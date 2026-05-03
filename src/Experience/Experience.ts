@@ -1,0 +1,47 @@
+// src/Experience/Experience.ts
+import * as THREE from 'three'
+import { Sizes } from './Sizes'
+import { Time } from './Time'
+import { Camera } from './Camera'
+import { Renderer } from './Renderer'
+import { World } from './World/World'
+
+export class Experience {
+    static instance: Experience
+
+    scene: THREE.Scene = new THREE.Scene()
+    sizes: Sizes = new Sizes()
+    time: Time = new Time()
+    camera: Camera
+    renderer: Renderer
+    world: World
+
+    constructor() {
+        if (Experience.instance) return Experience.instance
+        Experience.instance = this
+
+        this.camera = new Camera(this.sizes)
+        this.renderer = new Renderer(this.sizes)
+        this.world = new World()
+        // update() больше не вызывается здесь!
+    }
+
+    // НОВЫЙ МЕТОД: Асинхронный запуск
+    async init() {
+        // Ждем инициализации рендерера (WebGPU backend)
+        await this.renderer.init()
+
+        // Только после этого запускаем цикл анимации
+        this.update()
+    }
+
+    update() {
+        this.time.update()
+        this.world.update()
+        this.renderer.update(this.scene, this.camera.instance)
+
+        requestAnimationFrame(() => this.update())
+    }
+}
+
+export const experience = new Experience()

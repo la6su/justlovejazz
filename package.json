@@ -9,10 +9,56 @@
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@types/three": "^0.184.0",
     "less": "^4.6.4",
     "less-plugin-clean-css": "^1.6.0",
     "typescript": "~6.0.2",
     "uikit": "^3.25.16",
     "vite": "^8.0.10"
-  }
+  },
+  "description": "Modern interactive portfolio using **Three.js TSL (Nodes)** with **WebGPU → WebGL fallback**.   Designed with **mobile-first UX** and a **procedural 3D background**.",
+  "main": "index.js",
+  "dependencies": {
+    "clean-css": "^5.3.3",
+    "copy-anything": "^3.0.5",
+    "detect-libc": "^2.1.2",
+    "errno": "^0.1.8",
+    "fdir": "^6.5.0",
+    "fsevents": "^2.3.3",
+    "graceful-fs": "^4.2.11",
+    "iconv-lite": "^0.6.3",
+    "image-size": "^0.5.5",
+    "is-what": "^4.1.16",
+    "lightningcss": "^1.32.0",
+    "lightningcss-darwin-x64": "^1.32.0",
+    "make-dir": "^2.1.0",
+    "mime": "^1.6.0",
+    "nanoid": "^3.3.12",
+    "needle": "^3.5.0",
+    "parse-node-version": "^1.0.1",
+    "picocolors": "^1.1.1",
+    "picomatch": "^4.0.4",
+    "pify": "^4.0.1",
+    "postcss": "^8.5.13",
+    "prr": "^1.0.1",
+    "rolldown": "^1.0.0-rc.17",
+    "safer-buffer": "^2.1.2",
+    "sax": "^1.6.0",
+    "semver": "^5.7.2",
+    "source-map": "^0.6.1",
+    "source-map-js": "^1.2.1",
+    "three": "^0.184.0",
+    "tinyglobby": "^0.2.16"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/la6su/justlovejazz.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/la6su/justlovejazz/issues"
+  },
+  "homepage": "https://github.com/la6su/justlovejazz#readme"
 }

@@ -116,3 +116,26 @@ header .uk-heading-xlarge {
   font-size: 0.85rem;
   font-family: @global-font-family;
 }
+
+body {
+  margin: 0;
+  overflow-x: hidden;
+  background: #000;
+  color: white;
+  font-family: sans-serif;
+}
+
+canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  outline: none;
+  z-index: -1; /* Всегда сзади */
+}
+
+/* Пример для UIkit прозрачности */
+.uk-section {
+  background: transparent !important;
+  position: relative;
+  z-index: 1;
+}
