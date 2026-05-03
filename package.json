@@ -1,0 +1,18 @@
+{
+  "name": "justlovejazz",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "less": "^4.6.4",
+    "less-plugin-clean-css": "^1.6.0",
+    "typescript": "~6.0.2",
+    "uikit": "^3.25.16",
+    "vite": "^8.0.10"
+  }
+}
