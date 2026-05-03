@@ -5,19 +5,9 @@ Designed with **mobile-first UX** and a **procedural 3D background**.
 
 ---
 
-## ✨ Features
+## Features
 
-- 🎨 Procedural animated background (TSL / NodeMaterial)
-- ⚡ WebGPU renderer with WebGL fallback
-- 📱 Mobile-first adaptive performance
-- 🧊 Glassmorphism UI (UIkit 3)
-- 🧠 Interactive shaders (mouse + scroll)
-- 🧩 Optional GLTF central object
-- 🚀 Vite-powered fast dev environment
-
----
-
-## 🧱 Tech Stack
+## Tech Stack
 
 - **Language:** TypeScript
 - **3D Engine:** Three.js
@@ -28,4 +18,27 @@ Designed with **mobile-first UX** and a **procedural 3D background**.
 
 ---
 
-## 📁 Project Structure
+## Project Structure
+
+```
+src/
+├── Experience/
+│ ├── Experience.ts # Singleton (core app)
+│ ├── Renderer.ts # WebGPU/WebGL switch
+│ ├── Camera.ts
+│ ├── Sizes.ts
+│ ├── Time.ts
+│ └── World/
+│ ├── World.ts
+│ ├── Background.ts # TSL shader logic
+│ └── Model.ts # GLTF object
+│
+├── shaders/
+│ └── background.tsl.ts
+│
+├── ui/
+│ └── layout.html
+│
+├── main.ts
+└── style.css
+```
