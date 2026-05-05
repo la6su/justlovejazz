@@ -1,12 +1,13 @@
 
 import UIkit from 'uikit'
 import Icons from 'uikit/dist/js/uikit-icons'
+import type {Project} from '../Data/Projects'
 
 export class UIManager {
   constructor() {
     UIkit.use(Icons)
-    if (!(window as any).UIkit) {
-      (window as any).UIkit = UIkit
+    if (!window.UIkit) {
+      window.UIkit = UIkit
     }
   }
 
@@ -33,7 +34,7 @@ export class UIManager {
     const prevBtn = nav.querySelector('.prev')
     if (prevBtn) {
       prevBtn.addEventListener('click', () => {
-        const manager = (window as any).experience?.galleryManager
+        const manager = window.experience?.galleryManager
         if (manager) {
           const nextIdx = (manager.activeIndex - 1 + manager.projects.length) % manager.projects.length
           manager.setProject(nextIdx)
@@ -44,7 +45,7 @@ export class UIManager {
     const nextBtn = nav.querySelector('.next')
     if (nextBtn) {
       nextBtn.addEventListener('click', () => {
-        const manager = (window as any).experience?.galleryManager
+        const manager = window.experience?.galleryManager
         if (manager) {
           const nextIdx = (manager.activeIndex + 1) % manager.projects.length
           manager.setProject(nextIdx)
@@ -59,7 +60,7 @@ export class UIManager {
     });
   }
 
-  public showProjectContent(project: any) {
+  public showProjectContent(project: Project) {
     console.log(`Showing content for project: ${project.id}`);
     // Integration with UI elements would go here
   }

@@ -1,18 +1,19 @@
 // src/UI/ProjectDetail.ts
 import UIkit from 'uikit'
 import { type Project } from '../Data/Projects'
+import type { UIkitModal } from '../types/uikit'
 
 export class ProjectDetail {
     private modalElement: HTMLElement | null = null
     private contentElement: HTMLElement | null = null
-    private modalInstance: any = null
+    private modalInstance: UIkitModal | null = null
 
     constructor() {
         this.modalElement = document.getElementById('project-modal')
         this.contentElement = document.getElementById('modal-content')
 
         if (this.modalElement && UIkit) {
-            this.modalInstance = UIkit.modal(this.modalElement)
+            this.modalInstance = UIkit.modal(this.modalElement) as any
 
             // 1. Pre-fill with a skeleton to avoid "null -> huge" layout jump on first click
             if (this.contentElement) {
@@ -21,8 +22,10 @@ export class ProjectDetail {
 
             // 2. Warm-up: Trigger show/hide immediately to prime animations and DOM
             // This happens during bootstrap, so the user doesn't see the flicker
-            this.modalInstance.show()
-            this.modalInstance.hide()
+            if (this.modalInstance) {
+                this.modalInstance.show()
+                this.modalInstance.hide()
+            }
 
             UIkit.util.on(this.modalElement, 'close', () => {
                 window.dispatchEvent(new CustomEvent('project-detail-closed'))

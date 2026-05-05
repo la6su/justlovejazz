@@ -2,6 +2,7 @@
 import * as THREE from 'three'
 import { Section, type SectionConfig } from './Section'
 import { Camera } from '../Camera'
+import type {CameraState} from '../../types/camera'
 
 export class World {
     private sections: Section[] = []
@@ -15,8 +16,9 @@ export class World {
     /**
      * Updates the world based on the current scroll value (0 to sections.length - 1)
      * @param scrollValue The normalized scroll position
+     * @param deltaTime Time since last frame
      */
-    update(scrollValue: number) {
+    update(scrollValue: number, deltaTime: number) {
         if (this.sections.length === 0) return
 
         // 1. Determine current and next section
@@ -28,21 +30,14 @@ export class World {
 
         if (!from) return
 
-        // 2. Interpolate Camera
-        const currentCamPos = new THREE.Vector3().lerpVectors(from.config.cameraPosition, to.config.cameraPosition, t)
-        const currentCamTarget = new THREE.Vector3().lerpVectors(from.config.cameraTarget, to.config.cameraTarget, t)
-        const currentFov = from.config.fov + (to.config.fov - from.config.fov) * t
+        // 2. Interpolate Camera Target
+        const targetState: CameraState = {
+            position: new THREE.Vector3().lerpVectors(from.config.cameraPosition, to.config.cameraPosition, t),
+            target: new THREE.Vector3().lerpVectors(from.config.cameraTarget, to.config.cameraTarget, t),
+            fov: from.config.fov + (to.config.fov - from.config.fov) * t
+        }
 
-        this.camera.instance.position.copy(currentCamPos)
-        
-        // We use a separate target object for the camera to look at
-        // In a real implementation, this would be handled by a CameraController
-        // For now, we'll just set the lookAt
-        this.camera.instance.lookAt(currentCamTarget)
-        
-        // FOV usually requires updating the projection matrix
-        this.camera.instance.fov = currentFov
-        this.camera.instance.updateProjectionMatrix()
+        this.camera.updateSmooth(targetState, deltaTime)
 
         // 3. Return Baku transform, material and environment for the Experience to apply
         return {

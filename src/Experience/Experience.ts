@@ -38,14 +38,14 @@ export class Experience {
   private cursor!: Cursor
   
   // New Spatial System
-  private galleryManager!: GalleryManager
-  private galleryScene!: GalleryScene
+  public galleryManager!: GalleryManager;
+  public galleryScene!: GalleryScene;
   
   constructor(ui: UIManager) {
     this.sizes = new Sizes();
     this.time = new Time();
-    (Experience as any).instance = this;
-    (window as any).experience = this;
+    Experience.instance = this;
+    window.experience = this;
     this.ui = ui;
     this.camera = new Camera(this.sizes)
     this.renderer = new Renderer(this.sizes)
@@ -138,16 +138,17 @@ export class Experience {
   }
 
   update() {
+    const deltaTime = this.time.delta / 1000
     this.time.update()
     input.update()
     this.cursor.update()
 
     // Update Gallery System
-    this.galleryManager.update(this.time.delta / 1000)
-    this.galleryScene.update(this.camera.instance, this.time.delta / 1000)
+    this.galleryManager.update(deltaTime)
+    this.galleryScene.update(this.camera.instance, deltaTime)
 
     const normalizedScroll = input.getSmoothedScroll() / 1000
-    const worldState = this.world.update(normalizedScroll)
+    const worldState = this.world.update(normalizedScroll, deltaTime)
 
     if (worldState) {
       this.baku.position.copy(worldState.bakuPosition)
@@ -162,8 +163,8 @@ export class Experience {
       this.ui.setProjectActive(worldState.currentSectionId === 'explore' ? 'active' : 'none')
     }
 
-    this.camera.update(this.time.delta / 1000);
-    this.baku.update(this.time.delta / 1000);
+    this.camera.update(deltaTime);
+    this.baku.update(deltaTime);
     this.environment.update(this.time.elapsed / 1000, normalizedScroll, this.camera.getVelocity(), this.baku.position);
     this.renderer.update(this.scene, this.camera.instance);
     requestAnimationFrame(() => this.update());

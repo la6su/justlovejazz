@@ -9,14 +9,14 @@ export class PostProcessing {
         
         // In WebGPURenderer, post-processing is applied via the postProcessing property
         // We create a node that takes the screen texture as input
-        if (renderer.instance && renderer.instance.setPostProcessing) {
-            renderer.instance.setPostProcessing(postProcessingNode)
+        if ((renderer.instance as any).setPostProcessing) {
+            (renderer.instance as any).setPostProcessing(postProcessingNode)
         }
     }
 
     destroy() {
         if (Experience.instance.renderer && Experience.instance.renderer.instance) {
-            Experience.instance.renderer.instance.setPostProcessing(null)
+            (Experience.instance.renderer.instance as any).setPostProcessing(null)
         }
     }
 }

@@ -15,7 +15,7 @@ import {
 } from 'three/tsl';
 
 export const projectDiveShader = (tex: any, progress: any) => {
-    const currentUv = uv;
+    const currentUv = uv();
     const center = vec2(0.5, 0.5);
     const dist = distance(currentUv, center);
     
@@ -43,14 +43,14 @@ export const projectDiveShader = (tex: any, progress: any) => {
     // 3. Procedural Grain: Subtle high-frequency noise that intensifies during the jump
     const noise = Fn(() => {
         const t = float(0.1); // Time or seed
-        const random = fract(sin(add(mul(uv, 12.9898), t)).mul(43758.5453));
+        const random = fract(sin(add(mul(uv(), 12.9898), t)).mul(43758.5453));
         return random;
     });
     
     const grain = mul(noise(), 0.05);
     const grainIntensity = mul(progress, grain);
     
-    finalColor.assign(add(finalColor, grainIntensity));
+    finalColor.assign(finalColor.add(grainIntensity));
     
     return finalColor;
 };

@@ -24,7 +24,7 @@ export class ProjectMaterial {
     const g = tex.sample(zoomUV).g;
     const b = tex.sample(zoomUV.sub(shift)).b;
     
-    const finalCol = vec3(r, g, b).mix(col, p.mul(0.2));
+    const finalCol = mix(vec3(r, g, b), col, p.mul(0.2));
     this.material.colorNode = finalCol;
   }
 

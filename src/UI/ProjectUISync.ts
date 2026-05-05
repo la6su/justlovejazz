@@ -12,7 +12,7 @@ export class ProjectUISync {
       this.updateActiveSection(project.id);
     };
 
-    this.manager.onStateChange = (state, progress) => {
+    this.manager.onStateChange = (_state, progress) => {
       this.syncFullscreenUI(progress);
     };
   }

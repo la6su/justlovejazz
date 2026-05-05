@@ -7,7 +7,6 @@ import {
     uv, 
     time, 
     positionLocal, 
-    vec3, 
     mul, 
     add 
 } from 'three/tsl'
@@ -79,7 +78,7 @@ export class Environment {
         const size = 100 // Increased size for the horizon effect
         const geometry = new THREE.PlaneGeometry(size, size)
         
-        const gridColor = uniform(new THREE.Color(0x333333))
+        // Grid color is now handled by the material's default or a global uniform
         const bakuPos = uniform(new THREE.Vector2(0, 0))
         this.bakuPosUniform = bakuPos
         
@@ -90,7 +89,7 @@ export class Environment {
             opacity: 0.5
         }) as any
         
-        this.gridMaterial.colorNode = cinematicGridNode(gridColor, time, uv(), bakuPos)
+        this.gridMaterial.colorNode = cinematicGridNode(uv(), time)
         
         this.grid = new THREE.Mesh(geometry, this.gridMaterial)
         this.grid.rotation.x = -Math.PI / 2

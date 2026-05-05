@@ -3,7 +3,7 @@ import { WebGPURenderer } from 'three/webgpu'
 import { Sizes } from './Sizes'
 
 export class Renderer {
-    instance: any // Используем any для гибкости между WebGL и WebGPU
+    instance: WebGPURenderer | THREE.WebGLRenderer
 
     constructor(sizes: Sizes) {
         if (navigator.gpu) {
@@ -25,8 +25,8 @@ export class Renderer {
     // Делаем метод максимально безопасным
     async init() {
         // Проверяем, есть ли метод init у внутреннего рендерера Three.js
-        if (this.instance && typeof this.instance.init === 'function') {
-            await this.instance.init()
+        if (this.instance && typeof (this.instance as any).init === 'function') {
+            await (this.instance as any).init()
         }
     }
 

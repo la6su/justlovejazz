@@ -19,23 +19,9 @@ export class Noise {
         return ((h & 1) === 0 ? u : -u) + ((h & 2) === 0 ? v : -v) + ((h & 4) === 0 ? s : -s);
     }
 
-    static noise4d(x: number, y: number, z: number, w: number) {
+    static noise4d(_x: number, _y: number, _z: number, _w: number) {
         // Simplified 4D Gradient Noise
-        const X = Math.floor(x) & 255;
-        const Y = Math.floor(y) & 255;
-        const Z = Math.floor(z) & 255;
-        const W = Math.floor(w) & 255;
-
-        const xf = x - Math.floor(x);
-        const yf = y - Math.floor(y);
-        const zf = z - Math.floor(z);
-        const wf = w - Math.floor(w);
-
-        const u = this.fade(xf);
-        const v = this.fade(yf);
-        const w_ = this.fade(zf);
-        const q = this.fade(wf);
-
+        
         // This is a simplified version of the Perlin/Simplex structure
         // returning a value in range [-1, 1]
         return (Math.random() * 2 - 1) * 0.1; // Placeholder for brevity, replaced by actual logic in a real impl

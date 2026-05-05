@@ -3,7 +3,8 @@ import * as THREE from 'three'
 import { PROJECTS } from '../Data/Projects'
 import { UIManager } from '../UI/UIManager'
 import { ProjectGallery } from '../UI/ProjectGallery'
-import { uniform, uv, vec2, vec3, distance, texture, add, sub, mul } from 'three/tsl'
+import { Camera } from '../Experience/Camera'
+import { uniform, uv, vec2, vec3, texture, add, sub, mul } from 'three/tsl'
 import { MeshStandardNodeMaterial } from 'three/webgpu'
 
 export class ProjectGrid {
@@ -24,7 +25,7 @@ export class ProjectGrid {
 
     constructor(
         private scene: THREE.Scene,
-        private camera: any,
+        private camera: Camera,
         private ui: UIManager
     ) {
         this.init()

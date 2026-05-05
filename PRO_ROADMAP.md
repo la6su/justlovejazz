@@ -57,7 +57,7 @@ To reach "Top Studio" level, we must implement the following beyond basic featur
 *Porting the extracted 'Golden Patterns' into our TSL/WebGPU pipeline to reach Studio-Grade quality.*
 
 #### 🎥 Cinematic Camera & World
-- [ ] **Advanced Kinematics:** Implement inertia-based cursor follow, organic shake, and dynamic FOV offset. (Started)
+- [x] **Advanced Kinematics:** Implement inertia-based cursor follow, organic shake, and dynamic FOV offset.
 - [ ] **World Orchestration:** Implement a Section-based state machine. Instead of a single world, create a system of 'Scenes' with pre-defined camera and object transforms.
 - [ ] **Seamless Transitions:** Implement high-fidelity lerp/slerp transitions between sections, tied to the smooth-scroll progress.
 
@@ -67,7 +67,7 @@ To reach "Top Studio" level, we must implement the following beyond basic featur
 - [ ] **Custom Geometry:** Implement MipMap-based geometry for high-end bloom sampling.
 
 #### ⚙️ Studio Polish
-- [ ] **Asset Orchestration:** Implement the 'Baku' pattern: an object that changes materials and behavior based on the current world section.
+- [x] **Asset Orchestration:** Implement the 'Baku' pattern: an object that changes materials and behavior based on the current world section.
 - [ ] **Performance Tuning:** Optimize TSL shaders to ensure the full cinematic stack runs at 60fps.
 
 ### 🏆 Phase 6: The Masterpiece (Final Refinement)

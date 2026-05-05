@@ -98,8 +98,9 @@ update(camera: THREE.Camera, _delta: number) {
     currentLookAt.lerp(targetLook, 0.1);
     camera.lookAt(currentLookAt);
 
-    camera.fov = THREE.MathUtils.lerp(75, 45, progress);
-    camera.updateProjectionMatrix();
+    const cam = camera as THREE.PerspectiveCamera;
+    cam.fov = THREE.MathUtils.lerp(75, 45, progress);
+    cam.updateProjectionMatrix();
 
     this.materials.forEach(mat => mat.setProgress(progress));
   }
