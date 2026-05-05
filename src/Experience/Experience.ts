@@ -20,11 +20,12 @@ export class Experience {
     scene: THREE.Scene = new THREE.Scene()
     sizes: Sizes = new Sizes()
     time: Time = new Time()
-    camera: Camera
-    renderer: Renderer
-    world: World
-    private smoothScroll: SmoothScroll;
-    private postProcessing: PostProcessing;
+    camera!: Camera
+    renderer!: Renderer
+    world!: World
+    private smoothScroll!: SmoothScroll
+    private postProcessing!: PostProcessing
+    private textReveal!: TextReveal
 
     constructor() {
         if (Experience.instance) return Experience.instance
@@ -36,6 +37,7 @@ export class Experience {
         this.postProcessing = new PostProcessing()
         this.smoothScroll = new SmoothScroll()
         this.textReveal = new TextReveal()
+
 
 
 

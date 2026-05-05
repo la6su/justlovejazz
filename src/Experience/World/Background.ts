@@ -6,10 +6,11 @@ import { Experience } from '../Experience'
 import { input } from '../Input'
 
 export class Background {
-    mesh: THREE.Mesh
-    material: MeshBasicNodeMaterial
+    mesh!: THREE.Mesh
+    material!: MeshBasicNodeMaterial
 
     constructor() {
+
         const { scene } = Experience.instance
         const geometry = new THREE.PlaneGeometry(10, 10)
 

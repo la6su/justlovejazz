@@ -7,11 +7,9 @@ import {
     mul, 
     add, 
     sub, 
-    mix, 
     vec2, 
     vec3, 
     float, 
-    uniform
 } from 'three/tsl'
 
 export const postProcessingNode = (inputTexture: any) => {
@@ -34,7 +32,7 @@ export const postProcessingNode = (inputTexture: any) => {
     // --- 2. Film Grain ---
     // Pseudo-random noise based on time and UV
     // Use a simple TSL-compatible noise formula
-    const noise = fract(sin(add(mul(u, vec2(12.9898, 78.233)), t)) * float(43758.5453))
+    const noise = fract(mul(sin(add(mul(u, vec2(12.9898, 78.233)), t)), float(43758.5453)))
     const grainStrength = float(0.04)
     const grain = mul(sub(noise, float(0.5)), grainStrength)
     const colorWithGrain = add(color, grain)

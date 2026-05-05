@@ -1,9 +1,8 @@
 // src/Experience/Cursor.ts
-import * as THREE from 'three'
 
 export class Cursor {
     static instance: Cursor
-    element: HTMLElement
+    element!: HTMLElement
 
     constructor() {
         if (Cursor.instance) return Cursor.instance

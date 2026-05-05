@@ -1,7 +1,7 @@
 // src/Experience/TextReveal.ts
 
 export class TextReveal {
-    private observer: IntersectionObserver
+    private observer!: IntersectionObserver
 
     constructor() {
         this.setup()
@@ -12,13 +12,14 @@ export class TextReveal {
         const titles = document.querySelectorAll('.studio-title')
         
         titles.forEach(title => {
-            const text = title.innerText
-            title.innerHTML = '' // Clear original text
+            const titleElement = title as HTMLElement
+            const text = titleElement.innerText
+            titleElement.innerHTML = '' // Clear original text
 
             // Split by words for a more professional "studio" feel
             const words = text.split(' ')
             
-            words.forEach(word => {
+            words.forEach((word: string) => {
                 const mask = document.createElement('span')
                 mask.classList.add('reveal-mask')
                 
@@ -27,9 +28,10 @@ export class TextReveal {
                 span.innerText = word + '\u00A0'
                 
                 mask.appendChild(span)
-                title.appendChild(mask)
+                titleElement.appendChild(mask)
             })
         })
+
 
         // 2. Setup IntersectionObserver for animations
         this.observer = new IntersectionObserver((entries) => {

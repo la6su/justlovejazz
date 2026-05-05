@@ -4,7 +4,7 @@ import { Experience } from '../Experience'
 import { input } from '../Input'
 
 export class CentralObject {
-    mesh: THREE.Mesh
+    mesh!: THREE.Mesh
 
     constructor() {
         this.setup()
@@ -38,6 +38,11 @@ export class CentralObject {
     destroy() {
         Experience.instance.scene.remove(this.mesh)
         this.mesh.geometry.dispose()
-        this.mesh.material.dispose()
+        
+        if (Array.isArray(this.mesh.material)) {
+            this.mesh.material.forEach(mat => mat.dispose())
+        } else {
+            this.mesh.material.dispose()
+        }
     }
 }

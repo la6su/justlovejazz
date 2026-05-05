@@ -17,7 +17,7 @@ export class SmoothScroll {
             infinite: false,
         })
 
-        this.lenis.on('scroll', (event) => {
+        this.lenis.on('scroll', (event: { scroll: number }) => {
             input.setScroll(event.scroll)
         })
 

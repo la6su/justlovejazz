@@ -13,7 +13,7 @@ export class Input {
         if (Input.instance) return Input.instance
         Input.instance = this
 
-        window.addEventListener('mousemove', (event) => {
+        window.addEventListener('mousemove', (event: MouseEvent) => {
             this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1
             this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
         })

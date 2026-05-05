@@ -3,8 +3,8 @@ import * as THREE from 'three'
 import { Experience } from '../Experience'
 
 export class Lights {
-    ambientLight: THREE.AmbientLight
-    directionalLight: THREE.DirectionalLight
+    ambientLight!: THREE.AmbientLight
+    directionalLight!: THREE.DirectionalLight
 
     constructor() {
         this.setup()
