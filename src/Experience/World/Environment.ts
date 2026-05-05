@@ -1,16 +1,26 @@
 // src/Experience/World/Environment.ts
 import * as THREE from 'three'
 
+import { cinematicGridNode } from '../../shaders/env-effects.tsl.ts'
+import { uniform, uv, time } from 'three/tsl'
+
 export class Environment {
     private particles!: THREE.Points
-    private grid!: THREE.LineSegments
+    private grid!: THREE.Mesh
+    private gridMaterial!: THREE.MeshBasicMaterial
     private ambientLight!: THREE.AmbientLight
     private pointLight!: THREE.PointLight
 
     constructor(scene: THREE.Scene) {
+        this.setupFog(scene)
         this.setupLights(scene)
         this.setupParticles(scene)
         this.setupGrid(scene)
+    }
+
+    private setupFog(scene: THREE.Scene) {
+        // Exponential Height Fog for atmospheric depth
+        scene.fog = new THREE.FogExp2(0x05050a, 0.05)
     }
 
     private setupLights(scene: THREE.Scene) {
@@ -46,34 +56,31 @@ export class Environment {
     }
 
     private setupGrid(scene: THREE.Scene) {
-        const size = 20
-        const divisions = 20
-        const geometry = new THREE.PlaneGeometry(size, size, divisions, divisions)
-        const material = new THREE.MeshBasicMaterial({ 
-            color: 0x333333, 
-            wireframe: true, 
-            transparent: true, 
-            opacity: 0.2 
-        })
+        const size = 100 // Increased size for the horizon effect
+        const geometry = new THREE.PlaneGeometry(size, size)
         
-        const gridMesh = new THREE.Mesh(geometry, material)
-        gridMesh.rotation.x = -Math.PI / 2
-        gridMesh.position.y = -1
+        const gridColor = uniform(new THREE.Color(0x333333))
         
-        this.grid = new THREE.LineSegments(
-            new THREE.EdgesGeometry(geometry), 
-            new THREE.LineBasicMaterial({ color: 0x333333, transparent: true, opacity: 0.2 })
-        )
+        // Using standard MeshBasicMaterial and assigning colorNode.
+        // In Three.js r167+, WebGPURenderer treats this as a NodeMaterial.
+        this.gridMaterial = new THREE.MeshBasicMaterial({
+            transparent: true,
+            opacity: 0.5
+        }) as any
+        
+        this.gridMaterial.colorNode = cinematicGridNode(gridColor, time, uv())
+        
+        this.grid = new THREE.Mesh(geometry, this.gridMaterial)
         this.grid.rotation.x = -Math.PI / 2
         this.grid.position.y = -1
         
         scene.add(this.grid)
     }
 
-    update(time: number, scrollValue: number) {
+    update(timeVal: number, scrollValue: number) {
         // Медленное вращение частиц для создания жизни
-        this.particles.rotation.y = time * 0.05
-        this.particles.rotation.x = time * 0.02
+        this.particles.rotation.y = timeVal * 0.05
+        this.particles.rotation.x = timeVal * 0.02
         
         // Смещение сетки в зависимости от скролла (параллакс)
         this.grid.position.z = (scrollValue * 0.5) % 1
