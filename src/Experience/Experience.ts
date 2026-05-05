@@ -8,10 +8,9 @@ import { World } from './World/World'
 import { PostProcessing } from './PostProcessing'
 import { SmoothScroll } from './SmoothScroll'
 import { TextReveal } from './TextReveal'
+import { ContentReveal } from './ContentReveal'
+import { Cursor } from './Cursor'
 import { input } from './Input'
-
-
-
 
 
 export class Experience {
@@ -26,6 +25,8 @@ export class Experience {
     private smoothScroll!: SmoothScroll
     private postProcessing!: PostProcessing
     private textReveal!: TextReveal
+    private contentReveal!: ContentReveal
+    private cursor!: Cursor
 
     constructor() {
         if (Experience.instance) return Experience.instance
@@ -37,9 +38,8 @@ export class Experience {
         this.postProcessing = new PostProcessing()
         this.smoothScroll = new SmoothScroll()
         this.textReveal = new TextReveal()
-
-
-
+        this.contentReveal = new ContentReveal()
+        this.cursor = new Cursor()
 
         // update() больше не вызывается здесь!
     }
@@ -65,6 +65,7 @@ export class Experience {
     update() {
         this.time.update()
         input.update()
+        this.cursor.update()
         this.world.update()
         this.renderer.update(this.scene, this.camera.instance)
         requestAnimationFrame(() => this.update())
@@ -75,6 +76,8 @@ export class Experience {
         this.postProcessing.destroy()
         this.smoothScroll.destroy()
         this.textReveal.destroy()
+        this.contentReveal.destroy()
+        this.cursor.destroy()
         this.renderer.instance.dispose()
     }
 }
