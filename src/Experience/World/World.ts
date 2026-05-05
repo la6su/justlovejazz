@@ -1,27 +1,63 @@
 // src/Experience/World/World.ts
-import { Background } from './Background'
-import { CentralObject } from './CentralObject'
-import { Lights } from './Lights'
+import * as THREE from 'three'
+import { Section, type SectionConfig } from './Section'
+import { Camera } from '../Camera'
 
 export class World {
-    background: Background
-    centralObject: CentralObject
-    lights: Lights
+    private sections: Section[] = []
+    
+    constructor(private camera: Camera) {}
 
-    constructor() {
-        this.background = new Background()
-        this.lights = new Lights()
-        this.centralObject = new CentralObject()
+    addSection(config: SectionConfig) {
+        this.sections.push(new Section(config))
     }
 
-    update() {
-        this.background.update()
-        this.centralObject.update()
+    /**
+     * Updates the world based on the current scroll value (0 to sections.length - 1)
+     * @param scrollValue The normalized scroll position
+     */
+    update(scrollValue: number) {
+        if (this.sections.length === 0) return
+
+        // 1. Determine current and next section
+        const index = Math.floor(scrollValue)
+        const t = scrollValue % 1
+
+        const from = this.sections[index]
+        const to = this.sections[index + 1] || from
+
+        if (!from) return
+
+        // 2. Interpolate Camera
+        const currentCamPos = new THREE.Vector3().lerpVectors(from.config.cameraPosition, to.config.cameraPosition, t)
+        const currentCamTarget = new THREE.Vector3().lerpVectors(from.config.cameraTarget, to.config.cameraTarget, t)
+        const currentFov = from.config.fov + (to.config.fov - from.config.fov) * t
+
+        this.camera.instance.position.copy(currentCamPos)
+        
+        // We use a separate target object for the camera to look at
+        // In a real implementation, this would be handled by a CameraController
+        // For now, we'll just set the lookAt
+        this.camera.instance.lookAt(currentCamTarget)
+        
+        // FOV usually requires updating the projection matrix
+        this.camera.instance.fov = currentFov
+        this.camera.instance.updateProjectionMatrix()
+
+        // 3. Return Baku transform and material for the Experience to apply to the object
+        return {
+            bakuPosition: new THREE.Vector3().lerpVectors(from.config.bakuPosition, to.config.bakuPosition, t),
+            bakuRotation: new THREE.Quaternion().slerpQuaternions(from.config.bakuRotation, to.config.bakuRotation, t),
+            bakuScale: new THREE.Vector3().lerpVectors(from.config.bakuScale, to.config.bakuScale, t),
+            bakuMaterial: from.config.bakuMaterial || to.config.bakuMaterial
+        }
+    }
+
+    getSections() {
+        return this.sections
     }
 
     destroy() {
-        this.background.destroy()
-        this.centralObject.destroy()
-        this.lights.destroy()
+
     }
 }

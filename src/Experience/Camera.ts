@@ -2,7 +2,7 @@
 import * as THREE from 'three'
 import { Sizes } from './Sizes'
 import { input } from './Input'
-import { Time } from './Time'
+import { Easings } from '../Utils/Easings'
 
 export class Camera {
     instance: THREE.PerspectiveCamera
@@ -17,9 +17,16 @@ export class Camera {
     
     private fovOffset: number = 0
     private targetFovOffset: number = 0
-    
+    private fovTransitionT: number = 0
+    private fovStartOffset: number = 0
+    private fovDuration: number = 1
+
     private basePosition: THREE.Vector3 = new THREE.Vector3(0, 0, 3)
     private moveRange: THREE.Vector2 = new THREE.Vector2(0.15, 0.15)
+
+    setBasePosition(pos: THREE.Vector3) {
+        this.basePosition.copy(pos)
+    }
 
     constructor(sizes: Sizes) {
         this.instance = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
@@ -45,39 +52,40 @@ export class Camera {
      * Sets the FOV offset (used for cinematic zooms)
      */
     setFovOffset(value: number, duration: number = 1) {
+        this.fovStartOffset = this.fovOffset
         this.targetFovOffset = value
-        // In a full system, we'd use a tween here, but for now we lerp in update()
+        this.fovDuration = duration
+        this.fovTransitionT = 0
     }
 
     update(deltaTime: number) {
         // 1. Inertia-based Cursor Follow (The "Junni Feel")
-        // We use a modified spring-damper system for that high-end weight
         const mouse = input.getMouse()
         
-        // Adjusted deltaTime for consistency
         const dt = Math.min(0.1, deltaTime) * 0.5
         
         let diff = new THREE.Vector2().subVectors(mouse, this.cursorPosDelay).multiplyScalar(dt)
-        // Nonlinear amplification: makes the movement feel "snappy" but smooth
         diff.multiply(diff.clone().addScalar(1.0))
         
         this.cursorPosDelayVel.add(diff.multiplyScalar(5.0))
-        this.cursorPosDelayVel.multiplyScalar(0.85) // Damping
+        this.cursorPosDelayVel.multiplyScalar(0.85) 
         this.cursorPosDelay.add(this.cursorPosDelayVel)
-
+    
         // 2. Position Calculation
-        // Camera drifts slightly based on the delayed cursor position
         this.instance.position.set(
             this.basePosition.x + this.cursorPosDelay.x * this.moveRange.x,
             this.basePosition.y + this.cursorPosDelay.y * this.moveRange.y,
             this.basePosition.z
         )
+    
+        // 3. Dynamic FOV Offset with Cinematic Easing
+        if (this.fovTransitionT < 1.0) {
+            this.fovTransitionT = Math.min(1.0, this.fovTransitionT + deltaTime / this.fovDuration)
+            const t = Easings.easeInOutQuart(this.fovTransitionT)
+            this.fovOffset = this.fovStartOffset + (this.targetFovOffset - this.fovStartOffset) * t
+        }
 
-        // 3. Dynamic FOV Offset
-        // Smoothly transition fovOffset
-        this.fovOffset += (this.targetFovOffset - this.fovOffset) * 0.1
         if (this.fovOffset > 0) {
-            // Push camera back slightly when FOV offset is applied to maintain focus
             const offsetVec = new THREE.Vector3(0, 0, -this.fovOffset * 0.05).applyQuaternion(this.instance.quaternion)
             this.instance.position.add(offsetVec)
         }

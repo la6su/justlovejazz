@@ -8,6 +8,8 @@ import { experience } from './Experience/Experience'
 UIkit.use(Icons)
 
 // Запускаем асинхронную инициализацию
-experience.init().catch(err => {
+try {
+   await experience.init()
+} catch (err) {
    console.error('Failed to initialize Experience:', err)
-})
+}

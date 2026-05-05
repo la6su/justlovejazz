@@ -5,6 +5,7 @@ import { Time } from './Time'
 import { Camera } from './Camera'
 import { Renderer } from './Renderer'
 import { World } from './World/World'
+import { Baku } from './World/Baku'
 import { PostProcessing } from './PostProcessing'
 import { SmoothScroll } from './SmoothScroll'
 import { TextReveal } from './TextReveal'
@@ -22,6 +23,7 @@ export class Experience {
     camera!: Camera
     renderer!: Renderer
     world!: World
+    baku!: Baku
     private smoothScroll!: SmoothScroll
     private postProcessing!: PostProcessing
     private textReveal!: TextReveal
@@ -34,15 +36,73 @@ export class Experience {
 
         this.camera = new Camera(this.sizes)
         this.renderer = new Renderer(this.sizes)
-        this.world = new World()
+        
+        // World Orchestration
+        this.world = new World(this.camera)
+        this.baku = new Baku()
+        this.scene.add(this.baku)
+
+        // Define cinematic path
+        this.setupWorldSections()
+
         this.postProcessing = new PostProcessing()
         this.smoothScroll = new SmoothScroll()
         this.textReveal = new TextReveal()
         this.contentReveal = new ContentReveal()
         this.cursor = new Cursor()
-
-        // update() больше не вызывается здесь!
     }
+
+    private setupWorldSections() {
+        this.world.addSection({
+            id: 'intro',
+            cameraPosition: new THREE.Vector3(0, 0, 5),
+            cameraTarget: new THREE.Vector3(0, 0, 0),
+            fov: 75,
+            bakuPosition: new THREE.Vector3(0, 0, 0),
+            bakuRotation: new THREE.Quaternion(),
+            bakuScale: new THREE.Vector3(1, 1, 1),
+            bakuMaterial: {
+                color: new THREE.Color(0x333333),
+                emissive: new THREE.Color(0x111111),
+                roughness: 0.1,
+                metalness: 0.9
+            }
+        })
+
+        this.world.addSection({
+            id: 'explore',
+            cameraPosition: new THREE.Vector3(3, 2, 3),
+            cameraTarget: new THREE.Vector3(0, 0, 0),
+            fov: 60,
+            bakuPosition: new THREE.Vector3(0, 0, 0),
+            bakuRotation: new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 4, 0)),
+            bakuScale: new THREE.Vector3(1.2, 1.2, 1.2),
+            bakuMaterial: {
+                color: new THREE.Color(0x664422),
+                emissive: new THREE.Color(0x221100),
+                roughness: 0.4,
+                metalness: 0.7
+            }
+        })
+
+        this.world.addSection({
+            id: 'detail',
+            cameraPosition: new THREE.Vector3(0, 0, 2),
+            cameraTarget: new THREE.Vector3(0, 0, 0),
+            fov: 45,
+            bakuPosition: new THREE.Vector3(0, 0, 0),
+            bakuRotation: new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, 0, 0)),
+            bakuScale: new THREE.Vector3(0.8, 0.8, 0.8),
+            bakuMaterial: {
+                color: new THREE.Color(0x112233),
+                emissive: new THREE.Color(0x001122),
+                roughness: 0.05,
+                metalness: 1.0
+            }
+        })
+    }
+
+
 
     // НОВЫЙ МЕТОД: Асинхронный запуск
     async init() {
@@ -66,8 +126,24 @@ export class Experience {
         this.time.update()
         input.update()
         this.cursor.update()
+
+        // 1. World Orchestration: Map scroll to cinematic path
+        const normalizedScroll = input.getSmoothedScroll() / 1000
+        const bakuTransform = this.world.update(normalizedScroll)
+
+        if (bakuTransform) {
+            this.baku.position.copy(bakuTransform.bakuPosition)
+            this.baku.quaternion.copy(bakuTransform.bakuRotation)
+            this.baku.scale.copy(bakuTransform.bakuScale)
+            if (bakuTransform.bakuMaterial) {
+                this.baku.updateMaterial(bakuTransform.bakuMaterial)
+            }
+        }
+
+        // 2. Organic Motion: Update Baku's internal breathing/drift
+        this.baku.update(this.time.delta / 1000)
+
         this.camera.update(this.time.delta / 1000)
-        this.world.update()
         this.renderer.update(this.scene, this.camera.instance)
         requestAnimationFrame(() => this.update())
     }
