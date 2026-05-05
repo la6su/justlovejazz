@@ -4,6 +4,7 @@ export interface Project {
   title: string;
   description: string;
   textureUrl: string;
+  detailTextureUrl: string;
   color: string;
   year: string;
   category: string;
@@ -18,6 +19,7 @@ export const PROJECTS: Project[] = [
     title: 'Quantum Flux',
     description: 'An exploration of digital fluidity and light.',
     textureUrl: '/assets/textures/proj1.jpg',
+    detailTextureUrl: '/assets/textures/proj1_detail.jpg',
     color: '#ff3300',
     year: '2024',
     category: 'Generative',
@@ -30,6 +32,7 @@ export const PROJECTS: Project[] = [
     title: 'Neon Silence',
     description: 'Capturing the stillness of futuristic cities.',
     textureUrl: '/assets/textures/proj2.jpg',
+    detailTextureUrl: '/assets/textures/proj2_detail.jpg',
     color: '#00ffcc',
     year: '2023',
     category: 'Atmospheric',
@@ -42,6 +45,7 @@ export const PROJECTS: Project[] = [
     title: 'Aether Drift',
     description: 'The intersection of organic and synthetic forms.',
     textureUrl: '/assets/textures/proj3.jpg',
+    detailTextureUrl: '/assets/textures/proj3_detail.jpg',
     color: '#aa00ff',
     year: '2024',
     category: 'Abstract',
@@ -54,6 +58,7 @@ export const PROJECTS: Project[] = [
     title: 'Void Echo',
     description: 'A study on emptiness and resonance.',
     textureUrl: '/assets/textures/proj4.jpg',
+    detailTextureUrl: '/assets/textures/proj4_detail.jpg',
     color: '#ffff00',
     year: '2022',
     category: 'Minimalist',

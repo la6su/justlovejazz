@@ -8,10 +8,11 @@ export class ProjectMaterial {
   public material: MeshBasicNodeMaterial;
   private progressUniform = uniform(0);
 
-  constructor(textureUrl: string, baseColor: string) {
+  constructor(textureUrl: string, detailTextureUrl: string, baseColor: string) {
     this.material = new MeshBasicNodeMaterial();
 
     const tex = texture(new THREE.TextureLoader().load(textureUrl));
+    const detTex = texture(new THREE.TextureLoader().load(detailTextureUrl));
     const col = color(baseColor);
     const p = this.progressUniform;
 
@@ -20,11 +21,18 @@ export class ProjectMaterial {
 
     // Chromatic Aberration
     const shift = p.mul(0.02);
+    
+    // Base Texture Sample
     const r = tex.sample(zoomUV.add(shift)).r;
     const g = tex.sample(zoomUV).g;
     const b = tex.sample(zoomUV.sub(shift)).b;
-    
-    const finalCol = mix(vec3(r, g, b), col, p.mul(0.2));
+    const baseCol = vec3(r, g, b);
+
+    // Detail Texture Sample (simple)
+    const detailCol = detTex.sample(uv());
+
+    // Blend base and detail based on progress
+    const finalCol = mix(baseCol, mix(detailCol, col, p.mul(0.2)), p);
     this.material.colorNode = finalCol;
   }
 

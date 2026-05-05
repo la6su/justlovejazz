@@ -16,6 +16,7 @@ import { input } from './Input'
 
 import { GalleryManager } from '../core/GalleryManager'
 import { GalleryScene } from './World/GalleryScene'
+
 import { PROJECTS } from '../Data/Projects'
 
 export class Experience {
@@ -40,6 +41,7 @@ export class Experience {
   // New Spatial System
   public galleryManager!: GalleryManager;
   public galleryScene!: GalleryScene;
+
   
   constructor(ui: UIManager) {
     this.sizes = new Sizes();
@@ -55,8 +57,12 @@ export class Experience {
     this.environment = new Environment(this.scene)
     this.galleryManager = new GalleryManager(PROJECTS)
     this.galleryScene = new GalleryScene(this.galleryManager)
+
     this.scene.add(this.galleryScene.group)
+
     this.setupWorldSections()
+    
+
     // Move heavy/circular initializations to init()
     window.addEventListener('pointerdown', (e) => {
       this.galleryScene.handlePointerDown(e.clientX, e.clientY, this.camera.instance)
@@ -143,6 +149,7 @@ export class Experience {
     input.update()
     this.cursor.update()
 
+
     // Update Gallery System
     this.galleryManager.update(deltaTime)
     this.galleryScene.update(this.camera.instance, deltaTime)
@@ -160,7 +167,6 @@ export class Experience {
       this.environment.setLighting(worldState.envColor, worldState.envIntensity)
       
       // Sync UI visibility with current world section
-      this.ui.setProjectActive(worldState.currentSectionId === 'explore' ? 'active' : 'none')
     }
 
     this.camera.update(deltaTime);

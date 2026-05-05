@@ -8,24 +8,12 @@ export class ProjectUISync {
   }
 
   private init() {
-    this.manager.onProjectChange = (project) => {
-      this.updateActiveSection(project.id);
-    };
-
     this.manager.onStateChange = (_state, progress) => {
       this.syncFullscreenUI(progress);
     };
   }
 
-  private updateActiveSection(projectId: string) {
-    document.querySelectorAll('.project-section').forEach(sec => {
-      sec.classList.toggle('is-active', sec.getAttribute('data-id') === projectId);
-    });
-    
-    // We can also trigger a CSS transition for the HTML content to "slide"
-    document.body.classList.add('slider-move');
-    setTimeout(() => document.body.classList.remove('slider-move'), 500);
-  }
+
 
   private syncFullscreenUI(progress: number) {
     const overlay = document.querySelector('.fullscreen-overlay');

@@ -23,6 +23,14 @@ export class ProjectGrid {
     private uProgress = uniform(0)
     private gallery: ProjectGallery | null = null
 
+    // Carousel Constants
+    private readonly GAP = 0.5
+    private readonly CARD_WIDTH = 2.0
+    private readonly MAX_ROTATION = Math.PI / 6 // 30 deg
+    private readonly MAX_DEPTH = 2.0
+    private readonly MIN_SCALE = 0.9
+    private readonly SCALE_RANGE = 0.1
+
     constructor(
         private scene: THREE.Scene,
         private camera: Camera,
@@ -37,23 +45,19 @@ export class ProjectGrid {
 
     private init() {
         PROJECTS.forEach((project) => {
-            const geometry = new THREE.PlaneGeometry(2, 3)
+            const geometry = new THREE.PlaneGeometry(this.CARD_WIDTH, 3)
             const tex = new THREE.TextureLoader().load(project.textureUrl)
 
             const material = new MeshStandardNodeMaterial({
                 roughness: 0.1,
                 metalness: 0.5
             })
-
             const currentUv = uv()
             const center = vec2(0.5, 0.5)
             
-            // Cinematic Stretch: Radial warp that intensifies during transition
-            // Pulls the texture outwards as it expands
             const warp = mul(mul(sub(currentUv, center), this.uProgress), 0.2)
             const stretchUv = add(currentUv, warp)
 
-            // Chromatic Aberration: Slight offset for RGB channels during transition
             const shift = mul(this.uProgress, 0.01)
             const rUv = add(stretchUv, vec2(shift, 0))
             const gUv = stretchUv
@@ -74,35 +78,43 @@ export class ProjectGrid {
         this.scene.add(this.group)
     }
 
-    private syncPositions() {
-        if (!this.gallery) return
+    private updateCarousel() {
+        const manager = window.experience?.galleryManager;
+        if (!manager) return;
 
-        const items = this.gallery.getGalleryItems()
-        const projectIds = Array.from(this.meshes.keys())
+        const step = this.CARD_WIDTH + this.GAP;
+        const trackLength = this.projectsCount() * step;
+        const halfTrack = trackLength / 2;
 
-        items.forEach((item, index) => {
-            const projectId = projectIds[index]
-            if (!projectId) return
-            const mesh = this.meshes.get(projectId)
-            if (!mesh || mesh === this.activeMesh) return
+        this.meshes.forEach((mesh, id) => {
+            if (mesh === this.activeMesh && this.isTransitioning) return;
 
-            const rect = item.getBoundingClientRect()
+            const project = mesh.userData.project;
+            const index = PROJECTS.findIndex(p => p.id === id);
             
-            // Convert Screen Space to NDC (-1 to 1)
-            const x = ((rect.left + rect.width / 2) / window.innerWidth) * 2 - 1
-            const y = -((rect.top + rect.height / 2) / window.innerHeight) * 2 + 1
+            // Infinite Wrap Logic
+            let pos = (index * step) - manager.scrollX;
+            pos = ((pos + halfTrack) % trackLength + trackLength) % trackLength - halfTrack;
 
-            // Map NDC to World Space at a fixed distance
-            const dist = this.camera.instance.position.z
-            const fov = this.camera.instance.fov * (Math.PI / 180)
-            const aspect = this.camera.instance.aspect
+            // Calculate Norm (-1 to 1) based on a reasonable viewport width
+            const viewportHalfWidth = 5.0; 
+            const norm = Math.max(-1, Math.min(1, pos / viewportHalfWidth));
+            const absNorm = Math.abs(norm);
+            const invNorm = 1 - absNorm;
 
-            const worldX = x * Math.tan(fov / 2) * dist * aspect
-            const worldY = y * Math.tan(fov / 2) * dist
+            // Transforms
+            const ry = -norm * this.MAX_ROTATION;
+            const tz = invNorm * this.MAX_DEPTH;
+            const scale = this.MIN_SCALE + invNorm * this.SCALE_RANGE;
 
-            mesh.position.set(worldX, worldY, 0)
-            mesh.scale.set(1, 1, 1)
-        })
+            mesh.position.set(pos, 0, -tz);
+            mesh.rotation.y = ry;
+            mesh.scale.set(scale, scale, 1);
+        });
+    }
+
+    private projectsCount() {
+        return PROJECTS.length;
     }
 
     public update(delta: number) {
@@ -122,8 +134,8 @@ export class ProjectGrid {
             this.activeMesh.position.lerpVectors(this.startPos, this.targetPos, eased)
             this.activeMesh.scale.lerpVectors(this.startScale, this.targetScale, eased)
         } else {
-            this.uProgress.value = this.activeMesh ? 1 : 0
-            this.syncPositions()
+            this.uProgress.value = this.activeMesh ? 1 : 0;
+            this.updateCarousel();
         }
     }
 

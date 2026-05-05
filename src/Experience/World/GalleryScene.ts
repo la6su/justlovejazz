@@ -16,13 +16,12 @@ export class GalleryScene {
 
   private init() {
     this.manager.projects.forEach((proj, i) => {
-      const matWrapper = new ProjectMaterial(proj.textureUrl, proj.color);
+      const matWrapper = new ProjectMaterial(proj.textureUrl, proj.detailTextureUrl, proj.color);
       this.materials.push(matWrapper);
 
       const geometry = new THREE.PlaneGeometry(1, 1.4);
       const mesh = new THREE.Mesh(geometry, matWrapper.material);
       
-      // Initial position doesn't matter much, update() will handle it
       mesh.userData = { 
         projectId: proj.id, 
         index: i 
@@ -57,51 +56,48 @@ export class GalleryScene {
     }
   }
 
-update(camera: THREE.Camera, _delta: number) {
+  update(camera: THREE.Camera, _delta: number) {
     const progress = this.manager.transitionProgress;
     const activeIndex = this.manager.activeIndex;
+    const state = this.manager.state;
     
-    // 1. SLIDER LAYOUT LOGIC
-    // We position cards relative to the activeIndex
+    // 1. SLIDER LAYOUT & TRANSITION
     this.planes.forEach((mesh, i) => {
       const relativeIndex = i - activeIndex;
       
-      // Only the 3 central cards are fully visible/positioned
-      // Others are pushed back or hidden
-      if (Math.abs(relativeIndex) <= 1) {
-        const targetX = relativeIndex * 2.2; // Spacing for 3 cards
-        const targetZ = relativeIndex === 0 ? 0 : -1; // Active card is slightly forward
-        const targetScale = relativeIndex === 0 ? 1 : 0.8;
-        
-        mesh.position.x = THREE.MathUtils.lerp(mesh.position.x, targetX, 0.1);
-        mesh.position.z = THREE.MathUtils.lerp(mesh.position.z, targetZ, 0.1);
-        mesh.scale.setScalar(THREE.MathUtils.lerp(mesh.scale.x, targetScale, 0.1));
+      if (i === activeIndex) {
+        // ACTIVE MESH: Transition from Carousel Pos to Fullscreen
+        const carouselX = 0;
+        const carouselZ = 0;
+        const carouselScale = 1;
+
+        const fullscreenX = 0;
+        const fullscreenZ = 1; // Bring it close to camera
+        const fullscreenScale = 15; // Large enough to cover screen
+
+        mesh.position.x = THREE.MathUtils.lerp(carouselX, fullscreenX, progress);
+        mesh.position.y = THREE.MathUtils.lerp(0, 0, progress);
+        mesh.position.z = THREE.MathUtils.lerp(carouselZ, fullscreenZ, progress);
+        mesh.scale.setScalar(THREE.MathUtils.lerp(carouselScale, fullscreenScale, progress));
         mesh.visible = true;
       } else {
-        // Hide or push far away cards
-        mesh.visible = false;
+        // OTHER MESHES: Standard Carousel Logic
+        if (Math.abs(relativeIndex) <= 1 && state !== 2) { // State 2 = FULLSCREEN
+          const targetX = relativeIndex * 2.2;
+          const targetZ = relativeIndex === 0 ? 0 : -1;
+          const targetScale = 0.8;
+          
+          mesh.position.x = THREE.MathUtils.lerp(mesh.position.x, targetX, 0.1);
+          mesh.position.z = THREE.MathUtils.lerp(mesh.position.z, targetZ, 0.1);
+          mesh.scale.setScalar(THREE.MathUtils.lerp(mesh.scale.x, targetScale, 0.1));
+          mesh.visible = true;
+        } else {
+          mesh.visible = false;
+        }
       }
     });
 
-    // 2. CINEMATIC MOVE (DIVE)
-    const activeMesh = this.planes[activeIndex];
-    const viewPos = this.manager.getCurrentViewPosition();
-    const viewLook = this.manager.getCurrentLookAt();
-    const divePos = new THREE.Vector3().copy(activeMesh.position).add(new THREE.Vector3(0, 0, 1.2));
-    const diveLook = activeMesh.position.clone();
-
-    const targetPos = new THREE.Vector3().lerpVectors(viewPos, divePos, progress);
-    const targetLook = new THREE.Vector3().lerpVectors(viewLook, diveLook, progress);
-
-    camera.position.lerp(targetPos, 0.1);
-    const currentLookAt = new THREE.Vector3();
-    currentLookAt.lerp(targetLook, 0.1);
-    camera.lookAt(currentLookAt);
-
-    const cam = camera as THREE.PerspectiveCamera;
-    cam.fov = THREE.MathUtils.lerp(75, 45, progress);
-    cam.updateProjectionMatrix();
-
+    // 2. MATERIAL UPDATE
     this.materials.forEach(mat => mat.setProgress(progress));
   }
 }

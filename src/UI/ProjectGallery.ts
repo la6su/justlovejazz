@@ -32,18 +32,28 @@ export class ProjectGallery {
     }
 
     private render() {
+        const list = document.createElement('div')
+        list.className = 'project-slider__list uk-flex uk-flex-middle'
+
         PROJECTS.forEach((project, index) => {
             const item = document.createElement('div')
-            item.className = `project-item project-pos-${index}`
+            item.className = `project-slider__item project-pos-${index}`
             
             item.style.setProperty('--accent-color', project.color)
 
             item.innerHTML = `
-                <div class="meta">${project.year} — ${project.category}</div>
-                <h2 class="title">${project.title}</h2>
-                <div class="category">${project.tags.join(' / ')}</div>
-                <div class="project-link uk-link-text">View Case &rarr;</div>
-                <a href="#" uk-toggle="target: #project-modal" class="uk-position-cover"></a>
+                <div class="project-card">
+                    <div class="project-card__image-wrapper">
+                        <img src="${project.textureUrl}" alt="${project.title}" class="project-card__img">
+                        <div class="project-card__overlay"></div>
+                    </div>
+                    <div class="project-card__content">
+                        <span class="project-card__index">0${index + 1}</span>
+                        <h2 class="project-card__title">${project.title}</h2>
+                        <div class="project-card__meta">${project.year} — ${project.category}</div>
+                    </div>
+                    <div class="uk-position-cover"></div>
+                </div>
             `
 
             item.addEventListener('mouseenter', () => this.onProjectHover?.(project))
@@ -54,8 +64,9 @@ export class ProjectGallery {
             })
 
             this.items.push(item)
-            this.container.appendChild(item)
+            list.appendChild(item)
         })
+        this.container.appendChild(list)
     }
 
     public setVisible(visible: boolean) {
