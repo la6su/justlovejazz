@@ -1,4 +1,4 @@
-// src/Experience/World/Lights.ts
+// src/Experience/Projects/Lights.ts
 import * as THREE from 'three'
 import { Experience } from '../Experience'
 

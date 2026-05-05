@@ -6,9 +6,8 @@ import {
     sub, 
     mix, 
     fract, 
-    sin
+    sin 
 } from 'three/tsl'
-
 /**
  * Mip-Blend sampling implementation for TSL
  * Blends between two mip-levels to eliminate "popping" and blocky artifacts

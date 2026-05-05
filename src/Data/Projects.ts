@@ -1,55 +1,64 @@
-// src/Data/Projects.ts
 
 export interface Project {
-    id: string;
-    title: string;
-    category: string;
-    year: string;
-    color: string;
-    image: string;
-    description: string;
-    tags: string[];
+  id: string;
+  title: string;
+  description: string;
+  textureUrl: string;
+  color: string;
+  year: string;
+  category: string;
+  tags: string[];
+  viewPosition: { x: number, y: number, z: number };
+  viewLookAt: { x: number, y: number, z: number };
 }
 
 export const PROJECTS: Project[] = [
-    {
-        id: 'quantum-echo',
-        title: 'Quantum Echo',
-        category: 'Generative Art',
-        year: '2024',
-        color: '#ff3e00',
-        image: '/assets/projects/quantum-echo.jpg',
-        description: 'An exploration of quantum superposition through real-time generative visuals.',
-        tags: ['WebGL', 'TSL', 'Generative']
-    },
-    {
-        id: 'neon-synthesis',
-        title: 'Neon Synthesis',
-        category: 'Interactive Experience',
-        year: '2023',
-        color: '#00ffcc',
-        image: '/assets/projects/neon-synthesis.jpg',
-        description: 'A synaptic journey through a neon-lit futuristic cityscape.',
-        tags: ['Three.js', 'WebGPU', 'Audio-Reactive']
-    },
-    {
-        id: 'void-walker',
-        title: 'Void Walker',
-        category: 'Cinematic Short',
-        year: '2023',
-        color: '#8800ff',
-        image: '/assets/projects/void-walker.jpg',
-        description: 'A minimalist study of light and shadow in an infinite void.',
-        tags: ['Cinema 4D', 'Octane', 'Direction']
-    },
-    {
-        id: 'chrono-flux',
-        title: 'Chrono Flux',
-        category: 'Brand Identity',
-        year: '2024',
-        color: '#ffff00',
-        image: '/assets/projects/chrono-flux.jpg',
-        description: 'Redefining the concept of time for a luxury watch manufacture.',
-        tags: ['Branding', 'Motion Design', 'Typography']
-    }
+  {
+    id: 'proj1',
+    title: 'Quantum Flux',
+    description: 'An exploration of digital fluidity and light.',
+    textureUrl: '/assets/textures/proj1.jpg',
+    color: '#ff3300',
+    year: '2024',
+    category: 'Generative',
+    tags: ['WebGPU', 'TSL', 'Procedural'],
+    viewPosition: { x: -4, y: 1, z: 5 },
+    viewLookAt: { x: -4, y: 0, z: 0 },
+  },
+  {
+    id: 'proj2',
+    title: 'Neon Silence',
+    description: 'Capturing the stillness of futuristic cities.',
+    textureUrl: '/assets/textures/proj2.jpg',
+    color: '#00ffcc',
+    year: '2023',
+    category: 'Atmospheric',
+    tags: ['Cinema', 'Lighting', 'Urban'],
+    viewPosition: { x: 0, y: 1, z: 5 },
+    viewLookAt: { x: 0, y: 0, z: 0 },
+  },
+  {
+    id: 'proj3',
+    title: 'Aether Drift',
+    description: 'The intersection of organic and synthetic forms.',
+    textureUrl: '/assets/textures/proj3.jpg',
+    color: '#aa00ff',
+    year: '2024',
+    category: 'Abstract',
+    tags: ['Organic', 'Synthetic', 'Flow'],
+    viewPosition: { x: 4, y: 1, z: 5 },
+    viewLookAt: { x: 4, y: 0, z: 0 },
+  },
+  {
+    id: 'proj4',
+    title: 'Void Echo',
+    description: 'A study on emptiness and resonance.',
+    textureUrl: '/assets/textures/proj4.jpg',
+    color: '#ffff00',
+    year: '2022',
+    category: 'Minimalist',
+    tags: ['Void', 'Sound', 'Echo'],
+    viewPosition: { x: 8, y: 1, z: 5 },
+    viewLookAt: { x: 8, y: 0, z: 0 },
+  }
 ];

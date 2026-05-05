@@ -5,15 +5,13 @@ import {
     float, 
     vec2, 
     vec3, 
-    add,
-    mul,
     sub
 } from 'three/tsl'
 import { applyProfessionalGrain, applyCinematicVignette, applySoftGlow } from './tsl-utils'
 
 export const postProcessingNode = (inputTexture: any) => {
-    const u = uv()
-    const t = time()
+    const u = uv as any
+    const t = time as any
 
     // --- 1. Base Layer with Chromatic Aberration ---
     const aberrationStrength = float(0.003)
@@ -21,20 +19,20 @@ export const postProcessingNode = (inputTexture: any) => {
     const colorG = inputTexture.sample(u)
     const colorB = inputTexture.sample(sub(u, vec2(aberrationStrength, 0.0)))
     
-    let color = vec3(colorR.r, colorG.g, colorB.b)
-
+    let color = vec3(colorR.r, colorG.g, colorB.b).toVar()
+    
     // --- 2. Cinematic Bloom Simulation ---
     // We blend the original color with a blurred version to create a "glow"
     const glow = applySoftGlow(inputTexture, u, float(0.006))
-    color = add(color, mul(glow, float(0.4)))
-
+    color.assign(color.add(glow.mul(float(0.4))))
+    
     // --- 3. Final Polish Stack ---
     
     // Grain
-    color = applyProfessionalGrain(color, u, t, float(0.04))
+    color.assign(applyProfessionalGrain(color, u, t, float(0.04)))
     
     // Vignette
-    color = applyCinematicVignette(color, u, float(0.4))
+    color.assign(applyCinematicVignette(color, u, float(0.4)))
     
     return color
 }

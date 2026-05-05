@@ -20784,7 +20784,7 @@ import * as ORE from 'ore-three';
 import { GlobalManager } from './GlobalManager';
 import { RenderPipeline } from './RenderPipeline';
 import { CameraController } from './CameraController';
-import { World } from './World';
+import { World } from './Projects';
 import { Scroller } from './Scroller';
 import { Subtitles } from './Subtitle';
 import { Header } from './Header';
@@ -21050,7 +21050,7 @@ export class MainScene extends ORE.BaseLayer {
 		}
 
 		/*-------------------------------
-			World
+			Projects
 		-------------------------------*/
 
 		if ( this.renderer ) {

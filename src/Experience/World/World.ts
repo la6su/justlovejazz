@@ -1,4 +1,4 @@
-// src/Experience/World/World.ts
+// src/Experience/Projects/Projects.ts
 import * as THREE from 'three'
 import { Section, type SectionConfig } from './Section'
 import { Camera } from '../Camera'
@@ -46,6 +46,7 @@ export class World {
 
         // 3. Return Baku transform, material and environment for the Experience to apply
         return {
+            currentSectionId: from.config.id,
             bakuPosition: new THREE.Vector3().lerpVectors(from.config.bakuPosition, to.config.bakuPosition, t),
             bakuRotation: new THREE.Quaternion().slerpQuaternions(from.config.bakuRotation, to.config.bakuRotation, t),
             bakuScale: new THREE.Vector3().lerpVectors(from.config.bakuScale, to.config.bakuScale, t),

@@ -1,4 +1,4 @@
-// src/Experience/World/Baku.ts
+// src/Experience/Projects/Baku.ts
 import * as THREE from 'three'
 import { Noise } from '../../Utils/Noise'
 

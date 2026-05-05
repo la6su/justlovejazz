@@ -1,4 +1,4 @@
-// src/Experience/World/Section.ts
+// src/Experience/Projects/Section.ts
 import * as THREE from 'three'
 
 export interface SectionConfig {

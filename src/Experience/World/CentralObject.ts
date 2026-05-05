@@ -1,4 +1,4 @@
-// src/Experience/World/CentralObject.ts
+// src/Experience/Projects/CentralObject.ts
 import * as THREE from 'three'
 import { Experience } from '../Experience'
 import { input } from '../Input'

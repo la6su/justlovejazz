@@ -1,8 +1,6 @@
 // src/shaders/noise.tsl.ts
 import { 
     float, 
-    vec2, 
-    vec3, 
     vec4, 
     mul, 
     add, 

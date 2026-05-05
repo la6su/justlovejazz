@@ -1,4 +1,4 @@
-// src/Experience/World/Background.ts
+// src/Experience/Projects/Background.ts
 import * as THREE from 'three'
 import { MeshBasicNodeMaterial } from 'three/webgpu'
 import { backgroundNode, uScrollProgress } from '../../shaders/background.tsl.ts'

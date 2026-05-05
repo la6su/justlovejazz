@@ -4,8 +4,8 @@ import { postProcessingNode } from '../shaders/postprocessing.tsl.ts'
 import { Experience } from './Experience'
 
 export class PostProcessing {
-    constructor() {
-        const { renderer } = Experience.instance
+    constructor(experience: Experience) {
+        const { renderer } = experience
         
         // In WebGPURenderer, post-processing is applied via the postProcessing property
         // We create a node that takes the screen texture as input

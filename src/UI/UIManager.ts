@@ -1,52 +1,71 @@
-// src/UI/UIManager.ts
+
 import UIkit from 'uikit'
 import Icons from 'uikit/dist/js/uikit-icons'
-import { ProjectDetail } from './ProjectDetail'
-import { ProjectGallery } from './ProjectGallery'
 
 export class UIManager {
-    public projectDetail: ProjectDetail
-    public projectGallery: ProjectGallery
+  constructor() {
+    UIkit.use(Icons)
+    if (!(window as any).UIkit) {
+      (window as any).UIkit = UIkit
+    }
+  }
 
-    constructor() {
-        // Initialize UIkit and Icons
-        UIkit.use(Icons)
-        
-        // Ensure UIkit is on the window for any legacy/HTML-based components
-        if (!(window as any).UIkit) {
-            (window as any).UIkit = UIkit
+  async init() {
+    console.log('UIManager initialized for Render-Driven UX')
+    this.initGalleryNav()
+  }
+
+  private initGalleryNav() {
+    const nav = document.createElement('div')
+    nav.className = 'gallery-nav'
+    nav.innerHTML = `
+      <button class="gallery-nav__btn prev" aria-label="Previous project">
+        <span class="nav-line"></span>
+        <span class="nav-text">PREV</span>
+      </button>
+      <button class="gallery-nav__btn next" aria-label="Next project">
+        <span class="nav-line"></span>
+        <span class="nav-text">NEXT</span>
+      </button>
+    `
+    document.body.appendChild(nav)
+
+    const prevBtn = nav.querySelector('.prev')
+    if (prevBtn) {
+      prevBtn.addEventListener('click', () => {
+        const manager = (window as any).experience?.galleryManager
+        if (manager) {
+          const nextIdx = (manager.activeIndex - 1 + manager.projects.length) % manager.projects.length
+          manager.setProject(nextIdx)
         }
-
-        // Initialize UI Components
-        this.projectDetail = new ProjectDetail()
-        
-        // Note: ProjectGallery is initialized with callbacks that 
-        // will be linked to Experience later or via an event bus.
-        // For now, we'll allow Experience to pass its handlers.
-        this.projectGallery = null as any 
+      })
     }
 
-    /**
-     * Configures the gallery with specific callbacks
-     */
-    setupGallery(callbacks: {
-        onHover: (p: any) => void,
-        onLeave: () => void,
-        onClick: (p: any) => void
-    }) {
-        this.projectGallery = new ProjectGallery(callbacks)
+    const nextBtn = nav.querySelector('.next')
+    if (nextBtn) {
+      nextBtn.addEventListener('click', () => {
+        const manager = (window as any).experience?.galleryManager
+        if (manager) {
+          const nextIdx = (manager.activeIndex + 1) % manager.projects.length
+          manager.setProject(nextIdx)
+        }
+      })
     }
+  }
 
-    async init() {
-        // Any async initialization for UI can go here
-        console.log('UIManager initialized')
-    }
+  public setProjectActive(projectId: string) {
+    document.querySelectorAll('.project-section').forEach(sec => {
+      sec.classList.toggle('is-active', sec.getAttribute('data-id') === projectId);
+    });
+  }
 
-    public openProject(project: any) {
-        this.projectDetail.open(project)
-    }
+  public showProjectContent(project: any) {
+    console.log(`Showing content for project: ${project.id}`);
+    // Integration with UI elements would go here
+  }
 
-    public closeProject() {
-        this.projectDetail.close()
-    }
+  public hideProjectContent() {
+    console.log('Hiding project content');
+    // Integration with UI elements would go here
+  }
 }

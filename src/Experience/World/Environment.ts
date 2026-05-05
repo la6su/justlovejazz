@@ -1,4 +1,4 @@
-// src/Experience/World/Environment.ts
+// src/Experience/Projects/Environment.ts
 import * as THREE from 'three'
 
 import { cinematicGridNode } from '../../shaders/env-effects.tsl.ts'

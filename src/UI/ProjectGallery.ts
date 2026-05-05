@@ -65,4 +65,20 @@ export class ProjectGallery {
             this.container.classList.remove('visible')
         }
     }
+
+    public getGalleryItems() {
+        return this.items
+    }
+
+    public setFocusedProject(projectId: string | null) {
+        this.items.forEach((item, index) => {
+            if (projectId === null) {
+                item.classList.remove('project-focused')
+            } else if (index === PROJECTS.findIndex(p => p.id === projectId)) {
+                item.classList.add('project-focused')
+            } else {
+                item.classList.remove('project-focused')
+            }
+        })
+    }
 }

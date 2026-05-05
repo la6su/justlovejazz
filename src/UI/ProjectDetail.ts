@@ -12,10 +12,18 @@ export class ProjectDetail {
         this.contentElement = document.getElementById('modal-content')
 
         if (this.modalElement && UIkit) {
-            // Initialize UIkit modal instance using the imported UIkit object
             this.modalInstance = UIkit.modal(this.modalElement)
 
-            // UIkit modal events are handled via UIkit.util.on
+            // 1. Pre-fill with a skeleton to avoid "null -> huge" layout jump on first click
+            if (this.contentElement) {
+                this.contentElement.innerHTML = '<div class="uk-placeholder"></div>'
+            }
+
+            // 2. Warm-up: Trigger show/hide immediately to prime animations and DOM
+            // This happens during bootstrap, so the user doesn't see the flicker
+            this.modalInstance.show()
+            this.modalInstance.hide()
+
             UIkit.util.on(this.modalElement, 'close', () => {
                 window.dispatchEvent(new CustomEvent('project-detail-closed'))
             })

@@ -122,7 +122,7 @@ export class Camera {
         this.velocity.subVectors(this.instance.position, this.prevPosition).multiplyScalar(1 / deltaTime)
         this.prevPosition.copy(this.instance.position)
 
-        // Always look at center for now (unless World overrides this)
+        // Always look at center for now (unless Projects overrides this)
         this.instance.lookAt(0, 0, 0)
     }
 }
