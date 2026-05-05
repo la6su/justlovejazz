@@ -6,7 +6,8 @@ import {
     vec2, 
     vec3, 
     add,
-    mul
+    mul,
+    sub
 } from 'three/tsl'
 import { applyProfessionalGrain, applyCinematicVignette, applySoftGlow } from './tsl-utils'
 

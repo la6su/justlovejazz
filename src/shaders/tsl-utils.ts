@@ -2,7 +2,6 @@
 import { 
     float, 
     vec2, 
-    vec4, 
     mul, 
     add, 
     sub, 
@@ -16,7 +15,7 @@ import {
  * Mip-Blend sampling implementation for TSL
  * Blends between two mip-levels to eliminate "popping" and blocky artifacts
  */
-export const sampleMipBlend = (tex: any, uv: any, level1: float, level2: float, mixFactor: float) => {
+export const sampleMipBlend = (tex: any, uv: any, level1: any, level2: any, mixFactor: any) => {
     const s1 = tex.sampleLevel(uv, level1);
     const s2 = tex.sampleLevel(uv, level2);
     return mix(s1, s2, mixFactor);
@@ -42,7 +41,7 @@ export const sampleBicubic = (tex: any, uv: any, textureSize: any) => {
  * Single-pass Gaussian-like Blur/Glow
  * Used to simulate Bloom without a full mip-pyramid pipeline
  */
-export const applySoftGlow = (tex: any, uv: any, strength: float = 0.005) => {
+export const applySoftGlow = (tex: any, uv: any, strength: any = 0.005) => {
     const samples = [
         vec2(0.0, 0.0),
         vec2(strength, 0.0),
@@ -65,14 +64,17 @@ export const applySoftGlow = (tex: any, uv: any, strength: float = 0.005) => {
  * Professional Film Grain
  * Uses a combined sine-wave noise to avoid the "digital" look
  */
-export const applyProfessionalGrain = (color: any, uv: any, time: any, strength: float = 0.03) => {
+export const applyProfessionalGrain = (color: any, uv: any, time: any, strength: any = 0.03) => {
     const noise = fract(
-        sin(
-            add(
-                mul(uv, vec2(12.9898, 78.233)), 
-                time
-            )
-        ) * 43758.5453
+        mul(
+            sin(
+                add(
+                    mul(uv, vec2(12.9898, 78.233)), 
+                    time
+                )
+            ), 
+            43758.5453
+        )
     );
     
     const grain = mul(sub(noise, 0.5), strength);
@@ -82,8 +84,8 @@ export const applyProfessionalGrain = (color: any, uv: any, time: any, strength:
 /**
  * Cinematic Vignette
  */
-export const applyCinematicVignette = (color: any, uv: any, intensity: float = 0.4) => {
+export const applyCinematicVignette = (color: any, uv: any, intensity: any = 0.4) => {
     const dist = sub(mul(uv, 2.0), vec2(1.0, 1.0));
-    const v = sub(1.0, mul(add(mul(dist.x, dist.x), mul(dist.y, dist.y)), intensity));
+    const v = sub(1.0, mul(add(mul((dist as any).x, (dist as any).x), mul((dist as any).y, (dist as any).y)), intensity));
     return mul(color, v);
 }
