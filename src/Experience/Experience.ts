@@ -12,6 +12,8 @@ import { SmoothScroll } from './SmoothScroll'
 import { TextReveal } from './TextReveal'
 import { ContentReveal } from './ContentReveal'
 import { Cursor } from './Cursor'
+import { ProjectGallery } from '../UI/ProjectGallery'
+import { ProjectDetail } from '../UI/ProjectDetail'
 import { input } from './Input'
 
 
@@ -31,6 +33,8 @@ export class Experience {
     private textReveal!: TextReveal
     private contentReveal!: ContentReveal
     private cursor!: Cursor
+    private projectGallery!: ProjectGallery
+    private projectDetail!: ProjectDetail
 
     constructor() {
         if (Experience.instance) return Experience.instance
@@ -53,6 +57,18 @@ export class Experience {
         this.textReveal = new TextReveal()
         this.contentReveal = new ContentReveal()
         this.cursor = new Cursor()
+
+        // Portfolio Gallery
+        this.projectGallery = new ProjectGallery({
+            onHover: (p) => this.handleProjectHover(p),
+            onLeave: () => this.handleProjectLeave(),
+            onClick: (p) => this.handleProjectClick(p)
+        })
+
+        this.projectDetail = new ProjectDetail()
+
+        // Listen for detail view closure to reset camera
+        window.addEventListener('project-detail-closed', () => this.handleProjectLeave())
     }
 
     private setupWorldSections() {
@@ -109,6 +125,39 @@ export class Experience {
             ambientColor: new THREE.Color(0x001122),
             lightIntensity: 1.0
         })
+    }
+
+    private handleProjectHover(project: any) {
+        // 1. Change Baku's color to match the project
+        this.baku.updateMaterial({
+            color: new THREE.Color(project.color),
+            emissive: new THREE.Color(project.color).multiplyScalar(0.5),
+            roughness: 0.1,
+            metalness: 1.0
+        })
+
+        // 2. Slight camera shift (Cinematic feel)
+        this.camera.setBasePosition(new THREE.Vector3(0.5, 0.2, 4.5))
+        this.camera.setFovOffset(5)
+    }
+
+    private handleProjectLeave() {
+        // Reset camera and Baku will be handled by the world update loop
+        this.camera.setBasePosition(new THREE.Vector3(0, 0, 5))
+        this.camera.setFovOffset(0)
+    }
+
+    private handleProjectClick(project: any) {
+        // 1. Trigger Cinematic Zoom
+        this.camera.setBasePosition(new THREE.Vector3(0, 0, 2))
+        this.camera.setFovOffset(-15)
+        
+        // 2. Open detail view after a slight delay to sync with camera movement
+        setTimeout(() => {
+            this.projectDetail.open(project)
+        }, 600)
+
+        console.log(`Transitioning to project: ${project.title}`)
     }
 
 
