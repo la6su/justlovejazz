@@ -1,5 +1,5 @@
 // src/Experience/PostProcessing.ts
-import * as THREE from 'three'
+
 import { postProcessingNode } from '../shaders/postprocessing.tsl.ts'
 import { Experience } from './Experience'
 

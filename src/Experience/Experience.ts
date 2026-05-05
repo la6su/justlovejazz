@@ -7,7 +7,9 @@ import { Renderer } from './Renderer'
 import { World } from './World/World'
 import { PostProcessing } from './PostProcessing'
 import { SmoothScroll } from './SmoothScroll'
+import { TextReveal } from './TextReveal'
 import { input } from './Input'
+
 
 
 
@@ -21,6 +23,8 @@ export class Experience {
     camera: Camera
     renderer: Renderer
     world: World
+    private smoothScroll: SmoothScroll;
+    private postProcessing: PostProcessing;
 
     constructor() {
         if (Experience.instance) return Experience.instance
@@ -31,6 +35,8 @@ export class Experience {
         this.world = new World()
         this.postProcessing = new PostProcessing()
         this.smoothScroll = new SmoothScroll()
+        this.textReveal = new TextReveal()
+
 
 
         // update() больше не вызывается здесь!
@@ -66,6 +72,7 @@ export class Experience {
         this.world.destroy()
         this.postProcessing.destroy()
         this.smoothScroll.destroy()
+        this.textReveal.destroy()
         this.renderer.instance.dispose()
     }
 }

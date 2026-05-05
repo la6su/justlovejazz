@@ -7,7 +7,7 @@ export class Input {
     mouse: THREE.Vector2 = new THREE.Vector2()
     scrollY: number = 0
     smoothedScroll: number = 0
-    lerpFactor: number = 0.1 // Lower = smoother / slower
+    lerpFactor: number = 0.35 // Much snappier for better directional response
 
     constructor() {
         if (Input.instance) return Input.instance
