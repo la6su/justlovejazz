@@ -6,6 +6,7 @@ import { Camera } from './Camera'
 import { Renderer } from './Renderer'
 import { World } from './World/World'
 import { Baku } from './World/Baku'
+import { Environment } from './World/Environment'
 import { PostProcessing } from './PostProcessing'
 import { SmoothScroll } from './SmoothScroll'
 import { TextReveal } from './TextReveal'
@@ -24,6 +25,7 @@ export class Experience {
     renderer!: Renderer
     world!: World
     baku!: Baku
+    environment!: Environment
     private smoothScroll!: SmoothScroll
     private postProcessing!: PostProcessing
     private textReveal!: TextReveal
@@ -41,6 +43,7 @@ export class Experience {
         this.world = new World(this.camera)
         this.baku = new Baku()
         this.scene.add(this.baku)
+        this.environment = new Environment(this.scene)
 
         // Define cinematic path
         this.setupWorldSections()
@@ -66,7 +69,9 @@ export class Experience {
                 emissive: new THREE.Color(0x111111),
                 roughness: 0.1,
                 metalness: 0.9
-            }
+            },
+            ambientColor: new THREE.Color(0x111122),
+            lightIntensity: 2.0
         })
 
         this.world.addSection({
@@ -82,7 +87,9 @@ export class Experience {
                 emissive: new THREE.Color(0x221100),
                 roughness: 0.4,
                 metalness: 0.7
-            }
+            },
+            ambientColor: new THREE.Color(0x221100),
+            lightIntensity: 5.0
         })
 
         this.world.addSection({
@@ -98,7 +105,9 @@ export class Experience {
                 emissive: new THREE.Color(0x001122),
                 roughness: 0.05,
                 metalness: 1.0
-            }
+            },
+            ambientColor: new THREE.Color(0x001122),
+            lightIntensity: 1.0
         })
     }
 
@@ -129,19 +138,24 @@ export class Experience {
 
         // 1. World Orchestration: Map scroll to cinematic path
         const normalizedScroll = input.getSmoothedScroll() / 1000
-        const bakuTransform = this.world.update(normalizedScroll)
+        const worldState = this.world.update(normalizedScroll)
 
-        if (bakuTransform) {
-            this.baku.position.copy(bakuTransform.bakuPosition)
-            this.baku.quaternion.copy(bakuTransform.bakuRotation)
-            this.baku.scale.copy(bakuTransform.bakuScale)
-            if (bakuTransform.bakuMaterial) {
-                this.baku.updateMaterial(bakuTransform.bakuMaterial)
+        if (worldState) {
+            // Apply Baku transforms
+            this.baku.position.copy(worldState.bakuPosition)
+            this.baku.quaternion.copy(worldState.bakuRotation)
+            this.baku.scale.copy(worldState.bakuScale)
+            if (worldState.bakuMaterial) {
+                this.baku.updateMaterial(worldState.bakuMaterial)
             }
+            
+            // Apply Environment transitions
+            this.environment.setLighting(worldState.envColor, worldState.envIntensity)
         }
 
-        // 2. Organic Motion: Update Baku's internal breathing/drift
+        // 2. Organic Motion & Env update
         this.baku.update(this.time.delta / 1000)
+        this.environment.update(this.time.elapsed / 1000, normalizedScroll)
 
         this.camera.update(this.time.delta / 1000)
         this.renderer.update(this.scene, this.camera.instance)

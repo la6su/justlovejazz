@@ -15,6 +15,8 @@ export interface SectionConfig {
         roughness: number;
         metalness: number;
     };
+    ambientColor?: THREE.Color;
+    lightIntensity?: number;
 }
 
 export class Section {

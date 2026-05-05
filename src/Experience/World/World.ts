@@ -44,12 +44,15 @@ export class World {
         this.camera.instance.fov = currentFov
         this.camera.instance.updateProjectionMatrix()
 
-        // 3. Return Baku transform and material for the Experience to apply to the object
+        // 3. Return Baku transform, material and environment for the Experience to apply
         return {
             bakuPosition: new THREE.Vector3().lerpVectors(from.config.bakuPosition, to.config.bakuPosition, t),
             bakuRotation: new THREE.Quaternion().slerpQuaternions(from.config.bakuRotation, to.config.bakuRotation, t),
             bakuScale: new THREE.Vector3().lerpVectors(from.config.bakuScale, to.config.bakuScale, t),
-            bakuMaterial: from.config.bakuMaterial || to.config.bakuMaterial
+            bakuMaterial: from.config.bakuMaterial || to.config.bakuMaterial,
+            envColor: from.config.ambientColor || to.config.ambientColor || new THREE.Color(0x000000),
+            envIntensity: from.config.lightIntensity !== undefined ? 
+                from.config.lightIntensity + (to.config.lightIntensity || from.config.lightIntensity) * t : 1.0
         }
     }
 
