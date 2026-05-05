@@ -64,11 +64,6 @@ export class Experience {
             onLeave: () => this.handleProjectLeave(),
             onClick: (p) => this.handleProjectClick(p)
         })
-
-        this.projectDetail = new ProjectDetail()
-
-        // Listen for detail view closure to reset camera
-        window.addEventListener('project-detail-closed', () => this.handleProjectLeave())
     }
 
     private setupWorldSections() {
@@ -163,6 +158,14 @@ export class Experience {
 
     // НОВЫЙ МЕТОД: Асинхронный запуск
     async init() {
+        // Ensure UIkit is globally available
+        if (!(window as any).UIkit) {
+            console.warn('UIkit not found on window, attempting to initialize...')
+        }
+
+        this.projectDetail = new ProjectDetail()
+        window.addEventListener('project-detail-closed', () => this.handleProjectLeave())
+
         // Ждем инициализации рендерера (WebGPU backend)
         await this.renderer.init()
 
@@ -199,6 +202,10 @@ export class Experience {
             
             // Apply Environment transitions
             this.environment.setLighting(worldState.envColor, worldState.envIntensity)
+
+            // Sync Project Gallery visibility with current section
+            // Gallery should be visible in the 'explore' section
+            this.projectGallery.setVisible(worldState.currentSectionId === 'explore')
         }
 
         // 2. Organic Motion & Env update

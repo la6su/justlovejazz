@@ -6,6 +6,9 @@ import { experience } from './Experience/Experience'
 
 // Initialize UIkit
 UIkit.use(Icons)
+if (!(window as any).UIkit) {
+    (window as any).UIkit = UIkit
+}
 
 // Запускаем асинхронную инициализацию
 try {

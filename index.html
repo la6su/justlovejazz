@@ -6,7 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>JUSTLOVEJAZZ | Digital Experience</title>
   </head>
-  <body>
+  <body class="uk-modal-backdrop">
+    <!-- UIkit Project Modal -->
+    <div id="project-modal" uk-modal>
+        <div class="uk-modal-dialog uk-modal-body" style="background: #05050a; color: white; border: 1px solid rgba(255,255,255,0.1);">
+            <button class="uk-modal-close-default" type="button" uk-close style="color: white;"></button>
+            <div id="modal-content">
+                <!-- Dynamic content injected by ProjectDetail.ts -->
+            </div>
+        </div>
+    </div>
+
     <!-- Loading Screen -->
     <div id="pageLoader" class="uk-flex uk-flex-center uk-flex-middle" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 1000; color: white; transition: opacity 0.5s ease-out;">
       <div class="uk-text-center">
@@ -77,18 +87,6 @@
           <span class="section-number" style="text-align: center; display: block;">02 // Selected Works</span>
           <h2 class="studio-title uk-text-center" style="margin-bottom: 4rem;">Digital Archive</h2>
           
-          <div class="studio-grid">
-            <div class="reveal-item grid-item-left" uk-scrollspy style="border-left: 1px solid rgba(255,255,255,0.2); padding-left: 2rem;">
-              <h3 class="uk-text-bold uk-text-large" style="margin-bottom: 1rem;">TSL Shaders</h3>
-              <p class="studio-text">Exploring the Three.js Shading Language for complex procedural patterns.</p>
-              <a href="#" data-magnetic class="uk-link-text" style="color: var(--accent-color); font-weight: bold; text-decoration: none;">View Project →</a>
-            </div>
-            <div class="reveal-item grid-item-right" uk-scrollspy style="margin-top: 10vh;">
-              <h3 class="uk-text-bold uk-text-large" style="margin-bottom: 1rem;">GPU Performance</h3>
-              <p class="studio-text">Optimization of high-poly scenes for mobile-first experiences.</p>
-              <a href="#" data-magnetic class="uk-link-text" style="color: var(--accent-color); font-weight: bold; text-decoration: none;">View Project →</a>
-            </div>
-          </div>
         </div>
       </section>
 
