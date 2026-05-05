@@ -153,6 +153,9 @@ export class Experience {
     // Update Gallery System
     this.galleryManager.update(deltaTime)
     this.galleryScene.update(this.camera.instance, deltaTime)
+    if (this.ui.gallery) {
+      this.ui.gallery.update(this.galleryManager)
+    }
 
     const normalizedScroll = input.getSmoothedScroll() / 1000
     const worldState = this.world.update(normalizedScroll, deltaTime)
