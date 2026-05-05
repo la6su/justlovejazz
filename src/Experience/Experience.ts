@@ -5,6 +5,8 @@ import { Time } from './Time'
 import { Camera } from './Camera'
 import { Renderer } from './Renderer'
 import { World } from './World/World'
+import { PostProcessing } from './PostProcessing'
+
 
 export class Experience {
     static instance: Experience
@@ -23,6 +25,8 @@ export class Experience {
         this.camera = new Camera(this.sizes)
         this.renderer = new Renderer(this.sizes)
         this.world = new World()
+        this.postProcessing = new PostProcessing()
+
         // update() больше не вызывается здесь!
     }
 
@@ -54,6 +58,7 @@ export class Experience {
 
     destroy() {
         this.world.destroy()
+        this.postProcessing.destroy()
         this.renderer.instance.dispose()
     }
 }

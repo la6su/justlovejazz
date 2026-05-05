@@ -1,24 +1,39 @@
+// src/Experience/World/Background.ts
 import * as THREE from 'three'
-import { MeshBasicNodeMaterial } from 'three/webgpu' // Правильный путь для Node-материалов
-import { backgroundNode } from '../../shaders/background.tsl.ts'
+import { MeshBasicNodeMaterial } from 'three/webgpu'
+import { backgroundNode, uScrollProgress } from '../../shaders/background.tsl.ts'
 import { Experience } from '../Experience'
+import { input } from '../Input'
 
 export class Background {
     mesh: THREE.Mesh
+    material: MeshBasicNodeMaterial
 
     constructor() {
         const { scene } = Experience.instance
         const geometry = new THREE.PlaneGeometry(10, 10)
 
-        const material = new MeshBasicNodeMaterial()
-        material.colorNode = backgroundNode()
-        material.depthWrite = false
+        this.material = new MeshBasicNodeMaterial()
+        this.material.colorNode = backgroundNode()
+        this.material.depthWrite = false
 
-        this.mesh = new THREE.Mesh(geometry, material)
+        this.mesh = new THREE.Mesh(geometry, this.material)
         this.mesh.position.z = -1
 
         scene.add(this.mesh)
     }
 
-    update() {}
+    update() {
+        // Update the uniform based on scroll
+        const scroll = input.getScroll()
+        // Normalize scroll: 0 to 1 over roughly 3000 pixels
+        const progress = THREE.MathUtils.clamp(scroll / 3000, 0, 1)
+        uScrollProgress.value = progress
+    }
+
+    destroy() {
+        Experience.instance.scene.remove(this.mesh)
+        this.mesh.geometry.dispose()
+        this.material.dispose()
+    }
 }

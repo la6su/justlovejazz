@@ -1,3 +1,4 @@
+// src/shaders/background.tsl.ts
 import {
     color,
     sin,
@@ -6,59 +7,63 @@ import {
     uv,
     add,
     mul,
+    sub,
     float,
     mix,
     fract,
-    vec2
+    vec2,
+    uniform
 } from 'three/tsl'
 
+// Uniform for scroll progress to make the background react to the user
+export const uScrollProgress = uniform(0.0)
+
 export const backgroundNode = () => {
-    const t = typeof time === 'function' ? time() : time
-    const u = typeof uv === 'function' ? uv() : uv
+    const t = time
+    const u = uv()
 
-    // Вспомогательная функция для создания псевдо-шума
-    const organicNoise = (p: any, speed: any) => {
-        // x = p.x  2.0 + t  speed
-        const x = add(mul(p.x, float(2.0)), mul(t, speed))
-        // y = p.y  2.0 + t  (speed * 0.8)
-        const y = add(mul(p.y, float(2.0)), mul(t, mul(speed, float(0.8))))
-
-        return add(
-            sin(x),
-            sin(add(y, sin(x)))
-        )
+    // High-contrast noise function
+    const noise = (p: any, s: any) => {
+        const x = add(mul(p.x, float(3.0)), mul(t, s))
+        const y = add(mul(p.y, float(3.0)), mul(t, mul(s, float(0.7))))
+        return add(sin(x), sin(add(y, sin(x))))
     }
 
-    // --- Domain Warping ---
-    // 1. Первый слой искажения
-    const warp1 = organicNoise(u, float(0.3))
-    const offset1 = vec2(mul(warp1, float(0.1)), mul(warp1, float(0.1)))
+    // Domain Warping for "Liquid" feel
+    const warp1 = noise(u, float(0.2))
+    const offset = vec2(mul(warp1, float(0.2)), mul(warp1, float(0.2)))
+    const warpedUv = add(u, offset)
+    const warp2 = noise(warpedUv, float(0.5))
 
-    // 2. Второй слой, который читает координаты, смещенные первым слоем
-    const warpedUv = add(u, offset1)
-    const warp2 = organicNoise(warpedUv, 0.5)
+    // Contrast enhancement: use pow() or multiplication to sharpen the light/dark areas
+    // Avoid using JS operators like '*' or '-' with TSL nodes
+    const intensity = mul(float(0.5), add(warp2, float(1.0)))
+    const contrastIntensity = mul(intensity, intensity) // Square for higher contrast
 
-    // 3. Финальный коэффициент интенсивности (от 0 до 1)
-    const intensity = mul(add(warp2, float(1.0)), float(0.5))
+    // Color Palette: Deep Void -> Electric Accents
+    const colorVoid = color(0.01, 0.01, 0.02)
+    const colorDeep = color(0.05, 0.02, 0.15)
+    const colorBright = color(0.8, 0.2, 0.5) // Magenta/Red accent
+    const colorAccent = color(0.0, 0.7, 0.9) // Cyan accent
 
-    // --- Цветовая палитра (Deep AI / Cyberpunk) ---
-    // Глубокий темно-синий/черный
-    const colorDeep = color(0.02, 0.02, 0.05)
-    // Неоновый фиолетовый / Индиго
-    const colorNeon = color(0.4, 0.1, 0.7)
-    // Бирюзовый / Циан (для акцентов)
-    const colorAccent = color(0.0, 0.8, 0.8)
-
-    // Смешиваем цвета на основе интенсивности и времени
-    // Создаем пульсирующий переход между неоном и акцентом
-    const colorShift = sin(add(t,  0.2, 0.0))
-    const dynamicColor = mix(colorNeon, colorAccent, add(intensity, mul(colorShift, 0.2)))
-
-    // Итоговый цвет: база + динамический цвет, модулированный интенсивностью
+    // Mix colors based on scroll progress and intensity
+    const scrollMix = mix(colorBright, colorAccent, uScrollProgress)
+    
     const finalColor = add(
-        colorDeep,
-        mul(dynamicColor, intensity)
+        colorVoid,
+        mul(mix(colorDeep, scrollMix, contrastIntensity), contrastIntensity)
     )
 
-    return finalColor
+    // Vignette: darken the edges to make text more readable and center the focus
+    // Calculate distance from center (0.5, 0.5)
+    const dx = sub(mul(u.x, float(-1.0)), float(-0.5)) // simplified center offset
+    const dy = sub(mul(u.y, float(-1.0)), float(-0.5))
+    
+    // Let's use a more robust distance calc to avoid NaN
+    const distSq = add(mul(sub(u.x, float(0.5)), sub(u.x, float(0.5))), 
+                       mul(sub(u.y, float(0.5)), sub(u.y, float(0.5))))
+    
+    const vignette = sub(float(1.0), mul(distSq, float(0.8)))
+    
+    return mul(finalColor, vignette)
 }
