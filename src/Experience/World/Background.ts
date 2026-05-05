@@ -24,8 +24,8 @@ export class Background {
     }
 
     update() {
-        // Update the uniform based on scroll
-        const scroll = input.getScroll()
+        // Update the uniform based on smoothed scroll for that "expensive" feel
+        const scroll = input.getSmoothedScroll()
         // Normalize scroll: 0 to 1 over roughly 3000 pixels
         const progress = THREE.MathUtils.clamp(scroll / 3000, 0, 1)
         uScrollProgress.value = progress

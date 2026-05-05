@@ -27,7 +27,7 @@ export class CentralObject {
 
     update() {
         const mouse = input.getMouse()
-        const scroll = input.getScroll()
+        const scroll = input.getSmoothedScroll()
 
         // 1. Smooth Rotation (Lerp)
         const targetRotY = mouse.x * 0.5
@@ -36,14 +36,11 @@ export class CentralObject {
         this.mesh.rotation.x += (targetRotX - this.mesh.rotation.x) * 0.05
 
         // 2. Scroll-based Movement & Scaling
-        // Map scroll to a normalized value (roughly)
         const scrollProgress = scroll / 2000 
         
-        // Object moves from center to right side as we scroll down
         this.mesh.position.x = THREE.MathUtils.lerp(this.mesh.position.x, scrollProgress * 2, 0.05)
         this.mesh.position.y = THREE.MathUtils.lerp(this.mesh.position.y, -scrollProgress * 0.5, 0.05)
         
-        // Object scales down slightly as it moves
         const scale = 1.0 - Math.min(scrollProgress * 0.5, 0.5)
         this.mesh.scale.setScalar(THREE.MathUtils.lerp(this.mesh.scale.x, scale, 0.05))
 

@@ -6,6 +6,8 @@ export class Input {
 
     mouse: THREE.Vector2 = new THREE.Vector2()
     scrollY: number = 0
+    smoothedScroll: number = 0
+    lerpFactor: number = 0.1 // Lower = smoother / slower
 
     constructor() {
         if (Input.instance) return Input.instance
@@ -15,10 +17,10 @@ export class Input {
             this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1
             this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
         })
+    }
 
-        window.addEventListener('wheel', (event) => {
-            this.scrollY += event.deltaY
-        })
+    setScroll(value: number) {
+        this.scrollY = value
     }
 
     getMouse() {
@@ -27,6 +29,16 @@ export class Input {
 
     getScroll() {
         return this.scrollY
+    }
+
+    getSmoothedScroll() {
+        return this.smoothedScroll
+    }
+
+    update() {
+        // Linear Interpolation (Lerp) for smooth movement
+        // formula: current = current + (target - current) * factor
+        this.smoothedScroll += (this.scrollY - this.smoothedScroll) * this.lerpFactor
     }
 }
 

@@ -6,6 +6,10 @@ import { Camera } from './Camera'
 import { Renderer } from './Renderer'
 import { World } from './World/World'
 import { PostProcessing } from './PostProcessing'
+import { SmoothScroll } from './SmoothScroll'
+import { input } from './Input'
+
+
 
 
 export class Experience {
@@ -26,6 +30,8 @@ export class Experience {
         this.renderer = new Renderer(this.sizes)
         this.world = new World()
         this.postProcessing = new PostProcessing()
+        this.smoothScroll = new SmoothScroll()
+
 
         // update() больше не вызывается здесь!
     }
@@ -50,15 +56,16 @@ export class Experience {
 
     update() {
         this.time.update()
+        input.update()
         this.world.update()
         this.renderer.update(this.scene, this.camera.instance)
-
         requestAnimationFrame(() => this.update())
     }
 
     destroy() {
         this.world.destroy()
         this.postProcessing.destroy()
+        this.smoothScroll.destroy()
         this.renderer.instance.dispose()
     }
 }

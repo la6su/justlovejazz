@@ -19,6 +19,7 @@
   "description": "Modern interactive portfolio using **Three.js TSL (Nodes)** with **WebGPU → WebGL fallback**.   Designed with **mobile-first UX** and a **procedural 3D background**.",
   "main": "index.js",
   "dependencies": {
+    "@studio-freight/lenis": "^1.0.42",
     "clean-css": "^5.3.3",
     "copy-anything": "^3.0.5",
     "detect-libc": "^2.1.2",
