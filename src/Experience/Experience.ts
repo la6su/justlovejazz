@@ -66,6 +66,7 @@ export class Experience {
         this.time.update()
         input.update()
         this.cursor.update()
+        this.camera.update(this.time.delta / 1000)
         this.world.update()
         this.renderer.update(this.scene, this.camera.instance)
         requestAnimationFrame(() => this.update())

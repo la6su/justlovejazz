@@ -50,13 +50,29 @@ To reach "Top Studio" level, we must implement the following beyond basic featur
 - [ ] **Asset Optimization:** Convert all assets to professional formats, implement lazy loading for 3D components.
 - [ ] **Advanced Motion:** Implement "Scroll-bound animations" (parallax, scale, rotation tied to scroll position).
 - [ ] **Responsive Refinement:** Deep-dive into mobile UX to ensure the cinematic feel persists on touch devices.
-- [ ] **Final Quality Audit:** Performance profiling (Chrome DevTools), memory leak check, and accessibility pass.
+- [ ] **Final Quality Audit:** Performance profiling (Chrome DevTools), memory leak check, and accessibility pass
 
----
 
-## 📚 Technical Stack & Constraints
-- **Core:** Three.js + TSL + WebGPU
-- **Motion:** Lenis + Custom Lerp + GSAP (if needed for complex sequences)
-- **Styling:** Less + UIkit (minimalist implementation)
-- **Build:** Vite + TypeScript
-- **Constraint:** "Only the necessary" — avoid dependency bloat.
+### 🚀 Phase 5: The Golden Standard (Junni Implementation)
+*Porting the extracted 'Golden Patterns' into our TSL/WebGPU pipeline to reach Studio-Grade quality.*
+
+#### 🎥 Cinematic Camera & World
+- [ ] **Advanced Kinematics:** Implement inertia-based cursor follow, organic shake, and dynamic FOV offset. (Started)
+- [ ] **World Orchestration:** Implement a Section-based state machine. Instead of a single world, create a system of 'Scenes' with pre-defined camera and object transforms.
+- [ ] **Seamless Transitions:** Implement high-fidelity lerp/slerp transitions between sections, tied to the smooth-scroll progress.
+
+#### 🎨 Visual Fidelity (The "Look")
+- [ ] **Render Pipeline:** Port the cinematic stack: SMAA -> Multi-layer Bloom (Mip-pyramid) -> Bicubic Upsampling -> Grain -> Vignette.
+- [ ] **Procedural Organicism:** Port 4D Simplex Noise and professional Easings to TSL for natural, non-linear animations.
+- [ ] **Custom Geometry:** Implement MipMap-based geometry for high-end bloom sampling.
+
+#### ⚙️ Studio Polish
+- [ ] **Asset Orchestration:** Implement the 'Baku' pattern: an object that changes materials and behavior based on the current world section.
+- [ ] **Performance Tuning:** Optimize TSL shaders to ensure the full cinematic stack runs at 60fps.
+
+### 🏆 Phase 6: The Masterpiece (Final Refinement)
+*The final 5% that defines a world-class portfolio.*
+- [ ] **Optical Alignment:** Deep-dive into asymmetric grids and high-contrast typography to ensure a 'designer's eye' layout.
+- [ ] **Sensory Layer:** Add subtle audio cues and haptic-like visual feedback to interactive elements.
+- [ ] **The 'Wow' Sequence:** Design a custom intro sequence (splash screen -> world transition) that sets the tone for the entire experience.
+- [ ] **Final Polish Audit:** Frame-by-frame review of all motion to eliminate any 'floaty' feel.
