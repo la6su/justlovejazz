@@ -1,18 +1,22 @@
 // src/main.ts
 import './assets/main.less'
-import UIkit from 'uikit'
-import Icons from 'uikit/dist/js/uikit-icons'
-import { experience } from './Experience/Experience'
+import { UIManager } from './UI/UIManager'
+import { Experience } from './Experience/Experience'
 
-// Initialize UIkit
-UIkit.use(Icons)
-if (!(window as any).UIkit) {
-    (window as any).UIkit = UIkit
+async function bootstrap() {
+    try {
+        // 1. Initialize UI Layer first
+        const ui = new UIManager()
+        await ui.init()
+
+        // 2. Initialize 3D Experience with UI dependency
+        const experience = new Experience(ui)
+        await experience.init()
+
+        console.log('Application successfully bootstrapped')
+    } catch (err) {
+        console.error('Failed to initialize application:', err)
+    }
 }
 
-// Запускаем асинхронную инициализацию
-try {
-   await experience.init()
-} catch (err) {
-   console.error('Failed to initialize Experience:', err)
-}
+bootstrap()

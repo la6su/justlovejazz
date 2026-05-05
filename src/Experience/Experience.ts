@@ -12,13 +12,13 @@ import { SmoothScroll } from './SmoothScroll'
 import { TextReveal } from './TextReveal'
 import { ContentReveal } from './ContentReveal'
 import { Cursor } from './Cursor'
-import { ProjectGallery } from '../UI/ProjectGallery'
-import { ProjectDetail } from '../UI/ProjectDetail'
+import { UIManager } from '../UI/UIManager'
 import { input } from './Input'
-
 
 export class Experience {
     static instance: Experience
+
+    private ui!: UIManager
 
     scene: THREE.Scene = new THREE.Scene()
     sizes: Sizes = new Sizes()
@@ -33,12 +33,11 @@ export class Experience {
     private textReveal!: TextReveal
     private contentReveal!: ContentReveal
     private cursor!: Cursor
-    private projectGallery!: ProjectGallery
-    private projectDetail!: ProjectDetail
 
-    constructor() {
+    constructor(ui: UIManager) {
         if (Experience.instance) return Experience.instance
         Experience.instance = this
+        this.ui = ui
 
         this.camera = new Camera(this.sizes)
         this.renderer = new Renderer(this.sizes)
@@ -58,8 +57,8 @@ export class Experience {
         this.contentReveal = new ContentReveal()
         this.cursor = new Cursor()
 
-        // Portfolio Gallery
-        this.projectGallery = new ProjectGallery({
+        // Portfolio Gallery - initialized via UIManager
+        this.ui.setupGallery({
             onHover: (p) => this.handleProjectHover(p),
             onLeave: () => this.handleProjectLeave(),
             onClick: (p) => this.handleProjectClick(p)
@@ -123,7 +122,6 @@ export class Experience {
     }
 
     private handleProjectHover(project: any) {
-        // 1. Change Baku's color to match the project
         this.baku.updateMaterial({
             color: new THREE.Color(project.color),
             emissive: new THREE.Color(project.color).multiplyScalar(0.5),
@@ -131,45 +129,31 @@ export class Experience {
             metalness: 1.0
         })
 
-        // 2. Slight camera shift (Cinematic feel)
         this.camera.setBasePosition(new THREE.Vector3(0.5, 0.2, 4.5))
         this.camera.setFovOffset(5)
     }
 
     private handleProjectLeave() {
-        // Reset camera and Baku will be handled by the world update loop
         this.camera.setBasePosition(new THREE.Vector3(0, 0, 5))
         this.camera.setFovOffset(0)
     }
 
     private handleProjectClick(project: any) {
-        // 1. Trigger Cinematic Zoom
         this.camera.setBasePosition(new THREE.Vector3(0, 0, 2))
         this.camera.setFovOffset(-15)
         
-        // 2. Open detail view after a slight delay to sync with camera movement
         setTimeout(() => {
-            this.projectDetail.open(project)
+            this.ui.openProject(project)
         }, 600)
 
         console.log(`Transitioning to project: ${project.title}`)
     }
 
-
-    // НОВЫЙ МЕТОД: Асинхронный запуск
     async init() {
-        // Ensure UIkit is globally available
-        if (!(window as any).UIkit) {
-            console.warn('UIkit not found on window, attempting to initialize...')
-        }
-
-        this.projectDetail = new ProjectDetail()
         window.addEventListener('project-detail-closed', () => this.handleProjectLeave())
 
-        // Ждем инициализации рендерера (WebGPU backend)
         await this.renderer.init()
 
-        // Скрываем экран загрузки
         const loader = document.getElementById('pageLoader')
         if (loader) {
             loader.style.opacity = '0'
@@ -178,7 +162,6 @@ export class Experience {
             }, 500)
         }
 
-        // Только после этого запускаем цикл анимации
         this.update()
     }
 
@@ -187,12 +170,10 @@ export class Experience {
         input.update()
         this.cursor.update()
 
-        // 1. World Orchestration: Map scroll to cinematic path
         const normalizedScroll = input.getSmoothedScroll() / 1000
         const worldState = this.world.update(normalizedScroll)
 
         if (worldState) {
-            // Apply Baku transforms
             this.baku.position.copy(worldState.bakuPosition)
             this.baku.quaternion.copy(worldState.bakuRotation)
             this.baku.scale.copy(worldState.bakuScale)
@@ -200,15 +181,11 @@ export class Experience {
                 this.baku.updateMaterial(worldState.bakuMaterial)
             }
             
-            // Apply Environment transitions
             this.environment.setLighting(worldState.envColor, worldState.envIntensity)
 
-            // Sync Project Gallery visibility with current section
-            // Gallery should be visible in the 'explore' section
-            this.projectGallery.setVisible(worldState.currentSectionId === 'explore')
+            this.ui.projectGallery.setVisible(worldState.currentSectionId === 'explore')
         }
 
-        // 2. Organic Motion & Env update
         this.camera.update(this.time.delta / 1000)
         this.baku.update(this.time.delta / 1000)
         this.environment.update(this.time.elapsed / 1000, normalizedScroll, this.camera.getVelocity(), this.baku.position)
@@ -227,5 +204,3 @@ export class Experience {
         this.renderer.instance.dispose()
     }
 }
-
-export const experience = new Experience()

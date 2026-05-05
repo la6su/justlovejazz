@@ -1,4 +1,5 @@
 // src/UI/ProjectDetail.ts
+import UIkit from 'uikit'
 import { type Project } from '../Data/Projects'
 
 export class ProjectDetail {
@@ -10,12 +11,12 @@ export class ProjectDetail {
         this.modalElement = document.getElementById('project-modal')
         this.contentElement = document.getElementById('modal-content')
 
-        if (this.modalElement && (window as any).UIkit) {
-            // Initialize UIkit modal instance
-            this.modalInstance = (window as any).UIkit.modal(this.modalElement)
+        if (this.modalElement && UIkit) {
+            // Initialize UIkit modal instance using the imported UIkit object
+            this.modalInstance = UIkit.modal(this.modalElement)
 
-            // UIkit modal events are handled via UIkit.util.on or the element itself
-            (window as any).UIkit.util.on(this.modalElement, 'close', () => {
+            // UIkit modal events are handled via UIkit.util.on
+            UIkit.util.on(this.modalElement, 'close', () => {
                 window.dispatchEvent(new CustomEvent('project-detail-closed'))
             })
         } else {

@@ -129,9 +129,10 @@ canvas {
   width: 100vw;
   height: 100vh;
   outline: none;
-  z-index: 0; /* Changed from -1 to 0 to be visible */
+  z-index: 0;
   pointer-events: none;
 }
+
 
 #ui-layer {
   position: relative;
@@ -229,7 +230,7 @@ body {
   background-color: var(--accent-color);
   border-radius: 50%;
   pointer-events: none;
-  z-index: 9999;
+  z-index: 1080;
   transition: width 0.3s, height 0.3s, background-color 0.3s;
   transform: translate(-50%, -50%);
   will-change: transform;

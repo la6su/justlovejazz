@@ -43,7 +43,7 @@ export class ProjectGallery {
                 <h2 class="title">${project.title}</h2>
                 <div class="category">${project.tags.join(' / ')}</div>
                 <div class="project-link uk-link-text">View Case &rarr;</div>
-                <a href="#" class="uk-position-cover"></a>
+                <a href="#" uk-toggle="target: #project-modal" class="uk-position-cover"></a>
             `
 
             item.addEventListener('mouseenter', () => this.onProjectHover?.(project))
