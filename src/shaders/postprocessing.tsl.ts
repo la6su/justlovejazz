@@ -13,7 +13,7 @@ import { applyProfessionalGrain, applyCinematicVignette, applySoftGlow } from '.
 
 export const postProcessingNode = (inputTexture: any) => {
     const u = uv()
-    const t = time
+    const t = time()
 
     // --- 1. Base Layer with Chromatic Aberration ---
     const aberrationStrength = float(0.003)
