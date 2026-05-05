@@ -6,38 +6,58 @@ import {
     uv,
     add,
     mul,
-    float
+    float,
+    mix,
+    fract,
+    vec2
 } from 'three/tsl'
 
 export const backgroundNode = () => {
-    // В некоторых сборках time/uv - это функции, в некоторых - константы.
-    // Чтобы быть на 100% уверенными, проверяем тип.
     const t = typeof time === 'function' ? time() : time
     const u = typeof uv === 'function' ? uv() : uv
 
-    // wave1 = sin(u.x * 3 + t * 0.5) + sin(u.y * 2 + t * 0.3)
-    const wave1 = add(
-        sin(add(mul(u.x, 3), mul(t, 0.5))),
-        sin(add(mul(u.y, 2), mul(t, 0.3)))
-    )
+    // Вспомогательная функция для создания псевдо-шума
+    const organicNoise = (p: any, speed: any) => {
+        // x = p.x  2.0 + t  speed
+        const x = add(mul(p.x, float(2.0)), mul(t, speed))
+        // y = p.y  2.0 + t  (speed * 0.8)
+        const y = add(mul(p.y, float(2.0)), mul(t, mul(speed, float(0.8))))
 
-    // wave2 = cos(u.y * 4 + t * 0.4) + cos(u.x * 3 + t * 0.6)
-    const wave2 = add(
-        cos(add(mul(u.y, 4), mul(t, 0.4))),
-        cos(add(mul(u.x, 3), mul(t, 0.6)))
-    )
-
-    const colorA = color(0.05, 0.1, 0.2)
-    const colorB = color(0.2, 0.05, 0.3)
-    const colorC = color(0.0, 0.4, 0.4)
-
-    // finalColor = colorA + colorB * (wave1 + 1) * 0.5 + colorC * (wave2 + 1) * 0.5
-    const finalColor = add(
-        colorA,
-        add(
-            mul(colorB, mul(add(wave1, float(1)), float(0.5))),
-            mul(colorC, mul(add(wave2, float(1)), float(0.5)))
+        return add(
+            sin(x),
+            sin(add(y, sin(x)))
         )
+    }
+
+    // --- Domain Warping ---
+    // 1. Первый слой искажения
+    const warp1 = organicNoise(u, float(0.3))
+    const offset1 = vec2(mul(warp1, float(0.1)), mul(warp1, float(0.1)))
+
+    // 2. Второй слой, который читает координаты, смещенные первым слоем
+    const warpedUv = add(u, offset1)
+    const warp2 = organicNoise(warpedUv, 0.5)
+
+    // 3. Финальный коэффициент интенсивности (от 0 до 1)
+    const intensity = mul(add(warp2, float(1.0)), float(0.5))
+
+    // --- Цветовая палитра (Deep AI / Cyberpunk) ---
+    // Глубокий темно-синий/черный
+    const colorDeep = color(0.02, 0.02, 0.05)
+    // Неоновый фиолетовый / Индиго
+    const colorNeon = color(0.4, 0.1, 0.7)
+    // Бирюзовый / Циан (для акцентов)
+    const colorAccent = color(0.0, 0.8, 0.8)
+
+    // Смешиваем цвета на основе интенсивности и времени
+    // Создаем пульсирующий переход между неоном и акцентом
+    const colorShift = sin(add(t,  0.2, 0.0))
+    const dynamicColor = mix(colorNeon, colorAccent, add(intensity, mul(colorShift, 0.2)))
+
+    // Итоговый цвет: база + динамический цвет, модулированный интенсивностью
+    const finalColor = add(
+        colorDeep,
+        mul(dynamicColor, intensity)
     )
 
     return finalColor

@@ -4,9 +4,97 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>justlovejazz</title>
+    <title>justlovejazz | Interactive Portfolio</title>
   </head>
   <body>
+    <!-- Loading Screen -->
+    <div id="pageLoader" class="uk-flex uk-flex-center uk-flex-middle" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 1000; color: white; transition: opacity 0.5s ease-out;">
+      <div class="uk-text-center">
+        <div uk-spinner="crossing"></div>
+        <p class="uk-margin-small-top">Loading Experience...</p>
+      </div>
+    </div>
+
+    <!-- UI Layer -->
+    <div id="ui-layer">
+      <!-- Navbar -->
+      <nav class="uk-navbar-container" uk-navbar style="z-index: 10; position: fixed; width: 100%;">
+        <div class="uk-navbar-left">
+          <a class="uk-navbar-item uk-logo" href="#">JUSTLOVEJAZZ</a>
+        </div>
+        <div class="uk-navbar-right">
+          <ul class="uk-navbar-nav">
+            <li class="uk-navbar-item"><a href="#home">Home</a></li>
+            <li class="uk-navbar-item"><a href="#about">About</a></li>
+            <li class="uk-navbar-item"><a href="#works">Works</a></li>
+            <li class="uk-navbar-item"><a href="#contact">Contact</a></li>
+          </ul>
+        </div>
+      </nav>
+
+      <!-- Home Section -->
+      <section id="home" class="uk-section uk-section-large uk-flex uk-flex-middle" style="height: 100vh;">
+        <div class="uk-container uk-container-small">
+          <div class="uk-text-center">
+            <h1 class="uk-heading-xlarge uk-text-bold" uk-scrollspy="cls: uk-animation-fade">Modern Interactive Experience</h1>
+            <p class="uk-text-lead" uk-scrollspy="cls: uk-animation-slide-bottom">Exploring the intersection of 3D art and Web technology.</p>
+            <div class="uk-margin-large-top">
+              <a href="#about" class="uk-button uk-button-primary uk-button-large">Discover More</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- About Section -->
+      <section id="about" class="uk-section uk-section-large" style="min-height: 100vh;">
+        <div class="uk-container uk-container-small">
+          <div class="uk-grid-large uk-child-width-1-2@m" data-uk-grid="true">
+            <div class="uk-animation-fade" uk-scrollspy>
+              <h2 class="uk-heading-medium">The Vision</h2>
+              <p>This project serves as a playground for Three.js TSL and WebGPU, pushing the boundaries of real-time procedural graphics in the browser.</p>
+              <p>By leveraging the latest GPU technologies, we can create experiences that were previously impossible in a web browser.</p>
+            </div>
+            <div class="uk-animation-slide-right" uk-scrollspy>
+              <p>The central object and background react to your movements, creating a symbiotic relationship between the user and the digital space.</p>
+              <p>Every interaction is designed to be fluid, responsive, and visually captivating.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Works Section -->
+      <section id="works" class="uk-section uk-section-large" style="min-height: 100vh;">
+        <div class="uk-container uk-container-small">
+          <h2 class="uk-heading-medium uk-text-center uk-margin-large-bottom">Selected Works</h2>
+          <div class="uk-grid-small uk-child-width-1-3@m" data-uk-grid="true">
+            <div class="uk-card uk-card-default uk-card-body uk-animation-fade" uk-scrollspy style="background: rgba(255,255,255,0.05); color: white;">
+              <h3 class="uk-card-title">TSL Exploration</h3>
+              <p>Deep dive into Three.js Shading Language for procedural textures.</p>
+            </div>
+            <div class="uk-card uk-card-default uk-card-body uk-animation-fade" uk-scrollspy style="background: rgba(255,255,255,0.05); color: white;">
+              <h3 class="uk-card-title">WebGPU Performance</h3>
+              <p>Optimization techniques for high-performance web graphics.</p>
+            </div>
+            <div class="uk-card uk-card-default uk-card-body uk-animation-fade" uk-scrollspy style="background: rgba(255,255,255,0.05); color: white;">
+              <h3 class="uk-card-title">Interactive UI</h3>
+              <p>Blending 3D scenes with modern HTML/CSS frameworks.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Contact Section -->
+      <section id="contact" class="uk-section uk-section-large" style="min-height: 100vh;">
+        <div class="uk-container uk-container-small uk-text-center">
+          <h2 class="uk-heading-medium">Get In Touch</h2>
+          <p class="uk-text-lead">Available for new projects and collaborations.</p>
+          <div class="uk-margin-large-top">
+            <a href="mailto:hello@example.com" class="uk-button uk-button-secondary uk-button-large">Send an Email</a>
+          </div>
+        </div>
+      </section>
+    </div>
+
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>

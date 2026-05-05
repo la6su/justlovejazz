@@ -31,6 +31,15 @@ export class Experience {
         // Ждем инициализации рендерера (WebGPU backend)
         await this.renderer.init()
 
+        // Скрываем экран загрузки
+        const loader = document.getElementById('pageLoader')
+        if (loader) {
+            loader.style.opacity = '0'
+            setTimeout(() => {
+                loader.style.display = 'none'
+            }, 500)
+        }
+
         // Только после этого запускаем цикл анимации
         this.update()
     }
@@ -41,6 +50,11 @@ export class Experience {
         this.renderer.update(this.scene, this.camera.instance)
 
         requestAnimationFrame(() => this.update())
+    }
+
+    destroy() {
+        this.world.destroy()
+        this.renderer.instance.dispose()
     }
 }
 
