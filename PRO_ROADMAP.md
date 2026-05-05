@@ -1,33 +1,35 @@
-# PRO ROADMAP: The Junni-Standard (Updated)
+# PRO ROADMAP: The Junni-Standard (Finalized v2)
 
-This roadmap is a living document. We are moving from "Feature Implementation" to "Experience Tuning".
+Goal: Transform the project from a technical demo into a high-end cinematic portfolio that rivals top design studios (Junni, Active Theory, Locomotive).
 
-## Phase 1: Cinematic Base (Visual Fidelity) ✅ COMPLETED
-- [x] **Post-Processing Pipeline**: Film Grain, Bloom, Chromatic Aberration, Vignette.
-- [x] **Color Grade**: High-contrast "Deep Void $\to$ Electric Accents" palette.
-- [x] **Atmospheric Background**: TSL-based "Quantum Liquid" with scroll-reactivity.
+## ✅ Phase 1: Cinematic Base (Visual Fidelity)
+- [x] High-contrast visual identity (#ff3e00 accent).
+- [x] Asymmetric 'Studio Grid' layout.
+- [x] Cinematic Post-Processing: Film Grain, Chromatic Aberration, Global Vignette.
+- [x] TSL-driven Quantum Liquid Background.
 
-## Phase 2: Rhythmic Motion (The Feel) 🚀 CURRENT
-*Focus: Eliminating the "floaty" feeling and creating a tight, responsive connection between user and 3D.*
+## ✅ Phase 2: Rhythmic Motion (The "Feel")
+- [x] Virtual Smooth Scroll: Integrated Lenis with tuned snappiness (duration: 0.6).
+- [x] Global Lerp System: Centralized input smoothing in `Input.ts` (lerpFactor: 0.35).
+- [x] Responsive 3D: Central Object reactive to mouse-look without "jelly" lag.
+- [x] UX Optimization: Removed conflicting `scroll-behavior: smooth` for native-feeling inertia.
 
-- [x] **Smooth Scroll Engine**: Lenis integration.
-- [x] **Global Lerp System**: Smoothed input for 3D elements.
-- [ ] **Motion Tuning (CRITICAL)**:
-    - [ ] **Non-Linear Mapping**: Replace linear `scroll / 2000` with easing curves (Ease-In-Out) so the object has "weight" and "intent".
-    - [ ] **Velocity Synchronization**: Tie object rotation/scale to scroll *velocity*, not just position.
-    - [ ] **Tuning Inertia**: Adjust Lenis duration and Lerp factors to remove the "laggy" feeling.
-- [ ] **Symmetry & Balance**: Ensure the 3D object's path feels natural across different screen sizes.
+## 🏗️ Phase 3: Interaction Synergy (Current)
+- [x] Typography Reveal: Masked word-by-word animations for `.studio-title` with staggered timing.
+- [ ] Magnetic UI: Implementation of cursor attraction for links, buttons, and interactive elements.
+- [ ] Content Orchestration: Implementing staggered entry animations for project cards and section content.
+- [ ] Portfolio Expansion: Designing and implementing a professional 'Works' gallery with immersive transitions.
 
-## Phase 3: Interaction Synergy (Deep Integration)
-*Goal: Blend the interface and the scene into one organism.*
+## ⏳ Phase 4: Final Polish & Delivery
+- [ ] Performance Audit: Optimizing TSL shaders and memory cleanup (destroy methods).
+- [ ] Responsive Adaptation: Ensuring the cinematic experience translates to mobile/tablets.
+- [ ] Micro-interactions: Adding haptic-like visual feedback to all interactive triggers.
+- [ ] Final Content Pass: Replacing placeholders with high-fidelity assets.
 
-- [ ] **Typography Reveal**: Implement "mask-out" reveal animations for `studio-title` elements.
-- [ ] **Magnetic UI**: Cursor attraction for links and buttons.
-- [ ] **Text-Driven State**: Map 3D object states to specific UI sections (e.g., "About" $\to$ Object expands).
-
-## Phase 4: Final Polish & Assets
-*Goal: Production-ready high-end quality.*
-
-- [ ] **Asset Upgrade**: Replace the placeholder cube with a high-fidelity `.glb` model.
-- [ ] **Performance Optimization**: WebGPU $\to$ WebGL2 fallback audit.
-- [ ] **Responsive Polish**: Fine-tune mobile inertia and post-processing.
+---
+## Technical Stack Reference:
+- Three.js + TSL + WebGPU
+- Lenis (Smooth Scroll)
+- UIkit (UI Framework)
+- Less (Styling)
+- Vite (Build Tool)

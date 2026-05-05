@@ -24,7 +24,7 @@ export class TextReveal {
                 
                 const span = document.createElement('span')
                 span.classList.add('reveal-text')
-                span.innerText = word + ' '
+                span.innerText = word + '\u00A0'
                 
                 mask.appendChild(span)
                 title.appendChild(mask)
