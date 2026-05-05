@@ -17,7 +17,7 @@ import {
  * Procedural Cinematic Grid Node
  * Returns a TSL node for the grid color
  */
-export const cinematicGridNode = (color: any, time: any, uv: any) => {
+export const cinematicGridNode = (color: any, time: any, uv: any, bakuPos: any) => {
     // Scale and shift grid
     const gridScale = 10.0;
     const shiftedUv = mul(uv, gridScale) as any;
@@ -28,6 +28,12 @@ export const cinematicGridNode = (color: any, time: any, uv: any) => {
     const gridY = sub(1.0, smoothstep(0.0, lineWeight, abs(sub(fract(shiftedUv.y), 0.5))));
     const grid = add(gridX, gridY);
     
+    // --- Baku Influence ---
+    // Calculate distance from current UV to Baku's relative position
+    // Assuming Baku is centered and plane is sized accordingly, we map BakuPos to UV space
+    const distToBaku = length(sub(uv, bakuPos));
+    const bakuGlow = smoothstep(0.2, 0.0, distToBaku);
+    
     // Pulsing effect
     const pulse = mul(sin(add(time, mul(shiftedUv.x, 0.1))), 0.2);
     const finalGrid = add(grid, pulse);
@@ -36,7 +42,10 @@ export const cinematicGridNode = (color: any, time: any, uv: any) => {
     const dist = length(sub(uv, 0.5));
     const fade = smoothstep(0.5, 0.2, dist);
     
-    return mul(color, mul(finalGrid, fade));
+    // Mix the grid with Baku's glow
+    const result = add(mul(finalGrid, fade), bakuGlow);
+    
+    return mul(color, result);
 }
 
 /**

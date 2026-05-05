@@ -10,6 +10,8 @@ export class Camera {
     // --- Kinematics State ---
     private cursorPosDelay: THREE.Vector2 = new THREE.Vector2()
     private cursorPosDelayVel: THREE.Vector2 = new THREE.Vector2()
+    private velocity: THREE.Vector3 = new THREE.Vector3()
+    private prevPosition: THREE.Vector3 = new THREE.Vector3()
     
     private shakeTime: number = 0
     private shakePower: number = 0
@@ -20,7 +22,7 @@ export class Camera {
     private fovTransitionT: number = 0
     private fovStartOffset: number = 0
     private fovDuration: number = 1
-
+    
     private basePosition: THREE.Vector3 = new THREE.Vector3(0, 0, 3)
     private moveRange: THREE.Vector2 = new THREE.Vector2(0.15, 0.15)
 
@@ -28,9 +30,14 @@ export class Camera {
         this.basePosition.copy(pos)
     }
 
+    getVelocity() {
+        return this.velocity
+    }
+
     constructor(sizes: Sizes) {
         this.instance = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
         this.instance.position.copy(this.basePosition)
+        this.prevPosition.copy(this.basePosition)
 
         window.addEventListener('resize', () => {
             this.instance.aspect = sizes.width / sizes.height
@@ -110,6 +117,10 @@ export class Camera {
                 )
             }
         }
+
+        // Calculate Velocity for Environment Interaction
+        this.velocity.subVectors(this.instance.position, this.prevPosition).multiplyScalar(1 / deltaTime)
+        this.prevPosition.copy(this.instance.position)
 
         // Always look at center for now (unless World overrides this)
         this.instance.lookAt(0, 0, 0)

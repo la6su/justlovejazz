@@ -99,25 +99,42 @@ class World {
 
 ```
 src/
- ├── Experience/
- │   ├── Experience.ts
- │   ├── Renderer.ts
- │   ├── Camera.ts
- │   ├── Sizes.ts
- │   ├── Time.ts
- │   └── World/
- │        ├── World.ts
- │        ├── Background.ts
- │        └── Model.ts
- │
- ├── shaders/
- │   └── background.tsl.ts
- │
- ├── ui/
- │   └── index.html
- │
- ├── main.ts
- └── style.css
+├── assets/
+│
+├── Experience/
+│   ├── Camera.ts
+│   ├── ContentReveal.ts
+│   ├── Cursor.ts
+│   ├── Experience.ts
+│   ├── Input.ts
+│   ├── PostProcessing.ts
+│   ├── Renderer.ts
+│   ├── Sizes.ts
+│   ├── SmoothScroll.ts
+│   ├── TextReveal.ts
+│   ├── Time.ts
+│   │
+│   └── World/
+│       ├── Background.ts
+│       ├── Baku.ts
+│       ├── CentralObject.ts
+│       ├── Environment.ts
+│       ├── Lights.ts
+│       ├── Section.ts
+│       └── World.ts
+│
+├── shaders/
+│   ├── background.tsl.ts
+│   ├── env-effects.tsl.ts
+│   ├── noise.tsl.ts
+│   ├── postprocessing.tsl.ts
+│   └── tsl-utils.ts
+│
+├── Utils/
+│   ├── Easings.ts
+│   └── Noise.ts
+│
+├── main.ts
 ```
 
 ---

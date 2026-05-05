@@ -112,7 +112,6 @@ export class Experience {
     }
 
 
-
     // НОВЫЙ МЕТОД: Асинхронный запуск
     async init() {
         // Ждем инициализации рендерера (WebGPU backend)
@@ -154,10 +153,10 @@ export class Experience {
         }
 
         // 2. Organic Motion & Env update
-        this.baku.update(this.time.delta / 1000)
-        this.environment.update(this.time.elapsed / 1000, normalizedScroll)
-
         this.camera.update(this.time.delta / 1000)
+        this.baku.update(this.time.delta / 1000)
+        this.environment.update(this.time.elapsed / 1000, normalizedScroll, this.camera.getVelocity(), this.baku.position)
+
         this.renderer.update(this.scene, this.camera.instance)
         requestAnimationFrame(() => this.update())
     }

@@ -22,23 +22,40 @@ Designed with **mobile-first UX** and a **procedural 3D background**.
 
 ```
 src/
+├── assets/
+│
 ├── Experience/
-│ ├── Experience.ts # Singleton (core app)
-│ ├── Renderer.ts # WebGPU/WebGL switch
-│ ├── Camera.ts
-│ ├── Sizes.ts
-│ ├── Time.ts
-│ └── World/
-│ ├── World.ts
-│ ├── Background.ts # TSL shader logic
-│ └── Model.ts # GLTF object
+│   ├── Camera.ts
+│   ├── ContentReveal.ts
+│   ├── Cursor.ts
+│   ├── Experience.ts
+│   ├── Input.ts
+│   ├── PostProcessing.ts
+│   ├── Renderer.ts
+│   ├── Sizes.ts
+│   ├── SmoothScroll.ts
+│   ├── TextReveal.ts
+│   ├── Time.ts
+│   │
+│   └── World/
+│       ├── Background.ts
+│       ├── Baku.ts
+│       ├── CentralObject.ts
+│       ├── Environment.ts
+│       ├── Lights.ts
+│       ├── Section.ts
+│       └── World.ts
 │
 ├── shaders/
-│ └── background.tsl.ts
+│   ├── background.tsl.ts
+│   ├── env-effects.tsl.ts
+│   ├── noise.tsl.ts
+│   ├── postprocessing.tsl.ts
+│   └── tsl-utils.ts
 │
-├── ui/
-│ └── layout.html
+├── Utils/
+│   ├── Easings.ts
+│   └── Noise.ts
 │
 ├── main.ts
-└── style.css
 ```

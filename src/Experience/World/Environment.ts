@@ -2,7 +2,15 @@
 import * as THREE from 'three'
 
 import { cinematicGridNode } from '../../shaders/env-effects.tsl.ts'
-import { uniform, uv, time } from 'three/tsl'
+import { 
+    uniform, 
+    uv, 
+    time, 
+    positionLocal, 
+    vec3, 
+    mul, 
+    add 
+} from 'three/tsl'
 
 export class Environment {
     private particles!: THREE.Points
@@ -10,6 +18,8 @@ export class Environment {
     private gridMaterial!: THREE.MeshBasicMaterial
     private ambientLight!: THREE.AmbientLight
     private pointLight!: THREE.PointLight
+    private cameraVelocityUniform!: any
+    private bakuPosUniform!: any
 
     constructor(scene: THREE.Scene) {
         this.setupFog(scene)
@@ -43,14 +53,24 @@ export class Environment {
 
         geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
         
+        // Camera velocity uniform for reactive motion
+        const camVel = uniform(new THREE.Vector3(0, 0, 0))
+        this.cameraVelocityUniform = camVel
+
         const material = new THREE.PointsMaterial({
             size: 0.02,
             color: 0xffffff,
             transparent: true,
             opacity: 0.4,
             blending: THREE.AdditiveBlending
-        })
+        }) as any
 
+        // TSL override for vertex position to add camera-reactive drift
+        material.positionNode = add(
+            positionLocal,
+            mul(camVel, 0.05)
+        )
+        
         this.particles = new THREE.Points(geometry, material)
         scene.add(this.particles)
     }
@@ -60,6 +80,8 @@ export class Environment {
         const geometry = new THREE.PlaneGeometry(size, size)
         
         const gridColor = uniform(new THREE.Color(0x333333))
+        const bakuPos = uniform(new THREE.Vector2(0, 0))
+        this.bakuPosUniform = bakuPos
         
         // Using standard MeshBasicMaterial and assigning colorNode.
         // In Three.js r167+, WebGPURenderer treats this as a NodeMaterial.
@@ -68,7 +90,7 @@ export class Environment {
             opacity: 0.5
         }) as any
         
-        this.gridMaterial.colorNode = cinematicGridNode(gridColor, time, uv())
+        this.gridMaterial.colorNode = cinematicGridNode(gridColor, time, uv(), bakuPos)
         
         this.grid = new THREE.Mesh(geometry, this.gridMaterial)
         this.grid.rotation.x = -Math.PI / 2
@@ -77,7 +99,17 @@ export class Environment {
         scene.add(this.grid)
     }
 
-    update(timeVal: number, scrollValue: number) {
+    update(timeVal: number, scrollValue: number, camVelocity: THREE.Vector3, bakuPosition: THREE.Vector3) {
+        // Update uniforms
+        this.cameraVelocityUniform.value = camVelocity
+        
+        // Map Baku's world position to UV space (0..1)
+        // Grid size is 100, centered at 0. So world -50..50 maps to 0..1
+        this.bakuPosUniform.value.set(
+            (bakuPosition.x / 100) + 0.5,
+            (bakuPosition.z / 100) + 0.5
+        )
+
         // Медленное вращение частиц для создания жизни
         this.particles.rotation.y = timeVal * 0.05
         this.particles.rotation.x = timeVal * 0.02
