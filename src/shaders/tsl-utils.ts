@@ -54,8 +54,9 @@ export const easeInOutQuart = (t: any) => {
  * Uses combined sine-wave noise to avoid the "digital" look.
  */
 export const applyProfessionalGrain = (color: any, uv: any, time: any, strength: number = 0.03) => {
-    const noise = uv.mul(vec2(12.9898, 78.233)).add(time).sin().mul(43758.5453).fract();
-    const grain = noise.sub(0.5).mul(strength);
+    const noise1 = uv.mul(vec2(12.9898, 78.233)).add(time).sin().mul(43758.5453).fract();
+    const noise2 = uv.mul(vec2(34.123, 12.456)).add(time.mul(0.5)).cos().mul(12345.678).fract();
+    const grain = noise1.add(noise2).mul(0.5).sub(0.5).mul(strength);
     return color.add(grain);
 };
 
@@ -64,8 +65,9 @@ export const applyProfessionalGrain = (color: any, uv: any, time: any, strength:
  */
 export const applyCinematicVignette = (color: any, uv: any, intensity: number = 0.4) => {
     const dist = uv.mul(2.0).sub(vec2(1.0, 1.0));
-    const v = float(1.0).sub(dist.x.mul(dist.x).add(dist.y.mul(dist.y)).mul(intensity));
-    return color.mul(v.pow(2.0));
+    const d2 = dist.x.mul(dist.x).add(dist.y.mul(dist.y));
+    const v = float(1.0).sub(d2.mul(intensity));
+    return color.mul(v.pow(1.5).clamp(0, 1));
 };
 
 /**
@@ -106,7 +108,10 @@ export const applySoftGlow = (tex: any, uv: any, strength: number = 0.005) => {
             .add(tex.sample(uv.add(vec2(-sStr, 0.0))))
             .add(tex.sample(uv.add(vec2(0.0, sStr))))
             .add(tex.sample(uv.add(vec2(0.0, -sStr))));
-        glow = glow.add(sampleSum.mul(0.25));
+        
+        // High-pass filter: only keep bright parts of the blur
+        const bright = sampleSum.mul(0.25).sub(float(0.5)).clamp(0, 1);
+        glow = glow.add(bright);
     });
     
     return glow.mul(1.0 / scales.length);

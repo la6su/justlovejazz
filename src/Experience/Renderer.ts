@@ -2,6 +2,8 @@
 import * as THREE from 'three';
 import { WebGPURenderer } from 'three/webgpu';
 import { Sizes } from './Sizes';
+import { postProcessingNode } from '../shaders/postprocessing.tsl.ts';
+import { texture } from 'three/tsl';
 import type { RendererCapabilities } from '../types/renderer';
 
 export class Renderer {
@@ -80,9 +82,15 @@ export class Renderer {
     }
 
     private initPostProcessing() {
-        // For now, disable post-processing to verify the scene renders.
-        // Once verified, we will implement the correct TSL post-processing pipeline.
-        (this.instance as any).postProcessing = null;
+        if (this.capabilities.postProcessing) {
+            // Using a placeholder for the scene color texture until the exact TSL node is identified.
+            // In a real setup, this would be the renderer's scene color output.
+            const sceneColorPlaceholder = texture( new THREE.Texture() );
+            (this.instance as any).postProcessing = postProcessingNode( sceneColorPlaceholder );
+            console.info('Renderer: Post-processing enabled (placeholder)');
+        } else {
+            console.warn('Renderer: Post-processing not supported by current capabilities');
+        }
     }
 
     async init() {
