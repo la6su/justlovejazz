@@ -79,18 +79,23 @@ export class CameraStateManager {
     }
 
     private calculateSection(scroll: number): { currentSection: WorldSection, sectionProgress: number } {
-        const sections = [
-            { section: WorldSection.HOME, start: 0, startEnd: 0.25 },
-            { section: WorldSection.WORKS, start: 0.25, startEnd: 0.6 },
-            { section: WorldSection.ABOUT, start: 0.6, startEnd: 0.8 },
-            { section: WorldSection.CONTACT, start: 0.8, startEnd: 1.0 },
-        ];
+        const active = WORLD_CONFIG.find(config => {
+            const [start, end] = config.range;
+            return scroll >= start && scroll <= end;
+        }) || WORLD_CONFIG[0];
 
-        const active = sections.find(s => scroll >= s.start && scroll <= s.startEnd) || sections[0];
-        const progress = (scroll - active.start) / (active.startEnd - active.start);
+        if (!active) {
+            return {
+                currentSection: WorldSection.HOME,
+                sectionProgress: 0
+            };
+        }
+
+        const [start, end] = active.range;
+        const progress = (scroll - start) / (end - start);
 
         return {
-            currentSection: active.section,
+            currentSection: active.id,
             sectionProgress: Math.max(0, Math.min(1, progress))
         };
     }
@@ -124,8 +129,11 @@ export class CameraStateManager {
             bakuScale: new THREE.Vector3().lerpVectors(from.bakuScale, to.bakuScale, t),
             bakuMaterial: from.bakuMaterial || to.bakuMaterial,
             envColor: from.ambientColor || to.ambientColor || new THREE.Color(0x000000),
-            envIntensity: from.lightIntensity !== undefined ?
-                from.lightIntensity + (to.lightIntensity || from.lightIntensity) * t : 1.0
+            envIntensity: THREE.MathUtils.lerp(
+                from.lightIntensity ?? 1.0,
+                to.lightIntensity ?? from.lightIntensity ?? 1.0,
+                t
+            )
         };
     }
 

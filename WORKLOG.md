@@ -2,6 +2,11 @@
 
 ## 2026-05-07
 
+- Fixed: moved section scroll ranges into `WorldConfig` and corrected light intensity interpolation.
+- Files: `src/core/WorldConfig.ts`, `src/core/CameraStateManager.ts`.
+- Verified: `npm run type-check` passes; `npm run build` passes.
+- Next: verify build, then make `WorldConfig` shape closer to camera/baku/lighting/post presets.
+
 - Fixed: normalized smooth scroll progress to a stable `0..1` range.
 - Files: `src/Experience/Input.ts`, `src/Experience/SmoothScroll.ts`, `src/Experience/Experience.ts`.
 - Verified: `npm run type-check` passes; `npm run build` passes.

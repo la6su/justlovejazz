@@ -3,6 +3,7 @@ import { WorldSection } from './types';
 
 export interface SectionConfig {
     id: WorldSection;
+    range: [number, number];
     cameraPosition: THREE.Vector3;
     cameraTarget: THREE.Vector3;
     fov: number;
@@ -22,6 +23,7 @@ export interface SectionConfig {
 export const WORLD_CONFIG: SectionConfig[] = [
     {
         id: WorldSection.HOME,
+        range: [0, 0.25],
         cameraPosition: new THREE.Vector3(0, 0, 5),
         cameraTarget: new THREE.Vector3(0, 0, 0),
         fov: 75,
@@ -39,6 +41,7 @@ export const WORLD_CONFIG: SectionConfig[] = [
     },
     {
         id: WorldSection.WORKS,
+        range: [0.25, 0.6],
         cameraPosition: new THREE.Vector3(0, 0, 5),
         cameraTarget: new THREE.Vector3(0, 0, 0),
         fov: 75,
@@ -56,6 +59,7 @@ export const WORLD_CONFIG: SectionConfig[] = [
     },
     {
         id: WorldSection.ABOUT,
+        range: [0.6, 0.8],
         cameraPosition: new THREE.Vector3(0, 0, 2),
         cameraTarget: new THREE.Vector3(0, 0, 0),
         fov: 45,
@@ -73,6 +77,7 @@ export const WORLD_CONFIG: SectionConfig[] = [
     },
     {
         id: WorldSection.CONTACT,
+        range: [0.8, 1],
         cameraPosition: new THREE.Vector3(0, 2, 5),
         cameraTarget: new THREE.Vector3(0, 0, 0),
         fov: 60,
