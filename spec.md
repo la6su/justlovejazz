@@ -9,6 +9,11 @@
 - **Build Tool:** Vite
 - **Smooth Scroll:** Lenis
 - **Animation:** GSAP / TSL-driven animations
+- **Core Orchestration:**
+    - `Bootstrapper`: Centralized async initialization pipeline.
+    - `CameraStateManager`: State-machine for cinematic camera transitions (Intro $\rightarrow$ Explore $\rightarrow$ Detail).
+    - `AssetManager`: VRAM-aware resource management with KTX2/Basis support and dynamic purging.
+    - `World`: Section-based environment management.
 
 ## 2. Cinematic Visual Pipeline (The "Studio" Look)
 To achieve top-tier studio quality (Ref: Junni, Active Theory), the rendering pipeline must implement:

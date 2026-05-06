@@ -41,7 +41,7 @@ To reach "Top Studio" level, we must implement the following beyond basic featur
 - [x] Typography Reveal: Masked word-by-word animations.
 - [x] Magnetic UI: High-fidelity cursor attraction for interactive elements.
 - [x] Content Orchestration: Staggered entry animations for sections.
-- [ ] **Portfolio Expansion (Junni-Style):** 
+- [x] **Portfolio Expansion (Junni-Style):** 
   - Implement an immersive 'Works' gallery.
   - Create cinematic transitions between the gallery and project details (zoom/slide/fade).
   - Implement high-end image loading states (blur-up/fade-in).
@@ -58,8 +58,8 @@ To reach "Top Studio" level, we must implement the following beyond basic featur
 
 #### 🎥 Cinematic Camera & World
 - [x] **Advanced Kinematics:** Implement inertia-based cursor follow, organic shake, and dynamic FOV offset.
-- [ ] **World Orchestration:** Implement a Section-based state machine. Instead of a single world, create a system of 'Scenes' with pre-defined camera and object transforms.
-- [ ] **Seamless Transitions:** Implement high-fidelity lerp/slerp transitions between sections, tied to the smooth-scroll progress.
+- [x] **World Orchestration:** Implement a Section-based state machine. Instead of a single world, create a system of 'Scenes' with pre-defined camera and object transforms.
+- [x] **Seamless Transitions:** Implement high-fidelity lerp/slerp transitions between sections, tied to the smooth-scroll progress.
 
 #### 🎨 Visual Fidelity (The "Look")
 - [ ] **Render Pipeline:** Port the cinematic stack: SMAA -> Multi-layer Bloom (Mip-pyramid) -> Bicubic Upsampling -> Grain -> Vignette.

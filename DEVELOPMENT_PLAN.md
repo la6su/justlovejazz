@@ -1,61 +1,51 @@
-# План разработки и оптимизации: Проект 'justlovejazz'
+# Development Plan: justlovejazz (Current State)
 
-**Цель:** Достижение «Production Grade» кинематографического качества, ориентируясь на референс Junni и Active Theory. Основной фокус: Motion (динамика), Visual Polish (визуальный лоск) и Render-driven UX (бесшовность).
+This document serves as the living record of the project's technical evolution and the immediate roadmap to reach "Production Grade".
 
----
+## 📌 Current Architecture Snapshot (v2.0)
+The project has transitioned from a simple 3D scene to a professional cinematic pipeline.
 
-## 🟢 Спринт 1: Motion & Feel (Завершено / Фиксация)
-*Цель: Уйти от «плавающего» движения к «snappy» (четкому и упругому).*
+### 1. Core Systems (Implemented)
+- **`Bootstrapper`**: Asynchronous system initialization. Ensures all managers (Assets, UI, World) are ready before the first frame.
+- **`CameraStateManager`**: A finite state machine (FSM) managing `INTRO` $\rightarrow$ `EXPLORE` $\rightarrow$ `DETAIL` $\rightarrow$ `TRANSITION`.
+- **`AssetManager`**: Centralized resource hub with KTX2 support and a `purgeUnused` mechanism to maintain VRAM limits.
+- **`World` & `Section`**: A modular environment where each section defines its own camera target, baku properties, and lighting.
 
-- [x] **Shortest-path looping**: Реализация кратчайшего пути при навигации по карусели проектов.
-- [x] **Exponential Decay Snapping**: Замена линейной физики на систему Target $\rightarrow$ Actual с экспоненциальным затуханием.
-- [x] **Non-linear Transitions**: Внедрение `easeInOutQuart` для переходов в Fullscreen.
-- [x] **Double-smoothing Removal**: Удаление конфликтующих `lerp` в `GalleryScene`, синхронизация визуального ряда с `GalleryManager`.
-
----
-
-## 🔵 Спринт 2: Cinematic Pipeline (В процессе)
-*Цель: Создание высококачественного визуального стека и оптимизация шейдеров.*
-
-### 2.1. Рефакторинг TSL (Архитектура)
-- [ ] **Method Chaining**: Перевод всех шейдеров с глобальных функций `add()`, `mul()`, `sub()` на метод-чейнинг (`.add().mul()`).
-- [ ] **Type Safety**: Устранение ошибок TS2769 за счет правильного использования TSL-узлов.
-- [ ] **Fallback Strategy**: Проверка и обеспечение корректной работы базовых эффектов при переключении на WebGL2.
-
-### 2.2. Post-Processing Stack (Визуальный лоск)
-- [ ] **Cinematic Stack Implementation**: Переработка `postprocessing.tsl.ts` в последовательный пайплайн:
-    - `Chromatic Aberration`: Динамическое смещение каналов, усиливающееся к краям экрана.
-    - `Multi-layer Bloom`: Реализация многослойного свечения (имитация mip-pyramid) вместо простого блюра.
-    - `Professional Grain`: Добавление высокочастотного кинематографического зерна (динамический шум).
-    - `Cinematic Vignette`: Мягкое затемнение краев для фокусировки внимания.
-    - `SMAA`: Высококачественное сглаживание для устранения «лесенок» на контрастных линиях.
-    - `Bicubic Sampling`: Интеграция бикубического сэмплинга для текстур при сильном приближении (избегание пикселизации).
-
-### 2.3. Material Polish (Детализация)
-- [ ] **Procedural Detail**: Добавление в `ProjectMaterial` процедурных микро-деталей (шум, сетки), чтобы поверхности не выглядели «плоскими» при зуме.
-- [ ] **Dive Effect**: Улучшение эффекта «погружения» (`project-dive.tsl.ts`) с добавлением органических искажений (bulge/warp).
+### 2. Cinematic Pipeline (Implemented)
+- **Camera Kinematics**: 
+    - Exponential Decay smoothing for base position/target.
+    - Inertia-based cursor follow (the "Junni feel").
+    - Organic combined-sine shake.
+    - Dynamic FOV interpolation.
+- **GPU-Driven Transitions**:
+    - `GalleryScene` $\rightarrow$ Fullscreen zoom based on `transitionProgress`.
+    - TSL-based material morphing.
+- **Render Stack**: 
+    - WebGPU Primary $\rightarrow$ WebGL2 Fallback.
+    - TSL Post-processing pipeline (Grain, Vignette, Bloom).
 
 ---
 
-## 🟡 Спринт 3: Render-driven UX (Планируется)
-*Цель: Полное слияние интерфейса и 3D-сцены, минимизация DOM-зависимости.*
+## 🚀 Immediate Roadmap (The "Final 10%")
 
-### 3.1. Camera State Machine (Хореография)
-- [ ] **State Manager**: Создание полноценного автомата состояний для камеры (`Intro` $\rightarrow$ `Explore` $\rightarrow$ `Detail`).
-- [ ] **Inertia & Shake**: Реализация инерционного следования (drag/spring) и органического «ручного» дрожания (combined-sine).
-- [ ] **Smooth Interpolation**: Реализация бесшовных переходов между состояниями с использованием Slerp для вращений и плавного изменения FOV.
+### 🛠️ Task 1: Render Pipeline Completion (High Priority)
+- [ ] **SMAA Integration**: Implement high-quality anti-aliasing.
+- [ ] **Bicubic Upsampling**: Implement a custom TSL node for bicubic texture filtering to eliminate pixelation on extreme zooms.
+- [ ] **Multi-layer Bloom**: Upgrade the current bloom to a mip-pyramid based system for a more professional "glow".
 
-### 3.2. Advanced Transitions (Эффекты)
-- [ ] **Masked Reveal**: Реализация анимации «раскрытия» контента через GPU-маски.
-- [ ] **GPU Distortions**: Добавление искажений пространства при резких сменах состояний.
+### 🛠️ Task 2: Asset & Performance Optimization
+- [ ] **KTX2 Conversion**: Convert all current textures to Basis Universal / KTX2.
+- [ ] **LOD Shaders**: Implement shader complexity tiers (WebGPU vs WebGL2).
+- [ ] **Memory Audit**: Profiling VRAM usage and refining the `AssetManager.purgeUnused` triggers.
 
-### 3.3. Performance & Memory (Оптимизация)
-    - [x] **Smart Asset Loading**: Система динамической загрузки/выгрузки текстур высокого разрешения в зависимости от активного проекта.
-    - [x] **Texture Compression**: Переход на сжатые форматы текстур для уменьшения нагрузки на VRAM.
+### 🛠️ Task 3: UX & Motion Polish
+- [ ] **Optical Alignment**: Refine the asymmetric grid and typography spacing for a "designer's eye" layout.
+- [ ] **Responsive Refinement**: Ensure the 3D transitions feel natural on mobile (Touch-based inertia).
+- [ ] **Intro Sequence**: Create a high-fidelity splash $\rightarrow$ world entry sequence.
 
 ---
 
-## ✅ Definition of Done (Критерии готовности)
-1. **Motion**: Движение ощущается «дорогим», нет инерционного «киселя», переходы мгновенно реагируют на ввод, но завершаются мягко.
-2. **Visuals**: Картинка выглядит как в cinematic-студиях (есть глубина, зерно, bloom, отсутствие артефактов при зуме).
-3. **UX**: Отсутствие рывков при переключении между DOM-интерфейсом и WebGL-сценой.
+## 📐 Technical Constraints
+- **No Inline Styles**: All presentation in Less files.
+- **TSL Standard**: Use method chaining (`.add().mul()`) for all shader nodes.
+- **Motion Standard**: "Snappy" not "Floaty". Avoid linear interpolations.
