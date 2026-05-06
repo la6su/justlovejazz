@@ -21,10 +21,10 @@ export const backgroundNode = () => {
     //     return sin(mul(p, s));
     // };
 
-    const scrollMix = mix(colorDeep, colorAccent, time.mul(0.2).sin());
+    const scrollMix = mix(colorDeep.toVec3(), colorAccent.toVec3(), time.mul(0.2).sin());
     
-    const finalColor = colorVoid.add(
-        mix(colorDeep, scrollMix, contrastIntensity).mul(contrastIntensity)
+    const finalColor = colorVoid.toVec3().add(
+        mix(colorDeep.toVec3(), scrollMix, contrastIntensity).mul(contrastIntensity)
     )
 
     return finalColor;

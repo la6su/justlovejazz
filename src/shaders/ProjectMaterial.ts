@@ -12,7 +12,7 @@ export class ProjectMaterial {
 
     const tex = texture(mainTex);
     const detTex = texture(detailTex);
-    const col = color(baseColor);
+    const col = color(baseColor).toVec3();
     const p = this.progressUniform;
 
     // --- Vertex Stage: GPU Distortion (Cinematic Pop) ---

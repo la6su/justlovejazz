@@ -48,6 +48,7 @@ export class AssetManager {
         texture.magFilter = THREE.LinearFilter;
         // @ts-ignore - Bicubic is available in newer Three.js versions
         if (THREE.BicubicInterpolation) {
+          // @ts-ignore - Bicubic is available in newer Three.js versions
           texture.filter = THREE.BicubicInterpolation;
         }
       }
