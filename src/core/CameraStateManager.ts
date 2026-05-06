@@ -111,7 +111,8 @@ export class CameraStateManager {
                 bakuScale: new THREE.Vector3(1, 1, 1),
                 bakuMaterial: {},
                 envColor: new THREE.Color(0x000000),
-                envIntensity: 1.0
+                envIntensity: 1.0,
+                uiShowGallery: false
             };
         }
 
@@ -133,7 +134,8 @@ export class CameraStateManager {
                 from.lighting.intensity ?? 1.0,
                 to.lighting.intensity ?? from.lighting.intensity ?? 1.0,
                 t
-            )
+            ),
+            uiShowGallery: from.ui.showGallery
         };
     }
 

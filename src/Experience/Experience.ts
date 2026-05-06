@@ -101,7 +101,10 @@ export class Experience {
     this.galleryManager.update(deltaTime)
     this.galleryScene.update(this.camera.instance, deltaTime, worldState)
     if (this.ui.gallery) {
-      this.ui.gallery.update(this.galleryManager)
+      this.ui.gallery.setVisible(worldState.uiShowGallery)
+      if (worldState.uiShowGallery) {
+        this.ui.gallery.update(this.galleryManager)
+      }
     }
 
     if (worldState) {

@@ -16,15 +16,15 @@ export interface CameraTarget {
 
 export interface WorldState {
     currentSection: WorldSection;
-    sectionProgress: number; 
+    sectionProgress: number;
     globalProgress: number;
-    // Добавляем поля, которые требуются в World.ts
     bakuPosition: THREE.Vector3;
     bakuRotation: THREE.Quaternion;
     bakuScale: THREE.Vector3;
     bakuMaterial: any;
     envColor: THREE.Color;
     envIntensity: number;
+    uiShowGallery: boolean;
 }
 
 export interface Project {

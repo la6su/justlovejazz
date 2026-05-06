@@ -2,6 +2,11 @@
 
 ## 2026-05-07
 
+- Fixed: wired `WorldConfig.ui.showGallery` into `WorldState` and DOM gallery visibility.
+- Files: `src/core/types.ts`, `src/core/CameraStateManager.ts`, `src/Experience/Experience.ts`.
+- Verified: `npm run type-check` passes; `npm run build` passes.
+- Next: verify build, then expose post presets through world state.
+
 - Fixed: reshaped `WorldConfig` into typed camera/baku/lighting/post/ui presets.
 - Files: `src/core/WorldConfig.ts`, `src/core/CameraStateManager.ts`.
 - Verified: `npm run type-check` passes; `npm run build` passes.
