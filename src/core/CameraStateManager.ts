@@ -112,7 +112,12 @@ export class CameraStateManager {
                 bakuMaterial: {},
                 envColor: new THREE.Color(0x000000),
                 envIntensity: 1.0,
-                uiShowGallery: false
+                uiShowGallery: false,
+                post: {
+                    bloom: 0,
+                    vignette: 0,
+                    grain: 0
+                }
             };
         }
 
@@ -135,7 +140,12 @@ export class CameraStateManager {
                 to.lighting.intensity ?? from.lighting.intensity ?? 1.0,
                 t
             ),
-            uiShowGallery: from.ui.showGallery
+            uiShowGallery: from.ui.showGallery,
+            post: {
+                bloom: THREE.MathUtils.lerp(from.post.bloom, to.post.bloom, t),
+                vignette: THREE.MathUtils.lerp(from.post.vignette, to.post.vignette, t),
+                grain: THREE.MathUtils.lerp(from.post.grain, to.post.grain, t)
+            }
         };
     }
 

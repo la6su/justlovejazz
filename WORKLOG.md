@@ -2,6 +2,11 @@
 
 ## 2026-05-07
 
+- Fixed: exposed interpolated post presets through `WorldState`.
+- Files: `src/core/types.ts`, `src/core/CameraStateManager.ts`.
+- Verified: `npm run type-check` passes; `npm run build` passes.
+- Next: verify build, then connect post state to a safe renderer/post adapter.
+
 - Fixed: wired `WorldConfig.ui.showGallery` into `WorldState` and DOM gallery visibility.
 - Files: `src/core/types.ts`, `src/core/CameraStateManager.ts`, `src/Experience/Experience.ts`.
 - Verified: `npm run type-check` passes; `npm run build` passes.

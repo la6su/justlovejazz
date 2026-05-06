@@ -25,6 +25,11 @@ export interface WorldState {
     envColor: THREE.Color;
     envIntensity: number;
     uiShowGallery: boolean;
+    post: {
+        bloom: number;
+        vignette: number;
+        grain: number;
+    };
 }
 
 export interface Project {
