@@ -13,7 +13,7 @@ export class GalleryScene {
   private raycaster = new THREE.Raycaster();
   private mouse = new THREE.Vector2();
 
-  constructor(private manager: GalleryManager) {
+  constructor(private manager: GalleryManager, private sizes: any) {
     // Init is now called asynchronously from Bootstrapper
   }
 

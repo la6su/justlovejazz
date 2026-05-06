@@ -20,33 +20,32 @@ export class Bootstrapper {
     static async init(ui: UIManager): Promise<Experience> {
         const experience = new Experience(ui);
         
-        // 1. Core Systems
-        // These are already initialized in Experience constructor currently, 
-        // but we will move the wiring here.
+        // 1. Setup Core Event Listeners
+        experience.setupEventListeners();
         
         // 2. Content & World Configuration
         experience.galleryManager = new GalleryManager(PROJECTS);
-        experience.galleryScene = new GalleryScene(experience.galleryManager);
+        experience.galleryScene = new GalleryScene(experience.galleryManager, experience.sizes);
         await experience.galleryScene.init();
         
         // Wire GalleryScene into World for section-based updates
         experience.world.galleryScene = experience.galleryScene;
         
         experience.cameraStateManager = new CameraStateManager(experience.world, experience.galleryManager);
-
         
         experience.scene.add(experience.galleryScene.group);
         
         // 3. World Sections Setup
-        // Moved from Experience.setupWorldSections to keep the kernel clean
         this.configureWorld(experience.world);
         
-        // 4. Global Scene Objects
+        // 4. Global Scene Objects & Environment
         experience.baku = new Baku();
         experience.scene.add(experience.baku);
-        experience.environment = new Environment(experience.scene);
         
-        // 5. Final System Boot
+        experience.environment = new Environment(experience.scene);
+        await experience.environment.init(experience.scene);
+        
+        // 5. Final System Boot (Starts Render Loop)
         await experience.init();
         
         return experience;

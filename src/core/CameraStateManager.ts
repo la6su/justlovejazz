@@ -1,14 +1,25 @@
-
-
+// src/core/CameraStateManager.ts
 import * as THREE from 'three';
 import { CameraState, WorldSection, type WorldState, type CameraTarget } from './types';
 import { World } from '../Experience/World/World';
 import { GalleryManager } from './GalleryManager';
 
+/**
+ * Cinematic Camera State Manager
+ * Implements a state machine with smooth transitions and inertia.
+ */
 export class CameraStateManager {
     public currentState: CameraState = CameraState.INTRO;
     private targetState: CameraState = CameraState.EXPLORE;
-    private previousTarget: CameraTarget | null = null;
+    
+    // Smoothness parameters
+    private lerpFactor: number = 0.05; 
+    private fovLerpFactor: number = 0.03;
+    
+    private currentPosition = new THREE.Vector3();
+    private currentLookAt = new THREE.Vector3();
+    private currentFov = 75;
+
     private transitionT: number = 0;
     private transitionDuration: number = 1.2;
 
@@ -28,36 +39,43 @@ export class CameraStateManager {
             }
         }
 
-        let cameraTarget: CameraTarget;
+        let target: CameraTarget;
 
         switch (this.currentState) {
             case CameraState.INTRO:
-                cameraTarget = this.getWorldTarget(0);
+                target = this.getWorldTarget(0);
                 break;
-            
             case CameraState.EXPLORE:
-                cameraTarget = this.getWorldTarget(scrollValue);
+                target = this.getWorldTarget(scrollValue);
                 break;
-
             case CameraState.DETAIL:
-                cameraTarget = this.getProjectTarget();
+                target = this.getProjectTarget();
                 break;
-
             case CameraState.TRANSITION:
-                cameraTarget = this.getTransitionTarget(scrollValue);
+                target = this.getTransitionTarget(scrollValue);
                 break;
+            default:
+                target = this.getWorldTarget(0);
         }
 
-        this.previousTarget = { ...cameraTarget };
-        
+        // CINEMATIC POLISH: Inertia-based follow
+        // Instead of snapping to target, we lerp the current state
+        this.currentPosition.lerp(target.position, this.lerpFactor);
+        this.currentLookAt.lerp(target.lookAt, this.lerpFactor);
+        this.currentFov += (target.fov - this.currentFov) * this.fovLerpFactor;
+
+        const cameraTarget: CameraTarget = {
+            position: this.currentPosition.clone(),
+            lookAt: this.currentLookAt.clone(),
+            fov: this.currentFov
+        };
+
         const { currentSection, sectionProgress } = this.calculateSection(scrollValue);
         
-        // Now we correctly populate all fields required by WorldState
         const worldState: WorldState = {
             currentSection,
             sectionProgress,
             globalProgress: scrollValue,
-            // These values will be updated by World.update or used as defaults
             bakuPosition: new THREE.Vector3(),
             bakuRotation: new THREE.Quaternion(),
             bakuScale: new THREE.Vector3(1, 1, 1),
@@ -76,14 +94,14 @@ export class CameraStateManager {
 
     private calculateSection(scroll: number): { currentSection: WorldSection, sectionProgress: number } {
         const sections = [
-            { section: WorldSection.HOME, start: 0, end: 0.25 },
-            { section: WorldSection.WORKS, start: 0.25, end: 0.6 },
-            { section: WorldSection.ABOUT, start: 0.6, end: 0.8 },
-            { section: WorldSection.CONTACT, start: 0.8, end: 1.0 },
+            { section: WorldSection.HOME, start: 0, startEnd: 0.25 },
+            { section: WorldSection.WORKS, start: 0.25, startEnd: 0.6 },
+            { section: WorldSection.ABOUT, start: 0.6, startEnd: 0.8 },
+            { section: WorldSection.CONTACT, start: 0.8, startEnd: 1.0 },
         ];
 
-        const active = sections.find(s => scroll >= s.start && scroll <= s.end) || sections[0];
-        const progress = (scroll - active.start) / (active.end - active.start);
+        const active = sections.find(s => scroll >= s.start && scroll <= s.startEnd) || sections[0];
+        const progress = (scroll - active.start) / (active.startEnd - active.start);
 
         return {
             currentSection: active.section,
@@ -93,7 +111,6 @@ export class CameraStateManager {
 
     transitionTo(newState: CameraState, duration: number = 1.2) {
         if (this.currentState === newState) return;
-        
         this.targetState = newState;
         this.transitionDuration = duration;
         this.transitionT = 0;
@@ -119,5 +136,3 @@ export class CameraStateManager {
         return this.getWorldTarget(scroll);
     }
 }
-
-

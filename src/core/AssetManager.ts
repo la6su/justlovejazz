@@ -1,19 +1,27 @@
-
+// src/core/AssetManager.ts
 import * as THREE from 'three';
 import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
 
+/**
+ * VRAM-Aware Asset Manager
+ * Handles lifecycle of Textures, Geometries, and Materials to prevent memory leaks.
+ */
 export class AssetManager {
   private static instance: AssetManager;
+  
   private textureCache: Map<string, THREE.Texture> = new Map();
+  private geometryCache: Map<string, THREE.BufferGeometry> = new Map();
+  private materialCache: Map<string, THREE.Material> = new Map();
+  
+  // Group assets by "context" (e.g., 'intro', 'gallery', 'project-1') for easy bulk disposal
+  private contextGroups: Map<string, Set<THREE.Object3D | THREE.Texture | THREE.Material | THREE.BufferGeometry>> = new Map();
+
   private ktx2Loader: KTX2Loader;
   private textureLoader: THREE.TextureLoader;
 
   private constructor() {
     this.textureLoader = new THREE.TextureLoader();
     this.ktx2Loader = new KTX2Loader();
-    
-    // Note: KTX2Loader requires a worker and WASM files. 
-    // In a production environment, these paths would be configured.
     this.ktx2Loader.setWorkerLimit(2);
     this.ktx2Loader.setTranscoderPath('/basis/');
   }
@@ -26,65 +34,104 @@ export class AssetManager {
   }
 
   /**
-   * Loads a texture. Prefers KTX2 if the extension is .ktx2, otherwise falls back to TextureLoader.
+   * Register an asset to a specific context for later bulk disposal.
    */
-  public async loadTexture(url: string): Promise<THREE.Texture> {
+  public registerToContext(context: string, asset: THREE.Object3D | THREE.Texture | THREE.Material | THREE.BufferGeometry): void {
+    if (!this.contextGroups.has(context)) {
+      this.contextGroups.set(context, new Set());
+    }
+    this.contextGroups.get(context)!.add(asset);
+  }
+
+  /**
+   * Loads a texture with VRAM optimization.
+   */
+  public async loadTexture(url: string, context?: string): Promise<THREE.Texture> {
     if (this.textureCache.has(url)) {
-      return this.textureCache.get(url)!;
+      const tex = this.textureCache.get(url)!;
+      if (context) this.registerToContext(context, tex);
+      return tex;
     }
 
     let texture: THREE.Texture;
-
     try {
-      if (url.endsWith('.ktx2')) {
-        texture = await this.ktx2Loader.loadAsync(url);
-      } else {
-        texture = await this.textureLoader.loadAsync(url);
-      }
-      
-      // Production polish: set filtering to Bicubic if supported
+      texture = url.endsWith('.ktx2') 
+        ? await this.ktx2Loader.loadAsync(url) 
+        : await this.textureLoader.loadAsync(url);
+
+      // Production Grade: Bicubic Filtering
       if (texture.isTexture) {
         texture.minFilter = THREE.LinearMipmapLinearFilter;
         texture.magFilter = THREE.LinearFilter;
-        // @ts-ignore - Bicubic is available in newer Three.js versions
+        // @ts-ignore
         if (THREE.BicubicInterpolation) {
-          // @ts-ignore - Bicubic is available in newer Three.js versions
+          // @ts-ignore
           texture.filter = THREE.BicubicInterpolation;
         }
       }
     } catch (e) {
       console.error(`AssetManager: Failed to load texture ${url}`, e);
-      // Return a 1x1 transparent pixel as fallback
       texture = new THREE.DataTexture(new Uint8Array([0,0,0,0]), 1, 1);
     }
 
     this.textureCache.set(url, texture);
+    if (context) this.registerToContext(context, texture);
     return texture;
   }
 
   /**
-   * Unloads textures to free VRAM.
+   * Load/Cache Geometry.
    */
-  public unloadTexture(url: string): void {
-    const texture = this.textureCache.get(url);
-    if (texture) {
-      texture.dispose();
-      this.textureCache.delete(url);
-    }
+  public cacheGeometry(id: string, geometry: THREE.BufferGeometry, context?: string): THREE.BufferGeometry {
+    this.geometryCache.set(id, geometry);
+    if (context) this.registerToContext(context, geometry);
+    return geometry;
   }
 
   /**
-   * Bulk unload textures not in the provided list.
+   * Load/Cache Material.
    */
-  public purgeUnused(keepUrls: string[]): void {
-    for (const url of this.textureCache.keys()) {
-      if (!keepUrls.includes(url)) {
-        this.unloadTexture(url);
-      }
-    }
+  public cacheMaterial(id: string, material: THREE.Material, context?: string): THREE.Material {
+    this.materialCache.set(id, material);
+    if (context) this.registerToContext(context, material);
+    return material;
   }
 
-  public getCacheSize(): number {
-    return this.textureCache.size;
+  /**
+   * Full disposal of a specific context.
+   * CRITICAL for Cinematic experiences with high-res assets.
+   */
+  public disposeContext(context: string): void {
+    const assets = this.contextGroups.get(context);
+    if (!assets) return;
+
+    assets.forEach(asset => {
+      if ((asset as THREE.Texture).dispose) (asset as THREE.Texture).dispose();
+      if ((asset as THREE.Material).dispose) (asset as THREE.Material).dispose();
+      if ((asset as THREE.BufferGeometry).dispose) (asset as THREE.BufferGeometry).dispose();
+    });
+
+    this.contextGroups.delete(context);
+    console.log(`AssetManager: Context [${context}] disposed.`);
+  }
+
+  public purgeUnused(keepUrls: string[]): void {
+    this.textureCache.forEach((texture, url) => {
+      if (!keepUrls.includes(url)) {
+        texture.dispose();
+        this.textureCache.delete(url);
+      }
+    });
+  }
+
+  public purgeAll(): void {
+    this.textureCache.forEach(t => t.dispose());
+    this.geometryCache.forEach(g => g.dispose());
+    this.materialCache.forEach(m => m.dispose());
+    
+    this.textureCache.clear();
+    this.geometryCache.clear();
+    this.materialCache.clear();
+    this.contextGroups.clear();
   }
 }

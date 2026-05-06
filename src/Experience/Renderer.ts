@@ -1,22 +1,17 @@
-import * as THREE from 'three'
-import { WebGPURenderer } from 'three/webgpu'
-import { Sizes } from './Sizes'
-import { postProcessingNode } from '../shaders/postprocessing.tsl.ts'
+// src/Experience/Renderer.ts
+import * as THREE from 'three';
+import { WebGPURenderer } from 'three/webgpu';
+import { Sizes } from './Sizes';
+import { postProcessingNode } from '../shaders/postprocessing.tsl.ts';
 
 export class Renderer {
-    instance: WebGPURenderer | THREE.WebGLRenderer
+    instance: WebGPURenderer;
 
     constructor(sizes: Sizes) {
-        if (navigator.gpu && typeof WebGPURenderer === 'function') {
-            this.instance = new WebGPURenderer({ antialias: true });
-            
-            (this.instance as any).postProcessing = {
-                node: postProcessingNode
-            };
-        } else {
-            console.warn('WebGPU not supported or WebGPURenderer is not a constructor, falling back to WebGL');
-            this.instance = new THREE.WebGLRenderer({ antialias: true });
-        }
+        this.instance = new WebGPURenderer({ 
+            antialias: true,
+            powerPreference: 'high-performance'
+        });
 
         this.instance.setPixelRatio(sizes.dpr);
         this.instance.setSize(sizes.width, sizes.height);
@@ -26,16 +21,24 @@ export class Renderer {
         window.addEventListener('resize', () => {
             this.instance.setSize(sizes.width, sizes.height);
         });
+
+        this.initPostProcessing();
     }
 
+    private initPostProcessing() {
+        // In the latest Three.js WebGPU/TSL, post-processing is handled by 
+        // assigning a TSL node directly to the renderer's postProcessing property.
+        // This replaces the complex RenderPipeline/PostProcessing classes.
+        (this.instance as any).postProcessing = {
+            node: postProcessingNode
+        };
+    }
 
     async init() {
-        if (this.instance && typeof (this.instance as any).init === 'function') {
-            await (this.instance as any).init()
-        }
+        await this.instance.init();
     }
 
     update(scene: THREE.Scene, camera: THREE.Camera) {
-        this.instance.render(scene, camera)
+        this.instance.render(scene, camera);
     }
 }

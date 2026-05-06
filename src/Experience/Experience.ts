@@ -6,7 +6,7 @@ import { Renderer } from './Renderer'
 import { World } from './World/World'
 import { Baku } from './World/Baku'
 import { Environment } from './World/Environment'
-import { PostProcessing } from './PostProcessing'
+
 import { SmoothScroll } from './SmoothScroll'
 import { TextReveal } from './TextReveal'
 import { ContentReveal } from './ContentReveal'
@@ -35,7 +35,7 @@ export class Experience {
   environment!: Environment
   
   private smoothScroll!: SmoothScroll
-  private postProcessing!: PostProcessing
+
   private textReveal!: TextReveal
   private contentReveal!: ContentReveal
   private cursor!: Cursor
@@ -55,7 +55,9 @@ export class Experience {
         this.camera = new Camera(this.sizes)
         this.renderer = new Renderer(this.sizes)
         this.world = new World(this.camera)
-        
+    }
+
+    public setupEventListeners() {
         window.addEventListener('pointerdown', (e) => {
             if (this.galleryScene) {
                 this.galleryScene.handlePointerDown(e.clientX, e.clientY, this.camera.instance)
@@ -64,7 +66,7 @@ export class Experience {
     }
 
     async init() {
-      this.postProcessing = new PostProcessing(this)
+
       this.smoothScroll = new SmoothScroll()
       this.textReveal = new TextReveal()
       this.contentReveal = new ContentReveal()
@@ -81,13 +83,14 @@ export class Experience {
       this.update()
     }
 
-  update() {
-    const deltaTime = this.time.delta / 1000
-    this.time.update()
-    input.update()
-    this.cursor.update()
-
-    const normalizedScroll = input.getSmoothedScroll() / 1000
+    update() {
+        const deltaTime = this.time.delta / 1000
+        this.time.update()
+        this.smoothScroll.update(this.time.elapsed)
+        input.update()
+        this.cursor.update()
+        
+        const normalizedScroll = input.getSmoothedScroll() / 1000
 
     const { cameraTarget, worldState } = this.cameraStateManager.update(deltaTime, normalizedScroll);
     
@@ -122,7 +125,7 @@ export class Experience {
 
   destroy() {
     this.world.destroy()
-    this.postProcessing.destroy()
+
     this.smoothScroll.destroy()
     this.textReveal.destroy()
     this.contentReveal.destroy()

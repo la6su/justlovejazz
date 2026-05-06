@@ -26,7 +26,10 @@ export class Environment {
         this.setupLights(scene)
         this.setupParticles(scene)
         this.setupGrid(scene)
-        this.setupHDR(scene)
+    }
+
+    public async init(scene: THREE.Scene): Promise<void> {
+        await this.setupHDR(scene);
     }
 
     private async setupHDR(scene: THREE.Scene) {
@@ -107,7 +110,7 @@ export class Environment {
         
         this.grid = new THREE.Mesh(geometry, this.gridMaterial)
         this.grid.rotation.x = -Math.PI / 2
-        this.grid.position.y = -1
+        this.grid.position.y = -3
         
         scene.add(this.grid)
     }

@@ -20,14 +20,10 @@ export class SmoothScroll {
         this.lenis.on('scroll', (event: { scroll: number }) => {
             input.setScroll(event.scroll)
         })
+    }
 
-        // Use an arrow function to correctly preserve 'this' context in the loop
-        const raf = (time: number) => {
-            this.lenis.raf(time)
-            window.requestAnimationFrame(raf)
-        }
-        
-        window.requestAnimationFrame(raf)
+    update(time: number) {
+        this.lenis.raf(time)
     }
 
     destroy() {
