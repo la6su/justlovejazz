@@ -2,6 +2,11 @@
 
 ## 2026-05-07
 
+- Fixed: normalized smooth scroll progress to a stable `0..1` range.
+- Files: `src/Experience/Input.ts`, `src/Experience/SmoothScroll.ts`, `src/Experience/Experience.ts`.
+- Verified: `npm run type-check` passes; `npm run build` passes.
+- Next: move section ranges into `WorldConfig`.
+
 - Fixed: removed temporary red/cube debug scene and added explicit WebGPU renderer capability state.
 - Files: `src/Experience/Renderer.ts`, `src/core/Bootstrapper.ts`, `src/types/renderer.ts`.
 - Verified: `npm run type-check` passes; `npm run build` passes.

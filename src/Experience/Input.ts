@@ -6,6 +6,7 @@ export class Input {
 
     mouse: THREE.Vector2 = new THREE.Vector2()
     scrollY: number = 0
+    scrollLimit: number = 1
     smoothedScroll: number = 0
     lerpFactor: number = 0.35 // Much snappier for better directional response
 
@@ -19,8 +20,9 @@ export class Input {
         })
     }
 
-    setScroll(value: number) {
+    setScroll(value: number, limit: number = this.getDocumentScrollLimit()) {
         this.scrollY = value
+        this.scrollLimit = Math.max(1, limit)
     }
 
     getMouse() {
@@ -35,10 +37,27 @@ export class Input {
         return this.smoothedScroll
     }
 
+    getScrollProgress() {
+        return THREE.MathUtils.clamp(this.scrollY / this.scrollLimit, 0, 1)
+    }
+
+    getSmoothedScrollProgress() {
+        return THREE.MathUtils.clamp(this.smoothedScroll / this.scrollLimit, 0, 1)
+    }
+
     update() {
         // Linear Interpolation (Lerp) for smooth movement
         // formula: current = current + (target - current) * factor
         this.smoothedScroll += (this.scrollY - this.smoothedScroll) * this.lerpFactor
+    }
+
+    private getDocumentScrollLimit() {
+        const documentHeight = Math.max(
+            document.body.scrollHeight,
+            document.documentElement.scrollHeight
+        )
+
+        return Math.max(1, documentHeight - window.innerHeight)
     }
 }
 

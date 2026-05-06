@@ -90,7 +90,7 @@ export class Experience {
         input.update()
         this.cursor.update()
         
-        const normalizedScroll = input.getSmoothedScroll() / 1000
+        const normalizedScroll = input.getSmoothedScrollProgress()
 
     const { cameraTarget, worldState } = this.cameraStateManager.update(deltaTime, normalizedScroll);
     
