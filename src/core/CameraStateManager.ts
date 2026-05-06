@@ -124,14 +124,14 @@ export class CameraStateManager {
             currentSection,
             sectionProgress,
             globalProgress: scrollValue,
-            bakuPosition: new THREE.Vector3().lerpVectors(from.bakuPosition, to.bakuPosition, t),
-            bakuRotation: new THREE.Quaternion().slerpQuaternions(from.bakuRotation, to.bakuRotation, t),
-            bakuScale: new THREE.Vector3().lerpVectors(from.bakuScale, to.bakuScale, t),
-            bakuMaterial: from.bakuMaterial || to.bakuMaterial,
-            envColor: from.ambientColor || to.ambientColor || new THREE.Color(0x000000),
+            bakuPosition: new THREE.Vector3().lerpVectors(from.baku.position, to.baku.position, t),
+            bakuRotation: new THREE.Quaternion().slerpQuaternions(from.baku.rotation, to.baku.rotation, t),
+            bakuScale: new THREE.Vector3().lerpVectors(from.baku.scale, to.baku.scale, t),
+            bakuMaterial: from.baku.material || to.baku.material,
+            envColor: from.lighting.ambientColor || to.lighting.ambientColor || new THREE.Color(0x000000),
             envIntensity: THREE.MathUtils.lerp(
-                from.lightIntensity ?? 1.0,
-                to.lightIntensity ?? from.lightIntensity ?? 1.0,
+                from.lighting.intensity ?? 1.0,
+                to.lighting.intensity ?? from.lighting.intensity ?? 1.0,
                 t
             )
         };
@@ -153,9 +153,9 @@ export class CameraStateManager {
         const t = sectionProgress;
 
         return {
-            position: new THREE.Vector3().lerpVectors(from.cameraPosition, to.cameraPosition, t),
-            lookAt: new THREE.Vector3().lerpVectors(from.cameraTarget, to.cameraTarget, t),
-            fov: from.fov + (to.fov - from.fov) * t
+            position: new THREE.Vector3().lerpVectors(from.camera.position, to.camera.position, t),
+            lookAt: new THREE.Vector3().lerpVectors(from.camera.target, to.camera.target, t),
+            fov: from.camera.fov + (to.camera.fov - from.camera.fov) * t
         };
     }
 

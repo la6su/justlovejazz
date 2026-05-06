@@ -2,6 +2,11 @@
 
 ## 2026-05-07
 
+- Fixed: reshaped `WorldConfig` into typed camera/baku/lighting/post/ui presets.
+- Files: `src/core/WorldConfig.ts`, `src/core/CameraStateManager.ts`.
+- Verified: `npm run type-check` passes; `npm run build` passes.
+- Next: verify build, then wire `ui.showGallery` and post presets into runtime.
+
 - Fixed: moved section scroll ranges into `WorldConfig` and corrected light intensity interpolation.
 - Files: `src/core/WorldConfig.ts`, `src/core/CameraStateManager.ts`.
 - Verified: `npm run type-check` passes; `npm run build` passes.
