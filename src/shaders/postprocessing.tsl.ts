@@ -29,9 +29,9 @@ export const postProcessingNode = (inputTexture: any) => {
         const radialWeight = dist.x.mul(dist.x).add(dist.y.mul(dist.y)).add(float(0.1));
         const aberrationStrength = float(0.005).mul(radialWeight);
         
-        const colorR = inputTexture.sample(u.sub(vec2(aberrationStrength, 0.0)));
+        const colorR = inputTexture.sample(u.sub(vec2(aberrationStrength, float(0.0))));
         const colorG = inputTexture.sample(u);
-        const colorB = inputTexture.sample(u.add(vec2(aberrationStrength, 0.0)));
+        const colorB = inputTexture.sample(u.add(vec2(aberrationStrength, float(0.0))));
         
         let color = vec3(colorR.r, colorG.g, colorB.b).toVar();
 
