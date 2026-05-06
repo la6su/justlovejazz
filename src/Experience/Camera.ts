@@ -3,7 +3,7 @@ import * as THREE from 'three'
 import { Sizes } from './Sizes'
 import { input } from './Input'
 import { Easings } from '../Utils/Easings'
-import { type CameraState } from '../types/camera'
+import type {CameraTarget} from '../types/camera'
 
 export class Camera {
     instance: THREE.PerspectiveCamera
@@ -38,7 +38,7 @@ export class Camera {
      * Smoothly interpolates the camera base state towards a target.
      * Uses exponential smoothing for that "heavy" professional feel.
      */
-    updateSmooth(target: CameraState, deltaTime: number) {
+    updateSmooth(target: CameraTarget, deltaTime: number) {
         const lerpFactor = 1 - Math.exp(-5 * deltaTime); // Adjustable smoothing speed
         
         this.smoothPosition.lerp(target.position, lerpFactor);

@@ -18,28 +18,43 @@ export class World {
      * @param scrollValue The normalized scroll position
      * @param deltaTime Time since last frame
      */
-    update(scrollValue: number, deltaTime: number) {
-        if (this.sections.length === 0) return
+    /**
+     * Calculates the target camera state for a given scroll value.
+     * Pure function - does not apply changes to the camera.
+     */
+    calculateCameraTarget(scrollValue: number): CameraTarget {
+        if (this.sections.length === 0) {
+            return {
+                position: new THREE.Vector3(0, 0, 5),
+                target: new THREE.Vector3(0, 0, 0),
+                fov: 75
+            };
+        }
 
-        // 1. Determine current and next section
-        const index = Math.floor(scrollValue)
-        const t = scrollValue % 1
+        const index = Math.floor(scrollValue);
+        const t = scrollValue % 1;
 
-        const from = this.sections[index]
-        const to = this.sections[index + 1] || from
+        const from = this.sections[index] || this.sections[0];
+        const to = this.sections[index + 1] || from;
 
-        if (!from) return
-
-        // 2. Interpolate Camera Target
-        const targetState: CameraState = {
+        return {
             position: new THREE.Vector3().lerpVectors(from.config.cameraPosition, to.config.cameraPosition, t),
             target: new THREE.Vector3().lerpVectors(from.config.cameraTarget, to.config.cameraTarget, t),
             fov: from.config.fov + (to.config.fov - from.config.fov) * t
-        }
+        };
+    }
 
-        this.camera.updateSmooth(targetState, deltaTime)
+    update(scrollValue: number, deltaTime: number) {
+        // This method now primarily returns the World State for Baku and Env
+        // The CameraTarget is handled by the CameraStateManager
+        if (this.sections.length === 0) return;
 
-        // 3. Return Baku transform, material and environment for the Experience to apply
+        const index = Math.floor(scrollValue);
+        const t = scrollValue % 1;
+
+        const from = this.sections[index] || this.sections[0];
+        const to = this.sections[index + 1] || from;
+
         return {
             currentSectionId: from.config.id,
             bakuPosition: new THREE.Vector3().lerpVectors(from.config.bakuPosition, to.config.bakuPosition, t),
@@ -49,7 +64,7 @@ export class World {
             envColor: from.config.ambientColor || to.config.ambientColor || new THREE.Color(0x000000),
             envIntensity: from.config.lightIntensity !== undefined ? 
                 from.config.lightIntensity + (to.config.lightIntensity || from.config.lightIntensity) * t : 1.0
-        }
+        };
     }
 
     getSections() {

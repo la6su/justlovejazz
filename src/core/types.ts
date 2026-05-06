@@ -1,4 +1,3 @@
-
 export interface Project {
   id: string;
   title: string;
@@ -13,4 +12,11 @@ export enum ViewState {
   LIST = 'list',
   TRANSITIONING = 'transitioning',
   FULLSCREEN = 'fullscreen'
+}
+
+export enum CameraState {
+  INTRO = 'intro',
+  EXPLORE = 'explore',
+  DETAIL = 'detail',
+  TRANSITION = 'transition'
 }

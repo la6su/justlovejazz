@@ -15,7 +15,9 @@ import { UIManager } from '../UI/UIManager'
 import { input } from './Input'
 
 import { GalleryManager } from '../core/GalleryManager'
+import { CameraStateManager } from '../core/CameraStateManager'
 import { GalleryScene } from './World/GalleryScene'
+import {CameraState, ViewState} from '../core/types'
 
 import { PROJECTS } from '../Data/Projects'
 
@@ -41,7 +43,8 @@ export class Experience {
   // New Spatial System
   public galleryManager!: GalleryManager;
   public galleryScene!: GalleryScene;
-
+  public cameraStateManager!: CameraStateManager;
+  
   
   constructor(ui: UIManager) {
     this.sizes = new Sizes();
@@ -57,12 +60,12 @@ export class Experience {
     this.environment = new Environment(this.scene)
     this.galleryManager = new GalleryManager(PROJECTS)
     this.galleryScene = new GalleryScene(this.galleryManager)
+    this.cameraStateManager = new CameraStateManager(this.world, this.galleryManager)
 
     this.scene.add(this.galleryScene.group)
-
+    
     this.setupWorldSections()
     
-
     // Move heavy/circular initializations to init()
     window.addEventListener('pointerdown', (e) => {
       this.galleryScene.handlePointerDown(e.clientX, e.clientY, this.camera.instance)
@@ -149,15 +152,28 @@ export class Experience {
     input.update()
     this.cursor.update()
 
+    const normalizedScroll = input.getSmoothedScroll() / 1000
 
-    // Update Gallery System
+    // Sync Camera State with Gallery ViewState
+    const viewState = this.galleryManager.state;
+    switch (viewState) {
+        case ViewState.LIST: 
+            this.cameraStateManager.currentState = CameraState.EXPLORE; break;
+        case ViewState.TRANSITIONING: 
+            this.cameraStateManager.currentState = CameraState.TRANSITION; break;
+        case ViewState.FULLSCREEN: 
+            this.cameraStateManager.currentState = CameraState.DETAIL; break;
+    }
+
+    const cameraTarget = this.cameraStateManager.update(deltaTime, normalizedScroll);
+    this.camera.updateSmooth(cameraTarget, deltaTime);
+
     this.galleryManager.update(deltaTime)
     this.galleryScene.update(this.camera.instance, deltaTime)
     if (this.ui.gallery) {
       this.ui.gallery.update(this.galleryManager)
     }
 
-    const normalizedScroll = input.getSmoothedScroll() / 1000
     const worldState = this.world.update(normalizedScroll, deltaTime)
 
     if (worldState) {
