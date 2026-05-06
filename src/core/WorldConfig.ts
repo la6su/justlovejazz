@@ -24,6 +24,11 @@ export interface LightingPreset {
     intensity: number;
 }
 
+export interface FogPreset {
+    color: THREE.Color;
+    density: number;
+}
+
 export interface PostPreset {
     bloom: number;
     vignette: number;
@@ -41,6 +46,7 @@ export interface SectionConfig {
     camera: CameraPreset;
     baku: BakuPreset;
     lighting: LightingPreset;
+    fog: FogPreset;
     post: PostPreset;
     ui: UiPreset;
 }
@@ -70,6 +76,10 @@ export const WORLD_CONFIG: SectionConfig[] = [
             ambientColor: new THREE.Color(0x111122),
             intensity: 2.0
         },
+        fog: {
+            color: new THREE.Color(0x111122),
+            density: 0.02
+        },
         post: { bloom: 0.4, vignette: 0.45, grain: 0.03 },
         ui: { showGallery: false }
     },
@@ -96,6 +106,10 @@ export const WORLD_CONFIG: SectionConfig[] = [
         lighting: {
             ambientColor: new THREE.Color(0x001122),
             intensity: 1.0
+        },
+        fog: {
+            color: new THREE.Color(0x001122),
+            density: 0.05
         },
         post: { bloom: 0.25, vignette: 0.55, grain: 0.025 },
         ui: { showGallery: false }
@@ -124,6 +138,10 @@ export const WORLD_CONFIG: SectionConfig[] = [
             ambientColor: new THREE.Color(0x221100),
             intensity: 5.0
         },
+        fog: {
+            color: new THREE.Color(0x221100),
+            density: 0.08
+        },
         post: { bloom: 0.8, vignette: 0.5, grain: 0.035 },
         ui: { showGallery: true }
     },
@@ -150,6 +168,10 @@ export const WORLD_CONFIG: SectionConfig[] = [
         lighting: {
             ambientColor: new THREE.Color(0x111122),
             intensity: 2.0
+        },
+        fog: {
+            color: new THREE.Color(0x111122),
+            density: 0.02
         },
         post: { bloom: 0.35, vignette: 0.45, grain: 0.03 },
         ui: { showGallery: false }

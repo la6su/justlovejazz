@@ -5,6 +5,7 @@ import { Camera } from './Camera'
 import { Renderer } from './Renderer'
 import { Baku } from './World/Baku'
 import { Environment } from './World/Environment'
+import { WorldAtmosphere } from '../core/WorldAtmosphere'
 
 import { SmoothScroll } from './SmoothScroll'
 import { TextReveal } from './TextReveal'
@@ -36,6 +37,7 @@ export class Experience {
   private textReveal!: TextReveal
   private contentReveal!: ContentReveal
   private cursor!: Cursor
+  private atmosphere!: WorldAtmosphere
   
   // New Spatial System
   public galleryManager!: GalleryManager;
@@ -67,6 +69,7 @@ export class Experience {
       this.textReveal = new TextReveal()
       this.contentReveal = new ContentReveal()
       this.cursor = new Cursor()
+      this.atmosphere = new WorldAtmosphere(this.scene)
       
       await this.renderer.init()
 
@@ -103,6 +106,7 @@ export class Experience {
         if (this.currentSectionContext) {
             AssetManager.getInstance().disposeContext(this.currentSectionContext);
         }
+        this.atmosphere.setFog(config.fog.color, config.fog.density);
         this.currentSectionContext = config.context;
     }
     
@@ -133,6 +137,7 @@ export class Experience {
 
     this.camera.update(deltaTime);
     this.baku.update(deltaTime);
+    this.atmosphere.update();
     this.environment.update(this.time.elapsed / 1000, normalizedScroll, this.camera.getVelocity(), this.baku.position);
     this.renderer.update(this.scene, this.camera.instance);
     requestAnimationFrame((t) => this.update(t));
@@ -143,6 +148,7 @@ export class Experience {
     this.textReveal.destroy()
     this.contentReveal.destroy()
     this.cursor.destroy()
+    this.atmosphere.dispose()
     this.renderer.instance.dispose()
   }
 }
