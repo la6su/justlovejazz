@@ -13,7 +13,7 @@ export class Renderer {
 
         if (this.capabilities.mode === 'unsupported') {
             this.showUnsupportedMessage();
-            throw new Error('WebGPU is not supported by this browser.');
+            throw new Error('Neither WebGPU nor WebGL2 is supported by this browser.');
         }
 
         this.instance = new WebGPURenderer({ 
@@ -38,24 +38,37 @@ export class Renderer {
     }
 
     private detectCapabilities(sizes: Sizes): RendererCapabilities {
-        if (!navigator.gpu) {
+        const isMobile = sizes.isMobile;
+
+        if (navigator.gpu) {
             return {
-                mode: 'unsupported',
-                tier: 'low',
-                maxDpr: 1,
-                postProcessing: false,
+                mode: 'webgpu',
+                tier: isMobile ? 'medium' : 'high',
+                maxDpr: isMobile ? 1.5 : 2,
+                postProcessing: !isMobile,
+                floatRenderTargets: true
+            };
+        }
+
+        // Fallback to WebGL2
+        const canvas = document.createElement('canvas');
+        const gl = canvas.getContext('webgl2');
+        if (gl) {
+            return {
+                mode: 'webgl',
+                tier: isMobile ? 'low' : 'medium',
+                maxDpr: isMobile ? 1 : 1.5,
+                postProcessing: !isMobile,
                 floatRenderTargets: false
             };
         }
 
-        const isMobile = sizes.isMobile;
-
         return {
-            mode: 'webgpu',
-            tier: isMobile ? 'medium' : 'high',
-            maxDpr: isMobile ? 1.5 : 2,
-            postProcessing: !isMobile,
-            floatRenderTargets: true
+            mode: 'unsupported',
+            tier: 'low',
+            maxDpr: 1,
+            postProcessing: false,
+            floatRenderTargets: false
         };
     }
 

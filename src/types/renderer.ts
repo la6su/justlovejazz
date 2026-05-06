@@ -1,4 +1,4 @@
-export type RendererMode = 'webgpu' | 'unsupported'
+export type RendererMode = 'webgpu' | 'webgl' | 'unsupported'
 export type QualityTier = 'high' | 'medium' | 'low'
 
 export interface RendererCapabilities {

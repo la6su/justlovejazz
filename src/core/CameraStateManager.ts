@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { CameraState, WorldSection, type WorldState, type CameraTarget } from './types';
 import { GalleryManager } from './GalleryManager';
 import { WORLD_CONFIG } from './WorldConfig';
+import { easeInOutCubic } from './utils';
 
 /**
  * Cinematic Camera State Manager
@@ -92,11 +93,12 @@ export class CameraStateManager {
         }
 
         const [start, end] = active.range;
-        const progress = (scroll - start) / (end - start);
+        const rawProgress = (scroll - start) / (end - start);
+        const easedProgress = easeInOutCubic(Math.max(0, Math.min(1, rawProgress)));
 
         return {
             currentSection: active.id,
-            sectionProgress: Math.max(0, Math.min(1, progress))
+            sectionProgress: easedProgress
         };
     }
 

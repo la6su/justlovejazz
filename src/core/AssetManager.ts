@@ -95,28 +95,53 @@ export class AssetManager {
    * Full disposal of a specific context.
    * CRITICAL for Cinematic experiences with high-res assets.
    */
-  public disposeContext(context: string): void {
-    const assets = this.contextGroups.get(context);
-    if (!assets) return;
+    public disposeContext(context: string): void {
+        const assets = this.contextGroups.get(context);
+        if (!assets) return;
 
-    assets.forEach(asset => {
-      if ((asset as THREE.Texture).dispose) (asset as THREE.Texture).dispose();
-      if ((asset as THREE.Material).dispose) (asset as THREE.Material).dispose();
-      if ((asset as THREE.BufferGeometry).dispose) (asset as THREE.BufferGeometry).dispose();
-    });
+        assets.forEach(asset => {
+            this.disposeAsset(asset);
+        });
 
-    this.contextGroups.delete(context);
-    console.log(`AssetManager: Context [${context}] disposed.`);
-  }
+        this.contextGroups.delete(context);
+        console.log(`AssetManager: Context [${context}] disposed.`);
+    }
 
-  public purgeUnused(keepUrls: string[]): void {
-    this.textureCache.forEach((texture, url) => {
-      if (!keepUrls.includes(url)) {
-        texture.dispose();
-        this.textureCache.delete(url);
-      }
-    });
-  }
+    private disposeAsset(asset: any): void {
+        if (!asset) return;
+
+        if (asset.dispose) {
+            asset.dispose();
+        }
+
+        // Remove from caches if present
+        this.textureCache.forEach((val, key) => {
+            if (val === asset) this.textureCache.delete(key);
+        });
+        this.geometryCache.forEach((val, key) => {
+            if (val === asset) this.geometryCache.delete(key);
+        });
+        this.materialCache.forEach((val, key) => {
+            if (val === asset) this.materialCache.delete(key);
+        });
+    }
+
+    public purgeUnused(keepUrls: string[]): void {
+        const urlsToRemove: string[] = [];
+        this.textureCache.forEach((_texture, url) => {
+            if (!keepUrls.includes(url)) {
+                urlsToRemove.push(url);
+            }
+        });
+
+        urlsToRemove.forEach(url => {
+            const tex = this.textureCache.get(url);
+            if (tex) {
+                tex.dispose();
+                this.textureCache.delete(url);
+            }
+        });
+    }
 
   public purgeAll(): void {
     this.textureCache.forEach(t => t.dispose());
