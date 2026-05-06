@@ -6,6 +6,7 @@ import { GalleryManager } from './GalleryManager';
 
 export class CameraStateManager {
     public currentState: CameraState = CameraState.INTRO;
+    private targetState: CameraState = CameraState.EXPLORE;
     private previousTarget: CameraTarget | null = null;
     private transitionT: number = 0;
     private transitionDuration: number = 1.2;
@@ -20,6 +21,16 @@ export class CameraStateManager {
      * Determines where the camera SHOULD be based on state and input.
      */
     update(deltaTime: number, scrollValue: number): CameraTarget {
+        if (this.currentState === CameraState.TRANSITION) {
+            this.transitionT += deltaTime;
+            const progress = Math.min(this.transitionT / this.transitionDuration, 1);
+            this.galleryManager.transitionProgress = progress;
+
+            if (progress >= 1) {
+                this.currentState = this.targetState;
+            }
+        }
+
         let target: CameraTarget;
 
         switch (this.currentState) {
@@ -50,12 +61,10 @@ export class CameraStateManager {
     transitionTo(newState: CameraState, duration: number = 1.2) {
         if (this.currentState === newState) return;
         
+        this.targetState = newState;
         this.transitionDuration = duration;
         this.transitionT = 0;
         this.currentState = CameraState.TRANSITION;
-        
-        // We set a timer or flag to move to the final state after transition
-        // For simplicity, we handle this in update() or via a callback
     }
 
     private getWorldTarget(scroll: number): CameraTarget {

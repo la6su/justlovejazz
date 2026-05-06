@@ -154,17 +154,6 @@ export class Experience {
 
     const normalizedScroll = input.getSmoothedScroll() / 1000
 
-    // Sync Camera State with Gallery ViewState
-    const viewState = this.galleryManager.state;
-    switch (viewState) {
-        case ViewState.LIST: 
-            this.cameraStateManager.currentState = CameraState.EXPLORE; break;
-        case ViewState.TRANSITIONING: 
-            this.cameraStateManager.currentState = CameraState.TRANSITION; break;
-        case ViewState.FULLSCREEN: 
-            this.cameraStateManager.currentState = CameraState.DETAIL; break;
-    }
-
     const cameraTarget = this.cameraStateManager.update(deltaTime, normalizedScroll);
     this.camera.updateSmooth(cameraTarget, deltaTime);
 

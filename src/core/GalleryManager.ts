@@ -1,13 +1,14 @@
-
 import * as THREE from 'three';
-import { type Project, ViewState } from './types';
+import { type Project } from './types';
 import { Easings } from '../Utils/Easings';
+import { Experience } from '../Experience/Experience';
+import { CameraState } from './types';
 
 export class GalleryManager {
     public activeIndex = 0;
     public smoothedIndex = 0; 
-    public state: ViewState = ViewState.LIST;
     public transitionProgress = 0; // 0 to 1
+    public isTransitioning = false;
     
     // Motion state
     public scrollX: number = 0;
@@ -28,8 +29,9 @@ export class GalleryManager {
         return this.projects.length * this.STEP;
     }
 
-    public onProjectChange?: (project: Project) => void;
-    public onStateChange?: (state: ViewState, progress: number) => void;
+    public get activeProject(): Project {
+        return this.projects[this.activeIndex];
+    }
 
     constructor(public projects: Project[]) {}
 
@@ -77,20 +79,27 @@ export class GalleryManager {
 
     public setDragVelocity(velocity: number) {
         this.velocity = velocity * this.SENSITIVITY;
-        // Apply velocity to target to let the snapping system handle it
         this.targetScrollX += this.velocity * 10; 
     }
 
-    startFullscreen() {
-        if (this.state === ViewState.LIST) {
-            this.state = ViewState.TRANSITIONING;
+    public startFullscreen() {
+        this.setTransitioning(true);
+        if (Experience.instance) {
+            Experience.instance.cameraStateManager.transitionTo(CameraState.DETAIL);
+        }
+    }
+
+    public setTransitioning(active: boolean) {
+        this.isTransitioning = active;
+        if (active && this.transitionProgress >= 1) {
             this.transitionProgress = 0;
         }
     }
 
+    public onProjectChange?: (project: Project) => void;
+
     update(delta: number) {
         // 1. Professional Motion: Exponential Decay / Snapping
-        // Instead of linear velocity, we interpolate scrollX towards targetScrollX
         const dist = this.targetScrollX - this.scrollX;
         this.scrollX += dist * this.SMOOTHING;
 
@@ -104,22 +113,6 @@ export class GalleryManager {
             if (this.onProjectChange) this.onProjectChange(this.projects[this.activeIndex]);
         }
 
-        // 3. Non-linear Fullscreen Transition
-        if (this.state === ViewState.TRANSITIONING) {
-            this.transitionProgress += delta * 0.8; // Base speed
-            
-            if (this.transitionProgress >= 1) {
-                this.transitionProgress = 1;
-                this.state = ViewState.FULLSCREEN;
-            }
-            
-            if (this.onStateChange) {
-                // We pass the eased value to the listener for visual application
-                const easedProgress = Easings.easeInOutQuart(Math.min(this.transitionProgress, 1));
-                this.onStateChange(this.state, easedProgress);
-            }
-        } else if (this.onStateChange) {
-            this.onStateChange(this.state, this.transitionProgress);
-        }
+        // Transition progress is now driven by CameraStateManager
     }
 }

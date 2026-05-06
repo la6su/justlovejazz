@@ -55,23 +55,19 @@ export class GalleryScene {
     update(camera: THREE.Camera, _delta: number) {
       const progress = this.manager.transitionProgress;
       const activeIndex = this.manager.activeIndex;
-      const state = this.manager.state;
       
       const trackLength = this.manager.trackLength;
       const halfTrack = trackLength / 2;
-
-      // Use a smoothed version of progress for visuals (already handled in GalleryManager.update, 
-      // but for clarity we can apply it here if needed. 
-      // Actually, we'll use the raw progress and apply easing if we want specific curve control)
+      
       const visualProgress = progress; 
-
+      
       this.planes.forEach((mesh, i) => {
-        if (i === activeIndex && state !== 0) { // State 0 = LIST
+        if (i === activeIndex && progress > 0) { // Progress > 0 means we are transitioning or in fullscreen
           // ACTIVE MESH: Transition to Fullscreen
           const fullscreenX = 0;
           const fullscreenZ = 1; 
           const fullscreenScale = 15; 
-
+          
           mesh.position.x = THREE.MathUtils.lerp(this.manager.transitionStartPos.x, fullscreenX, visualProgress);
           mesh.position.y = THREE.MathUtils.lerp(this.manager.transitionStartPos.y, 0, visualProgress);
           mesh.position.z = THREE.MathUtils.lerp(this.manager.transitionStartPos.z, fullscreenZ, visualProgress);
@@ -86,13 +82,11 @@ export class GalleryScene {
 
           const relativeX = pos / this.manager.STEP;
           
-          if (Math.abs(relativeX) <= 1.5 && state !== 2) { // State 2 = FULLSCREEN
+          if (Math.abs(relativeX) <= 1.5 && progress < 1) { // progress < 1 means not fully in fullscreen
             const targetX = relativeX * 2.2;
             const targetZ = Math.abs(relativeX) < 0.5 ? 0 : -1;
             const targetScale = 0.8;
             
-            // REMOVED: lerp(..., 0.1) to prevent "floaty" feeling. 
-            // The smoothness now comes solely from this.manager.scrollX.
             mesh.position.x = targetX;
             mesh.position.z = targetZ;
             mesh.scale.setScalar(targetScale);
