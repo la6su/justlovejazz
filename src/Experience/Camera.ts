@@ -36,10 +36,12 @@ export class Camera {
 
     /**
      * Smoothly interpolates the camera base state towards a target.
-     * Uses exponential smoothing for that "heavy" professional feel.
+     * @param target The target state
+     * @param deltaTime Time delta
+     * @param smoothing Adjustable smoothing speed (default: 5 for "heavy" feel)
      */
-    updateSmooth(target: CameraTarget, deltaTime: number) {
-        const lerpFactor = 1 - Math.exp(-5 * deltaTime); // Adjustable smoothing speed
+    updateSmooth(target: CameraTarget, deltaTime: number, smoothing: number = 5) {
+        const lerpFactor = 1 - Math.exp(-smoothing * deltaTime); 
         
         this.smoothPosition.lerp(target.position, lerpFactor);
         this.smoothTarget.lerp(target.target, lerpFactor);

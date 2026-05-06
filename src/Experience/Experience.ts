@@ -154,16 +154,17 @@ export class Experience {
 
     const normalizedScroll = input.getSmoothedScroll() / 1000
 
-    const cameraTarget = this.cameraStateManager.update(deltaTime, normalizedScroll);
-    this.camera.updateSmooth(cameraTarget, deltaTime);
+    const { cameraTarget, worldState } = this.cameraStateManager.update(deltaTime, normalizedScroll);
+    
+    // Apply state-dependent smoothing
+    const smoothing = this.cameraStateManager.currentState === CameraState.TRANSITION ? 8 : 5;
+    this.camera.updateSmooth(cameraTarget, deltaTime, smoothing);
 
     this.galleryManager.update(deltaTime)
     this.galleryScene.update(this.camera.instance, deltaTime)
     if (this.ui.gallery) {
       this.ui.gallery.update(this.galleryManager)
     }
-
-    const worldState = this.world.update(normalizedScroll, deltaTime)
 
     if (worldState) {
       this.baku.position.copy(worldState.bakuPosition)
@@ -173,7 +174,7 @@ export class Experience {
         this.baku.updateMaterial(worldState.bakuMaterial)
       }
       this.environment.setLighting(worldState.envColor, worldState.envIntensity)
-      
+
       // Sync UI visibility with current world section
     }
 

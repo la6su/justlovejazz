@@ -17,10 +17,10 @@ export class CameraStateManager {
     ) {}
 
     /**
-     * Main update loop for camera logic.
-     * Determines where the camera SHOULD be based on state and input.
+     * Main update loop for camera and world logic.
+     * Ensures atomic synchronization between camera targets and world objects.
      */
-    update(deltaTime: number, scrollValue: number): CameraTarget {
+    update(deltaTime: number, scrollValue: number): { cameraTarget: CameraTarget, worldState: any } {
         if (this.currentState === CameraState.TRANSITION) {
             this.transitionT += deltaTime;
             const progress = Math.min(this.transitionT / this.transitionDuration, 1);
@@ -31,28 +31,35 @@ export class CameraStateManager {
             }
         }
 
-        let target: CameraTarget;
+        let cameraTarget: CameraTarget;
 
         switch (this.currentState) {
             case CameraState.INTRO:
-                target = this.getWorldTarget(0);
+                cameraTarget = this.getWorldTarget(0);
                 break;
             
             case CameraState.EXPLORE:
-                target = this.getWorldTarget(scrollValue);
+                cameraTarget = this.getWorldTarget(scrollValue);
                 break;
 
             case CameraState.DETAIL:
-                target = this.getProjectTarget();
+                cameraTarget = this.getProjectTarget();
                 break;
 
             case CameraState.TRANSITION:
-                target = this.getTransitionTarget(scrollValue);
+                cameraTarget = this.getTransitionTarget(scrollValue);
                 break;
         }
 
-        this.previousTarget = { ...target };
-        return target;
+        this.previousTarget = { ...cameraTarget };
+        
+        // Atomic synchronization: update world state in the same tick as camera target
+        const worldState = this.world.update(scrollValue, deltaTime);
+
+        return {
+            cameraTarget,
+            worldState
+        };
     }
 
     /**
