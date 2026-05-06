@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { GalleryManager } from '../../core/GalleryManager';
 import { ProjectMaterial } from '../../shaders/ProjectMaterial';
+import { AssetManager } from '../../core/AssetManager';
 
 export class GalleryScene {
   public group = new THREE.Group();
@@ -11,14 +12,20 @@ export class GalleryScene {
   private mouse = new THREE.Vector2();
 
   constructor(private manager: GalleryManager) {
-    this.init();
+    // Init is now called asynchronously from Bootstrapper
   }
 
-  private init() {
-    this.manager.projects.forEach((proj, i) => {
-      const matWrapper = new ProjectMaterial(proj.textureUrl, proj.detailTextureUrl, proj.color);
-      this.materials.push(matWrapper);
+  public async init() {
+    const assetManager = AssetManager.getInstance();
+    
+    const projectData = this.manager.projects.map(async (proj, i) => {
+      const [tex, detTex] = await Promise.all([
+        assetManager.loadTexture(proj.textureUrl),
+        assetManager.loadTexture(proj.detailTextureUrl)
+      ]);
 
+      const matWrapper = new ProjectMaterial(tex, detTex, proj.color);
+      
       const geometry = new THREE.PlaneGeometry(1, 1.4);
       const mesh = new THREE.Mesh(geometry, matWrapper.material);
       
@@ -27,6 +34,13 @@ export class GalleryScene {
         index: i 
       };
 
+      return { matWrapper, mesh };
+    });
+
+    const results = await Promise.all(projectData);
+
+    results.forEach(({ matWrapper, mesh }) => {
+      this.materials.push(matWrapper);
       this.planes.push(mesh);
       this.group.add(mesh);
     });
@@ -55,6 +69,21 @@ export class GalleryScene {
     update(camera: THREE.Camera, _delta: number) {
       const progress = this.manager.transitionProgress;
       const activeIndex = this.manager.activeIndex;
+      
+      // --- VRAM Optimization: Purge unused textures ---
+      // We keep textures for the active project and its immediate neighbors
+      if (Math.random() < 0.01) { // Run occasionally to avoid frame drops
+        const keepUrls: string[] = [];
+        const neighbors = [activeIndex - 1, activeIndex, activeIndex + 1];
+        
+        neighbors.forEach(idx => {
+          if (idx >= 0 && idx < this.manager.projects.length) {
+            const p = this.manager.projects[idx];
+            keepUrls.push(p.textureUrl, p.detailTextureUrl);
+          }
+        });
+        AssetManager.getInstance().purgeUnused(keepUrls);
+      }
       
       const trackLength = this.manager.trackLength;
       const halfTrack = trackLength / 2;

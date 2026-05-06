@@ -7,11 +7,11 @@ export class ProjectMaterial {
   public material: MeshBasicNodeMaterial;
   private progressUniform = uniform(0);
 
-  constructor(textureUrl: string, detailTextureUrl: string, baseColor: string) {
+  constructor(mainTex: THREE.Texture, detailTex: THREE.Texture, baseColor: string) {
     this.material = new MeshBasicNodeMaterial();
 
-    const tex = texture(new THREE.TextureLoader().load(textureUrl));
-    const detTex = texture(new THREE.TextureLoader().load(detailTextureUrl));
+    const tex = texture(mainTex);
+    const detTex = texture(detailTex);
     const col = color(baseColor);
     const p = this.progressUniform;
 

@@ -1,7 +1,7 @@
 // src/main.ts
 import './assets/main.less'
 import { UIManager } from './UI/UIManager'
-import { Experience } from './Experience/Experience'
+import { Bootstrapper } from './core/Bootstrapper'
 
 async function bootstrap() {
     try {
@@ -9,9 +9,8 @@ async function bootstrap() {
         const ui = new UIManager()
         await ui.init()
 
-        // 2. Initialize 3D Experience with UI dependency
-        const experience = new Experience(ui)
-        await experience.init()
+        // 2. Use Bootstrapper to wire the 3D Experience
+        const experience = await Bootstrapper.init(ui)
 
         console.log('Application successfully bootstrapped')
     } catch (err) {
