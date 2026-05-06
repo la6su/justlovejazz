@@ -1,4 +1,3 @@
-import * as THREE from 'three';
 import { Experience } from '../Experience/Experience';
 import { GalleryManager } from './GalleryManager';
 import { CameraStateManager } from './CameraStateManager';
@@ -18,15 +17,6 @@ export class Bootstrapper {
         
         // 1. Setup Core Event Listeners
         experience.setupEventListeners();
-
-        const debugMaterial = new THREE.MeshBasicMaterial({ color: 0x00ffff });
-        const debugMesh = new THREE.Mesh(
-            new THREE.BoxGeometry(1, 1, 1),
-            debugMaterial
-        );
-        debugMesh.name = 'debug-visibility-cube';
-        debugMesh.position.set(0, 0, 0);
-        experience.scene.add(debugMesh);
         
         // 2. Content & World Configuration
         experience.galleryManager = new GalleryManager(PROJECTS);
@@ -43,11 +33,7 @@ export class Bootstrapper {
         
         // 3. Global Scene Objects & Environment
         experience.baku = new Baku();
-        experience.baku.scale.setScalar(5); // Make it huge for visibility
         experience.scene.add(experience.baku);
-
-        const grid = new THREE.GridHelper(20, 20, 0x00ff00, 0x444444);
-        experience.scene.add(grid);
         
         experience.environment = new Environment(experience.scene);
         await experience.environment.init(experience.scene);

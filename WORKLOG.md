@@ -2,6 +2,11 @@
 
 ## 2026-05-07
 
+- Fixed: removed temporary red/cube debug scene and added explicit WebGPU renderer capability state.
+- Files: `src/Experience/Renderer.ts`, `src/core/Bootstrapper.ts`, `src/types/renderer.ts`.
+- Verified: `npm run type-check` passes; `npm run build` passes.
+- Next: verify build, then continue with scroll normalization/world timeline.
+
 - Fixed: restored visible Three.js scene and stabilized TypeScript build.
 - Files: `src/Experience/Time.ts`, `src/Experience/Camera.ts`, `src/core/Bootstrapper.ts`, `src/Experience/World/Environment.ts`, `src/shaders/*`, `src/UI/*`, `package.json`.
 - Verified: `npm run type-check` passes; `npm run build` passes.
