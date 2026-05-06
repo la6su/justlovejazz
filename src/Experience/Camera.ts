@@ -86,10 +86,12 @@ export class Camera {
     }
 
     update(deltaTime: number) {
+        const safeDelta = Math.max(deltaTime, 1 / 120)
+
         // 1. Inertia-based Cursor Follow (The "Junni Feel")
         const mouse = input.getMouse()
         
-        const dt = Math.min(0.1, deltaTime) * 0.5
+        const dt = Math.min(0.1, safeDelta) * 0.5
         
         let diff = new THREE.Vector2().subVectors(mouse, this.cursorPosDelay).multiplyScalar(dt)
         diff.multiply(diff.clone().addScalar(1.0))
@@ -111,7 +113,7 @@ export class Camera {
 
         // 3. Dynamic FOV Offset with Cinematic Easing
         if (this.fovTransitionT < 1.0) {
-            this.fovTransitionT = Math.min(1.0, this.fovTransitionT + deltaTime / this.fovDuration)
+            this.fovTransitionT = Math.min(1.0, this.fovTransitionT + safeDelta / this.fovDuration)
             const t = Easings.easeInOutQuart(this.fovTransitionT)
             this.fovOffset = this.fovStartOffset + (this.targetFovOffset - this.fovStartOffset) * t
         }
@@ -143,7 +145,7 @@ export class Camera {
         }
 
         // Calculate Velocity for Environment Interaction
-        this.velocity.subVectors(this.instance.position, this.prevPosition).multiplyScalar(1 / deltaTime)
+        this.velocity.subVectors(this.instance.position, this.prevPosition).multiplyScalar(1 / safeDelta)
         this.prevPosition.copy(this.instance.position)
 
         // Always look at center for now (unless Projects overrides this)

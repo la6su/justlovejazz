@@ -1,7 +1,7 @@
 
 import * as THREE from 'three';
 import { MeshBasicNodeMaterial } from 'three/webgpu';
-import { uniform, vec3, float, color, texture, uv, mix, positionLocal } from 'three/tsl';
+import { uniform, vec3, float, texture, uv, mix, positionLocal } from 'three/tsl';
 
 export class ProjectMaterial {
   public material: MeshBasicNodeMaterial;
@@ -12,7 +12,8 @@ export class ProjectMaterial {
 
     const tex = texture(mainTex);
     const detTex = texture(detailTex);
-    const col = color(baseColor).toVec3();
+    const parsedColor = new THREE.Color(baseColor);
+    const col = vec3(parsedColor.r, parsedColor.g, parsedColor.b);
     const p = this.progressUniform;
 
     // --- Vertex Stage: GPU Distortion (Cinematic Pop) ---
@@ -57,4 +58,3 @@ export class ProjectMaterial {
     this.progressUniform.value = value;
   }
 }
-

@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { type Project } from './types';
-import { Easings } from '../Utils/Easings';
 import { Experience } from '../Experience/Experience';
 import { CameraState } from './types';
 
@@ -97,8 +96,9 @@ export class GalleryManager {
     }
 
     public onProjectChange?: (project: Project) => void;
+    public onStateChange?: (state: CameraState, progress: number) => void;
 
-    update(delta: number) {
+    update(_delta: number) {
         // 1. Professional Motion: Exponential Decay / Snapping
         const dist = this.targetScrollX - this.scrollX;
         this.scrollX += dist * this.SMOOTHING;
@@ -114,5 +114,9 @@ export class GalleryManager {
         }
 
         // Transition progress is now driven by CameraStateManager
+        this.onStateChange?.(
+            Experience.instance?.cameraStateManager?.currentState ?? CameraState.EXPLORE,
+            this.transitionProgress
+        );
     }
 }

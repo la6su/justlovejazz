@@ -1,8 +1,8 @@
 // src/core/CameraStateManager.ts
 import * as THREE from 'three';
 import { CameraState, WorldSection, type WorldState, type CameraTarget } from './types';
-import { World } from '../Experience/World/World';
 import { GalleryManager } from './GalleryManager';
+import { WORLD_CONFIG } from './WorldConfig';
 
 /**
  * Cinematic Camera State Manager
@@ -11,11 +11,11 @@ import { GalleryManager } from './GalleryManager';
 export class CameraStateManager {
     public currentState: CameraState = CameraState.INTRO;
     private targetState: CameraState = CameraState.EXPLORE;
-    
+
     // Smoothness parameters
-    private lerpFactor: number = 0.05; 
+    private lerpFactor: number = 0.05;
     private fovLerpFactor: number = 0.03;
-    
+
     private currentPosition = new THREE.Vector3();
     private currentLookAt = new THREE.Vector3();
     private currentFov = 75;
@@ -24,7 +24,6 @@ export class CameraStateManager {
     private transitionDuration: number = 1.2;
 
     constructor(
-        private world: World,
         private galleryManager: GalleryManager
     ) {}
 
@@ -43,23 +42,22 @@ export class CameraStateManager {
 
         switch (this.currentState) {
             case CameraState.INTRO:
-                target = this.getWorldTarget(0);
+                target = this.calculateCameraTarget(0);
                 break;
             case CameraState.EXPLORE:
-                target = this.getWorldTarget(scrollValue);
+                target = this.calculateCameraTarget(scrollValue);
                 break;
             case CameraState.DETAIL:
                 target = this.getProjectTarget();
                 break;
             case CameraState.TRANSITION:
-                target = this.getTransitionTarget(scrollValue);
+                target = this.calculateCameraTarget(scrollValue);
                 break;
             default:
-                target = this.getWorldTarget(0);
+                target = this.calculateCameraTarget(0);
         }
 
         // CINEMATIC POLISH: Inertia-based follow
-        // Instead of snapping to target, we lerp the current state
         this.currentPosition.lerp(target.position, this.lerpFactor);
         this.currentLookAt.lerp(target.lookAt, this.lerpFactor);
         this.currentFov += (target.fov - this.currentFov) * this.fovLerpFactor;
@@ -72,19 +70,7 @@ export class CameraStateManager {
 
         const { currentSection, sectionProgress } = this.calculateSection(scrollValue);
         
-        const worldState: WorldState = {
-            currentSection,
-            sectionProgress,
-            globalProgress: scrollValue,
-            bakuPosition: new THREE.Vector3(),
-            bakuRotation: new THREE.Quaternion(),
-            bakuScale: new THREE.Vector3(1, 1, 1),
-            bakuMaterial: {},
-            envColor: new THREE.Color(0x000000),
-            envIntensity: 1.0
-        };
-
-        this.world.update(scrollValue, deltaTime, worldState);
+        const worldState: WorldState = this.calculateWorldState(scrollValue, currentSection, sectionProgress);
 
         return {
             cameraTarget,
@@ -109,6 +95,62 @@ export class CameraStateManager {
         };
     }
 
+    private calculateWorldState(scrollValue: number, currentSection: WorldSection, sectionProgress: number): WorldState {
+        if (WORLD_CONFIG.length === 0) {
+            return {
+                currentSection,
+                sectionProgress,
+                globalProgress: scrollValue,
+                bakuPosition: new THREE.Vector3(),
+                bakuRotation: new THREE.Quaternion(),
+                bakuScale: new THREE.Vector3(1, 1, 1),
+                bakuMaterial: {},
+                envColor: new THREE.Color(0x000000),
+                envIntensity: 1.0
+            };
+        }
+
+        const index = WORLD_CONFIG.findIndex(s => s.id === currentSection);
+        const from = WORLD_CONFIG[index] || WORLD_CONFIG[0];
+        const to = WORLD_CONFIG[index + 1] || from;
+        const t = sectionProgress;
+
+        return {
+            currentSection,
+            sectionProgress,
+            globalProgress: scrollValue,
+            bakuPosition: new THREE.Vector3().lerpVectors(from.bakuPosition, to.bakuPosition, t),
+            bakuRotation: new THREE.Quaternion().slerpQuaternions(from.bakuRotation, to.bakuRotation, t),
+            bakuScale: new THREE.Vector3().lerpVectors(from.bakuScale, to.bakuScale, t),
+            bakuMaterial: from.bakuMaterial || to.bakuMaterial,
+            envColor: from.ambientColor || to.ambientColor || new THREE.Color(0x000000),
+            envIntensity: from.lightIntensity !== undefined ?
+                from.lightIntensity + (to.lightIntensity || from.lightIntensity) * t : 1.0
+        };
+    }
+
+    private calculateCameraTarget(scroll: number): CameraTarget {
+        if (WORLD_CONFIG.length === 0) {
+            return {
+                position: new THREE.Vector3(0, 0, 5),
+                lookAt: new THREE.Vector3(0, 0, 0),
+                fov: 75
+            };
+        }
+
+        const { currentSection, sectionProgress } = this.calculateSection(scroll);
+        const index = WORLD_CONFIG.findIndex(s => s.id === currentSection);
+        const from = WORLD_CONFIG[index] || WORLD_CONFIG[0];
+        const to = WORLD_CONFIG[index + 1] || from;
+        const t = sectionProgress;
+
+        return {
+            position: new THREE.Vector3().lerpVectors(from.cameraPosition, to.cameraPosition, t),
+            lookAt: new THREE.Vector3().lerpVectors(from.cameraTarget, to.cameraTarget, t),
+            fov: from.fov + (to.fov - from.fov) * t
+        };
+    }
+
     transitionTo(newState: CameraState, duration: number = 1.2) {
         if (this.currentState === newState) return;
         this.targetState = newState;
@@ -117,22 +159,14 @@ export class CameraStateManager {
         this.currentState = CameraState.TRANSITION;
     }
 
-    private getWorldTarget(scroll: number): CameraTarget {
-        return this.world.calculateCameraTarget(scroll);
-    }
-
     private getProjectTarget(): CameraTarget {
         const project = this.galleryManager.activeProject;
-        if (!project) return this.getWorldTarget(0);
+        if (!project) return this.calculateCameraTarget(0);
 
         return {
             position: new THREE.Vector3(project.viewPosition.x, project.viewPosition.y, project.viewPosition.z),
             lookAt: new THREE.Vector3(project.viewLookAt.x, project.viewLookAt.y, project.viewLookAt.z),
             fov: 45
         };
-    }
-
-    private getTransitionTarget(scroll: number): CameraTarget {
-        return this.getWorldTarget(scroll);
     }
 }

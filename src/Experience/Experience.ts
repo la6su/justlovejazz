@@ -3,7 +3,6 @@ import { Sizes } from './Sizes'
 import { Time } from './Time'
 import { Camera } from './Camera'
 import { Renderer } from './Renderer'
-import { World } from './World/World'
 import { Baku } from './World/Baku'
 import { Environment } from './World/Environment'
 
@@ -17,9 +16,7 @@ import { input } from './Input'
 import { GalleryManager } from '../core/GalleryManager'
 import { CameraStateManager } from '../core/CameraStateManager'
 import { GalleryScene } from './World/GalleryScene'
-import {CameraState, ViewState} from '../core/types'
-
-import { PROJECTS } from '../Data/Projects'
+import { CameraState } from '../core/types'
 
 export class Experience {
   static instance: Experience
@@ -30,7 +27,6 @@ export class Experience {
   time!: Time
   camera!: Camera
   renderer!: Renderer
-  world!: World
   baku!: Baku
   environment!: Environment
   
@@ -54,7 +50,6 @@ export class Experience {
         this.ui = ui;
         this.camera = new Camera(this.sizes)
         this.renderer = new Renderer(this.sizes)
-        this.world = new World(this.camera)
     }
 
     public setupEventListeners() {
@@ -72,6 +67,12 @@ export class Experience {
       this.cursor = new Cursor()
       
       await this.renderer.init()
+
+      // DEBUG: Force camera to a safe position to verify visibility
+      this.camera.instance.position.set(0, 5, 10)
+      this.camera.instance.lookAt(0, 0, 0)
+      this.camera.instance.updateProjectionMatrix()
+
       const loader = document.getElementById('pageLoader')
       if (loader) {
         loader.style.opacity = '0'
@@ -83,8 +84,8 @@ export class Experience {
     }
 
     update(time: number) {
-        const deltaTime = this.time.delta / 1000
         this.time.update(time)
+        const deltaTime = this.time.delta / 1000
         this.smoothScroll.update(time)
         input.update()
         this.cursor.update()
@@ -123,8 +124,6 @@ export class Experience {
   }
 
   destroy() {
-    this.world.destroy()
-
     this.smoothScroll.destroy()
     this.textReveal.destroy()
     this.contentReveal.destroy()

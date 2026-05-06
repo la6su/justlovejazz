@@ -59,15 +59,9 @@ export class AssetManager {
         ? await this.ktx2Loader.loadAsync(url) 
         : await this.textureLoader.loadAsync(url);
 
-      // Production Grade: Bicubic Filtering
       if (texture.isTexture) {
         texture.minFilter = THREE.LinearMipmapLinearFilter;
         texture.magFilter = THREE.LinearFilter;
-        // @ts-ignore
-        if (THREE.BicubicInterpolation) {
-          // @ts-ignore
-          texture.filter = THREE.BicubicInterpolation;
-        }
       }
     } catch (e) {
       console.error(`AssetManager: Failed to load texture ${url}`, e);

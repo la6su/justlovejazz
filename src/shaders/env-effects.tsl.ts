@@ -1,17 +1,11 @@
 import { 
     vec3, 
-    mul, 
-    add, 
-    sub, 
-    fract, 
-    abs, 
     mix, 
     smoothstep, 
-    exp,
     float
 } from 'three/tsl'
 
-export const cinematicGridNode = (uv: any, time: any) => {
+export const cinematicGridNode = (uv: any, _time: any) => {
     const gridScale = 10.0;
     const gridThickness = 0.05;
     

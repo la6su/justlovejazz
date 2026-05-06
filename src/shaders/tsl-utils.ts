@@ -1,16 +1,8 @@
 // src/shaders/tsl-utils.ts
 import { 
     vec2, 
-    mul, 
-    add, 
-    sub, 
     mix, 
-    fract, 
-    sin, 
-    cos, 
-    float, 
-    pow,
-    clamp
+    float
 } from 'three/tsl';
 
 /**

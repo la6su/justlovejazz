@@ -1,9 +1,8 @@
 
 import UIkit from 'uikit'
 import Icons from 'uikit/dist/js/uikit-icons'
-import type {Project} from '../Data/Projects'
+import type { Project } from '../Data/Projects'
 import { ProjectGallery } from './ProjectGallery'
-import { GalleryManager } from '../core/GalleryManager'
 
 export class UIManager {
   public gallery!: ProjectGallery;
@@ -86,7 +85,7 @@ export class UIManager {
       lastT = now;
     };
 
-    const handlePointerUp = (e: PointerEvent) => {
+    const handlePointerUp = (_e: PointerEvent) => {
       isDragging = false;
       document.body.classList.remove('dragging');
       window.removeEventListener('pointermove', handlePointerMove);
@@ -132,6 +131,32 @@ export class UIManager {
         }
       })
     }
+  }
+
+  public showProjectContent(project: Project) {
+    let overlay = document.querySelector<HTMLElement>('.fullscreen-overlay')
+    if (!overlay) {
+      overlay = document.createElement('div')
+      overlay.className = 'fullscreen-overlay'
+      document.body.appendChild(overlay)
+    }
+
+    overlay.innerHTML = `
+      <div class="fullscreen-overlay__content">
+        <h2>${project.title}</h2>
+        <p>${project.description}</p>
+      </div>
+    `
+    overlay.style.opacity = '1'
+    overlay.style.pointerEvents = 'auto'
+  }
+
+  public hideProjectContent() {
+    const overlay = document.querySelector<HTMLElement>('.fullscreen-overlay')
+    if (!overlay) return
+
+    overlay.style.opacity = '0'
+    overlay.style.pointerEvents = 'none'
   }
 
 

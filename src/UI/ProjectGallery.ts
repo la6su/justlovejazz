@@ -80,7 +80,6 @@ export class ProjectGallery {
             const finalOpacity = opacity * (1 - transitionProgress);
             
             // Scale for active item
-            const scale = relativeIndex === 0 ? 1.1 : 0.9;
             const finalScale = relativeIndex === 0 
                 ? 1.1 - (transitionProgress * 0.1) 
                 : 0.9;

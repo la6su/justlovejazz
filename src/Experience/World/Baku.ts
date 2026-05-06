@@ -23,11 +23,8 @@ export class Baku extends THREE.Mesh {
 
     constructor() {
         const geometry = new THREE.IcosahedronGeometry(0.5, 15)
-        const material = new THREE.MeshStandardMaterial({ 
-            color: 0x333333, 
-            metalness: 0.9, 
-            roughness: 0.1,
-            emissive: 0x111111
+        const material = new THREE.MeshBasicMaterial({
+            color: 0xffffff
         })
         super(geometry, material)
         
@@ -55,11 +52,13 @@ export class Baku extends THREE.Mesh {
         this.rotation.y += swayY
 
         // 3. Material Morphing (Smooth lerp to target)
-        const mat = this.material as THREE.MeshStandardMaterial
-        mat.color.lerp(this.targetParams.color, 0.05)
-        mat.emissive.lerp(this.targetParams.emissive, 0.05)
-        mat.roughness += (this.targetParams.roughness - mat.roughness) * 0.05
-        mat.metalness += (this.targetParams.metalness - mat.metalness) * 0.05
+        if (this.material instanceof THREE.MeshStandardMaterial) {
+            const mat = this.material
+            mat.color.lerp(this.targetParams.color, 0.05)
+            mat.emissive.lerp(this.targetParams.emissive, 0.05)
+            mat.roughness += (this.targetParams.roughness - mat.roughness) * 0.05
+            mat.metalness += (this.targetParams.metalness - mat.metalness) * 0.05
+        }
     }
 
     updateMaterial(params: any) {

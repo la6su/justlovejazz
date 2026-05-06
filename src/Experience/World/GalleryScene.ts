@@ -69,7 +69,7 @@ export class GalleryScene {
   }
 
 
-    update(camera: THREE.Camera, _delta: number, worldState: WorldState) {
+    update(_camera: THREE.Camera, _delta: number, worldState: WorldState) {
       if (worldState.currentSection !== WorldSection.WORKS) {
         this.group.visible = false;
         return;

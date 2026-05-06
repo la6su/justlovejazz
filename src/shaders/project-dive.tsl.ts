@@ -6,12 +6,7 @@ import {
     vec3, 
     distance, 
     texture, 
-    add, 
-    sub, 
-    mul, 
-    sin, 
-    float, 
-    fract 
+    float
 } from 'three/tsl';
 
 export const projectDiveShader = (tex: any, progress: any) => {
@@ -22,7 +17,7 @@ export const projectDiveShader = (tex: any, progress: any) => {
     // 1. Organic Warp: A slight bulge that increases during transition
     // Creates a "lens" effect as we dive in
     const bulge = progress.mul(dist).mul(0.1);
-    const warpUv = currentUv.sub(center).mul(1.0.add(bulge)).add(center);
+    const warpUv = currentUv.sub(center).mul(float(1.0).add(bulge)).add(center);
     
     // 2. Advanced Chromatic Aberration
     // Shift increases at the edges and peaks during the transition

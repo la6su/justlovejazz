@@ -89,7 +89,6 @@ export class ProjectGrid {
         this.meshes.forEach((mesh, id) => {
             if (mesh === this.activeMesh && this.isTransitioning) return;
 
-            const project = mesh.userData.project;
             const index = PROJECTS.findIndex(p => p.id === id);
             
             // Infinite Wrap Logic

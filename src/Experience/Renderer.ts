@@ -2,7 +2,6 @@
 import * as THREE from 'three';
 import { WebGPURenderer } from 'three/webgpu';
 import { Sizes } from './Sizes';
-import { postProcessingNode } from '../shaders/postprocessing.tsl.ts';
 
 export class Renderer {
     instance: WebGPURenderer;
@@ -15,7 +14,7 @@ export class Renderer {
 
         this.instance.setPixelRatio(sizes.dpr);
         this.instance.setSize(sizes.width, sizes.height);
-        this.instance.setClearColor(0x000000);
+        this.instance.setClearColor(0xff0000); // RED for sanity check
         document.body.appendChild(this.instance.domElement);
 
         window.addEventListener('resize', () => {
@@ -26,12 +25,9 @@ export class Renderer {
     }
 
     private initPostProcessing() {
-        // In the latest Three.js WebGPU/TSL, post-processing is handled by 
-        // assigning a TSL node directly to the renderer's postProcessing property.
-        // This replaces the complex RenderPipeline/PostProcessing classes.
-        (this.instance as any).postProcessing = {
-            node: postProcessingNode
-        };
+        // For now, disable post-processing to verify the scene renders.
+        // Once verified, we will implement the correct TSL post-processing pipeline.
+        (this.instance as any).postProcessing = null;
     }
 
     async init() {
@@ -39,6 +35,10 @@ export class Renderer {
     }
 
     update(scene: THREE.Scene, camera: THREE.Camera) {
+        // DEBUG: Log scene state
+        if (Math.random() < 0.01) {
+            console.log(`Scene children: ${scene.children.length} | Cam pos: ${camera.position.x}, ${camera.position.y}, ${camera.position.z}`);
+        }
         this.instance.render(scene, camera);
     }
 }

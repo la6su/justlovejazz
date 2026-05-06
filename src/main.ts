@@ -10,7 +10,7 @@ async function bootstrap() {
         await ui.init()
 
         // 2. Use Bootstrapper to wire the 3D Experience
-        const experience = await Bootstrapper.init(ui)
+        await Bootstrapper.init(ui)
 
         console.log('Application successfully bootstrapped')
     } catch (err) {

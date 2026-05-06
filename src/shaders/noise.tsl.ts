@@ -1,8 +1,5 @@
 import { 
-    mul, 
-    add, 
     mix, 
-    floor, 
     sin
 } from 'three/tsl'
 
@@ -11,8 +8,6 @@ import {
  * Ported from professional studio implementations
  */
 export const simplex4d = (p: any) => {
-    const f = floor(p);
-    
     // Simplex noise implementation logic...
     // For brevity and stability, using a simplified organic noise approximation
     return mix(sin(p.x), sin(p.y), 0.5); 

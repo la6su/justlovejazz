@@ -4,11 +4,7 @@ import {
     time, 
     float, 
     vec2, 
-    vec3, 
-    sub, 
-    mul, 
-    add,
-    mix
+    vec3
 } from 'three/tsl';
 import { 
     applyProfessionalGrain, 
@@ -28,7 +24,7 @@ export const postProcessingNode = (inputTexture: any) => {
     // 1. Chromatic Aberration
     // Radial shift: stronger at the edges
     const dist = u.sub(vec2(0.5, 0.5));
-    const radialWeight = dist.mul(dist).add(float(0.1)); 
+    const radialWeight = dist.x.mul(dist.x).add(dist.y.mul(dist.y)).add(float(0.1));
     const aberrationStrength = float(0.005).mul(radialWeight);
     
     const colorR = inputTexture.sample(u.sub(vec2(aberrationStrength, 0.0)));
