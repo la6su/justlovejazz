@@ -160,6 +160,10 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+body.dragging {
+  cursor: grabbing !important;
+}
+
 /* Custom Section Styling */
 .section-studio {
   position: relative;
@@ -264,6 +268,69 @@ body, a, button, .interactive {
   z-index: 20;
 }
 
+@media (max-width: 768px) {
+  .project-gallery {
+    position: relative !important;
+    top: 0 !important;
+    left: 0 !important;
+    transform: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2rem !important;
+    padding: 10vh 5vw !important;
+    pointer-events: auto !important;
+  }
+
+  .project-card-wrapper {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    margin: 0 !important;
+    transform: none !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+
+  .project-card {
+    border-left: 4px solid var(--accent-color) !important;
+    padding-left: 15px !important;
+  }
+}
+
+/* Gallery Navigation Arrows */
+.gallery-nav {
+  pointer-events: auto;
+  z-index: 30;
+}
+
+.gallery-nav__btn {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #fff !important;
+  padding: 0 !important;
+  margin: 0 10px !important;
+  transition: transform 0.2s cubic-bezier(0.2, 0, 0.2, 1), opacity 0.2s ease !important;
+  cursor: none !important;
+  opacity: 0.6;
+}
+
+.gallery-nav__btn:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.gallery-nav__btn:active {
+  transform: scale(0.9);
+}
+
+.nav-icon {
+  width: 32px;
+  height: 32px;
+  display: block;
+  filter: invert(1); /* Ensure icons are white if they are black SVGs */
+}
+
 .project-card-wrapper {
   position: absolute;
   top: 50%;
@@ -274,6 +341,7 @@ body, a, button, .interactive {
   pointer-events: auto;
   will-change: transform, opacity;
 }
+
 
 .project-card {
   background: none;

@@ -44,60 +44,64 @@ export class GalleryScene {
       const object = intersects[0].object as THREE.Mesh;
       const index = object.userData.index;
       
-      console.log(`GalleryClick: hit index ${index}, active index ${this.manager.activeIndex}, state ${this.manager.state}`);
+      console.log(`GalleryClick: hit index ${index}`);
+
+      // Capture current state to avoid jumping when transitioning to fullscreen
+      this.manager.transitionStartPos.copy(object.position);
+      this.manager.transitionStartScale = object.scale.x;
       
-      if (index === this.manager.activeIndex) {
-        console.log('GalleryClick: triggering FULLSCREEN');
-        this.manager.startFullscreen();
-      } else {
-        console.log('GalleryClick: triggering PROJECT SWITCH');
-        this.manager.setProject(index);
-      }
+      // Set as active and trigger expansion
+      this.manager.activeIndex = index;
+      this.manager.startFullscreen();
     }
   }
 
-  update(camera: THREE.Camera, _delta: number) {
-    const progress = this.manager.transitionProgress;
-    const activeIndex = this.manager.activeIndex;
-    const state = this.manager.state;
-    
-    // 1. SLIDER LAYOUT & TRANSITION
-    this.planes.forEach((mesh, i) => {
-      const relativeIndex = i - activeIndex;
+    update(camera: THREE.Camera, _delta: number) {
+      const progress = this.manager.transitionProgress;
+      const activeIndex = this.manager.activeIndex;
+      const state = this.manager.state;
       
-      if (i === activeIndex) {
-        // ACTIVE MESH: Transition from Carousel Pos to Fullscreen
-        const carouselX = 0;
-        const carouselZ = 0;
-        const carouselScale = 1;
+      const trackLength = this.manager.trackLength;
+      const halfTrack = trackLength / 2;
 
-        const fullscreenX = 0;
-        const fullscreenZ = 1; // Bring it close to camera
-        const fullscreenScale = 15; // Large enough to cover screen
+      // 1. SLIDER LAYOUT & TRANSITION
+      this.planes.forEach((mesh, i) => {
+        if (i === activeIndex && state !== 0) { // State 0 = LIST
+          // ACTIVE MESH: Transition from captured Start Pos to Fullscreen
+          const fullscreenX = 0;
+          const fullscreenZ = 1; 
+          const fullscreenScale = 15; 
 
-        mesh.position.x = THREE.MathUtils.lerp(carouselX, fullscreenX, progress);
-        mesh.position.y = THREE.MathUtils.lerp(0, 0, progress);
-        mesh.position.z = THREE.MathUtils.lerp(carouselZ, fullscreenZ, progress);
-        mesh.scale.setScalar(THREE.MathUtils.lerp(carouselScale, fullscreenScale, progress));
-        mesh.visible = true;
-      } else {
-        // OTHER MESHES: Standard Carousel Logic
-        if (Math.abs(relativeIndex) <= 1 && state !== 2) { // State 2 = FULLSCREEN
-          const targetX = relativeIndex * 2.2;
-          const targetZ = relativeIndex === 0 ? 0 : -1;
-          const targetScale = 0.8;
-          
-          mesh.position.x = THREE.MathUtils.lerp(mesh.position.x, targetX, 0.1);
-          mesh.position.z = THREE.MathUtils.lerp(mesh.position.z, targetZ, 0.1);
-          mesh.scale.setScalar(THREE.MathUtils.lerp(mesh.scale.x, targetScale, 0.1));
+          mesh.position.x = THREE.MathUtils.lerp(this.manager.transitionStartPos.x, fullscreenX, progress);
+          mesh.position.y = THREE.MathUtils.lerp(this.manager.transitionStartPos.y, 0, progress);
+          mesh.position.z = THREE.MathUtils.lerp(this.manager.transitionStartPos.z, fullscreenZ, progress);
+          mesh.scale.setScalar(THREE.MathUtils.lerp(this.manager.transitionStartScale, fullscreenScale, progress));
           mesh.visible = true;
         } else {
-          mesh.visible = false;
-        }
-      }
-    });
+          // OTHER MESHES: Wrap-around Carousel Logic
+          let pos = (i * this.manager.STEP) - this.manager.scrollX;
+          
+          if (pos < -halfTrack) pos += trackLength;
+          if (pos > halfTrack) pos -= trackLength;
 
-    // 2. MATERIAL UPDATE
-    this.materials.forEach(mat => mat.setProgress(progress));
-  }
+          const relativeX = pos / this.manager.STEP;
+          
+          if (Math.abs(relativeX) <= 1.5 && state !== 2) { // State 2 = FULLSCREEN
+            const targetX = relativeX * 2.2;
+            const targetZ = Math.abs(relativeX) < 0.5 ? 0 : -1;
+            const targetScale = 0.8;
+            
+            mesh.position.x = THREE.MathUtils.lerp(mesh.position.x, targetX, 0.1);
+            mesh.position.z = THREE.MathUtils.lerp(mesh.position.z, targetZ, 0.1);
+            mesh.scale.setScalar(THREE.MathUtils.lerp(mesh.scale.x, targetScale, 0.1));
+            mesh.visible = true;
+          } else {
+            mesh.visible = false;
+          }
+        }
+      });
+
+      // 2. MATERIAL UPDATE
+      this.materials.forEach(mat => mat.setProgress(progress));
+    }
 }

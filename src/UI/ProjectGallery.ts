@@ -64,6 +64,8 @@ export class ProjectGallery {
     }
 
     public update(manager: GalleryManager) {
+        if (window.innerWidth < 768) return;
+
         const { activeIndex, transitionProgress } = manager;
         const pixelsPerUnit = window.innerWidth * 0.12; 
         
@@ -82,7 +84,7 @@ export class ProjectGallery {
             const finalScale = relativeIndex === 0 
                 ? 1.1 - (transitionProgress * 0.1) 
                 : 0.9;
-
+            
             item.style.transform = `translate3d(${x}px, 0, 0) scale(${finalScale})`;
             item.style.opacity = `${finalOpacity}`;
             item.style.pointerEvents = transitionProgress > 0.5 ? 'none' : 'auto';

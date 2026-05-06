@@ -22,15 +22,78 @@ export class UIManager {
     this.gallery = new ProjectGallery({
         onClick: (project) => {
             const manager = window.experience?.galleryManager;
-        
-            if (manager) {
+            const scene = window.experience?.galleryScene;
+            
+            if (manager && scene) {
                 const idx = manager.projects.findIndex(p => p.id === project.id);
-                manager.setProject(idx);
+                
+                // To ensure smooth expansion from current position, 
+                // we mimic the 3D plane click logic
+                const mesh = scene.planes[idx];
+                if (mesh) {
+                    manager.transitionStartPos.copy(mesh.position);
+                    manager.transitionStartScale = mesh.scale.x;
+                }
+                
+                manager.activeIndex = idx;
+                manager.startFullscreen();
             }
         }
     });
 
-    this.initGalleryNav()
+    this.initGalleryNav();
+    this.initDragAndDrop();
+  }
+
+  private initDragAndDrop() {
+    let isDragging = false;
+    let lastX = 0;
+    let lastT = 0;
+
+    const handlePointerDown = (e: PointerEvent) => {
+      // Prevent drag if clicking on UI elements
+      if ((e.target as HTMLElement).closest('.gallery-nav') || (e.target as HTMLElement).closest('.project-card')) {
+        return;
+      }
+
+      isDragging = true;
+      lastX = e.clientX;
+      lastT = performance.now();
+      document.body.classList.add('dragging');
+      window.addEventListener('pointermove', handlePointerMove);
+      window.addEventListener('pointerup', handlePointerUp);
+      
+      // Capture pointer to keep receiving events even if cursor leaves the element
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    };
+
+    const handlePointerMove = (e: PointerEvent) => {
+      if (!isDragging) return;
+
+      const manager = window.experience?.galleryManager;
+      if (!manager) return;
+
+      const dx = e.clientX - lastX;
+      manager.drag(dx);
+
+      // Track velocity for momentum
+      const now = performance.now();
+      const dt = Math.max(1, now - lastT);
+      const velocity = dx / dt;
+      manager.setDragVelocity(velocity);
+
+      lastX = e.clientX;
+      lastT = now;
+    };
+
+    const handlePointerUp = (e: PointerEvent) => {
+      isDragging = false;
+      document.body.classList.remove('dragging');
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+    };
+
+    window.addEventListener('pointerdown', handlePointerDown);
   }
 
   private initGalleryNav() {
