@@ -24,6 +24,6 @@ export const simplex4d = (p: any) => {
  */
 export const organicMotion = (p: any, scale: any = 1.0, intensity: any = 0.5) => {
     const time = p.x;
-    const movement = mul(sin(add(time, p.y)), intensity);
-    return mul(movement, scale);
+    const movement = time.add(p.y).sin().mul(intensity);
+    return movement.mul(scale);
 }

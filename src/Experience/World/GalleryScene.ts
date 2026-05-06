@@ -32,7 +32,6 @@ export class GalleryScene {
     });
   }
 
-  // Handle clicking on projects
   public handlePointerDown(clientX: number, clientY: number, camera: THREE.Camera) {
     this.mouse.x = (clientX / window.innerWidth) * 2 - 1;
     this.mouse.y = -(clientY / window.innerHeight) * 2 + 1;
@@ -44,13 +43,10 @@ export class GalleryScene {
       const object = intersects[0].object as THREE.Mesh;
       const index = object.userData.index;
       
-      console.log(`GalleryClick: hit index ${index}`);
-
-      // Capture current state to avoid jumping when transitioning to fullscreen
+      // Capture current state to avoid jumping
       this.manager.transitionStartPos.copy(object.position);
       this.manager.transitionStartScale = object.scale.x;
       
-      // Set as active and trigger expansion
       this.manager.activeIndex = index;
       this.manager.startFullscreen();
     }
@@ -64,18 +60,22 @@ export class GalleryScene {
       const trackLength = this.manager.trackLength;
       const halfTrack = trackLength / 2;
 
-      // 1. SLIDER LAYOUT & TRANSITION
+      // Use a smoothed version of progress for visuals (already handled in GalleryManager.update, 
+      // but for clarity we can apply it here if needed. 
+      // Actually, we'll use the raw progress and apply easing if we want specific curve control)
+      const visualProgress = progress; 
+
       this.planes.forEach((mesh, i) => {
         if (i === activeIndex && state !== 0) { // State 0 = LIST
-          // ACTIVE MESH: Transition from captured Start Pos to Fullscreen
+          // ACTIVE MESH: Transition to Fullscreen
           const fullscreenX = 0;
           const fullscreenZ = 1; 
           const fullscreenScale = 15; 
 
-          mesh.position.x = THREE.MathUtils.lerp(this.manager.transitionStartPos.x, fullscreenX, progress);
-          mesh.position.y = THREE.MathUtils.lerp(this.manager.transitionStartPos.y, 0, progress);
-          mesh.position.z = THREE.MathUtils.lerp(this.manager.transitionStartPos.z, fullscreenZ, progress);
-          mesh.scale.setScalar(THREE.MathUtils.lerp(this.manager.transitionStartScale, fullscreenScale, progress));
+          mesh.position.x = THREE.MathUtils.lerp(this.manager.transitionStartPos.x, fullscreenX, visualProgress);
+          mesh.position.y = THREE.MathUtils.lerp(this.manager.transitionStartPos.y, 0, visualProgress);
+          mesh.position.z = THREE.MathUtils.lerp(this.manager.transitionStartPos.z, fullscreenZ, visualProgress);
+          mesh.scale.setScalar(THREE.MathUtils.lerp(this.manager.transitionStartScale, fullscreenScale, visualProgress));
           mesh.visible = true;
         } else {
           // OTHER MESHES: Wrap-around Carousel Logic
@@ -91,9 +91,11 @@ export class GalleryScene {
             const targetZ = Math.abs(relativeX) < 0.5 ? 0 : -1;
             const targetScale = 0.8;
             
-            mesh.position.x = THREE.MathUtils.lerp(mesh.position.x, targetX, 0.1);
-            mesh.position.z = THREE.MathUtils.lerp(mesh.position.z, targetZ, 0.1);
-            mesh.scale.setScalar(THREE.MathUtils.lerp(mesh.scale.x, targetScale, 0.1));
+            // REMOVED: lerp(..., 0.1) to prevent "floaty" feeling. 
+            // The smoothness now comes solely from this.manager.scrollX.
+            mesh.position.x = targetX;
+            mesh.position.z = targetZ;
+            mesh.scale.setScalar(targetScale);
             mesh.visible = true;
           } else {
             mesh.visible = false;
@@ -101,7 +103,6 @@ export class GalleryScene {
         }
       });
 
-      // 2. MATERIAL UPDATE
       this.materials.forEach(mat => mat.setProgress(progress));
     }
 }

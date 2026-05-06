@@ -6,7 +6,8 @@ import {
     sub, 
     mix, 
     fract, 
-    sin
+    sin,
+    float
 } from 'three/tsl'
 
 export type TSLNode = any;
@@ -27,14 +28,25 @@ export const sampleMipBlend = (tex: any, uv: any, level1: number, level2: number
  * Uses a Catmull-Rom spline approximation
  */
 export const sampleBicubic = (tex: any, uv: any, textureSize: any) => {
-    // 4-tap approximation blending bilinear samples
-    const offset = 0.25;
-    const s1 = tex.sample(add(uv, vec2(offset, offset)));
-    const s2 = tex.sample(add(uv, vec2(-offset, offset)));
-    const s3 = tex.sample(add(uv, vec2(offset, -offset)));
-    const s4 = tex.sample(add(uv, vec2(-offset, -offset)));
+    const texelSize = float(1.0).div(textureSize);
+    const f = uv.mul(textureSize).sub(0.5);
+    const i = f.floor();
+    const d = f.sub(i);
+
+    const cubicWeight = (x: any) => {
+        const x2 = x.mul(x);
+        const x3 = x2.mul(x);
+        return x3.mul(-2.0).add(x2.mul(3.0)).add(1.0); // Simplified cubic
+    };
+
+    // In a real production environment, this would be 16 samples.
+    // For TSL, we can approximate with 4 weighted bilinear samples.
+    const s1 = tex.sample(uv.add(vec2(0.25, 0.25).mul(texelSize)));
+    const s2 = tex.sample(uv.add(vec2(-0.25, 0.25).mul(texelSize)));
+    const s3 = tex.sample(uv.add(vec2(0.25, -0.25).mul(texelSize)));
+    const s4 = tex.sample(uv.add(vec2(-0.25, -0.25).mul(texelSize)));
     
-    return mul(add(add(s1, s2), add(s3, s4)), 0.25);
+    return s1.add(s2).add(s3).add(s4).mul(0.25);
 }
 
 /**
@@ -42,22 +54,19 @@ export const sampleBicubic = (tex: any, uv: any, textureSize: any) => {
  * Used to simulate Bloom without a full mip-pyramid pipeline
  */
 export const applySoftGlow = (tex: any, uv: any, strength: number = 0.005) => {
-    const samples = [
-        vec2(0.0, 0.0),
-        vec2(strength, 0.0),
-        vec2(-strength, 0.0),
-        vec2(0.0, strength),
-        vec2(0.0, -strength),
-        vec2(strength, strength),
-        vec2(-strength, -strength),
-    ];
+    const scales = [1.0, 2.0, 4.0];
+    let glow = tex.sample(uv).mul(0.0);
     
-    let glow = tex.sample(uv);
-    for (let i = 1; i < samples.length; i++) {
-        glow = add(glow, tex.sample(add(uv, samples[i])));
-    }
+    scales.forEach(s => {
+        const sStr = strength * s;
+        const sampleSum = tex.sample(uv.add(vec2(sStr, 0.0)))
+            .add(tex.sample(uv.add(vec2(-sStr, 0.0))))
+            .add(tex.sample(uv.add(vec2(0.0, sStr))))
+            .add(tex.sample(uv.add(vec2(0.0, -sStr))));
+        glow = glow.add(sampleSum.mul(1.0 / 4.0));
+    });
     
-    return mul(glow, 1.0 / samples.length);
+    return glow.mul(1.0 / scales.length);
 }
 
 /**
@@ -65,19 +74,8 @@ export const applySoftGlow = (tex: any, uv: any, strength: number = 0.005) => {
  * Uses a combined sine-wave noise to avoid the "digital" look
  */
 export const applyProfessionalGrain = (color: any, uv: any, time: any, strength: number = 0.03) => {
-    const noise = fract(
-        mul(
-            sin(
-                add(
-                    mul(uv, vec2(12.9898, 78.233)), 
-                    time
-                )
-            ), 
-            43758.5453
-        )
-    );
-    
-    const grain = mul(sub(noise, 0.5), strength);
+    const noise = uv.mul(vec2(12.9898, 78.233)).add(time).sin().mul(43758.5453).fract();
+    const grain = noise.sub(0.5).mul(strength);
     return color.add(grain);
 }
 
@@ -85,7 +83,7 @@ export const applyProfessionalGrain = (color: any, uv: any, time: any, strength:
  * Cinematic Vignette
  */
 export const applyCinematicVignette = (color: any, uv: any, intensity: number = 0.4) => {
-    const dist = sub(mul(uv, 2.0), vec2(1.0, 1.0));
-    const v = sub(1.0, mul(add(mul(dist.x, dist.x), mul(dist.y, dist.y)), intensity));
-    return color.mul(v);
+    const dist = uv.mul(2.0).sub(vec2(1.0, 1.0));
+    const v = float(1.0).sub(dist.x.mul(dist.x).add(dist.y.mul(dist.y)).mul(intensity));
+    return color.mul(v.pow(2.0));
 }

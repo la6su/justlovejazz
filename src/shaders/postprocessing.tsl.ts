@@ -15,9 +15,9 @@ export const postProcessingNode = (inputTexture: any) => {
 
     // --- 1. Base Layer with Chromatic Aberration ---
     const aberrationStrength = float(0.003);
-    const colorR = inputTexture.sample(sub(u, vec2(-aberrationStrength, 0.0)));
+    const colorR = inputTexture.sample(u.sub(vec2(-aberrationStrength, 0.0)));
     const colorG = inputTexture.sample(u);
-    const colorB = inputTexture.sample(sub(u, vec2(aberrationStrength, 0.0)));
+    const colorB = inputTexture.sample(u.sub(vec2(aberrationStrength, 0.0)));
     
     let color = vec3(colorR.r, colorG.g, colorB.b).toVar();
     

@@ -21,18 +21,15 @@ export const projectDiveShader = (tex: any, progress: any) => {
     
     // 1. Organic Warp: A slight bulge that increases during transition
     // Creates a "lens" effect as we dive in
-    const bulge = mul(mul(progress, dist), 0.1);
-    const warpUv = add(
-        mul(sub(currentUv, center), add(1.0, bulge)), 
-        center
-    );
+    const bulge = progress.mul(dist).mul(0.1);
+    const warpUv = currentUv.sub(center).mul(1.0.add(bulge)).add(center);
     
     // 2. Advanced Chromatic Aberration
     // Shift increases at the edges and peaks during the transition
-    const aberrationAmount = mul(mul(progress, dist), 0.03);
-    const rUv = add(warpUv, vec2(aberrationAmount, 0));
+    const aberrationAmount = progress.mul(dist).mul(0.03);
+    const rUv = warpUv.add(vec2(aberrationAmount, 0));
     const gUv = warpUv;
-    const bUv = sub(warpUv, vec2(aberrationAmount, 0));
+    const bUv = warpUv.sub(vec2(aberrationAmount, 0));
     
     const r = texture(tex).sample(rUv).r;
     const g = texture(tex).sample(gUv).g;
@@ -43,12 +40,12 @@ export const projectDiveShader = (tex: any, progress: any) => {
     // 3. Procedural Grain: Subtle high-frequency noise that intensifies during the jump
     const noise = Fn(() => {
         const t = float(0.1); // Time or seed
-        const random = fract(sin(add(mul(uv(), 12.9898), t)).mul(43758.5453));
+        const random = uv().mul(12.9898).add(t).sin().mul(43758.5453).fract();
         return random;
     });
     
-    const grain = mul(noise(), 0.05);
-    const grainIntensity = mul(progress, grain);
+    const grain = noise().mul(0.05);
+    const grainIntensity = progress.mul(grain);
     
     finalColor.assign(finalColor.add(grainIntensity));
     
