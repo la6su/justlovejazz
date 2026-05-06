@@ -91,7 +91,7 @@ export class Environment {
         
         this.grid = new THREE.Mesh(geometry, this.gridMaterial)
         this.grid.rotation.x = -Math.PI / 2
-        this.grid.position.y = -3
+        this.grid.position.y = -1
         
         scene.add(this.grid)
     }

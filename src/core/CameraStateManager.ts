@@ -79,7 +79,7 @@ export class CameraStateManager {
         };
     }
 
-    private calculateSection(scroll: number): { currentSection: WorldSection, sectionProgress: number } {
+    public calculateSection(scroll: number): { currentSection: WorldSection, sectionProgress: number } {
         const active = WORLD_CONFIG.find(config => {
             const [start, end] = config.range;
             return scroll >= start && scroll <= end;
@@ -190,5 +190,9 @@ export class CameraStateManager {
             lookAt: new THREE.Vector3(project.viewLookAt.x, project.viewLookAt.y, project.viewLookAt.z),
             fov: 45
         };
+    }
+
+    public getWorldConfigForSection(section: WorldSection) {
+        return WORLD_CONFIG.find(s => s.id === section);
     }
 }

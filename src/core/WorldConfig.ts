@@ -36,6 +36,7 @@ export interface UiPreset {
 
 export interface SectionConfig {
     id: WorldSection;
+    context: string; // Unique ID for asset lifecycle management
     range: [number, number];
     camera: CameraPreset;
     baku: BakuPreset;
@@ -47,6 +48,7 @@ export interface SectionConfig {
 export const WORLD_CONFIG: SectionConfig[] = [
     {
         id: WorldSection.HOME,
+        context: 'world_home',
         range: [0, 0.25],
         camera: {
             position: new THREE.Vector3(0, 0, 5),
@@ -72,34 +74,9 @@ export const WORLD_CONFIG: SectionConfig[] = [
         ui: { showGallery: false }
     },
     {
-        id: WorldSection.WORKS,
-        range: [0.25, 0.6],
-        camera: {
-            position: new THREE.Vector3(0, 0, 5),
-            target: new THREE.Vector3(0, 0, 0),
-            fov: 75
-        },
-        baku: {
-            position: new THREE.Vector3(0, 0, 0),
-            rotation: new THREE.Quaternion(),
-            scale: new THREE.Vector3(1.2, 1.2, 1.2),
-            material: {
-                color: new THREE.Color(0x664422),
-                emissive: new THREE.Color(0x221100),
-                roughness: 0.4,
-                metalness: 0.7
-            }
-        },
-        lighting: {
-            ambientColor: new THREE.Color(0x221100),
-            intensity: 5.0
-        },
-        post: { bloom: 0.8, vignette: 0.5, grain: 0.035 },
-        ui: { showGallery: true }
-    },
-    {
         id: WorldSection.ABOUT,
-        range: [0.6, 0.8],
+        context: 'world_about',
+        range: [0.25, 0.5],
         camera: {
             position: new THREE.Vector3(0, 0, 2),
             target: new THREE.Vector3(0, 0, 0),
@@ -124,8 +101,36 @@ export const WORLD_CONFIG: SectionConfig[] = [
         ui: { showGallery: false }
     },
     {
+        id: WorldSection.WORKS,
+        context: 'world_works',
+        range: [0.5, 0.75],
+        camera: {
+            position: new THREE.Vector3(0, 0, 5),
+            target: new THREE.Vector3(0, 0, 0),
+            fov: 75
+        },
+        baku: {
+            position: new THREE.Vector3(0, 0, 0),
+            rotation: new THREE.Quaternion(),
+            scale: new THREE.Vector3(1.2, 1.2, 1.2),
+            material: {
+                color: new THREE.Color(0x664422),
+                emissive: new THREE.Color(0x221100),
+                roughness: 0.4,
+                metalness: 0.7
+            }
+        },
+        lighting: {
+            ambientColor: new THREE.Color(0x221100),
+            intensity: 5.0
+        },
+        post: { bloom: 0.8, vignette: 0.5, grain: 0.035 },
+        ui: { showGallery: true }
+    },
+    {
         id: WorldSection.CONTACT,
-        range: [0.8, 1],
+        context: 'world_contact',
+        range: [0.75, 1],
         camera: {
             position: new THREE.Vector3(0, 2, 5),
             target: new THREE.Vector3(0, 0, 0),

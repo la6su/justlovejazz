@@ -59,9 +59,9 @@ export class ProjectGrid {
             const stretchUv = add(currentUv, warp)
 
             const shift = mul(this.uProgress, 0.01)
-            const rUv = add(stretchUv, vec2(shift, float(0)));
+            const rUv = add(stretchUv, vec2(shift, 0));
             const gUv = stretchUv
-            const bUv = sub(stretchUv, vec2(shift, float(0)))
+            const bUv = sub(stretchUv, vec2(shift, 0))
 
             const r = texture(tex).sample(rUv).r
             const g = texture(tex).sample(gUv).g

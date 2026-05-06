@@ -15,6 +15,7 @@ import { input } from './Input'
 
 import { GalleryManager } from '../core/GalleryManager'
 import { CameraStateManager } from '../core/CameraStateManager'
+import { AssetManager } from '../core/AssetManager'
 import { GalleryScene } from './World/GalleryScene'
 import { CameraState } from '../core/types'
 
@@ -40,6 +41,7 @@ export class Experience {
   public galleryManager!: GalleryManager;
   public galleryScene!: GalleryScene;
   public cameraStateManager!: CameraStateManager;
+  private currentSectionContext: string | null = null;
   
   
     constructor(ui: UIManager) {
@@ -93,6 +95,16 @@ export class Experience {
         const normalizedScroll = input.getSmoothedScrollProgress()
 
     const { cameraTarget, worldState } = this.cameraStateManager.update(deltaTime, normalizedScroll);
+    
+    // VRAM Optimization: Dispose previous section assets on change
+    const sectionConfig = this.cameraStateManager.calculateSection(normalizedScroll).currentSection;
+    const config = this.cameraStateManager.getWorldConfigForSection(sectionConfig); // I'll need to add this method
+    if (config && config.context !== this.currentSectionContext) {
+        if (this.currentSectionContext) {
+            AssetManager.getInstance().disposeContext(this.currentSectionContext);
+        }
+        this.currentSectionContext = config.context;
+    }
     
     // Apply state-dependent smoothing
     const smoothing = this.cameraStateManager.currentState === CameraState.TRANSITION ? 8 : 5;
