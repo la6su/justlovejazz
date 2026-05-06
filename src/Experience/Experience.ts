@@ -66,7 +66,6 @@ export class Experience {
     }
 
     async init() {
-
       this.smoothScroll = new SmoothScroll()
       this.textReveal = new TextReveal()
       this.contentReveal = new ContentReveal()
@@ -80,13 +79,13 @@ export class Experience {
           loader.style.display = 'none'
         }, 500)
       }
-      this.update()
+      requestAnimationFrame((t) => this.update(t))
     }
 
-    update() {
+    update(time: number) {
         const deltaTime = this.time.delta / 1000
-        this.time.update()
-        this.smoothScroll.update(this.time.elapsed)
+        this.time.update(time)
+        this.smoothScroll.update(time)
         input.update()
         this.cursor.update()
         
@@ -120,7 +119,7 @@ export class Experience {
     this.baku.update(deltaTime);
     this.environment.update(this.time.elapsed / 1000, normalizedScroll, this.camera.getVelocity(), this.baku.position);
     this.renderer.update(this.scene, this.camera.instance);
-    requestAnimationFrame(() => this.update());
+    requestAnimationFrame((t) => this.update(t));
   }
 
   destroy() {
