@@ -1,40 +1,75 @@
-# Project Concept: JustLoveJazz — Cinematic Experience
+# CONCEPT.md
 
-## 核心 Philosophy: "Профессионализм в деталях, простота в форме"
+## JustLoveJazz: Cinematic Studio System
 
-Главный концепт проекта — создание ощущения безупречного качества через сдержанность. Продукт должен выглядеть минималистично и чисто на первый взгляд, но при этом раскрываться как сложный, высокотехнологичный механизм при ближайшем рассмотрении.
+Проект не должен выглядеть как набор WebGL-эффектов. Он должен ощущаться как цельная студийная система: строгая типографика, управляемая сцена, точное движение, высокая плотность деталей.
 
-### 1. Эстетика "Триединства" (The Rule of Three)
-В основе всего дизайна лежит ритм «раз-два-три». Это математическая гармония, которая считывается подсознательно:
-- **Цвета**: Ограниченная палитра из трех доминант (Глубокий черный $\rightarrow$ Акцентный оранжевый $\rightarrow$ Технологичный серый).
-- **Сетки**: Асимметричные, но сбалансированные композиции, основанные на тройных модулях.
-- **Ритм**: Хореография движений, где анимации разбиты на три фазы (Запуск $\rightarrow$ Акцент $\rightarrow$ Затухание).
-- **Простота и Вкус**: Отказ от лишнего декора в пользу идеальных пропорций и выверенного воздуха.
+Референс: `next.junni.co.jp`. Берём не визуальное копирование, а принципы:
 
-### 2. Парадокс Простоты
-- **First Glance**: Пользователь видит чистое пространство, идеальную типографику и лаконичные формы. Ничего не отвлекает от сути.
-- **Under the Hood**: За этой простотой скрывается «инженерный перфекционизм» — WebGPU, TSL-шейдеры, сложные системы интерполяции и оптимизация VRAM.
-- **Invisible Polish**: Качество определяется тем, чего *не* видно: отсутствием рывков, идеальным сглаживанием (SMAA) и органическим шумом, который убирает «цифровую стерильность».
+- world-driven storytelling;
+- scroll как режиссёрская временная шкала;
+- центральный 3D-объект, меняющий поведение по секциям;
+- камера с инерцией, FOV-акцентами и микродвижением;
+- staged loading: `pre`, `must`, `sub`;
+- post-processing как часть арт-дирекции, а не фильтр поверх картинки.
 
----
+## Дизайн-принципы
 
-## The "Junni" Pillars (Implementation)
+### 1. Система важнее эффекта
 
-### 1. Rhythmic Motion (The "Feel")
-- **Non-Linearity**: No element moves linearly. Every transition uses easing, inertia, and Lerp.
-- **Virtual Scrolling**: Smooth-scroll engine (Lenis) to decouple the browser's scroll from the visual experience.
-- **Organic Flow**: The 3D scene and UI respond to the user's velocity, not just their position.
+Любой визуальный приём должен отвечать на вопрос: что он делает для восприятия проекта? Если ответ только “красиво”, приём удаляется или упрощается.
 
-### 2. Cinematic Fidelity (The "Look")
-- **Anti-Digital Look**: Removal of the \"plastic\" 3D look through deliberate imperfections.
-- **Post-Processing Stack**:
-    - **Film Grain**: Constant subtle noise to add texture and warmth.
-    - **Bloom**: High-intensity light bleeding for \"glowing\" elements.
-    - **Chromatic Aberration**: Slight color fringing at the edges to simulate a real camera lens.
-    - **Vignette**: Focused lighting to draw the eye to the center.
-- **Extreme Contrast**: Deep blacks vs. vibrant, electric accents.
+### 2. Ритм важнее плавности
 
-### 3. UI/3D Synergy (The "Interaction")
-- **Text-Driven 3D**: The 3D object's state (scale, rotation, color, noise) is mapped to the current section and scroll progress.
-- **Typography as Art**: Use of asymmetric grids and \"Split-Text\" animations.
-- **Magnetic Interactions**: UI elements that attract the cursor, creating a tactile feel.
+Движение должно быть точным:
+
+- no linear motion;
+- easing и inertia по умолчанию;
+- stagger только там, где он помогает считывать иерархию;
+- быстрый старт, контролируемый акцент, короткое затухание.
+
+### 3. Контраст важнее декора
+
+Базовый язык:
+
+- глубокий чёрный;
+- технический серый;
+- один сильный акцент;
+- крупная, но не маркетинговая типографика;
+- асимметрия с оптическим балансом.
+
+### 4. Render-driven UX
+
+DOM и WebGL не должны спорить. UI объясняет состояние, сцена создаёт ощущение.
+
+Обязательные связи:
+
+- scroll progress -> world state;
+- pointer velocity -> camera/environment response;
+- active project -> camera/detail material transition;
+- section -> lighting/material/post-processing preset.
+
+## Junni Patterns Для Адаптации
+
+1. `CameraController`: base camera + delayed cursor + FOV offset + organic shake.
+2. `World`: секции с собственными camera/baku/post presets.
+3. `Baku`: один центральный объект, который меняет материал, позу и роль.
+4. `AssetManager`: загрузка по приоритетам `pre`, `must`, `sub`.
+5. `RenderPipeline`: отдельные проходы SMAA, bloom, composite, grain/vignette.
+6. `NoiseText`: текстовая микроанимация как акцент, не как постоянный шум.
+
+## Не Делать
+
+- Не копировать Junni assets, тексты, модели и графику.
+- Не добавлять эффекты без состояния и причины.
+- Не маскировать плохую композицию bloom/grain.
+- Не объявлять production-ready без измерений.
+- Не держать одинаковый layout на desktop и mobile, если поведение отличается.
+
+## Definition Of Done Для Концепта
+
+- Пользователь понимает структуру сайта за 5 секунд.
+- Переходы ощущаются намеренными, а не случайными.
+- 3D-сцена помогает читать portfolio, а не мешает.
+- Страница выдерживает паузу: кадр выглядит как законченный постер.
+- Mobile-версия спроектирована отдельно, а не просто уменьшена.

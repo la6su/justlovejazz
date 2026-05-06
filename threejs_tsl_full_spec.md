@@ -1,233 +1,128 @@
+# threejs_tsl_full_spec.md
 
-# Three.js TSL Project – Technical Specification
+## Three.js / TSL Production Spec
 
-## Stack
-- Three.js (WebGPU + WebGL fallback)
-- TSL (Three.js Shading Language / Nodes)
-- Vite + TypeScript
-- UIkit 3 (YOOtheme)
+Цель: использовать Three.js TSL как production-инструмент, а не как экспериментальный слой без контрактов.
 
----
-
-## Architecture Overview
-
-### Core Classes
-
-#### Experience (Singleton)
-Responsible for global orchestration
+## Renderer Contract
 
 ```ts
-class Experience {
-  static instance: Experience
-  scene: THREE.Scene
-  camera: Camera
-  renderer: Renderer
-  sizes: Sizes
-  time: Time
-  world: World
+export type RendererMode = 'webgpu' | 'webgl' | 'unsupported'
+export type QualityTier = 'high' | 'medium' | 'low'
 
-  constructor() {
-    if (Experience.instance) return Experience.instance
-    Experience.instance = this
-
-    this.scene = new THREE.Scene()
-    this.sizes = new Sizes()
-    this.time = new Time()
-    this.camera = new Camera()
-    this.renderer = new Renderer()
-    this.world = new World()
-
-    this.update()
-  }
-
-  update() {
-    this.camera.update()
-    this.world.update()
-    this.renderer.update()
-    requestAnimationFrame(this.update.bind(this))
-  }
+export interface RendererCapabilities {
+  mode: RendererMode
+  tier: QualityTier
+  maxDpr: number
+  postProcessing: boolean
+  floatRenderTargets: boolean
 }
 ```
 
----
+Правила:
 
-#### Renderer (WebGPU → WebGL fallback)
+- WebGPU path основной.
+- WebGL path должен быть либо реализован, либо явно заменён unsupported screen.
+- Никаких `any` вокруг post-processing без локального adapter.
+- Renderer не знает о конкретных секциях.
 
-```ts
-class Renderer {
-  instance: any
+## TSL Rules
 
-  constructor() {
-    if (navigator.gpu) {
-      this.instance = new THREE.WebGPURenderer()
-    } else {
-      this.instance = new THREE.WebGLRenderer({ antialias: true })
-    }
-  }
+- Использовать method chaining: `.add()`, `.mul()`, `.sub()`.
+- Утилиты держать в `src/shaders/tsl-utils.ts`.
+- Не смешивать GLSL strings и TSL в одном material без adapter.
+- Любой expensive node должен иметь quality tier switch.
+- `time`, `uv`, `uniform` используются через тонкие helpers, если они повторяются.
 
-  update() {
-    this.instance.render(scene, camera)
-  }
-}
+## Shader Modules
+
+```text
+src/shaders/
+├── background.tsl.ts
+├── env-effects.tsl.ts
+├── noise.tsl.ts
+├── postprocessing.tsl.ts
+├── project-dive.tsl.ts
+├── ProjectMaterial.ts
+└── tsl-utils.ts
 ```
 
----
+## Post-Processing Target
 
-#### World
-Handles scene content
+Минимальный production pipeline:
 
-```ts
-class World {
-  background: Background
-  model: Model
+1. scene color;
+2. anti-aliasing strategy;
+3. bright extraction;
+4. mip bloom blur;
+5. composite;
+6. chromatic aberration;
+7. grain;
+8. vignette;
+9. output color management.
 
-  constructor() {
-    this.background = new Background()
-    this.model = new Model()
-  }
+Текущий single-node soft glow допустим только как temporary fallback.
 
-  update() {
-    this.background.update()
-    this.model.update()
-  }
-}
-```
+## Materials
 
----
+### Project Material
 
-## Folder Structure
+Обязан поддерживать:
 
-```
-src/
-├── assets/
-│
-├── Experience/
-│   ├── Camera.ts
-│   ├── ContentReveal.ts
-│   ├── Cursor.ts
-│   ├── Experience.ts
-│   ├── Input.ts
-│   ├── PostProcessing.ts
-│   ├── Renderer.ts
-│   ├── Sizes.ts
-│   ├── SmoothScroll.ts
-│   ├── TextReveal.ts
-│   ├── Time.ts
-│   │
-│   └── World/
-│       ├── Background.ts
-│       ├── Baku.ts
-│       ├── CentralObject.ts
-│       ├── Environment.ts
-│       ├── Lights.ts
-│       ├── Section.ts
-│       └── World.ts
-│
-├── shaders/
-│   ├── background.tsl.ts
-│   ├── env-effects.tsl.ts
-│   ├── noise.tsl.ts
-│   ├── postprocessing.tsl.ts
-│   └── tsl-utils.ts
-│
-├── Utils/
-│   ├── Easings.ts
-│   └── Noise.ts
-│
-├── main.ts
-```
+- base texture;
+- detail texture;
+- transition progress;
+- hover/active state;
+- fullscreen sampling mode;
+- reduced quality path.
 
----
+### Baku Material
 
-## TSL Shader Example (Procedural Background)
+Обязан поддерживать states:
 
-```ts
-import { color, sin, time, uv } from 'three/nodes'
+- `normal`;
+- `glass`;
+- `line`;
+- `dark`;
+- `project-focus`.
 
-const uvNode = uv()
-const t = time
+Material state приходит из `WorldConfig`, не из случайной логики внутри mesh.
 
-const wave = sin(uvNode.y.mul(10).add(t))
-const finalColor = color(0.1, 0.2, 0.8).mul(wave)
+## Noise
 
-export const backgroundNode = finalColor
-```
+Использовать:
 
-Usage:
+- low-frequency noise для органики;
+- high-frequency grain только в final composite;
+- 4D noise для looping/time-based motion, если он реально нужен.
 
-```ts
-material.colorNode = backgroundNode
-```
+Не использовать noise как замену композиции.
 
----
+## Performance Rules
 
-## GLTF Model Integration
+- DPR capped.
+- Mobile получает reduced movement и reduced shader tier.
+- Не создавать vectors/materials/geometries внутри hot loop без причины.
+- Не вызывать texture disposal из random/runtime эвристик.
+- Debug toggles обязательны для дорогих passes.
 
-```ts
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
+## Testing
 
-class Model {
-  mesh: THREE.Object3D
+Минимальные проверки:
 
-  constructor() {
-    const loader = new GLTFLoader()
-    loader.load('/model.glb', (gltf) => {
-      this.mesh = gltf.scene
-      scene.add(this.mesh)
-    })
-  }
+- build;
+- renderer mode detection;
+- canvas не blank после init;
+- resize не ломает aspect/post targets;
+- project detail transition не создаёт NaN transform;
+- memory не растёт после повторных transitions.
 
-  update() {
-    if (this.mesh) {
-      this.mesh.rotation.y += 0.01
-    }
-  }
-}
-```
+## Implementation Order
 
----
-
-## Interaction System
-
-- Mouse movement → rotation
-- Scroll → animation progress
-
-```ts
-window.addEventListener('mousemove', (e) => {
-  const x = e.clientX / window.innerWidth
-  model.mesh.rotation.y = x * Math.PI
-})
-```
-
----
-
-## UI Integration
-
-- UIkit sections overlay canvas
-- Transparent canvas layer
-- Section-based triggers
-
-```ts
-observer.onSectionChange((section) => {
-  background.setTheme(section.color)
-})
-```
-
----
-
-## Performance Strategy
-
-- Mobile-first resolution scaling
-- DPR clamp (max 2)
-- Lazy loading assets
-- Use WebGPU when available
-
----
-
-## Future Extensions
-
-- Post-processing (Bloom, DOF)
-- Node-based materials for models
-- Audio-reactive shaders
-- GPU particles system
-
+1. Renderer adapter.
+2. Capability detection.
+3. Quality tier config.
+4. Stable post-processing adapter.
+5. Project material sampling.
+6. Bloom pipeline.
+7. Visual QA.
