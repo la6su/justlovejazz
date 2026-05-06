@@ -85,3 +85,7 @@ npm run build
 - Lighthouse: Performance >= 85, Accessibility >= 90;
 - ручной motion review: нет linear/floaty-переходов;
 - проверка disposal для textures/materials/geometries.
+
+## LLM Agents
+
+Общие инструкции для Codex, Hermes/llama.cpp и других локальных агентов: `AGENTS.md`.
