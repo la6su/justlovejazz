@@ -89,3 +89,5 @@ npm run build
 ## LLM Agents
 
 Общие инструкции для Codex, Hermes/llama.cpp и других локальных агентов: `AGENTS.md`.
+
+Автономный протокол для Hermes Agent: `HERMES_AUTONOMY.md`.

@@ -43,8 +43,9 @@ Read these files before large changes:
 4. `DEVELOPMENT_PLAN.md`
 5. `PRO_ROADMAP.md`
 6. `JUNNI_LEVEL_IMPLEMENTATION_PLAN.md`
-7. `threejs_tsl_full_spec.md`
-8. `system.md`
+7. `HERMES_AUTONOMY.md`
+8. `threejs_tsl_full_spec.md`
+9. `system.md`
 
 Use `next-junni-co.cxml` only as a local reference snapshot. Treat it as inspiration and architecture research, not as code to copy directly.
 
@@ -60,6 +61,8 @@ Immediate order:
 4. Normalize scroll progress and world timeline.
 5. Fix asset lifecycle and remove random texture disposal.
 6. Then work on post-processing, bloom, polish, mobile QA.
+
+For autonomous local LLM work, follow `HERMES_AUTONOMY.md`.
 
 ## Engineering Rules
 
