@@ -3,7 +3,7 @@ import * as THREE from 'three'
 import { Sizes } from './Sizes'
 import { input } from './Input'
 import { Easings } from '../Utils/Easings'
-import type {CameraTarget} from '../types/camera'
+import type {CameraTarget} from '../core/types';
 
 export class Camera {
     instance: THREE.PerspectiveCamera
@@ -41,10 +41,11 @@ export class Camera {
      * @param smoothing Adjustable smoothing speed (default: 5 for "heavy" feel)
      */
     updateSmooth(target: CameraTarget, deltaTime: number, smoothing: number = 5) {
+        if (!target) return;
         const lerpFactor = 1 - Math.exp(-smoothing * deltaTime); 
         
         this.smoothPosition.lerp(target.position, lerpFactor);
-        this.smoothTarget.lerp(target.target, lerpFactor);
+        this.smoothTarget.lerp(target.lookAt, lerpFactor);
         this.smoothFov += (target.fov - this.smoothFov) * lerpFactor;
     }
 

@@ -1,6 +1,7 @@
+
+
 import * as THREE from 'three';
-import { CameraState, ViewState } from './types';
-import type {CameraTarget} from '../types/camera';
+import { CameraState, WorldSection, type WorldState, type CameraTarget } from './types';
 import { World } from '../Experience/World/World';
 import { GalleryManager } from './GalleryManager';
 
@@ -16,11 +17,7 @@ export class CameraStateManager {
         private galleryManager: GalleryManager
     ) {}
 
-    /**
-     * Main update loop for camera and world logic.
-     * Ensures atomic synchronization between camera targets and world objects.
-     */
-    update(deltaTime: number, scrollValue: number): { cameraTarget: CameraTarget, worldState: any } {
+    update(deltaTime: number, scrollValue: number): { cameraTarget: CameraTarget, worldState: WorldState } {
         if (this.currentState === CameraState.TRANSITION) {
             this.transitionT += deltaTime;
             const progress = Math.min(this.transitionT / this.transitionDuration, 1);
@@ -53,8 +50,23 @@ export class CameraStateManager {
 
         this.previousTarget = { ...cameraTarget };
         
-        // Atomic synchronization: update world state in the same tick as camera target
-        const worldState = this.world.update(scrollValue, deltaTime);
+        const { currentSection, sectionProgress } = this.calculateSection(scrollValue);
+        
+        // Now we correctly populate all fields required by WorldState
+        const worldState: WorldState = {
+            currentSection,
+            sectionProgress,
+            globalProgress: scrollValue,
+            // These values will be updated by World.update or used as defaults
+            bakuPosition: new THREE.Vector3(),
+            bakuRotation: new THREE.Quaternion(),
+            bakuScale: new THREE.Vector3(1, 1, 1),
+            bakuMaterial: {},
+            envColor: new THREE.Color(0x000000),
+            envIntensity: 1.0
+        };
+
+        this.world.update(scrollValue, deltaTime, worldState);
 
         return {
             cameraTarget,
@@ -62,9 +74,23 @@ export class CameraStateManager {
         };
     }
 
-    /**
-     * Transition to a new state.
-     */
+    private calculateSection(scroll: number): { currentSection: WorldSection, sectionProgress: number } {
+        const sections = [
+            { section: WorldSection.HOME, start: 0, end: 0.25 },
+            { section: WorldSection.WORKS, start: 0.25, end: 0.6 },
+            { section: WorldSection.ABOUT, start: 0.6, end: 0.8 },
+            { section: WorldSection.CONTACT, start: 0.8, end: 1.0 },
+        ];
+
+        const active = sections.find(s => scroll >= s.start && scroll <= s.end) || sections[0];
+        const progress = (scroll - active.start) / (active.end - active.start);
+
+        return {
+            currentSection: active.section,
+            sectionProgress: Math.max(0, Math.min(1, progress))
+        };
+    }
+
     transitionTo(newState: CameraState, duration: number = 1.2) {
         if (this.currentState === newState) return;
         
@@ -75,8 +101,6 @@ export class CameraStateManager {
     }
 
     private getWorldTarget(scroll: number): CameraTarget {
-        // This leverages the existing World logic but returns a Target
-        // We need to modify World.update to be a pure calculation
         return this.world.calculateCameraTarget(scroll);
     }
 
@@ -86,15 +110,14 @@ export class CameraStateManager {
 
         return {
             position: new THREE.Vector3(project.viewPosition.x, project.viewPosition.y, project.viewPosition.z),
-            target: new THREE.Vector3(project.viewLookAt.x, project.viewLookAt.y, project.viewLookAt.z),
+            lookAt: new THREE.Vector3(project.viewLookAt.x, project.viewLookAt.y, project.viewLookAt.z),
             fov: 45
         };
     }
 
     private getTransitionTarget(scroll: number): CameraTarget {
-        // Handle the interpolation between previous state and target state
-        // For now, we'll just return the current target and let the Camera's 
-        // updateSmooth handle the easing, or implement a specific transition curve here.
         return this.getWorldTarget(scroll);
     }
 }
+
+

@@ -3,6 +3,8 @@ import * as THREE from 'three';
 import { GalleryManager } from '../../core/GalleryManager';
 import { ProjectMaterial } from '../../shaders/ProjectMaterial';
 import { AssetManager } from '../../core/AssetManager';
+import { WorldSection, type WorldState } from '../../core/types';
+
 
 export class GalleryScene {
   public group = new THREE.Group();
@@ -66,7 +68,15 @@ export class GalleryScene {
     }
   }
 
-    update(camera: THREE.Camera, _delta: number) {
+
+    update(camera: THREE.Camera, _delta: number, worldState: WorldState) {
+      // Only update and show the slider if we are in the WORKS section
+      if (worldState.currentSection !== WorldSection.WORKS) {
+        this.group.visible = false;
+        return;
+      }
+
+      this.group.visible = true;
       const progress = this.manager.transitionProgress;
       const activeIndex = this.manager.activeIndex;
       
@@ -128,4 +138,5 @@ export class GalleryScene {
 
       this.materials.forEach(mat => mat.setProgress(progress));
     }
+
 }

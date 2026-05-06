@@ -96,7 +96,7 @@ export class Experience {
     this.camera.updateSmooth(cameraTarget, deltaTime, smoothing);
 
     this.galleryManager.update(deltaTime)
-    this.galleryScene.update(this.camera.instance, deltaTime)
+    this.galleryScene.update(this.camera.instance, deltaTime, worldState)
     if (this.ui.gallery) {
       this.ui.gallery.update(this.galleryManager)
     }

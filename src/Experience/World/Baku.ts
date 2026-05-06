@@ -62,7 +62,14 @@ export class Baku extends THREE.Mesh {
         mat.metalness += (this.targetParams.metalness - mat.metalness) * 0.05
     }
 
-    updateMaterial(params: BakuMaterialParams) {
-        this.targetParams = params
+    updateMaterial(params: any) {
+        if (!params) return;
+        
+        this.targetParams = {
+            color: params.color instanceof THREE.Color ? params.color : new THREE.Color(params.color || 0x333333),
+            emissive: params.emissive instanceof THREE.Color ? params.emissive : new THREE.Color(params.emissive || 0x111111),
+            roughness: typeof params.roughness === 'number' ? params.roughness : this.targetParams.roughness,
+            metalness: typeof params.metalness === 'number' ? params.metalness : this.targetParams.metalness
+        };
     }
 }

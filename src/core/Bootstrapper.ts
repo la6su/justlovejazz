@@ -10,6 +10,7 @@ import { Environment } from '../Experience/World/Environment';
 import { Baku } from '../Experience/World/Baku';
 import { PROJECTS } from '../Data/Projects';
 import { UIManager } from '../UI/UIManager';
+import { WorldSection } from './types';
 
 export class Bootstrapper {
     /**
@@ -27,7 +28,12 @@ export class Bootstrapper {
         experience.galleryManager = new GalleryManager(PROJECTS);
         experience.galleryScene = new GalleryScene(experience.galleryManager);
         await experience.galleryScene.init();
+        
+        // Wire GalleryScene into World for section-based updates
+        experience.world.galleryScene = experience.galleryScene;
+        
         experience.cameraStateManager = new CameraStateManager(experience.world, experience.galleryManager);
+
         
         experience.scene.add(experience.galleryScene.group);
         
@@ -46,9 +52,11 @@ export class Bootstrapper {
         return experience;
     }
 
+
     private static configureWorld(world: World) {
+        // Home Section
         world.addSection({
-            id: 'intro',
+            id: WorldSection.HOME,
             cameraPosition: new THREE.Vector3(0, 0, 5),
             cameraTarget: new THREE.Vector3(0, 0, 0),
             fov: 75,
@@ -65,8 +73,9 @@ export class Bootstrapper {
             lightIntensity: 2.0
         });
 
+        // Works Section
         world.addSection({
-            id: 'explore',
+            id: WorldSection.WORKS,
             cameraPosition: new THREE.Vector3(0, 0, 5),
             cameraTarget: new THREE.Vector3(0, 0, 0),
             fov: 75,
@@ -83,8 +92,9 @@ export class Bootstrapper {
             lightIntensity: 5.0
         });
 
+        // About Section
         world.addSection({
-            id: 'detail',
+            id: WorldSection.ABOUT,
             cameraPosition: new THREE.Vector3(0, 0, 2),
             cameraTarget: new THREE.Vector3(0, 0, 0),
             fov: 45,
@@ -100,5 +110,25 @@ export class Bootstrapper {
             ambientColor: new THREE.Color(0x001122),
             lightIntensity: 1.0
         });
+
+        // Contact Section
+        world.addSection({
+            id: WorldSection.CONTACT,
+            cameraPosition: new THREE.Vector3(0, 2, 5),
+            cameraTarget: new THREE.Vector3(0, 0, 0),
+            fov: 60,
+            bakuPosition: new THREE.Vector3(0, 0, 0),
+            bakuRotation: new THREE.Quaternion(),
+            bakuScale: new THREE.Vector3(1, 1, 1),
+            bakuMaterial: {
+                color: new THREE.Color(0x333333),
+                emissive: new THREE.Color(0x111111),
+                roughness: 0.1,
+                metalness: 0.9
+            },
+            ambientColor: new THREE.Color(0x111122),
+            lightIntensity: 2.0
+        });
     }
+
 }

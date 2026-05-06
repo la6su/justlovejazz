@@ -1,14 +1,14 @@
-// src/Experience/Projects/Environment.ts
-import * as THREE from 'three'
 
+import * as THREE from 'three'
+import { HDRLoader } from 'three/addons/loaders/HDRLoader.js'
 import { cinematicGridNode } from '../../shaders/env-effects.tsl.ts'
 import { 
-    uniform, 
-    uv, 
-    time, 
-    positionLocal, 
-    mul, 
-    add 
+   uniform, 
+   uv, 
+   time, 
+   positionLocal, 
+   mul, 
+   add 
 } from 'three/tsl'
 
 export class Environment {
@@ -19,16 +19,35 @@ export class Environment {
     private pointLight!: THREE.PointLight
     private cameraVelocityUniform!: any
     private bakuPosUniform!: any
+    private envMap!: THREE.Texture
 
     constructor(scene: THREE.Scene) {
         this.setupFog(scene)
         this.setupLights(scene)
         this.setupParticles(scene)
         this.setupGrid(scene)
+        this.setupHDR(scene)
+    }
+
+    private async setupHDR(scene: THREE.Scene) {
+        const loader = new HDRLoader()
+        try {
+            // Path to local HDR asset in public/assets/env/
+            const texture = await loader.loadAsync('/assets/env/studio.hdr')
+            texture.mapping = THREE.EquirectangularReflectionMapping
+
+            
+            this.envMap = texture
+            scene.environment = texture
+            // scene.background = texture // Optional: set as background if needed
+            
+            console.log('Environment: HDR loaded successfully')
+        } catch (e) {
+            console.warn('Environment: Failed to load HDR, using default lighting', e)
+        }
     }
 
     private setupFog(scene: THREE.Scene) {
-        // Exponential Height Fog for atmospheric depth
         scene.fog = new THREE.FogExp2(0x05050a, 0.05)
     }
 
@@ -52,7 +71,6 @@ export class Environment {
 
         geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
         
-        // Camera velocity uniform for reactive motion
         const camVel = uniform(new THREE.Vector3(0, 0, 0))
         this.cameraVelocityUniform = camVel
 
@@ -64,7 +82,6 @@ export class Environment {
             blending: THREE.AdditiveBlending
         }) as any
 
-        // TSL override for vertex position to add camera-reactive drift
         material.positionNode = add(
             positionLocal,
             mul(camVel, 0.05)
@@ -75,15 +92,12 @@ export class Environment {
     }
 
     private setupGrid(scene: THREE.Scene) {
-        const size = 100 // Increased size for the horizon effect
+        const size = 100
         const geometry = new THREE.PlaneGeometry(size, size)
         
-        // Grid color is now handled by the material's default or a global uniform
         const bakuPos = uniform(new THREE.Vector2(0, 0))
         this.bakuPosUniform = bakuPos
         
-        // Using standard MeshBasicMaterial and assigning colorNode.
-        // In Three.js r167+, WebGPURenderer treats this as a NodeMaterial.
         this.gridMaterial = new THREE.MeshBasicMaterial({
             transparent: true,
             opacity: 0.5
@@ -99,26 +113,30 @@ export class Environment {
     }
 
     update(timeVal: number, scrollValue: number, camVelocity: THREE.Vector3, bakuPosition: THREE.Vector3) {
-        // Update uniforms
         this.cameraVelocityUniform.value = camVelocity
         
-        // Map Baku's world position to UV space (0..1)
-        // Grid size is 100, centered at 0. So world -50..50 maps to 0..1
         this.bakuPosUniform.value.set(
             (bakuPosition.x / 100) + 0.5,
             (bakuPosition.z / 100) + 0.5
         )
 
-        // Медленное вращение частиц для создания жизни
         this.particles.rotation.y = timeVal * 0.05
         this.particles.rotation.x = timeVal * 0.02
-        
-        // Смещение сетки в зависимости от скролла (параллакс)
         this.grid.position.z = (scrollValue * 0.5) % 1
     }
 
     setLighting(color: THREE.Color, intensity: number) {
+        // Smooth transition for ambient light
         this.ambientLight.color.lerp(color, 0.05)
+        
+        // Point light intensity smoothing
         this.pointLight.intensity = THREE.MathUtils.lerp(this.pointLight.intensity, intensity, 0.05)
+        
+        // If we have HDR, we can also modulate environment intensity
+        if (this.envMap) {
+            // In a real production scenario, we'd use a custom env-light node 
+            // or modulate the environment intensity via the renderer/scene
+        }
     }
 }
+

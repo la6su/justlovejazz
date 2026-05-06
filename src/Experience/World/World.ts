@@ -2,12 +2,15 @@
 import * as THREE from 'three'
 import { Section, type SectionConfig } from './Section'
 import { Camera } from '../Camera'
-import type {CameraState} from '../../types/camera'
+import type {CameraState, CameraTarget} from '../../core/types';
+
 
 export class World {
     private sections: Section[] = []
+    public galleryScene?: GalleryScene
     
     constructor(private camera: Camera) {}
+
 
     addSection(config: SectionConfig) {
         this.sections.push(new Section(config))
@@ -26,7 +29,7 @@ export class World {
         if (this.sections.length === 0) {
             return {
                 position: new THREE.Vector3(0, 0, 5),
-                target: new THREE.Vector3(0, 0, 0),
+                lookAt: new THREE.Vector3(0, 0, 0),
                 fov: 75
             };
         }
@@ -39,14 +42,13 @@ export class World {
 
         return {
             position: new THREE.Vector3().lerpVectors(from.config.cameraPosition, to.config.cameraPosition, t),
-            target: new THREE.Vector3().lerpVectors(from.config.cameraTarget, to.config.cameraTarget, t),
+            lookAt: new THREE.Vector3().lerpVectors(from.config.cameraTarget, to.config.cameraTarget, t),
             fov: from.config.fov + (to.config.fov - from.config.fov) * t
         };
     }
 
-    update(scrollValue: number, deltaTime: number) {
-        // This method now primarily returns the World State for Baku and Env
-        // The CameraTarget is handled by the CameraStateManager
+
+    update(scrollValue: number, deltaTime: number, worldState: WorldState) {
         if (this.sections.length === 0) return;
 
         const index = Math.floor(scrollValue);
@@ -54,6 +56,12 @@ export class World {
 
         const from = this.sections[index] || this.sections[0];
         const to = this.sections[index + 1] || from;
+
+        // If we have a gallery scene, update it with the current section
+        // This requires World to have a reference to GalleryScene
+        if (this.galleryScene) {
+            this.galleryScene.update(this.camera, deltaTime, worldState);
+        }
 
         return {
             currentSectionId: from.config.id,
@@ -66,6 +74,7 @@ export class World {
                 from.config.lightIntensity + (to.config.lightIntensity || from.config.lightIntensity) * t : 1.0
         };
     }
+
 
     getSections() {
         return this.sections
