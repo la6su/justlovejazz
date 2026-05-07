@@ -1,6 +1,7 @@
 // src/core/AssetManager.ts
 import * as THREE from 'three';
 import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
+import { DeviceCapability } from './DeviceCapability';
 
 /**
  * VRAM-Aware Asset Manager
@@ -63,6 +64,7 @@ export class AssetManager {
         const bicubic = (THREE as any).BicubicFilter;
         texture.minFilter = bicubic || THREE.LinearMipmapLinearFilter;
         texture.magFilter = bicubic || THREE.LinearFilter;
+        texture.anisotropy = DeviceCapability.getInstance().config.maxAnisotropy;
       }
     } catch (e) {
       console.error(`AssetManager: Failed to load texture ${url}`, e);

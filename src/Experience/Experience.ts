@@ -17,6 +17,7 @@ import { input } from './Input'
 import { GalleryManager } from '../core/GalleryManager'
 import { CameraStateManager } from '../core/CameraStateManager'
 import { AssetManager } from '../core/AssetManager'
+import { GPUResourceManager } from '../core/GPUResourceManager'
 import { GalleryScene } from './World/GalleryScene'
 import { CameraState } from '../core/types'
 
@@ -105,6 +106,7 @@ export class Experience {
     if (config && config.context !== this.currentSectionContext) {
         if (this.currentSectionContext) {
             AssetManager.getInstance().disposeContext(this.currentSectionContext);
+            GPUResourceManager.getInstance().disposeContext(this.currentSectionContext);
         }
         this.atmosphere.setFog(config.fog.color, config.fog.density);
         

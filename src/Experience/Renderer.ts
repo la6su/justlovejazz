@@ -4,12 +4,12 @@ import { WebGPURenderer } from 'three/webgpu';
 import { Sizes } from './Sizes';
 import { postProcessingNode } from '../shaders/postprocessing.tsl.ts';
 import { texture, uniform } from 'three/tsl';
-import type { RendererCapabilities } from '../types/renderer';
-import type {WorldState} from '../core/types';
+import { DeviceCapability } from '../core/DeviceCapability';
+import { GPUResourceManager } from '../core/GPUResourceManager';
 
 export class Renderer {
     instance: WebGPURenderer;
-    capabilities: RendererCapabilities;
+    private capabilities = DeviceCapability.getInstance();
 
     private postParams = {
         bloom: uniform(0),
@@ -18,8 +18,6 @@ export class Renderer {
     };
 
     constructor(sizes: Sizes) {
-        this.capabilities = this.detectCapabilities(sizes);
-
         if (this.capabilities.mode === 'unsupported') {
             this.showUnsupportedMessage();
             throw new Error('Neither WebGPU nor WebGL2 is supported by this browser.');
@@ -44,41 +42,6 @@ export class Renderer {
         });
 
         this.initPostProcessing();
-    }
-
-    private detectCapabilities(sizes: Sizes): RendererCapabilities {
-        const isMobile = sizes.isMobile;
-
-        if (navigator.gpu) {
-            return {
-                mode: 'webgpu',
-                tier: isMobile ? 'medium' : 'high',
-                maxDpr: isMobile ? 1.5 : 2,
-                postProcessing: !isMobile,
-                floatRenderTargets: true
-            };
-        }
-
-        // Fallback to WebGL2
-        const canvas = document.createElement('canvas');
-        const gl = canvas.getContext('webgl2');
-        if (gl) {
-            return {
-                mode: 'webgl',
-                tier: isMobile ? 'low' : 'medium',
-                maxDpr: isMobile ? 1 : 1.5,
-                postProcessing: !isMobile,
-                floatRenderTargets: false
-            };
-        }
-
-        return {
-            mode: 'unsupported',
-            tier: 'low',
-            maxDpr: 1,
-            postProcessing: false,
-            floatRenderTargets: false
-        };
     }
 
     private showUnsupportedMessage() {
@@ -112,9 +75,9 @@ export class Renderer {
 
     update(scene: THREE.Scene, camera: THREE.Camera, worldState?: WorldState) {
         if (worldState) {
-            this.postParams.bloom.value = worldState.post.bloom;
-            this.postParams.vignette.value = worldState.post.vignette;
-            this.postParams.grain.value = worldState.post.grain;
+            this.postParams.bloom.value = this.capabilities.scaleIntensity(worldState.post.bloom);
+            this.postParams.vignette.value = this.capabilities.scaleIntensity(worldState.post.vignette);
+            this.postParams.grain.value = this.capabilities.scaleIntensity(worldState.post.grain);
         }
         this.instance.render(scene, camera);
     }
