@@ -6,6 +6,7 @@ import { Renderer } from './Renderer'
 import { Baku } from './World/Baku'
 import { Environment } from './World/Environment'
 import { WorldAtmosphere } from '../core/WorldAtmosphere'
+import { DebugStats } from '../core/DebugStats'
 
 import { SmoothScroll } from './SmoothScroll'
 import { TextReveal } from './TextReveal'
@@ -39,6 +40,7 @@ export class Experience {
   private contentReveal!: ContentReveal
   private cursor!: Cursor
   private atmosphere!: WorldAtmosphere
+  private debugStats!: DebugStats
   
   // New Spatial System
   public galleryManager!: GalleryManager;
@@ -73,6 +75,7 @@ export class Experience {
       this.atmosphere = new WorldAtmosphere(this.scene)
       
       await this.renderer.init()
+      this.debugStats = new DebugStats(this.renderer.instance)
 
       // DEBUG: Force camera to a safe position to verify visibility
       this.camera.instance.position.set(0, 5, 10)
@@ -95,6 +98,7 @@ export class Experience {
         this.smoothScroll.update(time)
         input.update()
         this.cursor.update()
+        this.debugStats.update(time)
         
         const normalizedScroll = input.getSmoothedScrollProgress()
 
@@ -155,6 +159,7 @@ export class Experience {
     this.contentReveal.destroy()
     this.cursor.destroy()
     this.atmosphere.dispose()
+    this.debugStats.destroy()
     this.renderer.instance.dispose()
   }
 }

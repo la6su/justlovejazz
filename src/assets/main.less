@@ -381,6 +381,31 @@ body, a, button, .interactive {
   letter-spacing: 0.1em;
 }
 
+
 .project-card-wrapper.is-active .project-card__title {
   color: #fff;
 }
+
+/* Debug Stats Overlay */
+.debug-stats {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.7);
+  color: #0f0;
+  font-family: 'monospace';
+  font-size: 10px;
+  padding: 5px 10px;
+  border-radius: 4px;
+  pointer-events: none;
+  border: 1px solid rgba(0, 255, 0, 0.3);
+  user-select: none;
+}
+
+.debug-stat-line {
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+
