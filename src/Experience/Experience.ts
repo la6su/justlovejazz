@@ -107,6 +107,10 @@ export class Experience {
             AssetManager.getInstance().disposeContext(this.currentSectionContext);
         }
         this.atmosphere.setFog(config.fog.color, config.fog.density);
+        
+        // Cinematic Arrival Pulse: subtle FOV shift to announce section change
+        this.camera.setFovOffset(0.3, 0.8);
+        
         this.currentSectionContext = config.context;
     }
     
@@ -137,9 +141,9 @@ export class Experience {
 
     this.camera.update(deltaTime);
     this.baku.update(deltaTime);
-    this.atmosphere.update();
+    this.atmosphere.update(this.time.elapsed / 1000);
     this.environment.update(this.time.elapsed / 1000, normalizedScroll, this.camera.getVelocity(), this.baku.position);
-    this.renderer.update(this.scene, this.camera.instance);
+    this.renderer.update(this.scene, this.camera.instance, worldState);
     requestAnimationFrame((t) => this.update(t));
   }
 

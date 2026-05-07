@@ -22,6 +22,10 @@ export class Camera {
     private shakePower: number = 0
     private shakeDuration: number = 0
     
+    // Constant organic handheld shake
+    private organicShakeTime: number = 0
+    private organicShakePower: number = 0.002
+    
     private fovOffset: number = 0
     private targetFovOffset: number = 0
     private fovTransitionT: number = 0
@@ -101,10 +105,15 @@ export class Camera {
         this.cursorPosDelay.add(this.cursorPosDelayVel)
     
         // 2. Position Calculation
+        this.organicShakeTime += safeDelta;
+        const ox = (Math.sin(this.organicShakeTime * 0.7) + Math.sin(this.organicShakeTime * 1.3)) * this.organicShakePower;
+        const oy = (Math.sin(this.organicShakeTime * 0.9) + Math.sin(this.organicShakeTime * 1.7)) * this.organicShakePower;
+        const oz = (Math.sin(this.organicShakeTime * 1.1) + Math.sin(this.organicShakeTime * 2.1)) * this.organicShakePower;
+
         this.instance.position.set(
-            this.smoothPosition.x + this.cursorPosDelay.x * this.moveRange.x,
-            this.smoothPosition.y + this.cursorPosDelay.y * this.moveRange.y,
-            this.smoothPosition.z
+            this.smoothPosition.x + this.cursorPosDelay.x * this.moveRange.x + ox,
+            this.smoothPosition.y + this.cursorPosDelay.y * this.moveRange.y + oy,
+            this.smoothPosition.z + oz
         )
 
         this.instance.lookAt(this.smoothTarget)

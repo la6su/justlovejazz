@@ -18,13 +18,12 @@ import {
  * Implements a professional studio-grade pipeline:
  * Chromatic Aberration -> Bloom -> Grain -> Vignette
  */
-export const postProcessingNode = (inputTexture: any) => {
+export const postProcessingNode = (inputTexture: any, params: { bloom: any, vignette: any, grain: any }) => {
     return Fn(() => {
         const u = uv();
         const t = time;
 
         // 1. Chromatic Aberration
-        // Radial shift: stronger at the edges
         const dist = u.sub(vec2(0.5, 0.5));
         const radialWeight = dist.x.mul(dist.x).add(dist.y.mul(dist.y)).add(float(0.1));
         const aberrationStrength = float(0.005).mul(radialWeight);
@@ -36,14 +35,12 @@ export const postProcessingNode = (inputTexture: any) => {
         let color = vec3(colorR.r, colorG.g, colorB.b).toVar();
 
         // 2. Cinematic Bloom Simulation
-        // We blend the original with a blurred version
-        const glow = applySoftGlow(inputTexture, u, 0.008);
+        const glow = applySoftGlow(inputTexture, u, params.bloom);
         color.assign(color.add(glow.mul(float(0.5))));
 
-        // 3. Final Polish Stack (Order is critical)
-        // Grain first, then Vignette
-        color.assign(applyProfessionalGrain(color, u, t, 0.035));
-        color.assign(applyCinematicVignette(color, u, 0.45));
+        // 3. Final Polish Stack
+        color.assign(applyProfessionalGrain(color, u, t, params.grain));
+        color.assign(applyCinematicVignette(color, u, params.vignette));
 
         return color;
     });

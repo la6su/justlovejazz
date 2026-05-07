@@ -53,7 +53,7 @@ export const easeInOutQuart = (t: any) => {
  * Professional Film Grain
  * Uses combined sine-wave noise to avoid the "digital" look.
  */
-export const applyProfessionalGrain = (color: any, uv: any, time: any, strength: number = 0.03) => {
+export const applyProfessionalGrain = (color: any, uv: any, time: any, strength: any = 0.03) => {
     const noise1 = uv.mul(vec2(12.9898, 78.233)).add(time).sin().mul(43758.5453).fract();
     const noise2 = uv.mul(vec2(34.123, 12.456)).add(time.mul(0.5)).cos().mul(12345.678).fract();
     const grain = noise1.add(noise2).mul(0.5).sub(0.5).mul(strength);
@@ -63,7 +63,7 @@ export const applyProfessionalGrain = (color: any, uv: any, time: any, strength:
 /**
  * Cinematic Vignette
  */
-export const applyCinematicVignette = (color: any, uv: any, intensity: number = 0.4) => {
+export const applyCinematicVignette = (color: any, uv: any, intensity: any = 0.4) => {
     const dist = uv.mul(2.0).sub(vec2(1.0, 1.0));
     const d2 = dist.x.mul(dist.x).add(dist.y.mul(dist.y));
     const v = float(1.0).sub(d2.mul(intensity));
@@ -98,12 +98,12 @@ export const sampleMipBlend = (tex: any, uv: any, level1: number, level2: number
 /**
  * Soft Glow (Fast Bloom approximation)
  */
-export const applySoftGlow = (tex: any, uv: any, strength: number = 0.005) => {
+export const applySoftGlow = (tex: any, uv: any, strength: any = 0.005) => {
     const scales = [1.0, 2.0, 4.0];
     let glow = tex.sample(uv).mul(0.0);
     
     scales.forEach(s => {
-        const sStr = strength * s;
+        const sStr = strength.mul(s);
         const sampleSum = tex.sample(uv.add(vec2(sStr, 0.0)))
             .add(tex.sample(uv.add(vec2(-sStr, 0.0))))
             .add(tex.sample(uv.add(vec2(0.0, sStr))))

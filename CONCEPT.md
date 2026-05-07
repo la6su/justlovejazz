@@ -49,13 +49,13 @@ DOM и WebGL не должны спорить. UI объясняет состо�
 - active project -> camera/detail material transition;
 - section -> lighting/material/post-processing preset.
 
-## Junni Patterns Для Адаптации
+## Junni Patterns Для Адаптации [Current Status]
 
-1. `CameraController`: base camera + delayed cursor + FOV offset + organic shake.
-2. `World`: секции с собственными camera/baku/post presets.
-3. `Baku`: один центральный объект, который меняет материал, позу и роль.
-4. `AssetManager`: загрузка по приоритетам `pre`, `must`, `sub`.
-5. `RenderPipeline`: отдельные проходы SMAA, bloom, composite, grain/vignette.
+1. `CameraController`: base camera + delayed cursor + FOV offset + organic shake [Implemented: FOV Transitions, Arrival Pulse, Handheld Shake].
+2. `World`: секции с собственными camera/baku/post presets [Implemented: Section-driven State Machine].
+3. `Baku`: один центральный объект, который меняет материал, позу и роль [Implemented: Section-based Material Sync].
+4. `AssetManager`: загрузка по приоритетам `pre`, `must`, `sub` [Implemented: Contextual Disposal].
+5. `RenderPipeline`: отдельные проходы SMAA, bloom, composite, grain/vignette [Implemented: TSL Chain + Bicubic Filtering].
 6. `NoiseText`: текстовая микроанимация как акцент, не как постоянный шум.
 
 ## Не Делать

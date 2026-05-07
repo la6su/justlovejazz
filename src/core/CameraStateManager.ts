@@ -15,7 +15,7 @@ export class CameraStateManager {
 
     // Smoothness parameters
     private lerpFactor: number = 0.05;
-    private fovLerpFactor: number = 0.03;
+    private fovLerpFactor: number = 0.08;
 
     private currentPosition = new THREE.Vector3();
     private currentLookAt = new THREE.Vector3();

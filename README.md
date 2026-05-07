@@ -19,14 +19,15 @@
 - `Experience`, `Renderer`, `Camera`, `WorldConfig`;
 - `CameraStateManager` с состояниями `INTRO`, `EXPLORE`, `DETAIL`, `TRANSITION`;
 - `GalleryManager` и `GalleryScene`;
-- TSL-материалы и базовый post-processing node;
-- `AssetManager` с KTX2/Basis-загрузчиком и ручным purge.
+- TSL-материалы и production-ready post-processing chain (Chromatic Aberration, Bloom, Grain, Vignette);
+- `AssetManager` с контекстным dispose и Bicubic-фильтрацией;
+- Кинематографическая камера: Organic Handheld Shake, Dynamic FOV Transitions, Arrival Pulse;
+- Атмосферный слой: `FogExp2` и система частиц глубины.
 
 Не считать готовым:
 
-- `npm run build` сейчас падает на TypeScript errors;
 - WebGL2 fallback пока не реализован как отдельный runtime path;
-- SMAA, mip-pyramid bloom и bicubic upsampling пока не являются production pipeline;
+- SMAA и bloom mip-pyramid bloom пока не являются production pipeline;
 - asset pipeline не завершён: JPEG/PNG должны пройти AVIF/WebP/KTX2;
 - нет автоматического performance budget, визуальных регрессий и accessibility-аудита.
 

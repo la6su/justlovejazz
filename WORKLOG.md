@@ -2,6 +2,10 @@
 
 ## 2026-05-07
 
+- Fixed: TS build blocker in `AssetManager.ts` (BicubicFilter types).
+- Improved: Renderer fallback UI with cinematic error screen.
+- Implementation: Connected Post-Processing pipeline to `WorldState` via TSL uniforms (Bloom, Vignette, Grain).
+- Verified: `npm run build` passes.
 - Fixed: exposed interpolated post presets through `WorldState`.
 - Files: `src/core/types.ts`, `src/core/CameraStateManager.ts`.
 - Verified: `npm run type-check` passes; `npm run build` passes.

@@ -24,22 +24,22 @@ Production-ready означает:
 - [x] Зафиксировать реальный текущий статус.
 - [x] Убрать иллюзорные формулировки из документации.
 - [x] Запустить build и записать текущие ошибки как backlog.
+- [x] Исправить TypeScript build blockers.
 - [ ] Добавить `type-check` script.
-- [ ] Исправить TypeScript build blockers.
 
 ### Phase 1: Engine Reliability
 
-- [ ] Renderer mode detection: `webgpu`, `webgl`, `unsupported`.
+- [x] Renderer mode detection: `webgpu`, `webgl`, `unsupported`.
 - [ ] WebGL fallback или честная unsupported-страница, если TSL path невозможен.
-- [ ] DPR policy: desktop max 2, mobile max 1.5, low tier max 1.
-- [ ] Resize lifecycle без дублирования listeners.
-- [ ] Dispose lifecycle для renderer/world/UI.
+- [x] DPR policy: desktop max 2, mobile max 1.5, low tier max 1.
+- [x] Resize lifecycle без дублирования listeners.
+- [x] Dispose lifecycle для renderer/world/UI.
 
 ### Phase 2: Camera / World Choreography
 
-- [ ] `WorldConfig` как единый источник camera, object, light, post и UI state.
-- [ ] Section timeline с `start`, `end`, `progress`.
-- [ ] Camera controller: base transform, delayed cursor, FOV impulse, shake.
+- [x] `WorldConfig` как единый источник camera, object, light, post и UI state.
+- [x] Section timeline с `start`, `end`, `progress`.
+- [x] Camera controller: base transform, delayed cursor, FOV impulse, shake.
 - [ ] `Baku` role states: normal, glass, line, dark, project-focus.
 - [ ] Project detail transition: gallery plane -> fullscreen -> detail UI.
 
@@ -48,8 +48,8 @@ Production-ready означает:
 - [ ] Реальный multi-pass pipeline.
 - [ ] SMAA или production-grade alternative для текущего renderer path.
 - [ ] Bloom mip pyramid.
-- [ ] Grain/vignette/composite с параметрами по section.
-- [ ] Bicubic/detail sampling для fullscreen project textures.
+- [x] Grain/vignette/composite с параметрами по section.
+- [x] Bicubic/detail sampling для fullscreen project textures.
 - [ ] Debug toggles для каждого pass.
 
 ### Phase 4: Asset Orchestration
@@ -58,7 +58,7 @@ Production-ready означает:
 - [ ] KTX2 для GPU textures.
 - [ ] AVIF/WebP для UI/content images.
 - [ ] Lazy project detail assets.
-- [ ] Context disposal без удаления активных ресурсов.
+- [x] Context disposal без удаления активных ресурсов.
 
 ### Phase 5: Studio UI
 

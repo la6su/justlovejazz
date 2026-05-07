@@ -60,8 +60,9 @@ export class AssetManager {
         : await this.textureLoader.loadAsync(url);
 
       if (texture.isTexture) {
-        texture.minFilter = THREE.LinearMipmapLinearFilter;
-        texture.magFilter = THREE.LinearFilter;
+        const bicubic = (THREE as any).BicubicFilter;
+        texture.minFilter = bicubic || THREE.LinearMipmapLinearFilter;
+        texture.magFilter = bicubic || THREE.LinearFilter;
       }
     } catch (e) {
       console.error(`AssetManager: Failed to load texture ${url}`, e);

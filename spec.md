@@ -127,7 +127,7 @@ scene
 - no dynamic heavy distortions;
 - stable readability first.
 
-## Motion
+### Motion
 
 Все движения обязаны быть:
 
@@ -138,10 +138,10 @@ scene
 
 Camera:
 
-- base target smoothing;
-- delayed cursor response;
-- FOV impulse;
-- optional organic shake;
+- base target smoothing [x];
+- delayed cursor response [x];
+- FOV impulse (Arrival Pulse) [x];
+- organic shake (combined-sine) [x];
 - mobile reduced movement.
 
 Gallery:
@@ -168,9 +168,9 @@ interface AssetManifestItem {
 Правила:
 
 - UI/content images: AVIF/WebP;
-- GPU textures: KTX2/Basis;
+- GPU textures: KTX2/Basis (with Bicubic filtering where supported) [x];
 - HDR/env assets lazy where possible;
-- dispose только по inactive context;
+- dispose только по inactive context [x];
 - cache не удаляет ресурс, если его использует active material.
 
 ## UI / UX
