@@ -80,18 +80,6 @@ export class GalleryScene {
       const activeIndex = this.manager.activeIndex;
       const isMobile = this.sizes.isMobile;
       
-      if (Math.random() < 0.01) {
-        const keepUrls: string[] = [];
-        const neighbors = [activeIndex - 1, activeIndex, activeIndex + 1];
-        neighbors.forEach(idx => {
-          if (idx >= 0 && idx < this.manager.projects.length) {
-            const p = this.manager.projects[idx];
-            keepUrls.push(p.textureUrl, p.detailTextureUrl);
-          }
-        });
-        AssetManager.getInstance().purgeUnused(keepUrls);
-      }
-      
       const trackLength = this.manager.trackLength;
       const halfTrack = trackLength / 2;
       const visualProgress = progress; 

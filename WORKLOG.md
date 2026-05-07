@@ -45,3 +45,4 @@
 - Files: `HERMES_AUTONOMY.md`, `WORKLOG.md`.
 - Verified: documentation only; no runtime verification needed.
 - Next: start Phase 1 from `JUNNI_LEVEL_IMPLEMENTATION_PLAN.md` by fixing `npm run build`.
+\n---\n- Implementation: Baku Role system (Normal, Glass, Wire, Grid) integrated with WorldConfig.\n- Improvement: Baku material morphing with smooth lerps and role-based material switching.\n- Polish: Added cinematic FOV kick in CameraStateManager for transitions (Detail/Explore).\n- Cleanup: Removed random purge logic from GalleryScene.\n- Verified: `npm run build` passes.

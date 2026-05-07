@@ -8,29 +8,37 @@ export enum WorldSection {
     CONTACT = 'contact'
 }
 
+export enum BakuRole {
+    NORMAL = 'normal',
+    GLASS = 'glass',
+    WIRE = 'wire',
+    GRID = 'grid'
+}
+
 export interface CameraTarget {
     position: THREE.Vector3;
     lookAt: THREE.Vector3;
     fov: number;
 }
 
-export interface WorldState {
-    currentSection: WorldSection;
-    sectionProgress: number;
-    globalProgress: number;
-    bakuPosition: THREE.Vector3;
-    bakuRotation: THREE.Quaternion;
-    bakuScale: THREE.Vector3;
-    bakuMaterial: any;
-    envColor: THREE.Color;
-    envIntensity: number;
-    uiShowGallery: boolean;
-    post: {
-        bloom: number;
-        vignette: number;
-        grain: number;
-    };
-}
+    export interface WorldState {
+        currentSection: WorldSection;
+        sectionProgress: number;
+        globalProgress: number;
+        bakuPosition: THREE.Vector3;
+        bakuRotation: THREE.Quaternion;
+        bakuScale: THREE.Vector3;
+        bakuRole: BakuRole;
+        bakuMaterial: any;
+        envColor: THREE.Color;
+        envIntensity: number;
+        uiShowGallery: boolean;
+        post: {
+            bloom: number;
+            vignette: number;
+            grain: number;
+        };
+    }
 
 export interface Project {
   id: string;

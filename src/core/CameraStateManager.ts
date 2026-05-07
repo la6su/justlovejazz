@@ -1,6 +1,6 @@
 // src/core/CameraStateManager.ts
 import * as THREE from 'three';
-import { CameraState, WorldSection, type WorldState, type CameraTarget } from './types';
+import { CameraState, WorldSection, type WorldState, type CameraTarget, BakuRole } from './types';
 import { GalleryManager } from './GalleryManager';
 import { WORLD_CONFIG } from './WorldConfig';
 import { easeInOutCubic } from './utils';
@@ -20,6 +20,7 @@ export class CameraStateManager {
     private currentPosition = new THREE.Vector3();
     private currentLookAt = new THREE.Vector3();
     private currentFov = 75;
+    private fovKick = 0;
 
     private transitionT: number = 0;
     private transitionDuration: number = 1.2;
@@ -38,6 +39,9 @@ export class CameraStateManager {
                 this.currentState = this.targetState;
             }
         }
+
+        // Decay FOV kick
+        this.fovKick *= Math.exp(-deltaTime * 3);
 
         let target: CameraTarget;
 
@@ -61,7 +65,7 @@ export class CameraStateManager {
         // CINEMATIC POLISH: Inertia-based follow
         this.currentPosition.lerp(target.position, this.lerpFactor);
         this.currentLookAt.lerp(target.lookAt, this.lerpFactor);
-        this.currentFov += (target.fov - this.currentFov) * this.fovLerpFactor;
+        this.currentFov += (target.fov + this.fovKick - this.currentFov) * this.fovLerpFactor;
 
         const cameraTarget: CameraTarget = {
             position: this.currentPosition.clone(),
@@ -111,6 +115,7 @@ export class CameraStateManager {
                 bakuPosition: new THREE.Vector3(),
                 bakuRotation: new THREE.Quaternion(),
                 bakuScale: new THREE.Vector3(1, 1, 1),
+                bakuRole: BakuRole.NORMAL,
                 bakuMaterial: {},
                 envColor: new THREE.Color(0x000000),
                 envIntensity: 1.0,
@@ -135,6 +140,7 @@ export class CameraStateManager {
             bakuPosition: new THREE.Vector3().lerpVectors(from.baku.position, to.baku.position, t),
             bakuRotation: new THREE.Quaternion().slerpQuaternions(from.baku.rotation, to.baku.rotation, t),
             bakuScale: new THREE.Vector3().lerpVectors(from.baku.scale, to.baku.scale, t),
+            bakuRole: from.baku.role,
             bakuMaterial: from.baku.material || to.baku.material,
             envColor: from.lighting.ambientColor || to.lighting.ambientColor || new THREE.Color(0x000000),
             envIntensity: THREE.MathUtils.lerp(
@@ -179,6 +185,12 @@ export class CameraStateManager {
         this.transitionDuration = duration;
         this.transitionT = 0;
         this.currentState = CameraState.TRANSITION;
+
+        if (newState === CameraState.DETAIL) {
+            this.fovKick = 10; // Cinematic pop
+        } else if (newState === CameraState.EXPLORE) {
+            this.fovKick = -5; // Subtle pull-back
+        }
     }
 
     private getProjectTarget(): CameraTarget {

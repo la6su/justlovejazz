@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { WorldSection } from './types';
+import { WorldSection, BakuRole } from './types';
 
 export interface CameraPreset {
     position: THREE.Vector3;
@@ -8,6 +8,7 @@ export interface CameraPreset {
 }
 
 export interface BakuPreset {
+    role: BakuRole;
     position: THREE.Vector3;
     rotation: THREE.Quaternion;
     scale: THREE.Vector3;
@@ -62,6 +63,7 @@ export const WORLD_CONFIG: SectionConfig[] = [
             fov: 75
         },
         baku: {
+            role: BakuRole.NORMAL,
             position: new THREE.Vector3(0, 0, 0),
             rotation: new THREE.Quaternion(),
             scale: new THREE.Vector3(1, 1, 1),
@@ -93,6 +95,7 @@ export const WORLD_CONFIG: SectionConfig[] = [
             fov: 45
         },
         baku: {
+            role: BakuRole.GLASS,
             position: new THREE.Vector3(0, 0, 0),
             rotation: new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, 0, 0)),
             scale: new THREE.Vector3(0.8, 0.8, 0.8),
@@ -124,6 +127,7 @@ export const WORLD_CONFIG: SectionConfig[] = [
             fov: 75
         },
         baku: {
+            role: BakuRole.GRID,
             position: new THREE.Vector3(0, 0, 0),
             rotation: new THREE.Quaternion(),
             scale: new THREE.Vector3(1.2, 1.2, 1.2),
@@ -155,6 +159,7 @@ export const WORLD_CONFIG: SectionConfig[] = [
             fov: 60
         },
         baku: {
+            role: BakuRole.NORMAL,
             position: new THREE.Vector3(0, 0, 0),
             rotation: new THREE.Quaternion(),
             scale: new THREE.Vector3(1, 1, 1),
