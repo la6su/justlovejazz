@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+
 
 export enum QualityTier {
     LOW = 'low',

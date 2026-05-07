@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { GalleryManager } from '../../core/GalleryManager';
 import { ProjectMaterial } from '../../shaders/ProjectMaterial';
 import { AssetManager } from '../../core/AssetManager';
-import { WorldSection, type WorldState } from '../../core/types';
+import { NarrativePhase, type WorldState } from '../../core/types';
 
 
 export class GalleryScene {
@@ -70,7 +70,7 @@ export class GalleryScene {
 
 
     update(_camera: THREE.Camera, _delta: number, worldState: WorldState) {
-      if (worldState.currentSection !== WorldSection.WORKS) {
+      if (worldState.currentPhase !== NarrativePhase.DEEP_DIVE) {
         this.group.visible = false;
         return;
       }

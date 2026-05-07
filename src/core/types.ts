@@ -1,11 +1,11 @@
 
 import * as THREE from 'three';
 
-export enum WorldSection {
-    HOME = 'home',
-    WORKS = 'works',
-    ABOUT = 'about',
-    CONTACT = 'contact'
+export enum NarrativePhase {
+    AWAKENING = 'awakening',
+    DISCOVERY = 'discovery',
+    DEEP_DIVE = 'deep_dive',
+    CONNECTION = 'connection'
 }
 
 export enum BakuRole {
@@ -22,8 +22,8 @@ export interface CameraTarget {
 }
 
     export interface WorldState {
-        currentSection: WorldSection;
-        sectionProgress: number;
+        currentPhase: NarrativePhase;
+        phaseProgress: number;
         globalProgress: number;
         bakuPosition: THREE.Vector3;
         bakuRotation: THREE.Quaternion;

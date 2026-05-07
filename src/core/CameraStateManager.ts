@@ -1,6 +1,6 @@
 // src/core/CameraStateManager.ts
 import * as THREE from 'three';
-import { CameraState, WorldSection, type WorldState, type CameraTarget, BakuRole } from './types';
+import { CameraState, NarrativePhase, type WorldState, type CameraTarget, BakuRole } from './types';
 import { GalleryManager } from './GalleryManager';
 import { WORLD_CONFIG } from './WorldConfig';
 import { easeInOutCubic } from './utils';
@@ -73,9 +73,9 @@ export class CameraStateManager {
             fov: this.currentFov
         };
 
-        const { currentSection, sectionProgress } = this.calculateSection(scrollValue);
+        const { currentPhase, phaseProgress } = this.calculatePhase(scrollValue);
         
-        const worldState: WorldState = this.calculateWorldState(scrollValue, currentSection, sectionProgress);
+        const worldState: WorldState = this.calculateWorldState(scrollValue, currentPhase, phaseProgress);
 
         return {
             cameraTarget,
@@ -83,34 +83,48 @@ export class CameraStateManager {
         };
     }
 
-    public calculateSection(scroll: number): { currentSection: WorldSection, sectionProgress: number } {
+    private calculateBakuPosition(scroll: number): { position: THREE.Vector3, rotation: THREE.Quaternion, scale: THREE.Vector3 } {
+        const { currentPhase, phaseProgress } = this.calculatePhase(scroll);
+        const index = WORLD_CONFIG.findIndex(s => s.id === currentPhase);
+        const from = WORLD_CONFIG[index] || WORLD_CONFIG[0];
+        const to = WORLD_CONFIG[index + 1] || from;
+        const t = phaseProgress;
+
+        return {
+            position: new THREE.Vector3().lerpVectors(from.baku.position, to.baku.position, t),
+            rotation: new THREE.Quaternion().slerpQuaternions(from.baku.rotation, to.baku.rotation, t),
+            scale: new THREE.Vector3().lerpVectors(from.baku.scale, to.baku.scale, t)
+        };
+    }
+
+    public calculatePhase(scroll: number): { currentPhase: NarrativePhase, phaseProgress: number } {
         const active = WORLD_CONFIG.find(config => {
             const [start, end] = config.range;
             return scroll >= start && scroll <= end;
         }) || WORLD_CONFIG[0];
-
+        
         if (!active) {
             return {
-                currentSection: WorldSection.HOME,
-                sectionProgress: 0
+                currentPhase: NarrativePhase.AWAKENING,
+                phaseProgress: 0
             };
         }
-
+        
         const [start, end] = active.range;
         const rawProgress = (scroll - start) / (end - start);
         const easedProgress = easeInOutCubic(Math.max(0, Math.min(1, rawProgress)));
-
+        
         return {
-            currentSection: active.id,
-            sectionProgress: easedProgress
+            currentPhase: active.id,
+            phaseProgress: easedProgress
         };
     }
 
-    private calculateWorldState(scrollValue: number, currentSection: WorldSection, sectionProgress: number): WorldState {
+    private calculateWorldState(scrollValue: number, currentPhase: NarrativePhase, phaseProgress: number): WorldState {
         if (WORLD_CONFIG.length === 0) {
             return {
-                currentSection,
-                sectionProgress,
+                currentPhase,
+                phaseProgress,
                 globalProgress: scrollValue,
                 bakuPosition: new THREE.Vector3(),
                 bakuRotation: new THREE.Quaternion(),
@@ -128,14 +142,14 @@ export class CameraStateManager {
             };
         }
 
-        const index = WORLD_CONFIG.findIndex(s => s.id === currentSection);
+        const index = WORLD_CONFIG.findIndex(s => s.id === currentPhase);
         const from = WORLD_CONFIG[index] || WORLD_CONFIG[0];
         const to = WORLD_CONFIG[index + 1] || from;
-        const t = sectionProgress;
+        const t = phaseProgress;
 
         return {
-            currentSection,
-            sectionProgress,
+            currentPhase,
+            phaseProgress,
             globalProgress: scrollValue,
             bakuPosition: new THREE.Vector3().lerpVectors(from.baku.position, to.baku.position, t),
             bakuRotation: new THREE.Quaternion().slerpQuaternions(from.baku.rotation, to.baku.rotation, t),
@@ -166,15 +180,27 @@ export class CameraStateManager {
             };
         }
 
-        const { currentSection, sectionProgress } = this.calculateSection(scroll);
-        const index = WORLD_CONFIG.findIndex(s => s.id === currentSection);
+        const { currentPhase, phaseProgress } = this.calculatePhase(scroll);
+        const index = WORLD_CONFIG.findIndex(s => s.id === currentPhase);
         const from = WORLD_CONFIG[index] || WORLD_CONFIG[0];
         const to = WORLD_CONFIG[index + 1] || from;
-        const t = sectionProgress;
+        const t = phaseProgress;
+
+        const baku = this.calculateBakuPosition(scroll);
+        
+        // Determine if we are in relative mode (based on current phase)
+        const isRelative = from.camera.isRelative;
+        
+        const posOffset = new THREE.Vector3().lerpVectors(from.camera.position, to.camera.position, t);
+        const lookOffset = new THREE.Vector3().lerpVectors(from.camera.target, to.camera.target, t);
 
         return {
-            position: new THREE.Vector3().lerpVectors(from.camera.position, to.camera.position, t),
-            lookAt: new THREE.Vector3().lerpVectors(from.camera.target, to.camera.target, t),
+            position: isRelative 
+                ? baku.position.clone().add(posOffset) 
+                : posOffset,
+            lookAt: isRelative 
+                ? baku.position.clone().add(lookOffset) 
+                : lookOffset,
             fov: from.camera.fov + (to.camera.fov - from.camera.fov) * t
         };
     }
@@ -204,7 +230,7 @@ export class CameraStateManager {
         };
     }
 
-    public getWorldConfigForSection(section: WorldSection) {
-        return WORLD_CONFIG.find(s => s.id === section);
+    public getWorldConfigForPhase(phase: NarrativePhase) {
+        return WORLD_CONFIG.find(s => s.id === phase);
     }
 }

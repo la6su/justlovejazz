@@ -28,8 +28,8 @@ export class GPUResourceManager {
     /**
      * Создает RenderTarget и автоматически регистрирует его
      */
-    public createRenderTarget(contextId: string, options: THREE.WebGLRenderTargetOptions): THREE.WebGLRenderTarget {
-        const rtt = new THREE.WebGLRenderTarget(options);
+    public createRenderTarget(contextId: string, options: THREE.RenderTargetOptions): THREE.WebGLRenderTarget {
+        const rtt = new THREE.WebGLRenderTarget(options as any);
         this.track(contextId, rtt);
         return rtt;
     }
@@ -44,8 +44,8 @@ export class GPUResourceManager {
         console.log(`[GPUResourceManager] Disposing context: ${contextId} (${contextResources.size} resources)`);
         
         contextResources.forEach(res => {
-            if (res.dispose) {
-                res.dispose();
+            if ((res as any).dispose) {
+                (res as any).dispose();
             }
             if ((res as any).geometry?.dispose) {
                 (res as any).geometry.dispose();

@@ -105,8 +105,8 @@ export class Experience {
     const { cameraTarget, worldState } = this.cameraStateManager.update(deltaTime, normalizedScroll);
     
     // VRAM Optimization: Dispose previous section assets on change
-    const sectionConfig = this.cameraStateManager.calculateSection(normalizedScroll).currentSection;
-    const config = this.cameraStateManager.getWorldConfigForSection(sectionConfig); // I'll need to add this method
+    const { currentPhase } = this.cameraStateManager.calculatePhase(normalizedScroll);
+    const config = this.cameraStateManager.getWorldConfigForPhase(currentPhase); // I'll need to add this method
     if (config && config.context !== this.currentSectionContext) {
         if (this.currentSectionContext) {
             AssetManager.getInstance().disposeContext(this.currentSectionContext);

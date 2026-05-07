@@ -5,7 +5,7 @@ import { Sizes } from './Sizes';
 import { postProcessingNode } from '../shaders/postprocessing.tsl.ts';
 import { texture, uniform } from 'three/tsl';
 import { DeviceCapability } from '../core/DeviceCapability';
-import { GPUResourceManager } from '../core/GPUResourceManager';
+import { type WorldState } from '../core/types';
 
 export class Renderer {
     instance: WebGPURenderer;
@@ -60,7 +60,7 @@ export class Renderer {
     }
 
     private initPostProcessing() {
-        if (this.capabilities.postProcessing) {
+        if (this.capabilities.mode !== 'unsupported') {
             const sceneColorPlaceholder = texture( new THREE.Texture() );
             (this.instance as any).postProcessing = postProcessingNode( sceneColorPlaceholder, this.postParams );
             console.info('Renderer: Post-processing enabled (connected to uniforms)');

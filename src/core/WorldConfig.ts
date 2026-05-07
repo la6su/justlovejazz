@@ -1,10 +1,11 @@
 import * as THREE from 'three';
-import { WorldSection, BakuRole } from './types';
+import { NarrativePhase, BakuRole } from './types';
 
 export interface CameraPreset {
     position: THREE.Vector3;
     target: THREE.Vector3;
     fov: number;
+    isRelative: boolean;
 }
 
 export interface BakuPreset {
@@ -40,9 +41,9 @@ export interface UiPreset {
     showGallery: boolean;
 }
 
-export interface SectionConfig {
-    id: WorldSection;
-    context: string; // Unique ID for asset lifecycle management
+export interface PhaseConfig {
+    id: NarrativePhase;
+    context: string;
     range: [number, number];
     camera: CameraPreset;
     baku: BakuPreset;
@@ -52,15 +53,16 @@ export interface SectionConfig {
     ui: UiPreset;
 }
 
-export const WORLD_CONFIG: SectionConfig[] = [
+export const WORLD_CONFIG: PhaseConfig[] = [
     {
-        id: WorldSection.HOME,
-        context: 'world_home',
-        range: [0, 0.25],
+        id: NarrativePhase.AWAKENING,
+        context: 'phase_awakening',
+        range: [0, 0.2],
         camera: {
-            position: new THREE.Vector3(0, 0, 5),
+            position: new THREE.Vector3(0, 0, 8),
             target: new THREE.Vector3(0, 0, 0),
-            fov: 75
+            fov: 60,
+            isRelative: false
         },
         baku: {
             role: BakuRole.NORMAL,
@@ -68,95 +70,98 @@ export const WORLD_CONFIG: SectionConfig[] = [
             rotation: new THREE.Quaternion(),
             scale: new THREE.Vector3(1, 1, 1),
             material: {
-                color: new THREE.Color(0x333333),
-                emissive: new THREE.Color(0x111111),
+                color: new THREE.Color(0x111111),
+                emissive: new THREE.Color(0x050505),
+                roughness: 0.2,
+                metalness: 0.8
+            }
+        },
+        lighting: {
+            ambientColor: new THREE.Color(0x050510),
+            intensity: 1.5
+        },
+        fog: {
+            color: new THREE.Color(0x050510),
+            density: 0.04
+        },
+        post: { bloom: 0.3, vignette: 0.6, grain: 0.04 },
+        ui: { showGallery: false }
+    },
+    {
+        id: NarrativePhase.DISCOVERY,
+        context: 'phase_discovery',
+        range: [0.2, 0.5],
+        camera: {
+            position: new THREE.Vector3(-4, 2, 6),
+            target: new THREE.Vector3(0, 0, 0),
+            fov: 75,
+            isRelative: true
+        },
+        baku: {
+            role: BakuRole.WIRE,
+            position: new THREE.Vector3(0, 0, 0),
+            rotation: new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 4, 0)),
+            scale: new THREE.Vector3(1.1, 1.1, 1.1),
+            material: {
+                color: new THREE.Color(0x222222),
+                emissive: new THREE.Color(0x111122),
                 roughness: 0.1,
                 metalness: 0.9
             }
         },
         lighting: {
             ambientColor: new THREE.Color(0x111122),
-            intensity: 2.0
+            intensity: 2.5
         },
         fog: {
             color: new THREE.Color(0x111122),
-            density: 0.02
+            density: 0.03
         },
-        post: { bloom: 0.4, vignette: 0.45, grain: 0.03 },
+        post: { bloom: 0.5, vignette: 0.4, grain: 0.03 },
         ui: { showGallery: false }
     },
     {
-        id: WorldSection.ABOUT,
-        context: 'world_about',
-        range: [0.25, 0.5],
+        id: NarrativePhase.DEEP_DIVE,
+        context: 'phase_deep_dive',
+        range: [0.5, 0.8],
         camera: {
-            position: new THREE.Vector3(0, 0, 2),
+            position: new THREE.Vector3(0, 0, 4),
             target: new THREE.Vector3(0, 0, 0),
-            fov: 45
+            fov: 45,
+            isRelative: false
         },
         baku: {
             role: BakuRole.GLASS,
             position: new THREE.Vector3(0, 0, 0),
             rotation: new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, 0, 0)),
-            scale: new THREE.Vector3(0.8, 0.8, 0.8),
+            scale: new THREE.Vector3(0.9, 0.9, 0.9),
             material: {
-                color: new THREE.Color(0x112233),
-                emissive: new THREE.Color(0x001122),
-                roughness: 0.05,
+                color: new THREE.Color(0x001122),
+                emissive: new THREE.Color(0x000511),
+                roughness: 0.02,
                 metalness: 1.0
             }
         },
         lighting: {
-            ambientColor: new THREE.Color(0x001122),
-            intensity: 1.0
+            ambientColor: new THREE.Color(0x000511),
+            intensity: 4.0
         },
         fog: {
-            color: new THREE.Color(0x001122),
-            density: 0.05
+            color: new THREE.Color(0x000511),
+            density: 0.06
         },
-        post: { bloom: 0.25, vignette: 0.55, grain: 0.025 },
-        ui: { showGallery: false }
-    },
-    {
-        id: WorldSection.WORKS,
-        context: 'world_works',
-        range: [0.5, 0.75],
-        camera: {
-            position: new THREE.Vector3(0, 0, 5),
-            target: new THREE.Vector3(0, 0, 0),
-            fov: 75
-        },
-        baku: {
-            role: BakuRole.GRID,
-            position: new THREE.Vector3(0, 0, 0),
-            rotation: new THREE.Quaternion(),
-            scale: new THREE.Vector3(1.2, 1.2, 1.2),
-            material: {
-                color: new THREE.Color(0x664422),
-                emissive: new THREE.Color(0x221100),
-                roughness: 0.4,
-                metalness: 0.7
-            }
-        },
-        lighting: {
-            ambientColor: new THREE.Color(0x221100),
-            intensity: 5.0
-        },
-        fog: {
-            color: new THREE.Color(0x221100),
-            density: 0.08
-        },
-        post: { bloom: 0.8, vignette: 0.5, grain: 0.035 },
+        post: { bloom: 0.8, vignette: 0.5, grain: 0.02 },
         ui: { showGallery: true }
     },
     {
-        id: WorldSection.CONTACT,
-        context: 'world_contact',
-        range: [0.75, 1],
+        id: NarrativePhase.CONNECTION,
+        context: 'phase_connection',
+        range: [0.8, 1],
         camera: {
-            position: new THREE.Vector3(0, 2, 5),
+            position: new THREE.Vector3(0, 2, 7),
             target: new THREE.Vector3(0, 0, 0),
-            fov: 60
+            fov: 60,
+            isRelative: true
         },
         baku: {
             role: BakuRole.NORMAL,
@@ -164,21 +169,21 @@ export const WORLD_CONFIG: SectionConfig[] = [
             rotation: new THREE.Quaternion(),
             scale: new THREE.Vector3(1, 1, 1),
             material: {
-                color: new THREE.Color(0x333333),
-                emissive: new THREE.Color(0x111111),
-                roughness: 0.1,
-                metalness: 0.9
+                color: new THREE.Color(0x111111),
+                emissive: new THREE.Color(0x050505),
+                roughness: 0.2,
+                metalness: 0.8
             }
         },
         lighting: {
-            ambientColor: new THREE.Color(0x111122),
+            ambientColor: new THREE.Color(0x050510),
             intensity: 2.0
         },
         fog: {
-            color: new THREE.Color(0x111122),
-            density: 0.02
+            color: new THREE.Color(0x050510),
+            density: 0.03
         },
-        post: { bloom: 0.35, vignette: 0.45, grain: 0.03 },
+        post: { bloom: 0.3, vignette: 0.5, grain: 0.03 },
         ui: { showGallery: false }
     },
 ];
