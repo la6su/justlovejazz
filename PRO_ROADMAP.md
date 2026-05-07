@@ -30,10 +30,12 @@ Production-ready означает:
 ### Phase 1: Engine Reliability
 
 - [x] Renderer mode detection: `webgpu`, `webgl`, `unsupported`.
-- [ ] WebGL fallback или честная unsupported-страница, если TSL path невозможен.
+- [x] WebGL fallback или честная unsupported-страница, если TSL path невозможен.
 - [x] DPR policy: desktop max 2, mobile max 1.5, low tier max 1.
 - [x] Resize lifecycle без дублирования listeners.
 - [x] Dispose lifecycle для renderer/world/UI.
+- [x] Quality Tiers (LOW, MID, ULTRA) & Intensity Scaling.
+- [x] Centralized GPU Resource Management (RTT/Material tracking).
 
 ### Phase 2: Camera / World Choreography
 

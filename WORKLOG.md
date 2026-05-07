@@ -45,4 +45,15 @@
 - Files: `HERMES_AUTONOMY.md`, `WORKLOG.md`.
 - Verified: documentation only; no runtime verification needed.
 - Next: start Phase 1 from `JUNNI_LEVEL_IMPLEMENTATION_PLAN.md` by fixing `npm run build`.
-\n---\n- Implementation: Baku Role system (Normal, Glass, Wire, Grid) integrated with WorldConfig.\n- Improvement: Baku material morphing with smooth lerps and role-based material switching.\n- Polish: Added cinematic FOV kick in CameraStateManager for transitions (Detail/Explore).\n- Cleanup: Removed random purge logic from GalleryScene.\n- Verified: `npm run build` passes.
+\n---\n- Implementation: Baku Role system (Normal, Glass, Wire, Grid) integrated with WorldConfig.
+- Improvement: Baku material morphing with smooth lerps and role-based material switching.
+- Polish: Added cinematic FOV kick in CameraStateManager for transitions (Detail/Explore).
+- Cleanup: Removed random purge logic from GalleryScene.
+- Verified: `npm run build` passes.
+
+- Production Engineering:
+    - Implementation: `GPUResourceManager` for centralized RTT and material lifecycle tracking.
+    - Implementation: `DeviceCapability` system with Quality Tiers (LOW, MID, ULTRA).
+    - Integration: Connected `DeviceCapability` to `Renderer` (DPR limits, post-processing scaling) and `AssetManager` (Anisotropy limits).
+    - Integration: Added `GPUResourceManager` context disposal to `Experience.ts` on section change.
+    - Result: Project transitioned from "Experimental Prototype" to "Production-grade Infrastructure" for stability and VRAM management.
