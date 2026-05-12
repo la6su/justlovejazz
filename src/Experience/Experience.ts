@@ -33,96 +33,98 @@ export class Experience {
   renderer!: Renderer
   baku!: Baku
   environment!: Environment
-  
-  private smoothScroll!: SmoothScroll
 
+  private smoothScroll!: SmoothScroll
   private textReveal!: TextReveal
   private contentReveal!: ContentReveal
   private cursor!: Cursor
   private atmosphere!: WorldAtmosphere
   private debugStats!: DebugStats
-  
-  // New Spatial System
-  public galleryManager!: GalleryManager;
-  public galleryScene!: GalleryScene;
-  public cameraStateManager!: CameraStateManager;
-  private currentSectionContext: string | null = null;
-  
-  
-    constructor(ui: UIManager) {
-        this.sizes = new Sizes();
-        this.time = new Time();
-        Experience.instance = this;
-        window.experience = this;
-        this.ui = ui;
-        this.camera = new Camera(this.sizes)
-        this.renderer = new Renderer(this.sizes)
-    }
 
-    public setupEventListeners() {
-        window.addEventListener('pointerdown', (e) => {
-            if (this.galleryScene) {
-                this.galleryScene.handlePointerDown(e.clientX, e.clientY, this.camera.instance)
-            }
-        })
-    }
+  // New Spatial System — CRITICAL: must be initialized in order
+  public galleryManager!: GalleryManager
+  public galleryScene!: GalleryScene
+  public cameraStateManager!: CameraStateManager
+  private currentSectionContext: string | null = null
 
-    async init() {
-      this.smoothScroll = new SmoothScroll()
-      this.textReveal = new TextReveal()
-      this.contentReveal = new ContentReveal()
-      this.cursor = new Cursor()
-      this.atmosphere = new WorldAtmosphere(this.scene)
-      
-      await this.renderer.init()
-      this.debugStats = new DebugStats(this.renderer.instance)
+  constructor(ui: UIManager) {
+    this.sizes = new Sizes()
+    this.time = new Time()
+    Experience.instance = this
+    window.experience = this
+    this.ui = ui
+    this.camera = new Camera(this.sizes)
+    this.renderer = new Renderer(this.sizes)
+  }
 
-      // DEBUG: Force camera to a safe position to verify visibility
-      this.camera.instance.position.set(0, 5, 10)
-      this.camera.instance.lookAt(0, 0, 0)
-      this.camera.instance.updateProjectionMatrix()
-
-      const loader = document.getElementById('pageLoader')
-      if (loader) {
-        loader.style.opacity = '0'
-        setTimeout(() => {
-          loader.style.display = 'none'
-        }, 500)
+  public setupEventListeners() {
+    window.addEventListener('pointerdown', (e) => {
+      if (this.galleryScene) {
+        this.galleryScene.handlePointerDown(e.clientX, e.clientY, this.camera.instance)
       }
-      requestAnimationFrame((t) => this.update(t))
+    })
+  }
+
+  async init() {
+    this.smoothScroll = new SmoothScroll()
+    this.textReveal = new TextReveal()
+    this.contentReveal = new ContentReveal()
+    this.cursor = new Cursor()
+    this.atmosphere = new WorldAtmosphere(this.scene)
+
+    await this.renderer.init()
+
+    // Initialize DebugStats only in development
+    if (import.meta.env.DEV) {
+      this.debugStats = new DebugStats(this.renderer.instance)
     }
 
-    update(time: number) {
-        this.time.update(time)
-        const deltaTime = this.time.delta / 1000
-        this.smoothScroll.update(time)
-        input.update()
-        this.cursor.update()
-        this.debugStats.update(time)
-        
-        const normalizedScroll = input.getSmoothedScrollProgress()
+    // DEBUG: Force camera to a safe position to verify visibility
+    this.camera.instance.position.set(0, 5, 10)
+    this.camera.instance.lookAt(0, 0, 0)
+    this.camera.instance.updateProjectionMatrix()
 
-    const { cameraTarget, worldState } = this.cameraStateManager.update(deltaTime, normalizedScroll);
-    
+    const loader = document.getElementById('pageLoader')
+    if (loader) {
+      loader.style.opacity = '0'
+      setTimeout(() => {
+        loader.style.display = 'none'
+      }, 500)
+    }
+    requestAnimationFrame((t) => this.update(t))
+  }
+
+  update(time: number) {
+    this.time.update(time)
+    const deltaTime = this.time.delta / 1000
+    this.smoothScroll.update(time)
+    input.update()
+    this.cursor.update()
+    this.debugStats?.update(time)
+
+    const normalizedScroll = input.getSmoothedScrollProgress()
+
+    const { cameraTarget, worldState } = this.cameraStateManager.update(deltaTime, normalizedScroll)
+
     // VRAM Optimization: Dispose previous section assets on change
-    const { currentPhase } = this.cameraStateManager.calculatePhase(normalizedScroll);
-    const config = this.cameraStateManager.getWorldConfigForPhase(currentPhase); // I'll need to add this method
+    const { currentPhase } = this.cameraStateManager.calculatePhase(normalizedScroll)
+    const config = this.cameraStateManager.getWorldConfigForPhase(currentPhase)
     if (config && config.context !== this.currentSectionContext) {
-        if (this.currentSectionContext) {
-            AssetManager.getInstance().disposeContext(this.currentSectionContext);
-            GPUResourceManager.getInstance().disposeContext(this.currentSectionContext);
-        }
-        this.atmosphere.setFog(config.fog.color, config.fog.density);
-        
-        // Cinematic Arrival Pulse: subtle FOV shift to announce section change
-        this.camera.setFovOffset(0.3, 0.8);
-        
-        this.currentSectionContext = config.context;
+      if (this.currentSectionContext) {
+        AssetManager.getInstance().disposeContext(this.currentSectionContext)
+        GPUResourceManager.getInstance().disposeContext(this.currentSectionContext)
+      }
+      this.atmosphere.setFog(config.fog.color, config.fog.density)
+
+      // Cinematic Arrival Pulse: subtle FOV shift to announce section change
+      this.camera.setFovOffset(0.3, 0.8)
+
+      this.currentSectionContext = config.context
     }
-    
+
     // Apply state-dependent smoothing
-    const smoothing = this.cameraStateManager.currentState === CameraState.TRANSITION ? 8 : 5;
-    this.camera.updateSmooth(cameraTarget, deltaTime, smoothing);
+    const smoothing = this.cameraStateManager.currentState === CameraState.TRANSITION ? 8 : 5
+    this.camera.updateSmooth(cameraTarget, deltaTime, smoothing)
 
     this.galleryManager.update(deltaTime)
     this.galleryScene.update(this.camera.instance, deltaTime, worldState)
@@ -141,16 +143,14 @@ export class Experience {
         this.baku.updateMaterial(worldState.bakuMaterial)
       }
       this.environment.setLighting(worldState.envColor, worldState.envIntensity)
-
-      // Sync UI visibility with current world section
     }
 
-    this.camera.update(deltaTime);
-    this.baku.update(deltaTime);
-    this.atmosphere.update(this.time.elapsed / 1000);
-    this.environment.update(this.time.elapsed / 1000, normalizedScroll, this.camera.getVelocity(), this.baku.position);
-    this.renderer.update(this.scene, this.camera.instance, worldState);
-    requestAnimationFrame((t) => this.update(t));
+    this.camera.update(deltaTime)
+    this.baku.update(deltaTime)
+    this.atmosphere.update(this.time.elapsed / 1000)
+    this.environment.update(this.time.elapsed / 1000, normalizedScroll, this.camera.getVelocity(), this.baku.position)
+    this.renderer.update(this.scene, this.camera.instance, worldState)
+    requestAnimationFrame((t) => this.update(t))
   }
 
   destroy() {
@@ -159,7 +159,7 @@ export class Experience {
     this.contentReveal.destroy()
     this.cursor.destroy()
     this.atmosphere.dispose()
-    this.debugStats.destroy()
+    this.debugStats?.destroy()
     this.renderer.instance.dispose()
   }
 }
