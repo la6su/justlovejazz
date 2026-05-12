@@ -38,14 +38,14 @@ Do not copy Junni assets, text, models, SVGs, or content. Port patterns, not cop
 Read these files before large changes:
 
 1. `README.md`
-2. `CONCEPT.md`
-3. `spec.md`
-4. `DEVELOPMENT_PLAN.md`
-5. `PRO_ROADMAP.md`
-6. `JUNNI_LEVEL_IMPLEMENTATION_PLAN.md`
-7. `HERMES_AUTONOMY.md`
-8. `threejs_tsl_full_spec.md`
-9. `system.md`
+2. `docs/docs/CONCEPT.md`
+3. `docs/SPEC.md`
+4. `docs/docs/ROADMAP.md`
+5. `docs/ROADMAP.md`
+6. `docs/docs/ROADMAP.md`
+7. `docs/AUTONOMY.md`
+8. `threejs_tsl_full_docs/SPEC.md`
+9. `docs/ARCHITECTURE.md`
 
 Use `next-junni-co.cxml` only as a local reference snapshot. Treat it as inspiration and architecture research, not as code to copy directly.
 
@@ -62,7 +62,7 @@ Immediate order:
 5. Fix asset lifecycle and remove random texture disposal.
 6. Then work on post-processing, bloom, polish, mobile QA.
 
-For autonomous local LLM work, follow `HERMES_AUTONOMY.md`.
+For autonomous local LLM work, follow `docs/AUTONOMY.md`.
 
 ## Engineering Rules
 

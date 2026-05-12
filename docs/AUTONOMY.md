@@ -9,10 +9,10 @@ The goal is not to generate many changes. The goal is to safely and steadily mov
 Use this file together with:
 
 - `AGENTS.md`
-- `JUNNI_LEVEL_IMPLEMENTATION_PLAN.md`
-- `DEVELOPMENT_PLAN.md`
-- `spec.md`
-- `threejs_tsl_full_spec.md`
+- `ROADMAP.md`
+- `ROADMAP.md`
+- `SPEC.md`
+- `threejs_tsl_full_SPEC.md`
 
 ## Operating Mode
 
