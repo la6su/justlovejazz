@@ -1,47 +1,40 @@
-// src/UI/ProjectDetail.ts
+// src/UI/ProjectDetail.ts — Cinematic project detail overlay (slides in, no HW antialias)
 import UIkit from 'uikit'
-import { type Project } from '../Data/Projects'
+import { type Project } from '../core/types'
 import type { UIkitModal } from '../types/uikit'
 
 export class ProjectDetail {
-    private modalElement: HTMLElement | null = null
-    private contentElement: HTMLElement | null = null
-    private modalInstance: UIkitModal | null = null
+    private modal: UIkitModal | null = null
+    private content: HTMLElement | null = null
 
     constructor() {
-        this.modalElement = document.getElementById('project-modal')
-        this.contentElement = document.getElementById('modal-content')
+        const el = document.getElementById('project-modal')
+        const content = document.getElementById('modal-content')
 
-        if (this.modalElement && UIkit) {
-            this.modalInstance = UIkit.modal(this.modalElement) as any
-
-            // 1. Pre-fill with a skeleton to avoid "null -> huge" layout jump on first click
-            if (this.contentElement) {
-                this.contentElement.innerHTML = '<div class="uk-placeholder"></div>'
-            }
-
-            // 2. Warm-up: Trigger show/hide immediately to prime animations and DOM
-            // This happens during bootstrap, so the user doesn't see the flicker
-            if (this.modalInstance) {
-                this.modalInstance.show()
-                this.modalInstance.hide()
-            }
-
-            UIkit.util.on(this.modalElement, 'close', () => {
-                window.dispatchEvent(new CustomEvent('project-detail-closed'))
-            })
-        } else {
-            console.error('UIkit or Project Modal element not found in DOM')
+        if (!el || !content) {
+            console.warn('ProjectDetail: modal elements not found')
+            return
         }
+
+        this.content = content
+        this.modal = UIkit.modal(el) as unknown as UIkitModal
+
+        // Warm-up
+        this.modal.show()
+        this.modal.hide()
+
+        // On close → dispatch event for gallery return
+        UIkit.util.on(el, 'close', () => {
+            window.dispatchEvent(new CustomEvent('project-detail-closed'))
+        })
     }
 
     public open(project: Project) {
-        if (!this.contentElement) return
+        if (!this.content) return
 
-        // Inject content using UIkit classes for consistency
-        this.contentElement.innerHTML = `
-            <div class="detail-header uk-flex uk-flex-between uk-flex-middle uk-margin-medium-bottom" style="border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 20px;">
-                <h1 class="detail-title" style="color: ${project.color}; margin: 0;">${project.title}</h1>
+        this.content.innerHTML = `
+            <div class="detail-header uk-flex uk-flex-between uk-flex-middle uk-margin-medium-bottom">
+                <h1 class="detail-title">${project.title}</h1>
                 <div class="detail-meta">${project.year} — ${project.category}</div>
             </div>
             <div class="detail-body uk-grid-small uk-grid">
@@ -50,20 +43,16 @@ export class ProjectDetail {
                 </div>
                 <div class="uk-width-1-2@m">
                     <div class="detail-tags uk-flex uk-flex-wrap uk-gap-small">
-                        ${project.tags.map(tag => `<span class="detail-tag">${tag}</span>`).join('')}
+                        ${project.tags?.map(t => `<span class="detail-tag">${t}</span>`).join('') ?? ''}
                     </div>
                 </div>
             </div>
         `
 
-        if (this.modalInstance) {
-            this.modalInstance.show()
-        }
+        this.modal?.show()
     }
 
     public close() {
-        if (this.modalInstance) {
-            this.modalInstance.hide()
-        }
+        this.modal?.hide()
     }
 }

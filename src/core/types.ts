@@ -49,6 +49,9 @@ export interface Project {
   color: string;
   viewPosition: { x: number, y: number, z: number };
   viewLookAt: { x: number, y: number, z: number };
+  year?: string;
+  category?: string;
+  tags?: string[];
 }
 
 export enum ViewState {

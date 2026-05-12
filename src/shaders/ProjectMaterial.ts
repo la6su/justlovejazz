@@ -1,60 +1,67 @@
+// src/shaders/ProjectMaterial.ts — TSL shader: chromatic aberration, bulge displacement, grid detail
+import * as THREE from 'three'
+import { MeshBasicNodeMaterial } from 'three/webgpu'
+import { uniform, vec2, vec3, float, texture, uv, mix, positionLocal } from 'three/tsl'
 
-import * as THREE from 'three';
-import { MeshBasicNodeMaterial } from 'three/webgpu';
-import { uniform, vec3, float, texture, uv, mix, positionLocal } from 'three/tsl';
+const half = vec2(0.5, 0.5)
+const zero = float(0.0)
+const one = float(1.0)
 
 export class ProjectMaterial {
-  public material: MeshBasicNodeMaterial;
-  private progressUniform = uniform(0);
+    public material: MeshBasicNodeMaterial
+    private progressUniform = uniform(0)
+    private active = false
 
-  constructor(mainTex: THREE.Texture, detailTex: THREE.Texture, baseColor: string) {
-    this.material = new MeshBasicNodeMaterial();
+    constructor(mainTex: THREE.Texture, detailTex: THREE.Texture, baseColor: string) {
+        const parsedColor = new THREE.Color(baseColor)
+        const col = vec3(parsedColor.r, parsedColor.g, parsedColor.b)
+        const tex = texture(mainTex)
+        const detTex = texture(detailTex)
+        const p = this.progressUniform
+        const uvVal = uv()
 
-    const tex = texture(mainTex);
-    const detTex = texture(detailTex);
-    const parsedColor = new THREE.Color(baseColor);
-    const col = vec3(parsedColor.r, parsedColor.g, parsedColor.b);
-    const p = this.progressUniform;
+        // ── Vertex: displacement from center ──
+        const dist = positionLocal.length()
+        const bulge = p.mul(p).mul(one.sub(p)).mul(one.sub(dist)).mul(float(0.2))
+        this.material = new MeshBasicNodeMaterial()
+        this.material.positionNode = positionLocal.add(positionLocal.mul(bulge))
 
-    // --- Vertex Stage: GPU Distortion (Cinematic Pop) ---
-    // Creates a spherical bulge effect that peaks during the transition
-    const dist = positionLocal.length();
-    const bulge = float(1.0).add(
-        p.mul(p).mul(float(1.0).sub(p)) // Peak at p=0.66
-        .mul(float(1.0).sub(dist))
-        .mul(0.2)
-    );
-    this.material.positionNode = positionLocal.mul(bulge);
+        // ── Fragment ──
+        // Zoom: UV range narrows during transition
+        const zoomUV = uvVal.mul(float(2.0)).sub(half).mul(mix(one, float(0.1), p)).add(half)
 
-    // --- Fragment Stage: Masked Reveal & Visuals ---
-    
-    // Zoom simulation in UV space
-    const zoomUV = uv().mul(2.0).sub(1.0).mul(mix(1.0, 0.1, p)).add(0.5);
+        // Chromatic aberration — shift along x only
+        const shift = p.mul(float(0.02))
+        const shiftUV = vec2(shift, zero)
+        const r = tex.sample(zoomUV.add(shiftUV)).r
+        const g = tex.sample(zoomUV).g
+        const b = tex.sample(zoomUV.sub(shiftUV)).b
+        const baseCol = vec3(r, g, b)
 
-    // Chromatic Aberration
-    const shift = p.mul(0.02);
-    const r = tex.sample(zoomUV.add(shift)).r;
-    const g = tex.sample(zoomUV).g;
-    const b = tex.sample(zoomUV.sub(shift)).b;
-    const baseCol = vec3(r, g, b);
-    
-    // Procedural Detail
-    const detailCol = detTex.sample(uv());
-    const detailGrid = uv().mul(100.0).fract().sub(0.5).abs().mul(0.01);
-    const noiseLayer = detailGrid.add(detailCol.r).mul(0.1);
-    
-    // Masked Reveal: Radial gradient mask
-    const centerDist = uv().mul(2.0).sub(1.0).length();
-    const mask = float(1.0).sub(centerDist).mul(p).clamp(0, 1);
-    
-    // Blend based on mask and progress
-    const detailBlend = mix(detailCol, col, p.mul(0.2));
-    const finalCol = mix(baseCol.add(noiseLayer), detailBlend, mask);
-    
-    this.material.colorNode = finalCol;
-  }
+        // Procedural grid noise
+        const grid = uvVal.mul(float(100.0)).fract().sub(half).abs()
+        const gridColor = vec3(grid.x, grid.y, grid.y).mul(float(0.01))
 
-  setProgress(value: number) {
-    this.progressUniform.value = value;
-  }
+        // Detail blend
+        const detailBlend = mix(detTex.sample(uvVal), col, p.mul(float(0.2)))
+
+        // Radial mask — distance from UV center
+        const centerDist = uvVal.sub(half).length()
+        const mask = one.sub(centerDist).mul(p).max(zero)
+
+        // Final color
+        this.material.colorNode = mix(baseCol.add(gridColor), detailBlend, mask)
+    }
+
+    setActive(active: boolean) {
+        this.active = active
+    }
+
+    setProgress(value: number) {
+        this.progressUniform.value = this.active ? value : 0
+    }
+
+    dispose() {
+        this.material.dispose()
+    }
 }

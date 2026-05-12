@@ -25,6 +25,9 @@ export class CameraStateManager {
     private transitionT: number = 0;
     private transitionDuration: number = 1.2;
 
+    // Hook called when transition completes (progress >= 1)
+    public onTransitionComplete?: () => void
+
     constructor(
         private galleryManager: GalleryManager
     ) {}
@@ -35,9 +38,10 @@ export class CameraStateManager {
             const progress = Math.min(this.transitionT / this.transitionDuration, 1);
             this.galleryManager.transitionProgress = progress;
 
-            if (progress >= 1) {
-                this.currentState = this.targetState;
-            }
+        if (progress >= 1) {
+            this.currentState = this.targetState
+            this.onTransitionComplete?.()
+        }
         }
 
         // Decay FOV kick

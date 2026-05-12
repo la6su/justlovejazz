@@ -7,6 +7,7 @@ import { Baku } from '../Experience/World/Baku';
 import { CinematicLights } from '../Experience/World/Lights';
 import { PROJECTS } from '../Data/Projects';
 import { UIManager } from '../UI/UIManager';
+import { ProjectDetail } from '../UI/ProjectDetail';
 
 export class Bootstrapper {
     /**
@@ -42,7 +43,22 @@ export class Bootstrapper {
         experience.environment = new Environment(experience.scene);
         await experience.environment.init(experience.scene);
 
-        // 5. Final System Boot (Starts Render Loop)
+        // 5. Project Detail (UI modal)
+        const projectDetail = new ProjectDetail();
+
+        // Bridge: 3D transition → UI
+        experience.cameraStateManager.onTransitionComplete = () => {
+            const project = experience.galleryManager.activeProject
+            if (project) {
+                projectDetail.open(project);
+            }
+        };
+
+        window.addEventListener('project-detail-closed', () => {
+            experience.galleryManager.setTransitioning(false);
+        });
+
+        // 6. Final System Boot (Starts Render Loop)
         await experience.init();
 
         return experience;
