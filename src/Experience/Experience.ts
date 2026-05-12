@@ -130,6 +130,8 @@ export class Experience {
 
     this.galleryManager.update(deltaTime)
     this.galleryScene.update(deltaTime)
+    // Show/hide 3D gallery group + UI gallery per section context
+    this.galleryScene.group.visible = worldState.uiShowGallery
     if (this.ui.gallery) {
       this.ui.gallery.setVisible(worldState.uiShowGallery)
       if (worldState.uiShowGallery) {

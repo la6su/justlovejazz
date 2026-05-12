@@ -93,7 +93,7 @@ export class GalleryManager {
         this.onChange?.()
     }
 
-    /** Contract: fullscreen shrinks back to list */
+    /** Expand: fullscreen → list, card shrinks back */
     contractCard() {
         if (this.transitionState !== GalleryTransitionState.EXPAND) return
         this._expandProgress = 1
@@ -122,6 +122,7 @@ export class GalleryManager {
             this._expandProgress += this.transitionSpeed * deltaTime
             if (this._expandProgress >= 1) {
                 this._expandProgress = 1
+                this.onExpandComplete?.(this.activeProject)
                 this.reset()
             }
         }
@@ -130,6 +131,7 @@ export class GalleryManager {
             this._expandProgress -= this.transitionSpeed * deltaTime
             if (this._expandProgress <= 0) {
                 this._expandProgress = 0
+                this.onContractComplete?.()
                 this.reset()
             }
         }
@@ -140,4 +142,6 @@ export class GalleryManager {
     onProjectChange?: (project: Project) => void
     onStateChange?: (state: GalleryTransitionState, progress: number) => void
     onChange?: () => void
+    onExpandComplete?: (project: Project) => void
+    onContractComplete?: () => void
 }

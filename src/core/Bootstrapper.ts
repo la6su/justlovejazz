@@ -1,6 +1,6 @@
 // src/core/Bootstrapper.ts
 import { Experience } from '../Experience/Experience'
-import { GalleryManager, GalleryTransitionState } from './GalleryManager'
+import { GalleryManager } from './GalleryManager'
 import { CameraStateManager } from './CameraStateManager'
 import { GalleryScene } from '../Experience/World/GalleryScene'
 import { Environment } from '../Experience/World/Environment'
@@ -40,30 +40,14 @@ export class Bootstrapper {
         // ── Project Detail UI ──
         const projectDetail = new ProjectDetail()
 
-        // Bridge: when transition finishes → open modal
-        experience.galleryManager.onStateChange = (state: GalleryTransitionState, progress: number) => {
-            if (state === GalleryTransitionState.CONTRACT) {
-                // Contracting — close modal
-                if (progress === 0) {
-                    projectDetail.close()
-                }
-            }
+        // Expand complete → open modal
+        experience.galleryManager.onExpandComplete = (project) => {
+            projectDetail.open(project)
         }
 
-        experience.galleryManager.onChange = () => {
-            const gm = experience.galleryManager
-            if (gm.transitionState === GalleryTransitionState.LIST && gm.transitionProgress === 0) {
-                return // idle
-            }
-            if (gm.isTransitioning) {
-                // When expand finishes (progress reached 1) → open modal
-                if (gm.transitionProgress >= 1) {
-                    const project = gm.activeProject
-                    if (project) {
-                        projectDetail.open(project)
-                    }
-                }
-            }
+        // Contract complete → ensure modal is closed (modal already closed on user action)
+        experience.galleryManager.onContractComplete = () => {
+            projectDetail.close()
         }
 
         // When user closes modal → trigger reverse transition
