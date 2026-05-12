@@ -1,123 +1,61 @@
-     1|# SYSTEM.md
-     2|
-     3|## Studio Constitution
-     4|
-     5|Этот документ фиксирует системную архитектуру студии. Он определяет, как студия мыслит, производит и оценивает результат.
-     6|
-     7|SYSTEM.md не является маркетингом. Это рабочая конституция.
-     8|
-     9|## 1. Назначение
-    10|
-    11|Студия проектирует и производит визуальные системы:
-    12|
-    13|- digital experiences;
-    14|- portfolio/showcase systems;
-    15|- интерактивные сцены;
-    16|- дизайн-системы;
-    17|- experimental visual tools.
-    18|
-    19|Результат студии — не страница и не эффект, а управляемая система восприятия.
-    20|
-    21|## 2. Core Domain
-    22|
-    23|Core domain: **Design Production**.
-    24|
-    25|Он описывает:
-    26|
-    27|- как появляется намерение;
-    28|- как проводится research;
-    29|- как формируется concept;
-    30|- как система производится;
-    31|- как качество проверяется;
-    32|- как результат публикуется и развивается.
-    33|
-    34|## 3. Bounded Contexts
-    35|
-    36|### Design Production
-    37|
-    38|Главный контекст. Отвечает за замысел, структуру, визуальную целостность и критерии качества.
-    39|
-    40|### Studio Identity
-    41|
-    42|Фиксирует язык, принципы, тон, типографику, композицию и допустимые визуальные приёмы.
-    43|
-    44|### Interactive Technology
-    45|
-    46|Отвечает за WebGL/WebGPU, Three.js, shaders, render pipeline, asset lifecycle и performance.
-    47|
-    48|### Portfolio & Showcase
-    49|
-    50|Публичная интерпретация проектов. Ничего не придумывает заново, а точно показывает систему.
-    51|
-    52|### Client & Business
-    53|
-    54|Клиенты, статусы, коммерческие ограничения, delivery.
-    55|
-    56|### AI / CG Pipelines
-    57|
-    58|Генерация, ассеты, automation, procedural workflows. Интегрируется через понятные interfaces.
-    59|
-    60|## 4. Lifecycle
-    61|
-    62|Каждый проект проходит стадии:
-    63|
-    64|1. Intent
-    65|2. Research
-    66|3. Concept
-    67|4. System Design
-    68|5. Production
-    69|6. Refinement
-    70|7. QA
-    71|8. Release
-    72|9. Archive / Evolution
-    73|
-    74|Стадии можно сжимать, но нельзя пропускать концептуально.
-    75|
-    76|## 5. Quality Principles
-    77|
-    78|- Ясность важнее эффектности.
-    79|- Система важнее формы.
-    80|- Движение должно иметь причину.
-    81|- Performance является частью дизайна.
-    82|- Accessibility является частью production.
-    83|- Документация считается артефактом.
-    84|- Нельзя объявлять готовность без проверки.
-    85|
-    86|## 6. Engineering Principles
-    87|
-    88|- KISS перед абстракцией.
-    89|- SOLID там, где есть реальные границы ответственности.
-    90|- State-driven UI/WebGL.
-    91|- Один источник правды для section/world state.
-    92|- Assets имеют lifecycle.
-    93|- Render pipeline измеряется, а не угадывается.
-    94|- Fallback проектируется заранее.
-    95|
-    96|## 7. Roles
-    97|
-    98|Роль — функция, не должность.
-    99|
-   100|- Design Lead — визуальный язык.
-   101|- System Architect — целостность системы.
-   102|- Technologist — runtime, shaders, performance.
-   103|- Producer — стадии, scope, release.
-   104|- Researcher — контекст и концепты.
-   105|- QA Reviewer — проверка качества, regressions, accessibility.
-   106|
-   107|## 8. Production Bar
-   108|
-   109|Проект готов к публикации только если:
-   110|
-   111|- build проходит;
-   112|- performance измерен;
-   113|- fallback определён;
-   114|- mobile проверен отдельно;
-   115|- accessibility baseline выполнен;
-   116|- motion review пройден;
-   117|- документация соответствует реальности.
-   118|
-   119|## Финальное Правило
-   120|
-   121|Студия — это система.
-   122|Эффекты, страницы и технологии являются её проявлениями.
-   123|
+# ARCHITECTURE
+
+## Project Summary
+
+WebGL/WebGPU interactive portfolio. TypeScript, Vite, Three.js 18.4 (+ TSL), WebGPU primary. Cinematic scroll-driven experience with gallery, post-processing, and deferred loading.
+
+## Entry & Runtime
+
+```
+src/main.ts                    → creates UIManager, calls Bootstrapper.init()
+src/core/Bootstrapper.ts       → wires Experience, events, managers
+src/Experience/Experience.ts   → single render loop (update → requestAnimationFrame)
+```
+
+### Contracts
+
+| Module | Responsibility |
+|--------|---------------|
+| **Bootstrapper** | Init ordering only. No animation logic. Calls `experience.init()`. |
+| **Renderer** | Canvas, DPR, async init, capability detection, post-processing |
+| **CameraStateManager** | Returns `CameraTarget { position, lookAt, fov }`. Never touches Camera directly. |
+| **WorldConfig** | Single source of truth for section behavior (camera, baku, lighting, post, UI) |
+| **GalleryManager** | FSM: `LIST ↔ EXPAND ↔ CONTRACT` via scale/position on active card |
+| **GalleryScene** | 3D objects (cards, orbs). Visibility per `worldState.uiShowGallery` |
+
+## Render Pipeline
+
+```
+scene → anti-aliasing → bright extraction → mip bloom → composite
+       → chromatic aberration → grain → vignette → output
+```
+
+Quality tiers: `high` (full WebGPU) / `medium` (reduced) / `low` (no expensive bloom).
+
+## Asset Lifecycle
+
+```
+preload → activateContext → use → deactivateContext → dispose
+```
+
+Assets managed by priority (`pre`/`must`/`sub`). Never dispose from generic cleanup loops.
+
+## Core Types
+
+```ts
+type RendererMode = 'webgpu' | 'webgl' | 'unsupported'
+type QualityTier = 'high' | 'medium' | 'low'
+type NarrativePhase = 'AWAKENING' | 'DISCOVERY' | 'DEEP_DIVE' | 'CONNECTION'
+
+interface CameraTarget { position: Vector3; lookAt: Vector3; fov: number }
+interface WorldState { uiShowGallery: boolean; cameraTarget: CameraTarget; ... }
+```
+
+## Key Sections
+
+| Phase | Scroll Range | showGallery | Baku Role |
+|-------|-------------|-------------|-----------|
+| AWAKENING | 0–0.2 | no | normal |
+| DISCOVERY | 0.2–0.5 | no | glass |
+| DEEP_DIVE | 0.5–0.8 | **yes** | project |
+| CONNECTION | 0.8–1.0 | no | line |

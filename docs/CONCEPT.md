@@ -1,76 +1,49 @@
-     1|# CONCEPT.md
-     2|
-     3|## JustLoveJazz: Cinematic Studio System
-     4|
-     5|Проект не должен выглядеть как набор WebGL-эффектов. Он должен ощущаться как цельная студийная система: строгая типографика, управляемая сцена, точное движение, высокая плотность деталей.
-     6|
-     7|Референс: `next.junni.co.jp`. Берём не визуальное копирование, а принципы:
-     8|
-     9|- world-driven storytelling;
-    10|- scroll как режиссёрская временная шкала;
-    11|- центральный 3D-объект, меняющий поведение по секциям;
-    12|- камера с инерцией, FOV-акцентами и микродвижением;
-    13|- staged loading: `pre`, `must`, `sub`;
-    14|- post-processing как часть арт-дирекции, а не фильтр поверх картинки.
-    15|
-    16|## Дизайн-принципы
-    17|
-    18|### 1. Система важнее эффекта
-    19|
-    20|Любой визуальный приём должен отвечать на вопрос: что он делает для восприятия проекта? Если ответ только “красиво”, приём удаляется или упрощается.
-    21|
-    22|### 2. Ритм важнее плавности
-    23|
-    24|Движение должно быть точным:
-    25|
-    26|- no linear motion;
-    27|- easing и inertia по умолчанию;
-    28|- stagger только там, где он помогает считывать иерархию;
-    29|- быстрый старт, контролируемый акцент, короткое затухание.
-    30|
-    31|### 3. Контраст важнее декора
-    32|
-    33|Базовый язык:
-    34|
-    35|- глубокий чёрный;
-    36|- технический серый;
-    37|- один сильный акцент;
-    38|- крупная, но не маркетинговая типографика;
-    39|- асимметрия с оптическим балансом.
-    40|
-    41|### 4. Render-driven UX
-    42|
-    43|DOM и WebGL не должны спорить. UI объясняет состояние, сцена создаёт ощущение.
-    44|
-    45|Обязательные связи:
-    46|
-    47|- scroll progress -> world state;
-    48|- pointer velocity -> camera/environment response;
-    49|- active project -> camera/detail material transition;
-    50|- section -> lighting/material/post-processing preset.
-    51|
-    52|## Junni Patterns Для Адаптации [Current Status]
-    53|
-    54|1. `CameraController`: base camera + delayed cursor + FOV offset + organic shake [Implemented: FOV Transitions, Arrival Pulse, Handheld Shake].
-    55|2. `World`: секции с собственными camera/baku/post presets [Implemented: Section-driven State Machine].
-    56|3. `Baku`: один центральный объект, который меняет материал, позу и роль [Implemented: Section-based Material Sync].
-    57|4. `AssetManager`: загрузка по приоритетам `pre`, `must`, `sub` [Implemented: Contextual Disposal].
-    58|5. `RenderPipeline`: отдельные проходы SMAA, bloom, composite, grain/vignette [Implemented: TSL Chain + Bicubic Filtering].
-    59|6. `NoiseText`: текстовая микроанимация как акцент, не как постоянный шум.
-    60|
-    61|## Не Делать
-    62|
-    63|- Не копировать Junni assets, тексты, модели и графику.
-    64|- Не добавлять эффекты без состояния и причины.
-    65|- Не маскировать плохую композицию bloom/grain.
-    66|- Не объявлять production-ready без измерений.
-    67|- Не держать одинаковый layout на desktop и mobile, если поведение отличается.
-    68|
-    69|## Definition Of Done Для Концепта
-    70|
-    71|- Пользователь понимает структуру сайта за 5 секунд.
-    72|- Переходы ощущаются намеренными, а не случайными.
-    73|- 3D-сцена помогает читать portfolio, а не мешает.
-    74|- Страница выдерживает паузу: кадр выглядит как законченный постер.
-    75|- Mobile-версия спроектирована отдельно, а не просто уменьшена.
-    76|
+# CONCEPT
+
+## Goal
+
+Cinematic interactive studio portfolio inspired by `junni.co`. Principles over visual imitation:
+
+- World-driven storytelling; scroll as director timeline
+- Central 3D object that changes behavior per section
+- Camera with inertia, FOV accents, micro-movement
+- Staged loading: `pre` → `must` → `sub`
+- Post-processing as art direction, not a filter
+
+## Design Principles
+
+1. **System over effect** — every visual serves perception, not just aesthetics
+2. **Rhythm over smoothness** — no linear motion; easing + inertia; stagger only for hierarchy
+3. **Contrast over decoration** — deep black, technical grey, single accent, asymmetry with optical balance
+4. **State-driven UX** — DOM and WebGL share one state source:
+   - `scroll → worldState`
+   - `pointer velocity → camera/environment response`
+   - `active project → camera/detail material transition`
+   - `section → lighting/material/post-processing preset`
+
+## Junni Patterns to Adapt
+
+| Pattern | Status |
+|---------|--------|
+| CameraController: base + cursor delay + FOV offset + shake | FOV Transitions, Arrival Pulse, Handheld Shake |
+| World: section camera/baku/post presets | Section-driven State Machine |
+| Baku: central object, material/pose/role changes | Section-based Material Sync |
+| AssetManager: priority loading `pre`/`must`/`sub` | Contextual Disposal |
+| RenderPipeline: SMAA, bloom, composite, grain/vignette | TSL Chain + Bicubic Filtering |
+| NoiseText: text micro-animation as accent | --- |
+
+## Anti-Patterns
+
+- Copy Junni assets, text, models, graphics
+- Add effects without state or reason
+- Mask poor composition with bloom/grain
+- Claim production-ready without measurements
+- Ship identical desktop/mobile layouts when behavior differs
+
+## Definition of Done
+
+- User understands site structure in 5s
+- Transitions feel intentional, not accidental
+- 3D scene helps read portfolio, doesn't get in the way
+- Page freezes well: a frame looks like a finished poster
+- Mobile version designed separately, not just scaled down

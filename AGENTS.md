@@ -38,16 +38,14 @@ Do not copy Junni assets, text, models, SVGs, or content. Port patterns, not cop
 Read these files before large changes:
 
 1. `README.md`
-2. `docs/docs/CONCEPT.md`
+2. `docs/CONCEPT.md`
 3. `docs/SPEC.md`
-4. `docs/docs/ROADMAP.md`
-5. `docs/ROADMAP.md`
-6. `docs/docs/ROADMAP.md`
-7. `docs/AUTONOMY.md`
-8. `threejs_tsl_full_docs/SPEC.md`
-9. `docs/ARCHITECTURE.md`
+4. `docs/ROADMAP.md`
+5. `docs/AUTONOMY.md`
+6. `docs/ARCHITECTURE.md`
+7. `docs/LAZY_LOADING.md`
 
-Use `next-junni-co.cxml` only as a local reference snapshot. Treat it as inspiration and architecture research, not as code to copy directly.
+NOTE: The original Junni site archive was purged. Use `docs/CONCEPT.md` for reference patterns.
 
 ## Current Priority
 
