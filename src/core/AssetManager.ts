@@ -61,9 +61,10 @@ export class AssetManager {
         : await this.textureLoader.loadAsync(url);
 
       if (texture.isTexture) {
-        const bicubic = (THREE as any).BicubicFilter;
-        texture.minFilter = bicubic || THREE.LinearMipmapLinearFilter;
-        texture.magFilter = bicubic || THREE.LinearFilter;
+        // Three.js 184+: BicubicFilter not exported; use standard mipmap filters with linear sampling
+        texture.minFilter = THREE.LinearMipmapLinearFilter;
+        texture.magFilter = THREE.LinearFilter;
+        texture.generateMipmaps = true;
         texture.anisotropy = DeviceCapability.getInstance().config.maxAnisotropy;
       }
     } catch (e) {

@@ -9,7 +9,7 @@
   <body>
 
     <!-- Loading Screen -->
-    <div id="pageLoader" class="uk-flex uk-flex-center uk-flex-middle" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 1000; color: white; transition: opacity 0.5s ease-out;">
+    <div id="pageLoader" class="uk-flex uk-flex-center uk-flex-middle">
       <div class="uk-text-center">
         <div uk-spinner="crossing"></div>
         <p class="uk-margin-small-top">Loading Experience...</p>
@@ -19,41 +19,41 @@
     <!-- UI Layer -->
     <div id="ui-layer">
       <!-- Navbar -->
-      <nav class="uk-navbar-container" uk-navbar style="z-index: 100; position: fixed; width: 100%; background: transparent !important; border: none;">
+      <nav class="uk-navbar-container navbar" uk-navbar>
         <div class="uk-navbar-left">
-          <a class="uk-navbar-item uk-logo" href="#" style="font-weight: 900; letter-spacing: -0.05em; color: #fff;">&nbsp;</a>
+          <a class="uk-navbar-item uk-logo navbar-logo" href="#">&nbsp;</a>
         </div>
         <div class="uk-navbar-right">
           <ul class="uk-navbar-nav">
-            <li class="uk-navbar-item"><a href="#home" data-magnetic style="color: #fff;">Home</a></li>
-            <li class="uk-navbar-item"><a href="#about" data-magnetic style="color: #fff;">About</a></li>
-            <li class="uk-navbar-item"><a href="#works" data-magnetic style="color: #fff;">Works</a></li>
-            <li class="uk-navbar-item"><a href="#contact" data-magnetic style="color: #fff;">Contact</a></li>
+            <li class="uk-navbar-item"><a href="#home" data-magnetic class="navbar-link">Home</a></li>
+            <li class="uk-navbar-item"><a href="#about" data-magnetic class="navbar-link">About</a></li>
+            <li class="uk-navbar-item"><a href="#works" data-magnetic class="navbar-link">Works</a></li>
+            <li class="uk-navbar-item"><a href="#contact" data-magnetic class="navbar-link">Contact</a></li>
           </ul>
         </div>
       </nav>
 
       <!-- Home Section -->
-      <section id="home" class="section-studio uk-flex uk-flex-middle" style="height: 100vh;">
+      <section id="home" class="section-studio uk-flex uk-flex-middle section-intro">
         <div class="uk-container">
           <div class="uk-text-center">
             <h1 class="studio-title" uk-scrollspy="cls: uk-animation-fade">
               LEMON <br/>
-              <span style="color: var(--accent-color);">ROOM</span>
+              <span class="accent-text">ROOM</span>
             </h1>
             <p class="studio-text uk-margin-auto-center" uk-scrollspy="cls: uk-animation-slide-bottom">
               Pushing the boundaries of WebGPU and Three.js TSL <br/>
               to create immersive digital art.
             </p>
             <div class="uk-margin-large-top">
-              <a href="#about" data-magnetic class="reveal-item uk-button uk-button-primary uk-button-large" style="border-radius: 0; padding: 15px 40px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em;">Explore</a>
+              <a href="#about" data-magnetic class="reveal-item uk-button uk-button-primary uk-button-large btn-studio">Explore</a>
             </div>
           </div>
         </div>
       </section>
 
       <!-- About Section -->
-      <section id="about" class="section-studio" style="min-height: 100vh;">
+      <section id="about" class="section-studio section-scrolly">
         <div class="uk-container">
           <div class="studio-grid">
             <div class="reveal-item grid-item-left" uk-scrollspy>
@@ -63,7 +63,7 @@
                 We believe the web is the next canvas for high-fidelity art. By leveraging WebGPU, we bridge the gap between native software and the open web.
               </p>
             </div>
-            <div class="reveal-item grid-item-right" uk-scrollspy style="display: flex; align-items: center;">
+            <div class="reveal-item grid-item-right flex-center-vertical" uk-scrollspy>
               <p class="studio-text">
                 Our approach blends procedural generation with user interaction, creating a living environment that reacts to every movement.
               </p>
@@ -73,21 +73,21 @@
       </section>
 
       <!-- Works Section -->
-      <section id="works" class="section-studio" style="min-height: 100vh;">
+      <section id="works" class="section-studio section-scrolly">
         <div class="uk-container">
-          <span class="section-number" style="text-align: center; display: block;">02 // Selected Works</span>
-          <h2 class="studio-title uk-text-center" style="margin-bottom: 4rem;">Digital Archive</h2>
+          <span class="section-number section-number-center">02 // Selected Works</span>
+          <h2 class="studio-title uk-text-center studio-heading">Digital Archive</h2>
           
         </div>
       </section>
 
       <!-- Contact Section -->
-      <section id="contact" class="section-studio" style="min-height: 100vh; display: flex; align-items: center; justify-content: center;">
+      <section id="contact" class="section-studio section-centered">
         <div class="uk-container uk-text-center">
           <span class="section-number">03 // Connection</span>
           <h2 class="studio-title">Let's Build Something Great</h2>
           <div class="uk-margin-large-top">
-            <a href="mailto:hello@example.com" data-magnetic class="uk-button uk-button-secondary uk-button-large" style="border-radius: 0; padding: 20px 60px; font-weight: bold; text-transform: uppercase;">Get in Touch</a>
+            <a href="mailto:hello@example.com" data-magnetic class="uk-button uk-button-secondary uk-button-large cta-studio">Get in Touch</a>
           </div>
         </div>
       </section>

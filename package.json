@@ -12,8 +12,10 @@
   "devDependencies": {
     "@types/three": "^0.184.0",
     "@types/uikit": "^3.23.0",
+    "esbuild": "^0.28.0",
     "less": "^4.6.4",
     "less-plugin-clean-css": "^1.6.0",
+    "oxc": "^1.0.1",
     "typescript": "~6.0.2",
     "vite": "^8.0.10"
   },
