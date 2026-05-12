@@ -5,11 +5,6 @@ export default defineConfig({
     target: 'es2023',
     outDir: 'dist',
     cssCodeSplit: true,
-    // Vite 8 on rolldown: use oxc transpile instead of deprecated esbuild
-    transpile: {
-      // Use oxc transformer (default in Vite 8 + rolldown)
-      moduleSideEffects: true,
-    },
     rollupOptions: {
       output: {
         manualChunks(id) {
