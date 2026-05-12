@@ -1,61 +1,48 @@
-// src/Experience/Camera.ts
+// src/Experience/Camera.ts — Cinematic camera: inertia, organic shake, FOV dynamics
 import * as THREE from 'three'
 import { Sizes } from './Sizes'
 import { input } from './Input'
 import { Easings } from '../Utils/Easings'
-import type {CameraTarget} from '../core/types';
+import type { CameraTarget } from '../core/types'
+
+// Zero-allocation vectors
+const _offsetVec = new THREE.Vector3()
+const _tempQuat = new THREE.Quaternion()
+const _tempEuler = new THREE.Euler()
+
+// Spring-damper state
+const springX = { pos: 0, vel: 0, target: 0 }
+const springY = { pos: 0, vel: 0, target: 0 }
+
+const SP_STIFFNESS = 8
+const SP_DAMPING = 3
 
 export class Camera {
     instance: THREE.PerspectiveCamera
-    
-    // --- Kinematics State ---
-    private smoothPosition: THREE.Vector3 = new THREE.Vector3()
-    private smoothTarget: THREE.Vector3 = new THREE.Vector3()
-    private smoothFov: number = 75
 
-    private cursorPosDelay: THREE.Vector2 = new THREE.Vector2()
-    private cursorPosDelayVel: THREE.Vector2 = new THREE.Vector2()
-    private velocity: THREE.Vector3 = new THREE.Vector3()
-    private prevPosition: THREE.Vector3 = new THREE.Vector3()
-    
-    private shakeTime: number = 0
-    private shakePower: number = 0
-    private shakeDuration: number = 0
-    
-    // Constant organic handheld shake
-    private organicShakeTime: number = 0
-    private organicShakePower: number = 0.002
-    
-    private fovOffset: number = 0
-    private targetFovOffset: number = 0
-    private fovTransitionT: number = 0
-    private fovStartOffset: number = 0
-    private fovDuration: number = 1
-    
-    private moveRange: THREE.Vector2 = new THREE.Vector2(0.15, 0.15)
+    // Smooth state
+    private smoothPosition = new THREE.Vector3()
+    private smoothTarget = new THREE.Vector3()
+    private smoothFov = 75
 
-    setBasePosition(pos: THREE.Vector3) {
-        this.smoothPosition.copy(pos)
-    }
+    // Velocity tracking for Environment
+    private velocity = new THREE.Vector3()
+    private prevPosition = new THREE.Vector3()
 
-    /**
-     * Smoothly interpolates the camera base state towards a target.
-     * @param target The target state
-     * @param deltaTime Time delta
-     * @param smoothing Adjustable smoothing speed (default: 5 for "heavy" feel)
-     */
-    updateSmooth(target: CameraTarget, deltaTime: number, smoothing: number = 5) {
-        if (!target) return;
-        const lerpFactor = 1 - Math.exp(-smoothing * deltaTime); 
-        
-        this.smoothPosition.lerp(target.position, lerpFactor);
-        this.smoothTarget.lerp(target.lookAt, lerpFactor);
-        this.smoothFov += (target.fov - this.smoothFov) * lerpFactor;
-    }
+    // ── Action shake ──
+    private shakePower = 0
+    private shakeDuration = 0
+    private shakeTime = 0
 
-    getVelocity() {
-        return this.velocity
-    }
+    // ── Organic shake clock ──
+    private organicTime = 0
+
+    // ── FOV pulse ──
+    private fovOffset = 0
+    private targetFovOffset = 0
+    private fovTransitionT = 0
+    private fovStartOffset = 0
+    private fovDuration = 1.0
 
     constructor(sizes: Sizes) {
         this.instance = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
@@ -69,95 +56,116 @@ export class Camera {
         })
     }
 
-    /**
-     * Triggers an organic camera shake.
-     * @param power Intensity of the shake
-     * @param duration Duration in seconds
-     */
-    shake(power: number = 0.1, duration: number = 0.5) {
+    setBasePosition(pos: THREE.Vector3) {
+        this.smoothPosition.copy(pos)
+    }
+
+    /** Lerp camera base state toward target with exponential smoothing */
+    updateSmooth(target: CameraTarget, deltaT: number, smoothing = 5) {
+        if (!target) return
+        const lerp = 1 - Math.exp(-smoothing * deltaT)
+
+        this.smoothPosition.lerp(target.position, lerp)
+        this.smoothTarget.lerp(target.lookAt, lerp)
+        this.smoothFov += (target.fov - this.smoothFov) * lerp
+    }
+
+    getVelocity() {
+        return this.velocity
+    }
+
+    /** Trigger an action shake (impact on section change) */
+    shake(power = 0.1, duration = 0.5) {
         this.shakePower = power
         this.shakeDuration = duration
     }
 
-    /**
-     * Sets the FOV offset (used for cinematic zooms)
-     */
-    setFovOffset(value: number, duration: number = 1) {
+    /** Set FOV offset for cinematic zoom-in on section arrival */
+    setFovOffset(value: number, duration = 1) {
         this.fovStartOffset = this.fovOffset
         this.targetFovOffset = value
         this.fovDuration = duration
         this.fovTransitionT = 0
     }
 
-    update(deltaTime: number) {
-        const safeDelta = Math.max(deltaTime, 1 / 120)
+    update(deltaT: number) {
+        const dt = Math.min(Math.max(deltaT, 1 / 120), 0.1)
 
-        // 1. Inertia-based Cursor Follow (The "Junni Feel")
+        // ── 1. Spring-damper cursor follow ──
         const mouse = input.getMouse()
-        
-        const dt = Math.min(0.1, safeDelta) * 0.5
-        
-        let diff = new THREE.Vector2().subVectors(mouse, this.cursorPosDelay).multiplyScalar(dt)
-        diff.multiply(diff.clone().addScalar(1.0))
-        
-        this.cursorPosDelayVel.add(diff.multiplyScalar(5.0))
-        this.cursorPosDelayVel.multiplyScalar(0.85) 
-        this.cursorPosDelay.add(this.cursorPosDelayVel)
-    
-        // 2. Position Calculation
-        this.organicShakeTime += safeDelta;
-        const ox = (Math.sin(this.organicShakeTime * 0.7) + Math.sin(this.organicShakeTime * 1.3)) * this.organicShakePower;
-        const oy = (Math.sin(this.organicShakeTime * 0.9) + Math.sin(this.organicShakeTime * 1.7)) * this.organicShakePower;
-        const oz = (Math.sin(this.organicShakeTime * 1.1) + Math.sin(this.organicShakeTime * 2.1)) * this.organicShakePower;
 
-        this.instance.position.set(
-            this.smoothPosition.x + this.cursorPosDelay.x * this.moveRange.x + ox,
-            this.smoothPosition.y + this.cursorPosDelay.y * this.moveRange.y + oy,
-            this.smoothPosition.z + oz
+        springX.target = mouse.x
+        springY.target = mouse.y
+
+        springX.vel += (springX.target - springX.pos) * SP_STIFFNESS * dt
+        springY.vel += (springY.target - springY.pos) * SP_STIFFNESS * dt
+
+        springX.vel *= Math.exp(-SP_DAMPING * dt)
+        springY.vel *= Math.exp(-SP_DAMPING * dt)
+
+        springX.pos += springX.vel * dt
+        springY.pos += springY.vel * dt
+
+        // ── 2. Build position ──
+        const pos = this.instance.position
+        pos.set(
+            this.smoothPosition.x + springX.pos * 0.15,
+            this.smoothPosition.y + springY.pos * 0.15,
+            this.smoothPosition.z
         )
 
-        this.instance.lookAt(this.smoothTarget)
-        this.instance.fov = this.smoothFov
-        this.instance.updateProjectionMatrix()
+        // ── 3. Organic shake (continuous handheld) ──
+        this.organicTime += dt
+        const ot = this.organicTime
+        const ox = (Math.sin(ot * 0.7) * 0.3 + Math.sin(ot * 1.3) * 0.2) * 0.002
+        const oy = (Math.sin(ot * 0.9) * 0.2 + Math.sin(ot * 1.7) * 0.3) * 0.002
+        const oz = (Math.sin(ot * 1.1) * 0.4 + Math.sin(ot * 2.1) * 0.1) * 0.002
 
-        // 3. Dynamic FOV Offset with Cinematic Easing
-        if (this.fovTransitionT < 1.0) {
-            this.fovTransitionT = Math.min(1.0, this.fovTransitionT + safeDelta / this.fovDuration)
-            const t = Easings.easeInOutQuart(this.fovTransitionT)
-            this.fovOffset = this.fovStartOffset + (this.targetFovOffset - this.fovStartOffset) * t
+        pos.x += ox
+        pos.y += oy
+        pos.z += oz
+
+        // ── 4. Look at target ──
+        this.instance.lookAt(this.smoothTarget)
+
+        // ── 5. FOV — dynamic offset (pop zoom) ──
+        if (this.fovTransitionT < 1) {
+            this.fovTransitionT = Math.min(1, this.fovTransitionT + dt / this.fovDuration)
+            const easeT = Easings.easeInOutQuart(this.fovTransitionT)
+            this.fovOffset = this.fovStartOffset + (this.targetFovOffset - this.fovStartOffset) * easeT
         }
 
         if (this.fovOffset > 0) {
-            const offsetVec = new THREE.Vector3(0, 0, -this.fovOffset * 0.05).applyQuaternion(this.instance.quaternion)
-            this.instance.position.add(offsetVec)
+            _offsetVec.set(0, 0, -this.fovOffset * 0.05)
+            _offsetVec.applyQuaternion(this.instance.quaternion)
+            pos.add(_offsetVec)
         }
 
-        // 4. Organic Shake
+        // Blend FOV smoothly
+        const targetFov = this.smoothFov + this.fovOffset
+        this.instance.fov += (targetFov - this.instance.fov) * 0.25
+        this.instance.updateProjectionMatrix()
+
+        // ── 6. Action shake ──
         if (this.shakePower > 0) {
             this.shakeTime += dt
-            this.shakeDuration -= dt
-            
+
             if (this.shakeDuration <= 0) {
                 this.shakePower = 0
                 this.shakeDuration = 0
             } else {
-                // Junni-style combined sines for non-mechanical feel
-                const shakeX = Math.sin(this.shakeTime * 7.0) * Math.sin(this.shakeTime * 4.0) * 0.1 * this.shakePower
-                const shakeY = Math.sin(this.shakeTime * 3.3) * Math.sin(this.shakeTime * 5.2) * 0.1 * this.shakePower
-                
-                this.instance.applyQuaternion(
-                    new THREE.Quaternion().setFromEuler(
-                        new THREE.Euler(shakeX, shakeY, 0)
-                    )
-                )
+                const sx = Math.sin(this.shakeTime * 7) * Math.sin(this.shakeTime * 4) * 0.1 * this.shakePower
+                const sy = Math.sin(this.shakeTime * 3.3) * Math.sin(this.shakeTime * 5.2) * 0.1 * this.shakePower
+
+                _tempEuler.set(sx, sy, 0)
+                _tempQuat.setFromEuler(_tempEuler)
+                this.instance.quaternion.multiply(_tempQuat)
             }
+            this.shakeDuration -= dt
         }
 
-        // Calculate Velocity for Environment Interaction
-        this.velocity.subVectors(this.instance.position, this.prevPosition).multiplyScalar(1 / safeDelta)
-        this.prevPosition.copy(this.instance.position)
-
-        // Always look at center for now (unless Projects overrides this)
-        // this.instance.lookAt(0, 0, 0) // Now handled by smoothTarget in update()
+        // ── 7. Velocity ──
+        this.velocity.subVectors(pos, this.prevPosition).divideScalar(dt)
+        this.prevPosition.copy(pos)
     }
 }
