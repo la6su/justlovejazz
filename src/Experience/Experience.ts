@@ -129,7 +129,7 @@ export class Experience {
     this.camera.updateSmooth(cameraTarget, deltaTime, smoothing)
 
     this.galleryManager.update(deltaTime)
-    this.galleryScene.update(worldState)
+    this.galleryScene.update(deltaTime)
     if (this.ui.gallery) {
       this.ui.gallery.setVisible(worldState.uiShowGallery)
       if (worldState.uiShowGallery) {

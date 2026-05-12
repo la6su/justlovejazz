@@ -1,9 +1,7 @@
-
 import * as THREE from 'three'
-import { GalleryManager } from '../../core/GalleryManager'
+import { GalleryManager, GalleryTransitionState } from '../../core/GalleryManager'
 import { ProjectMaterial } from '../../shaders/ProjectMaterial'
 import { AssetManager } from '../../core/AssetManager'
-import { NarrativePhase, type WorldState } from '../../core/types'
 import { Easings } from '../../Utils/Easings'
 import type { Sizes } from '../../Experience/Sizes'
 
@@ -14,27 +12,25 @@ export class GalleryScene {
     private raycaster = new THREE.Raycaster()
     private mouse = new THREE.Vector2()
 
-    constructor(private manager: GalleryManager, private sizes: Sizes) {
-        // Init called from Bootstrapper
+    // Keep size reference for layout calculations
+    private sizes: Sizes
+    constructor(private manager: GalleryManager, sizes: Sizes) {
+        this.sizes = sizes
     }
 
     public async init() {
         const assetManager = AssetManager.getInstance()
-
         const projectData = this.manager.projects.map(async (proj, i) => {
             const [tex, detTex] = await Promise.all([
                 assetManager.loadTexture(proj.textureUrl),
-                assetManager.loadTexture(proj.detailTextureUrl)
+                assetManager.loadTexture(proj.detailTextureUrl),
             ])
-
             const mat = new ProjectMaterial(tex, detTex, proj.color)
             const geometry = new THREE.PlaneGeometry(1, 1.4)
             const mesh = new THREE.Mesh(geometry, mat.material)
             mesh.userData = { projectId: proj.id, index: i }
-
             return { mat, mesh }
         })
-
         const results = await Promise.all(projectData)
         results.forEach(({ mat, mesh }) => {
             this.materials.push(mat)
@@ -44,68 +40,70 @@ export class GalleryScene {
     }
 
     public handlePointerDown(clientX: number, clientY: number, camera: THREE.Camera) {
+        if (this.manager.isTransitioning) return
+
         this.mouse.x = (clientX / window.innerWidth) * 2 - 1
         this.mouse.y = -(clientY / window.innerHeight) * 2 + 1
-
         this.raycaster.setFromCamera(this.mouse, camera)
         const intersects = this.raycaster.intersectObjects(this.planes)
 
         if (intersects.length > 0) {
             const obj = intersects[0].object as THREE.Mesh
             const index = obj.userData.index
-
-            this.manager.transitionStartPos.copy(obj.position)
-            this.manager.transitionStartScale = obj.scale.x
-
-            this.manager.activeIndex = index
-            this.manager.startFullscreen()
+            const startPos = obj.position.clone()
+            const startScale = obj.scale.x
+            this.manager.expandCard(index, startPos, startScale)
         }
     }
 
-    update(worldState: WorldState) {
-        if (worldState.currentPhase !== NarrativePhase.DEEP_DIVE) {
-            this.group.visible = false
-            return
-        }
-
-        this.group.visible = true
-
-        const rawProgress = this.manager.transitionProgress
-        const easeProgress = Easings.easeInOutQuart(rawProgress)
+    update(_dt: number) {
+        const state = this.manager.transitionState
+        const progress = this.manager.transitionProgress
         const activeIndex = this.manager.activeIndex
+
+        const e = Easings.easeInOutQuart(progress)
         const isMobile = this.sizes.isMobile
-        const clampProgress = this.manager.trackLength
-        const half = clampProgress / 2
+        const trackLen = this.manager.trackLength
+        const half = trackLen / 2
 
         this.planes.forEach((mesh, i) => {
-            // ── Active project during transition ──
-            if (i === activeIndex && rawProgress > 0) {
+            // ── Active card during expand ──
+            if (state === GalleryTransitionState.EXPAND && i === activeIndex) {
                 mesh.position.lerpVectors(
                     this.manager.transitionStartPos,
                     new THREE.Vector3(0, 0, 1),
-                    easeProgress
+                    e,
                 )
-                const scale = THREE.MathUtils.lerp(this.manager.transitionStartScale, 15, easeProgress)
+                const scale = THREE.MathUtils.lerp(this.manager.transitionStartScale, 15, e)
                 mesh.scale.setScalar(scale)
                 mesh.visible = true
-
-                // Only active project gets shader progress
-                this.materials[i].setActive(true)
-                this.materials[i].setProgress(rawProgress)
+                this.materials[i].setProgress(progress)
                 return
             }
 
-            // ── Inactive planes — carousel layout ──
-            const pos = (i * this.manager.STEP) - this.manager.scrollX
+            // ── Active card during contract ──
+            if (state === GalleryTransitionState.CONTRACT && i === activeIndex) {
+                mesh.position.lerpVectors(
+                    new THREE.Vector3(0, 0, 1),
+                    this.manager.transitionStartPos,
+                    1 - e,
+                )
+                const scale = THREE.MathUtils.lerp(15, this.manager.transitionStartScale, 1 - e)
+                mesh.scale.setScalar(scale)
+                mesh.visible = true
+                this.materials[i].setProgress(progress)
+                return
+            }
 
-            // Wrap around for infinite carousel
-            let wrapped = pos % clampProgress
-            if (wrapped < -half) wrapped += clampProgress
-            if (wrapped > half) wrapped -= clampProgress
+            // ── Default carousel layout ──
+            this.materials[i].setProgress(0)
+            const pos = (i * this.manager.STEP) - this.manager.scrollX
+            let wrapped = pos % trackLen
+            if (wrapped < -half) wrapped += trackLen
+            if (wrapped > half) wrapped -= trackLen
 
             if (isMobile) {
                 const ry = wrapped / this.manager.STEP
-
                 if (Math.abs(ry) <= 1.5) {
                     mesh.position.set(0, ry * 2.5, Math.abs(ry) < 0.5 ? 0 : -1)
                     mesh.scale.setScalar(0.7)
@@ -115,7 +113,6 @@ export class GalleryScene {
                 }
             } else {
                 const rx = wrapped / this.manager.STEP
-
                 if (Math.abs(rx) <= 1.5) {
                     mesh.position.set(rx * 2.2, 0, Math.abs(rx) < 0.5 ? 0 : -1)
                     mesh.scale.setScalar(0.8)
@@ -124,10 +121,6 @@ export class GalleryScene {
                     mesh.visible = false
                 }
             }
-
-            // Reset inactive shader state
-            this.materials[i].setActive(false)
-            this.materials[i].setProgress(0)
         })
     }
 

@@ -36,9 +36,8 @@ export class CameraStateManager {
         if (this.currentState === CameraState.TRANSITION) {
             this.transitionT += deltaTime;
             const progress = Math.min(this.transitionT / this.transitionDuration, 1);
-            this.galleryManager.transitionProgress = progress;
 
-        if (progress >= 1) {
+            if (progress >= 1) {
             this.currentState = this.targetState
             this.onTransitionComplete?.()
         }

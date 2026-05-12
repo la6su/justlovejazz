@@ -22,20 +22,13 @@ export class UIManager {
         onClick: (project) => {
             const manager = window.experience?.galleryManager;
             const scene = window.experience?.galleryScene;
-            
+
             if (manager && scene) {
                 const idx = manager.projects.findIndex(p => p.id === project.id);
-                
-                // To ensure smooth expansion from current position, 
-                // we mimic the 3D plane click logic
                 const mesh = scene.planes[idx];
                 if (mesh) {
-                    manager.transitionStartPos.copy(mesh.position);
-                    manager.transitionStartScale = mesh.scale.x;
+                    manager.expandCard(idx, mesh.position.clone(), mesh.scale.x);
                 }
-                
-                manager.activeIndex = idx;
-                manager.startFullscreen();
             }
         }
     });
