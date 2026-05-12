@@ -71,6 +71,9 @@ export class Bootstrapper {
             experience.galleryManager.contractCard()
         })
 
+        // Initialize experience (renderer, UI modules, loader hide, render loop)
+        await experience.init()
+
         return experience
     }
 }
