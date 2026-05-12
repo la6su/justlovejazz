@@ -31,8 +31,10 @@ export class Experience {
   time!: Time
   camera!: Camera
   renderer!: Renderer
+  // World objects
   baku!: Baku
   environment!: Environment
+  cinematicLights!: import('./World/Lights').CinematicLights
 
   private smoothScroll!: SmoothScroll
   private textReveal!: TextReveal
@@ -142,13 +144,16 @@ export class Experience {
       if (worldState.bakuMaterial) {
         this.baku.updateMaterial(worldState.bakuMaterial)
       }
-      this.environment.setLighting(worldState.envColor, worldState.envIntensity)
+      // Cinematic lighting — mood color + intensity per section
+      const warmth = normalizedScroll
+      this.cinematicLights.setMood(warmth, worldState.envIntensity)
+      this.cinematicLights.setKeyTarget(this.baku)
     }
 
     this.camera.update(deltaTime)
     this.baku.update(deltaTime)
     this.atmosphere.update(this.time.elapsed / 1000)
-    this.environment.update(this.time.elapsed / 1000, normalizedScroll, this.camera.getVelocity(), this.baku.position)
+    this.environment.update(this.time.elapsed / 1000, normalizedScroll, this.camera.getVelocity())
     this.renderer.update(this.scene, this.camera.instance, worldState)
     requestAnimationFrame((t) => this.update(t))
   }
@@ -159,6 +164,8 @@ export class Experience {
     this.contentReveal.destroy()
     this.cursor.destroy()
     this.atmosphere.dispose()
+    this.cinematicLights.dispose()
+    this.environment.dispose()
     this.debugStats?.destroy()
     this.renderer.instance.dispose()
   }

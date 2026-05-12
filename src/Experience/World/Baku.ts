@@ -24,7 +24,7 @@ export class Baku extends THREE.Mesh {
     }
 
     constructor() {
-        const geometry = new THREE.IcosahedronGeometry(0.5, 15)
+        const geometry = new THREE.IcosahedronGeometry(0.5, 3)
         const material = new THREE.MeshStandardMaterial({
             color: 0xffffff
         })
