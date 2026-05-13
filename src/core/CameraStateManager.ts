@@ -38,9 +38,10 @@ export class CameraStateManager {
             const progress = Math.min(this.transitionT / this.transitionDuration, 1);
 
             if (progress >= 1) {
-            this.currentState = this.targetState
-            this.onTransitionComplete?.()
-        }
+                this.currentState = this.targetState;
+                this.transitionT = 0;
+                this.onTransitionComplete?.();
+            }
         }
 
         // Decay FOV kick

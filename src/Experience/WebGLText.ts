@@ -63,6 +63,7 @@ export class WebGLText {
   private element: HTMLElement
   private material!: THREE.ShaderMaterial
   private computedStyle: CSSStyleDeclaration
+  private layoutX: 'left' | 'center' | 'right' = 'left'
 
   private isVisible = false
   private targetProgress = 0
@@ -110,14 +111,26 @@ export class WebGLText {
     this.troikaThree = troika as unknown as THREE.Object3D
   }
 
+  /** Map CSS text-align / direction to Troika anchor + overlay X math */
+  private resolveHorizontalLayout(): 'left' | 'center' | 'right' {
+    const raw = (this.computedStyle.textAlign || 'start').toLowerCase()
+    const rtl = this.computedStyle.direction === 'rtl'
+    if (raw === 'center') return 'center'
+    if (raw === 'right') return 'right'
+    if (raw === 'left') return 'left'
+    if (raw === 'start') return rtl ? 'right' : 'left'
+    if (raw === 'end') return rtl ? 'left' : 'right'
+    return 'left'
+  }
+
   private setStaticValues() {
     const rawFs = parseFloat(this.computedStyle.fontSize)
     const fontSizeNum = Number.isFinite(rawFs) && rawFs > 0 ? rawFs : 16
 
     this.troika.text = this.element.innerText
     this.troika.material = this.material
-    // Troika uses anchorX / anchorY (not a Vector2 .anchor)
-    this.troika.anchorX = 'left'
+    this.layoutX = this.resolveHorizontalLayout()
+    this.troika.anchorX = this.layoutX
     this.troika.anchorY = 'middle'
 
     this.troika.fontSize = fontSizeNum
@@ -183,7 +196,19 @@ export class WebGLText {
       const w = window.innerWidth
       const h = window.innerHeight
 
-      this.troika.position.x = rect.left - w / 2
+      // Orthographic overlay: world (0,0) = viewport center; X/Y match pixel offsets from center.
+      let worldX: number
+      switch (this.layoutX) {
+        case 'center':
+          worldX = rect.left + rect.width * 0.5 - w * 0.5
+          break
+        case 'right':
+          worldX = rect.right - w * 0.5
+          break
+        default:
+          worldX = rect.left - w * 0.5
+      }
+      this.troika.position.x = worldX
       this.troika.position.y = -(rect.top + rect.height / 2 - h / 2)
       this.troika.position.z = 0
     }

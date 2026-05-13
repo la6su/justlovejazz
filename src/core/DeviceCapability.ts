@@ -42,13 +42,16 @@ export class DeviceCapability {
     public readonly mode: RenderMode;
     public readonly maxDpr: number;
     public readonly config: TierConfig;
+    /** TSL post stack (Renderer) — WebGPU only in current pipeline */
+    public readonly supportsTsPostProcessing: boolean;
 
     private constructor() {
         this.mode = this.detectRenderMode();
         this.tier = this.detectTier();
         this.maxDpr = this.calculateMaxDpr();
         this.config = TIER_SETTINGS[this.tier];
-        console.log(`[DeviceCapability] Mode: ${this.mode} / Tier: ${this.tier.toUpperCase()} / MaxDPR: ${this.maxDpr} | Scale: ${this.config.resolutionScale}`);
+        this.supportsTsPostProcessing = this.mode === 'webgpu';
+        console.log(`[DeviceCapability] Mode: ${this.mode} / Tier: ${this.tier.toUpperCase()} / MaxDPR: ${this.maxDpr} | Scale: ${this.config.resolutionScale} | TSL post: ${this.supportsTsPostProcessing}`);
     }
 
     public static getInstance(): DeviceCapability {

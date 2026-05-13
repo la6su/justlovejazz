@@ -18,6 +18,16 @@ export class Input {
             this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1
             this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
         })
+
+        window.addEventListener('resize', () => this.refreshScrollLimit(), { passive: true })
+    }
+
+    /** Keeps scrollLimit in sync with layout (Lenis limit + document height changes). */
+    refreshScrollLimit() {
+        const next = Math.max(1, this.getDocumentScrollLimit())
+        this.scrollLimit = next
+        this.scrollY = Math.min(this.scrollY, next)
+        this.smoothedScroll = Math.min(this.smoothedScroll, next)
     }
 
     setScroll(value: number, limit: number = this.getDocumentScrollLimit()) {
@@ -41,6 +51,10 @@ export class Input {
         return THREE.MathUtils.clamp(this.scrollY / this.scrollLimit, 0, 1)
     }
 
+    /**
+     * Smoothed narrative timeline 0–1 aligned with `WORLD_CONFIG` phase ranges.
+     * Same normalization as raw progress; uses Lenis-driven scroll + document limit.
+     */
     getSmoothedScrollProgress() {
         return THREE.MathUtils.clamp(this.smoothedScroll / this.scrollLimit, 0, 1)
     }

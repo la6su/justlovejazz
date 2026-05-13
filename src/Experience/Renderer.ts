@@ -54,9 +54,12 @@ export class Renderer {
     this.instance.setClearColor(0x000000)
     document.body.appendChild(this.instance.domElement)
 
-    console.info(`Renderer: ${this.capabilities.mode} / ${this.capabilities.tier} / DPR ${this.capabilities.maxDpr}`)
+    console.info(
+      `Renderer: ${this.capabilities.mode} / ${this.capabilities.tier} / DPR ${this.capabilities.maxDpr} / TSL post: ${this.capabilities.supportsTsPostProcessing}`,
+    )
 
     window.addEventListener('resize', () => {
+      sizes.resize()
       this.instance.setSize(sizes.width, sizes.height)
     })
   }
