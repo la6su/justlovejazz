@@ -9,8 +9,8 @@ import { WorldAtmosphere } from '../core/WorldAtmosphere'
 import { DebugStats } from '../core/DebugStats'
 
 import { SmoothScroll } from './SmoothScroll'
-import { TextReveal } from './TextReveal'
 import { ContentReveal } from './ContentReveal'
+import { WebGLTextManager } from './WebGLTextManager'
 import { Cursor } from './Cursor'
 import { UIManager } from '../UI/UIManager'
 import { input } from './Input'
@@ -37,7 +37,7 @@ export class Experience {
   cinematicLights!: import('./World/Lights').CinematicLights
 
   private smoothScroll!: SmoothScroll
-  private textReveal!: TextReveal
+  private webglTextManager!: WebGLTextManager
   private contentReveal!: ContentReveal
   private cursor!: Cursor
   private atmosphere!: WorldAtmosphere
@@ -69,7 +69,11 @@ export class Experience {
 
   async init() {
     this.smoothScroll = new SmoothScroll()
-    this.textReveal = new TextReveal()
+
+    // Initialize WebGL text effects for section titles
+    const titles = document.querySelectorAll<HTMLElement>('.studio-title')
+    this.webglTextManager = new WebGLTextManager(Array.from(titles))
+
     this.contentReveal = new ContentReveal()
     this.cursor = new Cursor()
     this.atmosphere = new WorldAtmosphere(this.scene)
@@ -103,6 +107,9 @@ export class Experience {
     input.update()
     this.cursor.update()
     this.debugStats?.update(time)
+
+    // Update WebGL text manager
+    this.webglTextManager.update()
 
     const normalizedScroll = input.getSmoothedScrollProgress()
 
@@ -161,8 +168,8 @@ export class Experience {
   }
 
   destroy() {
+    this.webglTextManager.dispose()
     this.smoothScroll.destroy()
-    this.textReveal.destroy()
     this.contentReveal.destroy()
     this.cursor.destroy()
     this.atmosphere.dispose()

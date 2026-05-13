@@ -1,0 +1,225 @@
+// WebGLText — Troika Text 3D mesh with GLSL reveal effect
+// DOM element stays in layout but becomes text-color: transparent.
+
+import * as THREE from 'three'
+import { Text as TroikaTextClass } from 'troika-three-text'
+
+// GLSL shaders (Codrops pattern — bottom-to-top reveal)
+const vertexShader = `
+uniform float uProgress;
+uniform float uHeight;
+varying vec2 vUv;
+void main() {
+  vUv = uv;
+  vec3 p = position;
+  p.y -= uHeight * (1.0 - uProgress);
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+}
+`
+
+const fragmentShader = `
+uniform float uProgress;
+uniform vec3 uColor;
+varying vec2 vUv;
+void main() {
+  float reveal = 1.0 - vUv.y;
+  if (reveal > uProgress) discard;
+  gl_FragColor = vec4(uColor, 1.0);
+}
+`
+
+interface Props {
+  element: HTMLElement
+}
+
+// Troika Text has no solid TS types for all properties — use any wrapper
+interface TroikaMesh {
+  text: string
+  material: THREE.Material
+  /** Horizontal anchor: number, percent string, or 'left' | 'center' | 'right' */
+  anchorX: number | string
+  /** Vertical anchor: number, percent string, or Troika keywords e.g. 'middle' */
+  anchorY: number | string
+  fontSize: number
+  textAlign: string
+  letterSpacing: number
+  lineHeight: number | string
+  maxWidth: number
+  /** null = Troika default (Roboto/Noto pipeline), avoids broken /fonts/*.ttf URLs */
+  font: string | null
+  fontWeight: string | number
+  fontStyle: string
+  position: THREE.Vector3
+  dispose(): void
+  // For scene management — troika Text IS an Object3D, TS just doesn't type it
+  isObject3D: true
+  uuid: string
+  id: number
+}
+
+export class WebGLText {
+  private troika!: TroikaMesh
+  private troikaThree!: THREE.Object3D // object that scene.add() accepts
+  private element: HTMLElement
+  private material!: THREE.ShaderMaterial
+  private computedStyle: CSSStyleDeclaration
+
+  private isVisible = false
+  private targetProgress = 0
+  private currentProgress = 0
+
+  readonly color: THREE.Color
+
+  get elementRef(): HTMLElement {
+    return this.element
+  }
+
+  constructor({ element }: Props) {
+    this.element = element
+    this.computedStyle = window.getComputedStyle(element)
+    this.color = new THREE.Color(this.computedStyle.color)
+
+    this.createMaterial()
+    this.createMesh()
+    this.setStaticValues()
+
+    // Hide DOM text — WebGL renders the visible layer
+    element.style.color = 'transparent'
+  }
+
+  private createMaterial() {
+    const bounds = this.element.getBoundingClientRect()
+    this.material = new THREE.ShaderMaterial({
+      fragmentShader,
+      vertexShader,
+      uniforms: {
+        uProgress: { value: 0 },
+        uHeight: { value: bounds.height },
+        uColor: { value: this.color },
+      },
+      transparent: true,
+      depthWrite: false,
+      depthTest: false,
+    })
+  }
+
+  private createMesh() {
+    const troika = new TroikaTextClass() as TroikaMesh
+    this.troika = troika
+    // Troika's Text is an Object3D under the hood
+    this.troikaThree = troika as unknown as THREE.Object3D
+  }
+
+  private setStaticValues() {
+    const rawFs = parseFloat(this.computedStyle.fontSize)
+    const fontSizeNum = Number.isFinite(rawFs) && rawFs > 0 ? rawFs : 16
+
+    this.troika.text = this.element.innerText
+    this.troika.material = this.material
+    // Troika uses anchorX / anchorY (not a Vector2 .anchor)
+    this.troika.anchorX = 'left'
+    this.troika.anchorY = 'middle'
+
+    this.troika.fontSize = fontSizeNum
+
+    // Troika uses em units — convert from px (computed "normal" → NaN)
+    const lsPx = parseFloat(this.computedStyle.letterSpacing)
+    this.troika.letterSpacing = Number.isFinite(lsPx) ? lsPx / fontSizeNum : 0
+
+    const lhPx = parseFloat(this.computedStyle.lineHeight)
+    this.troika.lineHeight =
+      Number.isFinite(lhPx) && lhPx > 0 ? lhPx / fontSizeNum : 'normal'
+    this.troika.textAlign = this.computedStyle.textAlign as unknown as string
+    this.troika.maxWidth = this.element.getBoundingClientRect().width
+
+    // Custom /fonts/Humane-*.ttf are not in the repo; 404 HTML was parsed as TTF → RangeError.
+    // Use Troika's built-in default font. To match Humane, add files under public/fonts and set `font` URL.
+    this.troika.font = null
+    const fw = this.computedStyle.fontWeight
+    this.troika.fontWeight =
+      fw === 'normal' || fw === '400'
+        ? 'normal'
+        : fw === 'bold' || fw === 'bolder' || fw === '700'
+          ? 'bold'
+          : /^\d+$/.test(fw)
+            ? fw
+            : 'normal'
+    this.troika.fontStyle = this.computedStyle.fontStyle === 'italic' ? 'italic' : 'normal'
+  }
+
+  /** Get the Three Object3D that can be added to overlay scene */
+  getTroikaMesh(): THREE.Object3D {
+    return this.troikaThree as THREE.Object3D
+  }
+
+  enterViewport() {
+    this.isVisible = true
+    this.targetProgress = 1
+  }
+
+  leaveViewport() {
+    if (!this.isVisible) return
+    this.targetProgress = 0
+    setTimeout(() => {
+      if (this.currentProgress < 0.02 && this.targetProgress === 0) {
+        this.isVisible = false
+        this.currentProgress = 0
+      }
+    }, 2000)
+  }
+
+  update() {
+    const diff = this.targetProgress - this.currentProgress
+    this.currentProgress += diff * 0.03
+
+    if (Math.abs(diff) < 0.001) {
+      this.currentProgress = this.targetProgress
+    }
+
+    this.material.uniforms.uProgress.value = this.currentProgress
+
+    if (this.isVisible) {
+      const rect = this.element.getBoundingClientRect()
+      const w = window.innerWidth
+      const h = window.innerHeight
+
+      this.troika.position.x = rect.left - w / 2
+      this.troika.position.y = -(rect.top + rect.height / 2 - h / 2)
+      this.troika.position.z = 0
+    }
+  }
+
+  onResize() {
+    this.computedStyle = window.getComputedStyle(this.element)
+    this.setStaticValues()
+    this.material.uniforms.uHeight.value = this.element.getBoundingClientRect().height
+  }
+
+  waitForLoaded(): Promise<void> {
+    const mesh = this.troikaThree as THREE.Object3D
+    const target = mesh as unknown as EventTarget
+    return new Promise((resolve) => {
+      const troika = mesh as unknown as { textRenderInfo: unknown | null }
+      if (troika.textRenderInfo != null) {
+        resolve()
+        return
+      }
+      const onSync = () => {
+        target.removeEventListener('synccomplete', onSync)
+        window.clearTimeout(timeoutId)
+        resolve()
+      }
+      target.addEventListener('synccomplete', onSync)
+      const timeoutId = window.setTimeout(() => {
+        target.removeEventListener('synccomplete', onSync)
+        resolve()
+      }, 15000)
+    })
+  }
+
+  dispose() {
+    this.troika.dispose()
+    this.material.dispose()
+    this.element.style.color = ''
+  }
+}

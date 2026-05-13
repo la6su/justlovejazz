@@ -23,7 +23,9 @@
   "main": "index.js",
   "dependencies": {
     "@studio-freight/lenis": "^1.0.42",
+    "playwright": "^1.60.0",
     "three": "^0.184.0",
+    "troika-three-text": "^0.52.4",
     "uikit": "^3.25.16"
   },
   "repository": {
