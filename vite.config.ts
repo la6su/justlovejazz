@@ -4,6 +4,7 @@ export default defineConfig({
   build: {
     target: 'es2023',
     outDir: 'dist',
+    chunkSizeWarningLimit: 600,
     cssCodeSplit: true,
     rollupOptions: {
       output: {
@@ -18,7 +19,9 @@ export default defineConfig({
             id.includes('/src/Experience/World/') ||
             id.includes('/src/shaders/ProjectMaterial') ||
             id.includes('/src/shaders/ProjectMaterialWebGL') ||
-            id.includes('/src/shaders/GalleryCardSurface')
+            id.includes('/src/shaders/GalleryCardSurface') ||
+            id.includes('/src/shaders/text/') ||
+            id.includes('/src/shaders/postprocessing')
           ) {
             return 'chunk-scene'
           }

@@ -20,11 +20,13 @@
 - Phase 3: full CSS still bundled via Less; optional future: split `@font-face` / subset fonts
 - Phase 4: production Service Worker (`public/sw.js`, registered from `src/main-app.ts`)
 
-### G. Production _(partially implemented)_
+### G. Production _(implemented)_
 
-- a11y: skip link, nav landmark, modal `role` / `aria-*` / focus title, `prefers-reduced-motion` (Lenis, gallery transitions, Less)
+- a11y: skip link, nav landmark, modal `role` / `aria-*` / focus trap, `prefers-reduced-motion` (Lenis, gallery transitions, Less)
 - Lighthouse ≥ 90: not automated here — run Lighthouse on `npm run preview` build
 - WebGL2 fallback: `Renderer` uses `THREE.WebGLRenderer` when `DeviceCapability.mode === 'webgl'`; gallery uses `ProjectMaterialWebGL`; post-processing TSL remains WebGPU-only
+- Service Worker: static asset caching (`public/sw.js`, registered from `src/main-app.ts`)
+- SceneContent lazy-loaded via `import()` — defers 3D section content
 
 ### G (remaining)
 

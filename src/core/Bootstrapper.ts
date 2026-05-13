@@ -4,7 +4,6 @@ import { GalleryManager } from './GalleryManager'
 import { CameraStateManager } from './CameraStateManager'
 import { SceneContentManager } from './SceneContentManager'
 import { GalleryScene } from '../Experience/World/GalleryScene'
-import { SectionContent } from '../Experience/World/SectionContent'
 import { Environment } from '../Experience/World/Environment'
 import { Baku } from '../Experience/World/Baku'
 import { CinematicLights } from '../Experience/World/Lights'
@@ -33,23 +32,8 @@ export class Bootstrapper {
         // Scene Content Manager (dynamic content per section)
         experience.sceneContentManager = new SceneContentManager(experience.scene);
 
-        // Populate section content
-        experience.sceneContentManager.setupPhaseContent(
-            NarrativePhase.AWAKENING,
-            SectionContent.createAwakeningContent()
-        );
-        experience.sceneContentManager.setupPhaseContent(
-            NarrativePhase.DISCOVERY,
-            SectionContent.createDiscoveryContent()
-        );
-        experience.sceneContentManager.setupPhaseContent(
-            NarrativePhase.DEEP_DIVE,
-            SectionContent.createDeepDiveContent()
-        );
-        experience.sceneContentManager.setupPhaseContent(
-            NarrativePhase.CONNECTION,
-            SectionContent.createConnectionContent()
-        );
+        // Lazy load section content (heavy shaders + geometries)
+        await loadSectionContent(experience.sceneContentManager);
 
         // Activate first section
         experience.sceneContentManager.queueTransition(NarrativePhase.AWAKENING, 0);
@@ -86,5 +70,20 @@ export class Bootstrapper {
         await experience.init()
 
         return experience
+    }
+}
+
+/** Lazy-load SectionContent into SceneContentManager */
+async function loadSectionContent(manager: SceneContentManager): Promise<void> {
+    try {
+        const { SectionContent } = await import('../Experience/World/SectionContent');
+        manager.setupPhaseContent(NarrativePhase.AWAKENING, SectionContent.createAwakeningContent());
+        manager.setupPhaseContent(NarrativePhase.DISCOVERY, SectionContent.createDiscoveryContent());
+        manager.setupPhaseContent(NarrativePhase.DEEP_DIVE, SectionContent.createDeepDiveContent());
+        manager.setupPhaseContent(NarrativePhase.CONNECTION, SectionContent.createConnectionContent());
+    } catch (err) {
+        if (import.meta.env.DEV) {
+            console.error('Failed to load section content:', err);
+        }
     }
 }
