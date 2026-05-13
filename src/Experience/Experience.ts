@@ -21,6 +21,7 @@ import { SceneContentManager } from '../core/SceneContentManager'
 import { AssetManager } from '../core/AssetManager'
 import { GPUResourceManager } from '../core/GPUResourceManager'
 import { GalleryScene } from './World/GalleryScene'
+import { SectionTransition } from './SectionTransition'
 import { CameraState } from '../core/types'
 
 export class Experience {
@@ -50,6 +51,7 @@ export class Experience {
   public cameraStateManager!: CameraStateManager
   public sceneContentManager!: SceneContentManager
   private currentSectionContext: string | null = null
+  private sectionTransition!: SectionTransition
 
   constructor(ui: UIManager) {
     this.sizes = new Sizes()
@@ -80,6 +82,7 @@ export class Experience {
     this.contentReveal = new ContentReveal()
     this.cursor = new Cursor()
     this.atmosphere = new WorldAtmosphere(this.scene)
+    this.sectionTransition = new SectionTransition()
 
     await this.renderer.init()
 
@@ -137,6 +140,9 @@ export class Experience {
 
       // Cinematic Arrival Pulse: subtle FOV shift to announce section change
       this.camera.setFovOffset(0.3, 0.8);
+
+      // Curtain wipe transition
+      void this.sectionTransition.trigger();
 
       this.currentSectionContext = config.context;
     }
