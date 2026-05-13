@@ -86,6 +86,23 @@ export class UIManager {
     };
 
     window.addEventListener('pointerdown', handlePointerDown);
+
+    const handleWheel = (e: WheelEvent) => {
+      const manager = window.experience?.galleryManager
+      if (!manager) return
+      if (manager.isTransitioning) return
+
+      const works = document.getElementById('works')
+      if (!works) return
+      const rect = works.getBoundingClientRect()
+      const inViewport = rect.top < window.innerHeight * 0.7 && rect.bottom > window.innerHeight * 0.3
+      if (!inViewport) return
+
+      const dominantDelta = Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX
+      manager.wheel(dominantDelta)
+    }
+
+    window.addEventListener('wheel', handleWheel, { passive: true })
   }
 
   private initGalleryNav() {

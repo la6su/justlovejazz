@@ -69,22 +69,26 @@ export class ProjectGallery {
     public update(manager: GalleryManager) {
         if (window.innerWidth < 768) return
 
-        const { activeIndex, transitionProgress } = manager
+        const { transitionProgress } = manager
         const pixelsPerUnit = window.innerWidth * 0.12
 
         this.items.forEach((item, i) => {
-            const relativeIndex = i - activeIndex
-            const x = relativeIndex * pixelsPerUnit * 2.2
-            const opacity = Math.abs(relativeIndex) <= 1 ? 1 : 0
+            const wrapped = manager.getWrappedOffset(i)
+            const relative = wrapped / manager.STEP
+            const x = relative * pixelsPerUnit * 2.2
+            const depth = Math.min(Math.abs(relative), 1.5) / 1.5
+            const opacity = Math.abs(relative) <= 1.5 ? 1 - depth * 0.5 : 0
             const finalOpacity = opacity * (1 - transitionProgress)
-            const finalScale = relativeIndex === 0
-                ? 1.1 - (transitionProgress * 0.1)
-                : 0.9
+            const finalScale = (1 - depth * 0.18) * (1 - transitionProgress * 0.08)
+            const y = Math.sin(relative * 1.1) * 12 + manager.smoothedVelocity * -10 * (1 - depth)
+            const rotateY = relative * -7 + manager.smoothedVelocity * -10
+            const thumb = relative * 14 + manager.smoothedVelocity * -18
 
-            item.style.transform = `translate3d(${x}px, 0, 0) scale(${finalScale})`
+            item.style.transform = `translate3d(${x}px, ${y}px, ${-depth * 30}px) rotateY(${rotateY}deg) scale(${finalScale})`
             item.style.opacity = `${finalOpacity}`
             item.style.pointerEvents = transitionProgress > 0.5 ? 'none' : 'auto'
-            item.classList.toggle('is-active', relativeIndex === 0)
+            item.classList.toggle('is-active', Math.abs(relative) < 0.5)
+            item.style.setProperty('--thumb-parallax-x', `${thumb}px`)
         })
     }
 

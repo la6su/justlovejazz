@@ -118,8 +118,7 @@ export class GalleryScene {
 
     const e = Easings.easeInOutQuart(progress)
     const isMobile = this.sizes.isMobile
-    const trackLen = this.manager.trackLength
-    const half = trackLen / 2
+    const velocity = THREE.MathUtils.clamp(this.manager.smoothedVelocity * 0.06, -1, 1)
 
     this.planes.forEach((mesh, i) => {
       if (state === GalleryTransitionState.EXPAND && i === activeIndex) {
@@ -150,16 +149,20 @@ export class GalleryScene {
       }
 
       this.surfaces[i].setProgress(0)
-      const pos = i * this.manager.STEP - this.manager.scrollX
-      let wrapped = pos % trackLen
-      if (wrapped < -half) wrapped += trackLen
-      if (wrapped > half) wrapped -= trackLen
+      const wrapped = this.manager.getWrappedOffset(i)
 
       if (isMobile) {
         const ry = wrapped / this.manager.STEP
         if (Math.abs(ry) <= 1.5) {
-          mesh.position.set(0, ry * 2.5, Math.abs(ry) < 0.5 ? 0 : -1)
-          mesh.scale.setScalar(0.7)
+          const depth = THREE.MathUtils.clamp(Math.abs(ry), 0, 1.5) / 1.5
+          const z = -depth * 1.6
+          mesh.position.set(
+            velocity * 0.35,
+            ry * 2.5 + velocity * -0.2 * (1 - depth),
+            z,
+          )
+          mesh.rotation.set(0, velocity * -0.2, 0)
+          mesh.scale.setScalar(THREE.MathUtils.lerp(0.82, 0.64, depth))
           mesh.visible = true
           this.scheduleTextureLoad(i)
         } else {
@@ -168,8 +171,12 @@ export class GalleryScene {
       } else {
         const rx = wrapped / this.manager.STEP
         if (Math.abs(rx) <= 1.5) {
-          mesh.position.set(rx * 2.2, 0, Math.abs(rx) < 0.5 ? 0 : -1)
-          mesh.scale.setScalar(0.8)
+          const depth = THREE.MathUtils.clamp(Math.abs(rx), 0, 1.5) / 1.5
+          const z = -depth * 1.8
+          const y = Math.sin(rx * 1.3) * 0.08 + velocity * -0.22 * (1 - depth)
+          mesh.position.set(rx * 2.2, y, z)
+          mesh.rotation.set(velocity * -0.08, rx * -0.08 + velocity * -0.14, 0)
+          mesh.scale.setScalar(THREE.MathUtils.lerp(0.88, 0.72, depth))
           mesh.visible = true
           this.scheduleTextureLoad(i)
         } else {

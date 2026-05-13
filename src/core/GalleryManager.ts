@@ -14,6 +14,7 @@ export class GalleryManager {
     public scrollX = 0
     public targetScrollX = 0
     public velocity = 0
+    public smoothedVelocity = 0
 
     // Transition state machine
     public transitionState: GalleryTransitionState = GalleryTransitionState.LIST
@@ -28,6 +29,7 @@ export class GalleryManager {
     public readonly SMOOTHING = 0.1
     public readonly FRICTION = 0.92
     public readonly SENSITIVITY = 1.0
+    public readonly WHEEL_SENSITIVITY = 0.0028
     private readonly transitionSpeed = 1.8
     /** Faster gallery expand/contract when user prefers reduced motion */
     private readonly transitionMotionMul = prefersReducedMotion() ? 3 : 1
@@ -84,6 +86,22 @@ export class GalleryManager {
         this.targetScrollX += this.velocity * 10
     }
 
+    wheel(delta: number) {
+        const move = delta * this.WHEEL_SENSITIVITY
+        this.targetScrollX += move
+        this.velocity += move * 0.3
+    }
+
+    getWrappedOffset(index: number): number {
+        const trackLen = this.trackLength
+        const half = trackLen / 2
+        const pos = index * this.STEP - this.scrollX
+        let wrapped = pos % trackLen
+        if (wrapped < -half) wrapped += trackLen
+        if (wrapped > half) wrapped -= trackLen
+        return wrapped
+    }
+
     /** Expand: card grows to fullscreen */
     expandCard(index: number, startPos: THREE.Vector3, startScale: number) {
         if (this.isTransitioning) return
@@ -115,9 +133,12 @@ export class GalleryManager {
         if (this.transitionState === GalleryTransitionState.LIST) {
             const dist = this.targetScrollX - this.scrollX
             this.scrollX += dist * this.SMOOTHING
+            this.smoothedVelocity += (dist - this.smoothedVelocity) * 0.12
             const currentPos = ((this.scrollX % this.trackLength) + this.trackLength) % this.trackLength
             const rawIdx = Math.round(currentPos / this.STEP)
             this.activeIndex = ((rawIdx % this.projects.length) + this.projects.length) % this.projects.length
+        } else {
+            this.smoothedVelocity *= 0.88
         }
 
         // Drive transition

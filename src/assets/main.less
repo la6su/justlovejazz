@@ -713,6 +713,7 @@ body, a, button, .interactive {
   pointer-events: auto;
   cursor: pointer;
   padding: 2rem 1.5rem;
+  transform-style: preserve-3d;
 }
 
 .project-card {
@@ -730,7 +731,8 @@ body, a, button, .interactive {
       height: 100%;
       object-fit: cover;
       filter: brightness(0.85) saturate(0.9);
-      transition: filter 0.8s ease;
+      transition: filter 0.8s ease, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+      transform: translate3d(var(--thumb-parallax-x, 0px), 0, 0) scale(1.08);
     }
     
     .is-active {
