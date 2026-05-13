@@ -191,22 +191,28 @@ export class CameraStateManager {
         const t = phaseProgress;
 
         const baku = this.calculateBakuPosition(scroll);
-        
         // Determine if we are in relative mode (based on current phase)
         const isRelative = from.camera.isRelative;
-        
+
         const posOffset = new THREE.Vector3().lerpVectors(from.camera.position, to.camera.position, t);
         const lookOffset = new THREE.Vector3().lerpVectors(from.camera.target, to.camera.target, t);
 
+        // Camera follows Baku position (0.3 offset — subtle tracking)
+        const bakuInfluence = 0.3;
+        const bakuxPos = isRelative
+            ? baku.position.clone().add(posOffset)
+            : posOffset.clone().lerp(baku.position.clone().multiplyScalar(0.5), bakuInfluence);
+        const bakuLook = isRelative
+            ? baku.position.clone().add(lookOffset)
+            : lookOffset.clone().lerp(baku.position.clone().multiplyScalar(0.3), bakuInfluence * 0.5);
+
         return {
-            position: isRelative 
-                ? baku.position.clone().add(posOffset) 
-                : posOffset,
-            lookAt: isRelative 
-                ? baku.position.clone().add(lookOffset) 
-                : lookOffset,
+            position: bakuxPos,
+            lookAt: bakuLook,
             fov: from.camera.fov + (to.camera.fov - from.camera.fov) * t
         };
+
+        // Baku follow: camera subtly tracks Baku position
     }
 
     transitionTo(newState: CameraState, duration: number = 1.2) {

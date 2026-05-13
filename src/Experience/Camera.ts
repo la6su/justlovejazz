@@ -3,6 +3,7 @@ import * as THREE from 'three'
 import { Sizes } from './Sizes'
 import { input } from './Input'
 import { Easings } from '../Utils/Easings'
+import { Device } from '../core/DeviceCapability'
 import type { CameraTarget } from '../core/types'
 
 // Zero-allocation vectors
@@ -106,24 +107,31 @@ export class Camera {
         springX.pos += springX.vel * dt
         springY.pos += springY.vel * dt
 
-        // ── 2. Build position ──
-        const pos = this.instance.position
+    // ── 2. Build position ──
+        const isMobile = Device.isMobile;
+        const pos = this.instance.position;
+
+        // Cursor follow — spring-damper (disabled on mobile)
+        const cursorX = isMobile ? 0 : springX.pos;
+        const cursorY = isMobile ? 0 : springY.pos;
+
         pos.set(
-            this.smoothPosition.x + springX.pos * 0.15,
-            this.smoothPosition.y + springY.pos * 0.15,
+            this.smoothPosition.x + cursorX * 0.15,
+            this.smoothPosition.y + cursorY * 0.15,
             this.smoothPosition.z
-        )
+        );
 
-        // ── 3. Organic shake (continuous handheld) ──
-        this.organicTime += dt
-        const ot = this.organicTime
-        const ox = (Math.sin(ot * 0.7) * 0.3 + Math.sin(ot * 1.3) * 0.2) * 0.002
-        const oy = (Math.sin(ot * 0.9) * 0.2 + Math.sin(ot * 1.7) * 0.3) * 0.002
-        const oz = (Math.sin(ot * 1.1) * 0.4 + Math.sin(ot * 2.1) * 0.1) * 0.002
-
-        pos.x += ox
-        pos.y += oy
-        pos.z += oz
+        // ── 3. Organic shake (continuous handheld) — desktop only ──
+        if (!isMobile) {
+            this.organicTime += dt;
+            const ot = this.organicTime;
+            const ox = (Math.sin(ot * 0.7) * 0.3 + Math.sin(ot * 1.3) * 0.2) * 0.002;
+            const oy = (Math.sin(ot * 0.9) * 0.2 + Math.sin(ot * 1.7) * 0.3) * 0.002;
+            const oz = (Math.sin(ot * 1.1) * 0.4 + Math.sin(ot * 2.1) * 0.1) * 0.002;
+            pos.x += ox;
+            pos.y += oy;
+            pos.z += oz;
+        }
 
         // ── 4. Look at target ──
         this.instance.lookAt(this.smoothTarget)

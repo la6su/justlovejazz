@@ -8,6 +8,7 @@ export async function bootstrap(): Promise<void> {
     const ui = new UIManager()
     await ui.init()
     await Bootstrapper.init(ui)
+    initScrollHint()
     registerServiceWorker()
     if (import.meta.env.DEV) {
       console.info('Application successfully bootstrapped')
@@ -27,4 +28,16 @@ function registerServiceWorker(): void {
   void navigator.serviceWorker.register(path).catch(() => {
     /* non-fatal */
   })
+}
+
+// Hide "scroll to explore" hint after first scroll
+function initScrollHint(): void {
+  const hint = document.getElementById('scrollHint') as HTMLElement | null;
+  if (!hint) return;
+  const hideHint = () => {
+    hint.classList.add('fade-out');
+    setTimeout(() => hint.remove(), 700);
+    window.removeEventListener('scroll', hideHint);
+  };
+  window.addEventListener('scroll', hideHint, { passive: true, once: true });
 }

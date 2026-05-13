@@ -93,14 +93,15 @@ export class Experience {
     this.camera.instance.lookAt(0, 0, 0)
     this.camera.instance.updateProjectionMatrix()
 
-    const loader = document.getElementById('pageLoader')
+    const loader = document.getElementById('pageLoader');
     if (loader) {
-      loader.style.opacity = '0'
+      loader.classList.add('fade-out');
       setTimeout(() => {
-        loader.style.display = 'none'
-      }, 500)
+        loader.style.display = 'none';
+        loader.style.opacity = '';
+      }, 900);
     }
-    requestAnimationFrame((t) => this.update(t))
+    requestAnimationFrame((t) => this.update(t));
   }
 
   update(time: number) {

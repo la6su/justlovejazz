@@ -417,7 +417,37 @@ body, a, button, .interactive {
   background: #000;
   z-index: 1000;
   color: #fff;
-  transition: opacity 0.5s ease-out;
+  transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+#pageLoader.fade-out {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Scroll hint */
+@keyframes scrollBounce {
+  0%, 100% { transform: translateY(0); opacity: 1; }
+  50% { transform: translateY(8px); opacity: 0.6; }
+}
+
+.scroll-hint {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  pointer-events: none;
+  animation: scrollBounce 2s ease-in-out infinite;
+  transition: opacity 0.6s ease;
+}
+
+.scroll-hint.fade-out {
+  opacity: 0;
 }
 
 /* === Navbar === */

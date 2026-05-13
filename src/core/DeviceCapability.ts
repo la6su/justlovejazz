@@ -66,6 +66,13 @@ export class DeviceCapability {
   public readonly isTouch: boolean;
   public readonly supportsTsPostProcessing: boolean;
 
+  public static get isMobile(): boolean {
+    return detectMobile();
+  }
+  public static get isTouch(): boolean {
+    return navigator.maxTouchPoints > 0;
+  }
+
   private constructor() {
     this.isMobile = detectMobile();
     this.isTouch = navigator.maxTouchPoints > 0;
@@ -120,3 +127,6 @@ export class DeviceCapability {
     return this.config.enableHeavyEffects;
   }
 }
+
+// Alias — Camera.ts imports as 'Device'
+export { DeviceCapability as Device };
