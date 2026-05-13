@@ -179,6 +179,7 @@ export class Experience {
     this.smoothScroll.destroy()
     this.contentReveal.destroy()
     this.cursor.destroy()
+    this.sceneContentManager.dispose()
     this.atmosphere.dispose()
     this.cinematicLights.dispose()
     this.environment.dispose()

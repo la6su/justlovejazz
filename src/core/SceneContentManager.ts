@@ -6,6 +6,7 @@ import { easeInOutCubic } from './utils';
 /**
  * Manages dynamic scene content transitions between sections.
  * Each section has its own 3D group. Transitions are delta-time driven.
+ * Idle animation keeps objects alive between transitions.
  */
 export class SceneContentManager {
     private scene: THREE.Scene;
@@ -17,6 +18,9 @@ export class SceneContentManager {
     private transitionProgress: number = 0;
     private transitionDuration: number = 1.2;
     private isTransitioning: boolean = false;
+
+    // Elapsed time counter for idle animation
+    private elapsed: number = 0;
 
     constructor(scene: THREE.Scene) {
         this.scene = scene;
@@ -69,13 +73,25 @@ export class SceneContentManager {
     }
 
     /**
-     * Call every frame with delta time. Advances the transition.
+     * Call every frame with delta time. Advances transitions + runs idle animation.
      */
     public update(deltaTime: number): void {
-        if (!this.isTransitioning || !this.targetPhase) return;
+        this.elapsed += deltaTime;
 
+        if (this.isTransitioning && this.targetPhase) {
+            this.runTransition(deltaTime);
+        }
+
+        // Idle animation on current content
+        if (this.currentPhase !== null && !this.isTransitioning) {
+            const group = this.groups.get(this.currentPhase);
+            if (group) this.animateIdle(group, deltaTime);
+        }
+    }
+
+    private runTransition(deltaTime: number): void {
         const oldGroup = this.currentPhase !== null ? this.groups.get(this.currentPhase) : null;
-        const newGroup = this.groups.get(this.targetPhase);
+        const newGroup = this.groups.get(this.targetPhase!);
 
         if (!oldGroup || !newGroup) {
             this.endTransition();
@@ -101,6 +117,57 @@ export class SceneContentManager {
         if (t >= 1) {
             this.endTransition();
         }
+    }
+
+    /** Idle animation for objects in the active section */
+    private animateIdle(group: THREE.Group, deltaTime: number): void {
+        group.traverse((obj) => {
+            if (!obj.userData.type) return;
+
+            switch (obj.userData.type) {
+                case 'floating-ring':
+                    if (obj instanceof THREE.Mesh) {
+                        obj.rotation.z += deltaTime * 0.15;
+                        obj.rotation.y += deltaTime * 0.08;
+                    }
+                    break;
+
+                case 'floating-cube':
+                    if (obj instanceof THREE.Mesh) {
+                        obj.rotation.x += deltaTime * 0.2;
+                        obj.rotation.y += deltaTime * 0.15;
+                        obj.position.y += Math.sin(this.elapsed * 0.5 + obj.position.x) * 0.001;
+                    }
+                    break;
+
+                case 'particles':
+                    if (obj instanceof THREE.Points) {
+                        obj.rotation.y += deltaTime * 0.02;
+                    }
+                    break;
+
+                case 'central-orb':
+                    if (obj instanceof THREE.Mesh) {
+                        const s = 1 + Math.sin(this.elapsed * 0.5) * 0.05;
+                        obj.scale.setScalar(s);
+                    }
+                    break;
+
+                case 'parametric-line':
+                    // subtle sway — handled via parent group rotation if needed
+                    break;
+
+                case 'wireframe-grid':
+                    // static — no idle
+                    break;
+
+                case 'halo':
+                    if (obj instanceof THREE.Mesh) {
+                        obj.rotation.z += deltaTime * 0.05;
+                    }
+                    break;
+            }
+        });
     }
 
     private setGroupOpacity(group: THREE.Group, opacity: number): void {
@@ -185,6 +252,14 @@ export class SceneContentManager {
                     } else if (obj.material) {
                         obj.material.dispose();
                     }
+                }
+                if (obj instanceof THREE.Points) {
+                    obj.geometry?.dispose();
+                    if (obj.material) obj.material.dispose();
+                }
+                if (obj instanceof THREE.Line) {
+                    obj.geometry?.dispose();
+                    if (obj.material) obj.material.dispose();
                 }
             });
             group.clear();
