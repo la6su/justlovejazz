@@ -2,13 +2,16 @@
 import { Experience } from '../Experience/Experience'
 import { GalleryManager } from './GalleryManager'
 import { CameraStateManager } from './CameraStateManager'
+import { SceneContentManager } from './SceneContentManager'
 import { GalleryScene } from '../Experience/World/GalleryScene'
+import { SectionContent } from '../Experience/World/SectionContent'
 import { Environment } from '../Experience/World/Environment'
 import { Baku } from '../Experience/World/Baku'
 import { CinematicLights } from '../Experience/World/Lights'
 import { PROJECTS } from '../Data/Projects'
 import { UIManager } from '../UI/UIManager'
 import { ProjectDetail } from '../UI/ProjectDetail'
+import { NarrativePhase } from './types'
 
 export class Bootstrapper {
     static async init(ui: UIManager): Promise<Experience> {
@@ -24,8 +27,32 @@ export class Bootstrapper {
             console.error('Bootstrapper: gallery init failed', error)
         }
 
-        experience.cameraStateManager = new CameraStateManager(experience.galleryManager)
-        experience.scene.add(experience.galleryScene.group)
+        experience.cameraStateManager = new CameraStateManager(experience.galleryManager);
+        experience.scene.add(experience.galleryScene.group);
+
+        // Scene Content Manager (dynamic content per section)
+        experience.sceneContentManager = new SceneContentManager(experience.scene);
+
+        // Populate section content
+        experience.sceneContentManager.setupPhaseContent(
+            NarrativePhase.AWAKENING,
+            SectionContent.createAwakeningContent()
+        );
+        experience.sceneContentManager.setupPhaseContent(
+            NarrativePhase.DISCOVERY,
+            SectionContent.createDiscoveryContent()
+        );
+        experience.sceneContentManager.setupPhaseContent(
+            NarrativePhase.DEEP_DIVE,
+            SectionContent.createDeepDiveContent()
+        );
+        experience.sceneContentManager.setupPhaseContent(
+            NarrativePhase.CONNECTION,
+            SectionContent.createConnectionContent()
+        );
+
+        // Activate first section
+        experience.sceneContentManager.queueTransition(NarrativePhase.AWAKENING, 0);
 
         // Cinematic lighting
         experience.cinematicLights = new CinematicLights(experience.scene)

@@ -17,6 +17,7 @@ import { input } from './Input'
 
 import { GalleryManager } from '../core/GalleryManager'
 import { CameraStateManager } from '../core/CameraStateManager'
+import { SceneContentManager } from '../core/SceneContentManager'
 import { AssetManager } from '../core/AssetManager'
 import { GPUResourceManager } from '../core/GPUResourceManager'
 import { GalleryScene } from './World/GalleryScene'
@@ -47,6 +48,7 @@ export class Experience {
   public galleryManager!: GalleryManager
   public galleryScene!: GalleryScene
   public cameraStateManager!: CameraStateManager
+  public sceneContentManager!: SceneContentManager
   private currentSectionContext: string | null = null
 
   constructor(ui: UIManager) {
@@ -69,6 +71,7 @@ export class Experience {
 
   async init() {
     this.smoothScroll = new SmoothScroll()
+    input.refreshScrollLimit()
 
     // Initialize WebGL text effects for section titles
     const titles = document.querySelectorAll<HTMLElement>('.studio-title')
@@ -116,27 +119,31 @@ export class Experience {
     const { cameraTarget, worldState } = this.cameraStateManager.update(deltaTime, normalizedScroll)
 
     // VRAM Optimization: Dispose previous section assets on change
-    const { currentPhase } = this.cameraStateManager.calculatePhase(normalizedScroll)
-    const config = this.cameraStateManager.getWorldConfigForPhase(currentPhase)
+    const { currentPhase } = this.cameraStateManager.calculatePhase(normalizedScroll);
+    const config = this.cameraStateManager.getWorldConfigForPhase(currentPhase);
     if (config && config.context !== this.currentSectionContext) {
       if (this.currentSectionContext) {
-        AssetManager.getInstance().disposeContext(this.currentSectionContext)
-        GPUResourceManager.getInstance().disposeContext(this.currentSectionContext)
+        AssetManager.getInstance().disposeContext(this.currentSectionContext);
+        GPUResourceManager.getInstance().disposeContext(this.currentSectionContext);
       }
-      this.atmosphere.setFog(config.fog.color, config.fog.density)
+      this.atmosphere.setFog(config.fog.color, config.fog.density);
+
+      // Scene Content Manager — queue transition to new section content
+      this.sceneContentManager.queueTransition(config.id, 1.2);
 
       // Cinematic Arrival Pulse: subtle FOV shift to announce section change
-      this.camera.setFovOffset(0.3, 0.8)
+      this.camera.setFovOffset(0.3, 0.8);
 
-      this.currentSectionContext = config.context
+      this.currentSectionContext = config.context;
     }
 
     // Apply state-dependent smoothing
     const smoothing = this.cameraStateManager.currentState === CameraState.TRANSITION ? 8 : 5
     this.camera.updateSmooth(cameraTarget, deltaTime, smoothing)
 
-    this.galleryManager.update(deltaTime)
-    this.galleryScene.update(deltaTime)
+    this.galleryManager.update(deltaTime);
+    this.galleryScene.update(deltaTime);
+    this.sceneContentManager.update(deltaTime);
     // Show/hide 3D gallery group + UI gallery per section context
     this.galleryScene.group.visible = worldState.uiShowGallery
     if (this.ui.gallery) {
