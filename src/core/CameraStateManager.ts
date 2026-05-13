@@ -133,11 +133,12 @@ export class CameraStateManager {
                 bakuPosition: new THREE.Vector3(),
                 bakuRotation: new THREE.Quaternion(),
                 bakuScale: new THREE.Vector3(1, 1, 1),
-                bakuRole: BakuRole.NORMAL,
-                bakuMaterial: {},
-                envColor: new THREE.Color(0x000000),
-                envIntensity: 1.0,
-                uiShowGallery: false,
+            bakuRole: BakuRole.NORMAL,
+            bakuMaterial: {},
+            envColor: new THREE.Color(0x000000),
+            envIntensity: 1.0,
+            uiShowGallery: false,
+            bakuOpacity: 1.0,
                 post: {
                     bloom: 0,
                     vignette: 0,
@@ -171,7 +172,8 @@ export class CameraStateManager {
                 bloom: THREE.MathUtils.lerp(from.post.bloom, to.post.bloom, t),
                 vignette: THREE.MathUtils.lerp(from.post.vignette, to.post.vignette, t),
                 grain: THREE.MathUtils.lerp(from.post.grain, to.post.grain, t)
-            }
+            },
+            bakuOpacity: THREE.MathUtils.lerp(from.baku.opacity, to.baku.opacity, t)
         };
     }
 

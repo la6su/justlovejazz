@@ -15,11 +15,8 @@ export default defineConfig({
             return 'vendor-misc'
           }
           if (id.includes('/src/UI/')) return 'chunk-ui'
-          // World entities: Gallery, Baku, Lights, Environment, SectionContent
           if (id.includes('/src/Experience/World/') || id.includes('/src/shaders/')) return 'chunk-world'
-          // WebGLText (TSL + postprocessing)
           if (id.includes('/WebGLText') || id.includes('/WebGLTextManager')) return 'chunk-text'
-          // Scene content manager (lazy)
           if (id.includes('/SceneContentManager')) return 'chunk-content'
         },
       },

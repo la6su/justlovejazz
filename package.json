@@ -26,9 +26,9 @@
   "description": "Modern interactive portfolio using **Three.js TSL (Nodes)** with **WebGPU → WebGL fallback**.   Designed with **mobile-first UX** and a **procedural 3D background**.",
   "main": "index.js",
   "dependencies": {
+    "@playwright/test": "^1.60.0",
     "@studio-freight/lenis": "^1.0.42",
     "playwright": "^1.60.0",
-    "@playwright/test": "^1.60.0",
     "three": "^0.184.0",
     "troika-three-text": "^0.52.4",
     "uikit": "^3.25.16"

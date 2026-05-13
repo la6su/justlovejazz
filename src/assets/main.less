@@ -651,5 +651,20 @@ body, a, button, .interactive {
   .cta-studio:hover {
     transform: none;
   }
-}
 
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  html {
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: auto;
+  }
+  body {
+    touch-action: pan-y;
+    -webkit-tap-highlight-color: transparent;
+  }
+  canvas {
+    touch-action: none;
+  }
+}
+}

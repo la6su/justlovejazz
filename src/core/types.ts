@@ -1,4 +1,3 @@
-
 import * as THREE from 'three';
 
 export enum NarrativePhase {
@@ -28,6 +27,7 @@ export interface CameraTarget {
         bakuPosition: THREE.Vector3;
         bakuRotation: THREE.Quaternion;
         bakuScale: THREE.Vector3;
+        bakuOpacity: number;
         bakuRole: BakuRole;
         bakuMaterial: any;
         envColor: THREE.Color;

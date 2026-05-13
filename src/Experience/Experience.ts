@@ -167,6 +167,12 @@ export class Experience {
       this.baku.position.copy(worldState.bakuPosition)
       this.baku.quaternion.copy(worldState.bakuRotation)
       this.baku.scale.copy(worldState.bakuScale)
+      // Apply opacity via material
+      if (this.baku.material && !Array.isArray(this.baku.material)) {
+        const mat = this.baku.material as THREE.MeshStandardMaterial
+        mat.opacity = worldState.bakuOpacity
+        mat.transparent = worldState.bakuOpacity < 1
+      }
       if (worldState.bakuMaterial) {
         this.baku.updateMaterial(worldState.bakuMaterial)
       }

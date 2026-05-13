@@ -13,6 +13,7 @@ export interface BakuPreset {
     position: THREE.Vector3;
     rotation: THREE.Quaternion;
     scale: THREE.Vector3;
+    opacity: number;  // Baku visibility per section: AW=1, DSC=0.5, DD=0.1, CON=0
     material: {
         color: THREE.Color;
         emissive: THREE.Color;
@@ -68,7 +69,8 @@ export const WORLD_CONFIG: PhaseConfig[] = [
             role: BakuRole.NORMAL,
             position: new THREE.Vector3(0, 0, 0),
             rotation: new THREE.Quaternion(),
-            scale: new THREE.Vector3(1, 1, 1),
+            scale: new THREE.Vector3(0.4, 0.4, 0.4),   // Smaller scale on Home
+            opacity: 1.0,
             material: {
                 color: new THREE.Color(0x111111),
                 emissive: new THREE.Color(0x050505),
@@ -101,7 +103,8 @@ export const WORLD_CONFIG: PhaseConfig[] = [
             role: BakuRole.WIRE,
             position: new THREE.Vector3(0, 0, 0),
             rotation: new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 4, 0)),
-            scale: new THREE.Vector3(1.1, 1.1, 1.1),
+            scale: new THREE.Vector3(0.6, 0.6, 0.6),
+            opacity: 0.5,
             material: {
                 color: new THREE.Color(0x222222),
                 emissive: new THREE.Color(0x111122),
@@ -134,7 +137,8 @@ export const WORLD_CONFIG: PhaseConfig[] = [
             role: BakuRole.GLASS,
             position: new THREE.Vector3(0, 0, 0),
             rotation: new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, 0, 0)),
-            scale: new THREE.Vector3(0.9, 0.9, 0.9),
+            scale: new THREE.Vector3(0.3, 0.3, 0.3),
+            opacity: 0,              // Hidden — project gallery takes over
             material: {
                 color: new THREE.Color(0x001122),
                 emissive: new THREE.Color(0x000511),
@@ -167,7 +171,8 @@ export const WORLD_CONFIG: PhaseConfig[] = [
             role: BakuRole.NORMAL,
             position: new THREE.Vector3(0, 0, 0),
             rotation: new THREE.Quaternion(),
-            scale: new THREE.Vector3(1, 1, 1),
+            scale: new THREE.Vector3(0.4, 0.4, 0.4),
+            opacity: 0.4,           // Low opacity — subtle presence
             material: {
                 color: new THREE.Color(0x111111),
                 emissive: new THREE.Color(0x050505),
