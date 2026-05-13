@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "test": "playwright test",
     "test:ui": "playwright test --ui",
-    "test:headed": "playwright test --headed"
+    "test:headed": "playwright test --headed",
+    "lhci": "npx @lhci/cli@0.13.0 lhci autorun"
   },
   "devDependencies": {
     "@types/three": "^0.184.0",

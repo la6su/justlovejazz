@@ -23,12 +23,15 @@
 ### G. Production _(implemented)_
 
 - a11y: skip link, nav landmark, modal `role` / `aria-*` / focus trap, `prefers-reduced-motion` (Lenis, gallery transitions, Less)
-- Lighthouse ≥ 90: not automated here — run Lighthouse on `npm run preview` build
+- Lighthouse CI: GitHub Action + local `npm run lhci` script, thresholds defined
 - WebGL2 fallback: `Renderer` uses `THREE.WebGLRenderer` when `DeviceCapability.mode === 'webgl'`; gallery uses `ProjectMaterialWebGL`; post-processing TSL remains WebGPU-only
 - Service Worker: static asset caching (`public/sw.js`, registered from `src/main-app.ts`)
+- Error tracking: `ErrorTracker` — zero-dependency unhandled rejection/error handler, sends to configurable endpoint
+- Console cleanup: all `console.log/info/warn` removed from production code; errors guarded with `import.meta.env.DEV`
 - SceneContent lazy-loaded via `import()` — defers 3D section content
+- Chunk splitting: 5 chunks — `chunk-world` (700KB), `chunk-content` (567KB gzip: 144KB), `chunk-ui` (234KB), `chunk-text` (121KB), `main-app` (21KB)
 
 ### G (remaining)
 
-- E2E tests
-- Further chunk tuning (TSL / post split), optional CDN headers documentation
+- E2E tests: Playwright configured, basic test spec created — needs browser install + CI integration
+- CDN headers documentation (optional)

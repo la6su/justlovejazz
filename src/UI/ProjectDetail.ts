@@ -13,7 +13,7 @@ export class ProjectDetail {
         const content = document.getElementById('modal-content')
 
         if (!el || !content) {
-            console.warn('ProjectDetail: modal elements not found')
+            /* Modal elements not found — skip */
             return
         }
 

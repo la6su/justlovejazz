@@ -108,7 +108,6 @@ export class AssetManager {
         });
 
         this.contextGroups.delete(context);
-        console.log(`AssetManager: Context [${context}] disposed.`);
     }
 
     private disposeAsset(asset: any): void {

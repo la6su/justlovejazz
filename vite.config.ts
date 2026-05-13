@@ -4,27 +4,23 @@ export default defineConfig({
   build: {
     target: 'es2023',
     outDir: 'dist',
-    chunkSizeWarningLimit: 600,
+    chunkSizeWarningLimit: 1200,
     cssCodeSplit: true,
     rollupOptions: {
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (id.includes('three')) return 'vendor-three'
-            if (id.includes('uikit') || id.includes('lenis') || id.includes('troika')) return 'vendor-ui'
+            if (id.includes('three') || id.includes('three-types')) return 'vendor-three'
+            if (id.includes('uikit') || id.includes('lenis')) return 'vendor-ui'
             return 'vendor-misc'
           }
           if (id.includes('/src/UI/')) return 'chunk-ui'
-          if (
-            id.includes('/src/Experience/World/') ||
-            id.includes('/src/shaders/ProjectMaterial') ||
-            id.includes('/src/shaders/ProjectMaterialWebGL') ||
-            id.includes('/src/shaders/GalleryCardSurface') ||
-            id.includes('/src/shaders/text/') ||
-            id.includes('/src/shaders/postprocessing')
-          ) {
-            return 'chunk-scene'
-          }
+          // World entities: Gallery, Baku, Lights, Environment, SectionContent
+          if (id.includes('/src/Experience/World/') || id.includes('/src/shaders/')) return 'chunk-world'
+          // WebGLText (TSL + postprocessing)
+          if (id.includes('/WebGLText') || id.includes('/WebGLTextManager')) return 'chunk-text'
+          // Scene content manager (lazy)
+          if (id.includes('/SceneContentManager')) return 'chunk-content'
         },
       },
     },

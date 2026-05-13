@@ -15,7 +15,7 @@ export class UIManager {
   }
 
   async init() {
-    console.log('UIManager initialized for Render-Driven UX')
+  /* UIManager initialized */
     
     // Initialize the HTML Gallery
     this.gallery = new ProjectGallery({

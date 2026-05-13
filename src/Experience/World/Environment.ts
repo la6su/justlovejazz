@@ -24,9 +24,9 @@ export class Environment {
             const texture = await loader.loadAsync('/assets/env/studio.hdr')
             texture.mapping = THREE.EquirectangularReflectionMapping
             scene.environment = texture
-            console.log('Environment: HDR loaded')
-        } catch (e) {
-            console.warn('Environment: HDR load failed, using default lighting', e)
+            /* HDR loaded */
+        } catch (_e) {
+            /* HDR unavailable, using default lighting */
         }
     }
 

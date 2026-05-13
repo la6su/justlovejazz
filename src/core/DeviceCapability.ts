@@ -51,7 +51,6 @@ export class DeviceCapability {
         this.maxDpr = this.calculateMaxDpr();
         this.config = TIER_SETTINGS[this.tier];
         this.supportsTsPostProcessing = this.mode === 'webgpu';
-        console.log(`[DeviceCapability] Mode: ${this.mode} / Tier: ${this.tier.toUpperCase()} / MaxDPR: ${this.maxDpr} | Scale: ${this.config.resolutionScale} | TSL post: ${this.supportsTsPostProcessing}`);
     }
 
     public static getInstance(): DeviceCapability {

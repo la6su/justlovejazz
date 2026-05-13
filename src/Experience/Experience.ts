@@ -88,7 +88,7 @@ export class Experience {
       this.debugStats = new DebugStats(this.renderer.instance)
     }
 
-    // DEBUG: Force camera to a safe position to verify visibility
+    // Force camera to a safe position
     this.camera.instance.position.set(0, 5, 10)
     this.camera.instance.lookAt(0, 0, 0)
     this.camera.instance.updateProjectionMatrix()

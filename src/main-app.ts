@@ -1,17 +1,21 @@
 import { UIManager } from './UI/UIManager'
 import { Bootstrapper } from './core/Bootstrapper'
+import { ErrorTracker } from './core/ErrorTracker'
 
 export async function bootstrap(): Promise<void> {
+  ErrorTracker.init()
   try {
     const ui = new UIManager()
     await ui.init()
     await Bootstrapper.init(ui)
+    registerServiceWorker()
     if (import.meta.env.DEV) {
       console.info('Application successfully bootstrapped')
     }
-    registerServiceWorker()
   } catch (err) {
-    console.error('Failed to initialize application:', err)
+    if (import.meta.env.DEV) {
+      console.error('Failed to initialize application:', err)
+    }
   }
 }
 

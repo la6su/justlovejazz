@@ -23,7 +23,9 @@ export class Bootstrapper {
         try {
             await experience.galleryScene.init()
         } catch (error) {
-            console.error('Bootstrapper: gallery init failed', error)
+            if (import.meta.env.DEV) {
+                console.error('Bootstrapper: gallery init failed', error)
+            }
         }
 
         experience.cameraStateManager = new CameraStateManager(experience.galleryManager);
@@ -81,9 +83,7 @@ async function loadSectionContent(manager: SceneContentManager): Promise<void> {
         manager.setupPhaseContent(NarrativePhase.DISCOVERY, SectionContent.createDiscoveryContent());
         manager.setupPhaseContent(NarrativePhase.DEEP_DIVE, SectionContent.createDeepDiveContent());
         manager.setupPhaseContent(NarrativePhase.CONNECTION, SectionContent.createConnectionContent());
-    } catch (err) {
-        if (import.meta.env.DEV) {
-            console.error('Failed to load section content:', err);
-        }
+    } catch (_err) {
+        /* Failed to load section content */
     }
 }

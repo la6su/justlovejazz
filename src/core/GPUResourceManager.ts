@@ -41,7 +41,7 @@ export class GPUResourceManager {
         const contextResources = this.resources.get(contextId);
         if (!contextResources) return;
 
-        console.log(`[GPUResourceManager] Disposing context: ${contextId} (${contextResources.size} resources)`);
+        /* Disposing context */
         
         contextResources.forEach(res => {
             if ((res as any).dispose) {
