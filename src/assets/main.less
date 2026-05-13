@@ -502,4 +502,20 @@ body, a, button, .interactive {
   display: block;
 }
 
+/* Phase G — respect prefers-reduced-motion (UIkit + micro-interactions) */
+@media (prefers-reduced-motion: reduce) {
+  .uk-animation-fade,
+  .uk-animation-slide-bottom,
+  .uk-animation-slide-top,
+  .uk-animation-slide-left,
+  .uk-animation-slide-right {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+  }
+
+  .btn-studio:hover,
+  .cta-studio:hover {
+    transform: none;
+  }
+}
 

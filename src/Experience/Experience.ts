@@ -62,7 +62,7 @@ export class Experience {
   public setupEventListeners() {
     window.addEventListener('pointerdown', (e) => {
       if (this.galleryScene) {
-        this.galleryScene.handlePointerDown(e.clientX, e.clientY, this.camera.instance)
+        void this.galleryScene.handlePointerDown(e.clientX, e.clientY, this.camera.instance)
       }
     })
   }

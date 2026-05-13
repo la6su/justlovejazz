@@ -2,13 +2,14 @@
 import * as THREE from 'three'
 import { MeshBasicNodeMaterial } from 'three/webgpu'
 import { uniform, vec2, vec3, float, texture, uv, mix, positionLocal } from 'three/tsl'
+import type { IGalleryCardSurface } from './GalleryCardSurface'
 
 const half = vec2(0.5, 0.5)
 const zero = float(0.0)
 const one = float(1.0)
 
-export class ProjectMaterial {
-    public material: MeshBasicNodeMaterial
+export class ProjectMaterial implements IGalleryCardSurface {
+    public readonly material: MeshBasicNodeMaterial
     private progressUniform = uniform(0)
     private active = false
 

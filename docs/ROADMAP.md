@@ -12,17 +12,21 @@
 
 ## Next
 
-### F. Lazy Loading
+### F. Lazy Loading _(partially implemented — see `src/entry.ts`, `vite.config.ts`, `GalleryScene`, `public/sw.js`)_
 
-- Phase 0: skeleton HTML (~14 KB) → instant first paint
-- Phase 1: Vite manualChunks (vendor + scene + UI + main)
-- Phase 2: on-demand texture loading per card
-- Phase 3: deferred fonts + heavy assets
-- Phase 4: CDN cache + Service Worker
+- Phase 0: skeleton HTML + critical inline CSS + deferred Less / app (`index.html`, `src/entry.ts`)
+- Phase 1: Vite `manualChunks` — `vendor-three`, `vendor-ui`, `vendor-misc`, `chunk-ui`, `chunk-scene`, `main-app`
+- Phase 2: on-demand gallery card textures (visible carousel slots + click prefetch)
+- Phase 3: full CSS still bundled via Less; optional future: split `@font-face` / subset fonts
+- Phase 4: production Service Worker (`public/sw.js`, registered from `src/main-app.ts`)
 
-### G. Production
+### G. Production _(partially implemented)_
 
-- a11y (prefers-reduced-motion, keyboard, focus, semantic UI, Escape/back)
-- Lighthouse ≥ 90
+- a11y: skip link, nav landmark, modal `role` / `aria-*` / focus title, `prefers-reduced-motion` (Lenis, gallery transitions, Less)
+- Lighthouse ≥ 90: not automated here — run Lighthouse on `npm run preview` build
+- WebGL2 fallback: `Renderer` uses `THREE.WebGLRenderer` when `DeviceCapability.mode === 'webgl'`; gallery uses `ProjectMaterialWebGL`; post-processing TSL remains WebGPU-only
+
+### G (remaining)
+
 - E2E tests
-- WebGL fallback path
+- Further chunk tuning (TSL / post split), optional CDN headers documentation

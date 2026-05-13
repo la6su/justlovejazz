@@ -7,7 +7,9 @@ WebGL/WebGPU interactive portfolio. TypeScript, Vite, Three.js 18.4 (+ TSL), Web
 ## Entry & Runtime
 
 ```
-src/main.ts                    → creates UIManager, calls Bootstrapper.init()
+src/entry.ts                  → Phase F.0: `syncReducedMotionDataset`, next frame loads Less + `main-app`
+src/main-app.ts               → `bootstrap()` + production Service Worker registration
+src/main.ts                   → re-exports `./entry` (legacy path for tooling)
 src/core/Bootstrapper.ts       → wires Experience, events, managers
 src/Experience/Experience.ts   → single render loop (update → requestAnimationFrame)
 ```

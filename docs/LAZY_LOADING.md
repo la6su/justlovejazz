@@ -117,8 +117,8 @@ export async function bootstrap() {
 
 ## Implementation Order
 
-1. Skeleton HTML + progress indicator (working demo)
-2. Vite manualChunks config
-3. On-demand texture loading per card
-4. Deferred fonts + models
-5. CDN cache + SW
+1. ~~Skeleton HTML + progress indicator~~ — `index.html` critical CSS + `src/entry.ts` deferred Less/app
+2. ~~Vite manualChunks~~ — `vite.config.ts` (`vendor-three`, `vendor-ui`, `chunk-ui`, `chunk-scene`, …)
+3. ~~On-demand texture loading per card~~ — `GalleryScene` + shared placeholder (`placeholderTexture.ts`)
+4. Deferred fonts + models — optional / future (`@font-face` subset, asset manifest)
+5. ~~CDN cache + SW~~ — `public/sw.js` + register in `main-app` (prod); CDN headers at deploy time

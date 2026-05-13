@@ -4,9 +4,65 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="LEMONROOM — immersive WebGPU / Three.js portfolio experience with cinematic scroll and gallery."
+    />
+    <meta name="theme-color" content="#000000" />
     <title>LEMONROOM | Digital Experience</title>
+    <!-- Phase F.0 — critical shell before full Less bundle (first paint) -->
+    <style>
+      html {
+        box-sizing: border-box;
+      }
+      *,
+      *::before,
+      *::after {
+        box-sizing: inherit;
+      }
+      body {
+        margin: 0;
+        background: #000;
+        color: #fff;
+        font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      }
+      .skip-link {
+        position: absolute;
+        left: -9999px;
+        top: auto;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+      }
+      .skip-link:focus {
+        position: fixed;
+        left: 8px;
+        top: 8px;
+        width: auto;
+        height: auto;
+        padding: 8px 12px;
+        background: #fff;
+        color: #000;
+        z-index: 10001;
+        text-decoration: none;
+        border-radius: 4px;
+        outline: 2px solid #515d84;
+      }
+      #pageLoader {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        z-index: 9999;
+        background: #000;
+        gap: 12px;
+      }
+    </style>
   </head>
   <body>
+    <a href="#home" class="skip-link">Skip to main content</a>
 
     <!-- Loading Screen -->
     <div id="pageLoader" class="uk-flex uk-flex-center uk-flex-middle">
@@ -19,9 +75,9 @@
     <!-- UI Layer -->
     <div id="ui-layer">
       <!-- Navbar -->
-      <nav class="uk-navbar-container navbar" uk-navbar>
+      <nav class="uk-navbar-container navbar" uk-navbar role="navigation" aria-label="Primary">
         <div class="uk-navbar-left">
-          <a class="uk-navbar-item uk-logo navbar-logo" href="#">&nbsp;</a>
+          <a class="uk-navbar-item uk-logo navbar-logo" href="#home" aria-label="Home">&nbsp;</a>
         </div>
         <div class="uk-navbar-right">
           <ul class="uk-navbar-nav">
@@ -94,7 +150,12 @@
     </div>
 
     <!-- Project Detail Modal -->
-    <div id="project-modal" class="uk-modal-full uk-visible@s" uk-modal>
+    <div
+      id="project-modal"
+      class="uk-modal-full uk-visible@s"
+      uk-modal
+      aria-hidden="true"
+    >
       <div class="uk-modal-body uk-flex uk-flex-center uk-flex-middle" style="height:100%; background:rgba(0,0,0,0.95);">
         <div id="modal-content" class="uk-container uk-container-small uk-light"></div>
         <a class="uk-modal-close-default" uk-close></a>
@@ -102,6 +163,6 @@
     </div>
 
     <div id="app"></div>
-    <script type="module" src="/src/main.ts"></script>
+    <script type="module" src="/src/entry.ts"></script>
   </body>
 </html>

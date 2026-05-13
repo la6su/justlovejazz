@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { type Project } from './types'
+import { prefersReducedMotion } from './motionPolicy'
 
 export enum GalleryTransitionState {
     LIST = 'list',
@@ -28,6 +29,8 @@ export class GalleryManager {
     public readonly FRICTION = 0.92
     public readonly SENSITIVITY = 1.0
     private readonly transitionSpeed = 1.8
+    /** Faster gallery expand/contract when user prefers reduced motion */
+    private readonly transitionMotionMul = prefersReducedMotion() ? 3 : 1
 
     public get trackLength(): number {
         return this.projects.length * this.STEP
@@ -119,7 +122,7 @@ export class GalleryManager {
 
         // Drive transition
         if (this.transitionState === GalleryTransitionState.EXPAND) {
-            this._expandProgress += this.transitionSpeed * deltaTime
+            this._expandProgress += this.transitionSpeed * this.transitionMotionMul * deltaTime
             if (this._expandProgress >= 1) {
                 this._expandProgress = 1
                 this.onExpandComplete?.(this.activeProject)
@@ -128,7 +131,7 @@ export class GalleryManager {
         }
 
         if (this.transitionState === GalleryTransitionState.CONTRACT) {
-            this._expandProgress -= this.transitionSpeed * deltaTime
+            this._expandProgress -= this.transitionSpeed * this.transitionMotionMul * deltaTime
             if (this._expandProgress <= 0) {
                 this._expandProgress = 0
                 this.onContractComplete?.()
