@@ -636,7 +636,208 @@ body, a, button, .interactive {
   }
 }
 
-/* Phase G — respect prefers-reduced-motion (UIkit + micro-interactions) */
+/* === Project Cards === */
+.project-gallery {
+  pointer-events: none;
+}
+
+.project-card-wrapper {
+  pointer-events: auto;
+  cursor: pointer;
+  padding: 2rem 1.5rem;
+}
+
+.project-card {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  
+  &__image {
+    aspect-ratio: 12 / 10;
+    overflow: hidden;
+    border-radius: 2px;
+    
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: brightness(0.85) saturate(0.9);
+      transition: filter 0.8s ease;
+    }
+    
+    .is-active {
+      img {
+        filter: brightness(1) saturate(1.1);
+      }
+    }
+  }
+  
+  &__overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(10,10,10,0.9) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  
+  &__content {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 1.5rem;
+    z-index: 2;
+  }
+  
+  &__index {
+    font-size: 0.75rem;
+    font-family: monospace;
+    letter-spacing: 0.15em;
+    color: var(--accent-color, #515d84);
+    opacity: 0.7;
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+  
+  &__title {
+    font-size: clamp(1.5rem, 3vw, 2.5rem);
+    font-weight: 300;
+    line-height: 1.1;
+    margin: 0 0 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  
+  &__meta {
+    font-size: 0.8rem;
+    color: #666;
+    font-family: monospace;
+    letter-spacing: 0.1em;
+  }
+  
+  &:hover {
+    .project-card__overlay {
+      background: linear-gradient(to top, rgba(10,10,10,0.7) 0%, transparent 60%);
+    }
+    
+    .project-card__title {
+      color: var(--accent-color, #515d84);
+    }
+  }
+}
+
+/* === Detail Modal === */
+.detail-hero {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2rem;
+  align-items: start;
+  margin-bottom: 2rem;
+  
+  &__media {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+    
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.3));
+      z-index: 1;
+    }
+  }
+  
+  &__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  &__fallback {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    font-weight: 100;
+    letter-spacing: 0.2em;
+  }
+  
+  &__info {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 100%;
+  }
+  
+  &__meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    
+    span {
+      font-family: monospace;
+      font-size: 0.75rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      opacity: 0.6;
+    }
+  }
+  
+  &__year {
+    color: var(--accent-color, #515d84);
+  }
+  
+  &__category {
+    color: #666;
+  }
+  
+  &__title {
+    font-size: clamp(2rem, 5vw, 4rem);
+    font-weight: 200;
+    line-height: 1;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0;
+  }
+}
+
+.detail-body {
+  .detail-description {
+    font-size: 1.1rem;
+    line-height: 1.7;
+    max-width: 600px;
+    opacity: 0.85;
+    margin-bottom: 2rem;
+  }
+  
+  .detail-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  .detail-tag {
+    font-size: 0.7rem;
+    font-family: monospace;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.4rem 0.8rem;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 2px;
+    opacity: 0.6;
+    transition: opacity 0.3s ease;
+    
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
+
+/* Phase G — respects-reduced-motion (UIkit + micro-interactions) */
 @media (prefers-reduced-motion: reduce) {
   .uk-animation-fade,
   .uk-animation-slide-bottom,
@@ -665,6 +866,15 @@ body, a, button, .interactive {
   }
   canvas {
     touch-action: none;
+  }
+  
+  .detail-hero {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .project-card-wrapper {
+    padding: 0.75rem;
   }
 }
 }

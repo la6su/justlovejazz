@@ -1,4 +1,3 @@
-
 import type { Project } from '../core/types';
 
 export { type Project };

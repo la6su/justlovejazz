@@ -6,59 +6,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="LEMONROOM — immersive WebGPU / Three.js portfolio experience with cinematic scroll and gallery."
+      content="JUSTLOVEJAZZ — immersive creative studio. Jazz, digital art, and interactive experiences."
     />
-    <meta name="theme-color" content="#000000" />
-    <title>LEMONROOM | Digital Experience</title>
-    <!-- Phase F.0 — critical shell before full Less bundle (first paint) -->
+    <meta name="theme-color" content="#0a0a0a" />
+    <title>JUSTLOVEJAZZ | Creative Studio</title>
+    <!-- Critical shell (first paint) -->
     <style>
-      html {
-        box-sizing: border-box;
-      }
-      *,
-      *::before,
-      *::after {
-        box-sizing: inherit;
-      }
-      body {
-        margin: 0;
-        background: #000;
-        color: #fff;
-        font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
-      }
-      .skip-link {
-        position: absolute;
-        left: -9999px;
-        top: auto;
-        width: 1px;
-        height: 1px;
-        overflow: hidden;
-      }
-      .skip-link:focus {
-        position: fixed;
-        left: 8px;
-        top: 8px;
-        width: auto;
-        height: auto;
-        padding: 8px 12px;
-        background: #fff;
-        color: #000;
-        z-index: 10001;
-        text-decoration: none;
-        border-radius: 4px;
-        outline: 2px solid #515d84;
-      }
-      #pageLoader {
-        position: fixed;
-        inset: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-direction: column;
-        z-index: 9999;
-        background: #000;
-        gap: 12px;
-      }
+      html { box-sizing: border-box; }
+      *, *::before, *::after { box-sizing: inherit; }
+      body { margin: 0; background: #0a0a0a; color: #fff; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; }
+      a { color: inherit; text-decoration: none; }
+      .skip-link { position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden; }
+      .skip-link:focus { position: fixed; left: 8px; top: 8px; width: auto; height: auto; padding: 8px 12px; background: #fff; color: #000; z-index: 10001; text-decoration: none; border-radius: 4px; outline: 2px solid #515d84; }
+      #pageLoader { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; z-index: 9999; background: #0a0a0a; gap: 12px; }
     </style>
   </head>
   <body>
@@ -72,7 +32,7 @@
       </div>
     </div>
 
-    <!-- Scroll hint — disappears after first scroll -->
+    <!-- Scroll hint -->
     <div class="scroll-hint" id="scrollHint">
       Scroll to explore
     </div>
@@ -82,7 +42,7 @@
       <!-- Navbar -->
       <nav class="uk-navbar-container navbar" uk-navbar role="navigation" aria-label="Primary">
         <div class="uk-navbar-left">
-          <a class="uk-navbar-item uk-logo navbar-logo" href="#home" aria-label="Home">&nbsp;</a>
+          <a class="uk-navbar-item uk-logo navbar-logo" href="#home" aria-label="Home">JLJ</a>
         </div>
         <div class="uk-navbar-right">
           <ul class="uk-navbar-nav">
@@ -99,15 +59,15 @@
         <div class="uk-container">
           <div class="uk-text-center">
             <h1 class="studio-title" uk-scrollspy="cls: uk-animation-fade">
-              LEMON <br/>
-              <span>ROOM</span>
+              JUST <br/>
+              <span>LOVE JAZZ</span>
             </h1>
             <p class="studio-text uk-margin-auto-center" uk-scrollspy="cls: uk-animation-slide-bottom">
-              Pushing the boundaries of WebGPU and Three.js TSL <br/>
-              to create immersive digital art.
+              Where rhythm meets code — immersive creative experiences <br/>
+              built with WebGPU, Three.js, and a love for jazz.
             </p>
             <div class="uk-margin-large-top">
-              <a href="#about" data-magnetic class="reveal-item uk-button uk-button-primary uk-button-large btn-studio">Explore</a>
+              <a href="#works" data-magnetic class="reveal-item uk-button uk-button-primary uk-button-large btn-studio">Explore</a>
             </div>
           </div>
         </div>
@@ -121,12 +81,12 @@
               <span class="section-number">01 // Vision</span>
               <h2 class="studio-title">Beyond the <br/>Browser</h2>
               <p class="studio-text">
-                We believe the web is the next canvas for high-fidelity art. By leveraging WebGPU, we bridge the gap between native software and the open web.
+                We build immersive digital experiences where sound, motion, and code converge. From live electronic sets to interactive installations, every project is a session — spontaneous, deliberate, unforgettable.
               </p>
             </div>
             <div class="reveal-item grid-item-right flex-center-vertical" uk-scrollspy>
               <p class="studio-text">
-                Our approach blends procedural generation with user interaction, creating a living environment that reacts to every movement.
+                Three.js shaders. WebGPU pipelines. Generative audio. The browser is our venue. Scroll is our conductor.
               </p>
             </div>
           </div>
@@ -138,7 +98,6 @@
         <div class="uk-container">
           <span class="section-number section-number-center">02 // Selected Works</span>
           <h2 class="studio-title uk-text-center studio-heading">Digital Archive</h2>
-          
         </div>
       </section>
 
@@ -146,9 +105,9 @@
       <section id="contact" class="section-studio section-centered uk-flex uk-flex-middle" uk-height-viewport>
         <div class="uk-container uk-text-center">
           <span class="section-number">03 // Connection</span>
-          <h2 class="studio-title">Let's Build Something Great</h2>
+          <h2 class="studio-title">Let's Make Something <br/>That Doesn't Exist Yet</h2>
           <div class="uk-margin-large-top">
-            <a href="mailto:hello@example.com" data-magnetic class="uk-button uk-button-secondary uk-button-large cta-studio">Get in Touch</a>
+            <a href="mailto:hello@justlovejazz.com" data-magnetic class="uk-button uk-button-secondary uk-button-large cta-studio">Get in Touch</a>
           </div>
         </div>
       </section>
@@ -161,7 +120,7 @@
       uk-modal
       aria-hidden="true"
     >
-      <div class="uk-modal-body uk-flex uk-flex-center uk-flex-middle" style="height:100%; background:rgba(0,0,0,0.95);">
+      <div class="uk-modal-body uk-flex uk-flex-center uk-flex-middle" style="height:100%; background:rgba(10,10,10,0.97);">
         <div id="modal-content" class="uk-container uk-container-small uk-light"></div>
         <a class="uk-modal-close-default" uk-close></a>
       </div>
