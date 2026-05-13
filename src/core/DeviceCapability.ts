@@ -1,10 +1,4 @@
-export enum QualityTier {
-  LOW = 'low',
-  MID = 'mid',
-  ULTRA = 'ultra',
-}
-
-export type RenderMode = 'webgpu' | 'webgl' | 'unsupported';
+import type { QualityTier, RendererCapabilities, RendererMode } from '../types/renderer'
 
 export interface TierConfig {
   postMultiplier: number;
@@ -15,21 +9,21 @@ export interface TierConfig {
 }
 
 const TIER_SETTINGS: Record<QualityTier, TierConfig> = {
-  [QualityTier.LOW]: {
+  low: {
     postMultiplier: 0.5,
     resolutionScale: 0.5,
     enableHeavyEffects: false,
     maxAnisotropy: 2,
     touchTargetSize: 44,
   },
-  [QualityTier.MID]: {
+  medium: {
     postMultiplier: 0.8,
     resolutionScale: 0.75,
     enableHeavyEffects: true,
     maxAnisotropy: 4,
     touchTargetSize: 32,
   },
-  [QualityTier.ULTRA]: {
+  high: {
     postMultiplier: 1.0,
     resolutionScale: 1.0,
     enableHeavyEffects: true,
@@ -59,12 +53,13 @@ function detectMobile(): boolean {
 export class DeviceCapability {
   private static instance: DeviceCapability;
   public readonly tier: QualityTier;
-  public readonly mode: RenderMode;
+  public readonly mode: RendererMode;
   public readonly maxDpr: number;
   public readonly config: TierConfig;
   public readonly isMobile: boolean;
   public readonly isTouch: boolean;
-  public readonly supportsTsPostProcessing: boolean;
+  public readonly postProcessing: boolean;
+  public readonly floatRenderTargets: boolean;
 
   public static get isMobile(): boolean {
     return detectMobile();
@@ -81,7 +76,8 @@ export class DeviceCapability {
     this.tier = this.detectTier();
     this.maxDpr = this.calculateMaxDpr();
     this.config = TIER_SETTINGS[this.tier];
-    this.supportsTsPostProcessing = this.mode === 'webgpu';
+    this.postProcessing = this.mode === 'webgpu';
+    this.floatRenderTargets = this.mode === 'webgpu';
   }
 
   public static getInstance(): DeviceCapability {
@@ -91,10 +87,10 @@ export class DeviceCapability {
     return DeviceCapability.instance;
   }
 
-  private detectRenderMode(): RenderMode {
+  private detectRenderMode(): RendererMode {
     if ('gpu' in navigator) return 'webgpu';
     const canvas = document.createElement('canvas');
-    if ('2' in canvas.getContext.bind(canvas) || canvas.getContext('webgl2')) {
+    if (canvas.getContext('webgl2')) {
       return 'webgl';
     }
     return 'unsupported';
@@ -108,15 +104,15 @@ export class DeviceCapability {
 
   private detectTier(): QualityTier {
     // Force low on mobile/low-res
-    if (this.isMobile) return QualityTier.LOW;
-    if (screen.width < 480 && screen.height < 480) return QualityTier.LOW;
+    if (this.isMobile) return 'low';
+    if (screen.width < 480 && screen.height < 480) return 'low';
 
     const cores = navigator.hardwareConcurrency || 4;
     const dpr = window.devicePixelRatio || 1;
 
-    if (cores <= 4 || dpr < 1.5) return QualityTier.LOW;
-    if (cores <= 8 || dpr < 2) return QualityTier.MID;
-    return QualityTier.ULTRA;
+    if (cores <= 4 || dpr < 1.5) return 'low';
+    if (cores <= 8 || dpr < 2) return 'medium';
+    return 'high';
   }
 
   public scaleIntensity(value: number): number {
@@ -125,6 +121,16 @@ export class DeviceCapability {
 
   public canRunHeavyEffects(): boolean {
     return this.config.enableHeavyEffects;
+  }
+
+  public toRendererCapabilities(): RendererCapabilities {
+    return {
+      mode: this.mode,
+      tier: this.tier,
+      maxDpr: this.maxDpr,
+      postProcessing: this.postProcessing,
+      floatRenderTargets: this.floatRenderTargets,
+    }
   }
 }
 

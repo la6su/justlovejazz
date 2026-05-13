@@ -4,6 +4,7 @@
 import { DeviceCapability } from './DeviceCapability'
 import { NarrativePhase } from './types'
 import { type PostPreset } from './WorldConfig'
+import type { QualityTier } from '../types/renderer'
 
 /**
  * Post-processing intensity presets per section.
@@ -45,7 +46,7 @@ const PHASE_PRESETS: Record<NarrativePhase, PostParams> = {
 }
 
 /** Quality tier scalers */
-const QUALITY_SCALARS: Record<string, Partial<PostParams>> = {
+const QUALITY_SCALARS: Record<QualityTier, Partial<PostParams>> = {
   high: {},                                    // No scaling — full pipeline
   medium: { chromatic: 0, grain: 0.5 },       // Drop chromatic, halve grain
   low: { bloom: 0, grain: 0, chromatic: 0 },  // Bloom off, just vignette
@@ -63,7 +64,7 @@ export class PostProcessingManager {
   // Crossfade speed (seconds) — 0.5s between section changes
   private crossfadeSpeed = 2.0     // 1 / 0.5 = 2.0
 
-  private tier: string = 'high'
+  private tier: QualityTier = 'high'
 
   constructor() {
     this.tier = this.capability.tier
@@ -77,11 +78,10 @@ export class PostProcessingManager {
 
     // Apply quality tier scaling
     const scaler = QUALITY_SCALARS[this.tier]
-    for (const [key, val] of Object.entries(scaler)) {
-      if (key in this.current) {
-        ;(this.current as unknown as Record<string, number>)[key] = val
-      }
-    }
+    this.current.bloom *= scaler.bloom ?? 1
+    this.current.vignette *= scaler.vignette ?? 1
+    this.current.grain *= scaler.grain ?? 1
+    this.current.chromatic *= scaler.chromatic ?? 1
   }
 
   /** Update display values (call each frame with dt) */

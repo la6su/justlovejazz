@@ -33,5 +33,5 @@
 
 ### G (remaining)
 
-- E2E tests: Playwright configured, basic test spec created — needs browser install + CI integration
+- E2E tests: Playwright smoke suite passes locally (`chromium`) — CI integration and stable runner policy still pending
 - CDN headers documentation (optional)

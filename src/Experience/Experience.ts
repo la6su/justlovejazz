@@ -132,9 +132,6 @@ export class Experience {
       }
       this.atmosphere.setFog(config.fog.color, config.fog.density);
 
-      // Scene Content Manager — queue transition to new section content
-      this.sceneContentManager.queueTransition(config.id, 1.2);
-
       // Post-processing preset switch (crossfades to new values)
       this.renderer.postManager.applyPreset(config.id);
 
@@ -153,6 +150,7 @@ export class Experience {
 
     this.galleryManager.update(deltaTime);
     this.galleryScene.update(deltaTime);
+    this.sceneContentManager.syncToTimeline(currentPhase, worldState.phaseProgress)
     this.sceneContentManager.update(deltaTime);
     // Show/hide 3D gallery group + UI gallery per section context
     this.galleryScene.group.visible = worldState.uiShowGallery

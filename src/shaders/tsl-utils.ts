@@ -6,19 +6,20 @@ import {
     mix,
     float,
 } from 'three/tsl';
+import type { TSLNode, TSLTextureNode } from '../types/tsl'
 
 //
 // ------------ EASINGS ------------
 //
 
-export const easeInQuart = (t: any) => t.mul(t).mul(t).mul(t)
+export const easeInQuart = (t: TSLNode) => t.mul(t).mul(t).mul(t)
 
-export const easeOutQuart = (t: any) => {
+export const easeOutQuart = (t: TSLNode) => {
     const t1 = float(1.0).sub(t)
     return float(1.0).sub(t1.mul(t1).mul(t1).mul(t1))
 }
 
-export const easeInOutQuad = (t: any) => {
+export const easeInOutQuad = (t: TSLNode) => {
     return t.lessThan(0.5)
         .select(
             float(2.0).mul(t).mul(t),
@@ -26,7 +27,7 @@ export const easeInOutQuad = (t: any) => {
         )
 }
 
-export const easeInOutQuart = (t: any) => {
+export const easeInOutQuart = (t: TSLNode) => {
     return t.lessThan(0.5)
         .select(
             float(8.0).mul(t).mul(t).mul(t).mul(t),
@@ -48,10 +49,10 @@ export const easeInOutQuart = (t: any) => {
  *   strength — grain intensity (0–0.1)
  */
 export const applyProfessionalGrain = (
-  color: any,
-  uv: any,
-  time: any,
-  strength: any = float(0.03)
+  color: TSLNode,
+  uv: TSLNode,
+  time: TSLNode,
+  strength: TSLNode = float(0.03)
 ) => {
     const noise1 = uv
         .mul(vec2(12.9898, 78.233))
@@ -85,9 +86,9 @@ export const applyProfessionalGrain = (
  *   intensity — vignette strength (0–1)
  */
 export const applyCinematicVignette = (
-  color: any,
-  uv: any,
-  intensity: any = float(0.4)
+  color: TSLNode,
+  uv: TSLNode,
+  intensity: TSLNode = float(0.4)
 ) => {
     const dist = uv.mul(2.0).sub(vec2(1.0, 1.0))
     const d2 = dist.x.mul(dist.x).add(dist.y.mul(dist.y))
@@ -102,7 +103,7 @@ export const applyCinematicVignette = (
 /**
  * Bicubic sampling approximation (4-tap)
  */
-export const sampleBicubic = (tex: any, uv: any, textureSize: any) => {
+export const sampleBicubic = (tex: TSLTextureNode, uv: TSLNode, textureSize: TSLNode) => {
     const texelSize = float(1.0).div(textureSize)
     const s1 = tex.sample(uv.add(vec2(0.25, 0.25).mul(texelSize)))
     const s2 = tex.sample(uv.add(vec2(-0.25, 0.25).mul(texelSize)))
@@ -114,9 +115,10 @@ export const sampleBicubic = (tex: any, uv: any, textureSize: any) => {
 /**
  * Mip-Blend sampling (eliminates mip popping)
  */
-export const sampleMipBlend = (tex: any, uv: any, level1: number, level2: number, mixFactor: any) => {
-    const s1 = tex.sampleLevel(uv, level1)
-    const s2 = tex.sampleLevel(uv, level2)
+export const sampleMipBlend = (tex: TSLTextureNode, uv: TSLNode, level1: number, level2: number, mixFactor: TSLNode) => {
+    const sampleLevel = tex.sampleLevel ?? ((_uv: TSLNode, _level: number) => tex.sample(_uv))
+    const s1 = sampleLevel(uv, level1)
+    const s2 = sampleLevel(uv, level2)
     return mix(s1, s2, mixFactor)
 }
 
@@ -133,9 +135,9 @@ export const sampleMipBlend = (tex: any, uv: any, level1: number, level2: number
  *   strength — base blur radius (0–0.02)
  */
 export const applySoftGlow = (
-  tex: any,
-  uv: any,
-  strength: any = float(0.005)
+  tex: TSLTextureNode,
+  uv: TSLNode,
+  strength: TSLNode = float(0.005)
 ) => {
     // 3 scales: 1x, 2x, 4x
     const scales = [
@@ -144,7 +146,7 @@ export const applySoftGlow = (
         { offset: 4.0, weight: 0.2 },
     ]
 
-    let glow: any = float(0.0)
+    let glow: TSLNode = float(0.0)
 
     for (const { offset, weight } of scales) {
         const sStr = strength.mul(offset)

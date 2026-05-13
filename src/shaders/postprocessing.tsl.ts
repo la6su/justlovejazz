@@ -10,6 +10,7 @@ import {
     vec3,
     Fn,
 } from 'three/tsl'
+import type { TSLNode, TSLTextureNode } from '../types/tsl'
 import {
     applyProfessionalGrain,
     applyCinematicVignette,
@@ -35,12 +36,12 @@ export interface PostUniforms {
  *  5. Vignette (radial falloff)
  */
 export const postProcessingNode = (
-    inputTexture: any,
+    inputTexture: TSLTextureNode,
     params: {
-      bloom: any,
-      vignette: any,
-      grain: any,
-      chromatic: any,
+      bloom: TSLNode,
+      vignette: TSLNode,
+      grain: TSLNode,
+      chromatic: TSLNode,
     }
 ) => {
     return Fn(() => {

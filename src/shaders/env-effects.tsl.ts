@@ -4,8 +4,9 @@ import {
     smoothstep, 
     float
 } from 'three/tsl'
+import type { TSLNode } from '../types/tsl'
 
-export const cinematicGridNode = (uv: any, _time: any) => {
+export const cinematicGridNode = (uv: TSLNode, _time: TSLNode) => {
     const gridScale = 10.0;
     const gridThickness = 0.05;
     
@@ -16,7 +17,7 @@ export const cinematicGridNode = (uv: any, _time: any) => {
     return float(1.0).sub(mask);
 }
 
-export const applyHeightFog = (color: any, depth: any) => {
+export const applyHeightFog = (color: TSLNode, depth: TSLNode) => {
     const fogDensity = 0.15;
     const fogColor = vec3(0.02, 0.02, 0.05);
     

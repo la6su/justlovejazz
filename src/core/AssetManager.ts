@@ -110,10 +110,10 @@ export class AssetManager {
         this.contextGroups.delete(context);
     }
 
-    private disposeAsset(asset: any): void {
+    private disposeAsset(asset: THREE.Object3D | THREE.Texture | THREE.Material | THREE.BufferGeometry): void {
         if (!asset) return;
 
-        if (asset.dispose) {
+        if (this.hasDispose(asset)) {
             asset.dispose();
         }
 
@@ -127,6 +127,12 @@ export class AssetManager {
         this.materialCache.forEach((val, key) => {
             if (val === asset) this.materialCache.delete(key);
         });
+    }
+
+    private hasDispose(
+      asset: THREE.Object3D | THREE.Texture | THREE.Material | THREE.BufferGeometry,
+    ): asset is (THREE.Object3D | THREE.Texture | THREE.Material | THREE.BufferGeometry) & { dispose: () => void } {
+      return typeof (asset as { dispose?: unknown }).dispose === 'function'
     }
 
     public purgeUnused(keepUrls: string[]): void {

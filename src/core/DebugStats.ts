@@ -1,4 +1,17 @@
 
+import * as THREE from 'three'
+import { WebGPURenderer } from 'three/webgpu'
+
+type RenderWithInfo = THREE.WebGLRenderer | WebGPURenderer
+
+interface BrowserPerformanceMemory {
+    usedJSHeapSize: number
+    jsHeapSizeLimit: number
+}
+
+interface BrowserPerformanceWithMemory extends Performance {
+    memory?: BrowserPerformanceMemory
+}
 
 export class DebugStats {
     private container: HTMLDivElement;
@@ -10,7 +23,7 @@ export class DebugStats {
     private frames: number = 0;
     private fps: number = 0;
 
-    constructor(renderer: any) {
+    constructor(renderer: RenderWithInfo) {
         this.container = document.createElement('div');
         this.container.className = 'debug-stats';
         
@@ -26,7 +39,7 @@ export class DebugStats {
         this.renderer = renderer;
     }
 
-    private renderer: any;
+    private renderer: RenderWithInfo;
 
     private createStatLine(prefix: string): HTMLDivElement {
         const div = document.createElement('div');
@@ -46,8 +59,9 @@ export class DebugStats {
         }
 
         // Memory Calculation (Chrome only for JS heap)
-        if ((window as any).performance && (window as any).performance.memory) {
-            const mem = (window as any).performance.memory;
+        const perf = window.performance as BrowserPerformanceWithMemory
+        if (perf.memory) {
+            const mem = perf.memory;
             const used = Math.round(mem.usedJSHeapSize / 1048576);
             const total = Math.round(mem.jsHeapSizeLimit / 1048576);
             this.memDisplay.innerText = `MEM: ${used} / ${total} MB`;

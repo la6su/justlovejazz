@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { Noise } from '../../Utils/Noise'
-import { BakuRole } from '../../core/types'
+import { BakuRole, type BakuMaterialState } from '../../core/types'
 
 export interface BakuMaterialParams {
     color: THREE.Color
@@ -8,6 +8,13 @@ export interface BakuMaterialParams {
     roughness: number
     metalness: number
     role: BakuRole
+}
+
+type MorphableMaterial = THREE.Material & {
+    color?: THREE.Color
+    emissive?: THREE.Color
+    roughness?: number
+    metalness?: number
 }
 
 export class Baku extends THREE.Mesh {
@@ -86,7 +93,7 @@ export class Baku extends THREE.Mesh {
 
         // Common params lerp
         if (this.material instanceof THREE.Material) {
-            const mat = this.material as any;
+            const mat = this.material as MorphableMaterial;
             if (mat.color) mat.color.lerp(this.targetParams.color, 0.05);
             if (mat.emissive) mat.emissive.lerp(this.targetParams.emissive, 0.05);
             if (mat.roughness !== undefined) mat.roughness += (this.targetParams.roughness - mat.roughness) * 0.05;
@@ -94,7 +101,7 @@ export class Baku extends THREE.Mesh {
         }
     }
 
-    updateMaterial(params: any) {
+    updateMaterial(params: BakuMaterialState) {
         if (!params) return;
         
         this.targetParams = {

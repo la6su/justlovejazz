@@ -84,7 +84,7 @@ export class Renderer {
   }
 
   private initPostProcessing() {
-    if (this.capabilities.mode !== 'webgpu' || !this.postUniforms) return
+    if (!this.capabilities.postProcessing || !this.postUniforms) return
     const sceneColorPlaceholder = texture(new THREE.Texture())
     ;(this.instance as WebGPURenderer & { postProcessing?: unknown }).postProcessing = postProcessingNode(
       sceneColorPlaceholder,

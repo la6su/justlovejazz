@@ -20,6 +20,14 @@ export interface CameraTarget {
     fov: number;
 }
 
+export interface BakuMaterialState {
+    role?: BakuRole;
+    color?: THREE.ColorRepresentation;
+    emissive?: THREE.ColorRepresentation;
+    roughness?: number;
+    metalness?: number;
+}
+
     export interface WorldState {
         currentPhase: NarrativePhase;
         phaseProgress: number;
@@ -29,7 +37,7 @@ export interface CameraTarget {
         bakuScale: THREE.Vector3;
         bakuOpacity: number;
         bakuRole: BakuRole;
-        bakuMaterial: any;
+        bakuMaterial: BakuMaterialState;
         envColor: THREE.Color;
         envIntensity: number;
         uiShowGallery: boolean;
