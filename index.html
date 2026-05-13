@@ -34,7 +34,7 @@
 
     <!-- Scroll hint -->
     <div class="scroll-hint" id="scrollHint">
-      Scroll to explore
+      <span>Scroll</span>
     </div>
 
     <!-- UI Layer -->
@@ -59,15 +59,16 @@
         <div class="uk-container">
           <div class="uk-text-center">
             <h1 class="studio-title" uk-scrollspy="cls: uk-animation-fade">
-              JUST <br/>
-              <span>LOVE JAZZ</span>
+              <span class="studio-title__line">Just</span>
+              <span class="studio-title__line">Love</span>
+              <span class="studio-title__line studio-title__accent">Jazz</span>
             </h1>
-            <p class="studio-text uk-margin-auto-center" uk-scrollspy="cls: uk-animation-slide-bottom">
-              Where rhythm meets code — immersive creative experiences <br/>
-              built with WebGPU, Three.js, and a love for jazz.
+            <p class="studio-tagline uk-margin-auto-center" uk-scrollspy="cls: uk-animation-slide-bottom">
+              Creative studio —<br/>
+              sound · code · motion
             </p>
             <div class="uk-margin-large-top">
-              <a href="#works" data-magnetic class="reveal-item uk-button uk-button-primary uk-button-large btn-studio">Explore</a>
+              <a href="#works" data-magnetic class="reveal-item uk-button uk-button-primary uk-button-large btn-studio">View Works</a>
             </div>
           </div>
         </div>
@@ -78,15 +79,20 @@
         <div class="uk-container">
           <div class="studio-grid">
             <div class="reveal-item grid-item-left" uk-scrollspy>
-              <span class="section-number">01 // Vision</span>
-              <h2 class="studio-title">Beyond the <br/>Browser</h2>
-              <p class="studio-text">
-                We build immersive digital experiences where sound, motion, and code converge. From live electronic sets to interactive installations, every project is a session — spontaneous, deliberate, unforgettable.
-              </p>
+              <span class="section-number">01</span>
+              <h2 class="studio-title studio-title--medium">
+                Building experiences<br/>
+                <span class="text--muted">that feel like sessions</span>
+              </h2>
             </div>
             <div class="reveal-item grid-item-right flex-center-vertical" uk-scrollspy>
-              <p class="studio-text">
-                Three.js shaders. WebGPU pipelines. Generative audio. The browser is our venue. Scroll is our conductor.
+              <p class="studio-text studio-text--body">
+                Every project starts with improvisation — a patch, a shader,<br/>
+                a reversal of expectations. We work at the intersection of<br/>
+                WebGPU, Three.js, and live video art.
+              </p>
+              <p class="studio-text studio-text--meta mt-2">
+                The browser is our venue. Scroll is our conductor.
               </p>
             </div>
           </div>
@@ -96,19 +102,30 @@
       <!-- Works Section -->
       <section id="works" class="section-studio section-scrolly uk-flex uk-flex-middle" uk-height-viewport>
         <div class="uk-container">
-          <span class="section-number section-number-center">02 // Selected Works</span>
-          <h2 class="studio-title uk-text-center studio-heading">Digital Archive</h2>
+          <span class="section-number section-number-center">02</span>
+          <h2 class="studio-title uk-text-center studio-title--medium">
+            Selected Works
+          </h2>
+          <p class="studio-text uk-text-center studio-text--cta">
+            4 projects — 4 different universes
+          </p>
         </div>
       </section>
 
       <!-- Contact Section -->
       <section id="contact" class="section-studio section-centered uk-flex uk-flex-middle" uk-height-viewport>
         <div class="uk-container uk-text-center">
-          <span class="section-number">03 // Connection</span>
-          <h2 class="studio-title">Let's Make Something <br/>That Doesn't Exist Yet</h2>
+          <span class="section-number">03</span>
+          <h2 class="studio-title studio-title--xl">
+            Let's make something<br/>
+            <span class="text--muted">that doesn't exist yet</span>
+          </h2>
           <div class="uk-margin-large-top">
             <a href="mailto:hello@justlovejazz.com" data-magnetic class="uk-button uk-button-secondary uk-button-large cta-studio">Get in Touch</a>
           </div>
+          <p class="studio-text studio-text--meta uk-margin-medium-top">
+            Open for commissions, collabs, live sessions
+          </p>
         </div>
       </section>
     </div>

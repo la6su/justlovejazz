@@ -184,6 +184,74 @@ canvas {
   font-weight: 900;
   letter-spacing: -0.04em;
   margin-bottom: 2rem;
+
+  &__line {
+    display: block;
+  }
+
+  &__accent {
+    background: linear-gradient(135deg, #515d84, #868dfc, #515d84);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  &--medium {
+    font-size: clamp(1.8rem, 5vw, 3.5rem);
+    margin-bottom: 1.5rem;
+  }
+
+  &--xl {
+    font-size: clamp(3rem, 10vw, 6rem);
+    font-weight: 900;
+  }
+}
+
+/* Tagline — of Home hero subtitle */
+.studio-tagline {
+  font-size: clamp(0.9rem, 1.5vw, 1.1rem);
+  font-family: monospace;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-top: 1.5rem;
+}
+
+/* Text utilities */
+.text--muted {
+  color: var(--text-muted);
+  opacity: 0.45;
+  font-weight: 200;
+}
+
+.studio-text--body {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: var(--text-muted);
+  opacity: 0.65;
+}
+
+.studio-text--cta {
+  font-family: monospace;
+  font-size: 0.85rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  opacity: 0.5;
+  margin-top: 1rem;
+}
+
+.studio-text--meta {
+  font-family: monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  opacity: 0.35;
+}
+
+.mt-2 {
+  margin-top: 2rem;
 }
 /* Text Reveal Styles *
 
@@ -875,6 +943,63 @@ body, a, button, .interactive {
   
   .project-card-wrapper {
     padding: 0.75rem;
+  }
+}
+
+/* Scroll Hint */
+.scroll-hint {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  pointer-events: none;
+  opacity: 0.3;
+  animation: scrollHintPulse 2s ease-in-out infinite;
+
+  span {
+    font-size: 0.7rem;
+    font-family: monospace;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    display: block;
+    padding: 0.5rem 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 2px;
+  }
+}
+
+@keyframes scrollHintPulse {
+  0%, 100% { opacity: 0.3; transform: translateX(-50%) translateY(0); }
+  50% { opacity: 0.15; transform: translateX(-50%) translateY(0.5rem); }
+}
+
+/* Section numbering — minimal */
+.section-number {
+  font-family: monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--text-muted, #666);
+  opacity: 0.4;
+  display: block;
+  margin-bottom: 1rem;
+
+  &--center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+
+    &::before,
+    &::after {
+      content: '';
+      display: inline-block;
+      width: 30px;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.1);
+      margin: 0 1rem;
+    }
   }
 }
 }
