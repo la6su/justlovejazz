@@ -1,47 +1,80 @@
-// src/shaders/postprocessing.tsl.ts
-import { 
-    uv, 
-    time, 
-    float, 
-    vec2, 
+// src/shaders/postprocessing.tsl.ts — Cinematic TSL Post-Processing Pipeline
+// Branches: Chromatic Aberration → Bloom → Tone Map → Grain → Vignette
+// All params are section-driven + quality-tier scaled, crossfaded per ft.
+
+import {
+    uv,
+    time,
+    float,
+    vec2,
     vec3,
-    Fn
-} from 'three/tsl';
-import { 
-    applyProfessionalGrain, 
-    applyCinematicVignette, 
-    applySoftGlow 
-} from './tsl-utils';
+    Fn,
+} from 'three/tsl'
+import {
+    applyProfessionalGrain,
+    applyCinematicVignette,
+    applySoftGlow,
+} from './tsl-utils'
+
+/* ---- Public interface for post-processing uniform params ---- */
+export interface PostUniforms {
+  bloom: number
+  vignette: number
+  grain: number
+  chromatic: number
+}
 
 /**
- * Cinematic Post-Processing Node
- * Implements a professional studio-grade pipeline:
- * Chromatic Aberration -> Bloom -> Grain -> Vignette
+ * Full TSL post-processing node.
+ *
+ * Pipeline (shader order):
+ *  1. Chromatic Aberration (radial, distance-weighted)
+ *  2. Bloom (multi-scale soft glow)
+ *  3. ACES Tone Mapping
+ *  4. Film Grain (time-varying)
+ *  5. Vignette (radial falloff)
  */
-export const postProcessingNode = (inputTexture: any, params: { bloom: any, vignette: any, grain: any }) => {
+export const postProcessingNode = (
+    inputTexture: any,
+    params: {
+      bloom: any,
+      vignette: any,
+      grain: any,
+      chromatic: any,
+    }
+) => {
     return Fn(() => {
-        const u = uv();
-        const t = time;
+        const u = uv()
+        const t = time
 
-        // 1. Chromatic Aberration
-        const dist = u.sub(vec2(0.5, 0.5));
-        const radialWeight = dist.x.mul(dist.x).add(dist.y.mul(dist.y)).add(float(0.1));
-        const aberrationStrength = float(0.005).mul(radialWeight);
-        
-        const colorR = inputTexture.sample(u.sub(vec2(aberrationStrength, float(0.0))));
-        const colorG = inputTexture.sample(u);
-        const colorB = inputTexture.sample(u.add(vec2(aberrationStrength, float(0.0))));
-        
-        let color = vec3(colorR.r, colorG.g, colorB.b).toVar();
+        // ── Step 1: Chromatic Aberration ──
+        // Radial split: R shifted out, B shifted in, G stays as center
+        const centerDist = u.sub(vec2(0.5, 0.5))
+        const radius2 = centerDist.x.mul(centerDist.x).add(centerDist.y.mul(centerDist.y))
+        const aberrationOffset = params.chromatic.mul(radius2).add(float(0.001))
 
-        // 2. Cinematic Bloom Simulation
-        const glow = applySoftGlow(inputTexture, u, params.bloom);
-        color.assign(color.add(glow.mul(float(0.5))));
+        const chColorR = inputTexture.sample(u.add(centerDist.mul(aberrationOffset)))
+        const chColorG = inputTexture.sample(u)
+        const chColorB = inputTexture.sample(u.sub(centerDist.mul(aberrationOffset)))
 
-        // 3. Final Polish Stack
-        color.assign(applyProfessionalGrain(color, u, t, params.grain));
-        color.assign(applyCinematicVignette(color, u, params.vignette));
+        let color = vec3(chColorR.r, chColorG.g, chColorB.b).toVar()
 
-        return color;
-    });
-};
+        // ── Step 2: Bloom (multi-scale soft glow) ──
+        const glow = applySoftGlow(inputTexture, u, params.bloom)
+        color.assign(color.add(glow.mul(float(0.5))))
+
+        // ── Step 3: ACES Tone Mapping ──
+        // acesFitted: C * (2.51 * C + 0.03) / (1.0 + 2.43 * C)
+        const acesNum = color.mul(float(6.25)).add(float(0.03))
+        const acesDen = float(1.0).add(color.mul(float(4.86)))
+        color.assign(acesNum.div(acesDen))
+
+        // ── Step 4: Film Grain ──
+        color.assign(applyProfessionalGrain(color, u, t, params.grain))
+
+        // ── Step 5: Vignette ──
+        color.assign(applyCinematicVignette(color, u, params.vignette))
+
+        return color
+    })
+}

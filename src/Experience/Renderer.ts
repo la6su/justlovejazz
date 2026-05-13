@@ -6,6 +6,7 @@ import { postProcessingNode } from '../shaders/postprocessing.tsl.ts'
 import { texture, uniform } from 'three/tsl'
 import { DeviceCapability } from '../core/DeviceCapability'
 import { type WorldState } from '../core/types'
+import { PostProcessingManager } from '../core/PostProcessingManager'
 
 export type RenderSurface = WebGPURenderer | THREE.WebGLRenderer
 
@@ -13,11 +14,16 @@ export class Renderer {
   instance: RenderSurface
   private capabilities = DeviceCapability.getInstance()
 
-  private postParams: {
+  // TSL post-processing uniforms (WebGPU only)
+  private postUniforms: {
     bloom: ReturnType<typeof uniform>
     vignette: ReturnType<typeof uniform>
     grain: ReturnType<typeof uniform>
+    chromatic: ReturnType<typeof uniform>
   } | null = null
+
+  // Post-processing manager (section-aware crossfade)
+  public postManager = new PostProcessingManager()
 
   constructor(sizes: Sizes) {
     if (this.capabilities.mode === 'unsupported') {
@@ -31,10 +37,11 @@ export class Renderer {
         powerPreference: 'high-performance',
       })
       this.instance = r
-      this.postParams = {
-        bloom: uniform(0),
-        vignette: uniform(0),
-        grain: uniform(0),
+      this.postUniforms = {
+        bloom: uniform(0.3),
+        vignette: uniform(0.5),
+        grain: uniform(0.03),
+        chromatic: uniform(0.004),
       }
       this.initPostProcessing()
     } else {
@@ -46,7 +53,7 @@ export class Renderer {
       r.toneMapping = THREE.ACESFilmicToneMapping
       r.toneMappingExposure = 1
       this.instance = r
-      this.postParams = null
+      this.postUniforms = null
     }
 
     this.instance.setPixelRatio(Math.min(sizes.dpr, this.capabilities.maxDpr))
@@ -77,13 +84,13 @@ export class Renderer {
   }
 
   private initPostProcessing() {
-    if (this.capabilities.mode !== 'webgpu' || !this.postParams) return
+    if (this.capabilities.mode !== 'webgpu' || !this.postUniforms) return
     const sceneColorPlaceholder = texture(new THREE.Texture())
     ;(this.instance as WebGPURenderer & { postProcessing?: unknown }).postProcessing = postProcessingNode(
       sceneColorPlaceholder,
-      this.postParams,
+      this.postUniforms,
     )
-    /* Post-processing enabled (WebGPU) */
+    /* Post-processing enabled (WebGPU with 4-pass TSL pipeline) */
   }
 
   async init() {
@@ -93,11 +100,18 @@ export class Renderer {
   }
 
   update(scene: THREE.Scene, camera: THREE.Camera, worldState?: WorldState) {
-    if (this.postParams && worldState) {
-      this.postParams.bloom.value = this.capabilities.scaleIntensity(worldState.post.bloom)
-      this.postParams.vignette.value = this.capabilities.scaleIntensity(worldState.post.vignette)
-      this.postParams.grain.value = this.capabilities.scaleIntensity(worldState.post.grain)
+    if (this.postUniforms && worldState) {
+      // Crossfade post-processing values via PostProcessingManager
+      this.postManager.update(this.timeDelta)
+
+      const pp = this.postManager.postParams
+      this.postUniforms.bloom.value = this.capabilities.scaleIntensity(pp.bloom)
+      this.postUniforms.vignette.value = this.capabilities.scaleIntensity(pp.vignette)
+      this.postUniforms.grain.value = this.capabilities.scaleIntensity(pp.grain)
+      this.postUniforms.chromatic.value = pp.chromatic
     }
     this.instance.render(scene, camera)
   }
+
+  private timeDelta = 1 / 60
 }

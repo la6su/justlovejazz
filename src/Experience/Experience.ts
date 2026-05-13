@@ -131,6 +131,9 @@ export class Experience {
       // Scene Content Manager — queue transition to new section content
       this.sceneContentManager.queueTransition(config.id, 1.2);
 
+      // Post-processing preset switch (crossfades to new values)
+      this.renderer.postManager.applyPreset(config.id);
+
       // Cinematic Arrival Pulse: subtle FOV shift to announce section change
       this.camera.setFovOffset(0.3, 0.8);
 
