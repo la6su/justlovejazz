@@ -1,69 +1,59 @@
 
-export interface Project {
-  id: string;
-  title: string;
-  description: string;
-  textureUrl: string;
-  detailTextureUrl: string;
-  color: string;
-  year: string;
-  category: string;
-  tags: string[];
-  viewPosition: { x: number, y: number, z: number };
-  viewLookAt: { x: number, y: number, z: number };
-}
+import type { Project } from '../core/types';
+
+export { type Project };
 
 export const PROJECTS: Project[] = [
   {
-    id: 'proj1',
-    title: 'Quantum Flux',
-    description: 'An exploration of digital fluidity and light.',
-    textureUrl: '/assets/textures/proj1.jpg',
-    detailTextureUrl: '/assets/textures/proj1_detail.jpg',
-    color: '#ff3300',
-    year: '2024',
-    category: 'Generative',
-    tags: ['WebGPU', 'TSL', 'Procedural'],
-    viewPosition: { x: -4, y: 1, z: 5 },
+    id: 'ebb-vibes',
+    title: 'Ebb Vibes',
+    description: 'Late night sessions captured in digital harmony. Guitar lines dissolving into neon atmosphere.',
+    textureUrl: '/assets/projects/ebb-vibes/cover.webp',
+    detailTextureUrl: '/assets/projects/ebb-vibes/detail.webp',
+    color: '#ff5500',
+    year: '2025',
+    category: 'Visual Music',
+    tags: ['WebGPU', 'Procedural', 'Atmosphere'],
+    viewPosition: { x: -4, y: 0.5, z: 5 },
     viewLookAt: { x: -4, y: 0, z: 0 },
   },
   {
-    id: 'proj2',
-    title: 'Neon Silence',
-    description: 'Capturing the stillness of futuristic cities.',
-    textureUrl: '/assets/textures/proj1.jpg',
-    detailTextureUrl: '/assets/textures/proj1_detail.jpg',
-    color: '#00ffcc',
-    year: '2023',
-    category: 'Atmospheric',
-    tags: ['Cinema', 'Lighting', 'Urban'],
-    viewPosition: { x: 0, y: 1, z: 5 },
+    id: 'mono-sunday',
+    title: 'Mono Sunday',
+    description: 'Three chords and the silence between them. A minimal experiment in absence.',
+    textureUrl: '/assets/projects/mono-sunday/cover.webp',
+    detailTextureUrl: '/assets/projects/mono-sunday/detail.webp',
+    color: '#88cc70',
+    year: '2024',
+    category: 'Minimalist',
+    tags: ['Ambient', 'Texture', 'Mono'],
+    viewPosition: { x: 0, y: 0.5, z: 5 },
     viewLookAt: { x: 0, y: 0, z: 0 },
   },
   {
-    id: 'proj3',
-    title: 'Aether Drift',
-    description: 'The intersection of organic and synthetic forms.',
-    textureUrl: '/assets/textures/proj1.jpg',
-    detailTextureUrl: '/assets/textures/proj1_detail.jpg',
-    color: '#aa00ff',
-    year: '2024',
-    category: 'Abstract',
-    tags: ['Organic', 'Synthetic', 'Flow'],
-    viewPosition: { x: 4, y: 1, z: 5 },
+    id: 'till-at-night',
+    title: 'Until the Night',
+    description: 'A parallel timeline where analog meets algorithm. Real instruments, synthetic space.',
+    textureUrl: '/assets/projects/till-at-night/cover.webp',
+    detailTextureUrl: '/assets/projects/till-at-night/detail.webp',
+    color: '#cc88ff',
+    year: '2025',
+    category: 'Crossover',
+    tags: ['Analogue', 'Synth', 'Timeline'],
+    viewPosition: { x: 4, y: 0.5, z: 5 },
     viewLookAt: { x: 4, y: 0, z: 0 },
   },
   {
-    id: 'proj4',
-    title: 'Void Echo',
-    description: 'A study on emptiness and resonance.',
-    textureUrl: '/assets/textures/proj1.jpg',
-    detailTextureUrl: '/assets/textures/proj1_detail.jpg',
-    color: '#ffff00',
-    year: '2022',
-    category: 'Minimalist',
-    tags: ['Void', 'Sound', 'Echo'],
-    viewPosition: { x: 8, y: 1, z: 5 },
+    id: 'undercurrent',
+    title: 'Undercurrent',
+    description: 'Sub-bass meditation. Frequencies below hearing, above feeling.',
+    textureUrl: '/assets/projects/undercurrent/cover.webp',
+    detailTextureUrl: '/assets/projects/undercurrent/detail.webp',
+    color: '#222233',
+    year: '2024',
+    category: 'Electronic',
+    tags: ['Subwoofer', '3D Audio', 'WebGPU'],
+    viewPosition: { x: 8, y: 0.5, z: 5 },
     viewLookAt: { x: 8, y: 0, z: 0 },
-  }
+  },
 ];
