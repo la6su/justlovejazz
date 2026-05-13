@@ -63,19 +63,7 @@ h6,
 }
 @close-color: @global-color;
 @close-hover-color: @global-color;
-.canvas {
-  height: 100dvh;
-  width: 100vw;
-  min-height: max(0px, 100dvh);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: -10;
-}
 
-#theatrejs-studio-root {
-  z-index: 1000 !important;
-}
 
 #tm-main {
   position: absolute;
@@ -118,37 +106,16 @@ header .uk-heading-xlarge {
   font-family: @global-font-family;
 }
 
-html {
-  /* scroll-behavior: smooth removed to prevent conflict with Lenis */
-}
-
-canvas {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  outline: none;
-  z-index: 0;
-  pointer-events: none;
-}
-
-#ui-layer {
-  position: relative;
-  z-index: 10;
-  pointer-events: none; /* Let clicks pass through to canvas if needed, but we'll enable it for UI elements */
-}
-
-#ui-layer > * {
-  pointer-events: auto; /* Re-enable clicks for actual UI components */
-}
-
 /* High-End Typography & Layout */
 :root {
   --accent-color: #ff3e00;
   --text-main: #ffffff;
   --text-muted: rgba(255,255,255,0.6);
   --font-heading: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+html {
+  /* scroll-behavior: smooth removed to prevent conflict with Lenis */
 }
 
 body {
@@ -163,6 +130,38 @@ body {
 body.dragging {
   cursor: grabbing !important;
 }
+
+canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  outline: none;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.canvas {
+  height: 100dvh;
+  width: 100vw;
+  min-height: max(0px, 100dvh);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: -10;
+}
+
+#ui-layer {
+  position: relative;
+  z-index: 10;
+  pointer-events: none; /* Let clicks pass through to canvas if needed, but we'll enable it for UI elements */
+}
+
+#ui-layer > * {
+  pointer-events: auto; /* Re-enable clicks for actual UI components */
+}
+
 
 /* Custom Section Styling */
 .section-studio {
