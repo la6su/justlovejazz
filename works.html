@@ -4,9 +4,9 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="JUSTLOVEJAZZ — Works page with 3D WebGPU transitions." />
+    <meta name="description" content="JUSTLOVEJAZZ — Works: An interactive gallery of 3D case studies. Each project runs its own material preset in real-time." />
     <meta name="theme-color" content="#0a0a0a" />
-    <title>JUSTLOVEJAZZ | Works</title>
+    <title>JUSTLOVEJAZZ | Works Gallery</title>
     <style>
       html { box-sizing: border-box; }
       *, *::before, *::after { box-sizing: inherit; }
@@ -22,64 +22,92 @@
 
     <div id="pageLoader" class="uk-flex uk-flex-center uk-flex-middle">
       <div class="uk-text-center">
-        <div uk-spinner="crossing"></div>
-        <p class="uk-margin-small-top">Loading Works...</p>
+        <div uk-spinner="ratio:2"></div>
+        <p class="uk-margin-small-top">Loading Experience...</p>
       </div>
     </div>
 
     <div class="scroll-hint" id="scrollHint"><span>Scroll</span></div>
 
-    <div id="ui-layer">
-      <nav class="uk-navbar-container navbar" uk-navbar role="navigation" aria-label="Primary">
-        <div class="uk-navbar-left">
-          <a class="uk-navbar-item uk-logo navbar-logo" href="/index.html" aria-label="Home">JLJ</a>
-        </div>
-        <div class="uk-navbar-right">
-          <ul class="uk-navbar-nav">
-            <li class="uk-navbar-item"><a href="/index.html" class="navbar-link">Home</a></li>
-            <li class="uk-navbar-item"><a href="/trinity.html" class="navbar-link">Trinity</a></li>
-            <li class="uk-navbar-item"><a href="/works.html" class="navbar-link" aria-current="page">Works</a></li>
-            <li class="uk-navbar-item"><a href="/contact.html" class="navbar-link">Contact</a></li>
-          </ul>
-        </div>
-      </nav>
+    <nav class="uk-navbar-container navbar" uk-navbar role="navigation" aria-label="Primary">
+      <div class="uk-navbar-left">
+        <a class="uk-navbar-item uk-logo navbar-logo" href="/index.html" aria-label="Home">JLJ</a>
+      </div>
+      <div class="uk-navbar-right">
+        <ul class="uk-navbar-nav">
+          <li class="uk-navbar-item"><a href="/index.html" class="navbar-link">Home</a></li>
+          <li class="uk-navbar-item"><a href="/trinity.html" class="navbar-link">Trinity</a></li>
+          <li class="uk-navbar-item"><a href="/works.html" class="navbar-link" aria-current="page">Works</a></li>
+          <li class="uk-navbar-item"><a href="/contact.html" class="navbar-link">Contact</a></li>
+        </ul>
+      </div>
+    </nav>
 
+    <div id="ui-layer">
+      <!-- HERO — Gallery Intro -->
       <section id="home" class="section-studio uk-flex uk-flex-middle section-intro" uk-height-viewport>
         <div class="uk-container">
-          <div class="uk-text-center">
-            <h1 class="studio-title"><span class="studio-title__line">Selected</span><span class="studio-title__line studio-title__accent">Works</span></h1>
-            <p class="studio-tagline uk-margin-auto-center">A dedicated portfolio route with interactive previews, project context, and click-to-open detail.</p>
+          <span class="section-number">00</span>
+          <h1 class="studio-title studio-title--xl">
+            <span class="studio-title__line">Four</span>
+            <span class="studio-title__line">Universes.</span>
+            <span class="studio-title__line studio-title__accent">One Gallery.</span>
+          </h1>
+          <p class="studio-tagline uk-margin-auto-center">Each case study carries its own material preset. Scroll to shift the scene. Click to hold the frame.</p>
+          <div class="uk-margin-large-top">
+            <a href="#gallery" class="reveal-item uk-button uk-button-primary uk-button-large btn-studio">Enter Gallery ↓</a>
           </div>
         </div>
       </section>
 
-      <section id="about" class="section-studio section-scrolly uk-flex uk-flex-middle" uk-height-viewport>
+      <!-- GALLERY SECTION — ProjectCard list injected here -->
+      <section id="gallery" class="section-studio section-scrolly uk-flex uk-flex-top" uk-height-viewport="expand:true">
         <div class="uk-container">
-          <span class="section-number">01</span>
-          <h2 class="studio-title studio-title--medium">Browse.<br/><span class="text--muted">Evaluate.</span></h2>
-          <p class="studio-text studio-text--body">Each case includes concept intent, visual language, and technical execution under real performance budgets.</p>
+          <span class="section-number section-number--center">01</span>
+          <h2 class="studio-title uk-text-center studio-title--medium">The Gallery</h2>
+          <p class="studio-text uk-text-center studio-text--body">Use scroll or arrow keys to navigate. Each card drives camera movement, material state, and post-processing.</p>
+          <!-- ProjectGallery component injects here -->
+        </div>
+      </section>
+
+      <!-- methodology -->
+      <section id="method" class="section-studio section-scrolly uk-flex uk-flex-middle" uk-height-viewport="expand:true">
+        <div class="uk-container">
+          <span class="section-number">02</span>
+          <h2 class="studio-title studio-title--medium">Role.<br /><span class="text--muted">Stack.</span><br /><span class="text--muted">Deliverable.</span></h2>
+          <p class="studio-text studio-text--body">Every project in this gallery follows the same production structure:</p>
           <div class="uk-grid-small uk-child-width-1-3@m uk-child-width-1-1" uk-grid>
-            <div><p class="studio-text studio-text--meta"><strong>Role</strong><br/>Creative direction, 3D design, frontend engineering.</p></div>
-            <div><p class="studio-text studio-text--meta"><strong>Stack</strong><br/>Three.js, TSL, WebGPU, TypeScript, Vite.</p></div>
-            <div><p class="studio-text studio-text--meta"><strong>Deliverables</strong><br/>Interactive website, motion system, production handoff docs.</p></div>
+            <div>
+              <p class="studio-text studio-text--meta">
+                <strong >Role</strong><br />
+                Creative direction + real-time production. We design the scene, not just the asset.
+              </p>
+            </div>
+            <div>
+              <p class="studio-text studio-text--meta">
+                <strong>Tech</strong><br />
+                Three.js, TSL chains, post-processing, chunked bundles, lazy textures.
+              </p>
+            </div>
+            <div>
+              <p class="studio-text studio-text--meta">
+                <strong>Deliverable</strong><br />
+                Deployable portfolio page. Real sessions will share source code, recaps, and MS.
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
-      <section id="works" class="section-studio section-scrolly uk-flex uk-flex-top" uk-height-viewport>
-        <div class="uk-container">
-          <span class="section-number section-number-center">02</span>
-          <h2 class="studio-title uk-text-center studio-title--medium">Project Portfolio</h2>
-          <p class="studio-text uk-text-center studio-text--cta">Works are fully interactive on this page only: sticky selector, 3D expansion, and detailed modal view.</p>
-        </div>
-      </section>
-
-      <section id="contact" class="section-studio section-centered uk-flex uk-flex-middle" uk-height-viewport>
+      <!-- FOOTER -->
+      <section id="footer" class="section-studio section-centered uk-flex uk-flex-middle" uk-height-viewport>
         <div class="uk-container uk-text-center">
-          <span class="section-number">03</span>
-          <h2 class="studio-title studio-title--xl">Select Project<br/><span class="text--muted">Open Full Case</span></h2>
-          <p class="studio-text studio-text--meta">Each case opens with detailed context, visual references, and technical notes.</p>
-          <div class="uk-margin-medium-top"><a href="/index.html" class="uk-button uk-button-secondary">Back to Home</a></div>
+          <h2 class="studio-title studio-title--medium">Want the break projekt?</h2>
+          <p class="studio-text uk-text-center studio-text--body">Every case study includes full source, real material presets, and deployable builds.</p>
+          <div class="uk-margin-medium-top">
+            <a href="/contact.html" class="uk-button uk-button-primary uk-button-large btn-studio">Request Full Case →</a>
+            <a href="/index.html" class="uk-button uk-button-secondary uk-button-large uk-margin-small-left" aria-label="Home">←</a>
+          </div>
         </div>
       </section>
     </div>
@@ -87,7 +115,7 @@
     <div id="project-modal" class="uk-modal-full uk-visible@s" uk-modal aria-hidden="true">
       <div class="uk-modal-body uk-flex uk-flex-center uk-flex-middle" style="height:100%; background:rgba(10,10,10,0.97);">
         <div id="modal-content" class="uk-container uk-container-small uk-light"></div>
-        <a class="uk-modal-close-default" uk-close></a>
+        <a class="uk-modal-close-default uk-modal-close" uk-close></a>
       </div>
     </div>
 

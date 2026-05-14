@@ -4,18 +4,195 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="JUSTLOVEJAZZ — Contact. Let's create something that doesn't exist yet." />
+    <meta name="description" content="JUSTLOVEJAZZ — Contact: Commissions, collaborations, and 3D production inquiries." />
     <meta name="theme-color" content="#0a0a0a" />
-    <title>Contact | JUSTLOVEJAZZ</title>
+    <title>JUSTLOVEJAZZ | Contact</title>
     <style>
-      html{box-sizing:border-box}*,*::before,*::after{box-sizing:inherit}body{margin:0;background:#0a0a0a;color:#fff;font-family:system-ui,-apple-system,'Segoe UI',sans-serif}a{color:inherit;text-decoration:none}.skip-link{position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden}.skip-link:focus{position:fixed;left:8px;top:8px;width:auto;height:auto;padding:8px 12px;background:#fff;color:#000;z-index:10001;border-radius:4px;outline:2px solid #515d84}#pageLoader{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:9999;background:#0a0a0a}
+      html { box-sizing: border-box; }
+      *, *::before, *::after { box-sizing: inherit; }
+      body { margin: 0; background: #0a0a0a; color: #fff; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; }
+      a { color: inherit; text-decoration: none; }
+      .skip-link { position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden; }
+      .skip-link:focus { position: fixed; left: 8px; top: 8px; width: auto; height: auto; padding: 8px 12px; background: #fff; color: #000; z-index: 10001; border-radius: 4px; outline: 2px solid #515d84; }
+      #pageLoader { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 9999; background: #0a0a0a; }
     </style>
   </head>
-  <body data-app-mode="minimal" data-page="contact">
-    <a href="#content" class="skip-link">Skip to content</a>
-    <div id="pageLoader" class="uk-flex uk-flex-center uk-flex-middle"><div class="uk-text-center"><div uk-spinner="crossing"></div></div></div>
-    <nav class="uk-navbar-container navbar" uk-navbar><div class="uk-navbar-left"><a class="uk-navbar-item uk-logo navbar-logo" href="/index.html">JLJ</a></div><div class="uk-navbar-right"><ul class="uk-navbar-nav"><li class="uk-navbar-item"><a href="/index.html" class="navbar-link">Home</a></li><li class="uk-navbar-item"><a href="/works.html" class="navbar-link">Works</a></li><li class="uk-navbar-item"><a href="/contact.html" class="navbar-link" aria-current="page">Contact</a></li></ul></div></nav>
-    <section class="section-studio section-centered uk-flex uk-flex-middle" uk-height-viewport><div class="uk-container uk-text-center"><div class="uk-width-1-2@m uk-margin-auto-x"><span class="section-number">01</span><h1 class="studio-title studio-title--xl">Let's create<br/><span class="text--muted">something.<br/>Whatever.</span></h1><p class="studio-text studio-text--meta uk-margin-medium-top">An open-ended collaboration spanning creative coding, audio visualization, and digital experiences. Where thoughts become work.</p><div class="uk-grid-small uk-child-width-1-2@s uk-grid-margin uk-margin-large-top" uk-grid><div><a href="mailto:hello@justlovejazz.studio" class="uk-button uk-button-primary">hello@justlovejazz.studio<button/div><div><div class="uk-grid-small uk-grid-margin" uk-grid><div><div class="uk-grid-small uk-grid-margin" uk-grid><div><div><p class="studio-text studio-text--meta"><strong>Scope</strong><br/>Creative Direction<br/>Frontend Engineering<br/>Motion Design</p></div><div><p class="studio-text studio-text--meta"><strong>Location</strong><br/>San Francisco<br/>Available Worldwide</p></div></div></div></div></div><a href="/index.html" class="uk-button uk-button-secondary uk-margin-medium-top">Home</a></div></div></section>
+  <body data-app-mode="full" data-page="contact">
+    <a href="#home" class="skip-link">Skip to main content</a>
+
+    <div id="pageLoader" class="uk-flex uk-flex-center uk-flex-middle">
+      <div class="uk-text-center">
+        <div uk-spinner="ratio:2"></div>
+        <p class="uk-margin-small-top">Loading Experience...</p>
+      </div>
+    </div>
+
+    <div class="scroll-hint" id="scrollHint"><span>Scroll</span></div>
+
+    <nav class="uk-navbar-container navbar" uk-navbar role="navigation" aria-label="Primary">
+      <div class="uk-navbar-left">
+        <a class="uk-navbar-item uk-logo navbar-logo" href="/index.html" aria-label="Home">JLJ</a>
+      </div>
+      <div class="uk-navbar-right">
+        <ul class="uk-navbar-nav">
+          <li class="uk-navbar-item"><a href="/index.html" class="navbar-link">Home</a></li>
+          <li class="uk-navbar-item"><a href="/trinity.html" class="navbar-link">Trinity</a></li>
+          <li class="uk-navbar-item"><a href="/works.html" class="navbar-link">Works</a></li>
+          <li class="uk-navbar-item"><a href="/contact.html" class="navbar-link" aria-current="page">Contact</a></li>
+        </ul>
+      </div>
+    </nav>
+
+    <div id="ui-layer">
+      <!-- HERO — Contact intro -->
+      <section id="home" class="section-studio uk-flex uk-flex-middle section-intro" uk-height-viewport>
+        <div class="uk-container">
+          <span class="section-number">00</span>
+          <h1 class="studio-title studio-title--xl">
+            <span class="studio-title__line">Let's</span>
+            <span class="studio-title__line">Make</span>
+            <span class="studio-title__line studio-title__accent">Something.</span>
+          </h1>
+          <p class="studio-tagline uk-margin-auto-center">We build scenes, not brochures. If that's what you're looking for — keep reading.</p>
+        </div>
+      </section>
+
+      <!-- TIMELINE -->
+      <section id="timeline" class="section-studio section-scrolly uk-flex uk-flex-middle" uk-height-viewport="expand:true">
+        <div class="uk-container">
+          <span class="section-number">01</span>
+          <h2 class="studio-title studio-title--medium">Timeline.<br /><span class="text--muted">From Brief to Deploy.</span></h2>
+          <p class="studio-text studio-text--body">Every project follows the same three-layer loop:</p>
+          <div class="uk-grid-small uk-child-width-1-3@m uk-child-width-1-1" uk-grid>
+            <div>
+              <p class="studio-text studio-text--meta">
+                <strong>Week 1–2 Narrative</strong><br />
+                Scope, frame shapes, material language. Camera paths mapped to scroll.
+              </p>
+            </div>
+            <div>
+              <p class="studio-text studio-text--meta">
+                <strong>Week 3–5 Runtime</strong><br />
+                Real-time build. Scene, lighting, transitions. Mobile parity verified early.
+              </p>
+            </div>
+            <div>
+              <p class="studio-text studio-text--meta">
+                <strong>Week 6–8 Operations</strong><br />
+                Asset optimization, chunk splitting, lazy loading, deploy. No surprises.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- WORKFLOW -->
+      <section id="workflow" class="section-studio section-scrolly uk-flex uk-flex-middle" uk-height-viewport="expand:true">
+        <div class="uk-container">
+          <span class="section-number">02</span>
+          <h2 class="studio-title studio-title--medium">What we deliver.<br /><span class="text--muted">What we don't deliver.</span></h2>
+          <div class="uk-grid-small uk-child-width-1-2@m uk-child-width-1-1" uk-grid>
+            <div>
+              <p class="studio-text studio-text--meta">
+                <strong>✓ Production-ready builds</strong><br />
+                Chunked bundles, lazy textures, deployable SSR/Dev code.
+              </p>
+            </div>
+            <div>
+              <p class="studio-text studio-text--meta">
+                <strong>✓ Material presets</strong><br />
+                Reusable shader configurations for future projects.
+              </p>
+            </div>
+            <div>
+              <p class="studio-text studio-text--meta">
+                <strong>✓ Full source code</strong><br />
+                TypeScript, Three.js, TSL. No black-box libraries.
+              </p>
+            </div>
+            <div>
+              <p class="studio-text studio-text--meta">
+                <strong>✓ Mobile parity</strong><br />
+                Same experience, scaled motion and reduced post-processing.
+              </p>
+            </div>
+            <div>
+              <p class="studio-text studio-text--meta">
+                <strong>✗ Demo-reel polish</strong><br />
+                We don't build throwaway demos. Every frame is shipping code.
+              </p>
+            </div>
+            <div>
+              <p class="studio-text studio-text--meta">
+                <strong>✗ Pre-rendered sequences</strong><br />
+                No baked videos. All motion is computed in real-time.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SCOPE -->
+      <section id="scope" class="section-studio section-scrolly uk-flex uk-flex-middle" uk-height-viewport="expand:true">
+        <div class="uk-container">
+          <span class="section-number">03</span>
+          <h2 class="studio-title studio-title--medium">Project scope.<br /><span class="text--muted">Typical engagements.</span></h2>
+          <div class="uk-grid-small uk-child-width-1-2@m uk-child-width-1-1" uk-grid>
+            <div>
+              <p class="studio-text studio-text--meta">
+                <strong>Portfolio sites</strong><br />
+                Single-page 3D experiences. Budget: 6–10 weeks.
+              </p>
+            </div>
+            <div>
+              <p class="studio-text studio-text--meta">
+                <strong>Live visuals</strong><br />
+                Real-time backgrounds for events and performances. Custom timeline.
+              </p>
+            </div>
+            <div>
+              <p class="studio-text studio-text--meta">
+                <strong>Product explainers</strong><br />
+                Interactive 3D demos for complex products. 4–8 weeks.
+              </p>
+            </div>
+            <div>
+              <p class="studio-text studio-text--meta">
+                <strong >Creative partnerships</strong><br />
+                Co-creation with brands, festivals, agencies. Scope is open.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CONTACT -->
+      <section id="contact" class="section-studio section-scrolly uk-flex uk-flex-middle" uk-height-viewport="expand:true">
+        <div class="uk-container uk-text-center">
+          <span class="section-number section-number--center">04</span>
+          <h2 class="studio-title uk-text-center studio-title--xl">Reach Out.</h2>
+          <p class="studio-text uk-text-center studio-text--body">Typical response: 2–3 working days. First call is exploratory, not commercial.</p>
+          <div class="uk-margin-medium-top">
+            <a href="/contact.html" class="uk-button uk-button-primary uk-button-large btn-studio">hello@justlovejazz.com</a>
+          </div>
+          <div class="uk-grid-small uk-child-width-1-4@s uk-child-width-1-1" uk-grid>
+            <div>
+              <p class="studio-text uk-text-center studio-text--meta">
+                <strong >2027</strong><br />
+                Open for commissions
+              </p>
+            </div>
+            <div>
+              <p class="studio-text uk-text-center studio-text--meta">
+                <strong>FaText</strong>:<br />
+                <a href="https://salha.com/jutoist">slah@salha.com</a>
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
     <div id="app"></div>
     <script type="module" src="/src/entry.ts"></script>
   </body>

@@ -4,28 +4,96 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Till At Night — JUSTLOVEJAZZ case study. Neon reflections on midnight asphalt." />
+    <meta name="description" content="JUSTLOVEJAZZ — Till At Night: Crossover. A parallel timeline where analog meets algorithm." />
     <meta name="theme-color" content="#0a0a0a" />
-    <title>Till At Night | JUSTLOVEJAZZ</title>
+    <title>JUSTLOVEJAZZ | Till At Night</title>
     <style>
-      html{box-sizing:border-box}*,*::before,*::after{box-sizing:inherit}body{margin:0;background:#0a0a0a;color:#fff;font-family:system-ui,-apple-system,'Segoe UI',sans-serif}a{color:inherit;text-decoration:none}.skip-link{position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden}.skip-link:focus{position:fixed;left:8px;top:8px;width:auto;height:auto;padding:8px 12px;background:#fff;color:#000;z-index:10001;border-radius:4px;outline:2px solid #515d84}#pageLoader{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:9999;background:#0a0a0a}
+      html { box-sizing: border-box; }
+      *, *::before, *::after { box-sizing: inherit; }
+      body { margin: 0; background: #0a0a0a; color: #fff; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; }
+      a { color: inherit; text-decoration: none; }
+      .skip-link { position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden; }
+      .skip-link:focus { position: fixed; left: 8px; top: 8px; width: auto; height: auto; padding: 8px 12px; background: #fff; color: #000; z-index: 10001; border-radius: 4px; outline: 2px solid #515d84; }
+      #pageLoader { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 9999; background: #0a0a0a; }
     </style>
   </head>
-  <body data-app-mode="minimal" data-page="project" data-project="till-at-night">
-    <a href="#content" class="skip-link">Skip to content</a>
-    <div id="pageLoader" class="uk-flex uk-flex-center uk-flex-middle"><div class="uk-text-center"><div uk-spinner="crossing"></div></div></div>
-    <nav class="uk-navbar-container navbar" uk-navbar><div class="uk-navbar-left"><a class="uk-navbar-item uk-logo navbar-logo" href="/index.html">JLJ</a></div><div class="uk-navbar-right"><ul class="uk-navbar-nav"><li class="uk-navbar-item"><a href="/index.html" class="navbar-link">Home</a></li><li class="uk-navbar-item"><a href="/works.html" class="navbar-link">Works</a></li><li class="uk-navbar-item"><a href="/contact.html" class="navbar-link">Contact</a></li></ul></div></nav>
-    <section class="section-studio uk-flex uk-flex-middle" uk-height-viewport><div class="uk-container"><div class="detail-hero"><div class="detail-hero__media"><img class="detail-hero__image" src="/assets/projects/till-at-night/hero.webp" alt="Till At Night" /></div><div class="detail-hero__info"><div class="detail-hero__meta"><span class="detail-hero__year">2024</span><span class="detail-hero__category">Live Visual / Performance</span></div><h1 class="detail-hero__title">Till At Night</h1></div></div></div></section>
-    <section class="section-studio section-scrolly uk-flex uk-flex-top" style="min-height:50vh"><div class="uk-container"><p class="studio-text studio-text--body">Neon reflections on midnight asphalt. A visual system built for live sets — reactive to BPM, chaos, and audience energy.</p>
-      <div class="uk-grid-small uk-child-width-1-3@m uk-grid-margin" uk-grid>
-        <div><p class="studio-text studio-text--meta"><strong>Role</strong><br/>Creative Direction<br/>Live Visuals</p></div>
-        <div><p class="studio-text studio-text--meta"><strong>Stack</strong><br/>WebGPU<br/>Three.js<br/>Shadertoy</p></div>
+  <body data-app-mode="full" data-page="project">
+    <a href="#home" class="skip-link">Skip to main content</a>
+    <div id="pageLoader" class="uk-flex uk-flex-center uk-flex-middle">
+      <div class="uk-text-center">
+        <div uk-spinner="ratio:2"></div>
+        <p class="uk-margin-small-top">Loading...</p>
       </div>
-      <div class="detail-image-wrap uk-margin-medium-top"><img src="/assets/projects/till-at-night/detail.webp" alt="Till At Night detail" /></div>
-      <p class="studio-text studio-text--body uk-margin-large-top">Takes a pre-written history of a jazz musician's final session, extrapolates what would happen the next night. The shader processes 6 layers of perception — each one slightly out of sync.</p>
-      <div class="detail-tags uk-margin-medium-top"><span class="detail-tag">Live Visual</span><span class="detail-tag">GLSL</span><span class="detail-tag">Performance</span><span class="detail-tag">DX</span></div>
-    </div></section>
-    <section class="section-studio section-centered uk-flex uk-flex-middle" style="min-height:30vh"><div class="uk-container"><div class="uk-grid uk-flex-center" uk-grid><div><a href="/projects/mono-sunday.html" class="uk-button uk-button-secondary">← Mono Sunday</a></div><div><a href="/projects/undercurrent.html" class="uk-button uk-button-primary">↓ Undercurrent →</a></div></div></div></section>
+    </div>
+    <nav class="uk-navbar-container navbar" uk-navbar role="navigation" aria-label="Primary">
+      <div class="uk-navbar-left">
+        <a class="uk-navbar-item uk-logo navbar-logo" href="/index.html" aria-label="Home">JLJ</a>
+      </div>
+      <div class="uk-navbar-right">
+        <ul class="uk-navbar-nav">
+          <li class="uk-navbar-item"><a href="/index.html" class="navbar-link">Home</a></li>
+          <li class="uk-navbar-item"><a href="/trinity.html" class="navbar-link">Trinity</a></li>
+          <li class="uk-navbar-item"><a href="/works.html" class="navbar-link">Works</a></li>
+          <li class="uk-navbar-item"><a href="/contact.html" class="navbar-link">Contact</a></li>
+        </ul>
+      </div>
+    </nav>
+    <div id="ui-layer">
+      <section id="home" class="section-studio uk-flex uk-flex-middle section-intro" uk-height-viewport>
+        <div class="uk-container">
+          <div class="uk-text-center">
+            <span class="section-number">00</span>
+            <h1 class="studio-title studio-title--xl">
+              <span class="studio-title__line">Till</span>
+              <span class="studio-title__line studio-title__accent">Night</span>
+            </h1>
+            <p class="studio-tagline uk-margin-auto-center">Crossover. A parallel timeline where analog meets algorithm.</p>
+          </div>
+        </div>
+      </section>
+      <section id="about" class="section-studio section-scrolly uk-flex uk-flex-middle" uk-height-viewport="expand:true">
+        <div class="uk-container">
+          <span class="section-number">01</span>
+          <h2 class="studio-title studio-title--medium">Brief.<br /><span class="text--muted">Frame Shape.</span></h2>
+          <p class="studio-text studio-text--body">What happens when the scene strips everything down? Crossover. A parallel timeline where analog meets algorithm. The answer is in the negative space — what Baku doesn't reveal.</p>
+        </div>
+      </section>
+      <section id="tech" class="section-studio section-scrolly uk-flex uk-flex-middle" uk-height-viewport="expand:true">
+        <div class="uk-container">
+          <span class="section-number">02</span>
+          <h2 class="studio-title studio-title--medium">Material Preset.<br /><span class="text--muted">Sceneography.</span></h2>
+          <div class="uk-grid-small uk-child-width-1-2@m uk-child-width-1-1" uk-grid>
+            <div>
+              <p class="studio-text studio-text--meta"><strong>Camera</strong><br />Diagonal traversal. Camera orbits while closing approximately. FOV sweep 24mm → 70mm.</p>
+            </div>
+            <div>
+              <p class="studio-text studio-text--meta"><strong>Material</strong><br />R = 0.8, metalness = 85mm. Reflections enabled. Environment map feeds grid + phase color.</p>
+            </div>
+            <div>
+              <p class="studio-text studio-text--meta"><strong>Fog</strong><br />Exponential squared fog (#cc82ff). High contrast fade — like depth.</p>
+            </div>
+            <div>
+              <p class="studio-text studio-text--meta"><strong>Post</strong><br />Bloom 0.3 + translucent color shift + 3mm vignette. Synth hands glow.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section id="deliverable" class="section-studio section-scrolly uk-flex uk-flex-middle" uk-height-viewport="expand:true">
+        <div class="uk-container">
+          <span class="section-number">03</span>
+          <h2 class="studio-title studio-title--medium">Deliverable.<br /><span class="text--muted">What ships.</span></h2>
+          <p class="studio-text studio-text--body">Each project includes:</p>
+          <div class="uk-grid-small uk-child-width-1-2@m uk-child-width-1-1" uk-grid>
+            <div><p class="studio-text studio-text--meta"><strong>✓</strong> Deployable Web build (KTX2 textures, chunked bundles)</p></div>
+            <div><p class="studio-text studio-text--meta"><strong>✓</strong> Real reusable presets (TSL chains, shader configs)</p></div>
+          </div>
+          <div class="uk-margin-medium-top">
+            <a href="/works.html" class="uk-button uk-button-secondary uk-button-large btn-studio">← Back to Gallery</a>
+            <a href="/contact.html" class="uk-button uk-button-primary uk-button-large uk-margin-small-left">Request Full Case →</a>
+          </div>
+        </div>
+      </section>
+    </div>
     <div id="app"></div>
     <script type="module" src="/src/entry.ts"></script>
   </body>

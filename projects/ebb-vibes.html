@@ -4,118 +4,123 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Ebb Vibes — JUSTLOVEJAZZ case study. Warm modular tones captured in immersive digital texture." />
-    <meta name="theme-color" content="#0a0a0a" />
-    <title>Ebb Vibes | JUSTLOVEJAZZ</title>
+    <meta name="description" content="JUSTLOVEJAZZ — Ebb Vibes: A warm ambient study in procedural scene generation." />
+    <meta name="theme-color" content="#7a0a0a" />
+    <title>JUSTLOVEJAZZ | Ebb Vibes</title>
     <style>
-      html{box-sizing:border-box}*,*::before,*::after{box-sizing:inherit}body{margin:0;background:#0a0a0a;color:#fff;font-family:system-ui,-apple-system,'Segoe UI',sans-serif}a{color:inherit;text-decoration:none}.skip-link{position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden}.skip-link:focus{position:fixed;left:8px;top:8px;width:auto;height:auto;padding:8px 12px;background:#fff;color:#000;z-index:10001;border-radius:4px;outline:2px solid #515d84}#pageLoader{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;z-index:9999;background:#0a0a0a;gap:12px}
+      html { box-sizing: border-box; }
+      *, *::before, *::after { box-sizing: inherit; }
+      body { margin: 0; background: #0a0a0a; color: #fff; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; }
+      a { color: inherit; text-decoration: none; }
+      .skip-link { position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden; }
+      .skip-link:focus { position: fixed; left: 8px; top: 8px; width: auto; height: auto; padding: 8px 12px; background: #fff; color: #000; z-index: 10001; border-radius: 4px; outline: 2px solid #515d84; }
+      #pageLoader { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 9999; background: #0a0a0a; }
     </style>
   </head>
-  <body data-app-mode="minimal" data-page="project" data-project="ebb-vibes">
-    <a href="#content" class="skip-link">Skip to content</a>
+  <body data-app-mode="full" data-page="project">
+    <a href="#home" class="skip-link">Skip to main content</a>
+
     <div id="pageLoader" class="uk-flex uk-flex-center uk-flex-middle">
-      <div class="uk-text-center"><div uk-spinner="crossing"></div><p class="uk-margin-small-top">Loading...</p></div>
+      <div class="uk-text-center">
+        <div uk-spinner="ratio:2"></div>
+        <p class="uk-margin-small-top">Loading...</p>
+      </div>
     </div>
 
-    <!-- Nav -->
-    <nav class="uk-navbar-container navbar" uk-navbar role="navigation">
+    <nav class="uk-navbar-container navbar" uk-navbar role="navigation" aria-label="Primary">
       <div class="uk-navbar-left">
-        <a class="uk-navbar-item uk-logo navbar-logo" href="/index.html">JLJ</a>
+        <a class="uk-navbar-item uk-logo navbar-logo" href="/index.html" aria-label="Home">JLJ</a>
       </div>
       <div class="uk-navbar-right">
-        <ul class="uk-navbar-nav">
           <li class="uk-navbar-item"><a href="/index.html" class="navbar-link">Home</a></li>
+          <li class="uk-navbar-item"><a href="/trinity.html" class="navbar-link">Trinity</a></li>
           <li class="uk-navbar-item"><a href="/works.html" class="navbar-link">Works</a></li>
           <li class="uk-navbar-item"><a href="/contact.html" class="navbar-link">Contact</a></li>
         </ul>
       </div>
     </nav>
 
-    <!-- Project Hero -->
-    <section class="section-studio uk-flex uk-flex-middle" uk-height-viewport>
-      <div class="uk-container">
-        <div class="detail-hero">
-          <div class="detail-hero__media">
-            <img class="detail-hero__image" src="/assets/projects/ebb-vibes/hero.webp" alt="Ebb Vibes — warm modular tones" />
+    <div id="ui-layer">
+      <section id="home" class="section-studio uk-flex uk-flex-middle section-intro" uk-height-viewport>
+        <div class="uk-container">
+          <div class="uk-text-center">
+            <span class="section-number">00</span>
+            <h1 class="studio-title studio-title--xl">
+              <span class="studio-title__line">Ebb</span>
+              <span class="studio-title__line studio-title__accent">Vibes</span>
+            </h1>
+            <p class="studio-tagline uk-margin-auto-center">Ambient. Late-night sessions where the tide pulls you into the mood. A Meditative ambient piece.</p>
           </div>
-          <div class="detail-hero__info">
-            <div class="detail-hero__meta">
-              <span class="detail-hero__year">2025</span>
-              <span class="detail-hero__category">Sound Design / Audio Visual</span>
+        </div>
+      </section>
+
+      <section id="about" class="section-studio section-scrolly uk-flex uk-flex-middle" uk-height-viewport="expand:true">
+        <div class="uk-container">
+          <span class="section-number">01</span>
+          <h2 class="studio-title studio-title--medium">Brief.<br /><span class="text--muted">Frame Shape.</span></h2>
+          <p class="studio-text studio-text--body">This project asks: what does warmth look like in a GPU-rendered scene? No puppet hammer, no fake lighting. Just procedural gradients, scanline texture, and fog — pushed to their emotional limit.</p>
+        </div>
+      </section>
+
+      <section id="tech" class="section-studio section-scrolly uk-flex uk-flex-middle" uk-height-viewport="expand:true">
+        <div class="uk-container">
+          <span class="section-number">02</span>
+          <h2 class="studio-title studio-title--medium">Material Preset.<br /><span class="text--muted">Scenography.</span></h2>
+          <div class="uk-grid-small uk-child-width-1-2@m uk-child-width-1-1" uk-grid>
+            <div>
+              <p class="studio-text studio-text--meta">
+                <strong>Camera</strong><br />
+                Slow z-axis descent. FOV shifts 52mm → 85mm. Minimal PC shake to keep distance.
+              </p>
             </div>
-            <h1 class="detail-hero__title">Ebb Vibes</h1>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Project Body -->
-    <section class="section-studio section-scrolly uk-flex uk-flex-top" style="min-height:50vh">
-      <div class="uk-container">
-        <div class="uk-grid uk-grid-match" uk-grid>
-          <div class="uk-width-expand@m">
-            <p class="studio-text studio-text--body">
-              Late night sessions captured in digital harmony. Warm modular tones<br/>
-              dissolving into space — a meditation on frequency, time, and resonance.
-            </p>
-          </div>
-          <div class="uk-width-1-3@m">
-            <div class="uk-grid-small" uk-grid>
-              <div>
-                <p class="studio-text studio-text--meta">
-                  <strong>Role</strong><br/>
-                  Creative Direction<br/>
-                  Sound Design<br/>
-                  Visual Programming
-                </p>
-              </div>
-              <div>
-                <p class="studio-text studio-text--meta">
-                  <strong>Stack</strong><br/>
-                  Web Audio API<br/>
-                  Three.js TSL<br/>
-                  GLSL Shaders
-                </p>
-              </div>
+            <div>
+              <p class="studio-text studio-text--meta">
+                <strong>Material</strong><br />
+                MeshStandardMaterial with warm emissive + roughness 0.6. No reflections — diffuse glow.
+              </p>
+            </div>
+            <div>
+              <p class="studio-text studio-text--meta">
+                <strong>Fog</strong><br />
+                Exponential fog (#cc8600 base). Peak opacity at 40% scroll.
+              </p>
+            </div>
+            <div>
+              <p class="studio-text studio-text--meta">
+                <strong>Post</strong><br />
+                Low bloom (strength 0.15), warm grain, 1% vignette pull.
+              </p>
             </div>
           </div>
         </div>
+      </section>
 
-        <!-- Visual Detail -->
-        <div class="detail-image-wrap uk-margin-medium-top">
-          <img src="/assets/projects/ebb-vibes/detail.webp" alt="Ebb Vibes detail" />
-        </div>
-
-        <!-- Context -->
-        <div class="uk-margin-large-top">
+      <section id="deliverable" class="section-studio section-scrolly uk-flex uk-flex-middle" uk-height-viewport="expand:true">
+        <div class="uk-container">
+          <span class="section-number">03</span>
+          <h2 class="studio-title studio-title--medium">Deliverable.<br /><span class="text--muted">What ships.</span></h2>
           <p class="studio-text studio-text--body">
-            The project explores the tension between structure and flow.<br/>
-            Each sequence builds from a simple repeating pattern, gradually<br/>
-            modulating until the original vowel becomes unrecognizable — yet<br/>
-            still carries the same emotional imprint.
+            Each project includes:
           </p>
+          <div class="uk-grid-small uk-child-width-1-2@m uk-child-width-1-1" uk-grid>
+            <div>
+              <p class="studio-text studio-text--meta">
+                <strong>✓</strong> Deployable Web build (TZ2 textures, chunked bundles)
+              </p>
+            </div>
+            <div>
+              <p class="studio-text studio-text--meta">
+                <strong>✓</strong> Real material presets (TSL chains, shader configs)
+              </p>
+            </div>
+          </div>
+          <div class="uk-margin-medium-top">
+            <a href="/works.html" class="uk-button uk-button-secondary uk-button-large btn-studio">← Back to Gallery</a>
+            <a href="/contact.html" class="uk-button uk-button-primary uk-button-large uk-margin-small-left">Request Full Case →</a>
+          </div>
         </div>
-
-        <!-- Tags -->
-        <div class="detail-tags uk-margin-medium-top">
-          <span class="detail-tag">Modular</span>
-          <span class="detail-tag">Ambient</span>
-          <span class="detail-tag">Web Audio</span>
-          <span class="detail-tag">TSL</span>
-          <span class="detail-tag">Shader</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- Navigation -->
-    <section class="section-studio section-centered uk-flex uk-flex-middle" style="min-height:30vh">
-      <div class="uk-container uk-text-center">
-        <div class="uk-grid uk-flex-center" uk-grid>
-          <div><a href="/works.html" class="uk-button uk-button-secondary">← Back to Works</a></div>
-          <div><a href="/projects/mono-sunday.html" class="uk-button uk-button-primary">Next → Mono Sunday</a></div>
-        </div>
-      </div>
-    </section>
+      </section>
+    </div>
 
     <div id="app"></div>
     <script type="module" src="/src/entry.ts"></script>
