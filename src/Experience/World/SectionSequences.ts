@@ -3,7 +3,7 @@
 // Low-light mood: dark backgrounds, muted materials, atmospheric
 
 import * as THREE from 'three'
-import { StarField } from '../../worlds/components/StarField'
+import StarField from '../../worlds/components/StarField'
 
 const ASSETS = '/assets/references'
 const textureCache = new Map<string, THREE.Texture>()
@@ -56,11 +56,8 @@ function ball(pos: [number,number,number], sc = 1, col = 0xffffff): THREE.Group 
 }
 
 function stars(count: number = 200): THREE.Group {
-  const g = new THREE.Group()
-  const field = new StarField(g, count)
-  g.userData.starField = field
-  g.userData.type = 'star-field'
-  return g
+  const field = new StarField({ count })
+  return field.group
 }
 
 function bgLines(count: number): THREE.Group {
