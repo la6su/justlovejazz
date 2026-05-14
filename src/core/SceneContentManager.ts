@@ -232,19 +232,10 @@ export class SceneContentManager {
                     // Drift smoke planes like orig 2015 portfolio
                     if (obj instanceof THREE.Mesh && obj.userData.smokeBase) {
                         const base = obj.userData.smokeBase as THREE.Vector3
-                        const speed = obj.userData.smokeSpeed ?? 0.5
-                        obj.position.x = base.x + Math.sin(this.elapsed * speed * 0.3) * 2
-                        obj.position.y = base.y + Math.cos(this.elapsed * speed * 0.2) * 1.5
-                        obj.rotation.z += deltaTime * speed * 0.01
-                        const mat = obj.material as THREE.MeshBasicMaterial
-                        if (mat && mat.opacity !== undefined) {
-                            mat.opacity = 0.15 + Math.sin(this.elapsed * speed * 0.5) * 0.05
-                        }
+                        obj.position.x = base.x + Math.sin(this.elapsed * 0.3) * 1.5
+                        obj.position.y = base.y + Math.cos(this.elapsed * 0.2) * 0.8
+                        obj.rotation.z += deltaTime * 0.01
                     }
-                    break;
-
-                case 'star-field':
-                    // Passive — no idle animation
                     break;
             }
         });

@@ -3,9 +3,8 @@ import { Sizes } from './Sizes'
 import { Time } from './Time'
 import { Camera } from './Camera'
 import { Renderer } from './Renderer'
-import { Baku } from './World/Baku'
-import { Environment } from './World/Environment'
 import { WorldAtmosphere } from '../core/WorldAtmosphere'
+import { CinematicLights } from './World/Lights'
 import { DebugStats } from '../core/DebugStats'
 
 import { SmoothScroll } from './SmoothScroll'
@@ -14,6 +13,7 @@ import { WebGLTextManager } from './WebGLTextManager'
 import { Cursor } from './Cursor'
 import { UIManager } from '../UI/UIManager'
 import { input } from './Input'
+import { GradientBackground } from '../worlds/components/GradientBackground'
 
 import { GalleryManager } from '../core/GalleryManager'
 import { CameraStateManager } from '../core/CameraStateManager'
@@ -21,10 +21,8 @@ import { SceneContentManager } from '../core/SceneContentManager'
 import { AssetManager } from '../core/AssetManager'
 import { GPUResourceManager } from '../core/GPUResourceManager'
 import { GalleryScene } from './World/GalleryScene'
-import { SectionTransition } from './SectionTransition'
 import { CameraState } from '../core/types'
 import { pageWorlds } from './World/SectionSequences'
-import { SmokeSystem } from '../worlds/components/SmokeSystem'
 
 export class Experience {
   static instance: Experience
@@ -34,16 +32,14 @@ export class Experience {
   time!: Time
   camera!: Camera
   renderer!: Renderer
-  // World objects
-  baku!: Baku
-  environment!: Environment
-  cinematicLights!: import('./World/Lights').CinematicLights
+  cinematicLights!: CinematicLights
 
   private smoothScroll!: SmoothScroll
   private webglTextManager!: WebGLTextManager
   private contentReveal!: ContentReveal
   private cursor!: Cursor
   private atmosphere!: WorldAtmosphere
+  private gradientBackground!: GradientBackground
   private debugStats!: DebugStats
 
   // New Spatial System — CRITICAL: must be initialized in order
@@ -52,8 +48,6 @@ export class Experience {
   public cameraStateManager!: CameraStateManager
   public sceneContentManager!: SceneContentManager
   private currentSectionContext: string | null = null
-  private sectionTransition!: SectionTransition
-  private smokeSystem!: SmokeSystem
 
   constructor(_ui: UIManager) {
     this.sizes = new Sizes()
@@ -84,21 +78,12 @@ export class Experience {
     this.cursor = new Cursor()
     this.atmosphere = new WorldAtmosphere(this.scene)
 
-    // Initialize Section Sequences — 4 unique animated worlds
+    // Gradient background — cheap replacement for star particles
+    this.gradientBackground = new GradientBackground()
+    this.scene.add(this.gradientBackground.mesh)
+
+    // Initialize Section Sequences — smoke + lines only
     this.initSectionSequences()
-
-    this.sectionTransition = new SectionTransition()
-
-    // Atmospheric smoke system (2015 portfolio-inspired)
-    this.smokeSystem = new SmokeSystem({
-      count: 150,
-      spread: 15,
-      depth: 10,
-      opacityRange: [0.03, 0.08],
-      color: new THREE.Color(0.06, 0.06, 0.1),
-      scrollCoupling: 0.3,
-    })
-    this.scene.add(this.smokeSystem)
 
     await this.renderer.init()
 
@@ -151,11 +136,8 @@ export class Experience {
       // Post-processing preset switch (crossfades to new values)
       this.renderer.postManager.applyPreset(config.id);
 
-      // Cinematic Arrival Pulse: subtle FOV shift to announce section change
+      // Transition visual marker — clean FOV pulse
       this.camera.setFovOffset(0.3, 0.8);
-
-      // Curtain wipe transition
-      void this.sectionTransition.trigger();
 
       this.currentSectionContext = config.context;
     }
@@ -172,29 +154,11 @@ export class Experience {
     // Show/hide 3D gallery group per section context
     this.galleryScene.group.visible = worldState.uiShowGallery
 
-    if (worldState) {
-      this.baku.position.copy(worldState.bakuPosition)
-      this.baku.quaternion.copy(worldState.bakuRotation)
-      this.baku.scale.copy(worldState.bakuScale)
-      // Apply opacity via material
-      if (this.baku.material && !Array.isArray(this.baku.material)) {
-        const mat = this.baku.material as THREE.MeshStandardMaterial
-        mat.opacity = worldState.bakuOpacity
-        mat.transparent = worldState.bakuOpacity < 1
-      }
-      if (worldState.bakuMaterial) {
-        this.baku.updateMaterial(worldState.bakuMaterial)
-      }
-      // Cinematic lighting — mood color + intensity per section
-      const warmth = normalizedScroll
-      this.cinematicLights.setMood(warmth, worldState.envIntensity)
-      this.cinematicLights.setKeyTarget(this.baku)
-    }
+    // Cinematic lighting — mood color + intensity per section
+    const warmth = normalizedScroll
+    this.cinematicLights.setMood(warmth, worldState.envIntensity)
 
     this.camera.update(deltaTime)
-    this.baku.update(this.time.delta / 1000)
-    this.smokeSystem.update(deltaTime, normalizedScroll)
-    this.environment.update(this.time.elapsed / 1000, normalizedScroll, this.camera.getVelocity())
     this.renderer.update(this.scene, this.camera.instance, worldState)
     requestAnimationFrame((t) => this.update(t))
   }
@@ -213,9 +177,8 @@ export class Experience {
     this.cursor.destroy()
     this.sceneContentManager.dispose()
     this.atmosphere.dispose()
+    this.gradientBackground.dispose()
     this.cinematicLights.dispose()
-    this.environment.dispose()
-    this.smokeSystem.dispose()
     this.debugStats?.destroy()
     this.renderer.instance.dispose()
   }

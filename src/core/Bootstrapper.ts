@@ -4,8 +4,6 @@ import { GalleryManager } from './GalleryManager'
 import { CameraStateManager } from './CameraStateManager'
 import { SceneContentManager } from './SceneContentManager'
 import { GalleryScene } from '../Experience/World/GalleryScene'
-import { Environment } from '../Experience/World/Environment'
-import { Baku } from '../Experience/World/Baku'
 import { CinematicLights } from '../Experience/World/Lights'
 import { PROJECTS } from '../Data/Projects'
 import { UIManager } from '../UI/UIManager'
@@ -39,13 +37,6 @@ export class Bootstrapper {
 
         // Cinematic lighting
         experience.cinematicLights = new CinematicLights(experience.scene)
-
-        // World objects
-        experience.baku = new Baku()
-        experience.scene.add(experience.baku)
-
-        experience.environment = new Environment(experience.scene)
-        await experience.environment.init(experience.scene)
 
         // ── Project Detail UI ──
         const projectDetail = new ProjectDetail()
