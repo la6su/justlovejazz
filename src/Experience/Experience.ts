@@ -22,7 +22,7 @@ import { AssetManager } from '../core/AssetManager'
 import { GPUResourceManager } from '../core/GPUResourceManager'
 import { GalleryScene } from './World/GalleryScene'
 import { SectionTransition } from './SectionTransition'
-import { CameraState, NarrativePhase } from '../core/types'
+import { CameraState } from '../core/types'
 import { getWorldCreators } from './World/SectionSequences'
 import { SmokeSystem } from '../worlds/components/SmokeSystem'
 
@@ -200,15 +200,17 @@ export class Experience {
   }
 
   private initSectionSequences() {
-    // Determine current page from data-page attribute
     const pageName = (document.body.getAttribute('data-page') || 'home').split('-')[0]
     const worlds = getWorldCreators(pageName)
 
-    // Populate each narrative phase with page-specific 3D world
-    this.sceneContentManager.setupPhaseContent(NarrativePhase.AWAKENING, worlds.awakening())
-    this.sceneContentManager.setupPhaseContent(NarrativePhase.DISCOVERY, worlds.discovery())
-    this.sceneContentManager.setupPhaseContent(NarrativePhase.DEEP_DIVE, worlds.deep_dive())
-    this.sceneContentManager.setupPhaseContent(NarrativePhase.CONNECTION, worlds.connection())
+    // Populate all 8 narrative steps
+    const steps = ['step01', 'step02', 'step03', 'step04', 'step05', 'step06', 'step07', 'step08']
+    for (const step of steps) {
+      const factory = worlds[step]
+      if (factory) {
+        this.sceneContentManager.setupPhaseContent(step as any, factory())
+      }
+    }
   }
 
   destroy() {

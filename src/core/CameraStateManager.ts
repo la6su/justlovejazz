@@ -119,7 +119,7 @@ export class CameraStateManager {
         const easedProgress = easeInOutCubic(Math.max(0, Math.min(1, rawProgress)));
         
         return {
-            currentPhase: active.id,
+            currentPhase: active.id as unknown as NarrativePhase,
             phaseProgress: easedProgress
         };
     }

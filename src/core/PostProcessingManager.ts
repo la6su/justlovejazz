@@ -2,7 +2,7 @@
 // Section-aware post-processing controller with quality tiers + crossfade.
 
 import { DeviceCapability } from './DeviceCapability'
-import { NarrativePhase } from './types'
+
 import { type PostPreset } from './WorldConfig'
 import type { QualityTier } from '../types/renderer'
 
@@ -17,32 +17,16 @@ interface PostParams {
   chromatic: number    // 0–1, chromatic aberration strength
 }
 
-// Presets: AWAKENING / DISCOVERY / DEEP_DIVE / CONNECTION
-const PHASE_PRESETS: Record<NarrativePhase, PostParams> = {
-  [NarrativePhase.AWAKENING]: {
-    bloom: 0.5,        // Strong bloom → atmosphere
-    vignette: 0.6,
-    grain: 0.05,       // Heavy grain → filmic
-    chromatic: 0.008,  // Subtle chroma → dreamy
-  },
-  [NarrativePhase.DISCOVERY]: {
-    bloom: 0.4,        // Clean bloom → gallery clarity
-    vignette: 0.4,
-    grain: 0.02,       // Light grain
-    chromatic: 0.002,  // Minimal
-  },
-  [NarrativePhase.DEEP_DIVE]: {
-    bloom: 0.7,        // Strong bloom → immersive
-    vignette: 0.5,
-    grain: 0.01,       // Minimal grain → technical
-    chromatic: 0.005,  // Slight chroma
-  },
-  [NarrativePhase.CONNECTION]: {
-    bloom: 0.2,        // Minimal → clean CTA
-    vignette: 0.3,
-    grain: 0.01,
-    chromatic: 0.0,
-  },
+// Presets: step01 through step08 (all string keys)
+const PHASE_PRESETS: Record<string, PostParams> = {
+  step01: { bloom: 0.5, vignette: 0.6, grain: 0.05, chromatic: 0.008 },
+  step02: { bloom: 0.4, vignette: 0.5, grain: 0.03, chromatic: 0.003 },
+  step03: { bloom: 0.6, vignette: 0.4, grain: 0.02, chromatic: 0.005 },
+  step04: { bloom: 0.3, vignette: 0.6, grain: 0.04, chromatic: 0.002 },
+  step05: { bloom: 0.7, vignette: 0.5, grain: 0.01, chromatic: 0.005 },
+  step06: { bloom: 0.5, vignette: 0.4, grain: 0.03, chromatic: 0.003 },
+  step07: { bloom: 0.4, vignette: 0.5, grain: 0.02, chromatic: 0.004 },
+  step08: { bloom: 0.2, vignette: 0.3, grain: 0.01, chromatic: 0.0 },
 }
 
 /** Quality tier scalers */
@@ -68,12 +52,12 @@ export class PostProcessingManager {
 
   constructor() {
     this.tier = this.capability.tier
-    this.applyPreset(NarrativePhase.AWAKENING)
+    this.applyPreset('step01')
   }
 
   /** Apply preset for a given phase */
-  applyPreset(phase: NarrativePhase): void {
-    const preset = PHASE_PRESETS[phase] ?? PHASE_PRESETS[NarrativePhase.AWAKENING]
+  applyPreset(phase: string): void {
+    const preset = PHASE_PRESETS[phase] ?? PHASE_PRESETS['step01']
     this.current = { ...preset }
 
     // Apply quality tier scaling

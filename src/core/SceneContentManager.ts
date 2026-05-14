@@ -1,6 +1,6 @@
 // src/core/SceneContentManager.ts
 import * as THREE from 'three';
-import { NarrativePhase } from './types';
+
 import { easeInOutCubic } from './utils';
 
 interface PhaseTransitionPreset {
@@ -10,19 +10,18 @@ interface PhaseTransitionPreset {
     exitRotationY: number
 }
 
-const PHASE_TRANSITION_PRESETS: Record<NarrativePhase, PhaseTransitionPreset> = {
-    [NarrativePhase.AWAKENING]: { enterScale: 0.86, exitScale: 1.14, enterRotationY: -0.18, exitRotationY: 0.12 },
-    [NarrativePhase.DISCOVERY]: { enterScale: 0.88, exitScale: 1.12, enterRotationY: -0.14, exitRotationY: 0.16 },
-    [NarrativePhase.DEEP_DIVE]: { enterScale: 0.92, exitScale: 1.08, enterRotationY: -0.1, exitRotationY: 0.18 },
-    [NarrativePhase.CONNECTION]: { enterScale: 0.9, exitScale: 1.1, enterRotationY: -0.12, exitRotationY: 0.1 },
+const PHASE_TRANSITION_PRESETS: Record<string, PhaseTransitionPreset> = {
+    step01: { enterScale: 0.86, exitScale: 1.14, enterRotationY: -0.18, exitRotationY: 0.12 },
+    step02: { enterScale: 0.88, exitScale: 1.12, enterRotationY: -0.14, exitRotationY: 0.16 },
+    step03: { enterScale: 0.90, exitScale: 1.10, enterRotationY: -0.12, exitRotationY: 0.15 },
+    step04: { enterScale: 0.85, exitScale: 1.15, enterRotationY: -0.20, exitRotationY: 0.10 },
+    step05: { enterScale: 0.92, exitScale: 1.08, enterRotationY: -0.10, exitRotationY: 0.18 },
+    step06: { enterScale: 0.88, exitScale: 1.12, enterRotationY: -0.15, exitRotationY: 0.14 },
+    step07: { enterScale: 0.91, exitScale: 1.09, enterRotationY: -0.11, exitRotationY: 0.16 },
+    step08: { enterScale: 0.90, exitScale: 1.10, enterRotationY: -0.12, exitRotationY: 0.10 },
 }
 
-const PHASE_ORDER: NarrativePhase[] = [
-    NarrativePhase.AWAKENING,
-    NarrativePhase.DISCOVERY,
-    NarrativePhase.DEEP_DIVE,
-    NarrativePhase.CONNECTION,
-]
+const PHASE_ORDER = ['step01','step02','step03','step04','step05','step06','step07','step08']
 
 /**
  * Manages dynamic scene content transitions between sections.
@@ -31,14 +30,14 @@ const PHASE_ORDER: NarrativePhase[] = [
  */
 export class SceneContentManager {
     private scene: THREE.Scene;
-    private _groups: Map<NarrativePhase, THREE.Group> = new Map();
-    public get groups(): Map<NarrativePhase, THREE.Group> {
+    private _groups: Map<string, THREE.Group> = new Map();
+    public get groups(): Map<string, THREE.Group> {
         return this._groups;
     }
-    private currentPhase: NarrativePhase | null = null;
+    private currentPhase: string | null = null;
 
     // Transition state (driven from Experience.update)
-    private targetPhase: NarrativePhase | null = null;
+    private targetPhase: string | null = null;
     private transitionProgress: number = 0;
     private transitionDuration: number = 1.2;
     private isTransitioning: boolean = false;
@@ -52,11 +51,12 @@ export class SceneContentManager {
     }
 
     private initGroups() {
-        for (const phase of Object.values(NarrativePhase)) {
+        const steps = ['step01','step02','step03','step04','step05','step06','step07','step08'];
+        for (const phase of steps) {
             const group = new THREE.Group();
             group.name = `scene-${phase}`;
             group.visible = false;
-            this._groups.set(phase as NarrativePhase, group);
+            this._groups.set(phase, group);
             this.scene.add(group);
         }
     }
@@ -65,7 +65,7 @@ export class SceneContentManager {
      * Queue a transition to the target phase.
      * Pass duration=0 for instant activation (no animation).
      */
-    public queueTransition(phase: NarrativePhase, duration?: number): void {
+    public queueTransition(phase: string, duration?: number): void {
         if (phase === this.currentPhase) return;
         if (this.isTransitioning && this.targetPhase === phase) return;
 
@@ -123,8 +123,8 @@ export class SceneContentManager {
      * Scroll/timeline-driven content blending.
      * Keeps section content transitions deterministic and synchronized with world state.
      */
-    public syncToTimeline(currentPhase: NarrativePhase, phaseProgress: number): void {
-        const currentIndex = PHASE_ORDER.indexOf(currentPhase)
+    public syncToTimeline(currentPhase: string, phaseProgress: number): void {
+        const currentIndex = PHASE_ORDER.indexOf(currentPhase as any)
         if (currentIndex === -1) return
 
         const nextPhase = PHASE_ORDER[Math.min(currentIndex + 1, PHASE_ORDER.length - 1)]
@@ -182,9 +182,9 @@ export class SceneContentManager {
         const t = Math.min(this.transitionProgress / this.transitionDuration, 1);
         const eased = easeInOutCubic(t);
 
-        const fromPhase = this.currentPhase ?? NarrativePhase.AWAKENING
-        const fromPreset = PHASE_TRANSITION_PRESETS[fromPhase]
-        const toPreset = PHASE_TRANSITION_PRESETS[targetPhase]
+        const fromPhase = this.currentPhase ?? "step01"
+        const fromPreset = PHASE_TRANSITION_PRESETS[fromPhase] || PHASE_TRANSITION_PRESETS["step01"]
+        const toPreset = PHASE_TRANSITION_PRESETS[targetPhase] || PHASE_TRANSITION_PRESETS["step01"]
 
         // Crossfade opacity across Mesh/Line/Points materials
         this.setGroupOpacity(oldGroup, 1 - eased);
@@ -412,14 +412,14 @@ export class SceneContentManager {
     /**
      * Get the group for a specific phase to populate content.
      */
-    public getGroup(phase: NarrativePhase): THREE.Group {
+    public getGroup(phase: string): THREE.Group {
         return this._groups.get(phase)!;
     }
 
     /**
      * Populate a phase's group with 3D objects.
      */
-    public setupPhaseContent(phase: NarrativePhase, objects: THREE.Object3D[]): void {
+    public setupPhaseContent(phase: string, objects: THREE.Object3D[]): void {
         this.getGroup(phase).add(...objects);
     }
 
