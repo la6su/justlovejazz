@@ -420,7 +420,24 @@ export class SceneContentManager {
      * Populate a phase's group with 3D objects.
      */
     public setupPhaseContent(phase: string, objects: THREE.Object3D[]): void {
-        this.getGroup(phase).add(...objects);
+        this.getGroup(phase).add(...objects)
+    }
+
+    /**
+     * Page-specific content setup — only initializes steps for this page.
+     */
+    public setupPageContent(pageName: string, worlds: Record<string, () => THREE.Object3D[]>): void {
+        const stepKeys = Object.keys(worlds)
+        stepKeys.forEach((key) => {
+            const group = new THREE.Group()
+            group.name = `scene-${key}-${pageName}`
+            group.visible = false
+            this._groups.set(key, group)
+            this.scene.add(group)
+
+            const objects = worlds[key]()
+            group.add(...objects)
+        })
     }
 
     /**

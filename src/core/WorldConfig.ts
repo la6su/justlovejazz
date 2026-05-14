@@ -98,3 +98,37 @@ export const WORLD_CONFIG: PhaseConfig[] = [
     post: { bloom: 0.3, vignette: 0.5, grain: 0.03 },
     ui: { showGallery: false }
   }];
+
+// ── Pages → 2 scenes each, each gets [0..0.5] and [0.5..1.0] ──
+export const PAGE_STEP_MAP: Record<string, string[]> = {
+  trinity: ['step01', 'step02'],
+  works: ['step03', 'step05'],
+  home: ['step07', 'step08'],
+  contact: ['step04', 'step06'],
+};
+
+/**
+ * Return a page-scoped WORLD_CONFIG — only the steps for this page,
+ * with ranges remapped to [0, 0.5] and [0.5, 1.0].
+ */
+export function getWorldConfigForPage(page: string): PhaseConfig[] {
+  const steps = PAGE_STEP_MAP[page] || PAGE_STEP_MAP.home;
+  return steps.map((stepId, i) => {
+    const original = WORLD_CONFIG.find(w => w.id === stepId)!;
+    const rangeStart = i === 0 ? 0 : 0.5;
+    const rangeEnd = i === 0 ? 0.5 : 1.0;
+    return { ...original, range: [rangeStart, rangeEnd] as [number, number] };
+  });
+}
+
+/**
+ * Remap a global scroll value to the active step index (0 or 1)
+ * for this page's config.
+ */
+export function getActiveStepIndex(scroll: number, steps: string[]): number {
+  if (scroll < 0.5) return 0;
+  if (scroll >= 1.0) return steps.length - 1;
+  // Interpolate: 0.5 → last step
+  const t = (scroll - 0.5) / 0.5;
+  return Math.min(Math.floor(t), steps.length - 1);
+}

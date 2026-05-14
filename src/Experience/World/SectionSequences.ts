@@ -514,28 +514,34 @@ function step08_galaxy(): THREE.Object3D[] {
 }
 
 // ── PAGE WORLD RECORDS ──
+// Each page gets 2 scenes — full control per scene
 
 export type WorldCreator = () => THREE.Object3D[]
 
-export const homeWorlds: Record<string, WorldCreator> = {
-  step01: step01_hello,
-  step02: step02_ball,
-  step03: step03_beams,
-  step04: step04_city,
-  step05: step05_neons,
-  step06: step06_flow,
-  step07: step07_drop,
-  step08: step08_galaxy,
-  // Aliases for backward compat
-  awakening: step01_hello,
-  discovery: step02_ball,
-  deep_dive: step05_neons,
-  connection: step08_galaxy,
+export const pageWorlds: Record<string, Record<string, WorldCreator>> = {
+  trinity: {
+    step01: step01_hello,   // smoke planes + starfield
+    step02: step02_ball,     // metallic sphere + orbs
+  },
+  works: {
+    step03: step03_beams,    // energy beams + particles
+    step05: step05_neons,     // neon columns + grid floor
+  },
+  home: {
+    step07: step07_drop,     // rainbow drops + heightmap
+    step08: step08_galaxy,    // spiral dust + nebula
+  },
+  contact: {
+    step04: step04_city,     // core shapes + fields
+    step06: step06_flow,      // flow field lines
+  },
 }
 
-export const trinityWorlds = homeWorlds
-export const worksWorlds = homeWorlds
-export const contactWorlds = homeWorlds
+// Legacy aliases
+export const homeWorlds = pageWorlds.home
+export const trinityWorlds = pageWorlds.trinity
+export const worksWorlds = pageWorlds.works
+export const contactWorlds = pageWorlds.contact
 
 export function getWorldCreators(pageName: string): Record<string, WorldCreator> {
   switch (pageName) {

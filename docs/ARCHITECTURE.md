@@ -1,40 +1,89 @@
 # ARCHITECTURE
 
-## Project Summary
+## Stack
 
-WebGL/WebGPU interactive portfolio with multi-page routing (`index`, `trinity`, `works`).
-TypeScript + Vite MPA + Three.js/TSL. Shared runtime + route-specific content roles.
+| Layer | Tech |
+|-------|------|
+| Language | TypeScript (strict) |
+| Build | Vite 8 (rolldown) |
+| 3D | Three.js 18.4 + TSL (Node Materials) |
+| GPU | WebGPU primary, WebGL fallback |
+| Template | `src/core/Templater.ts` (string-based, no deps) |
+| UI | UIkit 3 + Less |
+| Scroll | Lenis (smooth) |
 
 ## Entry & Runtime
 
 ```
-src/entry.ts                  → sync reduced-motion dataset, defer Less + app bootstrap
-src/main-app.ts               → `bootstrap()`, route mode gate (`data-app-mode`)
-src/main.ts                   → re-exports `./entry` (legacy path for tooling)
-src/core/Bootstrapper.ts       → wires Experience, events, managers
-src/Experience/Experience.ts   → single render loop (update → requestAnimationFrame)
+src/entry.ts          → sync reduced-motion, defer Less + app bootstrap
+src/main-app.ts       → bootstrap(), route gate (data-app-mode)
+src/main.ts           → re-exports entry.ts (legacy)
+src/core/Bootstrapper.ts → wires Experience, events, managers
+src/Experience/Experience.ts → single render loop (update → rAF)
 ```
 
-### Contracts
+## Modules & Responsibilities
 
-| Module | Responsibility |
-|--------|---------------|
-| **Bootstrapper** | Init ordering only. No animation logic. Calls `experience.init()`. |
-| **Renderer** | Canvas, DPR, async init, capability detection, post-processing |
-| **CameraStateManager** | Returns `CameraTarget { position, lookAt, fov }`. Never touches Camera directly. |
-| **WorldConfig** | Single source of truth for section behavior (camera, baku, lighting, post, UI) |
-| **GalleryManager** | FSM: `LIST ↔ EXPAND ↔ CONTRACT` via scale/position on active card |
-| **GalleryScene** | 3D objects (cards, orbs). Visibility per `worldState.uiShowGallery` |
-| **UIManager** | Route-aware UI init (`works` portfolio only on `data-page="works"`) |
+| Module | Role |
+|--------|------|
+| **Experience** | Single render loop state holder |
+| **Renderer** | Canvas, DPR, capability detection, post-processing GL |
+| **CameraStateManager** | Returns `CameraTarget { position, target, fov }` from scroll progress. Never touches Camera directly. |
+| **SceneContentManager** | Creates/disposes 3D scene objects per step. String-keyed (`step01`–`step08`). 14+ animation types. |
+| **WorldConfig** | Per-step config: camera preset, fog, post-processing |
+| **PostProcessingManager** | Per-step presets (bloom, vignette, grain, chromatic). Crossfades on transition. |
+| **GalleryManager** *(works only)* | FSM: `LIST ↔ EXPAND ↔ CONTRACT` via scale/position |
+| **GalleryScene** *(works only)* | 3D cards, orbs. Visibility per `worldState.uiShowGallery` |
+| **UIManager** | Route-aware UI init |
+| **Templater** | Page content from string templates + data objects |
+
+## Scene Architecture (8 steps)
+
+```
+step01  Smoke    — volumetric plane layers + starfield
+step02  Ball     — metallic sphere + glass orbs
+step03  Beams    — vertical energy beams + particles
+step04  City     — abstract core shapes + fields
+step05  Neon     — neon columns + gravity grid floor
+step06  Flow     — flow field lines
+step07  Droplets — rain drip + surface reflections
+step08  Galaxy   — spiral dust + nebula planes
+```
+
+Each step is a self-contained scene in `SectionSequences.ts`.
+`CameraStateManager` interpolates camera between steps based on scroll.
+`PostProcessingManager` crossfades bloom/vignette/grain/per-step presets.
+
+## Page → Scene Mapping
+
+| Page | data-page | Steps | Role |
+|------|-----------|-------|------|
+| Home | home | step07, step08 | Dropbox/fun |
+| Trinity | trinity | step01, step02 | Intro entry |
+| Works | works | step03, step05 | Beauty/gene |
+| Contact | contact | step04, step06 | City/scene |
+
+Each page gets 2 scenes — full control per scene.
+
+## Templater
+
+`src/core/Templater.ts` — lightweight string templating for page content.
+
+```ts
+const t = Templater();
+const html = t.render('section-hero', { title: 'Hello', subtitle: 'World' });
+```
+
+No deps. No compilation step. Templates defined as const strings, rendered at runtime.
 
 ## Render Pipeline
 
 ```
-scene → anti-aliasing → bright extraction → mip bloom → composite
-       → chromatic aberration → grain → vignette → output
+scene → AA → bloom extract → mip bloom → composite
+       → chromatic → grain → vignette → output
 ```
 
-Quality tiers: `high` (full WebGPU) / `medium` (reduced) / `low` (no expensive bloom).
+Quality tiers: `high` (full) / `medium` (reduced bloom) / `low` (disabled).
 
 ## Asset Lifecycle
 
@@ -42,30 +91,13 @@ Quality tiers: `high` (full WebGPU) / `medium` (reduced) / `low` (no expensive b
 preload → activateContext → use → deactivateContext → dispose
 ```
 
-Assets managed by priority (`pre`/`must`/`sub`). Never dispose from generic cleanup loops.
+Assets managed by priority (`pre`/`must`/`sub`). Disposal only by inactive context.
 
-## Route Behavior
+## Routes
 
-- `index.html`: studio overview narrative in shared template.
-- `trinity.html`: process/system narrative in shared template.
-- `works.html`: dedicated portfolio interactions (sticky selector + open detail).
-
-## Core Types
-
-```ts
-type RendererMode = 'webgpu' | 'webgl' | 'unsupported'
-type QualityTier = 'high' | 'medium' | 'low'
-type NarrativePhase = 'AWAKENING' | 'DISCOVERY' | 'DEEP_DIVE' | 'CONNECTION'
-
-interface CameraTarget { position: Vector3; lookAt: Vector3; fov: number }
-interface WorldState { uiShowGallery: boolean; cameraTarget: CameraTarget; ... }
-```
-
-## Key Sections
-
-| Phase | Scroll Range | showGallery | Baku Role |
-|-------|-------------|-------------|-----------|
-| AWAKENING | 0–0.2 | no | normal |
-| DISCOVERY | 0.2–0.5 | no | glass |
-| DEEP_DIVE | 0.5–0.8 | **yes** | project |
-| CONNECTION | 0.8–1.0 | no | line |
+| Route | File | Role |
+|-------|------|------|
+| Home | index.html | d |
+| Trinity | trinity.html | process/method |
+| Works | works.html | interactive portfolio |
+| Contact | contact.html | commissions |

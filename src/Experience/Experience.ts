@@ -23,7 +23,7 @@ import { GPUResourceManager } from '../core/GPUResourceManager'
 import { GalleryScene } from './World/GalleryScene'
 import { SectionTransition } from './SectionTransition'
 import { CameraState } from '../core/types'
-import { getWorldCreators } from './World/SectionSequences'
+import { pageWorlds } from './World/SectionSequences'
 import { SmokeSystem } from '../worlds/components/SmokeSystem'
 
 export class Experience {
@@ -201,16 +201,9 @@ export class Experience {
 
   private initSectionSequences() {
     const pageName = (document.body.getAttribute('data-page') || 'home').split('-')[0]
-    const worlds = getWorldCreators(pageName)
-
-    // Populate all 8 narrative steps
-    const steps = ['step01', 'step02', 'step03', 'step04', 'step05', 'step06', 'step07', 'step08']
-    for (const step of steps) {
-      const factory = worlds[step]
-      if (factory) {
-        this.sceneContentManager.setupPhaseContent(step as any, factory())
-      }
-    }
+    const worlds = pageWorlds[pageName] || pageWorlds.home
+    this.sceneContentManager.setupPageContent(pageName, worlds)
+    
   }
 
   destroy() {

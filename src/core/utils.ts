@@ -19,3 +19,9 @@ export const easeOutExpo = (t: number): number => {
 export const lerp = (start: number, end: number, t: number): number => {
     return start + (end - start) * t;
 };
+
+/** Escape HTML special chars */
+export function escapeHTML(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+           .replace(/"/g, '&quot;').replace(/'/g, '&#x27;')
+}

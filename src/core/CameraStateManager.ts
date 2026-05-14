@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { CameraState, NarrativePhase, type WorldState, type CameraTarget, BakuRole } from './types';
 import { GalleryManager } from './GalleryManager';
-import { WORLD_CONFIG } from './WorldConfig';
+import { PAGE_STEP_MAP, getWorldConfigForPage, type PhaseConfig } from './WorldConfig';
 import { easeInOutCubic } from './utils';
 
 /**
@@ -31,6 +31,18 @@ export class CameraStateManager {
     constructor(
         private galleryManager: GalleryManager
     ) {}
+
+    /** Get page-scoped config, cached */
+    private _pageCache: { page: string; steps: string[]; config: PhaseConfig[] } | null = null;
+    private getPageConfig() {
+        const page = (document.body?.getAttribute('data-page') || 'home').split('-')[0]
+        if (!this._pageCache || this._pageCache.page !== page) {
+            const steps = PAGE_STEP_MAP[page] || PAGE_STEP_MAP['home']
+            const config = getWorldConfigForPage(page)
+            this._pageCache = { page, steps, config }
+        }
+        return this._pageCache.config
+    }
 
     update(deltaTime: number, scrollValue: number): { cameraTarget: CameraTarget, worldState: WorldState } {
         if (this.currentState === CameraState.TRANSITION) {
@@ -89,9 +101,10 @@ export class CameraStateManager {
 
     private calculateBakuPosition(scroll: number): { position: THREE.Vector3, rotation: THREE.Quaternion, scale: THREE.Vector3 } {
         const { currentPhase, phaseProgress } = this.calculatePhase(scroll);
-        const index = WORLD_CONFIG.findIndex(s => s.id === currentPhase);
-        const from = WORLD_CONFIG[index] || WORLD_CONFIG[0];
-        const to = WORLD_CONFIG[index + 1] || from;
+        const pageConfig = this.getPageConfig()
+        const index = pageConfig.findIndex(s => s.id === currentPhase);
+        const from = pageConfig[index] || pageConfig[0];
+        const to = pageConfig[index + 1] || from;
         const t = phaseProgress;
 
         return {
@@ -102,14 +115,19 @@ export class CameraStateManager {
     }
 
     public calculatePhase(scroll: number): { currentPhase: NarrativePhase, phaseProgress: number } {
-        const active = WORLD_CONFIG.find(config => {
+        // Page-specific: only 2 steps per page, ranges [0..0.5] and [0.5..1.0]
+        const page = (document.body?.getAttribute('data-page') || 'home').split('-')[0]
+        const pageSteps = PAGE_STEP_MAP[page] || PAGE_STEP_MAP['home']
+        const pageConfig = getWorldConfigForPage(page)
+        
+        const active = pageConfig.find(config => {
             const [start, end] = config.range;
-            return scroll >= start && scroll <= end;
-        }) || WORLD_CONFIG[0];
+            return scroll >= start && scroll < end;
+        }) || pageConfig[0];
         
         if (!active) {
             return {
-                currentPhase: NarrativePhase.AWAKENING,
+                currentPhase: pageSteps[0] as unknown as NarrativePhase,
                 phaseProgress: 0
             };
         }
@@ -125,7 +143,8 @@ export class CameraStateManager {
     }
 
     private calculateWorldState(scrollValue: number, currentPhase: NarrativePhase, phaseProgress: number): WorldState {
-        if (WORLD_CONFIG.length === 0) {
+        const worldConfigForPage = this.getPageConfig()
+        if (worldConfigForPage.length === 0) {
             return {
                 currentPhase,
                 phaseProgress,
@@ -147,9 +166,10 @@ export class CameraStateManager {
             };
         }
 
-        const index = WORLD_CONFIG.findIndex(s => s.id === currentPhase);
-        const from = WORLD_CONFIG[index] || WORLD_CONFIG[0];
-        const to = WORLD_CONFIG[index + 1] || from;
+        const pageConfig = this.getPageConfig()
+        const index = pageConfig.findIndex(s => s.id === currentPhase);
+        const from = pageConfig[index] || pageConfig[0];
+        const to = pageConfig[index + 1] || from;
         const t = phaseProgress;
 
         return {
@@ -178,18 +198,11 @@ export class CameraStateManager {
     }
 
     private calculateCameraTarget(scroll: number): CameraTarget {
-        if (WORLD_CONFIG.length === 0) {
-            return {
-                position: new THREE.Vector3(0, 0, 5),
-                lookAt: new THREE.Vector3(0, 0, 0),
-                fov: 75
-            };
-        }
-
         const { currentPhase, phaseProgress } = this.calculatePhase(scroll);
-        const index = WORLD_CONFIG.findIndex(s => s.id === currentPhase);
-        const from = WORLD_CONFIG[index] || WORLD_CONFIG[0];
-        const to = WORLD_CONFIG[index + 1] || from;
+        const pageConfig = this.getPageConfig()
+        const index = pageConfig.findIndex(s => s.id === currentPhase);
+        const from = pageConfig[index] || pageConfig[0];
+        const to = pageConfig[index + 1] || from;
         const t = phaseProgress;
 
         const baku = this.calculateBakuPosition(scroll);
@@ -243,6 +256,6 @@ export class CameraStateManager {
     }
 
     public getWorldConfigForPhase(phase: NarrativePhase) {
-        return WORLD_CONFIG.find(s => s.id === phase);
+        return this.getPageConfig().find(s => s.id === phase);
     }
 }
