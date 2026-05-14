@@ -113,11 +113,29 @@ export class SceneContentManager {
             this.runTransition(deltaTime);
         }
 
+        // Background lines stretch — always active (idle + during transition)
+        if (this.currentPhase !== null) {
+            const group = this._groups.get(this.currentPhase);
+            if (group) this.updateBackgroundLines(group, deltaTime);
+        }
+
         // Idle animation on current content
         if (this.currentPhase !== null && !this.isTransitioning) {
             const group = this._groups.get(this.currentPhase);
             if (group) this.animateIdle(group, deltaTime);
         }
+    }
+
+    /** Stretch background lines — independent of idle animation */
+    private updateBackgroundLines(group: THREE.Group, deltaTime: number): void {
+        group.traverse((obj) => {
+            if (obj.userData.type === 'background-lines') {
+                const bl = obj as any
+                if (bl.userData.backgroundLines) {
+                    bl.userData.backgroundLines.update(deltaTime, this._phaseProgress)
+                }
+            }
+        });
     }
 
     /**
@@ -209,48 +227,6 @@ export class SceneContentManager {
             if (!obj.userData.type) return;
 
             switch (obj.userData.type) {
-                case 'floating-ring':
-                    if (obj instanceof THREE.Mesh) {
-                        obj.rotation.z += deltaTime * 0.15;
-                        obj.rotation.y += deltaTime * 0.08;
-                    }
-                    break;
-
-                case 'floating-cube':
-                    if (obj instanceof THREE.Mesh) {
-                        obj.rotation.x += deltaTime * 0.2;
-                        obj.rotation.y += deltaTime * 0.15;
-                        obj.position.y += Math.sin(this.elapsed * 0.5 + obj.position.x) * 0.001;
-                    }
-                    break;
-
-                case 'particles':
-                    if (obj instanceof THREE.Points) {
-                        obj.rotation.y += deltaTime * 0.02;
-                    }
-                    break;
-
-                case 'central-orb':
-                    if (obj instanceof THREE.Mesh) {
-                        const s = 1 + Math.sin(this.elapsed * 0.5) * 0.05;
-                        obj.scale.setScalar(s);
-                    }
-                    break;
-
-                case 'parametric-line':
-                    // subtle sway — handled via parent group rotation if needed
-                    break;
-
-                case 'wireframe-grid':
-                    // static — no idle
-                    break;
-
-                case 'halo':
-                    if (obj instanceof THREE.Mesh) {
-                        obj.rotation.z += deltaTime * 0.05;
-                    }
-                    break;
-
                 case 'smoke-plane':
                     // Drift smoke planes like orig 2015 portfolio
                     if (obj instanceof THREE.Mesh && obj.userData.smokeBase) {
@@ -259,7 +235,6 @@ export class SceneContentManager {
                         obj.position.x = base.x + Math.sin(this.elapsed * speed * 0.3) * 2
                         obj.position.y = base.y + Math.cos(this.elapsed * speed * 0.2) * 1.5
                         obj.rotation.z += deltaTime * speed * 0.01
-                        // Subtle opacity pulsing
                         const mat = obj.material as THREE.MeshBasicMaterial
                         if (mat && mat.opacity !== undefined) {
                             mat.opacity = 0.15 + Math.sin(this.elapsed * speed * 0.5) * 0.05
@@ -267,106 +242,9 @@ export class SceneContentManager {
                     }
                     break;
 
-                case 'ball':
-                    // Animate ball — reveal/appear from 2015
-                    if (obj instanceof THREE.Group) {
-                        obj.rotation.y += deltaTime * 0.2
-                        obj.rotation.x += deltaTime * 0.05
-                        const phase = this.elapsed * 0.3
-                        obj.scale.setScalar(1 + Math.sin(phase) * 0.05)
-                    }
+                case 'star-field':
+                    // Passive — no idle animation
                     break;
-
-                case 'grid':
-                    // Subtle grid breathing
-                    if (obj instanceof THREE.Group) {
-                        obj.rotation.z += deltaTime * 0.005
-                    }
-                    break;
-
-                case 'beam':
-                    // Beam rotation flare
-                    if (obj instanceof THREE.Group) {
-                        obj.rotation.y += deltaTime * 0.1
-                    }
-                    break;
-
-                case 'galaxy':
-                    // Galaxy spiral rotation
-                    if (obj instanceof THREE.Group) {
-                        obj.rotation.y += deltaTime * 0.05
-                    }
-                    break;
-
-                case 'neons':
-                    // Neon subtle glow pulse
-                    if (obj instanceof THREE.Group) {
-                        obj.traverse(child => {
-                            if (child.userData.type === 'neon-column' && child instanceof THREE.Mesh) {
-                                const mat = child.material as THREE.MeshStandardMaterial
-                                if (mat && mat.emissiveIntensity !== undefined) {
-                                    mat.emissiveIntensity = 0.4 + Math.sin(this.elapsed * 0.8) * 0.1
-                                }
-                            }
-                        })
-                    }
-                    break;
-
-                case 'flow-field':
-                    // Flow field drift
-                    if (obj instanceof THREE.Points) {
-                        obj.rotation.y += deltaTime * 0.02
-                        obj.position.y += Math.sin(this.elapsed) * 0.001
-                    }
-                    break;
-
-                case 'gravity-grid':
-                    // Gravity grid wobble
-                    if (obj instanceof THREE.Group) {
-                        obj.rotation.z += deltaTime * 0.003
-                    }
-                    break;
-
-                case 'wave':
-                    // Wave rolling
-                    if (obj instanceof THREE.Mesh) {
-                        obj.rotation.z += deltaTime * 0.02
-                    }
-                    break;
-
-                case 'drop':
-                    // Drop falling effect
-                    if (obj instanceof THREE.Group) {
-                        obj.position.y += Math.sin(this.elapsed * 2) * 0.002
-                    }
-                    break;
-
-                case 'strip':
-                    // Strip floating
-                    if (obj instanceof THREE.Mesh) {
-                        obj.rotation.z += deltaTime * 0.01
-                        obj.position.y += Math.sin(this.elapsed + obj.position.x * 0.1) * 0.001
-                    }
-                    break;
-
-                case 'face':
-                    // Face subtle rotation
-                    if (obj instanceof THREE.Group) {
-                        obj.rotation.y += deltaTime * 0.005
-                    }
-                    break;
-
-            case 'star-field':
-                // Star field — passive parallax only
-                break
-
-            case 'background-lines':
-                // Background lines — stretch Y by phase progress
-                const bgLines = obj as any
-                if (bgLines.userData.backgroundLines) {
-                    bgLines.userData.backgroundLines.update(deltaTime, this._phaseProgress)
-                }
-                break;
             }
         });
     }
