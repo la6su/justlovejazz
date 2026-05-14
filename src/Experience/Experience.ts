@@ -195,7 +195,7 @@ export class Experience {
 
   private initSectionSequences() {
     // Determine current page from data-page attribute
-    const pageName = (document.documentElement.getAttribute('data-page') || 'home').split('-')[0]
+    const pageName = (document.body.getAttribute('data-page') || 'home').split('-')[0]
     const worlds = getWorldCreators(pageName)
 
     // Populate each narrative phase with page-specific 3D world

@@ -1,7 +1,11 @@
 import { defineConfig } from 'vite'
 import { resolve } from 'node:path'
 
+import { copyFileSync, mkdirSync, readdirSync } from 'fs'
+
 export default defineConfig({
+  base: '/',
+  publicDir: 'public',
   build: {
     target: 'es2023',
     outDir: 'dist',
@@ -12,6 +16,7 @@ export default defineConfig({
         main: resolve(__dirname, 'index.html'),
         trinity: resolve(__dirname, 'trinity.html'),
         works: resolve(__dirname, 'works.html'),
+        contact: resolve(__dirname, 'contact.html'),
       },
       output: {
         manualChunks(id) {
@@ -29,6 +34,21 @@ export default defineConfig({
     },
     minify: 'esbuild',
   },
+  plugins: [
+    {
+      name: 'copy-projects',
+      closeBundle() {
+        const projects = readdirSync(resolve(__dirname, 'projects'))
+        mkdirSync(resolve(__dirname, 'dist', 'projects'), { recursive: true })
+        projects
+          .filter(f => f.endsWith('.html'))
+          .forEach(f => copyFileSync(
+            resolve(__dirname, 'projects', f),
+            resolve(__dirname, 'dist', 'projects', f),
+          ))
+      },
+    },
+  ],
   css: {
     preprocessorOptions: {
       less: {
