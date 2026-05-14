@@ -1,4 +1,6 @@
 // src/core/Bootstrapper.ts
+import * as THREE from 'three'
+import type { RenderSurface } from '../Experience/Renderer'
 import { Experience } from '../Experience/Experience'
 import { GalleryManager } from './GalleryManager'
 import { GalleryScene } from '../Experience/World/GalleryScene'
@@ -7,10 +9,15 @@ import { UIManager } from '../UI/UIManager'
 import { ProjectDetail } from '../UI/ProjectDetail'
 import { StateBus } from './StateBus'
 
+type OnReadyCallback = (renderer: RenderSurface, scene: THREE.Scene) => void
+
 export class Bootstrapper {
     static onIntroComplete: (() => void) | null = null
+    private static onReady: OnReadyCallback | null = null
 
-    static async init(ui: UIManager): Promise<Experience> {
+    static async init(ui: UIManager, onReadyCb?: OnReadyCallback): Promise<Experience> {
+        Bootstrapper.onReady = onReadyCb ?? null
+
         const experience = new Experience(ui)
         experience.setupEventListeners()
 
@@ -30,7 +37,7 @@ export class Bootstrapper {
         // ── Project Detail UI ──
         const projectDetail = new ProjectDetail()
 
-        experience.galleryManager.onExpandComplete = (project) => {
+        experience.galleryManager.onExpandComplete = (project: any) => {
             projectDetail.open(project)
         }
 
@@ -44,6 +51,9 @@ export class Bootstrapper {
 
         // Initialize experience (renderer, World, StateBus, render loop)
         await experience.init()
+
+        // Notify caller that renderer + scene are ready
+        Bootstrapper.onReady?.(experience.renderer.instance, experience.scene)
 
         // Hook: notify entry.ts when intro completes (so splash can be removed)
         Bootstrapper.setupIntroCallback()

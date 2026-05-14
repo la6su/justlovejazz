@@ -320,7 +320,7 @@ canvas {
 }
 
 body, a, button, .interactive {
-  cursor: none !important;
+  cursor: none;
 }
 
 /* Project Gallery Synced UI */
@@ -369,7 +369,12 @@ body, a, button, .interactive {
   opacity: 0;
   pointer-events: none;
 }
-
+#jlj-splash {
+  cursor: auto;
+}
+#jlj-enter {
+  cursor: pointer;
+}
 /* Scroll hint */
 @keyframes scrollBounce {
   0%, 100% { transform: translateY(0); opacity: 1; }
@@ -380,7 +385,7 @@ body, a, button, .interactive {
   position: fixed;
   bottom: 2rem;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(-50%)!important;
   z-index: 50;
   text-align: center;
   color: rgba(255, 255, 255, 0.5);
