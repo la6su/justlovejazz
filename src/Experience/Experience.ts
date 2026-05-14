@@ -23,7 +23,7 @@ import { GPUResourceManager } from '../core/GPUResourceManager'
 import { GalleryScene } from './World/GalleryScene'
 import { SectionTransition } from './SectionTransition'
 import { CameraState, NarrativePhase } from '../core/types'
-import { SectionSequences } from './World/SectionSequences'
+import { createAwakening, createDiscovery, createDeepDive, createConnection } from './World/SectionSequences'
 
 export class Experience {
   static instance: Experience
@@ -156,12 +156,7 @@ export class Experience {
     this.galleryManager.update(deltaTime);
     this.galleryScene.update(deltaTime);
     this.sceneContentManager.syncToTimeline(currentPhase, worldState.phaseProgress)
-    this.sceneContentManager.update(deltaTime);
-
-    // Tick shader materials on scene content
-    for (const group of this.sceneContentManager.groups.values()) {
-      SectionSequences.tickMaterials(this.time.elapsed, group)
-    }
+    this.sceneContentManager.update(deltaTime)
 
     // Show/hide 3D gallery group + UI gallery per section context
     this.galleryScene.group.visible = worldState.uiShowGallery
@@ -200,10 +195,10 @@ export class Experience {
 
   private initSectionSequences() {
     // Populate each narrative phase with its unique 3D world
-    this.sceneContentManager.setupPhaseContent(NarrativePhase.AWAKENING, SectionSequences.createAwakening())
-    this.sceneContentManager.setupPhaseContent(NarrativePhase.DISCOVERY, SectionSequences.createDiscovery())
-    this.sceneContentManager.setupPhaseContent(NarrativePhase.DEEP_DIVE, SectionSequences.createDeepDive())
-    this.sceneContentManager.setupPhaseContent(NarrativePhase.CONNECTION, SectionSequences.createConnection())
+    this.sceneContentManager.setupPhaseContent(NarrativePhase.AWAKENING, createAwakening())
+    this.sceneContentManager.setupPhaseContent(NarrativePhase.DISCOVERY, createDiscovery())
+    this.sceneContentManager.setupPhaseContent(NarrativePhase.DEEP_DIVE, createDeepDive())
+    this.sceneContentManager.setupPhaseContent(NarrativePhase.CONNECTION, createConnection())
   }
 
   destroy() {

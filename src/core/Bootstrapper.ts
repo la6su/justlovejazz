@@ -32,10 +32,7 @@ export class Bootstrapper {
         experience.scene.add(experience.galleryScene.group);
 
         // Scene Content Manager (dynamic content per section)
-        experience.sceneContentManager = new SceneContentManager(experience.scene);
-
-        // Lazy load section content (heavy shaders + geometries)
-        await loadSectionContent(experience.sceneContentManager);
+        experience.sceneContentManager = new SceneContentManager(experience.scene)
 
         // Activate first section
         experience.sceneContentManager.queueTransition(NarrativePhase.AWAKENING, 0);
@@ -75,15 +72,4 @@ export class Bootstrapper {
     }
 }
 
-/** Lazy-load SectionSequences (TSL-driven) into SceneContentManager */
-async function loadSectionContent(manager: SceneContentManager): Promise<void> {
-    try {
-        const { SectionSequences } = await import('../Experience/World/SectionSequences');
-        manager.setupPhaseContent(NarrativePhase.AWAKENING, SectionSequences.createAwakening());
-        manager.setupPhaseContent(NarrativePhase.DISCOVERY, SectionSequences.createDiscovery());
-        manager.setupPhaseContent(NarrativePhase.DEEP_DIVE, SectionSequences.createDeepDive());
-        manager.setupPhaseContent(NarrativePhase.CONNECTION, SectionSequences.createConnection());
-    } catch (_err) {
-        /* Failed to load section sequences */
-    }
-}
+/* removed: loadSectionContent — Experience.init() calls initSectionSequences() */
