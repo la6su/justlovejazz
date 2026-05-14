@@ -14,6 +14,7 @@
     "lhci": "npx @lhci/cli@0.13.0 lhci autorun"
   },
   "devDependencies": {
+    "@types/node": "^25.7.0",
     "@types/three": "^0.184.0",
     "@types/uikit": "^3.23.0",
     "esbuild": "^0.28.0",

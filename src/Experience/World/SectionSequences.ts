@@ -54,172 +54,252 @@ export function getWorldCreators(pageName: string): Record<string, WorldCreator>
 //  HOME PAGE — Sublime space orbitals
 // ════════════════════════════════════════════════════════
 
-/* Home · Awakening — Floating monolith cluster */
+/* Home · Awakening — The Monolith (diffuses on scroll) */
+/* 2015-inspired sharp geometry → 2025 scale */
 function createHomeAwakening(): THREE.Object3D[] {
   const group = new THREE.Group()
 
-  const monoMat = new THREE.MeshStandardMaterial({
-    color: new THREE.Color(0.03, 0.03, 0.06),
-    emissive: new THREE.Color(0.05, 0.0, 0.08),
-    metalness: 0.9,
+  // Central arch / monolith (2015 grid arch reference)
+  const archMat = new THREE.MeshStandardMaterial({
+    color: new THREE.Color(0.02, 0.02, 0.04),
+    emissive: new THREE.Color(0.02, 0.0, 0.04),
+    metalness: 0.85,
     roughness: 0.15,
     transparent: true,
-    opacity: 0.85,
+    opacity: 0.92,
   })
-  const mono = new THREE.Mesh(new THREE.IcosahedronGeometry(0.9, 0), monoMat)
-  mono.rotation.set(0.5, 0.8, 0)
-  mono.position.set(0, 0.3, 0)
-  group.add(mono)
 
+  // Massive vertical plane — hero of the awakens section
+  const arch = new THREE.Mesh(new THREE.BoxGeometry(0.15, 4.5, 0.15), archMat)
+  arch.position.set(-1.8, 0, 0)
+  group.add(arch)
+
+  // Horizontal overlay plane
+  const crossBeam = new THREE.Mesh(new THREE.BoxGeometry(4, 0.08, 0.12), archMat)
+  crossBeam.position.set(-0.05, 1.5, 0)
+  group.add(crossBeam)
+
+  // Ground line
+  const ground = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.02, 0.3), archMat)
+  ground.position.set(-0.05, -2.2, 0.15)
+  ground.rotation.x = -0.05
+  group.add(ground)
+
+  // Wireframe envelope (extending Arch)
   const wireMat = new THREE.MeshBasicMaterial({
-    color: new THREE.Color(0.15, 0.8, 0.95),
+    color: new THREE.Color(0.3, 0.7, 0.9),
     wireframe: true,
     transparent: true,
-    opacity: 0.12,
+    opacity: 0.10,
   })
-  const envelope = new THREE.Mesh(new THREE.OctahedronGeometry(2.2, 0), wireMat)
+  const envelope = new THREE.Mesh(new THREE.BoxGeometry(5.5, 6.5, 0.01), wireMat)
+  group.add(envelope)
   group.add(envelope)
 
+  // Small compass object — architectural icon
   const compMat = new THREE.MeshStandardMaterial({
-    color: new THREE.Color(0.7, 0.1, 0.15),
-    emissive: new THREE.Color(0.3, 0.0, 0.05),
-    metalness: 0.5,
-    roughness: 0.5,
+    color: new THREE.Color(0.9, 0.85, 0.1),
+    emissive: new THREE.Color(0.3, 0.2, 0.0),
+    metalness: 0.4,
+    roughness: 0.6,
     transparent: true,
-    opacity: 0.7,
+    opacity: 0.6,
   })
-  const companion = new THREE.Mesh(new THREE.IcosahedronGeometry(0.25, 1), compMat)
-  companion.position.set(1.6, -0.5, 0.8)
-  group.add(companion)
-
-  const haloMat = new THREE.MeshBasicMaterial({
-    color: new THREE.Color(1.0, 0.5, 0.05),
-    transparent: true,
-    opacity: 0.3,
-    side: THREE.DoubleSide,
-  })
-  const halo = new THREE.Mesh(new THREE.TorusGeometry(1.6, 0.003, 4, 128), haloMat)
-  halo.rotation.set(1.2, 0.3, 0)
-  group.add(halo)
-
-  const beamMat = new THREE.MeshStandardMaterial({
-    color: new THREE.Color(0.0, 0.0, 0.0),
-    emissive: new THREE.Color(0.08, 0.0, 0.15),
-    transparent: true,
-    opacity: 0.4,
-  })
-  const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 3.5, 6), beamMat)
-  beam.position.set(-1.2, 0, -0.5)
-  group.add(beam)
+  const compass = new THREE.Mesh(new THREE.TorusKnotGeometry(0.35, 0.1, 128, 16, 2, 3), compMat)
+  compass.position.set(1.8, -0.7, 0.5)
+  group.add(compass)
 
   return [group]
 }
 
-/* Home · Discovery — Shattered bars, data fragments */
+/* Home · Discovery — The Tide (breathing wave surface) */
+/* 2015-inspired: "what lies under the surface" → segmented wave */
 function createHomeDiscovery(): THREE.Object3D[] {
   const group = new THREE.Group()
 
-  const bars = 12
-  for (let i = 0; i < bars; i++) {
-    const h = 0.3 + Math.random() * 1.5
-    const mat = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(0.8, 0.05, 0.2),
-      emissive: new THREE.Color(0.2, 0.0, 0.05),
-      metalness: 0.7,
-      roughness: 0.3,
-      transparent: true,
-      opacity: 0.4 + Math.random() * 0.4,
-    })
-    const bar = new THREE.Mesh(new THREE.BoxGeometry(0.05, h, 0.05), mat)
-    bar.position.set((Math.random() - 0.5) * 3, (Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2)
-    bar.rotation.y = Math.random() * Math.PI * 2
+  // Wave plane — segmented columns of increasing height
+  const cols = 20
+  const waveMat = new THREE.MeshStandardMaterial({
+    color: new THREE.Color(0.85, 0.05, 0.2),
+    emissive: new THREE.Color(0.2, 0.0, 0.05),
+    metalness: 0.7,
+    roughness: 0.3,
+    transparent: true,
+    opacity: 0.6,
+  })
+
+  for (let i = 0; i < cols; i++) {
+    const baseH = 0.4 + (i / cols) * 2.5
+    const rise = Math.sin((i / cols) * Math.PI * 1.5) * 1.2
+    const h = baseH + rise
+    const bar = new THREE.Mesh(new THREE.BoxGeometry(0.06, h, 0.3), waveMat)
+    bar.position.set((i - cols / 2) * 0.25, (h / 2) - 2, 0)
+    bar.rotation.z = Math.sin((i / cols) * Math.PI) * 0.1
     group.add(bar)
   }
 
-  // Wide dark plane
+  // Surface plane behind — "mirror floor" (references 2015 reflection)
   const planeMat = new THREE.MeshStandardMaterial({
     color: new THREE.Color(0.02, 0.0, 0.03),
-    metalness: 0.5,
-    roughness: 0.8,
+    metalness: 0.6,
+    roughness: 0.9,
     transparent: true,
-    opacity: 0.5,
+    opacity: 0.4,
     side: THREE.DoubleSide,
   })
-  const plane = new THREE.Mesh(new THREE.PlaneGeometry(6, 6), planeMat)
-  plane.rotation.set(0.5, 0.3, 0)
+  const plane = new THREE.Mesh(new THREE.PlaneGeometry(10, 4), planeMat)
+  plane.position.set(0, -0.5, -2)
+  plane.rotation.x = -0.2
   group.add(plane)
+
+  // Floating sphere above the wave — reference point
+  const sphereMat = new THREE.MeshStandardMaterial({
+    color: new THREE.Color(0.0, 0.85, 0.95),
+    emissive: new THREE.Color(0.0, 0.3, 0.4),
+    metalness: 0.1,
+    roughness: 0.1,
+    transparent: true,
+    opacity: 0.7,
+  })
+  const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.25, 32, 32), sphereMat)
+  sphere.position.set(2.5, 0.8, 1.5)
+  group.add(sphere)
 
   return [group]
 }
 
-/* Home · DeepDive — Floating data grid lines */
+/* Home · DeepDive — The Structure (computational grid architecture) */
+/* 2015-inspired: "architecture as composition" */
 function createHomeDeepDive(): THREE.Object3D[] {
   const group = new THREE.Group()
 
-  const lineMat = new THREE.LineBasicMaterial({
+  // Architectural pillars network
+  const pillarMat = new THREE.MeshStandardMaterial({
     color: new THREE.Color(0.0, 0.6, 0.85),
+    emissive: new THREE.Color(0.0, 0.15, 0.2),
+    metalness: 0.4,
+    roughness: 0.6,
     transparent: true,
-    opacity: 0.35,
+    opacity: 0.35
   })
 
-  for (let i = -5; i <= 5; i++) {
-    const pos = i * 0.25
+  // Vertical pillars at regular intervals (2015 scaffolding style)
+  const pillars = 8
+  for (let i = 0; i < pillars; i++) {
+    const h = 0.8 + (i / pillars) * 2.2
+    const pillar = new THREE.Mesh(new THREE.BoxGeometry(0.04, h, 0.04), pillarMat)
+    pillar.position.set((i - pillars / 2) * 0.45, (h / 2) - 1.5, 0)
+    group.add(pillar)
+
+    // Horizontal string between pillar and top (tensegrity)
     const pts = [
-      new THREE.Vector3(-3, pos, 0),
-      new THREE.Vector3(3, pos, 0),
+      new THREE.Vector3((i - pillars / 2) * 0.45, (h / 2) - 1.5, -0.5),
+      new THREE.Vector3((i - pillars / 2) * 0.45, (h / 2) - 1.5, 0.5),
     ]
-    const g = new THREE.BufferGeometry().setFromPoints(pts)
-    group.add(new THREE.Line(g, lineMat))
+    const lineGeo = new THREE.BufferGeometry().setFromPoints(pts)
+    const lineMat = new THREE.LineBasicMaterial({
+      color: new THREE.Color(0.0, 0.6, 0.85),
+      transparent: true,
+      opacity: 0.2,
+    })
+    group.add(new THREE.Line(lineGeo, lineMat))
   }
 
-  // Floating cubes at grid intersections
-  for (let i = 0; i < 25; i++) {
-    const size = 0.03 + Math.random() * 0.06
+  // Horizontal string connecting all pillars
+  const topString = new THREE.BufferGeometry()
+  const stringPts = new Float32Array(pillars * 3)
+  for (let i = 0; i < pillars; i++) {
+    stringPts[i * 3] = (i - pillars / 2) * 0.45
+    stringPts[i * 3 + 1] = 1.5
+    stringPts[i * 3 + 2] = 0
+  }
+  topString.setAttribute('position', new THREE.BufferAttribute(stringPts, 3))
+  const stringMat = new THREE.LineBasicMaterial({
+    color: new THREE.Color(0.0, 0.6, 0.85),
+    transparent: true,
+    opacity: 0.25,
+  })
+  group.add(new THREE.Line(topString, stringMat))
+
+  // Floating data particles at intersections
+  for (let i = 0; i < 15; i++) {
+    const size = 0.02 + Math.random() * 0.04
     const mat = new THREE.MeshStandardMaterial({
       color: new THREE.Color(0.0, 0.2, 0.5),
       emissive: new THREE.Color(0.0, 0.1, 0.2),
       metalness: 0.5,
       roughness: 0.6,
       transparent: true,
-      opacity: 0.4,
+      opacity: 0.35
     })
     const cube = new THREE.Mesh(new THREE.BoxGeometry(size, size, size), mat)
-    cube.position.set((Math.random() - 0.5) * 3, (Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2)
+    cube.position.set(
+      (Math.random() - 0.5) * 3,
+      (Math.random() - 0.5) * 2,
+      (Math.random() - 0.5) * 1.5
+    )
+    cube.userData.originalPos = cube.position.clone()
     group.add(cube)
   }
 
   return [group]
 }
 
-/* Home · Connection — Terminal-style text field */
+/* Home · Connection — The Horizon (infinite plane with vanishing point) */
+/* 2015-inspired: minimal perspective, architectural horizon */
 function createHomeConnection(): THREE.Object3D[] {
   const group = new THREE.Group()
 
-  // Horizontal terminal lines (width-based layout)
-  for (let y = -3; y <= -1; y += 0.6) {
-    const w = 2 + Math.random() * 4
-    const mat = new THREE.LineBasicMaterial({
+  // Perspective grid receding into distance
+  const gridSize = 12
+  const gridSpacing = 0.5
+  for (let i = -gridSize; i <= gridSize; i++) {
+    // Horizontal lines (receding)
+    const hPts = [
+      new THREE.Vector3(-5, -i * gridSpacing * 0.1, 0),
+      new THREE.Vector3(5, -i * gridSpacing * 0.1, 0),
+    ]
+    const hm = new THREE.BufferGeometry().setFromPoints(hPts)
+    group.add(new THREE.Line(hm, new THREE.LineBasicMaterial({
       color: new THREE.Color(0.95, 0.7, 0.15),
       transparent: true,
-      opacity: 0.2 + Math.random() * 0.3,
-    })
-    const pts = [
-      new THREE.Vector3(-2 - w * 0.5, y, 0),
-      new THREE.Vector3(-2 + w * 0.5, y, 0),
+      opacity: 0.08 + Math.abs(i) * 0.005,
+    })))
+
+    // Vertical lines (perspective)
+    const vPts = [
+      new THREE.Vector3(i * 0.3, -2, -3),
+      new THREE.Vector3(i * 0.3, 2, 0),
     ]
-    const g = new THREE.BufferGeometry().setFromPoints(pts)
-    group.add(new THREE.Line(g, mat))
+    const vm = new THREE.BufferGeometry().setFromPoints(vPts)
+    group.add(new THREE.Line(vm, new THREE.LineBasicMaterial({
+      color: new THREE.Color(0.95, 0.7, 0.15),
+      transparent: true,
+      opacity: 0.05 + Math.abs(i) * 0.002,
+    })))
   }
 
-  // Terminal cursor marker
-  const cursorMat = new THREE.MeshBasicMaterial({
-    color: new THREE.Color(0.0, 1.0, 0.5),
+  // Vanishing point marker — tiny bright center
+  const markerMat = new THREE.MeshBasicMaterial({
+    color: new THREE.Color(1.0, 0.9, 0.2),
     transparent: true,
-    opacity: 0.6,
+    opacity: 0.7,
   })
-  const cursor = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.4, 0.01), cursorMat)
-  cursor.position.set(-1.5, -1.5, 0)
-  group.add(cursor)
+  const marker = new THREE.Mesh(new THREE.SphereGeometry(0.03, 16, 16), markerMat)
+  marker.position.set(0, 0, -1)
+  group.add(marker)
+
+  // Single horizon line — strongest element
+  const horizonGeo = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(-6, 0, 0),
+    new THREE.Vector3(6, 0, 0),
+  ])
+  const horizonMat = new THREE.LineBasicMaterial({
+    color: new THREE.Color(0.95, 0.7, 0.15),
+    transparent: true,
+    opacity: 0.35,
+  })
+  group.add(new THREE.Line(horizonGeo, horizonMat))
 
   return [group]
 }

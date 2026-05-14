@@ -24,6 +24,7 @@ import { GalleryScene } from './World/GalleryScene'
 import { SectionTransition } from './SectionTransition'
 import { CameraState, NarrativePhase } from '../core/types'
 import { getWorldCreators } from './World/SectionSequences'
+import { SmokeSystem } from '../worlds/components/SmokeSystem'
 
 export class Experience {
   static instance: Experience
@@ -52,6 +53,7 @@ export class Experience {
   public sceneContentManager!: SceneContentManager
   private currentSectionContext: string | null = null
   private sectionTransition!: SectionTransition
+  private smokeSystem!: SmokeSystem
 
   constructor(_ui: UIManager) {
     this.sizes = new Sizes()
@@ -86,6 +88,17 @@ export class Experience {
     this.initSectionSequences()
 
     this.sectionTransition = new SectionTransition()
+
+    // Atmospheric smoke system (2015 portfolio-inspired)
+    this.smokeSystem = new SmokeSystem({
+      count: 150,
+      spread: 15,
+      depth: 10,
+      opacityRange: [0.03, 0.08],
+      color: new THREE.Color(0.06, 0.06, 0.1),
+      scrollCoupling: 0.3,
+    })
+    this.scene.add(this.smokeSystem)
 
     await this.renderer.init()
 
@@ -180,6 +193,7 @@ export class Experience {
 
     this.camera.update(deltaTime)
     this.baku.update(this.time.delta / 1000)
+    this.smokeSystem.update(deltaTime, normalizedScroll)
     this.environment.update(this.time.elapsed / 1000, normalizedScroll, this.camera.getVelocity())
     this.renderer.update(this.scene, this.camera.instance, worldState)
     requestAnimationFrame((t) => this.update(t))
@@ -206,6 +220,7 @@ export class Experience {
     this.atmosphere.dispose()
     this.cinematicLights.dispose()
     this.environment.dispose()
+    this.smokeSystem.dispose()
     this.debugStats?.destroy()
     this.renderer.instance.dispose()
   }
