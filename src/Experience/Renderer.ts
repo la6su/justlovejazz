@@ -32,9 +32,7 @@ export class Renderer {
     }
 
     if (this.capabilities.mode === 'webgpu') {
-      const r = new WebGPURenderer({
-        antialias: true,
-      } as any)
+      const r = new WebGPURenderer({ antialias: true })
       this.instance = r
       this.postUniforms = {
         bloom: uniform(0.3),
@@ -55,9 +53,9 @@ export class Renderer {
       this.postUniforms = null
     }
 
-    (this.instance as any).setPixelRatio(Math.min(sizes.dpr, this.capabilities.maxDpr))
-    (this.instance as any).setSize(sizes.width, sizes.height)
-    (this.instance as any).setClearColor?.(0x000000)
+    this.instance.setPixelRatio(Math.min(sizes.dpr, this.capabilities.maxDpr))
+    this.instance.setSize(sizes.width, sizes.height)
+    // Note: setClearColor is WebGL-only; WebGPU uses default
     document.body.appendChild(this.instance.domElement)
 
     window.addEventListener('resize', () => {
