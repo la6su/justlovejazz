@@ -4,6 +4,7 @@
 
 import * as THREE from 'three'
 import StarField from '../../worlds/components/StarField'
+import BackgroundLines from '../../worlds/components/BackgroundLines'
 
 const ASSETS = '/assets/references'
 const textureCache = new Map<string, THREE.Texture>()
@@ -58,6 +59,13 @@ function ball(pos: [number,number,number], sc = 1, col = 0xffffff): THREE.Group 
 function stars(count: number = 200): THREE.Group {
   const field = new StarField({ count })
   return field.group
+}
+
+function backgroundLines(count: number = 200): THREE.Group {
+  const lines = new BackgroundLines({ count })
+  lines.group.userData.type = 'background-lines'
+  lines.group.userData.backgroundLines = lines
+  return lines.group
 }
 
 function bgLines(count: number): THREE.Group {
@@ -391,7 +399,8 @@ function strips(): THREE.Group {
 function step01_hello(): THREE.Object3D[] {
   const s = new THREE.Group()
   s.name = 'step01-hello'
-  s.add(stars(40))
+  s.add(stars(80))
+  s.add(backgroundLines(60))
   const smoke = smokePlanes([
     {x:10.7,y:3.9,z:17.8,rz:2.7,s:3.9,front:true},
     {x:24.5,y:-10.3,z:7.5,rz:5.5,s:5.0,front:true},
@@ -411,7 +420,8 @@ function step01_hello(): THREE.Object3D[] {
 function step02_ball(): THREE.Object3D[] {
   const s = new THREE.Group()
   s.name = 'step02-ball'
-  s.add(stars(45))
+  s.add(stars(80))
+  s.add(backgroundLines(60))
   const b = ball([0.25, 2, 1.35], 1.2, 0x4a3529)
   s.add(b)
   s.add(beams())

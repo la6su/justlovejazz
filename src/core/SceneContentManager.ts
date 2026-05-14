@@ -44,7 +44,7 @@ export class SceneContentManager {
 
     // Elapsed time counter for idle animation
     private elapsed: number = 0;
-    private _lastScroll: number = 0;
+    private _phaseProgress: number = 0;
 
     constructor(scene: THREE.Scene) {
         this.scene = scene;
@@ -124,8 +124,8 @@ export class SceneContentManager {
      * Scroll/timeline-driven content blending.
      * Keeps section content transitions deterministic and synchronized with world state.
      */
-    public syncToTimeline(currentPhase: string, phaseProgress: number, scrollValue: number = 0): void {
-        this._lastScroll = scrollValue
+    public syncToTimeline(currentPhase: string, phaseProgress: number, _scrollValue: number = 0): void {
+        this._phaseProgress = phaseProgress
         const currentIndex = PHASE_ORDER.indexOf(currentPhase as any)
         if (currentIndex === -1) return
 
@@ -356,13 +356,17 @@ export class SceneContentManager {
                     }
                     break;
 
-                case 'star-field':
-                    // Parallax star field — update StarField component
-                    const anyObj = obj as any
-                    if (anyObj.userData.starField) {
-                        anyObj.userData.starField.update(deltaTime, this._lastScroll ?? 0)
-                    }
-                    break;
+            case 'star-field':
+                // Star field — passive parallax only
+                break
+
+            case 'background-lines':
+                // Background lines — stretch Y by phase progress
+                const bgLines = obj as any
+                if (bgLines.userData.backgroundLines) {
+                    bgLines.userData.backgroundLines.update(deltaTime, this._phaseProgress)
+                }
+                break;
             }
         });
     }
