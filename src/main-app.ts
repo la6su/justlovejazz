@@ -14,13 +14,22 @@ export interface BootstrapOptions {
   onReady?: (enter: EnterButton) => void
 }
 
+/** One-time sentinel — splash/dissolve runs only once per session */
+let _bootstrapped = false
+
+export const isAppReady = () => _bootstrapped
+
 /**
  * Bootstrap the full 3D app (lazy-loaded).
  *
  * Junni-style enter: splash visible → Enter (z:10000 > splash z:9999) →
- * ENTER → splash fade out → GPU dissolve → splash.remove()
+ * ENTER (or auto after 2s) → splash fade out → GPU dissolve → splash.remove()
  */
 export async function bootstrap(opts: BootstrapOptions): Promise<void> {
+  // Guard: prevent double-init on SPA navigation
+  if (_bootstrapped) return
+  _bootstrapped = true
+
   const mode = document.body.dataset.appMode ?? 'full'
   if (mode !== 'full') return
 
@@ -49,10 +58,8 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
     })
     progress(98)
 
-    onReady?.(enterButton)
-
-    // ── Dissolve → splash fade out → scene revealed ──
-    enterButton.onTrigger(async () => {
+    const triggerDissolve = async () => {
+      enterButton.cancelAuto()
       enterButton.animateOut(300)
 
       let overlay: DissolveOverlay | null = null
@@ -73,7 +80,6 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
 
         if (overlay) {
           overlay.setProgress(eased)
-          overlay.setProgress(eased)
           overlay.update(0.016)
         }
 
@@ -90,7 +96,19 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
         }
       }
       requestAnimationFrame(doDissolve)
+    }
+
+    // ── Click handler ──
+    enterButton.onTrigger(() => {
+      triggerDissolve()
     })
+
+    // ── Auto-trigger after 2 seconds if user doesn't click ──
+    enterButton.autoTriggerAfter(2000, () => {
+      triggerDissolve()
+    })
+
+    onReady?.(enterButton)
 
     // ── Misc ──
     initScrollHint()

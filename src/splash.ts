@@ -23,6 +23,8 @@ export function createSplash(): SplashOverlay {
 
   function doShow() {
     if (el) return
+    // Idempotent: check if element already exists (e.g. from previous init)
+    if (document.getElementById(id)) return
 
     el = document.createElement('div')
     el.id = id

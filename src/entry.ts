@@ -1,64 +1,72 @@
 /**
- * entry.ts — splash → lazy load (with progress) → ENTER → GPU dissolve → scene
+ * entry.ts — SPA entry point (single index.html, hash router).
+ *
+ * Flow: splash → lazy load → ENTER / auto(2s) → GPU dissolve → scene ready.
+ * Subsequent nav (#/trinity, #/works, …): no splash, just World switch.
  */
 
-import { createSplash, type SplashOverlay } from './splash'
+// ─── Styles (UIkit Less components already via src/assets/_import.less) ───
+await import('./assets/main.less')
 
-// ① Instant splash — zero deps, paints <16ms at FCP
-const splash: SplashOverlay = createSplash()
-splash.show()
+// ─── UIkit JS components ───
+import UIkit from 'uikit'
+import Icons from 'uikit/dist/js/uikit-icons'
+;(UIkit as { use: (p: object) => void }).use(Icons as object)
 
-function createProgressBar(splash: SplashOverlay) {
-  let target = 0
-  let current = 0
-  let rafId: number | null = null
+// ─── Router ───
+import { initRouter } from './router'
+import { bootstrap as bootstrapApp, isAppReady, type BootstrapOptions } from './main-app'
+import { Experience } from './Experience/Experience'
 
-  const tick = () => {
-    if (current < target) {
-      current = Math.min(current + 0.8, target)
-      splash.setProgress(current)
-      rafId = requestAnimationFrame(tick)
-    } else {
-      rafId = null
-    }
+// ─── Init router (sets data-page from hash) ───
+initRouter()
+
+// ─── Wire router → 3D world switch ───
+window.addEventListener('jlj:navigate', () => {
+  if (!isAppReady()) return
+  const exp = Experience.instance
+  if (exp?.switchPage) {
+    exp.switchPage(document.body.dataset.page || 'home')
   }
+})
 
-  return {
-    set(pct: number): void {
-      if (pct <= current) return // never go backwards
-      target = Math.min(Math.max(pct, 0), 100)
-      if (rafId === null) {
-        rafId = requestAnimationFrame(tick)
+// ─── SPA: re-scan UIkit components after dynamic content render ───
+window.addEventListener('jlj:navigate', () => {
+  requestAnimationFrame(() => {
+    const content = document.getElementById('spa-content')
+    if (content) {
+      for (const el of content.querySelectorAll('[uk-height-viewport]')) {
+        ;(UIkit as any).componentsHeight?.(el as HTMLElement, {})
       }
-    },
-  }
-}
-
-const progress = createProgressBar(splash)
-
-// ③ Lazy-load heavy deps with visual progress
-async function startApp(): Promise<void> {
-  progress.set(3)
-
-  await import('./assets/main.less')
-  progress.set(25)
-
-  const mod = await import('./main-app')
-  progress.set(85)
-
-  await mod.bootstrap({
-    splash,
-    onReady: (enterButton: any) => {
-      progress.set(100)
-      setTimeout(() => enterButton.show('ENTER SITE'), 400)
-    },
+      ;(UIkit as any).update()
+    }
   })
+})
+
+// ─── First boot: splash → lazy chunks → ENTER / auto (2s) → dissolve ───
+async function boot() {
+  const { createSplash } = await import('./splash')
+  const splash = createSplash()
+
+  const opts: BootstrapOptions = {
+    splash,
+    progress: (pct) => splash.setProgress(Math.min(100, pct)),
+  }
+
+  const ready = await bootstrapApp(opts)
+
+  // Force UIkit component init on initial page
+  requestAnimationFrame(() => {
+    const content = document.getElementById('spa-content')
+    if (content) {
+      for (const el of content.querySelectorAll('[uk-height-viewport]')) {
+        ;(UIkit as any).componentsHeight?.(el as HTMLElement, {})
+      }
+      ;(UIkit as any).update()
+    }
+  })
+
+  return ready
 }
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    requestAnimationFrame(() => requestAnimationFrame(startApp))
-  }, { once: true })
-} else {
-  requestAnimationFrame(() => requestAnimationFrame(startApp))
-}
+boot().catch(() => {})

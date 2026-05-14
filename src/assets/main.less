@@ -138,7 +138,7 @@ canvas {
   width: 100vw;
   height: 100vh;
   outline: none;
-  z-index: 0;
+  z-index: -1;
   pointer-events: none;
 }
 
@@ -154,19 +154,16 @@ canvas {
 
 #ui-layer {
   position: relative;
-  z-index: 10;
-  pointer-events: none; /* Let clicks pass through to canvas if needed, but we'll enable it for UI elements */
-}
-
-#ui-layer > * {
-  pointer-events: auto; /* Re-enable clicks for actual UI components */
+  z-index: 1;
 }
 
 
 /* Custom Section Styling */
 .section-studio {
   position: relative;
+  z-index: 1;
   padding: 10vh 5vw;
+  overflow: hidden;
 }
 
 .section-number {

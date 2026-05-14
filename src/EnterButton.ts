@@ -50,8 +50,28 @@ export class EnterButton {
   animateOut(duration = 300): void {
     this.el!.style.opacity = '0'
     this.el!.style.pointerEvents = 'none'
-    setTimeout(() => {
-      this.el!.remove()
-    }, duration)
+    this.cleared = true
+    clearTimeout(this._autoId ?? undefined)
+    setTimeout(() => this.el?.remove(), duration)
+  }
+
+  /**
+   * Auto-trigger after timeout — if user doesn't click Enter,
+   * dissolve starts automatically.
+   */
+  private _autoId: ReturnType<typeof setTimeout> | null = null
+  private cleared = false
+
+  autoTriggerAfter(ms: number, fn: () => void): void {
+    this._autoId = setTimeout(() => {
+      if (!this.cleared) {
+        fn()
+      }
+    }, ms)
+  }
+
+  cancelAuto(): void {
+    clearTimeout(this._autoId ?? undefined)
+    this._autoId = null
   }
 }

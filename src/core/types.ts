@@ -63,18 +63,19 @@ export interface BakuMaterialState {
     }
 
 export interface Project {
-  id: string;
-  title: string;
-  description: string;
-  textureUrl: string;
-  detailTextureUrl: string; // Исправлено: было пропущено
-  color: string;
-  viewPosition: { x: number, y: number, z: number };
-  viewLookAt: { x: number, y: number, z: number };
-  year?: string;
-  category?: string;
-  tags?: string[];
-  slug?: string;
+  id: string
+  page?: 'home' | 'works' | 'trinity'
+  title: string
+  description: string
+  textureUrl: string
+  detailTextureUrl: string
+  color: string
+  viewPosition: { x: number, y: number, z: number }
+  viewLookAt: { x: number, y: number, z: number }
+  year?: string
+  category?: string
+  tags?: string[]
+  slug?: string
 }
 
 export enum ViewState {

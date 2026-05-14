@@ -129,9 +129,9 @@ export class Experience {
     // Camera smoothing (Junni: cameraController follows world position)
     this.camera.updateSmooth(cameraTarget, deltaTime, 5)
 
-    this.galleryManager.update(deltaTime)
-    this.galleryScene.update(deltaTime)
-    this.galleryScene.group.visible = worldState.uiShowGallery
+    this.galleryManager?.update(deltaTime)
+    this.galleryScene?.update(deltaTime)
+    this.galleryScene?.group && (this.galleryScene.group.visible = worldState.uiShowGallery)
 
     // Lighting — delegates to World.lightsGroup (Junni pattern)
     const warmth = normalizedScroll
@@ -140,6 +140,46 @@ export class Experience {
     this.camera.update(deltaTime)
     this.renderer.update(this.scene, this.camera.instance, worldState)
     requestAnimationFrame((t) => this.update(t))
+  }
+
+  /** SPA navigation: switch 3D world to a new page without full reload */
+  public switchPage(page: string): void {
+    // Ensure data-page reflects the new route
+    document.body.dataset.page = page
+
+    // Dispose old world
+    if (this.world) {
+      this.scene.remove(this.world)
+      this.world.dispose()
+    }
+
+    // Reset context tracking
+    if (this.currentSectionContext) {
+      AssetManager.getInstance().disposeContext(this.currentSectionContext)
+      GPUResourceManager.getInstance().disposeContext(this.currentSectionContext)
+    }
+    this.currentSectionContext = null
+    this.bus.cancelAll()
+
+    // Rebuild
+    this.world = new World(this.scene)
+    this.world.init()
+    this.scene.add(this.world)
+
+    // Fresh intro
+    this.world.intro.init(this.world, this.scene)
+
+    // Safe camera
+    this.camera.instance.position.set(0, 5, 10)
+    this.camera.instance.lookAt(0, 0, 0)
+    this.camera.instance.updateProjectionMatrix()
+
+    // Reset scroll — gives clean timeline to the new page
+    input.resetScroll()
+
+    // Refresh Troika text overlay with new page elements
+    const titles = document.querySelectorAll<HTMLElement>('.studio-title')
+    this.webglTextManager.refresh(Array.from(titles))
   }
 
   destroy() {

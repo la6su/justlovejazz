@@ -127,6 +127,53 @@ export class WebGLTextManager {
     await Promise.all(this.texts.map((t) => t.waitForLoaded()))
   }
 
+  /** Dispose all old text instances and recreate from new DOM elements */
+  refresh(elements: HTMLElement[]) {
+    // Disconnect observers before we tear down
+    this.observer.disconnect()
+    this.resizeObserver.disconnect()
+
+    // Remove old meshes from scene and dispose
+    for (const text of this.texts) {
+      this.overlayScene.remove(text.getTroikaMesh())
+      text.dispose()
+    }
+    this.texts = []
+
+    // Create new WebGLText instances
+    for (const element of elements) {
+      const text = new WebGLText({ element })
+      this.texts.push(text)
+    }
+
+    // Re-register observers
+    this.observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const text = this.texts.find((t) => t.elementRef === entry.target)
+          if (text) {
+            if (entry.isIntersecting) {
+              text.enterViewport()
+            } else {
+              text.leaveViewport()
+            }
+          }
+        }
+      },
+      { threshold: 0.1 }
+    )
+
+    for (const text of this.texts) {
+      this.observer.observe(text.elementRef)
+    }
+
+    this.resizeObserver = new ResizeObserver(() => this.onResize())
+    this.resizeObserver.observe(document.documentElement)
+
+    this.registerAllMeshes()
+    return this.waitForAllLoaded()
+  }
+
   dispose() {
     this.observer.disconnect()
     this.resizeObserver.disconnect()

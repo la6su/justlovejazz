@@ -5,6 +5,7 @@ export { type Project };
 export const PROJECTS: Project[] = [
   {
     id: 'ebb-vibes',
+    page: 'works',
     title: 'Ebb Vibes',
     description: 'Late night sessions captured in digital harmony. Guitar lines dissolving into neon atmosphere.',
     textureUrl: '/assets/projects/ebb-vibes/cover.webp',
@@ -18,6 +19,7 @@ export const PROJECTS: Project[] = [
   },
   {
     id: 'mono-sunday',
+    page: 'home',
     title: 'Mono Sunday',
     description: 'Three chords and the silence between them. A minimal experiment in absence.',
     textureUrl: '/assets/projects/mono-sunday/cover.webp',
@@ -31,6 +33,7 @@ export const PROJECTS: Project[] = [
   },
   {
     id: 'till-at-night',
+    page: 'works',
     title: 'Until the Night',
     description: 'A parallel timeline where analog meets algorithm. Real instruments, synthetic space.',
     textureUrl: '/assets/projects/till-at-night/cover.webp',
@@ -44,6 +47,7 @@ export const PROJECTS: Project[] = [
   },
   {
     id: 'undercurrent',
+    page: 'works',
     title: 'Undercurrent',
     description: 'Sub-bass meditation. Frequencies below hearing, above feeling.',
     textureUrl: '/assets/projects/undercurrent/cover.webp',

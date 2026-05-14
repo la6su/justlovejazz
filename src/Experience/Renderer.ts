@@ -56,7 +56,16 @@ export class Renderer {
     this.instance.setPixelRatio(Math.min(sizes.dpr, this.capabilities.maxDpr))
     this.instance.setSize(sizes.width, sizes.height)
     // Note: setClearColor is WebGL-only; WebGPU uses default
-    document.body.appendChild(this.instance.domElement)
+    const canvas = this.instance.domElement
+    canvas.className = 'canvas'
+    canvas.style.position = 'fixed'
+    canvas.style.top = '0'
+    canvas.style.left = '0'
+    canvas.style.width = '100vw'
+    canvas.style.height = '100dvh'
+    canvas.style.zIndex = '1'
+    canvas.style.pointerEvents = 'none'
+    document.body.appendChild(canvas)
 
     window.addEventListener('resize', () => {
       sizes.resize()

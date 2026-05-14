@@ -62,6 +62,15 @@ export class Input {
         return THREE.MathUtils.clamp(this.smoothedScroll / this.scrollLimit, 0, 1)
     }
 
+    /** Reset scroll state (used on SPA page switch) */
+    resetScroll(): void {
+        this.scrollY = 0
+        this.smoothedScroll = 0
+        this.scrollVelocity = 0
+        // Scroll browser top too
+        window.scrollTo(0, 0)
+    }
+
     update() {
         const prevSmoothed = this.smoothedScroll
         this.smoothedScroll += (this.scrollY - this.smoothedScroll) * this.lerpFactor
