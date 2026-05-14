@@ -1,12 +1,14 @@
 import { UIManager } from './UI/UIManager'
 import { Bootstrapper } from './core/Bootstrapper'
 import { ErrorTracker } from './core/ErrorTracker'
+import { syncReducedMotionDataset } from './core/motionPolicy'
 
 export async function bootstrap(): Promise<void> {
   const mode = document.body.dataset.appMode ?? 'full'
   if (mode !== 'full') return
 
   ErrorTracker.init()
+  syncReducedMotionDataset()
   try {
     const ui = new UIManager()
     await ui.init()

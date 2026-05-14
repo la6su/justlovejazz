@@ -1,0 +1,140 @@
+// src/core/Section.ts
+import * as THREE from 'three'
+import { StateBus } from './StateBus'
+import { type PhaseConfig } from './WorldConfig'
+
+export enum SectionState {
+    READY = 'ready',
+    VIEWING = 'viewing',
+    PASSED = 'passed',
+}
+
+const STATE_VALUE: Record<SectionState, number> = {
+    [SectionState.READY]: 0,
+    [SectionState.VIEWING]: 1,
+    [SectionState.PASSED]: 2,
+}
+
+export class Section extends THREE.Group {
+    public phaseConfig: PhaseConfig
+    private _state: SectionState = SectionState.READY
+    public get state(): SectionState { return this._state }
+
+    private stateChannel: string
+    private opacityChannel: string
+
+    constructor(config: PhaseConfig, public phaseIndex: number) {
+        super()
+        this.name = `section-${config.id}`
+        this.phaseConfig = config
+        this.stateChannel = `section:${config.id}:state`
+        this.opacityChannel = `section:${config.id}:opacity`
+        this.visible = false
+
+        const bus = StateBus.getInstance()
+        bus.channel(this.stateChannel, STATE_VALUE[SectionState.READY])
+        bus.channel(this.opacityChannel, 0)
+
+        bus.on(this.stateChannel, () => {
+            const raw = bus.get(this.stateChannel)
+            const val = Math.round(THREE.MathUtils.clamp(raw, 0, 2))
+            const newState = val === 1 ? SectionState.VIEWING : val === 2 ? SectionState.PASSED : SectionState.READY
+            if (newState !== this._state) {
+                this._state = newState
+                this.applyState()
+            }
+        })
+
+        bus.on(this.opacityChannel, () => this.applyOpacity())
+    }
+
+    public switchState(target: SectionState, duration: number = 1.0, reduced: boolean = false): void {
+        const bus = StateBus.getInstance()
+        const delta = STATE_VALUE[target] - bus.get(this.stateChannel)
+        if (delta === 0) return
+        // At reduced motion, skip animation and jump instantly
+        const dur = reduced ? 0 : duration
+        bus.channel(this.stateChannel, STATE_VALUE[target])
+        bus.animate(this.stateChannel, bus.get(this.stateChannel) + delta, dur, 'easeOutQuart')
+        if (reduced) {
+            // Instantly apply final state for reduced motion
+            bus.set(this.stateChannel, STATE_VALUE[target])
+            this._state = target
+            this.applyState()
+        }
+    }
+
+    public fadeIn(duration: number = 1.0): void {
+        StateBus.getInstance().animate(this.opacityChannel, 1, duration, 'easeOutQuart')
+    }
+
+    public fadeOut(duration: number = 1.0): void {
+        StateBus.getInstance().animate(this.opacityChannel, 0, duration, 'easeInOutQuart')
+    }
+
+    private applyState(reduced: boolean = false): void {
+        switch (this._state) {
+            case SectionState.READY:
+                this.visible = false
+                this.setTransforms(0.9, -0.15, reduced)
+                this.setMeshOpacity(0)
+                break
+            case SectionState.VIEWING:
+                this.visible = true
+                this.applyOpacity()
+                this.setTransforms(1.0, 0, reduced)
+                break
+            case SectionState.PASSED:
+                this.visible = false
+                this.setTransforms(1.15, 0.1, reduced)
+                this.setMeshOpacity(0)
+                break
+        }
+    }
+
+    private setTransforms(scale: number, ry: number, reduced: boolean = false): void {
+        this.scale.setScalar(scale)
+        this.rotation.y = reduced ? 0 : ry
+    }
+
+    private applyOpacity(): void {
+        this.setMeshOpacity(StateBus.getInstance().get(this.opacityChannel))
+    }
+
+    private setMeshOpacity(value: number): void {
+        this.traverse((obj: THREE.Object3D) => {
+            if (obj instanceof THREE.Mesh) {
+                const mat = obj.material
+                if (!Array.isArray(mat) && 'opacity' in mat) {
+                    mat.opacity = value
+                    mat.needsUpdate = true
+                }
+            }
+        })
+    }
+
+    public forceState(state: SectionState, reduced: boolean = false): void {
+        const bus = StateBus.getInstance()
+        bus.set(this.stateChannel, STATE_VALUE[state])
+        this._state = state
+        this.applyState(reduced)
+    }
+
+    public update(_dt: number): void {}
+
+    public dispose(): void {
+        const bus = StateBus.getInstance()
+        bus.cancel(this.stateChannel)
+        bus.cancel(this.opacityChannel)
+        bus.off(this.stateChannel)
+        bus.off(this.opacityChannel)
+        this.traverse((obj: THREE.Object3D) => {
+            if (obj instanceof THREE.Mesh) {
+                obj.geometry?.dispose()
+                const mats = Array.isArray(obj.material) ? obj.material : [obj.material]
+                mats.forEach(m => m?.dispose())
+            }
+        })
+        this.clear()
+    }
+}

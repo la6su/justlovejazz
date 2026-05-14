@@ -1,21 +1,18 @@
 // src/core/Bootstrapper.ts
 import { Experience } from '../Experience/Experience'
 import { GalleryManager } from './GalleryManager'
-import { CameraStateManager } from './CameraStateManager'
-import { SceneContentManager } from './SceneContentManager'
 import { GalleryScene } from '../Experience/World/GalleryScene'
 import { CinematicLights } from '../Experience/World/Lights'
 import { PROJECTS } from '../Data/Projects'
 import { UIManager } from '../UI/UIManager'
 import { ProjectDetail } from '../UI/ProjectDetail'
-import { NarrativePhase } from './types'
 
 export class Bootstrapper {
     static async init(ui: UIManager): Promise<Experience> {
         const experience = new Experience(ui)
         experience.setupEventListeners()
 
-        // Gallery
+        // Gallery — created by Bootstrapper so Experience stays unopinionated
         experience.galleryManager = new GalleryManager(PROJECTS)
         experience.galleryScene = new GalleryScene(experience.galleryManager, experience.sizes)
         try {
@@ -26,14 +23,7 @@ export class Bootstrapper {
             }
         }
 
-        experience.cameraStateManager = new CameraStateManager(experience.galleryManager);
-        experience.scene.add(experience.galleryScene.group);
-
-        // Scene Content Manager (dynamic content per section)
-        experience.sceneContentManager = new SceneContentManager(experience.scene)
-
-        // Activate first section
-        experience.sceneContentManager.queueTransition(NarrativePhase.AWAKENING, 0);
+        experience.scene.add(experience.galleryScene.group)
 
         // Cinematic lighting
         experience.cinematicLights = new CinematicLights(experience.scene)
@@ -41,26 +31,21 @@ export class Bootstrapper {
         // ── Project Detail UI ──
         const projectDetail = new ProjectDetail()
 
-        // Expand complete → open modal
         experience.galleryManager.onExpandComplete = (project) => {
             projectDetail.open(project)
         }
 
-        // Contract complete → ensure modal is closed (modal already closed on user action)
         experience.galleryManager.onContractComplete = () => {
             projectDetail.close()
         }
 
-        // When user closes modal → trigger reverse transition
         window.addEventListener('project-detail-closed', () => {
             experience.galleryManager.contractCard()
         })
 
-        // Initialize experience (renderer, UI modules, loader hide, render loop)
+        // Initialize experience (renderer, World, StateBus, render loop)
         await experience.init()
 
         return experience
     }
 }
-
-/* removed: loadSectionContent — Experience.init() calls initSectionSequences() */
