@@ -1,33 +1,25 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('JustLoveJazz', () => {
-  test('page loads and renders canvas', async ({ page }) => {
+  test('home page loads triad navigation', async ({ page }) => {
     await page.goto('/');
+    await expect(page.locator('nav[aria-label="Primary"]')).toBeVisible();
+    const links = page.locator('nav[aria-label="Primary"] a[href]');
+    expect(await links.count()).toBeGreaterThanOrEqual(3);
+  });
 
-    // Page title exists
-    const title = await page.title();
-    expect(title.length).toBeGreaterThan(0);
+  test('works page loads and renders canvas', async ({ page }) => {
+    await page.goto('/works.html');
 
-    // Canvas element present (WebGL/WebGPU renderer)
+    const nav = page.locator('nav, [role="navigation"]');
+    await expect(nav).toBeVisible({ timeout: 10000 });
+
     const canvas = page.locator('canvas');
     await expect(canvas).toBeVisible({ timeout: 15000 });
   });
 
-  test('navigation structure is valid', async ({ page }) => {
-    await page.goto('/');
-
-    // Nav landmark exists
-    const nav = page.locator('nav, [role="navigation"]');
-    await expect(nav).toBeVisible({ timeout: 5000 });
-
-    // At least one nav link
-    const links = nav.locator('a[href]');
-    const count = await links.count();
-    expect(count).toBeGreaterThan(0);
-  });
-
   test('accessibility landmarks present', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/works.html');
 
     // Skip link exists
     const skipLink = page.locator('.skip-link, [data-skip-link]');
@@ -42,7 +34,7 @@ test.describe('JustLoveJazz', () => {
   });
 
   test('gallery renders within timeout', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/works.html');
 
     // Wait for renderer to initialize (canvas + scene)
     const canvas = page.locator('canvas');
@@ -61,7 +53,7 @@ test.describe('JustLoveJazz', () => {
       }
     });
 
-    await page.goto('/');
+    await page.goto('/works.html');
     // Wait for scene to initialize
     await page.locator('canvas').waitFor({ state: 'visible', timeout: 15000 });
 

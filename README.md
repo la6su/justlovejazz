@@ -1,71 +1,73 @@
 # justlovejazz
 
-Cinematic interactive studio portfolio built with [Three.js](https://threejs.org/) (TSL), [WebGPU](https://gpuweb.github.io/gpu-web/), and Vite.
+Interactive studio portfolio with Three.js + WebGPU, implemented as a multi-page template system:
 
-> Inspired by the production quality of [junni-inc/next.junni.co.jp](https://github.com/junni-inc/next.junni.co.jp).
+- `/index.html` — Home;
+- `/trinity.html` — process/method page;
+- `/works.html` — dedicated interactive portfolio page.
 
-## Status
+Project direction is inspired by studio-level quality patterns similar to `next.junni.co.jp` (patterns only, no asset/content copying).
+
+## Current Implementation
 
 | Area | Status |
 |------|--------|
-| Core infra (types, config, WebGPU renderer) | ✅ |
-| Cinematic camera (FOV, shake, Baku follow) | ✅ |
-| Post-processing chain (bloom, grain, vignette) | ✅ |
-| 3D gallery (expand/contract transitions) | ✅ |
-| Project detail modal pipeline | ✅ |
-| DPR cap + Bicubic filtering | ✅ |
-| Lazy loading (chunk split, deferred assets) | 🔄 |
-| WebGL fallback | ❌ |
-| a11y audit | ❌ |
-| E2E tests | ❌ |
+| TypeScript strict + build stability | ✅ |
+| Renderer contract (`webgpu/webgl/unsupported`) | ✅ |
+| Multi-page build (MPA) | ✅ |
+| Shared page template (loader/nav/sections/modal) | ✅ |
+| Works page sticky portfolio + click-to-open project flow | ✅ |
+| WebGPU primary + WebGL fallback path | ✅ |
+| E2E smoke for Home + Works | ✅ |
+| CI-level Lighthouse/perf closure | 🔄 |
 
 ## Stack
 
 | Layer | Tech |
 |-------|------|
 | Language | TypeScript (strict) |
-| Build | Vite 8 (rolldown) |
-| 3D | Three.js 18.4 — TSL / Nodes |
-| GPU | WebGPU primary |
-| Scroll | Lenis |
+| Build | Vite 8 (MPA) |
+| 3D | Three.js 18.4 + TSL (Node Materials) |
+| GPU | WebGPU primary, explicit WebGL fallback |
+| Motion/Scroll | Lenis + state-driven timeline |
 | UI | UIkit 3 + Less |
 
 ## Run
 
 ```bash
 npm run dev
+npm run type-check
 npm run build
+npm test
 ```
 
-## Architecture
+## Architecture Snapshot
 
 ```
 src/
-├── core/                  # Bootstrapper, CameraStateManager, GalleryManager, WorldConfig
-├── Experience/            # Renderer, Camera, Input, SmoothScroll
-├── Experience/World/      # Baku, Environment, GalleryScene
-├── shaders/               # ProjectMaterial, postprocessing.tsl, tsl-utils, noise
-└── UI/                    # ProjectDetail, GalleryUI
+├── core/                  # Bootstrapper, state/capability managers, lifecycle managers
+├── Experience/            # Renderer, Camera, loop, section/world orchestration
+├── Experience/World/      # GalleryScene, Baku, Environment, section content
+├── shaders/               # TSL utilities, post-processing, gallery materials
+└── UI/                    # Sticky Works UI, detail modal, UI wiring
 ```
 
-Single render loop: `Experience.update()` drives everything (camera, scene, post, UI state).
+Single render loop in `Experience.update()` drives camera, world, post-processing, gallery state, and UI sync.
+
+## Route Roles
+
+- `index.html`: positioning and capabilities overview.
+- `trinity.html`: process/system framing.
+- `works.html`: fully interactive project portfolio (sticky selector + 3D expansion + detail modal).
 
 ## Docs
 
 | File | Content |
 |------|---------|
-| [CONCEPT](docs/CONCEPT.md) | Design principles, patterns, anti-patterns |
-| [SPEC](docs/SPEC.md) | Technical spec, renderer contract, materials |
-| [ARCHITECTURE](docs/ARCHITECTURE.md) | Module responsibilities, pipeline, types |
-| [ROADMAP](docs/ROADMAP.md) | Phased plan & completion status |
-| [LAZY_LOADING](docs/LAZY_LOADING.md) | Progressive loading plan |
-| [AUTONOMY](docs/AUTONOMY.md) | LLM agent work protocol |
-| [CHANGELOG](docs/CHANGELOG.md) | Activity log |
-
-## Production Gate
-
-- `npm run build` passes
-- Desktop: stable 60 FPS; Mobile: ≥ 45 FPS
-- WebGPU primary; Android fallback defined
-- Lighthouse: Performance ≥ 85 / Accessibility ≥ 90
-- No memory growth after transitions
+| [CONCEPT](docs/CONCEPT.md) | Design and narrative concept |
+| [SPEC](docs/SPEC.md) | Technical contracts and runtime rules |
+| [ARCHITECTURE](docs/ARCHITECTURE.md) | Module responsibilities and data flow |
+| [ROADMAP](docs/ROADMAP.md) | Delivery progress and next milestones |
+| [AUTONOMY](docs/AUTONOMY.md) | Agent execution protocol |
+| [PRODUCTION_AUTOPILOT_PLAN](docs/PRODUCTION_AUTOPILOT_PLAN.md) | Studio-grade completion plan |
+| [SKILLS_TRAINING_PLAN](docs/SKILLS_TRAINING_PLAN_WEBGPU_THREEJS_JUNNI_STYLE.md) | Skill-building system for this stack |

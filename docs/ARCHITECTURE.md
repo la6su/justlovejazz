@@ -2,13 +2,14 @@
 
 ## Project Summary
 
-WebGL/WebGPU interactive portfolio. TypeScript, Vite, Three.js 18.4 (+ TSL), WebGPU primary. Cinematic scroll-driven experience with gallery, post-processing, and deferred loading.
+WebGL/WebGPU interactive portfolio with multi-page routing (`index`, `trinity`, `works`).
+TypeScript + Vite MPA + Three.js/TSL. Shared runtime + route-specific content roles.
 
 ## Entry & Runtime
 
 ```
-src/entry.ts                  → Phase F.0: `syncReducedMotionDataset`, next frame loads Less + `main-app`
-src/main-app.ts               → `bootstrap()` + production Service Worker registration
+src/entry.ts                  → sync reduced-motion dataset, defer Less + app bootstrap
+src/main-app.ts               → `bootstrap()`, route mode gate (`data-app-mode`)
 src/main.ts                   → re-exports `./entry` (legacy path for tooling)
 src/core/Bootstrapper.ts       → wires Experience, events, managers
 src/Experience/Experience.ts   → single render loop (update → requestAnimationFrame)
@@ -24,6 +25,7 @@ src/Experience/Experience.ts   → single render loop (update → requestAnimati
 | **WorldConfig** | Single source of truth for section behavior (camera, baku, lighting, post, UI) |
 | **GalleryManager** | FSM: `LIST ↔ EXPAND ↔ CONTRACT` via scale/position on active card |
 | **GalleryScene** | 3D objects (cards, orbs). Visibility per `worldState.uiShowGallery` |
+| **UIManager** | Route-aware UI init (`works` portfolio only on `data-page="works"`) |
 
 ## Render Pipeline
 
@@ -41,6 +43,12 @@ preload → activateContext → use → deactivateContext → dispose
 ```
 
 Assets managed by priority (`pre`/`must`/`sub`). Never dispose from generic cleanup loops.
+
+## Route Behavior
+
+- `index.html`: studio overview narrative in shared template.
+- `trinity.html`: process/system narrative in shared template.
+- `works.html`: dedicated portfolio interactions (sticky selector + open detail).
 
 ## Core Types
 

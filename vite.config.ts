@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite'
+import { resolve } from 'node:path'
 
 export default defineConfig({
   build: {
@@ -7,6 +8,11 @@ export default defineConfig({
     chunkSizeWarningLimit: 1200,
     cssCodeSplit: true,
     rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),
+        trinity: resolve(__dirname, 'trinity.html'),
+        works: resolve(__dirname, 'works.html'),
+      },
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {

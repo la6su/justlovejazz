@@ -16,15 +16,22 @@ export class UIManager {
 
   async init() {
   /* UIManager initialized */
-    
-    // Initialize the HTML Gallery
+    const page = document.body.dataset.page
+    if (page !== 'works') return
+
+    const worksSection = document.getElementById('works')
+    if (!worksSection) return
+
+    // Initialize sticky Works gallery
     this.gallery = new ProjectGallery({
-        onClick: (project) => {
+        onClick: async (project) => {
             const manager = window.experience?.galleryManager;
             const scene = window.experience?.galleryScene;
 
             if (manager && scene) {
                 const idx = manager.projects.findIndex(p => p.id === project.id);
+                manager.setProject(idx)
+                await scene.ensureCardTextures(idx)
                 const mesh = scene.planes[idx];
                 if (mesh) {
                     manager.expandCard(idx, mesh.position.clone(), mesh.scale.x);
@@ -33,7 +40,6 @@ export class UIManager {
         }
     });
 
-    this.initGalleryNav();
     this.initDragAndDrop();
   }
 
@@ -44,7 +50,7 @@ export class UIManager {
 
     const handlePointerDown = (e: PointerEvent) => {
       // Prevent drag if clicking on UI elements
-      if ((e.target as HTMLElement).closest('.gallery-nav') || (e.target as HTMLElement).closest('.project-card')) {
+      if ((e.target as HTMLElement).closest('.works-sticky')) {
         return;
       }
 
@@ -103,44 +109,6 @@ export class UIManager {
     }
 
     window.addEventListener('wheel', handleWheel, { passive: true })
-  }
-
-  private initGalleryNav() {
-    const nav = document.createElement('div')
-    nav.className = 'gallery-nav uk-position-fixed uk-position-bottom-right uk-margin-large'
-    nav.innerHTML = `
-      <div class="gallery-nav__controls uk-flex uk-flex-middle">
-        <button class="gallery-nav__btn prev uk-button uk-button-default" aria-label="Previous project">
-          <img src="/src/assets/master-quantum-flares/icons/slidenav-previous-large.svg" alt="Prev" class="nav-icon">
-        </button>
-        <button class="gallery-nav__btn next uk-button uk-button-default" aria-label="Next project">
-          <img src="/src/assets/master-quantum-flares/icons/slidenav-next-large.svg" alt="Next" class="nav-icon">
-        </button>
-      </div>
-    `
-    document.body.appendChild(nav)
-
-    const prevBtn = nav.querySelector('.prev')
-    if (prevBtn) {
-      prevBtn.addEventListener('click', () => {
-        const manager = window.experience?.galleryManager
-        if (manager) {
-          const nextIdx = (manager.activeIndex - 1 + manager.projects.length) % manager.projects.length
-          manager.setProject(nextIdx)
-        }
-      })
-    }
-
-    const nextBtn = nav.querySelector('.next')
-    if (nextBtn) {
-      nextBtn.addEventListener('click', () => {
-        const manager = window.experience?.galleryManager
-        if (manager) {
-          const nextIdx = (manager.activeIndex + 1) % manager.projects.length
-          manager.setProject(nextIdx)
-        }
-      })
-    }
   }
 
   public showProjectContent(project: Project) {

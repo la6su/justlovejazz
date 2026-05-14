@@ -11,6 +11,21 @@
 | UI | UIkit 3 + Less |
 | Scroll | Lenis (smooth) |
 
+## Route Contract (MPA)
+
+Pages:
+
+- `index.html` (`data-page="home"`)
+- `trinity.html` (`data-page="trinity"`)
+- `works.html` (`data-page="works"`)
+
+Rules:
+
+- All pages use the same structural template (loader/nav/sections/modal scaffold).
+- Page content is route-specific and non-duplicative in intent.
+- Interactive works UI (`ProjectGallery`) must initialize only on `data-page="works"`.
+- 3D runtime (`data-app-mode="full"`) remains enabled on all studio routes.
+
 ## Renderer Contract
 
 ```ts
@@ -114,8 +129,9 @@ Rules:
 - `npm run build` passes
 - `--noUnusedLocals` not disabled to hide errors
 - Renderer mode + quality tier logged on init
-- All sections reachable (scroll/touch/keyboard)
+- All sections reachable (scroll/touch/keyboard) on each route
 - Gallery → detail → back: no visual jumps
+- Works interactions isolated to `/works.html` (no cross-route UI leakage)
 - WebGPU path stable
 - Fallback behavior defined and tested
 - No TODO masking production blockers

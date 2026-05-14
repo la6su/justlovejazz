@@ -9,6 +9,7 @@
 | C. Post-Processing | Bloom, vignette, grain via TSL |
 | D. Gallery | 3D gallery, expand/contract transitions, ProjectDetail modal |
 | E. Performance | DPR cap (max 2), Bicubic filtering, asset disposal |
+| H. Multi-Page Studio Template | Shared template across `index/trinity/works`, dedicated interactive works route |
 
 ## Next
 
@@ -35,3 +36,9 @@
 
 - E2E tests: Playwright smoke suite passes locally (`chromium`) — CI integration and stable runner policy still pending
 - CDN headers documentation (optional)
+
+### I. Studio Completion (active)
+
+- Visual system unification across all routes (content-specific, not duplicated messaging)
+- Works route final polish to studio-grade (preview transitions, metadata density, keyboard/a11y refinement)
+- Perf/a11y budgets and Lighthouse closure

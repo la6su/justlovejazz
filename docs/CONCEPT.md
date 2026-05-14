@@ -2,13 +2,12 @@
 
 ## Goal
 
-Cinematic interactive studio portfolio inspired by `junni.co`. Principles over visual imitation:
+Build a studio-grade multi-page portfolio in one coherent visual system:
 
-- World-driven storytelling; scroll as director timeline
-- Central 3D object that changes behavior per section
-- Camera with inertia, FOV accents, micro-movement
-- Staged loading: `pre` → `must` → `sub`
-- Post-processing as art direction, not a filter
+- shared page template across routes;
+- route-specific narrative and content;
+- dedicated interactive portfolio route (`/works.html`);
+- 3D transitions and state-driven motion as core language.
 
 ## Design Principles
 
@@ -20,6 +19,10 @@ Cinematic interactive studio portfolio inspired by `junni.co`. Principles over v
    - `pointer velocity → camera/environment response`
    - `active project → camera/detail material transition`
    - `section → lighting/material/post-processing preset`
+5. **Route clarity** — each page has a clear role:
+   - `Home`: studio positioning
+   - `Trinity`: method/process system
+   - `Works`: interactive portfolio cases
 
 ## Junni Patterns to Adapt
 
@@ -42,8 +45,8 @@ Cinematic interactive studio portfolio inspired by `junni.co`. Principles over v
 
 ## Definition of Done
 
-- User understands site structure in 5s
-- Transitions feel intentional, not accidental
-- 3D scene helps read portfolio, doesn't get in the way
-- Page freezes well: a frame looks like a finished poster
-- Mobile version designed separately, not just scaled down
+- User understands route purpose in under 5 seconds.
+- Works interactions exist only on `/works.html` and feel deterministic.
+- Transitions are intentional across all routes, not event-noise.
+- Mobile-first behavior remains clear and performant.
+- Frames read as finished compositions, not placeholder scaffolds.

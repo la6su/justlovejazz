@@ -3,6 +3,9 @@ import { Bootstrapper } from './core/Bootstrapper'
 import { ErrorTracker } from './core/ErrorTracker'
 
 export async function bootstrap(): Promise<void> {
+  const mode = document.body.dataset.appMode ?? 'full'
+  if (mode !== 'full') return
+
   ErrorTracker.init()
   try {
     const ui = new UIManager()

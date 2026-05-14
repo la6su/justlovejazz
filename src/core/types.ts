@@ -60,6 +60,7 @@ export interface Project {
   year?: string;
   category?: string;
   tags?: string[];
+  slug?: string;
 }
 
 export enum ViewState {
