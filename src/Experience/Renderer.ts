@@ -34,8 +34,7 @@ export class Renderer {
     if (this.capabilities.mode === 'webgpu') {
       const r = new WebGPURenderer({
         antialias: true,
-        powerPreference: 'high-performance',
-      })
+      } as any)
       this.instance = r
       this.postUniforms = {
         bloom: uniform(0.3),
@@ -56,9 +55,9 @@ export class Renderer {
       this.postUniforms = null
     }
 
-    this.instance.setPixelRatio(Math.min(sizes.dpr, this.capabilities.maxDpr))
-    this.instance.setSize(sizes.width, sizes.height)
-    this.instance.setClearColor(0x000000)
+    (this.instance as any).setPixelRatio(Math.min(sizes.dpr, this.capabilities.maxDpr))
+    (this.instance as any).setSize(sizes.width, sizes.height)
+    (this.instance as any).setClearColor?.(0x000000)
     document.body.appendChild(this.instance.domElement)
 
     window.addEventListener('resize', () => {
@@ -95,7 +94,7 @@ export class Renderer {
 
   async init() {
     if (this.capabilities.mode === 'webgpu') {
-      await (this.instance as WebGPURenderer).init()
+      await (this.instance as any).init?.()
     }
   }
 

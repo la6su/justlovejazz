@@ -75,15 +75,15 @@ export class Bootstrapper {
     }
 }
 
-/** Lazy-load SectionContent into SceneContentManager */
+/** Lazy-load SectionSequences (TSL-driven) into SceneContentManager */
 async function loadSectionContent(manager: SceneContentManager): Promise<void> {
     try {
-        const { SectionContent } = await import('../Experience/World/SectionContent');
-        manager.setupPhaseContent(NarrativePhase.AWAKENING, SectionContent.createAwakeningContent());
-        manager.setupPhaseContent(NarrativePhase.DISCOVERY, SectionContent.createDiscoveryContent());
-        manager.setupPhaseContent(NarrativePhase.DEEP_DIVE, SectionContent.createDeepDiveContent());
-        manager.setupPhaseContent(NarrativePhase.CONNECTION, SectionContent.createConnectionContent());
+        const { SectionSequences } = await import('../Experience/World/SectionSequences');
+        manager.setupPhaseContent(NarrativePhase.AWAKENING, SectionSequences.createAwakening());
+        manager.setupPhaseContent(NarrativePhase.DISCOVERY, SectionSequences.createDiscovery());
+        manager.setupPhaseContent(NarrativePhase.DEEP_DIVE, SectionSequences.createDeepDive());
+        manager.setupPhaseContent(NarrativePhase.CONNECTION, SectionSequences.createConnection());
     } catch (_err) {
-        /* Failed to load section content */
+        /* Failed to load section sequences */
     }
 }

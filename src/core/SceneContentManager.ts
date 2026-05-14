@@ -31,7 +31,10 @@ const PHASE_ORDER: NarrativePhase[] = [
  */
 export class SceneContentManager {
     private scene: THREE.Scene;
-    private groups: Map<NarrativePhase, THREE.Group> = new Map();
+    private _groups: Map<NarrativePhase, THREE.Group> = new Map();
+    public get groups(): Map<NarrativePhase, THREE.Group> {
+        return this._groups;
+    }
     private currentPhase: NarrativePhase | null = null;
 
     // Transition state (driven from Experience.update)
@@ -53,7 +56,7 @@ export class SceneContentManager {
             const group = new THREE.Group();
             group.name = `scene-${phase}`;
             group.visible = false;
-            this.groups.set(phase as NarrativePhase, group);
+            this._groups.set(phase as NarrativePhase, group);
             this.scene.add(group);
         }
     }
@@ -68,8 +71,8 @@ export class SceneContentManager {
 
         // Instant activation — no animation
         if (duration === 0) {
-            const oldGroup = this.currentPhase !== null ? this.groups.get(this.currentPhase) : null;
-            const newGroup = this.groups.get(phase);
+            const oldGroup = this.currentPhase !== null ? this._groups.get(this.currentPhase) : null;
+            const newGroup = this._groups.get(phase);
             if (oldGroup) {
                 oldGroup.visible = false;
                 oldGroup.scale.setScalar(1);
@@ -89,7 +92,7 @@ export class SceneContentManager {
         this.transitionProgress = 0;
         this.isTransitioning = true;
 
-        const newGroup = this.groups.get(phase);
+        const newGroup = this._groups.get(phase);
         if (newGroup) {
             newGroup.visible = true;
             const preset = PHASE_TRANSITION_PRESETS[phase];
@@ -111,7 +114,7 @@ export class SceneContentManager {
 
         // Idle animation on current content
         if (this.currentPhase !== null && !this.isTransitioning) {
-            const group = this.groups.get(this.currentPhase);
+            const group = this._groups.get(this.currentPhase);
             if (group) this.animateIdle(group, deltaTime);
         }
     }
@@ -125,12 +128,12 @@ export class SceneContentManager {
         if (currentIndex === -1) return
 
         const nextPhase = PHASE_ORDER[Math.min(currentIndex + 1, PHASE_ORDER.length - 1)]
-        const currentGroup = this.groups.get(currentPhase)
-        const nextGroup = this.groups.get(nextPhase)
+        const currentGroup = this._groups.get(currentPhase)
+        const nextGroup = this._groups.get(nextPhase)
         if (!currentGroup || !nextGroup) return
 
         // Hide non-participating groups for deterministic visuals and lower overdraw.
-        this.groups.forEach((group, phase) => {
+        this._groups.forEach((group, phase) => {
             group.visible = phase === currentPhase || phase === nextPhase
         })
 
@@ -167,8 +170,8 @@ export class SceneContentManager {
             this.endTransition()
             return
         }
-        const oldGroup = this.currentPhase !== null ? this.groups.get(this.currentPhase) : null;
-        const newGroup = this.groups.get(targetPhase);
+        const oldGroup = this.currentPhase !== null ? this._groups.get(this.currentPhase) : null;
+        const newGroup = this._groups.get(targetPhase);
 
         if (!oldGroup || !newGroup) {
             this.endTransition();
@@ -258,8 +261,8 @@ export class SceneContentManager {
     }
 
     private endTransition(): void {
-        const oldGroup = this.currentPhase !== null ? this.groups.get(this.currentPhase) : null;
-        const newGroup = this.targetPhase ? this.groups.get(this.targetPhase) : null;
+        const oldGroup = this.currentPhase !== null ? this._groups.get(this.currentPhase) : null;
+        const newGroup = this.targetPhase ? this._groups.get(this.targetPhase) : null;
 
         if (oldGroup) {
             oldGroup.visible = false;
@@ -305,7 +308,7 @@ export class SceneContentManager {
      * Get the group for a specific phase to populate content.
      */
     public getGroup(phase: NarrativePhase): THREE.Group {
-        return this.groups.get(phase)!;
+        return this._groups.get(phase)!;
     }
 
     /**
@@ -332,7 +335,7 @@ export class SceneContentManager {
      * Dispose all groups and materials.
      */
     public dispose(): void {
-        this.groups.forEach(group => {
+        this._groups.forEach(group => {
             group.traverse(obj => {
                 if (obj instanceof THREE.Mesh) {
                     obj.geometry?.dispose();
@@ -353,7 +356,7 @@ export class SceneContentManager {
             });
             group.clear();
         });
-        this.groups.forEach(g => this.scene.remove(g));
-        this.groups.clear();
+        this._groups.forEach(g => this.scene.remove(g));
+        this._groups.clear();
     }
 }

@@ -70,7 +70,7 @@ export class DebugStats {
         }
 
         // Geometry / Texture count from Three.js renderer
-        const info = this.renderer.info;
+        const info = (this.renderer as any).info;
         this.geoDisplay.innerText = `GEO: ${info.memory.geometries} | TEX: ${info.memory.textures}`;
     }
 
