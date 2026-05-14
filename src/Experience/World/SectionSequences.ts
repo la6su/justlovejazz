@@ -3,6 +3,7 @@
 // Low-light mood: dark backgrounds, muted materials, atmospheric
 
 import * as THREE from 'three'
+import { StarField } from '../../worlds/components/StarField'
 
 const ASSETS = '/assets/references'
 const textureCache = new Map<string, THREE.Texture>()
@@ -54,22 +55,11 @@ function ball(pos: [number,number,number], sc = 1, col = 0xffffff): THREE.Group 
   return g
 }
 
-function stars(cx: number, cy: number, cz: number, count: number): THREE.Group {
+function stars(count: number = 200): THREE.Group {
   const g = new THREE.Group()
-  const positions = new Float32Array(count * 3)
-  for (let i = 0; i < count; i++) {
-    positions[i*3] = R(cx - 30, cx + 30)
-    positions[i*3+1] = R(cy - 40, cy + 40)
-    positions[i*3+2] = R(cz - 30, cz + 30)
-  }
-  const geo = new THREE.BufferGeometry()
-  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-  const mat = new THREE.PointsMaterial({
-    size: R(0.03, 0.08), color: 0x555566,
-    transparent: true, opacity: 0.25, depthWrite: false, sizeAttenuation: true,
-  })
-  g.add(new THREE.Points(geo, mat))
-  g.userData.type = 'stars'
+  const field = new StarField(g, count)
+  g.userData.starField = field
+  g.userData.type = 'star-field'
   return g
 }
 
@@ -404,7 +394,7 @@ function strips(): THREE.Group {
 function step01_hello(): THREE.Object3D[] {
   const s = new THREE.Group()
   s.name = 'step01-hello'
-  s.add(stars(0, 0, 0, 40))
+  s.add(stars(40))
   const smoke = smokePlanes([
     {x:10.7,y:3.9,z:17.8,rz:2.7,s:3.9,front:true},
     {x:24.5,y:-10.3,z:7.5,rz:5.5,s:5.0,front:true},
@@ -424,7 +414,7 @@ function step01_hello(): THREE.Object3D[] {
 function step02_ball(): THREE.Object3D[] {
   const s = new THREE.Group()
   s.name = 'step02-ball'
-  s.add(stars(0, 0, 0, 45))
+  s.add(stars(45))
   const b = ball([0.25, 2, 1.35], 1.2, 0x4a3529)
   s.add(b)
   s.add(beams())
@@ -436,7 +426,7 @@ function step02_ball(): THREE.Object3D[] {
 function step03_beams(): THREE.Object3D[] {
   const s = new THREE.Group()
   s.name = 'step03-beams'
-  s.add(stars(0, 0, 0, 35))
+  s.add(stars(35))
   // Multiple beam groups at different angles
   const bg1 = beams()
   s.add(bg1)
@@ -452,7 +442,7 @@ function step03_beams(): THREE.Object3D[] {
 function step04_city(): THREE.Object3D[] {
   const s = new THREE.Group()
   s.name = 'step04-city'
-  s.add(stars(0, 0, 0, 50))
+  s.add(stars(50))
   s.add(city())
   s.add(strips())
   s.add(rocks())
@@ -463,7 +453,7 @@ function step04_city(): THREE.Object3D[] {
 function step05_neons(): THREE.Object3D[] {
   const s = new THREE.Group()
   s.name = 'step05-neons'
-  s.add(stars(0, 0, 0, 50))
+  s.add(stars(50))
   s.add(neons())
   const gg = gravityGrid()
   gg.position.y = -3
@@ -476,7 +466,7 @@ function step05_neons(): THREE.Object3D[] {
 function step06_flow(): THREE.Object3D[] {
   const s = new THREE.Group()
   s.name = 'step06-flow'
-  s.add(stars(0, 0, 0, 30))
+  s.add(stars(30))
   const ff = flowField()
   ff.position.set(-1.5, 12, -8)
   s.add(ff)
@@ -488,7 +478,7 @@ function step06_flow(): THREE.Object3D[] {
 function step07_drop(): THREE.Object3D[] {
   const s = new THREE.Group()
   s.name = 'step07-drop'
-  s.add(stars(0, 0, 0, 35))
+  s.add(stars(35))
   s.add(dropParticles())
   const h = heightmap()
   h.position.set(0, -10, -20)
@@ -502,7 +492,7 @@ function step07_drop(): THREE.Object3D[] {
 function step08_galaxy(): THREE.Object3D[] {
   const s = new THREE.Group()
   s.name = 'step08-galaxy'
-  s.add(stars(0, 0, 0, 35))
+  s.add(stars(35))
   const b = ball([7, 6.2, 0], 1.5, 0x444455)
   s.add(b)
   s.add(galaxy())

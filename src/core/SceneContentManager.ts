@@ -44,6 +44,7 @@ export class SceneContentManager {
 
     // Elapsed time counter for idle animation
     private elapsed: number = 0;
+    private _lastScroll: number = 0;
 
     constructor(scene: THREE.Scene) {
         this.scene = scene;
@@ -123,7 +124,8 @@ export class SceneContentManager {
      * Scroll/timeline-driven content blending.
      * Keeps section content transitions deterministic and synchronized with world state.
      */
-    public syncToTimeline(currentPhase: string, phaseProgress: number): void {
+    public syncToTimeline(currentPhase: string, phaseProgress: number, scrollValue: number = 0): void {
+        this._lastScroll = scrollValue
         const currentIndex = PHASE_ORDER.indexOf(currentPhase as any)
         if (currentIndex === -1) return
 
@@ -351,6 +353,14 @@ export class SceneContentManager {
                     // Face subtle rotation
                     if (obj instanceof THREE.Group) {
                         obj.rotation.y += deltaTime * 0.005
+                    }
+                    break;
+
+                case 'star-field':
+                    // Parallax star field — update StarField component
+                    const anyObj = obj as any
+                    if (anyObj.userData.starField) {
+                        anyObj.userData.starField.update(deltaTime, this._lastScroll ?? 0)
                     }
                     break;
             }
