@@ -28,7 +28,6 @@ import { getWorldCreators } from './World/SectionSequences'
 export class Experience {
   static instance: Experience
 
-  private ui!: UIManager
   scene: THREE.Scene = new THREE.Scene()
   sizes!: Sizes
   time!: Time
@@ -54,12 +53,11 @@ export class Experience {
   private currentSectionContext: string | null = null
   private sectionTransition!: SectionTransition
 
-  constructor(ui: UIManager) {
+  constructor(_ui: UIManager) {
     this.sizes = new Sizes()
     this.time = new Time()
     Experience.instance = this
     window.experience = this
-    this.ui = ui
     this.camera = new Camera(this.sizes)
     this.renderer = new Renderer(this.sizes)
   }
@@ -158,14 +156,8 @@ export class Experience {
     this.sceneContentManager.syncToTimeline(currentPhase, worldState.phaseProgress)
     this.sceneContentManager.update(deltaTime)
 
-    // Show/hide 3D gallery group + UI gallery per section context
+    // Show/hide 3D gallery group per section context
     this.galleryScene.group.visible = worldState.uiShowGallery
-    if (this.ui.gallery) {
-      this.ui.gallery.setVisible(worldState.uiShowGallery)
-      if (worldState.uiShowGallery) {
-        this.ui.gallery.update(this.galleryManager)
-      }
-    }
 
     if (worldState) {
       this.baku.position.copy(worldState.bakuPosition)
