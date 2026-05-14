@@ -3,7 +3,15 @@ import { Bootstrapper } from './core/Bootstrapper'
 import { ErrorTracker } from './core/ErrorTracker'
 import { syncReducedMotionDataset } from './core/motionPolicy'
 
-export async function bootstrap(): Promise<void> {
+export interface BootstrapOptions {
+  onIntroComplete?: () => void
+}
+
+/**
+ * Bootstrap the full 3D app (lazy-loaded chunk).
+ * Heavy deps: three, world, shaders are all in this module
+ */
+export async function bootstrap(opts: BootstrapOptions = {}): Promise<void> {
   const mode = document.body.dataset.appMode ?? 'full'
   if (mode !== 'full') return
 
@@ -13,6 +21,10 @@ export async function bootstrap(): Promise<void> {
     const ui = new UIManager()
     await ui.init()
     await Bootstrapper.init(ui)
+
+    // Hook into IntroSequence for splash lifecycle
+    Bootstrapper.onIntroComplete = opts.onIntroComplete ?? null
+
     initScrollHint()
     registerServiceWorker()
     if (import.meta.env.DEV) {
@@ -37,12 +49,12 @@ function registerServiceWorker(): void {
 
 // Hide "scroll to explore" hint after first scroll
 function initScrollHint(): void {
-  const hint = document.getElementById('scrollHint') as HTMLElement | null;
-  if (!hint) return;
+  const hint = document.getElementById('scrollHint') as HTMLElement | null
+  if (!hint) return
   const hideHint = () => {
-    hint.classList.add('fade-out');
-    setTimeout(() => hint.remove(), 700);
-    window.removeEventListener('scroll', hideHint);
-  };
-  window.addEventListener('scroll', hideHint, { passive: true, once: true });
+    hint.classList.add('fade-out')
+    setTimeout(() => hint.remove(), 700)
+    window.removeEventListener('scroll', hideHint)
+  }
+  window.addEventListener('scroll', hideHint, { passive: true, once: true })
 }

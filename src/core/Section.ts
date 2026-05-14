@@ -1,4 +1,5 @@
-// src/core/Section.ts
+// src/core/Section.ts — Junni-style: cameraTransform, bakuTransform, viewingState, switchViewingState()
+
 import * as THREE from 'three'
 import { StateBus } from './StateBus'
 import { type PhaseConfig } from './WorldConfig'
@@ -15,8 +16,51 @@ const STATE_VALUE: Record<SectionState, number> = {
     [SectionState.PASSED]: 2,
 }
 
+// ── Junni: camera transform per section (where camera is when this section is active)
+export interface CameraTransform {
+    position: THREE.Vector3
+    target: THREE.Vector3
+    fov: number
+}
+
+// ── Junni: baku transform per section (where character is when this section is active)
+export interface BakuTransform {
+    position: THREE.Vector3
+    rotation: THREE.Quaternion
+    scale: THREE.Vector3
+    opacity: number
+    role: number
+    material: {
+        color: THREE.Color
+        emissive: THREE.Color
+        roughness: number
+        metalness: number
+    }
+}
+
+// ── Junni: post processing params per section
+export interface PostProcessingParams {
+    bloom: number
+    vignette: number
+    grain: number
+}
+
+// ── Junni: light data per section
+export interface LightData {
+    ambientColor: THREE.Color
+    intensity: number
+}
+
 export class Section extends THREE.Group {
     public phaseConfig: PhaseConfig
+
+    // ── Junni-style transform holders (read from PhaseConfig at construction)
+    public cameraTransform: CameraTransform
+    public bakuTransform: BakuTransform
+    public ppParams: PostProcessingParams
+    public lightData: LightData
+
+    // ── Viewing state machinery (Junni: ready/viewing/passed)
     private _state: SectionState = SectionState.READY
     public get state(): SectionState { return this._state }
 
@@ -30,6 +74,38 @@ export class Section extends THREE.Group {
         this.stateChannel = `section:${config.id}:state`
         this.opacityChannel = `section:${config.id}:opacity`
         this.visible = false
+
+        // ── Extract transforms from PhaseConfig (Junni pattern)
+        this.cameraTransform = {
+            position: config.camera.position.clone(),
+            target: config.camera.target.clone(),
+            fov: config.camera.fov,
+        }
+
+        this.bakuTransform = {
+            position: config.baku.position.clone(),
+            rotation: config.baku.rotation.clone(),
+            scale: config.baku.scale.clone(),
+            opacity: config.baku.opacity,
+            role: config.baku.role as unknown as number,
+            material: {
+                color: config.baku.material.color.clone(),
+                emissive: config.baku.material.emissive.clone(),
+                roughness: config.baku.material.roughness,
+                metalness: config.baku.material.metalness,
+            },
+        }
+
+        this.ppParams = {
+            bloom: config.post.bloom,
+            vignette: config.post.vignette,
+            grain: config.post.grain,
+        }
+
+        this.lightData = {
+            ambientColor: config.lighting.ambientColor.clone(),
+            intensity: config.lighting.intensity,
+        }
 
         const bus = StateBus.getInstance()
         bus.channel(this.stateChannel, STATE_VALUE[SectionState.READY])
@@ -48,19 +124,22 @@ export class Section extends THREE.Group {
         bus.on(this.opacityChannel, () => this.applyOpacity())
     }
 
+    // ── Junni: switchViewingState(index) — instant или animated + reduced motion aware
+    public switchViewingState(state: SectionState, duration: number = 1.0, reduced: boolean = false): void {
+        this.switchState(state, duration, reduced)
+    }
+
     public switchState(target: SectionState, duration: number = 1.0, reduced: boolean = false): void {
         const bus = StateBus.getInstance()
         const delta = STATE_VALUE[target] - bus.get(this.stateChannel)
         if (delta === 0) return
-        // At reduced motion, skip animation and jump instantly
         const dur = reduced ? 0 : duration
         bus.channel(this.stateChannel, STATE_VALUE[target])
         bus.animate(this.stateChannel, bus.get(this.stateChannel) + delta, dur, 'easeOutQuart')
         if (reduced) {
-            // Instantly apply final state for reduced motion
             bus.set(this.stateChannel, STATE_VALUE[target])
             this._state = target
-            this.applyState()
+            this.applyState(true)
         }
     }
 
@@ -70,6 +149,12 @@ export class Section extends THREE.Group {
 
     public fadeOut(duration: number = 1.0): void {
         StateBus.getInstance().animate(this.opacityChannel, 0, duration, 'easeInOutQuart')
+    }
+
+    public splash(): void {
+        // ── Junni: splash = export-ready visible state (called on world splash)
+        this.visible = true
+        this.forceState(SectionState.VIEWING, true)
     }
 
     private applyState(reduced: boolean = false): void {

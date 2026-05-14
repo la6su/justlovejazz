@@ -31,8 +31,10 @@ export class GalleryManager {
     public readonly SENSITIVITY = 1.0
     public readonly WHEEL_SENSITIVITY = 0.0028
     private readonly transitionSpeed = 1.8
-    /** Faster gallery expand/contract when user prefers reduced motion */
-    private readonly transitionMotionMul = prefersReducedMotion() ? 3 : 1
+    /** Dynamic: re-checks OS preference each tick to handle mid-session changes */
+    private get transitionMotionMul(): number {
+        return prefersReducedMotion() ? 3 : 1
+    }
 
     public get trackLength(): number {
         return this.projects.length * this.STEP

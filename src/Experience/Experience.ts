@@ -3,8 +3,6 @@ import { Sizes } from './Sizes'
 import { Time } from './Time'
 import { Camera } from './Camera'
 import { Renderer } from './Renderer'
-import { WorldAtmosphere } from '../core/WorldAtmosphere'
-import { CinematicLights } from './World/Lights'
 import { DebugStats } from '../core/DebugStats'
 
 import { SmoothScroll } from './SmoothScroll'
@@ -30,16 +28,14 @@ export class Experience {
   time!: Time
   camera!: Camera
   renderer!: Renderer
-  cinematicLights!: CinematicLights
 
   private smoothScroll!: SmoothScroll
   private webglTextManager!: WebGLTextManager
   private contentReveal!: ContentReveal
   private cursor!: Cursor
-  private atmosphere!: WorldAtmosphere
   private debugStats!: DebugStats
 
-  // World composition system
+  // World composition system (Junni: World owns baku + lights + atmosphere + ground + sections)
   public world!: World
   private bus!: StateBus
 
@@ -73,7 +69,6 @@ export class Experience {
     this.webglTextManager = new WebGLTextManager(Array.from(titles))
     this.contentReveal = new ContentReveal()
     this.cursor = new Cursor()
-    this.atmosphere = new WorldAtmosphere(this.scene)
 
     await this.renderer.init()
 
@@ -81,8 +76,8 @@ export class Experience {
       this.debugStats = new DebugStats(this.renderer.instance)
     }
 
-    // World — scene composition (init: World sections)
-    this.world = new World()
+    // World — composition root (Junni: owns baku + lights + atmosphere + ground + sections)
+    this.world = new World(this.scene)
     this.world.init()
     this.scene.add(this.world)
 
@@ -94,14 +89,8 @@ export class Experience {
     this.camera.instance.lookAt(0, 0, 0)
     this.camera.instance.updateProjectionMatrix()
 
-    const loader = document.getElementById('pageLoader')
-    if (loader) {
-      loader.classList.add('fade-out')
-      setTimeout(() => {
-        loader.style.display = 'none'
-        loader.style.opacity = ''
-      }, 900)
-    }
+    // ── Intro sequence (Junni: World.Intro splash — StateBus only, no DOM overlay)
+    this.world.intro.init(this.world, this.scene)
 
     requestAnimationFrame((t) => this.update(t))
   }
@@ -120,7 +109,7 @@ export class Experience {
 
     const normalizedScroll = input.getSmoothedScrollProgress()
 
-    // World‐driven scene update (returns cameraTarget + worldState)
+    // World-driven scene update (returns cameraTarget + worldState)
     const { cameraTarget, worldState } = this.world.advance(normalizedScroll)
     this.world.update(deltaTime)
 
@@ -131,22 +120,22 @@ export class Experience {
         AssetManager.getInstance().disposeContext(this.currentSectionContext)
         GPUResourceManager.getInstance().disposeContext(this.currentSectionContext)
       }
-      this.atmosphere.setFog(config.fog.color, config.fog.density)
+      this.world.atmosphere.setFog(config.fog.color, config.fog.density)
       this.renderer.postManager.applyPreset(config.id)
       this.camera.setFovOffset(0.3, 0.8)
       this.currentSectionContext = config.context
     }
 
-    // Camera smoothing — constant 5 since CameraStateManager is gone
+    // Camera smoothing (Junni: cameraController follows world position)
     this.camera.updateSmooth(cameraTarget, deltaTime, 5)
 
     this.galleryManager.update(deltaTime)
     this.galleryScene.update(deltaTime)
     this.galleryScene.group.visible = worldState.uiShowGallery
 
-    // Lighting
+    // Lighting — delegates to World.lightsGroup (Junni pattern)
     const warmth = normalizedScroll
-    this.cinematicLights.setMood(warmth, worldState.envIntensity)
+    this.world.lightsGroup.setMood(warmth, worldState.envIntensity)
 
     this.camera.update(deltaTime)
     this.renderer.update(this.scene, this.camera.instance, worldState)
@@ -160,8 +149,6 @@ export class Experience {
     this.cursor.destroy()
     this.world.dispose()
     this.bus.cancelAll()
-    this.atmosphere.dispose()
-    this.cinematicLights.dispose()
     this.debugStats?.destroy()
     this.renderer.instance.dispose()
   }

@@ -2,12 +2,14 @@
 import { Experience } from '../Experience/Experience'
 import { GalleryManager } from './GalleryManager'
 import { GalleryScene } from '../Experience/World/GalleryScene'
-import { CinematicLights } from '../Experience/World/Lights'
 import { PROJECTS } from '../Data/Projects'
 import { UIManager } from '../UI/UIManager'
 import { ProjectDetail } from '../UI/ProjectDetail'
+import { StateBus } from './StateBus'
 
 export class Bootstrapper {
+    static onIntroComplete: (() => void) | null = null
+
     static async init(ui: UIManager): Promise<Experience> {
         const experience = new Experience(ui)
         experience.setupEventListeners()
@@ -24,9 +26,6 @@ export class Bootstrapper {
         }
 
         experience.scene.add(experience.galleryScene.group)
-
-        // Cinematic lighting
-        experience.cinematicLights = new CinematicLights(experience.scene)
 
         // ── Project Detail UI ──
         const projectDetail = new ProjectDetail()
@@ -46,6 +45,29 @@ export class Bootstrapper {
         // Initialize experience (renderer, World, StateBus, render loop)
         await experience.init()
 
+        // Hook: notify entry.ts when intro completes (so splash can be removed)
+        Bootstrapper.setupIntroCallback()
+
         return experience
+    }
+
+    private static setupIntroCallback(): void {
+        const bus = StateBus.getInstance()
+        let completed = false
+
+        const checkDone = () => {
+            if (completed) return
+            const stage = bus.get('intro:stage')
+            if (stage === 1) {
+                completed = true
+                Bootstrapper.onIntroComplete?.()
+            }
+        }
+
+        const poll = () => {
+            checkDone()
+            if (!completed) requestAnimationFrame(poll)
+        }
+        requestAnimationFrame(poll)
     }
 }

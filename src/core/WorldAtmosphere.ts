@@ -5,17 +5,26 @@ export class WorldAtmosphere {
 
     constructor(scene: THREE.Scene) {
         this.scene = scene;
+        this.initBG();
         this.initFog();
-        // No particles — replaced by GradientBackground for performance
+    }
+
+    // ── Junni BG pattern: gradient sphere / background color
+    private initBG() {
+        this.scene.background = new THREE.Color(0x000000);
     }
 
     private initFog() {
-        // Thin fog for depth
+        // Thin exponential fog for depth cues
         this.scene.fog = new THREE.FogExp2(new THREE.Color(0x000000), 0.04);
     }
 
     public setFog(color: THREE.Color, density: number) {
         this.scene.fog = new THREE.FogExp2(color, density);
+    }
+
+    public setBackground(color: THREE.Color) {
+        this.scene.background = color;
     }
 
     public update(_time: number) {
@@ -24,5 +33,6 @@ export class WorldAtmosphere {
 
     public dispose() {
         this.scene.fog = null;
+        this.scene.background = null;
     }
 }

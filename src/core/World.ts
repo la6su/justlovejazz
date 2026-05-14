@@ -1,10 +1,15 @@
-// src/core/World.ts
+// src/core/World.ts — Junni-style composition: Section[], Baku, Lights, Atmosphere, Ground
+
 import * as THREE from 'three'
 import { Section, SectionState } from './Section'
 import { StateBus } from './StateBus'
 import { getWorldConfigForPage, type PhaseConfig } from './WorldConfig'
 import { prefersReducedMotion } from './motionPolicy'
 import { type CameraTarget, type WorldState, NarrativePhase, BakuRole } from './types'
+import { Baku } from '../Experience/World/Baku'
+import { CinematicLights } from '../Experience/World/Lights'
+import { WorldAtmosphere } from './WorldAtmosphere'
+import { IntroSequence } from './IntroSequence'
 
 export interface WorldTransformResult {
     cameraTarget: CameraTarget
@@ -12,12 +17,53 @@ export interface WorldTransformResult {
 }
 
 export class World extends THREE.Group {
+    // ── Composition (Junni: sections + baku + lights + atmosphere + ground)
     public sections: Section[] = []
+    public baku!: Baku
+    public lightsGroup!: CinematicLights
+    public atmosphere!: WorldAtmosphere
+    private groundPlane!: THREE.Mesh
+    public intro: IntroSequence
+
     private configs: PhaseConfig[] = []
 
-    constructor() {
+    // ── Junni: current section tracking
+    private _currentSectionIndex: number = 0
+    public get currentSectionIndex(): number { return this._currentSectionIndex }
+
+    constructor(scene: THREE.Scene) {
         super()
         this.name = 'world'
+
+        // ── Atmosphere (= BG + fog, аналог Junni BG)
+        this.atmosphere = new WorldAtmosphere(scene)
+
+        // ── Lights (= World.lights, аналог Junni Lights)
+        this.lightsGroup = new CinematicLights(scene)
+
+        // ── Baku (character sphere)
+        this.baku = new Baku()
+        this.baku.name = 'baku'
+        this.add(this.baku)
+
+        // ── Ground plane (visual anchor, аналог Junni Ground)
+        this.groundPlane = new THREE.Mesh(
+            new THREE.PlaneGeometry(200, 200),
+            new THREE.MeshStandardMaterial({
+                color: 0x000000,
+                transparent: true,
+                opacity: 0.3,
+                roughness: 1,
+                metalness: 0,
+            })
+        )
+        this.groundPlane.rotation.x = -Math.PI / 2
+        this.groundPlane.position.y = -2
+        this.groundPlane.name = 'ground'
+        this.add(this.groundPlane)
+
+        // ── Intro sequence (Junni: World.Intro splash pattern)
+        this.intro = new IntroSequence()
     }
 
     public init(): void {
@@ -50,103 +96,124 @@ export class World extends THREE.Group {
 
     public update(deltaTime: number): void {
         this.sections.forEach(s => s.update(deltaTime))
+        this.baku.update(deltaTime)
     }
 
-    public advance(scroll: number): WorldTransformResult {
-        scroll = THREE.MathUtils.clamp(scroll, 0, 1)
+    // ── Junni: changeSection(index) — state machine (ready → viewing → passed)
+    // Returns the newly-active Section
+    public changeSection(index: number): Section | undefined {
+        const section = this.sections[index]
+        if (!section) return undefined
+
+        this._currentSectionIndex = index
+
+        const reduced = this.isReducedMotion
+
+        // All sections switch to appropriate states
+        this.sections.forEach((s, i) => {
+            if (i === index) {
+                // Active section → viewing
+                s.switchViewingState(SectionState.VIEWING, 0.8, reduced)
+                s.fadeIn(0.6)
+            } else if (i < index) {
+                // Previous sections → passed
+                s.switchViewingState(SectionState.PASSED, 0.5, reduced)
+            }
+            // Sections > index stay ready
+        })
+
+        return section
+    }
+
+    // ── Junni: updateTransform(scroll) — continuous lerp between adjacent sections
+    // Uses Section.cameraTransform / bakuTransform for interpolation
+    public updateTransform(scrollValue: number): WorldTransformResult {
+        scrollValue = THREE.MathUtils.clamp(scrollValue, 0, 1)
         if (this.sections.length === 0) return this.defaultResult()
 
         const total = this.sections.length
-        const scaled = scroll * (total - 1)
-        const from = Math.floor(scaled)
-        const to = Math.min(from + 1, total - 1)
-        const t = scaled - from
-        const reduced = this.isReducedMotion
+        const scaled = scrollValue * (total - 1)
+        const fromIndex = Math.floor(scaled)
+        const toIndex = Math.min(fromIndex + 1, total - 1)
+        const t = scaled - fromIndex
 
-        const fromSec = this.sections[from]
-        const toSec = this.sections[to] || this.sections[from]
-        const fromCfg = fromSec.phaseConfig
-        const toCfg = toSec.phaseConfig
-        const bus = StateBus.getInstance()
-
-        // Same section transition
-        if (from === to) {
-            if (fromSec.state === SectionState.READY) {
-                fromSec.switchState(SectionState.VIEWING, 0.8, reduced)
-                fromSec.fadeIn(0.6)
-            }
-            bus.set(`section:${fromCfg.id}:opacity`, 1)
-            return this.buildResult(fromCfg, undefined, 0, scroll, reduced)
+        // ── Update current section index (Junni pattern)
+        if (fromIndex !== this._currentSectionIndex) {
+            this._currentSectionIndex = fromIndex
         }
 
-        // State transitions
+        const fromSec = this.sections[fromIndex]
+        const toSec = this.sections[toIndex] || this.sections[fromIndex]
+
+        // ── State transitions (Junni: trigger on entering/leaving scroll ranges)
+        const reduced = this.isReducedMotion
         if (fromSec.state === SectionState.READY) {
-            fromSec.switchState(SectionState.VIEWING, 0.8, reduced)
+            fromSec.switchViewingState(SectionState.VIEWING, 0.8, reduced)
             fromSec.fadeIn(0.6)
         }
         if (toSec.state === SectionState.READY && t > 0.1) {
-            toSec.switchState(SectionState.VIEWING, 0.8, reduced)
+            toSec.switchViewingState(SectionState.VIEWING, 0.8, reduced)
             toSec.fadeIn(0.6)
         }
         if (t > 0.7 && fromSec.state === SectionState.VIEWING) {
-            fromSec.switchState(SectionState.PASSED, 0.5, reduced)
+            fromSec.switchViewingState(SectionState.PASSED, 0.5, reduced)
         }
 
-        // Crossfade
+        // ── Lerp transforms from Section transforms (Junni pattern)
+        const fromCam = fromSec.cameraTransform
+        const toCam = toSec.cameraTransform
+        const fromBaku = fromSec.bakuTransform
+        const toBaku = toSec.bakuTransform
+        const fromPP = fromSec.ppParams
+        const toPP = toSec.ppParams
+        const fromLight = fromSec.lightData
+        const toLight = toSec.lightData
+
+        const bus = StateBus.getInstance()
+        const fromCfg = fromSec.phaseConfig
+        const toCfg = toSec.phaseConfig
+
+        // Crossfade opacity
         bus.set(`section:${fromCfg.id}:opacity`, 1 - t)
         bus.set(`section:${toCfg.id}:opacity`, t)
 
-        return this.buildResult(fromCfg, toCfg, t, scroll, reduced)
-    }
-
-    private buildResult(from: PhaseConfig, to: PhaseConfig | undefined, t: number, scroll: number, _reduced: boolean = false): WorldTransformResult {
-        const toC = to ?? from
-
         return {
             cameraTarget: {
-                position: new THREE.Vector3().lerpVectors(from.camera.position, toC.camera.position, t),
-                lookAt: new THREE.Vector3().lerpVectors(from.camera.target, toC.camera.target, t),
-                fov: THREE.MathUtils.lerp(from.camera.fov, toC.camera.fov, t),
+                position: new THREE.Vector3().lerpVectors(fromCam.position, toCam.position, t),
+                lookAt: new THREE.Vector3().lerpVectors(fromCam.target, toCam.target, t),
+                fov: THREE.MathUtils.lerp(fromCam.fov, toCam.fov, t),
             },
             worldState: {
-                currentPhase: from.id as unknown as NarrativePhase,
+                currentPhase: fromCfg.id as unknown as NarrativePhase,
                 phaseProgress: t,
-                globalProgress: scroll,
-                bakuPosition: new THREE.Vector3().lerpVectors(from.baku.position, toC.baku.position, t),
-                bakuRotation: new THREE.Quaternion(),
-                bakuScale: new THREE.Vector3().lerpVectors(from.baku.scale, toC.baku.scale, t),
-                bakuOpacity: THREE.MathUtils.lerp(from.baku.opacity, toC.baku.opacity, t),
-                bakuRole: toC.baku.role as unknown as BakuRole,
+                globalProgress: scrollValue,
+                bakuPosition: new THREE.Vector3().lerpVectors(fromBaku.position, toBaku.position, t),
+                bakuRotation: new THREE.Quaternion().copy(fromBaku.rotation).slerp(toBaku.rotation, t),
+                bakuScale: new THREE.Vector3().lerpVectors(fromBaku.scale, toBaku.scale, t),
+                bakuOpacity: THREE.MathUtils.lerp(fromBaku.opacity, toBaku.opacity, t),
+                bakuRole: toBaku.role as unknown as BakuRole,
                 bakuMaterial: {
-                    role: toC.baku.role as unknown as BakuRole,
-                    color: new THREE.Color().lerpColors(from.baku.material.color, toC.baku.material.color, t),
-                    emissive: new THREE.Color().lerpColors(from.baku.material.emissive, toC.baku.material.emissive, t),
-                    roughness: THREE.MathUtils.lerp(from.baku.material.roughness, toC.baku.material.roughness, t),
-                    metalness: THREE.MathUtils.lerp(from.baku.material.metalness, toC.baku.material.metalness, t),
+                    role: toBaku.role as unknown as BakuRole,
+                    color: new THREE.Color().lerpColors(fromBaku.material.color, toBaku.material.color, t),
+                    emissive: new THREE.Color().lerpColors(fromBaku.material.emissive, toBaku.material.emissive, t),
+                    roughness: THREE.MathUtils.lerp(fromBaku.material.roughness, toBaku.material.roughness, t),
+                    metalness: THREE.MathUtils.lerp(fromBaku.material.metalness, toBaku.material.metalness, t),
                 },
-                envColor: new THREE.Color().lerpColors(from.lighting.ambientColor, toC.lighting.ambientColor, t),
-                envIntensity: THREE.MathUtils.lerp(from.lighting.intensity, toC.lighting.intensity, t),
-                uiShowGallery: toC.ui.showGallery,
+                envColor: new THREE.Color().lerpColors(fromLight.ambientColor, toLight.ambientColor, t),
+                envIntensity: THREE.MathUtils.lerp(fromLight.intensity, toLight.intensity, t),
+                uiShowGallery: toCfg.ui.showGallery,
                 post: {
-                    bloom: THREE.MathUtils.lerp(from.post.bloom, toC.post.bloom, t),
-                    vignette: THREE.MathUtils.lerp(from.post.vignette, toC.post.vignette, t),
-                    grain: THREE.MathUtils.lerp(from.post.grain, toC.post.grain, t),
+                    bloom: THREE.MathUtils.lerp(fromPP.bloom, toPP.bloom, t),
+                    vignette: THREE.MathUtils.lerp(fromPP.vignette, toPP.vignette, t),
+                    grain: THREE.MathUtils.lerp(fromPP.grain, toPP.grain, t),
                 },
             },
         }
     }
 
-    private defaultResult(): WorldTransformResult {
-        const cfg: PhaseConfig = {
-            id: 'step01', context: 'phase_step01', range: [0, 1],
-            camera: { position: new THREE.Vector3(0, 0, 8), target: new THREE.Vector3(0, 0, 0), fov: 55, isRelative: false },
-            baku: { position: new THREE.Vector3(), rotation: new THREE.Quaternion(), scale: new THREE.Vector3(0.4), opacity: 1, role: 0 as unknown as BakuRole, material: { color: new THREE.Color(), emissive: new THREE.Color(), roughness: 0.2, metalness: 0.8 } },
-            lighting: { ambientColor: new THREE.Color(), intensity: 1 },
-            fog: { color: new THREE.Color(), density: 0.03 },
-            post: { bloom: 0.2, vignette: 0.5, grain: 0.03 },
-            ui: { showGallery: false },
-        }
-        return this.buildResult(cfg, undefined, 0, 0)
+    // ── Legacy: keep advance() for backward compatibility during migration
+    public advance(scroll: number): WorldTransformResult {
+        return this.updateTransform(scroll)
     }
 
     public resize(_width: number, _height: number): void {}
@@ -163,11 +230,75 @@ export class World extends THREE.Group {
 
     public dispose(): void {
         this.disposeSections()
+        this.baku.geometry.dispose()
+        const bakuMat = this.baku.material
+        if (Array.isArray(bakuMat)) bakuMat.forEach(m => m.dispose())
+        else bakuMat.dispose()
+        this.groundPlane.geometry.dispose()
+        const groundMat = this.groundPlane.material
+        if (Array.isArray(groundMat)) groundMat.forEach(m => m.dispose())
+        else groundMat.dispose()
+        this.lightsGroup.dispose()
+        this.atmosphere.dispose()
+        this.intro.dispose()
     }
 
     /** Get PhaseConfig for a given phase ID */
     public getConfig(phase: string): PhaseConfig | undefined {
         return this.configs.find(c => c.id === phase)
+    }
+
+    private defaultResult(): WorldTransformResult {
+        const cfg: PhaseConfig = {
+            id: 'step01', context: 'phase_step01', range: [0, 1],
+            camera: { position: new THREE.Vector3(0, 0, 8), target: new THREE.Vector3(0, 0, 0), fov: 55, isRelative: false },
+            baku: { position: new THREE.Vector3(), rotation: new THREE.Quaternion(), scale: new THREE.Vector3(0.4), opacity: 1, role: 0 as unknown as BakuRole, material: { color: new THREE.Color(), emissive: new THREE.Color(), roughness: 0.2, metalness: 0.8 } },
+            lighting: { ambientColor: new THREE.Color(), intensity: 1 },
+            fog: { color: new THREE.Color(), density: 0.03 },
+            post: { bloom: 0.2, vignette: 0.5, grain: 0.03 },
+            ui: { showGallery: false },
+        }
+        return this.buildResultFromConfig(cfg)
+    }
+
+    private buildResultFromConfig(cfg: PhaseConfig): WorldTransformResult {
+        const cam = cfg.camera
+        const baku = cfg.baku
+        const light = cfg.lighting
+        const post = cfg.post
+
+        return {
+            cameraTarget: {
+                position: cam.position.clone(),
+                lookAt: cam.target.clone(),
+                fov: cam.fov,
+            },
+            worldState: {
+                currentPhase: cfg.id as unknown as NarrativePhase,
+                phaseProgress: 0,
+                globalProgress: 0,
+                bakuPosition: baku.position.clone(),
+                bakuRotation: baku.rotation.clone(),
+                bakuScale: baku.scale.clone(),
+                bakuOpacity: baku.opacity,
+                bakuRole: baku.role as unknown as BakuRole,
+                bakuMaterial: {
+                    role: baku.role as unknown as BakuRole,
+                    color: baku.material.color.clone(),
+                    emissive: baku.material.emissive.clone(),
+                    roughness: baku.material.roughness,
+                    metalness: baku.material.metalness,
+                },
+                envColor: light.ambientColor.clone(),
+                envIntensity: light.intensity,
+                uiShowGallery: cfg.ui.showGallery,
+                post: {
+                    bloom: post.bloom,
+                    vignette: post.vignette,
+                    grain: post.grain,
+                },
+            },
+        }
     }
 
     /** Check whether reduced motion is active */

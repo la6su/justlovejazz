@@ -14,18 +14,14 @@
       a { color: inherit; text-decoration: none; }
       .skip-link { position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden; }
       .skip-link:focus { position: fixed; left: 8px; top: 8px; width: auto; height: auto; padding: 8px 12px; background: #fff; color: #000; z-index: 10001; border-radius: 4px; outline: 2px solid #515d84; }
-      #pageLoader { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 9999; background: #0a0a0a; }
+      /* Splash: hidden until injected by splash.ts (z-index=9999) */
     </style>
   </head>
   <body data-app-mode="full" data-page="home">
     <a href="#home" class="skip-link">Skip to main content</a>
 
-    <div id="pageLoader" class="uk-flex uk-flex-center uk-flex-middle">
-      <div class="uk-text-center">
-        <div uk-spinner="crossing"></div>
-        <p class="uk-margin-small-top">Loading Experience...</p>
-      </div>
-    </div>
+    <!-- Splash overlay is rendered by splash.ts (zero-dep, instant paint) -->
+    <!-- Removed #pageLoader — replaced by lazy splash screen -->
 
     <div class="scroll-hint" id="scrollHint"><span>Scroll</span></div>
 

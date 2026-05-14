@@ -21,8 +21,13 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
+            // troika-three-text: ~680KB, always separate — lazy preload on demand
+            if (id.includes('troika-three-text')) return 'vendor-troika'
+            // three.js core + addons: ~700KB — core 3D engine
             if (id.includes('three') || id.includes('three-types')) return 'vendor-three'
+            // UI layer: uikit + lenis
             if (id.includes('uikit') || id.includes('lenis')) return 'vendor-ui'
+            // vendor-misc: everything else
             return 'vendor-misc'
           }
           if (id.includes('/src/UI/')) return 'chunk-ui'
