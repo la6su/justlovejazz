@@ -248,6 +248,111 @@ export class SceneContentManager {
                         obj.rotation.z += deltaTime * 0.05;
                     }
                     break;
+
+                case 'smoke-plane':
+                    // Drift smoke planes like orig 2015 portfolio
+                    if (obj instanceof THREE.Mesh && obj.userData.smokeBase) {
+                        const base = obj.userData.smokeBase as THREE.Vector3
+                        const speed = obj.userData.smokeSpeed ?? 0.5
+                        obj.position.x = base.x + Math.sin(this.elapsed * speed * 0.3) * 2
+                        obj.position.y = base.y + Math.cos(this.elapsed * speed * 0.2) * 1.5
+                        obj.rotation.z += deltaTime * speed * 0.01
+                        // Subtle opacity pulsing
+                        const mat = obj.material as THREE.MeshBasicMaterial
+                        if (mat && mat.opacity !== undefined) {
+                            mat.opacity = 0.15 + Math.sin(this.elapsed * speed * 0.5) * 0.05
+                        }
+                    }
+                    break;
+
+                case 'ball':
+                    // Animate ball — reveal/appear from 2015
+                    if (obj instanceof THREE.Group) {
+                        obj.rotation.y += deltaTime * 0.2
+                        obj.rotation.x += deltaTime * 0.05
+                        const phase = this.elapsed * 0.3
+                        obj.scale.setScalar(1 + Math.sin(phase) * 0.05)
+                    }
+                    break;
+
+                case 'grid':
+                    // Subtle grid breathing
+                    if (obj instanceof THREE.Group) {
+                        obj.rotation.z += deltaTime * 0.005
+                    }
+                    break;
+
+                case 'beam':
+                    // Beam rotation flare
+                    if (obj instanceof THREE.Group) {
+                        obj.rotation.y += deltaTime * 0.1
+                    }
+                    break;
+
+                case 'galaxy':
+                    // Galaxy spiral rotation
+                    if (obj instanceof THREE.Group) {
+                        obj.rotation.y += deltaTime * 0.05
+                    }
+                    break;
+
+                case 'neons':
+                    // Neon subtle glow pulse
+                    if (obj instanceof THREE.Group) {
+                        obj.traverse(child => {
+                            if (child.userData.type === 'neon-column' && child instanceof THREE.Mesh) {
+                                const mat = child.material as THREE.MeshStandardMaterial
+                                if (mat && mat.emissiveIntensity !== undefined) {
+                                    mat.emissiveIntensity = 0.4 + Math.sin(this.elapsed * 0.8) * 0.1
+                                }
+                            }
+                        })
+                    }
+                    break;
+
+                case 'flow-field':
+                    // Flow field drift
+                    if (obj instanceof THREE.Points) {
+                        obj.rotation.y += deltaTime * 0.02
+                        obj.position.y += Math.sin(this.elapsed) * 0.001
+                    }
+                    break;
+
+                case 'gravity-grid':
+                    // Gravity grid wobble
+                    if (obj instanceof THREE.Group) {
+                        obj.rotation.z += deltaTime * 0.003
+                    }
+                    break;
+
+                case 'wave':
+                    // Wave rolling
+                    if (obj instanceof THREE.Mesh) {
+                        obj.rotation.z += deltaTime * 0.02
+                    }
+                    break;
+
+                case 'drop':
+                    // Drop falling effect
+                    if (obj instanceof THREE.Group) {
+                        obj.position.y += Math.sin(this.elapsed * 2) * 0.002
+                    }
+                    break;
+
+                case 'strip':
+                    // Strip floating
+                    if (obj instanceof THREE.Mesh) {
+                        obj.rotation.z += deltaTime * 0.01
+                        obj.position.y += Math.sin(this.elapsed + obj.position.x * 0.1) * 0.001
+                    }
+                    break;
+
+                case 'face':
+                    // Face subtle rotation
+                    if (obj instanceof THREE.Group) {
+                        obj.rotation.y += deltaTime * 0.005
+                    }
+                    break;
             }
         });
     }
