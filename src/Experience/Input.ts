@@ -8,7 +8,10 @@ export class Input {
     scrollY: number = 0
     scrollLimit: number = 1
     smoothedScroll: number = 0
-    lerpFactor: number = 0.35 // Much snappier for better directional response
+    lerpFactor: number = 0.35
+
+    /** Instantaneous scroll velocity (pixels/frame) — for impulse-driven line stretch */
+    scrollVelocity: number = 0
 
     constructor() {
         if (Input.instance) return Input.instance
@@ -60,9 +63,9 @@ export class Input {
     }
 
     update() {
-        // Linear Interpolation (Lerp) for smooth movement
-        // formula: current = current + (target - current) * factor
+        const prevSmoothed = this.smoothedScroll
         this.smoothedScroll += (this.scrollY - this.smoothedScroll) * this.lerpFactor
+        this.scrollVelocity = this.smoothedScroll - prevSmoothed
     }
 
     private getDocumentScrollLimit() {

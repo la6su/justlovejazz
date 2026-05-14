@@ -42,9 +42,10 @@ export class SceneContentManager {
     private transitionDuration: number = 1.2;
     private isTransitioning: boolean = false;
 
-    // Elapsed time counter for idle animation
+    // Scroll velocity for background line stretch
+    private _scrollVelocity: number = 0;
+
     private elapsed: number = 0;
-    private _phaseProgress: number = 0;
 
     constructor(scene: THREE.Scene) {
         this.scene = scene;
@@ -116,7 +117,7 @@ export class SceneContentManager {
         // Background lines stretch — always active (idle + during transition)
         if (this.currentPhase !== null) {
             const group = this._groups.get(this.currentPhase);
-            if (group) this.updateBackgroundLines(group, deltaTime);
+            if (group) this.updateBackgroundLines(group, deltaTime, this._scrollVelocity);
         }
 
         // Idle animation on current content
@@ -127,12 +128,12 @@ export class SceneContentManager {
     }
 
     /** Stretch background lines — independent of idle animation */
-    private updateBackgroundLines(group: THREE.Group, deltaTime: number): void {
+    private updateBackgroundLines(group: THREE.Group, _deltaTime: number, scrollVelocity: number): void {
         group.traverse((obj) => {
             if (obj.userData.type === 'background-lines') {
                 const bl = obj as any
                 if (bl.userData.backgroundLines) {
-                    bl.userData.backgroundLines.update(deltaTime, this._phaseProgress)
+                    bl.userData.backgroundLines.update(scrollVelocity)
                 }
             }
         });
@@ -142,8 +143,8 @@ export class SceneContentManager {
      * Scroll/timeline-driven content blending.
      * Keeps section content transitions deterministic and synchronized with world state.
      */
-    public syncToTimeline(currentPhase: string, phaseProgress: number, _scrollValue: number = 0): void {
-        this._phaseProgress = phaseProgress
+    public syncToTimeline(currentPhase: string, phaseProgress: number, scrollVelocity: number = 0): void {
+        this._scrollVelocity = scrollVelocity
         const currentIndex = PHASE_ORDER.indexOf(currentPhase as any)
         if (currentIndex === -1) return
 

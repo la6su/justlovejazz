@@ -166,7 +166,7 @@ export class Experience {
 
     this.galleryManager.update(deltaTime);
     this.galleryScene.update(deltaTime);
-    this.sceneContentManager.syncToTimeline(currentPhase, worldState.phaseProgress, normalizedScroll)
+    this.sceneContentManager.syncToTimeline(currentPhase, worldState.phaseProgress, input.scrollVelocity)
     this.sceneContentManager.update(deltaTime)
 
     // Show/hide 3D gallery group per section context
