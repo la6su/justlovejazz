@@ -8,7 +8,6 @@
 | Build | Vite 8 (rolldown) |
 | 3D | Three.js 18.4 + TSL (Node Materials) |
 | GPU | WebGPU primary, WebGL fallback |
-| Template | `src/core/Templater.ts` (string-based, no deps) |
 | UI | UIkit 3 + Less |
 | Scroll | Lenis (smooth) |
 
@@ -35,7 +34,6 @@ src/Experience/Experience.ts → single render loop (update → rAF)
 | **GalleryManager** *(works only)* | FSM: `LIST ↔ EXPAND ↔ CONTRACT` via scale/position |
 | **GalleryScene** *(works only)* | 3D cards, orbs. Visibility per `worldState.uiShowGallery` |
 | **UIManager** | Route-aware UI init |
-| **Templater** | Page content from string templates + data objects |
 
 ## Scene Architecture (8 steps)
 
@@ -65,16 +63,15 @@ Each step is a self-contained scene in `SectionSequences.ts`.
 
 Each page gets 2 scenes — full control per scene.
 
-## Templater
+## Capability and Fallback
 
-`src/core/Templater.ts` — lightweight string templating for page content.
+Runtime capability is resolved once and propagated through renderer decisions:
 
-```ts
-const t = Templater();
-const html = t.render('section-hero', { title: 'Hello', subtitle: 'World' });
-```
+- `webgpu`: primary renderer path.
+- `webgl`: fallback path with quality constraints.
+- `unsupported`: controlled UI state without runtime crashes.
 
-No deps. No compilation step. Templates defined as const strings, rendered at runtime.
+Capability-driven choices must stay in one decision layer, not duplicated in many modules.
 
 ## Render Pipeline
 
@@ -97,7 +94,7 @@ Assets managed by priority (`pre`/`must`/`sub`). Disposal only by inactive conte
 
 | Route | File | Role |
 |-------|------|------|
-| Home | index.html | d |
+| Home | index.html | studio positioning |
 | Trinity | trinity.html | process/method |
 | Works | works.html | interactive portfolio |
 | Contact | contact.html | commissions |

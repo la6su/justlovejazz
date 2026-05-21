@@ -2,8 +2,6 @@
 import * as THREE from 'three'
 import { WebGPURenderer } from 'three/webgpu'
 import { Sizes } from './Sizes'
-import { postProcessingNode } from '../shaders/postprocessing.tsl.ts'
-import { texture, uniform } from 'three/tsl'
 import { DeviceCapability } from '../core/DeviceCapability'
 import { type WorldState } from '../core/types'
 import { PostProcessingManager } from '../core/PostProcessingManager'
@@ -16,10 +14,10 @@ export class Renderer {
 
   // TSL post-processing uniforms (WebGPU only)
   private postUniforms: {
-    bloom: ReturnType<typeof uniform>
-    vignette: ReturnType<typeof uniform>
-    grain: ReturnType<typeof uniform>
-    chromatic: ReturnType<typeof uniform>
+    bloom: { value: number }
+    vignette: { value: number }
+    grain: { value: number }
+    chromatic: { value: number }
   } | null = null
 
   // Post-processing manager (section-aware crossfade)
@@ -34,13 +32,6 @@ export class Renderer {
     if (this.capabilities.mode === 'webgpu') {
       const r = new WebGPURenderer({ antialias: true })
       this.instance = r
-      this.postUniforms = {
-        bloom: uniform(0.3),
-        vignette: uniform(0.5),
-        grain: uniform(0.03),
-        chromatic: uniform(0.004),
-      }
-      this.initPostProcessing()
     } else {
       const r = new THREE.WebGLRenderer({
         antialias: true,
@@ -89,8 +80,18 @@ export class Renderer {
     document.body.appendChild(overlay)
   }
 
-  private initPostProcessing() {
-    if (!this.capabilities.postProcessing || !this.postUniforms) return
+  private async initPostProcessing() {
+    if (!this.capabilities.postProcessing || this.capabilities.mode !== 'webgpu') return
+    const [{ postProcessingNode }, { texture, uniform }] = await Promise.all([
+      import('../shaders/postprocessing.tsl.ts'),
+      import('three/tsl'),
+    ])
+    this.postUniforms = {
+      bloom: uniform(0.3),
+      vignette: uniform(0.5),
+      grain: uniform(0.03),
+      chromatic: uniform(0.004),
+    }
     const sceneColorPlaceholder = texture(new THREE.Texture())
     ;(this.instance as WebGPURenderer & { postProcessing?: unknown }).postProcessing = postProcessingNode(
       sceneColorPlaceholder,
@@ -102,6 +103,7 @@ export class Renderer {
   async init() {
     if (this.capabilities.mode === 'webgpu') {
       await (this.instance as any).init?.()
+      void this.initPostProcessing()
     }
   }
 

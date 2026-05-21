@@ -2,11 +2,7 @@
 import * as THREE from 'three'
 import type { RenderSurface } from '../Experience/Renderer'
 import { Experience } from '../Experience/Experience'
-import { GalleryManager } from './GalleryManager'
-import { GalleryScene } from '../Experience/World/GalleryScene'
-import { PROJECTS } from '../Data/Projects'
 import { UIManager } from '../UI/UIManager'
-import { ProjectDetail } from '../UI/ProjectDetail'
 import { StateBus } from './StateBus'
 
 type OnReadyCallback = (renderer: RenderSurface, scene: THREE.Scene) => void
@@ -21,35 +17,7 @@ export class Bootstrapper {
         const experience = new Experience(ui)
         experience.setupEventListeners()
 
-        // Gallery — created by Bootstrapper so Experience stays unopinionated
-        experience.galleryManager = new GalleryManager(PROJECTS)
-        experience.galleryScene = new GalleryScene(experience.galleryManager, experience.sizes)
-        try {
-            await experience.galleryScene.init()
-        } catch (error) {
-            if (import.meta.env.DEV) {
-                console.error('Bootstrapper: gallery init failed', error)
-            }
-        }
-
-        experience.scene.add(experience.galleryScene.group)
-
-        // ── Project Detail UI ──
-        const projectDetail = new ProjectDetail()
-
-        experience.galleryManager.onExpandComplete = (project: any) => {
-            projectDetail.open(project)
-        }
-
-        experience.galleryManager.onContractComplete = () => {
-            projectDetail.close()
-        }
-
-        window.addEventListener('project-detail-closed', () => {
-            experience.galleryManager.contractCard()
-        })
-
-        // Initialize experience (renderer, World, StateBus, render loop)
+        // HomeSlider is created inside Experience.init()
         await experience.init()
 
         // Notify caller that renderer + scene are ready

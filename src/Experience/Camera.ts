@@ -109,15 +109,17 @@ export class Camera {
 
     // ── 2. Build position ──
         const isMobile = Device.isMobile;
+        const isHome = document.body?.dataset?.page === 'home';
         const pos = this.instance.position;
 
         // Cursor follow — spring-damper (disabled on mobile)
         const cursorX = isMobile ? 0 : springX.pos;
         const cursorY = isMobile ? 0 : springY.pos;
 
+        const cursorFollow = isHome ? 0.19 : 0.15
         pos.set(
-            this.smoothPosition.x + cursorX * 0.15,
-            this.smoothPosition.y + cursorY * 0.15,
+            this.smoothPosition.x + cursorX * cursorFollow,
+            this.smoothPosition.y + cursorY * cursorFollow,
             this.smoothPosition.z
         );
 
@@ -125,9 +127,10 @@ export class Camera {
         if (!isMobile) {
             this.organicTime += dt;
             const ot = this.organicTime;
-            const ox = (Math.sin(ot * 0.7) * 0.3 + Math.sin(ot * 1.3) * 0.2) * 0.002;
-            const oy = (Math.sin(ot * 0.9) * 0.2 + Math.sin(ot * 1.7) * 0.3) * 0.002;
-            const oz = (Math.sin(ot * 1.1) * 0.4 + Math.sin(ot * 2.1) * 0.1) * 0.002;
+            const amp = isHome ? 0.0026 : 0.002
+            const ox = (Math.sin(ot * 0.7) * 0.3 + Math.sin(ot * 1.3) * 0.2) * amp;
+            const oy = (Math.sin(ot * 0.9) * 0.2 + Math.sin(ot * 1.7) * 0.3) * amp;
+            const oz = (Math.sin(ot * 1.1) * 0.4 + Math.sin(ot * 2.1) * 0.1) * amp;
             pos.x += ox;
             pos.y += oy;
             pos.z += oz;
@@ -150,7 +153,8 @@ export class Camera {
         }
 
         // Blend FOV smoothly
-        const targetFov = this.smoothFov + this.fovOffset
+        const fovBreath = isHome && !isMobile ? Math.sin(this.organicTime * 0.45) * 0.18 : 0
+        const targetFov = this.smoothFov + this.fovOffset + fovBreath
         this.instance.fov += (targetFov - this.instance.fov) * 0.25
         this.instance.updateProjectionMatrix()
 

@@ -39,28 +39,27 @@ export function homePage(): PageLayout {
         <section id="home-hero" class="section-studio uk-flex uk-flex-middle section-intro" uk-height-viewport>
           <div class="uk-container uk-text-center">
             <h1 class="studio-title">
-              <span class="studio-title__line">Lemon</span>
-              <span class="studio-title__line">Room</span>
+              <span class="studio-title__line">JUSTLOVEJAZZ</span>
             </h1>
-            <p class="studio-tagline uk-margin-auto-center">Realtime · Performance · Digital</p>
+            <p class="studio-tagline uk-margin-auto-center">Official Site · Visual Directory</p>
             <div class="uk-margin-large-top">
-              <a href="#/works" class="reveal-item uk-button uk-button-primary uk-button-large btn-studio">Case Studies</a>
+              <a href="#/works" class="reveal-item uk-button uk-button-primary uk-button-large btn-studio">Lets Explore</a>
             </div>
           </div>
         </section>`,
       body: `
-        <section id="home-body" class="section-studio section-scrolly uk-flex uk-flex-middle" uk-height-viewport>
+        <section id="home-body" class="section-studio section-scrolly uk-flex uk-flex-middle" uk-height-viewport="expand:true">
           <div class="uk-container">
-            <span class="section-number">01</span>
-            <h2 class="studio-title studio-title--medium">Creative Direction</h2>
-            <p class="studio-text studio-text--body">Interactive identities and WebGPU scenes — fast launch, cross-device scale, production maintainability.</p>
-            <div class="uk-grid-small uk-child-width-1-3@m uk-child-width-1-1" uk-grid>
-              <div><p class="studio-text studio-text--meta"><strong>Brand Films</strong><br/>Realtime storytelling microsites for campaigns.</p></div>
-              <div><p class="studio-text studio-text--meta"><strong>Visual Systems</strong><br/>3D backgrounds and motion for events.</p></div>
-              <div><p class="studio-text studio-text--meta"><strong>Product Narratives</strong><br/>Interactive explainers for complex products.</p></div>
+            <span class="section-number">Directory</span>
+            <div class="home-directory">
+              <a class="home-directory__item" href="#/works"><span class="home-directory__index">01</span><span class="home-directory__label">Fashion Book</span></a>
+              <a class="home-directory__item" href="#/works"><span class="home-directory__index">02</span><span class="home-directory__label">Beauty / Portrait</span></a>
+              <a class="home-directory__item" href="#/works"><span class="home-directory__index">03</span><span class="home-directory__label">Cinematography Work</span></a>
+              <a class="home-directory__item" href="#/works"><span class="home-directory__index">04</span><span class="home-directory__label">Brands / Campaigns</span></a>
+              <a class="home-directory__item" href="#/works"><span class="home-directory__index">05</span><span class="home-directory__label">Monochromatic Series</span></a>
             </div>
-            <p class="studio-text uk-text-center studio-text--cta uk-margin-medium-top">
-              <a href="#/trinity" class="studio-link">Our Method →</a>
+            <p class="studio-text studio-text--meta uk-margin-medium-top">
+              Scroll and choose a universe. Each category opens a dedicated visual case.
             </p>
           </div>
         </section>`,

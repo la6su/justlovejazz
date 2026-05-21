@@ -3,13 +3,13 @@
 import * as THREE from 'three'
 import { Section, SectionState } from './Section'
 import { StateBus } from './StateBus'
-import { getWorldConfigForPage, type PhaseConfig } from './WorldConfig'
 import { prefersReducedMotion } from './motionPolicy'
 import { type CameraTarget, type WorldState, NarrativePhase, BakuRole } from './types'
 import { Baku } from '../Experience/World/Baku'
 import { CinematicLights } from '../Experience/World/Lights'
-import { WorldAtmosphere } from './WorldAtmosphere'
 import { IntroSequence } from './IntroSequence'
+import type { PhaseConfig } from './WorldConfig'
+import type { WorldAtmosphere } from './WorldAtmosphere'
 
 export interface WorldTransformResult {
     cameraTarget: CameraTarget
@@ -21,11 +21,12 @@ export class World extends THREE.Group {
     public sections: Section[] = []
     public baku!: Baku
     public lightsGroup!: CinematicLights
-    public atmosphere!: WorldAtmosphere
+    public atmosphere: WorldAtmosphere | null = null
     private groundPlane!: THREE.Mesh
     public intro: IntroSequence
 
     private configs: readonly PhaseConfig[] = []
+    private sceneRef: THREE.Scene
 
     // ── Junni: current section tracking
     private _currentSectionIndex: number = 0
@@ -35,8 +36,7 @@ export class World extends THREE.Group {
         super()
         this.name = 'world'
 
-        // ── Atmosphere (= BG + fog, аналог Junni BG)
-        this.atmosphere = new WorldAtmosphere(scene)
+        this.sceneRef = scene
 
         // ── Lights (= World.lights, аналог Junni Lights)
         this.lightsGroup = new CinematicLights(scene)
@@ -66,7 +66,9 @@ export class World extends THREE.Group {
         this.intro = new IntroSequence()
     }
 
-    public init(): void {
+    public async init(): Promise<void> {
+        const { getWorldConfigForPage } = await import('./WorldConfig')
+        await this.ensureAtmosphere()
         const page = (document.body?.getAttribute('data-page') || 'home').split('-')[0]
         this.configs = getWorldConfigForPage(page)
         this.disposeSections()
@@ -239,8 +241,14 @@ export class World extends THREE.Group {
         if (Array.isArray(groundMat)) groundMat.forEach(m => m.dispose())
         else groundMat.dispose()
         this.lightsGroup.dispose()
-        this.atmosphere.dispose()
+        this.atmosphere?.dispose()
         this.intro.dispose()
+    }
+
+    public async ensureAtmosphere(): Promise<void> {
+        if (this.atmosphere) return
+        const { WorldAtmosphere } = await import('./WorldAtmosphere')
+        this.atmosphere = new WorldAtmosphere(this.sceneRef)
     }
 
     /** Get PhaseConfig for a given phase ID */

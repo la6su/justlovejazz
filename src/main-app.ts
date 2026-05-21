@@ -39,6 +39,9 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
   const { splash, progress, onReady } = opts
 
   try {
+    // ── Show splash immediately ──
+    splash.show()
+
     // ── UI layer ──
     progress(87)
     const ui = new UIManager()

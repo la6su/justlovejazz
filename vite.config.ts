@@ -22,7 +22,12 @@ export default defineConfig({
             return 'vendor-misc'
           }
           if (id.includes('/src/UI/')) return 'chunk-ui'
-          if (id.includes('/src/core/') || id.includes('/src/shaders/')) return 'chunk-core'
+          if (id.includes('/src/core/World')) return 'chunk-core-world'
+          if (id.includes('/src/core/PostProcessingManager')) return 'chunk-core-post'
+          if (id.includes('/src/Experience/Renderer')) return 'chunk-core-renderer'
+          if (id.includes('/src/shaders/')) return 'chunk-shaders'
+          if (id.includes('/src/core/')) return 'chunk-core'
+          if (id.includes('/src/Experience/World/')) return 'chunk-world'
           if (id.includes('/WebGLText') || id.includes('/WebGLTextManager')) return 'chunk-text'
           if (id.includes('/SceneContentManager')) return 'chunk-content'
         },
