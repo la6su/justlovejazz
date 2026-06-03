@@ -7,7 +7,6 @@ import { prefersReducedMotion } from './motionPolicy'
 import { type CameraTarget, type WorldState, NarrativePhase, BakuRole } from './types'
 import { Baku } from '../Experience/World/Baku'
 import { CinematicLights } from '../Experience/World/Lights'
-import { IntroSequence } from './IntroSequence'
 import type { PhaseConfig } from './WorldConfig'
 import type { WorldAtmosphere } from './WorldAtmosphere'
 
@@ -17,18 +16,15 @@ export interface WorldTransformResult {
 }
 
 export class World extends THREE.Group {
-    // ── Composition (Junni: sections + baku + lights + atmosphere + ground)
     public sections: Section[] = []
     public baku!: Baku
     public lightsGroup!: CinematicLights
     public atmosphere: WorldAtmosphere | null = null
     private groundPlane!: THREE.Mesh
-    public intro: IntroSequence
 
     private configs: readonly PhaseConfig[] = []
     private sceneRef: THREE.Scene
 
-    // ── Junni: current section tracking
     private _currentSectionIndex: number = 0
     public get currentSectionIndex(): number { return this._currentSectionIndex }
 
@@ -62,8 +58,7 @@ export class World extends THREE.Group {
         this.groundPlane.name = 'ground'
         this.add(this.groundPlane)
 
-        // ── Intro sequence (Junni: World.Intro splash pattern)
-        this.intro = new IntroSequence()
+
     }
 
     public async init(): Promise<void> {
@@ -242,7 +237,6 @@ export class World extends THREE.Group {
         else groundMat.dispose()
         this.lightsGroup.dispose()
         this.atmosphere?.dispose()
-        this.intro.dispose()
     }
 
     public async ensureAtmosphere(): Promise<void> {

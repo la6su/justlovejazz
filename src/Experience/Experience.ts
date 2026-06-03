@@ -28,8 +28,8 @@ export class Experience {
   renderer!: Renderer
 
   private smoothScroll!: SmoothScroll
-  private webglTextManager: WebGLTextManager | null = null
   private contentReveal!: ContentReveal
+  private webglTextManager: WebGLTextManager | null = null
   private cursor!: Cursor
   private debugStats!: DebugStats
 
@@ -65,6 +65,24 @@ export class Experience {
     })
   }
 
+  private async buildWorld(): Promise<void> {
+    const { World } = await import('../core/World')
+    this.world = new World(this.scene)
+    await this.world.init()
+    this.scene.add(this.world)
+  }
+
+  private setupIntro(): void {
+    // Reset channels for fresh intro
+    this.bus
+      .channel('intro:opacity', 1)
+      .channel('intro:stage', 0)
+
+    // Start intro: splash → fade → done
+      .animate('intro:opacity', 0, 0.8, 'easeOutCubic')
+    this.bus.animate('intro:stage', 1, 0.8, 'easeOutCubic')
+  }
+
   async init() {
     this.smoothScroll = new SmoothScroll()
     input.refreshScrollLimit()
@@ -79,10 +97,7 @@ export class Experience {
     }
 
     // World
-    const { World } = await import('../core/World')
-    this.world = new World(this.scene)
-    await this.world.init()
-    this.scene.add(this.world)
+    await this.buildWorld()
 
     // StateBus
     this.bus = StateBus.getInstance()
@@ -94,8 +109,8 @@ export class Experience {
     this.camera.instance.lookAt(0, 0, 0)
     this.camera.instance.updateProjectionMatrix()
 
-    // ── Intro sequence ──
-    this.world.intro.init(this.world, this.scene)
+    // Intro sequence — event-driven
+    this.setupIntro()
 
     requestAnimationFrame((t) => this.update(t))
     void this.ensureWebGLTextManager()
@@ -104,14 +119,15 @@ export class Experience {
   update(time: number) {
     this.time.update(time)
     const deltaTime = this.time.delta / 1000
+
+    // StateBus tick — drives all animations
+    this.bus.tick(deltaTime)
+
     this.smoothScroll.update(time)
     input.update()
     this.cursor.update()
     this.debugStats?.update(time)
     this.webglTextManager?.update()
-
-    // StateBus tick
-    this.bus.tick(deltaTime)
 
     const normalizedScroll = input.getSmoothedScrollProgress()
     const { cameraTarget, worldState } = this.world.advance(normalizedScroll)
@@ -132,7 +148,7 @@ export class Experience {
 
     this.camera.updateSmooth(cameraTarget, deltaTime, 5)
 
-    // ── HomeSlider ──
+    // HomeSlider
     this.homeSlider?.update(deltaTime)
     const isHomePage = document.body.dataset.page === 'home'
     if (this.homeSlider) this.homeSlider.group.visible = isHomePage
@@ -168,12 +184,15 @@ export class Experience {
   }
 
   private async rebuildWorld(): Promise<void> {
-    const { World } = await import('../core/World')
-    this.world = new World(this.scene)
-    await this.world.init()
-    this.scene.add(this.world)
+    await this.buildWorld()
 
-    this.world.intro.init(this.world, this.scene)
+    // Reset intro for new world
+    this.bus
+      .set('intro:opacity', 1)
+      .set('intro:stage', 0)
+    this.bus.animate('intro:opacity', 0, 0.8, 'easeOutCubic')
+    this.bus.animate('intro:stage', 1, 0.8, 'easeOutCubic')
+
     this.camera.instance.position.set(0, 5, 10)
     this.camera.instance.lookAt(0, 0, 0)
     this.camera.instance.updateProjectionMatrix()

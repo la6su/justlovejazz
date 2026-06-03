@@ -3,7 +3,7 @@
 
 import { DeviceCapability } from './DeviceCapability'
 
-import { type PostPreset } from './WorldConfig'
+import type { PostPreset } from '../types/post-processing'
 import type { QualityTier } from '../types/renderer'
 
 /**

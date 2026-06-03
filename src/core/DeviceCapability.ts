@@ -103,15 +103,22 @@ export class DeviceCapability {
   }
 
   private detectTier(): QualityTier {
-    // Force low on mobile/low-res
+    // Mobile = always low
     if (this.isMobile) return 'low';
-    if (screen.width < 480 && screen.height < 480) return 'low';
 
-    const cores = navigator.hardwareConcurrency || 4;
+    // Very small non-mobile screens
+    const viewportPx = screen.width * screen.height;
+    if (viewportPx < 240 * 240) return 'low';
+
+    const cores = navigator.hardwareConcurrency || 8;
     const dpr = window.devicePixelRatio || 1;
 
-    if (cores <= 4 || dpr < 1.5) return 'low';
-    if (cores <= 8 || dpr < 2) return 'medium';
+    // Low if too weak even for desktop
+    if (cores <= 4 && dpr < 1.3) return 'low';
+
+    // Medium — WebGPU but with limited GPU memory (e.g. integrated desktop)
+    if (this.mode === 'webgl' || (cores <= 8 && viewportPx < 1920 * 1080)) return 'medium';
+
     return 'high';
   }
 
