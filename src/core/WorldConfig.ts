@@ -40,6 +40,7 @@ export interface PostTransform {
   bloom: number
   vignette: number
   grain: number
+  chromatic: number
 }
 
 export interface PhaseConfig {
@@ -52,6 +53,7 @@ export interface PhaseConfig {
   fog: FogTransform
   post: PostTransform
   ui: { showGallery: boolean }
+  background: number
 }
 
 // ── Pure data (no Three.js, bundle-friendly shape) ──
@@ -72,15 +74,17 @@ type RawScene = {
   lightIntensity: number
   fogColor: number
   fogDensity: number
+  postChromatic: number
+  bgColor: number
 }
 
 const RAW: RawScene[] = [
-  { id: 'step01', camPos: [0,0,8], camTarget: [0,0,0], camFov: 55, bakuRole: BakuRole.NORMAL, bakuOpacity: 1, bakuColor: 0x111111, bakuEmissive: 0x020202, postBloom: 0.2, postVignette: 0.7, postGrain: 0.03, lightColor: 0x030308, lightIntensity: 0.8, fogColor: 0x030308, fogDensity: 0.03 },
-  { id: 'step02', camPos: [-4,2,6], camTarget: [0,0,0], camFov: 65, bakuRole: BakuRole.WIRE, bakuOpacity: 0.6, bakuColor: 0x111111, bakuEmissive: 0x020202, postBloom: 0.3, postVignette: 0.5, postGrain: 0.025, lightColor: 0x040302, lightIntensity: 1, fogColor: 0x040302, fogDensity: 0.025 },
-  { id: 'step03', camPos: [3,5,7], camTarget: [0,2,0], camFov: 70, bakuRole: BakuRole.WIRE, bakuOpacity: 0.4, bakuColor: 0x111111, bakuEmissive: 0x020202, postBloom: 0.4, postVignette: 0.4, postGrain: 0.02, lightColor: 0x030305, lightIntensity: 1.2, fogColor: 0x030305, fogDensity: 0.02 },
-  { id: 'step04', camPos: [0,8,10], camTarget: [0,5,0], camFov: 80, bakuRole: BakuRole.NORMAL, bakuOpacity: 0.2, bakuColor: 0x111111, bakuEmissive: 0x020202, postBloom: 0.15, postVignette: 0.6, postGrain: 0.04, lightColor: 0x020204, lightIntensity: 0.6, fogColor: 0x020204, fogDensity: 0.04 },
-  { id: 'step05', camPos: [0,0,5], camTarget: [0,2,0], camFov: 50, bakuRole: BakuRole.GLASS, bakuOpacity: 1, bakuColor: 0x111111, bakuEmissive: 0x020202, postBloom: 0.6, postVignette: 0.5, postGrain: 0.02, lightColor: 0x020101, lightIntensity: 2, fogColor: 0x020101, fogDensity: 0.05 },
-  { id: 'step06', camPos: [-2,10,8], camTarget: [0,8,-5], camFov: 60, bakuRole: BakuRole.WIRE, bakuOpacity: 0.3, bakuColor: 0x111111, bakuEmissive: 0x020202, postBloom: 0.3, postVignette: 0.4, postGrain: 0.03, lightColor: 0x030306, lightIntensity: 1, fogColor: 0x030306, fogDensity: 0.02 },
+  { id: 'step01', camPos: [0,0,8], camTarget: [0,0,0], camFov: 55, bakuRole: BakuRole.NORMAL, bakuOpacity: 1, bakuColor: 0x111111, bakuEmissive: 0x020202, postBloom: 0.2, postVignette: 0.7, postGrain: 0.03, lightColor: 0x030308, lightIntensity: 0.8, fogColor: 0x030308, fogDensity: 0.03, postChromatic: 0.005, bgColor: 0xa0ebff },
+  { id: 'step02', camPos: [-4,2,6], camTarget: [0,0,0], camFov: 65, bakuRole: BakuRole.WIRE, bakuOpacity: 0.6, bakuColor: 0x111111, bakuEmissive: 0x020202, postBloom: 0.3, postVignette: 0.5, postGrain: 0.025, lightColor: 0x040302, lightIntensity: 1, fogColor: 0x040302, fogDensity: 0.025, postChromatic: 0.005, bgColor: 0x00ff40 },
+  { id: 'step03', camPos: [3,5,7], camTarget: [0,2,0], camFov: 70, bakuRole: BakuRole.WIRE, bakuOpacity: 0.4, bakuColor: 0x111111, bakuEmissive: 0x020202, postBloom: 0.4, postVignette: 0.4, postGrain: 0.02, lightColor: 0x030305, lightIntensity: 1.2, fogColor: 0x030305, fogDensity: 0.02, postChromatic: 0.005, bgColor: 0x00d2ff },
+  { id: 'step04', camPos: [0,8,10], camTarget: [0,5,0], camFov: 80, bakuRole: BakuRole.NORMAL, bakuOpacity: 0.2, bakuColor: 0x111111, bakuEmissive: 0x020202, postBloom: 0.15, postVignette: 0.6, postGrain: 0.04, lightColor: 0x020204, lightIntensity: 0.6, fogColor: 0x020204, fogDensity: 0.04, postChromatic: 0.005, bgColor: 0x030308 },
+  { id: 'step05', camPos: [0,0,5], camTarget: [0,2,0], camFov: 50, bakuRole: BakuRole.GLASS, bakuOpacity: 1, bakuColor: 0x111111, bakuEmissive: 0x020202, postBloom: 0.6, postVignette: 0.5, postGrain: 0.02, lightColor: 0x020101, lightIntensity: 2, fogColor: 0x020101, fogDensity: 0.05, postChromatic: 0.005, bgColor: 0x030308 },
+  { id: 'step06', camPos: [-2,10,8], camTarget: [0,8,-5], camFov: 60, bakuRole: BakuRole.WIRE, bakuOpacity: 0.3, bakuColor: 0x111111, bakuEmissive: 0x020202, postBloom: 0.3, postVignette: 0.4, postGrain: 0.03, lightColor: 0x030306, lightIntensity: 1, fogColor: 0x030306, fogDensity: 0.02, postChromatic: 0.005, bgColor: 0x00d2ff },
 ]
 
 const PAGE_MAP: Record<string, RawScene[]> = {
@@ -112,7 +116,8 @@ export function toPhaseConfig(raw: RawScene): PhaseConfig {
     baku: { position: bakuPos, rotation: bakuRot, scale: bakuSc, opacity: raw.bakuOpacity, role: raw.bakuRole, material: { color, emissive, roughness: 0.2, metalness: 0.8 } },
     lighting: { ambient: lightCol, ambientColor: lightCol, intensity: raw.lightIntensity },
     fog: { color: fogCol, density: raw.fogDensity },
-    post: { bloom: raw.postBloom, vignette: raw.postVignette, grain: raw.postGrain },
+    post: { bloom: raw.postBloom, vignette: raw.postVignette, grain: raw.postGrain, chromatic: raw.postChromatic },
+  background: raw.bgColor,
     ui: { showGallery: false },
   }
 }
@@ -139,4 +144,5 @@ export interface PostPreset {
   bloom: number
   vignette: number
   grain: number
+  chromatic: number
 }

@@ -87,7 +87,25 @@ export class Renderer {
     }
   }
 
-  update(scene: THREE.Scene, camera: THREE.Camera, _worldState?: WorldState): void {
+  private _fog!: THREE.FogExp2
+  private _prevBgHex: number = -1
+
+  update(scene: THREE.Scene, camera: THREE.Camera, worldState?: WorldState): void {
+    // ── Apply background + fog ONLY when color changes (avoids per-frame allocation)
+    if (worldState) {
+      const hex = worldState.envColor.getHex()
+      if (hex !== this._prevBgHex) {
+        this._prevBgHex = hex
+        scene.background = worldState.envColor
+        if (!this._fog) {
+          this._fog = new THREE.FogExp2(worldState.envColor.clone(), 0.03)
+        } else {
+          this._fog.color.copy(worldState.envColor)
+        }
+        scene.fog = this._fog
+      }
+    }
+
     // Crossfade post-processing params
     this.postManager.update(1 / 60)
     const params = this.postManager.postParams
@@ -98,6 +116,7 @@ export class Renderer {
         bloom: this.capabilities.scaleIntensity(params.bloom),
         vignette: this.capabilities.scaleIntensity(params.vignette),
         grain: this.capabilities.scaleIntensity(params.grain),
+        chromatic: this.capabilities.scaleIntensity(params.chromatic),
       }
       this.pipeline.updateParams(pp)
     }

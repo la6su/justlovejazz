@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import type { UIManager } from '../UI/UIManager'
 import type { Experience } from '../Experience/Experience'
 import type { RenderSurface } from '../Experience/Renderer'
+import { StateBus } from './StateBus'
 
 type OnReadyCallback = (renderer: RenderSurface, scene: THREE.Scene) => void
 
@@ -10,7 +11,6 @@ export class Bootstrapper {
 
     static async init(ui: UIManager, onReadyCb?: OnReadyCallback): Promise<Experience> {
         const { Experience } = await import('../Experience/Experience')
-        const { StateBus } = await import('./StateBus')
 
         const experience = new Experience(ui)
         experience.setupEventListeners()

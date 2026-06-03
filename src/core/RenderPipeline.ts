@@ -23,6 +23,7 @@ export interface PostParams {
   bloom: number
   vignette: number
   grain: number
+  chromatic?: number
 }
 
 // ─── GLSL Shaders (WebGL path) ───────────────────────────────────
@@ -89,19 +90,29 @@ const COMPOSITE_FSG = `
     vec3 scene = texture2D(uScene, vUv).xyz;
     vec3 bloom = texture2D(uBloom, vUv).xyz;
     
+    // Chromatic aberration — RGB channel shift
+    if (uChromatic > 0.0) {
+      vec2 dir = normalize(vUv - vec2(0.5)) * uChromatic;
+      scene = vec3(
+        texture2D(uScene, vUv + dir).r,
+        scene.g,
+        texture2D(uScene, vUv - dir).b
+      );
+    }
+
     // Bloom composite
     vec3 color = scene + bloom * uBloomIntensity;
-    
+
     // ACES-like tone mapping
     color = color * (6.2 * color + 0.03) / (color * (4.8 * color + 1.0));
-    
+
     // Film grain (time-varying, low-res dither)
     if (uGrain > 0.0) {
       float grain = noise(vUv * 1024.0 + uTime * 10.0);
       grain = (grain - 0.5) * 2.0 * uGrain;
       color += grain;
     }
-    
+
     // Vignette (radial falloff)
     if (uVignette > 0.0) {
       vec2 center = vUv - vec2(0.5);
@@ -162,7 +173,7 @@ const GAUSSIAN_WEIGHTS: number[] = (() => {
  */
 export class RenderPipeline {
   private _config!: Required<RenderPipelineConfig>
-  private _params: Required<PostParams>
+  private _params!: PostParams & { chromatic: number }
   
   // RTs
   private _rtScene?: THREE.WebGLRenderTarget | null
@@ -182,7 +193,7 @@ export class RenderPipeline {
   private _isWebGPU = false
   
   private constructor() {
-    this._params = { bloom: 1.0, vignette: 1.0, grain: 1.0 }
+    this._params = { bloom: 1.0, vignette: 1.0, grain: 1.0, chromatic: 0.0 }
   }
   
   /** Factory: create pipeline for renderer */
@@ -222,12 +233,14 @@ export class RenderPipeline {
     this._params.bloom = params.bloom
     this._params.vignette = params.vignette
     this._params.grain = params.grain
-    
+    this._params.chromatic = params.chromatic ?? this._params.chromatic ?? 0
+
     // Update composite pass uniforms (WebGL)
     if (this._passComposite) {
       this._passComposite.uniforms.uBloomIntensity.value = params.bloom
       this._passComposite.uniforms.uVignette.value = params.vignette
       this._passComposite.uniforms.uGrain.value = params.grain
+      this._passComposite.uniforms.uChromatic.value = this._params.chromatic
     }
   }
   
@@ -351,6 +364,7 @@ export class RenderPipeline {
         uBloomIntensity: { value: this._params.bloom },
         uVignette: { value: this._params.vignette },
         uGrain: { value: this._params.grain },
+        uChromatic: { value: 0.0 },
         uTime: { value: 0 },
       },
       vertexShader: QUAD_VERTEX,
@@ -459,6 +473,7 @@ export class RenderPipeline {
     passComposite.uniforms.uBloomIntensity.value = this._params.bloom
     passComposite.uniforms.uVignette.value = this._params.vignette
     passComposite.uniforms.uGrain.value = this._params.grain
+    passComposite.uniforms.uChromatic.value = this._params.chromatic ?? 0
     passComposite.uniforms.uTime.value = performance.now() * 0.001
     
     this._renderQuad(passComposite, {}, null, renderer)

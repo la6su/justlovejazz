@@ -133,81 +133,16 @@ export function worksPage(): PageLayout {
           </div>
         </section>`,
       body: `
-        <section id="gallery" class="section-studio section-scrolly uk-flex uk-flex-top" uk-height-viewport="expand:true">
-          <div class="uk-container">
-            <div class="works-grid">
-              <a href="/projects/ebb-vibes.html" class="works-grid__card" aria-label="Ebb Vibes — Visual Music">
-                <div class="works-grid__thumbnail" style="background-image:url('/assets/projects/ebb-vibes/cover.webp'); background-color:#ff5500;">
-                  <div class="works-grid__placeholder" aria-hidden="true">
-                    <svg width="64" height="64" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="1.5">
-                      <circle cx="50" cy="50" r="30" stroke-dasharray="4 6"/><circle cx="50" cy="50" r="15"/>
-                      <path d="M50 20v15M50 65v15M20 50h15M65 50h15"/>
-                    </svg>
-                  </div>
-                </div>
-                <div class="works-grid__content">
-                  <div class="works-grid__header"><span class="works-grid__index">01</span><span class="works-grid__category">Visual Music</span></div>
-                  <h3 class="works-grid__title">Ebb Vibes</h3>
-                  <p class="works-grid__desc">Late night sessions captured in digital harmony.</p>
-                  <div class="works-grid__tags"><span class="works-grid__tag">WebGPU</span><span class="works-grid__tag">Procedural</span></div>
-                  <span class="works-grid__year">2025</span>
-                </div>
-              </a>
-              <a href="/projects/mono-sunday.html" class="works-grid__card" aria-label="Mono Sunday — Minimalist">
-                <div class="works-grid__thumbnail" style="background-image:url('/assets/projects/mono-sunday/cover.webp'); background-color:#88cc70;">
-                  <div class="works-grid__placeholder" aria-hidden="true">
-                    <svg width="64" height="64" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="1.5">
-                      <rect x="20" y="20" width="60" height="60" rx="4"/><line x1="20" y1="50" x2="80" y2="50"/>
-                    </svg>
-                  </div>
-                </div>
-                <div class="works-grid__content">
-                  <div class="works-grid__header"><span class="works-grid__index">02</span><span class="works-grid__category">Minimalist</span></div>
-                  <h3 class="works-grid__title">Mono Sunday</h3>
-                  <p class="works-grid__desc">Three chords and the silence between them.</p>
-                  <div class="works-grid__tags"><span class="works-grid__tag">Ambient</span><span class="works-grid__tag">Texture</span></div>
-                  <span class="works-grid__year">2024</span>
-                </div>
-              </a>
-              <a href="/projects/till-at-night.html" class="works-grid__card" aria-label="Until the Night — Crossover">
-                <div class="works-grid__thumbnail" style="background-image:url('/assets/projects/till-at-night/cover.webp); background-color:#cc88ff;">
-                  <div class="works-grid__placeholder" aria-hidden="true">
-                    <svg width="64" height="64" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="1.5">
-                      <polygon points="50,15 85,80 15,80"/><polygon points="50,35 70,70 30,70"/>
-                    </svg>
-                  </div>
-                </div>
-                <div class="works-grid__content">
-                  <div class="works-grid__header"><span class="works-grid__index">03</span><span class="works-grid__category">Crossover</span></div>
-                  <h3 class="works-grid__title">Until the Night</h3>
-                  <p class="works-grid__desc">Analog meets algorithm. Real instruments, synthetic space.</p>
-                  <div class="works-grid__tags"><span class="works-grid__tag">Analogue</span><span class="works-grid__tag">Synth</span></div>
-                  <span class="works-grid__year">2025</span>
-                </div>
-              </a>
-              <a href="/projects/undercurrent.html" class="works-grid__card" aria-label="Undercurrent — Electronic">
-                <div class="works-grid__thumbnail" style="background-image:url('/assets/projects/undercurrent/cover.webp); background-color:#222233;">
-                  <div class="works-grid__placeholder" aria-hidden="true">
-                    <svg width="64" height="64" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="1.5">
-                      <path d="M10 50 Q25 30 40 50 Q55 70 70 50 Q85 30 95 50"/><circle cx="50" cy="50" r="8"/>
-                    </svg>
-                  </div>
-                </div>
-                <div class="works-grid__content">
-                  <div class="works-grid__header"><span class="works-grid__index">04</span><span class="works-grid__category">Electronic</span></div>
-                  <h3 class="works-grid__title">Undercurrent</h3>
-                  <p class="works-grid__desc">Sub-bass meditation. Frequencies below hearing, above feeling.</p>
-                  <div class="works-grid__tags"><span class="works-grid__tag">Subwoofer</span><span class="works-grid__tag">3D Audio</span></div>
-                  <span class="works-grid__year">2024</span>
-                </div>
-              </a>
-            </div>
-          </div>
+        <section id="gallery" class="section-studio section-works-gallery uk-flex uk-flex-top" uk-height-viewport="expand:true">
+          <!-- 3D canvas rendered behind. DOM layers for scroll anchoring only. -->
+          <div id="gallery-anchor" data-role="3d-gallery" style="width:100%;height:100vh;pointer-events:none;"></div>
         </section>`,
       footer: sharedFooter(),
     },
   }
 }
+
+
 
 // Page factory — returns template for any key.
 export const PAGES: Record<string, () => PageLayout> = {

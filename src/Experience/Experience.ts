@@ -4,19 +4,18 @@ import { Time } from './Time'
 import { Camera } from './Camera'
 import { Renderer } from './Renderer'
 import { DebugStats } from '../core/DebugStats'
-
 import { SmoothScroll } from './SmoothScroll'
 import { ContentReveal } from './ContentReveal'
 import { Cursor } from './Cursor'
 import { UIManager } from '../UI/UIManager'
 import { input } from './Input'
-
 import { AssetManager } from '../core/AssetManager'
 import { GPUResourceManager } from '../core/GPUResourceManager'
-
 import { StateBus } from '../core/StateBus'
 import type { World } from '../core/World'
 import type { WebGLTextManager } from './WebGLTextManager'
+import { WorksPortfolio } from './WorksPortfolio'
+import { ProjectOverlay } from '../UI/ProjectOverlay'
 
 export class Experience {
   static instance: Experience
@@ -26,24 +25,17 @@ export class Experience {
   time!: Time
   camera!: Camera
   renderer!: Renderer
-
-  private smoothScroll!: SmoothScroll
+  public smoothScroll!: SmoothScroll
   private contentReveal!: ContentReveal
   private webglTextManager: WebGLTextManager | null = null
   private cursor!: Cursor
   private debugStats!: DebugStats
-
   public world!: World
   private bus!: StateBus
 
-  public homeSlider: {
-    group: THREE.Group
-    next: () => void
-    prev: () => void
-    setActive: (index: number) => void
-    update: (deltaTime: number) => void
-    dispose: () => void
-  } | null = null
+  // Works portfolio
+  private portfolio: WorksPortfolio | null = null
+  private overlay: ProjectOverlay | null = null
   private currentSectionContext: string | null = null
 
   constructor(_ui: UIManager) {
@@ -55,15 +47,7 @@ export class Experience {
     this.renderer = new Renderer(this.sizes)
   }
 
-  public setupEventListeners() {
-    // Keyboard navigation for slider
-    window.addEventListener('keydown', (e) => {
-      if (this.homeSlider?.group.visible) {
-        if (e.key === 'ArrowRight') this.homeSlider.next()
-        if (e.key === 'ArrowLeft') this.homeSlider.prev()
-      }
-    })
-  }
+  public setupEventListeners() {}
 
   private async buildWorld(): Promise<void> {
     const { World } = await import('../core/World')
@@ -73,12 +57,9 @@ export class Experience {
   }
 
   private setupIntro(): void {
-    // Reset channels for fresh intro
     this.bus
       .channel('intro:opacity', 1)
       .channel('intro:stage', 0)
-
-    // Start intro: splash → fade → done
       .animate('intro:opacity', 0, 0.8, 'easeOutCubic')
     this.bus.animate('intro:stage', 1, 0.8, 'easeOutCubic')
   }
@@ -86,118 +67,97 @@ export class Experience {
   async init() {
     this.smoothScroll = new SmoothScroll()
     input.refreshScrollLimit()
-
     this.contentReveal = new ContentReveal()
     this.cursor = new Cursor()
-
     await this.renderer.init()
-
     if (import.meta.env.DEV) {
       this.debugStats = new DebugStats(this.renderer.instance)
     }
-
-    // World
     await this.buildWorld()
-
-    // StateBus
     this.bus = StateBus.getInstance()
-
-    await this.ensureHomeSlider()
-
-    // Camera setup
+    void this.ensurePortfolio()
     this.camera.instance.position.set(0, 5, 10)
     this.camera.instance.lookAt(0, 0, 0)
     this.camera.instance.updateProjectionMatrix()
-
-    // Intro sequence — event-driven
     this.setupIntro()
-
     requestAnimationFrame((t) => this.update(t))
     void this.ensureWebGLTextManager()
   }
 
   update(time: number) {
     this.time.update(time)
-    const deltaTime = this.time.delta / 1000
-
-    // StateBus tick — drives all animations
-    this.bus.tick(deltaTime)
-
+    const dt = this.time.delta / 1000
+    this.bus.tick(dt)
     this.smoothScroll.update(time)
     input.update()
     this.cursor.update()
     this.debugStats?.update(time)
     this.webglTextManager?.update()
 
-    const normalizedScroll = input.getSmoothedScrollProgress()
-    const { cameraTarget, worldState } = this.world.advance(normalizedScroll)
-    this.world.update(deltaTime)
+    // Portfolio update
+    this.portfolio?.update(dt)
 
-    // Context switch on new section
-    const config = this.world.getConfig(worldState.currentPhase)
-    if (config && config.context !== this.currentSectionContext) {
+    const ns = input.getSmoothedScrollProgress()
+    const { cameraTarget, worldState } = this.world.advance(ns)
+    this.world.update(dt)
+
+    // Context switch
+    const cfg = this.world.getConfig(worldState.currentPhase)
+    if (cfg && cfg.context !== this.currentSectionContext) {
       if (this.currentSectionContext) {
         AssetManager.getInstance().disposeContext(this.currentSectionContext)
         GPUResourceManager.getInstance().disposeContext(this.currentSectionContext)
       }
-      this.world.atmosphere?.setFog(config.fog.color, config.fog.density)
-      this.renderer.postManager.applyPreset(config.id)
+      this.world.atmosphere?.setFog(cfg.fog.color, cfg.fog.density)
+      this.renderer.postManager.applyPreset(cfg.id)
       this.camera.setFovOffset(0.3, 0.8)
-      this.currentSectionContext = config.context
+      this.currentSectionContext = cfg.context
     }
 
-    this.camera.updateSmooth(cameraTarget, deltaTime, 5)
+    // Show portfolio only on works page
+    const isWorks = document.body.dataset.page === 'works'
+    if (this.portfolio) {
+      this.portfolio.group.visible = isWorks
+    }
+    if (this.overlay) {
+      this.overlay.hide()
+    }
 
-    // HomeSlider
-    this.homeSlider?.update(deltaTime)
-    const isHomePage = document.body.dataset.page === 'home'
-    if (this.homeSlider) this.homeSlider.group.visible = isHomePage
-
-    // Lighting
-    const warmth = normalizedScroll
+    this.camera.updateSmooth(cameraTarget, dt, 5)
+    const warmth = ns
     this.world.lightsGroup.setMood(warmth, worldState.envIntensity)
-
-    this.camera.update(deltaTime)
+    this.camera.update(dt)
     this.renderer.update(this.scene, this.camera.instance, worldState)
     requestAnimationFrame((t) => this.update(t))
   }
 
   public switchPage(page: string): void {
     document.body.dataset.page = page
-    void this.ensureHomeSlider()
-
-    // Dispose old world
+    void this.ensurePortfolio()
     if (this.world) {
       this.scene.remove(this.world)
       this.world.dispose()
     }
-
     if (this.currentSectionContext) {
       AssetManager.getInstance().disposeContext(this.currentSectionContext)
       GPUResourceManager.getInstance().disposeContext(this.currentSectionContext)
     }
     this.currentSectionContext = null
     this.bus.cancelAll()
-
-    // Rebuild
     void this.rebuildWorld()
   }
 
   private async rebuildWorld(): Promise<void> {
     await this.buildWorld()
-
-    // Reset intro for new world
     this.bus
       .set('intro:opacity', 1)
       .set('intro:stage', 0)
     this.bus.animate('intro:opacity', 0, 0.8, 'easeOutCubic')
     this.bus.animate('intro:stage', 1, 0.8, 'easeOutCubic')
-
     this.camera.instance.position.set(0, 5, 10)
     this.camera.instance.lookAt(0, 0, 0)
     this.camera.instance.updateProjectionMatrix()
     input.resetScroll()
-
     const titles = document.querySelectorAll<HTMLElement>('.studio-title')
     this.webglTextManager?.refresh(Array.from(titles))
   }
@@ -211,25 +171,40 @@ export class Experience {
     this.bus.cancelAll()
     this.debugStats?.destroy()
     this.renderer.instance.dispose()
-    this.homeSlider?.dispose()
+    this.portfolio?.dispose()
+    this.overlay?.dispose()
   }
 
-  private async ensureHomeSlider(): Promise<void> {
-    if (this.homeSlider) return
-    if (document.body.dataset.page !== 'home') return
+  private async ensurePortfolio(): Promise<void> {
+    if (this.portfolio) return
+    const page = document.body.dataset.page
+    if (page !== 'works') return
 
-    const [{ HomeSlider }, { PROJECTS }] = await Promise.all([
-      import('./HomeSlider'),
-      import('../Data/Projects'),
-    ])
+    const { PROJECTS } = await import('../Data/Projects')
+    this.portfolio = new WorksPortfolio(PROJECTS, (idx) => {
+      this.onProjectSelect(idx)
+    })
+    // Add portfolio group at a position in camera FOV (works page camera is at [3,5,7] or [0,8,10])
+    this.portfolio.group.position.set(0, 1, 2)
+    this.world.add(this.portfolio.group)
 
-    this.homeSlider = new HomeSlider(PROJECTS)
-    this.scene.add(this.homeSlider.group)
+    this.overlay = new ProjectOverlay()
+    // Bind overlay buttons
+    this.overlay.onPrev(() => this.portfolio?.prev())
+    this.overlay.onNext(() => this.portfolio?.next())
+    this.onProjectSelect(0)
+  }
+
+  private onProjectSelect(idx: number): void {
+    if (!this.portfolio || !this.overlay) return
+    const projs = (this.portfolio as any).projects
+    if (projs.length === 0) return
+    const project = projs[idx]
+    this.overlay.show(project, idx, projs.length)
   }
 
   private async ensureWebGLTextManager(): Promise<void> {
     if (this.webglTextManager) return
-
     const { WebGLTextManager } = await import('./WebGLTextManager')
     const titles = document.querySelectorAll<HTMLElement>('.studio-title')
     this.webglTextManager = new WebGLTextManager(Array.from(titles))

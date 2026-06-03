@@ -64,6 +64,10 @@ export async function startApp(): Promise<void> {
     if (!isAppReady()) return
     const exp = window.experience
     if (exp?.switchPage) exp.switchPage(document.body.dataset.page || 'home')
+    // Reset scroll to top on page switch
+    if (exp?.smoothScroll) {
+      exp.smoothScroll.lenis.scrollTo(0, { immediate: true })
+    }
   })
 
   window.addEventListener('jlj:navigate', () => {

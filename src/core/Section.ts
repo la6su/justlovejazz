@@ -43,6 +43,7 @@ export interface PostProcessingParams {
     bloom: number
     vignette: number
     grain: number
+    chromatic: number
 }
 
 // ── Junni: light data per section
@@ -100,6 +101,7 @@ export class Section extends THREE.Group {
             bloom: config.post.bloom,
             vignette: config.post.vignette,
             grain: config.post.grain,
+            chromatic: config.post.chromatic,
         }
 
         this.lightData = {
