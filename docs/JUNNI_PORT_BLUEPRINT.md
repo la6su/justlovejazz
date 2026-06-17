@@ -60,57 +60,53 @@ Key discipline patterns to port:
 
 ## 4. Acceptance criteria — "done" for each track
 
-### Track 1 — WebGPU TSL post-processing (BLOCKER) ✅
+### Track 1 — WebGPU TSL post-processing (BLOCKER)
 - [x] `_renderWebGPU` replaced with `three/webgpu` `RenderPipeline` instance
-- [x] Bloom (bright-extract → gaussian blur → composite) as TSL node graph
-      *(via three/addons BloomNode — mip-chain, 5 levels)*
+- [~] Bloom (bright-extract → gaussian blur → composite) as TSL node graph
+      *(foundation: single-pass applySoftGlow; mip-chain bloom is Track 1.2)*
 - [x] Grain, vignette, chromatic aberration as TSL nodes
 - [x] Section-aware: `ppParam` from active section drives uniform values
 - [x] WebGL path kept as fallback (existing ShaderMaterial pipeline)
 - [x] `npm run build` green; visual parity WebGPU≈WebGL on a smoke scene
 
-### Track 1.2 — Mip-chain bloom quality ✅
-- [x] Replace single-pass `applySoftGlow` with downsample RT chain (4 mips)
-      *(used three/addons BloomNode which implements 5-level mip-chain)*
-- [x] Separable `gaussBlur5` per mip (horizontal + vertical)
-      *(BloomNode internals handle this)*
-- [x] Upsample + additive composite back to full res
-- [x] Quality parity with WebGL path (5-pass)
+### Track 1.2 — Mip-chain bloom quality (NEXT)
+- [ ] Replace single-pass `applySoftGlow` with downsample RT chain (4 mips)
+- [ ] Separable `gaussBlur5` per mip (horizontal + vertical)
+- [ ] Upsample + additive composite back to full res
+- [ ] Quality parity with WebGL path (5-pass)
 
-### Track 2 — Section lifecycle ✅
+### Track 2 — Section lifecycle
 - [x] `src/core/Section.ts` base class: `init()`, `activate()`, `deactivate()`, `dispose()`, `update(dt)`
 - [x] Each section exposes `cameraTransform`, `ppParam`, `viewingState`
 - [x] `World` owns `sections: Section[]`, advances active by scroll progress
 - [x] Context-driven disposal preserved (no regression on AssetManager.disposeContext)
 
-### Track 3 — CameraController ✅
+### Track 3 — CameraController
 - [x] Per-section `CameraTransform { position, target, fov }` from section config
 - [x] Cursor-delay spring (port junni's velocity-based delay) — keep existing organic shake
 - [x] FOV pop on section arrival uses section config, not global magic number
 - [x] `prefers-reduced-motion` respected
 
-### Track 4 — TSL shader library ✅
+### Track 4 — TSL shader library
 - [x] `src/shaders/tsl/` directory: `easings.ts`, `noise.ts`, `blur.ts`, `color.ts`, `transform.ts`
       *(consolidated into tsl-utils.ts for now; split when it exceeds ~500 lines)*
 - [x] Port: easeInOutQuart, noise2D/3D, gaussBlur5/9/13, hsv2rgb, rotate
 - [x] All typed, no `any`, tested via build
 
-### Track 4.1 — TSL adapter hardening ✅
-- [x] `sampleMipBlend` used fragile `?? fallback` on `tex.sampleLevel` — removed
-      (was dead code; three 0.184 renamed API to `tex.level()`, so fallback
-      always fired and the function never actually blended mip levels)
-- [x] Document three/tsl version assumptions in tsl-utils.ts header
+### Track 4.1 — TSL adapter hardening (NEXT)
+- [ ] `sampleMipBlend` uses fragile `?? fallback` on `tex.sampleLevel` — type-guard or remove
+- [ ] Document three/tsl version assumptions in tsl-utils.ts header
 
-### Track 5 — Visual token system ✅
+### Track 5 — Visual token system
 - [x] `src/styles/tokens.css` — CSS custom properties: typography scale, spacing rhythm, color, z-index
 - [x] `src/styles/motion.css` — easing matrix (entrance, exit, emphasis, state-change)
       *(merged into tokens.css under "Motion: easing matrix")*
 - [x] Less variables mirror tokens for components
-- [x] `ProjectOverlay` and inline-styled components migrated to tokens
-      *(ProjectOverlay + nav + splash + EnterButton + modal + gallery-anchor + router all done)*
+- [~] `ProjectOverlay` and inline-styled components migrated to tokens
+      *(ProjectOverlay + index.html nav done; remaining: splash, EnterButton, modal, other UI)*
 
-### Track 6 — Bespoke content (NEEDS HUMAN / DESIGNER) ⏳
-- [ ] 6 section scenes with real 3D content (Blender → glTF)
+### Track 6 — Bespoke content (NEEDS HUMAN / DESIGNER)
+- [ ] 8 section scenes with real 3D content (Blender → glTF)
 - [ ] Baku central object model + per-section material variants
 - [ ] Per-page copy (Home / Trinity / Works)
 - [ ] Motion choreography tuned on real desktop + mobile devices

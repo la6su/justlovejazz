@@ -12,7 +12,6 @@ import { bloom } from 'three/addons/tsl/display/BloomNode.js'
 import {
   applyProfessionalGrain,
   applyCinematicVignette,
-  applyChromaticAberration,
   acesTonemap,
 } from '../shaders/tsl-utils'
 import type { TSLNode } from '../types/tsl'
@@ -576,13 +575,8 @@ export class RenderPipeline {
     // Hold uniform ref for per-frame mutation (radius/threshold fixed at build).
     this._bloomStrength = bloomNode.strength as unknown as TSLNode
 
-    // ── Chromatic aberration (parity with WebGL composite uChromatic) ──
-    // Applied to scene color BEFORE bloom composite (matches WebGL path
-    // where the uChromatic branch shifts uScene before bloom add).
-    const sceneWithChroma = applyChromaticAberration(sceneColor, screenUV, this._uChromatic)
-
-    // Additive composite: scene (with chromatic) + bloom.
-    let color: TSLNode = sceneWithChroma.add(bloomNode)
+    // Additive composite: scene + bloom.
+    let color: TSLNode = sceneColor.add(bloomNode)
 
     // ── Film grain ──
     if (this._config.grainEnabled) {

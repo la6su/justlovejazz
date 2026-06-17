@@ -309,25 +309,4 @@
   #jlj-splash, #jlj-splash-progress { transition: none; }
 }
 
-/* ── SPA content container (router.ts) ── */
-#spa-content {
-  position: relative;
-  z-index: var(--jlz-z-content);
-}
-
-/* ── Project modal (entry-app.ts) ── */
-.jlz-project-modal-body {
-  height: 100%;
-  background: rgba(10, 10, 15, 0.97);
-}
-
-/* ── Works gallery anchor (templates.ts) ──
- * 3D canvas renders behind; this is a scroll-anchoring placeholder.
- */
-#gallery-anchor {
-  width: 100%;
-  height: 100vh;
-  pointer-events: none;
-}
-
 
