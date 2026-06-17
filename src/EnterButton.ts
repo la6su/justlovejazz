@@ -7,24 +7,10 @@ export class EnterButton {
   constructor() {
     this.el = document.createElement('button')
     this.el.id = 'jlj-enter'
-    this.el.style.cssText = `
-      position: fixed;
-      bottom: 10vh;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 10000;
-      background: transparent;
-      border: 1px solid rgba(255,255,255,0.25);
-      color: rgba(255,255,255,0.8);
-      font: 600 clamp(0.55rem, 1vw, 0.85rem) 'Inter', system-ui, -apple-system, sans-serif;
-      letter-spacing: 0.3em;
-      padding: 14px 40px;
-      cursor: pointer;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.8s ease, border-color 0.3s ease, color 0.3s ease;
-      text-transform: uppercase;
-    `
+    this.el.className = 'jlz-enter'
+    // Visual styling lives in src/styles/tokens.css (.jlz-enter).
+    // id kept as jlj-enter for back-compat with main-app.ts lookup.
+    // Only opacity + pointer-events are toggled dynamically below.
   }
 
   show(label = 'ENTER SITE'): void {

@@ -213,3 +213,100 @@
   line-height: 24px;
 }
 
+/* ── EnterButton — splash→dissolve entry trigger ── */
+.jlz-enter {
+  position: fixed;
+  bottom: 10vh;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--jlz-z-toast);
+  background: transparent;
+  border: 1px solid var(--jlz-color-border-strong);
+  color: var(--jlz-color-text-muted);
+  font-weight: var(--jlz-weight-semibold);
+  font-size: clamp(0.55rem, 1vw, 0.85rem);
+  font-family: var(--jlz-font-display);
+  letter-spacing: var(--jlz-tracking-widest);
+  padding: var(--jlz-space-3) var(--jlz-space-10);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity var(--jlz-duration-cinematic) var(--jlz-ease-entrance),
+    border-color var(--jlz-duration-normal) var(--jlz-ease-state),
+    color var(--jlz-duration-normal) var(--jlz-ease-state);
+  text-transform: uppercase;
+}
+
+.jlz-enter:hover {
+  border-color: var(--jlz-color-accent-hover);
+  color: var(--jlz-color-text);
+}
+
+.jlz-enter:focus-visible {
+  outline: 2px solid var(--jlz-color-accent);
+  outline-offset: var(--jlz-space-1);
+}
+
+/* ── Splash overlay — instant paint, zero deps ──
+ * id kept as jlj-splash for back-compat with index.html inline markup
+ * and main.less overrides. Style source of truth lives here.
+ */
+#jlj-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: var(--jlz-color-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  opacity: 1;
+  transition: opacity var(--jlz-duration-cinematic) var(--jlz-ease-exit);
+  will-change: opacity;
+}
+
+#jlj-splash > div:first-child {
+  /* brand mark (logo) */
+  color: var(--jlz-color-text);
+  font-weight: 700;
+  font-size: var(--jlz-type-display-md);
+  font-family: var(--jlz-font-display);
+  letter-spacing: var(--jlz-tracking-widest);
+  text-align: center;
+  opacity: 0;
+  animation: jlz-splash-in var(--jlz-duration-cinematic) var(--jlz-ease-entrance) 0.1s forwards;
+}
+
+#jlj-splash-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  width: 0%;
+  background: var(--jlz-color-text);
+  transition: width var(--jlz-duration-normal) var(--jlz-ease-state);
+  will-change: width;
+}
+
+#jlj-splash-label {
+  position: absolute;
+  bottom: var(--jlz-space-6);
+  color: var(--jlz-color-text-subtle);
+  font-weight: var(--jlz-weight-semibold);
+  font-size: var(--jlz-type-overline);
+  font-family: var(--jlz-font-display);
+  letter-spacing: var(--jlz-tracking-wider);
+  text-transform: uppercase;
+}
+
+@keyframes jlz-splash-in {
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #jlj-splash > div:first-child { animation: none; opacity: 1; }
+  #jlj-splash, #jlj-splash-progress { transition: none; }
+}
+
+
