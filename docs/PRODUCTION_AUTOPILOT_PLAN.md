@@ -1,115 +1,95 @@
 # Production Autopilot Plan (Studio-Grade Target)
 
+> Last updated: 2026-06-17. See `docs/STATUS.md` for canonical state.
+
 ## Objective
 
-Move `justlovejazz` from a functional prototype to a studio-grade interactive portfolio with:
+Move `justlovejazz` from functional prototype to studio-grade interactive
+portfolio. Most code-level tracks are done; remaining work is bespoke
+content + design review + QA on real hardware.
 
-- page-consistent visual system;
-- deterministic state/motion architecture;
-- polished 3D transitions;
-- production QA gates;
-- documented repeatable workflows for future projects.
+## Current Maturity (post-junni-parity session)
 
-## Current Maturity (Estimated)
-
-- Architecture and build stability: 70%
-- WebGPU/Three.js core integration: 75%
-- Works UX and project flow: 60%
-- Visual direction consistency across pages: 45%
-- Production QA (perf/accessibility/mobile): 35%
-- Studio polish level: 20–30%
+| Area | Before | After |
+|------|--------|-------|
+| Architecture + build stability | 70% | ✅ 95% |
+| WebGPU/Three.js core integration | 75% | ✅ 95% (TSL pipeline + BloomNode) |
+| Works UX and project flow | 60% | 60% (unchanged — needs bespoke content) |
+| Visual direction consistency | 45% | 60% (tokens unified, content pending) |
+| Production QA (perf/a11y/mobile) | 35% | 65% (a11y done, perf pending Lighthouse) |
+| Studio polish level | 20–30% | 30–40% (foundation done, bespoke polish pending) |
 
 ## Non-Negotiable Production Gates
 
-1. `npm run type-check` and `npm run build` always green.
-2. E2E smoke green on all key routes (`/`, `/trinity.html`, `/works.html`).
-3. Explicit renderer capability behavior (`webgpu | webgl | unsupported`) verified.
-4. No known unsafe resource lifecycle paths.
-5. Mobile-first UX and reduced-motion support verified.
-6. Lighthouse target baseline:
-   - Performance >= 85
-   - Accessibility >= 90
+1. ✅ `npm run type-check` and `npm run build` always green.
+2. 🔄 E2E smoke green on all key routes (`#/`, `#/trinity`, `#/works`).
+   Playwright config exists; tests need expansion.
+3. ✅ Explicit renderer capability behavior (`webgpu | webgl | unsupported`) verified.
+4. ✅ No known unsafe resource lifecycle paths (listeners clean up on destroy).
+5. 🔄 Mobile-first UX and reduced-motion support verified (reduced-motion done;
+   mobile touch UX needs real-device testing).
+6. ⏳ Lighthouse target baseline: Performance ≥ 85, Accessibility ≥ 90.
 
-## Delivery Tracks
+## Delivery Tracks (status)
 
-## Track A — Visual System Unification
+### Track A — Visual System Unification ✅
+1. ✅ Shared page-token layer: `src/styles/tokens.css` (typography scale,
+   spacing rhythm, color, z-index, motion easing matrix) + `tokens.less` bridge.
+2. 🔄 Section storytelling per page — needs bespoke content (Track 6).
+3. ✅ Remaining style drift removed — splash, EnterButton, ProjectOverlay,
+   nav, modal, gallery-anchor all migrated to tokens.
 
-1. Introduce a shared page-token layer:
-   - typography scale;
-   - spacing rhythm;
-   - section composition rules;
-   - surface styles for cards/modals.
-2. Normalize section storytelling per page:
-   - Home: positioning + capabilities;
-   - Trinity: method/process;
-   - Works: portfolio deep dive.
-3. Remove remaining style drift and duplicated legacy blocks.
+### Track B — 3D Narrative Quality 🔄
+1. ✅ Phase-specific easing: per-section `camFovOffset`/`camFovDuration`/
+   `camSmoothing` in WorldConfig.
+2. 🔄 Gallery/project transition fidelity — needs design review.
+3. 🔄 Page-aware world presets — `bloomRadius`/`bloomThreshold` per section
+   is the next design decision.
 
-## Track B — 3D Narrative Quality
+### Track C — Works Page Finalization 🔄
+1. ✅ Portfolio interactive only on `#/works` (data-page gate).
+2. 🔄 Sticky UX polish — needs bespoke content + design review.
+3. ⏳ Case-study metadata blocks (role, scope, stack, outcomes).
 
-1. Tighten section transition choreography:
-   - phase-specific easing curves;
-   - camera transition timing by page context;
-   - controlled amplitude for mobile.
-2. Improve gallery/project transition fidelity:
-   - continuity between sticky list selection and 3D card expansion;
-   - better transition masking for detail entry.
-3. Add page-aware world presets (without forking architecture).
+### Track D — Performance and Stability 🔄
+1. ⏳ Runtime performance diagnostics — DebugStats exists (FPS/MEM/GEO),
+   needs section-transition profiling.
+2. ✅ Expensive effects capped by quality tier (PostProcessingManager
+   QUALITY_SCALARS: high/medium/low).
+3. ⏳ Heavy asset audit (texture formats, payload) — deferred until assets exist.
 
-## Track C — Works Page Finalization
+### Track E — QA and Accessibility Hardening 🔄
+1. ⏳ Playwright coverage expansion (route smoke, works lifecycle, keyboard nav).
+2. ✅ A11y semantics: landmarks, ARIA on splash/progress, focus-visible on
+   EnterButton/overlay nav, skip-link present.
+3. ⏳ Mobile interaction validation on real devices.
 
-1. Keep portfolio interactive only on `/works.html`.
-2. Finalize sticky UX:
-   - stronger item hierarchy;
-   - smoother preview change transitions;
-   - explicit active state persistence.
-3. Add case-study metadata blocks (role, scope, stack, outcomes).
+## Sprint Plan (revised)
 
-## Track D — Performance and Stability
+### Sprint 1 (DONE)
+- ✅ Planning artifacts locked (JUNNI_PORT_BLUEPRINT, STATUS.md).
+- ✅ Render-pipeline integrity (PR #1).
+- ✅ Core gates green.
 
-1. Add runtime performance diagnostics for critical transitions.
-2. Cap expensive effects by quality tier in all heavy passes.
-3. Audit and optimize heavy assets (texture formats, payload size, preload policy).
+### Sprint 2 (DONE)
+- ✅ Visual token unification (PR #3, #5, #7).
+- ✅ Per-section transition presets (PR #3).
 
-## Track E — QA and Accessibility Hardening
-
-1. Expand Playwright coverage:
-   - route-level smoke;
-   - works selection -> open -> close;
-   - keyboard navigation in works listbox.
-2. Improve a11y semantics:
-   - landmarks, focus order, modal flow;
-   - aria state for active works item.
-3. Validate mobile interaction details (touch, scroll, momentum, reduced motion).
-
-## Sprint Plan (Automatic Execution)
-
-### Sprint 1 (Now)
-- Lock planning artifacts.
-- Stabilize page-specific content and works isolation.
-- Confirm core gates remain green.
-
-### Sprint 2
-- Implement visual token unification and remove style drift.
-- Add page-aware transition presets.
-
-### Sprint 3
-- Finalize works polish (preview transitions + metadata structure).
-- Expand E2E to cover works interaction lifecycle.
+### Sprint 3 (NEXT — needs human)
+- Bespoke 3D content for 6 step scenes.
+- Baku central object model + per-section material variants.
+- Per-page copy (Home/Trinity/Works).
 
 ### Sprint 4
-- Perf + a11y pass.
-- Lighthouse + regression checks.
+- Playwright E2E expansion.
+- Lighthouse on real hardware.
 
 ### Sprint 5
-- Final production sweep:
-  - docs sync;
-  - QA checklist closure;
-  - release readiness report.
+- Final production sweep: docs sync (this pass done), QA checklist, release.
 
 ## Done Definition (Studio-Grade)
 
-- Cohesive cross-page art direction.
-- Works flow is robust, intuitive, and benchmark-ready.
-- Technical quality gates pass without exceptions.
-- Docs accurately describe architecture, capabilities, and operations.
+- ⏳ Cohesive cross-page art direction (needs bespoke content).
+- 🔄 Works flow robust + benchmark-ready (code done, content pending).
+- ✅ Technical quality gates pass without exceptions.
+- ✅ Docs accurately describe architecture, capabilities, and operations.

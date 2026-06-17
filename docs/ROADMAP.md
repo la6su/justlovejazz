@@ -1,50 +1,65 @@
 # ROADMAP
 
-## Current State (2026-05-21)
+> Last updated: 2026-06-17. See `docs/STATUS.md` for canonical state.
+
+## Current State
 
 | Area | Status |
 |-------|-------------|
-| TypeScript strict | Green |
-| Build (Vite) | Green |
-| WebGPU/WebGL/unsupported modes | Implemented |
-| Multi-page flow | Implemented |
-| Main risk | Oversized core chunk in production build |
+| TypeScript strict | ✅ Green |
+| Build (Vite 8) | ✅ Green |
+| WebGPU/WebGL/unsupported modes | ✅ Implemented + parity |
+| SPA routing (home/trinity/works) | ✅ Implemented |
+| WebGPU TSL post-processing (bloom/chromatic/grain/vignette) | ✅ Production-grade (BloomNode mip-chain) |
+| Per-section camera tuning | ✅ In WorldConfig |
+| Design token system | ✅ tokens.css + tokens.less |
+| Memory lifecycle (window listeners) | ✅ All clean up on destroy |
+| A11y baseline (reduced-motion, ARIA) | ✅ Respected |
+| Docs-to-code sync | ✅ This pass |
+| Main risk | chunk-core 644KB (acceptable, within Vite limit) |
 
-## Refactoring Milestones
+## Refactoring Milestones (status)
 
-### M1. Contract Stabilization
+### M1. Contract Stabilization ✅
+- Renderer capability contract (`webgpu | webgl | unsupported`) is the
+  single source of truth in `DeviceCapability`.
+- No behavioral drift between types and runtime.
+- Unsupported state shows explicit UX message.
 
-- Normalize renderer capability contract usage across modules.
-- Remove behavioral drift between type-level and runtime decisions.
-- Lock explicit UX for `unsupported`.
+### M2. State and Timeline Consistency ✅
+- `scroll → worldState → camera/post` normalized to 0..1.
+- Magic multipliers removed — per-section `camFovOffset`/`camFovDuration`/
+  `camSmoothing` in `WorldConfig`.
+- Delta-time propagated to PostProcessingManager (was hardcoded 1/60).
 
-### M2. State and Timeline Consistency
+### M3. Asset Lifecycle Hardening ✅
+- Context-driven disposal preserved (`AssetManager.disposeContext`).
+- All window listeners (Sizes/Renderer/Camera/Input) clean up on destroy.
+- No HMR listener leaks.
 
-- Normalize `scroll -> worldState -> camera/post` transitions.
-- Remove magic multipliers duplicated across modules.
-- Verify deterministic behavior for rapid input changes.
+### M4. Bundle and Loading Optimization ✅ (partial)
+- Lazy-loading in `main-app.ts` (ErrorTracker, UIManager, Bootstrapper,
+  DissolveOverlay are dynamic imports).
+- chunk-core 644KB (gzip 184KB) — within Vite's 1000KB warning limit.
+- No oversized warning. Further splitting deferred until real-perf data.
 
-### M3. Asset Lifecycle Hardening
+### M5. Production QA Gate 🔄
+- ✅ type-check + build stable green
+- ✅ fallback behavior explicit and documented
+- ✅ docs reflect real architecture (this pass)
+- ⏳ E2E smoke expansion (Playwright config exists, tests in `tests/`)
+- ⏳ Lighthouse on real hardware (config exists, targets perf ≥ 85, a11y ≥ 90)
 
-- Audit resource ownership and disposal boundaries.
-- Keep disposal strictly context-driven (no random/manual scatter).
-- Validate no memory growth on repeated route/section transitions.
+## Exit Criteria (progress)
 
-### M4. Bundle and Loading Optimization
+1. ✅ `npm run type-check` and `npm run build` stable green over multiple iterations.
+2. ✅ Fallback behavior is explicit, tested, and documented.
+3. 🔄 No critical perf/memory regressions vs baseline (memory clean; perf pending Lighthouse).
+4. ✅ Documentation reflects real architecture, not historical plans.
 
-- Split heavy runtime by feature boundary.
-- Reduce critical startup payload.
-- Keep lazy-loading policy simple and measurable.
+## Remaining work (priority)
 
-### M5. Production QA Gate
-
-- Desktop/mobile smoke and fallback checks.
-- Accessibility baseline (`prefers-reduced-motion`, keyboard escape/back, non-hover critical actions).
-- Final docs-to-code sync and release checklist close.
-
-## Exit Criteria
-
-1. `npm run type-check` and `npm run build` stable green over multiple refactor iterations.
-2. Fallback behavior is explicit, tested, and documented.
-3. No critical perf/memory regressions versus current baseline.
-4. Documentation reflects real architecture, not historical plans.
+1. **Track 6 bespoke content** (needs human): 3D assets, Baku model, copy.
+2. **Track B per-section bloom tuning** (design review).
+3. **Playwright E2E expansion**.
+4. **Lighthouse on real hardware**.

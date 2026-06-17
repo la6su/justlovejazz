@@ -1,5 +1,10 @@
 # Works Sticky Rebuild Plan
 
+> Status: ✅ IMPLEMENTED — `src/Experience/WorksPortfolio.ts` +
+> `src/Experience/ProjectCarousel.ts` exist and are wired into
+> `Experience.ensurePortfolio()`. This file is kept as historical reference.
+> See `docs/STATUS.md` for current state.
+
 ## Goal
 
 Bring `#works` to a production-ready sticky experience inspired by `StickyImageEffect`, adapted to this repository architecture:

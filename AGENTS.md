@@ -35,30 +35,33 @@ Do not copy Junni assets, text, models, SVGs, or content. Port patterns, not cop
 
 ## Main References
 
-Read these files before large changes:
+Read these files before large changes (in priority order):
 
-1. `README.md`
-2. `docs/CONCEPT.md`
-3. `docs/SPEC.md`
-4. `docs/ROADMAP.md`
-5. `docs/AUTONOMY.md`
-6. `docs/ARCHITECTURE.md`
-7. `docs/LAZY_LOADING.md`
+1. `docs/STATUS.md` ⭐ — canonical current state; if other docs conflict, STATUS wins
+2. `docs/JUNNI_PORT_BLUEPRINT.md` — junni → modern stack port map + acceptance criteria
+3. `README.md` — overview + run commands
+4. `docs/SPEC.md` — technical specification (renderer contract, scenes, motion rules)
+5. `docs/ARCHITECTURE.md` — module responsibilities + entry/runtime map
+6. `docs/AUTONOMY.md` — LLM agent operating protocol
+7. `docs/LAZY_LOADING.md` — bundle split strategy
 
-NOTE: The original Junni site archive was purged. Use `docs/CONCEPT.md` for reference patterns.
+**Junni reference repo is PUBLIC**: `junni-inc/next.junni.co.jp` on GitHub
+(Gulp + three 0.145, 2022). Port patterns, do not copy assets/content.
 
 ## Current Priority
 
-Do not start visual polish before the build is stable.
+Build is stable (type-check + build green). Core tracks 1–5 from
+JUNNI_PORT_BLUEPRINT are done. See `docs/STATUS.md` for the live state.
 
-Immediate order:
+Immediate priorities (in order):
 
-1. Fix TypeScript build errors.
-2. Add/keep a separate type-check command.
-3. Define renderer capabilities and fallback behavior.
-4. Normalize scroll progress and world timeline.
-5. Fix asset lifecycle and remove random texture disposal.
-6. Then work on post-processing, bloom, polish, mobile QA.
+1. **Track 6 bespoke content** — 3D assets, Baku model, per-page copy.
+   Requires human creative direction; cannot be code-generated.
+2. **Track B per-section bloom tuning** — design review of bloomRadius
+   + bloomThreshold per RawScene in WorldConfig.
+3. **Playwright E2E expansion** — route smoke, works lifecycle, keyboard nav.
+4. **Lighthouse on real hardware** — perf ≥ 85, a11y ≥ 90.
+5. Any regression or new defect found in `docs/STATUS.md` audit.
 
 For autonomous local LLM work, follow `docs/AUTONOMY.md`.
 
@@ -78,12 +81,17 @@ For autonomous local LLM work, follow `docs/AUTONOMY.md`.
 
 - WebGPU is the primary rendering path.
 - WebGL support must be explicit: implemented fallback or clear unsupported state.
-- Keep WebGPU-specific APIs isolated.
+- Keep WebGPU-specific APIs isolated (adapter boundary `any` only in
+  `RenderPipeline.ts` for the native RenderPipeline constructor).
 - Use TSL method chaining where possible: `.add()`, `.mul()`, `.sub()`.
 - Keep shader helpers in `src/shaders/tsl-utils.ts`.
+- TSL version assumptions are documented in the header of `tsl-utils.ts`
+  — verify against `node_modules/three/src/nodes/` on three upgrades.
 - Expensive shader features need quality-tier control.
 - Do not mix GLSL string shaders and TSL in the same material without an adapter.
-- Treat current post-processing as temporary until a real pipeline exists.
+- Post-processing pipeline is production-grade: WebGPU uses
+  `three/addons/tsl/display/BloomNode` (mip-chain); WebGL uses custom
+  ShaderMaterial pipeline. Both have parity (bloom, chromatic, grain, vignette).
 
 ## UX / Motion Rules
 
@@ -91,9 +99,32 @@ For autonomous local LLM work, follow `docs/AUTONOMY.md`.
 - Avoid linear visual movement.
 - Camera should have clear base transform and final transform.
 - Mobile must use reduced movement, not a scaled desktop feel.
-- Support `prefers-reduced-motion`.
+- Support `prefers-reduced-motion` — enforced in Camera, SmoothScroll,
+  GalleryManager, World, and tokens.css (transitions disabled).
 - DOM and WebGL must use the same application state.
 - No hover-only critical interactions.
+
+## Styling Rules
+
+- Design tokens live in `src/styles/tokens.css` (CSS custom properties)
+  with a Less bridge in `src/styles/tokens.less`.
+- All new UI must use `--jlz-*` tokens — no hardcoded colors, sizes,
+  durations, or easings in component code.
+- Component classes go in `tokens.css` under a "Component styles" section.
+- Inline `style=` attributes are allowed ONLY for dynamic values (e.g.
+  per-frame transform, per-project accent color). Static styling → class.
+- UIkit 3 + Less variables are bridged via `@jlz-*` in `tokens.less`.
+
+## Lifecycle Rules
+
+- Any module registering a `window.addEventListener` MUST expose a
+  `destroy()` (or `dispose()`) that calls `removeEventListener` with the
+  SAME bound handler ref (anonymous arrows cannot be removed).
+- `Experience.destroy()` MUST call destroy/dispose on every owned module:
+  Sizes, Renderer, Camera, Input, SmoothScroll, ContentReveal, Cursor,
+  World, StateBus, DebugStats, Portfolio, Overlay.
+- Vite HMR triggers destroy on module replacement — leaks surface fast
+  in dev. If a listener can't be cleaned up, fix it before merging.
 
 ## Asset Rules
 

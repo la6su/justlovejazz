@@ -69,10 +69,16 @@ Single render loop in `Experience.update()` drives camera, world, post-processin
 
 | File | Content |
 |------|---------|
+| [STATUS](docs/STATUS.md) ⭐ | **Canonical current state** — if other docs conflict, STATUS wins |
+| [JUNNI_PORT_BLUEPRINT](docs/JUNNI_PORT_BLUEPRINT.md) | Junni → modern stack port map + acceptance criteria |
+| [CHANGELOG](docs/CHANGELOG.md) | Recent merge log |
 | [CONCEPT](docs/CONCEPT.md) | Design and narrative concept |
 | [SPEC](docs/SPEC.md) | Technical contracts and runtime rules |
 | [ARCHITECTURE](docs/ARCHITECTURE.md) | Module responsibilities and data flow |
 | [ROADMAP](docs/ROADMAP.md) | Delivery progress and next milestones |
 | [AUTONOMY](docs/AUTONOMY.md) | Agent execution protocol |
 | [PRODUCTION_AUTOPILOT_PLAN](docs/PRODUCTION_AUTOPILOT_PLAN.md) | Studio-grade completion plan |
+| [PHASE_H](docs/PHASE_H.md) | Visual polish & mobile QA checklist |
+| [LAZY_LOADING](docs/LAZY_LOADING.md) | Bundle split strategy |
+| [HERMES_QWEN36_PLAN](docs/HERMES_QWEN36_PLAN.md) | Local LLM execution phases |
 | [SKILLS_TRAINING_PLAN](docs/SKILLS_TRAINING_PLAN_WEBGPU_THREEJS_JUNNI_STYLE.md) | Skill-building system for this stack |

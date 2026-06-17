@@ -1,8 +1,23 @@
 # CHANGELOG
 
-Recent activity. Use `git log` for details.
+Recent activity. Use `git log` for full details. See `docs/STATUS.md`
+for the canonical current state.
 
-## Recent Commits
+## 2026-06-17 — Junni-parity session (8 PRs merged into `test`)
+
+| PR | Topic |
+|----|-------|
+| #1 | render-pipeline integrity: wire Renderer.resize to pipeline, pass delta-time to PostProcessingManager (was hardcoded 1/60), make ProjectOverlay hide event-driven (was per-frame), extract section-transition magic numbers |
+| #3 | junni-parity foundation: JUNNI_PORT_BLUEPRINT doc, TSL shader library (sigmoid, snoise, hsv2rgb, gaussBlur5, acesTonemap), WebGPU TSL post-processing pipeline (was empty stub), per-section FOV/smoothing in WorldConfig, design token system (tokens.css + tokens.less) |
+| #5 | mip-chain bloom via three/addons BloomNode (replaces single-pass applySoftGlow), TSL adapter hardening (remove broken sampleMipBlend — API renamed to tex.level), RenderPipeline init order fix (was created before renderer.init()), splash + EnterButton migrated to tokens |
+| #7 | docs-drift fix (SPA reality, entry-shell.ts, Contact not impl), resize listener leaks fixed (Sizes/Renderer/Camera/Input — all had anonymous-arrow listeners), splash ARIA roles + aria-valuenow sync, Camera prefers-reduced-motion compliance |
+| #8 | WebGPU/WebGL parity: chromatic aberration added to WebGPU path (was WebGL-only), Input.ts listener leak fix |
+
+**Net effect**: WebGPU primary path now has full post-processing parity
+with WebGL (bloom + chromatic + grain + vignette + ACES tonemap). All
+window listeners clean up on destroy (no HMR leaks). Docs match code.
+
+## 2026-05-12 — Pre-session baseline
 
 | Date | Summary |
 |------|---------|
