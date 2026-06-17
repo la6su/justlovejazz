@@ -186,9 +186,15 @@ export class Experience {
     this.world.dispose()
     this.bus.cancelAll()
     this.debugStats?.destroy()
-    this.renderer.instance.dispose()
+    // Renderer.dispose() cleans up the resize listener AND the pipeline
+    // AND the renderer instance (was previously only instance.dispose()).
+    this.renderer.dispose()
+    this.camera.destroy()
     this.portfolio?.dispose()
     this.overlay?.dispose()
+    // Sizes owns a window resize listener — clean it up to avoid leaks
+    // on hot-reload (Vite HMR) and on explicit teardown.
+    this.sizes.destroy()
   }
 
   private async ensurePortfolio(): Promise<void> {

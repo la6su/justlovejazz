@@ -51,10 +51,20 @@ export class Camera {
         this.instance.position.copy(this.smoothPosition)
         this.prevPosition.copy(this.smoothPosition)
 
-        window.addEventListener('resize', () => {
+        // Bound ref so removeEventListener works in destroy().
+        this._onResize = () => {
             this.instance.aspect = sizes.width / sizes.height
             this.instance.updateProjectionMatrix()
-        })
+        }
+        window.addEventListener('resize', this._onResize, { passive: true })
+    }
+
+    // Resize handler ref — cleaned up in destroy().
+    private _onResize: () => void = () => {}
+
+    /** Remove the window resize listener. Call from Experience.destroy(). */
+    destroy(): void {
+        window.removeEventListener('resize', this._onResize)
     }
 
     setBasePosition(pos: THREE.Vector3) {
