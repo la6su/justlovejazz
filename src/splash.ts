@@ -85,6 +85,8 @@ export function createSplash(): SplashOverlay {
   function doSetProgress(pct: number) {
     if (progressBar) {
       progressBar.style.width = `${Math.round(pct)}%`
+      // Keep the ARIA progressbar value in sync for screen readers.
+      progressBar.setAttribute('aria-valuenow', String(Math.round(pct)))
     }
     if (pct >= 95) doSetState('ready')
     else if (pct >= 55) doSetState('warming')
