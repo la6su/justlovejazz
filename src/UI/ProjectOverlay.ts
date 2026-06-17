@@ -13,31 +13,25 @@ export class ProjectOverlay {
   constructor() {
     this.container = document.createElement('div')
     this.container.className = 'project-overlay'
-    this.container.style.cssText = [
-      'position: fixed',
-      'bottom: 12vh',
-      'left: 50%',
-      'transform: translateX(-50%)',
-      'text-align: center',
-      'pointer-events: none',
-      'z-index: 50',
-      'transition: opacity 0.4s ease',
-    ].join('; ') + '; x'
+    // All visual styling lives in src/styles/tokens.css (.project-overlay*).
+    // Only the per-project accent glow is set dynamically in show().
     this.buildContent()
     document.body.appendChild(this.container)
   }
 
   private buildContent(): void {
-    const svg_prev = ['<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.5">','<polyline points="15 18 9 12 15 6"/></svg>'].join('')
-    const svg_next = ['<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.5">','<polyline points="9 18 15 12 9 6"/></svg>'].join('')
+    // SVG stroke color uses currentColor so tokens.css can theme it via
+    // .project-overlay__nav button { color: var(--jlz-color-text-muted) }.
+    const svg_prev = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="15 18 9 12 15 6"/></svg>'
+    const svg_next = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="9 18 15 12 9 6"/></svg>'
     this.container.innerHTML = [
-      '<div class="project-overlay__index" style="font-size: 0.75rem; letter-spacing: 0.25em; color: rgba(255,255,255,0.4); margin-bottom: 0.5rem;"></div>',
-      '<div class="project-overlay__title" style="font-size: clamp(1.4rem, 4vw, 3rem); font-weight: 300; letter-spacing: 0.3em; color: rgba(255,255,255,0.9); margin: 0;"></div>',
-      '<div class="project-overlay__category" style="font-size: 0.85rem; letter-spacing: 0.2em; color: rgba(255,255,255,0.35); margin-top: 0.4rem;"></div>',
-      '<div class="project-overlay__nav" style="margin-top: 2rem; display: flex; justify-content: center; gap: 2rem;">',
-        '<button class="prev" style="background:none;border:none;cursor:pointer;pointer-events: auto;">' + svg_prev + '</button>',
-        '<span class="counter" style="color: rgba(255,255,255,0.4); font-size: 0.75rem; line-height: 24px;"></span>',
-        '<button class="next" style="background:none;border:none;cursor:pointer;pointer-events: auto;">' + svg_next + '</button>',
+      '<div class="project-overlay__index"></div>',
+      '<div class="project-overlay__title"></div>',
+      '<div class="project-overlay__category"></div>',
+      '<div class="project-overlay__nav">',
+        '<button class="prev" aria-label="Previous project">' + svg_prev + '</button>',
+        '<span class="counter"></span>',
+        '<button class="next" aria-label="Next project">' + svg_next + '</button>',
       '</div>',
     ].join('')
     this.indexEl = this.container.querySelector('.project-overlay__index') as HTMLElement
