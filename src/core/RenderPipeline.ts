@@ -12,7 +12,6 @@ import { bloom } from 'three/addons/tsl/display/BloomNode.js'
 import {
   applyProfessionalGrain,
   applyCinematicVignette,
-  acesTonemap,
 } from '../shaders/tsl-utils'
 import type { TSLNode } from '../types/tsl'
 
@@ -588,9 +587,11 @@ export class RenderPipeline {
       color = applyCinematicVignette(color, screenUV, this._uVignette.mul(0.4))
     }
 
-    // ── ACES tonemap + output color space ──
-    // renderOutput applies renderer tone mapping + output color space.
-    const output = renderOutput(acesTonemap(color), null, null)
+    // ── Output: renderOutput applies renderer.toneMapping + outputColorSpace.
+    // Do NOT apply acesTonemap manually here — that would double-tonemap
+    // (manual + renderer toneMapping) and blow the frame to white.
+    // WebGPURenderer.toneMapping is set to ACESFilmic in Renderer constructor.
+    const output = renderOutput(color, null, null)
 
     this._nativePipeline = new NativeRenderPipelineCtor(this._renderer, output)
   }
