@@ -1,12 +1,17 @@
 # justlovejazz
 
-Interactive studio portfolio with Three.js + WebGPU, implemented as a multi-page template system:
+Interactive studio portfolio with Three.js + WebGPU, implemented as a
+**single-page application** with hash-based routing (`src/router.ts`):
 
-- `/index.html` — Home;
-- `/trinity.html` — process/method page;
-- `/works.html` — dedicated interactive portfolio page.
+- `index.html` → entry shell, splash, canvas mount
+- `#/` (default) — Home: studio positioning + capabilities
+- `#/trinity` — Process / method
+- `#/works` — Interactive portfolio (sticky selector + 3D expansion + detail modal)
 
-Project direction is inspired by studio-level quality patterns similar to `next.junni.co.jp` (patterns only, no asset/content copying).
+Project direction is inspired by studio-level quality patterns similar to
+`next.junni.co.jp` (patterns only, no asset/content copying). See
+[`docs/JUNNI_PORT_BLUEPRINT.md`](docs/JUNNI_PORT_BLUEPRINT.md) for the
+port map and acceptance criteria.
 
 ## Current Implementation
 
@@ -56,9 +61,9 @@ Single render loop in `Experience.update()` drives camera, world, post-processin
 
 ## Route Roles
 
-- `index.html`: positioning and capabilities overview.
-- `trinity.html`: process/system framing.
-- `works.html`: fully interactive project portfolio (sticky selector + 3D expansion + detail modal).
+- `#/` (Home): positioning and capabilities overview.
+- `#/trinity`: process/system framing.
+- `#/works`: fully interactive project portfolio (sticky selector + 3D expansion + detail modal).
 
 ## Docs
 

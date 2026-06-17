@@ -26,7 +26,7 @@ const container: HTMLElement | null = (() => {
     el = document.createElement('main')
     el.id = 'spa-content'
     el.setAttribute('role', 'main')
-    el.style.cssText = 'position:relative;z-index:10;'
+    // Styling via #spa-content in src/styles/tokens.css.
     // Insert after nav.
     const nav = document.getElementById('main-nav')
     if (nav && nav.nextElementSibling) {

@@ -14,11 +14,13 @@
 ## Entry & Runtime
 
 ```
-src/entry.ts          → sync reduced-motion, defer Less + app bootstrap
-src/main-app.ts       → bootstrap(), route gate (data-app-mode)
-src/main.ts           → re-exports entry.ts (legacy)
+src/entry-shell.ts    → Vite entry (referenced by index.html <script>)
+src/entry-app.ts      → deferred shell mount (modal, router init, splash wiring)
+src/main-app.ts       → bootstrap(), route gate (data-app-mode), dissolve transition
+src/main.ts           → @deprecated re-export of entry-shell (kept for deep imports)
 src/core/Bootstrapper.ts → wires Experience, events, managers
 src/Experience/Experience.ts → single render loop (update → rAF)
+src/styles/tokens.css → design tokens (color/type/space/motion), consumed globally
 ```
 
 ## Modules & Responsibilities
@@ -92,9 +94,12 @@ Assets managed by priority (`pre`/`must`/`sub`). Disposal only by inactive conte
 
 ## Routes
 
-| Route | File | Role |
-|-------|------|------|
-| Home | index.html | studio positioning |
-| Trinity | trinity.html | process/method |
-| Works | works.html | interactive portfolio |
-| Contact | contact.html | commissions |
+SPA hash routes (one `index.html`, DOM injection via `src/router.ts`):
+
+| Route | data-page | Role |
+|-------|-----------|------|
+| `#/` | home | studio positioning |
+| `#/trinity` | trinity | process/method |
+| `#/works` | works | interactive portfolio |
+
+Contact is planned but not implemented (see SPEC.md).

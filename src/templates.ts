@@ -135,7 +135,7 @@ export function worksPage(): PageLayout {
       body: `
         <section id="gallery" class="section-studio section-works-gallery uk-flex uk-flex-top" uk-height-viewport="expand:true">
           <!-- 3D canvas rendered behind. DOM layers for scroll anchoring only. -->
-          <div id="gallery-anchor" data-role="3d-gallery" style="width:100%;height:100vh;pointer-events:none;"></div>
+          <div id="gallery-anchor" data-role="3d-gallery"></div>
         </section>`,
       footer: sharedFooter(),
     },
