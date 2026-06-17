@@ -1,54 +1,50 @@
 # ROADMAP
 
-## Done
+## Current State (2026-05-21)
 
-| Phase | Description |
+| Area | Status |
 |-------|-------------|
-| A. Core Infra | Three.js + Vite + TS, WebGPU renderer, 8-step WorldConfig |
-| B. Camera | Scroll-driven lerp, organic shake, FOV accents |
-| C. Post-Processing | Bloom, vignette, grain via TSL, per-step presets |
-| D. Gallery | 3D gallery, expand/contract transitions |
-| E. Performance | DPR cap (max 2), Bicubic filtering, asset disposal |
-| H. Multi-Page Studio | Shared template, route-specific content |
-| I. Scene Port | 8 cinematic steps (smoke→galaxy), low-light mood |
-| J. Templater | Lightweight string templating for page content |
+| TypeScript strict | Green |
+| Build (Vite) | Green |
+| WebGPU/WebGL/unsupported modes | Implemented |
+| Multi-page flow | Implemented |
+| Main risk | Oversized core chunk in production build |
 
-## Active
+## Refactoring Milestones
 
-### K. Per-Page Scenes (current)
+### M1. Contract Stabilization
 
-Split 8 scenes across 4 pages (2 scenes each):
+- Normalize renderer capability contract usage across modules.
+- Remove behavioral drift between type-level and runtime decisions.
+- Lock explicit UX for `unsupported`.
 
-| Page | Steps | Scenes |
-|------|-------|--------|
-| Trinity | step01, step02 | smoke, ball |
-| Works | step03, step05 | beams, neon |
-| Home | step07, step08 | drop, galaxy |
-| Contact | step04, step06 | city, flow |
+### M2. State and Timeline Consistency
 
-**Goal:** Full control per scene, no cross-page mixing.
+- Normalize `scroll -> worldState -> camera/post` transitions.
+- Remove magic multipliers duplicated across modules.
+- Verify deterministic behavior for rapid input changes.
 
-### L. Scene Content Polish
+### M3. Asset Lifecycle Hardening
 
-For each step:
-1. Add `ensureUV()` on MeshStandardMaterial geometries (UV warning fix)
-2. Proper composition (no chaos, cinematic framing)
-3. Low-light mood (ambient 0x030308, bloom ≤ 0.3)
+- Audit resource ownership and disposal boundaries.
+- Keep disposal strictly context-driven (no random/manual scatter).
+- Validate no memory growth on repeated route/section transitions.
 
-## Planned
+### M4. Bundle and Loading Optimization
 
-### M. Templater Integration
-- Replace hardcoded page content with Templater
-- Define templates: `hero`, `section`, `nav`, `footer`
-- Data-driven content per page
+- Split heavy runtime by feature boundary.
+- Reduce critical startup payload.
+- Keep lazy-loading policy simple and measurable.
 
-### N. Mobile QA
-- Reduced movement per `prefers-reduced-motion`
-- Touch interaction on works
-- Mobile quality tier enforcement
+### M5. Production QA Gate
 
-### O. Production Hardening
-- CDN headers doc
-- LHCI thresholds closure
-- E2E Playwright CI
-- ErrorTracker endpoint
+- Desktop/mobile smoke and fallback checks.
+- Accessibility baseline (`prefers-reduced-motion`, keyboard escape/back, non-hover critical actions).
+- Final docs-to-code sync and release checklist close.
+
+## Exit Criteria
+
+1. `npm run type-check` and `npm run build` stable green over multiple refactor iterations.
+2. Fallback behavior is explicit, tested, and documented.
+3. No critical perf/memory regressions versus current baseline.
+4. Documentation reflects real architecture, not historical plans.

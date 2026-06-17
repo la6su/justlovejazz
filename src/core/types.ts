@@ -59,6 +59,7 @@ export interface BakuMaterialState {
             bloom: number;
             vignette: number;
             grain: number;
+            chromatic: number;
         };
     }
 

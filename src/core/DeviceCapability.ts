@@ -1,27 +1,33 @@
-import type { QualityTier, RendererCapabilities, RendererMode } from '../types/renderer'
+import type { QualityTier, RendererMode } from '../types/renderer'
 
 export interface TierConfig {
-  postMultiplier: number;
-  resolutionScale: number;
-  enableHeavyEffects: boolean;
-  maxAnisotropy: number;
-  touchTargetSize: number; // Minimum hit area in px
+  postMultiplier: number
+  resolutionScale: number
+  enableHeavyEffects: boolean
+  maxAnisotropy: number
+  touchTargetSize: number
+  gpuParticles: boolean
+  maxLightCount: number
 }
 
 const TIER_SETTINGS: Record<QualityTier, TierConfig> = {
   low: {
-    postMultiplier: 0.5,
+    postMultiplier: 0.4,
     resolutionScale: 0.5,
     enableHeavyEffects: false,
     maxAnisotropy: 2,
-    touchTargetSize: 44,
+    touchTargetSize: 48,
+    gpuParticles: false,
+    maxLightCount: 2,
   },
   medium: {
-    postMultiplier: 0.8,
+    postMultiplier: 0.7,
     resolutionScale: 0.75,
     enableHeavyEffects: true,
     maxAnisotropy: 4,
-    touchTargetSize: 32,
+    touchTargetSize: 36,
+    gpuParticles: true,
+    maxLightCount: 4,
   },
   high: {
     postMultiplier: 1.0,
@@ -29,101 +35,139 @@ const TIER_SETTINGS: Record<QualityTier, TierConfig> = {
     enableHeavyEffects: true,
     maxAnisotropy: 16,
     touchTargetSize: 24,
+    gpuParticles: true,
+    maxLightCount: 8,
   },
-};
+}
 
-/**
- * Detect mobile/touch device reliably (no UA sniffing).
- * Uses:
- *   1. navigator.maxTouchPoints > 0
- *   2. screen.width < 768 — true mobile form factor
- *   3. UA check only as last fallback (Silicon/Android/Mobi)
- */
 function detectMobile(): boolean {
-  const hasTouch = navigator.maxTouchPoints > 0;
-  const smallScreen = Math.min(screen.width, screen.height) < 768;
-  const uaMobile = /Mobi|Android|Silicon/i.test(navigator.userAgent);
+  const hasTouch = navigator.maxTouchPoints > 0
+  const smallScreen = Math.min(screen.width, screen.height) < 768
+  const uaMobile = /Mobi|Android|Silicon|iPhone/i.test(navigator.userAgent)
+  if (hasTouch && smallScreen) return true
+  if (hasTouch && uaMobile) return true
+  if (smallScreen && uaMobile) return true
+  return false
+}
 
-  if (hasTouch && smallScreen) return true;
-  if (hasTouch && uaMobile) return true;
-
-  return false;
+function isLowEndDesktop(): boolean {
+  const cores = navigator.hardwareConcurrency || 4
+  const dpr = window.devicePixelRatio || 1
+  const viewportPx = screen.width * screen.height
+  // Low-end: <=4 cores, low DPR, small viewport
+  return cores <= 4 && dpr < 1.3 && viewportPx < 1920 * 1080
 }
 
 export class DeviceCapability {
-  private static instance: DeviceCapability;
-  public readonly tier: QualityTier;
-  public readonly mode: RendererMode;
-  public readonly maxDpr: number;
-  public readonly config: TierConfig;
-  public readonly isMobile: boolean;
-  public readonly isTouch: boolean;
-  public readonly postProcessing: boolean;
-  public readonly floatRenderTargets: boolean;
+  private static instance: DeviceCapability
+  public readonly tier: QualityTier
+  public readonly mode: RendererMode
+  public readonly maxDpr: number
+  public readonly config: TierConfig
+  public readonly isMobile: boolean
+  public readonly isTouch: boolean
+  public readonly postProcessing: boolean
+  public readonly floatRenderTargets: boolean
 
   public static get isMobile(): boolean {
-    return detectMobile();
+    return detectMobile()
   }
   public static get isTouch(): boolean {
-    return navigator.maxTouchPoints > 0;
+    return navigator.maxTouchPoints > 0
   }
 
   private constructor() {
-    this.isMobile = detectMobile();
-    this.isTouch = navigator.maxTouchPoints > 0;
+    this.isMobile = detectMobile()
+    this.isTouch = navigator.maxTouchPoints > 0
 
-    this.mode = this.detectRenderMode();
-    this.tier = this.detectTier();
-    this.maxDpr = this.calculateMaxDpr();
-    this.config = TIER_SETTINGS[this.tier];
-    this.postProcessing = this.mode === 'webgpu';
-    this.floatRenderTargets = this.mode === 'webgpu';
+    this.mode = this.detectRenderMode()
+    this.tier = this.detectTier()
+    this.maxDpr = this.calculateMaxDpr()
+    this.config = TIER_SETTINGS[this.tier]
+    this.postProcessing = this.tier !== 'low' && this.mode !== 'unsupported'
+    this.floatRenderTargets = this.mode === 'webgpu' && this.tier !== 'low'
   }
 
   public static getInstance(): DeviceCapability {
     if (!DeviceCapability.instance) {
-      DeviceCapability.instance = new DeviceCapability();
+      DeviceCapability.instance = new DeviceCapability()
     }
-    return DeviceCapability.instance;
+    return DeviceCapability.instance
   }
 
   private detectRenderMode(): RendererMode {
-    if ('gpu' in navigator) return 'webgpu';
-    const canvas = document.createElement('canvas');
-    if (canvas.getContext('webgl2')) {
-      return 'webgl';
+    if ('gpu' in navigator) return 'webgpu'
+    const canvas = document.createElement('canvas')
+    if (canvas.getContext('webgl2')) return 'webgl'
+    return 'unsupported'
+  }
+
+  // ── Tier detection: weigh all signals ──
+
+  private detectTier(): QualityTier {
+    // Mobile: start at low, upgrade with strong signals
+    if (this.isMobile) {
+      return this.detectMobileTier()
     }
-    return 'unsupported';
+
+    // Desktop: weigh performance signals
+    if (isLowEndDesktop()) return 'low'
+
+    const cores = navigator.hardwareConcurrency || 8
+    const dpr = window.devicePixelRatio || 1
+    const isWebGPU = this.mode === 'webgpu'
+    const isWebGL2 = this.mode === 'webgl'
+
+    // High: WebGPU + decent cores, OR WebGL2 + many cores + high DPR
+    if (isWebGPU && cores >= 8) return 'high'
+    if (isWebGL2 && cores >= 12 && dpr >= 2) return 'high'
+
+    // Medium: WebGPU with fewer cores, OR WebGL2 with decent setup
+    if (isWebGPU) return 'medium'
+    if (isWebGL2 && cores >= 6) return 'medium'
+
+    return 'low'
+  }
+
+  private detectMobileTier(): QualityTier {
+    const cores = navigator.hardwareConcurrency || 2
+    const dpr = window.devicePixelRatio || 1
+
+    // High-end mobile: 8+ cores, high DPR
+    if (cores >= 8 && dpr >= 3) return 'medium'
+    // Mid-range: 6+ cores or moderate DPR
+    if (cores >= 6 || dpr >= 2) return 'medium'
+
+    return 'low'
   }
 
   private calculateMaxDpr(): number {
-    if (this.mode === 'webgpu') return this.isMobile ? 1.5 : 2;
-    if (this.mode === 'webgl') return this.isMobile ? 1 : 1.5;
-    return 1;
+    if (this.mode === 'webgpu') {
+      return this.isMobile ? 1.5 : 2
+    }
+    if (this.mode === 'webgl') {
+      return this.isMobile ? 1 : 1.5
+    }
+    return 1
   }
 
-  private detectTier(): QualityTier {
-    // Force low on mobile/low-res
-    if (this.isMobile) return 'low';
-    if (screen.width < 480 && screen.height < 480) return 'low';
-
-    const cores = navigator.hardwareConcurrency || 4;
-    const dpr = window.devicePixelRatio || 1;
-
-    if (cores <= 4 || dpr < 1.5) return 'low';
-    if (cores <= 8 || dpr < 2) return 'medium';
-    return 'high';
-  }
+  // ── Per-operation helpers ──
 
   public scaleIntensity(value: number): number {
-    return value * this.config.postMultiplier;
+    return value * this.config.postMultiplier
   }
 
   public canRunHeavyEffects(): boolean {
-    return this.config.enableHeavyEffects;
+    return this.config.enableHeavyEffects
   }
 
-  public toRendererCapabilities(): RendererCapabilities {
+  public toRendererCapabilities(): {
+    mode: RendererMode
+    tier: QualityTier
+    maxDpr: number
+    postProcessing: boolean
+    floatRenderTargets: boolean
+  } {
     return {
       mode: this.mode,
       tier: this.tier,
@@ -135,4 +179,4 @@ export class DeviceCapability {
 }
 
 // Alias — Camera.ts imports as 'Device'
-export { DeviceCapability as Device };
+export { DeviceCapability as Device }

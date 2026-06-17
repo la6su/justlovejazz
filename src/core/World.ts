@@ -3,13 +3,13 @@
 import * as THREE from 'three'
 import { Section, SectionState } from './Section'
 import { StateBus } from './StateBus'
-import { getWorldConfigForPage, type PhaseConfig } from './WorldConfig'
 import { prefersReducedMotion } from './motionPolicy'
 import { type CameraTarget, type WorldState, NarrativePhase, BakuRole } from './types'
 import { Baku } from '../Experience/World/Baku'
 import { CinematicLights } from '../Experience/World/Lights'
-import { WorldAtmosphere } from './WorldAtmosphere'
-import { IntroSequence } from './IntroSequence'
+import { getWorldConfigForPage, type PhaseConfig } from './WorldConfig'
+import { SectionSceneFactory } from './SectionSceneFactory'
+import type { WorldAtmosphere } from './WorldAtmosphere'
 
 export interface WorldTransformResult {
     cameraTarget: CameraTarget
@@ -17,26 +17,34 @@ export interface WorldTransformResult {
 }
 
 export class World extends THREE.Group {
-    // ── Composition (Junni: sections + baku + lights + atmosphere + ground)
     public sections: Section[] = []
     public baku!: Baku
     public lightsGroup!: CinematicLights
-    public atmosphere!: WorldAtmosphere
+    public atmosphere: WorldAtmosphere | null = null
     private groundPlane!: THREE.Mesh
-    public intro: IntroSequence
+    private sceneGroups: THREE.Group[] = []
 
     private configs: readonly PhaseConfig[] = []
+    private sceneRef: THREE.Scene
 
-    // ── Junni: current section tracking
     private _currentSectionIndex: number = 0
     public get currentSectionIndex(): number { return this._currentSectionIndex }
+
+    // ── GC-free object pool for per-frame transforms (avoids 11 allocs/frame)
+    private _poolPos = new THREE.Vector3()
+    private _poolLookAt = new THREE.Vector3()
+    private _poolBakuPos = new THREE.Vector3()
+    private _poolBakuRot = new THREE.Quaternion()
+    private _poolBakuScale = new THREE.Vector3()
+    private _poolBakuColor = new THREE.Color()
+    private _poolBakuEmissive = new THREE.Color()
+    private _poolEnvColor = new THREE.Color()
 
     constructor(scene: THREE.Scene) {
         super()
         this.name = 'world'
 
-        // ── Atmosphere (= BG + fog, аналог Junni BG)
-        this.atmosphere = new WorldAtmosphere(scene)
+        this.sceneRef = scene
 
         // ── Lights (= World.lights, аналог Junni Lights)
         this.lightsGroup = new CinematicLights(scene)
@@ -62,14 +70,15 @@ export class World extends THREE.Group {
         this.groundPlane.name = 'ground'
         this.add(this.groundPlane)
 
-        // ── Intro sequence (Junni: World.Intro splash pattern)
-        this.intro = new IntroSequence()
+
     }
 
-    public init(): void {
-        const page = (document.body?.getAttribute('data-page') || 'home').split('-')[0]
-        this.configs = getWorldConfigForPage(page)
+    public async init(): Promise<void> {
+        await this.ensureAtmosphere()
+        const pageKey = (document.body?.getAttribute('data-page') || 'home').split('-')[0]
+        this.configs = getWorldConfigForPage(pageKey)
         this.disposeSections()
+        this.disposeSceneGroups()
 
         const bus = StateBus.getInstance()
 
@@ -90,6 +99,18 @@ export class World extends THREE.Group {
             }
             this.sections.push(section)
         })
+
+        // ── Create 3D scene groups (awakening, connection, deepdive, etc.)
+        for (let i = 0; i < this.configs.length; i++) {
+            const group = SectionSceneFactory.byIndex(i)
+            this.add(group)
+            this.sceneGroups.push(group)
+            if (i === 0) {
+                group.visible = true
+            } else {
+                group.visible = false
+            }
+        }
     }
 
     protected populateSection(_section: Section, _config: PhaseConfig, _index: number): void {}
@@ -97,6 +118,14 @@ export class World extends THREE.Group {
     public update(deltaTime: number): void {
         this.sections.forEach(s => s.update(deltaTime))
         this.baku.update(deltaTime)
+
+        // ── Animate scene groups (Junni: gentle rotation per active group)
+        this.sceneGroups.forEach((group) => {
+            if (group.visible) {
+                group.rotation.y += deltaTime * 0.1
+                group.rotation.x += deltaTime * 0.05
+            }
+        })
     }
 
     // ── Junni: changeSection(index) — state machine (ready → viewing → passed)
@@ -142,6 +171,9 @@ export class World extends THREE.Group {
             this._currentSectionIndex = fromIndex
         }
 
+        // ── Scene group visibility (Junni: sync 3D groups with active section)
+        this.sceneGroups.forEach((g, i) => { g.visible = (i === fromIndex || i === toIndex) })
+
         const fromSec = this.sections[fromIndex]
         const toSec = this.sections[toIndex] || this.sections[fromIndex]
 
@@ -179,33 +211,34 @@ export class World extends THREE.Group {
 
         return {
             cameraTarget: {
-                position: new THREE.Vector3().lerpVectors(fromCam.position, toCam.position, t),
-                lookAt: new THREE.Vector3().lerpVectors(fromCam.target, toCam.target, t),
+                position: this._poolPos.lerpVectors(fromCam.position, toCam.position, t),
+                lookAt: this._poolLookAt.lerpVectors(fromCam.target, toCam.target, t),
                 fov: THREE.MathUtils.lerp(fromCam.fov, toCam.fov, t),
             },
             worldState: {
                 currentPhase: fromCfg.id as unknown as NarrativePhase,
                 phaseProgress: t,
                 globalProgress: scrollValue,
-                bakuPosition: new THREE.Vector3().lerpVectors(fromBaku.position, toBaku.position, t),
-                bakuRotation: new THREE.Quaternion().copy(fromBaku.rotation).slerp(toBaku.rotation, t),
-                bakuScale: new THREE.Vector3().lerpVectors(fromBaku.scale, toBaku.scale, t),
+                bakuPosition: this._poolBakuPos.lerpVectors(fromBaku.position, toBaku.position, t),
+                bakuRotation: this._poolBakuRot.copy(fromBaku.rotation).slerp(toBaku.rotation, t),
+                bakuScale: this._poolBakuScale.lerpVectors(fromBaku.scale, toBaku.scale, t),
                 bakuOpacity: THREE.MathUtils.lerp(fromBaku.opacity, toBaku.opacity, t),
                 bakuRole: toBaku.role as unknown as BakuRole,
                 bakuMaterial: {
                     role: toBaku.role as unknown as BakuRole,
-                    color: new THREE.Color().lerpColors(fromBaku.material.color, toBaku.material.color, t),
-                    emissive: new THREE.Color().lerpColors(fromBaku.material.emissive, toBaku.material.emissive, t),
+                    color: this._poolBakuColor.lerpColors(fromBaku.material.color, toBaku.material.color, t),
+                    emissive: this._poolBakuEmissive.lerpColors(fromBaku.material.emissive, toBaku.material.emissive, t),
                     roughness: THREE.MathUtils.lerp(fromBaku.material.roughness, toBaku.material.roughness, t),
                     metalness: THREE.MathUtils.lerp(fromBaku.material.metalness, toBaku.material.metalness, t),
                 },
-                envColor: new THREE.Color().lerpColors(fromLight.ambientColor, toLight.ambientColor, t),
+                envColor: this._poolEnvColor.lerpColors(fromLight.ambientColor, toLight.ambientColor, t),
                 envIntensity: THREE.MathUtils.lerp(fromLight.intensity, toLight.intensity, t),
                 uiShowGallery: toCfg.ui.showGallery,
                 post: {
                     bloom: THREE.MathUtils.lerp(fromPP.bloom, toPP.bloom, t),
                     vignette: THREE.MathUtils.lerp(fromPP.vignette, toPP.vignette, t),
                     grain: THREE.MathUtils.lerp(fromPP.grain, toPP.grain, t),
+                    chromatic: THREE.MathUtils.lerp(fromPP.chromatic, toPP.chromatic, t),
                 },
             },
         }
@@ -228,6 +261,20 @@ export class World extends THREE.Group {
         this.sections = []
     }
 
+    private disposeSceneGroups(): void {
+        this.sceneGroups.forEach(group => {
+            group.traverse(obj => {
+                if (obj instanceof THREE.Mesh) {
+                    obj.geometry?.dispose()
+                    if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose())
+                    else obj.material?.dispose()
+                }
+            })
+            this.remove(group)
+        })
+        this.sceneGroups = []
+    }
+
     public dispose(): void {
         this.disposeSections()
         this.baku.geometry.dispose()
@@ -239,8 +286,13 @@ export class World extends THREE.Group {
         if (Array.isArray(groundMat)) groundMat.forEach(m => m.dispose())
         else groundMat.dispose()
         this.lightsGroup.dispose()
-        this.atmosphere.dispose()
-        this.intro.dispose()
+        this.atmosphere?.dispose()
+    }
+
+    public async ensureAtmosphere(): Promise<void> {
+        if (this.atmosphere) return
+        const { WorldAtmosphere } = await import('./WorldAtmosphere')
+        this.atmosphere = new WorldAtmosphere(this.sceneRef)
     }
 
     /** Get PhaseConfig for a given phase ID */
@@ -255,8 +307,9 @@ export class World extends THREE.Group {
             baku: { position: new THREE.Vector3(), rotation: new THREE.Quaternion(), scale: new THREE.Vector3(0.4), opacity: 1, role: 0 as unknown as BakuRole, material: { color: new THREE.Color(), emissive: new THREE.Color(), roughness: 0.2, metalness: 0.8 } },
             lighting: { ambient: new THREE.Color(), ambientColor: new THREE.Color(), intensity: 1 },
             fog: { color: new THREE.Color(), density: 0.03 },
-            post: { bloom: 0.2, vignette: 0.5, grain: 0.03 },
+            post: { bloom: 0.2, vignette: 0.5, grain: 0.03, chromatic: 0.005 },
             ui: { showGallery: false },
+            background: 0xa0ebff,
         }
         return this.buildResultFromConfig(cfg)
     }
@@ -296,6 +349,7 @@ export class World extends THREE.Group {
                     bloom: post.bloom,
                     vignette: post.vignette,
                     grain: post.grain,
+                    chromatic: post.chromatic,
                 },
             },
         }

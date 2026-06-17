@@ -44,7 +44,7 @@ export class StateBus {
         duration: number
         easing: EasingFn
     }>()
-    #listeners = new Map<string, StateListener>()
+    #listeners = new Map<string, StateListener[]>()
 
     static getInstance(): StateBus {
         if (!StateBus.instance) {
@@ -107,22 +107,44 @@ export class StateBus {
         return this
     }
 
-    /** Subscribe to changes on a channel pattern */
-    on(channelName: string, listener: StateListener): void {
-        this.#listeners.set(channelName, listener)
+    /** Subscribe to events on a channel pattern */
+    on(channelName: string, listener: StateListener): StateBus {
+        const list = this.#listeners.get(channelName) ?? []
+        list.push(listener)
+        this.#listeners.set(channelName, list)
+        return this
     }
 
     /** Unsubscribe */
-    off(channelName: string): void {
-        this.#listeners.delete(channelName)
+    off(channelName: string, listener?: StateListener): StateBus {
+        if (listener) {
+            const list = this.#listeners.get(channelName)
+            if (list) {
+                const idx = list.indexOf(listener)
+                if (idx >= 0) list.splice(idx, 1)
+            }
+        } else {
+            this.#listeners.delete(channelName)
+        }
+        return this
     }
 
-    /** Emit an event */
-    #emit(channelName: string, data: unknown): void {
-        const handler = this.#listeners.get(channelName)
-        if (handler) handler(channelName, data)
+    /** Emit an event to all listeners (supports '*' wildcard) */
+    emit(channelName: string, data: unknown = undefined): StateBus {
+        const list = this.#listeners.get(channelName)
+        if (list) {
+            list.forEach(l => l(channelName, data))
+        }
         const wildcard = this.#listeners.get('*')
-        if (wildcard) wildcard(channelName, data)
+        if (wildcard) {
+            wildcard.forEach(l => l(channelName, data))
+        }
+        return this
+    }
+
+    /** Emit event (private — animation tick only) */
+    #notify(channelName: string, data: unknown): void {
+        this.emit(channelName, data)
     }
 
     /** Core tick — advances all animations */
@@ -145,23 +167,23 @@ export class StateBus {
             if (rawT >= 1) {
                 this.#channels.set(name, anim.target)
                 this.#animations.delete(name)
-                this.#emit(`done:${name}`, name)
+                this.#notify(`done:${name}`, name)
             }
         }
 
         if (changed.length > 0) {
-            this.#emit('change', changed)
+            this.#notify('change', changed)
         }
 
         return this
     }
 
-    activeChannels(): string[] {
+    activeAnimations(): string[] {
         return Array.from(this.#animations.keys())
     }
 
-    isDone(name: string): boolean {
-        return !this.#animations.has(name)
+    isAnimating(name: string): boolean {
+        return this.#animations.has(name)
     }
 
     get hasAnimations(): boolean {

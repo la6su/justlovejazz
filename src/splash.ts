@@ -6,6 +6,7 @@ export interface SplashOverlay {
   hide(durationMs?: number): void
   remove(): void
   setProgress(pct: number): void
+  setState(state: 'booting' | 'warming' | 'ready'): void
 }
 
 /**
@@ -18,13 +19,24 @@ export function createSplash(): SplashOverlay {
   const id = 'jlj-splash'
   let el: HTMLElement | null = null
   let progressBar: HTMLDivElement | null = null
-  let progressTrack: HTMLDivElement | null = null
   let labelEl: HTMLDivElement | null = null
+  let shellReady = false
+
+  function bindExistingShell() {
+    const root = document.getElementById(id)
+    const bar = document.getElementById('jlj-splash-progress') as HTMLDivElement | null
+    const label = document.getElementById('jlj-splash-label') as HTMLDivElement | null
+    if (!root || !bar || !label) return false
+    el = root
+    progressBar = bar
+    labelEl = label
+    shellReady = true
+    return true
+  }
 
   function doShow() {
     if (el) return
-    // Idempotent: check if element already exists (e.g. from previous init)
-    if (document.getElementById(id)) return
+    if (bindExistingShell()) return
 
     el = document.createElement('div')
     el.id = id
@@ -47,12 +59,8 @@ export function createSplash(): SplashOverlay {
     el.appendChild(logo)
 
     // ── Progress bar (track + fill) ──
-    progressTrack = document.createElement('div')
-    progressTrack.style.cssText = `
-      position:absolute;bottom:0;left:0;right:0;
-      height:2px;background:rgba(255,255,255,.06);
-      transform:translateY(0);
-    `
+    const progressTrack = document.createElement('div')
+    progressTrack.style.cssText = `position:absolute;bottom:0;left:0;right:0;height:2px;background:rgba(255,255,255,.06);`
     el.appendChild(progressTrack)
 
     progressBar = document.createElement('div')
@@ -85,6 +93,7 @@ export function createSplash(): SplashOverlay {
     }
 
     document.body.prepend(el)
+    shellReady = true
   }
 
   function doHide(durationMs = 600) {
@@ -108,9 +117,15 @@ export function createSplash(): SplashOverlay {
     if (progressBar) {
       progressBar.style.width = `${Math.round(pct)}%`
     }
-    if (labelEl && pct >= 95) {
-      labelEl.textContent = 'ready'
-    }
+    if (pct >= 95) doSetState('ready')
+    else if (pct >= 55) doSetState('warming')
+    else doSetState('booting')
+  }
+
+  function doSetState(state: 'booting' | 'warming' | 'ready') {
+    if (!shellReady) bindExistingShell()
+    if (!labelEl) return
+    labelEl.textContent = state
   }
 
   return {
@@ -118,5 +133,6 @@ export function createSplash(): SplashOverlay {
     hide: doHide,
     remove: doRemove,
     setProgress: doSetProgress,
+    setState: doSetState,
   }
 }

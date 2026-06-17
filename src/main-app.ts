@@ -1,9 +1,7 @@
-import { UIManager } from './UI/UIManager'
-import { Bootstrapper } from './core/Bootstrapper'
-import { ErrorTracker } from './core/ErrorTracker'
+// src/main-app.ts — lazy bootstrap entry
+import * as THREE from 'three'
 import { syncReducedMotionDataset } from './core/motionPolicy'
 import { EnterButton } from './EnterButton'
-import { DissolveOverlay } from './shaders/dissolveOverlay'
 import type { SplashOverlay } from './splash'
 
 type ProgressFn = (pct: number) => void
@@ -14,56 +12,53 @@ export interface BootstrapOptions {
   onReady?: (enter: EnterButton) => void
 }
 
-/** One-time sentinel — splash/dissolve runs only once per session */
 let _bootstrapped = false
-
 export const isAppReady = () => _bootstrapped
 
-/**
- * Bootstrap the full 3D app (lazy-loaded).
- *
- * Junni-style enter: splash visible → Enter (z:10000 > splash z:9999) →
- * ENTER (or auto after 2s) → splash fade out → GPU dissolve → splash.remove()
- */
+type OnReadyCallback = (renderer: any, scene: THREE.Scene) => void
+
 export async function bootstrap(opts: BootstrapOptions): Promise<void> {
-  // Guard: prevent double-init on SPA navigation
   if (_bootstrapped) return
   _bootstrapped = true
 
   const mode = document.body.dataset.appMode ?? 'full'
   if (mode !== 'full') return
 
-  ErrorTracker.init()
-  syncReducedMotionDataset()
-
-  const { splash, progress, onReady } = opts
-
   try {
-    // ── UI layer ──
-    progress(87)
+    const { ErrorTracker } = await import('./core/ErrorTracker')
+    ErrorTracker.init()
+    syncReducedMotionDataset()
+
+    const { splash, progress, onReady } = opts
+    splash.show()
+    progress(10)
+
+    const { UIManager } = await import('./UI/UIManager')
     const ui = new UIManager()
     await ui.init()
-    progress(89)
+    progress(50)
 
-    // ── Enter trigger once world is ready ──
     const enterButton = new EnterButton()
+    progress(60)
 
-    let dissolveOverlay: DissolveOverlay | null = null
+    let dissolveOverlay: import('./shaders/dissolveOverlay').DissolveOverlay | null = null
 
-    // ── 3D world (next import) ──
-    progress(90)
-    await Bootstrapper.init(ui, (_renderer, scene) => {
+    const { Bootstrapper } = await import('./core/Bootstrapper')
+    const { DissolveOverlay } = await import('./shaders/dissolveOverlay')
+
+    const onReadyCb: OnReadyCallback = (_renderer: any, scene: THREE.Scene) => {
       progress(95)
       dissolveOverlay = new DissolveOverlay().init(scene)
-    })
+    }
+
+    await Bootstrapper.init(ui, onReadyCb)
     progress(98)
 
     const triggerDissolve = async () => {
       enterButton.cancelAuto()
       enterButton.animateOut(300)
 
-      let overlay: DissolveOverlay | null = null
-
+      let overlay: import('./shaders/dissolveOverlay').DissolveOverlay | null = null
       if (dissolveOverlay) {
         overlay = dissolveOverlay
         overlay.setProgress(0)
@@ -83,7 +78,6 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
           overlay.update(0.016)
         }
 
-        // Fade splash at 55% of dissolve
         if (t > 0.55 && t < 0.56) {
           splash.hide(400)
         }
@@ -98,31 +92,16 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
       requestAnimationFrame(doDissolve)
     }
 
-    // ── Click handler ──
-    enterButton.onTrigger(() => {
-      triggerDissolve()
-    })
-
-    // ── Auto-trigger after 2 seconds if user doesn't click ──
-    enterButton.autoTriggerAfter(2000, () => {
-      triggerDissolve()
-    })
-
+    enterButton.onTrigger(() => triggerDissolve())
+    enterButton.autoTriggerAfter(2000, () => triggerDissolve())
     onReady?.(enterButton)
 
-    // ── Misc ──
     initScrollHint()
     registerServiceWorker()
-
-    if (import.meta.env.DEV) {
-      console.info('Application successfully bootstrapped')
-    }
   } catch (err) {
-    if (import.meta.env.DEV) {
-      console.error('Failed to initialize application:', err)
-    }
-    splash.hide(400)
-    setTimeout(() => splash.remove(), 600)
+    console.error('Bootstrap failed:', err)
+    opts.splash.hide(400)
+    setTimeout(() => opts.splash.remove(), 600)
   }
 }
 

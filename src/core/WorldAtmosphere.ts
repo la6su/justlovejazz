@@ -9,15 +9,10 @@ export class WorldAtmosphere {
         this.initFog();
     }
 
-    // ── Junni BG pattern: gradient sphere / background color
-    private initBG() {
-        this.scene.background = new THREE.Color(0x000000);
-    }
+    // ── Background: solid color from phase config (Junni: vivid colors per section)
+    private initBG() {}
 
-    private initFog() {
-        // Thin exponential fog for depth cues
-        this.scene.fog = new THREE.FogExp2(new THREE.Color(0x000000), 0.04);
-    }
+    private initFog() {}
 
     public setFog(color: THREE.Color, density: number) {
         this.scene.fog = new THREE.FogExp2(color, density);

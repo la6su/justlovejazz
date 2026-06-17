@@ -17,6 +17,10 @@ export const Easings = {
         return t < 0.5 ? 8 * t * t * t * t : 1 - 8 * Math.pow(t - 1, 4);
     },
     
+    easeInOutCubic: (t: number) => {
+        return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    },
+    
     sigmoid: (x: number) => {
         const weight = 6.0;
         const e1 = Math.exp(-weight * (2 * x - 1));

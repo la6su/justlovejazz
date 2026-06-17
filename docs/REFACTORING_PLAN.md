@@ -1,130 +1,97 @@
 # REFACTORING_PLAN
 
-Поэтапный план для полного контроля над сценнымими.
+Практичный план рефакторинга без усложнений. Цель: production-уровень студийного WebGL/WebGPU сайта с предсказуемым поведением, чистым lifecycle и измеримым качеством.
 
-## ETA 1. Fix UV Warning **(day 1 now)**
+## 0) Актуальный baseline (2026-05-21)
 
-**Problem:** `THREE.AttributeNode: Vertex attribute "uv" not found on geometry`
+- `npm run type-check` — проходит.
+- `npm run build` — проходит.
+- Главный риск: oversized bundle (`chunk-core` ~1.6 MB minified), предупреждение Vite.
+- В проекте уже есть базовый контракт capabilities: `webgpu | webgl | unsupported`.
 
-**Fix:** Add `ensureUV()` helper that computes UVs for MeshStandardMaterial geometries:
+## 1) Принципы рефакторинга
 
-```ts
-// SectionSequences.ts — already added
-function ensureUV(geo: THREE.BufferGeometry): void {
-  if (!geo.getAttribute('uv')) {
-    const pos = geo.getAttribute('position')
-    const uv = new Float32Array(pos.count * 2)
-    for (let i = 0; i < pos.count; i++) {
-      uv[i * 2] = pos.getX(i)
-      uv[i * 2 + 1] = pos.getY(i)
-    }
-    geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2))
-  }
-}
-```
+1. Сначала стабильность и контракты, потом визуальная полировка.
+2. Небольшие изменения с проверкой после каждого шага.
+3. Никаких новых зависимостей без явной необходимости.
+4. Явная стратегия fallback: WebGPU primary, WebGL safe fallback, unsupported с понятным UX.
 
-**Action:** Apply `ensureUV()` to all geometries used with MeshStandardMaterial in SectionSequences.ts.
+## 2) Фазы работ
 
-**Files:** `SectionSequences.ts`, `SectionContent.ts`
+### Фаза A — Stabilize Contracts
 
-**Verify:** Build passes, console clean of UV warnings.
+Цель: убрать неявное поведение между `core`/`Experience`/`UI`.
 
----
+- Зафиксировать единый runtime-контракт `RendererCapabilities` и использовать его как single source of truth.
+- Проверить, что все ветки `webgpu`, `webgl`, `unsupported` реально исполняемы и дают корректный UI/UX.
+- Свести motion policy в один путь (`prefers-reduced-motion` + quality tier), без дублирующей логики в модулях.
 
-## ETA 2. Scene → Page Split (current)
+Готово, когда:
+- Нет расхождений между типами и runtime.
+- Нет silent-degrade сценариев.
 
-**Current:** All 8 steps available on all pages.
+### Фаза B — Timeline and Scene State
 
-**Target:** Each page gets 2 scenes only.
+Цель: нормализовать прогресс скролла и переходы состояний.
 
-```
-Trinity  → step01 (smoke) + step02 (ball)
-Works    → step03 (beams) + step05 (neon)
-Home     → step07 (drop) + step08 (galaxy)
-Contact  → step04 (city) + step06 (flow)
-```
+- Привести `scroll -> worldState -> camera/post` к одному нормализованному диапазону и детерминированным переходам.
+- Убрать плавающие магические коэффициенты в нескольких местах, оставить конфигурируемые значения в одном слое.
+- Проверить синхронизацию DOM/3D на `works` (sticky, detail, section switch).
 
-**Files:**
-- `src/Experience/World/SectionSequences.ts` — `getWorldCreators()` per-page records
-- `src/Experience/Experience.ts` — initWorldCreators per page
-- `CameraStateManager` — already works with 8 steps via scroll
-- `WorldConfig.ts` — already has 8 step configs
+Готово, когда:
+- Переходы воспроизводимы и одинаковы на одинаковом вводе.
+- Нет визуальных "прыжков" при быстрых scroll/pointer паттернах.
 
-**Implementation:**
-1. Define `pageToSteps` mapping in SectionSequences
-2. `getWorldCreators(pageName)` returns only the steps for that page
-3. `Experience.initSectionSequences()` uses only mapped steps
-4. Scroll range: each step spans 0–0.5 within page (2 steps per page)
+### Фаза C — Asset and GPU Lifecycle
 
-**Verify:** Each page shows only its 2 scenes, transition clean.
+Цель: предсказуемое потребление памяти.
 
----
+- Проверить и документировать ownership для текстур/материалов/геометрий/таргетов.
+- Удалить случайный disposal и оставить только lifecycle-driven disposal.
+- Привести deactivation/disposal контекстов к единым правилам.
 
-## ETA 3. Templater (day 2)
+Готово, когда:
+- Нет роста памяти после повторных переходов по разделам.
+- Нет предупреждений рендера о невалидных/освобожденных ресурсах.
 
-Create `src/core/Templater.ts` — lightweight string templating:
+### Фаза D — Bundle and Loading
 
-```ts
-// Simple mustache-style template engine
-export class Templater {
-  static render(template: string, data: Record<string, any>): string {
-    let result = template
-    // Handle {{var}} interpolation
-    for (const [key, value] of Object.entries(data)) {
-      const regex = new RegExp(`{{\s*${key}\s*}}`, 'g')
-      result = result.replace(regex, String(value))
-    }
-    // Handle {{#each item in arr}}...{{/each}}
-    // Handle {{#if cond}}...{{/if}}
-    return result
-  }
-}
-```
+Цель: снизить стоимость первого интерактивного кадра.
 
-**Templates:**
-- `hero` — full viewport section with title + subtitle + CTA
-- `section` — generic content section with number + heading + text
-- `gallery` — grid of project cards (works only)
-- `nav` — navigation bar
-- `footer` — footer section
+- Уменьшить `chunk-core` через практичное split-by-feature (без экзотических схем).
+- Оставить lazy-loading только там, где есть реальный выигрыш и нулевой UX-риск.
+- Проверить, что загрузка критичного пути не блокируется тяжёлыми non-critical модулями.
 
-**Integration:**
-- `src/main-app.ts` → `renderPageContent(pageName, data)`
-- Each `data-page` uses Templater for content
-- Data stored in `src/Data/pages.ts`
+Готово, когда:
+- Нет oversized-warning на критичном чанке или есть обоснованный лимит с документацией.
+- Улучшен startup path на cold load.
 
-**Verify:** Pages render from templates + data. No hardcoded HTML content.
+### Фаза E — Production QA Gate
 
----
+Цель: выпускной критерий до визуальной полировки.
 
-## ETA 4. Scene Polish (per step)
+- Desktop + mobile smoke (real devices или близкий класс устройств).
+- Проверка accessibility-минимума: reduced motion, keyboard escape/back, non-hover critical flow.
+- Финальная сверка docs с реализацией.
 
-For each of 8 steps:
+Готово, когда:
+- Build/type-check стабильно зелёные.
+- Fallback-поведение формализовано и проверено.
+- Документация не противоречит коду.
 
-1. **Composition** — objects in their proper positions, no chaos
-2. **Lighting** — ambient 0x030308, focal lights where needed
-3. **Animation** — idle state proper (drift, pulse, shimmer, etc.)
-4. **Transition** — smooth entry/exit (crossfade, not pop)
-5. **Novelty** — unique visual element per step
+## 3) Definition of Production-Ready
 
-**Progress tracker:**
-- [ ] step01 smoke — ✅ smoke planes + starfield
-- [ ] step02 ball — ✅ metallic sphere + glass orbs
-- [ ] step03 beams — partial (need beam animation)
-- [ ] step04 city — need core shapes + field
-- [ ] step05 neon — need columns + grid floor
-- [ ] step06 flow — need flow field lines
-- [ ] step07 drop — need drop + reflections
-- [ ] step08 galaxy — need spiral + nebula
+Функция считается production-ready только если одновременно:
 
----
+1. Контракты типов и runtime совпадают.
+2. Есть явное поведение для `webgpu`, `webgl`, `unsupported`.
+3. Lifecycle ресурсов прозрачен и воспроизводим.
+4. Нет критичных перф-регрессий на mobile.
+5. Документация описывает фактическое поведение.
 
-## ETA 5. Post-Fix & Polish
+## 4) Минимальный цикл в каждой задаче
 
-- [ ] Bloom intensity locked to step presets
-- [ ] Fog transitions crossfaded
-- [ ] Static UV warning eliminated
-- [ ] Console warnings clean
-- [ ] Mobile quality tier enforced
-- [ ] `prefers-reduced-motion` respected
-- [ ] Asset disposal lifecycle correct
+1. Локальная правка ограниченного объёма.
+2. `npm run type-check`
+3. `npm run build`
+4. Короткая запись в `docs/CHANGELOG.md` (что изменили и зачем).

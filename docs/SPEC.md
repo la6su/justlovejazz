@@ -8,7 +8,6 @@
 | Build | Vite 8 (rolldown) |
 | 3D | Three.js 18.4 + TSL |
 | GPU | WebGPU primary, WebGL fallback |
-| Template | `Templater.ts` (string-based, no deps) |
 | UI | UIkit 3 + Less |
 | Scroll | Lenis (smooth) |
 
@@ -21,7 +20,7 @@
 | Works | works.html | works | beams, neon | Portfolio |
 | Contact | contact.html | contact | city, flow | Contact |
 
-Each page gets 2 scenes — independent control per scene.
+Page-specific behavior is allowed, but runtime state must stay deterministic across routes.
 
 ## Scenes (8 steps)
 
@@ -35,31 +34,6 @@ Each page gets 2 scenes — independent control per scene.
 | step06 | Flow | 20 flow field lines | bloom:0.2, vignette:0.5 |
 | step07 | Droplets | 30 drop + reflections | bloom:0.15, vignette:0.35 |
 | step08 | Galaxy | spiral dust + nebula planes | bloom:0.45, vignette:0.65 |
-
-## Templater Contract
-
-```ts
-// Define template
-const TEMPLATES = {
-  hero: `
-    <section class="hero" uk-height-viewport>
-      <h1>{{title}}</h1>
-      <p>{{subtitle}}</p>
-    </section>
-  `,
-  // more templates...
-}
-
-// Render with data
-import { Templater } from '../core/Templater'
-const html = render('hero', { title: 'Studio', subtitle: '2025' })
-```
-
-Rules:
-- Mustache-style helpers only `{{var}}`, `{{#each}}...{{/each}}`, `{{#if}}...{{/if}}`
-- No eval, no external deps
-- Templates are const strings (inline, not separate files)
-- Safe by default (no injection)
 
 ## Renderer Contract
 
@@ -76,6 +50,11 @@ interface RendererCapabilities {
 }
 ```
 
+Required behavior:
+- `webgpu`: primary path with full supported feature set for tier.
+- `webgl`: supported fallback path with controlled feature downgrade.
+- `unsupported`: explicit non-broken UX state (no silent blank canvas).
+
 ## Materials
 
 | Material | Notes |
@@ -90,7 +69,7 @@ interface RendererCapabilities {
 |--------|--------|
 | Desktop FPS | 60 stable |
 | Mobile FPS | ≥ 45 on mid-range |
-| Chunk sizes | world:700KB, content:567KB, ui:225KB, text:121KB |
+| Critical startup bundle | keep below warning threshold or document justified threshold |
 | Memory | No growth after repeated transitions |
 
 ## Motion Rules
