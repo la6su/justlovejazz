@@ -48,6 +48,12 @@ export interface PhaseConfig {
   context: string
   range: [number, number]
   camera: CameraTransform
+  /** FOV pop amplitude on section arrival (Track 5: per-section, replaces global magic number). */
+  camFovOffset: number
+  /** FOV pop transition duration in seconds. */
+  camFovDuration: number
+  /** Camera position/target lerp smoothing factor (higher = snappier). */
+  camSmoothing: number
   baku: BakuTransform
   lighting: LightTransform
   fog: FogTransform
@@ -76,15 +82,19 @@ type RawScene = {
   fogDensity: number
   postChromatic: number
   bgColor: number
+  // Track 5: per-section camera arrival tuning (replaces global SECTION_TRANSITION).
+  camFovOffset: number
+  camFovDuration: number
+  camSmoothing: number
 }
 
 const RAW: RawScene[] = [
-  { id: 'step01', camPos: [0,0,8], camTarget: [0,0,0], camFov: 55, bakuRole: BakuRole.NORMAL, bakuOpacity: 1, bakuColor: 0x111111, bakuEmissive: 0x020202, postBloom: 0.2, postVignette: 0.7, postGrain: 0.03, lightColor: 0x030308, lightIntensity: 0.8, fogColor: 0x030308, fogDensity: 0.03, postChromatic: 0.005, bgColor: 0xa0ebff },
-  { id: 'step02', camPos: [-4,2,6], camTarget: [0,0,0], camFov: 65, bakuRole: BakuRole.WIRE, bakuOpacity: 0.6, bakuColor: 0x111111, bakuEmissive: 0x020202, postBloom: 0.3, postVignette: 0.5, postGrain: 0.025, lightColor: 0x040302, lightIntensity: 1, fogColor: 0x040302, fogDensity: 0.025, postChromatic: 0.005, bgColor: 0x00ff40 },
-  { id: 'step03', camPos: [3,5,7], camTarget: [0,2,0], camFov: 70, bakuRole: BakuRole.WIRE, bakuOpacity: 0.4, bakuColor: 0x111111, bakuEmissive: 0x020202, postBloom: 0.4, postVignette: 0.4, postGrain: 0.02, lightColor: 0x030305, lightIntensity: 1.2, fogColor: 0x030305, fogDensity: 0.02, postChromatic: 0.005, bgColor: 0x00d2ff },
-  { id: 'step04', camPos: [0,8,10], camTarget: [0,5,0], camFov: 80, bakuRole: BakuRole.NORMAL, bakuOpacity: 0.2, bakuColor: 0x111111, bakuEmissive: 0x020202, postBloom: 0.15, postVignette: 0.6, postGrain: 0.04, lightColor: 0x020204, lightIntensity: 0.6, fogColor: 0x020204, fogDensity: 0.04, postChromatic: 0.005, bgColor: 0x030308 },
-  { id: 'step05', camPos: [0,0,5], camTarget: [0,2,0], camFov: 50, bakuRole: BakuRole.GLASS, bakuOpacity: 1, bakuColor: 0x111111, bakuEmissive: 0x020202, postBloom: 0.6, postVignette: 0.5, postGrain: 0.02, lightColor: 0x020101, lightIntensity: 2, fogColor: 0x020101, fogDensity: 0.05, postChromatic: 0.005, bgColor: 0x030308 },
-  { id: 'step06', camPos: [-2,10,8], camTarget: [0,8,-5], camFov: 60, bakuRole: BakuRole.WIRE, bakuOpacity: 0.3, bakuColor: 0x111111, bakuEmissive: 0x020202, postBloom: 0.3, postVignette: 0.4, postGrain: 0.03, lightColor: 0x030306, lightIntensity: 1, fogColor: 0x030306, fogDensity: 0.02, postChromatic: 0.005, bgColor: 0x00d2ff },
+  { id: 'step01', camPos: [0,0,8], camTarget: [0,0,0], camFov: 55, bakuRole: BakuRole.NORMAL, bakuOpacity: 1, bakuColor: 0x111111, bakuEmissive: 0x020202, postBloom: 0.2, postVignette: 0.7, postGrain: 0.03, lightColor: 0x030308, lightIntensity: 0.8, fogColor: 0x030308, fogDensity: 0.03, postChromatic: 0.005, bgColor: 0xa0ebff, camFovOffset: 0.3, camFovDuration: 0.8, camSmoothing: 5 },
+  { id: 'step02', camPos: [-4,2,6], camTarget: [0,0,0], camFov: 65, bakuRole: BakuRole.WIRE, bakuOpacity: 0.6, bakuColor: 0x111111, bakuEmissive: 0x020202, postBloom: 0.3, postVignette: 0.5, postGrain: 0.025, lightColor: 0x040302, lightIntensity: 1, fogColor: 0x040302, fogDensity: 0.025, postChromatic: 0.005, bgColor: 0x00ff40, camFovOffset: 0.4, camFovDuration: 0.9, camSmoothing: 4 },
+  { id: 'step03', camPos: [3,5,7], camTarget: [0,2,0], camFov: 70, bakuRole: BakuRole.WIRE, bakuOpacity: 0.4, bakuColor: 0x111111, bakuEmissive: 0x020202, postBloom: 0.4, postVignette: 0.4, postGrain: 0.02, lightColor: 0x030305, lightIntensity: 1.2, fogColor: 0x030305, fogDensity: 0.02, postChromatic: 0.005, bgColor: 0x00d2ff, camFovOffset: 0.5, camFovDuration: 1.0, camSmoothing: 6 },
+  { id: 'step04', camPos: [0,8,10], camTarget: [0,5,0], camFov: 80, bakuRole: BakuRole.NORMAL, bakuOpacity: 0.2, bakuColor: 0x111111, bakuEmissive: 0x020202, postBloom: 0.15, postVignette: 0.6, postGrain: 0.04, lightColor: 0x020204, lightIntensity: 0.6, fogColor: 0x020204, fogDensity: 0.04, postChromatic: 0.005, bgColor: 0x030308, camFovOffset: 0.2, camFovDuration: 0.7, camSmoothing: 3 },
+  { id: 'step05', camPos: [0,0,5], camTarget: [0,2,0], camFov: 50, bakuRole: BakuRole.GLASS, bakuOpacity: 1, bakuColor: 0x111111, bakuEmissive: 0x020202, postBloom: 0.6, postVignette: 0.5, postGrain: 0.02, lightColor: 0x020101, lightIntensity: 2, fogColor: 0x020101, fogDensity: 0.05, postChromatic: 0.005, bgColor: 0x030308, camFovOffset: 0.6, camFovDuration: 1.1, camSmoothing: 7 },
+  { id: 'step06', camPos: [-2,10,8], camTarget: [0,8,-5], camFov: 60, bakuRole: BakuRole.WIRE, bakuOpacity: 0.3, bakuColor: 0x111111, bakuEmissive: 0x020202, postBloom: 0.3, postVignette: 0.4, postGrain: 0.03, lightColor: 0x030306, lightIntensity: 1, fogColor: 0x030306, fogDensity: 0.02, postChromatic: 0.005, bgColor: 0x00d2ff, camFovOffset: 0.35, camFovDuration: 0.85, camSmoothing: 5 },
 ]
 
 const PAGE_MAP: Record<string, RawScene[]> = {
@@ -119,6 +129,9 @@ export function toPhaseConfig(raw: RawScene): PhaseConfig {
     post: { bloom: raw.postBloom, vignette: raw.postVignette, grain: raw.postGrain, chromatic: raw.postChromatic },
   background: raw.bgColor,
     ui: { showGallery: false },
+    camFovOffset: raw.camFovOffset,
+    camFovDuration: raw.camFovDuration,
+    camSmoothing: raw.camSmoothing,
   }
 }
 

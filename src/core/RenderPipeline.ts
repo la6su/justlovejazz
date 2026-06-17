@@ -6,6 +6,28 @@
 
 import * as THREE from 'three'
 import { WebGPURenderer } from 'three/webgpu'
+import * as ThreeWebGPU from 'three/webgpu'
+import { pass, renderOutput, uniform, screenUV } from 'three/tsl'
+import {
+  applyProfessionalGrain,
+  applyCinematicVignette,
+  applySoftGlow,
+  acesTonemap,
+} from '../shaders/tsl-utils'
+import type { TSLNode } from '../types/tsl'
+
+// three/webgpu exports RenderPipeline (r183+) at runtime, but @types/three has
+// not typed it yet. Isolate the constructor cast at this adapter boundary so
+// the rest of the module stays strictly typed. AUTONOMY: `any` only here.
+type NativeRenderPipelineHandle = { render(): void }
+const NativeRenderPipelineCtor: new (
+  renderer: unknown,
+  outputNode: unknown,
+) => NativeRenderPipelineHandle = (
+  ThreeWebGPU as unknown as {
+    RenderPipeline: new (renderer: unknown, outputNode: unknown) => NativeRenderPipelineHandle
+  }
+).RenderPipeline
 
 // ─── Configuration ───────────────────────────────────────────────
 
@@ -188,9 +210,22 @@ export class RenderPipeline {
   
   // Full-screen quad (WebGL)
   private _quad?: THREE.Mesh | null
-  
+
   /** Flag: is this a WebGPU renderer? */
   private _isWebGPU = false
+
+  // ─── WebGPU TSL post-processing state ──────────────────────────
+  // Built lazily on first render() call (needs the live scene + camera).
+  // The native RenderPipeline holds a TSL node graph that references the
+  // scene via a PassNode; uniforms are mutated each frame from _params.
+  private _nativePipeline?: NativeRenderPipelineHandle | null
+  private _scenePass?: TSLNode | null
+  private _uBloom?: TSLNode | null
+  private _uVignette?: TSLNode | null
+  private _uGrain?: TSLNode | null
+  private _uChromatic?: TSLNode | null
+  private _uTime?: TSLNode | null
+  private _uGlowStrength?: TSLNode | null
   
   private constructor() {
     this._params = { bloom: 1.0, vignette: 1.0, grain: 1.0, chromatic: 0.0 }
@@ -221,8 +256,9 @@ export class RenderPipeline {
     if (!pipeline._isWebGPU) {
       pipeline._setupWebGL()
     }
-    // WebGPU: TSL path setup (future)
-    
+    // WebGPU TSL pipeline is built lazily on first render() — it needs the
+    // live scene + camera references to bind into the PassNode.
+
     return pipeline
   }
   
@@ -246,12 +282,12 @@ export class RenderPipeline {
   
   /** Render: scene → post passes → screen */
   public render(scene: THREE.Scene, camera: THREE.Camera): void {
-    if (!this._config.bloomEnabled) {
+    if (!this._config.bloomEnabled && !this._config.vignetteEnabled && !this._config.grainEnabled) {
       // Fast path: no post-processing
       this._renderer.render(scene, camera)
       return
     }
-    
+
     if (this._isWebGPU) {
       this._renderWebGPU(scene, camera)
     } else {
@@ -266,6 +302,8 @@ export class RenderPipeline {
     if (!this._isWebGPU) {
       this._setupRTSize()
     }
+    // WebGPU: native RenderPipeline + PassNode read renderer size on each
+    // render, so no explicit RT reallocation is needed here.
   }
   
   /** Destroy all GPU resources. Call once during teardown. */
@@ -292,6 +330,18 @@ export class RenderPipeline {
     this._passBlur = null
     this._passComposite = null
     this._quad = null
+
+    // WebGPU: drop native pipeline + uniform node refs. The native
+    // RenderPipeline does not expose an explicit dispose in r184 — GPU
+    // resources are reclaimed when the renderer is disposed.
+    this._nativePipeline = null
+    this._scenePass = null
+    this._uBloom = null
+    this._uVignette = null
+    this._uGrain = null
+    this._uChromatic = null
+    this._uTime = null
+    this._uGlowStrength = null
   }
   
   // ─── Property accessors ──────────────────────────────────────
@@ -481,20 +531,91 @@ export class RenderPipeline {
     renderer.autoClear = autoClearBackup
   }
   
-  // ─── Rendering: WebGPU ───────────────────────────────────────
-  
+  // ─── Rendering: WebGPU (TSL post-processing) ─────────────────
+
+  /**
+   * Build the WebGPU TSL post-processing node graph.
+   *
+   * Uses three/webgpu's native RenderPipeline + PassNode. The graph:
+   *   scenePass(pass) → sceneColor(texture)
+   *   → soft glow (multi-tap, additive) scaled by bloom intensity
+   *   → film grain (time-varying)
+   *   → cinematic vignette (radial falloff)
+   *   → ACES tonemap + color space (via renderOutput)
+   *
+   * Uniforms are exposed as TSL uniform nodes and mutated each frame from
+   * _params, so PostProcessingManager crossfades propagate to WebGPU.
+   *
+   * TODO(track-1-full): replace single-pass applySoftGlow with a true
+   * mip-chain bloom (downsample RTs + separable gaussBlur5 per mip) to
+   * match junni's 5-pass quality. Single-pass is the foundation that
+   * keeps the WebGPU path from being a no-op stub.
+   */
+  private _setupWebGPU(scene: THREE.Scene, camera: THREE.Camera): void {
+    // Mutable uniform nodes — .value is updated each frame in _renderWebGPU.
+    this._uBloom = uniform(this._params.bloom)
+    this._uVignette = uniform(this._params.vignette)
+    this._uGrain = uniform(this._params.grain)
+    this._uChromatic = uniform(this._params.chromatic)
+    this._uTime = uniform(0)
+    this._uGlowStrength = uniform(0.005)
+
+    // Scene → texture pass (PassNode bound to scene + camera).
+    // For COLOR scope the PassNode itself acts as the color texture node.
+    this._scenePass = pass(scene, camera)
+    const sceneColor = this._scenePass
+
+    // ── Bloom-like glow (single-pass, multi-tap additive) ──
+    // applySoftGlow returns the glow term; composite additively.
+    const glow = applySoftGlow(sceneColor, screenUV, this._uGlowStrength)
+    let color: TSLNode = sceneColor.add(glow.mul(this._uBloom))
+
+    // ── Film grain ──
+    if (this._config.grainEnabled) {
+      color = applyProfessionalGrain(color, screenUV, this._uTime, this._uGrain.mul(0.03))
+    }
+
+    // ── Cinematic vignette ──
+    if (this._config.vignetteEnabled) {
+      color = applyCinematicVignette(color, screenUV, this._uVignette.mul(0.4))
+    }
+
+    // ── ACES tonemap + output color space ──
+    // renderOutput applies renderer tone mapping + output color space.
+    const output = renderOutput(acesTonemap(color), null, null)
+
+    this._nativePipeline = new NativeRenderPipelineCtor(this._renderer, output)
+  }
+
   private _renderWebGPU(scene: THREE.Scene, camera: THREE.Camera): void {
-    // WebGPU: TSL-based fullscreen post-processing (same pipeline, but uses TSL nodes)
-    // Strategy: renderOutput node + TSL for WebGPU-specific path.
-    //
-    // Current implementation: render scene directly, then apply TSL post-processing
-    // (Junni pattern: bright-extract → blur → composite).
-    //
-    // Three.js WebGPU API is experimental (r180+). Multi-pass TSL is not fully
-    // stabilized yet. For now: graceful degradation to WebGL ShaderMaterial path.
-    // When stabilized, use renderOutput for multi-pass TSL chain.
-    
-    this._renderer.render(scene, camera)
+    // Lazy-init: the TSL graph needs live scene + camera refs.
+    if (!this._nativePipeline) {
+      try {
+        this._setupWebGPU(scene, camera)
+      } catch (err) {
+        // TSL/PassNode API is experimental across three minor releases.
+        // If graph construction fails, fall back to direct render so the
+        // site stays functional (no post-processing, but no blank canvas).
+        console.error('[RenderPipeline] WebGPU TSL setup failed, falling back to direct render:', err)
+        this._renderer.render(scene, camera)
+        return
+      }
+    }
+
+    // Sync uniforms from current params (PostProcessingManager crossfade target).
+    if (this._uBloom) this._uBloom.value = this._params.bloom
+    if (this._uVignette) this._uVignette.value = this._params.vignette
+    if (this._uGrain) this._uGrain.value = this._params.grain
+    if (this._uChromatic) this._uChromatic.value = this._params.chromatic
+    if (this._uTime) this._uTime.value = performance.now() * 0.001
+
+    try {
+      this._nativePipeline!.render()
+    } catch (err) {
+      console.error('[RenderPipeline] WebGPU TSL render failed, falling back:', err)
+      this._nativePipeline = null
+      this._renderer.render(scene, camera)
+    }
   }
   
   // ─── Helpers: Render full-screen quad to target ─────────────

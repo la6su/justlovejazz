@@ -5,28 +5,61 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="JUSTLOVEJAZZ — 3D WebGPU studio portfolio." />
-    <meta name="theme-color" content="#0a0a0a" />
+    <meta name="theme-color" content="#050507" />
     <title>JUSTLOVEJAZZ</title>
+    <!-- Design tokens: single source of truth for color/typography/spacing/motion.
+         See src/styles/tokens.css. Loaded before inline styles so they can override. -->
+    <link rel="stylesheet" href="/src/styles/tokens.css" />
     <style>
       html { box-sizing: border-box; }
       *, *::before, *::after { box-sizing: inherit; }
-      body { margin: 0; background: #0a0a0a; color: #fff; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; }
+      body {
+        margin: 0;
+        background: var(--jlz-color-bg);
+        color: var(--jlz-color-text);
+        font-family: var(--jlz-font-body);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
       a { color: inherit; text-decoration: none; }
       .skip-link { position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden; }
-      .skip-link:focus { position: fixed; left: 8px; top: 8px; width: auto; height: auto; padding: 8px 12px; background: #fff; color: #000; z-index: 10001; border-radius: 4px; outline: 2px solid #515d84; }
+      .skip-link:focus {
+        position: fixed; left: var(--jlz-space-2); top: var(--jlz-space-2);
+        width: auto; height: auto; padding: var(--jlz-space-2) var(--jlz-space-3);
+        background: var(--jlz-color-text); color: var(--jlz-color-text-inverse);
+        z-index: var(--jlz-z-toast); border-radius: var(--jlz-radius-md);
+        outline: 2px solid var(--jlz-color-accent);
+      }
       /* Dynamic content container */
-      #spa-content { position: relative; z-index: 10; }
+      #spa-content { position: relative; z-index: var(--jlz-z-content); }
       /* Mobile nav */
-      .nav-toggle { display: none; background: none; border: none; color: #fff; font-size: 24px; cursor: pointer; }
+      .nav-toggle {
+        display: none; background: none; border: none;
+        color: var(--jlz-color-text); font-size: 24px; cursor: pointer;
+      }
       @media (max-width: 960px) {
         .nav-toggle { display: block !important; }
       }
-      #main-nav { position: fixed; top: 0; left: 0; width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 24px 32px; z-index: 100; pointer-events: none; }
+      #main-nav {
+        position: fixed; top: 0; left: 0; width: 100%;
+        display: flex; justify-content: space-between; align-items: center;
+        padding: var(--jlz-space-6) var(--jlz-space-8);
+        z-index: var(--jlz-z-nav); pointer-events: none;
+      }
       #main-nav > * { pointer-events: auto; }
-      .nav-logo { font-weight: 900; letter-spacing: -0.025em; font-size: 18px; color: #fff; }
-      .nav-links { display: flex; gap: 32px; }
-      .nav-links a { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,.6); transition: color .3s; }
-      .nav-links a:hover { color: #fff; }
+      .nav-logo {
+        font-weight: var(--jlz-weight-semibold);
+        letter-spacing: var(--jlz-tracking-tight);
+        font-size: 18px; color: var(--jlz-color-text);
+      }
+      .nav-links { display: flex; gap: var(--jlz-space-8); }
+      .nav-links a {
+        font-size: var(--jlz-type-small); text-transform: uppercase;
+        letter-spacing: var(--jlz-tracking-wide);
+        color: var(--jlz-color-text-muted);
+        transition: color var(--jlz-duration-normal) var(--jlz-ease-state);
+      }
+      .nav-links a:hover { color: var(--jlz-color-text); }
     </style>
   </head>
   <body data-app-mode="full" data-page="home">
