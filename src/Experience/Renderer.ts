@@ -12,6 +12,7 @@ export type RenderSurface = WebGPURenderer | THREE.WebGLRenderer
 export class Renderer {
   instance: RenderSurface
   private capabilities = DeviceCapability.getInstance()
+  private sizes: Sizes
 
   // Post-processing manager (section-aware crossfade)
   public postManager = new PostProcessingManager()
@@ -20,6 +21,7 @@ export class Renderer {
   private pipeline: RenderPipeline | null = null
 
   constructor(sizes: Sizes) {
+    this.sizes = sizes
     if (this.capabilities.mode === 'unsupported') {
       this.showUnsupportedMessage()
       throw new Error('Neither WebGPU nor WebGL2 is supported by this browser.')
@@ -53,6 +55,11 @@ export class Renderer {
       grainEnabled: this.capabilities.tier !== 'low',
     }
     this.pipeline = RenderPipeline.create(this.instance, sizes.width, sizes.height, pipelineConfig)
+
+    // Subscribe to viewport resize: update canvas + pipeline render targets.
+    // Sizes is constructed before Renderer in Experience, so its window listener
+    // registers first and updates sizes.width/height before this handler runs.
+    window.addEventListener('resize', () => this.resize())
   }
 
   private setupCanvas(canvas: HTMLCanvasElement): void {
@@ -90,7 +97,7 @@ export class Renderer {
   private _fog!: THREE.FogExp2
   private _prevBgHex: number = -1
 
-  update(scene: THREE.Scene, camera: THREE.Camera, worldState?: WorldState): void {
+  update(scene: THREE.Scene, camera: THREE.Camera, dt: number, worldState?: WorldState): void {
     // ── Apply background + fog ONLY when color changes (avoids per-frame allocation)
     if (worldState) {
       const hex = worldState.envColor.getHex()
@@ -106,8 +113,8 @@ export class Renderer {
       }
     }
 
-    // Crossfade post-processing params
-    this.postManager.update(1 / 60)
+    // Crossfade post-processing params (delta-time aware — SPEC.md motion rules)
+    this.postManager.update(dt)
     const params = this.postManager.postParams
 
     // Apply to pipeline (typed, no `any`)
@@ -129,10 +136,13 @@ export class Renderer {
     }
   }
 
-  /** Resize: update pipeline RTs */
+  /** Resize: propagate viewport changes to canvas, renderer, and pipeline RTs. */
   public resize(): void {
-    // Pipeline handles resize internally via current sizes
-    // (called from Sizes.resize → Renderer.resize → Pipeline.resize)
+    const w = this.sizes.width
+    const h = this.sizes.height
+    this.instance.setPixelRatio(Math.min(this.sizes.dpr, this.capabilities.maxDpr))
+    this.instance.setSize(w, h)
+    this.pipeline?.resize(w, h)
   }
 
   /** Dispose: clean up GPU resources */
