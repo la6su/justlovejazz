@@ -22,7 +22,6 @@
 
 import {
     vec2,
-    mix,
     float,
     exp,
     mx_noise_float,
