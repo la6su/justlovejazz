@@ -192,9 +192,10 @@ export class Experience {
     this.camera.destroy()
     this.portfolio?.dispose()
     this.overlay?.dispose()
-    // Sizes owns a window resize listener — clean it up to avoid leaks
+    // Sizes + Input own window listeners — clean them up to avoid leaks
     // on hot-reload (Vite HMR) and on explicit teardown.
     this.sizes.destroy()
+    input.destroy()
   }
 
   private async ensurePortfolio(): Promise<void> {
