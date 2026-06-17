@@ -97,7 +97,7 @@ export class Renderer {
   private _fog!: THREE.FogExp2
   private _prevBgHex: number = -1
 
-  update(scene: THREE.Scene, camera: THREE.Camera, worldState?: WorldState): void {
+  update(scene: THREE.Scene, camera: THREE.Camera, dt: number, worldState?: WorldState): void {
     // ── Apply background + fog ONLY when color changes (avoids per-frame allocation)
     if (worldState) {
       const hex = worldState.envColor.getHex()
@@ -113,8 +113,8 @@ export class Renderer {
       }
     }
 
-    // Crossfade post-processing params
-    this.postManager.update(1 / 60)
+    // Crossfade post-processing params (delta-time aware — SPEC.md motion rules)
+    this.postManager.update(dt)
     const params = this.postManager.postParams
 
     // Apply to pipeline (typed, no `any`)

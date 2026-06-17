@@ -127,7 +127,7 @@ export class Experience {
     const warmth = ns
     this.world.lightsGroup.setMood(warmth, worldState.envIntensity)
     this.camera.update(dt)
-    this.renderer.update(this.scene, this.camera.instance, worldState)
+    this.renderer.update(this.scene, this.camera.instance, dt, worldState)
     requestAnimationFrame((t) => this.update(t))
   }
 
