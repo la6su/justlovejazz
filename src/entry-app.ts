@@ -8,7 +8,7 @@ function mountDeferredShell(): void {
   const tpl = document.createElement('template')
   tpl.innerHTML = `
     <div id="project-modal" class="uk-modal-full uk-visible@s" uk-modal aria-hidden="true">
-      <div class="uk-modal-body uk-flex uk-flex-center uk-flex-middle" style="height:100%; background:rgba(10,10,10,0.97);">
+      <div class="uk-modal-body uk-flex uk-flex-center uk-flex-middle jlz-project-modal-body">
         <div id="modal-content" class="uk-container uk-container-small uk-light"></div>
         <a class="uk-modal-close-default" uk-close></a>
       </div>

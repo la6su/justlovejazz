@@ -108,20 +108,19 @@ Key discipline patterns to port:
 ### Track 6 — Bespoke content (NEEDS HUMAN / DESIGNER)
 - [ ] 8 section scenes with real 3D content (Blender → glTF)
 - [ ] Baku central object model + per-section material variants
-- [ ] Per-page copy (Home / Trinity / Works / Contact)
+- [ ] Per-page copy (Home / Trinity / Works)
 - [ ] Motion choreography tuned on real desktop + mobile devices
 - [ ] Lighthouse perf ≥ 85, a11y ≥ 90 on real hardware
 
-## 5. What this session delivers
+## 5. Session outcome (2026-06-17)
 
-This branch (`rewrite/junni-parity-foundation`) delivers Tracks 1–5 **foundation**:
-- Track 1: WebGPU TSL pipeline (or documented stub if API unstable)
-- Track 4: TSL shader library
-- Track 2: Section base class
-- Track 3: CameraController upgrade
-- Track 5: Visual tokens
+Tracks 1–5 + 1.2 + 4.1 are **DONE** (merged to `test` via PRs #1, #3,
+#5, #7, #8). See `docs/STATUS.md` for the canonical state and
+`docs/CHANGELOG.md` for the merge log.
 
-Track 6 (bespoke content) is explicitly out of scope — it requires human creative direction and 3D assets that cannot be generated in code. The blueprint above is the handoff contract for that work.
+Track 6 (bespoke content) is explicitly out of scope for code-only work
+— it requires human creative direction and 3D assets. This blueprint is
+the handoff contract for that work.
 
 ## 6. Non-negotiable gates (from AUTONOMY.md)
 

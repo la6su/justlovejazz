@@ -13,12 +13,21 @@
 
 ## Pages
 
-| Page | File | data-page | Scenes | RouterPage |
-|------|------|-----------|--------|------------|
-| Home | index.html | home | drop, galaxy | Hero |
-| Trinity | trinity.html | trinity | smoke, ball | Intro |
-| Works | works.html | works | beams, neon | Portfolio |
-| Contact | contact.html | contact | city, flow | Contact |
+The app is a **single-page application (SPA)** with hash-based routing
+(`src/router.ts`). One `index.html` entry; pages swap via DOM injection
+into `#spa-content`. Each route sets `document.body.dataset.page` which
+the render loop reads to gate scene + UI behavior.
+
+| Route | data-page | Scenes (step ids) | Role |
+|-------|-----------|-------------------|------|
+| `#/` (default) | `home` | step05, step06 | Studio positioning + capabilities |
+| `#/trinity` | `trinity` | step01, step02 | Process / method |
+| `#/works` | `works` | step03, step04 | Interactive portfolio |
+
+**Contact** is referenced in historical planning docs but is NOT
+implemented in the current router (`PageKey = 'home' | 'trinity' | 'works'`).
+If a Contact route is needed, add it to `src/router.ts` PageKey union
+and `src/core/WorldConfig.ts` PAGE_MAP.
 
 Page-specific behavior is allowed, but runtime state must stay deterministic across routes.
 

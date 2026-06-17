@@ -4,6 +4,7 @@ import { Sizes } from './Sizes'
 import { input } from './Input'
 import { Easings } from '../Utils/Easings'
 import { Device } from '../core/DeviceCapability'
+import { prefersReducedMotion } from '../core/motionPolicy'
 import type { CameraTarget } from '../core/types'
 
 // Zero-allocation vectors
@@ -51,10 +52,20 @@ export class Camera {
         this.instance.position.copy(this.smoothPosition)
         this.prevPosition.copy(this.smoothPosition)
 
-        window.addEventListener('resize', () => {
+        // Bound ref so removeEventListener works in destroy().
+        this._onResize = () => {
             this.instance.aspect = sizes.width / sizes.height
             this.instance.updateProjectionMatrix()
-        })
+        }
+        window.addEventListener('resize', this._onResize, { passive: true })
+    }
+
+    // Resize handler ref — cleaned up in destroy().
+    private _onResize: () => void = () => {}
+
+    /** Remove the window resize listener. Call from Experience.destroy(). */
+    destroy(): void {
+        window.removeEventListener('resize', this._onResize)
     }
 
     setBasePosition(pos: THREE.Vector3) {
@@ -110,11 +121,14 @@ export class Camera {
     // ── 2. Build position ──
         const isMobile = Device.isMobile;
         const isHome = document.body?.dataset?.page === 'home';
+        // Respect prefers-reduced-motion: disable cursor follow + organic shake
+        // + FOV breath (SPEC.md motion rules).
+        const reduced = prefersReducedMotion();
         const pos = this.instance.position;
 
-        // Cursor follow — spring-damper (disabled on mobile)
-        const cursorX = isMobile ? 0 : springX.pos;
-        const cursorY = isMobile ? 0 : springY.pos;
+        // Cursor follow — spring-damper (disabled on mobile + reduced motion)
+        const cursorX = (isMobile || reduced) ? 0 : springX.pos;
+        const cursorY = (isMobile || reduced) ? 0 : springY.pos;
 
         const cursorFollow = isHome ? 0.19 : 0.15
         pos.set(
@@ -123,8 +137,8 @@ export class Camera {
             this.smoothPosition.z
         );
 
-        // ── 3. Organic shake (continuous handheld) — desktop only ──
-        if (!isMobile) {
+        // ── 3. Organic shake (continuous handheld) — desktop, non-reduced only ──
+        if (!isMobile && !reduced) {
             this.organicTime += dt;
             const ot = this.organicTime;
             const amp = isHome ? 0.0026 : 0.002
@@ -152,8 +166,8 @@ export class Camera {
             pos.add(_offsetVec)
         }
 
-        // Blend FOV smoothly
-        const fovBreath = isHome && !isMobile ? Math.sin(this.organicTime * 0.45) * 0.18 : 0
+        // Blend FOV smoothly. Breathing disabled on mobile + reduced motion.
+        const fovBreath = (isHome && !isMobile && !reduced) ? Math.sin(this.organicTime * 0.45) * 0.18 : 0
         const targetFov = this.smoothFov + this.fovOffset + fovBreath
         this.instance.fov += (targetFov - this.instance.fov) * 0.25
         this.instance.updateProjectionMatrix()

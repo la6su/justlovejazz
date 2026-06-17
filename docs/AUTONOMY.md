@@ -22,12 +22,14 @@ Production quality requires truth before polish. Do not add new visual effects, 
 2. Broken public API between modules
 3. Renderer capability/fallback contract
 4. Scroll normalization / world timeline
-5. Asset lifecycle and disposal correctness
+5. Asset lifecycle and disposal correctness (incl. window listeners — see AGENTS.md Lifecycle Rules)
 6. Gallery/detail FSM
 7. Camera/world polish
 8. Render pipeline
-9. UI/accessibility
+9. UI/accessibility (tokens system + prefers-reduced-motion + ARIA)
 10. Performance QA
+
+See `docs/STATUS.md` for what is already done — do not redo completed work.
 
 ## Edit Rules
 
@@ -88,6 +90,29 @@ Do not solve unused errors by changing `tsconfig` unless explicitly asked.
 - Wrap unstable patterns in small helpers
 - Keep helpers in `src/shaders/tsl-utils.ts`
 - Avoid large shader rewrites while build is red
+- The `tsl-utils.ts` header documents the exact three 0.184 API surface
+  used — verify against it on three upgrades
+- `three/addons/tsl/display/BloomNode.js` is the production bloom node
+  (mip-chain) — use it, do not reimplement bloom
+- `tex.sampleLevel(uv, level)` no longer exists in three 0.184 — use
+  `tex.level(levelNode)` instead (documented in tsl-utils.ts header)
+
+## Lifecycle Fix Strategy
+
+- Any `window.addEventListener` MUST use a bound handler ref (not anonymous
+  arrow) so `removeEventListener` works
+- Every module owning a listener MUST expose `destroy()` or `dispose()`
+- `Experience.destroy()` MUST call all owned module destroy/dispose methods
+- Vite HMR triggers destroy on module replacement — leaks surface fast in dev
+
+## Styling Strategy
+
+- All visual styling goes in `src/styles/tokens.css` as `--jlz-*` custom
+  properties or component classes
+- No hardcoded colors/sizes/durations in TS — use tokens
+- Inline `style=` only for dynamic values (per-frame transform, per-project
+  accent)
+- UIkit theming via `@jlz-*` Less vars in `src/styles/tokens.less`
 
 ## Gallery Strategy
 

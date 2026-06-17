@@ -63,8 +63,13 @@ export class Renderer {
     // Subscribe to viewport resize: update canvas + pipeline render targets.
     // Sizes is constructed before Renderer in Experience, so its window listener
     // registers first and updates sizes.width/height before this handler runs.
-    window.addEventListener('resize', () => this.resize())
+    // Bound ref so removeEventListener works in dispose().
+    this._onResize = () => this.resize()
+    window.addEventListener('resize', this._onResize, { passive: true })
   }
+
+  // Resize handler ref — cleaned up in dispose().
+  private _onResize: () => void = () => {}
 
   private setupCanvas(canvas: HTMLCanvasElement): void {
     canvas.className = 'canvas'
@@ -158,8 +163,9 @@ export class Renderer {
     this.pipeline?.resize(w, h)
   }
 
-  /** Dispose: clean up GPU resources */
+  /** Dispose: clean up GPU resources + window listener */
   public dispose(): void {
+    window.removeEventListener('resize', this._onResize)
     this.pipeline?.dispose()
     this.instance.dispose()
   }

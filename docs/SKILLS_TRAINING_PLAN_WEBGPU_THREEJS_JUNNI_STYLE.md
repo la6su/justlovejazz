@@ -1,6 +1,10 @@
 # Skills Training Plan
 # WebGPU + Three.js Interactive Studio Sites (Junni-Style Patterns)
 
+> Last updated: 2026-06-17. See `docs/STATUS.md` for canonical state.
+> This plan is a reusable training framework, not a per-repo task list.
+> The "Mapping to This Repository" section below reflects current status.
+
 ## Goal
 
 Create a reusable skill system for training and delivery of interactive 3D sites using:
@@ -150,9 +154,22 @@ Every skill is accepted only if:
 
 ## Mapping to This Repository
 
-Immediate implementation order for `justlovejazz`:
+Status as of 2026-06-17 (post-junni-parity session). See `docs/STATUS.md`.
 
-1. Skill 04 (transition choreography refinement)
-2. Skill 05 (works flow final polish)
-3. Skill 08 (mobile + a11y hardening)
-4. Skill 09 (release/QA closure)
+| Skill | Status | Notes |
+|-------|--------|-------|
+| 01-foundation | ✅ done | Vite + TS strict + app shell + build gates |
+| 02-renderer-capability | ✅ done | webgpu/webgl/unsupported + quality tiers |
+| 03-world-state-timeline | ✅ done | scroll normalization + section phase mapping |
+| 04-transition-choreography | ✅ done | per-section camFovOffset/Duration/Smoothing in WorldConfig |
+| 05-gallery-and-detail-fsm | ✅ done | WorksPortfolio + ProjectCarousel + ProjectOverlay |
+| 06-webgpu-shader-patterns | ✅ done | tsl-utils.ts + three/addons BloomNode |
+| 07-asset-lifecycle-performance | ✅ done | context-driven disposal + listener cleanup on destroy |
+| 08-mobile-first-a11y-qa | 🔄 partial | reduced-motion + ARIA done; real-device testing pending |
+| 09-production-release-ops | 🔄 partial | Lighthouse config exists; E2E expansion pending |
+
+**Immediate implementation order for `justlovejazz`** (remaining):
+
+1. Skill 08 — real-device mobile QA (needs hardware)
+2. Skill 09 — E2E expansion + Lighthouse on real hardware
+3. Bespoke content (Track 6 in JUNNI_PORT_BLUEPRINT) — needs human

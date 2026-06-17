@@ -16,6 +16,7 @@ import type { World } from '../core/World'
 import type { WebGLTextManager } from './WebGLTextManager'
 import { WorksPortfolio } from './WorksPortfolio'
 import { ProjectOverlay } from '../UI/ProjectOverlay'
+import { PerfMonitor } from '../core/PerfMonitor'
 
 /**
  * Section-arrival transition tuning.
@@ -83,6 +84,8 @@ export class Experience {
     await this.renderer.init()
     if (import.meta.env.DEV) {
       this.debugStats = new DebugStats(this.renderer.instance)
+      // Start long-task + FPS + memory monitoring (DEV only, no-op in PROD).
+      PerfMonitor.start()
     }
     await this.buildWorld()
     this.bus = StateBus.getInstance()
@@ -186,9 +189,18 @@ export class Experience {
     this.world.dispose()
     this.bus.cancelAll()
     this.debugStats?.destroy()
-    this.renderer.instance.dispose()
+    // Renderer.dispose() cleans up the resize listener AND the pipeline
+    // AND the renderer instance (was previously only instance.dispose()).
+    this.renderer.dispose()
+    this.camera.destroy()
     this.portfolio?.dispose()
     this.overlay?.dispose()
+    // Sizes + Input own window listeners — clean them up to avoid leaks
+    // on hot-reload (Vite HMR) and on explicit teardown.
+    this.sizes.destroy()
+    input.destroy()
+    // Stop perf monitoring (disconnects PerformanceObserver + cancels rAF).
+    PerfMonitor.stop()
   }
 
   private async ensurePortfolio(): Promise<void> {

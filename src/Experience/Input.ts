@@ -13,16 +13,27 @@ export class Input {
     /** Instantaneous scroll velocity (pixels/frame) — for impulse-driven line stretch */
     scrollVelocity: number = 0
 
+    // Bound handler refs so removeEventListener works in destroy().
+    private readonly _onMouseMove = (event: MouseEvent) => {
+        this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1
+        this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
+    }
+    private readonly _onResize = () => this.refreshScrollLimit()
+
     constructor() {
         if (Input.instance) return Input.instance
         Input.instance = this
 
-        window.addEventListener('mousemove', (event: MouseEvent) => {
-            this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1
-            this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
-        })
+        window.addEventListener('mousemove', this._onMouseMove, { passive: true })
+        window.addEventListener('resize', this._onResize, { passive: true })
+    }
 
-        window.addEventListener('resize', () => this.refreshScrollLimit(), { passive: true })
+    /** Remove window listeners. Call from Experience.destroy(). */
+    destroy(): void {
+        window.removeEventListener('mousemove', this._onMouseMove)
+        window.removeEventListener('resize', this._onResize)
+        // Clear singleton ref so a fresh Input can be constructed after HMR.
+        if (Input.instance === this) Input.instance = undefined as unknown as Input
     }
 
     /** Keeps scrollLimit in sync with layout (Lenis limit + document height changes). */
