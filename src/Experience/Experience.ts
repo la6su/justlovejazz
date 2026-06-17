@@ -119,9 +119,6 @@ export class Experience {
     if (this.portfolio) {
       this.portfolio.group.visible = isWorks
     }
-    if (this.overlay) {
-      this.overlay.hide()
-    }
 
     this.camera.updateSmooth(cameraTarget, dt, 5)
     const warmth = ns
@@ -133,6 +130,11 @@ export class Experience {
 
   public switchPage(page: string): void {
     document.body.dataset.page = page
+    // Hide project overlay when leaving the works page (event-driven, not per-frame).
+    // On the works page ensurePortfolio() → onProjectSelect() re-shows it.
+    if (page !== 'works') {
+      this.overlay?.hide()
+    }
     void this.ensurePortfolio()
     if (this.world) {
       this.scene.remove(this.world)
