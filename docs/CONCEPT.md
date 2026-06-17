@@ -2,11 +2,11 @@
 
 ## Goal
 
-Build a studio-grade multi-page portfolio in one coherent visual system:
+Build a studio-grade **single-page** portfolio in one coherent visual system:
 
-- shared page template across routes;
+- shared page template across hash routes;
 - route-specific narrative and content;
-- dedicated interactive portfolio route (`/works.html`);
+- dedicated interactive portfolio route (`#/works`);
 - 3D transitions and state-driven motion as core language.
 
 ## Design Principles
@@ -20,9 +20,9 @@ Build a studio-grade multi-page portfolio in one coherent visual system:
    - `active project → camera/detail material transition`
    - `section → lighting/material/post-processing preset`
 5. **Route clarity** — each page has a clear role:
-   - `Home`: studio positioning
-   - `Trinity`: method/process system
-   - `Works`: interactive portfolio cases
+   - `#/` (Home): studio positioning
+   - `#/trinity`: method/process system
+   - `#/works`: interactive portfolio cases
 
 ## Junni Patterns to Adapt
 
@@ -46,7 +46,7 @@ Build a studio-grade multi-page portfolio in one coherent visual system:
 ## Definition of Done
 
 - User understands route purpose in under 5 seconds.
-- Works interactions exist only on `/works.html` and feel deterministic.
+- Works interactions exist only on `#/works` and feel deterministic.
 - Transitions are intentional across all routes, not event-noise.
 - Mobile-first behavior remains clear and performant.
 - Frames read as finished compositions, not placeholder scaffolds.

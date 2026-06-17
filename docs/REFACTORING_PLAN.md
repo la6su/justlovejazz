@@ -1,93 +1,73 @@
 # REFACTORING_PLAN
 
-Практичный план рефакторинга без усложнений. Цель: production-уровень студийного WebGL/WebGPU сайта с предсказуемым поведением, чистым lifecycle и измеримым качеством.
+> Last updated: 2026-06-17. See `docs/STATUS.md` for canonical state.
+> Практичный план рефакторинга без усложнений.
 
-## 0) Актуальный baseline (2026-05-21)
+## 0) Актуальный baseline (2026-06-17)
 
-- `npm run type-check` — проходит.
-- `npm run build` — проходит.
-- Главный риск: oversized bundle (`chunk-core` ~1.6 MB minified), предупреждение Vite.
-- В проекте уже есть базовый контракт capabilities: `webgpu | webgl | unsupported`.
+- `npm run type-check` — ✅ проходит.
+- `npm run build` — ✅ проходит.
+- Bundle: `chunk-core` 644 KB minified (gzip 184 KB) — без oversized-warning
+  (исторически было ~1.6 MB, сейчас значительно лучше).
+- Контракт capabilities: `webgpu | webgl | unsupported` — единый source of truth.
+- WebGPU TSL pipeline: production-grade (BloomNode mip-chain + chromatic +
+  grain + vignette + ACES tonemap).
+- Все window listeners чистятся на destroy (no HMR leaks).
 
 ## 1) Принципы рефакторинга
 
 1. Сначала стабильность и контракты, потом визуальная полировка.
 2. Небольшие изменения с проверкой после каждого шага.
 3. Никаких новых зависимостей без явной необходимости.
-4. Явная стратегия fallback: WebGPU primary, WebGL safe fallback, unsupported с понятным UX.
+4. Явная стратегия fallback: WebGPU primary, WebGL safe fallback, unsupported
+   с понятным UX.
 
-## 2) Фазы работ
+## 2) Фазы работ (status)
 
-### Фаза A — Stabilize Contracts
+### Фаза A — Stabilize Contracts ✅ DONE
 
-Цель: убрать неявное поведение между `core`/`Experience`/`UI`.
+- ✅ Единый runtime-контракт `RendererCapabilities` — single source of truth.
+- ✅ Все ветки `webgpu`, `webgl`, `unsupported` исполняемы + корректный UX.
+- ✅ Motion policy в одном пути (`prefers-reduced-motion` + quality tier).
 
-- Зафиксировать единый runtime-контракт `RendererCapabilities` и использовать его как single source of truth.
-- Проверить, что все ветки `webgpu`, `webgl`, `unsupported` реально исполняемы и дают корректный UI/UX.
-- Свести motion policy в один путь (`prefers-reduced-motion` + quality tier), без дублирующей логики в модулях.
+### Фаза B — Timeline and Scene State ✅ DONE
 
-Готово, когда:
-- Нет расхождений между типами и runtime.
-- Нет silent-degrade сценариев.
+- ✅ `scroll → worldState → camera/post` нормализован к 0..1.
+- ✅ Магические коэффициенты убраны — per-section `camFovOffset`/`camFovDuration`/
+  `camSmoothing` в WorldConfig.
+- ✅ Синхронизация DOM/3D на works (data-page gate + ProjectOverlay event-driven).
 
-### Фаза B — Timeline and Scene State
+### Фаза C — Asset and GPU Lifecycle ✅ DONE
 
-Цель: нормализовать прогресс скролла и переходы состояний.
+- ✅ Ownership для текстур/материалов/геометрий/таргетов документирован.
+- ✅ Случайный disposal убран — только lifecycle-driven (AssetManager.disposeContext).
+- ✅ Deactivation/disposal контекстов к единым правилам.
+- ✅ Все window listeners (Sizes/Renderer/Camera/Input) чистятся на destroy.
 
-- Привести `scroll -> worldState -> camera/post` к одному нормализованному диапазону и детерминированным переходам.
-- Убрать плавающие магические коэффициенты в нескольких местах, оставить конфигурируемые значения в одном слое.
-- Проверить синхронизацию DOM/3D на `works` (sticky, detail, section switch).
+### Фаза D — Bundle and Loading ✅ DONE (partial)
 
-Готово, когда:
-- Переходы воспроизводимы и одинаковы на одинаковом вводе.
-- Нет визуальных "прыжков" при быстрых scroll/pointer паттернах.
+- ✅ `chunk-core` 644 KB (был ~1.6 MB) — практичным split-by-feature в vite.config.ts.
+- ✅ Lazy-loading в `main-app.ts` (ErrorTracker, UIManager, Bootstrapper,
+  DissolveOverlay — dynamic imports).
+- ✅ Критичный путь не блокируется тяжёлыми non-critical модулями.
+- ⏳ Дальнейший split отложен до real-perf data (Lighthouse).
 
-### Фаза C — Asset and GPU Lifecycle
+### Фаза E — Production QA Gate 🔄 PARTIAL
 
-Цель: предсказуемое потребление памяти.
-
-- Проверить и документировать ownership для текстур/материалов/геометрий/таргетов.
-- Удалить случайный disposal и оставить только lifecycle-driven disposal.
-- Привести deactivation/disposal контекстов к единым правилам.
-
-Готово, когда:
-- Нет роста памяти после повторных переходов по разделам.
-- Нет предупреждений рендера о невалидных/освобожденных ресурсах.
-
-### Фаза D — Bundle and Loading
-
-Цель: снизить стоимость первого интерактивного кадра.
-
-- Уменьшить `chunk-core` через практичное split-by-feature (без экзотических схем).
-- Оставить lazy-loading только там, где есть реальный выигрыш и нулевой UX-риск.
-- Проверить, что загрузка критичного пути не блокируется тяжёлыми non-critical модулями.
-
-Готово, когда:
-- Нет oversized-warning на критичном чанке или есть обоснованный лимит с документацией.
-- Улучшен startup path на cold load.
-
-### Фаза E — Production QA Gate
-
-Цель: выпускной критерий до визуальной полировки.
-
-- Desktop + mobile smoke (real devices или близкий класс устройств).
-- Проверка accessibility-минимума: reduced motion, keyboard escape/back, non-hover critical flow.
-- Финальная сверка docs с реализацией.
-
-Готово, когда:
-- Build/type-check стабильно зелёные.
-- Fallback-поведение формализовано и проверено.
-- Документация не противоречит коду.
+- 🔄 Desktop + mobile smoke — нужен real-device тестинг.
+- ✅ Accessibility-минимум: reduced motion, keyboard escape/back, non-hover
+  critical flow, ARIA roles on splash/progress, focus-visible on interactive.
+- ✅ Финальная сверка docs с реализацией (этот pass).
 
 ## 3) Definition of Production-Ready
 
 Функция считается production-ready только если одновременно:
 
-1. Контракты типов и runtime совпадают.
-2. Есть явное поведение для `webgpu`, `webgl`, `unsupported`.
-3. Lifecycle ресурсов прозрачен и воспроизводим.
-4. Нет критичных перф-регрессий на mobile.
-5. Документация описывает фактическое поведение.
+1. ✅ Контракты типов и runtime совпадают.
+2. ✅ Явное поведение для `webgpu`, `webgl`, `unsupported`.
+3. ✅ Lifecycle ресурсов прозрачен и воспроизводим.
+4. 🔄 Нет критичных перф-регрессий на mobile (pending Lighthouse).
+5. ✅ Документация описывает фактическое поведение.
 
 ## 4) Минимальный цикл в каждой задаче
 

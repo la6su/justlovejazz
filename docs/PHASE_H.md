@@ -1,130 +1,125 @@
 # Phase H — Visual Polish & Mobile QA
 
+> Last updated: 2026-06-17. See `docs/STATUS.md` for canonical state.
+> Section ids in code are `step01`–`step06` (not AWAKENING/DISCOVERY/etc.
+> — those names were historical and never matched WorldConfig).
+
 ## Context
 
-**Status**: Core Done (A–E), Lazy Loading Done (F), Production Done (G).
-**Next**: Visual finish that gets the site to "Active Theory / Resn" level.
-
-Everything functional works. The scene renders correctly with:
-- WebGPU primary / WebGL fallback
-- Cinematic camera with scroll-driven state machine
+Code-level foundation is done (PRs #1–#8). The scene renders correctly with:
+- WebGPU primary / WebGL fallback (full parity: bloom + chromatic + grain + vignette)
+- Cinematic camera with scroll-driven state machine + per-section FOV/smoothing
 - Gallery expand/contract with atomic callbacks
-- Section-based content transitions (Awakening → Discovery → DeepDive → Connection)
-- Post-processing (bloom, vignette, grain via TSL)
+- Section-based content transitions (step01 → step06 per page)
+- Post-processing via three/addons BloomNode (mip-chain, 5 levels) on WebGPU
 - Service Worker offline caching
 - Error tracking (zero-dependency)
-- Lighthouse CI + E2E tests
+- Lighthouse CI + E2E test config
+
+**Remaining**: bespoke visual content + design polish + real-device QA.
 
 ## Goals
 
-Transform the experience from "functional" to "cinemic studio portfolio" —
-the kind that makes design studios' portfolios.
+Transform from "functional" to "cinematic studio portfolio".
 
-### H.1 — Post-Processing Pipeline (Upgrade)
+### H.1 — Post-Processing Pipeline ✅ DONE
 
-**Current**: Basic bloom + vignette + grain via `postProcessingNode()`.
-**Problem**: Post-processing is primitive — single compositon node, no SMAA, no proper tone mapping. Flash + bloom hits are too heavy.
+**Was**: Basic single-pass glow + vignette + grain.
+**Now**: Production-grade TSL pipeline on WebGPU:
+- 🌸 Bloom: `three/addons/tsl/display/BloomNode` (5-level mip-chain)
+- 🔇 Chromatic aberration: `applyChromaticAberration` in tsl-utils.ts
+- ⌛ Vignette: `applyCinematicVignette` (radial falloff)
+- 🌾 Grain: `applyProfessionalGrain` (time-varying, dual sine)
+- 🎨 Tone mapping: `acesTonemap` (Narkowicz 2015) + `renderOutput`
 
-**Target**:
+Quality tiers enforced via `PostProcessingManager.QUALITY_SCALARS`:
+- high: full chain
+- medium: chromatic off, grain 50%
+- low: bloom off, vignette only
 
-1. Proper TSL post-processing chain:
-   - 🌸 Bloom: multi-resolution mip pyramid, sample count per quality tier
-   - 🔇 Chromatic aberration (subtle, WebGPU only)
-   - ⌛ Vignette: smooth edge falloff with configurable radius
-   - 🌾 Grain: frequency-based, amplitude modulated per section
-   - 📐 SMAA/TAA (anti-aliasing in post)
-   - 🎨 Tone mapping: ACES applied uniformly across all paths
+Section-aware: `ppParam` from active section drives uniform values,
+crossfaded by `PostProcessingManager.update(dt)`.
 
-2. Post-processing responds to section state:
-   - `AWAKENING`: Strong bloom, heavy grain → atmosphere.
-   - `DISCOVERY`: Clean bloom, subtle grain → gallery clarity.
-   - `DEEP_DIVE`: Reduced bloom, more chromatic → technical feel.
-   - `CONNECTION`: Minimal post-processing → clean CTA.
+⏳ **Remaining**: SMAA/TAA anti-aliasing in post (currently relies on
+renderer `antialias: true` at construction).
 
-3. Quality tiers:
-   - high: full chain (bloom pyramid + AA + chromatic + grain + vignette)
-   - medium: reduced samples (bloom 4-tap, chromatic off, grain 50%)
-   - low: bloom disabled, vignette only
+### H.2 — Baku Material (Section States) ⏳ NEEDS BESPOKE
 
-### H.2 — Baku Material (Section States)
+**Current**: `Baku` class exists in `src/Experience/World/Baku.ts` with
+basic material states. `BakuRole` enum: `NORMAL | WIRE | GLASS`.
+**Target**: Section-driven Baku per WorldConfig `bakuRole`:
 
-**Current**: `Baku` has basic material states.
-**Target**: Section-driven Baku:
+| Step | bakuRole | Appearance |
+|------|----------|------------|
+| step01 | NORMAL | Default material |
+| step02 | WIRE | Wireframe mode |
+| step03 | WIRE | Wireframe mode |
+| step04 | NORMAL | Default, low opacity |
+| step05 | GLASS | Transmissive |
+| step06 | WIRE | Wireframe mode |
 
-| Section     | Material State | Appearance                            |
-|------------|----------------|---------------------------------------|
-| AWAKENING  | `wireframe`    | Eeride mesh, high metal, emissive     |
-| DISCOVERY  | `dark`         | Matte dark, low reflectance           |
-| DEEP_DIVE  | `glass`        | Transmissive, rough 0.0               |
-| CONNECTION | `normal`       | Clean brushed metal, subtle sheen     |
+⏳ **Needs**: bespoke 3D model + material variants (Blender → glTF).
+Code infrastructure exists; assets do not.
 
-### H.3 — Camera Polish
+### H.3 — Camera Polish ✅ DONE
 
-**Current**: Camera follows `cameraTarget` with smoothing + FOV accents on section change.
-**Target**:
+**Now**:
+1. ✅ Arrival pulse: `Camera.setFovOffset(camFovOffset, camFovDuration)` per section.
+2. ✅ Handheld shake: organic sine-based, `!isMobile && !reduced` gated.
+3. ✅ Cursor attract: spring-damper, `!isMobile && !reduced` gated.
+4. 🔄 Baku follow: not implemented (needs Baku model first).
+5. ✅ Mobile: no shake, no cursor attract, reduced smoothing.
 
-1. **Arrival pulse**: Subtle FOV wobble on section change (0.8s ease-out).
-2. **Handheld shake**: Low-frequency noise overlay (gen 0.001 amplitude, never on mobile).
-3. **Cursor attract**: Camera micro-drifts toward pointer (0.1 strength, ease 0.95).
-4. **Baku follow**: Camera rotates slightly to track Baku's position (0.3 offset).
-5. **Mobile**: No handheld shake, no cursor attract, slower smoothing.
+### H.4 — Section Transitions (Visual) 🔄 PARTIAL
 
-### H.4 — Section Transitions (Visual)
+**Current**: Section content fades via StateBus `queueTransition()`.
+Post-processing crossfades via `PostProcessingManager.update(dt)`.
 
-**Current**: Section content fades via `queueTransition()`.
-**Target**:
+⏳ **Remaining**:
+1. Curtain wipe TSL node (geometric reveal/hide).
+2. Bloom pulse on section change (0.3s spike).
+3. Post-processing crossfade is done; visual tuning pending.
 
-1. **Curtain wipe**: TSL node that reveals/hides content with a geometric wipe.
-2. **Bloom pulse**: Bloom intensity spikes for 0.3s on section change.
-3. **Camera snap**: After arrival pulse, camera smoothly settles to new position.
-4. **Post-processing crossfade**: 0.5s lerp between old and new post params.
+### H.5 — Mobile QA ⏳ NEEDS REAL-DEVICE TESTING
 
-### H.5 — Mobile QA
+1. ✅ `prefers-reduced-motion`: enforced in Camera, SmoothScroll,
+   GalleryManager, World, tokens.css.
+2. 🔄 Mobile layout: gallery cards min 80px touch target — verify.
+3. ✅ Mobile camera: reduced FOV range, no shake.
+4. ✅ DPR cap: 2.0 (in Sizes + DeviceCapability).
+5. 🔄 Touch gallery: swipe + tap, no hover — verify.
+6. ⏳ Performance: target 45 FPS on iPhone 13-class — measure.
+7. ✅ WebGPU mobile primary where supported; WebGL fallback otherwise.
 
-**Priority**: Critical. Site must be usable on mobile.
+### H.6 — Performance Final Audit ⏳ PENDING
 
-1. **`prefers-reduced-motion`**: All animations disabled or simplified.
-2. **Mobile layout**: Gallery cards larger (min 80px touch target).
-3. **Mobile camera**: Reduced FOV range (fof 1.0–1.1 vs 1.0–1.5).
-4. **DPR cap**: Already at 2.0 — verify.
-5. **Touch gallery**: Swipe + tap, no hover.
-6. **Performance**: Target 45 FPS on iPhone 13-level devices.
-7. **No WebGL fallback**: WebGPU mobile is primary for WebGPU-supported devices.
+1. ✅ Heap stability: no listener leaks (destroy wiring complete).
+2. ✅ Texture disposal: context-driven via AssetManager.disposeContext.
+3. ⏳ Long tasks: nothing > 100ms in steady state — profile on real hardware.
+4. ⏳ Lighthouse: Performance ≥ 90 (config exists, needs run).
+5. ✅ Bundle size: chunk-core 644KB gzip 184KB (within limits).
 
-### H.6 — Performance Final Audit
+### H.7 — Content Polish ⏳ NEEDS HUMAN
 
-1. **Heap stability**: No memory growth after repeated section transitions.
-2. **Texture disposal**: Old section content disposed when transitioning.
-3. **Long tasks**: Nothing > 100ms in steady state.
-4. **Lighthouse**: Performance ≥ 90 score.
-5. **Bundle size**: Already optimized (chunk-world 700KB gzip 209KB).
+1. ✅ Loading screen: splash with progress bar + ARIA.
+2. ✅ Scroll hints: scrollHint element in index.html.
+3. ✅ Typography: token scale (1.250 major third) in tokens.css.
+4. 🔄 Gallery cards: hover state (glow, lift) — desktop only, needs design.
 
-### H.7 — Content Polish
-
-1. **Loading screen**: Animated loader → fade to scene (no abrupt reveal).
-2. **Scroll hints**: "Scroll to explore" indicator for first visit.
-3. **Typography**: All text uses consistent scale/accent pattern.
-4. **Gallery cards**: Hover state (glow, slight lift) — desktop only.
-
-## Order of Execution
+## Order of Execution (revised)
 
 ```
-H.1 → H.4 → H.2 → H.3 → H.5 → H.6 → H.7
+H.1 ✅ → H.3 ✅ → H.4 🔄 → H.2 ⏳ → H.5 ⏳ → H.6 ⏳ → H.7 ⏳
 ```
 
-1. Post-processing foundation controls visual quality ceiling.
-2. Section transitions depend on post-processing state.
-3. Baku material builds on post-processing output.
-4. Camera polish enhances all other systems.
-5. Mobile QA validates everything.
-6. Performance audit closes gaps.
-7. Content polish is the final layer.
+H.1 + H.3 done. H.4 partial. H.2 blocked on bespoke Baku model.
+H.5/H.6/H.7 need real-device access and bespoke content.
 
 ## Success Criteria
 
-- `npm run build` passes
-- 🌸 Lighthouse: Performance ≥ 90, Accessible ≥ 90
-- 📁 No memory leaks after 10 section transitions
-- ❌ Mobile touch targets ≥ 80px
-- 🖥️ Reduced motion complied
-- 🖼️ Each section "pauses" well (poster quality)
+- ✅ `npm run build` passes
+- ⏳ Lighthouse: Performance ≥ 90, Accessibility ≥ 90
+- ✅ No memory leaks after section transitions (destroy wiring complete)
+- 🔄 Mobile touch targets ≥ 80px (verify)
+- ✅ Reduced motion complied
+- ⏳ Each section "pauses" well (poster quality) — needs bespoke content
