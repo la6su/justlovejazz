@@ -77,11 +77,11 @@
 
     <!-- SPA content dynamically injected here by router -->
     <!-- <main id="spa-content"> is auto-created by router.ts -->
-    <div id="jlj-splash" style="position:fixed;inset:0;z-index:9999;background:#0a0a0a;display:flex;align-items:center;justify-content:center;flex-direction:column;opacity:1;transition:opacity .6s ease;">
-      <div style="color:#fff;font:700 clamp(1.5rem,4vw,3rem) system-ui,-apple-system,sans-serif;letter-spacing:.3em;text-align:center;opacity:1;">JUSTLOVEJAZZ</div>
-      <div id="jlj-splash-label" style="position:absolute;bottom:24px;color:rgba(255,255,255,.3);font:600 .65rem system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase;">booting</div>
-      <div style="position:absolute;bottom:0;left:0;right:0;height:2px;background:rgba(255,255,255,.06);"></div>
-      <div id="jlj-splash-progress" style="position:absolute;bottom:0;left:0;height:2px;width:0%;background:#fff;transition:width .3s ease;"></div>
+    <!-- Splash: styled by #jlj-splash* in src/styles/tokens.css -->
+    <div id="jlj-splash">
+      <div>JUSTLOVEJAZZ</div>
+      <div id="jlj-splash-label">booting</div>
+      <div id="jlj-splash-progress"></div>
     </div>
 
     <!-- ===== 3D CANVAS ===== -->

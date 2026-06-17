@@ -19,6 +19,8 @@ export class Renderer {
 
   // Junni-style multi-pass post-processing pipeline (typed, explicit fallback)
   private pipeline: RenderPipeline | null = null
+  // Pipeline config built in constructor, applied in init() after backend ready.
+  private _pipelineConfig!: RenderPipelineConfig
 
   constructor(sizes: Sizes) {
     this.sizes = sizes
@@ -44,8 +46,11 @@ export class Renderer {
     this.instance.setSize(sizes.width, sizes.height)
     this.setupCanvas(this.instance.domElement)
 
-    // Create render pipeline (typed, zero `any`)
-    const pipelineConfig: RenderPipelineConfig = {
+    // Store pipeline config — pipeline is created in init() AFTER the renderer
+    // backend is initialized (WebGPURenderer.init() configures the GPU device;
+    // creating RTs/pipeline before that is unsafe and can yield uninitialized
+    // GPU state on some drivers).
+    this._pipelineConfig = {
       bloomThreshold: this.capabilities.postProcessing ? 0.5 : 1.0,
       bloomPasses: this.capabilities.tier === 'high' ? 4 : this.capabilities.tier === 'medium' ? 3 : 2,
       bloomResRatio: this.capabilities.tier === 'high' ? 0.5 : 0.25,
@@ -54,7 +59,6 @@ export class Renderer {
       vignetteEnabled: true,
       grainEnabled: this.capabilities.tier !== 'low',
     }
-    this.pipeline = RenderPipeline.create(this.instance, sizes.width, sizes.height, pipelineConfig)
 
     // Subscribe to viewport resize: update canvas + pipeline render targets.
     // Sizes is constructed before Renderer in Experience, so its window listener
@@ -92,6 +96,15 @@ export class Renderer {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (this.instance as any).init?.()
     }
+    // Now that the renderer backend is initialized (WebGPU device configured,
+    // WebGL context ready), create the post-processing pipeline. Creating it
+    // in the constructor was unsafe — RTs/GPU state could be uninitialized.
+    this.pipeline = RenderPipeline.create(
+      this.instance,
+      this.sizes.width,
+      this.sizes.height,
+      this._pipelineConfig,
+    )
   }
 
   private _fog!: THREE.FogExp2

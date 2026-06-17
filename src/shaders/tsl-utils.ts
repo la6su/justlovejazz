@@ -5,10 +5,23 @@
 // Where three/tsl ships a built-in equivalent (MaterialX noise, hsvtorgb,
 // rotate2d, hash), we re-export it under a junni-compatible name instead of
 // re-implementing — keeps WGSL output optimal and avoids drift.
+//
+// ── three/tsl version assumptions (verify on upgrade) ──
+// Tested against: three@0.184.0
+// API surface used here:
+//   - arithmetic node methods: .add .sub .mul .div .pow .fract .sin .cos .clamp .select
+//   - float(n), vec2(..), vec3(..), mix(a,b,t), exp(n)
+//   - mx_noise_float(p)         — MaterialX simplex-like, [-1,1]
+//   - mx_hsvtorgb(hsv)           — HSV→RGB
+//   - mx_rotate2d(input, amount) — rotates vec2 position, amount in DEGREES
+//   - hash(p)                    — deterministic [0,1)
+//   - texture.sample(uv)         — basic sampling
+//   - texture.level(levelNode)   — mip-level sampling (replaces old sampleLevel)
+// If three/tsl renames any of these, update here and re-run type-check.
+// AUTONOMY: do NOT silence type errors with `any` here — fix the call site.
 
 import {
     vec2,
-    mix,
     float,
     exp,
     mx_noise_float,
@@ -123,14 +136,22 @@ export const sampleBicubic = (tex: TSLTextureNode, uv: TSLNode, textureSize: TSL
 }
 
 /**
- * Mip-Blend sampling (eliminates mip popping)
+ * Mip-Blend sampling (eliminates mip popping).
+ *
+ * NOTE: three 0.184 renamed the mip-level sampler. The old `tex.sampleLevel(uv, level)`
+ * no longer exists — it is now `tex.level(levelNode)` (returns a texture node that
+ * samples at that mip when used in a graph). The previous implementation here used
+ * `tex.sampleLevel ?? fallback`, which silently fell back to `tex.sample(uv)` on
+ * every three release that lacks sampleLevel — i.e. it never actually blended
+ * mip levels, defeating the purpose.
+ *
+ * Removed until a correct implementation against the current API is needed.
+ * If you need mip-level sampling, use:
+ *   const s1 = tex.level(float(level1))
+ *   const s2 = tex.level(float(level2))
+ *   return mix(s1, s2, mixFactor)
+ * (Verify against node_modules/three/src/nodes/accessors/TextureNode.js level().)
  */
-export const sampleMipBlend = (tex: TSLTextureNode, uv: TSLNode, level1: number, level2: number, mixFactor: TSLNode) => {
-    const sampleLevel = tex.sampleLevel ?? ((_uv: TSLNode, _level: number) => tex.sample(_uv))
-    const s1 = sampleLevel(uv, level1)
-    const s2 = sampleLevel(uv, level2)
-    return mix(s1, s2, mixFactor)
-}
 
 //
 // ------------ BLOOM ------------

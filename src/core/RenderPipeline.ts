@@ -8,10 +8,10 @@ import * as THREE from 'three'
 import { WebGPURenderer } from 'three/webgpu'
 import * as ThreeWebGPU from 'three/webgpu'
 import { pass, renderOutput, uniform, screenUV } from 'three/tsl'
+import { bloom } from 'three/addons/tsl/display/BloomNode.js'
 import {
   applyProfessionalGrain,
   applyCinematicVignette,
-  applySoftGlow,
   acesTonemap,
 } from '../shaders/tsl-utils'
 import type { TSLNode } from '../types/tsl'
@@ -220,12 +220,13 @@ export class RenderPipeline {
   // scene via a PassNode; uniforms are mutated each frame from _params.
   private _nativePipeline?: NativeRenderPipelineHandle | null
   private _scenePass?: TSLNode | null
-  private _uBloom?: TSLNode | null
   private _uVignette?: TSLNode | null
   private _uGrain?: TSLNode | null
   private _uChromatic?: TSLNode | null
   private _uTime?: TSLNode | null
-  private _uGlowStrength?: TSLNode | null
+  // BloomNode uniform handle — mutate .value each frame for section crossfade.
+  // (radius + threshold are set at construction; per-section tuning is Track B.)
+  private _bloomStrength?: TSLNode | null
   
   private constructor() {
     this._params = { bloom: 1.0, vignette: 1.0, grain: 1.0, chromatic: 0.0 }
@@ -336,12 +337,11 @@ export class RenderPipeline {
     // resources are reclaimed when the renderer is disposed.
     this._nativePipeline = null
     this._scenePass = null
-    this._uBloom = null
     this._uVignette = null
     this._uGrain = null
     this._uChromatic = null
     this._uTime = null
-    this._uGlowStrength = null
+    this._bloomStrength = null
   }
   
   // ─── Property accessors ──────────────────────────────────────
@@ -538,37 +538,45 @@ export class RenderPipeline {
    *
    * Uses three/webgpu's native RenderPipeline + PassNode. The graph:
    *   scenePass(pass) → sceneColor(texture)
-   *   → soft glow (multi-tap, additive) scaled by bloom intensity
+   *   → bloom(sceneColor, strength, radius, threshold)   [mip-chain, 5 levels]
+   *   → sceneColor + bloom * strength                     [additive composite]
    *   → film grain (time-varying)
    *   → cinematic vignette (radial falloff)
    *   → ACES tonemap + color space (via renderOutput)
    *
-   * Uniforms are exposed as TSL uniform nodes and mutated each frame from
-   * _params, so PostProcessingManager crossfades propagate to WebGPU.
-   *
-   * TODO(track-1-full): replace single-pass applySoftGlow with a true
-   * mip-chain bloom (downsample RTs + separable gaussBlur5 per mip) to
-   * match junni's 5-pass quality. Single-pass is the foundation that
-   * keeps the WebGPU path from being a no-op stub.
+   * Bloom uses three/addons/tsl/display/BloomNode — production-grade mip-chain
+   * (downsample → separable gaussian blur per mip → upsample composite),
+   * matching junni's 5-pass quality. Strength/radius/threshold are exposed
+   * as BloomNode uniform nodes and mutated each frame from _params, so
+   * PostProcessingManager section crossfades propagate to WebGPU.
    */
   private _setupWebGPU(scene: THREE.Scene, camera: THREE.Camera): void {
     // Mutable uniform nodes — .value is updated each frame in _renderWebGPU.
-    this._uBloom = uniform(this._params.bloom)
     this._uVignette = uniform(this._params.vignette)
     this._uGrain = uniform(this._params.grain)
     this._uChromatic = uniform(this._params.chromatic)
     this._uTime = uniform(0)
-    this._uGlowStrength = uniform(0.005)
 
     // Scene → texture pass (PassNode bound to scene + camera).
     // For COLOR scope the PassNode itself acts as the color texture node.
     this._scenePass = pass(scene, camera)
     const sceneColor = this._scenePass
 
-    // ── Bloom-like glow (single-pass, multi-tap additive) ──
-    // applySoftGlow returns the glow term; composite additively.
-    const glow = applySoftGlow(sceneColor, screenUV, this._uGlowStrength)
-    let color: TSLNode = sceneColor.add(glow.mul(this._uBloom))
+    // ── Mip-chain bloom (three/addons BloomNode) ──
+    // threshold = config.bloomThreshold (luminance gate, 0.5 default)
+    // strength  = per-frame from _params.bloom (section crossfade target)
+    // radius    = 0.6 (mid-soft; tune per section in Track B)
+    const bloomNode = bloom(
+      sceneColor,
+      this._params.bloom,
+      0.6,
+      this._config.bloomThreshold,
+    )
+    // Hold uniform ref for per-frame mutation (radius/threshold fixed at build).
+    this._bloomStrength = bloomNode.strength as unknown as TSLNode
+
+    // Additive composite: scene + bloom.
+    let color: TSLNode = sceneColor.add(bloomNode)
 
     // ── Film grain ──
     if (this._config.grainEnabled) {
@@ -603,7 +611,7 @@ export class RenderPipeline {
     }
 
     // Sync uniforms from current params (PostProcessingManager crossfade target).
-    if (this._uBloom) this._uBloom.value = this._params.bloom
+    if (this._bloomStrength) this._bloomStrength.value = this._params.bloom
     if (this._uVignette) this._uVignette.value = this._params.vignette
     if (this._uGrain) this._uGrain.value = this._params.grain
     if (this._uChromatic) this._uChromatic.value = this._params.chromatic
