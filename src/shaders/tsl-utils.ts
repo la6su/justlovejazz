@@ -22,6 +22,7 @@
 
 import {
     vec2,
+    vec3,
     float,
     exp,
     mx_noise_float,
@@ -341,10 +342,13 @@ export const compositeBloom = (
 /**
  * ACES filmic tonemap approximation (Narkowicz 2015).
  * Matches the WebGL composite pass in RenderPipeline.ts.
+ *
+ * Guard: denominator is max(denom, 0.0001) to avoid div-by-zero when
+ * color is exactly 0 (black background → inf → white screen).
  */
 export const acesTonemap = (color: TSLNode): TSLNode => {
     const a = float(6.2).mul(color).add(0.03)
-    const b = color.mul(float(4.8).mul(color).add(1.0))
+    const b = color.mul(float(4.8).mul(color).add(1.0)).max(0.0001)
     return a.div(b)
 }
 
@@ -365,7 +369,11 @@ export const applyChromaticAberration = (
     uv: TSLNode,
     intensity: TSLNode,
 ): TSLNode => {
-    const dir = uv.sub(vec2(0.5, 0.5)).normalize().mul(intensity)
+    // Direction from screen center. Guard against normalize(0,0) = NaN
+    // at exact center by adding a tiny epsilon before normalize.
+    const offset = uv.sub(vec2(0.5, 0.5))
+    const len = offset.length().max(0.0001)
+    const dir = offset.div(len).mul(intensity)
     const r = tex.sample(uv.add(dir)).x
     const g = tex.sample(uv).y
     const b = tex.sample(uv.sub(dir)).z
