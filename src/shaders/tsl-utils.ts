@@ -22,6 +22,7 @@
 
 import {
     vec2,
+    vec3,
     float,
     exp,
     mx_noise_float,
@@ -346,4 +347,28 @@ export const acesTonemap = (color: TSLNode): TSLNode => {
     const a = float(6.2).mul(color).add(0.03)
     const b = color.mul(float(4.8).mul(color).add(1.0))
     return a.div(b)
+}
+
+/**
+ * Chromatic aberration — RGB channel shift towards screen edges.
+ * Matches the WebGL composite pass uChromatic branch.
+ *
+ * Parameters:
+ *   tex       — input texture node (scene color)
+ *   uv        — screen UV
+ *   intensity — shift magnitude (0 disables; ~0.005 typical)
+ *
+ * Implementation: shift R channel +dir, B channel -dir, G stays at center.
+ * Direction = normalize(uv - 0.5) * intensity.
+ */
+export const applyChromaticAberration = (
+    tex: TSLTextureNode,
+    uv: TSLNode,
+    intensity: TSLNode,
+): TSLNode => {
+    const dir = uv.sub(vec2(0.5, 0.5)).normalize().mul(intensity)
+    const r = tex.sample(uv.add(dir)).x
+    const g = tex.sample(uv).y
+    const b = tex.sample(uv.sub(dir)).z
+    return vec3(r, g, b)
 }
