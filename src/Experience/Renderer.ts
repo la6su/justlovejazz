@@ -31,6 +31,14 @@ export class Renderer {
 
     if (this.capabilities.mode === 'webgpu') {
       this.instance = new WebGPURenderer({ antialias: true })
+      // Match WebGL path: ACES tonemap + sRGB output. renderOutput() in
+      // RenderPipeline reads these to apply tone mapping + color space.
+      // WebGPURenderer extends Renderer (has toneMapping at runtime) but
+      // @types/three doesn't type it yet — adapter cast here.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const wg = this.instance as any
+      wg.toneMapping = THREE.ACESFilmicToneMapping
+      wg.toneMappingExposure = 1
     } else {
       const gl = new THREE.WebGLRenderer({
         antialias: true,
