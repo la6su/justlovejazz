@@ -43,11 +43,12 @@ export class ProjectOverlay {
   }
 
   show(project: Project, index: number, total: number): void {
+    if (!project) return // defensive: caller should clamp, but never crash here
     this.indexEl.textContent = ('0' + (index + 1)).slice(-2)
-    this.titleEl.textContent = project.title.toUpperCase()
-    this.catEl.textContent = project.category + ' \u00b7 ' + project.year
+    this.titleEl.textContent = (project.title || '').toUpperCase()
+    this.catEl.textContent = (project.category || '') + ' \u00b7 ' + (project.year || '')
     this.counterEl.textContent = (index + 1) + ' / ' + total
-    const accent = project.color.replace('#', '')
+    const accent = (project.color || '#ffffff').replace('#', '')
     this.titleEl.style.textShadow = '0 0 30px #' + accent + '40'
     this.container.style.opacity = '1'
   }
