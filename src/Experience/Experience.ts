@@ -226,9 +226,13 @@ export class Experience {
   private onProjectSelect(idx: number): void {
     if (!this.portfolio || !this.overlay) return
     const projs = (this.portfolio as any).projects
-    if (projs.length === 0) return
-    const project = projs[idx]
-    this.overlay.show(project, idx, projs.length)
+    if (!Array.isArray(projs) || projs.length === 0) return
+    // Clamp idx into valid range — goTo() uses modulo but a fast swipe
+    // can race ahead of currentIdx update, yielding an out-of-range idx.
+    const safeIdx = ((idx % projs.length) + projs.length) % projs.length
+    const project = projs[safeIdx]
+    if (!project) return // defensive: still undefined → skip, don't crash
+    this.overlay.show(project, safeIdx, projs.length)
   }
 
   private async ensureWebGLTextManager(): Promise<void> {
