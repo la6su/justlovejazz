@@ -121,7 +121,8 @@ export class Experience {
       }
       this.world.atmosphere?.setFog(cfg.fog.color, cfg.fog.density)
       this.renderer.postManager.applyPreset(cfg.id)
-      this.camera.setFovOffset(SECTION_TRANSITION.fovOffset, SECTION_TRANSITION.fovDuration)
+      // Track 5: per-section FOV pop + smoothing from WorldConfig (no global magic).
+      this.camera.setFovOffset(cfg.camFovOffset, cfg.camFovDuration)
       this.currentSectionContext = cfg.context
     }
 
@@ -131,7 +132,9 @@ export class Experience {
       this.portfolio.group.visible = isWorks
     }
 
-    this.camera.updateSmooth(cameraTarget, dt, SECTION_TRANSITION.cameraSmoothing)
+    // Per-section camera smoothing (Track 5). Fall back to default if cfg absent.
+    const smoothing = cfg?.camSmoothing ?? SECTION_TRANSITION.cameraSmoothing
+    this.camera.updateSmooth(cameraTarget, dt, smoothing)
     const warmth = ns
     this.world.lightsGroup.setMood(warmth, worldState.envIntensity)
     this.camera.update(dt)

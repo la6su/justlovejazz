@@ -310,6 +310,9 @@ export class World extends THREE.Group {
             post: { bloom: 0.2, vignette: 0.5, grain: 0.03, chromatic: 0.005 },
             ui: { showGallery: false },
             background: 0xa0ebff,
+            camFovOffset: 0.3,
+            camFovDuration: 0.8,
+            camSmoothing: 5,
         }
         return this.buildResultFromConfig(cfg)
     }
