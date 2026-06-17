@@ -17,6 +17,17 @@ import type { WebGLTextManager } from './WebGLTextManager'
 import { WorksPortfolio } from './WorksPortfolio'
 import { ProjectOverlay } from '../UI/ProjectOverlay'
 
+/**
+ * Section-arrival transition tuning.
+ * TODO(track-b): move per-step values into WorldConfig so each phase can
+ * define its own FOV pop amplitude and camera smoothing (ROADMAP M2).
+ */
+const SECTION_TRANSITION = {
+  fovOffset: 0.3,
+  fovDuration: 0.8,
+  cameraSmoothing: 5,
+} as const
+
 export class Experience {
   static instance: Experience
 
@@ -110,7 +121,7 @@ export class Experience {
       }
       this.world.atmosphere?.setFog(cfg.fog.color, cfg.fog.density)
       this.renderer.postManager.applyPreset(cfg.id)
-      this.camera.setFovOffset(0.3, 0.8)
+      this.camera.setFovOffset(SECTION_TRANSITION.fovOffset, SECTION_TRANSITION.fovDuration)
       this.currentSectionContext = cfg.context
     }
 
@@ -120,7 +131,7 @@ export class Experience {
       this.portfolio.group.visible = isWorks
     }
 
-    this.camera.updateSmooth(cameraTarget, dt, 5)
+    this.camera.updateSmooth(cameraTarget, dt, SECTION_TRANSITION.cameraSmoothing)
     const warmth = ns
     this.world.lightsGroup.setMood(warmth, worldState.envIntensity)
     this.camera.update(dt)
