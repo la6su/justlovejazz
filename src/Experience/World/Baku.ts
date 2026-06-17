@@ -1,7 +1,9 @@
 // Baku — Character sphere with organic motion + role-based material switching
 import * as THREE from 'three'
 import { Noise } from '../../Utils/Noise'
+import { DeviceCapability } from '../../core/DeviceCapability'
 import { BakuRole, type BakuMaterialState } from '../../core/types'
+import { createBakuTSLMaterial } from '../../shaders/BakuTSLMaterial'
 
 export interface BakuMaterialParams {
   color: THREE.Color
@@ -33,9 +35,27 @@ export class Baku extends THREE.Mesh {
 
   constructor() {
     const geometry = new THREE.IcosahedronGeometry(0.5, 3)
-    const material = new THREE.MeshStandardMaterial({
-      color: 0xffffff,
-    })
+
+    // WebGPU: TSL iridescent fresnel material (studio-grade, procedural).
+    // WebGL: MeshStandardMaterial fallback (role switching handles variants).
+    const caps = DeviceCapability.getInstance()
+    let material: THREE.Material
+    if (caps.mode === 'webgpu') {
+      try {
+        material = createBakuTSLMaterial({
+          color: new THREE.Color(0x111111),
+          rimColor: new THREE.Color(0x515d84),
+          rimPower: 2.5,
+          noiseAmplitude: 0.05,
+          noiseFrequency: 2.0,
+        })
+      } catch {
+        material = new THREE.MeshStandardMaterial({ color: 0xffffff })
+      }
+    } else {
+      material = new THREE.MeshStandardMaterial({ color: 0xffffff })
+    }
+
     super(geometry, material)
     this.initialPosition.copy(this.position)
     this.initialRotation.copy(this.quaternion)
@@ -64,8 +84,13 @@ export class Baku extends THREE.Mesh {
     if (!this.material) return
     const role = this.targetParams.role
 
+    // Preserve TSL node material for NORMAL role on WebGPU.
+    // Only swap to MeshPhysical/MeshStandard for GLASS/WIRE where TSL
+    // equivalents aren't trivially exposed.
+    const isTSL = this.material.constructor.name === 'MeshPhysicalNodeMaterial'
+
     if (role === BakuRole.GLASS) {
-      if (!(this.material instanceof THREE.MeshPhysicalMaterial)) {
+      if (isTSL || !(this.material instanceof THREE.MeshPhysicalMaterial)) {
         this.material = new THREE.MeshPhysicalMaterial()
       }
       const mat = this.material as THREE.MeshPhysicalMaterial
@@ -73,19 +98,22 @@ export class Baku extends THREE.Mesh {
       mat.thickness = THREE.MathUtils.lerp(mat.thickness, 0.5, 0.05)
       mat.roughness = THREE.MathUtils.lerp(mat.roughness, this.targetParams.roughness, 0.05)
     } else if (role === BakuRole.WIRE) {
-      if (!(this.material instanceof THREE.MeshStandardMaterial)) {
-        this.material = new THREE.MeshStandardMaterial()
+      if (isTSL || !(this.material instanceof THREE.MeshStandardMaterial)) {
+        this.material = new THREE.MeshStandardMaterial({ wireframe: true })
       }
       ;(this.material as THREE.MeshStandardMaterial).wireframe = true
     } else {
-      if (!(this.material instanceof THREE.MeshStandardMaterial)) {
-        this.material = new THREE.MeshStandardMaterial()
+      // NORMAL: keep TSL material if present.
+      if (!isTSL) {
+        if (!(this.material instanceof THREE.MeshStandardMaterial)) {
+          this.material = new THREE.MeshStandardMaterial()
+        }
+        ;(this.material as THREE.MeshStandardMaterial).wireframe = false
       }
-      ;(this.material as THREE.MeshStandardMaterial).wireframe = false
     }
 
-    // Common params lerp
-    if (this.material instanceof THREE.Material) {
+    // Common params lerp (only for standard/physical, not TSL node materials).
+    if (!isTSL && this.material instanceof THREE.Material) {
       const mat = this.material as MorphableMaterial
       if (mat.color) mat.color.lerp(this.targetParams.color, 0.05)
       if (mat.emissive) mat.emissive.lerp(this.targetParams.emissive, 0.05)
