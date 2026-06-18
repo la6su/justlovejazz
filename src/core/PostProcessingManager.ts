@@ -11,22 +11,24 @@ import type { QualityTier } from '../types/renderer'
  * Controls bloom, vignette, grain, chromatic aberration strength.
  */
 interface PostParams {
-  bloom: number        // 0–1, bloom intensity multiplier
-  vignette: number     // 0–1, vignette radius/darkness
-  grain: number        // 0–1, grain amplitude
-  chromatic: number    // 0–1, chromatic aberration strength
+  bloom: number          // 0–1, bloom intensity multiplier
+  vignette: number       // 0–1, vignette radius/darkness
+  grain: number          // 0–1, grain amplitude
+  chromatic: number      // 0–1, chromatic aberration strength
+  bloomRadius: number    // 0–1, bloom blur radius (Track B: per-section)
+  bloomThreshold: number // 0–1, luminance gate for bloom (Track B)
 }
 
 // Presets: step01 through step08 (all string keys)
 const PHASE_PRESETS: Record<string, PostParams> = {
-  step01: { bloom: 0.5, vignette: 0.6, grain: 0.05, chromatic: 0.008 },
-  step02: { bloom: 0.4, vignette: 0.5, grain: 0.03, chromatic: 0.003 },
-  step03: { bloom: 0.6, vignette: 0.4, grain: 0.02, chromatic: 0.005 },
-  step04: { bloom: 0.3, vignette: 0.6, grain: 0.04, chromatic: 0.002 },
-  step05: { bloom: 0.7, vignette: 0.5, grain: 0.01, chromatic: 0.005 },
-  step06: { bloom: 0.5, vignette: 0.4, grain: 0.03, chromatic: 0.003 },
-  step07: { bloom: 0.4, vignette: 0.5, grain: 0.02, chromatic: 0.004 },
-  step08: { bloom: 0.2, vignette: 0.3, grain: 0.01, chromatic: 0.0 },
+  step01: { bloom: 0.5, vignette: 0.6, grain: 0.05, chromatic: 0.008, bloomRadius: 0.5, bloomThreshold: 0.5 },
+  step02: { bloom: 0.4, vignette: 0.5, grain: 0.03, chromatic: 0.003, bloomRadius: 0.6, bloomThreshold: 0.4 },
+  step03: { bloom: 0.6, vignette: 0.4, grain: 0.02, chromatic: 0.005, bloomRadius: 0.7, bloomThreshold: 0.45 },
+  step04: { bloom: 0.3, vignette: 0.6, grain: 0.04, chromatic: 0.002, bloomRadius: 0.4, bloomThreshold: 0.6 },
+  step05: { bloom: 0.7, vignette: 0.5, grain: 0.01, chromatic: 0.005, bloomRadius: 0.8, bloomThreshold: 0.35 },
+  step06: { bloom: 0.5, vignette: 0.4, grain: 0.03, chromatic: 0.003, bloomRadius: 0.6, bloomThreshold: 0.5 },
+  step07: { bloom: 0.4, vignette: 0.5, grain: 0.02, chromatic: 0.004, bloomRadius: 0.5, bloomThreshold: 0.5 },
+  step08: { bloom: 0.2, vignette: 0.3, grain: 0.01, chromatic: 0.0, bloomRadius: 0.3, bloomThreshold: 0.7 },
 }
 
 /** Quality tier scalers */
@@ -40,10 +42,10 @@ export class PostProcessingManager {
   private capability = DeviceCapability.getInstance()
 
   // Current values (crossfade target)
-  private current: PostParams = { bloom: 0, vignette: 0, grain: 0, chromatic: 0 }
+  private current: PostParams = { bloom: 0, vignette: 0, grain: 0, chromatic: 0, bloomRadius: 0.6, bloomThreshold: 0.5 }
 
   // Display values (lerped toward current each frame)
-  private display: PostParams = { bloom: 0, vignette: 0, grain: 0, chromatic: 0 }
+  private display: PostParams = { bloom: 0, vignette: 0, grain: 0, chromatic: 0, bloomRadius: 0.6, bloomThreshold: 0.5 }
 
   // Crossfade speed (seconds) — 0.5s between section changes
   private crossfadeSpeed = 2.0     // 1 / 0.5 = 2.0
@@ -66,6 +68,8 @@ export class PostProcessingManager {
     this.current.vignette *= scaler.vignette ?? 1
     this.current.grain *= scaler.grain ?? 1
     this.current.chromatic *= scaler.chromatic ?? 1
+    // bloomRadius + bloomThreshold are NOT scaled by quality tier (they are
+    // shape parameters, not intensity — scaling would distort the look).
   }
 
   /** Update display values (call each frame with dt) */
@@ -76,6 +80,8 @@ export class PostProcessingManager {
     this.display.vignette = lerp(this.display.vignette, this.current.vignette, factor)
     this.display.grain = lerp(this.display.grain, this.current.grain, factor)
     this.display.chromatic = lerp(this.display.chromatic, this.current.chromatic, factor)
+    this.display.bloomRadius = lerp(this.display.bloomRadius, this.current.bloomRadius, factor)
+    this.display.bloomThreshold = lerp(this.display.bloomThreshold, this.current.bloomThreshold, factor)
   }
 
   /** Get display values for shader uniforms */
