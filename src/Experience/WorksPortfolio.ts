@@ -25,6 +25,9 @@ export class WorksPortfolio {
   private dragOff = 0
   private dragging = false
   private dragStartX = 0
+  private vel = 0
+  private lastX = 0
+  private lastT = 0
   private spacing = 4.0
   private cardW = 3.0
   private cardH = 2.0
@@ -123,13 +126,23 @@ export class WorksPortfolio {
     if (this.expanding) return
     // Ignore clicks on UI overlay/modal/nav — they have their own handlers.
     const target = e.target as HTMLElement
-    if (target.closest('.project-overlay, #project-modal, #jlj-splash, #main-nav, canvas')) return
+    if (target.closest('.project-overlay, #project-modal, #jlj-splash, #main-nav')) return
     this.dragging = true
     this.dragStartX = e.clientX
+    this.lastX = e.clientX
+    this.lastT = performance.now()
+    this.vel = 0
   }
 
   private onPointerMove = (e: PointerEvent) => {
-    void e
+    if (!this.dragging) return
+    // Live drag offset for visual feedback during swipe.
+    this.dragOff = (e.clientX - this.dragStartX) * 0.004
+    const now = performance.now()
+    const dt = now - this.lastT
+    this.vel = dt > 0 ? (e.clientX - this.lastX) / dt : 0
+    this.lastX = e.clientX
+    this.lastT = now
   }
 
   private onPointerUp = (e: PointerEvent) => {
@@ -137,14 +150,21 @@ export class WorksPortfolio {
     this.dragging = false
     if (this.cards.length === 0) { this.dragOff = 0; return }
     const target = e.target as HTMLElement
-    if (target.closest('.project-overlay, #project-modal, #jlj-splash, #main-nav, canvas')) {
+    if (target.closest('.project-overlay, #project-modal, #jlj-splash, #main-nav')) {
       this.dragOff = 0
       return
     }
     const dragDistance = Math.abs(e.clientX - this.dragStartX)
-    if (dragDistance < 8) {
+    if (Math.abs(this.vel) > 0.12) {
+      // Swipe with velocity → change project.
+      this.goTo(this.currentIdx + (this.vel > 0 ? -1 : 1))
+    } else if (dragDistance < 8) {
+      // Tap (click without drag) → open detail.
       const safeIdx = ((this.currentIdx % this.cards.length) + this.cards.length) % this.cards.length
       this.onCardActivate(safeIdx)
+    } else if (dragDistance > 40) {
+      // Slow drag beyond threshold → change project in drag direction.
+      this.goTo(this.currentIdx + (e.clientX < this.dragStartX ? 1 : -1))
     }
     this.dragOff = 0
   }
