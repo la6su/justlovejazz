@@ -19,7 +19,6 @@ import { ProjectOverlay } from '../UI/ProjectOverlay'
 import { ProjectDetail } from '../UI/ProjectDetail'
 import { PerfMonitor } from '../core/PerfMonitor'
 import { DissolveOverlay } from '../shaders/dissolveOverlay'
-import { StickyTransition } from '../shaders/StickyTransition'
 
 /**
  * Section-arrival transition tuning.
@@ -56,9 +55,6 @@ export class Experience {
   // Project transition dissolve (shader effect on card click)
   private projectDissolve: DissolveOverlay | null = null
   private projectDissolveActive = false
-  // Sticky image transition (Anemolo-inspired) for tap → detail
-  private stickyTransition: StickyTransition | null = null
-  private stickyActive = false
 
   constructor(_ui: UIManager) {
     this.sizes = new Sizes()
@@ -225,8 +221,6 @@ export class Experience {
     this.overlay?.dispose()
     this.projectDissolve?.dispose()
     this.projectDissolve = null
-    this.stickyTransition?.dispose()
-    this.stickyTransition = null
     // Sizes + Input own window listeners — clean them up to avoid leaks
     // on hot-reload (Vite HMR) and on explicit teardown.
     this.sizes.destroy()
@@ -254,8 +248,10 @@ export class Experience {
 
     this.portfolio = new WorksPortfolio(
       PROJECTS,
-      (idx) => { this.onProjectSelect(idx) },           // swipe → preview
-      (idx) => { this.openProjectDetail(idx) },          // tap → detail view
+      (idx) => { this.onProjectSelect(idx) },           // swipe → preview overlay
+      (idx) => { this.activateCard(idx) },              // tap → expand card
+      (idx) => { this.onCardExpanded(idx) },            // expand done → open detail
+      () => { this.onCardCollapsed() },                 // collapse done → return to carousel
     )
     // Add portfolio group at a position in camera FOV (works page camera is at [3,5,7] or [0,8,10])
     this.portfolio.group.position.set(0, 1, 2)
@@ -268,6 +264,10 @@ export class Experience {
     }
     if (!this.projectDetail) {
       this.projectDetail = new ProjectDetail()
+      // When modal closes (Esc / bg click), collapse the expanded card.
+      this.projectDetail.onClose = () => {
+        this.portfolio?.collapseCard()
+      }
     }
     // Create the project transition dissolve overlay (shader wipe effect).
     // Reused across all project selections on the works page.
@@ -354,101 +354,37 @@ export class Experience {
   }
 
   /**
-   * Open the full-screen project detail view with a sticky image transition
-   * (Anemolo StickyImageEffect inspired, inverted: expands OUT to fullscreen).
-   *
-   * Flow:
-   * 1. Load project texture
-   * 2. Sticky plane expands from center to fullscreen (progress 0→1, direction=0)
-   * 3. At peak, open ProjectDetail modal (DOM appears over the sticky plane)
-   * 4. Hide sticky plane (modal covers it)
-   *
-   * Close is handled by UIkit modal (Esc / bg click).
+   * Tap on card → start expand animation. The card morphs from its carousel
+   * position to a fullscreen-cover position (handled in WorksPortfolio.update).
    */
-  private async openProjectDetail(idx: number): Promise<void> {
+  private activateCard(idx: number): void {
+    if (!this.portfolio) return
+    this.portfolio.expandCard(idx)
+  }
+
+  /**
+   * Expand animation reached peak (progress=1). Card is now fullscreen.
+   * Open the DOM detail modal over it.
+   */
+  private async onCardExpanded(idx: number): Promise<void> {
     if (!this.portfolio || !this.projectDetail) return
-    if (this.stickyActive) return
     const projs = (this.portfolio as any).projects
-    if (!Array.isArray(projs) || projs.length === 0) return
-    const safeIdx = ((idx % projs.length) + projs.length) % projs.length
-    const project = projs[safeIdx]
+    const project = projs?.[idx]
     if (!project) return
+    await this.projectDetail.open(project)
+  }
 
-    // Load project texture (use AssetManager for context-driven disposal).
-    let texture: THREE.Texture | null = null
-    try {
-      const { AssetManager } = await import('../core/AssetManager')
-      texture = await AssetManager.getInstance().loadTexture(
-        project.textureUrl || project.detailTextureUrl,
-        'project-detail',
-      )
-    } catch {
-      texture = null
-    }
+  /**
+   * User closed the detail modal → collapse the card back to carousel.
+   */
+  public closeProjectDetail(): void {
+    if (!this.portfolio) return
+    this.projectDetail?.close()
+    this.portfolio.collapseCard()
+  }
 
-    // No texture or no sticky support → fall back to direct modal open.
-    if (!texture) {
-      void this.projectDetail.open(project)
-      return
-    }
-
-    // Create sticky transition plane (WebGPU only; fallback to modal on WebGL).
-    const { DeviceCapability } = await import('../core/DeviceCapability')
-    if (DeviceCapability.getInstance().mode !== 'webgpu') {
-      void this.projectDetail.open(project)
-      return
-    }
-
-    try {
-      if (!this.stickyTransition) {
-        this.stickyTransition = new StickyTransition({
-          texture,
-          direction: 0, // 0 = expand out
-          offset: 0.5,
-        })
-        this.stickyTransition.fitToScreen(this.sizes.width, this.sizes.height)
-        this.scene.add(this.stickyTransition.meshGroup)
-      } else {
-        this.stickyTransition.setTexture(texture)
-        this.stickyTransition.setDirection(0)
-      }
-    } catch {
-      // TSL material construction failed → open modal directly.
-      void this.projectDetail.open(project)
-      return
-    }
-
-    // Run sticky expand transition.
-    const sticky = this.stickyTransition
-    sticky.meshGroup.visible = true
-    sticky.setProgress(0)
-    sticky.setDirection(0) // expand OUT
-    sticky.setWaveIntensity(0.3)
-    this.stickyActive = true
-
-    const duration = 700 // ms
-    const start = performance.now()
-
-    const animate = (now: number) => {
-      const elapsed = now - start
-      const t = Math.min(elapsed / duration, 1)
-      // Ease-out cubic for smooth expand.
-      const eased = 1 - Math.pow(1 - t, 3)
-      sticky.setProgress(eased)
-      sticky.update(0.016)
-
-      if (t < 1) {
-        requestAnimationFrame(animate)
-      } else {
-        // Expansion complete → open modal over the sticky plane.
-        void this.projectDetail!.open(project).then(() => {
-          // Modal is open; hide sticky plane (modal covers it).
-          sticky.meshGroup.visible = false
-          this.stickyActive = false
-        })
-      }
-    }
-    requestAnimationFrame(animate)
+  private onCardCollapsed(): void {
+    // Carousel resumed — no action needed, update() continues normally.
   }
 
   private async ensureWebGLTextManager(): Promise<void> {

@@ -1,4 +1,6 @@
 // WorksPortfolio — 3D card carousel for works page
+// Cards carry project textures. On tap, the active card morphs to fullscreen
+// (position + scale animation), then DOM detail overlay appears on top.
 import * as THREE from 'three'
 import { type Project } from '../core/types'
 
@@ -7,6 +9,12 @@ interface ProjectCard {
   mesh: THREE.Mesh
   mat: THREE.MeshStandardMaterial
   color: THREE.Color
+  texture: THREE.Texture | null
+}
+
+/** Easing — easeInOutCubic for smooth expand/collapse. */
+function easeInOutCubic(t: number): number {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
 }
 
 export class WorksPortfolio {
@@ -23,23 +31,41 @@ export class WorksPortfolio {
   private spacing = 4.0
   private cardW = 3.0
   private cardH = 2.0
+
+  // Expand transition state
+  private expanding = false
+  private expandProgress = 0 // 0 = normal carousel, 1 = fullscreen
+  private expandDirection: 'expand' | 'collapse' = 'expand'
+  private expandedIdx = -1
+  // Stored start/end transforms for the expanding card
+  private expandStart = { x: 0, y: 0, z: 0, scale: 1 }
+  private expandTarget = { x: 0, y: 0, z: 0, scale: 1 }
+
   declare onCardClick: (index: number) => void
-  /** Called when user taps (clicks without dragging) a card → open detail. */
   declare onCardActivate: (index: number) => void
+  /** Called when expand animation reaches peak (progress=1) → open detail. */
+  declare onCardExpanded: (index: number) => void
+  /** Called when collapse animation finishes → return to carousel. */
+  declare onCardCollapsed: () => void
 
   constructor(
     private readonly projects: Project[],
     onCardClick: (index: number) => void = () => {},
-    onCardActivate: (index: number) => void = () => {}
+    onCardActivate: (index: number) => void = () => {},
+    onCardExpanded: (index: number) => void = () => {},
+    onCardCollapsed: () => void = () => {}
   ) {
     this.group.name = 'works-portfolio'
     this.onCardClick = onCardClick
     this.onCardActivate = onCardActivate
+    this.onCardExpanded = onCardExpanded
+    this.onCardCollapsed = onCardCollapsed
     this.buildCards()
     this.bindEvents()
   }
 
   private buildCards(): void {
+    const loader = new THREE.TextureLoader()
     for (let i = 0; i < this.projects.length; i++) {
       const proj = this.projects[i]
       const grp = new THREE.Group()
@@ -49,14 +75,28 @@ export class WorksPortfolio {
       const col = new THREE.Color(proj.color)
 
       const mat = new THREE.MeshStandardMaterial({
-        color: new THREE.Color(0x222222),
-        emissive: col.clone().multiplyScalar(2),
-        emissiveIntensity: 3,
-        roughness: 0.2,
-        metalness: 0.9,
+        color: new THREE.Color(0x111111),
+        emissive: col.clone().multiplyScalar(1.5),
+        emissiveIntensity: 0.6,
+        roughness: 0.3,
+        metalness: 0.7,
         side: THREE.DoubleSide,
         transparent: true,
       })
+
+      // Load project texture asynchronously, apply when ready.
+      const texUrl = proj.textureUrl || proj.detailTextureUrl
+      let texture: THREE.Texture | null = null
+      if (texUrl) {
+        loader.load(texUrl, (tex) => {
+          tex.colorSpace = THREE.SRGBColorSpace
+          mat.map = tex
+          mat.emissiveIntensity = 0.2
+          mat.needsUpdate = true
+          texture = tex
+        })
+      }
+
       const mesh = new THREE.Mesh(geo, mat)
       mesh.userData = { idx: i }
       grp.add(mesh)
@@ -64,7 +104,7 @@ export class WorksPortfolio {
       grp.lookAt(0, 0.5, 10)
       this.group.add(grp)
 
-      this.cards.push({ group: grp, mesh, mat, color: col })
+      this.cards.push({ group: grp, mesh, mat, color: col, texture })
     }
   }
 
@@ -77,11 +117,13 @@ export class WorksPortfolio {
   }
 
   private onKey = (e: KeyboardEvent) => {
+    if (this.expanding) return
     if (e.key === 'ArrowRight' || e.key === ' ') this.goTo(this.currentIdx + 1)
     if (e.key === 'ArrowLeft') this.goTo(this.currentIdx - 1)
   }
 
   private onPointerDown = (e: PointerEvent) => {
+    if (this.expanding) return
     this.dragging = true
     this.dragStartX = e.clientX
     this.lastX = e.clientX
@@ -103,11 +145,9 @@ export class WorksPortfolio {
     if (!this.dragging) return
     this.dragging = false
     const dragDistance = Math.abs(e.clientX - this.dragStartX)
-    // Swipe: enough velocity → change project in overlay.
     if (Math.abs(this.vel) > 0.12) {
       this.goTo(this.currentIdx + (this.vel > 0 ? -1 : 1))
     } else if (dragDistance < 8) {
-      // Tap (click without drag) → open detail view for current card.
       this.onCardActivate(this.currentIdx)
     }
     this.dragOff = 0
@@ -121,7 +161,102 @@ export class WorksPortfolio {
   next(): void { this.goTo(this.currentIdx + 1) }
   prev(): void { this.goTo(this.currentIdx - 1) }
 
+  /**
+   * Start expanding the given card to fullscreen.
+   * Stores the card's current carousel transform as start, computes a
+   * fullscreen-cover transform as target. Animation runs in update().
+   * Calls onCardExpanded(idx) when progress reaches 1.
+   */
+  expandCard(idx: number): void {
+    if (this.expanding || idx < 0 || idx >= this.cards.length) return
+    this.expanding = true
+    this.expandDirection = 'expand'
+    this.expandProgress = 0
+    this.expandedIdx = idx
+
+    const card = this.cards[idx]
+    this.expandStart = {
+      x: card.group.position.x,
+      y: card.group.position.y,
+      z: card.group.position.z,
+      scale: card.group.scale.x,
+    }
+    // Target: center of screen, pushed toward camera, scaled to fill viewport.
+    // Camera is at ~[3,5,7] looking at [0,2,0] for works page. Place card
+    // at world origin facing camera, large enough to cover.
+    this.expandTarget = { x: 0, y: 2, z: 3, scale: 3.5 }
+  }
+
+  /**
+   * Collapse the expanded card back to its carousel position.
+   * Calls onCardCollapsed() when progress reaches 0.
+   */
+  collapseCard(): void {
+    if (!this.expanding || this.expandedIdx < 0) return
+    this.expandDirection = 'collapse'
+    this.expandProgress = 0
+    // Collapse starts from current (expanded) state back to carousel.
+    const card = this.cards[this.expandedIdx]
+    this.expandStart = {
+      x: card.group.position.x,
+      y: card.group.position.y,
+      z: card.group.position.z,
+      scale: card.group.scale.x,
+    }
+    // Recompute the carousel target position for this idx.
+    const w = this.wrapOffset(this.expandedIdx - this.currentIdx, this.cards.length)
+    const depth = THREE.MathUtils.clamp(Math.abs(w) / 1.5, 0, 1)
+    this.expandTarget = {
+      x: w * this.spacing,
+      y: 1.0 + Math.sin(w * 0.9) * 0.12 * (1 - depth),
+      z: -depth * 2.5,
+      scale: THREE.MathUtils.lerp(1, 0.6, depth),
+    }
+  }
+
+  get isExpanding(): boolean { return this.expanding }
+
   update(dt: number): void {
+    // ── Expand/collapse animation takes priority ──
+    if (this.expanding) {
+      const speed = 2.0 // 0.5s for full transition
+      this.expandProgress = Math.min(this.expandProgress + dt * speed, 1)
+      const eased = easeInOutCubic(this.expandProgress)
+
+      const card = this.cards[this.expandedIdx]
+      if (card) {
+        const x = THREE.MathUtils.lerp(this.expandStart.x, this.expandTarget.x, eased)
+        const y = THREE.MathUtils.lerp(this.expandStart.y, this.expandTarget.y, eased)
+        const z = THREE.MathUtils.lerp(this.expandStart.z, this.expandTarget.z, eased)
+        const s = THREE.MathUtils.lerp(this.expandStart.scale, this.expandTarget.scale, eased)
+        card.group.position.set(x, y, z)
+        card.group.scale.setScalar(s)
+        card.group.rotation.y = THREE.MathUtils.lerp(card.group.rotation.y, 0, eased)
+        card.mat.opacity = 1
+        card.mat.emissiveIntensity = THREE.MathUtils.lerp(card.mat.emissiveIntensity, 0.1, eased)
+      }
+
+      // Fade out other cards during expand, fade in during collapse.
+      for (let i = 0; i < this.cards.length; i++) {
+        if (i === this.expandedIdx) continue
+        const c = this.cards[i]
+        const targetOpacity = this.expandDirection === 'expand' ? 0 : 1
+        c.mat.opacity = THREE.MathUtils.lerp(c.mat.opacity, targetOpacity, eased)
+      }
+
+      if (this.expandProgress >= 1) {
+        if (this.expandDirection === 'expand') {
+          this.onCardExpanded(this.expandedIdx)
+        } else {
+          this.expanding = false
+          this.expandedIdx = -1
+          this.onCardCollapsed()
+        }
+      }
+      return
+    }
+
+    // ── Normal carousel update ──
     this.dragOff *= 0.9
 
     const diff = this.targetIdx - this.currentIdx
@@ -158,7 +293,7 @@ export class WorksPortfolio {
       card.group.rotation.y = THREE.MathUtils.lerp(card.group.rotation.y, rotY, dt * 4)
       card.mat.opacity = THREE.MathUtils.lerp(card.mat.opacity, opacity, dt * 3)
 
-      const emTarget = Math.abs(w) < 0.1 ? 0.6 : 0.15
+      const emTarget = Math.abs(w) < 0.1 ? 0.3 : 0.1
       card.mat.emissiveIntensity = THREE.MathUtils.lerp(card.mat.emissiveIntensity, emTarget, dt * 3)
     }
   }
@@ -180,6 +315,7 @@ export class WorksPortfolio {
     for (const card of this.cards) {
       card.mesh.geometry?.dispose()
       card.mat.dispose()
+      card.texture?.dispose()
       this.group.remove(card.group)
     }
     this.cards.length = 0
