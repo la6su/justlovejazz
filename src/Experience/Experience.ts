@@ -254,7 +254,8 @@ export class Experience {
       () => { this.onCardCollapsed() },                 // collapse done → return to carousel
     )
     // Add portfolio group at a position in camera FOV (works page camera is at [3,5,7] or [0,8,10])
-    this.portfolio.group.position.set(0, 1, 2)
+    // Portfolio group at world origin — frontal camera at [0,1,7] looks at [0,1,0].
+    this.portfolio.group.position.set(0, 1, 0)
     this.world.add(this.portfolio.group)
 
     if (!this.overlay) {

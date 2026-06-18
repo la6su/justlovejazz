@@ -25,9 +25,6 @@ export class WorksPortfolio {
   private dragOff = 0
   private dragging = false
   private dragStartX = 0
-  private vel = 0
-  private lastX = 0
-  private lastT = 0
   private spacing = 4.0
   private cardW = 3.0
   private cardH = 2.0
@@ -124,32 +121,25 @@ export class WorksPortfolio {
 
   private onPointerDown = (e: PointerEvent) => {
     if (this.expanding) return
+    // Track pointer down position for tap detection (no swipe drag).
     this.dragging = true
     this.dragStartX = e.clientX
-    this.lastX = e.clientX
-    this.lastT = performance.now()
-    this.vel = 0
   }
 
   private onPointerMove = (e: PointerEvent) => {
-    if (!this.dragging) return
-    this.dragOff = (e.clientX - this.dragStartX) * 0.004
-    const now = performance.now()
-    const dt = now - this.lastT
-    this.vel = dt > 0 ? (e.clientX - this.lastX) / dt : 0
-    this.lastX = e.clientX
-    this.lastT = now
+    // No swipe drag — slider moves only via keyboard arrows / UI buttons.
+    // Keep this handler for potential future cursor-follow effects only.
+    void e
   }
 
   private onPointerUp = (e: PointerEvent) => {
     if (!this.dragging) return
     this.dragging = false
     if (this.cards.length === 0) { this.dragOff = 0; return }
+    // Tap = pointerup with minimal movement (< 8px) → activate card.
+    // Swipe drag is intentionally disabled — use arrow keys to navigate.
     const dragDistance = Math.abs(e.clientX - this.dragStartX)
-    if (Math.abs(this.vel) > 0.12) {
-      this.goTo(this.currentIdx + (this.vel > 0 ? -1 : 1))
-    } else if (dragDistance < 8) {
-      // Clamp currentIdx before activate — can drift during fast swipes.
+    if (dragDistance < 8) {
       const safeIdx = ((this.currentIdx % this.cards.length) + this.cards.length) % this.cards.length
       this.onCardActivate(safeIdx)
     }
@@ -189,8 +179,9 @@ export class WorksPortfolio {
       z: card.group.position.z,
       scale: card.group.scale.x,
     }
-    // Target: center of screen, pushed toward camera, scaled to fill viewport.
-    this.expandTarget = { x: 0, y: 2, z: 3, scale: 3.5 }
+    // Target: center of screen (frontal camera at [0,1,7] looking at [0,1,0]).
+    // Push card toward camera (z=4) and scale up to fill viewport.
+    this.expandTarget = { x: 0, y: 1, z: 4, scale: 3.5 }
   }
 
   /**
