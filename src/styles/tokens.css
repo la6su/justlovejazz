@@ -309,4 +309,78 @@
   #jlj-splash, #jlj-splash-progress { transition: none; }
 }
 
+/* ── Project detail modal — integrated with 3D card ──
+ * The modal opens over the expanded 3D card. Background is semi-transparent
+ * dark with backdrop blur so the 3D card glows through. Content panel
+ * slides in from the right (desktop) / bottom (mobile).
+ */
+#project-modal .jlz-project-modal-body {
+  background: rgba(5, 5, 7, 0.85);
+  backdrop-filter: blur(20px) saturate(1.2);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+}
+
+#project-modal .detail-hero {
+  max-width: 900px;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: var(--jlz-space-10);
+  align-items: center;
+  padding: var(--jlz-space-8);
+}
+
+#project-modal .detail-hero__media {
+  border-radius: var(--jlz-radius-lg);
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+#project-modal .detail-hero__image {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+#project-modal .detail-hero__title {
+  font-size: var(--jlz-type-display-md);
+  font-weight: var(--jlz-weight-light);
+  letter-spacing: var(--jlz-tracking-tight);
+  color: var(--jlz-color-text);
+  margin: var(--jlz-space-2) 0 var(--jlz-space-4);
+}
+
+#project-modal .detail-hero__meta {
+  display: flex;
+  gap: var(--jlz-space-4);
+  font-size: var(--jlz-type-small);
+  letter-spacing: var(--jlz-tracking-wide);
+  color: var(--jlz-color-text-muted);
+  text-transform: uppercase;
+}
+
+#project-modal .detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--jlz-space-2);
+  margin-top: var(--jlz-space-4);
+}
+
+#project-modal .detail-tag {
+  font-size: var(--jlz-type-caption);
+  font-family: var(--jlz-font-mono);
+  padding: var(--jlz-space-1) var(--jlz-space-3);
+  border: 1px solid var(--jlz-color-border);
+  border-radius: var(--jlz-radius-full);
+  color: var(--jlz-color-text-muted);
+}
+
+@media (max-width: 768px) {
+  #project-modal .detail-hero {
+    grid-template-columns: 1fr;
+    gap: var(--jlz-space-4);
+    padding: var(--jlz-space-4);
+  }
+}
+
 
