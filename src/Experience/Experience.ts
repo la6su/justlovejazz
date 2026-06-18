@@ -19,6 +19,7 @@ import { ProjectOverlay } from '../UI/ProjectOverlay'
 import { ProjectDetail } from '../UI/ProjectDetail'
 import { PerfMonitor } from '../core/PerfMonitor'
 import { DissolveOverlay } from '../shaders/dissolveOverlay'
+import { StickyTransition } from '../shaders/StickyTransition'
 
 /**
  * Section-arrival transition tuning.
@@ -55,6 +56,9 @@ export class Experience {
   // Project transition dissolve (shader effect on card click)
   private projectDissolve: DissolveOverlay | null = null
   private projectDissolveActive = false
+  // Sticky image transition (Anemolo-inspired) for tap → detail
+  private stickyTransition: StickyTransition | null = null
+  private stickyActive = false
 
   constructor(_ui: UIManager) {
     this.sizes = new Sizes()
@@ -221,6 +225,8 @@ export class Experience {
     this.overlay?.dispose()
     this.projectDissolve?.dispose()
     this.projectDissolve = null
+    this.stickyTransition?.dispose()
+    this.stickyTransition = null
     // Sizes + Input own window listeners — clean them up to avoid leaks
     // on hot-reload (Vite HMR) and on explicit teardown.
     this.sizes.destroy()
@@ -348,61 +354,97 @@ export class Experience {
   }
 
   /**
-   * Open the full-screen project detail view with a shader dissolve.
-   * Flow: dissolve IN (canvas covered) → open modal → dissolve OUT.
-   * Close: ProjectDetail handles via UIkit escClose/bgClose; on close,
-   * the canvas is already visible underneath.
+   * Open the full-screen project detail view with a sticky image transition
+   * (Anemolo StickyImageEffect inspired, inverted: expands OUT to fullscreen).
+   *
+   * Flow:
+   * 1. Load project texture
+   * 2. Sticky plane expands from center to fullscreen (progress 0→1, direction=0)
+   * 3. At peak, open ProjectDetail modal (DOM appears over the sticky plane)
+   * 4. Hide sticky plane (modal covers it)
+   *
+   * Close is handled by UIkit modal (Esc / bg click).
    */
-  private openProjectDetail(idx: number): void {
+  private async openProjectDetail(idx: number): Promise<void> {
     if (!this.portfolio || !this.projectDetail) return
+    if (this.stickyActive) return
     const projs = (this.portfolio as any).projects
     if (!Array.isArray(projs) || projs.length === 0) return
     const safeIdx = ((idx % projs.length) + projs.length) % projs.length
     const project = projs[safeIdx]
     if (!project) return
 
-    // No dissolve overlay → just open modal directly (graceful fallback).
-    if (!this.projectDissolve) {
+    // Load project texture (use AssetManager for context-driven disposal).
+    let texture: THREE.Texture | null = null
+    try {
+      const { AssetManager } = await import('../core/AssetManager')
+      texture = await AssetManager.getInstance().loadTexture(
+        project.textureUrl || project.detailTextureUrl,
+        'project-detail',
+      )
+    } catch {
+      texture = null
+    }
+
+    // No texture or no sticky support → fall back to direct modal open.
+    if (!texture) {
       void this.projectDetail.open(project)
       return
     }
 
-    // Dissolve IN → open modal at peak → Dissolve OUT.
-    const overlay = this.projectDissolve
-    overlay.meshGroup.visible = true
-    overlay.setProgress(0)
-    this.projectDissolveActive = true
+    // Create sticky transition plane (WebGPU only; fallback to modal on WebGL).
+    const { DeviceCapability } = await import('../core/DeviceCapability')
+    if (DeviceCapability.getInstance().mode !== 'webgpu') {
+      void this.projectDetail.open(project)
+      return
+    }
 
-    const duration = 500 // ms
+    try {
+      if (!this.stickyTransition) {
+        this.stickyTransition = new StickyTransition({
+          texture,
+          direction: 0, // 0 = expand out
+          offset: 0.5,
+        })
+        this.stickyTransition.fitToScreen(this.sizes.width, this.sizes.height)
+        this.scene.add(this.stickyTransition.meshGroup)
+      } else {
+        this.stickyTransition.setTexture(texture)
+        this.stickyTransition.setDirection(0)
+      }
+    } catch {
+      // TSL material construction failed → open modal directly.
+      void this.projectDetail.open(project)
+      return
+    }
+
+    // Run sticky expand transition.
+    const sticky = this.stickyTransition
+    sticky.meshGroup.visible = true
+    sticky.setProgress(0)
+    sticky.setDirection(0) // expand OUT
+    sticky.setWaveIntensity(0.3)
+    this.stickyActive = true
+
+    const duration = 700 // ms
     const start = performance.now()
 
     const animate = (now: number) => {
       const elapsed = now - start
       const t = Math.min(elapsed / duration, 1)
-      // Half triangle: 0 → 1 over full duration (cover screen).
-      overlay.setProgress(t)
-      overlay.update(0.016)
+      // Ease-out cubic for smooth expand.
+      const eased = 1 - Math.pow(1 - t, 3)
+      sticky.setProgress(eased)
+      sticky.update(0.016)
 
       if (t < 1) {
         requestAnimationFrame(animate)
       } else {
-        // Screen fully covered → open modal (DOM appears under the dissolve).
+        // Expansion complete → open modal over the sticky plane.
         void this.projectDetail!.open(project).then(() => {
-          // Modal open → dissolve OUT to reveal it.
-          overlay.setProgress(1)
-          const outStart = performance.now()
-          const animateOut = (now2: number) => {
-            const t2 = Math.min((now2 - outStart) / duration, 1)
-            overlay.setProgress(1 - t2)
-            overlay.update(0.016)
-            if (t2 < 1) {
-              requestAnimationFrame(animateOut)
-            } else {
-              overlay.meshGroup.visible = false
-              this.projectDissolveActive = false
-            }
-          }
-          requestAnimationFrame(animateOut)
+          // Modal is open; hide sticky plane (modal covers it).
+          sticky.meshGroup.visible = false
+          this.stickyActive = false
         })
       }
     }
