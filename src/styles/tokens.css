@@ -309,77 +309,122 @@
   #jlj-splash, #jlj-splash-progress { transition: none; }
 }
 
-/* ── Project detail modal — integrated with 3D card ──
- * The modal opens over the expanded 3D card. Background is semi-transparent
- * dark with backdrop blur so the 3D card glows through. Content panel
- * slides in from the right (desktop) / bottom (mobile).
+/* ── Project detail modal — fullscreen with background texture ──
+ * The modal covers the entire screen. The project's detail texture
+ * fills the background; a dark scrim ensures text readability; content
+ * panel sits centered on top.
  */
 #project-modal .jlz-project-modal-body {
-  background: rgba(5, 5, 7, 0.85);
-  backdrop-filter: blur(20px) saturate(1.2);
-  -webkit-backdrop-filter: blur(20px) saturate(1.2);
-}
-
-#project-modal .detail-hero {
-  max-width: 900px;
-  width: 100%;
-  display: grid;
-  grid-template-columns: 1.2fr 1fr;
-  gap: var(--jlz-space-10);
-  align-items: center;
-  padding: var(--jlz-space-8);
-}
-
-#project-modal .detail-hero__media {
-  border-radius: var(--jlz-radius-lg);
+  background: var(--jlz-color-bg);
+  padding: 0 !important;
   overflow: hidden;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 
-#project-modal .detail-hero__image {
+#project-modal .jlz-detail-root {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#project-modal .jlz-detail-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(5, 5, 7, 0.92) 0%,
+    rgba(5, 5, 7, 0.75) 50%,
+    rgba(5, 5, 7, 0.92) 100%
+  );
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+#project-modal .jlz-detail-content {
+  position: relative;
+  z-index: 2;
+  max-width: 720px;
   width: 100%;
-  height: auto;
-  display: block;
-}
-
-#project-modal .detail-hero__title {
-  font-size: var(--jlz-type-display-md);
-  font-weight: var(--jlz-weight-light);
-  letter-spacing: var(--jlz-tracking-tight);
+  padding: var(--jlz-space-12) var(--jlz-space-16);
   color: var(--jlz-color-text);
-  margin: var(--jlz-space-2) 0 var(--jlz-space-4);
 }
 
-#project-modal .detail-hero__meta {
+#project-modal .jlz-detail-close {
+  position: absolute;
+  top: var(--jlz-space-6);
+  right: var(--jlz-space-8);
+  z-index: 3;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--jlz-color-text-muted);
+  transition: color var(--jlz-duration-fast) var(--jlz-ease-state);
+  padding: var(--jlz-space-3);
+}
+
+#project-modal .jlz-detail-close:hover {
+  color: var(--jlz-color-text);
+}
+
+#project-modal .jlz-detail-meta {
   display: flex;
   gap: var(--jlz-space-4);
   font-size: var(--jlz-type-small);
   letter-spacing: var(--jlz-tracking-wide);
   color: var(--jlz-color-text-muted);
   text-transform: uppercase;
+  font-family: var(--jlz-font-mono);
+  margin-bottom: var(--jlz-space-4);
 }
 
-#project-modal .detail-tags {
+#project-modal .jlz-detail-title {
+  font-size: var(--jlz-type-display-lg);
+  font-weight: var(--jlz-weight-light);
+  letter-spacing: var(--jlz-tracking-tight);
+  color: var(--jlz-color-text);
+  margin: 0 0 var(--jlz-space-6);
+  line-height: var(--jlz-leading-tight);
+}
+
+#project-modal .jlz-detail-description {
+  font-size: var(--jlz-type-body-lg);
+  line-height: var(--jlz-leading-loose);
+  color: var(--jlz-color-text-muted);
+  margin: 0 0 var(--jlz-space-8);
+  max-width: 560px;
+}
+
+#project-modal .jlz-detail-tags {
   display: flex;
   flex-wrap: wrap;
   gap: var(--jlz-space-2);
-  margin-top: var(--jlz-space-4);
+  margin-bottom: var(--jlz-space-10);
 }
 
-#project-modal .detail-tag {
+#project-modal .jlz-detail-tag {
   font-size: var(--jlz-type-caption);
   font-family: var(--jlz-font-mono);
   padding: var(--jlz-space-1) var(--jlz-space-3);
   border: 1px solid var(--jlz-color-border);
   border-radius: var(--jlz-radius-full);
   color: var(--jlz-color-text-muted);
+  letter-spacing: var(--jlz-tracking-wide);
+}
+
+#project-modal .jlz-detail-cta {
+  margin-top: var(--jlz-space-8);
 }
 
 @media (max-width: 768px) {
-  #project-modal .detail-hero {
-    grid-template-columns: 1fr;
-    gap: var(--jlz-space-4);
-    padding: var(--jlz-space-4);
+  #project-modal .jlz-detail-content {
+    padding: var(--jlz-space-8) var(--jlz-space-6);
+  }
+  #project-modal .jlz-detail-title {
+    font-size: var(--jlz-type-display-md);
   }
 }
 

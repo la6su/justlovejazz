@@ -307,7 +307,8 @@ export class WorksPortfolio {
       card.group.visible = true
 
       const depth = THREE.MathUtils.clamp(Math.abs(w) / 1.5, 0, 1)
-      const x = w * this.spacing
+      // Add live dragOff so swipe moves cards in real-time during drag.
+      const x = (w + this.dragOff) * this.spacing
       const z = -depth * 2.5
       const y = Math.sin(w * 0.9) * 0.12 * (1 - depth)
       const scale = THREE.MathUtils.lerp(1, 0.6, depth)
