@@ -41,33 +41,40 @@ export class StickyTransition {
   private material: MeshBasicNodeMaterial
   private mesh: THREE.Mesh
   private geometry: THREE.PlaneGeometry
+  private currentTexture: THREE.Texture
 
   // Mutable uniforms (animated per-frame)
   private uProgress: TSLNode
   private uDirection: TSLNode
   private uWaveIntensity: TSLNode
   private uOffset: TSLNode
-  private uTexture: TSLNode
   private uTime: TSLNode
 
   constructor(opts: StickyTransitionOptions) {
     this.geometry = new THREE.PlaneGeometry(2, 2) // fullscreen quad (will scale)
+    this.currentTexture = opts.texture
 
     this.uProgress = uniform(0)
     this.uDirection = uniform(opts.direction)
     this.uOffset = uniform(opts.offset)
     this.uWaveIntensity = uniform(0)
     this.uTime = uniform(0)
-    // Texture uniform: TSL's uniform() accepts Texture at runtime but
-    // @types/three doesn't type it. Adapter cast here (AUTONOMY: any only here).
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    this.uTexture = uniform(opts.texture as any) as TSLNode
+
+    this.material = this.buildMaterial()
+    this.mesh = new THREE.Mesh(this.geometry, this.material)
+    this.mesh.renderOrder = 9998
+    this.mesh.visible = false
+    this.mesh.frustumCulled = false
+  }
+
+  private buildMaterial(): MeshBasicNodeMaterial {
+    const mat = new MeshBasicNodeMaterial()
+    mat.transparent = true
 
     // ── Vertex: sticky deformation (port of Anemolo vertex shader) ──
-    // Modifies Z of positionLocal based on wave-driven progress.
-    const stickyVertex = Fn(() => {
+    mat.positionNode = Fn(() => {
       const dist = uv().sub(vec2(0.5, 0.5)).length()
-      const sizeDist = float(0.7071) // length(vec2(0.5,0.5))
+      const sizeDist = float(0.7071)
       const normalizedDistance = dist.div(sizeDist)
 
       const stickOutEffect = normalizedDistance
@@ -84,37 +91,26 @@ export class StickyTransition {
       const offsetOutProgress = clamp(float(1.0).sub(waveOutSmooth), 0, 1)
       const offsetProgress = mix(offsetInProgress, offsetOutProgress, this.uDirection)
 
-      // Z deformation: stick out/in + wave
       const zDeform = stickEffect.mul(this.uOffset).mul(stickProgress).sub(
         this.uOffset.mul(offsetProgress)
       )
       const waveZ = sin(dist.mul(8.0).sub(this.uTime.mul(2.0))).mul(this.uWaveIntensity)
 
-      // Return modified position: keep x/y, replace z.
-      // TSL typing for vec3(Node, Node, Node) is fragile — cast through TSLNode.
       return vec3(
         positionLocal.x as TSLNode,
         positionLocal.y as TSLNode,
         zDeform.add(waveZ) as TSLNode,
       ) as TSLNode
-    })
+    })() as TSLNode
 
     // ── Fragment: texture sample ──
-    const stickyFragment = Fn(() => {
-      const tex = texture(this.uTexture)
-      return tex
-    })
+    // texture() expects a THREE.Texture instance directly (not a uniform).
+    // For texture swaps, rebuild the material (see setTexture).
+    mat.colorNode = Fn(() => {
+      return texture(this.currentTexture)
+    })() as TSLNode
 
-    this.material = new MeshBasicNodeMaterial()
-    this.material.transparent = true
-    // Use the vertex function to set positionNode
-    this.material.positionNode = stickyVertex() as TSLNode
-    this.material.colorNode = stickyFragment() as TSLNode
-
-    this.mesh = new THREE.Mesh(this.geometry, this.material)
-    this.mesh.renderOrder = 9998
-    this.mesh.visible = false
-    this.mesh.frustumCulled = false
+    return mat
   }
 
   /** Set transition progress 0 → 1. */
@@ -132,7 +128,13 @@ export class StickyTransition {
   }
 
   setTexture(tex: THREE.Texture): void {
-    ;(this.uTexture as { value: THREE.Texture }).value = tex
+    if (tex === this.currentTexture) return
+    this.currentTexture = tex
+    // Rebuild material — texture() bakes the Texture ref at build time.
+    const oldMat = this.material
+    this.material = this.buildMaterial()
+    this.mesh.material = this.material
+    oldMat.dispose()
   }
 
   update(dt: number): void {
