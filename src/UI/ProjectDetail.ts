@@ -6,10 +6,18 @@ export class ProjectDetail {
   private readonly modal: HTMLElement | null
   private readonly content: HTMLElement | null
   private instance: ReturnType<typeof UIkit.modal> | null = null
+  /** Called when the modal is hidden (Esc / bg click) → trigger card collapse. */
+  public onClose: (() => void) | null = null
 
   constructor() {
     this.modal = document.getElementById('project-modal')
     this.content = document.getElementById('modal-content')
+    // Listen for UIkit modal hide event → notify caller to collapse card.
+    if (this.modal) {
+      this.modal.addEventListener('hidden', () => {
+        this.onClose?.()
+      })
+    }
   }
 
   async open(project: Project): Promise<void> {
