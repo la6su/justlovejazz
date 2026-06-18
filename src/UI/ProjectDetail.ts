@@ -6,10 +6,18 @@ export class ProjectDetail {
   private readonly modal: HTMLElement | null
   private readonly content: HTMLElement | null
   private instance: ReturnType<typeof UIkit.modal> | null = null
+  /** Called when the modal is hidden (Esc / bg click) → trigger card collapse. */
+  public onClose: (() => void) | null = null
 
   constructor() {
     this.modal = document.getElementById('project-modal')
     this.content = document.getElementById('modal-content')
+    // Listen for UIkit modal hide event → notify caller to collapse card.
+    if (this.modal) {
+      this.modal.addEventListener('hidden', () => {
+        this.onClose?.()
+      })
+    }
   }
 
   async open(project: Project): Promise<void> {
@@ -37,12 +45,27 @@ export class ProjectDetail {
         </div>
       </div>
     `
+    // Remove aria-hidden before showing — UIkit doesn't clear it, and a
+    // focused element inside an aria-hidden ancestor is a11y violation.
+    this.modal.removeAttribute('aria-hidden')
+    this.modal.setAttribute('aria-modal', 'true')
     this.instance = UIkit.modal(this.modal, { bgClose: true, escClose: true })
     this.instance?.show()
+
+    // Move focus into the modal so screen readers announce it.
+    const focusable = this.modal.querySelector<HTMLElement>(
+      'a, button, [tabindex], input, select, textarea'
+    )
+    focusable?.focus()
   }
 
   close(): void {
     this.instance?.hide()
+    // Restore aria-hidden on close (modal hidden from AT).
+    if (this.modal) {
+      this.modal.setAttribute('aria-hidden', 'true')
+      this.modal.removeAttribute('aria-modal')
+    }
     if (this.content) this.content.innerHTML = ''
   }
 }

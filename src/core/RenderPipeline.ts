@@ -12,7 +12,6 @@ import { bloom } from 'three/addons/tsl/display/BloomNode.js'
 import {
   applyProfessionalGrain,
   applyCinematicVignette,
-  acesTonemap,
 } from '../shaders/tsl-utils'
 import type { TSLNode } from '../types/tsl'
 
@@ -46,6 +45,10 @@ export interface PostParams {
   vignette: number
   grain: number
   chromatic?: number
+  /** Bloom blur radius (0–1). Track B: per-section. */
+  bloomRadius?: number
+  /** Bloom luminance threshold (0–1). Track B: per-section. */
+  bloomThreshold?: number
 }
 
 // ─── GLSL Shaders (WebGL path) ───────────────────────────────────
@@ -195,7 +198,7 @@ const GAUSSIAN_WEIGHTS: number[] = (() => {
  */
 export class RenderPipeline {
   private _config!: Required<RenderPipelineConfig>
-  private _params!: PostParams & { chromatic: number }
+  private _params!: PostParams & { chromatic: number; bloomRadius: number; bloomThreshold: number }
   
   // RTs
   private _rtScene?: THREE.WebGLRenderTarget | null
@@ -225,11 +228,12 @@ export class RenderPipeline {
   private _uChromatic?: TSLNode | null
   private _uTime?: TSLNode | null
   // BloomNode uniform handle — mutate .value each frame for section crossfade.
-  // (radius + threshold are set at construction; per-section tuning is Track B.)
   private _bloomStrength?: TSLNode | null
+  private _bloomRadius?: TSLNode | null
+  private _bloomThreshold?: TSLNode | null
   
   private constructor() {
-    this._params = { bloom: 1.0, vignette: 1.0, grain: 1.0, chromatic: 0.0 }
+    this._params = { bloom: 1.0, vignette: 1.0, grain: 1.0, chromatic: 0.0, bloomRadius: 0.6, bloomThreshold: 0.5 }
   }
   
   /** Factory: create pipeline for renderer */
@@ -271,6 +275,11 @@ export class RenderPipeline {
     this._params.vignette = params.vignette
     this._params.grain = params.grain
     this._params.chromatic = params.chromatic ?? this._params.chromatic ?? 0
+    // Track B: per-section bloom radius + threshold (WebGPU uses these via
+    // uniform mutation in _renderWebGPU; WebGL path uses fixed config values
+    // since its blur pipeline is RT-based, not uniform-driven).
+    this._params.bloomRadius = params.bloomRadius ?? this._params.bloomRadius
+    this._params.bloomThreshold = params.bloomThreshold ?? this._params.bloomThreshold
 
     // Update composite pass uniforms (WebGL)
     if (this._passComposite) {
@@ -342,6 +351,8 @@ export class RenderPipeline {
     this._uChromatic = null
     this._uTime = null
     this._bloomStrength = null
+    this._bloomRadius = null
+    this._bloomThreshold = null
   }
   
   // ─── Property accessors ──────────────────────────────────────
@@ -563,17 +574,18 @@ export class RenderPipeline {
     const sceneColor = this._scenePass
 
     // ── Mip-chain bloom (three/addons BloomNode) ──
-    // threshold = config.bloomThreshold (luminance gate, 0.5 default)
-    // strength  = per-frame from _params.bloom (section crossfade target)
-    // radius    = 0.6 (mid-soft; tune per section in Track B)
+    // All three params (strength, radius, threshold) are exposed as uniforms
+    // and mutated per-frame from _params for section crossfade (Track B).
     const bloomNode = bloom(
       sceneColor,
       this._params.bloom,
-      0.6,
-      this._config.bloomThreshold,
+      this._params.bloomRadius ?? 0.6,
+      this._params.bloomThreshold ?? this._config.bloomThreshold,
     )
-    // Hold uniform ref for per-frame mutation (radius/threshold fixed at build).
+    // Hold uniform refs for per-frame mutation.
     this._bloomStrength = bloomNode.strength as unknown as TSLNode
+    this._bloomRadius = bloomNode.radius as unknown as TSLNode
+    this._bloomThreshold = bloomNode.threshold as unknown as TSLNode
 
     // Additive composite: scene + bloom.
     let color: TSLNode = sceneColor.add(bloomNode)
@@ -588,9 +600,11 @@ export class RenderPipeline {
       color = applyCinematicVignette(color, screenUV, this._uVignette.mul(0.4))
     }
 
-    // ── ACES tonemap + output color space ──
-    // renderOutput applies renderer tone mapping + output color space.
-    const output = renderOutput(acesTonemap(color), null, null)
+    // ── Output: renderOutput applies renderer.toneMapping + outputColorSpace.
+    // Do NOT apply acesTonemap manually here — that would double-tonemap
+    // (manual + renderer toneMapping) and blow the frame to white.
+    // WebGPURenderer.toneMapping is set to ACESFilmic in Renderer constructor.
+    const output = renderOutput(color, null, null)
 
     this._nativePipeline = new NativeRenderPipelineCtor(this._renderer, output)
   }
@@ -612,6 +626,8 @@ export class RenderPipeline {
 
     // Sync uniforms from current params (PostProcessingManager crossfade target).
     if (this._bloomStrength) this._bloomStrength.value = this._params.bloom
+    if (this._bloomRadius) this._bloomRadius.value = this._params.bloomRadius ?? 0.6
+    if (this._bloomThreshold) this._bloomThreshold.value = this._params.bloomThreshold ?? 0.5
     if (this._uVignette) this._uVignette.value = this._params.vignette
     if (this._uGrain) this._uGrain.value = this._params.grain
     if (this._uChromatic) this._uChromatic.value = this._params.chromatic
