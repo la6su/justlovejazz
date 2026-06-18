@@ -25,6 +25,9 @@ export class WorksPortfolio {
   private dragOff = 0
   private dragging = false
   private dragStartX = 0
+  private vel = 0
+  private lastX = 0
+  private lastT = 0
   private spacing = 4.0
   private cardW = 3.0
   private cardH = 2.0
@@ -121,27 +124,47 @@ export class WorksPortfolio {
 
   private onPointerDown = (e: PointerEvent) => {
     if (this.expanding) return
-    // Track pointer down position for tap detection (no swipe drag).
+    // Ignore clicks on UI overlay/modal/nav — they have their own handlers.
+    const target = e.target as HTMLElement
+    if (target.closest('.project-overlay, #project-modal, #jlj-splash, #main-nav')) return
     this.dragging = true
     this.dragStartX = e.clientX
+    this.lastX = e.clientX
+    this.lastT = performance.now()
+    this.vel = 0
   }
 
   private onPointerMove = (e: PointerEvent) => {
-    // No swipe drag — slider moves only via keyboard arrows / UI buttons.
-    // Keep this handler for potential future cursor-follow effects only.
-    void e
+    if (!this.dragging) return
+    // Live drag offset for visual feedback during swipe.
+    this.dragOff = (e.clientX - this.dragStartX) * 0.004
+    const now = performance.now()
+    const dt = now - this.lastT
+    this.vel = dt > 0 ? (e.clientX - this.lastX) / dt : 0
+    this.lastX = e.clientX
+    this.lastT = now
   }
 
   private onPointerUp = (e: PointerEvent) => {
     if (!this.dragging) return
     this.dragging = false
     if (this.cards.length === 0) { this.dragOff = 0; return }
-    // Tap = pointerup with minimal movement (< 8px) → activate card.
-    // Swipe drag is intentionally disabled — use arrow keys to navigate.
+    const target = e.target as HTMLElement
+    if (target.closest('.project-overlay, #project-modal, #jlj-splash, #main-nav')) {
+      this.dragOff = 0
+      return
+    }
     const dragDistance = Math.abs(e.clientX - this.dragStartX)
-    if (dragDistance < 8) {
+    if (Math.abs(this.vel) > 0.12) {
+      // Swipe with velocity → change project.
+      this.goTo(this.currentIdx + (this.vel > 0 ? -1 : 1))
+    } else if (dragDistance < 8) {
+      // Tap (click without drag) → open detail.
       const safeIdx = ((this.currentIdx % this.cards.length) + this.cards.length) % this.cards.length
       this.onCardActivate(safeIdx)
+    } else if (dragDistance > 40) {
+      // Slow drag beyond threshold → change project in drag direction.
+      this.goTo(this.currentIdx + (e.clientX < this.dragStartX ? 1 : -1))
     }
     this.dragOff = 0
   }
@@ -189,9 +212,13 @@ export class WorksPortfolio {
    * Calls onCardCollapsed() when progress reaches 0.
    */
   collapseCard(): void {
-    if (!this.expanding || this.expandedIdx < 0) return
+    // Can collapse even if expanding animation finished (expanding=false)
+    // — we just need a valid expandedIdx.
+    if (this.expandedIdx < 0) return
+    if (this.cards[this.expandedIdx] === undefined) return
     this.expandDirection = 'collapse'
     this.expandProgress = 0
+    this.expanding = true
     // Collapse starts from current (expanded) state back to carousel.
     const card = this.cards[this.expandedIdx]
     this.expandStart = {
@@ -243,7 +270,11 @@ export class WorksPortfolio {
 
       if (this.expandProgress >= 1) {
         if (this.expandDirection === 'expand') {
+          // Expand complete — card is fullscreen. Keep expanding=true so
+          // collapse can run. Notify Experience to open detail overlay.
           this.onCardExpanded(this.expandedIdx)
+          // Stop the expand animation loop (card stays fullscreen).
+          this.expanding = false
         } else {
           this.expanding = false
           this.expandedIdx = -1
