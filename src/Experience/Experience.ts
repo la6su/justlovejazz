@@ -17,6 +17,7 @@ import type { WebGLTextManager } from './WebGLTextManager'
 import { WorksPortfolio } from './WorksPortfolio'
 import { ProjectOverlay } from '../UI/ProjectOverlay'
 import { PerfMonitor } from '../core/PerfMonitor'
+import { DissolveOverlay } from '../shaders/dissolveOverlay'
 
 /**
  * Section-arrival transition tuning.
@@ -49,6 +50,9 @@ export class Experience {
   private portfolio: WorksPortfolio | null = null
   private overlay: ProjectOverlay | null = null
   private currentSectionContext: string | null = null
+  // Project transition dissolve (shader effect on card click)
+  private projectDissolve: DissolveOverlay | null = null
+  private projectDissolveActive = false
 
   constructor(_ui: UIManager) {
     this.sizes = new Sizes()
@@ -151,6 +155,13 @@ export class Experience {
     // On the works page ensurePortfolio() → onProjectSelect() re-shows it.
     if (page !== 'works') {
       this.overlay?.hide()
+      // Cancel any in-flight project dissolve transition.
+      if (this.projectDissolve) {
+        this.projectDissolveActive = false
+        this._pendingProject = null
+        this.projectDissolve.meshGroup.visible = false
+        this.projectDissolve.setProgress(0)
+      }
     }
     // Dispose existing portfolio — it was bound to the old world which we
     // are about to destroy. A fresh portfolio will be created for the new
@@ -206,6 +217,8 @@ export class Experience {
     this.camera.destroy()
     this.portfolio?.dispose()
     this.overlay?.dispose()
+    this.projectDissolve?.dispose()
+    this.projectDissolve = null
     // Sizes + Input own window listeners — clean them up to avoid leaks
     // on hot-reload (Vite HMR) and on explicit teardown.
     this.sizes.destroy()
@@ -243,6 +256,18 @@ export class Experience {
       this.overlay.onPrev(() => this.portfolio?.prev())
       this.overlay.onNext(() => this.portfolio?.next())
     }
+    // Create the project transition dissolve overlay (shader wipe effect).
+    // Reused across all project selections on the works page.
+    if (!this.projectDissolve) {
+      try {
+        this.projectDissolve = new DissolveOverlay().init(this.scene)
+        this.projectDissolve.meshGroup.visible = false
+      } catch {
+        // TSL material may fail on some drivers — dissolve is optional,
+        // overlay.show() still works without it.
+        this.projectDissolve = null
+      }
+    }
     this.onProjectSelect(0)
   }
 
@@ -250,12 +275,69 @@ export class Experience {
     if (!this.portfolio || !this.overlay) return
     const projs = (this.portfolio as any).projects
     if (!Array.isArray(projs) || projs.length === 0) return
-    // Clamp idx into valid range — goTo() uses modulo but a fast swipe
-    // can race ahead of currentIdx update, yielding an out-of-range idx.
     const safeIdx = ((idx % projs.length) + projs.length) % projs.length
     const project = projs[safeIdx]
-    if (!project) return // defensive: still undefined → skip, don't crash
-    this.overlay.show(project, safeIdx, projs.length)
+    if (!project) return
+
+    // If a dissolve transition is already running, just update the target
+    // project (will be applied at mid-transition).
+    if (this.projectDissolveActive) {
+      this._pendingProject = { project, idx: safeIdx, total: projs.length }
+      return
+    }
+
+    // First selection: show immediately (no dissolve on initial load).
+    if (!this.projectDissolve) {
+      this.overlay.show(project, safeIdx, projs.length)
+      return
+    }
+
+    // Subsequent selections: dissolve transition.
+    // Phase 1: dissolve IN (0 → 1) — screen covered by noise wipe.
+    // Phase 2 (at mid): swap overlay content.
+    // Phase 3: dissolve OUT (1 → 0) — reveal with new project.
+    this._runProjectDissolve(project, safeIdx, projs.length)
+  }
+
+  private _pendingProject: { project: unknown; idx: number; total: number } | null = null
+
+  private _runProjectDissolve(project: unknown, idx: number, total: number): void {
+    if (!this.projectDissolve || !this.overlay) return
+    this.projectDissolveActive = true
+    const overlay = this.projectDissolve
+    overlay.meshGroup.visible = true
+    overlay.setProgress(0)
+
+    const duration = 600 // ms total (300 in + 300 out)
+    const start = performance.now()
+
+    const animate = (now: number) => {
+      const elapsed = now - start
+      const t = Math.min(elapsed / duration, 1)
+      // Triangle wave: 0→1 over first half, 1→0 over second half.
+      const progress = t < 0.5 ? t * 2 : (1 - t) * 2
+      overlay.setProgress(progress)
+      overlay.update(0.016)
+
+      // Mid-point: swap overlay content to new project.
+      if (t >= 0.5 && this._pendingProject) {
+        const p = this._pendingProject
+        this.overlay!.show(p.project as never, p.idx, p.total)
+        this._pendingProject = null
+      } else if (t >= 0.5 && !this._pendingProject) {
+        // First-time swap at mid.
+        this.overlay!.show(project as never, idx, total)
+      }
+
+      if (t < 1) {
+        requestAnimationFrame(animate)
+      } else {
+        overlay.meshGroup.visible = false
+        overlay.setProgress(0)
+        this.projectDissolveActive = false
+      }
+    }
+    requestAnimationFrame(animate)
   }
 
   private async ensureWebGLTextManager(): Promise<void> {
