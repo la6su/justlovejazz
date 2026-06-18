@@ -152,7 +152,13 @@ export class Experience {
     if (page !== 'works') {
       this.overlay?.hide()
     }
-    void this.ensurePortfolio()
+    // Dispose existing portfolio — it was bound to the old world which we
+    // are about to destroy. A fresh portfolio will be created for the new
+    // world in rebuildWorld() → ensurePortfolio().
+    if (this.portfolio) {
+      this.portfolio.dispose()
+      this.portfolio = null
+    }
     if (this.world) {
       this.scene.remove(this.world)
       this.world.dispose()
@@ -163,7 +169,12 @@ export class Experience {
     }
     this.currentSectionContext = null
     this.bus.cancelAll()
-    void this.rebuildWorld()
+    // rebuildWorld() builds the new world, THEN ensures portfolio on it.
+    void this.rebuildWorld().then(() => {
+      if (document.body.dataset.page === 'works') {
+        void this.ensurePortfolio()
+      }
+    })
   }
 
   private async rebuildWorld(): Promise<void> {
@@ -204,11 +215,22 @@ export class Experience {
   }
 
   private async ensurePortfolio(): Promise<void> {
+    // Guard against duplicate calls (race between init and switchPage).
     if (this.portfolio) return
     const page = document.body.dataset.page
     if (page !== 'works') return
+    // World must exist and be in the scene before adding portfolio to it.
+    if (!this.world || !this.scene.children.includes(this.world)) {
+      // Wait one frame for rebuildWorld to finish, then retry.
+      await new Promise((r) => requestAnimationFrame(() => r(null)))
+      if (!this.world || !this.scene.children.includes(this.world)) return
+    }
 
     const { PROJECTS } = await import('../Data/Projects')
+    // Re-check after async import — page may have changed during await.
+    if (document.body.dataset.page !== 'works') return
+    if (this.portfolio) return // another call won
+
     this.portfolio = new WorksPortfolio(PROJECTS, (idx) => {
       this.onProjectSelect(idx)
     })
@@ -216,10 +238,11 @@ export class Experience {
     this.portfolio.group.position.set(0, 1, 2)
     this.world.add(this.portfolio.group)
 
-    this.overlay = new ProjectOverlay()
-    // Bind overlay buttons
-    this.overlay.onPrev(() => this.portfolio?.prev())
-    this.overlay.onNext(() => this.portfolio?.next())
+    if (!this.overlay) {
+      this.overlay = new ProjectOverlay()
+      this.overlay.onPrev(() => this.portfolio?.prev())
+      this.overlay.onNext(() => this.portfolio?.next())
+    }
     this.onProjectSelect(0)
   }
 
