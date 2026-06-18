@@ -37,12 +37,27 @@ export class ProjectDetail {
         </div>
       </div>
     `
+    // Remove aria-hidden before showing — UIkit doesn't clear it, and a
+    // focused element inside an aria-hidden ancestor is a11y violation.
+    this.modal.removeAttribute('aria-hidden')
+    this.modal.setAttribute('aria-modal', 'true')
     this.instance = UIkit.modal(this.modal, { bgClose: true, escClose: true })
     this.instance?.show()
+
+    // Move focus into the modal so screen readers announce it.
+    const focusable = this.modal.querySelector<HTMLElement>(
+      'a, button, [tabindex], input, select, textarea'
+    )
+    focusable?.focus()
   }
 
   close(): void {
     this.instance?.hide()
+    // Restore aria-hidden on close (modal hidden from AT).
+    if (this.modal) {
+      this.modal.setAttribute('aria-hidden', 'true')
+      this.modal.removeAttribute('aria-modal')
+    }
     if (this.content) this.content.innerHTML = ''
   }
 }
