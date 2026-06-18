@@ -43,9 +43,9 @@ export class Baku extends THREE.Mesh {
     if (caps.mode === 'webgpu') {
       try {
         material = createBakuTSLMaterial({
-          color: new THREE.Color(0x111111),
-          rimColor: new THREE.Color(0x515d84),
-          rimPower: 2.5,
+          color: new THREE.Color(0x0a0a0f),      // near-black metallic base
+          rimColor: new THREE.Color(0x6b78a3),   // accent iridescent rim
+          rimPower: 2.0,                         // broader rim falloff
           noiseAmplitude: 0.05,
           noiseFrequency: 2.0,
         })
