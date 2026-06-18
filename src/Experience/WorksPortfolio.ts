@@ -24,13 +24,17 @@ export class WorksPortfolio {
   private cardW = 3.0
   private cardH = 2.0
   declare onCardClick: (index: number) => void
+  /** Called when user taps (clicks without dragging) a card → open detail. */
+  declare onCardActivate: (index: number) => void
 
   constructor(
     private readonly projects: Project[],
-    onCardClick: (index: number) => void = () => {}
+    onCardClick: (index: number) => void = () => {},
+    onCardActivate: (index: number) => void = () => {}
   ) {
     this.group.name = 'works-portfolio'
     this.onCardClick = onCardClick
+    this.onCardActivate = onCardActivate
     this.buildCards()
     this.bindEvents()
   }
@@ -95,11 +99,16 @@ export class WorksPortfolio {
     this.lastT = now
   }
 
-  private onPointerUp = () => {
+  private onPointerUp = (e: PointerEvent) => {
     if (!this.dragging) return
     this.dragging = false
+    const dragDistance = Math.abs(e.clientX - this.dragStartX)
+    // Swipe: enough velocity → change project in overlay.
     if (Math.abs(this.vel) > 0.12) {
       this.goTo(this.currentIdx + (this.vel > 0 ? -1 : 1))
+    } else if (dragDistance < 8) {
+      // Tap (click without drag) → open detail view for current card.
+      this.onCardActivate(this.currentIdx)
     }
     this.dragOff = 0
   }
