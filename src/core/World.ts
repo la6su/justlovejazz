@@ -309,7 +309,7 @@ export class World extends THREE.Group {
             fog: { color: new THREE.Color(), density: 0.03 },
             post: { bloom: 0.2, vignette: 0.5, grain: 0.03, chromatic: 0.005 },
             ui: { showGallery: false },
-            background: 0xa0ebff,
+            background: 0x050507,
             camFovOffset: 0.3,
             camFovDuration: 0.8,
             camSmoothing: 5,
