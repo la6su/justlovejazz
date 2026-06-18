@@ -144,11 +144,14 @@ export class WorksPortfolio {
   private onPointerUp = (e: PointerEvent) => {
     if (!this.dragging) return
     this.dragging = false
+    if (this.cards.length === 0) { this.dragOff = 0; return }
     const dragDistance = Math.abs(e.clientX - this.dragStartX)
     if (Math.abs(this.vel) > 0.12) {
       this.goTo(this.currentIdx + (this.vel > 0 ? -1 : 1))
     } else if (dragDistance < 8) {
-      this.onCardActivate(this.currentIdx)
+      // Clamp currentIdx before activate — can drift during fast swipes.
+      const safeIdx = ((this.currentIdx % this.cards.length) + this.cards.length) % this.cards.length
+      this.onCardActivate(safeIdx)
     }
     this.dragOff = 0
   }
@@ -168,13 +171,18 @@ export class WorksPortfolio {
    * Calls onCardExpanded(idx) when progress reaches 1.
    */
   expandCard(idx: number): void {
-    if (this.expanding || idx < 0 || idx >= this.cards.length) return
+    if (this.expanding) return
+    if (this.cards.length === 0) return
+    // Clamp idx into valid range — currentIdx can drift during fast swipes.
+    const safeIdx = ((idx % this.cards.length) + this.cards.length) % this.cards.length
+    const card = this.cards[safeIdx]
+    if (!card) return
+
     this.expanding = true
     this.expandDirection = 'expand'
     this.expandProgress = 0
-    this.expandedIdx = idx
+    this.expandedIdx = safeIdx
 
-    const card = this.cards[idx]
     this.expandStart = {
       x: card.group.position.x,
       y: card.group.position.y,
@@ -182,8 +190,6 @@ export class WorksPortfolio {
       scale: card.group.scale.x,
     }
     // Target: center of screen, pushed toward camera, scaled to fill viewport.
-    // Camera is at ~[3,5,7] looking at [0,2,0] for works page. Place card
-    // at world origin facing camera, large enough to cover.
     this.expandTarget = { x: 0, y: 2, z: 3, scale: 3.5 }
   }
 
