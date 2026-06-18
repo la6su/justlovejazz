@@ -16,6 +16,7 @@ import type { World } from '../core/World'
 import type { WebGLTextManager } from './WebGLTextManager'
 import { WorksPortfolio } from './WorksPortfolio'
 import { ProjectOverlay } from '../UI/ProjectOverlay'
+import { ProjectDetail } from '../UI/ProjectDetail'
 import { PerfMonitor } from '../core/PerfMonitor'
 import { DissolveOverlay } from '../shaders/dissolveOverlay'
 
@@ -49,6 +50,7 @@ export class Experience {
   // Works portfolio
   private portfolio: WorksPortfolio | null = null
   private overlay: ProjectOverlay | null = null
+  private projectDetail: ProjectDetail | null = null
   private currentSectionContext: string | null = null
   // Project transition dissolve (shader effect on card click)
   private projectDissolve: DissolveOverlay | null = null
@@ -244,9 +246,11 @@ export class Experience {
     if (document.body.dataset.page !== 'works') return
     if (this.portfolio) return // another call won
 
-    this.portfolio = new WorksPortfolio(PROJECTS, (idx) => {
-      this.onProjectSelect(idx)
-    })
+    this.portfolio = new WorksPortfolio(
+      PROJECTS,
+      (idx) => { this.onProjectSelect(idx) },           // swipe → preview
+      (idx) => { this.openProjectDetail(idx) },          // tap → detail view
+    )
     // Add portfolio group at a position in camera FOV (works page camera is at [3,5,7] or [0,8,10])
     this.portfolio.group.position.set(0, 1, 2)
     this.world.add(this.portfolio.group)
@@ -255,6 +259,9 @@ export class Experience {
       this.overlay = new ProjectOverlay()
       this.overlay.onPrev(() => this.portfolio?.prev())
       this.overlay.onNext(() => this.portfolio?.next())
+    }
+    if (!this.projectDetail) {
+      this.projectDetail = new ProjectDetail()
     }
     // Create the project transition dissolve overlay (shader wipe effect).
     // Reused across all project selections on the works page.
@@ -335,6 +342,68 @@ export class Experience {
         overlay.meshGroup.visible = false
         overlay.setProgress(0)
         this.projectDissolveActive = false
+      }
+    }
+    requestAnimationFrame(animate)
+  }
+
+  /**
+   * Open the full-screen project detail view with a shader dissolve.
+   * Flow: dissolve IN (canvas covered) → open modal → dissolve OUT.
+   * Close: ProjectDetail handles via UIkit escClose/bgClose; on close,
+   * the canvas is already visible underneath.
+   */
+  private openProjectDetail(idx: number): void {
+    if (!this.portfolio || !this.projectDetail) return
+    const projs = (this.portfolio as any).projects
+    if (!Array.isArray(projs) || projs.length === 0) return
+    const safeIdx = ((idx % projs.length) + projs.length) % projs.length
+    const project = projs[safeIdx]
+    if (!project) return
+
+    // No dissolve overlay → just open modal directly (graceful fallback).
+    if (!this.projectDissolve) {
+      void this.projectDetail.open(project)
+      return
+    }
+
+    // Dissolve IN → open modal at peak → Dissolve OUT.
+    const overlay = this.projectDissolve
+    overlay.meshGroup.visible = true
+    overlay.setProgress(0)
+    this.projectDissolveActive = true
+
+    const duration = 500 // ms
+    const start = performance.now()
+
+    const animate = (now: number) => {
+      const elapsed = now - start
+      const t = Math.min(elapsed / duration, 1)
+      // Half triangle: 0 → 1 over full duration (cover screen).
+      overlay.setProgress(t)
+      overlay.update(0.016)
+
+      if (t < 1) {
+        requestAnimationFrame(animate)
+      } else {
+        // Screen fully covered → open modal (DOM appears under the dissolve).
+        void this.projectDetail!.open(project).then(() => {
+          // Modal open → dissolve OUT to reveal it.
+          overlay.setProgress(1)
+          const outStart = performance.now()
+          const animateOut = (now2: number) => {
+            const t2 = Math.min((now2 - outStart) / duration, 1)
+            overlay.setProgress(1 - t2)
+            overlay.update(0.016)
+            if (t2 < 1) {
+              requestAnimationFrame(animateOut)
+            } else {
+              overlay.meshGroup.visible = false
+              this.projectDissolveActive = false
+            }
+          }
+          requestAnimationFrame(animateOut)
+        })
       }
     }
     requestAnimationFrame(animate)
