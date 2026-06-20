@@ -21,8 +21,8 @@ export class World extends THREE.Group {
     public baku!: Baku
     public lightsGroup!: CinematicLights
     public atmosphere: WorldAtmosphere | null = null
-    private groundPlane!: THREE.Mesh
-    private sceneGroups: THREE.Group[] = []
+    public groundPlane!: THREE.Mesh
+    public sceneGroups: THREE.Group[] = []
 
     private configs: readonly PhaseConfig[] = []
     private sceneRef: THREE.Scene
@@ -119,11 +119,60 @@ export class World extends THREE.Group {
         this.sections.forEach(s => s.update(deltaTime))
         this.baku.update(deltaTime)
 
-        // ── Animate scene groups (Junni: gentle rotation per active group)
+        // ── Junni-inspired per-component animation ──
+        const t = performance.now() * 0.001
         this.sceneGroups.forEach((group) => {
-            if (group.visible) {
-                group.rotation.y += deltaTime * 0.1
-                group.rotation.x += deltaTime * 0.05
+            if (!group.visible) return
+            group.traverse((obj) => {
+                if (!(obj instanceof THREE.Mesh || obj instanceof THREE.Points)) return
+                const name = obj.name || ''
+
+                // Grid floors: subtle Z drift (perspective shift)
+                if (name.includes('grid')) {
+                    obj.position.z = Math.sin(t * 0.2) * 0.15
+                }
+                // Crosses: slow rotation + opacity flicker
+                else if (name.includes('cross')) {
+                    obj.rotation.z = Math.sin(t * 0.3 + obj.position.x) * 0.1
+                    const mat = (obj as THREE.Mesh).material as THREE.MeshBasicMaterial
+                    if (mat?.opacity !== undefined) {
+                        mat.opacity = 0.3 + Math.sin(t * 0.5 + obj.position.x) * 0.15
+                    }
+                }
+                // Ring dots: orbit (parent group rotation handled below)
+                else if (name.includes('ring-dot')) {
+                    // individual dots don't move; parent group rotates
+                }
+                // Center glow: breathe
+                else if (name === 'step02-glow') {
+                    const mat = (obj as THREE.Mesh).material as THREE.MeshBasicMaterial
+                    if (mat?.opacity !== undefined) {
+                        mat.opacity = 0.4 + Math.sin(t * 0.8) * 0.2
+                    }
+                    obj.scale.setScalar(1 + Math.sin(t * 0.8) * 0.08)
+                }
+                // Light strips: staggered opacity pulse (rhythm)
+                else if (name.includes('strip')) {
+                    const mat = (obj as THREE.Mesh).material as THREE.MeshBasicMaterial
+                    if (mat?.opacity !== undefined) {
+                        const idx = parseInt(name.split('-').pop() || '0')
+                        mat.opacity = 0.35 + Math.sin(t * 0.5 + idx * 0.6) * 0.25
+                    }
+                }
+                // Chrome sphere: slow rotation + bob
+                else if (name === 'step06-sphere') {
+                    obj.rotation.y += deltaTime * 0.05
+                    obj.position.y = Math.sin(t * 0.3) * 0.05
+                }
+                // BG spheres: no animation (atmosphere is static)
+                else if (name.includes('bg')) {
+                    // static — atmospheric gradient doesn't move
+                }
+            })
+
+            // Rotate step02 ring dot group as a whole (text ring effect)
+            if (group.name === 'step02-scene') {
+                group.rotation.z += deltaTime * 0.08
             }
         })
     }
@@ -209,9 +258,19 @@ export class World extends THREE.Group {
         bus.set(`section:${fromCfg.id}:opacity`, 1 - t)
         bus.set(`section:${toCfg.id}:opacity`, t)
 
+        // Scroll-driven parallax: subtle camera depth drift within a section.
+        // sin(t * PI) peaks at mid-transition (t=0.5) — camera nudges forward,
+        // giving a "breathing" depth feel as user scrolls between sections.
+        const parallaxZ = Math.sin(t * Math.PI) * 0.4
+        const parallaxY = Math.cos(t * Math.PI) * 0.15
+
+        this._poolPos.lerpVectors(fromCam.position, toCam.position, t)
+        this._poolPos.y += parallaxY
+        this._poolPos.z += parallaxZ
+
         return {
             cameraTarget: {
-                position: this._poolPos.lerpVectors(fromCam.position, toCam.position, t),
+                position: this._poolPos,
                 lookAt: this._poolLookAt.lerpVectors(fromCam.target, toCam.target, t),
                 fov: THREE.MathUtils.lerp(fromCam.fov, toCam.fov, t),
             },

@@ -123,20 +123,10 @@ export function worksPage(): PageLayout {
     title: 'JUSTLOVEJAZZ — Works',
     sections: {
       intro: `
-        <section id="works-hero" data-section="step03" class="section-studio uk-flex uk-flex-middle section-intro" uk-height-viewport="expand:true">
-          <div class="uk-container uk-text-center">
-            <h1 class="studio-title studio-title--xl">
-              <span class="studio-title__line">Four</span>
-              <span class="studio-title__line">Universes.</span>
-            </h1>
-            <p class="studio-tagline uk-margin-auto-center">Each carries its own material preset, timeline, and deliverable.</p>
-          </div>
-        </section>`,
-      body: `
-        <section id="gallery" data-section="step04" class="section-studio section-works-gallery uk-flex uk-flex-top" uk-height-viewport="expand:true">
-          <!-- 3D canvas rendered behind. DOM layers for scroll anchoring only. -->
+        <section id="works-slider" data-section="step03" class="section-studio section-works-slider" uk-height-viewport="expand:true">
           <div id="gallery-anchor" data-role="3d-gallery"></div>
         </section>`,
+      body: ``,
       footer: sharedFooter(),
     },
   }

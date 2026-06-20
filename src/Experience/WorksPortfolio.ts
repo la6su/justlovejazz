@@ -1,6 +1,6 @@
 // WorksPortfolio — 3D card carousel for works page
-// Cards carry project textures. On tap, the active card morphs to fullscreen
-// (position + scale animation), then DOM detail overlay appears on top.
+// Cards carry project textures. On tap (raycast), the active card morphs to
+// fullscreen (position + scale animation), then DOM detail overlay appears.
 import * as THREE from 'three'
 import { type Project } from '../core/types'
 
@@ -33,6 +33,11 @@ export class WorksPortfolio {
   private spacing = 4.0
   private cardW = 3.0
   private cardH = 2.0
+
+  // Raycaster for tap detection on 3D card meshes.
+  private raycaster = new THREE.Raycaster()
+  private pointer = new THREE.Vector2()
+  private camera: THREE.Camera | null = null
 
   // Expand transition state
   private expanding = false
@@ -67,7 +72,6 @@ export class WorksPortfolio {
   }
 
   private buildCards(): void {
-    const loader = WorksPortfolio.sharedLoader
     for (let i = 0; i < this.projects.length; i++) {
       const proj = this.projects[i]
       const grp = new THREE.Group()
@@ -86,28 +90,38 @@ export class WorksPortfolio {
         transparent: true,
       })
 
-      // Load project texture asynchronously, apply when ready.
-      const texUrl = proj.textureUrl || proj.detailTextureUrl
-      let texture: THREE.Texture | null = null
-      if (texUrl) {
-        loader.load(texUrl, (tex) => {
-          tex.colorSpace = THREE.SRGBColorSpace
-          mat.map = tex
-          mat.emissiveIntensity = 0.2
-          mat.needsUpdate = true
-          texture = tex
-        })
-      }
-
+      // Texture starts null — loaded lazily when card becomes active.
       const mesh = new THREE.Mesh(geo, mat)
-      mesh.userData = { idx: i }
+      mesh.userData = { idx: i, texLoaded: false, texUrl: proj.textureUrl || proj.detailTextureUrl }
       grp.add(mesh)
       mesh.lookAt(0, 0.5, 10)
       grp.lookAt(0, 0.5, 10)
       this.group.add(grp)
 
-      this.cards.push({ group: grp, mesh, mat, color: col, texture })
+      this.cards.push({ group: grp, mesh, mat, color: col, texture: null })
     }
+    // Preload the first card immediately so it's visible on first render.
+    this.loadCardTexture(0)
+  }
+
+  /**
+   * Load texture for a card if not already loaded. Called when card
+   * becomes active (current) or adjacent (preload neighbors).
+   */
+  private loadCardTexture(idx: number): void {
+    if (idx < 0 || idx >= this.cards.length) return
+    const card = this.cards[idx]
+    const mesh = card.mesh
+    if (mesh.userData.texLoaded || !mesh.userData.texUrl) return
+
+    mesh.userData.texLoaded = true
+    WorksPortfolio.sharedLoader.load(mesh.userData.texUrl, (tex) => {
+      tex.colorSpace = THREE.SRGBColorSpace
+      card.mat.map = tex
+      card.mat.emissiveIntensity = 0.2
+      card.mat.needsUpdate = true
+      card.texture = tex
+    })
   }
 
   private bindEvents(): void {
@@ -128,7 +142,7 @@ export class WorksPortfolio {
     if (this.expanding) return
     // Ignore clicks on UI overlay/modal/nav — they have their own handlers.
     const target = e.target as HTMLElement
-    if (target.closest('.project-overlay, #project-modal, #jlj-splash, #main-nav')) return
+    if (target.closest('.jlz-works-ui, #project-modal, #jlj-splash, #main-nav')) return
     this.dragging = true
     this.dragStartX = e.clientX
     this.lastX = e.clientX
@@ -152,7 +166,7 @@ export class WorksPortfolio {
     this.dragging = false
     if (this.cards.length === 0) { this.dragOff = 0; return }
     const target = e.target as HTMLElement
-    if (target.closest('.project-overlay, #project-modal, #jlj-splash, #main-nav')) {
+    if (target.closest('.jlz-works-ui, #project-modal, #jlj-splash, #main-nav')) {
       this.dragOff = 0
       return
     }
@@ -161,9 +175,17 @@ export class WorksPortfolio {
       // Swipe with velocity → change project.
       this.goTo(this.currentIdx + (this.vel > 0 ? -1 : 1))
     } else if (dragDistance < 8) {
-      // Tap (click without drag) → open detail.
-      const safeIdx = ((this.currentIdx % this.cards.length) + this.cards.length) % this.cards.length
-      this.onCardActivate(safeIdx)
+      // Tap → raycast to find which card was clicked.
+      const hitIdx = this.raycastCard(e.clientX, e.clientY)
+      if (hitIdx >= 0) {
+        // If clicked card is not current, navigate to it first.
+        if (hitIdx !== this.currentIdx) {
+          this.goTo(hitIdx)
+        }
+        // Activate (open detail) for the clicked card.
+        this.onCardActivate(hitIdx)
+      }
+      // If raycast missed (clicked empty space), do nothing.
     } else if (dragDistance > 40) {
       // Slow drag beyond threshold → change project in drag direction.
       this.goTo(this.currentIdx + (e.clientX < this.dragStartX ? 1 : -1))
@@ -171,13 +193,48 @@ export class WorksPortfolio {
     this.dragOff = 0
   }
 
+  /**
+   * Raycast from screen coords against card meshes.
+   * Returns card index if hit, -1 if missed.
+   */
+  private raycastCard(clientX: number, clientY: number): number {
+    if (!this.camera) return -1
+    // Convert to NDC (-1 to 1).
+    this.pointer.x = (clientX / window.innerWidth) * 2 - 1
+    this.pointer.y = -(clientY / window.innerHeight) * 2 + 1
+    this.raycaster.setFromCamera(this.pointer, this.camera)
+
+    // Collect visible card meshes.
+    const meshes: THREE.Object3D[] = []
+    for (const card of this.cards) {
+      if (card.group.visible) meshes.push(card.mesh)
+    }
+    if (meshes.length === 0) return -1
+
+    const intersects = this.raycaster.intersectObjects(meshes, false)
+    if (intersects.length === 0) return -1
+
+    const hit = intersects[0].object as THREE.Mesh
+    const idx = hit.userData?.idx
+    return typeof idx === 'number' ? idx : -1
+  }
+
   goTo(idx: number): void {
     this.targetIdx = ((idx % this.projects.length) + this.projects.length) % this.projects.length
+    // Lazy-load: load texture for target card + preload neighbors.
+    this.loadCardTexture(this.targetIdx)
+    this.loadCardTexture(this.targetIdx + 1)
+    this.loadCardTexture(this.targetIdx - 1)
     this.onCardClick(this.targetIdx)
   }
 
   next(): void { this.goTo(this.currentIdx + 1) }
   prev(): void { this.goTo(this.currentIdx - 1) }
+
+  /** Set camera reference for raycasting. Call from Experience after init. */
+  setCamera(cam: THREE.Camera): void {
+    this.camera = cam
+  }
 
   /**
    * Start expanding the given card to fullscreen.
