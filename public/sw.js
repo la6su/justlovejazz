@@ -1,5 +1,9 @@
-/* Phase F.4 — offline-first cache for versioned static assets (same-origin). */
-const CACHE = 'lemonroom-static-v1'
+/* Offline-first cache for versioned static assets (same-origin).
+ *
+ * CACHE VERSIONING: bump this version on every deploy to invalidate
+ * stale cached assets. Old caches are deleted on activate.
+ */
+const CACHE = 'jlz-static-v2'
 
 self.addEventListener('install', () => {
   self.skipWaiting()

@@ -133,6 +133,10 @@ export class Experience {
       // Track 5: per-section FOV pop + smoothing from WorldConfig (no global magic).
       this.camera.setFovOffset(cfg.camFovOffset, cfg.camFovDuration)
       this.currentSectionContext = cfg.context
+      // Dispatch section-change event so DOM UI can react (3D→UI integration).
+      window.dispatchEvent(new CustomEvent('jlz:section-change', {
+        detail: { sectionId: cfg.id, context: cfg.context }
+      }))
     }
 
     // Show portfolio only on works page
@@ -145,7 +149,9 @@ export class Experience {
     const smoothing = cfg?.camSmoothing ?? SECTION_TRANSITION.cameraSmoothing
     this.camera.updateSmooth(cameraTarget, dt, smoothing)
     const warmth = ns
+    // setMood sets target; update() lerps lights toward it smoothly.
     this.world.lightsGroup.setMood(warmth, worldState.envIntensity)
+    this.world.lightsGroup.update(dt)
     this.camera.update(dt)
     this.renderer.update(this.scene, this.camera.instance, dt, worldState)
     requestAnimationFrame((t) => this.update(t))
@@ -254,7 +260,8 @@ export class Experience {
       () => { this.onCardCollapsed() },                 // collapse done → return to carousel
     )
     // Add portfolio group at a position in camera FOV (works page camera is at [3,5,7] or [0,8,10])
-    this.portfolio.group.position.set(0, 1, 2)
+    // Portfolio group at world origin — frontal camera at [0,1,7] looks at [0,1,0].
+    this.portfolio.group.position.set(0, 1, 0)
     this.world.add(this.portfolio.group)
 
     if (!this.overlay) {

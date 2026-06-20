@@ -309,4 +309,151 @@
   #jlj-splash, #jlj-splash-progress { transition: none; }
 }
 
+/* ── Project detail modal — fullscreen with background texture ──
+ * The modal covers the entire screen. The project's detail texture
+ * fills the background; a dark scrim ensures text readability; content
+ * panel sits centered on top.
+ */
+#project-modal .jlz-project-modal-body {
+  background: var(--jlz-color-bg);
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+#project-modal .jlz-detail-root {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#project-modal .jlz-detail-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(5, 5, 7, 0.92) 0%,
+    rgba(5, 5, 7, 0.75) 50%,
+    rgba(5, 5, 7, 0.92) 100%
+  );
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+#project-modal .jlz-detail-content {
+  position: relative;
+  z-index: 2;
+  max-width: 720px;
+  width: 100%;
+  padding: var(--jlz-space-12) var(--jlz-space-16);
+  color: var(--jlz-color-text);
+}
+
+#project-modal .jlz-detail-close {
+  position: absolute;
+  top: var(--jlz-space-6);
+  right: var(--jlz-space-8);
+  z-index: 3;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--jlz-color-text-muted);
+  transition: color var(--jlz-duration-fast) var(--jlz-ease-state);
+  padding: var(--jlz-space-3);
+}
+
+#project-modal .jlz-detail-close:hover {
+  color: var(--jlz-color-text);
+}
+
+#project-modal .jlz-detail-meta {
+  display: flex;
+  gap: var(--jlz-space-4);
+  font-size: var(--jlz-type-small);
+  letter-spacing: var(--jlz-tracking-wide);
+  color: var(--jlz-color-text-muted);
+  text-transform: uppercase;
+  font-family: var(--jlz-font-mono);
+  margin-bottom: var(--jlz-space-4);
+}
+
+#project-modal .jlz-detail-title {
+  font-size: var(--jlz-type-display-lg);
+  font-weight: var(--jlz-weight-light);
+  letter-spacing: var(--jlz-tracking-tight);
+  color: var(--jlz-color-text);
+  margin: 0 0 var(--jlz-space-6);
+  line-height: var(--jlz-leading-tight);
+}
+
+#project-modal .jlz-detail-description {
+  font-size: var(--jlz-type-body-lg);
+  line-height: var(--jlz-leading-loose);
+  color: var(--jlz-color-text-muted);
+  margin: 0 0 var(--jlz-space-8);
+  max-width: 560px;
+}
+
+#project-modal .jlz-detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--jlz-space-2);
+  margin-bottom: var(--jlz-space-10);
+}
+
+#project-modal .jlz-detail-tag {
+  font-size: var(--jlz-type-caption);
+  font-family: var(--jlz-font-mono);
+  padding: var(--jlz-space-1) var(--jlz-space-3);
+  border: 1px solid var(--jlz-color-border);
+  border-radius: var(--jlz-radius-full);
+  color: var(--jlz-color-text-muted);
+  letter-spacing: var(--jlz-tracking-wide);
+}
+
+#project-modal .jlz-detail-cta {
+  margin-top: var(--jlz-space-8);
+}
+
+@media (max-width: 768px) {
+  #project-modal .jlz-detail-content {
+    padding: var(--jlz-space-8) var(--jlz-space-6);
+  }
+  #project-modal .jlz-detail-title {
+    font-size: var(--jlz-type-display-md);
+  }
+}
+
+/* ── 3D↔UI section sync ──
+ * When 3D world transitions to a new section, Experience dispatches
+ * 'jlz:section-change'. ContentReveal adds .section-active to the
+ * matching DOM element (data-section="step01" etc).
+ */
+.section-active {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+  transition:
+    opacity var(--jlz-duration-slow) var(--jlz-ease-entrance),
+    transform var(--jlz-duration-slow) var(--jlz-ease-entrance);
+}
+
+[data-section] {
+  opacity: 0.4;
+  transform: translateY(8px);
+  transition:
+    opacity var(--jlz-duration-normal) var(--jlz-ease-state),
+    transform var(--jlz-duration-normal) var(--jlz-ease-state);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-section] {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 

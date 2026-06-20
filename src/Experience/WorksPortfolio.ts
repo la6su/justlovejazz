@@ -19,6 +19,8 @@ function easeInOutCubic(t: number): number {
 
 export class WorksPortfolio {
   public readonly group = new THREE.Group()
+  // Shared loader — creating one per card wastes resources.
+  private static readonly sharedLoader = new THREE.TextureLoader()
   private cards: ProjectCard[] = []
   private currentIdx = 0
   private targetIdx = 0
@@ -65,7 +67,7 @@ export class WorksPortfolio {
   }
 
   private buildCards(): void {
-    const loader = new THREE.TextureLoader()
+    const loader = WorksPortfolio.sharedLoader
     for (let i = 0; i < this.projects.length; i++) {
       const proj = this.projects[i]
       const grp = new THREE.Group()
@@ -124,6 +126,9 @@ export class WorksPortfolio {
 
   private onPointerDown = (e: PointerEvent) => {
     if (this.expanding) return
+    // Ignore clicks on UI overlay/modal/nav — they have their own handlers.
+    const target = e.target as HTMLElement
+    if (target.closest('.project-overlay, #project-modal, #jlj-splash, #main-nav')) return
     this.dragging = true
     this.dragStartX = e.clientX
     this.lastX = e.clientX
@@ -133,6 +138,7 @@ export class WorksPortfolio {
 
   private onPointerMove = (e: PointerEvent) => {
     if (!this.dragging) return
+    // Live drag offset for visual feedback during swipe.
     this.dragOff = (e.clientX - this.dragStartX) * 0.004
     const now = performance.now()
     const dt = now - this.lastT
@@ -144,11 +150,23 @@ export class WorksPortfolio {
   private onPointerUp = (e: PointerEvent) => {
     if (!this.dragging) return
     this.dragging = false
+    if (this.cards.length === 0) { this.dragOff = 0; return }
+    const target = e.target as HTMLElement
+    if (target.closest('.project-overlay, #project-modal, #jlj-splash, #main-nav')) {
+      this.dragOff = 0
+      return
+    }
     const dragDistance = Math.abs(e.clientX - this.dragStartX)
     if (Math.abs(this.vel) > 0.12) {
+      // Swipe with velocity → change project.
       this.goTo(this.currentIdx + (this.vel > 0 ? -1 : 1))
     } else if (dragDistance < 8) {
-      this.onCardActivate(this.currentIdx)
+      // Tap (click without drag) → open detail.
+      const safeIdx = ((this.currentIdx % this.cards.length) + this.cards.length) % this.cards.length
+      this.onCardActivate(safeIdx)
+    } else if (dragDistance > 40) {
+      // Slow drag beyond threshold → change project in drag direction.
+      this.goTo(this.currentIdx + (e.clientX < this.dragStartX ? 1 : -1))
     }
     this.dragOff = 0
   }
@@ -168,23 +186,27 @@ export class WorksPortfolio {
    * Calls onCardExpanded(idx) when progress reaches 1.
    */
   expandCard(idx: number): void {
-    if (this.expanding || idx < 0 || idx >= this.cards.length) return
+    if (this.expanding) return
+    if (this.cards.length === 0) return
+    // Clamp idx into valid range — currentIdx can drift during fast swipes.
+    const safeIdx = ((idx % this.cards.length) + this.cards.length) % this.cards.length
+    const card = this.cards[safeIdx]
+    if (!card) return
+
     this.expanding = true
     this.expandDirection = 'expand'
     this.expandProgress = 0
-    this.expandedIdx = idx
+    this.expandedIdx = safeIdx
 
-    const card = this.cards[idx]
     this.expandStart = {
       x: card.group.position.x,
       y: card.group.position.y,
       z: card.group.position.z,
       scale: card.group.scale.x,
     }
-    // Target: center of screen, pushed toward camera, scaled to fill viewport.
-    // Camera is at ~[3,5,7] looking at [0,2,0] for works page. Place card
-    // at world origin facing camera, large enough to cover.
-    this.expandTarget = { x: 0, y: 2, z: 3, scale: 3.5 }
+    // Target: center of screen (frontal camera at [0,1,7] looking at [0,1,0]).
+    // Push card toward camera (z=4) and scale up to fill viewport.
+    this.expandTarget = { x: 0, y: 1, z: 4, scale: 3.5 }
   }
 
   /**
@@ -192,9 +214,13 @@ export class WorksPortfolio {
    * Calls onCardCollapsed() when progress reaches 0.
    */
   collapseCard(): void {
-    if (!this.expanding || this.expandedIdx < 0) return
+    // Can collapse even if expanding animation finished (expanding=false)
+    // — we just need a valid expandedIdx.
+    if (this.expandedIdx < 0) return
+    if (this.cards[this.expandedIdx] === undefined) return
     this.expandDirection = 'collapse'
     this.expandProgress = 0
+    this.expanding = true
     // Collapse starts from current (expanded) state back to carousel.
     const card = this.cards[this.expandedIdx]
     this.expandStart = {
@@ -246,7 +272,11 @@ export class WorksPortfolio {
 
       if (this.expandProgress >= 1) {
         if (this.expandDirection === 'expand') {
+          // Expand complete — card is fullscreen. Keep expanding=true so
+          // collapse can run. Notify Experience to open detail overlay.
           this.onCardExpanded(this.expandedIdx)
+          // Stop the expand animation loop (card stays fullscreen).
+          this.expanding = false
         } else {
           this.expanding = false
           this.expandedIdx = -1
@@ -279,7 +309,8 @@ export class WorksPortfolio {
       card.group.visible = true
 
       const depth = THREE.MathUtils.clamp(Math.abs(w) / 1.5, 0, 1)
-      const x = w * this.spacing
+      // Add live dragOff so swipe moves cards in real-time during drag.
+      const x = (w + this.dragOff) * this.spacing
       const z = -depth * 2.5
       const y = Math.sin(w * 0.9) * 0.12 * (1 - depth)
       const scale = THREE.MathUtils.lerp(1, 0.6, depth)

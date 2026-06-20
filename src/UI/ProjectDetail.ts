@@ -8,13 +8,15 @@ export class ProjectDetail {
   private instance: ReturnType<typeof UIkit.modal> | null = null
   /** Called when the modal is hidden (Esc / bg click) → trigger card collapse. */
   public onClose: (() => void) | null = null
+  private isOpen = false
 
   constructor() {
     this.modal = document.getElementById('project-modal')
     this.content = document.getElementById('modal-content')
-    // Listen for UIkit modal hide event → notify caller to collapse card.
     if (this.modal) {
       this.modal.addEventListener('hidden', () => {
+        if (!this.isOpen) return
+        this.isOpen = false
         this.onClose?.()
       })
     }
@@ -24,48 +26,53 @@ export class ProjectDetail {
     if (!this.modal || !this.content) return
     const slug = project.slug || project.id
     const detailUrl = project.detailTextureUrl || project.textureUrl
+
+    // Fullscreen modal: background texture covers entire screen, content
+    // panel sits on top with blur backdrop for readability.
     this.content.innerHTML = `
-      <div class="detail-hero">
-        <div class="detail-hero__media">
-          <img class="detail-hero__image" src="${detailUrl}" alt="${project.title}" loading="lazy" />
-        </div>
-        <div class="detail-hero__info">
-          <div class="detail-hero__meta">
-            <span class="detail-hero__year">${project.year ?? ''}</span>
-            <span class="detail-hero__category">${project.category ?? ''}</span>
+      <div class="jlz-detail-root" style="background-image: url('${detailUrl}')">
+        <div class="jlz-detail-scrim"></div>
+        <div class="jlz-detail-content">
+          <button class="jlz-detail-close" type="button" aria-label="Close detail" uk-close></button>
+          <div class="jlz-detail-meta">
+            <span class="jlz-detail-year">${project.year ?? ''}</span>
+            <span class="jlz-detail-category">${project.category ?? ''}</span>
           </div>
-          <h2 class="detail-hero__title">${project.title}</h2>
-          <p class="studio-text studio-text--body">${project.description || ''}</p>
-          <div class="detail-tags">
-            ${(project.tags ?? []).filter(Boolean).map(t => `<span class="detail-tag">${t}</span>`).join('')}
+          <h2 class="jlz-detail-title">${project.title}</h2>
+          <p class="jlz-detail-description">${project.description || ''}</p>
+          <div class="jlz-detail-tags">
+            ${(project.tags ?? []).filter(Boolean).map(t => `<span class="jlz-detail-tag">${t}</span>`).join('')}
           </div>
-          <div class="uk-margin-medium-top">
+          <div class="jlz-detail-cta">
             <a class="uk-button uk-button-primary" href="/projects/${slug}.html">Open Full Case →</a>
           </div>
         </div>
       </div>
     `
-    // Remove aria-hidden before showing — UIkit doesn't clear it, and a
-    // focused element inside an aria-hidden ancestor is a11y violation.
     this.modal.removeAttribute('aria-hidden')
     this.modal.setAttribute('aria-modal', 'true')
     this.instance = UIkit.modal(this.modal, { bgClose: true, escClose: true })
     this.instance?.show()
+    this.isOpen = true
 
-    // Move focus into the modal so screen readers announce it.
-    const focusable = this.modal.querySelector<HTMLElement>(
-      'a, button, [tabindex], input, select, textarea'
-    )
+    // Wire close button.
+    const closeBtn = this.content.querySelector<HTMLElement>('.jlz-detail-close')
+    closeBtn?.addEventListener('click', () => this.close())
+
+    const focusable = this.content.querySelector<HTMLElement>('button, a, [tabindex]')
     focusable?.focus()
   }
 
   close(): void {
+    if (!this.isOpen) return
+    this.isOpen = false
     this.instance?.hide()
-    // Restore aria-hidden on close (modal hidden from AT).
     if (this.modal) {
       this.modal.setAttribute('aria-hidden', 'true')
       this.modal.removeAttribute('aria-modal')
     }
     if (this.content) this.content.innerHTML = ''
   }
+
+  get visible(): boolean { return this.isOpen }
 }
