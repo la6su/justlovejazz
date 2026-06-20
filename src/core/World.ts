@@ -130,40 +130,44 @@ export class World extends THREE.Group {
         const t = performance.now() * 0.001
         this.sceneGroups.forEach((group) => {
             if (!group.visible) return
+
             group.traverse((obj) => {
                 if (!(obj instanceof THREE.Mesh || obj instanceof THREE.Points)) return
                 const name = obj.name || ''
+                const mat = (obj as THREE.Mesh).material as THREE.Material & {
+                    uniforms?: { uTime?: { value: number } }
+                    opacity?: number
+                }
 
-                // Grid floors: subtle Z drift (perspective shift)
+                // Update uTime on ShaderMaterials (instanced particles, BG)
+                if (mat?.uniforms?.uTime) {
+                    mat.uniforms.uTime.value = t
+                }
+
+                // Grid floors: subtle Z drift
                 if (name.includes('grid')) {
                     obj.position.z = Math.sin(t * 0.2) * 0.15
                 }
-                // Crosses: slow rotation + opacity flicker
-                else if (name.includes('cross')) {
-                    obj.rotation.z = Math.sin(t * 0.3 + obj.position.x) * 0.1
-                    const mat = (obj as THREE.Mesh).material as THREE.MeshBasicMaterial
-                    if (mat?.opacity !== undefined) {
-                        mat.opacity = 0.3 + Math.sin(t * 0.5 + obj.position.x) * 0.15
-                    }
-                }
-                // Ring dots: orbit (parent group rotation handled below)
-                else if (name.includes('ring-dot')) {
-                    // individual dots don't move; parent group rotates
+                // Floating transparents: slow rotation + bob
+                else if (name.startsWith('transparent-')) {
+                    obj.rotation.x += deltaTime * 0.1
+                    obj.rotation.y += deltaTime * 0.15
+                    obj.position.y += Math.sin(t * 0.4 + obj.position.x) * 0.003
                 }
                 // Center glow: breathe
                 else if (name === 'step02-glow') {
-                    const mat = (obj as THREE.Mesh).material as THREE.MeshBasicMaterial
-                    if (mat?.opacity !== undefined) {
-                        mat.opacity = 0.4 + Math.sin(t * 0.8) * 0.2
+                    const bm = mat as THREE.MeshBasicMaterial
+                    if (bm?.opacity !== undefined) {
+                        bm.opacity = 0.4 + Math.sin(t * 0.8) * 0.2
                     }
                     obj.scale.setScalar(1 + Math.sin(t * 0.8) * 0.08)
                 }
-                // Light strips: staggered opacity pulse (rhythm)
+                // Light strips: staggered opacity pulse
                 else if (name.includes('strip')) {
-                    const mat = (obj as THREE.Mesh).material as THREE.MeshBasicMaterial
-                    if (mat?.opacity !== undefined) {
+                    const bm = mat as THREE.MeshBasicMaterial
+                    if (bm?.opacity !== undefined) {
                         const idx = parseInt(name.split('-').pop() || '0')
-                        mat.opacity = 0.35 + Math.sin(t * 0.5 + idx * 0.6) * 0.25
+                        bm.opacity = 0.35 + Math.sin(t * 0.5 + idx * 0.6) * 0.25
                     }
                 }
                 // Chrome sphere: slow rotation + bob
@@ -171,13 +175,9 @@ export class World extends THREE.Group {
                     obj.rotation.y += deltaTime * 0.05
                     obj.position.y = Math.sin(t * 0.3) * 0.05
                 }
-                // BG spheres: no animation (atmosphere is static)
-                else if (name.includes('bg')) {
-                    // static — atmospheric gradient doesn't move
-                }
             })
 
-            // Rotate step02 ring dot group as a whole (text ring effect)
+            // Rotate step02 text ring group
             if (group.name === 'step02-scene') {
                 group.rotation.z += deltaTime * 0.08
             }
