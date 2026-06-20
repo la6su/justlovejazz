@@ -207,7 +207,19 @@ export class Section extends THREE.Group {
         this.applyState(reduced)
     }
 
-    public update(_dt: number): void {}
+    public update(_dt: number): void {
+        // Emissive pulse on standard materials — adds life to procedural scenes.
+        // (Rotation is handled by World.update on sceneGroups — don't double-rotate.)
+        this.traverse((obj: THREE.Object3D) => {
+            if (obj instanceof THREE.Mesh) {
+                const mat = obj.material
+                if (!Array.isArray(mat) && mat instanceof THREE.MeshStandardMaterial) {
+                    const pulse = Math.sin(performance.now() * 0.001) * 0.15 + 0.85
+                    mat.emissiveIntensity = (mat.emissiveIntensity || 0.5) * 0.95 + pulse * 0.05
+                }
+            }
+        })
+    }
 
     public dispose(): void {
         const bus = StateBus.getInstance()

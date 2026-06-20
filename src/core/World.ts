@@ -209,9 +209,19 @@ export class World extends THREE.Group {
         bus.set(`section:${fromCfg.id}:opacity`, 1 - t)
         bus.set(`section:${toCfg.id}:opacity`, t)
 
+        // Scroll-driven parallax: subtle camera depth drift within a section.
+        // sin(t * PI) peaks at mid-transition (t=0.5) — camera nudges forward,
+        // giving a "breathing" depth feel as user scrolls between sections.
+        const parallaxZ = Math.sin(t * Math.PI) * 0.4
+        const parallaxY = Math.cos(t * Math.PI) * 0.15
+
+        this._poolPos.lerpVectors(fromCam.position, toCam.position, t)
+        this._poolPos.y += parallaxY
+        this._poolPos.z += parallaxZ
+
         return {
             cameraTarget: {
-                position: this._poolPos.lerpVectors(fromCam.position, toCam.position, t),
+                position: this._poolPos,
                 lookAt: this._poolLookAt.lerpVectors(fromCam.target, toCam.target, t),
                 fov: THREE.MathUtils.lerp(fromCam.fov, toCam.fov, t),
             },
