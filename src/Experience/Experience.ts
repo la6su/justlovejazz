@@ -17,6 +17,7 @@ import type { WebGLTextManager } from './WebGLTextManager'
 import { WorksPortfolio } from './WorksPortfolio'
 import { ProjectOverlay } from '../UI/ProjectOverlay'
 import { ProjectDetail } from '../UI/ProjectDetail'
+import { Subtitles } from '../UI/Subtitles'
 import { PerfMonitor } from '../core/PerfMonitor'
 import { DissolveOverlay } from '../shaders/dissolveOverlay'
 
@@ -51,6 +52,7 @@ export class Experience {
   private portfolio: WorksPortfolio | null = null
   private overlay: ProjectOverlay | null = null
   private projectDetail: ProjectDetail | null = null
+  private _subtitles: Subtitles | null = null
   private currentSectionContext: string | null = null
   // Project transition dissolve (shader effect on card click)
   private projectDissolve: DissolveOverlay | null = null
@@ -95,6 +97,8 @@ export class Experience {
     }
     await this.buildWorld()
     this.bus = StateBus.getInstance()
+    // Subtitles listen for jlz:section-change events automatically.
+    this._subtitles = new Subtitles()
     void this.ensurePortfolio()
     this.camera.instance.position.set(0, 5, 10)
     this.camera.instance.lookAt(0, 0, 0)
@@ -238,6 +242,8 @@ export class Experience {
     this.overlay?.dispose()
     this.projectDissolve?.dispose()
     this.projectDissolve = null
+    this._subtitles?.dispose()
+    this._subtitles = null
     // Sizes + Input own window listeners — clean them up to avoid leaks
     // on hot-reload (Vite HMR) and on explicit teardown.
     this.sizes.destroy()
