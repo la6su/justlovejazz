@@ -119,7 +119,7 @@ export class World extends THREE.Group {
         this.sections.forEach(s => s.update(deltaTime))
         this.baku.update(deltaTime)
 
-        // ── Art-directed per-component animation ──
+        // ── Junni-inspired per-component animation ──
         const t = performance.now() * 0.001
         this.sceneGroups.forEach((group) => {
             if (!group.visible) return
@@ -127,57 +127,53 @@ export class World extends THREE.Group {
                 if (!(obj instanceof THREE.Mesh || obj instanceof THREE.Points)) return
                 const name = obj.name || ''
 
-                // Tunnel rings: subtle pulse + fade shift
-                if (name.includes('tunnel')) {
+                // Grid floors: subtle Z drift (perspective shift)
+                if (name.includes('grid')) {
+                    obj.position.z = Math.sin(t * 0.2) * 0.15
+                }
+                // Crosses: slow rotation + opacity flicker
+                else if (name.includes('cross')) {
+                    obj.rotation.z = Math.sin(t * 0.3 + obj.position.x) * 0.1
                     const mat = (obj as THREE.Mesh).material as THREE.MeshBasicMaterial
                     if (mat?.opacity !== undefined) {
-                        const base = parseFloat(name.split('-').pop() || '0')
-                        mat.opacity = 0.4 * (1 - base / 12) + Math.sin(t * 0.5 + base) * 0.05
+                        mat.opacity = 0.3 + Math.sin(t * 0.5 + obj.position.x) * 0.15
                     }
                 }
-                // Light at end: pulse brightness
-                else if (name === 'step01-light') {
-                    const mat = (obj as THREE.Mesh).material as THREE.MeshBasicMaterial
-                    if (mat?.opacity !== undefined) {
-                        mat.opacity = 0.6 + Math.sin(t * 1.2) * 0.2
-                    }
-                    obj.scale.setScalar(1 + Math.sin(t * 1.2) * 0.1)
-                }
-                // Concentric rings: slow rotation, different speeds
-                else if (name.includes('ring') && name.includes('step02')) {
-                    const idx = parseInt(name.split('-').pop() || '0')
-                    obj.rotation.z += deltaTime * (0.1 + idx * 0.03)
+                // Ring dots: orbit (parent group rotation handled below)
+                else if (name.includes('ring-dot')) {
+                    // individual dots don't move; parent group rotates
                 }
                 // Center glow: breathe
                 else if (name === 'step02-glow') {
                     const mat = (obj as THREE.Mesh).material as THREE.MeshBasicMaterial
                     if (mat?.opacity !== undefined) {
-                        mat.opacity = 0.5 + Math.sin(t * 0.8) * 0.15
+                        mat.opacity = 0.4 + Math.sin(t * 0.8) * 0.2
                     }
-                    obj.scale.setScalar(1 + Math.sin(t * 0.8) * 0.05)
+                    obj.scale.setScalar(1 + Math.sin(t * 0.8) * 0.08)
                 }
-                // Light strips: staggered opacity pulse
+                // Light strips: staggered opacity pulse (rhythm)
                 else if (name.includes('strip')) {
                     const mat = (obj as THREE.Mesh).material as THREE.MeshBasicMaterial
                     if (mat?.opacity !== undefined) {
                         const idx = parseInt(name.split('-').pop() || '0')
-                        mat.opacity = 0.4 + Math.sin(t * 0.6 + idx * 0.5) * 0.25
+                        mat.opacity = 0.35 + Math.sin(t * 0.5 + idx * 0.6) * 0.25
                     }
                 }
-                // Floor: static (anchor, no movement)
-                else if (name.includes('floor')) {
-                    // no animation — it's a ground anchor
-                }
-                // Sphere: slow rotation (showing reflection)
+                // Chrome sphere: slow rotation + bob
                 else if (name === 'step06-sphere') {
                     obj.rotation.y += deltaTime * 0.05
                     obj.position.y = Math.sin(t * 0.3) * 0.05
                 }
-                // Faint ring: counter-rotate
-                else if (name === 'step06-ring') {
-                    obj.rotation.z -= deltaTime * 0.02
+                // BG spheres: no animation (atmosphere is static)
+                else if (name.includes('bg')) {
+                    // static — atmospheric gradient doesn't move
                 }
             })
+
+            // Rotate step02 ring dot group as a whole (text ring effect)
+            if (group.name === 'step02-scene') {
+                group.rotation.z += deltaTime * 0.08
+            }
         })
     }
 
