@@ -67,7 +67,6 @@ export class WorksPortfolio {
   }
 
   private buildCards(): void {
-    const loader = WorksPortfolio.sharedLoader
     for (let i = 0; i < this.projects.length; i++) {
       const proj = this.projects[i]
       const grp = new THREE.Group()
@@ -86,28 +85,38 @@ export class WorksPortfolio {
         transparent: true,
       })
 
-      // Load project texture asynchronously, apply when ready.
-      const texUrl = proj.textureUrl || proj.detailTextureUrl
-      let texture: THREE.Texture | null = null
-      if (texUrl) {
-        loader.load(texUrl, (tex) => {
-          tex.colorSpace = THREE.SRGBColorSpace
-          mat.map = tex
-          mat.emissiveIntensity = 0.2
-          mat.needsUpdate = true
-          texture = tex
-        })
-      }
-
+      // Texture starts null — loaded lazily when card becomes active.
       const mesh = new THREE.Mesh(geo, mat)
-      mesh.userData = { idx: i }
+      mesh.userData = { idx: i, texLoaded: false, texUrl: proj.textureUrl || proj.detailTextureUrl }
       grp.add(mesh)
       mesh.lookAt(0, 0.5, 10)
       grp.lookAt(0, 0.5, 10)
       this.group.add(grp)
 
-      this.cards.push({ group: grp, mesh, mat, color: col, texture })
+      this.cards.push({ group: grp, mesh, mat, color: col, texture: null })
     }
+    // Preload the first card immediately so it's visible on first render.
+    this.loadCardTexture(0)
+  }
+
+  /**
+   * Load texture for a card if not already loaded. Called when card
+   * becomes active (current) or adjacent (preload neighbors).
+   */
+  private loadCardTexture(idx: number): void {
+    if (idx < 0 || idx >= this.cards.length) return
+    const card = this.cards[idx]
+    const mesh = card.mesh
+    if (mesh.userData.texLoaded || !mesh.userData.texUrl) return
+
+    mesh.userData.texLoaded = true
+    WorksPortfolio.sharedLoader.load(mesh.userData.texUrl, (tex) => {
+      tex.colorSpace = THREE.SRGBColorSpace
+      card.mat.map = tex
+      card.mat.emissiveIntensity = 0.2
+      card.mat.needsUpdate = true
+      card.texture = tex
+    })
   }
 
   private bindEvents(): void {
@@ -173,6 +182,10 @@ export class WorksPortfolio {
 
   goTo(idx: number): void {
     this.targetIdx = ((idx % this.projects.length) + this.projects.length) % this.projects.length
+    // Lazy-load: load texture for target card + preload neighbors.
+    this.loadCardTexture(this.targetIdx)
+    this.loadCardTexture(this.targetIdx + 1)
+    this.loadCardTexture(this.targetIdx - 1)
     this.onCardClick(this.targetIdx)
   }
 
