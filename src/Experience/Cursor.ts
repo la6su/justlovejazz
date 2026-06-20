@@ -1,5 +1,7 @@
 // src/Experience/Cursor.ts
 
+import { DeviceCapability } from '../core/DeviceCapability'
+
 export class Cursor {
     private element: HTMLElement;
     private posX: number = 0;
@@ -8,16 +10,25 @@ export class Cursor {
     private targetY: number = 0;
     private lerpFactor: number = 0.2; // Snappy feel
     private magneticElement: HTMLElement | null = null;
+    private readonly mousemoveHandler: (e: MouseEvent) => void;
 
     constructor() {
         this.element = document.createElement('div');
         this.element.classList.add('custom-cursor');
+
+        // Hide custom cursor on mobile/touch — it's useless and interferes.
+        if (DeviceCapability.isMobile) {
+            this.element.style.display = 'none'
+        }
+
         document.body.appendChild(this.element);
 
-        window.addEventListener('mousemove', (e) => {
+        // Bound handler for cleanup in destroy().
+        this.mousemoveHandler = (e: MouseEvent) => {
             this.targetX = e.clientX;
             this.targetY = e.clientY;
-        });
+        };
+        window.addEventListener('mousemove', this.mousemoveHandler);
 
         this.initMagneticListeners();
     }

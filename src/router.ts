@@ -40,7 +40,10 @@ const container: HTMLElement | null = (() => {
 
 function toSpaKey(raw: string | null | undefined): PageKey {
   const key = (raw || '').replace(/^#\/?/, '')
-  return (key || 'home') as PageKey
+  // Validate against known routes; unknown → home fallback.
+  if (key === '' || key === 'home') return 'home'
+  if (key === 'trinity' || key === 'works') return key
+  return 'home'
 }
 
 function renderAndInject(key: PageKey): void {
@@ -54,10 +57,15 @@ function renderAndInject(key: PageKey): void {
 export function navigateTo(hashRoute: string, replace = false): void {
   const key = toSpaKey(hashRoute)
   const routeKey = key === 'home' ? '' : key
-  const target = ROUTES[routeKey]
-  if (!target) return
+  let target = ROUTES[routeKey]
+  // Fallback: unknown route → redirect to home (not silent no-op).
+  if (!target) {
+    console.warn(`[router] Unknown route "${hashRoute}" → falling back to home`)
+    navigateTo('#/', replace)
+    return
+  }
 
-  if (target && key === current && !replace) return
+  if (key === current && !replace) return
 
   const href = key === 'home' ? '#/' : `/#/${key}`
   if (replace) {
