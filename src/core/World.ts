@@ -119,12 +119,60 @@ export class World extends THREE.Group {
         this.sections.forEach(s => s.update(deltaTime))
         this.baku.update(deltaTime)
 
-        // ── Animate scene groups (Junni: gentle rotation per active group)
+        // ── Art-directed per-component animation (not blanket rotation) ──
+        // Each scene group has named children that animate with purpose.
+        const t = performance.now() * 0.001
         this.sceneGroups.forEach((group) => {
-            if (group.visible) {
-                group.rotation.y += deltaTime * 0.1
-                group.rotation.x += deltaTime * 0.05
-            }
+            if (!group.visible) return
+            group.traverse((obj) => {
+                if (!(obj instanceof THREE.Mesh || obj instanceof THREE.Points)) return
+                const name = obj.name || ''
+
+                // Grids: slow drift, no rotation (anchor)
+                if (name.includes('grid') || name.includes('plane') || name.includes('pedestal')) {
+                    obj.position.z = Math.sin(t * 0.3) * 0.1
+                }
+                // Beams: subtle vertical pulse
+                else if (name.includes('beam')) {
+                    const mat = (obj as THREE.Mesh).material as THREE.MeshStandardMaterial
+                    if (mat?.emissiveIntensity !== undefined) {
+                        mat.emissiveIntensity = 1.5 + Math.sin(t * 0.8 + obj.position.x) * 0.5
+                    }
+                }
+                // Rings: slow rotation on their own axis
+                else if (name.includes('ring')) {
+                    obj.rotation.z += deltaTime * 0.15
+                }
+                // Shell: very slow counter-rotation
+                else if (name.includes('shell')) {
+                    obj.rotation.y -= deltaTime * 0.03
+                }
+                // Sphere: subtle bob
+                else if (name.includes('sphere') && !name.includes('glass')) {
+                    obj.position.y = Math.sin(t * 0.5) * 0.1
+                }
+                // Particles/dust/haze: drift upward, loop
+                else if (name.includes('dust') || name.includes('particle') || name.includes('haze')) {
+                    const positions = (obj as THREE.Points).geometry.attributes.position
+                    const arr = positions.array as Float32Array
+                    for (let i = 1; i < arr.length; i += 3) {
+                        arr[i] += deltaTime * 0.15
+                        if (arr[i] > 5) arr[i] = -1
+                    }
+                    positions.needsUpdate = true
+                }
+                // Glow planes: pulse opacity
+                else if (name.includes('glow')) {
+                    const mat = (obj as THREE.Mesh).material as THREE.MeshBasicMaterial
+                    if (mat?.opacity !== undefined) {
+                        mat.opacity = 0.25 + Math.sin(t * 0.4) * 0.08
+                    }
+                }
+                // Monolith: slow vertical breathe
+                else if (name.includes('monolith')) {
+                    obj.scale.y = 1 + Math.sin(t * 0.3) * 0.02
+                }
+            })
         })
     }
 
