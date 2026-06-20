@@ -5,7 +5,7 @@
 // use MeshBasicNodeMaterial + TSL, or MeshBasicMaterial for simple cases.
 import * as THREE from 'three'
 import { MeshBasicNodeMaterial } from 'three/webgpu'
-import { Fn, vec4, float, uniform, uv, pow, exp, fract, step, mix, normalize, positionLocal, time } from 'three/tsl'
+import { Fn, vec4, float, uniform, uv, sin, pow, exp, fract, step, mix, normalize, positionLocal, time } from 'three/tsl'
 
 // ── Gradient BG using TSL (WebGPU-compatible, no ShaderMaterial) ──
 function makeGradientBG(topColor: number, bottomColor: number): THREE.Mesh {
@@ -140,6 +140,28 @@ export class SectionSceneFactory {
     )
     particles.name = 'step01-particles'
     group.add(particles)
+
+    // Slashes (junni Section1 Slashes pattern) — animated stripe plane
+    // Uses TSL MeshBasicNodeMaterial for WebGPU compatibility.
+    const slashGeo = new THREE.PlaneGeometry(8, 4)
+    const slashMat = new MeshBasicNodeMaterial()
+    slashMat.transparent = true
+    slashMat.depthWrite = false
+    slashMat.side = THREE.DoubleSide
+    slashMat.colorNode = Fn(() => {
+      const vUv = uv()
+      // Animated stripes: sin pattern moves over time, discard between stripes
+      const stripe = sin(vUv.x.mul(30.0).sub(time.mul(3.0)))
+      const visible = step(float(-0.5), stripe)
+      // Fade edges
+      const edgeFade = vUv.y.mul(2.0).sub(1.0).abs().negate().add(1.0)
+      return vec4(float(1.0), float(1.0), float(1.0), visible.mul(0.15).mul(edgeFade))
+    })()
+    const slashes = new THREE.Mesh(slashGeo, slashMat)
+    slashes.position.set(0, 0.5, -3)
+    slashes.rotation.y = 0.2
+    slashes.name = 'step01-slashes'
+    group.add(slashes)
 
     return group
   }
