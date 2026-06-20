@@ -2,104 +2,63 @@
 
 ## Stack
 
-| Layer | Tech |
-|-------|------|
-| Language | TypeScript (strict) |
-| Build | Vite 8 (rolldown) |
-| 3D | Three.js 18.4 + TSL (Node Materials) |
-| GPU | WebGPU primary, WebGL fallback |
-| UI | UIkit 3 + Less |
-| Scroll | Lenis (smooth) |
+Vite 8 (rolldown) · TypeScript strict · three 0.184 + TSL · WebGPU primary / WebGL fallback · UIkit 3 + Less · Lenis · troika-three-text · Playwright.
 
 ## Entry & Runtime
 
 ```
-src/entry-shell.ts    → Vite entry (referenced by index.html <script>)
-src/entry-app.ts      → deferred shell mount (modal, router init, splash wiring)
-src/main-app.ts       → bootstrap(), route gate (data-app-mode), dissolve transition
-src/main.ts           → @deprecated re-export of entry-shell (kept for deep imports)
-src/core/Bootstrapper.ts → wires Experience, events, managers
-src/Experience/Experience.ts → single render loop (update → rAF)
-src/styles/tokens.css → design tokens (color/type/space/motion), consumed globally
+index.html → /src/entry-shell.ts → entry-app.ts (router init, splash, modal mount)
+  → main-app.ts (bootstrap, dissolve transition)
+  → core/Bootstrapper.ts → Experience.ts (single render loop: update → rAF)
+  → src/styles/tokens.css (design tokens, consumed globally)
 ```
 
-## Modules & Responsibilities
+## Modules
 
 | Module | Role |
 |--------|------|
-| **Experience** | Single render loop state holder |
-| **Renderer** | Canvas, DPR, capability detection, post-processing GL |
-| **CameraStateManager** | Returns `CameraTarget { position, target, fov }` from scroll progress. Never touches Camera directly. |
-| **SceneContentManager** | Creates/disposes 3D scene objects per step. String-keyed (`step01`–`step08`). 14+ animation types. |
-| **WorldConfig** | Per-step config: camera preset, fog, post-processing |
-| **PostProcessingManager** | Per-step presets (bloom, vignette, grain, chromatic). Crossfades on transition. |
-| **GalleryManager** *(works only)* | FSM: `LIST ↔ EXPAND ↔ CONTRACT` via scale/position |
-| **GalleryScene** *(works only)* | 3D cards, orbs. Visibility per `worldState.uiShowGallery` |
-| **UIManager** | Route-aware UI init |
+| Experience | Single render loop. Owns Sizes, Time, Camera, Renderer, World, StateBus, Portfolio, Overlay, ProjectDetail, PerfMonitor |
+| Renderer | Canvas, DPR, capability detection, post-processing pipeline (WebGPU TSL + WebGL ShaderMaterial) |
+| World | Section[] composition, Baku, Lights, Atmosphere, Ground. Config-driven via WorldConfig |
+| Section | Base class: viewingState (ready/viewing/passed), cameraTransform, ppParams, fade in/out, context-driven dispose |
+| WorksPortfolio | 3D card carousel. Swipe/tap/arrow input. expandCard/collapseCard morph transition |
+| ProjectDetail | Fullscreen modal with project texture background. UIkit modal + custom close |
+| PostProcessingManager | Per-section presets (bloom/vignette/grain/chromatic/bloomRadius/bloomThreshold), crossfade via lerp |
+| RenderPipeline | WebGPU: native RenderPipeline + BloomNode. WebGL: custom RT ping-pong. Both have parity |
 
-## Scene Architecture (8 steps)
+## Routes (SPA hash)
 
-```
-step01  Smoke    — volumetric plane layers + starfield
-step02  Ball     — metallic sphere + glass orbs
-step03  Beams    — vertical energy beams + particles
-step04  City     — abstract core shapes + fields
-step05  Neon     — neon columns + gravity grid floor
-step06  Flow     — flow field lines
-step07  Droplets — rain drip + surface reflections
-step08  Galaxy   — spiral dust + nebula planes
-```
+| Route | data-page | Steps | Role |
+|-------|-----------|-------|------|
+| `#/` | home | step05, step06 | Studio positioning |
+| `#/trinity` | trinity | step01, step02 | Process/method |
+| `#/works` | works | step03, step04 | Interactive portfolio |
 
-Each step is a self-contained scene in `SectionSequences.ts`.
-`CameraStateManager` interpolates camera between steps based on scroll.
-`PostProcessingManager` crossfades bloom/vignette/grain/per-step presets.
+Contact: not implemented (`PageKey = 'home' | 'trinity' | 'works'`).
 
-## Page → Scene Mapping
+## WorldConfig
 
-| Page | data-page | Steps | Role |
-|------|-----------|-------|------|
-| Home | home | step07, step08 | Dropbox/fun |
-| Trinity | trinity | step01, step02 | Intro entry |
-| Works | works | step03, step05 | Beauty/gene |
-| Contact | contact | step04, step06 | City/scene |
+6 RAW scenes (step01–step06), each defines: camera (pos/target/fov), baku (role/opacity/color), post (bloom/vignette/grain/chromatic), fog, lights, camFovOffset/Duration/Smoothing, bloomRadius/Threshold. PAGE_MAP maps routes to step pairs.
 
-Each page gets 2 scenes — full control per scene.
+## Works page flow
 
-## Capability and Fallback
+1. Swipe (velocity > 0.12) or arrows → change project in preview overlay
+2. Tap (click < 8px) → `expandCard(idx)` → card morphs to fullscreen (0.5s easeInOutCubic)
+3. At peak → `ProjectDetail.open()` → fullscreen modal with texture background
+4. Esc / bg click / close button → `collapseCard()` → card returns to carousel
 
-Runtime capability is resolved once and propagated through renderer decisions:
+## Memory lifecycle
 
-- `webgpu`: primary renderer path.
-- `webgl`: fallback path with quality constraints.
-- `unsupported`: controlled UI state without runtime crashes.
+All window listeners (Sizes, Renderer, Camera, Input) have `destroy()`/`dispose()` with bound handler refs. `Experience.destroy()` calls all. No HMR leaks.
 
-Capability-driven choices must stay in one decision layer, not duplicated in many modules.
+## A11y
 
-## Render Pipeline
+- `prefers-reduced-motion`: Camera, SmoothScroll, GalleryManager, World, tokens.css
+- Splash: `role=status`, `aria-live`, `role=progressbar` with `aria-valuenow`
+- Nav: `role=navigation` + `aria-label`
+- Modal: `aria-modal`, focus moved in, close button with `aria-label`
+- Skip-link in index.html
 
-```
-scene → AA → bloom extract → mip bloom → composite
-       → chromatic → grain → vignette → output
-```
+## Design tokens
 
-Quality tiers: `high` (full) / `medium` (reduced bloom) / `low` (disabled).
-
-## Asset Lifecycle
-
-```
-preload → activateContext → use → deactivateContext → dispose
-```
-
-Assets managed by priority (`pre`/`must`/`sub`). Disposal only by inactive context.
-
-## Routes
-
-SPA hash routes (one `index.html`, DOM injection via `src/router.ts`):
-
-| Route | data-page | Role |
-|-------|-----------|------|
-| `#/` | home | studio positioning |
-| `#/trinity` | trinity | process/method |
-| `#/works` | works | interactive portfolio |
-
-Contact is planned but not implemented (see SPEC.md).
+`src/styles/tokens.css`: CSS custom properties (`--jlz-*`) for color, typography (1.250 scale), spacing (4px base), z-index, motion (duration + easing matrix), `prefers-reduced-motion` overrides. Less bridge in `tokens.less`. All components use tokens — no hardcoded values.
