@@ -137,7 +137,7 @@ export class WorksPortfolio {
     if (this.expanding) return
     // Ignore clicks on UI overlay/modal/nav — they have their own handlers.
     const target = e.target as HTMLElement
-    if (target.closest('.project-overlay, #project-modal, #jlj-splash, #main-nav')) return
+    if (target.closest('.jlz-works-ui, #project-modal, #jlj-splash, #main-nav')) return
     this.dragging = true
     this.dragStartX = e.clientX
     this.lastX = e.clientX
@@ -161,7 +161,7 @@ export class WorksPortfolio {
     this.dragging = false
     if (this.cards.length === 0) { this.dragOff = 0; return }
     const target = e.target as HTMLElement
-    if (target.closest('.project-overlay, #project-modal, #jlj-splash, #main-nav')) {
+    if (target.closest('.jlz-works-ui, #project-modal, #jlj-splash, #main-nav')) {
       this.dragOff = 0
       return
     }
