@@ -139,10 +139,13 @@ export class Experience {
       }))
     }
 
-    // Show portfolio only on works page
+    // Show portfolio only on works page; hide Baku (works = pure slider, no Baku).
     const isWorks = document.body.dataset.page === 'works'
     if (this.portfolio) {
       this.portfolio.group.visible = isWorks
+    }
+    if (this.world?.baku) {
+      this.world.baku.visible = !isWorks
     }
 
     // Per-section camera smoothing (Track 5). Fall back to default if cfg absent.
@@ -259,10 +262,11 @@ export class Experience {
       (idx) => { this.onCardExpanded(idx) },            // expand done → open detail
       () => { this.onCardCollapsed() },                 // collapse done → return to carousel
     )
-    // Add portfolio group at a position in camera FOV (works page camera is at [3,5,7] or [0,8,10])
     // Portfolio group at world origin — frontal camera at [0,1,7] looks at [0,1,0].
     this.portfolio.group.position.set(0, 1, 0)
     this.world.add(this.portfolio.group)
+    // Give portfolio the camera ref for raycast-based tap detection.
+    this.portfolio.setCamera(this.camera.instance)
 
     if (!this.overlay) {
       this.overlay = new ProjectOverlay()
