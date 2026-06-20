@@ -18,6 +18,7 @@ import { WorksPortfolio } from './WorksPortfolio'
 import { ProjectOverlay } from '../UI/ProjectOverlay'
 import { ProjectDetail } from '../UI/ProjectDetail'
 import { Subtitles } from '../UI/Subtitles'
+import { SectionProgress } from '../UI/SectionProgress'
 import { PerfMonitor } from '../core/PerfMonitor'
 import { DissolveOverlay } from '../shaders/dissolveOverlay'
 
@@ -53,6 +54,7 @@ export class Experience {
   private overlay: ProjectOverlay | null = null
   private projectDetail: ProjectDetail | null = null
   private _subtitles: Subtitles | null = null
+  private _sectionProgress: SectionProgress | null = null
   private currentSectionContext: string | null = null
   // Project transition dissolve (shader effect on card click)
   private projectDissolve: DissolveOverlay | null = null
@@ -99,6 +101,8 @@ export class Experience {
     this.bus = StateBus.getInstance()
     // Subtitles listen for jlz:section-change events automatically.
     this._subtitles = new Subtitles()
+    // Section progress indicator with clickable timeline dots.
+    this._sectionProgress = new SectionProgress(['Intro', 'Method', 'Works', 'Detail', 'Identity', 'Outro'])
     void this.ensurePortfolio()
     this.camera.instance.position.set(0, 5, 10)
     this.camera.instance.lookAt(0, 0, 0)
@@ -244,6 +248,8 @@ export class Experience {
     this.projectDissolve = null
     this._subtitles?.dispose()
     this._subtitles = null
+    this._sectionProgress?.dispose()
+    this._sectionProgress = null
     // Sizes + Input own window listeners — clean them up to avoid leaks
     // on hot-reload (Vite HMR) and on explicit teardown.
     this.sizes.destroy()

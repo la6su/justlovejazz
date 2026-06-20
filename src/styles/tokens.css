@@ -615,4 +615,90 @@
   }
 }
 
+/* ── Section progress indicator + timeline nav (junni Footer pattern) ── */
+.jlz-section-progress {
+  position: fixed;
+  bottom: var(--jlz-space-6);
+  right: var(--jlz-space-8);
+  z-index: var(--jlz-z-content);
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--jlz-space-3);
+}
+
+.jlz-section-progress__bar {
+  width: 120px;
+  height: 2px;
+  background: var(--jlz-color-border);
+  transform-origin: right;
+  transform: scaleX(0);
+  transition: transform var(--jlz-duration-normal) var(--jlz-ease-state);
+}
+
+.jlz-section-progress__bar::after {
+  content: '';
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--jlz-color-accent);
+  transform-origin: left;
+  transform: scaleX(1);
+}
+
+.jlz-section-progress__dots {
+  display: flex;
+  gap: var(--jlz-space-2);
+  pointer-events: auto;
+}
+
+.jlz-section-progress__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--jlz-radius-full);
+  border: 1px solid var(--jlz-color-border-strong);
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: all var(--jlz-duration-fast) var(--jlz-ease-state);
+}
+
+.jlz-section-progress__dot:hover {
+  border-color: var(--jlz-color-accent-hover);
+  transform: scale(1.3);
+}
+
+.jlz-section-progress__dot.is-active {
+  background: var(--jlz-color-accent);
+  border-color: var(--jlz-color-accent);
+}
+
+.jlz-section-progress__dot.is-passed {
+  background: var(--jlz-color-border-strong);
+  border-color: var(--jlz-color-border-strong);
+}
+
+.jlz-section-progress__dot:focus-visible {
+  outline: 2px solid var(--jlz-color-accent);
+  outline-offset: 4px;
+}
+
+@media (max-width: 768px) {
+  .jlz-section-progress {
+    bottom: var(--jlz-space-4);
+    right: var(--jlz-space-4);
+  }
+  .jlz-section-progress__bar {
+    width: 80px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jlz-section-progress__bar,
+  .jlz-section-progress__dot {
+    transition: none;
+  }
+}
+
 
