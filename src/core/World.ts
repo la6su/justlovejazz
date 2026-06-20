@@ -7,6 +7,7 @@ import { prefersReducedMotion } from './motionPolicy'
 import { type CameraTarget, type WorldState, NarrativePhase, BakuRole } from './types'
 import { Baku } from '../Experience/World/Baku'
 import { CinematicLights } from '../Experience/World/Lights'
+import { CursorLight } from '../Experience/World/CursorLight'
 import { getWorldConfigForPage, type PhaseConfig } from './WorldConfig'
 import { SectionSceneFactory } from './SectionSceneFactory'
 import type { WorldAtmosphere } from './WorldAtmosphere'
@@ -20,6 +21,7 @@ export class World extends THREE.Group {
     public sections: Section[] = []
     public baku!: Baku
     public lightsGroup!: CinematicLights
+    public cursorLight!: CursorLight
     public atmosphere: WorldAtmosphere | null = null
     public groundPlane!: THREE.Mesh
     public sceneGroups: THREE.Group[] = []
@@ -48,6 +50,10 @@ export class World extends THREE.Group {
 
         // ── Lights (= World.lights, аналог Junni Lights)
         this.lightsGroup = new CinematicLights(scene)
+
+        // ── CursorLight (junni pattern: cursor-driven directional light)
+        this.cursorLight = new CursorLight()
+        scene.add(this.cursorLight.object)
 
         // ── Baku (character sphere)
         this.baku = new Baku()
@@ -118,62 +124,77 @@ export class World extends THREE.Group {
     public update(deltaTime: number): void {
         this.sections.forEach(s => s.update(deltaTime))
         this.baku.update(deltaTime)
+        this.cursorLight.update(deltaTime)
 
-        // ── Junni-inspired per-component animation ──
+        // ── Room composition animation (per-component, Z-layer aware) ──
         const t = performance.now() * 0.001
         this.sceneGroups.forEach((group) => {
             if (!group.visible) return
+
             group.traverse((obj) => {
                 if (!(obj instanceof THREE.Mesh || obj instanceof THREE.Points)) return
                 const name = obj.name || ''
 
                 // Grid floors: subtle Z drift (perspective shift)
                 if (name.includes('grid')) {
-                    obj.position.z = Math.sin(t * 0.2) * 0.15
+                    obj.position.z = Math.sin(t * 0.2) * 0.1
                 }
-                // Crosses: slow rotation + opacity flicker
-                else if (name.includes('cross')) {
-                    obj.rotation.z = Math.sin(t * 0.3 + obj.position.x) * 0.1
-                    const mat = (obj as THREE.Mesh).material as THREE.MeshBasicMaterial
-                    if (mat?.opacity !== undefined) {
-                        mat.opacity = 0.3 + Math.sin(t * 0.5 + obj.position.x) * 0.15
+                // Front-layer geometric objects: slow rotation + bob
+                else if (name === 'step01-cube') {
+                    obj.rotation.x += deltaTime * 0.2
+                    obj.rotation.y += deltaTime * 0.15
+                    obj.position.y = 0.8 + Math.sin(t * 0.5) * 0.08
+                }
+                else if (name === 'step01-torus') {
+                    obj.rotation.x += deltaTime * 0.15
+                    obj.rotation.z += deltaTime * 0.1
+                    obj.position.y = 0.2 + Math.sin(t * 0.4 + 1) * 0.06
+                }
+                else if (name === 'step01-cyl') {
+                    obj.rotation.y += deltaTime * 0.3
+                    obj.position.y = -0.3 + Math.sin(t * 0.6 + 2) * 0.05
+                }
+                // Orbital rings: slow rotation on Z
+                else if (name.includes('ring') && name.includes('step02')) {
+                    obj.rotation.z += deltaTime * 0.08
+                }
+                // Central sphere (step02): emissive pulse
+                else if (name === 'step02-sphere') {
+                    const mat = (obj as THREE.Mesh).material as THREE.MeshStandardMaterial
+                    if (mat?.emissiveIntensity !== undefined) {
+                        mat.emissiveIntensity = 0.6 + Math.sin(t * 0.8) * 0.3
                     }
+                    obj.position.y = Math.sin(t * 0.3) * 0.05
                 }
-                // Ring dots: orbit (parent group rotation handled below)
-                else if (name.includes('ring-dot')) {
-                    // individual dots don't move; parent group rotates
-                }
-                // Center glow: breathe
-                else if (name === 'step02-glow') {
-                    const mat = (obj as THREE.Mesh).material as THREE.MeshBasicMaterial
-                    if (mat?.opacity !== undefined) {
-                        mat.opacity = 0.4 + Math.sin(t * 0.8) * 0.2
-                    }
-                    obj.scale.setScalar(1 + Math.sin(t * 0.8) * 0.08)
-                }
-                // Light strips: staggered opacity pulse (rhythm)
-                else if (name.includes('strip')) {
+                // Light columns: staggered opacity pulse
+                else if (name.includes('column')) {
                     const mat = (obj as THREE.Mesh).material as THREE.MeshBasicMaterial
                     if (mat?.opacity !== undefined) {
                         const idx = parseInt(name.split('-').pop() || '0')
-                        mat.opacity = 0.35 + Math.sin(t * 0.5 + idx * 0.6) * 0.25
+                        mat.opacity = 0.35 + Math.sin(t * 0.4 + idx * 0.7) * 0.2
                     }
                 }
-                // Chrome sphere: slow rotation + bob
+                // Chrome sphere (step06): slow rotation + bob
                 else if (name === 'step06-sphere') {
                     obj.rotation.y += deltaTime * 0.05
-                    obj.position.y = Math.sin(t * 0.3) * 0.05
+                    obj.position.y = Math.sin(t * 0.3) * 0.04
                 }
-                // BG spheres: no animation (atmosphere is static)
-                else if (name.includes('bg')) {
-                    // static — atmospheric gradient doesn't move
+                // Ring beneath sphere: counter-rotate
+                else if (name === 'step06-ring') {
+                    obj.rotation.z -= deltaTime * 0.02
+                }
+                // Particles: drift upward, loop
+                else if (name.includes('particles')) {
+                    const pts = obj as THREE.Points
+                    const positions = pts.geometry.attributes.position
+                    const arr = positions.array as Float32Array
+                    for (let i = 1; i < arr.length; i += 3) {
+                        arr[i] += deltaTime * 0.1
+                        if (arr[i] > 4) arr[i] = -2
+                    }
+                    positions.needsUpdate = true
                 }
             })
-
-            // Rotate step02 ring dot group as a whole (text ring effect)
-            if (group.name === 'step02-scene') {
-                group.rotation.z += deltaTime * 0.08
-            }
         })
     }
 
@@ -220,8 +241,30 @@ export class World extends THREE.Group {
             this._currentSectionIndex = fromIndex
         }
 
-        // ── Scene group visibility (Junni: sync 3D groups with active section)
-        this.sceneGroups.forEach((g, i) => { g.visible = (i === fromIndex || i === toIndex) })
+        // ── Scene group visibility with opacity fade (junni switchVisibility pattern)
+        // From group fades out as t→1, to group fades in. Both visible during transition.
+        this.sceneGroups.forEach((g, i) => {
+            if (i === fromIndex || i === toIndex) {
+                g.visible = true
+                // Calculate per-group opacity based on transition progress.
+                let opacity = 0
+                if (i === fromIndex) opacity = 1 - t
+                if (i === toIndex) opacity = t
+                if (i === fromIndex && i === toIndex) opacity = 1
+                // Apply opacity to all meshes in the group.
+                g.traverse((obj) => {
+                    if (obj instanceof THREE.Mesh) {
+                        const mat = obj.material
+                        if (!Array.isArray(mat) && 'opacity' in mat) {
+                            ;(mat as THREE.Material & { opacity: number }).opacity = opacity
+                            ;(mat as THREE.Material & { transparent: boolean }).transparent = true
+                        }
+                    }
+                })
+            } else {
+                g.visible = false
+            }
+        })
 
         const fromSec = this.sections[fromIndex]
         const toSec = this.sections[toIndex] || this.sections[fromIndex]
@@ -345,6 +388,7 @@ export class World extends THREE.Group {
         if (Array.isArray(groundMat)) groundMat.forEach(m => m.dispose())
         else groundMat.dispose()
         this.lightsGroup.dispose()
+        this.cursorLight.dispose()
         this.atmosphere?.dispose()
     }
 

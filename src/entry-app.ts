@@ -60,11 +60,15 @@ export async function startApp(): Promise<void> {
 
   await initRouter()
 
+  // NoiseText: scramble studio titles on page load (junni pattern).
+  window.addEventListener('jlj:navigate', () => {
+    animateNoiseTitles()
+  })
+
   window.addEventListener('jlj:navigate', () => {
     if (!isAppReady()) return
     const exp = window.experience
     if (exp?.switchPage) exp.switchPage(document.body.dataset.page || 'home')
-    // Reset scroll to top on page switch
     if (exp?.smoothScroll) {
       exp.smoothScroll.lenis.scrollTo(0, { immediate: true })
     }
@@ -75,4 +79,18 @@ export async function startApp(): Promise<void> {
   })
   mountDeferredShell()
   void boot()
+}
+
+/**
+ * NoiseText animation on studio titles — characters scramble then resolve.
+ * Junni pattern: gives text a "decoding" studio identity feel.
+ */
+async function animateNoiseTitles(): Promise<void> {
+  const { NoiseText } = await import('./Experience/NoiseText')
+  document.querySelectorAll<HTMLElement>('.studio-title, .studio-title__line').forEach((el) => {
+    const text = el.textContent?.trim() || ''
+    if (!text) return
+    const nt = new NoiseText(el)
+    nt.show(text, 1.2)
+  })
 }
