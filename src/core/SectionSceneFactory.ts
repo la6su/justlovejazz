@@ -1,44 +1,31 @@
 // SectionSceneFactory — Deep junni-inspired art-directed scenes.
 // Patterns: instanced particles, floating transparents, layout grid,
 // text ring, BG gradient sphere, cursor light.
+// NOTE: WebGPU doesn't support ShaderMaterial (GLSL). All custom shaders
+// use MeshBasicNodeMaterial + TSL, or MeshBasicMaterial for simple cases.
 import * as THREE from 'three'
+import { MeshBasicNodeMaterial } from 'three/webgpu'
+import { Fn, vec4, float, uniform, uv, pow, exp, fract, step, mix, normalize, positionLocal, time } from 'three/tsl'
 
-// ── Shared shader for gradient BG (junni BG pattern) ──
-const BG_VERT = `
-  varying vec3 vWorldPos;
-  void main() {
-    vWorldPos = position;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
-`
-const BG_FRAG = `
-  uniform vec3 uColorTop;
-  uniform vec3 uColorBottom;
-  uniform float uTime;
-  varying vec3 vWorldPos;
-  void main() {
-    float h = normalize(vWorldPos).y * 0.5 + 0.5;
-    vec3 col = mix(uColorBottom, uColorTop, h);
-    // Subtle noise band (junni bg.fs pattern)
-    float band = exp(-pow((h - 0.7) * 8.0, 2.0)) * 0.15;
-    col += band * uColorTop;
-    gl_FragColor = vec4(col, 1.0);
-  }
-`
-
-function makeGradientBG(top: number, bottom: number): THREE.Mesh {
+// ── Gradient BG using TSL (WebGPU-compatible, no ShaderMaterial) ──
+function makeGradientBG(topColor: number, bottomColor: number): THREE.Mesh {
   const geo = new THREE.SphereGeometry(50, 32, 32)
-  const mat = new THREE.ShaderMaterial({
-    uniforms: {
-      uColorTop: { value: new THREE.Color(top) },
-      uColorBottom: { value: new THREE.Color(bottom) },
-      uTime: { value: 0 },
-    },
-    vertexShader: BG_VERT,
-    fragmentShader: BG_FRAG,
-    side: THREE.BackSide,
-    depthWrite: false,
-  })
+  const uTop = uniform(new THREE.Color(topColor))
+  const uBottom = uniform(new THREE.Color(bottomColor))
+
+  const mat = new MeshBasicNodeMaterial()
+  mat.side = THREE.BackSide
+  mat.depthWrite = false
+
+  // TSL fragment: vertical gradient + atmospheric band (junni bg.fs pattern)
+  mat.colorNode = Fn(() => {
+    const h = normalize(positionLocal).y.mul(0.5).add(0.5)
+    const base = mix(uBottom, uTop, h)
+    // Noise band at h=0.7
+    const band = exp(pow(h.sub(0.7).mul(8.0), 2.0).negate()).mul(0.15)
+    return base.add(uTop.mul(band))
+  })()
+
   return new THREE.Mesh(geo, mat)
 }
 
@@ -53,61 +40,31 @@ function makeGridFloor(size: number, divisions: number, color1: number, color2: 
 
 /**
  * Instanced particles (junni Sec3Particle pattern).
- * InstancedBufferGeometry with random offset positions + per-instance scale.
+ * Uses PointsMaterial for WebGPU compatibility (no ShaderMaterial).
+ * Animated via World.update (position drift on BufferAttribute).
  */
-function makeInstancedParticles(count: number, range: THREE.Vector3, color: number, size: number, opacity: number): THREE.Mesh {
-  const baseGeo = new THREE.PlaneGeometry(size, size)
-  const geo = new THREE.InstancedBufferGeometry()
-  geo.setAttribute('position', baseGeo.getAttribute('position'))
-  geo.setAttribute('uv', baseGeo.getAttribute('uv'))
-  geo.setIndex(baseGeo.getIndex()!)
-
-  const offsets = new Float32Array(count * 3)
-  const scales = new Float32Array(count)
+function makeInstancedParticles(count: number, range: THREE.Vector3, color: number, size: number, opacity: number): THREE.Points {
+  const geo = new THREE.BufferGeometry()
+  const positions = new Float32Array(count * 3)
   for (let i = 0; i < count; i++) {
-    offsets[i * 3] = (Math.random() - 0.5) * range.x
-    offsets[i * 3 + 1] = (Math.random() - 0.5) * range.y
-    offsets[i * 3 + 2] = (Math.random() - 0.5) * range.z
-    scales[i] = 0.5 + Math.random() * 0.5
+    positions[i * 3] = (Math.random() - 0.5) * range.x
+    positions[i * 3 + 1] = (Math.random() - 0.5) * range.y
+    positions[i * 3 + 2] = (Math.random() - 0.5) * range.z
   }
-  geo.setAttribute('offset', new THREE.InstancedBufferAttribute(offsets, 3))
-  geo.setAttribute('aScale', new THREE.InstancedBufferAttribute(scales, 1))
+  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3))
 
-  const mat = new THREE.ShaderMaterial({
-    uniforms: {
-      uColor: { value: new THREE.Color(color) },
-      uOpacity: { value: opacity },
-      uTime: { value: 0 },
-    },
-    vertexShader: `
-      attribute vec3 offset;
-      attribute float aScale;
-      uniform float uTime;
-      varying float vAlpha;
-      void main() {
-        vec3 pos = position * aScale + offset;
-        pos.y += sin(uTime + offset.x) * 0.3;
-        pos.x += cos(uTime * 0.5 + offset.z) * 0.2;
-        vAlpha = aScale;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-      }
-    `,
-    fragmentShader: `
-      uniform vec3 uColor;
-      uniform float uOpacity;
-      varying float vAlpha;
-      void main() {
-        gl_FragColor = vec4(uColor, uOpacity * vAlpha);
-      }
-    `,
+  const mat = new THREE.PointsMaterial({
+    color,
+    size,
     transparent: true,
+    opacity,
+    sizeAttenuation: true,
     depthWrite: false,
-    side: THREE.DoubleSide,
   })
 
-  const mesh = new THREE.Mesh(geo, mat)
-  mesh.frustumCulled = false
-  return mesh
+  const points = new THREE.Points(geo, mat)
+  points.frustumCulled = false
+  return points
 }
 
 /**
@@ -310,6 +267,28 @@ export class SectionSceneFactory {
     const sphere = new THREE.Mesh(sphereGeo, sphereMat)
     sphere.name = 'step06-sphere'
     group.add(sphere)
+
+    // Road (junni Section6 Road pattern) — TSL node material for WebGPU
+    // Scrolling lines on a plane with additive blending.
+    const roadGeo = new THREE.PlaneGeometry(8, 30, 1, 20)
+    const roadUColor = uniform(new THREE.Color(0x1a2a4a))
+    const roadMat = new MeshBasicNodeMaterial()
+    roadMat.transparent = true
+    roadMat.depthWrite = false
+    roadMat.blending = THREE.AdditiveBlending
+    roadMat.colorNode = Fn(() => {
+      const vUv = uv()
+      const scroll = fract(vUv.y.sub(time.mul(0.3)))
+      const line = step(0.48, fract(scroll.mul(5.0)))
+      const fade = float(1.0).sub(vUv.y)
+      const alpha = line.mul(fade).mul(0.3)
+      return vec4(roadUColor, alpha)
+    })()
+    const road = new THREE.Mesh(roadGeo, roadMat)
+    road.rotation.x = -Math.PI / 2
+    road.position.set(0, -1.8, -5)
+    road.name = 'step06-road'
+    group.add(road)
 
     // Grid floor
     const grid = makeGridFloor(20, 20, 0x2a3a5a, 0x1a2a3a, 0.15, -1.8)
