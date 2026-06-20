@@ -11,10 +11,10 @@ export class CinematicLights {
     private hemiLight!: THREE.HemisphereLight
     private readonly group!: THREE.Group
 
-    // Target mood values (set by setMood, lerped toward in update)
-    private targetKeyColor = new THREE.Color(0xffffee)
-    private targetFillColor = new THREE.Color(0x88aaff)
-    private targetRimColor = new THREE.Color(0x4488ff)
+    // Target mood values — cool dark palette (no warm tones)
+    private targetKeyColor = new THREE.Color(0xb0c4e0)
+    private targetFillColor = new THREE.Color(0x506080)
+    private targetRimColor = new THREE.Color(0x4a6fa5)
     private targetKeyIntensity = 1.8
     private targetFillIntensity = 0.5
     private targetRimIntensity = 1.2
@@ -36,7 +36,7 @@ export class CinematicLights {
 
     private setupKey() {
         this.keyTarget = new THREE.Object3D()
-        this.keyLight = new THREE.DirectionalLight(0xffffee, 1.8)
+        this.keyLight = new THREE.DirectionalLight(0xb0c4e0, 1.8)
         this.keyLight.position.set(3, 4, 3)
         this.keyLight.castShadow = true
         this.group.add(this.keyLight)
@@ -44,25 +44,25 @@ export class CinematicLights {
     }
 
     private setupFill() {
-        this.fillLight = new THREE.DirectionalLight(0x88aaff, 0.5)
+        this.fillLight = new THREE.DirectionalLight(0x506080, 0.5)
         this.fillLight.position.set(-4, 2, 1)
         this.group.add(this.fillLight)
     }
 
     private setupRim() {
-        this.rimLight = new THREE.DirectionalLight(0x4488ff, 1.2)
+        this.rimLight = new THREE.DirectionalLight(0x4a6fa5, 1.2)
         this.rimLight.position.set(0, 2, -4)
         this.group.add(this.rimLight)
     }
 
     private setupVolumetric() {
-        this.volumetricLight = new THREE.PointLight(0xff6622, 0.6, 12)
+        this.volumetricLight = new THREE.PointLight(0x3a5a8a, 0.6, 12)
         this.volumetricLight.position.set(0, 1.5, 0)
         this.group.add(this.volumetricLight)
     }
 
     private setupHemisphere() {
-        this.hemiLight = new THREE.HemisphereLight(0x012345, 0x000000, 0.3)
+        this.hemiLight = new THREE.HemisphereLight(0x050810, 0x000000, 0.3)
         this.group.add(this.hemiLight)
     }
 
