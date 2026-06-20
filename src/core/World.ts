@@ -126,7 +126,7 @@ export class World extends THREE.Group {
         this.baku.update(deltaTime)
         this.cursorLight.update(deltaTime)
 
-        // ── Junni-inspired per-component animation ──
+        // ── Room composition animation (per-component, Z-layer aware) ──
         const t = performance.now() * 0.001
         this.sceneGroups.forEach((group) => {
             if (!group.visible) return
@@ -134,53 +134,67 @@ export class World extends THREE.Group {
             group.traverse((obj) => {
                 if (!(obj instanceof THREE.Mesh || obj instanceof THREE.Points)) return
                 const name = obj.name || ''
-                const mat = (obj as THREE.Mesh).material as THREE.Material & {
-                    uniforms?: { uTime?: { value: number } }
-                    opacity?: number
-                }
 
-                // Update uTime on ShaderMaterials (instanced particles, BG)
-                if (mat?.uniforms?.uTime) {
-                    mat.uniforms.uTime.value = t
-                }
-
-                // Grid floors: subtle Z drift
+                // Grid floors: subtle Z drift (perspective shift)
                 if (name.includes('grid')) {
-                    obj.position.z = Math.sin(t * 0.2) * 0.15
+                    obj.position.z = Math.sin(t * 0.2) * 0.1
                 }
-                // Floating transparents: slow rotation + bob
-                else if (name.startsWith('transparent-')) {
-                    obj.rotation.x += deltaTime * 0.1
+                // Front-layer geometric objects: slow rotation + bob
+                else if (name === 'step01-cube') {
+                    obj.rotation.x += deltaTime * 0.2
                     obj.rotation.y += deltaTime * 0.15
-                    obj.position.y += Math.sin(t * 0.4 + obj.position.x) * 0.003
+                    obj.position.y = 0.8 + Math.sin(t * 0.5) * 0.08
                 }
-                // Center glow: breathe
-                else if (name === 'step02-glow') {
-                    const bm = mat as THREE.MeshBasicMaterial
-                    if (bm?.opacity !== undefined) {
-                        bm.opacity = 0.4 + Math.sin(t * 0.8) * 0.2
+                else if (name === 'step01-torus') {
+                    obj.rotation.x += deltaTime * 0.15
+                    obj.rotation.z += deltaTime * 0.1
+                    obj.position.y = 0.2 + Math.sin(t * 0.4 + 1) * 0.06
+                }
+                else if (name === 'step01-cyl') {
+                    obj.rotation.y += deltaTime * 0.3
+                    obj.position.y = -0.3 + Math.sin(t * 0.6 + 2) * 0.05
+                }
+                // Orbital rings: slow rotation on Z
+                else if (name.includes('ring') && name.includes('step02')) {
+                    obj.rotation.z += deltaTime * 0.08
+                }
+                // Central sphere (step02): emissive pulse
+                else if (name === 'step02-sphere') {
+                    const mat = (obj as THREE.Mesh).material as THREE.MeshStandardMaterial
+                    if (mat?.emissiveIntensity !== undefined) {
+                        mat.emissiveIntensity = 0.6 + Math.sin(t * 0.8) * 0.3
                     }
-                    obj.scale.setScalar(1 + Math.sin(t * 0.8) * 0.08)
-                }
-                // Light strips: staggered opacity pulse
-                else if (name.includes('strip')) {
-                    const bm = mat as THREE.MeshBasicMaterial
-                    if (bm?.opacity !== undefined) {
-                        const idx = parseInt(name.split('-').pop() || '0')
-                        bm.opacity = 0.35 + Math.sin(t * 0.5 + idx * 0.6) * 0.25
-                    }
-                }
-                // Chrome sphere: slow rotation + bob
-                else if (name === 'step06-sphere') {
-                    obj.rotation.y += deltaTime * 0.05
                     obj.position.y = Math.sin(t * 0.3) * 0.05
                 }
+                // Light columns: staggered opacity pulse
+                else if (name.includes('column')) {
+                    const mat = (obj as THREE.Mesh).material as THREE.MeshBasicMaterial
+                    if (mat?.opacity !== undefined) {
+                        const idx = parseInt(name.split('-').pop() || '0')
+                        mat.opacity = 0.35 + Math.sin(t * 0.4 + idx * 0.7) * 0.2
+                    }
+                }
+                // Chrome sphere (step06): slow rotation + bob
+                else if (name === 'step06-sphere') {
+                    obj.rotation.y += deltaTime * 0.05
+                    obj.position.y = Math.sin(t * 0.3) * 0.04
+                }
+                // Ring beneath sphere: counter-rotate
+                else if (name === 'step06-ring') {
+                    obj.rotation.z -= deltaTime * 0.02
+                }
+                // Particles: drift upward, loop
+                else if (name.includes('particles')) {
+                    const pts = obj as THREE.Points
+                    const positions = pts.geometry.attributes.position
+                    const arr = positions.array as Float32Array
+                    for (let i = 1; i < arr.length; i += 3) {
+                        arr[i] += deltaTime * 0.1
+                        if (arr[i] > 4) arr[i] = -2
+                    }
+                    positions.needsUpdate = true
+                }
             })
-
-            // Rotate step02 text ring group
-            if (group.name === 'step02-scene') {
-                group.rotation.z += deltaTime * 0.08
-            }
         })
     }
 

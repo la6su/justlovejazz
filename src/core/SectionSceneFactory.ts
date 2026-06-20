@@ -1,36 +1,34 @@
-// SectionSceneFactory — Deep junni-inspired art-directed scenes.
-// Patterns: instanced particles, floating transparents, layout grid,
-// text ring, BG gradient sphere, cursor light.
-// NOTE: WebGPU doesn't support ShaderMaterial (GLSL). All custom shaders
-// use MeshBasicNodeMaterial + TSL, or MeshBasicMaterial for simple cases.
+// SectionSceneFactory — Room compositions (junni art direction).
+// Each scene = virtual room with layered depth:
+//   FRONT (z=1 to 3): focal object, closest to camera
+//   MID (z=-1 to -3): supporting elements, parallax mid
+//   BACK (z=-5 to -8): atmospheric depth, parallax far
+//   BG (z=-50): gradient sphere (sky/wall)
+// Camera is frontal — every object placed deliberately in frame.
 import * as THREE from 'three'
 import { MeshBasicNodeMaterial } from 'three/webgpu'
 import { Fn, vec4, float, uniform, uv, sin, pow, exp, fract, step, mix, normalize, positionLocal, time } from 'three/tsl'
 
-// ── Gradient BG using TSL (WebGPU-compatible, no ShaderMaterial) ──
+// ── BG gradient sphere (back wall of room) ──
 function makeGradientBG(topColor: number, bottomColor: number): THREE.Mesh {
   const geo = new THREE.SphereGeometry(50, 32, 32)
   const uTop = uniform(new THREE.Color(topColor))
   const uBottom = uniform(new THREE.Color(bottomColor))
-
   const mat = new MeshBasicNodeMaterial()
   mat.side = THREE.BackSide
   mat.depthWrite = false
-
-  // TSL fragment: vertical gradient + atmospheric band (junni bg.fs pattern)
   mat.colorNode = Fn(() => {
     const h = normalize(positionLocal).y.mul(0.5).add(0.5)
     const base = mix(uBottom, uTop, h)
-    // Noise band at h=0.7
-    const band = exp(pow(h.sub(0.7).mul(8.0), 2.0).negate()).mul(0.15)
+    const band = exp(pow(h.sub(0.7).mul(8.0), 2.0).negate()).mul(0.1)
     return base.add(uTop.mul(band))
   })()
-
   return new THREE.Mesh(geo, mat)
 }
 
-function makeGridFloor(size: number, divisions: number, color1: number, color2: number, opacity: number, y: number): THREE.GridHelper {
-  const grid = new THREE.GridHelper(size, divisions, color1, color2)
+// ── Floor grid (room floor, perspective anchor) ──
+function makeGridFloor(size: number, div: number, c1: number, c2: number, opacity: number, y: number): THREE.GridHelper {
+  const grid = new THREE.GridHelper(size, div, c1, c2)
   const mat = grid.material as THREE.Material
   mat.transparent = true
   mat.opacity = opacity
@@ -38,210 +36,147 @@ function makeGridFloor(size: number, divisions: number, color1: number, color2: 
   return grid
 }
 
-/**
- * Instanced particles (junni Sec3Particle pattern).
- * Uses PointsMaterial for WebGPU compatibility (no ShaderMaterial).
- * Animated via World.update (position drift on BufferAttribute).
- */
-function makeInstancedParticles(count: number, range: THREE.Vector3, color: number, size: number, opacity: number): THREE.Points {
-  const geo = new THREE.BufferGeometry()
-  const positions = new Float32Array(count * 3)
-  for (let i = 0; i < count; i++) {
-    positions[i * 3] = (Math.random() - 0.5) * range.x
-    positions[i * 3 + 1] = (Math.random() - 0.5) * range.y
-    positions[i * 3 + 2] = (Math.random() - 0.5) * range.z
-  }
-  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-
-  const mat = new THREE.PointsMaterial({
-    color,
-    size,
-    transparent: true,
-    opacity,
-    sizeAttenuation: true,
-    depthWrite: false,
-  })
-
-  const points = new THREE.Points(geo, mat)
-  points.frustumCulled = false
-  return points
-}
-
-/**
- * Floating transparents (junni Section2 Transparents pattern).
- * Geometric shapes (cube, torus, cylinder) floating at layout positions.
- */
-function makeFloatingTransparents(): THREE.Group {
-  const group = new THREE.Group()
-
-  // Cube
-  const cubeGeo = new THREE.BoxGeometry(0.4, 0.4, 0.4)
-  const cubeMat = new THREE.MeshStandardMaterial({
-    color: 0x1a2a3a, roughness: 0.1, metalness: 0.8,
-    transparent: true, opacity: 0.3,
-  })
-  const cube = new THREE.Mesh(cubeGeo, cubeMat)
-  cube.position.set(2, 1, -1)
-  cube.name = 'transparent-cube'
-  group.add(cube)
-
-  // Torus
-  const torusGeo = new THREE.TorusGeometry(0.3, 0.08, 12, 32)
-  const torusMat = new THREE.MeshStandardMaterial({
-    color: 0x2a3a5a, roughness: 0.2, metalness: 0.7,
-    transparent: true, opacity: 0.35,
-  })
-  const torus = new THREE.Mesh(torusGeo, torusMat)
-  torus.position.set(-2, -0.5, -1.5)
-  torus.name = 'transparent-torus'
-  group.add(torus)
-
-  // Cylinder
-  const cylGeo = new THREE.CylinderGeometry(0.15, 0.15, 0.6, 16)
-  const cylMat = new THREE.MeshStandardMaterial({
-    color: 0x1a3a5a, roughness: 0.15, metalness: 0.85,
-    transparent: true, opacity: 0.25,
-  })
-  const cyl = new THREE.Mesh(cylGeo, cylMat)
-  cyl.position.set(-1.5, 1.2, -2)
-  cyl.name = 'transparent-cyl'
-  group.add(cyl)
-
-  return group
-}
-
 export class SectionSceneFactory {
   /**
-   * step01: Trinity intro — BG + grid + floating transparents + particles.
-   * Junni: Section1 (wall, crosses, dots) + Section2 (transparents) blend.
+   * step01: Trinity intro — "Entry Hall"
+   * Front: floating geometric trio (cube/torus/cylinder) at eye level
+   * Mid: slashes plane (animated stripes, junni pattern)
+   * Back: gradient BG + sparse particles
+   * Floor: grid for perspective
    */
   static createStep01(): THREE.Group {
     const group = new THREE.Group()
     group.name = 'step01-scene'
 
-    // BG gradient sphere
+    // ── BACK: gradient sphere ──
     const bg = makeGradientBG(0x0a0a14, 0x050507)
     bg.name = 'step01-bg'
+    bg.position.z = -50
     group.add(bg)
 
-    // Grid floor
-    const grid = makeGridFloor(30, 30, 0x2a3a5a, 0x1a2a3a, 0.25, -2)
-    grid.name = 'step01-grid'
-    group.add(grid)
-
-    // Floating transparents (junni Section2 pattern)
-    const transparents = makeFloatingTransparents()
-    transparents.name = 'step01-transparents'
-    group.add(transparents)
-
-    // Instanced particles (junni Sec3Particle pattern)
-    const particles = makeInstancedParticles(
-      80, new THREE.Vector3(12, 6, 6), 0x4a6fa5, 0.04, 0.4
-    )
+    // ── BACK: sparse particles (depth, 30 only) ──
+    const pGeo = new THREE.BufferGeometry()
+    const pPos = new Float32Array(30 * 3)
+    for (let i = 0; i < 30; i++) {
+      pPos[i * 3] = (Math.random() - 0.5) * 14
+      pPos[i * 3 + 1] = (Math.random() - 0.5) * 8
+      pPos[i * 3 + 2] = -3 - Math.random() * 5
+    }
+    pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3))
+    const pMat = new THREE.PointsMaterial({ color: 0x3a4a6a, size: 0.03, transparent: true, opacity: 0.4, sizeAttenuation: true, depthWrite: false })
+    const particles = new THREE.Points(pGeo, pMat)
     particles.name = 'step01-particles'
     group.add(particles)
 
-    // Slashes (junni Section1 Slashes pattern) — animated stripe plane
-    // Uses TSL MeshBasicNodeMaterial for WebGPU compatibility.
-    const slashGeo = new THREE.PlaneGeometry(8, 4)
+    // ── MID: animated slashes plane (junni Section1 Slashes) ──
+    const slashGeo = new THREE.PlaneGeometry(10, 5)
     const slashMat = new MeshBasicNodeMaterial()
     slashMat.transparent = true
     slashMat.depthWrite = false
     slashMat.side = THREE.DoubleSide
     slashMat.colorNode = Fn(() => {
       const vUv = uv()
-      // Animated stripes: sin pattern moves over time, discard between stripes
-      const stripe = sin(vUv.x.mul(30.0).sub(time.mul(3.0)))
-      const visible = step(float(-0.5), stripe)
-      // Fade edges
+      const stripe = sin(vUv.x.mul(25.0).sub(time.mul(2.0)))
+      const visible = step(float(-0.3), stripe)
       const edgeFade = vUv.y.mul(2.0).sub(1.0).abs().negate().add(1.0)
-      return vec4(float(1.0), float(1.0), float(1.0), visible.mul(0.15).mul(edgeFade))
+      return vec4(float(0.3), float(0.4), float(0.6), visible.mul(0.08).mul(edgeFade))
     })()
     const slashes = new THREE.Mesh(slashGeo, slashMat)
-    slashes.position.set(0, 0.5, -3)
-    slashes.rotation.y = 0.2
+    slashes.position.set(0, 0, -3)
     slashes.name = 'step01-slashes'
     group.add(slashes)
+
+    // ── FRONT: geometric trio at eye level (focal composition) ──
+    // Cube — left, slightly high
+    const cube = new THREE.Mesh(
+      new THREE.BoxGeometry(0.5, 0.5, 0.5),
+      new THREE.MeshStandardMaterial({ color: 0x1a2a3a, roughness: 0.1, metalness: 0.8, transparent: true, opacity: 0.4 })
+    )
+    cube.position.set(-2.5, 0.8, 1)
+    cube.name = 'step01-cube'
+    group.add(cube)
+
+    // Torus — center, focal point
+    const torus = new THREE.Mesh(
+      new THREE.TorusGeometry(0.6, 0.12, 16, 48),
+      new THREE.MeshStandardMaterial({ color: 0x2a4a6a, roughness: 0.15, metalness: 0.7, transparent: true, opacity: 0.5 })
+    )
+    torus.position.set(0, 0.2, 1.5)
+    torus.name = 'step01-torus'
+    group.add(torus)
+
+    // Cylinder — right, low
+    const cyl = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.2, 0.2, 0.8, 16),
+      new THREE.MeshStandardMaterial({ color: 0x1a3a5a, roughness: 0.12, metalness: 0.85, transparent: true, opacity: 0.35 })
+    )
+    cyl.position.set(2.5, -0.3, 0.8)
+    cyl.name = 'step01-cyl'
+    group.add(cyl)
+
+    // ── FLOOR: grid ──
+    const grid = makeGridFloor(20, 20, 0x1a2a3a, 0x0a1a2a, 0.2, -2)
+    grid.name = 'step01-grid'
+    group.add(grid)
 
     return group
   }
 
   /**
-   * step02: Trinity method — text ring + grid + center glow + particles.
-   * Junni: Section5 (TextRing, Grid) pattern.
+   * step02: Trinity method — "Process Chamber"
+   * Front: central glowing sphere (essence/focus)
+   * Mid: 3 orbital rings at different angles (process layers)
+   * Back: gradient BG
+   * Floor: grid
    */
   static createStep02(): THREE.Group {
     const group = new THREE.Group()
     group.name = 'step02-scene'
 
-    // Text ring (junni Section5 TextRing — simplified as dot ring)
-    const ringRadius = 3
-    const ringCount = 32
-    const dotGeo = new THREE.SphereGeometry(0.03, 8, 8)
-    const dotMat = new THREE.MeshBasicMaterial({
-      color: 0x4a7ab5, transparent: true, opacity: 0.5,
-    })
-    for (let i = 0; i < ringCount; i++) {
-      const angle = (i / ringCount) * Math.PI * 2
-      const dot = new THREE.Mesh(dotGeo, dotMat)
-      dot.position.set(
-        Math.cos(angle) * ringRadius,
-        Math.sin(angle) * ringRadius * 0.3,
-        0
-      )
-      dot.name = `step02-ring-dot-${i}`
-      group.add(dot)
-    }
+    // ── BACK ──
+    const bg = makeGradientBG(0x0a0a14, 0x05050a)
+    bg.name = 'step02-bg'
+    bg.position.z = -50
+    group.add(bg)
 
-    // Grid floor
-    const grid = makeGridFloor(20, 20, 0x2a3a5a, 0x1a2a3a, 0.2, -2)
+    // ── MID: 3 orbital rings (tilted, different sizes) ──
+    const ringConfigs = [
+      { radius: 1.5, rotX: 0.3, rotZ: 0, color: 0x2a4a7a, opacity: 0.4 },
+      { radius: 2.2, rotX: -0.5, rotZ: 0.4, color: 0x1a3a6a, opacity: 0.3 },
+      { radius: 2.8, rotX: 0.8, rotZ: -0.3, color: 0x0a2a5a, opacity: 0.2 },
+    ]
+    ringConfigs.forEach((cfg, i) => {
+      const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(cfg.radius, 0.015, 8, 64),
+        new THREE.MeshBasicMaterial({ color: cfg.color, transparent: true, opacity: cfg.opacity })
+      )
+      ring.rotation.set(cfg.rotX, 0, cfg.rotZ)
+      ring.position.z = -1
+      ring.name = `step02-ring-${i}`
+      group.add(ring)
+    })
+
+    // ── FRONT: central glowing sphere ──
+    const sphere = new THREE.Mesh(
+      new THREE.IcosahedronGeometry(0.6, 3),
+      new THREE.MeshStandardMaterial({
+        color: 0x0a0a14, emissive: 0x2a4a7a, emissiveIntensity: 0.8,
+        roughness: 0.1, metalness: 0.9,
+      })
+    )
+    sphere.position.set(0, 0, 1)
+    sphere.name = 'step02-sphere'
+    group.add(sphere)
+
+    // ── FLOOR ──
+    const grid = makeGridFloor(16, 16, 0x1a2a3a, 0x0a1a2a, 0.15, -2)
     grid.name = 'step02-grid'
     group.add(grid)
-
-    // Center glow
-    const glowGeo = new THREE.SphereGeometry(0.5, 24, 24)
-    const glowMat = new THREE.MeshBasicMaterial({
-      color: 0x5a8ac5, transparent: true, opacity: 0.4,
-    })
-    const glow = new THREE.Mesh(glowGeo, glowMat)
-    glow.name = 'step02-glow'
-    group.add(glow)
-
-    // Sparse particles
-    const particles = makeInstancedParticles(
-      40, new THREE.Vector3(8, 4, 4), 0x3a5a8a, 0.03, 0.3
-    )
-    particles.name = 'step02-particles'
-    group.add(particles)
-
-    // Gradation plane (junni Section1 Gradation pattern)
-    // HSV gradient that shifts over time — atmospheric color wash.
-    const gradGeo = new THREE.PlaneGeometry(10, 6)
-    const gradMat = new MeshBasicNodeMaterial()
-    gradMat.transparent = true
-    gradMat.depthWrite = false
-    gradMat.side = THREE.DoubleSide
-    gradMat.colorNode = Fn(() => {
-      const vUv = uv()
-      // HSV: hue shifts with uv.x + time, high saturation, full value.
-      // Approximate hsv2rgb via sin-based (junni uses hsv2rgb glslify).
-      const hue = vUv.x.negate().mul(0.2).add(0.3).add(time.mul(0.1))
-      const r = sin(hue.mul(6.283)).mul(0.5).add(0.5)
-      const g = sin(hue.mul(6.283).add(2.094)).mul(0.5).add(0.5)
-      const b = sin(hue.mul(6.283).add(4.188)).mul(0.5).add(0.5)
-      // Fade at edges.
-      const edgeFade = vUv.y.mul(2.0).sub(1.0).abs().negate().add(1.0)
-      return vec4(vec4(r, g, b, float(1.0)).xyz.mul(edgeFade).mul(0.15), float(0.15))
-    })()
-    const grad = new THREE.Mesh(gradGeo, gradMat)
-    grad.position.set(0, 0.5, -4)
-    grad.name = 'step02-gradation'
-    group.add(grad)
 
     return group
   }
 
-  /** step03/04: Works backdrop — empty (cards = scene). */
+  /** step03/04: Works — empty (cards = room) */
   static createStep03(): THREE.Group {
     const group = new THREE.Group()
     group.name = 'step03-scene'
@@ -254,69 +189,77 @@ export class SectionSceneFactory {
   }
 
   /**
-   * step05: Home — BG + light strips + grid + particles.
-   * Junni: Section5 (Grid) + Section6 (atmosphere) blend.
+   * step05: Home — "Identity Gallery"
+   * Front: 5 vertical light columns (identity, rhythm)
+   * Mid: nothing (negative space for parallax)
+   * Back: gradient BG + very sparse particles
+   * Floor: reflective grid
    */
   static createStep05(): THREE.Group {
     const group = new THREE.Group()
     group.name = 'step05-scene'
 
-    // BG gradient
+    // ── BACK ──
     const bg = makeGradientBG(0x0a0a14, 0x05050a)
     bg.name = 'step05-bg'
+    bg.position.z = -50
     group.add(bg)
 
-    // Vertical light strips
-    const stripCount = 7
-    const stripGeo = new THREE.PlaneGeometry(0.06, 6)
-    for (let i = 0; i < stripCount; i++) {
-      const x = (i - (stripCount - 1) / 2) * 1.5
-      const hue = 0.58 + (i - stripCount / 2) * 0.015
-      const color = new THREE.Color().setHSL(hue, 0.4, 0.5)
-      const mat = new THREE.MeshBasicMaterial({
-        color, transparent: true, opacity: 0.5, side: THREE.DoubleSide,
-      })
-      const strip = new THREE.Mesh(stripGeo, mat)
-      strip.position.set(x, 0.5, -1.5)
-      strip.name = `step05-strip-${i}`
-      group.add(strip)
+    // ── BACK: sparse particles ──
+    const pGeo = new THREE.BufferGeometry()
+    const pPos = new Float32Array(20 * 3)
+    for (let i = 0; i < 20; i++) {
+      pPos[i * 3] = (Math.random() - 0.5) * 16
+      pPos[i * 3 + 1] = Math.random() * 6 - 1
+      pPos[i * 3 + 2] = -4 - Math.random() * 4
     }
-
-    // Grid floor
-    const grid = makeGridFloor(25, 25, 0x2a3a5a, 0x152535, 0.2, -2.5)
-    grid.name = 'step05-grid'
-    group.add(grid)
-
-    // Ambient particles
-    const particles = makeInstancedParticles(
-      60, new THREE.Vector3(14, 6, 5), 0x3a5a7a, 0.035, 0.3
-    )
+    pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3))
+    const pMat = new THREE.PointsMaterial({ color: 0x2a3a5a, size: 0.025, transparent: true, opacity: 0.3, sizeAttenuation: true, depthWrite: false })
+    const particles = new THREE.Points(pGeo, pMat)
     particles.name = 'step05-particles'
     group.add(particles)
+
+    // ── FRONT: 5 vertical light columns ──
+    const colCount = 5
+    const colGeo = new THREE.PlaneGeometry(0.04, 5)
+    for (let i = 0; i < colCount; i++) {
+      const x = (i - (colCount - 1) / 2) * 2
+      const hue = 0.58 + (i - colCount / 2) * 0.02
+      const color = new THREE.Color().setHSL(hue, 0.4, 0.45)
+      const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.45, side: THREE.DoubleSide })
+      const col = new THREE.Mesh(colGeo, mat)
+      col.position.set(x, 0.5, 1)
+      col.name = `step05-column-${i}`
+      group.add(col)
+    }
+
+    // ── FLOOR ──
+    const grid = makeGridFloor(20, 20, 0x1a2a3a, 0x0a1a2a, 0.15, -2.5)
+    grid.name = 'step05-grid'
+    group.add(grid)
 
     return group
   }
 
   /**
-   * step06: Home outro — chrome sphere + grid + BG + sparse particles.
-   * Junni: Section6 (reflection) + Section5 (Grid) blend.
+   * step06: Home outro — "Reflection Room"
+   * Front: chrome sphere on pedestal (reflection focal)
+   * Mid: scrolling road shader (junni Section6 Road — forward motion)
+   * Back: gradient BG
+   * Floor: grid (reflection surface)
    */
   static createStep06(): THREE.Group {
     const group = new THREE.Group()
     group.name = 'step06-scene'
 
-    // Chrome sphere
-    const sphereGeo = new THREE.SphereGeometry(1.2, 64, 64)
-    const sphereMat = new THREE.MeshStandardMaterial({
-      color: 0x0a0a0f, roughness: 0.02, metalness: 1, envMapIntensity: 1,
-    })
-    const sphere = new THREE.Mesh(sphereGeo, sphereMat)
-    sphere.name = 'step06-sphere'
-    group.add(sphere)
+    // ── BACK ──
+    const bg = makeGradientBG(0x080810, 0x030305)
+    bg.name = 'step06-bg'
+    bg.position.z = -50
+    group.add(bg)
 
-    // Road (junni Section6 Road pattern) — TSL node material for WebGPU
-    // Scrolling lines on a plane with additive blending.
-    const roadGeo = new THREE.PlaneGeometry(8, 30, 1, 20)
+    // ── MID: road shader (junni Section6 Road) ──
+    const roadGeo = new THREE.PlaneGeometry(6, 20, 1, 16)
     const roadUColor = uniform(new THREE.Color(0x1a2a4a))
     const roadMat = new MeshBasicNodeMaterial()
     roadMat.transparent = true
@@ -327,31 +270,38 @@ export class SectionSceneFactory {
       const scroll = fract(vUv.y.sub(time.mul(0.3)))
       const line = step(0.48, fract(scroll.mul(5.0)))
       const fade = float(1.0).sub(vUv.y)
-      const alpha = line.mul(fade).mul(0.3)
+      const alpha = line.mul(fade).mul(0.25)
       return vec4(roadUColor, alpha)
     })()
     const road = new THREE.Mesh(roadGeo, roadMat)
     road.rotation.x = -Math.PI / 2
-    road.position.set(0, -1.8, -5)
+    road.position.set(0, -1.5, -3)
     road.name = 'step06-road'
     group.add(road)
 
-    // Grid floor
-    const grid = makeGridFloor(20, 20, 0x2a3a5a, 0x1a2a3a, 0.15, -1.8)
+    // ── FRONT: chrome sphere (focal reflection) ──
+    const sphere = new THREE.Mesh(
+      new THREE.SphereGeometry(0.9, 64, 64),
+      new THREE.MeshStandardMaterial({ color: 0x0a0a0f, roughness: 0.02, metalness: 1, envMapIntensity: 1 })
+    )
+    sphere.position.set(0, 0, 1)
+    sphere.name = 'step06-sphere'
+    group.add(sphere)
+
+    // ── FRONT: faint ring beneath sphere (ground reference) ──
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(1.1, 1.12, 64),
+      new THREE.MeshBasicMaterial({ color: 0x2a3a5a, transparent: true, opacity: 0.2, side: THREE.DoubleSide })
+    )
+    ring.rotation.x = -Math.PI / 2
+    ring.position.set(0, -1, 1)
+    ring.name = 'step06-ring'
+    group.add(ring)
+
+    // ── FLOOR ──
+    const grid = makeGridFloor(16, 16, 0x1a2a3a, 0x0a1a2a, 0.1, -1.5)
     grid.name = 'step06-grid'
     group.add(grid)
-
-    // BG gradient
-    const bg = makeGradientBG(0x080810, 0x030305)
-    bg.name = 'step06-bg'
-    group.add(bg)
-
-    // Sparse particles
-    const particles = makeInstancedParticles(
-      30, new THREE.Vector3(10, 5, 4), 0x2a3a5a, 0.025, 0.25
-    )
-    particles.name = 'step06-particles'
-    group.add(particles)
 
     return group
   }
