@@ -139,78 +139,186 @@
 }
 
 /* ──────────────────────────────────────────────────────────────
- * Component styles (token-driven, replacing inline styles)
- *
- * Components migrated from inline cssText to token-driven classes:
- *   .project-overlay — Works page project info overlay
+ * Works page — 3D slider UI overlay (studio-grade layout)
+ * Synced with WorksPortfolio 3D carousel. Token-driven.
  * ────────────────────────────────────────────────────────────── */
 
-.project-overlay {
+.jlz-works-ui {
   position: fixed;
-  bottom: 12vh;
-  left: 50%;
-  transform: translateX(-50%);
-  text-align: center;
-  pointer-events: none;
+  inset: 0;
   z-index: var(--jlz-z-content);
+  pointer-events: none;
   transition: opacity var(--jlz-duration-slow) var(--jlz-ease-state);
 }
 
-.project-overlay__index {
-  font-size: var(--jlz-type-caption);
-  letter-spacing: var(--jlz-tracking-widest);
-  color: var(--jlz-color-text-subtle);
-  margin-bottom: var(--jlz-space-2);
-  font-family: var(--jlz-font-mono);
+.jlz-works-ui--changing .jlz-works-title,
+.jlz-works-ui--changing .jlz-works-description,
+.jlz-works-ui--changing .jlz-works-category,
+.jlz-works-ui--changing .jlz-works-tags {
+  opacity: 0;
+  transform: translateY(4px);
 }
 
-.project-overlay__title {
-  font-size: var(--jlz-type-display-md);
-  font-weight: var(--jlz-weight-light);
-  letter-spacing: var(--jlz-tracking-widest);
-  color: var(--jlz-color-text);
-  margin: 0;
-}
-
-.project-overlay__category {
-  font-size: var(--jlz-type-small);
-  letter-spacing: var(--jlz-tracking-wider);
-  color: var(--jlz-color-text-subtle);
-  margin-top: var(--jlz-space-2);
-  text-transform: uppercase;
-}
-
-.project-overlay__nav {
-  margin-top: var(--jlz-space-8);
-  display: flex;
-  justify-content: center;
-  gap: var(--jlz-space-8);
-}
-
-.project-overlay__nav button {
+/* ── Nav arrows (screen sides) ── */
+.jlz-works-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
   background: none;
   border: none;
   cursor: pointer;
   pointer-events: auto;
   color: var(--jlz-color-text-muted);
+  padding: var(--jlz-space-4);
   transition: color var(--jlz-duration-fast) var(--jlz-ease-state);
+  z-index: 2;
 }
 
-.project-overlay__nav button:hover {
+.jlz-works-nav--prev { left: var(--jlz-space-8); }
+.jlz-works-nav--next { right: var(--jlz-space-8); }
+
+.jlz-works-nav:hover {
   color: var(--jlz-color-text);
 }
 
-.project-overlay__nav button:focus-visible {
+.jlz-works-nav:focus-visible {
   outline: 2px solid var(--jlz-color-accent);
   outline-offset: var(--jlz-space-1);
   border-radius: var(--jlz-radius-sm);
 }
 
-.project-overlay__nav .counter {
+/* ── Top-left: index + title + category ── */
+.jlz-works-info--top {
+  position: absolute;
+  top: var(--jlz-space-20);
+  left: var(--jlz-space-16);
+  max-width: 480px;
+}
+
+.jlz-works-index {
+  font-size: var(--jlz-type-overline);
+  font-family: var(--jlz-font-mono);
+  letter-spacing: var(--jlz-tracking-widest);
   color: var(--jlz-color-text-subtle);
+  margin-bottom: var(--jlz-space-3);
+}
+
+.jlz-works-title {
+  font-size: var(--jlz-type-display-md);
+  font-weight: var(--jlz-weight-light);
+  letter-spacing: var(--jlz-tracking-tight);
+  color: var(--jlz-color-text);
+  margin: 0;
+  line-height: var(--jlz-leading-tight);
+  transition:
+    opacity var(--jlz-duration-normal) var(--jlz-ease-state),
+    transform var(--jlz-duration-normal) var(--jlz-ease-state);
+}
+
+.jlz-works-category {
+  font-size: var(--jlz-type-small);
+  font-family: var(--jlz-font-mono);
+  letter-spacing: var(--jlz-tracking-wide);
+  color: var(--jlz-color-text-muted);
+  margin-top: var(--jlz-space-3);
+  text-transform: uppercase;
+  transition:
+    opacity var(--jlz-duration-normal) var(--jlz-ease-state),
+    transform var(--jlz-duration-normal) var(--jlz-ease-state);
+}
+
+/* ── Top-right: counter ── */
+.jlz-works-counter {
+  position: absolute;
+  top: var(--jlz-space-20);
+  right: var(--jlz-space-16);
+  font-size: var(--jlz-type-small);
+  font-family: var(--jlz-font-mono);
+  letter-spacing: var(--jlz-tracking-wide);
+  color: var(--jlz-color-text-subtle);
+}
+
+/* ── Bottom-left: description + tags ── */
+.jlz-works-info--bottom {
+  position: absolute;
+  bottom: var(--jlz-space-20);
+  left: var(--jlz-space-16);
+  max-width: 420px;
+}
+
+.jlz-works-description {
+  font-size: var(--jlz-type-body);
+  line-height: var(--jlz-leading-loose);
+  color: var(--jlz-color-text-muted);
+  margin: 0 0 var(--jlz-space-4);
+  transition:
+    opacity var(--jlz-duration-normal) var(--jlz-ease-state),
+    transform var(--jlz-duration-normal) var(--jlz-ease-state);
+}
+
+.jlz-works-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--jlz-space-2);
+  transition:
+    opacity var(--jlz-duration-normal) var(--jlz-ease-state),
+    transform var(--jlz-duration-normal) var(--jlz-ease-state);
+}
+
+.jlz-works-tag {
   font-size: var(--jlz-type-caption);
   font-family: var(--jlz-font-mono);
-  line-height: 24px;
+  padding: var(--jlz-space-1) var(--jlz-space-3);
+  border: 1px solid var(--jlz-color-border);
+  border-radius: var(--jlz-radius-full);
+  color: var(--jlz-color-text-subtle);
+  letter-spacing: var(--jlz-tracking-wide);
+}
+
+/* ── Works slider section ── */
+.section-works-slider {
+  position: relative;
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+#gallery-anchor {
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .jlz-works-info--top {
+    top: var(--jlz-space-12);
+    left: var(--jlz-space-6);
+    max-width: 90%;
+  }
+  .jlz-works-counter {
+    top: var(--jlz-space-12);
+    right: var(--jlz-space-6);
+  }
+  .jlz-works-info--bottom {
+    bottom: var(--jlz-space-12);
+    left: var(--jlz-space-6);
+    max-width: 90%;
+  }
+  .jlz-works-nav {
+    padding: var(--jlz-space-2);
+  }
+  .jlz-works-nav--prev { left: var(--jlz-space-2); }
+  .jlz-works-nav--next { right: var(--jlz-space-2); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jlz-works-ui,
+  .jlz-works-title,
+  .jlz-works-description,
+  .jlz-works-category,
+  .jlz-works-tags {
+    transition: none;
+  }
 }
 
 /* ── EnterButton — splash→dissolve entry trigger ── */
