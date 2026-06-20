@@ -214,6 +214,30 @@ export class SectionSceneFactory {
     particles.name = 'step02-particles'
     group.add(particles)
 
+    // Gradation plane (junni Section1 Gradation pattern)
+    // HSV gradient that shifts over time — atmospheric color wash.
+    const gradGeo = new THREE.PlaneGeometry(10, 6)
+    const gradMat = new MeshBasicNodeMaterial()
+    gradMat.transparent = true
+    gradMat.depthWrite = false
+    gradMat.side = THREE.DoubleSide
+    gradMat.colorNode = Fn(() => {
+      const vUv = uv()
+      // HSV: hue shifts with uv.x + time, high saturation, full value.
+      // Approximate hsv2rgb via sin-based (junni uses hsv2rgb glslify).
+      const hue = vUv.x.negate().mul(0.2).add(0.3).add(time.mul(0.1))
+      const r = sin(hue.mul(6.283)).mul(0.5).add(0.5)
+      const g = sin(hue.mul(6.283).add(2.094)).mul(0.5).add(0.5)
+      const b = sin(hue.mul(6.283).add(4.188)).mul(0.5).add(0.5)
+      // Fade at edges.
+      const edgeFade = vUv.y.mul(2.0).sub(1.0).abs().negate().add(1.0)
+      return vec4(vec4(r, g, b, float(1.0)).xyz.mul(edgeFade).mul(0.15), float(0.15))
+    })()
+    const grad = new THREE.Mesh(gradGeo, gradMat)
+    grad.position.set(0, 0.5, -4)
+    grad.name = 'step02-gradation'
+    group.add(grad)
+
     return group
   }
 
