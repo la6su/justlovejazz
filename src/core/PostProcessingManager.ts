@@ -21,12 +21,12 @@ interface PostParams {
 
 // Presets: step01 through step08 (all string keys)
 const PHASE_PRESETS: Record<string, PostParams> = {
-  step01: { bloom: 0.5, vignette: 0.6, grain: 0.05, chromatic: 0.008, bloomRadius: 0.5, bloomThreshold: 0.5 },
-  step02: { bloom: 0.4, vignette: 0.5, grain: 0.03, chromatic: 0.003, bloomRadius: 0.6, bloomThreshold: 0.4 },
-  step03: { bloom: 0.6, vignette: 0.4, grain: 0.02, chromatic: 0.005, bloomRadius: 0.7, bloomThreshold: 0.45 },
-  step04: { bloom: 0.3, vignette: 0.6, grain: 0.04, chromatic: 0.002, bloomRadius: 0.4, bloomThreshold: 0.6 },
-  step05: { bloom: 0.7, vignette: 0.5, grain: 0.01, chromatic: 0.005, bloomRadius: 0.8, bloomThreshold: 0.35 },
-  step06: { bloom: 0.5, vignette: 0.4, grain: 0.03, chromatic: 0.003, bloomRadius: 0.6, bloomThreshold: 0.5 },
+  step01: { bloom: 0.35, vignette: 0.65, grain: 0.03, chromatic: 0.004, bloomRadius: 0.5, bloomThreshold: 0.55 },
+  step02: { bloom: 0.45, vignette: 0.5, grain: 0.025, chromatic: 0.003, bloomRadius: 0.65, bloomThreshold: 0.4 },
+  step03: { bloom: 0.5, vignette: 0.35, grain: 0.015, chromatic: 0.004, bloomRadius: 0.7, bloomThreshold: 0.45 },
+  step04: { bloom: 0.2, vignette: 0.55, grain: 0.035, chromatic: 0.002, bloomRadius: 0.35, bloomThreshold: 0.65 },
+  step05: { bloom: 0.65, vignette: 0.45, grain: 0.015, chromatic: 0.004, bloomRadius: 0.8, bloomThreshold: 0.3 },
+  step06: { bloom: 0.4, vignette: 0.4, grain: 0.02, chromatic: 0.003, bloomRadius: 0.55, bloomThreshold: 0.5 },
   step07: { bloom: 0.4, vignette: 0.5, grain: 0.02, chromatic: 0.004, bloomRadius: 0.5, bloomThreshold: 0.5 },
   step08: { bloom: 0.2, vignette: 0.3, grain: 0.01, chromatic: 0.0, bloomRadius: 0.3, bloomThreshold: 0.7 },
 }
