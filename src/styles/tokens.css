@@ -428,4 +428,32 @@
   }
 }
 
+/* ── 3D↔UI section sync ──
+ * When 3D world transitions to a new section, Experience dispatches
+ * 'jlz:section-change'. ContentReveal adds .section-active to the
+ * matching DOM element (data-section="step01" etc).
+ */
+.section-active {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+  transition:
+    opacity var(--jlz-duration-slow) var(--jlz-ease-entrance),
+    transform var(--jlz-duration-slow) var(--jlz-ease-entrance);
+}
+
+[data-section] {
+  opacity: 0.4;
+  transform: translateY(8px);
+  transition:
+    opacity var(--jlz-duration-normal) var(--jlz-ease-state),
+    transform var(--jlz-duration-normal) var(--jlz-ease-state);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-section] {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 

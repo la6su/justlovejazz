@@ -36,7 +36,7 @@ export function homePage(): PageLayout {
     title: 'JUSTLOVEJAZZ',
     sections: {
       intro: `
-        <section id="home-hero" class="section-studio uk-flex uk-flex-middle section-intro" uk-height-viewport>
+        <section id="home-hero" data-section="step05" class="section-studio uk-flex uk-flex-middle section-intro" uk-height-viewport>
           <div class="uk-container uk-text-center">
             <h1 class="studio-title">
               <span class="studio-title__line">JUSTLOVEJAZZ</span>
@@ -48,7 +48,7 @@ export function homePage(): PageLayout {
           </div>
         </section>`,
       body: `
-        <section id="home-body" class="section-studio section-scrolly uk-flex uk-flex-middle" uk-height-viewport="expand:true">
+        <section id="home-body" data-section="step06" class="section-studio section-scrolly uk-flex uk-flex-middle" uk-height-viewport="expand:true">
           <div class="uk-container">
             <span class="section-number">Directory</span>
             <div class="home-directory">
@@ -73,7 +73,7 @@ export function trinityPage(): PageLayout {
     title: 'JUSTLOVEJAZZ — Trinity',
     sections: {
       intro: `
-        <section id="trinity-hero" class="section-studio uk-flex uk-flex-middle section-intro" uk-height-viewport>
+        <section id="trinity-hero" data-section="step01" class="section-studio uk-flex uk-flex-middle section-intro" uk-height-viewport>
           <div class="uk-container uk-text-center">
             <h1 class="studio-title studio-title--xl">
               <span class="studio-title__line">Three</span>
@@ -87,7 +87,7 @@ export function trinityPage(): PageLayout {
           </div>
         </section>`,
       body: `
-        <section id="trinity-loop" class="section-studio section-scrolly uk-flex uk-flex-middle" uk-height-viewport="expand:true">
+        <section id="trinity-loop" data-section="step02" class="section-studio section-scrolly uk-flex uk-flex-middle" uk-height-viewport="expand:true">
           <div class="uk-container">
             <h2 class="studio-title uk-text-center studio-title--medium uk-margin-bottom">The Trinity</h2>
             <div uk-grid class="uk-grid-small uk-child-width-1-3@m uk-child-width-1-1">
@@ -123,7 +123,7 @@ export function worksPage(): PageLayout {
     title: 'JUSTLOVEJAZZ — Works',
     sections: {
       intro: `
-        <section id="works-hero" class="section-studio uk-flex uk-flex-middle section-intro" uk-height-viewport="expand:true">
+        <section id="works-hero" data-section="step03" class="section-studio uk-flex uk-flex-middle section-intro" uk-height-viewport="expand:true">
           <div class="uk-container uk-text-center">
             <h1 class="studio-title studio-title--xl">
               <span class="studio-title__line">Four</span>
@@ -133,7 +133,7 @@ export function worksPage(): PageLayout {
           </div>
         </section>`,
       body: `
-        <section id="gallery" class="section-studio section-works-gallery uk-flex uk-flex-top" uk-height-viewport="expand:true">
+        <section id="gallery" data-section="step04" class="section-studio section-works-gallery uk-flex uk-flex-top" uk-height-viewport="expand:true">
           <!-- 3D canvas rendered behind. DOM layers for scroll anchoring only. -->
           <div id="gallery-anchor" data-role="3d-gallery"></div>
         </section>`,
