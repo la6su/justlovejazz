@@ -139,13 +139,21 @@ export class Experience {
       }))
     }
 
-    // Show portfolio only on works page; hide Baku (works = pure slider, no Baku).
+    // Show portfolio only on works page; hide everything else (pure slider).
     const isWorks = document.body.dataset.page === 'works'
     if (this.portfolio) {
       this.portfolio.group.visible = isWorks
     }
     if (this.world?.baku) {
       this.world.baku.visible = !isWorks
+    }
+    // On works page: hide ground plane + scene backdrop (only slider + fog).
+    if (this.world) {
+      this.world.groundPlane.visible = !isWorks
+      // Toggle scene groups visibility — works page doesn't need them.
+      this.world.sceneGroups.forEach((g: THREE.Group) => {
+        g.visible = !isWorks
+      })
     }
 
     // Per-section camera smoothing (Track 5). Fall back to default if cfg absent.
