@@ -128,6 +128,8 @@ export class Experience {
     const ns = input.getSmoothedScrollProgress()
     const { cameraTarget, worldState } = this.world.advance(ns)
     this.world.update(dt)
+    // Give World the camera ref for DrawTrail (once, after init).
+    this.world.setCamera(this.camera.instance)
 
     // Context switch
     const cfg = this.world.getConfig(worldState.currentPhase)
