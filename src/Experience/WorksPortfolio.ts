@@ -34,6 +34,11 @@ export class WorksPortfolio {
   private cardW = 3.0
   private cardH = 2.0
 
+  // Momentum physics (spring-damper for currentIdx)
+  private idxVelocity = 0
+  private idxStiffness = 120 // spring stiffness
+  private idxDamping = 18   // damping coefficient
+
   // Raycaster for tap detection on 3D card meshes.
   private raycaster = new THREE.Raycaster()
   private pointer = new THREE.Vector2()
@@ -343,15 +348,26 @@ export class WorksPortfolio {
       return
     }
 
-    // ── Normal carousel update ──
-    this.dragOff *= 0.9
+    // ── Normal carousel update with momentum physics ──
+    this.dragOff *= 0.85 // decay drag offset
 
-    const diff = this.targetIdx - this.currentIdx
-    if (Math.abs(diff) > 0.001) {
-      this.currentIdx += diff * dt * 3
-    } else {
+    // Spring-damper physics for currentIdx toward targetIdx.
+    // This gives natural momentum: cards overshoot slightly, then settle.
+    const idxDiff = this.targetIdx - this.currentIdx
+    const springForce = idxDiff * this.idxStiffness
+    const dampingForce = -this.idxVelocity * this.idxDamping
+    this.idxVelocity += (springForce + dampingForce) * dt
+    this.currentIdx += this.idxVelocity * dt
+
+    // Snap when close enough and slow enough.
+    if (Math.abs(idxDiff) < 0.001 && Math.abs(this.idxVelocity) < 0.01) {
       this.currentIdx = this.targetIdx
+      this.idxVelocity = 0
     }
+
+    // Calculate movement velocity for distortion effect.
+    // Positive = moving right (cards shift left), negative = moving left.
+    const moveVel = this.idxVelocity + this.dragOff * 2
 
     const n = this.projects.length
     for (let i = 0; i < n; i++) {
@@ -359,7 +375,7 @@ export class WorksPortfolio {
       const w = this.wrapOffset(i - this.currentIdx, n)
 
       if (Math.abs(w) > 2.5) {
-        card.mat.opacity = THREE.MathUtils.lerp(card.mat.opacity, 0, dt * 2)
+        card.mat.opacity = THREE.MathUtils.lerp(card.mat.opacity, 0, dt * 3)
         card.group.visible = false
         continue
       }
@@ -374,15 +390,26 @@ export class WorksPortfolio {
       const rotY = -w * 0.06 * (1 - depth * 0.5)
       const opacity = Math.abs(w) < 0.1 ? 1 : THREE.MathUtils.lerp(1, 0.15, depth)
 
-      card.group.position.x = THREE.MathUtils.lerp(card.group.position.x, x, dt * 4)
-      card.group.position.y = THREE.MathUtils.lerp(card.group.position.y, 1.0 + y, dt * 4)
-      card.group.position.z = THREE.MathUtils.lerp(card.group.position.z, z, dt * 4)
-      card.group.scale.setScalar(THREE.MathUtils.lerp(card.group.scale.x, scale, dt * 4))
-      card.group.rotation.y = THREE.MathUtils.lerp(card.group.rotation.y, rotY, dt * 4)
-      card.mat.opacity = THREE.MathUtils.lerp(card.mat.opacity, opacity, dt * 3)
+      // ── Momentum distortion: skew + wave based on movement velocity ──
+      // Cards skew in the direction of movement (like motion blur in 3D).
+      // Distortion is stronger for cards closer to center (more visible).
+      const distortionAmount = Math.abs(moveVel) * 0.15 * (1 - depth * 0.5)
+      const skewZ = THREE.MathUtils.clamp(moveVel * 0.08, -0.3, 0.3)
+      const scaleX = scale * (1 - Math.abs(moveVel) * 0.03) // compress in move direction
+      const waveY = Math.sin(w * 3.0 + performance.now() * 0.003) * distortionAmount * 0.3
+
+      card.group.position.x = THREE.MathUtils.lerp(card.group.position.x, x, dt * 8)
+      card.group.position.y = THREE.MathUtils.lerp(card.group.position.y, 1.0 + y + waveY, dt * 8)
+      card.group.position.z = THREE.MathUtils.lerp(card.group.position.z, z, dt * 8)
+      card.group.scale.x = THREE.MathUtils.lerp(card.group.scale.x, scaleX, dt * 8)
+      card.group.scale.y = THREE.MathUtils.lerp(card.group.scale.y, scale, dt * 8)
+      card.group.rotation.y = THREE.MathUtils.lerp(card.group.rotation.y, rotY, dt * 8)
+      // Skew: rotation.z tilts card in movement direction
+      card.group.rotation.z = THREE.MathUtils.lerp(card.group.rotation.z, skewZ, dt * 6)
+      card.mat.opacity = THREE.MathUtils.lerp(card.mat.opacity, opacity, dt * 4)
 
       const emTarget = Math.abs(w) < 0.1 ? 0.3 : 0.1
-      card.mat.emissiveIntensity = THREE.MathUtils.lerp(card.mat.emissiveIntensity, emTarget, dt * 3)
+      card.mat.emissiveIntensity = THREE.MathUtils.lerp(card.mat.emissiveIntensity, emTarget, dt * 4)
     }
   }
 
