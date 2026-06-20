@@ -80,7 +80,7 @@ export function trinityPage(): PageLayout {
               <span class="studio-title__line">Layers.</span>
               <span class="studio-title__line">One Form.</span>
             </h1>
-            <p class="studio-tagline uk-margin-auto-center">Narrative → Runtime → Operations. A loop, not a stack.</p>
+            <p class="studio-tagline uk-margin-auto-center">Every project moves through narrative, runtime, and operations — not as phases, but as one continuous loop.</p>
             <div class="uk-margin-large-top">
               <a href="#trinity-loop" class="reveal-item uk-button uk-button-primary uk-button-large btn-studio">Enter the Loop</a>
             </div>
@@ -94,17 +94,17 @@ export function trinityPage(): PageLayout {
               <div>
                 <span class="section-number">I</span>
                 <h3 class="studio-title studio-title--meta">Narrative</h3>
-                <p class="studio-text studio-text--meta">Scene-first thinking. Scroll maps to emotion. Camera choreography — position, look-at, FOV offset — all state-driven.</p>
+                <p class="studio-text studio-text--meta">Scene-first thinking. Scroll maps to emotion. Camera choreography — position, look-at, FOV — all state-driven, never improvised.</p>
               </div>
               <div>
                 <span class="section-number">II</span>
                 <h3 class="studio-title studio-title--meta">Runtime</h3>
-                <p class="studio-text studio-text--meta">Scroll → State → Scene. One source of truth for DOM and WebGL. Material presets shift with every scroll stop.</p>
+                <p class="studio-text studio-text--meta">One source of truth for DOM and WebGL. Material presets, lighting, post-processing — all shift with every scroll stop.</p>
               </div>
               <div>
                 <span class="section-number">III</span>
                 <h3 class="studio-title studio-title--meta">Operations</h3>
-                <p class="studio-text studio-text--meta">Zero random disposal. Chunked bundles. Lazy textures. Lifecycle is a feature.</p>
+                <p class="studio-text studio-text--meta">Zero random disposal. Chunked bundles. Lazy textures. Lifecycle is a feature, not an afterthought.</p>
               </div>
             </div>
             <p class="studio-text uk-text-center studio-text--body uk-margin-medium-top">
