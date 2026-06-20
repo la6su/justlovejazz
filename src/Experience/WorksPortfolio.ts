@@ -114,9 +114,13 @@ export class WorksPortfolio {
    * becomes active (current) or adjacent (preload neighbors).
    */
   private loadCardTexture(idx: number): void {
-    if (idx < 0 || idx >= this.cards.length) return
-    const card = this.cards[idx]
+    if (this.cards.length === 0) return
+    // Wrap idx into valid range before accessing cards array.
+    const safeIdx = ((idx % this.cards.length) + this.cards.length) % this.cards.length
+    const card = this.cards[safeIdx]
+    if (!card) return
     const mesh = card.mesh
+    if (!mesh?.userData?.texLoaded === undefined) return
     if (mesh.userData.texLoaded || !mesh.userData.texUrl) return
 
     mesh.userData.texLoaded = true
