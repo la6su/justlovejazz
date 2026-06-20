@@ -1,11 +1,12 @@
-// SectionSceneFactory — Build 3D scene groups for each section phase (Junni pattern)
+// SectionSceneFactory — Build 3D scene groups for each section phase.
+// Method names match WorldConfig step ids (step01–step06) for clarity.
 import * as THREE from 'three'
 
 export class SectionSceneFactory {
-  /** Section 1: AWAKENING — Iridescent torus knot */
-  static createAwakening(): THREE.Group {
+  /** step01: Iridescent torus knot (trinity page) */
+  static createStep01(): THREE.Group {
     const group = new THREE.Group()
-    group.name = 'awakening-scene'
+    group.name = 'step01-scene'
 
     const geometry = new THREE.TorusKnotGeometry(1.5, 0.3, 100, 32)
     const material = new THREE.MeshStandardMaterial({
@@ -16,15 +17,15 @@ export class SectionSceneFactory {
       metalness: 0.85,
     })
     const mesh = new THREE.Mesh(geometry, material)
-    mesh.name = 'awakening-knot'
+    mesh.name = 'step01-knot'
     group.add(mesh)
     return group
   }
 
-  /** Section 2: CONNECTION — Pulsating floor grid + portal ring */
-  static createConnection(): THREE.Group {
+  /** step02: Pulsating floor grid + portal ring (trinity page) */
+  static createStep02(): THREE.Group {
     const group = new THREE.Group()
-    group.name = 'connection-scene'
+    group.name = 'step02-scene'
 
     const gridGeo = new THREE.PlaneGeometry(8, 8, 40, 40)
     const gridMat = new THREE.MeshStandardMaterial({
@@ -38,7 +39,7 @@ export class SectionSceneFactory {
     const grid = new THREE.Mesh(gridGeo, gridMat)
     grid.rotation.x = -Math.PI / 2
     grid.position.y = -1
-    grid.name = 'grid'
+    grid.name = 'step02-grid'
     group.add(grid)
 
     const ringGeo = new THREE.TorusGeometry(2.5, 0.05, 16, 64)
@@ -48,16 +49,16 @@ export class SectionSceneFactory {
       emissiveIntensity: 1.5,
     })
     const ring = new THREE.Mesh(ringGeo, ringMat)
-    ring.name = 'portal-ring'
+    ring.name = 'step02-ring'
     group.add(ring)
 
     return group
   }
 
-  /** Section 3: DEEP_DIVE — Glass sphere + orbital ring */
-  static createDeepDive(): THREE.Group {
+  /** step03: Glass sphere + orbital ring (works page) */
+  static createStep03(): THREE.Group {
     const group = new THREE.Group()
-    group.name = 'deepdive-scene'
+    group.name = 'step03-scene'
 
     const sphereGeo = new THREE.IcosahedronGeometry(1.2, 3)
     const sphereMat = new THREE.MeshStandardMaterial({
@@ -70,7 +71,7 @@ export class SectionSceneFactory {
       emissiveIntensity: 0.5,
     })
     const sphere = new THREE.Mesh(sphereGeo, sphereMat)
-    sphere.name = 'glass-sphere'
+    sphere.name = 'step03-sphere'
     group.add(sphere)
 
     const orbitGeo = new THREE.TorusGeometry(3, 0.08, 16, 100)
@@ -81,16 +82,16 @@ export class SectionSceneFactory {
     })
     const orbit = new THREE.Mesh(orbitGeo, orbitMat)
     orbit.rotation.x = Math.PI / 3
-    orbit.name = 'orbital-ring'
+    orbit.name = 'step03-orbit'
     group.add(orbit)
 
     return group
   }
 
-  /** Section 4: DISCOVERY — Floating cube field */
-  static createDiscovery(): THREE.Group {
+  /** step04: Floating cube field (works page) */
+  static createStep04(): THREE.Group {
     const group = new THREE.Group()
-    group.name = 'discovery-scene'
+    group.name = 'step04-scene'
 
     const count = 200
     const geo = new THREE.BoxGeometry(0.08, 0.08, 0.08)
@@ -103,7 +104,7 @@ export class SectionSceneFactory {
     })
 
     const instancedMesh = new THREE.InstancedMesh(geo, mat, count)
-    instancedMesh.name = 'cube-field'
+    instancedMesh.name = 'step04-cubes'
     const dummy = new THREE.Object3D()
 
     for (let i = 0; i < count; i++) {
@@ -126,10 +127,10 @@ export class SectionSceneFactory {
     return group
   }
 
-  /** Section 5: EXIT — Floating monolith */
-  static createExit(): THREE.Group {
+  /** step05: Floating monolith (home page) */
+  static createStep05(): THREE.Group {
     const group = new THREE.Group()
-    group.name = 'exit-scene'
+    group.name = 'step05-scene'
 
     const monolithGeo = new THREE.BoxGeometry(0.5, 4, 0.5)
     const monolithMat = new THREE.MeshStandardMaterial({
@@ -139,7 +140,7 @@ export class SectionSceneFactory {
       emissive: 0x000000,
     })
     const monolith = new THREE.Mesh(monolithGeo, monolithMat)
-    monolith.name = 'monolith'
+    monolith.name = 'step05-monolith'
     group.add(monolith)
 
     const pedestalGeo = new THREE.CircleGeometry(2, 32)
@@ -153,16 +154,16 @@ export class SectionSceneFactory {
     const pedestal = new THREE.Mesh(pedestalGeo, pedestalMat)
     pedestal.rotation.x = -Math.PI / 2
     pedestal.position.y = -1.8
-    pedestal.name = 'pedestal'
+    pedestal.name = 'step05-pedestal'
     group.add(pedestal)
 
     return group
   }
 
-  /** Section 6: REFLECTION — Minimal chromatic sphere */
-  static createReflection(): THREE.Group {
+  /** step06: Minimal chromatic sphere (home page) */
+  static createStep06(): THREE.Group {
     const group = new THREE.Group()
-    group.name = 'reflection-scene'
+    group.name = 'step06-scene'
 
     const sphereGeo = new THREE.IcosahedronGeometry(0.8, 4)
     const sphereMat = new THREE.MeshStandardMaterial({
@@ -173,23 +174,23 @@ export class SectionSceneFactory {
       wireframe: false,
     })
     const sphere = new THREE.Mesh(sphereGeo, sphereMat)
-    sphere.name = 'reflection-sphere'
+    sphere.name = 'step06-sphere'
     group.add(sphere)
 
     return group
   }
 
-  // ── Factory — maps section index to scene group factory ──
+  // ── Factory: maps section index (0-5) to step01-step06 ──
 
   static byIndex(index: number): THREE.Group {
     switch (index) {
-      case 0: return SectionSceneFactory.createAwakening()
-      case 1: return SectionSceneFactory.createConnection()
-      case 2: return SectionSceneFactory.createDeepDive()
-      case 3: return SectionSceneFactory.createDiscovery()
-      case 4: return SectionSceneFactory.createExit()
-      case 5: return SectionSceneFactory.createReflection()
-      default: return SectionSceneFactory.createReflection()
+      case 0: return SectionSceneFactory.createStep01()
+      case 1: return SectionSceneFactory.createStep02()
+      case 2: return SectionSceneFactory.createStep03()
+      case 3: return SectionSceneFactory.createStep04()
+      case 4: return SectionSceneFactory.createStep05()
+      case 5: return SectionSceneFactory.createStep06()
+      default: return SectionSceneFactory.createStep06()
     }
   }
 }

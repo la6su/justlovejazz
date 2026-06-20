@@ -19,6 +19,8 @@ function easeInOutCubic(t: number): number {
 
 export class WorksPortfolio {
   public readonly group = new THREE.Group()
+  // Shared loader — creating one per card wastes resources.
+  private static readonly sharedLoader = new THREE.TextureLoader()
   private cards: ProjectCard[] = []
   private currentIdx = 0
   private targetIdx = 0
@@ -65,7 +67,7 @@ export class WorksPortfolio {
   }
 
   private buildCards(): void {
-    const loader = new THREE.TextureLoader()
+    const loader = WorksPortfolio.sharedLoader
     for (let i = 0; i < this.projects.length; i++) {
       const proj = this.projects[i]
       const grp = new THREE.Group()
