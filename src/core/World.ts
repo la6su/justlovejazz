@@ -227,8 +227,30 @@ export class World extends THREE.Group {
             this._currentSectionIndex = fromIndex
         }
 
-        // ── Scene group visibility (Junni: sync 3D groups with active section)
-        this.sceneGroups.forEach((g, i) => { g.visible = (i === fromIndex || i === toIndex) })
+        // ── Scene group visibility with opacity fade (junni switchVisibility pattern)
+        // From group fades out as t→1, to group fades in. Both visible during transition.
+        this.sceneGroups.forEach((g, i) => {
+            if (i === fromIndex || i === toIndex) {
+                g.visible = true
+                // Calculate per-group opacity based on transition progress.
+                let opacity = 0
+                if (i === fromIndex) opacity = 1 - t
+                if (i === toIndex) opacity = t
+                if (i === fromIndex && i === toIndex) opacity = 1
+                // Apply opacity to all meshes in the group.
+                g.traverse((obj) => {
+                    if (obj instanceof THREE.Mesh) {
+                        const mat = obj.material
+                        if (!Array.isArray(mat) && 'opacity' in mat) {
+                            ;(mat as THREE.Material & { opacity: number }).opacity = opacity
+                            ;(mat as THREE.Material & { transparent: boolean }).transparent = true
+                        }
+                    }
+                })
+            } else {
+                g.visible = false
+            }
+        })
 
         const fromSec = this.sections[fromIndex]
         const toSec = this.sections[toIndex] || this.sections[fromIndex]
