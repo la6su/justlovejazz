@@ -7,6 +7,7 @@ import { prefersReducedMotion } from './motionPolicy'
 import { type CameraTarget, type WorldState, NarrativePhase, BakuRole } from './types'
 import { Baku } from '../Experience/World/Baku'
 import { CinematicLights } from '../Experience/World/Lights'
+import { CursorLight } from '../Experience/World/CursorLight'
 import { getWorldConfigForPage, type PhaseConfig } from './WorldConfig'
 import { SectionSceneFactory } from './SectionSceneFactory'
 import type { WorldAtmosphere } from './WorldAtmosphere'
@@ -20,6 +21,7 @@ export class World extends THREE.Group {
     public sections: Section[] = []
     public baku!: Baku
     public lightsGroup!: CinematicLights
+    public cursorLight!: CursorLight
     public atmosphere: WorldAtmosphere | null = null
     public groundPlane!: THREE.Mesh
     public sceneGroups: THREE.Group[] = []
@@ -48,6 +50,10 @@ export class World extends THREE.Group {
 
         // ── Lights (= World.lights, аналог Junni Lights)
         this.lightsGroup = new CinematicLights(scene)
+
+        // ── CursorLight (junni pattern: cursor-driven directional light)
+        this.cursorLight = new CursorLight()
+        scene.add(this.cursorLight.object)
 
         // ── Baku (character sphere)
         this.baku = new Baku()
@@ -118,6 +124,7 @@ export class World extends THREE.Group {
     public update(deltaTime: number): void {
         this.sections.forEach(s => s.update(deltaTime))
         this.baku.update(deltaTime)
+        this.cursorLight.update(deltaTime)
 
         // ── Junni-inspired per-component animation ──
         const t = performance.now() * 0.001
@@ -345,6 +352,7 @@ export class World extends THREE.Group {
         if (Array.isArray(groundMat)) groundMat.forEach(m => m.dispose())
         else groundMat.dispose()
         this.lightsGroup.dispose()
+        this.cursorLight.dispose()
         this.atmosphere?.dispose()
     }
 
