@@ -85,8 +85,7 @@ export class DissolveOverlay {
     this.mesh.renderOrder = 9999
   }
 
-  init(parent: THREE.Scene | THREE.Group): this {
-    parent.add(this.mesh!)
+  init(): this {
     return this
   }
 

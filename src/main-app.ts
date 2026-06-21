@@ -46,9 +46,9 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
     const { Bootstrapper } = await import('./core/Bootstrapper')
     const { DissolveOverlay } = await import('./shaders/dissolveOverlay')
 
-    const onReadyCb: OnReadyCallback = (_renderer: any, scene: THREE.Scene) => {
+    const onReadyCb: OnReadyCallback = (_renderer: any) => {
       progress(95)
-      dissolveOverlay = new DissolveOverlay().init(scene)
+      dissolveOverlay = new DissolveOverlay()
     }
 
     await Bootstrapper.init(ui, onReadyCb)
