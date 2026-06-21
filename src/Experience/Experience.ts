@@ -306,7 +306,8 @@ export class Experience {
     // Reused across all project selections on the works page.
     if (!this.projectDissolve) {
       try {
-        this.projectDissolve = new DissolveOverlay().init()
+        this.projectDissolve = new DissolveOverlay()
+        this.projectDissolve.init(this.scene)
         this.projectDissolve.meshGroup.visible = false
       } catch {
         // TSL material may fail on some drivers — dissolve is optional,
