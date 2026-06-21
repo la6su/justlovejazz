@@ -111,15 +111,20 @@ export class DeviceCapability {
 
   /** Whether the current page is on a secure origin (web-safe for WebGPU). */
   private _isSecureOrigin(): boolean {
-    // `isCrossOriginIsolated` is true for COOP/COEP pages.
-    // Also accept well-known secure schemes.
-    if (typeof window.isSecureContext === 'boolean') {
-      return window.isSecureContext
-    }
-    // No secure-context API — assume HTTPS / localhost / file://.
+    // WebGPU requires a secure context per spec: HTTPS, localhost, or file://.
+    // `window.isSecureContext` can be unreliable on some browsers/dev servers
+    // (Chrome 131+ may report true even on insecure origins for COOP/COEP),
+    // so always verify via explicit protocol/hostname check.
     const { protocol, hostname } = window.location
-    return protocol === 'https:' || protocol === 'file:'
+    const explicit = protocol === 'https:' || protocol === 'file:'
       || hostname === 'localhost' || hostname === '127.0.0.1'
+
+    // Only trust isSecureContext if it agrees with explicit check.
+    // If explicit says "insecure" (e.g. http://192.168.x.x), never allow WebGPU.
+    if (typeof window.isSecureContext === 'boolean') {
+      return window.isSecureContext && explicit
+    }
+    return explicit
   }
 
   // ── Tier detection: weigh all signals ──
