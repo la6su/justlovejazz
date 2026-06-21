@@ -213,6 +213,8 @@ export class RenderPipeline {
   
   // Full-screen quad (WebGL)
   private _quad?: THREE.Mesh | null
+  // Dummy camera for fullscreen quad rendering (Firefox crashes on null camera)
+  private static _dummyCam: THREE.OrthographicCamera | null = null
 
   /** Flag: is this a WebGPU renderer? */
   private _isWebGPU = false
@@ -652,11 +654,15 @@ export class RenderPipeline {
   ): void {
     const quad = this._quad!
     quad.material = material
-    
-    // Render quad to target
+
+    // Use dummy orthographic camera — Firefox crashes on null camera
+    if (!RenderPipeline._dummyCam) {
+      RenderPipeline._dummyCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1)
+    }
+
     renderer.setRenderTarget(target)
     renderer.autoClear = false
-    renderer.render(quad, null as unknown as THREE.Camera)
+    renderer.render(quad, RenderPipeline._dummyCam)
     renderer.autoClear = true
   }
 }
