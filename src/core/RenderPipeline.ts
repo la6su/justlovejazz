@@ -95,6 +95,7 @@ const COMPOSITE_FSG = `
   uniform float uVignette;
   uniform float uGrain;
   uniform float uTime;
+  uniform float uChromatic;
   
   float hash(vec2 p) {
     return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
@@ -159,7 +160,7 @@ const QUAD_VERTEX = `
 varying vec2 vUv;
 void main() {
   vUv = uv;
-  gl_Position = vec4(position, 0.0, 1.0);
+  gl_Position = vec4(position, 1.0);
 }
 `
 
