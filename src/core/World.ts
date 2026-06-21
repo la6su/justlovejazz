@@ -8,6 +8,7 @@ import { type CameraTarget, type WorldState, NarrativePhase, BakuRole } from './
 import { Baku } from '../Experience/World/Baku'
 import { CinematicLights } from '../Experience/World/Lights'
 import { CursorLight } from '../Experience/World/CursorLight'
+import { DrawTrail } from '../Experience/World/DrawTrail'
 import { getWorldConfigForPage, type PhaseConfig } from './WorldConfig'
 import { SectionSceneFactory } from './SectionSceneFactory'
 import type { WorldAtmosphere } from './WorldAtmosphere'
@@ -22,6 +23,8 @@ export class World extends THREE.Group {
     public baku!: Baku
     public lightsGroup!: CinematicLights
     public cursorLight!: CursorLight
+    public drawTrail!: DrawTrail
+    private _camera: THREE.Camera | null = null
     public atmosphere: WorldAtmosphere | null = null
     public groundPlane!: THREE.Mesh
     public sceneGroups: THREE.Group[] = []
@@ -54,6 +57,10 @@ export class World extends THREE.Group {
         // ── CursorLight (junni pattern: cursor-driven directional light)
         this.cursorLight = new CursorLight()
         scene.add(this.cursorLight.object)
+
+        // ── DrawTrail (junni pattern: cursor trail ribbon)
+        this.drawTrail = new DrawTrail()
+        scene.add(this.drawTrail.object)
 
         // ── Baku (character sphere)
         this.baku = new Baku()
@@ -125,6 +132,8 @@ export class World extends THREE.Group {
         this.sections.forEach(s => s.update(deltaTime))
         this.baku.update(deltaTime)
         this.cursorLight.update(deltaTime)
+        // DrawTrail needs camera ref — passed from Experience.update
+        if (this._camera) this.drawTrail.update(deltaTime, this._camera)
 
         // ── Room composition animation (per-component, Z-layer aware) ──
         const t = performance.now() * 0.001
@@ -389,7 +398,13 @@ export class World extends THREE.Group {
         else groundMat.dispose()
         this.lightsGroup.dispose()
         this.cursorLight.dispose()
+        this.drawTrail.dispose()
         this.atmosphere?.dispose()
+    }
+
+    /** Set camera reference for DrawTrail (unproject cursor to world). */
+    public setCamera(cam: THREE.Camera): void {
+        this._camera = cam
     }
 
     public async ensureAtmosphere(): Promise<void> {
