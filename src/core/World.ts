@@ -113,9 +113,11 @@ export class World extends THREE.Group {
             this.sections.push(section)
         })
 
-        // ── Create 3D scene groups (awakening, connection, deepdive, etc.)
+        // ── Create 3D scene groups — map config step id to factory
         for (let i = 0; i < this.configs.length; i++) {
-            const group = SectionSceneFactory.byIndex(i)
+            const config = this.configs[i]
+            const stepNum = parseInt(config.id.replace('step', ''), 10) - 1
+            const group = SectionSceneFactory.byIndex(stepNum)
             this.add(group)
             this.sceneGroups.push(group)
             if (i === 0) {
