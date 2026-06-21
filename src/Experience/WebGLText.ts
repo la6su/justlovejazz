@@ -1,32 +1,8 @@
-// WebGLText — Troika Text 3D mesh with GLSL reveal effect
+// WebGLText — Troika Text 3D mesh with opacity reveal effect
 // DOM element stays in layout but becomes text-color: transparent.
 
 import * as THREE from 'three'
 import { Text as TroikaTextClass } from 'troika-three-text'
-
-// GLSL shaders (Codrops pattern — bottom-to-top reveal)
-const vertexShader = `
-uniform float uProgress;
-uniform float uHeight;
-varying vec2 vUv;
-void main() {
-  vUv = uv;
-  vec3 p = position;
-  p.y -= uHeight * (1.0 - uProgress);
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
-}
-`
-
-const fragmentShader = `
-uniform float uProgress;
-uniform vec3 uColor;
-varying vec2 vUv;
-void main() {
-  float reveal = 1.0 - vUv.y;
-  if (reveal > uProgress) discard;
-  gl_FragColor = vec4(uColor, 1.0);
-}
-`
 
 interface Props {
   element: HTMLElement
@@ -61,7 +37,7 @@ export class WebGLText {
   private troika!: TroikaMesh
   private troikaThree!: THREE.Object3D // object that scene.add() accepts
   private element: HTMLElement
-  private material!: THREE.ShaderMaterial
+  private material!: THREE.MeshBasicMaterial
   private computedStyle: CSSStyleDeclaration
   private layoutX: 'left' | 'center' | 'right' = 'left'
 
@@ -89,16 +65,10 @@ export class WebGLText {
   }
 
   private createMaterial() {
-    const bounds = this.element.getBoundingClientRect()
-    this.material = new THREE.ShaderMaterial({
-      fragmentShader,
-      vertexShader,
-      uniforms: {
-        uProgress: { value: 0 },
-        uHeight: { value: bounds.height },
-        uColor: { value: this.color },
-      },
+    this.material = new THREE.MeshBasicMaterial({
+      color: this.color,
       transparent: true,
+      opacity: 0,
       depthWrite: false,
       depthTest: false,
     })
@@ -189,7 +159,7 @@ export class WebGLText {
       this.currentProgress = this.targetProgress
     }
 
-    this.material.uniforms.uProgress.value = this.currentProgress
+    this.material.opacity = this.currentProgress
 
     if (this.isVisible) {
       const rect = this.element.getBoundingClientRect()
@@ -217,7 +187,7 @@ export class WebGLText {
   onResize() {
     this.computedStyle = window.getComputedStyle(this.element)
     this.setStaticValues()
-    this.material.uniforms.uHeight.value = this.element.getBoundingClientRect().height
+    // No shader uniforms to update with MeshBasicMaterial — opacity is the only dynamic.
   }
 
   waitForLoaded(): Promise<void> {
