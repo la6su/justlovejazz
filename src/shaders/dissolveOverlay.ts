@@ -1,73 +1,83 @@
 // src/shaders/dissolveOverlay.ts
-// WebGPU-compatible procedural dissolve overlay — NodeMaterial + TSL nodes.
+// WebGL-compatible procedural dissolve overlay — ShaderMaterial + GLSL.
 // Usage: progress = 0 (solid overlay) → progress = 1 (transparent, scene visible)
 
 import * as THREE from 'three'
-import { MeshBasicNodeMaterial } from 'three/webgpu'
-import {
-  uniform,
-  uv,
-  vec3,
-  float,
-  sin,
-  min,
-  max,
-  step,
-} from 'three/tsl'
-import type { TSLNode } from '../types/tsl'
 
-const zero = float(0.0)
-const one = float(1.0)
+// ── GLSL shaders ──
+const DISSOLVE_VERTEX = `
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+const DISSOLVE_FRAGMENT = `
+  uniform float uProgress;
+  uniform float uNoiseTime;
+  uniform float uNoiseScale;
+  uniform float uBias;
+  uniform float uThreshold;
+  varying vec2 vUv;
+  
+  // Simplex-like noise using sine hashing (from junni-style dissolv)
+  float noise(vec2 p, float t, float scale) {
+    return fract(sin(dot(p * scale + t * vec2(0.25, 0.15)) * vec2(12.9898, 78.233))) * 43758.5453;
+  }
+  
+  void main() {
+    // Multi-octave noise
+    float n = 0.0;
+    float amp = 0.5;
+    float f = uNoiseScale;
+    for (int i = 0; i < 4; i++) {
+      n += noise(vUv, uNoiseTime, f) * amp;
+      f *= 2.0;
+      amp *= 0.5;
+    }
+    float noiseClamped = clamp(n, 0.0, 1.0);
+    
+    float dissolveMask = step(uThreshold - uProgress * 0.5, noiseClamped + uBias);
+    float alpha = 1.0 - dissolveMask;
+    gl_FragColor = vec4(vec3(0.03, 0.03, 0.03) * alpha, alpha);
+  }
+`;
+
+interface UniformValue {
+  value: number
+}
 
 export class DissolveOverlay {
   private mesh: THREE.Mesh | null = null
-  private material!: MeshBasicNodeMaterial
+  private material: THREE.ShaderMaterial
 
-  private progress!: TSLNode
-  private noiseTime!: TSLNode
-  private noiseScale!: TSLNode
-  private bias!: TSLNode
-  private threshold!: TSLNode
+  private uProgress!: UniformValue
+  private uNoiseTime!: UniformValue
+  private uNoiseScale!: UniformValue
+  private uBias!: UniformValue
+  private uThreshold!: UniformValue
 
   constructor() {
-    this.progress = uniform(0.0)
-    this.noiseTime = uniform(0.0)
-    this.noiseScale = uniform(8.0)
-    this.bias = uniform(0.5)
-    this.threshold = uniform(0.5)
+    this.uProgress = { value: 0.0 }
+    this.uNoiseTime = { value: 0.0 }
+    this.uNoiseScale = { value: 8.0 }
+    this.uBias = { value: 0.5 }
+    this.uThreshold = { value: 0.5 }
 
-    this.material = new MeshBasicNodeMaterial()
-    this.material.transparent = true
-
-    // ── Fragment: multi-octave value noise dissolve ──
-    const uvVal = uv()
-    const t = this.noiseTime
-
-    let noise: TSLNode = float(0.0)
-    let amp: TSLNode = float(0.5)
-    let f: TSLNode = this.noiseScale
-
-    for (let i = 0; i < 4; i++) {
-      const h1 = sin(uvVal.x.mul(f).add(t.mul(float(0.25))).mul(float(12.9898)))
-      const h2 = sin(uvVal.y.mul(f).add(t.mul(float(0.25))).mul(float(78.233)))
-      noise = noise.add(sin(h1.add(h2)).mul(float(43758.5453)).fract())
-      f = f.mul(float(2.0))
-      amp = amp.mul(float(0.5))
-    }
-
-    const noiseClamped = min(max(noise, zero), one)
-
-    // Dissolve mask: threshold-controlled step from noise
-    const dissolveMask = step(
-      this.threshold.sub(this.progress.mul(float(0.5))),
-      noiseClamped.add(this.bias),
-    )
-
-    // Alpha: solid at progress=0, fully transparent at progress=1
-    const alpha = one.sub(dissolveMask)
-
-    // Dark overlay modulated by alpha
-    this.material.colorNode = vec3(float(0.03), float(0.03), float(0.03)).mul(alpha)
+    this.material = new THREE.ShaderMaterial({
+      uniforms: {
+        uProgress: this.uProgress,
+        uNoiseTime: this.uNoiseTime,
+        uNoiseScale: this.uNoiseScale,
+        uBias: this.uBias,
+        uThreshold: this.uThreshold,
+      },
+      vertexShader: DISSOLVE_VERTEX,
+      fragmentShader: DISSOLVE_FRAGMENT,
+      transparent: true,
+      depthWrite: false,
+    })
 
     // ── Geometry: fullscreen quad ──
     const geometry = new THREE.PlaneGeometry(2, 2)
@@ -81,19 +91,19 @@ export class DissolveOverlay {
   }
 
   setProgress(t: number): void {
-    this.progress.value = THREE.MathUtils.clamp(t, 0, 1)
+    this.uProgress.value = THREE.MathUtils.clamp(t, 0, 1)
   }
 
   update(dt: number): void {
-    this.noiseTime.value += dt
+    this.uNoiseTime.value += dt
   }
 
   setNoiseScale(v: number): void {
-    this.noiseScale.value = v
+    this.uNoiseScale.value = v
   }
 
   setBias(v: number): void {
-    this.bias.value = v
+    this.uBias.value = v
   }
 
   get meshGroup(): THREE.Mesh {
