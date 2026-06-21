@@ -19,7 +19,6 @@
         "esbuild": "^0.28.0",
         "less": "^4.6.4",
         "less-plugin-clean-css": "^1.6.0",
-        "oxc": "^1.0.1",
         "typescript": "~6.0.2",
         "vite": "^8.0.10",
       },
@@ -203,8 +202,6 @@
     "nanoid": ["nanoid@3.3.13", "", { "bin": { "nanoid": "bin/nanoid.cjs" } }, "sha512-sPdqC6ByMVVGvF1ynvvMo0/o+oD1VX7DaHhijt1bFgjvBkHBib4t49GoNDhf2NDta4oeUNlaGbSt5K7qjZ955Q=="],
 
     "needle": ["needle@3.5.0", "", { "dependencies": { "iconv-lite": "^0.6.3", "sax": "^1.2.4" }, "bin": { "needle": "bin/needle" } }, "sha512-jaQyPKKk2YokHrEg+vFDYxXIHTCBgiZwSHOoVx/8V3GIBS8/VN6NdVRmg8q1ERtPkMvmOvebsgga4sAj5hls/w=="],
-
-    "oxc": ["oxc@1.0.1", "", { "bin": { "oxc": "oxc" } }, "sha512-MJ18y2Ekl329i3zdZpRVOqFdEUjoRKC1+uy1f4kuRp9ygindCVVUIhhKxwyAhTsWt3jIV8UczKtlTwWWahcaWQ=="],
 
     "parse-node-version": ["parse-node-version@1.0.1", "", {}, "sha512-3YHlOa/JgH6Mnpr05jP9eDG254US9ek25LyIxZlDItp2iJtwyaXQb57lBYLdT3MowkUFYEV2XXNAYIPlESvJlA=="],
 
