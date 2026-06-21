@@ -96,10 +96,30 @@ export class DeviceCapability {
   }
 
   private detectRenderMode(): RendererMode {
-    if ('gpu' in navigator) return 'webgpu'
+    if ('gpu' in navigator) {
+      // WebGPU requires a secure context (HTTPS, localhost, file://).
+      // On insecure origins (e.g. http://192.168.x.x), requestAdapter() fails
+      // and WebGPURenderer ends up in a broken state with no adapter —
+      // resulting in a black screen. Fall back to WebGL instead.
+      if (!this._isSecureOrigin()) return 'webgl'
+      return 'webgpu'
+    }
     const canvas = document.createElement('canvas')
     if (canvas.getContext('webgl2')) return 'webgl'
     return 'unsupported'
+  }
+
+  /** Whether the current page is on a secure origin (web-safe for WebGPU). */
+  private _isSecureOrigin(): boolean {
+    // `isCrossOriginIsolated` is true for COOP/COEP pages.
+    // Also accept well-known secure schemes.
+    if (typeof window.isSecureContext === 'boolean') {
+      return window.isSecureContext
+    }
+    // No secure-context API — assume HTTPS / localhost / file://.
+    const { protocol, hostname } = window.location
+    return protocol === 'https:' || protocol === 'file:'
+      || hostname === 'localhost' || hostname === '127.0.0.1'
   }
 
   // ── Tier detection: weigh all signals ──

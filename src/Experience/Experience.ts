@@ -190,7 +190,6 @@ export class Experience {
         this._pendingProject = null
         this.projectDissolve.meshGroup.visible = false
         this.projectDissolve.setProgress(0)
-        this.scene?.remove(this.projectDissolve!.meshGroup)
       }
     }
     // Dispose existing portfolio — it was bound to the old world which we
@@ -352,7 +351,6 @@ export class Experience {
     if (!this.projectDissolve || !this.overlay) return
     this.projectDissolveActive = true
     const overlay = this.projectDissolve
-    this.scene.add(overlay.meshGroup!)
     overlay.meshGroup.visible = true
     overlay.setProgress(0)
 
