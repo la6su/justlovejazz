@@ -139,12 +139,12 @@ export class World extends THREE.Group {
             group.traverse(obj => {
                 if (obj instanceof THREE.Mesh || obj instanceof THREE.Points || obj instanceof THREE.LineSegments) {
                     const mat = obj.material as THREE.Material
-                    if (mat instanceof THREE.ShaderMaterial && mat.uniforms) {
-                        const uTime = mat.uniforms['uTime']
-                        if (uTime) {
-                            uTime.value = this._shaderTime
-                        }
-                    }
+                    // Update uTime on any material with uniforms (MeshBasicMaterial
+                // doesn't have uniforms, but ShaderMaterial did — keep for compat).
+                const anyMat = mat as THREE.Material & { uniforms?: Record<string, { value: unknown }> }
+                if (anyMat.uniforms?.['uTime']) {
+                    ;(anyMat.uniforms['uTime'] as { value: number }).value = this._shaderTime
+                }
                 }
             })
         })

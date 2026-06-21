@@ -53,132 +53,132 @@ export interface PostParams {
 
 // ─── GLSL Shaders (WebGL path) ───────────────────────────────────
 
-const BRIGHT_EXTRACT_FSG = `
-  varying vec2 vUv;
-  uniform sampler2D uScene;
-  uniform float uThreshold;
-  void main() {
-    vec3 c = texture2D(uScene, vUv).xyz;
-    vec3 f = max(vec3(0.0), c - uThreshold);
-    gl_FragColor = vec4(c * f, 1.0);
-  }
-`
-
-const GAUSSIAN_BLUR_FSG = `
-  varying vec2 vUv;
-  uniform sampler2D uInput;
-  uniform float uBlurRange;
-  uniform vec2 uResolution;
-  uniform bool uHorizontal;
-  uniform float uWeights[5];
-  
-  void main() {
-    vec2 pix = uBlurRange / uResolution;
-    vec2 dir = uHorizontal ? vec2(pix.x, 0.0) : vec2(0.0, pix.y);
-    
-    vec3 sum = vec3(0.0);
-    sum += texture2D(uInput, vUv).rgb * uWeights[0];
-    sum += texture2D(uInput, vUv + dir * 1.0).rgb * uWeights[1];
-    sum += texture2D(uInput, vUv - dir * 1.0).rgb * uWeights[1];
-    sum += texture2D(uInput, vUv + dir * 2.0).rgb * uWeights[2];
-    sum += texture2D(uInput, vUv - dir * 2.0).rgb * uWeights[2];
-    
-    gl_FragColor = vec4(sum, 1.0);
-  }
-`
-
-const COMPOSITE_FSG = `
-  varying vec2 vUv;
-  uniform sampler2D uScene;
-  uniform sampler2D uBloom;
-  uniform float uBloomIntensity;
-  uniform float uVignette;
-  uniform float uGrain;
-  uniform float uTime;
-  
-  float hash(vec2 p) {
-    return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
-  }
-  
-  float noise(vec2 p) {
-    vec2 i = floor(p);
-    vec2 f = fract(p);
-    f = f * f * (3.0 - 2.0 * f);
-    float a = hash(i);
-    float b = hash(i + vec2(1.0, 0.0));
-    float c = hash(i + vec2(0.0, 1.0));
-    float d = hash(i + vec2(1.0, 1.0));
-    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
-  }
-  
-  void main() {
-    vec3 scene = texture2D(uScene, vUv).xyz;
-    vec3 bloom = texture2D(uBloom, vUv).xyz;
-    
-    // Chromatic aberration — RGB channel shift
-    if (uChromatic > 0.0) {
-      vec2 dir = normalize(vUv - vec2(0.5)) * uChromatic;
-      scene = vec3(
-        texture2D(uScene, vUv + dir).r,
-        scene.g,
-        texture2D(uScene, vUv - dir).b
-      );
-    }
-
-    // Bloom composite
-    vec3 color = scene + bloom * uBloomIntensity;
-
-    // ACES-like tone mapping
-    color = color * (6.2 * color + 0.03) / (color * (4.8 * color + 1.0));
-
-    // Film grain (time-varying, low-res dither)
-    if (uGrain > 0.0) {
-      float grain = noise(vUv * 1024.0 + uTime * 10.0);
-      grain = (grain - 0.5) * 2.0 * uGrain;
-      color += grain;
-    }
-
-    // Vignette (radial falloff)
-    if (uVignette > 0.0) {
-      vec2 center = vUv - vec2(0.5);
-      float dist = length(center);
-      float vig = 1.0 - dist * uVignette;
-      vig = smoothstep(0.0, 1.0, vig);
-      color *= vig;
-    }
-    
-    gl_FragColor = vec4(color, 1.0);
-  }
-`
-
+// const BRIGHT_EXTRACT_FSG = `
+//   varying vec2 vUv;
+//   uniform sampler2D uScene;
+//   uniform float uThreshold;
+//   void main() {
+//     vec3 c = texture2D(uScene, vUv).xyz;
+//     vec3 f = max(vec3(0.0), c - uThreshold);
+//     gl_FragColor = vec4(c * f, 1.0);
+//   }
+// `
+// 
+// const GAUSSIAN_BLUR_FSG = `
+//   varying vec2 vUv;
+//   uniform sampler2D uInput;
+//   uniform float uBlurRange;
+//   uniform vec2 uResolution;
+//   uniform bool uHorizontal;
+//   uniform float uWeights[5];
+//   
+//   void main() {
+//     vec2 pix = uBlurRange / uResolution;
+//     vec2 dir = uHorizontal ? vec2(pix.x, 0.0) : vec2(0.0, pix.y);
+//     
+//     vec3 sum = vec3(0.0);
+//     sum += texture2D(uInput, vUv).rgb * uWeights[0];
+//     sum += texture2D(uInput, vUv + dir * 1.0).rgb * uWeights[1];
+//     sum += texture2D(uInput, vUv - dir * 1.0).rgb * uWeights[1];
+//     sum += texture2D(uInput, vUv + dir * 2.0).rgb * uWeights[2];
+//     sum += texture2D(uInput, vUv - dir * 2.0).rgb * uWeights[2];
+//     
+//     gl_FragColor = vec4(sum, 1.0);
+//   }
+// `
+// 
+// const COMPOSITE_FSG = `
+//   varying vec2 vUv;
+//   uniform sampler2D uScene;
+//   uniform sampler2D uBloom;
+//   uniform float uBloomIntensity;
+//   uniform float uVignette;
+//   uniform float uGrain;
+//   uniform float uTime;
+//   
+//   float hash(vec2 p) {
+//     return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+//   }
+//   
+//   float noise(vec2 p) {
+//     vec2 i = floor(p);
+//     vec2 f = fract(p);
+//     f = f * f * (3.0 - 2.0 * f);
+//     float a = hash(i);
+//     float b = hash(i + vec2(1.0, 0.0));
+//     float c = hash(i + vec2(0.0, 1.0));
+//     float d = hash(i + vec2(1.0, 1.0));
+//     return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+//   }
+//   
+//   void main() {
+//     vec3 scene = texture2D(uScene, vUv).xyz;
+//     vec3 bloom = texture2D(uBloom, vUv).xyz;
+//     
+//     // Chromatic aberration — RGB channel shift
+//     if (uChromatic > 0.0) {
+//       vec2 dir = normalize(vUv - vec2(0.5)) * uChromatic;
+//       scene = vec3(
+//         texture2D(uScene, vUv + dir).r,
+//         scene.g,
+//         texture2D(uScene, vUv - dir).b
+//       );
+//     }
+// 
+//     // Bloom composite
+//     vec3 color = scene + bloom * uBloomIntensity;
+// 
+//     // ACES-like tone mapping
+//     color = color * (6.2 * color + 0.03) / (color * (4.8 * color + 1.0));
+// 
+//     // Film grain (time-varying, low-res dither)
+//     if (uGrain > 0.0) {
+//       float grain = noise(vUv * 1024.0 + uTime * 10.0);
+//       grain = (grain - 0.5) * 2.0 * uGrain;
+//       color += grain;
+//     }
+// 
+//     // Vignette (radial falloff)
+//     if (uVignette > 0.0) {
+//       vec2 center = vUv - vec2(0.5);
+//       float dist = length(center);
+//       float vig = 1.0 - dist * uVignette;
+//       vig = smoothstep(0.0, 1.0, vig);
+//       color *= vig;
+//     }
+//     
+//     gl_FragColor = vec4(color, 1.0);
+//   }
+// `
+// 
 // ─── Full-screen quad geometry (shared across all passes) ───────
-const QUAD_GEOMETRY = new THREE.PlaneGeometry(2, 2)
-
+// const QUAD_GEOMETRY = new THREE.PlaneGeometry(2, 2)
+// 
 // Base vertex shader (identity — fullscreen)
-const QUAD_VERTEX = `
-varying vec2 vUv;
-void main() {
-  vUv = uv;
-  gl_Position = vec4(position, 0.0, 1.0);
-}
-`
-
+// const QUAD_VERTEX = `
+// varying vec2 vUv;
+// void main() {
+//   vUv = uv;
+//   gl_Position = vec4(position, 0.0, 1.0);
+// }
+// `
+// 
 // Pre-computed gaussian weights (5-tap, sigma=2.0)
-const GAUSSIAN_WEIGHTS: number[] = (() => {
-  const sigma = 2.0
-  const n = 5
-  const weights = new Array(n)
-  let sum = 0.0
-  for (let i = 0; i < n; i++) {
-    const d = Math.abs(i - 2) // distance from center (2)
-    weights[i] = Math.exp(-0.5 * (d * d) / (sigma * sigma))
-    sum += weights[i]
-  }
-  for (let i = 0; i < n; i++) {
-    weights[i] /= sum
-  }
-  return weights
-})()
+// const GAUSSIAN_WEIGHTS: number[] = (() => {
+//   const sigma = 2.0
+//   const n = 5
+//   const weights = new Array(n)
+//   let sum = 0.0
+//   for (let i = 0; i < n; i++) {
+//     const d = Math.abs(i - 2) // distance from center (2)
+//     weights[i] = Math.exp(-0.5 * (d * d) / (sigma * sigma))
+//     sum += weights[i]
+//   }
+//   for (let i = 0; i < n; i++) {
+//     weights[i] /= sum
+//   }
+//   return weights
+// })()
 
 // ─── RenderPipeline Class ──────────────────────────────────────
 
@@ -259,7 +259,7 @@ export class RenderPipeline {
     }
     
     if (!pipeline._isWebGPU) {
-      pipeline._setupWebGL()
+      // WebGL: direct render, no post-processing setup
     }
     // WebGPU TSL pipeline is built lazily on first render() — it needs the
     // live scene + camera references to bind into the PassNode.
@@ -292,16 +292,10 @@ export class RenderPipeline {
   
   /** Render: scene → post passes → screen */
   public render(scene: THREE.Scene, camera: THREE.Camera): void {
-    if (!this._config.bloomEnabled && !this._config.vignetteEnabled && !this._config.grainEnabled) {
-      // Fast path: no post-processing
-      this._renderer.render(scene, camera)
-      return
-    }
-
     if (this._isWebGPU) {
       this._renderWebGPU(scene, camera)
     } else {
-      this._renderWebGL(scene, camera)
+      this._renderer.render(scene, camera)
     }
   }
   
@@ -381,63 +375,8 @@ export class RenderPipeline {
   
   // ─── Private: Setup ────────────────────────────────────────
   
-  private _setupWebGL(): void {
-    this._width = this._width || 1920
-    this._height = this._height || 1080
-    this._setupRTSize()
-    
-    // Bright-extract pass
-    this._passBright = new THREE.ShaderMaterial({
-      uniforms: {
-        uScene: { value: null },
-        uThreshold: { value: this._config.bloomThreshold },
-      },
-      vertexShader: QUAD_VERTEX,
-      fragmentShader: BRIGHT_EXTRACT_FSG,
-      depthTest: false,
-      depthWrite: false,
-    })
-    
-    // Gaussian blur (separable, 5-tap)
-    const bRatio = this._config.bloomResRatio
-    this._passBlur = new THREE.ShaderMaterial({
-      uniforms: {
-        uInput: { value: null },
-        uBlurRange: { value: this._config.blurRange },
-        uResolution: { value: new THREE.Vector2(
-          Math.round(this._width * bRatio),
-          Math.round(this._height * bRatio)
-        )},
-        uHorizontal: { value: true },
-        uWeights: { value: GAUSSIAN_WEIGHTS },
-      },
-      vertexShader: QUAD_VERTEX,
-      fragmentShader: GAUSSIAN_BLUR_FSG,
-      depthTest: false,
-      depthWrite: false,
-    })
-    
-    // Composite pass
-    this._passComposite = new THREE.ShaderMaterial({
-      uniforms: {
-        uScene: { value: null },
-        uBloom: { value: null },
-        uBloomIntensity: { value: this._params.bloom },
-        uVignette: { value: this._params.vignette },
-        uGrain: { value: this._params.grain },
-        uChromatic: { value: 0.0 },
-        uTime: { value: 0 },
-      },
-      vertexShader: QUAD_VERTEX,
-      fragmentShader: COMPOSITE_FSG,
-      depthTest: false,
-      depthWrite: false,
-    })
-    
-    // Full-screen quad
-    this._quad = new THREE.Mesh(QUAD_GEOMETRY)
-  }
-  
+  /* _setupWebGL disabled — WebGL uses direct render
+  /* _setupWebGL disabled — WebGL uses direct render */
   private _setupRTSize(): void {
     const w = this._width
     const h = this._height
@@ -486,6 +425,7 @@ export class RenderPipeline {
   
   // ─── Rendering: WebGL ────────────────────────────────────────
   
+  /* _renderWebGL disabled
   private _renderWebGL(scene: THREE.Scene, camera: THREE.Camera): void {
     const renderer = this._renderer as THREE.WebGLRenderer
     const autoClearBackup = renderer.autoClear
@@ -541,6 +481,7 @@ export class RenderPipeline {
     
     renderer.autoClear = autoClearBackup
   }
+  */
   
   // ─── Rendering: WebGPU (TSL post-processing) ─────────────────
 
@@ -644,6 +585,7 @@ export class RenderPipeline {
   
   // ─── Helpers: Render full-screen quad to target ─────────────
   
+  /* _renderQuad disabled
   private _renderQuad(
     material: THREE.ShaderMaterial,
     _uniforms: Record<string, THREE.Texture | null>,
@@ -659,4 +601,5 @@ export class RenderPipeline {
     renderer.render(quad, null as unknown as THREE.Camera)
     renderer.autoClear = true
   }
+  */
 }
