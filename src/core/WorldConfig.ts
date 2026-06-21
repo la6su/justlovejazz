@@ -43,6 +43,30 @@ export interface PostTransform {
   chromatic: number
 }
 
+export interface SectionLightDef {
+  /** Light color */
+  color: number
+  /** PointLight intensity */
+  intensity?: number
+  /** PointLight distance (0 = infinite) */
+  distance?: number
+  /** Position [x, y, z] */
+  position: [number, number, number]
+}
+
+/** per-section dynamic light definition */
+export interface SectionLightDef {
+    /** [r, g, b] hex or THREE.Color string */
+    /** hex color string or rgba "0xff0000" */
+    hexColor: string
+    /** light intensity (default: 5) */
+    intensity?: number
+    /** light distance/fall-off radius (0 = infinite) */
+    distance?: number
+    /** [x, y, z] position in world space */
+    position: [number, number, number]
+}
+
 export interface PhaseConfig {
   id: string
   context: string
@@ -60,6 +84,9 @@ export interface PhaseConfig {
   post: PostTransform
   ui: { showGallery: boolean }
   background: number
+  /** Per-section dynamic lights (Q6). Applied on section arrival. */
+  sectionLights?: SectionLightDef[]
+        /** per-section point lights */
 }
 
 // ── Pure data (no Three.js, bundle-friendly shape) ──

@@ -1,65 +1,165 @@
 // SectionSceneFactory — Studio-grade room compositions.
-// Each scene: layered depth with art-directed lighting and materials.
-// All shaders TSL (WebGPU compatible).
+// WebGL + WebGPU compatible via ShaderMaterial (no TSL dependency needed).
 import * as THREE from 'three'
-import { MeshBasicNodeMaterial } from 'three/webgpu'
-import { Fn, vec4, float, uniform, uv, sin, pow, exp, fract, step, mix, normalize, positionLocal, time } from 'three/tsl'
 
-// ── BG gradient sphere with atmospheric glow ──
+// ── Shared GLSL shaders ──
+const BG_VERTEX = `
+  varying vec3 vNormal;
+  void main() {
+    vNormal = normalize(normalMatrix * normal);
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+const BG_FRAGMENT = `
+  uniform vec3 uTop;
+  uniform vec3 uBottom;
+  uniform vec3 uGlow;
+  varying vec3 vNormal;
+  void main() {
+    float h = vNormal.y * 0.5 + 0.5;
+    vec3 base = mix(uBottom, uTop, h);
+    float band = exp(-pow((h - 0.65) * 6.0, 2.0)) * 0.2;
+    float horizon = exp(-pow((h - 0.5) * 20.0, 2.0)) * 0.08;
+    gl_FragColor = vec4(base + uGlow * band + uGlow * horizon, 1.0);
+  }
+`;
+
+const FLOOR_VERTEX = `
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+const FLOOR_FRAGMENT = `
+  uniform vec3 uColor;
+  uniform float uOpacity;
+  varying vec2 vUv;
+  void main() {
+    float gx = fract(vUv.x * 20.0);
+    float gy = fract(vUv.y * 20.0);
+    float lineX = step(0.96, gx);
+    float lineY = step(0.96, gy);
+    float grid = clamp(lineX + lineY, 0.0, 1.0);
+    float dist = length(vUv - 0.5);
+    float fade = clamp(1.0 - dist * 2.0, 0.0, 1.0);
+    float alpha = grid * fade * uOpacity;
+    gl_FragColor = vec4(uColor, alpha);
+  }
+`;
+
+const SLASHES_VERTEX = `
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+const SLASHES_FRAGMENT = `
+  uniform float uTime;
+  varying vec2 vUv;
+  void main() {
+    float stripe = sin(vUv.x * 25.0 - uTime * 2.0);
+    float visible = step(-0.3, stripe);
+    float edgeFade = 1.0 - abs(vUv.y * 2.0 - 1.0);
+    float alpha = visible * 0.06 * edgeFade;
+    gl_FragColor = vec4(0.3, 0.4, 0.6, alpha);
+  }
+`;
+
+const ROAD_VERTEX = `
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+const ROAD_FRAGMENT = `
+  uniform vec3 uColor;
+  uniform float uTime;
+  varying vec2 vUv;
+  void main() {
+    float scroll = fract(vUv.y - uTime * 0.3);
+    float line = step(0.48, fract(scroll * 5.0));
+    float fade = 1.0 - vUv.y;
+    float alpha = line * fade * 0.25;
+    gl_FragColor = vec4(uColor, alpha);
+  }
+`;
+
+// ── BG gradient sphere ──
 function makeGradientBG(topColor: number, bottomColor: number, glowColor?: number): THREE.Mesh {
   const geo = new THREE.SphereGeometry(50, 48, 48)
-  const uTop = uniform(new THREE.Color(topColor))
-  const uBottom = uniform(new THREE.Color(bottomColor))
-  const uGlow = uniform(new THREE.Color(glowColor ?? topColor))
-
-  const mat = new MeshBasicNodeMaterial()
-  mat.side = THREE.BackSide
-  mat.depthWrite = false
-  mat.colorNode = Fn(() => {
-    const h = normalize(positionLocal).y.mul(0.5).add(0.5)
-    const base = mix(uBottom, uTop, h)
-    // Atmospheric glow band (junni bg.fs pattern)
-    const band = exp(pow(h.sub(0.65).mul(6.0), 2.0).negate()).mul(0.2)
-    // Subtle horizon glow
-    const horizon = exp(pow(h.sub(0.5).mul(20.0), 2.0).negate()).mul(0.08)
-    return base.add(uGlow.mul(band)).add(uGlow.mul(horizon))
-  })()
+  const mat = new THREE.ShaderMaterial({
+    uniforms: {
+      uTop: { value: new THREE.Color(topColor) },
+      uBottom: { value: new THREE.Color(bottomColor) },
+      uGlow: { value: new THREE.Color(glowColor ?? topColor) },
+    },
+    vertexShader: BG_VERTEX,
+    fragmentShader: BG_FRAGMENT,
+    side: THREE.BackSide,
+    depthWrite: false,
+  })
   return new THREE.Mesh(geo, mat)
 }
 
-// ── Studio floor: shader-based grid with perspective fade ──
-// Replaces GridHelper — cleaner, art-directed, depth-aware.
+// ── Studio floor ──
 function makeStudioFloor(color: number, opacity: number, y: number): THREE.Mesh {
   const geo = new THREE.PlaneGeometry(40, 40, 1, 1)
-  const uColor = uniform(new THREE.Color(color))
-  const uOpacity = uniform(opacity)
-
-  const mat = new MeshBasicNodeMaterial()
-  mat.transparent = true
-  mat.depthWrite = false
-  mat.side = THREE.DoubleSide
-  mat.colorNode = Fn(() => {
-    const vUv = uv()
-    // Grid lines: frequency 20, line width via step
-    const gx = fract(vUv.x.mul(20.0))
-    const gy = fract(vUv.y.mul(20.0))
-    const lineX = step(0.96, gx)
-    const lineY = step(0.96, gy)
-    const grid = lineX.add(lineY).clamp(0, 1)
-    // Perspective fade: center bright, edges fade
-    const dist = vUv.sub(0.5).length()
-    const fade = float(1.0).sub(dist.mul(2.0)).clamp(0, 1)
-    const alpha = grid.mul(fade).mul(uOpacity)
-    return vec4(uColor, alpha)
-  })()
-
+  const mat = new THREE.ShaderMaterial({
+    uniforms: {
+      uColor: { value: new THREE.Color(color) },
+      uOpacity: { value: opacity },
+    },
+    vertexShader: FLOOR_VERTEX,
+    fragmentShader: FLOOR_FRAGMENT,
+    transparent: true,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+  })
   const mesh = new THREE.Mesh(geo, mat)
   mesh.rotation.x = -Math.PI / 2
   mesh.position.y = y
   return mesh
 }
 
-// ── Glowing particles: PointsMaterial with additive blending ──
+// ── Animated slashes ──
+function makeSlashes(): THREE.Mesh {
+  const geo = new THREE.PlaneGeometry(10, 5)
+  const mat = new THREE.ShaderMaterial({
+    uniforms: { uTime: { value: 0 } },
+    vertexShader: SLASHES_VERTEX,
+    fragmentShader: SLASHES_FRAGMENT,
+    transparent: true,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+  })
+  return new THREE.Mesh(geo, mat)
+}
+
+// ── Scrolling road ──
+function makeRoad(): THREE.Mesh {
+  const geo = new THREE.PlaneGeometry(6, 20, 1, 16)
+  const mat = new THREE.ShaderMaterial({
+    uniforms: {
+      uColor: { value: new THREE.Color(0x1a2a4a) },
+      uTime: { value: 0 },
+    },
+    vertexShader: ROAD_VERTEX,
+    fragmentShader: ROAD_FRAGMENT,
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+  })
+  return new THREE.Mesh(geo, mat)
+}
+
+// ── Glowing particles ──
 function makeGlowParticles(count: number, range: THREE.Vector3, color: number, size: number, opacity: number): THREE.Points {
   const geo = new THREE.BufferGeometry()
   const positions = new Float32Array(count * 3)
@@ -85,43 +185,24 @@ function makeGlowParticles(count: number, range: THREE.Vector3, color: number, s
 }
 
 export class SectionSceneFactory {
-  /**
-   * step01: "Entry Hall" — floating geometric trio + slashes + depth.
-   */
   static createStep01(): THREE.Group {
     const group = new THREE.Group()
     group.name = 'step01-scene'
 
-    // BACK: gradient with warm glow
     const bg = makeGradientBG(0x0c0c18, 0x050508, 0x1a2030)
     bg.name = 'step01-bg'
     bg.position.z = -50
     group.add(bg)
 
-    // BACK: glowing particles
     const particles = makeGlowParticles(40, new THREE.Vector3(14, 8, 6), 0x4a6fa5, 0.05, 0.5)
     particles.name = 'step01-particles'
     group.add(particles)
 
-    // MID: animated slashes (junni Section1)
-    const slashGeo = new THREE.PlaneGeometry(10, 5)
-    const slashMat = new MeshBasicNodeMaterial()
-    slashMat.transparent = true
-    slashMat.depthWrite = false
-    slashMat.side = THREE.DoubleSide
-    slashMat.colorNode = Fn(() => {
-      const vUv = uv()
-      const stripe = sin(vUv.x.mul(25.0).sub(time.mul(2.0)))
-      const visible = step(float(-0.3), stripe)
-      const edgeFade = vUv.y.mul(2.0).sub(1.0).abs().negate().add(1.0)
-      return vec4(float(0.3), float(0.4), float(0.6), visible.mul(0.06).mul(edgeFade))
-    })()
-    const slashes = new THREE.Mesh(slashGeo, slashMat)
+    const slashes = makeSlashes()
     slashes.position.set(0, 0, -3)
     slashes.name = 'step01-slashes'
     group.add(slashes)
 
-    // FRONT: geometric trio — metallic, semi-transparent
     const cube = new THREE.Mesh(
       new THREE.BoxGeometry(0.5, 0.5, 0.5),
       new THREE.MeshStandardMaterial({ color: 0x1a2a3a, roughness: 0.08, metalness: 0.9, transparent: true, opacity: 0.45 })
@@ -146,7 +227,6 @@ export class SectionSceneFactory {
     cyl.name = 'step01-cyl'
     group.add(cyl)
 
-    // FLOOR: studio shader grid
     const floor = makeStudioFloor(0x2a3a5a, 0.25, -2)
     floor.name = 'step01-grid'
     group.add(floor)
@@ -154,20 +234,15 @@ export class SectionSceneFactory {
     return group
   }
 
-  /**
-   * step02: "Process Chamber" — glowing core + orbital rings.
-   */
   static createStep02(): THREE.Group {
     const group = new THREE.Group()
     group.name = 'step02-scene'
 
-    // BACK
     const bg = makeGradientBG(0x0a0a16, 0x05050a, 0x152030)
     bg.name = 'step02-bg'
     bg.position.z = -50
     group.add(bg)
 
-    // MID: orbital rings (tilted, different sizes, emissive)
     const ringConfigs = [
       { radius: 1.5, rotX: 0.3, rotZ: 0, color: 0x3a5a8a, opacity: 0.5 },
       { radius: 2.2, rotX: -0.5, rotZ: 0.4, color: 0x2a4a7a, opacity: 0.35 },
@@ -184,7 +259,6 @@ export class SectionSceneFactory {
       group.add(ring)
     })
 
-    // FRONT: glowing core sphere
     const sphere = new THREE.Mesh(
       new THREE.IcosahedronGeometry(0.6, 4),
       new THREE.MeshStandardMaterial({
@@ -196,7 +270,6 @@ export class SectionSceneFactory {
     sphere.name = 'step02-sphere'
     group.add(sphere)
 
-    // FLOOR
     const floor = makeStudioFloor(0x2a3a5a, 0.2, -2)
     floor.name = 'step02-grid'
     group.add(floor)
@@ -204,37 +277,31 @@ export class SectionSceneFactory {
     return group
   }
 
-  /** step03/04: Works — empty (cards = scene) */
   static createStep03(): THREE.Group {
     const group = new THREE.Group()
     group.name = 'step03-scene'
     return group
   }
+
   static createStep04(): THREE.Group {
     const group = new THREE.Group()
     group.name = 'step04-scene'
     return group
   }
 
-  /**
-   * step05: "Identity Gallery" — light columns + atmospheric depth.
-   */
   static createStep05(): THREE.Group {
     const group = new THREE.Group()
     group.name = 'step05-scene'
 
-    // BACK
     const bg = makeGradientBG(0x0a0a14, 0x05050a, 0x1a2535)
     bg.name = 'step05-bg'
     bg.position.z = -50
     group.add(bg)
 
-    // BACK: glowing particles
     const particles = makeGlowParticles(25, new THREE.Vector3(16, 6, 4), 0x3a5a7a, 0.04, 0.4)
     particles.name = 'step05-particles'
     group.add(particles)
 
-    // FRONT: 5 vertical light columns with additive blending
     const colCount = 5
     const colGeo = new THREE.PlaneGeometry(0.06, 5)
     for (let i = 0; i < colCount; i++) {
@@ -251,7 +318,6 @@ export class SectionSceneFactory {
       group.add(col)
     }
 
-    // FLOOR
     const floor = makeStudioFloor(0x2a3a5a, 0.2, -2.5)
     floor.name = 'step05-grid'
     group.add(floor)
@@ -259,41 +325,21 @@ export class SectionSceneFactory {
     return group
   }
 
-  /**
-   * step06: "Reflection Room" — chrome sphere + scrolling road.
-   */
   static createStep06(): THREE.Group {
     const group = new THREE.Group()
     group.name = 'step06-scene'
 
-    // BACK
     const bg = makeGradientBG(0x080812, 0x030306, 0x101828)
     bg.name = 'step06-bg'
     bg.position.z = -50
     group.add(bg)
 
-    // MID: road shader (junni Section6)
-    const roadGeo = new THREE.PlaneGeometry(6, 20, 1, 16)
-    const roadUColor = uniform(new THREE.Color(0x1a2a4a))
-    const roadMat = new MeshBasicNodeMaterial()
-    roadMat.transparent = true
-    roadMat.depthWrite = false
-    roadMat.blending = THREE.AdditiveBlending
-    roadMat.colorNode = Fn(() => {
-      const vUv = uv()
-      const scroll = fract(vUv.y.sub(time.mul(0.3)))
-      const line = step(0.48, fract(scroll.mul(5.0)))
-      const fade = float(1.0).sub(vUv.y)
-      const alpha = line.mul(fade).mul(0.25)
-      return vec4(roadUColor, alpha)
-    })()
-    const road = new THREE.Mesh(roadGeo, roadMat)
+    const road = makeRoad()
     road.rotation.x = -Math.PI / 2
     road.position.set(0, -1.5, -3)
     road.name = 'step06-road'
     group.add(road)
 
-    // FRONT: chrome sphere
     const sphere = new THREE.Mesh(
       new THREE.SphereGeometry(0.9, 64, 64),
       new THREE.MeshStandardMaterial({ color: 0x0a0a0f, roughness: 0.02, metalness: 1, envMapIntensity: 1 })
@@ -302,7 +348,6 @@ export class SectionSceneFactory {
     sphere.name = 'step06-sphere'
     group.add(sphere)
 
-    // FRONT: ring beneath sphere
     const ring = new THREE.Mesh(
       new THREE.RingGeometry(1.1, 1.12, 64),
       new THREE.MeshBasicMaterial({ color: 0x3a5a8a, transparent: true, opacity: 0.3, side: THREE.DoubleSide, blending: THREE.AdditiveBlending })
@@ -312,7 +357,6 @@ export class SectionSceneFactory {
     ring.name = 'step06-ring'
     group.add(ring)
 
-    // FLOOR
     const floor = makeStudioFloor(0x2a3a5a, 0.15, -1.5)
     floor.name = 'step06-grid'
     group.add(floor)
