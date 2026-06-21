@@ -219,6 +219,7 @@ export class RenderPipeline {
 
   /** Flag: is this a WebGPU renderer? */
   private _isWebGPU = false
+  private _webgpuFailed = false
 
   // ─── WebGPU TSL post-processing state ──────────────────────────
   // Built lazily on first render() call (needs the live scene + camera).
@@ -613,15 +614,18 @@ export class RenderPipeline {
   }
 
   private _renderWebGPU(scene: THREE.Scene, camera: THREE.Camera): void {
+    // If TSL already failed, just direct render (no retry loop)
+    if (this._webgpuFailed) {
+      this._renderer.render(scene, camera)
+      return
+    }
     // Lazy-init: the TSL graph needs live scene + camera refs.
     if (!this._nativePipeline) {
       try {
         this._setupWebGPU(scene, camera)
       } catch (err) {
-        // TSL/PassNode API is experimental across three minor releases.
-        // If graph construction fails, fall back to direct render so the
-        // site stays functional (no post-processing, but no blank canvas).
         console.error('[RenderPipeline] WebGPU TSL setup failed, falling back to direct render:', err)
+        this._webgpuFailed = true
         this._renderer.render(scene, camera)
         return
       }
@@ -641,6 +645,7 @@ export class RenderPipeline {
     } catch (err) {
       console.error('[RenderPipeline] WebGPU TSL render failed, falling back:', err)
       this._nativePipeline = null
+      this._webgpuFailed = true
       this._renderer.render(scene, camera)
     }
   }
