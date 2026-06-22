@@ -17,7 +17,7 @@ jobs:
       - run: npm ci
       - run: npm run build
       - name: Lighthouse CI
-        uses: treosh/lighthouse-ci-action@v14
+        uses: treosh/lighthouse-ci-action@v10
         with:
           upload: false
           url: 'http://localhost:4173'

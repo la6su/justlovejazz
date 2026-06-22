@@ -108,7 +108,13 @@ export class Experience {
     this.camera.instance.lookAt(0, 0, 0)
     this.camera.instance.updateProjectionMatrix()
     this.setupIntro()
-    requestAnimationFrame((t) => this.update(t))
+    // Use renderer.setAnimationLoop() instead of requestAnimationFrame.
+    // WebGPURenderer on the WebGPU backend REQUIRES this for correct frame
+    // pacing — rAF does not synchronize with the WebGPU swap chain, causing
+    // severe frame stutter (observed 3 FPS on Chrome/WebGPU). On WebGL2 it
+    // falls back to rAF internally, so behavior is identical.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(this.renderer.instance as any).setAnimationLoop((t: number) => this.update(t))
     void this.ensureWebGLTextManager()
   }
 
@@ -175,7 +181,9 @@ export class Experience {
     this.world.lightsGroup.update(dt)
     this.camera.update(dt)
     this.renderer.update(this.scene, this.camera.instance, dt, worldState)
-    requestAnimationFrame((t) => this.update(t))
+    // NOTE: do NOT call requestAnimationFrame here — setAnimationLoop (set in
+    // init()) drives the loop. Calling rAF on top would double the frame rate
+    // and fight the WebGPU swap chain synchronization.
   }
 
   public switchPage(page: string): void {
@@ -233,6 +241,10 @@ export class Experience {
   }
 
   destroy() {
+    // Stop the animation loop FIRST — setAnimationLoop(null) cancels the
+    // internal callback. Without this, the loop keeps firing after dispose().
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(this.renderer.instance as any).setAnimationLoop(null)
     this.webglTextManager?.dispose()
     this.smoothScroll.destroy()
     this.contentReveal.destroy()

@@ -130,7 +130,27 @@ export class World extends THREE.Group {
 
     protected populateSection(_section: Section, _config: PhaseConfig, _index: number): void {}
 
+    private _shaderTime = 0
+    
     public update(deltaTime: number): void {
+        // Update shader time for animated materials (slashes, road, etc.)
+        this._shaderTime += deltaTime
+        
+        // Update uniforms in all scene group materials
+        this.sceneGroups.forEach(group => {
+            group.traverse(obj => {
+                if (obj instanceof THREE.Mesh || obj instanceof THREE.Points || obj instanceof THREE.LineSegments) {
+                    const mat = obj.material as THREE.Material
+                    if (mat instanceof THREE.ShaderMaterial && mat.uniforms) {
+                        const uTime = mat.uniforms['uTime']
+                        if (uTime) {
+                            uTime.value = this._shaderTime
+                        }
+                    }
+                }
+            })
+        })
+        
         this.sections.forEach(s => s.update(deltaTime))
         this.baku.update(deltaTime)
         this.cursorLight.update(deltaTime)
@@ -386,6 +406,20 @@ export class World extends THREE.Group {
             this.remove(group)
         })
         this.sceneGroups = []
+    }
+
+    /** Apply per-section dynamic lights from PhaseConfig.sectionLights[] */
+    protected applySectionLights(config: PhaseConfig): void {
+        if (!config.sectionLights?.length) return
+        for (const def of config.sectionLights) {
+            const light = new THREE.PointLight()
+            light.color.set(def.hexColor)
+            light.intensity = def.intensity ?? 5
+            light.distance = def.distance ?? 0
+            light.position.set(def.position[0], def.position[1], def.position[2])
+            light.castShadow = false
+            this.add(light)
+        }
     }
 
     public dispose(): void {
