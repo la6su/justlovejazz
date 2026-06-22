@@ -1,24 +1,44 @@
 # CHANGELOG
 
-Use `git log` for details. See `docs/STATUS.md` for current state.
+## 2026-06-22
 
-## 2026-06-17/20 — Session (40 PRs)
+### 3D restore + performance (7 commits)
 
-### Foundation (PRs #1-#10)
-render-pipeline integrity, junni-parity foundation (blueprint, TSL lib, WebGPU pipeline, tokens), mip-chain BloomNode, docs sync, listener leaks, ARIA, E2E, PerfMonitor.
+- `7a6c15d` fix: restore 3D — built-in materials, getTextureNode, dissolve guard
+  - Replaced all ShaderMaterial in SectionSceneFactory with built-in materials
+  - Added getTextureNode('output') for pass() (was black screen on WebGPU)
+  - Removed double renderOutput wrap
+  - Skip DissolveOverlay on WebGPU (ShaderMaterial incompatible)
+  - Fixed WebGPU renderer detection (isWebGPURenderer, not isWebGPU)
+- `86fb90b` perf: BakuTSLMaterial → MeshStandardMaterial
+  - TSL NodeMaterial with MaterialX noise was 3 FPS on Chrome WebGPU-over-ANGLE
+- `3a8487a` fix: dissolveOverlay GLSL dot() args
+  - dot() called with one arg → shader compile error
+- `2bffc17` perf: WebGPU direct render — bypass TSL pipeline
+  - TSL pipeline (pass→RT→QuadMesh) doubled GPU work; direct render is 60 FPS
+- `b68eb92` perf: remove per-frame ShaderMaterial traverse
+  - World.update traversed all scene groups every frame looking for uTime (no-op)
+- `65e014f` perf: disable DrawTrail + WebGLTextManager
+  - DrawTrail: 64-point geometry update every frame
+  - WebGLTextManager: second WebGLRenderer (Troika) every frame
 
-### Baku + bloom (PRs #11-#18)
-Baku TSL iridescent material, white-screen fixes (ACES div-by-zero, double-tonemap), per-section bloom radius/threshold, Baku rework + dark backgrounds.
+### Branch cleanup
 
-### Works transitions (PRs #19-#29)
-Slider race fix, card-morph transition, tap→detail, sticky→card-morph, texture+aria fixes, swipe+tap coexist, fullscreen detail with texture bg.
+- Synced `test` to `main` (was 17 commits behind)
+- Deleted 8 merged feature branches
 
-### Production hardening (PRs #30-#35)
-Error visibility, route fallback, mobile cursor, shared TextureLoader, SW v2, section names, smooth lights, 3D→DOM section sync, bun migration, lazy-load textures, scroll parallax.
+### Docs
 
-### Works slider + scenes (PRs #36-#40)
-Production 3D slider UI, art-directed scenes, raycast tap, hide Baku on works, clean works page, junni-inspired compositions (BG sphere, grid, crosses, text ring).
+- Updated STATUS.md, ARCHITECTURE.md, AGENTS.md, AUTONOMY.md
+- Added HERMES_RULES.md (10 hard rules with bug provenance)
+- Added ENVIRONMENT.md (Chrome/Wayland WebGPU issue + workarounds)
 
-## Pre-session (2026-05)
+## 2026-06-20
 
-See git log for 2026-05-07/12 baseline.
+- PR #55: loadCardTexture crash fix (modulo wrap + undefined guard)
+- Bun migration complete
+- DrawTrail added (later disabled for perf on 2026-06-22)
+
+## Earlier
+
+See `git log --oneline` for full history.
