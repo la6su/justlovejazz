@@ -143,7 +143,10 @@ export class DeviceCapability {
 
   private calculateMaxDpr(): number {
     if (this.mode === 'webgpu') {
-      return this.isMobile ? 1.5 : 2
+      // Cap desktop WebGPU at 1.5 — the TSL bloom pipeline (mip-chain, 4
+      // passes) is expensive at 2× DPR. 1.5 keeps visual quality high while
+      // avoiding the 3-FPS regression observed on Chrome/WebGPU at dpr=2.
+      return this.isMobile ? 1.5 : 1.5
     }
     if (this.mode === 'webgl') {
       return this.isMobile ? 1 : 1.5
