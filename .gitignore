@@ -145,3 +145,7 @@ vite.config.ts.timestamp-*
 
 # 2015 portfolio reference
 references/2015-portfolio/
+references/**/.git
+references/**/.gitobj *
+references/**/.git
+references/**/.gitattributes
