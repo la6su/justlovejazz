@@ -21,9 +21,14 @@ const DISSOLVE_FRAGMENT = `
   uniform float uThreshold;
   varying vec2 vUv;
   
-  // Simplex-like noise using sine hashing (from junni-style dissolv)
+  // Simplex-like noise using sine hashing (junni-style dissolve).
+  // CRITICAL: dot() requires TWO vec2 arguments. The previous code called
+  // dot() with a single argument (a vec2), which fails GLSL overload
+  // resolution → "no matching overloaded function found" → shader compile
+  // error → "Program must be linked successfully" warning + no render.
   float noise(vec2 p, float t, float scale) {
-    return fract(sin(dot(p * scale + t * vec2(0.25, 0.15)) * vec2(12.9898, 78.233))) * 43758.5453;
+    vec2 q = p * scale + t * vec2(0.25, 0.15);
+    return fract(sin(dot(q, vec2(12.9898, 78.233))) * 43758.5453);
   }
   
   void main() {
