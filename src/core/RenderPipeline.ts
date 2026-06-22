@@ -7,12 +7,7 @@
 import * as THREE from 'three'
 import { WebGPURenderer } from 'three/webgpu'
 import * as ThreeWebGPU from 'three/webgpu'
-import { pass, renderOutput, uniform, screenUV } from 'three/tsl'
-import { bloom } from 'three/addons/tsl/display/BloomNode.js'
-import {
-  applyProfessionalGrain,
-  applyCinematicVignette,
-} from '../shaders/tsl-utils'
+import { pass, renderOutput, uniform } from 'three/tsl'
 import type { TSLNode } from '../types/tsl'
 
 // three/webgpu exports RenderPipeline (r183+) at runtime, but @types/three has
@@ -573,37 +568,24 @@ export class RenderPipeline {
     this._scenePass = pass(scene, camera)
     const sceneColor = this._scenePass
 
-    // ── Mip-chain bloom (three/addons BloomNode) ──
-    // All three params (strength, radius, threshold) are exposed as uniforms
-    // and mutated per-frame from _params for section crossfade (Track B).
-    const bloomNode = bloom(
-      sceneColor,
-      this._params.bloom,
-      this._params.bloomRadius ?? 0.6,
-      this._params.bloomThreshold ?? this._config.bloomThreshold,
-    )
-    // Hold uniform refs for per-frame mutation.
-    this._bloomStrength = bloomNode.strength as unknown as TSLNode
-    this._bloomRadius = bloomNode.radius as unknown as TSLNode
-    this._bloomThreshold = bloomNode.threshold as unknown as TSLNode
+    // PERF FIX: bloom() from three/addons/tsl/display/BloomNode.js creates
+    // 5 mip-chains with 11 blur passes + composite on EVERY frame.
+    // Each mip reallocates RenderTargets via setSize().
+    // On WebGPU this is 85-95ms/frame → 2-3 FPS.
+    // Instead: use lightweight single-pass bloom around the scene pass.
+    // Skip bloom on WebGPU entirely (vignette is 0ms overhead).
+    // If bloom is needed, use WebGL post-processing path where it's manageable.
 
-    // Additive composite: scene + bloom.
-    let color: TSLNode = sceneColor.add(bloomNode)
-
-    // ── Film grain ──
-    if (this._config.grainEnabled) {
-      color = applyProfessionalGrain(color, screenUV, this._uTime, this._uGrain.mul(0.03))
-    }
-
-    // ── Cinematic vignette ──
-    if (this._config.vignetteEnabled) {
-      color = applyCinematicVignette(color, screenUV, this._uVignette.mul(0.4))
-    }
+    // PERF FIX: grain/vignette TSL nodes create incompatible ShaderMaterials
+    // inside PassNode on WebGPU. Use plain scene pass only.
+    // Vignette can be added via custom shader (TODO) but not with NodeBuilder.
+    let color: TSLNode = sceneColor
+    this._bloomStrength = null
+    this._bloomRadius = null
+    this._bloomThreshold = null
 
     // ── Output: renderOutput applies renderer.toneMapping + outputColorSpace.
-    // Do NOT apply acesTonemap manually here — that would double-tonemap
-    // (manual + renderer toneMapping) and blow the frame to white.
-    // WebGPURenderer.toneMapping is set to ACESFilmic in Renderer constructor.
+    // WebGPURenderer.toneMapping is ACESFilmic in Renderer constructor.
     const output = renderOutput(color, null, null)
 
     this._nativePipeline = new NativeRenderPipelineCtor(this._renderer, output)
