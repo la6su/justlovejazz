@@ -23,8 +23,7 @@ export class World extends THREE.Group {
     public baku!: Baku
     public lightsGroup!: CinematicLights
     public cursorLight!: CursorLight
-    public drawTrail!: DrawTrail
-    private _camera: THREE.Camera | null = null
+    public drawTrail?: DrawTrail
     public atmosphere: WorldAtmosphere | null = null
     public groundPlane!: THREE.Mesh
     public sceneGroups: THREE.Group[] = []
@@ -59,8 +58,12 @@ export class World extends THREE.Group {
         scene.add(this.cursorLight.object)
 
         // ── DrawTrail (junni pattern: cursor trail ribbon)
-        this.drawTrail = new DrawTrail()
-        scene.add(this.drawTrail.object)
+        // PERF: disabled — DrawTrail updates a 64-point line geometry every
+        // frame (unproject cursor → world, shift ring buffer, rewrite position
+        // + color attributes). On WebGPU-over-ANGLE this is a significant
+        // per-frame cost. Re-enable when performance budget allows.
+        // this.drawTrail = new DrawTrail()
+        // scene.add(this.drawTrail.object)
 
         // ── Baku (character sphere)
         this.baku = new Baku()
@@ -140,7 +143,7 @@ export class World extends THREE.Group {
         this.baku.update(deltaTime)
         this.cursorLight.update(deltaTime)
         // DrawTrail needs camera ref — passed from Experience.update
-        if (this._camera) this.drawTrail.update(deltaTime, this._camera)
+        // PERF: disabled (see constructor). if (this._camera) this.drawTrail.update(deltaTime, this._camera)
 
         // ── Room composition animation (per-component, Z-layer aware) ──
         const t = performance.now() * 0.001
@@ -419,13 +422,15 @@ export class World extends THREE.Group {
         else groundMat.dispose()
         this.lightsGroup.dispose()
         this.cursorLight.dispose()
-        this.drawTrail.dispose()
+        this.drawTrail?.dispose()
         this.atmosphere?.dispose()
     }
 
-    /** Set camera reference for DrawTrail (unproject cursor to world). */
-    public setCamera(cam: THREE.Camera): void {
-        this._camera = cam
+    /** Set camera reference for DrawTrail (unproject cursor to world).
+     *  Currently a no-op — DrawTrail is disabled for perf. Kept for API
+     *  compatibility (Experience.update calls it). */
+    public setCamera(_cam: THREE.Camera): void {
+        // no-op (DrawTrail disabled)
     }
 
     public async ensureAtmosphere(): Promise<void> {

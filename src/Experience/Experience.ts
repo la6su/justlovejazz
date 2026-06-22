@@ -437,9 +437,11 @@ export class Experience {
   }
 
   private async ensureWebGLTextManager(): Promise<void> {
-    if (this.webglTextManager) return
-    const { WebGLTextManager } = await import('./WebGLTextManager')
-    const titles = document.querySelectorAll<HTMLElement>('.studio-title')
-    this.webglTextManager = new WebGLTextManager(Array.from(titles))
+    // PERF: disabled — WebGLTextManager creates a SECOND WebGLRenderer (Troika
+    // text overlay) that renders every frame. On WebGPU-over-ANGLE this is a
+    // significant per-frame cost (separate GL context, separate render pass).
+    // Text is now rendered via DOM (CSS .studio-title) instead of WebGL.
+    // Re-enable when performance budget allows.
+    return
   }
 }
