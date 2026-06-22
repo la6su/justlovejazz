@@ -7,6 +7,7 @@
 // keeping nav buttons, title, description etc clickable.
 
 import { type Project } from '../core/types'
+import { NoiseText } from '../Experience/NoiseText'
 
 export class ProjectOverlay {
   private container: HTMLElement
@@ -122,9 +123,7 @@ export class ProjectOverlay {
 
   private _animateTitle(titleText: string): void {
     if (titleText.trim()) {
-      void import('../Experience/NoiseText').then(({ NoiseText }) => {
-        NoiseText.for(this.titleEl).show(0.5, titleText.trim());
-      }).catch(() => {})
+      NoiseText.for(this.titleEl).show(0.5, titleText.trim());
     }
   }
 

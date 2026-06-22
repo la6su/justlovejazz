@@ -15,7 +15,7 @@ export interface BootstrapOptions {
 let _bootstrapped = false
 export const isAppReady = () => _bootstrapped
 
-type OnReadyCallback = (renderer: any, scene: THREE.Scene) => void
+type OnReadyCallback = (renderer: import('./Experience/Renderer').RenderSurface, scene: THREE.Scene) => void
 
 export async function bootstrap(opts: BootstrapOptions): Promise<void> {
   if (_bootstrapped) return
@@ -47,11 +47,11 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
     const mod = await import('./shaders/dissolveOverlay')
     const DissolveOverlay = mod.DissolveOverlay
 
-    const onReadyCb: OnReadyCallback = (_renderer: any, scene: THREE.Scene) => {
+    const onReadyCb: OnReadyCallback = (_renderer, scene: THREE.Scene) => {
       progress(95)
       // Only create dissolve overlay on WebGL — ShaderMaterial incompatible
       // with WebGPURenderer. WebGPURenderer has isWebGPURenderer=true property.
-      if (!_renderer?.isWebGPURenderer) {
+      if (!(_renderer as any)?.isWebGPURenderer) {
         dissolveOverlay = new DissolveOverlay().init(scene)
       }
     }

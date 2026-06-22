@@ -340,7 +340,7 @@ export class Experience {
 
   private onProjectSelect(idx: number): void {
     if (!this.portfolio || !this.overlay) return
-    const projs = (this.portfolio as any).projects
+    const projs = this.portfolio.projects
     if (!Array.isArray(projs) || projs.length === 0) return
     const safeIdx = ((idx % projs.length) + projs.length) % projs.length
     const project = projs[safeIdx]
@@ -421,7 +421,7 @@ export class Experience {
    */
   private async onCardExpanded(idx: number): Promise<void> {
     if (!this.portfolio || !this.projectDetail) return
-    const projs = (this.portfolio as any).projects
+    const projs = this.portfolio.projects
     const project = projs?.[idx]
     if (!project) return
     await this.projectDetail.open(project)

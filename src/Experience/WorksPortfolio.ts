@@ -61,7 +61,7 @@ export class WorksPortfolio {
   declare onCardCollapsed: () => void
 
   constructor(
-    private readonly projects: Project[],
+    public readonly projects: Project[],
     onCardClick: (index: number) => void = () => {},
     onCardActivate: (index: number) => void = () => {},
     onCardExpanded: (index: number) => void = () => {},
@@ -94,6 +94,8 @@ export class WorksPortfolio {
         side: THREE.DoubleSide,
         transparent: true,
       })
+      // ── Rule 3: cache baseOpacity (HERMES_RULES §3) ──
+      mat.userData.baseOpacity = mat.opacity
 
       // Texture starts null — loaded lazily when card becomes active.
       const mesh = new THREE.Mesh(geo, mat)
@@ -306,7 +308,9 @@ export class WorksPortfolio {
     }
   }
 
+  get projectCount(): number { return this.projects.length }
   get isExpanding(): boolean { return this.expanding }
+
 
   update(dt: number): void {
     // ── Expand/collapse animation takes priority ──

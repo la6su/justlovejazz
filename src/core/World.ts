@@ -186,6 +186,10 @@ export class World extends THREE.Group {
                 else if (name.includes('column')) {
                     const mat = (obj as THREE.Mesh).material as THREE.MeshBasicMaterial
                     if (mat?.opacity !== undefined) {
+                        // ── Rule 3: cache baseOpacity (HERMES_RULES §3) ──
+                        if (mat.userData.baseOpacity === undefined) {
+                            mat.userData.baseOpacity = mat.opacity
+                        }
                         const idx = parseInt(name.split('-').pop() || '0')
                         mat.opacity = 0.35 + Math.sin(t * 0.4 + idx * 0.7) * 0.2
                     }
@@ -272,6 +276,10 @@ export class World extends THREE.Group {
                     if (obj instanceof THREE.Mesh) {
                         const mat = obj.material
                         if (!Array.isArray(mat) && 'opacity' in mat) {
+                            // ── Rule 3: cache baseOpacity (HERMES_RULES §3) ──
+                            if (mat.userData.baseOpacity === undefined) {
+                                mat.userData.baseOpacity = mat.opacity
+                            }
                             ;(mat as THREE.Material & { opacity: number }).opacity = opacity
                             ;(mat as THREE.Material & { transparent: boolean }).transparent = true
                         }

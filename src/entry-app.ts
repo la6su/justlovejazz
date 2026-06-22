@@ -2,6 +2,7 @@ import UIkit from 'uikit'
 import Icons from 'uikit/dist/js/uikit-icons'
 import { initRouter } from './router'
 import { bootstrap as bootstrapApp, isAppReady, type BootstrapOptions } from './main-app'
+import { NoiseText } from './Experience/NoiseText'
 
 function mountDeferredShell(): void {
   if (document.getElementById('project-modal')) return
@@ -92,8 +93,7 @@ export async function startApp(): Promise<void> {
  * NOTE: .jlz-works-title is NOT animated here — ProjectOverlay handles
  * its own NoiseText.on show() to avoid double-animation on works page.
  */
-async function animateNoiseTitles(): Promise<void> {
-  const { NoiseText } = await import('./Experience/NoiseText')
+function animateNoiseTitles(): void {
   const leafEls = document.querySelectorAll<HTMLElement>('.studio-title__line')
   const leafSet = new Set(leafEls)
 

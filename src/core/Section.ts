@@ -193,6 +193,10 @@ export class Section extends THREE.Group {
             if (obj instanceof THREE.Mesh) {
                 const mat = obj.material
                 if (!Array.isArray(mat) && 'opacity' in mat) {
+                    // ── Rule 3: cache baseOpacity (HERMES_RULES §3) ──
+                    if (mat.userData.baseOpacity === undefined) {
+                        mat.userData.baseOpacity = mat.opacity
+                    }
                     mat.opacity = value
                     mat.needsUpdate = true
                 }
