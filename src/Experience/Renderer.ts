@@ -1,6 +1,13 @@
 // src/Experience/Renderer.ts
 import * as THREE from 'three'
 import { WebGPURenderer } from 'three/webgpu'
+// Compatibility node builder: lets the WebGL fallback renderer
+// compile TSL NodeMaterials (MeshBasicNodeMaterial, etc.) used by
+// SectionSceneFactory, DissolveOverlay, ProjectMaterial. Without this,
+// WebGLRenderer's _nodesHandler stays null, so NodeMaterials are compiled
+// with undefined vertexShader/fragmentShader -> resolveIncludes(undefined)
+// crash on the first frame. (three r0.184 does not auto-register this.)
+import { WebGLNodesHandler } from 'three/addons/tsl/WebGLNodesHandler.js'
 import { Sizes } from './Sizes'
 import { DeviceCapability } from '../core/DeviceCapability'
 import { type WorldState } from '../core/types'
@@ -30,7 +37,14 @@ export class Renderer {
     }
 
     if (this.capabilities.mode === 'webgpu') {
-      this.instance = new WebGPURenderer({ antialias: true })
+      // alpha: false → opaque canvas. Chrome's WebGPU backend defaults to
+      // alpha: true (transparent canvas), which means the canvas composites
+      // over the page background (body is #000). When the 3D scene's background
+      // is also dark, the result is indistinguishable from a black screen.
+      // Firefox's WebGPU backend defaults to alpha: false, which is why the
+      // same code 'works' there. Setting alpha: false explicitly makes Chrome
+      // match Firefox — the canvas owns its pixels, no compositing ambiguity.
+      this.instance = new WebGPURenderer({ antialias: true, alpha: false })
       // Match WebGL path: ACES tonemap + sRGB output. renderOutput() in
       // RenderPipeline reads these to apply tone mapping + color space.
       // WebGPURenderer extends Renderer (has toneMapping at runtime) but
@@ -39,6 +53,7 @@ export class Renderer {
       const wg = this.instance as any
       wg.toneMapping = THREE.ACESFilmicToneMapping
       wg.toneMappingExposure = 1
+      wg.outputColorSpace = THREE.SRGBColorSpace
     } else {
       const gl = new THREE.WebGLRenderer({
         antialias: true,
@@ -47,6 +62,23 @@ export class Renderer {
       gl.outputColorSpace = THREE.SRGBColorSpace
       gl.toneMapping = THREE.ACESFilmicToneMapping
       gl.toneMappingExposure = 1
+
+      // Enable TSL NodeMaterial rendering on the WebGL fallback path.
+      // SectionSceneFactory (and the works-page dissolve/project materials)
+      // build their look with MeshBasicNodeMaterial + TSL Fn colorNodes.
+      // WebGLRenderer in three r0.184 cannot compile these out of the box —
+      // setNodesHandler installs the GLSLNodeBuilder adapter that generates
+      // real GLSL for node materials before WebGLProgram compilation.
+      // Wrap defensively: the handler is marked experimental across releases.
+      try {
+        // setNodesHandler is a runtime method on WebGLRenderer; @types/three
+        // does not type it yet. Isolate the cast at this adapter boundary.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (gl as any).setNodesHandler(new WebGLNodesHandler())
+      } catch (err) {
+        console.error('[Renderer] Failed to install WebGLNodesHandler — TSL materials will not render:', err)
+      }
+
       this.instance = gl
     }
 

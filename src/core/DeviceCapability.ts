@@ -146,7 +146,10 @@ export class DeviceCapability {
     // PERF FIX: WebGPU DPR capped at 1.5 max (was 2).
     // Reduces pixel count by ~56% at 2x DPR → massive perf gain.
     if (this.mode === 'webgpu') {
-      return this.isMobile ? 1 : 1.5
+      // Cap desktop WebGPU at 1.5 — the TSL bloom pipeline (mip-chain, 4
+      // passes) is expensive at 2× DPR. 1.5 keeps visual quality high while
+      // avoiding the 3-FPS regression observed on Chrome/WebGPU at dpr=2.
+      return this.isMobile ? 1.5 : 1.5
     }
     if (this.mode === 'webgl') {
       return this.isMobile ? 1 : 2
