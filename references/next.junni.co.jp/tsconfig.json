@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+	"strict": true,
+    "sourceMap": true,
+	"allowSyntheticDefaultImports": true,
+    "target": "es6",
+    "module": "es2015",
+    "moduleResolution": "node",
+    "lib": [
+      "es2017",
+      "dom"
+    ],
+    "typeRoots": ["node_modules/@types"],
+    "rootDir": "./",
+    "outDir": "./public",
+	"baseUrl": ".",
+    "paths": {
+      "ore-three" : ["./packages/ore-three/packages/ore-three/src"],
+      "power-mesh" : ["./packages/power-mesh/packages/power-mesh/src"],
+    }
+  },
+  "include": ["./src/"]
+} 
