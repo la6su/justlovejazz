@@ -7,7 +7,7 @@
 import * as THREE from 'three'
 import { WebGPURenderer } from 'three/webgpu'
 import * as ThreeWebGPU from 'three/webgpu'
-import { pass, renderOutput, uniform } from 'three/tsl'
+import { pass, uniform } from 'three/tsl'
 import type { TSLNode } from '../types/tsl'
 
 // three/webgpu exports RenderPipeline (r183+) at runtime, but @types/three has
@@ -568,9 +568,13 @@ export class RenderPipeline {
     this._uTime = uniform(0)
 
     // Scene → texture pass (PassNode bound to scene + camera).
-    // For COLOR scope the PassNode itself acts as the color texture node.
+    // CRITICAL: pass() returns a PassNode, NOT a texture. To use the rendered
+    // color as input to bloom()/add()/etc., you MUST obtain the texture node
+    // via getTextureNode('output'). Using the PassNode directly produces a
+    // black frame on WebGPU (the texture binding never resolves).
+    // Per three 0.184 BloomNode.js docs.
     this._scenePass = pass(scene, camera)
-    const sceneColor = this._scenePass
+    const sceneColor = this._scenePass.getTextureNode('output')
 
     // PERF FIX: bloom() from three/addons/tsl/display/BloomNode.js creates
     // 5 mip-chains with 11 blur passes + composite on EVERY frame.
@@ -588,11 +592,14 @@ export class RenderPipeline {
     this._bloomRadius = null
     this._bloomThreshold = null
 
-    // ── Output: renderOutput applies renderer.toneMapping + outputColorSpace.
-    // WebGPURenderer.toneMapping is ACESFilmic in Renderer constructor.
-    const output = renderOutput(color, null, null)
-
-    this._nativePipeline = new NativeRenderPipelineCtor(this._renderer, output)
+    // ── Output ──
+    // Do NOT wrap in renderOutput() manually. The native RenderPipeline has
+    // outputColorTransform=true by default, which wraps the outputNode in
+    // renderOutput(color, renderer.toneMapping, renderer.outputColorSpace)
+    // internally. Wrapping manually creates a double-renderOutput. Pass the
+    // color node directly so the pipeline's single renderOutput applies ACES
+    // + sRGB correctly.
+    this._nativePipeline = new NativeRenderPipelineCtor(this._renderer, color)
   }
 
   private _renderWebGPU(scene: THREE.Scene, camera: THREE.Camera): void {

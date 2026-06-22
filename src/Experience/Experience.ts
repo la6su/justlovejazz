@@ -20,6 +20,7 @@ import { ProjectDetail } from '../UI/ProjectDetail'
 import { Subtitles } from '../UI/Subtitles'
 import { SectionProgress } from '../UI/SectionProgress'
 import { PerfMonitor } from '../core/PerfMonitor'
+import { DeviceCapability } from '../core/DeviceCapability'
 import { DissolveOverlay } from '../shaders/dissolveOverlay'
 
 /**
@@ -316,13 +317,16 @@ export class Experience {
     }
     // Create the project transition dissolve overlay (shader wipe effect).
     // Reused across all project selections on the works page.
-    if (!this.projectDissolve) {
+    // SKIP on WebGPU — DissolveOverlay uses ShaderMaterial which is
+    // incompatible with WebGPURenderer's NodeBuilder (throws
+    // "Material ShaderMaterial is not compatible"). The overlay is optional;
+    // ProjectOverlay.show() works without it.
+    const isWebGPU = DeviceCapability.getInstance().mode === 'webgpu'
+    if (!this.projectDissolve && !isWebGPU) {
       try {
         this.projectDissolve = new DissolveOverlay().init(this.scene)
         this.projectDissolve.meshGroup.visible = false
       } catch {
-        // TSL material may fail on some drivers — dissolve is optional,
-        // overlay.show() still works without it.
         this.projectDissolve = null
       }
     }

@@ -49,8 +49,9 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
 
     const onReadyCb: OnReadyCallback = (_renderer: any, scene: THREE.Scene) => {
       progress(95)
-      // Only create dissolve overlay on WebGL — ShaderMaterial incompatible with WebGPU
-      if (!('isWebGPU' in _renderer)) {
+      // Only create dissolve overlay on WebGL — ShaderMaterial incompatible
+      // with WebGPURenderer. WebGPURenderer has isWebGPURenderer=true property.
+      if (!_renderer?.isWebGPURenderer) {
         dissolveOverlay = new DissolveOverlay().init(scene)
       }
     }
