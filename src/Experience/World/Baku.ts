@@ -1,9 +1,7 @@
 // Baku — Character sphere with organic motion + role-based material switching
 import * as THREE from 'three'
 import { Noise } from '../../Utils/Noise'
-import { DeviceCapability } from '../../core/DeviceCapability'
 import { BakuRole, type BakuMaterialState } from '../../core/types'
-import { createBakuTSLMaterial } from '../../shaders/BakuTSLMaterial'
 
 export interface BakuMaterialParams {
   color: THREE.Color
@@ -36,23 +34,22 @@ export class Baku extends THREE.Mesh {
   constructor() {
     const geometry = new THREE.IcosahedronGeometry(0.5, 3)
 
-    // WebGPU: TSL iridescent fresnel material (studio-grade, procedural).
-    // WebGL: MeshStandardMaterial fallback (role switching handles variants).
-    const caps = DeviceCapability.getInstance()
+    // PERF: MeshPhysicalNodeMaterial (TSL) with MaterialX noise + fresnel is
+    // extremely expensive on Chrome's WebGPU-over-ANGLE-OpenGL backend
+    // (3 FPS observed on RTX 4060 Ti). The TSL graph compiles to complex
+    // WGSL→GLSL that ANGLE struggles to optimize.
+    // Use MeshStandardMaterial with emissive for a similar visual at 1/100th
+    // the GPU cost. Built-in materials are highly optimized on both backends.
     let material: THREE.Material
-    if (caps.mode === 'webgpu') {
-      try {
-        material = createBakuTSLMaterial({
-          color: new THREE.Color(0x0a0a0f),      // near-black metallic base
-          rimColor: new THREE.Color(0x6b78a3),   // accent iridescent rim
-          rimPower: 2.0,                         // broader rim falloff
-          noiseAmplitude: 0.05,
-          noiseFrequency: 2.0,
-        })
-      } catch {
-        material = new THREE.MeshStandardMaterial({ color: 0xffffff })
-      }
-    } else {
+    try {
+      material = new THREE.MeshStandardMaterial({
+        color: 0x0a0a0f,           // near-black metallic base
+        emissive: 0x6b78a3,        // iridescent rim glow approximation
+        emissiveIntensity: 0.4,
+        roughness: 0.15,
+        metalness: 0.9,
+      })
+    } catch {
       material = new THREE.MeshStandardMaterial({ color: 0xffffff })
     }
 
