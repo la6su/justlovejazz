@@ -168,12 +168,13 @@ export class Renderer {
   private _prevBgHex: number = -1
 
   update(scene: THREE.Scene, camera: THREE.Camera, dt: number, worldState?: WorldState): void {
-    // ── Apply background + fog ONLY when color changes (avoids per-frame allocation)
+    // ── BG handled by World.bg (BG.ts sphere shader) — only update fog
     if (worldState) {
       const hex = worldState.envColor.getHex()
       if (hex !== this._prevBgHex) {
         this._prevBgHex = hex
-        scene.background = worldState.envColor
+        // BG handled by shader sphere; clear native background
+        scene.background = null
         if (!this._fog) {
           this._fog = new THREE.FogExp2(worldState.envColor.clone(), 0.03)
         } else {

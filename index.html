@@ -10,6 +10,7 @@
     <!-- Design tokens: single source of truth for color/typography/spacing/motion.
          See src/styles/tokens.css. Loaded before inline styles so they can override. -->
     <link rel="stylesheet" href="/src/styles/tokens.css" />
+    <link rel="stylesheet" href="/src/styles/section2.css" />
     <style>
       html { box-sizing: border-box; }
       *, *::before, *::after { box-sizing: inherit; }
@@ -60,18 +61,32 @@
         transition: color var(--jlz-duration-normal) var(--jlz-ease-state);
       }
       .nav-links a:hover { color: var(--jlz-color-text); }
+      .nav-links a[data-active] { color: var(--jlz-color-text); }
+      /* Smooth scroll styling for the whole page */
+      html { scroll-behavior: smooth; }
+      /* Section styling */
+      .section-studio {
+        position: relative;
+        overflow: hidden;
+        scroll-snap-align: start;
+      }
+      /* Active section indicator in nav */
+      .nav-links a.active {
+        color: var(--jlz-color-text);
+      }
     </style>
   </head>
   <body data-app-mode="full" data-page="home">
-    <a href="#home-hero" class="skip-link">Skip to main content</a>
+    <a href="#section-hero" class="skip-link">Skip to main content</a>
 
-    <!-- ===== NAV ===== -->
+    <!-- ===== NAV (anchor links for single-page layout) ===== -->
     <nav id="main-nav" role="navigation" aria-label="Primary">
-      <a href="#/" class="nav-logo">JLJ</a>
+      <a href="#section-hero" class="nav-logo">JLJ</a>
       <div class="nav-links">
-        <a href="#/">Studio</a>
-        <a href="#/trinity">Trinity</a>
-        <a href="#/works">Works</a>
+        <a href="#section-hero">Studio</a>
+        <a href="#section-about">About</a>
+        <a href="#section-works">Works</a>
+        <a href="#section-contact">Contact</a>
       </div>
     </nav>
 

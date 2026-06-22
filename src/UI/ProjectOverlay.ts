@@ -21,11 +21,11 @@ export class ProjectOverlay {
   private counterEl!: HTMLElement
   private _first = true
 
-  constructor() {
+  constructor(protected root: HTMLElement) {
     this.container = document.createElement('div')
     this.container.className = 'jlz-works-ui'
     this.buildContent()
-    document.body.appendChild(this.container)
+    root.appendChild(this.container)
   }
 
   private buildContent(): void {

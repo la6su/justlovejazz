@@ -1,11 +1,11 @@
 // src/core/World.ts — Junni-style composition: Section[], Baku, Lights, Atmosphere, Ground
 
 import * as THREE from 'three'
+import { BG } from './BG'
 import { Section, SectionState } from './Section'
 import { StateBus } from './StateBus'
 import { prefersReducedMotion } from './motionPolicy'
 import { type CameraTarget, type WorldState, NarrativePhase, BakuRole } from './types'
-import { Baku } from '../Experience/World/Baku'
 import { CinematicLights } from '../Experience/World/Lights'
 import { CursorLight } from '../Experience/World/CursorLight'
 import { DrawTrail } from '../Experience/World/DrawTrail'
@@ -20,11 +20,12 @@ export interface WorldTransformResult {
 
 export class World extends THREE.Group {
     public sections: Section[] = []
-    public baku!: Baku
+    public baku: null = null  // baku removed
     public lightsGroup!: CinematicLights
     public cursorLight!: CursorLight
     public drawTrail?: DrawTrail
     public atmosphere: WorldAtmosphere | null = null
+    public bg!: BG
     public groundPlane!: THREE.Mesh
     public sceneGroups: THREE.Group[] = []
 
@@ -61,10 +62,10 @@ export class World extends THREE.Group {
         this.drawTrail = new DrawTrail()
         scene.add(this.drawTrail.object)
 
-        // ── Baku (character sphere)
-        this.baku = new Baku()
-        this.baku.name = 'baku'
-        this.add(this.baku)
+
+        // ── BG (procedural background sphere, junni pattern)
+        this.bg = new BG()
+        this.sceneRef.add(this.bg.mesh)
 
         // ── Ground plane (visual anchor, аналог Junni Ground)
         this.groundPlane = new THREE.Mesh(
@@ -136,7 +137,7 @@ export class World extends THREE.Group {
         // the entire scene graph every frame.
 
         this.sections.forEach(s => s.update(deltaTime))
-        this.baku.update(deltaTime)
+        // baku.update() — no-op (baku removed)
         this.cursorLight.update(deltaTime)
         if (this.drawTrail && this._camera) {
             this.drawTrail.update(deltaTime, this._camera)
@@ -203,6 +204,17 @@ export class World extends THREE.Group {
                 else if (name === 'step06-ring') {
                     obj.rotation.z -= deltaTime * 0.02
                 }
+                // Holographic blobs (step07): float + rotation + scale pulse
+                else if (name.startsWith('s2-blob')) {
+                    obj.rotation.y += deltaTime * 0.05
+                    obj.rotation.x += deltaTime * 0.03
+                    const baseY = (obj.userData.baseY ?? obj.position.y)
+                    const phase = obj.userData.floatPhase ?? 0
+                    const speed = obj.userData.floatSpeed ?? 0.3
+                    obj.position.y = baseY + Math.sin(t * speed + phase) * 0.3
+                    const scale = 1.8 + Math.sin(t * speed * 0.7 + phase) * 0.12
+                    obj.scale.setScalar(scale)
+                }
                 // Particles: drift upward, loop
                 else if (name.includes('particles')) {
                     const pts = obj as THREE.Points
@@ -260,6 +272,9 @@ export class World extends THREE.Group {
         if (fromIndex !== this._currentSectionIndex) {
             this._currentSectionIndex = fromIndex
         }
+
+        // ── BG sphere section switch (junni pattern: change Section BG color per section)
+        this.bg.setSection(this._currentSectionIndex)
 
         // ── Scene group visibility with opacity fade (junni switchVisibility pattern)
         // From group fades out as t→1, to group fades in. Both visible during transition.
@@ -417,10 +432,7 @@ export class World extends THREE.Group {
 
     public dispose(): void {
         this.disposeSections()
-        this.baku.geometry.dispose()
-        const bakuMat = this.baku.material
-        if (Array.isArray(bakuMat)) bakuMat.forEach(m => m.dispose())
-        else bakuMat.dispose()
+        // baku dispose skipped (no-op)
         this.groundPlane.geometry.dispose()
         const groundMat = this.groundPlane.material
         if (Array.isArray(groundMat)) groundMat.forEach(m => m.dispose())

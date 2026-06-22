@@ -60,6 +60,7 @@ export class Experience {
   // Project transition dissolve (shader effect on card click)
   private projectDissolve: DissolveOverlay | null = null
   private projectDissolveActive = false
+  private _introEmitted = false
 
   constructor(_ui: UIManager) {
     this.sizes = new Sizes()
@@ -83,8 +84,21 @@ export class Experience {
     this.bus
       .channel('intro:opacity', 1)
       .channel('intro:stage', 0)
-      .animate('intro:opacity', 0, 0.8, 'easeOutCubic')
-    this.bus.animate('intro:stage', 1, 0.8, 'easeOutCubic')
+      .animate('intro:opacity', 0, 0.5, 'easeOutCubic')
+    this.bus.animate('intro:stage', 1, 0.6, 'easeOutCubic')
+
+    // After splash fade-out: hide splash DOM + white-theme for white hero
+    this.bus.on('intro:done', () => {
+      // Hide splash so clicks work
+      const splash = document.getElementById('jlj-splash')
+      if (splash) {
+        splash.style.display = 'none'
+        splash.style.pointerEvents = 'none'
+      }
+      // Light theme for white hero section
+      document.documentElement.classList.add('light-theme')
+      document.body.classList.add('light-theme')
+    })
   }
 
   async init() {
@@ -99,11 +113,12 @@ export class Experience {
       PerfMonitor.start()
     }
     await this.buildWorld()
-    this.bus = StateBus.getInstance()
+      this.bus = StateBus.getInstance()
     // Subtitles listen for jlz:section-change events automatically.
     this._subtitles = new Subtitles()
     // Section progress indicator with clickable timeline dots.
-    this._sectionProgress = new SectionProgress(['Intro', 'Method', 'Works', 'Detail', 'Identity', 'Outro'])
+    this._sectionProgress = new SectionProgress(['Intro', 'Trinity', 'Works', 'Footer'])
+    // Always build portfolio — single-page, always needs works slider
     void this.ensurePortfolio()
     this.camera.instance.position.set(0, 5, 10)
     this.camera.instance.lookAt(0, 0, 0)
@@ -122,12 +137,19 @@ export class Experience {
   update(time: number) {
     this.time.update(time)
     const dt = this.time.delta / 1000
-    this.bus.tick(dt)
+      this.bus.tick(dt)
     this.smoothScroll.update(time)
     input.update()
     this.cursor.update()
     this.debugStats?.update(time)
     this.webglTextManager?.update()
+
+    // Intro sequence: emit 'intro:done' once stage reaches 1
+    const stage = this.bus.get('intro:stage')
+    if (stage >= 1 && !this.bus.isAnimating('intro:stage') && !this._introEmitted) {
+      this._introEmitted = true
+      this.bus.emit('intro:done')
+    }
 
     // Portfolio update
     this.portfolio?.update(dt)
@@ -135,6 +157,13 @@ export class Experience {
     const ns = input.getSmoothedScrollProgress()
     const { cameraTarget, worldState } = this.world.advance(ns)
     this.world.update(dt)
+    this.world.bg.update(dt)
+
+    // UI inversion: white hero (section 0) needs dark text on light bg
+    // Toggle on both html (for CSS vars) and body (for nav selectors)
+    const isWhiteHero = this.world.currentSectionIndex === 0
+    document.documentElement.classList.toggle('light-theme', isWhiteHero)
+    document.body.classList.toggle('light-theme', isWhiteHero)
     // Give World the camera ref for DrawTrail (once, after init).
     this.world.setCamera(this.camera.instance)
 
@@ -156,20 +185,27 @@ export class Experience {
       }))
     }
 
-    // Show portfolio only on works page; hide everything else (pure slider).
-    const isWorks = document.body.dataset.page === 'works'
+    // Portfolio (3D slider) is only visible inside the Works section —
+    // driven by WorldConfig.ui.showGallery, so it's NOT a global overlay.
+    const showGallery = cfg?.ui?.showGallery ?? false
     if (this.portfolio) {
-      this.portfolio.group.visible = isWorks
+      this.portfolio.group.visible = showGallery
     }
-    if (this.world?.baku) {
-      this.world.baku.visible = !isWorks
+    // Sync ProjectOverlay (DOM UI layer) with the same visibility —
+    // slider UI is scoped to #section-works, never a global overlay.
+    if (this.overlay) {
+      if (showGallery) {
+        this.overlay.showContainer()
+      } else {
+        this.overlay.hide()
+      }
     }
     // On works page: hide ground plane + scene backdrop (only slider + fog).
     if (this.world) {
-      this.world.groundPlane.visible = !isWorks
+      this.world.groundPlane.visible = !showGallery
       // Toggle scene groups visibility — works page doesn't need them.
       this.world.sceneGroups.forEach((g: THREE.Group) => {
-        g.visible = !isWorks
+        g.visible = !showGallery
       })
     }
 
@@ -217,7 +253,7 @@ export class Experience {
       GPUResourceManager.getInstance().disposeContext(this.currentSectionContext)
     }
     this.currentSectionContext = null
-    this.bus.cancelAll()
+      this.bus.cancelAll()
     // rebuildWorld() builds the new world, THEN ensures portfolio on it.
     void this.rebuildWorld().then(() => {
       if (document.body.dataset.page === 'works') {
@@ -228,11 +264,11 @@ export class Experience {
 
   private async rebuildWorld(): Promise<void> {
     await this.buildWorld()
-    this.bus
+      this.bus
       .set('intro:opacity', 1)
       .set('intro:stage', 0)
-    this.bus.animate('intro:opacity', 0, 0.8, 'easeOutCubic')
-    this.bus.animate('intro:stage', 1, 0.8, 'easeOutCubic')
+        this.bus.animate('intro:opacity', 0, 0.8, 'easeOutCubic')
+        this.bus.animate('intro:stage', 1, 0.8, 'easeOutCubic')
     this.camera.instance.position.set(0, 5, 10)
     this.camera.instance.lookAt(0, 0, 0)
     this.camera.instance.updateProjectionMatrix()
@@ -254,7 +290,7 @@ export class Experience {
     this.contentReveal.destroy()
     this.cursor.destroy()
     this.world.dispose()
-    this.bus.cancelAll()
+      this.bus.cancelAll()
     this.debugStats?.destroy()
     // Renderer.dispose() cleans up the resize listener AND the pipeline
     // AND the renderer instance (was previously only instance.dispose()).
@@ -277,10 +313,8 @@ export class Experience {
   }
 
   private async ensurePortfolio(): Promise<void> {
-    // Guard against duplicate calls (race between init and switchPage).
     if (this.portfolio) return
-    const page = document.body.dataset.page
-    if (page !== 'works') return
+    // Always build portfolio — single-page experience
     // World must exist and be in the scene before adding portfolio to it.
     if (!this.world || !this.scene.children.includes(this.world)) {
       // Wait one frame for rebuildWorld to finish, then retry.
@@ -290,7 +324,6 @@ export class Experience {
 
     const { PROJECTS } = await import('../Data/Projects')
     // Re-check after async import — page may have changed during await.
-    if (document.body.dataset.page !== 'works') return
     if (this.portfolio) return // another call won
 
     this.portfolio = new WorksPortfolio(
@@ -307,7 +340,8 @@ export class Experience {
     this.portfolio.setCamera(this.camera.instance)
 
     if (!this.overlay) {
-      this.overlay = new ProjectOverlay()
+      const worksSection = document.getElementById('section-works')
+      this.overlay = new ProjectOverlay(worksSection!)
       this.overlay.onPrev(() => this.portfolio?.prev())
       this.overlay.onNext(() => this.portfolio?.next())
     }
@@ -421,7 +455,14 @@ export class Experience {
    */
   private async onCardExpanded(idx: number): Promise<void> {
     if (!this.portfolio || !this.projectDetail) return
-    const projs = this.portfolio.projects
+    // Section3 works on single-page (no switchPage), so ensure it's initialized.
+    if (this.world) {
+      const hasGalleryAnchor = Array.from(document.querySelectorAll('#gallery-anchor')).length > 0
+      if (hasGalleryAnchor && !document.body.dataset.page) {
+        document.body.dataset.page = 'works'
+      }
+    }
+    const projs = this.portfolio?.projects ?? []
     const project = projs?.[idx]
     if (!project) return
     await this.projectDetail.open(project)

@@ -122,8 +122,8 @@ export class WorksPortfolio {
     const card = this.cards[safeIdx]
     if (!card) return
     const mesh = card.mesh
-    if (!mesh?.userData?.texLoaded === undefined) return
-    if (mesh.userData.texLoaded || !mesh.userData.texUrl) return
+    if (mesh?.userData?.texLoaded === true) return
+    if (!mesh?.userData?.texUrl) return
 
     mesh.userData.texLoaded = true
     WorksPortfolio.sharedLoader.load(mesh.userData.texUrl, (tex) => {

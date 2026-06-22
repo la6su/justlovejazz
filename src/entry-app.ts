@@ -58,24 +58,25 @@ export async function startApp(): Promise<void> {
   await import('./assets/main.less')
   ;(UIkit as { use: (p: object) => void }).use(Icons as object)
 
-  await initRouter()
+  // Render DOM sections BEFORE boot so they exist when event fires.
+  initRouter()
 
-  window.addEventListener('jlz:webgl-ready', () => {
-    animateNoiseTitles()
-  })
+  // Wire NoiseText title animations: listen BEFORE dispatch so we never miss it.
+  const onWebGlReady = () => animateNoiseTitles()
+  window.addEventListener('jlz:webgl-ready', onWebGlReady)
 
-  window.addEventListener('jlj:navigate', () => {
+  // On navigation, re-animate titles (fresh DOM elements)
+  const onNavigate = () => {
     if (!isAppReady()) return
     const exp = window.experience
     if (exp?.switchPage) exp.switchPage(document.body.dataset.page || 'home')
     if (exp?.smoothScroll) {
       exp.smoothScroll.lenis.scrollTo(0, { immediate: true })
     }
-  })
-
-  window.addEventListener('jlj:navigate', () => {
-    scheduleUiKitRefresh()
-  })
+    setTimeout(animateNoiseTitles, 200)
+  }
+  window.addEventListener('jlj:navigate', onNavigate)
+  window.addEventListener('jlj:navigate', scheduleUiKitRefresh)
   mountDeferredShell()
   void boot()
 }

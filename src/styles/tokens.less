@@ -92,3 +92,19 @@
 @jlz-page-max-width: 1440px;
 @jlz-page-gutter: 80px;
 @jlz-section-min-height: 100vh;
+
+/* ── LIGHT THEME: html class for white hero section ── */
+html.light-theme {
+  --jlz-color-text: #050507 !important;
+  --jlz-color-text-muted: rgba(5, 5, 7, 0.55) !important;
+  --jlz-color-text-subtle: rgba(5, 5, 7, 0.35) !important;
+}
+
+body.light-theme #main-nav .nav-logo,
+body.light-theme #main-nav .nav-links a {
+  color: var(--jlz-color-text);
+}
+
+body.light-theme .nav-links a {
+  color: var(--jlz-color-text-muted);
+}

@@ -1,33 +1,27 @@
 /**
- * SPA Router — dynamic content rendering via templates.
+ * SPA Router — single-page layout with anchor navigation.
  *
- * No longer uses opacity-switching on multiple hidden DOM pages.
- * Instead, a single <main id="spa-content"> container receives
- * fresh HTML per route. UIkit is re-scanned after each render.
+ * The site is now one long scrollable page (7 sections + footer).
+ * Navigation uses #anchor links, not hash routes.
+ * Legacy #/trinity and #/works redirects still work → scroll to the appropriate section.
  */
 
 import { renderPage } from './templates'
 
-const ROUTES: Record<string, { title: string }> = {
-  '':        { title: 'JUSTLOVEJAZZ' },
-  '/':       { title: 'JUSTLOVEJAZZ' },
-  'trinity': { title: 'JUSTLOVEJAZZ — Trinity' },
-  'works':   { title: 'JUSTLOVEJAZZ — Works' },
+// Legacy redirects: old hash routes → anchor sections
+const LEGACY_REDIRECTS: Record<string, string> = {
+  'trinity': '#section-hero',    // step01/step02 → Trinity section
+  'works':   '#section-works',   // step03/step04 → Works section
 }
 
-export type PageKey = 'home' | 'trinity' | 'works'
-
-let current: PageKey = 'home'
+let initialized = false
 
 const container: HTMLElement | null = (() => {
-  // Use existing container if present, otherwise create one.
   let el = document.getElementById('spa-content')
   if (!el) {
     el = document.createElement('main')
     el.id = 'spa-content'
     el.setAttribute('role', 'main')
-    // Styling via #spa-content in src/styles/tokens.css.
-    // Insert after nav.
     const nav = document.getElementById('main-nav')
     if (nav && nav.nextElementSibling) {
       nav.parentNode!.insertBefore(el, nav.nextElementSibling)
@@ -38,94 +32,94 @@ const container: HTMLElement | null = (() => {
   return el
 })()
 
-function toSpaKey(raw: string | null | undefined): PageKey {
-  const key = (raw || '').replace(/^#\/?/, '')
-  // Validate against known routes; unknown → home fallback.
-  if (key === '' || key === 'home') return 'home'
-  if (key === 'trinity' || key === 'works') return key
-  return 'home'
-}
-
-function emitNavigate(key: PageKey): void {
-  window.dispatchEvent(new CustomEvent('jlj:navigate', { detail: { page: key } }))
-}
-
-function renderAndInject(key: PageKey): void {
+function renderAndInject(): void {
   const el = container
   if (!el) return
 
-  el.innerHTML = renderPage(key)
+  el.innerHTML = renderPage()
   window.scrollTo(0, 0)
 }
 
-export function navigateTo(hashRoute: string, replace = false): void {
-  const key = toSpaKey(hashRoute)
-  const routeKey = key === 'home' ? '' : key
-  let target = ROUTES[routeKey]
-  // Fallback: unknown route → redirect to home (not silent no-op).
-  if (!target) {
-    console.warn(`[router] Unknown route "${hashRoute}" → falling back to home`)
-    navigateTo('#/', replace)
-    return
+export function navigateTo(anchor: string, _replace = false): void {
+  const targetId = anchor.replace('#', '')
+  const target = document.getElementById(targetId)
+  if (target) {
+    target.scrollIntoView({ behavior: 'smooth' })
   }
-
-  if (key === current && !replace) return
-
-  const href = key === 'home' ? '#/' : `/#/${key}`
-  if (replace) {
-    history.replaceState(null, '', href)
-  } else {
-    history.pushState(null, '', href)
-  }
-
-  document.body.dataset.page = key
-  document.title = target.title
-  current = key
-
-  renderAndInject(key)
-  emitNavigate(key)
 }
 
 export function initRouter(): void {
-  const key = toSpaKey(location.hash)
-  const routeKey = key === 'home' ? '' : key
-  const route = ROUTES[routeKey] ?? ROUTES['']
+  if (initialized) return
+  initialized = true
 
-  document.body.dataset.page = key
-  document.title = route.title
-  current = key
+  document.body.dataset.page = 'home'
+  document.title = 'JUSTLOVEJAZZ'
 
-  renderAndInject(key)
-  emitNavigate(key)  // also fire on initial render so noise titles animate
+  renderAndInject()
 
-  window.addEventListener('popstate', () => {
-    const newKey = toSpaKey(location.hash)
-    const rk = newKey === 'home' ? '' : newKey
-    const r = ROUTES[rk] ?? ROUTES['']
-    document.body.dataset.page = newKey
-    document.title = r.title
-    current = newKey
-    renderAndInject(newKey)
-    emitNavigate(newKey)
-  })
+  // Fire event so Experience knows DOM is ready
+  window.dispatchEvent(new CustomEvent('jlj:navigate', { detail: { page: 'home' } }))
 
-  // Intercept nav links
+  // ── Handle legacy hash routes (#/trinity, #/works) → redirect to anchors ──
+  const legacyMatch = location.hash.match(/^#\/?(trinity|works)$/i)
+  if (legacyMatch) {
+    const legacyKey = legacyMatch[1].toLowerCase()
+    const anchor = LEGACY_REDIRECTS[legacyKey]
+    if (anchor) {
+      history.replaceState(null, '', anchor)
+      setTimeout(() => navigateTo(anchor), 100)
+    }
+  } else if (location.hash.startsWith('#section-')) {
+    const anchor = location.hash
+    history.replaceState(null, '', anchor)
+    setTimeout(() => navigateTo(anchor), 100)
+  }
+
+  // ── Intercept anchor links ──
   const handler = (e: MouseEvent) => {
     const anchor = (e.target as HTMLElement)?.closest('a[href]') as HTMLAnchorElement | null
     if (!anchor) return
     const href = anchor.getAttribute('href')
     if (!href) return
-    const match = href.match(/^#\/?(trinity|works)?$/i)
-    if (match) {
+
+    // Handle legacy hash routes → redirect
+    const legacyMatchHref = href.match(/^#\/?(trinity|works)$/i)
+    if (legacyMatchHref) {
       e.preventDefault()
-      navigateTo(href)
+      const legacyKey = legacyMatchHref[1].toLowerCase()
+      const targetAnchor = LEGACY_REDIRECTS[legacyKey]
+      if (targetAnchor) {
+        history.pushState(null, '', targetAnchor)
+        navigateTo(targetAnchor)
+      }
+      return
+    }
+
+    // Handle anchor links (#section-xxx)
+    if (href.startsWith('#')) {
+      e.preventDefault()
+      const target = document.getElementById(href.replace('#', ''))
+      if (target) {
+        history.pushState(null, '', href)
+        target.scrollIntoView({ behavior: 'smooth' })
+      }
     }
   }
   document.addEventListener('click', handler, true)
+
+  // ── Handle browser back/forward for anchors ──
+  window.addEventListener('popstate', () => {
+    if (location.hash.startsWith('#section-')) {
+      const target = document.getElementById(location.hash.replace('#', ''))
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth' })
+      }
+    }
+  })
 }
 
-export function currentPage(): PageKey {
-  return current
+export function currentPage(): 'home' {
+  return 'home'
 }
 
 export const routerContainer: HTMLElement | null = container

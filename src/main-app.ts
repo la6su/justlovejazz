@@ -3,6 +3,7 @@ import * as THREE from 'three'
 import { syncReducedMotionDataset } from './core/motionPolicy'
 import { EnterButton } from './EnterButton'
 import type { SplashOverlay } from './splash'
+import { input as _input } from './Experience/Input'
 
 type ProgressFn = (pct: number) => void
 
@@ -60,16 +61,23 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
       splash.markPhase('dissolving')
       await splash.curtainSplit(1400)
 
-      // ── Phase 2: Hide splash behind hero ──
+      // ── Phase 2: Hide splash, jump to Section2 (white blob world) ──
       splash.hide(600)
 
-      // ── Phase 3: Hero entrance (staggered CSS reveal) ──
-      const heroEl = document.getElementById('home-hero')
-      if (heroEl) {
-        heroEl.classList.add('is-revealed')
-        // Trigger NoiseText on studio titles
-        window.dispatchEvent(new CustomEvent('jlz:webgl-ready'))
+      // Force scroll to end → Section2 (step07, white bg, holographic blobs)
+      // immediately after splash. Hero (step05) accessible via scroll up.
+      // Use Experience.lenis.scrollTo to reach end instantly
+      const { Experience } = await import('./Experience/Experience')
+      if (Experience.instance?.smoothScroll) {
+        const lenis = Experience.instance.smoothScroll.lenis
+        lenis.scrollTo('100%', {
+          offset: 0,
+          duration: 0.3,
+          easing: (t: number) => t * (2 - t),
+        })
       }
+
+      window.dispatchEvent(new CustomEvent('jlz:webgl-ready'))
 
       // ── Phase 4: Cleanup splash overlay ──
       setTimeout(() => splash.remove(), 1200)

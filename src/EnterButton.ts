@@ -14,10 +14,13 @@ export class EnterButton {
 
   show(label = 'ENTER SITE'): void {
     this.el!.textContent = label
+    this.el!.setAttribute('tabindex', '0')
+    this.el!.setAttribute('role', 'button')
     document.body.appendChild(this.el!)
     // Delay reveal slightly for cinematic timing
     requestAnimationFrame(() => {
       this.el!.classList.add('is-visible')
+      this.el!.focus()
     })
   }
 
@@ -29,6 +32,13 @@ export class EnterButton {
   onTrigger(fn: () => void): void {
     this.el!.addEventListener('click', fn, { once: true })
     this.el!.addEventListener('touchend', fn, { once: true })
+    const keyHandler = (e: KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        e.preventDefault()
+        fn()
+      }
+    }
+    this.el!.addEventListener('keydown', keyHandler, { once: true })
   }
 
   animateOut(duration = 400): void {
