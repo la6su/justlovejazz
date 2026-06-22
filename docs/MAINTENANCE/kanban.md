@@ -7,30 +7,28 @@
 - [x] T-002: Проанализировать причину отключения (DrawTrail.perf budget)
 - [x] T-003: Оптимизировать DrawTrail geometry update (batch 64 points → GPU buffer)
 - [x] T-004: Интегрировать DrawTrail с Points + friendly buffer update
-- [x] T-005: Интегрировать DrawTrail в Experience.ts (re-enable flag)
-- [x] T-006: Верификация: type-check PASS + build PASS + browser ✅
-  - DrawTrail re-enabled и работает! Видна faint blue trail following cursor
-  - Details: LineBasicMaterial — WebGPU compatible, AdditiveBlending, 64-point buffer
+- [x] T-005: Интегрировать DrawTrail в World.ts (re-enable in constructor + update loop)
+- [x] T-006: Верификация: type-check ✅ + build ✅ + browser ✅ (faint blue trail following cursor)
+
+### EPIC: Junni reference repo cloned
+- [x] Clone junni repo into `references/next.junni.co.jp/`
+- [x] Properly gitignore nested `.git/` history
 
 ## TODO
 
-### EPIC: CursorLight (junni pattern port)
-- [ ] T-010: Изучить junni CursorLight — как работает в оригинале
-- [ ] T-011: Создать CursorLight.ts — spotlight following mouse cursor in 3D
-- [ ] T-012: Подключить CursorLight к World module (CinematicLights integration)
-- [ ] T-013: Добавить prefers-reduced-motion guard для accessibility
-- [ ] T-014: Верификация: type-check + build + browser light follows cursor
+### EPIC: WebGLTextManager re-enable (Troika / second-pass text overlay)
+- [ ] T-040: Проанализировать WebGLTextManager.ts (reason for disable)
+- [ ] T-041: Создать safe WebGL rendering mode (DOM + WebGL hybrid)
+- [ ] T-042: Верификация: type-check + build + browser text visible
 
-### EPIC: WebGLTextManager re-enable (Troika text overlay)
-- [ ] T-020: Изучить WebGLTextManager.ts — понять подсистему (Troika overlay)
-- [ ] T-021: Оптимизировать second WebGLRenderer — batch text renders
-- [ ] T-022: Create text rendering mode toggle (DOM fallback vs Troika)
-- [ ] T-023: Интегрировать WebGLTextManager в Experience (guarded re-enable)
-- [ ] T-024: Верификация: type-check + build + browser text visible + no perf drop
+### EPIC: Holographic UI panels (Comrades / Displays) — styled references
+- [ ] T-050: Изучить Section3/Displays в Junni
+- [ ] T-051: Создать holographic display panel component
+- [ ] T-052: Интегрировать в Canvas/UI overlay system
+- [ ] T-053: Восстановить Scene3 index pattern
 
-### EPIC: NoiseText (junni pattern port)
-- [ ] T-030: Изучить junni NoiseText — как работает в оригинале
-- [ ] T-031: Создать NoiseText.ts — text scramble effect with built-in materials
-- [ ] T-032: Подключить NoiseText к ContentReveal.ts / Section transitions
-- [ ] T-033: Адаптировать for prefers-reduced-motion
-- [ ] T-034: Верификация: type-check + build + browser text effect visible
+### EPIC: SecurityMaterials / interactive lighting upgrades
+- [ ] T-060: Recreate Junni CursorLight Material interaction
+- [ ] T-061: Upgrade DrawTrail to GPU-compute trail node
+- [ ] T-062: Test WebGL2/next3 integration with texture passes
+- [ ] T-063: Verify on browser (cursor light + trail + holographic panel OK)
