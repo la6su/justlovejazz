@@ -1,20 +1,29 @@
 /**
  * SPA Router — single-page layout with anchor navigation.
- *
- * The site is now one long scrollable page (7 sections + footer).
- * Navigation uses #anchor links, not hash routes.
- * Legacy #/trinity and #/works redirects still work → scroll to the appropriate section.
+ * Supports: #section-xxx (scroll anchors), #/lesson/[id], #/lessons, legacy redirects.
  */
 
-import { renderPage } from './templates'
+import { renderPage, renderLessonPage, renderLessonsList } from './templates'
 
-// Legacy redirects: old hash routes → anchor sections
 const LEGACY_REDIRECTS: Record<string, string> = {
-  'trinity': '#section-hero',    // step01/step02 → Trinity section
-  'works':   '#section-works',   // step03/step04 → Works section
+  'trinity': '#section-hero',
+  'works':   '#section-works',
 }
 
 let initialized = false
+let currentView: 'home' | 'lesson' | 'lessons' = 'home'
+
+function parseRoute(hash: string):
+  | { type: 'home'; anchor?: string }
+  | { type: 'lesson'; id: string }
+  | { type: 'lessons' } {
+  const clean = hash.replace(/^#/, '')
+  const lessonMatch = clean.match(/^lesson\/([^/]+)$/)
+  if (lessonMatch) return { type: 'lesson', id: lessonMatch[1] }
+  if (clean === 'lessons') return { type: 'lessons' }
+  const anchor = hash.startsWith('#') ? hash : undefined
+  return { type: 'home', anchor }
+}
 
 const container: HTMLElement | null = (() => {
   let el = document.getElementById('spa-content')
@@ -32,12 +41,30 @@ const container: HTMLElement | null = (() => {
   return el
 })()
 
-function renderAndInject(): void {
+function renderView(): void {
   const el = container
   if (!el) return
+  const route = parseRoute(location.hash)
 
-  el.innerHTML = renderPage()
-  window.scrollTo(0, 0)
+  switch (route.type) {
+    case 'lesson':
+      currentView = 'lesson'
+      document.body.dataset.page = 'lesson'
+      document.title = 'JUSTLOVEJAZZ — Lesson'
+      el.innerHTML = renderLessonPage(route.id)
+      break
+    case 'lessons':
+      currentView = 'lessons'
+      document.body.dataset.page = 'lessons'
+      document.title = 'JUSTLOVEJAZZ — Lessons'
+      el.innerHTML = renderLessonsList()
+      break
+    default:
+      currentView = 'home'
+      document.body.dataset.page = 'home'
+      document.title = 'JUSTLOVEJAZZ'
+      el.innerHTML = renderPage()
+  }
 }
 
 export function navigateTo(anchor: string, _replace = false): void {
@@ -48,19 +75,24 @@ export function navigateTo(anchor: string, _replace = false): void {
   }
 }
 
+export function navigateToLesson(id: string): void {
+  history.pushState(null, '', `#/lesson/${id}`)
+  renderView()
+  window.dispatchEvent(new CustomEvent('jlj:lesson:navigate', { detail: { id } }))
+}
+
+export function navigateToLessons(): void {
+  history.pushState(null, '', '#/lessons')
+  renderView()
+}
+
 export function initRouter(): void {
   if (initialized) return
   initialized = true
 
-  document.body.dataset.page = 'home'
-  document.title = 'JUSTLOVEJAZZ'
-
-  renderAndInject()
-
-  // Fire event so Experience knows DOM is ready
+  renderView()
   window.dispatchEvent(new CustomEvent('jlj:navigate', { detail: { page: 'home' } }))
 
-  // ── Handle legacy hash routes (#/trinity, #/works) → redirect to anchors ──
   const legacyMatch = location.hash.match(/^#\/?(trinity|works)$/i)
   if (legacyMatch) {
     const legacyKey = legacyMatch[1].toLowerCase()
@@ -75,51 +107,47 @@ export function initRouter(): void {
     setTimeout(() => navigateTo(anchor), 100)
   }
 
-  // ── Intercept anchor links ──
   const handler = (e: MouseEvent) => {
-    const anchor = (e.target as HTMLElement)?.closest('a[href]') as HTMLAnchorElement | null
-    if (!anchor) return
-    const href = anchor.getAttribute('href')
+    const anchorEl = (e.target as HTMLElement)?.closest('a[href]') as HTMLAnchorElement | null
+    if (!anchorEl) return
+    const href = anchorEl.getAttribute('href')
     if (!href) return
 
-    // Handle legacy hash routes → redirect
-    const legacyMatchHref = href.match(/^#\/?(trinity|works)$/i)
-    if (legacyMatchHref) {
+    const lMatch = href.match(/^#\/lesson\/([^/]+)$/)
+    if (lMatch) { e.preventDefault(); navigateToLesson(lMatch[1]); return }
+
+    if (href === '#/lessons') { e.preventDefault(); navigateToLessons(); return }
+
+    const lRef = href.match(/^#\/?(trinity|works)$/i)
+    if (lRef) {
       e.preventDefault()
-      const legacyKey = legacyMatchHref[1].toLowerCase()
-      const targetAnchor = LEGACY_REDIRECTS[legacyKey]
-      if (targetAnchor) {
-        history.pushState(null, '', targetAnchor)
-        navigateTo(targetAnchor)
-      }
+      const lk = lRef[1].toLowerCase()
+      const ta = LEGACY_REDIRECTS[lk]
+      if (ta) { history.pushState(null, '', ta); navigateTo(ta) }
       return
     }
 
-    // Handle anchor links (#section-xxx)
     if (href.startsWith('#')) {
       e.preventDefault()
-      const target = document.getElementById(href.replace('#', ''))
-      if (target) {
-        history.pushState(null, '', href)
-        target.scrollIntoView({ behavior: 'smooth' })
-      }
+      const tgt = document.getElementById(href.replace('#', ''))
+      if (tgt) { history.pushState(null, '', href); tgt.scrollIntoView({ behavior: 'smooth' }) }
     }
   }
   document.addEventListener('click', handler, true)
 
-  // ── Handle browser back/forward for anchors ──
   window.addEventListener('popstate', () => {
-    if (location.hash.startsWith('#section-')) {
-      const target = document.getElementById(location.hash.replace('#', ''))
-      if (target) {
-        target.scrollIntoView({ behavior: 'smooth' })
-      }
+    const route = parseRoute(location.hash)
+    if (route.type === 'home' && route.anchor) {
+      const tgt = document.getElementById(route.anchor.replace('#', ''))
+      if (tgt) tgt.scrollIntoView({ behavior: 'smooth' })
+    } else {
+      renderView()
     }
   })
 }
 
-export function currentPage(): 'home' {
-  return 'home'
+export function currentPage(): 'home' | 'lesson' | 'lessons' {
+  return currentView
 }
 
 export const routerContainer: HTMLElement | null = container

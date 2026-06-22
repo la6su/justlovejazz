@@ -1,6 +1,6 @@
 import UIkit from 'uikit'
 import Icons from 'uikit/dist/js/uikit-icons'
-import { initRouter } from './router'
+import { initRouter, currentPage } from './router'
 import { bootstrap as bootstrapApp, isAppReady, type BootstrapOptions } from './main-app'
 import { NoiseText } from './Experience/NoiseText'
 
@@ -65,7 +65,7 @@ export async function startApp(): Promise<void> {
   const onWebGlReady = () => animateNoiseTitles()
   window.addEventListener('jlz:webgl-ready', onWebGlReady)
 
-  // On navigation, re-animate titles (fresh DOM elements)
+  // Lessons navigation wiring
   const onNavigate = () => {
     if (!isAppReady()) return
     const exp = window.experience
@@ -74,6 +74,8 @@ export async function startApp(): Promise<void> {
       exp.smoothScroll.lenis.scrollTo(0, { immediate: true })
     }
     setTimeout(animateNoiseTitles, 200)
+    // Bind interactive components for lesson views
+    bindLessonComponents()
   }
   window.addEventListener('jlj:navigate', onNavigate)
   window.addEventListener('jlj:navigate', scheduleUiKitRefresh)
@@ -114,5 +116,23 @@ function animateNoiseTitles(): void {
     const text = el.textContent?.trim() || ''
     if (!text) continue
     NoiseText.for(el).show(2.0)
+  }
+}
+
+/**
+ * Bind interactive elements on lesson/lessons pages after navigation.
+ * Called on every jlj:navigate event — components are guarded by selector
+ * presence so they are no-ops when the DOM doesn't contain lesson elements.
+ */
+function bindLessonComponents(): void {
+  const cur = currentPage()
+  if (cur === 'home') return
+
+  if (cur === 'lesson' && document.querySelector('.jlz-lesson-page')) {
+    import('./components/LessonPage').then(m => m.bindLessonPage())
+  }
+
+  if (cur === 'lessons' && document.querySelector('.jlz-lessons-list')) {
+    import('./components/LessonsListPage').then(m => m.bindLessonsList())
   }
 }
