@@ -238,7 +238,10 @@ export class Experience {
     this.camera.instance.updateProjectionMatrix()
     input.resetScroll()
     const titles = document.querySelectorAll<HTMLElement>('.studio-title')
-    this.webglTextManager?.refresh(Array.from(titles))
+    await this.webglTextManager?.refresh(Array.from(titles))
+    // Signal that WebGL text overlay is now up-to-date so NoiseText can
+    // safely animate DOM text without the overlay capturing noisy text.
+    window.dispatchEvent(new Event('jlz:webgl-ready'))
   }
 
   destroy() {
@@ -452,5 +455,7 @@ export class Experience {
     const { WebGLTextManager } = await import('./WebGLTextManager')
     this.webglTextManager = new WebGLTextManager(Array.from(titles))
     await this.webglTextManager.waitForAllLoaded()
+    // Dispatch so NoiseText can safely start after overlay is synchronized.
+    window.dispatchEvent(new Event('jlz:webgl-ready'))
   }
 }

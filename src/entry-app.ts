@@ -59,7 +59,7 @@ export async function startApp(): Promise<void> {
 
   await initRouter()
 
-  window.addEventListener('jlj:navigate', () => {
+  window.addEventListener('jlz:webgl-ready', () => {
     animateNoiseTitles()
   })
 
