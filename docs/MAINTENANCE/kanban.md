@@ -19,9 +19,16 @@
 - [x] Clone next.junni.co.jp → references/next.junni.co.jp/
 - [x] .gitignore для .git в references
 
+### EPIC: CursorLight (T-003) — ALREADY ACTIVE
+- [x] T-003: Var CursorLight в World.ts, подключен и работает. Код: DirectionalLight с spring-damper по курсору — Junni pattern
+
+### EPIC: NoiseText (T-004) — ALREADY ACTIVE
+- [x] T-004: NoiseText в entry-app.ts + Subtitles.ts, подключен и работает.
+
 ## TODO
 
-### EPIC: CursorLight (Junni Section3 pattern)
-- [ ] Проанализировать CursorLight в Junni
-- [ ] Портировать в src/Experience/World/CursorLight.ts
-- [ ] Интегрировать в World.ts + type-check + push
+### EPIC: Holographic UI Panels (T-050)
+- [ ] T-050: Displays panel — interactive holographic UI (прищелк по '.')
+- [ ] T-051: Comrades panel — multi-character display
+- [ ] T-052: Type-check + build
+- [ ] T-053: Git push
