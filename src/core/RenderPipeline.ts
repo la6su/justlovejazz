@@ -90,6 +90,7 @@ const COMPOSITE_FSG = `
   uniform float uVignette;
   uniform float uGrain;
   uniform float uTime;
+  uniform float uChromatic;
   
   float hash(vec2 p) {
     return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
@@ -154,7 +155,7 @@ const QUAD_VERTEX = `
 varying vec2 vUv;
 void main() {
   vUv = uv;
-  gl_Position = vec4(position, 0.0, 1.0);
+  gl_Position = vec4(position, 1.0);
 }
 `
 
@@ -208,9 +209,12 @@ export class RenderPipeline {
   
   // Full-screen quad (WebGL)
   private _quad?: THREE.Mesh | null
+  // Dummy camera for fullscreen quad rendering (Firefox crashes on null camera)
+  private static _dummyCam: THREE.OrthographicCamera | null = null
 
   /** Flag: is this a WebGPU renderer? */
   private _isWebGPU = false
+  private _webgpuFailed = false
 
   // ─── WebGPU TSL post-processing state ──────────────────────────
   // Built lazily on first render() call (needs the live scene + camera).
@@ -592,15 +596,18 @@ export class RenderPipeline {
   }
 
   private _renderWebGPU(scene: THREE.Scene, camera: THREE.Camera): void {
+    // If TSL already failed, just direct render (no retry loop)
+    if (this._webgpuFailed) {
+      this._renderer.render(scene, camera)
+      return
+    }
     // Lazy-init: the TSL graph needs live scene + camera refs.
     if (!this._nativePipeline) {
       try {
         this._setupWebGPU(scene, camera)
       } catch (err) {
-        // TSL/PassNode API is experimental across three minor releases.
-        // If graph construction fails, fall back to direct render so the
-        // site stays functional (no post-processing, but no blank canvas).
         console.error('[RenderPipeline] WebGPU TSL setup failed, falling back to direct render:', err)
+        this._webgpuFailed = true
         this._renderer.render(scene, camera)
         return
       }
@@ -620,6 +627,7 @@ export class RenderPipeline {
     } catch (err) {
       console.error('[RenderPipeline] WebGPU TSL render failed, falling back:', err)
       this._nativePipeline = null
+      this._webgpuFailed = true
       this._renderer.render(scene, camera)
     }
   }
@@ -634,11 +642,15 @@ export class RenderPipeline {
   ): void {
     const quad = this._quad!
     quad.material = material
-    
-    // Render quad to target
+
+    // Use dummy orthographic camera — Firefox crashes on null camera
+    if (!RenderPipeline._dummyCam) {
+      RenderPipeline._dummyCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1)
+    }
+
     renderer.setRenderTarget(target)
     renderer.autoClear = false
-    renderer.render(quad, null as unknown as THREE.Camera)
+    renderer.render(quad, RenderPipeline._dummyCam)
     renderer.autoClear = true
   }
 }

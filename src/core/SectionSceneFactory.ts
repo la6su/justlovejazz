@@ -162,26 +162,11 @@ function makeRoad(): THREE.Mesh {
 // ── Glowing particles ──
 function makeGlowParticles(count: number, range: THREE.Vector3, color: number, size: number, opacity: number): THREE.Points {
   const geo = new THREE.BufferGeometry()
-  const positions = new Float32Array(count * 3)
-  for (let i = 0; i < count; i++) {
-    positions[i * 3] = (Math.random() - 0.5) * range.x
-    positions[i * 3 + 1] = (Math.random() - 0.5) * range.y
-    positions[i * 3 + 2] = -2 - Math.random() * range.z
-  }
-  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-
-  const mat = new THREE.PointsMaterial({
-    color,
-    size,
-    transparent: true,
-    opacity,
-    sizeAttenuation: true,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-  })
-  const points = new THREE.Points(geo, mat)
-  points.frustumCulled = false
-  return points
+  const p = new Float32Array(n * 3)
+  for (let i = 0; i < n; i++) { p[i*3] = (Math.random()-0.5)*r.x; p[i*3+1] = (Math.random()-0.5)*r.y; p[i*3+2] = (Math.random()-0.5)*r.z }
+  geo.setAttribute('position', new THREE.BufferAttribute(p, 3))
+  const pts = new THREE.Points(geo, new THREE.PointsMaterial({ color: c, size: s, transparent: true, opacity: o, sizeAttenuation: true, depthWrite: false }))
+  pts.frustumCulled = false; return pts
 }
 
 export class SectionSceneFactory {
@@ -363,16 +348,7 @@ export class SectionSceneFactory {
 
     return group
   }
-
-  static byIndex(index: number): THREE.Group {
-    switch (index) {
-      case 0: return SectionSceneFactory.createStep01()
-      case 1: return SectionSceneFactory.createStep02()
-      case 2: return SectionSceneFactory.createStep03()
-      case 3: return SectionSceneFactory.createStep04()
-      case 4: return SectionSceneFactory.createStep05()
-      case 5: return SectionSceneFactory.createStep06()
-      default: return SectionSceneFactory.createStep06()
-    }
+  static byIndex(i: number): THREE.Group {
+    return [this.createStep01, this.createStep02, this.createStep03, this.createStep04, this.createStep05, this.createStep06][i]?.() ?? this.createStep06()
   }
 }

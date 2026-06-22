@@ -137,9 +137,21 @@ export class Renderer {
 
   async init(): Promise<void> {
     if (this.capabilities.mode === 'webgpu') {
-      // WebGPURenderer.init() is experimental — not typed in current Three.js
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (this.instance as any).init?.()
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (this.instance as any).init?.()
+      } catch (err) {
+        console.error('[Renderer.init] WebGPU init failed, falling back to WebGL:', err)
+        this.instance.dispose()
+        const gl = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' })
+        gl.outputColorSpace = THREE.SRGBColorSpace
+        gl.toneMapping = THREE.ACESFilmicToneMapping
+        gl.toneMappingExposure = 1
+        this.instance = gl
+        this.setupCanvas(this.instance.domElement)
+        this.instance.setPixelRatio(Math.min(this.sizes.dpr, this.capabilities.maxDpr))
+        this.instance.setSize(this.sizes.width, this.sizes.height)
+      }
     }
     // Now that the renderer backend is initialized (WebGPU device configured,
     // WebGL context ready), create the post-processing pipeline. Creating it
