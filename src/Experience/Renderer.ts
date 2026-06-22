@@ -30,7 +30,14 @@ export class Renderer {
     }
 
     if (this.capabilities.mode === 'webgpu') {
-      this.instance = new WebGPURenderer({ antialias: true })
+      // alpha: false → opaque canvas. Chrome's WebGPU backend defaults to
+      // alpha: true (transparent canvas), which means the canvas composites
+      // over the page background (body is #000). When the 3D scene's background
+      // is also dark, the result is indistinguishable from a black screen.
+      // Firefox's WebGPU backend defaults to alpha: false, which is why the
+      // same code 'works' there. Setting alpha: false explicitly makes Chrome
+      // match Firefox — the canvas owns its pixels, no compositing ambiguity.
+      this.instance = new WebGPURenderer({ antialias: true, alpha: false })
       // Match WebGL path: ACES tonemap + sRGB output. renderOutput() in
       // RenderPipeline reads these to apply tone mapping + color space.
       // WebGPURenderer extends Renderer (has toneMapping at runtime) but
@@ -39,6 +46,7 @@ export class Renderer {
       const wg = this.instance as any
       wg.toneMapping = THREE.ACESFilmicToneMapping
       wg.toneMappingExposure = 1
+      wg.outputColorSpace = THREE.SRGBColorSpace
     } else {
       const gl = new THREE.WebGLRenderer({
         antialias: true,
