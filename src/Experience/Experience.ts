@@ -437,11 +437,19 @@ export class Experience {
   }
 
   private async ensureWebGLTextManager(): Promise<void> {
-    // PERF: disabled — WebGLTextManager creates a SECOND WebGLRenderer (Troika
-    // text overlay) that renders every frame. On WebGPU-over-ANGLE this is a
-    // significant per-frame cost (separate GL context, separate render pass).
-    // Text is now rendered via DOM (CSS .studio-title) instead of WebGL.
-    // Re-enable when performance budget allows.
-    return
+    // WebGLTextManager creates a secondary WebGLRenderer for Troika text overlay
+    // on top of DOM. Renders .studio-title elements via Troika on a transparent
+    // orthographic canvas, synchronized with the main scene's update loop.
+    if (this.webglTextManager) return // already initialized
+
+    const titles = document.querySelectorAll<HTMLElement>('.studio-title')
+    if (titles.length === 0) {
+      // No titles yet — DOM may not be ready; wait for DOMContentLoaded / first layout
+      return
+    }
+
+    const { WebGLTextManager } = await import('./WebGLTextManager')
+    this.webglTextManager = new WebGLTextManager(Array.from(titles))
+    await this.webglTextManager.waitForAllLoaded()
   }
 }
