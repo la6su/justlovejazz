@@ -45,7 +45,6 @@ function scheduleUiKitRefresh(): void {
     }
     ;(UIkit as any).update()
   }
-  // Non-critical UI layout reconciliation after first paint
   if ('requestIdleCallback' in window) {
     ;(window as Window & { requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => void })
       .requestIdleCallback(refresh, { timeout: 800 })
@@ -60,7 +59,6 @@ export async function startApp(): Promise<void> {
 
   await initRouter()
 
-  // NoiseText: scramble studio titles on page load (junni pattern).
   window.addEventListener('jlj:navigate', () => {
     animateNoiseTitles()
   })
@@ -82,15 +80,38 @@ export async function startApp(): Promise<void> {
 }
 
 /**
- * NoiseText animation on studio titles — characters scramble then resolve.
- * Junni pattern: gives text a "decoding" studio identity feel.
+ * NoiseText animation on studio titles — characters flicker then resolve.
+ * Uses NoiseText.for() singleton to prevent overlapping animations on
+ * the same DOM element across navigation events.
+ *
+ * Two tiers:
+ * 1) Animate parent .studio-title only when it has no .studio-title__line
+ *    children (so we don't double-animate).
+ * 2) Animate .studio-title__line spans as their own leaf elements.
+ *
+ * NOTE: .jlz-works-title is NOT animated here — ProjectOverlay handles
+ * its own NoiseText.on show() to avoid double-animation on works page.
  */
 async function animateNoiseTitles(): Promise<void> {
   const { NoiseText } = await import('./Experience/NoiseText')
-  document.querySelectorAll<HTMLElement>('.studio-title, .studio-title__line').forEach((el) => {
+  const leafEls = document.querySelectorAll<HTMLElement>('.studio-title__line')
+  const leafSet = new Set(leafEls)
+
+  // Animate parent .studio-title that have no .studio-title__line children.
+  for (const el of document.querySelectorAll<HTMLElement>('.studio-title')) {
+    if (leafSet.has(el)) continue
+    const hasLeafChild = [...leafEls].some(l => l.closest('.studio-title') === el)
+    if (hasLeafChild) continue
+
     const text = el.textContent?.trim() || ''
-    if (!text) return
-    const nt = new NoiseText(el)
-    nt.show(text, 1.2)
-  })
+    if (!text) continue
+    NoiseText.for(el).show(2.0)
+  }
+
+  // Animate .studio-title__line spans.
+  for (const el of leafEls) {
+    const text = el.textContent?.trim() || ''
+    if (!text) continue
+    NoiseText.for(el).show(2.0)
+  }
 }

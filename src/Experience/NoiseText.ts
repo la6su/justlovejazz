@@ -1,75 +1,132 @@
-// NoiseText — DOM text with character scramble animation.
-// Junni pattern: text appears letter-by-letter with random noise characters
-// resolving to final text. Studio identity effect.
+// NoiseText — character-level flicker (Junni identity effect).
 //
-// Usage: const nt = new NoiseText(element); nt.show('JUSTLOVEJAZZ', 1.5)
+// Critical guarantees:
+// 1. Frame 0 = correct text → no flash.
+// 2. Final frame = ALWAYS clean text (no glitch residue).
+// 3. Global instance per element → prevents overlapping animations.
 
-const NOISE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*'
+const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*<>?+=_~|{}[]';
 
 export class NoiseText {
-  private elm: HTMLElement
-  private text = ''
-  private startTime = 0
-  private duration = 0
-  private interval: ReturnType<typeof setInterval> | null = null
-  private onFinishAnimation: (() => void) | null = null
+  /** Global registry: one instance per DOM element, prevents overlap. */
+  private static instances = new WeakMap<HTMLElement, NoiseText>();
 
-  constructor(elm: HTMLElement) {
-    this.elm = elm
+  private readonly el: HTMLElement;
+  private cleanText = '';
+
+  private rafId: number | null = null;
+  private timeoutId: number | null = null;
+  private running = false;
+  private start = 0;
+  private dur = 600;
+
+  private constructor(el: HTMLElement) {
+    this.el = el;
   }
 
-  show(text: string, duration = 1.5, onFinish?: () => void): void {
-    this.text = text
-    this.stopAnimation()
-    this.startTime = Date.now()
-    this.elm.textContent = ''
-    this.elm.setAttribute('data-visible', 'true')
-    this.duration = duration * 1000 // ms
-    this.onFinishAnimation = onFinish ?? null
+  /**
+   * Get or create the singleton NoiseText for this element.
+   */
+  static for(el: HTMLElement): NoiseText {
+    let inst = this.instances.get(el);
+    if (!inst) {
+      inst = new NoiseText(el);
+      this.instances.set(el, inst);
+    }
+    return inst;
+  }
 
-    this.interval = setInterval(() => this.draw(), 30)
+  /**
+   * Start noise animation for `dur` seconds.
+   * @param dur Duration in seconds.
+   * @param sourceText Explicit clean text to use. If passed (strongly recommended),
+   *   this overrides reading `el.textContent` and guarantees no "stale noisy text"
+   *   is captured when a new animation starts mid-previous-animation.
+   */
+  show(dur: number = 0.6, sourceText?: string): void {
+    this.cancel();
+
+    // If caller provides explicit text, use it. Otherwise read from DOM.
+    // Reading from DOM immediately after cancel is safe because cancel only
+    // stops RAF/timers — it does NOT modify el.textContent.
+    this.cleanText = sourceText ?? (this.el.textContent || '');
+    if (this.cleanText.length === 0) return;
+
+    // Frame 0 = correct text.
+    this.el.textContent = this.cleanText;
+
+    this.dur = dur * 1000;
+    this.running = true;
+    this.start = performance.now();
+    this.el.setAttribute('data-visible', 'true');
+
+    // Safety timeout → guarantees we always stop even if RAF is throttled.
+    this.timeoutId = window.setTimeout(() => this.finalize(), this.dur + 200);
+    this.rafId = requestAnimationFrame(this.tick);
   }
 
   hide(): void {
-    this.stopAnimation()
-    this.elm.setAttribute('data-visible', 'false')
-    this.elm.textContent = ''
+    this.finalize();
+    this.el.removeAttribute('data-visible');
   }
 
-  private draw(): void {
-    const elapsed = Date.now() - this.startTime
-    const progress = Math.min(elapsed / this.duration, 1)
+  private tick = (ts: number): void => {
+    if (!this.running) return;
 
-    if (progress >= 1) {
-      this.elm.textContent = this.text
-      this.stopAnimation()
-      this.onFinishAnimation?.()
-      return
+    const t = Math.min(1, (ts - this.start) / this.dur);
+
+    // Hard stop at 100%: only the very last frame produces noise,
+    // then we immediately finalize. No "90% early stop" that can leave
+    // the animation in an intermediate state.
+    if (t >= 1) {
+      this.finalize();
+      return;
     }
 
-    // Reveal characters left-to-right; unrevealed show noise.
-    const revealCount = Math.floor(this.text.length * progress)
-    let result = ''
-    for (let i = 0; i < this.text.length; i++) {
-      if (i < revealCount) {
-        result += this.text[i]
-      } else if (this.text[i] === ' ') {
-        result += ' '
+    // Ramp: intensity starts at ~30%, fades linearly to 0 at t=1.
+    const intensity = Math.max(0, 1 - t) * 0.30;
+
+    // Generate noisy version of cleanText.
+    let buf = '';
+    for (let i = 0; i < this.cleanText.length; i++) {
+      const ch = this.cleanText[i];
+      if (ch === ' ' || ch === '\n' || ch === '\t') {
+        buf += ch;
+      } else if (Math.random() < intensity) {
+        buf += CHARS[Math.floor(Math.random() * CHARS.length)];
       } else {
-        result += NOISE_CHARS[Math.floor(Math.random() * NOISE_CHARS.length)]
+        buf += ch;
       }
     }
-    this.elm.textContent = result
-  }
 
-  private stopAnimation(): void {
-    if (this.interval) {
-      clearInterval(this.interval)
-      this.interval = null
+    this.el.textContent = buf;
+    this.rafId = requestAnimationFrame(this.tick);
+  };
+
+  /** Hard stop with clean text restoration (called on animation end). */
+  finalize(): void {
+    this.running = false;
+    if (this.rafId !== null) {
+      cancelAnimationFrame(this.rafId);
+      this.rafId = null;
     }
+    if (this.timeoutId !== null) {
+      clearTimeout(this.timeoutId);
+      this.timeoutId = null;
+    }
+    this.el.textContent = this.cleanText;
   }
 
-  dispose(): void {
-    this.stopAnimation()
+  /** Lightweight cancel — only cancel RAF+timeout, do NOT write text. */
+  private cancel(): void {
+    this.running = false;
+    if (this.rafId !== null) {
+      cancelAnimationFrame(this.rafId);
+      this.rafId = null;
+    }
+    if (this.timeoutId !== null) {
+      clearTimeout(this.timeoutId);
+      this.timeoutId = null;
+    }
   }
 }

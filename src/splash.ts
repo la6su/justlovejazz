@@ -65,15 +65,16 @@ export function createSplash(): SplashOverlay {
     shellReady = true
   }
 
-  function doHide(durationMs = 600) {
+  function doHide() {
     if (!el) return
+    // Instant hide — no fade, no delay (avoids white flash)
+    el.style.transition = 'none'
     el.style.opacity = '0'
-    setTimeout(() => {
-      if (el) {
-        el.remove()
-        el = null
-      }
-    }, durationMs)
+    // Force reflow so the transition override takes effect immediately
+    void el.offsetWidth
+    // Remove right away
+    el.remove()
+    el = null
   }
 
   function doRemove() {

@@ -60,6 +60,9 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
     progress(98)
 
     const triggerDissolve = async () => {
+      // Hide splash immediately — no RAF timing dependency
+      splash.hide(0)
+      splash.remove()
       enterButton.cancelAuto()
       enterButton.animateOut(300)
 
@@ -71,7 +74,7 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
       }
 
       const start = performance.now()
-      const duration = 1400
+      const duration = 300
 
       const doDissolve = (now: number) => {
         const elapsed = now - start
@@ -83,30 +86,25 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
           overlay.update(0.016)
         }
 
-        if (t > 0.55 && t < 0.56) {
-          splash.hide(400)
-        }
-
         if (t < 1.0) {
           requestAnimationFrame(doDissolve)
         } else {
           if (overlay) overlay.meshGroup.visible = false
-          splash.remove()
         }
       }
       requestAnimationFrame(doDissolve)
     }
 
     enterButton.onTrigger(() => triggerDissolve())
-    enterButton.autoTriggerAfter(2000, () => triggerDissolve())
+    enterButton.autoTriggerAfter(300, () => triggerDissolve())
     onReady?.(enterButton)
 
     initScrollHint()
     registerServiceWorker()
   } catch (err) {
     console.error('Bootstrap failed:', err)
-    opts.splash.hide(400)
-    setTimeout(() => opts.splash.remove(), 600)
+    opts.splash.hide(0)
+    opts.splash.remove()
   }
 }
 

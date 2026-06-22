@@ -149,6 +149,11 @@
   z-index: var(--jlz-z-content);
   pointer-events: none;
   transition: opacity var(--jlz-duration-slow) var(--jlz-ease-state);
+  opacity: 0;
+}
+
+.jlz-works-ui.jlz-works-ui--visible {
+  opacity: 1;
 }
 
 .jlz-works-ui--changing .jlz-works-title,
@@ -598,6 +603,22 @@
 
 @keyframes jlz-subtitle-fade {
   0% { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes jlz-title-glow {
+  0%, 100% { text-shadow: none; }
+  50% { text-shadow: 0 0 20px rgba(81, 93, 132, 0.4); }
+}
+
+/* NoiseText animation support for .jlz-works-title */
+.jlz-works-title[data-visible] {
+  animation: jlz-title-noise 2.5s ease-out;
+}
+
+@keyframes jlz-title-noise {
+  0% { opacity: 0; transform: translateY(4px); }
+  20% { opacity: 1; transform: translateY(0); }
   100% { opacity: 1; transform: translateY(0); }
 }
 

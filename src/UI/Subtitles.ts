@@ -47,31 +47,31 @@ export class Subtitles {
     const p = document.createElement('p')
     p.className = 'jlz-subtitles-text'
     const span = document.createElement('span')
+    span.textContent = text
     p.appendChild(span)
     this.container.appendChild(p)
 
     // NoiseText scramble.
-    this.current = new NoiseText(span)
-    this.current.show(text, 1.0)
+    this.current = NoiseText.for(span)
+    this.current.show(0.8)
 
     // Auto-hide after 5s.
     setTimeout(() => {
       if (this.current) {
         this.current.hide()
+        this.current = null
       }
     }, 5000)
   }
 
   hide(): void {
-    if (this.current) {
-      this.current.hide()
-      this.current = null
-    }
+    this.current?.hide()
+    this.current = null
     this.container.innerHTML = ''
   }
 
   dispose(): void {
     this.hide()
-    window.removeEventListener('jlz:section-change', this as unknown as EventListener)
+    this.container.remove()
   }
 }

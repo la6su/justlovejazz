@@ -46,6 +46,10 @@ function toSpaKey(raw: string | null | undefined): PageKey {
   return 'home'
 }
 
+function emitNavigate(key: PageKey): void {
+  window.dispatchEvent(new CustomEvent('jlj:navigate', { detail: { page: key } }))
+}
+
 function renderAndInject(key: PageKey): void {
   const el = container
   if (!el) return
@@ -79,7 +83,7 @@ export function navigateTo(hashRoute: string, replace = false): void {
   current = key
 
   renderAndInject(key)
-  window.dispatchEvent(new CustomEvent('jlj:navigate', { detail: { page: key } }))
+  emitNavigate(key)
 }
 
 export function initRouter(): void {
@@ -92,6 +96,7 @@ export function initRouter(): void {
   current = key
 
   renderAndInject(key)
+  emitNavigate(key)  // also fire on initial render so noise titles animate
 
   window.addEventListener('popstate', () => {
     const newKey = toSpaKey(location.hash)
@@ -101,7 +106,7 @@ export function initRouter(): void {
     document.title = r.title
     current = newKey
     renderAndInject(newKey)
-    window.dispatchEvent(new CustomEvent('jlj:navigate', { detail: { page: newKey } }))
+    emitNavigate(newKey)
   })
 
   // Intercept nav links

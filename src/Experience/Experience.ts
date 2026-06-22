@@ -331,6 +331,8 @@ export class Experience {
       }
     }
     this.onProjectSelect(0)
+    // Immediately make overlay visible — shows inaugural fade-in.
+    this.overlay!.showContainer()
   }
 
   private onProjectSelect(idx: number): void {
@@ -348,11 +350,8 @@ export class Experience {
       return
     }
 
-    // First selection: show immediately (no dissolve on initial load).
-    if (!this.projectDissolve) {
-      this.overlay.show(project, safeIdx, projs.length)
-      return
-    }
+    // Run dissolve flow for all project selections
+
 
     // Subsequent selections: dissolve transition.
     // Phase 1: dissolve IN (0 → 1) — screen covered by noise wipe.
@@ -397,6 +396,8 @@ export class Experience {
         overlay.meshGroup.visible = false
         overlay.setProgress(0)
         this.projectDissolveActive = false
+        // Ensure overlay is visible (opacity=1 + pointer-events)
+        this.overlay!.showContainer()
       }
     }
     requestAnimationFrame(animate)
