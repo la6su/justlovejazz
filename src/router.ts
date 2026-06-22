@@ -17,10 +17,10 @@ function parseRoute(hash: string):
   | { type: 'home'; anchor?: string }
   | { type: 'lesson'; id: string }
   | { type: 'lessons' } {
-  const clean = hash.replace(/^#/, '')
-  const lessonMatch = clean.match(/^lesson\/([^/]+)$/)
+  const clean = hash.replace(/^#\/?/, '')
+  const lessonMatch = clean.match(/^(?:lesson|\/lesson)\/([^/]+)$/)
   if (lessonMatch) return { type: 'lesson', id: lessonMatch[1] }
-  if (clean === 'lessons') return { type: 'lessons' }
+  if (clean === 'lessons' || clean === '/lessons') return { type: 'lessons' }
   const anchor = hash.startsWith('#') ? hash : undefined
   return { type: 'home', anchor }
 }
