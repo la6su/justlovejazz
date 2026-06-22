@@ -44,11 +44,15 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
     let dissolveOverlay: import('./shaders/dissolveOverlay').DissolveOverlay | null = null
 
     const { Bootstrapper } = await import('./core/Bootstrapper')
-    const { DissolveOverlay } = await import('./shaders/dissolveOverlay')
+    const mod = await import('./shaders/dissolveOverlay')
+    const DissolveOverlay = mod.DissolveOverlay
 
     const onReadyCb: OnReadyCallback = (_renderer: any, scene: THREE.Scene) => {
       progress(95)
-      dissolveOverlay = new DissolveOverlay().init(scene)
+      // Only create dissolve overlay on WebGL — ShaderMaterial incompatible with WebGPU
+      if (!('isWebGPU' in _renderer)) {
+        dissolveOverlay = new DissolveOverlay().init(scene)
+      }
     }
 
     await Bootstrapper.init(ui, onReadyCb)
