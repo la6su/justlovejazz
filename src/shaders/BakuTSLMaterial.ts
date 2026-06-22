@@ -41,6 +41,7 @@ export interface BakuTSLParams {
 
 export function createBakuTSLMaterial(params: BakuTSLParams): MeshPhysicalNodeMaterial {
   const material = new MeshPhysicalNodeMaterial()
+  ;(material as THREE.Material & { fog?: boolean }).fog = false
 
   const uRimColor = uniform(params.rimColor)
   const uRimPower = uniform(params.rimPower)

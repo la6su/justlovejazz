@@ -25,6 +25,7 @@ export class ProjectMaterial implements IGalleryCardSurface {
         const dist = positionLocal.length()
         const bulge = p.mul(p).mul(one.sub(p)).mul(one.sub(dist)).mul(float(0.2))
         this.material = new MeshBasicNodeMaterial()
+        ;(this.material as THREE.Material & { fog?: boolean }).fog = false
         this.material.positionNode = positionLocal.add(positionLocal.mul(bulge))
 
         // ── Fragment ──

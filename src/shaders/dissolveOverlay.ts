@@ -38,6 +38,9 @@ export class DissolveOverlay {
 
     this.material = new MeshBasicNodeMaterial()
     this.material.transparent = true
+    // Fullscreen overlay — must not pick up scene.fog (would crash the
+    // WebGLNodesHandler uniforms path, which doesn't provide fogDensity).
+    ;(this.material as THREE.Material & { fog?: boolean }).fog = false
 
     // ── Fragment: multi-octave value noise dissolve ──
     const uvVal = uv()

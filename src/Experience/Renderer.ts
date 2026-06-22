@@ -29,61 +29,74 @@ export class Renderer {
   // Pipeline config built in constructor, applied in init() after backend ready.
   private _pipelineConfig!: RenderPipelineConfig
 
+  /**
+   * Shared WebGL renderer factory. Installs WebGLNodesHandler so TSL
+   * NodeMaterials (MeshBasicNodeMaterial etc.) compile via the GLSL node
+   * builder instead of crashing resolveIncludes() with undefined shaders.
+   */
+  private static createWebGLRenderer(sizes: Sizes): THREE.WebGLRenderer {
+    const gl = new THREE.WebGLRenderer({
+      antialias: true,
+      powerPreference: 'high-performance',
+    })
+    gl.outputColorSpace = THREE.SRGBColorSpace
+    gl.toneMapping = THREE.ACESFilmicToneMapping
+    gl.toneMappingExposure = 1
+    gl.setPixelRatio(Math.min(sizes.dpr, DeviceCapability.getInstance().maxDpr))
+    gl.setSize(sizes.width, sizes.height)
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (gl as any).setNodesHandler(new WebGLNodesHandler())
+    } catch (err) {
+      console.error('[Renderer] Failed to install WebGLNodesHandler — TSL materials will not render:', err)
+    }
+    return gl
+  }
+
+  /**
+   * Construct a WebGPU renderer (opaque canvas). Returns null if the adapter
+   * can't be obtained — caller falls back to the existing WebGL renderer.
+   */
+  private static async tryCreateWebGPURenderer(_sizes: Sizes): Promise<WebGPURenderer | null> {
+    // Verify adapter availability BEFORE constructing WebGPURenderer —
+    // constructing + init() on a machine where requestAdapter() rejects
+    // yields a renderer that produces a black canvas.
+    try {
+      const adapter = await Promise.race([
+        (navigator as Navigator & { gpu?: { requestAdapter(): Promise<GPUAdapter | null> } })
+          .gpu!.requestAdapter(),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 2000)),
+      ])
+      if (!adapter) return null
+    } catch {
+      return null
+    }
+    // alpha: false → opaque canvas. Chrome's WebGPU backend defaults to
+    // alpha: true (transparent canvas) which composites dark scenes to black.
+    const wg = new WebGPURenderer({ antialias: true, alpha: false })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const wgAny = wg as any
+    wgAny.toneMapping = THREE.ACESFilmicToneMapping
+    wgAny.toneMappingExposure = 1
+    wgAny.outputColorSpace = THREE.SRGBColorSpace
+    return wg
+  }
+
   constructor(sizes: Sizes) {
     this.sizes = sizes
-    if (this.capabilities.mode === 'unsupported') {
+    // NOTE: WebGPU is NOT selected here. 'gpu' in navigator alone is not a
+    // reliable signal — requestAdapter() can reject (blocklisted driver, flag
+    // off, software fallback disabled), leaving the canvas black with no error.
+    // We construct a WebGL renderer first (safe, always-available on modern
+    // browsers) and attempt a WebGPU upgrade in init() after the async probe
+    // resolves. If the probe rejects, we stay on WebGL — no black screen.
+    if (typeof window === 'undefined' || !document.createElement('canvas').getContext('webgl2')) {
       this.showUnsupportedMessage()
       throw new Error('Neither WebGPU nor WebGL2 is supported by this browser.')
     }
 
-    if (this.capabilities.mode === 'webgpu') {
-      // alpha: false → opaque canvas. Chrome's WebGPU backend defaults to
-      // alpha: true (transparent canvas), which means the canvas composites
-      // over the page background (body is #000). When the 3D scene's background
-      // is also dark, the result is indistinguishable from a black screen.
-      // Firefox's WebGPU backend defaults to alpha: false, which is why the
-      // same code 'works' there. Setting alpha: false explicitly makes Chrome
-      // match Firefox — the canvas owns its pixels, no compositing ambiguity.
-      this.instance = new WebGPURenderer({ antialias: true, alpha: false })
-      // Match WebGL path: ACES tonemap + sRGB output. renderOutput() in
-      // RenderPipeline reads these to apply tone mapping + color space.
-      // WebGPURenderer extends Renderer (has toneMapping at runtime) but
-      // @types/three doesn't type it yet — adapter cast here.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const wg = this.instance as any
-      wg.toneMapping = THREE.ACESFilmicToneMapping
-      wg.toneMappingExposure = 1
-      wg.outputColorSpace = THREE.SRGBColorSpace
-    } else {
-      const gl = new THREE.WebGLRenderer({
-        antialias: true,
-        powerPreference: 'high-performance',
-      })
-      gl.outputColorSpace = THREE.SRGBColorSpace
-      gl.toneMapping = THREE.ACESFilmicToneMapping
-      gl.toneMappingExposure = 1
-
-      // Enable TSL NodeMaterial rendering on the WebGL fallback path.
-      // SectionSceneFactory (and the works-page dissolve/project materials)
-      // build their look with MeshBasicNodeMaterial + TSL Fn colorNodes.
-      // WebGLRenderer in three r0.184 cannot compile these out of the box —
-      // setNodesHandler installs the GLSLNodeBuilder adapter that generates
-      // real GLSL for node materials before WebGLProgram compilation.
-      // Wrap defensively: the handler is marked experimental across releases.
-      try {
-        // setNodesHandler is a runtime method on WebGLRenderer; @types/three
-        // does not type it yet. Isolate the cast at this adapter boundary.
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (gl as any).setNodesHandler(new WebGLNodesHandler())
-      } catch (err) {
-        console.error('[Renderer] Failed to install WebGLNodesHandler — TSL materials will not render:', err)
-      }
-
-      this.instance = gl
-    }
-
-    this.instance.setPixelRatio(Math.min(sizes.dpr, this.capabilities.maxDpr))
-    this.instance.setSize(sizes.width, sizes.height)
+    this.instance = Renderer.createWebGLRenderer(sizes)
     this.setupCanvas(this.instance.domElement)
 
     // Store pipeline config — pipeline is created in init() AFTER the renderer
@@ -136,14 +149,33 @@ export class Renderer {
   }
 
   async init(): Promise<void> {
-    if (this.capabilities.mode === 'webgpu') {
-      // WebGPURenderer.init() is experimental — not typed in current Three.js
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (this.instance as any).init?.()
+    // Wait for the async WebGPU probe to settle. If the probe confirms WebGPU
+    // is actually usable (requestAdapter succeeded), swap the WebGL renderer
+    // for a WebGPURenderer. Otherwise keep the WebGL renderer we built in the
+    // constructor — no black screen, no wasted WebGPURenderer.init() failure.
+    const resolved = await this.capabilities.resolveMode()
+    if (resolved === 'webgpu') {
+      const wg = await Renderer.tryCreateWebGPURenderer(this.sizes)
+      if (wg) {
+        // Dispose the placeholder WebGL renderer + its canvas before swapping.
+        this.instance.dispose()
+        this.instance.domElement.remove()
+        this.instance = wg
+        // WebGPURenderer.init() is experimental — not typed in current Three.js
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (wg as any).init?.()
+        this.instance.setPixelRatio(Math.min(this.sizes.dpr, this.capabilities.maxDpr))
+        this.instance.setSize(this.sizes.width, this.sizes.height)
+        this.setupCanvas(this.instance.domElement)
+      } else {
+        // Probe said WebGPU but adapter vanished between calls — stay WebGL.
+        console.warn('[Renderer] WebGPU probe passed but adapter unavailable; staying on WebGL.')
+      }
     }
-    // Now that the renderer backend is initialized (WebGPU device configured,
-    // WebGL context ready), create the post-processing pipeline. Creating it
-    // in the constructor was unsafe — RTs/GPU state could be uninitialized.
+
+    // Now that the renderer backend is finalized, create the post-processing
+    // pipeline. RenderPipeline branches on renderer type (WebGPU TSL vs WebGL
+    // ShaderMaterial), so this MUST run after the upgrade decision.
     this.pipeline = RenderPipeline.create(
       this.instance,
       this.sizes.width,

@@ -15,6 +15,7 @@ function makeGradientBG(topColor: number, bottomColor: number, glowColor?: numbe
   const mat = new MeshBasicNodeMaterial()
   mat.side = THREE.BackSide
   mat.depthWrite = false
+  ;(mat as THREE.Material & { fog?: boolean }).fog = false
   mat.colorNode = Fn(() => {
     const h = normalize(positionLocal).y.mul(0.5).add(0.5)
     const base = mix(uBottom, uTop, h)
@@ -38,6 +39,7 @@ function makeStudioFloor(color: number, opacity: number, y: number): THREE.Mesh 
   mat.transparent = true
   mat.depthWrite = false
   mat.side = THREE.DoubleSide
+  ;(mat as THREE.Material & { fog?: boolean }).fog = false
   mat.colorNode = Fn(() => {
     const vUv = uv()
     // Grid lines: frequency 20, line width via step
@@ -109,6 +111,7 @@ export class SectionSceneFactory {
     slashMat.transparent = true
     slashMat.depthWrite = false
     slashMat.side = THREE.DoubleSide
+    ;(slashMat as THREE.Material & { fog?: boolean }).fog = false
     slashMat.colorNode = Fn(() => {
       const vUv = uv()
       const stripe = sin(vUv.x.mul(25.0).sub(time.mul(2.0)))
@@ -279,6 +282,7 @@ export class SectionSceneFactory {
     roadMat.transparent = true
     roadMat.depthWrite = false
     roadMat.blending = THREE.AdditiveBlending
+    ;(roadMat as THREE.Material & { fog?: boolean }).fog = false
     roadMat.colorNode = Fn(() => {
       const vUv = uv()
       const scroll = fract(vUv.y.sub(time.mul(0.3)))

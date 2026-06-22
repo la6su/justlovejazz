@@ -1,5 +1,15 @@
 import type { QualityTier, RendererMode } from '../types/renderer'
 
+// WebGPU detection is async (must call navigator.gpu.requestAdapter()).
+// While the probe is in flight, mode = 'pending' and consumers should
+// either await resolveMode() or treat 'pending' as 'use WebGL fallback
+// until told otherwise'. This avoids the old bug where 'gpu' in navigator
+// alone selected WebGPU even when requestAdapter() would reject (blocklisted
+// driver, WebGPU flag off, software-only fallback) — producing a black
+// canvas with no error.
+export type ProbeableMode = RendererMode | 'pending'
+
+
 export interface TierConfig {
   postMultiplier: number
   resolutionScale: number
@@ -61,7 +71,7 @@ function isLowEndDesktop(): boolean {
 export class DeviceCapability {
   private static instance: DeviceCapability
   public readonly tier: QualityTier
-  public readonly mode: RendererMode
+  public mode: ProbeableMode
   public readonly maxDpr: number
   public readonly config: TierConfig
   public readonly isMobile: boolean
@@ -84,6 +94,11 @@ export class DeviceCapability {
     this.tier = this.detectTier()
     this.maxDpr = this.calculateMaxDpr()
     this.config = TIER_SETTINGS[this.tier]
+    // 'pending' (WebGPU probe in flight) is treated as WebGL-safe: the
+    // Renderer constructs a WebGLRenderer first and upgrades to WebGPU
+    // only if resolveMode() returns 'webgpu'. So postProcessing is gated on
+    // 'not unsupported AND not pending-claims-webgpu', and floatRenderTargets
+    // stays false until the probe confirms WebGPU.
     this.postProcessing = this.tier !== 'low' && this.mode !== 'unsupported'
     this.floatRenderTargets = this.mode === 'webgpu' && this.tier !== 'low'
   }
@@ -95,11 +110,67 @@ export class DeviceCapability {
     return DeviceCapability.instance
   }
 
-  private detectRenderMode(): RendererMode {
-    if ('gpu' in navigator) return 'webgpu'
+  private detectRenderMode(): ProbeableMode {
+    // Sync check first: if WebGPU API isn't even present, fall through to WebGL.
+    if (!('gpu' in navigator)) {
+      const canvas = document.createElement('canvas')
+      if (canvas.getContext('webgl2')) return 'webgl'
+      return 'unsupported'
+    }
+    // WebGPU API exists — but requestAdapter() may still reject (blocklisted
+    // driver, flag off, software fallback disabled). Resolve async; until
+    // then consumers treat 'pending' as 'webgl' so the page renders.
+    void this.resolveMode()
+    return 'pending'
+  }
+
+  /**
+   * Async WebGPU capability probe. Calls navigator.gpu.requestAdapter()
+   * with a 2s timeout; on success flips mode to 'webgpu', otherwise falls
+   * back to 'webgl'. Idempotent — only the first call does the probe.
+   */
+  private _probed = false
+  public async resolveMode(): Promise<RendererMode> {
+    if (this._probed) {
+      // Already resolved; current mode is final.
+      return this.mode === 'pending' ? 'webgl' : this.mode
+    }
+    this._probed = true
+
+    let adapter: GPUAdapter | null = null
+    try {
+      adapter = await Promise.race([
+        (navigator as Navigator & { gpu?: { requestAdapter(): Promise<GPUAdapter | null> } }).gpu!.requestAdapter(),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 2000)),
+      ])
+    } catch {
+      adapter = null
+    }
+
+    if (adapter) {
+      // Re-run tier calc with the now-known mode before flipping.
+      (this as { mode: RendererMode }).mode = 'webgpu'
+      this.recomputeTier()
+      return 'webgpu'
+    }
+
+    // Adapter null/timeout → WebGL fallback. WebGL2 already verified
+    // synchronously in detectRenderMode() (we only got here because 'gpu'
+    // existed), but double-check in case it was a false positive.
     const canvas = document.createElement('canvas')
-    if (canvas.getContext('webgl2')) return 'webgl'
-    return 'unsupported'
+    const mode: RendererMode = canvas.getContext('webgl2') ? 'webgl' : 'unsupported'
+    ;(this as { mode: RendererMode }).mode = mode
+    this.recomputeTier()
+    return mode
+  }
+
+  private recomputeTier(): void {
+    ;(this as { tier: QualityTier }).tier = this.detectTier()
+    ;(this as { maxDpr: number }).maxDpr = this.calculateMaxDpr()
+    ;(this as { postProcessing: boolean }).postProcessing =
+      this.tier !== 'low' && this.mode !== 'unsupported'
+    ;(this as { floatRenderTargets: boolean }).floatRenderTargets =
+      this.mode === 'webgpu' && this.tier !== 'low'
   }
 
   // ── Tier detection: weigh all signals ──
@@ -169,7 +240,7 @@ export class DeviceCapability {
     floatRenderTargets: boolean
   } {
     return {
-      mode: this.mode,
+      mode: this.mode === 'pending' ? 'webgl' : this.mode,
       tier: this.tier,
       maxDpr: this.maxDpr,
       postProcessing: this.postProcessing,

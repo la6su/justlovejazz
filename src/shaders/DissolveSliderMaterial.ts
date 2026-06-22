@@ -28,6 +28,7 @@ export class DissolveSliderMaterial {
 
   constructor() {
     this.material = new MeshBasicNodeMaterial()
+    ;(this.material as THREE.Material & { fog?: boolean }).fog = false
 
     const p = this.dissolve
     const t = this.noiseTime
