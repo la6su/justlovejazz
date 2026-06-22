@@ -117,7 +117,7 @@ export class NoiseText {
     this.el.textContent = this.cleanText;
   }
 
-  /** Lightweight cancel — only cancel RAF+timeout, do NOT write text. */
+  /** Lightweight cancel — restores clean text and cancels RAF+timeout. */
   private cancel(): void {
     this.running = false;
     if (this.rafId !== null) {
@@ -127,6 +127,11 @@ export class NoiseText {
     if (this.timeoutId !== null) {
       clearTimeout(this.timeoutId);
       this.timeoutId = null;
+    }
+    // Always restore clean text on cancel so a new show() read from DOM
+    // picks up the correct text, not a noisy frame from the previous run.
+    if (this.cleanText) {
+      this.el.textContent = this.cleanText;
     }
   }
 }
