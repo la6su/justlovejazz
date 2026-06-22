@@ -1,5 +1,5 @@
-// src/splash.ts — instant splash screen (zero deps: no Three.js, no heavy imports)
-// Purpose: paint immediately on FCP. Heavy app loads in background.
+// splash.ts — Cinematic curtain splash screen
+export type SplashPhase = 'loading' | 'enter' | 'dissolving' | 'revealing' | 'idle'
 
 export interface SplashOverlay {
   show(): void
@@ -7,104 +7,134 @@ export interface SplashOverlay {
   remove(): void
   setProgress(pct: number): void
   setState(state: 'booting' | 'warming' | 'ready'): void
+  curtainSplit(duration?: number): Promise<void>
+  markPhase(phase: SplashPhase): void
+  getElements(): { root: HTMLElement; top: HTMLElement; bottom: HTMLElement; line: HTMLElement } | null
 }
 
-/**
- * Zero-dependency splash overlay.
- *
- * Renders a minimal dark screen with the brand mark and a thin progress bar.
- * No external CSS, no fonts, no images — guaranteed to paint before first frame.
- */
 export function createSplash(): SplashOverlay {
   const id = 'jlj-splash'
-  let el: HTMLElement | null = null
+  let root: HTMLElement | null = null
+  let topPanel: HTMLDivElement | null = null
+  let bottomPanel: HTMLDivElement | null = null
+  let splitLine: HTMLDivElement | null = null
+  let brandEl: HTMLDivElement | null = null
   let progressBar: HTMLDivElement | null = null
   let labelEl: HTMLDivElement | null = null
   let shellReady = false
 
-  function bindExistingShell() {
-    const root = document.getElementById(id)
-    const bar = document.getElementById('jlj-splash-progress') as HTMLDivElement | null
-    const label = document.getElementById('jlj-splash-label') as HTMLDivElement | null
-    if (!root || !bar || !label) return false
-    el = root
-    progressBar = bar
-    labelEl = label
+  function bindShell() {
+    const existing = document.getElementById(id)
+    if (!existing) return false
+    root = existing
+    topPanel = existing.querySelector('.jlj-splash-top')!
+    bottomPanel = existing.querySelector('.jlj-splash-bottom')!
+    splitLine = existing.querySelector('.jlj-splash-line')!
+    brandEl = existing.querySelector('#jlj-splash-brand')!
+    progressBar = existing.querySelector('#jlj-splash-progress')!
+    labelEl = existing.querySelector('#jlj-splash-label')!
     shellReady = true
     return true
   }
 
-  function doShow() {
-    if (el) return
-    if (bindExistingShell()) return
+  function buildShell() {
+    root = document.createElement('div')
+    root.id = id
+    root.setAttribute('data-phase', 'loading')
 
-    el = document.createElement('div')
-    el.id = id
-    // All visual styling lives in src/styles/tokens.css (#jlj-splash*).
-    // This function only builds the DOM structure; opacity/width are
-    // toggled dynamically in doHide/doSetProgress.
+    topPanel = document.createElement('div')
+    topPanel.className = 'jlj-splash-top'
 
-    // ── Brand mark ──
-    const logo = document.createElement('div')
-    logo.textContent = 'JUSTLOVEJAZZ'
-    el.appendChild(logo)
+    bottomPanel = document.createElement('div')
+    bottomPanel.className = 'jlj-splash-bottom'
 
-    // ── Progress bar fill (track is via ::before on #jlj-splash-progress
-    //     OR a sibling; here we keep the simple fill-only structure) ──
     progressBar = document.createElement('div')
     progressBar.id = 'jlj-splash-progress'
-    el.appendChild(progressBar)
+    progressBar.setAttribute('role', 'progressbar')
+    progressBar.setAttribute('aria-valuenow', '0')
+    progressBar.setAttribute('aria-valuemin', '0')
+    progressBar.setAttribute('aria-valuemax', '100')
+    bottomPanel.appendChild(progressBar)
 
-    // ── State label ──
     labelEl = document.createElement('div')
     labelEl.id = 'jlj-splash-label'
-    labelEl.textContent = 'loading'
-    el.appendChild(labelEl)
+    labelEl.className = 'jlj-splash-label'
+    bottomPanel.appendChild(labelEl)
 
-    document.body.prepend(el)
+    splitLine = document.createElement('div')
+    splitLine.className = 'jlj-splash-line'
+
+    brandEl = document.createElement('div')
+    brandEl.id = 'jlj-splash-brand'
+    brandEl.textContent = 'JUSTLOVEJAZZ'
+
+    root.appendChild(topPanel)
+    root.appendChild(bottomPanel)
+    root.appendChild(splitLine)
+    root.appendChild(brandEl)
+    document.body.appendChild(root)
     shellReady = true
   }
 
-  function doHide() {
-    if (!el) return
-    // Instant hide — no fade, no delay (avoids white flash)
-    el.style.transition = 'none'
-    el.style.opacity = '0'
-    // Force reflow so the transition override takes effect immediately
-    void el.offsetWidth
-    // Remove right away
-    el.remove()
-    el = null
-  }
-
-  function doRemove() {
-    if (!el) return
-    el.remove()
-    el = null
-  }
-
-  function doSetProgress(pct: number) {
-    if (progressBar) {
-      progressBar.style.width = `${Math.round(pct)}%`
-      // Keep the ARIA progressbar value in sync for screen readers.
-      progressBar.setAttribute('aria-valuenow', String(Math.round(pct)))
-    }
-    if (pct >= 95) doSetState('ready')
-    else if (pct >= 55) doSetState('warming')
-    else doSetState('booting')
-  }
-
-  function doSetState(state: 'booting' | 'warming' | 'ready') {
-    if (!shellReady) bindExistingShell()
-    if (!labelEl) return
-    labelEl.textContent = state
-  }
-
   return {
-    show: doShow,
-    hide: doHide,
-    remove: doRemove,
-    setProgress: doSetProgress,
-    setState: doSetState,
+    show(): void {
+      if (!shellReady) {
+        bindShell() || buildShell()
+      }
+      root!.style.opacity = '1'
+      root!.style.visibility = 'visible'
+    },
+
+    hide(durationMs: number = 0): void {
+      root!.style.opacity = '0'
+      if (durationMs > 0) {
+        root!.style.transition = `opacity ${durationMs}ms var(--jlz-ease-exit)`
+      }
+    },
+
+    remove(): void {
+      if (root) {
+        root.remove()
+        root = null
+      }
+    },
+
+    setProgress(pct: number): void {
+      progressBar!.style.width = `${pct}%`
+      progressBar!.setAttribute('aria-valuenow', String(pct))
+    },
+
+    setState(state: 'booting' | 'warming' | 'ready'): void {
+      labelEl!.textContent = state
+      if (root) {
+        root.dataset.phase = state === 'ready' ? 'enter' : 'loading'
+      }
+    },
+
+    curtainSplit(duration: number = 1400): Promise<void> {
+      return new Promise<void>((resolve) => {
+        if (!root) {
+          resolve()
+          return
+        }
+        root.classList.add('is-splitting')
+        resolve(new Promise((r) => {
+          setTimeout(r, duration)
+        }))
+      })
+    },
+
+    markPhase(phase: SplashPhase): void {
+      if (root) {
+        root.dataset.phase = phase
+      }
+    },
+
+    getElements() {
+      if (!root || !topPanel || !bottomPanel || !splitLine) return null
+      return { root, top: topPanel, bottom: bottomPanel, line: splitLine }
+    }
   }
 }
+
+export default createSplash

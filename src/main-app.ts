@@ -41,62 +41,42 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
     const enterButton = new EnterButton()
     progress(60)
 
-    let dissolveOverlay: import('./shaders/dissolveOverlay').DissolveOverlay | null = null
+    // Curtain split — no dissolveOverlay needed
 
     const { Bootstrapper } = await import('./core/Bootstrapper')
-    const mod = await import('./shaders/dissolveOverlay')
-    const DissolveOverlay = mod.DissolveOverlay
 
-    const onReadyCb: OnReadyCallback = (_renderer, scene: THREE.Scene) => {
+    const onReadyCb: OnReadyCallback = (_renderer, _scene: THREE.Scene) => {
       progress(95)
-      // Only create dissolve overlay on WebGL — ShaderMaterial incompatible
-      // with WebGPURenderer. WebGPURenderer has isWebGPURenderer=true property.
-      if (!(_renderer as any)?.isWebGPURenderer) {
-        dissolveOverlay = new DissolveOverlay().init(scene)
-      }
     }
 
     await Bootstrapper.init(ui, onReadyCb)
     progress(98)
 
-    const triggerDissolve = async () => {
-      // Hide splash immediately — no RAF timing dependency
-      splash.hide(0)
-      splash.remove()
+    const triggerCinematicIntro = async () => {
       enterButton.cancelAuto()
-      enterButton.animateOut(300)
+      enterButton.animateOut(400)
 
-      let overlay: import('./shaders/dissolveOverlay').DissolveOverlay | null = null
-      if (dissolveOverlay) {
-        overlay = dissolveOverlay
-        overlay.setProgress(0)
-        overlay.meshGroup.visible = true
+      // ── Phase 1: Curtain split (1400ms) ──
+      splash.markPhase('dissolving')
+      await splash.curtainSplit(1400)
+
+      // ── Phase 2: Hide splash behind hero ──
+      splash.hide(600)
+
+      // ── Phase 3: Hero entrance (staggered CSS reveal) ──
+      const heroEl = document.getElementById('home-hero')
+      if (heroEl) {
+        heroEl.classList.add('is-revealed')
+        // Trigger NoiseText on studio titles
+        window.dispatchEvent(new CustomEvent('jlz:webgl-ready'))
       }
 
-      const start = performance.now()
-      const duration = 300
-
-      const doDissolve = (now: number) => {
-        const elapsed = now - start
-        const t = Math.min(elapsed / duration, 1.0)
-        const eased = 1.0 - Math.pow(1.0 - t, 3.0)
-
-        if (overlay) {
-          overlay.setProgress(eased)
-          overlay.update(0.016)
-        }
-
-        if (t < 1.0) {
-          requestAnimationFrame(doDissolve)
-        } else {
-          if (overlay) overlay.meshGroup.visible = false
-        }
-      }
-      requestAnimationFrame(doDissolve)
+      // ── Phase 4: Cleanup splash overlay ──
+      setTimeout(() => splash.remove(), 1200)
     }
 
-    enterButton.onTrigger(() => triggerDissolve())
-    enterButton.autoTriggerAfter(300, () => triggerDissolve())
+    enterButton.onTrigger(() => triggerCinematicIntro())
+    enterButton.autoTriggerAfter(600, () => triggerCinematicIntro())
     onReady?.(enterButton)
 
     initScrollHint()

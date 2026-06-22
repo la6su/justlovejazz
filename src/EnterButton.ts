@@ -3,29 +3,27 @@
 
 export class EnterButton {
   private el: HTMLElement | null = null
+  private cleared = false
+  private _autoId: ReturnType<typeof setTimeout> | null = null
 
   constructor() {
     this.el = document.createElement('button')
     this.el.id = 'jlj-enter'
     this.el.className = 'jlz-enter'
-    // Visual styling lives in src/styles/tokens.css (.jlz-enter).
-    // id kept as jlj-enter for back-compat with main-app.ts lookup.
-    // Only opacity + pointer-events are toggled dynamically below.
   }
 
   show(label = 'ENTER SITE'): void {
     this.el!.textContent = label
     document.body.appendChild(this.el!)
+    // Delay reveal slightly for cinematic timing
     requestAnimationFrame(() => {
-      this.el!.style.opacity = '1'
-      this.el!.style.pointerEvents = 'auto'
+      this.el!.classList.add('is-visible')
     })
   }
 
   hide(): void {
-    this.el!.style.opacity = '0'
+    this.el!.classList.remove('is-visible')
     this.el!.style.pointerEvents = 'none'
-    setTimeout(() => this.el!.remove(), 600)
   }
 
   onTrigger(fn: () => void): void {
@@ -33,9 +31,10 @@ export class EnterButton {
     this.el!.addEventListener('touchend', fn, { once: true })
   }
 
-  animateOut(duration = 300): void {
-    this.el!.style.opacity = '0'
+  animateOut(duration = 400): void {
+    this.el!.classList.remove('is-visible')
     this.el!.style.pointerEvents = 'none'
+    this.el!.style.opacity = '0'
     this.cleared = true
     clearTimeout(this._autoId ?? undefined)
     setTimeout(() => this.el?.remove(), duration)
@@ -45,9 +44,6 @@ export class EnterButton {
    * Auto-trigger after timeout — if user doesn't click Enter,
    * dissolve starts automatically.
    */
-  private _autoId: ReturnType<typeof setTimeout> | null = null
-  private cleared = false
-
   autoTriggerAfter(ms: number, fn: () => void): void {
     this._autoId = setTimeout(() => {
       if (!this.cleared) {

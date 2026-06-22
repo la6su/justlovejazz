@@ -326,18 +326,187 @@
   }
 }
 
-/* ── EnterButton — splash→dissolve entry trigger ── */
-.jlz-enter {
+/* ── CINEMATIC SPLASH — Curtain Split System ──
+ * Studio-grade intro: brand reveal → curtain split → hero entrance
+ *
+ * Architecture:
+ *   #jlj-splash = curtain container (vH-screen fixed overlay)
+ *   .jlj-splash-top    = upper curtain panel (slides UP on split)
+ *   .jlj-splash-bottom = lower curtain panel (slides DOWN on split)
+ *   .jlj-splash-line   = glow split line (breathes, expands on split)
+ *   #jlj-splash-brand  = brand mark (JUSTLOVEJAZZ, center)
+ *   #jlj-splash-progress = bottom progress bar
+ *   #jlj-splash-label  = state label
+ *   .jlz-enter         = Enter button (neon glow, fixed bottom)
+ *   .jlz-hero-entrance = hero section DOM reveal (slide-up stagger)
+ */
+
+/* ── Curtain container ── */
+#jlj-splash {
   position: fixed;
-  bottom: 10vh;
+  inset: 0;
+  z-index: 9999;
+  background: var(--jlz-color-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  overflow: hidden;
+  transition: opacity var(--jlz-duration-epic) var(--jlz-ease-exit);
+  will-change: opacity, transform;
+}
+
+/* ── Top curtain panel (half-screen, splits upward) ── */
+.jlj-splash-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 50%;
+  background: var(--jlz-color-bg);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 2rem;
+  /* Initial hidden state */
+  transform: translateY(-100%);
+  animation: jlz-curtain-top-in var(--jlz-duration-epic) var(--jlz-ease-cinematic) 0.2s forwards;
+  will-change: transform;
+}
+
+/* ── Bottom curtain panel (half-screen, splits downward) ── */
+.jlj-splash-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 50%;
+  background: var(--jlz-color-bg);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 2rem;
+  transform: translateY(100%);
+  animation: jlz-curtain-bottom-in var(--jlz-duration-epic) var(--jlz-ease-cinematic) 0.2s forwards;
+  will-change: transform;
+}
+
+/* ── Brand mark (centered at split line, straddles both halves) ── */
+#jlj-splash-brand {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  color: var(--jlz-color-text);
+  font-weight: var(--jlz-weight-bold);
+  font-size: var(--jlz-type-display-lg);
+  font-family: var(--jlz-font-display);
+  letter-spacing: var(--jlz-tracking-widest);
+  text-align: center;
+  white-space: nowrap;
+  opacity: 0;
+  animation: jlz-brand-reveal var(--jlz-duration-epic) var(--jlz-ease-cinematic) 0.6s forwards;
+  text-shadow: 0 0 40px rgba(255, 255, 255, 0.15);
+  will-change: opacity, transform;
+}
+
+/*
+/*
+/* ── Split line (glow seam between panels) ── */
+.jlj-splash-line {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 1px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--jlz-color-accent) 50%,
+    transparent 100%
+  );
+  z-index: 100;
+  opacity: 0;
+  animation: jlz-line-reveal var(--jlz-duration-cinematic) var(--jlz-ease-entrance) 0.3s forwards;
+  will-change: width, height, opacity;
+}
+
+/* ── Glow pulse on split line ── */
+.jlj-splash-line::before,
+.jlj-splash-line::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: inherit;
+  filter: blur(4px);
+  animation: jlz-line-pulse 2s ease-in-out infinite;
+}
+
+.jlj-splash-line::after {
+  filter: blur(12px);
+  animation-delay: 0.3s;
+}
+
+/* ── Curtain SPLIT animation (triggered via JS class toggle) ── */
+#jlj-split.is-splitting .jlj-splash-top {
+  animation: jlz-curtain-top-out var(--jlz-duration-epic) var(--jlz-ease-cinematic) forwards;
+}
+
+#jlj-splash.is-splitting .jlj-splash-bottom {
+  animation: jlz-curtain-bottom-out var(--jlz-duration-epic) var(--jlz-ease-cinematic) forwards;
+}
+
+#jlj-splash.is-splitting .jlj-splash-line {
+  animation: jlz-line-split var(--jlz-duration-cinematic) var(--jlz-ease-cinematic) forwards;
+}
+
+#jlj-splash.is-splitting #jlj-splash-brand {
+  animation: jlz-brand-exit var(--jlz-duration-cinematic) var(--jlz-ease-exit) forwards;
+}
+
+/* ── Progress bar ── */
+#jlj-splash-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  width: 0%;
+  background: linear-gradient(90deg, var(--jlz-color-accent), var(--jlz-color-text));
+  transition: width var(--jlz-duration-slow) var(--jlz-ease-state);
+  will-change: width;
+  box-shadow: 0 0 10px rgba(var(--jlz-color-accent-rgb, 255, 255, 255), 0.5);
+}
+
+/* ── State label ── */
+#jlj-splash-label {
+  position: absolute;
+  bottom: var(--jlz-space-6);
   left: 50%;
   transform: translateX(-50%);
+  color: var(--jlz-color-text-subtle);
+  font-weight: var(--jlz-weight-semibold);
+  font-size: var(--jlz-type-overline);
+  font-family: var(--jlz-font-display);
+  letter-spacing: var(--jlz-tracking-wider);
+  text-transform: uppercase;
+  opacity: 0;
+  animation: jlz-label-reveal var(--jlz-duration-slow) var(--jlz-ease-entrance) 0.1s forwards;
+}
+
+/* ── Enter Button — neon glow variant ── */
+.jlz-enter {
+  position: fixed;
+  bottom: 8vh;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
   z-index: var(--jlz-z-toast);
   background: transparent;
   border: 1px solid var(--jlz-color-border-strong);
-  color: var(--jlz-color-text-muted);
+  color: var(--jlz-color-text);
   font-weight: var(--jlz-weight-semibold);
-  font-size: clamp(0.55rem, 1vw, 0.85rem);
+  font-size: clamp(0.55rem, 1.2vw, 0.85rem);
   font-family: var(--jlz-font-display);
   letter-spacing: var(--jlz-tracking-widest);
   padding: var(--jlz-space-3) var(--jlz-space-10);
@@ -347,8 +516,22 @@
   transition:
     opacity var(--jlz-duration-cinematic) var(--jlz-ease-entrance),
     border-color var(--jlz-duration-normal) var(--jlz-ease-state),
-    color var(--jlz-duration-normal) var(--jlz-ease-state);
+    color var(--jlz-duration-normal) var(--jlz-ease-state),
+    transform var(--jlz-duration-cinematic) var(--jlz-ease-entrance);
   text-transform: uppercase;
+  animation: none;
+}
+
+/* Enter button visible state */
+.jlz-enter.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Neon glow pulse */
+.jlz-enter.is-visible {
+  animation: jlz-enter-pulse 2s ease-in-out infinite;
 }
 
 .jlz-enter:hover {
@@ -361,67 +544,173 @@
   outline-offset: var(--jlz-space-1);
 }
 
-/* ── Splash overlay — instant paint, zero deps ──
- * id kept as jlj-splash for back-compat with index.html inline markup
- * and main.less overrides. Style source of truth lives here.
- */
-#jlj-splash {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  background: var(--jlz-color-bg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  opacity: 1;
-  transition: opacity var(--jlz-duration-cinematic) var(--jlz-ease-exit);
-  will-change: opacity;
-}
+/* ── HERO ENTRANCE — stagger + noise text reveal ── */
 
-#jlj-splash > div:first-child {
-  /* brand mark (logo) */
-  color: var(--jlz-color-text);
-  font-weight: 700;
-  font-size: var(--jlz-type-display-md);
-  font-family: var(--jlz-font-display);
-  letter-spacing: var(--jlz-tracking-widest);
-  text-align: center;
+/* Hero section entrance (staggered slide-up) */
+#home-hero {
   opacity: 0;
-  animation: jlz-splash-in var(--jlz-duration-cinematic) var(--jlz-ease-entrance) 0.1s forwards;
+  transform: translateY(30px);
 }
 
-#jlj-splash-progress {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  height: 2px;
-  width: 0%;
-  background: var(--jlz-color-text);
-  transition: width var(--jlz-duration-normal) var(--jlz-ease-state);
-  will-change: width;
+#home-hero.is-revealed {
+  animation: jlz-hero-in var(--jlz-duration-epic) var(--jlz-ease-cinematic) forwards;
 }
 
-#jlj-splash-label {
-  position: absolute;
-  bottom: var(--jlz-space-6);
-  color: var(--jlz-color-text-subtle);
-  font-weight: var(--jlz-weight-semibold);
-  font-size: var(--jlz-type-overline);
-  font-family: var(--jlz-font-display);
-  letter-spacing: var(--jlz-tracking-wider);
-  text-transform: uppercase;
+/* Studio title character-by-character reveal */
+#home-hero .studio-title__line {
+  display: inline-block;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(100%);
 }
 
-@keyframes jlz-splash-in {
-  to { opacity: 1; }
+#home-hero.is-revealed .studio-title__line {
+  animation: jlz-title-line-in var(--jlz-duration-cinematic) var(--jlz-ease-cinematic) forwards;
 }
 
+#home-hero.is-revealed .studio-title__line:nth-child(1) {
+  animation-delay: 0.1s;
+}
+#home-hero.is-revealed .studio-title__line:nth-child(2) {
+  animation-delay: 0.2s;
+}
+#home-hero.is-revealed .studio-title__line:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+/* Tagline entrance */
+#home-hero .studio-tagline {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+#home-hero.is-revealed .studio-tagline {
+  animation: jlz-tagline-in var(--jlz-duration-cinematic) var(--jlz-ease-entrance) 0.5s forwards;
+}
+
+/* CTA button entrance */
+#home-hero .btn-studio {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+#home-hero.is-revealed .btn-studio {
+  animation: jlz-btn-in var(--jlz-duration-cinematic) var(--jlz-ease-entrance) 0.7s forwards;
+}
+
+/* ── KEYFRAMES ── */
+
+/* Curtain panel A: IN (slides from top to center) */
+@keyframes jlz-curtain-top-in {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(0); }
+}
+
+/* Curtain panel B: IN (slides from bottom to center) */
+@keyframes jlz-curtain-bottom-in {
+  0% { transform: translateY(100%); }
+  100% { transform: translateY(0); }
+}
+
+/* Brand mark reveal: fade + slight scale */
+@keyframes jlz-brand-reveal {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.95); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+/*
+/* Split line: thin → full-width expand */
+@keyframes jlz-line-reveal {
+  0% { width: 1px; height: 1px; opacity: 0; }
+  50% { width: 100vw; height: 1px; opacity: 0.3; }
+  100% { width: 100vw; height: 1px; opacity: 0.15; }
+}
+
+/* Split line pulse */
+@keyframes jlz-line-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.8; }
+}
+
+/* Split line: expand to full-screen flash → fade */
+@keyframes jlz-line-split {
+  0% { width: 100vw; height: 1px; opacity: 0.8; transform: translate(-50%, -50%) scale(1); }
+  30% { width: 100vw; height: 2px; opacity: 1; background: white; filter: blur(0); }
+  100% { width: 200vw; height: 200vh; opacity: 0; transform: translate(-50%, -50%) scale(2); filter: blur(20px); }
+}
+
+/* Curtain panel A: OUT (slides up and away) */
+@keyframes jlz-curtain-top-out {
+  0% { transform: translateY(0); }
+  40% { transform: translateY(-5%); }
+  100% { transform: translateY(-100%); }
+}
+
+/* Curtain panel B: OUT (slides down and away) */
+@keyframes jlz-curtain-bottom-out {
+  0% { transform: translateY(0); }
+  40% { transform: translateY(5%); }
+  100% { transform: translateY(100%); }
+}
+
+/* Brand mark exit: fade + scale down */
+@keyframes jlz-brand-exit {
+  0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+}
+
+/* Progress label reveal */
+@keyframes jlz-label-reveal {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+/* Enter button neon pulse */
+@keyframes jlz-enter-pulse {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.1), 0 0 30px rgba(255, 255, 255, 0);
+  }
+  50% {
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.2), 0 0 50px rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* Hero section entrance: slide-up + fade */
+@keyframes jlz-hero-in {
+  0% { opacity: 0; transform: translateY(30px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Title line slide-up */
+@keyframes jlz-title-line-in {
+  0% { opacity: 0; transform: translateY(100%); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Tagline fade + slide */
+@keyframes jlz-tagline-in {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* CTA button entrance */
+@keyframes jlz-btn-in {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Reduced motion safety */
 @media (prefers-reduced-motion: reduce) {
-  #jlj-splash > div:first-child { animation: none; opacity: 1; }
-  #jlj-splash, #jlj-splash-progress { transition: none; }
+  #jlj-splash, .jlj-splash-top, .jlj-splash-bottom,
+  #jlj-splash-brand, .jlj-splash-line, .jlz-enter,
+  #home-hero, #home-hero .studio-title__line,
+  #home-hero .studio-tagline, #home-hero .btn-studio {
+    animation: none !important;
+    transition: none !important;
+    opacity: 1;
+    transform: none;
+  }
 }
-
 /* ── Project detail modal — fullscreen with background texture ──
  * The modal covers the entire screen. The project's detail texture
  * fills the background; a dark scrim ensures text readability; content

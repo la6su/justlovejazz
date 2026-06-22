@@ -78,10 +78,20 @@
     <!-- SPA content dynamically injected here by router -->
     <!-- <main id="spa-content"> is auto-created by router.ts -->
     <!-- Splash: styled by #jlj-splash* in src/styles/tokens.css -->
+    <!-- Cinematic curtain splash shell (styled by src/styles/tokens.css #jlj-splash*) -->
     <div id="jlj-splash">
-      <div>JUSTLOVEJAZZ</div>
-      <div id="jlj-splash-label">booting</div>
-      <div id="jlj-splash-progress"></div>
+      <div class="jlj-splash-top" id="jlj-curtain-top">
+      </div>
+      <div class="jlj-splash-bottom" id="jlj-curtain-bottom">
+        <!-- Progress bar -->
+        <div id="jlj-splash-progress" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+        <!-- State label -->
+        <div id="jlj-splash-label">booting</div>
+      </div>
+      <!-- Glow split line between panels -->
+      <div class="jlj-splash-line" id="jlj-split-line"></div>
+      <!-- Center brand mark (straddles both panels, fades on split) -->
+      <div id="jlj-splash-brand">JUSTLOVEJAZZ</div>
     </div>
 
     <!-- ===== 3D CANVAS ===== -->
