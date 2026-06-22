@@ -1,6 +1,13 @@
 // src/Experience/Renderer.ts
 import * as THREE from 'three'
 import { WebGPURenderer } from 'three/webgpu'
+// Compatibility node builder: lets the WebGL fallback renderer
+// compile TSL NodeMaterials (MeshBasicNodeMaterial, etc.) used by
+// SectionSceneFactory, DissolveOverlay, ProjectMaterial. Without this,
+// WebGLRenderer's _nodesHandler stays null, so NodeMaterials are compiled
+// with undefined vertexShader/fragmentShader -> resolveIncludes(undefined)
+// crash on the first frame. (three r0.184 does not auto-register this.)
+import { WebGLNodesHandler } from 'three/addons/tsl/WebGLNodesHandler.js'
 import { Sizes } from './Sizes'
 import { DeviceCapability } from '../core/DeviceCapability'
 import { type WorldState } from '../core/types'
@@ -55,6 +62,23 @@ export class Renderer {
       gl.outputColorSpace = THREE.SRGBColorSpace
       gl.toneMapping = THREE.ACESFilmicToneMapping
       gl.toneMappingExposure = 1
+
+      // Enable TSL NodeMaterial rendering on the WebGL fallback path.
+      // SectionSceneFactory (and the works-page dissolve/project materials)
+      // build their look with MeshBasicNodeMaterial + TSL Fn colorNodes.
+      // WebGLRenderer in three r0.184 cannot compile these out of the box —
+      // setNodesHandler installs the GLSLNodeBuilder adapter that generates
+      // real GLSL for node materials before WebGLProgram compilation.
+      // Wrap defensively: the handler is marked experimental across releases.
+      try {
+        // setNodesHandler is a runtime method on WebGLRenderer; @types/three
+        // does not type it yet. Isolate the cast at this adapter boundary.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (gl as any).setNodesHandler(new WebGLNodesHandler())
+      } catch (err) {
+        console.error('[Renderer] Failed to install WebGLNodesHandler — TSL materials will not render:', err)
+      }
+
       this.instance = gl
     }
 
