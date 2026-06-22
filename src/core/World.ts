@@ -130,27 +130,12 @@ export class World extends THREE.Group {
 
     protected populateSection(_section: Section, _config: PhaseConfig, _index: number): void {}
 
-    private _shaderTime = 0
-    
     public update(deltaTime: number): void {
-        // Update shader time for animated materials (slashes, road, etc.)
-        this._shaderTime += deltaTime
-        
-        // Update uniforms in all scene group materials
-        this.sceneGroups.forEach(group => {
-            group.traverse(obj => {
-                if (obj instanceof THREE.Mesh || obj instanceof THREE.Points || obj instanceof THREE.LineSegments) {
-                    const mat = obj.material as THREE.Material
-                    if (mat instanceof THREE.ShaderMaterial && mat.uniforms) {
-                        const uTime = mat.uniforms['uTime']
-                        if (uTime) {
-                            uTime.value = this._shaderTime
-                        }
-                    }
-                }
-            })
-        })
-        
+        // PERF: removed the per-frame traverse that updated ShaderMaterial uTime
+        // uniforms. SectionSceneFactory no longer uses ShaderMaterial (all
+        // built-in materials now), so this traverse was a no-op that walked
+        // the entire scene graph every frame.
+
         this.sections.forEach(s => s.update(deltaTime))
         this.baku.update(deltaTime)
         this.cursorLight.update(deltaTime)
