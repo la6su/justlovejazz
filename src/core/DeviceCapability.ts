@@ -118,12 +118,13 @@ export class DeviceCapability {
     const isWebGPU = this.mode === 'webgpu'
     const isWebGL2 = this.mode === 'webgl'
 
-    // High: WebGPU + decent cores, OR WebGL2 + many cores + high DPR
-    if (isWebGPU && cores >= 8) return 'high'
-    if (isWebGL2 && cores >= 12 && dpr >= 2) return 'high'
-
-    // Medium: WebGPU with fewer cores, OR WebGL2 with decent setup
+    // PERF FIX: WebGPU NEVER gets 'high' tier.
+    // WebGPU post-processing (bloom mip-chain, heavy passes) is unpredictable
+    // and often catastrophically slow. Cap at 'medium' to be safe.
     if (isWebGPU) return 'medium'
+
+    // WebGL2: High only with strong signal
+    if (isWebGL2 && cores >= 12 && dpr >= 2) return 'high'
     if (isWebGL2 && cores >= 6) return 'medium'
 
     return 'low'
@@ -142,11 +143,13 @@ export class DeviceCapability {
   }
 
   private calculateMaxDpr(): number {
+    // PERF FIX: WebGPU DPR capped at 1.5 max (was 2).
+    // Reduces pixel count by ~56% at 2x DPR → massive perf gain.
     if (this.mode === 'webgpu') {
-      return this.isMobile ? 1.5 : 2
+      return this.isMobile ? 1 : 1.5
     }
     if (this.mode === 'webgl') {
-      return this.isMobile ? 1 : 1.5
+      return this.isMobile ? 1 : 2
     }
     return 1
   }
