@@ -30,7 +30,7 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
     ErrorTracker.init()
     syncReducedMotionDataset()
 
-    const { splash, progress, onReady } = opts
+    const { splash, progress } = opts
     splash.show()
     progress(10)
 
@@ -43,7 +43,6 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
     progress(60)
 
     // Curtain split — no dissolveOverlay needed
-
     const { Bootstrapper } = await import('./core/Bootstrapper')
 
     const onReadyCb: OnReadyCallback = (_renderer, _scene: THREE.Scene) => {
@@ -52,21 +51,19 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
 
     await Bootstrapper.init(ui, onReadyCb)
     progress(98)
-    
-    // Auto-hide splash after a brief pause so the intro scene loads
-    // This prevents splash from getting stuck at 98% forever
-    await new Promise(r => setTimeout(r, 1500))
-    splash.hide()
+    // 100% → mark ready → show enter button
+    progress(100)
+    splash.setState('ready')
 
     const triggerCinematicIntro = async () => {
       enterButton.cancelAuto()
       enterButton.animateOut(400)
 
-      // ── Phase 1: Curtain split (1400ms) ──
+      // Phase 1: Curtain split (1400ms)
       splash.markPhase('dissolving')
       await splash.curtainSplit(1400)
 
-      // ── Phase 2: Hide splash, jump to Section2 (white blob world) ──
+      // Phase 2: Hide splash, jump to Section2 (white blob world)
       splash.hide(600)
 
       // Force scroll to end → Section2 (step07, white bg, holographic blobs)
@@ -84,37 +81,14 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
 
       window.dispatchEvent(new CustomEvent('jlz:webgl-ready'))
 
-      // ── Phase 4: Cleanup splash overlay ──
+      // Phase 4: Cleanup splash overlay
       setTimeout(() => splash.remove(), 1200)
     }
 
-    enterButton.onTrigger(() => triggerCinematicIntro())
-    enterButton.autoTriggerAfter(600, () => triggerCinematicIntro())
-    onReady?.(enterButton)
-
-    initScrollHint()
-    registerServiceWorker()
-  } catch (err) {
-    console.error('Bootstrap failed:', err)
-    opts.splash.hide(0)
-    opts.splash.remove()
+    // Wire enter button → trigger the intro transition
+    enterButton.onTrigger(triggerCinematicIntro)
+    enterButton.autoTriggerAfter(5000, triggerCinematicIntro)
+  } catch (e) {
+    console.error('[main-app] bootstrap failed:', e)
   }
-}
-
-function registerServiceWorker(): void {
-  if (!import.meta.env.PROD || typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return
-  const base = import.meta.env.BASE_URL || '/'
-  const path = `${base.endsWith('/') ? base : base + '/'}sw.js`
-  void navigator.serviceWorker.register(path).catch(() => {})
-}
-
-function initScrollHint(): void {
-  const hint = document.getElementById('scrollHint') as HTMLElement | null
-  if (!hint) return
-  const hideHint = () => {
-    hint.classList.add('fade-out')
-    setTimeout(() => hint.remove(), 700)
-    window.removeEventListener('scroll', hideHint)
-  }
-  window.addEventListener('scroll', hideHint, { passive: true, once: true })
 }

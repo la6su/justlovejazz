@@ -4,6 +4,7 @@
  */
 
 import { renderPage, renderLessonPage, renderLessonsList } from './templates'
+import UIkit from 'uikit'
 
 const LEGACY_REDIRECTS: Record<string, string> = {
   'trinity': '#section-hero',
@@ -64,6 +65,13 @@ function renderView(): void {
       document.body.dataset.page = 'home'
       document.title = 'JUSTLOVEJAZZ'
       el.innerHTML = renderPage()
+  }
+
+  // Initialize UIKit components on dynamically inserted content
+  (UIkit as any).update(el)
+  // Re-bind scrollspy/height-viewport on new elements
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(() => (UIkit as any).update(el), { timeout: 100 })
   }
 }
 

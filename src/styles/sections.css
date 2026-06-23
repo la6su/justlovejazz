@@ -1,0 +1,92 @@
+/* ── Section layout — SPA template sections ── */
+
+/* Section background layers */
+.section-bg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
+.section-bg--intro { background: linear-gradient(180deg, #ffffff 0%, #f8f8f8 100%); }
+.section-bg--about { background: #0a0a0f; }
+.section-bg--flexible { background: linear-gradient(180deg, #f8f8f8 0%, #e8e8e8 100%); }
+.section-bg--challenge { background: #0a0a0f; }
+.section-bg--innovative { background: #0a0a0f; }
+.section-bg--contact { background: #0a0a0f; }
+
+/* uk-position-cover fallback */
+.uk-position-cover { position: absolute; width: 100%; height: 100%; top: 0; right: 0; bottom: 0; left: 0; }
+
+/* Section container — full viewport center */
+.section-container {
+  position: relative; z-index: 1;
+  width: 100%; max-width: 1200px;
+  margin: 0 auto; padding: 5vh 5vw;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  min-height: 100vh; min-height: 100dvh;
+}
+
+.section-content { text-align: center; z-index: 1; }
+
+/* Studio title variants */
+.studio-title--hero { font-size: clamp(3rem, 10vw, 7rem); font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; }
+.studio-subtitle { font-size: clamp(0.8rem, 1.2vw, 1rem); letter-spacing: 0.2em; text-transform: uppercase; opacity: 0.6; }
+.studio-body { max-width: 60ch; line-height: 1.8; font-size: clamp(0.85rem, 1.1vw, 1.05rem); }
+
+/* FORCE uk-height-viewport sizing — UIKit JS may not init on SPA */
+/* SPA sections: force viewport height — UIKit doesn't init dynamically */
+.section-studio section[data-section] {
+  min-height: 100vh !important;
+  min-height: 100dvh !important;
+  height: auto !important;
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
+}
+.uk-height-viewport {
+  min-height: 100vh !important;
+  min-height: 100dvh !important;
+}
+
+/* Scroll indicator SVG */
+.scroll-indicator { width: 100px; height: 250px; margin: 2rem auto 0; display: block; }
+
+/* Dark sections: force white text */
+.section-bg--about .section-content, .section-bg--challenge .section-content,
+.section-bg--innovative .section-content, .section-bg--contact .section-content { color: #fff; }
+.section-bg--about .studio-title, .section-bg--challenge .studio-title,
+.section-bg--innovative .studio-title, .section-bg--contact .studio-title { color: #fff; }
+.section-bg--about .studio-subtitle, .section-bg--challenge .studio-subtitle,
+.section-bg--innovative .studio-subtitle, .section-bg--contact .studio-subtitle { color: rgba(255,255,255,0.6); }
+
+/* Light sections: force dark text */
+.section-bg--intro .section-content, .section-bg--intro .studio-title,
+.section-bg--flexible .section-content, .section-bg--flexible .studio-title { color: #111; }
+.section-bg--intro .studio-subtitle,
+.section-bg--flexible .studio-subtitle { color: rgba(0,0,0,0.6); }
+
+/* Buttons on light sections */
+.section-bg--intro .uk-button-default, .section-bg--flexible .uk-button-default {
+  border-color: #111; color: #111;
+}
+.section-bg--intro .uk-button-default:hover, .section-bg--flexible .uk-button-default:hover {
+  background: #111; color: #fff; border-color: #111;
+}
+
+/* Section active state */
+.section-active { opacity: 1; }
+
+/* Project overlay */
+.jlz-works-ui { position: absolute; z-index: 999; bottom: 0; left: 0; width: 100%; pointer-events: auto; }
+
+/* Splash/status */
+#jlj-splash { z-index: 1000; }
+
+#spa-content { position: relative; z-index: 2; }
+
+/* Section direct layout (for when section-bg is nested) */
+.section-studio section[data-section] {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  z-index: 2;
+}
