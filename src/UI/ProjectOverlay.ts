@@ -22,10 +22,18 @@ export class ProjectOverlay {
   private _first = true
 
   constructor(protected root: HTMLElement) {
-    this.container = document.createElement('div')
-    this.container.className = 'jlz-works-ui'
+    // Reuse existing #project-overlay from templates.ts if present,
+    // otherwise create a new container. Avoids duplicate overlays.
+    const existing = (root.querySelector('#project-overlay') as HTMLElement | null)
+      || (document.getElementById('project-overlay'))
+    this.container = existing ?? document.createElement('div')
+    if (!existing) {
+      this.container.className = 'jlz-works-ui'
+    }
     this.buildContent()
-    root.appendChild(this.container)
+    if (!existing) {
+      root.appendChild(this.container)
+    }
   }
 
   private buildContent(): void {

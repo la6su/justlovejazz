@@ -340,7 +340,11 @@ export class Experience {
     this.portfolio.setCamera(this.camera.instance)
 
     if (!this.overlay) {
-      const worksSection = document.getElementById('section-works')
+      // Works slider overlay mounts into the challenge section (data-section="challenge",
+      // id="section-challenge") — this is the "Works" section in the SPA layout.
+      const worksSection = document.getElementById('section-challenge')
+        || document.getElementById('section-works')
+        || document.getElementById('spa-content')
       this.overlay = new ProjectOverlay(worksSection!)
       this.overlay.onPrev(() => this.portfolio?.prev())
       this.overlay.onNext(() => this.portfolio?.next())

@@ -2,9 +2,7 @@
 
 Studio-grade interactive 3D portfolio. Vite 8 + TypeScript strict + three 0.184 + TSL + WebGPU/WebGL2 + UIkit 3 + Lenis + bun.
 
-**SPA** with hash routing: `#/` (Home), `#/trinity` (Process), `#/works` (Portfolio).
-
-Inspired by `junni-inc/next.junni.co.jp` (patterns only, no assets/content).
+**SPA** with scroll navigation: 6 sections (intro→contact), 3D canvas + transparent DOM overlay. Inspired by `junni-inc/next.junni.co.jp` (patterns only).
 
 ## Run
 
@@ -27,10 +25,10 @@ bun run dev -- --host 0.0.0.0
 | File | Content |
 |------|---------|
 | [STATUS](docs/STATUS.md) ⭐ | Canonical state — if conflict, STATUS wins |
-| [HERMES_RULES](docs/HERMES_RULES.md) | 10 hard rules with bug provenance (READ FIRST) |
-| [ARCHITECTURE](docs/ARCHITECTURE.md) | Modules, render path, routes |
+| [HERMES_RULES](docs/HERMES_RULES.md) | 15 hard rules with bug provenance (READ FIRST) |
+| [ARCHITECTURE](docs/ARCHITECTURE.md) | Modules, render path, layout |
+| [JUNNI_REFERENCE](docs/JUNNI_REFERENCE.md) | Junni patterns to port (and NOT to port) |
 | [ENVIRONMENT](docs/ENVIRONMENT.md) | Chrome/Wayland WebGPU issue + workarounds |
-| [JUNNI_PORT_BLUEPRINT](docs/JUNNI_PORT_BLUEPRINT.md) | Junni → modern stack port map |
 | [AUTONOMY](docs/AUTONOMY.md) | LLM agent protocol |
 | [CHANGELOG](docs/CHANGELOG.md) | Recent merge log |
 | [AGENTS.md](AGENTS.md) | Agent instructions (rules, stop conditions) |
@@ -40,7 +38,6 @@ bun run dev -- --host 0.0.0.0
 - **Framework:** Vite 8 (rolldown) + TypeScript strict
 - **3D:** three 0.184 + TSL, WebGPURenderer (WebGPU/WebGL2 auto-fallback)
 - **UI:** UIkit 3 + Less, Lenis smooth scroll
-- **Text:** troika-three-text (disabled for perf, DOM text instead)
 - **Test:** Playwright
 - **Package manager:** bun
 
@@ -56,3 +53,14 @@ TSL compiles to both WGSL and GLSL. No manual renderer switching.
 
 All scene materials are built-in (MeshStandard, MeshBasic, Points, LineBasic).
 No ShaderMaterial in scene objects — incompatible with WebGPURenderer.
+
+## Sections
+
+| Section | 3D content | Background |
+|---------|-----------|------------|
+| intro | Baku sphere (metallic) | White |
+| about | Blob + particles | Dark |
+| flexible | Metal drop + particles | Light |
+| challenge | Works 3D slider (cards) | Dark |
+| innovative | Constellation network | Dark |
+| contact | Baku sphere + grid | Dark |
