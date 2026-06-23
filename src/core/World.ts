@@ -263,19 +263,47 @@ export class World extends THREE.Group {
         return section
     }
 
-    // ── Junni: updateTransform(scroll) — continuous lerp between adjacent sections
-    // Uses Section.cameraTransform / bakuTransform for interpolation
+    // ── Range-based scroll mapping: scrollValue → section index + eased t
+    // Uses PhaseConfig.range[] for weighted scroll buckets
+    // Applies S-curve easing to t so transitions have "comfort zones"
     public updateTransform(scrollValue: number): WorldTransformResult {
         scrollValue = THREE.MathUtils.clamp(scrollValue, 0, 1)
         if (this.sections.length === 0) return this.defaultResult()
 
-        const total = this.sections.length
-        const scaled = scrollValue * (total - 1)
-        const fromIndex = Math.floor(scaled)
-        const toIndex = Math.min(fromIndex + 1, total - 1)
-        const t = scaled - fromIndex
+        // ── Find from/to indices from range config
+        const ranges = this.configs.map(c => c.range)
+        let fromIndex = 0
+        let toIndex = 1
+        let t = 0
 
-        // ── Update current section index (Junni pattern)
+        // Map scrollValue to range index
+        for (let i = 0; i < ranges.length; i++) {
+            const [rStart, rEnd] = ranges[i]
+            if (scrollValue >= rStart && scrollValue < rEnd) {
+                // scrollValue is inside this section's range
+                fromIndex = i
+                toIndex = Math.min(i + 1, this.sections.length - 1)
+                const rangeWidth = rEnd - rStart
+                t = (scrollValue - rStart) / rangeWidth
+            }
+            else if (scrollValue >= rEnd && i < ranges.length - 1) {
+                // scrollValue is past this range, check next
+                continue
+            }
+        }
+
+        // Clamp edge case: scrollValue at exactly 1.0 → last section
+        if (scrollValue >= 1.0) {
+            fromIndex = this.sections.length - 1
+            toIndex = fromIndex
+            t = 1
+        }
+
+        // ── Ease t through S-curve for comfort zone
+        // smoothstep creates a plateau at each end of the range
+        t = this._smoothstep(t)
+
+        // ── Update current section index
         if (fromIndex !== this._currentSectionIndex) {
             this._currentSectionIndex = fromIndex
         }
@@ -477,6 +505,12 @@ export class World extends THREE.Group {
     }
 
     private _camera: THREE.Camera | undefined
+
+    /** Smoothstep easing: S-curve for comfort zones */
+    private _smoothstep(t: number): number {
+        // t is 0..1 within a range; ease it so transitions have plateaus
+        return t * t * (3 - 2 * t)
+    }
 
     public async ensureAtmosphere(): Promise<void> {
         if (this.atmosphere) return
