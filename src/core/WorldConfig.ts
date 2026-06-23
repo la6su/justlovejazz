@@ -76,15 +76,10 @@ type RawScene = {
   context: string
   domSection: string
   /** Scroll range [start, end] mapped to the section.
-   * Values are 0..1 on the full scroll timeline.
-   * Ranges are weighted to match DOM section heights so transitions
-   * feel proportional to what the user actually sees.
-   *   |  |  |  |  |  |  |  |  |sum|
-   * Hero: 0.00..0.35  (35%, ~1.1vh)
-   * About: 0.35..0.60 (25%, ~0.75vh)
-   * Works: 0.60..0.85 (25%, ~0.75vh)
-   * Footer: 0.85..1.00 (15%, ~0.45vh)
-  */
+   * Values 0..1 on full scroll timeline.
+   * All sections are ~100vh so ranges are equal (1/4 each).
+   *   Hero: 0.00–0.25, About: 0.25–0.50, Works: 0.50–0.75, Footer: 0.75–1.00
+   */
   range: [number, number]
   camPos: [number, number, number]
   camTarget: [number, number, number]
@@ -117,7 +112,7 @@ const RAW: RawScene[] = [
     id: 'sec_hero',
     context: 'Studio — Home',
     domSection: 'hero',
-    range: [0.0, 0.35],
+    range: [0.0, 0.25],
     camPos: [0, 0.5, 7],
     camTarget: [0, 0, -2],
     camFov: 50,
@@ -145,7 +140,7 @@ const RAW: RawScene[] = [
     id: 'sec_about',
     context: 'TRINITY — About',
     domSection: 'about',
-    range: [0.35, 0.60],
+    range: [0.25, 0.50],
     camPos: [0, 1, 6],
     camTarget: [0, 0, 0],
     camFov: 55,
@@ -173,7 +168,7 @@ const RAW: RawScene[] = [
     id: 'sec_works',
     context: 'WORKS — Gallery',
     domSection: 'works',
-    range: [0.60, 0.85],
+    range: [0.50, 0.75],
     camPos: [0, 1, 7],
     camTarget: [0, 1, 0],
     camFov: 50,
@@ -201,7 +196,7 @@ const RAW: RawScene[] = [
     id: 'sec_footer',
     context: 'CONTACT — Footer',
     domSection: 'footer',
-    range: [0.85, 1.0],
+    range: [0.75, 1.0],
     camPos: [0, 0, 8],
     camTarget: [0, 0, 0],
     camFov: 50,
