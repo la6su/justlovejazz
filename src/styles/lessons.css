@@ -156,45 +156,7 @@
   line-height: 1.6;
 }
 
-/* ── Lessons list ── */
-.jlz-lessons-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: var(--jlz-space-4);
-  margin-top: var(--jlz-space-5);
-}
-
-.jlz-lesson-card {
-  background: var(--jlz-color-surface);
-  border: 1px solid var(--jlz-color-border);
-  border-radius: 12px;
-  padding: var(--jlz-space-5);
-  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-  cursor: pointer;
-  text-decoration: none;
-  display: flex;
-  flex-direction: column;
-  gap: var(--jlz-space-2);
-}
-
-.jlz-lesson-card:hover {
-  transform: translateY(-2px);
-  border-color: var(--jlz-color-border-strong);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-}
-
-.jlz-lesson-card-title {
-  font-size: var(--jlz-type-heading-xs);
-  font-weight: 600;
-  color: var(--jlz-color-text);
-}
-
-.jlz-lesson-card-desc {
-  font-size: var(--jlz-type-body-xs);
-  color: var(--jlz-color-text-muted);
-  line-height: 1.5;
-}
-
+/* ── Lessons list ── (replaced by uk-grid + uk-card, keep only status text override) */
 .jlz-lesson-card .status-text {
   font-size: 0.75rem;
   font-weight: 600;
@@ -428,27 +390,7 @@ body[data-page="lessons"] {
   line-height: 1.6;
 }
 
-/* Search / filter bar */
+/* Search / filter bar — now uses uk-search component, keep only minimal override */
 .jlz-lessons-search {
-  display: flex;
-  align-items: center;
-  gap: var(--jlz-space-3);
-  padding: var(--jlz-space-3) var(--jlz-space-4);
-  background: var(--jlz-color-surface);
-  border: 1px solid var(--jlz-color-border);
-  border-radius: 8px;
-  margin-bottom: var(--jlz-space-5);
-}
-
-.jlz-lessons-search input {
-  flex: 1;
-  background: none;
-  border: none;
-  color: var(--jlz-color-text);
-  font-size: var(--jlz-type-body-sm, 0.9rem);
-  outline: none;
-}
-
-.jlz-lessons-search input::placeholder {
-  color: var(--jlz-color-text-subtle);
+  display: none; /* replaced by uk-search */
 }

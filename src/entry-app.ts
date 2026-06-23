@@ -41,10 +41,8 @@ function scheduleUiKitRefresh(): void {
   const refresh = () => {
     const content = document.getElementById('spa-content')
     if (!content) return
-    for (const el of content.querySelectorAll('[uk-height-viewport]')) {
-      ;(UIkit as any).componentsHeight?.(el as HTMLElement, {})
-    }
-    ;(UIkit as any).update()
+    // Re-initialize dynamically inserted UIKit components
+    (UIkit as any).update()
   }
   if ('requestIdleCallback' in window) {
     ;(window as Window & { requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => void })

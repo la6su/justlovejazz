@@ -1,59 +1,27 @@
 @import './_import.less';
-// Design tokens (Less bridge — mirrors src/styles/tokens.css CSS custom properties)
-@import '../styles/tokens.less';
+/* Theme variables already defined in _import.less (tokens → UIKit mapping)
+ * All UIKit component imports are centralized there too.
+ */
 @import './master-quantum-flares/_import.less';
 @import './master-quantum-flares/styles/black-blue.less';
+
+/* Reset box-sizing — project-level */
 * {
   box-sizing: border-box;
 }
 
-@global-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
-
-@inverse-global-color-mode: none;
-
-@global-control-height: 50px;
-@global-control-small-height: 36px;
-@global-control-large-height: 56px;
-
-@global-small-margin: 6px;
-
-@global-small-gutter: 16px;
-@global-secondary-background: rgba(255, 255, 255, 0.1);
-@global-color: #fff;
-@global-emphasis-color: #fff;
-
-@global-accent-color: #515d84;
-
-@button-default-color: @global-accent-color;
-@button-secondary-color: @global-color;
-@button-link-hover-color: @global-accent-color;
-@button-secondary-hover-background: darken(@button-secondary-background, 25%);
-@button-secondary-hover-color: #f2f2f2;
-@icon-button-hover-background: darken(@button-secondary-background, 25%);
-@icon-button-border-radius: 4px;
-@icon-button-background: @global-secondary-background;
-@icon-button-color: @global-color;
-@icon-button-size: 50px;
-
-@navbar-nav-item-font-family: @global-font-family;
 html,
 body {
   overflow-x: hidden;
 }
 
-h1,
-.uk-h1,
-h2,
-.uk-h2,
-h3,
-.uk-h3,
-h4,
-.uk-h4,
-h5,
-.uk-h5,
-h6,
-.uk-h6,
+/* Headings — uppercase as brand convention */
+h1, .uk-h1,
+h2, .uk-h2,
+h3, .uk-h3,
+h4, .uk-h4,
+h5, .uk-h5,
+h6, .uk-h6,
 .uk-heading-small,
 .uk-heading-medium,
 .uk-heading-large,
@@ -63,9 +31,6 @@ h6,
   font-family: @global-font-family;
   text-transform: uppercase;
 }
-@close-color: @global-color;
-@close-hover-color: @global-color;
-
 
 #tm-main {
   position: absolute;
@@ -93,19 +58,10 @@ h6,
   visibility: visible;
   background-color: #868da4;
 }
-.contacts-heading {
-  font-family: @global-font-family;
-}
-.custom-font,
-header .uk-heading-xlarge {
-  font-family: @global-font-family;
-}
-
 .hook-button() {
   border-radius: 4px;
   text-transform: uppercase;
   font-size: 0.85rem;
-  font-family: @global-font-family;
 }
 
 /* High-End Typography & Layout */

@@ -34,63 +34,49 @@
       }
       /* Dynamic content container */
       #spa-content { position: relative; z-index: var(--jlz-z-content); }
-      /* Mobile nav */
-      .nav-toggle {
-        display: none; background: none; border: none;
-        color: var(--jlz-color-text); font-size: 24px; cursor: pointer;
-      }
-      @media (max-width: 960px) {
-        .nav-toggle { display: block !important; }
-      }
-      #main-nav {
-        position: fixed; top: 0; left: 0; width: 100%;
-        display: flex; justify-content: space-between; align-items: center;
-        padding: var(--jlz-space-6) var(--jlz-space-8);
-        z-index: var(--jlz-z-nav); pointer-events: none;
-      }
-      #main-nav > * { pointer-events: auto; }
-      .nav-logo {
-        font-weight: var(--jlz-weight-semibold);
-        letter-spacing: var(--jlz-tracking-tight);
-        font-size: 18px; color: var(--jlz-color-text);
-      }
-      .nav-links { display: flex; gap: var(--jlz-space-8); }
-      .nav-links a {
-        font-size: var(--jlz-type-small); text-transform: uppercase;
-        letter-spacing: var(--jlz-tracking-wide);
-        color: var(--jlz-color-text-muted);
-        transition: color var(--jlz-duration-normal) var(--jlz-ease-state);
-      }
-      .nav-links a:hover { color: var(--jlz-color-text); }
-      .nav-links a[data-active] { color: var(--jlz-color-text); }
-      /* Smooth scroll styling for the whole page */
-      html { scroll-behavior: smooth; }
-      /* Section styling */
-      .section-studio {
-        position: relative;
-        overflow: hidden;
-        scroll-snap-align: start;
-      }
-      /* Active section indicator in nav */
-      .nav-links a.active {
-        color: var(--jlz-color-text);
-      }
     </style>
   </head>
   <body data-app-mode="full" data-page="home">
     <a href="#section-hero" class="skip-link">Skip to main content</a>
 
-    <!-- ===== NAV (anchor links for single-page layout) ===== -->
-    <nav id="main-nav" role="navigation" aria-label="Primary">
-      <a href="#section-hero" class="nav-logo">JLJ</a>
-      <div class="nav-links">
-        <a href="#section-hero">Studio</a>
-        <a href="#section-about">About</a>
-        <a href="#section-works">Works</a>
-        <a href="#section-contact">Contact</a>
-        <a href="#/lessons">Lessons</a>
+    <!-- ===== NAV (UIkit: navbar + sticky + offcanvas for mobile) ===== -->
+    <div id="main-nav" uk-sticky="sel-target: .jlz-nav-inner; top: 0; bottom: vm-sticky">
+      <nav class="jlz-nav-inner" role="navigation" aria-label="Primary">
+        <!-- Desktop navbar (hidden on mobile) -->
+        <div uk-navbar="mode: full">
+          <div class="uk-navbar-left">
+            <a href="#section-hero" class="uk-navbar-item uk-link" style="font-weight: var(--jlz-weight-semibold); letter-spacing: var(--jlz-tracking-tight);">
+              JLJ
+            </a>
+          </div>
+          <div class="uk-navbar-right">
+            <ul class="uk-navbar-nav">
+              <li><a class="uk-link" href="#section-hero">Studio</a></li>
+              <li><a class="uk-link" href="#section-about">About</a></li>
+              <li><a class="uk-link" href="#section-works">Works</a></li>
+              <li><a class="uk-link" href="#section-contact">Contact</a></li>
+              <li><a class="uk-link" href="#/lessons">Lessons</a></li>
+            </ul>
+            <!-- Mobile menu toggle -->
+            <a href="#offcanvas-nav" uk-offcanvas-icon uk-toggle></a>
+          </div>
+        </div>
+      </nav>
+    </div>
+
+    <!-- Mobile offcanvas menu -->
+    <div id="offcanvas-nav" uk-offcanvas="mode: push">
+      <div class="uk-offcanvas-bar">
+        <button class="uk-offcanvas-close" type="button" uk-close></button>
+        <ul class="uk-nav uk-nav-default">
+          <li><a href="#section-hero">Studio</a></li>
+          <li><a href="#section-about">About</a></li>
+          <li><a href="#section-works">Works</a></li>
+          <li><a href="#section-contact">Contact</a></li>
+          <li><a href="#/lessons">Lessons</a></li>
+        </ul>
       </div>
-    </nav>
+    </div>
 
     <!-- SPA content dynamically injected here by router -->
     <!-- <main id="spa-content"> is auto-created by router.ts -->
