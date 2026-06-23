@@ -1,6 +1,6 @@
 import UIkit from 'uikit'
 import Icons from 'uikit/dist/js/uikit-icons'
-import { initRouter, currentPage } from './router'
+import { initRouter } from './router'
 import { bootstrap as bootstrapApp, isAppReady, type BootstrapOptions } from './main-app'
 import { NoiseText } from './Experience/NoiseText'
 
@@ -63,22 +63,15 @@ export async function startApp(): Promise<void> {
   const onWebGlReady = () => animateNoiseTitles()
   window.addEventListener('jlz:webgl-ready', onWebGlReady)
 
-  // Lessons navigation wiring
+  // Navigation handler — scroll-based SPA, no page switching needed
   const onNavigate = () => {
     if (!isAppReady()) return
     const exp = window.experience
-    const page = document.body?.dataset?.page || 'home'
-
-    // switchPage() handles 3D↔DOM visibility automatically (WorldConfig.ui.showGallery).
-    // showExperience/hideExperience were removed from Experience — no longer needed.
-
-    if (exp?.switchPage) exp.switchPage(page)
+    // No switchPage — single scroll page now, 3D follows scroll progress
     if (exp?.smoothScroll) {
       exp.smoothScroll.lenis.scrollTo(0, { immediate: true })
     }
     setTimeout(animateNoiseTitles, 200)
-    // Bind interactive components for lesson views
-    bindLessonComponents()
   }
   window.addEventListener('jlj:navigate', onNavigate)
   window.addEventListener('jlj:navigate', scheduleUiKitRefresh)
@@ -122,20 +115,4 @@ function animateNoiseTitles(): void {
   }
 }
 
-/**
- * Bind interactive elements on lesson/lessons pages after navigation.
- * Called on every jlj:navigate event — components are guarded by selector
- * presence so they are no-ops when the DOM doesn't contain lesson elements.
- */
-function bindLessonComponents(): void {
-  const cur = currentPage()
-  if (cur === 'home') return
-
-  if (cur === 'lesson' && document.querySelector('.jlz-lesson-page')) {
-    import('./components/LessonPage').then(m => m.bindLessonPage())
-  }
-
-  if (cur === 'lessons' && document.querySelector('.jlz-lessons-list')) {
-    import('./components/LessonsListPage').then(m => m.bindLessonsList())
-  }
-}
+// (lesson/lessons binding removed — lessons system deleted, junni reference has none)
