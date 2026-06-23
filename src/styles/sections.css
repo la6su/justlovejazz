@@ -1,13 +1,23 @@
-/* ── Section layout — SPA template sections ── */
+/* ── Section layout — SPA template sections ──
+ * Layout pattern (junni-style):
+ *   canvas.canvas (z-index:1, fixed, pointer-events:none) — 3D scene
+ *   #spa-content (z-index:2, relative) — DOM sections
+ *     section[data-section] — transparent, just holds text content
+ *     .section-bg — transparent (3D canvas provides the background)
+ *     .section-container — centered text, z-index:1 within section
+ *
+ * The 3D scene's BG.color (World.bg) provides the section background.
+ * DOM sections are transparent overlays — text floats over the 3D canvas.
+ */
 
-/* Section background layers */
-.section-bg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
-.section-bg--intro { background: linear-gradient(180deg, #ffffff 0%, #f8f8f8 100%); }
-.section-bg--about { background: #0a0a0f; }
-.section-bg--flexible { background: linear-gradient(180deg, #f8f8f8 0%, #e8e8e8 100%); }
-.section-bg--challenge { background: #0a0a0f; }
-.section-bg--innovative { background: #0a0a0f; }
-.section-bg--contact { background: #0a0a0f; }
+/* Section background layers — TRANSPARENT (3D canvas provides background) */
+.section-bg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; background: transparent !important; }
+.section-bg--intro,
+.section-bg--about,
+.section-bg--flexible,
+.section-bg--challenge,
+.section-bg--innovative,
+.section-bg--contact { background: transparent !important; }
 
 /* uk-position-cover fallback */
 .uk-position-cover { position: absolute; width: 100%; height: 100%; top: 0; right: 0; bottom: 0; left: 0; }
@@ -46,25 +56,37 @@
 /* Scroll indicator SVG */
 .scroll-indicator { width: 100px; height: 250px; margin: 2rem auto 0; display: block; }
 
-/* Dark sections: force white text */
-.section-bg--about .section-content, .section-bg--challenge .section-content,
-.section-bg--innovative .section-content, .section-bg--contact .section-content { color: #fff; }
-.section-bg--about .studio-title, .section-bg--challenge .studio-title,
-.section-bg--innovative .studio-title, .section-bg--contact .studio-title { color: #fff; }
-.section-bg--about .studio-subtitle, .section-bg--challenge .studio-subtitle,
-.section-bg--innovative .studio-subtitle, .section-bg--contact .studio-subtitle { color: rgba(255,255,255,0.6); }
+/* Dark sections (about, challenge, innovative, contact): force white text.
+ * Background comes from 3D canvas, so we detect dark sections by data-section
+ * attribute, not by .section-bg color. */
+section[data-section="about"] .section-content,
+section[data-section="challenge"] .section-content,
+section[data-section="innovative"] .section-content,
+section[data-section="contact"] .section-content { color: #fff; }
+section[data-section="about"] .studio-title,
+section[data-section="challenge"] .studio-title,
+section[data-section="innovative"] .studio-title,
+section[data-section="contact"] .studio-title { color: #fff; }
+section[data-section="about"] .studio-subtitle,
+section[data-section="challenge"] .studio-subtitle,
+section[data-section="innovative"] .studio-subtitle,
+section[data-section="contact"] .studio-subtitle { color: rgba(255,255,255,0.6); }
 
-/* Light sections: force dark text */
-.section-bg--intro .section-content, .section-bg--intro .studio-title,
-.section-bg--flexible .section-content, .section-bg--flexible .studio-title { color: #111; }
-.section-bg--intro .studio-subtitle,
-.section-bg--flexible .studio-subtitle { color: rgba(0,0,0,0.6); }
+/* Light sections (intro, flexible): force dark text */
+section[data-section="intro"] .section-content,
+section[data-section="intro"] .studio-title,
+section[data-section="flexible"] .section-content,
+section[data-section="flexible"] .studio-title { color: #111; }
+section[data-section="intro"] .studio-subtitle,
+section[data-section="flexible"] .studio-subtitle { color: rgba(0,0,0,0.6); }
 
 /* Buttons on light sections */
-.section-bg--intro .uk-button-default, .section-bg--flexible .uk-button-default {
+section[data-section="intro"] .uk-button-default,
+section[data-section="flexible"] .uk-button-default {
   border-color: #111; color: #111;
 }
-.section-bg--intro .uk-button-default:hover, .section-bg--flexible .uk-button-default:hover {
+section[data-section="intro"] .uk-button-default:hover,
+section[data-section="flexible"] .uk-button-default:hover {
   background: #111; color: #fff; border-color: #111;
 }
 
@@ -77,6 +99,8 @@
 /* Splash/status */
 #jlj-splash { z-index: 1000; }
 
+/* spa-content sits above the 3D canvas (z-index:1) but is transparent —
+ * DOM text floats over the live 3D scene. */
 #spa-content { position: relative; z-index: 2; }
 
 /* Section direct layout (for when section-bg is nested) */

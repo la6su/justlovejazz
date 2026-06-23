@@ -9,6 +9,7 @@ import { type CameraTarget, type WorldState, NarrativePhase, BakuRole } from './
 import { CinematicLights } from '../Experience/World/Lights'
 import { CursorLight } from '../Experience/World/CursorLight'
 import { DrawTrail } from '../Experience/World/DrawTrail'
+import { Baku } from '../Experience/World/Baku'
 import { getWorldConfigForPage, type PhaseConfig } from './WorldConfig'
 import { SectionSceneFactory } from './SectionSceneFactory'
 import type { WorldAtmosphere } from './WorldAtmosphere'
@@ -20,7 +21,7 @@ export interface WorldTransformResult {
 
 export class World extends THREE.Group {
     public sections: Section[] = []
-    public baku: null = null  // baku removed
+    public baku!: Baku
     public lightsGroup!: CinematicLights
     public cursorLight!: CursorLight
     public drawTrail?: DrawTrail
@@ -63,13 +64,18 @@ export class World extends THREE.Group {
         scene.add(this.cursorLight.object)
 
         // ── DrawTrail (junni pattern: cursor trail ribbon)
-        this.drawTrail = new DrawTrail()
-        scene.add(this.drawTrail.object)
+        // PERF: disabled — re-enable when perf budget allows.
+        // this.drawTrail = new DrawTrail()
+        // scene.add(this.drawTrail.object)
 
+        // ── Baku (character sphere) — central 3D object, junni pattern
+        this.baku = new Baku()
+        this.baku.name = 'baku'
+        this.add(this.baku)
 
-        // ── BG (procedural background sphere, junni pattern)
+        // ── BG (procedural background color, junni pattern)
         this.bg = new BG()
-        this.sceneRef.background = this.bg.color  // Use color, not a sphere mesh
+        this.sceneRef.background = this.bg.color
 
         // ── Ground plane (visual anchor, аналог Junni Ground)
         this.groundPlane = new THREE.Mesh(
@@ -147,21 +153,17 @@ export class World extends THREE.Group {
     protected populateSection(_section: Section, _config: PhaseConfig, _index: number): void {}
 
     public update(deltaTime: number): void {
-        // PERF: removed the per-frame traverse that updated ShaderMaterial uTime
-        // uniforms. SectionSceneFactory no longer uses ShaderMaterial (all
-        // built-in materials now), so this traverse was a no-op that walked
-        // the entire scene graph every frame.
-
         this.bg.update(deltaTime)
         this.sceneRef.background = this.bg.color
         this.sections.forEach(s => s.update(deltaTime))
-        // baku.update() — no-op (baku removed)
+        this.baku.update(deltaTime)
         this.cursorLight.update(deltaTime)
         if (this.drawTrail && this._camera) {
             this.drawTrail.update(deltaTime, this._camera)
         }
 
         // ── Room composition animation (per-component, Z-layer aware) ──
+        // Only animates VISIBLE groups — invisible groups are skipped.
         const t = performance.now() * 0.001
         this.sceneGroups.forEach((group) => {
             if (!group.visible) return
@@ -173,65 +175,6 @@ export class World extends THREE.Group {
                 // Grid floors: subtle Z drift (perspective shift)
                 if (name.includes('grid')) {
                     obj.position.z = Math.sin(t * 0.2) * 0.1
-                }
-                // Front-layer geometric objects: slow rotation + bob
-                else if (name === 'step01-cube') {
-                    obj.rotation.x += deltaTime * 0.2
-                    obj.rotation.y += deltaTime * 0.15
-                    obj.position.y = 0.8 + Math.sin(t * 0.5) * 0.08
-                }
-                else if (name === 'step01-torus') {
-                    obj.rotation.x += deltaTime * 0.15
-                    obj.rotation.z += deltaTime * 0.1
-                    obj.position.y = 0.2 + Math.sin(t * 0.4 + 1) * 0.06
-                }
-                else if (name === 'step01-cyl') {
-                    obj.rotation.y += deltaTime * 0.3
-                    obj.position.y = -0.3 + Math.sin(t * 0.6 + 2) * 0.05
-                }
-                // Orbital rings: slow rotation on Z
-                else if (name.includes('ring') && name.includes('step02')) {
-                    obj.rotation.z += deltaTime * 0.08
-                }
-                // Central sphere (step02): emissive pulse
-                else if (name === 'step02-sphere') {
-                    const mat = (obj as THREE.Mesh).material as THREE.MeshStandardMaterial
-                    if (mat?.emissiveIntensity !== undefined) {
-                        mat.emissiveIntensity = 0.6 + Math.sin(t * 0.8) * 0.3
-                    }
-                    obj.position.y = Math.sin(t * 0.3) * 0.05
-                }
-                // Light columns: staggered opacity pulse
-                else if (name.includes('column')) {
-                    const mat = (obj as THREE.Mesh).material as THREE.MeshBasicMaterial
-                    if (mat?.opacity !== undefined) {
-                        // ── Rule 3: cache baseOpacity (HERMES_RULES §3) ──
-                        if (mat.userData.baseOpacity === undefined) {
-                            mat.userData.baseOpacity = mat.opacity
-                        }
-                        const idx = parseInt(name.split('-').pop() || '0')
-                        mat.opacity = 0.35 + Math.sin(t * 0.4 + idx * 0.7) * 0.2
-                    }
-                }
-                // Chrome sphere (step06): slow rotation + bob
-                else if (name === 'step06-sphere') {
-                    obj.rotation.y += deltaTime * 0.05
-                    obj.position.y = Math.sin(t * 0.3) * 0.04
-                }
-                // Ring beneath sphere: counter-rotate
-                else if (name === 'step06-ring') {
-                    obj.rotation.z -= deltaTime * 0.02
-                }
-                // Holographic blobs (step07): float + rotation + scale pulse
-                else if (name.startsWith('s2-blob')) {
-                    obj.rotation.y += deltaTime * 0.05
-                    obj.rotation.x += deltaTime * 0.03
-                    const baseY = (obj.userData.baseY ?? obj.position.y)
-                    const phase = obj.userData.floatPhase ?? 0
-                    const speed = obj.userData.floatSpeed ?? 0.3
-                    obj.position.y = baseY + Math.sin(t * speed + phase) * 0.3
-                    const scale = 1.8 + Math.sin(t * speed * 0.7 + phase) * 0.12
-                    obj.scale.setScalar(scale)
                 }
                 // Particles: drift upward, loop
                 else if (name.includes('particles')) {
@@ -278,6 +221,7 @@ export class World extends THREE.Group {
     // Uses PhaseConfig.range[] for weighted scroll buckets
     // Applies S-curve easing to t so transitions have "comfort zones"
     public updateTransform(scrollValue: number): WorldTransformResult {
+        if (!Number.isFinite(scrollValue)) scrollValue = 0
         scrollValue = THREE.MathUtils.clamp(scrollValue, 0, 1)
         if (this.sections.length === 0) return this.defaultResult()
 
@@ -324,40 +268,33 @@ export class World extends THREE.Group {
 
         // ── Scene group visibility with opacity fade (junni switchVisibility pattern)
         // From group fades out as t→1, to group fades in. Both visible during transition.
-        // FIX: Compute opacity first, then only set group.visible = true when opacity > 0.
+        // NON-DESTRUCTIVE: cache baseOpacity in userData, apply fade multiplicatively.
+        // (HERMES_RULES §3 — never overwrite factory opacity values.)
         this.sceneGroups.forEach((g, i) => {
             const isFrom = i === fromIndex
             const isTo = i === toIndex
-            let opacity = 0
-            if (isFrom) opacity = 1 - t
-            if (isTo) opacity = t
-            if (isFrom && isTo) opacity = 1
+            let fade = 0
+            if (isFrom) fade = 1 - t
+            if (isTo) fade = t
+            if (isFrom && isTo) fade = 1
 
-            if (isFrom || isTo) {
-                g.visible = opacity > 0
-                // Apply opacity to all meshes in the group.
+            const shouldShow = isFrom || isTo
+            if (shouldShow) {
+                g.visible = fade > 0.001
+                // Apply fade multiplicatively on top of cached base opacity.
                 g.traverse((obj) => {
                     if (obj instanceof THREE.Mesh) {
                         const mat = obj.material
                         if (!Array.isArray(mat) && 'opacity' in mat) {
-                            // ── Rule 3: cache baseOpacity (HERMES_RULES §3) ──
-                            if (mat.userData.baseOpacity === undefined) {
-                                mat.userData.baseOpacity = mat.opacity
+                            const m = mat as THREE.Material & { opacity: number; userData: { baseOpacity?: number } }
+                            if (m.userData.baseOpacity === undefined) {
+                                m.userData.baseOpacity = m.opacity
                             }
-                            ;(mat as THREE.Material & { opacity: number }).opacity = opacity
-                            ;(mat as THREE.Material & { transparent: boolean }).transparent = true
+                            m.opacity = m.userData.baseOpacity * fade
                         }
                     }
                 })
             } else {
-                g.visible = false
-            }
-        })
-
-        // SAFETY: Reset visibility for groups that should not be visible
-        // (prevents stale visible=true from leaking across transitions)
-        this.sceneGroups.forEach((g, i) => {
-            if (i !== fromIndex && i !== toIndex) {
                 g.visible = false
             }
         })

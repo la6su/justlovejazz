@@ -136,26 +136,19 @@ export class Renderer {
   }
 
   async init(): Promise<void> {
+    // WebGPURenderer.init() configures the backend — WebGPU device if
+    // available, else WebGL2 context (transparent fallback). The fallback
+    // is built into WebGPURenderer; no manual WebGLRenderer switch needed.
     if (this.capabilities.mode === 'webgpu') {
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (this.instance as any).init?.()
-      } catch (err) {
-        console.error('[Renderer.init] WebGPU init failed, falling back to WebGL:', err)
-        this.instance.dispose()
-        const gl = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' })
-        gl.outputColorSpace = THREE.SRGBColorSpace
-        gl.toneMapping = THREE.ACESFilmicToneMapping
-        gl.toneMappingExposure = 1
-        this.instance = gl
-        this.setupCanvas(this.instance.domElement)
-        this.instance.setPixelRatio(Math.min(this.sizes.dpr, this.capabilities.maxDpr))
-        this.instance.setSize(this.sizes.width, this.sizes.height)
-      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (this.instance as any).init?.()
     }
-    // Now that the renderer backend is initialized (WebGPU device configured,
-    // WebGL context ready), create the post-processing pipeline. Creating it
-    // in the constructor was unsafe — RTs/GPU state could be uninitialized.
+    // Re-apply size AFTER init() — on the WebGPU backend the canvas swap
+    // chain is configured during init(), so setSize from the constructor
+    // (before init) may not propagate to the GPU surface.
+    this.instance.setPixelRatio(Math.min(this.sizes.dpr, this.capabilities.maxDpr))
+    this.instance.setSize(this.sizes.width, this.sizes.height)
+
     this.pipeline = RenderPipeline.create(
       this.instance,
       this.sizes.width,
@@ -168,13 +161,15 @@ export class Renderer {
   private _prevBgHex: number = -1
 
   update(scene: THREE.Scene, camera: THREE.Camera, dt: number, worldState?: WorldState): void {
-    // ── BG handled by World.bg (BG.ts sphere shader) — only update fog
+    // ── BG + fog ──
+    // World.update sets scene.background = bg.color (per-section color).
+    // We only sync fog here when the env color changes. Do NOT set
+    // scene.background = null — on WebGPU that produces a black frame
+    // (no implicit canvas clear). The BG.color from World is authoritative.
     if (worldState) {
       const hex = worldState.envColor.getHex()
       if (hex !== this._prevBgHex) {
         this._prevBgHex = hex
-        // BG handled by shader sphere; clear native background
-        scene.background = null
         if (!this._fog) {
           this._fog = new THREE.FogExp2(worldState.envColor.clone(), 0.03)
         } else {
