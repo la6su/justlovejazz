@@ -1,4 +1,5 @@
-// src/core/WorldConfig.ts — 4 clear sections (Hero → Trinity/About → Works → Footer)
+// src/core/WorldConfig.ts — 4 sections matching DOM layout
+// Order: Hero → About → Works → Footer (scroll-driven, 1:1 with DOM sections)
 // Baku removed from experience (no-op placeholder)
 
 import * as THREE from 'three'
@@ -53,6 +54,7 @@ export interface SectionLightDef {
 export interface PhaseConfig {
   id: string
   context: string
+  domSection: string
   range: [number, number]
   camera: CameraTransform
   camFovOffset: number
@@ -72,6 +74,7 @@ export interface PhaseConfig {
 type RawScene = {
   id: string
   context: string
+  domSection: string
   camPos: [number, number, number]
   camTarget: [number, number, number]
   camFov: number
@@ -96,11 +99,13 @@ type RawScene = {
   groundOpacity: number
 }
 
-// 5 sections: Hero → Trinity/About → Works → Footer → Flexible
+// 4 sections: Hero → About → Works → Footer
+// Index 0→hero, 1→about, 2→works, 3→footer
 const RAW: RawScene[] = [
   {
     id: 'sec_hero',
     context: 'Studio — Home',
+    domSection: 'hero',
     camPos: [0, 0.5, 7],
     camTarget: [0, 0, -2],
     camFov: 50,
@@ -127,6 +132,7 @@ const RAW: RawScene[] = [
   {
     id: 'sec_about',
     context: 'TRINITY — About',
+    domSection: 'about',
     camPos: [0, 1, 6],
     camTarget: [0, 0, 0],
     camFov: 55,
@@ -153,6 +159,7 @@ const RAW: RawScene[] = [
   {
     id: 'sec_works',
     context: 'WORKS — Gallery',
+    domSection: 'works',
     camPos: [0, 1, 7],
     camTarget: [0, 1, 0],
     camFov: 50,
@@ -179,6 +186,7 @@ const RAW: RawScene[] = [
   {
     id: 'sec_footer',
     context: 'CONTACT — Footer',
+    domSection: 'footer',
     camPos: [0, 0, 8],
     camTarget: [0, 0, 0],
     camFov: 50,
@@ -202,32 +210,6 @@ const RAW: RawScene[] = [
     groundColor: 0x050810,
     groundOpacity: 0.05,
   },
-  {
-    id: 'sec_flexible',
-    context: 'FLEXIBLE — Showcase',
-    camPos: [0, 0.5, 6],
-    camTarget: [0, 0, 0],
-    camFov: 50,
-    camFovOffset: 0.5,
-    camFovDuration: 1.0,
-    camSmoothing: 5,
-    bakuRole: BakuRole.WIRE,
-    bakuOpacity: 0.5,
-    bakuColor: 0xeeeeee,
-    bakuEmissive: 0x515d84,
-    postBloom: 0,
-    postVignette: 0.8,
-    postGrain: 0.02,
-    postChromatic: 0.003,
-    lightColor: 0xf0f0f0,
-    lightIntensity: 1,
-    fogColor: 0xf0f0f0,
-    fogDensity: 0.008,
-    bgColor: 0xf0f0f0,
-    showGallery: false,
-    groundColor: 0xf0f0f0,
-    groundOpacity: 0.3,
-  },
 ]
 
 // ── Helpers (preserve original signatures) ──
@@ -240,6 +222,7 @@ export function toPhaseConfig(raw: RawScene): PhaseConfig {
   return {
     id: raw.id,
     context: raw.context,
+    domSection: raw.domSection ?? raw.id.replace(/^sec_/, ''),
     range: [0, 0], /* placeholder; overwritten by getAllScenes().computeRanges() */
     camera: { position: pos, target: tgt, fov: raw.camFov },
     camFovOffset: raw.camFovOffset,

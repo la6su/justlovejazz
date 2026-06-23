@@ -491,7 +491,7 @@ export class World extends THREE.Group {
 
     private defaultResult(): WorldTransformResult {
         const cfg: PhaseConfig = {
-            id: 'step01', context: 'phase_step01', range: [0, 1],
+            id: 'step01', context: 'phase_step01', domSection: 'hero', range: [0, 1],
             camera: { position: new THREE.Vector3(0, 0, 8), target: new THREE.Vector3(0, 0, 0), fov: 55 },
             baku: { position: new THREE.Vector3(), rotation: new THREE.Quaternion(), scale: new THREE.Vector3(0.4), opacity: 1, role: 0 as unknown as BakuRole, material: { color: new THREE.Color(), emissive: new THREE.Color(), roughness: 0.2, metalness: 0.8 } },
             lighting: { ambient: new THREE.Color(), ambientColor: new THREE.Color(), intensity: 1 },

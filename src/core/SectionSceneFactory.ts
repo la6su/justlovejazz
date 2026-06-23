@@ -1,10 +1,9 @@
 // SectionSceneFactory — Studio-grade room compositions.
-// 4 scenes: Hero, Trinity/About, Works, Footer.
+// 4 scenes: Hero → About → Works → Footer (1:1 with DOM sections).
 // Built-in materials ONLY (MeshBasicMaterial, MeshStandardMaterial, PointsMaterial,
 // LineBasicMaterial, GridHelper). No ShaderMaterial.
 
 import * as THREE from 'three'
-import { Section2SceneFactory } from './Section2SceneFactory'
 
 // BG sphere — normal-sized icosahedron with proper PBR material (junni style)
 // BackSide render inside the sphere like a gradient backdrop.
@@ -93,13 +92,17 @@ export class SectionSceneFactory {
     return group
   }
 
+  /**
+   * Create a section group by index.
+   * Mapping: 0 → hero, 1 → about, 2 → works, 3 → footer
+   * (1:1 with DOM sections and WorldConfig RAW order)
+   */
   static byIndex(i: number): THREE.Group {
     switch (i) {
       case 0: return SectionSceneFactory.createHero()
       case 1: return SectionSceneFactory.createAboutTrinity()
       case 2: return SectionSceneFactory.createWorks()
       case 3: return SectionSceneFactory.createFooter()
-      case 4: return Section2SceneFactory.createSection2()
       default: return SectionSceneFactory.createHero()
     }
   }

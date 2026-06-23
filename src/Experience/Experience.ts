@@ -180,11 +180,9 @@ export class Experience {
       this.camera.setFovOffset(cfg.camFovOffset, cfg.camFovDuration)
       this.currentSectionContext = cfg.context
       // Dispatch section-change event so DOM UI can react (3D→UI integration).
-      // Send the DOM-friendly section key (strip 'sec_' prefix) so ContentReveal
-      // can match [data-section="hero"] etc.
-      const domSectionId = cfg.id.replace(/^sec_/, '')
+      // Use the explicit domSection field from the config.
       window.dispatchEvent(new CustomEvent('jlz:section-change', {
-        detail: { sectionId: domSectionId, context: cfg.context, configId: cfg.id }
+        detail: { sectionId: cfg.domSection, context: cfg.context, configId: cfg.id }
       }))
     }
 
