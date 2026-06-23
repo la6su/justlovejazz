@@ -69,7 +69,12 @@ export async function startApp(): Promise<void> {
   const onNavigate = () => {
     if (!isAppReady()) return
     const exp = window.experience
-    if (exp?.switchPage) exp.switchPage(document.body.dataset.page || 'home')
+    const page = document.body?.dataset?.page || 'home'
+
+    // switchPage() handles 3D↔DOM visibility automatically (WorldConfig.ui.showGallery).
+    // showExperience/hideExperience were removed from Experience — no longer needed.
+
+    if (exp?.switchPage) exp.switchPage(page)
     if (exp?.smoothScroll) {
       exp.smoothScroll.lenis.scrollTo(0, { immediate: true })
     }

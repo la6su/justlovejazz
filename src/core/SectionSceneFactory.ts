@@ -4,6 +4,7 @@
 // LineBasicMaterial, GridHelper). No ShaderMaterial.
 
 import * as THREE from 'three'
+import { Section2SceneFactory } from './Section2SceneFactory'
 
 // BG sphere — normal-sized icosahedron with proper PBR material (junni style)
 // BackSide render inside the sphere like a gradient backdrop.
@@ -98,6 +99,7 @@ export class SectionSceneFactory {
       case 1: return SectionSceneFactory.createAboutTrinity()
       case 2: return SectionSceneFactory.createWorks()
       case 3: return SectionSceneFactory.createFooter()
+      case 4: return Section2SceneFactory.createSection2()
       default: return SectionSceneFactory.createHero()
     }
   }

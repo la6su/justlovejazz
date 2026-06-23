@@ -64,6 +64,7 @@ export interface PhaseConfig {
   post: PostTransform
   ui: { showGallery: boolean }
   background: number
+  ground: { color: THREE.Color; opacity: number }
   sectionLights?: SectionLightDef[]
 }
 
@@ -91,9 +92,11 @@ type RawScene = {
   fogDensity: number
   bgColor: number
   showGallery: boolean
+  groundColor: number
+  groundOpacity: number
 }
 
-// 4 sections: Hero → Trinity/About → Works → Footer
+// 5 sections: Hero → Trinity/About → Works → Footer → Flexible
 const RAW: RawScene[] = [
   {
     id: 'sec_hero',
@@ -118,6 +121,8 @@ const RAW: RawScene[] = [
     fogDensity: 0.01,
     bgColor: 0xffffff,
     showGallery: false,
+    groundColor: 0xffffff,
+    groundOpacity: 0,
   },
   {
     id: 'sec_about',
@@ -142,6 +147,8 @@ const RAW: RawScene[] = [
     fogDensity: 0.02,
     bgColor: 0x08080c,
     showGallery: false,
+    groundColor: 0x080812,
+    groundOpacity: 0.08,
   },
   {
     id: 'sec_works',
@@ -166,6 +173,8 @@ const RAW: RawScene[] = [
     fogDensity: 0.02,
     bgColor: 0x060608,
     showGallery: true,
+    groundColor: 0x06080e,
+    groundOpacity: 0.1,
   },
   {
     id: 'sec_footer',
@@ -190,6 +199,34 @@ const RAW: RawScene[] = [
     fogDensity: 0.025,
     bgColor: 0x050507,
     showGallery: false,
+    groundColor: 0x050810,
+    groundOpacity: 0.05,
+  },
+  {
+    id: 'sec_flexible',
+    context: 'FLEXIBLE — Showcase',
+    camPos: [0, 0.5, 6],
+    camTarget: [0, 0, 0],
+    camFov: 50,
+    camFovOffset: 0.5,
+    camFovDuration: 1.0,
+    camSmoothing: 5,
+    bakuRole: BakuRole.WIRE,
+    bakuOpacity: 0.5,
+    bakuColor: 0xeeeeee,
+    bakuEmissive: 0x515d84,
+    postBloom: 0,
+    postVignette: 0.8,
+    postGrain: 0.02,
+    postChromatic: 0.003,
+    lightColor: 0xf0f0f0,
+    lightIntensity: 1,
+    fogColor: 0xf0f0f0,
+    fogDensity: 0.008,
+    bgColor: 0xf0f0f0,
+    showGallery: false,
+    groundColor: 0xf0f0f0,
+    groundOpacity: 0.3,
   },
 ]
 
@@ -203,7 +240,7 @@ export function toPhaseConfig(raw: RawScene): PhaseConfig {
   return {
     id: raw.id,
     context: raw.context,
-    range: [0, 0.5],
+    range: [0, 0], /* placeholder; overwritten by getAllScenes().computeRanges() */
     camera: { position: pos, target: tgt, fov: raw.camFov },
     camFovOffset: raw.camFovOffset,
     camFovDuration: raw.camFovDuration,
@@ -235,6 +272,10 @@ export function toPhaseConfig(raw: RawScene): PhaseConfig {
     },
     ui: { showGallery: raw.showGallery },
     background: raw.bgColor,
+    ground: {
+      color: _toColor(raw.groundColor),
+      opacity: raw.groundOpacity,
+    },
   }
 }
 

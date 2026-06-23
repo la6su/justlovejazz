@@ -5,12 +5,10 @@
 import { NoiseText } from '../Experience/NoiseText'
 
 const SUBTITLES: Record<string, string> = {
-  step01: 'Scene-first thinking. Scroll maps to emotion.',
-  step02: 'One source of truth for DOM and WebGL.',
-  step03: 'Each project — its own universe.',
-  step04: 'Material presets, lighting, post — all state-driven.',
-  step05: 'We bring imagination to life through code.',
-  step06: 'Lifecycle is a feature, not an afterthought.',
+  hero: 'Scene-first thinking. Scroll maps to emotion.',
+  about: 'One source of truth for DOM and WebGL.',
+  works: 'Each project — its own universe.',
+  footer: 'We bring imagination to life through code.',
 }
 
 export class Subtitles {

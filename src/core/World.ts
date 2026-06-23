@@ -44,6 +44,10 @@ export class World extends THREE.Group {
     private _poolBakuColor = new THREE.Color()
     private _poolBakuEmissive = new THREE.Color()
     private _poolEnvColor = new THREE.Color()
+    private _poolGroundColor = new THREE.Color()
+    private _targetGroundOpacity = 0
+    private _splashed = false
+    public get splashed(): boolean { return this._splashed }
 
     constructor(scene: THREE.Scene) {
         super()
@@ -113,18 +117,21 @@ export class World extends THREE.Group {
             this.sections.push(section)
         })
 
-        // ── Create 3D scene groups — map config step id to factory
+        /* ── Create 3D scene groups — direct index→factory mapping ── */
         for (let i = 0; i < this.configs.length; i++) {
-            const config = this.configs[i]
-            const stepNum = parseInt(config.id.replace('step', ''), 10) - 1
-            const group = SectionSceneFactory.byIndex(stepNum)
+            const group = SectionSceneFactory.byIndex(i)
             this.add(group)
             this.sceneGroups.push(group)
-            if (i === 0) {
-                group.visible = true
-            } else {
-                group.visible = false
-            }
+            group.visible = i === 0
+        }
+
+        // ── Initialize ground from first section config
+        const groundMat = this.groundPlane.material as THREE.MeshStandardMaterial
+        const firstGround = this.configs[0]?.ground
+        if (firstGround) {
+            groundMat.color.set(firstGround.color)
+            groundMat.opacity = firstGround.opacity
+            this._targetGroundOpacity = firstGround.opacity
         }
     }
 
@@ -336,6 +343,14 @@ export class World extends THREE.Group {
         const fromCfg = fromSec.phaseConfig
         const toCfg = toSec.phaseConfig
 
+        // ── Ground plane update (junni pattern: lerp color + opacity per section)
+        const fromGround = fromCfg.ground
+        const toGround = toCfg.ground
+        const groundMat = this.groundPlane.material as THREE.MeshStandardMaterial
+        groundMat.color.copy(this._poolGroundColor.lerpColors(fromGround.color, toGround.color, t))
+        this._targetGroundOpacity = THREE.MathUtils.lerp(fromGround.opacity, toGround.opacity, t)
+        groundMat.opacity = this._targetGroundOpacity
+
         // Crossfade opacity
         bus.set(`section:${fromCfg.id}:opacity`, 1 - t)
         bus.set(`section:${toCfg.id}:opacity`, t)
@@ -391,6 +406,19 @@ export class World extends THREE.Group {
     }
 
     public resize(_width: number, _height: number): void {}
+
+    // ── Junni: splash() — unified entry point for first-section activation
+    // Called when cinematic intro completes and experience becomes interactive
+    public splash(): void {
+        if (this._splashed) return
+        this._splashed = true
+
+        // Activate first section
+        const first = this.sections[0]
+        if (first) {
+            first.splash()
+        }
+    }
 
     public reinit(): void {
         this.disposeSections()
@@ -471,6 +499,7 @@ export class World extends THREE.Group {
             post: { bloom: 0.2, vignette: 0.5, grain: 0.03, chromatic: 0.005 },
             ui: { showGallery: false },
             background: 0x050507,
+            ground: { color: new THREE.Color(0x000000), opacity: 0 },
             camFovOffset: 0.3,
             camFovDuration: 0.8,
             camSmoothing: 5,

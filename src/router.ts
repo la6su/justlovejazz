@@ -79,11 +79,13 @@ export function navigateToLesson(id: string): void {
   history.pushState(null, '', `#/lesson/${id}`)
   renderView()
   window.dispatchEvent(new CustomEvent('jlj:lesson:navigate', { detail: { id } }))
+  window.dispatchEvent(new CustomEvent('jlj:navigate', { detail: { page: 'lesson' } }))
 }
 
 export function navigateToLessons(): void {
   history.pushState(null, '', '#/lessons')
   renderView()
+  window.dispatchEvent(new CustomEvent('jlj:navigate', { detail: { page: 'lessons' } }))
 }
 
 export function initRouter(): void {
@@ -140,8 +142,11 @@ export function initRouter(): void {
     if (route.type === 'home' && route.anchor) {
       const tgt = document.getElementById(route.anchor.replace('#', ''))
       if (tgt) tgt.scrollIntoView({ behavior: 'smooth' })
+      window.dispatchEvent(new CustomEvent('jlj:navigate', { detail: { page: 'home' } }))
     } else {
       renderView()
+      const page = route.type
+      window.dispatchEvent(new CustomEvent('jlj:navigate', { detail: { page } }))
     }
   })
 }
