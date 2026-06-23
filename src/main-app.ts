@@ -52,6 +52,11 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
 
     await Bootstrapper.init(ui, onReadyCb)
     progress(98)
+    
+    // Auto-hide splash after a brief pause so the intro scene loads
+    // This prevents splash from getting stuck at 98% forever
+    await new Promise(r => setTimeout(r, 1500))
+    splash.hide()
 
     const triggerCinematicIntro = async () => {
       enterButton.cancelAuto()

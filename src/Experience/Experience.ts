@@ -117,7 +117,7 @@ export class Experience {
     // Subtitles listen for jlz:section-change events automatically.
     this._subtitles = new Subtitles()
     // Section progress indicator with clickable timeline dots.
-    this._sectionProgress = new SectionProgress(['Intro', 'Trinity', 'Works', 'Footer'])
+    this._sectionProgress = new SectionProgress(['Intro', 'About', 'Flexible', 'Challenge', 'Innovative', 'Contact'])
     // Always build portfolio — single-page, always needs works slider
     void this.ensurePortfolio()
     this.camera.instance.position.set(0, 5, 10)
@@ -157,7 +157,6 @@ export class Experience {
     const ns = input.getSmoothedScrollProgress()
     const { cameraTarget, worldState } = this.world.advance(ns)
     this.world.update(dt)
-    this.world.bg.update(dt)
 
     // UI inversion: white hero (section 0) needs dark text on light bg
     // Toggle on both html (for CSS vars) and body (for nav selectors)
@@ -204,10 +203,10 @@ export class Experience {
     // On works page: hide ground plane + scene backdrop (only slider + fog).
     if (this.world) {
       this.world.groundPlane.visible = !showGallery
-      // Toggle scene groups visibility — works page doesn't need them.
-      this.world.sceneGroups.forEach((g: THREE.Group) => {
-        g.visible = !showGallery
-      })
+      // Toggle scene groups — hide all on works page, let World manage visibility on home.
+      if (showGallery) {
+        this.world.sceneGroups.forEach((g: THREE.Group) => { g.visible = false })
+      }
     }
 
     // Per-section camera smoothing (Track 5). Fall back to default if cfg absent.

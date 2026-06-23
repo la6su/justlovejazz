@@ -69,7 +69,7 @@ export class World extends THREE.Group {
 
         // ── BG (procedural background sphere, junni pattern)
         this.bg = new BG()
-        this.sceneRef.add(this.bg.mesh)
+        this.sceneRef.background = this.bg.color  // Use color, not a sphere mesh
 
         // ── Ground plane (visual anchor, аналог Junni Ground)
         this.groundPlane = new THREE.Mesh(
@@ -133,6 +133,15 @@ export class World extends THREE.Group {
             groundMat.opacity = firstGround.opacity
             this._targetGroundOpacity = firstGround.opacity
         }
+
+        // ── Enforce final visibility: only group 0 visible, all others hidden.
+        // This guard runs after ALL group creation to prevent any upstream call
+        // (e.g. a premature updateTransform with t=0 showing from+to) from
+        // leaking visibility before init() returns.
+        this.sceneGroups.forEach((g, i) => { g.visible = i === 0 })
+
+        console.debug('[World] init — scene group visibility:',
+            this.sceneGroups.map((g, i) => `g[${i}]=${g.visible}`))
     }
 
     protected populateSection(_section: Section, _config: PhaseConfig, _index: number): void {}
@@ -143,6 +152,8 @@ export class World extends THREE.Group {
         // built-in materials now), so this traverse was a no-op that walked
         // the entire scene graph every frame.
 
+        this.bg.update(deltaTime)
+        this.sceneRef.background = this.bg.color
         this.sections.forEach(s => s.update(deltaTime))
         // baku.update() — no-op (baku removed)
         this.cursorLight.update(deltaTime)
@@ -313,14 +324,17 @@ export class World extends THREE.Group {
 
         // ── Scene group visibility with opacity fade (junni switchVisibility pattern)
         // From group fades out as t→1, to group fades in. Both visible during transition.
+        // FIX: Compute opacity first, then only set group.visible = true when opacity > 0.
         this.sceneGroups.forEach((g, i) => {
-            if (i === fromIndex || i === toIndex) {
-                g.visible = true
-                // Calculate per-group opacity based on transition progress.
-                let opacity = 0
-                if (i === fromIndex) opacity = 1 - t
-                if (i === toIndex) opacity = t
-                if (i === fromIndex && i === toIndex) opacity = 1
+            const isFrom = i === fromIndex
+            const isTo = i === toIndex
+            let opacity = 0
+            if (isFrom) opacity = 1 - t
+            if (isTo) opacity = t
+            if (isFrom && isTo) opacity = 1
+
+            if (isFrom || isTo) {
+                g.visible = opacity > 0
                 // Apply opacity to all meshes in the group.
                 g.traverse((obj) => {
                     if (obj instanceof THREE.Mesh) {
@@ -336,6 +350,14 @@ export class World extends THREE.Group {
                     }
                 })
             } else {
+                g.visible = false
+            }
+        })
+
+        // SAFETY: Reset visibility for groups that should not be visible
+        // (prevents stale visible=true from leaking across transitions)
+        this.sceneGroups.forEach((g, i) => {
+            if (i !== fromIndex && i !== toIndex) {
                 g.visible = false
             }
         })

@@ -1,11 +1,10 @@
-// src/core/WorldConfig.ts — 4 sections matching DOM layout
-// Order: Hero → About → Works → Footer (scroll-driven, 1:1 with DOM sections)
-// Baku removed from experience (no-op placeholder)
+// src/core/WorldConfig.ts — 6 sections matching junni.co.jp reference
+// Order: Intro → About → Flexible → Challenge → Innovative → Contact (scroll-driven)
 
 import * as THREE from 'three'
 import { BakuRole } from './types'
 
-// ── Types ──
+// ── Types (unchanged) ──
 export interface CameraTransform {
   position: THREE.Vector3
   target: THREE.Vector3
@@ -70,16 +69,10 @@ export interface PhaseConfig {
   sectionLights?: SectionLightDef[]
 }
 
-// ── Raw data (no Three.js) ──
 type RawScene = {
   id: string
   context: string
   domSection: string
-  /** Scroll range [start, end] mapped to the section.
-   * Values 0..1 on full scroll timeline.
-   * All sections are ~100vh so ranges are equal (1/4 each).
-   *   Hero: 0.00–0.25, About: 0.25–0.50, Works: 0.50–0.75, Footer: 0.75–1.00
-   */
   range: [number, number]
   camPos: [number, number, number]
   camTarget: [number, number, number]
@@ -105,14 +98,15 @@ type RawScene = {
   groundOpacity: number
 }
 
-// 4 sections: Hero → About → Works → Footer
-// Index 0→hero, 1→about, 2→works, 3→footer
+// 6 sections matching https://next.junni.co.jp/
+// Index: 0=intro, 1=about, 2=flexible, 3=challenge, 4=innovative, 5=contact
 const RAW: RawScene[] = [
+  // ── Section 1: INTRO — White BG, metal drop ──
   {
-    id: 'sec_hero',
+    id: 'sec_intro',
     context: 'Studio — Home',
-    domSection: 'hero',
-    range: [0.0, 0.25],
+    domSection: 'intro',
+    range: [0, 1/6],
     camPos: [0, 0.5, 7],
     camTarget: [0, 0, -2],
     camFov: 50,
@@ -136,11 +130,12 @@ const RAW: RawScene[] = [
     groundColor: 0xffffff,
     groundOpacity: 0,
   },
+  // ── Section 2: ABOUT — Black BG, blob, reflective floor, grey blocks ──
   {
     id: 'sec_about',
-    context: 'TRINITY — About',
+    context: "TRINITY — About",
     domSection: 'about',
-    range: [0.25, 0.50],
+    range: [1/6, 2/6],
     camPos: [0, 1, 6],
     camTarget: [0, 0, 0],
     camFov: 55,
@@ -164,11 +159,41 @@ const RAW: RawScene[] = [
     groundColor: 0x080812,
     groundOpacity: 0.08,
   },
+  // ── Section 3: FLEXIBLE — White/light transition ──
   {
-    id: 'sec_works',
+    id: 'sec_flexible',
+    context: 'FLEXIBLE — Approach',
+    domSection: 'flexible',
+    range: [2/6, 3/6],
+    camPos: [0, 0.5, 6],
+    camTarget: [0, 0, -1],
+    camFov: 50,
+    camFovOffset: 0.35,
+    camFovDuration: 0.85,
+    camSmoothing: 5,
+    bakuRole: BakuRole.GLASS,
+    bakuOpacity: 0.8,
+    bakuColor: 0xdddddd,
+    bakuEmissive: 0x999999,
+    postBloom: 0.2,
+    postVignette: 1.0,
+    postGrain: 0.015,
+    postChromatic: 0.002,
+    lightColor: 0xeeeeee,
+    lightIntensity: 1.0,
+    fogColor: 0xeeeeee,
+    fogDensity: 0.015,
+    bgColor: 0xeeeeee,
+    showGallery: false,
+    groundColor: 0xeeeeee,
+    groundOpacity: 0,
+  },
+  // ── Section 4: CHALLENGE — Dark BG, checkered floor, blue lines ──
+  {
+    id: 'sec_challenge',
     context: 'WORKS — Gallery',
-    domSection: 'works',
-    range: [0.50, 0.75],
+    domSection: 'challenge',
+    range: [3/6, 4/6],
     camPos: [0, 1, 7],
     camTarget: [0, 1, 0],
     camFov: 50,
@@ -192,11 +217,41 @@ const RAW: RawScene[] = [
     groundColor: 0x06080e,
     groundOpacity: 0.1,
   },
+  // ── Section 5: INNOVATIVE — Dark BG, constellation/grid ──
   {
-    id: 'sec_footer',
+    id: 'sec_innovative',
+    context: 'INNOVATIVE — Vision',
+    domSection: 'innovative',
+    range: [4/6, 5/6],
+    camPos: [0, 0.8, 6],
+    camTarget: [0, 0.5, -1],
+    camFov: 50,
+    camFovOffset: 0.4,
+    camFovDuration: 0.9,
+    camSmoothing: 5,
+    bakuRole: BakuRole.WIRE,
+    bakuOpacity: 0.5,
+    bakuColor: 0x111111,
+    bakuEmissive: 0x020202,
+    postBloom: 0.3,
+    postVignette: 0.6,
+    postGrain: 0.02,
+    postChromatic: 0.004,
+    lightColor: 0x050810,
+    lightIntensity: 1.0,
+    fogColor: 0x050810,
+    fogDensity: 0.025,
+    bgColor: 0x050507,
+    showGallery: false,
+    groundColor: 0x050810,
+    groundOpacity: 0.05,
+  },
+  // ── Section 6: CONTACT — Dark BG, noisy blocks ──
+  {
+    id: 'sec_contact',
     context: 'CONTACT — Footer',
-    domSection: 'footer',
-    range: [0.75, 1.0],
+    domSection: 'contact',
+    range: [5/6, 1.0],
     camPos: [0, 0, 8],
     camTarget: [0, 0, 0],
     camFov: 50,
@@ -222,7 +277,7 @@ const RAW: RawScene[] = [
   },
 ]
 
-// ── Helpers (preserve original signatures) ──
+// ── Helpers ──
 const _toVec = (v: [number, number, number]) => new THREE.Vector3(...v)
 const _toColor = (hex: number) => new THREE.Color(hex)
 
@@ -272,7 +327,7 @@ export function toPhaseConfig(raw: RawScene): PhaseConfig {
   }
 }
 
-// ── Public API (preserve original signatures) ──
+// ── Public API ──
 export const ALL_SECTIONS = RAW
 
 export function resolvePageKey(_attr?: string): { isAbsolute: boolean; pageKey: string } {
@@ -290,5 +345,3 @@ export function getPageScenes(_pageKey: string): PhaseConfig[] {
 export function getWorldConfigForPage(_pageKey: string): readonly PhaseConfig[] {
   return getAllScenes()
 }
-
-

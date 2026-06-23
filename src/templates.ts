@@ -1,15 +1,101 @@
 // templates.ts — HTML string templates for SPA rendering.
 import { getLesson, getAllLessons } from './Data/Lessons'
 
-function sharedFooter(): string {
-  return `\n    <footer id="section-contact" class="section-studio section-centered uk-flex uk-flex-middle" data-section="footer">\n      <div class="uk-container uk-text-center">\n        <span class="section-number">∞</span>\n        <h2 class="studio-title studio-title--medium uk-text-center">Start<br/><span>a Project</span></h2>\n        <p class="studio-text studio-text--meta">Direction · 3D · Frontend</p>\n        <div class="uk-margin-medium-top">\n          <a href="mailto:hello@justlovejazz.com" class="uk-button uk-button-secondary uk-button-large">hello@justlovejazz.com</a>\n        </div>\n      </div>\n    </footer>`
-}
+// HTML escaping
 function esc(s: string): string {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
 }
+
+// 6 sections: intro, about, flexible, challenge, innovative, contact
 export function homePage(): string {
-  return `\n    <section id="section-hero" data-section="hero" class="section-studio section-hero uk-flex uk-flex-middle" uk-height-viewport>\n      <div class="uk-container uk-text-center">\n        <h1 class="studio-title studio-title--xl"><span class="studio-title__line">JUSTLOVEJAZZ</span></h1>\n        <p class="studio-tagline uk-margin-auto-center">Visual studio · Creative direction</p>\n      </div>\n    </section>\n    <section id="section-about" data-section="about" class="section-studio uk-flex uk-flex-middle" uk-height-viewport="expand:true">\n      <div class="uk-container">\n        <h2 class="studio-title uk-text-center studio-title--medium uk-margin-bottom">The Trinity</h2>\n        <div uk-grid class="uk-grid-small uk-child-width-1-3@m uk-child-width-1-1">\n          <div><span class="section-number">I</span><h3 class="studio-title studio-title--meta">Narrative</h3><p class="studio-text studio-text--meta">Scene-first thinking.</p></div>\n          <div><span class="section-number">II</span><h3 class="studio-title studio-title--meta">Runtime</h3><p class="studio-text studio-text--meta">One source of truth.</p></div>\n          <div><span class="section-number">III</span><h3 class="studio-title studio-title--meta">Operations</h3><p class="studio-text studio-text--meta">Lifecycle is a feature.</p></div>\n        </div>\n      </div>\n    </section>\n    <section id="section-works" data-section="works" class="section-studio section-works-slider" uk-height-viewport="expand:true">\n      <div id="gallery-anchor" data-role="3d-gallery"></div>\n    </section>\n    ${sharedFooter()}\n  `
+  return `
+    <!-- ═══ section-studio → 6 child sections ═══ -->
+    <div class="section-studio uk-position-relative">
+
+      <!-- 1: Intro — White BG, metal drop -->
+      <section class="uk-height-viewport" uk-height-viewport="expand: true" 
+               id="section-intro" data-section="intro">
+        <div class="section-bg section-bg--hero uk-flex uk-flex-middle uk-flex-center" data-dynamic-content>
+          <div class="section-container uk-height-viewport" uk-scrollspy="cls: fade-in-up; delay: 100; repeat: true" aria-label="Studio">
+            <div class="section-content uk-text-center">
+              <h1 class="uk-h1" data-content-id="hero-title">JUSTLOVEJAZZ</h1>
+              <p class="uk-text-meta" data-content-id="hero-subtitle">INTERACTIVE 3D WEB EXPERIENCE</p>
+            </div>
+            <div class="section-nav">
+              <svg class="scroll-indicator" viewBox="0 0 100 300" aria-hidden="true">
+                <g><circle cx='50' cy='288' r='12' fill='none' stroke='currentColor' stroke-width='1'><animate attributeName='r' dur='3s' repeatCount='indefinite' values='0; 15; 0' /></circle></g>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2: About — Black BG, blob character -->
+      <section class="uk-height-viewport" uk-height-viewport="expand: true"
+               id="section-about" data-section="about">
+        <div class="section-bg section-bg--about uk-flex uk-flex-middle uk-flex-center" data-dynamic-content>
+          <div class="section-container uk-height-viewport" uk-scrollspy="cls: fade-in-up; delay: 100; repeat: true" aria-label="About">
+            <div class="section-content uk-text-center">
+              <p class="uk-text-meta uk-margin-large-top" data-content-id="about-text"></p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3: Flexible — Light transition -->
+      <section class="uk-height-viewport" uk-height-viewport="expand: true"
+               id="section-flexible" data-section="flexible">
+        <div class="section-bg section-bg--flexible uk-flex uk-flex-middle uk-flex-center" data-dynamic-content>
+          <div class="section-container uk-height-viewport" uk-scrollspy="cls: fade-in-up; delay: 100; repeat: true" aria-label="Flexible">
+            <div class="section-content uk-text-center">
+              <h2 class="uk-h2" data-content-id="flexible-title">FLEXIBLE</h2>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4: Challenge — Dark, checkered floor, gallery -->
+      <section class="uk-height-viewport" uk-height-viewport="expand: true"
+               id="section-challenge" data-section="challenge">
+        <div class="section-bg section-bg--challenge uk-flex uk-flex-middle uk-flex-center" data-dynamic-content>
+          <div class="section-container uk-height-viewport" uk-scrollspy="cls: fade-in-up; delay: 100; repeat: true" aria-label="Challenge">
+            <div class="section-content uk-text-center">
+              <h2 class="uk-h2" data-content-id="challenge-title">CHALLENGE</h2>
+            </div>
+          </div>
+          <div id="project-overlay" class="uk-position-z-index:999" uk-scrollspy="cls: fade-in-up; delay: 100; repeat: true"></div>
+        </div>
+      </section>
+
+      <!-- 5: Innovative — Dark, constellation -->
+      <section class="uk-height-viewport" uk-height-viewport="expand: true"
+               id="section-innovative" data-section="innovative">
+        <div class="section-bg section-bg--innovative uk-flex uk-flex-middle uk-flex-center" data-dynamic-content>
+          <div class="section-container uk-height-viewport" uk-scrollspy="cls: fade-in-up; delay: 100; repeat: true" aria-label="Innovative">
+            <div class="section-content uk-text-center">
+              <h2 class="uk-h2" data-content-id="innovative-title">INNOVATIVE</h2>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 6: Contact — Dark, noisy blocks -->
+      <section class="uk-height-viewport" uk-height-viewport="expand: true"
+               id="section-contact" data-section="contact">
+        <div class="section-bg section-bg--contact uk-flex uk-flex-middle uk-flex-center" data-dynamic-content>
+          <div class="section-container uk-height-viewport" uk-scrollspy="cls: fade-in-up; delay: 100; repeat: true" aria-label="Contact">
+            <div class="section-content uk-text-center">
+              <h2 class="uk-h2" data-content-id="contact-title">CONTACT</h2>
+              <div class="uk-grid uk-margin-large-top" data-content-id="contact-grid"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  `
 }
+
 export function renderLessonPage(lessonId: string): string {
   const lesson = getLesson(lessonId)
   if (!lesson) return `<div class="uk-container uk-padding-large"><h1>Lesson not found</h1><a href="#/lessons" class="uk-button uk-button-primary">Back to Lessons</a></div>`

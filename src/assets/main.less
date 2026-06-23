@@ -462,7 +462,8 @@ body, a, button, .interactive {
   }
 
   .uk-grid {
-    gap: 1rem !important;
+    gap: 0.75rem !important;
+    padding: 0.75rem 1rem !important;
   }
 
   /* Grid collapse to single column */
@@ -647,7 +648,7 @@ body, a, button, .interactive {
   
   .detail-hero {
     grid-template-columns: 1fr;
-    gap: 1rem;
+    gap: 0.75rem;
   }
   
 }
@@ -788,7 +789,8 @@ body, a, button, .interactive {
 .works-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 1rem;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
   max-width: 1080px;
   margin: 2.25rem auto 0;
 }
@@ -920,7 +922,8 @@ body, a, button, .interactive {
   display: grid;
   grid-template-columns: 60px 1fr;
   align-items: baseline;
-  gap: 1rem;
+  gap: 0.75rem;
+  
   color: #fff;
   text-decoration: none;
   border-bottom: 1px solid rgba(255, 255, 255, 0.16);
@@ -984,7 +987,8 @@ body, a, button, .interactive {
 @media (max-width: 768px) {
   .project-cards-grid {
     grid-template-columns: 1fr;
-    gap: 1rem;
+    gap: 0.75rem;
+  
     max-width: 400px;
   }
 }
@@ -1003,3 +1007,110 @@ body, a, button, .interactive {
     padding: 0.2rem 0 0.6rem;
   }
 }
+
+/* === Section Progress Indicator (bottom) === */
+.jlz-section-progress {
+  position: fixed;
+  bottom: 28px;
+  left: 0;
+  right: 0;
+  z-index: 110;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.jlz-section-progress__bar {
+  width: 220px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.15);
+  transform-origin: left;
+  transform: scaleX(0);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.jlz-section-progress__bar::after {
+  content: '';
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.jlz-section-progress__dots {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  pointer-events: auto;
+}
+
+.jlz-section-progress__dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 0;
+  pointer-events: auto;
+}
+
+.jlz-section-progress__dot:hover {
+  background: rgba(255, 255, 255, 0.8);
+  transform: scale(1.4);
+  opacity: 1;
+}
+
+.jlz-section-progress__dot.is-active {
+  background: #fff;
+  border-color: #fff;
+  transform: scale(1.3);
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.6);
+}
+
+.jlz-section-progress__dot.is-passed {
+  background: rgba(255, 255, 255, 0.75);
+  border-color: rgba(255, 255, 255, 0.75);
+}
+
+/* === Header / Navbar visibility on white BG sections === */
+/* On Intro (white/very light BG), force header dark text */
+.section-studio[data-section="intro"] .navbar .navbar-logo,
+.section-studio[data-section="intro"] .navbar .navbar-link {
+  color: #111 !important;
+}
+
+/* Ensure navbar always visible, contr*in each section */
+.navbar {
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 200 !important;
+  pointer-events: auto;
+}
+
+.navbar.uk-navbar {
+  min-height: 56px !important;
+}
+
+/* === Intro section - white BG contrast === */
+.section-studio[data-section="intro"] {
+  .studio-title, .studio-subtitle, .section-number {
+    color: #111 !important;
+  }
+}
+
+/* Works section styling */
+.section-studio[data-section="flexible"],
+.section-studio[data-section="challenge"],
+.section-studio[data-section="innovative"] {
+  .studio-title {
+    color: #fff !important;
+  }
+}
+
