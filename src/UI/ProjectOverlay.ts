@@ -30,6 +30,9 @@ export class ProjectOverlay {
     if (!existing) {
       this.container.className = 'jlz-works-ui'
     }
+    // Start hidden — Experience.update() shows via showContainer() when
+    // showGallery config is true (works section only).
+    this.container.style.opacity = '0'
     this.buildContent()
     if (!existing) {
       root.appendChild(this.container)

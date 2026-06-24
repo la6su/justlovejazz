@@ -59,7 +59,8 @@ export async function startApp(): Promise<void> {
   // Render DOM sections BEFORE boot so they exist when event fires.
   initRouter()
 
-  // Wire NoiseText title animations: listen BEFORE dispatch so we never miss it.
+  // Wire NoiseText title animations via jlz:webgl-ready event.
+  // This fires after WebGLTextManager refresh (or Experience.init).
   const onWebGlReady = () => animateNoiseTitles()
   window.addEventListener('jlz:webgl-ready', onWebGlReady)
 
@@ -67,7 +68,6 @@ export async function startApp(): Promise<void> {
   const onNavigate = () => {
     if (!isAppReady()) return
     const exp = window.experience
-    // No switchPage — single scroll page now, 3D follows scroll progress
     if (exp?.smoothScroll) {
       exp.smoothScroll.lenis.scrollTo(0, { immediate: true })
     }
@@ -78,12 +78,9 @@ export async function startApp(): Promise<void> {
   mountDeferredShell()
   void boot()
 
-  // Fallback: ensure NoiseText runs even if jlz:webgl-ready never fires
-  setTimeout(animateNoiseTitles, 1000)
-
   // Scroll-spy: animate titles when their section enters the viewport.
-  // Uses IntersectionObserver (junni scroll-spy pattern) — only animates
-  // the title that becomes visible, not all at once.
+  // This is the PRIMARY trigger — fires when section becomes 35% visible.
+  // jlz:webgl-ready is a fallback for the first section on load.
   setupTitleScrollSpy()
 }
 
@@ -93,6 +90,7 @@ export async function startApp(): Promise<void> {
  * the viewport. Re-triggers on re-entry (uk-scrollspy "repeat: true" style).
  */
 function setupTitleScrollSpy(): void {
+  // Track which titles have been animated — prevent re-trigger on scroll back
   const animated = new WeakSet<HTMLElement>()
 
   const observer = new IntersectionObserver((entries) => {
@@ -104,13 +102,13 @@ function setupTitleScrollSpy(): void {
         animated.add(title)
         // Small delay so the section is visually settled before flicker starts
         setTimeout(() => {
-          NoiseText.for(title).show(1.5)
-        }, 150)
+          NoiseText.for(title).show(1.2)
+        }, 100)
       }
     }
   }, {
-    threshold: 0.35,  // 35% of section visible
-    rootMargin: '-10% 0px -10% 0px',  // slight inset
+    threshold: 0.3,  // 30% of section visible
+    rootMargin: '-5% 0px -5% 0px',
   })
 
   // Observe all sections with data-section
@@ -123,7 +121,8 @@ function setupTitleScrollSpy(): void {
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', observeSections)
   } else {
-    observeSections()
+    // Defer to next tick so router has rendered sections
+    setTimeout(observeSections, 50)
   }
 }
 
@@ -152,14 +151,14 @@ function animateNoiseTitles(): void {
 
     const text = el.textContent?.trim() || ''
     if (!text) continue
-    NoiseText.for(el).show(2.0)
+    NoiseText.for(el).show(1.2)
   }
 
   // Animate .studio-title__line spans.
   for (const el of leafEls) {
     const text = el.textContent?.trim() || ''
     if (!text) continue
-    NoiseText.for(el).show(2.0)
+    NoiseText.for(el).show(1.2)
   }
 }
 

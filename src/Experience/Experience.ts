@@ -371,8 +371,9 @@ export class Experience {
       }
     }
     this.onProjectSelect(0)
-    // Immediately make overlay visible — shows inaugural fade-in.
-    this.overlay!.showContainer()
+    // Do NOT call showContainer() here — Experience.update() manages overlay
+    // visibility via showGallery config. Calling it here makes overlay flash
+    // on non-works sections before the first update() hides it.
   }
 
   private onProjectSelect(idx: number): void {
