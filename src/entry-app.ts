@@ -59,7 +59,6 @@ export async function startApp(): Promise<void> {
   initRouter()
 
   // NoiseText: animate ALL titles when jlz:webgl-ready fires (after splash).
-  // This was the WORKING approach from commit 39eda64.
   window.addEventListener('jlz:webgl-ready', () => {
     animateNoiseTitles()
   })
@@ -81,25 +80,48 @@ export async function startApp(): Promise<void> {
   mountDeferredShell()
   void boot()
 
-  // Fallback: if jlz:webgl-ready never fires, animate after 3s
+  // DIRECT animation triggers — don't rely solely on events.
+  // The events (jlz:webgl-ready, jlz:section-change) may fire at unpredictable
+  // times depending on splash, WebGLTextManager, and scroll timing.
+  // These direct calls ensure titles always animate:
+
+  // 1. After DOM is ready (titles exist from router)
+  setTimeout(animateNoiseTitles, 500)
+
+  // 2. After app boots (Experience.init complete)
   setTimeout(() => {
-    const hero = document.querySelector('.studio-title--hero')
-    if (hero && hero.getAttribute('data-visible') !== 'true') {
+    if (isAppReady()) animateNoiseTitles()
+  }, 2000)
+
+  // 3. After splash likely dismissed (5s)
+  setTimeout(animateNoiseTitles, 5000)
+
+  // 4. On scroll — use a throttled scroll listener
+  let scrollTimer: number | null = null
+  window.addEventListener('scroll', () => {
+    if (scrollTimer) return
+    scrollTimer = window.setTimeout(() => {
+      scrollTimer = null
       animateNoiseTitles()
-    }
-  }, 3000)
+    }, 300)
+  }, { passive: true })
 }
 
 /**
  * NoiseText animation on studio titles — animates ALL .studio-title elements.
- * This is the WORKING version from commit 39eda64.
- * Each title gets its own NoiseText instance (singleton per element).
- * NoiseText.show() cancels any previous animation on the same element,
- * so re-calling animateNoiseTitles() is safe.
+ * Uses a flag to prevent rapid re-triggering (which cancels the animation
+ * before it can complete, leaving text permanently glitched).
  */
+let noiseAnimating = false
+
 function animateNoiseTitles(): void {
-  // Animate all .studio-title elements (skip .studio-title__line children
-  // to avoid double-animation).
+  // If animation is already running, don't re-trigger — let it finish.
+  if (noiseAnimating) return
+  noiseAnimating = true
+
+  // Clear after max animation duration (2s + 200ms safety)
+  setTimeout(() => { noiseAnimating = false }, 2200)
+
   const leafEls = document.querySelectorAll<HTMLElement>('.studio-title__line')
   const leafSet = new Set(leafEls)
 
@@ -110,13 +132,12 @@ function animateNoiseTitles(): void {
 
     const text = el.textContent?.trim() || ''
     if (!text) continue
-    NoiseText.for(el).show(2.0)
+    NoiseText.for(el).show(1.2)
   }
 
-  // Animate .studio-title__line spans.
   for (const el of leafEls) {
     const text = el.textContent?.trim() || ''
     if (!text) continue
-    NoiseText.for(el).show(2.0)
+    NoiseText.for(el).show(1.2)
   }
 }
