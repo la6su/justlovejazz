@@ -61,6 +61,7 @@ export class Experience {
   private projectDissolve: DissolveOverlay | null = null
   private projectDissolveActive = false
   private _portfolioInitialized = false
+  private _prevSectionIndex = -1
   private _introEmitted = false
 
   constructor(_ui: UIManager) {
@@ -159,7 +160,6 @@ export class Experience {
     this.world.update(dt)
 
     // UI theme: light sections (intro=0, flexible=2) need dark text/nav.
-    // Toggle on both html (for CSS vars) and body (for nav selectors).
     const idx = this.world.currentSectionIndex
     const isLightSection = idx === 0 || idx === 2
     document.documentElement.classList.toggle('light-theme', isLightSection)
@@ -167,7 +167,18 @@ export class Experience {
     // Give World the camera ref for DrawTrail (once, after init).
     this.world.setCamera(this.camera.instance)
 
-    // Context switch
+    // Dispatch section-change on EVERY section index change (not just context).
+    // This triggers NoiseText title animation for the new section.
+    if (idx !== this._prevSectionIndex) {
+      this._prevSectionIndex = idx
+      const cfgForSection = this.world.getConfig(worldState.currentPhase)
+      const sectionId = cfgForSection?.domSection ?? `section-${idx}`
+      window.dispatchEvent(new CustomEvent('jlz:section-change', {
+        detail: { sectionId, context: cfgForSection?.context, configId: cfgForSection?.id, index: idx }
+      }))
+    }
+
+    // Context switch (asset disposal + post-processing preset)
     const cfg = this.world.getConfig(worldState.currentPhase)
     if (cfg && cfg.context !== this.currentSectionContext) {
       if (this.currentSectionContext) {
@@ -176,14 +187,8 @@ export class Experience {
       }
       this.world.atmosphere?.setFog(cfg.fog.color, cfg.fog.density)
       this.renderer.postManager.applyPreset(cfg.id)
-      // Track 5: per-section FOV pop + smoothing from WorldConfig (no global magic).
       this.camera.setFovOffset(cfg.camFovOffset, cfg.camFovDuration)
       this.currentSectionContext = cfg.context
-      // Dispatch section-change event so DOM UI can react (3D→UI integration).
-      // Use the explicit domSection field from the config.
-      window.dispatchEvent(new CustomEvent('jlz:section-change', {
-        detail: { sectionId: cfg.domSection, context: cfg.context, configId: cfg.id }
-      }))
     }
 
     // Portfolio (3D slider) is only visible inside the Works section —

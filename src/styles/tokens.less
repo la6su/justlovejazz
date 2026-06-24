@@ -1,15 +1,12 @@
-// src/styles/tokens.less — Less bridge for design tokens
+// src/styles/tokens.less — Design tokens
 //
-// Mirrors src/styles/tokens.css CSS custom properties into Less variables
-// so UIkit components and .less stylesheets can consume the same token
-// system. When a token changes in tokens.css, update the matching @jlz-*
-// variable here.
+// Single source of truth. Generates CSS custom properties (:root { --jlz-* })
+// AND Less variables (@jlz-*) for UIKit theming.
 //
-// CSS custom properties remain the runtime source of truth (they support
-// responsive clamp() and prefers-reduced-motion). Less vars are a build-time
-// mirror for UIkit theming and static stylesheets.
+// This file is imported by _import.less BEFORE UIKit components so the
+// @jlz-* variables are available for UIKit theme overrides.
 
-// ── Color: surface ──
+// ── Color ──
 @jlz-color-bg: #050507;
 @jlz-color-bg-elevated: #0a0a0f;
 @jlz-color-surface: rgba(255, 255, 255, 0.04);
@@ -17,30 +14,26 @@
 @jlz-color-border: rgba(255, 255, 255, 0.10);
 @jlz-color-border-strong: rgba(255, 255, 255, 0.20);
 
-// ── Color: text ──
 @jlz-color-text: rgba(255, 255, 255, 0.92);
 @jlz-color-text-muted: rgba(255, 255, 255, 0.55);
 @jlz-color-text-subtle: rgba(255, 255, 255, 0.35);
 @jlz-color-text-inverse: #050507;
 
-// ── Color: accent (single, restrained) ──
 @jlz-color-accent: #515d84;
 @jlz-color-accent-hover: #6b78a3;
 @jlz-color-accent-glow: rgba(81, 93, 132, 0.40);
 
-// ── Typography: family (sync with tokens.css) ──
+// ── Typography ──
 @jlz-font-display: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 @jlz-font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 @jlz-font-mono: 'Inter', 'SF Mono', monospace;
 
-// ── Typography: weight ──
 @jlz-weight-light: 300;
 @jlz-weight-regular: 400;
 @jlz-weight-medium: 500;
 @jlz-weight-semibold: 600;
 @jlz-weight-bold: 700;
 
-// ── Typography: tracking ──
 @jlz-tracking-tight: -0.02em;
 @jlz-tracking-normal: 0;
 @jlz-tracking-wide: 0.05em;
@@ -95,10 +88,104 @@
 
 // ── Layout ──
 @jlz-page-max-width: 1440px;
-@jlz-page-gutter: clamp(16px, 5vw, 80px);
-@jlz-section-min-height: 100dvh;
+@jlz-page-gutter: 80px;
+@jlz-section-min-height: 100vh;
 
-// Note: html.light-theme token overrides live in tokens.css (CSS custom
-// properties are the runtime source of truth for theme switching).
-// Component-level light-theme rules (body.light-theme .nav-*) live in
-// src/assets/main.less alongside the rest of the component styles.
+// ═══════════════════════════════════════════════════════════════════════
+// CSS CUSTOM PROPERTIES — generated from Less variables above.
+// These are the runtime source of truth for CSS (var(--jlz-*)).
+// Less variables (@jlz-*) are for build-time UIKit theming.
+// ═══════════════════════════════════════════════════════════════════════
+
+:root {
+  --jlz-color-bg: @jlz-color-bg;
+  --jlz-color-bg-elevated: @jlz-color-bg-elevated;
+  --jlz-color-surface: @jlz-color-surface;
+  --jlz-color-surface-hover: @jlz-color-surface-hover;
+  --jlz-color-border: @jlz-color-border;
+  --jlz-color-border-strong: @jlz-color-border-strong;
+  --jlz-color-text: @jlz-color-text;
+  --jlz-color-text-muted: @jlz-color-text-muted;
+  --jlz-color-text-subtle: @jlz-color-text-subtle;
+  --jlz-color-text-inverse: @jlz-color-text-inverse;
+  --jlz-color-accent: @jlz-color-accent;
+  --jlz-color-accent-hover: @jlz-color-accent-hover;
+  --jlz-color-accent-glow: @jlz-color-accent-glow;
+
+  --jlz-font-display: @jlz-font-display;
+  --jlz-font-body: @jlz-font-body;
+  --jlz-font-mono: @jlz-font-mono;
+
+  --jlz-weight-light: @jlz-weight-light;
+  --jlz-weight-regular: @jlz-weight-regular;
+  --jlz-weight-medium: @jlz-weight-medium;
+  --jlz-weight-semibold: @jlz-weight-semibold;
+  --jlz-weight-bold: @jlz-weight-bold;
+
+  --jlz-tracking-tight: @jlz-tracking-tight;
+  --jlz-tracking-normal: @jlz-tracking-normal;
+  --jlz-tracking-wide: @jlz-tracking-wide;
+  --jlz-tracking-wider: @jlz-tracking-wider;
+  --jlz-tracking-widest: @jlz-tracking-widest;
+
+  --jlz-space-0: @jlz-space-0;
+  --jlz-space-1: @jlz-space-1;
+  --jlz-space-2: @jlz-space-2;
+  --jlz-space-3: @jlz-space-3;
+  --jlz-space-4: @jlz-space-4;
+  --jlz-space-5: @jlz-space-5;
+  --jlz-space-6: @jlz-space-6;
+  --jlz-space-8: @jlz-space-8;
+  --jlz-space-10: @jlz-space-10;
+  --jlz-space-12: @jlz-space-12;
+  --jlz-space-16: @jlz-space-16;
+  --jlz-space-20: @jlz-space-20;
+  --jlz-space-24: @jlz-space-24;
+  --jlz-space-32: @jlz-space-32;
+
+  --jlz-radius-sm: @jlz-radius-sm;
+  --jlz-radius-md: @jlz-radius-md;
+  --jlz-radius-lg: @jlz-radius-lg;
+  --jlz-radius-full: @jlz-radius-full;
+
+  --jlz-z-canvas: @jlz-z-canvas;
+  --jlz-z-content: @jlz-z-content;
+  --jlz-z-nav: @jlz-z-nav;
+  --jlz-z-overlay: @jlz-z-overlay;
+  --jlz-z-modal: @jlz-z-modal;
+  --jlz-z-toast: @jlz-z-toast;
+
+  --jlz-duration-instant: @jlz-duration-instant;
+  --jlz-duration-fast: @jlz-duration-fast;
+  --jlz-duration-normal: @jlz-duration-normal;
+  --jlz-duration-slow: @jlz-duration-slow;
+  --jlz-duration-cinematic: @jlz-duration-cinematic;
+  --jlz-duration-epic: @jlz-duration-epic;
+
+  --jlz-ease-entrance: @jlz-ease-entrance;
+  --jlz-ease-exit: @jlz-ease-exit;
+  --jlz-ease-emphasis: @jlz-ease-emphasis;
+  --jlz-ease-state: @jlz-ease-state;
+  --jlz-ease-cinematic: @jlz-ease-cinematic;
+
+  --jlz-duration-reduced: 0ms;
+  --jlz-page-max-width: @jlz-page-max-width;
+  --jlz-page-gutter: clamp(16px, 5vw, 80px);
+  --jlz-section-min-height: 100dvh;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --jlz-duration-fast: var(--jlz-duration-reduced);
+    --jlz-duration-normal: var(--jlz-duration-reduced);
+    --jlz-duration-slow: var(--jlz-duration-reduced);
+    --jlz-duration-cinematic: var(--jlz-duration-reduced);
+    --jlz-duration-epic: var(--jlz-duration-reduced);
+  }
+}
+
+html.light-theme {
+  --jlz-color-text: #050507 !important;
+  --jlz-color-text-muted: rgba(5, 5, 7, 0.55) !important;
+  --jlz-color-text-subtle: rgba(5, 5, 7, 0.35) !important;
+}
