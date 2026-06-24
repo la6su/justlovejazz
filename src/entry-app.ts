@@ -59,11 +59,6 @@ export async function startApp(): Promise<void> {
   // Render DOM sections BEFORE boot so they exist when event fires.
   initRouter()
 
-  // Wire NoiseText title animations via jlz:webgl-ready event.
-  // This fires after WebGLTextManager refresh (or Experience.init).
-  const onWebGlReady = () => animateNoiseTitles()
-  window.addEventListener('jlz:webgl-ready', onWebGlReady)
-
   // Navigation handler — scroll-based SPA, no page switching needed
   const onNavigate = () => {
     if (!isAppReady()) return
@@ -71,95 +66,85 @@ export async function startApp(): Promise<void> {
     if (exp?.smoothScroll) {
       exp.smoothScroll.lenis.scrollTo(0, { immediate: true })
     }
-    setTimeout(animateNoiseTitles, 200)
   }
   window.addEventListener('jlj:navigate', onNavigate)
   window.addEventListener('jlj:navigate', scheduleUiKitRefresh)
   mountDeferredShell()
   void boot()
 
-  // Scroll-spy: animate titles when their section enters the viewport.
-  // This is the PRIMARY trigger — fires when section becomes 35% visible.
-  // jlz:webgl-ready is a fallback for the first section on load.
-  setupTitleScrollSpy()
+  // Wire NoiseText title animations: after splash is dismissed.
+  // jlz:webgl-ready fires after intro/splash — start scroll-spy then.
+  const onWebGlReady = () => {
+    setTimeout(setupTitleScrollSpy, 300)
+  }
+  window.addEventListener('jlz:webgl-ready', onWebGlReady)
+
+  // Fallback: if jlz:webgl-ready never fires, start after 5s.
+  setTimeout(() => {
+    if (!window.__titleSpyStarted) {
+      window.__titleSpyStarted = true
+      setupTitleScrollSpy()
+    }
+  }, 5000)
 }
 
 /**
  * Scroll-spy for title animations (junni pattern).
  * Each .studio-title animates with NoiseText when its section enters
- * the viewport. Re-triggers on re-entry (uk-scrollspy "repeat: true" style).
+ * the viewport. Uses IntersectionObserver — the ONLY trigger for titles.
  */
 function setupTitleScrollSpy(): void {
-  // Track which titles have been animated — prevent re-trigger on scroll back
+  // Guard: only start once
+  if (window.__titleSpyStarted) return
+  window.__titleSpyStarted = true
+
   const animated = new WeakSet<HTMLElement>()
+
+  const animateTitle = (title: HTMLElement) => {
+    if (animated.has(title)) return
+    animated.add(title)
+    // Small delay so the section is visually settled before flicker starts
+    setTimeout(() => {
+      NoiseText.for(title).show(1.0)
+    }, 100)
+  }
 
   const observer = new IntersectionObserver((entries) => {
     for (const entry of entries) {
       if (!entry.isIntersecting) continue
       const section = entry.target as HTMLElement
       const title = section.querySelector<HTMLElement>('.studio-title')
-      if (title && !animated.has(title)) {
-        animated.add(title)
-        // Small delay so the section is visually settled before flicker starts
-        setTimeout(() => {
-          NoiseText.for(title).show(1.2)
-        }, 100)
+      if (title) {
+        animateTitle(title)
       }
     }
   }, {
-    threshold: 0.3,  // 30% of section visible
-    rootMargin: '-5% 0px -5% 0px',
+    threshold: 0.25,  // 25% of section visible
+    rootMargin: '0px',
   })
 
   // Observe all sections with data-section
   const observeSections = () => {
     document.querySelectorAll<HTMLElement>('section[data-section]').forEach(s => {
       observer.observe(s)
+      // Also check if section is already in viewport on init
+      const rect = s.getBoundingClientRect()
+      if (rect.top < window.innerHeight && rect.bottom > 0) {
+        const title = s.querySelector<HTMLElement>('.studio-title')
+        if (title) animateTitle(title)
+      }
     })
   }
+
   // Run after DOM is ready (sections are rendered by router)
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', observeSections)
   } else {
-    // Defer to next tick so router has rendered sections
-    setTimeout(observeSections, 50)
-  }
-}
-
-/**
- * NoiseText animation on studio titles — characters flicker then resolve.
- * Uses NoiseText.for() singleton to prevent overlapping animations on
- * the same DOM element across navigation events.
- *
- * Two tiers:
- * 1) Animate parent .studio-title only when it has no .studio-title__line
- *    children (so we don't double-animate).
- * 2) Animate .studio-title__line spans as their own leaf elements.
- *
- * NOTE: .jlz-works-title is NOT animated here — ProjectOverlay handles
- * its own NoiseText.on show() to avoid double-animation on works page.
- */
-function animateNoiseTitles(): void {
-  const leafEls = document.querySelectorAll<HTMLElement>('.studio-title__line')
-  const leafSet = new Set(leafEls)
-
-  // Animate parent .studio-title that have no .studio-title__line children.
-  for (const el of document.querySelectorAll<HTMLElement>('.studio-title')) {
-    if (leafSet.has(el)) continue
-    const hasLeafChild = [...leafEls].some(l => l.closest('.studio-title') === el)
-    if (hasLeafChild) continue
-
-    const text = el.textContent?.trim() || ''
-    if (!text) continue
-    NoiseText.for(el).show(1.2)
-  }
-
-  // Animate .studio-title__line spans.
-  for (const el of leafEls) {
-    const text = el.textContent?.trim() || ''
-    if (!text) continue
-    NoiseText.for(el).show(1.2)
+    setTimeout(observeSections, 100)
   }
 }
 
 // (lesson/lessons binding removed — lessons system deleted, junni reference has none)
+// animateNoiseTitles() removed — scroll-spy (setupTitleScrollSpy) is the
+// ONLY NoiseText trigger now. Bulk animation caused conflicts (double-trigger
+// with scroll-spy, leaving text in glitch state).

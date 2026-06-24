@@ -5,7 +5,8 @@ import { UIManager } from '../UI/UIManager';
 declare global {
   interface Window {
     experience: Experience;
-    UIkit: any; // UIkit is a legacy JS library, usually any is acceptable or we can define the core methods
+    UIkit: any;
+    __titleSpyStarted?: boolean;
   }
 }
 
