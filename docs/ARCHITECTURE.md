@@ -2,133 +2,80 @@
 
 ## Stack
 
-Vite 8 (rolldown) · TypeScript strict · three 0.184 + TSL · WebGPURenderer
-(WebGPU/WebGL2 auto-fallback) · UIkit 3 + Less · Lenis · bun.
+Vite 8 (rolldown) · TypeScript · three 0.184 + TSL · WebGPURenderer
+(WebGPU/WebGL2 auto-fallback) · UIkit 3 + Less (master-quantum-flares theme)
+· Lenis · bun. Single font: Inter.
 
-## Layout pattern (junni-inspired)
+## Layout
 
 ```
-index.html
-  ├─ #main-nav (sticky, z-index:10)
-  ├─ #spa-content (z-index:2, transparent) — DOM sections
-  │   └─ .section-studio
-  │       ├─ section#section-intro     (100vh, transparent bg)
-  │       ├─ section#section-about     (100vh, transparent bg)
-  │       ├─ section#section-flexible  (100vh, transparent bg)
-  │       ├─ section#section-challenge (100vh, transparent bg, Works slider)
-  │       ├─ section#section-innovative(100vh, transparent bg)
-  │       └─ section#section-contact   (100vh, transparent bg)
-  ├─ canvas.canvas (z-index:1, fixed, pointer-events:none) — 3D scene
-  └─ .jlz-section-progress (footer, z-index:100) — timeline dots
+canvas.canvas (z-index:1, fixed, pointer-events:none) — 3D scene
+#spa-content (z-index:2, transparent) — DOM sections (100vh each)
+  section#section-intro → 3D group 0
+  section#section-about → 3D group 1
+  section#section-flexible → 3D group 2
+  section#section-challenge → 3D group 3 (Works slider)
+  section#section-innovative → 3D group 4
+  section#section-contact → 3D group 5
+.jlz-section-progress (footer, z-index:100) — timeline dots
 ```
-
-DOM sections are transparent overlays. 3D canvas (behind) provides the
-background via `World.bg.color`. Text floats over the live 3D scene.
 
 ## Entry & Runtime
 
 ```
-index.html → /src/entry-shell.ts → entry-app.ts (router init, splash)
-  → main-app.ts (bootstrap, dissolve transition)
-  → core/Bootstrapper.ts → Experience.ts (render loop: setAnimationLoop)
-  → src/styles/tokens.css (design tokens)
+index.html → entry-shell.ts → entry-app.ts → main-app.ts → Bootstrapper → Experience.ts
+Render loop: renderer.instance.setAnimationLoop(callback)
 ```
 
-**Render loop:** `renderer.instance.setAnimationLoop(callback)` — required
-for WebGPU backend (rAF does not sync with WebGPU swap chain).
+## Renderer
 
-## Renderer (single WebGPURenderer)
+Single WebGPURenderer (alpha:false, ACES tonemap, sRGB).
+- WebGPU: direct renderer.render() (no post-processing)
+- WebGL2: ShaderMaterial RT pipeline (bloom/grain/vignette)
+- All scene materials: built-in (no ShaderMaterial, no TSL NodeMaterial)
 
+## Fonts
+
+Single font: Inter (300-900). master-quantum-flares sets 'Source Sans 3' —
+overridden in main.less AFTER the theme import:
+```less
+@global-font-family: 'Inter', sans-serif;
+@global-primary-font-family: 'Inter', sans-serif;
+body { font-family: 'Inter', sans-serif !important; }
 ```
-WebGPURenderer (always, alpha:false)
-  ├─ navigator.gpu present → WebGPU backend (WGSL)
-  └─ else                  → WebGL2 backend (GLSL, transparent)
-```
 
-No manual WebGLRenderer. TSL compiles to both targets. `DeviceCapability.mode`
-is a capability hint (`webgpu` | `webgl2` | `unsupported`), not a selector.
+## NoiseText
 
-### Render path
-
-| Backend | Method | Post |
-|---------|--------|------|
-| WebGPU | `renderer.render(scene, camera)` direct | none |
-| WebGL2 | RenderPipeline ShaderMaterial RT pipeline | bloom + grain + vignette |
-
-WebGPU direct render because TSL pipeline (pass→RT→QuadMesh) doubled GPU
-work on Chrome's ANGLE-OpenGL backend.
-
-### Materials (built-in only)
-
-**No ShaderMaterial in scene objects** — incompatible with WebGPURenderer's
-NodeBuilder. All scene materials are built-in (MeshStandard, MeshBasic,
-Points, LineBasic, GridHelper).
-
-DissolveOverlay (ShaderMaterial) is skipped on WebGPU via mode check.
+Triggered by `jlz:section-change` event (NOT IntersectionObserver).
+Experience.update() dispatches this when 3D scene transitions to a new section.
+Each .studio-title animates with character-level glitch (60% intensity, 1.5s).
 
 ## Modules
 
 | Module | Role |
 |--------|------|
-| Experience | Render loop (setAnimationLoop). Owns Sizes, Time, Camera, Renderer, World, Portfolio, Overlay |
-| Renderer | WebGPURenderer, alpha:false, ACES tonemap, sRGB. Direct render on WebGPU |
-| World | Section[] + sceneGroups[] composition, Baku, Lights, BG, Ground |
-| SectionSceneFactory | 6 scene compositions (built-in materials) |
+| Experience | Render loop (setAnimationLoop). Owns World, Renderer, Portfolio, Overlay |
+| Renderer | WebGPURenderer, alpha:false, direct render on WebGPU |
+| World | Section[] + sceneGroups[], Baku, Lights, BG, Ground |
+| SectionSceneFactory | 6 scenes (particles only, minimal) |
 | BG | Per-section background color (lerp transitions) |
-| WorksPortfolio | 3D card carousel. Raycast tap, swipe, arrows |
-| ProjectOverlay | DOM overlay for works slider (title/nav/description) |
-| RenderPipeline | WebGL2: ShaderMaterial RT pipeline. WebGPU: direct render |
-| PostProcessingManager | Per-section presets, WebGL2 only |
-| CinematicLights | 5-light setup, setMood + lerp |
-| SectionProgress | Footer timeline dots (clickable nav) |
+| WorksPortfolio | 3D card carousel (pointer guard: check group.visible) |
+| ProjectOverlay | DOM overlay (reuses #project-overlay from templates) |
+| NoiseText | Character glitch animation (jlz:section-change trigger) |
 
-## Disabled modules (perf)
+## Disabled (perf)
 
-| Module | Why | Re-enable |
-|--------|-----|-----------|
-| DrawTrail | Per-frame 64-point geometry update | When perf budget allows |
-| WebGLTextManager | Second WebGLRenderer (Troika) | DOM text works instead |
-
-## Routes (SPA scroll)
-
-No hash routing. Pure anchor scroll:
-
-| Anchor | Section | 3D group | Role |
-|--------|---------|----------|------|
-| `#section-intro` | intro | 0 | Hero — Baku on white |
-| `#section-about` | about | 1 | About — blob on dark |
-| `#section-flexible` | flexible | 2 | Flexible — metal drop |
-| `#section-challenge` | challenge | 3 | Works — 3D slider |
-| `#section-innovative` | innovative | 4 | Innovative — constellation |
-| `#section-contact` | contact | 5 | Contact — Baku on dark |
-
-## WorldConfig
-
-6 scenes, each defines: camera, baku, post, fog, lights, camFovOffset,
-bloomRadius/Threshold, `ui.showGallery` (true only for challenge/works).
+| Module | Why |
+|--------|-----|
+| DrawTrail | Per-frame geometry update |
+| WebGLTextManager | Second WebGLRenderer (Troika) |
+| Baku | Hidden — user will refine visual |
 
 ## Scroll → 3D sync
 
-1. Lenis scroll → `input.setScroll(scroll, limit)`
-2. `input.getSmoothedScrollProgress()` → 0..1
-3. `world.advance(progress)` → `updateTransform(progress)`
-4. updateTransform: range-based fromIndex/toIndex + smoothstep t
-5. sceneGroups visibility: from/to groups visible, fade multiplicatively
-6. BG.color lerps to section color
-7. Camera lerps between section transforms
-
-## Memory lifecycle
-
-- `setAnimationLoop(null)` in Experience.destroy() FIRST
-- All window listeners have destroy()/dispose() with bound refs
-- No HMR leaks
-
-## A11y
-
-prefers-reduced-motion, ARIA roles, focus management, skip-link, modal.
-
-## 3D↔UI sync
-
-- `jlz:section-change` CustomEvent → ContentReveal highlights DOM section
-- `worldState.currentPhase` → Experience → ProjectOverlay visibility
-- `showGallery` config → Portfolio.group.visible + Overlay.showContainer
+1. Lenis scroll → input.setScroll()
+2. input.getSmoothedScrollProgress() → 0..1
+3. world.advance(progress) → updateTransform(progress)
+4. sceneGroups visibility: from/to groups visible, fade multiplicatively
+5. BG.color lerps to section color
+6. jlz:section-change dispatched on section transition → NoiseText fires
