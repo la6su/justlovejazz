@@ -501,21 +501,25 @@ export class Experience {
   }
 
   private async ensureWebGLTextManager(): Promise<void> {
-    // WebGLTextManager creates a secondary WebGLRenderer for Troika text overlay
-    // on top of DOM. Renders .studio-title elements via Troika on a transparent
-    // orthographic canvas, synchronized with the main scene's update loop.
-    if (this.webglTextManager) return // already initialized
+    // DISABLED: WebGLTextManager makes .studio-title text transparent
+    // (style.color = 'transparent') and renders via Troika overlay canvas.
+    // This BREAKS NoiseText — NoiseText changes el.textContent (invisible),
+    // while Troika shows its own static text that never updates.
+    // Result: titles appear stuck/glitched because Troika overlay hides
+    // the NoiseText animation happening in the DOM.
+    //
+    // To re-enable: uncomment the code below. But then NoiseText must
+    // also call troika.text = el.innerText after each textContent change.
+    //
+    // if (this.webglTextManager) return
+    // const titles = document.querySelectorAll<HTMLElement>('.studio-title')
+    // if (titles.length === 0) return
+    // const { WebGLTextManager } = await import('./WebGLTextManager')
+    // this.webglTextManager = new WebGLTextManager(Array.from(titles))
+    // await this.webglTextManager.waitForAllLoaded()
+    // window.dispatchEvent(new Event('jlz:webgl-ready'))
 
-    const titles = document.querySelectorAll<HTMLElement>('.studio-title')
-    if (titles.length === 0) {
-      // No titles yet — DOM may not be ready; wait for DOMContentLoaded / first layout
-      return
-    }
-
-    const { WebGLTextManager } = await import('./WebGLTextManager')
-    this.webglTextManager = new WebGLTextManager(Array.from(titles))
-    await this.webglTextManager.waitForAllLoaded()
-    // Dispatch so NoiseText can safely start after overlay is synchronized.
+    // Instead: dispatch jlz:webgl-ready immediately so NoiseText can start.
     window.dispatchEvent(new Event('jlz:webgl-ready'))
   }
 }
