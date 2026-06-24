@@ -5,6 +5,10 @@
 // Built-in materials ONLY (MeshStandardMaterial, MeshBasicMaterial,
 // PointsMaterial, LineBasicMaterial). No ShaderMaterial — incompatible
 // with WebGPURenderer's NodeBuilder.
+//
+// DESIGN: Minimal, clean. Each section has 1-2 key objects + subtle
+// particles. No cluttered grids, constellations, or geometric line fields.
+// Background color (BG.ts) provides the section mood.
 
 import * as THREE from 'three'
 
@@ -26,124 +30,6 @@ function makeGlowParticles(count: number, range: THREE.Vector3, color: number, s
   return pts
 }
 
-// Reflective floor — simple dark plane, gives depth to the scene
-function makeReflectiveFloor(color: number, opacity: number, y: number): THREE.Mesh {
-  const plane = new THREE.Mesh(
-    new THREE.PlaneGeometry(60, 60),
-    new THREE.MeshStandardMaterial({
-      color, metalness: 1.0, roughness: 0.1, transparent: true, opacity,
-    })
-  )
-  plane.rotation.x = -Math.PI / 2
-  plane.position.y = y
-  return plane
-}
-
-// Grid floor — wireframe grid, junni Ground pattern
-function makeGridFloor(color: number, y: number, size: number = 40, divisions: number = 20): THREE.GridHelper {
-  const grid = new THREE.GridHelper(size, divisions, color, color)
-  const mat = grid.material as THREE.LineBasicMaterial
-  mat.transparent = true
-  mat.opacity = 0.3
-  mat.depthWrite = false
-  grid.position.y = y
-  return grid
-}
-
-// Blob — central character-like form (complements Baku sphere)
-function makeBlob(x: number, y: number, z: number, bodyColor: number, accentColor?: number): THREE.Group {
-  const grp = new THREE.Group()
-  grp.name = 'blob'
-  const body = new THREE.Mesh(
-    new THREE.SphereGeometry(0.8, 32, 32),
-    new THREE.MeshStandardMaterial({ color: bodyColor, metalness: 0.4, roughness: 0.4 })
-  )
-  body.scale.y = 1.3
-  body.position.set(x, y, z)
-  grp.add(body)
-  if (accentColor !== undefined) {
-    const accent = new THREE.Mesh(
-      new THREE.SphereGeometry(0.12, 16, 16),
-      new THREE.MeshStandardMaterial({ color: accentColor, emissive: accentColor, emissiveIntensity: 0.6 })
-    )
-    accent.position.set(x - 0.35, y + 0.15, z + 0.7)
-    grp.add(accent)
-    const accent2 = accent.clone()
-    accent2.position.x = x + 0.35
-    grp.add(accent2)
-  }
-  return grp
-}
-
-// Constellation — network of points + connecting lines (junni Section5 pattern)
-function makeConstellation(count: number, spread: number, color: number): THREE.Group {
-  const grp = new THREE.Group()
-  grp.name = 'constellation'
-
-  const points = new Float32Array(count * 3)
-  const positions: [number, number, number][] = []
-  for (let i = 0; i < count; i++) {
-    const px = (Math.random() - 0.5) * spread
-    const py = (Math.random() - 0.5) * spread * 0.6
-    const pz = (Math.random() - 0.3) * spread * 0.4
-    points[i * 3] = px
-    points[i * 3 + 1] = py
-    points[i * 3 + 2] = pz
-    positions.push([px, py, pz])
-  }
-
-  const dots = new THREE.Points(
-    new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(points, 3)),
-    new THREE.PointsMaterial({ color, size: 0.08, transparent: true, opacity: 0.7, depthWrite: false })
-  )
-  grp.add(dots)
-
-  // Lines between nearby points
-  const linePositions: number[] = []
-  for (let i = 0; i < positions.length; i++) {
-    for (let j = i + 1; j < positions.length; j++) {
-      const dx = positions[i][0] - positions[j][0]
-      const dy = positions[i][1] - positions[j][1]
-      const dz = positions[i][2] - positions[j][2]
-      const dist = Math.sqrt(dx * dx + dy * dy + dz * dz)
-      if (dist < spread * 0.22) {
-        linePositions.push(positions[i][0], positions[i][1], positions[i][2])
-        linePositions.push(positions[j][0], positions[j][1], positions[j][2])
-      }
-    }
-  }
-  if (linePositions.length > 0) {
-    const lineGeo = new THREE.BufferGeometry()
-    lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3))
-    grp.add(new THREE.LineSegments(
-      lineGeo,
-      new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.3, depthWrite: false })
-    ))
-  }
-  return grp
-}
-
-// Geometric lines — vertical line field (junni Lines pattern)
-function makeGeometricLines(count: number, spread: number, color: number, yBase: number): THREE.Group {
-  const grp = new THREE.Group()
-  grp.name = 'geo-lines'
-  const verts: number[] = []
-  for (let i = 0; i < count; i++) {
-    const x = (Math.random() - 0.5) * spread
-    const z = (Math.random() - 0.3) * spread * 0.5
-    const len = 2 + Math.random() * 6
-    verts.push(x, yBase, z)
-    verts.push(x + (Math.random() - 0.5) * 2, yBase + len, z)
-  }
-  const geo = new THREE.BufferGeometry()
-  geo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3))
-  grp.add(new THREE.LineSegments(
-    geo,
-    new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.2, depthWrite: false })
-  ))
-  return grp
-}
-
 // Metal drop — glossy metallic sphere (junni Baku-like centerpiece)
 function makeMetalDrop(x: number, y: number, z: number, color: number = 0xcccccc): THREE.Mesh {
   const drop = new THREE.Mesh(
@@ -157,10 +43,26 @@ function makeMetalDrop(x: number, y: number, z: number, color: number = 0xcccccc
   return drop
 }
 
+// Reflective floor — simple dark plane, gives depth to the scene
+function makeReflectiveFloor(color: number, opacity: number, y: number): THREE.Mesh {
+  const plane = new THREE.Mesh(
+    new THREE.PlaneGeometry(60, 60),
+    new THREE.MeshStandardMaterial({
+      color, metalness: 1.0, roughness: 0.1, transparent: true, opacity,
+    })
+  )
+  plane.rotation.x = -Math.PI / 2
+  plane.position.y = y
+  return plane
+}
+
 // ─── Factory: 6 scenes ───
+// Minimal compositions — 1 key object + optional particles per section.
+// Baku (character sphere) is managed separately by World, not by factory.
+
 export class SectionSceneFactory {
 
-  // 0: Intro — white background, metal drop centerpiece
+  // 0: Intro — white background, single metal drop centerpiece
   static createIntro(): THREE.Group {
     const g = new THREE.Group()
     g.name = 'intro'
@@ -168,13 +70,12 @@ export class SectionSceneFactory {
     return g
   }
 
-  // 1: About — black BG, reflective floor, blob, particles
+  // 1: About — black BG, reflective floor, subtle particles
   static createAbout(): THREE.Group {
     const g = new THREE.Group()
     g.name = 'about'
     g.add(makeReflectiveFloor(0x111111, 0.15, -2))
-    g.add(makeBlob(0, -0.3, 2, 0x1a1a1a, 0xff69b4))
-    g.add(makeGlowParticles(60, new THREE.Vector3(12, 6, 8), 0xff69b4, 0.06, 0.4))
+    g.add(makeGlowParticles(50, new THREE.Vector3(12, 6, 8), 0xff69b4, 0.05, 0.3))
     return g
   }
 
@@ -183,37 +84,33 @@ export class SectionSceneFactory {
     const g = new THREE.Group()
     g.name = 'flexible'
     g.add(makeMetalDrop(0, 0.3, 0, 0xaaaaaa))
-    g.add(makeGlowParticles(40, new THREE.Vector3(14, 7, 8), 0xbbbbbb, 0.05, 0.3))
+    g.add(makeGlowParticles(35, new THREE.Vector3(14, 7, 8), 0xbbbbbb, 0.04, 0.25))
     return g
   }
 
-  // 3: Challenge — dark BG, grid floor, geometric lines, blob
+  // 3: Challenge (Works) — dark BG, minimal (portfolio slider is the content)
+  // No grid, no geometric lines — the 3D card carousel is the focus.
   static createChallenge(): THREE.Group {
     const g = new THREE.Group()
     g.name = 'challenge'
-    g.add(makeGridFloor(0x4488ff, -2))
-    g.add(makeBlob(0, -0.3, 2, 0x111111, 0xff1493))
-    g.add(makeGeometricLines(18, 22, 0x4488ff, -2))
-    g.add(makeGlowParticles(30, new THREE.Vector3(14, 6, 8), 0x4488ff, 0.04, 0.3))
+    g.add(makeGlowParticles(25, new THREE.Vector3(14, 6, 8), 0x4488ff, 0.04, 0.25))
     return g
   }
 
-  // 4: Innovative — dark BG, constellation network, blob
+  // 4: Innovative — dark BG, subtle particles only
+  // No constellation network — keep minimal, let Baku (when enabled) be focus.
   static createInnovative(): THREE.Group {
     const g = new THREE.Group()
     g.name = 'innovative'
-    g.add(makeConstellation(90, 22, 0x6688cc))
-    g.add(makeBlob(0, -0.5, 2, 0x111111, 0x6688ff))
-    g.add(makeGlowParticles(50, new THREE.Vector3(12, 7, 6), 0x88aacc, 0.05, 0.35))
+    g.add(makeGlowParticles(45, new THREE.Vector3(12, 7, 6), 0x88aacc, 0.05, 0.3))
     return g
   }
 
-  // 5: Contact — dark BG, grid floor, particles
+  // 5: Contact — dark BG, subtle particles
   static createContact(): THREE.Group {
     const g = new THREE.Group()
     g.name = 'contact'
-    g.add(makeGridFloor(0x444466, -2))
-    g.add(makeGlowParticles(50, new THREE.Vector3(10, 5, 6), 0x666688, 0.05, 0.3))
+    g.add(makeGlowParticles(40, new THREE.Vector3(10, 5, 6), 0x666688, 0.05, 0.25))
     return g
   }
 
