@@ -34,21 +34,20 @@
 
 .section-content { text-align: center; z-index: 1; }
 
-/* Studio title variants — Bebas Neue display font, large and bold.
- * Base font-size + margin-bottom here so plain .studio-title (without
- * a --hero / --about / --challenge modifier) still renders correctly. */
+/* Studio title variants — Inter, bold, tight tracking.
+ * Single font (Inter) for the entire project. */
 .studio-title {
   font-family: var(--jlz-font-display);
-  font-weight: 700;
+  font-weight: 800;
   font-size: clamp(2.5rem, 8vw, 5rem);
   line-height: 1;
-  letter-spacing: 0.02em;
+  letter-spacing: -0.02em;
   text-transform: uppercase;
   margin: 0 0 var(--jlz-space-8);
 }
-.studio-title--hero { font-size: clamp(3.5rem, 11vw, 8rem); font-weight: 400; letter-spacing: 0.05em; }
+.studio-title--hero { font-size: clamp(3rem, 10vw, 7rem); font-weight: 900; letter-spacing: -0.03em; }
 .studio-title--about,
-.studio-title--challenge { font-size: clamp(2.5rem, 8vw, 5rem); }
+.studio-title--challenge { font-size: clamp(2.5rem, 8vw, 5rem); font-weight: 800; }
 .studio-subtitle { font-family: var(--jlz-font-body); font-size: clamp(0.75rem, 1.2vw, 0.95rem); letter-spacing: 0.25em; text-transform: uppercase; opacity: 0.65; font-weight: 400; }
 .studio-body { font-family: var(--jlz-font-body); max-width: 60ch; line-height: 1.7; font-size: clamp(0.9rem, 1.1vw, 1.05rem); font-weight: 300; }
 

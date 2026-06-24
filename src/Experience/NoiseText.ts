@@ -83,8 +83,9 @@ export class NoiseText {
       return;
     }
 
-    // Ramp: intensity starts at ~30%, fades linearly to 0 at t=1.
-    const intensity = Math.max(0, 1 - t) * 0.30;
+    // Ramp: intensity starts at ~60%, fades linearly to 0 at t=1.
+    // Higher starting intensity = more visible glitch characters.
+    const intensity = Math.max(0, 1 - t) * 0.60;
 
     // Generate noisy version of cleanText.
     let buf = '';

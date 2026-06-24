@@ -27,6 +27,17 @@
  */
 @import './master-quantum-flares/_import.less';
 @import './master-quantum-flares/styles/black-blue.less';
+
+/* ════════════════════════════════════════════════════════════════════
+   0. Force Inter font globally — override master-quantum-flares
+   (which sets 'Source Sans 3' + 'Geologica'). Single font for the
+   entire project per user request.
+   ════════════════════════════════════════════════════════════════════ */
+@global-font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+@global-primary-font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+@base-heading-font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+@base-body-font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
 /* SPA section layout — force viewport height for scroll-based sections */
 @import (inline) '../styles/sections.css';
 
@@ -41,6 +52,7 @@
 html,
 body {
   overflow-x: hidden;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
 }
 
 /* Headings — uppercase as brand convention */

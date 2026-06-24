@@ -72,79 +72,44 @@ export async function startApp(): Promise<void> {
   mountDeferredShell()
   void boot()
 
-  // Wire NoiseText title animations: after splash is dismissed.
-  // jlz:webgl-ready fires after intro/splash — start scroll-spy then.
+  // Wire NoiseText title animations via jlz:section-change event.
+  // This fires from Experience.update() when the 3D scene transitions
+  // to a new section — the title animates when the section becomes ACTIVE,
+  // not when it merely enters the viewport (which fires too early during scroll).
+  const onSectionChange = (e: Event) => {
+    const detail = (e as CustomEvent).detail
+    if (!detail?.sectionId) return
+    // Find the DOM section matching the 3D section
+    const sectionEl = document.querySelector(`[data-section="${detail.sectionId}"]`) as HTMLElement
+    if (!sectionEl) return
+    const title = sectionEl.querySelector<HTMLElement>('.studio-title')
+    if (!title) return
+    // Animate with NoiseText — visible glitch flicker
+    NoiseText.for(title).show(1.5)
+  }
+  window.addEventListener('jlz:section-change', onSectionChange)
+
+  // Also trigger on jlz:webgl-ready (first load, after splash)
   const onWebGlReady = () => {
-    setTimeout(setupTitleScrollSpy, 300)
+    setTimeout(() => {
+      const heroTitle = document.querySelector<HTMLElement>('.studio-title--hero')
+      if (heroTitle) {
+        NoiseText.for(heroTitle).show(1.5)
+      }
+    }, 300)
   }
   window.addEventListener('jlz:webgl-ready', onWebGlReady)
 
-  // Fallback: if jlz:webgl-ready never fires, start after 5s.
+  // Fallback: if jlz:webgl-ready never fires, animate hero after 5s
   setTimeout(() => {
     if (!window.__titleSpyStarted) {
       window.__titleSpyStarted = true
-      setupTitleScrollSpy()
+      const heroTitle = document.querySelector<HTMLElement>('.studio-title--hero')
+      if (heroTitle) NoiseText.for(heroTitle).show(1.5)
     }
   }, 5000)
 }
 
-/**
- * Scroll-spy for title animations (junni pattern).
- * Each .studio-title animates with NoiseText when its section enters
- * the viewport. Uses IntersectionObserver — the ONLY trigger for titles.
- */
-function setupTitleScrollSpy(): void {
-  // Guard: only start once
-  if (window.__titleSpyStarted) return
-  window.__titleSpyStarted = true
-
-  const animated = new WeakSet<HTMLElement>()
-
-  const animateTitle = (title: HTMLElement) => {
-    if (animated.has(title)) return
-    animated.add(title)
-    // Small delay so the section is visually settled before flicker starts
-    setTimeout(() => {
-      NoiseText.for(title).show(1.0)
-    }, 100)
-  }
-
-  const observer = new IntersectionObserver((entries) => {
-    for (const entry of entries) {
-      if (!entry.isIntersecting) continue
-      const section = entry.target as HTMLElement
-      const title = section.querySelector<HTMLElement>('.studio-title')
-      if (title) {
-        animateTitle(title)
-      }
-    }
-  }, {
-    threshold: 0.25,  // 25% of section visible
-    rootMargin: '0px',
-  })
-
-  // Observe all sections with data-section
-  const observeSections = () => {
-    document.querySelectorAll<HTMLElement>('section[data-section]').forEach(s => {
-      observer.observe(s)
-      // Also check if section is already in viewport on init
-      const rect = s.getBoundingClientRect()
-      if (rect.top < window.innerHeight && rect.bottom > 0) {
-        const title = s.querySelector<HTMLElement>('.studio-title')
-        if (title) animateTitle(title)
-      }
-    })
-  }
-
-  // Run after DOM is ready (sections are rendered by router)
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', observeSections)
-  } else {
-    setTimeout(observeSections, 100)
-  }
-}
-
-// (lesson/lessons binding removed — lessons system deleted, junni reference has none)
-// animateNoiseTitles() removed — scroll-spy (setupTitleScrollSpy) is the
-// ONLY NoiseText trigger now. Bulk animation caused conflicts (double-trigger
-// with scroll-spy, leaving text in glitch state).
+// NoiseText is triggered by jlz:section-change event (from Experience.update)
+// + jlz:webgl-ready (hero on first load). No IntersectionObserver — it fired
+// too early during scroll, before the user could see the animation.
