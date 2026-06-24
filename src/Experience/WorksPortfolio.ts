@@ -151,6 +151,10 @@ export class WorksPortfolio {
 
   private onPointerDown = (e: PointerEvent) => {
     if (this.expanding) return
+    // Ignore events when portfolio is hidden (non-works sections).
+    // Without this, pointerdown captures ALL clicks on the page via
+    // window-level capture listener, interfering with other sections.
+    if (!this.group.visible) return
     // Ignore clicks on UI overlay/modal/nav — they have their own handlers.
     const target = e.target as HTMLElement
     if (target.closest('.jlz-works-ui, #project-modal, #jlj-splash, #main-nav')) return

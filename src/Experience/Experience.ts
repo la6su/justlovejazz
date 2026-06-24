@@ -60,6 +60,7 @@ export class Experience {
   // Project transition dissolve (shader effect on card click)
   private projectDissolve: DissolveOverlay | null = null
   private projectDissolveActive = false
+  private _portfolioInitialized = false
   private _introEmitted = false
 
   constructor(_ui: UIManager) {
@@ -195,6 +196,11 @@ export class Experience {
     // slider UI is scoped to #section-works, never a global overlay.
     if (this.overlay) {
       if (showGallery) {
+        // First time entering works section → load initial project.
+        if (!this._portfolioInitialized) {
+          this._portfolioInitialized = true
+          this.onProjectSelect(0)
+        }
         this.overlay.showContainer()
       } else {
         this.overlay.hide()
@@ -370,10 +376,11 @@ export class Experience {
         this.projectDissolve = null
       }
     }
-    this.onProjectSelect(0)
-    // Do NOT call showContainer() here — Experience.update() manages overlay
-    // visibility via showGallery config. Calling it here makes overlay flash
-    // on non-works sections before the first update() hides it.
+    // Do NOT call onProjectSelect(0) here — it triggers _runProjectDissolve
+    // which calls overlay.showContainer() at the end, making the overlay
+    // visible on non-works sections. Experience.update() will call
+    // onProjectSelect when the user scrolls to the works section.
+    // this.onProjectSelect(0)  // REMOVED — causes overlay flash on intro
   }
 
   private onProjectSelect(idx: number): void {
@@ -391,20 +398,23 @@ export class Experience {
       return
     }
 
-    // Run dissolve flow for all project selections
-
-
-    // Subsequent selections: dissolve transition.
-    // Phase 1: dissolve IN (0 → 1) — screen covered by noise wipe.
-    // Phase 2 (at mid): swap overlay content.
-    // Phase 3: dissolve OUT (1 → 0) — reveal with new project.
-    this._runProjectDissolve(project, safeIdx, projs.length)
+    // If dissolve overlay exists, run the cinematic dissolve transition.
+    // Otherwise (WebGL2 backend, or dissolve creation failed), show the
+    // project overlay directly — no transition, but content is populated.
+    if (this.projectDissolve) {
+      this._runProjectDissolve(project, safeIdx, projs.length)
+    } else {
+      // Direct show — no dissolve transition (fallback path).
+      this.overlay.show(project as never, safeIdx, projs.length)
+    }
   }
 
   private _pendingProject: { project: unknown; idx: number; total: number } | null = null
 
   private _runProjectDissolve(project: unknown, idx: number, total: number): void {
     if (!this.projectDissolve || !this.overlay) return
+    // Safety: don't run dissolve if portfolio is hidden (non-works section).
+    if (this.portfolio && !this.portfolio.group.visible) return
     this.projectDissolveActive = true
     const overlay = this.projectDissolve
     overlay.meshGroup.visible = true
