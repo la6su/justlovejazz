@@ -4,29 +4,31 @@
 // 1. Frame 0 = correct text → no flash.
 // 2. Final frame = ALWAYS clean text (no glitch residue).
 // 3. Global instance per element → prevents overlapping animations.
+// 4. Debounce: show() called within 1s of a previous call is ignored,
+//    preventing rapid re-triggers from leaving text in glitch state.
+// 5. sourceText is ALWAYS cached on first call — never re-read from DOM
+//    (which might contain glitched text from a previous animation).
 
 const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*<>?+=_~|{}[]';
 
 export class NoiseText {
-  /** Global registry: one instance per DOM element, prevents overlap. */
   private static instances = new WeakMap<HTMLElement, NoiseText>();
 
   private readonly el: HTMLElement;
   private cleanText = '';
+  private hasCleanText = false;  // tracks whether cleanText was ever set
 
   private rafId: number | null = null;
   private timeoutId: number | null = null;
   private running = false;
   private start = 0;
   private dur = 600;
+  private lastShowTime = 0;  // debounce: ignore show() within 1s of previous
 
   private constructor(el: HTMLElement) {
     this.el = el;
   }
 
-  /**
-   * Get or create the singleton NoiseText for this element.
-   */
   static for(el: HTMLElement): NoiseText {
     let inst = this.instances.get(el);
     if (!inst) {
@@ -39,17 +41,39 @@ export class NoiseText {
   /**
    * Start noise animation for `dur` seconds.
    * @param dur Duration in seconds.
-   * @param sourceText Explicit clean text to use. If passed (strongly recommended),
-   *   this overrides reading `el.textContent` and guarantees no "stale noisy text"
-   *   is captured when a new animation starts mid-previous-animation.
+   * @param sourceText Explicit clean text. STRONGLY RECOMMENDED — if not
+   *   provided, reads from el.textContent ONLY on the first call (cached
+   *   thereafter). This prevents glitched text from being captured as
+   *   "clean" when show() is called mid-previous-animation.
    */
   show(dur: number = 0.6, sourceText?: string): void {
+    const now = performance.now();
+
+    // Debounce: if show() was called less than 1s ago AND animation is
+    // still running, ignore this call. Prevents rapid re-triggers from
+    // leaving text permanently glitched.
+    if (this.running && (now - this.lastShowTime) < 1000) {
+      return;
+    }
+    this.lastShowTime = now;
+
     this.cancel();
 
-    // If caller provides explicit text, use it. Otherwise read from DOM.
-    // Reading from DOM immediately after cancel is safe because cancel only
-    // stops RAF/timers — it does NOT modify el.textContent.
-    this.cleanText = sourceText ?? (this.el.textContent || '');
+    // Set cleanText: prefer explicit sourceText, then cached value,
+    // then read from DOM (first call only).
+    if (sourceText) {
+      this.cleanText = sourceText;
+      this.hasCleanText = true;
+    } else if (!this.hasCleanText) {
+      // First call ever — read from DOM. This is safe because cancel()
+      // above restored cleanText if we had one, or left DOM untouched
+      // if this is the first call.
+      this.cleanText = this.el.textContent || '';
+      this.hasCleanText = true;
+    }
+    // If hasCleanText is true and no sourceText provided, keep the cached
+    // cleanText — NEVER re-read from DOM (it might be glitched).
+
     if (this.cleanText.length === 0) return;
 
     // Frame 0 = correct text.
@@ -57,7 +81,7 @@ export class NoiseText {
 
     this.dur = dur * 1000;
     this.running = true;
-    this.start = performance.now();
+    this.start = now;
     this.el.setAttribute('data-visible', 'true');
 
     // Safety timeout → guarantees we always stop even if RAF is throttled.
@@ -75,19 +99,14 @@ export class NoiseText {
 
     const t = Math.min(1, (ts - this.start) / this.dur);
 
-    // Hard stop at 100%: only the very last frame produces noise,
-    // then we immediately finalize. No "90% early stop" that can leave
-    // the animation in an intermediate state.
     if (t >= 1) {
       this.finalize();
       return;
     }
 
     // Ramp: intensity starts at ~60%, fades linearly to 0 at t=1.
-    // Higher starting intensity = more visible glitch characters.
     const intensity = Math.max(0, 1 - t) * 0.60;
 
-    // Generate noisy version of cleanText.
     let buf = '';
     for (let i = 0; i < this.cleanText.length; i++) {
       const ch = this.cleanText[i];
@@ -104,7 +123,6 @@ export class NoiseText {
     this.rafId = requestAnimationFrame(this.tick);
   };
 
-  /** Hard stop with clean text restoration (called on animation end). */
   finalize(): void {
     this.running = false;
     if (this.rafId !== null) {
@@ -118,7 +136,6 @@ export class NoiseText {
     this.el.textContent = this.cleanText;
   }
 
-  /** Lightweight cancel — restores clean text and cancels RAF+timeout. */
   private cancel(): void {
     this.running = false;
     if (this.rafId !== null) {
@@ -129,9 +146,8 @@ export class NoiseText {
       clearTimeout(this.timeoutId);
       this.timeoutId = null;
     }
-    // Always restore clean text on cancel so a new show() read from DOM
-    // picks up the correct text, not a noisy frame from the previous run.
-    if (this.cleanText) {
+    // Restore clean text on cancel so DOM is never left glitched.
+    if (this.hasCleanText && this.cleanText) {
       this.el.textContent = this.cleanText;
     }
   }

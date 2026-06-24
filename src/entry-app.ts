@@ -41,8 +41,8 @@ function scheduleUiKitRefresh(): void {
   const refresh = () => {
     const content = document.getElementById('spa-content')
     if (!content) return
-    // Re-initialize dynamically inserted UIKit components
-    (UIkit as any).update()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(UIkit as any).update()
   }
   if ('requestIdleCallback' in window) {
     ;(window as Window & { requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => void })
@@ -56,10 +56,9 @@ export async function startApp(): Promise<void> {
   await import('./assets/main.less')
   ;(UIkit as { use: (p: object) => void }).use(Icons as object)
 
-  // Render DOM sections BEFORE boot so they exist when event fires.
+  // Render DOM sections BEFORE boot so they exist when events fire.
   initRouter()
 
-  // Navigation handler — scroll-based SPA, no page switching needed
   const onNavigate = () => {
     if (!isAppReady()) return
     const exp = window.experience
@@ -72,44 +71,30 @@ export async function startApp(): Promise<void> {
   mountDeferredShell()
   void boot()
 
-  // Wire NoiseText title animations via jlz:section-change event.
-  // This fires from Experience.update() when the 3D scene transitions
-  // to a new section — the title animates when the section becomes ACTIVE,
-  // not when it merely enters the viewport (which fires too early during scroll).
-  const onSectionChange = (e: Event) => {
-    const detail = (e as CustomEvent).detail
-    if (!detail?.sectionId) return
-    // Find the DOM section matching the 3D section
-    const sectionEl = document.querySelector(`[data-section="${detail.sectionId}"]`) as HTMLElement
+  // ── NoiseText: SINGLE trigger — jlz:section-change event ──
+  // Experience.update() dispatches this when currentSectionIndex changes.
+  // This fires for EVERY section transition (including initial load where
+  // _prevSectionIndex=-1 → idx=0). Each .studio-title gets animated with
+  // its cached clean text. NoiseText has a 1s debounce to prevent rapid
+  // re-triggers from leaving text in glitch state.
+  window.addEventListener('jlz:section-change', ((e: CustomEvent) => {
+    const sectionId = e.detail?.sectionId
+    if (!sectionId) return
+    const sectionEl = document.querySelector(`[data-section="${sectionId}"]`)
     if (!sectionEl) return
     const title = sectionEl.querySelector<HTMLElement>('.studio-title')
     if (!title) return
-    // Animate with NoiseText — visible glitch flicker
-    NoiseText.for(title).show(1.5)
-  }
-  window.addEventListener('jlz:section-change', onSectionChange)
+    // Pass explicit sourceText — NEVER let NoiseText read from DOM
+    // (which might contain glitched text from a previous animation).
+    NoiseText.for(title).show(1.5, title.textContent || '')
+  }) as EventListener)
 
-  // Also trigger on jlz:webgl-ready (first load, after splash)
-  const onWebGlReady = () => {
-    setTimeout(() => {
-      const heroTitle = document.querySelector<HTMLElement>('.studio-title--hero')
-      if (heroTitle) {
-        NoiseText.for(heroTitle).show(1.5)
-      }
-    }, 300)
-  }
-  window.addEventListener('jlz:webgl-ready', onWebGlReady)
-
-  // Fallback: if jlz:webgl-ready never fires, animate hero after 5s
+  // Fallback: if jlz:section-change never fires (Experience not booted),
+  // animate the hero title after 5s.
   setTimeout(() => {
-    if (!window.__titleSpyStarted) {
-      window.__titleSpyStarted = true
-      const heroTitle = document.querySelector<HTMLElement>('.studio-title--hero')
-      if (heroTitle) NoiseText.for(heroTitle).show(1.5)
+    const heroTitle = document.querySelector<HTMLElement>('.studio-title--hero')
+    if (heroTitle && heroTitle.dataset.visible !== 'true') {
+      NoiseText.for(heroTitle).show(1.5, 'JUSTLOVEJAZZ')
     }
   }, 5000)
 }
-
-// NoiseText is triggered by jlz:section-change event (from Experience.update)
-// + jlz:webgl-ready (hero on first load). No IntersectionObserver — it fired
-// too early during scroll, before the user could see the animation.
