@@ -14,21 +14,18 @@
     "lhci": "bunx @lhci/cli@0.13.0 autorun"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@types/node": "^25.7.0",
     "@types/three": "^0.184.0",
     "@types/uikit": "^3.23.0",
     "esbuild": "^0.28.0",
     "less": "^4.6.4",
-    "less-plugin-clean-css": "^1.6.0",
     "typescript": "~6.0.2",
     "vite": "^8.0.10"
   },
   "description": "Modern interactive portfolio using **Three.js TSL (Nodes)** with **WebGPU → WebGL fallback**.   Designed with **mobile-first UX** and a **procedural 3D background**.",
-  "main": "index.js",
   "dependencies": {
-    "@playwright/test": "^1.60.0",
     "@studio-freight/lenis": "^1.0.42",
-    "playwright": "^1.60.0",
     "three": "^0.184.0",
     "troika-three-text": "^0.52.4",
     "uikit": "^3.25.16"

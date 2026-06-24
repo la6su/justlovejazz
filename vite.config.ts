@@ -17,7 +17,7 @@ export default defineConfig({
         manualChunks(id) {
           // Vendor chunks (pin them at TOP — they can't be split further)
           if (id.includes('node_modules')) {
-            if (id.includes('three') || id.includes('three-types') || id.includes('three-stdlib')) return 'vendor-three'
+            if (id.includes('three') || id.includes('three-stdlib')) return 'vendor-three'
             if (id.includes('troika-three-text')) return 'vendor-troika'
             if (id.includes('uikit') || id.includes('lenis') || id.includes('@studio-freight/lenis')) return 'vendor-ui'
             return 'vendor-misc'
@@ -29,7 +29,6 @@ export default defineConfig({
           if (id.includes('/src/Experience/Camera')) return 'chunk-camera'
           if (id.includes('/src/Experience/Cursor')) return 'chunk-cursor'
           if (id.includes('/src/Experience/WebGLText')) return 'chunk-text'
-          if (id.includes('/src/Experience/HomeSlider')) return 'chunk-slider'
           if (id.includes('/src/Experience/World/')) return 'chunk-world'
           if (id.includes('/src/core/World')) return 'chunk-core-world'
           if (id.includes('/src/Experience/Renderer')) return 'chunk-renderer'

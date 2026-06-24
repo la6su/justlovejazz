@@ -4,16 +4,20 @@
 
 import { NoiseText } from '../Experience/NoiseText'
 
+// Section IDs match templates.ts: intro, about, flexible, challenge, innovative, contact
 const SUBTITLES: Record<string, string> = {
-  hero: 'Scene-first thinking. Scroll maps to emotion.',
+  intro: 'Scene-first thinking. Scroll maps to emotion.',
   about: 'One source of truth for DOM and WebGL.',
-  works: 'Each project — its own universe.',
-  footer: 'We bring imagination to life through code.',
+  flexible: 'Adaptive workflows from concept to production.',
+  challenge: 'Each project — its own universe.',
+  innovative: 'Pushing the frontier of what browsers can do.',
+  contact: 'We bring imagination to life through code.',
 }
 
 export class Subtitles {
   private container: HTMLElement
   private current: NoiseText | null = null
+  private readonly sectionChangeHandler: (e: Event) => void
 
   constructor() {
     // Create or find subtitle container.
@@ -24,13 +28,14 @@ export class Subtitles {
       document.body.appendChild(this.container)
     }
 
-    // Listen for 3D section changes.
-    window.addEventListener('jlz:section-change', (e: Event) => {
+    // Bound handler for cleanup in dispose().
+    this.sectionChangeHandler = (e: Event) => {
       const detail = (e as CustomEvent).detail
       if (detail?.sectionId) {
         this.showForSection(detail.sectionId)
       }
-    })
+    }
+    window.addEventListener('jlz:section-change', this.sectionChangeHandler)
   }
 
   private showForSection(sectionId: string): void {
@@ -69,6 +74,7 @@ export class Subtitles {
   }
 
   dispose(): void {
+    window.removeEventListener('jlz:section-change', this.sectionChangeHandler)
     this.hide()
     this.container.remove()
   }

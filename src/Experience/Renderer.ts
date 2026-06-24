@@ -49,7 +49,6 @@ export class Renderer {
       // RenderPipeline reads these to apply tone mapping + color space.
       // WebGPURenderer extends Renderer (has toneMapping at runtime) but
       // @types/three doesn't type it yet — adapter cast here.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const wg = this.instance as any
       wg.toneMapping = THREE.ACESFilmicToneMapping
       wg.toneMappingExposure = 1
@@ -73,7 +72,6 @@ export class Renderer {
       try {
         // setNodesHandler is a runtime method on WebGLRenderer; @types/three
         // does not type it yet. Isolate the cast at this adapter boundary.
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (gl as any).setNodesHandler(new WebGLNodesHandler())
       } catch (err) {
         console.error('[Renderer] Failed to install WebGLNodesHandler — TSL materials will not render:', err)
@@ -140,7 +138,6 @@ export class Renderer {
     // available, else WebGL2 context (transparent fallback). The fallback
     // is built into WebGPURenderer; no manual WebGLRenderer switch needed.
     if (this.capabilities.mode === 'webgpu') {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (this.instance as any).init?.()
     }
     // Re-apply size AFTER init() — on the WebGPU backend the canvas swap

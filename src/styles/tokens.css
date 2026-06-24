@@ -464,6 +464,7 @@
 
 #jlj-splash.is-splitting #jlj-splash-brand {
   animation: jlz-brand-exit var(--jlz-duration-cinematic) var(--jlz-ease-exit) forwards;
+}
 
 /* ── BRAND INVERSION: white flash = dark text for contrast ── */
 #jlj-splash.is-splitting #jlj-splash-brand {
@@ -486,10 +487,6 @@ body.light-theme #main-nav .nav-links a {
 
 body.light-theme .nav-links a {
   color: var(--jlz-color-text-muted);
-}
-
-
-
 }
 
 /* ── Progress bar ── */

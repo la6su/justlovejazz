@@ -129,7 +129,6 @@ export class Experience {
     // pacing — rAF does not synchronize with the WebGPU swap chain, causing
     // severe frame stutter (observed 3 FPS on Chrome/WebGPU). On WebGL2 it
     // falls back to rAF internally, so behavior is identical.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ;(this.renderer.instance as any).setAnimationLoop((t: number) => this.update(t))
     void this.ensureWebGLTextManager()
   }
@@ -284,7 +283,6 @@ export class Experience {
   destroy() {
     // Stop the animation loop FIRST — setAnimationLoop(null) cancels the
     // internal callback. Without this, the loop keeps firing after dispose().
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ;(this.renderer.instance as any).setAnimationLoop(null)
     this.webglTextManager?.dispose()
     this.smoothScroll.destroy()

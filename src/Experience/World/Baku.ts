@@ -86,9 +86,22 @@ export class Baku extends THREE.Mesh {
     // equivalents aren't trivially exposed.
     const isTSL = this.material.constructor.name === 'MeshPhysicalNodeMaterial'
 
+    // Helper: swap material with proper disposal of the old one (avoid GPU leak)
+    const swapMaterial = (newMat: THREE.Material) => {
+      const old = this.material
+      if (old) {
+        if (Array.isArray(old)) {
+          old.forEach(m => m.dispose())
+        } else {
+          old.dispose()
+        }
+      }
+      this.material = newMat
+    }
+
     if (role === BakuRole.GLASS) {
       if (isTSL || !(this.material instanceof THREE.MeshPhysicalMaterial)) {
-        this.material = new THREE.MeshPhysicalMaterial()
+        swapMaterial(new THREE.MeshPhysicalMaterial())
       }
       const mat = this.material as THREE.MeshPhysicalMaterial
       mat.transmission = THREE.MathUtils.lerp(mat.transmission, 1.0, 0.05)
@@ -96,14 +109,14 @@ export class Baku extends THREE.Mesh {
       mat.roughness = THREE.MathUtils.lerp(mat.roughness, this.targetParams.roughness, 0.05)
     } else if (role === BakuRole.WIRE) {
       if (isTSL || !(this.material instanceof THREE.MeshStandardMaterial)) {
-        this.material = new THREE.MeshStandardMaterial({ wireframe: true })
+        swapMaterial(new THREE.MeshStandardMaterial({ wireframe: true }))
       }
       ;(this.material as THREE.MeshStandardMaterial).wireframe = true
     } else {
       // NORMAL: keep TSL material if present.
       if (!isTSL) {
         if (!(this.material instanceof THREE.MeshStandardMaterial)) {
-          this.material = new THREE.MeshStandardMaterial()
+          swapMaterial(new THREE.MeshStandardMaterial())
         }
         ;(this.material as THREE.MeshStandardMaterial).wireframe = false
       }

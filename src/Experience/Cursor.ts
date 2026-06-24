@@ -11,6 +11,8 @@ export class Cursor {
     private lerpFactor: number = 0.2; // Snappy feel
     private magneticElement: HTMLElement | null = null;
     private readonly mousemoveHandler: (e: MouseEvent) => void;
+    private readonly mouseoverHandler: (e: MouseEvent) => void;
+    private readonly mouseoutHandler: (e: MouseEvent) => void;
 
     constructor() {
         this.element = document.createElement('div');
@@ -23,21 +25,15 @@ export class Cursor {
 
         document.body.appendChild(this.element);
 
-        // Bound handler for cleanup in destroy().
+        // Bound handlers for cleanup in destroy().
         this.mousemoveHandler = (e: MouseEvent) => {
             this.targetX = e.clientX;
             this.targetY = e.clientY;
         };
-        window.addEventListener('mousemove', this.mousemoveHandler);
-
-        this.initMagneticListeners();
-    }
-
-    private initMagneticListeners() {
-        document.addEventListener('mouseover', (e) => {
+        this.mouseoverHandler = (e: MouseEvent) => {
             const target = e.target as HTMLElement;
             const magnetic = target.closest('[data-magnetic]');
-            
+
             if (magnetic) {
                 this.magneticElement = magnetic as HTMLElement;
                 this.element.classList.add('magnetic');
@@ -47,15 +43,18 @@ export class Cursor {
             } else {
                 this.element.classList.remove('magnetic', 'hovering');
             }
-        });
-
-        document.addEventListener('mouseout', (e) => {
+        };
+        this.mouseoutHandler = (e: MouseEvent) => {
             const target = e.target as HTMLElement;
             if (target.closest('[data-magnetic]')) {
                 this.magneticElement = null;
                 this.element.classList.remove('magnetic');
             }
-        });
+        };
+
+        window.addEventListener('mousemove', this.mousemoveHandler);
+        document.addEventListener('mouseover', this.mouseoverHandler);
+        document.addEventListener('mouseout', this.mouseoutHandler);
     }
 
     update() {
@@ -66,11 +65,11 @@ export class Cursor {
             const rect = this.magneticElement.getBoundingClientRect();
             const centerX = rect.left + rect.width / 2;
             const centerY = rect.top + rect.height / 2;
-            
+
             // Calculate distance to center
             const distX = centerX - this.targetX;
             const distY = centerY - this.targetY;
-            
+
             // Pull the cursor towards the center (Magnetic effect)
             // Only pull if the mouse is within a certain range of the element
             const pullStrength = 0.4;
@@ -86,6 +85,9 @@ export class Cursor {
     }
 
     destroy() {
+        window.removeEventListener('mousemove', this.mousemoveHandler);
+        document.removeEventListener('mouseover', this.mouseoverHandler);
+        document.removeEventListener('mouseout', this.mouseoutHandler);
         this.element.remove();
     }
 }

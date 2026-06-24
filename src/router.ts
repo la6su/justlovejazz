@@ -32,10 +32,8 @@ function renderView(): void {
   document.title = 'JUSTLOVEJAZZ'
   el.innerHTML = renderPage()
   // Initialize UIkit components on dynamically inserted content
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ;(UIkit as any).update(el)
   if ('requestIdleCallback' in window) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     requestIdleCallback(() => (UIkit as any).update(el), { timeout: 100 })
   }
 }
