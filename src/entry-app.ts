@@ -56,45 +56,67 @@ export async function startApp(): Promise<void> {
   await import('./assets/main.less')
   ;(UIkit as { use: (p: object) => void }).use(Icons as object)
 
-  // Render DOM sections BEFORE boot so they exist when events fire.
   initRouter()
 
-  const onNavigate = () => {
+  // NoiseText: animate ALL titles when jlz:webgl-ready fires (after splash).
+  // This was the WORKING approach from commit 39eda64.
+  window.addEventListener('jlz:webgl-ready', () => {
+    animateNoiseTitles()
+  })
+
+  // Also re-animate on section changes (scroll between sections).
+  window.addEventListener('jlz:section-change', () => {
+    animateNoiseTitles()
+  })
+
+  // Navigation handler
+  window.addEventListener('jlj:navigate', () => {
     if (!isAppReady()) return
     const exp = window.experience
     if (exp?.smoothScroll) {
       exp.smoothScroll.lenis.scrollTo(0, { immediate: true })
     }
-  }
-  window.addEventListener('jlj:navigate', onNavigate)
+  })
   window.addEventListener('jlj:navigate', scheduleUiKitRefresh)
   mountDeferredShell()
   void boot()
 
-  // ── NoiseText: SINGLE trigger — jlz:section-change event ──
-  // Experience.update() dispatches this when currentSectionIndex changes.
-  // This fires for EVERY section transition (including initial load where
-  // _prevSectionIndex=-1 → idx=0). Each .studio-title gets animated with
-  // its cached clean text. NoiseText has a 1s debounce to prevent rapid
-  // re-triggers from leaving text in glitch state.
-  window.addEventListener('jlz:section-change', ((e: CustomEvent) => {
-    const sectionId = e.detail?.sectionId
-    if (!sectionId) return
-    const sectionEl = document.querySelector(`[data-section="${sectionId}"]`)
-    if (!sectionEl) return
-    const title = sectionEl.querySelector<HTMLElement>('.studio-title')
-    if (!title) return
-    // Pass explicit sourceText — NEVER let NoiseText read from DOM
-    // (which might contain glitched text from a previous animation).
-    NoiseText.for(title).show(1.5, title.textContent || '')
-  }) as EventListener)
-
-  // Fallback: if jlz:section-change never fires (Experience not booted),
-  // animate the hero title after 5s.
+  // Fallback: if jlz:webgl-ready never fires, animate after 3s
   setTimeout(() => {
-    const heroTitle = document.querySelector<HTMLElement>('.studio-title--hero')
-    if (heroTitle && heroTitle.dataset.visible !== 'true') {
-      NoiseText.for(heroTitle).show(1.5, 'JUSTLOVEJAZZ')
+    const hero = document.querySelector('.studio-title--hero')
+    if (hero && hero.getAttribute('data-visible') !== 'true') {
+      animateNoiseTitles()
     }
-  }, 5000)
+  }, 3000)
+}
+
+/**
+ * NoiseText animation on studio titles — animates ALL .studio-title elements.
+ * This is the WORKING version from commit 39eda64.
+ * Each title gets its own NoiseText instance (singleton per element).
+ * NoiseText.show() cancels any previous animation on the same element,
+ * so re-calling animateNoiseTitles() is safe.
+ */
+function animateNoiseTitles(): void {
+  // Animate all .studio-title elements (skip .studio-title__line children
+  // to avoid double-animation).
+  const leafEls = document.querySelectorAll<HTMLElement>('.studio-title__line')
+  const leafSet = new Set(leafEls)
+
+  for (const el of document.querySelectorAll<HTMLElement>('.studio-title')) {
+    if (leafSet.has(el)) continue
+    const hasLeafChild = [...leafEls].some(l => l.closest('.studio-title') === el)
+    if (hasLeafChild) continue
+
+    const text = el.textContent?.trim() || ''
+    if (!text) continue
+    NoiseText.for(el).show(2.0)
+  }
+
+  // Animate .studio-title__line spans.
+  for (const el of leafEls) {
+    const text = el.textContent?.trim() || ''
+    if (!text) continue
+    NoiseText.for(el).show(2.0)
+  }
 }
