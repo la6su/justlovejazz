@@ -9,7 +9,7 @@
 // responsive clamp() and prefers-reduced-motion). Less vars are a build-time
 // mirror for UIkit theming and static stylesheets.
 
-// ── Color ──
+// ── Color: surface ──
 @jlz-color-bg: #050507;
 @jlz-color-bg-elevated: #0a0a0f;
 @jlz-color-surface: rgba(255, 255, 255, 0.04);
@@ -17,25 +17,30 @@
 @jlz-color-border: rgba(255, 255, 255, 0.10);
 @jlz-color-border-strong: rgba(255, 255, 255, 0.20);
 
+// ── Color: text ──
 @jlz-color-text: rgba(255, 255, 255, 0.92);
 @jlz-color-text-muted: rgba(255, 255, 255, 0.55);
 @jlz-color-text-subtle: rgba(255, 255, 255, 0.35);
 @jlz-color-text-inverse: #050507;
 
+// ── Color: accent (single, restrained) ──
 @jlz-color-accent: #515d84;
 @jlz-color-accent-hover: #6b78a3;
 @jlz-color-accent-glow: rgba(81, 93, 132, 0.40);
 
-// ── Typography ──
-@jlz-font-display: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-@jlz-font-body: @jlz-font-display;
-@jlz-font-mono: 'SF Mono', 'JetBrains Mono', 'Fira Code', Menlo, Consolas, monospace;
+// ── Typography: family (sync with tokens.css) ──
+@jlz-font-display: 'Bebas Neue', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+@jlz-font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+@jlz-font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', Menlo, Consolas, monospace;
 
+// ── Typography: weight ──
 @jlz-weight-light: 300;
 @jlz-weight-regular: 400;
 @jlz-weight-medium: 500;
 @jlz-weight-semibold: 600;
+@jlz-weight-bold: 700;
 
+// ── Typography: tracking ──
 @jlz-tracking-tight: -0.02em;
 @jlz-tracking-normal: 0;
 @jlz-tracking-wide: 0.05em;
@@ -90,21 +95,10 @@
 
 // ── Layout ──
 @jlz-page-max-width: 1440px;
-@jlz-page-gutter: 80px;
-@jlz-section-min-height: 100vh;
+@jlz-page-gutter: clamp(16px, 5vw, 80px);
+@jlz-section-min-height: 100dvh;
 
-/* ── LIGHT THEME: html class for white hero section ── */
-html.light-theme {
-  --jlz-color-text: #050507 !important;
-  --jlz-color-text-muted: rgba(5, 5, 7, 0.55) !important;
-  --jlz-color-text-subtle: rgba(5, 5, 7, 0.35) !important;
-}
-
-body.light-theme #main-nav .nav-logo,
-body.light-theme #main-nav .nav-links a {
-  color: var(--jlz-color-text);
-}
-
-body.light-theme .nav-links a {
-  color: var(--jlz-color-text-muted);
-}
+// Note: html.light-theme token overrides live in tokens.css (CSS custom
+// properties are the runtime source of truth for theme switching).
+// Component-level light-theme rules (body.light-theme .nav-*) live in
+// src/assets/main.less alongside the rest of the component styles.

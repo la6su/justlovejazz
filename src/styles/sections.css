@@ -34,13 +34,17 @@
 
 .section-content { text-align: center; z-index: 1; }
 
-/* Studio title variants — Bebas Neue display font, large and bold */
+/* Studio title variants — Bebas Neue display font, large and bold.
+ * Base font-size + margin-bottom here so plain .studio-title (without
+ * a --hero / --about / --challenge modifier) still renders correctly. */
 .studio-title {
   font-family: var(--jlz-font-display);
   font-weight: 700;
+  font-size: clamp(2.5rem, 8vw, 5rem);
   line-height: 1;
   letter-spacing: 0.02em;
   text-transform: uppercase;
+  margin: 0 0 var(--jlz-space-8);
 }
 .studio-title--hero { font-size: clamp(3.5rem, 11vw, 8rem); font-weight: 400; letter-spacing: 0.05em; }
 .studio-title--about,
