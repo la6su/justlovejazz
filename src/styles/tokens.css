@@ -35,9 +35,9 @@
   --jlz-color-accent-glow: rgba(81, 93, 132, 0.40);
 
   /* ── Typography: family ── */
-  --jlz-font-display: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --jlz-font-body: var(--jlz-font-display);
-  --jlz-font-mono: 'SF Mono', 'JetBrains Mono', 'Fira Code', Menlo, Consolas, monospace;
+  --jlz-font-display: 'Bebas Neue', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --jlz-font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --jlz-font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', Menlo, Consolas, monospace;
 
   /* ── Typography: scale (1.250 major third) ── */
   --jlz-type-display-xl: clamp(3.5rem, 8vw, 6rem);

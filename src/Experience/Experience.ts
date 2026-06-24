@@ -158,11 +158,12 @@ export class Experience {
     const { cameraTarget, worldState } = this.world.advance(ns)
     this.world.update(dt)
 
-    // UI inversion: white hero (section 0) needs dark text on light bg
-    // Toggle on both html (for CSS vars) and body (for nav selectors)
-    const isWhiteHero = this.world.currentSectionIndex === 0
-    document.documentElement.classList.toggle('light-theme', isWhiteHero)
-    document.body.classList.toggle('light-theme', isWhiteHero)
+    // UI theme: light sections (intro=0, flexible=2) need dark text/nav.
+    // Toggle on both html (for CSS vars) and body (for nav selectors).
+    const idx = this.world.currentSectionIndex
+    const isLightSection = idx === 0 || idx === 2
+    document.documentElement.classList.toggle('light-theme', isLightSection)
+    document.body.classList.toggle('light-theme', isLightSection)
     // Give World the camera ref for DrawTrail (once, after init).
     this.world.setCamera(this.camera.instance)
 

@@ -77,6 +77,11 @@ export async function startApp(): Promise<void> {
   window.addEventListener('jlj:navigate', scheduleUiKitRefresh)
   mountDeferredShell()
   void boot()
+
+  // Fallback: ensure NoiseText runs even if jlz:webgl-ready never fires
+  // (e.g. WebGLTextManager disabled or intro not triggered). Retry up to 5s.
+  setTimeout(animateNoiseTitles, 1000)
+  setTimeout(animateNoiseTitles, 3000)
 }
 
 /**
