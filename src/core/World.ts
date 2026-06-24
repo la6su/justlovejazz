@@ -68,9 +68,13 @@ export class World extends THREE.Group {
         // this.drawTrail = new DrawTrail()
         // scene.add(this.drawTrail.object)
 
-        // ── Baku (character sphere) — central 3D object, junni pattern
+        // ── Baku (character sphere) — central 3D object, junni pattern.
+        // Currently hidden — user will refine the visual. update() still runs
+        // so position/rotation drift continues, but the mesh is not rendered.
+        // To re-enable: this.baku.visible = true (or remove the line).
         this.baku = new Baku()
         this.baku.name = 'baku'
+        this.baku.visible = false
         this.add(this.baku)
 
         // ── BG (procedural background color, junni pattern)

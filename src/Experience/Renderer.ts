@@ -3,10 +3,10 @@ import * as THREE from 'three'
 import { WebGPURenderer } from 'three/webgpu'
 // Compatibility node builder: lets the WebGL fallback renderer
 // compile TSL NodeMaterials (MeshBasicNodeMaterial, etc.) used by
-// SectionSceneFactory, DissolveOverlay, ProjectMaterial. Without this,
-// WebGLRenderer's _nodesHandler stays null, so NodeMaterials are compiled
-// with undefined vertexShader/fragmentShader -> resolveIncludes(undefined)
-// crash on the first frame. (three r0.184 does not auto-register this.)
+// SectionSceneFactory. Without this, WebGLRenderer's _nodesHandler stays
+// null, so NodeMaterials are compiled with undefined vertexShader/
+// fragmentShader → resolveIncludes(undefined) crash on first frame.
+// (three r0.184 does not auto-register this.)
 import { WebGLNodesHandler } from 'three/addons/tsl/WebGLNodesHandler.js'
 import { Sizes } from './Sizes'
 import { DeviceCapability } from '../core/DeviceCapability'
