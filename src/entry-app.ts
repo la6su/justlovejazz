@@ -79,9 +79,52 @@ export async function startApp(): Promise<void> {
   void boot()
 
   // Fallback: ensure NoiseText runs even if jlz:webgl-ready never fires
-  // (e.g. WebGLTextManager disabled or intro not triggered). Retry up to 5s.
   setTimeout(animateNoiseTitles, 1000)
-  setTimeout(animateNoiseTitles, 3000)
+
+  // Scroll-spy: animate titles when their section enters the viewport.
+  // Uses IntersectionObserver (junni scroll-spy pattern) — only animates
+  // the title that becomes visible, not all at once.
+  setupTitleScrollSpy()
+}
+
+/**
+ * Scroll-spy for title animations (junni pattern).
+ * Each .studio-title animates with NoiseText when its section enters
+ * the viewport. Re-triggers on re-entry (uk-scrollspy "repeat: true" style).
+ */
+function setupTitleScrollSpy(): void {
+  const animated = new WeakSet<HTMLElement>()
+
+  const observer = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue
+      const section = entry.target as HTMLElement
+      const title = section.querySelector<HTMLElement>('.studio-title')
+      if (title && !animated.has(title)) {
+        animated.add(title)
+        // Small delay so the section is visually settled before flicker starts
+        setTimeout(() => {
+          NoiseText.for(title).show(1.5)
+        }, 150)
+      }
+    }
+  }, {
+    threshold: 0.35,  // 35% of section visible
+    rootMargin: '-10% 0px -10% 0px',  // slight inset
+  })
+
+  // Observe all sections with data-section
+  const observeSections = () => {
+    document.querySelectorAll<HTMLElement>('section[data-section]').forEach(s => {
+      observer.observe(s)
+    })
+  }
+  // Run after DOM is ready (sections are rendered by router)
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', observeSections)
+  } else {
+    observeSections()
+  }
 }
 
 /**
