@@ -42,6 +42,15 @@
 - [x] T-066: Документация — HERMES_RULES +5 правил (18-21), STATUS.md актуализирован,
   kanban обновлён
 
+### EPIC: Quality pass (2026-06-26 — сессия 2)
+- [x] T-067: BG.ts — добавлен setProgress(fromIndex, toIndex, t) для плавного
+  pixel-perfect lerp фона при скролле между секциями (был snap по индексу секции)
+- [x] T-068: World.ts — updateTransform вызывает bg.setProgress вместо bg.setSection
+- [x] T-069: Input.ts — scroll smoothing переведён с фиксированного lerpFactor=0.35
+  на framerate-independent exponential decay (smoothHalfLife=0.18s)
+- [x] T-070: Camera.ts — исправлен баг: shakeTime/shakePower не сбрасывались после
+  окончания shake-анимации; добавлен сброс shakeTime=0 по завершению
+
 ## TODO
 
 ### EPIC: Holographic UI Panels (T-050)

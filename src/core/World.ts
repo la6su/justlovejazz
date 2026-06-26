@@ -267,8 +267,10 @@ export class World extends THREE.Group {
             this._currentSectionIndex = fromIndex
         }
 
-        // ── BG sphere section switch (junni pattern: change Section BG color per section)
-        this.bg.setSection(this._currentSectionIndex)
+        // ── BG sphere section switch (junni pattern: lerp BG color continuously)
+        // setProgress() lerps between fromIndex and toIndex colors using eased t,
+        // giving pixel-perfect background progression while scrolling.
+        this.bg.setProgress(fromIndex, toIndex, t)
 
         // ── Scene group visibility with opacity fade (junni switchVisibility pattern)
         // From group fades out as t→1, to group fades in. Both visible during transition.

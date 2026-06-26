@@ -173,21 +173,19 @@ export class Camera {
         this.instance.updateProjectionMatrix()
 
         // ── 6. Action shake ──
-        if (this.shakePower > 0) {
+        if (this.shakePower > 0 && this.shakeDuration > 0) {
             this.shakeTime += dt
-
+            const sx = Math.sin(this.shakeTime * 7) * Math.sin(this.shakeTime * 4) * 0.1 * this.shakePower
+            const sy = Math.sin(this.shakeTime * 3.3) * Math.sin(this.shakeTime * 5.2) * 0.1 * this.shakePower
+            _tempEuler.set(sx, sy, 0)
+            _tempQuat.setFromEuler(_tempEuler)
+            this.instance.quaternion.multiply(_tempQuat)
+            this.shakeDuration -= dt
             if (this.shakeDuration <= 0) {
                 this.shakePower = 0
                 this.shakeDuration = 0
-            } else {
-                const sx = Math.sin(this.shakeTime * 7) * Math.sin(this.shakeTime * 4) * 0.1 * this.shakePower
-                const sy = Math.sin(this.shakeTime * 3.3) * Math.sin(this.shakeTime * 5.2) * 0.1 * this.shakePower
-
-                _tempEuler.set(sx, sy, 0)
-                _tempQuat.setFromEuler(_tempEuler)
-                this.instance.quaternion.multiply(_tempQuat)
+                this.shakeTime = 0
             }
-            this.shakeDuration -= dt
         }
 
         // ── 7. Velocity ──

@@ -24,6 +24,9 @@ Single font: Inter (300-900 weights).
 | dissolve transition uses StateBus (no rAF) | ✅ fixed |
 | WorldAtmosphere — dead initBG/initFog removed | ✅ fixed |
 | NoiseText — single canonical trigger path | ✅ fixed |
+| BG — continuous cross-section color lerp (setProgress) | ✅ fixed |
+| Input — framerate-independent scroll smoothing (half-life) | ✅ fixed |
+| Camera — shake state reset on completion | ✅ fixed |
 | Baku (hidden, user will refine) | ⏸️ |
 | DrawTrail | ⏸️ disabled for perf |
 | WebGLTextManager (Troika) | ⏸️ disabled (conflicts with NoiseText) |
