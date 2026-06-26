@@ -76,6 +76,18 @@
 
 ## TODO
 
+### EPIC: AUDIT fixes (docs/AUDIT.md — priority order)
+- [ ] A-003: Section.switchState() — fix animation bug (bus.channel overwrites current value)
+- [ ] A-001: World.resize() — implement propagation to sceneGroups + groundPlane
+- [ ] A-004: Wire world.resize() from Experience Sizes listener
+- [ ] A-002: Portrait FOV — add portraitFovBoost to PhaseConfig + Camera.updateSmooth()
+- [ ] A-008: Section.setMeshOpacity() — reuse _cachedMeshes (lazy-init if null)
+- [ ] A-009: Baku worldState.bakuMaterial → baku.updateMaterial() connection in World
+- [ ] A-005: Baku role caching — _currentRole field, skip applyRoleAndParams when unchanged
+- [ ] A-006: Double traverse in updateTransform — _meshCache in sceneGroups userData
+- [ ] A-007: DrawTrail per-section re-enable + visibility gating (sec_about, sec_flexible)
+- [ ] A-015: Per-section cursor follow strength (cursorFollowStrength in PhaseConfig)
+
 ### EPIC: Holographic UI Panels (T-050)
 - [ ] T-050: Displays panel — interactive holographic UI
 - [ ] T-051: Comrades panel — multi-character display
