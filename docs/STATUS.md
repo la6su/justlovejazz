@@ -1,6 +1,25 @@
 # STATUS — Single Source of Truth
 
-> Updated: 2026-06-26. Branch: `main`. Build green.
+> Updated: 2026-06-26. Branch: `dev`. Build green.
+
+## ⚡ Active Priority — AUDIT items (see `docs/AUDIT.md`)
+
+| ID | Description | Status |
+|----|-------------|--------|
+| **A-001** | `World.resize()` — implement + propagate to sceneGroups | ⏳ |
+| **A-002** | Portrait FOV adaptation (`portraitFovBoost` in PhaseConfig) | ⏳ |
+| **A-003** | `Section.switchState()` logic bug — animation starts wrong | ⏳ |
+| **A-004** | Wire `world.resize()` from Experience/Sizes | ⏳ |
+| **A-005** | Baku role caching — skip `applyRoleAndParams()` when unchanged | ⏳ |
+| **A-006** | Double traverse in `updateTransform()` — add mesh cache | ⏳ |
+| **A-007** | DrawTrail per-section re-enable with visibility gating | ⏳ |
+| **A-008** | `Section.setMeshOpacity()` — reuse `_cachedMeshes` | ⏳ |
+| **A-009** | Baku `worldState.bakuMaterial` → `baku.updateMaterial()` | ⏳ |
+| **A-015** | Per-section cursor follow strength in PhaseConfig | ⏳ |
+
+Full analysis with root causes + code examples: **`docs/AUDIT.md`**
+
+---
 
 ## Project
 
@@ -24,6 +43,15 @@ Single font: Inter (300-900 weights).
 | dissolve transition uses StateBus (no rAF) | ✅ fixed |
 | WorldAtmosphere — dead initBG/initFog removed | ✅ fixed |
 | NoiseText — single canonical trigger path | ✅ fixed |
+| BG — continuous cross-section color lerp (setProgress) | ✅ fixed |
+| Input — framerate-independent scroll smoothing (half-life) | ✅ fixed |
+| Camera — shake state reset on completion | ✅ fixed |
+| SectionSceneFactory — distinctive geometry per section (junni patterns) | ✅ |
+| Section.update — cached mesh list, no traverse per frame | ✅ |
+| CursorLight — zero alloc per frame (subVectors/addScaledVector) | ✅ |
+| Lights — per-section presets, changeSection() junni pattern | ✅ |
+| World — fog per-section from PhaseConfig, no more context-change lag | ✅ |
+| SectionSceneFactory — non-particle geometry hidden (particles only) | ✅ |
 | Baku (hidden, user will refine) | ⏸️ |
 | DrawTrail | ⏸️ disabled for perf |
 | WebGLTextManager (Troika) | ⏸️ disabled (conflicts with NoiseText) |

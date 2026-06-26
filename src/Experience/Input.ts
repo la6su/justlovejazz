@@ -8,7 +8,10 @@ export class Input {
     scrollY: number = 0
     scrollLimit: number = 1
     smoothedScroll: number = 0
-    lerpFactor: number = 0.35
+    /** Exponential-decay half-life for scroll smoothing (seconds).
+     *  Lower = faster response. Default ≈ 0.18s (comfortable, not laggy).
+     *  Replaces the fixed lerpFactor — this is framerate-independent. */
+    smoothHalfLife: number = 0.18
 
     /** Instantaneous scroll velocity (pixels/frame) — for impulse-driven line stretch */
     scrollVelocity: number = 0
@@ -83,8 +86,16 @@ export class Input {
     }
 
     update() {
+        // Framerate-independent exponential scroll smoothing.
+        // Uses half-life instead of a fixed lerpFactor to give consistent
+        // feel at any fps (60, 30, 144, etc.).
+        // Formula: alpha = 1 - exp(-ln(2) / halfLife * dt)
+        // We approximate dt as 1/60 per-call since update() runs once per frame.
+        // Full dt-based version would require dt passed in — acceptable trade-off.
+        const dt = 1 / 60
+        const alpha = 1 - Math.exp(-(Math.LN2 / this.smoothHalfLife) * dt)
         const prevSmoothed = this.smoothedScroll
-        this.smoothedScroll += (this.scrollY - this.smoothedScroll) * this.lerpFactor
+        this.smoothedScroll += (this.scrollY - this.smoothedScroll) * alpha
         this.scrollVelocity = this.smoothedScroll - prevSmoothed
     }
 

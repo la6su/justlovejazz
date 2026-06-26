@@ -1,4 +1,6 @@
 // BG — Background color provider (scene.background)
+// Supports both section-snap (setSection) and continuous lerp (setProgress)
+// for smooth cross-section transitions driven by World.updateTransform(t).
 import * as THREE from 'three'
 
 const sectionColors = [
@@ -13,38 +15,42 @@ const sectionColors = [
 export class BG {
     public color = new THREE.Color(0xffffff)
 
-    private targetR = 1
-    private targetG = 1
-    private targetB = 1
-    private currentR = 1
-    private currentG = 1
-    private currentB = 1
+    // Exponential-smoothing target (set by setSection + setProgress)
+    private targetColor = new THREE.Color(0xffffff)
+    // GC-free lerp scratch
+    private _scratch = new THREE.Color()
 
     constructor() {
-        const c = sectionColors[0]
-        this.targetR = c.r
-        this.targetG = c.g
-        this.targetB = c.b
-        this.currentR = c.r
-        this.currentG = c.g
-        this.currentB = c.b
-        this.color.copy(c)
+        this.targetColor.copy(sectionColors[0])
+        this.color.copy(sectionColors[0])
     }
 
+    /**
+     * Snap target to a single section color.
+     * Called by World.updateTransform when the section index changes.
+     */
     public setSection(index: number): void {
-        if (index >= 0 && index < sectionColors.length) {
-            const c = sectionColors[index]
-            this.targetR = c.r
-            this.targetG = c.g
-            this.targetB = c.b
-        }
+        const c = sectionColors[Math.max(0, Math.min(index, sectionColors.length - 1))]
+        this.targetColor.copy(c)
     }
 
+    /**
+     * Set target as a continuous lerp between two adjacent sections.
+     * Called by World.updateTransform with fromIndex, toIndex, and eased t.
+     * This gives pixel-perfect background progression while scrolling.
+     */
+    public setProgress(fromIndex: number, toIndex: number, t: number): void {
+        const from = sectionColors[Math.max(0, Math.min(fromIndex, sectionColors.length - 1))]
+        const to   = sectionColors[Math.max(0, Math.min(toIndex,   sectionColors.length - 1))]
+        this.targetColor.copy(this._scratch.lerpColors(from, to, t))
+    }
+
+    /**
+     * Per-frame smooth update — exponential decay toward target.
+     * Speed: ~3 means ~63% of the way in 1/3 s — visually smooth.
+     */
     public update(deltaTime: number): void {
         const lerp = 1 - Math.exp(-3 * deltaTime)
-        this.currentR += (this.targetR - this.currentR) * lerp
-        this.currentG += (this.targetG - this.currentG) * lerp
-        this.currentB += (this.targetB - this.currentB) * lerp
-        this.color.setRGB(this.currentR, this.currentG, this.currentB)
+        this.color.lerp(this.targetColor, lerp)
     }
 }

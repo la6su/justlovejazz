@@ -130,6 +130,10 @@ export class World extends THREE.Group {
         /* ── Create 3D scene groups — direct index→factory mapping ── */
         for (let i = 0; i < this.configs.length; i++) {
             const group = SectionSceneFactory.byIndex(i)
+            // Hide non-particle geometry until bespoke visuals are ready (T-070..T-074).
+            // Particles remain for atmospheric depth. Remove this call section by section
+            // as real visuals are added.
+            SectionSceneFactory.hideGeometry(group)
             this.add(group)
             this.sceneGroups.push(group)
             group.visible = i === 0
@@ -142,6 +146,13 @@ export class World extends THREE.Group {
             groundMat.color.set(firstGround.color)
             groundMat.opacity = firstGround.opacity
             this._targetGroundOpacity = firstGround.opacity
+        }
+
+        // ── Apply first section's lights + fog immediately (no lerp on init)
+        const firstCfg = this.configs[0]
+        if (firstCfg) {
+            this.lightsGroup.changeSection(firstCfg)
+            this.atmosphere?.setFog(firstCfg.fog.color, firstCfg.fog.density)
         }
 
         // ── Enforce final visibility: only group 0 visible, all others hidden.
@@ -166,33 +177,28 @@ export class World extends THREE.Group {
             this.drawTrail.update(deltaTime, this._camera)
         }
 
-        // ── Room composition animation (per-component, Z-layer aware) ──
-        // Only animates VISIBLE groups — invisible groups are skipped.
-        const t = performance.now() * 0.001
-        this.sceneGroups.forEach((group) => {
-            if (!group.visible) return
-
-            group.traverse((obj) => {
-                if (!(obj instanceof THREE.Mesh || obj instanceof THREE.Points)) return
-                const name = obj.name || ''
-
-                // Grid floors: subtle Z drift (perspective shift)
-                if (name.includes('grid')) {
-                    obj.position.z = Math.sin(t * 0.2) * 0.1
+        // ── Particle drift — only visible groups, cached Points refs ──
+        // Cache built on first update() call per group to avoid traverse() every frame.
+        // (Junni pattern: each section object owns its update logic.)
+        for (const group of this.sceneGroups) {
+            if (!group.visible) continue
+            // Build cache on first access
+            if (!group.userData._particleCache) {
+                const pts: THREE.Points[] = []
+                group.traverse(obj => { if (obj instanceof THREE.Points) pts.push(obj) })
+                group.userData._particleCache = pts
+            }
+            const pts = group.userData._particleCache as THREE.Points[]
+            for (const p of pts) {
+                const attr = p.geometry.attributes.position
+                const arr = attr.array as Float32Array
+                for (let i = 1; i < arr.length; i += 3) {
+                    arr[i] += deltaTime * 0.05
+                    if (arr[i] > 4) arr[i] = -2
                 }
-                // Particles: drift upward, loop
-                else if (name.includes('particles')) {
-                    const pts = obj as THREE.Points
-                    const positions = pts.geometry.attributes.position
-                    const arr = positions.array as Float32Array
-                    for (let i = 1; i < arr.length; i += 3) {
-                        arr[i] += deltaTime * 0.1
-                        if (arr[i] > 4) arr[i] = -2
-                    }
-                    positions.needsUpdate = true
-                }
-            })
-        })
+                attr.needsUpdate = true
+            }
+        }
     }
 
     // ── Junni: changeSection(index) — state machine (ready → viewing → passed)
@@ -262,13 +268,21 @@ export class World extends THREE.Group {
         // smoothstep creates a plateau at each end of the range
         t = this._smoothstep(t)
 
-        // ── Update current section index
+        // ── Update current section index + fire per-section systems ──
         if (fromIndex !== this._currentSectionIndex) {
             this._currentSectionIndex = fromIndex
+            // Junni changeSection() pattern: lights + fog driven by section data
+            const activeCfg = this.configs[fromIndex]
+            if (activeCfg) {
+                this.lightsGroup.changeSection(activeCfg)
+                this.atmosphere?.setFog(activeCfg.fog.color, activeCfg.fog.density)
+            }
         }
 
-        // ── BG sphere section switch (junni pattern: change Section BG color per section)
-        this.bg.setSection(this._currentSectionIndex)
+        // ── BG sphere section switch (junni pattern: lerp BG color continuously)
+        // setProgress() lerps between fromIndex and toIndex colors using eased t,
+        // giving pixel-perfect background progression while scrolling.
+        this.bg.setProgress(fromIndex, toIndex, t)
 
         // ── Scene group visibility with opacity fade (junni switchVisibility pattern)
         // From group fades out as t→1, to group fades in. Both visible during transition.

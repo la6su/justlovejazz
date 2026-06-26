@@ -185,7 +185,8 @@ export class Experience {
         AssetManager.getInstance().disposeContext(this.currentSectionContext)
         GPUResourceManager.getInstance().disposeContext(this.currentSectionContext)
       }
-      this.world.atmosphere?.setFog(cfg.fog.color, cfg.fog.density)
+      // Fog is now managed by World.updateTransform() on section index change —
+      // no need to set it here. PostProcessing + FOV still triggered on context change.
       this.renderer.postManager.applyPreset(cfg.id)
       this.camera.setFovOffset(cfg.camFovOffset, cfg.camFovDuration)
       this.currentSectionContext = cfg.context
@@ -223,9 +224,9 @@ export class Experience {
     // Per-section camera smoothing (Track 5). Fall back to default if cfg absent.
     const smoothing = cfg?.camSmoothing ?? SECTION_TRANSITION.cameraSmoothing
     this.camera.updateSmooth(cameraTarget, dt, smoothing)
-    const warmth = ns
-    // setMood sets target; update() lerps lights toward it smoothly.
-    this.world.lightsGroup.setMood(warmth, worldState.envIntensity)
+    // Lights driven by section config (junni changeSection pattern) —
+    // World.updateTransform() calls lightsGroup.changeSection() on index change.
+    // Here we only tick the lerp update.
     this.world.lightsGroup.update(dt)
     this.camera.update(dt)
     this.renderer.update(this.scene, this.camera.instance, dt, worldState)
