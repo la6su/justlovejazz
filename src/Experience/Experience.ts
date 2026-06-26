@@ -197,6 +197,13 @@ export class Experience {
       this.renderer.postManager.applyPreset(cfg.id)
       this.camera.setFovOffset(cfg.camFovOffset, cfg.camFovDuration)
       this.currentSectionContext = cfg.context
+      // A-009: Apply Baku material from worldState (was computed but never applied)
+      if (this.world?.baku) {
+        this.world.baku.updateMaterial(worldState.bakuMaterial)
+      }
+      // A-015: Per-section cursor follow (works=0.22, others=0.15)
+      const cursorFollow = idx === 3 ? 0.22 : 0.15
+      this.camera.setCursorFollow(cursorFollow)
     }
 
     // Portfolio (3D slider) is only visible inside the Works section —

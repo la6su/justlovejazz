@@ -46,6 +46,14 @@ export class Camera {
     private fovStartOffset = 0
     private fovDuration = 1.0
 
+    // A-015: Per-section cursor follow strength
+    private _cursorFollowStrength: number | null = null
+
+    /** Set cursor follow strength for current section (A-015) */
+    setCursorFollow(strength: number): void {
+        this._cursorFollowStrength = strength
+    }
+
     constructor(sizes: Sizes) {
         this.instance = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
         this.smoothPosition.set(0, 0, 3)
@@ -130,7 +138,10 @@ export class Camera {
         const cursorX = (isMobile || reduced) ? 0 : springX.pos;
         const cursorY = (isMobile || reduced) ? 0 : springY.pos;
 
-        const cursorFollow = isHome ? 0.19 : 0.15
+        // A-015: Per-section cursor follow strength (junni cameraRange pattern).
+        // Works section (idx=3) gets stronger follow for interactive feel.
+        // Uses _currentSectionIndex set by Experience.update via setCursorFollow.
+        const cursorFollow = isHome ? 0.19 : (this._cursorFollowStrength ?? 0.15)
         pos.set(
             this.smoothPosition.x + cursorX * cursorFollow,
             this.smoothPosition.y + cursorY * cursorFollow,
@@ -168,7 +179,11 @@ export class Camera {
 
         // Blend FOV smoothly. Breathing disabled on mobile + reduced motion.
         const fovBreath = (isHome && !isMobile && !reduced) ? Math.sin(this.organicTime * 0.45) * 0.18 : 0
-        const targetFov = this.smoothFov + this.fovOffset + fovBreath
+        // A-002: Portrait FOV adaptation — widen FOV on portrait so objects fit
+        const aspect = this.instance.aspect
+        const portraitWeight = Math.max(0, Math.min(1, 1 - aspect / 1.5))
+        const portraitBoost = portraitWeight * 20  // up to +20° on narrow portrait
+        const targetFov = this.smoothFov + this.fovOffset + fovBreath + portraitBoost
         this.instance.fov += (targetFov - this.instance.fov) * 0.25
         this.instance.updateProjectionMatrix()
 

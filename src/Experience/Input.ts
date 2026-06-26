@@ -48,7 +48,7 @@ export class Input {
     }
 
     setScroll(value: number, limit: number = this.getDocumentScrollLimit()) {
-        this.scrollY = value
+        this.scrollY = Math.max(0, Math.min(value, limit))  // A-010: defensive clamp
         this.scrollLimit = Math.max(1, limit)
     }
 

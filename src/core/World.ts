@@ -64,9 +64,11 @@ export class World extends THREE.Group {
         scene.add(this.cursorLight.object)
 
         // ── DrawTrail (junni pattern: cursor trail ribbon)
-        // PERF: disabled — re-enable when perf budget allows.
-        // this.drawTrail = new DrawTrail()
-        // scene.add(this.drawTrail.object)
+        // A-007: Re-enabled with per-section visibility gating.
+        // Trail is visible only on about (1) and flexible (2) sections.
+        this.drawTrail = new DrawTrail()
+        scene.add(this.drawTrail.object)
+        this.drawTrail.object.visible = false  // hidden until about/flexible
 
         // ── Baku (character sphere) — central 3D object, junni pattern.
         // Currently hidden — user will refine the visual. update() still runs
@@ -277,6 +279,10 @@ export class World extends THREE.Group {
                 this.lightsGroup.changeSection(activeCfg)
                 this.atmosphere?.setFog(activeCfg.fog.color, activeCfg.fog.density)
             }
+            // A-007: DrawTrail visibility — only on about(1) and flexible(2)
+            if (this.drawTrail) {
+                this.drawTrail.object.visible = fromIndex === 1 || fromIndex === 2
+            }
         }
 
         // ── BG sphere section switch (junni pattern: lerp BG color continuously)
@@ -299,19 +305,29 @@ export class World extends THREE.Group {
             const shouldShow = isFrom || isTo
             if (shouldShow) {
                 g.visible = fade > 0.001
-                // Apply fade multiplicatively on top of cached base opacity.
-                g.traverse((obj) => {
-                    if (obj instanceof THREE.Mesh) {
-                        const mat = obj.material
-                        if (!Array.isArray(mat) && 'opacity' in mat) {
-                            const m = mat as THREE.Material & { opacity: number; userData: { baseOpacity?: number } }
-                            if (m.userData.baseOpacity === undefined) {
-                                m.userData.baseOpacity = m.opacity
+                // A-006: Use cached mesh list instead of traverse every frame.
+                // Cache stored in group.userData._meshCache (lazy-init).
+                let meshCache = g.userData._meshCache as THREE.Mesh[] | undefined
+                if (!meshCache) {
+                    meshCache = []
+                    g.traverse((obj) => {
+                        if (obj instanceof THREE.Mesh) {
+                            const mat = obj.material
+                            if (!Array.isArray(mat) && 'opacity' in mat) {
+                                const m = mat as THREE.Material & { opacity: number; userData: { baseOpacity?: number } }
+                                if (m.userData.baseOpacity === undefined) {
+                                    m.userData.baseOpacity = m.opacity
+                                }
+                                meshCache!.push(obj)
                             }
-                            m.opacity = m.userData.baseOpacity * fade
                         }
-                    }
-                })
+                    })
+                    g.userData._meshCache = meshCache
+                }
+                for (const mesh of meshCache) {
+                    const m = mesh.material as THREE.Material & { opacity: number; userData: { baseOpacity?: number } }
+                    m.opacity = (m.userData.baseOpacity ?? 1) * fade
+                }
             } else {
                 g.visible = false
             }
