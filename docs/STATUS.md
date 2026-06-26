@@ -30,6 +30,9 @@ Single font: Inter (300-900 weights).
 | SectionSceneFactory — distinctive geometry per section (junni patterns) | ✅ |
 | Section.update — cached mesh list, no traverse per frame | ✅ |
 | CursorLight — zero alloc per frame (subVectors/addScaledVector) | ✅ |
+| Lights — per-section presets, changeSection() junni pattern | ✅ |
+| World — fog per-section from PhaseConfig, no more context-change lag | ✅ |
+| SectionSceneFactory — non-particle geometry hidden (particles only) | ✅ |
 | Baku (hidden, user will refine) | ⏸️ |
 | DrawTrail | ⏸️ disabled for perf |
 | WebGLTextManager (Troika) | ⏸️ disabled (conflicts with NoiseText) |

@@ -60,6 +60,20 @@
 - [x] T-073: CursorLight — убрана Vector3.clone() на каждый update(); заменена на
   subVectors + addScaledVector (zero-alloc spring-damper).
 
+### EPIC: World Environment Architecture (2026-06-26 — сессия 4)
+- [x] T-074: Lights.ts — полная переписка по junni changeSection() паттерну.
+  setMood(warmth=scrollProgress) удалён. Теперь SECTION_PRESETS[cfg.id] с per-section
+  цветами key/fill/rim/hemi/volumetric. Lights lerp к новым значениям за ~0.5s.
+- [x] T-075: World.updateTransform() — при смене fromIndex вызывает
+  lightsGroup.changeSection(cfg) + atmosphere.setFog(). Junni: atmosphere matches section.
+- [x] T-076: World.init() — snap lights + fog к первой секции при инициализации.
+- [x] T-077: World.update() — traverse() по sceneGroups заменён на cached Points refs
+  (_particleCache в userData). Particle drift O(n pts) без traverse per frame.
+- [x] T-078: Experience.ts — удалён setMood(warmth, envIntensity), удалён fog из
+  context-change блока. Lights/fog теперь полностью управляется из World.
+- [x] T-079: SectionSceneFactory — добавлен hideGeometry(group), вызывается в World.init().
+  Все не-particle объекты скрыты (visible=false) до появления bespoke визуала.
+
 ## TODO
 
 ### EPIC: Holographic UI Panels (T-050)

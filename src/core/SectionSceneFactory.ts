@@ -385,4 +385,18 @@ export class SectionSceneFactory {
       default: return SectionSceneFactory.createIntro()
     }
   }
+
+  /**
+   * Hide all non-particle geometry in a group.
+   * Call on every group returned by byIndex() until bespoke visuals are ready.
+   * Particles stay visible — they provide minimal atmospheric depth.
+   * HERMES_RULES §3: baseOpacity stays cached, visibility change is non-destructive.
+   */
+  static hideGeometry(group: THREE.Group): void {
+    group.traverse(obj => {
+      if (obj === group) return
+      if (obj instanceof THREE.Points) return  // keep particles
+      obj.visible = false
+    })
+  }
 }
