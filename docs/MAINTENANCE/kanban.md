@@ -12,23 +12,51 @@
 - [x] T-040: Проанализировать WebGLTextManager.ts (причина отключения — perf)
 - [x] T-041: Восстановить ensureWebGLTextManager с dynamic import + DOM guard
 - [x] T-042: type-check + build + git push
-  - Патч: Experience.ts — ensureWebGLTextManager() вместо return → real WebGLTextManager init
-  - Troika overlay rendering .studio-title on transparent canvas, synced with update()
+  - Итог: Troika конфликтует с NoiseText (делает textContent невидимым).
+    WebGLTextManager снова отключён. jlz:webgl-ready диспатчится сразу.
 
 ### EPIC: Junni reference repo cloned
 - [x] Clone next.junni.co.jp → references/next.junni.co.jp/
 - [x] .gitignore для .git в references
 
 ### EPIC: CursorLight (T-003) — ALREADY ACTIVE
-- [x] T-003: Var CursorLight в World.ts, подключен и работает. Код: DirectionalLight с spring-damper по курсору — Junni pattern
+- [x] CursorLight в World.ts, подключен и работает.
 
 ### EPIC: NoiseText (T-004) — ALREADY ACTIVE
-- [x] T-004: NoiseText в entry-app.ts + Subtitles.ts, подключен и работает.
+- [x] NoiseText в entry-app.ts + Subtitles.ts, подключен и работает.
+
+### EPIC: Critical bug fixes (2026-06-26)
+- [x] T-060: PostProcessingManager — ключи пресетов step01..step08 → sec_intro..sec_contact
+  (applyPreset(cfg.id) теперь реально находит пресет, постобработка per-section работает)
+- [x] T-061: NarrativePhase enum — STEP01..STEP08 → INTRO..CONTACT, синхронизировано
+  с WorldConfig.id и PostProcessingManager ключами
+- [x] T-062: Baku.applyRoleAndParams — убран GPU memory leak: новый материал создавался
+  каждый кадр; теперь swap только при смене типа (instanceof check)
+- [x] T-063: Experience._runProjectDissolve — requestAnimationFrame → StateBus.animate
+  (соблюдение HERMES_RULES §4 / §19)
+- [x] T-064: WorldAtmosphere — удалены мёртвые initBG/initFog, dispose не обнуляет
+  scene.background (соблюдение HERMES_RULES §5 / §21)
+- [x] T-065: entry-app.ts — удалены setTimeout(animateNoiseTitles, 500/2000/5000) и
+  throttled scroll listener; единственный триггер — jlz:webgl-ready + jlz:section-change
+  (соблюдение HERMES_RULES §10 / §19)
+- [x] T-066: Документация — HERMES_RULES +5 правил (18-21), STATUS.md актуализирован,
+  kanban обновлён
 
 ## TODO
 
 ### EPIC: Holographic UI Panels (T-050)
-- [ ] T-050: Displays panel — interactive holographic UI (прищелк по '.')
+- [ ] T-050: Displays panel — interactive holographic UI
 - [ ] T-051: Comrades panel — multi-character display
 - [ ] T-052: Type-check + build
 - [ ] T-053: Git push
+
+### EPIC: Bespoke 3D section content
+- [ ] T-070: Section 0 (Intro) — white BG hero object (replaces Baku placeholder)
+- [ ] T-071: Section 1 (About) — dark BG blob / reflective floor
+- [ ] T-072: Section 2 (Flexible) — light transition object
+- [ ] T-073: Section 4 (Innovative) — constellation/network graph
+- [ ] T-074: Section 5 (Contact) — closing visual
+
+### EPIC: DrawTrail re-enable
+- [ ] T-080: Profiling budget — confirm DrawTrail fits within 60 FPS target
+- [ ] T-081: Uncomment DrawTrail in World.ts + smoke-test

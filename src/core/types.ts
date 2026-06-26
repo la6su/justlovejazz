@@ -1,24 +1,20 @@
 import * as THREE from 'three';
 
+// NarrativePhase maps to PhaseConfig.id values from WorldConfig.ts.
+// Must stay in sync with RAW[i].id — these are the keys used in
+// PostProcessingManager.applyPreset() and StateBus section channels.
 export enum NarrativePhase {
-    STEP01 = 'step01',
-    STEP02 = 'step02',
-    STEP03 = 'step03',
-    STEP04 = 'step04',
-    STEP05 = 'step05',
-    STEP06 = 'step06',
-    STEP07 = 'step07',
-    STEP08 = 'step08',
-    // aliases kept for backward compat
-    AWAKENING = 'step01',
-    DISCOVERY = 'step02',
-    DEEP_DIVE = 'step05',
-    CONNECTION = 'step08'
+    INTRO      = 'sec_intro',
+    ABOUT      = 'sec_about',
+    FLEXIBLE   = 'sec_flexible',
+    CHALLENGE  = 'sec_challenge',
+    INNOVATIVE = 'sec_innovative',
+    CONTACT    = 'sec_contact',
 }
 
 export const NARRATIVE_PHASES = [
-  'step01', 'step02', 'step03', 'step04',
-  'step05', 'step06', 'step07', 'step08',
+  'sec_intro', 'sec_about', 'sec_flexible',
+  'sec_challenge', 'sec_innovative', 'sec_contact',
 ] as const;
 
 export enum BakuRole {

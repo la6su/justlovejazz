@@ -425,38 +425,49 @@ export class Experience {
     overlay.meshGroup.visible = true
     overlay.setProgress(0)
 
-    const duration = 600 // ms total (300 in + 300 out)
-    const start = performance.now()
+    // Use StateBus animation instead of requestAnimationFrame — HERMES_RULES §4.
+    // Phase 1: 0 → 1 (300ms), phase 2: 1 → 0 (300ms). Content swapped at peak.
+    const KEY = 'dissolve:progress'
+    let midSwapped = false
+    this.bus.set(KEY, 0)
 
-    const animate = (now: number) => {
-      const elapsed = now - start
-      const t = Math.min(elapsed / duration, 1)
-      // Triangle wave: 0→1 over first half, 1→0 over second half.
-      const progress = t < 0.5 ? t * 2 : (1 - t) * 2
-      overlay.setProgress(progress)
+    // Per-frame value subscriber (fires on change event, reads key value).
+    const onChange = (_ch: string, _d: unknown) => {
+      const val = this.bus.get(KEY)
+      overlay.setProgress(val)
       overlay.update(0.016)
 
-      // Mid-point: swap overlay content to new project.
-      if (t >= 0.5 && this._pendingProject) {
-        const p = this._pendingProject
-        this.overlay!.show(p.project as never, p.idx, p.total)
-        this._pendingProject = null
-      } else if (t >= 0.5 && !this._pendingProject) {
-        // First-time swap at mid.
-        this.overlay!.show(project as never, idx, total)
+      if (val >= 0.98 && !midSwapped) {
+        midSwapped = true
+        if (this._pendingProject) {
+          const p = this._pendingProject
+          this.overlay!.show(p.project as never, p.idx, p.total)
+          this._pendingProject = null
+        } else {
+          this.overlay!.show(project as never, idx, total)
+        }
       }
+    }
+    this.bus.on('change', onChange)
 
-      if (t < 1) {
-        requestAnimationFrame(animate)
-      } else {
+    // Phase 1 done → kick phase 2
+    const onPhase1Done = () => {
+      this.bus.off(`done:${KEY}`, onPhase1Done)
+      this.bus.animate(KEY, 0, 0.3, 'easeInOutCubic')
+
+      const onPhase2Done = () => {
+        this.bus.off(`done:${KEY}`, onPhase2Done)
+        this.bus.off('change', onChange)
         overlay.meshGroup.visible = false
         overlay.setProgress(0)
         this.projectDissolveActive = false
-        // Ensure overlay is visible (opacity=1 + pointer-events)
         this.overlay!.showContainer()
       }
+      this.bus.on(`done:${KEY}`, onPhase2Done)
     }
-    requestAnimationFrame(animate)
+    this.bus.on(`done:${KEY}`, onPhase1Done)
+
+    this.bus.animate(KEY, 1, 0.3, 'easeInOutCubic')
   }
 
   /**

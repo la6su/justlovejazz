@@ -19,16 +19,15 @@ interface PostParams {
   bloomThreshold: number // 0–1, luminance gate for bloom (Track B)
 }
 
-// Presets: step01 through step08 (all string keys)
+// Presets keyed by PhaseConfig.id (sec_intro..sec_contact) — must match
+// WorldConfig.ts RAW[i].id exactly so applyPreset(cfg.id) resolves correctly.
 const PHASE_PRESETS: Record<string, PostParams> = {
-  step01: { bloom: 0.35, vignette: 0.65, grain: 0.03, chromatic: 0.004, bloomRadius: 0.5, bloomThreshold: 0.55 },
-  step02: { bloom: 0.45, vignette: 0.5, grain: 0.025, chromatic: 0.003, bloomRadius: 0.65, bloomThreshold: 0.4 },
-  step03: { bloom: 0.5, vignette: 0.35, grain: 0.015, chromatic: 0.004, bloomRadius: 0.7, bloomThreshold: 0.45 },
-  step04: { bloom: 0.2, vignette: 0.55, grain: 0.035, chromatic: 0.002, bloomRadius: 0.35, bloomThreshold: 0.65 },
-  step05: { bloom: 0.65, vignette: 0.45, grain: 0.015, chromatic: 0.004, bloomRadius: 0.8, bloomThreshold: 0.3 },
-  step06: { bloom: 0.4, vignette: 0.4, grain: 0.02, chromatic: 0.003, bloomRadius: 0.55, bloomThreshold: 0.5 },
-  step07: { bloom: 0.4, vignette: 0.5, grain: 0.02, chromatic: 0.004, bloomRadius: 0.5, bloomThreshold: 0.5 },
-  step08: { bloom: 0.2, vignette: 0.3, grain: 0.01, chromatic: 0.0, bloomRadius: 0.3, bloomThreshold: 0.7 },
+  sec_intro:      { bloom: 0.0,  vignette: 0.65, grain: 0.03,  chromatic: 0.002, bloomRadius: 0.5,  bloomThreshold: 0.55 },
+  sec_about:      { bloom: 0.45, vignette: 0.5,  grain: 0.025, chromatic: 0.003, bloomRadius: 0.65, bloomThreshold: 0.4  },
+  sec_flexible:   { bloom: 0.2,  vignette: 0.55, grain: 0.015, chromatic: 0.002, bloomRadius: 0.4,  bloomThreshold: 0.55 },
+  sec_challenge:  { bloom: 0.4,  vignette: 0.4,  grain: 0.02,  chromatic: 0.005, bloomRadius: 0.55, bloomThreshold: 0.45 },
+  sec_innovative: { bloom: 0.3,  vignette: 0.6,  grain: 0.02,  chromatic: 0.004, bloomRadius: 0.5,  bloomThreshold: 0.5  },
+  sec_contact:    { bloom: 0.3,  vignette: 0.6,  grain: 0.025, chromatic: 0.004, bloomRadius: 0.5,  bloomThreshold: 0.5  },
 }
 
 /** Quality tier scalers */
@@ -54,12 +53,12 @@ export class PostProcessingManager {
 
   constructor() {
     this.tier = this.capability.tier
-    this.applyPreset('step01')
+    this.applyPreset('sec_intro')
   }
 
-  /** Apply preset for a given phase */
+  /** Apply preset for a given phase (pass PhaseConfig.id, e.g. 'sec_about') */
   applyPreset(phase: string): void {
-    const preset = PHASE_PRESETS[phase] ?? PHASE_PRESETS['step01']
+    const preset = PHASE_PRESETS[phase] ?? PHASE_PRESETS['sec_intro']
     this.current = { ...preset }
 
     // Apply quality tier scaling
