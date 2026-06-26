@@ -59,11 +59,14 @@ export async function startApp(): Promise<void> {
   initRouter()
 
   // NoiseText: animate ALL titles when jlz:webgl-ready fires (after splash).
+  // This is the single canonical trigger path — HERMES_RULES §10.
   window.addEventListener('jlz:webgl-ready', () => {
     animateNoiseTitles()
   })
 
-  // Also re-animate on section changes (scroll between sections).
+  // Re-animate on section change (scroll between sections).
+  // jlz:section-change is dispatched by Experience.update() only when
+  // the section index actually changes — no throttle needed.
   window.addEventListener('jlz:section-change', () => {
     animateNoiseTitles()
   })
@@ -79,32 +82,6 @@ export async function startApp(): Promise<void> {
   window.addEventListener('jlj:navigate', scheduleUiKitRefresh)
   mountDeferredShell()
   void boot()
-
-  // DIRECT animation triggers — don't rely solely on events.
-  // The events (jlz:webgl-ready, jlz:section-change) may fire at unpredictable
-  // times depending on splash, WebGLTextManager, and scroll timing.
-  // These direct calls ensure titles always animate:
-
-  // 1. After DOM is ready (titles exist from router)
-  setTimeout(animateNoiseTitles, 500)
-
-  // 2. After app boots (Experience.init complete)
-  setTimeout(() => {
-    if (isAppReady()) animateNoiseTitles()
-  }, 2000)
-
-  // 3. After splash likely dismissed (5s)
-  setTimeout(animateNoiseTitles, 5000)
-
-  // 4. On scroll — use a throttled scroll listener
-  let scrollTimer: number | null = null
-  window.addEventListener('scroll', () => {
-    if (scrollTimer) return
-    scrollTimer = window.setTimeout(() => {
-      scrollTimer = null
-      animateNoiseTitles()
-    }, 300)
-  }, { passive: true })
 }
 
 /**

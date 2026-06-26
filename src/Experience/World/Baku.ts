@@ -81,49 +81,43 @@ export class Baku extends THREE.Mesh {
     if (!this.material) return
     const role = this.targetParams.role
 
-    // Preserve TSL node material for NORMAL role on WebGPU.
-    // Only swap to MeshPhysical/MeshStandard for GLASS/WIRE where TSL
-    // equivalents aren't trivially exposed.
-    const isTSL = this.material.constructor.name === 'MeshPhysicalNodeMaterial'
-
-    // Helper: swap material with proper disposal of the old one (avoid GPU leak)
+    // Helper: swap material with proper disposal of the old one (avoid GPU leak).
+    // Only called when the material TYPE actually needs to change.
     const swapMaterial = (newMat: THREE.Material) => {
       const old = this.material
       if (old) {
-        if (Array.isArray(old)) {
-          old.forEach(m => m.dispose())
-        } else {
-          old.dispose()
-        }
+        if (Array.isArray(old)) old.forEach(m => m.dispose())
+        else old.dispose()
       }
       this.material = newMat
     }
 
+    // Only swap material when role changes — avoid creating a new material
+    // every frame (was causing a GPU memory leak on every role-check).
     if (role === BakuRole.GLASS) {
-      if (isTSL || !(this.material instanceof THREE.MeshPhysicalMaterial)) {
+      if (!(this.material instanceof THREE.MeshPhysicalMaterial)) {
         swapMaterial(new THREE.MeshPhysicalMaterial())
       }
       const mat = this.material as THREE.MeshPhysicalMaterial
       mat.transmission = THREE.MathUtils.lerp(mat.transmission, 1.0, 0.05)
-      mat.thickness = THREE.MathUtils.lerp(mat.thickness, 0.5, 0.05)
-      mat.roughness = THREE.MathUtils.lerp(mat.roughness, this.targetParams.roughness, 0.05)
+      mat.thickness    = THREE.MathUtils.lerp(mat.thickness, 0.5, 0.05)
+      mat.roughness    = THREE.MathUtils.lerp(mat.roughness, this.targetParams.roughness, 0.05)
     } else if (role === BakuRole.WIRE) {
-      if (isTSL || !(this.material instanceof THREE.MeshStandardMaterial)) {
+      if (!(this.material instanceof THREE.MeshStandardMaterial) ||
+          !(this.material as THREE.MeshStandardMaterial).wireframe) {
         swapMaterial(new THREE.MeshStandardMaterial({ wireframe: true }))
       }
-      ;(this.material as THREE.MeshStandardMaterial).wireframe = true
     } else {
-      // NORMAL: keep TSL material if present.
-      if (!isTSL) {
-        if (!(this.material instanceof THREE.MeshStandardMaterial)) {
-          swapMaterial(new THREE.MeshStandardMaterial())
-        }
-        ;(this.material as THREE.MeshStandardMaterial).wireframe = false
+      // NORMAL: MeshStandardMaterial, no wireframe
+      if (!(this.material instanceof THREE.MeshStandardMaterial) ||
+          (this.material as THREE.MeshStandardMaterial).wireframe) {
+        swapMaterial(new THREE.MeshStandardMaterial())
       }
+      ;(this.material as THREE.MeshStandardMaterial).wireframe = false
     }
 
-    // Common params lerp (only for standard/physical, not TSL node materials).
-    if (!isTSL && this.material instanceof THREE.Material) {
+    // Common params lerp (standard/physical only).
+    if (this.material instanceof THREE.Material) {
       const mat = this.material as MorphableMaterial
       if (mat.color) mat.color.lerp(this.targetParams.color, 0.05)
       if (mat.emissive) mat.emissive.lerp(this.targetParams.emissive, 0.05)

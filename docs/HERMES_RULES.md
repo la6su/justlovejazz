@@ -70,6 +70,19 @@ Lessons were removed. Do NOT re-add lesson routes, lesson data, or lesson UI. Th
 ### 17. Check junni reference first
 Before adding new patterns, check https://github.com/junni-inc/next.junni.co.jp. Don't reinvent the wheel — port junni's approach (adapted to our built-in-materials constraint).
 
+### 18. PostProcessingManager keys = PhaseConfig.id
+`PHASE_PRESETS` keys must match `WorldConfig.RAW[i].id` exactly (`sec_intro`, `sec_about`, etc.).
+`applyPreset(cfg.id)` is called in `Experience.update()` — if keys diverge, all sections fall back to the default preset and per-section post-processing is effectively disabled.
+
+### 19. No `requestAnimationFrame` in Experience code
+Use `StateBus.animate()` + `bus.on('done:<key>', cb)` for all timed transitions (dissolve, intro, etc.). `requestAnimationFrame` fights the WebGPU swap-chain loop managed by `setAnimationLoop`.
+
+### 20. Baku material swap only on role change
+`Baku.applyRoleAndParams()` must check `instanceof` before swapping material. Creating a new material every frame is a GPU memory leak. Only swap when the material type actually needs to change (role transition).
+
+### 21. WorldAtmosphere owns fog, BG.ts owns background
+`WorldAtmosphere.dispose()` must NOT set `scene.background = null` — that causes a black frame on WebGPU (see §5). `BG.ts` is authoritative for `scene.background`. `WorldAtmosphere` only manages `scene.fog`.
+
 ## Verification protocol
 
 After EVERY change:
