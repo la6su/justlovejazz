@@ -6,9 +6,11 @@ import { input } from '../Input'
 
 export class CursorLight {
   private light: THREE.DirectionalLight
-  private goalPos = new THREE.Vector3(-1, -1, -0.5)
+  private goalPos  = new THREE.Vector3(-1, -1, -0.5)
   private currentPos = new THREE.Vector3(-1, -1, -0.5)
   private velocity = new THREE.Vector3()
+  // GC-free scratch — avoids one Vector3 alloc per frame
+  private _diff = new THREE.Vector3()
 
   constructor() {
     this.light = new THREE.DirectionalLight(0x6a8ab5, 0.8)
@@ -21,13 +23,12 @@ export class CursorLight {
   }
 
   update(dt: number): void {
-    // Map cursor to goal position (screen → world-ish).
     const mouse = input.getMouse()
     this.goalPos.set(mouse.x * 2, mouse.y * 2, -0.5)
 
-    // Spring-damper toward goal.
-    const diff = this.goalPos.clone().sub(this.currentPos)
-    this.velocity.add(diff.multiplyScalar(dt * 2.5))
+    // Spring-damper — zero alloc
+    this._diff.subVectors(this.goalPos, this.currentPos)
+    this.velocity.addScaledVector(this._diff, dt * 2.5)
     this.velocity.multiplyScalar(0.85)
     this.currentPos.add(this.velocity)
 

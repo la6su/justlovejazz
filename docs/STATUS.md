@@ -27,6 +27,9 @@ Single font: Inter (300-900 weights).
 | BG — continuous cross-section color lerp (setProgress) | ✅ fixed |
 | Input — framerate-independent scroll smoothing (half-life) | ✅ fixed |
 | Camera — shake state reset on completion | ✅ fixed |
+| SectionSceneFactory — distinctive geometry per section (junni patterns) | ✅ |
+| Section.update — cached mesh list, no traverse per frame | ✅ |
+| CursorLight — zero alloc per frame (subVectors/addScaledVector) | ✅ |
 | Baku (hidden, user will refine) | ⏸️ |
 | DrawTrail | ⏸️ disabled for perf |
 | WebGLTextManager (Troika) | ⏸️ disabled (conflicts with NoiseText) |

@@ -68,6 +68,11 @@ export class Section extends THREE.Group {
     private stateChannel: string
     private opacityChannel: string
 
+    // Cached mesh list for per-frame ops — populated lazily on first update()
+    // to avoid traverse() every frame (junni pattern: cache once, update cheap)
+    private _cachedMeshes: (THREE.Mesh & { material: THREE.MeshStandardMaterial })[] | null = null
+    private _pulseTime = 0
+
     constructor(config: PhaseConfig, public phaseIndex: number) {
         super()
         this.name = `section-${config.id}`
@@ -211,18 +216,28 @@ export class Section extends THREE.Group {
         this.applyState(reduced)
     }
 
-    public update(_dt: number): void {
-        // Emissive pulse on standard materials — adds life to procedural scenes.
-        // (Rotation is handled by World.update on sceneGroups — don't double-rotate.)
-        this.traverse((obj: THREE.Object3D) => {
-            if (obj instanceof THREE.Mesh) {
-                const mat = obj.material
-                if (!Array.isArray(mat) && mat instanceof THREE.MeshStandardMaterial) {
-                    const pulse = Math.sin(performance.now() * 0.001) * 0.15 + 0.85
-                    mat.emissiveIntensity = (mat.emissiveIntensity || 0.5) * 0.95 + pulse * 0.05
+    public update(dt: number): void {
+        // Emissive pulse on cached MeshStandardMaterial meshes.
+        // Cache built on first call — avoids traverse() every frame.
+        if (this._cachedMeshes === null) {
+            this._cachedMeshes = []
+            this.traverse((obj: THREE.Object3D) => {
+                if (
+                    obj instanceof THREE.Mesh &&
+                    !Array.isArray(obj.material) &&
+                    obj.material instanceof THREE.MeshStandardMaterial
+                ) {
+                    this._cachedMeshes!.push(obj as THREE.Mesh & { material: THREE.MeshStandardMaterial })
                 }
-            }
-        })
+            })
+        }
+
+        this._pulseTime += dt
+        const pulse = Math.sin(this._pulseTime) * 0.15 + 0.85
+        for (const mesh of this._cachedMeshes) {
+            const m = mesh.material
+            m.emissiveIntensity = m.emissiveIntensity * 0.95 + pulse * 0.05
+        }
     }
 
     public dispose(): void {
@@ -231,6 +246,7 @@ export class Section extends THREE.Group {
         bus.cancel(this.opacityChannel)
         bus.off(this.stateChannel)
         bus.off(this.opacityChannel)
+        this._cachedMeshes = null
         this.traverse((obj: THREE.Object3D) => {
             if (obj instanceof THREE.Mesh) {
                 obj.geometry?.dispose()

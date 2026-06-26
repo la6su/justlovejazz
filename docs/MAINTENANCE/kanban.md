@@ -51,6 +51,15 @@
 - [x] T-070: Camera.ts — исправлен баг: shakeTime/shakePower не сбрасывались после
   окончания shake-анимации; добавлен сброс shakeTime=0 по завершению
 
+### EPIC: Section content + perf (2026-06-26 — сессия 3)
+- [x] T-071: SectionSceneFactory — все 6 секций получили уникальную геометрию
+  по junni-паттернам: crosses, line-ring, grid, torus, dots, slashes, constellation,
+  perspective road. Только built-in materials (HERMES_RULES §1).
+- [x] T-072: Section.update — mesh cache: traverse() заменён на разовый сбор в
+  _cachedMeshes при первом вызове. Emissive pulse теперь O(n) без traverse per frame.
+- [x] T-073: CursorLight — убрана Vector3.clone() на каждый update(); заменена на
+  subVectors + addScaledVector (zero-alloc spring-damper).
+
 ## TODO
 
 ### EPIC: Holographic UI Panels (T-050)
