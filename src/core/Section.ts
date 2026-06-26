@@ -71,6 +71,7 @@ export class Section extends THREE.Group {
     // Cached mesh list for per-frame ops — populated lazily on first update()
     // to avoid traverse() every frame (junni pattern: cache once, update cheap)
     private _cachedMeshes: (THREE.Mesh & { material: THREE.MeshStandardMaterial })[] | null = null
+    private _opacityMeshCache: THREE.Mesh[] | null = null  // A-008: cache for setMeshOpacity
     private _pulseTime = 0
 
     constructor(config: PhaseConfig, public phaseIndex: number) {
@@ -138,13 +139,17 @@ export class Section extends THREE.Group {
 
     public switchState(target: SectionState, duration: number = 1.0, reduced: boolean = false): void {
         const bus = StateBus.getInstance()
-        const delta = STATE_VALUE[target] - bus.get(this.stateChannel)
-        if (delta === 0) return
+        // A-003 fix: read current value BEFORE any write. Previous code
+        // called bus.channel() which overwrote the value, then bus.get()
+        // returned the just-written target, and + delta overshot.
+        const current = bus.get(this.stateChannel)
+        const targetValue = STATE_VALUE[target]
+        if (Math.abs(targetValue - current) < 0.001) return
         const dur = reduced ? 0 : duration
-        bus.channel(this.stateChannel, STATE_VALUE[target])
-        bus.animate(this.stateChannel, bus.get(this.stateChannel) + delta, dur, 'easeOutQuart')
+        // Animate from current → target (no bus.channel() overwrite)
+        bus.animate(this.stateChannel, targetValue, dur, 'easeOutQuart')
         if (reduced) {
-            bus.set(this.stateChannel, STATE_VALUE[target])
+            bus.set(this.stateChannel, targetValue)
             this._state = target
             this.applyState(true)
         }
@@ -194,19 +199,27 @@ export class Section extends THREE.Group {
     }
 
     private setMeshOpacity(value: number): void {
-        this.traverse((obj: THREE.Object3D) => {
-            if (obj instanceof THREE.Mesh) {
-                const mat = obj.material
-                if (!Array.isArray(mat) && 'opacity' in mat) {
-                    // ── Rule 3: cache baseOpacity (HERMES_RULES §3) ──
-                    if (mat.userData.baseOpacity === undefined) {
-                        mat.userData.baseOpacity = mat.opacity
+        // A-008 fix: use _opacityMeshCache instead of traverse every call.
+        // Lazy-init on first call (same pattern as _cachedMeshes in update()).
+        if (this._opacityMeshCache === null) {
+            this._opacityMeshCache = []
+            this.traverse((obj: THREE.Object3D) => {
+                if (obj instanceof THREE.Mesh) {
+                    const mat = obj.material
+                    if (!Array.isArray(mat) && 'opacity' in mat) {
+                        if (mat.userData.baseOpacity === undefined) {
+                            mat.userData.baseOpacity = (mat as THREE.Material & { opacity: number }).opacity
+                        }
+                        this._opacityMeshCache!.push(obj)
                     }
-                    mat.opacity = value
-                    mat.needsUpdate = true
                 }
-            }
-        })
+            })
+        }
+        for (const mesh of this._opacityMeshCache) {
+            const mat = mesh.material as THREE.Material & { opacity: number; needsUpdate: boolean }
+            mat.opacity = value
+            mat.needsUpdate = true
+        }
     }
 
     public forceState(state: SectionState, reduced: boolean = false): void {
@@ -247,6 +260,7 @@ export class Section extends THREE.Group {
         bus.off(this.stateChannel)
         bus.off(this.opacityChannel)
         this._cachedMeshes = null
+        this._opacityMeshCache = null
         this.traverse((obj: THREE.Object3D) => {
             if (obj instanceof THREE.Mesh) {
                 obj.geometry?.dispose()

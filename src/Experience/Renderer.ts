@@ -199,7 +199,7 @@ export class Renderer {
     }
   }
 
-  /** Resize: propagate viewport changes to canvas, renderer, and pipeline RTs. */
+  /** Resize: propagate viewport changes to canvas, renderer, pipeline, and world. */
   public resize(): void {
     const w = this.sizes.width
     const h = this.sizes.height

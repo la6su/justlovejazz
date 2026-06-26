@@ -410,7 +410,18 @@ export class World extends THREE.Group {
         return this.updateTransform(scroll)
     }
 
-    public resize(_width: number, _height: number): void {}
+    public resize(width: number, height: number): void {
+        // A-001: Propagate resize to scene groups + ground plane.
+        // Scene groups: adjust scale for narrow screens (keep aspect ratio).
+        const aspect = width / height
+        const scale = aspect < 1 ? 0.7 : 1.0  // shrink on portrait
+        this.sceneGroups.forEach(g => {
+            g.scale.setScalar(scale)
+        })
+        // Ground plane: always covers viewport (large geometry, no change needed).
+        // Baku: position stays at origin, no resize needed.
+        // Atmosphere: fog density stays per-section.
+    }
 
     // ── Junni: splash() — unified entry point for first-section activation
     // Called when cinematic intro completes and experience becomes interactive

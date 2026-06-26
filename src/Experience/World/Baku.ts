@@ -73,9 +73,14 @@ export class Baku extends THREE.Mesh {
     this.rotation.x += Noise.organicValue(this.time, 40, 0.2, 0.01)
     this.rotation.y += Noise.organicValue(this.time, 50, 0.3, 0.01)
 
-    // Material morphing
-    this.applyRoleAndParams()
+    // A-005: Only apply role/material when role has changed (not every frame)
+    if (this.targetParams.role !== this._currentRole) {
+      this._currentRole = this.targetParams.role
+      this.applyRoleAndParams()
+    }
   }
+
+  private _currentRole: BakuRole | null = null
 
   private applyRoleAndParams(): void {
     if (!this.material) return

@@ -63,6 +63,7 @@ export class Experience {
   private _portfolioInitialized = false
   private _prevSectionIndex = -1
   private _introEmitted = false
+  private _onSizesResize: () => void = () => {}
 
   constructor(_ui: UIManager) {
     this.sizes = new Sizes()
@@ -71,6 +72,12 @@ export class Experience {
     window.experience = this
     this.camera = new Camera(this.sizes)
     this.renderer = new Renderer(this.sizes)
+
+    // Wire resize → world (A-001/A-004: World.resize was empty + never called)
+    this._onSizesResize = () => {
+      this.world?.resize(this.sizes.width, this.sizes.height)
+    }
+    this.sizes.onResize(this._onSizesResize)
   }
 
   public setupEventListeners() {}
