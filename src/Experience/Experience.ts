@@ -96,15 +96,13 @@ export class Experience {
       .animate('intro:opacity', 0, 0.5, 'easeOutCubic')
     this.bus.animate('intro:stage', 1, 0.6, 'easeOutCubic')
 
-    // After splash fade-out: hide splash DOM + white-theme for white hero
+    // After the Experience intro: switch to the light hero theme.
+    // NOTE: do NOT touch the splash DOM here. The splash lifecycle (opening
+    // animation + hide + remove) is owned entirely by main-app.ts. Previously
+    // this handler force-set splash.style.display='none' ~0.6s after boot,
+    // which instantly destroyed the splash ~2.5s BEFORE the cinematic opening
+    // sequence could play — so the user saw no opening animation at all.
     this.bus.on('intro:done', () => {
-      // Hide splash so clicks work
-      const splash = document.getElementById('jlj-splash')
-      if (splash) {
-        splash.style.display = 'none'
-        splash.style.pointerEvents = 'none'
-      }
-      // Light theme for white hero section
       document.documentElement.classList.add('light-theme')
       document.body.classList.add('light-theme')
     })
