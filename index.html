@@ -26,24 +26,15 @@
       #jlj-splash.is-splitting{background:transparent}
       #jlj-splash.hide{opacity:0;pointer-events:none}
 
-      /* === BRAND / LOADING WORD === two stacked words crossfade:
-         LOADING (during boot/warming) → JUSTLOVEJAZZ (at ready, brand reveal).
-         The crossfade IS the bridge from intro to opening — no static freeze.
-         Uses paired CSS animations (wordIn/wordOut, brandReveal/brandOut) instead
-         of transitions — animation-fill-mode:forwards would otherwise lock the
-         opacity and block the crossfade transition. */
+      /* === LOADING WORD === single muted word in center during boot/warming.
+         No brand reveal — dissolves straight into the opening choreography. */
       #jlj-splash-brand{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10;text-align:center;pointer-events:none}
-      .jlj-splash-word{display:block;position:absolute;top:50%;left:50%;white-space:nowrap}
-      /* LOADING — muted, smaller, wide letter-spacing; fades in at 0.8s */
-      .jlj-splash-word--loading{color:rgba(255,255,255,.5);font-weight:500;font-size:clamp(.7rem,1.6vw,.95rem);letter-spacing:.45em;text-transform:uppercase;transform:translate(-50%,-50%);opacity:0;animation:wordIn .8s ease .8s forwards}
+      .jlj-splash-word{display:block;position:absolute;top:50%;left:50%;white-space:nowrap;color:rgba(255,255,255,.5);font-weight:500;font-size:clamp(.7rem,1.6vw,.95rem);letter-spacing:.45em;text-transform:uppercase;transform:translate(-50%,-50%);opacity:0;animation:wordIn .8s ease .8s forwards}
       @keyframes wordIn{from{opacity:0}to{opacity:1}}
-      /* JUSTLOVEJAZZ — bright, bigger; hidden until phase=enter (ready) */
-      .jlj-splash-word--brand{color:#fff;font-weight:900;font-size:clamp(1.5rem,5vw,3.5rem);letter-spacing:-.03em;text-transform:uppercase;transform:translate(-50%,-50%) scale(.94);opacity:0}
-      /* Ready: crossfade LOADING → JUSTLOVEJAZZ via paired animations */
-      #jlj-splash[data-phase="enter"] .jlj-splash-word--loading{animation:wordOut .6s cubic-bezier(.65,0,.35,1) forwards}
-      @keyframes wordOut{from{opacity:1;transform:translate(-50%,-50%)}to{opacity:0;transform:translate(-50%,-50%) translateY(-10px)}}
-      #jlj-splash[data-phase="enter"] .jlj-splash-word--brand{animation:brandReveal .6s cubic-bezier(.65,0,.35,1) forwards}
-      @keyframes brandReveal{from{opacity:0;transform:translate(-50%,-50%) scale(.94)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+      /* On opening: dissolve LOADING up+out (no crossfade to brand) */
+      #jlj-splash[data-phase="enter"] .jlj-splash-word,
+      #jlj-splash[data-phase="revealing"] .jlj-splash-word{animation:wordOut .5s cubic-bezier(.5,0,.75,0) forwards}
+      @keyframes wordOut{from{opacity:1;transform:translate(-50%,-50%)}to{opacity:0;transform:translate(-50%,-50%) translateY(-14px)}}
 
       /* === PORTAL FRAMES === z-index:6 puts portals ABOVE curtains so the
          opening zoom-out is visible (curtains paint below, then part).
@@ -82,11 +73,8 @@
       @keyframes lineSplit{0%{width:100vw;height:1px;opacity:.6;background:linear-gradient(90deg,transparent,rgba(160,180,240,.9),transparent)}35%{width:100vw;height:2px;opacity:.9;background:linear-gradient(90deg,transparent,rgba(255,255,255,.95),transparent);box-shadow:0 0 24px rgba(160,180,240,.5)}100%{width:100vw;height:36vh;opacity:0;background:radial-gradient(ellipse,rgba(255,255,255,.3),transparent 70%);filter:blur(18px)}}
 
       /* === OPENING MISC === portals stay visible (zoom out via .is-collapsing);
-         brand rushes forward + blurs then dissolves; overlays fade out. */
-      #jlj-splash.is-splitting .jlj-splash-word--brand{animation:brandOut .8s cubic-bezier(.5,0,.75,0) forwards}
-      @keyframes brandOut{0%{opacity:1;transform:translate(-50%,-50%) scale(1);filter:blur(0)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.14);filter:blur(6px)}}
-      #jlj-splash[data-phase="revealing"] .jlj-splash-word--loading,
-      #jlj-splash.is-splitting .jlj-splash-word--loading{animation:none;opacity:0}
+         LOADING word dissolves up+out; overlays fade out. */
+      #jlj-splash.is-splitting .jlj-splash-word{animation:wordOut .5s cubic-bezier(.5,0,.75,0) forwards}
       #jlj-splash.is-splitting .jlj-splash-vignette{opacity:0;transition:opacity .6s ease}
       #jlj-splash.is-splitting .jlj-splash-scanlines{opacity:0;transition:opacity .4s ease}
       #jlj-splash.is-splitting #jlj-splash-progress{opacity:0;transition:opacity .4s ease}
@@ -149,7 +137,6 @@
       <div class="jlj-splash-line"></div>
       <div id="jlj-splash-brand">
         <span class="jlj-splash-word jlj-splash-word--loading">LOADING</span>
-        <span class="jlj-splash-word jlj-splash-word--brand">JUSTLOVEJAZZ</span>
       </div>
       <div class="jlj-splash-vignette"></div>
       <div class="jlj-splash-scanlines"></div>

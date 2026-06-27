@@ -92,16 +92,12 @@ export function createSplash(): SplashOverlay {
 
     brandEl = document.createElement('div')
     brandEl.id = 'jlj-splash-brand'
-    // Two stacked words crossfade: LOADING (boot) → JUSTLOVEJAZZ (ready).
-    // CSS in index.html drives the crossfade via #jlj-splash[data-phase="enter"].
+    // Single muted LOADING word during boot/warming — no brand reveal.
+    // On opening, CSS dissolves it up+out (no crossfade to brand).
     const loadingWord = document.createElement('span')
     loadingWord.className = 'jlj-splash-word jlj-splash-word--loading'
     loadingWord.textContent = 'LOADING'
-    const brandWord = document.createElement('span')
-    brandWord.className = 'jlj-splash-word jlj-splash-word--brand'
-    brandWord.textContent = 'JUSTLOVEJAZZ'
     brandEl.appendChild(loadingWord)
-    brandEl.appendChild(brandWord)
 
     // Cinematic overlays
     const vignette = document.createElement('div')

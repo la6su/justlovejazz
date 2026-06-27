@@ -4,6 +4,7 @@
 // Inspired by junni reference: Logo+Crosses+Lines+Dots per section.
 
 import * as THREE from 'three'
+import { FlexibleSlides } from '../Experience/World/Sections/FlexibleSlides'
 
 // ── Shared helpers ──────────────────────────────────────────────────────────
 
@@ -237,29 +238,25 @@ export class SectionSceneFactory {
     const g = new THREE.Group()
     g.name = 'flexible'
 
-    // Particles (light grey)
+    // ── Junni Section2 "Slides" — typographic text-background ──
+    // 50 instanced curved strips with scrolling concept-word texture.
+    // Replaces the placeholder lines/crosses/dots (those were hidden anyway).
+    // Texture loads async; slides fade in once loaded via setVisibility().
+    const slides = new FlexibleSlides()
+    slides.userData.keepVisible = true // bypass hideGeometry
+    g.add(slides)
+    // Async-load the typographic texture, then build the strips.
+    const loader = new THREE.TextureLoader()
+    loader.load('/assets/textures/sec2-bg-text.png', (tex) => {
+      slides.build(tex)
+      // Tag for World.update to find + drive per-frame.
+      g.userData.flexibleSlides = slides
+    }, undefined, (err) => {
+      console.warn('[SectionSceneFactory] sec2-bg-text.png failed to load', err)
+    })
+
+    // Particles (light grey) — atmospheric depth
     g.add(makeParticles(30, new THREE.Vector3(14, 7, 8), 0xaaaaaa, 0.035, 0.2))
-
-    // Parallel horizontal lines (process/timeline metaphor)
-    const lineColor = 0x999999
-    for (let i = 0; i < 5; i++) {
-      const y = -0.8 + i * 0.5
-      const w = 6 - i * 0.4
-      g.add(makeLine(
-        [new THREE.Vector3(-w, y, -0.5), new THREE.Vector3(w, y, -0.5)],
-        lineColor, 0.12 + i * 0.03,
-      ))
-    }
-
-    // Corner crosses (organised, structured)
-    g.add(makeCross(0.6, new THREE.Vector3(-4,  1.5, 0), 0x999999, 0.3))
-    g.add(makeCross(0.6, new THREE.Vector3( 4, -1.0, 0), 0x999999, 0.3))
-    g.add(makeCross(0.4, new THREE.Vector3( 3,  1.8, 0), 0xbbbbbb, 0.2))
-
-    // Small dots (organised cluster — top left)
-    const dots = makeDots(10, new THREE.Vector3(3, 2, 2), 0x888888, 0.04, 0.5)
-    dots.position.set(-3.5, 1, 0)
-    g.add(dots)
 
     return g
   }
@@ -390,12 +387,14 @@ export class SectionSceneFactory {
    * Hide all non-particle geometry in a group.
    * Call on every group returned by byIndex() until bespoke visuals are ready.
    * Particles stay visible — they provide minimal atmospheric depth.
+   * Objects tagged `userData.keepVisible = true` are also kept (e.g. FlexibleSlides).
    * HERMES_RULES §3: baseOpacity stays cached, visibility change is non-destructive.
    */
   static hideGeometry(group: THREE.Group): void {
     group.traverse(obj => {
       if (obj === group) return
       if (obj instanceof THREE.Points) return  // keep particles
+      if (obj.userData?.keepVisible) return    // keep bespoke visuals (FlexibleSlides etc.)
       obj.visible = false
     })
   }
