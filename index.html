@@ -28,29 +28,29 @@
       #jlj-splash-brand{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10;color:#fff;font-weight:900;font-size:clamp(1.5rem,5vw,3.5rem);letter-spacing:-.03em;text-transform:uppercase;white-space:nowrap;opacity:0;animation:brandIn 1.5s cubic-bezier(.65,0,.35,1) .8s forwards}
       @keyframes brandIn{to{opacity:1}}
 
-      /* === PORTAL FRAMES === */
+      /* === PORTAL FRAMES === bright enough to see on black */
       .jlj-splash-portals{position:absolute;inset:0;z-index:3;pointer-events:none;perspective:800px}
-      .jlj-splash-portal{position:absolute;top:50%;left:50%;border:1px solid rgba(255,255,255,.15);border-radius:2px;opacity:0;transform:translate(-50%,-50%) scale(6);animation:portalIn 1.8s cubic-bezier(.65,0,.35,1) forwards}
+      .jlj-splash-portal{position:absolute;top:50%;left:50%;border:1px solid rgba(255,255,255,.4);border-radius:2px;opacity:0;transform:translate(-50%,-50%) scale(6);animation:portalIn 1.8s cubic-bezier(.65,0,.35,1) forwards;box-shadow:0 0 20px rgba(81,93,132,.15)}
       .jlz-portal-1{width:40vmin;height:60vmin;animation-delay:.1s}
-      .jlz-portal-2{width:55vmin;height:75vmin;border-color:rgba(81,93,132,.2);animation-delay:.25s}
-      .jlz-portal-3{width:70vmin;height:90vmin;border-color:rgba(255,255,255,.08);animation-delay:.4s}
-      .jlz-portal-4{width:85vmin;height:105vmin;border-color:rgba(81,93,132,.12);animation-delay:.55s}
-      @keyframes portalIn{0%{opacity:0;transform:translate(-50%,-50%) scale(6)}20%{opacity:.8}100%{opacity:.3;transform:translate(-50%,-50%) scale(1)}}
-      .jlj-splash-portals.is-collapsing .jlj-splash-portal{animation:portalCollapse .8s cubic-bezier(.7,0,.84,0) forwards}
-      @keyframes portalCollapse{0%{opacity:.3;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(.1)}}
+      .jlz-portal-2{width:55vmin;height:75vmin;border-color:rgba(81,93,132,.5);animation-delay:.25s}
+      .jlz-portal-3{width:70vmin;height:90vmin;border-color:rgba(255,255,255,.2);animation-delay:.4s}
+      .jlz-portal-4{width:85vmin;height:105vmin;border-color:rgba(81,93,132,.3);animation-delay:.55s}
+      @keyframes portalIn{0%{opacity:0;transform:translate(-50%,-50%) scale(6)}20%{opacity:1}100%{opacity:.5;transform:translate(-50%,-50%) scale(1)}}
+      .jlj-splash-portals.is-collapsing .jlj-splash-portal{animation:portalCollapse 1.2s cubic-bezier(.7,0,.84,0) forwards}
+      @keyframes portalCollapse{0%{opacity:.5;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(.05)}}
 
-      /* === CURTAIN PANELS === */
-      .jlj-splash-top{position:absolute;top:0;left:0;width:100%;height:50%;background:#000;transform:translateY(-100%);animation:curtainTopIn 1.4s cubic-bezier(.65,0,.35,1) .2s forwards}
-      .jlj-splash-bottom{position:absolute;bottom:0;left:0;width:100%;height:50%;background:#000;display:flex;align-items:flex-start;justify-content:center;transform:translateY(100%);animation:curtainBotIn 1.4s cubic-bezier(.65,0,.35,1) .2s forwards}
+      /* === CURTAIN PANELS === visible (dark, not pure black) so you SEE them slide */
+      .jlj-splash-top{position:absolute;top:0;left:0;width:100%;height:50%;background:#0a0a0f;transform:translateY(-100%);animation:curtainTopIn 1.4s cubic-bezier(.65,0,.35,1) .2s forwards;box-shadow:inset 0 -1px 0 rgba(81,93,132,.3)}
+      .jlj-splash-bottom{position:absolute;bottom:0;left:0;width:100%;height:50%;background:#0a0a0f;display:flex;align-items:flex-start;justify-content:center;transform:translateY(100%);animation:curtainBotIn 1.4s cubic-bezier(.65,0,.35,1) .2s forwards;box-shadow:inset 0 1px 0 rgba(81,93,132,.3)}
       @keyframes curtainTopIn{to{transform:translateY(0)}}
       @keyframes curtainBotIn{to{transform:translateY(0)}}
-      #jlj-splash.is-splitting .jlj-splash-top{animation:curtainTopOut 1.4s cubic-bezier(.65,0,.35,1) forwards}
-      #jlj-splash.is-splitting .jlj-splash-bottom{animation:curtainBotOut 1.4s cubic-bezier(.65,0,.35,1) forwards}
-      @keyframes curtainTopOut{0%{transform:translateY(0)}20%{transform:translateY(-3%)}40%{transform:translateY(-8%)}100%{transform:translateY(-105%)}}
-      @keyframes curtainBotOut{0%{transform:translateY(0)}20%{transform:translateY(3%)}40%{transform:translateY(8%)}100%{transform:translateY(105%)}}
+      #jlj-splash.is-splitting .jlj-splash-top{animation:curtainTopOut 1.6s cubic-bezier(.65,0,.35,1) forwards}
+      #jlj-splash.is-splitting .jlj-splash-bottom{animation:curtainBotOut 1.6s cubic-bezier(.65,0,.35,1) forwards}
+      @keyframes curtainTopOut{0%{transform:translateY(0)}15%{transform:translateY(-3%)}30%{transform:translateY(-8%)}100%{transform:translateY(-105%)}}
+      @keyframes curtainBotOut{0%{transform:translateY(0)}15%{transform:translateY(3%)}30%{transform:translateY(8%)}100%{transform:translateY(105%)}}
 
-      /* === SPLIT LINE === */
-      .jlj-splash-line{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:1px;height:1px;background:linear-gradient(90deg,transparent,#515d84,transparent);z-index:100;opacity:0;animation:lineIn .8s ease .3s forwards}
+      /* === SPLIT LINE === bright glow line */
+      .jlj-splash-line{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:1px;height:1px;background:linear-gradient(90deg,transparent,#515d84,transparent);z-index:100;opacity:0;animation:lineIn .8s ease .3s forwards;box-shadow:0 0 8px rgba(81,93,132,.4)}
       @keyframes lineIn{to{width:100vw;opacity:.15}}
       #jlj-splash.is-splitting .jlj-splash-line{animation:lineSplit .8s cubic-bezier(.65,0,.35,1) forwards}
       @keyframes lineSplit{0%{width:100vw;height:1px;opacity:.8}30%{width:100vw;height:2px;opacity:1;background:#fff}100%{width:200vw;height:200vh;opacity:0;transform:translate(-50%,-50%) scale(2);filter:blur(20px)}}

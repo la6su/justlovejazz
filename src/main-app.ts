@@ -47,19 +47,17 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
     progress(100)
     splash.setState('ready')
 
-    // No Enter button — auto-trigger cinematic reveal after short delay.
+    // Auto-trigger cinematic reveal after short delay.
     // Flow: portal collapse → curtain split → scene revealed.
-    // This gives the user a moment to see "READY" + 100% progress,
-    // then the wow-effect curtain split happens automatically.
     setTimeout(async () => {
-      // Phase 1: Portal collapse (800ms) — frames zoom toward viewer
+      // Phase 1: Portal collapse (1.2s) — frames zoom toward viewer
       splash.markPhase('dissolving')
       splash.triggerPortalCollapse()
-      await new Promise(r => setTimeout(r, 800))
+      await new Promise(r => setTimeout(r, 1200))
 
-      // Phase 2: Curtain split (1400ms) — top/bottom panels slide apart
+      // Phase 2: Curtain split (1.6s) — top/bottom panels slide apart
       splash.curtainSplit()
-      await new Promise(r => setTimeout(r, 1400))
+      await new Promise(r => setTimeout(r, 1600))
 
       // Phase 3: Hide splash, reveal scene
       splash.hide()
@@ -67,7 +65,7 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
 
       // Phase 4: Cleanup splash overlay
       setTimeout(() => splash.remove(), 600)
-    }, 800)
+    }, 1200)
   } catch (e) {
     console.error('[main-app] bootstrap failed:', e)
   }
