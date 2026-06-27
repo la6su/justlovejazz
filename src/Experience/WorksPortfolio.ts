@@ -4,7 +4,7 @@
 // Liquid distortion shader (TSL NodeMaterial) warps cards during swipe.
 import * as THREE from 'three'
 import { type Project } from '../core/types'
-import { createLiquidSliderMaterial, type LiquidSliderMaterial } from '../shaders/LiquidSliderMaterial'
+import { createLiquidSliderMaterial, updateLiquidTexture, type LiquidSliderMaterial } from '../shaders/LiquidSliderMaterial'
 
 interface ProjectCard {
   group: THREE.Group
@@ -98,7 +98,7 @@ export class WorksPortfolio {
       mat.userData.baseOpacity = mat.opacity
 
       // Texture starts null — loaded lazily when card becomes active.
-      const mesh = new THREE.Mesh(geo, mat)
+      const mesh = new THREE.Mesh(geo, mat as unknown as THREE.Material)
       mesh.userData = { idx: i, texLoaded: false, texUrl: proj.textureUrl || proj.detailTextureUrl }
       grp.add(mesh)
       mesh.lookAt(0, 0.5, 10)
@@ -128,10 +128,10 @@ export class WorksPortfolio {
     mesh.userData.texLoaded = true
     WorksPortfolio.sharedLoader.load(mesh.userData.texUrl, (tex) => {
       tex.colorSpace = THREE.SRGBColorSpace
-      // Standard three.js texture binding (onBeforeCompile uses built-in map sampling).
-      card.mat.map = tex
+      // Dual-backend texture binding: TSL colorNode rebuild on WebGPU,
+      // standard map binding on WebGL2 (onBeforeCompile uses built-in map).
+      updateLiquidTexture(card.mat, tex)
       card.mat.emissiveIntensity = 0.2
-      card.mat.needsUpdate = true
       card.texture = tex
     })
   }
