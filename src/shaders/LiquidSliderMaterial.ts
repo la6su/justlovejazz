@@ -25,31 +25,43 @@ export interface LiquidCardGeometry {
  * Returns the geometry + an update function to call per-frame.
  */
 export function createLiquidCardGeometry(w: number, h: number): LiquidCardGeometry {
-  const segments = 32
+  // 128×128 segments — high enough that waves look smooth, not faceted.
+  // (32×32 was pixelated/faceted on card edges.)
+  const segments = 128
   const geometry = new THREE.PlaneGeometry(w, h, segments, segments)
   const basePositions = new Float32Array(geometry.attributes.position.array)
 
   let time = 0
+  let normalRecomputeTimer = 0
 
   const update = (dt: number, moveVel: number) => {
     time += dt
+    normalRecomputeTimer += dt
     const positions = geometry.attributes.position.array as Float32Array
     // Normalize moveVel (can spike to 20-150) to 0-1 range.
     const velNorm = Math.min(Math.abs(moveVel) * 0.05, 1)
-    // Ambient + swipe-boosted distortion amount.
-    const distortAmount = 0.02 + velNorm * 0.06
+    // Ambient + swipe-boosted distortion amount. Kept small so the card
+    // surface stays smooth — large displacement + low segments = facets.
+    const distortAmount = 0.015 + velNorm * 0.04
 
     for (let i = 0; i < positions.length; i += 3) {
       const bx = basePositions[i]
       const by = basePositions[i + 1]
-      // Multi-octave liquid displacement in Z (depth).
-      const wave1 = Math.sin(by * 4 + time * 1.5) * distortAmount
-      const wave2 = Math.cos(bx * 5 + time * 1.2) * distortAmount
-      const ripple = Math.sin(by * 12 - time * 3.0) * distortAmount * 0.3
+      // Smooth multi-octave liquid displacement in Z (depth).
+      // Lower frequencies = broader, smoother waves (less pixelation).
+      const wave1 = Math.sin(by * 2.5 + time * 1.2) * distortAmount
+      const wave2 = Math.cos(bx * 3.0 + time * 1.0) * distortAmount
+      const ripple = Math.sin(by * 8 - time * 2.5) * distortAmount * 0.25
       positions[i + 2] = wave1 + wave2 + ripple
     }
     geometry.attributes.position.needsUpdate = true
-    geometry.computeVertexNormals()
+    // Recompute normals at ~30fps (every ~33ms) instead of every frame —
+    // computeVertexNormals on 128² is expensive and the eye can't see
+    // the difference at 60fps vs 30fps normal updates.
+    if (normalRecomputeTimer >= 0.033) {
+      geometry.computeVertexNormals()
+      normalRecomputeTimer = 0
+    }
   }
 
   const dispose = () => {
