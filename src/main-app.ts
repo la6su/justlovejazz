@@ -51,9 +51,13 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
 
     await Bootstrapper.init(ui, onReadyCb)
     progress(98)
-    // 100% → mark ready → show enter button
     progress(100)
     splash.setState('ready')
+
+    // Show enter button — opts.onReady callback from entry-app
+    if (opts.onReady) {
+      opts.onReady(enterButton)
+    }
 
     const triggerCinematicIntro = async () => {
       enterButton.cancelAuto()
@@ -65,15 +69,16 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
       await new Promise(r => setTimeout(r, 800))
 
       // Phase 2: Curtain split (1400ms) — top/bottom panels slide apart
-      await splash.curtainSplit(1400)
+      splash.curtainSplit(1400)
+      // Wait for curtain split to visually complete before hiding
+      await new Promise(r => setTimeout(r, 1400))
 
       // Phase 3: Hide splash, reveal scene
-      splash.hide(600)
-
+      splash.hide(400)
       window.dispatchEvent(new CustomEvent('jlz:webgl-ready'))
 
-      // Phase 4: Cleanup splash overlay
-      setTimeout(() => splash.remove(), 1200)
+      // Phase 4: Cleanup splash overlay after hide transition
+      setTimeout(() => splash.remove(), 600)
     }
 
     // Wire enter button → trigger the intro transition

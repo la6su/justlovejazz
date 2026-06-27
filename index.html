@@ -46,6 +46,25 @@
       .jlj-splash-vignette{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 30%,rgba(0,0,0,.6) 100%);pointer-events:none;z-index:7;opacity:0;animation:vgIn 2s ease-in .5s forwards}
       @keyframes vgIn{to{opacity:1}}
       .jlj-splash-scanlines{position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0,transparent 2px,rgba(255,255,255,.015) 2px,rgba(255,255,255,.015) 3px);pointer-events:none;z-index:8;opacity:0}
+      /* Portal collapse — triggered by JS .is-collapsing */
+      .jlj-splash-portals.is-collapsing .jlj-splash-portal{animation:jlz-portal-collapse .8s cubic-bezier(.7,0,.84,0) forwards}
+      @keyframes jlz-portal-collapse{0%{opacity:.3;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(.1)}}
+      /* Curtain split — triggered by JS .is-splitting */
+      #jlj-splash.is-splitting .jlj-splash-top{animation:ctOut 1.4s cubic-bezier(.65,0,.35,1) forwards}
+      #jlj-splash.is-splitting .jlj-splash-bottom{animation:cbOut 1.4s cubic-bezier(.65,0,.35,1) forwards}
+      #jlj-splash.is-splitting .jlj-splash-line{animation:lineSplit .8s cubic-bezier(.65,0,.35,1) forwards}
+      #jlj-splash.is-splitting .jlj-splash-portals{opacity:0;transition:opacity .3s}
+      #jlj-splash.is-splitting #jlj-splash-brand{animation:brandOut .8s cubic-bezier(.7,0,.84,0) forwards}
+      @keyframes ctOut{0%{transform:translateY(0)}20%{transform:translateY(-3%)}40%{transform:translateY(-8%)}100%{transform:translateY(-105%)}}
+      @keyframes cbOut{0%{transform:translateY(0)}20%{transform:translateY(3%)}40%{transform:translateY(8%)}100%{transform:translateY(105%)}}
+      @keyframes lineSplit{0%{width:100vw;height:1px;opacity:.8}30%{width:100vw;height:2px;opacity:1;background:#fff}100%{width:200vw;height:200vh;opacity:0;transform:translate(-50%,-50%) scale(2);filter:blur(20px)}}
+      @keyframes brandOut{0%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(.9)}}
+      /* Enter button */
+      .jlz-enter{position:fixed;bottom:8vh;left:50%;transform:translateX(-50%) translateY(20px);z-index:3000;background:transparent;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.92);font-weight:500;font-size:clamp(.55rem,1.2vw,.8rem);font-family:'Inter',sans-serif;letter-spacing:.2em;padding:12px 40px;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .8s,transform .8s;text-transform:uppercase}
+      .jlz-enter.is-visible{opacity:1;pointer-events:auto;transform:translateX(-50%) translateY(0);animation:enterPulse 2s ease-in-out infinite}
+      @keyframes enterPulse{0%,100%{box-shadow:0 0 8px rgba(255,255,255,.1),0 0 30px rgba(255,255,255,0)}50%{box-shadow:0 0 12px rgba(255,255,255,.2),0 0 50px rgba(255,255,255,.1)}}
+      /* Skip link */
+      .skip-link{position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden}
     </style>
   </head>
   <body data-app-mode="full" data-page="home">

@@ -16,7 +16,7 @@ export interface SplashOverlay {
   setProgress(pct: number): void
   setState(state: 'booting' | 'warming' | 'ready'): void
   triggerPortalCollapse(): void
-  curtainSplit(duration?: number): Promise<void>
+  curtainSplit(duration?: number): void
   markPhase(phase: SplashPhase): void
   getElements(): { root: HTMLElement; top: HTMLElement; bottom: HTMLElement; line: HTMLElement } | null
 }
@@ -155,17 +155,9 @@ export function createSplash(): SplashOverlay {
       }
     },
 
-    curtainSplit(duration: number = 1400): Promise<void> {
-      return new Promise<void>((resolve) => {
-        if (!root) {
-          resolve()
-          return
-        }
-        root.classList.add('is-splitting')
-        resolve(new Promise((r) => {
-          setTimeout(r, duration)
-        }))
-      })
+    curtainSplit(_duration?: number): void {
+      if (!root) return
+      root.classList.add('is-splitting')
     },
 
     markPhase(phase: SplashPhase): void {
