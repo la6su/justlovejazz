@@ -59,25 +59,16 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
       enterButton.cancelAuto()
       enterButton.animateOut(400)
 
-      // Phase 1: Curtain split (1400ms)
+      // Phase 1: Portal collapse (800ms) — frames zoom toward viewer
       splash.markPhase('dissolving')
+      splash.triggerPortalCollapse()
+      await new Promise(r => setTimeout(r, 800))
+
+      // Phase 2: Curtain split (1400ms) — top/bottom panels slide apart
       await splash.curtainSplit(1400)
 
-      // Phase 2: Hide splash, jump to Section2 (white blob world)
+      // Phase 3: Hide splash, reveal scene
       splash.hide(600)
-
-      // Force scroll to end → Section2 (step07, white bg, holographic blobs)
-      // immediately after splash. Hero (step05) accessible via scroll up.
-      // Use Experience.lenis.scrollTo to reach end instantly
-      const { Experience } = await import('./Experience/Experience')
-      if (Experience.instance?.smoothScroll) {
-        const lenis = Experience.instance.smoothScroll.lenis
-        lenis.scrollTo('100%', {
-          offset: 0,
-          duration: 0.3,
-          easing: (t: number) => t * (2 - t),
-        })
-      }
 
       window.dispatchEvent(new CustomEvent('jlz:webgl-ready'))
 
