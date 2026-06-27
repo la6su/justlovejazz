@@ -4,6 +4,7 @@
 // Inspired by junni reference: Logo+Crosses+Lines+Dots per section.
 
 import * as THREE from 'three'
+import { FlexibleSlides } from '../Experience/World/Sections/FlexibleSlides'
 
 // ── Shared helpers ──────────────────────────────────────────────────────────
 
@@ -232,34 +233,39 @@ export class SectionSceneFactory {
   }
 
   // ── 2: Flexible — light/grey BG, approach/process feel
-  // Junni Section2 adapted: clean lines, organized feel
+  // Junni Section2 pattern: animated text background + full-screen title texture.
+  // NO HTML content — pure 3D scene (user request: match junni reference).
   static createFlexible(): THREE.Group {
     const g = new THREE.Group()
     g.name = 'flexible'
 
-    // Particles (light grey)
-    g.add(makeParticles(30, new THREE.Vector3(14, 7, 8), 0xaaaaaa, 0.035, 0.2))
-
-    // Parallel horizontal lines (process/timeline metaphor)
-    const lineColor = 0x999999
-    for (let i = 0; i < 5; i++) {
-      const y = -0.8 + i * 0.5
-      const w = 6 - i * 0.4
-      g.add(makeLine(
-        [new THREE.Vector3(-w, y, -0.5), new THREE.Vector3(w, y, -0.5)],
-        lineColor, 0.12 + i * 0.03,
-      ))
+    // ── Junni Section2: animated bg + full-screen title ──
+    const slides = new FlexibleSlides()
+    slides.userData.keepVisible = true // bypass hideGeometry
+    g.add(slides)
+    // Async-load both textures, then build.
+    const loader = new THREE.TextureLoader()
+    let bgTex: THREE.Texture | null = null
+    let titleTex: THREE.Texture | null = null
+    const tryBuild = () => {
+      if (bgTex && titleTex) {
+        slides.build(bgTex, titleTex)
+        g.userData.flexibleSlides = slides
+      }
     }
+    loader.load('/assets/textures/sec2-bg-text.png', (tex) => {
+      bgTex = tex; tryBuild()
+    }, undefined, (err) => {
+      console.warn('[SectionSceneFactory] sec2-bg-text.png failed to load', err)
+    })
+    loader.load('/assets/textures/flexible-title.png', (tex) => {
+      titleTex = tex; tryBuild()
+    }, undefined, (err) => {
+      console.warn('[SectionSceneFactory] flexible-title.png failed to load', err)
+    })
 
-    // Corner crosses (organised, structured)
-    g.add(makeCross(0.6, new THREE.Vector3(-4,  1.5, 0), 0x999999, 0.3))
-    g.add(makeCross(0.6, new THREE.Vector3( 4, -1.0, 0), 0x999999, 0.3))
-    g.add(makeCross(0.4, new THREE.Vector3( 3,  1.8, 0), 0xbbbbbb, 0.2))
-
-    // Small dots (organised cluster — top left)
-    const dots = makeDots(10, new THREE.Vector3(3, 2, 2), 0x888888, 0.04, 0.5)
-    dots.position.set(-3.5, 1, 0)
-    g.add(dots)
+    // Particles (light grey) — atmospheric depth
+    g.add(makeParticles(30, new THREE.Vector3(14, 7, 8), 0xaaaaaa, 0.035, 0.2))
 
     return g
   }
@@ -390,12 +396,14 @@ export class SectionSceneFactory {
    * Hide all non-particle geometry in a group.
    * Call on every group returned by byIndex() until bespoke visuals are ready.
    * Particles stay visible — they provide minimal atmospheric depth.
+   * Objects tagged `userData.keepVisible = true` are also kept (e.g. FlexibleSlides).
    * HERMES_RULES §3: baseOpacity stays cached, visibility change is non-destructive.
    */
   static hideGeometry(group: THREE.Group): void {
     group.traverse(obj => {
       if (obj === group) return
       if (obj instanceof THREE.Points) return  // keep particles
+      if (obj.userData?.keepVisible) return    // keep bespoke visuals (FlexibleSlides etc.)
       obj.visible = false
     })
   }

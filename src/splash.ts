@@ -1,4 +1,12 @@
-// splash.ts — Cinematic curtain splash screen
+// splash.ts — Cinematic portal splash screen
+//
+// Flow:
+// 1. Black screen → "JUSTLOVEJAZZ" fades in (warming phase)
+// 2. Portal frames: 3-4 rectangular frames scale down toward center
+//    creating a "flying through portals" effect
+// 3. Curtain split: top/bottom panels slide apart with overshoot
+// 4. Brand exits, scene revealed
+
 export type SplashPhase = 'loading' | 'enter' | 'dissolving' | 'revealing' | 'idle'
 
 export interface SplashOverlay {
@@ -7,7 +15,8 @@ export interface SplashOverlay {
   remove(): void
   setProgress(pct: number): void
   setState(state: 'booting' | 'warming' | 'ready'): void
-  curtainSplit(duration?: number): Promise<void>
+  triggerPortalCollapse(): void
+  curtainSplit(duration?: number): void
   markPhase(phase: SplashPhase): void
   getElements(): { root: HTMLElement; top: HTMLElement; bottom: HTMLElement; line: HTMLElement } | null
 }
@@ -21,6 +30,8 @@ export function createSplash(): SplashOverlay {
   let brandEl: HTMLDivElement | null = null
   let progressBar: HTMLDivElement | null = null
   let labelEl: HTMLDivElement | null = null
+  let portalContainer: HTMLDivElement | null = null
+  let portals: HTMLDivElement[] = []
   let shellReady = false
 
   function bindShell() {
@@ -33,6 +44,8 @@ export function createSplash(): SplashOverlay {
     brandEl = existing.querySelector('#jlj-splash-brand')!
     progressBar = existing.querySelector('#jlj-splash-progress')!
     labelEl = existing.querySelector('#jlj-splash-label')!
+    portalContainer = existing.querySelector('.jlj-splash-portals')!
+    portals = Array.from(existing.querySelectorAll('.jlj-splash-portal'))
     shellReady = true
     return true
   }
@@ -41,6 +54,19 @@ export function createSplash(): SplashOverlay {
     root = document.createElement('div')
     root.id = id
     root.setAttribute('data-phase', 'loading')
+
+    // Portal frames container
+    portalContainer = document.createElement('div')
+    portalContainer.className = 'jlj-splash-portals'
+
+    // Create 4 portal frames (different sizes, staggered animation)
+    for (let i = 0; i < 4; i++) {
+      const portal = document.createElement('div')
+      portal.className = `jlj-splash-portal jlz-portal-${i + 1}`
+      portal.style.animationDelay = `${0.1 + i * 0.15}s`
+      portalContainer.appendChild(portal)
+      portals.push(portal)
+    }
 
     topPanel = document.createElement('div')
     topPanel.className = 'jlj-splash-top'
@@ -66,12 +92,27 @@ export function createSplash(): SplashOverlay {
 
     brandEl = document.createElement('div')
     brandEl.id = 'jlj-splash-brand'
-    brandEl.textContent = 'JUSTLOVEJAZZ'
+    // Single muted LOADING word during boot/warming — no brand reveal.
+    // On opening, CSS dissolves it up+out (no crossfade to brand).
+    const loadingWord = document.createElement('span')
+    loadingWord.className = 'jlj-splash-word jlj-splash-word--loading'
+    loadingWord.textContent = 'LOADING'
+    brandEl.appendChild(loadingWord)
 
+    // Cinematic overlays
+    const vignette = document.createElement('div')
+    vignette.className = 'jlj-splash-vignette'
+
+    const scanlines = document.createElement('div')
+    scanlines.className = 'jlj-splash-scanlines'
+
+    root.appendChild(portalContainer)
     root.appendChild(topPanel)
     root.appendChild(bottomPanel)
     root.appendChild(splitLine)
     root.appendChild(brandEl)
+    root.appendChild(vignette)
+    root.appendChild(scanlines)
     document.body.appendChild(root)
     shellReady = true
   }
@@ -85,11 +126,9 @@ export function createSplash(): SplashOverlay {
       root!.style.visibility = 'visible'
     },
 
-    hide(durationMs: number = 0): void {
-      root!.style.opacity = '0'
-      if (durationMs > 0) {
-        root!.style.transition = `opacity ${durationMs}ms var(--jlz-ease-exit)`
-      }
+    hide(_durationMs?: number): void {
+      if (!root) return
+      root.classList.add('hide')
     },
 
     remove(): void {
@@ -105,23 +144,23 @@ export function createSplash(): SplashOverlay {
     },
 
     setState(state: 'booting' | 'warming' | 'ready'): void {
-      labelEl!.textContent = state
+      labelEl!.textContent = state.toUpperCase()
       if (root) {
         root.dataset.phase = state === 'ready' ? 'enter' : 'loading'
       }
+      // Portal collapse is triggered separately by triggerPortalCollapse()
+      // to avoid collapsing immediately when 'ready' state is set.
     },
 
-    curtainSplit(duration: number = 1400): Promise<void> {
-      return new Promise<void>((resolve) => {
-        if (!root) {
-          resolve()
-          return
-        }
-        root.classList.add('is-splitting')
-        resolve(new Promise((r) => {
-          setTimeout(r, duration)
-        }))
-      })
+    triggerPortalCollapse(): void {
+      if (portalContainer) {
+        portalContainer.classList.add('is-collapsing')
+      }
+    },
+
+    curtainSplit(_duration?: number): void {
+      if (!root) return
+      root.classList.add('is-splitting')
     },
 
     markPhase(phase: SplashPhase): void {

@@ -1,25 +1,6 @@
 # STATUS — Single Source of Truth
 
-> Updated: 2026-06-26. Branch: `dev`. Build green.
-
-## ⚡ Active Priority — AUDIT items (see `docs/AUDIT.md`)
-
-| ID | Description | Status |
-|----|-------------|--------|
-| **A-001** | `World.resize()` — implement + propagate to sceneGroups | ⏳ |
-| **A-002** | Portrait FOV adaptation (`portraitFovBoost` in PhaseConfig) | ⏳ |
-| **A-003** | `Section.switchState()` logic bug — animation starts wrong | ⏳ |
-| **A-004** | Wire `world.resize()` from Experience/Sizes | ⏳ |
-| **A-005** | Baku role caching — skip `applyRoleAndParams()` when unchanged | ⏳ |
-| **A-006** | Double traverse in `updateTransform()` — add mesh cache | ⏳ |
-| **A-007** | DrawTrail per-section re-enable with visibility gating | ⏳ |
-| **A-008** | `Section.setMeshOpacity()` — reuse `_cachedMeshes` | ⏳ |
-| **A-009** | Baku `worldState.bakuMaterial` → `baku.updateMaterial()` | ⏳ |
-| **A-015** | Per-section cursor follow strength in PhaseConfig | ⏳ |
-
-Full analysis with root causes + code examples: **`docs/AUDIT.md`**
-
----
+> Updated: 2026-06-27. Branch: `main` (dev + test synced). Build green.
 
 ## Project
 
@@ -33,64 +14,55 @@ Single font: Inter (300-900 weights).
 |------|--------|
 | 3D scene renders (WebGPU + WebGL2) | ✅ |
 | 6 sections with scroll navigation | ✅ |
-| NoiseText title animation (jlz:section-change) | ✅ |
+| NoiseText title animation (junni typewriter reveal) | ✅ |
 | Works 3D slider + overlay | ✅ |
-| Splash screen (curtain split + grain + glow) | ✅ |
+| Splash screen (curtain split + grain + glow + vignette + scanlines) | ✅ |
+| DrawTrail (about/flexible sections) | ✅ |
+| DrawTrail per-section visibility gating | ✅ |
+| Per-section lighting + fog (junni changeSection pattern) | ✅ |
+| Camera shake on section transition | ✅ |
+| Portrait FOV adaptation | ✅ |
+| Per-section cursor follow strength | ✅ |
 | Single Inter font throughout | ✅ |
-| Per-section post-processing presets (sec_intro..sec_contact) | ✅ fixed |
-| NarrativePhase enum synced with PhaseConfig.id | ✅ fixed |
-| Baku material swap — no per-frame GPU leak | ✅ fixed |
-| dissolve transition uses StateBus (no rAF) | ✅ fixed |
-| WorldAtmosphere — dead initBG/initFog removed | ✅ fixed |
-| NoiseText — single canonical trigger path | ✅ fixed |
-| BG — continuous cross-section color lerp (setProgress) | ✅ fixed |
-| Input — framerate-independent scroll smoothing (half-life) | ✅ fixed |
-| Camera — shake state reset on completion | ✅ fixed |
-| SectionSceneFactory — distinctive geometry per section (junni patterns) | ✅ |
-| Section.update — cached mesh list, no traverse per frame | ✅ |
-| CursorLight — zero alloc per frame (subVectors/addScaledVector) | ✅ |
-| Lights — per-section presets, changeSection() junni pattern | ✅ |
-| World — fog per-section from PhaseConfig, no more context-change lag | ✅ |
-| SectionSceneFactory — non-particle geometry hidden (particles only) | ✅ |
 | Baku (hidden, user will refine) | ⏸️ |
-| DrawTrail | ⏸️ disabled for perf |
-| WebGLTextManager (Troika) | ⏸️ disabled (conflicts with NoiseText) |
-| Bespoke 3D content per section | ⏳ needs human |
-| Holographic UI Panels (T-050/051) | ⏳ not started |
+| WebGLTextManager (disabled — conflicts with NoiseText) | ⏸️ |
+| Bespoke 3D content | ⏳ needs human |
 
 ## Renderer
 
 Single WebGPURenderer (alpha:false). Auto-fallback to WebGL2.
 - WebGPU: direct renderer.render() (no post-processing, perf)
-- WebGL2: ShaderMaterial RT pipeline (bloom/grain/vignette/chromatic)
-- Post-processing pipeline: RenderPipeline.ts (GLSL inline shaders)
-- Per-section presets: PostProcessingManager.ts (keyed by PhaseConfig.id)
+- WebGL2: ShaderMaterial RT pipeline (bloom/grain/vignette)
 
 ## Section layout
 
 ```
 canvas.canvas (z-index:1, fixed) — 3D scene
 #spa-content (z-index:2, transparent) — DOM sections
-  section#section-intro      → 3D group 0  (PhaseConfig id: sec_intro)
-  section#section-about      → 3D group 1  (PhaseConfig id: sec_about)
-  section#section-flexible   → 3D group 2  (PhaseConfig id: sec_flexible)
-  section#section-challenge  → 3D group 3  (PhaseConfig id: sec_challenge)
-  section#section-innovative → 3D group 4  (PhaseConfig id: sec_innovative)
-  section#section-contact    → 3D group 5  (PhaseConfig id: sec_contact)
+  section#section-intro     → 3D group 0 (light BG, particles)
+  section#section-about     → 3D group 1 (dark BG, particles, DrawTrail)
+  section#section-flexible  → 3D group 2 (light BG, particles, DrawTrail)
+  section#section-challenge → 3D group 3 (Works slider)
+  section#section-innovative→ 3D group 4 (dark BG, particles)
+  section#section-contact   → 3D group 5 (dark BG, particles)
 ```
 
-## PhaseConfig ID ↔ NarrativePhase ↔ PostProcessingManager
+## AUDIT status — ALL RESOLVED
 
-These three must stay in sync at all times:
-
-| WorldConfig id | NarrativePhase enum | PostProcessingManager key |
-|----------------|---------------------|---------------------------|
-| `sec_intro`    | `INTRO`             | `sec_intro`               |
-| `sec_about`    | `ABOUT`             | `sec_about`               |
-| `sec_flexible` | `FLEXIBLE`          | `sec_flexible`            |
-| `sec_challenge`| `CHALLENGE`         | `sec_challenge`           |
-| `sec_innovative`| `INNOVATIVE`       | `sec_innovative`          |
-| `sec_contact`  | `CONTACT`           | `sec_contact`             |
+| ID | Description | Status |
+|----|-------------|--------|
+| A-001 | World.resize() implementation | ✅ |
+| A-002 | Portrait FOV adaptation | ✅ |
+| A-003 | Section.switchState() bug fix | ✅ |
+| A-004 | World.resize() wired to Experience | ✅ |
+| A-005 | Baku role caching | ✅ |
+| A-006 | Double traverse optimization | ✅ |
+| A-007 | DrawTrail per-section re-enable | ✅ |
+| A-008 | Section.setMeshOpacity cache | ✅ |
+| A-009 | Baku worldState→material | ✅ |
+| A-010 | Lenis defensive clamp | ✅ |
+| A-011–A-014 | Resolved (HERMES_RULES constraints) | ✅ |
+| A-015 | Per-section cursor follow | ✅ |
 
 ## Fonts
 
@@ -99,10 +71,21 @@ master-quantum-flares sets 'Source Sans 3' — overridden in main.less.
 
 ## NoiseText
 
-Triggered ONLY by `jlz:section-change` event (from Experience.update when 3D
-transitions to a new section) AND `jlz:webgl-ready` (after splash).
-NOT IntersectionObserver, NOT setTimeout polls, NOT scroll listeners.
-Duration: 1.2s. Intensity: 60% (visible glitch).
+Junni typewriter reveal algorithm. Characters appear left-to-right,
+noise tail (1-3 random chars) at reveal frontier. Duration 1.2s.
+Triggered by jlz:section-change event (every section index change).
+
+## Splash
+
+Cinematic curtain split system:
+- Gradient brand text (shimmer animation)
+- Radial glow behind brand
+- Film grain overlay (SVG noise, animated shift)
+- Vignette (dark edges for depth)
+- Scan lines (retro CRT, very subtle)
+- Curtain split with overshoot (more dramatic)
+- Progress bar + state label
+- Enter button (neon glow)
 
 ## Known env issues
 

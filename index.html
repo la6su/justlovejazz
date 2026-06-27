@@ -5,122 +5,143 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="JUSTLOVEJAZZ — 3D WebGPU studio portfolio." />
-    <meta name="theme-color" content="#050507" />
+    <meta name="theme-color" content="#000000" />
     <title>JUSTLOVEJAZZ</title>
-    <!-- Google Fonts: Inter (single font for everything) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
-    <!-- Critical CSS: inline tokens + splash (loads before JS/Less bundle).
-         Full styles loaded via main.less in entry-app.ts. -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet" /></noscript>
+    <!--
+      SPLASH CSS — inline, self-contained, no LESS dependency.
+      This is the ONLY place splash styles exist. main.less has NO splash CSS.
+      Flow: black screen → brand + portals → READY + enter → portal collapse → curtain split
+    -->
     <style>
-      :root {
-        --jlz-color-bg: #050507;
-        --jlz-color-text: rgba(255,255,255,0.92);
-        --jlz-color-text-muted: rgba(255,255,255,0.55);
-        --jlz-color-text-inverse: #050507;
-        --jlz-color-accent: #515d84;
-        --jlz-color-accent-glow: rgba(81,93,132,0.40);
-        --jlz-font-body: 'Inter', sans-serif;
-        --jlz-z-canvas: 1;
-        --jlz-z-content: 10;
-        --jlz-z-toast: 3000;
-        --jlz-duration-epic: 1400ms;
-        --jlz-ease-cinematic: cubic-bezier(0.65,0,0.35,1);
-        --jlz-ease-exit: cubic-bezier(0.7,0,0.84,0);
-      }
-      html { box-sizing: border-box; }
-      *, *::before, *::after { box-sizing: inherit; }
-      body {
-        margin: 0;
-        background: var(--jlz-color-bg);
-        color: var(--jlz-color-text);
-        font-family: var(--jlz-font-body);
-        -webkit-font-smoothing: antialiased;
-      }
-      /* Splash screen — visible before JS loads */
-      #jlj-splash {
-        position: fixed; inset: 0; z-index: 3000;
-        background: var(--jlz-color-bg);
-        display: flex; align-items: center; justify-content: center;
-        flex-direction: column; overflow: hidden;
-      }
-      #jlj-splash-brand {
-        color: var(--jlz-color-text);
-        font-family: var(--jlz-font-body); font-weight: 900;
-        font-size: clamp(2rem,6vw,4rem); letter-spacing: -0.03em;
-        text-transform: uppercase; opacity: 0;
-        animation: brandIn 1.4s cubic-bezier(0.65,0,0.35,1) 0.3s forwards;
-      }
-      @keyframes brandIn { to { opacity: 1; } }
+      *{box-sizing:border-box}
+      body{margin:0;background:#000;color:rgba(255,255,255,.92);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased}
+
+      /* === SPLASH CONTAINER === bg goes transparent on .is-splitting so the
+         parting curtains reveal the 3D scene beneath (not more black). */
+      #jlj-splash{position:fixed;inset:0;z-index:3000;background:#000;overflow:hidden;transition:opacity .4s ease}
+      #jlj-splash.is-splitting{background:transparent}
+      #jlj-splash.hide{opacity:0;pointer-events:none}
+
+      /* === LOADING WORD === single muted word in center during boot/warming.
+         No brand reveal — dissolves straight into the opening choreography. */
+      #jlj-splash-brand{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10;text-align:center;pointer-events:none}
+      .jlj-splash-word{display:block;position:absolute;top:50%;left:50%;white-space:nowrap;color:rgba(255,255,255,.5);font-weight:500;font-size:clamp(.7rem,1.6vw,.95rem);letter-spacing:.45em;text-transform:uppercase;transform:translate(-50%,-50%);opacity:0;animation:wordIn .8s ease .8s forwards}
+      @keyframes wordIn{from{opacity:0}to{opacity:1}}
+      /* On opening: dissolve LOADING up+out (no crossfade to brand) */
+      #jlj-splash[data-phase="enter"] .jlj-splash-word,
+      #jlj-splash[data-phase="revealing"] .jlj-splash-word{animation:wordOut .5s cubic-bezier(.5,0,.75,0) forwards}
+      @keyframes wordOut{from{opacity:1;transform:translate(-50%,-50%)}to{opacity:0;transform:translate(-50%,-50%) translateY(-14px)}}
+
+      /* === PORTAL FRAMES === z-index:6 puts portals ABOVE curtains so the
+         opening zoom-out is visible (curtains paint below, then part).
+         Bright borders + glow so the frames read clearly on black. */
+      .jlj-splash-portals{position:absolute;inset:0;z-index:6;pointer-events:none;perspective:800px}
+      .jlj-splash-portal{position:absolute;top:50%;left:50%;border:1.5px solid rgba(255,255,255,.6);border-radius:2px;opacity:0;transform:translate(-50%,-50%) scale(6);animation:portalIn 1.8s cubic-bezier(.65,0,.35,1) forwards;box-shadow:0 0 28px rgba(120,140,220,.28),inset 0 0 18px rgba(120,140,220,.1)}
+      .jlz-portal-1{width:40vmin;height:60vmin;animation-delay:.1s}
+      .jlz-portal-2{width:55vmin;height:75vmin;border-color:rgba(120,140,220,.65);animation-delay:.25s}
+      .jlz-portal-3{width:70vmin;height:90vmin;border-color:rgba(255,255,255,.35);animation-delay:.4s}
+      .jlz-portal-4{width:85vmin;height:105vmin;border-color:rgba(120,140,220,.45);animation-delay:.55s}
+      @keyframes portalIn{0%{opacity:0;transform:translate(-50%,-50%) scale(6)}20%{opacity:1}100%{opacity:.6;transform:translate(-50%,-50%) scale(1)}}
+      /* OPENING: portals zoom OUT (reverse of intro fly-in) — accelerating
+         fly-through. 1.0s (was 1.4s) for a snappier reveal. */
+      .jlj-splash-portals.is-collapsing .jlj-splash-portal{animation:portalZoomOut 1s cubic-bezier(.5,0,.9,.2) forwards}
+      @keyframes portalZoomOut{0%{opacity:.6;transform:translate(-50%,-50%) scale(1)}35%{opacity:.85}100%{opacity:0;transform:translate(-50%,-50%) scale(7)}}
+
+      /* === CURTAIN PANELS === #13131c is visibly lighter than the #000 splash bg
+         and the #050507 page bg, so the panels read as solid objects and their
+         parting is unmistakable. Bright seam edge faces the split. */
+      .jlj-splash-top{position:absolute;top:0;left:0;width:100%;height:50%;background:#13131c;transform:translateY(-100%);animation:curtainTopIn 1.4s cubic-bezier(.65,0,.35,1) .2s forwards;box-shadow:inset 0 -2px 0 rgba(160,180,240,.7),0 0 18px rgba(140,160,220,.2)}
+      .jlj-splash-bottom{position:absolute;bottom:0;left:0;width:100%;height:50%;background:#13131c;display:flex;align-items:flex-start;justify-content:center;transform:translateY(100%);animation:curtainBotIn 1.4s cubic-bezier(.65,0,.35,1) .2s forwards;box-shadow:inset 0 2px 0 rgba(160,180,240,.7),0 0 18px rgba(140,160,220,.2)}
+      @keyframes curtainTopIn{to{transform:translateY(0)}}
+      @keyframes curtainBotIn{to{transform:translateY(0)}}
+      /* OPENING: curtains part with a single smooth ease-out — NO stagger
+         overshoot (the old -3%/-8% keyframes read as jerky). 1.1s. */
+      #jlj-splash.is-splitting .jlj-splash-top{animation:curtainTopOut 1.1s cubic-bezier(.22,1,.36,1) forwards}
+      #jlj-splash.is-splitting .jlj-splash-bottom{animation:curtainBotOut 1.1s cubic-bezier(.22,1,.36,1) forwards}
+      @keyframes curtainTopOut{0%{transform:translateY(0)}100%{transform:translateY(-100%)}}
+      @keyframes curtainBotOut{0%{transform:translateY(0)}100%{transform:translateY(100%)}}
+
+      /* === SPLIT LINE === soft glow line; gently brightens then diffuses into
+         a soft radial wash on opening (was a harsh 4px flash — too aggressive). */
+      .jlj-splash-line{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:1px;height:1px;background:linear-gradient(90deg,transparent,rgba(160,180,240,.8),transparent);z-index:100;opacity:0;animation:lineIn .8s ease .3s forwards;box-shadow:0 0 12px rgba(140,160,220,.5)}
+      @keyframes lineIn{to{width:100vw;opacity:.2}}
+      #jlj-splash.is-splitting .jlj-splash-line{animation:lineSplit .7s cubic-bezier(.4,0,.2,1) forwards}
+      @keyframes lineSplit{0%{width:100vw;height:1px;opacity:.6;background:linear-gradient(90deg,transparent,rgba(160,180,240,.9),transparent)}35%{width:100vw;height:2px;opacity:.9;background:linear-gradient(90deg,transparent,rgba(255,255,255,.95),transparent);box-shadow:0 0 24px rgba(160,180,240,.5)}100%{width:100vw;height:36vh;opacity:0;background:radial-gradient(ellipse,rgba(255,255,255,.3),transparent 70%);filter:blur(18px)}}
+
+      /* === OPENING MISC === portals stay visible (zoom out via .is-collapsing);
+         LOADING word dissolves up+out; overlays fade out. */
+      #jlj-splash.is-splitting .jlj-splash-word{animation:wordOut .5s cubic-bezier(.5,0,.75,0) forwards}
+      #jlj-splash.is-splitting .jlj-splash-vignette{opacity:0;transition:opacity .6s ease}
+      #jlj-splash.is-splitting .jlj-splash-scanlines{opacity:0;transition:opacity .4s ease}
+      #jlj-splash.is-splitting #jlj-splash-progress{opacity:0;transition:opacity .4s ease}
+      #jlj-splash.is-splitting #jlj-splash-label{opacity:0;transition:opacity .4s ease}
+
+      /* === PROGRESS BAR === */
+      #jlj-splash-progress{position:absolute;bottom:0;left:0;height:2px;width:0;background:linear-gradient(90deg,#515d84,#fff);transition:width .4s ease;box-shadow:0 0 10px rgba(81,93,132,.4)}
+
+      /* === STATE LABEL === */
+      #jlj-splash-label{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,.35);font-size:.65rem;font-weight:500;letter-spacing:.2em;text-transform:uppercase;opacity:0;animation:labelIn .4s ease .1s forwards}
+      @keyframes labelIn{to{opacity:1}}
+
+      /* === CINEMATIC OVERLAYS === */
+      .jlj-splash-vignette{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 30%,rgba(0,0,0,.6) 100%);pointer-events:none;z-index:7;opacity:0;animation:vignIn 2s ease-in .5s forwards}
+      @keyframes vignIn{to{opacity:1}}
+      .jlj-splash-scanlines{position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0,transparent 2px,rgba(255,255,255,.015) 2px,rgba(255,255,255,.015) 3px);pointer-events:none;z-index:8;opacity:0}
+
+      /* === ENTER BUTTON === */
+      .jlz-enter{position:fixed;bottom:8vh;left:50%;transform:translateX(-50%) translateY(20px);z-index:3000;background:transparent;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.92);font-weight:500;font-size:clamp(.55rem,1.2vw,.8rem);font-family:'Inter',sans-serif;letter-spacing:.2em;padding:12px 40px;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .8s,transform .8s;text-transform:uppercase}
+      .jlz-enter.is-visible{opacity:1;pointer-events:auto;transform:translateX(-50%) translateY(0);animation:enterPulse 2s ease-in-out infinite}
+      .jlz-enter:hover{border-color:rgba(107,120,163,1);color:#fff}
+      @keyframes enterPulse{0%,100%{box-shadow:0 0 8px rgba(255,255,255,.1),0 0 30px rgba(255,255,255,0)}50%{box-shadow:0 0 12px rgba(255,255,255,.2),0 0 50px rgba(255,255,255,.1)}}
+
+      /* === SKIP LINK === */
+      .skip-link{position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden}
     </style>
   </head>
   <body data-app-mode="full" data-page="home">
     <a href="#section-intro" class="skip-link">Skip to main content</a>
-
-    <!-- ===== NAV (UIkit: navbar + sticky + offcanvas for mobile) ===== -->
-    <div id="main-nav" uk-sticky="sel-target: .jlz-nav-inner; top: 0; bottom: vm-sticky">
-      <nav class="jlz-nav-inner" role="navigation" aria-label="Primary">
-        <!-- Desktop navbar (hidden on mobile) -->
-        <div uk-navbar="mode: full">
-          <div class="uk-navbar-left">
-            <a href="#section-intro" class="uk-navbar-item uk-link" style="font-weight: var(--jlz-weight-semibold); letter-spacing: var(--jlz-tracking-tight);">
-              JLJ
-            </a>
-          </div>
-          <div class="uk-navbar-right">
-            <ul class="uk-navbar-nav">
-              <li><a class="uk-link" href="#section-intro">Studio</a></li>
-              <li><a class="uk-link" href="#section-about">About</a></li>
-              <li><a class="uk-link" href="#section-flexible">Flexible</a></li>
-              <li><a class="uk-link" href="#section-challenge">Works</a></li>
-              <li><a class="uk-link" href="#section-innovative">Innovative</a></li>
-              <li><a class="uk-link" href="#section-contact">Contact</a></li>
-            </ul>
-            <!-- Mobile menu toggle -->
-            <a href="#offcanvas-nav" uk-offcanvas-icon uk-toggle></a>
-          </div>
-        </div>
-      </nav>
-    </div>
-
-    <!-- Mobile offcanvas menu -->
-    <div id="offcanvas-nav" uk-offcanvas="mode: push">
-      <div class="uk-offcanvas-bar">
-        <button class="uk-offcanvas-close" type="button" uk-close></button>
-        <ul class="uk-nav uk-nav-default">
-          <li><a href="#section-intro">Studio</a></li>
-          <li><a href="#section-about">About</a></li>
-          <li><a href="#section-flexible">Flexible</a></li>
-          <li><a href="#section-challenge">Works</a></li>
-          <li><a href="#section-innovative">Innovative</a></li>
-          <li><a href="#section-contact">Contact</a></li>
-        </ul>
-      </div>
-    </div>
-
-    <!-- SPA content dynamically injected here by router -->
-    <!-- <main id="spa-content"> is auto-created by router.ts -->
-    <!-- Splash: styled by #jlj-splash* in src/styles/tokens.css -->
-    <!-- Cinematic curtain splash shell (styled by src/styles/tokens.css #jlj-splash*) -->
+    <!-- Nav: minimal HTML, styled by LESS when loaded -->
+    <div id="main-nav"><nav class="jlz-nav-inner" role="navigation" aria-label="Primary">
+      <div uk-navbar="mode: full">
+        <div class="uk-navbar-left"><a href="#section-intro" class="uk-navbar-item uk-link">JLJ</a></div>
+        <div class="uk-navbar-right"><ul class="uk-navbar-nav">
+          <li><a href="#section-intro">Studio</a></li><li><a href="#section-about">About</a></li>
+          <li><a href="#section-flexible">Flexible</a></li><li><a href="#section-challenge">Works</a></li>
+          <li><a href="#section-innovative">Innovative</a></li><li><a href="#section-contact">Contact</a></li>
+        </ul><a href="#offcanvas-nav" uk-offcanvas-icon uk-toggle></a></div>
+      </div></nav></div>
+    <div id="offcanvas-nav" uk-offcanvas="mode: push"><div class="uk-offcanvas-bar">
+      <button class="uk-offcanvas-close" type="button" uk-close></button>
+      <ul class="uk-nav uk-nav-default">
+        <li><a href="#section-intro">Studio</a></li><li><a href="#section-about">About</a></li>
+        <li><a href="#section-flexible">Flexible</a></li><li><a href="#section-challenge">Works</a></li>
+        <li><a href="#section-innovative">Innovative</a></li><li><a href="#section-contact">Contact</a></li>
+      </ul></div></div>
+    <!-- SPLASH: all elements inline, CSS above, visible instantly -->
     <div id="jlj-splash">
-      <div class="jlj-splash-top" id="jlj-curtain-top">
+      <div class="jlj-splash-portals">
+        <div class="jlj-splash-portal jlz-portal-1"></div>
+        <div class="jlj-splash-portal jlz-portal-2"></div>
+        <div class="jlj-splash-portal jlz-portal-3"></div>
+        <div class="jlj-splash-portal jlz-portal-4"></div>
       </div>
-      <div class="jlj-splash-bottom" id="jlj-curtain-bottom">
-        <!-- Progress bar -->
+      <div class="jlj-splash-top"></div>
+      <div class="jlj-splash-bottom">
         <div id="jlj-splash-progress" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-        <!-- State label -->
-        <div id="jlj-splash-label">booting</div>
+        <div id="jlj-splash-label">BOOTING</div>
       </div>
-      <!-- Glow split line between panels -->
-      <div class="jlj-splash-line" id="jlj-split-line"></div>
-      <!-- Center brand mark (straddles both panels, fades on split) -->
-      <div id="jlj-splash-brand">JUSTLOVEJAZZ</div>
+      <div class="jlj-splash-line"></div>
+      <div id="jlj-splash-brand">
+        <span class="jlj-splash-word jlj-splash-word--loading">LOADING</span>
+      </div>
+      <div class="jlj-splash-vignette"></div>
+      <div class="jlj-splash-scanlines"></div>
     </div>
-
-    <!-- ===== 3D CANVAS ===== -->
-    <div id="app"></div>
-
+    <!-- App: JS creates sections, canvas, 3D scene -->
     <script type="module" src="/src/entry-shell.ts"></script>
   </body>
 </html>

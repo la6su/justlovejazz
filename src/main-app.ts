@@ -1,16 +1,13 @@
 // src/main-app.ts — lazy bootstrap entry
 import * as THREE from 'three'
-import { syncReducedMotionDataset } from './core/motionPolicy'
-import { EnterButton } from './EnterButton'
+import { syncReducedMotionDataset, prefersReducedMotion } from './core/motionPolicy'
 import type { SplashOverlay } from './splash'
-import { input as _input } from './Experience/Input'
 
 type ProgressFn = (pct: number) => void
 
 export interface BootstrapOptions {
   splash: SplashOverlay
   progress: ProgressFn
-  onReady?: (enter: EnterButton) => void
 }
 
 let _bootstrapped = false
@@ -31,6 +28,7 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
     syncReducedMotionDataset()
 
     const { splash, progress } = opts
+    const bootStart = performance.now()
     splash.show()
     progress(10)
 
@@ -39,10 +37,6 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
     await ui.init()
     progress(50)
 
-    const enterButton = new EnterButton()
-    progress(60)
-
-    // Curtain split — no dissolveOverlay needed
     const { Bootstrapper } = await import('./core/Bootstrapper')
 
     const onReadyCb: OnReadyCallback = (_renderer, _scene: THREE.Scene) => {
@@ -51,43 +45,60 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
 
     await Bootstrapper.init(ui, onReadyCb)
     progress(98)
-    // 100% → mark ready → show enter button
     progress(100)
-    splash.setState('ready')
 
-    const triggerCinematicIntro = async () => {
-      enterButton.cancelAuto()
-      enterButton.animateOut(400)
+    // ── Cinematic reveal — intro → crossfade → opening, one fluid motion ──
+    // The intro CSS animations (portals fly in ~1.9s, LOADING fades in at 0.8s)
+    // need wall-clock time to play. In dev the bootstrap finishes in milliseconds,
+    // so we gate the reveal on wall-clock — otherwise it cuts into the intro.
+    //
+    // Flow (no static freeze — the crossfade IS the bridge):
+    //   t=readyAt:           setState('ready') → phase='enter' → CSS crossfades
+    //                        center text LOADING → JUSTLOVEJAZZ (0.6s transition)
+    //   t=readyAt+BRIDGE_MS: opening fires as one beat — portals zoom out (1.0s)
+    //                        + curtains part (1.1s) + brand rushes+blurs (0.8s)
+    //   t=readyAt+BRIDGE_MS+OPENING_MS: hide + remove
+    //
+    // Reduced-motion users get a simple fade instead of the full choreography.
+    const INTRO_MS = 1900      // portals settled + LOADING visible by ~1.9s
+    const BRIDGE_MS = 650      // LOADING→JUSTLOVEJAZZ crossfade (0.6s) + small breathe
+    const OPENING_MS = 1100    // portal zoom-out + curtain part + brand exit (overlapping)
+    const FADE_MS = 500        // splash opacity fade before remove
 
-      // Phase 1: Curtain split (1400ms)
-      splash.markPhase('dissolving')
-      await splash.curtainSplit(1400)
+    const elapsed = performance.now() - bootStart
+    const readyAt = Math.max(0, INTRO_MS - elapsed)
 
-      // Phase 2: Hide splash, jump to Section2 (white blob world)
-      splash.hide(600)
+    setTimeout(() => {
+      // Ready: triggers the LOADING → JUSTLOVEJAZZ crossfade via data-phase='enter'.
+      splash.setState('ready')
 
-      // Force scroll to end → Section2 (step07, white bg, holographic blobs)
-      // immediately after splash. Hero (step05) accessible via scroll up.
-      // Use Experience.lenis.scrollTo to reach end instantly
-      const { Experience } = await import('./Experience/Experience')
-      if (Experience.instance?.smoothScroll) {
-        const lenis = Experience.instance.smoothScroll.lenis
-        lenis.scrollTo('100%', {
-          offset: 0,
-          duration: 0.3,
-          easing: (t: number) => t * (2 - t),
-        })
-      }
+      setTimeout(() => {
+        splash.markPhase('revealing')
 
-      window.dispatchEvent(new CustomEvent('jlz:webgl-ready'))
+        if (prefersReducedMotion()) {
+          window.dispatchEvent(new CustomEvent('jlz:webgl-ready'))
+          splash.hide()
+          setTimeout(() => splash.remove(), 450)
+          return
+        }
 
-      // Phase 4: Cleanup splash overlay
-      setTimeout(() => splash.remove(), 1200)
-    }
+        // Single fluid beat: portal zoom-out + curtain split + brand exit,
+        // all firing together — the reversed-intro bookend.
+        splash.triggerPortalCollapse()
+        splash.curtainSplit()
 
-    // Wire enter button → trigger the intro transition
-    enterButton.onTrigger(triggerCinematicIntro)
-    enterButton.autoTriggerAfter(5000, triggerCinematicIntro)
+        // Reveal the 3D scene once the curtains have parted enough.
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('jlz:webgl-ready'))
+        }, 350)
+
+        // Fade out + remove once the opening animations have completed.
+        setTimeout(() => {
+          splash.hide()
+          setTimeout(() => splash.remove(), FADE_MS)
+        }, OPENING_MS)
+      }, BRIDGE_MS)
+    }, readyAt)
   } catch (e) {
     console.error('[main-app] bootstrap failed:', e)
   }

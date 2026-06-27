@@ -200,6 +200,12 @@ export class World extends THREE.Group {
                 }
                 attr.needsUpdate = true
             }
+
+            // ── Drive FlexibleSlides per-frame (typographic bg scroll + visibility lerp) ──
+            // Tagged on the group by SectionSceneFactory.createFlexible() after texture load.
+            const slides = group.userData.flexibleSlides as
+                import('../Experience/World/Sections/FlexibleSlides').FlexibleSlides | undefined
+            if (slides) slides.update(deltaTime)
         }
     }
 
@@ -328,6 +334,13 @@ export class World extends THREE.Group {
                     const m = mesh.material as THREE.Material & { opacity: number; userData: { baseOpacity?: number } }
                     m.opacity = (m.userData.baseOpacity ?? 1) * fade
                 }
+
+                // ── Drive FlexibleSlides visibility from the section fade ──
+                // (junni uVisibility/uSlide pattern). FlexibleSlides manages its own
+                // internal opacity lerp toward this target.
+                const slides = g.userData.flexibleSlides as
+                    import('../Experience/World/Sections/FlexibleSlides').FlexibleSlides | undefined
+                if (slides) slides.setVisibility(fade)
             } else {
                 g.visible = false
             }

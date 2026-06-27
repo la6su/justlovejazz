@@ -30,7 +30,6 @@ async function boot() {
       else if (value >= 55) splash.setState('warming')
       else splash.setState('booting')
     },
-    onReady: (enter) => enter.show('ENTER SITE'),
   }
 
   await bootstrapApp(opts)

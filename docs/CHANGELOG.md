@@ -1,35 +1,55 @@
 # CHANGELOG
 
+## 2026-06-27
+
+### Splash + scroll transitions + docs
+
+- `c0ff818` feat: DrawTrail — fix cursor-to-world projection, trail now visible
+- `16ad4ef` fix: remove Hermes hallucinated code — 569 lines of broken TypeScript
+- `91f1bfc` fix: AUDIT A-002/A-006/A-007/A-009/A-010/A-015 — remaining items
+- `f2ac5e2` fix: AUDIT A-001/A-003/A-004/A-005/A-008 — critical bugs + perf
+
+Splash enhancements:
+- Vignette (dark edges for depth)
+- Scan lines (retro CRT, subtle)
+- Curtain split with overshoot (more dramatic)
+- All existing: gradient brand + shimmer + radial glow + film grain
+
+Scroll transitions:
+- Camera shake on section transition (0.04 power, 0.4s)
+- Per-section cursor follow (works=0.22, others=0.15)
+- Portrait FOV boost (up to +20°)
+- All existing: camera lerp, BG continuous lerp, fog, lighting, post-processing
+
+## 2026-06-26
+
+### AUDIT complete + NoiseText + styles cleanup
+
+- All AUDIT items A-001 through A-015 resolved
+- NoiseText: junni typewriter reveal algorithm (was random scramble)
+- WebGLTextManager disabled (was making titles transparent)
+- Styles: single main.less, tokens.css deleted, sections.css merged
+- Single Inter font (overrode master-quantum-flares Source Sans 3)
+- Hermes hallucinated code removed (Stage4, WorksStack, Jólni — 569 lines)
+
 ## 2026-06-24
 
-### Font + NoiseText + overlay fixes
+### 3D restore + performance + overlay fixes
 
-- `7fd37d3` fix: single Inter font + NoiseText via section-change event
-  - Override master-quantum-flares 'Source Sans 3' with Inter
-  - Hero title: weight 900, letter-spacing -0.03em (was 400, 0.05em)
-  - NoiseText: jlz:section-change trigger (not IntersectionObserver)
-  - NoiseText: intensity 60% (was 30%), duration 1.5s
-- `a2321b3` fix: single Inter font + NoiseText scroll-spy timing
-- `f5bbda8` fix: NoiseText + overlay — root cause fixes for all 3 issues
-- `2725de8` fix: NoiseText scroll-spy + overlay hidden on non-works
-- `d6b90a2` feat: scroll-spy NoiseText + cinematic splash enhancements
-- `484c0dd` refactor: styles cleanup — -1068 lines, tokens.css pure tokens
-- `4dd1645` audit: P0 bug fixes + P1 dead code removal (~1900 lines)
-- `97e9948` fix: remove all 3D objects, fix floor glitch, restore NoiseText
-- `8d887a1` fix: restore 3D layer — Baku, transparent sections, non-destructive fade
-- `5eee827` fix: restore junni-pattern 1:1 sections — remove lessons, fix nav
-
-### Docs overhaul
-- HERMES_RULES.md: 17 rules (fonts, NoiseText trigger, overlay guard, etc.)
-- STATUS.md, ARCHITECTURE.md, AGENTS.md updated
-- JUNNI_REFERENCE.md added
+- WebGPU direct render (bypass TSL pipeline)
+- BakuTSLMaterial → MeshStandardMaterial
+- setAnimationLoop (not rAF)
+- alpha:false for WebGPURenderer
+- NoiseText via jlz:section-change
+- Works overlay: lazy init, pointer guard, reuse #project-overlay
+- Styles cleanup: -1068 lines, tokens.css pure tokens (later deleted)
+- Dead code removal: ~1900 lines, 28 files
 
 ## 2026-06-22
 
-### 3D restore + performance
-- WebGPU direct render (bypass TSL pipeline)
-- BakuTSLMaterial → MeshStandardMaterial
-- Disable DrawTrail + WebGLTextManager (perf)
-- setAnimationLoop (not rAF)
-- alpha:false for WebGPURenderer
+### 3D restore + performance (7 commits)
+
+- Built-in materials only (no ShaderMaterial in scene)
 - getTextureNode('output') for pass()
+- Disable DrawTrail + WebGLTextManager (perf, later re-enabled/disabled)
+- setAnimationLoop for WebGPU swap chain

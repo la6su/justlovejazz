@@ -12,6 +12,13 @@ import type {
 declare module 'three/webgpu' {
   export class MeshBasicNodeMaterial extends Material {
     colorNode: any
+    color: import('three').Color
+    map: import('three').Texture | null
+    opacity: number
+    transparent: boolean
+    side: import('three').Side
+    needsUpdate: boolean
+    userData: Record<string, unknown>
     constructor(parameters?: {})
   }
 
