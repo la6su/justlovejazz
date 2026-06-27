@@ -40,24 +40,28 @@ export function createLiquidCardGeometry(w: number, h: number): LiquidCardGeomet
     const positions = geometry.attributes.position.array as Float32Array
     // Normalize moveVel (can spike to 20-150) to 0-1 range.
     const velNorm = Math.min(Math.abs(moveVel) * 0.05, 1)
-    // Ambient + swipe-boosted distortion amount. Kept small so the card
-    // surface stays smooth — large displacement + low segments = facets.
-    const distortAmount = 0.015 + velNorm * 0.04
+    // Ambient + swipe-boosted distortion. Boosted: swipe produces clearly
+    // visible warping (was 0.04, now 0.12 — 3× stronger during scroll).
+    const distortAmount = 0.015 + velNorm * 0.12
+    // Directional bias: waves travel in the scroll direction (sign of moveVel).
+    const dir = Math.sign(moveVel)
 
     for (let i = 0; i < positions.length; i += 3) {
       const bx = basePositions[i]
       const by = basePositions[i + 1]
       // Smooth multi-octave liquid displacement in Z (depth).
-      // Lower frequencies = broader, smoother waves (less pixelation).
+      // wave1/wave2 = broad ambient waves, ripple = fine detail.
+      // During scroll, waves accelerate in the scroll direction (dir).
       const wave1 = Math.sin(by * 2.5 + time * 1.2) * distortAmount
       const wave2 = Math.cos(bx * 3.0 + time * 1.0) * distortAmount
-      const ripple = Math.sin(by * 8 - time * 2.5) * distortAmount * 0.25
-      positions[i + 2] = wave1 + wave2 + ripple
+      const ripple = Math.sin(by * 8 - time * 2.5 * dir) * distortAmount * 0.3
+      // Scroll-boosted directional wave — only visible during swipe.
+      const scrollWave = Math.sin(bx * 1.5 + time * 4.0 * dir) * velNorm * 0.04
+      positions[i + 2] = wave1 + wave2 + ripple + scrollWave
     }
     geometry.attributes.position.needsUpdate = true
-    // Recompute normals at ~30fps (every ~33ms) instead of every frame —
-    // computeVertexNormals on 128² is expensive and the eye can't see
-    // the difference at 60fps vs 30fps normal updates.
+    // Recompute normals at ~30fps (every ~33ms) — computeVertexNormals on
+    // 128² is expensive and the eye can't tell 60fps vs 30fps normal updates.
     if (normalRecomputeTimer >= 0.033) {
       geometry.computeVertexNormals()
       normalRecomputeTimer = 0

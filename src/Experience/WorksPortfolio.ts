@@ -399,40 +399,45 @@ export class WorksPortfolio {
       }
       card.group.visible = true
 
-      const depth = THREE.MathUtils.clamp(Math.abs(w) / 1.5, 0, 1)
+      // depth: 0 = center (active), 1 = far. Smoothstep for natural falloff.
+      const depthRaw = THREE.MathUtils.clamp(Math.abs(w) / 1.5, 0, 1)
+      const depth = depthRaw * depthRaw * (3 - 2 * depthRaw) // smoothstep
       // Add live dragOff so swipe moves cards in real-time during drag.
       const x = (w + this.dragOff) * this.spacing
       const z = -depth * 2.5
       const y = Math.sin(w * 0.9) * 0.12 * (1 - depth)
-      const scale = THREE.MathUtils.lerp(1, 0.6, depth)
-      const rotY = -w * 0.06 * (1 - depth * 0.5)
-      const opacity = Math.abs(w) < 0.1 ? 1 : THREE.MathUtils.lerp(1, 0.15, depth)
+      // Smoother scale curve — center card full size, side cards shrink less aggressively.
+      const scale = THREE.MathUtils.lerp(1, 0.65, depth)
+      // NO angular rotation (rotY) — user request. Cards stay face-on to camera.
+      // Opacity: active card full, side cards fade smoothly (not to 0.15 — too dark).
+      const opacity = Math.abs(w) < 0.1 ? 1 : THREE.MathUtils.lerp(1, 0.35, depth)
 
-      // ── Momentum distortion: skew + wave based on movement velocity ──
-      // Cards skew in the direction of movement (like motion blur in 3D).
-      // Distortion is stronger for cards closer to center (more visible).
-      const distortionAmount = Math.abs(moveVel) * 0.15 * (1 - depth * 0.5)
-      const skewZ = THREE.MathUtils.clamp(moveVel * 0.08, -0.3, 0.3)
-      const scaleX = scale * (1 - Math.abs(moveVel) * 0.03) // compress in move direction
-      const waveY = Math.sin(w * 3.0 + performance.now() * 0.003) * distortionAmount * 0.3
+      // ── Liquid distortion boost during scroll ──
+      // moveVel drives the liquid displacement. Center card (w≈0) gets full
+      // velocity, side cards get less (they move slower in screen space).
+      // NO skew (rotation.z) — user wants no angular tilt, only liquid warp.
+      const cardMoveVel = moveVel * (1 - depth * 0.4) * this.liquidMultiplier
+      const waveY = Math.sin(w * 3.0 + performance.now() * 0.003) * Math.abs(moveVel) * 0.02 * (1 - depth * 0.5)
 
       card.group.position.x = THREE.MathUtils.lerp(card.group.position.x, x, dt * 8)
       card.group.position.y = THREE.MathUtils.lerp(card.group.position.y, 1.0 + y + waveY, dt * 8)
       card.group.position.z = THREE.MathUtils.lerp(card.group.position.z, z, dt * 8)
-      card.group.scale.x = THREE.MathUtils.lerp(card.group.scale.x, scaleX, dt * 8)
+      card.group.scale.x = THREE.MathUtils.lerp(card.group.scale.x, scale, dt * 8)
       card.group.scale.y = THREE.MathUtils.lerp(card.group.scale.y, scale, dt * 8)
-      card.group.rotation.y = THREE.MathUtils.lerp(card.group.rotation.y, rotY, dt * 8)
-      // Skew: rotation.z tilts card in movement direction
-      card.group.rotation.z = THREE.MathUtils.lerp(card.group.rotation.z, skewZ, dt * 6)
+      // rotation.y stays 0 (no angular yaw). rotation.z stays 0 (no skew).
+      card.group.rotation.y = 0
+      card.group.rotation.z = 0
       card.mat.opacity = THREE.MathUtils.lerp(card.mat.opacity, opacity, dt * 4)
 
       // ── Liquid distortion: CPU vertex displacement ──
-      // Works on ALL backends (WebGPU, WebGL2). No shaders/uniforms needed.
-      card.mat.uMoveVel.value = moveVel * this.liquidMultiplier
+      // Boost moveVel influence: liquid.update scales displacement by moveVel.
+      // Pass the boosted velocity so scroll produces clearly visible warping.
+      card.mat.uMoveVel.value = cardMoveVel
       card.mat.uTime.value += dt
-      card.liquid.update(dt, moveVel * this.liquidMultiplier)
+      card.liquid.update(dt, cardMoveVel)
 
-      const emTarget = Math.abs(w) < 0.1 ? 0.3 : 0.1
+      // Active card glows brighter (emissive), side cards dim.
+      const emTarget = Math.abs(w) < 0.1 ? 0.4 : 0.08
       card.mat.emissiveIntensity = THREE.MathUtils.lerp(card.mat.emissiveIntensity, emTarget, dt * 4)
     }
   }

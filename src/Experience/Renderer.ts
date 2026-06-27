@@ -44,23 +44,27 @@ export class Renderer {
       // Firefox's WebGPU backend defaults to alpha: false, which is why the
       // same code 'works' there. Setting alpha: false explicitly makes Chrome
       // match Firefox — the canvas owns its pixels, no compositing ambiguity.
+      // antialias: true → MSAA 4× on WebGPU (cheaper than WebGL post-AA).
       this.instance = new WebGPURenderer({ antialias: true, alpha: false })
-      // Match WebGL path: ACES tonemap + sRGB output. renderOutput() in
-      // RenderPipeline reads these to apply tone mapping + color space.
-      // WebGPURenderer extends Renderer (has toneMapping at runtime) but
-      // @types/three doesn't type it yet — adapter cast here.
+      // ACES tonemap + sRGB output — industry standard for PBR scenes.
       const wg = this.instance as any
       wg.toneMapping = THREE.ACESFilmicToneMapping
-      wg.toneMappingExposure = 1
+      wg.toneMappingExposure = 1.0
       wg.outputColorSpace = THREE.SRGBColorSpace
     } else {
+      // WebGL2 best-practices: explicit context flags.
+      // stencil: false (not used), depth: true, antialias: true (MSAA 4×).
+      // powerPreference: 'high-performance' requests discrete GPU on dual-GPU laptops.
+      // preserveDrawingBuffer: false (default — only needed for screenshots).
       const gl = new THREE.WebGLRenderer({
         antialias: true,
         powerPreference: 'high-performance',
+        stencil: false,
+        depth: true,
       })
       gl.outputColorSpace = THREE.SRGBColorSpace
       gl.toneMapping = THREE.ACESFilmicToneMapping
-      gl.toneMappingExposure = 1
+      gl.toneMappingExposure = 1.0
 
       // Enable TSL NodeMaterial rendering on the WebGL fallback path.
       // SectionSceneFactory (and the works-page dissolve/project materials)
