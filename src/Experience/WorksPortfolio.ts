@@ -1,13 +1,15 @@
 // WorksPortfolio — 3D card carousel for works page
 // Cards carry project textures. On tap (raycast), the active card morphs to
 // fullscreen (position + scale animation), then DOM detail overlay appears.
+// Liquid distortion shader (TSL NodeMaterial) warps cards during swipe.
 import * as THREE from 'three'
 import { type Project } from '../core/types'
+import { createLiquidSliderMaterial, type LiquidSliderMaterial } from '../shaders/LiquidSliderMaterial'
 
 interface ProjectCard {
   group: THREE.Group
   mesh: THREE.Mesh
-  mat: THREE.MeshStandardMaterial
+  mat: LiquidSliderMaterial
   color: THREE.Color
   texture: THREE.Texture | null
 }
@@ -85,15 +87,13 @@ export class WorksPortfolio {
       const geo = new THREE.PlaneGeometry(this.cardW, this.cardH)
       const col = new THREE.Color(proj.color)
 
-      const mat = new THREE.MeshStandardMaterial({
-        color: new THREE.Color(0x111111),
-        emissive: col.clone().multiplyScalar(1.5),
-        emissiveIntensity: 0.6,
-        roughness: 0.3,
-        metalness: 0.7,
-        side: THREE.DoubleSide,
-        transparent: true,
-      })
+      // ── Liquid distortion material (MeshStandardMaterial + onBeforeCompile) ──
+      // UV displacement in vertex shader, driven by movement velocity.
+      // Works on WebGL2; on WebGPU cards render normally without distortion.
+      const mat = createLiquidSliderMaterial()
+      // Tint emissive to project color for a subtle glow.
+      mat.emissive = col.clone().multiplyScalar(0.6)
+      mat.emissiveIntensity = 0.4
       // ── Rule 3: cache baseOpacity (HERMES_RULES §3) ──
       mat.userData.baseOpacity = mat.opacity
 
@@ -128,6 +128,7 @@ export class WorksPortfolio {
     mesh.userData.texLoaded = true
     WorksPortfolio.sharedLoader.load(mesh.userData.texUrl, (tex) => {
       tex.colorSpace = THREE.SRGBColorSpace
+      // Standard three.js texture binding (onBeforeCompile uses built-in map sampling).
       card.mat.map = tex
       card.mat.emissiveIntensity = 0.2
       card.mat.needsUpdate = true
@@ -333,7 +334,8 @@ export class WorksPortfolio {
         card.group.scale.setScalar(s)
         card.group.rotation.y = THREE.MathUtils.lerp(card.group.rotation.y, 0, eased)
         card.mat.opacity = 1
-        card.mat.emissiveIntensity = THREE.MathUtils.lerp(card.mat.emissiveIntensity, 0.1, eased)
+        // Liquid distortion off during expand (card is fullscreen, no swipe).
+        card.mat.uMoveVel.value = THREE.MathUtils.lerp(card.mat.uMoveVel.value, 0, eased)
       }
 
       // Fade out other cards during expand, fade in during collapse.
@@ -420,8 +422,12 @@ export class WorksPortfolio {
       card.group.rotation.z = THREE.MathUtils.lerp(card.group.rotation.z, skewZ, dt * 6)
       card.mat.opacity = THREE.MathUtils.lerp(card.mat.opacity, opacity, dt * 4)
 
-      const emTarget = Math.abs(w) < 0.1 ? 0.3 : 0.1
-      card.mat.emissiveIntensity = THREE.MathUtils.lerp(card.mat.emissiveIntensity, emTarget, dt * 4)
+      // ── Liquid distortion: drive uMoveVel per-card ──
+      // Center card (w≈0) gets full velocity; side cards get less (they're
+      // moving slower in screen space due to depth).
+      const cardMoveVel = moveVel * (1 - depth * 0.5) * (Math.abs(w) < 0.5 ? 1 : 0.6)
+      card.mat.uMoveVel.value = THREE.MathUtils.lerp(card.mat.uMoveVel.value, cardMoveVel, dt * 8)
+      card.mat.uTime.value += dt
     }
   }
 
