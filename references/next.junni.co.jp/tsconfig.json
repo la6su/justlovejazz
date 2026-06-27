@@ -1,47 +1,23 @@
 {
   "compilerOptions": {
-    "strict": true,
-    "noImplicitAny": true,
-    "noImplicitReturns": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noUnusedParameters": true,
-    "allowUnusedLabels": false,
-    "allowUnreachableCode": false,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "target": "es6",
-    "module": "esnext",
-    "moduleResolution": "node",
-    "skipLibCheck": true,
-    "typeRoots": ["./node_modules/@types", "./src/ts/types"],
-    "types": ["three", "cannon"],
-    "lib": ["dom", "es6", "es2015", "es2016", "es2017"],
-    "outDir": "dist",
-    "declaration": true,
-    "declarationDir": "dist",
+	"strict": true,
     "sourceMap": true,
-    "inlineSources": true,
-    "removeComments": false,
-    "preserveConstEnums": true,
-    "isolatedModules": true
+	"allowSyntheticDefaultImports": true,
+    "target": "es6",
+    "module": "es2015",
+    "moduleResolution": "node",
+    "lib": [
+      "es2017",
+      "dom"
+    ],
+    "typeRoots": ["node_modules/@types"],
+    "rootDir": "./",
+    "outDir": "./public",
+	"baseUrl": ".",
+    "paths": {
+      "ore-three" : ["./packages/ore-three/packages/ore-three/src"],
+      "power-mesh" : ["./packages/power-mesh/packages/power-mesh/src"],
+    }
   },
-  "include": [
-    "src/ts/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "**/*.test.ts",
-    "**/*Test*.ts"
-  ],
-  "ts-node": {
-    "transpileOnly": true,
-    "experimentalModules": true,
-    "compiler": "typescript"
-  },
-  "files": [
-    "src/ts/main.ts"
-  ],
-  "compileOnSave": true
-}
+  "include": ["./src/"]
+} 
