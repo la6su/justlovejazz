@@ -4,7 +4,7 @@
 // Liquid distortion shader (TSL NodeMaterial) warps cards during swipe.
 import * as THREE from 'three'
 import { type Project } from '../core/types'
-import { createLiquidSliderMaterial, updateLiquidTexture, type LiquidSliderMaterial } from '../shaders/LiquidSliderMaterial'
+import { createLiquidSliderMaterial, createLiquidCardGeometry, updateLiquidTexture, type LiquidSliderMaterial, type LiquidCardGeometry } from '../shaders/LiquidSliderMaterial'
 
 interface ProjectCard {
   group: THREE.Group
@@ -12,6 +12,7 @@ interface ProjectCard {
   mat: LiquidSliderMaterial
   color: THREE.Color
   texture: THREE.Texture | null
+  liquid: LiquidCardGeometry
 }
 
 /** Easing — easeInOutCubic for smooth expand/collapse. */
@@ -88,12 +89,11 @@ export class WorksPortfolio {
       const grp = new THREE.Group()
       grp.name = 'card-' + i
 
-      const geo = new THREE.PlaneGeometry(this.cardW, this.cardH)
       const col = new THREE.Color(proj.color)
 
-      // ── Liquid distortion material (MeshStandardMaterial + onBeforeCompile) ──
-      // UV displacement in vertex shader, driven by movement velocity.
-      // Works on WebGL2; on WebGPU cards render normally without distortion.
+      // ── Liquid distortion: CPU vertex displacement (works on ALL backends) ──
+      // 32×32 segmented plane, vertices displaced per-frame by sin/cos waves.
+      const liquid = createLiquidCardGeometry(this.cardW, this.cardH)
       const mat = createLiquidSliderMaterial()
       // Tint emissive to project color for a subtle glow.
       mat.emissive = col.clone().multiplyScalar(0.6)
@@ -102,14 +102,14 @@ export class WorksPortfolio {
       mat.userData.baseOpacity = mat.opacity
 
       // Texture starts null — loaded lazily when card becomes active.
-      const mesh = new THREE.Mesh(geo, mat as unknown as THREE.Material)
+      const mesh = new THREE.Mesh(liquid.geometry, mat as unknown as THREE.Material)
       mesh.userData = { idx: i, texLoaded: false, texUrl: proj.textureUrl || proj.detailTextureUrl }
       grp.add(mesh)
       mesh.lookAt(0, 0.5, 10)
       grp.lookAt(0, 0.5, 10)
       this.group.add(grp)
 
-      this.cards.push({ group: grp, mesh, mat, color: col, texture: null })
+      this.cards.push({ group: grp, mesh, mat, color: col, texture: null, liquid })
     }
     // Preload the first card immediately so it's visible on first render.
     this.loadCardTexture(0)
@@ -426,15 +426,11 @@ export class WorksPortfolio {
       card.group.rotation.z = THREE.MathUtils.lerp(card.group.rotation.z, skewZ, dt * 6)
       card.mat.opacity = THREE.MathUtils.lerp(card.mat.opacity, opacity, dt * 4)
 
-      // ── Liquid distortion: drive uMoveVel per-card ──
-      // Set DIRECTLY (no lerp) — spring-damper already produces smooth velocity.
-      // liquidMultiplier (DevPanel) scales the effect globally.
-      const cardMoveVel = moveVel * (1 - depth * 0.5) * (Math.abs(w) < 0.5 ? 1 : 0.6) * this.liquidMultiplier
-      const liquidMat = card.mat as unknown as { uMoveVel: { value: number }; uTime?: { value?: unknown } }
-      liquidMat.uMoveVel.value = cardMoveVel
-      // uTime: only update manually on WebGL2 (onBeforeCompile). On WebGPU,
-      // TSL `time` node is auto-updated by the renderer.
-      if (typeof liquidMat.uTime?.value === 'number') liquidMat.uTime.value += dt
+      // ── Liquid distortion: CPU vertex displacement ──
+      // Works on ALL backends (WebGPU, WebGL2). No shaders/uniforms needed.
+      card.mat.uMoveVel.value = moveVel * this.liquidMultiplier
+      card.mat.uTime.value += dt
+      card.liquid.update(dt, moveVel * this.liquidMultiplier)
 
       const emTarget = Math.abs(w) < 0.1 ? 0.3 : 0.1
       card.mat.emissiveIntensity = THREE.MathUtils.lerp(card.mat.emissiveIntensity, emTarget, dt * 4)
