@@ -61,6 +61,10 @@ export class DevPanel {
   private readonly world: World
   private readonly camera: Camera
   private readonly renderer: Renderer
+  /** Perf refresh interval handle — cleared in dispose() to prevent leaks. */
+  private perfInterval: ReturnType<typeof setInterval> | null = null
+  /** Toggle keydown handler ref — removed in dispose(). */
+  private keydownHandler: ((e: KeyboardEvent) => void) | null = null
 
   private params = {
     bgHex: '#050507',
@@ -169,7 +173,8 @@ export class DevPanel {
     f.addBinding(monitor, 'longTasks', { readonly: true, label: 'long tasks' })
     f.addBinding(monitor, 'heap', { readonly: true, label: 'heap MB' })
     f.addBinding(monitor, 'renderer', { readonly: true, label: 'backend' })
-    setInterval(() => {
+    // Store interval handle so dispose() can clear it (prevents leak).
+    this.perfInterval = setInterval(() => {
       const s = PerfMonitor.snapshot
       monitor.fps = s.fps
       monitor.longTasks = s.longTaskCount
@@ -214,7 +219,8 @@ export class DevPanel {
   }
 
   private bindToggle(): void {
-    window.addEventListener('keydown', (e) => {
+    // Store bound handler so dispose() can remove it (prevents leak).
+    this.keydownHandler = (e: KeyboardEvent) => {
       // Backquote (`) or Ctrl+D toggles the panel visibility.
       if (e.key === '`' || (e.ctrlKey && e.key.toLowerCase() === 'd')) {
         e.preventDefault()
@@ -222,10 +228,21 @@ export class DevPanel {
         this.applyVisibility()
         saveState(this.state)
       }
-    })
+    }
+    window.addEventListener('keydown', this.keydownHandler)
   }
 
   dispose(): void {
+    // Clear perf interval — prevents the 500ms refresh from firing after dispose.
+    if (this.perfInterval) {
+      clearInterval(this.perfInterval)
+      this.perfInterval = null
+    }
+    // Remove keydown toggle listener.
+    if (this.keydownHandler) {
+      window.removeEventListener('keydown', this.keydownHandler)
+      this.keydownHandler = null
+    }
     this.pane.dispose()
   }
 }

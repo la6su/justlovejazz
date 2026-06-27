@@ -460,6 +460,7 @@ export class WorksPortfolio {
       card.mesh.geometry?.dispose()
       card.mat.dispose()
       card.texture?.dispose()
+      card.liquid.dispose() // dispose LiquidCardGeometry (PlaneGeometry)
       this.group.remove(card.group)
     }
     this.cards.length = 0
