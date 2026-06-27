@@ -7,67 +7,83 @@
     <meta name="description" content="JUSTLOVEJAZZ — 3D WebGPU studio portfolio." />
     <meta name="theme-color" content="#000000" />
     <title>JUSTLOVEJAZZ</title>
-    <!-- Non-blocking font load: renders with system font, swaps to Inter when ready -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
     <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet" /></noscript>
-    <!-- Critical inline CSS: splash only (~3KB). Full styles via main.less (JS). -->
+    <!--
+      SPLASH CSS — inline, self-contained, no LESS dependency.
+      This is the ONLY place splash styles exist. main.less has NO splash CSS.
+      Flow: black screen → brand + portals → READY + enter → portal collapse → curtain split
+    -->
     <style>
-      :root{--jlz-color-bg:#050507;--jlz-color-text:rgba(255,255,255,.92);--jlz-color-accent:#515d84;--jlz-color-accent-glow:rgba(81,93,132,.4);--jlz-font-body:'Inter',sans-serif;--jlz-z-canvas:1;--jlz-z-content:10;--jlz-z-toast:3000}
       *{box-sizing:border-box}
-      body{margin:0;background:var(--jlz-color-bg);color:var(--jlz-color-text);font-family:var(--jlz-font-body);-webkit-font-smoothing:antialiased}
-      /* Splash — pure black, visible before JS */
-      #jlj-splash{position:fixed;inset:0;z-index:3000;background:#000;display:flex;align-items:center;justify-content:center;overflow:hidden}
-      #jlj-splash-brand{color:#fff;font-weight:900;font-size:clamp(1.5rem,5vw,3.5rem);letter-spacing:-.03em;text-transform:uppercase;opacity:0;animation:brandIn 1.4s cubic-bezier(.65,0,.35,1) .3s forwards}
+      body{margin:0;background:#000;color:rgba(255,255,255,.92);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased}
+
+      /* === SPLASH CONTAINER === */
+      #jlj-splash{position:fixed;inset:0;z-index:3000;background:#000;overflow:hidden;transition:opacity .4s ease}
+      #jlj-splash.hide{opacity:0;pointer-events:none}
+
+      /* === BRAND === */
+      #jlj-splash-brand{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10;color:#fff;font-weight:900;font-size:clamp(1.5rem,5vw,3.5rem);letter-spacing:-.03em;text-transform:uppercase;white-space:nowrap;opacity:0;animation:brandIn 1.5s cubic-bezier(.65,0,.35,1) .8s forwards}
       @keyframes brandIn{to{opacity:1}}
-      /* Portal frames */
+
+      /* === PORTAL FRAMES === */
       .jlj-splash-portals{position:absolute;inset:0;z-index:3;pointer-events:none;perspective:800px}
-      .jlj-splash-portal{position:absolute;top:50%;left:50%;border:1px solid rgba(255,255,255,.15);border-radius:2px;opacity:0;transform:translate(-50%,-50%) scale(6);animation:jlz-portal-in 1.8s cubic-bezier(.65,0,.35,1) forwards}
+      .jlj-splash-portal{position:absolute;top:50%;left:50%;border:1px solid rgba(255,255,255,.15);border-radius:2px;opacity:0;transform:translate(-50%,-50%) scale(6);animation:portalIn 1.8s cubic-bezier(.65,0,.35,1) forwards}
       .jlz-portal-1{width:40vmin;height:60vmin;animation-delay:.1s}
       .jlz-portal-2{width:55vmin;height:75vmin;border-color:rgba(81,93,132,.2);animation-delay:.25s}
       .jlz-portal-3{width:70vmin;height:90vmin;border-color:rgba(255,255,255,.08);animation-delay:.4s}
       .jlz-portal-4{width:85vmin;height:105vmin;border-color:rgba(81,93,132,.12);animation-delay:.55s}
-      @keyframes jlz-portal-in{0%{opacity:0;transform:translate(-50%,-50%) scale(6)}20%{opacity:.8}100%{opacity:.3;transform:translate(-50%,-50%) scale(1)}}
-      /* Curtain panels */
-      .jlj-splash-top{position:absolute;top:0;left:0;width:100%;height:50%;background:#000;transform:translateY(-100%);animation:ctIn 1.4s cubic-bezier(.65,0,.35,1) .2s forwards}
-      .jlj-splash-bottom{position:absolute;bottom:0;left:0;width:100%;height:50%;background:#000;display:flex;align-items:flex-start;justify-content:center;transform:translateY(100%);animation:cbIn 1.4s cubic-bezier(.65,0,.35,1) .2s forwards}
-      @keyframes ctIn{to{transform:translateY(0)}}
-      @keyframes cbIn{to{transform:translateY(0)}}
-      /* Split line */
-      .jlj-splash-line{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:1px;height:1px;background:linear-gradient(90deg,transparent,var(--jlz-color-accent),transparent);z-index:100;opacity:0;animation:lineIn .8s ease .3s forwards}
+      @keyframes portalIn{0%{opacity:0;transform:translate(-50%,-50%) scale(6)}20%{opacity:.8}100%{opacity:.3;transform:translate(-50%,-50%) scale(1)}}
+      .jlj-splash-portals.is-collapsing .jlj-splash-portal{animation:portalCollapse .8s cubic-bezier(.7,0,.84,0) forwards}
+      @keyframes portalCollapse{0%{opacity:.3;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(.1)}}
+
+      /* === CURTAIN PANELS === */
+      .jlj-splash-top{position:absolute;top:0;left:0;width:100%;height:50%;background:#000;transform:translateY(-100%);animation:curtainTopIn 1.4s cubic-bezier(.65,0,.35,1) .2s forwards}
+      .jlj-splash-bottom{position:absolute;bottom:0;left:0;width:100%;height:50%;background:#000;display:flex;align-items:flex-start;justify-content:center;transform:translateY(100%);animation:curtainBotIn 1.4s cubic-bezier(.65,0,.35,1) .2s forwards}
+      @keyframes curtainTopIn{to{transform:translateY(0)}}
+      @keyframes curtainBotIn{to{transform:translateY(0)}}
+      #jlj-splash.is-splitting .jlj-splash-top{animation:curtainTopOut 1.4s cubic-bezier(.65,0,.35,1) forwards}
+      #jlj-splash.is-splitting .jlj-splash-bottom{animation:curtainBotOut 1.4s cubic-bezier(.65,0,.35,1) forwards}
+      @keyframes curtainTopOut{0%{transform:translateY(0)}20%{transform:translateY(-3%)}40%{transform:translateY(-8%)}100%{transform:translateY(-105%)}}
+      @keyframes curtainBotOut{0%{transform:translateY(0)}20%{transform:translateY(3%)}40%{transform:translateY(8%)}100%{transform:translateY(105%)}}
+
+      /* === SPLIT LINE === */
+      .jlj-splash-line{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:1px;height:1px;background:linear-gradient(90deg,transparent,#515d84,transparent);z-index:100;opacity:0;animation:lineIn .8s ease .3s forwards}
       @keyframes lineIn{to{width:100vw;opacity:.15}}
-      /* Progress bar */
-      #jlj-splash-progress{position:absolute;bottom:0;left:0;height:2px;width:0;background:linear-gradient(90deg,var(--jlz-color-accent),#fff);transition:width .4s ease;box-shadow:0 0 10px var(--jlz-color-accent-glow)}
-      /* State label */
-      #jlj-splash-label{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,.35);font-size:.65rem;letter-spacing:.2em;text-transform:uppercase;opacity:0;animation:lblIn .4s ease .1s forwards}
-      @keyframes lblIn{to{opacity:1}}
-      /* Cinematic overlays */
-      .jlj-splash-vignette{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 30%,rgba(0,0,0,.6) 100%);pointer-events:none;z-index:7;opacity:0;animation:vgIn 2s ease-in .5s forwards}
-      @keyframes vgIn{to{opacity:1}}
-      .jlj-splash-scanlines{position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0,transparent 2px,rgba(255,255,255,.015) 2px,rgba(255,255,255,.015) 3px);pointer-events:none;z-index:8;opacity:0}
-      /* Portal collapse — triggered by JS .is-collapsing */
-      .jlj-splash-portals.is-collapsing .jlj-splash-portal{animation:jlz-portal-collapse .8s cubic-bezier(.7,0,.84,0) forwards}
-      @keyframes jlz-portal-collapse{0%{opacity:.3;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(.1)}}
-      /* Curtain split — triggered by JS .is-splitting */
-      #jlj-splash.is-splitting .jlj-splash-top{animation:ctOut 1.4s cubic-bezier(.65,0,.35,1) forwards}
-      #jlj-splash.is-splitting .jlj-splash-bottom{animation:cbOut 1.4s cubic-bezier(.65,0,.35,1) forwards}
       #jlj-splash.is-splitting .jlj-splash-line{animation:lineSplit .8s cubic-bezier(.65,0,.35,1) forwards}
+      @keyframes lineSplit{0%{width:100vw;height:1px;opacity:.8}30%{width:100vw;height:2px;opacity:1;background:#fff}100%{width:200vw;height:200vh;opacity:0;transform:translate(-50%,-50%) scale(2);filter:blur(20px)}}
+
+      /* === CURTAIN SPLIT MISC === */
       #jlj-splash.is-splitting .jlj-splash-portals{opacity:0;transition:opacity .3s}
       #jlj-splash.is-splitting #jlj-splash-brand{animation:brandOut .8s cubic-bezier(.7,0,.84,0) forwards}
-      @keyframes ctOut{0%{transform:translateY(0)}20%{transform:translateY(-3%)}40%{transform:translateY(-8%)}100%{transform:translateY(-105%)}}
-      @keyframes cbOut{0%{transform:translateY(0)}20%{transform:translateY(3%)}40%{transform:translateY(8%)}100%{transform:translateY(105%)}}
-      @keyframes lineSplit{0%{width:100vw;height:1px;opacity:.8}30%{width:100vw;height:2px;opacity:1;background:#fff}100%{width:200vw;height:200vh;opacity:0;transform:translate(-50%,-50%) scale(2);filter:blur(20px)}}
       @keyframes brandOut{0%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(.9)}}
-      /* Enter button */
+
+      /* === PROGRESS BAR === */
+      #jlj-splash-progress{position:absolute;bottom:0;left:0;height:2px;width:0;background:linear-gradient(90deg,#515d84,#fff);transition:width .4s ease;box-shadow:0 0 10px rgba(81,93,132,.4)}
+
+      /* === STATE LABEL === */
+      #jlj-splash-label{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,.35);font-size:.65rem;font-weight:500;letter-spacing:.2em;text-transform:uppercase;opacity:0;animation:labelIn .4s ease .1s forwards}
+      @keyframes labelIn{to{opacity:1}}
+
+      /* === CINEMATIC OVERLAYS === */
+      .jlj-splash-vignette{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 30%,rgba(0,0,0,.6) 100%);pointer-events:none;z-index:7;opacity:0;animation:vignIn 2s ease-in .5s forwards}
+      @keyframes vignIn{to{opacity:1}}
+      .jlj-splash-scanlines{position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0,transparent 2px,rgba(255,255,255,.015) 2px,rgba(255,255,255,.015) 3px);pointer-events:none;z-index:8;opacity:0}
+
+      /* === ENTER BUTTON === */
       .jlz-enter{position:fixed;bottom:8vh;left:50%;transform:translateX(-50%) translateY(20px);z-index:3000;background:transparent;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.92);font-weight:500;font-size:clamp(.55rem,1.2vw,.8rem);font-family:'Inter',sans-serif;letter-spacing:.2em;padding:12px 40px;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .8s,transform .8s;text-transform:uppercase}
       .jlz-enter.is-visible{opacity:1;pointer-events:auto;transform:translateX(-50%) translateY(0);animation:enterPulse 2s ease-in-out infinite}
+      .jlz-enter:hover{border-color:rgba(107,120,163,1);color:#fff}
       @keyframes enterPulse{0%,100%{box-shadow:0 0 8px rgba(255,255,255,.1),0 0 30px rgba(255,255,255,0)}50%{box-shadow:0 0 12px rgba(255,255,255,.2),0 0 50px rgba(255,255,255,.1)}}
-      /* Skip link */
+
+      /* === SKIP LINK === */
       .skip-link{position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden}
     </style>
   </head>
   <body data-app-mode="full" data-page="home">
+    <a href="#section-intro" class="skip-link">Skip to main content</a>
     <!-- Nav: minimal HTML, styled by LESS when loaded -->
     <div id="main-nav"><nav class="jlz-nav-inner" role="navigation" aria-label="Primary">
       <div uk-navbar="mode: full">
@@ -85,7 +101,7 @@
         <li><a href="#section-flexible">Flexible</a></li><li><a href="#section-challenge">Works</a></li>
         <li><a href="#section-innovative">Innovative</a></li><li><a href="#section-contact">Contact</a></li>
       </ul></div></div>
-    <!-- Splash: visible instantly from HTML, no JS needed -->
+    <!-- SPLASH: all elements inline, CSS above, visible instantly -->
     <div id="jlj-splash">
       <div class="jlj-splash-portals">
         <div class="jlj-splash-portal jlz-portal-1"></div>
