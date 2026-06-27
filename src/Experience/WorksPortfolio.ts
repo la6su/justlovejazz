@@ -423,11 +423,16 @@ export class WorksPortfolio {
       card.mat.opacity = THREE.MathUtils.lerp(card.mat.opacity, opacity, dt * 4)
 
       // ── Liquid distortion: drive uMoveVel per-card ──
-      // Center card (w≈0) gets full velocity; side cards get less (they're
-      // moving slower in screen space due to depth).
+      // Set DIRECTLY (no lerp smoothing) — the spring-damper already produces
+      // smooth velocity; lerping it again dampens the spike and hides the effect.
+      // Center card (w≈0) gets full velocity; side cards get less.
       const cardMoveVel = moveVel * (1 - depth * 0.5) * (Math.abs(w) < 0.5 ? 1 : 0.6)
-      card.mat.uMoveVel.value = THREE.MathUtils.lerp(card.mat.uMoveVel.value, cardMoveVel, dt * 8)
-      card.mat.uTime.value += dt
+      card.mat.uMoveVel.value = cardMoveVel
+      // uTime: only update manually on WebGL2 (onBeforeCompile needs it).
+      // On WebGPU, TSL `time` node is auto-updated by the renderer.
+      if (typeof card.mat.uTime === 'object' && 'value' in card.mat.uTime && typeof (card.mat.uTime as { value: unknown }).value === 'number') {
+        ;(card.mat.uTime as { value: number }).value += dt
+      }
     }
   }
 

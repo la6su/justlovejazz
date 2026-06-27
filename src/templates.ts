@@ -47,35 +47,12 @@ export function homePage(): string {
         </div>
       </section>
 
-      <!-- 3: FLEXIBLE — Light transition -->
+      <!-- 3: FLEXIBLE — Pure 3D scene (junni pattern: no HTML content).
+           Animated text background + full-screen title texture rendered in WebGL.
+           Section is kept for scroll positioning only. -->
       <section class="uk-height-viewport uk-flex uk-flex-center" uk-height-viewport="expand: true"
                id="section-flexible" data-section="flexible">
-        <div class="section-bg section-bg--flexible uk-position-cover" data-dynamic-content>
-          <div class="section-container uk-height-viewport uk-flex uk-flex-middle uk-flex-center" uk-scrollspy="cls: uk-animation-scale-up; delay: 100; repeat: true">
-            <div class="section-content uk-text-center">
-              <h2 class="studio-title" data-content-id="flexible-title">FLEXIBLE</h2>
-              <p class="studio-body uk-text-lead uk-margin-large-top" data-content-id="flexible-text">
-                Adaptive workflows that scale from concept to production.
-                From rapid prototypes to polished experiences — we build systems that evolve
-                with your creative vision, not against it.
-              </p>
-              <div class="uk-grid-small uk-child-width-1-3@m uk-text-center uk-margin-large-top" uk-grid>
-                <div uk-scrollspy="cls: uk-animation-fade; delay: 100; repeat: true">
-                  <span class="uk-icon uk-icon-large" uk-icon="settings"></span>
-                  <p class="uk-margin-top">Highly configurable</p>
-                </div>
-                <div uk-scrollspy="cls: uk-animation-fade; delay: 200; repeat: true">
-                  <span class="uk-icon uk-icon-large" uk-icon="cog"></span>
-                  <p class="uk-margin-top">Modular architecture</p>
-                </div>
-                <div uk-scrollspy="cls: uk-animation-fade; delay: 300; repeat: true">
-                  <span class="uk-icon uk-icon-large" uk-icon="code"></span>
-                  <p class="uk-margin-top">Developer friendly</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <div class="section-bg section-bg--flexible uk-position-cover" data-dynamic-content></div>
       </section>
 
       <!-- 4: CHALLENGE — Dark, checkered floor, gallery -->

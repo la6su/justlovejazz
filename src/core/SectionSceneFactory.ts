@@ -233,26 +233,35 @@ export class SectionSceneFactory {
   }
 
   // ── 2: Flexible — light/grey BG, approach/process feel
-  // Junni Section2 adapted: clean lines, organized feel
+  // Junni Section2 pattern: animated text background + full-screen title texture.
+  // NO HTML content — pure 3D scene (user request: match junni reference).
   static createFlexible(): THREE.Group {
     const g = new THREE.Group()
     g.name = 'flexible'
 
-    // ── Junni Section2 "Slides" — typographic text-background ──
-    // 50 instanced curved strips with scrolling concept-word texture.
-    // Replaces the placeholder lines/crosses/dots (those were hidden anyway).
-    // Texture loads async; slides fade in once loaded via setVisibility().
+    // ── Junni Section2: animated bg + full-screen title ──
     const slides = new FlexibleSlides()
     slides.userData.keepVisible = true // bypass hideGeometry
     g.add(slides)
-    // Async-load the typographic texture, then build the strips.
+    // Async-load both textures, then build.
     const loader = new THREE.TextureLoader()
+    let bgTex: THREE.Texture | null = null
+    let titleTex: THREE.Texture | null = null
+    const tryBuild = () => {
+      if (bgTex && titleTex) {
+        slides.build(bgTex, titleTex)
+        g.userData.flexibleSlides = slides
+      }
+    }
     loader.load('/assets/textures/sec2-bg-text.png', (tex) => {
-      slides.build(tex)
-      // Tag for World.update to find + drive per-frame.
-      g.userData.flexibleSlides = slides
+      bgTex = tex; tryBuild()
     }, undefined, (err) => {
       console.warn('[SectionSceneFactory] sec2-bg-text.png failed to load', err)
+    })
+    loader.load('/assets/textures/flexible-title.png', (tex) => {
+      titleTex = tex; tryBuild()
+    }, undefined, (err) => {
+      console.warn('[SectionSceneFactory] flexible-title.png failed to load', err)
     })
 
     // Particles (light grey) — atmospheric depth

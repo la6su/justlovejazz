@@ -58,11 +58,11 @@ function buildTSLColorNode(tex: THREE.Texture) {
   const uMoveVel = uniform(0)
   const uTime = time
   const baseUv = uv()
-  // Liquid displacement — larger amplitude for visible effect.
-  const waveX = sin(baseUv.y.mul(10).add(uTime.mul(2.5))).mul(0.04)
-  const waveY = cos(baseUv.x.mul(12).add(uTime.mul(3.0))).mul(0.04)
-  const detailX = sin(baseUv.y.mul(30).sub(uTime.mul(5.0))).mul(0.015)
-  const detailY = cos(baseUv.x.mul(35).sub(uTime.mul(4.5))).mul(0.015)
+  // Liquid displacement — larger amplitude for clearly visible effect during swipe.
+  const waveX = sin(baseUv.y.mul(10).add(uTime.mul(2.5))).mul(0.08)
+  const waveY = cos(baseUv.x.mul(12).add(uTime.mul(3.0))).mul(0.08)
+  const detailX = sin(baseUv.y.mul(30).sub(uTime.mul(5.0))).mul(0.03)
+  const detailY = cos(baseUv.x.mul(35).sub(uTime.mul(4.5))).mul(0.03)
   const distortedUv = baseUv.add(vec2(waveX.add(detailX), waveY.add(detailY)).mul(uMoveVel))
   const colorNode = texture(tex, distortedUv)
   return { colorNode, uMoveVel, uTime }
@@ -115,10 +115,10 @@ export function createLiquidSliderMaterial(): LiquidSliderMaterial {
         `#include <uv_vertex>
          #ifdef USE_MAP
          {
-           float waveX = sin(vMapUv.y * 10.0 + uTime * 2.5) * 0.04;
-           float waveY = cos(vMapUv.x * 12.0 + uTime * 3.0) * 0.04;
-           float detailX = sin(vMapUv.y * 30.0 - uTime * 5.0) * 0.015;
-           float detailY = cos(vMapUv.x * 35.0 - uTime * 4.5) * 0.015;
+           float waveX = sin(vMapUv.y * 10.0 + uTime * 2.5) * 0.08;
+           float waveY = cos(vMapUv.x * 12.0 + uTime * 3.0) * 0.08;
+           float detailX = sin(vMapUv.y * 30.0 - uTime * 5.0) * 0.03;
+           float detailY = cos(vMapUv.x * 35.0 - uTime * 4.5) * 0.03;
            vMapUv += vec2(waveX + detailX, waveY + detailY) * uMoveVel;
          }
          #endif`,
