@@ -50,10 +50,13 @@ export function createLiquidCardGeometry(w: number, h: number): LiquidCardGeomet
     if (Math.abs(moveVel) > 0.1) lastDir = moveVel > 0 ? 1 : -1
 
     const positions = geometry.attributes.position.array as Float32Array
-    // Normalize smoothed moveVel (can spike to 20-150) to 0-1 range.
-    const velNorm = Math.min(Math.abs(smoothMoveVel) * 0.05, 1)
-    // Ambient + swipe-boosted distortion. 0.12 = 3× stronger during scroll.
-    const distortAmount = 0.015 + velNorm * 0.12
+    // Normalize smoothed moveVel to 0-1 range. moveVel can spike to 20-200
+    // (spring-damper with stiffness 120), so 0.1 factor = 10→1.0, 50→1.0 (clamped).
+    const velNorm = Math.min(Math.abs(smoothMoveVel) * 0.1, 1)
+    // Ambient + swipe-boosted distortion. Large amplitude so warping is clearly
+    // visible on a 3×2 card (card depth Z ~2.5, so 0.1-0.5 displacement reads
+    // as obvious liquid motion).
+    const distortAmount = 0.05 + velNorm * 0.5
     // Direction from lastDir (not Math.sign — that freezes at 0).
     const dir = lastDir
 
@@ -65,8 +68,7 @@ export function createLiquidCardGeometry(w: number, h: number): LiquidCardGeomet
       const wave2 = Math.cos(bx * 3.0 + time * 1.0) * distortAmount
       const ripple = Math.sin(by * 8 - time * 2.5 * dir) * distortAmount * 0.3
       // Scroll-boosted directional wave — travels in swipe direction.
-      // Stronger (0.04→0.08) so it's clearly visible during scroll.
-      const scrollWave = Math.sin(bx * 1.5 + time * 4.0 * dir) * velNorm * 0.08
+      const scrollWave = Math.sin(bx * 1.5 + time * 4.0 * dir) * velNorm * 0.3
       positions[i + 2] = wave1 + wave2 + ripple + scrollWave
     }
     geometry.attributes.position.needsUpdate = true
