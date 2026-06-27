@@ -306,6 +306,36 @@ body, a, button, .interactive {
   will-change: opacity, transform;
 }
 
+/* Cinematic vignette — dark edges for depth */
+#jlj-splash > .jlj-splash-vignette {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.6) 100%);
+  pointer-events: none;
+  z-index: 7;
+  opacity: 0;
+  animation: jlz-vignette-in 2s ease-in 0.5s forwards;
+}
+
+/* Scan lines — retro CRT effect, very subtle */
+#jlj-splash > .jlj-splash-scanlines {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0px,
+    transparent 2px,
+    rgba(255,255,255,0.015) 2px,
+    rgba(255,255,255,0.015) 3px
+  );
+  pointer-events: none;
+  z-index: 8;
+  opacity: 0;
+  animation: jlz-scanlines-in 1.5s ease-in 1s forwards;
+}
+
 .jlj-splash-top {
   position: absolute;
   top: 0;
@@ -528,6 +558,14 @@ body, a, button, .interactive {
 }
 
 /* ── Splash keyframes ── */
+@keyframes jlz-vignette-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+@keyframes jlz-scanlines-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
 @keyframes jlz-curtain-top-in {
   0% { transform: translateY(-100%); }
   100% { transform: translateY(0); }
@@ -571,13 +609,15 @@ body, a, button, .interactive {
 }
 @keyframes jlz-curtain-top-out {
   0% { transform: translateY(0); }
-  40% { transform: translateY(-5%); }
-  100% { transform: translateY(-100%); }
+  20% { transform: translateY(-3%); }
+  40% { transform: translateY(-8%); }
+  100% { transform: translateY(-105%); }
 }
 @keyframes jlz-curtain-bottom-out {
   0% { transform: translateY(0); }
-  40% { transform: translateY(5%); }
-  100% { transform: translateY(100%); }
+  20% { transform: translateY(3%); }
+  40% { transform: translateY(8%); }
+  100% { transform: translateY(105%); }
 }
 @keyframes jlz-brand-exit {
   0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }

@@ -68,10 +68,19 @@ export function createSplash(): SplashOverlay {
     brandEl.id = 'jlj-splash-brand'
     brandEl.textContent = 'JUSTLOVEJAZZ'
 
+    // Cinematic overlays: vignette + scanlines
+    const vignette = document.createElement('div')
+    vignette.className = 'jlj-splash-vignette'
+
+    const scanlines = document.createElement('div')
+    scanlines.className = 'jlj-splash-scanlines'
+
     root.appendChild(topPanel)
     root.appendChild(bottomPanel)
     root.appendChild(splitLine)
     root.appendChild(brandEl)
+    root.appendChild(vignette)
+    root.appendChild(scanlines)
     document.body.appendChild(root)
     shellReady = true
   }

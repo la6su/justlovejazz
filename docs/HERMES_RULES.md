@@ -12,86 +12,74 @@ git pull origin main
 git log --oneline -1  # verify you're on latest
 ```
 
-`main` and `test` are always synced. Never force-push to either.
+`main`, `dev`, and `test` are always synced. Never force-push to either.
 
 ## Golden rules
 
 ### 1. NEVER use ShaderMaterial in scene objects
-Use built-in materials only (MeshStandardMaterial, MeshBasicMaterial, PointsMaterial, LineBasicMaterial, GridHelper). ShaderMaterial is incompatible with WebGPURenderer's NodeBuilder.
+Use built-in materials only (MeshStandardMaterial, MeshBasicMaterial, PointsMaterial, LineBasicMaterial, GridHelper).
 
 ### 2. NEVER use TSL NodeMaterial for scene objects
-MeshPhysicalNodeMaterial with TSL is slow on WebGPU-over-ANGLE. Use built-in materials.
+Slow on WebGPU-over-ANGLE. Use built-in materials.
 
 ### 3. Non-destructive opacity fade
-Cache baseOpacity in userData, apply fade multiplicatively. Never overwrite factory opacity values.
+Cache baseOpacity in userData, apply fade multiplicatively.
 
 ### 4. ALWAYS use setAnimationLoop, not requestAnimationFrame
-WebGPU requires setAnimationLoop for swap chain sync. rAF causes 3-5 FPS.
+WebGPU requires setAnimationLoop for swap chain sync.
 
 ### 5. ALWAYS set scene.background
-WebGPURenderer does NOT auto-clear. World.bg.color is authoritative. Never set scene.background = null.
+WebGPURenderer does NOT auto-clear. World.bg.color is authoritative.
 
 ### 6. alpha: false for WebGPURenderer
-Chrome defaults to alpha:true → black screen over body#000.
+Chrome defaults to alpha:true → black screen.
 
 ### 7. NEVER remove Baku
-Baku is the central 3D character (currently hidden, user will refine). Baku.ts must remain a full Mesh class.
+Central 3D character (currently hidden, user will refine).
 
 ### 8. NEVER make section-bg opaque
-DOM sections are transparent overlays. 3D canvas (z-index:1) provides background. section-bg must be transparent.
+DOM sections are transparent. 3D canvas provides background.
 
 ### 9. Single font: Inter
-The entire project uses ONE font: Inter (300-900 weights). Do NOT add Bebas Neue, JetBrains Mono, Source Sans 3, Geologica, or any other font. master-quantum-flares theme sets 'Source Sans 3' — override it in main.less AFTER the import.
+ONE font: Inter (300-900). Override master-quantum-flares AFTER import.
 
 ### 10. NoiseText trigger: jlz:section-change
-NoiseText animation fires on `jlz:section-change` event (from Experience.update when 3D transitions to a new section). Do NOT use IntersectionObserver — it fires too early during scroll. Do NOT use bulk animateNoiseTitles() — it conflicts with section-change.
+NOT IntersectionObserver. NOT bulk animateNoiseTitles. Section-change event only.
 
-### 11. Match section IDs
-Section IDs in templates.ts must match JS lookups:
-- `#section-intro`, `#section-about`, `#section-flexible`
-- `#section-challenge` (Works slider, NOT "section-works")
-- `#section-innovative`, `#section-contact`
+### 11. NEVER disable WebGLTextManager without dispatching jlz:webgl-ready
+WebGLTextManager is currently disabled (conflicts with NoiseText). But
+jlz:webgl-ready event MUST still fire — it triggers NoiseText animation.
 
-### 12. Reuse #project-overlay
-templates.ts defines `<div id="project-overlay">`. ProjectOverlay must reuse it, not create a duplicate.
+### 12. Match section IDs
+intro/about/flexible/challenge/innovative/contact. NOT "section-works".
 
-### 13. WorksPortfolio pointer guard
-WorksPortfolio.addEventListener('pointerdown', ..., true) uses capture phase. MUST check `if (!this.group.visible) return` — otherwise it captures ALL clicks on the page, even on non-works sections.
+### 13. Reuse #project-overlay
+Don't create duplicate overlay containers.
 
-### 14. Don't call onProjectSelect(0) in ensurePortfolio
-It triggers _runProjectDissolve → overlay.showContainer() → overlay visible on ALL sections. Call it lazily when user first scrolls to works section (via _portfolioInitialized flag).
+### 14. WorksPortfolio pointer guard
+Check `if (!this.group.visible) return` — capture phase intercepts all clicks.
 
 ### 15. master-quantum-flares is UIKit3 theme — DO NOT TOUCH
-It sets 'Source Sans 3' + 'Geologica' fonts. Override AFTER its import in main.less, never modify the theme files.
+Override AFTER its import in main.less, never modify theme files.
 
 ### 16. No lessons system
-Lessons were removed. Do NOT re-add lesson routes, lesson data, or lesson UI. The project is a single scroll page with 6 sections.
+Removed. Don't re-add.
 
 ### 17. Check junni reference first
-Before adding new patterns, check https://github.com/junni-inc/next.junni.co.jp. Don't reinvent the wheel — port junni's approach (adapted to our built-in-materials constraint).
+`references/next.junni.co.jp/` — DO NOT MODIFY reference files.
 
-### 18. PostProcessingManager keys = PhaseConfig.id
-`PHASE_PRESETS` keys must match `WorldConfig.RAW[i].id` exactly (`sec_intro`, `sec_about`, etc.).
-`applyPreset(cfg.id)` is called in `Experience.update()` — if keys diverge, all sections fall back to the default preset and per-section post-processing is effectively disabled.
+### 18. references/ directory is READ-ONLY
+Never commit changes to files under `references/`.
 
-### 19. No `requestAnimationFrame` in Experience code
-Use `StateBus.animate()` + `bus.on('done:<key>', cb)` for all timed transitions (dissolve, intro, etc.). `requestAnimationFrame` fights the WebGPU swap-chain loop managed by `setAnimationLoop`.
+### 19. No hallucinated architecture
+Don't create "Stage4", "WorksStack", "Jólni", or other fictional frameworks.
+Use existing patterns from junni reference, adapted to built-in materials.
 
-### 20. Baku material swap only on role change
-`Baku.applyRoleAndParams()` must check `instanceof` before swapping material. Creating a new material every frame is a GPU memory leak. Only swap when the material type actually needs to change (role transition).
-
-### 21. WorldAtmosphere owns fog, BG.ts owns background
-`WorldAtmosphere.dispose()` must NOT set `scene.background = null` — that causes a black frame on WebGPU (see §5). `BG.ts` is authoritative for `scene.background`. `WorldAtmosphere` only manages `scene.fog`.
-
-## Verification protocol
-
-After EVERY change:
+### 20. Always verify with type-check + build
 ```bash
-bun run type-check   # tsc --noEmit
-bun run build        # tsc && vite build
+bun run type-check && bun run build
 ```
-
-For runtime: restart dev server (`bun run dev`), open in browser, check console for errors.
+Both must pass. No exceptions.
 
 ## Stop conditions
 

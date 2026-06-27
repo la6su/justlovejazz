@@ -196,6 +196,8 @@ export class Experience {
       // no need to set it here. PostProcessing + FOV still triggered on context change.
       this.renderer.postManager.applyPreset(cfg.id)
       this.camera.setFovOffset(cfg.camFovOffset, cfg.camFovDuration)
+      // Subtle camera shake on section transition for cinematic impact
+      this.camera.shake(0.04, 0.4)
       this.currentSectionContext = cfg.context
       // A-009: Apply Baku material from worldState (was computed but never applied)
       if (this.world?.baku) {

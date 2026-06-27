@@ -36,46 +36,57 @@ Single WebGPURenderer (alpha:false, ACES tonemap, sRGB).
 
 ## Fonts
 
-Single font: Inter (300-900). master-quantum-flares sets 'Source Sans 3' —
-overridden in main.less AFTER the theme import:
+Single font: Inter (300-900). Override master-quantum-flares in main.less:
 ```less
 @global-font-family: 'Inter', sans-serif;
-@global-primary-font-family: 'Inter', sans-serif;
 body { font-family: 'Inter', sans-serif !important; }
 ```
 
 ## NoiseText
 
-Triggered by `jlz:section-change` event (NOT IntersectionObserver).
-Experience.update() dispatches this when 3D scene transitions to a new section.
-Each .studio-title animates with character-level glitch (60% intensity, 1.5s).
+Junni typewriter reveal algorithm. Characters appear left-to-right,
+noise tail at frontier. Triggered by jlz:section-change event.
+
+## Splash
+
+Cinematic curtain split: gradient brand + shimmer + radial glow + film grain
++ vignette + scanlines + dramatic curtain split with overshoot.
+
+## Scroll transitions
+
+Per-section (from WorldConfig):
+- Camera position/FOV (lerp via Camera.updateSmooth)
+- BG color (continuous lerp via BG.setProgress)
+- Fog color + density (set on section change)
+- Lighting: key/fill/rim/volumetric/hemi (lerp via Lights.changeSection)
+- Post-processing presets (bloom/vignette/grain per section)
+- Camera shake on section transition (0.04 power, 0.4s)
+- Portrait FOV boost (up to +20° on narrow portrait)
+- Per-section cursor follow (works=0.22, others=0.15)
+- DrawTrail visible on about(1) + flexible(2) only
 
 ## Modules
 
 | Module | Role |
 |--------|------|
-| Experience | Render loop (setAnimationLoop). Owns World, Renderer, Portfolio, Overlay |
-| Renderer | WebGPURenderer, alpha:false, direct render on WebGPU |
-| World | Section[] + sceneGroups[], Baku, Lights, BG, Ground |
+| Experience | Render loop, section transitions, portfolio |
+| Renderer | WebGPURenderer, direct render on WebGPU |
+| World | Section[] + sceneGroups[], Baku, Lights, BG, Ground, DrawTrail |
 | SectionSceneFactory | 6 scenes (particles only, minimal) |
-| BG | Per-section background color (lerp transitions) |
+| BG | Per-section background color (continuous lerp) |
 | WorksPortfolio | 3D card carousel (pointer guard: check group.visible) |
-| ProjectOverlay | DOM overlay (reuses #project-overlay from templates) |
-| NoiseText | Character glitch animation (jlz:section-change trigger) |
+| ProjectOverlay | DOM overlay (reuses #project-overlay) |
+| NoiseText | Junni typewriter reveal (jlz:section-change trigger) |
+| DrawTrail | Cursor trail (about/flexible only) |
+| CinematicLights | 5-light setup, changeSection + lerp |
 
-## Disabled (perf)
+## Disabled (perf/compat)
 
 | Module | Why |
 |--------|-----|
-| DrawTrail | Per-frame geometry update |
-| WebGLTextManager | Second WebGLRenderer (Troika) |
+| WebGLTextManager | Makes .studio-title transparent → breaks NoiseText |
 | Baku | Hidden — user will refine visual |
 
-## Scroll → 3D sync
+## AUDIT — ALL RESOLVED ✅
 
-1. Lenis scroll → input.setScroll()
-2. input.getSmoothedScrollProgress() → 0..1
-3. world.advance(progress) → updateTransform(progress)
-4. sceneGroups visibility: from/to groups visible, fade multiplicatively
-5. BG.color lerps to section color
-6. jlz:section-change dispatched on section transition → NoiseText fires
+A-001 through A-015 — all fixed. See docs/AUDIT.md for details.
