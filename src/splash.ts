@@ -121,11 +121,9 @@ export function createSplash(): SplashOverlay {
       root!.style.visibility = 'visible'
     },
 
-    hide(durationMs: number = 0): void {
-      root!.style.opacity = '0'
-      if (durationMs > 0) {
-        root!.style.transition = `opacity ${durationMs}ms var(--jlz-ease-exit)`
-      }
+    hide(_durationMs?: number): void {
+      if (!root) return
+      root.classList.add('hide')
     },
 
     remove(): void {

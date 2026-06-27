@@ -1,16 +1,13 @@
 // src/main-app.ts — lazy bootstrap entry
 import * as THREE from 'three'
 import { syncReducedMotionDataset } from './core/motionPolicy'
-import { EnterButton } from './EnterButton'
 import type { SplashOverlay } from './splash'
-import { input as _input } from './Experience/Input'
 
 type ProgressFn = (pct: number) => void
 
 export interface BootstrapOptions {
   splash: SplashOverlay
   progress: ProgressFn
-  onReady?: (enter: EnterButton) => void
 }
 
 let _bootstrapped = false
@@ -39,10 +36,6 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
     await ui.init()
     progress(50)
 
-    const enterButton = new EnterButton()
-    progress(60)
-
-    // Curtain split — no dissolveOverlay needed
     const { Bootstrapper } = await import('./core/Bootstrapper')
 
     const onReadyCb: OnReadyCallback = (_renderer, _scene: THREE.Scene) => {
@@ -54,36 +47,27 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
     progress(100)
     splash.setState('ready')
 
-    // Show enter button — opts.onReady callback from entry-app
-    if (opts.onReady) {
-      opts.onReady(enterButton)
-    }
-
-    const triggerCinematicIntro = async () => {
-      enterButton.cancelAuto()
-      enterButton.animateOut(400)
-
+    // No Enter button — auto-trigger cinematic reveal after short delay.
+    // Flow: portal collapse → curtain split → scene revealed.
+    // This gives the user a moment to see "READY" + 100% progress,
+    // then the wow-effect curtain split happens automatically.
+    setTimeout(async () => {
       // Phase 1: Portal collapse (800ms) — frames zoom toward viewer
       splash.markPhase('dissolving')
       splash.triggerPortalCollapse()
       await new Promise(r => setTimeout(r, 800))
 
       // Phase 2: Curtain split (1400ms) — top/bottom panels slide apart
-      splash.curtainSplit(1400)
-      // Wait for curtain split to visually complete before hiding
+      splash.curtainSplit()
       await new Promise(r => setTimeout(r, 1400))
 
       // Phase 3: Hide splash, reveal scene
-      splash.hide(400)
+      splash.hide()
       window.dispatchEvent(new CustomEvent('jlz:webgl-ready'))
 
-      // Phase 4: Cleanup splash overlay after hide transition
+      // Phase 4: Cleanup splash overlay
       setTimeout(() => splash.remove(), 600)
-    }
-
-    // Wire enter button → trigger the intro transition
-    enterButton.onTrigger(triggerCinematicIntro)
-    enterButton.autoTriggerAfter(5000, triggerCinematicIntro)
+    }, 800)
   } catch (e) {
     console.error('[main-app] bootstrap failed:', e)
   }
