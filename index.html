@@ -41,18 +41,36 @@
       /* Splash screen — visible before JS loads */
       #jlj-splash {
         position: fixed; inset: 0; z-index: 3000;
-        background: var(--jlz-color-bg);
+        background: #000;
         display: flex; align-items: center; justify-content: center;
         flex-direction: column; overflow: hidden;
       }
       #jlj-splash-brand {
-        color: var(--jlz-color-text);
-        font-family: var(--jlz-font-body); font-weight: 900;
-        font-size: clamp(2rem,6vw,4rem); letter-spacing: -0.03em;
+        color: #fff;
+        font-family: 'Inter', sans-serif; font-weight: 900;
+        font-size: clamp(1.5rem,5vw,3.5rem); letter-spacing: -0.03em;
         text-transform: uppercase; opacity: 0;
         animation: brandIn 1.4s cubic-bezier(0.65,0,0.35,1) 0.3s forwards;
       }
       @keyframes brandIn { to { opacity: 1; } }
+      /* Portal frames — inline so visible before LESS loads */
+      .jlj-splash-portals { position: absolute; inset: 0; z-index: 3; pointer-events: none; perspective: 800px; }
+      .jlj-splash-portal { position: absolute; top: 50%; left: 50%; border: 1px solid rgba(255,255,255,0.15); border-radius: 2px; opacity: 0; transform: translate(-50%,-50%) scale(6); }
+      .jlz-portal-1 { width: 40vmin; height: 60vmin; }
+      .jlz-portal-2 { width: 55vmin; height: 75vmin; border-color: rgba(81,93,132,0.2); }
+      .jlz-portal-3 { width: 70vmin; height: 90vmin; border-color: rgba(255,255,255,0.08); }
+      .jlz-portal-4 { width: 85vmin; height: 105vmin; border-color: rgba(81,93,132,0.12); }
+      /* Portal animation — visible before LESS loads */
+      @keyframes jlz-portal-in {
+        0% { opacity: 0; transform: translate(-50%,-50%) scale(6); }
+        20% { opacity: 0.8; }
+        100% { opacity: 0.3; transform: translate(-50%,-50%) scale(1); }
+      }
+      .jlj-splash-portal { animation: jlz-portal-in 1.8s cubic-bezier(0.65,0,0.35,1) forwards; }
+      /* Vignette + scanlines */
+      .jlj-splash-vignette { position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.6) 100%); pointer-events: none; z-index: 7; opacity: 0; animation: vignIn 2s ease-in 0.5s forwards; }
+      .jlj-splash-scanlines { position: absolute; inset: 0; background: repeating-linear-gradient(0deg, transparent 0px, transparent 2px, rgba(255,255,255,0.015) 2px, rgba(255,255,255,0.015) 3px); pointer-events: none; z-index: 8; opacity: 0; }
+      @keyframes vignIn { to { opacity: 1; } }
     </style>
   </head>
   <body data-app-mode="full" data-page="home">
@@ -101,9 +119,15 @@
 
     <!-- SPA content dynamically injected here by router -->
     <!-- <main id="spa-content"> is auto-created by router.ts -->
-    <!-- Splash: styled by #jlj-splash* in src/styles/tokens.css -->
-    <!-- Cinematic curtain splash shell (styled by src/styles/tokens.css #jlj-splash*) -->
+    <!-- Cinematic portal + curtain splash shell -->
     <div id="jlj-splash">
+      <!-- Portal frames (flying through portals effect) -->
+      <div class="jlj-splash-portals">
+        <div class="jlj-splash-portal jlz-portal-1" style="animation-delay:0.1s"></div>
+        <div class="jlj-splash-portal jlz-portal-2" style="animation-delay:0.25s"></div>
+        <div class="jlj-splash-portal jlz-portal-3" style="animation-delay:0.4s"></div>
+        <div class="jlj-splash-portal jlz-portal-4" style="animation-delay:0.55s"></div>
+      </div>
       <div class="jlj-splash-top" id="jlj-curtain-top">
       </div>
       <div class="jlj-splash-bottom" id="jlj-curtain-bottom">
@@ -116,6 +140,9 @@
       <div class="jlj-splash-line" id="jlj-split-line"></div>
       <!-- Center brand mark (straddles both panels, fades on split) -->
       <div id="jlj-splash-brand">JUSTLOVEJAZZ</div>
+      <!-- Cinematic overlays -->
+      <div class="jlj-splash-vignette"></div>
+      <div class="jlj-splash-scanlines"></div>
     </div>
 
     <!-- ===== 3D CANVAS ===== -->
