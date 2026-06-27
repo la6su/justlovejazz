@@ -4,6 +4,7 @@ import { Time } from './Time'
 import { Camera } from './Camera'
 import { Renderer } from './Renderer'
 import { DebugStats } from '../core/DebugStats'
+import { DevPanel } from '../core/DevPanel'
 import { SmoothScroll } from './SmoothScroll'
 import { ContentReveal } from './ContentReveal'
 import { Cursor } from './Cursor'
@@ -47,11 +48,12 @@ export class Experience {
   private webglTextManager: WebGLTextManager | null = null
   private cursor!: Cursor
   private debugStats!: DebugStats
+  private devPanel: DevPanel | null = null
   public world!: World
   private bus!: StateBus
 
-  // Works portfolio
-  private portfolio: WorksPortfolio | null = null
+  // Works portfolio (public for DevPanel access)
+  public portfolio: WorksPortfolio | null = null
   private overlay: ProjectOverlay | null = null
   private projectDetail: ProjectDetail | null = null
   private _subtitles: Subtitles | null = null
@@ -123,6 +125,14 @@ export class Experience {
     }
     await this.buildWorld()
       this.bus = StateBus.getInstance()
+    // DevPanel (Tweakpane) — only in DEV. Toggle with Backquote (`) or Ctrl+D.
+    if (import.meta.env.DEV) {
+      try {
+        this.devPanel = new DevPanel(this)
+      } catch (e) {
+        console.warn('[Experience] DevPanel init failed:', e)
+      }
+    }
     // Subtitles listen for jlz:section-change events automatically.
     this._subtitles = new Subtitles()
     // Section progress indicator with clickable timeline dots.
@@ -317,6 +327,7 @@ export class Experience {
     this.world.dispose()
       this.bus.cancelAll()
     this.debugStats?.destroy()
+    this.devPanel?.dispose()
     // Renderer.dispose() cleans up the resize listener AND the pipeline
     // AND the renderer instance (was previously only instance.dispose()).
     this.renderer.dispose()

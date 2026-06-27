@@ -28,6 +28,7 @@
     "@studio-freight/lenis": "^1.0.42",
     "three": "^0.184.0",
     "troika-three-text": "^0.52.4",
+    "tweakpane": "^4.0.5",
     "uikit": "^3.25.16"
   },
   "repository": {

@@ -21,7 +21,8 @@ export class WorksPortfolio {
   public readonly group = new THREE.Group()
   // Shared loader — creating one per card wastes resources.
   private static readonly sharedLoader = new THREE.TextureLoader()
-  private cards: ProjectCard[] = []
+  /** Public for DevPanel inspection (read-only intent). */
+  public cards: ProjectCard[] = []
   private currentIdx = 0
   private targetIdx = 0
   private dragOff = 0
@@ -38,6 +39,9 @@ export class WorksPortfolio {
   private idxVelocity = 0
   private idxStiffness = 120 // spring stiffness
   private idxDamping = 18   // damping coefficient
+
+  /** Liquid distortion multiplier (driven by DevPanel). 1 = default, 0 = off. */
+  public liquidMultiplier = 1
 
   // Raycaster for tap detection on 3D card meshes.
   private raycaster = new THREE.Raycaster()
@@ -419,6 +423,16 @@ export class WorksPortfolio {
       // Skew: rotation.z tilts card in movement direction
       card.group.rotation.z = THREE.MathUtils.lerp(card.group.rotation.z, skewZ, dt * 6)
       card.mat.opacity = THREE.MathUtils.lerp(card.mat.opacity, opacity, dt * 4)
+
+      // ── Liquid distortion: drive uMoveVel per-card ──
+      // Set DIRECTLY (no lerp) — spring-damper already produces smooth velocity.
+      // liquidMultiplier (DevPanel) scales the effect globally.
+      const cardMoveVel = moveVel * (1 - depth * 0.5) * (Math.abs(w) < 0.5 ? 1 : 0.6) * this.liquidMultiplier
+      const liquidMat = card.mat as unknown as { uMoveVel: { value: number }; uTime?: { value?: unknown } }
+      liquidMat.uMoveVel.value = cardMoveVel
+      // uTime: only update manually on WebGL2 (onBeforeCompile). On WebGPU,
+      // TSL `time` node is auto-updated by the renderer.
+      if (typeof liquidMat.uTime?.value === 'number') liquidMat.uTime.value += dt
 
       const emTarget = Math.abs(w) < 0.1 ? 0.3 : 0.1
       card.mat.emissiveIntensity = THREE.MathUtils.lerp(card.mat.emissiveIntensity, emTarget, dt * 4)
