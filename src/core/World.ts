@@ -215,6 +215,12 @@ export class World extends THREE.Group {
             const slides = group.userData.flexibleSlides as
                 import('../Experience/World/Sections/FlexibleSlides').FlexibleSlides | undefined
             if (slides) slides.update(deltaTime)
+            // Bug 6: rotate the flexible wireframe object (junni elastic pattern).
+            const flexObj = group.userData.flexibleObject as THREE.Mesh | undefined
+            if (flexObj && !this.isReducedMotion) {
+                flexObj.rotation.y += deltaTime * 0.3
+                flexObj.rotation.x += deltaTime * 0.15
+            }
         }
     }
 
@@ -278,12 +284,18 @@ export class World extends THREE.Group {
         if (scrollValue >= 1.0) {
             fromIndex = this.sections.length - 1
             toIndex = fromIndex
-            t = 1
+            t = 0  // at the last section, no transition (was t=1)
         }
 
         // ── Ease t through S-curve for comfort zone
         // smoothstep creates a plateau at each end of the range
         t = this._smoothstep(t)
+
+        // Bug 2: double-smoothstep for bg + group fade so each section's color
+        // holds until mid-transition, then quickly flips. Prevents the about
+        // section's dark bg from bleeding into flexible's light bg too early
+        // (white text contrast loss). Camera/baku still use the single-smoothstep t.
+        const bgT = this._smoothstep(t)
 
         // ── Update current section index + fire per-section systems ──
         if (fromIndex !== this._currentSectionIndex) {
@@ -303,7 +315,7 @@ export class World extends THREE.Group {
         // ── BG sphere section switch (junni pattern: lerp BG color continuously)
         // setProgress() lerps between fromIndex and toIndex colors using eased t,
         // giving pixel-perfect background progression while scrolling.
-        this.bg.setProgress(fromIndex, toIndex, t)
+        this.bg.setProgress(fromIndex, toIndex, bgT)
 
         // ── Scene group visibility with opacity fade (junni switchVisibility pattern)
         // From group fades out as t→1, to group fades in. Both visible during transition.
@@ -313,8 +325,8 @@ export class World extends THREE.Group {
             const isFrom = i === fromIndex
             const isTo = i === toIndex
             let fade = 0
-            if (isFrom) fade = 1 - t
-            if (isTo) fade = t
+            if (isFrom) fade = 1 - bgT
+            if (isTo) fade = bgT
             if (isFrom && isTo) fade = 1
 
             const shouldShow = isFrom || isTo
@@ -394,9 +406,9 @@ export class World extends THREE.Group {
         this._targetGroundOpacity = THREE.MathUtils.lerp(fromGround.opacity, toGround.opacity, t)
         groundMat.opacity = this._targetGroundOpacity
 
-        // Crossfade opacity
-        bus.set(`section:${fromCfg.id}:opacity`, 1 - t)
-        bus.set(`section:${toCfg.id}:opacity`, t)
+        // Crossfade opacity (bgT holds each section's opacity longer)
+        bus.set(`section:${fromCfg.id}:opacity`, 1 - bgT)
+        bus.set(`section:${toCfg.id}:opacity`, bgT)
 
         // Scroll-driven parallax: subtle camera depth drift within a section.
         // sin(t * PI) peaks at mid-transition (t=0.5) — camera nudges forward,
