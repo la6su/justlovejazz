@@ -101,7 +101,8 @@
       uniform float uProgress;
       uniform float uReveal;
       uniform float uMode;   // 0=liquid loading, 1=CRT boot
-      uniform float uCRT;   // CRT animation 0→1 (0=white flash, 1=TV hole)
+      uniform float uCRT;   // CRT animation 0→1 (0=liquid, 1=TV hole collapsed)
+      uniform float uIntro; // 0→1 fade-in from black to liquid (boot intro)
       out vec4 fragColor;
 
       float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -137,73 +138,77 @@
         return smoothstep(edge, -edge, d);
       }
 
-      void main(){
-        vec2 uv = gl_FragCoord.xy / uResolution;
-
-        if(uMode > 0.5){
-          // ── CRT BOOT: TV включение ──
-          // uCRT 0→1: white flash → collapses to TV hole
-          float p = clamp(uCRT, 0.0, 1.0);
-          float param01 = 1.0 - p;
-          float cutPoint = 0.5;
-          float blendRange = 0.2;
-
-          float anim01 = param01 / cutPoint;
-          anim01 = anim01 * anim01 * anim01 / 1.05;
-          float topBlack = uv2TopBottomBlack(uv, anim01);
-
-          anim01 = (param01 - cutPoint) / (1.0 - cutPoint);
-          anim01 = max(anim01, 0.0);
-          float x = anim01 * anim01 * anim01 * 80.0 + 1.0;
-          float y = anim01 * anim01 * 80.0 + 2.0;
-          float holeMask = uv2TVHoleShape(uv, vec2(x, y));
-
-          float mixT = smoothstep(cutPoint - blendRange, cutPoint + blendRange, param01);
-          float crtMask = mix(topBlack, holeMask, mixT);
-
-          // White CRT glow + slight blue tint at edges
-          vec3 crtCol = vec3(1.0) * crtMask;
-          crtCol += vec3(0.4, 0.5, 0.7) * (1.0 - crtMask) * 0.15;
-
-          // After hole collapses (uCRT near 1), fade to transparent for reveal
-          float alpha = 1.0 - uReveal;
-          fragColor = vec4(crtCol, alpha);
-          return;
-        }
-
-        // ── LIQUID LOADING (mode 0) ──
-        float aspect = uResolution.x / uResolution.y;
+      // ── Liquid FBM color computation (shared by liquid mode + CRT blend) ──
+      vec3 liquidColor(vec2 uv, float aspect){
         vec2 pp = (uv - 0.5) * vec2(aspect, 1.0) * 3.0;
         float t = uTime * 0.15;
-
-        // Domain warping — organic liquid flow (IQ technique)
         vec2 q = vec2(fbm(pp + t), fbm(pp + vec2(5.2, 1.3) + t));
         vec2 r = vec2(
           fbm(pp + 2.0*q + vec2(1.7, 9.2) + t*1.5),
           fbm(pp + 2.0*q + vec2(8.3, 2.8) + t)
         );
         float n = fbm(pp + 2.0*r);
-
-        // Color palette: dark liquid metal with blue/purple highlights
         vec3 dark = vec3(0.02, 0.02, 0.04);
         vec3 mid = vec3(0.08, 0.10, 0.18);
         vec3 bright = vec3(0.5, 0.55, 0.75);
         vec3 col = mix(dark, mid, n);
         col = mix(col, bright, smoothstep(0.45, 0.75, n));
-
-        // Progress: brighten + shift hue as loading completes
         col += vec3(0.08, 0.06, 0.12) * uProgress;
         col += vec3(0.15, 0.12, 0.2) * smoothstep(0.6, 1.0, n) * uProgress;
+        return col;
+      }
 
-        // At 100%: flash white briefly before CRT boot
-        float flash = smoothstep(0.95, 1.0, uProgress) * 0.3;
-        col = mix(col, vec3(1.0), flash);
+      void main(){
+        vec2 uv = gl_FragCoord.xy / uResolution;
+        float aspect = uResolution.x / uResolution.y;
 
-        // Subtle vignette
-        float dist = length((uv - 0.5) * vec2(aspect, 1.0));
-        col *= 1.0 - dist * 0.3;
+        // ── Liquid color (always computed — CRT blends from it) ──
+        vec3 liquid = liquidColor(uv, aspect);
+        // Fade-in from black: uIntro 0→1 over ~0.8s on boot
+        liquid *= uIntro;
 
-        fragColor = vec4(col, 1.0);
+        if(uMode < 0.5){
+          // ── LIQUID LOADING (mode 0) ──
+          // At 100%: flash white briefly before CRT boot
+          float flash = smoothstep(0.95, 1.0, uProgress) * 0.4;
+          vec3 col = mix(liquid, vec3(1.0), flash);
+          float dist = length((uv - 0.5) * vec2(aspect, 1.0));
+          col *= 1.0 - dist * 0.3;
+          fragColor = vec4(col, 1.0);
+          return;
+        }
+
+        // ── CRT BOOT (mode 1) — blends SEAMLESSLY from liquid ──
+        // uCRT 0→1: liquid → white flash → collapses to TV hole
+        float p = clamp(uCRT, 0.0, 1.0);
+        float param01 = 1.0 - p;
+        float cutPoint = 0.5;
+        float blendRange = 0.2;
+
+        float anim01 = param01 / cutPoint;
+        anim01 = anim01 * anim01 * anim01 / 1.05;
+        float topBlack = uv2TopBottomBlack(uv, anim01);
+
+        anim01 = (param01 - cutPoint) / (1.0 - cutPoint);
+        anim01 = max(anim01, 0.0);
+        float x = anim01 * anim01 * anim01 * 80.0 + 1.0;
+        float y = anim01 * anim01 * 80.0 + 2.0;
+        float holeMask = uv2TVHoleShape(uv, vec2(x, y));
+
+        float mixT = smoothstep(cutPoint - blendRange, cutPoint + blendRange, param01);
+        float crtMask = mix(topBlack, holeMask, mixT);
+
+        // White CRT glow + slight blue tint at edges
+        vec3 crtCol = vec3(1.0) * crtMask;
+        crtCol += vec3(0.4, 0.5, 0.7) * (1.0 - crtMask) * 0.15;
+
+        // Seamless blend: at uCRT=0, show liquid; as uCRT→1, crossfade to CRT.
+        // This avoids the black gap — liquid flows directly into CRT boot.
+        vec3 col = mix(liquid, crtCol, smoothstep(0.0, 0.3, uCRT));
+
+        // After hole collapses (uCRT near 1), fade to transparent for reveal
+        float alpha = 1.0 - uReveal;
+        fragColor = vec4(col, alpha);
       }` : `precision highp float;
       uniform float uTime;
       uniform vec2 uResolution;
@@ -211,6 +216,7 @@
       uniform float uReveal;
       uniform float uMode;
       uniform float uCRT;
+      uniform float uIntro;
 
       float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
       float noise(vec2 p){
@@ -244,32 +250,7 @@
         return smoothstep(edge, -edge, d);
       }
 
-      void main(){
-        vec2 uv = gl_FragCoord.xy / uResolution;
-
-        if(uMode > 0.5){
-          float p = clamp(uCRT, 0.0, 1.0);
-          float param01 = 1.0 - p;
-          float cutPoint = 0.5;
-          float blendRange = 0.2;
-          float anim01 = param01 / cutPoint;
-          anim01 = anim01 * anim01 * anim01 / 1.05;
-          float topBlack = uv2TopBottomBlack(uv, anim01);
-          anim01 = (param01 - cutPoint) / (1.0 - cutPoint);
-          anim01 = max(anim01, 0.0);
-          float x = anim01 * anim01 * anim01 * 80.0 + 1.0;
-          float y = anim01 * anim01 * 80.0 + 2.0;
-          float holeMask = uv2TVHoleShape(uv, vec2(x, y));
-          float mixT = smoothstep(cutPoint - blendRange, cutPoint + blendRange, param01);
-          float crtMask = mix(topBlack, holeMask, mixT);
-          vec3 crtCol = vec3(1.0) * crtMask;
-          crtCol += vec3(0.4, 0.5, 0.7) * (1.0 - crtMask) * 0.15;
-          float alpha = 1.0 - uReveal;
-          gl_FragColor = vec4(crtCol, alpha);
-          return;
-        }
-
-        float aspect = uResolution.x / uResolution.y;
+      vec3 liquidColor(vec2 uv, float aspect){
         vec2 pp = (uv - 0.5) * vec2(aspect, 1.0) * 3.0;
         float t = uTime * 0.15;
         vec2 q = vec2(fbm(pp + t), fbm(pp + vec2(5.2, 1.3) + t));
@@ -282,11 +263,43 @@
         col = mix(col, bright, smoothstep(0.45, 0.75, n));
         col += vec3(0.08, 0.06, 0.12) * uProgress;
         col += vec3(0.15, 0.12, 0.2) * smoothstep(0.6, 1.0, n) * uProgress;
-        float flash = smoothstep(0.95, 1.0, uProgress) * 0.3;
-        col = mix(col, vec3(1.0), flash);
-        float dist = length((uv - 0.5) * vec2(aspect, 1.0));
-        col *= 1.0 - dist * 0.3;
-        gl_FragColor = vec4(col, 1.0);
+        return col;
+      }
+
+      void main(){
+        vec2 uv = gl_FragCoord.xy / uResolution;
+        float aspect = uResolution.x / uResolution.y;
+        vec3 liquid = liquidColor(uv, aspect);
+        liquid *= uIntro;
+
+        if(uMode < 0.5){
+          float flash = smoothstep(0.95, 1.0, uProgress) * 0.4;
+          vec3 col = mix(liquid, vec3(1.0), flash);
+          float dist = length((uv - 0.5) * vec2(aspect, 1.0));
+          col *= 1.0 - dist * 0.3;
+          gl_FragColor = vec4(col, 1.0);
+          return;
+        }
+
+        float p = clamp(uCRT, 0.0, 1.0);
+        float param01 = 1.0 - p;
+        float cutPoint = 0.5;
+        float blendRange = 0.2;
+        float anim01 = param01 / cutPoint;
+        anim01 = anim01 * anim01 * anim01 / 1.05;
+        float topBlack = uv2TopBottomBlack(uv, anim01);
+        anim01 = (param01 - cutPoint) / (1.0 - cutPoint);
+        anim01 = max(anim01, 0.0);
+        float x = anim01 * anim01 * anim01 * 80.0 + 1.0;
+        float y = anim01 * anim01 * 80.0 + 2.0;
+        float holeMask = uv2TVHoleShape(uv, vec2(x, y));
+        float mixT = smoothstep(cutPoint - blendRange, cutPoint + blendRange, param01);
+        float crtMask = mix(topBlack, holeMask, mixT);
+        vec3 crtCol = vec3(1.0) * crtMask;
+        crtCol += vec3(0.4, 0.5, 0.7) * (1.0 - crtMask) * 0.15;
+        vec3 col = mix(liquid, crtCol, smoothstep(0.0, 0.3, uCRT));
+        float alpha = 1.0 - uReveal;
+        gl_FragColor = vec4(col, alpha);
       }`;
 
       function compile(src, type){
@@ -330,9 +343,10 @@
       const uReveal = gl.getUniformLocation(prog, 'uReveal');
       const uMode = gl.getUniformLocation(prog, 'uMode');
       const uCRT = gl.getUniformLocation(prog, 'uCRT');
+      const uIntro = gl.getUniformLocation(prog, 'uIntro');
 
       // State
-      let progress = 0, reveal = 0, mode = 0, crt = 0;
+      let progress = 0, reveal = 0, mode = 0, crt = 0, intro = 0;
       let startTime = performance.now();
       let rafId = null;
       let disposed = false;
@@ -353,12 +367,15 @@
       function render(){
         if(disposed) return;
         const t = (performance.now() - startTime) / 1000;
+        // Auto-fade intro 0→1 over 0.8s (liquid fades in from black)
+        if(intro < 1) intro = Math.min(1, intro + 0.016 / 0.8);
         gl.uniform1f(uTime, t);
         gl.uniform2f(uRes, canvas.width, canvas.height);
         gl.uniform1f(uProg, progress);
         gl.uniform1f(uReveal, reveal);
         gl.uniform1f(uMode, mode);
         gl.uniform1f(uCRT, crt);
+        gl.uniform1f(uIntro, intro);
         // Enable alpha blending for CRT reveal fade
         gl.enable(gl.BLEND);
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
