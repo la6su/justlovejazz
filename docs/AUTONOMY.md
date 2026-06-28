@@ -11,7 +11,7 @@ No broad refactors without failing build, TODO, or documented plan.
 ## Before starting
 
 1. `git fetch origin && git checkout main && git pull origin main`
-2. Read `docs/HERMES_RULES.md` — 10 hard rules with bug provenance
+2. Read `docs/HERMES_RULES.md` — 20 hard rules with bug provenance
 3. Read `docs/STATUS.md` — current state, don't redo done work
 
 ## Priority
@@ -32,7 +32,8 @@ No broad refactors without failing build, TODO, or documented plan.
 ## Verification (after every change)
 
 ```bash
-bun run type-check   # tsc --noEmit, must pass
+bun run lint         # ESLint, must pass (0 errors)
+bun run type-check   # tsc --noEmit (strict), must pass
 bun run build        # tsc && vite build, must pass
 ```
 

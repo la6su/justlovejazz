@@ -2,105 +2,65 @@
 
 ## ✅ DONE
 
-### EPIC: Re-enable DrawTrail
-- [x] T-001: Изучить DrawTrail.ts → интеграция в World.ts + update loop
-- [x] T-002: Проанализировать perf budget → решаемо, retained 64-point buffer
-- [x] T-003: Интегрировать DrawTrail в World.ts (re-enable) + type-check
-- [x] T-004: Git push
+### EPIC: AUDIT fixes (docs/AUDIT.md) — all resolved
+- [x] A-001: World.resize() — implement propagation to sceneGroups + groundPlane
+- [x] A-002: Portrait FOV — portraitFovBoost in PhaseConfig + Camera.updateSmooth()
+- [x] A-003: Section.switchState() — fix bus.channel overwrites-current-value bug
+- [x] A-004: Wire world.resize() from Experience Sizes listener
+- [x] A-005: Baku role caching — _currentRole, skip applyRoleAndParams when unchanged
+- [x] A-006: Double traverse — _meshCache in sceneGroups userData
+- [x] A-007: DrawTrail per-section re-enable + visibility gating (about, flexible)
+- [x] A-008: Section.setMeshOpacity() — reuse _cachedMeshes (lazy-init)
+- [x] A-009: Baku worldState.bakuMaterial → baku.updateMaterial() connection
+- [x] A-010: Lenis — migrated to `lenis` package (was @studio-freight/lenis)
+- [x] A-015: Per-section cursor follow strength (cursorFollowStrength)
+- [x] A-011..A-014: Resolved by design (HERMES §1, out of scope, StateBus better, CPU opacity correct)
 
-### EPIC: Re-enable WebGLTextManager (T-040)
-- [x] T-040: Проанализировать WebGLTextManager.ts (причина отключения — perf)
-- [x] T-041: Восстановить ensureWebGLTextManager с dynamic import + DOM guard
-- [x] T-042: type-check + build + git push
-  - Итог: Troika конфликтует с NoiseText (делает textContent невидимым).
-    WebGLTextManager снова отключён. jlz:webgl-ready диспатчится сразу.
+### EPIC: Optimization Sprints 1-5 (2026-06-28, PR #79)
+- [x] Sprint 1: Remove 3.2 MB dead assets; untrack .idea/.claude/test-results; delete ts5112-fix.json (LLM artifact)
+- [x] Sprint 1: Deps cleanup — remove troika-three-text; tweakpane→devDeps+dynamic import; migrate @studio-freight/lenis→lenis
+- [x] Sprint 1: Fix CI (npm ci→bun install; add type-check/test/lint); rewrite e2e tests; fix projects/*.html
+- [x] Sprint 2: visibilitychange pauses render loop; lazy KTX2Loader; particle counts gated by DeviceCapability.tier
+- [x] Sprint 3: Fix double ACES + triple sRGB; disposeMaterialDeep util; SplashCube.dispose() called; resize debounced; reduced-motion freezes decorative 3D anims
+- [x] Sprint 4: Enable TS strict:true (0 errors); ESLint 9 flat config + Prettier; migrate manualChunks→rolldown codeSplitting (vendor-three isolated, −40% preload)
+- [x] Sprint 5: a11y (skip-link :focus, dialog focus-trap, noscript, cursor scope); SEO (og/twitter/canonical/JSON-LD/sitemap); prerender home sections
+- [x] Bug fixes: title delay (fire jlz:webgl-ready at curtain mid-open); overlay flash (remove uk-scrollspy); prev/next (round goTo, use targetIdx); letter-spacing pop (strip span styles); section snap (CSS scroll-snap + ranges /6→/5 + BG lerp 6.0 + double-smoothstep); flexible wireframe icosahedron; portals rename (triggerPortalCollapse→reveal)
+
+### EPIC: Re-enable DrawTrail
+- [x] T-001..T-004: DrawTrail integrated in World.ts + update loop (64-point ring buffer)
 
 ### EPIC: Junni reference repo cloned
 - [x] Clone next.junni.co.jp → references/next.junni.co.jp/
-- [x] .gitignore для .git в references
-
-### EPIC: CursorLight (T-003) — ALREADY ACTIVE
-- [x] CursorLight в World.ts, подключен и работает.
-
-### EPIC: NoiseText (T-004) — ALREADY ACTIVE
-- [x] NoiseText в entry-app.ts + Subtitles.ts, подключен и работает.
+- [x] .gitignore for .git in references
 
 ### EPIC: Critical bug fixes (2026-06-26)
-- [x] T-060: PostProcessingManager — ключи пресетов step01..step08 → sec_intro..sec_contact
-  (applyPreset(cfg.id) теперь реально находит пресет, постобработка per-section работает)
-- [x] T-061: NarrativePhase enum — STEP01..STEP08 → INTRO..CONTACT, синхронизировано
-  с WorldConfig.id и PostProcessingManager ключами
-- [x] T-062: Baku.applyRoleAndParams — убран GPU memory leak: новый материал создавался
-  каждый кадр; теперь swap только при смене типа (instanceof check)
-- [x] T-063: Experience._runProjectDissolve — requestAnimationFrame → StateBus.animate
-  (соблюдение HERMES_RULES §4 / §19)
-- [x] T-064: WorldAtmosphere — удалены мёртвые initBG/initFog, dispose не обнуляет
-  scene.background (соблюдение HERMES_RULES §5 / §21)
-- [x] T-065: entry-app.ts — удалены setTimeout(animateNoiseTitles, 500/2000/5000) и
-  throttled scroll listener; единственный триггер — jlz:webgl-ready + jlz:section-change
-  (соблюдение HERMES_RULES §10 / §19)
-- [x] T-066: Документация — HERMES_RULES +5 правил (18-21), STATUS.md актуализирован,
-  kanban обновлён
+- [x] T-060..T-066: PostProcessingManager keys, NarrativePhase sync, Baku memory leak, WorldAtmosphere dead code, entry-app setTimeout cleanup, docs update
 
-### EPIC: Quality pass (2026-06-26 — сессия 2)
-- [x] T-067: BG.ts — добавлен setProgress(fromIndex, toIndex, t) для плавного
-  pixel-perfect lerp фона при скролле между секциями (был snap по индексу секции)
-- [x] T-068: World.ts — updateTransform вызывает bg.setProgress вместо bg.setSection
-- [x] T-069: Input.ts — scroll smoothing переведён с фиксированного lerpFactor=0.35
-  на framerate-independent exponential decay (smoothHalfLife=0.18s)
-- [x] T-070: Camera.ts — исправлен баг: shakeTime/shakePower не сбрасывались после
-  окончания shake-анимации; добавлен сброс shakeTime=0 по завершению
+### EPIC: Quality pass (2026-06-26)
+- [x] T-067..T-070: BG.setProgress continuous lerp; Input.ts framerate-independent smoothing; Camera shake reset
 
-### EPIC: Section content + perf (2026-06-26 — сессия 3)
-- [x] T-071: SectionSceneFactory — все 6 секций получили уникальную геометрию
-  по junni-паттернам: crosses, line-ring, grid, torus, dots, slashes, constellation,
-  perspective road. Только built-in materials (HERMES_RULES §1).
-- [x] T-072: Section.update — mesh cache: traverse() заменён на разовый сбор в
-  _cachedMeshes при первом вызове. Emissive pulse теперь O(n) без traverse per frame.
-- [x] T-073: CursorLight — убрана Vector3.clone() на каждый update(); заменена на
-  subVectors + addScaledVector (zero-alloc spring-damper).
+### EPIC: Section content + perf (2026-06-26)
+- [x] T-071..T-073: SectionSceneFactory unique geometry; Section.update mesh cache; CursorLight zero-alloc
 
-### EPIC: World Environment Architecture (2026-06-26 — сессия 4)
-- [x] T-074: Lights.ts — полная переписка по junni changeSection() паттерну.
-  setMood(warmth=scrollProgress) удалён. Теперь SECTION_PRESETS[cfg.id] с per-section
-  цветами key/fill/rim/hemi/volumetric. Lights lerp к новым значениям за ~0.5s.
-- [x] T-075: World.updateTransform() — при смене fromIndex вызывает
-  lightsGroup.changeSection(cfg) + atmosphere.setFog(). Junni: atmosphere matches section.
-- [x] T-076: World.init() — snap lights + fog к первой секции при инициализации.
-- [x] T-077: World.update() — traverse() по sceneGroups заменён на cached Points refs
-  (_particleCache в userData). Particle drift O(n pts) без traverse per frame.
-- [x] T-078: Experience.ts — удалён setMood(warmth, envIntensity), удалён fog из
-  context-change блока. Lights/fog теперь полностью управляется из World.
-- [x] T-079: SectionSceneFactory — добавлен hideGeometry(group), вызывается в World.init().
-  Все не-particle объекты скрыты (visible=false) до появления bespoke визуала.
+### EPIC: World Environment Architecture (2026-06-26)
+- [x] T-074..T-079: Lights.ts rewrite (SECTION_PRESETS); World.updateTransform lights+fog; particle cache; SectionSceneFactory hideGeometry
 
 ## TODO
 
-### EPIC: AUDIT fixes (docs/AUDIT.md — priority order)
-- [ ] A-003: Section.switchState() — fix animation bug (bus.channel overwrites current value)
-- [ ] A-001: World.resize() — implement propagation to sceneGroups + groundPlane
-- [ ] A-004: Wire world.resize() from Experience Sizes listener
-- [ ] A-002: Portrait FOV — add portraitFovBoost to PhaseConfig + Camera.updateSmooth()
-- [ ] A-008: Section.setMeshOpacity() — reuse _cachedMeshes (lazy-init if null)
-- [ ] A-009: Baku worldState.bakuMaterial → baku.updateMaterial() connection in World
-- [ ] A-005: Baku role caching — _currentRole field, skip applyRoleAndParams when unchanged
-- [ ] A-006: Double traverse in updateTransform — _meshCache in sceneGroups userData
-- [ ] A-007: DrawTrail per-section re-enable + visibility gating (sec_about, sec_flexible)
-- [ ] A-015: Per-section cursor follow strength (cursorFollowStrength in PhaseConfig)
+### EPIC: Bespoke 3D section content (deferred — needs human/design)
+- [ ] T-090: Section 0 (Intro) — white BG hero object (replaces placeholder particles)
+- [ ] T-091: Section 1 (About) — dark BG blob / reflective floor
+- [ ] T-092: Section 2 (Flexible) — refine wireframe + text texture interaction
+- [ ] T-093: Section 4 (Innovative) — constellation/network graph
+- [ ] T-094: Section 5 (Contact) — closing visual
 
-### EPIC: Holographic UI Panels (T-050)
-- [ ] T-050: Displays panel — interactive holographic UI
-- [ ] T-051: Comrades panel — multi-character display
-- [ ] T-052: Type-check + build
-- [ ] T-053: Git push
+### EPIC: Codebase hardening (follow-up from bug 8 analysis)
+- [ ] Consolidate 4 sources of section index (World/StateBus/Experience×2) → single SectionStore
+- [ ] Replace untyped jlz:* custom events (27 usages) → typed EventBus<T>
+- [ ] Enable noUncheckedIndexedAccess (~80 errors, per-case fixes)
+- [ ] Mass `bun run format` Prettier cleanup (65 files)
+- [ ] Decide fate of references/next.junni.co.jp/ (85 MB) — git-lfs or remove
 
-### EPIC: Bespoke 3D section content
-- [ ] T-070: Section 0 (Intro) — white BG hero object (replaces Baku placeholder)
-- [ ] T-071: Section 1 (About) — dark BG blob / reflective floor
-- [ ] T-072: Section 2 (Flexible) — light transition object
-- [ ] T-073: Section 4 (Innovative) — constellation/network graph
-- [ ] T-074: Section 5 (Contact) — closing visual
-
-### EPIC: DrawTrail re-enable
-- [ ] T-080: Profiling budget — confirm DrawTrail fits within 60 FPS target
-- [ ] T-081: Uncomment DrawTrail in World.ts + smoke-test
+### EPIC: Holographic UI Panels (deferred — aspirational)
+- [ ] Displays panel — interactive holographic UI
+- [ ] Comrades panel — multi-character display

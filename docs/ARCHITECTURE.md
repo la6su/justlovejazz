@@ -2,19 +2,20 @@
 
 ## Stack
 
-Vite 8 (rolldown) · TypeScript · three 0.184 + TSL · WebGPURenderer
-(WebGPU/WebGL2 auto-fallback) · UIkit 3 + Less (master-quantum-flares theme)
-· Lenis · bun. Single font: Inter.
+Vite 8 (rolldown) · TypeScript (`strict: true`) · three 0.184 + TSL ·
+`WebGPURenderer` (WebGPU/WebGL2 auto-fallback) · UIkit 3 + Less
+(master-quantum-flares theme) · Lenis · bun · ESLint + Prettier.
+Single font: Inter.
 
 ## Layout
 
 ```
 canvas.canvas (z-index:1, fixed, pointer-events:none) — 3D scene
-#spa-content (z-index:2, transparent) — DOM sections (100vh each)
+#spa-content (z-index:2, transparent) — DOM sections (100vh, scroll-snap)
   section#section-intro → 3D group 0
   section#section-about → 3D group 1
-  section#section-flexible → 3D group 2
-  section#section-challenge → 3D group 3 (Works slider)
+  section#section-flexible → 3D group 2 (wireframe icosahedron)
+  section#section-challenge → 3D group 3 (Works slider on cube)
   section#section-innovative → 3D group 4
   section#section-contact → 3D group 5
 .jlz-section-progress (footer, z-index:100) — timeline dots
@@ -23,70 +24,84 @@ canvas.canvas (z-index:1, fixed, pointer-events:none) — 3D scene
 ## Entry & Runtime
 
 ```
-index.html → entry-shell.ts → entry-app.ts → main-app.ts → Bootstrapper → Experience.ts
+index.html (prerendered sections) → entry-shell.ts → entry-app.ts → main-app.ts → Bootstrapper → Experience.ts
 Render loop: renderer.instance.setAnimationLoop(callback)
+  (pauses on hidden tab via visibilitychange)
 ```
 
 ## Renderer
 
-Single WebGPURenderer (alpha:false, ACES tonemap, sRGB).
-- WebGPU: direct renderer.render() (no post-processing)
-- WebGL2: ShaderMaterial RT pipeline (bloom/grain/vignette)
-- All scene materials: built-in (no ShaderMaterial, no TSL NodeMaterial)
+Single `WebGPURenderer` (alpha:false, ACES tonemap, sRGB).
+- WebGPU: direct `renderer.render()` (no post-processing)
+- WebGL2: ShaderMaterial RT pipeline — single ACES pass in composite shader,
+  rtScene is linear (no double tone-map / sRGB encode)
+- All scene materials: built-in (no ShaderMaterial in scene, no TSL NodeMaterial)
+
+## Chunking (Vite 8 / rolldown `codeSplitting`)
+
+```
+vendor-three  (preloaded — three.js needed at boot)
+vendor-ui     (uikit + lenis)
+KTX2Loader    (lazy — dynamic import, not preloaded)
+chunk-*       (app code, split by src path)
+```
 
 ## Fonts
 
-Single font: Inter (300-900). Override master-quantum-flares in main.less:
-```less
-@global-font-family: 'Inter', sans-serif;
-body { font-family: 'Inter', sans-serif !important; }
-```
+Single font: Inter (300-900). Override master-quantum-flares in main.less.
 
 ## NoiseText
 
-Junni typewriter reveal algorithm. Characters appear left-to-right,
-noise tail at frontier. Triggered by jlz:section-change event.
+Glitch reveal (staggered chars, blur+rotate → settle). Triggered by
+`jlz:webgl-ready` + `jlz:section-change`. `finalize()` strips span styles
+in place (no layout pop).
 
 ## Splash
 
-Cinematic curtain split: gradient brand + shimmer + radial glow + film grain
-+ vignette + scanlines + dramatic curtain split with overshoot.
+CSS curtain split (two panels part vertically) + seam glow line.
+`role=status` + `aria-live=polite`. `jlz:webgl-ready` fires at curtain
+mid-open (400ms).
 
 ## Scroll transitions
 
-Per-section (from WorldConfig):
-- Camera position/FOV (lerp via Camera.updateSmooth)
-- BG color (continuous lerp via BG.setProgress)
+Per-section (from `WorldConfig`, ranges `[i/5, (i+1)/5]`):
+- Camera position/FOV (lerp via `Camera.updateSmooth`)
+- BG color (double-smoothstep `bgT` — holds color until mid-transition)
 - Fog color + density (set on section change)
-- Lighting: key/fill/rim/volumetric/hemi (lerp via Lights.changeSection)
+- Lighting: key/fill/rim/volumetric/hemi (lerp via `Lights.changeSection`)
 - Post-processing presets (bloom/vignette/grain per section)
-- Camera shake on section transition (0.04 power, 0.4s)
+- Camera shake on section transition (reduced-motion gated)
 - Portrait FOV boost (up to +20° on narrow portrait)
 - Per-section cursor follow (works=0.22, others=0.15)
 - DrawTrail visible on about(1) + flexible(2) only
+
+CSS `scroll-snap-type: y mandatory` + `scroll-snap-align: start` for
+junni-style full-screen section locking.
 
 ## Modules
 
 | Module | Role |
 |--------|------|
-| Experience | Render loop, section transitions, portfolio |
+| Experience | Render loop, section transitions, portfolio, visibilitychange |
 | Renderer | WebGPURenderer, direct render on WebGPU |
-| World | Section[] + sceneGroups[], Baku, Lights, BG, Ground, DrawTrail |
-| SectionSceneFactory | 6 scenes (particles only, minimal) |
-| BG | Per-section background color (continuous lerp) |
-| WorksPortfolio | 3D card carousel (pointer guard: check group.visible) |
-| ProjectOverlay | DOM overlay (reuses #project-overlay) |
-| NoiseText | Junni typewriter reveal (jlz:section-change trigger) |
+| World | Section[] + sceneGroups[], SplashCube (baku), Lights, BG, Ground, DrawTrail |
+| SectionSceneFactory | 6 scenes (particles, flexible wireframe) |
+| BG | Per-section background color (reads from WorldConfig — single source) |
+| WorksPortfolio | Cube-face slider (spring physics, pointer guard) |
+| ProjectOverlay | DOM dialog (role=dialog, focus-trap, ESC close) |
+| NoiseText | Glitch reveal (jlz:webgl-ready + jlz:section-change) |
 | DrawTrail | Cursor trail (about/flexible only) |
 | CinematicLights | 5-light setup, changeSection + lerp |
+| disposeMaterialDeep | Disposes all material textures (prevents VRAM leak) |
+| AssetManager | Lazy KTX2Loader (dynamic import) |
 
-## Disabled (perf/compat)
+## Removed (cleanup)
 
 | Module | Why |
 |--------|-----|
-| WebGLTextManager | Makes .studio-title transparent → breaks NoiseText |
-| Baku | Hidden — user will refine visual |
+| WebGLTextManager | Troika conflicted with NoiseText (made titles transparent). Deleted with troika-three-text dep. |
+| Baku.ts | Replaced by SplashCube (cube IS the baku). |
 
 ## AUDIT — ALL RESOLVED ✅
 
-A-001 through A-015 — all fixed. See docs/AUDIT.md for details.
+A-001 through A-015 — all fixed. See `docs/AUDIT.md`.

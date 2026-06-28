@@ -34,8 +34,11 @@ WebGPURenderer does NOT auto-clear. World.bg.color is authoritative.
 ### 6. alpha: false for WebGPURenderer
 Chrome defaults to alpha:true → black screen.
 
-### 7. NEVER remove Baku
-Central 3D character (currently hidden, user will refine).
+### 7. NEVER remove the SplashCube (baku)
+The SplashCube (Apple Fifth Avenue-style glass cube) IS the baku — the central
+3D object present on all sections. It doubles as the splash reveal surface
+and the works-slider (project textures on its faces). Removing it breaks both
+the splash sequence and the works section.
 
 ### 8. NEVER make section-bg opaque
 DOM sections are transparent. 3D canvas provides background.
@@ -46,9 +49,12 @@ ONE font: Inter (300-900). Override master-quantum-flares AFTER import.
 ### 10. NoiseText trigger: jlz:section-change
 NOT IntersectionObserver. NOT bulk animateNoiseTitles. Section-change event only.
 
-### 11. NEVER disable WebGLTextManager without dispatching jlz:webgl-ready
-WebGLTextManager is currently disabled (conflicts with NoiseText). But
-jlz:webgl-ready event MUST still fire — it triggers NoiseText animation.
+### 11. jlz:webgl-ready MUST fire — do not re-add Troika/WebGLTextManager
+WebGLTextManager + troika-three-text were DELETED (they made .studio-title
+text transparent, conflicting with NoiseText which edits textContent).
+`jlz:webgl-ready` is dispatched by `main-app.ts` at curtain mid-open and
+triggers the NoiseText title animation. Do not re-introduce Troika — if
+WebGL text rendering is needed, find an approach that does not hide DOM text.
 
 ### 12. Match section IDs
 intro/about/flexible/challenge/innovative/contact. NOT "section-works".
@@ -72,14 +78,16 @@ Removed. Don't re-add.
 Never commit changes to files under `references/`.
 
 ### 19. No hallucinated architecture
-Don't create "Stage4", "WorksStack", "Jólni", or other fictional frameworks.
-Use existing patterns from junni reference, adapted to built-in materials.
+Don't invent "Stage4", "WorksStack", "Jólni", or other fictional modules.
+(Lesson: an earlier LLM agent hallucinated 569 lines of broken TS under these
+names — removed in commit 16ad4ef.) Use existing patterns from the junni
+reference, adapted to built-in materials.
 
-### 20. Always verify with type-check + build
+### 20. Always verify with lint + type-check + build
 ```bash
-bun run type-check && bun run build
+bun run lint && bun run type-check && bun run build
 ```
-Both must pass. No exceptions.
+All three must pass. No exceptions.
 
 ## Stop conditions
 

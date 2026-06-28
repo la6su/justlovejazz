@@ -32,11 +32,11 @@ git pull origin main
 4. setAnimationLoop — not rAF
 5. scene.background always set (BG.color)
 6. alpha:false for WebGPURenderer
-7. Never remove Baku
+7. Never remove the SplashCube (baku) — it is the central 3D object on all sections
 8. section-bg transparent
 9. Single font: Inter
 10. NoiseText via jlz:section-change
-11. WebGLTextManager disabled but jlz:webgl-ready must fire
+11. jlz:webgl-ready must fire (do not re-add Troika/WebGLTextManager)
 12. Section IDs: intro/about/flexible/challenge/innovative/contact
 13. Reuse #project-overlay
 14. WorksPortfolio pointer guard (check group.visible)
@@ -45,11 +45,12 @@ git pull origin main
 17. Check junni reference first
 18. references/ READ-ONLY
 19. No hallucinated architecture (no "Stage4", "WorksStack", "Jólni")
-20. Always verify: `bun run type-check && bun run build`
+20. Always verify: `bun run lint && bun run type-check && bun run build`
 
 ## Verification
 
 ```bash
-bun run type-check   # must pass
+bun run lint         # must pass (0 errors; warnings ok)
+bun run type-check   # must pass (strict mode)
 bun run build        # must pass
 ```

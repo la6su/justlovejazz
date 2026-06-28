@@ -1,8 +1,13 @@
 # AUDIT — Gap Analysis: justlovejazz vs junni reference
 
-> Created: 2026-06-26. Based on full codebase + reference review.
+> Created: 2026-06-26. Updated: 2026-06-28 (all items resolved).
+> Based on full codebase + reference review.
 > Source: `references/next.junni.co.jp/src/ts/MainScene/`
 > Priority: 🔴 High / 🟡 Medium / 🟢 Low
+>
+> **Note:** The detailed sections below describe the ORIGINAL problems + the
+> fixes applied. All A-001…A-015 are now resolved (see Implementation Order
+> at the bottom). This doc is kept as historical reference.
 
 ---
 
@@ -303,19 +308,23 @@ it in `Camera.update()`. Lerp between sections. Medium visual impact.
 
 ## Implementation Order
 
+> **All items below are RESOLVED ✅** (verified in code via `// A-00X:` comments).
+> The table is kept for historical reference. The detailed sections above
+> describe the original problems + fixes applied.
+
 | ID | Description | Impact | Effort | Status |
 |----|-------------|--------|--------|--------|
-| A-001 | World.resize() implementation | High | Low | ⏳ TODO |
-| A-002 | Portrait FOV adaptation | High | Low | ⏳ TODO |
-| A-003 | Section.switchState() bug fix | High | Low | ⏳ TODO |
-| A-004 | World.resize() wired to Experience | High | Low | ⏳ TODO |
-| A-005 | Baku role caching | Medium | Low | ⏳ TODO |
-| A-006 | Double traverse optimization | Medium | Medium | ⏳ TODO |
-| A-007 | DrawTrail per-section re-enable | Medium | Medium | ⏳ TODO |
-| A-008 | Section.setMeshOpacity cache | Medium | Low | ⏳ TODO |
-| A-009 | Baku worldState→material connection | Medium | Low | ⏳ TODO |
-| A-010 | Lenis version verification | Low | Low | ⏳ TODO |
-| A-015 | Per-section cursor follow strength | Low | Low | ⏳ TODO |
+| A-001 | World.resize() implementation | High | Low | ✅ Done |
+| A-002 | Portrait FOV adaptation | High | Low | ✅ Done |
+| A-003 | Section.switchState() bug fix | High | Low | ✅ Done |
+| A-004 | World.resize() wired to Experience | High | Low | ✅ Done |
+| A-005 | Baku role caching | Medium | Low | ✅ Done |
+| A-006 | Double traverse optimization | Medium | Medium | ✅ Done |
+| A-007 | DrawTrail per-section re-enable | Medium | Medium | ✅ Done |
+| A-008 | Section.setMeshOpacity cache | Medium | Low | ✅ Done |
+| A-009 | Baku worldState→material connection | Medium | Low | ✅ Done |
+| A-010 | Lenis version verification | Low | Low | ✅ Done (migrated to `lenis`) |
+| A-015 | Per-section cursor follow strength | Low | Low | ✅ Done |
 | A-011 | BG gradient sphere | — | — | ✅ Resolved (HERMES §1) |
 | A-012 | Intro physics wall | — | — | ✅ Out of scope |
 | A-013 | Global animator pattern | — | — | ✅ StateBus is better |
