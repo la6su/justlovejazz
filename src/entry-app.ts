@@ -3,6 +3,7 @@ import Icons from 'uikit/dist/js/uikit-icons'
 import { initRouter } from './router'
 import { bootstrap as bootstrapApp, isAppReady, type BootstrapOptions } from './main-app'
 import { NoiseText } from './Experience/NoiseText'
+import { eventBus } from './core/EventBus'
 
 async function boot() {
   const { createSplash } = await import('./splash')
@@ -52,27 +53,27 @@ export async function startApp(): Promise<void> {
   // jlz:webgl-ready dispatches AFTER splash curtains open, so the animation
   // is visible (not hidden behind splash overlay).
   let webglReady = false
-  window.addEventListener('jlz:webgl-ready', () => {
+  eventBus.on('jlz:webgl-ready', () => {
     webglReady = true
     animateNoiseTitles()
   })
 
   // Re-animate on section change (scroll between sections) — but ONLY after
   // webgl-ready has fired (prevents animation running behind splash).
-  window.addEventListener('jlz:section-change', () => {
+  eventBus.on('jlz:section-change', () => {
     if (!webglReady) return
     animateNoiseTitles()
   })
 
   // Navigation handler
-  window.addEventListener('jlj:navigate', () => {
+  eventBus.on('jlj:navigate', () => {
     if (!isAppReady()) return
     const exp = window.experience
     if (exp?.smoothScroll) {
       exp.smoothScroll.lenis.scrollTo(0, { immediate: true })
     }
   })
-  window.addEventListener('jlj:navigate', scheduleUiKitRefresh)
+  eventBus.on('jlj:navigate', scheduleUiKitRefresh)
   void boot()
 }
 

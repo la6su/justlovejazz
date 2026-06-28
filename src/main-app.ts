@@ -1,6 +1,7 @@
 // src/main-app.ts — lazy bootstrap entry
 import type * as THREE from 'three'
 import { syncReducedMotionDataset, prefersReducedMotion } from './core/motionPolicy'
+import { eventBus } from './core/EventBus'
 import type { SplashOverlay } from './splash'
 
 type ProgressFn = (pct: number) => void
@@ -70,7 +71,7 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
 
     setTimeout(() => {
       if (prefersReducedMotion()) {
-        window.dispatchEvent(new CustomEvent('jlz:webgl-ready'))
+        eventBus.emit('jlz:webgl-ready')
         splash.hide()
         setTimeout(() => splash.remove(), 300)
         return
@@ -88,7 +89,7 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
       // Dispatch jlz:webgl-ready AFTER splash is fully removed — NoiseText
       // starts animating JUSTLOVEJAZZ once the scene is completely visible.
       setTimeout(() => {
-        window.dispatchEvent(new CustomEvent('jlz:webgl-ready'))
+        eventBus.emit('jlz:webgl-ready')
       }, TITLE_START_MS)
     }, readyAt)
   } catch (e) {

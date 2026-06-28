@@ -20,6 +20,7 @@ import { Subtitles } from '../UI/Subtitles'
 import { SectionProgress } from '../UI/SectionProgress'
 import { PerfMonitor } from '../core/PerfMonitor'
 import { prefersReducedMotion } from '../core/motionPolicy'
+import { eventBus } from '../core/EventBus'
 // DissolveOverlay removed — cover transition in ProjectDetail replaces it.
 
 /**
@@ -204,16 +205,12 @@ export class Experience {
       this._prevSectionIndex = idx
       const cfgForSection = this.world.getConfig(worldState.currentPhase)
       const sectionId = cfgForSection?.domSection ?? `section-${idx}`
-      window.dispatchEvent(
-        new CustomEvent('jlz:section-change', {
-          detail: {
-            sectionId,
-            context: cfgForSection?.context,
-            configId: cfgForSection?.id,
-            index: idx,
-          },
-        }),
-      )
+      eventBus.emit('jlz:section-change', {
+        sectionId,
+        context: cfgForSection?.context,
+        configId: cfgForSection?.id,
+        index: idx,
+      })
       // Clear project textures from baku when leaving works section (idx !== 3).
       // Prevents project images showing on cube during intro/about/etc.
       if (idx !== 3) {

@@ -3,9 +3,11 @@
 // Listens for 'jlz:section-change' events from Experience to sync DOM
 // section highlighting with the 3D world state.
 
+import { eventBus, type AppEvents } from '../core/EventBus'
+
 export class ContentReveal {
   private observer!: IntersectionObserver
-  private sectionHandler: ((e: Event) => void) | null = null
+  private sectionHandler: ((payload: AppEvents['jlz:section-change']) => void) | null = null
 
   constructor() {
     this.setup()
@@ -45,26 +47,25 @@ export class ContentReveal {
    * corresponding DOM section (data-section attribute matching).
    */
   private setupSectionSync() {
-    this.sectionHandler = (e: Event) => {
-      const detail = (e as CustomEvent).detail
-      if (!detail?.sectionId) return
+    this.sectionHandler = (payload) => {
+      if (!payload?.sectionId) return
       // Remove 'active' from all DOM sections tagged with data-section.
       document.querySelectorAll<HTMLElement>('[data-section]').forEach((el) => {
         el.classList.remove('section-active')
       })
       // Highlight matching DOM section.
-      const matching = document.querySelector<HTMLElement>(`[data-section="${detail.sectionId}"]`)
+      const matching = document.querySelector<HTMLElement>(`[data-section="${payload.sectionId}"]`)
       if (matching) {
         matching.classList.add('section-active')
       }
     }
-    window.addEventListener('jlz:section-change', this.sectionHandler)
+    eventBus.on('jlz:section-change', this.sectionHandler)
   }
 
   destroy() {
     this.observer.disconnect()
     if (this.sectionHandler) {
-      window.removeEventListener('jlz:section-change', this.sectionHandler)
+      eventBus.off('jlz:section-change', this.sectionHandler)
     }
   }
 }
