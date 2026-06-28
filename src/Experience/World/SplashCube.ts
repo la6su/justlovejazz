@@ -20,7 +20,7 @@ export interface BakuMaterialParams {
 
 export class SplashCube extends THREE.Mesh {
   private faces: THREE.Mesh[] = []
-  private faceMaterials: THREE.MeshStandardMaterial[] = []
+  private faceMaterials: THREE.MeshPhysicalMaterial[] = []
   private edgeLines: THREE.LineSegments[] = []
   private time = 0
   /** Loading progress (0-1). Drives edge glow brightness. */
@@ -64,7 +64,9 @@ export class SplashCube extends THREE.Mesh {
       const dir = this.faceDirs[i]!
 
       const geo = new THREE.PlaneGeometry(size, size)
-      const mat = new THREE.MeshStandardMaterial({
+      // MeshPhysicalMaterial gives the cube its holographic, fluid-like sheen
+      // (iridescence + clearcoat) matching the junni flexible-section reference.
+      const mat = new THREE.MeshPhysicalMaterial({
         color: 0x1a1a2e,
         emissive: 0x4a5a8a,
         emissiveIntensity: 0.3,
@@ -73,6 +75,10 @@ export class SplashCube extends THREE.Mesh {
         side: THREE.DoubleSide,
         roughness: 0.1,
         metalness: 0.9,
+        iridescence: 1.0,
+        iridescenceIOR: 1.8,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.1,
       })
       this.faceMaterials.push(mat)
 
@@ -229,8 +235,10 @@ export class SplashCube extends THREE.Mesh {
       mat.metalness = metalness
       // WIRE role = wireframe (only when no texture — wireframe hides textures)
       mat.wireframe = role === BakuRole.WIRE && !mat.map
-      // Keep opacity high if texture is set (works slider), else glass-like.
-      mat.opacity = mat.map ? 0.9 : role === BakuRole.GLASS ? 0.1 : 0.3
+      // Keep opacity high if texture is set (works slider), else glossy/visible.
+      // GLASS was 0.1 (nearly invisible on light bg) — bumped to 0.5 so the
+      // iridescent cube is clearly visible as the flexible section's 3D object.
+      mat.opacity = mat.map ? 0.9 : role === BakuRole.GLASS ? 0.5 : 0.4
       mat.needsUpdate = true
     }
   }
