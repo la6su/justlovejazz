@@ -45,7 +45,7 @@ export class WorksPortfolio {
     onCardClick: (index: number) => void = () => {},
     onCardActivate: (index: number) => void = () => {},
     onCardExpanded: (index: number) => void = () => {},
-    onCardCollapsed: () => void = () => {}
+    onCardCollapsed: () => void = () => {},
   ) {
     this.group.name = 'works-portfolio'
     this.projects = projects
@@ -68,17 +68,27 @@ export class WorksPortfolio {
     this.texturesLoaded = true
     let loaded = 0
     for (let i = 0; i < this.projects.length; i++) {
-      const url = this.projects[i].textureUrl || this.projects[i].detailTextureUrl
-      if (!url) { loaded++; continue }
-      WorksPortfolio.sharedLoader.load(url, (tex) => {
-        tex.colorSpace = THREE.SRGBColorSpace
-        this.textures[i] = tex
+      const url = this.projects[i]!.textureUrl || this.projects[i]!.detailTextureUrl
+      if (!url) {
         loaded++
-        // Apply to cube once all textures are loaded.
-        if (loaded >= this.projects.length) {
-          this.applyTexturesToCube()
-        }
-      }, undefined, () => { loaded++ })
+        continue
+      }
+      WorksPortfolio.sharedLoader.load(
+        url,
+        (tex) => {
+          tex.colorSpace = THREE.SRGBColorSpace
+          this.textures[i] = tex
+          loaded++
+          // Apply to cube once all textures are loaded.
+          if (loaded >= this.projects.length) {
+            this.applyTexturesToCube()
+          }
+        },
+        undefined,
+        () => {
+          loaded++
+        },
+      )
     }
   }
 
@@ -151,8 +161,12 @@ export class WorksPortfolio {
   // Use targetIdx (the settled integer target), NOT currentIdx (a float that
   // lags behind due to spring physics). Jumping from currentIdx caused prev/next
   // to land on wrong indices when clicked mid-animation.
-  next(): void { this.goTo(this.targetIdx + 1) }
-  prev(): void { this.goTo(this.targetIdx - 1) }
+  next(): void {
+    this.goTo(this.targetIdx + 1)
+  }
+  prev(): void {
+    this.goTo(this.targetIdx - 1)
+  }
 
   expandCard(idx: number): void {
     if (this.expanding) return
@@ -203,9 +217,11 @@ export class WorksPortfolio {
     // Rotate the baku cube to show the current project face.
     // Live drag offset is added to the rotation for real-time swipe feedback.
     if (this.baku) {
-      const targetRotY = -(this.currentIdx * Math.PI / 2) - this.dragOff
+      const targetRotY = -((this.currentIdx * Math.PI) / 2) - this.dragOff
       this.baku.rotation.y = THREE.MathUtils.lerp(
-        this.baku.rotation.y, targetRotY, Math.min(1, dt * 8)
+        this.baku.rotation.y,
+        targetRotY,
+        Math.min(1, dt * 8),
       )
     }
   }

@@ -19,16 +19,16 @@ export class SmoothScroll {
       infinite: false,
     })
 
-        this.lenis.on('scroll', (event: { scroll: number, limit?: number }) => {
-            input.setScroll(event.scroll, event.limit)
-        })
-    }
+    this.lenis.on('scroll', (event: { scroll: number; limit?: number }) => {
+      input.setScroll(event.scroll, event.limit)
+    })
+  }
 
-    update(time: number) {
-        this.lenis.raf(time)
-    }
+  update(time: number) {
+    this.lenis.raf(time)
+  }
 
-    destroy() {
-        this.lenis.destroy()
-    }
+  destroy() {
+    this.lenis.destroy()
+  }
 }

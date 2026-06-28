@@ -31,93 +31,93 @@ interface SectionLightPreset {
 // Design intent: key light echoes section accent, fill/hemi give depth.
 const SECTION_PRESETS: Record<string, SectionLightPreset> = {
   sec_intro: {
-    keyColor:            0xffffff,  // clean white — bright studio feel
-    keyIntensity:        2.0,
-    keyPos:              [4, 6, 4],
-    fillColor:           0xd0d8e8,
-    fillIntensity:       0.6,
-    rimColor:            0xb0c0d8,
-    rimIntensity:        0.8,
-    hemiSky:             0xffffff,
-    hemiGround:          0xe8e8e8,
-    hemiIntensity:       0.5,
-    volumetricColor:     0xffffff,
-    volumetricIntensity: 0.0,       // off on white bg
+    keyColor: 0xffffff, // clean white — bright studio feel
+    keyIntensity: 2.0,
+    keyPos: [4, 6, 4],
+    fillColor: 0xd0d8e8,
+    fillIntensity: 0.6,
+    rimColor: 0xb0c0d8,
+    rimIntensity: 0.8,
+    hemiSky: 0xffffff,
+    hemiGround: 0xe8e8e8,
+    hemiIntensity: 0.5,
+    volumetricColor: 0xffffff,
+    volumetricIntensity: 0.0, // off on white bg
   },
   sec_about: {
-    keyColor:            0x8899cc,  // cool blue-grey — dark section
-    keyIntensity:        1.6,
-    keyPos:              [-2, 4, 2],
-    fillColor:           0x334466,
-    fillIntensity:       0.4,
-    rimColor:            0xaa88cc,  // purple rim — adds depth on dark bg
-    rimIntensity:        1.4,
-    hemiSky:             0x080812,
-    hemiGround:          0x000000,
-    hemiIntensity:       0.3,
-    volumetricColor:     0x6677bb,
+    keyColor: 0x8899cc, // cool blue-grey — dark section
+    keyIntensity: 1.6,
+    keyPos: [-2, 4, 2],
+    fillColor: 0x334466,
+    fillIntensity: 0.4,
+    rimColor: 0xaa88cc, // purple rim — adds depth on dark bg
+    rimIntensity: 1.4,
+    hemiSky: 0x080812,
+    hemiGround: 0x000000,
+    hemiIntensity: 0.3,
+    volumetricColor: 0x6677bb,
     volumetricIntensity: 0.8,
   },
   sec_flexible: {
-    keyColor:            0xe8e8e8,  // near-white — soft light section
-    keyIntensity:        1.8,
-    keyPos:              [3, 5, 3],
-    fillColor:           0xc0c8d8,
-    fillIntensity:       0.5,
-    rimColor:            0xa8b8c8,
-    rimIntensity:        0.7,
-    hemiSky:             0xeeeeee,
-    hemiGround:          0xdddddd,
-    hemiIntensity:       0.4,
-    volumetricColor:     0xffffff,
+    keyColor: 0xe8e8e8, // near-white — soft light section
+    keyIntensity: 1.8,
+    keyPos: [3, 5, 3],
+    fillColor: 0xc0c8d8,
+    fillIntensity: 0.5,
+    rimColor: 0xa8b8c8,
+    rimIntensity: 0.7,
+    hemiSky: 0xeeeeee,
+    hemiGround: 0xdddddd,
+    hemiIntensity: 0.4,
+    volumetricColor: 0xffffff,
     volumetricIntensity: 0.0,
   },
   sec_challenge: {
-    keyColor:            0x4466aa,  // blue gallery light — stage feel
-    keyIntensity:        1.8,
-    keyPos:              [0, 5, 5],
-    fillColor:           0x223355,
-    fillIntensity:       0.3,
-    rimColor:            0x5577cc,
-    rimIntensity:        1.6,       // strong rim for card edges
-    hemiSky:             0x060810,
-    hemiGround:          0x000000,
-    hemiIntensity:       0.2,
-    volumetricColor:     0x3355aa,
+    keyColor: 0x4466aa, // blue gallery light — stage feel
+    keyIntensity: 1.8,
+    keyPos: [0, 5, 5],
+    fillColor: 0x223355,
+    fillIntensity: 0.3,
+    rimColor: 0x5577cc,
+    rimIntensity: 1.6, // strong rim for card edges
+    hemiSky: 0x060810,
+    hemiGround: 0x000000,
+    hemiIntensity: 0.2,
+    volumetricColor: 0x3355aa,
     volumetricIntensity: 1.0,
   },
   sec_innovative: {
-    keyColor:            0x6688bb,  // constellation blue
-    keyIntensity:        1.4,
-    keyPos:              [2, 4, -2],
-    fillColor:           0x334455,
-    fillIntensity:       0.3,
-    rimColor:            0x88aadd,
-    rimIntensity:        1.2,
-    hemiSky:             0x050810,
-    hemiGround:          0x000000,
-    hemiIntensity:       0.25,
-    volumetricColor:     0x445577,
+    keyColor: 0x6688bb, // constellation blue
+    keyIntensity: 1.4,
+    keyPos: [2, 4, -2],
+    fillColor: 0x334455,
+    fillIntensity: 0.3,
+    rimColor: 0x88aadd,
+    rimIntensity: 1.2,
+    hemiSky: 0x050810,
+    hemiGround: 0x000000,
+    hemiIntensity: 0.25,
+    volumetricColor: 0x445577,
     volumetricIntensity: 0.6,
   },
   sec_contact: {
-    keyColor:            0x556688,  // muted blue — closing feel
-    keyIntensity:        1.2,
-    keyPos:              [-3, 4, 2],
-    fillColor:           0x223344,
-    fillIntensity:       0.3,
-    rimColor:            0x667799,
-    rimIntensity:        1.0,
-    hemiSky:             0x050507,
-    hemiGround:          0x000000,
-    hemiIntensity:       0.2,
-    volumetricColor:     0x334455,
+    keyColor: 0x556688, // muted blue — closing feel
+    keyIntensity: 1.2,
+    keyPos: [-3, 4, 2],
+    fillColor: 0x223344,
+    fillIntensity: 0.3,
+    rimColor: 0x667799,
+    rimIntensity: 1.0,
+    hemiSky: 0x050507,
+    hemiGround: 0x000000,
+    hemiIntensity: 0.2,
+    volumetricColor: 0x334455,
     volumetricIntensity: 0.4,
   },
 }
 
 // Fallback to sec_about for unknown sections
-const DEFAULT_PRESET = SECTION_PRESETS['sec_about']
+const DEFAULT_PRESET = SECTION_PRESETS['sec_about']!
 
 export class CinematicLights {
   private keyLight: THREE.DirectionalLight
@@ -128,15 +128,15 @@ export class CinematicLights {
   private readonly group: THREE.Group
 
   // Lerp targets — set by changeSection(), consumed by update()
-  private _targetKeyColor    = new THREE.Color()
-  private _targetFillColor   = new THREE.Color()
-  private _targetRimColor    = new THREE.Color()
-  private _targetKeyPos      = new THREE.Vector3()
-  private _targetKeyIntensity    = 1.8
-  private _targetFillIntensity   = 0.5
-  private _targetRimIntensity    = 1.2
+  private _targetKeyColor = new THREE.Color()
+  private _targetFillColor = new THREE.Color()
+  private _targetRimColor = new THREE.Color()
+  private _targetKeyPos = new THREE.Vector3()
+  private _targetKeyIntensity = 1.8
+  private _targetFillIntensity = 0.5
+  private _targetRimIntensity = 1.2
   private _targetVolumetricIntensity = 0.6
-  private _targetHemiIntensity   = 0.3
+  private _targetHemiIntensity = 0.3
 
   // GC-free scratch for lerping colors
   private _scratchColor = new THREE.Color()
@@ -176,7 +176,7 @@ export class CinematicLights {
     scene.add(this.group)
 
     // Initialise targets from intro preset
-    this._applyPresetToTargets(SECTION_PRESETS['sec_intro'])
+    this._applyPresetToTargets(SECTION_PRESETS['sec_intro']!)
     // Snap immediately (no lerp on first frame)
     this._snapToTargets()
   }
@@ -204,11 +204,12 @@ export class CinematicLights {
     this.rimLight.color.lerp(this._targetRimColor, t)
 
     // Intensities
-    this.keyLight.intensity    += (this._targetKeyIntensity    - this.keyLight.intensity)    * t
-    this.fillLight.intensity   += (this._targetFillIntensity   - this.fillLight.intensity)   * t
-    this.rimLight.intensity    += (this._targetRimIntensity    - this.rimLight.intensity)    * t
-    this.volumetricLight.intensity += (this._targetVolumetricIntensity - this.volumetricLight.intensity) * t
-    this.hemiLight.intensity   += (this._targetHemiIntensity   - this.hemiLight.intensity)   * t
+    this.keyLight.intensity += (this._targetKeyIntensity - this.keyLight.intensity) * t
+    this.fillLight.intensity += (this._targetFillIntensity - this.fillLight.intensity) * t
+    this.rimLight.intensity += (this._targetRimIntensity - this.rimLight.intensity) * t
+    this.volumetricLight.intensity +=
+      (this._targetVolumetricIntensity - this.volumetricLight.intensity) * t
+    this.hemiLight.intensity += (this._targetHemiIntensity - this.hemiLight.intensity) * t
 
     // Key light position (lerp toward target — no alloc, uses lerp in-place)
     this.keyLight.position.lerp(this._targetKeyPos, t)
@@ -236,11 +237,11 @@ export class CinematicLights {
     this._targetFillColor.setHex(p.fillColor)
     this._targetRimColor.setHex(p.rimColor)
     this._targetKeyPos.set(...p.keyPos)
-    this._targetKeyIntensity        = p.keyIntensity
-    this._targetFillIntensity       = p.fillIntensity
-    this._targetRimIntensity        = p.rimIntensity
+    this._targetKeyIntensity = p.keyIntensity
+    this._targetFillIntensity = p.fillIntensity
+    this._targetRimIntensity = p.rimIntensity
     this._targetVolumetricIntensity = p.volumetricIntensity
-    this._targetHemiIntensity       = p.hemiIntensity
+    this._targetHemiIntensity = p.hemiIntensity
     // Hemisphere colors: update immediately (no lerp on hemi colors — minor visual)
     this.hemiLight.color.setHex(p.hemiSky)
     this.hemiLight.groundColor.setHex(p.hemiGround)
@@ -254,11 +255,11 @@ export class CinematicLights {
     this.fillLight.color.copy(this._targetFillColor)
     this.rimLight.color.copy(this._targetRimColor)
     this.keyLight.position.copy(this._targetKeyPos)
-    this.keyLight.intensity        = this._targetKeyIntensity
-    this.fillLight.intensity       = this._targetFillIntensity
-    this.rimLight.intensity        = this._targetRimIntensity
+    this.keyLight.intensity = this._targetKeyIntensity
+    this.fillLight.intensity = this._targetFillIntensity
+    this.rimLight.intensity = this._targetRimIntensity
     this.volumetricLight.intensity = this._targetVolumetricIntensity
-    this.hemiLight.intensity       = this._targetHemiIntensity
+    this.hemiLight.intensity = this._targetHemiIntensity
     // suppress unused var warning
     void this._scratchColor
   }

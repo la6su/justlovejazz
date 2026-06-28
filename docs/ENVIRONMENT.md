@@ -14,6 +14,7 @@ Chrome on Wayland+NVIDIA often cannot activate native Vulkan WebGPU. It
 falls back to **ANGLE→OpenGL ES 3.0** WebGPU, which is 5-10× slower.
 
 From `chrome://gpu`:
+
 ```
 WebGPU: Hardware accelerated (via ANGLE→OpenGL, NOT native Vulkan)
 Vulkan: Disabled
@@ -31,6 +32,7 @@ origins).
 ### Workarounds
 
 **Option 1 — Access via LAN IP (recommended for dev):**
+
 ```bash
 # On the dev machine:
 bun run dev -- --host 0.0.0.0
@@ -42,6 +44,7 @@ Firefox WebGPU works at full speed on localhost. Enable via `about:config`:
 `dom.webgpu.enabled = true` (default on recent Firefox).
 
 **Option 3 — Force Vulkan in Chrome flags:**
+
 - `chrome://flags/#enable-features=Vulkan` → Enabled
 - `chrome://flags/#use-vulkan` → Enabled (if present)
 - Restart Chrome
@@ -54,6 +57,7 @@ Log into an X11 session. Chrome's ANGLE handles NVIDIA better on X11.
 
 This is an environment limitation. The project code is correct — it runs
 at 60 FPS on:
+
 - Firefox (WebGPU or WebGL2)
 - Chrome with native Vulkan WebGPU
 - Chrome on X11

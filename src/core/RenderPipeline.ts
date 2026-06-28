@@ -151,7 +151,7 @@ const GAUSSIAN_WEIGHTS: number[] = (() => {
   let sum = 0.0
   for (let i = 0; i < n; i++) {
     const d = Math.abs(i - 2) // distance from center (2)
-    weights[i] = Math.exp(-0.5 * (d * d) / (sigma * sigma))
+    weights[i] = Math.exp((-0.5 * (d * d)) / (sigma * sigma))
     sum += weights[i]
   }
   for (let i = 0; i < n; i++) {
@@ -164,33 +164,33 @@ const GAUSSIAN_WEIGHTS: number[] = (() => {
 
 /**
  * RenderPipeline — multi-pass post-processing pipeline with Junni-style pattern.
- * 
+ *
  * Architecture:
  * 1. Scene → rtScene (full res)
  * 2. rtScene → bloomA (bright-extract)
  * 3. bloomA ↔ bloomB (gaussian blur, ping-pong, N times)
  * 4. rtScene + bloomB → screen (composite: scene + bloom + grain + vignette)
- * 
+ *
  * Graceful degradation: WebGPU → WebGPU TSL (future). WebGL → full implementation.
- * 
+ *
  * Memory management: explicit dispose() with ref counting. RTs are HalfFloatType for
  * HDR bloom accumulation.
  */
 export class RenderPipeline {
   private _config!: Required<RenderPipelineConfig>
   private _params!: PostParams & { chromatic: number; bloomRadius: number; bloomThreshold: number }
-  
+
   // RTs
   private _rtScene?: THREE.WebGLRenderTarget | null
   private _rtBloomA?: THREE.WebGLRenderTarget | null
   private _rtBloomB?: THREE.WebGLRenderTarget | null
   private _rtBright?: THREE.WebGLRenderTarget | null
-  
+
   // Shader passes (WebGL)
   private _passBright?: THREE.ShaderMaterial | null
   private _passBlur?: THREE.ShaderMaterial | null
   private _passComposite?: THREE.ShaderMaterial | null
-  
+
   // Full-screen quad (WebGL)
   private _quad?: THREE.Mesh | null
   // Dummy camera for fullscreen quad rendering (Firefox crashes on null camera)
@@ -200,21 +200,28 @@ export class RenderPipeline {
   private _isWebGPU = false
 
   private constructor() {
-    this._params = { bloom: 1.0, vignette: 1.0, grain: 1.0, chromatic: 0.0, bloomRadius: 0.6, bloomThreshold: 0.5 }
+    this._params = {
+      bloom: 1.0,
+      vignette: 1.0,
+      grain: 1.0,
+      chromatic: 0.0,
+      bloomRadius: 0.6,
+      bloomThreshold: 0.5,
+    }
   }
-  
+
   /** Factory: create pipeline for renderer */
   public static create(
     renderer: THREE.WebGLRenderer | WebGPURenderer,
     _width: number,
     _height: number,
-    config?: RenderPipelineConfig
+    config?: RenderPipelineConfig,
   ): RenderPipeline {
     const pipeline = new RenderPipeline()
-    
+
     pipeline._renderer = renderer
     pipeline._isWebGPU = renderer instanceof WebGPURenderer
-    
+
     pipeline._config = {
       bloomThreshold: config?.bloomThreshold ?? 0.5,
       bloomPasses: config?.bloomPasses ?? 4,
@@ -224,7 +231,7 @@ export class RenderPipeline {
       vignetteEnabled: config?.vignetteEnabled ?? true,
       grainEnabled: config?.grainEnabled ?? true,
     }
-    
+
     if (!pipeline._isWebGPU) {
       pipeline._setupWebGL()
     }
@@ -233,9 +240,9 @@ export class RenderPipeline {
 
     return pipeline
   }
-  
+
   // ─── Public API ────────────────────────────────────────────────
-  
+
   /** Update post-processing parameters (cross-fade from PostProcessingManager) */
   public updateParams(params: PostParams): void {
     this._params.bloom = params.bloom
@@ -250,13 +257,13 @@ export class RenderPipeline {
 
     // Update composite pass uniforms (WebGL)
     if (this._passComposite) {
-      this._passComposite.uniforms.uBloomIntensity.value = params.bloom
-      this._passComposite.uniforms.uVignette.value = params.vignette
-      this._passComposite.uniforms.uGrain.value = params.grain
-      this._passComposite.uniforms.uChromatic.value = this._params.chromatic
+      this._passComposite.uniforms.uBloomIntensity!.value = params.bloom
+      this._passComposite.uniforms.uVignette!.value = params.vignette
+      this._passComposite.uniforms.uGrain!.value = params.grain
+      this._passComposite.uniforms.uChromatic!.value = this._params.chromatic
     }
   }
-  
+
   /** Render: scene → post passes → screen */
   public render(scene: THREE.Scene, camera: THREE.Camera): void {
     // PERF: On WebGPU (especially Chrome's WebGPU-over-ANGLE-OpenGL backend),
@@ -278,7 +285,7 @@ export class RenderPipeline {
 
     this._renderWebGL(scene, camera)
   }
-  
+
   private _resizeTimer: ReturnType<typeof setTimeout> | null = null
 
   /** Resize all RTs to new resolution (debounced — recreating 4 HalfFloat RTs
@@ -295,23 +302,26 @@ export class RenderPipeline {
       this._setupRTSize()
     }, 150)
   }
-  
+
   /** Destroy all GPU resources. Call once during teardown. */
   public dispose(): void {
-    if (this._resizeTimer) { clearTimeout(this._resizeTimer); this._resizeTimer = null }
+    if (this._resizeTimer) {
+      clearTimeout(this._resizeTimer)
+      this._resizeTimer = null
+    }
     this._rtScene?.dispose()
     this._rtBloomA?.dispose()
     this._rtBloomB?.dispose()
     this._rtBright?.dispose()
-    
+
     this._passBright?.dispose()
     this._passBlur?.dispose()
     this._passComposite?.dispose()
-    
+
     if (this._quad) {
       this._quad.geometry.dispose()
     }
-    
+
     // Clear refs to free GC
     this._rtScene = null
     this._rtBloomA = null
@@ -326,38 +336,38 @@ export class RenderPipeline {
     // RenderPipeline does not expose an explicit dispose in r184 — GPU
     // resources are reclaimed when the renderer is disposed.
   }
-  
+
   // ─── Property accessors ──────────────────────────────────────
-  
+
   get bloomThreshold(): number {
     return this._config.bloomThreshold
   }
-  
+
   set bloomThreshold(v: number) {
     this._config.bloomThreshold = v
   }
-  
+
   get bloomPasses(): number {
     return this._config.bloomPasses
   }
-  
+
   get bloomResRatio(): number {
     return this._config.bloomResRatio
   }
-  
+
   // ─── Private: State ────────────────────────────────────────
-  
+
   private _width = 0
   private _height = 0
   private _renderer!: THREE.WebGLRenderer | WebGPURenderer
-  
+
   // ─── Private: Setup ────────────────────────────────────────
-  
+
   private _setupWebGL(): void {
     this._width = this._width || 1920
     this._height = this._height || 1080
     this._setupRTSize()
-    
+
     // Bright-extract pass
     this._passBright = new THREE.ShaderMaterial({
       uniforms: {
@@ -370,17 +380,19 @@ export class RenderPipeline {
       depthTest: false,
       depthWrite: false,
     })
-    
+
     // Gaussian blur (separable, 5-tap)
     const bRatio = this._config.bloomResRatio
     this._passBlur = new THREE.ShaderMaterial({
       uniforms: {
         uInput: { value: null },
         uBlurRange: { value: this._config.blurRange },
-        uResolution: { value: new THREE.Vector2(
-          Math.round(this._width * bRatio),
-          Math.round(this._height * bRatio)
-        )},
+        uResolution: {
+          value: new THREE.Vector2(
+            Math.round(this._width * bRatio),
+            Math.round(this._height * bRatio),
+          ),
+        },
         uHorizontal: { value: true },
         uWeights: { value: GAUSSIAN_WEIGHTS },
       },
@@ -390,7 +402,7 @@ export class RenderPipeline {
       depthTest: false,
       depthWrite: false,
     })
-    
+
     // Composite pass
     this._passComposite = new THREE.ShaderMaterial({
       uniforms: {
@@ -408,23 +420,23 @@ export class RenderPipeline {
       depthTest: false,
       depthWrite: false,
     })
-    
+
     // Full-screen quad
     this._quad = new THREE.Mesh(QUAD_GEOMETRY)
   }
-  
+
   private _setupRTSize(): void {
     const w = this._width
     const h = this._height
     const bw = Math.round(w * this._config.bloomResRatio)
     const bh = Math.round(h * this._config.bloomResRatio)
-    
+
     // Dispose old targets first
     this._rtScene?.dispose()
     this._rtBloomA?.dispose()
     this._rtBloomB?.dispose()
     this._rtBright?.dispose()
-    
+
     // Scene RT (full res, LINEAR HDR — composite pass applies ACES + sRGB encode once).
     // Previously colorSpace: SRGB caused the scene to be sRGB-encoded into the RT,
     // then the composite shader applied ACES on already-encoded values, then the
@@ -434,35 +446,35 @@ export class RenderPipeline {
       magFilter: THREE.LinearFilter,
       type: THREE.HalfFloatType,
     })
-    
+
     // Bloom RTs (half res, HalfFloat for HDR accumulation)
     this._rtBloomA = new THREE.WebGLRenderTarget(bw, bh, {
       minFilter: THREE.LinearFilter,
       magFilter: THREE.LinearFilter,
       type: THREE.HalfFloatType,
     })
-    
+
     this._rtBloomB = new THREE.WebGLRenderTarget(bw, bh, {
       minFilter: THREE.LinearFilter,
       magFilter: THREE.LinearFilter,
       type: THREE.HalfFloatType,
     })
-    
+
     // Bright-extract RT (same size as bloom)
     this._rtBright = new THREE.WebGLRenderTarget(bw, bh, {
       minFilter: THREE.LinearFilter,
       magFilter: THREE.LinearFilter,
       type: THREE.HalfFloatType,
     })
-    
+
     // Update blur resolution uniform
     if (this._passBlur) {
-      this._passBlur.uniforms.uResolution.value.set(bw, bh)
+      this._passBlur.uniforms.uResolution!.value.set(bw, bh)
     }
   }
-  
+
   // ─── Rendering: WebGL ────────────────────────────────────────
-  
+
   private _renderWebGL(scene: THREE.Scene, camera: THREE.Camera): void {
     const renderer = this._renderer as THREE.WebGLRenderer
     const autoClearBackup = renderer.autoClear
@@ -473,60 +485,60 @@ export class RenderPipeline {
     // composite→screen pass → double tone mapping (washed-out highlights).
     const toneMappingBackup = renderer.toneMapping
     renderer.toneMapping = THREE.NoToneMapping
-    
+
     const rtScene = this._rtScene!
     const rtBloomA = this._rtBloomA!
     const rtBright = this._rtBright!
-    
+
     const passBright = this._passBright!
     const passBlur = this._passBlur!
     const passComposite = this._passComposite!
-    
+
     // 1. Render scene to rtScene
     renderer.setRenderTarget(rtScene)
     renderer.render(scene, camera)
-    
+
     // 2. Bright-extract: rtScene → rtBright
     this._renderQuad(passBright, { uScene: rtScene.texture }, rtBright, renderer)
-    
+
     // 3. Gaussian blur (ping-pong)
     let inputRT = rtBright
     let outputRT = rtBloomA
-    
+
     for (let i = 0; i < this._config.bloomPasses; i++) {
       // Horizontal
-      passBlur.uniforms.uInput.value = inputRT.texture
-      passBlur.uniforms.uHorizontal.value = true
+      passBlur.uniforms.uInput!.value = inputRT.texture
+      passBlur.uniforms.uHorizontal!.value = true
       this._renderQuad(passBlur, {}, outputRT, renderer)
-      
+
       // Vertical — swap RO/point
-      passBlur.uniforms.uInput.value = outputRT.texture
-      passBlur.uniforms.uHorizontal.value = false
+      passBlur.uniforms.uInput!.value = outputRT.texture
+      passBlur.uniforms.uHorizontal!.value = false
       this._renderQuad(passBlur, {}, inputRT, renderer)
-      
+
       // Swap for next iteration
       ;[inputRT, outputRT] = [outputRT, inputRT]
     }
-    
+
     // Final bloom result is in rtBloomA
     const bloomTex = rtBloomA.texture
-    
+
     // 4. Composite: scene + bloom → screen
     renderer.setRenderTarget(null)
-    passComposite.uniforms.uScene.value = rtScene.texture
-    passComposite.uniforms.uBloom.value = bloomTex
-    passComposite.uniforms.uBloomIntensity.value = this._params.bloom
-    passComposite.uniforms.uVignette.value = this._params.vignette
-    passComposite.uniforms.uGrain.value = this._params.grain
-    passComposite.uniforms.uChromatic.value = this._params.chromatic ?? 0
-    passComposite.uniforms.uTime.value = performance.now() * 0.001
-    
+    passComposite.uniforms.uScene!.value = rtScene.texture
+    passComposite.uniforms.uBloom!.value = bloomTex
+    passComposite.uniforms.uBloomIntensity!.value = this._params.bloom
+    passComposite.uniforms.uVignette!.value = this._params.vignette
+    passComposite.uniforms.uGrain!.value = this._params.grain
+    passComposite.uniforms.uChromatic!.value = this._params.chromatic ?? 0
+    passComposite.uniforms.uTime!.value = performance.now() * 0.001
+
     this._renderQuad(passComposite, {}, null, renderer)
-    
+
     renderer.autoClear = autoClearBackup
     renderer.toneMapping = toneMappingBackup
   }
-  
+
   // ─── Rendering: WebGPU (TSL post-processing) ─────────────────
 
   /**

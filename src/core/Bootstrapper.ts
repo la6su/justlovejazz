@@ -7,23 +7,23 @@ import { StateBus } from './StateBus'
 type OnReadyCallback = (renderer: RenderSurface, scene: THREE.Scene) => void
 
 export class Bootstrapper {
-    static onIntroComplete: (() => void) | null = null
+  static onIntroComplete: (() => void) | null = null
 
-    static async init(ui: UIManager, onReadyCb?: OnReadyCallback): Promise<Experience> {
-        const { Experience } = await import('../Experience/Experience')
+  static async init(ui: UIManager, onReadyCb?: OnReadyCallback): Promise<Experience> {
+    const { Experience } = await import('../Experience/Experience')
 
-        const experience = new Experience(ui)
-        experience.setupEventListeners()
+    const experience = new Experience(ui)
+    experience.setupEventListeners()
 
-        await experience.init()
+    await experience.init()
 
-        onReadyCb?.(experience.renderer.instance as RenderSurface, experience.scene)
+    onReadyCb?.(experience.renderer.instance as RenderSurface, experience.scene)
 
-        const bus = StateBus.getInstance()
-        bus.on('intro:complete', () => {
-            Bootstrapper.onIntroComplete?.()
-        })
+    const bus = StateBus.getInstance()
+    bus.on('intro:complete', () => {
+      Bootstrapper.onIntroComplete?.()
+    })
 
-        return experience
-    }
+    return experience
+  }
 }

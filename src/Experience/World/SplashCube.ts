@@ -31,9 +31,12 @@ export class SplashCube extends THREE.Mesh {
 
   // Face directions: +X, -X, +Y, -Y, +Z, -Z
   private readonly faceDirs = [
-    new THREE.Vector3(1, 0, 0), new THREE.Vector3(-1, 0, 0),
-    new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, -1, 0),
-    new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 0, -1),
+    new THREE.Vector3(1, 0, 0),
+    new THREE.Vector3(-1, 0, 0),
+    new THREE.Vector3(0, 1, 0),
+    new THREE.Vector3(0, -1, 0),
+    new THREE.Vector3(0, 0, 1),
+    new THREE.Vector3(0, 0, -1),
   ]
 
   private targetParams: BakuMaterialParams = {
@@ -58,7 +61,7 @@ export class SplashCube extends THREE.Mesh {
     const half = size / 2
 
     for (let i = 0; i < 6; i++) {
-      const dir = this.faceDirs[i]
+      const dir = this.faceDirs[i]!
 
       const geo = new THREE.PlaneGeometry(size, size)
       const mat = new THREE.MeshStandardMaterial({
@@ -114,10 +117,10 @@ export class SplashCube extends THREE.Mesh {
     for (let i = 0; i < Math.min(4, textures.length); i++) {
       const tex = textures[i]
       if (tex) {
-        this.faceMaterials[i].map = tex
-        this.faceMaterials[i].opacity = 0.9
-        this.faceMaterials[i].emissiveIntensity = 0.1
-        this.faceMaterials[i].needsUpdate = true
+        this.faceMaterials[i]!.map = tex
+        this.faceMaterials[i]!.opacity = 0.9
+        this.faceMaterials[i]!.emissiveIntensity = 0.1
+        this.faceMaterials[i]!.needsUpdate = true
       }
     }
   }
@@ -125,15 +128,15 @@ export class SplashCube extends THREE.Mesh {
   /** Clear project textures (back to glass mode). */
   clearProjectTextures(): void {
     for (let i = 0; i < 4; i++) {
-      this.faceMaterials[i].map = null
-      this.faceMaterials[i].opacity = 0.15
-      this.faceMaterials[i].needsUpdate = true
+      this.faceMaterials[i]!.map = null
+      this.faceMaterials[i]!.opacity = 0.15
+      this.faceMaterials[i]!.needsUpdate = true
     }
   }
 
   /** Target Y rotation for showing project face (0=front, 1=right, 2=back, 3=left). */
   getProjectRotationY(idx: number): number {
-    return -(idx * Math.PI / 2) // -90° per project
+    return -((idx * Math.PI) / 2) // -90° per project
   }
 
   /** Trigger the opener — faces pulse outward + back (cube "breathes" open). */
@@ -179,7 +182,7 @@ export class SplashCube extends THREE.Mesh {
     const pulse = this.openerProgress * 0.8 // how far faces move out
 
     for (let i = 0; i < this.faces.length; i++) {
-      const face = this.faces[i]
+      const face = this.faces[i]!
       const dir = face.userData.dir as THREE.Vector3
       const basePos = face.userData.basePos as THREE.Vector3
 
@@ -190,12 +193,13 @@ export class SplashCube extends THREE.Mesh {
       face.rotation.z = this.openerProgress * 0.3 * (i % 2 === 0 ? 1 : -1)
 
       // Edge lines follow faces
-      this.edgeLines[i].position.copy(face.position)
-      this.edgeLines[i].rotation.copy(face.rotation)
-      this.edgeLines[i].rotation.z = face.rotation.z
+      this.edgeLines[i]!.position.copy(face.position)
+      this.edgeLines[i]!.rotation.copy(face.rotation)
+      this.edgeLines[i]!.rotation.z = face.rotation.z
       // Edge glow follows progress (brighter as loading completes)
       const baseEdgeOpacity = 0.4 + this._progress * 0.6
-      ;(this.edgeLines[i].material as THREE.LineBasicMaterial).opacity = baseEdgeOpacity * (1 - this.openerProgress * 0.3)
+      ;(this.edgeLines[i]!.material as THREE.LineBasicMaterial).opacity =
+        baseEdgeOpacity * (1 - this.openerProgress * 0.3)
     }
 
     // Apply role/material when role changes (baku behavior)
@@ -226,7 +230,7 @@ export class SplashCube extends THREE.Mesh {
       // WIRE role = wireframe (only when no texture — wireframe hides textures)
       mat.wireframe = role === BakuRole.WIRE && !mat.map
       // Keep opacity high if texture is set (works slider), else glass-like.
-      mat.opacity = mat.map ? 0.9 : (role === BakuRole.GLASS ? 0.1 : 0.3)
+      mat.opacity = mat.map ? 0.9 : role === BakuRole.GLASS ? 0.1 : 0.3
       mat.needsUpdate = true
     }
   }

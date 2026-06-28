@@ -10,30 +10,31 @@ Single font: Inter (300-900 weights).
 
 ## Current state
 
-| Item | Status |
-|------|--------|
-| 3D scene renders (WebGPU + WebGL2 fallback) | ✅ |
-| 6 sections with scroll-snap navigation | ✅ |
-| NoiseText title animation (glitch reveal) | ✅ |
-| Works 3D slider on cube faces + overlay | ✅ |
-| Splash screen (CSS curtain split + seam glow) | ✅ |
-| SplashCube (Apple Fifth Avenue cube = baku) | ✅ |
-| DrawTrail (about/flexible sections) | ✅ |
-| Per-section lighting + fog (junni changeSection) | ✅ |
-| Camera shake on section transition (reduced-motion gated) | ✅ |
-| Portrait FOV adaptation | ✅ |
-| Per-section cursor follow strength | ✅ |
-| Single Inter font throughout | ✅ |
-| TypeScript `strict: true` | ✅ |
-| ESLint + Prettier configured | ✅ |
-| Prerendered home sections (SEO) | ✅ |
-| a11y (skip-link, dialog focus-trap, noscript) | ✅ |
-| SEO (og/twitter/JSON-LD/sitemap) | ✅ |
-| Flexible section wireframe object | ✅ |
+| Item                                                      | Status |
+| --------------------------------------------------------- | ------ |
+| 3D scene renders (WebGPU + WebGL2 fallback)               | ✅     |
+| 6 sections with scroll-snap navigation                    | ✅     |
+| NoiseText title animation (glitch reveal)                 | ✅     |
+| Works 3D slider on cube faces + overlay                   | ✅     |
+| Splash screen (CSS curtain split + seam glow)             | ✅     |
+| SplashCube (Apple Fifth Avenue cube = baku)               | ✅     |
+| DrawTrail (about/flexible sections)                       | ✅     |
+| Per-section lighting + fog (junni changeSection)          | ✅     |
+| Camera shake on section transition (reduced-motion gated) | ✅     |
+| Portrait FOV adaptation                                   | ✅     |
+| Per-section cursor follow strength                        | ✅     |
+| Single Inter font throughout                              | ✅     |
+| TypeScript `strict: true`                                 | ✅     |
+| ESLint + Prettier configured                              | ✅     |
+| Prerendered home sections (SEO)                           | ✅     |
+| a11y (skip-link, dialog focus-trap, noscript)             | ✅     |
+| SEO (og/twitter/JSON-LD/sitemap)                          | ✅     |
+| Flexible section wireframe object                         | ✅     |
 
 ## Renderer
 
 Single `WebGPURenderer` (alpha:false, ACES tonemap, sRGB). Auto-fallback to WebGL2.
+
 - WebGPU: direct `renderer.render()` (no post-processing — perf)
 - WebGL2: ShaderMaterial RT pipeline (bloom/grain/vignette), single ACES pass
 
@@ -74,8 +75,9 @@ layout pop from letter-spacing trailing).
 
 CSS curtain split — two panels (`#jlj-splash`) part vertically to reveal
 the 3D SplashCube beneath. Seam glow line fades on open. `role=status`
-+ `aria-live=polite` for SR. `jlz:webgl-ready` fires at curtain mid-open
-(400ms) so the title animates in parallel with the cube reveal.
+
+- `aria-live=polite` for SR. `jlz:webgl-ready` fires at curtain mid-open
+  (400ms) so the title animates in parallel with the cube reveal.
 
 ## Performance
 

@@ -28,8 +28,9 @@ export class ProjectOverlay {
   public onClose: (() => void) | null = null
 
   constructor(protected root: HTMLElement) {
-    const existing = (root.querySelector('#project-overlay') as HTMLElement | null)
-      || (document.getElementById('project-overlay'))
+    const existing =
+      (root.querySelector('#project-overlay') as HTMLElement | null) ||
+      document.getElementById('project-overlay')
     this.container = existing ?? document.createElement('div')
     if (!existing) {
       this.container.id = 'project-overlay'
@@ -84,19 +85,32 @@ export class ProjectOverlay {
     // Stored handler ref so dispose() can remove it (prevents leak across rebuilds).
     this._keydownHandler = (e: KeyboardEvent) => {
       if (!this._isOpen) return
-      if (e.key === 'Escape') { e.preventDefault(); this.close(); return }
-      if (e.key === 'ArrowLeft') { this.onPrev?.() }
-      if (e.key === 'ArrowRight') { this.onNext?.() }
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        this.close()
+        return
+      }
+      if (e.key === 'ArrowLeft') {
+        this.onPrev?.()
+      }
+      if (e.key === 'ArrowRight') {
+        this.onNext?.()
+      }
       // Focus trap (WCAG 2.4.3) — keep Tab focus inside the dialog.
       if (e.key === 'Tab') {
         const focusable = this.container.querySelectorAll<HTMLElement>(
-          'button, [href], input, [tabindex]:not([tabindex="-1"])'
+          'button, [href], input, [tabindex]:not([tabindex="-1"])',
         )
         if (focusable.length === 0) return
-        const first = focusable[0]
-        const last = focusable[focusable.length - 1]
-        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus() }
-        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
+        const first = focusable[0]!
+        const last = focusable[focusable.length - 1]!
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault()
+          last.focus()
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault()
+          first.focus()
+        }
       }
     }
     document.addEventListener('keydown', this._keydownHandler)
@@ -128,7 +142,10 @@ export class ProjectOverlay {
     this.counterEl.textContent = `${index + 1} / ${total}`
     this.tagsEl.innerHTML = (project.tags ?? [])
       .filter(Boolean)
-      .map(t => `<span style="background:rgba(120,140,200,.15);color:#a0b0e0;padding:.2rem .6rem;border-radius:4px;font-size:.7rem;">${t}</span>`)
+      .map(
+        (t) =>
+          `<span style="background:rgba(120,140,200,.15);color:#a0b0e0;padding:.2rem .6rem;border-radius:4px;font-size:.7rem;">${t}</span>`,
+      )
       .join('')
     // Update thumbnail preview if exists
     const thumb = this.container.querySelector('.jlz-fs-thumb') as HTMLElement | null

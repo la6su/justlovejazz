@@ -3,6 +3,7 @@
 // DOM-based, synced with 3D section changes via jlz:section-change event.
 
 import { NoiseText } from '../Experience/NoiseText'
+import { eventBus, type AppEvents } from '../core/EventBus'
 
 // Section IDs match templates.ts: intro, about, flexible, challenge, innovative, contact
 const SUBTITLES: Record<string, string> = {
@@ -17,7 +18,7 @@ const SUBTITLES: Record<string, string> = {
 export class Subtitles {
   private container: HTMLElement
   private current: NoiseText | null = null
-  private readonly sectionChangeHandler: (e: Event) => void
+  private readonly sectionChangeHandler: (payload: AppEvents['jlz:section-change']) => void
 
   constructor() {
     // Create or find subtitle container.
@@ -29,13 +30,12 @@ export class Subtitles {
     }
 
     // Bound handler for cleanup in dispose().
-    this.sectionChangeHandler = (e: Event) => {
-      const detail = (e as CustomEvent).detail
-      if (detail?.sectionId) {
-        this.showForSection(detail.sectionId)
+    this.sectionChangeHandler = (payload) => {
+      if (payload?.sectionId) {
+        this.showForSection(payload.sectionId)
       }
     }
-    window.addEventListener('jlz:section-change', this.sectionChangeHandler)
+    eventBus.on('jlz:section-change', this.sectionChangeHandler)
   }
 
   private showForSection(sectionId: string): void {
@@ -74,7 +74,7 @@ export class Subtitles {
   }
 
   dispose(): void {
-    window.removeEventListener('jlz:section-change', this.sectionChangeHandler)
+    eventBus.off('jlz:section-change', this.sectionChangeHandler)
     this.hide()
     this.container.remove()
   }

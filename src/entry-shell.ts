@@ -21,10 +21,14 @@ const startApp = () =>
 // Start app: use requestIdleCallback if available (with short timeout),
 // otherwise fall back to double-rAF for paint stabilization.
 if ('requestIdleCallback' in window) {
-  ;(window as Window & { requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => void })
-    .requestIdleCallback(() => {
+  ;(
+    window as Window & { requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => void }
+  ).requestIdleCallback(
+    () => {
       requestAnimationFrame(() => requestAnimationFrame(startApp))
-    }, { timeout: 250 })
+    },
+    { timeout: 250 },
+  )
 } else {
   requestAnimationFrame(() => requestAnimationFrame(startApp))
 }

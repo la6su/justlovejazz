@@ -72,7 +72,7 @@ export class DrawTrail {
     this._ndc.set(
       camera.position.x + dirX * (dist * Math.sign(t)),
       camera.position.y + dirY * (dist * Math.sign(t)),
-      0
+      0,
     )
 
     if (!this.initialized) {
@@ -84,27 +84,27 @@ export class DrawTrail {
 
     // Shift ring buffer (oldest dropped, newest = cursor)
     for (let i = this.trailPositions.length - 1; i > 0; i--) {
-      this.trailPositions[i].copy(this.trailPositions[i - 1])
+      this.trailPositions[i]!.copy(this.trailPositions[i - 1]!)
     }
-    this.trailPositions[0].copy(this._ndc)
+    this.trailPositions[0]!.copy(this._ndc)
 
     // Write positions + vertex colors (fade head→tail)
     for (let i = 0; i < TRAIL_LENGTH; i++) {
-      const p = this.trailPositions[i]
+      const p = this.trailPositions[i]!
       this.positions[i * 3] = p.x
       this.positions[i * 3 + 1] = p.y
       this.positions[i * 3 + 2] = p.z
 
-      const fade = 1.0 - (i / TRAIL_LENGTH)
+      const fade = 1.0 - i / TRAIL_LENGTH
       const intensity = fade * fade
       // Accent color trail (matches --jlz-color-accent #515d84)
-      this.colors[i * 3] = intensity * 0.32     // R
+      this.colors[i * 3] = intensity * 0.32 // R
       this.colors[i * 3 + 1] = intensity * 0.36 // G
       this.colors[i * 3 + 2] = intensity * 0.52 // B
     }
 
-    this.geometry.attributes.position.needsUpdate = true
-    this.geometry.attributes.color.needsUpdate = true
+    this.geometry.attributes.position!.needsUpdate = true
+    this.geometry.attributes.color!.needsUpdate = true
   }
 
   setVisible(visible: boolean): void {

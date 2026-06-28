@@ -20,191 +20,192 @@ const SP_STIFFNESS = 8
 const SP_DAMPING = 3
 
 export class Camera {
-    instance: THREE.PerspectiveCamera
+  instance: THREE.PerspectiveCamera
 
-    // Smooth state
-    private smoothPosition = new THREE.Vector3()
-    private smoothTarget = new THREE.Vector3()
-    private smoothFov = 75
+  // Smooth state
+  private smoothPosition = new THREE.Vector3()
+  private smoothTarget = new THREE.Vector3()
+  private smoothFov = 75
 
-    // Velocity tracking for Environment
-    private velocity = new THREE.Vector3()
-    private prevPosition = new THREE.Vector3()
+  // Velocity tracking for Environment
+  private velocity = new THREE.Vector3()
+  private prevPosition = new THREE.Vector3()
 
-    // ── Action shake ──
-    private shakePower = 0
-    private shakeDuration = 0
-    private shakeTime = 0
+  // ── Action shake ──
+  private shakePower = 0
+  private shakeDuration = 0
+  private shakeTime = 0
 
-    // ── Organic shake clock ──
-    private organicTime = 0
+  // ── Organic shake clock ──
+  private organicTime = 0
 
-    // ── FOV pulse ──
-    private fovOffset = 0
-    private targetFovOffset = 0
-    private fovTransitionT = 0
-    private fovStartOffset = 0
-    private fovDuration = 1.0
+  // ── FOV pulse ──
+  private fovOffset = 0
+  private targetFovOffset = 0
+  private fovTransitionT = 0
+  private fovStartOffset = 0
+  private fovDuration = 1.0
 
-    // A-015: Per-section cursor follow strength
-    private _cursorFollowStrength: number | null = null
+  // A-015: Per-section cursor follow strength
+  private _cursorFollowStrength: number | null = null
 
-    /** Set cursor follow strength for current section (A-015) */
-    setCursorFollow(strength: number): void {
-        this._cursorFollowStrength = strength
+  /** Set cursor follow strength for current section (A-015) */
+  setCursorFollow(strength: number): void {
+    this._cursorFollowStrength = strength
+  }
+
+  constructor(sizes: Sizes) {
+    this.instance = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
+    this.smoothPosition.set(0, 0, 3)
+    this.instance.position.copy(this.smoothPosition)
+    this.prevPosition.copy(this.smoothPosition)
+
+    // Bound ref so removeEventListener works in destroy().
+    this._onResize = () => {
+      this.instance.aspect = sizes.width / sizes.height
+      this.instance.updateProjectionMatrix()
     }
+    window.addEventListener('resize', this._onResize, { passive: true })
+  }
 
-    constructor(sizes: Sizes) {
-        this.instance = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
-        this.smoothPosition.set(0, 0, 3)
-        this.instance.position.copy(this.smoothPosition)
-        this.prevPosition.copy(this.smoothPosition)
+  // Resize handler ref — cleaned up in destroy().
+  private _onResize: () => void = () => {}
 
-        // Bound ref so removeEventListener works in destroy().
-        this._onResize = () => {
-            this.instance.aspect = sizes.width / sizes.height
-            this.instance.updateProjectionMatrix()
-        }
-        window.addEventListener('resize', this._onResize, { passive: true })
-    }
+  /** Remove the window resize listener. Call from Experience.destroy(). */
+  destroy(): void {
+    window.removeEventListener('resize', this._onResize)
+  }
 
-    // Resize handler ref — cleaned up in destroy().
-    private _onResize: () => void = () => {}
+  setBasePosition(pos: THREE.Vector3) {
+    this.smoothPosition.copy(pos)
+  }
 
-    /** Remove the window resize listener. Call from Experience.destroy(). */
-    destroy(): void {
-        window.removeEventListener('resize', this._onResize)
-    }
+  /** Lerp camera base state toward target with exponential smoothing */
+  updateSmooth(target: CameraTarget, deltaT: number, smoothing = 5) {
+    if (!target) return
+    const lerp = 1 - Math.exp(-smoothing * deltaT)
 
-    setBasePosition(pos: THREE.Vector3) {
-        this.smoothPosition.copy(pos)
-    }
+    this.smoothPosition.lerp(target.position, lerp)
+    this.smoothTarget.lerp(target.lookAt, lerp)
+    this.smoothFov += (target.fov - this.smoothFov) * lerp
+  }
 
-    /** Lerp camera base state toward target with exponential smoothing */
-    updateSmooth(target: CameraTarget, deltaT: number, smoothing = 5) {
-        if (!target) return
-        const lerp = 1 - Math.exp(-smoothing * deltaT)
+  getVelocity() {
+    return this.velocity
+  }
 
-        this.smoothPosition.lerp(target.position, lerp)
-        this.smoothTarget.lerp(target.lookAt, lerp)
-        this.smoothFov += (target.fov - this.smoothFov) * lerp
-    }
+  /** Trigger an action shake (impact on section change) */
+  shake(power = 0.1, duration = 0.5) {
+    this.shakePower = power
+    this.shakeDuration = duration
+  }
 
-    getVelocity() {
-        return this.velocity
-    }
+  /** Set FOV offset for cinematic zoom-in on section arrival */
+  setFovOffset(value: number, duration = 1) {
+    this.fovStartOffset = this.fovOffset
+    this.targetFovOffset = value
+    this.fovDuration = duration
+    this.fovTransitionT = 0
+  }
 
-    /** Trigger an action shake (impact on section change) */
-    shake(power = 0.1, duration = 0.5) {
-        this.shakePower = power
-        this.shakeDuration = duration
-    }
+  update(deltaT: number) {
+    const dt = Math.min(Math.max(deltaT, 1 / 120), 0.1)
 
-    /** Set FOV offset for cinematic zoom-in on section arrival */
-    setFovOffset(value: number, duration = 1) {
-        this.fovStartOffset = this.fovOffset
-        this.targetFovOffset = value
-        this.fovDuration = duration
-        this.fovTransitionT = 0
-    }
+    // ── 1. Spring-damper cursor follow ──
+    const mouse = input.getMouse()
 
-    update(deltaT: number) {
-        const dt = Math.min(Math.max(deltaT, 1 / 120), 0.1)
+    springX.target = mouse.x
+    springY.target = mouse.y
 
-        // ── 1. Spring-damper cursor follow ──
-        const mouse = input.getMouse()
+    springX.vel += (springX.target - springX.pos) * SP_STIFFNESS * dt
+    springY.vel += (springY.target - springY.pos) * SP_STIFFNESS * dt
 
-        springX.target = mouse.x
-        springY.target = mouse.y
+    springX.vel *= Math.exp(-SP_DAMPING * dt)
+    springY.vel *= Math.exp(-SP_DAMPING * dt)
 
-        springX.vel += (springX.target - springX.pos) * SP_STIFFNESS * dt
-        springY.vel += (springY.target - springY.pos) * SP_STIFFNESS * dt
-
-        springX.vel *= Math.exp(-SP_DAMPING * dt)
-        springY.vel *= Math.exp(-SP_DAMPING * dt)
-
-        springX.pos += springX.vel * dt
-        springY.pos += springY.vel * dt
+    springX.pos += springX.vel * dt
+    springY.pos += springY.vel * dt
 
     // ── 2. Build position ──
-        const isMobile = Device.isMobile;
-        const isHome = document.body?.dataset?.page === 'home';
-        // Respect prefers-reduced-motion: disable cursor follow + organic shake
-        // + FOV breath (SPEC.md motion rules).
-        const reduced = prefersReducedMotion();
-        const pos = this.instance.position;
+    const isMobile = Device.isMobile
+    const isHome = document.body?.dataset?.page === 'home'
+    // Respect prefers-reduced-motion: disable cursor follow + organic shake
+    // + FOV breath (SPEC.md motion rules).
+    const reduced = prefersReducedMotion()
+    const pos = this.instance.position
 
-        // Cursor follow — spring-damper (disabled on mobile + reduced motion)
-        const cursorX = (isMobile || reduced) ? 0 : springX.pos;
-        const cursorY = (isMobile || reduced) ? 0 : springY.pos;
+    // Cursor follow — spring-damper (disabled on mobile + reduced motion)
+    const cursorX = isMobile || reduced ? 0 : springX.pos
+    const cursorY = isMobile || reduced ? 0 : springY.pos
 
-        // A-015: Per-section cursor follow strength (junni cameraRange pattern).
-        // Works section (idx=3) gets stronger follow for interactive feel.
-        // Uses _currentSectionIndex set by Experience.update via setCursorFollow.
-        const cursorFollow = isHome ? 0.19 : (this._cursorFollowStrength ?? 0.15)
-        pos.set(
-            this.smoothPosition.x + cursorX * cursorFollow,
-            this.smoothPosition.y + cursorY * cursorFollow,
-            this.smoothPosition.z
-        );
+    // A-015: Per-section cursor follow strength (junni cameraRange pattern).
+    // Works section (idx=3) gets stronger follow for interactive feel.
+    // Uses _currentSectionIndex set by Experience.update via setCursorFollow.
+    const cursorFollow = isHome ? 0.19 : (this._cursorFollowStrength ?? 0.15)
+    pos.set(
+      this.smoothPosition.x + cursorX * cursorFollow,
+      this.smoothPosition.y + cursorY * cursorFollow,
+      this.smoothPosition.z,
+    )
 
-        // ── 3. Organic shake (continuous handheld) — desktop, non-reduced only ──
-        if (!isMobile && !reduced) {
-            this.organicTime += dt;
-            const ot = this.organicTime;
-            const amp = isHome ? 0.0026 : 0.002
-            const ox = (Math.sin(ot * 0.7) * 0.3 + Math.sin(ot * 1.3) * 0.2) * amp;
-            const oy = (Math.sin(ot * 0.9) * 0.2 + Math.sin(ot * 1.7) * 0.3) * amp;
-            const oz = (Math.sin(ot * 1.1) * 0.4 + Math.sin(ot * 2.1) * 0.1) * amp;
-            pos.x += ox;
-            pos.y += oy;
-            pos.z += oz;
-        }
-
-        // ── 4. Look at target ──
-        this.instance.lookAt(this.smoothTarget)
-
-        // ── 5. FOV — dynamic offset (pop zoom) ──
-        if (this.fovTransitionT < 1) {
-            this.fovTransitionT = Math.min(1, this.fovTransitionT + dt / this.fovDuration)
-            const easeT = Easings.easeInOutQuart(this.fovTransitionT)
-            this.fovOffset = this.fovStartOffset + (this.targetFovOffset - this.fovStartOffset) * easeT
-        }
-
-        if (this.fovOffset > 0) {
-            _offsetVec.set(0, 0, -this.fovOffset * 0.05)
-            _offsetVec.applyQuaternion(this.instance.quaternion)
-            pos.add(_offsetVec)
-        }
-
-        // Blend FOV smoothly. Breathing disabled on mobile + reduced motion.
-        const fovBreath = (isHome && !isMobile && !reduced) ? Math.sin(this.organicTime * 0.45) * 0.18 : 0
-        // A-002: Portrait FOV adaptation — widen FOV on portrait so objects fit
-        const aspect = this.instance.aspect
-        const portraitWeight = Math.max(0, Math.min(1, 1 - aspect / 1.5))
-        const portraitBoost = portraitWeight * 20  // up to +20° on narrow portrait
-        const targetFov = this.smoothFov + this.fovOffset + fovBreath + portraitBoost
-        this.instance.fov += (targetFov - this.instance.fov) * 0.25
-        this.instance.updateProjectionMatrix()
-
-        // ── 6. Action shake ──
-        if (this.shakePower > 0 && this.shakeDuration > 0) {
-            this.shakeTime += dt
-            const sx = Math.sin(this.shakeTime * 7) * Math.sin(this.shakeTime * 4) * 0.1 * this.shakePower
-            const sy = Math.sin(this.shakeTime * 3.3) * Math.sin(this.shakeTime * 5.2) * 0.1 * this.shakePower
-            _tempEuler.set(sx, sy, 0)
-            _tempQuat.setFromEuler(_tempEuler)
-            this.instance.quaternion.multiply(_tempQuat)
-            this.shakeDuration -= dt
-            if (this.shakeDuration <= 0) {
-                this.shakePower = 0
-                this.shakeDuration = 0
-                this.shakeTime = 0
-            }
-        }
-
-        // ── 7. Velocity ──
-        this.velocity.subVectors(pos, this.prevPosition).divideScalar(dt)
-        this.prevPosition.copy(pos)
+    // ── 3. Organic shake (continuous handheld) — desktop, non-reduced only ──
+    if (!isMobile && !reduced) {
+      this.organicTime += dt
+      const ot = this.organicTime
+      const amp = isHome ? 0.0026 : 0.002
+      const ox = (Math.sin(ot * 0.7) * 0.3 + Math.sin(ot * 1.3) * 0.2) * amp
+      const oy = (Math.sin(ot * 0.9) * 0.2 + Math.sin(ot * 1.7) * 0.3) * amp
+      const oz = (Math.sin(ot * 1.1) * 0.4 + Math.sin(ot * 2.1) * 0.1) * amp
+      pos.x += ox
+      pos.y += oy
+      pos.z += oz
     }
+
+    // ── 4. Look at target ──
+    this.instance.lookAt(this.smoothTarget)
+
+    // ── 5. FOV — dynamic offset (pop zoom) ──
+    if (this.fovTransitionT < 1) {
+      this.fovTransitionT = Math.min(1, this.fovTransitionT + dt / this.fovDuration)
+      const easeT = Easings.easeInOutQuart(this.fovTransitionT)
+      this.fovOffset = this.fovStartOffset + (this.targetFovOffset - this.fovStartOffset) * easeT
+    }
+
+    if (this.fovOffset > 0) {
+      _offsetVec.set(0, 0, -this.fovOffset * 0.05)
+      _offsetVec.applyQuaternion(this.instance.quaternion)
+      pos.add(_offsetVec)
+    }
+
+    // Blend FOV smoothly. Breathing disabled on mobile + reduced motion.
+    const fovBreath = isHome && !isMobile && !reduced ? Math.sin(this.organicTime * 0.45) * 0.18 : 0
+    // A-002: Portrait FOV adaptation — widen FOV on portrait so objects fit
+    const aspect = this.instance.aspect
+    const portraitWeight = Math.max(0, Math.min(1, 1 - aspect / 1.5))
+    const portraitBoost = portraitWeight * 20 // up to +20° on narrow portrait
+    const targetFov = this.smoothFov + this.fovOffset + fovBreath + portraitBoost
+    this.instance.fov += (targetFov - this.instance.fov) * 0.25
+    this.instance.updateProjectionMatrix()
+
+    // ── 6. Action shake ──
+    if (this.shakePower > 0 && this.shakeDuration > 0) {
+      this.shakeTime += dt
+      const sx = Math.sin(this.shakeTime * 7) * Math.sin(this.shakeTime * 4) * 0.1 * this.shakePower
+      const sy =
+        Math.sin(this.shakeTime * 3.3) * Math.sin(this.shakeTime * 5.2) * 0.1 * this.shakePower
+      _tempEuler.set(sx, sy, 0)
+      _tempQuat.setFromEuler(_tempEuler)
+      this.instance.quaternion.multiply(_tempQuat)
+      this.shakeDuration -= dt
+      if (this.shakeDuration <= 0) {
+        this.shakePower = 0
+        this.shakeDuration = 0
+        this.shakeTime = 0
+      }
+    }
+
+    // ── 7. Velocity ──
+    this.velocity.subVectors(pos, this.prevPosition).divideScalar(dt)
+    this.prevPosition.copy(pos)
+  }
 }

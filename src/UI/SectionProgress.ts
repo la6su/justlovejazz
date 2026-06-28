@@ -53,7 +53,7 @@ export class SectionProgress {
     // Highlight active section dot.
     const activeIdx = Math.min(
       Math.floor(progress * this.sectionLabels.length),
-      this.sectionLabels.length - 1
+      this.sectionLabels.length - 1,
     )
     this.dots.forEach((dot, i) => {
       dot.classList.toggle('is-active', i === activeIdx)

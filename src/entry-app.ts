@@ -3,6 +3,7 @@ import Icons from 'uikit/dist/js/uikit-icons'
 import { initRouter } from './router'
 import { bootstrap as bootstrapApp, isAppReady, type BootstrapOptions } from './main-app'
 import { NoiseText } from './Experience/NoiseText'
+import { eventBus } from './core/EventBus'
 
 async function boot() {
   const { createSplash } = await import('./splash')
@@ -31,8 +32,11 @@ function scheduleUiKitRefresh(): void {
     ;(UIkit as any).update()
   }
   if ('requestIdleCallback' in window) {
-    ;(window as Window & { requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => void })
-      .requestIdleCallback(refresh, { timeout: 800 })
+    ;(
+      window as Window & {
+        requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => void
+      }
+    ).requestIdleCallback(refresh, { timeout: 800 })
   } else {
     setTimeout(refresh, 120)
   }
@@ -49,27 +53,27 @@ export async function startApp(): Promise<void> {
   // jlz:webgl-ready dispatches AFTER splash curtains open, so the animation
   // is visible (not hidden behind splash overlay).
   let webglReady = false
-  window.addEventListener('jlz:webgl-ready', () => {
+  eventBus.on('jlz:webgl-ready', () => {
     webglReady = true
     animateNoiseTitles()
   })
 
   // Re-animate on section change (scroll between sections) — but ONLY after
   // webgl-ready has fired (prevents animation running behind splash).
-  window.addEventListener('jlz:section-change', () => {
+  eventBus.on('jlz:section-change', () => {
     if (!webglReady) return
     animateNoiseTitles()
   })
 
   // Navigation handler
-  window.addEventListener('jlj:navigate', () => {
+  eventBus.on('jlj:navigate', () => {
     if (!isAppReady()) return
     const exp = window.experience
     if (exp?.smoothScroll) {
       exp.smoothScroll.lenis.scrollTo(0, { immediate: true })
     }
   })
-  window.addEventListener('jlj:navigate', scheduleUiKitRefresh)
+  eventBus.on('jlj:navigate', scheduleUiKitRefresh)
   void boot()
 }
 
@@ -86,14 +90,16 @@ function animateNoiseTitles(): void {
   noiseAnimating = true
 
   // Clear after max animation duration (2s + 200ms safety)
-  setTimeout(() => { noiseAnimating = false }, 2200)
+  setTimeout(() => {
+    noiseAnimating = false
+  }, 2200)
 
   const leafEls = document.querySelectorAll<HTMLElement>('.studio-title__line')
   const leafSet = new Set(leafEls)
 
   for (const el of document.querySelectorAll<HTMLElement>('.studio-title')) {
     if (leafSet.has(el)) continue
-    const hasLeafChild = [...leafEls].some(l => l.closest('.studio-title') === el)
+    const hasLeafChild = [...leafEls].some((l) => l.closest('.studio-title') === el)
     if (hasLeafChild) continue
 
     const text = el.textContent?.trim() || ''

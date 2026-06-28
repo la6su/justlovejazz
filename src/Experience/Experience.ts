@@ -20,6 +20,7 @@ import { Subtitles } from '../UI/Subtitles'
 import { SectionProgress } from '../UI/SectionProgress'
 import { PerfMonitor } from '../core/PerfMonitor'
 import { prefersReducedMotion } from '../core/motionPolicy'
+import { eventBus } from '../core/EventBus'
 // DissolveOverlay removed — cover transition in ProjectDetail replaces it.
 
 /**
@@ -116,7 +117,7 @@ export class Experience {
       PerfMonitor.start()
     }
     await this.buildWorld()
-      this.bus = StateBus.getInstance()
+    this.bus = StateBus.getInstance()
     // Splash cube IS the baku (World.baku is now a SplashCube).
     // No separate splash object — the cube in the scene is both splash + baku.
     // DevPanel (Tweakpane) — only in DEV. Toggle with Backquote (`) or Ctrl+D.
@@ -131,7 +132,14 @@ export class Experience {
     // Subtitles listen for jlz:section-change events automatically.
     this._subtitles = new Subtitles()
     // Section progress indicator with clickable timeline dots.
-    this._sectionProgress = new SectionProgress(['Intro', 'About', 'Flexible', 'Challenge', 'Innovative', 'Contact'])
+    this._sectionProgress = new SectionProgress([
+      'Intro',
+      'About',
+      'Flexible',
+      'Challenge',
+      'Innovative',
+      'Contact',
+    ])
     // Always build portfolio — single-page, always needs works slider
     void this.ensurePortfolio()
     this.camera.instance.position.set(0, 5, 10)
@@ -148,7 +156,9 @@ export class Experience {
     // Pause the render loop when the tab is hidden — setAnimationLoop runs
     // full-rate otherwise, burning CPU/GPU in the background.
     this._onVisibilityChange = () => {
-      const r = this.renderer.instance as { setAnimationLoop: (cb: ((t: number) => void) | null) => void }
+      const r = this.renderer.instance as {
+        setAnimationLoop: (cb: ((t: number) => void) | null) => void
+      }
       if (document.hidden) r.setAnimationLoop(null)
       else r.setAnimationLoop((t: number) => this.update(t))
     }
@@ -158,7 +168,7 @@ export class Experience {
   update(time: number) {
     this.time.update(time)
     const dt = this.time.delta / 1000
-      this.bus.tick(dt)
+    this.bus.tick(dt)
     this.smoothScroll.update(time)
     input.update()
     this.cursor.update()
@@ -195,9 +205,12 @@ export class Experience {
       this._prevSectionIndex = idx
       const cfgForSection = this.world.getConfig(worldState.currentPhase)
       const sectionId = cfgForSection?.domSection ?? `section-${idx}`
-      window.dispatchEvent(new CustomEvent('jlz:section-change', {
-        detail: { sectionId, context: cfgForSection?.context, configId: cfgForSection?.id, index: idx }
-      }))
+      eventBus.emit('jlz:section-change', {
+        sectionId,
+        context: cfgForSection?.context,
+        configId: cfgForSection?.id,
+        index: idx,
+      })
       // Clear project textures from baku when leaving works section (idx !== 3).
       // Prevents project images showing on cube during intro/about/etc.
       if (idx !== 3) {
@@ -256,7 +269,9 @@ export class Experience {
       this.world.groundPlane.visible = !showGallery
       // Toggle scene groups — hide all on works page, let World manage visibility on home.
       if (showGallery) {
-        this.world.sceneGroups.forEach((g: THREE.Group) => { g.visible = false })
+        this.world.sceneGroups.forEach((g: THREE.Group) => {
+          g.visible = false
+        })
       }
     }
 
@@ -309,7 +324,7 @@ export class Experience {
       GPUResourceManager.getInstance().disposeContext(this.currentSectionContext)
     }
     this.currentSectionContext = null
-      this.bus.cancelAll()
+    this.bus.cancelAll()
     // rebuildWorld() builds the new world, THEN ensures portfolio on it.
     void this.rebuildWorld().then(() => {
       if (document.body.dataset.page === 'works') {
@@ -320,11 +335,9 @@ export class Experience {
 
   private async rebuildWorld(): Promise<void> {
     await this.buildWorld()
-      this.bus
-      .set('intro:opacity', 1)
-      .set('intro:stage', 0)
-        this.bus.animate('intro:opacity', 0, 0.8, 'easeOutCubic')
-        this.bus.animate('intro:stage', 1, 0.8, 'easeOutCubic')
+    this.bus.set('intro:opacity', 1).set('intro:stage', 0)
+    this.bus.animate('intro:opacity', 0, 0.8, 'easeOutCubic')
+    this.bus.animate('intro:stage', 1, 0.8, 'easeOutCubic')
     this.camera.instance.position.set(0, 5, 10)
     this.camera.instance.lookAt(0, 0, 0)
     this.camera.instance.updateProjectionMatrix()
@@ -345,7 +358,7 @@ export class Experience {
     this.contentReveal.destroy()
     this.cursor.destroy()
     this.world.dispose()
-      this.bus.cancelAll()
+    this.bus.cancelAll()
     this.debugStats?.destroy()
     this.devPanel?.dispose()
     // Renderer.dispose() cleans up the resize listener AND the pipeline
@@ -382,10 +395,14 @@ export class Experience {
 
     this.portfolio = new WorksPortfolio(
       PROJECTS,
-      (idx) => { this.onProjectSelect(idx) },           // swipe → update overlay
-      (idx) => { this.activateCard(idx) },              // tap → open detail cover
-      () => {},                                         // expand done (unused)
-      () => {},                                         // collapse done (unused)
+      (idx) => {
+        this.onProjectSelect(idx)
+      }, // swipe → update overlay
+      (idx) => {
+        this.activateCard(idx)
+      }, // tap → open detail cover
+      () => {}, // expand done (unused)
+      () => {}, // collapse done (unused)
     )
     // Portfolio group at world origin — frontal camera at [0,1,7] looks at [0,1,0].
     this.portfolio.group.position.set(0, 1, 0)
@@ -398,15 +415,17 @@ export class Experience {
     }
 
     if (!this.overlay) {
-      const worksSection = document.getElementById('section-challenge')
-        || document.getElementById('section-works')
-        || document.getElementById('spa-content')
+      const worksSection =
+        document.getElementById('section-challenge') ||
+        document.getElementById('section-works') ||
+        document.getElementById('spa-content')
       this.overlay = new ProjectOverlay(worksSection!)
       this.overlay.onPrev = () => this.portfolio?.prev()
       this.overlay.onNext = () => this.portfolio?.next()
       this.overlay.onClose = () => {
         // Close fullscreen → clear project textures from cube
-        const cube = this.world?.baku as unknown as { clearProjectTextures?: () => void } | undefined
+        const cube = this.world?.baku as unknown as
+          { clearProjectTextures?: () => void } | undefined
         cube?.clearProjectTextures?.()
         if (this.portfolio) this.portfolio.group.visible = false
       }
@@ -448,5 +467,4 @@ export class Experience {
   private activateCard(_idx: number): void {
     this.overlay?.showContainer()
   }
-
 }

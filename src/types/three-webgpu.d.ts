@@ -1,5 +1,11 @@
 declare module 'three/webgpu' {
-  import type { Material, MeshPhysicalMaterial, MeshStandardMaterial, PointsMaterial, Color } from 'three'
+  import type {
+    Material,
+    MeshPhysicalMaterial,
+    MeshStandardMaterial,
+    PointsMaterial,
+    Color,
+  } from 'three'
 
   // ── WebGPU Renderer ──
   export interface WebGPURendererParameters {

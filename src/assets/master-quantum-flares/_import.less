@@ -19,7 +19,7 @@
 @global-secondary-font-style: inherit;
 @global-color: rgba(255, 255, 255, 0.8);
 @global-emphasis-color: #fff;
-@global-muted-color: rgba(255,255,255, 0.5);
+@global-muted-color: rgba(255, 255, 255, 0.5);
 @global-link-color: #6a6a6a;
 @global-link-hover-color: #fff;
 @global-inverse-color: #1d1d1d;
@@ -33,10 +33,10 @@
 @global-border-width: 2px;
 @global-border: @global-muted-color;
 @global-border-radius: 0;
-@global-small-box-shadow: 0 2px 8px rgba(0,0,0,0.5);
-@global-medium-box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-@global-large-box-shadow: 0 14px 25px rgba(0,0,0,0.5);
-@global-xlarge-box-shadow: 0 28px 50px rgba(0,0,0,0.5);
+@global-small-box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+@global-medium-box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+@global-large-box-shadow: 0 14px 25px rgba(0, 0, 0, 0.5);
+@global-xlarge-box-shadow: 0 28px 50px rgba(0, 0, 0, 0.5);
 @global-margin: 20px;
 @global-small-margin: 10px;
 @global-medium-margin: 40px;
@@ -64,7 +64,7 @@
 @base-blockquote-footer-font-size: @global-font-size;
 @base-selection-background: @global-primary-background;
 @internal-base-body-mode: overlay;
-@internal-base-body-overlay-image: "../../master-quantum-flares/images/base-body-overlay.gif";
+@internal-base-body-overlay-image: '../../master-quantum-flares/images/base-body-overlay.gif';
 @internal-base-body-overlay-opacity: 0.03;
 @base-code-padding-horizontal: 6px;
 @base-code-padding-vertical: 2px;
@@ -102,11 +102,14 @@
 @inverse-base-blockquote-border: @inverse-global-color;
 @link-muted-hover-color: @global-emphasis-color;
 @internal-link-muted-hover-mode: glitch;
-@internal-link-muted-hover-glitch-animation: uk-glitch-opacity, uk-glitch-text-shadow, uk-glitch-color;
+@internal-link-muted-hover-glitch-animation: uk-glitch-opacity, uk-glitch-text-shadow,
+  uk-glitch-color;
 @internal-link-text-hover-mode: glitch;
-@internal-link-text-hover-glitch-animation: uk-glitch-opacity, uk-glitch-text-shadow, uk-glitch-color;
+@internal-link-text-hover-glitch-animation: uk-glitch-opacity, uk-glitch-text-shadow,
+  uk-glitch-color;
 @internal-link-heading-hover-mode: glitch;
-@internal-link-heading-hover-glitch-animation: uk-glitch-opacity, uk-glitch-text-shadow, uk-glitch-color;
+@internal-link-heading-hover-glitch-animation: uk-glitch-opacity, uk-glitch-text-shadow,
+  uk-glitch-color;
 @heading-small-font-size: 2.2rem;
 @heading-medium-font-size: 2.5rem;
 @heading-large-font-size: 2.9rem;
@@ -125,7 +128,7 @@
 @inverse-heading-line-border: @global-secondary-background;
 @divider-icon-height: 30px;
 @divider-icon-color: @global-emphasis-color;
-@internal-divider-icon-image: "../../../../uikit-themes/master-quantum-flares/images/divider-icon.svg";
+@internal-divider-icon-image: '../../../../uikit-themes/master-quantum-flares/images/divider-icon.svg';
 @inverse-divider-icon-color: @global-secondary-background;
 @inverse-divider-icon-line-border: @global-secondary-background;
 @inverse-divider-small-border: @global-secondary-background;
@@ -200,25 +203,41 @@
 @button-danger-active-color: fade(@global-emphasis-color, 70%);
 @button-text-mode: none;
 @internal-button-default-mode: glow;
-@internal-button-default-glow-gradient: radial-gradient(circle at center, transparent ~'calc(100% - 1.05em)', @global-primary-background);
+@internal-button-default-glow-gradient: radial-gradient(
+  circle at center,
+  transparent ~'calc(100% - 1.05em)',
+  @global-primary-background
+);
 @internal-button-default-glow-filter: blur(4px);
 @internal-button-default-hover-glow-filter: blur(8px);
 @internal-button-primary-mode: glow;
-@internal-button-primary-glow-gradient: conic-gradient(from 0, @global-primary-background, @global-primary-background);
+@internal-button-primary-glow-gradient: conic-gradient(
+  from 0,
+  @global-primary-background,
+  @global-primary-background
+);
 @internal-button-primary-glow-filter: blur(5px);
 @internal-button-primary-hover-glow-filter: blur(12px);
 @internal-button-secondary-mode: glow;
-@internal-button-secondary-glow-gradient: conic-gradient(from 0, fade(@global-primary-background, 25%), fade(@global-primary-background, 25%));
+@internal-button-secondary-glow-gradient: conic-gradient(
+  from 0,
+  fade(@global-primary-background, 25%),
+  fade(@global-primary-background, 25%)
+);
 @internal-button-secondary-glow-filter: blur(5px);
 @internal-button-secondary-hover-glow-filter: blur(12px);
 @internal-button-default-hover-mode: glitch;
-@internal-button-default-hover-glitch-animation: uk-glitch-opacity, uk-glitch-text-shadow, uk-glitch-color;
+@internal-button-default-hover-glitch-animation: uk-glitch-opacity, uk-glitch-text-shadow,
+  uk-glitch-color;
 @internal-button-primary-hover-mode: glitch;
-@internal-button-primary-hover-glitch-animation: uk-glitch-opacity, uk-glitch-text-shadow, uk-glitch-color;
+@internal-button-primary-hover-glitch-animation: uk-glitch-opacity, uk-glitch-text-shadow,
+  uk-glitch-color;
 @internal-button-secondary-hover-mode: glitch;
-@internal-button-secondary-hover-glitch-animation: uk-glitch-opacity, uk-glitch-text-shadow, uk-glitch-color;
+@internal-button-secondary-hover-glitch-animation: uk-glitch-opacity, uk-glitch-text-shadow,
+  uk-glitch-color;
 @internal-button-text-hover-mode: glitch;
-@internal-button-text-hover-glitch-animation: uk-glitch-opacity, uk-glitch-text-shadow, uk-glitch-color;
+@internal-button-text-hover-glitch-animation: uk-glitch-opacity, uk-glitch-text-shadow,
+  uk-glitch-color;
 @button-font-weight: 500;
 @button-text-transform: uppercase;
 @button-border-radius: 500px;
@@ -240,15 +259,31 @@
 @inverse-button-secondary-hover-color: fade(@global-inverse-color, 70%);
 @inverse-button-secondary-active-background: transparent;
 @inverse-button-secondary-active-color: fade(@global-inverse-color, 50%);
-@internal-inverse-button-default-glow-gradient: radial-gradient(circle at center, transparent 75%, @global-inverse-color);
-@internal-inverse-button-primary-glow-gradient: conic-gradient(from 0, @global-secondary-background, @global-secondary-background);
-@internal-inverse-button-secondary-glow-gradient: conic-gradient(from 0, fade(@global-secondary-background, 50%), fade(@global-secondary-background,  50%));
+@internal-inverse-button-default-glow-gradient: radial-gradient(
+  circle at center,
+  transparent 75%,
+  @global-inverse-color
+);
+@internal-inverse-button-primary-glow-gradient: conic-gradient(
+  from 0,
+  @global-secondary-background,
+  @global-secondary-background
+);
+@internal-inverse-button-secondary-glow-gradient: conic-gradient(
+  from 0,
+  fade(@global-secondary-background, 50%),
+  fade(@global-secondary-background, 50%)
+);
 @progress-background: darken(@global-secondary-background, 74%);
 @section-default-color-mode: light;
 @section-muted-color-mode: light;
 @section-primary-color-mode: dark;
-@internal-section-secondary-gradient: radial-gradient(circle closest-corner at 20% 40%, rgba(203, 255, 221, 0.1),transparent 100%),
-                                                    radial-gradient(circle closest-corner at 85% 20%, rgba(203, 255, 221, 0.08),transparent 100%);
+@internal-section-secondary-gradient: radial-gradient(
+    circle closest-corner at 20% 40%,
+    rgba(203, 255, 221, 0.1),
+    transparent 100%
+  ),
+  radial-gradient(circle closest-corner at 85% 20%, rgba(203, 255, 221, 0.08), transparent 100%);
 @tile-default-color-mode: light;
 @tile-muted-color-mode: light;
 @tile-primary-color-mode: dark;
@@ -259,8 +294,14 @@
 @card-secondary-color: @global-emphasis-color;
 @card-secondary-hover-background: lighten(@card-default-background, 3%);
 @card-overlay-color-mode: light;
-@internal-card-overlay-backdrop-filter: "../../master-quantum-flares/images/overlay-filter.svg#svg-filter-overlay";
-@internal-card-overlay-gradient: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.12) 0px, rgba(0, 0, 0, 0.12) 1px, transparent 2px, transparent 4px);
+@internal-card-overlay-backdrop-filter: '../../master-quantum-flares/images/overlay-filter.svg#svg-filter-overlay';
+@internal-card-overlay-gradient: repeating-linear-gradient(
+  0deg,
+  rgba(0, 0, 0, 0.12) 0px,
+  rgba(0, 0, 0, 0.12) 1px,
+  transparent 2px,
+  transparent 4px
+);
 @inverse-card-badge-color: @global-emphasis-color;
 @close-color: @global-emphasis-color;
 @marker-background: @global-primary-background;
@@ -299,10 +340,22 @@
 @overlay-default-color-mode: light;
 @overlay-primary-background: fade(@global-primary-background, 70%);
 @overlay-primary-color-mode: dark;
-@internal-overlay-default-backdrop-filter: "../../master-quantum-flares/images/overlay-filter.svg#svg-filter-overlay";
-@internal-overlay-primary-backdrop-filter: "../../master-quantum-flares/images/overlay-filter.svg#svg-filter-overlay";
-@internal-overlay-default-gradient: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.12) 0px, rgba(0, 0, 0, 0.12) 1px, transparent 2px, transparent 4px);
-@internal-overlay-primary-gradient: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.12) 0px, rgba(0, 0, 0, 0.12) 1px, transparent 2px, transparent 4px);
+@internal-overlay-default-backdrop-filter: '../../master-quantum-flares/images/overlay-filter.svg#svg-filter-overlay';
+@internal-overlay-primary-backdrop-filter: '../../master-quantum-flares/images/overlay-filter.svg#svg-filter-overlay';
+@internal-overlay-default-gradient: repeating-linear-gradient(
+  0deg,
+  rgba(0, 0, 0, 0.12) 0px,
+  rgba(0, 0, 0, 0.12) 1px,
+  transparent 2px,
+  transparent 4px
+);
+@internal-overlay-primary-gradient: repeating-linear-gradient(
+  0deg,
+  rgba(0, 0, 0, 0.12) 0px,
+  rgba(0, 0, 0, 0.12) 1px,
+  transparent 2px,
+  transparent 4px
+);
 @search-color: @global-emphasis-color;
 @search-placeholder-color: @global-emphasis-color;
 @search-icon-color: @global-emphasis-color;
@@ -415,7 +468,8 @@
 @nav-secondary-margin-top: 15px;
 @nav-primary-siblings-filter: blur(5px);
 @internal-nav-default-item-hover-mode: glitch;
-@internal-nav-default-item-hover-glitch-animation: uk-glitch-opacity, uk-glitch-text-shadow, uk-glitch-color;
+@internal-nav-default-item-hover-glitch-animation: uk-glitch-opacity, uk-glitch-text-shadow,
+  uk-glitch-color;
 @nav-default-font-family: @global-primary-font-family;
 @nav-default-font-weight: inherit;
 @nav-default-text-transform: @global-primary-text-transform;
@@ -485,14 +539,20 @@
 @subnav-pill-item-hover-color: @global-inverse-color;
 @subnav-pill-item-active-background: transparent;
 @internal-subnav-pill-item-mode: glow;
-@internal-subnav-pill-item-glow-gradient: conic-gradient(from 0, @global-primary-background, @global-primary-background);
+@internal-subnav-pill-item-glow-gradient: conic-gradient(
+  from 0,
+  @global-primary-background,
+  @global-primary-background
+);
 @internal-subnav-pill-item-glow-filter: blur(5px);
 @internal-subnav-pill-item-glow-opacity: 0;
 @subnav-siblings-opacity: 0.5;
 @internal-subnav-item-hover-mode: glitch;
-@internal-subnav-item-hover-glitch-animation: uk-glitch-opacity, uk-glitch-text-shadow, uk-glitch-color;
+@internal-subnav-item-hover-glitch-animation: uk-glitch-opacity, uk-glitch-text-shadow,
+  uk-glitch-color;
 @internal-subnav-pill-item-hover-mode: glitch;
-@internal-subnav-pill-item-hover-glitch-animation: uk-glitch-opacity, uk-glitch-text-shadow, uk-glitch-color;
+@internal-subnav-pill-item-hover-glitch-animation: uk-glitch-opacity, uk-glitch-text-shadow,
+  uk-glitch-color;
 @subnav-item-font-family: @global-primary-font-family;
 @subnav-item-font-weight: inherit;
 @subnav-item-text-transform: @global-primary-text-transform;
@@ -503,7 +563,11 @@
 @inverse-subnav-pill-item-hover-color: @global-emphasis-color;
 @inverse-subnav-pill-item-active-background: transparent;
 @inverse-subnav-pill-item-active-color: @global-emphasis-color;
-@internal-inverse-subnav-pill-item-glow-gradient: conic-gradient(from 0, @global-inverse-color, @global-inverse-color);
+@internal-inverse-subnav-pill-item-glow-gradient: conic-gradient(
+  from 0,
+  @global-inverse-color,
+  @global-inverse-color
+);
 @breadcrumb-item-color: lighten(@global-emphasis-color, 30%);
 @breadcrumb-item-hover-color: @global-primary-background;
 @breadcrumb-item-active-color: lighten(@global-primary-background, 10%);
@@ -511,14 +575,15 @@
 @breadcrumb-divider-color: lighten(@global-emphasis-color, 30%);
 @breadcrumb-item-text-transform: uppercase;
 @breadcrumb-item-disabled-color: darken(@global-muted-color, 20%);
-@internal-breadcrumb-divider-background-image: "../../../../uikit-themes/master-quantum-flares/images/breadcrumb-divider.svg";
+@internal-breadcrumb-divider-background-image: '../../../../uikit-themes/master-quantum-flares/images/breadcrumb-divider.svg';
 @pagination-margin-horizontal: 30px;
 @pagination-item-padding-vertical: 3px;
 @pagination-item-padding-horizontal: 6px;
 @pagination-item-active-color: @global-emphasis-color;
 @pagination-item-height: 25px;
 @internal-pagination-item-hover-mode: glitch;
-@internal-pagination-item-hover-glitch-animation: uk-glitch-opacity, uk-glitch-text-shadow, uk-glitch-color;
+@internal-pagination-item-hover-glitch-animation: uk-glitch-opacity, uk-glitch-text-shadow,
+  uk-glitch-color;
 @pagination-item-font-size: 20px;
 @pagination-item-font-family: @global-primary-font-family;
 @pagination-item-font-weight: @global-primary-font-weight;
@@ -542,7 +607,7 @@
 @thumbnav-item-background: transparent;
 @internal-thumbnav-item-hover-mode: glitch;
 @internal-thumbnav-item-hover-glitch-animation: uk-glitch-color;
-@thumbnav-item-gradient: linear-gradient(360deg, rgba(255,255,255,0), rgba(255,255,255,0.4));
+@thumbnav-item-gradient: linear-gradient(360deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.4));
 @iconnav-item-color: @global-emphasis-color;
 @iconnav-item-hover-color: @global-emphasis-color;
 @iconnav-siblings-opacity: 0.5;

@@ -1,13 +1,14 @@
-import type { Project } from '../core/types';
+import type { Project } from '../core/types'
 
-export { type Project };
+export { type Project }
 
 export const PROJECTS: Project[] = [
   {
     id: 'ebb-vibes',
     page: 'works',
     title: 'Ebb Vibes',
-    description: 'Late night sessions captured in digital harmony. Guitar lines dissolving into neon atmosphere.',
+    description:
+      'Late night sessions captured in digital harmony. Guitar lines dissolving into neon atmosphere.',
     textureUrl: '/assets/projects/ebb-vibes/cover.webp',
     detailTextureUrl: '/assets/projects/ebb-vibes/detail.webp',
     color: '#ff5500',
@@ -35,7 +36,8 @@ export const PROJECTS: Project[] = [
     id: 'till-at-night',
     page: 'works',
     title: 'Until the Night',
-    description: 'A parallel timeline where analog meets algorithm. Real instruments, synthetic space.',
+    description:
+      'A parallel timeline where analog meets algorithm. Real instruments, synthetic space.',
     textureUrl: '/assets/projects/till-at-night/cover.webp',
     detailTextureUrl: '/assets/projects/till-at-night/detail.webp',
     color: '#cc88ff',
@@ -59,4 +61,4 @@ export const PROJECTS: Project[] = [
     viewPosition: { x: 8, y: 0.5, z: 5 },
     viewLookAt: { x: 8, y: 0, z: 0 },
   },
-];
+]

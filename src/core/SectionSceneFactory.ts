@@ -26,15 +26,22 @@ function makeParticles(
   const geo = new THREE.BufferGeometry()
   const pos = new Float32Array(count * 3)
   for (let i = 0; i < count; i++) {
-    pos[i * 3]     = (Math.random() - 0.5) * spread.x
+    pos[i * 3] = (Math.random() - 0.5) * spread.x
     pos[i * 3 + 1] = (Math.random() - 0.5) * spread.y
     pos[i * 3 + 2] = (Math.random() - 0.5) * spread.z
   }
   geo.setAttribute('position', new THREE.BufferAttribute(pos, 3))
-  const pts = new THREE.Points(geo, new THREE.PointsMaterial({
-    color, size, transparent: true, opacity,
-    sizeAttenuation: true, depthWrite: false,
-  }))
+  const pts = new THREE.Points(
+    geo,
+    new THREE.PointsMaterial({
+      color,
+      size,
+      transparent: true,
+      opacity,
+      sizeAttenuation: true,
+      depthWrite: false,
+    }),
+  )
   pts.name = name
   pts.frustumCulled = false
   pts.material.userData.baseOpacity = opacity
@@ -71,8 +78,14 @@ export class SectionSceneFactory {
         g.userData.flexibleSlides = slides
       }
     }
-    loader.load('/assets/textures/sec2-bg-text.png', (tex) => { bgTex = tex; tryBuild() })
-    loader.load('/assets/textures/flexible-title.png', (tex) => { titleTex = tex; tryBuild() })
+    loader.load('/assets/textures/sec2-bg-text.png', (tex) => {
+      bgTex = tex
+      tryBuild()
+    })
+    loader.load('/assets/textures/flexible-title.png', (tex) => {
+      titleTex = tex
+      tryBuild()
+    })
     g.add(makeParticles(pc(30), new THREE.Vector3(14, 7, 8), 0xaaaaaa, 0.035, 0.2))
 
     // Bug 6: junni "flexible/elastic object" pattern — a rotating wireframe
@@ -80,7 +93,10 @@ export class SectionSceneFactory {
     // Wireframe + low opacity keeps it subtle against the light bg.
     const flexGeo = new THREE.IcosahedronGeometry(1.4, 1)
     const flexMat = new THREE.MeshBasicMaterial({
-      color: 0x222222, wireframe: true, transparent: true, opacity: 0.25,
+      color: 0x222222,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.25,
     })
     const flexMesh = new THREE.Mesh(flexGeo, flexMat)
     flexMesh.name = 'flexible-object'
@@ -116,18 +132,25 @@ export class SectionSceneFactory {
 
   static byIndex(i: number): THREE.Group {
     switch (i) {
-      case 0: return SectionSceneFactory.createIntro()
-      case 1: return SectionSceneFactory.createAbout()
-      case 2: return SectionSceneFactory.createFlexible()
-      case 3: return SectionSceneFactory.createChallenge()
-      case 4: return SectionSceneFactory.createInnovative()
-      case 5: return SectionSceneFactory.createContact()
-      default: return SectionSceneFactory.createIntro()
+      case 0:
+        return SectionSceneFactory.createIntro()
+      case 1:
+        return SectionSceneFactory.createAbout()
+      case 2:
+        return SectionSceneFactory.createFlexible()
+      case 3:
+        return SectionSceneFactory.createChallenge()
+      case 4:
+        return SectionSceneFactory.createInnovative()
+      case 5:
+        return SectionSceneFactory.createContact()
+      default:
+        return SectionSceneFactory.createIntro()
     }
   }
 
   static hideGeometry(group: THREE.Group): void {
-    group.traverse(obj => {
+    group.traverse((obj) => {
       if (obj === group) return
       if (obj instanceof THREE.Points) return
       if (obj.userData?.keepVisible) return

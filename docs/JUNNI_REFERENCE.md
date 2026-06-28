@@ -20,6 +20,7 @@
 absolute-positioned overlays with `pointer-events: none` (except active).
 
 Our adaptation:
+
 - `canvas.canvas` (z-index:1, fixed, pointer-events:none)
 - `#spa-content` (z-index:2, transparent) with 6 `<section>` (100vh each)
 - Scroll-based section switching (not absolute overlay)
@@ -27,6 +28,7 @@ Our adaptation:
 ## Section compositions (junni)
 
 ### Section1 — Intro
+
 - **Wall**: physics-based collision wall (cannon.js)
 - **Logo**: 3D logo parts that assemble
 - **Crosses**: animated cross shapes
@@ -39,6 +41,7 @@ Our adaptation:
 Keep simple — junni uses GLTF assets we don't have.
 
 ### Section2 — Flexible
+
 - **Flexible**: flexible/elastic object
 - **Section2Title**: animated title
 - **Slides**: sliding panels
@@ -47,6 +50,7 @@ Keep simple — junni uses GLTF assets we don't have.
 **Our adaptation (createAbout):** Blob + reflective floor + particles on dark BG.
 
 ### Section3 — Works (displays)
+
 - **Wire**: wireframe structure
 - **Displays**: product display cards (like our WorksPortfolio)
 - **Lights**: section-specific lighting
@@ -58,13 +62,16 @@ Keep simple — junni uses GLTF assets we don't have.
 ProjectOverlay (DOM UI). Grid floor + geometric lines.
 
 ### Section4 — Peoples
+
 - **Peoples**: character figures (GLTF)
 - **TileText**: tiled text display
 
 **Our adaptation (createInnovative):** Constellation network (points + lines)
-+ blob. Represents "innovation/network" concept.
+
+- blob. Represents "innovation/network" concept.
 
 ### Section5 — Outro
+
 - **Grid**: animated grid (shader-based)
 - **TextRing**: rotating ring of text
 - **Outro**: closing text
@@ -73,6 +80,7 @@ ProjectOverlay (DOM UI). Grid floor + geometric lines.
 TextRing pattern — rotating text around Baku.)
 
 ### Section6 — Next
+
 - **Comrades**: companion shapes
 - **Next**: "next" call-to-action
 - **Particle**: closing particles
@@ -84,32 +92,39 @@ TextRing pattern — rotating text around Baku.)
 ## Key junni technical patterns
 
 ### BG (background)
+
 Junni: `BG.ts` — gradient sphere with shader.
 Ours: `BG.ts` — per-section Color, set as `scene.background`. Lerp between
 section colors. Simpler, works on WebGPU without shaders.
 
 ### Ground
+
 Junni: `Ground.ts` — shader-based grid floor.
 Ours: `GridHelper` (built-in) or `MeshStandardMaterial` plane. No shader.
 
 ### Baku (character)
+
 Junni: `Baku.ts` — GLTF model with physics + multiple materials.
 Ours: `IcosahedronGeometry` + `MeshStandardMaterial`. Organic drift via
 Noise. Role-based material switching (NORMAL/GLASS/WIRE).
 
 ### DrawTrail
+
 Junni: `DrawTrail.ts` — cursor trail ribbon (GPU computation).
 Ours: Disabled for perf. Would be LineBasicMaterial with ring buffer.
 
 ### CursorLight
+
 Junni: `CursorLight.ts` — cursor-driven directional light.
 Ours: `CursorLight.ts` — same pattern, PointLight following cursor.
 
 ### CameraController
+
 Junni: Per-section camera transforms with scroll-driven lerp.
 Ours: Same — `Section.cameraTransform` lerped in `updateTransform`.
 
 ### Post-processing
+
 Junni: Custom RenderPipeline with bloom, vignette, chromatic aberration.
 Ours: WebGPU = direct render (no post, perf). WebGL2 = ShaderMaterial RT
 pipeline (bloom/grain/vignette).

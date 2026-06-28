@@ -3,11 +3,11 @@ const sent = new Set<string>()
 
 // EXported error tracker
 interface ErrorReport {
-  message: string;
-  url: string;
-  timestamp: string;
-  user_agent: string;
-  version: string;
+  message: string
+  url: string
+  timestamp: string
+  user_agent: string
+  version: string
 }
 
 export const ErrorTracker = {

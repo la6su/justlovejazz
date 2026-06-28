@@ -137,4 +137,6 @@ export function homePage(): string {
   `
 }
 
-export function renderPage(): string { return homePage() }
+export function renderPage(): string {
+  return homePage()
+}

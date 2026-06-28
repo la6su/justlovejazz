@@ -33,12 +33,18 @@ function loadState(): DevPanelState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) return JSON.parse(raw)
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return { visible: true }
 }
 
 function saveState(s: DevPanelState): void {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)) } catch { /* ignore */ }
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(s))
+  } catch {
+    /* ignore */
+  }
 }
 
 // Tweakpane 4 type defs are incomplete (addFolder missing). Cast to a loose
@@ -46,7 +52,11 @@ function saveState(s: DevPanelState): void {
 interface PaneLike {
   element: HTMLElement
   addFolder(opts: { title: string; expanded?: boolean }): PaneLike
-  addBinding(target: object, key: string, opts?: Record<string, unknown>): {
+  addBinding(
+    target: object,
+    key: string,
+    opts?: Record<string, unknown>,
+  ): {
     on(evt: 'change', cb: (ev: { value: unknown }) => void): void
   }
   addButton(opts: { title: string }): { on(evt: 'click', cb: () => void): void }
@@ -70,7 +80,9 @@ export class DevPanel {
     bgHex: '#050507',
     fogDensity: 0.02,
     sectionIdx: 0,
-    camX: 0, camY: 1, camZ: 7,
+    camX: 0,
+    camY: 1,
+    camZ: 7,
     camFov: 50,
     exposure: 1,
     liquidMultiplier: 1,
@@ -84,7 +96,10 @@ export class DevPanel {
     this.renderer = exp.renderer
     this.state = loadState()
 
-    this.pane = new Pane({ title: 'JUSTLOVEJAZZ · dev', expanded: this.state.visible }) as unknown as PaneLike
+    this.pane = new Pane({
+      title: 'JUSTLOVEJAZZ · dev',
+      expanded: this.state.visible,
+    }) as unknown as PaneLike
     this.pane.element.style.position = 'fixed'
     this.pane.element.style.top = '12px'
     this.pane.element.style.right = '12px'
@@ -107,32 +122,43 @@ export class DevPanel {
     f.addBinding(this.params, 'bgHex', { label: 'bg color' }).on('change', (ev) => {
       this.world.bg.color.set(ev.value as string)
     })
-    f.addBinding(this.params, 'fogDensity', { label: 'fog', min: 0, max: 0.1, step: 0.001 })
-      .on('change', (ev) => {
+    f.addBinding(this.params, 'fogDensity', { label: 'fog', min: 0, max: 0.1, step: 0.001 }).on(
+      'change',
+      (ev) => {
         // setFog takes (color, density); keep current color, change density only.
         this.world.atmosphere?.setFog(this.world.bg.color, ev.value as number)
-      })
+      },
+    )
   }
 
   private buildCameraFolder(): void {
     const f = this.pane.addFolder({ title: 'Camera' })
-    f.addBinding(this.params, 'camX', { label: 'x', step: 0.1 }).on('change', () => this.applyCamera())
-    f.addBinding(this.params, 'camY', { label: 'y', step: 0.1 }).on('change', () => this.applyCamera())
-    f.addBinding(this.params, 'camZ', { label: 'z', step: 0.1 }).on('change', () => this.applyCamera())
-    f.addBinding(this.params, 'camFov', { label: 'fov', min: 20, max: 90, step: 1 })
-      .on('change', () => this.applyCamera())
+    f.addBinding(this.params, 'camX', { label: 'x', step: 0.1 }).on('change', () =>
+      this.applyCamera(),
+    )
+    f.addBinding(this.params, 'camY', { label: 'y', step: 0.1 }).on('change', () =>
+      this.applyCamera(),
+    )
+    f.addBinding(this.params, 'camZ', { label: 'z', step: 0.1 }).on('change', () =>
+      this.applyCamera(),
+    )
+    f.addBinding(this.params, 'camFov', { label: 'fov', min: 20, max: 90, step: 1 }).on(
+      'change',
+      () => this.applyCamera(),
+    )
   }
 
   private buildWorldFolder(): void {
     const f = this.pane.addFolder({ title: 'World' })
-    f.addBinding(this.params, 'sectionIdx', { label: 'section', min: 0, max: 5, step: 1 })
-      .on('change', (ev) => {
+    f.addBinding(this.params, 'sectionIdx', { label: 'section', min: 0, max: 5, step: 1 }).on(
+      'change',
+      (ev) => {
         this.world.changeSection(ev.value as number)
-      })
-    f.addBinding(this.params, 'bakuVisible', { label: 'baku visible' })
-      .on('change', (ev) => {
-        if (this.world.baku) this.world.baku.visible = ev.value as boolean
-      })
+      },
+    )
+    f.addBinding(this.params, 'bakuVisible', { label: 'baku visible' }).on('change', (ev) => {
+      if (this.world.baku) this.world.baku.visible = ev.value as boolean
+    })
     f.addButton({ title: 'Jump to works' }).on('click', () => {
       document.getElementById('section-challenge')?.scrollIntoView({ behavior: 'smooth' })
     })
@@ -160,7 +186,8 @@ export class DevPanel {
       monitor.fps = s.fps
       monitor.longTasks = s.longTaskCount
       monitor.heap = s.usedHeapMB ?? 0
-      monitor.renderer = (this.renderer.instance as unknown as { isWebGPURenderer?: boolean }).isWebGPURenderer
+      monitor.renderer = (this.renderer.instance as unknown as { isWebGPURenderer?: boolean })
+        .isWebGPURenderer
         ? 'WebGPU'
         : 'WebGL2'
       f.refresh()
@@ -169,11 +196,13 @@ export class DevPanel {
 
   private buildRenderFolder(): void {
     const f = this.pane.addFolder({ title: 'Render' })
-    f.addBinding(this.params, 'exposure', { label: 'exposure', min: 0, max: 3, step: 0.05 })
-      .on('change', (ev) => {
+    f.addBinding(this.params, 'exposure', { label: 'exposure', min: 0, max: 3, step: 0.05 }).on(
+      'change',
+      (ev) => {
         const r = this.renderer.instance as unknown as { toneMappingExposure: number }
         r.toneMappingExposure = ev.value as number
-      })
+      },
+    )
     f.addButton({ title: 'Reload' }).on('click', () => location.reload())
   }
 

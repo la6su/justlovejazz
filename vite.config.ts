@@ -135,11 +135,13 @@ export default defineConfig({
         const projects = readdirSync(resolve(__dirname, 'projects'))
         mkdirSync(resolve(__dirname, 'dist', 'projects'), { recursive: true })
         projects
-          .filter(f => f.endsWith('.html'))
-          .forEach(f => copyFileSync(
-            resolve(__dirname, 'projects', f),
-            resolve(__dirname, 'dist', 'projects', f),
-          ))
+          .filter((f) => f.endsWith('.html'))
+          .forEach((f) =>
+            copyFileSync(
+              resolve(__dirname, 'projects', f),
+              resolve(__dirname, 'dist', 'projects', f),
+            ),
+          )
       },
     },
   ],
