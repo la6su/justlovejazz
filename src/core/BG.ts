@@ -19,8 +19,8 @@ export class BG {
   private _scratch = new THREE.Color()
 
   constructor() {
-    this.targetColor.copy(sectionColors[0])
-    this.color.copy(sectionColors[0])
+    this.targetColor.copy(sectionColors[0]!)
+    this.color.copy(sectionColors[0]!)
   }
 
   /**
@@ -28,7 +28,7 @@ export class BG {
    * Called by World.updateTransform when the section index changes.
    */
   public setSection(index: number): void {
-    const c = sectionColors[Math.max(0, Math.min(index, sectionColors.length - 1))]
+    const c = sectionColors[Math.max(0, Math.min(index, sectionColors.length - 1))]!
     this.targetColor.copy(c)
   }
 
@@ -38,8 +38,8 @@ export class BG {
    * This gives pixel-perfect background progression while scrolling.
    */
   public setProgress(fromIndex: number, toIndex: number, t: number): void {
-    const from = sectionColors[Math.max(0, Math.min(fromIndex, sectionColors.length - 1))]
-    const to = sectionColors[Math.max(0, Math.min(toIndex, sectionColors.length - 1))]
+    const from = sectionColors[Math.max(0, Math.min(fromIndex, sectionColors.length - 1))]!
+    const to = sectionColors[Math.max(0, Math.min(toIndex, sectionColors.length - 1))]!
     this.targetColor.copy(this._scratch.lerpColors(from, to, t))
   }
 

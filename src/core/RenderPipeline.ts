@@ -257,10 +257,10 @@ export class RenderPipeline {
 
     // Update composite pass uniforms (WebGL)
     if (this._passComposite) {
-      this._passComposite.uniforms.uBloomIntensity.value = params.bloom
-      this._passComposite.uniforms.uVignette.value = params.vignette
-      this._passComposite.uniforms.uGrain.value = params.grain
-      this._passComposite.uniforms.uChromatic.value = this._params.chromatic
+      this._passComposite.uniforms.uBloomIntensity!.value = params.bloom
+      this._passComposite.uniforms.uVignette!.value = params.vignette
+      this._passComposite.uniforms.uGrain!.value = params.grain
+      this._passComposite.uniforms.uChromatic!.value = this._params.chromatic
     }
   }
 
@@ -469,7 +469,7 @@ export class RenderPipeline {
 
     // Update blur resolution uniform
     if (this._passBlur) {
-      this._passBlur.uniforms.uResolution.value.set(bw, bh)
+      this._passBlur.uniforms.uResolution!.value.set(bw, bh)
     }
   }
 
@@ -507,13 +507,13 @@ export class RenderPipeline {
 
     for (let i = 0; i < this._config.bloomPasses; i++) {
       // Horizontal
-      passBlur.uniforms.uInput.value = inputRT.texture
-      passBlur.uniforms.uHorizontal.value = true
+      passBlur.uniforms.uInput!.value = inputRT.texture
+      passBlur.uniforms.uHorizontal!.value = true
       this._renderQuad(passBlur, {}, outputRT, renderer)
 
       // Vertical — swap RO/point
-      passBlur.uniforms.uInput.value = outputRT.texture
-      passBlur.uniforms.uHorizontal.value = false
+      passBlur.uniforms.uInput!.value = outputRT.texture
+      passBlur.uniforms.uHorizontal!.value = false
       this._renderQuad(passBlur, {}, inputRT, renderer)
 
       // Swap for next iteration
@@ -525,13 +525,13 @@ export class RenderPipeline {
 
     // 4. Composite: scene + bloom → screen
     renderer.setRenderTarget(null)
-    passComposite.uniforms.uScene.value = rtScene.texture
-    passComposite.uniforms.uBloom.value = bloomTex
-    passComposite.uniforms.uBloomIntensity.value = this._params.bloom
-    passComposite.uniforms.uVignette.value = this._params.vignette
-    passComposite.uniforms.uGrain.value = this._params.grain
-    passComposite.uniforms.uChromatic.value = this._params.chromatic ?? 0
-    passComposite.uniforms.uTime.value = performance.now() * 0.001
+    passComposite.uniforms.uScene!.value = rtScene.texture
+    passComposite.uniforms.uBloom!.value = bloomTex
+    passComposite.uniforms.uBloomIntensity!.value = this._params.bloom
+    passComposite.uniforms.uVignette!.value = this._params.vignette
+    passComposite.uniforms.uGrain!.value = this._params.grain
+    passComposite.uniforms.uChromatic!.value = this._params.chromatic ?? 0
+    passComposite.uniforms.uTime!.value = performance.now() * 0.001
 
     this._renderQuad(passComposite, {}, null, renderer)
 

@@ -84,13 +84,13 @@ export class DrawTrail {
 
     // Shift ring buffer (oldest dropped, newest = cursor)
     for (let i = this.trailPositions.length - 1; i > 0; i--) {
-      this.trailPositions[i].copy(this.trailPositions[i - 1])
+      this.trailPositions[i]!.copy(this.trailPositions[i - 1]!)
     }
-    this.trailPositions[0].copy(this._ndc)
+    this.trailPositions[0]!.copy(this._ndc)
 
     // Write positions + vertex colors (fade head→tail)
     for (let i = 0; i < TRAIL_LENGTH; i++) {
-      const p = this.trailPositions[i]
+      const p = this.trailPositions[i]!
       this.positions[i * 3] = p.x
       this.positions[i * 3 + 1] = p.y
       this.positions[i * 3 + 2] = p.z
@@ -103,8 +103,8 @@ export class DrawTrail {
       this.colors[i * 3 + 2] = intensity * 0.52 // B
     }
 
-    this.geometry.attributes.position.needsUpdate = true
-    this.geometry.attributes.color.needsUpdate = true
+    this.geometry.attributes.position!.needsUpdate = true
+    this.geometry.attributes.color!.needsUpdate = true
   }
 
   setVisible(visible: boolean): void {

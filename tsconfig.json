@@ -20,7 +20,8 @@
     "noFallthroughCasesInSwitch": true,
 
     /* Strict type-safety (Sprint 4) */
-    "strict": true
+    "strict": true,
+    "noUncheckedIndexedAccess": true
   },
 
   "include": ["src"],

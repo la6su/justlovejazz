@@ -117,7 +117,7 @@ const SECTION_PRESETS: Record<string, SectionLightPreset> = {
 }
 
 // Fallback to sec_about for unknown sections
-const DEFAULT_PRESET = SECTION_PRESETS['sec_about']
+const DEFAULT_PRESET = SECTION_PRESETS['sec_about']!
 
 export class CinematicLights {
   private keyLight: THREE.DirectionalLight
@@ -176,7 +176,7 @@ export class CinematicLights {
     scene.add(this.group)
 
     // Initialise targets from intro preset
-    this._applyPresetToTargets(SECTION_PRESETS['sec_intro'])
+    this._applyPresetToTargets(SECTION_PRESETS['sec_intro']!)
     // Snap immediately (no lerp on first frame)
     this._snapToTargets()
   }

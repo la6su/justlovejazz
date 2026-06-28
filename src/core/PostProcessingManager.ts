@@ -114,7 +114,7 @@ export class PostProcessingManager {
 
   /** Apply preset for a given phase (pass PhaseConfig.id, e.g. 'sec_about') */
   applyPreset(phase: string): void {
-    const preset = PHASE_PRESETS[phase] ?? PHASE_PRESETS['sec_intro']
+    const preset = PHASE_PRESETS[phase] ?? PHASE_PRESETS['sec_intro']!
     this.current = { ...preset }
 
     // Apply quality tier scaling

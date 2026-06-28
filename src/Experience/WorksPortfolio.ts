@@ -68,7 +68,7 @@ export class WorksPortfolio {
     this.texturesLoaded = true
     let loaded = 0
     for (let i = 0; i < this.projects.length; i++) {
-      const url = this.projects[i].textureUrl || this.projects[i].detailTextureUrl
+      const url = this.projects[i]!.textureUrl || this.projects[i]!.detailTextureUrl
       if (!url) {
         loaded++
         continue

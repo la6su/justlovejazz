@@ -107,7 +107,7 @@ export class World extends THREE.Group {
 
   public async init(): Promise<void> {
     await this.ensureAtmosphere()
-    const pageKey = (document.body?.getAttribute('data-page') || 'home').split('-')[0]
+    const pageKey = (document.body?.getAttribute('data-page') || 'home').split('-')[0] ?? 'home'
     this.configs = getWorldConfigForPage(pageKey)
     this.disposeSections()
     this.disposeSceneGroups()
@@ -208,11 +208,11 @@ export class World extends THREE.Group {
       const pts = group.userData._particleCache as THREE.Points[]
       if (!this.isReducedMotion) {
         for (const p of pts) {
-          const attr = p.geometry.attributes.position
+          const attr = p.geometry.attributes.position!
           const arr = attr.array as Float32Array
           for (let i = 1; i < arr.length; i += 3) {
-            arr[i] += deltaTime * 0.05
-            if (arr[i] > 4) arr[i] = -2
+            arr[i]! += deltaTime * 0.05
+            if (arr[i]! > 4) arr[i]! = -2
           }
           attr.needsUpdate = true
         }
@@ -274,7 +274,7 @@ export class World extends THREE.Group {
 
     // Map scrollValue to range index
     for (let i = 0; i < ranges.length; i++) {
-      const [rStart, rEnd] = ranges[i]
+      const [rStart, rEnd] = ranges[i]!
       if (scrollValue >= rStart && scrollValue < rEnd) {
         // scrollValue is inside this section's range
         fromIndex = i
@@ -381,7 +381,9 @@ export class World extends THREE.Group {
     })
 
     const fromSec = this.sections[fromIndex]
-    const toSec = this.sections[toIndex] || this.sections[fromIndex]
+    const toSec = this.sections[toIndex] ?? this.sections[fromIndex]
+    if (!fromSec) return this.defaultResult()
+    if (!toSec) return this.defaultResult()
 
     // ── State transitions (Junni: trigger on entering/leaving scroll ranges)
     const reduced = this.isReducedMotion
