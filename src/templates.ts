@@ -66,6 +66,7 @@ export function homePage(): string {
                 A curated selection of interactive experiences, creative coding experiments,
                 and immersive web projects.
               </p>
+              <button id="jlz-show-works" class="uk-button uk-button-default uk-margin-large-top" style="border-color:rgba(255,255,255,.3);color:#fff;">Show</button>
             </div>
           </div>
           <div id="project-overlay" class="jlz-works-ui uk-position-z-index" uk-scrollspy="cls: uk-animation-slide-bottom; delay: 200; repeat: true"></div>

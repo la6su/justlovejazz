@@ -55,7 +55,7 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
     //   4. Splash overlay hidden + removed
     const INTRO_MS = 800       // cube establishes by ~0.8s
     const CURTAIN_MS = 800     // curtain split duration (CSS transition)
-    const TITLE_START_MS = 400 // dispatch jlz:webgl-ready at curtain midpoint
+    const TITLE_START_MS = 850 // dispatch jlz:webgl-ready AFTER curtains fully open
     const FADE_MS = 300        // splash fade after curtain fully open
 
     const elapsed = performance.now() - bootStart
@@ -72,8 +72,8 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
       // Open curtains + trigger cube opener (pulse).
       splash.triggerPortalCollapse()
 
-      // Dispatch jlz:webgl-ready at curtain midpoint — NoiseText starts
-      // animating JUSTLOVEJAZZ as the curtain reveals the scene. Seamless.
+      // Dispatch jlz:webgl-ready AFTER curtains fully open — NoiseText starts
+      // animating JUSTLOVEJAZZ once the scene is fully visible.
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent('jlz:webgl-ready'))
       }, TITLE_START_MS)

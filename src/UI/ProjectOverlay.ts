@@ -1,10 +1,9 @@
-// ProjectOverlay — Studio-grade UI synced with 3D carousel.
-// Layout: title (left), counter (right top), description (bottom left),
-// tags (bottom), nav arrows (screen sides). All token-driven.
+// ProjectOverlay — Fullscreen works mode UI.
 //
-// CRITICAL: container uses pointer-events: none with explicit auto on children.
-// This allows 3D carousel interaction (click/drag) to pass through while
-// keeping nav buttons, title, description etc clickable.
+// When Show button clicked: fullscreen overlay with cube + UI inside.
+// UI: title (top-left), counter (top-right), prev/next arrows (screen sides),
+// description (bottom), close button (top-right). Arrow nav works inside.
+// Esc closes. Cursor visible (pointer-events: auto on overlay).
 
 import { type Project } from '../core/types'
 import { NoiseText } from '../Experience/NoiseText'
@@ -13,129 +12,105 @@ export class ProjectOverlay {
   private container: HTMLElement
   private prevBtn!: HTMLButtonElement
   private nextBtn!: HTMLButtonElement
+  private closeBtn!: HTMLButtonElement
   private titleEl!: HTMLElement
-  private indexEl!: HTMLElement
   private catEl!: HTMLElement
   private descEl!: HTMLElement
   private tagsEl!: HTMLElement
   private counterEl!: HTMLElement
   private _first = true
+  private _isOpen = false
+
+  public onPrev: (() => void) | null = null
+  public onNext: (() => void) | null = null
+  public onClose: (() => void) | null = null
 
   constructor(protected root: HTMLElement) {
-    // Reuse existing #project-overlay from templates.ts if present,
-    // otherwise create a new container. Avoids duplicate overlays.
     const existing = (root.querySelector('#project-overlay') as HTMLElement | null)
       || (document.getElementById('project-overlay'))
     this.container = existing ?? document.createElement('div')
     if (!existing) {
-      this.container.className = 'jlz-works-ui'
-    }
-    // Start hidden — Experience.update() shows via showContainer() when
-    // showGallery config is true (works section only).
-    this.container.style.opacity = '0'
-    this.buildContent()
-    if (!existing) {
+      this.container.id = 'project-overlay'
       root.appendChild(this.container)
     }
+    this.build()
+    this.hide()
   }
 
-  private buildContent(): void {
-    const svg_prev = '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><polyline points="15 18 9 12 15 6"/></svg>'
-    const svg_next = '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><polyline points="9 18 15 12 9 6"/></svg>'
+  private build(): void {
+    this.container.style.cssText = `
+      position:fixed;inset:0;z-index:3500;pointer-events:none;
+      opacity:0;transition:opacity .4s ease;
+    `
+    this.container.innerHTML = `
+      <div class="jlz-fs-bg" style="position:absolute;inset:0;background:rgba(2,2,6,.85);backdrop-filter:blur(8px);"></div>
+      <div class="jlz-fs-top" style="position:absolute;top:0;left:0;width:100%;padding:2rem 2.5rem;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:auto;">
+        <div>
+          <div class="jlz-fs-cat" style="font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:.3rem;"></div>
+          <h2 class="jlz-fs-title" style="font-size:clamp(1.5rem,4vw,2.5rem);font-weight:900;color:#fff;margin:0;"></h2>
+        </div>
+        <div style="display:flex;align-items:center;gap:1.5rem;">
+          <div class="jlz-fs-counter" style="font-size:.8rem;color:rgba(255,255,255,.5);font-variant-numeric:tabular-nums;"></div>
+          <button class="jlz-fs-close" type="button" aria-label="Close" style="background:none;border:1px solid rgba(255,255,255,.2);color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;">✕</button>
+        </div>
+      </div>
+      <button class="jlz-fs-prev" type="button" aria-label="Previous" style="position:absolute;left:1.5rem;top:50%;transform:translateY(-50%);background:none;border:1px solid rgba(255,255,255,.2);color:#fff;width:44px;height:44px;border-radius:50%;cursor:pointer;font-size:1.2rem;pointer-events:auto;">←</button>
+      <button class="jlz-fs-next" type="button" aria-label="Next" style="position:absolute;right:1.5rem;top:50%;transform:translateY(-50%);background:none;border:1px solid rgba(255,255,255,.2);color:#fff;width:44px;height:44px;border-radius:50%;cursor:pointer;font-size:1.2rem;pointer-events:auto;">→</button>
+      <div class="jlz-fs-bottom" style="position:absolute;bottom:0;left:0;width:100%;padding:2rem 2.5rem;pointer-events:auto;">
+        <p class="jlz-fs-desc" style="color:rgba(255,255,255,.6);font-size:.9rem;max-width:600px;margin:0 0 .8rem;"></p>
+        <div class="jlz-fs-tags" style="display:flex;gap:.5rem;flex-wrap:wrap;"></div>
+      </div>
+    `
+    this.prevBtn = this.container.querySelector('.jlz-fs-prev')!
+    this.nextBtn = this.container.querySelector('.jlz-fs-next')!
+    this.closeBtn = this.container.querySelector('.jlz-fs-close')!
+    this.titleEl = this.container.querySelector('.jlz-fs-title')!
+    this.catEl = this.container.querySelector('.jlz-fs-cat')!
+    this.descEl = this.container.querySelector('.jlz-fs-desc')!
+    this.tagsEl = this.container.querySelector('.jlz-fs-tags')!
+    this.counterEl = this.container.querySelector('.jlz-fs-counter')!
 
-    this.container.innerHTML = [
-      '<div class="jlz-works-interact">',
-        '<button class="jlz-works-nav jlz-works-nav--prev" aria-label="Previous project">' + svg_prev + '</button>',
-        '<button class="jlz-works-nav jlz-works-nav--next" aria-label="Next project">' + svg_next + '</button>',
-        '<div class="jlz-works-info jlz-works-info--top">',
-          '<div class="jlz-works-index"></div>',
-          '<h2 class="jlz-works-title"></h2>',
-          '<div class="jlz-works-category"></div>',
-        '</div>',
-        '<div class="jlz-works-counter"></div>',
-        '<div class="jlz-works-info jlz-works-info--bottom">',
-          '<p class="jlz-works-description"></p>',
-          '<div class="jlz-works-tags"></div>',
-        '</div>',
-      '</div>',
-    ].join('')
-
-    this.indexEl = this.container.querySelector('.jlz-works-index') as HTMLElement
-    this.titleEl = this.container.querySelector('.jlz-works-title') as HTMLElement
-    this.catEl = this.container.querySelector('.jlz-works-category') as HTMLElement
-    this.descEl = this.container.querySelector('.jlz-works-description') as HTMLElement
-    this.tagsEl = this.container.querySelector('.jlz-works-tags') as HTMLElement
-    this.counterEl = this.container.querySelector('.jlz-works-counter') as HTMLElement
-    this.prevBtn = this.container.querySelector('.jlz-works-nav--prev') as HTMLButtonElement
-    this.nextBtn = this.container.querySelector('.jlz-works-nav--next') as HTMLButtonElement
-  }
-
-  show(project: Project, index: number, total: number): void {
-    if (!project) return
-
-    this.container.classList.add('jlz-works-ui--changing')
-
-    requestAnimationFrame(() => {
-      this.indexEl.textContent = ('0' + (index + 1)).slice(-2)
-      const titleText = (project.title || '').toUpperCase()
-      this.titleEl.textContent = titleText
-      this.catEl.textContent = (project.category || '') + ' · ' + (project.year || '')
-      this.descEl.textContent = project.description || ''
-      this.counterEl.textContent = (index + 1) + ' / ' + total
-
-      const tags = project.tags ?? []
-      this.tagsEl.innerHTML = tags
-        .filter(Boolean)
-        .map(t => '<span class="jlz-works-tag">' + t + '</span>')
-        .join('')
-
-      const accent = (project.color || '#515d84').replace('#', '')
-      this.titleEl.style.textShadow = '0 0 40px #' + accent + '30'
-
-      requestAnimationFrame(() => {
-        this.container.classList.remove('jlz-works-ui--changing')
-      })
-
-      // Start title animation after DOM update is committed.
-      requestAnimationFrame(() => {
-        this._animateTitle(titleText);
-      });
+    this.prevBtn.addEventListener('click', () => this.onPrev?.())
+    this.nextBtn.addEventListener('click', () => this.onNext?.())
+    this.closeBtn.addEventListener('click', () => this.close())
+    document.addEventListener('keydown', (e) => {
+      if (!this._isOpen) return
+      if (e.key === 'Escape') this.close()
+      if (e.key === 'ArrowLeft') this.onPrev?.()
+      if (e.key === 'ArrowRight') this.onNext?.()
     })
   }
 
-  setIndex(idx: number, total: number): void {
-    this.counterEl.textContent = (idx + 1) + ' / ' + total
-    this.indexEl.textContent = ('0' + (idx + 1)).slice(-2)
-  }
-
-  onPrev(cb: () => void): void {
-    this.prevBtn.onclick = cb
-  }
-
-  onNext(cb: () => void): void {
-    this.nextBtn.onclick = cb
+  showContainer(): void {
+    this._isOpen = true
+    this.container.style.opacity = '1'
+    this.container.style.pointerEvents = 'auto'
   }
 
   hide(): void {
+    this._isOpen = false
     this.container.style.opacity = '0'
+    this.container.style.pointerEvents = 'none'
   }
 
-  showContainer(): void {
+  show(project: Project, index: number, total: number): void {
+    this.catEl.textContent = `${project.year ?? ''} · ${project.category ?? ''}`
+    NoiseText.for(this.titleEl).show(0.8, project.title)
+    this.descEl.textContent = project.description || ''
+    this.counterEl.textContent = `${index + 1} / ${total}`
+    this.tagsEl.innerHTML = (project.tags ?? [])
+      .filter(Boolean)
+      .map(t => `<span style="background:rgba(120,140,200,.15);color:#a0b0e0;padding:.2rem .6rem;border-radius:4px;font-size:.7rem;">${t}</span>`)
+      .join('')
     if (this._first) {
-      this.container.style.opacity = '0'
-      requestAnimationFrame(() => {
-        this.container.style.opacity = '1'
-        this._first = false
-      })
-    } else {
-      this.container.style.opacity = '1'
+      this._first = false
+      this.showContainer()
     }
   }
 
-  private _animateTitle(titleText: string): void {
-    if (titleText.trim()) {
-      NoiseText.for(this.titleEl).show(0.5, titleText.trim());
-    }
+  close(): void {
+    this.hide()
+    this.onClose?.()
   }
 
   dispose(): void {

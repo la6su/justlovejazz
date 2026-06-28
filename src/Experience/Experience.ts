@@ -196,6 +196,12 @@ export class Experience {
       window.dispatchEvent(new CustomEvent('jlz:section-change', {
         detail: { sectionId, context: cfgForSection?.context, configId: cfgForSection?.id, index: idx }
       }))
+      // Clear project textures from baku when leaving works section (idx !== 3).
+      // Prevents project images showing on cube during intro/about/etc.
+      if (idx !== 3) {
+        const cube = this.world.baku as unknown as { clearProjectTextures?: () => void } | undefined
+        cube?.clearProjectTextures?.()
+      }
     }
 
     // Context switch (asset disposal + post-processing preset)
@@ -397,14 +403,32 @@ export class Experience {
     }
 
     if (!this.overlay) {
-      // Works slider overlay mounts into the challenge section (data-section="challenge",
-      // id="section-challenge") — this is the "Works" section in the SPA layout.
       const worksSection = document.getElementById('section-challenge')
         || document.getElementById('section-works')
         || document.getElementById('spa-content')
       this.overlay = new ProjectOverlay(worksSection!)
-      this.overlay.onPrev(() => this.portfolio?.prev())
-      this.overlay.onNext(() => this.portfolio?.next())
+      this.overlay.onPrev = () => this.portfolio?.prev()
+      this.overlay.onNext = () => this.portfolio?.next()
+      this.overlay.onClose = () => {
+        // Close fullscreen → clear project textures from cube
+        const cube = this.world?.baku as unknown as { clearProjectTextures?: () => void } | undefined
+        cube?.clearProjectTextures?.()
+        if (this.portfolio) this.portfolio.group.visible = false
+      }
+    }
+    // Wire the Show button → open fullscreen works mode.
+    const showBtn = document.getElementById('jlz-show-works')
+    if (showBtn && !showBtn.dataset.wired) {
+      showBtn.dataset.wired = 'true'
+      showBtn.addEventListener('click', () => {
+        if (this.portfolio) this.portfolio.group.visible = true
+        this.overlay?.showContainer()
+        // Re-apply textures to cube + load first project
+        if (this.portfolio && this.world.baku) {
+          this.portfolio.setBaku(this.world.baku)
+        }
+        this.onProjectSelect(0)
+      })
     }
     if (!this.projectDetail) {
       this.projectDetail = new ProjectDetail()
