@@ -38,6 +38,7 @@ bun run build        # tsc && vite build, must pass
 ```
 
 For runtime check (if dev server running):
+
 ```bash
 agent-browser open http://127.0.0.1:5173/
 agent-browser console  # no errors

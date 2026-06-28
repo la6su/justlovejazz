@@ -23,10 +23,14 @@ export function createSplash(): SplashOverlay {
   let root: HTMLElement | null = null
 
   function getExp() {
-    return (window as unknown as { experience?: {
-      setSplashProgress: (pct: number) => void
-      triggerSplashOpener: () => void
-    } }).experience
+    return (
+      window as unknown as {
+        experience?: {
+          setSplashProgress: (pct: number) => void
+          triggerSplashOpener: () => void
+        }
+      }
+    ).experience
   }
 
   function openCurtains(): void {
@@ -83,7 +87,7 @@ export function createSplash(): SplashOverlay {
     getElements() {
       if (!root) root = document.getElementById(id)
       return root ? { root } : null
-    }
+    },
   }
 }
 

@@ -33,81 +33,224 @@
    (which sets 'Source Sans 3' + 'Geologica'). Single font for the
    entire project per user request.
    ════════════════════════════════════════════════════════════════════ */
-@global-font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-@global-primary-font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-@base-heading-font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-@base-body-font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+@global-font-family:
+  'Inter',
+  -apple-system,
+  BlinkMacSystemFont,
+  sans-serif;
+@global-primary-font-family:
+  'Inter',
+  -apple-system,
+  BlinkMacSystemFont,
+  sans-serif;
+@base-heading-font-family:
+  'Inter',
+  -apple-system,
+  BlinkMacSystemFont,
+  sans-serif;
+@base-body-font-family:
+  'Inter',
+  -apple-system,
+  BlinkMacSystemFont,
+  sans-serif;
 
 /* ════════════════════════════════════════════════════════════════════
    0.5. SPA section layout (was sections.css — merged into main.less)
    ════════════════════════════════════════════════════════════════════ */
 
 /* Section background layers — TRANSPARENT (3D canvas provides background) */
-.section-bg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; background: transparent !important; }
-.section-bg--intro, .section-bg--about, .section-bg--flexible,
-.section-bg--challenge, .section-bg--innovative, .section-bg--contact { background: transparent !important; }
+.section-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  background: transparent !important;
+}
+.section-bg--intro,
+.section-bg--about,
+.section-bg--flexible,
+.section-bg--challenge,
+.section-bg--innovative,
+.section-bg--contact {
+  background: transparent !important;
+}
 
-.uk-position-cover { position: absolute; width: 100%; height: 100%; top: 0; right: 0; bottom: 0; left: 0; }
+.uk-position-cover {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
 
 .section-container {
-  position: relative; z-index: 1; width: 100%; max-width: 1200px;
-  margin: 0 auto; padding: 5vh 5vw;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  min-height: 100vh; min-height: 100dvh;
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 5vh 5vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  min-height: 100dvh;
 }
-.section-content { text-align: center; z-index: 1; }
+.section-content {
+  text-align: center;
+  z-index: 1;
+}
 
 .studio-title {
-  font-family: var(--jlz-font-display); font-weight: 800;
-  font-size: clamp(2.5rem, 8vw, 5rem); line-height: 1; letter-spacing: -0.02em;
-  text-transform: uppercase; margin: 0 0 var(--jlz-space-8);
+  font-family: var(--jlz-font-display);
+  font-weight: 800;
+  font-size: clamp(2.5rem, 8vw, 5rem);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  margin: 0 0 var(--jlz-space-8);
 }
-.studio-title--hero { font-size: clamp(3rem, 10vw, 7rem); font-weight: 900; letter-spacing: -0.03em; }
-.studio-title--about, .studio-title--challenge { font-size: clamp(2.5rem, 8vw, 5rem); font-weight: 800; }
-.studio-subtitle { font-family: var(--jlz-font-body); font-size: clamp(0.75rem, 1.2vw, 0.95rem); letter-spacing: 0.25em; text-transform: uppercase; opacity: 0.65; font-weight: 400; }
-.studio-body { font-family: var(--jlz-font-body); max-width: 60ch; line-height: 1.7; font-size: clamp(0.9rem, 1.1vw, 1.05rem); font-weight: 300; }
+.studio-title--hero {
+  font-size: clamp(3rem, 10vw, 7rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+.studio-title--about,
+.studio-title--challenge {
+  font-size: clamp(2.5rem, 8vw, 5rem);
+  font-weight: 800;
+}
+.studio-subtitle {
+  font-family: var(--jlz-font-body);
+  font-size: clamp(0.75rem, 1.2vw, 0.95rem);
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  opacity: 0.65;
+  font-weight: 400;
+}
+.studio-body {
+  font-family: var(--jlz-font-body);
+  max-width: 60ch;
+  line-height: 1.7;
+  font-size: clamp(0.9rem, 1.1vw, 1.05rem);
+  font-weight: 300;
+}
 
 .section-studio section[data-section] {
-  min-height: 100vh !important; min-height: 100dvh !important;
-  height: auto !important; flex-shrink: 0 !important; flex-grow: 0 !important;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  position: relative; overflow: hidden; z-index: 2;
+  min-height: 100vh !important;
+  min-height: 100dvh !important;
+  height: auto !important;
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  z-index: 2;
   /* Bug 5: snap each section to viewport top — full-screen clear switch. */
   scroll-snap-align: start;
   scroll-snap-stop: always;
 }
-.uk-height-viewport { min-height: 100vh !important; min-height: 100dvh !important; }
+.uk-height-viewport {
+  min-height: 100vh !important;
+  min-height: 100dvh !important;
+}
 
 .jlz-nav-inner {
-  background: rgba(0,0,0,0.25); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  background: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
-body.light-theme .jlz-nav-inner { background: rgba(255,255,255,0.6); border-bottom: 1px solid rgba(0,0,0,0.08); }
-.jlz-nav-inner .uk-navbar-nav a, .jlz-nav-inner .uk-navbar-item {
-  color: rgba(255,255,255,0.85); font-family: var(--jlz-font-body); font-weight: 500;
-  font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; transition: color 0.3s ease;
+body.light-theme .jlz-nav-inner {
+  background: rgba(255, 255, 255, 0.6);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
-.jlz-nav-inner .uk-navbar-nav a:hover, .jlz-nav-inner .uk-navbar-nav a:focus { color: #fff; text-decoration: none; }
-body.light-theme .jlz-nav-inner .uk-navbar-nav a, body.light-theme .jlz-nav-inner .uk-navbar-item { color: rgba(0,0,0,0.75); }
-body.light-theme .jlz-nav-inner .uk-navbar-nav a:hover, body.light-theme .jlz-nav-inner .uk-navbar-nav a:focus { color: #000; }
+.jlz-nav-inner .uk-navbar-nav a,
+.jlz-nav-inner .uk-navbar-item {
+  color: rgba(255, 255, 255, 0.85);
+  font-family: var(--jlz-font-body);
+  font-weight: 500;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: color 0.3s ease;
+}
+.jlz-nav-inner .uk-navbar-nav a:hover,
+.jlz-nav-inner .uk-navbar-nav a:focus {
+  color: #fff;
+  text-decoration: none;
+}
+body.light-theme .jlz-nav-inner .uk-navbar-nav a,
+body.light-theme .jlz-nav-inner .uk-navbar-item {
+  color: rgba(0, 0, 0, 0.75);
+}
+body.light-theme .jlz-nav-inner .uk-navbar-nav a:hover,
+body.light-theme .jlz-nav-inner .uk-navbar-nav a:focus {
+  color: #000;
+}
 
-section[data-section="about"] .section-content,
-section[data-section="challenge"] .section-content,
-section[data-section="innovative"] .section-content,
-section[data-section="contact"] .section-content { color: #fff; }
-section[data-section="about"] .studio-title, section[data-section="challenge"] .studio-title,
-section[data-section="innovative"] .studio-title, section[data-section="contact"] .studio-title { color: #fff; }
-section[data-section="about"] .studio-subtitle, section[data-section="challenge"] .studio-subtitle,
-section[data-section="innovative"] .studio-subtitle, section[data-section="contact"] .studio-subtitle { color: rgba(255,255,255,0.6); }
-section[data-section="intro"] .section-content, section[data-section="intro"] .studio-title,
-section[data-section="flexible"] .section-content, section[data-section="flexible"] .studio-title { color: #111; }
-section[data-section="intro"] .studio-subtitle, section[data-section="flexible"] .studio-subtitle { color: rgba(0,0,0,0.6); }
-section[data-section="intro"] .uk-button-default, section[data-section="flexible"] .uk-button-default { border-color: #111; color: #111; }
-section[data-section="intro"] .uk-button-default:hover, section[data-section="flexible"] .uk-button-default:hover { background: #111; color: #fff; border-color: #111; }
+section[data-section='about'] .section-content,
+section[data-section='challenge'] .section-content,
+section[data-section='innovative'] .section-content,
+section[data-section='contact'] .section-content {
+  color: #fff;
+}
+section[data-section='about'] .studio-title,
+section[data-section='challenge'] .studio-title,
+section[data-section='innovative'] .studio-title,
+section[data-section='contact'] .studio-title {
+  color: #fff;
+}
+section[data-section='about'] .studio-subtitle,
+section[data-section='challenge'] .studio-subtitle,
+section[data-section='innovative'] .studio-subtitle,
+section[data-section='contact'] .studio-subtitle {
+  color: rgba(255, 255, 255, 0.6);
+}
+section[data-section='intro'] .section-content,
+section[data-section='intro'] .studio-title,
+section[data-section='flexible'] .section-content,
+section[data-section='flexible'] .studio-title {
+  color: #111;
+}
+section[data-section='intro'] .studio-subtitle,
+section[data-section='flexible'] .studio-subtitle {
+  color: rgba(0, 0, 0, 0.6);
+}
+section[data-section='intro'] .uk-button-default,
+section[data-section='flexible'] .uk-button-default {
+  border-color: #111;
+  color: #111;
+}
+section[data-section='intro'] .uk-button-default:hover,
+section[data-section='flexible'] .uk-button-default:hover {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
 
-.section-active { opacity: 1; }
-.jlz-works-ui { position: absolute; z-index: 999; bottom: 0; left: 0; width: 100%; pointer-events: auto; }
-#spa-content { position: relative; z-index: 2; }
+.section-active {
+  opacity: 1;
+}
+.jlz-works-ui {
+  position: absolute;
+  z-index: 999;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  pointer-events: auto;
+}
+#spa-content {
+  position: relative;
+  z-index: 2;
+}
 
 /* ════════════════════════════════════════════════════════════════════
    1. Reset + base body / canvas
@@ -123,16 +266,26 @@ body {
   /* Bug 5: junni-style section snapping — each section locks to viewport. */
   scroll-snap-type: y mandatory;
   scroll-behavior: auto; /* Lenis handles smoothing; CSS must not double-smooth */
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif !important;
 }
 
 /* Headings — uppercase as brand convention */
-h1, .uk-h1,
-h2, .uk-h2,
-h3, .uk-h3,
-h4, .uk-h4,
-h5, .uk-h5,
-h6, .uk-h6,
+h1,
+.uk-h1,
+h2,
+.uk-h2,
+h3,
+.uk-h3,
+h4,
+.uk-h4,
+h5,
+.uk-h5,
+h6,
+.uk-h6,
 .uk-heading-small,
 .uk-heading-medium,
 .uk-heading-large,
@@ -219,7 +372,9 @@ canvas {
 }
 
 /* Splash cursor — splash CSS is inline in index.html */
-#jlj-enter { cursor: pointer; }
+#jlj-enter {
+  cursor: pointer;
+}
 
 /* ════════════════════════════════════════════════════════════════════
    4. Custom cursor
@@ -235,9 +390,10 @@ canvas {
   border-radius: var(--jlz-radius-full);
   pointer-events: none;
   z-index: var(--jlz-z-toast);
-  transition: width var(--jlz-duration-normal) var(--jlz-ease-state),
-              height var(--jlz-duration-normal) var(--jlz-ease-state),
-              background-color var(--jlz-duration-normal) var(--jlz-ease-state);
+  transition:
+    width var(--jlz-duration-normal) var(--jlz-ease-state),
+    height var(--jlz-duration-normal) var(--jlz-ease-state),
+    background-color var(--jlz-duration-normal) var(--jlz-ease-state);
   transform: translate(-50%, -50%);
   will-change: transform;
   mix-blend-mode: difference;
@@ -258,7 +414,10 @@ canvas {
 /* Custom cursor only on precise-pointer devices (desktop mouse).
    Touch / coarse-pointer / motor-impaired users keep the system cursor (WCAG). */
 @media (hover: hover) and (pointer: fine) {
-  body, a, button, .interactive {
+  body,
+  a,
+  button,
+  .interactive {
     cursor: none;
   }
 }
@@ -333,9 +492,15 @@ canvas {
   transition: color var(--jlz-duration-fast) var(--jlz-ease-state);
   z-index: 2;
 }
-.jlz-works-nav--prev { left: var(--jlz-space-8); }
-.jlz-works-nav--next { right: var(--jlz-space-8); }
-.jlz-works-nav:hover { color: var(--jlz-color-text); }
+.jlz-works-nav--prev {
+  left: var(--jlz-space-8);
+}
+.jlz-works-nav--next {
+  right: var(--jlz-space-8);
+}
+.jlz-works-nav:hover {
+  color: var(--jlz-color-text);
+}
 .jlz-works-nav:focus-visible {
   outline: 2px solid var(--jlz-color-accent);
   outline-offset: var(--jlz-space-1);
@@ -430,9 +595,18 @@ canvas {
 }
 
 @keyframes jlz-title-noise {
-  0% { opacity: 0; transform: translateY(4px); }
-  20% { opacity: 1; transform: translateY(0); }
-  100% { opacity: 1; transform: translateY(0); }
+  0% {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Works UI responsive */
@@ -451,9 +625,15 @@ canvas {
     left: var(--jlz-space-6);
     max-width: 90%;
   }
-  .jlz-works-nav { padding: var(--jlz-space-2); }
-  .jlz-works-nav--prev { left: var(--jlz-space-2); }
-  .jlz-works-nav--next { right: var(--jlz-space-2); }
+  .jlz-works-nav {
+    padding: var(--jlz-space-2);
+  }
+  .jlz-works-nav--prev {
+    left: var(--jlz-space-2);
+  }
+  .jlz-works-nav--next {
+    right: var(--jlz-space-2);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -591,13 +771,24 @@ canvas {
 }
 
 @keyframes jlz-subtitle-fade {
-  0% { opacity: 0; transform: translateY(8px); }
-  100% { opacity: 1; transform: translateY(0); }
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes jlz-title-glow {
-  0%, 100% { text-shadow: none; }
-  50% { text-shadow: 0 0 20px rgba(81, 93, 132, 0.4); }
+  0%,
+  100% {
+    text-shadow: none;
+  }
+  50% {
+    text-shadow: 0 0 20px rgba(81, 93, 132, 0.4);
+  }
 }
 
 @media (max-width: 768px) {
@@ -771,7 +962,10 @@ canvas {
   .custom-cursor {
     display: none !important;
   }
-  body, a, button, .interactive {
+  body,
+  a,
+  button,
+  .interactive {
     cursor: auto !important;
   }
 

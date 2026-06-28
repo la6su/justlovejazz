@@ -6,7 +6,7 @@ import { input } from '../Input'
 
 export class CursorLight {
   private light: THREE.DirectionalLight
-  private goalPos  = new THREE.Vector3(-1, -1, -0.5)
+  private goalPos = new THREE.Vector3(-1, -1, -0.5)
   private currentPos = new THREE.Vector3(-1, -1, -0.5)
   private velocity = new THREE.Vector3()
   // GC-free scratch — avoids one Vector3 alloc per frame

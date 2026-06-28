@@ -76,9 +76,12 @@ export class Renderer {
       try {
         // setNodesHandler is a runtime method on WebGLRenderer; @types/three
         // does not type it yet. Isolate the cast at this adapter boundary.
-        (gl as any).setNodesHandler(new WebGLNodesHandler())
+        ;(gl as any).setNodesHandler(new WebGLNodesHandler())
       } catch (err) {
-        console.error('[Renderer] Failed to install WebGLNodesHandler — TSL materials will not render:', err)
+        console.error(
+          '[Renderer] Failed to install WebGLNodesHandler — TSL materials will not render:',
+          err,
+        )
       }
 
       this.instance = gl
@@ -94,7 +97,8 @@ export class Renderer {
     // GPU state on some drivers).
     this._pipelineConfig = {
       bloomThreshold: this.capabilities.postProcessing ? 0.5 : 1.0,
-      bloomPasses: this.capabilities.tier === 'high' ? 4 : this.capabilities.tier === 'medium' ? 3 : 2,
+      bloomPasses:
+        this.capabilities.tier === 'high' ? 4 : this.capabilities.tier === 'medium' ? 3 : 2,
       bloomResRatio: this.capabilities.tier === 'high' ? 0.5 : 0.25,
       blurRange: this.capabilities.tier === 'high' ? 2.0 : 3.0,
       bloomEnabled: this.capabilities.postProcessing, // Respect device tier

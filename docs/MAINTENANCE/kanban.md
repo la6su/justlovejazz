@@ -3,6 +3,7 @@
 ## ✅ DONE
 
 ### EPIC: AUDIT fixes (docs/AUDIT.md) — all resolved
+
 - [x] A-001: World.resize() — implement propagation to sceneGroups + groundPlane
 - [x] A-002: Portrait FOV — portraitFovBoost in PhaseConfig + Camera.updateSmooth()
 - [x] A-003: Section.switchState() — fix bus.channel overwrites-current-value bug
@@ -17,6 +18,7 @@
 - [x] A-011..A-014: Resolved by design (HERMES §1, out of scope, StateBus better, CPU opacity correct)
 
 ### EPIC: Optimization Sprints 1-5 (2026-06-28, PR #79)
+
 - [x] Sprint 1: Remove 3.2 MB dead assets; untrack .idea/.claude/test-results; delete ts5112-fix.json (LLM artifact)
 - [x] Sprint 1: Deps cleanup — remove troika-three-text; tweakpane→devDeps+dynamic import; migrate @studio-freight/lenis→lenis
 - [x] Sprint 1: Fix CI (npm ci→bun install; add type-check/test/lint); rewrite e2e tests; fix projects/*.html
@@ -27,27 +29,34 @@
 - [x] Bug fixes: title delay (fire jlz:webgl-ready at curtain mid-open); overlay flash (remove uk-scrollspy); prev/next (round goTo, use targetIdx); letter-spacing pop (strip span styles); section snap (CSS scroll-snap + ranges /6→/5 + BG lerp 6.0 + double-smoothstep); flexible wireframe icosahedron; portals rename (triggerPortalCollapse→reveal)
 
 ### EPIC: Re-enable DrawTrail
+
 - [x] T-001..T-004: DrawTrail integrated in World.ts + update loop (64-point ring buffer)
 
 ### EPIC: Junni reference repo cloned
+
 - [x] Clone next.junni.co.jp → references/next.junni.co.jp/
 - [x] .gitignore for .git in references
 
 ### EPIC: Critical bug fixes (2026-06-26)
+
 - [x] T-060..T-066: PostProcessingManager keys, NarrativePhase sync, Baku memory leak, WorldAtmosphere dead code, entry-app setTimeout cleanup, docs update
 
 ### EPIC: Quality pass (2026-06-26)
+
 - [x] T-067..T-070: BG.setProgress continuous lerp; Input.ts framerate-independent smoothing; Camera shake reset
 
 ### EPIC: Section content + perf (2026-06-26)
+
 - [x] T-071..T-073: SectionSceneFactory unique geometry; Section.update mesh cache; CursorLight zero-alloc
 
 ### EPIC: World Environment Architecture (2026-06-26)
+
 - [x] T-074..T-079: Lights.ts rewrite (SECTION_PRESETS); World.updateTransform lights+fog; particle cache; SectionSceneFactory hideGeometry
 
 ## TODO
 
 ### EPIC: Bespoke 3D section content (deferred — needs human/design)
+
 - [ ] T-090: Section 0 (Intro) — white BG hero object (replaces placeholder particles)
 - [ ] T-091: Section 1 (About) — dark BG blob / reflective floor
 - [ ] T-092: Section 2 (Flexible) — refine wireframe + text texture interaction
@@ -55,6 +64,7 @@
 - [ ] T-094: Section 5 (Contact) — closing visual
 
 ### EPIC: Codebase hardening (follow-up from bug 8 analysis)
+
 - [ ] Consolidate 4 sources of section index (World/StateBus/Experience×2) → single SectionStore
 - [ ] Replace untyped jlz:* custom events (27 usages) → typed EventBus<T>
 - [ ] Enable noUncheckedIndexedAccess (~80 errors, per-case fixes)
@@ -62,5 +72,6 @@
 - [ ] Decide fate of references/next.junni.co.jp/ (85 MB) — git-lfs or remove
 
 ### EPIC: Holographic UI Panels (deferred — aspirational)
+
 - [ ] Displays panel — interactive holographic UI
 - [ ] Comrades panel — multi-character display

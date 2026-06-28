@@ -32,6 +32,7 @@ Render loop: renderer.instance.setAnimationLoop(callback)
 ## Renderer
 
 Single `WebGPURenderer` (alpha:false, ACES tonemap, sRGB).
+
 - WebGPU: direct `renderer.render()` (no post-processing)
 - WebGL2: ShaderMaterial RT pipeline — single ACES pass in composite shader,
   rtScene is linear (no double tone-map / sRGB encode)
@@ -65,6 +66,7 @@ mid-open (400ms).
 ## Scroll transitions
 
 Per-section (from `WorldConfig`, ranges `[i/5, (i+1)/5]`):
+
 - Camera position/FOV (lerp via `Camera.updateSmooth`)
 - BG color (double-smoothstep `bgT` — holds color until mid-transition)
 - Fog color + density (set on section change)
@@ -80,27 +82,27 @@ junni-style full-screen section locking.
 
 ## Modules
 
-| Module | Role |
-|--------|------|
-| Experience | Render loop, section transitions, portfolio, visibilitychange |
-| Renderer | WebGPURenderer, direct render on WebGPU |
-| World | Section[] + sceneGroups[], SplashCube (baku), Lights, BG, Ground, DrawTrail |
-| SectionSceneFactory | 6 scenes (particles, flexible wireframe) |
-| BG | Per-section background color (reads from WorldConfig — single source) |
-| WorksPortfolio | Cube-face slider (spring physics, pointer guard) |
-| ProjectOverlay | DOM dialog (role=dialog, focus-trap, ESC close) |
-| NoiseText | Glitch reveal (jlz:webgl-ready + jlz:section-change) |
-| DrawTrail | Cursor trail (about/flexible only) |
-| CinematicLights | 5-light setup, changeSection + lerp |
-| disposeMaterialDeep | Disposes all material textures (prevents VRAM leak) |
-| AssetManager | Lazy KTX2Loader (dynamic import) |
+| Module              | Role                                                                        |
+| ------------------- | --------------------------------------------------------------------------- |
+| Experience          | Render loop, section transitions, portfolio, visibilitychange               |
+| Renderer            | WebGPURenderer, direct render on WebGPU                                     |
+| World               | Section[] + sceneGroups[], SplashCube (baku), Lights, BG, Ground, DrawTrail |
+| SectionSceneFactory | 6 scenes (particles, flexible wireframe)                                    |
+| BG                  | Per-section background color (reads from WorldConfig — single source)       |
+| WorksPortfolio      | Cube-face slider (spring physics, pointer guard)                            |
+| ProjectOverlay      | DOM dialog (role=dialog, focus-trap, ESC close)                             |
+| NoiseText           | Glitch reveal (jlz:webgl-ready + jlz:section-change)                        |
+| DrawTrail           | Cursor trail (about/flexible only)                                          |
+| CinematicLights     | 5-light setup, changeSection + lerp                                         |
+| disposeMaterialDeep | Disposes all material textures (prevents VRAM leak)                         |
+| AssetManager        | Lazy KTX2Loader (dynamic import)                                            |
 
 ## Removed (cleanup)
 
-| Module | Why |
-|--------|-----|
+| Module           | Why                                                                                             |
+| ---------------- | ----------------------------------------------------------------------------------------------- |
 | WebGLTextManager | Troika conflicted with NoiseText (made titles transparent). Deleted with troika-three-text dep. |
-| Baku.ts | Replaced by SplashCube (cube IS the baku). |
+| Baku.ts          | Replaced by SplashCube (cube IS the baku).                                                      |
 
 ## AUDIT — ALL RESOLVED ✅
 

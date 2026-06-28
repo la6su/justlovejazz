@@ -72,7 +72,7 @@ export class DrawTrail {
     this._ndc.set(
       camera.position.x + dirX * (dist * Math.sign(t)),
       camera.position.y + dirY * (dist * Math.sign(t)),
-      0
+      0,
     )
 
     if (!this.initialized) {
@@ -95,10 +95,10 @@ export class DrawTrail {
       this.positions[i * 3 + 1] = p.y
       this.positions[i * 3 + 2] = p.z
 
-      const fade = 1.0 - (i / TRAIL_LENGTH)
+      const fade = 1.0 - i / TRAIL_LENGTH
       const intensity = fade * fade
       // Accent color trail (matches --jlz-color-accent #515d84)
-      this.colors[i * 3] = intensity * 0.32     // R
+      this.colors[i * 3] = intensity * 0.32 // R
       this.colors[i * 3 + 1] = intensity * 0.36 // G
       this.colors[i * 3 + 2] = intensity * 0.52 // B
     }

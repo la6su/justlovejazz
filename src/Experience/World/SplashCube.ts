@@ -31,9 +31,12 @@ export class SplashCube extends THREE.Mesh {
 
   // Face directions: +X, -X, +Y, -Y, +Z, -Z
   private readonly faceDirs = [
-    new THREE.Vector3(1, 0, 0), new THREE.Vector3(-1, 0, 0),
-    new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, -1, 0),
-    new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 0, -1),
+    new THREE.Vector3(1, 0, 0),
+    new THREE.Vector3(-1, 0, 0),
+    new THREE.Vector3(0, 1, 0),
+    new THREE.Vector3(0, -1, 0),
+    new THREE.Vector3(0, 0, 1),
+    new THREE.Vector3(0, 0, -1),
   ]
 
   private targetParams: BakuMaterialParams = {
@@ -133,7 +136,7 @@ export class SplashCube extends THREE.Mesh {
 
   /** Target Y rotation for showing project face (0=front, 1=right, 2=back, 3=left). */
   getProjectRotationY(idx: number): number {
-    return -(idx * Math.PI / 2) // -90° per project
+    return -((idx * Math.PI) / 2) // -90° per project
   }
 
   /** Trigger the opener — faces pulse outward + back (cube "breathes" open). */
@@ -195,7 +198,8 @@ export class SplashCube extends THREE.Mesh {
       this.edgeLines[i].rotation.z = face.rotation.z
       // Edge glow follows progress (brighter as loading completes)
       const baseEdgeOpacity = 0.4 + this._progress * 0.6
-      ;(this.edgeLines[i].material as THREE.LineBasicMaterial).opacity = baseEdgeOpacity * (1 - this.openerProgress * 0.3)
+      ;(this.edgeLines[i].material as THREE.LineBasicMaterial).opacity =
+        baseEdgeOpacity * (1 - this.openerProgress * 0.3)
     }
 
     // Apply role/material when role changes (baku behavior)
@@ -226,7 +230,7 @@ export class SplashCube extends THREE.Mesh {
       // WIRE role = wireframe (only when no texture — wireframe hides textures)
       mat.wireframe = role === BakuRole.WIRE && !mat.map
       // Keep opacity high if texture is set (works slider), else glass-like.
-      mat.opacity = mat.map ? 0.9 : (role === BakuRole.GLASS ? 0.1 : 0.3)
+      mat.opacity = mat.map ? 0.9 : role === BakuRole.GLASS ? 0.1 : 0.3
       mat.needsUpdate = true
     }
   }

@@ -31,8 +31,11 @@ function scheduleUiKitRefresh(): void {
     ;(UIkit as any).update()
   }
   if ('requestIdleCallback' in window) {
-    ;(window as Window & { requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => void })
-      .requestIdleCallback(refresh, { timeout: 800 })
+    ;(
+      window as Window & {
+        requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => void
+      }
+    ).requestIdleCallback(refresh, { timeout: 800 })
   } else {
     setTimeout(refresh, 120)
   }
@@ -86,14 +89,16 @@ function animateNoiseTitles(): void {
   noiseAnimating = true
 
   // Clear after max animation duration (2s + 200ms safety)
-  setTimeout(() => { noiseAnimating = false }, 2200)
+  setTimeout(() => {
+    noiseAnimating = false
+  }, 2200)
 
   const leafEls = document.querySelectorAll<HTMLElement>('.studio-title__line')
   const leafSet = new Set(leafEls)
 
   for (const el of document.querySelectorAll<HTMLElement>('.studio-title')) {
     if (leafSet.has(el)) continue
-    const hasLeafChild = [...leafEls].some(l => l.closest('.studio-title') === el)
+    const hasLeafChild = [...leafEls].some((l) => l.closest('.studio-title') === el)
     if (hasLeafChild) continue
 
     const text = el.textContent?.trim() || ''

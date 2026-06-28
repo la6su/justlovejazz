@@ -13,7 +13,10 @@ export interface BootstrapOptions {
 let _bootstrapped = false
 export const isAppReady = () => _bootstrapped
 
-type OnReadyCallback = (renderer: import('./Experience/Renderer').RenderSurface, scene: THREE.Scene) => void
+type OnReadyCallback = (
+  renderer: import('./Experience/Renderer').RenderSurface,
+  scene: THREE.Scene,
+) => void
 
 export async function bootstrap(opts: BootstrapOptions): Promise<void> {
   if (_bootstrapped) return
@@ -53,9 +56,9 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
     //   2. At curtain midpoint (400ms) — dispatch jlz:webgl-ready → NoiseText animate JUSTLOVEJAZZ
     //   3. Cube continues rotating as baku
     //   4. Splash overlay hidden + removed
-    const INTRO_MS = 800       // cube establishes by ~0.8s
-    const CURTAIN_MS = 800     // curtain split duration (CSS transition)
-    const FADE_MS = 300        // splash opacity fade after curtain fully open
+    const INTRO_MS = 800 // cube establishes by ~0.8s
+    const CURTAIN_MS = 800 // curtain split duration (CSS transition)
+    const FADE_MS = 300 // splash opacity fade after curtain fully open
     // Fire jlz:webgl-ready at curtain mid-open so the JUSTLOVEJAZZ title
     // animates IN PARALLEL with the cube reveal — no perceived delay after
     // the splash is gone. (Previously +1150ms after curtain start = ~350ms
