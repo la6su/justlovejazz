@@ -142,28 +142,9 @@ export class DevPanel {
   }
 
   private buildLiquidFolder(): void {
-    const f = this.pane.addFolder({ title: 'Liquid (works slider)' })
-    f.addBinding(this.params, 'liquidMultiplier', { label: 'distort mult', min: 0, max: 5, step: 0.1 })
-      .on('change', (ev) => {
-        if (this.exp.portfolio) this.exp.portfolio.liquidMultiplier = ev.value as number
-      })
+    const f = this.pane.addFolder({ title: 'Works slider (cube)' })
     f.addButton({ title: 'Swipe →' }).on('click', () => this.exp.portfolio?.next())
     f.addButton({ title: '← Swipe' }).on('click', () => this.exp.portfolio?.prev())
-    f.addButton({ title: 'Force distort 2s' }).on('click', () => {
-      const portfolio = this.exp.portfolio
-      if (!portfolio) return
-      const t0 = performance.now()
-      const tick = () => {
-        const dt = (performance.now() - t0) / 1000
-        if (dt > 2) {
-          for (const c of portfolio.cards) (c.mat as unknown as { uMoveVel: { value: number } }).uMoveVel.value = 0
-          return
-        }
-        for (const c of portfolio.cards) (c.mat as unknown as { uMoveVel: { value: number } }).uMoveVel.value = 4
-        requestAnimationFrame(tick)
-      }
-      tick()
-    })
   }
 
   private buildPerfFolder(): void {

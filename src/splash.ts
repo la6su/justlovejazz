@@ -14,6 +14,8 @@ export interface SplashOverlay {
   curtainSplit(duration?: number): void
   markPhase(phase: string): void
   getElements(): { root: HTMLElement } | null
+  /** Open the curtain panels — reveals the 3D cube beneath. */
+  openCurtains(): void
 }
 
 export function createSplash(): SplashOverlay {
@@ -56,8 +58,14 @@ export function createSplash(): SplashOverlay {
     },
 
     triggerPortalCollapse(): void {
-      // Trigger the cube opener — faces split + dissolve → Baku appears.
+      // Open curtains — reveals the 3D cube beneath. Also trigger cube opener.
+      this.openCurtains()
       getExp()?.triggerSplashOpener()
+    },
+
+    openCurtains(): void {
+      if (!root) root = document.getElementById(id)
+      root?.classList.add('open')
     },
 
     curtainSplit(_duration?: number): void {

@@ -14,18 +14,28 @@
     <style>
       *{box-sizing:border-box}
       body{margin:0;background:#050507;overflow:hidden}
-      #jlj-splash{position:fixed;inset:0;z-index:3000;background:#050507;transition:opacity .3s ease}
-      #jlj-splash.hide{opacity:0;pointer-events:none}
-      .jlz-enter{position:fixed;bottom:8vh;left:50%;transform:translateX(-50%);z-index:3000;background:transparent;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.92);font:500 clamp(.55rem,1.2vw,.8rem)/1 'Inter',sans-serif;letter-spacing:.2em;padding:12px 40px;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .8s,transform .8s;text-transform:uppercase}
-      .jlz-enter.is-visible{opacity:1;pointer-events:auto;transform:translateX(-50%)}
+      #jlj-splash{position:fixed;inset:0;z-index:3000;pointer-events:none}
+      #jlj-splash.hide{opacity:0;transition:opacity .3s ease}
+      /* Curtain panels — split apart to reveal the 3D cube beneath */
+      .jlj-curtain{position:absolute;left:0;width:100%;height:50%;background:#050507;transition:transform .8s cubic-bezier(.65,0,.35,1)}
+      .jlj-curtain--top{top:0;transform:translateY(0)}
+      .jlj-curtain--bottom{bottom:0;transform:translateY(0)}
+      #jlj-splash.open .jlj-curtain--top{transform:translateY(-100%)}
+      #jlj-splash.open .jlj-curtain--bottom{transform:translateY(100%)}
+      /* Seam glow line at the curtain split */
+      .jlj-curtain-seam{position:absolute;top:50%;left:0;width:100%;height:1px;background:linear-gradient(90deg,transparent,rgba(120,140,200,.4),transparent);transform:translateY(-50%);opacity:1;transition:opacity .4s ease}
+      #jlj-splash.open .jlj-curtain-seam{opacity:0}
       .skip-link{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
     </style>
   </head>
   <body data-app-mode="full" data-page="home">
     <a href="#section-intro" class="skip-link">Skip to main content</a>
-    <!-- Black screen overlay — removed when Three.js cube appears.
-         The 3D SplashCube (Apple Fifth Avenue style) is in the Three.js scene. -->
-    <div id="jlj-splash"></div>
+    <!-- Splash: curtain panels that split apart to reveal the 3D cube. -->
+    <div id="jlj-splash">
+      <div class="jlj-curtain jlj-curtain--top"></div>
+      <div class="jlj-curtain jlj-curtain--bottom"></div>
+      <div class="jlj-curtain-seam"></div>
+    </div>
     <div id="main-nav"></div>
     <div id="app"></div>
     <script type="module" src="/src/entry-shell.ts"></script>

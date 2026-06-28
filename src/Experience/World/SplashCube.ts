@@ -108,6 +108,34 @@ export class SplashCube extends THREE.Mesh {
     }
   }
 
+  /** Project textures for works slider — applied to 4 side faces (0=front,1=right,2=back,3=left).
+   *  Index 4=top, 5=bottom stay glass. */
+  setProjectTextures(textures: (THREE.Texture | null)[]): void {
+    for (let i = 0; i < Math.min(4, textures.length); i++) {
+      const tex = textures[i]
+      if (tex) {
+        this.faceMaterials[i].map = tex
+        this.faceMaterials[i].opacity = 0.9
+        this.faceMaterials[i].emissiveIntensity = 0.1
+        this.faceMaterials[i].needsUpdate = true
+      }
+    }
+  }
+
+  /** Clear project textures (back to glass mode). */
+  clearProjectTextures(): void {
+    for (let i = 0; i < 4; i++) {
+      this.faceMaterials[i].map = null
+      this.faceMaterials[i].opacity = 0.15
+      this.faceMaterials[i].needsUpdate = true
+    }
+  }
+
+  /** Target Y rotation for showing project face (0=front, 1=right, 2=back, 3=left). */
+  getProjectRotationY(idx: number): number {
+    return -(idx * Math.PI / 2) // -90° per project
+  }
+
   /** Trigger the opener — faces pulse outward + back (cube "breathes" open). */
   triggerOpener(): void {
     this.openerPhase = 'opening'

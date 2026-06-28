@@ -62,8 +62,6 @@ export class Experience {
   // Project transition dissolve (shader effect on card click)
   private projectDissolve: DissolveOverlay | null = null
   private projectDissolveActive = false
-  // Splash cube opener tracking — cube IS the baku, stays after opener.
-  private _openerDispatched = false
   private _portfolioInitialized = false
   private _prevSectionIndex = -1
   private _introEmitted = false
@@ -174,13 +172,8 @@ export class Experience {
     // Portfolio update
     this.portfolio?.update(dt)
 
-    // Splash cube (= baku) — opener detection. When opener completes,
-    // dispatch jlz:webgl-ready so text animation starts. Cube stays as baku.
-    const baku = this.world.baku as unknown as { openerComplete?: boolean; openerPhase?: string } | null
-    if (baku && baku.openerComplete && !this._openerDispatched) {
-      this._openerDispatched = true
-      window.dispatchEvent(new CustomEvent('jlz:webgl-ready'))
-    }
+    // Splash cube (= baku) opener is triggered by main-app via triggerSplashOpener.
+    // jlz:webgl-ready is dispatched by main-app at curtain midpoint (not here).
 
     const ns = input.getSmoothedScrollProgress()
     const { cameraTarget, worldState } = this.world.advance(ns)
@@ -398,6 +391,10 @@ export class Experience {
     this.world.add(this.portfolio.group)
     // Give portfolio the camera ref for raycast-based tap detection.
     this.portfolio.setCamera(this.camera.instance)
+    // Connect portfolio to the baku cube — project textures go on cube faces.
+    if (this.world.baku) {
+      this.portfolio.setBaku(this.world.baku)
+    }
 
     if (!this.overlay) {
       // Works slider overlay mounts into the challenge section (data-section="challenge",

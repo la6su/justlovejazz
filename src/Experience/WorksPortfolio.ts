@@ -1,143 +1,92 @@
-// WorksPortfolio — 3D card carousel for works page
-// Cards carry project textures. On tap (raycast), the active card morphs to
-// fullscreen (position + scale animation), then DOM detail overlay appears.
-// Liquid distortion shader (TSL NodeMaterial) warps cards during swipe.
+// WorksPortfolio — works slider ON the baku cube.
+//
+// Instead of separate card meshes, project textures are applied to the 4 side
+// faces of the SplashCube (baku). Swiping rotates the cube to show the next face.
+// No liquid distortion — clean, simple, cube-based slider.
+
 import * as THREE from 'three'
 import { type Project } from '../core/types'
-import { createLiquidSliderMaterial, createLiquidCardGeometry, updateLiquidTexture, type LiquidSliderMaterial, type LiquidCardGeometry } from '../shaders/LiquidSliderMaterial'
-
-interface ProjectCard {
-  group: THREE.Group
-  mesh: THREE.Mesh
-  mat: LiquidSliderMaterial
-  color: THREE.Color
-  texture: THREE.Texture | null
-  liquid: LiquidCardGeometry
-}
-
-/** Easing — easeInOutCubic for smooth expand/collapse. */
-function easeInOutCubic(t: number): number {
-  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
-}
 
 export class WorksPortfolio {
   public readonly group = new THREE.Group()
-  // Shared loader — creating one per card wastes resources.
   private static readonly sharedLoader = new THREE.TextureLoader()
-  /** Public for DevPanel inspection (read-only intent). */
-  public cards: ProjectCard[] = []
-  private currentIdx = 0
+  public projects: Project[]
+  public currentIdx = 0
   private targetIdx = 0
+  private idxVelocity = 0
+  private idxStiffness = 80
+  private idxDamping = 14
   private dragOff = 0
   private dragging = false
   private dragStartX = 0
   private vel = 0
   private lastX = 0
   private lastT = 0
-  private spacing = 4.0
-  private cardW = 3.0
-  private cardH = 2.0
-
-  // Momentum physics (spring-damper for currentIdx)
-  private idxVelocity = 0
-  private idxStiffness = 120 // spring stiffness
-  private idxDamping = 18   // damping coefficient
-
-  /** Liquid distortion multiplier (driven by DevPanel). 1 = default, 0 = off. */
-  public liquidMultiplier = 1
-
-  // Raycaster for tap detection on 3D card meshes.
-  private raycaster = new THREE.Raycaster()
-  private pointer = new THREE.Vector2()
-  private camera: THREE.Camera | null = null
-
-  // Expand transition state
+  private textures: (THREE.Texture | null)[] = []
+  private texturesLoaded = false
+  private baku: THREE.Object3D | null = null
   private expanding = false
-  private expandProgress = 0 // 0 = normal carousel, 1 = fullscreen
+  private expandProgress = 0
   private expandDirection: 'expand' | 'collapse' = 'expand'
   private expandedIdx = -1
-  // Stored start/end transforms for the expanding card
-  private expandStart = { x: 0, y: 0, z: 0, scale: 1 }
-  private expandTarget = { x: 0, y: 0, z: 0, scale: 1 }
+
+  /** Liquid multiplier (kept for DevPanel API compat, no longer used in shader). */
+  public liquidMultiplier = 1
+  /** Public for DevPanel inspection (empty — cards are on cube now). */
+  public cards: unknown[] = []
 
   declare onCardClick: (index: number) => void
   declare onCardActivate: (index: number) => void
-  /** Called when expand animation reaches peak (progress=1) → open detail. */
   declare onCardExpanded: (index: number) => void
-  /** Called when collapse animation finishes → return to carousel. */
   declare onCardCollapsed: () => void
 
   constructor(
-    public readonly projects: Project[],
+    projects: Project[],
     onCardClick: (index: number) => void = () => {},
     onCardActivate: (index: number) => void = () => {},
     onCardExpanded: (index: number) => void = () => {},
     onCardCollapsed: () => void = () => {}
   ) {
     this.group.name = 'works-portfolio'
+    this.projects = projects
     this.onCardClick = onCardClick
     this.onCardActivate = onCardActivate
     this.onCardExpanded = onCardExpanded
     this.onCardCollapsed = onCardCollapsed
-    this.buildCards()
+    this.textures = new Array(projects.length).fill(null)
     this.bindEvents()
   }
 
-  private buildCards(): void {
-    for (let i = 0; i < this.projects.length; i++) {
-      const proj = this.projects[i]
-      const grp = new THREE.Group()
-      grp.name = 'card-' + i
-
-      const col = new THREE.Color(proj.color)
-
-      // ── Liquid distortion: CPU vertex displacement (works on ALL backends) ──
-      // 32×32 segmented plane, vertices displaced per-frame by sin/cos waves.
-      const liquid = createLiquidCardGeometry(this.cardW, this.cardH)
-      const mat = createLiquidSliderMaterial()
-      // Tint emissive to project color for a subtle glow.
-      mat.emissive = col.clone().multiplyScalar(0.6)
-      mat.emissiveIntensity = 0.4
-      // ── Rule 3: cache baseOpacity (HERMES_RULES §3) ──
-      mat.userData.baseOpacity = mat.opacity
-
-      // Texture starts null — loaded lazily when card becomes active.
-      const mesh = new THREE.Mesh(liquid.geometry, mat as unknown as THREE.Material)
-      mesh.userData = { idx: i, texLoaded: false, texUrl: proj.textureUrl || proj.detailTextureUrl }
-      grp.add(mesh)
-      mesh.lookAt(0, 0.5, 10)
-      grp.lookAt(0, 0.5, 10)
-      this.group.add(grp)
-
-      this.cards.push({ group: grp, mesh, mat, color: col, texture: null, liquid })
-    }
-    // Preload the first card immediately so it's visible on first render.
-    this.loadCardTexture(0)
+  /** Set the baku (SplashCube) that will display project textures on its faces. */
+  setBaku(baku: THREE.Object3D): void {
+    this.baku = baku
+    this.loadAllTextures()
   }
 
-  /**
-   * Load texture for a card if not already loaded. Called when card
-   * becomes active (current) or adjacent (preload neighbors).
-   */
-  private loadCardTexture(idx: number): void {
-    if (this.cards.length === 0) return
-    // Wrap idx into valid range before accessing cards array.
-    const safeIdx = ((idx % this.cards.length) + this.cards.length) % this.cards.length
-    const card = this.cards[safeIdx]
-    if (!card) return
-    const mesh = card.mesh
-    if (mesh?.userData?.texLoaded === true) return
-    if (!mesh?.userData?.texUrl) return
+  private loadAllTextures(): void {
+    if (this.texturesLoaded || !this.baku) return
+    this.texturesLoaded = true
+    let loaded = 0
+    for (let i = 0; i < this.projects.length; i++) {
+      const url = this.projects[i].textureUrl || this.projects[i].detailTextureUrl
+      if (!url) { loaded++; continue }
+      WorksPortfolio.sharedLoader.load(url, (tex) => {
+        tex.colorSpace = THREE.SRGBColorSpace
+        this.textures[i] = tex
+        loaded++
+        // Apply to cube once all textures are loaded.
+        if (loaded >= this.projects.length) {
+          this.applyTexturesToCube()
+        }
+      }, undefined, () => { loaded++ })
+    }
+  }
 
-    mesh.userData.texLoaded = true
-    WorksPortfolio.sharedLoader.load(mesh.userData.texUrl, (tex) => {
-      tex.colorSpace = THREE.SRGBColorSpace
-      // Dual-backend texture binding: TSL colorNode rebuild on WebGPU,
-      // standard map binding on WebGL2 (onBeforeCompile uses built-in map).
-      updateLiquidTexture(card.mat, tex)
-      card.mat.emissiveIntensity = 0.2
-      card.texture = tex
-    })
+  private applyTexturesToCube(): void {
+    const cube = this.baku as unknown as {
+      setProjectTextures?: (t: (THREE.Texture | null)[]) => void
+    }
+    cube?.setProjectTextures?.(this.textures)
   }
 
   private bindEvents(): void {
@@ -156,11 +105,7 @@ export class WorksPortfolio {
 
   private onPointerDown = (e: PointerEvent) => {
     if (this.expanding) return
-    // Ignore events when portfolio is hidden (non-works sections).
-    // Without this, pointerdown captures ALL clicks on the page via
-    // window-level capture listener, interfering with other sections.
     if (!this.group.visible) return
-    // Ignore clicks on UI overlay/modal/nav — they have their own handlers.
     const target = e.target as HTMLElement
     if (target.closest('.jlz-works-ui, #project-modal, #jlj-splash, #main-nav')) return
     this.dragging = true
@@ -172,8 +117,7 @@ export class WorksPortfolio {
 
   private onPointerMove = (e: PointerEvent) => {
     if (!this.dragging) return
-    // Live drag offset for visual feedback during swipe.
-    this.dragOff = (e.clientX - this.dragStartX) * 0.004
+    this.dragOff = (e.clientX - this.dragStartX) * 0.005
     const now = performance.now()
     const dt = now - this.lastT
     this.vel = dt > 0 ? (e.clientX - this.lastX) / dt : 0
@@ -184,269 +128,79 @@ export class WorksPortfolio {
   private onPointerUp = (e: PointerEvent) => {
     if (!this.dragging) return
     this.dragging = false
-    if (this.cards.length === 0) { this.dragOff = 0; return }
-    const target = e.target as HTMLElement
-    if (target.closest('.jlz-works-ui, #project-modal, #jlj-splash, #main-nav')) {
-      this.dragOff = 0
-      return
-    }
-    const dragDistance = Math.abs(e.clientX - this.dragStartX)
-    if (Math.abs(this.vel) > 0.12) {
-      // Swipe with velocity → change project.
-      this.goTo(this.currentIdx + (this.vel > 0 ? -1 : 1))
-    } else if (dragDistance < 8) {
-      // Tap → raycast to find which card was clicked.
-      const hitIdx = this.raycastCard(e.clientX, e.clientY)
-      if (hitIdx >= 0) {
-        // If clicked card is not current, navigate to it first.
-        if (hitIdx !== this.currentIdx) {
-          this.goTo(hitIdx)
-        }
-        // Activate (open detail) for the clicked card.
-        this.onCardActivate(hitIdx)
-      }
-      // If raycast missed (clicked empty space), do nothing.
-    } else if (dragDistance > 40) {
-      // Slow drag beyond threshold → change project in drag direction.
-      this.goTo(this.currentIdx + (e.clientX < this.dragStartX ? 1 : -1))
+    const dragDist = Math.abs(e.clientX - this.dragStartX)
+    if (this.vel > 0.12 || dragDist > 40) {
+      this.goTo(e.clientX < this.dragStartX ? this.currentIdx + 1 : this.currentIdx - 1)
+    } else if (dragDist < 8) {
+      // Tap — activate card
+      this.onCardActivate(this.currentIdx)
     }
     this.dragOff = 0
   }
 
-  /**
-   * Raycast from screen coords against card meshes.
-   * Returns card index if hit, -1 if missed.
-   */
-  private raycastCard(clientX: number, clientY: number): number {
-    if (!this.camera) return -1
-    // Convert to NDC (-1 to 1).
-    this.pointer.x = (clientX / window.innerWidth) * 2 - 1
-    this.pointer.y = -(clientY / window.innerHeight) * 2 + 1
-    this.raycaster.setFromCamera(this.pointer, this.camera)
-
-    // Collect visible card meshes.
-    const meshes: THREE.Object3D[] = []
-    for (const card of this.cards) {
-      if (card.group.visible) meshes.push(card.mesh)
-    }
-    if (meshes.length === 0) return -1
-
-    const intersects = this.raycaster.intersectObjects(meshes, false)
-    if (intersects.length === 0) return -1
-
-    const hit = intersects[0].object as THREE.Mesh
-    const idx = hit.userData?.idx
-    return typeof idx === 'number' ? idx : -1
-  }
-
   goTo(idx: number): void {
-    this.targetIdx = ((idx % this.projects.length) + this.projects.length) % this.projects.length
-    // Lazy-load: load texture for target card + preload neighbors.
-    this.loadCardTexture(this.targetIdx)
-    this.loadCardTexture(this.targetIdx + 1)
-    this.loadCardTexture(this.targetIdx - 1)
+    const n = this.projects.length
+    this.targetIdx = ((idx % n) + n) % n
     this.onCardClick(this.targetIdx)
   }
 
   next(): void { this.goTo(this.currentIdx + 1) }
   prev(): void { this.goTo(this.currentIdx - 1) }
 
-  /** Set camera reference for raycasting. Call from Experience after init. */
-  setCamera(cam: THREE.Camera): void {
-    this.camera = cam
-  }
-
-  /**
-   * Start expanding the given card to fullscreen.
-   * Stores the card's current carousel transform as start, computes a
-   * fullscreen-cover transform as target. Animation runs in update().
-   * Calls onCardExpanded(idx) when progress reaches 1.
-   */
   expandCard(idx: number): void {
     if (this.expanding) return
-    if (this.cards.length === 0) return
-    // Clamp idx into valid range — currentIdx can drift during fast swipes.
-    const safeIdx = ((idx % this.cards.length) + this.cards.length) % this.cards.length
-    const card = this.cards[safeIdx]
-    if (!card) return
-
     this.expanding = true
     this.expandDirection = 'expand'
+    this.expandedIdx = idx
     this.expandProgress = 0
-    this.expandedIdx = safeIdx
-
-    this.expandStart = {
-      x: card.group.position.x,
-      y: card.group.position.y,
-      z: card.group.position.z,
-      scale: card.group.scale.x,
-    }
-    // Target: center of screen (frontal camera at [0,1,7] looking at [0,1,0]).
-    // Push card toward camera (z=4) and scale up to fill viewport.
-    this.expandTarget = { x: 0, y: 1, z: 4, scale: 3.5 }
   }
 
-  /**
-   * Collapse the expanded card back to its carousel position.
-   * Calls onCardCollapsed() when progress reaches 0.
-   */
   collapseCard(): void {
-    // Can collapse even if expanding animation finished (expanding=false)
-    // — we just need a valid expandedIdx.
-    if (this.expandedIdx < 0) return
-    if (this.cards[this.expandedIdx] === undefined) return
+    if (!this.expanding) return
     this.expandDirection = 'collapse'
     this.expandProgress = 0
-    this.expanding = true
-    // Collapse starts from current (expanded) state back to carousel.
-    const card = this.cards[this.expandedIdx]
-    this.expandStart = {
-      x: card.group.position.x,
-      y: card.group.position.y,
-      z: card.group.position.z,
-      scale: card.group.scale.x,
-    }
-    // Recompute the carousel target position for this idx.
-    const w = this.wrapOffset(this.expandedIdx - this.currentIdx, this.cards.length)
-    const depth = THREE.MathUtils.clamp(Math.abs(w) / 1.5, 0, 1)
-    this.expandTarget = {
-      x: w * this.spacing,
-      y: 1.0 + Math.sin(w * 0.9) * 0.12 * (1 - depth),
-      z: -depth * 2.5,
-      scale: THREE.MathUtils.lerp(1, 0.6, depth),
-    }
   }
 
-  get projectCount(): number { return this.projects.length }
-  get isExpanding(): boolean { return this.expanding }
-
+  setCamera(_cam: THREE.Camera): void {
+    // No raycasting needed — cards are on the cube.
+  }
 
   update(dt: number): void {
-    // ── Expand/collapse animation takes priority ──
     if (this.expanding) {
-      const speed = 2.0 // 0.5s for full transition
-      this.expandProgress = Math.min(this.expandProgress + dt * speed, 1)
-      const eased = easeInOutCubic(this.expandProgress)
-
-      const card = this.cards[this.expandedIdx]
-      if (card) {
-        const x = THREE.MathUtils.lerp(this.expandStart.x, this.expandTarget.x, eased)
-        const y = THREE.MathUtils.lerp(this.expandStart.y, this.expandTarget.y, eased)
-        const z = THREE.MathUtils.lerp(this.expandStart.z, this.expandTarget.z, eased)
-        const s = THREE.MathUtils.lerp(this.expandStart.scale, this.expandTarget.scale, eased)
-        card.group.position.set(x, y, z)
-        card.group.scale.setScalar(s)
-        card.group.rotation.y = THREE.MathUtils.lerp(card.group.rotation.y, 0, eased)
-        card.mat.opacity = 1
-        // Liquid distortion off during expand (card is fullscreen, no swipe).
-        card.mat.uMoveVel.value = THREE.MathUtils.lerp(card.mat.uMoveVel.value, 0, eased)
+      this.expandProgress = Math.min(1, this.expandProgress + dt * 2)
+      if (this.expandDirection === 'expand' && this.expandProgress >= 1) {
+        this.onCardExpanded(this.expandedIdx)
       }
-
-      // Fade out other cards during expand, fade in during collapse.
-      for (let i = 0; i < this.cards.length; i++) {
-        if (i === this.expandedIdx) continue
-        const c = this.cards[i]
-        const targetOpacity = this.expandDirection === 'expand' ? 0 : 1
-        c.mat.opacity = THREE.MathUtils.lerp(c.mat.opacity, targetOpacity, eased)
-      }
-
-      if (this.expandProgress >= 1) {
-        if (this.expandDirection === 'expand') {
-          // Expand complete — card is fullscreen. Keep expanding=true so
-          // collapse can run. Notify Experience to open detail overlay.
-          this.onCardExpanded(this.expandedIdx)
-          // Stop the expand animation loop (card stays fullscreen).
-          this.expanding = false
-        } else {
-          this.expanding = false
-          this.expandedIdx = -1
-          this.onCardCollapsed()
-        }
+      if (this.expandDirection === 'collapse' && this.expandProgress >= 1) {
+        this.expanding = false
+        this.expandedIdx = -1
+        this.onCardCollapsed()
       }
       return
     }
 
-    // ── Normal carousel update with momentum physics ──
-    this.dragOff *= 0.85 // decay drag offset
-
     // Spring-damper physics for currentIdx toward targetIdx.
-    // This gives natural momentum: cards overshoot slightly, then settle.
+    this.dragOff *= 0.85
     const idxDiff = this.targetIdx - this.currentIdx
     const springForce = idxDiff * this.idxStiffness
     const dampingForce = -this.idxVelocity * this.idxDamping
     this.idxVelocity += (springForce + dampingForce) * dt
     this.currentIdx += this.idxVelocity * dt
 
-    // Snap when close enough and slow enough.
+    // Snap when close enough.
     if (Math.abs(idxDiff) < 0.001 && Math.abs(this.idxVelocity) < 0.01) {
       this.currentIdx = this.targetIdx
       this.idxVelocity = 0
     }
 
-    // Calculate movement velocity for distortion effect.
-    // Positive = moving right (cards shift left), negative = moving left.
-    const moveVel = this.idxVelocity + this.dragOff * 2
-
-    const n = this.projects.length
-    for (let i = 0; i < n; i++) {
-      const card = this.cards[i]
-      const w = this.wrapOffset(i - this.currentIdx, n)
-
-      if (Math.abs(w) > 2.5) {
-        card.mat.opacity = THREE.MathUtils.lerp(card.mat.opacity, 0, dt * 3)
-        card.group.visible = false
-        continue
-      }
-      card.group.visible = true
-
-      // depth: 0 = center (active), 1 = far. Smoothstep for natural falloff.
-      const depthRaw = THREE.MathUtils.clamp(Math.abs(w) / 1.5, 0, 1)
-      const depth = depthRaw * depthRaw * (3 - 2 * depthRaw) // smoothstep
-      // Add live dragOff so swipe moves cards in real-time during drag.
-      const x = (w + this.dragOff) * this.spacing
-      const z = -depth * 2.5
-      const y = Math.sin(w * 0.9) * 0.12 * (1 - depth)
-      // Smoother scale curve — center card full size, side cards shrink less aggressively.
-      const scale = THREE.MathUtils.lerp(1, 0.65, depth)
-      // NO angular rotation (rotY) — user request. Cards stay face-on to camera.
-      // Opacity: active card full, side cards fade smoothly (not to 0.15 — too dark).
-      const opacity = Math.abs(w) < 0.1 ? 1 : THREE.MathUtils.lerp(1, 0.35, depth)
-
-      // ── Liquid distortion boost during scroll ──
-      // moveVel drives the liquid displacement. Center card (w≈0) gets full
-      // velocity, side cards get less (they move slower in screen space).
-      // NO skew (rotation.z) — user wants no angular tilt, only liquid warp.
-      const cardMoveVel = moveVel * (1 - depth * 0.4) * this.liquidMultiplier
-      const waveY = Math.sin(w * 3.0 + performance.now() * 0.003) * Math.abs(moveVel) * 0.02 * (1 - depth * 0.5)
-
-      card.group.position.x = THREE.MathUtils.lerp(card.group.position.x, x, dt * 8)
-      card.group.position.y = THREE.MathUtils.lerp(card.group.position.y, 1.0 + y + waveY, dt * 8)
-      card.group.position.z = THREE.MathUtils.lerp(card.group.position.z, z, dt * 8)
-      card.group.scale.x = THREE.MathUtils.lerp(card.group.scale.x, scale, dt * 8)
-      card.group.scale.y = THREE.MathUtils.lerp(card.group.scale.y, scale, dt * 8)
-      // rotation.y stays 0 (no angular yaw). rotation.z stays 0 (no skew).
-      card.group.rotation.y = 0
-      card.group.rotation.z = 0
-      card.mat.opacity = THREE.MathUtils.lerp(card.mat.opacity, opacity, dt * 4)
-
-      // ── Liquid distortion: CPU vertex displacement ──
-      // Boost moveVel influence: liquid.update scales displacement by moveVel.
-      // Pass the boosted velocity so scroll produces clearly visible warping.
-      card.mat.uMoveVel.value = cardMoveVel
-      card.mat.uTime.value += dt
-      card.liquid.update(dt, cardMoveVel)
-
-      // Active card glows brighter (emissive), side cards dim.
-      const emTarget = Math.abs(w) < 0.1 ? 0.4 : 0.08
-      card.mat.emissiveIntensity = THREE.MathUtils.lerp(card.mat.emissiveIntensity, emTarget, dt * 4)
+    // Rotate the baku cube to show the current project face.
+    // Live drag offset is added to the rotation for real-time swipe feedback.
+    if (this.baku) {
+      const targetRotY = -(this.currentIdx * Math.PI / 2) - this.dragOff
+      this.baku.rotation.y = THREE.MathUtils.lerp(
+        this.baku.rotation.y, targetRotY, Math.min(1, dt * 8)
+      )
     }
-  }
-
-  private wrapOffset(value: number, n: number): number {
-    let w = value % n
-    if (w > n / 2) w -= n
-    if (w < -n / 2) w += n
-    return w
   }
 
   dispose(): void {
@@ -455,14 +209,9 @@ export class WorksPortfolio {
     window.removeEventListener('pointerup', this.onPointerUp, true)
     window.removeEventListener('pointercancel', this.onPointerUp, true)
     window.removeEventListener('keydown', this.onKey)
-
-    for (const card of this.cards) {
-      card.mesh.geometry?.dispose()
-      card.mat.dispose()
-      card.texture?.dispose()
-      card.liquid.dispose() // dispose LiquidCardGeometry (PlaneGeometry)
-      this.group.remove(card.group)
+    for (const tex of this.textures) {
+      tex?.dispose()
     }
-    this.cards.length = 0
+    this.textures = []
   }
 }
