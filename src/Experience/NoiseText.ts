@@ -1,27 +1,16 @@
-// NoiseText — junni-style typewriter reveal with noise tail.
+// NoiseText — glitch reveal animation.
 //
-// Port of junni-inc/next.junni.co.jp NoiseText (src/ts/MainScene/NoiseText/index.ts).
+// Effect: characters appear with random X/Y offset + blur, then settle
+// into their final position with a stagger. More cinematic than typewriter.
 //
-// Effect: characters appear left-to-right. Already-revealed characters
-// are clean (correct). Ahead of the reveal position, 2-3 random noise
-// characters flicker. As the animation progresses, more characters
-// become "fixed" (clean) and the noise tail shrinks. At the end, the
-// full text is displayed clean.
-//
-// Differences from original junni:
-// - Uses requestAnimationFrame instead of setInterval (smoother)
-// - Noise characters from a wider charset (alphanumeric + symbols)
-// - Same visual effect: typewriter + noise tail
-
-const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#@%&!?';
+// Each character: starts offset (translateY + rotate) + blurred, animates
+// to clean position. Staggered timing = wave-like reveal.
 
 export class NoiseText {
-  /** Global registry: one instance per DOM element, prevents overlap. */
   private static instances = new WeakMap<HTMLElement, NoiseText>();
 
   private readonly el: HTMLElement;
   private cleanText = '';
-
   private rafId: number | null = null;
   private timeoutId: number | null = null;
   private running = false;
@@ -41,28 +30,22 @@ export class NoiseText {
     return inst;
   }
 
-  /**
-   * Start noise animation for `dur` seconds.
-   * Junni pattern: typewriter reveal with noise tail.
-   *
-   * @param dur Duration in seconds.
-   * @param sourceText Explicit clean text. If not provided, reads from DOM.
-   */
   show(dur: number = 0.6, sourceText?: string): void {
     this.cancel();
-
     this.cleanText = sourceText ?? (this.el.textContent || '');
     if (this.cleanText.length === 0) return;
-
-    // Start with empty text — characters will appear left-to-right
-    this.el.textContent = '';
 
     this.dur = dur * 1000;
     this.running = true;
     this.start = performance.now();
     this.el.setAttribute('data-visible', 'true');
 
-    // Safety timeout → guarantees we always stop even if RAF is throttled.
+    // Build spans — each character in its own span for stagger animation
+    this.el.innerHTML = this.cleanText.split('').map((ch) => {
+      const safeChar = ch === ' ' ? '&nbsp;' : ch;
+      return `<span style="display:inline-block;opacity:0;transform:translateY(20px) rotate(${(Math.random() - 0.5) * 30}deg);filter:blur(8px);transition:none;">${safeChar}</span>`;
+    }).join('');
+
     this.timeoutId = window.setTimeout(() => this.finalize(), this.dur + 200);
     this.rafId = requestAnimationFrame(this.tick);
   }
@@ -74,32 +57,31 @@ export class NoiseText {
 
   private tick = (ts: number): void => {
     if (!this.running) return;
-
     const t = Math.min(1, (ts - this.start) / this.dur);
-
     if (t >= 1) {
       this.finalize();
       return;
     }
 
-    // Progressive reveal: fixedLength grows from 0 to text.length
-    const fixedLength = Math.floor(t * this.cleanText.length);
-    // Noise tail: 1-3 random characters after the fixed portion
-    const noiseLength = Math.min(3, this.cleanText.length - fixedLength);
-
-    let text = '';
-
-    // Fixed (clean) characters — already revealed
-    for (let i = 0; i < fixedLength; i++) {
-      text += this.cleanText[i];
+    const spans = this.el.children;
+    const n = spans.length;
+    // Stagger: each character starts at a different time
+    const staggerDelay = 0.3; // 30% of duration for stagger spread
+    for (let i = 0; i < n; i++) {
+      const span = spans[i] as HTMLElement;
+      const charDelay = (i / n) * staggerDelay;
+      const charT = Math.max(0, Math.min(1, (t - charDelay) / (1 - staggerDelay)));
+      // Ease out cubic
+      const eased = 1 - Math.pow(1 - charT, 3);
+      const opacity = eased;
+      const translateY = 20 * (1 - eased);
+      const rotate = (parseFloat(span.dataset.rot || '0')) * (1 - eased);
+      const blur = 8 * (1 - eased);
+      span.style.opacity = String(opacity);
+      span.style.transform = `translateY(${translateY}px) rotate(${rotate}deg)`;
+      span.style.filter = `blur(${blur}px)`;
     }
 
-    // Noise tail — random characters that flicker
-    for (let i = 0; i < noiseLength; i++) {
-      text += CHARS[Math.floor(Math.random() * CHARS.length)];
-    }
-
-    this.el.textContent = text;
     this.rafId = requestAnimationFrame(this.tick);
   };
 

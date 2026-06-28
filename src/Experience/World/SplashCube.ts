@@ -223,10 +223,10 @@ export class SplashCube extends THREE.Mesh {
       mat.emissive.copy(emissive)
       mat.roughness = roughness
       mat.metalness = metalness
-      // WIRE role = wireframe
-      mat.wireframe = role === BakuRole.WIRE
-      // GLASS role = more transparent
-      mat.opacity = role === BakuRole.GLASS ? 0.1 : 0.3
+      // WIRE role = wireframe (only when no texture — wireframe hides textures)
+      mat.wireframe = role === BakuRole.WIRE && !mat.map
+      // Keep opacity high if texture is set (works slider), else glass-like.
+      mat.opacity = mat.map ? 0.9 : (role === BakuRole.GLASS ? 0.1 : 0.3)
       mat.needsUpdate = true
     }
   }
