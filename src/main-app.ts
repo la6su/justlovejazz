@@ -47,29 +47,26 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
     progress(98)
     progress(100)
 
-    // ── Cinematic reveal — intro → crossfade → opening, one fluid motion ──
-    // The intro CSS animations (portals fly in ~1.9s, LOADING fades in at 0.8s)
-    // need wall-clock time to play. In dev the bootstrap finishes in milliseconds,
-    // so we gate the reveal on wall-clock — otherwise it cuts into the intro.
+    // ── Liquid reveal — one fluid motion ──
+    // The liquid shader runs immediately on page load (instant FCP).
+    // We gate the reveal on wall-clock time so the liquid has time to
+    // establish visually before dissolving.
     //
-    // Flow (no static freeze — the crossfade IS the bridge):
-    //   t=readyAt:           setState('ready') → phase='enter' → CSS crossfades
-    //                        center text LOADING → JUSTLOVEJAZZ (0.6s transition)
-    //   t=readyAt+BRIDGE_MS: opening fires as one beat — portals zoom out (1.0s)
-    //                        + curtains part (1.1s) + brand rushes+blurs (0.8s)
-    //   t=readyAt+BRIDGE_MS+OPENING_MS: hide + remove
+    // Flow:
+    //   t=readyAt:        setState('ready') → LOADING dissolves, liquid brightens
+    //   t=readyAt+HOLD:   triggerPortalCollapse() → liquid.reveal() radial dissolve
+    //   t=readyAt+HOLD+REVEAL_MS: hide + remove (liquid disposed)
     //
-    // Reduced-motion users get a simple fade instead of the full choreography.
-    const INTRO_MS = 1900      // portals settled + LOADING visible by ~1.9s
-    const BRIDGE_MS = 650      // LOADING→JUSTLOVEJAZZ crossfade (0.6s) + small breathe
-    const OPENING_MS = 1100    // portal zoom-out + curtain part + brand exit (overlapping)
+    // Reduced-motion users get a simple fade.
+    const INTRO_MS = 1500      // liquid establishes by ~1.5s
+    const HOLD_MS = 500        // READY state breathe before dissolve
+    const REVEAL_MS = 1400     // liquid radial dissolve duration
     const FADE_MS = 500        // splash opacity fade before remove
 
     const elapsed = performance.now() - bootStart
     const readyAt = Math.max(0, INTRO_MS - elapsed)
 
     setTimeout(() => {
-      // Ready: triggers the LOADING → JUSTLOVEJAZZ crossfade via data-phase='enter'.
       splash.setState('ready')
 
       setTimeout(() => {
@@ -82,22 +79,20 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
           return
         }
 
-        // Single fluid beat: portal zoom-out + curtain split + brand exit,
-        // all firing together — the reversed-intro bookend.
+        // Liquid radial dissolve — 3D scene appears beneath.
         splash.triggerPortalCollapse()
-        splash.curtainSplit()
 
-        // Reveal the 3D scene once the curtains have parted enough.
+        // Reveal the 3D scene once the liquid has dissolved enough.
         setTimeout(() => {
           window.dispatchEvent(new CustomEvent('jlz:webgl-ready'))
-        }, 350)
+        }, 400)
 
-        // Fade out + remove once the opening animations have completed.
+        // Fade out + remove once the dissolve has completed.
         setTimeout(() => {
           splash.hide()
           setTimeout(() => splash.remove(), FADE_MS)
-        }, OPENING_MS)
-      }, BRIDGE_MS)
+        }, REVEAL_MS)
+      }, HOLD_MS)
     }, readyAt)
   } catch (e) {
     console.error('[main-app] bootstrap failed:', e)

@@ -1,11 +1,15 @@
-// splash.ts — Cinematic portal splash screen
+// splash.ts — Cinematic liquid splash screen coordinator.
+//
+// The liquid WebGL2 shader runs inline in index.html (instant FCP, before
+// Three.js loads). This module coordinates the overlay (LOADING text,
+// progress bar, label) and drives the liquid shader via window.jlzLiquid.
 //
 // Flow:
-// 1. Black screen → "JUSTLOVEJAZZ" fades in (warming phase)
-// 2. Portal frames: 3-4 rectangular frames scale down toward center
-//    creating a "flying through portals" effect
-// 3. Curtain split: top/bottom panels slide apart with overshoot
-// 4. Brand exits, scene revealed
+// 1. Liquid shader runs immediately (domain-warped FBM noise)
+// 2. setProgress() → progress bar + liquid brightens
+// 3. setState('ready') → data-phase='enter', LOADING dissolves
+// 4. triggerPortalCollapse() → liquid.reveal() starts radial dissolve
+// 5. hide() → fade out, remove() → dispose liquid + DOM
 
 export type SplashPhase = 'loading' | 'enter' | 'dissolving' | 'revealing' | 'idle'
 
@@ -18,112 +22,33 @@ export interface SplashOverlay {
   triggerPortalCollapse(): void
   curtainSplit(duration?: number): void
   markPhase(phase: SplashPhase): void
-  getElements(): { root: HTMLElement; top: HTMLElement; bottom: HTMLElement; line: HTMLElement } | null
+  getElements(): { root: HTMLElement } | null
 }
 
 export function createSplash(): SplashOverlay {
   const id = 'jlj-splash'
   let root: HTMLElement | null = null
-  let topPanel: HTMLDivElement | null = null
-  let bottomPanel: HTMLDivElement | null = null
-  let splitLine: HTMLDivElement | null = null
-  let brandEl: HTMLDivElement | null = null
   let progressBar: HTMLDivElement | null = null
   let labelEl: HTMLDivElement | null = null
-  let portalContainer: HTMLDivElement | null = null
-  let portals: HTMLDivElement[] = []
   let shellReady = false
 
   function bindShell() {
     const existing = document.getElementById(id)
     if (!existing) return false
     root = existing
-    topPanel = existing.querySelector('.jlj-splash-top')!
-    bottomPanel = existing.querySelector('.jlj-splash-bottom')!
-    splitLine = existing.querySelector('.jlj-splash-line')!
-    brandEl = existing.querySelector('#jlj-splash-brand')!
-    progressBar = existing.querySelector('#jlj-splash-progress')!
-    labelEl = existing.querySelector('#jlj-splash-label')!
-    portalContainer = existing.querySelector('.jlj-splash-portals')!
-    portals = Array.from(existing.querySelectorAll('.jlj-splash-portal'))
+    progressBar = existing.querySelector('#jlj-splash-progress')
+    labelEl = existing.querySelector('#jlj-splash-label')
     shellReady = true
     return true
   }
 
-  function buildShell() {
-    root = document.createElement('div')
-    root.id = id
-    root.setAttribute('data-phase', 'loading')
-
-    // Portal frames container
-    portalContainer = document.createElement('div')
-    portalContainer.className = 'jlj-splash-portals'
-
-    // Create 4 portal frames (different sizes, staggered animation)
-    for (let i = 0; i < 4; i++) {
-      const portal = document.createElement('div')
-      portal.className = `jlj-splash-portal jlz-portal-${i + 1}`
-      portal.style.animationDelay = `${0.1 + i * 0.15}s`
-      portalContainer.appendChild(portal)
-      portals.push(portal)
-    }
-
-    topPanel = document.createElement('div')
-    topPanel.className = 'jlj-splash-top'
-
-    bottomPanel = document.createElement('div')
-    bottomPanel.className = 'jlj-splash-bottom'
-
-    progressBar = document.createElement('div')
-    progressBar.id = 'jlj-splash-progress'
-    progressBar.setAttribute('role', 'progressbar')
-    progressBar.setAttribute('aria-valuenow', '0')
-    progressBar.setAttribute('aria-valuemin', '0')
-    progressBar.setAttribute('aria-valuemax', '100')
-    bottomPanel.appendChild(progressBar)
-
-    labelEl = document.createElement('div')
-    labelEl.id = 'jlj-splash-label'
-    labelEl.className = 'jlj-splash-label'
-    bottomPanel.appendChild(labelEl)
-
-    splitLine = document.createElement('div')
-    splitLine.className = 'jlj-splash-line'
-
-    brandEl = document.createElement('div')
-    brandEl.id = 'jlj-splash-brand'
-    // Single muted LOADING word during boot/warming — no brand reveal.
-    // On opening, CSS dissolves it up+out (no crossfade to brand).
-    const loadingWord = document.createElement('span')
-    loadingWord.className = 'jlj-splash-word jlj-splash-word--loading'
-    loadingWord.textContent = 'LOADING'
-    brandEl.appendChild(loadingWord)
-
-    // Cinematic overlays
-    const vignette = document.createElement('div')
-    vignette.className = 'jlj-splash-vignette'
-
-    const scanlines = document.createElement('div')
-    scanlines.className = 'jlj-splash-scanlines'
-
-    root.appendChild(portalContainer)
-    root.appendChild(topPanel)
-    root.appendChild(bottomPanel)
-    root.appendChild(splitLine)
-    root.appendChild(brandEl)
-    root.appendChild(vignette)
-    root.appendChild(scanlines)
-    document.body.appendChild(root)
-    shellReady = true
-  }
-
   return {
     show(): void {
-      if (!shellReady) {
-        bindShell() || buildShell()
+      if (!shellReady) bindShell()
+      if (root) {
+        root.style.opacity = '1'
+        root.style.visibility = 'visible'
       }
-      root!.style.opacity = '1'
-      root!.style.visibility = 'visible'
     },
 
     hide(_durationMs?: number): void {
@@ -132,6 +57,9 @@ export function createSplash(): SplashOverlay {
     },
 
     remove(): void {
+      // Dispose the liquid shader before removing DOM.
+      const liquid = (window as unknown as { jlzLiquid?: { dispose: () => void } }).jlzLiquid
+      liquid?.dispose()
       if (root) {
         root.remove()
         root = null
@@ -139,39 +67,37 @@ export function createSplash(): SplashOverlay {
     },
 
     setProgress(pct: number): void {
-      progressBar!.style.width = `${pct}%`
-      progressBar!.setAttribute('aria-valuenow', String(pct))
+      if (progressBar) {
+        progressBar.style.width = `${pct}%`
+        progressBar.setAttribute('aria-valuenow', String(pct))
+      }
+      // Drive the liquid shader's progress uniform (0-1).
+      const liquid = (window as unknown as { jlzLiquid?: { setProgress: (v: number) => void } }).jlzLiquid
+      liquid?.setProgress(pct / 100)
     },
 
     setState(state: 'booting' | 'warming' | 'ready'): void {
-      labelEl!.textContent = state.toUpperCase()
-      if (root) {
-        root.dataset.phase = state === 'ready' ? 'enter' : 'loading'
-      }
-      // Portal collapse is triggered separately by triggerPortalCollapse()
-      // to avoid collapsing immediately when 'ready' state is set.
+      if (labelEl) labelEl.textContent = state.toUpperCase()
+      if (root) root.dataset.phase = state === 'ready' ? 'enter' : 'loading'
     },
 
     triggerPortalCollapse(): void {
-      if (portalContainer) {
-        portalContainer.classList.add('is-collapsing')
-      }
+      // Liquid reveal: radial dissolve from center outward.
+      const liquid = (window as unknown as { jlzLiquid?: { reveal: () => void } }).jlzLiquid
+      liquid?.reveal()
     },
 
     curtainSplit(_duration?: number): void {
-      if (!root) return
-      root.classList.add('is-splitting')
+      // No-op — liquid dissolve handles the reveal transition.
     },
 
     markPhase(phase: SplashPhase): void {
-      if (root) {
-        root.dataset.phase = phase
-      }
+      if (root) root.dataset.phase = phase
     },
 
     getElements() {
-      if (!root || !topPanel || !bottomPanel || !splitLine) return null
-      return { root, top: topPanel, bottom: bottomPanel, line: splitLine }
+      if (!root) return null
+      return { root }
     }
   }
 }
