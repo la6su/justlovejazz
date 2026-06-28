@@ -17,7 +17,6 @@ import type { World } from '../core/World'
 import type { WebGLTextManager } from './WebGLTextManager'
 import { WorksPortfolio } from './WorksPortfolio'
 import { ProjectOverlay } from '../UI/ProjectOverlay'
-import { ProjectDetail } from '../UI/ProjectDetail'
 import { Subtitles } from '../UI/Subtitles'
 import { SectionProgress } from '../UI/SectionProgress'
 import { PerfMonitor } from '../core/PerfMonitor'
@@ -54,7 +53,6 @@ export class Experience {
   // Works portfolio (public for DevPanel access)
   public portfolio: WorksPortfolio | null = null
   private overlay: ProjectOverlay | null = null
-  private projectDetail: ProjectDetail | null = null
   private _subtitles: Subtitles | null = null
   private _sectionProgress: SectionProgress | null = null
   private currentSectionContext: string | null = null
@@ -325,9 +323,8 @@ export class Experience {
     input.resetScroll()
     const titles = document.querySelectorAll<HTMLElement>('.studio-title')
     await this.webglTextManager?.refresh(Array.from(titles))
-    // Signal that WebGL text overlay is now up-to-date so NoiseText can
-    // safely animate DOM text without the overlay capturing noisy text.
-    window.dispatchEvent(new Event('jlz:webgl-ready'))
+    // jlz:webgl-ready is dispatched ONLY by main-app.ts (after splash fully removed).
+    // Do NOT dispatch here — would fire too early (before splash opens).
   }
 
   destroy() {
@@ -419,18 +416,9 @@ export class Experience {
         this.onProjectSelect(0)
       })
     }
-    if (!this.projectDetail) {
-      this.projectDetail = new ProjectDetail()
-      // When modal closes (Esc / bg click), collapse the expanded card.
-      this.projectDetail.onClose = () => {
-        this.portfolio?.collapseCard()
-      }
-    }
     // Do NOT call onProjectSelect(0) here — it would show the overlay
-    // which calls overlay.showContainer() at the end, making the overlay
     // visible on non-works sections. Experience.update() will call
     // onProjectSelect when the user scrolls to the works section.
-    // this.onProjectSelect(0)  // REMOVED — causes overlay flash on intro
   }
 
   private onProjectSelect(idx: number): void {
@@ -446,20 +434,10 @@ export class Experience {
   }
 
   /**
-   * Tap on cube face → open fullscreen detail (ProjectDetail cover transition).
+   * Tap on cube face → open fullscreen overlay (ProjectOverlay).
    */
-  private async activateCard(idx: number): Promise<void> {
-    if (!this.portfolio || !this.projectDetail) return
-    const projs = this.portfolio.projects
-    const project = projs?.[idx]
-    if (!project) return
-    await this.projectDetail.open(project)
-  }
-
-  /** Expand/collapse flow removed — cards are on cube, no separate card meshes. */
-
-  public closeProjectDetail(): void {
-    this.projectDetail?.close()
+  private activateCard(_idx: number): void {
+    this.overlay?.showContainer()
   }
 
   private async ensureWebGLTextManager(): Promise<void> {
@@ -481,7 +459,6 @@ export class Experience {
     // await this.webglTextManager.waitForAllLoaded()
     // window.dispatchEvent(new Event('jlz:webgl-ready'))
 
-    // Instead: dispatch jlz:webgl-ready immediately so NoiseText can start.
-    window.dispatchEvent(new Event('jlz:webgl-ready'))
+    // jlz:webgl-ready is dispatched ONLY by main-app.ts (after splash fully removed).
   }
 }

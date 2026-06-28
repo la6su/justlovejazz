@@ -29,6 +29,11 @@ export function createSplash(): SplashOverlay {
     } }).experience
   }
 
+  function openCurtains(): void {
+    if (!root) root = document.getElementById(id)
+    root?.classList.add('open')
+  }
+
   return {
     show(): void {
       if (!root) root = document.getElementById(id)
@@ -59,13 +64,12 @@ export function createSplash(): SplashOverlay {
 
     triggerPortalCollapse(): void {
       // Open curtains — reveals the 3D cube beneath. Also trigger cube opener.
-      this.openCurtains()
+      openCurtains()
       getExp()?.triggerSplashOpener()
     },
 
     openCurtains(): void {
-      if (!root) root = document.getElementById(id)
-      root?.classList.add('open')
+      openCurtains()
     },
 
     curtainSplit(_duration?: number): void {
