@@ -47,21 +47,23 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
     progress(98)
     progress(100)
 
-    // ── Liquid reveal — one fluid motion ──
+    // ── CRT boot reveal — liquid → CRT TV включение → 3D scene ──
     // The liquid shader runs immediately on page load (instant FCP).
-    // We gate the reveal on wall-clock time so the liquid has time to
-    // establish visually before dissolving.
+    // At 100%: liquid flash → CRT boot (white flash → TV hole collapse)
+    // → reveal 3D scene through the hole → fade out.
     //
     // Flow:
-    //   t=readyAt:        setState('ready') → LOADING dissolves, liquid brightens
-    //   t=readyAt+HOLD:   triggerPortalCollapse() → liquid.reveal() radial dissolve
-    //   t=readyAt+HOLD+REVEAL_MS: hide + remove (liquid disposed)
+    //   t=readyAt:        setState('ready') → LOADING dissolves
+    //   t=readyAt+HOLD:   triggerCRT() → white flash → TV hole collapse (1.2s)
+    //   t=readyAt+HOLD+CRT_MS: reveal() → fade alpha, 3D scene appears (0.6s)
+    //   t=readyAt+HOLD+CRT_MS+REVEAL_MS: hide + remove
     //
     // Reduced-motion users get a simple fade.
     const INTRO_MS = 1500      // liquid establishes by ~1.5s
-    const HOLD_MS = 500        // READY state breathe before dissolve
-    const REVEAL_MS = 1400     // liquid radial dissolve duration
-    const FADE_MS = 500        // splash opacity fade before remove
+    const HOLD_MS = 400        // READY state breathe before CRT
+    const CRT_MS = 1200        // CRT boot duration (white flash → TV hole)
+    const REVEAL_MS = 600      // fade alpha to reveal 3D beneath
+    const FADE_MS = 300        // splash opacity fade before remove
 
     const elapsed = performance.now() - bootStart
     const readyAt = Math.max(0, INTRO_MS - elapsed)
@@ -79,19 +81,19 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
           return
         }
 
-        // Liquid radial dissolve — 3D scene appears beneath.
-        splash.triggerPortalCollapse()
+        // CRT boot: white flash → TV hole collapse.
+        splash.triggerCRT()
 
-        // Reveal the 3D scene once the liquid has dissolved enough.
+        // Reveal the 3D scene once the TV hole has collapsed.
         setTimeout(() => {
           window.dispatchEvent(new CustomEvent('jlz:webgl-ready'))
-        }, 400)
+        }, CRT_MS)
 
-        // Fade out + remove once the dissolve has completed.
+        // Fade out splash alpha — 3D scene appears through the hole.
         setTimeout(() => {
           splash.hide()
           setTimeout(() => splash.remove(), FADE_MS)
-        }, REVEAL_MS)
+        }, CRT_MS + REVEAL_MS)
       }, HOLD_MS)
     }, readyAt)
   } catch (e) {

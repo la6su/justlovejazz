@@ -23,6 +23,8 @@ export interface SplashOverlay {
   curtainSplit(duration?: number): void
   markPhase(phase: SplashPhase): void
   getElements(): { root: HTMLElement } | null
+  /** Trigger CRT TV boot effect (white flash → TV hole collapse). */
+  triggerCRT(): void
 }
 
 export function createSplash(): SplashOverlay {
@@ -82,9 +84,14 @@ export function createSplash(): SplashOverlay {
     },
 
     triggerPortalCollapse(): void {
-      // Liquid reveal: radial dissolve from center outward.
-      const liquid = (window as unknown as { jlzLiquid?: { reveal: () => void } }).jlzLiquid
-      liquid?.reveal()
+      // CRT boot: white flash → TV hole collapse (replaces radial dissolve).
+      const liquid = (window as unknown as { jlzLiquid?: { triggerCRT: () => void } }).jlzLiquid
+      liquid?.triggerCRT()
+    },
+
+    triggerCRT(): void {
+      const liquid = (window as unknown as { jlzLiquid?: { triggerCRT: () => void } }).jlzLiquid
+      liquid?.triggerCRT()
     },
 
     curtainSplit(_duration?: number): void {
