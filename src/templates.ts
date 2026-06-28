@@ -13,10 +13,10 @@ export function homePage(): string {
                id="section-intro" data-section="intro">
         <div class="section-bg section-bg--intro uk-position-cover" data-dynamic-content>
           <div class="section-container uk-height-viewport uk-flex uk-flex-middle uk-flex-center">
-            <div class="section-content uk-text-center" uk-scrollspy="target: > *; cls: uk-animation-fade; delay: 200; repeat: true">
+            <div class="section-content uk-text-center">
               <h1 class="studio-title studio-title--hero" data-content-id="hero-title">JUSTLOVEJAZZ</h1>
-              <p class="studio-subtitle uk-text-meta uk-light" data-content-id="hero-subtitle" uk-scrollspy="cls: uk-animation-fade; delay: 400; repeat: true">Interactive 3D Experience</p>
-              <div class="uk-margin-large-top" uk-scrollspy="cls: uk-animation-fade; delay: 600; repeat: true">
+              <p class="studio-subtitle uk-text-meta uk-light" data-content-id="hero-subtitle">Interactive 3D Experience</p>
+              <div class="uk-margin-large-top">
                 <a href="#section-about" class="uk-button uk-button-default uk-button-large uk-border-circle">Explore</a>
               </div>
             </div>
@@ -35,9 +35,9 @@ export function homePage(): string {
                id="section-about" data-section="about">
         <div class="section-bg section-bg--about uk-position-cover" data-dynamic-content>
           <div class="section-container uk-height-viewport uk-flex uk-flex-middle uk-flex-center">
-            <div class="section-content uk-text-center" uk-scrollspy="target: > *; cls: uk-animation-fade; delay: 200; repeat: true">
-              <h2 class="studio-title studio-title--about" data-content-id="about-title" uk-scrollspy="cls: uk-animation-slide-bottom; delay: 200; repeat: true">ABOUT</h2>
-              <p class="studio-body uk-text-lead uk-light uk-margin-large-top" data-content-id="about-text" uk-scrollspy="cls: uk-animation-fade; delay: 400; repeat: true">
+            <div class="section-content uk-text-center">
+              <h2 class="studio-title studio-title--about" data-content-id="about-title">ABOUT</h2>
+              <p class="studio-body uk-text-lead uk-light uk-margin-large-top" data-content-id="about-text">
                 We craft immersive digital experiences at the intersection of art and technology.
                 Our approach blends creative vision with cutting-edge 3D web technology,
                 delivering memorable interactive moments that push the boundaries of the modern browser.
@@ -61,12 +61,12 @@ export function homePage(): string {
         <div class="section-bg section-bg--challenge uk-position-cover" data-dynamic-content>
           <div class="section-container uk-height-viewport uk-flex uk-flex-middle uk-flex-center">
             <div class="section-content uk-text-center">
-              <h2 class="studio-title studio-title--challenge" data-content-id="challenge-title" uk-scrollspy="cls: uk-animation-slide-bottom; delay: 200; repeat: true">WORKS</h2>
-              <p class="studio-body uk-text-lead uk-light uk-margin-large-top" data-content-id="challenge-text" uk-scrollspy="cls: uk-animation-fade; delay: 400; repeat: true">
+              <h2 class="studio-title studio-title--challenge" data-content-id="challenge-title">WORKS</h2>
+              <p class="studio-body uk-text-lead uk-light uk-margin-large-top" data-content-id="challenge-text">
                 A curated selection of interactive experiences, creative coding experiments,
                 and immersive web projects.
               </p>
-              <button id="jlz-show-works" class="uk-button uk-button-default uk-margin-large-top" uk-scrollspy="cls: uk-animation-fade; delay: 600; repeat: true" style="border-color:rgba(255,255,255,.3);color:#fff;">Show</button>
+              <button id="jlz-show-works" class="uk-button uk-button-default uk-margin-large-top" style="border-color:rgba(255,255,255,.3);color:#fff;">Show</button>
             </div>
           </div>
           <div id="project-overlay" class="jlz-works-ui uk-position-z-index"></div>
@@ -79,18 +79,18 @@ export function homePage(): string {
         <div class="section-bg section-bg--innovative uk-position-cover" data-dynamic-content>
           <div class="section-container uk-height-viewport uk-flex uk-flex-middle uk-flex-center">
             <div class="section-content uk-text-center">
-              <h2 class="studio-title" data-content-id="innovative-title" uk-scrollspy="cls: uk-animation-slide-bottom; delay: 200; repeat: true">INNOVATIVE</h2>
-              <p class="studio-body uk-text-lead uk-margin-large-top" data-content-id="innovative-text" uk-scrollspy="cls: uk-animation-fade; delay: 400; repeat: true">
+              <h2 class="studio-title" data-content-id="innovative-title">INNOVATIVE</h2>
+              <p class="studio-body uk-text-lead uk-margin-large-top" data-content-id="innovative-text">
                 Pushing the frontier of what browsers can do. WebGL, WebGPU, spatial audio —
                 we explore every edge of the platform to create experiences that feel
                 like stepping into another world.
               </p>
-              <div class="uk-grid-small uk-child-width-1-2@m uk-text-center uk-margin-large-top" uk-grid uk-scrollspy="cls: uk-animation-fade; delay: 600; repeat: true">
-                <div uk-scrollspy="cls: uk-animation-fade; delay: 100; repeat: true">
+              <div class="uk-grid-small uk-child-width-1-2@m uk-text-center uk-margin-large-top" uk-grid>
+                <div>
                   <span class="uk-icon uk-icon-large" uk-icon="rocket"></span>
                   <p class="uk-margin-top">WebGPU Native</p>
                 </div>
-                <div uk-scrollspy="cls: uk-animation-fade; delay: 200; repeat: true">
+                <div>
                   <span class="uk-icon uk-icon-large" uk-icon="layers"></span>
                   <p class="uk-margin-top">Multi-layer Rendering</p>
                 </div>
@@ -106,11 +106,11 @@ export function homePage(): string {
         <div class="section-bg section-bg--contact uk-position-cover" data-dynamic-content>
           <div class="section-container uk-height-viewport uk-flex uk-flex-middle uk-flex-center">
             <div class="section-content uk-text-center">
-              <h2 class="studio-title" data-content-id="contact-title" uk-scrollspy="cls: uk-animation-slide-bottom; delay: 200; repeat: true">CONTACT</h2>
-              <p class="uk-text-lead uk-light uk-margin-large-top" data-content-id="contact-text" uk-scrollspy="cls: uk-animation-fade; delay: 400; repeat: true">
+              <h2 class="studio-title" data-content-id="contact-title">CONTACT</h2>
+              <p class="uk-text-lead uk-light uk-margin-large-top" data-content-id="contact-text">
                 Ready to build something extraordinary?
               </p>
-              <div class="uk-grid-small uk-child-width-1-3@m uk-text-center uk-margin-large-top" data-content-id="contact-grid" uk-grid uk-scrollspy="cls: uk-animation-fade; delay: 600; repeat: true">
+              <div class="uk-grid-small uk-child-width-1-3@m uk-text-center uk-margin-large-top" data-content-id="contact-grid" uk-grid>
                 <div>
                   <a href="mailto:hello@justlovejazz.com" class="uk-button uk-button-primary uk-button-large">
                     <span class="uk-icon" uk-icon="mail"></span> Email

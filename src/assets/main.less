@@ -236,9 +236,13 @@ section[data-section='flexible'] .uk-button-default:hover {
   border-color: #111;
 }
 
-/* .section-active is set by ContentReveal — keeps the section visible.
-   Fade-in is handled by UIkit scrollspy (uk-scrollspy attribute in templates.ts),
-   which animates elements on viewport entry. */
+/* Bug 1: before UIkit scrollspy initializes (during splash), section content
+   children are invisible. The .scrollspy-pending class on <body> is removed
+   when scrollspy is initialized after splash — then uk-animation-fade takes over
+   without CSS specificity conflicts. */
+.scrollspy-pending .section-content > * {
+  opacity: 0;
+}
 .section-active {
   opacity: 1;
 }

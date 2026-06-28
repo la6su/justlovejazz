@@ -260,10 +260,17 @@ export class Experience {
     const showGallery = cfg?.ui?.showGallery ?? false
     if (this.portfolio) {
       this.portfolio.group.visible = showGallery
-      // Bug 4: ensure cube textures are applied while on works section.
-      // applyTexturesToCube is idempotent (sets material.map + needsUpdate).
+      const cube = this.world.baku as unknown as
+        | { setProjectTextures?: (t: (THREE.Texture | null)[]) => void; clearProjectTextures?: () => void }
+        | undefined
       if (showGallery && this.portfolio.texturesLoaded) {
+        // On works: apply project textures to cube faces.
         this.portfolio.applyTexturesToCube()
+      } else {
+        // NOT on works: clear textures so cube is clean glass. This runs every
+        // frame, guaranteeing textures never leak to other sections (was: only
+        // cleared on section-change idx!==3, which missed edge cases).
+        cube?.clearProjectTextures?.()
       }
     }
     // Sync ProjectOverlay (DOM UI layer) with the same visibility —
