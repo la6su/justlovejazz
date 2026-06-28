@@ -1,17 +1,12 @@
-// splash.ts — Cinematic liquid splash screen coordinator.
+// splash.ts — Cinematic liquid splash coordinator.
 //
-// The liquid WebGL2 shader runs inline in index.html (instant FCP, before
-// Three.js loads). This module coordinates the overlay (LOADING text,
-// progress bar, label) and drives the liquid shader via window.jlzLiquid.
+// The liquid WebGL2 shader runs inline in index.html (instant FCP).
+// One uPhase uniform drives the entire sequence:
+//   0.0-0.25: noise mask reveal (liquid emerges from black via FBM)
+//   0.25-0.75: liquid loading (flows, brightens with progress)
+//   0.75-1.0: CRT collapse (liquid morphs into TV hole + white glow)
 //
-// Flow:
-// 1. Liquid shader runs immediately (domain-warped FBM noise)
-// 2. setProgress() → progress bar + liquid brightens
-// 3. setState('ready') → data-phase='enter', LOADING dissolves
-// 4. triggerPortalCollapse() → liquid.reveal() starts radial dissolve
-// 5. hide() → fade out, remove() → dispose liquid + DOM
-
-export type SplashPhase = 'loading' | 'enter' | 'dissolving' | 'revealing' | 'idle'
+// This module just coordinates the overlay + drives the shader via jlzLiquid.
 
 export interface SplashOverlay {
   show(): void
@@ -21,36 +16,28 @@ export interface SplashOverlay {
   setState(state: 'booting' | 'warming' | 'ready'): void
   triggerPortalCollapse(): void
   curtainSplit(duration?: number): void
-  markPhase(phase: SplashPhase): void
+  markPhase(phase: string): void
   getElements(): { root: HTMLElement } | null
-  /** Trigger CRT TV boot effect (white flash → TV hole collapse). */
-  triggerCRT(): void
 }
 
 export function createSplash(): SplashOverlay {
   const id = 'jlj-splash'
   let root: HTMLElement | null = null
-  let progressBar: HTMLDivElement | null = null
-  let labelEl: HTMLDivElement | null = null
-  let shellReady = false
 
-  function bindShell() {
-    const existing = document.getElementById(id)
-    if (!existing) return false
-    root = existing
-    progressBar = existing.querySelector('#jlj-splash-progress')
-    labelEl = existing.querySelector('#jlj-splash-label')
-    shellReady = true
-    return true
+  function getLiquid() {
+    return (window as unknown as {
+      jlzLiquid?: {
+        setProgress: (v: number) => void
+        setPhase: (v: number) => void
+        reveal: () => void
+        dispose: () => void
+      }
+    }).jlzLiquid
   }
 
   return {
     show(): void {
-      if (!shellReady) bindShell()
-      if (root) {
-        root.style.opacity = '1'
-        root.style.visibility = 'visible'
-      }
+      if (!root) root = document.getElementById(id)
     },
 
     hide(_durationMs?: number): void {
@@ -59,9 +46,7 @@ export function createSplash(): SplashOverlay {
     },
 
     remove(): void {
-      // Dispose the liquid shader before removing DOM.
-      const liquid = (window as unknown as { jlzLiquid?: { dispose: () => void } }).jlzLiquid
-      liquid?.dispose()
+      getLiquid()?.dispose()
       if (root) {
         root.remove()
         root = null
@@ -69,42 +54,31 @@ export function createSplash(): SplashOverlay {
     },
 
     setProgress(pct: number): void {
-      if (progressBar) {
-        progressBar.style.width = `${pct}%`
-        progressBar.setAttribute('aria-valuenow', String(pct))
-      }
-      // Drive the liquid shader's progress uniform (0-1).
-      const liquid = (window as unknown as { jlzLiquid?: { setProgress: (v: number) => void } }).jlzLiquid
-      liquid?.setProgress(pct / 100)
+      // Drive the shader's uProgress (0-1) — brightens liquid + triggers CRT at 100%.
+      getLiquid()?.setProgress(pct / 100)
     },
 
-    setState(state: 'booting' | 'warming' | 'ready'): void {
-      if (labelEl) labelEl.textContent = state.toUpperCase()
-      if (root) root.dataset.phase = state === 'ready' ? 'enter' : 'loading'
+    setState(_state: 'booting' | 'warming' | 'ready'): void {
+      // No-op — the shader's uPhase auto-advances based on progress.
+      // No separate "ready" state needed; at 100% the CRT collapse triggers
+      // automatically inside the shader.
     },
 
     triggerPortalCollapse(): void {
-      // CRT boot: white flash → TV hole collapse (replaces radial dissolve).
-      const liquid = (window as unknown as { jlzLiquid?: { triggerCRT: () => void } }).jlzLiquid
-      liquid?.triggerCRT()
-    },
-
-    triggerCRT(): void {
-      const liquid = (window as unknown as { jlzLiquid?: { triggerCRT: () => void } }).jlzLiquid
-      liquid?.triggerCRT()
+      // No-op — CRT collapse is driven by uPhase inside the shader (auto at 100%).
     },
 
     curtainSplit(_duration?: number): void {
-      // No-op — liquid dissolve handles the reveal transition.
+      // No-op — reveal is driven by jlzLiquid.reveal() in main-app.
     },
 
-    markPhase(phase: SplashPhase): void {
-      if (root) root.dataset.phase = phase
+    markPhase(_phase: string): void {
+      // No-op — phase tracking is internal to the shader now.
     },
 
     getElements() {
-      if (!root) return null
-      return { root }
+      if (!root) root = document.getElementById(id)
+      return root ? { root } : null
     }
   }
 }

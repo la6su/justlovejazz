@@ -5,425 +5,180 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="JUSTLOVEJAZZ — 3D WebGPU studio portfolio." />
-    <meta name="theme-color" content="#000000" />
+    <meta name="theme-color" content="#050507" />
     <title>JUSTLOVEJAZZ</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
     <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet" /></noscript>
-    <!--
-      SPLASH — cinematic liquid WebGL2 shader (vanilla, inline for instant FCP).
-      Runs BEFORE Three.js loads. Domain-warped FBM noise = organic liquid flow.
-      On reveal: liquid dissolves from center, 3D scene appears beneath.
-      API: window.jlzLiquid = { setProgress, reveal, dispose }
-    -->
     <style>
       *{box-sizing:border-box}
-      body{margin:0;background:#000;color:rgba(255,255,255,.92);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased}
-
-      /* === SPLASH CONTAINER === liquid canvas + minimal overlay */
-      #jlj-splash{position:fixed;inset:0;z-index:3000;background:#000;overflow:hidden;transition:opacity .6s ease}
+      body{margin:0;background:#050507;overflow:hidden}
+      #jlj-splash{position:fixed;inset:0;z-index:3000;transition:opacity .4s ease}
       #jlj-splash.hide{opacity:0;pointer-events:none}
       #jlj-splash-canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
-
-      /* === LOADING text overlay === minimal, centered */
-      #jlj-splash-brand{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10;text-align:center;pointer-events:none}
-      .jlj-splash-word{display:block;color:rgba(255,255,255,.7);font-weight:500;font-size:clamp(.7rem,1.6vw,.95rem);letter-spacing:.45em;text-transform:uppercase;opacity:0;animation:wordIn .8s ease .8s forwards}
-      @keyframes wordIn{to{opacity:1}}
-      #jlj-splash[data-phase="enter"] .jlj-splash-word,
-      #jlj-splash[data-phase="revealing"] .jlj-splash-word{animation:wordOut .5s ease forwards}
-      @keyframes wordOut{to{opacity:0;transform:translateY(-14px)}}
-
-      /* === Progress bar (bottom edge) === */
-      #jlj-splash-progress{position:absolute;bottom:0;left:0;height:2px;width:0;background:linear-gradient(90deg,rgba(120,140,220,.6),#fff);transition:width .4s ease;box-shadow:0 0 10px rgba(120,140,220,.5);z-index:11}
-
-      /* === State label (bottom center) === */
-      #jlj-splash-label{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,.4);font-size:.65rem;font-weight:500;letter-spacing:.2em;text-transform:uppercase;opacity:0;animation:labelIn .4s ease .1s forwards;z-index:11}
-      @keyframes labelIn{to{opacity:1}}
-
-      /* === ENTER BUTTON === */
-      .jlz-enter{position:fixed;bottom:8vh;left:50%;transform:translateX(-50%) translateY(20px);z-index:3000;background:transparent;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.92);font-weight:500;font-size:clamp(.55rem,1.2vw,.8rem);font-family:'Inter',sans-serif;letter-spacing:.2em;padding:12px 40px;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .8s,transform .8s;text-transform:uppercase}
-      .jlz-enter.is-visible{opacity:1;pointer-events:auto;transform:translateX(-50%) translateY(0);animation:enterPulse 2s ease-in-out infinite}
-      .jlz-enter:hover{border-color:rgba(120,140,220,1);color:#fff}
-      @keyframes enterPulse{0%,100%{box-shadow:0 0 8px rgba(255,255,255,.1),0 0 30px rgba(255,255,255,0)}50%{box-shadow:0 0 12px rgba(255,255,255,.2),0 0 50px rgba(255,255,255,.1)}}
-
-      .skip-link{position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden}
+      .jlz-enter{position:fixed;bottom:8vh;left:50%;transform:translateX(-50%);z-index:3000;background:transparent;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.92);font:500 clamp(.55rem,1.2vw,.8rem)/1 'Inter',sans-serif;letter-spacing:.2em;padding:12px 40px;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .8s,transform .8s;text-transform:uppercase}
+      .jlz-enter.is-visible{opacity:1;pointer-events:auto;transform:translateX(-50%)}
+      .skip-link{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
     </style>
   </head>
   <body data-app-mode="full" data-page="home">
     <a href="#section-intro" class="skip-link">Skip to main content</a>
-    <!-- Nav: minimal HTML, styled by LESS when loaded -->
-    <div id="main-nav"><nav class="jlz-nav-inner" role="navigation" aria-label="Primary">
-      <div uk-navbar="mode: full">
-        <div class="uk-navbar-left"><a href="#section-intro" class="uk-navbar-item uk-link">JLJ</a></div>
-        <div class="uk-navbar-right"><ul class="uk-navbar-nav">
-          <li><a href="#section-intro">Studio</a></li><li><a href="#section-about">About</a></li>
-          <li><a href="#section-flexible">Flexible</a></li><li><a href="#section-challenge">Works</a></li>
-          <li><a href="#section-innovative">Innovative</a></li><li><a href="#section-contact">Contact</a></li>
-        </ul><a href="#offcanvas-nav" uk-offcanvas-icon uk-toggle></a></div>
-      </div></nav></div>
-    <div id="offcanvas-nav" uk-offcanvas="mode: push"><div class="uk-offcanvas-bar">
-      <button class="uk-offcanvas-close" type="button" uk-close></button>
-      <ul class="uk-nav uk-nav-default">
-        <li><a href="#section-intro">Studio</a></li><li><a href="#section-about">About</a></li>
-        <li><a href="#section-flexible">Flexible</a></li><li><a href="#section-challenge">Works</a></li>
-        <li><a href="#section-innovative">Innovative</a></li><li><a href="#section-contact">Contact</a></li>
-      </ul></div></div>
-    <!-- SPLASH: liquid WebGL2 canvas + minimal overlay -->
-    <div id="jlj-splash" data-phase="loading">
-      <canvas id="jlj-splash-canvas"></canvas>
-      <div id="jlj-splash-brand">
-        <span class="jlj-splash-word">LOADING</span>
-      </div>
-      <div id="jlj-splash-progress" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-      <div id="jlj-splash-label">BOOTING</div>
-    </div>
-    <!-- Liquid splash shader — vanilla WebGL2, runs instantly before Three.js -->
+    <div id="jlj-splash"><canvas id="jlj-splash-canvas"></canvas></div>
+    <!--
+      Cinematic liquid splash — vanilla WebGL2, inline for instant FCP.
+      One shader, one uPhase uniform drives the entire sequence:
+        0.0-0.25: noise mask reveal (liquid emerges from black via FBM mask)
+        0.25-0.75: liquid loading (flows, brightens with progress)
+        0.75-1.0: CRT collapse (liquid morphs into TV hole shape + white glow)
+      API: window.jlzLiquid = { setProgress, setPhase, reveal, dispose }
+    -->
     <script>
     (function(){
-      const canvas = document.getElementById('jlj-splash-canvas');
-      const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
-      if(!gl){ console.warn('[splash] WebGL unavailable — liquid shader disabled'); return; }
-
-      // ── Shaders ── both VS and FS must use the same GLSL version.
-      const isGL2 = !!gl.getParameter && gl.getParameter(gl.VERSION).includes('WebGL 2.0');
-
-      const VS = isGL2 ? `#version 300 es
-      in vec2 aPos;
-      void main(){ gl_Position = vec4(aPos, 0.0, 1.0); }` : `
-      attribute vec2 aPos;
-      void main(){ gl_Position = vec4(aPos, 0.0, 1.0); }`;
-
-      const FS = isGL2 ? `#version 300 es
+      const canvas=document.getElementById('jlj-splash-canvas');
+      const gl=canvas.getContext('webgl2',{alpha:false,antialias:false})||canvas.getContext('webgl',{alpha:false,antialias:false});
+      if(!gl){console.warn('[splash] WebGL unavailable');return;}
+      const isGL2=gl.getParameter(gl.VERSION).includes('WebGL 2.0');
+      const VS=isGL2?`#version 300 es
+      in vec2 aPos;void main(){gl_Position=vec4(aPos,0.,1.);}`:`
+      attribute vec2 aPos;void main(){gl_Position=vec4(aPos,0.,1.);}`;
+      const FS=isGL2?`#version 300 es
       precision highp float;
-      uniform float uTime;
+      uniform float uTime,uProgress,uPhase,uReveal;
       uniform vec2 uResolution;
-      uniform float uProgress;
-      uniform float uReveal;
-      uniform float uMode;   // 0=liquid loading, 1=CRT boot
-      uniform float uCRT;   // CRT animation 0→1 (0=liquid, 1=TV hole collapsed)
-      uniform float uIntro; // 0→1 fade-in from black to liquid (boot intro)
       out vec4 fragColor;
-
-      float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-      float noise(vec2 p){
-        vec2 i = floor(p), f = fract(p);
-        f = f*f*(3.0-2.0*f);
-        return mix(mix(hash(i), hash(i+vec2(1,0)), f.x),
-                   mix(hash(i+vec2(0,1)), hash(i+vec2(1,1)), f.x), f.y);
-      }
-      float fbm(vec2 p){
-        float v=0.0, a=0.5;
-        mat2 rot = mat2(0.8, 0.6, -0.6, 0.8);
-        for(int i=0; i<5; i++){ v += a*noise(p); p = rot*p*2.0; a *= 0.5; }
-        return v;
-      }
-
-      // ── CRT TV hole shape (user-provided shader) ──
-      float uv2TVHoleShape(vec2 uv, vec2 scale) {
-        uv = uv * 2.0 - 1.0;
-        uv = abs(uv);
-        uv *= scale;
-        float y = smoothstep(1.0, 0.0, uv.x);
-        float d = uv.y - y;
-        float edge = fwidth(d);
-        return smoothstep(edge, -edge, d);
-      }
-      float uv2TopBottomBlack(vec2 uv, float amount01) {
-        uv.y = uv.y * 2.0 - 1.0;
-        uv.y = abs(uv.y);
-        float edgeVal = 1.0 - amount01;
-        float d = uv.y - edgeVal;
-        float edge = fwidth(d);
-        return smoothstep(edge, -edge, d);
-      }
-
-      // ── Liquid FBM color computation (shared by liquid mode + CRT blend) ──
-      vec3 liquidColor(vec2 uv, float aspect){
-        vec2 pp = (uv - 0.5) * vec2(aspect, 1.0) * 3.0;
-        float t = uTime * 0.15;
-        vec2 q = vec2(fbm(pp + t), fbm(pp + vec2(5.2, 1.3) + t));
-        vec2 r = vec2(
-          fbm(pp + 2.0*q + vec2(1.7, 9.2) + t*1.5),
-          fbm(pp + 2.0*q + vec2(8.3, 2.8) + t)
-        );
-        float n = fbm(pp + 2.0*r);
-        vec3 dark = vec3(0.02, 0.02, 0.04);
-        vec3 mid = vec3(0.08, 0.10, 0.18);
-        vec3 bright = vec3(0.5, 0.55, 0.75);
-        vec3 col = mix(dark, mid, n);
-        col = mix(col, bright, smoothstep(0.45, 0.75, n));
-        col += vec3(0.08, 0.06, 0.12) * uProgress;
-        col += vec3(0.15, 0.12, 0.2) * smoothstep(0.6, 1.0, n) * uProgress;
-        return col;
-      }
-
+      float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+      float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
+        return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);}
+      float fbm(vec2 p){float v=0.,a=.5;mat2 r=mat2(.8,.6,-.6,.8);
+        for(int i=0;i<5;i++){v+=a*noise(p);p=r*p*2.;a*=.5;}return v;}
+      // TV hole shape (CRT collapse)
+      float tvHole(vec2 uv,vec2 sc){uv=uv*2.-1.;uv=abs(uv);uv*=sc;
+        float y=smoothstep(1.,0.,uv.x);float d=uv.y-y;return smoothstep(fwidth(d),-fwidth(d),d);}
+      float topBot(vec2 uv,float a){uv.y=uv.y*2.-1.;uv.y=abs(uv.y);
+        float d=uv.y-(1.-a);return smoothstep(fwidth(d),-fwidth(d),d);}
+      // Liquid FBM color
+      vec3 liquidCol(vec2 uv,float asp){
+        vec2 p=(uv-.5)*vec2(asp,1.)*3.;float t=uTime*.15;
+        vec2 q=vec2(fbm(p+t),fbm(p+vec2(5.2,1.3)+t));
+        vec2 r=vec2(fbm(p+2.*q+vec2(1.7,9.2)+t*1.5),fbm(p+2.*q+vec2(8.3,2.8)+t));
+        float n=fbm(p+2.*r);
+        vec3 c=mix(vec3(.02,.02,.04),vec3(.08,.1,.18),n);
+        c=mix(c,vec3(.5,.55,.75),smoothstep(.45,.75,n));
+        c+=vec3(.08,.06,.12)*uProgress;
+        c+=vec3(.15,.12,.2)*smoothstep(.6,1.,n)*uProgress;
+        return c;}
       void main(){
-        vec2 uv = gl_FragCoord.xy / uResolution;
-        float aspect = uResolution.x / uResolution.y;
-
-        // ── Liquid color (always computed — CRT blends from it) ──
-        vec3 liquid = liquidColor(uv, aspect);
-        // Fade-in from black: uIntro 0→1 over ~0.8s on boot
-        liquid *= uIntro;
-
-        if(uMode < 0.5){
-          // ── LIQUID LOADING (mode 0) ──
-          // At 100%: flash white briefly before CRT boot
-          float flash = smoothstep(0.95, 1.0, uProgress) * 0.4;
-          vec3 col = mix(liquid, vec3(1.0), flash);
-          float dist = length((uv - 0.5) * vec2(aspect, 1.0));
-          col *= 1.0 - dist * 0.3;
-          fragColor = vec4(col, 1.0);
-          return;
-        }
-
-        // ── CRT BOOT (mode 1) — blends SEAMLESSLY from liquid ──
-        // uCRT 0→1: liquid → white flash → collapses to TV hole
-        float p = clamp(uCRT, 0.0, 1.0);
-        float param01 = 1.0 - p;
-        float cutPoint = 0.5;
-        float blendRange = 0.2;
-
-        float anim01 = param01 / cutPoint;
-        anim01 = anim01 * anim01 * anim01 / 1.05;
-        float topBlack = uv2TopBottomBlack(uv, anim01);
-
-        anim01 = (param01 - cutPoint) / (1.0 - cutPoint);
-        anim01 = max(anim01, 0.0);
-        float x = anim01 * anim01 * anim01 * 80.0 + 1.0;
-        float y = anim01 * anim01 * 80.0 + 2.0;
-        float holeMask = uv2TVHoleShape(uv, vec2(x, y));
-
-        float mixT = smoothstep(cutPoint - blendRange, cutPoint + blendRange, param01);
-        float crtMask = mix(topBlack, holeMask, mixT);
-
-        // White CRT glow + slight blue tint at edges
-        vec3 crtCol = vec3(1.0) * crtMask;
-        crtCol += vec3(0.4, 0.5, 0.7) * (1.0 - crtMask) * 0.15;
-
-        // Seamless blend: at uCRT=0, show liquid; as uCRT→1, crossfade to CRT.
-        // This avoids the black gap — liquid flows directly into CRT boot.
-        vec3 col = mix(liquid, crtCol, smoothstep(0.0, 0.3, uCRT));
-
-        // After hole collapses (uCRT near 1), fade to transparent for reveal
-        float alpha = 1.0 - uReveal;
-        fragColor = vec4(col, alpha);
-      }` : `precision highp float;
-      uniform float uTime;
+        vec2 uv=gl_FragCoord.xy/uResolution;float asp=uResolution.x/uResolution.y;
+        vec3 liq=liquidCol(uv,asp);
+        // Phase 0-0.25: noise mask reveal (liquid emerges from black via FBM mask)
+        float revealT=smoothstep(0.,0.25,uPhase);
+        float maskNoise=fbm(uv*4.+uTime*.3);
+        float revealMask=smoothstep(.3-revealT*.6,.7-revealT*.6,maskNoise);
+        liq*=revealMask;
+        // Phase 0.25-0.75: loading (liquid flows, brightens)
+        // Phase 0.75-1: CRT collapse (liquid morphs into TV hole)
+        float crtT=smoothstep(.75,1.,uPhase);
+        float param01=1.-crtT;
+        float anim01=param01/.5;anim01=anim01*anim01*anim01/1.05;
+        float tb=topBot(uv,anim01);
+        anim01=max((param01-.5)/.5,0.);
+        float hm=tvHole(uv,vec2(anim01*anim01*anim01*80.+1.,anim01*anim01*80.+2.));
+        float crtMask=mix(tb,hm,smoothstep(.3,.7,param01));
+        vec3 crtCol=vec3(1.)*crtMask+vec3(.4,.5,.7)*(1.-crtMask)*.15;
+        // Seamless blend: liquid crossfades into CRT as phase→1
+        vec3 col=mix(liq,crtCol,smoothstep(.7,1.,uPhase));
+        // White flash at 100% loading (before CRT)
+        float flash=smoothstep(.95,1.,uProgress)*smoothstep(1.,.98,uPhase)*.5;
+        col=mix(col,vec3(1.),flash);
+        col*=1.-length((uv-.5)*vec2(asp,1.))*.25;
+        fragColor=vec4(col,1.-uReveal);
+      }`:`
+      precision highp float;
+      uniform float uTime,uProgress,uPhase,uReveal;
       uniform vec2 uResolution;
-      uniform float uProgress;
-      uniform float uReveal;
-      uniform float uMode;
-      uniform float uCRT;
-      uniform float uIntro;
-
-      float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-      float noise(vec2 p){
-        vec2 i = floor(p), f = fract(p);
-        f = f*f*(3.0-2.0*f);
-        return mix(mix(hash(i), hash(i+vec2(1.0,0.0)), f.x),
-                   mix(hash(i+vec2(0.0,1.0)), hash(i+vec2(1.0,1.0)), f.x), f.y);
-      }
-      float fbm(vec2 p){
-        float v=0.0, a=0.5;
-        mat2 rot = mat2(0.8, 0.6, -0.6, 0.8);
-        for(int i=0; i<5; i++){ v += a*noise(p); p = rot*p*2.0; a *= 0.5; }
-        return v;
-      }
-
-      float uv2TVHoleShape(vec2 uv, vec2 scale) {
-        uv = uv * 2.0 - 1.0;
-        uv = abs(uv);
-        uv *= scale;
-        float y = smoothstep(1.0, 0.0, uv.x);
-        float d = uv.y - y;
-        float edge = fwidth(d);
-        return smoothstep(edge, -edge, d);
-      }
-      float uv2TopBottomBlack(vec2 uv, float amount01) {
-        uv.y = uv.y * 2.0 - 1.0;
-        uv.y = abs(uv.y);
-        float edgeVal = 1.0 - amount01;
-        float d = uv.y - edgeVal;
-        float edge = fwidth(d);
-        return smoothstep(edge, -edge, d);
-      }
-
-      vec3 liquidColor(vec2 uv, float aspect){
-        vec2 pp = (uv - 0.5) * vec2(aspect, 1.0) * 3.0;
-        float t = uTime * 0.15;
-        vec2 q = vec2(fbm(pp + t), fbm(pp + vec2(5.2, 1.3) + t));
-        vec2 r = vec2(fbm(pp + 2.0*q + vec2(1.7, 9.2) + t*1.5), fbm(pp + 2.0*q + vec2(8.3, 2.8) + t));
-        float n = fbm(pp + 2.0*r);
-        vec3 dark = vec3(0.02, 0.02, 0.04);
-        vec3 mid = vec3(0.08, 0.10, 0.18);
-        vec3 bright = vec3(0.5, 0.55, 0.75);
-        vec3 col = mix(dark, mid, n);
-        col = mix(col, bright, smoothstep(0.45, 0.75, n));
-        col += vec3(0.08, 0.06, 0.12) * uProgress;
-        col += vec3(0.15, 0.12, 0.2) * smoothstep(0.6, 1.0, n) * uProgress;
-        return col;
-      }
-
+      float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+      float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
+        return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x),f.y);}
+      float fbm(vec2 p){float v=0.,a=.5;mat2 r=mat2(.8,.6,-.6,.8);
+        for(int i=0;i<5;i++){v+=a*noise(p);p=r*p*2.;a*=.5;}return v;}
+      float tvHole(vec2 uv,vec2 sc){uv=uv*2.-1.;uv=abs(uv);uv*=sc;
+        float y=smoothstep(1.,0.,uv.x);float d=uv.y-y;return smoothstep(fwidth(d),-fwidth(d),d);}
+      float topBot(vec2 uv,float a){uv.y=uv.y*2.-1.;uv.y=abs(uv.y);
+        float d=uv.y-(1.-a);return smoothstep(fwidth(d),-fwidth(d),d);}
+      vec3 liquidCol(vec2 uv,float asp){
+        vec2 p=(uv-.5)*vec2(asp,1.)*3.;float t=uTime*.15;
+        vec2 q=vec2(fbm(p+t),fbm(p+vec2(5.2,1.3)+t));
+        vec2 r=vec2(fbm(p+2.*q+vec2(1.7,9.2)+t*1.5),fbm(p+2.*q+vec2(8.3,2.8)+t));
+        float n=fbm(p+2.*r);
+        vec3 c=mix(vec3(.02,.02,.04),vec3(.08,.1,.18),n);
+        c=mix(c,vec3(.5,.55,.75),smoothstep(.45,.75,n));
+        c+=vec3(.08,.06,.12)*uProgress;c+=vec3(.15,.12,.2)*smoothstep(.6,1.,n)*uProgress;return c;}
       void main(){
-        vec2 uv = gl_FragCoord.xy / uResolution;
-        float aspect = uResolution.x / uResolution.y;
-        vec3 liquid = liquidColor(uv, aspect);
-        liquid *= uIntro;
-
-        if(uMode < 0.5){
-          float flash = smoothstep(0.95, 1.0, uProgress) * 0.4;
-          vec3 col = mix(liquid, vec3(1.0), flash);
-          float dist = length((uv - 0.5) * vec2(aspect, 1.0));
-          col *= 1.0 - dist * 0.3;
-          gl_FragColor = vec4(col, 1.0);
-          return;
-        }
-
-        float p = clamp(uCRT, 0.0, 1.0);
-        float param01 = 1.0 - p;
-        float cutPoint = 0.5;
-        float blendRange = 0.2;
-        float anim01 = param01 / cutPoint;
-        anim01 = anim01 * anim01 * anim01 / 1.05;
-        float topBlack = uv2TopBottomBlack(uv, anim01);
-        anim01 = (param01 - cutPoint) / (1.0 - cutPoint);
-        anim01 = max(anim01, 0.0);
-        float x = anim01 * anim01 * anim01 * 80.0 + 1.0;
-        float y = anim01 * anim01 * 80.0 + 2.0;
-        float holeMask = uv2TVHoleShape(uv, vec2(x, y));
-        float mixT = smoothstep(cutPoint - blendRange, cutPoint + blendRange, param01);
-        float crtMask = mix(topBlack, holeMask, mixT);
-        vec3 crtCol = vec3(1.0) * crtMask;
-        crtCol += vec3(0.4, 0.5, 0.7) * (1.0 - crtMask) * 0.15;
-        vec3 col = mix(liquid, crtCol, smoothstep(0.0, 0.3, uCRT));
-        float alpha = 1.0 - uReveal;
-        gl_FragColor = vec4(col, alpha);
+        vec2 uv=gl_FragCoord.xy/uResolution;float asp=uResolution.x/uResolution.y;
+        vec3 liq=liquidCol(uv,asp);
+        float revealT=smoothstep(0.,.25,uPhase);
+        float maskNoise=fbm(uv*4.+uTime*.3);
+        float revealMask=smoothstep(.3-revealT*.6,.7-revealT*.6,maskNoise);
+        liq*=revealMask;
+        float crtT=smoothstep(.75,1.,uPhase);float param01=1.-crtT;
+        float anim01=param01/.5;anim01=anim01*anim01*anim01/1.05;
+        float tb=topBot(uv,anim01);
+        anim01=max((param01-.5)/.5,0.);
+        float hm=tvHole(uv,vec2(anim01*anim01*anim01*80.+1.,anim01*anim01*80.+2.));
+        float crtMask=mix(tb,hm,smoothstep(.3,.7,param01));
+        vec3 crtCol=vec3(1.)*crtMask+vec3(.4,.5,.7)*(1.-crtMask)*.15;
+        vec3 col=mix(liq,crtCol,smoothstep(.7,1.,uPhase));
+        float flash=smoothstep(.95,1.,uProgress)*smoothstep(1.,.98,uPhase)*.5;
+        col=mix(col,vec3(1.),flash);
+        col*=1.-length((uv-.5)*vec2(asp,1.))*.25;
+        gl_FragColor=vec4(col,1.-uReveal);
       }`;
-
-      function compile(src, type){
-        const s = gl.createShader(type);
-        gl.shaderSource(s, src);
-        gl.compileShader(s);
-        if(!gl.getShaderParameter(s, gl.COMPILE_STATUS)){
-          console.error('[splash] shader error:', gl.getShaderInfoLog(s));
-          gl.deleteShader(s);
-          return null;
-        }
-        return s;
-      }
-
-      const vs = compile(VS, gl.VERTEX_SHADER);
-      const fs = compile(FS, gl.FRAGMENT_SHADER);
-      if(!vs || !fs) return;
-
-      const prog = gl.createProgram();
-      gl.attachShader(prog, vs);
-      gl.attachShader(prog, fs);
-      gl.linkProgram(prog);
-      if(!gl.getProgramParameter(prog, gl.LINK_STATUS)){
-        console.error('[splash] link error:', gl.getProgramInfoLog(prog));
-        return;
-      }
+      function compile(s,t){const sh=gl.createShader(t);gl.shaderSource(sh,s);gl.compileShader(sh);
+        if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS)){console.error('[splash]',gl.getShaderInfoLog(sh));return null;}return sh;}
+      const vs=compile(VS,gl.VERTEX_SHADER),fs=compile(FS,gl.FRAGMENT_SHADER);
+      if(!vs||!fs)return;
+      const prog=gl.createProgram();gl.attachShader(prog,vs);gl.attachShader(prog,fs);gl.linkProgram(prog);
+      if(!gl.getProgramParameter(prog,gl.LINK_STATUS)){console.error('[splash] link:',gl.getProgramInfoLog(prog));return;}
       gl.useProgram(prog);
-
-      // Fullscreen quad
-      const buf = gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
-      const aPos = gl.getAttribLocation(prog, 'aPos');
-      gl.enableVertexAttribArray(aPos);
-      gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
-
-      // Uniforms
-      const uTime = gl.getUniformLocation(prog, 'uTime');
-      const uRes = gl.getUniformLocation(prog, 'uResolution');
-      const uProg = gl.getUniformLocation(prog, 'uProgress');
-      const uReveal = gl.getUniformLocation(prog, 'uReveal');
-      const uMode = gl.getUniformLocation(prog, 'uMode');
-      const uCRT = gl.getUniformLocation(prog, 'uCRT');
-      const uIntro = gl.getUniformLocation(prog, 'uIntro');
-
-      // State
-      let progress = 0, reveal = 0, mode = 0, crt = 0, intro = 0;
-      let startTime = performance.now();
-      let rafId = null;
-      let disposed = false;
-
-      function resize(){
-        const dpr = Math.min(window.devicePixelRatio || 1, 2);
-        const w = canvas.clientWidth * dpr;
-        const h = canvas.clientHeight * dpr;
-        if(canvas.width !== w || canvas.height !== h){
-          canvas.width = w;
-          canvas.height = h;
-          gl.viewport(0, 0, w, h);
-        }
-      }
-      window.addEventListener('resize', resize);
-      resize();
-
-      function render(){
-        if(disposed) return;
-        const t = (performance.now() - startTime) / 1000;
-        // Auto-fade intro 0→1 over 0.8s (liquid fades in from black)
-        if(intro < 1) intro = Math.min(1, intro + 0.016 / 0.8);
-        gl.uniform1f(uTime, t);
-        gl.uniform2f(uRes, canvas.width, canvas.height);
-        gl.uniform1f(uProg, progress);
-        gl.uniform1f(uReveal, reveal);
-        gl.uniform1f(uMode, mode);
-        gl.uniform1f(uCRT, crt);
-        gl.uniform1f(uIntro, intro);
-        // Enable alpha blending for CRT reveal fade
-        gl.enable(gl.BLEND);
-        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-        rafId = requestAnimationFrame(render);
-      }
+      const buf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buf);
+      gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+      const aPos=gl.getAttribLocation(prog,'aPos');gl.enableVertexAttribArray(aPos);
+      gl.vertexAttribPointer(aPos,2,gl.FLOAT,false,0,0);
+      const uT=gl.getUniformLocation(prog,'uTime'),uRes=gl.getUniformLocation(prog,'uResolution');
+      const uP=gl.getUniformLocation(prog,'uProgress'),uPh=gl.getUniformLocation(prog,'uPhase');
+      const uR=gl.getUniformLocation(prog,'uReveal');
+      let progress=0,phase=0,reveal=0,startT=performance.now(),raf=null,disposed=false;
+      function resize(){const dpr=Math.min(devicePixelRatio||1,2);const w=canvas.clientWidth*dpr,h=canvas.clientHeight*dpr;
+        if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;gl.viewport(0,0,w,h);}}
+      addEventListener('resize',resize);resize();
+      // Auto-advance phase 0→0.25 (intro reveal) over 1s
+      let introPhase=0;
+      function render(){if(disposed)return;
+        const t=(performance.now()-startT)/1000;
+        if(introPhase<.25)introPhase=Math.min(.25,introPhase+.016/1.0);
+        // phase: intro (0→.25) auto, then loading (.25) until progress=1, then CRT (.25→1)
+        let targetPhase=introPhase;
+        if(progress>=1)targetPhase=.25+0.75*Math.min(1,(t-introStart)/1.5);
+        phase+=(targetPhase-phase)*Math.min(1,.016*6);
+        gl.uniform1f(uT,t);gl.uniform2f(uRes,canvas.width,canvas.height);
+        gl.uniform1f(uP,progress);gl.uniform1f(uPh,phase);gl.uniform1f(uR,reveal);
+        gl.drawArrays(gl.TRIANGLE_STRIP,0,4);raf=requestAnimationFrame(render);}
+      let introStart=performance.now()/1000;
       render();
-
-      // ── Public API ──
-      window.jlzLiquid = {
-        setProgress(v){ progress = v; },
-        triggerCRT(){
-          // Switch to CRT boot mode + animate uCRT 0→1 (white flash → TV hole)
-          mode = 1;
-          const start = performance.now();
-          const dur = 1200;
-          function step(){
-            const t = Math.min((performance.now() - start) / dur, 1);
-            crt = t * t * (3 - 2 * t); // smoothstep
-            if(t < 1) requestAnimationFrame(step);
-          }
-          step();
-        },
-        reveal(target){
-          // After CRT boot, fade splash alpha to reveal 3D scene beneath.
-          const start = performance.now();
-          const dur = 600;
-          function step(){
-            const t = Math.min((performance.now() - start) / dur, 1);
-            reveal = t * t * (3 - 2 * t);
-            if(t < 1) requestAnimationFrame(step);
-          }
-          step();
-        },
-        dispose(){
-          disposed = true;
-          if(rafId) cancelAnimationFrame(rafId);
-          window.removeEventListener('resize', resize);
-          gl.deleteProgram(prog);
-          gl.deleteShader(vs);
-          gl.deleteShader(fs);
-          gl.deleteBuffer(buf);
-          delete window.jlzLiquid;
-        }
+      window.jlzLiquid={
+        setProgress(v){progress=v;if(v>=1)introStart=(performance.now()-startT)/1000;},
+        setPhase(v){phase=v;},
+        reveal(){const s=performance.now();const step=()=>{const t=Math.min((performance.now()-s)/600,1);
+          reveal=t*t*(3-2*t);if(t<1)requestAnimationFrame(step);};step();},
+        dispose(){disposed=true;if(raf)cancelAnimationFrame(raf);
+          removeEventListener('resize',resize);gl.deleteProgram(prog);gl.deleteShader(vs);
+          gl.deleteShader(fs);gl.deleteBuffer(buf);delete window.jlzLiquid;}
       };
     })();
     </script>
-    <!-- App: JS creates sections, canvas, 3D scene -->
+    <div id="main-nav"></div>
+    <div id="app"></div>
     <script type="module" src="/src/entry-shell.ts"></script>
   </body>
 </html>
