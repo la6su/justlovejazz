@@ -19,6 +19,7 @@ import { ProjectOverlay } from '../UI/ProjectOverlay'
 import { Subtitles } from '../UI/Subtitles'
 import { SectionProgress } from '../UI/SectionProgress'
 import { PerfMonitor } from '../core/PerfMonitor'
+import { prefersReducedMotion } from '../core/motionPolicy'
 // DissolveOverlay removed — cover transition in ProjectDetail replaces it.
 
 /**
@@ -58,6 +59,7 @@ export class Experience {
   private _prevSectionIndex = -1
   private _introEmitted = false
   private _onSizesResize: () => void = () => {}
+  private _onVisibilityChange: (() => void) | null = null
 
   constructor(_ui: UIManager) {
     this.sizes = new Sizes()
@@ -142,6 +144,15 @@ export class Experience {
     // severe frame stutter (observed 3 FPS on Chrome/WebGPU). On WebGL2 it
     // falls back to rAF internally, so behavior is identical.
     ;(this.renderer.instance as any).setAnimationLoop((t: number) => this.update(t))
+
+    // Pause the render loop when the tab is hidden — setAnimationLoop runs
+    // full-rate otherwise, burning CPU/GPU in the background.
+    this._onVisibilityChange = () => {
+      const r = this.renderer.instance as { setAnimationLoop: (cb: ((t: number) => void) | null) => void }
+      if (document.hidden) r.setAnimationLoop(null)
+      else r.setAnimationLoop((t: number) => this.update(t))
+    }
+    document.addEventListener('visibilitychange', this._onVisibilityChange)
   }
 
   update(time: number) {
@@ -207,7 +218,7 @@ export class Experience {
       this.renderer.postManager.applyPreset(cfg.id)
       this.camera.setFovOffset(cfg.camFovOffset, cfg.camFovDuration)
       // Subtle camera shake on section transition for cinematic impact
-      this.camera.shake(0.04, 0.4)
+      if (!prefersReducedMotion()) this.camera.shake(0.04, 0.4)
       this.currentSectionContext = cfg.context
       // A-009: Apply Baku material from worldState (was computed but never applied)
       if (this.world?.baku) {
@@ -326,6 +337,10 @@ export class Experience {
     // Stop the animation loop FIRST — setAnimationLoop(null) cancels the
     // internal callback. Without this, the loop keeps firing after dispose().
     ;(this.renderer.instance as any).setAnimationLoop(null)
+    if (this._onVisibilityChange) {
+      document.removeEventListener('visibilitychange', this._onVisibilityChange)
+      this._onVisibilityChange = null
+    }
     this.smoothScroll.destroy()
     this.contentReveal.destroy()
     this.cursor.destroy()
