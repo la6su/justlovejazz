@@ -27,14 +27,21 @@ export class ProjectOverlay {
   public onNext: (() => void) | null = null
   public onClose: (() => void) | null = null
 
-  constructor(protected root: HTMLElement) {
-    const existing =
-      (root.querySelector('#project-overlay') as HTMLElement | null) ||
-      document.getElementById('project-overlay')
+  constructor(protected _root: HTMLElement) {
+    // Attach to document.body — NOT to the section. A section ancestor with a
+    // CSS transform (UIkit scrollspy uk-animation-scale-up) creates a new
+    // containing block, making position:fixed relative to the section instead
+    // of the viewport. Body-attached overlay is always full-viewport.
+    const existing = document.getElementById('project-overlay')
     this.container = existing ?? document.createElement('div')
     if (!existing) {
       this.container.id = 'project-overlay'
-      root.appendChild(this.container)
+    }
+    // Always attach to body — if the overlay was prerendered inside a section
+    // (templates.ts has it inside #section-challenge), move it to body so
+    // position:fixed is viewport-relative (section transforms break fixed).
+    if (this.container.parentElement !== document.body) {
+      document.body.appendChild(this.container)
     }
     this.build()
     this.hide()

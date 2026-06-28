@@ -60,9 +60,24 @@ export async function startApp(): Promise<void> {
 
   // Re-animate on section change (scroll between sections) — but ONLY after
   // webgl-ready has fired (prevents animation running behind splash).
-  eventBus.on('jlz:section-change', () => {
+  eventBus.on('jlz:section-change', (payload) => {
     if (!webglReady) return
     animateNoiseTitles()
+    // Force UIkit scrollspy to re-evaluate the active section's elements.
+    // With Lenis smooth scroll, UIkit's scroll listener may not fire at the
+    // right time, leaving uk-scrollspy elements at opacity:0. Calling update()
+    // on the active section triggers scrollspy's viewport check.
+    const sec = document.querySelector(`[data-section="${payload.sectionId}"]`)
+    if (sec) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ;(UIkit as any).update(sec)
+      // Also manually trigger scrollspy for elements with uk-scrollspy
+      sec.querySelectorAll<HTMLElement>('[uk-scrollspy]').forEach((el) => {
+        const rect = el.getBoundingClientRect()
+        const inView = rect.top < window.innerHeight && rect.bottom > 0
+        if (inView) el.classList.add('uk-scrollspy-inview')
+      })
+    }
   })
 
   // Navigation handler
