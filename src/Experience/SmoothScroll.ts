@@ -1,5 +1,5 @@
 // src/Experience/SmoothScroll.ts
-import Lenis from '@studio-freight/lenis'
+import Lenis from 'lenis'
 import { input } from './Input'
 import { prefersReducedMotion } from '../core/motionPolicy'
 

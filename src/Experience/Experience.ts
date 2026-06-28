@@ -4,7 +4,7 @@ import { Time } from './Time'
 import { Camera } from './Camera'
 import { Renderer } from './Renderer'
 import { DebugStats } from '../core/DebugStats'
-import { DevPanel } from '../core/DevPanel'
+import type { DevPanel } from '../core/DevPanel'
 import { SmoothScroll } from './SmoothScroll'
 import { ContentReveal } from './ContentReveal'
 import { Cursor } from './Cursor'
@@ -14,7 +14,6 @@ import { AssetManager } from '../core/AssetManager'
 import { GPUResourceManager } from '../core/GPUResourceManager'
 import { StateBus } from '../core/StateBus'
 import type { World } from '../core/World'
-import type { WebGLTextManager } from './WebGLTextManager'
 import { WorksPortfolio } from './WorksPortfolio'
 import { ProjectOverlay } from '../UI/ProjectOverlay'
 import { Subtitles } from '../UI/Subtitles'
@@ -43,7 +42,6 @@ export class Experience {
   renderer!: Renderer
   public smoothScroll!: SmoothScroll
   private contentReveal!: ContentReveal
-  private webglTextManager: WebGLTextManager | null = null
   private cursor!: Cursor
   private debugStats!: DebugStats
   private devPanel: DevPanel | null = null
@@ -122,7 +120,8 @@ export class Experience {
     // DevPanel (Tweakpane) — only in DEV. Toggle with Backquote (`) or Ctrl+D.
     if (import.meta.env.DEV) {
       try {
-        this.devPanel = new DevPanel(this)
+        const { DevPanel: DevPanelCtor } = await import('../core/DevPanel')
+        this.devPanel = new DevPanelCtor(this)
       } catch (e) {
         console.warn('[Experience] DevPanel init failed:', e)
       }
@@ -143,7 +142,6 @@ export class Experience {
     // severe frame stutter (observed 3 FPS on Chrome/WebGPU). On WebGL2 it
     // falls back to rAF internally, so behavior is identical.
     ;(this.renderer.instance as any).setAnimationLoop((t: number) => this.update(t))
-    void this.ensureWebGLTextManager()
   }
 
   update(time: number) {
@@ -154,7 +152,6 @@ export class Experience {
     input.update()
     this.cursor.update()
     this.debugStats?.update(time)
-    this.webglTextManager?.update()
 
     // Intro sequence: emit 'intro:done' once stage reaches 1
     const stage = this.bus.get('intro:stage')
@@ -321,8 +318,6 @@ export class Experience {
     this.camera.instance.lookAt(0, 0, 0)
     this.camera.instance.updateProjectionMatrix()
     input.resetScroll()
-    const titles = document.querySelectorAll<HTMLElement>('.studio-title')
-    await this.webglTextManager?.refresh(Array.from(titles))
     // jlz:webgl-ready is dispatched ONLY by main-app.ts (after splash fully removed).
     // Do NOT dispatch here — would fire too early (before splash opens).
   }
@@ -331,7 +326,6 @@ export class Experience {
     // Stop the animation loop FIRST — setAnimationLoop(null) cancels the
     // internal callback. Without this, the loop keeps firing after dispose().
     ;(this.renderer.instance as any).setAnimationLoop(null)
-    this.webglTextManager?.dispose()
     this.smoothScroll.destroy()
     this.contentReveal.destroy()
     this.cursor.destroy()
@@ -440,25 +434,4 @@ export class Experience {
     this.overlay?.showContainer()
   }
 
-  private async ensureWebGLTextManager(): Promise<void> {
-    // DISABLED: WebGLTextManager makes .studio-title text transparent
-    // (style.color = 'transparent') and renders via Troika overlay canvas.
-    // This BREAKS NoiseText — NoiseText changes el.textContent (invisible),
-    // while Troika shows its own static text that never updates.
-    // Result: titles appear stuck/glitched because Troika overlay hides
-    // the NoiseText animation happening in the DOM.
-    //
-    // To re-enable: uncomment the code below. But then NoiseText must
-    // also call troika.text = el.innerText after each textContent change.
-    //
-    // if (this.webglTextManager) return
-    // const titles = document.querySelectorAll<HTMLElement>('.studio-title')
-    // if (titles.length === 0) return
-    // const { WebGLTextManager } = await import('./WebGLTextManager')
-    // this.webglTextManager = new WebGLTextManager(Array.from(titles))
-    // await this.webglTextManager.waitForAllLoaded()
-    // window.dispatchEvent(new Event('jlz:webgl-ready'))
-
-    // jlz:webgl-ready is dispatched ONLY by main-app.ts (after splash fully removed).
-  }
 }
