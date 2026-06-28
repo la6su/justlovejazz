@@ -63,13 +63,13 @@
 - [ ] T-093: Section 4 (Innovative) — constellation/network graph
 - [ ] T-094: Section 5 (Contact) — closing visual
 
-### EPIC: Codebase hardening (follow-up from bug 8 analysis)
+### EPIC: Codebase hardening (follow-up from bug 8 analysis) — DONE
 
-- [ ] Consolidate 4 sources of section index (World/StateBus/Experience×2) → single SectionStore
-- [ ] Replace untyped jlz:* custom events (27 usages) → typed EventBus<T>
-- [ ] Enable noUncheckedIndexedAccess (~80 errors, per-case fixes)
-- [ ] Mass `bun run format` Prettier cleanup (65 files)
-- [ ] Decide fate of references/next.junni.co.jp/ (85 MB) — git-lfs or remove
+- [x] Mass `bun run format` Prettier cleanup (65 files)
+- [x] Enable noUncheckedIndexedAccess + fix 80 errors (9 files)
+- [x] Replace untyped jlz:* custom events (27 usages) → typed EventBus<T>
+- [x] SectionStore consolidation — ASSESSED & DEFERRED (the 4 sources are 1 source of truth + 3 derived caches; not redundant, refactor not worth the risk)
+- [ ] references/next.junni.co.jp/ (85 MB) — recommend git-lfs or remove (READ-ONLY per AGENTS §17/§18, decision deferred to human)
 
 ### EPIC: Holographic UI Panels (deferred — aspirational)
 
