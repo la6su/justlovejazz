@@ -20,6 +20,8 @@ export class ProjectOverlay {
   private counterEl!: HTMLElement
   private _first = true
   private _isOpen = false
+  private _previouslyFocused: HTMLElement | null = null
+  private _keydownHandler: ((e: KeyboardEvent) => void) | null = null
 
   public onPrev: (() => void) | null = null
   public onNext: (() => void) | null = null
@@ -38,6 +40,9 @@ export class ProjectOverlay {
   }
 
   private build(): void {
+    this.container.setAttribute('role', 'dialog')
+    this.container.setAttribute('aria-modal', 'true')
+    this.container.setAttribute('aria-label', 'Project details')
     this.container.style.cssText = `
       position:fixed;inset:0;z-index:3500;pointer-events:none;
       opacity:0;transition:opacity .4s ease;
@@ -76,24 +81,44 @@ export class ProjectOverlay {
     this.prevBtn.addEventListener('click', () => this.onPrev?.())
     this.nextBtn.addEventListener('click', () => this.onNext?.())
     this.closeBtn.addEventListener('click', () => this.close())
-    document.addEventListener('keydown', (e) => {
+    // Stored handler ref so dispose() can remove it (prevents leak across rebuilds).
+    this._keydownHandler = (e: KeyboardEvent) => {
       if (!this._isOpen) return
-      if (e.key === 'Escape') this.close()
-      if (e.key === 'ArrowLeft') this.onPrev?.()
-      if (e.key === 'ArrowRight') this.onNext?.()
-    })
+      if (e.key === 'Escape') { e.preventDefault(); this.close(); return }
+      if (e.key === 'ArrowLeft') { this.onPrev?.() }
+      if (e.key === 'ArrowRight') { this.onNext?.() }
+      // Focus trap (WCAG 2.4.3) — keep Tab focus inside the dialog.
+      if (e.key === 'Tab') {
+        const focusable = this.container.querySelectorAll<HTMLElement>(
+          'button, [href], input, [tabindex]:not([tabindex="-1"])'
+        )
+        if (focusable.length === 0) return
+        const first = focusable[0]
+        const last = focusable[focusable.length - 1]
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus() }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
+      }
+    }
+    document.addEventListener('keydown', this._keydownHandler)
   }
 
   showContainer(): void {
     this._isOpen = true
     this.container.style.opacity = '1'
     this.container.style.pointerEvents = 'auto'
+    // Record the element that had focus before opening so we can restore it.
+    this._previouslyFocused = document.activeElement as HTMLElement | null
+    // Move focus into the dialog (close button) so keyboard users land inside.
+    requestAnimationFrame(() => this.closeBtn.focus())
   }
 
   hide(): void {
     this._isOpen = false
     this.container.style.opacity = '0'
     this.container.style.pointerEvents = 'none'
+    // Restore focus to the element that opened the dialog (WCAG 2.4.3).
+    this._previouslyFocused?.focus?.()
+    this._previouslyFocused = null
   }
 
   show(project: Project, index: number, total: number): void {
@@ -122,6 +147,10 @@ export class ProjectOverlay {
   }
 
   dispose(): void {
+    if (this._keydownHandler) {
+      document.removeEventListener('keydown', this._keydownHandler)
+      this._keydownHandler = null
+    }
     this.container.remove()
   }
 }
