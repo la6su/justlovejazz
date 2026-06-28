@@ -149,3 +149,14 @@ references/**/.git
 references/**/.gitobj *
 references/**/.git
 references/**/.gitattributes
+
+# IDE
+.idea/
+.vscode/
+
+# LLM agent local
+.claude/
+
+# Test output
+test-results/
+playwright-report/
