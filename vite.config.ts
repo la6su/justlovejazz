@@ -14,29 +14,99 @@ export default defineConfig({
     rollupOptions: {
       input: resolve(__dirname, 'index.html'),
       output: {
-        manualChunks(id) {
-          // Vendor chunks (pin them at TOP — they can't be split further)
-          if (id.includes('node_modules')) {
-            if (id.includes('three') || id.includes('three-stdlib')) return 'vendor-three'
-            if (id.includes('uikit') || id.includes('lenis')) return 'vendor-ui'
-            return 'vendor-misc'
-          }
-          // Core app (after vendor Three.js) — never split Three.js again
-          // Specific chunks (order matters — most specific first)
-          if (id.includes('/src/core/Section')) return 'chunk-sections'
-          if (id.includes('/src/shaders/')) return 'chunk-shaders'
-          if (id.includes('/src/Experience/Camera')) return 'chunk-camera'
-          if (id.includes('/src/Experience/Cursor')) return 'chunk-cursor'
-          if (id.includes('/src/Experience/WebGLText')) return 'chunk-text'
-          if (id.includes('/src/Experience/World/')) return 'chunk-world'
-          if (id.includes('/src/core/World')) return 'chunk-core-world'
-          if (id.includes('/src/Experience/Renderer')) return 'chunk-renderer'
-          if (id.includes('/src/core/PostProcessingManager')) return 'chunk-post'
-          if (id.includes('/src/core/AssetManager')) return 'chunk-assets'
-          if (id.includes('/src/core/')) return 'chunk-core'
-          if (id.includes('/src/UI/')) return 'chunk-ui'
-          if (id.includes('/src/Experience/')) return 'chunk-experience'
-          return undefined
+        // ───────────────────────────────────────────────────────────────────
+        // Vite 8 ships rolldown (not rollup). Rolldown's *deprecated*
+        // `output.manualChunks(id)` function is internally transformed into
+        // a single `codeSplitting.groups` entry whose `name(id)` callback
+        // returns a chunk name per module. In rolldown 1.0.x that transform
+        // does NOT reliably isolate `node_modules/three` — the manualChunks
+        // function IS invoked for every three.js module and DOES return
+        // `'vendor-three'` (verified by probing), but rolldown still ends
+        // up re-merging the statically-imported three.js code into the
+        // consuming app chunks (`chunk-core` 624 KB, `chunk-assets` 565 KB).
+        //
+        // The supported, non-deprecated API is `output.codeSplitting.groups`
+        // with explicit `test` regexps + `priority`. Groups with higher
+        // priority are matched first; matched modules are removed from
+        // lower-priority groups, so vendor chunks cleanly win over the app
+        // fallback. See `node_modules/rolldown/dist/shared/define-config-*.d.mts`
+        // (`CodeSplittingGroup`, `CodeSplittingOptions`) for the full
+        // option reference.
+        //
+        // KTX2 LAZY CHUNK HANDLING
+        // `three/addons/loaders/KTX2Loader.js` is dynamically imported by
+        // `AssetManager.getKtx2Loader()` (src/core/AssetManager.ts:32). It
+        // must NOT be merged into the static `vendor-three` chunk —
+        // otherwise its ~57 KB basis-transcoder glue gets modulepreloaded
+        // together with the rest of three.js (regression observed in the
+        // first iteration of this migration: a single 1246 KB `vendor-three`
+        // chunk that combined static three.js + KTX2 and was preloaded).
+        //
+        // We exclude KTX2Loader from the `vendor-three` and `vendor-misc`
+        // `test` functions. Because no group captures it, rolldown falls
+        // back to *automatic chunking* — and since KTX2Loader is a
+        // dynamic-import target, rolldown emits it as its own chunk that is
+        // only fetched at runtime via `import()`. That chunk is therefore
+        // NOT emitted as `<link rel="modulepreload">` in dist/index.html.
+        // ───────────────────────────────────────────────────────────────────
+        codeSplitting: {
+          // `includeDependenciesRecursively` defaults to true — captured
+          // modules' transitive deps are pulled into the same group, which
+          // keeps three.js's internal addons (ktx-parse, zstddec,
+          // WorkerPool, …) inside vendor-three instead of leaking into app
+          // chunks.
+          groups: [
+            // ── Vendor chunks (highest priority — matched first) ──────────
+            {
+              name: 'vendor-three',
+              // Match every three / three-stdlib module EXCEPT the
+              // dynamically-imported KTX2Loader — that one must stay in its
+              // own lazy chunk (see header comment).
+              test(id) {
+                if (/[\\/]node_modules[\\/]three[\/].*loaders[\\/]KTX2Loader/.test(id)) return false
+                return /[\\/]node_modules[\\/](three|three-stdlib)[\\/]/.test(id)
+              },
+              priority: 30,
+            },
+            {
+              name: 'vendor-ui',
+              test: /[\\/]node_modules[\\/](@studio-freight[\\/]lenis|uikit|lenis)[\\/]/,
+              priority: 20,
+            },
+            {
+              name: 'vendor-misc',
+              // Same KTX2Loader exclusion — don't let the misc vendor group
+              // eagerly pull the lazy transcoder into its merged chunk.
+              test(id) {
+                if (/[\\/]node_modules[\\/]three[\/].*loaders[\\/]KTX2Loader/.test(id)) return false
+                return /[\\/]node_modules[\\/]/.test(id)
+              },
+              priority: 10,
+            },
+            // ── App chunks (lower priority). `name(id)` returns the chunk
+            //    name based on src path, or null to fall through to
+            //    rolldown's automatic chunking. Order matters — most
+            //    specific paths first.
+            {
+              name(id) {
+                if (id.includes('/src/core/Section')) return 'chunk-sections'
+                if (id.includes('/src/shaders/')) return 'chunk-shaders'
+                if (id.includes('/src/Experience/Camera')) return 'chunk-camera'
+                if (id.includes('/src/Experience/Cursor')) return 'chunk-cursor'
+                if (id.includes('/src/Experience/WebGLText')) return 'chunk-text'
+                if (id.includes('/src/Experience/World/')) return 'chunk-world'
+                if (id.includes('/src/core/World')) return 'chunk-core-world'
+                if (id.includes('/src/Experience/Renderer')) return 'chunk-renderer'
+                if (id.includes('/src/core/PostProcessingManager')) return 'chunk-post'
+                if (id.includes('/src/core/AssetManager')) return 'chunk-assets'
+                if (id.includes('/src/core/')) return 'chunk-core'
+                if (id.includes('/src/UI/')) return 'chunk-ui'
+                if (id.includes('/src/Experience/')) return 'chunk-experience'
+                return null
+              },
+              priority: 5,
+            },
+          ],
         },
       },
     },
