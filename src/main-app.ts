@@ -47,18 +47,17 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
     progress(98)
     progress(100)
 
-    // ── Cinematic liquid → CRT collapse → 3D scene ──
-    // The shader's uPhase auto-advances:
-    //   0-0.25: noise mask reveal (liquid emerges from black)
-    //   0.25-0.75: liquid loading (flows, brightens)
-    //   0.75-1.0: CRT collapse (liquid morphs into TV hole)
-    //
-    // At 100% progress, the shader auto-starts the CRT collapse (1.5s).
-    // After collapse: reveal() fades alpha → 3D scene appears → dispose.
-    const INTRO_MS = 1200      // liquid noise-reveal establishes by ~1.2s
-    const CRT_MS = 1500        // CRT collapse duration (phase 0.25→1.0)
-    const REVEAL_MS = 600      // fade alpha to reveal 3D beneath
-    const FADE_MS = 300        // splash opacity fade before remove
+    // ── Aurora splash → light sweep reveal → 3D scene + text animation ──
+    // Ultra-light shader (pure trig, 0.5× DPR). Flow:
+    //   1. Aurora fades in from black (0.5s, auto via uIntro)
+    //   2. Aurora flows during loading (brightens with progress)
+    //   3. At 100%: diagonal light sweep wipes splash away (0.8s)
+    //   4. jlz:webgl-ready dispatches at sweep midpoint → text animation starts
+    //   5. Splash disposes after sweep completes
+    const INTRO_MS = 800       // aurora establishes by ~0.8s
+    const SWEEP_MS = 800       // diagonal sweep duration
+    const TEXT_START_MS = 200  // dispatch jlz:webgl-ready at sweep midpoint
+    const FADE_MS = 200        // splash opacity fade after sweep
 
     const elapsed = performance.now() - bootStart
     const readyAt = Math.max(0, INTRO_MS - elapsed)
@@ -67,24 +66,25 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
       if (prefersReducedMotion()) {
         window.dispatchEvent(new CustomEvent('jlz:webgl-ready'))
         splash.hide()
-        setTimeout(() => splash.remove(), 450)
+        setTimeout(() => splash.remove(), 300)
         return
       }
 
-      // CRT collapse auto-triggers at 100% via shader uPhase.
-      // Wait for it to complete, then reveal 3D scene.
+      // Start the diagonal sweep — wipes splash from top-left to bottom-right.
+      const liquid = (window as unknown as { jlzLiquid?: { reveal: () => void } }).jlzLiquid
+      liquid?.reveal()
+
+      // Dispatch jlz:webgl-ready early so text animation starts as sweep passes.
+      // The 3D scene is already rendering beneath; sweep reveals it progressively.
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent('jlz:webgl-ready'))
-        // Fade splash alpha — 3D scene appears through the TV hole.
-        const liquid = (window as unknown as { jlzLiquid?: { reveal: () => void } }).jlzLiquid
-        liquid?.reveal()
-      }, CRT_MS)
+      }, TEXT_START_MS)
 
-      // Hide + dispose once the reveal fade has completed.
+      // Hide + dispose after sweep completes.
       setTimeout(() => {
         splash.hide()
         setTimeout(() => splash.remove(), FADE_MS)
-      }, CRT_MS + REVEAL_MS)
+      }, SWEEP_MS)
     }, readyAt)
   } catch (e) {
     console.error('[main-app] bootstrap failed:', e)
