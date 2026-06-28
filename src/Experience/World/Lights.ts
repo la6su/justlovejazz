@@ -9,6 +9,7 @@
 
 import * as THREE from 'three'
 import type { PhaseConfig } from '../../core/WorldConfig'
+import { prefersReducedMotion } from '../../core/motionPolicy'
 
 // ── Per-section light preset ─────────────────────────────────────────────────
 interface SectionLightPreset {
@@ -213,9 +214,12 @@ export class CinematicLights {
     this.keyLight.position.lerp(this._targetKeyPos, t)
 
     // Volumetric light: slow orbit for organic atmosphere
-    const time = performance.now() * 0.0004
-    this.volumetricLight.position.x = Math.sin(time) * 2.5
-    this.volumetricLight.position.z = Math.cos(time) * 2.5
+    // (frozen when prefers-reduced-motion — continuous orbit is a vestibular hazard)
+    if (!prefersReducedMotion()) {
+      const time = performance.now() * 0.0004
+      this.volumetricLight.position.x = Math.sin(time) * 2.5
+      this.volumetricLight.position.z = Math.cos(time) * 2.5
+    }
   }
 
   public dispose(): void {

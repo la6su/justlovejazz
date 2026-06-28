@@ -12,6 +12,7 @@ import { DrawTrail } from '../Experience/World/DrawTrail'
 import { SplashCube } from '../Experience/World/SplashCube'
 import { getWorldConfigForPage, type PhaseConfig } from './WorldConfig'
 import { SectionSceneFactory } from './SectionSceneFactory'
+import { disposeMaterialDeep } from '../Utils/dispose'
 import type { WorldAtmosphere } from './WorldAtmosphere'
 
 export interface WorldTransformResult {
@@ -173,10 +174,16 @@ export class World extends THREE.Group {
         this.bg.update(deltaTime)
         this.sceneRef.background = this.bg.color
         this.sections.forEach(s => s.update(deltaTime))
-        this.baku.update(deltaTime)
-        this.cursorLight.update(deltaTime)
-        if (this.drawTrail && this._camera) {
-            this.drawTrail.update(deltaTime, this._camera)
+
+        // Reduced motion: freeze continuous decorative 3D animations
+        // (baku rotation, cursor light, draw trail, particle drift).
+        // Section transitions, bg color, and light lerps still run so navigation works.
+        if (!this.isReducedMotion) {
+            this.baku.update(deltaTime)
+            this.cursorLight.update(deltaTime)
+            if (this.drawTrail && this._camera) {
+                this.drawTrail.update(deltaTime, this._camera)
+            }
         }
 
         // ── Particle drift — only visible groups, cached Points refs ──
@@ -191,14 +198,16 @@ export class World extends THREE.Group {
                 group.userData._particleCache = pts
             }
             const pts = group.userData._particleCache as THREE.Points[]
-            for (const p of pts) {
-                const attr = p.geometry.attributes.position
-                const arr = attr.array as Float32Array
-                for (let i = 1; i < arr.length; i += 3) {
-                    arr[i] += deltaTime * 0.05
-                    if (arr[i] > 4) arr[i] = -2
+            if (!this.isReducedMotion) {
+                for (const p of pts) {
+                    const attr = p.geometry.attributes.position
+                    const arr = attr.array as Float32Array
+                    for (let i = 1; i < arr.length; i += 3) {
+                        arr[i] += deltaTime * 0.05
+                        if (arr[i] > 4) arr[i] = -2
+                    }
+                    attr.needsUpdate = true
                 }
-                attr.needsUpdate = true
             }
 
             // ── Drive FlexibleSlides per-frame (typographic bg scroll + visibility lerp) ──
@@ -480,8 +489,8 @@ export class World extends THREE.Group {
             group.traverse(obj => {
                 if (obj instanceof THREE.Mesh) {
                     obj.geometry?.dispose()
-                    if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose())
-                    else obj.material?.dispose()
+                    if (Array.isArray(obj.material)) obj.material.forEach(m => disposeMaterialDeep(m))
+                    else disposeMaterialDeep(obj.material)
                 }
             })
             this.remove(group)
@@ -505,7 +514,9 @@ export class World extends THREE.Group {
 
     public dispose(): void {
         this.disposeSections()
-        // baku dispose skipped (no-op)
+        // Dispose baku (SplashCube) GPU resources — 6 face geos+mats + 6 edge geos+mats.
+        // Previously skipped as a "no-op", leaking ~24 GPU objects per rebuildWorld().
+        this.baku?.dispose()
         this.groundPlane.geometry.dispose()
         const groundMat = this.groundPlane.material
         if (Array.isArray(groundMat)) groundMat.forEach(m => m.dispose())
