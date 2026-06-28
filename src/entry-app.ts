@@ -46,6 +46,10 @@ export async function startApp(): Promise<void> {
   await import('./assets/main.less')
   ;(UIkit as { use: (p: object) => void }).use(Icons as object)
 
+  // Bug 1: don't init UIkit scrollspy yet — it fires during boot (elements
+  // are in viewport) and the fade-in plays behind the splash overlay.
+  // scrollspy attributes are added dynamically after jlz:webgl-ready.
+  document.body.classList.add('scrollspy-pending')
   initRouter()
 
   // NoiseText: animate ALL titles when jlz:webgl-ready fires (after splash).
@@ -55,6 +59,16 @@ export async function startApp(): Promise<void> {
   let webglReady = false
   eventBus.on('jlz:webgl-ready', () => {
     webglReady = true
+    // Bug 1: NOW init UIkit scrollspy — splash is gone, so fade-in is visible.
+    // Remove scrollspy-pending so CSS opacity:0 no longer applies (would conflict
+    // with uk-animation-fade's fill-mode:both). Then add uk-scrollspy attributes;
+    // UIkit native target: > * + delay: 300 gives a staggered cascade.
+    document.body.classList.remove('scrollspy-pending')
+    document.querySelectorAll<HTMLElement>('.section-content').forEach((el) => {
+      el.setAttribute('uk-scrollspy', 'target: > *; cls: uk-animation-fade; delay: 300; repeat: true')
+    })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(UIkit as any).update(document)
     animateNoiseTitles()
   })
 

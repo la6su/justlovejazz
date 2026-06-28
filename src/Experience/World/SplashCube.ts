@@ -128,18 +128,22 @@ export class SplashCube extends THREE.Mesh {
       const tex = textures[i]
       if (tex) {
         this.faceMaterials[i]!.map = tex
-        this.faceMaterials[i]!.opacity = 0.9
+        this.faceMaterials[i]!.opacity = 0.95
+        this.faceMaterials[i]!.transmission = 0
         this.faceMaterials[i]!.emissiveIntensity = 0.1
         this.faceMaterials[i]!.needsUpdate = true
       }
     }
   }
 
-  /** Clear project textures (back to glass mode). */
+  /** Clear project textures (back to glass mode). Restores glass material
+   *  properties — map=null, transmission=0.85, opacity=0.35. */
   clearProjectTextures(): void {
     for (let i = 0; i < 4; i++) {
       this.faceMaterials[i]!.map = null
-      this.faceMaterials[i]!.opacity = 0.15
+      this.faceMaterials[i]!.transmission = 0.85
+      this.faceMaterials[i]!.opacity = 0.35
+      this.faceMaterials[i]!.emissiveIntensity = 0.3
       this.faceMaterials[i]!.needsUpdate = true
     }
   }
@@ -231,25 +235,25 @@ export class SplashCube extends THREE.Mesh {
   }
 
   private applyRoleAndParams(): void {
-    const { color, emissive, roughness, metalness, role } = this.targetParams
+    const { color, emissive, roughness, metalness } = this.targetParams
     for (const mat of this.faceMaterials) {
       mat.color.copy(color)
       mat.emissive.copy(emissive)
       mat.roughness = roughness
       mat.metalness = metalness
-      // WIRE role = wireframe (only when no texture — wireframe hides textures)
-      mat.wireframe = role === BakuRole.WIRE && !mat.map
-      // GLASS role: transparent glass (junni uTransparent=1) — see-through
-      // but visible via iridescence/clearcoat/refraction. NORMAL: more opaque.
+      // No wireframe — the cube should always be glass-like (transparent,
+      //      // iridescent) per junni reference. WIRE/NORMAL/GLASS all use transmission
+      //      // glass, differing only in opacity/transmission values.
+      mat.wireframe = false
+      // Texture mode (works slider): opaque project images on faces.
+      // Glass mode: transparent see-through glass (junni uTransparent=1).
       if (mat.map) {
-        mat.opacity = 0.9
+        mat.opacity = 0.95
         mat.transmission = 0
-      } else if (role === BakuRole.GLASS) {
-        mat.opacity = 0.35
-        mat.transmission = 0.9
       } else {
-        mat.opacity = 0.6
-        mat.transmission = 0.3
+        // All non-textured roles use glass transmission.
+        mat.opacity = 0.35
+        mat.transmission = 0.85
       }
       mat.needsUpdate = true
     }
