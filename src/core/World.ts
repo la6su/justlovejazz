@@ -223,12 +223,6 @@ export class World extends THREE.Group {
       const slides = group.userData.flexibleSlides as
         import('../Experience/World/Sections/FlexibleSlides').FlexibleSlides | undefined
       if (slides) slides.update(deltaTime)
-      // Rotate the flexible blob (junni fluid object pattern).
-      const blob = group.userData.flexibleBlob as THREE.Mesh | undefined
-      if (blob && !this.isReducedMotion) {
-        blob.rotation.y += deltaTime * 0.25
-        blob.rotation.x += deltaTime * 0.1
-      }
     }
   }
 

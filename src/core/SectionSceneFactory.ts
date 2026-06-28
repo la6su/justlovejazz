@@ -4,7 +4,6 @@
 
 import * as THREE from 'three'
 import { FlexibleSlides } from '../Experience/World/Sections/FlexibleSlides'
-import { Noise } from '../Utils/Noise'
 import { DeviceCapability } from './DeviceCapability'
 
 // Scale particle counts by device tier — low-end devices render far fewer
@@ -88,37 +87,6 @@ export class SectionSceneFactory {
       tryBuild()
     })
     g.add(makeParticles(pc(30), new THREE.Vector3(14, 7, 8), 0xaaaaaa, 0.035, 0.2))
-
-    // Junni reference: a glossy 3D fluid-like metallic blob in the center.
-    // Distorted icosahedron (vertex noise displacement) + MeshPhysicalMaterial
-    // with iridescence for the holographic sheen. Rotates slowly.
-    const blobGeo = new THREE.IcosahedronGeometry(1.8, 5)
-    const pos = blobGeo.attributes.position!
-    for (let i = 0; i < pos.count; i++) {
-      const x = pos.getX(i)
-      const y = pos.getY(i)
-      const z = pos.getZ(i)
-      const n = Noise.organicValue(x * 1.5, y * 1.5, 0.5, 0.3)
-        + Noise.organicValue(y * 2.0, z * 2.0, 0.7, 0.2)
-      const d = 1 + n * 0.25
-      pos.setXYZ(i, x * d, y * d, z * d)
-    }
-    blobGeo.computeVertexNormals()
-    const blobMat = new THREE.MeshPhysicalMaterial({
-      color: 0xcccccc,
-      metalness: 0.9,
-      roughness: 0.15,
-      iridescence: 1.0,
-      iridescenceIOR: 1.8,
-      clearcoat: 1.0,
-      clearcoatRoughness: 0.1,
-    })
-    blobMat.userData.baseOpacity = 1
-    const blob = new THREE.Mesh(blobGeo, blobMat)
-    blob.name = 'flexible-blob'
-    blob.userData.keepVisible = true
-    g.add(blob)
-    g.userData.flexibleBlob = blob
 
     return g
   }
