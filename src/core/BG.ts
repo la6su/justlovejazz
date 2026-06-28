@@ -47,10 +47,11 @@ export class BG {
 
     /**
      * Per-frame smooth update — exponential decay toward target.
-     * Speed: ~3 means ~63% of the way in 1/3 s — visually smooth.
+     * Speed: ~1.5 means ~63% of the way in ~0.67s — slower, more cinematic.
+     * Slower lerp lets each section's BG color "hold" longer before blending.
      */
     public update(deltaTime: number): void {
-        const lerp = 1 - Math.exp(-3 * deltaTime)
+        const lerp = 1 - Math.exp(-1.5 * deltaTime)
         this.color.lerp(this.targetColor, lerp)
     }
 }

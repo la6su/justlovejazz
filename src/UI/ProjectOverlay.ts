@@ -56,9 +56,12 @@ export class ProjectOverlay {
       </div>
       <button class="jlz-fs-prev" type="button" aria-label="Previous" style="position:absolute;left:1.5rem;top:50%;transform:translateY(-50%);background:none;border:1px solid rgba(255,255,255,.2);color:#fff;width:44px;height:44px;border-radius:50%;cursor:pointer;font-size:1.2rem;pointer-events:auto;">←</button>
       <button class="jlz-fs-next" type="button" aria-label="Next" style="position:absolute;right:1.5rem;top:50%;transform:translateY(-50%);background:none;border:1px solid rgba(255,255,255,.2);color:#fff;width:44px;height:44px;border-radius:50%;cursor:pointer;font-size:1.2rem;pointer-events:auto;">→</button>
-      <div class="jlz-fs-bottom" style="position:absolute;bottom:0;left:0;width:100%;padding:2rem 2.5rem;pointer-events:auto;">
-        <p class="jlz-fs-desc" style="color:rgba(255,255,255,.6);font-size:.9rem;max-width:600px;margin:0 0 .8rem;"></p>
-        <div class="jlz-fs-tags" style="display:flex;gap:.5rem;flex-wrap:wrap;"></div>
+      <div class="jlz-fs-bottom" style="position:absolute;bottom:0;left:0;width:100%;padding:2rem 2.5rem;pointer-events:auto;display:flex;align-items:flex-end;gap:2rem;">
+        <div class="jlz-fs-thumb" style="width:120px;height:80px;background-size:cover;background-position:center;border-radius:6px;flex-shrink:0;border:1px solid rgba(255,255,255,.1);"></div>
+        <div style="flex:1;">
+          <p class="jlz-fs-desc" style="color:rgba(255,255,255,.6);font-size:.9rem;max-width:600px;margin:0 0 .8rem;"></p>
+          <div class="jlz-fs-tags" style="display:flex;gap:.5rem;flex-wrap:wrap;"></div>
+        </div>
       </div>
     `
     this.prevBtn = this.container.querySelector('.jlz-fs-prev')!
@@ -102,9 +105,14 @@ export class ProjectOverlay {
       .filter(Boolean)
       .map(t => `<span style="background:rgba(120,140,200,.15);color:#a0b0e0;padding:.2rem .6rem;border-radius:4px;font-size:.7rem;">${t}</span>`)
       .join('')
+    // Update thumbnail preview if exists
+    const thumb = this.container.querySelector('.jlz-fs-thumb') as HTMLElement | null
+    if (thumb) {
+      const url = project.detailTextureUrl || project.textureUrl
+      if (url) thumb.style.backgroundImage = `url('${url}')`
+    }
     if (this._first) {
       this._first = false
-      this.showContainer()
     }
   }
 

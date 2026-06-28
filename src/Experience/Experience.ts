@@ -237,12 +237,13 @@ export class Experience {
     // slider UI is scoped to #section-works, never a global overlay.
     if (this.overlay) {
       if (showGallery) {
-        // First time entering works section → load initial project.
+        // First time entering works section → load initial project (but don't
+        // auto-open fullscreen — user must click Show button).
         if (!this._portfolioInitialized) {
           this._portfolioInitialized = true
           this.onProjectSelect(0)
         }
-        this.overlay.showContainer()
+        // Do NOT auto-showContainer() — fullscreen opens only via Show button.
       } else {
         this.overlay.hide()
       }
@@ -532,7 +533,7 @@ export class Experience {
         overlay.meshGroup.visible = false
         overlay.setProgress(0)
         this.projectDissolveActive = false
-        this.overlay!.showContainer()
+        // Do NOT auto-showContainer() — fullscreen opens only via Show button.
       }
       this.bus.on(`done:${KEY}`, onPhase2Done)
     }

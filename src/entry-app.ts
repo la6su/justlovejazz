@@ -4,19 +4,6 @@ import { initRouter } from './router'
 import { bootstrap as bootstrapApp, isAppReady, type BootstrapOptions } from './main-app'
 import { NoiseText } from './Experience/NoiseText'
 
-function mountDeferredShell(): void {
-  if (document.getElementById('project-modal')) return
-  const tpl = document.createElement('template')
-  tpl.innerHTML = `
-    <div id="project-modal" class="uk-modal-full uk-visible@s" uk-modal aria-hidden="true">
-      <div class="uk-modal-body uk-flex uk-flex-center uk-flex-middle jlz-project-modal-body">
-        <div id="modal-content" class="uk-container uk-container-small uk-light"></div>
-        <a class="uk-modal-close-default" uk-close></a>
-      </div>
-    </div>`
-  document.body.appendChild(tpl.content.firstElementChild as HTMLElement)
-}
-
 async function boot() {
   const { createSplash } = await import('./splash')
   const splash = createSplash()
@@ -59,14 +46,18 @@ export async function startApp(): Promise<void> {
 
   // NoiseText: animate ALL titles when jlz:webgl-ready fires (after splash).
   // This is the single canonical trigger path — HERMES_RULES §10.
+  // jlz:webgl-ready dispatches AFTER splash curtains open, so the animation
+  // is visible (not hidden behind splash overlay).
+  let webglReady = false
   window.addEventListener('jlz:webgl-ready', () => {
+    webglReady = true
     animateNoiseTitles()
   })
 
-  // Re-animate on section change (scroll between sections).
-  // jlz:section-change is dispatched by Experience.update() only when
-  // the section index actually changes — no throttle needed.
+  // Re-animate on section change (scroll between sections) — but ONLY after
+  // webgl-ready has fired (prevents animation running behind splash).
   window.addEventListener('jlz:section-change', () => {
+    if (!webglReady) return
     animateNoiseTitles()
   })
 
@@ -79,7 +70,6 @@ export async function startApp(): Promise<void> {
     }
   })
   window.addEventListener('jlj:navigate', scheduleUiKitRefresh)
-  mountDeferredShell()
   void boot()
 }
 
