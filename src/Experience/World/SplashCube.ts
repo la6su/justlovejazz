@@ -64,21 +64,25 @@ export class SplashCube extends THREE.Mesh {
       const dir = this.faceDirs[i]!
 
       const geo = new THREE.PlaneGeometry(size, size)
-      // MeshPhysicalMaterial gives the cube its holographic, fluid-like sheen
-      // (iridescence + clearcoat) matching the junni flexible-section reference.
+      // MeshPhysicalMaterial with transmission = real glass (see-through),
+      // matching the junni Baku 'glass' materialType. Iridescence + clearcoat
+      // give the holographic sheen. Low opacity + transmission = translucent.
       const mat = new THREE.MeshPhysicalMaterial({
         color: 0x1a1a2e,
         emissive: 0x4a5a8a,
         emissiveIntensity: 0.3,
         transparent: true,
-        opacity: 0.15,
+        opacity: 0.35,
         side: THREE.DoubleSide,
-        roughness: 0.1,
-        metalness: 0.9,
+        roughness: 0.05,
+        metalness: 0.1,
         iridescence: 1.0,
         iridescenceIOR: 1.8,
         clearcoat: 1.0,
-        clearcoatRoughness: 0.1,
+        clearcoatRoughness: 0.05,
+        transmission: 0.9,
+        thickness: 0.5,
+        ior: 1.5,
       })
       this.faceMaterials.push(mat)
 
@@ -235,10 +239,18 @@ export class SplashCube extends THREE.Mesh {
       mat.metalness = metalness
       // WIRE role = wireframe (only when no texture — wireframe hides textures)
       mat.wireframe = role === BakuRole.WIRE && !mat.map
-      // Keep opacity high if texture is set (works slider), else glossy/visible.
-      // GLASS was 0.1 (nearly invisible on light bg) — bumped to 0.5 so the
-      // iridescent cube is clearly visible as the flexible section's 3D object.
-      mat.opacity = mat.map ? 0.9 : role === BakuRole.GLASS ? 0.5 : 0.4
+      // GLASS role: transparent glass (junni uTransparent=1) — see-through
+      // but visible via iridescence/clearcoat/refraction. NORMAL: more opaque.
+      if (mat.map) {
+        mat.opacity = 0.9
+        mat.transmission = 0
+      } else if (role === BakuRole.GLASS) {
+        mat.opacity = 0.35
+        mat.transmission = 0.9
+      } else {
+        mat.opacity = 0.6
+        mat.transmission = 0.3
+      }
       mat.needsUpdate = true
     }
   }
