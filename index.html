@@ -14,9 +14,8 @@
     <style>
       *{box-sizing:border-box}
       body{margin:0;background:#050507;overflow:hidden}
-      #jlj-splash{position:fixed;inset:0;z-index:3000;transition:opacity .3s ease}
+      #jlj-splash{position:fixed;inset:0;z-index:3000;background:#050507;transition:opacity .3s ease}
       #jlj-splash.hide{opacity:0;pointer-events:none}
-      #jlj-splash-canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
       .jlz-enter{position:fixed;bottom:8vh;left:50%;transform:translateX(-50%);z-index:3000;background:transparent;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.92);font:500 clamp(.55rem,1.2vw,.8rem)/1 'Inter',sans-serif;letter-spacing:.2em;padding:12px 40px;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .8s,transform .8s;text-transform:uppercase}
       .jlz-enter.is-visible{opacity:1;pointer-events:auto;transform:translateX(-50%)}
       .skip-link{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
@@ -24,134 +23,9 @@
   </head>
   <body data-app-mode="full" data-page="home">
     <a href="#section-intro" class="skip-link">Skip to main content</a>
-    <div id="jlj-splash"><canvas id="jlj-splash-canvas"></canvas></div>
-    <!--
-      Aurora splash — vanilla WebGL2, ultra-light shader for 60fps.
-      Pure trigonometry (3 sin calls, 0 noise/FBM) — 10× cheaper than FBM.
-      Rendered at 0.5× DPR for performance (splash is background, not detail).
-      API: window.jlzLiquid = { setProgress, reveal, dispose }
-    -->
-    <script>
-    (function(){
-      const canvas=document.getElementById('jlj-splash-canvas');
-      const gl=canvas.getContext('webgl2',{alpha:false,antialias:false,depth:false,stencil:false})
-             ||canvas.getContext('webgl',{alpha:false,antialias:false,depth:false,stencil:false});
-      if(!gl){console.warn('[splash] WebGL unavailable');return;}
-      const isGL2=gl.getParameter(gl.VERSION).includes('WebGL 2.0');
-      const VS=isGL2?`#version 300 es
-      in vec2 aPos;void main(){gl_Position=vec4(aPos,0.,1.);}`:`
-      attribute vec2 aPos;void main(){gl_Position=vec4(aPos,0.,1.);}`;
-      // Aurora shader — pure trig, no noise/FBM. ~10 ops/pixel.
-      const FS=isGL2?`#version 300 es
-      precision highp float;
-      uniform float uTime,uProgress,uReveal,uIntro;
-      uniform vec2 uResolution;
-      out vec4 fragColor;
-      void main(){
-        vec2 uv=gl_FragCoord.xy/uResolution;
-        float asp=uResolution.x/uResolution.y;
-        vec2 p=(uv-.5)*vec2(asp,1.);
-        float t=uTime*.4;
-        // Aurora plasma — 3 sine layers (no noise, no FBM)
-        float a=sin(p.x*2.5+t)*.5+.5;
-        float b=sin(p.y*3.0-t*1.2)*.5+.5;
-        float c=sin((p.x+p.y)*1.8+t*.7)*.5+.5;
-        float plasma=a*b*c;
-        // Color: deep blue → purple → cyan highlights
-        vec3 dark=vec3(.02,.03,.06);
-        vec3 mid=vec3(.06,.1,.2);
-        vec3 bright=vec3(.2,.4,.7);
-        vec3 col=mix(dark,mid,plasma);
-        col=mix(col,bright,pow(plasma,3.));
-        // Progress: brighten + shift toward cyan
-        col+=vec3(.04,.08,.12)*uProgress;
-        // Intro: fade in from black (0.5s)
-        col*=uIntro;
-        // Reveal: diagonal light sweep (top-left → bottom-right)
-        // Sweep line position: -0.5 (off-screen left) → 1.5 (off-screen right)
-        float sweepPos=uReveal*2.-.5;
-        float sweepDist=uv.x+uv.y*0.6-sweepPos;
-        // Hard cut: everything left of sweep = transparent (3D scene visible)
-        // Soft edge on the sweep line for smooth wipe
-        float sweepMask=smoothstep(-.02,.05,sweepDist);
-        col*=sweepMask;
-        // Bright glow on the sweep edge
-        float edge=1.-smoothstep(0.,.08,abs(sweepDist));
-        col+=vec3(.5,.7,1.)*edge*uReveal*.8;
-        fragColor=vec4(col,sweepMask*(1.-uReveal*.3));
-      }`:`
-      precision highp float;
-      uniform float uTime,uProgress,uReveal,uIntro;
-      uniform vec2 uResolution;
-      void main(){
-        vec2 uv=gl_FragCoord.xy/uResolution;
-        float asp=uResolution.x/uResolution.y;
-        vec2 p=(uv-.5)*vec2(asp,1.);
-        float t=uTime*.4;
-        float a=sin(p.x*2.5+t)*.5+.5;
-        float b=sin(p.y*3.0-t*1.2)*.5+.5;
-        float c=sin((p.x+p.y)*1.8+t*.7)*.5+.5;
-        float plasma=a*b*c;
-        vec3 dark=vec3(.02,.03,.06);
-        vec3 mid=vec3(.06,.1,.2);
-        vec3 bright=vec3(.2,.4,.7);
-        vec3 col=mix(dark,mid,plasma);
-        col=mix(col,bright,pow(plasma,3.));
-        col+=vec3(.04,.08,.12)*uProgress;
-        col*=uIntro;
-        float sweepPos=uReveal*2.-.5;
-        float sweepDist=uv.x+uv.y*0.6-sweepPos;
-        float sweepMask=smoothstep(-.02,.05,sweepDist);
-        col*=sweepMask;
-        float edge=1.-smoothstep(0.,.08,abs(sweepDist));
-        col+=vec3(.5,.7,1.)*edge*uReveal*.8;
-        gl_FragColor=vec4(col,sweepMask*(1.-uReveal*.3));
-      }`;
-      function compile(s,t){const sh=gl.createShader(t);gl.shaderSource(sh,s);gl.compileShader(sh);
-        if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS)){console.error('[splash]',gl.getShaderInfoLog(sh));return null;}return sh;}
-      const vs=compile(VS,gl.VERTEX_SHADER),fs=compile(FS,gl.FRAGMENT_SHADER);
-      if(!vs||!fs)return;
-      const prog=gl.createProgram();gl.attachShader(prog,vs);gl.attachShader(prog,fs);gl.linkProgram(prog);
-      if(!gl.getProgramParameter(prog,gl.LINK_STATUS)){console.error('[splash] link:',gl.getProgramInfoLog(prog));return;}
-      gl.useProgram(prog);
-      const buf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buf);
-      gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
-      const aPos=gl.getAttribLocation(prog,'aPos');gl.enableVertexAttribArray(aPos);
-      gl.vertexAttribPointer(aPos,2,gl.FLOAT,false,0,0);
-      const uT=gl.getUniformLocation(prog,'uTime'),uRes=gl.getUniformLocation(prog,'uResolution');
-      const uP=gl.getUniformLocation(prog,'uProgress'),uR=gl.getUniformLocation(prog,'uReveal');
-      const uI=gl.getUniformLocation(prog,'uIntro');
-      let progress=0,reveal=0,intro=0,startT=performance.now(),raf=null,disposed=false;
-      // Render at 0.5× DPR — splash is a background effect, doesn't need full res.
-      // This cuts pixel count by 4× = 4× less GPU work.
-      function resize(){const dpr=Math.min(devicePixelRatio||1,2)*0.5;
-        const w=Math.floor(canvas.clientWidth*dpr),h=Math.floor(canvas.clientHeight*dpr);
-        if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;gl.viewport(0,0,w,h);}}
-      addEventListener('resize',resize);resize();
-      function render(){if(disposed)return;
-        const t=(performance.now()-startT)/1000;
-        // Intro fade-in 0→1 over 0.5s (cheap linear, no easing needed)
-        if(intro<1)intro=Math.min(1,intro+.016/.5);
-        gl.uniform1f(uT,t);gl.uniform2f(uRes,canvas.width,canvas.height);
-        gl.uniform1f(uP,progress);gl.uniform1f(uR,reveal);gl.uniform1f(uI,intro);
-        gl.drawArrays(gl.TRIANGLE_STRIP,0,4);raf=requestAnimationFrame(render);}
-      render();
-      window.jlzLiquid={
-        setProgress(v){progress=v;},
-        reveal(){
-          // Diagonal sweep 0→1 over 0.8s — wipes splash away, 3D scene appears.
-          const s=performance.now();const step=()=>{
-            const t=Math.min((performance.now()-s)/800,1);
-            reveal=t; // linear — sweep should be steady, not eased
-            if(t<1)requestAnimationFrame(step);
-          };step();
-        },
-        dispose(){disposed=true;if(raf)cancelAnimationFrame(raf);
-          removeEventListener('resize',resize);gl.deleteProgram(prog);gl.deleteShader(vs);
-          gl.deleteShader(fs);gl.deleteBuffer(buf);delete window.jlzLiquid;}
-      };
-    })();
-    </script>
+    <!-- Black screen overlay — removed when Three.js cube appears.
+         The 3D SplashCube (Apple Fifth Avenue style) is in the Three.js scene. -->
+    <div id="jlj-splash"></div>
     <div id="main-nav"></div>
     <div id="app"></div>
     <script type="module" src="/src/entry-shell.ts"></script>

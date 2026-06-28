@@ -9,7 +9,7 @@ import { type CameraTarget, type WorldState, NarrativePhase, BakuRole } from './
 import { CinematicLights } from '../Experience/World/Lights'
 import { CursorLight } from '../Experience/World/CursorLight'
 import { DrawTrail } from '../Experience/World/DrawTrail'
-import { Baku } from '../Experience/World/Baku'
+import { SplashCube } from '../Experience/World/SplashCube'
 import { getWorldConfigForPage, type PhaseConfig } from './WorldConfig'
 import { SectionSceneFactory } from './SectionSceneFactory'
 import type { WorldAtmosphere } from './WorldAtmosphere'
@@ -21,7 +21,7 @@ export interface WorldTransformResult {
 
 export class World extends THREE.Group {
     public sections: Section[] = []
-    public baku!: Baku
+    public baku!: SplashCube
     public lightsGroup!: CinematicLights
     public cursorLight!: CursorLight
     public drawTrail?: DrawTrail
@@ -70,13 +70,13 @@ export class World extends THREE.Group {
         scene.add(this.drawTrail.object)
         this.drawTrail.object.visible = false  // hidden until about/flexible
 
-        // ── Baku (character sphere) — central 3D object, junni pattern.
-        // Currently hidden — user will refine the visual. update() still runs
-        // so position/rotation drift continues, but the mesh is not rendered.
-        // To re-enable: this.baku.visible = true (or remove the line).
-        this.baku = new Baku()
+        // ── Baku = SplashCube (Apple Fifth Avenue style glass cube).
+        // The cube IS the baku — stays on all sections, rotates, changes
+        // materials per section role. During splash: rotates + edges brighten.
+        // At 100%: opener (faces pulse outward + back).
+        this.baku = new SplashCube()
         this.baku.name = 'baku'
-        this.baku.visible = false
+        this.baku.visible = true
         this.add(this.baku)
 
         // ── BG (procedural background color, junni pattern)

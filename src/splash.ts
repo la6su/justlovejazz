@@ -1,8 +1,8 @@
-// splash.ts — Aurora splash coordinator.
+// splash.ts — Splash cube coordinator.
 //
-// Ultra-light WebGL2 shader (pure trig, no FBM). Rendered at 0.5× DPR.
-// API: setProgress (0-1), reveal (diagonal sweep), dispose.
-// The shader auto-fades in from black on boot (uIntro 0→1 over 0.5s).
+// The SplashCube (Apple Fifth Avenue style) is a Three.js object in the 3D scene.
+// This module coordinates progress + opener trigger via Experience.
+// The cube is shown during loading, then "opens" (faces split) → Baku appears.
 
 export interface SplashOverlay {
   show(): void
@@ -20,14 +20,11 @@ export function createSplash(): SplashOverlay {
   const id = 'jlj-splash'
   let root: HTMLElement | null = null
 
-  function getLiquid() {
-    return (window as unknown as {
-      jlzLiquid?: {
-        setProgress: (v: number) => void
-        reveal: () => void
-        dispose: () => void
-      }
-    }).jlzLiquid
+  function getExp() {
+    return (window as unknown as { experience?: {
+      setSplashProgress: (pct: number) => void
+      triggerSplashOpener: () => void
+    } }).experience
   }
 
   return {
@@ -41,7 +38,8 @@ export function createSplash(): SplashOverlay {
     },
 
     remove(): void {
-      getLiquid()?.dispose()
+      // Remove the HTML splash overlay (black screen). The 3D cube is disposed
+      // separately by Experience when the opener completes.
       if (root) {
         root.remove()
         root = null
@@ -49,15 +47,17 @@ export function createSplash(): SplashOverlay {
     },
 
     setProgress(pct: number): void {
-      getLiquid()?.setProgress(pct / 100)
+      // Drive the 3D cube's progress (edge glow brightens).
+      getExp()?.setSplashProgress(pct)
     },
 
     setState(_state: 'booting' | 'warming' | 'ready'): void {
-      // No-op — shader auto-drives via uIntro + uProgress.
+      // No-op — cube auto-drives via setProgress.
     },
 
     triggerPortalCollapse(): void {
-      // No-op — reveal() drives the sweep transition.
+      // Trigger the cube opener — faces split + dissolve → Baku appears.
+      getExp()?.triggerSplashOpener()
     },
 
     curtainSplit(_duration?: number): void {

@@ -62,6 +62,8 @@ export class Experience {
   // Project transition dissolve (shader effect on card click)
   private projectDissolve: DissolveOverlay | null = null
   private projectDissolveActive = false
+  // Splash cube opener tracking — cube IS the baku, stays after opener.
+  private _openerDispatched = false
   private _portfolioInitialized = false
   private _prevSectionIndex = -1
   private _introEmitted = false
@@ -123,6 +125,8 @@ export class Experience {
     }
     await this.buildWorld()
       this.bus = StateBus.getInstance()
+    // Splash cube IS the baku (World.baku is now a SplashCube).
+    // No separate splash object — the cube in the scene is both splash + baku.
     // DevPanel (Tweakpane) — only in DEV. Toggle with Backquote (`) or Ctrl+D.
     if (import.meta.env.DEV) {
       try {
@@ -169,6 +173,14 @@ export class Experience {
 
     // Portfolio update
     this.portfolio?.update(dt)
+
+    // Splash cube (= baku) — opener detection. When opener completes,
+    // dispatch jlz:webgl-ready so text animation starts. Cube stays as baku.
+    const baku = this.world.baku as unknown as { openerComplete?: boolean; openerPhase?: string } | null
+    if (baku && baku.openerComplete && !this._openerDispatched) {
+      this._openerDispatched = true
+      window.dispatchEvent(new CustomEvent('jlz:webgl-ready'))
+    }
 
     const ns = input.getSmoothedScrollProgress()
     const { cameraTarget, worldState } = this.world.advance(ns)
@@ -257,6 +269,18 @@ export class Experience {
     // NOTE: do NOT call requestAnimationFrame here — setAnimationLoop (set in
     // init()) drives the loop. Calling rAF on top would double the frame rate
     // and fight the WebGPU swap chain synchronization.
+  }
+
+  /** Set splash cube loading progress (0-100). Cube = baku. */
+  public setSplashProgress(pct: number): void {
+    const cube = this.world?.baku as unknown as { setProgress?: (v: number) => void } | undefined
+    cube?.setProgress?.(pct / 100)
+  }
+
+  /** Trigger the cube opener — faces pulse outward + back. Cube stays as baku. */
+  public triggerSplashOpener(): void {
+    const cube = this.world?.baku as unknown as { triggerOpener?: () => void } | undefined
+    cube?.triggerOpener?.()
   }
 
   public switchPage(page: string): void {

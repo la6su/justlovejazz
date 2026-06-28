@@ -47,17 +47,22 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
     progress(98)
     progress(100)
 
-    // ── Aurora splash → light sweep reveal → 3D scene + text animation ──
-    // Ultra-light shader (pure trig, 0.5× DPR). Flow:
-    //   1. Aurora fades in from black (0.5s, auto via uIntro)
-    //   2. Aurora flows during loading (brightens with progress)
-    //   3. At 100%: diagonal light sweep wipes splash away (0.8s)
-    //   4. jlz:webgl-ready dispatches at sweep midpoint → text animation starts
-    //   5. Splash disposes after sweep completes
-    const INTRO_MS = 800       // aurora establishes by ~0.8s
-    const SWEEP_MS = 800       // diagonal sweep duration
-    const TEXT_START_MS = 200  // dispatch jlz:webgl-ready at sweep midpoint
-    const FADE_MS = 200        // splash opacity fade after sweep
+    // ── Splash cube → opener → Baku → 3D scene ──
+    // The SplashCube (Apple Fifth Avenue style) is in the 3D scene, rotating
+    // during loading. At 100%: triggerOpener() — faces split + dissolve.
+    // Experience detects opener completion, disposes cube, reveals Baku,
+    // and dispatches jlz:webgl-ready (triggers text animation).
+    //
+    // Flow:
+    //   1. Black screen (CSS) → Three.js loads → cube appears
+    //   2. Cube rotates during loading (edges brighten with progress)
+    //   3. At 100%: triggerSplashOpener() → faces split outward + dissolve
+    //   4. Experience detects opener complete → cube disposed → Baku visible
+    //   5. jlz:webgl-ready dispatched → text animation starts
+    //   6. HTML splash overlay removed
+    const INTRO_MS = 800       // cube establishes by ~0.8s
+    const OPENER_MS = 400      // wait for cube to settle before opener
+    const FADE_MS = 300        // HTML splash fade after opener starts
 
     const elapsed = performance.now() - bootStart
     const readyAt = Math.max(0, INTRO_MS - elapsed)
@@ -70,21 +75,16 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
         return
       }
 
-      // Start the diagonal sweep — wipes splash from top-left to bottom-right.
-      const liquid = (window as unknown as { jlzLiquid?: { reveal: () => void } }).jlzLiquid
-      liquid?.reveal()
+      // Trigger the cube opener — faces split + dissolve → Baku appears.
+      // Experience handles the rest (dispose cube, reveal Baku, dispatch jlz:webgl-ready).
+      splash.triggerPortalCollapse()
 
-      // Dispatch jlz:webgl-ready early so text animation starts as sweep passes.
-      // The 3D scene is already rendering beneath; sweep reveals it progressively.
-      setTimeout(() => {
-        window.dispatchEvent(new CustomEvent('jlz:webgl-ready'))
-      }, TEXT_START_MS)
-
-      // Hide + dispose after sweep completes.
+      // Fade out the HTML splash overlay (black screen) — the 3D scene is
+      // already visible beneath (cube is part of the scene).
       setTimeout(() => {
         splash.hide()
         setTimeout(() => splash.remove(), FADE_MS)
-      }, SWEEP_MS)
+      }, OPENER_MS)
     }, readyAt)
   } catch (e) {
     console.error('[main-app] bootstrap failed:', e)
