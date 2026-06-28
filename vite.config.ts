@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import { resolve } from 'node:path'
 
 import { copyFileSync, mkdirSync, readdirSync } from 'fs'
+import { homePage } from './src/templates'
 
 export default defineConfig({
   base: '/',
@@ -113,6 +114,21 @@ export default defineConfig({
     minify: 'esbuild',
   },
   plugins: [
+    {
+      // Prerender the 6 home sections into index.html at build time so
+      // crawlers (and users with JS disabled / failing) see the real text
+      // content immediately instead of an empty <div id="app"></div>.
+      // router.ts skips re-injection when #spa-content already has children,
+      // so the prerendered HTML is hydrated (UIkit.init) not replaced.
+      name: 'prerender-home',
+      transformIndexHtml(html) {
+        const sections = homePage()
+        return html.replace(
+          '<div id="app"></div>',
+          `<div id="app"><main id="spa-content" role="main">${sections}</main></div>`,
+        )
+      },
+    },
     {
       name: 'copy-projects',
       closeBundle() {
