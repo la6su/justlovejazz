@@ -218,8 +218,15 @@ export class Experience {
       const cube = this.world.baku as unknown as
         | { setProjectTextures?: (t: (THREE.Texture | null)[]) => void; clearProjectTextures?: () => void }
         | undefined
-      if (idx === 3 && this.portfolio) {
-        cube?.setProjectTextures?.(this.portfolio.textures)
+      if (idx === 3) {
+        // Defer to next frame — portfolio textures may still be loading on
+        // first entry. Also re-apply every entry (clearProjectTextures was
+        // called on the previous section change).
+        requestAnimationFrame(() => {
+          if (this.portfolio && this.portfolio.texturesLoaded) {
+            this.portfolio.applyTexturesToCube()
+          }
+        })
       } else {
         cube?.clearProjectTextures?.()
       }
@@ -253,6 +260,11 @@ export class Experience {
     const showGallery = cfg?.ui?.showGallery ?? false
     if (this.portfolio) {
       this.portfolio.group.visible = showGallery
+      // Bug 4: ensure cube textures are applied while on works section.
+      // applyTexturesToCube is idempotent (sets material.map + needsUpdate).
+      if (showGallery && this.portfolio.texturesLoaded) {
+        this.portfolio.applyTexturesToCube()
+      }
     }
     // Sync ProjectOverlay (DOM UI layer) with the same visibility —
     // slider UI is scoped to #section-works, never a global overlay.

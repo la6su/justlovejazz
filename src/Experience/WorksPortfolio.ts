@@ -24,7 +24,8 @@ export class WorksPortfolio {
   private lastT = 0
   // Public for Experience to re-apply on works section entry (Bug 4).
   textures: (THREE.Texture | null)[] = []
-  private texturesLoaded = false
+  // Public for Experience to check load state (Bug 4).
+  texturesLoaded = false
   private baku: THREE.Object3D | null = null
   private expanding = false
   private expandProgress = 0
@@ -93,7 +94,8 @@ export class WorksPortfolio {
     }
   }
 
-  private applyTexturesToCube(): void {
+  /** Public — Experience calls this on works section entry (Bug 4). */
+  applyTexturesToCube(): void {
     const cube = this.baku as unknown as {
       setProjectTextures?: (t: (THREE.Texture | null)[]) => void
     }

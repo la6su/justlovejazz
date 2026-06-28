@@ -236,28 +236,11 @@ section[data-section='flexible'] .uk-button-default:hover {
   border-color: #111;
 }
 
-/* Bug 2: staggered fade-in for titles + UI content when section becomes active.
-   ContentReveal adds .section-active to the [data-section] element on section change.
-   Children of .section-content animate in with a delay cascade. */
+/* .section-active is set by ContentReveal — keeps the section visible.
+   Fade-in is handled by UIkit scrollspy (uk-scrollspy attribute in templates.ts),
+   which animates elements on viewport entry. */
 .section-active {
   opacity: 1;
-}
-.section-active .section-content > * {
-  animation: jlz-fade-up 0.7s ease-out both;
-}
-.section-active .section-content > *:nth-child(1) { animation-delay: 0.15s; }
-.section-active .section-content > *:nth-child(2) { animation-delay: 0.3s; }
-.section-active .section-content > *:nth-child(3) { animation-delay: 0.45s; }
-.section-active .section-content > *:nth-child(4) { animation-delay: 0.6s; }
-@keyframes jlz-fade-up {
-  from { opacity: 0; transform: translateY(24px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-/* Respect reduced motion — skip the fade-up, just show. */
-@media (prefers-reduced-motion: reduce) {
-  .section-active .section-content > * {
-    animation: none;
-  }
 }
 .jlz-works-ui {
   position: absolute;
