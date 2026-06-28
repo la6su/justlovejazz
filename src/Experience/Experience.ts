@@ -21,8 +21,7 @@ import { ProjectDetail } from '../UI/ProjectDetail'
 import { Subtitles } from '../UI/Subtitles'
 import { SectionProgress } from '../UI/SectionProgress'
 import { PerfMonitor } from '../core/PerfMonitor'
-import { DeviceCapability } from '../core/DeviceCapability'
-import { DissolveOverlay } from '../shaders/dissolveOverlay'
+// DissolveOverlay removed — cover transition in ProjectDetail replaces it.
 
 /**
  * Section-arrival transition tuning.
@@ -59,9 +58,6 @@ export class Experience {
   private _subtitles: Subtitles | null = null
   private _sectionProgress: SectionProgress | null = null
   private currentSectionContext: string | null = null
-  // Project transition dissolve (shader effect on card click)
-  private projectDissolve: DissolveOverlay | null = null
-  private projectDissolveActive = false
   private _portfolioInitialized = false
   private _prevSectionIndex = -1
   private _introEmitted = false
@@ -244,9 +240,10 @@ export class Experience {
           this.onProjectSelect(0)
         }
         // Do NOT auto-showContainer() — fullscreen opens only via Show button.
-      } else {
-        this.overlay.hide()
       }
+      // Do NOT auto-hide overlay when leaving works section — fullscreen
+      // stays open until user explicitly closes it (Esc / ✕ button).
+      // overlay.hide() is called by overlay.close() → onClose callback.
     }
     // On works page: hide ground plane + scene backdrop (only slider + fog).
     if (this.world) {
@@ -289,13 +286,6 @@ export class Experience {
     // On the works page ensurePortfolio() → onProjectSelect() re-shows it.
     if (page !== 'works') {
       this.overlay?.hide()
-      // Cancel any in-flight project dissolve transition.
-      if (this.projectDissolve) {
-        this.projectDissolveActive = false
-        this._pendingProject = null
-        this.projectDissolve.meshGroup.visible = false
-        this.projectDissolve.setProgress(0)
-      }
     }
     // Dispose existing portfolio — it was bound to the old world which we
     // are about to destroy. A fresh portfolio will be created for the new
@@ -358,8 +348,6 @@ export class Experience {
     this.camera.destroy()
     this.portfolio?.dispose()
     this.overlay?.dispose()
-    this.projectDissolve?.dispose()
-    this.projectDissolve = null
     this._subtitles?.dispose()
     this._subtitles = null
     this._sectionProgress?.dispose()
@@ -388,10 +376,10 @@ export class Experience {
 
     this.portfolio = new WorksPortfolio(
       PROJECTS,
-      (idx) => { this.onProjectSelect(idx) },           // swipe → preview overlay
-      (idx) => { this.activateCard(idx) },              // tap → expand card
-      (idx) => { this.onCardExpanded(idx) },            // expand done → open detail
-      () => { this.onCardCollapsed() },                 // collapse done → return to carousel
+      (idx) => { this.onProjectSelect(idx) },           // swipe → update overlay
+      (idx) => { this.activateCard(idx) },              // tap → open detail cover
+      () => {},                                         // expand done (unused)
+      () => {},                                         // collapse done (unused)
     )
     // Portfolio group at world origin — frontal camera at [0,1,7] looks at [0,1,0].
     this.portfolio.group.position.set(0, 1, 0)
@@ -438,22 +426,7 @@ export class Experience {
         this.portfolio?.collapseCard()
       }
     }
-    // Create the project transition dissolve overlay (shader wipe effect).
-    // Reused across all project selections on the works page.
-    // SKIP on WebGPU — DissolveOverlay uses ShaderMaterial which is
-    // incompatible with WebGPURenderer's NodeBuilder (throws
-    // "Material ShaderMaterial is not compatible"). The overlay is optional;
-    // ProjectOverlay.show() works without it.
-    const isWebGPU = DeviceCapability.getInstance().mode === 'webgpu'
-    if (!this.projectDissolve && !isWebGPU) {
-      try {
-        this.projectDissolve = new DissolveOverlay().init(this.scene)
-        this.projectDissolve.meshGroup.visible = false
-      } catch {
-        this.projectDissolve = null
-      }
-    }
-    // Do NOT call onProjectSelect(0) here — it triggers _runProjectDissolve
+    // Do NOT call onProjectSelect(0) here — it would show the overlay
     // which calls overlay.showContainer() at the end, making the overlay
     // visible on non-works sections. Experience.update() will call
     // onProjectSelect when the user scrolls to the works section.
@@ -468,119 +441,25 @@ export class Experience {
     const project = projs[safeIdx]
     if (!project) return
 
-    // If a dissolve transition is already running, just update the target
-    // project (will be applied at mid-transition).
-    if (this.projectDissolveActive) {
-      this._pendingProject = { project, idx: safeIdx, total: projs.length }
-      return
-    }
-
-    // If dissolve overlay exists, run the cinematic dissolve transition.
-    // Otherwise (WebGL2 backend, or dissolve creation failed), show the
-    // project overlay directly — no transition, but content is populated.
-    if (this.projectDissolve) {
-      this._runProjectDissolve(project, safeIdx, projs.length)
-    } else {
-      // Direct show — no dissolve transition (fallback path).
-      this.overlay.show(project as never, safeIdx, projs.length)
-    }
-  }
-
-  private _pendingProject: { project: unknown; idx: number; total: number } | null = null
-
-  private _runProjectDissolve(project: unknown, idx: number, total: number): void {
-    if (!this.projectDissolve || !this.overlay) return
-    // Safety: don't run dissolve if portfolio is hidden (non-works section).
-    if (this.portfolio && !this.portfolio.group.visible) return
-    this.projectDissolveActive = true
-    const overlay = this.projectDissolve
-    overlay.meshGroup.visible = true
-    overlay.setProgress(0)
-
-    // Use StateBus animation instead of requestAnimationFrame — HERMES_RULES §4.
-    // Phase 1: 0 → 1 (300ms), phase 2: 1 → 0 (300ms). Content swapped at peak.
-    const KEY = 'dissolve:progress'
-    let midSwapped = false
-    this.bus.set(KEY, 0)
-
-    // Per-frame value subscriber (fires on change event, reads key value).
-    const onChange = (_ch: string, _d: unknown) => {
-      const val = this.bus.get(KEY)
-      overlay.setProgress(val)
-      overlay.update(0.016)
-
-      if (val >= 0.98 && !midSwapped) {
-        midSwapped = true
-        if (this._pendingProject) {
-          const p = this._pendingProject
-          this.overlay!.show(p.project as never, p.idx, p.total)
-          this._pendingProject = null
-        } else {
-          this.overlay!.show(project as never, idx, total)
-        }
-      }
-    }
-    this.bus.on('change', onChange)
-
-    // Phase 1 done → kick phase 2
-    const onPhase1Done = () => {
-      this.bus.off(`done:${KEY}`, onPhase1Done)
-      this.bus.animate(KEY, 0, 0.3, 'easeInOutCubic')
-
-      const onPhase2Done = () => {
-        this.bus.off(`done:${KEY}`, onPhase2Done)
-        this.bus.off('change', onChange)
-        overlay.meshGroup.visible = false
-        overlay.setProgress(0)
-        this.projectDissolveActive = false
-        // Do NOT auto-showContainer() — fullscreen opens only via Show button.
-      }
-      this.bus.on(`done:${KEY}`, onPhase2Done)
-    }
-    this.bus.on(`done:${KEY}`, onPhase1Done)
-
-    this.bus.animate(KEY, 1, 0.3, 'easeInOutCubic')
+    // Direct show — no dissolve transition (removed, cover transition in ProjectDetail).
+    this.overlay.show(project as never, safeIdx, projs.length)
   }
 
   /**
-   * Tap on card → start expand animation. The card morphs from its carousel
-   * position to a fullscreen-cover position (handled in WorksPortfolio.update).
+   * Tap on cube face → open fullscreen detail (ProjectDetail cover transition).
    */
-  private activateCard(idx: number): void {
-    if (!this.portfolio) return
-    this.portfolio.expandCard(idx)
-  }
-
-  /**
-   * Expand animation reached peak (progress=1). Card is now fullscreen.
-   * Open the DOM detail modal over it.
-   */
-  private async onCardExpanded(idx: number): Promise<void> {
+  private async activateCard(idx: number): Promise<void> {
     if (!this.portfolio || !this.projectDetail) return
-    // Section3 works on single-page (no switchPage), so ensure it's initialized.
-    if (this.world) {
-      const hasGalleryAnchor = Array.from(document.querySelectorAll('#gallery-anchor')).length > 0
-      if (hasGalleryAnchor && !document.body.dataset.page) {
-        document.body.dataset.page = 'works'
-      }
-    }
-    const projs = this.portfolio?.projects ?? []
+    const projs = this.portfolio.projects
     const project = projs?.[idx]
     if (!project) return
     await this.projectDetail.open(project)
   }
 
-  /**
-   * User closed the detail modal → collapse the card back to carousel.
-   */
-  public closeProjectDetail(): void {
-    if (!this.portfolio) return
-    this.projectDetail?.close()
-    this.portfolio.collapseCard()
-  }
+  /** Expand/collapse flow removed — cards are on cube, no separate card meshes. */
 
-  private onCardCollapsed(): void {
-    // Carousel resumed — no action needed, update() continues normally.
+  public closeProjectDetail(): void {
+    this.projectDetail?.close()
   }
 
   private async ensureWebGLTextManager(): Promise<void> {

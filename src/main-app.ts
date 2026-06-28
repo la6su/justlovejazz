@@ -55,8 +55,10 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
     //   4. Splash overlay hidden + removed
     const INTRO_MS = 800       // cube establishes by ~0.8s
     const CURTAIN_MS = 800     // curtain split duration (CSS transition)
-    const TITLE_START_MS = 850 // dispatch jlz:webgl-ready AFTER curtains fully open
-    const FADE_MS = 300        // splash fade after curtain fully open
+    const FADE_MS = 300        // splash opacity fade after curtain fully open
+    // Dispatch jlz:webgl-ready AFTER splash is fully removed (curtain + fade).
+    // This guarantees JUSTLOVEJAZZ animation is visible — not hidden behind splash.
+    const TITLE_START_MS = CURTAIN_MS + FADE_MS + 50 // 1150ms — after splash gone
 
     const elapsed = performance.now() - bootStart
     const readyAt = Math.max(0, INTRO_MS - elapsed)
@@ -72,17 +74,17 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
       // Open curtains + trigger cube opener (pulse).
       splash.triggerPortalCollapse()
 
-      // Dispatch jlz:webgl-ready AFTER curtains fully open — NoiseText starts
-      // animating JUSTLOVEJAZZ once the scene is fully visible.
-      setTimeout(() => {
-        window.dispatchEvent(new CustomEvent('jlz:webgl-ready'))
-      }, TITLE_START_MS)
-
       // Hide + remove splash after curtain fully opens.
       setTimeout(() => {
         splash.hide()
         setTimeout(() => splash.remove(), FADE_MS)
       }, CURTAIN_MS)
+
+      // Dispatch jlz:webgl-ready AFTER splash is fully removed — NoiseText
+      // starts animating JUSTLOVEJAZZ once the scene is completely visible.
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('jlz:webgl-ready'))
+      }, TITLE_START_MS)
     }, readyAt)
   } catch (e) {
     console.error('[main-app] bootstrap failed:', e)
