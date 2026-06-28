@@ -29,8 +29,16 @@ function renderView(): void {
   const el = container
   if (!el) return
   document.body.dataset.page = 'home'
-  document.title = 'JUSTLOVEJAZZ'
-  el.innerHTML = renderPage()
+  // Keep the SEO-friendly <title> from index.html — do not clobber it with
+  // a shorter tab title on JS boot.
+  // document.title is intentionally left as-is.
+  // Skip re-injection when #spa-content was prerendered at build time
+  // (Vite prerender-home plugin). Re-injecting the same HTML would flash
+  // and re-trigger UIkit init unnecessarily. Still run UIkit.update below
+  // so UIkit attributes (uk-grid, uk-scrollspy, …) hydrate.
+  if (el.children.length === 0) {
+    el.innerHTML = renderPage()
+  }
   // Initialize UIkit components on dynamically inserted content
   ;(UIkit as any).update(el)
   if ('requestIdleCallback' in window) {

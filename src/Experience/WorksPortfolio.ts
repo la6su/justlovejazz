@@ -140,12 +140,19 @@ export class WorksPortfolio {
 
   goTo(idx: number): void {
     const n = this.projects.length
-    this.targetIdx = ((idx % n) + n) % n
+    // Round to integer — currentIdx is a float (spring physics) so
+    // currentIdx ± 1 is a float, which broke modular indexing (projects[float]
+    // = undefined → overlay never updated, cube rotated to non-integer faces).
+    const ri = Math.round(idx)
+    this.targetIdx = ((ri % n) + n) % n
     this.onCardClick(this.targetIdx)
   }
 
-  next(): void { this.goTo(this.currentIdx + 1) }
-  prev(): void { this.goTo(this.currentIdx - 1) }
+  // Use targetIdx (the settled integer target), NOT currentIdx (a float that
+  // lags behind due to spring physics). Jumping from currentIdx caused prev/next
+  // to land on wrong indices when clicked mid-animation.
+  next(): void { this.goTo(this.targetIdx + 1) }
+  prev(): void { this.goTo(this.targetIdx - 1) }
 
   expandCard(idx: number): void {
     if (this.expanding) return

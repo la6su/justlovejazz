@@ -2,15 +2,13 @@
 // Supports both section-snap (setSection) and continuous lerp (setProgress)
 // for smooth cross-section transitions driven by World.updateTransform(t).
 import * as THREE from 'three'
+import { getAllScenes } from './WorldConfig'
 
-const sectionColors = [
-    new THREE.Color(0xffffff),  // 0: intro — white
-    new THREE.Color(0x08080c),  // 1: about
-    new THREE.Color(0xeeeeee),  // 2: flexible
-    new THREE.Color(0x060608),  // 3: challenge
-    new THREE.Color(0x050507),  // 4: innovative
-    new THREE.Color(0x050507),  // 5: contact
-]
+// Single source of truth: colors come from WorldConfig (previously BG had a
+// hardcoded array that drifted from WorldConfig — about was 0x08080c here vs
+// 0x020204 in WorldConfig). Now both the 3D scene bg and the fog/ground use
+// the same PhaseConfig.background values.
+const sectionColors = getAllScenes().map(c => new THREE.Color(c.background))
 
 export class BG {
     public color = new THREE.Color(0xffffff)
@@ -47,11 +45,13 @@ export class BG {
 
     /**
      * Per-frame smooth update — exponential decay toward target.
-     * Speed: ~0.4 means ~63% of the way in ~2.5s — extremely slow, cinematic.
-     * Each section's BG color holds much longer before blending to the next.
+     * Speed ~6 so the bg tracks scroll-snap section switches in ~0.2s.
+     * (Previously 0.4 = ~2.5s lag — the bg was still mid-transition long
+     * after the section snapped, causing white-text-on-grey contrast loss
+     * on the about section.)
      */
     public update(deltaTime: number): void {
-        const lerp = 1 - Math.exp(-0.4 * deltaTime)
+        const lerp = 1 - Math.exp(-6 * deltaTime)
         this.color.lerp(this.targetColor, lerp)
     }
 }

@@ -56,9 +56,11 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
     const INTRO_MS = 800       // cube establishes by ~0.8s
     const CURTAIN_MS = 800     // curtain split duration (CSS transition)
     const FADE_MS = 300        // splash opacity fade after curtain fully open
-    // Dispatch jlz:webgl-ready AFTER splash is fully removed (curtain + fade).
-    // This guarantees JUSTLOVEJAZZ animation is visible — not hidden behind splash.
-    const TITLE_START_MS = CURTAIN_MS + FADE_MS + 50 // 1150ms — after splash gone
+    // Fire jlz:webgl-ready at curtain mid-open so the JUSTLOVEJAZZ title
+    // animates IN PARALLEL with the cube reveal — no perceived delay after
+    // the splash is gone. (Previously +1150ms after curtain start = ~350ms
+    // dead gap after splash visually disappeared.)
+    const TITLE_START_MS = Math.round(CURTAIN_MS * 0.5) // 400ms — curtains ~half open
 
     const elapsed = performance.now() - bootStart
     const readyAt = Math.max(0, INTRO_MS - elapsed)

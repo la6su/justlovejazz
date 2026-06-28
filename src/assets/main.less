@@ -72,6 +72,9 @@
   height: auto !important; flex-shrink: 0 !important; flex-grow: 0 !important;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   position: relative; overflow: hidden; z-index: 2;
+  /* Bug 5: snap each section to viewport top — full-screen clear switch. */
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
 }
 .uk-height-viewport { min-height: 100vh !important; min-height: 100dvh !important; }
 
@@ -117,6 +120,9 @@ section[data-section="intro"] .uk-button-default:hover, section[data-section="fl
 html,
 body {
   overflow-x: hidden;
+  /* Bug 5: junni-style section snapping — each section locks to viewport. */
+  scroll-snap-type: y mandatory;
+  scroll-behavior: auto; /* Lenis handles smoothing; CSS must not double-smooth */
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
 }
 
@@ -183,7 +189,7 @@ canvas {
 .section-studio {
   position: relative;
   z-index: var(--jlz-z-content);
-  padding: 10vh 5vw;
+  padding: 0; /* was 10vh 5vw — removed for clean scroll-snap alignment */
   overflow: hidden;
 }
 

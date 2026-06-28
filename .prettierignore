@@ -1,0 +1,9 @@
+dist/
+node_modules/
+references/
+public/
+projects/
+test-results/
+playwright-report/
+*.lock
+bun.lock
