@@ -4,6 +4,16 @@
 
 import * as THREE from 'three'
 import { FlexibleSlides } from '../Experience/World/Sections/FlexibleSlides'
+import { DeviceCapability } from './DeviceCapability'
+
+// Scale particle counts by device tier — low-end devices render far fewer
+// particles. DeviceCapability.config.gpuParticles is false on low tier but
+// was never read; this scale factor makes the gating effective.
+const PARTICLE_SCALE: number = (() => {
+  const tier = DeviceCapability.getInstance().tier
+  return tier === 'low' ? 0.4 : tier === 'medium' ? 0.7 : 1.0
+})()
+const pc = (n: number): number => Math.max(4, Math.round(n * PARTICLE_SCALE))
 
 function makeParticles(
   count: number,
@@ -35,14 +45,14 @@ export class SectionSceneFactory {
   static createIntro(): THREE.Group {
     const g = new THREE.Group()
     g.name = 'intro'
-    g.add(makeParticles(25, new THREE.Vector3(14, 8, 8), 0x999999, 0.035, 0.15))
+    g.add(makeParticles(pc(25), new THREE.Vector3(14, 8, 8), 0x999999, 0.035, 0.15))
     return g
   }
 
   static createAbout(): THREE.Group {
     const g = new THREE.Group()
     g.name = 'about'
-    g.add(makeParticles(50, new THREE.Vector3(12, 6, 8), 0xff69b4, 0.04, 0.25))
+    g.add(makeParticles(pc(50), new THREE.Vector3(12, 6, 8), 0xff69b4, 0.04, 0.25))
     return g
   }
 
@@ -63,28 +73,28 @@ export class SectionSceneFactory {
     }
     loader.load('/assets/textures/sec2-bg-text.png', (tex) => { bgTex = tex; tryBuild() })
     loader.load('/assets/textures/flexible-title.png', (tex) => { titleTex = tex; tryBuild() })
-    g.add(makeParticles(30, new THREE.Vector3(14, 7, 8), 0xaaaaaa, 0.035, 0.2))
+    g.add(makeParticles(pc(30), new THREE.Vector3(14, 7, 8), 0xaaaaaa, 0.035, 0.2))
     return g
   }
 
   static createChallenge(): THREE.Group {
     const g = new THREE.Group()
     g.name = 'challenge'
-    g.add(makeParticles(20, new THREE.Vector3(14, 6, 8), 0x4488ff, 0.035, 0.2))
+    g.add(makeParticles(pc(20), new THREE.Vector3(14, 6, 8), 0x4488ff, 0.035, 0.2))
     return g
   }
 
   static createInnovative(): THREE.Group {
     const g = new THREE.Group()
     g.name = 'innovative'
-    g.add(makeParticles(45, new THREE.Vector3(14, 7, 8), 0x88aacc, 0.04, 0.25))
+    g.add(makeParticles(pc(45), new THREE.Vector3(14, 7, 8), 0x88aacc, 0.04, 0.25))
     return g
   }
 
   static createContact(): THREE.Group {
     const g = new THREE.Group()
     g.name = 'contact'
-    g.add(makeParticles(30, new THREE.Vector3(12, 6, 6), 0xaabbdd, 0.035, 0.2))
+    g.add(makeParticles(pc(30), new THREE.Vector3(12, 6, 6), 0xaabbdd, 0.035, 0.2))
     return g
   }
 

@@ -32,10 +32,11 @@
         <a class="uk-navbar-item uk-logo navbar-logo" href="/index.html" aria-label="Home">JLJ</a>
       </div>
       <div class="uk-navbar-right">
+          <ul class="uk-navbar-nav">
           <li class="uk-navbar-item"><a href="/index.html" class="navbar-link">Home</a></li>
-          <li class="uk-navbar-item"><a href="/trinity.html" class="navbar-link">Trinity</a></li>
-          <li class="uk-navbar-item"><a href="/works.html" class="navbar-link">Works</a></li>
-          <li class="uk-navbar-item"><a href="/contact.html" class="navbar-link">Contact</a></li>
+          <li class="uk-navbar-item"><a href="/" class="navbar-link">Trinity</a></li>
+          <li class="uk-navbar-item"><a href="/#section-challenge" class="navbar-link">Works</a></li>
+          <li class="uk-navbar-item"><a href="/#section-contact" class="navbar-link">Contact</a></li>
         </ul>
       </div>
     </nav>
@@ -115,14 +116,19 @@
             </div>
           </div>
           <div class="uk-margin-medium-top">
-            <a href="/works.html" class="uk-button uk-button-secondary uk-button-large btn-studio">← Back to Gallery</a>
-            <a href="/contact.html" class="uk-button uk-button-primary uk-button-large uk-margin-small-left">Request Full Case →</a>
+            <a href="/#section-challenge" class="uk-button uk-button-secondary uk-button-large btn-studio">← Back to Gallery</a>
+            <a href="/#section-contact" class="uk-button uk-button-primary uk-button-large uk-margin-small-left">Request Full Case →</a>
           </div>
         </div>
       </section>
     </div>
 
     <div id="app"></div>
-    <script type="module" src="/src/entry.ts"></script>
+    <script>
+      // Standalone project detail page — no SPA bootstrap (the previous
+      // /src/entry.ts reference pointed to a non-existent file). Hide the
+      // full-screen loading overlay now that the static page is interactive.
+      document.getElementById('pageLoader')?.style.setProperty('display', 'none');
+    </script>
   </body>
 </html>

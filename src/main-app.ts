@@ -1,5 +1,5 @@
 // src/main-app.ts — lazy bootstrap entry
-import * as THREE from 'three'
+import type * as THREE from 'three'
 import { syncReducedMotionDataset, prefersReducedMotion } from './core/motionPolicy'
 import type { SplashOverlay } from './splash'
 

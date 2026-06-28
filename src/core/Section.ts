@@ -3,6 +3,7 @@
 import * as THREE from 'three'
 import { StateBus } from './StateBus'
 import { type PhaseConfig } from './WorldConfig'
+import { disposeMaterialDeep } from '../Utils/dispose'
 
 export enum SectionState {
     READY = 'ready',
@@ -265,7 +266,7 @@ export class Section extends THREE.Group {
             if (obj instanceof THREE.Mesh) {
                 obj.geometry?.dispose()
                 const mats = Array.isArray(obj.material) ? obj.material : [obj.material]
-                mats.forEach(m => m?.dispose())
+                mats.forEach(m => disposeMaterialDeep(m))
             }
         })
         this.clear()

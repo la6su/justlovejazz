@@ -249,8 +249,12 @@ canvas {
   background-color: var(--jlz-color-text);
 }
 
-body, a, button, .interactive {
-  cursor: none;
+/* Custom cursor only on precise-pointer devices (desktop mouse).
+   Touch / coarse-pointer / motor-impaired users keep the system cursor (WCAG). */
+@media (hover: hover) and (pointer: fine) {
+  body, a, button, .interactive {
+    cursor: none;
+  }
 }
 
 /* ════════════════════════════════════════════════════════════════════

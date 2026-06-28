@@ -18,8 +18,7 @@ export default defineConfig({
           // Vendor chunks (pin them at TOP — they can't be split further)
           if (id.includes('node_modules')) {
             if (id.includes('three') || id.includes('three-stdlib')) return 'vendor-three'
-            if (id.includes('troika-three-text')) return 'vendor-troika'
-            if (id.includes('uikit') || id.includes('lenis') || id.includes('@studio-freight/lenis')) return 'vendor-ui'
+            if (id.includes('uikit') || id.includes('lenis')) return 'vendor-ui'
             return 'vendor-misc'
           }
           // Core app (after vendor Three.js) — never split Three.js again

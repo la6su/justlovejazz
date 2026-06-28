@@ -1,6 +1,6 @@
 // src/core/AssetManager.ts
 import * as THREE from 'three';
-import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
+import type { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
 import { DeviceCapability } from './DeviceCapability';
 
 /**
@@ -17,14 +17,24 @@ export class AssetManager {
   // Group assets by "context" (e.g., 'intro', 'gallery', 'project-1') for easy bulk disposal
   private contextGroups: Map<string, Set<THREE.Object3D | THREE.Texture | THREE.Material | THREE.BufferGeometry>> = new Map();
 
-  private ktx2Loader: KTX2Loader;
+  private ktx2Loader: KTX2Loader | null = null;
   private textureLoader: THREE.TextureLoader;
 
   private constructor() {
     this.textureLoader = new THREE.TextureLoader();
-    this.ktx2Loader = new KTX2Loader();
-    this.ktx2Loader.setWorkerLimit(2);
-    this.ktx2Loader.setTranscoderPath('/basis/');
+  }
+
+  /** Lazily create the KTX2Loader (and its 2 web workers) only when a .ktx2
+   *  texture is first requested. Avoids pulling the ~622 KB basis transcoder
+   *  into the main bundle when no KTX2 textures are used (currently none). */
+  private async getKtx2Loader(): Promise<KTX2Loader> {
+    if (this.ktx2Loader) return this.ktx2Loader;
+    const { KTX2Loader } = await import('three/addons/loaders/KTX2Loader.js');
+    const loader = new KTX2Loader();
+    loader.setWorkerLimit(2);
+    loader.setTranscoderPath('/basis/');
+    this.ktx2Loader = loader;
+    return loader;
   }
 
   public static getInstance(): AssetManager {
@@ -56,8 +66,8 @@ export class AssetManager {
 
     let texture: THREE.Texture;
     try {
-      texture = url.endsWith('.ktx2') 
-        ? await this.ktx2Loader.loadAsync(url) 
+      texture = url.endsWith('.ktx2')
+        ? await (await this.getKtx2Loader()).loadAsync(url)
         : await this.textureLoader.loadAsync(url);
 
       if (texture.isTexture) {

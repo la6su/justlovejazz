@@ -220,7 +220,7 @@ export class RenderPipeline {
       bloomPasses: config?.bloomPasses ?? 4,
       bloomResRatio: config?.bloomResRatio ?? 0.5,
       blurRange: config?.blurRange ?? 2.0,
-      bloomEnabled: config?.bloomEnabled ?? (pipeline._isWebGPU || true),
+      bloomEnabled: config?.bloomEnabled ?? !pipeline._isWebGPU,
       vignetteEnabled: config?.vignetteEnabled ?? true,
       grainEnabled: config?.grainEnabled ?? true,
     }
@@ -279,19 +279,26 @@ export class RenderPipeline {
     this._renderWebGL(scene, camera)
   }
   
-  /** Resize all RTs to new resolution */
+  private _resizeTimer: ReturnType<typeof setTimeout> | null = null
+
+  /** Resize all RTs to new resolution (debounced — recreating 4 HalfFloat RTs
+   *  on every resize event causes GC/VRAM spikes during drag-resize). */
   public resize(width: number, height: number): void {
     this._width = width
     this._height = height
-    if (!this._isWebGPU) {
-      this._setupRTSize()
-    }
+    if (this._isWebGPU) return
     // WebGPU: native RenderPipeline + PassNode read renderer size on each
     // render, so no explicit RT reallocation is needed here.
+    if (this._resizeTimer) clearTimeout(this._resizeTimer)
+    this._resizeTimer = setTimeout(() => {
+      this._resizeTimer = null
+      this._setupRTSize()
+    }, 150)
   }
   
   /** Destroy all GPU resources. Call once during teardown. */
   public dispose(): void {
+    if (this._resizeTimer) { clearTimeout(this._resizeTimer); this._resizeTimer = null }
     this._rtScene?.dispose()
     this._rtBloomA?.dispose()
     this._rtBloomB?.dispose()
@@ -359,6 +366,7 @@ export class RenderPipeline {
       },
       vertexShader: QUAD_VERTEX,
       fragmentShader: BRIGHT_EXTRACT_FSG,
+      toneMapped: false,
       depthTest: false,
       depthWrite: false,
     })
@@ -378,6 +386,7 @@ export class RenderPipeline {
       },
       vertexShader: QUAD_VERTEX,
       fragmentShader: GAUSSIAN_BLUR_FSG,
+      toneMapped: false,
       depthTest: false,
       depthWrite: false,
     })
@@ -395,6 +404,7 @@ export class RenderPipeline {
       },
       vertexShader: QUAD_VERTEX,
       fragmentShader: COMPOSITE_FSG,
+      toneMapped: false,
       depthTest: false,
       depthWrite: false,
     })
@@ -415,9 +425,11 @@ export class RenderPipeline {
     this._rtBloomB?.dispose()
     this._rtBright?.dispose()
     
-    // Scene RT (full res, SRGB, HDR)
+    // Scene RT (full res, LINEAR HDR — composite pass applies ACES + sRGB encode once).
+    // Previously colorSpace: SRGB caused the scene to be sRGB-encoded into the RT,
+    // then the composite shader applied ACES on already-encoded values, then the
+    // screen output sRGB-encoded AGAIN → washed-out double-encoded image.
     this._rtScene = new THREE.WebGLRenderTarget(w, h, {
-      colorSpace: THREE.SRGBColorSpace,
       minFilter: THREE.LinearFilter,
       magFilter: THREE.LinearFilter,
       type: THREE.HalfFloatType,
@@ -454,6 +466,13 @@ export class RenderPipeline {
   private _renderWebGL(scene: THREE.Scene, camera: THREE.Camera): void {
     const renderer = this._renderer as THREE.WebGLRenderer
     const autoClearBackup = renderer.autoClear
+    // Render the scene to a LINEAR HDR RT (no tone mapping) so the composite pass
+    // can apply ACES exactly once. Restored before returning so the WebGPU
+    // direct-render path (which relies on renderer.toneMapping=ACES) is unaffected.
+    // Without this, three applies ACES on BOTH the scene→RT pass AND the
+    // composite→screen pass → double tone mapping (washed-out highlights).
+    const toneMappingBackup = renderer.toneMapping
+    renderer.toneMapping = THREE.NoToneMapping
     
     const rtScene = this._rtScene!
     const rtBloomA = this._rtBloomA!
@@ -505,6 +524,7 @@ export class RenderPipeline {
     this._renderQuad(passComposite, {}, null, renderer)
     
     renderer.autoClear = autoClearBackup
+    renderer.toneMapping = toneMappingBackup
   }
   
   // ─── Rendering: WebGPU (TSL post-processing) ─────────────────
