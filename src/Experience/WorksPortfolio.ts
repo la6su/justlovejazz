@@ -22,7 +22,8 @@ export class WorksPortfolio {
   private vel = 0
   private lastX = 0
   private lastT = 0
-  private textures: (THREE.Texture | null)[] = []
+  // Public for Experience to re-apply on works section entry (Bug 4).
+  textures: (THREE.Texture | null)[] = []
   private texturesLoaded = false
   private baku: THREE.Object3D | null = null
   private expanding = false

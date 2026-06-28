@@ -120,6 +120,12 @@ export class ProjectOverlay {
     this._isOpen = true
     this.container.style.opacity = '1'
     this.container.style.pointerEvents = 'auto'
+    // Lock background scroll — the overlay is fixed but the page behind would
+    // still scroll (scroll-snap mandatory fights the overlay). Stop Lenis +
+    // set body overflow:hidden.
+    document.body.style.overflow = 'hidden'
+    const exp = (window as unknown as { experience?: { smoothScroll?: { lenis: { stop: () => void } } } }).experience
+    exp?.smoothScroll?.lenis?.stop()
     // Record the element that had focus before opening so we can restore it.
     this._previouslyFocused = document.activeElement as HTMLElement | null
     // Move focus into the dialog (close button) so keyboard users land inside.
@@ -130,6 +136,10 @@ export class ProjectOverlay {
     this._isOpen = false
     this.container.style.opacity = '0'
     this.container.style.pointerEvents = 'none'
+    // Unlock background scroll.
+    document.body.style.overflow = ''
+    const exp = (window as unknown as { experience?: { smoothScroll?: { lenis: { start: () => void } } } }).experience
+    exp?.smoothScroll?.lenis?.start()
     // Restore focus to the element that opened the dialog (WCAG 2.4.3).
     this._previouslyFocused?.focus?.()
     this._previouslyFocused = null
