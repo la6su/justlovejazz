@@ -211,10 +211,16 @@ export class Experience {
         configId: cfgForSection?.id,
         index: idx,
       })
-      // Clear project textures from baku when leaving works section (idx !== 3).
-      // Prevents project images showing on cube during intro/about/etc.
-      if (idx !== 3) {
-        const cube = this.world.baku as unknown as { clearProjectTextures?: () => void } | undefined
+      // Bug 4: re-apply project textures when ENTERING works section (idx === 3).
+      // Textures are applied once during init, but clearProjectTextures() is called
+      // when scrolling through other sections — so they must be re-applied on entry.
+      // When LEAVING works (idx !== 3), clear textures so the cube is clean glass.
+      const cube = this.world.baku as unknown as
+        | { setProjectTextures?: (t: (THREE.Texture | null)[]) => void; clearProjectTextures?: () => void }
+        | undefined
+      if (idx === 3 && this.portfolio) {
+        cube?.setProjectTextures?.(this.portfolio.textures)
+      } else {
         cube?.clearProjectTextures?.()
       }
     }

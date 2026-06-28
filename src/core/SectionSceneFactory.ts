@@ -88,24 +88,6 @@ export class SectionSceneFactory {
     })
     g.add(makeParticles(pc(30), new THREE.Vector3(14, 7, 8), 0xaaaaaa, 0.035, 0.2))
 
-    // Bug 6: junni "flexible/elastic object" pattern — a rotating wireframe
-    // icosahedron adds geometric depth beyond the flat text textures.
-    // Wireframe + low opacity keeps it subtle against the light bg.
-    const flexGeo = new THREE.IcosahedronGeometry(1.4, 1)
-    const flexMat = new THREE.MeshBasicMaterial({
-      color: 0x222222,
-      wireframe: true,
-      transparent: true,
-      opacity: 0.25,
-    })
-    const flexMesh = new THREE.Mesh(flexGeo, flexMat)
-    flexMesh.name = 'flexible-object'
-    flexMesh.position.set(0, 0, 0)
-    flexMesh.userData.keepVisible = true
-    flexMat.userData.baseOpacity = 0.25
-    g.add(flexMesh)
-    g.userData.flexibleObject = flexMesh
-
     return g
   }
 

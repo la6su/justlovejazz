@@ -223,12 +223,6 @@ export class World extends THREE.Group {
       const slides = group.userData.flexibleSlides as
         import('../Experience/World/Sections/FlexibleSlides').FlexibleSlides | undefined
       if (slides) slides.update(deltaTime)
-      // Bug 6: rotate the flexible wireframe object (junni elastic pattern).
-      const flexObj = group.userData.flexibleObject as THREE.Mesh | undefined
-      if (flexObj && !this.isReducedMotion) {
-        flexObj.rotation.y += deltaTime * 0.3
-        flexObj.rotation.x += deltaTime * 0.15
-      }
     }
   }
 

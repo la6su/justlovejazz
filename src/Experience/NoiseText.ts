@@ -98,16 +98,18 @@ export class NoiseText {
       clearTimeout(this.timeoutId)
       this.timeoutId = null
     }
-    // Strip inline styles from the animation spans IN PLACE instead of
-    // swapping innerHTML to textContent. Replacing with textContent caused a
-    // layout pop: the animated spans were display:inline-block with
-    // transform/filter (subpixel rendering + letter-spacing trailing differ
-    // from plain text nodes), so the title shifted ~1px at animation end.
-    // Removing the style attributes lets the spans render as plain inline
-    // text — identical metrics to the pre-animation state, no shift.
+    // Set spans to their final resting state IN PLACE (do NOT removeAttribute
+    // style — that drops display:inline-block → inline, causing a letter-spacing
+    // shift). Keep display:inline-block so the box model matches the during-anim
+    // state exactly. Set transform='none' and filter='none' (NOT translateY(0)/
+    // blur(0px)) — 'none' removes the compositing layer + filter pipeline, which
+    // changes subpixel AA vs the animated state. opacity='1' is the final value.
     const spans = this.el.children
     for (let i = 0; i < spans.length; i++) {
-      ;(spans[i] as HTMLElement).removeAttribute('style')
+      const sp = spans[i] as HTMLElement
+      sp.style.opacity = '1'
+      sp.style.transform = 'none'
+      sp.style.filter = 'none'
     }
   }
 
