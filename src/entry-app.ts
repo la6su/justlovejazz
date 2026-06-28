@@ -58,20 +58,24 @@ export async function startApp(): Promise<void> {
     animateNoiseTitles()
   })
 
-  // Re-animate on section change (scroll between sections) — but ONLY after
-  // webgl-ready has fired (prevents animation running behind splash).
+  // Sync NoiseText with UIkit scrollspy: an IntersectionObserver watches each
+  // .studio-title and fires the blur animation exactly when the title enters
+  // the viewport (the same moment scrollspy adds uk-scrollspy-inview). This
+  // replaces the old jlz:section-change trigger which fired separately from
+  // scrollspy, causing the blur animation to run out of sync with the fade-in.
+  if (webglReady) {
+    setupTitleObserver()
+  } else {
+    eventBus.on('jlz:webgl-ready', () => setupTitleObserver())
+  }
+
+  // Keep the section-change handler ONLY for UIkit scrollspy refresh (Lenis
+  // smooth scroll doesn't always trigger UIkit's scroll listener at the right time).
   eventBus.on('jlz:section-change', (payload) => {
-    if (!webglReady) return
-    animateNoiseTitles()
-    // Force UIkit scrollspy to re-evaluate the active section's elements.
-    // With Lenis smooth scroll, UIkit's scroll listener may not fire at the
-    // right time, leaving uk-scrollspy elements at opacity:0. Calling update()
-    // on the active section triggers scrollspy's viewport check.
     const sec = document.querySelector(`[data-section="${payload.sectionId}"]`)
     if (sec) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ;(UIkit as any).update(sec)
-      // Also manually trigger scrollspy for elements with uk-scrollspy
       sec.querySelectorAll<HTMLElement>('[uk-scrollspy]').forEach((el) => {
         const rect = el.getBoundingClientRect()
         const inView = rect.top < window.innerHeight && rect.bottom > 0
@@ -90,6 +94,35 @@ export async function startApp(): Promise<void> {
   })
   eventBus.on('jlj:navigate', scheduleUiKitRefresh)
   void boot()
+}
+
+/**
+ * IntersectionObserver that fires NoiseText when a .studio-title enters the
+ * viewport — synchronized with UIkit scrollspy's viewport entry. Both the
+ * scrollspy fade-in and the NoiseText blur animation start at the same moment.
+ */
+function setupTitleObserver(): void {
+  const titles = document.querySelectorAll<HTMLElement>('.studio-title')
+  if (titles.length === 0) return
+  const observer = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          const el = entry.target as HTMLElement
+          // Skip leaf lines (they're animated via their parent)
+          const leafEls = document.querySelectorAll<HTMLElement>('.studio-title__line')
+          const isLeaf = Array.from(leafEls).some((l) => l === el)
+          if (isLeaf) continue
+          const hasLeafChild = Array.from(leafEls).some((l) => l.closest('.studio-title') === el)
+          if (hasLeafChild) continue
+          const text = el.textContent?.trim() || ''
+          if (text) NoiseText.for(el).show(1.2)
+        }
+      }
+    },
+    { threshold: 0.15 },
+  )
+  titles.forEach((t) => observer.observe(t))
 }
 
 /**
