@@ -239,6 +239,7 @@ export class RenderPipeline {
   // Section grade values (stored so setSectionGrade works before WebGL composite is built)
   private _sectionRefract = 0.05
   private _sectionBorder = 0.0
+  private _globalBorder = 0.4
   private _sectionShadows = new THREE.Vector3(1, 1, 1)
   private _sectionHighlights = new THREE.Vector3(1, 1, 1)
 
@@ -310,10 +311,16 @@ export class RenderPipeline {
       // Re-apply section grade (stored in _sectionRefract/Shadows/Highlights)
       // so it survives updateParams calls from PostProcessingManager.
       this._passComposite.uniforms.uRefract!.value = this._sectionRefract
-      this._passComposite.uniforms.uBorder!.value = this._sectionBorder
+      this._passComposite.uniforms.uBorder!.value = Math.max(this._sectionBorder, this._globalBorder)
       ;(this._passComposite.uniforms.uGradeShadows!.value as THREE.Vector3).copy(this._sectionShadows)
       ;(this._passComposite.uniforms.uGradeHighlights!.value as THREE.Vector3).copy(this._sectionHighlights)
     }
+  }
+
+  /** Set global screen border intensity (0=off, 1=full black). One border
+   *  for ALL sections — not per-section. */
+  public setGlobalBorder(intensity: number): void {
+    this._globalBorder = intensity
   }
 
   /** Set section-driven color grading (shadows tint, highlights tint, refraction). */
@@ -361,15 +368,16 @@ export class RenderPipeline {
       return
     }
 
-    // WebGL2 path (either native WebGLRenderer OR WebGPURenderer with WebGLBackend fallback).
-    // _setupWebGL() is only called when !_isWebGPU, so for the fallback case we need to
-    // lazily init the WebGL composite here.
-    if (this._isWebGPU && !this._passComposite && !isRealWebGPU) {
-      this._setupWebGL()
+    // WebGLBackend fallback: WebGPURenderer with WebGLBackend cannot compile
+    // ShaderMaterial (THREE.NodeBuilder incompatibility). Use direct render —
+    // border/vignette/grain are applied via CSS overlay (see BorderOverlay).
+    if (this._isWebGPU && !isRealWebGPU) {
+      this._renderer.render(scene, camera)
+      return
     }
 
-    if (!this._config.bloomEnabled && !this._config.vignetteEnabled && !this._config.grainEnabled && this._sectionBorder <= 0) {
-      // Fast path: no post-processing
+    // Native WebGL2 path (WebGLRenderer, not WebGPURenderer).
+    if (!this._config.bloomEnabled && !this._config.vignetteEnabled && !this._config.grainEnabled && this._sectionBorder <= 0 && this._globalBorder <= 0) {
       this._renderer.render(scene, camera)
       return
     }
@@ -632,7 +640,7 @@ export class RenderPipeline {
     passComposite.uniforms.uChromatic!.value = this._params.chromatic ?? 0
     passComposite.uniforms.uTime!.value = performance.now() * 0.001
     passComposite.uniforms.uRefract!.value = this._sectionRefract
-    passComposite.uniforms.uBorder!.value = this._sectionBorder
+    passComposite.uniforms.uBorder!.value = Math.max(this._sectionBorder, this._globalBorder)
     ;(passComposite.uniforms.uGradeShadows!.value as THREE.Vector3).copy(this._sectionShadows)
     ;(passComposite.uniforms.uGradeHighlights!.value as THREE.Vector3).copy(this._sectionHighlights)
     // Refraction + grade are set via setSectionGrade() — they persist across frames.

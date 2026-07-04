@@ -8,6 +8,7 @@ import { WebGPURenderer } from 'three/webgpu'
 // fragmentShader → resolveIncludes(undefined) crash on first frame.
 // (three r0.184 does not auto-register this.)
 import { WebGLNodesHandler } from 'three/addons/tsl/WebGLNodesHandler.js'
+import { setTransmissionEnabled } from './World/SplashCube'
 import { Sizes } from './Sizes'
 import { DeviceCapability } from '../core/DeviceCapability'
 import { type WorldState } from '../core/types'
@@ -161,6 +162,19 @@ export class Renderer {
       this.sizes.height,
       this._pipelineConfig,
     )
+
+    // Fix: if WebGPURenderer fell back to WebGLBackend, transmission on
+    // MeshPhysicalNodeMaterial triggers ViewportTextureNode.getCanvasTarget()
+    // which doesn't exist on the fallback path → runtime crash. Disable
+    // transmission entirely on non-real-WebGPU (use opacity-only glass).
+    const isRealWebGPU = (this.instance as any).isWebGPURenderer
+      && (this.instance as any).backend?.constructor?.name === 'WebGPUBackend'
+    if (!isRealWebGPU) {
+      setTransmissionEnabled(false)
+      if ((this.instance as any).isWebGPURenderer) {
+        console.info('[Renderer] WebGPU unavailable — WebGL2 fallback (transmission disabled)')
+      }
+    }
   }
 
   private _fog!: THREE.FogExp2

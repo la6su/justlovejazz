@@ -20,6 +20,16 @@ export interface BakuMaterialParams {
   role: BakuRole
 }
 
+// Set to false when WebGPU backend is not available (WebGL2 fallback).
+// transmission on MeshPhysicalNodeMaterial crashes on WebGLBackend
+// (ViewportTextureNode.getCanvasTarget not a function).
+let transmissionEnabled = true
+
+/** Called by Renderer.init() to disable transmission on WebGL2 fallback. */
+export function setTransmissionEnabled(enabled: boolean): void {
+  transmissionEnabled = enabled
+}
+
 export class SplashCube extends THREE.Mesh {
   private faces: THREE.Mesh[] = []
   private faceMaterials: MeshPhysicalNodeMaterial[] = []
@@ -88,7 +98,7 @@ export class SplashCube extends THREE.Mesh {
         iridescenceIOR: 1.8,
         clearcoat: 1.0,
         clearcoatRoughness: 0.05,
-        transmission: 0.9,
+        transmission: transmissionEnabled ? 0.9 : 0,
         thickness: 0.5,
         ior: 1.5,
       })
@@ -152,8 +162,8 @@ export class SplashCube extends THREE.Mesh {
   clearProjectTextures(): void {
     for (let i = 0; i < 4; i++) {
       this.faceMaterials[i]!.map = null
-      this.faceMaterials[i]!.transmission = 0.85
-      this.faceMaterials[i]!.opacity = 0.35
+      this.faceMaterials[i]!.transmission = transmissionEnabled ? 0.85 : 0
+      this.faceMaterials[i]!.opacity = transmissionEnabled ? 0.35 : 0.6
       this.faceMaterials[i]!.emissiveIntensity = 0.3
       this.faceMaterials[i]!.needsUpdate = true
     }
@@ -287,8 +297,8 @@ export class SplashCube extends THREE.Mesh {
         mat.transmission = 0
       } else {
         // All non-textured roles use glass transmission.
-        mat.opacity = 0.35
-        mat.transmission = 0.85
+        mat.opacity = transmissionEnabled ? 0.35 : 0.6
+        mat.transmission = transmissionEnabled ? 0.85 : 0
       }
       mat.needsUpdate = true
     }
