@@ -36,8 +36,9 @@ export class DrawTrail {
     const material = new THREE.LineBasicMaterial({
       vertexColors: true,
       transparent: true,
-      opacity: 0.8,
+      opacity: 1.0,
       depthWrite: false,
+      depthTest: false,
       blending: THREE.AdditiveBlending,
     })
 
@@ -98,9 +99,9 @@ export class DrawTrail {
       const fade = 1.0 - i / TRAIL_LENGTH
       const intensity = fade * fade
       // Accent color trail (matches --jlz-color-accent #515d84)
-      this.colors[i * 3] = intensity * 0.32 // R
-      this.colors[i * 3 + 1] = intensity * 0.36 // G
-      this.colors[i * 3 + 2] = intensity * 0.52 // B
+      this.colors[i * 3] = intensity * 0.5 // R
+      this.colors[i * 3 + 1] = intensity * 0.6 // G
+      this.colors[i * 3 + 2] = intensity * 1.0 // B
     }
 
     this.geometry.attributes.position!.needsUpdate = true
