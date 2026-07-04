@@ -237,8 +237,6 @@ export class RenderPipeline {
 
   /** TSL post-processing pipeline for WebGPU path (lazy-built on first render). */
   private _webgpuPipeline: WebGPUPostPipeline | null = null
-  private _sceneRef: THREE.Scene | null = null
-  private _cameraRef: THREE.Camera | null = null
 
   private constructor() {
     this._params = {
@@ -321,8 +319,9 @@ export class RenderPipeline {
 
   /** Render: scene → post passes → screen */
   public render(scene: THREE.Scene, camera: THREE.Camera): void {
-    if (this._isWebGPU) {
-      // WebGPU: TSL RenderPipeline + PassNode + BloomNode + vignette/grain Fn.
+    if (this._isWebGPU && (this._renderer as any).backend?.constructor?.name === 'WebGPUBackend') {
+      // WebGPU native: TSL RenderPipeline + PassNode + BloomNode + vignette/grain Fn.
+      // Only use TSL pipeline when WebGPU is actually available (not WebGL2 fallback).
       // Built lazily on first render (needs live scene+camera refs).
       if (!this._webgpuPipeline) {
         this._webgpuPipeline = WebGPUPostPipeline.create(
@@ -339,6 +338,10 @@ export class RenderPipeline {
         bloomThreshold: this._params.bloomThreshold,
         vignette: this._params.vignette,
         grain: this._params.grain,
+        chromatic: this._params.chromatic,
+        refract: this._sectionRefract,
+        gradeShadows: [this._sectionShadows.x, this._sectionShadows.y, this._sectionShadows.z],
+        gradeHighlights: [this._sectionHighlights.x, this._sectionHighlights.y, this._sectionHighlights.z],
       })
       this._webgpuPipeline.render()
       return
