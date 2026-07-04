@@ -267,6 +267,19 @@ export class Renderer {
       this.pipeline.updateParams(pp)
     }
 
+    // Safety: disable classic fog on any NodeMaterials in the scene.
+    // NodeMaterial handles fog via TSL setupFog() internally, but WebGLRenderer
+    // calls refreshFogUniforms which crashes (classic fog uniforms don't exist
+    // in NodeMaterial-compiled programs). This catches materials created after init.
+    if (!(this.instance as any).isWebGPURenderer ||
+        (this.instance as any).backend?.constructor?.name !== 'WebGPUBackend') {
+      scene.traverse((obj: any) => {
+        if (obj.material?.isNodeMaterial && obj.material.fog === true) {
+          obj.material.fog = false
+        }
+      })
+    }
+
     // Render scene → post → screen
     if (this.pipeline) {
       this.pipeline.render(scene, camera)
