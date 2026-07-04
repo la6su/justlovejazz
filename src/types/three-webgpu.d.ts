@@ -24,6 +24,22 @@ declare module 'three/webgpu' {
     domElement: HTMLCanvasElement
   }
 
+  // ── TSL Render Pipeline (post-processing) ──
+  export class PassNode {
+    constructor(scene: any, camera: any)
+    getTextureNode(name?: string): any
+    setMRT(mrt: any): void
+  }
+
+  export class RenderPipeline {
+    constructor(renderer: WebGPURenderer, outputNode?: any)
+    outputNode: any
+    render(): void
+    renderAsync(): Promise<void>
+    dispose(): void
+    setSize(width: number, height: number): void
+  }
+
   // ── Node materials ──
   export class MeshBasicNodeMaterial extends Material {
     constructor(parameters?: {})

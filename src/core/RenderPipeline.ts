@@ -1,11 +1,15 @@
-// src/core/RenderPipeline.ts — Multi-pass post-processing pipeline (Junni-style pattern)
+// src/core/RenderPipeline.ts — Multi-pass post-processing pipeline (Junji-style pattern)
 //
-// Pipeline: scene → rt1(bright-extract) → gaussian blur(x2, ping-pong) → composite(scene+bloom+grain+vignette) → screen
-// Supports both WebGPU(RenderTarget+TSL fullscreen) and WebGL(WebGLRenderTarget+ShaderMaterial).
-// Zero `any` types. Explicit capability gating. Proper memory disposal.
+// Two paths:
+//   WebGPU:  TSL RenderPipeline + PassNode + BloomNode + vignette/grain Fn nodes
+//            (delegated to WebGPUPostPipeline — no ShaderMaterial)
+//   WebGL2:  scene → rt1(bright-extract) → gaussian blur(x2, ping-pong) →
+//            composite(scene+bloom+grain+vignette+chromatic+refraction+grade) → screen
+// Zero `any` types in WebGL path. Explicit capability gating. Proper memory disposal.
 
 import * as THREE from 'three'
 import { WebGPURenderer } from 'three/webgpu'
+import { WebGPUPostPipeline } from './WebGPUPostPipeline'
 
 // ─── Configuration ───────────────────────────────────────────────
 
@@ -231,6 +235,11 @@ export class RenderPipeline {
   /** Flag: is this a WebGPU renderer? */
   private _isWebGPU = false
 
+  /** TSL post-processing pipeline for WebGPU path (lazy-built on first render). */
+  private _webgpuPipeline: WebGPUPostPipeline | null = null
+  private _sceneRef: THREE.Scene | null = null
+  private _cameraRef: THREE.Camera | null = null
+
   private constructor() {
     this._params = {
       bloom: 1.0,
@@ -312,18 +321,26 @@ export class RenderPipeline {
 
   /** Render: scene → post passes → screen */
   public render(scene: THREE.Scene, camera: THREE.Camera): void {
-    // PERF: On WebGPU (especially Chrome's WebGPU-over-ANGLE-OpenGL backend),
-    // the TSL pipeline (pass() + getTextureNode + RenderPipeline composite)
-    // does double rendering: scene→RT, then RT→screen via QuadMesh. This
-    // halves performance. Since bloom/grain/vignette are already disabled
-    // on WebGPU (Hermes removed them), the TSL pipeline adds overhead with
-    // zero visual benefit. Use direct renderer.render() on WebGPU.
     if (this._isWebGPU) {
-      // WebGPURenderer cannot compile ShaderMaterial (THREE.NodeBuilder
-      // incompatibility) — refraction + color grade are WebGL2-only.
-      // WebGPU gets direct render (ACES via renderer.toneMapping). This
-      // matches the original perf decision (HERMES removed WebGPU post).
-      this._renderer.render(scene, camera)
+      // WebGPU: TSL RenderPipeline + PassNode + BloomNode + vignette/grain Fn.
+      // Built lazily on first render (needs live scene+camera refs).
+      if (!this._webgpuPipeline) {
+        this._webgpuPipeline = WebGPUPostPipeline.create(
+          this._renderer as WebGPURenderer,
+          scene,
+          camera,
+        )
+      }
+      this._webgpuPipeline.setScene(scene, camera)
+      // Push current params (bloom/vignette/grain) into TSL uniforms.
+      this._webgpuPipeline.updateParams({
+        bloom: this._params.bloom,
+        bloomRadius: this._params.bloomRadius,
+        bloomThreshold: this._params.bloomThreshold,
+        vignette: this._params.vignette,
+        grain: this._params.grain,
+      })
+      this._webgpuPipeline.render()
       return
     }
 
@@ -381,6 +398,10 @@ export class RenderPipeline {
     this._passBlur = null
     this._passComposite = null
     this._quad = null
+
+    // WebGPU TSL pipeline cleanup.
+    this._webgpuPipeline?.dispose()
+    this._webgpuPipeline = null
 
     // WebGPU: drop native pipeline + uniform node refs. The native
     // RenderPipeline does not expose an explicit dispose in r184 — GPU
