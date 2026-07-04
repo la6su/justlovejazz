@@ -111,6 +111,7 @@ export class DevPanel {
     this.buildWorldFolder()
     this.buildLiquidFolder()
     this.buildPerfFolder()
+    this.buildAudioFolder()
     this.buildRenderFolder()
 
     this.bindToggle()
@@ -203,6 +204,36 @@ export class DevPanel {
       monitor.triangles = s.triangles ?? 0
       f.refresh()
     }, 500)
+  }
+
+  private buildAudioFolder(): void {
+    const f = this.pane.addFolder({ title: 'Audio (reactive)' })
+    f.addButton({ title: 'Start (gesture)' }).on('click', () => {
+      this.exp.audio.start()
+    })
+    f.addButton({ title: 'Load demo track' }).on('click', () => {
+      this.exp.audio.start()
+      this.exp.audio.load('/audio/demo.mp3').catch(() => {
+        console.warn('[DevPanel] No demo track at /audio/demo.mp3')
+      })
+    })
+    f.addButton({ title: 'Connect mic' }).on('click', () => {
+      this.exp.audio.start()
+      this.exp.audio.connectMicrophone()
+    })
+    const monitor = { bass: 0, mid: 0, treble: 0, level: 0 }
+    f.addBinding(monitor, 'bass', { readonly: true, min: 0, max: 1 })
+    f.addBinding(monitor, 'mid', { readonly: true, min: 0, max: 1 })
+    f.addBinding(monitor, 'treble', { readonly: true, min: 0, max: 1 })
+    f.addBinding(monitor, 'level', { readonly: true, min: 0, max: 1 })
+    this.perfInterval && clearInterval(this.perfInterval)
+    this.perfInterval = setInterval(() => {
+      monitor.bass = this.exp.audio.getBass()
+      monitor.mid = this.exp.audio.getMid()
+      monitor.treble = this.exp.audio.getTreble()
+      monitor.level = this.exp.audio.getLevel()
+      f.refresh()
+    }, 100)
   }
 
   private buildRenderFolder(): void {
