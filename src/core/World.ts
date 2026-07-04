@@ -12,6 +12,7 @@ import { CursorLight } from '../Experience/World/CursorLight'
 import { DrawTrail } from '../Experience/World/DrawTrail'
 import { SplashCube } from '../Experience/World/SplashCube'
 import { getWorldConfigForPage, type PhaseConfig } from './WorldConfig'
+import { getCameraAnchors, type CameraAnchor } from './CameraAnchors'
 import { SectionSceneFactory } from './SectionSceneFactory'
 import { disposeMaterialDeep } from '../Utils/dispose'
 import type { WorldAtmosphere } from './WorldAtmosphere'
@@ -110,6 +111,17 @@ export class World extends THREE.Group {
     await this.ensureAtmosphere()
     const pageKey = (document.body?.getAttribute('data-page') || 'home').split('-')[0] ?? 'home'
     this.configs = getWorldConfigForPage(pageKey)
+    // Register camera anchors from WorldConfig (Blender-style named points).
+    const anchors = getCameraAnchors()
+    this.configs.forEach((cfg, i) => {
+      anchors.register({
+        name: cfg.domSection,
+        sectionIndex: i,
+        position: cfg.camera.position.clone(),
+        lookAt: cfg.camera.target.clone(),
+        fov: cfg.camera.fov,
+      } satisfies CameraAnchor)
+    })
     this.disposeSections()
     this.disposeSceneGroups()
 

@@ -333,6 +333,19 @@ export class Experience {
     this.world.lightsGroup.update(dt)
     this.camera.update(dt)
     this.renderer.update(this.scene, this.camera.instance, dt, worldState)
+
+    // Performance profiling — feed renderer info to PerfMonitor (DEV only).
+    if (import.meta.env.DEV) {
+      const r = this.renderer.instance as unknown as {
+        isWebGPURenderer?: boolean
+        info?: { render?: { calls?: number; triangles?: number } }
+      }
+      PerfMonitor.setRendererInfo(
+        r.isWebGPURenderer ? 'webgpu' : 'webgl',
+        r.info?.render?.calls ?? null,
+        r.info?.render?.triangles ?? null,
+      )
+    }
     // NOTE: do NOT call requestAnimationFrame here — setAnimationLoop (set in
     // init()) drives the loop. Calling rAF on top would double the frame rate
     // and fight the WebGPU swap chain synchronization.

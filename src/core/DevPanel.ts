@@ -175,21 +175,32 @@ export class DevPanel {
 
   private buildPerfFolder(): void {
     const f = this.pane.addFolder({ title: 'Performance' })
-    const monitor = { fps: 0, longTasks: 0, heap: 0, renderer: '?' }
+    const monitor = {
+      fps: 0,
+      frameTime: 0,
+      longTasks: 0,
+      heap: 0,
+      renderer: '?',
+      drawCalls: 0,
+      triangles: 0,
+    }
     f.addBinding(monitor, 'fps', { readonly: true, label: 'fps' })
+    f.addBinding(monitor, 'frameTime', { readonly: true, label: 'frame ms' })
+    f.addBinding(monitor, 'renderer', { readonly: true, label: 'backend' })
+    f.addBinding(monitor, 'drawCalls', { readonly: true, label: 'draw calls' })
+    f.addBinding(monitor, 'triangles', { readonly: true, label: 'triangles' })
     f.addBinding(monitor, 'longTasks', { readonly: true, label: 'long tasks' })
     f.addBinding(monitor, 'heap', { readonly: true, label: 'heap MB' })
-    f.addBinding(monitor, 'renderer', { readonly: true, label: 'backend' })
     // Store interval handle so dispose() can clear it (prevents leak).
     this.perfInterval = setInterval(() => {
       const s = PerfMonitor.snapshot
       monitor.fps = s.fps
+      monitor.frameTime = s.frameTimeMs
       monitor.longTasks = s.longTaskCount
       monitor.heap = s.usedHeapMB ?? 0
-      monitor.renderer = (this.renderer.instance as unknown as { isWebGPURenderer?: boolean })
-        .isWebGPURenderer
-        ? 'WebGPU'
-        : 'WebGL2'
+      monitor.renderer = s.rendererBackend === 'webgpu' ? 'WebGPU' : 'WebGL2'
+      monitor.drawCalls = s.drawCalls ?? 0
+      monitor.triangles = s.triangles ?? 0
       f.refresh()
     }, 500)
   }

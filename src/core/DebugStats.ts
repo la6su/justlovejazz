@@ -15,24 +15,36 @@ interface BrowserPerformanceWithMemory extends Performance {
 export class DebugStats {
   private container: HTMLDivElement
   private fpsDisplay: HTMLDivElement
+  private frameTimeDisplay: HTMLDivElement
+  private backendDisplay: HTMLDivElement
   private memDisplay: HTMLDivElement
   private geoDisplay: HTMLDivElement
+  private drawDisplay: HTMLDivElement
 
   private lastTime: number = 0
   private frames: number = 0
   private fps: number = 0
+  private lastFrameTime: number = 0
+  private smoothedFrameTime: number = 0
+  private backend: string = '?'
 
   constructor(renderer: RenderWithInfo) {
     this.container = document.createElement('div')
     this.container.className = 'debug-stats'
 
     this.fpsDisplay = this.createStatLine('FPS: ')
+    this.frameTimeDisplay = this.createStatLine('FT: ')
+    this.backendDisplay = this.createStatLine('API: ')
     this.memDisplay = this.createStatLine('MEM: ')
     this.geoDisplay = this.createStatLine('GEO: ')
+    this.drawDisplay = this.createStatLine('DRAW: ')
 
     this.container.appendChild(this.fpsDisplay)
+    this.container.appendChild(this.frameTimeDisplay)
+    this.container.appendChild(this.backendDisplay)
     this.container.appendChild(this.memDisplay)
     this.container.appendChild(this.geoDisplay)
+    this.container.appendChild(this.drawDisplay)
 
     document.body.appendChild(this.container)
     this.renderer = renderer
@@ -48,6 +60,13 @@ export class DebugStats {
   }
 
   update(time: number) {
+    // Frame time (smoothed)
+    if (this.lastFrameTime > 0) {
+      const dt = time - this.lastFrameTime
+      this.smoothedFrameTime = this.smoothedFrameTime === 0 ? dt : this.smoothedFrameTime * 0.9 + dt * 0.1
+    }
+    this.lastFrameTime = time
+
     // FPS Calculation
     this.frames++
     if (time > this.lastTime + 1000) {
@@ -55,6 +74,13 @@ export class DebugStats {
       this.frames = 0
       this.lastTime = time
       this.fpsDisplay.innerText = `FPS: ${this.fps}`
+      this.frameTimeDisplay.innerText = `FT: ${this.smoothedFrameTime.toFixed(1)}ms`
+      // Backend + draw calls (updated once per second)
+      const isWebGPU = (this.renderer as unknown as { isWebGPURenderer?: boolean }).isWebGPURenderer
+      this.backend = isWebGPU ? 'WebGPU' : 'WebGL2'
+      this.backendDisplay.innerText = `API: ${this.backend}`
+      const info = (this.renderer as THREE.WebGLRenderer).info
+      this.drawDisplay.innerText = `DRAW: ${info.render.calls} | TRI: ${info.render.triangles}`
     }
 
     // Memory Calculation (Chrome only for JS heap)

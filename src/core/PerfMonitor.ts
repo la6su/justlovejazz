@@ -12,10 +12,18 @@
 
 interface PerfSnapshot {
   fps: number
+  /** Smoothed frame time in ms (16.7 = 60fps target). */
+  frameTimeMs: number
   longTaskCount: number
   longestTaskMs: number
   usedHeapMB: number | null
   heapLimitMB: number | null
+  /** Renderer backend ('webgpu' | 'webgl' | 'unknown'). */
+  rendererBackend: string
+  /** Draw calls (from renderer.info.render.calls, WebGL only). */
+  drawCalls: number | null
+  /** Triangle count (from renderer.info.render.triangles). */
+  triangles: number | null
 }
 
 interface BrowserPerformanceWithMemory extends Performance {
@@ -32,8 +40,13 @@ class PerfMonitorImpl {
 
   // FPS (rAF-based, exponential smoothing)
   private fps = 0
+  private frameTimeMs = 0
   private lastFrame = 0
   private rafId: number | null = null
+  // Renderer info (set by Experience.update each frame)
+  private rendererBackend = 'unknown'
+  private drawCalls: number | null = null
+  private triangles: number | null = null
 
   start(): void {
     if (typeof PerformanceObserver === 'undefined') return
@@ -58,8 +71,10 @@ class PerfMonitorImpl {
       this.lastFrame = now
       if (delta > 0) {
         const instantFps = 1000 / delta
+        const instantFrameTime = delta
         // Exponential smoothing (alpha 0.1)
         this.fps = this.fps === 0 ? instantFps : this.fps * 0.9 + instantFps * 0.1
+        this.frameTimeMs = this.frameTimeMs === 0 ? instantFrameTime : this.frameTimeMs * 0.9 + instantFrameTime * 0.1
       }
       this.rafId = requestAnimationFrame(tick)
     }
@@ -77,15 +92,26 @@ class PerfMonitorImpl {
     }
   }
 
+  /** Set renderer info (called by Experience.update each frame). */
+  setRendererInfo(backend: string, drawCalls: number | null, triangles: number | null): void {
+    this.rendererBackend = backend
+    this.drawCalls = drawCalls
+    this.triangles = triangles
+  }
+
   get snapshot(): PerfSnapshot {
     const perf = performance as BrowserPerformanceWithMemory
     const mem = perf.memory
     return {
       fps: Math.round(this.fps),
+      frameTimeMs: Math.round(this.frameTimeMs * 10) / 10,
       longTaskCount: this.longTaskCount,
       longestTaskMs: Math.round(this.longestTaskMs),
       usedHeapMB: mem ? Math.round(mem.usedJSHeapSize / 1048576) : null,
       heapLimitMB: mem ? Math.round(mem.jsHeapSizeLimit / 1048576) : null,
+      rendererBackend: this.rendererBackend,
+      drawCalls: this.drawCalls,
+      triangles: this.triangles,
     }
   }
 
@@ -103,7 +129,8 @@ export const PerfMonitor: PerfMonitorImpl = import.meta.env.DEV
       start() {},
       stop() {},
       reset() {},
+      setRendererInfo() {},
       get snapshot() {
-        return { fps: 0, longTaskCount: 0, longestTaskMs: 0, usedHeapMB: null, heapLimitMB: null }
+        return { fps: 0, frameTimeMs: 0, longTaskCount: 0, longestTaskMs: 0, usedHeapMB: null, heapLimitMB: null, rendererBackend: 'unknown', drawCalls: null, triangles: null }
       },
     } as unknown as PerfMonitorImpl)
