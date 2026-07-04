@@ -317,6 +317,18 @@ export class RenderPipeline {
     }
   }
 
+  /** Update the WebGPU flag after a renderer switch (WebGPURenderer → WebGLRenderer). */
+  public setWebGPU(isWebGPU: boolean): void {
+    this._isWebGPU = isWebGPU
+  }
+
+  /** Lazily set up WebGL post-processing passes if not already done. */
+  public setupWebGLIfNeeded(): void {
+    if (!this._passComposite && !this._isWebGPU) {
+      this._setupWebGL()
+    }
+  }
+
   /** Set global screen border intensity (0=off, 1=full black). One border
    *  for ALL sections — not per-section. */
   public setGlobalBorder(intensity: number): void {
