@@ -2,27 +2,37 @@
   "ci": {
     "collect": {
       "staticDistDir": "./dist",
-      "url": ["http://localhost/index.html"],
+      "url": [
+        "http://localhost/index.html"
+      ],
       "numberOfRuns": 3
     },
     "assert": {
       "assertions": {
-        "first-contentful-paint": ["warn", { "maxNumericValue": 1800 }],
-        "largest-contentful-paint": ["warn", { "maxNumericValue": 2800 }],
-        "total-blocking-time": ["warn", { "maxNumericValue": 300 }],
-        "interactive": ["warn", { "maxNumericValue": 3800 }],
-        "unused-javascript": "off",
-        "unused-css-rules": "off",
-        "csp-xss": "off",
-        "installable-manifest": "off",
-        "maskable-icon": "off",
-        "splash-screen": "off",
-        "themed-omnibox": "off",
-        "color-contrast": "off",
-        "button-name": "off",
-        "tap-targets": "off",
-        "target-size": "off",
-        "errors-in-console": "off"
+        "first-contentful-paint": [
+          "warn",
+          {
+            "maxNumericValue": 1800
+          }
+        ],
+        "largest-contentful-paint": [
+          "warn",
+          {
+            "maxNumericValue": 2800
+          }
+        ],
+        "total-blocking-time": [
+          "warn",
+          {
+            "maxNumericValue": 300
+          }
+        ],
+        "interactive": [
+          "warn",
+          {
+            "maxNumericValue": 3800
+          }
+        ]
       }
     },
     "upload": {
