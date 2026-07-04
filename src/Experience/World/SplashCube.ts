@@ -9,6 +9,7 @@
 import * as THREE from 'three'
 import { MeshBasicNodeMaterial, MeshPhysicalNodeMaterial } from 'three/webgpu'
 import { Noise } from '../../Utils/Noise'
+import { attachWorldDNA, updateWorldDNA } from './worldDNA'
 import { BakuRole, type BakuMaterialState } from '../../core/types'
 
 export interface BakuMaterialParams {
@@ -84,9 +85,12 @@ export class SplashCube extends THREE.Mesh {
         thickness: 0.5,
         ior: 1.5,
       })
+      // Attach worldDNA TSL shader — persistent world material driven by
+      // section state via uniforms (positionNode, colorNode, emissiveNode, roughnessNode).
+      attachWorldDNA(mat)
       this.faceMaterials.push(mat)
 
-      const face = new THREE.Mesh(geo, mat)
+      const face = new THREE.Mesh(geo, mat as unknown as THREE.Material)
       face.userData = { dir: dir.clone(), basePos: dir.clone().multiplyScalar(half) }
       face.position.copy(face.userData.basePos)
       face.lookAt(dir.clone().multiplyScalar(half * 2))
@@ -227,6 +231,19 @@ export class SplashCube extends THREE.Mesh {
     const driftY = Noise.organicValue(this.time, 20, 0.4, 0.1)
     this.position.x = driftX
     this.position.y = driftY
+
+    // Update worldDNA uniforms — drive vertex displacement + color blend + pulse.
+    // sectionBlend = 0 (single section, no blend). colorA = current targetParams color.
+    updateWorldDNA({
+      sectionBlend: 0,
+      colorA: this.targetParams.color,
+      colorB: this.targetParams.color,
+      emissiveA: this.targetParams.emissive,
+      emissiveB: this.targetParams.emissive,
+      time: this.time,
+      displace: this.openerProgress * 0.3 + 0.05,
+      pulse: this.openerProgress,
+    })
   }
 
   /** Check if opener is complete (pulse done, cube is baku now). */
