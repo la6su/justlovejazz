@@ -17,16 +17,16 @@ export class BorderOverlay {
     document.body.appendChild(this.el)
   }
 
-  /** Set border intensity (0=off, 1=full black). */
+  /** Set border intensity (0=off, 1=full black border). */
   setIntensity(intensity: number): void {
     this._intensity = intensity
     if (intensity <= 0) {
       this.el.style.boxShadow = 'inset 0 0 0 0 rgba(0,0,0,0)'
       return
     }
-    // Border width = 3% of viewport, alpha = intensity
-    const width = '3vw'
-    this.el.style.boxShadow = 'inset 0 0 0 ' + width + ' rgba(0,0,0,' + intensity + ')'
+    // Full black border — 2% of viewport width (matches shader smoothstep 0.02)
+    const width = '2vw'
+    this.el.style.boxShadow = 'inset 0 0 0 ' + width + ' rgba(0,0,0,1)'
   }
 
   get intensity(): number {
