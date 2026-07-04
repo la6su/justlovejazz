@@ -19,6 +19,8 @@ import { ProjectOverlay } from '../UI/ProjectOverlay'
 import { Subtitles } from '../UI/Subtitles'
 import { SectionProgress } from '../UI/SectionProgress'
 import { PerfMonitor } from '../core/PerfMonitor'
+import { AudioSystem } from '../core/AudioSystem'
+import { updateWorldDNAAudio } from './World/worldDNA'
 import { prefersReducedMotion } from '../core/motionPolicy'
 import { eventBus } from '../core/EventBus'
 // DissolveOverlay removed — cover transition in ProjectDetail replaces it.
@@ -61,6 +63,7 @@ export class Experience {
   private _introEmitted = false
   private _onSizesResize: () => void = () => {}
   private _onVisibilityChange: (() => void) | null = null
+  public audio: AudioSystem = new AudioSystem()
 
   constructor(_ui: UIManager) {
     this.sizes = new Sizes()
@@ -163,6 +166,16 @@ export class Experience {
       else r.setAnimationLoop((t: number) => this.update(t))
     }
     document.addEventListener('visibilitychange', this._onVisibilityChange)
+
+    // Audio-reactive: start AudioContext on first user gesture (browser autoplay policy).
+    // Analyser runs silently until a track is loaded or mic connected.
+    const startAudio = () => {
+      this.audio.start()
+      document.removeEventListener('click', startAudio)
+      document.removeEventListener('keydown', startAudio)
+    }
+    document.addEventListener('click', startAudio)
+    document.addEventListener('keydown', startAudio)
   }
 
   update(time: number) {
@@ -334,6 +347,12 @@ export class Experience {
     this.camera.update(dt)
     this.renderer.update(this.scene, this.camera.instance, dt, worldState)
 
+    // Audio-reactive: update FFT + feed worldDNA uniforms.
+    if (this.audio.started) {
+      this.audio.update()
+      updateWorldDNAAudio(this.audio.getBass(), this.audio.getMid(), this.audio.getTreble())
+    }
+
     // Performance profiling — feed renderer info to PerfMonitor (DEV only).
     if (import.meta.env.DEV) {
       const r = this.renderer.instance as unknown as {
@@ -439,6 +458,7 @@ export class Experience {
     input.destroy()
     // Stop perf monitoring (disconnects PerformanceObserver + cancels rAF).
     PerfMonitor.stop()
+    this.audio.dispose()
   }
 
   private async ensurePortfolio(): Promise<void> {

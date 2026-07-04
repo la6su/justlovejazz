@@ -25,6 +25,10 @@ export const worldDNAUniforms = {
   uTime: uniform(0),
   uDisplace: uniform(0.15),
   uPulse: uniform(0),
+  // Audio-reactive uniforms (driven by AudioSystem)
+  uAudioBass: uniform(0),
+  uAudioMid: uniform(0),
+  uAudioTreble: uniform(0),
 }
 
 // Vertex displacement — organic fluid-like deformation via noise.
@@ -42,8 +46,9 @@ export const worldPositionNode = Fn(() => {
   // Pulse (opener animation) expands vertices outward
   const pulse = worldDNAUniforms.uPulse
 
-  // Displace along normal
-  const displace = noise.mul(worldDNAUniforms.uDisplace).add(pulse.mul(0.3))
+  // Displace along normal — noise + pulse + audio-reactive bass kick
+  const audioKick = worldDNAUniforms.uAudioBass.mul(0.15)
+  const displace = noise.mul(worldDNAUniforms.uDisplace).add(pulse.mul(0.3)).add(audioKick)
   return pos.add(nrm.mul(displace))
 })
 
@@ -57,6 +62,7 @@ export const worldColorNode = Fn(() => {
   const shimmer = sin(nrm.x.mul(3.0).add(worldDNAUniforms.uTime))
     .mul(0.05)
     .add(cos(nrm.y.mul(2.0).sub(worldDNAUniforms.uTime.mul(0.7))).mul(0.05))
+    .add(worldDNAUniforms.uAudioTreble.mul(0.1))
 
   return baseColor.add(vec3(shimmer, shimmer.mul(0.8), shimmer.mul(1.2)))
 })
@@ -84,6 +90,13 @@ export function attachWorldDNA(mat: MeshPhysicalNodeMaterial): void {
   mat.colorNode = worldColorNode()
   mat.emissiveNode = worldEmissiveNode()
   mat.roughnessNode = worldRoughnessNode()
+}
+
+/** Update audio-reactive uniforms. Called by Experience.update each frame. */
+export function updateWorldDNAAudio(bass: number, mid: number, treble: number): void {
+  worldDNAUniforms.uAudioBass.value = bass
+  worldDNAUniforms.uAudioMid.value = mid
+  worldDNAUniforms.uAudioTreble.value = treble
 }
 
 /** Update worldDNA uniforms from section state. Called by SplashCube.updateMaterial. */
