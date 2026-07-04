@@ -1,6 +1,6 @@
 # STATUS — Single Source of Truth
 
-> Updated: 2026-06-28. Branch: `main`. Build green (type-check + lint + build).
+> Updated: 2026-07-04. Branch: `main`. Build green (type-check + lint + build).
 
 ## Project
 
@@ -30,6 +30,14 @@ Single font: Inter (300-900 weights).
 | a11y (skip-link, dialog focus-trap, noscript)             | ✅     |
 | SEO (og/twitter/JSON-LD/sitemap)                          | ✅     |
 | Flexible section wireframe object                         | ✅     |
+| worldDNA TSL persistent shader (vertex displacement + color blend) | ✅ |
+| Per-section worldDNA displacement amplitude                | ✅     |
+| Section blend drives GPU color morph                       | ✅     |
+| TSL NodeMaterial on all scene objects                      | ✅     |
+| Camera anchor system (Blender-style named points)          | ✅     |
+| Audio-reactive worldDNA (Web Audio API FFT → GPU uniforms) | ✅     |
+| WebGPU TSL post-processing (bloom + vignette + grain + grade) | ✅  |
+| Performance profiling (FPS, frame time, draw calls, backend) | ✅   |
 
 ## Renderer
 

@@ -98,6 +98,10 @@ junni-style full-screen section locking.
 | CinematicLights     | 5-light setup, changeSection + lerp                                         |
 | disposeMaterialDeep | Disposes all material textures (prevents VRAM leak)                         |
 | AssetManager        | Lazy KTX2Loader (dynamic import)                                            |
+| worldDNA            | TSL persistent shader: vertex displacement, color blend, iridescent shimmer |
+| CameraAnchors       | Blender-style named anchor points for camera choreography                   |
+| AudioSystem         | Web Audio API FFT analyser → worldDNA uniforms (bass/mid/treble)            |
+| WebGPUPostPipeline  | TSL post-processing (bloom + vignette + grain + color grade) for WebGPU     |
 
 ## Removed (cleanup)
 
