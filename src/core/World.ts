@@ -601,6 +601,7 @@ export class World extends THREE.Group {
         scale: new THREE.Vector3(0.4),
         opacity: 1,
         role: 0 as unknown as BakuRole,
+        displace: 0.05,
         material: {
           color: new THREE.Color(),
           emissive: new THREE.Color(),
