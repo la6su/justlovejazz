@@ -145,14 +145,54 @@ export class Renderer {
 
   async init(): Promise<void> {
     // WebGPURenderer.init() configures the backend — WebGPU device if
-    // available, else WebGL2 context (transparent fallback). The fallback
-    // is built into WebGPURenderer; no manual WebGLRenderer switch needed.
+    // available, else WebGL2 context (transparent fallback).
     if (this.capabilities.mode === 'webgpu') {
       await (this.instance as any).init?.()
     }
-    // Re-apply size AFTER init() — on the WebGPU backend the canvas swap
-    // chain is configured during init(), so setSize from the constructor
-    // (before init) may not propagate to the GPU surface.
+
+    // ROOT FIX: if WebGPURenderer fell back to WebGLBackend, REPLACE it with
+    // a plain WebGLRenderer. WebGPURenderer+WebGLBackend uses NodeBuilder for
+    // ALL material compilation — NodeBuilder can't compile raw GLSL
+    // ShaderMaterial (post-processing passes crash with "Material ShaderMaterial
+    // is not compatible"). It also crashes with refreshFogUniforms when
+    // NodeMaterials + scene.fog are used together.
+    //
+    // Plain WebGLRenderer natively supports ShaderMaterial AND NodeMaterials
+    // (via WebGLNodesHandler). This eliminates ALL fallback incompatibilities.
+    const isRealWebGPU = (this.instance as any).isWebGPURenderer
+      && (this.instance as any).backend?.constructor?.name === 'WebGPUBackend'
+
+    if (!isRealWebGPU && (this.instance as any).isWebGPURenderer) {
+      // WebGPURenderer fell back to WebGLBackend — replace with WebGLRenderer
+      console.info('[Renderer] WebGPU unavailable — switching to WebGLRenderer (native ShaderMaterial + NodeMaterial support)')
+
+      // Dispose the WebGPURenderer and its canvas
+      const oldCanvas = this.instance.domElement
+      oldCanvas.remove()
+      ;(this.instance as any).dispose?.()
+
+      // Create plain WebGLRenderer with WebGLNodesHandler (for NodeMaterial support)
+      const gl = new THREE.WebGLRenderer({
+        antialias: true,
+        powerPreference: 'high-performance',
+        stencil: false,
+        depth: true,
+      })
+      gl.outputColorSpace = THREE.SRGBColorSpace
+      gl.toneMapping = THREE.ACESFilmicToneMapping
+      gl.toneMappingExposure = 1.0
+
+      try {
+        ;(gl as any).setNodesHandler(new WebGLNodesHandler())
+      } catch (err) {
+        console.error('[Renderer] Failed to install WebGLNodesHandler:', err)
+      }
+
+      this.instance = gl
+      this.setupCanvas(gl.domElement)
+    }
+
+    // Re-apply size AFTER init/switch
     this.instance.setPixelRatio(Math.min(this.sizes.dpr, this.capabilities.maxDpr))
     this.instance.setSize(this.sizes.width, this.sizes.height)
 
@@ -163,17 +203,11 @@ export class Renderer {
       this._pipelineConfig,
     )
 
-    // Fix: if WebGPURenderer fell back to WebGLBackend, transmission on
-    // MeshPhysicalNodeMaterial triggers ViewportTextureNode.getCanvasTarget()
-    // which doesn't exist on the fallback path → runtime crash. Disable
-    // transmission entirely on non-real-WebGPU (use opacity-only glass).
-    const isRealWebGPU = (this.instance as any).isWebGPURenderer
-      && (this.instance as any).backend?.constructor?.name === 'WebGPUBackend'
-    if (!isRealWebGPU) {
-      setTransmissionEnabled(false)
-      if ((this.instance as any).isWebGPURenderer) {
-        console.info('[Renderer] WebGPU unavailable — WebGL2 fallback (transmission disabled)')
-      }
+    // Enable transmission only on real WebGPU (WebGLRenderer supports it too,
+    // but transmission requires a backbuffer sampling pass that's expensive
+    // on WebGL2 — keep it disabled for perf unless real WebGPU).
+    if (isRealWebGPU) {
+      setTransmissionEnabled(true)
     }
   }
 
@@ -195,14 +229,16 @@ export class Renderer {
         } else {
           this._fog.color.copy(worldState.envColor)
         }
-        // NodeMaterials (MeshStandardNodeMaterial etc.) crash with
-        // refreshFogUniforms when scene.fog is set — fog uniforms are undefined
-        // for NodeMaterials in three 0.184. Only set fog on real WebGPU (where
-        // TSL handles fog via nodes) — skip on WebGLBackend fallback.
+        // NodeMaterials crash with refreshFogUniforms when scene.fog is set
+        // (fog uniforms undefined for NodeMaterials in three 0.184). Only set
+        // fog on real WebGPU (TSL handles fog via nodes). On fallback: CLEAR
+        // fog every frame in case it was set on a previous real-WebGPU frame.
         const isRealWebGPU = (this.instance as any).isWebGPURenderer
           && (this.instance as any).backend?.constructor?.name === 'WebGPUBackend'
         if (isRealWebGPU) {
           scene.fog = this._fog
+        } else {
+          scene.fog = null
         }
       }
     }
