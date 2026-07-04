@@ -49,6 +49,12 @@ export class SplashCube extends THREE.Mesh {
     role: BakuRole.NORMAL,
   }
   private _currentRole: BakuRole | null = null
+  // worldDNA blend state (set by Experience.update every frame)
+  private _blendFromColor: THREE.Color = new THREE.Color(0x3a3a5e)
+  private _blendToColor: THREE.Color = new THREE.Color(0x3a3a5e)
+  private _blendFromEmissive: THREE.Color = new THREE.Color(0x5a5a8a)
+  private _blendToEmissive: THREE.Color = new THREE.Color(0x5a5a8a)
+  private _blendT: number = 0
 
   constructor() {
     // Dummy geometry — we render faces as children, not the mesh itself.
@@ -233,17 +239,26 @@ export class SplashCube extends THREE.Mesh {
     this.position.y = driftY
 
     // Update worldDNA uniforms — drive vertex displacement + color blend + pulse.
-    // sectionBlend = 0 (single section, no blend). colorA = current targetParams color.
+    // Blend from→to colors by _blendT (scroll progress between sections).
     updateWorldDNA({
-      sectionBlend: 0,
-      colorA: this.targetParams.color,
-      colorB: this.targetParams.color,
-      emissiveA: this.targetParams.emissive,
-      emissiveB: this.targetParams.emissive,
+      sectionBlend: this._blendT,
+      colorA: this._blendFromColor,
+      colorB: this._blendToColor,
+      emissiveA: this._blendFromEmissive,
+      emissiveB: this._blendToEmissive,
       time: this.time,
       displace: this.openerProgress * 0.3 + 0.05,
       pulse: this.openerProgress,
     })
+  }
+
+  /** Update worldDNA blend state from scroll progress. Called by Experience.update every frame. */
+  updateWorldBlend(fromColor: THREE.Color, toColor: THREE.Color, fromEmissive: THREE.Color, toEmissive: THREE.Color, t: number): void {
+    this._blendFromColor.copy(fromColor)
+    this._blendToColor.copy(toColor)
+    this._blendFromEmissive.copy(fromEmissive)
+    this._blendToEmissive.copy(toEmissive)
+    this._blendT = t
   }
 
   /** Check if opener is complete (pulse done, cube is baku now). */

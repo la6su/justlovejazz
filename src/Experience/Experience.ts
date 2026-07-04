@@ -191,6 +191,22 @@ export class Experience {
     const { cameraTarget, worldState } = this.world.advance(ns)
     this.world.update(dt)
 
+    // Drive worldDNA section blend — from→to colors + phaseProgress (scroll t).
+    if (this.world?.baku) {
+      const fromCfg = this.world.getConfig(this.world.sections[this.world.currentSectionIndex]?.phaseConfig?.id ?? 'sec_intro')
+      const toIdx = Math.min(this.world.currentSectionIndex + 1, 5)
+      const toCfg = this.world.getConfig(this.world.sections[toIdx]?.phaseConfig?.id ?? 'sec_intro')
+      if (fromCfg && toCfg) {
+        this.world.baku.updateWorldBlend(
+          fromCfg.baku.material.color,
+          toCfg.baku.material.color,
+          fromCfg.baku.material.emissive,
+          toCfg.baku.material.emissive,
+          worldState.phaseProgress,
+        )
+      }
+    }
+
     // UI theme: light sections (intro=0, flexible=2) need dark text/nav.
     const idx = this.world.currentSectionIndex
     const isLightSection = idx === 0 || idx === 2
