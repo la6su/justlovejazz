@@ -45,6 +45,8 @@ export interface PostTransform {
   chromatic: number
   /** Screen-space glass refraction strength (0=off, 0.1=subtle, 0.3=strong). */
   refract: number
+  /** Screen border intensity (0=off, 0.3=subtle, 1.0=full black border). */
+  border: number
   /** Shadow tint (RGB 0-1, multiplied into dark areas). */
   gradeShadows: [number, number, number]
   /** Highlight tint (RGB 0-1, 1=neutral, pushed into bright areas). */
@@ -98,6 +100,7 @@ type RawScene = {
   postGrain: number
   postChromatic: number
   postRefract: number
+  postBorder: number
   postGradeShadows: [number, number, number]
   postGradeHighlights: [number, number, number]
   lightColor: number
@@ -135,6 +138,7 @@ const RAW: RawScene[] = [
     postGrain: 0.02,
     postChromatic: 0.002,
     postRefract: 0.05,
+    postBorder: 0.0,
     postGradeShadows: [1.0, 0.98, 0.95],
     postGradeHighlights: [1.0, 1.0, 1.0],
     lightColor: 0xffffff,
@@ -168,6 +172,7 @@ const RAW: RawScene[] = [
     postGrain: 0.02,
     postChromatic: 0.003,
     postRefract: 0.15,
+    postBorder: 0.6,
     postGradeShadows: [0.9, 0.92, 1.0],
     postGradeHighlights: [0.85, 0.9, 1.0],
     lightColor: 0x040408,
@@ -201,6 +206,7 @@ const RAW: RawScene[] = [
     postGrain: 0.02,
     postChromatic: 0.004,
     postRefract: 0.25,
+    postBorder: 0.0,
     postGradeShadows: [0.98, 0.98, 1.0],
     postGradeHighlights: [1.0, 1.0, 1.0],
     lightColor: 0xeeeeee,
@@ -234,6 +240,7 @@ const RAW: RawScene[] = [
     postGrain: 0.02,
     postChromatic: 0.005,
     postRefract: 0.1,
+    postBorder: 0.7,
     postGradeShadows: [0.88, 0.9, 1.0],
     postGradeHighlights: [0.9, 0.92, 1.0],
     lightColor: 0x06080e,
@@ -267,6 +274,7 @@ const RAW: RawScene[] = [
     postGrain: 0.02,
     postChromatic: 0.004,
     postRefract: 0.12,
+    postBorder: 0.6,
     postGradeShadows: [0.92, 0.94, 1.0],
     postGradeHighlights: [0.92, 0.95, 1.0],
     lightColor: 0x050810,
@@ -300,6 +308,7 @@ const RAW: RawScene[] = [
     postGrain: 0.025,
     postChromatic: 0.004,
     postRefract: 0.08,
+    postBorder: 0.6,
     postGradeShadows: [1.0, 0.96, 0.92],
     postGradeHighlights: [1.0, 0.98, 0.95],
     lightColor: 0x050810,
@@ -355,6 +364,7 @@ export function toPhaseConfig(raw: RawScene): PhaseConfig {
       grain: raw.postGrain,
       chromatic: raw.postChromatic,
       refract: raw.postRefract,
+      border: raw.postBorder,
       gradeShadows: raw.postGradeShadows,
       gradeHighlights: raw.postGradeHighlights,
     },

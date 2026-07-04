@@ -16,6 +16,7 @@ export interface WebGPUPostParams {
   vignette: number
   grain: number
   chromatic: number
+  border: number
   refract: number
   gradeShadows: [number, number, number]
   gradeHighlights: [number, number, number]
@@ -37,6 +38,7 @@ export class WebGPUPostPipeline {
   private _bloomThreshold = uniform(0.5)
   private _vignetteStrength = uniform(0)
   private _grainStrength = uniform(0)
+  private _borderStrength = uniform(0)
   private _chromaticStrength = uniform(0)
   private _refractStrength = uniform(0)
   private _gradeShadows = uniform(new THREE.Vector3(1, 1, 1))
@@ -66,6 +68,7 @@ export class WebGPUPostPipeline {
     this._bloomThreshold.value = params.bloomThreshold
     this._vignetteStrength.value = params.vignette
     this._grainStrength.value = params.grain
+    this._borderStrength.value = params.border
     this._chromaticStrength.value = params.chromatic
     this._refractStrength.value = params.refract
     ;(this._gradeShadows.value as any).set(...params.gradeShadows)
@@ -127,6 +130,16 @@ export class WebGPUPostPipeline {
     const vDist = vCenter.length()
     const vFactor = vDist.mul(this._vignetteStrength).oneMinus()
     color = color.mul(vFactor)
+
+    // Screen border — dark frame around edges (CRT-style border)
+    // smoothstep(0, 0.03, uv) → 0 at edge, 1 toward center (both axes)
+    // borderMask = edgeX * edgeY → 1 in center, 0 at borders
+    const bUv = uv()
+    const bEdgeX = smoothstep(0.0, 0.03, bUv.x).mul(smoothstep(0.0, 0.03, bUv.x.oneMinus()))
+    const bEdgeY = smoothstep(0.0, 0.03, bUv.y).mul(smoothstep(0.0, 0.03, bUv.y.oneMinus()))
+    const bMask = bEdgeX.mul(bEdgeY)
+    // border=0 → no effect, border=1 → full black border
+    color = color.mul(this._borderStrength.oneMinus().add(bMask).min(1.0))
 
     // Film grain: cheap hash noise
     const gCoord = uv().mul(1024.0)
