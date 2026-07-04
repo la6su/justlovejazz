@@ -3,6 +3,7 @@
 // Built-in materials ONLY (HERMES_RULES §1, §2).
 
 import * as THREE from 'three'
+import { PointsNodeMaterial } from 'three/webgpu'
 import { FlexibleSlides } from '../Experience/World/Sections/FlexibleSlides'
 import { DeviceCapability } from './DeviceCapability'
 
@@ -31,20 +32,18 @@ function makeParticles(
     pos[i * 3 + 2] = (Math.random() - 0.5) * spread.z
   }
   geo.setAttribute('position', new THREE.BufferAttribute(pos, 3))
-  const pts = new THREE.Points(
-    geo,
-    new THREE.PointsMaterial({
-      color,
-      size,
-      transparent: true,
-      opacity,
-      sizeAttenuation: true,
-      depthWrite: false,
-    }),
-  )
+  const mat = new PointsNodeMaterial({
+    color,
+    size,
+    transparent: true,
+    opacity,
+    sizeAttenuation: true,
+    depthWrite: false,
+  })
+  const pts = new THREE.Points(geo, mat as unknown as THREE.Material)
   pts.name = name
   pts.frustumCulled = false
-  pts.material.userData.baseOpacity = opacity
+  ;(pts.material as unknown as THREE.Material & { userData: Record<string, unknown> }).userData.baseOpacity = opacity
   return pts
 }
 
