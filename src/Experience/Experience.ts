@@ -278,6 +278,7 @@ export class Experience {
         cfg.post.refract,
         new THREE.Vector3(...cfg.post.gradeShadows),
         new THREE.Vector3(...cfg.post.gradeHighlights),
+        cfg.post.border,
       )
       this.camera.setFovOffset(cfg.camFovOffset, cfg.camFovDuration)
       // Subtle camera shake on section transition for cinematic impact

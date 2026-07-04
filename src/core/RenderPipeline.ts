@@ -80,6 +80,7 @@ const COMPOSITE_FSG = `
   uniform float uTime;
   uniform float uChromatic;
   uniform float uRefract;
+  uniform float uBorder;
   uniform vec3 uGradeShadows;
   uniform vec3 uGradeHighlights;
   
@@ -158,6 +159,14 @@ const COMPOSITE_FSG = `
       vig = smoothstep(0.0, 1.0, vig);
       color *= vig;
     }
+
+    // Screen border — dark frame around edges (CRT-style border)
+    if (uBorder > 0.0) {
+      vec2 edge = smoothstep(0.0, 0.06, vUv) * (1.0 - smoothstep(1.0 - 0.06, 1.0, vUv));
+      float borderMask = edge.x * edge.y;
+      // borderMask=1 center, 0 at edges. mix(0, 1, borderMask) → black border.
+      color *= mix(1.0 - uBorder, 1.0, borderMask);
+    }
     
     gl_FragColor = vec4(color, 1.0);
   }
@@ -229,6 +238,7 @@ export class RenderPipeline {
   private static _dummyCam: THREE.OrthographicCamera | null = null
   // Section grade values (stored so setSectionGrade works before WebGL composite is built)
   private _sectionRefract = 0.05
+  private _sectionBorder = 0.0
   private _sectionShadows = new THREE.Vector3(1, 1, 1)
   private _sectionHighlights = new THREE.Vector3(1, 1, 1)
 
@@ -300,18 +310,21 @@ export class RenderPipeline {
       // Re-apply section grade (stored in _sectionRefract/Shadows/Highlights)
       // so it survives updateParams calls from PostProcessingManager.
       this._passComposite.uniforms.uRefract!.value = this._sectionRefract
+      this._passComposite.uniforms.uBorder!.value = this._sectionBorder
       ;(this._passComposite.uniforms.uGradeShadows!.value as THREE.Vector3).copy(this._sectionShadows)
       ;(this._passComposite.uniforms.uGradeHighlights!.value as THREE.Vector3).copy(this._sectionHighlights)
     }
   }
 
   /** Set section-driven color grading (shadows tint, highlights tint, refraction). */
-  public setSectionGrade(refract: number, shadowTint: THREE.Vector3, highlightTint: THREE.Vector3): void {
+  public setSectionGrade(refract: number, shadowTint: THREE.Vector3, highlightTint: THREE.Vector3, border: number = 0): void {
     this._sectionRefract = refract
+    this._sectionBorder = border
     this._sectionShadows.copy(shadowTint)
     this._sectionHighlights.copy(highlightTint)
     if (this._passComposite) {
       this._passComposite.uniforms.uRefract!.value = refract
+      this._passComposite.uniforms.uBorder!.value = border
       ;(this._passComposite.uniforms.uGradeShadows!.value as THREE.Vector3).copy(shadowTint)
       ;(this._passComposite.uniforms.uGradeHighlights!.value as THREE.Vector3).copy(highlightTint)
     }
@@ -319,10 +332,11 @@ export class RenderPipeline {
 
   /** Render: scene → post passes → screen */
   public render(scene: THREE.Scene, camera: THREE.Camera): void {
-    if (this._isWebGPU && (this._renderer as any).backend?.constructor?.name === 'WebGPUBackend') {
+    // Check if we're on REAL WebGPU (not WebGL2 fallback via WebGPURenderer)
+    const isRealWebGPU = this._isWebGPU && (this._renderer as any).backend?.constructor?.name === 'WebGPUBackend'
+
+    if (isRealWebGPU) {
       // WebGPU native: TSL RenderPipeline + PassNode + BloomNode + vignette/grain Fn.
-      // Only use TSL pipeline when WebGPU is actually available (not WebGL2 fallback).
-      // Built lazily on first render (needs live scene+camera refs).
       if (!this._webgpuPipeline) {
         this._webgpuPipeline = WebGPUPostPipeline.create(
           this._renderer as WebGPURenderer,
@@ -331,7 +345,6 @@ export class RenderPipeline {
         )
       }
       this._webgpuPipeline.setScene(scene, camera)
-      // Push current params (bloom/vignette/grain) into TSL uniforms.
       this._webgpuPipeline.updateParams({
         bloom: this._params.bloom,
         bloomRadius: this._params.bloomRadius,
@@ -340,6 +353,7 @@ export class RenderPipeline {
         grain: this._params.grain,
         chromatic: this._params.chromatic,
         refract: this._sectionRefract,
+        border: this._sectionBorder,
         gradeShadows: [this._sectionShadows.x, this._sectionShadows.y, this._sectionShadows.z],
         gradeHighlights: [this._sectionHighlights.x, this._sectionHighlights.y, this._sectionHighlights.z],
       })
@@ -347,7 +361,14 @@ export class RenderPipeline {
       return
     }
 
-    if (!this._config.bloomEnabled && !this._config.vignetteEnabled && !this._config.grainEnabled) {
+    // WebGL2 path (either native WebGLRenderer OR WebGPURenderer with WebGLBackend fallback).
+    // _setupWebGL() is only called when !_isWebGPU, so for the fallback case we need to
+    // lazily init the WebGL composite here.
+    if (this._isWebGPU && !this._passComposite && !isRealWebGPU) {
+      this._setupWebGL()
+    }
+
+    if (!this._config.bloomEnabled && !this._config.vignetteEnabled && !this._config.grainEnabled && this._sectionBorder <= 0) {
       // Fast path: no post-processing
       this._renderer.render(scene, camera)
       return
@@ -488,6 +509,7 @@ export class RenderPipeline {
         uChromatic: { value: 0.0 },
         uTime: { value: 0 },
         uRefract: { value: 0.0 },
+        uBorder: { value: 0.0 },
         uGradeShadows: { value: new THREE.Vector3(1, 1, 1) },
         uGradeHighlights: { value: new THREE.Vector3(1, 1, 1) },
       },
@@ -609,6 +631,10 @@ export class RenderPipeline {
     passComposite.uniforms.uGrain!.value = this._params.grain
     passComposite.uniforms.uChromatic!.value = this._params.chromatic ?? 0
     passComposite.uniforms.uTime!.value = performance.now() * 0.001
+    passComposite.uniforms.uRefract!.value = this._sectionRefract
+    passComposite.uniforms.uBorder!.value = this._sectionBorder
+    ;(passComposite.uniforms.uGradeShadows!.value as THREE.Vector3).copy(this._sectionShadows)
+    ;(passComposite.uniforms.uGradeHighlights!.value as THREE.Vector3).copy(this._sectionHighlights)
     // Refraction + grade are set via setSectionGrade() — they persist across frames.
 
     this._renderQuad(passComposite, {}, null, renderer)
