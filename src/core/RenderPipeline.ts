@@ -369,9 +369,12 @@ export class RenderPipeline {
     }
 
     // WebGLBackend fallback: WebGPURenderer with WebGLBackend cannot compile
-    // ShaderMaterial (THREE.NodeBuilder incompatibility). Use direct render —
-    // border/vignette/grain are applied via CSS overlay (see BorderOverlay).
+    // ShaderMaterial (THREE.NodeBuilder incompatibility) AND NodeMaterials crash
+    // with refreshFogUniforms if scene.fog is set. Use direct render only —
+    // border/vignette/grain applied via CSS overlay (see BorderOverlay).
     if (this._isWebGPU && !isRealWebGPU) {
+      // Safety: clear fog (NodeMaterial + fog = crash on this path)
+      scene.fog = null
       this._renderer.render(scene, camera)
       return
     }

@@ -23,7 +23,10 @@ export interface BakuMaterialParams {
 // Set to false when WebGPU backend is not available (WebGL2 fallback).
 // transmission on MeshPhysicalNodeMaterial crashes on WebGLBackend
 // (ViewportTextureNode.getCanvasTarget not a function).
-let transmissionEnabled = true
+// Default: disabled. Renderer.init() enables it only when real WebGPU
+// backend is confirmed. WebGPURenderer.init() renders a test frame that
+// would crash if transmission > 0 on WebGLBackend fallback.
+let transmissionEnabled = false
 
 /** Called by Renderer.init() to disable transmission on WebGL2 fallback. */
 export function setTransmissionEnabled(enabled: boolean): void {
