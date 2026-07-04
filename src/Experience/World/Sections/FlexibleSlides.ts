@@ -10,10 +10,11 @@
 // The title is static and centered, providing contrast against the moving bg.
 
 import * as THREE from 'three'
+import { MeshBasicNodeMaterial } from 'three/webgpu'
 
 export class FlexibleSlides extends THREE.Group {
-  private bgMaterial: THREE.MeshBasicMaterial | null = null
-  private titleMaterial: THREE.MeshBasicMaterial | null = null
+  private bgMaterial: MeshBasicNodeMaterial | null = null
+  private titleMaterial: MeshBasicNodeMaterial | null = null
   private visibility = 0
   private targetVisibility = 0
   private time = 0
@@ -35,7 +36,7 @@ export class FlexibleSlides extends THREE.Group {
     bgTexture.needsUpdate = true
 
     const bgGeo = new THREE.PlaneGeometry(24, 14)
-    this.bgMaterial = new THREE.MeshBasicMaterial({
+    this.bgMaterial = new MeshBasicNodeMaterial({
       map: bgTexture,
       transparent: true,
       depthWrite: false,
@@ -43,7 +44,7 @@ export class FlexibleSlides extends THREE.Group {
       side: THREE.DoubleSide,
     })
     this.bgMaterial.userData.baseOpacity = 1
-    const bgMesh = new THREE.Mesh(bgGeo, this.bgMaterial)
+    const bgMesh = new THREE.Mesh(bgGeo, this.bgMaterial as unknown as THREE.Material)
     bgMesh.renderOrder = 1
     bgMesh.position.z = -1
     this.add(bgMesh)
@@ -55,7 +56,7 @@ export class FlexibleSlides extends THREE.Group {
     titleTexture.needsUpdate = true
 
     const titleGeo = new THREE.PlaneGeometry(8, 4)
-    this.titleMaterial = new THREE.MeshBasicMaterial({
+    this.titleMaterial = new MeshBasicNodeMaterial({
       map: titleTexture,
       transparent: true,
       depthWrite: false,
@@ -63,7 +64,7 @@ export class FlexibleSlides extends THREE.Group {
       side: THREE.DoubleSide,
     })
     this.titleMaterial.userData.baseOpacity = 1
-    const titleMesh = new THREE.Mesh(titleGeo, this.titleMaterial)
+    const titleMesh = new THREE.Mesh(titleGeo, this.titleMaterial as unknown as THREE.Material)
     titleMesh.renderOrder = 2
     titleMesh.position.z = 0
     this.add(titleMesh)
@@ -83,8 +84,9 @@ export class FlexibleSlides extends THREE.Group {
     this.visibility += (this.targetVisibility - this.visibility) * Math.min(1, dt * 4)
 
     // Scroll the background texture horizontally for animated effect.
-    if (this.bgMaterial?.map) {
-      this.bgMaterial.map.offset.x = this.time * 0.02
+    const bgMat = this.bgMaterial as unknown as THREE.MeshBasicMaterial
+    if (bgMat?.map) {
+      bgMat.map.offset.x = this.time * 0.02
     }
 
     if (this.bgMaterial) {
@@ -102,7 +104,7 @@ export class FlexibleSlides extends THREE.Group {
       const m = c as THREE.Mesh
       if (m.geometry) m.geometry.dispose()
       if (m.material) {
-        const mat = m.material as THREE.MeshBasicMaterial
+        const mat = m.material as unknown as THREE.MeshBasicMaterial
         if (mat.map) mat.map.dispose()
         mat.dispose()
       }

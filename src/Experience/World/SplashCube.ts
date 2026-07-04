@@ -7,6 +7,7 @@
 // After opener: cube continues as baku on all sections.
 
 import * as THREE from 'three'
+import { MeshBasicNodeMaterial, MeshPhysicalNodeMaterial } from 'three/webgpu'
 import { Noise } from '../../Utils/Noise'
 import { BakuRole, type BakuMaterialState } from '../../core/types'
 
@@ -20,7 +21,7 @@ export interface BakuMaterialParams {
 
 export class SplashCube extends THREE.Mesh {
   private faces: THREE.Mesh[] = []
-  private faceMaterials: THREE.MeshPhysicalMaterial[] = []
+  private faceMaterials: MeshPhysicalNodeMaterial[] = []
   private edgeLines: THREE.LineSegments[] = []
   private time = 0
   /** Loading progress (0-1). Drives edge glow brightness. */
@@ -50,7 +51,7 @@ export class SplashCube extends THREE.Mesh {
 
   constructor() {
     // Dummy geometry — we render faces as children, not the mesh itself.
-    super(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial({ visible: false }))
+    super(new THREE.BufferGeometry(), new MeshBasicNodeMaterial({ visible: false }))
     this.name = 'baku-cube'
     this.visible = true
     this.buildCube()
@@ -64,10 +65,9 @@ export class SplashCube extends THREE.Mesh {
       const dir = this.faceDirs[i]!
 
       const geo = new THREE.PlaneGeometry(size, size)
-      // MeshPhysicalMaterial with transmission = real glass (see-through),
-      // matching the junni Baku 'glass' materialType. Iridescence + clearcoat
-      // give the holographic sheen. Low opacity + transmission = translucent.
-      const mat = new THREE.MeshPhysicalMaterial({
+      // MeshPhysicalNodeMaterial (TSL) — native WebGPU path. Real glass via
+      // transmission, holographic sheen via iridescence + clearcoat.
+      const mat = new MeshPhysicalNodeMaterial({
         color: 0x1a1a2e,
         emissive: 0x4a5a8a,
         emissiveIntensity: 0.3,
