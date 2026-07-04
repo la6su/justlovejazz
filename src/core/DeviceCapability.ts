@@ -118,10 +118,16 @@ export class DeviceCapability {
     const isWebGPU = this.mode === 'webgpu'
     const isWebGL2 = this.mode === 'webgl'
 
-    // PERF FIX: WebGPU NEVER gets 'high' tier.
-    // WebGPU post-processing (bloom mip-chain, heavy passes) is unpredictable
-    // and often catastrophically slow. Cap at 'medium' to be safe.
-    if (isWebGPU) return 'medium'
+    // WebGPU: allow 'high' tier on capable desktops (native WebGPU via
+    // Vulkan/D3D12/Metal handles TSL post-processing well). The original
+    // 'medium' cap was a workaround for ANGLE/OpenGL fallback on Chrome/
+    // Wayland/NVIDIA — that's a local env issue, not fundamental to WebGPU.
+    // Low-end desktops still fall through to 'low'/'medium' via isLowEndDesktop.
+    if (isWebGPU) {
+      if (isLowEndDesktop()) return 'low'
+      if (cores >= 8 && this.maxDpr >= 2) return 'high'
+      return 'medium'
+    }
 
     // WebGL2: High only with strong signal
     if (isWebGL2 && cores >= 12 && dpr >= 2) return 'high'

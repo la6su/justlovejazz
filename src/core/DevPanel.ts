@@ -87,6 +87,11 @@ export class DevPanel {
     exposure: 1,
     liquidMultiplier: 1,
     bakuVisible: false,
+    // worldDNA tuning
+    dnaDisplace: 0.15,
+    dnaBlend: 0,
+    dnaBassGain: 1.0,
+    dnaTrebleGain: 1.0,
   }
 
   constructor(exp: Experience) {
@@ -112,6 +117,7 @@ export class DevPanel {
     this.buildLiquidFolder()
     this.buildPerfFolder()
     this.buildAudioFolder()
+    this.buildWorldDNAFolder()
     this.buildRenderFolder()
 
     this.bindToggle()
@@ -226,7 +232,7 @@ export class DevPanel {
     f.addBinding(monitor, 'mid', { readonly: true, min: 0, max: 1 })
     f.addBinding(monitor, 'treble', { readonly: true, min: 0, max: 1 })
     f.addBinding(monitor, 'level', { readonly: true, min: 0, max: 1 })
-    this.perfInterval && clearInterval(this.perfInterval)
+    if (this.perfInterval) clearInterval(this.perfInterval)
     this.perfInterval = setInterval(() => {
       monitor.bass = this.exp.audio.getBass()
       monitor.mid = this.exp.audio.getMid()
@@ -234,6 +240,37 @@ export class DevPanel {
       monitor.level = this.exp.audio.getLevel()
       f.refresh()
     }, 100)
+  }
+
+  private buildWorldDNAFolder(): void {
+    const f = this.pane.addFolder({ title: 'worldDNA (TSL shader)' })
+    f.addBinding(this.params, 'dnaDisplace', { label: 'displace', min: 0, max: 0.5, step: 0.01 }).on('change', (ev) => {
+      // Directly set the uniform — bypasses section config for live tuning
+      const exp = this.exp as any
+      if (exp?.world?.baku) {
+        ;(exp.world.baku as any)._blendDisplace = ev.value as number
+      }
+    })
+    f.addBinding(this.params, 'dnaBlend', { label: 'blend', min: 0, max: 1, step: 0.01 }).on('change', (ev) => {
+      const exp = this.exp as any
+      if (exp?.world?.baku) {
+        ;(exp.world.baku as any)._blendT = ev.value as number
+      }
+    })
+    f.addBinding(this.params, 'dnaBassGain', { label: 'bass gain', min: 0, max: 3, step: 0.1 }).on('change', (ev) => {
+      // Audio gain multiplier — applied in Experience.update before feeding worldDNA
+      ;(this.exp as any)._audioBassGain = ev.value as number
+    })
+    f.addBinding(this.params, 'dnaTrebleGain', { label: 'treble gain', min: 0, max: 3, step: 0.1 }).on('change', (ev) => {
+      ;(this.exp as any)._audioTrebleGain = ev.value as number
+    })
+    f.addButton({ title: 'Reset' }).on('click', () => {
+      this.params.dnaDisplace = 0.15
+      this.params.dnaBlend = 0
+      this.params.dnaBassGain = 1.0
+      this.params.dnaTrebleGain = 1.0
+      f.refresh()
+    })
   }
 
   private buildRenderFolder(): void {
