@@ -54,3 +54,10 @@ class EventBus {
 
 /** Singleton instance — import this, not the class. */
 export const eventBus = new EventBus()
+
+// HMR: clear all listeners on hot-reload to prevent phantom subscriptions.
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    eventBus.clear()
+  })
+}

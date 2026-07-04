@@ -22,6 +22,7 @@ export class WorksPortfolio {
   private vel = 0
   private lastX = 0
   private lastT = 0
+  private _touchStartY: number | null = null
   // Public for Experience to re-apply on works section entry (Bug 4).
   textures: (THREE.Texture | null)[] = []
   // Public for Experience to check load state (Bug 4).
@@ -121,6 +122,12 @@ export class WorksPortfolio {
     if (!this.group.visible) return
     const target = e.target as HTMLElement
     if (target.closest('.jlz-works-ui, #project-modal, #jlj-splash, #main-nav')) return
+    // Touch devices: prevent the page from scrolling while swiping the cube.
+    // scroll-snap mandatory would otherwise fight the horizontal drag.
+    if (e.pointerType === 'touch') {
+      // Only prevent if the drag is likely horizontal (not vertical scroll)
+      this._touchStartY = e.clientY
+    }
     this.dragging = true
     this.dragStartX = e.clientX
     this.lastX = e.clientX
@@ -130,6 +137,18 @@ export class WorksPortfolio {
 
   private onPointerMove = (e: PointerEvent) => {
     if (!this.dragging) return
+    // Touch: if vertical movement dominates, cancel drag (let page scroll)
+    if (e.pointerType === 'touch' && this._touchStartY !== null) {
+      const dy = Math.abs(e.clientY - this._touchStartY)
+      const dx = Math.abs(e.clientX - this.dragStartX)
+      if (dy > dx * 1.5 && dy > 10) {
+        this.dragging = false
+        this.dragOff = 0
+        return
+      }
+      // Horizontal drag — prevent page scroll
+      e.preventDefault()
+    }
     this.dragOff = (e.clientX - this.dragStartX) * 0.005
     const now = performance.now()
     const dt = now - this.lastT
@@ -141,8 +160,11 @@ export class WorksPortfolio {
   private onPointerUp = (e: PointerEvent) => {
     if (!this.dragging) return
     this.dragging = false
+    this._touchStartY = null
     const dragDist = Math.abs(e.clientX - this.dragStartX)
-    if (this.vel > 0.12 || dragDist > 40) {
+    // Touch: use larger threshold (finger less precise than mouse)
+    const swipeThreshold = e.pointerType === 'touch' ? 50 : 40
+    if (this.vel > 0.12 || dragDist > swipeThreshold) {
       this.goTo(e.clientX < this.dragStartX ? this.currentIdx + 1 : this.currentIdx - 1)
     } else if (dragDist < 8) {
       // Tap — activate card
