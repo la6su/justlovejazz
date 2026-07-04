@@ -202,6 +202,13 @@ export class Renderer {
       this.sizes.height,
       this._pipelineConfig,
     )
+    // If we switched to WebGLRenderer, update pipeline's _isWebGPU flag
+    // (was set to true at create() time from `instanceof WebGPURenderer`).
+    if (!(this.instance instanceof WebGPURenderer)) {
+      this.pipeline.setWebGPU(false)
+      // Also set up WebGL post-processing passes (bloom/blur/composite)
+      this.pipeline.setupWebGLIfNeeded()
+    }
 
     // Enable transmission only on real WebGPU (WebGLRenderer supports it too,
     // but transmission requires a backbuffer sampling pass that's expensive
@@ -229,13 +236,15 @@ export class Renderer {
         } else {
           this._fog.color.copy(worldState.envColor)
         }
-        // NodeMaterials crash with refreshFogUniforms when scene.fog is set
-        // (fog uniforms undefined for NodeMaterials in three 0.184). Only set
-        // fog on real WebGPU (TSL handles fog via nodes). On fallback: CLEAR
-        // fog every frame in case it was set on a previous real-WebGPU frame.
-        const isRealWebGPU = (this.instance as any).isWebGPURenderer
+        // Fog: safe on WebGLRenderer (classic uniform path). On WebGPURenderer
+        // with WebGLBackend, NodeMaterials crash with refreshFogUniforms — but
+        // we've already switched to WebGLRenderer in that case, so fog is safe.
+        // On real WebGPU, TSL handles fog via nodes.
+        const isWebGPURenderer = (this.instance as any).isWebGPURenderer === true
+        const isWebGPUBackend = isWebGPURenderer
           && (this.instance as any).backend?.constructor?.name === 'WebGPUBackend'
-        if (isRealWebGPU) {
+        if (isWebGPUBackend || !isWebGPURenderer) {
+          // Real WebGPU (TSL fog) OR plain WebGLRenderer (classic fog) — both safe
           scene.fog = this._fog
         } else {
           scene.fog = null
