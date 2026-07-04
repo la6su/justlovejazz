@@ -55,6 +55,7 @@ export class SplashCube extends THREE.Mesh {
   private _blendFromEmissive: THREE.Color = new THREE.Color(0x5a5a8a)
   private _blendToEmissive: THREE.Color = new THREE.Color(0x5a5a8a)
   private _blendT: number = 0
+  private _blendDisplace: number = 0.05
 
   constructor() {
     // Dummy geometry — we render faces as children, not the mesh itself.
@@ -247,18 +248,20 @@ export class SplashCube extends THREE.Mesh {
       emissiveA: this._blendFromEmissive,
       emissiveB: this._blendToEmissive,
       time: this.time,
-      displace: this.openerProgress * 0.3 + 0.05,
+      displace: this._blendDisplace + this.openerProgress * 0.3,
       pulse: this.openerProgress,
     })
   }
 
   /** Update worldDNA blend state from scroll progress. Called by Experience.update every frame. */
-  updateWorldBlend(fromColor: THREE.Color, toColor: THREE.Color, fromEmissive: THREE.Color, toEmissive: THREE.Color, t: number): void {
+  updateWorldBlend(fromColor: THREE.Color, toColor: THREE.Color, fromEmissive: THREE.Color, toEmissive: THREE.Color, t: number, fromDisplace: number = 0.05, toDisplace: number = 0.05): void {
     this._blendFromColor.copy(fromColor)
     this._blendToColor.copy(toColor)
     this._blendFromEmissive.copy(fromEmissive)
     this._blendToEmissive.copy(toEmissive)
     this._blendT = t
+    // Lerp displacement amplitude between sections
+    this._blendDisplace = fromDisplace * (1 - t) + toDisplace * t
   }
 
   /** Check if opener is complete (pulse done, cube is baku now). */

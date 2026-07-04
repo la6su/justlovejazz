@@ -203,6 +203,8 @@ export class Experience {
           fromCfg.baku.material.emissive,
           toCfg.baku.material.emissive,
           worldState.phaseProgress,
+          fromCfg.baku.displace,
+          toCfg.baku.displace,
         )
       }
     }

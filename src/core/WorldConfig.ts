@@ -17,6 +17,8 @@ export interface BakuTransform {
   scale: THREE.Vector3
   opacity: number
   role: BakuRole
+  /** worldDNA vertex displacement amplitude (0=static, 0.3=strong fluid). */
+  displace: number
   material: {
     color: THREE.Color
     emissive: THREE.Color
@@ -88,6 +90,7 @@ type RawScene = {
   camSmoothing: number
   bakuRole: BakuRole
   bakuOpacity: number
+  bakuDisplace: number
   bakuColor: number
   bakuEmissive: number
   postBloom: number
@@ -124,6 +127,7 @@ const RAW: RawScene[] = [
     camSmoothing: 5,
     bakuRole: BakuRole.GLASS,
     bakuOpacity: 0.4,
+    bakuDisplace: 0.08,
     bakuColor: 0x3a3a5e,
     bakuEmissive: 0x5a5a8a,
     postBloom: 0,
@@ -156,6 +160,7 @@ const RAW: RawScene[] = [
     camSmoothing: 5,
     bakuRole: BakuRole.GLASS,
     bakuOpacity: 0.35,
+    bakuDisplace: 0.15,
     bakuColor: 0x2a2a3e,
     bakuEmissive: 0x4a4a6a,
     postBloom: 0.4,
@@ -188,6 +193,7 @@ const RAW: RawScene[] = [
     camSmoothing: 5,
     bakuRole: BakuRole.GLASS,
     bakuOpacity: 0.35,
+    bakuDisplace: 0.25,
     bakuColor: 0x3a3a5e,
     bakuEmissive: 0x5a5a8a,
     postBloom: 0.35,
@@ -220,6 +226,7 @@ const RAW: RawScene[] = [
     camSmoothing: 6,
     bakuRole: BakuRole.GLASS,
     bakuOpacity: 0.4,
+    bakuDisplace: 0.05,
     bakuColor: 0x2a2a3e,
     bakuEmissive: 0x4a4a6a,
     postBloom: 0.4,
@@ -252,6 +259,7 @@ const RAW: RawScene[] = [
     camSmoothing: 5,
     bakuRole: BakuRole.GLASS,
     bakuOpacity: 0.35,
+    bakuDisplace: 0.12,
     bakuColor: 0x2a2a3e,
     bakuEmissive: 0x4a4a6a,
     postBloom: 0.3,
@@ -284,6 +292,7 @@ const RAW: RawScene[] = [
     camSmoothing: 5,
     bakuRole: BakuRole.GLASS,
     bakuOpacity: 0.4,
+    bakuDisplace: 0.06,
     bakuColor: 0x2a2a3e,
     bakuEmissive: 0x4a4a6a,
     postBloom: 0.3,
@@ -326,6 +335,7 @@ export function toPhaseConfig(raw: RawScene): PhaseConfig {
       scale: new THREE.Vector3(0.4, 0.4, 0.4),
       opacity: raw.bakuOpacity,
       role: raw.bakuRole as unknown as BakuRole,
+      displace: raw.bakuDisplace,
       material: {
         color: _toColor(raw.bakuColor),
         emissive: _toColor(raw.bakuEmissive),
