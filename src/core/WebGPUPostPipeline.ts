@@ -4,8 +4,8 @@
 // Vignette + grain via simple TSL Fn. No ShaderMaterial.
 
 import { WebGPURenderer, RenderPipeline as TSLRenderPipeline } from 'three/webgpu'
-import { bloom } from 'three/addons/tsl/display/BloomNode.js'
-import { pass, Fn, uniform, uv, fract, dot, vec2, vec3, mix, smoothstep } from 'three/tsl'
+import { tslBloom, tslPass } from '../types/tsl-helpers'
+import { Fn, uniform, uv, fract, dot, vec2, vec3, mix, smoothstep } from 'three/tsl'
 import * as THREE from 'three'
 import type { Scene, Camera } from 'three'
 
@@ -97,13 +97,13 @@ export class WebGPUPostPipeline {
     }
 
     // Scene pass: render scene to texture.
-    const scenePass = pass(this._scene as any, this._camera as any) as any
+    const scenePass = tslPass(this._scene, this._camera) as any
     const sceneColor = scenePass.getTextureNode()
 
     // Bloom (mip-chain, ready-made node).
     // bloom() accepts UniformNode at runtime; TS types in three 0.184
     // incorrectly expect numbers. Cast to bypass.
-    const bloomNode = (bloom as any)(
+    const bloomNode = tslBloom(
       sceneColor,
       this._bloomStrength,
       this._bloomRadius,

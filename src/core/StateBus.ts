@@ -210,3 +210,15 @@ export class StateBus {
     return this
   }
 }
+
+// HMR: clear all state on hot-reload to prevent phantom subscriptions
+// from old StateBus instances lingering across module reloads.
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    try {
+      StateBus.getInstance().reset()
+    } catch {
+      // StateBus may not exist yet during initial load
+    }
+  })
+}
