@@ -26,8 +26,8 @@ git pull origin main
 
 ## Key rules (see HERMES_RULES.md)
 
-1. No ShaderMaterial in scene — built-in only
-2. No TSL NodeMaterial for scene — slow on WebGPU
+1. No raw ShaderMaterial in scene — use built-in or TSL NodeMaterial
+2. TSL NodeMaterial IS allowed (native WebGPU path); gate by DeviceCapability
 3. Non-destructive opacity — cache baseOpacity
 4. setAnimationLoop — not rAF
 5. scene.background always set (BG.color)

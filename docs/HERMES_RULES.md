@@ -16,13 +16,29 @@ git log --oneline -1  # verify you're on latest
 
 ## Golden rules
 
-### 1. NEVER use ShaderMaterial in scene objects
+### 1. NEVER use raw ShaderMaterial in scene objects
 
-Use built-in materials only (MeshStandardMaterial, MeshBasicMaterial, PointsMaterial, LineBasicMaterial, GridHelper).
+WebGPURenderer cannot compile raw GLSL ShaderMaterial (THREE.NodeBuilder
+incompatibility). Use built-in materials (MeshStandardMaterial,
+MeshBasicMaterial, PointsMaterial, LineBasicMaterial) or TSL NodeMaterial
+(see §2). ShaderMaterial is allowed in post-processing passes (fullscreen
+quad, not in scene graph) on the WebGL2 path only.
 
-### 2. NEVER use TSL NodeMaterial for scene objects
+### 2. TSL NodeMaterial IS allowed for scene objects (revised)
 
-Slow on WebGPU-over-ANGLE. Use built-in materials.
+Previously banned due to lag on WebGPU-over-ANGLE (Chrome/Wayland/NVIDIA).
+That was a LOCAL ENVIRONMENT issue (ANGLE→OpenGL fallback), not a
+fundamental TSL problem. On native WebGPU (Vulkan/D3D12/Metal) and on
+WebGL2 (via WebGLNodesHandler) TSL NodeMaterial works correctly.
+
+Guidelines:
+- TSL NodeMaterial (MeshStandardNodeMaterial, etc.) is the NATIVE path for
+  WebGPU — prefer it over built-in materials when you need custom shaders.
+- Gate heavy TSL materials by DeviceCapability.tier — on low-tier devices,
+  fall back to built-in materials (cheaper to compile).
+- Raw ShaderMaterial remains banned in scene (see §1) — use TSL instead.
+- Post-processing: use TSL PostProcessing (PassNode) on WebGPU,
+  ShaderMaterial on WebGL2.
 
 ### 3. Non-destructive opacity fade
 

@@ -41,6 +41,12 @@ export interface PostTransform {
   vignette: number
   grain: number
   chromatic: number
+  /** Screen-space glass refraction strength (0=off, 0.1=subtle, 0.3=strong). */
+  refract: number
+  /** Shadow tint (RGB 0-1, multiplied into dark areas). */
+  gradeShadows: [number, number, number]
+  /** Highlight tint (RGB 0-1, 1=neutral, pushed into bright areas). */
+  gradeHighlights: [number, number, number]
 }
 
 export interface SectionLightDef {
@@ -88,6 +94,9 @@ type RawScene = {
   postVignette: number
   postGrain: number
   postChromatic: number
+  postRefract: number
+  postGradeShadows: [number, number, number]
+  postGradeHighlights: [number, number, number]
   lightColor: number
   lightIntensity: number
   fogColor: number
@@ -121,6 +130,9 @@ const RAW: RawScene[] = [
     postVignette: 1.5,
     postGrain: 0.02,
     postChromatic: 0.002,
+    postRefract: 0.05,
+    postGradeShadows: [1.0, 0.98, 0.95],
+    postGradeHighlights: [1.0, 1.0, 1.0],
     lightColor: 0xffffff,
     lightIntensity: 1,
     fogColor: 0xffffff,
@@ -150,6 +162,9 @@ const RAW: RawScene[] = [
     postVignette: 0.5,
     postGrain: 0.02,
     postChromatic: 0.003,
+    postRefract: 0.15,
+    postGradeShadows: [0.9, 0.92, 1.0],
+    postGradeHighlights: [0.85, 0.9, 1.0],
     lightColor: 0x040408,
     lightIntensity: 1.2,
     fogColor: 0x040408,
@@ -179,6 +194,9 @@ const RAW: RawScene[] = [
     postVignette: 0.8,
     postGrain: 0.02,
     postChromatic: 0.004,
+    postRefract: 0.25,
+    postGradeShadows: [0.98, 0.98, 1.0],
+    postGradeHighlights: [1.0, 1.0, 1.0],
     lightColor: 0xeeeeee,
     lightIntensity: 1.0,
     fogColor: 0xeeeeee,
@@ -208,6 +226,9 @@ const RAW: RawScene[] = [
     postVignette: 0.4,
     postGrain: 0.02,
     postChromatic: 0.005,
+    postRefract: 0.1,
+    postGradeShadows: [0.88, 0.9, 1.0],
+    postGradeHighlights: [0.9, 0.92, 1.0],
     lightColor: 0x06080e,
     lightIntensity: 1.2,
     fogColor: 0x06080e,
@@ -237,6 +258,9 @@ const RAW: RawScene[] = [
     postVignette: 0.6,
     postGrain: 0.02,
     postChromatic: 0.004,
+    postRefract: 0.12,
+    postGradeShadows: [0.92, 0.94, 1.0],
+    postGradeHighlights: [0.92, 0.95, 1.0],
     lightColor: 0x050810,
     lightIntensity: 1.0,
     fogColor: 0x050810,
@@ -266,6 +290,9 @@ const RAW: RawScene[] = [
     postVignette: 0.6,
     postGrain: 0.025,
     postChromatic: 0.004,
+    postRefract: 0.08,
+    postGradeShadows: [1.0, 0.96, 0.92],
+    postGradeHighlights: [1.0, 0.98, 0.95],
     lightColor: 0x050810,
     lightIntensity: 0.8,
     fogColor: 0x050810,
@@ -317,6 +344,9 @@ export function toPhaseConfig(raw: RawScene): PhaseConfig {
       vignette: raw.postVignette,
       grain: raw.postGrain,
       chromatic: raw.postChromatic,
+      refract: raw.postRefract,
+      gradeShadows: raw.postGradeShadows,
+      gradeHighlights: raw.postGradeHighlights,
     },
     ui: { showGallery: raw.showGallery },
     background: raw.bgColor,

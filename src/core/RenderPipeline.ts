@@ -75,6 +75,9 @@ const COMPOSITE_FSG = `
   uniform float uGrain;
   uniform float uTime;
   uniform float uChromatic;
+  uniform float uRefract;
+  uniform vec3 uGradeShadows;
+  uniform vec3 uGradeHighlights;
   
   float hash(vec2 p) {
     return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
@@ -92,21 +95,46 @@ const COMPOSITE_FSG = `
   }
   
   void main() {
-    vec3 scene = texture2D(uScene, vUv).xyz;
-    vec3 bloom = texture2D(uBloom, vUv).xyz;
+    // Screen-space refraction — glass-like distortion sampling the scene
+    // texture with a radial UV offset. Cheaper than real transmission: no
+    // per-mesh render, just a fullscreen post pass. Subtle on bright areas,
+    // stronger toward edges (like looking through a glass cube).
+    vec2 uv = vUv;
+    if (uRefract > 0.0) {
+      vec2 center = vUv - vec2(0.5);
+      float dist = length(center);
+      // Refraction strength increases toward edges (radial)
+      float strength = uRefract * (0.5 + dist * 1.5);
+      // Sin-wave distortion for organic glass feel
+      uv = vUv + center * strength * 0.04
+           + vec2(sin(vUv.y * 20.0 + uTime * 0.5), cos(vUv.x * 20.0 + uTime * 0.5)) * strength * 0.003;
+    }
+
+    vec3 scene = texture2D(uScene, uv).xyz;
+    vec3 bloom = texture2D(uBloom, uv).xyz;
     
     // Chromatic aberration — RGB channel shift
     if (uChromatic > 0.0) {
       vec2 dir = normalize(vUv - vec2(0.5)) * uChromatic;
       scene = vec3(
-        texture2D(uScene, vUv + dir).r,
+        texture2D(uScene, uv + dir).r,
         scene.g,
-        texture2D(uScene, vUv - dir).b
+        texture2D(uScene, uv - dir).b
       );
     }
 
     // Bloom composite
     vec3 color = scene + bloom * uBloomIntensity;
+
+    // Section-driven color grading — lift shadows / push highlights
+    // toward a per-section tint (subtle, like a LUT). Mixes based on luminance.
+    float lum = dot(color, vec3(0.299, 0.587, 0.114));
+    vec3 graded = mix(
+      color * uGradeShadows,
+      color + (uGradeHighlights - 1.0) * max(color - 0.5, 0.0),
+      smoothstep(0.0, 1.0, lum)
+    );
+    color = mix(color, graded, 0.4);
 
     // ACES-like tone mapping
     color = color * (6.2 * color + 0.03) / (color * (4.8 * color + 1.0));
@@ -195,6 +223,10 @@ export class RenderPipeline {
   private _quad?: THREE.Mesh | null
   // Dummy camera for fullscreen quad rendering (Firefox crashes on null camera)
   private static _dummyCam: THREE.OrthographicCamera | null = null
+  // Section grade values (stored so setSectionGrade works before WebGL composite is built)
+  private _sectionRefract = 0.05
+  private _sectionShadows = new THREE.Vector3(1, 1, 1)
+  private _sectionHighlights = new THREE.Vector3(1, 1, 1)
 
   /** Flag: is this a WebGPU renderer? */
   private _isWebGPU = false
@@ -249,9 +281,6 @@ export class RenderPipeline {
     this._params.vignette = params.vignette
     this._params.grain = params.grain
     this._params.chromatic = params.chromatic ?? this._params.chromatic ?? 0
-    // Track B: per-section bloom radius + threshold (WebGPU uses these via
-    // uniform mutation in _renderWebGPU; WebGL path uses fixed config values
-    // since its blur pipeline is RT-based, not uniform-driven).
     this._params.bloomRadius = params.bloomRadius ?? this._params.bloomRadius
     this._params.bloomThreshold = params.bloomThreshold ?? this._params.bloomThreshold
 
@@ -261,6 +290,23 @@ export class RenderPipeline {
       this._passComposite.uniforms.uVignette!.value = params.vignette
       this._passComposite.uniforms.uGrain!.value = params.grain
       this._passComposite.uniforms.uChromatic!.value = this._params.chromatic
+      // Re-apply section grade (stored in _sectionRefract/Shadows/Highlights)
+      // so it survives updateParams calls from PostProcessingManager.
+      this._passComposite.uniforms.uRefract!.value = this._sectionRefract
+      ;(this._passComposite.uniforms.uGradeShadows!.value as THREE.Vector3).copy(this._sectionShadows)
+      ;(this._passComposite.uniforms.uGradeHighlights!.value as THREE.Vector3).copy(this._sectionHighlights)
+    }
+  }
+
+  /** Set section-driven color grading (shadows tint, highlights tint, refraction). */
+  public setSectionGrade(refract: number, shadowTint: THREE.Vector3, highlightTint: THREE.Vector3): void {
+    this._sectionRefract = refract
+    this._sectionShadows.copy(shadowTint)
+    this._sectionHighlights.copy(highlightTint)
+    if (this._passComposite) {
+      this._passComposite.uniforms.uRefract!.value = refract
+      ;(this._passComposite.uniforms.uGradeShadows!.value as THREE.Vector3).copy(shadowTint)
+      ;(this._passComposite.uniforms.uGradeHighlights!.value as THREE.Vector3).copy(highlightTint)
     }
   }
 
@@ -273,6 +319,10 @@ export class RenderPipeline {
     // on WebGPU (Hermes removed them), the TSL pipeline adds overhead with
     // zero visual benefit. Use direct renderer.render() on WebGPU.
     if (this._isWebGPU) {
+      // WebGPURenderer cannot compile ShaderMaterial (THREE.NodeBuilder
+      // incompatibility) — refraction + color grade are WebGL2-only.
+      // WebGPU gets direct render (ACES via renderer.toneMapping). This
+      // matches the original perf decision (HERMES removed WebGPU post).
       this._renderer.render(scene, camera)
       return
     }
@@ -294,7 +344,7 @@ export class RenderPipeline {
     this._width = width
     this._height = height
     if (this._isWebGPU) return
-    // WebGPU: native RenderPipeline + PassNode read renderer size on each
+    // WebGPU: direct render, no RT to resize.
     // render, so no explicit RT reallocation is needed here.
     if (this._resizeTimer) clearTimeout(this._resizeTimer)
     this._resizeTimer = setTimeout(() => {
@@ -413,6 +463,9 @@ export class RenderPipeline {
         uGrain: { value: this._params.grain },
         uChromatic: { value: 0.0 },
         uTime: { value: 0 },
+        uRefract: { value: 0.0 },
+        uGradeShadows: { value: new THREE.Vector3(1, 1, 1) },
+        uGradeHighlights: { value: new THREE.Vector3(1, 1, 1) },
       },
       vertexShader: QUAD_VERTEX,
       fragmentShader: COMPOSITE_FSG,
@@ -532,6 +585,7 @@ export class RenderPipeline {
     passComposite.uniforms.uGrain!.value = this._params.grain
     passComposite.uniforms.uChromatic!.value = this._params.chromatic ?? 0
     passComposite.uniforms.uTime!.value = performance.now() * 0.001
+    // Refraction + grade are set via setSectionGrade() — they persist across frames.
 
     this._renderQuad(passComposite, {}, null, renderer)
 
@@ -539,7 +593,10 @@ export class RenderPipeline {
     renderer.toneMapping = toneMappingBackup
   }
 
-  // ─── Rendering: WebGPU (TSL post-processing) ─────────────────
+  // ─── Rendering: WebGPU (direct render — no post-processing) ───
+  // WebGPURenderer cannot compile ShaderMaterial (THREE.NodeBuilder
+  // incompatibility). Refraction + color grade are WebGL2-only. WebGPU gets
+  // direct renderer.render() with ACES tone mapping (perf-optimised).
 
   /**
    * Build the WebGPU TSL post-processing node graph.
