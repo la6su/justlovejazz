@@ -25,7 +25,8 @@ export class Renderer {
   public postManager = new PostProcessingManager()
 
   // Junni-style multi-pass post-processing pipeline (typed, explicit fallback)
-  private pipeline: RenderPipeline | null = null
+  /** Public for Experience to call setSectionGrade (refraction + color grade). */
+  pipeline: RenderPipeline | null = null
   // Pipeline config built in constructor, applied in init() after backend ready.
   private _pipelineConfig!: RenderPipelineConfig
 

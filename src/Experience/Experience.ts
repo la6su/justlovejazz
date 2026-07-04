@@ -242,6 +242,12 @@ export class Experience {
       // Fog is now managed by World.updateTransform() on section index change —
       // no need to set it here. PostProcessing + FOV still triggered on context change.
       this.renderer.postManager.applyPreset(cfg.id)
+      // Section-driven screen-space refraction + color grading (glass + LUT-like tint).
+      this.renderer.pipeline?.setSectionGrade(
+        cfg.post.refract,
+        new THREE.Vector3(...cfg.post.gradeShadows),
+        new THREE.Vector3(...cfg.post.gradeHighlights),
+      )
       this.camera.setFovOffset(cfg.camFovOffset, cfg.camFovDuration)
       // Subtle camera shake on section transition for cinematic impact
       if (!prefersReducedMotion()) this.camera.shake(0.04, 0.4)

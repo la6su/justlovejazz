@@ -609,7 +609,7 @@ export class World extends THREE.Group {
       },
       lighting: { ambient: new THREE.Color(), ambientColor: new THREE.Color(), intensity: 1 },
       fog: { color: new THREE.Color(), density: 0.03 },
-      post: { bloom: 0.2, vignette: 0.5, grain: 0.03, chromatic: 0.005 },
+      post: { bloom: 0.2, vignette: 0.5, grain: 0.03, chromatic: 0.005, refract: 0.05, gradeShadows: [1,1,1], gradeHighlights: [1,1,1] },
       ui: { showGallery: false },
       background: 0x050507,
       ground: { color: new THREE.Color(0x000000), opacity: 0 },

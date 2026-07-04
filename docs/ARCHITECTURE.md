@@ -36,7 +36,9 @@ Single `WebGPURenderer` (alpha:false, ACES tonemap, sRGB).
 - WebGPU: direct `renderer.render()` (no post-processing)
 - WebGL2: ShaderMaterial RT pipeline — single ACES pass in composite shader,
   rtScene is linear (no double tone-map / sRGB encode)
-- All scene materials: built-in (no ShaderMaterial in scene, no TSL NodeMaterial)
+- All scene materials: built-in or TSL NodeMaterial (native WebGPU path)
+- Raw ShaderMaterial banned in scene (WebGPURenderer incompatible); allowed in post-processing (WebGL2 only)
+- Post-processing: refraction + color grade (composite shader, WebGL2 path)
 
 ## Chunking (Vite 8 / rolldown `codeSplitting`)
 
