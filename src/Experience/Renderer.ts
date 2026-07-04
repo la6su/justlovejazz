@@ -195,7 +195,15 @@ export class Renderer {
         } else {
           this._fog.color.copy(worldState.envColor)
         }
-        scene.fog = this._fog
+        // NodeMaterials (MeshStandardNodeMaterial etc.) crash with
+        // refreshFogUniforms when scene.fog is set — fog uniforms are undefined
+        // for NodeMaterials in three 0.184. Only set fog on real WebGPU (where
+        // TSL handles fog via nodes) — skip on WebGLBackend fallback.
+        const isRealWebGPU = (this.instance as any).isWebGPURenderer
+          && (this.instance as any).backend?.constructor?.name === 'WebGPUBackend'
+        if (isRealWebGPU) {
+          scene.fog = this._fog
+        }
       }
     }
 
