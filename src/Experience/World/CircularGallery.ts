@@ -51,7 +51,7 @@ export class CircularGallery extends THREE.Group {
   constructor() {
     super()
     this.name = 'circular-gallery'
-    this.geometry = new THREE.PlaneGeometry(1, 1, 100, 50)
+    this.geometry = new THREE.PlaneGeometry(1, 1, 20, 10)
   }
 
   /** Load textures and create gallery items. Call after construction. */
@@ -74,10 +74,9 @@ export class CircularGallery extends THREE.Group {
       ),
     )
 
-    const scale = window.innerHeight / 1500
-    const planeHeight = (viewportHeight * (900 * scale)) / window.innerHeight
-    const planeWidth = (viewportWidth * (700 * scale)) / window.innerWidth
-    const padding = 2
+    const planeWidth = 3.5
+    const planeHeight = 2.5
+    const padding = 1.5
 
     this.widthTotal = (planeWidth + padding) * GALLERY_IMAGES.length
 
@@ -115,7 +114,7 @@ export class CircularGallery extends THREE.Group {
     this.wheelHandler = (e: WheelEvent) => {
       if (!this.visible) return
       e.preventDefault()
-      this.scroll.target += e.deltaY * 0.01
+      this.scroll.target += e.deltaY * 0.005
       this.scheduleSnap()
     }
     this.pointerDownHandler = (e: PointerEvent) => {
@@ -158,11 +157,10 @@ export class CircularGallery extends THREE.Group {
     this.scroll.target = this.scroll.target < 0 ? -item : item
   }
 
-  private updateItems(viewportWidth: number, viewportHeight: number): void {
-    const scale = window.innerHeight / 1500
-    const planeHeight = (viewportHeight * (900 * scale)) / window.innerHeight
-    const planeWidth = (viewportWidth * (700 * scale)) / window.innerWidth
-    const padding = 2
+  private updateItems(_viewportWidth: number, _viewportHeight: number): void {
+    const planeWidth = 3.5
+    const planeHeight = 2.5
+    const padding = 1.5
 
     this.widthTotal = (planeWidth + padding) * this.items.length
 
@@ -187,7 +185,7 @@ export class CircularGallery extends THREE.Group {
     this.speed = this.scroll.current - this.scroll.last
     this.direction = this.scroll.current > this.scroll.last ? 'right' : 'left'
 
-    const viewportWidth = window.innerWidth / 100 // rough world-space viewport
+    const viewportWidth = 10 // rough world-space half-viewport width
 
     for (const item of this.items) {
       // X position: scroll-based, wraps infinitely
@@ -195,7 +193,7 @@ export class CircularGallery extends THREE.Group {
 
       // Y position: cosine curve (circular arrangement)
       // Maps X to a circle: y = cos(x / widthTotal * PI) * radius - offset
-      const radius = 75
+      const radius = 3.0
       const yAngle = (posX / this.widthTotal) * Math.PI
       const posY = Math.cos(yAngle) * radius - (radius - 0.5)
 
