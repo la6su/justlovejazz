@@ -106,37 +106,63 @@ export class CircularGallery extends THREE.Group {
   private addEventListeners(): void {
     this.wheelHandler = (e: WheelEvent) => {
       if (!this._active) return
+      // Ignore wheel when the nav menu is open or wheel originates from UI chrome.
+      const overlay = document.getElementById('jlz-menu-overlay')
+      if (overlay && overlay.style.visibility === 'visible') return
+      const target = e.target as HTMLElement | null
+      if (target?.closest('#swipe-nav, #jlz-menu-toggle, #jlz-menu-overlay, #project-modal')) return
       e.preventDefault()
       this.scroll.target += e.deltaY * WHEEL_SENSITIVITY
       this.scheduleSnap()
     }
     this.pointerDownHandler = (e: PointerEvent) => {
       if (!this._active) return
+      // Ignore pointerdown on UI chrome — the gallery only reacts to drags
+      // on the 3D canvas area.
+      const target = e.target as HTMLElement | null
+      if (
+        target?.closest(
+          '#swipe-nav, #jlz-menu-toggle, #jlz-menu-overlay, #project-modal, .jlz-works-ui',
+        )
+      )
+        return
       this.isDown = true
       this.dragStartX = e.clientX
     }
     this.pointerMoveHandler = (e: PointerEvent) => {
       if (!this.isDown || !this._active) return
+      // Prevent page scroll on touch while dragging the gallery horizontally.
+      if (e.cancelable) e.preventDefault()
       const dx = (e.clientX - this.dragStartX) * DRAG_SENSITIVITY
       this.scroll.target -= dx
       this.dragStartX = e.clientX
-      this.scheduleSnap()
     }
     this.pointerUpHandler = () => {
       if (this.isDown) {
         this.isDown = false
+        // Snap to nearest item on release (not during drag — smoother feel).
         this.scheduleSnap()
       }
     }
     this.keydownHandler = (e: KeyboardEvent) => {
       if (!this._active) return
-      if (e.key === 'ArrowLeft') this.prev()
-      if (e.key === 'ArrowRight') this.next()
+      const overlay = document.getElementById('jlz-menu-overlay')
+      if (overlay && overlay.style.visibility === 'visible') return
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault()
+        this.prev()
+      }
+      if (e.key === 'ArrowRight') {
+        e.preventDefault()
+        this.next()
+      }
     }
     window.addEventListener('wheel', this.wheelHandler, { passive: false })
     window.addEventListener('pointerdown', this.pointerDownHandler)
-    window.addEventListener('pointermove', this.pointerMoveHandler)
+    // pointermove must be non-passive so we can preventDefault on touch drags.
+    window.addEventListener('pointermove', this.pointerMoveHandler, { passive: false })
     window.addEventListener('pointerup', this.pointerUpHandler)
+    window.addEventListener('pointercancel', this.pointerUpHandler)
     window.addEventListener('keydown', this.keydownHandler)
   }
 
@@ -205,7 +231,10 @@ export class CircularGallery extends THREE.Group {
     if (this.wheelHandler) window.removeEventListener('wheel', this.wheelHandler)
     if (this.pointerDownHandler) window.removeEventListener('pointerdown', this.pointerDownHandler)
     if (this.pointerMoveHandler) window.removeEventListener('pointermove', this.pointerMoveHandler)
-    if (this.pointerUpHandler) window.removeEventListener('pointerup', this.pointerUpHandler)
+    if (this.pointerUpHandler) {
+      window.removeEventListener('pointerup', this.pointerUpHandler)
+      window.removeEventListener('pointercancel', this.pointerUpHandler)
+    }
     if (this.keydownHandler) window.removeEventListener('keydown', this.keydownHandler)
     if (this.snapTimer) clearTimeout(this.snapTimer)
     this.geometry.dispose()

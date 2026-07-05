@@ -110,34 +110,39 @@ test.describe('JustLoveJazz — page boot smoke', () => {
 })
 
 test.describe('JustLoveJazz — accessibility & DOM UI', () => {
-  test('SectionProgress timeline dots render (one per section) with aria-labels', async ({
-    page,
-  }) => {
+  test('UIMenu toggle + section links render with aria-labels', async ({ page }) => {
     await page.goto('/')
 
-    // SectionProgress injects button.jlz-section-progress__dot per section
-    // (src/UI/SectionProgress.ts). It is only constructed after the Experience
-    // finishes init() — which requires WebGPU or WebGL2. In headless CI without
-    // a real GPU this may never happen, so skip gracefully instead of failing.
-    const dots = page.locator('button.jlz-section-progress__dot')
-    const firstAttached = await dots
-      .first()
+    // UIMenu injects #jlz-menu-toggle (hamburger) + #jlz-menu-overlay with
+    // .jlz-menu-link buttons (one per section). It is only constructed after
+    // the Experience finishes init() — which requires WebGPU or WebGL2. In
+    // headless CI without a real GPU this may never happen, so skip gracefully.
+    const toggle = page.locator('#jlz-menu-toggle')
+    const attached = await toggle
       .waitFor({ state: 'attached', timeout: 25000 })
       .then(() => true)
       .catch(() => false)
 
     test.skip(
-      !firstAttached,
-      'SectionProgress did not render — GPU/WebGL init likely failed in headless',
+      !attached,
+      'UIMenu did not render — GPU/WebGL init likely failed in headless',
     )
 
-    const count = await dots.count()
+    // Toggle has an accessible label.
+    const label = await toggle.getAttribute('aria-label')
+    expect(label).toBeTruthy()
+    expect(label!.toLowerCase()).toContain('menu')
+
+    // Open the menu and verify section links.
+    await toggle.click()
+    const links = page.locator('.jlz-menu-link')
+    await expect(links.first()).toBeVisible({ timeout: 5000 })
+    const count = await links.count()
     expect(count).toBeGreaterThanOrEqual(6)
 
-    // Each dot has an accessible label containing "section".
-    const firstLabel = await dots.first().getAttribute('aria-label')
-    expect(firstLabel).toBeTruthy()
-    expect(firstLabel!.toLowerCase()).toContain('section')
+    const firstLinkLabel = await links.first().getAttribute('aria-label')
+    expect(firstLinkLabel).toBeTruthy()
+    expect(firstLinkLabel!.toLowerCase()).toContain('section')
   })
 
   test('keyboard: Tab from top of page reaches the skip link first', async ({ page }) => {

@@ -17,10 +17,10 @@ import type { World } from '../core/World'
 import { WorksPortfolio } from './WorksPortfolio'
 import { ProjectOverlay } from '../UI/ProjectOverlay'
 import { Subtitles } from '../UI/Subtitles'
-import { SectionProgress } from '../UI/SectionProgress'
 import { PerfMonitor } from '../core/PerfMonitor'
 import { AudioSystem } from '../core/AudioSystem'
 import { SwipeNav } from '../UI/SwipeNav'
+import { UIMenu } from '../UI/UIMenu'
 import { updateWorldDNAAudio } from './World/worldDNA'
 import { prefersReducedMotion } from '../core/motionPolicy'
 import { eventBus } from '../core/EventBus'
@@ -57,7 +57,7 @@ export class Experience {
   public portfolio: WorksPortfolio | null = null
   private overlay: ProjectOverlay | null = null
   private _subtitles: Subtitles | null = null
-  private _sectionProgress: SectionProgress | null = null
+  private _uiMenu: UIMenu | null = null
   private currentSectionContext: string | null = null
   private _portfolioInitialized = false
   private _prevSectionIndex = -1
@@ -66,6 +66,23 @@ export class Experience {
   private _onVisibilityChange: (() => void) | null = null
   public audio: AudioSystem = new AudioSystem()
   private _swipeNav: SwipeNav | null = null
+
+  private static readonly SECTION_LABELS = [
+    'Intro',
+    'About',
+    'Flexible',
+    'Works',
+    'Innovative',
+    'Contact',
+  ]
+  private static readonly SECTION_SUBTITLES = [
+    'Interactive 3D Experience',
+    'Art meets technology',
+    'Adaptive workflows',
+    'Curated projects',
+    'Pushing the frontier',
+    'Build something extraordinary',
+  ]
 
   constructor(_ui: UIManager) {
     this.sizes = new Sizes()
@@ -138,27 +155,33 @@ export class Experience {
     }
     // Subtitles listen for jlz:section-change events automatically.
     this._subtitles = new Subtitles()
-    // Section progress indicator with clickable timeline dots.
-    // Swipe-based section navigation (replaces scroll-snap).
-    this._swipeNav = new SwipeNav(6)
-    this._swipeNav.setGalleryActiveChecker(() => {
-      const gallery = this.world?.sceneGroups?.[2]?.userData?.gallery as
-        { _active?: boolean } | undefined
-      return gallery?._active === true
+    // SwipeNav: scrubber-style section navigation (0-100% across all sections).
+    // Drag the handle to move through 3D scenes; release snaps to nearest section.
+    // Wheel/scroll is NOT used for section navigation — scroll only drives HTML
+    // content + active sliders (CircularGallery / WorksPortfolio).
+    this._swipeNav = new SwipeNav(6, {
+      sectionLabels: Experience.SECTION_LABELS,
     })
     this._swipeNav.onSectionChange((idx) => {
-      // Section change callback — update world
-      console.info('[SwipeNav] section changed:', idx)
+      this._uiMenu?.setActive(idx)
     })
 
-    this._sectionProgress = new SectionProgress([
-      'Intro',
-      'About',
-      'Flexible',
-      'Challenge',
-      'Innovative',
-      'Contact',
-    ])
+    // UIMenu: modal navigation for jumping to a specific section.
+    // Opens via hamburger button (top-right). The SwipeNav scrubber and the
+    // menu are the two navigation surfaces — section scroll is disabled.
+    this._uiMenu = new UIMenu({
+      sectionLabels: Experience.SECTION_LABELS,
+      sectionSubtitles: Experience.SECTION_SUBTITLES,
+    })
+    this._uiMenu.onNavigate((idx) => {
+      this._swipeNav?.goToSection(idx)
+    })
+
+    // Mark the intro section active on init so its DOM content is visible
+    // (ContentReveal toggles .section-active on jlz:section-change, but no
+    // event fires for the initial section).
+    const firstSection = document.querySelector('[data-section="intro"]')
+    firstSection?.classList.add('section-active')
     // Always build portfolio — single-page, always needs works slider
     void this.ensurePortfolio()
     this.camera.instance.position.set(0, 5, 10)
@@ -473,8 +496,8 @@ export class Experience {
     this.overlay?.dispose()
     this._subtitles?.dispose()
     this._subtitles = null
-    this._sectionProgress?.dispose()
-    this._sectionProgress = null
+    this._uiMenu?.dispose()
+    this._uiMenu = null
     // Sizes + Input own window listeners — clean them up to avoid leaks
     // on hot-reload (Vite HMR) and on explicit teardown.
     this.sizes.destroy()

@@ -32,6 +32,9 @@ export class WorksPortfolio {
   private expandProgress = 0
   private expandDirection: 'expand' | 'collapse' = 'expand'
   private expandedIdx = -1
+  private wheelHandler: ((e: WheelEvent) => void) | null = null
+  private wheelAccum = 0
+  private wheelAccumTimer: ReturnType<typeof setTimeout> | null = null
 
   /** Liquid multiplier (kept for DevPanel API compat, no longer used in shader). */
   public liquidMultiplier = 1
@@ -109,19 +112,65 @@ export class WorksPortfolio {
     window.addEventListener('pointerup', this.onPointerUp, true)
     window.addEventListener('pointercancel', this.onPointerUp, true)
     window.addEventListener('keydown', this.onKey)
+    // Wheel/scroll drives the carousel when the works section is active.
+    // Scroll does NOT navigate sections (SwipeNav scrubber does) — here it
+    // cycles through project faces on the cube.
+    this.wheelHandler = (e: WheelEvent) => {
+      if (this.expanding || !this.group.visible) return
+      // Ignore wheel when the nav menu is open (overlay covers screen).
+      const overlay = document.getElementById('jlz-menu-overlay')
+      if (overlay && overlay.style.visibility === 'visible') return
+      // Ignore wheel originating from the SwipeNav / menu / overlay UI.
+      const target = e.target as HTMLElement | null
+      if (target?.closest('#swipe-nav, #jlz-menu-toggle, #jlz-menu-overlay, #project-modal')) return
+      e.preventDefault()
+      // Accumulate wheel delta — trackpads fire many small events; mice
+      // fire one large event. Threshold-based accumulation handles both.
+      this.wheelAccum += e.deltaY
+      if (this.wheelAccumTimer) clearTimeout(this.wheelAccumTimer)
+      this.wheelAccumTimer = setTimeout(() => {
+        this.wheelAccum = 0
+      }, 200)
+      const threshold = 60
+      if (Math.abs(this.wheelAccum) > threshold) {
+        const dir = this.wheelAccum > 0 ? 1 : -1
+        this.goTo(this.targetIdx + dir)
+        this.wheelAccum = 0
+      }
+    }
+    window.addEventListener('wheel', this.wheelHandler, { passive: false })
   }
 
   private onKey = (e: KeyboardEvent) => {
     if (this.expanding) return
-    if (e.key === 'ArrowRight' || e.key === ' ') this.goTo(this.currentIdx + 1)
-    if (e.key === 'ArrowLeft') this.goTo(this.currentIdx - 1)
+    if (!this.group.visible) return
+    // Don't hijack arrows when the menu is open or focus is in a control.
+    const overlay = document.getElementById('jlz-menu-overlay')
+    if (overlay && overlay.style.visibility === 'visible') return
+    const tag = (e.target as HTMLElement)?.tagName
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return
+    if (e.key === 'ArrowRight' || e.key === ' ') {
+      e.preventDefault()
+      this.goTo(this.currentIdx + 1)
+    }
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault()
+      this.goTo(this.currentIdx - 1)
+    }
   }
 
   private onPointerDown = (e: PointerEvent) => {
     if (this.expanding) return
     if (!this.group.visible) return
     const target = e.target as HTMLElement
-    if (target.closest('.jlz-works-ui, #project-modal, #jlj-splash, #main-nav')) return
+    // Ignore pointerdown on UI chrome — the carousel only reacts to drags
+    // on the 3D canvas area.
+    if (
+      target.closest(
+        '.jlz-works-ui, #project-modal, #jlj-splash, #main-nav, #swipe-nav, #jlz-menu-toggle, #jlz-menu-overlay',
+      )
+    )
+      return
     // Touch devices: prevent the page from scrolling while swiping the cube.
     // scroll-snap mandatory would otherwise fight the horizontal drag.
     if (e.pointerType === 'touch') {
@@ -149,7 +198,8 @@ export class WorksPortfolio {
       // Horizontal drag — prevent page scroll
       e.preventDefault()
     }
-    this.dragOff = (e.clientX - this.dragStartX) * 0.005
+    // Live drag offset in radians — maps ~180px of drag to one cube face (PI/2).
+    this.dragOff = (e.clientX - this.dragStartX) * 0.009
     const now = performance.now()
     const dt = now - this.lastT
     this.vel = dt > 0 ? (e.clientX - this.lastX) / dt : 0
@@ -241,12 +291,16 @@ export class WorksPortfolio {
 
     // Rotate the baku cube to show the current project face.
     // Live drag offset is added to the rotation for real-time swipe feedback.
+    // During active drag, follow the target more aggressively (dt*18) so the
+    // cube tracks the finger/mouse with minimal lag; when settling after
+    // release, use a softer lerp (dt*8) for a smooth spring feel.
     if (this.baku) {
       const targetRotY = -((this.currentIdx * Math.PI) / 2) - this.dragOff
+      const lerpFactor = this.dragging ? Math.min(1, dt * 18) : Math.min(1, dt * 8)
       this.baku.rotation.y = THREE.MathUtils.lerp(
         this.baku.rotation.y,
         targetRotY,
-        Math.min(1, dt * 8),
+        lerpFactor,
       )
     }
   }
@@ -257,6 +311,8 @@ export class WorksPortfolio {
     window.removeEventListener('pointerup', this.onPointerUp, true)
     window.removeEventListener('pointercancel', this.onPointerUp, true)
     window.removeEventListener('keydown', this.onKey)
+    if (this.wheelHandler) window.removeEventListener('wheel', this.wheelHandler)
+    if (this.wheelAccumTimer) clearTimeout(this.wheelAccumTimer)
     for (const tex of this.textures) {
       tex?.dispose()
     }

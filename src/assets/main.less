@@ -140,21 +140,29 @@
   font-weight: 300;
 }
 
+.section-studio {
+  position: relative;
+  z-index: var(--jlz-z-content);
+  height: 100vh;
+  height: 100dvh;
+  width: 100vw;
+  overflow: hidden;
+}
 .section-studio section[data-section] {
-  min-height: 100vh !important;
-  min-height: 100dvh !important;
-  height: auto !important;
-  flex-shrink: 0 !important;
-  flex-grow: 0 !important;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  position: relative;
   overflow: hidden;
   z-index: 2;
-  /* Bug 5: snap each section to viewport top — full-screen clear switch. */
-  /* No scroll-snap — SwipeNav handles navigation. */
+  /* Sections are stacked (absolute). Only the active section is visible.
+     Visibility is toggled via .section-active (set by ContentReveal on
+     jlz:section-change). The SwipeNav scrubber drives section index. */
 }
 .uk-height-viewport {
   min-height: 100vh !important;
@@ -934,8 +942,13 @@ canvas {
    .section-active on [data-section] elements.)
    ════════════════════════════════════════════════════════════════════ */
 
+/* Sections are stacked (position:absolute). Inactive ones are fully hidden
+   so they don't ghost through the transparent section-bg. The active section
+   fades in. pointer-events disabled on hidden sections so they don't block
+   the 3D canvas / sliders. */
 [data-section] {
-  opacity: 0.4;
+  opacity: 0;
+  pointer-events: none;
   transform: translateY(8px);
   transition:
     opacity var(--jlz-duration-normal) var(--jlz-ease-state),
@@ -944,6 +957,7 @@ canvas {
 
 .section-active {
   opacity: 1 !important;
+  pointer-events: auto !important;
   transform: translateY(0) !important;
   transition:
     opacity var(--jlz-duration-slow) var(--jlz-ease-entrance),
@@ -952,7 +966,6 @@ canvas {
 
 @media (prefers-reduced-motion: reduce) {
   [data-section] {
-    opacity: 1;
     transform: none;
   }
 }
@@ -972,11 +985,6 @@ canvas {
   button,
   .interactive {
     cursor: auto !important;
-  }
-
-  /* Tighten section padding on small screens */
-  .section-studio {
-    padding: 8vh 0.5rem !important;
   }
 
   /* Tighten UIkit grid gaps on mobile */
@@ -1010,5 +1018,290 @@ canvas {
   .uk-animation-slide-right {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   14. Menu modal (section navigation)
+   — .jlz-menu-toggle (hamburger button, fixed top-right)
+   — .jlz-menu-overlay (full-screen dialog)
+   — .jlz-menu-close (overlay close button)
+   — .jlz-menu-nav / .jlz-menu-link (section list)
+   Open state toggled via `.is-open` on the overlay (no inline styles).
+   ════════════════════════════════════════════════════════════════════ */
+
+.jlz-menu-toggle {
+  position: fixed;
+  top: 1.25rem;
+  right: 1.25rem;
+  z-index: 10001;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  background: rgba(20, 20, 24, 0.5);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+.jlz-menu-toggle:hover {
+  background: rgba(40, 40, 46, 0.7);
+}
+
+.jlz-menu-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  padding: 2rem;
+  background: rgba(5, 5, 7, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+.jlz-menu-overlay.is-open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.jlz-menu-close {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  z-index: 2;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  background: rgba(40, 40, 46, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+}
+
+.jlz-menu-nav {
+  width: 100%;
+  max-width: 520px;
+  gap: 0.35rem;
+}
+
+.jlz-menu-link {
+  gap: 1.25rem;
+  padding: 1rem 1.25rem;
+  background: transparent;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.85);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  opacity: 0.55;
+  transition: background 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+}
+.jlz-menu-link:hover {
+  background: rgba(255, 255, 255, 0.06);
+  transform: translateX(6px);
+}
+.jlz-menu-link.is-active {
+  opacity: 1;
+}
+
+.jlz-menu-link__num {
+  font-family: var(--jlz-font-mono, 'Inter', monospace);
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  min-width: 2rem;
+  color: rgba(180, 180, 180, 0.5);
+  transition: color 0.2s ease;
+}
+.jlz-menu-link.is-active .jlz-menu-link__num {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.jlz-menu-link__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.jlz-menu-link__label {
+  font-size: clamp(1.1rem, 3vw, 1.6rem);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+
+.jlz-menu-link__sub {
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(160, 160, 160, 0.55);
+  font-family: var(--jlz-font-mono, 'Inter', monospace);
+}
+
+.jlz-menu-link:focus-visible,
+.jlz-menu-toggle:focus-visible,
+.jlz-menu-close:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.5);
+  outline-offset: 2px;
+}
+
+@media (max-width: 600px) {
+  .jlz-menu-toggle {
+    top: 0.75rem;
+    right: 0.75rem;
+    width: 40px;
+    height: 40px;
+  }
+  .jlz-menu-close {
+    top: 0.75rem;
+    right: 0.75rem;
+    width: 40px;
+    height: 40px;
+  }
+  .jlz-menu-link {
+    padding: 0.75rem 1rem;
+    gap: 1rem;
+  }
+  .jlz-menu-link__label {
+    font-size: 1.1rem;
+  }
+}
+
+/* Light-theme sections: keep the menu button legible on white bg */
+body.light-theme .jlz-menu-toggle {
+  background: rgba(255, 255, 255, 0.6);
+  border-color: rgba(0, 0, 0, 0.12);
+  color: rgba(0, 0, 0, 0.8);
+}
+body.light-theme .jlz-menu-toggle:hover {
+  background: rgba(240, 240, 240, 0.85);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   15. SwipeNav (scrubber) — 0–100% section progress
+   — .jlz-swipenav (fixed bottom center)
+   — .jlz-swipenav__label / __name / __pct (top label row)
+   — .jlz-swipenav__track (draggable area)
+   — .jlz-swipenav__fill (progress fill)
+   — .jlz-swipenav__thumb (draggable handle)
+   — .jlz-swipenav__ticks / __tick (section boundary marks)
+   State classes: .is-grabbing (track/thumb), .is-active / .is-passed (ticks)
+   ════════════════════════════════════════════════════════════════════ */
+
+.jlz-swipenav {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  pointer-events: auto;
+  gap: 0.45rem;
+  padding: 0.5rem 1rem;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.jlz-swipenav__label {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.6rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(128, 128, 128, 0.7);
+  transition: opacity 0.3s;
+}
+.jlz-swipenav__name {
+  color: rgba(200, 200, 200, 0.95);
+  font-weight: 600;
+}
+.jlz-swipenav__pct {
+  color: rgba(128, 128, 128, 0.5);
+  font-family: var(--jlz-font-mono, 'Inter', monospace);
+}
+
+.jlz-swipenav__track {
+  position: relative;
+  width: 60vw;
+  max-width: 520px;
+  height: 30px;
+  background: rgba(128, 128, 128, 0.1);
+  border-radius: 15px;
+  cursor: grab;
+  touch-action: none;
+  overflow: visible;
+  border: 1px solid rgba(128, 128, 128, 0.18);
+}
+.jlz-swipenav__track.is-grabbing {
+  cursor: grabbing;
+}
+
+.jlz-swipenav__fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, rgba(200, 200, 200, 0.18), rgba(220, 220, 220, 0.42));
+  border-radius: 15px;
+  pointer-events: none;
+}
+
+.jlz-swipenav__thumb {
+  position: absolute;
+  top: 50%;
+  left: 0%;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+  transition: transform 0.15s ease;
+  will-change: left;
+}
+.jlz-swipenav__thumb.is-grabbing {
+  transform: translate(-50%, -50%) scale(1.25);
+}
+
+.jlz-swipenav__ticks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.jlz-swipenav__tick {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 2px;
+  height: 10px;
+  background: rgba(128, 128, 128, 0.3);
+  border-radius: 1px;
+  transition: height 0.2s ease, background 0.2s ease;
+}
+.jlz-swipenav__tick.is-passed {
+  background: rgba(200, 200, 200, 0.6);
+}
+.jlz-swipenav__tick.is-active {
+  background: rgba(255, 255, 255, 0.95);
+  height: 14px;
+}
+
+@media (max-width: 600px) {
+  .jlz-swipenav {
+    bottom: 1rem;
+    width: 92vw;
+  }
+  .jlz-swipenav__track {
+    width: 100%;
+    max-width: 100%;
   }
 }
