@@ -166,7 +166,21 @@ export class DeviceCapability {
   }
 
   private detectRenderMode(): RendererMode {
-    if ('gpu' in navigator) return 'webgpu'
+    // WebGPU requires a SECURE CONTEXT (HTTPS or localhost).
+    // Accessing via LAN IP (http://192.168.x.x) is NOT secure context —
+    // navigator.gpu is undefined even if the browser supports WebGPU.
+    // Check isSecureContext first and log a warning if not secure.
+    if ('gpu' in navigator) {
+      return 'webgpu'
+    }
+    // WebGPU API exists but not available — likely non-secure context
+    if (typeof navigator !== 'undefined' && !('gpu' in navigator) && typeof isSecureContext !== 'undefined' && !isSecureContext) {
+      console.warn(
+        '[DeviceCapability] WebGPU not available — page is not a secure context.\n' +
+        'WebGPU requires HTTPS or localhost. Accessing via LAN IP (http://192.168.x.x) will NOT work.\n' +
+        'Use http://localhost:5173/ or configure Vite with HTTPS for LAN access.'
+      )
+    }
     const canvas = document.createElement('canvas')
     if (canvas.getContext('webgl2')) return 'webgl'
     return 'unsupported'
