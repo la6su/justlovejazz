@@ -51,7 +51,7 @@ export class BG {
    * on the about section.)
    */
   public update(deltaTime: number): void {
-    const lerp = 1 - Math.exp(-6 * deltaTime)
+    const lerp = 1 - Math.exp(-4 * deltaTime)
     this.color.lerp(this.targetColor, lerp)
   }
 }

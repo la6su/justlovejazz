@@ -160,11 +160,16 @@ const COMPOSITE_FSG = `
       color *= vig;
     }
 
-    // Screen border — full black frame at edges (from reference shader)
-    // edge = smoothstep(0, 0.02, uv) * (1 - smoothstep(1-0.02, 1, uv))
-    // = 0 at very edge, 1 toward center. color *= edge.x * edge.y → black border.
+    // Screen border — CRT curved black frame (from reference shader)
+    // Barrel distortion: curveUV = uv*2-1; offset = curveUV.yx * 0.25;
+    // curveUV += curveUV * offset * offset; curveUV = curveUV * 0.5 + 0.5;
+    // edge = smoothstep(0, 0.02, curveUV) * (1 - smoothstep(1-0.02, 1, curveUV))
     if (uBorder > 0.0) {
-      vec2 edge = smoothstep(0.0, 0.02, vUv) * (1.0 - smoothstep(1.0 - 0.02, 1.0, vUv));
+      vec2 curveUV = vUv * 2.0 - 1.0;
+      vec2 offset = curveUV.yx * 0.25;
+      curveUV += curveUV * offset * offset;
+      curveUV = curveUV * 0.5 + 0.5;
+      vec2 edge = smoothstep(0.0, 0.02, curveUV) * (1.0 - smoothstep(1.0 - 0.02, 1.0, curveUV));
       color *= edge.x * edge.y;
     }
     

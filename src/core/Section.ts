@@ -166,11 +166,11 @@ export class Section extends THREE.Group {
     }
   }
 
-  public fadeIn(duration: number = 1.0): void {
+  public fadeIn(duration: number = 0.8): void {
     StateBus.getInstance().animate(this.opacityChannel, 1, duration, 'easeOutQuart')
   }
 
-  public fadeOut(duration: number = 1.0): void {
+  public fadeOut(duration: number = 0.8): void {
     StateBus.getInstance().animate(this.opacityChannel, 0, duration, 'easeInOutQuart')
   }
 
