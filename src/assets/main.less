@@ -1022,12 +1022,13 @@ canvas {
 }
 
 /* ════════════════════════════════════════════════════════════════════
-   14. Menu modal (section navigation)
-   — .jlz-menu-toggle (hamburger button, fixed top-right)
-   — .jlz-menu-overlay (full-screen dialog)
-   — .jlz-menu-close (overlay close button)
-   — .jlz-menu-nav / .jlz-menu-link (section list)
-   Open state toggled via `.is-open` on the overlay (no inline styles).
+   14. Menu modal (section navigation) — uses UIkit modal component
+   — .jlz-menu-toggle (hamburger button, fixed top-right) — bespoke
+   — .jlz-menu-modal / .jlz-menu-dialog — UIkit modal shell (uk-modal)
+   — .jlz-menu-close — UIkit close-outside variant
+   — .jlz-menu-nav / .jlz-menu-link — section list (bespoke)
+   UIkit handles: overlay bg, show/hide transition, esc-close, bg-close,
+   focus trap, scroll-lock. Only the button + links have bespoke styles.
    ════════════════════════════════════════════════════════════════════ */
 
 .jlz-menu-toggle {
@@ -1051,30 +1052,33 @@ canvas {
   background: rgba(40, 40, 46, 0.7);
 }
 
-.jlz-menu-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 10000;
-  padding: 2rem;
-  background: rgba(5, 5, 7, 0.88);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.3s ease, visibility 0.3s ease;
+/* Modal dialog — make it tall + narrow for a section list */
+.jlz-menu-dialog {
+  width: 560px;
+  max-width: 92vw;
+  background: rgba(10, 10, 14, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 2rem 2.25rem;
 }
-.jlz-menu-overlay.is-open {
-  opacity: 1;
-  visibility: visible;
+
+.jlz-menu-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: rgba(160, 160, 170, 0.6);
 }
 
 .jlz-menu-close {
   position: absolute;
-  top: 1.25rem;
-  right: 1.25rem;
-  z-index: 2;
-  width: 44px;
-  height: 44px;
+  top: 1rem;
+  right: 1rem;
+  width: 40px;
+  height: 40px;
   padding: 0;
   background: rgba(40, 40, 46, 0.6);
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -1085,7 +1089,7 @@ canvas {
 
 .jlz-menu-nav {
   width: 100%;
-  max-width: 520px;
+  max-width: 100%;
   gap: 0.35rem;
 }
 
@@ -1157,11 +1161,8 @@ canvas {
     width: 40px;
     height: 40px;
   }
-  .jlz-menu-close {
-    top: 0.75rem;
-    right: 0.75rem;
-    width: 40px;
-    height: 40px;
+  .jlz-menu-dialog {
+    padding: 1.5rem 1.25rem;
   }
   .jlz-menu-link {
     padding: 0.75rem 1rem;
@@ -1183,14 +1184,15 @@ body.light-theme .jlz-menu-toggle:hover {
 }
 
 /* ════════════════════════════════════════════════════════════════════
-   15. SwipeNav (scrubber) — 0–100% section progress
+   15. SwipeNav — one-section-at-a-time swiper (drag 0→100% = one neighbor)
    — .jlz-swipenav (fixed bottom center)
-   — .jlz-swipenav__label / __name / __pct (top label row)
-   — .jlz-swipenav__track (draggable area)
-   — .jlz-swipenav__fill (progress fill)
-   — .jlz-swipenav__thumb (draggable handle)
-   — .jlz-swipenav__ticks / __tick (section boundary marks)
-   State classes: .is-grabbing (track/thumb), .is-active / .is-passed (ticks)
+   — .jlz-swipenav__label / __name / __dir (top label row)
+   — .jlz-swipenav__track (draggable area, center origin)
+   — .jlz-swipenav__origin (center 0% line)
+   — .jlz-swipenav__fill (progress fill, grows from center toward drag dir)
+   — .jlz-swipenav__thumb (draggable handle, starts at center)
+   — .jlz-swipenav__mark--left/right (50% commit threshold marks)
+   State classes: .is-grabbing (track/thumb), .is-next / .is-prev (fill/thumb)
    ════════════════════════════════════════════════════════════════════ */
 
 .jlz-swipenav {
@@ -1216,14 +1218,15 @@ body.light-theme .jlz-menu-toggle:hover {
   text-transform: uppercase;
   color: rgba(128, 128, 128, 0.7);
   transition: opacity 0.3s;
+  white-space: nowrap;
 }
 .jlz-swipenav__name {
   color: rgba(200, 200, 200, 0.95);
   font-weight: 600;
 }
-.jlz-swipenav__pct {
-  color: rgba(128, 128, 128, 0.5);
-  font-family: var(--jlz-font-mono, 'Inter', monospace);
+.jlz-swipenav__dir {
+  color: rgba(160, 180, 220, 0.7);
+  transition: opacity 0.2s ease;
 }
 
 .jlz-swipenav__track {
@@ -1242,21 +1245,54 @@ body.light-theme .jlz-menu-toggle:hover {
   cursor: grabbing;
 }
 
+/* Center origin line — the 0% reference */
+.jlz-swipenav__origin {
+  position: absolute;
+  left: 50%;
+  top: 20%;
+  width: 1px;
+  height: 60%;
+  background: rgba(160, 180, 220, 0.5);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+/* ±50% commit threshold marks */
+.jlz-swipenav__mark {
+  position: absolute;
+  top: 30%;
+  width: 1px;
+  height: 40%;
+  background: rgba(255, 255, 255, 0.15);
+  pointer-events: none;
+}
+.jlz-swipenav__mark--left {
+  left: 0%;
+}
+.jlz-swipenav__mark--right {
+  right: 0%;
+}
+
 .jlz-swipenav__fill {
   position: absolute;
-  left: 0;
   top: 0;
   height: 100%;
   width: 0%;
-  background: linear-gradient(90deg, rgba(200, 200, 200, 0.18), rgba(220, 220, 220, 0.42));
   border-radius: 15px;
   pointer-events: none;
+  transition: none;
+}
+.jlz-swipenav__fill.is-next {
+  background: linear-gradient(90deg, rgba(120, 160, 220, 0.25), rgba(140, 180, 240, 0.5));
+}
+.jlz-swipenav__fill.is-prev {
+  background: linear-gradient(270deg, rgba(220, 160, 120, 0.25), rgba(240, 180, 140, 0.5));
 }
 
 .jlz-swipenav__thumb {
   position: absolute;
   top: 50%;
-  left: 0%;
+  left: 50%;
   transform: translate(-50%, -50%);
   width: 20px;
   height: 20px;
@@ -1265,34 +1301,19 @@ body.light-theme .jlz-menu-toggle:hover {
   border: 2px solid rgba(255, 255, 255, 0.4);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
   pointer-events: none;
-  transition: transform 0.15s ease;
+  transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease;
   will-change: left;
 }
 .jlz-swipenav__thumb.is-grabbing {
   transform: translate(-50%, -50%) scale(1.25);
 }
-
-.jlz-swipenav__ticks {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
+.jlz-swipenav__thumb.is-next {
+  background: rgba(140, 180, 240, 0.95);
+  border-color: rgba(140, 180, 240, 0.6);
 }
-.jlz-swipenav__tick {
-  position: absolute;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: 2px;
-  height: 10px;
-  background: rgba(128, 128, 128, 0.3);
-  border-radius: 1px;
-  transition: height 0.2s ease, background 0.2s ease;
-}
-.jlz-swipenav__tick.is-passed {
-  background: rgba(200, 200, 200, 0.6);
-}
-.jlz-swipenav__tick.is-active {
-  background: rgba(255, 255, 255, 0.95);
-  height: 14px;
+.jlz-swipenav__thumb.is-prev {
+  background: rgba(240, 180, 140, 0.95);
+  border-color: rgba(240, 180, 140, 0.6);
 }
 
 @media (max-width: 600px) {

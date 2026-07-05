@@ -155,10 +155,11 @@ export class Experience {
     }
     // Subtitles listen for jlz:section-change events automatically.
     this._subtitles = new Subtitles()
-    // SwipeNav: scrubber-style section navigation (0-100% across all sections).
-    // Drag the handle to move through 3D scenes; release snaps to nearest section.
-    // Wheel/scroll is NOT used for section navigation — scroll only drives HTML
-    // content + active sliders (CircularGallery / WorksPortfolio).
+    // SwipeNav: one-section-at-a-time swiper. Drag 0→100% (right) to move to
+    // the NEXT section, 0→-100% (left) to move to PREV. Release snaps back if
+    // |progress| < 50%, commits the transition if > 50%. Wheel/scroll is NOT
+    // used for section navigation — scroll only drives HTML content + the
+    // active sliders (BakuCarousel on flexible, WorksPortfolio on challenge).
     this._swipeNav = new SwipeNav(6, {
       sectionLabels: Experience.SECTION_LABELS,
     })

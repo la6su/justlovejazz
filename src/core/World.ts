@@ -181,14 +181,17 @@ export class World extends THREE.Group {
       g.visible = i === 0
     })
 
-    // Init CircularGallery (async texture loading) for flexible section
+    // Init BakuCarousel (async texture loading) for flexible section.
+    // The baku cube morphs into a carousel ring when the flexible section
+    // becomes active — see BakuCarousel.ts for the morph logic.
     const flexGroup = this.sceneGroups[2]
     if (flexGroup) {
-      const gallery = flexGroup.userData.gallery as
-        import('../Sections/Section3Flexible/CircularGallery').CircularGallery | undefined
-      if (gallery) {
-        void gallery.init().then(() => {
-          console.info('[World] CircularGallery initialized')
+      const carousel = flexGroup.userData.gallery as
+        | import('../Experience/World/BakuCarousel').BakuCarousel
+        | undefined
+      if (carousel) {
+        void carousel.init().then(() => {
+          console.info('[World] BakuCarousel initialized')
         })
       }
     }
@@ -248,6 +251,12 @@ export class World extends THREE.Group {
       const slides = group.userData.flexibleSlides as
         import('../Experience/World/Sections/FlexibleSlides').FlexibleSlides | undefined
       if (slides) slides.update(deltaTime)
+
+      // ── Drive BakuCarousel per-frame (morph cube ↔ carousel ring + scroll) ──
+      const carousel = group.userData.gallery as
+        | import('../Experience/World/BakuCarousel').BakuCarousel
+        | undefined
+      if (carousel) carousel.update(deltaTime)
     }
   }
 
@@ -388,12 +397,13 @@ export class World extends THREE.Group {
           m.opacity = (m.userData.baseOpacity ?? 1) * fade
         }
 
-        // CircularGallery visibility + active state
-        const gallery = g.userData.gallery as
-          import('../Sections/Section3Flexible/CircularGallery').CircularGallery | undefined
-        if (gallery) {
-          gallery.visible = fade > 0.01
-          gallery.setActive(fade > 0.5)
+        // BakuCarousel visibility + active state (morph cube ↔ carousel ring)
+        const carousel = g.userData.gallery as
+          | import('../Experience/World/BakuCarousel').BakuCarousel
+          | undefined
+        if (carousel) {
+          carousel.visible = fade > 0.01
+          carousel.setActive(fade > 0.5)
         }
       } else {
         g.visible = false

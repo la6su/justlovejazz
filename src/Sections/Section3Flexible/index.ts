@@ -1,15 +1,18 @@
-// Section3 — Flexible: colorful dark bg, circular gallery, particles.
+// Section3 — Flexible: baku cube morphs into a circular carousel.
 import * as THREE from 'three'
 import { PointsNodeMaterial } from 'three/webgpu'
-import { CircularGallery } from './CircularGallery'
+import { BakuCarousel } from '../../Experience/World/BakuCarousel'
 
 export function createSection3(): THREE.Group {
   const g = new THREE.Group()
   g.name = 'flexible'
-  const gallery = new CircularGallery()
-  gallery.userData.keepVisible = true
-  g.add(gallery)
-  g.userData.gallery = gallery
+  // BakuCarousel — the baku cube unfolds into a ring of carousel cards.
+  // The carousel cards are rendered on top of the baku cube; when morphed
+  // out (morphT > 0.5) they form the carousel ring the user can scroll/drag.
+  const carousel = new BakuCarousel()
+  carousel.userData.keepVisible = true
+  g.add(carousel)
+  g.userData.gallery = carousel
   g.add(makeParticles(20, new THREE.Vector3(20, 10, 10), 0xaaaaaa, 0.03, 0.15))
   return g
 }
