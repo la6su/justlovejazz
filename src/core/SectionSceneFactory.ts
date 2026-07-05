@@ -4,8 +4,8 @@
 
 import * as THREE from 'three'
 import { PointsNodeMaterial } from 'three/webgpu'
-import { FlexibleSlides } from '../Experience/World/Sections/FlexibleSlides'
 import { DeviceCapability } from './DeviceCapability'
+import { CircularGallery } from '../Experience/World/CircularGallery'
 
 // Scale particle counts by device tier — low-end devices render far fewer
 // particles. DeviceCapability.config.gpuParticles is false on low tier but
@@ -65,28 +65,14 @@ export class SectionSceneFactory {
   static createFlexible(): THREE.Group {
     const g = new THREE.Group()
     g.name = 'flexible'
-    const slides = new FlexibleSlides()
-    slides.userData.keepVisible = true
-    g.add(slides)
-    const loader = new THREE.TextureLoader()
-    let bgTex: THREE.Texture | null = null
-    let titleTex: THREE.Texture | null = null
-    const tryBuild = () => {
-      if (bgTex && titleTex) {
-        slides.build(bgTex, titleTex)
-        g.userData.flexibleSlides = slides
-      }
-    }
-    loader.load('/assets/textures/sec2-bg-text.png', (tex) => {
-      bgTex = tex
-      tryBuild()
-    })
-    loader.load('/assets/textures/flexible-title.png', (tex) => {
-      titleTex = tex
-      tryBuild()
-    })
-    g.add(makeParticles(pc(30), new THREE.Vector3(14, 7, 8), 0xaaaaaa, 0.035, 0.2))
-
+    // Circular gallery — infinite scrolling images on a cosine curve.
+    // Init is async (loads textures); done by World after group is added.
+    const gallery = new CircularGallery()
+    gallery.userData.keepVisible = true
+    g.add(gallery)
+    g.userData.gallery = gallery
+    // Particles for ambiance
+    g.add(makeParticles(pc(20), new THREE.Vector3(20, 10, 10), 0xaaaaaa, 0.03, 0.15))
     return g
   }
 
