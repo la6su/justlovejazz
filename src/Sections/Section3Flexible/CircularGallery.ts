@@ -21,8 +21,8 @@ const PLANE_H = 2.0
 const PADDING = 1.0
 const RADIUS = 2.5
 const SCROLL_EASE = 0.08
-const WHEEL_SENSITIVITY = 0.008
-const DRAG_SENSITIVITY = 0.015
+const WHEEL_SENSITIVITY = 0.02
+const DRAG_SENSITIVITY = 0.03
 
 interface GalleryItem {
   mesh: THREE.Mesh
