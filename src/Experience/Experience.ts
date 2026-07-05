@@ -20,7 +20,6 @@ import { Subtitles } from '../UI/Subtitles'
 import { SectionProgress } from '../UI/SectionProgress'
 import { PerfMonitor } from '../core/PerfMonitor'
 import { AudioSystem } from '../core/AudioSystem'
-import { BorderOverlay } from '../core/BorderOverlay'
 import { updateWorldDNAAudio } from './World/worldDNA'
 import { prefersReducedMotion } from '../core/motionPolicy'
 import { eventBus } from '../core/EventBus'
@@ -65,7 +64,6 @@ export class Experience {
   private _onSizesResize: () => void = () => {}
   private _onVisibilityChange: (() => void) | null = null
   public audio: AudioSystem = new AudioSystem()
-  private _borderOverlay: BorderOverlay | null = null
 
   constructor(_ui: UIManager) {
     this.sizes = new Sizes()
@@ -167,17 +165,9 @@ export class Experience {
       if (document.hidden) r.setAnimationLoop(null)
       else r.setAnimationLoop((t: number) => this.update(t))
     }
-    // Global screen border — one fixed intensity for all sections.
-    // On real WebGPU: applied via TSL post-processing shader.
-    // On WebGL2 fallback: applied via CSS BorderOverlay (ShaderMaterial incompatible).
-    const isRealWebGPU = (this.renderer.instance as any).isWebGPURenderer
-      && (this.renderer.instance as any).backend?.constructor?.name === 'WebGPUBackend'
-    if (isRealWebGPU) {
-      this.renderer.pipeline?.setGlobalBorder(0.4)
-    } else {
-      this._borderOverlay = new BorderOverlay()
-      this._borderOverlay.setIntensity(0.4)
-    }
+    // Global screen border — CRT curved shader border, applied via
+    // RenderPipeline composite (works on both WebGL2 and WebGPU paths).
+    this.renderer.pipeline?.setGlobalBorder(0.4)
 
     document.addEventListener('visibilitychange', this._onVisibilityChange)
 
@@ -474,7 +464,6 @@ export class Experience {
     // Stop perf monitoring (disconnects PerformanceObserver + cancels rAF).
     PerfMonitor.stop()
     this.audio.dispose()
-    this._borderOverlay?.dispose()
   }
 
   private async ensurePortfolio(): Promise<void> {
