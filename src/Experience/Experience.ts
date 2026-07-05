@@ -20,6 +20,7 @@ import { Subtitles } from '../UI/Subtitles'
 import { SectionProgress } from '../UI/SectionProgress'
 import { PerfMonitor } from '../core/PerfMonitor'
 import { AudioSystem } from '../core/AudioSystem'
+import { SwipeNav } from '../UI/SwipeNav'
 import { updateWorldDNAAudio } from './World/worldDNA'
 import { prefersReducedMotion } from '../core/motionPolicy'
 import { eventBus } from '../core/EventBus'
@@ -64,6 +65,7 @@ export class Experience {
   private _onSizesResize: () => void = () => {}
   private _onVisibilityChange: (() => void) | null = null
   public audio: AudioSystem = new AudioSystem()
+  private _swipeNav: SwipeNav | null = null
 
   constructor(_ui: UIManager) {
     this.sizes = new Sizes()
@@ -109,6 +111,8 @@ export class Experience {
   }
 
   async init() {
+    // SmoothScroll/Lenis kept for potential future use but SwipeNav
+    // now drives section navigation (no page scroll needed).
     this.smoothScroll = new SmoothScroll()
     input.refreshScrollLimit()
     this.contentReveal = new ContentReveal()
@@ -135,6 +139,9 @@ export class Experience {
     // Subtitles listen for jlz:section-change events automatically.
     this._subtitles = new Subtitles()
     // Section progress indicator with clickable timeline dots.
+    // Swipe-based section navigation (replaces scroll-snap).
+    this._swipeNav = new SwipeNav(6, ['Intro', 'About', 'Flexible', 'Works', 'Innovative', 'Contact'])
+
     this._sectionProgress = new SectionProgress([
       'Intro',
       'About',
@@ -204,7 +211,8 @@ export class Experience {
     // Splash cube (= baku) opener is triggered by main-app via triggerSplashOpener.
     // jlz:webgl-ready is dispatched by main-app at curtain midpoint (not here).
 
-    const ns = input.getSmoothedScrollProgress()
+    // Navigation: SwipeNav progress (0-1) replaces scroll progress.
+    const ns = this._swipeNav?.getProgress() ?? 0
     const { cameraTarget, worldState } = this.world.advance(ns)
     this.world.update(dt)
 
@@ -463,6 +471,7 @@ export class Experience {
     input.destroy()
     // Stop perf monitoring (disconnects PerformanceObserver + cancels rAF).
     PerfMonitor.stop()
+    this._swipeNav?.dispose()
     this.audio.dispose()
   }
 

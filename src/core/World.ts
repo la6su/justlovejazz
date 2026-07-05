@@ -185,9 +185,9 @@ export class World extends THREE.Group {
     const flexGroup = this.sceneGroups[2]
     if (flexGroup) {
       const gallery = flexGroup.userData.gallery as
-        import('../Experience/World/CircularGallery').CircularGallery | undefined
+        import('../Sections/Section3Flexible/CircularGallery').CircularGallery | undefined
       if (gallery) {
-        void gallery.init(20, 10).then(() => {
+        void gallery.init().then(() => {
           console.info('[World] CircularGallery initialized')
         })
       }
