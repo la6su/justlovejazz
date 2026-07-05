@@ -60,14 +60,14 @@ function isLowEndDesktop(): boolean {
 
 export class DeviceCapability {
   private static instance: DeviceCapability
-  public readonly tier: QualityTier
-  public readonly mode: RendererMode
-  public readonly maxDpr: number
-  public readonly config: TierConfig
+  public tier: QualityTier
+  public mode: RendererMode
+  public maxDpr: number
+  public config: TierConfig
   public readonly isMobile: boolean
   public readonly isTouch: boolean
-  public readonly postProcessing: boolean
-  public readonly floatRenderTargets: boolean
+  public postProcessing: boolean
+  public floatRenderTargets: boolean
 
   public static get isMobile(): boolean {
     return detectMobile()
@@ -99,7 +99,9 @@ export class DeviceCapability {
 
   /** Check if WebGPU adapter is actually available (async). 'gpu' in navigator
    *  only means the API exists — the adapter might be unavailable (driver,
-   *  Wayland+ANGLE, etc). Call this before trusting mode === 'webgpu'. */
+   *  Wayland+ANGLE, etc). Call this before trusting mode === 'webgpu'.
+   *  If adapter is unavailable, updates mode to 'webgl' so the rest of the
+   *  system (tier detection, postProcessing, etc) uses WebGL2 settings. */
   async verifyWebGPU(): Promise<boolean> {
     if (this._webgpuAdapterAvailable !== null) return this._webgpuAdapterAvailable
     if (!('gpu' in navigator)) {
@@ -109,12 +111,27 @@ export class DeviceCapability {
     try {
       const adapter = await (navigator as any).gpu.requestAdapter()
       this._webgpuAdapterAvailable = !!adapter
+      console.info('[DeviceCapability] WebGPU requestAdapter() result:', adapter ? 'adapter found' : 'no adapter')
       if (!adapter) {
         console.info('[DeviceCapability] WebGPU API present but no adapter — falling back to WebGL2')
+        // Update mode so tier/postProcessing settings use WebGL2 values
+        this.mode = 'webgl' as RendererMode
+        this.tier = this.detectTier()
+        this.maxDpr = this.calculateMaxDpr()
+        this.config = TIER_SETTINGS[this.tier]
+        this.postProcessing = this.tier !== 'low' && this.mode !== 'unsupported'
+        this.floatRenderTargets = false
       }
       return !!adapter
-    } catch {
+    } catch (e) {
+      console.info('[DeviceCapability] WebGPU requestAdapter() threw:', e)
       this._webgpuAdapterAvailable = false
+      this.mode = 'webgl' as RendererMode
+      this.tier = this.detectTier()
+      this.maxDpr = this.calculateMaxDpr()
+      this.config = TIER_SETTINGS[this.tier]
+      this.postProcessing = this.tier !== 'low' && this.mode !== 'unsupported'
+      this.floatRenderTargets = false
       return false
     }
   }

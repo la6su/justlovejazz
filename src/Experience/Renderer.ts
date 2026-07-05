@@ -149,7 +149,10 @@ export class Renderer {
     // a real GPU adapter is accessible. If not, switch to WebGLRenderer
     // immediately (avoids WebGPURenderer→WebGLBackend fallback entirely).
     const webgpuAvailable = await this.capabilities.verifyWebGPU()
-    if (this.capabilities.mode === 'webgpu' && !webgpuAvailable) {
+    console.info('[Renderer.init] mode:', this.capabilities.mode, '| webgpuAvailable:', webgpuAvailable)
+    // Check if we have a WebGPURenderer instance that needs replacing
+    const isWebGPURenderer = (this.instance as any).isWebGPURenderer === true
+    if (isWebGPURenderer && !webgpuAvailable) {
       console.info('[Renderer] WebGPU adapter unavailable — using WebGLRenderer directly')
       // Replace WebGPURenderer with WebGLRenderer before init
       const oldCanvas = this.instance.domElement
@@ -171,8 +174,33 @@ export class Renderer {
       }
       this.instance = gl
       this.setupCanvas(gl.domElement)
-    } else if (this.capabilities.mode === 'webgpu') {
+    } else if (isWebGPURenderer && webgpuAvailable) {
       await (this.instance as any).init?.()
+      // After init, verify the backend is actually WebGPU (not WebGLBackend fallback)
+      const backendName = (this.instance as any).backend?.constructor?.name
+      console.info('[Renderer.init] After WebGPURenderer.init(): backend =', backendName)
+      if (backendName !== 'WebGPUBackend') {
+        console.info('[Renderer.init] WebGPURenderer fell back to', backendName, '— replacing with WebGLRenderer')
+        const oldCanvas = this.instance.domElement
+        oldCanvas.remove()
+        ;(this.instance as any).dispose?.()
+        const gl = new THREE.WebGLRenderer({
+          antialias: true,
+          powerPreference: 'high-performance',
+          stencil: false,
+          depth: true,
+        })
+        gl.outputColorSpace = THREE.SRGBColorSpace
+        gl.toneMapping = THREE.ACESFilmicToneMapping
+        gl.toneMappingExposure = 1.0
+        try {
+          ;(gl as any).setNodesHandler(new WebGLNodesHandler())
+        } catch (err) {
+          console.error('[Renderer] Failed to install WebGLNodesHandler:', err)
+        }
+        this.instance = gl
+        this.setupCanvas(gl.domElement)
+      }
     }
 
     // ROOT FIX: if WebGPURenderer fell back to WebGLBackend, REPLACE it with
