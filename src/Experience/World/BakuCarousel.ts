@@ -1,24 +1,24 @@
-// BakuCarousel.ts — Baku cube morphs into a circular carousel on the flexible section.
+// BakuCarousel.ts — Baku cube morphs into a circular carousel on the works section.
 //
-// Concept: the baku cube IS the carousel. When the flexible section becomes
+// Concept: the baku cube IS the carousel. When the works section becomes
 // active, the cube's 6 faces "unfold" — each face travels outward along an
 // arc and settles into a ring of carousel cards. Scrolling/dragging rotates
-// the ring. When leaving the section, the ring collapses back into a cube.
+// the ring. Clicking a card opens the fullscreen ProjectOverlay. When
+// leaving the section, the ring collapses back into a cube.
 //
-// Implementation:
-//   - 6 plane meshes (the "cards"), reused as the baku's faces
+// Morph animation details:
 //   - morphT: 0 = cube (folded), 1 = carousel (unfolded)
-//   - Each frame, each card's position/rotation is a lerp between its
-//     cube position (face of the cube) and its carousel position (point on
-//     a horizontal ring).
-//   - The carousel ring rotates by `scroll.current` (driven by wheel/drag).
-//   - When morphT < 0.5, the baku's own rotation is visible (cube spin).
-//     When morphT > 0.5, the carousel ring rotation takes over.
+//   - Eased with smoothstep so the morph has ease-in/ease-out (not linear)
+//   - Each card travels along an ARC (not a straight line) from its cube
+//     face position to its ring position — the arc peaks at y=+1.5 mid-morph,
+//     giving a "bloom" feel
+//   - Card opacity: 0 while cube (morphT < 0.25), fades in 0.25→0.7, full at 0.7+
+//   - Cube spin slows as morphT→1 (carousel takes over rotation)
+//   - Ring rotation (scroll.current) is scaled by morphT so the ring only
+//     rotates when mostly unfolded
 //
 // The baku cube's own update() (rotation, drift, worldDNA) still runs —
-// this component only overrides the face positions when morphing. We attach
-// as a child of the baku's parent (World) so we share the scene graph but
-// don't fight the baku's transform.
+// this component renders the carousel cards on top, independently.
 
 import * as THREE from 'three'
 import { MeshBasicNodeMaterial } from 'three/webgpu'
@@ -37,10 +37,12 @@ const CARD_W = 2.0
 const CARD_H = 1.4
 const CUBE_SIZE = 1.6
 const CUBE_HALF = CUBE_SIZE / 2
+const ARC_PEAK = 1.6 // y-height of the arc trajectory peak (mid-morph bloom)
 const SCROLL_EASE = 0.1
 const WHEEL_SENSITIVITY = 0.012
 const DRAG_SENSITIVITY = 0.01
-const MORPH_EASE = 0.08
+const MORPH_EASE = 0.07
+const TAP_THRESHOLD = 6 // px — if pointerup within this distance of down, it's a tap
 
 // Cube face directions (+X, -X, +Y, -Y, +Z, -Z) — matches SplashCube
 const CUBE_FACES = [
@@ -57,7 +59,7 @@ export class BakuCarousel extends THREE.Group {
   private cardMaterials: MeshBasicNodeMaterial[] = []
   private geometry: THREE.PlaneGeometry
   private scroll = { current: 0, target: 0 }
-  private _morphT = 0 // 0 = cube, 1 = carousel
+  private _morphT = 0 // 0 = cube, 1 = carousel (raw, before easing)
   private _morphTarget = 0
   private _active = false
   private time = 0
@@ -66,12 +68,22 @@ export class BakuCarousel extends THREE.Group {
   // Input state
   private isDown = false
   private dragStartX = 0
+  private dragStartY = 0
+  private dragMoved = false
   private wheelHandler: ((e: WheelEvent) => void) | null = null
   private pointerDownHandler: ((e: PointerEvent) => void) | null = null
   private pointerMoveHandler: ((e: PointerEvent) => void) | null = null
   private pointerUpHandler: ((e: PointerEvent) => void) | null = null
   private keydownHandler: ((e: KeyboardEvent) => void) | null = null
   private snapTimer: ReturnType<typeof setTimeout> | null = null
+
+  // Callback — fired when user taps/clicks a carousel card
+  private _onCardClick: ((index: number) => void) | null = null
+
+  // Reusable temp vectors (avoid per-frame alloc)
+  private _tmpCubePos = new THREE.Vector3()
+  private _tmpRingPos = new THREE.Vector3()
+  private _tmpArcPos = new THREE.Vector3()
 
   constructor() {
     super()
@@ -91,6 +103,11 @@ export class BakuCarousel extends THREE.Group {
 
   get morphProgress(): number {
     return this._morphT
+  }
+
+  /** Set callback for card click (index = which card was tapped). */
+  onCardClick(cb: (index: number) => void): void {
+    this._onCardClick = cb
   }
 
   async init(): Promise<void> {
@@ -127,6 +144,8 @@ export class BakuCarousel extends THREE.Group {
       const mesh = new THREE.Mesh(this.geometry, mat as unknown as THREE.Material)
       mesh.scale.set(CARD_W, CARD_H, 1)
       mesh.userData.texIdx = i
+      // Cards are pickable — store a ref so we can raycast on tap
+      mesh.userData.cardIndex = i % (CAROUSEL_IMAGES.length / 2) // 0..3 (4 unique projects)
       this.cards.push(mesh)
       this.cardMaterials.push(mat)
       this.add(mesh)
@@ -141,7 +160,7 @@ export class BakuCarousel extends THREE.Group {
       const menu = document.getElementById('jlz-menu-modal')
       if (menu && menu.classList.contains('uk-open')) return
       const target = e.target as HTMLElement | null
-      if (target?.closest('#swipe-nav, #jlz-menu-toggle, #jlz-menu-modal, #project-modal, .jlz-works-ui')) return
+      if (target?.closest('#swipe-nav, #jlz-menu-toggle, #jlz-menu-modal, #project-modal, .jlz-works-ui, #project-overlay')) return
       e.preventDefault()
       this.scroll.target += e.deltaY * WHEEL_SENSITIVITY
       this.scheduleSnap()
@@ -149,20 +168,34 @@ export class BakuCarousel extends THREE.Group {
     this.pointerDownHandler = (e: PointerEvent) => {
       if (!this._active || this._morphT < 0.5) return
       const target = e.target as HTMLElement | null
-      if (target?.closest('#swipe-nav, #jlz-menu-toggle, #jlz-menu-modal, #project-modal, .jlz-works-ui')) return
+      if (target?.closest('#swipe-nav, #jlz-menu-toggle, #jlz-menu-modal, #project-modal, .jlz-works-ui, #project-overlay')) return
       this.isDown = true
       this.dragStartX = e.clientX
+      this.dragStartY = e.clientY
+      this.dragMoved = false
     }
     this.pointerMoveHandler = (e: PointerEvent) => {
       if (!this.isDown || !this._active) return
-      if (e.cancelable) e.preventDefault()
-      const dx = (e.clientX - this.dragStartX) * DRAG_SENSITIVITY
-      this.scroll.target -= dx
+      const dx = e.clientX - this.dragStartX
+      const dy = e.clientY - this.dragStartY
+      // Mark as moved if beyond tap threshold (so pointerup knows it was a drag, not a tap)
+      if (Math.abs(dx) > TAP_THRESHOLD || Math.abs(dy) > TAP_THRESHOLD) {
+        this.dragMoved = true
+      }
+      if (this.dragMoved && e.cancelable) e.preventDefault()
+      this.scroll.target -= dx * DRAG_SENSITIVITY
       this.dragStartX = e.clientX
+      this.dragStartY = e.clientY
+      this.scheduleSnap()
     }
-    this.pointerUpHandler = () => {
-      if (this.isDown) {
-        this.isDown = false
+    this.pointerUpHandler = (e: PointerEvent) => {
+      if (!this.isDown) return
+      this.isDown = false
+      // If pointer didn't move much → treat as a TAP on a carousel card
+      if (!this.dragMoved) {
+        void e // tap uses front-facing card, not tap position
+        this.handleTap()
+      } else {
         this.scheduleSnap()
       }
     }
@@ -180,6 +213,11 @@ export class BakuCarousel extends THREE.Group {
         e.preventDefault()
         this.next()
       }
+      if (e.key === 'Enter' || e.key === ' ') {
+        // Enter/Space opens the front-facing card
+        e.preventDefault()
+        this._onCardClick?.(this.getFrontCardIndex())
+      }
     }
     window.addEventListener('wheel', this.wheelHandler, { passive: false })
     window.addEventListener('pointerdown', this.pointerDownHandler)
@@ -187,6 +225,28 @@ export class BakuCarousel extends THREE.Group {
     window.addEventListener('pointerup', this.pointerUpHandler)
     window.addEventListener('pointercancel', this.pointerUpHandler)
     window.addEventListener('keydown', this.keydownHandler)
+  }
+
+  /** Tap detected → open the front-facing card. */
+  private handleTap(): void {
+    // Simple approach: the front card is the one at angle closest to 0
+    // (facing the camera at +Z). For a ring carousel this is the most
+    // prominent card the user is looking at.
+    const frontIdx = this.getFrontCardIndex()
+    this._onCardClick?.(frontIdx)
+  }
+
+  /** Get the index of the card currently facing the camera (front of ring). */
+  getFrontCardIndex(): number {
+    if (this.cards.length === 0) return 0
+    // The ring rotates by scroll.current. The front card is at angle = 0
+    // (closest to camera at +Z). Find the card whose base angle + scroll
+    // is closest to 0 (mod 2π).
+    const n = this.cards.length
+    const step = (Math.PI * 2) / n
+    // Normalize scroll.current to nearest card
+    const idx = Math.round(-this.scroll.current / step)
+    return ((idx % n) + n) % n
   }
 
   private scheduleSnap(): void {
@@ -212,20 +272,31 @@ export class BakuCarousel extends THREE.Group {
     this.scroll.target = idx * step
   }
 
+  /** Smoothstep easing: S-curve for organic ease-in/ease-out. */
+  private smoothstep(t: number): number {
+    const c = THREE.MathUtils.clamp(t, 0, 1)
+    return c * c * (3 - 2 * c)
+  }
+
   update(dt: number): void {
     this.time += dt
 
-    // Morph lerp (cube ↔ carousel)
+    // Morph lerp (cube ↔ carousel) — raw value
     this._morphT += (this._morphTarget - this._morphT) * MORPH_EASE
     if (Math.abs(this._morphTarget - this._morphT) < 0.001) {
       this._morphT = this._morphTarget
     }
 
+    // Eased morph for animations (smoothstep gives ease-in/ease-out)
+    const easedT = this.smoothstep(this._morphT)
+
     // Scroll lerp (only matters when morphed into carousel)
     this.scroll.current += (this.scroll.target - this.scroll.current) * SCROLL_EASE
+    // Scale ring rotation by morphT — ring only rotates when mostly unfolded
+    const ringRotation = this.scroll.current * easedT
 
-    // Card opacity: fade in as we morph toward carousel
-    const cardOpacity = THREE.MathUtils.clamp((this._morphT - 0.3) / 0.5, 0, 1)
+    // Card opacity: invisible while cube (morphT < 0.25), fade in 0.25→0.7
+    const cardOpacity = THREE.MathUtils.clamp((this._morphT - 0.25) / 0.45, 0, 1)
 
     const n = this.cards.length
     for (let i = 0; i < n; i++) {
@@ -233,15 +304,15 @@ export class BakuCarousel extends THREE.Group {
       const mat = this.cardMaterials[i]!
       mat.opacity = cardOpacity
 
-      // Cube position (face of cube) — folded state
+      // ── Cube position (folded state) — face of cube ──
       const cubeFace = CUBE_FACES[i % CUBE_FACES.length]!
-      const cubePos = cubeFace.dir.clone().multiplyScalar(CUBE_HALF)
+      this._tmpCubePos.copy(cubeFace.dir).multiplyScalar(CUBE_HALF)
       const cubeRot = cubeFace.rot
 
-      // Carousel position (point on horizontal ring) — unfolded state
+      // ── Carousel position (unfolded state) — point on horizontal ring ──
       const baseAngle = (i / n) * Math.PI * 2
-      const angle = baseAngle + this.scroll.current
-      const ringPos = new THREE.Vector3(
+      const angle = baseAngle + ringRotation
+      this._tmpRingPos.set(
         Math.cos(angle) * RING_RADIUS,
         0,
         Math.sin(angle) * RING_RADIUS,
@@ -249,14 +320,20 @@ export class BakuCarousel extends THREE.Group {
       // Card faces inward (toward ring center)
       const ringRot = new THREE.Euler(0, -angle + Math.PI / 2, 0)
 
-      // Lerp position + rotation by morphT
-      card.position.lerpVectors(cubePos, ringPos, this._morphT)
-      card.rotation.x = THREE.MathUtils.lerp(cubeRot.x, ringRot.x, this._morphT)
-      card.rotation.y = THREE.MathUtils.lerp(cubeRot.y, ringRot.y, this._morphT)
-      card.rotation.z = THREE.MathUtils.lerp(cubeRot.z, ringRot.z, this._morphT)
+      // ── ARC trajectory: lerp position, then add arc peak (y-bump) ──
+      // The arc peaks at mid-morph (easedT=0.5) and is 0 at start+end.
+      // sin(π·t) = 0 at t=0,1 and 1 at t=0.5 — perfect arc bump.
+      const arcBump = Math.sin(Math.PI * easedT) * ARC_PEAK
+      this._tmpArcPos.lerpVectors(this._tmpCubePos, this._tmpRingPos, easedT)
+      this._tmpArcPos.y += arcBump
 
-      // Scale: slightly smaller in cube state (face of 1.6 cube), full in carousel
-      const scale = THREE.MathUtils.lerp(0.8, 1.0, this._morphT)
+      card.position.copy(this._tmpArcPos)
+      card.rotation.x = THREE.MathUtils.lerp(cubeRot.x, ringRot.x, easedT)
+      card.rotation.y = THREE.MathUtils.lerp(cubeRot.y, ringRot.y, easedT)
+      card.rotation.z = THREE.MathUtils.lerp(cubeRot.z, ringRot.z, easedT)
+
+      // Scale: smaller in cube state (face of 1.6 cube), full in carousel
+      const scale = THREE.MathUtils.lerp(0.8, 1.0, easedT)
       card.scale.set(CARD_W * scale, CARD_H * scale, 1)
     }
   }

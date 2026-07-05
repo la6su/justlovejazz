@@ -339,49 +339,29 @@ export class Experience {
       this.camera.setCursorFollow(cursorFollow)
     }
 
-    // Portfolio (3D slider) is only visible inside the Works section —
-    // driven by WorldConfig.ui.showGallery, so it's NOT a global overlay.
+    // Works section: baku cube morphs into a carousel ring of project cards
+    // (BakuCarousel). The carousel is a child of sceneGroups[3] and manages
+    // its own visibility via morph — we do NOT force-hide scene groups here.
     const showGallery = cfg?.ui?.showGallery ?? false
     if (this.portfolio) {
-      this.portfolio.group.visible = showGallery
+      this.portfolio.group.visible = false // BakuCarousel replaces the old cube-texture slider
+      // Keep the baku cube clean glass — carousel cards render on top.
       const cube = this.world.baku as unknown as
-        | { setProjectTextures?: (t: (THREE.Texture | null)[]) => void; clearProjectTextures?: () => void }
+        | { clearProjectTextures?: () => void }
         | undefined
-      if (showGallery && this.portfolio.texturesLoaded) {
-        // On works: apply project textures to cube faces.
-        this.portfolio.applyTexturesToCube()
-      } else {
-        // NOT on works: clear textures so cube is clean glass. This runs every
-        // frame, guaranteeing textures never leak to other sections (was: only
-        // cleared on section-change idx!==3, which missed edge cases).
-        cube?.clearProjectTextures?.()
-      }
+      cube?.clearProjectTextures?.()
     }
-    // Sync ProjectOverlay (DOM UI layer) with the same visibility —
-    // slider UI is scoped to #section-works, never a global overlay.
+    // Sync ProjectOverlay (DOM UI layer) — fullscreen opens on card click.
     if (this.overlay) {
-      if (showGallery) {
-        // First time entering works section → load initial project (but don't
-        // auto-open fullscreen — user must click Show button).
-        if (!this._portfolioInitialized) {
-          this._portfolioInitialized = true
-          this.onProjectSelect(0)
-        }
-        // Do NOT auto-showContainer() — fullscreen opens only via Show button.
+      if (showGallery && !this._portfolioInitialized) {
+        this._portfolioInitialized = true
+        // Preload the first project into the overlay (hidden until card click)
+        this.onProjectSelect(0)
       }
-      // Do NOT auto-hide overlay when leaving works section — fullscreen
-      // stays open until user explicitly closes it (Esc / ✕ button).
-      // overlay.hide() is called by overlay.close() → onClose callback.
     }
-    // On works page: hide ground plane + scene backdrop (only slider + fog).
+    // On works page: hide ground plane (only carousel + fog).
     if (this.world) {
       this.world.groundPlane.visible = !showGallery
-      // Toggle scene groups — hide all on works page, let World manage visibility on home.
-      if (showGallery) {
-        this.world.sceneGroups.forEach((g: THREE.Group) => {
-          g.visible = false
-        })
-      }
     }
 
     // Per-section camera smoothing (Track 5). Fall back to default if cfg absent.
@@ -527,10 +507,8 @@ export class Experience {
       PROJECTS,
       (idx) => {
         this.onProjectSelect(idx)
-      }, // swipe → update overlay
-      (idx) => {
-        this.activateCard(idx)
-      }, // tap → open detail cover
+      }, // swipe → update overlay (preload project data)
+      () => {}, // tap — no-op: BakuCarousel card click is the sole overlay opener
       () => {}, // expand done (unused)
       () => {}, // collapse done (unused)
     )
@@ -550,33 +528,44 @@ export class Experience {
         document.getElementById('section-works') ||
         document.getElementById('spa-content')
       this.overlay = new ProjectOverlay(worksSection!)
-      this.overlay.onPrev = () => this.portfolio?.prev()
-      this.overlay.onNext = () => this.portfolio?.next()
+      // Overlay prev/next → drive the BakuCarousel ring (the baku cube morphed
+      // into a carousel). Falls back to portfolio if carousel unavailable.
+      this.overlay.onPrev = () => {
+        const carousel = this.getCarousel()
+        if (carousel) carousel.prev()
+        else this.portfolio?.prev()
+      }
+      this.overlay.onNext = () => {
+        const carousel = this.getCarousel()
+        if (carousel) carousel.next()
+        else this.portfolio?.next()
+      }
       this.overlay.onClose = () => {
-        // Close fullscreen → clear project textures from cube
-        const cube = this.world?.baku as unknown as
-          { clearProjectTextures?: () => void } | undefined
-        cube?.clearProjectTextures?.()
-        if (this.portfolio) this.portfolio.group.visible = false
+        // Close fullscreen — nothing to clear (carousel cards stay morphed)
       }
     }
-    // Wire the Show button → open fullscreen works mode.
-    const showBtn = document.getElementById('jlz-show-works')
-    if (showBtn && !showBtn.dataset.wired) {
-      showBtn.dataset.wired = 'true'
-      showBtn.addEventListener('click', () => {
-        if (this.portfolio) this.portfolio.group.visible = true
+
+    // Wire BakuCarousel card click → open fullscreen ProjectOverlay.
+    // This is the SOLE entry point for opening the fullscreen overlay —
+    // the old Show button and cube-tap paths were removed to avoid duplication.
+    // The carousel is a child of sceneGroups[3] (works section).
+    const carousel = this.getCarousel()
+    if (carousel && !carousel.userData.clickWired) {
+      carousel.userData.clickWired = true
+      carousel.onCardClick((idx) => {
+        this.onProjectSelect(idx)
         this.overlay?.showContainer()
-        // Re-apply textures to cube + load first project
-        if (this.portfolio && this.world.baku) {
-          this.portfolio.setBaku(this.world.baku)
-        }
-        this.onProjectSelect(0)
       })
     }
-    // Do NOT call onProjectSelect(0) here — it would show the overlay
-    // visible on non-works sections. Experience.update() will call
-    // onProjectSelect when the user scrolls to the works section.
+  }
+
+  /** Get the BakuCarousel from the works scene group (index 3). */
+  private getCarousel(): import('./World/BakuCarousel').BakuCarousel | null {
+    const worksGroup = this.world?.sceneGroups?.[3]
+    if (!worksGroup) return null
+    return (worksGroup.userData.gallery as
+      | import('./World/BakuCarousel').BakuCarousel
+      | undefined) ?? null
   }
 
   private onProjectSelect(idx: number): void {
@@ -591,10 +580,7 @@ export class Experience {
     this.overlay.show(project as never, safeIdx, projs.length)
   }
 
-  /**
-   * Tap on cube face → open fullscreen overlay (ProjectOverlay).
-   */
-  private activateCard(_idx: number): void {
-    this.overlay?.showContainer()
-  }
+  // Note: the old activateCard() (tap on baku cube → open overlay) was
+  // removed. The BakuCarousel card click is now the SOLE entry point for
+  // opening the fullscreen ProjectOverlay, avoiding duplicate click paths.
 }

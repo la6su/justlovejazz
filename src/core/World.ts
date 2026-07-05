@@ -181,17 +181,17 @@ export class World extends THREE.Group {
       g.visible = i === 0
     })
 
-    // Init BakuCarousel (async texture loading) for flexible section.
-    // The baku cube morphs into a carousel ring when the flexible section
-    // becomes active — see BakuCarousel.ts for the morph logic.
-    const flexGroup = this.sceneGroups[2]
-    if (flexGroup) {
-      const carousel = flexGroup.userData.gallery as
+    // Init BakuCarousel (async texture loading) for the works section (index 3).
+    // The baku cube morphs into a carousel ring of project cards when the
+    // works section becomes active — see BakuCarousel.ts for the morph logic.
+    const worksGroup = this.sceneGroups[3]
+    if (worksGroup) {
+      const carousel = worksGroup.userData.gallery as
         | import('../Experience/World/BakuCarousel').BakuCarousel
         | undefined
       if (carousel) {
         void carousel.init().then(() => {
-          console.info('[World] BakuCarousel initialized')
+          console.info('[World] BakuCarousel initialized (works section)')
         })
       }
     }

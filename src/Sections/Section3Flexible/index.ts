@@ -1,18 +1,14 @@
-// Section3 — Flexible: baku cube morphs into a circular carousel.
+// Section3 — Flexible: empty for now (content moved to Section4 Works).
+// Kept as a placeholder section so the 6-section layout + SwipeNav indices
+// stay stable. Only atmospheric particles remain.
 import * as THREE from 'three'
 import { PointsNodeMaterial } from 'three/webgpu'
-import { BakuCarousel } from '../../Experience/World/BakuCarousel'
 
 export function createSection3(): THREE.Group {
   const g = new THREE.Group()
   g.name = 'flexible'
-  // BakuCarousel — the baku cube unfolds into a ring of carousel cards.
-  // The carousel cards are rendered on top of the baku cube; when morphed
-  // out (morphT > 0.5) they form the carousel ring the user can scroll/drag.
-  const carousel = new BakuCarousel()
-  carousel.userData.keepVisible = true
-  g.add(carousel)
-  g.userData.gallery = carousel
+  // Empty section — only atmospheric particles. The baku cube still
+  // renders here (World.baku is always visible), but no carousel.
   g.add(makeParticles(20, new THREE.Vector3(20, 10, 10), 0xaaaaaa, 0.03, 0.15))
   return g
 }

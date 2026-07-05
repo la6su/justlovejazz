@@ -216,10 +216,10 @@ export class WorksPortfolio {
     const swipeThreshold = e.pointerType === 'touch' ? 50 : 40
     if (this.vel > 0.12 || dragDist > swipeThreshold) {
       this.goTo(e.clientX < this.dragStartX ? this.currentIdx + 1 : this.currentIdx - 1)
-    } else if (dragDist < 8) {
-      // Tap — activate card
-      this.onCardActivate(this.currentIdx)
     }
+    // No tap-to-activate here — the BakuCarousel card click is the sole
+    // entry point for opening the fullscreen ProjectOverlay. Tapping the
+    // baku cube no longer opens anything (avoids duplicate click paths).
     this.dragOff = 0
   }
 

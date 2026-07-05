@@ -1,10 +1,19 @@
-// Section4 — Challenge (Works): dark BG, works slider on baku cube.
+// Section4 — Challenge (Works): baku cube morphs into carousel of projects.
+// Clicking a carousel card opens the fullscreen ProjectOverlay.
 import * as THREE from 'three'
 import { PointsNodeMaterial } from 'three/webgpu'
+import { BakuCarousel } from '../../Experience/World/BakuCarousel'
 
 export function createSection4(): THREE.Group {
   const g = new THREE.Group()
   g.name = 'challenge'
+  // BakuCarousel — the baku cube unfolds into a ring of project cards.
+  // When morphed out (morphT > 0.5) the ring can be scrolled/dragged,
+  // and clicking a card opens the fullscreen ProjectOverlay.
+  const carousel = new BakuCarousel()
+  carousel.userData.keepVisible = true
+  g.add(carousel)
+  g.userData.gallery = carousel
   g.add(makeParticles(20, new THREE.Vector3(14, 6, 8), 0x4488ff, 0.035, 0.2))
   return g
 }

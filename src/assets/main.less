@@ -402,7 +402,9 @@ canvas {
   background-color: var(--jlz-color-accent);
   border-radius: var(--jlz-radius-full);
   pointer-events: none;
-  z-index: var(--jlz-z-toast);
+  /* z-index above ProjectOverlay (3500) + UIkit modal (~10000) so the cursor
+     stays visible on top of fullscreen overlays. */
+  z-index: 100000;
   transition:
     width var(--jlz-duration-normal) var(--jlz-ease-state),
     height var(--jlz-duration-normal) var(--jlz-ease-state),

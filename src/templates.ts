@@ -64,9 +64,8 @@ export function homePage(): string {
               <h2 class="studio-title studio-title--challenge" data-content-id="challenge-title">WORKS</h2>
               <p class="studio-body uk-text-lead uk-light uk-margin-large-top" data-content-id="challenge-text">
                 A curated selection of interactive experiences, creative coding experiments,
-                and immersive web projects.
+                and immersive web projects. Click a slide to open.
               </p>
-              <button id="jlz-show-works" class="uk-button uk-button-default uk-margin-large-top" style="border-color:rgba(255,255,255,.3);color:#fff;">Show</button>
             </div>
           </div>
           <div id="project-overlay" class="jlz-works-ui uk-position-z-index"></div>
