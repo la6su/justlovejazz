@@ -95,11 +95,20 @@ export class Renderer {
       const backendName = wg.backend?.constructor?.name
       console.info('[Renderer.init] WebGPURenderer backend:', backendName)
 
-      if (backendName !== 'WebGPUBackend') {
-        // WebGPURenderer fell back to WebGLBackend — replace with plain WebGLRenderer.
-        // WebGPURenderer+WebGLBackend uses NodeBuilder which can't compile ShaderMaterial
-        // and crashes with refreshFogUniforms on NodeMaterials.
-        console.info('[Renderer.init] WebGPU unavailable — switching to WebGLRenderer')
+      // Check if the WebGPU adapter is a fallback (SwiftShader = software rendering).
+      // Software WebGPU gives ~2 FPS — hardware WebGL2 is much faster.
+      const adapter = wg.backend?.adapter?.info ?? wg.backend?.gpu?._adapter
+      const isFallback = adapter?.isFallbackAdapter ?? false
+      console.info('[Renderer.init] WebGPU adapter isFallback:', isFallback,
+        '| architecture:', adapter?.architecture ?? '?')
+
+      if (backendName !== 'WebGPUBackend' || isFallback) {
+        // Either WebGLBackend fallback OR WebGPUBackend with SwiftShader (software).
+        // Both cases → use hardware-accelerated WebGLRenderer instead.
+        const reason = backendName !== 'WebGPUBackend'
+          ? `backend is ${backendName}`
+          : 'adapter is SwiftShader (software rendering — would give ~2 FPS)'
+        console.info('[Renderer.init] Switching to WebGLRenderer:', reason)
         this.instance.domElement.remove()
         wg.dispose?.()
         this.instance = this.createWebGLRenderer()
