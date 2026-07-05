@@ -9,7 +9,7 @@ export class SmoothScroll {
   constructor() {
     const reduce = prefersReducedMotion()
     this.lenis = new Lenis({
-      duration: reduce ? 0.08 : 0.6,
+      duration: reduce ? 0.08 : 0.8,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       orientation: 'vertical',
       gestureOrientation: 'vertical',

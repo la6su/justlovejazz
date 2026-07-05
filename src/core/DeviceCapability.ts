@@ -95,6 +95,30 @@ export class DeviceCapability {
     return DeviceCapability.instance
   }
 
+  private _webgpuAdapterAvailable: boolean | null = null
+
+  /** Check if WebGPU adapter is actually available (async). 'gpu' in navigator
+   *  only means the API exists — the adapter might be unavailable (driver,
+   *  Wayland+ANGLE, etc). Call this before trusting mode === 'webgpu'. */
+  async verifyWebGPU(): Promise<boolean> {
+    if (this._webgpuAdapterAvailable !== null) return this._webgpuAdapterAvailable
+    if (!('gpu' in navigator)) {
+      this._webgpuAdapterAvailable = false
+      return false
+    }
+    try {
+      const adapter = await (navigator as any).gpu.requestAdapter()
+      this._webgpuAdapterAvailable = !!adapter
+      if (!adapter) {
+        console.info('[DeviceCapability] WebGPU API present but no adapter — falling back to WebGL2')
+      }
+      return !!adapter
+    } catch {
+      this._webgpuAdapterAvailable = false
+      return false
+    }
+  }
+
   private detectRenderMode(): RendererMode {
     if ('gpu' in navigator) return 'webgpu'
     const canvas = document.createElement('canvas')

@@ -127,7 +127,7 @@ const RAW: RawScene[] = [
     camFov: 50,
     camFovOffset: 0.3,
     camFovDuration: 0.8,
-    camSmoothing: 5,
+    camSmoothing: 4,
     bakuRole: BakuRole.GLASS,
     bakuOpacity: 0.4,
     bakuDisplace: 0.08,

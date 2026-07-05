@@ -144,9 +144,34 @@ export class Renderer {
   }
 
   async init(): Promise<void> {
-    // WebGPURenderer.init() configures the backend — WebGPU device if
-    // available, else WebGL2 context (transparent fallback).
-    if (this.capabilities.mode === 'webgpu') {
+    // Verify WebGPU adapter is actually available BEFORE init.
+    // 'gpu' in navigator only means the API exists — requestAdapter() confirms
+    // a real GPU adapter is accessible. If not, switch to WebGLRenderer
+    // immediately (avoids WebGPURenderer→WebGLBackend fallback entirely).
+    const webgpuAvailable = await this.capabilities.verifyWebGPU()
+    if (this.capabilities.mode === 'webgpu' && !webgpuAvailable) {
+      console.info('[Renderer] WebGPU adapter unavailable — using WebGLRenderer directly')
+      // Replace WebGPURenderer with WebGLRenderer before init
+      const oldCanvas = this.instance.domElement
+      oldCanvas.remove()
+      ;(this.instance as any).dispose?.()
+      const gl = new THREE.WebGLRenderer({
+        antialias: true,
+        powerPreference: 'high-performance',
+        stencil: false,
+        depth: true,
+      })
+      gl.outputColorSpace = THREE.SRGBColorSpace
+      gl.toneMapping = THREE.ACESFilmicToneMapping
+      gl.toneMappingExposure = 1.0
+      try {
+        ;(gl as any).setNodesHandler(new WebGLNodesHandler())
+      } catch (err) {
+        console.error('[Renderer] Failed to install WebGLNodesHandler:', err)
+      }
+      this.instance = gl
+      this.setupCanvas(gl.domElement)
+    } else if (this.capabilities.mode === 'webgpu') {
       await (this.instance as any).init?.()
     }
 
