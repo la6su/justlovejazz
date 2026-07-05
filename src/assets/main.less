@@ -154,8 +154,7 @@
   overflow: hidden;
   z-index: 2;
   /* Bug 5: snap each section to viewport top — full-screen clear switch. */
-  scroll-snap-align: start;
-  scroll-snap-stop: always;
+  /* No scroll-snap — SwipeNav handles navigation. */
 }
 .uk-height-viewport {
   min-height: 100vh !important;
@@ -270,9 +269,8 @@ section[data-section='flexible'] .uk-button-default:hover {
 html,
 body {
   overflow-x: hidden;
-  /* Bug 5: junni-style section snapping — each section locks to viewport. */
-  scroll-snap-type: y proximity;
-  scroll-behavior: auto; /* Lenis handles smoothing; CSS must not double-smooth */
+  /* SwipeNav replaces scroll-snap — no CSS scroll snapping needed. */
+  overflow: hidden; /* lock page scroll — navigation via SwipeNav only */
   font-family:
     'Inter',
     -apple-system,
