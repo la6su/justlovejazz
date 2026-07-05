@@ -388,12 +388,13 @@ export class World extends THREE.Group {
           m.opacity = (m.userData.baseOpacity ?? 1) * fade
         }
 
-        // ── Drive FlexibleSlides visibility from the section fade ──
-        // (junni uVisibility/uSlide pattern). FlexibleSlides manages its own
-        // internal opacity lerp toward this target.
-        const slides = g.userData.flexibleSlides as
-          import('../Experience/World/Sections/FlexibleSlides').FlexibleSlides | undefined
-        if (slides) slides.setVisibility(fade)
+        // CircularGallery visibility + active state
+        const gallery = g.userData.gallery as
+          import('../Sections/Section3Flexible/CircularGallery').CircularGallery | undefined
+        if (gallery) {
+          gallery.visible = fade > 0.01
+          gallery.setActive(fade > 0.5)
+        }
       } else {
         g.visible = false
       }
