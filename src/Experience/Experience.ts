@@ -141,6 +141,11 @@ export class Experience {
     // Section progress indicator with clickable timeline dots.
     // Swipe-based section navigation (replaces scroll-snap).
     this._swipeNav = new SwipeNav(6)
+    this._swipeNav.setGalleryActiveChecker(() => {
+      const gallery = this.world?.sceneGroups?.[2]?.userData?.gallery as
+        { _active?: boolean } | undefined
+      return gallery?._active === true
+    })
     this._swipeNav.onSectionChange((idx) => {
       // Section change callback — update world
       console.info('[SwipeNav] section changed:', idx)

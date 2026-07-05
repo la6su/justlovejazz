@@ -28,6 +28,8 @@ export class SwipeNav {
   private _pointerMoveHandler: ((e: PointerEvent) => void) | null = null
   private _pointerUpHandler: ((e: PointerEvent) => void) | null = null
   private _keydownHandler: ((e: KeyboardEvent) => void) | null = null
+  private _wheelHandler: ((e: WheelEvent) => void) | null = null
+  private _isGalleryActive: (() => boolean) | null = null
 
   constructor(sectionCount: number) {
     this._sectionCount = sectionCount
@@ -76,6 +78,12 @@ export class SwipeNav {
 
     this.addEventListeners()
     this.updateUI()
+  }
+
+  /** Set a callback that returns true when the gallery is active (flexible section).
+   *  When gallery is active, SwipeNav wheel is disabled (gallery handles it). */
+  setGalleryActiveChecker(checker: () => boolean): void {
+    this._isGalleryActive = checker
   }
 
   /** Set callback for section change. */
@@ -142,6 +150,24 @@ export class SwipeNav {
       }
     }
 
+    this._wheelHandler = (e: WheelEvent) => {
+      // If gallery is active (flexible section), let gallery handle wheel
+      if (this._isGalleryActive?.()) return
+      // Otherwise, wheel = section navigation
+      e.preventDefault()
+      if (e.deltaY > 0) {
+        // Scroll down = next section
+        if (this._currentSection < this._sectionCount - 1 && !this._transitioning) {
+          this._targetProgress = 1
+          this.commitTransition()
+        }
+      } else {
+        // Scroll up = prev section
+        if (this._currentSection > 0) {
+          this.goToSection(this._currentSection - 1)
+        }
+      }
+    }
     this._keydownHandler = (e: KeyboardEvent) => {
       if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
         e.preventDefault()
@@ -161,6 +187,7 @@ export class SwipeNav {
     window.addEventListener('pointermove', this._pointerMoveHandler)
     window.addEventListener('pointerup', this._pointerUpHandler)
     window.addEventListener('keydown', this._keydownHandler)
+    window.addEventListener('wheel', this._wheelHandler, { passive: false })
   }
 
   private commitTransition(): void {
@@ -207,6 +234,7 @@ export class SwipeNav {
     if (this._pointerMoveHandler) window.removeEventListener('pointermove', this._pointerMoveHandler)
     if (this._pointerUpHandler) window.removeEventListener('pointerup', this._pointerUpHandler)
     if (this._keydownHandler) window.removeEventListener('keydown', this._keydownHandler)
+    if (this._wheelHandler) window.removeEventListener('wheel', this._wheelHandler)
     this.el.remove()
   }
 }
