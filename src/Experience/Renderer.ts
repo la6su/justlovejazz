@@ -18,7 +18,7 @@ import { RenderPipeline, type RenderPipelineConfig, type PostParams } from '../c
 export type RenderSurface = WebGPURenderer | THREE.WebGLRenderer
 
 export class Renderer {
-  instance: RenderSurface
+  instance!: RenderSurface
   private capabilities = DeviceCapability.getInstance()
   private sizes: Sizes
 
@@ -38,80 +38,16 @@ export class Renderer {
       throw new Error('Neither WebGPU nor WebGL2 is supported by this browser.')
     }
 
-    if (this.capabilities.mode === 'webgpu') {
-      // alpha: false → opaque canvas. Chrome's WebGPU backend defaults to
-      // alpha: true (transparent canvas), which means the canvas composites
-      // over the page background (body is #000). When the 3D scene's background
-      // is also dark, the result is indistinguishable from a black screen.
-      // Firefox's WebGPU backend defaults to alpha: false, which is why the
-      // same code 'works' there. Setting alpha: false explicitly makes Chrome
-      // match Firefox — the canvas owns its pixels, no compositing ambiguity.
-      // antialias: true → MSAA 4× on WebGPU (cheaper than WebGL post-AA).
-      this.instance = new WebGPURenderer({ antialias: true, alpha: false })
-      // ACES tonemap + sRGB output — industry standard for PBR scenes.
-      const wg = this.instance as any
-      wg.toneMapping = THREE.ACESFilmicToneMapping
-      wg.toneMappingExposure = 1.0
-      wg.outputColorSpace = THREE.SRGBColorSpace
-    } else {
-      // WebGL2 best-practices: explicit context flags.
-      // stencil: false (not used), depth: true, antialias: true (MSAA 4×).
-      // powerPreference: 'high-performance' requests discrete GPU on dual-GPU laptops.
-      // preserveDrawingBuffer: false (default — only needed for screenshots).
-      const gl = new THREE.WebGLRenderer({
-        antialias: true,
-        powerPreference: 'high-performance',
-        stencil: false,
-        depth: true,
-      })
-      gl.outputColorSpace = THREE.SRGBColorSpace
-      gl.toneMapping = THREE.ACESFilmicToneMapping
-      gl.toneMappingExposure = 1.0
-
-      // Enable TSL NodeMaterial rendering on the WebGL fallback path.
-      // SectionSceneFactory (and the works-page dissolve/project materials)
-      // build their look with MeshBasicNodeMaterial + TSL Fn colorNodes.
-      // WebGLRenderer in three r0.184 cannot compile these out of the box —
-      // setNodesHandler installs the GLSLNodeBuilder adapter that generates
-      // real GLSL for node materials before WebGLProgram compilation.
-      // Wrap defensively: the handler is marked experimental across releases.
-      try {
-        // setNodesHandler is a runtime method on WebGLRenderer; @types/three
-        // does not type it yet. Isolate the cast at this adapter boundary.
-        ;(gl as any).setNodesHandler(new WebGLNodesHandler())
-      } catch (err) {
-        console.error(
-          '[Renderer] Failed to install WebGLNodesHandler — TSL materials will not render:',
-          err,
-        )
-      }
-
-      this.instance = gl
-    }
-
-    this.instance.setPixelRatio(Math.min(sizes.dpr, this.capabilities.maxDpr))
-    this.instance.setSize(sizes.width, sizes.height)
-    this.setupCanvas(this.instance.domElement)
-
-    // Store pipeline config — pipeline is created in init() AFTER the renderer
-    // backend is initialized (WebGPURenderer.init() configures the GPU device;
-    // creating RTs/pipeline before that is unsafe and can yield uninitialized
-    // GPU state on some drivers).
     this._pipelineConfig = {
       bloomThreshold: this.capabilities.postProcessing ? 0.5 : 1.0,
-      bloomPasses:
-        this.capabilities.tier === 'high' ? 4 : this.capabilities.tier === 'medium' ? 3 : 2,
+      bloomPasses: this.capabilities.tier === 'high' ? 4 : this.capabilities.tier === 'medium' ? 3 : 2,
       bloomResRatio: this.capabilities.tier === 'high' ? 0.5 : 0.25,
       blurRange: this.capabilities.tier === 'high' ? 2.0 : 3.0,
-      bloomEnabled: this.capabilities.postProcessing, // Respect device tier
+      bloomEnabled: this.capabilities.postProcessing,
       vignetteEnabled: true,
       grainEnabled: this.capabilities.tier !== 'low',
     }
 
-    // Subscribe to viewport resize: update canvas + pipeline render targets.
-    // Sizes is constructed before Renderer in Experience, so its window listener
-    // registers first and updates sizes.width/height before this handler runs.
-    // Bound ref so removeEventListener works in dispose().
     this._onResize = () => this.resize()
     window.addEventListener('resize', this._onResize, { passive: true })
   }
@@ -144,92 +80,68 @@ export class Renderer {
   }
 
   async init(): Promise<void> {
-    // Verify WebGPU adapter is actually available BEFORE init.
-    // 'gpu' in navigator only means the API exists — requestAdapter() confirms
-    // a real GPU adapter is accessible. If not, switch to WebGLRenderer
-    // immediately (avoids WebGPURenderer→WebGLBackend fallback entirely).
+    // Step 1: Verify WebGPU adapter is actually available.
     const webgpuAvailable = await this.capabilities.verifyWebGPU()
-    console.info('[Renderer.init] mode:', this.capabilities.mode, '| webgpuAvailable:', webgpuAvailable)
-    // Check if we have a WebGPURenderer instance that needs replacing
-    const isWebGPURenderer = (this.instance as any).isWebGPURenderer === true
-    if (isWebGPURenderer && !webgpuAvailable) {
-      console.info('[Renderer] WebGPU adapter unavailable — using WebGLRenderer directly')
-      // Replace WebGPURenderer with WebGLRenderer before init
-      const oldCanvas = this.instance.domElement
-      oldCanvas.remove()
-      ;(this.instance as any).dispose?.()
-      const gl = new THREE.WebGLRenderer({
-        antialias: true,
-        powerPreference: 'high-performance',
-        stencil: false,
-        depth: true,
-      })
-      gl.outputColorSpace = THREE.SRGBColorSpace
-      gl.toneMapping = THREE.ACESFilmicToneMapping
-      gl.toneMappingExposure = 1.0
-      try {
-        ;(gl as any).setNodesHandler(new WebGLNodesHandler())
-      } catch (err) {
-        console.error('[Renderer] Failed to install WebGLNodesHandler:', err)
-      }
-      this.instance = gl
-      this.setupCanvas(gl.domElement)
-    } else if (isWebGPURenderer && webgpuAvailable) {
-      await (this.instance as any).init?.()
-      // After init, verify the backend is actually WebGPU (not WebGLBackend fallback)
-      const backendName = (this.instance as any).backend?.constructor?.name
-      console.info('[Renderer.init] After WebGPURenderer.init(): backend =', backendName)
+    console.info('[Renderer.init] webgpuAvailable:', webgpuAvailable, '| mode:', this.capabilities.mode)
+
+    // Step 2: Create the appropriate renderer (NOT in constructor — here in init).
+    if (webgpuAvailable) {
+      this.instance = new WebGPURenderer({ antialias: true, alpha: false })
+      const wg = this.instance as any
+      wg.toneMapping = THREE.ACESFilmicToneMapping
+      wg.toneMappingExposure = 1.0
+      wg.outputColorSpace = THREE.SRGBColorSpace
+      await wg.init?.()
+      const backendName = wg.backend?.constructor?.name
+      console.info('[Renderer.init] WebGPURenderer backend:', backendName)
       if (backendName !== 'WebGPUBackend') {
-        console.info('[Renderer.init] WebGPURenderer fell back to', backendName, '— replacing with WebGLRenderer')
-        const oldCanvas = this.instance.domElement
-        oldCanvas.remove()
-        ;(this.instance as any).dispose?.()
-        const gl = new THREE.WebGLRenderer({
-          antialias: true,
-          powerPreference: 'high-performance',
-          stencil: false,
-          depth: true,
-        })
-        gl.outputColorSpace = THREE.SRGBColorSpace
-        gl.toneMapping = THREE.ACESFilmicToneMapping
-        gl.toneMappingExposure = 1.0
-        try {
-          ;(gl as any).setNodesHandler(new WebGLNodesHandler())
-        } catch (err) {
-          console.error('[Renderer] Failed to install WebGLNodesHandler:', err)
-        }
-        this.instance = gl
-        this.setupCanvas(gl.domElement)
+        console.info('[Renderer.init] Fell back to', backendName, '— using WebGLRenderer')
+        this.instance.domElement.remove()
+        wg.dispose?.()
+        this.instance = this.createWebGLRenderer()
       }
+    } else {
+      console.info('[Renderer.init] Using WebGLRenderer')
+      this.instance = this.createWebGLRenderer()
     }
 
-    // Re-apply size AFTER init/switch
+    // Step 3: Size + canvas
     this.instance.setPixelRatio(Math.min(this.sizes.dpr, this.capabilities.maxDpr))
     this.instance.setSize(this.sizes.width, this.sizes.height)
+    this.setupCanvas(this.instance.domElement)
 
+    // Step 4: Pipeline
     this.pipeline = RenderPipeline.create(
-      this.instance,
-      this.sizes.width,
-      this.sizes.height,
-      this._pipelineConfig,
+      this.instance, this.sizes.width, this.sizes.height, this._pipelineConfig,
     )
-    // If we switched to WebGLRenderer, update pipeline's _isWebGPU flag
-    // (was set to true at create() time from `instanceof WebGPURenderer`).
     if (!(this.instance instanceof WebGPURenderer)) {
       this.pipeline.setWebGPU(false)
-      // Also set up WebGL post-processing passes (bloom/blur/composite)
       this.pipeline.setupWebGLIfNeeded()
     }
 
-    // Enable transmission only on real WebGPU (WebGLRenderer supports it too,
-    // but transmission requires a backbuffer sampling pass that's expensive
-    // on WebGL2 — keep it disabled for perf unless real WebGPU).
+    // Step 5: Transmission on real WebGPU only
     const isRealWebGPU = (this.instance as any).isWebGPURenderer
       && (this.instance as any).backend?.constructor?.name === 'WebGPUBackend'
     if (isRealWebGPU) {
       setTransmissionEnabled(true)
     }
   }
+
+  /** Create WebGLRenderer with NodeMaterial support. */
+  private createWebGLRenderer(): THREE.WebGLRenderer {
+    const gl = new THREE.WebGLRenderer({
+      antialias: true, powerPreference: 'high-performance', stencil: false, depth: true,
+    })
+    gl.outputColorSpace = THREE.SRGBColorSpace
+    gl.toneMapping = THREE.ACESFilmicToneMapping
+    gl.toneMappingExposure = 1.0
+    try { ;(gl as any).setNodesHandler(new WebGLNodesHandler()) }
+    catch (e) { console.error('[Renderer] WebGLNodesHandler failed:', e) }
+    return gl
+  }
+
+  // --- OLD init code below (removed) ---
+  // old_init_placeholder
 
   private _fog!: THREE.FogExp2
   private _prevBgHex: number = -1
