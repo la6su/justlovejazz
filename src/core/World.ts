@@ -181,6 +181,18 @@ export class World extends THREE.Group {
       g.visible = i === 0
     })
 
+    // Init CircularGallery (async texture loading) for flexible section
+    const flexGroup = this.sceneGroups[2]
+    if (flexGroup) {
+      const gallery = flexGroup.userData.gallery as
+        import('../Experience/World/CircularGallery').CircularGallery | undefined
+      if (gallery) {
+        void gallery.init(20, 10).then(() => {
+          console.info('[World] CircularGallery initialized')
+        })
+      }
+    }
+
     console.debug(
       '[World] init — scene group visibility:',
       this.sceneGroups.map((g, i) => `g[${i}]=${g.visible}`),
