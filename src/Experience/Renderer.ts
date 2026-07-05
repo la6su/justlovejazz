@@ -80,37 +80,41 @@ export class Renderer {
   }
 
   async init(): Promise<void> {
-    // Step 1: Verify WebGPU adapter is actually available.
-    const webgpuAvailable = await this.capabilities.verifyWebGPU()
-    console.info('[Renderer.init] webgpuAvailable:', webgpuAvailable, '| mode:', this.capabilities.mode)
-
-    // Step 2: Create the appropriate renderer (NOT in constructor — here in init).
-    if (webgpuAvailable) {
+    // Create renderer based on DeviceCapability mode (sync detection via
+    // 'gpu' in navigator). WebGPURenderer.init() will configure the backend —
+    // if WebGPU is not available, it falls back to WebGLBackend internally.
+    if (this.capabilities.mode === 'webgpu') {
       this.instance = new WebGPURenderer({ antialias: true, alpha: false })
       const wg = this.instance as any
       wg.toneMapping = THREE.ACESFilmicToneMapping
       wg.toneMappingExposure = 1.0
       wg.outputColorSpace = THREE.SRGBColorSpace
       await wg.init?.()
+
+      // Check if WebGPURenderer actually got WebGPUBackend (not WebGLBackend fallback)
       const backendName = wg.backend?.constructor?.name
       console.info('[Renderer.init] WebGPURenderer backend:', backendName)
+
       if (backendName !== 'WebGPUBackend') {
-        console.info('[Renderer.init] Fell back to', backendName, '— using WebGLRenderer')
+        // WebGPURenderer fell back to WebGLBackend — replace with plain WebGLRenderer.
+        // WebGPURenderer+WebGLBackend uses NodeBuilder which can't compile ShaderMaterial
+        // and crashes with refreshFogUniforms on NodeMaterials.
+        console.info('[Renderer.init] WebGPU unavailable — switching to WebGLRenderer')
         this.instance.domElement.remove()
         wg.dispose?.()
         this.instance = this.createWebGLRenderer()
       }
     } else {
-      console.info('[Renderer.init] Using WebGLRenderer')
+      console.info('[Renderer.init] Using WebGLRenderer (no WebGPU API)')
       this.instance = this.createWebGLRenderer()
     }
 
-    // Step 3: Size + canvas
+    // Size + canvas
     this.instance.setPixelRatio(Math.min(this.sizes.dpr, this.capabilities.maxDpr))
     this.instance.setSize(this.sizes.width, this.sizes.height)
     this.setupCanvas(this.instance.domElement)
 
-    // Step 4: Pipeline
+    // Pipeline
     this.pipeline = RenderPipeline.create(
       this.instance, this.sizes.width, this.sizes.height, this._pipelineConfig,
     )
@@ -119,7 +123,7 @@ export class Renderer {
       this.pipeline.setupWebGLIfNeeded()
     }
 
-    // Step 5: Transmission on real WebGPU only
+    // Transmission on real WebGPU only
     const isRealWebGPU = (this.instance as any).isWebGPURenderer
       && (this.instance as any).backend?.constructor?.name === 'WebGPUBackend'
     if (isRealWebGPU) {
