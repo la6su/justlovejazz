@@ -39,6 +39,13 @@ export class CircularGallery extends THREE.Group {
   private time = 0
   private speed = 0
   private initialized = false
+  private isDown = false
+  private dragStartX = 0
+  private wheelHandler: ((e: WheelEvent) => void) | null = null
+  private pointerDownHandler: ((e: PointerEvent) => void) | null = null
+  private pointerMoveHandler: ((e: PointerEvent) => void) | null = null
+  private pointerUpHandler: ((e: PointerEvent) => void) | null = null
+  private snapTimer: ReturnType<typeof setTimeout> | null = null
 
   // Reusable vectors
   constructor() {
@@ -101,6 +108,40 @@ export class CircularGallery extends THREE.Group {
     })
 
     this.updateItems(viewportWidth, viewportHeight)
+    this.addEventListeners()
+  }
+
+  private addEventListeners(): void {
+    this.wheelHandler = (e: WheelEvent) => {
+      if (!this.visible) return
+      e.preventDefault()
+      this.scroll.target += e.deltaY * 0.01
+      this.scheduleSnap()
+    }
+    this.pointerDownHandler = (e: PointerEvent) => {
+      if (!this.visible) return
+      this.isDown = true
+      this.dragStartX = e.clientX
+    }
+    this.pointerMoveHandler = (e: PointerEvent) => {
+      if (!this.isDown || !this.visible) return
+      const dx = (e.clientX - this.dragStartX) * 0.02
+      this.scroll.target -= dx
+      this.dragStartX = e.clientX
+    }
+    this.pointerUpHandler = () => {
+      this.isDown = false
+      this.scheduleSnap()
+    }
+    window.addEventListener('wheel', this.wheelHandler, { passive: false })
+    window.addEventListener('pointerdown', this.pointerDownHandler)
+    window.addEventListener('pointermove', this.pointerMoveHandler)
+    window.addEventListener('pointerup', this.pointerUpHandler)
+  }
+
+  private scheduleSnap(): void {
+    if (this.snapTimer) clearTimeout(this.snapTimer)
+    this.snapTimer = setTimeout(() => this.snap(), 200)
   }
 
   /** Handle scroll input — target moves, current lerps toward it. */
@@ -198,6 +239,11 @@ export class CircularGallery extends THREE.Group {
   }
 
   dispose(): void {
+    if (this.wheelHandler) window.removeEventListener('wheel', this.wheelHandler)
+    if (this.pointerDownHandler) window.removeEventListener('pointerdown', this.pointerDownHandler)
+    if (this.pointerMoveHandler) window.removeEventListener('pointermove', this.pointerMoveHandler)
+    if (this.pointerUpHandler) window.removeEventListener('pointerup', this.pointerUpHandler)
+    if (this.snapTimer) clearTimeout(this.snapTimer)
     this.geometry.dispose()
     for (const item of this.items) {
       ;(item.mesh.material as THREE.Material).dispose()
