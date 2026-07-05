@@ -315,9 +315,9 @@ const RAW: RawScene[] = [
     lightIntensity: 1.5,
     fogColor: 0xf5f5f0,
     fogDensity: 0.008,
-    bgColor: 0x050507,
+    bgColor: 0xf5f5f0,
     showGallery: false,
-    groundColor: 0x050810,
+    groundColor: 0xe0e0d0,
     groundOpacity: 0.05,
   },
 ]
