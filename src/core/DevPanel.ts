@@ -73,6 +73,7 @@ export class DevPanel {
   private readonly renderer: Renderer
   /** Perf refresh interval handle — cleared in dispose() to prevent leaks. */
   private perfInterval: ReturnType<typeof setInterval> | null = null
+  private audioInterval: ReturnType<typeof setInterval> | null = null
   /** Toggle keydown handler ref — removed in dispose(). */
   private keydownHandler: ((e: KeyboardEvent) => void) | null = null
 
@@ -232,8 +233,8 @@ export class DevPanel {
     f.addBinding(monitor, 'mid', { readonly: true, min: 0, max: 1 })
     f.addBinding(monitor, 'treble', { readonly: true, min: 0, max: 1 })
     f.addBinding(monitor, 'level', { readonly: true, min: 0, max: 1 })
-    if (this.perfInterval) clearInterval(this.perfInterval)
-    this.perfInterval = setInterval(() => {
+    if (this.audioInterval) clearInterval(this.audioInterval)
+    this.audioInterval = setInterval(() => {
       monitor.bass = this.exp.audio.getBass()
       monitor.mid = this.exp.audio.getMid()
       monitor.treble = this.exp.audio.getTreble()
@@ -326,6 +327,10 @@ export class DevPanel {
     if (this.perfInterval) {
       clearInterval(this.perfInterval)
       this.perfInterval = null
+    }
+    if (this.audioInterval) {
+      clearInterval(this.audioInterval)
+      this.audioInterval = null
     }
     // Remove keydown toggle listener.
     if (this.keydownHandler) {

@@ -137,6 +137,11 @@ function setupTitleObserver(): void {
     { threshold: 0.15 },
   )
   titles.forEach((t) => observer.observe(t))
+
+  // HMR: disconnect observer on hot-reload to prevent phantom observations.
+  if (import.meta.hot) {
+    import.meta.hot.dispose(() => observer.disconnect())
+  }
 }
 
 /**
