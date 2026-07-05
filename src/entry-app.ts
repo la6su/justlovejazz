@@ -1,7 +1,7 @@
 import UIkit from 'uikit'
 import Icons from 'uikit/dist/js/uikit-icons'
 import { initRouter } from './router'
-import { bootstrap as bootstrapApp, isAppReady, type BootstrapOptions } from './main-app'
+import { bootstrap as bootstrapApp, type BootstrapOptions } from './main-app'
 import { NoiseText } from './Experience/NoiseText'
 import { eventBus } from './core/EventBus'
 
@@ -98,15 +98,10 @@ export async function startApp(): Promise<void> {
     }
   })
 
-  // Navigation handler
-  eventBus.on('jlj:navigate', () => {
-    if (!isAppReady()) return
-    const exp = window.experience
-    if (exp?.smoothScroll) {
-      exp.smoothScroll.lenis.scrollTo(0, { immediate: true })
-    }
-  })
-  eventBus.on('jlj:navigate', scheduleUiKitRefresh)
+  // NOTE: the old `jlj:navigate` eventBus listener was removed — router.ts
+  // dispatches `jlj:navigate` via window.dispatchEvent (not eventBus), so the
+  // listener never fired, and it referenced the now-deleted SmoothScroll.
+  // UIkit refresh on SPA nav is handled by router.ts itself via UIkit.update.
   void boot()
 }
 

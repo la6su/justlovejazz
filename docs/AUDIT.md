@@ -1,13 +1,18 @@
 # AUDIT — Gap Analysis: justlovejazz vs junni reference
 
+> **Historical document.** All A-001…A-015 items below are RESOLVED.
+> This doc is kept as reference for the original problems + fixes.
+>
+> A second audit on 2026-07-05 found + fixed: dead code (6 files deleted),
+> memory leaks (BakuCarousel.dispose, WorksPortfolio listener mismatch,
+> Subtitles timer), per-frame allocations, and over-complication
+> (WorksPortfolio simplified from 322→127 LOC). See [CHANGELOG.md](CHANGELOG.md)
+> for the full 2026-07-05 cleanup record.
+>
 > Created: 2026-06-26. Updated: 2026-06-28 (all items resolved).
 > Based on full codebase + reference review.
 > Source: `references/next.junni.co.jp/src/ts/MainScene/`
 > Priority: 🔴 High / 🟡 Medium / 🟢 Low
->
-> **Note:** The detailed sections below describe the ORIGINAL problems + the
-> fixes applied. All A-001…A-015 are now resolved (see Implementation Order
-> at the bottom). This doc is kept as historical reference.
 
 ---
 

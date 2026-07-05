@@ -1,5 +1,39 @@
 # CHANGELOG
 
+## 2026-07-05
+
+### Navigation rewrite + dead-code purge + memory-leak fixes
+
+**Navigation (4 commits):**
+- `feat(nav)`: SwipeNav rewritten as one-section-at-a-time swiper (drag 0→100% = one neighbor; |progress|>50% commits, <50% snaps back). Replaces scrubber-across-all-sections model.
+- `feat(nav)`: UIMenu rewritten to use UIkit modal component (`uk-modal`) — no custom overlay/focus-trap/esc code. Hamburger uses `uk-toggle`.
+- `feat(works)`: BakuCarousel — baku cube morphs into carousel ring on works §4. Smoothstep easing + arc trajectory. Card click → ProjectOverlay fullscreen. Moved from flexible §3 (now empty placeholder).
+- `fix(cursor)`: custom-cursor z-index raised to 100000 so it stays visible above ProjectOverlay (3500) + UIkit modal.
+
+**Dead-code purge (this commit):**
+- Deleted 6 dead files: SmoothScroll, CameraAnchors, BorderOverlay, FlexibleSlides, AssetManager, GPUResourceManager (~600 LOC)
+- Simplified WorksPortfolio from 322 → 127 LOC (removed spring physics, drag/wheel/keyboard input, expand/collapse — BakuCarousel owns the works UI now)
+- Deleted ~280 LOC of dead CSS: `.jlz-works-*`, `.jlz-section-progress*`, `#project-modal .jlz-detail-*`
+- Extracted shared `makeParticles` (was 6× copy-pasted across Section files)
+- Derived BakuCarousel textures from PROJECTS (4 unique, shared across 6 faces — was 6 duplicate loads)
+- Centralized UI-chrome event guard in `src/UI/uiChrome.ts` (fixed `#jlz-menu-overlay` typo → `#jlz-menu-modal`; `#project-modal` → `#project-overlay`)
+- Removed dead methods: switchPage, rebuildWorld, populateSection, applySectionLights, splash, reinit, activateCard, + dozens of unused fields/getters
+
+**Memory-leak fixes:**
+- `BakuCarousel.dispose()` now called by `World.disposeSceneGroups()` via `group.userData.gallery?.dispose?.()` — was never called (6 window listeners + snapTimer leaked per World rebuild)
+- `WorksPortfolio.dispose()`: fixed `removeEventListener` capture-flag mismatch on pointermove (was `true`, should be `false` — listener was never removed)
+- `Subtitles.dispose()`: clear 5s hide-timer (was stacking on rapid section changes)
+- `World.dispose()`: now calls `disposeSceneGroups()` + removes cursorLight.object + drawTrail.object from sceneRef
+
+**Performance fixes:**
+- Stopped per-frame `clearProjectTextures()` + `portfolio.group.visible = false` (was forcing `material.needsUpdate` every frame → shader recompiles). Moved to event-driven (section change).
+- Stopped per-frame `portfolio.update(dt)` (was rotating baku cube, fighting SplashCube.update)
+- Pre-allocated scratch vectors in SplashCube (`_tmpFaceOffset`) + BakuCarousel (`_tmpRingRot`) — eliminated 720 allocations/sec
+
+**Bundle size:** vendor-ui 242→223 kB (Lenis gone), chunk-experience 40→35 kB, vendor-three 1241→1192 kB.
+
+**Verification:** type-check (0 errors) · lint (0 errors, 46 warnings) · build (1.99s).
+
 ## 2026-06-28
 
 ### Optimization sprints 1-5 + bug fixes (PR #79)

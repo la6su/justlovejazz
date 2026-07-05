@@ -69,6 +69,8 @@ export class SplashCube extends THREE.Mesh {
   private _blendToEmissive: THREE.Color = new THREE.Color(0x5a5a8a)
   private _blendT: number = 0
   private _blendDisplace: number = 0.05
+  // Pre-allocated scratch vectors — avoid per-face per-frame allocations
+  private _tmpFaceOffset: THREE.Vector3 = new THREE.Vector3()
 
   constructor() {
     // Dummy geometry — we render faces as children, not the mesh itself.
@@ -224,8 +226,9 @@ export class SplashCube extends THREE.Mesh {
       const dir = face.userData.dir as THREE.Vector3
       const basePos = face.userData.basePos as THREE.Vector3
 
-      // Move face outward along its normal (pulse)
-      face.position.copy(basePos).add(dir.clone().multiplyScalar(pulse))
+      // Move face outward along its normal (pulse) — reuse scratch vector
+      this._tmpFaceOffset.copy(dir).multiplyScalar(pulse)
+      face.position.copy(basePos).add(this._tmpFaceOffset)
 
       // Slight rotation during pulse
       face.rotation.z = this.openerProgress * 0.3 * (i % 2 === 0 ? 1 : -1)

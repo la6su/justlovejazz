@@ -1,4 +1,4 @@
-# HERMES_RULES — Operating Protocol for Hermes Agent
+# HERMES_RULES — Operating Protocol for LLM Agents
 
 > Hard-won rules. Each rule has a concrete bug that caused it.
 > Follow them or you WILL break the project.
@@ -12,7 +12,7 @@ git pull origin main
 git log --oneline -1  # verify you're on latest
 ```
 
-`main`, `dev`, and `test` are always synced. Never force-push to either.
+`main` is always deployable. Never force-push.
 
 ## Golden rules
 
@@ -24,21 +24,12 @@ MeshBasicMaterial, PointsMaterial, LineBasicMaterial) or TSL NodeMaterial
 (see §2). ShaderMaterial is allowed in post-processing passes (fullscreen
 quad, not in scene graph) on the WebGL2 path only.
 
-### 2. TSL NodeMaterial IS allowed for scene objects (revised)
+### 2. TSL NodeMaterial IS allowed for scene objects
 
-Previously banned due to lag on WebGPU-over-ANGLE (Chrome/Wayland/NVIDIA).
-That was a LOCAL ENVIRONMENT issue (ANGLE→OpenGL fallback), not a
-fundamental TSL problem. On native WebGPU (Vulkan/D3D12/Metal) and on
-WebGL2 (via WebGLNodesHandler) TSL NodeMaterial works correctly.
-
-Guidelines:
-- TSL NodeMaterial (MeshStandardNodeMaterial, etc.) is the NATIVE path for
-  WebGPU — prefer it over built-in materials when you need custom shaders.
-- Gate heavy TSL materials by DeviceCapability.tier — on low-tier devices,
-  fall back to built-in materials (cheaper to compile).
-- Raw ShaderMaterial remains banned in scene (see §1) — use TSL instead.
-- Post-processing: use TSL PostProcessing (PassNode) on WebGPU,
-  ShaderMaterial on WebGL2.
+TSL NodeMaterial (MeshStandardNodeMaterial, etc.) is the NATIVE path for
+WebGPU — prefer it over built-in materials when you need custom shaders.
+Gate heavy TSL materials by DeviceCapability.tier — on low-tier devices,
+fall back to built-in materials. Raw ShaderMaterial remains banned in scene.
 
 ### 3. Non-destructive opacity fade
 
@@ -59,9 +50,9 @@ Chrome defaults to alpha:true → black screen.
 ### 7. NEVER remove the SplashCube (baku)
 
 The SplashCube (Apple Fifth Avenue-style glass cube) IS the baku — the central
-3D object present on all sections. It doubles as the splash reveal surface
-and the works-slider (project textures on its faces). Removing it breaks both
-the splash sequence and the works section.
+3D object present on all sections. On the works section it morphs into the
+BakuCarousel ring (see §14). Removing it breaks both the splash sequence
+and the works section.
 
 ### 8. NEVER make section-bg opaque
 
@@ -77,11 +68,8 @@ NOT IntersectionObserver. NOT bulk animateNoiseTitles. Section-change event only
 
 ### 11. jlz:webgl-ready MUST fire — do not re-add Troika/WebGLTextManager
 
-WebGLTextManager + troika-three-text were DELETED (they made .studio-title
-text transparent, conflicting with NoiseText which edits textContent).
 `jlz:webgl-ready` is dispatched by `main-app.ts` at curtain mid-open and
-triggers the NoiseText title animation. Do not re-introduce Troika — if
-WebGL text rendering is needed, find an approach that does not hide DOM text.
+triggers the NoiseText title animation. Do not re-introduce Troika.
 
 ### 12. Match section IDs
 
@@ -91,9 +79,11 @@ intro/about/flexible/challenge/innovative/contact. NOT "section-works".
 
 Don't create duplicate overlay containers.
 
-### 14. WorksPortfolio pointer guard
+### 14. BakuCarousel card click is the SOLE overlay opener
 
-Check `if (!this.group.visible) return` — capture phase intercepts all clicks.
+The fullscreen ProjectOverlay opens ONLY via BakuCarousel card click.
+Do NOT re-add: Show button, cube-tap, or any other click path. Multiple
+entry points caused event-handler conflicts + duplicate wiring.
 
 ### 15. master-quantum-flares is UIKit3 theme — DO NOT TOUCH
 
@@ -114,9 +104,7 @@ Never commit changes to files under `references/`.
 ### 19. No hallucinated architecture
 
 Don't invent "Stage4", "WorksStack", "Jólni", or other fictional modules.
-(Lesson: an earlier LLM agent hallucinated 569 lines of broken TS under these
-names — removed in commit 16ad4ef.) Use existing patterns from the junni
-reference, adapted to built-in materials.
+Use existing patterns from the junni reference, adapted to built-in materials.
 
 ### 20. Always verify with lint + type-check + build
 
@@ -125,6 +113,46 @@ bun run lint && bun run type-check && bun run build
 ```
 
 All three must pass. No exceptions.
+
+### 21. NEVER re-add SmoothScroll / Lenis
+
+SmoothScroll + Lenis were REMOVED. SwipeNav drives section navigation
+(one-section-at-a-time swiper). The page doesn't scroll. ProjectOverlay
+locks `body.overflow` directly when the fullscreen overlay is open.
+Re-adding Lenis re-introduces a per-frame `lenis.raf()` call + a window
+scroll listener that drives nothing.
+
+### 22. NEVER re-add SectionProgress
+
+SectionProgress was replaced by SwipeNav (`.jlz-swipenav*`). Don't re-add
+timeline dots — the SwipeNav scrubber IS the progress indicator.
+
+### 23. Centralize UI-chrome event guards
+
+Use `isUiChromeEvent(e)` + `isMenuOpen()` from `src/UI/uiChrome.ts`.
+Do NOT inline `target.closest('#swipe-nav, #jlz-menu-toggle, …')` strings —
+they drift out of sync (a previous bug had `#jlz-menu-overlay` in some
+files but the actual id is `#jlz-menu-modal`; guards silently failed).
+
+### 24. dispose() must clean up ALL listeners + timers + GPU resources
+
+Every class that adds window listeners, setTimeout, or creates THREE
+geometries/materials/textures MUST remove/dispose them in `dispose()`.
+Check: capture flags on removeEventListener MUST match addEventListener.
+BakuCarousel.dispose() is called by World.disposeSceneGroups() via
+`group.userData.gallery?.dispose?.()`.
+
+### 25. No per-frame allocations in update() loops
+
+Reuse pre-allocated scratch vectors/eulers/colors. `new THREE.Vector3()`
+inside a per-frame loop causes GC pressure. See SplashCube._tmpFaceOffset
+and BakuCarousel._tmpRingRot/_tmpCubePos/_tmpRingPos/_tmpArcPos.
+
+### 26. Event-driven, not per-frame, for section-state writes
+
+`clearProjectTextures()`, `portfolio.group.visible = false`, etc. should
+be called on section CHANGE (event-driven), not every frame. Per-frame
+`material.needsUpdate = true` forces shader recompiles.
 
 ## Stop conditions
 

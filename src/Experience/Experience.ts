@@ -5,13 +5,10 @@ import { Camera } from './Camera'
 import { Renderer } from './Renderer'
 import { DebugStats } from '../core/DebugStats'
 import type { DevPanel } from '../core/DevPanel'
-import { SmoothScroll } from './SmoothScroll'
 import { ContentReveal } from './ContentReveal'
 import { Cursor } from './Cursor'
 import { UIManager } from '../UI/UIManager'
 import { input } from './Input'
-import { AssetManager } from '../core/AssetManager'
-import { GPUResourceManager } from '../core/GPUResourceManager'
 import { StateBus } from '../core/StateBus'
 import type { World } from '../core/World'
 import { WorksPortfolio } from './WorksPortfolio'
@@ -45,7 +42,6 @@ export class Experience {
   time!: Time
   camera!: Camera
   renderer!: Renderer
-  public smoothScroll!: SmoothScroll
   private contentReveal!: ContentReveal
   private cursor!: Cursor
   private debugStats!: DebugStats
@@ -128,9 +124,9 @@ export class Experience {
   }
 
   async init() {
-    // SmoothScroll/Lenis kept for potential future use but SwipeNav
-    // now drives section navigation (no page scroll needed).
-    this.smoothScroll = new SmoothScroll()
+    // NOTE: SmoothScroll/Lenis was removed — SwipeNav drives section
+    // navigation (no page scroll). ProjectOverlay locks body overflow
+    // directly when the fullscreen overlay is open.
     input.refreshScrollLimit()
     this.contentReveal = new ContentReveal()
     this.cursor = new Cursor()
@@ -226,7 +222,6 @@ export class Experience {
     this.time.update(time)
     const dt = this.time.delta / 1000
     this.bus.tick(dt)
-    this.smoothScroll.update(time)
     input.update()
     this.cursor.update()
     this.debugStats?.update(time)
@@ -238,8 +233,11 @@ export class Experience {
       this.bus.emit('intro:done')
     }
 
-    // Portfolio update
-    this.portfolio?.update(dt)
+    // NOTE: portfolio.update(dt) is NOT called — the BakuCarousel now drives
+    // the works section. Calling portfolio.update() would rotate the baku cube
+    // via spring physics, fighting SplashCube.update() which also sets
+    // rotation.y. The portfolio object is retained only as a project-metadata
+    // + texture source for the overlay (onProjectSelect reads .projects).
 
     // Splash cube (= baku) opener is triggered by main-app via triggerSplashOpener.
     // jlz:webgl-ready is dispatched by main-app at curtain midpoint (not here).
@@ -309,13 +307,9 @@ export class Experience {
       }
     }
 
-    // Context switch (asset disposal + post-processing preset)
+    // Context switch (post-processing preset)
     const cfg = this.world.getConfig(worldState.currentPhase)
     if (cfg && cfg.context !== this.currentSectionContext) {
-      if (this.currentSectionContext) {
-        AssetManager.getInstance().disposeContext(this.currentSectionContext)
-        GPUResourceManager.getInstance().disposeContext(this.currentSectionContext)
-      }
       // Fog is now managed by World.updateTransform() on section index change —
       // no need to set it here. PostProcessing + FOV still triggered on context change.
       this.renderer.postManager.applyPreset(cfg.id)
@@ -341,23 +335,16 @@ export class Experience {
 
     // Works section: baku cube morphs into a carousel ring of project cards
     // (BakuCarousel). The carousel is a child of sceneGroups[3] and manages
-    // its own visibility via morph — we do NOT force-hide scene groups here.
+    // its own visibility via morph. Textures on the cube are cleared/applied
+    // event-driven in the section-change handler above — NOT every frame
+    // (calling clearProjectTextures() every frame forces material.needsUpdate
+    // → shader recompile every frame, a real perf hit).
     const showGallery = cfg?.ui?.showGallery ?? false
-    if (this.portfolio) {
-      this.portfolio.group.visible = false // BakuCarousel replaces the old cube-texture slider
-      // Keep the baku cube clean glass — carousel cards render on top.
-      const cube = this.world.baku as unknown as
-        | { clearProjectTextures?: () => void }
-        | undefined
-      cube?.clearProjectTextures?.()
-    }
     // Sync ProjectOverlay (DOM UI layer) — fullscreen opens on card click.
-    if (this.overlay) {
-      if (showGallery && !this._portfolioInitialized) {
-        this._portfolioInitialized = true
-        // Preload the first project into the overlay (hidden until card click)
-        this.onProjectSelect(0)
-      }
+    if (this.overlay && showGallery && !this._portfolioInitialized) {
+      this._portfolioInitialized = true
+      // Preload the first project into the overlay (hidden until card click)
+      this.onProjectSelect(0)
     }
     // On works page: hide ground plane (only carousel + fog).
     if (this.world) {
@@ -409,51 +396,6 @@ export class Experience {
     cube?.triggerOpener?.()
   }
 
-  public switchPage(page: string): void {
-    document.body.dataset.page = page
-    // Hide project overlay when leaving the works page (event-driven, not per-frame).
-    // On the works page ensurePortfolio() → onProjectSelect() re-shows it.
-    if (page !== 'works') {
-      this.overlay?.hide()
-    }
-    // Dispose existing portfolio — it was bound to the old world which we
-    // are about to destroy. A fresh portfolio will be created for the new
-    // world in rebuildWorld() → ensurePortfolio().
-    if (this.portfolio) {
-      this.portfolio.dispose()
-      this.portfolio = null
-    }
-    if (this.world) {
-      this.scene.remove(this.world)
-      this.world.dispose()
-    }
-    if (this.currentSectionContext) {
-      AssetManager.getInstance().disposeContext(this.currentSectionContext)
-      GPUResourceManager.getInstance().disposeContext(this.currentSectionContext)
-    }
-    this.currentSectionContext = null
-    this.bus.cancelAll()
-    // rebuildWorld() builds the new world, THEN ensures portfolio on it.
-    void this.rebuildWorld().then(() => {
-      if (document.body.dataset.page === 'works') {
-        void this.ensurePortfolio()
-      }
-    })
-  }
-
-  private async rebuildWorld(): Promise<void> {
-    await this.buildWorld()
-    this.bus.set('intro:opacity', 1).set('intro:stage', 0)
-    this.bus.animate('intro:opacity', 0, 0.8, 'easeOutCubic')
-    this.bus.animate('intro:stage', 1, 0.8, 'easeOutCubic')
-    this.camera.instance.position.set(0, 5, 10)
-    this.camera.instance.lookAt(0, 0, 0)
-    this.camera.instance.updateProjectionMatrix()
-    input.resetScroll()
-    // jlz:webgl-ready is dispatched ONLY by main-app.ts (after splash fully removed).
-    // Do NOT dispatch here — would fire too early (before splash opens).
-  }
-
   destroy() {
     // Stop the animation loop FIRST — setAnimationLoop(null) cancels the
     // internal callback. Without this, the loop keeps firing after dispose().
@@ -462,7 +404,6 @@ export class Experience {
       document.removeEventListener('visibilitychange', this._onVisibilityChange)
       this._onVisibilityChange = null
     }
-    this.smoothScroll.destroy()
     this.contentReveal.destroy()
     this.cursor.destroy()
     this.world.dispose()
@@ -507,10 +448,7 @@ export class Experience {
       PROJECTS,
       (idx) => {
         this.onProjectSelect(idx)
-      }, // swipe → update overlay (preload project data)
-      () => {}, // tap — no-op: BakuCarousel card click is the sole overlay opener
-      () => {}, // expand done (unused)
-      () => {}, // collapse done (unused)
+      }, // prev/next → preload project data into overlay
     )
     // Portfolio group at world origin — frontal camera at [0,1,7] looks at [0,1,0].
     this.portfolio.group.position.set(0, 1, 0)

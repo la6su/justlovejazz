@@ -22,15 +22,16 @@
 
 import * as THREE from 'three'
 import { MeshBasicNodeMaterial } from 'three/webgpu'
+import { isMenuOpen, isUiChromeEvent } from '../../UI/uiChrome'
+import { PROJECTS } from '../../Data/Projects'
 
-const CAROUSEL_IMAGES = [
-  '/assets/projects/ebb-vibes/cover.webp',
-  '/assets/projects/mono-sunday/cover.webp',
-  '/assets/projects/till-at-night/cover.webp',
-  '/assets/projects/undercurrent/cover.webp',
-  '/assets/projects/ebb-vibes/cover.webp',
-  '/assets/projects/mono-sunday/cover.webp',
-]
+// 6 cube faces — textures derived from PROJECTS (4 unique, repeated to fill 6).
+// Loading 4 textures once and referencing by index avoids duplicate GPU resources.
+const CARD_COUNT = 6
+const CARD_TEXTURE_URLS: string[] = Array.from({ length: CARD_COUNT }, (_, i) => {
+  const p = PROJECTS[i % PROJECTS.length]!
+  return p.textureUrl || p.detailTextureUrl
+})
 
 const RING_RADIUS = 3.2
 const CARD_W = 2.0
@@ -84,6 +85,7 @@ export class BakuCarousel extends THREE.Group {
   private _tmpCubePos = new THREE.Vector3()
   private _tmpRingPos = new THREE.Vector3()
   private _tmpArcPos = new THREE.Vector3()
+  private _tmpRingRot = new THREE.Euler()
 
   constructor() {
     super()
@@ -115,8 +117,11 @@ export class BakuCarousel extends THREE.Group {
     this.initialized = true
 
     const loader = new THREE.TextureLoader()
-    const textures = await Promise.all(
-      CAROUSEL_IMAGES.map(
+    // Load only the UNIQUE project textures once (4, not 6) — cards reference
+    // them by index, avoiding duplicate GPU textures + HTTP requests.
+    const uniqueUrls = [...new Set(CARD_TEXTURE_URLS)]
+    const uniqueTextures = await Promise.all(
+      uniqueUrls.map(
         (url) =>
           new Promise<THREE.Texture>((resolve, reject) => {
             loader.load(
@@ -133,8 +138,10 @@ export class BakuCarousel extends THREE.Group {
           }),
       ),
     )
+    const urlToTexture = new Map(uniqueUrls.map((url, i) => [url, uniqueTextures[i]!]))
 
-    textures.forEach((tex, i) => {
+    CARD_TEXTURE_URLS.forEach((url, i) => {
+      const tex = urlToTexture.get(url)!
       const mat = new MeshBasicNodeMaterial({
         map: tex,
         transparent: true,
@@ -144,8 +151,8 @@ export class BakuCarousel extends THREE.Group {
       const mesh = new THREE.Mesh(this.geometry, mat as unknown as THREE.Material)
       mesh.scale.set(CARD_W, CARD_H, 1)
       mesh.userData.texIdx = i
-      // Cards are pickable — store a ref so we can raycast on tap
-      mesh.userData.cardIndex = i % (CAROUSEL_IMAGES.length / 2) // 0..3 (4 unique projects)
+      // cardIndex = which PROJECT (0..3) — used by onCardClick → onProjectSelect
+      mesh.userData.cardIndex = i % PROJECTS.length
       this.cards.push(mesh)
       this.cardMaterials.push(mat)
       this.add(mesh)
@@ -157,18 +164,14 @@ export class BakuCarousel extends THREE.Group {
   private addEventListeners(): void {
     this.wheelHandler = (e: WheelEvent) => {
       if (!this._active || this._morphT < 0.5) return
-      const menu = document.getElementById('jlz-menu-modal')
-      if (menu && menu.classList.contains('uk-open')) return
-      const target = e.target as HTMLElement | null
-      if (target?.closest('#swipe-nav, #jlz-menu-toggle, #jlz-menu-modal, #project-modal, .jlz-works-ui, #project-overlay')) return
+      if (isMenuOpen() || isUiChromeEvent(e)) return
       e.preventDefault()
       this.scroll.target += e.deltaY * WHEEL_SENSITIVITY
       this.scheduleSnap()
     }
     this.pointerDownHandler = (e: PointerEvent) => {
       if (!this._active || this._morphT < 0.5) return
-      const target = e.target as HTMLElement | null
-      if (target?.closest('#swipe-nav, #jlz-menu-toggle, #jlz-menu-modal, #project-modal, .jlz-works-ui, #project-overlay')) return
+      if (isMenuOpen() || isUiChromeEvent(e)) return
       this.isDown = true
       this.dragStartX = e.clientX
       this.dragStartY = e.clientY
@@ -201,8 +204,7 @@ export class BakuCarousel extends THREE.Group {
     }
     this.keydownHandler = (e: KeyboardEvent) => {
       if (!this._active || this._morphT < 0.5) return
-      const menu = document.getElementById('jlz-menu-modal')
-      if (menu && menu.classList.contains('uk-open')) return
+      if (isMenuOpen() || isUiChromeEvent(e)) return
       const tag = (e.target as HTMLElement)?.tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA') return
       if (e.key === 'ArrowLeft') {
@@ -317,8 +319,8 @@ export class BakuCarousel extends THREE.Group {
         0,
         Math.sin(angle) * RING_RADIUS,
       )
-      // Card faces inward (toward ring center)
-      const ringRot = new THREE.Euler(0, -angle + Math.PI / 2, 0)
+      // Card faces inward (toward ring center) — reuse scratch Euler
+      this._tmpRingRot.set(0, -angle + Math.PI / 2, 0)
 
       // ── ARC trajectory: lerp position, then add arc peak (y-bump) ──
       // The arc peaks at mid-morph (easedT=0.5) and is 0 at start+end.
@@ -328,9 +330,9 @@ export class BakuCarousel extends THREE.Group {
       this._tmpArcPos.y += arcBump
 
       card.position.copy(this._tmpArcPos)
-      card.rotation.x = THREE.MathUtils.lerp(cubeRot.x, ringRot.x, easedT)
-      card.rotation.y = THREE.MathUtils.lerp(cubeRot.y, ringRot.y, easedT)
-      card.rotation.z = THREE.MathUtils.lerp(cubeRot.z, ringRot.z, easedT)
+      card.rotation.x = THREE.MathUtils.lerp(cubeRot.x, this._tmpRingRot.x, easedT)
+      card.rotation.y = THREE.MathUtils.lerp(cubeRot.y, this._tmpRingRot.y, easedT)
+      card.rotation.z = THREE.MathUtils.lerp(cubeRot.z, this._tmpRingRot.z, easedT)
 
       // Scale: smaller in cube state (face of 1.6 cube), full in carousel
       const scale = THREE.MathUtils.lerp(0.8, 1.0, easedT)
@@ -349,9 +351,15 @@ export class BakuCarousel extends THREE.Group {
     if (this.keydownHandler) window.removeEventListener('keydown', this.keydownHandler)
     if (this.snapTimer) clearTimeout(this.snapTimer)
     this.geometry.dispose()
+    // Dispose card materials. Textures are SHARED across cards (4 unique for 6
+    // faces), so dispose each unique texture only once.
+    const disposedTextures = new Set<THREE.Texture>()
     for (const mat of this.cardMaterials) {
       const m = mat as unknown as { map?: THREE.Texture }
-      m.map?.dispose()
+      if (m.map && !disposedTextures.has(m.map)) {
+        m.map.dispose()
+        disposedTextures.add(m.map)
+      }
       mat.dispose()
     }
     this.cards = []

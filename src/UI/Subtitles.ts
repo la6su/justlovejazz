@@ -18,6 +18,7 @@ const SUBTITLES: Record<string, string> = {
 export class Subtitles {
   private container: HTMLElement
   private current: NoiseText | null = null
+  private hideTimer: ReturnType<typeof setTimeout> | null = null
   private readonly sectionChangeHandler: (payload: AppEvents['jlz:section-change']) => void
 
   constructor() {
@@ -45,6 +46,12 @@ export class Subtitles {
       return
     }
 
+    // Clear previous timer so rapid section changes don't stack timeouts.
+    if (this.hideTimer) {
+      clearTimeout(this.hideTimer)
+      this.hideTimer = null
+    }
+
     // Clear previous.
     this.container.innerHTML = ''
     const p = document.createElement('p')
@@ -59,15 +66,20 @@ export class Subtitles {
     this.current.show(0.8)
 
     // Auto-hide after 5s.
-    setTimeout(() => {
+    this.hideTimer = setTimeout(() => {
       if (this.current) {
         this.current.hide()
         this.current = null
       }
+      this.hideTimer = null
     }, 5000)
   }
 
   hide(): void {
+    if (this.hideTimer) {
+      clearTimeout(this.hideTimer)
+      this.hideTimer = null
+    }
     this.current?.hide()
     this.current = null
     this.container.innerHTML = ''

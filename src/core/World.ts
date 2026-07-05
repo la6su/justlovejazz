@@ -12,7 +12,6 @@ import { CursorLight } from '../Experience/World/CursorLight'
 import { DrawTrail } from '../Experience/World/DrawTrail'
 import { SplashCube } from '../Experience/World/SplashCube'
 import { getWorldConfigForPage, type PhaseConfig } from './WorldConfig'
-import { getCameraAnchors, type CameraAnchor } from './CameraAnchors'
 import { SectionSceneFactory } from './SectionSceneFactory'
 import { disposeMaterialDeep } from '../Utils/dispose'
 import type { WorldAtmosphere } from './WorldAtmosphere'
@@ -52,10 +51,6 @@ export class World extends THREE.Group {
   private _poolEnvColor = new THREE.Color()
   private _poolGroundColor = new THREE.Color()
   private _targetGroundOpacity = 0
-  private _splashed = false
-  public get splashed(): boolean {
-    return this._splashed
-  }
 
   constructor(scene: THREE.Scene) {
     super()
@@ -111,17 +106,6 @@ export class World extends THREE.Group {
     await this.ensureAtmosphere()
     const pageKey = (document.body?.getAttribute('data-page') || 'home').split('-')[0] ?? 'home'
     this.configs = getWorldConfigForPage(pageKey)
-    // Register camera anchors from WorldConfig (Blender-style named points).
-    const anchors = getCameraAnchors()
-    this.configs.forEach((cfg, i) => {
-      anchors.register({
-        name: cfg.domSection,
-        sectionIndex: i,
-        position: cfg.camera.position.clone(),
-        lookAt: cfg.camera.target.clone(),
-        fov: cfg.camera.fov,
-      } satisfies CameraAnchor)
-    })
     this.disposeSections()
     this.disposeSceneGroups()
 
@@ -130,7 +114,6 @@ export class World extends THREE.Group {
     this.configs.forEach((config, index) => {
       const section = new Section(config, index)
       this.add(section)
-      this.populateSection(section, config, index)
 
       if (index === 0) {
         section.visible = true
@@ -202,8 +185,6 @@ export class World extends THREE.Group {
     )
   }
 
-  protected populateSection(_section: Section, _config: PhaseConfig, _index: number): void {}
-
   public update(deltaTime: number): void {
     this.bg.update(deltaTime)
     this.sceneRef.background = this.bg.color
@@ -245,12 +226,6 @@ export class World extends THREE.Group {
           attr.needsUpdate = true
         }
       }
-
-      // ── Drive FlexibleSlides per-frame (typographic bg scroll + visibility lerp) ──
-      // Tagged on the group by SectionSceneFactory.createFlexible() after texture load.
-      const slides = group.userData.flexibleSlides as
-        import('../Experience/World/Sections/FlexibleSlides').FlexibleSlides | undefined
-      if (slides) slides.update(deltaTime)
 
       // ── Drive BakuCarousel per-frame (morph cube ↔ carousel ring + scroll) ──
       const carousel = group.userData.gallery as
@@ -512,7 +487,7 @@ export class World extends THREE.Group {
     }
   }
 
-  // ── Legacy: keep advance() for backward compatibility during migration
+  // ── Public alias for updateTransform — Experience.advance() calls this
   public advance(scroll: number): WorldTransformResult {
     return this.updateTransform(scroll)
   }
@@ -530,24 +505,6 @@ export class World extends THREE.Group {
     // Atmosphere: fog density stays per-section.
   }
 
-  // ── Junni: splash() — unified entry point for first-section activation
-  // Called when cinematic intro completes and experience becomes interactive
-  public splash(): void {
-    if (this._splashed) return
-    this._splashed = true
-
-    // Activate first section
-    const first = this.sections[0]
-    if (first) {
-      first.splash()
-    }
-  }
-
-  public reinit(): void {
-    this.disposeSections()
-    this.init()
-  }
-
   private disposeSections(): void {
     this.sections.forEach((s) => {
       s.dispose()
@@ -558,6 +515,14 @@ export class World extends THREE.Group {
 
   private disposeSceneGroups(): void {
     this.sceneGroups.forEach((group) => {
+      // If the group hosts a BakuCarousel (userData.gallery), call its
+      // dispose() FIRST — it removes 6 window listeners + clears snapTimer
+      // + disposes card materials/textures/geometry. The traverse below
+      // then handles any remaining mesh resources.
+      const gallery = group.userData.gallery as
+        | { dispose?: () => void }
+        | undefined
+      gallery?.dispose?.()
       group.traverse((obj) => {
         if (obj instanceof THREE.Mesh) {
           obj.geometry?.dispose()
@@ -570,24 +535,12 @@ export class World extends THREE.Group {
     this.sceneGroups = []
   }
 
-  /** Apply per-section dynamic lights from PhaseConfig.sectionLights[] */
-  protected applySectionLights(config: PhaseConfig): void {
-    if (!config.sectionLights?.length) return
-    for (const def of config.sectionLights) {
-      const light = new THREE.PointLight()
-      light.color.set(def.hexColor)
-      light.intensity = def.intensity ?? 5
-      light.distance = def.distance ?? 0
-      light.position.set(def.position[0], def.position[1], def.position[2])
-      light.castShadow = false
-      this.add(light)
-    }
-  }
-
   public dispose(): void {
     this.disposeSections()
+    // Dispose scene groups — including BakuCarousel (calls its dispose() which
+    // removes 6 window listeners + clears snapTimer + disposes GPU resources).
+    this.disposeSceneGroups()
     // Dispose baku (SplashCube) GPU resources — 6 face geos+mats + 6 edge geos+mats.
-    // Previously skipped as a "no-op", leaking ~24 GPU objects per rebuildWorld().
     this.baku?.dispose()
     this.groundPlane.geometry.dispose()
     const groundMat = this.groundPlane.material
@@ -595,7 +548,10 @@ export class World extends THREE.Group {
     else groundMat.dispose()
     this.lightsGroup.dispose()
     this.cursorLight.dispose()
+    // cursorLight.object was added directly to sceneRef in constructor — remove it.
+    this.sceneRef.remove(this.cursorLight.object)
     this.drawTrail?.dispose()
+    if (this.drawTrail) this.sceneRef.remove(this.drawTrail.object)
     this.atmosphere?.dispose()
   }
 

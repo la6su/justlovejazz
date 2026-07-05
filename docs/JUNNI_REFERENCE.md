@@ -3,139 +3,66 @@
 > Source: https://github.com/junni-inc/next.junni.co.jp
 > Reference implementation for justlovejazz. Port patterns, not assets.
 
-## Layout (junni pattern)
+## Layout (junni pattern → our adaptation)
 
-```
-.content-wrapper
-  .content (flex column, z-index:1)
-    .header (z-index:10)
-    .section-wrap (flex:1, position:relative)
-      canvas (position:absolute, z-index:0)  ← 3D scene
-      .section (position:absolute, 100%, pointer-events:none)
-        .section1, .section2, ... (DOM content overlays)
-    .footer (z-index:10)
-```
-
-**Key:** Canvas is INSIDE section-wrap, behind sections. Sections are
-absolute-positioned overlays with `pointer-events: none` (except active).
-
+Junni uses canvas inside section-wrap with absolute-positioned DOM overlays.
 Our adaptation:
+- `canvas.canvas` (z-index:1, fixed, pointer-events:none) — 3D scene
+- `#spa-content` (z-index:2, transparent) — 6 `<section>` absolute-stacked (100dvh each)
+- `body { overflow: hidden }` — no page scroll
+- `.section-active` toggles which section is visible (ContentReveal on `jlz:section-change`)
+- SwipeNav (bottom bar) + UIMenu (UIkit modal) drive navigation — NOT scroll
 
-- `canvas.canvas` (z-index:1, fixed, pointer-events:none)
-- `#spa-content` (z-index:2, transparent) with 6 `<section>` (100vh each)
-- Scroll-based section switching (not absolute overlay)
+## Section compositions (current state)
 
-## Section compositions (junni)
+| Idx | Section | 3D content | BG |
+| --- | --- | --- | --- |
+| 0 | intro | particles (25 grey) | white (light) |
+| 1 | about | particles (50 pink), DrawTrail | dark |
+| 2 | flexible | particles (20 grey) — **EMPTY placeholder** | dark purple |
+| 3 | challenge (works) | **BakuCarousel** (baku cube morphs into ring) + particles (20 blue) | dark |
+| 4 | innovative | particles (45 blue-grey) | dark |
+| 5 | contact | particles (30 light-blue) | light cream |
 
-### Section1 — Intro
+All factories in `src/Sections/Section*/index.ts` use the shared
+`makeParticles` helper from `src/Sections/_shared/makeParticles.ts`.
 
-- **Wall**: physics-based collision wall (cannon.js)
-- **Logo**: 3D logo parts that assemble
-- **Crosses**: animated cross shapes
-- **Gradation**: gradient background sphere
-- **Lines**: geometric line field
-- **Slashes**: diagonal slash patterns
-- **Dots**: particle dots
-
-**Our adaptation (createIntro):** Metal drop (Baku-like sphere) on white BG.
-Keep simple — junni uses GLTF assets we don't have.
-
-### Section2 — Flexible
-
-- **Flexible**: flexible/elastic object
-- **Section2Title**: animated title
-- **Slides**: sliding panels
-- **Transparents**: transparent layered objects
-
-**Our adaptation (createAbout):** Blob + reflective floor + particles on dark BG.
-
-### Section3 — Works (displays)
-
-- **Wire**: wireframe structure
-- **Displays**: product display cards (like our WorksPortfolio)
-- **Lights**: section-specific lighting
-- **BackText**: background text
-- **CursorLight**: cursor-driven light
-- **Sec3Particle**: section particles
-
-**Our adaptation (createChallenge):** WorksPortfolio (3D card carousel) +
-ProjectOverlay (DOM UI). Grid floor + geometric lines.
-
-### Section4 — Peoples
-
-- **Peoples**: character figures (GLTF)
-- **TileText**: tiled text display
-
-**Our adaptation (createInnovative):** Constellation network (points + lines)
-
-- blob. Represents "innovation/network" concept.
-
-### Section5 — Outro
-
-- **Grid**: animated grid (shader-based)
-- **TextRing**: rotating ring of text
-- **Outro**: closing text
-
-**Our adaptation (createFlexible):** Metal drop + particles. (Could add
-TextRing pattern — rotating text around Baku.)
-
-### Section6 — Next
-
-- **Comrades**: companion shapes
-- **Next**: "next" call-to-action
-- **Particle**: closing particles
-- **Road**: perspective road
-- **Wind**: wind effect
-
-**Our adaptation (createContact):** Grid floor + particles. Simple closing.
-
-## Key junni technical patterns
+## Key junni technical patterns (ported)
 
 ### BG (background)
-
-Junni: `BG.ts` — gradient sphere with shader.
-Ours: `BG.ts` — per-section Color, set as `scene.background`. Lerp between
-section colors. Simpler, works on WebGPU without shaders.
-
-### Ground
-
-Junni: `Ground.ts` — shader-based grid floor.
-Ours: `GridHelper` (built-in) or `MeshStandardMaterial` plane. No shader.
+Junni: gradient sphere with shader. Ours: `BG.ts` — per-section Color as
+`scene.background`, lerped between section colors. Works on WebGPU without shaders.
 
 ### Baku (character)
-
-Junni: `Baku.ts` — GLTF model with physics + multiple materials.
-Ours: `IcosahedronGeometry` + `MeshStandardMaterial`. Organic drift via
-Noise. Role-based material switching (NORMAL/GLASS/WIRE).
+Junni: GLTF model with physics. Ours: `SplashCube` — Apple Fifth Avenue glass
+cube (`MeshPhysicalNodeMaterial` + worldDNA TSL nodes). 6 faces. On works §4
+the cube morphs into BakuCarousel (faces unfold into a ring of project cards).
 
 ### DrawTrail
-
-Junni: `DrawTrail.ts` — cursor trail ribbon (GPU computation).
-Ours: Disabled for perf. Would be LineBasicMaterial with ring buffer.
+Junni: GPU cursor trail ribbon. Ours: `DrawTrail.ts` — 48-segment Line with
+vertex colors, additive blending. Visible on about(1) only.
 
 ### CursorLight
-
-Junni: `CursorLight.ts` — cursor-driven directional light.
-Ours: `CursorLight.ts` — same pattern, PointLight following cursor.
+Junni: cursor-driven directional light. Ours: `CursorLight.ts` — same pattern,
+DirectionalLight spring-following cursor.
 
 ### CameraController
-
-Junni: Per-section camera transforms with scroll-driven lerp.
-Ours: Same — `Section.cameraTransform` lerped in `updateTransform`.
+Junni: per-section camera transforms with scroll-driven lerp.
+Ours: `Section.cameraTransform` lerped in `World.updateTransform()`.
 
 ### Post-processing
-
-Junni: Custom RenderPipeline with bloom, vignette, chromatic aberration.
-Ours: WebGPU = direct render (no post, perf). WebGL2 = ShaderMaterial RT
-pipeline (bloom/grain/vignette).
+Junni: custom RenderPipeline. Ours: WebGPU = direct render (no post, perf);
+WebGL2 = ShaderMaterial RT pipeline (bloom/grain/vignette).
 
 ## What NOT to port
 
 - **ore-three**: junni's custom utility library. We use vanilla three.js.
-- **cannon.js physics**: too heavy for our use case. Baku uses simple drift.
+- **cannon.js physics**: too heavy. Baku uses simple drift.
 - **GLTF assets**: we don't have junni's models. Use primitives.
-- **ShaderMaterial**: incompatible with WebGPURenderer. Use built-in materials.
-- **TSL NodeMaterial for scene objects**: slow on WebGPU-over-ANGLE.
+- **ShaderMaterial in scene**: incompatible with WebGPURenderer. Use built-in or TSL.
+- **scroll-snap navigation**: replaced by SwipeNav + UIMenu. Don't re-add.
+- **SmoothScroll/Lenis**: removed — SwipeNav drives navigation. Don't re-add.
+- **SectionProgress timeline dots**: replaced by SwipeNav. Don't re-add.
 
 ## Design language (junni aesthetic)
 
@@ -148,3 +75,4 @@ pipeline (bloom/grain/vignette).
 
 Our current factory follows this: 1-3 objects per section, accent colors,
 transparent sections over 3D canvas.
+
