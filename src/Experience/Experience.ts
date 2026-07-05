@@ -140,7 +140,11 @@ export class Experience {
     this._subtitles = new Subtitles()
     // Section progress indicator with clickable timeline dots.
     // Swipe-based section navigation (replaces scroll-snap).
-    this._swipeNav = new SwipeNav(6, ['Intro', 'About', 'Flexible', 'Works', 'Innovative', 'Contact'])
+    this._swipeNav = new SwipeNav(6)
+    this._swipeNav.onSectionChange((idx) => {
+      // Section change callback — update world
+      console.info('[SwipeNav] section changed:', idx)
+    })
 
     this._sectionProgress = new SectionProgress([
       'Intro',
@@ -212,7 +216,8 @@ export class Experience {
     // jlz:webgl-ready is dispatched by main-app at curtain midpoint (not here).
 
     // Navigation: SwipeNav progress (0-1) replaces scroll progress.
-    const ns = this._swipeNav?.getProgress() ?? 0
+    this._swipeNav?.update()
+    const ns = this._swipeNav?.getOverallProgress() ?? 0
     const { cameraTarget, worldState } = this.world.advance(ns)
     this.world.update(dt)
 
