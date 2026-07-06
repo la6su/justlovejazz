@@ -33,6 +33,11 @@ export function setTransmissionEnabled(enabled: boolean): void {
   transmissionEnabled = enabled
 }
 
+/** Check if transmission (glass refraction) is available. False on WebGL2 fallback. */
+export function isTransmissionEnabled(): boolean {
+  return transmissionEnabled
+}
+
 export class SplashCube extends THREE.Mesh {
   private faces: THREE.Mesh[] = []
   private faceMaterials: MeshPhysicalNodeMaterial[] = []

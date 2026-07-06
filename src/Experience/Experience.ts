@@ -13,7 +13,6 @@ import { StateBus } from '../core/StateBus'
 import type { World } from '../core/World'
 import { WorksPortfolio } from './WorksPortfolio'
 import { ProjectOverlay } from '../UI/ProjectOverlay'
-import { Subtitles } from '../UI/Subtitles'
 import { PerfMonitor } from '../core/PerfMonitor'
 import { AudioSystem } from '../core/AudioSystem'
 import { SwipeNav } from '../UI/SwipeNav'
@@ -52,7 +51,6 @@ export class Experience {
   // Works portfolio (public for DevPanel access)
   public portfolio: WorksPortfolio | null = null
   private overlay: ProjectOverlay | null = null
-  private _subtitles: Subtitles | null = null
   private _uiMenu: UIMenu | null = null
   private currentSectionContext: string | null = null
   private _portfolioInitialized = false
@@ -149,8 +147,8 @@ export class Experience {
         console.warn('[Experience] DevPanel init failed:', e)
       }
     }
-    // Subtitles listen for jlz:section-change events automatically.
-    this._subtitles = new Subtitles()
+    // Subtitles moved to 3D — SubtitleTorus (glass torus + circular text)
+    // is created in World and listens for jlz:section-change directly.
     // SwipeNav: one-section-at-a-time swiper. Drag 0→100% (right) to move to
     // the NEXT section, 0→-100% (left) to move to PREV. Release snaps back if
     // |progress| < 50%, commits the transition if > 50%. Wheel/scroll is NOT
@@ -416,8 +414,6 @@ export class Experience {
     this.camera.destroy()
     this.portfolio?.dispose()
     this.overlay?.dispose()
-    this._subtitles?.dispose()
-    this._subtitles = null
     this._uiMenu?.dispose()
     this._uiMenu = null
     // Sizes + Input own window listeners — clean them up to avoid leaks

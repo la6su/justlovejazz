@@ -13,7 +13,6 @@
 //   - .scroll-hint
 //   - .jlz-works-ui (works slider overlay)
 //   - .jlz-section-progress (section progress indicator)
-//   - .jlz-subtitles (section subtitles)
 //   - #project-modal (project detail modal)
 //   - .section-active / [data-section] (section reveal state)
 //   - responsive + reduced-motion overrides
@@ -472,72 +471,10 @@ canvas {
    section progress is the SwipeNav (.jlz-swipenav*, see §15 below). */
 
 /* ════════════════════════════════════════════════════════════════════
-   10. Section subtitles (junni Subtitle + NoiseText pattern)
-   (Moved from tokens.css)
+   10. Section subtitles — moved to 3D (SubtitleTorus).
+   The old DOM .jlz-subtitles* CSS was removed. Subtitles are now a glass
+   torus with circular text in the 3D environment layer (see SubtitleTorus.ts).
    ════════════════════════════════════════════════════════════════════ */
-
-.jlz-subtitles {
-  position: fixed;
-  bottom: var(--jlz-space-16);
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: var(--jlz-z-content);
-  pointer-events: none;
-  text-align: center;
-  max-width: 600px;
-}
-
-.jlz-subtitles-text {
-  margin: 0;
-  font-size: var(--jlz-type-body);
-  line-height: var(--jlz-leading-loose);
-  color: var(--jlz-color-text-muted);
-  letter-spacing: var(--jlz-tracking-wide);
-  font-family: var(--jlz-font-display);
-  opacity: 0;
-  animation: jlz-subtitle-fade 0.6s var(--jlz-ease-entrance) forwards;
-}
-
-.jlz-subtitles-text span {
-  font-family: var(--jlz-font-mono);
-  font-size: var(--jlz-type-small);
-  letter-spacing: var(--jlz-tracking-wider);
-}
-
-@keyframes jlz-subtitle-fade {
-  0% {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes jlz-title-glow {
-  0%,
-  100% {
-    text-shadow: none;
-  }
-  50% {
-    text-shadow: 0 0 20px rgba(81, 93, 132, 0.4);
-  }
-}
-
-@media (max-width: 768px) {
-  .jlz-subtitles {
-    bottom: var(--jlz-space-12);
-    max-width: 90%;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .jlz-subtitles-text {
-    animation: none;
-    opacity: 1;
-  }
-}
 
 /* ════════════════════════════════════════════════════════════════════
    11. Project detail overlay — ProjectOverlay.ts builds its own DOM with
