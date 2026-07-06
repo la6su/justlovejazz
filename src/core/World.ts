@@ -11,7 +11,6 @@ import { CinematicLights } from '../Experience/World/Lights'
 import { CursorLight } from '../Experience/World/CursorLight'
 import { DrawTrail } from '../Experience/World/DrawTrail'
 import { SplashCube } from '../Experience/World/SplashCube'
-import { SubtitleTorus } from '../Experience/World/SubtitleTorus'
 import { getWorldConfigForPage, type PhaseConfig } from './WorldConfig'
 import { SectionSceneFactory } from './SectionSceneFactory'
 import { disposeMaterialDeep } from '../Utils/dispose'
@@ -28,7 +27,6 @@ export class World extends THREE.Group {
   public lightsGroup!: CinematicLights
   public cursorLight!: CursorLight
   public drawTrail?: DrawTrail
-  public subtitleTorus!: import('../Experience/World/SubtitleTorus').SubtitleTorus
   public atmosphere: WorldAtmosphere | null = null
   public bg!: BG
   public groundPlane!: THREE.Mesh
@@ -82,12 +80,6 @@ export class World extends THREE.Group {
     this.baku.name = 'baku'
     this.baku.visible = true
     this.add(this.baku)
-
-    // ── SubtitleTorus — 3D environment-layer subtitle (glass torus + circular text).
-    // Replaces the old DOM .jlz-subtitles bar. Positioned behind the baku cube,
-    // visible on all sections. Text updates on jlz:section-change.
-    this.subtitleTorus = new SubtitleTorus()
-    this.add(this.subtitleTorus)
 
     // ── BG (procedural background color, junni pattern)
     this.bg = new BG()
@@ -208,7 +200,6 @@ export class World extends THREE.Group {
       if (this.drawTrail && this._camera) {
         this.drawTrail.update(deltaTime, this._camera)
       }
-      this.subtitleTorus.update(deltaTime)
     }
 
     // ── Particle drift — only visible groups, cached Points refs ──
@@ -562,7 +553,6 @@ export class World extends THREE.Group {
     this.sceneRef.remove(this.cursorLight.object)
     this.drawTrail?.dispose()
     if (this.drawTrail) this.sceneRef.remove(this.drawTrail.object)
-    this.subtitleTorus.dispose()
     this.atmosphere?.dispose()
   }
 
