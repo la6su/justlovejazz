@@ -43,9 +43,16 @@ export class UIMenu {
 
     // ── UIkit modal markup ──
     // UIkit modal structure: <div id uk-modal> <div class="uk-modal-dialog"> ... </div> </div>
+    // NOTE: do NOT add `uk-flex uk-flex-top` to the modal element className —
+    // `uk-flex` sets `display:flex !important` which overrides `.uk-modal {
+    // display:none }`, so the modal stays visible (blocking pointer events
+    // across the whole viewport) even when closed. UIkit adds/removes
+    // `uk-flex` dynamically on show/hide (see modal.js `show`/`hidden`
+    // handlers). The dialog uses `uk-margin-auto-vertical` for centering,
+    // which triggers UIkit to add `uk-flex` on the modal when it opens.
     this.modalEl = document.createElement('div')
     this.modalEl.id = 'jlz-menu-modal'
-    this.modalEl.className = 'jlz-menu-modal uk-modal uk-flex uk-flex-top'
+    this.modalEl.className = 'jlz-menu-modal uk-modal'
     this.modalEl.setAttribute('uk-modal', 'stack: true; bg-close: true; esc-close: true')
 
     const dialog = document.createElement('div')
