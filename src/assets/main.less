@@ -11,9 +11,9 @@
 //   - Splash system is inline in index.html (no LESS dependency)
 //   - .custom-cursor / .debug-stats (overlay UX)
 //   - .scroll-hint
-//   - .jlz-works-ui (works slider overlay)
-//   - .jlz-section-progress (section progress indicator)
-//   - #project-modal (project detail modal)
+//   - .jlz-works-ui (works slider overlay — removed)
+//   - .jlz-section-progress (section progress indicator — removed)
+//   - #project-modal (project detail modal — removed)
 //   - .section-active / [data-section] (section reveal state)
 //   - responsive + reduced-motion overrides
 //
@@ -468,7 +468,7 @@ canvas {
    ════════════════════════════════════════════════════════════════════ */
 /* Blocks 8 (old .jlz-works-* slider UI) and 9 (.jlz-section-progress*) were
    removed — the slider UI is now the BakuCarousel (3D, no DOM overlay) and
-   section progress is the SwipeNav (.jlz-swipenav*, see §15 below). */
+   section navigation is the CircularNav (.jlz-circnav*, see §14 below). */
 
 /* ════════════════════════════════════════════════════════════════════
    10. Section subtitles — DISABLED (will be re-added as 3D later).
@@ -581,52 +581,172 @@ canvas {
 }
 
 /* ════════════════════════════════════════════════════════════════════
-   14. Bottom dock + Menu modal
-   — #jlz-dock (fixed bottom, unified bar: hamburger + SwipeNav)
-   — .jlz-menu-toggle (hamburger button, inside dock)
+   14. Circular navigation (bottom-right corner) + Menu modal
+   — #circ-nav (fixed bottom-right, overflow:hidden — only top-left quadrant visible)
+   — .jlz-circnav__arc / __arc-fill (the visible circular track + progress)
+   — .jlz-circnav__dots / __dot / __dot-label (6 section dots on the arc)
+   — .jlz-circnav__center (center anchor dot at the corner)
+   — .jlz-menu-toggle (hamburger button, at the corner center)
    — .jlz-menu-modal / .jlz-menu-dialog — UIkit modal shell (uk-modal)
-   — .jlz-menu-close — UIkit close-outside variant
-   — .jlz-menu-nav / .jlz-menu-link — section list (bespoke)
-   UIkit handles: overlay bg, show/hide transition, esc-close, bg-close,
-   focus trap, scroll-lock. Only the dock + button + links have bespoke styles.
+   UIkit handles: overlay bg, show/hide, esc-close, bg-close, focus trap.
    ════════════════════════════════════════════════════════════════════ */
 
-/* Bottom dock — unified bar holding the hamburger button + SwipeNav track */
-.jlz-dock {
+/* Circular nav — bottom-right corner. The circle center IS the corner.
+   overflow:hidden clips everything except the top-left quadrant. */
+.jlz-circnav {
   position: fixed;
-  bottom: 1.25rem;
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: 0;
+  right: 0;
+  width: 320px;
+  height: 320px;
   z-index: 10001;
-  gap: 0.75rem;
-  padding: 0.5rem 0.75rem;
-  background: rgba(20, 20, 24, 0.5);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 18px;
+  pointer-events: auto;
+  overflow: hidden;
   user-select: none;
   -webkit-user-select: none;
+  touch-action: none;
 }
 
+/* Arc background — the visible circular track. A full circle centered at
+   the bottom-right corner. Only the top-left quadrant shows. */
+.jlz-circnav__arc {
+  position: absolute;
+  right: -160px;
+  bottom: -160px;
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  background: rgba(20, 20, 24, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Arc fill — conic gradient that shows progress. Origin at bottom-right
+   (the corner). Rotates based on progress (see CircularNav.updateUI). */
+.jlz-circnav__arc-fill {
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 180deg,
+    transparent 0deg,
+    rgba(140, 180, 240, 0.25) 0deg,
+    rgba(140, 180, 240, 0.4) 90deg,
+    transparent 90deg
+  );
+  pointer-events: none;
+  transition: none;
+}
+
+/* Dots wrapper — holds the 6 section dots positioned on the arc */
+.jlz-circnav__dots {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+/* Section dots — positioned via inline left/top (cos/sin of angle * RADIUS) */
+.jlz-circnav__dot {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  margin: -16px 0 0 -16px; /* center on the arc point */
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.jlz-circnav__dot:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.15);
+}
+.jlz-circnav__dot.is-passed {
+  background: rgba(160, 180, 220, 0.3);
+  border-color: rgba(160, 180, 220, 0.4);
+}
+.jlz-circnav__dot.is-active {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 16px rgba(255, 255, 255, 0.4);
+}
+
+/* Dot label — appears on hover/active */
+.jlz-circnav__dot-label {
+  position: absolute;
+  bottom: 110%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: "Inter", sans-serif;
+  font-size: 0.6rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.8);
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+.jlz-circnav__dot:hover .jlz-circnav__dot-label,
+.jlz-circnav__dot.is-active .jlz-circnav__dot-label {
+  opacity: 1;
+}
+
+/* Center anchor dot — at the corner (the circle center) */
+.jlz-circnav__center {
+  position: absolute;
+  right: -10px;
+  bottom: -10px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.6);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  transition: background 0.2s ease, border-color 0.2s ease;
+  pointer-events: none;
+}
+.jlz-circnav__center.is-next {
+  background: rgba(140, 180, 240, 0.95);
+  border-color: rgba(140, 180, 240, 0.6);
+}
+.jlz-circnav__center.is-prev {
+  background: rgba(240, 180, 140, 0.95);
+  border-color: rgba(240, 180, 140, 0.6);
+}
+
+/* Hamburger button — at the corner center, opens UIkit modal */
 .jlz-menu-toggle {
-  flex-shrink: 0;
+  position: fixed;
+  bottom: 12px;
+  right: 12px;
+  z-index: 10002;
   width: 40px;
   height: 40px;
   padding: 0;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
   color: rgba(255, 255, 255, 0.9);
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: background 0.2s ease, transform 0.2s ease;
 }
 .jlz-menu-toggle:hover {
-  background: rgba(255, 255, 255, 0.12);
-  transform: scale(1.05);
+  background: rgba(255, 255, 255, 0.18);
+  transform: scale(1.08);
 }
 
-/* Modal dialog — make it tall + narrow for a section list */
+/* Modal dialog — tall + narrow for a section list */
 .jlz-menu-dialog {
   width: 560px;
   max-width: 92vw;
@@ -639,7 +759,7 @@ canvas {
 }
 
 .jlz-menu-title {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 0.7rem;
   font-weight: 600;
   letter-spacing: 0.25em;
@@ -675,7 +795,7 @@ canvas {
   border-radius: 12px;
   cursor: pointer;
   color: rgba(255, 255, 255, 0.85);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
   opacity: 0.55;
   transition: background 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
 }
@@ -688,7 +808,7 @@ canvas {
 }
 
 .jlz-menu-link__num {
-  font-family: var(--jlz-font-mono, 'Inter', monospace);
+  font-family: var(--jlz-font-mono, "Inter", monospace);
   font-size: 0.75rem;
   letter-spacing: 0.2em;
   min-width: 2rem;
@@ -718,7 +838,7 @@ canvas {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: rgba(160, 160, 160, 0.55);
-  font-family: var(--jlz-font-mono, 'Inter', monospace);
+  font-family: var(--jlz-font-mono, "Inter", monospace);
 }
 
 .jlz-menu-link:focus-visible,
@@ -729,10 +849,15 @@ canvas {
 }
 
 @media (max-width: 600px) {
-  .jlz-dock {
-    bottom: 0.75rem;
-    width: calc(100vw - 1.5rem);
-    max-width: none;
+  .jlz-circnav {
+    width: 240px;
+    height: 240px;
+  }
+  .jlz-circnav__arc {
+    right: -120px;
+    bottom: -120px;
+    width: 240px;
+    height: 240px;
   }
   .jlz-menu-dialog {
     padding: 1.5rem 1.25rem;
@@ -746,10 +871,24 @@ canvas {
   }
 }
 
-/* Light-theme sections: keep the dock + button legible on white bg */
-body.light-theme .jlz-dock {
-  background: rgba(255, 255, 255, 0.55);
+/* Light-theme sections: keep the circular nav legible on white bg */
+body.light-theme .jlz-circnav__arc {
+  background: rgba(255, 255, 255, 0.5);
   border-color: rgba(0, 0, 0, 0.1);
+}
+body.light-theme .jlz-circnav__dot {
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.15);
+}
+body.light-theme .jlz-circnav__dot.is-active {
+  background: rgba(0, 0, 0, 0.85);
+}
+body.light-theme .jlz-circnav__dot-label {
+  color: rgba(0, 0, 0, 0.8);
+}
+body.light-theme .jlz-circnav__center {
+  background: rgba(0, 0, 0, 0.5);
+  border-color: rgba(0, 0, 0, 0.2);
 }
 body.light-theme .jlz-menu-toggle {
   background: rgba(0, 0, 0, 0.05);
@@ -758,140 +897,4 @@ body.light-theme .jlz-menu-toggle {
 }
 body.light-theme .jlz-menu-toggle:hover {
   background: rgba(240, 240, 240, 0.85);
-}
-
-/* ════════════════════════════════════════════════════════════════════
-   15. SwipeNav — one-section-at-a-time swiper (drag 0→100% = one neighbor)
-   — .jlz-swipenav (fixed bottom center)
-   — .jlz-swipenav__label / __name / __dir (top label row)
-   — .jlz-swipenav__track (draggable area, center origin)
-   — .jlz-swipenav__origin (center 0% line)
-   — .jlz-swipenav__fill (progress fill, grows from center toward drag dir)
-   — .jlz-swipenav__thumb (draggable handle, starts at center)
-   — .jlz-swipenav__mark--left/right (50% commit threshold marks)
-   State classes: .is-grabbing (track/thumb), .is-next / .is-prev (fill/thumb)
-   ════════════════════════════════════════════════════════════════════ */
-
-.jlz-swipenav {
-  /* Inside #jlz-dock — no fixed positioning. Inherits pointer-events from dock. */
-  pointer-events: auto;
-  gap: 0.4rem;
-  padding: 0;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.jlz-swipenav__label {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  font-family: 'Inter', sans-serif;
-  font-size: 0.6rem;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: rgba(128, 128, 128, 0.7);
-  transition: opacity 0.3s;
-  white-space: nowrap;
-}
-.jlz-swipenav__name {
-  color: rgba(200, 200, 200, 0.95);
-  font-weight: 600;
-}
-.jlz-swipenav__dir {
-  color: rgba(160, 180, 220, 0.7);
-  transition: opacity 0.2s ease;
-}
-
-.jlz-swipenav__track {
-  position: relative;
-  width: 60vw;
-  max-width: 520px;
-  height: 30px;
-  background: rgba(128, 128, 128, 0.1);
-  border-radius: 15px;
-  cursor: grab;
-  touch-action: none;
-  overflow: visible;
-  border: 1px solid rgba(128, 128, 128, 0.18);
-}
-.jlz-swipenav__track.is-grabbing {
-  cursor: grabbing;
-}
-
-/* Center origin line — the 0% reference */
-.jlz-swipenav__origin {
-  position: absolute;
-  left: 50%;
-  top: 20%;
-  width: 1px;
-  height: 60%;
-  background: rgba(160, 180, 220, 0.5);
-  transform: translateX(-50%);
-  pointer-events: none;
-}
-
-/* ±50% commit threshold marks */
-.jlz-swipenav__mark {
-  position: absolute;
-  top: 30%;
-  width: 1px;
-  height: 40%;
-  background: rgba(255, 255, 255, 0.15);
-  pointer-events: none;
-}
-.jlz-swipenav__mark--left {
-  left: 0%;
-}
-.jlz-swipenav__mark--right {
-  right: 0%;
-}
-
-.jlz-swipenav__fill {
-  position: absolute;
-  top: 0;
-  height: 100%;
-  width: 0%;
-  border-radius: 15px;
-  pointer-events: none;
-  transition: none;
-}
-.jlz-swipenav__fill.is-next {
-  background: linear-gradient(90deg, rgba(120, 160, 220, 0.25), rgba(140, 180, 240, 0.5));
-}
-.jlz-swipenav__fill.is-prev {
-  background: linear-gradient(270deg, rgba(220, 160, 120, 0.25), rgba(240, 180, 140, 0.5));
-}
-
-.jlz-swipenav__thumb {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.9);
-  border: 2px solid rgba(255, 255, 255, 0.4);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-  pointer-events: none;
-  transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease;
-  will-change: left;
-}
-.jlz-swipenav__thumb.is-grabbing {
-  transform: translate(-50%, -50%) scale(1.25);
-}
-.jlz-swipenav__thumb.is-next {
-  background: rgba(140, 180, 240, 0.95);
-  border-color: rgba(140, 180, 240, 0.6);
-}
-.jlz-swipenav__thumb.is-prev {
-  background: rgba(240, 180, 140, 0.95);
-  border-color: rgba(240, 180, 140, 0.6);
-}
-
-@media (max-width: 600px) {
-  .jlz-swipenav__track {
-    width: 100%;
-    max-width: 100%;
-  }
 }

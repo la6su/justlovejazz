@@ -15,7 +15,7 @@ import { WorksPortfolio } from './WorksPortfolio'
 import { ProjectOverlay } from '../UI/ProjectOverlay'
 import { PerfMonitor } from '../core/PerfMonitor'
 import { AudioSystem } from '../core/AudioSystem'
-import { SwipeNav } from '../UI/SwipeNav'
+import { CircularNav } from '../UI/CircularNav'
 import { UIMenu } from '../UI/UIMenu'
 import { updateWorldDNAAudio } from './World/worldDNA'
 import { prefersReducedMotion } from '../core/motionPolicy'
@@ -59,7 +59,7 @@ export class Experience {
   private _onSizesResize: () => void = () => {}
   private _onVisibilityChange: (() => void) | null = null
   public audio: AudioSystem = new AudioSystem()
-  private _swipeNav: SwipeNav | null = null
+  private _circNav: CircularNav | null = null
 
   private static readonly SECTION_LABELS = [
     'Intro',
@@ -148,15 +148,15 @@ export class Experience {
       }
     }
     // Subtitles disabled — will be re-added as a 3D environment element later.
-    // SwipeNav: one-section-at-a-time swiper. Drag 0→100% (right) to move to
-    // the NEXT section, 0→-100% (left) to move to PREV. Release snaps back if
-    // |progress| < 50%, commits the transition if > 50%. Wheel/scroll is NOT
-    // used for section navigation — scroll only drives HTML content + the
-    // active sliders (BakuCarousel on flexible, WorksPortfolio on challenge).
-    this._swipeNav = new SwipeNav(6, {
+    // CircularNav: circular swipe navigation from the bottom-right corner.
+    // Drag along the arc to move to NEXT/PREV section (one at a time).
+    // The circle's center is the corner — only the top-left quadrant is
+    // visible (overflow:hidden). Hamburger button opens UIkit modal for
+    // jump navigation.
+    this._circNav = new CircularNav(6, {
       sectionLabels: Experience.SECTION_LABELS,
     })
-    this._swipeNav.onSectionChange((idx) => {
+    this._circNav.onSectionChange((idx) => {
       this._uiMenu?.setActive(idx)
     })
 
@@ -168,18 +168,14 @@ export class Experience {
       sectionSubtitles: Experience.SECTION_SUBTITLES,
     })
     this._uiMenu.onNavigate((idx) => {
-      this._swipeNav?.goToSection(idx)
+      this._circNav?.goToSection(idx)
     })
 
-    // ── Bottom dock: unify hamburger button + SwipeNav into one bar ──
-    // The dock is a fixed-bottom container. The hamburger button sits on
-    // the left, the SwipeNav track on the right — visually a single panel.
-    const dock = document.createElement('div')
-    dock.id = 'jlz-dock'
-    dock.className = 'jlz-dock uk-flex uk-flex-middle uk-flex-center'
-    dock.appendChild(this._uiMenu.button)
-    dock.appendChild(this._swipeNav.el)
-    document.body.appendChild(dock)
+    // ── Bottom-right circular nav + hamburger button (placed in body) ──
+    // The CircularNav is a fixed bottom-right circular menu. The hamburger
+    // button sits at the center of the circle (the corner).
+    document.body.appendChild(this._circNav.el)
+    document.body.appendChild(this._uiMenu.button)
 
     // Mark the intro section active on init so its DOM content is visible
     // (ContentReveal toggles .section-active on jlz:section-change, but no
@@ -249,9 +245,9 @@ export class Experience {
     // Splash cube (= baku) opener is triggered by main-app via triggerSplashOpener.
     // jlz:webgl-ready is dispatched by main-app at curtain midpoint (not here).
 
-    // Navigation: SwipeNav progress (0-1) replaces scroll progress.
-    this._swipeNav?.update()
-    const ns = this._swipeNav?.getOverallProgress() ?? 0
+    // Navigation: CircularNav progress (0-1) replaces scroll progress.
+    this._circNav?.update()
+    const ns = this._circNav?.getOverallProgress() ?? 0
     const { cameraTarget, worldState } = this.world.advance(ns)
     this.world.update(dt)
 
@@ -431,7 +427,7 @@ export class Experience {
     input.destroy()
     // Stop perf monitoring (disconnects PerformanceObserver + cancels rAF).
     PerfMonitor.stop()
-    this._swipeNav?.dispose()
+    this._circNav?.dispose()
     this.audio.dispose()
   }
 
