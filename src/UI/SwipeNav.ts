@@ -28,7 +28,8 @@ export interface SwipeNavOptions {
 }
 
 export class SwipeNav {
-  private el: HTMLDivElement
+  /** Public so Experience can place it in #jlz-dock. */
+  public el: HTMLDivElement
   private track: HTMLDivElement
   private fill: HTMLDivElement
   private thumb: HTMLDivElement
@@ -105,7 +106,8 @@ export class SwipeNav {
     this.track.appendChild(markR)
 
     this.el.appendChild(this.track)
-    document.body.appendChild(this.el)
+    // NOTE: not appended to body here — Experience places this.el into
+    // #jlz-dock so it sits next to the hamburger button in a unified bar.
 
     this.addEventListeners()
     this.updateUI()

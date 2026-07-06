@@ -20,7 +20,8 @@ export interface UIMenuOptions {
 }
 
 export class UIMenu {
-  private button: HTMLButtonElement
+  /** Public so Experience can place it in #jlz-dock. */
+  public button: HTMLButtonElement
   private modalEl: HTMLDivElement
   private links: HTMLButtonElement[] = []
   private _activeIndex = 0
@@ -32,7 +33,9 @@ export class UIMenu {
     this._sectionLabels = opts.sectionLabels
     this._sectionSubtitles = opts.sectionSubtitles ?? []
 
-    // ── Hamburger button (fixed top-right) ──
+    // ── Hamburger button (placed in the bottom dock by Experience) ──
+    // No position:fixed — the button is appended to #jlz-dock so it sits
+    // visually next to the SwipeNav track in a unified bottom bar.
     this.button = document.createElement('button')
     this.button.id = 'jlz-menu-toggle'
     this.button.className = 'jlz-menu-toggle uk-flex uk-flex-middle uk-flex-center'
@@ -103,7 +106,9 @@ export class UIMenu {
     dialog.appendChild(nav)
     this.modalEl.appendChild(dialog)
 
-    document.body.appendChild(this.button)
+    // NOTE: the button is NOT appended to body here — Experience places it
+    // into #jlz-dock so it sits next to the SwipeNav track. The modal is
+    // appended to body (UIkit modal needs to be a direct child of body).
     document.body.appendChild(this.modalEl)
 
     // Initialize UIkit modal on the element (parses uk-modal attributes)
