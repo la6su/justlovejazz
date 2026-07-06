@@ -1,22 +1,22 @@
-// SubtitleTorus.ts — 3D environment-layer subtitle as a glass torus with
-// circular text warped around its inner surface.
+// SubtitleTorus.ts — 3D environment-layer subtitle: horizontal glass torus
+// with text warped around its ring.
 //
-// Visual concept (adapted from codrops "Warping 3D text inside a glass torus"):
-//   - A large glass torus (MeshPhysicalNodeMaterial with transmission) faces
-//     the camera (hole toward camera, lies in XY plane). Refracts light.
-//   - The section subtitle text is rendered onto a canvas as a horizontal
-//     strip (repeated), then mapped onto a SECOND torus geometry (slightly
-//     smaller, thin tube) so the text follows the 3D curve of the ring.
-//   - The whole group spins slowly on Z (like a wheel facing the camera).
-//   - The glass material's IOR oscillates (1.07 ↔ 3.5) with a pause,
-//     creating a "breathing" refraction effect.
-//
-// Positioned behind the baku cube, visible on all sections.
-// Text updates on jlz:section-change.
+// Visual concept (from codrops "Warping 3D text inside a glass torus"):
+//   - A LARGE horizontal glass torus (like a donut lying on a table, tilted
+//     slightly toward the camera so we see INTO the hole).
+//   - Camera sits INSIDE the ring radius — the near part of the ring is
+//     below the camera, the far part is behind. The torus fills 60-70% of
+//     the screen as a background environment element.
+//   - Section subtitle text is mapped onto a second torus (slightly larger
+//     tube) so the text follows the 3D curve of the ring. Text is on the
+//     outer surface, distorted by the glass refraction.
+//   - The whole group spins slowly on Y (the vertical axis — since the torus
+//     is horizontal, this rotates the ring like a turntable).
+//   - Glass material: transmission (refraction), clearcoat, iridescence.
+//     IOR oscillates (1.07 ↔ 3.5) for a "breathing" refraction effect.
 //
 // WebGPU: transmission (glass refraction) is active.
-// WebGL2: transmission disabled (crashes on WebGLBackend) — torus uses
-// semi-transparent opacity instead.
+// WebGL2: transmission disabled (crashes on WebGLBackend) — semi-transparent.
 
 import * as THREE from 'three'
 import { MeshBasicNodeMaterial, MeshPhysicalNodeMaterial } from 'three/webgpu'
@@ -32,15 +32,16 @@ const SUBTITLES: Record<string, string> = {
   contact: 'We bring imagination to life through code',
 }
 
-// Torus geometry — the glass torus faces the camera (hole toward +Z).
-// Default TorusGeometry lies in the XY plane with the hole on the Z axis,
-// which is exactly the orientation we want.
-const GLASS_RING_R = 3.2
-const GLASS_TUBE_R = 0.45
-const TEXT_RING_R = 3.2 // same as glass — text sits on the tube surface
-const TEXT_TUBE_R = 0.46 // slightly larger so text is visible on the outer tube
-const POSITION_Z = -6
-const ROT_SPEED = 0.12
+// Torus geometry — HORIZONTAL. Default TorusGeometry lies in the XY plane
+// (hole on Z). We rotate it by X=PI/2 so it lies flat in the XZ plane (hole
+// on Y, like a donut on a table). Then tilt slightly toward camera.
+const RING_R = 7.5
+const GLASS_TUBE_R = 0.35
+const TEXT_TUBE_R = 0.37
+const TILT = 0.28 // radians — tilt the far edge up so camera sees into hole
+const POSITION_Y = -0.8
+const POSITION_Z = -1.5
+const ROT_SPEED = 0.08
 
 // IOR oscillation params (from the reference)
 const IOR_MIN = 1.07
@@ -67,33 +68,26 @@ export class SubtitleTorus extends THREE.Group {
     this.name = 'subtitle-torus'
 
     // ── Glass torus (transmission / refraction) ──
-    // Default orientation: ring in XY plane, hole faces +Z (camera). Good.
-    const glassGeo = new THREE.TorusGeometry(GLASS_RING_R, GLASS_TUBE_R, 32, 120)
+    const glassGeo = new THREE.TorusGeometry(RING_R, GLASS_TUBE_R, 32, 160)
     const hasTransmission = isTransmissionEnabled()
     this.glassMaterial = new MeshPhysicalNodeMaterial({
-      color: 0xe8e0ff,
+      color: 0xdde8ff,
       transmission: hasTransmission ? 0.98 : 0,
-      thickness: 1.2,
+      thickness: 1.5,
       roughness: 0.0,
       ior: IOR_MIN,
       clearcoat: 1.0,
       clearcoatRoughness: 0.0,
       transparent: true,
-      opacity: hasTransmission ? 0.6 : 0.3,
+      opacity: hasTransmission ? 0.7 : 0.35,
       side: THREE.DoubleSide,
-      iridescence: 0.8,
+      iridescence: 1.0,
       iridescenceIOR: 1.3,
     })
     this.glassTorus = new THREE.Mesh(glassGeo, this.glassMaterial as unknown as THREE.Material)
     this.add(this.glassTorus)
 
-    // ── Circular text on a thin torus geometry ──
-    // The text canvas is a horizontal strip (text repeated). When mapped onto
-    // a TorusGeometry, the U coordinate goes around the tube and V goes around
-    // the ring. We want the text to follow the RING, so the canvas's X axis
-    // maps to V (around the ring) and the canvas's Y axis maps to U (around
-    // the tube cross-section). The text strip is centered vertically on the
-    // canvas so it lands on the outer face of the tube.
+    // ── Circular text on a thin torus (follows the ring curve) ──
     this.canvas = document.createElement('canvas')
     this.canvas.width = 2048
     this.canvas.height = 128
@@ -105,9 +99,7 @@ export class SubtitleTorus extends THREE.Group {
     this.texture.wrapS = THREE.RepeatWrapping
     this.texture.wrapT = THREE.RepeatWrapping
 
-    // Text torus: thin tube so the text strip wraps the outer surface.
-    // High tubularSegments for smooth text curvature around the ring.
-    const textGeo = new THREE.TorusGeometry(TEXT_RING_R, TEXT_TUBE_R, 8, 200)
+    const textGeo = new THREE.TorusGeometry(RING_R, TEXT_TUBE_R, 8, 200)
     this.textMaterial = new MeshBasicNodeMaterial({
       map: this.texture,
       transparent: true,
@@ -117,9 +109,10 @@ export class SubtitleTorus extends THREE.Group {
     this.textTorus = new THREE.Mesh(textGeo, this.textMaterial as unknown as THREE.Material)
     this.add(this.textTorus)
 
-    // Position behind the baku cube, scaled up for dominance
-    this.position.set(0, 0, POSITION_Z)
-    this.scale.setScalar(1.6)
+    // ── Orientation: horizontal (donut on a table) + slight tilt ──
+    // Rotate X by PI/2 to lay flat, then tilt toward camera.
+    this.rotation.x = Math.PI / 2 - TILT
+    this.position.set(0, POSITION_Y, POSITION_Z)
 
     // Initial text
     this.setText(SUBTITLES.intro ?? '')
@@ -143,7 +136,7 @@ export class SubtitleTorus extends THREE.Group {
   }
 
   /** Draw the text as a horizontal strip (repeated to fill the canvas width).
-   *  This maps around the torus ring (V coordinate). */
+   *  Maps around the torus ring (V coordinate). */
   private renderTextStrip(text: string): void {
     const ctx = this.ctx
     const w = this.canvas.width
@@ -151,43 +144,42 @@ export class SubtitleTorus extends THREE.Group {
 
     ctx.clearRect(0, 0, w, h)
 
-    // Transparent background — only text is visible
     const separator = '   ·   '
     const oneRepeat = text + separator
-    const fontSize = 64
+    const fontSize = 60
     ctx.font = `700 ${fontSize}px Inter, sans-serif`
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.92)'
+    ctx.fillStyle = 'rgba(230, 240, 255, 0.9)'
     ctx.textAlign = 'left'
     ctx.textBaseline = 'middle'
 
-    // Repeat text to fill the canvas width
     const oneRepeatWidth = ctx.measureText(oneRepeat).width
     const repeatCount = Math.ceil(w / oneRepeatWidth) + 1
     const fullText = oneRepeat.repeat(Math.max(1, repeatCount))
 
-    // Draw centered vertically (so text sits on the outer face of the tube)
-    const centerY = h / 2
-    ctx.fillText(fullText, 0, centerY)
+    // Centered vertically — text sits on the outer face of the tube
+    ctx.fillText(fullText, 0, h / 2)
   }
 
   update(dt: number): void {
     this.time += dt
 
-    // Spin on Z (like a wheel facing the camera) — keeps hole toward camera.
-    this.rotation.z += dt * ROT_SPEED
+    // Spin on Y (vertical axis) — since torus is horizontal, this rotates
+    // the ring like a turntable. The hole always faces up/toward camera.
+    this.rotation.y += dt * ROT_SPEED
+
+    // Keep the X tilt fixed (don't accumulate — rotation.x is absolute)
+    this.rotation.x = Math.PI / 2 - TILT + Math.sin(this.time * 0.15) * 0.03
 
     // IOR oscillation (breathing refraction effect)
     if (isTransmissionEnabled()) {
       this.iorTime = (this.iorTime + dt) % IOR_CYCLE
       let ior: number
       if (this.iorTime < IOR_OSCILLATION_DURATION) {
-        // Oscillation phase: IOR_MIN → IOR_MAX → IOR_MIN (cosine)
         const progress = this.iorTime / IOR_OSCILLATION_DURATION
         const amplitude = (IOR_MAX - IOR_MIN) / 2
         const offset = (IOR_MAX + IOR_MIN) / 2
         ior = offset - amplitude * Math.cos(progress * Math.PI)
       } else {
-        // Pause phase
         ior = IOR_MIN
       }
       this.glassMaterial.ior = ior
