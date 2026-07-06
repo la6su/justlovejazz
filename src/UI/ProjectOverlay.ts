@@ -55,9 +55,15 @@ export class ProjectOverlay {
       position:fixed;inset:0;z-index:3500;pointer-events:none;
       opacity:0;transition:opacity .4s ease;
     `
+    // NOTE: child elements do NOT have inline pointer-events:auto.
+    // When closed, the container is pointer-events:none and ALL children
+    // inherit none — so events pass through to the 3D canvas / BakuCarousel.
+    // When open, showContainer() sets the container to pointer-events:auto
+    // and adds .is-open so the interactive children (buttons, panels) become
+    // clickable via CSS (main.less).
     this.container.innerHTML = `
       <div class="jlz-fs-bg" style="position:absolute;inset:0;background:rgba(2,2,6,.85);backdrop-filter:blur(8px);"></div>
-      <div class="jlz-fs-top" style="position:absolute;top:0;left:0;width:100%;padding:2rem 2.5rem;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:auto;">
+      <div class="jlz-fs-top" style="position:absolute;top:0;left:0;width:100%;padding:2rem 2.5rem;display:flex;justify-content:space-between;align-items:flex-start;">
         <div>
           <div class="jlz-fs-cat" style="font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:.3rem;"></div>
           <h2 class="jlz-fs-title" style="font-size:clamp(1.5rem,4vw,2.5rem);font-weight:900;color:#fff;margin:0;"></h2>
@@ -67,9 +73,9 @@ export class ProjectOverlay {
           <button class="jlz-fs-close" type="button" aria-label="Close" style="background:none;border:1px solid rgba(255,255,255,.2);color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;">✕</button>
         </div>
       </div>
-      <button class="jlz-fs-prev" type="button" aria-label="Previous" style="position:absolute;left:1.5rem;top:50%;transform:translateY(-50%);background:none;border:1px solid rgba(255,255,255,.2);color:#fff;width:44px;height:44px;border-radius:50%;cursor:pointer;font-size:1.2rem;pointer-events:auto;">←</button>
-      <button class="jlz-fs-next" type="button" aria-label="Next" style="position:absolute;right:1.5rem;top:50%;transform:translateY(-50%);background:none;border:1px solid rgba(255,255,255,.2);color:#fff;width:44px;height:44px;border-radius:50%;cursor:pointer;font-size:1.2rem;pointer-events:auto;">→</button>
-      <div class="jlz-fs-bottom" style="position:absolute;bottom:0;left:0;width:100%;padding:2rem 2.5rem;pointer-events:auto;display:flex;align-items:flex-end;gap:2rem;">
+      <button class="jlz-fs-prev" type="button" aria-label="Previous" style="position:absolute;left:1.5rem;top:50%;transform:translateY(-50%);background:none;border:1px solid rgba(255,255,255,.2);color:#fff;width:44px;height:44px;border-radius:50%;cursor:pointer;font-size:1.2rem;">←</button>
+      <button class="jlz-fs-next" type="button" aria-label="Next" style="position:absolute;right:1.5rem;top:50%;transform:translateY(-50%);background:none;border:1px solid rgba(255,255,255,.2);color:#fff;width:44px;height:44px;border-radius:50%;cursor:pointer;font-size:1.2rem;">→</button>
+      <div class="jlz-fs-bottom" style="position:absolute;bottom:0;left:0;width:100%;padding:2rem 2.5rem;display:flex;align-items:flex-end;gap:2rem;">
         <div class="jlz-fs-thumb" style="width:120px;height:80px;background-size:cover;background-position:center;border-radius:6px;flex-shrink:0;border:1px solid rgba(255,255,255,.1);"></div>
         <div style="flex:1;">
           <p class="jlz-fs-desc" style="color:rgba(255,255,255,.6);font-size:.9rem;max-width:600px;margin:0 0 .8rem;"></p>
@@ -127,6 +133,7 @@ export class ProjectOverlay {
     this._isOpen = true
     this.container.style.opacity = '1'
     this.container.style.pointerEvents = 'auto'
+    this.container.classList.add('is-open')
     // Lock background scroll — body overflow:hidden is enough (the page doesn't
     // actually scroll, but this is a defensive measure for any future scroll).
     document.body.style.overflow = 'hidden'
@@ -140,6 +147,7 @@ export class ProjectOverlay {
     this._isOpen = false
     this.container.style.opacity = '0'
     this.container.style.pointerEvents = 'none'
+    this.container.classList.remove('is-open')
     // Unlock background scroll.
     document.body.style.overflow = ''
     // Restore focus to the element that opened the dialog (WCAG 2.4.3).

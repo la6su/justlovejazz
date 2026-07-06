@@ -541,9 +541,23 @@ canvas {
 
 /* ════════════════════════════════════════════════════════════════════
    11. Project detail overlay — ProjectOverlay.ts builds its own DOM with
-   inline styles (.jlz-fs-* classes). The old #project-modal .jlz-detail-*
-   rules were removed (that modal was never rendered).
+   inline styles (.jlz-fs-* classes). When closed, the container is
+   pointer-events:none and ALL children inherit none — so events pass
+   through to the 3D canvas / BakuCarousel. When open (.is-open class),
+   the interactive children become pointer-events:auto.
    ════════════════════════════════════════════════════════════════════ */
+
+/* When overlay is open, interactive children get pointer-events:auto.
+   Without this rule, child elements would need inline pointer-events:auto
+   which would make them ALWAYS intercept events — blocking BakuCarousel
+   even when the overlay is closed. */
+#project-overlay.is-open .jlz-fs-top,
+#project-overlay.is-open .jlz-fs-prev,
+#project-overlay.is-open .jlz-fs-next,
+#project-overlay.is-open .jlz-fs-bottom,
+#project-overlay.is-open .jlz-fs-close {
+  pointer-events: auto;
+}
 
 /* ════════════════════════════════════════════════════════════════════
    12. Section reveal state (3D↔UI sync)

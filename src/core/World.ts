@@ -173,9 +173,10 @@ export class World extends THREE.Group {
         | import('../Experience/World/BakuCarousel').BakuCarousel
         | undefined
       if (carousel) {
-        void carousel.init().then(() => {
-          console.info('[World] BakuCarousel initialized (works section)')
-        })
+        void carousel.init().then(
+          () => console.info('[World] BakuCarousel initialized (works section)'),
+          (err) => console.error('[World] BakuCarousel init FAILED — textures may not load, event listeners NOT attached:', err),
+        )
       }
     }
 

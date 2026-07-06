@@ -238,16 +238,24 @@ export class BakuCarousel extends THREE.Group {
     this._onCardClick?.(frontIdx)
   }
 
-  /** Get the index of the card currently facing the camera (front of ring). */
+  /** Get the index of the card currently facing the camera (front of ring).
+   *  Uses scroll.current (the settled value). */
   getFrontCardIndex(): number {
     if (this.cards.length === 0) return 0
-    // The ring rotates by scroll.current. The front card is at angle = 0
-    // (closest to camera at +Z). Find the card whose base angle + scroll
-    // is closest to 0 (mod 2π).
     const n = this.cards.length
     const step = (Math.PI * 2) / n
-    // Normalize scroll.current to nearest card
     const idx = Math.round(-this.scroll.current / step)
+    return ((idx % n) + n) % n
+  }
+
+  /** Get the index of the card that WILL face the camera after the current
+   *  scroll animation settles (uses scroll.target, not scroll.current).
+   *  Use this right after prev()/next() to know which project to load. */
+  getTargetCardIndex(): number {
+    if (this.cards.length === 0) return 0
+    const n = this.cards.length
+    const step = (Math.PI * 2) / n
+    const idx = Math.round(-this.scroll.target / step)
     return ((idx % n) + n) % n
   }
 

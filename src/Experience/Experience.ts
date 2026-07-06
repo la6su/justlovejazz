@@ -466,17 +466,26 @@ export class Experience {
         document.getElementById('section-works') ||
         document.getElementById('spa-content')
       this.overlay = new ProjectOverlay(worksSection!)
-      // Overlay prev/next → drive the BakuCarousel ring (the baku cube morphed
-      // into a carousel). Falls back to portfolio if carousel unavailable.
+      // Overlay prev/next → drive the BakuCarousel ring AND update the
+      // overlay HTML (title/description/counter). Without the onProjectSelect
+      // call, the ring rotates but the overlay UI stays on the old project.
       this.overlay.onPrev = () => {
         const carousel = this.getCarousel()
-        if (carousel) carousel.prev()
-        else this.portfolio?.prev()
+        if (carousel) {
+          carousel.prev()
+          this.onProjectSelect(carousel.getTargetCardIndex())
+        } else {
+          this.portfolio?.prev()
+        }
       }
       this.overlay.onNext = () => {
         const carousel = this.getCarousel()
-        if (carousel) carousel.next()
-        else this.portfolio?.next()
+        if (carousel) {
+          carousel.next()
+          this.onProjectSelect(carousel.getTargetCardIndex())
+        } else {
+          this.portfolio?.next()
+        }
       }
       this.overlay.onClose = () => {
         // Close fullscreen — nothing to clear (carousel cards stay morphed)
