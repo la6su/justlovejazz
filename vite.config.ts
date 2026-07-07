@@ -116,20 +116,15 @@ export default defineConfig({
   plugins: [
     {
       // Strip @vite/client from HTML — prevents the dev client from loading.
-      // Vite injects @vite/client via its own transformIndexHtml hook.
-      // Using enforce: 'post' makes our hook run AFTER Vite's injection,
-      // so we can strip the script tag before it reaches the browser.
       // Without the client: no WebSocket, no polling, no reload loop.
+      // The MutationObserver in index.html handles the browser-side removal.
       name: 'strip-vite-client',
       apply: 'serve',
-      transformIndexHtml: {
-        enforce: 'post',
-        transform(html) {
-          return html.replace(
-            /<script[^>]*src="[^"]*\/@vite\/client[^"]*"[^>]*><\/script>\s*/g,
-            '',
-          )
-        },
+      transformIndexHtml(html) {
+        return html.replace(
+          /<script[^>]*src="[^"]*\/@vite\/client[^"]*"[^>]*><\/script>\s*/g,
+          '',
+        )
       },
     },
     {
