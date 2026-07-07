@@ -286,7 +286,7 @@ const RAW: RawScene[] = [
     groundColor: 0x050810,
     groundOpacity: 0.05,
   },
-  // ── Section 6: CONTACT — Dark BG, noisy blocks ──
+  // ── Section 6: CONTACT — Dark BG, closing ──
   {
     id: 'sec_contact',
     context: 'CONTACT — Footer',
@@ -313,11 +313,11 @@ const RAW: RawScene[] = [
     postGradeHighlights: [1.0, 0.98, 0.95],
     lightColor: 0xffffff,
     lightIntensity: 1.5,
-    fogColor: 0xf5f5f0,
+    fogColor: 0x0a0a0f,
     fogDensity: 0.008,
-    bgColor: 0xf5f5f0,
+    bgColor: 0x0a0a0f,
     showGallery: false,
-    groundColor: 0xe0e0d0,
+    groundColor: 0x080812,
     groundOpacity: 0.05,
   },
 ]

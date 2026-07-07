@@ -266,8 +266,11 @@ export class Experience {
     const introActive = this.bus.isAnimating('intro:stage') || stage < 1
     const audioActive = this.audio.started
     const carouselActive = this._bakuCarouselActive
+    // Opener active — baku cube face pulse during/after splash
+    const baku = this.world?.baku as unknown as { openerPhase?: string; openerProgress?: number } | undefined
+    const openerActive = baku?.openerPhase !== 'done' && baku?.openerPhase !== 'idle'
 
-    if (navActive || introActive || audioActive || carouselActive) {
+    if (navActive || introActive || audioActive || carouselActive || openerActive) {
       this._needsRender = true
     }
 
@@ -390,7 +393,7 @@ export class Experience {
       this.renderer.update(this.scene, this.camera.instance, dt, worldState)
       // If nothing is actively changing, clear the flag (will be re-set by
       // transition/cursor/carousel callbacks next frame)
-      if (!navActive && !introActive && !audioActive && !carouselActive) {
+      if (!navActive && !introActive && !audioActive && !carouselActive && !openerActive) {
         this._needsRender = false
       }
     }

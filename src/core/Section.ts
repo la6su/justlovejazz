@@ -71,11 +71,8 @@ export class Section extends THREE.Group {
   private stateChannel: string
   private opacityChannel: string
 
-  // Cached mesh list for per-frame ops — populated lazily on first update()
-  // to avoid traverse() every frame (junni pattern: cache once, update cheap)
-  private _cachedMeshes: (THREE.Mesh & { material: THREE.MeshStandardMaterial })[] | null = null
-  private _opacityMeshCache: THREE.Mesh[] | null = null // A-008: cache for setMeshOpacity
-  private _pulseTime = 0
+  // A-008: cache for setMeshOpacity
+  private _opacityMeshCache: THREE.Mesh[] | null = null
 
   constructor(
     config: PhaseConfig,
@@ -244,28 +241,10 @@ export class Section extends THREE.Group {
     this.applyState(reduced)
   }
 
-  public update(dt: number): void {
-    // Emissive pulse on cached MeshStandardMaterial meshes.
-    // Cache built on first call — avoids traverse() every frame.
-    if (this._cachedMeshes === null) {
-      this._cachedMeshes = []
-      this.traverse((obj: THREE.Object3D) => {
-        if (
-          obj instanceof THREE.Mesh &&
-          !Array.isArray(obj.material) &&
-          obj.material instanceof THREE.MeshStandardMaterial
-        ) {
-          this._cachedMeshes!.push(obj as THREE.Mesh & { material: THREE.MeshStandardMaterial })
-        }
-      })
-    }
-
-    this._pulseTime += dt
-    const pulse = Math.sin(this._pulseTime) * 0.15 + 0.85
-    for (const mesh of this._cachedMeshes) {
-      const m = mesh.material
-      m.emissiveIntensity = m.emissiveIntensity * 0.95 + pulse * 0.05
-    }
+  public update(_dt: number): void {
+    // No-op — emissive pulse was removed for on-demand rendering.
+    // Section meshes are static; only World.update(dt, needsRender) drives
+    // the visible animations (baku, particles, BakuCarousel).
   }
 
   public dispose(): void {
@@ -274,7 +253,6 @@ export class Section extends THREE.Group {
     bus.cancel(this.opacityChannel)
     bus.off(this.stateChannel)
     bus.off(this.opacityChannel)
-    this._cachedMeshes = null
     this._opacityMeshCache = null
     this.traverse((obj: THREE.Object3D) => {
       if (obj instanceof THREE.Mesh) {
