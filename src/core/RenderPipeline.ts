@@ -396,7 +396,7 @@ export class RenderPipeline {
         grain: this._params.grain,
         chromatic: this._params.chromatic,
         refract: this._sectionRefract,
-        border: this._sectionBorder,
+        border: Math.max(this._sectionBorder, this._globalBorder),
         gradeShadows: [this._sectionShadows.x, this._sectionShadows.y, this._sectionShadows.z],
         gradeHighlights: [this._sectionHighlights.x, this._sectionHighlights.y, this._sectionHighlights.z],
       })
