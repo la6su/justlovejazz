@@ -1,5 +1,59 @@
 # CHANGELOG
 
+## 2026-07-09
+
+### Visual overhaul — premium WebGPU path + 21st.dev paper-shader background
+
+**Premium WebGPU path (PR #118):**
+- `DeviceCapability.isRealWebGPU` flag — set in `Renderer.init()` after backend detection
+- `worldDNA` TSL shader resurrected: `attachWorldDNA()` now connects 4 TSL nodes
+  (`positionNode`, `colorNode`, `emissiveNode`, `roughnessNode`) on real WebGPU.
+  Opacity safety verified via `NodeMaterial.js:843,878` (vec3 colorNode → vec4 → a *= opacity).
+- Real glass transmission (`transmission=1.0`) on premium path via `MeshPhysicalNodeMaterial`.
+  Parity path keeps `MeshPhysicalMaterial` + opacity-glass.
+- Ambient breathing: 1-frame refresh every ~2.5s in idle. Advances `worldDNA.uTime`
+  on premium, EnvSphere/shader on parity. Respects `prefers-reduced-motion`.
+
+**Baku fresnel iridescence (PR #121):**
+- Root cause of "didn't see shader effects" on cube: `worldDNA` used `normalLocal`
+  (constant per flat face) → shader was uniform → invisible.
+- Fix: fresnel-based iridescence (`1 - dot(normalWorld, viewDir)`) + position-based
+  shimmer (`positionLocal` varies across face). Rim glow amplitude 0.10 → 0.50 (5x).
+
+**Background system evolution (PR #119 → #130):**
+- PR #119: Aurora mesh-gradient (3 drifting orbs) + grain amplitude halved. User: "swims".
+- PR #120: Static EnvSphere (no rotation/noise) + `mix()` orbs (was `add()` — invisible on white).
+- PR #123: Bold cinematic (4 orbs, saturated colors, vignette).
+- PR #124: Skybox render pattern (`depthTest=false`, `renderOrder=-1000`, `toneMapped=false`).
+- PR #125: Atlas Aurora port from 21st.dev (component id: 16166) — TSL shader on BackSide sphere.
+- PR #126: CanvasTexture fallback for WebGL2 parity path + diagnostic logging.
+- PR #127: Fixed black bg bug — orbs were on +Z hemisphere (behind camera). Flipped to -Z.
+- PR #128: Switched to `scene.background = equirectangular CanvasTexture` (native, most reliable).
+- PR #129: Paper-shader background plane (@reuno-ui port, TSL NodeMaterial).
+- PR #130: **Final** — paper-shaders in dark grey palette (`0x1a1a1a` → `0x4a4a4a`),
+  opaque, sole background. Matches @reuno-ui "Background Paper Shade with grey shaders".
+
+**Background system (final state):**
+- `ShaderBackground` (`src/Experience/World/ShaderBackground.ts`) — `MeshBasicNodeMaterial`
+  with `positionNode` (vertex displacement) + `colorNode` (noise + color mix).
+- Port of [@reuno-ui/background-paper-shaders](https://21st.dev/@reuno-ui/components/background-paper-shaders)
+  (21st.dev id: 5732, fetched via 21st MCP).
+- Dark grey palette, opaque, fullscreen at `z=-30`, `renderOrder=-1000`.
+- `EnvSphere` (Atlas Aurora) disabled — `attachToScene()` not called, `scene.background` not set.
+
+**Diagnostic logging (PR #126):**
+- `Renderer.init()` now logs: `[Renderer.init] Final path: WebGPU (WebGPUBackend) | isRealWebGPU=true | EnvSphere=TSL shader (premium)`
+- Helps debug "I don't see the background" — immediately shows which path is active.
+
+**21st.dev MCP integration:**
+- API key format: `21st_sk_...` (old `an_sk_...` format rejected by server).
+- Used `get_component({ id: 5732 })` to fetch @reuno-ui paper-shaders source code.
+- Used `get_component({ id: 16166 })` to fetch Atlas Aurora source code.
+
+**Post-processing:**
+- Grain amplitude halved across all 6 section presets (PR #119). Was "too obvious",
+  now subtle dither (its actual purpose — break up banding in dark gradients).
+
 ## 2026-07-08
 
 ### Event-driven animations + on-demand rendering + bug fixes
