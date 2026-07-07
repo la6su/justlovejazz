@@ -12,15 +12,6 @@ export enum NarrativePhase {
   CONTACT = 'sec_contact',
 }
 
-export const NARRATIVE_PHASES = [
-  'sec_intro',
-  'sec_about',
-  'sec_flexible',
-  'sec_challenge',
-  'sec_innovative',
-  'sec_contact',
-] as const
-
 export enum BakuRole {
   NORMAL = 'normal',
   GLASS = 'glass',
@@ -77,17 +68,4 @@ export interface Project {
   category?: string
   tags?: string[]
   slug?: string
-}
-
-export enum ViewState {
-  LIST = 'list',
-  TRANSITIONING = 'transitioning',
-  FULLSCREEN = 'fullscreen',
-}
-
-export enum CameraState {
-  INTRO = 'intro',
-  EXPLORE = 'explore',
-  DETAIL = 'detail',
-  TRANSITION = 'transition',
 }

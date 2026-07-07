@@ -5,7 +5,7 @@
 
 import { WebGPURenderer, RenderPipeline as TSLRenderPipeline } from 'three/webgpu'
 import { tslBloom, tslPass } from '../types/tsl-helpers'
-import { Fn, uniform, uv, fract, dot, vec2, vec3, mix, smoothstep } from 'three/tsl'
+import { uniform, uv, fract, dot, vec2, vec3, mix, smoothstep } from 'three/tsl'
 import * as THREE from 'three'
 import type { Scene, Camera } from 'three'
 
@@ -169,6 +169,3 @@ export class WebGPUPostPipeline {
     this._pipeline = null
   }
 }
-
-// Silence unused-import warnings for TSL fns kept for clarity.
-void Fn

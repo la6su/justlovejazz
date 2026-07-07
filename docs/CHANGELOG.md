@@ -1,5 +1,50 @@
 # CHANGELOG
 
+## 2026-07-07
+
+### Proxy/HMR fixes + LLM-optimized docs rewrite
+
+**Navigation rewrite (CircularNav):**
+- `feat(nav)`: SwipeNav replaced by CircularNav — vinyl-record dial fixed to bottom-right corner. Circle center = viewport corner; only top-left quadrant visible (`overflow:hidden`). 6 dots on a 90° arc. Drag counter-clockwise = NEXT, clockwise = PREV. Tap dot = jump. Boundary rubber-band ×0.3. Keyboard arrows + Home/End.
+- `refactor(ui)`: `uiChrome.ts` selector updated — `#swipe-nav` → `#circ-nav`.
+- `docs`: All `.jlz-swipenav*` references in docs updated to `.jlz-circnav*`.
+
+**Proxy/dev-server fixes (Caddy reverse proxy + project.6la.ru):**
+- `fix(build)`: `vite.config.ts` — `server.hmr: false` (WebSocket unstable through proxy → reload loop every ~30s).
+- `fix(build)`: `server.allowedHosts: ['project.6la.ru']` so Vite doesn't block proxy requests.
+- `fix(build)`: New `block-vite-client` plugin — `transformIndexHtml` strips `@vite/client` script tag + `configureServer` middleware stubs the HTTP request (returns empty `createHotContext`/`updateStyle` exports). Through the proxy, `/@vite/client` resolves to the Next.js app (port 3000) returning HTML instead of JS — breaks all module loading.
+- `fix(css)`: `entry-app.ts` — `main.less` imported with `?inline` (raw CSS string, no `@vite/client` `updateStyle`/`removeStyle` injection). Manually inject `<style>` into `<head>`.
+- `fix(hmr)`: All `import.meta.hot` calls removed from source (3 files: entry-app, StateBus, EventBus — only trailing comment markers remain).
+- `chore`: Inline `<script>` MutationObserver in `index.html` removed — `block-vite-client` plugin handles stripping at build time.
+
+**Performance fixes (WebGL binding-point limit + per-frame allocations):**
+- `perf(splashcube)`: SplashCube now uses ONE shared `MeshPhysicalNodeMaterial` for all 6 faces (was 6). 6 NodeMaterials exceeded the WebGL ~12-16 binding-point limit on WebGLBackend fallback. Single uniform group.
+- `perf(materials)`: Built-in materials used for particles (PointsMaterial), ground (MeshStandardMaterial), BakuCarousel cards (MeshBasicMaterial), SplashCube edges (LineBasicMaterial). No per-mesh NodeMaterial → no uniform-group bloat.
+- `fix(update)`: `Experience.update()` wrapped in try/catch — error logs once (`_updateErrorLogged` flag), animation loop survives. Previously a thrown error stopped the loop permanently.
+- `fix(stats)`: `DebugStats` shows `info.render.drawCalls` (per-frame, reset by `info.reset()`) NOT `info.render.calls` (cumulative since start on WebGPURenderer).
+- `feat(render)`: WebGPU post-processing re-enabled — `WebGPUPostPipeline` (TSL RenderPipeline + BloomNode + Fn nodes for vignette/grain/color grade). Was disabled for direct `renderer.render()` perf; now restored with proper TSL nodes.
+
+**Dead code cleanup (continuation of 2026-07-05 purge):**
+- `refactor(input)`: `Input.ts` rewritten (113→41 LOC). Removed scroll system (`scrollY`, `scrollLimit`, `smoothedScroll`, `setScroll`, `getScroll`, `getScrollProgress`, `update`, resize listener). Kept: mouse + `getMouse()` + `destroy()` + singleton.
+- `refactor(portfolio)`: `WorksPortfolio.ts` rewritten (119→60 LOC). Removed `baku`, `textures`, `texturesLoaded`, `sharedLoader`, `setBaku`, `loadAllTextures`, `applyTexturesToCube`, `expandCard`, `collapseCard`, `setCamera`. Now metadata + `prev/next/goTo` only.
+- `refactor(splashcube)`: Removed 5 dead methods — `setProjectTextures` (no-op), `clearProjectTextures` (no-op), `getProjectRotationY`, `setMaterialParams`, `openerComplete` getter.
+- `refactor(experience)`: Removed empty `setupEventListeners`, `input.refreshScrollLimit()` call, `input.update()` call, `portfolio.setCamera()` + `portfolio.setBaku()` calls, dead `intro:complete` handler.
+- `refactor(bootstrapper)`: Removed `onIntroComplete` field + `bus.on('intro:complete')` handler (event never emitted — only `intro:done`). 30→21 LOC.
+- `chore(logs)`: Console logs DEV-gated (`if (import.meta.env.DEV)`) in Renderer, DeviceCapability, World.
+- `chore(entry-app)`: Removed dead `webglReady` branch, merged two `jlz:webgl-ready` listeners, removed leaf-skip logic in `setupTitleObserver` + `animateNoiseTitles`, removed `jlz:section-change` manual scrollspy refresh handler (caused forced reflows).
+- `chore(exports)`: 13 files cleaned of dead exports — `isAppReady`, `NARRATIVE_PHASES`, `ViewState`, `CameraState`, `ALL_SECTIONS`, `resolvePageKey`, `getPageScenes`, `currentPage`, `routerContainer`, `Camera.setBasePosition/getVelocity/velocity/prevPosition`, `AudioSystem.setMuted/muted/_muted`, `BG.setSection`, `UIMenu.isOpen/show/hide`, `Lights._scratchColor`, `worldDNA.uAudioMid`, `WebGPUPostPipeline.Fn`, `ProjectOverlay._first`, `Window.__titleSpyStarted`.
+- `chore(types)`: Deleted dead type files `src/types/renderer.ts` + `src/types/post-processing.ts`. Relocated still-used `QualityTier` + `RendererMode` to `DeviceCapability.ts`. Removed `PostProcessingManager.getSectionPreset()` (only consumer of `PostPreset`).
+
+**Subtitles:**
+- `refactor`: Subtitles module disabled — will be re-added as a 3D environment element later. References removed from Experience.ts wiring.
+
+**Docs rewrite (LLM-optimized):**
+- `docs`: All 7 docs rewritten — tables over prose, 1-line summaries, DO/DON'T format, cross-references with relative links, ≤150 lines each.
+- `docs(HERMES_RULES)`: 7 new rules added (27-33): no `import.meta.hot`, CSS `?inline`, try/catch in `update()`, `drawCalls` not `calls`, no Subtitles re-add, no Input scroll re-add, no `setProjectTextures`/`clearProjectTextures` re-add.
+- `docs`: AGENTS.md navigation model updated (CircularNav + UIMenu). STATUS.md current/removed tables refreshed. ARCHITECTURE.md module table + render path updated. JUNNI_REFERENCE.md section table + NOT-to-port list updated. README.md stack + navigation updated.
+
+**Verification:** type-check (0 errors) · lint (0 errors, 47 warnings pre-existing) · build succeeds.
+
 ## 2026-07-05
 
 ### Navigation rewrite + dead-code purge + memory-leak fixes

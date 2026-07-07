@@ -63,9 +63,9 @@ at 60 FPS on:
 - Chrome on X11
 - Chrome via LAN IP
 
-The project's WebGPU path uses direct `renderer.render()` (no TSL
-post-processing pipeline) specifically to avoid the ANGLE-OpenGL overhead.
-See `docs/ARCHITECTURE.md` → "Render path".
+The project's WebGPU path uses the TSL RenderPipeline (`WebGPUPostPipeline`:
+bloom + vignette + grain + color grade). See [ARCHITECTURE.md](ARCHITECTURE.md)
+→ "Renderer".
 
 ## Dev server
 
@@ -74,8 +74,12 @@ bun run dev -- --host 127.0.0.1    # localhost only
 bun run dev -- --host 0.0.0.0       # all interfaces (LAN access)
 ```
 
-Default port: 5173. HMR configured in `vite.config.ts` with explicit
-`server.host` and `hmr.host` to avoid WebSocket mismatch.
+Default port: 5173. HMR is **disabled** (`server.hmr: false` in
+`vite.config.ts`) — the HMR WebSocket is unstable through the Caddy reverse
+proxy (project.6la.ru). The `block-vite-client` plugin strips `@vite/client`
+from HTML + stubs the HTTP request, and `main.less` is imported with `?inline`
+to prevent `@vite/client` injection in CSS. See [STATUS.md](STATUS.md) →
+"Proxy/dev-server config".
 
 ## Verification tools
 

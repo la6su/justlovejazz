@@ -93,14 +93,18 @@ export class Renderer {
 
       // Check if WebGPURenderer actually got WebGPUBackend (not WebGLBackend fallback)
       const backendName = wg.backend?.constructor?.name
-      console.info('[Renderer.init] WebGPURenderer backend:', backendName)
+      if (import.meta.env.DEV) {
+        console.info('[Renderer.init] WebGPURenderer backend:', backendName)
+      }
 
       // Check if the WebGPU adapter is a fallback (SwiftShader = software rendering).
       // Software WebGPU gives ~2 FPS — hardware WebGL2 is much faster.
       const adapter = wg.backend?.adapter?.info ?? wg.backend?.gpu?._adapter
       const isFallback = adapter?.isFallbackAdapter ?? false
-      console.info('[Renderer.init] WebGPU adapter isFallback:', isFallback,
-        '| architecture:', adapter?.architecture ?? '?')
+      if (import.meta.env.DEV) {
+        console.info('[Renderer.init] WebGPU adapter isFallback:', isFallback,
+          '| architecture:', adapter?.architecture ?? '?')
+      }
 
       if (backendName !== 'WebGPUBackend' || isFallback) {
         // Either WebGLBackend fallback OR WebGPUBackend with SwiftShader (software).
@@ -108,13 +112,17 @@ export class Renderer {
         const reason = backendName !== 'WebGPUBackend'
           ? `backend is ${backendName}`
           : 'adapter is SwiftShader (software rendering — would give ~2 FPS)'
-        console.info('[Renderer.init] Switching to WebGLRenderer:', reason)
+        if (import.meta.env.DEV) {
+          console.info('[Renderer.init] Switching to WebGLRenderer:', reason)
+        }
         this.instance.domElement.remove()
         wg.dispose?.()
         this.instance = this.createWebGLRenderer()
       }
     } else {
-      console.info('[Renderer.init] Using WebGLRenderer (no WebGPU API)')
+      if (import.meta.env.DEV) {
+        console.info('[Renderer.init] Using WebGLRenderer (no WebGPU API)')
+      }
       this.instance = this.createWebGLRenderer()
     }
 
@@ -137,15 +145,17 @@ export class Renderer {
       && (this.instance as any).backend?.constructor?.name === 'WebGPUBackend'
     if (isRealWebGPU) {
       setTransmissionEnabled(true)
-      // Log WebGPU device loss — helps diagnose the ~30s reload issue.
-      // three.js sets _isDeviceLost = true on loss, but doesn't reload.
+      // DEV-only WebGPU device-loss logging — helps diagnose the ~30s reload
+      // issue. three.js sets _isDeviceLost = true on loss, but doesn't reload.
       // The browser may auto-reload the tab if GPU memory is exhausted.
-      const wg = this.instance as any
-      if (wg.onDeviceLost) {
-        const origHandler = wg.onDeviceLost.bind(wg)
-        wg.onDeviceLost = (info: any) => {
-          console.error('[Renderer] WebGPU device lost!', info)
-          origHandler(info)
+      if (import.meta.env.DEV) {
+        const wg = this.instance as any
+        if (wg.onDeviceLost) {
+          const origHandler = wg.onDeviceLost.bind(wg)
+          wg.onDeviceLost = (info: any) => {
+            console.error('[Renderer] WebGPU device lost!', info)
+            origHandler(info)
+          }
         }
       }
     }
@@ -163,9 +173,6 @@ export class Renderer {
     catch (e) { console.error('[Renderer] WebGLNodesHandler failed:', e) }
     return gl
   }
-
-  // --- OLD init code below (removed) ---
-  // old_init_placeholder
 
   private _fog!: THREE.FogExp2
   private _prevBgHex: number = -1

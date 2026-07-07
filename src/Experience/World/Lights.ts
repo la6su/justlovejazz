@@ -138,9 +138,6 @@ export class CinematicLights {
   private _targetVolumetricIntensity = 0.6
   private _targetHemiIntensity = 0.3
 
-  // GC-free scratch for lerping colors
-  private _scratchColor = new THREE.Color()
-
   // Speed multiplier for lerp — higher = faster transition (junni: ~0.5s)
   private static readonly LERP_SPEED = 3.0
 
@@ -260,7 +257,5 @@ export class CinematicLights {
     this.rimLight.intensity = this._targetRimIntensity
     this.volumetricLight.intensity = this._targetVolumetricIntensity
     this.hemiLight.intensity = this._targetHemiIntensity
-    // suppress unused var warning
-    void this._scratchColor
   }
 }

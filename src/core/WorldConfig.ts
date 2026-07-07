@@ -378,18 +378,8 @@ export function toPhaseConfig(raw: RawScene): PhaseConfig {
 }
 
 // ── Public API ──
-export const ALL_SECTIONS = RAW
-
-export function resolvePageKey(_attr?: string): { isAbsolute: boolean; pageKey: string } {
-  return { isAbsolute: false, pageKey: 'home' }
-}
-
 export function getAllScenes(): PhaseConfig[] {
   return RAW.map((raw) => toPhaseConfig(raw))
-}
-
-export function getPageScenes(_pageKey: string): PhaseConfig[] {
-  return getAllScenes()
 }
 
 export function getWorldConfigForPage(_pageKey: string): readonly PhaseConfig[] {

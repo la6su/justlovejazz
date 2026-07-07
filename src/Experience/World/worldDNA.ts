@@ -27,7 +27,6 @@ export const worldDNAUniforms = {
   uPulse: uniform(0),
   // Audio-reactive uniforms (driven by AudioSystem)
   uAudioBass: uniform(0),
-  uAudioMid: uniform(0),
   uAudioTreble: uniform(0),
 }
 
@@ -93,9 +92,8 @@ export function attachWorldDNA(mat: MeshPhysicalNodeMaterial): void {
 }
 
 /** Update audio-reactive uniforms. Called by Experience.update each frame. */
-export function updateWorldDNAAudio(bass: number, mid: number, treble: number): void {
+export function updateWorldDNAAudio(bass: number, _mid: number, treble: number): void {
   worldDNAUniforms.uAudioBass.value = bass
-  worldDNAUniforms.uAudioMid.value = mid
   worldDNAUniforms.uAudioTreble.value = treble
 }
 

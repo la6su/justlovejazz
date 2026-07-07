@@ -11,12 +11,12 @@ No broad refactors without failing build, TODO, or documented plan.
 ## Before starting
 
 1. `git fetch origin && git checkout main && git pull origin main`
-2. Read `docs/HERMES_RULES.md` — 20 hard rules with bug provenance
+2. Read `docs/HERMES_RULES.md` — 33 hard rules with bug provenance
 3. Read `docs/STATUS.md` — current state, don't redo done work
 
 ## Priority
 
-1. Build/type errors → 2. Public API breaks → 3. Renderer contract → 4. Scroll/timeline → 5. Lifecycle/disposal → 6. Gallery FSM → 7. Camera → 8. Pipeline → 9. A11y → 10. Perf
+1. Build/type errors → 2. Public API breaks → 3. Renderer contract → 4. Navigation (CircularNav/UIMenu) → 5. Lifecycle/disposal → 6. BakuCarousel morph → 7. Camera → 8. Pipeline → 9. A11y → 10. Perf
 
 ## Edit rules
 
@@ -25,9 +25,12 @@ No broad refactors without failing build, TODO, or documented plan.
 - TSL: inspect `node_modules/three/src/nodes` first. Wrap unstable patterns in helpers.
 - Lifecycle: bound handler refs, `destroy()` on every listener owner.
 - Styling: tokens only. No hardcoded values.
-- **No ShaderMaterial in scene objects** — see HERMES_RULES.md rule 1.
-- **No TSL NodeMaterial for scene objects** — see HERMES_RULES.md rule 2.
-- **setAnimationLoop, not rAF** — see HERMES_RULES.md rule 6.
+- **No ShaderMaterial in scene objects** — see HERMES_RULES.md §1.
+- **TSL NodeMaterial allowed** (built-in preferred for simple cases) — see HERMES_RULES.md §2.
+- **ONE shared NodeMaterial per multi-face object** — see HERMES_RULES.md §3.
+- **setAnimationLoop, not rAF** — see HERMES_RULES.md §5.
+- **No `import.meta.hot`** (HMR disabled) — see HERMES_RULES.md §27.
+- **CSS via `?inline`** — see HERMES_RULES.md §28.
 
 ## Verification (after every change)
 

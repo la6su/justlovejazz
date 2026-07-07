@@ -1,6 +1,6 @@
 // BG — Background color provider (scene.background)
-// Supports both section-snap (setSection) and continuous lerp (setProgress)
-// for smooth cross-section transitions driven by World.updateTransform(t).
+// Continuous lerp (setProgress) for smooth cross-section transitions driven
+// by World.updateTransform(t).
 import * as THREE from 'three'
 import { getAllScenes } from './WorldConfig'
 
@@ -13,7 +13,7 @@ const sectionColors = getAllScenes().map((c) => new THREE.Color(c.background))
 export class BG {
   public color = new THREE.Color(0xffffff)
 
-  // Exponential-smoothing target (set by setSection + setProgress)
+  // Exponential-smoothing target (set by setProgress)
   private targetColor = new THREE.Color(0xffffff)
   // GC-free lerp scratch
   private _scratch = new THREE.Color()
@@ -21,15 +21,6 @@ export class BG {
   constructor() {
     this.targetColor.copy(sectionColors[0]!)
     this.color.copy(sectionColors[0]!)
-  }
-
-  /**
-   * Snap target to a single section color.
-   * Called by World.updateTransform when the section index changes.
-   */
-  public setSection(index: number): void {
-    const c = sectionColors[Math.max(0, Math.min(index, sectionColors.length - 1))]!
-    this.targetColor.copy(c)
   }
 
   /**

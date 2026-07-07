@@ -1,11 +1,10 @@
 # justlovejazz
 
 Studio-grade interactive 3D portfolio. Vite 8 (rolldown) + TypeScript (strict)
++ three 0.184 + WebGPU/WebGL2 + UIkit 3 + bun.
 
-- three 0.184 + WebGPU/WebGL2 + UIkit 3 + bun.
-
-**SPA** with SwipeNav + UIMenu navigation: 6 sections (intro→contact),
-3D canvas + transparent DOM overlay. Home sections are prerendered into
+**SPA** with CircularNav + UIMenu navigation: 6 sections (intro→contact),
+3D canvas + transparent DOM overlay. Home sections prerendered into
 `index.html` at build time for SEO.
 
 ## Run
@@ -20,53 +19,62 @@ bun run test         # playwright e2e
 bun run format       # Prettier write
 ```
 
-For LAN access (faster WebGPU on Chrome/Wayland — see ENVIRONMENT.md):
+For LAN access (faster WebGPU on Chrome/Wayland — see [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md)):
 
 ```bash
 bun run dev -- --host 0.0.0.0
 ```
 
-## Docs
+## Docs (priority order)
 
 | File | Content |
 | --- | --- |
 | [AGENTS.md](AGENTS.md) | **Start here** — agent instructions, rules, stop conditions |
-| [STATUS](docs/STATUS.md) ⭐ | Canonical state — if conflict, STATUS wins |
-| [ARCHITECTURE](docs/ARCHITECTURE.md) | Modules, render path, layout, navigation |
-| [HERMES_RULES](docs/HERMES_RULES.md) | Hard rules with bug provenance |
-| [JUNNI_REFERENCE](docs/JUNNI_REFERENCE.md) | Junni patterns to port (and NOT to port) |
-| [ENVIRONMENT](docs/ENVIRONMENT.md) | Chrome/Wayland WebGPU issue + workarounds |
-| [AUDIT](docs/AUDIT.md) | Gap analysis vs junni (all resolved — historical) |
-| [CHANGELOG](docs/CHANGELOG.md) | Recent merge log |
+| [docs/STATUS](docs/STATUS.md) ⭐ | Canonical state — if conflict, STATUS wins |
+| [docs/ARCHITECTURE](docs/ARCHITECTURE.md) | Modules, render path, layout, navigation |
+| [docs/HERMES_RULES](docs/HERMES_RULES.md) | Hard rules with bug provenance |
+| [docs/JUNNI_REFERENCE](docs/JUNNI_REFERENCE.md) | Junni patterns to port (and NOT to port) |
+| [docs/ENVIRONMENT](docs/ENVIRONMENT.md) | Chrome/Wayland WebGPU issue + workarounds |
+| [docs/AUDIT](docs/AUDIT.md) | Gap analysis vs junni (all resolved — historical) |
+| [docs/CHANGELOG](docs/CHANGELOG.md) | Recent merge log |
 
 ## Stack
 
-- **Framework:** Vite 8 (rolldown) + TypeScript (`strict: true`)
-- **3D:** three 0.184 (TSL NodeMaterial allowed; raw ShaderMaterial banned in scene)
-- **Renderer:** `WebGPURenderer` (WebGPU/WebGL2 auto-fallback)
-- **UI:** UIkit 3 + Less (master-quantum-flares theme)
-- **Navigation:** SwipeNav (one-section swiper) + UIMenu (UIkit modal)
-- **Lint:** ESLint 9 flat config + Prettier
-- **Test:** Playwright
-- **Package manager:** bun
+| Layer | Tech |
+| --- | --- |
+| Framework | Vite 8 (rolldown) + TypeScript (`strict: true`) |
+| 3D | three 0.184 (TSL NodeMaterial allowed; raw ShaderMaterial banned in scene) |
+| Renderer | `WebGPURenderer` (WebGPU/WebGL2 auto-fallback) |
+| UI | UIkit 3 + Less (master-quantum-flares theme) |
+| Navigation | CircularNav (vinyl-record dial) + UIMenu (UIkit modal) |
+| Lint | ESLint 9 flat config + Prettier |
+| Test | Playwright |
+| Package manager | bun |
 
 ## Renderer
 
-Single `WebGPURenderer` — auto-selects backend (WebGPU if available, else WebGL2).
+Single `WebGPURenderer` — auto-selects backend (WebGPU if available + not
+SwiftShader fallback, else hardware WebGL2).
 
 | Backend | Render | Post-processing |
 | --- | --- | --- |
-| WebGPU | `renderer.render()` direct | none (ACES via renderer.toneMapping) |
-| WebGL2 | ShaderMaterial RT pipeline | bloom + grain + vignette (single ACES pass) |
+| WebGPU | TSL RenderPipeline (`WebGPUPostPipeline`) | bloom + vignette + grain + color grade (TSL Fn nodes) |
+| WebGL2 | ShaderMaterial RT pipeline | bloom + grain + vignette + chromatic + refraction + grade (single ACES pass) |
 
-All scene materials are TSL NodeMaterial or built-in. No raw ShaderMaterial
-in scene objects — incompatible with WebGPURenderer.
+All scene materials: built-in or TSL NodeMaterial. No raw ShaderMaterial in
+scene objects — incompatible with WebGPURenderer. ONE shared NodeMaterial per
+multi-face object (WebGL binding-point limit).
 
 ## Navigation
 
-- **SwipeNav** (bottom bar): drag 0→100% to move to NEXT/PREV section (one at a time). |progress|>50% commits, <50% snaps back.
-- **UIMenu** (UIkit modal, top-right hamburger): jump to any section.
-- Page scroll is disabled (`body { overflow: hidden }`). Sections are absolute-stacked.
+| Surface | Role |
+| --- | --- |
+| **CircularNav** | Bottom-right vinyl-record dial. Drag along arc → NEXT/PREV (one section). Tap dot → jump. Keyboard arrows + Home/End. |
+| **UIMenu** | UIkit modal (`uk-modal`). Hamburger button (center of dial) opens jump-nav overlay. |
+| **BakuCarousel card click** | Raycast hit on works-section card → ProjectOverlay fullscreen. |
+
+Page scroll is disabled (`body { overflow: hidden }`). Sections are
+absolute-stacked. `.section-active` toggles visibility on `jlz:section-change`.
 
 ## Sections
 
@@ -78,3 +86,15 @@ in scene objects — incompatible with WebGPURenderer.
 | challenge (works) | BakuCarousel (baku cube morphs into carousel ring) | Dark |
 | innovative | Particles | Dark |
 | contact | Particles | Light cream |
+
+## Dev-server / proxy config
+
+| Setting | Value | Why |
+| --- | --- | --- |
+| `server.hmr` | `false` | WebSocket unstable through Caddy reverse proxy → reload loop |
+| `server.allowedHosts` | `['project.6la.ru']` | Proxy host forwarding to localhost:5173 |
+| `block-vite-client` plugin | strips `@vite/client` script tag + stubs HTTP request | `@vite/client` resolves to Next.js app through proxy (returns HTML, breaks modules) |
+| `main.less` import | `?inline` suffix | Prevents `@vite/client` `updateStyle`/`removeStyle` injection in CSS |
+| `import.meta.hot` | removed from all source | HMR triggers `@vite/client` injection (see above) |
+
+See [docs/STATUS.md](docs/STATUS.md) → "Proxy/dev-server config".

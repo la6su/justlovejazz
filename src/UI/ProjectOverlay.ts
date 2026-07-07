@@ -18,7 +18,6 @@ export class ProjectOverlay {
   private descEl!: HTMLElement
   private tagsEl!: HTMLElement
   private counterEl!: HTMLElement
-  private _first = true
   private _isOpen = false
   private _previouslyFocused: HTMLElement | null = null
   private _keydownHandler: ((e: KeyboardEvent) => void) | null = null
@@ -172,9 +171,6 @@ export class ProjectOverlay {
     if (thumb) {
       const url = project.detailTextureUrl || project.textureUrl
       if (url) thumb.style.backgroundImage = `url('${url}')`
-    }
-    if (this._first) {
-      this._first = false
     }
   }
 

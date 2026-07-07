@@ -93,8 +93,6 @@ export class Experience {
     this.sizes.onResize(this._onSizesResize)
   }
 
-  public setupEventListeners() {}
-
   private async buildWorld(): Promise<void> {
     const { World } = await import('../core/World')
     this.world = new World(this.scene)
@@ -125,7 +123,6 @@ export class Experience {
     // NOTE: SmoothScroll/Lenis was removed — SwipeNav drives section
     // navigation (no page scroll). ProjectOverlay locks body overflow
     // directly when the fullscreen overlay is open.
-    input.refreshScrollLimit()
     this.contentReveal = new ContentReveal()
     this.cursor = new Cursor()
     await this.renderer.init()
@@ -238,7 +235,6 @@ export class Experience {
     this.time.update(time)
     const dt = this.time.delta / 1000
     this.bus.tick(dt)
-    input.update()
     this.cursor.update()
     this.debugStats?.update(time)
 
@@ -306,12 +302,6 @@ export class Experience {
       // group visibility (which doesn't add/remove materials, but the carousel
       // morph changes card opacity which could affect the material list).
       this.renderer.invalidateNodeMaterialCache()
-      // NOTE: applyTexturesToCube / clearProjectTextures were REMOVED —
-      // BakuCarousel fully replaces the old cube-face texture slider.
-      // The baku cube stays clean glass on ALL sections; BakuCarousel
-      // renders its own card meshes on top when morphed (works §4).
-      // Calling applyTexturesToCube made the cube opaque (opacity 0.95),
-      // which hid the carousel cards behind it.
     }
 
     // Context switch (post-processing preset)
@@ -342,10 +332,7 @@ export class Experience {
 
     // Works section: baku cube morphs into a carousel ring of project cards
     // (BakuCarousel). The carousel is a child of sceneGroups[3] and manages
-    // its own visibility via morph. Textures on the cube are cleared/applied
-    // event-driven in the section-change handler above — NOT every frame
-    // (calling clearProjectTextures() every frame forces material.needsUpdate
-    // → shader recompile every frame, a real perf hit).
+    // its own visibility via morph.
     const showGallery = cfg?.ui?.showGallery ?? false
     // Sync ProjectOverlay (DOM UI layer) — fullscreen opens on card click.
     if (this.overlay && showGallery && !this._portfolioInitialized) {
@@ -458,12 +445,6 @@ export class Experience {
     // Portfolio group at world origin — frontal camera at [0,1,7] looks at [0,1,0].
     this.portfolio.group.position.set(0, 1, 0)
     this.world.add(this.portfolio.group)
-    // Give portfolio the camera ref for raycast-based tap detection.
-    this.portfolio.setCamera(this.camera.instance)
-    // Connect portfolio to the baku cube — project textures go on cube faces.
-    if (this.world.baku) {
-      this.portfolio.setBaku(this.world.baku)
-    }
 
     if (!this.overlay) {
       const worksSection =

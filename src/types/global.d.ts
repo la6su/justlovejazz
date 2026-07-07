@@ -6,7 +6,6 @@ declare global {
   interface Window {
     experience: Experience
     UIkit: any
-    __titleSpyStarted?: boolean
   }
 }
 

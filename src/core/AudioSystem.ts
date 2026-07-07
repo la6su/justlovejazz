@@ -22,7 +22,6 @@ export class AudioSystem {
   private _treble = 0
   private _level = 0
   private _started = false
-  private _muted = false
 
   /** Whether the audio system is initialized. */
   get started(): boolean {
@@ -128,17 +127,6 @@ export class AudioSystem {
   /** Overall level (0..1). */
   getLevel(): number {
     return this._level
-  }
-
-  /** Mute/unmute audio output (analyser still runs). */
-  setMuted(muted: boolean): void {
-    this._muted = muted
-    if (this.gain && this.ctx) {
-      this.gain.gain.setValueAtTime(muted ? 0 : 0.3, this.ctx.currentTime)
-    }
-  }
-  get muted(): boolean {
-    return this._muted
   }
 
   /** Dispose all audio resources. */

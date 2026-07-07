@@ -2,9 +2,7 @@
 // Section-aware post-processing controller with quality tiers + crossfade.
 
 import { DeviceCapability } from './DeviceCapability'
-
-import type { PostPreset } from '../types/post-processing'
-import type { QualityTier } from '../types/renderer'
+import type { QualityTier } from './DeviceCapability'
 
 /**
  * Post-processing intensity presets per section.
@@ -146,16 +144,6 @@ export class PostProcessingManager {
   /** Get display values for shader uniforms */
   get postParams(): PostParams {
     return this.display
-  }
-
-  /** Get display values for world config post presets */
-  getSectionPreset(): PostPreset {
-    const p = this.display
-    return {
-      bloom: p.bloom,
-      vignette: p.vignette,
-      grain: p.grain,
-    }
   }
 }
 

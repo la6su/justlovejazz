@@ -128,20 +128,6 @@ export class UIMenu {
     this.updateActive()
   }
 
-  get isOpen(): boolean {
-    // UIkit modal exposes isActive() at runtime; cast to access it.
-    const modal = UIkit.modal(this.modalEl) as unknown as { isActive?: () => boolean }
-    return modal.isActive?.() ?? false
-  }
-
-  show(): void {
-    UIkit.modal(this.modalEl).show()
-  }
-
-  hide(): void {
-    UIkit.modal(this.modalEl).hide()
-  }
-
   private updateActive(): void {
     this.links.forEach((link, i) => {
       link.classList.toggle('is-active', i === this._activeIndex)

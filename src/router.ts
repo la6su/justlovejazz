@@ -91,9 +91,3 @@ export function initRouter(): void {
     }
   })
 }
-
-export function currentPage(): 'home' {
-  return 'home'
-}
-
-export const routerContainer: HTMLElement | null = container

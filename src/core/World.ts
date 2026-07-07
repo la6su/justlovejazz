@@ -176,16 +176,26 @@ export class World extends THREE.Group {
         | undefined
       if (carousel) {
         void carousel.init().then(
-          () => console.info('[World] BakuCarousel initialized (works section)'),
-          (err) => console.error('[World] BakuCarousel init FAILED — textures may not load, event listeners NOT attached:', err),
+          () => {
+            if (import.meta.env.DEV) {
+              console.info('[World] BakuCarousel initialized (works section)')
+            }
+          },
+          (err) => {
+            if (import.meta.env.DEV) {
+              console.error('[World] BakuCarousel init FAILED — textures may not load, event listeners NOT attached:', err)
+            }
+          },
         )
       }
     }
 
-    console.debug(
-      '[World] init — scene group visibility:',
-      this.sceneGroups.map((g, i) => `g[${i}]=${g.visible}`),
-    )
+    if (import.meta.env.DEV) {
+      console.debug(
+        '[World] init — scene group visibility:',
+        this.sceneGroups.map((g, i) => `g[${i}]=${g.visible}`),
+      )
+    }
   }
 
   public update(deltaTime: number): void {

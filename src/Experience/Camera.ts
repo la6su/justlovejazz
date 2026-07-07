@@ -27,10 +27,6 @@ export class Camera {
   private smoothTarget = new THREE.Vector3()
   private smoothFov = 75
 
-  // Velocity tracking for Environment
-  private velocity = new THREE.Vector3()
-  private prevPosition = new THREE.Vector3()
-
   // ── Action shake ──
   private shakePower = 0
   private shakeDuration = 0
@@ -58,7 +54,6 @@ export class Camera {
     this.instance = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
     this.smoothPosition.set(0, 0, 3)
     this.instance.position.copy(this.smoothPosition)
-    this.prevPosition.copy(this.smoothPosition)
 
     // Bound ref so removeEventListener works in destroy().
     this._onResize = () => {
@@ -76,10 +71,6 @@ export class Camera {
     window.removeEventListener('resize', this._onResize)
   }
 
-  setBasePosition(pos: THREE.Vector3) {
-    this.smoothPosition.copy(pos)
-  }
-
   /** Lerp camera base state toward target with exponential smoothing */
   updateSmooth(target: CameraTarget, deltaT: number, smoothing = 5) {
     if (!target) return
@@ -88,10 +79,6 @@ export class Camera {
     this.smoothPosition.lerp(target.position, lerp)
     this.smoothTarget.lerp(target.lookAt, lerp)
     this.smoothFov += (target.fov - this.smoothFov) * lerp
-  }
-
-  getVelocity() {
-    return this.velocity
   }
 
   /** Trigger an action shake (impact on section change) */
@@ -203,9 +190,5 @@ export class Camera {
         this.shakeTime = 0
       }
     }
-
-    // ── 7. Velocity ──
-    this.velocity.subVectors(pos, this.prevPosition).divideScalar(dt)
-    this.prevPosition.copy(pos)
   }
 }

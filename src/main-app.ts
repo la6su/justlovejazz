@@ -12,7 +12,6 @@ export interface BootstrapOptions {
 }
 
 let _bootstrapped = false
-export const isAppReady = () => _bootstrapped
 
 type OnReadyCallback = (
   renderer: import('./Experience/Renderer').RenderSurface,

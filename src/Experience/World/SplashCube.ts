@@ -88,10 +88,9 @@ export class SplashCube extends THREE.Mesh {
     // ── ONE shared NodeMaterial for all 6 faces ──
     // All faces use the same worldDNA TSL shader. Sharing one material means
     // only ONE uniform group is created on WebGL2 (6 separate NodeMaterials
-    // would exceed the WebGL limit of ~12-16 binding points). The downside is
-    // that setProjectTextures/clearProjectTextures can't set different maps per
-    // face — but BakuCarousel now handles the works-section visuals, so the
-    // cube faces are always clean glass (no per-face textures needed).
+    // would exceed the WebGL limit of ~12-16 binding points). The cube faces
+    // are always clean glass — BakuCarousel handles the works-section visuals
+    // with its own per-card meshes, so no per-face textures are needed here.
     const sharedMat = new MeshPhysicalNodeMaterial({
       color: 0x1a1a2e,
       emissive: 0x4a5a8a,
@@ -151,32 +150,10 @@ export class SplashCube extends THREE.Mesh {
     }
   }
 
-  /** Project textures — NO-OP now. BakuCarousel handles the works-section
-   *  visuals. The cube uses a single shared material (can't set per-face maps).
-   *  Kept for API compatibility (Experience may still call it). */
-  setProjectTextures(_textures: (THREE.Texture | null)[]): void {
-    // No-op — BakuCarousel renders its own card meshes on top of the cube.
-  }
-
-  /** Clear project textures — NO-OP now. Cube stays clean glass on all sections. */
-  clearProjectTextures(): void {
-    // No-op — cube is always clean glass now.
-  }
-
-  /** Target Y rotation for showing project face (0=front, 1=right, 2=back, 3=left). */
-  getProjectRotationY(idx: number): number {
-    return -((idx * Math.PI) / 2) // -90° per project
-  }
-
   /** Trigger the opener — faces pulse outward + back (cube "breathes" open). */
   triggerOpener(): void {
     this.openerPhase = 'opening'
     this.openerTarget = 1
-  }
-
-  /** Baku role/material params (called by World on section change). */
-  setMaterialParams(params: BakuMaterialParams): void {
-    this.targetParams = params
   }
 
   /** Alias for Experience.update() compatibility (Baku API). */
@@ -267,11 +244,6 @@ export class SplashCube extends THREE.Mesh {
     this._blendT = t
     // Lerp displacement amplitude between sections
     this._blendDisplace = fromDisplace * (1 - t) + toDisplace * t
-  }
-
-  /** Check if opener is complete (pulse done, cube is baku now). */
-  get openerComplete(): boolean {
-    return this.openerPhase === 'done'
   }
 
   private applyRoleAndParams(): void {
