@@ -167,13 +167,21 @@ export class WebGPUPostPipeline {
     color = div(color.mul(a), b)
 
     // ── 7. Film grain ──
-    // WebGL2: grain = (noise(uv*1024 + uTime*10) - 0.5) * 2.0 * uGrain; color += grain;
-    // Note: WebGL2 uses bilinear-interpolated noise; WebGPU uses simple hash.
-    // The difference is subtle at 0.02 intensity. Time offset added for parity.
+    // MIRROR WebGL2 COMPOSITE_FSG noise() exactly: bilinear-interpolated hash noise
+    // WebGL2: float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+    //         float noise(vec2 p) { vec2 i=floor(p); vec2 f=fract(p); f=f*f*(3-2*f);
+    //               float a=hash(i); float b=hash(i+1,0); float c=hash(i+0,1); float d=hash(i+1,1);
+    //               return mix(mix(a,b,f.x), mix(c,d,f.x), f.y); }
+    // Parity: exact same bilinear noise function on both paths now.
     const gCoord = uv().mul(1024.0).add(vec2(time.mul(10.0)))
-    const gNoise = fract(
-      dot(gCoord, vec2(12.9898, 78.233)).mul(43758.5453),
-    )
+    // Bilinear-interpolated noise (mirrors WebGL2 exactly)
+    const gFloor = gCoord.floor()
+    const gFract = gCoord.sub(gFloor).mul(gCoord.sub(gFloor)).mul(float(3.0).sub(gCoord.sub(gFloor).mul(2.0)))
+    const gA = fract(sin(dot(gFloor, vec2(12.9898, 78.233))).mul(43758.5453))
+    const gB = fract(sin(dot(gFloor.add(vec2(1.0, 0.0)), vec2(12.9898, 78.233))).mul(43758.5453))
+    const gC = fract(sin(dot(gFloor.add(vec2(0.0, 1.0)), vec2(12.9898, 78.233))).mul(43758.5453))
+    const gD = fract(sin(dot(gFloor.add(vec2(1.0, 1.0)), vec2(12.9898, 78.233))).mul(43758.5453))
+    const gNoise = mix(mix(gA, gB, gFract.x), mix(gC, gD, gFract.x), gFract.y)
       .sub(0.5)
       .mul(2.0)
       .mul(this._grainStrength)
