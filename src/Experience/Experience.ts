@@ -105,29 +105,49 @@ export class Experience {
    *  all PBR materials (MeshPhysicalNodeMaterial, MeshStandardMaterial) get
    *  image-based lighting reflections. Zero per-frame cost.
    *
-   *  IMPORTANT: PMREMGenerator is WebGLRenderer-only. On WebGPURenderer
-   *  (real WebGPU OR WebGLBackend fallback), renderer.state.buffers is
-   *  undefined → PMREMGenerator._sceneToCubeUV() crashes with
-   *  "Cannot read properties of undefined (reading 'buffers')". So we
-   *  only run this on the WebGLRenderer path. On WebGPU, the scene
-   *  environment is left null (glass still gets direct light reflections
-   *  from the scene's lights via PBR, just no image-based reflections). */
+   *  PARITY: PMREMGenerator needs renderer.state.buffers.depth (WebGLRenderer-
+   *  only API). On the WebGLRenderer path we use the main renderer directly.
+   *  On the WebGPURenderer path (real WebGPU OR WebGLBackend fallback), we
+   *  create a SECONDARY offscreen WebGLRenderer solely for PMREM generation.
+   *  The resulting PMREM texture is a plain DataTexture — renderer-agnostic —
+   *  so it works as scene.environment on WebGPURenderer too. This gives both
+   *  paths identical image-based lighting → visual parity. */
   private setupEnvironment(): void {
-    // Only run on WebGLRenderer — PMREMGenerator crashes on WebGPURenderer
     const isWebGLRenderer = !((this.renderer.instance as unknown as { isWebGPURenderer?: boolean }).isWebGPURenderer)
-    if (!isWebGLRenderer) {
-      if (import.meta.env.DEV) {
-        console.info('[Experience] Skipping RoomEnvironment PMREM — WebGPURenderer detected (PMREMGenerator is WebGLRenderer-only)')
-      }
-      return
-    }
+
     // Dynamic import — RoomEnvironment is in three/addons (not in the
     // main three bundle). Keeps it out of the initial chunk.
     void import('three/examples/jsm/environments/RoomEnvironment.js')
       .then(({ RoomEnvironment }) => {
         try {
-          const renderer = this.renderer.instance as unknown as THREE.WebGLRenderer
-          const pmrem = new THREE.PMREMGenerator(renderer)
+          let pmremRenderer: THREE.WebGLRenderer
+          let isSecondary = false
+
+          if (isWebGLRenderer) {
+            // Main renderer IS a WebGLRenderer — use it directly.
+            pmremRenderer = this.renderer.instance as unknown as THREE.WebGLRenderer
+          } else {
+            // WebGPURenderer — create an offscreen WebGLRenderer just for PMREM.
+            // PMREMGenerator needs renderer.state.buffers.depth (WebGLRenderer-only).
+            // The resulting texture is renderer-agnostic, so it can be applied
+            // to scene.environment on the WebGPURenderer main scene.
+            const offscreenCanvas = document.createElement('canvas')
+            offscreenCanvas.width = 16
+            offscreenCanvas.height = 16
+            pmremRenderer = new THREE.WebGLRenderer({
+              canvas: offscreenCanvas,
+              antialias: false,
+              alpha: false,
+              powerPreference: 'high-performance',
+            })
+            pmremRenderer.setSize(16, 16)
+            isSecondary = true
+            if (import.meta.env.DEV) {
+              console.info('[Experience] Created secondary WebGLRenderer for PMREM generation (WebGPU main path)')
+            }
+          }
+
+          const pmrem = new THREE.PMREMGenerator(pmremRenderer)
           const envScene = new RoomEnvironment()
           const envRT = pmrem.fromScene(envScene, 0.04)
           this.scene.environment = envRT.texture
@@ -143,8 +163,20 @@ export class Experience {
               else (mat as THREE.Material).dispose()
             }
           })
+          // Dispose the secondary renderer + its canvas (no longer needed).
+          // forceContextLoss() releases the WebGL context immediately (browsers
+          // limit ~16 concurrent WebGL contexts — must free this one).
+          if (isSecondary) {
+            pmremRenderer.dispose()
+            pmremRenderer.forceContextLoss()
+            const canvas = pmremRenderer.domElement
+            canvas.width = 0
+            canvas.height = 0
+            // Remove from DOM if accidentally attached (shouldn't be — offscreen)
+            canvas.remove()
+          }
           if (import.meta.env.DEV) {
-            console.info('[Experience] RoomEnvironment PMREM set — glass reflections active')
+            console.info('[Experience] RoomEnvironment PMREM set — glass reflections active' + (isSecondary ? ' (via secondary WebGLRenderer)' : ''))
           }
         } catch (e) {
           if (import.meta.env.DEV) {
