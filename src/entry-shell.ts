@@ -1,23 +1,19 @@
 // Minimal shell entry: keep first paint path tiny, then lazy-load full app.
 // Errors are surfaced to console + ErrorTracker (not silently swallowed).
 
-// ── Block Vite HMR WebSocket — prevents ~30s reload loop through proxy ──
-// Vite injects @vite/client in dev mode which opens a WebSocket. Through a
-// reverse proxy (Caddy), the WS idle-times out after ~30s → Vite client
-// calls location.reload() → reload loop.
-// `server.hmr: false` in vite.config.ts doesn't prevent the client from
-// loading — it still tries to connect. So we block the WebSocket creation
-// at the browser level, targeting only the 'vite-hmr' protocol.
+// ── Kill Vite dev client completely — prevents ~30s reload loop through proxy ──
+// Vite injects @vite/client in dev mode. Through the Caddy reverse proxy,
+// the WebSocket/polling connection is unstable → Vite client calls
+// location.reload() every ~30s. We need to completely neutralize the Vite
+// client: block WebSocket, override location.reload, and strip the Vite
+// client script tag.
 const _OrigWebSocket = window.WebSocket
 window.WebSocket = function (url: string | URL, protocols?: string | string[]) {
   const isViteHmr = protocols === 'vite-hmr'
     || (Array.isArray(protocols) && protocols.includes('vite-hmr'))
   if (isViteHmr) {
-    // Return a fake WebSocket that never connects — Vite client sees
-    // readyState=0 (connecting) forever, never gets onclose/onerror,
-    // never triggers the disconnect→poll→reload cycle.
     return {
-      readyState: 0,
+      readyState: 3, // CLOSED — tell Vite the connection failed immediately
       url: String(url),
       protocol: '',
       extensions: '',
@@ -41,6 +37,25 @@ window.WebSocket.prototype = _OrigWebSocket.prototype
 ;(window.WebSocket as any).OPEN = _OrigWebSocket.OPEN
 ;(window.WebSocket as any).CLOSING = _OrigWebSocket.CLOSING
 ;(window.WebSocket as any).CLOSED = _OrigWebSocket.CLOSED
+
+// Override location.reload — Vite client calls this when it detects
+// "server connection lost". We block ALL reloads triggered by Vite.
+// (User-initiated reloads via F5/Ctrl+R bypass this — they're not
+// programmatic location.reload() calls.)
+const _origReload = window.location.reload.bind(window.location)
+let _viteReloadBlocked = false
+window.location.reload = function () {
+  // Check call stack — if Vite client is in the stack, block the reload
+  const stack = new Error().stack || ''
+  if (stack.includes('client.mjs') || stack.includes('vite') || _viteReloadBlocked) {
+    if (!_viteReloadBlocked) {
+      _viteReloadBlocked = true
+      console.warn('[entry-shell] Blocked Vite location.reload() — would cause reload loop')
+    }
+    return
+  }
+  _origReload()
+} as typeof window.location.reload
 
 // ── Console capture — survives page reload via sessionStorage ──
 // Intercepts ALL console.log/warn/error and stores them in sessionStorage
