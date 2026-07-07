@@ -163,7 +163,10 @@ export class CircularNav {
 
   private addEventListeners(): void {
     this._pointerDownHandler = (e: PointerEvent) => {
-      if (this._transitioning) return
+      // Allow new drag even during transition — complete current first
+      if (this._transitioning) {
+        this._completeTransition()
+      }
       this._isDragging = true
       this._dragStartY = e.clientY
       this._dragStartX = e.clientX
@@ -198,7 +201,7 @@ export class CircularNav {
       }
       // Commit if |progress| > 0.5
       if (Math.abs(this._progress) > 0.5) {
-        this.commitTransition()
+        this.commitTransition(this._progress > 0 ? 1 : -1)
       } else {
         this._targetProgress = 0
       }
@@ -249,17 +252,22 @@ export class CircularNav {
     }
   }
 
-  /** Navigate to neighbor section. dir = +1 (next/down), -1 (prev/up). */
+  /** Navigate to neighbor section. dir = +1 (next/down), -1 (prev/up).
+   *  If a transition is in progress, it completes immediately before starting
+   *  the new one (prevents stuck state on rapid swipes). */
   goToDirection(dir: 1 | -1): void {
-    if (this._transitioning) return
+    // If transitioning, complete the current transition first
+    if (this._transitioning) {
+      this._completeTransition()
+    }
     const next = this._currentSection + dir
     if (next < 0 || next >= this._sectionCount) return
-    this._targetProgress = dir
-    this.commitTransition()
+    this.commitTransition(dir)
   }
 
-  private commitTransition(): void {
-    const dir = this._progress > 0 ? 1 : -1
+  /** Commit a transition in the given direction.
+   *  dir = +1 (next), -1 (prev). */
+  private commitTransition(dir: number): void {
     const next = this._currentSection + dir
     if (next < 0 || next >= this._sectionCount) {
       this._targetProgress = 0
@@ -269,18 +277,24 @@ export class CircularNav {
     this._targetProgress = dir
   }
 
+  /** Force-complete the current transition immediately. */
+  private _completeTransition(): void {
+    if (!this._transitioning) return
+    const dir = this._targetProgress > 0 ? 1 : -1
+    this._currentSection = Math.max(0, Math.min(this._sectionCount - 1, this._currentSection + dir))
+    this._progress = 0
+    this._targetProgress = 0
+    this._transitioning = false
+    this._onSectionChange?.(this._currentSection)
+  }
+
   update(): void {
     this._progress += (this._targetProgress - this._progress) * this._ease
     if (Math.abs(this._targetProgress - this._progress) < 0.0005) {
       this._progress = this._targetProgress
     }
     if (this._transitioning && Math.abs(this._progress) > 0.92) {
-      const dir = this._progress > 0 ? 1 : -1
-      this._currentSection = Math.max(0, Math.min(this._sectionCount - 1, this._currentSection + dir))
-      this._progress = 0
-      this._targetProgress = 0
-      this._transitioning = false
-      this._onSectionChange?.(this._currentSection)
+      this._completeTransition()
       this._onActiveChange?.(false)
     }
     // If settled (not dragging, not transitioning, progress ≈ 0) → inactive
