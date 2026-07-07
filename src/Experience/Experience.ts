@@ -409,10 +409,6 @@ export class Experience {
         configId: cfgForSection?.id,
         index: idx,
       })
-      // Invalidate the NodeMaterial cache — section change may have toggled
-      // group visibility (which doesn't add/remove materials, but the carousel
-      // morph changes card opacity which could affect the material list).
-      this.renderer.invalidateNodeMaterialCache()
     }
 
     // Context switch (post-processing preset)

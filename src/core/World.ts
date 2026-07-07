@@ -73,8 +73,8 @@ export class World extends THREE.Group {
 
     // ── Ground plane (visual anchor, аналог Junni Ground)
     // Built-in MeshStandardMaterial (NOT NodeMaterial) — reduces uniform group
-    // count on WebGL2 (NodeMaterials each create a separate uniform group,
-    // hitting the WebGL limit of ~12-16 binding points).
+    // count on WebGL2. FrontSide (default) — only top face visible from camera.
+    // frustumCulled = true (default) — ground is large but centered, stays in frustum.
     this.groundPlane = new THREE.Mesh(
       new THREE.PlaneGeometry(200, 200),
       new THREE.MeshStandardMaterial({
@@ -83,6 +83,7 @@ export class World extends THREE.Group {
         opacity: 0.3,
         roughness: 1,
         metalness: 0,
+        side: THREE.FrontSide, // default — only render top face
       }),
     )
     this.groundPlane.rotation.x = -Math.PI / 2
