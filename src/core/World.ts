@@ -253,6 +253,11 @@ export class World extends THREE.Group {
         | import('../Experience/World/BakuCarousel').BakuCarousel
         | undefined
       if (carousel) carousel.update(deltaTime)
+      // Update wireframe typography (Section2 About)
+      const typo = group.userData.typography as
+        | import('../Experience/World/WireframeTypography').WireframeTypography
+        | undefined
+      if (typo) typo.update(deltaTime)
     }
   }
 
