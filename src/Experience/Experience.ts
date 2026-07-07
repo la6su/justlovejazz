@@ -236,17 +236,6 @@ export class Experience {
   }
 
   private _updateErrorLogged = false
-  private _prevMouseX = 0
-  private _prevMouseY = 0
-
-  /** Check if cursor moved since last frame (for CursorLight rendering). */
-  private _cursorMoved(): boolean {
-    const m = input.getMouse()
-    const moved = Math.abs(m.x - this._prevMouseX) > 0.001 || Math.abs(m.y - this._prevMouseY) > 0.001
-    this._prevMouseX = m.x
-    this._prevMouseY = m.y
-    return moved
-  }
 
   private _updateInner(time: number) {
     this.time.update(time)
@@ -270,17 +259,15 @@ export class Experience {
     // 1. Section transition in progress (CircularNav progress != 0)
     // 2. BakuCarousel is active (morphing or scrolling on works section)
     // 3. Splash/intro animation running
-    // 4. Cursor moved (CursorLight follows cursor)
-    // 5. Audio-reactive (worldDNA uniforms changing)
+    // 4. Audio-reactive (worldDNA uniforms changing)
     // When idle (settled on a section, no BakuCarousel interaction), skip
     // the expensive renderer.render() to save GPU.
     const navActive = this._circNav?.isActive() ?? false
     const introActive = this.bus.isAnimating('intro:stage') || stage < 1
     const audioActive = this.audio.started
-    const cursorMoved = this._cursorMoved()
     const carouselActive = this._bakuCarouselActive
 
-    if (navActive || introActive || audioActive || cursorMoved || carouselActive) {
+    if (navActive || introActive || audioActive || carouselActive) {
       this._needsRender = true
     }
 
@@ -403,7 +390,7 @@ export class Experience {
       this.renderer.update(this.scene, this.camera.instance, dt, worldState)
       // If nothing is actively changing, clear the flag (will be re-set by
       // transition/cursor/carousel callbacks next frame)
-      if (!navActive && !introActive && !audioActive && !cursorMoved && !carouselActive) {
+      if (!navActive && !introActive && !audioActive && !carouselActive) {
         this._needsRender = false
       }
     }

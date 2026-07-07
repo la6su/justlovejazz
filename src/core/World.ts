@@ -7,7 +7,6 @@ import { StateBus } from './StateBus'
 import { prefersReducedMotion } from './motionPolicy'
 import { type CameraTarget, type WorldState, NarrativePhase, BakuRole } from './types'
 import { CinematicLights } from '../Experience/World/Lights'
-import { CursorLight } from '../Experience/World/CursorLight'
 import { DrawTrail } from '../Experience/World/DrawTrail'
 import { SplashCube } from '../Experience/World/SplashCube'
 import { getWorldConfigForPage, type PhaseConfig } from './WorldConfig'
@@ -24,7 +23,6 @@ export class World extends THREE.Group {
   public sections: Section[] = []
   public baku!: SplashCube
   public lightsGroup!: CinematicLights
-  public cursorLight!: CursorLight
   public drawTrail?: DrawTrail
   public atmosphere: WorldAtmosphere | null = null
   public bg!: BG
@@ -60,16 +58,10 @@ export class World extends THREE.Group {
     // ── Lights (= World.lights, аналог Junni Lights)
     this.lightsGroup = new CinematicLights(scene)
 
-    // ── CursorLight (junni pattern: cursor-driven directional light)
-    this.cursorLight = new CursorLight()
-    scene.add(this.cursorLight.object)
-
-    // ── DrawTrail (junni pattern: cursor trail ribbon)
-    // A-007: Re-enabled with per-section visibility gating.
-    // Trail is visible only on about (1) and flexible (2) sections.
+    // ── DrawTrail (cursor trail ribbon) — only on works section (idx=3)
     this.drawTrail = new DrawTrail()
     scene.add(this.drawTrail.object)
-    this.drawTrail.object.visible = false // hidden until about/flexible
+    this.drawTrail.object.visible = false // hidden until works section
 
     // ── Baku = SplashCube (Apple Fifth Avenue style glass cube).
     // The cube IS the baku — stays on all sections, rotates, changes
@@ -211,8 +203,8 @@ export class World extends THREE.Group {
 
     if (!this.isReducedMotion) {
       this.baku.update(deltaTime)
-      this.cursorLight.update(deltaTime)
-      if (this.drawTrail && this._camera) {
+      // DrawTrail only on works section (idx=3)
+      if (this.drawTrail && this._camera && this._currentSectionIndex === 3) {
         this.drawTrail.update(deltaTime, this._camera)
       }
     }
@@ -329,9 +321,9 @@ export class World extends THREE.Group {
         this.lightsGroup.changeSection(activeCfg)
         this.atmosphere?.setFog(activeCfg.fog.color, activeCfg.fog.density)
       }
-      // A-007: DrawTrail visibility — only on about(1) and flexible(2)
+      // DrawTrail visibility — only on works section (idx=3)
       if (this.drawTrail) {
-        this.drawTrail.object.visible = fromIndex === 1 || fromIndex === 2
+        this.drawTrail.object.visible = fromIndex === 3
       }
     }
 
@@ -560,9 +552,6 @@ export class World extends THREE.Group {
     if (Array.isArray(groundMat)) groundMat.forEach((m) => m.dispose())
     else groundMat.dispose()
     this.lightsGroup.dispose()
-    this.cursorLight.dispose()
-    // cursorLight.object was added directly to sceneRef in constructor — remove it.
-    this.sceneRef.remove(this.cursorLight.object)
     this.drawTrail?.dispose()
     if (this.drawTrail) this.sceneRef.remove(this.drawTrail.object)
     this.atmosphere?.dispose()

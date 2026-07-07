@@ -38,8 +38,6 @@ export class SplashCube extends THREE.Mesh {
   private faceMaterials: MeshPhysicalNodeMaterial[] = []
   private edgeLines: THREE.LineSegments[] = []
   private time = 0
-  /** Loading progress (0-1). Drives edge glow brightness. */
-  private _progress = 0
   private openerProgress = 0 // 0=closed, 1=fully opened (pulsed out)
   private openerTarget = 0
   private openerPhase: 'idle' | 'opening' | 'closing' | 'done' = 'idle'
@@ -138,16 +136,10 @@ export class SplashCube extends THREE.Mesh {
     }
   }
 
-  /** Drive loading progress (0-1). Brightens edges as loading completes. */
-  setProgress(p: number): void {
-    this._progress = p
-    const glow = 0.3 + p * 0.7
-    for (const mat of this.faceMaterials) {
-      mat.emissiveIntensity = glow
-    }
-    for (const edges of this.edgeLines) {
-      ;(edges.material as THREE.LineBasicMaterial).opacity = 0.4 + p * 0.6
-    }
+  /** Drive loading progress (0-1). No-op — edge glow was removed for
+   *  on-demand rendering. Kept for API compat (main-app calls it). */
+  setProgress(_p: number): void {
+    // No-op
   }
 
   /** Trigger the opener — faces pulse outward + back (cube "breathes" open). */
@@ -173,6 +165,7 @@ export class SplashCube extends THREE.Mesh {
   private _transitionT = 0
   private _transitionDir = 0 // +1 = next, -1 = prev
   private _idleRotY = 0 // accumulated rotation that stays after transition
+  private _transitionCommitted = false
 
   /** Called by Experience when a section transition is in progress.
    *  t = 0..1 (transition progress), dir = +1 (next) or -1 (prev). */
@@ -184,88 +177,78 @@ export class SplashCube extends THREE.Mesh {
   update(dt: number): void {
     this.time += dt
 
-    // Opener animation: opening → (at peak) → closing → done
-    this.openerProgress += (this.openerTarget - this.openerProgress) * Math.min(1, dt * 4)
-    if (this.openerPhase === 'opening' && this.openerProgress > 0.9) {
-      this.openerPhase = 'closing'
-      this.openerTarget = 0
-    } else if (this.openerPhase === 'closing' && this.openerProgress < 0.05) {
-      this.openerPhase = 'done'
-    }
-
-    // ── Transition-driven rotation ──
-    // During transition (t > 0): cube rotates toward the next section.
-    // Rotation is proportional to transition progress — at t=0.5 the cube
-    // is mid-rotation, at t=1 it settles at the new angle.
-    // After transition (t=0): cube is static at _idleRotY.
-    const tEase = this._transitionT * this._transitionT * (3 - 2 * this._transitionT) // smoothstep
-    const transitionRot = this._transitionDir * tEase * Math.PI * 0.5 // 90° per transition
+    // ── Transition-driven rotation (the ONLY animation when idle=false) ──
+    // Cube is static at _idleRotY. During transition it rotates 90° with
+    // smoothstep easing + subtle tilt + drift. When transition ends,
+    // rotation is committed and cube freezes again.
+    const tEase = this._transitionT * this._transitionT * (3 - 2 * this._transitionT)
+    const transitionRot = this._transitionDir * tEase * Math.PI * 0.5
     this.rotation.y = this._idleRotY + transitionRot
-    // Subtle tilt during transition
     this.rotation.x = tEase * 0.15 * this._transitionDir
 
-    // When transition completes (t drops back to 0), commit the rotation
-    if (this._transitionT > 0.001 && this._transitionT < 0.01 && this._transitionDir !== 0) {
-      // Transition just ended — commit accumulated rotation
+    // Commit rotation when transition ends (progress drops back to ~0)
+    if (this._transitionT < 0.01 && this._transitionDir !== 0 && !this._transitionCommitted) {
       this._idleRotY += this._transitionDir * Math.PI * 0.5
       this._transitionDir = 0
+      this._transitionCommitted = true
       this.rotation.x = 0
+      this.rotation.y = this._idleRotY
+      this.position.x = 0
+      this.position.y = 0
+    }
+    if (this._transitionT > 0.01) {
+      this._transitionCommitted = false
     }
 
-    // Opener: faces pulse outward (then back when closing)
-    const pulse = this.openerProgress * 0.8 // how far faces move out
+    // ── Opener (splash only) — only animate when opener is active ──
+    if (this.openerPhase !== 'done' || this.openerProgress > 0.01) {
+      this.openerProgress += (this.openerTarget - this.openerProgress) * Math.min(1, dt * 4)
+      if (this.openerPhase === 'opening' && this.openerProgress > 0.9) {
+        this.openerPhase = 'closing'
+        this.openerTarget = 0
+      } else if (this.openerPhase === 'closing' && this.openerProgress < 0.05) {
+        this.openerPhase = 'done'
+      }
 
-    for (let i = 0; i < this.faces.length; i++) {
-      const face = this.faces[i]!
-      const dir = face.userData.dir as THREE.Vector3
-      const basePos = face.userData.basePos as THREE.Vector3
-
-      // Move face outward along its normal (pulse) — reuse scratch vector
-      this._tmpFaceOffset.copy(dir).multiplyScalar(pulse)
-      face.position.copy(basePos).add(this._tmpFaceOffset)
-
-      // Slight rotation during pulse
-      face.rotation.z = this.openerProgress * 0.3 * (i % 2 === 0 ? 1 : -1)
-
-      // Edge lines follow faces
-      this.edgeLines[i]!.position.copy(face.position)
-      this.edgeLines[i]!.rotation.copy(face.rotation)
-      this.edgeLines[i]!.rotation.z = face.rotation.z
-      // Edge glow follows progress (brighter as loading completes)
-      const baseEdgeOpacity = 0.4 + this._progress * 0.6
-      ;(this.edgeLines[i]!.material as THREE.LineBasicMaterial).opacity =
-        baseEdgeOpacity * (1 - this.openerProgress * 0.3)
+      // Face pulse — only during opener
+      const pulse = this.openerProgress * 0.8
+      for (let i = 0; i < this.faces.length; i++) {
+        const dir = this.faces[i]!.userData.dir as THREE.Vector3
+        const basePos = this.faces[i]!.userData.basePos as THREE.Vector3
+        this._tmpFaceOffset.copy(dir).multiplyScalar(pulse)
+        this.faces[i]!.position.copy(basePos).add(this._tmpFaceOffset)
+        this.faces[i]!.rotation.z = this.openerProgress * 0.3 * (i % 2 === 0 ? 1 : -1)
+        this.edgeLines[i]!.position.copy(this.faces[i]!.position)
+        this.edgeLines[i]!.rotation.copy(this.faces[i]!.rotation)
+        this.edgeLines[i]!.rotation.z = this.faces[i]!.rotation.z
+      }
     }
 
-    // Apply role/material when role changes (baku behavior)
+    // ── Drift — only during transition ──
+    if (this._transitionT > 0.01) {
+      this.position.x = Noise.organicValue(this.time, 10, 0.3, 0.1) * this._transitionT
+      this.position.y = Noise.organicValue(this.time, 20, 0.4, 0.1) * this._transitionT
+    }
+
+    // ── worldDNA uniforms — only when something is changing ──
+    if (this._transitionT > 0.01 || this.openerProgress > 0.01 || this._blendT > 0.01) {
+      updateWorldDNA({
+        sectionBlend: this._blendT,
+        colorA: this._blendFromColor,
+        colorB: this._blendToColor,
+        emissiveA: this._blendFromEmissive,
+        emissiveB: this._blendToEmissive,
+        time: this.time,
+        displace: this._blendDisplace + this.openerProgress * 0.3,
+        pulse: this.openerProgress,
+      })
+    }
+
+    // Apply role/material when role changes
     if (this.targetParams.role !== this._currentRole) {
       this._currentRole = this.targetParams.role
       this.applyRoleAndParams()
     }
-
-    // Organic drift — only during transition, not idle
-    if (this._transitionT > 0.001 || this.openerProgress > 0.01) {
-      const driftX = Noise.organicValue(this.time, 10, 0.3, 0.1)
-      const driftY = Noise.organicValue(this.time, 20, 0.4, 0.1)
-      this.position.x = driftX * this._transitionT
-      this.position.y = driftY * this._transitionT
-    } else {
-      this.position.x = 0
-      this.position.y = 0
-    }
-
-    // Update worldDNA uniforms — drive vertex displacement + color blend + pulse.
-    // Blend from→to colors by _blendT (scroll progress between sections).
-    updateWorldDNA({
-      sectionBlend: this._blendT,
-      colorA: this._blendFromColor,
-      colorB: this._blendToColor,
-      emissiveA: this._blendFromEmissive,
-      emissiveB: this._blendToEmissive,
-      time: this.time,
-      displace: this._blendDisplace + this.openerProgress * 0.3,
-      pulse: this.openerProgress,
-    })
   }
 
   /** Update worldDNA blend state from scroll progress. Called by Experience.update every frame. */
