@@ -103,38 +103,60 @@ export class Experience {
   /** Create a studio environment map (RoomEnvironment → PMREM) for glass
    *  reflections. Called once after world init. Sets scene.environment so
    *  all PBR materials (MeshPhysicalNodeMaterial, MeshStandardMaterial) get
-   *  image-based lighting reflections. Zero per-frame cost. */
+   *  image-based lighting reflections. Zero per-frame cost.
+   *
+   *  IMPORTANT: PMREMGenerator is WebGLRenderer-only. On WebGPURenderer
+   *  (real WebGPU OR WebGLBackend fallback), renderer.state.buffers is
+   *  undefined → PMREMGenerator._sceneToCubeUV() crashes with
+   *  "Cannot read properties of undefined (reading 'buffers')". So we
+   *  only run this on the WebGLRenderer path. On WebGPU, the scene
+   *  environment is left null (glass still gets direct light reflections
+   *  from the scene's lights via PBR, just no image-based reflections). */
   private setupEnvironment(): void {
-    try {
-      // Dynamic import — RoomEnvironment is in three/addons (not in the
-      // main three bundle). Keeps it out of the initial chunk.
-      void import('three/examples/jsm/environments/RoomEnvironment.js').then(({ RoomEnvironment }) => {
-        const renderer = this.renderer.instance as unknown as THREE.WebGLRenderer
-        const pmrem = new THREE.PMREMGenerator(renderer)
-        const envScene = new RoomEnvironment()
-        const envRT = pmrem.fromScene(envScene, 0.04)
-        this.scene.environment = envRT.texture
-        // Dispose the PMREM generator (the texture stays on the GPU).
-        pmrem.dispose()
-        // Dispose the RoomEnvironment scene's geometries/materials.
-        envScene.traverse((obj) => {
-          const mesh = obj as THREE.Mesh
-          if (mesh.geometry) mesh.geometry.dispose()
-          const mat = mesh.material
-          if (mat) {
-            if (Array.isArray(mat)) mat.forEach((m) => m.dispose())
-            else (mat as THREE.Material).dispose()
+    // Only run on WebGLRenderer — PMREMGenerator crashes on WebGPURenderer
+    const isWebGLRenderer = !((this.renderer.instance as unknown as { isWebGPURenderer?: boolean }).isWebGPURenderer)
+    if (!isWebGLRenderer) {
+      if (import.meta.env.DEV) {
+        console.info('[Experience] Skipping RoomEnvironment PMREM — WebGPURenderer detected (PMREMGenerator is WebGLRenderer-only)')
+      }
+      return
+    }
+    // Dynamic import — RoomEnvironment is in three/addons (not in the
+    // main three bundle). Keeps it out of the initial chunk.
+    void import('three/examples/jsm/environments/RoomEnvironment.js')
+      .then(({ RoomEnvironment }) => {
+        try {
+          const renderer = this.renderer.instance as unknown as THREE.WebGLRenderer
+          const pmrem = new THREE.PMREMGenerator(renderer)
+          const envScene = new RoomEnvironment()
+          const envRT = pmrem.fromScene(envScene, 0.04)
+          this.scene.environment = envRT.texture
+          // Dispose the PMREM generator (the texture stays on the GPU).
+          pmrem.dispose()
+          // Dispose the RoomEnvironment scene's geometries/materials.
+          envScene.traverse((obj) => {
+            const mesh = obj as THREE.Mesh
+            if (mesh.geometry) mesh.geometry.dispose()
+            const mat = mesh.material
+            if (mat) {
+              if (Array.isArray(mat)) mat.forEach((m) => m.dispose())
+              else (mat as THREE.Material).dispose()
+            }
+          })
+          if (import.meta.env.DEV) {
+            console.info('[Experience] RoomEnvironment PMREM set — glass reflections active')
           }
-        })
-        if (import.meta.env.DEV) {
-          console.info('[Experience] RoomEnvironment PMREM set — glass reflections active')
+        } catch (e) {
+          if (import.meta.env.DEV) {
+            console.warn('[Experience] RoomEnvironment PMREM generation failed:', e)
+          }
         }
       })
-    } catch (e) {
-      if (import.meta.env.DEV) {
-        console.warn('[Experience] RoomEnvironment setup failed — glass will lack env reflections:', e)
-      }
-    }
+      .catch((e) => {
+        if (import.meta.env.DEV) {
+          console.warn('[Experience] RoomEnvironment import failed:', e)
+        }
+      })
   }
 
   private setupIntro(): void {
