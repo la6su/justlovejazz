@@ -22,10 +22,12 @@ export interface CircularNavOptions {
   sectionLabels: string[]
 }
 
-const DRAG_SENSITIVITY = 0.006 // px → progress: ~170px = full transition (softer)
+const DRAG_SENSITIVITY = 0.0055 // px → progress: ~180px = full transition (tuned for desktop mouse)
 const TAP_THRESHOLD = 8 // px — drag < this = tap
-const COMMIT_THRESHOLD = 0.5 // |progress| > this on release → commit transition
+const COMMIT_THRESHOLD = 0.35 // |progress| > this on release → commit (lower = easier to commit)
 const SETTLE_EPS = 0.01 // |progress - target| < this → snapped (completion detection)
+const FLICK_VELOCITY = 0.45 // px/ms — flick faster than this → commit regardless of distance
+const WHEEL_COOLDOWN = 350 // ms — prevent rapid-fire wheel from skipping sections
 
 export class CircularNav {
   /** Public so Experience can place it. */
@@ -57,12 +59,17 @@ export class CircularNav {
   private _wasActive = false
   /** Pointer capture id (for robust drag tracking outside the arc). */
   private _captureId: number | null = null
+  /** Recent drag samples for velocity computation (t, y pairs). */
+  private _dragSamples: { t: number; y: number }[] = []
+  /** Last wheel event time (for cooldown). */
+  private _lastWheelTime = 0
 
   // Listeners
   private _pointerDownHandler: ((e: PointerEvent) => void) | null = null
   private _pointerMoveHandler: ((e: PointerEvent) => void) | null = null
   private _pointerUpHandler: ((e: PointerEvent) => void) | null = null
   private _keydownHandler: ((e: KeyboardEvent) => void) | null = null
+  private _wheelHandler: ((e: WheelEvent) => void) | null = null
 
   constructor(sectionCount: number, opts?: Partial<CircularNavOptions>) {
     this._sectionCount = Math.max(2, sectionCount)
@@ -182,6 +189,7 @@ export class CircularNav {
       this._dragStartY = e.clientY
       this._dragStartX = e.clientX
       this._dragStartProgress = this._progress
+      this._dragSamples = [{ t: performance.now(), y: e.clientY }]
       this.el.classList.add('is-grabbing')
       // Capture the pointer so pointermove/up keep firing even if the finger
       // leaves the arc or moves quickly across the viewport. Without this,
@@ -208,6 +216,12 @@ export class CircularNav {
       target = clamp(target, -1, 1)
       this._targetProgress = target
       this._progress = target
+      // Track velocity samples (keep last ~120ms for stable velocity estimate)
+      const now = performance.now()
+      this._dragSamples.push({ t: now, y: e.clientY })
+      while (this._dragSamples.length > 2 && this._dragSamples[0]!.t < now - 120) {
+        this._dragSamples.shift()
+      }
     }
     this._pointerUpHandler = (e: PointerEvent) => {
       if (!this._isDragging) return
@@ -228,13 +242,27 @@ export class CircularNav {
         this.handleTap(e.clientX, e.clientY)
         return
       }
-      // Commit if |progress| > threshold, else snap back to 0.
-      // The commit/snap-back animation uses _ease (0.22) for a decisive settle.
-      if (Math.abs(this._progress) > COMMIT_THRESHOLD) {
+      // ── Compute flick velocity (px/ms) from recent samples ──
+      let velocity = 0
+      if (this._dragSamples.length >= 2) {
+        const first = this._dragSamples[0]!
+        const last = this._dragSamples[this._dragSamples.length - 1]!
+        const dt = last.t - first.t
+        if (dt > 0) velocity = (last.y - first.y) / dt
+      }
+      // ── Commit logic: flick OR distance threshold ──
+      // A flick (fast swipe) commits regardless of distance — this is what
+      // makes the swipe feel "natural" on desktop: a quick flick advances,
+      // a slow drag needs to pass the threshold. This matches trackpad +
+      // touchscreen conventions.
+      if (Math.abs(velocity) > FLICK_VELOCITY) {
+        this.commitTransition(velocity > 0 ? 1 : -1)
+      } else if (Math.abs(this._progress) > COMMIT_THRESHOLD) {
         this.commitTransition(this._progress > 0 ? 1 : -1)
       } else {
         this._targetProgress = 0
       }
+      this._dragSamples = []
     }
     this._keydownHandler = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName
@@ -256,11 +284,32 @@ export class CircularNav {
       }
     }
 
+    // ── Mouse wheel / trackpad scroll → section navigation ──
+    // Desktop users instinctively scroll the wheel to navigate. Without this,
+    // the 3D experience feels "broken" on desktop (wheel does nothing).
+    // Cooldown prevents rapid-fire wheel events from skipping sections —
+    // one wheel "tick" = one section, matching the visual transition speed.
+    this._wheelHandler = (e: WheelEvent) => {
+      // Ignore if modal menu is open
+      const menu = document.getElementById('jlz-menu-modal')
+      if (menu && menu.classList.contains('uk-open')) return
+      // Only respond to vertical scroll (ignore horizontal trackpad swipe)
+      if (Math.abs(e.deltaY) < 8) return
+      // Cooldown — prevent rapid-fire from trackpad momentum scroll
+      const now = performance.now()
+      if (now - this._lastWheelTime < WHEEL_COOLDOWN) return
+      this._lastWheelTime = now
+      e.preventDefault()
+      const dir = e.deltaY > 0 ? 1 : -1
+      this.goToDirection(dir as 1 | -1)
+    }
+
     this.arc.addEventListener('pointerdown', this._pointerDownHandler)
     window.addEventListener('pointermove', this._pointerMoveHandler)
     window.addEventListener('pointerup', this._pointerUpHandler)
     window.addEventListener('pointercancel', this._pointerUpHandler)
     window.addEventListener('keydown', this._keydownHandler)
+    window.addEventListener('wheel', this._wheelHandler, { passive: false })
   }
 
   /** Tap on a dot → jump to that section. */
@@ -395,6 +444,7 @@ export class CircularNav {
       window.removeEventListener('pointercancel', this._pointerUpHandler)
     }
     if (this._keydownHandler) window.removeEventListener('keydown', this._keydownHandler)
+    if (this._wheelHandler) window.removeEventListener('wheel', this._wheelHandler)
     this.el.remove()
   }
 }

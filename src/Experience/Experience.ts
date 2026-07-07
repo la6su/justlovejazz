@@ -100,6 +100,43 @@ export class Experience {
     this.scene.add(this.world)
   }
 
+  /** Create a studio environment map (RoomEnvironment → PMREM) for glass
+   *  reflections. Called once after world init. Sets scene.environment so
+   *  all PBR materials (MeshPhysicalNodeMaterial, MeshStandardMaterial) get
+   *  image-based lighting reflections. Zero per-frame cost. */
+  private setupEnvironment(): void {
+    try {
+      // Dynamic import — RoomEnvironment is in three/addons (not in the
+      // main three bundle). Keeps it out of the initial chunk.
+      void import('three/examples/jsm/environments/RoomEnvironment.js').then(({ RoomEnvironment }) => {
+        const renderer = this.renderer.instance as unknown as THREE.WebGLRenderer
+        const pmrem = new THREE.PMREMGenerator(renderer)
+        const envScene = new RoomEnvironment()
+        const envRT = pmrem.fromScene(envScene, 0.04)
+        this.scene.environment = envRT.texture
+        // Dispose the PMREM generator (the texture stays on the GPU).
+        pmrem.dispose()
+        // Dispose the RoomEnvironment scene's geometries/materials.
+        envScene.traverse((obj) => {
+          const mesh = obj as THREE.Mesh
+          if (mesh.geometry) mesh.geometry.dispose()
+          const mat = mesh.material
+          if (mat) {
+            if (Array.isArray(mat)) mat.forEach((m) => m.dispose())
+            else (mat as THREE.Material).dispose()
+          }
+        })
+        if (import.meta.env.DEV) {
+          console.info('[Experience] RoomEnvironment PMREM set — glass reflections active')
+        }
+      })
+    } catch (e) {
+      if (import.meta.env.DEV) {
+        console.warn('[Experience] RoomEnvironment setup failed — glass will lack env reflections:', e)
+      }
+    }
+  }
+
   private setupIntro(): void {
     this.bus
       .channel('intro:opacity', 1)
@@ -132,6 +169,16 @@ export class Experience {
     }
     await this.buildWorld()
     this.bus = StateBus.getInstance()
+
+    // ── Glassmorphism: studio environment map for realistic glass reflections ──
+    // RoomEnvironment is a procedural studio scene (walls + lights) rendered
+    // ONCE to a PMREM (pre-filtered mipmap radiance environment) texture.
+    // This gives the glass cube its reflections — without it, MeshPhysicalMaterial
+    // has NO reflections and glass looks flat/dead. Generated once at init,
+    // costs ZERO per frame. The PMREM also benefits the ground plane (subtle
+    // reflections). try/catch: PMREMGenerator expects WebGLRenderer; on
+    // WebGPURenderer it may fail (duck-typed), so we fall back gracefully.
+    this.setupEnvironment()
 
     // CircularNav — created BEFORE DevPanel so DevPanel can read nav state
     this._circNav = new CircularNav(6, {

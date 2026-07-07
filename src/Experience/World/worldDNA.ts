@@ -77,10 +77,13 @@ export const worldEmissiveNode = Fn(() => {
   return baseEmissive.add(vec3(rim.mul(0.1)))
 })
 
-// Roughness node — noise-modulated for varied surface response
+// Roughness node — noise-modulated for varied surface response.
+// Very low base (0.03) + subtle noise (±0.02) = 0.03-0.05 range.
+// This gives razor-sharp glass reflections with tiny imperfections.
+// Higher values would blur the env-map reflections and lose the glass look.
 export const worldRoughnessNode = Fn(() => {
   const n = mx_noise_float(positionLocal.mul(3.0))
-  return n.mul(0.05).add(0.08)
+  return n.mul(0.02).add(0.03)
 })
 
 /** Attach worldDNA to a MeshPhysicalNodeMaterial. Call once per material. */

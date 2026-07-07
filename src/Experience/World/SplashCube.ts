@@ -88,27 +88,32 @@ export class SplashCube extends THREE.Mesh {
     const half = size / 2
 
     // ── ONE shared NodeMaterial for all 6 faces ──
-    // All faces use the same worldDNA TSL shader. Sharing one material means
-    // only ONE uniform group is created on WebGL2 (6 separate NodeMaterials
-    // would exceed the WebGL limit of ~12-16 binding points). The cube faces
-    // are always clean glass — BakuCarousel handles the works-section visuals
-    // with its own per-card meshes, so no per-face textures are needed here.
+    // Glassmorphism: studio-grade glass with strong env-map reflections,
+    // low roughness (sharp highlights), high clearcoat (surface gloss),
+    // iridescence (rainbow edge shimmer), and real transmission on WebGPU.
+    // On WebGL2 fallback, transmission is disabled (crashes) — we fake glass
+    // via opacity + strong env reflections + clearcoat. The env map is set
+    // on scene.environment by Experience.setupEnvironment().
     const sharedMat = new MeshPhysicalNodeMaterial({
-      color: 0x1a1a2e,
-      emissive: 0x4a5a8a,
-      emissiveIntensity: 0.3,
+      color: 0xffffff,           // neutral white — section tint comes from worldDNA colorNode
+      emissive: 0x1a2a4a,        // subtle blue glow at edges
+      emissiveIntensity: 0.12,   // very subtle — glass shouldn't self-illuminate much
       transparent: true,
-      opacity: 0.35,
+      opacity: transmissionEnabled ? 0.15 : 0.45, // very transparent on WebGPU (transmission does the rest), more opaque on WebGL2 (fakes glass)
       side: THREE.DoubleSide,
-      roughness: 0.05,
-      metalness: 0.1,
-      iridescence: 1.0,
-      iridescenceIOR: 1.8,
-      clearcoat: 1.0,
-      clearcoatRoughness: 0.05,
-      transmission: transmissionEnabled ? 0.9 : 0,
-      thickness: 0.5,
-      ior: 1.5,
+      roughness: 0.02,           // extremely smooth → razor-sharp reflections
+      metalness: 0.0,            // non-metal (it's dielectric glass)
+      iridescence: 1.0,          // full rainbow shimmer
+      iridescenceIOR: 1.3,       // subtle iridescence shift
+      clearcoat: 1.0,            // full clearcoat — surface gloss
+      clearcoatRoughness: 0.0,   // perfectly smooth clearcoat
+      transmission: transmissionEnabled ? 0.95 : 0, // real refraction on WebGPU only
+      thickness: 1.2,            // thick glass → deeper refraction + stronger attenuation
+      ior: 1.52,                 // crown glass IOR
+      attenuationColor: new THREE.Color(0x8899bb),  // cool blue tint at edges (light absorption)
+      attenuationDistance: 3.0,  // how far light travels before absorbing the tint
+      envMapIntensity: 1.5,      // strong environment reflections (THE key for glass look)
+      depthWrite: false,         // don't write depth — transparent glass shouldn't occlude
     })
     attachWorldDNA(sharedMat)
     this.faceMaterials.push(sharedMat)
@@ -121,20 +126,24 @@ export class SplashCube extends THREE.Mesh {
       face.userData = { dir: dir.clone(), basePos: dir.clone().multiplyScalar(half) }
       face.position.copy(face.userData.basePos)
       face.lookAt(dir.clone().multiplyScalar(half * 2))
+      // Render order: transparent faces need sorted rendering. Set explicit
+      // renderOrder so faces render back-to-front for correct alpha blending.
+      face.renderOrder = 2
 
       this.faces.push(face)
       this.add(face)
 
-      // Glowing edge lines
+      // Glowing edge lines — brighten the glass edges for a "framed" look
       const edgeGeo = new THREE.EdgesGeometry(geo)
       const edgeMat = new THREE.LineBasicMaterial({
-        color: 0x8090c0,
+        color: 0xa0b8e0,
         transparent: true,
-        opacity: 0.8,
+        opacity: 0.6,
       })
       const edges = new THREE.LineSegments(edgeGeo, edgeMat)
       edges.position.copy(face.position)
       edges.rotation.copy(face.rotation)
+      edges.renderOrder = 3
       this.edgeLines.push(edges)
       this.add(edges)
     }
@@ -223,18 +232,42 @@ export class SplashCube extends THREE.Mesh {
     // but it keeps the code path clean).
     const dir = this._transitionDir || this._prevTransitionDir
 
+    // ════════════════════════════════════════════════════════════════════
+    // CINEMATIC MULTI-AXIS MOTION
+    // ════════════════════════════════════════════════════════════════════
+    // Persistent (commits to _idleRotY):
+    //   rotation.y — 30° per transition, accumulates
+    //
+    // Transient (sinT-scaled → 0 at start AND end, no jerk on commit):
+    //   rotation.x — tilt (peaks ~7° at mid)
+    //   rotation.z — Dutch roll (peaks ~3.5° at mid — cinematic flair)
+    //   position.x — organic drift
+    //   position.y — organic drift + upward lift (dir-independent "float")
+    //   scale      — breathe (peaks +5% at mid)
+    //
+    // All transient effects return to exactly 0/1 before the section commits,
+    // so the cube settles cleanly into its new idle state with no snap.
+    // ════════════════════════════════════════════════════════════════════
+
     // ── Rotation Y (persistent — commits to _idleRotY) ──
     this.rotation.y = this._idleRotY + dir * tEase * ROT_PER_TRANSITION
 
     // ── Tilt X (transient — peaks at mid, returns to 0) ──
-    this.rotation.x = sinT * 0.10 * dir
+    this.rotation.x = sinT * 0.12 * dir
 
-    // ── Drift XY (transient — organic, returns to origin) ──
-    this.position.x = Noise.organicValue(this.time, 10, 0.22, 0.08) * sinT * dir
-    this.position.y = Noise.organicValue(this.time, 20, 0.30, 0.08) * sinT * dir
+    // ── Dutch roll Z (transient — subtle cinematic angle) ──
+    this.rotation.z = sinT * 0.06 * dir
+
+    // ── Drift XY + lift (transient — organic, returns to origin) ──
+    // X: pure noise drift (directional, peaks at mid)
+    // Y: noise drift (directional) + upward lift (dir-independent "float")
+    // The lift gives the cube a weightless "rising" feel during transitions.
+    this.position.x = Noise.organicValue(this.time, 10, 0.15, 0.08) * sinT * dir
+    this.position.y = Noise.organicValue(this.time, 20, 0.18, 0.08) * sinT * dir
+    this.position.y += sinT * 0.15 // upward lift (always positive — "floats" up)
 
     // ── Scale pulse (transient — subtle weight at mid) ──
-    this.scale.setScalar(1 + sinT * 0.035)
+    this.scale.setScalar(1 + sinT * 0.05)
 
     // ── Save prev state for next frame's commit detection ──
     this._prevTransitionT = this._transitionT
@@ -314,16 +347,20 @@ export class SplashCube extends THREE.Mesh {
 
   private applyRoleAndParams(): void {
     const { color, emissive, roughness, metalness } = this.targetParams
-    // Single shared material — update once (was 6 iterations, now 1)
+    // Single shared material — update once.
+    // NOTE: worldDNA TSL nodes override colorNode, emissiveNode, and
+    // roughnessNode at the shader level. Setting these properties here only
+    // updates the material's "base" values (used as fallback). The actual
+    // rendered color/roughness come from the TSL nodes (section blend).
+    // We DO NOT override glass-defining properties (transmission, clearcoat,
+    // iridescence, envMapIntensity, etc.) — those are set once in buildCube()
+    // and must persist across all sections.
     const mat = this.faceMaterials[0]!
     mat.color.copy(color)
     mat.emissive.copy(emissive)
     mat.roughness = roughness
     mat.metalness = metalness
     mat.wireframe = false
-    // Cube is always clean glass now (BakuCarousel handles works visuals)
-    mat.opacity = transmissionEnabled ? 0.35 : 0.6
-    mat.transmission = transmissionEnabled ? 0.85 : 0
   }
 
   dispose(): void {
