@@ -1,47 +1,10 @@
 // Minimal shell entry: keep first paint path tiny, then lazy-load full app.
 // Errors are surfaced to console + ErrorTracker (not silently swallowed).
 
-// ── Kill Vite dev client completely — prevents ~30s reload loop through proxy ──
-// Vite injects @vite/client in dev mode. Through the Caddy reverse proxy,
-// the WebSocket/polling connection is unstable → Vite client calls
-// location.reload() every ~30s. We need to completely neutralize the Vite
-// client: block WebSocket, override location.reload, and strip the Vite
-// client script tag.
-const _OrigWebSocket = window.WebSocket
-window.WebSocket = function (url: string | URL, protocols?: string | string[]) {
-  const isViteHmr = protocols === 'vite-hmr'
-    || (Array.isArray(protocols) && protocols.includes('vite-hmr'))
-  if (isViteHmr) {
-    return {
-      readyState: 3, // CLOSED — tell Vite the connection failed immediately
-      url: String(url),
-      protocol: '',
-      extensions: '',
-      bufferedAmount: 0,
-      binaryType: 'blob' as BinaryType,
-      close() {},
-      send() {},
-      addEventListener() {},
-      removeEventListener() {},
-      dispatchEvent() { return false },
-      onopen: null,
-      onclose: null,
-      onerror: null,
-      onmessage: null,
-    } as unknown as WebSocket
-  }
-  return new _OrigWebSocket(url, protocols)
-} as unknown as typeof WebSocket
-window.WebSocket.prototype = _OrigWebSocket.prototype
-;(window.WebSocket as any).CONNECTING = _OrigWebSocket.CONNECTING
-;(window.WebSocket as any).OPEN = _OrigWebSocket.OPEN
-;(window.WebSocket as any).CLOSING = _OrigWebSocket.CLOSING
-;(window.WebSocket as any).CLOSED = _OrigWebSocket.CLOSED
-
-// NOTE: can't override location.reload — it's a read-only property on
-// Location in strict mode. The WebSocket block above (readyState: 3 = CLOSED)
-// is sufficient: Vite client sees the connection failed immediately and
-// doesn't enter the polling→reload cycle.
+// NOTE: @vite/client is stripped by the 'strip-vite-client' Vite plugin
+// (vite.config.ts, apply: 'serve'). This prevents the dev client from
+// loading at all — no WebSocket, no polling, no location.reload() loop
+// through the reverse proxy.
 
 // ── Console capture — survives page reload via sessionStorage ──
 // Intercepts ALL console.log/warn/error and stores them in sessionStorage

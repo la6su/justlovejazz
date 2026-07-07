@@ -115,6 +115,20 @@ export default defineConfig({
   },
   plugins: [
     {
+      // Strip @vite/client from HTML in dev mode — prevents the dev client
+      // from loading at all. Without the client, there's no WebSocket, no
+      // polling, no location.reload() loop through the reverse proxy.
+      // File changes require manual page refresh.
+      name: 'strip-vite-client',
+      apply: 'serve',
+      transformIndexHtml(html) {
+        return html.replace(
+          /<script[^>]*src="[^"]*\/@vite\/client[^"]*"[^>]*><\/script>/g,
+          '',
+        )
+      },
+    },
+    {
       // Prerender the 6 home sections into index.html at build time so
       // crawlers (and users with JS disabled / failing) see the real text
       // content immediately instead of an empty <div id="app"></div>.
@@ -157,7 +171,6 @@ export default defineConfig({
     // the HMR WebSocket connection is unstable (proxy idle timeout ~30s).
     // When the WebSocket disconnects, Vite client triggers location.reload(),
     // causing the page to reload every ~30 seconds.
-    // HMR is only useful for local development on localhost:5173.
     hmr: false,
     // Allow the reverse proxy host so Vite doesn't block requests from
     // project.6la.ru (Caddy forwards to localhost:5173).
