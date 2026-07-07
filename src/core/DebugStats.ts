@@ -82,7 +82,12 @@ export class DebugStats {
       this.backend = isWebGPU ? 'WebGPU' : 'WebGL2'
       this.backendDisplay.innerText = `API: ${this.backend}`
       const info = (this.renderer as THREE.WebGLRenderer).info
-      this.drawDisplay.innerText = `DRAW: ${info.render.calls} | TRI: ${info.render.triangles}`
+      // Use drawCalls (per-frame, reset each frame) NOT calls (cumulative since start).
+      // WebGPURenderer: info.render.calls is cumulative (grows forever — not a bug).
+      // info.render.drawCalls is per-frame (reset by info.reset() each frame via autoReset).
+      const renderInfo = info.render as { calls: number; drawCalls?: number; frameCalls?: number; triangles: number }
+      const drawCount = renderInfo.drawCalls ?? renderInfo.frameCalls ?? 0
+      this.drawDisplay.innerText = `DRAW: ${drawCount} | TRI: ${info.render.triangles}`
 
       // Memory (Chrome only for JS heap) — once per second
       const perf = window.performance as BrowserPerformanceWithMemory
