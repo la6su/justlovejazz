@@ -133,10 +133,8 @@ function setupTitleObserver(): void {
   )
   titles.forEach((t) => observer.observe(t))
 
-  // HMR: disconnect observer on hot-reload to prevent phantom observations.
-  if (import.meta.hot) {
-    import.meta.hot.dispose(() => observer.disconnect())
-  }
+  // HMR disabled — import.meta.hot triggers Vite to inject @vite/client
+  // which breaks module loading through the reverse proxy.
 }
 
 /**

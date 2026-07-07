@@ -211,14 +211,5 @@ export class StateBus {
   }
 }
 
-// HMR: clear all state on hot-reload to prevent phantom subscriptions
-// from old StateBus instances lingering across module reloads.
-if (import.meta.hot) {
-  import.meta.hot.dispose(() => {
-    try {
-      StateBus.getInstance().reset()
-    } catch {
-      // StateBus may not exist yet during initial load
-    }
-  })
-}
+// HMR disabled — import.meta.hot triggers Vite to inject @vite/client
+// which breaks module loading through the reverse proxy.
