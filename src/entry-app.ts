@@ -43,7 +43,16 @@ function scheduleUiKitRefresh(): void {
 }
 
 export async function startApp(): Promise<void> {
-  await import('./assets/main.less')
+  // Use ?inline to prevent Vite from injecting @vite/client (updateStyle/
+  // removeStyle) into the CSS module — through the reverse proxy, /@vite/client
+  // resolves to the Next.js app which returns HTML instead of JS, breaking
+  // the entire module loading chain. ?inline returns raw CSS string without
+  // HMR injection.
+  const cssModule = await import('./assets/main.less?inline')
+  // Manually inject the CSS into the document
+  const style = document.createElement('style')
+  style.textContent = (cssModule as unknown as { default: string }).default || ''
+  document.head.appendChild(style)
   ;(UIkit as { use: (p: object) => void }).use(Icons as object)
 
   // Bug 1: don't init UIkit scrollspy yet — it fires during boot (elements
