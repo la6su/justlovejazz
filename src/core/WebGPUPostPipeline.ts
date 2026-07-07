@@ -5,7 +5,7 @@
 
 import { WebGPURenderer, RenderPipeline as TSLRenderPipeline } from 'three/webgpu'
 import { tslBloom, tslPass } from '../types/tsl-helpers'
-import { uniform, uv, fract, dot, vec2, vec3, mix, smoothstep, time, normalize, sin, cos, float } from 'three/tsl'
+import { uniform, uv, fract, dot, vec2, vec3, mix, smoothstep, time, normalize, sin, cos, float, div } from 'three/tsl'
 import * as THREE from 'three'
 import type { Scene, Camera } from 'three'
 
@@ -199,6 +199,19 @@ export class WebGPUPostPipeline {
       .sub(1.0)
       .mul(this._grainStrength)
     color = color.add(gNoise)
+
+    // ── ACES-like tone mapping ──
+    // SAME formula as WebGL2 COMPOSITE_FSG (line 145):
+    //   color = color * (6.2 * color + 0.03) / (color * (4.8 * color + 1.0))
+    // This ensures TONAL PARITY between WebGPU and WebGL2. Without this,
+    // the TSL RenderPipeline's outputNode applies THREE.ACESFilmicToneMapping
+    // (full implementation) which gives a different look than the simplified
+    // ACES approximation in the WebGL2 composite shader.
+    // We disable renderer-level tone mapping (see RenderPipeline.render) and
+    // apply ACES here in the TSL graph instead.
+    const a = color.mul(6.2).add(0.03)
+    const b = color.mul(color.mul(4.8).add(1.0))
+    color = div(color.mul(a), b)
 
     this._pipeline = new TSLRenderPipeline(this._renderer, color)
   }
