@@ -132,37 +132,20 @@ export class Experience {
     }
     await this.buildWorld()
     this.bus = StateBus.getInstance()
-    // Splash cube IS the baku (World.baku is now a SplashCube).
-    // No separate splash object — the cube in the scene is both splash + baku.
-    // DevPanel (Tweakpane) — only in DEV. Toggle with Backquote (`) or Ctrl+D.
-    if (import.meta.env.DEV) {
-      try {
-        const { DevPanel: DevPanelCtor } = await import('../core/DevPanel')
-        this.devPanel = new DevPanelCtor(this)
-      } catch (e) {
-        console.warn('[Experience] DevPanel init failed:', e)
-      }
-    }
-    // Subtitles disabled — will be re-added as a 3D environment element later.
-    // CircularNav: circular swipe navigation from the bottom-right corner.
-    // Drag along the arc to move to NEXT/PREV section (one at a time).
-    // The circle's center is the corner — only the top-left quadrant is
-    // visible (overflow:hidden). Hamburger button opens UIkit modal for
-    // jump navigation.
+
+    // CircularNav — created BEFORE DevPanel so DevPanel can read nav state
     this._circNav = new CircularNav(6, {
       sectionLabels: Experience.SECTION_LABELS,
     })
     this._circNav.onSectionChange((idx) => {
       this._uiMenu?.setActive(idx)
-      this._needsRender = true // section changed → render the new state
+      this._needsRender = true
     })
     this._circNav.onActiveChange((active) => {
-      if (active) this._needsRender = true // transition started → render
+      if (active) this._needsRender = true
     })
 
-    // UIMenu: modal navigation for jumping to a specific section.
-    // Opens via hamburger button (top-right). The SwipeNav scrubber and the
-    // menu are the two navigation surfaces — section scroll is disabled.
+    // UIMenu
     this._uiMenu = new UIMenu({
       sectionLabels: Experience.SECTION_LABELS,
       sectionSubtitles: Experience.SECTION_SUBTITLES,
@@ -171,11 +154,18 @@ export class Experience {
       this._circNav?.goToSection(idx)
     })
 
-    // ── Bottom-right circular nav + hamburger button (placed in body) ──
-    // The CircularNav is a fixed bottom-right circular menu. The hamburger
-    // button sits at the center of the circle (the corner).
     document.body.appendChild(this._circNav.el)
     document.body.appendChild(this._uiMenu.button)
+
+    // DevPanel — created AFTER nav so it can read current section
+    if (import.meta.env.DEV) {
+      try {
+        const { DevPanel: DevPanelCtor } = await import('../core/DevPanel')
+        this.devPanel = new DevPanelCtor(this)
+      } catch (e) {
+        console.warn('[Experience] DevPanel init failed:', e)
+      }
+    }
 
     // Mark the intro section active on init so its DOM content is visible
     // (ContentReveal toggles .section-active on jlz:section-change, but no

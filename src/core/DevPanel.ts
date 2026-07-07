@@ -236,7 +236,14 @@ export class DevPanel {
   }
 
   private applyVisibility(): void {
-    this.pane.element.style.display = this.state.visible ? '' : 'none'
+    const el = this.pane.element
+    if (this.state.visible) {
+      el.style.display = ''
+      el.style.pointerEvents = 'auto'
+    } else {
+      el.style.display = 'none'
+      el.style.pointerEvents = 'none'
+    }
   }
 
   private bindToggle(): void {
