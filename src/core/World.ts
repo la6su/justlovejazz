@@ -10,6 +10,7 @@ import { CinematicLights } from '../Experience/World/Lights'
 import { DrawTrail } from '../Experience/World/DrawTrail'
 import { SplashCube } from '../Experience/World/SplashCube'
 import { EnvSphere } from '../Experience/World/EnvSphere'
+import { ShaderBackground } from '../Experience/World/ShaderBackground'
 import { getWorldConfigForPage, type PhaseConfig } from './WorldConfig'
 import { SectionSceneFactory } from './SectionSceneFactory'
 import { disposeMaterialDeep } from '../Utils/dispose'
@@ -25,6 +26,7 @@ export class World extends THREE.Group {
   public lightsGroup!: CinematicLights
   public drawTrail?: DrawTrail
   public envSphere!: EnvSphere
+  public shaderBg!: ShaderBackground
   public bg!: BG
   public groundPlane!: THREE.Mesh
   public sceneGroups: THREE.Group[] = []
@@ -78,6 +80,13 @@ export class World extends THREE.Group {
     this.envSphere = new EnvSphere()
     this.envSphere.attachToScene(scene)
     this.add(this.envSphere)  // added for lifecycle (update/dispose), not rendering
+
+    // ── ShaderBackground — animated paper-shader plane (21st.dev @reuno-ui port).
+    // Sits at z=-20, behind baku cube (z=0), on top of scene.background.
+    // Vertex displacement (paper undulation) + fragment noise + radial glow.
+    // Transparent edges → Atlas Aurora (scene.background) shows through.
+    this.shaderBg = new ShaderBackground()
+    this.add(this.shaderBg)
 
     // ── BG (color provider — still used for lerp logic, but NOT set as
     // scene.background. EnvSphere renders the background visually. BG.color
@@ -211,6 +220,7 @@ export class World extends THREE.Group {
     // EnvSphere manages scene.background (equirectangular CanvasTexture).
     // Do NOT touch scene.background here — EnvSphere.update() handles it.
     this.envSphere.update(deltaTime)
+    this.shaderBg.update(deltaTime)
     this.sections.forEach((s) => s.update(deltaTime))
 
     // ── On-demand: decorative 3D animations only run when rendering ──
@@ -542,6 +552,8 @@ export class World extends THREE.Group {
     this.baku?.dispose()
     // Dispose env sphere GPU resources
     this.envSphere?.dispose()
+    // Dispose shader background
+    this.shaderBg?.dispose()
     this.groundPlane.geometry.dispose()
     const groundMat = this.groundPlane.material
     if (Array.isArray(groundMat)) groundMat.forEach((m) => m.dispose())
