@@ -206,10 +206,12 @@ export class World extends THREE.Group {
 
   public update(deltaTime: number, needsRender: boolean = true): void {
     this.bg.update(deltaTime)
-    // Keep scene.background as a fallback clear color (needed when rendering
-    // to RT — WebGLRenderer clears with scene.background). EnvSphere renders
-    // on top, providing the procedural gradient + noise + glow.
-    this.sceneRef.background = this.bg.color
+    // EnvSphere is the SOLE background (skybox pattern: depthTest=false,
+    // renderOrder=-1000, renders first). Do NOT set scene.background to a
+    // solid Color — that would clear the framebuffer and could interfere
+    // with EnvSphere visibility on some backend paths. bg.color is kept
+    // only as a programmatic color reference (used by other systems).
+    this.sceneRef.background = null
     this.envSphere.update(deltaTime)
     this.sections.forEach((s) => s.update(deltaTime))
 
