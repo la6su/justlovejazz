@@ -1,34 +1,32 @@
 // ShaderBackground.ts — "background-paper-shaders" port (21st.dev @reuno-ui)
 //
-// Port of the GLSL shader from https://21st.dev/@reuno-ui/components/background-paper-shaders
-// into Three.js TSL (HERMES_RULES §1: no raw ShaderMaterial in scene — TSL only).
+// Port of https://21st.dev/@reuno-ui/components/background-paper-shaders (id: 5732)
+// "Background Paper Shade with grey shaders" — dark grey palette.
 //
-// Original was React Three Fiber <shaderMaterial> with:
-//   - Vertex: sine wave displacement on X/Y (paper-like undulation)
-//   - Fragment: animated noise pattern, 2-color mix, radial glow, alpha fade
+// The original component uses the GLSL shader (vertex displacement + fragment noise)
+// but the DEMO shows it paired with a MeshGradient in dark grey colors:
+//   ["#000000", "#1a1a1a", "#333333", "#ffffff"]
 //
-// This port uses MeshBasicNodeMaterial with:
-//   - positionNode: vertex displacement (sine/cos undulation)
-//   - colorNode: fragment shader (noise + color mix + glow + alpha)
+// This port uses the SAME GLSL shader logic (ported to TSL per HERMES §1) but
+// with the dark grey palette from the demo. The shader is OPAQUE (no alpha
+// fade at edges) — it's the SOLE background, not a layered overlay.
 //
-// Rendered as a fullscreen plane BEHIND the baku cube, ON TOP of scene.background
-// (the Atlas Aurora CanvasTexture). The shader has transparent edges (glow-based
-// alpha) so the Aurora shows through at the edges → layered cinematic effect.
-//
-// Skybox-like render pattern: depthTest=false, depthWrite=false, renderOrder=-999
-// (renders after scene.background clear, before baku cube at renderOrder=0).
+// Placement: fullscreen plane at z=-30, behind everything (renderOrder=-1000).
+// Replaces scene.background Atlas Aurora when active.
 
 import * as THREE from 'three'
 import { MeshBasicNodeMaterial } from 'three/webgpu'
-import { Fn, vec3, vec4, float, uniform, uv, positionLocal, sin, cos, mix, pow, length, abs } from 'three/tsl'
+import { Fn, vec3, vec4, float, uniform, uv, positionLocal, sin, cos, mix, pow, abs } from 'three/tsl'
 import { prefersReducedMotion } from '../../core/motionPolicy'
 
 // Uniforms — driven by update() each frame
 const shaderUniforms = {
   uTime: uniform(0),
   uIntensity: uniform(1.0),
-  uColor1: uniform(new THREE.Color(0xff5722)),  // vivid orange (original default)
-  uColor2: uniform(new THREE.Color(0xffffff)),  // white
+  // Dark grey palette (from @reuno-ui demo): #1a1a1a → #4a4a4a
+  // Slightly lighter than pure black so the noise pattern is visible.
+  uColor1: uniform(new THREE.Color(0x1a1a1a)),  // dark grey (shadow)
+  uColor2: uniform(new THREE.Color(0x4a4a4a)),  // lighter grey (highlight)
 }
 
 // ── Vertex displacement (port of original vertexShader) ──
@@ -54,6 +52,13 @@ const positionNode = Fn(() => {
 // float glow = 1.0 - length(uv - 0.5) * 2.0;
 // glow = pow(glow, 2.0);
 // gl_FragColor = vec4(color * glow, glow * 0.8);
+//
+// ADAPTATION for dark grey background (vs original orange/white overlay):
+//   - Removed the radial glow alpha (was making edges transparent).
+//   - Kept the noise pattern + color mix (this is the "paper" texture).
+//   - Kept the subtle white flash on high noise (pow(abs(noise), 2) * intensity).
+//   - Reduced the white flash amplitude (0.15 instead of 1.0) so it reads as
+//     a subtle silver shimmer, not a bright orange flare.
 const colorNode = Fn(() => {
   const vUv = uv()
   const t = shaderUniforms.uTime
@@ -64,16 +69,16 @@ const colorNode = Fn(() => {
   const n2 = sin(vUv.x.mul(35.0).sub(t.mul(2.0))).mul(cos(vUv.y.mul(25.0).add(t.mul(1.2)))).mul(0.5)
   const noise = n1.add(n2)
 
-  // Mix colors based on noise and position
+  // Mix the two grey colors based on noise
   let color = mix(shaderUniforms.uColor1, shaderUniforms.uColor2, noise.mul(0.5).add(0.5))
-  // Bright flash on high noise
-  color = mix(color, vec3(1.0), pow(abs(noise), float(2.0)).mul(intensity))
 
-  // Radial glow — bright center, fades to transparent at edges
-  const glow = pow(float(1.0).sub(length(vUv.sub(0.5)).mul(2.0)), float(2.0))
+  // Subtle silver shimmer on high noise (amplitude 0.15 — was 1.0 in original)
+  // Original mixed toward vec3(1.0) (pure white) — too bright for a dark bg.
+  // We mix toward vec3(0.85) (light grey) at reduced amplitude.
+  color = mix(color, vec3(0.85), pow(abs(noise), float(2.0)).mul(intensity).mul(0.15))
 
-  // vec4: RGB * glow, alpha = glow * 0.8 (transparent edges → Aurora shows through)
-  return vec4(color.mul(glow), glow.mul(0.8))
+  // Return opaque vec4 (alpha=1.0) — this is the SOLE background, no transparency.
+  return vec4(color, 1.0)
 })
 
 export class ShaderBackground extends THREE.Mesh {
@@ -81,28 +86,27 @@ export class ShaderBackground extends THREE.Mesh {
 
   constructor() {
     // Large plane, subdivided (32x32) for vertex displacement.
-    // Positioned at z=-20: behind baku cube (z=0), in front of scene.background.
-    // Size 80x50: covers view at z=-20 with camera at z=7, FOV 50°.
-    const geo = new THREE.PlaneGeometry(80, 50, 32, 32)
+    // Positioned at z=-30: behind baku cube (z=0), serves as the SOLE background.
+    // Size 120x80: covers view at z=-30 with camera at z=7, FOV 50°.
+    const geo = new THREE.PlaneGeometry(120, 80, 32, 32)
     const mat = new MeshBasicNodeMaterial({
-      transparent: true,
       side: THREE.DoubleSide,
       depthTest: false,    // skybox pattern: always render, never occluded
       depthWrite: false,   // don't write depth — baku cube renders on top
       fog: false,
-      toneMapped: false,   // keep shader colors vivid (no ACES)
+      toneMapped: false,   // keep shader colors accurate (no ACES)
     })
     mat.positionNode = positionNode()
     mat.colorNode = colorNode()
 
     super(geo, mat)
     this.name = 'shader-background'
-    this.position.set(0, 0, -20)
+    this.position.set(0, 0, -30)
     this.frustumCulled = false  // always render (background)
-    this.renderOrder = -999     // after scene.background (-1000), before baku (0)
+    this.renderOrder = -1000    // render FIRST (sole background)
   }
 
-  /** Set the two gradient colors. */
+  /** Set the two grey colors. Default: 0x1a1a1a → 0x4a4a4a. */
   setColors(color1: THREE.Color, color2: THREE.Color): void {
     ;(shaderUniforms.uColor1.value as THREE.Color).copy(color1)
     ;(shaderUniforms.uColor2.value as THREE.Color).copy(color2)
