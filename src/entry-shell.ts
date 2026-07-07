@@ -38,24 +38,10 @@ window.WebSocket.prototype = _OrigWebSocket.prototype
 ;(window.WebSocket as any).CLOSING = _OrigWebSocket.CLOSING
 ;(window.WebSocket as any).CLOSED = _OrigWebSocket.CLOSED
 
-// Override location.reload — Vite client calls this when it detects
-// "server connection lost". We block ALL reloads triggered by Vite.
-// (User-initiated reloads via F5/Ctrl+R bypass this — they're not
-// programmatic location.reload() calls.)
-const _origReload = window.location.reload.bind(window.location)
-let _viteReloadBlocked = false
-window.location.reload = function () {
-  // Check call stack — if Vite client is in the stack, block the reload
-  const stack = new Error().stack || ''
-  if (stack.includes('client.mjs') || stack.includes('vite') || _viteReloadBlocked) {
-    if (!_viteReloadBlocked) {
-      _viteReloadBlocked = true
-      console.warn('[entry-shell] Blocked Vite location.reload() — would cause reload loop')
-    }
-    return
-  }
-  _origReload()
-} as typeof window.location.reload
+// NOTE: can't override location.reload — it's a read-only property on
+// Location in strict mode. The WebSocket block above (readyState: 3 = CLOSED)
+// is sufficient: Vite client sees the connection failed immediately and
+// doesn't enter the polling→reload cycle.
 
 // ── Console capture — survives page reload via sessionStorage ──
 // Intercepts ALL console.log/warn/error and stores them in sessionStorage
