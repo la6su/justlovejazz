@@ -291,6 +291,14 @@ export class Experience {
     // cursor light, draw trail, BakuCarousel) when not rendering
     this.world.update(dt, this._needsRender)
 
+    // Drive baku transition animation — pass transition progress + direction
+    // so the cube rotates only during section changes (not continuously).
+    if (this.world?.baku) {
+      const navProgress = this._circNav?._progress ?? 0
+      const navDir = navProgress > 0 ? 1 : navProgress < 0 ? -1 : 0
+      this.world.baku.setTransition(Math.abs(navProgress), navDir)
+    }
+
     // Drive worldDNA section blend — from→to colors + phaseProgress (scroll t).
     if (this.world?.baku) {
       const fromCfg = this.world.getConfig(this.world.sections[this.world.currentSectionIndex]?.phaseConfig?.id ?? 'sec_intro')

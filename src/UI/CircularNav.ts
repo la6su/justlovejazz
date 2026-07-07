@@ -35,7 +35,8 @@ export class CircularNav {
   private _currentSection = 0
   private _sectionCount: number
   private _sectionLabels: string[]
-  private _progress = 0 // -1..1 transition progress (0 = settled)
+  /** Public read-only — Experience uses this to drive baku transition animation. */
+  public _progress = 0 // -1..1 transition progress (0 = settled)
   private _targetProgress = 0
   private _isDragging = false
   private _dragStartY = 0

@@ -167,6 +167,20 @@ export class SplashCube extends THREE.Mesh {
     }
   }
 
+  /** Transition progress (0-1) set by Experience during section change.
+   *  0 = idle (static), 0→1 = transitioning to next section.
+   *  Drives a one-shot rotation + face pulse animation. */
+  private _transitionT = 0
+  private _transitionDir = 0 // +1 = next, -1 = prev
+  private _idleRotY = 0 // accumulated rotation that stays after transition
+
+  /** Called by Experience when a section transition is in progress.
+   *  t = 0..1 (transition progress), dir = +1 (next) or -1 (prev). */
+  setTransition(t: number, dir: number): void {
+    this._transitionT = t
+    this._transitionDir = dir
+  }
+
   update(dt: number): void {
     this.time += dt
 
@@ -179,10 +193,24 @@ export class SplashCube extends THREE.Mesh {
       this.openerPhase = 'done'
     }
 
-    // Rotation: continuous, slows slightly during opener
-    const rotSpeed = 0.5 * (1 - this.openerProgress * 0.3)
-    this.rotation.y += rotSpeed * dt
-    this.rotation.x += rotSpeed * 0.3 * dt
+    // ── Transition-driven rotation ──
+    // During transition (t > 0): cube rotates toward the next section.
+    // Rotation is proportional to transition progress — at t=0.5 the cube
+    // is mid-rotation, at t=1 it settles at the new angle.
+    // After transition (t=0): cube is static at _idleRotY.
+    const tEase = this._transitionT * this._transitionT * (3 - 2 * this._transitionT) // smoothstep
+    const transitionRot = this._transitionDir * tEase * Math.PI * 0.5 // 90° per transition
+    this.rotation.y = this._idleRotY + transitionRot
+    // Subtle tilt during transition
+    this.rotation.x = tEase * 0.15 * this._transitionDir
+
+    // When transition completes (t drops back to 0), commit the rotation
+    if (this._transitionT > 0.001 && this._transitionT < 0.01 && this._transitionDir !== 0) {
+      // Transition just ended — commit accumulated rotation
+      this._idleRotY += this._transitionDir * Math.PI * 0.5
+      this._transitionDir = 0
+      this.rotation.x = 0
+    }
 
     // Opener: faces pulse outward (then back when closing)
     const pulse = this.openerProgress * 0.8 // how far faces move out
@@ -215,11 +243,16 @@ export class SplashCube extends THREE.Mesh {
       this.applyRoleAndParams()
     }
 
-    // Organic drift (baku behavior — subtle position offset)
-    const driftX = Noise.organicValue(this.time, 10, 0.3, 0.1)
-    const driftY = Noise.organicValue(this.time, 20, 0.4, 0.1)
-    this.position.x = driftX
-    this.position.y = driftY
+    // Organic drift — only during transition, not idle
+    if (this._transitionT > 0.001 || this.openerProgress > 0.01) {
+      const driftX = Noise.organicValue(this.time, 10, 0.3, 0.1)
+      const driftY = Noise.organicValue(this.time, 20, 0.4, 0.1)
+      this.position.x = driftX * this._transitionT
+      this.position.y = driftY * this._transitionT
+    } else {
+      this.position.x = 0
+      this.position.y = 0
+    }
 
     // Update worldDNA uniforms — drive vertex displacement + color blend + pulse.
     // Blend from→to colors by _blendT (scroll progress between sections).
