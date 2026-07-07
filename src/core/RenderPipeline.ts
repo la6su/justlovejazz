@@ -181,7 +181,7 @@ const COMPOSITE_FSG = `
       vec2 edge = smoothstep(0.0, 0.02, curveUV) * (1.0 - smoothstep(1.0 - 0.02, 1.0, curveUV));
       color *= edge.x * edge.y;
     }
-    
+
     gl_FragColor = vec4(color, 1.0);
   }
 `
@@ -560,7 +560,7 @@ export class RenderPipeline {
       },
       vertexShader: QUAD_VERTEX,
       fragmentShader: COMPOSITE_FSG,
-      toneMapped: false,
+      toneMapped: true, // true → three.js applies sRGB encode (with NoToneMapping, no ACES)
       depthTest: false,
       depthWrite: false,
     })
