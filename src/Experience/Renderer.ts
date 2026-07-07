@@ -158,6 +158,25 @@ export class Renderer {
 
   private _fog!: THREE.FogExp2
   private _prevBgHex: number = -1
+  /** Cached list of NodeMaterials in the scene — avoids per-frame traverse. */
+  private _nodeMaterials: THREE.Material[] = []
+  private _nodeMaterialsNeedsRebuild = true
+
+  /** Mark the NodeMaterial cache as stale — call when materials are added/removed. */
+  public invalidateNodeMaterialCache(): void {
+    this._nodeMaterialsNeedsRebuild = true
+  }
+
+  private _rebuildNodeMaterialCache(scene: THREE.Scene): void {
+    this._nodeMaterials = []
+    scene.traverse((obj: THREE.Object3D) => {
+      const mat = (obj as THREE.Mesh).material
+      if (mat && !Array.isArray(mat) && (mat as unknown as { isNodeMaterial?: boolean }).isNodeMaterial === true) {
+        this._nodeMaterials.push(mat)
+      }
+    })
+    this._nodeMaterialsNeedsRebuild = false
+  }
 
   update(scene: THREE.Scene, camera: THREE.Camera, dt: number, worldState?: WorldState): void {
     // ── BG + fog ──
@@ -208,14 +227,19 @@ export class Renderer {
     // Safety: disable classic fog on any NodeMaterials in the scene.
     // NodeMaterial handles fog via TSL setupFog() internally, but WebGLRenderer
     // calls refreshFogUniforms which crashes (classic fog uniforms don't exist
-    // in NodeMaterial-compiled programs). This catches materials created after init.
+    // in NodeMaterial-compiled programs).
+    // PERF: use cached NodeMaterial list — avoids per-frame scene.traverse().
+    // Cache is rebuilt only when invalidated (on material add/remove/section change).
     if (!(this.instance as any).isWebGPURenderer ||
         (this.instance as any).backend?.constructor?.name !== 'WebGPUBackend') {
-      scene.traverse((obj: any) => {
-        if (obj.material?.isNodeMaterial && obj.material.fog === true) {
-          obj.material.fog = false
+      if (this._nodeMaterialsNeedsRebuild) {
+        this._rebuildNodeMaterialCache(scene)
+      }
+      for (const mat of this._nodeMaterials) {
+        if ((mat as unknown as { fog?: boolean }).fog === true) {
+          ;(mat as unknown as { fog: boolean }).fog = false
         }
-      })
+      }
     }
 
     // Render scene → post → screen

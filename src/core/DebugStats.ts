@@ -69,34 +69,35 @@ export class DebugStats {
 
     // FPS Calculation
     this.frames++
+    // Update all stats ONCE per second — updating innerText every frame
+    // causes layout reflow (perf hit, especially with long stat strings).
     if (time > this.lastTime + 1000) {
       this.fps = Math.round((this.frames * 1000) / (time - this.lastTime))
       this.frames = 0
       this.lastTime = time
       this.fpsDisplay.innerText = `FPS: ${this.fps}`
       this.frameTimeDisplay.innerText = `FT: ${this.smoothedFrameTime.toFixed(1)}ms`
-      // Backend + draw calls (updated once per second)
+      // Backend + draw calls
       const isWebGPU = (this.renderer as unknown as { isWebGPURenderer?: boolean }).isWebGPURenderer
       this.backend = isWebGPU ? 'WebGPU' : 'WebGL2'
       this.backendDisplay.innerText = `API: ${this.backend}`
       const info = (this.renderer as THREE.WebGLRenderer).info
       this.drawDisplay.innerText = `DRAW: ${info.render.calls} | TRI: ${info.render.triangles}`
-    }
 
-    // Memory Calculation (Chrome only for JS heap)
-    const perf = window.performance as BrowserPerformanceWithMemory
-    if (perf.memory) {
-      const mem = perf.memory
-      const used = Math.round(mem.usedJSHeapSize / 1048576)
-      const total = Math.round(mem.jsHeapSizeLimit / 1048576)
-      this.memDisplay.innerText = `MEM: ${used} / ${total} MB`
-    } else {
-      this.memDisplay.innerText = `MEM: N/A`
-    }
+      // Memory (Chrome only for JS heap) — once per second
+      const perf = window.performance as BrowserPerformanceWithMemory
+      if (perf.memory) {
+        const mem = perf.memory
+        const used = Math.round(mem.usedJSHeapSize / 1048576)
+        const total = Math.round(mem.jsHeapSizeLimit / 1048576)
+        this.memDisplay.innerText = `MEM: ${used} / ${total} MB`
+      } else {
+        this.memDisplay.innerText = `MEM: N/A`
+      }
 
-    // Geometry / Texture count from Three.js renderer
-    const info = (this.renderer as THREE.WebGLRenderer).info
-    this.geoDisplay.innerText = `GEO: ${info.memory.geometries} | TEX: ${info.memory.textures}`
+      // Geometry / Texture count — once per second
+      this.geoDisplay.innerText = `GEO: ${info.memory.geometries} | TEX: ${info.memory.textures}`
+    }
   }
 
   destroy() {

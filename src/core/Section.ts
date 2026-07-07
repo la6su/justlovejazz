@@ -227,9 +227,13 @@ export class Section extends THREE.Group {
       })
     }
     for (const mesh of this._opacityMeshCache) {
-      const mat = mesh.material as THREE.Material & { opacity: number; needsUpdate: boolean }
+      const mat = mesh.material as THREE.Material & { opacity: number }
+      // NOTE: do NOT set mat.needsUpdate = true here. Opacity is a uniform,
+      // not a shader-structure change — needsUpdate would force a full shader
+      // recompile every frame during opacity animation (0→1 over 0.6s = 36
+      // recompiles). The material is already transparent (transparent:true
+      // set at creation), so uniform updates are enough.
       mat.opacity = value
-      mat.needsUpdate = true
     }
   }
 

@@ -222,6 +222,19 @@ export class Experience {
   }
 
   update(time: number) {
+    // Wrap the entire update in try/catch — if any frame throws, log the
+    // error and stop the animation loop gracefully instead of letting the
+    // exception propagate to setAnimationLoop (which can crash the tab /
+    // trigger a browser-level reload on WebGPU device loss).
+    try {
+      this._updateInner(time)
+    } catch (err) {
+      console.error('[Experience] update() threw — stopping render loop to prevent crash loop:', err)
+      ;(this.renderer.instance as any).setAnimationLoop(null)
+    }
+  }
+
+  private _updateInner(time: number) {
     this.time.update(time)
     const dt = this.time.delta / 1000
     this.bus.tick(dt)
@@ -289,6 +302,10 @@ export class Experience {
         configId: cfgForSection?.id,
         index: idx,
       })
+      // Invalidate the NodeMaterial cache — section change may have toggled
+      // group visibility (which doesn't add/remove materials, but the carousel
+      // morph changes card opacity which could affect the material list).
+      this.renderer.invalidateNodeMaterialCache()
       // Bug 4: re-apply project textures when ENTERING works section (idx === 3).
       // Textures are applied once during init, but clearProjectTextures() is called
       // when scrolling through other sections — so they must be re-applied on entry.

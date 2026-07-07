@@ -148,29 +148,35 @@ export class SplashCube extends THREE.Mesh {
   }
 
   /** Project textures for works slider — applied to 4 side faces (0=front,1=right,2=back,3=left).
-   *  Index 4=top, 5=bottom stay glass. */
+   *  Index 4=top, 5=bottom stay glass.
+   *  NOTE: only sets map on first call (when map is null). Subsequent calls
+   *  just update opacity — avoids needsUpdate=true (shader recompile) on
+   *  every section transition. */
   setProjectTextures(textures: (THREE.Texture | null)[]): void {
     for (let i = 0; i < Math.min(4, textures.length); i++) {
       const tex = textures[i]
       if (tex) {
-        this.faceMaterials[i]!.map = tex
-        this.faceMaterials[i]!.opacity = 0.95
-        this.faceMaterials[i]!.transmission = 0
-        this.faceMaterials[i]!.emissiveIntensity = 0.1
-        this.faceMaterials[i]!.needsUpdate = true
+        const mat = this.faceMaterials[i]!
+        if (mat.map !== tex) {
+          mat.map = tex
+          mat.needsUpdate = true
+        }
+        mat.opacity = 0.95
+        mat.transmission = 0
+        mat.emissiveIntensity = 0.1
       }
     }
   }
 
-  /** Clear project textures (back to glass mode). Restores glass material
-   *  properties — map=null, transmission=0.85, opacity=0.35. */
+  /** "Clear" project textures — hides them by setting opacity to glass mode
+   *  WITHOUT removing the map. This avoids needsUpdate=true (shader recompile)
+   *  on every section transition. The texture stays bound but invisible. */
   clearProjectTextures(): void {
     for (let i = 0; i < 4; i++) {
-      this.faceMaterials[i]!.map = null
-      this.faceMaterials[i]!.transmission = transmissionEnabled ? 0.85 : 0
-      this.faceMaterials[i]!.opacity = transmissionEnabled ? 0.35 : 0.6
-      this.faceMaterials[i]!.emissiveIntensity = 0.3
-      this.faceMaterials[i]!.needsUpdate = true
+      const mat = this.faceMaterials[i]!
+      mat.transmission = transmissionEnabled ? 0.85 : 0
+      mat.opacity = transmissionEnabled ? 0.35 : 0.6
+      mat.emissiveIntensity = 0.3
     }
   }
 
@@ -292,21 +298,21 @@ export class SplashCube extends THREE.Mesh {
       mat.emissive.copy(emissive)
       mat.roughness = roughness
       mat.metalness = metalness
-      // No wireframe — the cube should always be glass-like (transparent,
-      //      // iridescent) per junni reference. WIRE/NORMAL/GLASS all use transmission
-      //      // glass, differing only in opacity/transmission values.
       mat.wireframe = false
       // Texture mode (works slider): opaque project images on faces.
-      // Glass mode: transparent see-through glass (junni uTransparent=1).
+      // Glass mode: transparent see-through glass.
       if (mat.map) {
         mat.opacity = 0.95
         mat.transmission = 0
       } else {
-        // All non-textured roles use glass transmission.
         mat.opacity = transmissionEnabled ? 0.35 : 0.6
         mat.transmission = transmissionEnabled ? 0.85 : 0
       }
-      mat.needsUpdate = true
+      // NOTE: needsUpdate = true is NOT needed here — color/emissive/roughness/
+      // metalness/opacity/transmission are all uniforms, not shader-structure
+      // changes. needsUpdate would force a full shader recompile on every role
+      // change, which can cause draw-call spikes on WebGPU (pipeline recreation).
+      // The material is already compiled with all these features enabled at init.
     }
   }
 
