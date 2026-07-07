@@ -53,6 +53,18 @@
       }
     </script>
 
+    <!-- Kill @vite/client before it loads — prevents reload loop through proxy -->
+    <script>
+      // Synchronous inline script — runs before any module scripts.
+      // MutationObserver catches @vite/client script tag as Vite injects it
+      // and removes it before the browser has a chance to execute it.
+      new MutationObserver(function () {
+        document.querySelectorAll('script[src*="/@vite/client"]').forEach(function (s) {
+          s.remove()
+        })
+      }).observe(document.documentElement, { childList: true, subtree: true })
+    </script>
+
     <style>
       * {
         box-sizing: border-box;

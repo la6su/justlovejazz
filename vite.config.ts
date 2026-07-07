@@ -115,17 +115,21 @@ export default defineConfig({
   },
   plugins: [
     {
-      // Strip @vite/client from HTML in dev mode — prevents the dev client
-      // from loading at all. Without the client, there's no WebSocket, no
-      // polling, no location.reload() loop through the reverse proxy.
-      // File changes require manual page refresh.
+      // Strip @vite/client from HTML — prevents the dev client from loading.
+      // Vite injects @vite/client via its own transformIndexHtml hook.
+      // Using enforce: 'post' makes our hook run AFTER Vite's injection,
+      // so we can strip the script tag before it reaches the browser.
+      // Without the client: no WebSocket, no polling, no reload loop.
       name: 'strip-vite-client',
       apply: 'serve',
-      transformIndexHtml(html) {
-        return html.replace(
-          /<script[^>]*src="[^"]*\/@vite\/client[^"]*"[^>]*><\/script>/g,
-          '',
-        )
+      transformIndexHtml: {
+        enforce: 'post',
+        transform(html) {
+          return html.replace(
+            /<script[^>]*src="[^"]*\/@vite\/client[^"]*"[^>]*><\/script>\s*/g,
+            '',
+          )
+        },
       },
     },
     {
