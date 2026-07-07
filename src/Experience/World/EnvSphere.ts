@@ -20,7 +20,7 @@
 
 import * as THREE from 'three'
 import { MeshBasicNodeMaterial } from 'three/webgpu'
-import { Fn, vec3, float, uniform, normalLocal, mix, smoothstep, sin, cos } from 'three/tsl'
+import { Fn, vec3, float, uniform, normalLocal, mix, smoothstep } from 'three/tsl'
 
 // Uniforms — updated by EnvSphere.update() each frame
 const envUniforms = {
@@ -51,9 +51,6 @@ const envColorNode = Fn(() => {
   // normalLocal: unit vector (-1..1) — perfect for sphere-space gradients.
   const nrm = normalLocal
   const y = nrm.y            // -1 (bottom) → 1 (top)
-  const x = nrm.x            // left ↔ right
-  const z = nrm.z            // front ↔ back
-  const t = envUniforms.uTime
 
   // ── Layer 1: Vertical gradient (ground → horizon → zenith) ──
   const horizonMix = smoothstep(float(-0.3), float(0.4), y)
@@ -62,35 +59,28 @@ const envColorNode = Fn(() => {
   // Section blend: mix between colorA and colorB based on uBlend
   color = mix(color, envUniforms.uColorB, envUniforms.uBlend)
 
-  // ── Layer 2: 3 aurora orbs — soft radial spots that drift slowly ──
-  // Each orb has a center that moves on a slow sinusoidal path (period ~30s).
-  // Falloff = smoothstep(1.0, 0.0, distance) → 1 at center, 0 at edge.
-  // The orb colors are added on top, then globally attenuated so they stay
-  // subtle (glassmorphic, not garish).
+  // ── Layer 2: 3 STATIC aurora orbs — soft radial spots at fixed positions ──
+  // No time dependence. Each orb = smoothstep falloff from a fixed center on
+  // the sphere surface. This is the 21st.dev mesh-gradient look: 3-4 color
+  // blobs softly blended, completely static, premium and clean.
+  //
+  // Positions chosen for visual balance: orb1 upper-front-left, orb2 lower-
+  // right, orb3 upper-back. Colors: purple / blue / magenta-pink.
 
-  // Orb 1 — drifts in a slow circle on the upper hemisphere
-  const orb1Cx = sin(t.mul(0.05)).mul(0.5)           // x: -0.5..0.5
-  const orb1Cy = float(0.3).add(sin(t.mul(0.03)).mul(0.15))  // y: 0.15..0.45
-  const orb1Cz = cos(t.mul(0.05)).mul(0.5)           // z: -0.5..0.5
-  const orb1Dist = vec3(orb1Cx, orb1Cy, orb1Cz).sub(nrm).length()
+  // Orb 1 (purple) — upper-front-left
+  const orb1Dist = vec3(float(-0.5), float(0.35), float(0.5)).sub(nrm).length()
   const orb1Falloff = smoothstep(float(0.9), float(0.0), orb1Dist)
-  color = color.add(envUniforms.uOrb1.mul(orb1Falloff.mul(0.18)))
+  color = color.add(envUniforms.uOrb1.mul(orb1Falloff.mul(0.22)))
 
-  // Orb 2 — drifts on the opposite side, lower
-  const orb2Cx = cos(t.mul(0.04).add(float(2.0))).mul(0.6)
-  const orb2Cy = float(0.0).add(sin(t.mul(0.06).add(float(1.0))).mul(0.2))
-  const orb2Cz = sin(t.mul(0.04).add(float(2.0))).mul(0.6)
-  const orb2Dist = vec3(orb2Cx, orb2Cy, orb2Cz).sub(nrm).length()
+  // Orb 2 (blue) — lower-right
+  const orb2Dist = vec3(float(0.6), float(-0.1), float(-0.2)).sub(nrm).length()
   const orb2Falloff = smoothstep(float(1.0), float(0.0), orb2Dist)
-  color = color.add(envUniforms.uOrb2.mul(orb2Falloff.mul(0.15)))
+  color = color.add(envUniforms.uOrb2.mul(orb2Falloff.mul(0.18)))
 
-  // Orb 3 — slow diagonal drift, upper-back
-  const orb3Cx = sin(t.mul(0.025).add(float(4.0))).mul(0.4)
-  const orb3Cy = float(0.5).add(cos(t.mul(0.035)).mul(0.1))
-  const orb3Cz = cos(t.mul(0.025).add(float(4.0))).mul(0.4).sub(float(0.3))
-  const orb3Dist = vec3(orb3Cx, orb3Cy, orb3Cz).sub(nrm).length()
-  const orb3Falloff = smoothstep(float(0.8), float(0.0), orb3Dist)
-  color = color.add(envUniforms.uOrb3.mul(orb3Falloff.mul(0.12)))
+  // Orb 3 (magenta) — upper-back
+  const orb3Dist = vec3(float(0.3), float(0.55), float(-0.6)).sub(nrm).length()
+  const orb3Falloff = smoothstep(float(0.85), float(0.0), orb3Dist)
+  color = color.add(envUniforms.uOrb3.mul(orb3Falloff.mul(0.16)))
 
   // ── Layer 3: Horizon glow — brighter band at y≈0 ──
   const glowBand = smoothstep(float(0.15), float(0.0), y.abs())
@@ -100,15 +90,9 @@ const envColorNode = Fn(() => {
   const zenith = smoothstep(float(0.3), float(1.0), y)
   color = color.mul(float(1.0).sub(zenith.mul(0.4)))
 
-  // ── Layer 5: Subtle horizontal aurora bands (NO noise) ──
-  // Two very-low-amplitude sine waves at different frequencies → gentle
-  // "northern lights" undulation. Amplitude is tiny (0.02) so it reads as
-  // atmosphere, not as a texture. Uses x and z (horizontal) so bands wrap
-  // around the horizon, not the poles.
-  const band1 = sin(x.mul(3.0).add(t.mul(0.1))).mul(0.5).add(0.5)
-  const band2 = sin(z.mul(4.0).sub(t.mul(0.08))).mul(0.5).add(0.5)
-  const auroraBands = band1.mul(band2).mul(smoothstep(float(0.5), float(0.0), y.abs()))
-  color = color.add(envUniforms.uColorC.mul(auroraBands.mul(0.05)))
+  // Note: NO Layer 5 aurora bands anymore. User feedback: "should not move".
+  // Bands with time gave movement; bands without time looked like a texture.
+  // Removed entirely → pure mesh-gradient, completely static.
 
   return color
 })
@@ -186,9 +170,10 @@ export class EnvSphere extends THREE.Mesh {
     ;(envUniforms.uColorB.value as THREE.Color).copy(this._colorB)
     ;(envUniforms.uColorC.value as THREE.Color).copy(this._colorC)
 
-    // Slow rotation for subtle parallax (kept very slow so aurora orbs don't
-    // appear to "race" — they drift on their own sinusoidal paths).
-    this.rotation.y += dt * 0.005
+    // Slow rotation removed — user feedback: background should not move.
+    // The sphere is now completely static (mesh-gradient at fixed positions).
+    // EnvSphere.update() still runs each frame (World.update) to lerp section
+    // colors smoothly on transitions, but does NOT rotate or advance time.
   }
 
   dispose(): void {
