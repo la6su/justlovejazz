@@ -115,17 +115,22 @@ export default defineConfig({
   },
   plugins: [
     {
-      // Intercept /@vite/client request — return empty script instead of
-      // the real Vite client. Without the real client code: no WebSocket,
-      // no polling, no 'server connection lost', no location.reload().
-      // This is the most reliable approach — blocks at the network level.
+      // Intercept /@vite/client request — return a stub with the exports
+      // that source files import (createHotContext, etc.). Without the real
+      // client code: no WebSocket, no polling, no reload loop.
       name: 'block-vite-client',
       apply: 'serve',
       configureServer(server) {
         server.middlewares.use((req, res, next) => {
           if (req.url && req.url.includes('/@vite/client')) {
             res.setHeader('Content-Type', 'text/javascript')
-            res.end('// Vite client disabled — prevents reload loop through proxy')
+            res.end([
+              '// Vite client stub — prevents reload loop through proxy',
+              'export function createHotContext() { return { accept() {}, dispose() {}, prune() {} } }',
+              'export function updateStyle() {}',
+              'export function defineDevServer() {}',
+              'export const transport = null',
+            ].join('\n'))
             return
           }
           next()
