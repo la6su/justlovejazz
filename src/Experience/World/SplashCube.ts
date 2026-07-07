@@ -177,18 +177,17 @@ export class SplashCube extends THREE.Mesh {
   update(dt: number): void {
     this.time += dt
 
-    // ── Transition-driven rotation (the ONLY animation when idle=false) ──
-    // Cube is static at _idleRotY. During transition it rotates 90° with
-    // smoothstep easing + subtle tilt + drift. When transition ends,
-    // rotation is committed and cube freezes again.
+    // ── Transition-driven rotation ──
+    // Cube is static at _idleRotY. During transition it rotates ~30° with
+    // smoothstep easing + subtle tilt + drift. Softer than before.
     const tEase = this._transitionT * this._transitionT * (3 - 2 * this._transitionT)
-    const transitionRot = this._transitionDir * tEase * Math.PI * 0.5
+    const transitionRot = this._transitionDir * tEase * Math.PI * 0.17 // ~30° (was 90°)
     this.rotation.y = this._idleRotY + transitionRot
-    this.rotation.x = tEase * 0.15 * this._transitionDir
+    this.rotation.x = tEase * 0.08 * this._transitionDir // softer tilt (was 0.15)
 
     // Commit rotation when transition ends (progress drops back to ~0)
     if (this._transitionT < 0.01 && this._transitionDir !== 0 && !this._transitionCommitted) {
-      this._idleRotY += this._transitionDir * Math.PI * 0.5
+      this._idleRotY += this._transitionDir * Math.PI * 0.17
       this._transitionDir = 0
       this._transitionCommitted = true
       this.rotation.x = 0
@@ -232,6 +231,9 @@ export class SplashCube extends THREE.Mesh {
 
     // ── worldDNA uniforms — only when something is changing ──
     if (this._transitionT > 0.01 || this.openerProgress > 0.01 || this._blendT > 0.01) {
+      // Scale displacement by transition progress — cube is flat when idle,
+      // gets organic distortion only during transitions.
+      const displaceAmount = this._blendDisplace * Math.max(this._transitionT, this.openerProgress)
       updateWorldDNA({
         sectionBlend: this._blendT,
         colorA: this._blendFromColor,
@@ -239,7 +241,7 @@ export class SplashCube extends THREE.Mesh {
         emissiveA: this._blendFromEmissive,
         emissiveB: this._blendToEmissive,
         time: this.time,
-        displace: this._blendDisplace + this.openerProgress * 0.3,
+        displace: displaceAmount + this.openerProgress * 0.3,
         pulse: this.openerProgress,
       })
     }

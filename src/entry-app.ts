@@ -84,10 +84,22 @@ export async function startApp(): Promise<void> {
   // dispatches `jlj:navigate` via window.dispatchEvent (not eventBus), so the
   // listener never fired, and it referenced the now-deleted SmoothScroll.
   // UIkit refresh on SPA nav is handled by router.ts itself via UIkit.update.
-  // The jlz:section-change manual scrollspy refresh handler was removed —
-  // it caused forced reflows (getBoundingClientRect) on every section change
-  // and fought with UIkit's own scroll listener. UIkit scrollspy handles
-  // in-view detection natively.
+
+  // ── Animate titles on section change ──
+  // Sections are position:absolute (all "in viewport"), so IntersectionObserver
+  // fires for all of them simultaneously. Instead, listen to jlz:section-change
+  // and animate the title of the newly active section directly.
+  eventBus.on('jlz:section-change', (payload) => {
+    if (!payload?.sectionId) return
+    const section = document.querySelector(`[data-section="${payload.sectionId}"]`)
+    if (!section) return
+    const title = section.querySelector<HTMLElement>('.studio-title')
+    if (title) {
+      const text = title.textContent?.trim() || ''
+      if (text) NoiseText.for(title).show(1.5) // 1.5s — softer/longer
+    }
+  })
+
   void boot()
 }
 

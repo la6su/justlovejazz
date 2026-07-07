@@ -22,7 +22,7 @@ export interface CircularNavOptions {
   sectionLabels: string[]
 }
 
-const DRAG_SENSITIVITY = 0.008 // px → progress: ~125px = full transition
+const DRAG_SENSITIVITY = 0.006 // px → progress: ~170px = full transition (softer)
 const TAP_THRESHOLD = 8 // px — drag < this = tap
 
 export class CircularNav {
@@ -43,7 +43,7 @@ export class CircularNav {
   private _dragStartX = 0
   private _dragStartProgress = 0
   private _transitioning = false
-  private _ease = 0.14
+  private _ease = 0.08 // softer settle (was 0.14 — too snappy)
   private _onSectionChange: ((index: number) => void) | null = null
   /** Called when transition starts or ends (for on-demand rendering). */
   private _onActiveChange: ((active: boolean) => void) | null = null
@@ -293,7 +293,7 @@ export class CircularNav {
     if (Math.abs(this._targetProgress - this._progress) < 0.0005) {
       this._progress = this._targetProgress
     }
-    if (this._transitioning && Math.abs(this._progress) > 0.92) {
+    if (this._transitioning && Math.abs(this._progress) > 0.85) {
       this._completeTransition()
       this._onActiveChange?.(false)
     }
