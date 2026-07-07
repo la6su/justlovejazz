@@ -1,6 +1,47 @@
 // Minimal shell entry: keep first paint path tiny, then lazy-load full app.
 // Errors are surfaced to console + ErrorTracker (not silently swallowed).
 
+// ── Block Vite HMR WebSocket — prevents ~30s reload loop through proxy ──
+// Vite injects @vite/client in dev mode which opens a WebSocket. Through a
+// reverse proxy (Caddy), the WS idle-times out after ~30s → Vite client
+// calls location.reload() → reload loop.
+// `server.hmr: false` in vite.config.ts doesn't prevent the client from
+// loading — it still tries to connect. So we block the WebSocket creation
+// at the browser level, targeting only the 'vite-hmr' protocol.
+const _OrigWebSocket = window.WebSocket
+window.WebSocket = function (url: string | URL, protocols?: string | string[]) {
+  const isViteHmr = protocols === 'vite-hmr'
+    || (Array.isArray(protocols) && protocols.includes('vite-hmr'))
+  if (isViteHmr) {
+    // Return a fake WebSocket that never connects — Vite client sees
+    // readyState=0 (connecting) forever, never gets onclose/onerror,
+    // never triggers the disconnect→poll→reload cycle.
+    return {
+      readyState: 0,
+      url: String(url),
+      protocol: '',
+      extensions: '',
+      bufferedAmount: 0,
+      binaryType: 'blob' as BinaryType,
+      close() {},
+      send() {},
+      addEventListener() {},
+      removeEventListener() {},
+      dispatchEvent() { return false },
+      onopen: null,
+      onclose: null,
+      onerror: null,
+      onmessage: null,
+    } as unknown as WebSocket
+  }
+  return new _OrigWebSocket(url, protocols)
+} as unknown as typeof WebSocket
+window.WebSocket.prototype = _OrigWebSocket.prototype
+;(window.WebSocket as any).CONNECTING = _OrigWebSocket.CONNECTING
+;(window.WebSocket as any).OPEN = _OrigWebSocket.OPEN
+;(window.WebSocket as any).CLOSING = _OrigWebSocket.CLOSING
+;(window.WebSocket as any).CLOSED = _OrigWebSocket.CLOSED
+
 // ── Console capture — survives page reload via sessionStorage ──
 // Intercepts ALL console.log/warn/error and stores them in sessionStorage
 // so we can read them AFTER the reload (the ~30s reload wipes the console).
