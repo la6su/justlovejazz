@@ -45,30 +45,31 @@ const envColorNode = Fn(() => {
   color = mix(color, envUniforms.uColorB, envUniforms.uBlend)
 
   // 3 drifting orbs (Atlas Aurora keyframes, ~30s period)
+  // -Z hemisphere (visible from camera at z=+7 looking toward z=-2)
   const orb1Cx = float(-0.40).add(sin(t.mul(0.21)).mul(0.08))
   const orb1Cy = float(0.40).add(cos(t.mul(0.21)).mul(0.08))
-  const orb1Dist = vec3(orb1Cx, orb1Cy, float(0.70)).sub(nrm).length()
+  const orb1Dist = vec3(orb1Cx, orb1Cy, float(-0.70)).sub(nrm).length()
   const orb1Falloff = smoothstep(float(1.3), float(0.0), orb1Dist)
   color = mix(color, envUniforms.uOrb1, orb1Falloff.mul(0.85))
 
   const orb2Cx = float(0.50).add(sin(t.mul(0.19).add(float(1.5))).mul(0.09))
   const orb2Cy = float(0.05).add(cos(t.mul(0.19).add(float(1.5))).mul(0.07))
-  const orb2Dist = vec3(orb2Cx, orb2Cy, float(0.60)).sub(nrm).length()
+  const orb2Dist = vec3(orb2Cx, orb2Cy, float(-0.60)).sub(nrm).length()
   const orb2Falloff = smoothstep(float(1.3), float(0.0), orb2Dist)
   color = mix(color, envUniforms.uOrb2, orb2Falloff.mul(0.80))
 
   const orb3Cx = float(0.10).add(sin(t.mul(0.21).add(float(3.0))).mul(0.06))
   const orb3Cy = float(0.50).add(cos(t.mul(0.21).add(float(3.0))).mul(0.08))
-  const orb3Dist = vec3(orb3Cx, orb3Cy, float(0.55)).sub(nrm).length()
+  const orb3Dist = vec3(orb3Cx, orb3Cy, float(-0.55)).sub(nrm).length()
   const orb3Falloff = smoothstep(float(1.2), float(0.0), orb3Dist)
   color = mix(color, envUniforms.uOrb3, orb3Falloff.mul(0.80))
 
-  // Diagonal sweep (~26s)
+  // Diagonal sweep (~26s) — also -Z hemisphere
   const sweepPhase = sin(t.mul(0.24))
   const sweepX = sweepPhase.mul(0.30)
   const sweepDistX = nrm.x.sub(sweepX)
   const sweepDistY = nrm.y.sub(float(0.3))
-  const sweepDist = vec3(sweepDistX, sweepDistY, float(0.5)).length()
+  const sweepDist = vec3(sweepDistX, sweepDistY, float(-0.5)).length()
   const sweepFalloff = smoothstep(float(1.0), float(0.0), sweepDist)
   color = mix(color, envUniforms.uSweep, sweepFalloff.mul(0.35))
 
