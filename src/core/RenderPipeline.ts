@@ -360,12 +360,28 @@ export class RenderPipeline {
     const isRealWebGPU = this._isWebGPU && (this._renderer as any).backend?.constructor?.name === 'WebGPUBackend'
 
     if (isRealWebGPU) {
-      // WebGPU native: direct render (no TSL post-processing pipeline).
-      // The TSL RenderPipeline (PassNode + BloomNode) was causing draw-call
-      // growth + WebGPU device loss (~30s reload). Direct render is stable.
-      // Post-processing (bloom/vignette/grain) is handled via renderer.toneMapping
-      // (ACES) + the section grade uniforms on the shared NodeMaterial.
-      this._renderer.render(scene, camera)
+      // WebGPU native: TSL RenderPipeline + PassNode + BloomNode + vignette/grain Fn.
+      if (!this._webgpuPipeline) {
+        this._webgpuPipeline = WebGPUPostPipeline.create(
+          this._renderer as WebGPURenderer,
+          scene,
+          camera,
+        )
+      }
+      this._webgpuPipeline.setScene(scene, camera)
+      this._webgpuPipeline.updateParams({
+        bloom: this._params.bloom,
+        bloomRadius: this._params.bloomRadius,
+        bloomThreshold: this._params.bloomThreshold,
+        vignette: this._params.vignette,
+        grain: this._params.grain,
+        chromatic: this._params.chromatic,
+        refract: this._sectionRefract,
+        border: this._sectionBorder,
+        gradeShadows: [this._sectionShadows.x, this._sectionShadows.y, this._sectionShadows.z],
+        gradeHighlights: [this._sectionHighlights.x, this._sectionHighlights.y, this._sectionHighlights.z],
+      })
+      this._webgpuPipeline.render()
       return
     }
 

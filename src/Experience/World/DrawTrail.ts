@@ -104,14 +104,8 @@ export class DrawTrail {
       this.colors[i * 3 + 2] = intensity * 1.0 // B
     }
 
-    // On WebGPURenderer, setting attribute.needsUpdate every frame causes
-    // GPU buffer recreation (memory leak → device loss). Only update on WebGL.
-    const isWebGL = !((this.group.parent as any)?.isWebGPURenderer
-      || (this.group.parent?.parent as any)?.isWebGPURenderer)
-    if (isWebGL) {
-      this.geometry.attributes.position!.needsUpdate = true
-      this.geometry.attributes.color!.needsUpdate = true
-    }
+    this.geometry.attributes.position!.needsUpdate = true
+    this.geometry.attributes.color!.needsUpdate = true
   }
 
   setVisible(visible: boolean): void {

@@ -226,15 +226,7 @@ export class World extends THREE.Group {
             arr[i]! += deltaTime * 0.05
             if (arr[i]! > 4) arr[i]! = -2
           }
-          // NOTE: on WebGPURenderer, setting attribute.needsUpdate = true every
-          // frame can cause GPU buffer recreation (memory leak → device loss
-          // after ~30s). Only set needsUpdate on WebGLRenderer (which handles
-          // buffer suballocation efficiently). WebGPU particles stay static
-          // (the visual impact is minimal — particles are subtle background).
-          const isWebGL = !(this.sceneRef as any).isWebGPURenderer
-          if (isWebGL) {
-            attr.needsUpdate = true
-          }
+          attr.needsUpdate = true
         }
       }
 
