@@ -5,7 +5,7 @@
 
 import { WebGPURenderer, RenderPipeline as TSLRenderPipeline } from 'three/webgpu'
 import { tslBloom, tslPass } from '../types/tsl-helpers'
-import { uniform, uv, fract, dot, vec2, vec3, mix, smoothstep, time, normalize, sin, cos, float, div } from 'three/tsl'
+import { uniform, uv, dot, vec2, vec3, mix, smoothstep, step, time, normalize, sin, cos, float, div, fract, floor } from 'three/tsl'
 import * as THREE from 'three'
 import type { Scene, Camera } from 'three'
 
@@ -167,33 +167,55 @@ export class WebGPUPostPipeline {
     color = div(color.mul(a), b)
 
     // ── 7. Film grain ──
-    // WebGL2: grain = (noise(uv*1024 + uTime*10) - 0.5) * 2.0 * uGrain; color += grain;
-    // Note: WebGL2 uses bilinear-interpolated noise; WebGPU uses simple hash.
-    // The difference is subtle at 0.02 intensity. Time offset added for parity.
-    const gCoord = uv().mul(1024.0).add(vec2(time.mul(10.0)))
-    const gNoise = fract(
-      dot(gCoord, vec2(12.9898, 78.233)).mul(43758.5453),
-    )
-      .sub(0.5)
-      .mul(2.0)
-      .mul(this._grainStrength)
-    color = color.add(gNoise)
-
-    // ── 8. Vignette ──
-    // WebGL2: dist = length(vUv-0.5); vig = 1.0 - dist*uVignette; vig = smoothstep(0,1,vig); color *= vig;
-    const vCenter = uv().sub(0.5)
-    const vDist = vCenter.length()
-    const vFactor = smoothstep(0.0, 1.0, float(1.0).sub(vDist.mul(this._vignetteStrength)))
-    color = color.mul(vFactor)
-
+    // MIRROR WebGL2 COMPOSITE_FSG noise() exactly: bilinear-interpolated hash noise
+    // WebGL2: float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+    //         float noise(vec2 p) { vec2 i=floor(p); vec2 f=fract(p); f=f*f*(3-2*f);
+    //               float a=hash(i); float b=hash(i+1,0); float c=hash(i+0,1); float d=hash(i+1,1);
+    //               return mix(mix(a,b,f.x), mix(c,d,f.x), f.y); }
+    // TSL parity: inline the hash+noise formula using TSL nodes.
+    // hash(p) = fract(sin(dot(p, vec2(12.9898, 78.233))).mul(43758.5453))
+    // noise(p) = bilinear lerp of 4 hash samples at integer neighbors.
+    const noiseCoord = uv().mul(1024.0).add(vec2(time.mul(10.0)))
+    const nFloor = floor(noiseCoord)
+    // Smoothstep interpolation (f = f*f*(3-2*f) already done above)
+    const nSmooth = fract(noiseCoord).mul(fract(noiseCoord)).mul(float(3.0).sub(fract(noiseCoord).mul(2.0)))
+    // Helper: hash via inline TSL
+    const _hash = (p: any) => fract(sin(dot(p, vec2(12.9898, 78.233))).mul(43758.5453))
+    const nA = _hash(nFloor)
+    const nB = _hash(nFloor.add(vec2(1.0, 0.0)))
+    const nC = _hash(nFloor.add(vec2(0.0, 1.0)))
+    const nD = _hash(nFloor.add(vec2(1.0, 1.0)))
+    const grainNoise = mix(mix(nA, nB, (nSmooth.x as any)), mix(nC, nD, (nSmooth.x as any)), (nSmooth.y as any))
+    // grain = (noise - 0.5) * 2.0 * strength → adds ±strength per pixel
+    const grain = grainNoise.sub(0.5).mul(2.0).mul(this._grainStrength)
+    color = color.add(vec3(grain))
     // ── 9. Screen border ──
-    // WebGL2: barrel distortion + edge smoothstep
-    // WebGPU: simple edge smoothstep (close enough, border is 0 in all sections)
-    const bUv = uv()
-    const bEdgeX = smoothstep(0.0, 0.03, bUv.x).mul(smoothstep(0.0, 0.03, bUv.x.oneMinus()))
-    const bEdgeY = smoothstep(0.0, 0.03, bUv.y).mul(smoothstep(0.0, 0.03, bUv.y.oneMinus()))
-    const bMask = bEdgeX.mul(bEdgeY)
-    color = color.mul(this._borderStrength.oneMinus().add(bMask).min(1.0))
+    // MIRROR WebGL2 COMPOSITE_FSG barrel distortion + edge masking exactly
+    // WebGL2: curveUV = vUv * 2 - 1; offset = curveUV.yx * 0.25;
+    //         curveUV += curveUV * offset * offset; curveUV = curveUV * 0.5 + 0.5;
+    //         edge = smoothstep(0, 0.02, curveUV) * (1 - smoothstep(0.98, 1, curveUV));
+    //         color *= (edge.x * edge.y)  if uBorder > 0
+    //
+    // edge is vec2, but edge.x * edge.y = scalar. All RGB channels multiply by same
+    // scalar → uniform blackening at edges (true CRT frame effect).
+    // Gate: step(0.0, _borderStrength) → 0 when off, 1 when any border > 0.
+    // mix(1.0, edgeScalar, gate) = edgeScalar when border enabled, 1.0 when off.
+    // TSL note: smoothstep() types only accept FloatOrNumber but at runtime WGSL compiles
+    // per-component for vec2. Cast via 'as any' to bypass TS limitation.
+    // TSL note: edge.x / edge.y are getters (not methods) — no parentheses needed.
+    // edge.x is a SplitNode typed as Node by TS; cast to Node<"float"> for .mul().
+    const barrelUV = uv().mul(2.0).sub(1.0)
+    const barrelOffset = barrelUV.yx.mul(0.25)
+    const barrelDistorted = barrelUV.add(barrelUV.mul(barrelOffset).mul(barrelOffset)).mul(0.5).add(0.5)
+    const innerEdge = smoothstep(0.0, 0.02, barrelDistorted as any) as any
+    const outerEdge = smoothstep(0.98, 1.0, barrelDistorted as any).oneMinus() as any
+    const edge = innerEdge.mul(outerEdge)  // Node<"vec2">
+    const edgeScalar: any = (edge.x as any).mul(edge.y as any)  // scalar (Node<"float">)
+    // MIRROR WebGL2: color *= edge.x * edge.y (full, no mix attenuate)
+    // Use step(0.0, _borderStrength) as 0/1 gate: 0 when disabled, 1 when any border.
+    const borderGate = step(float(0.0), this._borderStrength)
+    const borderFactor = mix(float(1.0), edgeScalar, borderGate)
+    color = color.mul(borderFactor)
 
     // ── sRGB encode ──
     // Let TSLRenderPipeline apply sRGB automatically via outputColorTransform=true
