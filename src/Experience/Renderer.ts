@@ -137,6 +137,17 @@ export class Renderer {
       && (this.instance as any).backend?.constructor?.name === 'WebGPUBackend'
     if (isRealWebGPU) {
       setTransmissionEnabled(true)
+      // Log WebGPU device loss — helps diagnose the ~30s reload issue.
+      // three.js sets _isDeviceLost = true on loss, but doesn't reload.
+      // The browser may auto-reload the tab if GPU memory is exhausted.
+      const wg = this.instance as any
+      if (wg.onDeviceLost) {
+        const origHandler = wg.onDeviceLost.bind(wg)
+        wg.onDeviceLost = (info: any) => {
+          console.error('[Renderer] WebGPU device lost!', info)
+          origHandler(info)
+        }
+      }
     }
   }
 
