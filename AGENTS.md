@@ -1,86 +1,53 @@
-# AGENTS.md
+# AGENTS.md — LLM entry point for justlovejazz. Read first.
 
-> Entry point for LLM agents. Read this first, then [docs/STATUS.md](docs/STATUS.md).
-
-## Language
-
-- User responses: Russian. Code/commits/docs: English.
+> Studio-grade 3D portfolio. Vite 8 + TypeScript + Three.js + UIkit 3. Single-page, 6 sections.
 
 ## Docs (priority order)
 
-| File | Read when |
-| --- | --- |
-| [STATUS.md](docs/STATUS.md) ⭐ | **Always first** — canonical state (conflicts → STATUS wins) |
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Understanding structure, modules, render path |
-| [HERMES_RULES.md](docs/HERMES_RULES.md) | Before changing code — hard rules with bug provenance |
-| [JUNNI_REFERENCE.md](docs/JUNNI_REFERENCE.md) | Adding section visuals — patterns to port / NOT to port |
-| [ENVIRONMENT.md](docs/ENVIRONMENT.md) | Env/runtime problems (Chrome/Wayland WebGPU) |
-| [CHANGELOG.md](docs/CHANGELOG.md) | Understanding history |
-| [AUDIT.md](docs/AUDIT.md) | Reference only (historical) |
-
-## Navigation model (current)
-
-| Surface | Role | File |
+| File | Content | Read when |
 | --- | --- | --- |
-| **CircularNav** | Bottom-right vinyl-record dial. Drag along arc → NEXT/PREV (one section). Tap dot → jump. `#circ-nav` | `src/UI/CircularNav.ts` |
-| **UIMenu** | UIkit modal (`uk-modal`). Hamburger `#jlz-menu-toggle` (center of dial). Jump to any section | `src/UI/UIMenu.ts` |
-| **BakuCarousel card click** | Raycast hit on carousel card → `ProjectOverlay` fullscreen | `src/Experience/World/BakuCarousel.ts` |
+| [STATUS.md](docs/STATUS.md) ⭐ | Canonical state | **Always first** |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Modules, render path, navigation | Understanding structure |
+| [HERMES_RULES.md](docs/HERMES_RULES.md) | Hard rules (36) | Before changing code |
+| [JUNNI_REFERENCE.md](docs/JUNNI_REFERENCE.md) | Junni patterns to port / NOT port | Adding section visuals |
+| [CHANGELOG.md](docs/CHANGELOG.md) | Recent merge log | Understanding history |
 
-- Page scroll disabled (`body { overflow: hidden }`). Sections `position:absolute` stacked.
-- `.section-active` toggles visibility on `jlz:section-change`.
-- `CircularNav.getOverallProgress()` → `world.advance()` (replaces scroll).
+## Language
 
-## Key rules (full list in HERMES_RULES.md)
+User responses: Russian. Code/commits/docs: English.
 
-DO:
-- Use built-in materials (MeshStandardMaterial/PointsMaterial/LineBasicMaterial) or ONE shared TSL NodeMaterial per object
-- Use `setAnimationLoop` (not rAF)
-- Set `scene.background` every frame (BG.color is authoritative)
-- Gate console logs with `if (import.meta.env.DEV)`
-- Import CSS via `?inline` (e.g. `import './assets/main.less?inline'`)
-- Wrap `update()` body in try/catch so errors don't stop the loop
-- Dispose all listeners + timers + GPU resources in `dispose()`
+## Navigation model
 
-DON'T:
-- Don't use `import.meta.hot` (breaks proxy) — HMR is disabled
-- Don't re-add Lenis/SmoothScroll, SectionProgress, CameraAnchors, BorderOverlay, FlexibleSlides, AssetManager, GPUResourceManager (all deleted)
-- Don't create 6 NodeMaterials for one object (WebGL binding-point limit)
-- Don't use `info.render.calls` (cumulative) — use `info.render.drawCalls` (per-frame)
-- Don't touch `master-quantum-flares/` (UIkit theme)
-- Don't modify `references/` (READ-ONLY)
-- Don't re-add Subtitles (will return as 3D later)
+| Surface | Role | API |
+| --- | --- | --- |
+| CircularNav | Bottom-right vinyl circle. Drag DOWN=next, UP=prev | `goToSection(i)`, `goToDirection(±1)`, `isActive()`, `onActiveChange(cb)` |
+| UIMenu | UIkit modal, hamburger button | `onNavigate(cb)`, `setActive(i)` |
+| BakuCarousel | Works §4 — cube morphs into ring. Card click→overlay | `onCardClick(cb)`, `isAnimating` getter |
+
+## Key rules (see HERMES_RULES.md for full list)
+
+1. No raw ShaderMaterial in scene — TSL NodeMaterial only
+2. ONE shared NodeMaterial per multi-face object (not 6)
+3. Built-in materials for particles/ground/cards (reduce uniform groups)
+4. `setAnimationLoop` — not rAF
+5. `scene.background` always set (BG.color)
+6. Never remove SplashCube (baku)
+7. Single font: Inter
+8. NoiseText via `jlz:section-change` event (not IntersectionObserver)
+9. `import.meta.hot` — DON'T USE (breaks module loading through proxy)
+10. CSS imports use `?inline` suffix (prevents @vite/client injection)
+11. On-demand rendering: only render when `_needsRender=true`. Don't set it permanently.
+12. Event-driven animations: baku/particles/lights are STATIC when idle. Animate only during transitions.
+13. DrawTrail: works section (idx=3) ONLY
+14. CursorLight: DELETED — don't re-add
+15. `server.hmr: false` + `block-vite-client` plugin in vite.config.ts
+16. Always verify: `bun run lint && bun run type-check && bun run build`
 
 ## Verification
 
 ```bash
-bun run lint         # 0 errors (warnings ok)
-bun run type-check   # strict mode, 0 errors
+bun run lint         # 0 errors
+bun run type-check   # 0 errors (strict)
 bun run build        # must pass
+bun run test:unit    # 54 tests
 ```
-
-## Synchronization
-
-```bash
-git fetch origin && git checkout main && git pull origin main
-git log --oneline -1
-```
-
-`main` is always deployable. Never force-push.
-
-## Stop conditions
-
-- TSL/WebGPU API unclear → ask human
-- Same verify fails after 2 approaches → ask human
-- Design decision not in docs → ask human
-- New dependency needed → ask human
-- Tempted to use `any` outside adapter boundary → STOP, fix types
-
-## Commit format
-
-```
-type: short imperative summary
-
-Body: what changed, why, what bug it fixes.
-```
-
-Types: `fix`, `perf`, `feat`, `refactor`, `docs`, `chore`.
