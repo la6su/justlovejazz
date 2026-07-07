@@ -287,7 +287,9 @@ export class Experience {
     // Always update navigation + world state (cheap), but only render when needed
     const ns = this._circNav?.getOverallProgress() ?? 0
     const { cameraTarget, worldState } = this.world.advance(ns)
-    this.world.update(dt)
+    // World.update: skip decorative animations (baku rotation, particles,
+    // cursor light, draw trail, BakuCarousel) when not rendering
+    this.world.update(dt, this._needsRender)
 
     // Drive worldDNA section blend — from→to colors + phaseProgress (scroll t).
     if (this.world?.baku) {

@@ -198,14 +198,17 @@ export class World extends THREE.Group {
     }
   }
 
-  public update(deltaTime: number): void {
+  public update(deltaTime: number, needsRender: boolean = true): void {
     this.bg.update(deltaTime)
     this.sceneRef.background = this.bg.color
     this.sections.forEach((s) => s.update(deltaTime))
 
-    // Reduced motion: freeze continuous decorative 3D animations
-    // (baku rotation, cursor light, draw trail, particle drift).
-    // Section transitions, bg color, and light lerps still run so navigation works.
+    // ── On-demand: decorative 3D animations only run when rendering ──
+    // When idle (settled on a section, no transition, no cursor movement),
+    // skip baku rotation, cursor light, draw trail, particle drift, and
+    // BakuCarousel updates — the last rendered frame stays on screen.
+    if (!needsRender) return
+
     if (!this.isReducedMotion) {
       this.baku.update(deltaTime)
       this.cursorLight.update(deltaTime)
@@ -215,11 +218,8 @@ export class World extends THREE.Group {
     }
 
     // ── Particle drift — only visible groups, cached Points refs ──
-    // Cache built on first update() call per group to avoid traverse() every frame.
-    // (Junni pattern: each section object owns its update logic.)
     for (const group of this.sceneGroups) {
       if (!group.visible) continue
-      // Build cache on first access
       if (!group.userData._particleCache) {
         const pts: THREE.Points[] = []
         group.traverse((obj) => {
