@@ -3,7 +3,6 @@ import { Sizes } from './Sizes'
 import { Time } from './Time'
 import { Camera } from './Camera'
 import { Renderer } from './Renderer'
-import { DebugStats } from '../core/DebugStats'
 import type { DevPanel } from '../core/DevPanel'
 import { ContentReveal } from './ContentReveal'
 import { Cursor } from './Cursor'
@@ -43,7 +42,6 @@ export class Experience {
   renderer!: Renderer
   private contentReveal!: ContentReveal
   private cursor!: Cursor
-  private debugStats!: DebugStats
   private devPanel: DevPanel | null = null
   public world!: World
   private bus!: StateBus
@@ -129,7 +127,6 @@ export class Experience {
     this.cursor = new Cursor()
     await this.renderer.init()
     if (import.meta.env.DEV) {
-      this.debugStats = new DebugStats(this.renderer.instance)
       // Start long-task + FPS + memory monitoring (DEV only, no-op in PROD).
       PerfMonitor.start()
     }
@@ -381,7 +378,6 @@ export class Experience {
         updateWorldDNAAudio(this.audio.getBass(), this.audio.getMid(), this.audio.getTreble())
       }
       this.cursor.update()
-      this.debugStats?.update(time)
       this.renderer.update(this.scene, this.camera.instance, dt, worldState)
       // Clear flag if nothing is actively changing
       if (!navActive && !introActive && !carouselActive && !openerActive && !camShaking) {
@@ -430,7 +426,6 @@ export class Experience {
     this.cursor.destroy()
     this.world.dispose()
     this.bus.cancelAll()
-    this.debugStats?.destroy()
     this.devPanel?.dispose()
     // Renderer.dispose() cleans up the resize listener AND the pipeline
     // AND the renderer instance (was previously only instance.dispose()).

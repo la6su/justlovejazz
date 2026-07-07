@@ -9,7 +9,7 @@
 // Then this file adds bespoke component styles on top:
 //   - Reset / base body / canvas
 //   - Splash system is inline in index.html (no LESS dependency)
-//   - .custom-cursor / .debug-stats (overlay UX)
+//   - .custom-cursor (overlay UX)
 //   - .scroll-hint
 //   - .jlz-works-ui (works slider overlay — removed)
 //   - .jlz-section-progress (section progress indicator — removed)
@@ -437,29 +437,8 @@ canvas {
 }
 
 /* ════════════════════════════════════════════════════════════════════
-   5. Debug stats overlay
+   5. Debug stats — removed (merged into DevPanel/Tweakpane)
    ════════════════════════════════════════════════════════════════════ */
-
-.debug-stats {
-  position: fixed;
-  top: var(--jlz-space-2);
-  left: var(--jlz-space-2);
-  z-index: var(--jlz-z-toast);
-  background: rgba(0, 0, 0, 0.7);
-  color: #0f0;
-  font-family: var(--jlz-font-mono);
-  font-size: 10px;
-  padding: 5px 10px;
-  border-radius: var(--jlz-radius-md);
-  pointer-events: none;
-  border: 1px solid rgba(0, 255, 0, 0.3);
-  user-select: none;
-}
-
-.debug-stat-line {
-  line-height: 1.2;
-  white-space: nowrap;
-}
 
 /* ════════════════════════════════════════════════════════════════════
    6. Splash — ALL splash CSS is inline in index.html (for instant FCP).
