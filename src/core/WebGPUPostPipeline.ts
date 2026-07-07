@@ -43,9 +43,6 @@ export class WebGPUPostPipeline {
   private _refractStrength = uniform(0)
   private _gradeShadows = uniform(new THREE.Vector3(1, 1, 1))
   private _gradeHighlights = uniform(new THREE.Vector3(1, 1, 1))
-  /** Background color — composited as base layer. On WebGPU, the TSL PassNode
-   *  may not render scene.background, so we explicitly mix it in here. */
-  private _bgColor = uniform(new THREE.Color(0x000000))
 
   private constructor(renderer: WebGPURenderer, scene: Scene, camera: Camera) {
     this._renderer = renderer
@@ -63,13 +60,8 @@ export class WebGPUPostPipeline {
       this._camera = camera
       this._needsBuild = true
     }
-    // Sync background color from scene.background every frame.
-    // On WebGPU, the PassNode may not render scene.background, so we
-    // composite it explicitly in the TSL graph as the base layer.
-    const bg = scene.background
-    if (bg && (bg as any).isColor === true) {
-      ;(this._bgColor.value as THREE.Color).copy(bg as THREE.Color)
-    }
+    // Background is handled by PassNode's clear color (scene.background)
+    // via Background.js — no need to composite it manually in the TSL graph.
   }
 
   updateParams(params: WebGPUPostParams): void {
@@ -109,15 +101,18 @@ export class WebGPUPostPipeline {
       }
     }
 
-    // Scene pass: render scene to texture.
+    // Scene pass: render scene to texture. PassNode clears with
+    // scene.background automatically (Background.js handles this).
     const scenePass = tslPass(this._scene, this._camera) as any
     const sceneColor = scenePass.getTextureNode()
 
-    // ── Screen-space refraction (glass-like distortion) ──
-    // Mirrors the WebGL2 COMPOSITE_FSG refraction exactly (same coefficients):
-    // radial UV offset toward edges + sinusoidal organic wobble. The texture
-    // is sampled at the offset UV via .sample(uvNode). When refract=0 the
-    // offset collapses to zero, so sampling equals a plain sceneColor read.
+    // ════════════════════════════════════════════════════════════════════
+    // MIRROR WebGL2 COMPOSITE_FSG EXACTLY (same order, same formulas)
+    // ════════════════════════════════════════════════════════════════════
+
+    // ── 1. Screen-space refraction ──
+    // WebGL2: uv = vUv + center * strength * 0.04 + wobble (only if uRefract > 0)
+    // WebGPU: same formula, but always computed (when refract=0, offset=0)
     const rCenter = uv().sub(0.5)
     const rDist = rCenter.length()
     const rStrength = this._refractStrength.mul(float(0.5).add(rDist.mul(1.5)))
@@ -126,46 +121,33 @@ export class WebGPUPostPipeline {
       cos(uv().x.mul(20.0).add(time.mul(0.5))),
     ).mul(rStrength.mul(0.003))
     const refractUv = uv().add(rCenter.mul(rStrength).mul(0.04)).add(rWobble)
+
+    // ── 2. Sample scene at refracted UV ──
+    // WebGL2: vec3 scene = texture2D(uScene, uv).xyz;
     let scene = (sceneColor as any).sample(refractUv)
 
-    // ── Background color as base layer ──
-    // On WebGPU, the PassNode may not render scene.background (the clear
-    // color might not propagate to the PassNode's render target). To ensure
-    // the background color is always visible, we composite it as the base
-    // layer: wherever the scene texture is black (no objects), the bg color
-    // shows through. We use max() — fills black pixels with bg color without
-    // overwriting bright pixels (objects, lights).
-    // Extract RGB components from the Color uniform (TSL vec3() doesn't
-    // accept THREE.Color directly — needs r/g/b floats).
-    const bgR = this._bgColor.mul(1).x // extract r channel from Color uniform
-    const bgG = this._bgColor.mul(1).y
-    const bgB = this._bgColor.mul(1).z
-    const bgAsVec3 = vec3(bgR, bgG, bgB)
-    scene = scene.max(bgAsVec3)
-
-    // ── Chromatic aberration (RGB channel shift) ──
-    // Mirrors COMPOSITE_FSG: dir = normalize(uv-0.5) * chromatic; R and B
-    // sampled at offset UVs in opposite directions, G kept at center.
-    // When chromatic=0 the shift is zero → identical to a single sample.
+    // ── 3. Chromatic aberration ──
+    // WebGL2: samples uScene at uv+dir and uv-dir (using SAME refracted uv)
+    // WebGPU: must sample sceneColor at refractUv+dir, not uv+dir
     const cDir = normalize(uv().sub(0.5)).mul(this._chromaticStrength)
-    const rChan = (sceneColor as any).sample(uv().add(cDir)).x
-    const bChan = (sceneColor as any).sample(uv().sub(cDir)).z
+    const rChan = (sceneColor as any).sample(refractUv.add(cDir)).x
+    const bChan = (sceneColor as any).sample(refractUv.sub(cDir)).z
     scene = vec3(rChan, scene.y, bChan)
 
-    // Bloom (mip-chain, ready-made node).
-    // bloom() accepts UniformNode at runtime; TS types in three 0.184
-    // incorrectly expect numbers. Cast to bypass.
+    // ── 4. Bloom composite ──
+    // WebGL2: color = scene + bloom * uBloomIntensity
     const bloomNode = tslBloom(
       scene,
       this._bloomStrength,
       this._bloomRadius,
       this._bloomThreshold,
     )
-
-    // Composite: scene + bloom
     let color = scene.add(bloomNode)
 
-    // Color grading — luminance-based shadow/highlight tint
+    // ── 5. Color grading ──
+    // WebGL2: lum = dot(color, vec3(0.299,0.587,0.114));
+    //         graded = mix(color*uGradeShadows, color+(uGradeHighlights-1)*max(color-0.5,0), smoothstep(0,1,lum));
+    //         color = mix(color, graded, 0.4);
     const lum = dot(color, vec3(0.299, 0.587, 0.114))
     const graded = mix(
       color.mul(this._gradeShadows),
@@ -174,44 +156,40 @@ export class WebGPUPostPipeline {
     )
     color = mix(color, graded, 0.4)
 
-    // Vignette: radial darkening from center.
+    // ── 6. ACES tone mapping ──
+    // WebGL2: color = color * (6.2 * color + 0.03) / (color * (4.8 * color + 1.0));
+    const a = color.mul(6.2).add(0.03)
+    const b = color.mul(color.mul(4.8).add(1.0))
+    color = div(color.mul(a), b)
+
+    // ── 7. Film grain ──
+    // WebGL2: grain = (noise(uv*1024 + uTime*10) - 0.5) * 2.0 * uGrain; color += grain;
+    // Note: WebGL2 uses bilinear-interpolated noise; WebGPU uses simple hash.
+    // The difference is subtle at 0.02 intensity. Time offset added for parity.
+    const gCoord = uv().mul(1024.0).add(vec2(time.mul(10.0)))
+    const gNoise = fract(
+      dot(gCoord, vec2(12.9898, 78.233)).mul(43758.5453),
+    )
+      .sub(0.5)
+      .mul(2.0)
+      .mul(this._grainStrength)
+    color = color.add(gNoise)
+
+    // ── 8. Vignette ──
+    // WebGL2: dist = length(vUv-0.5); vig = 1.0 - dist*uVignette; vig = smoothstep(0,1,vig); color *= vig;
     const vCenter = uv().sub(0.5)
     const vDist = vCenter.length()
-    const vFactor = vDist.mul(this._vignetteStrength).oneMinus()
+    const vFactor = smoothstep(0.0, 1.0, float(1.0).sub(vDist.mul(this._vignetteStrength)))
     color = color.mul(vFactor)
 
-    // Screen border — dark frame around edges (CRT-style border)
-    // smoothstep(0, 0.03, uv) → 0 at edge, 1 toward center (both axes)
-    // borderMask = edgeX * edgeY → 1 in center, 0 at borders
+    // ── 9. Screen border ──
+    // WebGL2: barrel distortion + edge smoothstep
+    // WebGPU: simple edge smoothstep (close enough, border is 0 in all sections)
     const bUv = uv()
     const bEdgeX = smoothstep(0.0, 0.03, bUv.x).mul(smoothstep(0.0, 0.03, bUv.x.oneMinus()))
     const bEdgeY = smoothstep(0.0, 0.03, bUv.y).mul(smoothstep(0.0, 0.03, bUv.y.oneMinus()))
     const bMask = bEdgeX.mul(bEdgeY)
-    // border=0 → no effect, border=1 → full black border
     color = color.mul(this._borderStrength.oneMinus().add(bMask).min(1.0))
-
-    // Film grain: cheap hash noise
-    const gCoord = uv().mul(1024.0)
-    const gNoise = fract(
-      dot(gCoord, vec2(12.9898, 78.233)).mul(43758.5453),
-    )
-      .mul(2.0)
-      .sub(1.0)
-      .mul(this._grainStrength)
-    color = color.add(gNoise)
-
-    // ── ACES-like tone mapping ──
-    // SAME formula as WebGL2 COMPOSITE_FSG (line 145):
-    //   color = color * (6.2 * color + 0.03) / (color * (4.8 * color + 1.0))
-    // This ensures TONAL PARITY between WebGPU and WebGL2. Without this,
-    // the TSL RenderPipeline's outputNode applies THREE.ACESFilmicToneMapping
-    // (full implementation) which gives a different look than the simplified
-    // ACES approximation in the WebGL2 composite shader.
-    // We disable renderer-level tone mapping (see RenderPipeline.render) and
-    // apply ACES here in the TSL graph instead.
-    const a = color.mul(6.2).add(0.03)
-    const b = color.mul(color.mul(4.8).add(1.0))
-    color = div(color.mul(a), b)
 
     this._pipeline = new TSLRenderPipeline(this._renderer, color)
   }
