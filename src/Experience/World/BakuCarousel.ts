@@ -109,6 +109,17 @@ export class BakuCarousel extends THREE.Group {
     return this._morphT
   }
 
+  /** True when the carousel is actively morphing or scrolling (needs rendering). */
+  get isAnimating(): boolean {
+    // Morphing: _morphT not at target
+    const morphing = Math.abs(this._morphTarget - this._morphT) > 0.001
+    // Scrolling: scroll.current not at target
+    const scrolling = Math.abs(this.scroll.target - this.scroll.current) > 0.001
+    // Active drag
+    const dragging = this.isDown
+    return morphing || scrolling || dragging
+  }
+
   /** Set camera reference for raycast-based tap detection. */
   setCamera(cam: THREE.Camera): void {
     this._camera = cam

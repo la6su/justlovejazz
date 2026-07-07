@@ -1,32 +1,20 @@
 // CircularNav.ts — Circular swipe navigation from the bottom-right corner.
 //
-// Inspired by codrops "Building a Circular Navigation with CSS Transforms"
-// (https://tympanus.net/codrops/2013/08/09/building-a-circular-navigation-with-css-transforms/),
-// adapted to our stack: the circle's CENTER is the bottom-right corner of
-// the viewport. Only the top-left quadrant of the circle is visible
-// (overflow:hidden clips the rest).
+// Vinyl-record style circular menu. The circle's CENTER is the bottom-right
+// corner of the viewport. Only the top-left quadrant is visible (overflow:hidden).
 //
-// Layout (bottom-right corner, looking at the visible quadrant):
+// Swipe DOWN on the visible area → transition to NEXT section.
+// Swipe UP → transition to PREV section.
+// Progress 0→1 (0→100%) during drag drives the 3D scene transition.
+// On release: |progress| > 0.5 commits the transition, < 0.5 snaps back.
 //
-//     ╭─────────────╮
-//    /               \
-//   /    02   03      \
-//  |  01         04    |
-//  |  ●(current)       |
-//   \    06   05      /
-//    \               /
-//     ╰─────┬───────╯
-//           └─ center = bottom-right corner (clipped)
+// The progress (0-1) is the SAME value that animates the 3D scene —
+// World.advance() uses getOverallProgress() which combines currentSection
+// + progress. When idle (progress=0, not transitioning), the 3D scene
+// is static — Experience skips rendering to save GPU.
 //
-// The 6 section dots sit on an arc (180° spanning the visible quadrant).
-// The CURRENT section is highlighted. A swipe gesture (drag along the arc)
-// moves to the NEXT or PREV section:
-//   - Drag counter-clockwise (up) → NEXT section
-//   - Drag clockwise (down) → PREV section
-// On release: if the drag passed the midpoint to the next dot, commit;
-// otherwise snap back.
-//
-// A central hamburger button opens the UIkit modal for jump navigation.
+// BakuCarousel (works section) has its own scroll/drag — it doesn't use
+// CircularNav's drag, only its progress for section positioning.
 //
 // Styling: classes in src/assets/main.less (.jlz-circnav*).
 
@@ -34,20 +22,15 @@ export interface CircularNavOptions {
   sectionLabels: string[]
 }
 
-const RADIUS = 150 // px from corner center to the dot arc
-const ARC_START = Math.PI // 180° (left)
-const ARC_END = 1.5 * Math.PI // 270° (top) — spans 90° upward-leftward
-// Dots are spread across ARC_START..ARC_END
+const DRAG_SENSITIVITY = 0.008 // px → progress: ~125px = full transition
 const TAP_THRESHOLD = 8 // px — drag < this = tap
 
 export class CircularNav {
   /** Public so Experience can place it. */
   public el: HTMLDivElement
+  private arc: HTMLDivElement
   private dotsWrap: HTMLDivElement
   private dots: HTMLDivElement[] = []
-  private labels: HTMLSpanElement[] = []
-  private arc: HTMLDivElement
-  private arcFill: HTMLDivElement
   private centerDot: HTMLDivElement
   private _currentSection = 0
   private _sectionCount: number
@@ -55,12 +38,14 @@ export class CircularNav {
   private _progress = 0 // -1..1 transition progress (0 = settled)
   private _targetProgress = 0
   private _isDragging = false
-  private _dragStartAngle = 0
-  private _dragStartProgress = 0
+  private _dragStartY = 0
   private _dragStartX = 0
+  private _dragStartProgress = 0
   private _transitioning = false
   private _ease = 0.14
   private _onSectionChange: ((index: number) => void) | null = null
+  /** Called when transition starts or ends (for on-demand rendering). */
+  private _onActiveChange: ((active: boolean) => void) | null = null
 
   // Listeners
   private _pointerDownHandler: ((e: PointerEvent) => void) | null = null
@@ -72,8 +57,6 @@ export class CircularNav {
     this._sectionCount = Math.max(2, sectionCount)
     this._sectionLabels = opts?.sectionLabels ?? this.defaultLabels(sectionCount)
 
-    // ── Root: fixed bottom-right, overflow hidden — only the top-left
-    //    quadrant of the circle is visible.
     this.el = document.createElement('div')
     this.el.id = 'circ-nav'
     this.el.className = 'jlz-circnav'
@@ -83,56 +66,52 @@ export class CircularNav {
     this.el.setAttribute('aria-valuemax', '100')
     this.el.setAttribute('aria-valuenow', '0')
 
-    // ── Vinyl record base — the dark disc with grooves ──
+    // Vinyl record layers
     const vinyl = document.createElement('div')
     vinyl.className = 'jlz-circnav__vinyl'
     this.el.appendChild(vinyl)
-
-    // ── Vinyl grooves — concentric circles (visual texture) ──
     const grooves = document.createElement('div')
     grooves.className = 'jlz-circnav__grooves'
     this.el.appendChild(grooves)
-
-    // ── Vinyl shine — subtle light reflection sweeping across ──
     const shine = document.createElement('div')
     shine.className = 'jlz-circnav__shine'
     this.el.appendChild(shine)
 
-    // ── Arc background (the visible circular track) ──
+    // Arc track (interactive area — only this gets pointer-events:auto)
     this.arc = document.createElement('div')
     this.arc.className = 'jlz-circnav__arc'
     this.el.appendChild(this.arc)
 
-    // ── Arc fill (shows progress along the arc) ──
-    this.arcFill = document.createElement('div')
-    this.arcFill.className = 'jlz-circnav__arc-fill'
-    this.arc.appendChild(this.arcFill)
+    // Arc fill (shows progress)
+    const arcFill = document.createElement('div')
+    arcFill.className = 'jlz-circnav__arc-fill'
+    this.arc.appendChild(arcFill)
 
-    // ── Dots wrapper (rotates as a whole during drag for live feedback) ──
+    // Dots
     this.dotsWrap = document.createElement('div')
     this.dotsWrap.className = 'jlz-circnav__dots'
     this.el.appendChild(this.dotsWrap)
-
-    // ── Section dots + labels ──
+    const radius = 150
+    const arcStart = Math.PI
+    const arcEnd = 1.5 * Math.PI
     for (let i = 0; i < this._sectionCount; i++) {
-      const angle = this.dotAngle(i)
+      const t = i / (this._sectionCount - 1)
+      const angle = arcStart + t * (arcEnd - arcStart)
       const dot = document.createElement('div')
       dot.className = 'jlz-circnav__dot'
       dot.dataset.section = String(i)
-      dot.style.left = `${Math.cos(angle) * RADIUS}px`
-      dot.style.top = `${Math.sin(angle) * RADIUS}px`
+      dot.style.left = `${Math.cos(angle) * radius}px`
+      dot.style.top = `${Math.sin(angle) * radius}px`
       dot.setAttribute('aria-label', `Go to section ${i + 1}: ${this._sectionLabels[i]}`)
       this.dotsWrap.appendChild(dot)
       this.dots.push(dot)
-
       const label = document.createElement('span')
       label.className = 'jlz-circnav__dot-label'
       label.textContent = this._sectionLabels[i] ?? ''
       dot.appendChild(label)
-      this.labels.push(label)
     }
 
-    // ── Center dot (the corner anchor — indicates current position) ──
+    // Center dot
     this.centerDot = document.createElement('div')
     this.centerDot.className = 'jlz-circnav__center'
     this.el.appendChild(this.centerDot)
@@ -145,30 +124,29 @@ export class CircularNav {
     return Array.from({ length: n }, (_, i) => `Section ${i + 1}`)
   }
 
-  /** Angle (radians) for dot i on the arc.
-   *  Dot 0 at ARC_START (left, 180°), last dot at ARC_END (top, 270°). */
-  private dotAngle(i: number): number {
-    const t = i / (this._sectionCount - 1)
-    return ARC_START + t * (ARC_END - ARC_START)
-  }
-
-  /** Set callback for section change. */
   onSectionChange(cb: (index: number) => void): void {
     this._onSectionChange = cb
   }
 
-  /** Get current section index. */
+  /** Set callback for active-state changes (transition start/end). */
+  onActiveChange(cb: (active: boolean) => void): void {
+    this._onActiveChange = cb
+  }
+
   getSectionIndex(): number {
     return this._currentSection
   }
 
-  /** Get overall scroll progress (0-1 across all sections) for World. */
+  /** Is a transition in progress (progress != 0 or transitioning)? */
+  isActive(): boolean {
+    return Math.abs(this._progress) > 0.001 || this._transitioning
+  }
+
   getOverallProgress(): number {
     const span = this._sectionCount - 1
     return clamp((this._currentSection + this._progress) / span, 0, 1)
   }
 
-  /** Navigate to a specific section (from menu). Snaps progress to 0. */
   goToSection(index: number): void {
     index = Math.max(0, Math.min(this._sectionCount - 1, index))
     if (index === this._currentSection) return
@@ -177,6 +155,8 @@ export class CircularNav {
     this._targetProgress = 0
     this._transitioning = false
     this._onSectionChange?.(index)
+    this._onActiveChange?.(true) // brief active to render the jump
+    setTimeout(() => this._onActiveChange?.(false), 300)
     this.updateUI()
   }
 
@@ -184,25 +164,18 @@ export class CircularNav {
     this._pointerDownHandler = (e: PointerEvent) => {
       if (this._transitioning) return
       this._isDragging = true
-      this._dragStartAngle = this.pointerAngle(e.clientX, e.clientY)
-      this._dragStartProgress = this._progress
+      this._dragStartY = e.clientY
       this._dragStartX = e.clientX
+      this._dragStartProgress = this._progress
       this.el.classList.add('is-grabbing')
+      this._onActiveChange?.(true)
       e.preventDefault()
     }
     this._pointerMoveHandler = (e: PointerEvent) => {
       if (!this._isDragging) return
-      // Compute angular delta from drag start.
-      // Counter-clockwise (angle decreasing) = positive progress (NEXT).
-      const currentAngle = this.pointerAngle(e.clientX, e.clientY)
-      let delta = this._dragStartAngle - currentAngle // positive = CCW = NEXT
-      // Normalize delta to [-PI, PI]
-      while (delta > Math.PI) delta -= 2 * Math.PI
-      while (delta < -Math.PI) delta += 2 * Math.PI
-      // Map angular delta to progress: full quadrant (PI/2) = 1.0 progress
-      const anglePerSection = (ARC_END - ARC_START) / (this._sectionCount - 1)
-      const progressPerRadian = 1 / anglePerSection
-      let target = this._dragStartProgress + delta * progressPerRadian
+      // Vertical drag: DOWN = positive progress (NEXT), UP = negative (PREV)
+      const dy = e.clientY - this._dragStartY
+      let target = this._dragStartProgress + dy * DRAG_SENSITIVITY
       // Rubber-band at boundaries
       const atStart = this._currentSection === 0
       const atEnd = this._currentSection === this._sectionCount - 1
@@ -216,9 +189,9 @@ export class CircularNav {
       if (!this._isDragging) return
       this._isDragging = false
       this.el.classList.remove('is-grabbing')
-      // Check if this was a tap (on a dot) — if so, jump to that section
-      const moved = Math.abs(this._progress - this._dragStartProgress)
-      if (Math.abs(e.clientX - this._dragStartX) < TAP_THRESHOLD && moved < 0.05) {
+      const moved = Math.abs(e.clientX - this._dragStartX) + Math.abs(e.clientY - this._dragStartY)
+      // Tap on a dot → jump to that section
+      if (moved < TAP_THRESHOLD) {
         this.handleTap(e.clientX, e.clientY)
         return
       }
@@ -229,16 +202,15 @@ export class CircularNav {
         this._targetProgress = 0
       }
     }
-
     this._keydownHandler = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA') return
       const menu = document.getElementById('jlz-menu-modal')
       if (menu && menu.classList.contains('uk-open')) return
-      if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
         e.preventDefault()
         this.goToDirection(1)
-      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+      } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
         e.preventDefault()
         this.goToDirection(-1)
       } else if (e.key === 'Home') {
@@ -250,8 +222,6 @@ export class CircularNav {
       }
     }
 
-    // pointerdown on the arc element (pointer-events:auto) — not on el
-    // (which is pointer-events:none except for the arc + dots).
     this.arc.addEventListener('pointerdown', this._pointerDownHandler)
     window.addEventListener('pointermove', this._pointerMoveHandler)
     window.addEventListener('pointerup', this._pointerUpHandler)
@@ -259,18 +229,9 @@ export class CircularNav {
     window.addEventListener('keydown', this._keydownHandler)
   }
 
-  /** Angle of a pointer event relative to the corner center (bottom-right). */
-  private pointerAngle(clientX: number, clientY: number): number {
-    // Center is at bottom-right corner of viewport.
-    const cx = window.innerWidth
-    const cy = window.innerHeight
-    return Math.atan2(clientY - cy, clientX - cx)
-  }
-
   /** Tap on a dot → jump to that section. */
   private handleTap(clientX: number, clientY: number): void {
-    // Find the closest dot to the tap position.
-    let closest = 0
+    let closest = -1
     let closestDist = Infinity
     for (let i = 0; i < this.dots.length; i++) {
       const rect = this.dots[i]!.getBoundingClientRect()
@@ -282,8 +243,7 @@ export class CircularNav {
         closest = i
       }
     }
-    // Only treat as a tap if within ~40px of a dot
-    if (closestDist < 1600) {
+    if (closest >= 0 && closestDist < 1600) {
       this.goToSection(closest)
     }
   }
@@ -307,7 +267,6 @@ export class CircularNav {
     this._targetProgress = dir
   }
 
-  /** Call each frame. */
   update(): void {
     this._progress += (this._targetProgress - this._progress) * this._ease
     if (Math.abs(this._targetProgress - this._progress) < 0.0005) {
@@ -320,30 +279,50 @@ export class CircularNav {
       this._targetProgress = 0
       this._transitioning = false
       this._onSectionChange?.(this._currentSection)
+      this._onActiveChange?.(false)
+    }
+    // If settled (not dragging, not transitioning, progress ≈ 0) → inactive
+    if (!this._isDragging && !this._transitioning && Math.abs(this._progress) < 0.001) {
+      this._onActiveChange?.(false)
     }
     this.updateUI()
   }
 
   private updateUI(): void {
-    // Highlight active dot
+    const pct = this._progress * 50 // -50..50 (center = 0%)
+    const absPct = Math.abs(pct)
+
+    // Arc fill: grows from center toward drag direction
+    const arcFill = this.arc.querySelector('.jlz-circnav__arc-fill') as HTMLElement
+    if (arcFill) {
+      if (pct >= 0) {
+        arcFill.style.left = '50%'
+        arcFill.style.width = absPct + '%'
+        arcFill.classList.remove('is-prev')
+        arcFill.classList.add('is-next')
+      } else {
+        arcFill.style.left = (50 - absPct) + '%'
+        arcFill.style.width = absPct + '%'
+        arcFill.classList.remove('is-next')
+        arcFill.classList.add('is-prev')
+      }
+    }
+
+    // Dots
     this.dots.forEach((dot, i) => {
       const isActive = i === this._currentSection
       const isPassed = i < this._currentSection
       dot.classList.toggle('is-active', isActive)
       dot.classList.toggle('is-passed', isPassed)
     })
-    // Center dot color reflects direction
-    this.centerDot.classList.toggle('is-next', this._progress > 0.01)
-    this.centerDot.classList.toggle('is-prev', this._progress < -0.01)
-    // Arc fill: rotate the fill to show progress
-    // The arc spans 180°→270°. Progress 0 = at current section's dot.
-    // Positive progress fills toward next dot (CCW), negative toward prev (CW).
-    const anglePerSection = (ARC_END - ARC_START) / (this._sectionCount - 1)
-    const fillAngle = this._progress * anglePerSection
-    this.arcFill.style.transform = `rotate(${fillAngle}rad)`
-    // ARIA value
-    const pct = Math.round((this._currentSection / (this._sectionCount - 1)) * 100)
-    this.el.setAttribute('aria-valuenow', String(pct))
+
+    // Center dot color
+    this.centerDot.classList.toggle('is-next', pct > 0.01)
+    this.centerDot.classList.toggle('is-prev', pct < -0.01)
+
+    // ARIA
+    const ariaVal = Math.round(pct + 50)
+    this.el.setAttribute('aria-valuenow', String(ariaVal))
   }
 
   dispose(): void {

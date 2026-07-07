@@ -60,6 +60,8 @@ export class Experience {
   private _onVisibilityChange: (() => void) | null = null
   public audio: AudioSystem = new AudioSystem()
   private _circNav: CircularNav | null = null
+  private _needsRender = true // start true to render the first frame
+  private _bakuCarouselActive = false // BakuCarousel is morphed/scrolling
 
   private static readonly SECTION_LABELS = [
     'Intro',
@@ -155,6 +157,10 @@ export class Experience {
     })
     this._circNav.onSectionChange((idx) => {
       this._uiMenu?.setActive(idx)
+      this._needsRender = true // section changed → render the new state
+    })
+    this._circNav.onActiveChange((active) => {
+      if (active) this._needsRender = true // transition started → render
     })
 
     // UIMenu: modal navigation for jumping to a specific section.
@@ -230,6 +236,17 @@ export class Experience {
   }
 
   private _updateErrorLogged = false
+  private _prevMouseX = 0
+  private _prevMouseY = 0
+
+  /** Check if cursor moved since last frame (for CursorLight rendering). */
+  private _cursorMoved(): boolean {
+    const m = input.getMouse()
+    const moved = Math.abs(m.x - this._prevMouseX) > 0.001 || Math.abs(m.y - this._prevMouseY) > 0.001
+    this._prevMouseX = m.x
+    this._prevMouseY = m.y
+    return moved
+  }
 
   private _updateInner(time: number) {
     this.time.update(time)
@@ -245,17 +262,29 @@ export class Experience {
       this.bus.emit('intro:done')
     }
 
-    // NOTE: portfolio.update(dt) is NOT called — the BakuCarousel now drives
-    // the works section. Calling portfolio.update() would rotate the baku cube
-    // via spring physics, fighting SplashCube.update() which also sets
-    // rotation.y. The portfolio object is retained only as a project-metadata
-    // + texture source for the overlay (onProjectSelect reads .projects).
-
-    // Splash cube (= baku) opener is triggered by main-app via triggerSplashOpener.
-    // jlz:webgl-ready is dispatched by main-app at curtain midpoint (not here).
-
-    // Navigation: CircularNav progress (0-1) replaces scroll progress.
+    // Navigation: CircularNav update
     this._circNav?.update()
+
+    // ── On-demand rendering ──
+    // Only render when something is actually changing:
+    // 1. Section transition in progress (CircularNav progress != 0)
+    // 2. BakuCarousel is active (morphing or scrolling on works section)
+    // 3. Splash/intro animation running
+    // 4. Cursor moved (CursorLight follows cursor)
+    // 5. Audio-reactive (worldDNA uniforms changing)
+    // When idle (settled on a section, no BakuCarousel interaction), skip
+    // the expensive renderer.render() to save GPU.
+    const navActive = this._circNav?.isActive() ?? false
+    const introActive = this.bus.isAnimating('intro:stage') || stage < 1
+    const audioActive = this.audio.started
+    const cursorMoved = this._cursorMoved()
+    const carouselActive = this._bakuCarouselActive
+
+    if (navActive || introActive || audioActive || cursorMoved || carouselActive) {
+      this._needsRender = true
+    }
+
+    // Always update navigation + world state (cheap), but only render when needed
     const ns = this._circNav?.getOverallProgress() ?? 0
     const { cameraTarget, worldState } = this.world.advance(ns)
     this.world.update(dt)
@@ -334,6 +363,10 @@ export class Experience {
     // (BakuCarousel). The carousel is a child of sceneGroups[3] and manages
     // its own visibility via morph.
     const showGallery = cfg?.ui?.showGallery ?? false
+    // Track BakuCarousel active state for on-demand rendering — when morphing
+    // or scrolling, we need to keep rendering.
+    const carousel = this.getCarousel()
+    this._bakuCarouselActive = carousel?.isAnimating ?? false
     // Sync ProjectOverlay (DOM UI layer) — fullscreen opens on card click.
     if (this.overlay && showGallery && !this._portfolioInitialized) {
       this._portfolioInitialized = true
@@ -353,7 +386,17 @@ export class Experience {
     // Here we only tick the lerp update.
     this.world.lightsGroup.update(dt)
     this.camera.update(dt)
-    this.renderer.update(this.scene, this.camera.instance, dt, worldState)
+
+    // Only call renderer.update (expensive: GPU render) when something changed.
+    // When idle, skip rendering to save GPU — the last rendered frame stays.
+    if (this._needsRender) {
+      this.renderer.update(this.scene, this.camera.instance, dt, worldState)
+      // If nothing is actively changing, clear the flag (will be re-set by
+      // transition/cursor/carousel callbacks next frame)
+      if (!navActive && !introActive && !audioActive && !cursorMoved && !carouselActive) {
+        this._needsRender = false
+      }
+    }
 
     // Audio-reactive: update FFT + feed worldDNA uniforms.
     if (this.audio.started) {
