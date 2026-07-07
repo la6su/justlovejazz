@@ -365,9 +365,10 @@ export class Experience {
     const carouselActive = this._bakuCarouselActive
     const baku = this.world?.baku as unknown as { openerPhase?: string } | undefined
     const openerActive = baku?.openerPhase !== 'done' && baku?.openerPhase !== 'idle'
+    const burstActive = this.world?.particleBurst?.isActive ?? false
     const camShaking = this.camera.isShaking
 
-    if (navActive || introActive || carouselActive || openerActive || camShaking) {
+    if (navActive || introActive || carouselActive || openerActive || burstActive || camShaking) {
       this._needsRender = true
     }
 
@@ -510,10 +511,16 @@ export class Experience {
     cube?.setProgress?.(pct / 100)
   }
 
-  /** Trigger the cube opener — faces pulse outward + back. Cube stays as baku. */
+  /** Trigger the cube opener — faces pulse outward + back. Cube stays as baku.
+   *  Also triggers the particle burst (B1-a) — 200 particles fly outward from cube. */
   public triggerSplashOpener(): void {
     const cube = this.world?.baku as unknown as { triggerOpener?: () => void } | undefined
     cube?.triggerOpener?.()
+    // B1-a: trigger particle burst from cube center
+    this.world?.particleBurst?.trigger(0, 0, 0)
+    if (this.world?.particleBurst?.isActive) {
+      this._needsRender = true  // keep rendering while burst is active
+    }
   }
 
   destroy() {

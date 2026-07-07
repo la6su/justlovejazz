@@ -11,8 +11,10 @@ import { DrawTrail } from '../Experience/World/DrawTrail'
 import { SplashCube } from '../Experience/World/SplashCube'
 import { EnvSphere } from '../Experience/World/EnvSphere'
 import { ShaderBackground } from '../Experience/World/ShaderBackground'
+import { ParticleBurst } from '../Experience/World/ParticleBurst'
 import { getWorldConfigForPage, type PhaseConfig } from './WorldConfig'
 import { SectionSceneFactory } from './SectionSceneFactory'
+import { updateInstancedParticles } from '../Sections/_shared/makeInstancedParticles'
 import { disposeMaterialDeep } from '../Utils/dispose'
 
 export interface WorldTransformResult {
@@ -27,6 +29,7 @@ export class World extends THREE.Group {
   public drawTrail?: DrawTrail
   public envSphere!: EnvSphere
   public shaderBg!: ShaderBackground
+  public particleBurst!: ParticleBurst
   public bg!: BG
   public groundPlane!: THREE.Mesh
   public sceneGroups: THREE.Group[] = []
@@ -83,6 +86,11 @@ export class World extends THREE.Group {
     // Vertex displacement (paper undulation) + fragment noise + silver shimmer.
     this.shaderBg = new ShaderBackground()
     this.add(this.shaderBg)
+
+    // ── ParticleBurst — one-shot burst from baku cube on opener (intro).
+    // 200 particles fly outward + fade over 1.2s. Hidden until triggered.
+    this.particleBurst = new ParticleBurst()
+    this.add(this.particleBurst)
 
     // ── BG (color provider — still used for lerp logic, but NOT set as
     // scene.background. EnvSphere renders the background visually. BG.color
@@ -217,6 +225,8 @@ export class World extends THREE.Group {
     // Do NOT touch scene.background here — EnvSphere.update() handles it.
     this.envSphere.update(deltaTime)
     this.shaderBg.update(deltaTime)
+    // Update instanced particles (advances uTime for GPU drift). Frozen when
+    // not rendering (on-demand) — only called when needsRender=true (see below).
     this.sections.forEach((s) => s.update(deltaTime))
 
     // ── On-demand: decorative 3D animations only run when rendering ──
@@ -227,6 +237,8 @@ export class World extends THREE.Group {
 
     if (!this.isReducedMotion) {
       this.baku.update(deltaTime)
+      // Update instanced particles (GPU drift) — frozen when idle
+      updateInstancedParticles(deltaTime)
       // DrawTrail only on works section (idx=3)
       if (this.drawTrail && this._camera && this._currentSectionIndex === 3) {
         this.drawTrail.update(deltaTime, this._camera)
@@ -555,6 +567,8 @@ export class World extends THREE.Group {
     this.envSphere?.dispose()
     // Dispose shader background
     this.shaderBg?.dispose()
+    // Dispose particle burst
+    this.particleBurst?.dispose()
     this.groundPlane.geometry.dispose()
     const groundMat = this.groundPlane.material
     if (Array.isArray(groundMat)) groundMat.forEach((m) => m.dispose())
