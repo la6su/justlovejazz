@@ -152,4 +152,12 @@ export default defineConfig({
       },
     },
   },
+  server: {
+    // Disable HMR — when accessing through a reverse proxy (Caddy gateway),
+    // the HMR WebSocket connection is unstable (proxy idle timeout ~30s).
+    // When the WebSocket disconnects, Vite client triggers location.reload(),
+    // causing the page to reload every ~30 seconds.
+    // HMR is only useful for local development on localhost:5173.
+    hmr: false,
+  },
 })
