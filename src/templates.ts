@@ -1,5 +1,14 @@
 // templates.ts — HTML string templates for SPA rendering.
 // 6 sections matching junni reference (1:1 with 3D scene groups).
+//
+// Cinematic UI overhaul:
+//  - Section indices (01–06) as a design element next to eyebrows
+//  - Mix-weight typography (900 hero + 200 section + 300 body)
+//  - Glassmorphism feature cards (innovative) + CTA buttons (contact)
+//  - Layouts that avoid the center cube: top / bottom / split / between
+//  - Stagger reveal on .section-active (CSS-only, no JS)
+//  - `.studio-title` preserved on every title — NoiseText animation
+//    (entry-app.ts) keys off it; do not remove that class.
 
 // 6 sections: intro, about, flexible, challenge, innovative, contact
 // Index: 0=intro, 1=about, 2=flexible, 3=challenge, 4=innovative, 5=contact
@@ -8,125 +17,185 @@ export function homePage(): string {
     <!-- ═══ section-studio → 6 child sections (1:1 with 3D scene groups) ═══ -->
     <div class="section-studio uk-position-relative">
 
-      <!-- 1: INTRO — White BG, metal drop -->
+      <!-- 01: INTRO — baku cube center, hero at top, scroll hint at bottom -->
       <section class="uk-height-viewport uk-flex uk-flex-center" uk-height-viewport="expand: true"
                id="section-intro" data-section="intro">
         <div class="section-bg section-bg--intro uk-position-cover" data-dynamic-content>
-          <div class="section-container uk-height-viewport uk-flex uk-flex-middle uk-flex-center">
-            <div class="section-content uk-text-center">
-              <h1 class="studio-title studio-title--hero" data-content-id="hero-title">JUSTLOVEJAZZ</h1>
-              <p class="studio-subtitle uk-text-meta uk-light" data-content-id="hero-subtitle">Interactive 3D Experience</p>
-              <div class="uk-margin-large-top">
-                <a href="#section-about" class="uk-button uk-button-default uk-button-large uk-border-circle">Explore</a>
-              </div>
+          <div class="section-container jlz-layout--between">
+            <div class="section-content jlz-hero">
+              <span class="jlz-hero__meta jlz-reveal">Studio · est. 2025</span>
+              <h1 class="studio-title studio-title--hero jlz-hero__title"
+                  data-content-id="hero-title">JUSTLOVEJAZZ</h1>
+              <p class="studio-subtitle jlz-hero__subtitle jlz-reveal"
+                 data-content-id="hero-subtitle">Interactive 3D Experiences</p>
+              <p class="jlz-hero__tagline jlz-reveal">
+                Cinematic interfaces for the modern browser — built from
+                <span class="jlz-weight-medium">glass</span>,
+                <span class="jlz-weight-medium">motion</span>, and
+                <span class="jlz-weight-medium">light</span>.
+              </p>
             </div>
-            <div class="section-nav">
-              <svg class="scroll-indicator" viewBox="0 0 100 300" aria-hidden="true">
-                <g><circle cx='50' cy='288' r='12' fill='none' stroke='currentColor' stroke-width='1'><animate attributeName='r' dur='3s' repeatCount='indefinite' values='0; 15; 0' /></circle>
-                <circle cx='50' cy='10' r='3' fill='currentColor'/></g>
-              </svg>
+            <div class="jlz-scroll-hint jlz-reveal" aria-hidden="true">
+              <span class="jlz-scroll-hint__label">Scroll</span>
+              <span class="jlz-scroll-hint__line"></span>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- 2: ABOUT — Black BG, blob character -->
+      <!-- 02: ABOUT — two-column split, cube visible through center gap -->
       <section class="uk-height-viewport uk-flex uk-flex-center" uk-height-viewport="expand: true"
                id="section-about" data-section="about">
         <div class="section-bg section-bg--about uk-position-cover" data-dynamic-content>
-          <div class="section-container uk-height-viewport uk-flex uk-flex-middle uk-flex-center">
-            <div class="section-content uk-text-center">
-              <h2 class="studio-title studio-title--about" data-content-id="about-title">ABOUT</h2>
-              <p class="studio-body uk-text-lead uk-light uk-margin-large-top" data-content-id="about-text">
-                We craft immersive digital experiences at the intersection of art and technology.
-                Our approach blends creative vision with cutting-edge 3D web technology,
-                delivering memorable interactive moments that push the boundaries of the modern browser.
+          <div class="section-container jlz-layout--split">
+            <div class="jlz-split__left">
+              <p class="jlz-eyebrow jlz-reveal">
+                <span class="jlz-section-index">02</span> About
+              </p>
+              <h2 class="studio-title studio-title--about jlz-section-title"
+                  data-content-id="about-title">About</h2>
+            </div>
+            <div class="jlz-split__right jlz-reveal">
+              <p class="studio-body jlz-body-text" data-content-id="about-text">
+                Craft meets code. We design 3D interfaces that respond to
+                gesture, light, and sound — engineered for the GPU in your pocket.
+              </p>
+              <p class="studio-body jlz-body-text jlz-body-text--muted">
+                Every pixel is choreographed. Every frame, considered.
+                We build for browsers, but we design for people.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- 3: FLEXIBLE — Pure 3D scene (junni pattern: no HTML content).
+      <!-- 03: FLEXIBLE — pure 3D scene. Cube is hero. Minimal corner label only.
            Animated text background + full-screen title texture rendered in WebGL.
            Section is kept for scroll positioning only. -->
       <section class="uk-height-viewport uk-flex uk-flex-center" uk-height-viewport="expand: true"
                id="section-flexible" data-section="flexible">
-        <div class="section-bg section-bg--flexible uk-position-cover" data-dynamic-content></div>
+        <div class="section-bg section-bg--flexible uk-position-cover" data-dynamic-content>
+          <div class="jlz-corner-label" aria-hidden="true">
+            <p class="jlz-eyebrow">
+              <span class="jlz-section-index">03</span> Works
+            </p>
+            <p class="jlz-corner-label__hint">Drag the cube · Scroll to morph</p>
+          </div>
+        </div>
       </section>
 
-      <!-- 4: CHALLENGE — Dark, checkered floor, gallery -->
+      <!-- 04: CHALLENGE / WORKS — gallery, cube + carousel morph -->
       <section class="uk-height-viewport uk-flex uk-flex-center" uk-height-viewport="expand: true"
                id="section-challenge" data-section="challenge">
         <div class="section-bg section-bg--challenge uk-position-cover" data-dynamic-content>
-          <div class="section-container uk-height-viewport uk-flex uk-flex-middle uk-flex-center">
-            <div class="section-content uk-text-center">
-              <h2 class="studio-title studio-title--challenge" data-content-id="challenge-title">WORKS</h2>
-              <p class="studio-body uk-text-lead uk-light uk-margin-large-top" data-content-id="challenge-text">
-                A curated selection of interactive experiences, creative coding experiments,
-                and immersive web projects. Click a slide to open.
+          <div class="section-container jlz-layout--top">
+            <div class="section-content">
+              <p class="jlz-eyebrow jlz-reveal">
+                <span class="jlz-section-index">04</span> Selected Works
+              </p>
+              <h2 class="studio-title studio-title--challenge jlz-section-title"
+                  data-content-id="challenge-title">Works</h2>
+              <p class="studio-body jlz-body-text jlz-reveal"
+                 data-content-id="challenge-text">
+                Six interactive experiences. Drag to spin the carousel,
+                click any card to open.
               </p>
             </div>
+          </div>
+          <div class="jlz-works-hint jlz-reveal" aria-hidden="true">
+            <span>Drag</span>
+            <span class="jlz-works-hint__arrow">→</span>
+            <span>Click to open</span>
           </div>
           <div id="project-overlay" class="jlz-works-ui uk-position-z-index"></div>
         </div>
       </section>
 
-      <!-- 5: INNOVATIVE — Dark, constellation -->
+      <!-- 05: INNOVATIVE — feature cards with glassmorphism -->
       <section class="uk-height-viewport uk-flex uk-flex-center" uk-height-viewport="expand: true"
                id="section-innovative" data-section="innovative">
         <div class="section-bg section-bg--innovative uk-position-cover" data-dynamic-content>
-          <div class="section-container uk-height-viewport uk-flex uk-flex-middle uk-flex-center">
-            <div class="section-content uk-text-center">
-              <h2 class="studio-title" data-content-id="innovative-title">INNOVATIVE</h2>
-              <p class="studio-body uk-text-lead uk-margin-large-top" data-content-id="innovative-text">
-                Pushing the frontier of what browsers can do. WebGL, WebGPU, spatial audio —
-                we explore every edge of the platform to create experiences that feel
-                like stepping into another world.
+          <div class="section-container jlz-layout--between">
+            <div class="section-content jlz-innovative__head">
+              <p class="jlz-eyebrow jlz-reveal">
+                <span class="jlz-section-index">05</span> Innovative
               </p>
-              <div class="uk-grid-small uk-child-width-1-2@m uk-text-center uk-margin-large-top" uk-grid>
-                <div>
-                  <span class="uk-icon uk-icon-large" uk-icon="rocket"></span>
-                  <p class="uk-margin-top">WebGPU Native</p>
-                </div>
-                <div>
-                  <span class="uk-icon uk-icon-large" uk-icon="layers"></span>
-                  <p class="uk-margin-top">Multi-layer Rendering</p>
-                </div>
-              </div>
+              <h2 class="studio-title jlz-section-title"
+                  data-content-id="innovative-title">Innovative</h2>
+              <p class="studio-body jlz-body-text jlz-reveal"
+                 data-content-id="innovative-text">
+                We explore every edge of the platform — engineering
+                experiences that feel like stepping into another world.
+              </p>
+            </div>
+            <div class="jlz-feature-grid">
+              <article class="jlz-feature-card jlz-reveal">
+                <span class="jlz-feature-card__index">01</span>
+                <h3 class="jlz-feature-card__title">WebGPU Native</h3>
+                <p class="jlz-feature-card__body">
+                  Compute shaders and render pipelines on the GPU.
+                  Native performance, zero plugins.
+                </p>
+              </article>
+              <article class="jlz-feature-card jlz-reveal">
+                <span class="jlz-feature-card__index">02</span>
+                <h3 class="jlz-feature-card__title">Real-time Shaders</h3>
+                <p class="jlz-feature-card__body">
+                  TSL node graphs compiled on the fly. Materials that
+                  react to light, sound, and gesture.
+                </p>
+              </article>
+              <article class="jlz-feature-card jlz-reveal">
+                <span class="jlz-feature-card__index">03</span>
+                <h3 class="jlz-feature-card__title">Spatial Design</h3>
+                <p class="jlz-feature-card__body">
+                  3D-first interfaces built for depth, parallax, and
+                  presence — not flat pages.
+                </p>
+              </article>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- 6: CONTACT — Dark, noisy blocks -->
+      <!-- 06: CONTACT — large CTA, glass buttons -->
       <section class="uk-height-viewport uk-flex uk-flex-center" uk-height-viewport="expand: true"
                id="section-contact" data-section="contact">
         <div class="section-bg section-bg--contact uk-position-cover" data-dynamic-content>
-          <div class="section-container uk-height-viewport uk-flex uk-flex-middle uk-flex-center">
-            <div class="section-content uk-text-center">
-              <h2 class="studio-title" data-content-id="contact-title">CONTACT</h2>
-              <p class="uk-text-lead uk-light uk-margin-large-top" data-content-id="contact-text">
-                Ready to build something extraordinary?
+          <div class="section-container jlz-layout--top">
+            <div class="section-content">
+              <p class="jlz-eyebrow jlz-reveal">
+                <span class="jlz-section-index">06</span> Contact
               </p>
-              <div class="uk-grid-small uk-child-width-1-3@m uk-text-center uk-margin-large-top" data-content-id="contact-grid" uk-grid>
-                <div>
-                  <a href="mailto:hello@justlovejazz.com" class="uk-button uk-button-primary uk-button-large">
-                    <span class="uk-icon" uk-icon="mail"></span> Email
-                  </a>
-                </div>
-                <div>
-                  <a href="https://github.com" class="uk-button uk-button-default uk-button-large" target="_blank" rel="noopener">
-                    <span class="uk-icon" uk-icon="github"></span> GitHub
-                  </a>
-                </div>
-                <div>
-                  <a href="https://twitter.com" class="uk-button uk-button-default uk-button-large" target="_blank" rel="noopener">
-                    <span class="uk-icon" uk-icon="twitter"></span> Twitter
-                  </a>
-                </div>
+              <h2 class="studio-title jlz-section-title"
+                  data-content-id="contact-title">Contact</h2>
+              <p class="jlz-contact-tagline jlz-reveal"
+                 data-content-id="contact-text">
+                Let’s build something extraordinary.
+              </p>
+              <a href="mailto:hello@justlovejazz.com"
+                 class="jlz-contact-email jlz-reveal">hello@justlovejazz.com</a>
+              <div class="jlz-cta-grid jlz-reveal" data-content-id="contact-grid">
+                <a href="mailto:hello@justlovejazz.com"
+                   class="jlz-glass-btn jlz-glass-btn--primary">
+                  <span class="jlz-glass-btn__icon" uk-icon="icon: mail; ratio: 1.1"
+                        aria-hidden="true"></span>
+                  <span>Start a project</span>
+                </a>
+                <a href="https://github.com" class="jlz-glass-btn"
+                   target="_blank" rel="noopener">
+                  <span class="jlz-glass-btn__icon" uk-icon="icon: github; ratio: 1.1"
+                        aria-hidden="true"></span>
+                  <span>GitHub</span>
+                </a>
+                <a href="https://twitter.com" class="jlz-glass-btn"
+                   target="_blank" rel="noopener">
+                  <span class="jlz-glass-btn__icon" uk-icon="icon: twitter; ratio: 1.1"
+                        aria-hidden="true"></span>
+                  <span>Twitter</span>
+                </a>
               </div>
-              <p class="uk-text-meta uk-margin-large-top">© 2025 JUSTLOVEJAZZ. All rights reserved.</p>
+              <p class="jlz-contact-footer jlz-reveal">© 2025 JUSTLOVEJAZZ — Crafted in WebGL</p>
             </div>
           </div>
         </div>
