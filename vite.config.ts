@@ -128,6 +128,7 @@ export default defineConfig({
               '// Vite client stub — prevents reload loop through proxy',
               'export function createHotContext() { return { accept() {}, dispose() {}, prune() {} } }',
               'export function updateStyle() {}',
+              'export function removeStyle() {}',
               'export function defineDevServer() {}',
               'export const transport = null',
             ].join('\n'))
