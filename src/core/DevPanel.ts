@@ -23,7 +23,7 @@ function loadState(): DevPanelState {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) return JSON.parse(raw)
   } catch { /* ignore */ }
-  return { visible: false }
+  return { visible: true }
 }
 
 function saveState(s: DevPanelState): void {

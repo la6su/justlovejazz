@@ -228,6 +228,8 @@ export class Experience {
     this.time.update(time)
     const dt = this.time.delta / 1000
     this.bus.tick(dt)
+    // Cursor always updates (DOM, cheap — not GPU rendering)
+    this.cursor.update()
 
     // Intro sequence: emit 'intro:done' once stage reaches 1
     const stage = this.bus.get('intro:stage')
@@ -248,7 +250,6 @@ export class Experience {
     const carouselActive = this._bakuCarouselActive
     const baku = this.world?.baku as unknown as { openerPhase?: string } | undefined
     const openerActive = baku?.openerPhase !== 'done' && baku?.openerPhase !== 'idle'
-    // Camera shake active — needs rendering while shaking
     const camShaking = this.camera.isShaking
 
     if (navActive || introActive || carouselActive || openerActive || camShaking) {
@@ -362,12 +363,10 @@ export class Experience {
       this.camera.updateSmooth(cameraTarget, dt, smoothing)
       this.world.lightsGroup.update(dt)
       this.camera.update(dt)
-      // Audio-reactive: only update FFT + worldDNA when rendering
       if (this.audio.started) {
         this.audio.update()
         updateWorldDNAAudio(this.audio.getBass(), this.audio.getMid(), this.audio.getTreble())
       }
-      this.cursor.update()
       this.renderer.update(this.scene, this.camera.instance, dt, worldState)
       // Clear flag if nothing is actively changing
       if (!navActive && !introActive && !carouselActive && !openerActive && !camShaking) {
