@@ -42,8 +42,15 @@ const BRIGHT_EXTRACT_FSG = `
   uniform float uThreshold;
   void main() {
     vec3 c = texture2D(uScene, vUv).xyz;
-    vec3 f = max(vec3(0.0), c - uThreshold);
-    gl_FragColor = vec4(c * f, 1.0);
+    // Match BloomNode's smoothstep high-pass filter (NOT quadratic c*(c-threshold)).
+    // BloomNode: alpha = smoothstep(threshold, threshold+smoothWidth, luminance(c));
+    //            result = mix(0, texel, alpha).
+    // This ensures bloom parity between WebGPU (BloomNode) and WebGL2 (this shader).
+    // REC709 luminance coefficients (same as three.js ColorManagement)
+    float v = dot(c, vec3(0.2126, 0.7152, 0.0722));
+    float smoothWidth = 0.1;
+    float alpha = smoothstep(uThreshold, uThreshold + smoothWidth, v);
+    gl_FragColor = vec4(c * alpha, 1.0);
   }
 `
 
