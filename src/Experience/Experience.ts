@@ -504,6 +504,7 @@ export class Experience {
     const carousel = this.getCarousel()
     if (carousel && !carousel.userData.clickWired) {
       carousel.userData.clickWired = true
+      carousel.setCamera(this.camera.instance)
       carousel.onCardClick((idx) => {
         this.onProjectSelect(idx)
         this.overlay?.showContainer()

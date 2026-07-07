@@ -85,35 +85,38 @@ export class SplashCube extends THREE.Mesh {
     const size = 1.6
     const half = size / 2
 
+    // ── ONE shared NodeMaterial for all 6 faces ──
+    // All faces use the same worldDNA TSL shader. Sharing one material means
+    // only ONE uniform group is created on WebGL2 (6 separate NodeMaterials
+    // would exceed the WebGL limit of ~12-16 binding points). The downside is
+    // that setProjectTextures/clearProjectTextures can't set different maps per
+    // face — but BakuCarousel now handles the works-section visuals, so the
+    // cube faces are always clean glass (no per-face textures needed).
+    const sharedMat = new MeshPhysicalNodeMaterial({
+      color: 0x1a1a2e,
+      emissive: 0x4a5a8a,
+      emissiveIntensity: 0.3,
+      transparent: true,
+      opacity: 0.35,
+      side: THREE.DoubleSide,
+      roughness: 0.05,
+      metalness: 0.1,
+      iridescence: 1.0,
+      iridescenceIOR: 1.8,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.05,
+      transmission: transmissionEnabled ? 0.9 : 0,
+      thickness: 0.5,
+      ior: 1.5,
+    })
+    attachWorldDNA(sharedMat)
+    this.faceMaterials.push(sharedMat)
+
     for (let i = 0; i < 6; i++) {
       const dir = this.faceDirs[i]!
 
       const geo = new THREE.PlaneGeometry(size, size)
-      // MeshPhysicalNodeMaterial (TSL) — native WebGPU path. Real glass via
-      // transmission, holographic sheen via iridescence + clearcoat.
-      const mat = new MeshPhysicalNodeMaterial({
-        color: 0x1a1a2e,
-        emissive: 0x4a5a8a,
-        emissiveIntensity: 0.3,
-        transparent: true,
-        opacity: 0.35,
-        side: THREE.DoubleSide,
-        roughness: 0.05,
-        metalness: 0.1,
-        iridescence: 1.0,
-        iridescenceIOR: 1.8,
-        clearcoat: 1.0,
-        clearcoatRoughness: 0.05,
-        transmission: transmissionEnabled ? 0.9 : 0,
-        thickness: 0.5,
-        ior: 1.5,
-      })
-      // Attach worldDNA TSL shader — persistent world material driven by
-      // section state via uniforms (positionNode, colorNode, emissiveNode, roughnessNode).
-      attachWorldDNA(mat)
-      this.faceMaterials.push(mat)
-
-      const face = new THREE.Mesh(geo, mat as unknown as THREE.Material)
+      const face = new THREE.Mesh(geo, sharedMat as unknown as THREE.Material)
       face.userData = { dir: dir.clone(), basePos: dir.clone().multiplyScalar(half) }
       face.position.copy(face.userData.basePos)
       face.lookAt(dir.clone().multiplyScalar(half * 2))
@@ -148,37 +151,16 @@ export class SplashCube extends THREE.Mesh {
     }
   }
 
-  /** Project textures for works slider — applied to 4 side faces (0=front,1=right,2=back,3=left).
-   *  Index 4=top, 5=bottom stay glass.
-   *  NOTE: only sets map on first call (when map is null). Subsequent calls
-   *  just update opacity — avoids needsUpdate=true (shader recompile) on
-   *  every section transition. */
-  setProjectTextures(textures: (THREE.Texture | null)[]): void {
-    for (let i = 0; i < Math.min(4, textures.length); i++) {
-      const tex = textures[i]
-      if (tex) {
-        const mat = this.faceMaterials[i]!
-        if (mat.map !== tex) {
-          mat.map = tex
-          mat.needsUpdate = true
-        }
-        mat.opacity = 0.95
-        mat.transmission = 0
-        mat.emissiveIntensity = 0.1
-      }
-    }
+  /** Project textures — NO-OP now. BakuCarousel handles the works-section
+   *  visuals. The cube uses a single shared material (can't set per-face maps).
+   *  Kept for API compatibility (Experience may still call it). */
+  setProjectTextures(_textures: (THREE.Texture | null)[]): void {
+    // No-op — BakuCarousel renders its own card meshes on top of the cube.
   }
 
-  /** "Clear" project textures — hides them by setting opacity to glass mode
-   *  WITHOUT removing the map. This avoids needsUpdate=true (shader recompile)
-   *  on every section transition. The texture stays bound but invisible. */
+  /** Clear project textures — NO-OP now. Cube stays clean glass on all sections. */
   clearProjectTextures(): void {
-    for (let i = 0; i < 4; i++) {
-      const mat = this.faceMaterials[i]!
-      mat.transmission = transmissionEnabled ? 0.85 : 0
-      mat.opacity = transmissionEnabled ? 0.35 : 0.6
-      mat.emissiveIntensity = 0.3
-    }
+    // No-op — cube is always clean glass now.
   }
 
   /** Target Y rotation for showing project face (0=front, 1=right, 2=back, 3=left). */
@@ -294,27 +276,16 @@ export class SplashCube extends THREE.Mesh {
 
   private applyRoleAndParams(): void {
     const { color, emissive, roughness, metalness } = this.targetParams
-    for (const mat of this.faceMaterials) {
-      mat.color.copy(color)
-      mat.emissive.copy(emissive)
-      mat.roughness = roughness
-      mat.metalness = metalness
-      mat.wireframe = false
-      // Texture mode (works slider): opaque project images on faces.
-      // Glass mode: transparent see-through glass.
-      if (mat.map) {
-        mat.opacity = 0.95
-        mat.transmission = 0
-      } else {
-        mat.opacity = transmissionEnabled ? 0.35 : 0.6
-        mat.transmission = transmissionEnabled ? 0.85 : 0
-      }
-      // NOTE: needsUpdate = true is NOT needed here — color/emissive/roughness/
-      // metalness/opacity/transmission are all uniforms, not shader-structure
-      // changes. needsUpdate would force a full shader recompile on every role
-      // change, which can cause draw-call spikes on WebGPU (pipeline recreation).
-      // The material is already compiled with all these features enabled at init.
-    }
+    // Single shared material — update once (was 6 iterations, now 1)
+    const mat = this.faceMaterials[0]!
+    mat.color.copy(color)
+    mat.emissive.copy(emissive)
+    mat.roughness = roughness
+    mat.metalness = metalness
+    mat.wireframe = false
+    // Cube is always clean glass now (BakuCarousel handles works visuals)
+    mat.opacity = transmissionEnabled ? 0.35 : 0.6
+    mat.transmission = transmissionEnabled ? 0.85 : 0
   }
 
   dispose(): void {

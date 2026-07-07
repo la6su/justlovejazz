@@ -64,6 +64,9 @@ export class BakuCarousel extends THREE.Group {
   private _active = false
   private time = 0
   private initialized = false
+  private _camera: THREE.Camera | null = null
+  private _raycaster: THREE.Raycaster = new THREE.Raycaster()
+  private _ndc: THREE.Vector2 = new THREE.Vector2()
 
   // Input state
   private isDown = false
@@ -104,6 +107,11 @@ export class BakuCarousel extends THREE.Group {
 
   get morphProgress(): number {
     return this._morphT
+  }
+
+  /** Set camera reference for raycast-based tap detection. */
+  setCamera(cam: THREE.Camera): void {
+    this._camera = cam
   }
 
   /** Set callback for card click (index = which card was tapped). */
@@ -198,8 +206,7 @@ export class BakuCarousel extends THREE.Group {
       this.isDown = false
       // If pointer didn't move much → treat as a TAP on a carousel card
       if (!this.dragMoved) {
-        void e // tap uses front-facing card, not tap position
-        this.handleTap()
+        this.handleTap(e.clientX, e.clientY)
       } else {
         this.scheduleSnap()
       }
@@ -231,13 +238,34 @@ export class BakuCarousel extends THREE.Group {
     window.addEventListener('keydown', this.keydownHandler)
   }
 
-  /** Tap detected → open the front-facing card. */
-  private handleTap(): void {
-    // Simple approach: the front card is the one at angle closest to 0
-    // (facing the camera at +Z). For a ring carousel this is the most
-    // prominent card the user is looking at.
-    const frontIdx = this.getFrontCardIndex()
-    this._onCardClick?.(frontIdx)
+  /** Tap detected → raycast to check if a card was actually hit.
+   *  Only opens overlay if the tap landed on a carousel card mesh.
+   *  Taps on the baku cube or empty space are ignored. */
+  private handleTap(clientX: number, clientY: number): void {
+    if (!this._camera) {
+      // No camera — fall back to front card
+      this._onCardClick?.(this.getFrontCardIndex())
+      return
+    }
+    // Convert screen coords to NDC
+    this._ndc.x = (clientX / window.innerWidth) * 2 - 1
+    this._ndc.y = -(clientY / window.innerHeight) * 2 + 1
+    this._raycaster.setFromCamera(this._ndc, this._camera)
+    // Raycast against visible cards only (opacity > 0 means morphed enough)
+    const hitTargets: THREE.Object3D[] = []
+    for (let i = 0; i < this.cards.length; i++) {
+      const card = this.cards[i]!
+      if (this.cardMaterials[i]!.opacity > 0.1) {
+        hitTargets.push(card)
+      }
+    }
+    const intersects = this._raycaster.intersectObjects(hitTargets, false)
+    if (intersects.length > 0) {
+      const hit = intersects[0]!.object as THREE.Mesh
+      const idx = hit.userData.cardIndex as number
+      this._onCardClick?.(idx)
+    }
+    // No hit → tap was on cube or empty space → ignore (no overlay open)
   }
 
   /** Get the index of the card currently facing the camera (front of ring).
