@@ -62,22 +62,22 @@ const envColorNode = Fn(() => {
   // Orb 1 (vivid purple) — upper-left-front
   const orb1Dist = vec3(float(-0.45), float(0.40), float(0.70)).sub(nrm).length()
   const orb1Falloff = smoothstep(float(1.3), float(0.0), orb1Dist)
-  color = mix(color, envUniforms.uOrb1, orb1Falloff.mul(0.75))
+  color = mix(color, envUniforms.uOrb1, orb1Falloff.mul(0.90))
 
   // Orb 2 (vivid blue) — center-right-front
   const orb2Dist = vec3(float(0.55), float(0.05), float(0.60)).sub(nrm).length()
   const orb2Falloff = smoothstep(float(1.3), float(0.0), orb2Dist)
-  color = mix(color, envUniforms.uOrb2, orb2Falloff.mul(0.70))
+  color = mix(color, envUniforms.uOrb2, orb2Falloff.mul(0.85))
 
   // Orb 3 (magenta-pink) — upper-center-front
   const orb3Dist = vec3(float(0.10), float(0.55), float(0.50)).sub(nrm).length()
   const orb3Falloff = smoothstep(float(1.2), float(0.0), orb3Dist)
-  color = mix(color, envUniforms.uOrb3, orb3Falloff.mul(0.65))
+  color = mix(color, envUniforms.uOrb3, orb3Falloff.mul(0.85))
 
   // Orb 4 (teal/cyan) — lower-front accent
   const orb4Dist = vec3(float(-0.20), float(-0.30), float(0.65)).sub(nrm).length()
   const orb4Falloff = smoothstep(float(1.1), float(0.0), orb4Dist)
-  color = mix(color, envUniforms.uOrb4, orb4Falloff.mul(0.55))
+  color = mix(color, envUniforms.uOrb4, orb4Falloff.mul(0.75))
 
   // ── Layer 3: Horizon glow — brighter band at y≈0 ──
   const glowBand = smoothstep(float(0.15), float(0.0), y.abs())
@@ -116,13 +116,16 @@ export class EnvSphere extends THREE.Mesh {
     const mat = new MeshBasicNodeMaterial({
       side: THREE.BackSide,
       depthWrite: false,
-      fog: false, // env sphere is not affected by fog (it IS the atmosphere)
+      depthTest: false,   // always render, never occluded (skybox pattern)
+      fog: false,         // env sphere is not affected by fog (it IS the atmosphere)
+      toneMapped: false,  // keep orb colors vivid (don't ACES-tone-map down)
     })
     mat.colorNode = envColorNode()
 
     super(geo, mat)
     this.name = 'env-sphere'
     this.frustumCulled = false // always render (it's the background)
+    this.renderOrder = -1000   // render FIRST, before everything else
 
     this._colorA = new THREE.Color(0x1a0a2e)
     this._colorB = new THREE.Color(0x050507)
