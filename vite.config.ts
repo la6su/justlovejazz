@@ -115,16 +115,21 @@ export default defineConfig({
   },
   plugins: [
     {
-      // Strip @vite/client from HTML — prevents the dev client from loading.
-      // Without the client: no WebSocket, no polling, no reload loop.
-      // The MutationObserver in index.html handles the browser-side removal.
-      name: 'strip-vite-client',
+      // Intercept /@vite/client request — return empty script instead of
+      // the real Vite client. Without the real client code: no WebSocket,
+      // no polling, no 'server connection lost', no location.reload().
+      // This is the most reliable approach — blocks at the network level.
+      name: 'block-vite-client',
       apply: 'serve',
-      transformIndexHtml(html) {
-        return html.replace(
-          /<script[^>]*src="[^"]*\/@vite\/client[^"]*"[^>]*><\/script>\s*/g,
-          '',
-        )
+      configureServer(server) {
+        server.middlewares.use((req, res, next) => {
+          if (req.url && req.url.includes('/@vite/client')) {
+            res.setHeader('Content-Type', 'text/javascript')
+            res.end('// Vite client disabled — prevents reload loop through proxy')
+            return
+          }
+          next()
+        })
       },
     },
     {
