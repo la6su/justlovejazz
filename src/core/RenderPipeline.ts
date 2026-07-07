@@ -182,6 +182,16 @@ const COMPOSITE_FSG = `
       color *= edge.x * edge.y;
     }
 
+    // sRGB encode — exact sRGBTransferOETF (same as three.js uses internally).
+    // ShaderMaterial with toneMapped:true + NoToneMapping does NOT auto-apply
+    // sRGB encode. We apply it manually to match WebGPU TSL outputColorTransform
+    // (which uses the same sRGBTransferOETF via renderOutput).
+    color = mix(
+      pow(color, vec3(0.41666)) * 1.055 - vec3(0.055),
+      color * 12.92,
+      step(color, vec3(0.0031308))
+    );
+
     gl_FragColor = vec4(color, 1.0);
   }
 `
@@ -561,7 +571,7 @@ export class RenderPipeline {
       },
       vertexShader: QUAD_VERTEX,
       fragmentShader: COMPOSITE_FSG,
-      toneMapped: true, // true → three.js applies sRGB encode (with NoToneMapping, no ACES)
+      toneMapped: false, // sRGB encode is applied manually in the shader (sRGBTransferOETF)
       depthTest: false,
       depthWrite: false,
     })
