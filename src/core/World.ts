@@ -1,7 +1,6 @@
 // src/core/World.ts — Junni-style composition: Section[], Baku, Lights, Atmosphere, Ground
 
 import * as THREE from 'three'
-import { MeshStandardNodeMaterial } from 'three/webgpu'
 import { BG } from './BG'
 import { Section, SectionState } from './Section'
 import { StateBus } from './StateBus'
@@ -86,15 +85,18 @@ export class World extends THREE.Group {
     this.sceneRef.background = this.bg.color
 
     // ── Ground plane (visual anchor, аналог Junni Ground)
+    // Built-in MeshStandardMaterial (NOT NodeMaterial) — reduces uniform group
+    // count on WebGL2 (NodeMaterials each create a separate uniform group,
+    // hitting the WebGL limit of ~12-16 binding points).
     this.groundPlane = new THREE.Mesh(
       new THREE.PlaneGeometry(200, 200),
-      new MeshStandardNodeMaterial({
+      new THREE.MeshStandardMaterial({
         color: 0x000000,
         transparent: true,
         opacity: 0.3,
         roughness: 1,
         metalness: 0,
-      }) as THREE.Material,
+      }),
     )
     this.groundPlane.rotation.x = -Math.PI / 2
     this.groundPlane.position.y = -2

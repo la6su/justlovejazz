@@ -3,7 +3,6 @@
 // lived in each Section*/index.ts file.
 
 import * as THREE from 'three'
-import { PointsNodeMaterial } from 'three/webgpu'
 
 export interface ParticleParams {
   count: number
@@ -14,6 +13,9 @@ export interface ParticleParams {
 }
 
 /** Create a THREE.Points cloud with the given params.
+ *  - Uses built-in THREE.PointsMaterial (NOT PointsNodeMaterial) — reduces
+ *    uniform group count on WebGL2 (NodeMaterials each create a separate
+ *    uniform group, hitting the WebGL limit of ~12-16 binding points).
  *  - `baseOpacity` is cached in material.userData for non-destructive fade.
  *  - `frustumCulled = false` so points don't pop when the bounds leave the frustum. */
 export function makeParticles(params: ParticleParams): THREE.Points {
@@ -26,7 +28,7 @@ export function makeParticles(params: ParticleParams): THREE.Points {
     pos[i * 3 + 2] = (Math.random() - 0.5) * spread.z
   }
   geo.setAttribute('position', new THREE.BufferAttribute(pos, 3))
-  const mat = new PointsNodeMaterial({
+  const mat = new THREE.PointsMaterial({
     color,
     size,
     transparent: true,
@@ -34,8 +36,8 @@ export function makeParticles(params: ParticleParams): THREE.Points {
     sizeAttenuation: true,
     depthWrite: false,
   })
-  const pts = new THREE.Points(geo, mat as unknown as THREE.Material)
+  const pts = new THREE.Points(geo, mat)
   pts.frustumCulled = false
-  ;(pts.material as unknown as { userData: Record<string, unknown> }).userData.baseOpacity = opacity
+  mat.userData.baseOpacity = opacity
   return pts
 }

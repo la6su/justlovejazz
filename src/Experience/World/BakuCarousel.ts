@@ -21,7 +21,6 @@
 // this component renders the carousel cards on top, independently.
 
 import * as THREE from 'three'
-import { MeshBasicNodeMaterial } from 'three/webgpu'
 import { isMenuOpen, isUiChromeEvent } from '../../UI/uiChrome'
 import { PROJECTS } from '../../Data/Projects'
 
@@ -57,7 +56,7 @@ const CUBE_FACES = [
 
 export class BakuCarousel extends THREE.Group {
   private cards: THREE.Mesh[] = []
-  private cardMaterials: MeshBasicNodeMaterial[] = []
+  private cardMaterials: THREE.MeshBasicMaterial[] = []
   private geometry: THREE.PlaneGeometry
   private scroll = { current: 0, target: 0 }
   private _morphT = 0 // 0 = cube, 1 = carousel (raw, before easing)
@@ -142,13 +141,13 @@ export class BakuCarousel extends THREE.Group {
 
     CARD_TEXTURE_URLS.forEach((url, i) => {
       const tex = urlToTexture.get(url)!
-      const mat = new MeshBasicNodeMaterial({
+      const mat = new THREE.MeshBasicMaterial({
         map: tex,
         transparent: true,
         side: THREE.DoubleSide,
         opacity: 0,
       })
-      const mesh = new THREE.Mesh(this.geometry, mat as unknown as THREE.Material)
+      const mesh = new THREE.Mesh(this.geometry, mat)
       mesh.scale.set(CARD_W, CARD_H, 1)
       mesh.userData.texIdx = i
       // cardIndex = which PROJECT (0..3) — used by onCardClick → onProjectSelect

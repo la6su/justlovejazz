@@ -7,7 +7,7 @@
 // After opener: cube continues as baku on all sections.
 
 import * as THREE from 'three'
-import { MeshBasicNodeMaterial, MeshPhysicalNodeMaterial } from 'three/webgpu'
+import { MeshPhysicalNodeMaterial } from 'three/webgpu'
 import { Noise } from '../../Utils/Noise'
 import { attachWorldDNA, updateWorldDNA } from './worldDNA'
 import { BakuRole, type BakuMaterialState } from '../../core/types'
@@ -74,7 +74,8 @@ export class SplashCube extends THREE.Mesh {
 
   constructor() {
     // Dummy geometry — we render faces as children, not the mesh itself.
-    super(new THREE.BufferGeometry(), new MeshBasicNodeMaterial({ visible: false }))
+    // Built-in MeshBasicMaterial (NOT NodeMaterial) — reduces uniform group count.
+    super(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial({ visible: false }))
     this.name = 'baku-cube'
     this.visible = true
     this.buildCube()
