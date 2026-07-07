@@ -34,7 +34,7 @@ export interface CircularNavOptions {
   sectionLabels: string[]
 }
 
-const RADIUS = 140 // px from corner center to the dot arc
+const RADIUS = 150 // px from corner center to the dot arc
 const ARC_START = Math.PI // 180° (left)
 const ARC_END = 1.5 * Math.PI // 270° (top) — spans 90° upward-leftward
 // Dots are spread across ARC_START..ARC_END
@@ -59,7 +59,7 @@ export class CircularNav {
   private _dragStartProgress = 0
   private _dragStartX = 0
   private _transitioning = false
-  private _ease = 0.22
+  private _ease = 0.14
   private _onSectionChange: ((index: number) => void) | null = null
 
   // Listeners
@@ -82,6 +82,21 @@ export class CircularNav {
     this.el.setAttribute('aria-valuemin', '0')
     this.el.setAttribute('aria-valuemax', '100')
     this.el.setAttribute('aria-valuenow', '0')
+
+    // ── Vinyl record base — the dark disc with grooves ──
+    const vinyl = document.createElement('div')
+    vinyl.className = 'jlz-circnav__vinyl'
+    this.el.appendChild(vinyl)
+
+    // ── Vinyl grooves — concentric circles (visual texture) ──
+    const grooves = document.createElement('div')
+    grooves.className = 'jlz-circnav__grooves'
+    this.el.appendChild(grooves)
+
+    // ── Vinyl shine — subtle light reflection sweeping across ──
+    const shine = document.createElement('div')
+    shine.className = 'jlz-circnav__shine'
+    this.el.appendChild(shine)
 
     // ── Arc background (the visible circular track) ──
     this.arc = document.createElement('div')
@@ -235,7 +250,9 @@ export class CircularNav {
       }
     }
 
-    this.el.addEventListener('pointerdown', this._pointerDownHandler)
+    // pointerdown on the arc element (pointer-events:auto) — not on el
+    // (which is pointer-events:none except for the arc + dots).
+    this.arc.addEventListener('pointerdown', this._pointerDownHandler)
     window.addEventListener('pointermove', this._pointerMoveHandler)
     window.addEventListener('pointerup', this._pointerUpHandler)
     window.addEventListener('pointercancel', this._pointerUpHandler)
@@ -330,7 +347,7 @@ export class CircularNav {
   }
 
   dispose(): void {
-    if (this._pointerDownHandler) this.el.removeEventListener('pointerdown', this._pointerDownHandler)
+    if (this._pointerDownHandler) this.arc.removeEventListener('pointerdown', this._pointerDownHandler)
     if (this._pointerMoveHandler) window.removeEventListener('pointermove', this._pointerMoveHandler)
     if (this._pointerUpHandler) {
       window.removeEventListener('pointerup', this._pointerUpHandler)
