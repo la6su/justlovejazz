@@ -158,8 +158,12 @@ export class WebGPUPostPipeline {
 
     // ── 6. ACES tone mapping ──
     // WebGL2: color = color * (6.2 * color + 0.03) / (color * (4.8 * color + 1.0));
+    // NOTE: WebGL2 GLSL handles 0/0 = NaN gracefully (GPU clamps to 0), but
+    // WebGPU TSL may produce different results for black pixels (division by
+    // zero). Add epsilon (0.0001) to denominator to avoid NaN on both paths.
+    // This also ensures ACES lifts shadows correctly (0.01 → 0.088 instead of 0).
     const a = color.mul(6.2).add(0.03)
-    const b = color.mul(color.mul(4.8).add(1.0))
+    const b = color.mul(color.mul(4.8).add(1.0)).add(0.0001)
     color = div(color.mul(a), b)
 
     // ── 7. Film grain ──
