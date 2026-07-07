@@ -71,20 +71,16 @@ export class World extends THREE.Group {
     this.baku.visible = true
     this.add(this.baku)
 
-    // ── EnvSphere — now a BACKGROUND PROVIDER (not a visible mesh).
-    // Sets scene.background to an equirectangular CanvasTexture with the
-    // Atlas Aurora mesh-gradient. Native three.js API — no geometry/BackSide/
-    // normalLocal/TSL compilation issues. Works on ALL render paths.
-    // The mesh itself is invisible (visible=false); it's just a container
-    // for the update() + dispose() lifecycle.
+    // ── EnvSphere — now DISABLED (background provided by ShaderBackground).
+    // Kept for lifecycle compat (other code may reference world.envSphere).
+    // scene.background is NOT set — ShaderBackground plane is the sole bg.
     this.envSphere = new EnvSphere()
-    this.envSphere.attachToScene(scene)
+    // Do NOT call attachToScene — ShaderBackground replaces it.
     this.add(this.envSphere)  // added for lifecycle (update/dispose), not rendering
 
     // ── ShaderBackground — animated paper-shader plane (21st.dev @reuno-ui port).
-    // Sits at z=-20, behind baku cube (z=0), on top of scene.background.
-    // Vertex displacement (paper undulation) + fragment noise + radial glow.
-    // Transparent edges → Atlas Aurora (scene.background) shows through.
+    // Dark grey palette, opaque, fullscreen at z=-30. SOLE background.
+    // Vertex displacement (paper undulation) + fragment noise + silver shimmer.
     this.shaderBg = new ShaderBackground()
     this.add(this.shaderBg)
 
