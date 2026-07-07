@@ -153,6 +153,9 @@ export class BakuCarousel extends THREE.Group {
       mesh.userData.texIdx = i
       // cardIndex = which PROJECT (0..3) — used by onCardClick → onProjectSelect
       mesh.userData.cardIndex = i % PROJECTS.length
+      // keepVisible = true so SectionSceneFactory.hideGeometry() doesn't
+      // hide the carousel cards (it hides all non-Points, non-keepVisible meshes)
+      mesh.userData.keepVisible = true
       this.cards.push(mesh)
       this.cardMaterials.push(mat)
       this.add(mesh)

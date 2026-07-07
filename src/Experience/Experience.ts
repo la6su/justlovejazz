@@ -306,25 +306,12 @@ export class Experience {
       // group visibility (which doesn't add/remove materials, but the carousel
       // morph changes card opacity which could affect the material list).
       this.renderer.invalidateNodeMaterialCache()
-      // Bug 4: re-apply project textures when ENTERING works section (idx === 3).
-      // Textures are applied once during init, but clearProjectTextures() is called
-      // when scrolling through other sections — so they must be re-applied on entry.
-      // When LEAVING works (idx !== 3), clear textures so the cube is clean glass.
-      const cube = this.world.baku as unknown as
-        | { setProjectTextures?: (t: (THREE.Texture | null)[]) => void; clearProjectTextures?: () => void }
-        | undefined
-      if (idx === 3) {
-        // Defer to next frame — portfolio textures may still be loading on
-        // first entry. Also re-apply every entry (clearProjectTextures was
-        // called on the previous section change).
-        requestAnimationFrame(() => {
-          if (this.portfolio && this.portfolio.texturesLoaded) {
-            this.portfolio.applyTexturesToCube()
-          }
-        })
-      } else {
-        cube?.clearProjectTextures?.()
-      }
+      // NOTE: applyTexturesToCube / clearProjectTextures were REMOVED —
+      // BakuCarousel fully replaces the old cube-face texture slider.
+      // The baku cube stays clean glass on ALL sections; BakuCarousel
+      // renders its own card meshes on top when morphed (works §4).
+      // Calling applyTexturesToCube made the cube opaque (opacity 0.95),
+      // which hid the carousel cards behind it.
     }
 
     // Context switch (post-processing preset)
