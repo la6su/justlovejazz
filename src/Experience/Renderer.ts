@@ -117,6 +117,14 @@ export class Renderer {
         this.instance.domElement.remove()
         wg.dispose?.()
         this.instance = this.createWebGLRenderer()
+      } else {
+        // Real WebGPU on real hardware — enable premium visual path
+        // (TSL node overrides on SplashCube, real glass transmission).
+        // See IMPROVEMENT_PLAN A1/A2.
+        this.capabilities.isRealWebGPU = true
+        if (import.meta.env.DEV) {
+          console.info('[Renderer.init] Premium WebGPU path active — TSL worldDNA nodes + real transmission enabled')
+        }
       }
     } else {
       if (import.meta.env.DEV) {
