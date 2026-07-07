@@ -7,7 +7,7 @@
 | File | Content | Read when |
 | --- | --- | --- |
 | [STATUS.md](docs/STATUS.md) ⭐ | Canonical state | **Always first** |
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Modules, render path, navigation | Understanding structure |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Modules, render path, visual tiers, background system | Understanding structure |
 | [HERMES_RULES.md](docs/HERMES_RULES.md) | Hard rules (36) | Before changing code |
 | [JUNNI_REFERENCE.md](docs/JUNNI_REFERENCE.md) | Junni patterns to port / NOT port | Adding section visuals |
 | [CHANGELOG.md](docs/CHANGELOG.md) | Recent merge log | Understanding history |
@@ -15,6 +15,17 @@
 ## Language
 
 User responses: Russian. Code/commits/docs: English.
+
+## Visual tiers (IMPORTANT)
+
+The project has TWO visual paths, gated by `DeviceCapability.isRealWebGPU`:
+
+| Tier | Path | Baku | Background |
+| --- | --- | --- | --- |
+| **Premium** | Real WebGPU | `MeshPhysicalNodeMaterial` + `transmission=1` + 4 TSL worldDNA nodes | ShaderBackground (TSL) |
+| **Parity** | WebGL2 / fallback | `MeshPhysicalMaterial` + opacity-glass (no TSL nodes) | ShaderBackground (TSL) |
+
+`isRealWebGPU` is set in `Renderer.init()` after backend detection. Logged to console on startup.
 
 ## Navigation model
 
@@ -27,10 +38,10 @@ User responses: Russian. Code/commits/docs: English.
 ## Key rules (see HERMES_RULES.md for full list)
 
 1. No raw ShaderMaterial in scene — TSL NodeMaterial only
-2. ONE shared NodeMaterial per multi-face object (not 6)
-3. Built-in materials for particles/ground/cards (reduce uniform groups)
-4. `setAnimationLoop` — not rAF
-5. `scene.background` always set (BG.color)
+2. TSL NodeMaterial IS allowed (native WebGPU path)
+3. ONE shared NodeMaterial per multi-face object (not 6)
+4. Built-in materials for particles/ground/cards (reduce uniform groups)
+5. `setAnimationLoop` — not rAF
 6. Never remove SplashCube (baku)
 7. Single font: Inter
 8. NoiseText via `jlz:section-change` event (not IntersectionObserver)
@@ -38,16 +49,43 @@ User responses: Russian. Code/commits/docs: English.
 10. CSS imports use `?inline` suffix (prevents @vite/client injection)
 11. On-demand rendering: only render when `_needsRender=true`. Don't set it permanently.
 12. Event-driven animations: baku/particles/lights are STATIC when idle. Animate only during transitions.
-13. DrawTrail: works section (idx=3) ONLY
-14. CursorLight: DELETED — don't re-add
-15. `server.hmr: false` + `block-vite-client` plugin in vite.config.ts
-16. Always verify: `bun run lint && bun run type-check && bun run build`
+13. Ambient breathing: 1-frame refresh every ~2.5s in idle is OK (respects reduced-motion).
+14. DrawTrail: works section (idx=3) ONLY
+15. CursorLight: DELETED — don't re-add
+16. `server.hmr: false` + `block-vite-client` plugin in vite.config.ts
+17. Always verify: `bun run lint && bun run type-check && bun run build`
+18. **Visual tier doctrine**: premium path (real WebGPU) can diverge from parity (WebGL2).
+    Document any divergence in `ARCHITECTURE.md` and log to console.
+19. **Background**: `ShaderBackground` is the sole background. `EnvSphere.attachToScene()`
+    is NOT called. Do NOT set `scene.background` — ShaderBackground plane handles it.
+20. **21st.dev MCP**: API key format `21st_sk_...` (not `an_sk_...`). Endpoint
+    `https://21st.dev/api/mcp`. Free tier: 2 retrievals/day.
 
 ## Verification
 
 ```bash
-bun run lint         # 0 errors
+bun run lint         # 0 errors (56 warnings — all pre-existing no-console/no-explicit-any)
 bun run type-check   # 0 errors (strict)
-bun run build        # must pass
+bun run build        # must pass (69 modules transformed, ~2s)
 bun run test:unit    # 54 tests
 ```
+
+## 21st.dev MCP usage
+
+```bash
+# Search components (metadata free)
+curl -s -X POST https://21st.dev/api/mcp \
+  -H "x-api-key: 21st_sk_..." \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"search","arguments":{"query":"aurora background","limit":5}}}'
+
+# Get component code (uses daily quota)
+curl -s -X POST https://21st.dev/api/mcp \
+  -H "x-api-key: 21st_sk_..." \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"get_component","arguments":{"id":5732}}}'
+```
+
+Already fetched: Atlas Aurora (id: 16166), Background Paper Shaders (id: 5732).
