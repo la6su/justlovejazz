@@ -33,6 +33,10 @@ export function setTransmissionEnabled(enabled: boolean): void {
   transmissionEnabled = enabled
 }
 
+/** Rotation per section transition (radians). ~30° = π/6. Persistent —
+ *  committed to _idleRotY so the cube stays rotated after each transition. */
+const ROT_PER_TRANSITION = Math.PI / 6
+
 export class SplashCube extends THREE.Mesh {
   private faces: THREE.Mesh[] = []
   private faceMaterials: MeshPhysicalNodeMaterial[] = []
@@ -161,10 +165,14 @@ export class SplashCube extends THREE.Mesh {
 
   /** Transition progress (0-1) set by Experience during section change.
    *  0 = idle (static), 0→1 = transitioning to next section.
-   *  Drives a one-shot rotation + face pulse animation. */
+   *  Drives a one-shot rotation + tilt + drift + scale pulse. */
   private _transitionT = 0
   private _transitionDir = 0 // +1 = next, -1 = prev
   private _idleRotY = 0 // accumulated rotation that stays after transition
+  // Previous-frame transition state — used to detect section-commit (the
+  // moment nav._progress snaps from ~1 back to 0, dir goes nonzero→0).
+  private _prevTransitionT = 0
+  private _prevTransitionDir = 0
 
   /** Called by Experience when a section transition is in progress.
    *  t = 0..1 (transition progress), dir = +1 (next) or -1 (prev). */
@@ -176,17 +184,65 @@ export class SplashCube extends THREE.Mesh {
   update(dt: number): void {
     this.time += dt
 
-    // ── Transition-driven rotation ──
-    // Cube is static at _idleRotY. During transition it rotates ~30° with
-    // smoothstep easing + subtle tilt + drift. Softer than before.
-    const tEase = this._transitionT * this._transitionT * (3 - 2 * this._transitionT)
-    const transitionRot = this._transitionDir * tEase * Math.PI * 0.17 // ~30° (was 90°)
-    this.rotation.y = this._idleRotY + transitionRot
-    this.rotation.x = tEase * 0.08 * this._transitionDir // softer tilt (was 0.15)
-    // When idle (transitionT ≈ 0), rotation.x is already 0 via the formula
-    // above (tEase=0). rotation.y = _idleRotY. No explicit reset needed.
+    // ════════════════════════════════════════════════════════════════════
+    // SEAMLESS CINEMATIC TRANSITION
+    // ════════════════════════════════════════════════════════════════════
+    // Two easing curves drive different aspects of the animation:
+    //
+    //   tEase = smoothstep(transitionT)  — 0→1 monotonically (persistent)
+    //   sinT  = sin(tEase * PI)          — 0→1→0 (transient: 0 at both ends)
+    //
+    // PERSISTENT effects (rotation Y) use tEase and are COMMITTED to
+    // _idleRotY when the transition completes, so the cube stays rotated —
+    // no snap-back.
+    //
+    // TRANSIENT effects (tilt X, drift XY, scale, displacement) use sinT
+    // so they are exactly 0 at transition start AND end. When the section
+    // commits (transitionT→0), these are already 0 → no jerk.
+    //
+    // COMMIT DETECTION: nav._progress snaps from ~0.99 to 0 in one frame
+    // when the section changes, so transitionDir goes nonzero→0. We detect
+    // this (prevDir≠0 && dir==0 && prevT>0.5) and accumulate the rotation.
+    // The 0.5 threshold ensures snap-backs (progress<0.5) don't commit.
+    // ════════════════════════════════════════════════════════════════════
 
-    // ── Opener (splash only) — only animate when opener is active ──
+    // ── Detect transition completion & commit rotation ──
+    const committed = this._prevTransitionDir !== 0
+      && this._transitionDir === 0
+      && this._prevTransitionT > 0.5
+    if (committed) {
+      this._idleRotY += this._prevTransitionDir * ROT_PER_TRANSITION
+    }
+
+    // ── Easing curves ──
+    const tEase = this._transitionT * this._transitionT * (3 - 2 * this._transitionT)
+    const sinT = Math.sin(tEase * Math.PI) // 0 at t=0 and t=1, 1 at t=0.5
+    // Use the direction that's active this frame; on the commit frame,
+    // _transitionDir is already 0, so fall back to prevDir for one frame
+    // (tEase is 0 on that frame, so the direction doesn't affect the result,
+    // but it keeps the code path clean).
+    const dir = this._transitionDir || this._prevTransitionDir
+
+    // ── Rotation Y (persistent — commits to _idleRotY) ──
+    this.rotation.y = this._idleRotY + dir * tEase * ROT_PER_TRANSITION
+
+    // ── Tilt X (transient — peaks at mid, returns to 0) ──
+    this.rotation.x = sinT * 0.10 * dir
+
+    // ── Drift XY (transient — organic, returns to origin) ──
+    this.position.x = Noise.organicValue(this.time, 10, 0.22, 0.08) * sinT * dir
+    this.position.y = Noise.organicValue(this.time, 20, 0.30, 0.08) * sinT * dir
+
+    // ── Scale pulse (transient — subtle weight at mid) ──
+    this.scale.setScalar(1 + sinT * 0.035)
+
+    // ── Save prev state for next frame's commit detection ──
+    this._prevTransitionT = this._transitionT
+    this._prevTransitionDir = this._transitionDir
+
+    // ════════════════════════════════════════════════════════════════════
+    // OPENER (splash intro only — independent of section transitions)
+    // ════════════════════════════════════════════════════════════════════
     if (this.openerPhase !== 'done' || this.openerProgress > 0.01) {
       this.openerProgress += (this.openerTarget - this.openerProgress) * Math.min(1, dt * 4)
       if (this.openerPhase === 'opening' && this.openerProgress > 0.9) {
@@ -195,10 +251,7 @@ export class SplashCube extends THREE.Mesh {
       } else if (this.openerPhase === 'closing' && this.openerProgress < 0.05) {
         this.openerPhase = 'done'
         this.openerProgress = 0
-        // Snap faces EXACTLY back to base positions — the easing loop above
-        // stops at openerProgress≈0.01, leaving a tiny residual offset on
-        // every face. Without this snap, the cube stays slightly "puffed"
-        // forever after the splash opener.
+        // Snap faces EXACTLY back to base positions
         for (let i = 0; i < this.faces.length; i++) {
           const basePos = this.faces[i]!.userData.basePos as THREE.Vector3
           this.faces[i]!.position.copy(basePos)
@@ -209,12 +262,11 @@ export class SplashCube extends THREE.Mesh {
       }
 
       if (this.openerPhase !== 'done') {
-        // Face pulse — only while opener is actively animating
         const pulse = this.openerProgress * 0.8
         for (let i = 0; i < this.faces.length; i++) {
-          const dir = this.faces[i]!.userData.dir as THREE.Vector3
+          const faceDir = this.faces[i]!.userData.dir as THREE.Vector3
           const basePos = this.faces[i]!.userData.basePos as THREE.Vector3
-          this._tmpFaceOffset.copy(dir).multiplyScalar(pulse)
+          this._tmpFaceOffset.copy(faceDir).multiplyScalar(pulse)
           this.faces[i]!.position.copy(basePos).add(this._tmpFaceOffset)
           this.faces[i]!.rotation.z = this.openerProgress * 0.3 * (i % 2 === 0 ? 1 : -1)
           this.edgeLines[i]!.position.copy(this.faces[i]!.position)
@@ -224,28 +276,13 @@ export class SplashCube extends THREE.Mesh {
       }
     }
 
-    // ── Drift — during transition; RESET to origin when idle ──
-    // Previously this was guarded by `if (transitionT > 0.01)` with no else,
-    // so when a transition ended the cube kept its last drifted x/y offset
-    // permanently. Now we explicitly zero position when idle so the cube
-    // sits cleanly centered on every section.
-    if (this._transitionT > 0.01) {
-      this.position.x = Noise.organicValue(this.time, 10, 0.3, 0.1) * this._transitionT
-      this.position.y = Noise.organicValue(this.time, 20, 0.4, 0.1) * this._transitionT
-    } else {
-      this.position.x = 0
-      this.position.y = 0
-    }
-
-    // ── worldDNA uniforms — ALWAYS update ──
-    // The displacement amplitude scales by max(transitionT, openerProgress),
-    // so it naturally computes to 0 when idle. We MUST call updateWorldDNA
-    // every frame (including the final frame before going idle) so the
-    // uDisplace uniform is set to 0 — otherwise it retains the last
-    // mid-transition value and the cube stays deformed on the frozen
-    // idle frame. This is especially visible on the flexible section,
-    // which has the highest bakuDisplace (0.25).
-    const displaceAmount = this._blendDisplace * Math.max(this._transitionT, this.openerProgress)
+    // ════════════════════════════════════════════════════════════════════
+    // worldDNA uniforms — ALWAYS update
+    // ════════════════════════════════════════════════════════════════════
+    // Displacement uses sinT (not transitionT) so it returns to 0 BEFORE
+    // the section commits. When the cube goes idle, the last rendered frame
+    // already has uDisplace=0 → no frozen deformation.
+    const displaceAmount = this._blendDisplace * sinT
     updateWorldDNA({
       sectionBlend: this._blendT,
       colorA: this._blendFromColor,

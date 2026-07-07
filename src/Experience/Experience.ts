@@ -241,6 +241,19 @@ export class Experience {
     // Navigation: CircularNav update
     this._circNav?.update()
 
+    // ── Drive baku transition state BEFORE world.update ──
+    // baku.update() (inside world.update) reads _transitionT/_transitionDir
+    // to detect section-commit (dir goes nonzero→0) and commit the rotation.
+    // If setTransition is called AFTER world.update, baku always sees the
+    // PREVIOUS frame's state — commit detection is one frame late and may
+    // be skipped entirely if the next frame doesn't render (on-demand mode).
+    // Calling it here ensures baku.update sees the current frame's state.
+    if (this.world?.baku) {
+      const navProgress = this._circNav?._progress ?? 0
+      const navDir = navProgress > 0 ? 1 : navProgress < 0 ? -1 : 0
+      this.world.baku.setTransition(Math.abs(navProgress), navDir)
+    }
+
     // ── On-demand rendering ──
     // Only render when something is actually changing. When idle (settled
     // on a section, no transition, no carousel), the last rendered frame
@@ -260,13 +273,6 @@ export class Experience {
     const ns = this._circNav?.getOverallProgress() ?? 0
     const { cameraTarget, worldState } = this.world.advance(ns)
     this.world.update(dt, this._needsRender)
-
-    // Drive baku transition animation
-    if (this.world?.baku) {
-      const navProgress = this._circNav?._progress ?? 0
-      const navDir = navProgress > 0 ? 1 : navProgress < 0 ? -1 : 0
-      this.world.baku.setTransition(Math.abs(navProgress), navDir)
-    }
 
     // Drive worldDNA section blend — from→to colors + phaseProgress (scroll t).
     if (this.world?.baku) {
