@@ -224,16 +224,22 @@ export class Experience {
 
   update(time: number) {
     // Wrap the entire update in try/catch — if any frame throws, log the
-    // error and stop the animation loop gracefully instead of letting the
-    // exception propagate to setAnimationLoop (which can crash the tab /
-    // trigger a browser-level reload on WebGPU device loss).
+    // error but DON'T stop the animation loop. Stopping setAnimationLoop(null)
+    // leaves three.js' internal rAF running (info.reset + nodeFrame.update)
+    // without our render callback — the WebGPU swap chain stops presenting
+    // frames and Chrome kills the tab after ~30s of inactivity.
+    // Instead: log the error and skip this frame — the next frame will retry.
     try {
       this._updateInner(time)
     } catch (err) {
-      console.error('[Experience] update() threw — stopping render loop to prevent crash loop:', err)
-      ;(this.renderer.instance as any).setAnimationLoop(null)
+      if (!this._updateErrorLogged) {
+        this._updateErrorLogged = true
+        console.error('[Experience] update() threw — skipping frame (loop continues):', err)
+      }
     }
   }
+
+  private _updateErrorLogged = false
 
   private _updateInner(time: number) {
     this.time.update(time)
