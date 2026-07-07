@@ -9,6 +9,7 @@ import { type CameraTarget, type WorldState, NarrativePhase, BakuRole } from './
 import { CinematicLights } from '../Experience/World/Lights'
 import { DrawTrail } from '../Experience/World/DrawTrail'
 import { SplashCube } from '../Experience/World/SplashCube'
+import { EnvSphere } from '../Experience/World/EnvSphere'
 import { getWorldConfigForPage, type PhaseConfig } from './WorldConfig'
 import { SectionSceneFactory } from './SectionSceneFactory'
 import { disposeMaterialDeep } from '../Utils/dispose'
@@ -23,6 +24,7 @@ export class World extends THREE.Group {
   public baku!: SplashCube
   public lightsGroup!: CinematicLights
   public drawTrail?: DrawTrail
+  public envSphere!: EnvSphere
   public bg!: BG
   public groundPlane!: THREE.Mesh
   public sceneGroups: THREE.Group[] = []
@@ -67,9 +69,18 @@ export class World extends THREE.Group {
     this.baku.visible = true
     this.add(this.baku)
 
-    // ── BG (procedural background color, junni pattern)
+    // ── EnvSphere — cinematic environment sphere (replaces scene.background Color)
+    // Large inverted sphere with procedural TSL shader: gradient sky + animated
+    // noise + horizon glow + section-driven color blending. Gives depth and
+    // atmosphere that a flat Color cannot. BackSide — we see the inside.
+    // frustumCulled = false — always render (it's the background).
+    this.envSphere = new EnvSphere()
+    this.add(this.envSphere)
+
+    // ── BG (color provider — still used for lerp logic, but NOT set as
+    // scene.background. EnvSphere renders the background visually. BG.color
+    // is used as a fallback and for section color queries.)
     this.bg = new BG()
-    this.sceneRef.background = this.bg.color
 
     // ── Ground plane (visual anchor, аналог Junni Ground)
     // Built-in MeshStandardMaterial (NOT NodeMaterial) — reduces uniform group
@@ -138,13 +149,19 @@ export class World extends THREE.Group {
       this._targetGroundOpacity = firstGround.opacity
     }
 
-    // ── Apply first section's lights + fog immediately (no lerp on init)
+    // ── Apply first section's lights + fog + env sphere colors immediately
     const firstCfg = this.configs[0]
     if (firstCfg) {
       this.lightsGroup.changeSection(firstCfg)
       // Inline WorldAtmosphere.setFog — fog not yet set on init, so create new.
-      // Background is owned by BG.ts (HERMES_RULES §5) — do not touch scene.background.
       this.sceneRef.fog = new THREE.FogExp2(firstCfg.fog.color.clone(), firstCfg.fog.density)
+      // EnvSphere initial colors from first section
+      const glowColor = new THREE.Color(firstCfg.background).offsetHSL(0, 0.1, 0.15)
+      this.envSphere.setSectionColors(
+        new THREE.Color(firstCfg.background),
+        new THREE.Color(firstCfg.ground.color),
+        glowColor,
+      )
     }
 
     // ── Enforce final visibility: only group 0 visible, all others hidden.
@@ -189,7 +206,11 @@ export class World extends THREE.Group {
 
   public update(deltaTime: number, needsRender: boolean = true): void {
     this.bg.update(deltaTime)
+    // Keep scene.background as a fallback clear color (needed when rendering
+    // to RT — WebGLRenderer clears with scene.background). EnvSphere renders
+    // on top, providing the procedural gradient + noise + glow.
     this.sceneRef.background = this.bg.color
+    this.envSphere.update(deltaTime)
     this.sections.forEach((s) => s.update(deltaTime))
 
     // ── On-demand: decorative 3D animations only run when rendering ──
@@ -292,7 +313,7 @@ export class World extends THREE.Group {
     // ── Update current section index + fire per-section systems ──
     if (fromIndex !== this._currentSectionIndex) {
       this._currentSectionIndex = fromIndex
-      // Junni changeSection() pattern: lights + fog driven by section data
+      // Junni changeSection() pattern: lights + fog + env sphere driven by section data
       const activeCfg = this.configs[fromIndex]
       if (activeCfg) {
         this.lightsGroup.changeSection(activeCfg)
@@ -304,6 +325,13 @@ export class World extends THREE.Group {
         } else {
           this.sceneRef.fog = new THREE.FogExp2(activeCfg.fog.color.clone(), activeCfg.fog.density)
         }
+        // EnvSphere section colors: main bg + ground + horizon glow (derived)
+        const glowColor = new THREE.Color(activeCfg.background).offsetHSL(0, 0.1, 0.15)
+        this.envSphere.setSectionColors(
+          new THREE.Color(activeCfg.background),
+          new THREE.Color(activeCfg.ground.color),
+          glowColor,
+        )
       }
       // DrawTrail visibility — only on works section (idx=3)
       if (this.drawTrail) {
@@ -315,6 +343,8 @@ export class World extends THREE.Group {
     // setProgress() lerps between fromIndex and toIndex colors using eased t,
     // giving pixel-perfect background progression while scrolling.
     this.bg.setProgress(fromIndex, toIndex, bgT)
+    // EnvSphere blend factor for cross-section transition
+    this.envSphere.setBlend(bgT)
 
     // ── Scene group visibility with opacity fade (junni switchVisibility pattern)
     // From group fades out as t→1, to group fades in. Both visible during transition.
@@ -510,6 +540,8 @@ export class World extends THREE.Group {
     this.disposeSceneGroups()
     // Dispose baku (SplashCube) GPU resources — 6 face geos+mats + 6 edge geos+mats.
     this.baku?.dispose()
+    // Dispose env sphere GPU resources
+    this.envSphere?.dispose()
     this.groundPlane.geometry.dispose()
     const groundMat = this.groundPlane.material
     if (Array.isArray(groundMat)) groundMat.forEach((m) => m.dispose())
