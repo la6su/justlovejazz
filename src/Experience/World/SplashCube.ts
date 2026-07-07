@@ -165,7 +165,6 @@ export class SplashCube extends THREE.Mesh {
   private _transitionT = 0
   private _transitionDir = 0 // +1 = next, -1 = prev
   private _idleRotY = 0 // accumulated rotation that stays after transition
-  private _transitionCommitted = false
 
   /** Called by Experience when a section transition is in progress.
    *  t = 0..1 (transition progress), dir = +1 (next) or -1 (prev). */
@@ -184,20 +183,8 @@ export class SplashCube extends THREE.Mesh {
     const transitionRot = this._transitionDir * tEase * Math.PI * 0.17 // ~30° (was 90°)
     this.rotation.y = this._idleRotY + transitionRot
     this.rotation.x = tEase * 0.08 * this._transitionDir // softer tilt (was 0.15)
-
-    // Commit rotation when transition ends (progress drops back to ~0)
-    if (this._transitionT < 0.01 && this._transitionDir !== 0 && !this._transitionCommitted) {
-      this._idleRotY += this._transitionDir * Math.PI * 0.17
-      this._transitionDir = 0
-      this._transitionCommitted = true
-      this.rotation.x = 0
-      this.rotation.y = this._idleRotY
-      this.position.x = 0
-      this.position.y = 0
-    }
-    if (this._transitionT > 0.01) {
-      this._transitionCommitted = false
-    }
+    // When idle (transitionT ≈ 0), rotation.x is already 0 via the formula
+    // above (tEase=0). rotation.y = _idleRotY. No explicit reset needed.
 
     // ── Opener (splash only) — only animate when opener is active ──
     if (this.openerPhase !== 'done' || this.openerProgress > 0.01) {
@@ -207,44 +194,68 @@ export class SplashCube extends THREE.Mesh {
         this.openerTarget = 0
       } else if (this.openerPhase === 'closing' && this.openerProgress < 0.05) {
         this.openerPhase = 'done'
+        this.openerProgress = 0
+        // Snap faces EXACTLY back to base positions — the easing loop above
+        // stops at openerProgress≈0.01, leaving a tiny residual offset on
+        // every face. Without this snap, the cube stays slightly "puffed"
+        // forever after the splash opener.
+        for (let i = 0; i < this.faces.length; i++) {
+          const basePos = this.faces[i]!.userData.basePos as THREE.Vector3
+          this.faces[i]!.position.copy(basePos)
+          this.faces[i]!.rotation.z = 0
+          this.edgeLines[i]!.position.copy(basePos)
+          this.edgeLines[i]!.rotation.copy(this.faces[i]!.rotation)
+        }
       }
 
-      // Face pulse — only during opener
-      const pulse = this.openerProgress * 0.8
-      for (let i = 0; i < this.faces.length; i++) {
-        const dir = this.faces[i]!.userData.dir as THREE.Vector3
-        const basePos = this.faces[i]!.userData.basePos as THREE.Vector3
-        this._tmpFaceOffset.copy(dir).multiplyScalar(pulse)
-        this.faces[i]!.position.copy(basePos).add(this._tmpFaceOffset)
-        this.faces[i]!.rotation.z = this.openerProgress * 0.3 * (i % 2 === 0 ? 1 : -1)
-        this.edgeLines[i]!.position.copy(this.faces[i]!.position)
-        this.edgeLines[i]!.rotation.copy(this.faces[i]!.rotation)
-        this.edgeLines[i]!.rotation.z = this.faces[i]!.rotation.z
+      if (this.openerPhase !== 'done') {
+        // Face pulse — only while opener is actively animating
+        const pulse = this.openerProgress * 0.8
+        for (let i = 0; i < this.faces.length; i++) {
+          const dir = this.faces[i]!.userData.dir as THREE.Vector3
+          const basePos = this.faces[i]!.userData.basePos as THREE.Vector3
+          this._tmpFaceOffset.copy(dir).multiplyScalar(pulse)
+          this.faces[i]!.position.copy(basePos).add(this._tmpFaceOffset)
+          this.faces[i]!.rotation.z = this.openerProgress * 0.3 * (i % 2 === 0 ? 1 : -1)
+          this.edgeLines[i]!.position.copy(this.faces[i]!.position)
+          this.edgeLines[i]!.rotation.copy(this.faces[i]!.rotation)
+          this.edgeLines[i]!.rotation.z = this.faces[i]!.rotation.z
+        }
       }
     }
 
-    // ── Drift — only during transition ──
+    // ── Drift — during transition; RESET to origin when idle ──
+    // Previously this was guarded by `if (transitionT > 0.01)` with no else,
+    // so when a transition ended the cube kept its last drifted x/y offset
+    // permanently. Now we explicitly zero position when idle so the cube
+    // sits cleanly centered on every section.
     if (this._transitionT > 0.01) {
       this.position.x = Noise.organicValue(this.time, 10, 0.3, 0.1) * this._transitionT
       this.position.y = Noise.organicValue(this.time, 20, 0.4, 0.1) * this._transitionT
+    } else {
+      this.position.x = 0
+      this.position.y = 0
     }
 
-    // ── worldDNA uniforms — only when something is changing ──
-    if (this._transitionT > 0.01 || this.openerProgress > 0.01 || this._blendT > 0.01) {
-      // Scale displacement by transition progress — cube is flat when idle,
-      // gets organic distortion only during transitions.
-      const displaceAmount = this._blendDisplace * Math.max(this._transitionT, this.openerProgress)
-      updateWorldDNA({
-        sectionBlend: this._blendT,
-        colorA: this._blendFromColor,
-        colorB: this._blendToColor,
-        emissiveA: this._blendFromEmissive,
-        emissiveB: this._blendToEmissive,
-        time: this.time,
-        displace: displaceAmount + this.openerProgress * 0.3,
-        pulse: this.openerProgress,
-      })
-    }
+    // ── worldDNA uniforms — ALWAYS update ──
+    // The displacement amplitude scales by max(transitionT, openerProgress),
+    // so it naturally computes to 0 when idle. We MUST call updateWorldDNA
+    // every frame (including the final frame before going idle) so the
+    // uDisplace uniform is set to 0 — otherwise it retains the last
+    // mid-transition value and the cube stays deformed on the frozen
+    // idle frame. This is especially visible on the flexible section,
+    // which has the highest bakuDisplace (0.25).
+    const displaceAmount = this._blendDisplace * Math.max(this._transitionT, this.openerProgress)
+    updateWorldDNA({
+      sectionBlend: this._blendT,
+      colorA: this._blendFromColor,
+      colorB: this._blendToColor,
+      emissiveA: this._blendFromEmissive,
+      emissiveB: this._blendToEmissive,
+      time: this.time,
+      displace: displaceAmount + this.openerProgress * 0.3,
+      pulse: this.openerProgress,
+    })
 
     // Apply role/material when role changes
     if (this.targetParams.role !== this._currentRole) {

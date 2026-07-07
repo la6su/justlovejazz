@@ -24,6 +24,8 @@ export interface CircularNavOptions {
 
 const DRAG_SENSITIVITY = 0.006 // px → progress: ~170px = full transition (softer)
 const TAP_THRESHOLD = 8 // px — drag < this = tap
+const COMMIT_THRESHOLD = 0.5 // |progress| > this on release → commit transition
+const SETTLE_EPS = 0.01 // |progress - target| < this → snapped (completion detection)
 
 export class CircularNav {
   /** Public so Experience can place it. */
@@ -43,10 +45,18 @@ export class CircularNav {
   private _dragStartX = 0
   private _dragStartProgress = 0
   private _transitioning = false
-  private _ease = 0.08 // softer settle (was 0.14 — too snappy)
+  // Settle ease for commit / snap-back animations.
+  // 0.22 = ~10 frames to reach target at 60fps (~167ms) — decisive snap.
+  // During drag, progress is set directly (1:1 with finger), so this ease
+  // only governs the post-release settle, NOT drag responsiveness.
+  private _ease = 0.22
   private _onSectionChange: ((index: number) => void) | null = null
   /** Called when transition starts or ends (for on-demand rendering). */
   private _onActiveChange: ((active: boolean) => void) | null = null
+  /** Tracks last active-state notification to avoid redundant callbacks. */
+  private _wasActive = false
+  /** Pointer capture id (for robust drag tracking outside the arc). */
+  private _captureId: number | null = null
 
   // Listeners
   private _pointerDownHandler: ((e: PointerEvent) => void) | null = null
@@ -156,8 +166,9 @@ export class CircularNav {
     this._targetProgress = 0
     this._transitioning = false
     this._onSectionChange?.(index)
-    this._onActiveChange?.(true) // brief active to render the jump
-    setTimeout(() => this._onActiveChange?.(false), 300)
+    // Brief active burst so Experience renders the section jump, then settle.
+    this._setActive(true)
+    setTimeout(() => this._setActive(false), 300)
     this.updateUI()
   }
 
@@ -172,7 +183,16 @@ export class CircularNav {
       this._dragStartX = e.clientX
       this._dragStartProgress = this._progress
       this.el.classList.add('is-grabbing')
-      this._onActiveChange?.(true)
+      // Capture the pointer so pointermove/up keep firing even if the finger
+      // leaves the arc or moves quickly across the viewport. Without this,
+      // fast swipes can lose the pointerup → drag gets "stuck".
+      try {
+        this.arc.setPointerCapture(e.pointerId)
+        this._captureId = e.pointerId
+      } catch {
+        this._captureId = null
+      }
+      this._setActive(true)
       e.preventDefault()
     }
     this._pointerMoveHandler = (e: PointerEvent) => {
@@ -193,14 +213,24 @@ export class CircularNav {
       if (!this._isDragging) return
       this._isDragging = false
       this.el.classList.remove('is-grabbing')
+      // Release pointer capture so the arc doesn't hoard future events.
+      if (this._captureId !== null) {
+        try {
+          this.arc.releasePointerCapture(this._captureId)
+        } catch {
+          /* already released */
+        }
+        this._captureId = null
+      }
       const moved = Math.abs(e.clientX - this._dragStartX) + Math.abs(e.clientY - this._dragStartY)
       // Tap on a dot → jump to that section
       if (moved < TAP_THRESHOLD) {
         this.handleTap(e.clientX, e.clientY)
         return
       }
-      // Commit if |progress| > 0.5
-      if (Math.abs(this._progress) > 0.5) {
+      // Commit if |progress| > threshold, else snap back to 0.
+      // The commit/snap-back animation uses _ease (0.22) for a decisive settle.
+      if (Math.abs(this._progress) > COMMIT_THRESHOLD) {
         this.commitTransition(this._progress > 0 ? 1 : -1)
       } else {
         this._targetProgress = 0
@@ -254,7 +284,9 @@ export class CircularNav {
 
   /** Navigate to neighbor section. dir = +1 (next/down), -1 (prev/up).
    *  If a transition is in progress, it completes immediately before starting
-   *  the new one (prevents stuck state on rapid swipes). */
+   *  the new one. With the faster settle ease (0.22), the reset-to-0 stutter
+   *  is barely visible (~1 frame). This preserves multi-press behavior:
+   *  pressing ArrowDown twice quickly advances two sections. */
   goToDirection(dir: 1 | -1): void {
     // If transitioning, complete the current transition first
     if (this._transitioning) {
@@ -288,18 +320,32 @@ export class CircularNav {
     this._onSectionChange?.(this._currentSection)
   }
 
+  /** Notify Experience of active-state changes (deduplicated via _wasActive). */
+  private _setActive(active: boolean): void {
+    if (active === this._wasActive) return
+    this._wasActive = active
+    this._onActiveChange?.(active)
+  }
+
   update(): void {
-    this._progress += (this._targetProgress - this._progress) * this._ease
-    if (Math.abs(this._targetProgress - this._progress) < 0.0005) {
+    // During drag, _progress is set directly in pointermove (1:1 with finger),
+    // so the ease only governs post-release settle (commit / snap-back).
+    if (!this._isDragging) {
+      this._progress += (this._targetProgress - this._progress) * this._ease
+    }
+    // Snap to target when close enough (avoids infinite asymptotic approach)
+    if (Math.abs(this._targetProgress - this._progress) < SETTLE_EPS * 0.1) {
       this._progress = this._targetProgress
     }
-    if (this._transitioning && Math.abs(this._progress) > 0.85) {
+    // Commit complete: transitioning + reached target (±1)
+    if (this._transitioning && Math.abs(this._targetProgress - this._progress) < SETTLE_EPS) {
       this._completeTransition()
-      this._onActiveChange?.(false)
     }
-    // If settled (not dragging, not transitioning, progress ≈ 0) → inactive
-    if (!this._isDragging && !this._transitioning && Math.abs(this._progress) < 0.001) {
-      this._onActiveChange?.(false)
+    // Settle complete: not dragging, not transitioning, progress ≈ 0
+    if (!this._isDragging && !this._transitioning && Math.abs(this._progress) < SETTLE_EPS) {
+      this._progress = 0
+      this._targetProgress = 0
+      this._setActive(false)
     }
     this.updateUI()
   }

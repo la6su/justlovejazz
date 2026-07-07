@@ -79,12 +79,14 @@ function completeTransition(s: NavState): void {
   s.transitioning = false
 }
 
-function update(s: NavState, ease = 0.14): void {
+function update(s: NavState, ease = 0.22): void {
   s.progress += (s.targetProgress - s.progress) * ease
-  if (Math.abs(s.targetProgress - s.progress) < 0.0005) {
+  if (Math.abs(s.targetProgress - s.progress) < 0.001) {
     s.progress = s.targetProgress
   }
-  if (s.transitioning && Math.abs(s.progress) > 0.92) {
+  // Complete when progress reaches target (within 0.01), not at an arbitrary
+  // absolute threshold. Mirrors the real CircularNav.update() SETTLE_EPS check.
+  if (s.transitioning && Math.abs(s.targetProgress - s.progress) < 0.01) {
     completeTransition(s)
   }
 }
@@ -215,7 +217,7 @@ describe('CircularNav state machine', () => {
       expect(s.progress).toBeLessThan(1)
     })
 
-    it('completes transition when progress > 0.92', () => {
+    it('completes transition when progress reaches target', () => {
       goToDirection(s, 1)
       // Fast-forward to completion
       for (let i = 0; i < 30; i++) update(s)
