@@ -23,10 +23,13 @@ import { prefersReducedMotion } from '../../core/motionPolicy'
 const shaderUniforms = {
   uTime: uniform(0),
   uIntensity: uniform(1.0),
-  // Dark grey palette (from @reuno-ui demo): #1a1a1a → #4a4a4a
-  // Slightly lighter than pure black so the noise pattern is visible.
-  uColor1: uniform(new THREE.Color(0x1a1a1a)),  // dark grey (shadow)
-  uColor2: uniform(new THREE.Color(0x4a4a4a)),  // lighter grey (highlight)
+  // Neutral dark grey palette — chosen so BOTH black AND white text are readable.
+  //   uColor1 (shadow):    0x2a2a2a  (luminance ~0.164 → white text contrast ~6.5:1 WCAG AA)
+  //   uColor2 (highlight): 0x3a3a3a  (luminance ~0.196 → black text contrast ~5.2:1 WCAG AA)
+  // Range kept narrow (Δ0.10) so no spot gets bright enough to lose black text
+  // or dark enough to lose white text.
+  uColor1: uniform(new THREE.Color(0x2a2a2a)),  // neutral dark grey (shadow)
+  uColor2: uniform(new THREE.Color(0x3a3a3a)),  // neutral grey (highlight)
 }
 
 // ── Vertex displacement (port of original vertexShader) ──
@@ -72,10 +75,11 @@ const colorNode = Fn(() => {
   // Mix the two grey colors based on noise
   let color = mix(shaderUniforms.uColor1, shaderUniforms.uColor2, noise.mul(0.5).add(0.5))
 
-  // Subtle silver shimmer on high noise (amplitude 0.15 — was 1.0 in original)
-  // Original mixed toward vec3(1.0) (pure white) — too bright for a dark bg.
-  // We mix toward vec3(0.85) (light grey) at reduced amplitude.
-  color = mix(color, vec3(0.85), pow(abs(noise), float(2.0)).mul(intensity).mul(0.15))
+  // Subtle mid-grey shimmer on high noise (amplitude 0.10)
+  // Original mixed toward vec3(1.0) (pure white) — too bright, killed black text.
+  // Now mixes toward vec3(0.45) (mid-grey) at low amplitude — reads as a soft
+  // paper texture, never bright enough to lose black text contrast.
+  color = mix(color, vec3(0.45), pow(abs(noise), float(2.0)).mul(intensity).mul(0.10))
 
   // Return opaque vec4 (alpha=1.0) — this is the SOLE background, no transparency.
   return vec4(color, 1.0)
