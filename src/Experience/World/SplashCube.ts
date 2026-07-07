@@ -7,7 +7,6 @@
 // After opener: cube continues as baku on all sections.
 
 import * as THREE from 'three'
-import { MeshPhysicalNodeMaterial } from 'three/webgpu'
 import { Noise } from '../../Utils/Noise'
 import { attachWorldDNA, updateWorldDNA } from './worldDNA'
 import { BakuRole, type BakuMaterialState } from '../../core/types'
@@ -20,17 +19,18 @@ export interface BakuMaterialParams {
   role: BakuRole
 }
 
-// Set to false when WebGPU backend is not available (WebGL2 fallback).
-// transmission on MeshPhysicalNodeMaterial crashes on WebGLBackend
-// (ViewportTextureNode.getCanvasTarget not a function).
-// Default: disabled. Renderer.init() enables it only when real WebGPU
-// backend is confirmed. WebGPURenderer.init() renders a test frame that
-// would crash if transmission > 0 on WebGLBackend fallback.
-let transmissionEnabled = false
+// Transmission is DISABLED on ALL paths. On WebGPU with TSL PassNode,
+// transmission renders the material opaque (the TSL colorNode override
+// doesn't properly wire up the transmission render target). On WebGL2
+// (WebGLBackend fallback), transmission crashes (ViewportTextureNode.
+// getCanvasTarget not a function). Both paths use opacity-based glass
+// instead — consistent visual parity. Env map reflections (from
+// RoomEnvironment PMREM) provide the glass look on both paths.
 
-/** Called by Renderer.init() to disable transmission on WebGL2 fallback. */
-export function setTransmissionEnabled(enabled: boolean): void {
-  transmissionEnabled = enabled
+/** Kept for API compat — Renderer.init() imports this but it's a no-op now.
+ *  Transmission is always disabled (see comment above). */
+export function setTransmissionEnabled(_enabled: boolean): void {
+  // No-op — transmission is always disabled
 }
 
 /** Rotation per section transition (radians). ~30° = π/6. Persistent —
@@ -39,7 +39,7 @@ const ROT_PER_TRANSITION = Math.PI / 6
 
 export class SplashCube extends THREE.Mesh {
   private faces: THREE.Mesh[] = []
-  private faceMaterials: MeshPhysicalNodeMaterial[] = []
+  private faceMaterials: THREE.MeshPhysicalMaterial[] = []
   private edgeLines: THREE.LineSegments[] = []
   private time = 0
   private openerProgress = 0 // 0=closed, 1=fully opened (pulsed out)
@@ -87,19 +87,28 @@ export class SplashCube extends THREE.Mesh {
     const size = 1.6
     const half = size / 2
 
-    // ── ONE shared NodeMaterial for all 6 faces ──
+    // ── ONE shared material for all 6 faces ──
     // Glassmorphism: studio-grade glass with strong env-map reflections,
     // low roughness (sharp highlights), high clearcoat (surface gloss),
-    // iridescence (rainbow edge shimmer), and real transmission on WebGPU.
-    // On WebGL2 fallback, transmission is disabled (crashes) — we fake glass
-    // via opacity + strong env reflections + clearcoat. The env map is set
-    // on scene.environment by Experience.setupEnvironment().
-    const sharedMat = new MeshPhysicalNodeMaterial({
-      color: 0xffffff,           // neutral white — section tint comes from worldDNA colorNode
+    // iridescence (rainbow edge shimmer).
+    //
+    // IMPORTANT: Using THREE.MeshPhysicalMaterial (NOT MeshPhysicalNodeMaterial).
+    // NodeMaterials don't properly handle transparent/opacity through
+    // WebGLNodesHandler on WebGL2, and on WebGPU native TSL compilation
+    // ignores opacity when TSL nodes are set. A regular MeshPhysicalMaterial
+    // handles opacity/transparent correctly on ALL backends:
+    //   - WebGLRenderer: native PBR shader with proper alpha blending
+    //   - WebGPURenderer: auto-wraps regular materials in TSL nodes internally
+    // This gives visual parity — the glass cube is translucent on both paths.
+    //
+    // The env map is set on scene.environment by Experience.setupEnvironment()
+    // (RoomEnvironment PMREM via secondary WebGLRenderer on WebGPU path).
+    const sharedMat = new THREE.MeshPhysicalMaterial({
+      color: 0xffffff,           // neutral white — section tint comes from mat.color update
       emissive: 0x1a2a4a,        // subtle blue glow at edges
       emissiveIntensity: 0.12,   // very subtle — glass shouldn't self-illuminate much
       transparent: true,
-      opacity: transmissionEnabled ? 0.15 : 0.45, // very transparent on WebGPU (transmission does the rest), more opaque on WebGL2 (fakes glass)
+      opacity: 0.45,             // semi-transparent glass (same on all paths for parity)
       side: THREE.DoubleSide,
       roughness: 0.02,           // extremely smooth → razor-sharp reflections
       metalness: 0.0,            // non-metal (it's dielectric glass)
@@ -107,10 +116,10 @@ export class SplashCube extends THREE.Mesh {
       iridescenceIOR: 1.3,       // subtle iridescence shift
       clearcoat: 1.0,            // full clearcoat — surface gloss
       clearcoatRoughness: 0.0,   // perfectly smooth clearcoat
-      transmission: transmissionEnabled ? 0.95 : 0, // real refraction on WebGPU only
-      thickness: 1.2,            // thick glass → deeper refraction + stronger attenuation
+      transmission: 0,           // disabled (crashes on WebGLBackend fallback)
+      thickness: 1.2,            // kept for API compat (no effect when transmission=0)
       ior: 1.52,                 // crown glass IOR
-      attenuationColor: new THREE.Color(0x8899bb),  // cool blue tint at edges (light absorption)
+      attenuationColor: new THREE.Color(0x8899bb),  // cool blue tint at edges
       attenuationDistance: 3.0,  // how far light travels before absorbing the tint
       envMapIntensity: 1.5,      // strong environment reflections (THE key for glass look)
       depthWrite: false,         // don't write depth — transparent glass shouldn't occlude
@@ -122,7 +131,7 @@ export class SplashCube extends THREE.Mesh {
       const dir = this.faceDirs[i]!
 
       const geo = new THREE.PlaneGeometry(size, size)
-      const face = new THREE.Mesh(geo, sharedMat as unknown as THREE.Material)
+      const face = new THREE.Mesh(geo, sharedMat)
       face.userData = { dir: dir.clone(), basePos: dir.clone().multiplyScalar(half) }
       face.position.copy(face.userData.basePos)
       face.lookAt(dir.clone().multiplyScalar(half * 2))
@@ -326,6 +335,17 @@ export class SplashCube extends THREE.Mesh {
       displace: displaceAmount + this.openerProgress * 0.3,
       pulse: this.openerProgress,
     })
+
+    // ── Update mat.color + mat.emissive directly (replaces TSL node overrides) ──
+    // When ANY TSL node is overridden (positionNode, colorNode, emissiveNode,
+    // roughnessNode), the material's `opacity`/`transparent` properties are
+    // ignored on WebGPU (native TSL compilation treats material as opaque).
+    // By NOT setting any TSL nodes and instead updating mat.color/mat.emissive
+    // in JS, the material's native opacity/transparent handling works on ALL
+    // backends → visual parity. The lerp blends between current + next section.
+    const mat = this.faceMaterials[0]!
+    mat.color.copy(this._blendFromColor).lerp(this._blendToColor, this._blendT)
+    mat.emissive.copy(this._blendFromEmissive).lerp(this._blendToEmissive, this._blendT)
 
     // Apply role/material when role changes
     if (this.targetParams.role !== this._currentRole) {

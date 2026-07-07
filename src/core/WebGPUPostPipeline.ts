@@ -43,6 +43,9 @@ export class WebGPUPostPipeline {
   private _refractStrength = uniform(0)
   private _gradeShadows = uniform(new THREE.Vector3(1, 1, 1))
   private _gradeHighlights = uniform(new THREE.Vector3(1, 1, 1))
+  /** Background color — composited as base layer. On WebGPU, the TSL PassNode
+   *  may not render scene.background, so we explicitly mix it in here. */
+  private _bgColor = uniform(new THREE.Color(0x000000))
 
   private constructor(renderer: WebGPURenderer, scene: Scene, camera: Camera) {
     this._renderer = renderer
@@ -59,6 +62,13 @@ export class WebGPUPostPipeline {
       this._scene = scene
       this._camera = camera
       this._needsBuild = true
+    }
+    // Sync background color from scene.background every frame.
+    // On WebGPU, the PassNode may not render scene.background, so we
+    // composite it explicitly in the TSL graph as the base layer.
+    const bg = scene.background
+    if (bg && (bg as any).isColor === true) {
+      ;(this._bgColor.value as THREE.Color).copy(bg as THREE.Color)
     }
   }
 
@@ -117,6 +127,21 @@ export class WebGPUPostPipeline {
     ).mul(rStrength.mul(0.003))
     const refractUv = uv().add(rCenter.mul(rStrength).mul(0.04)).add(rWobble)
     let scene = (sceneColor as any).sample(refractUv)
+
+    // ── Background color as base layer ──
+    // On WebGPU, the PassNode may not render scene.background (the clear
+    // color might not propagate to the PassNode's render target). To ensure
+    // the background color is always visible, we composite it as the base
+    // layer: wherever the scene texture is black (no objects), the bg color
+    // shows through. We use max() — fills black pixels with bg color without
+    // overwriting bright pixels (objects, lights).
+    // Extract RGB components from the Color uniform (TSL vec3() doesn't
+    // accept THREE.Color directly — needs r/g/b floats).
+    const bgR = this._bgColor.mul(1).x // extract r channel from Color uniform
+    const bgG = this._bgColor.mul(1).y
+    const bgB = this._bgColor.mul(1).z
+    const bgAsVec3 = vec3(bgR, bgG, bgB)
+    scene = scene.max(bgAsVec3)
 
     // ── Chromatic aberration (RGB channel shift) ──
     // Mirrors COMPOSITE_FSG: dir = normalize(uv-0.5) * chromatic; R and B

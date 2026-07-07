@@ -8,7 +8,6 @@ import { WebGPURenderer } from 'three/webgpu'
 // fragmentShader → resolveIncludes(undefined) crash on first frame.
 // (three r0.184 does not auto-register this.)
 import { WebGLNodesHandler } from 'three/addons/tsl/WebGLNodesHandler.js'
-import { setTransmissionEnabled } from './World/SplashCube'
 import { Sizes } from './Sizes'
 import { DeviceCapability } from '../core/DeviceCapability'
 import { type WorldState } from '../core/types'
@@ -140,22 +139,18 @@ export class Renderer {
       this.pipeline.setupWebGLIfNeeded()
     }
 
-    // Transmission on real WebGPU only
+    // Transmission is disabled on ALL paths (see SplashCube.ts comment).
+    // setTransmissionEnabled() is now a no-op, kept for API compat.
+    // WebGPU device-loss logging (DEV only).
     const isRealWebGPU = (this.instance as any).isWebGPURenderer
       && (this.instance as any).backend?.constructor?.name === 'WebGPUBackend'
-    if (isRealWebGPU) {
-      setTransmissionEnabled(true)
-      // DEV-only WebGPU device-loss logging — helps diagnose the ~30s reload
-      // issue. three.js sets _isDeviceLost = true on loss, but doesn't reload.
-      // The browser may auto-reload the tab if GPU memory is exhausted.
-      if (import.meta.env.DEV) {
-        const wg = this.instance as any
-        if (wg.onDeviceLost) {
-          const origHandler = wg.onDeviceLost.bind(wg)
-          wg.onDeviceLost = (info: any) => {
-            console.error('[Renderer] WebGPU device lost!', info)
-            origHandler(info)
-          }
+    if (isRealWebGPU && import.meta.env.DEV) {
+      const wg = this.instance as any
+      if (wg.onDeviceLost) {
+        const origHandler = wg.onDeviceLost.bind(wg)
+        wg.onDeviceLost = (info: any) => {
+          console.error('[Renderer] WebGPU device lost!', info)
+          origHandler(info)
         }
       }
     }

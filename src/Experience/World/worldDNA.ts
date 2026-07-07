@@ -13,7 +13,6 @@
 
 import { Fn, vec3, float, uniform, positionLocal, normalLocal, mx_noise_float, mix, sin, cos, smoothstep } from 'three/tsl'
 import * as THREE from 'three'
-import type { MeshPhysicalNodeMaterial } from 'three/webgpu'
 
 // Uniforms — shared across all face materials (set once, mutated per section)
 export const worldDNAUniforms = {
@@ -86,12 +85,26 @@ export const worldRoughnessNode = Fn(() => {
   return n.mul(0.02).add(0.03)
 })
 
-/** Attach worldDNA to a MeshPhysicalNodeMaterial. Call once per material. */
-export function attachWorldDNA(mat: MeshPhysicalNodeMaterial): void {
-  mat.positionNode = worldPositionNode()
-  mat.colorNode = worldColorNode()
-  mat.emissiveNode = worldEmissiveNode()
-  mat.roughnessNode = worldRoughnessNode()
+/** Attach worldDNA to a material. Call once per material.
+ *
+ *  NO TSL node overrides are set. When ANY TSL node (positionNode, colorNode,
+ *  emissiveNode, roughnessNode) is overridden, the material's `opacity`/
+ *  `transparent` properties are ignored on WebGPU (native TSL compilation
+ *  treats the material as opaque). This causes the glass cube to render
+ *  solid instead of translucent — a major visual difference between WebGPU
+ *  and WebGL2.
+ *
+ *  Instead of TSL nodes, ALL material properties are updated in JS:
+ *    - mat.color: lerp between section colors (SplashCube.update)
+ *    - mat.emissive: lerp between section emissive (SplashCube.update)
+ *    - mat.roughness: set as material property
+ *    - Vertex displacement: done at mesh level (face position offsets in JS)
+ *
+ *  This gives visual parity: the material uses its built-in PBR shader on
+ *  ALL backends, which respects opacity/transparent correctly. */
+export function attachWorldDNA(_mat: THREE.MeshPhysicalMaterial): void {
+  // No TSL node overrides — see comment above.
+  // Intentionally empty: all material updates are done via JS properties.
 }
 
 /** Update audio-reactive uniforms. Called by Experience.update each frame. */
