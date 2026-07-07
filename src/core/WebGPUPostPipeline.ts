@@ -195,7 +195,20 @@ export class WebGPUPostPipeline {
     const bMask = bEdgeX.mul(bEdgeY)
     color = color.mul(this._borderStrength.oneMinus().add(bMask).min(1.0))
 
+    // ── 10. sRGB encode ──
+    // Explicit sRGB encode — matches WebGL2 composite shader (toneMapped: true
+    // applies sRGB via three.js). We disable outputColorTransform on the
+    // pipeline (see below) to avoid double encode. This ensures the TSL graph
+    // has FULL control over the output: ACES (step 6) + sRGB (this step).
+    // Using pow(1/2.2) approximation — close to exact sRGB curve, same as
+    // WebGL2 composite shader (which also uses pow(0.4545)).
+    color = color.pow(0.4545)
+
     this._pipeline = new TSLRenderPipeline(this._renderer, color)
+    // Disable automatic color transform — we apply sRGB encode manually above.
+    // Without this, TSLRenderPipeline would apply renderOutput() which adds
+    // ANOTHER sRGB encode → double encode → washed out image.
+    this._pipeline.outputColorTransform = false
   }
 
   resize(): void {
