@@ -115,11 +115,21 @@ export default defineConfig({
   },
   plugins: [
     {
-      // Intercept /@vite/client request — return a stub with the exports
-      // that source files import (createHotContext, etc.). Without the real
-      // client code: no WebSocket, no polling, no reload loop.
+      // Strip @vite/client from HTML + intercept the HTTP request.
+      // Through the Caddy/XTransformPort gateway, /@vite/client resolves to
+      // the Next.js app (port 3000) which returns HTML instead of JS — this
+      // breaks all module loading. We need to: (1) remove the script tag from
+      // HTML so the browser never requests it, and (2) return a stub for
+      // direct localhost access.
       name: 'block-vite-client',
       apply: 'serve',
+      transformIndexHtml(html) {
+        // Remove the @vite/client script tag from the HTML
+        return html.replace(
+          /<script[^>]*src="[^"]*\/@vite\/client[^"]*"[^>]*><\/script>\s*/g,
+          '',
+        )
+      },
       configureServer(server) {
         server.middlewares.use((req, res, next) => {
           if (req.url && req.url.includes('/@vite/client')) {

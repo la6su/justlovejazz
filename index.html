@@ -53,6 +53,30 @@
       }
     </script>
 
+    <!-- Block @vite/client — through the reverse proxy, /@vite/client
+         resolves to the Next.js app (port 3000) which returns HTML instead
+         of JS, breaking all module loading. This synchronous script removes
+         the @vite/client script tag before the browser can fetch it. -->
+    <script>
+      (function () {
+        // Remove existing @vite/client script tags
+        document.querySelectorAll('script[src*="/@vite/client"]').forEach(function (s) {
+          s.remove()
+        })
+        // Watch for dynamically injected @vite/client (Vite injects it at runtime)
+        var observer = new MutationObserver(function () {
+          document.querySelectorAll('script[src*="/@vite/client"]').forEach(function (s) {
+            s.remove()
+          })
+        })
+        observer.observe(document.documentElement, { childList: true, subtree: true })
+        // Provide a minimal import.meta.hot shim — EventBus/StateBus check
+        // import.meta.hot for HMR dispose. Since @vite/client is blocked,
+        // import.meta.hot may be undefined (which is fine — the if() guards
+        // skip the HMR code).
+      })()
+    </script>
+
     <style>
       * {
         box-sizing: border-box;
