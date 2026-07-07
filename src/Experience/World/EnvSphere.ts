@@ -64,23 +64,28 @@ const envColorNode = Fn(() => {
   // the sphere surface. This is the 21st.dev mesh-gradient look: 3-4 color
   // blobs softly blended, completely static, premium and clean.
   //
+  // IMPORTANT: we use mix() not add(). add() is invisible on bright backgrounds
+  // (intro section has white bg → purple + white = still white). mix() replaces
+  // the base color with the orb color at the orb center, fading to base at the
+  // edge → visible on ANY background (white intro OR dark about/works/etc.).
+  //
   // Positions chosen for visual balance: orb1 upper-front-left, orb2 lower-
   // right, orb3 upper-back. Colors: purple / blue / magenta-pink.
 
   // Orb 1 (purple) — upper-front-left
   const orb1Dist = vec3(float(-0.5), float(0.35), float(0.5)).sub(nrm).length()
   const orb1Falloff = smoothstep(float(0.9), float(0.0), orb1Dist)
-  color = color.add(envUniforms.uOrb1.mul(orb1Falloff.mul(0.22)))
+  color = mix(color, envUniforms.uOrb1, orb1Falloff.mul(0.55))
 
   // Orb 2 (blue) — lower-right
   const orb2Dist = vec3(float(0.6), float(-0.1), float(-0.2)).sub(nrm).length()
   const orb2Falloff = smoothstep(float(1.0), float(0.0), orb2Dist)
-  color = color.add(envUniforms.uOrb2.mul(orb2Falloff.mul(0.18)))
+  color = mix(color, envUniforms.uOrb2, orb2Falloff.mul(0.50))
 
   // Orb 3 (magenta) — upper-back
   const orb3Dist = vec3(float(0.3), float(0.55), float(-0.6)).sub(nrm).length()
   const orb3Falloff = smoothstep(float(0.85), float(0.0), orb3Dist)
-  color = color.add(envUniforms.uOrb3.mul(orb3Falloff.mul(0.16)))
+  color = mix(color, envUniforms.uOrb3, orb3Falloff.mul(0.45))
 
   // ── Layer 3: Horizon glow — brighter band at y≈0 ──
   const glowBand = smoothstep(float(0.15), float(0.0), y.abs())
