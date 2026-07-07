@@ -70,6 +70,20 @@ export class DeviceCapability {
   public postProcessing: boolean
   public floatRenderTargets: boolean
 
+  /**
+   * True ONLY when WebGPURenderer actually got WebGPUBackend (not WebGLBackend
+   * fallback) AND the adapter is NOT a software fallback (SwiftShader).
+   *
+   * Set by Renderer.init() after `wg.init()` + adapter inspection. Stays
+   * `false` on WebGL2 path and on WebGPU→WebGL fallback.
+   *
+   * This flag gates the "premium" visual path (TSL node overrides, real
+   * glass transmission) — see IMPROVEMENT_PLAN A1/A2. On non-premium paths
+   * the project falls back to the parity path (JS-driven material props,
+   * opacity-based glass) that already works.
+   */
+  public isRealWebGPU: boolean = false
+
   public static get isMobile(): boolean {
     return detectMobile()
   }

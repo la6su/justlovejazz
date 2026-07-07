@@ -7,9 +7,11 @@
 // After opener: cube continues as baku on all sections.
 
 import * as THREE from 'three'
+import { MeshPhysicalNodeMaterial } from 'three/webgpu'
 import { Noise } from '../../Utils/Noise'
 import { attachWorldDNA, updateWorldDNA } from './worldDNA'
 import { BakuRole, type BakuMaterialState } from '../../core/types'
+import { DeviceCapability } from '../../core/DeviceCapability'
 
 export interface BakuMaterialParams {
   color: THREE.Color
@@ -19,18 +21,18 @@ export interface BakuMaterialParams {
   role: BakuRole
 }
 
-// Transmission is DISABLED on ALL paths. On WebGPU with TSL PassNode,
-// transmission renders the material opaque (the TSL colorNode override
-// doesn't properly wire up the transmission render target). On WebGL2
-// (WebGLBackend fallback), transmission crashes (ViewportTextureNode.
-// getCanvasTarget not a function). Both paths use opacity-based glass
-// instead — consistent visual parity. Env map reflections (from
-// RoomEnvironment PMREM) provide the glass look on both paths.
+// Transmission is DISABLED on the PARITY path (WebGL2 / WebGLBackend fallback).
+// On the PREMIUM path (real WebGPU, see DeviceCapability.isRealWebGPU) we use
+// MeshPhysicalNodeMaterial with transmission=1 — true glass refraction.
+// The parity path uses opacity-based glass instead — consistent visual parity.
+// Env map reflections (from RoomEnvironment PMREM) provide the glass look on
+// both paths; the premium path additionally gets worldDNA TSL displacement +
+// iridescent shimmer + rim glow.
 
 /** Kept for API compat — Renderer.init() imports this but it's a no-op now.
- *  Transmission is always disabled (see comment above). */
+ *  Transmission is gated by `isRealWebGPU` in SplashCube.buildCube(). */
 export function setTransmissionEnabled(_enabled: boolean): void {
-  // No-op — transmission is always disabled
+  // No-op — transmission is decided at material-creation time in buildCube()
 }
 
 /** Rotation per section transition (radians). ~30° = π/6. Persistent —
@@ -92,23 +94,35 @@ export class SplashCube extends THREE.Mesh {
     // low roughness (sharp highlights), high clearcoat (surface gloss),
     // iridescence (rainbow edge shimmer).
     //
-    // IMPORTANT: Using THREE.MeshPhysicalMaterial (NOT MeshPhysicalNodeMaterial).
-    // NodeMaterials don't properly handle transparent/opacity through
-    // WebGLNodesHandler on WebGL2, and on WebGPU native TSL compilation
-    // ignores opacity when TSL nodes are set. A regular MeshPhysicalMaterial
-    // handles opacity/transparent correctly on ALL backends:
-    //   - WebGLRenderer: native PBR shader with proper alpha blending
-    //   - WebGPURenderer: auto-wraps regular materials in TSL nodes internally
-    // This gives visual parity — the glass cube is translucent on both paths.
+    // PREMIUM PATH (IMPROVEMENT_PLAN A1+A2):
+    // On real WebGPU (DeviceCapability.isRealWebGPU === true) we use
+    // MeshPhysicalNodeMaterial — this allows TSL node overrides (worldDNA:
+    // vertex displacement, iridescent shimmer, rim glow, noise roughness)
+    // AND real `transmission` (true glass refraction through the cube).
+    //
+    // PARITY PATH (WebGL2 / WebGLBackend fallback):
+    // Plain THREE.MeshPhysicalMaterial — no TSL nodes (attachWorldDNA is
+    // a no-op), transmission disabled (crashes on WebGLBackend fallback).
+    // Glass look comes from opacity + envMap reflections only. Visual
+    // outcome is clean but lacks the displacement / shimmer / refraction.
     //
     // The env map is set on scene.environment by Experience.setupEnvironment()
     // (RoomEnvironment PMREM via secondary WebGLRenderer on WebGPU path).
-    const sharedMat = new THREE.MeshPhysicalMaterial({
-      color: 0xffffff,           // neutral white — section tint comes from mat.color update
+    //
+    // NOTE: MeshPhysicalNodeMaterial shares all public PBR props with
+    // MeshPhysicalMaterial (color, emissive, roughness, metalness, opacity,
+    // iridescence, clearcoat, transmission, etc.) — the JS-side updates in
+    // update()/applyRoleAndParams() work identically on both paths. The
+    // difference is only whether TSL nodes override the GPU-side color /
+    // position / emissive / roughness (premium) or not (parity).
+    const isPremium = DeviceCapability.getInstance().isRealWebGPU
+
+    const baseProps = {
+      color: 0xffffff,           // neutral white — section tint comes from worldColorNode (premium) or mat.color update (parity)
       emissive: 0x1a2a4a,        // subtle blue glow at edges
       emissiveIntensity: 0.12,   // very subtle — glass shouldn't self-illuminate much
       transparent: true,
-      opacity: 0.45,             // semi-transparent glass (same on all paths for parity)
+      opacity: 0.45,             // semi-transparent glass (parity path). On premium path, opacity is multiplied by 1.0 in NodeMaterial — same result.
       side: THREE.DoubleSide,
       roughness: 0.02,           // extremely smooth → razor-sharp reflections
       metalness: 0.0,            // non-metal (it's dielectric glass)
@@ -116,15 +130,32 @@ export class SplashCube extends THREE.Mesh {
       iridescenceIOR: 1.3,       // subtle iridescence shift
       clearcoat: 1.0,            // full clearcoat — surface gloss
       clearcoatRoughness: 0.0,   // perfectly smooth clearcoat
-      transmission: 0,           // disabled (crashes on WebGLBackend fallback)
-      thickness: 1.2,            // kept for API compat (no effect when transmission=0)
+      thickness: 1.2,            // glass thickness for refraction (premium path uses it; parity path ignores when transmission=0)
       ior: 1.52,                 // crown glass IOR
       attenuationColor: new THREE.Color(0x8899bb),  // cool blue tint at edges
       attenuationDistance: 3.0,  // how far light travels before absorbing the tint
       envMapIntensity: 1.5,      // strong environment reflections (THE key for glass look)
       depthWrite: false,         // don't write depth — transparent glass shouldn't occlude
-    })
-    attachWorldDNA(sharedMat)
+    } as const
+
+    let sharedMat: THREE.MeshPhysicalMaterial
+    if (isPremium) {
+      // Premium WebGPU path: NodeMaterial + TSL worldDNA + REAL transmission.
+      // transmission=1 here is safe — real WebGPUBackend supports it. The old
+      // "crashes on WebGLBackend fallback" comment only applied to the parity
+      // path, which we no longer hit on real WebGPU.
+      const nodeMat = new MeshPhysicalNodeMaterial(baseProps)
+      nodeMat.transmission = 1.0  // A2: true glass refraction
+      sharedMat = nodeMat as unknown as THREE.MeshPhysicalMaterial
+    } else {
+      // Parity path: opacity-based glass (as before).
+      sharedMat = new THREE.MeshPhysicalMaterial({
+        ...baseProps,
+        transmission: 0,           // disabled (crashes on WebGLBackend fallback)
+      })
+    }
+
+    attachWorldDNA(sharedMat)  // premium: attaches 4 TSL nodes. parity: no-op.
     this.faceMaterials.push(sharedMat)
 
     for (let i = 0; i < 6; i++) {
@@ -336,13 +367,14 @@ export class SplashCube extends THREE.Mesh {
       pulse: this.openerProgress,
     })
 
-    // ── Update mat.color + mat.emissive directly (replaces TSL node overrides) ──
-    // When ANY TSL node is overridden (positionNode, colorNode, emissiveNode,
-    // roughnessNode), the material's `opacity`/`transparent` properties are
-    // ignored on WebGPU (native TSL compilation treats material as opaque).
-    // By NOT setting any TSL nodes and instead updating mat.color/mat.emissive
-    // in JS, the material's native opacity/transparent handling works on ALL
-    // backends → visual parity. The lerp blends between current + next section.
+    // ── Update mat.color + mat.emissive directly ──
+    // On PREMIUM path: these JS props are overridden by TSL worldDNA nodes
+    // (colorNode, emissiveNode) — the GPU reads from uColorA/uColorB uniforms
+    // set above via updateWorldDNA(). The JS copy() here is a harmless no-op
+    // visually (kept for parity-path correctness + future fallback safety).
+    // On PARITY path: these JS props ARE the source of truth — the GPU reads
+    // mat.color / mat.emissive directly. The lerp blends between current +
+    // next section colors smoothly.
     const mat = this.faceMaterials[0]!
     mat.color.copy(this._blendFromColor).lerp(this._blendToColor, this._blendT)
     mat.emissive.copy(this._blendFromEmissive).lerp(this._blendToEmissive, this._blendT)

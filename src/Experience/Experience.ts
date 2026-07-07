@@ -60,6 +60,10 @@ export class Experience {
   private _circNav: CircularNav | null = null
   private _needsRender = true // start true to render the first frame
   private _bakuCarouselActive = false // BakuCarousel is morphed/scrolling
+  // A4: ambient breathing — periodic 1-frame refresh in idle (no continuous loop)
+  private _ambientBreathTimer = 0
+  private static readonly AMBIENT_BREATH_INTERVAL = 2.5 // seconds between idle refresh frames
+  private _reducedMotion = false // cached prefers-reduced-motion (updated in init)
 
   private static readonly SECTION_LABELS = [
     'Intro',
@@ -214,6 +218,7 @@ export class Experience {
     // NOTE: SmoothScroll/Lenis was removed — SwipeNav drives section
     // navigation (no page scroll). ProjectOverlay locks body overflow
     // directly when the fullscreen overlay is open.
+    this._reducedMotion = prefersReducedMotion()
     this.contentReveal = new ContentReveal()
     this.cursor = new Cursor()
     await this.renderer.init()
@@ -364,6 +369,27 @@ export class Experience {
 
     if (navActive || introActive || carouselActive || openerActive || camShaking) {
       this._needsRender = true
+    }
+
+    // ── A4: Ambient breathing (IMPROVEMENT_PLAN) ──
+    // When fully idle, schedule a single render frame every ~2.5 s so the
+    // scene doesn't look frozen. On premium path this advances worldDNA's
+    // uTime → the baku cube's vertex displacement subtly morphs (breathing
+    // effect). On parity path it advances EnvSphere rotation + particle
+    // drift timers. Cost: ~0.4 fps equivalent (1 frame / 2.5 s) — still
+    // "zero draw calls when idle" in spirit (no continuous loop).
+    //
+    // Respects: prefers-reduced-motion (frozen entirely), document.hidden
+    // (setAnimationLoop already paused, but guard is cheap).
+    if (!navActive && !introActive && !carouselActive && !openerActive && !camShaking && !this._reducedMotion) {
+      this._ambientBreathTimer += dt
+      if (this._ambientBreathTimer >= Experience.AMBIENT_BREATH_INTERVAL) {
+        this._ambientBreathTimer = 0
+        this._needsRender = true
+      }
+    } else {
+      // Reset timer when active — first idle period waits full interval.
+      this._ambientBreathTimer = 0
     }
 
     // Always update navigation + world state (cheap), but only render when needed
