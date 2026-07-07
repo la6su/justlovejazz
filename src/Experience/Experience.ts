@@ -12,7 +12,7 @@ import { StateBus } from '../core/StateBus'
 import type { World } from '../core/World'
 import { WorksPortfolio } from './WorksPortfolio'
 import { ProjectOverlay } from '../UI/ProjectOverlay'
-import { PerfMonitor } from '../core/PerfMonitor'
+
 import { AudioSystem } from '../core/AudioSystem'
 import { CircularNav } from '../UI/CircularNav'
 import { UIMenu } from '../UI/UIMenu'
@@ -217,10 +217,6 @@ export class Experience {
     this.contentReveal = new ContentReveal()
     this.cursor = new Cursor()
     await this.renderer.init()
-    if (import.meta.env.DEV) {
-      // Start long-task + FPS + memory monitoring (DEV only, no-op in PROD).
-      PerfMonitor.start()
-    }
     await this.buildWorld()
     this.bus = StateBus.getInstance()
 
@@ -372,7 +368,7 @@ export class Experience {
 
     // Always update navigation + world state (cheap), but only render when needed
     const ns = this._circNav?.getOverallProgress() ?? 0
-    const { cameraTarget, worldState } = this.world.advance(ns)
+    const { cameraTarget, worldState } = this.world.updateTransform(ns)
     this.world.update(dt, this._needsRender)
 
     // Drive worldDNA section blend — from→to colors + phaseProgress (scroll t).
@@ -481,18 +477,6 @@ export class Experience {
       }
     }
 
-    // Performance profiling — feed renderer info to PerfMonitor (DEV only).
-    if (import.meta.env.DEV) {
-      const r = this.renderer.instance as unknown as {
-        isWebGPURenderer?: boolean
-        info?: { render?: { calls?: number; triangles?: number } }
-      }
-      PerfMonitor.setRendererInfo(
-        r.isWebGPURenderer ? 'webgpu' : 'webgl',
-        r.info?.render?.calls ?? null,
-        r.info?.render?.triangles ?? null,
-      )
-    }
     // NOTE: do NOT call requestAnimationFrame here — setAnimationLoop (set in
     // init()) drives the loop. Calling rAF on top would double the frame rate
     // and fight the WebGPU swap chain synchronization.
@@ -535,8 +519,6 @@ export class Experience {
     // on hot-reload (Vite HMR) and on explicit teardown.
     this.sizes.destroy()
     input.destroy()
-    // Stop perf monitoring (disconnects PerformanceObserver + cancels rAF).
-    PerfMonitor.stop()
     this._circNav?.dispose()
     this.audio.dispose()
   }

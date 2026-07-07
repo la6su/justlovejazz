@@ -40,13 +40,19 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
     await ui.init()
     progress(50)
 
-    const { Bootstrapper } = await import('./core/Bootstrapper')
+    const { Experience } = await import('./Experience/Experience')
 
     const onReadyCb: OnReadyCallback = (_renderer, _scene: THREE.Scene) => {
       progress(95)
     }
 
-    await Bootstrapper.init(ui, onReadyCb)
+    // Inline Bootstrapper.init — three lines (construct + init + onReady cb).
+    const experience = new Experience(ui)
+    await experience.init()
+    onReadyCb(
+      experience.renderer.instance as import('./Experience/Renderer').RenderSurface,
+      experience.scene,
+    )
     progress(98)
     progress(100)
 

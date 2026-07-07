@@ -12,7 +12,6 @@ import { SplashCube } from '../Experience/World/SplashCube'
 import { getWorldConfigForPage, type PhaseConfig } from './WorldConfig'
 import { SectionSceneFactory } from './SectionSceneFactory'
 import { disposeMaterialDeep } from '../Utils/dispose'
-import type { WorldAtmosphere } from './WorldAtmosphere'
 
 export interface WorldTransformResult {
   cameraTarget: CameraTarget
@@ -24,7 +23,6 @@ export class World extends THREE.Group {
   public baku!: SplashCube
   public lightsGroup!: CinematicLights
   public drawTrail?: DrawTrail
-  public atmosphere: WorldAtmosphere | null = null
   public bg!: BG
   public groundPlane!: THREE.Mesh
   public sceneGroups: THREE.Group[] = []
@@ -37,12 +35,9 @@ export class World extends THREE.Group {
     return this._currentSectionIndex
   }
 
-  // ── GC-free object pool for per-frame transforms (avoids 11 allocs/frame)
+  // ── GC-free object pool for per-frame transforms (avoids allocs/frame)
   private _poolPos = new THREE.Vector3()
   private _poolLookAt = new THREE.Vector3()
-  private _poolBakuPos = new THREE.Vector3()
-  private _poolBakuRot = new THREE.Quaternion()
-  private _poolBakuScale = new THREE.Vector3()
   private _poolBakuColor = new THREE.Color()
   private _poolBakuEmissive = new THREE.Color()
   private _poolEnvColor = new THREE.Color()
@@ -97,7 +92,6 @@ export class World extends THREE.Group {
   }
 
   public async init(): Promise<void> {
-    await this.ensureAtmosphere()
     const pageKey = (document.body?.getAttribute('data-page') || 'home').split('-')[0] ?? 'home'
     this.configs = getWorldConfigForPage(pageKey)
     this.disposeSections()
@@ -147,7 +141,9 @@ export class World extends THREE.Group {
     const firstCfg = this.configs[0]
     if (firstCfg) {
       this.lightsGroup.changeSection(firstCfg)
-      this.atmosphere?.setFog(firstCfg.fog.color, firstCfg.fog.density)
+      // Inline WorldAtmosphere.setFog — fog not yet set on init, so create new.
+      // Background is owned by BG.ts (HERMES_RULES §5) — do not touch scene.background.
+      this.sceneRef.fog = new THREE.FogExp2(firstCfg.fog.color.clone(), firstCfg.fog.density)
     }
 
     // ── Enforce final visibility: only group 0 visible, all others hidden.
@@ -234,11 +230,11 @@ export class World extends THREE.Group {
     this.sections.forEach((s, i) => {
       if (i === index) {
         // Active section → viewing
-        s.switchViewingState(SectionState.VIEWING, 0.8, reduced)
+        s.switchState(SectionState.VIEWING, 0.8, reduced)
         s.fadeIn(0.6)
       } else if (i < index) {
         // Previous sections → passed
-        s.switchViewingState(SectionState.PASSED, 0.5, reduced)
+        s.switchState(SectionState.PASSED, 0.5, reduced)
       }
       // Sections > index stay ready
     })
@@ -299,7 +295,14 @@ export class World extends THREE.Group {
       const activeCfg = this.configs[fromIndex]
       if (activeCfg) {
         this.lightsGroup.changeSection(activeCfg)
-        this.atmosphere?.setFog(activeCfg.fog.color, activeCfg.fog.density)
+        // Inline WorldAtmosphere.setFog — fog exists from init(), reuse instance.
+        const existingFog = this.sceneRef.fog
+        if (existingFog instanceof THREE.FogExp2) {
+          existingFog.color.copy(activeCfg.fog.color)
+          existingFog.density = activeCfg.fog.density
+        } else {
+          this.sceneRef.fog = new THREE.FogExp2(activeCfg.fog.color.clone(), activeCfg.fog.density)
+        }
       }
       // DrawTrail visibility — only on works section (idx=3)
       if (this.drawTrail) {
@@ -378,15 +381,15 @@ export class World extends THREE.Group {
     // ── State transitions (Junni: trigger on entering/leaving scroll ranges)
     const reduced = this.isReducedMotion
     if (fromSec.state === SectionState.READY) {
-      fromSec.switchViewingState(SectionState.VIEWING, 0.8, reduced)
+      fromSec.switchState(SectionState.VIEWING, 0.8, reduced)
       fromSec.fadeIn(0.6)
     }
     if (toSec.state === SectionState.READY && t > 0.1) {
-      toSec.switchViewingState(SectionState.VIEWING, 0.8, reduced)
+      toSec.switchState(SectionState.VIEWING, 0.8, reduced)
       toSec.fadeIn(0.6)
     }
     if (t > 0.7 && fromSec.state === SectionState.VIEWING) {
-      fromSec.switchViewingState(SectionState.PASSED, 0.5, reduced)
+      fromSec.switchState(SectionState.PASSED, 0.5, reduced)
     }
 
     // ── Lerp transforms from Section transforms (Junni pattern)
@@ -394,8 +397,6 @@ export class World extends THREE.Group {
     const toCam = toSec.cameraTransform
     const fromBaku = fromSec.bakuTransform
     const toBaku = toSec.bakuTransform
-    const fromPP = fromSec.ppParams
-    const toPP = toSec.ppParams
     const fromLight = fromSec.lightData
     const toLight = toSec.lightData
 
@@ -434,12 +435,6 @@ export class World extends THREE.Group {
       worldState: {
         currentPhase: fromCfg.id as unknown as NarrativePhase,
         phaseProgress: t,
-        globalProgress: scrollValue,
-        bakuPosition: this._poolBakuPos.lerpVectors(fromBaku.position, toBaku.position, t),
-        bakuRotation: this._poolBakuRot.copy(fromBaku.rotation).slerp(toBaku.rotation, t),
-        bakuScale: this._poolBakuScale.lerpVectors(fromBaku.scale, toBaku.scale, t),
-        bakuOpacity: THREE.MathUtils.lerp(fromBaku.opacity, toBaku.opacity, t),
-        bakuRole: toBaku.role as unknown as BakuRole,
         bakuMaterial: {
           role: toBaku.role as unknown as BakuRole,
           color: this._poolBakuColor.lerpColors(fromBaku.material.color, toBaku.material.color, t),
@@ -460,21 +455,8 @@ export class World extends THREE.Group {
           ),
         },
         envColor: this._poolEnvColor.lerpColors(fromLight.ambientColor, toLight.ambientColor, t),
-        envIntensity: THREE.MathUtils.lerp(fromLight.intensity, toLight.intensity, t),
-        uiShowGallery: toCfg.ui.showGallery,
-        post: {
-          bloom: THREE.MathUtils.lerp(fromPP.bloom, toPP.bloom, t),
-          vignette: THREE.MathUtils.lerp(fromPP.vignette, toPP.vignette, t),
-          grain: THREE.MathUtils.lerp(fromPP.grain, toPP.grain, t),
-          chromatic: THREE.MathUtils.lerp(fromPP.chromatic, toPP.chromatic, t),
-        },
       },
     }
-  }
-
-  // ── Public alias for updateTransform — Experience.advance() calls this
-  public advance(scroll: number): WorldTransformResult {
-    return this.updateTransform(scroll)
   }
 
   public resize(width: number, height: number): void {
@@ -534,7 +516,8 @@ export class World extends THREE.Group {
     this.lightsGroup.dispose()
     this.drawTrail?.dispose()
     if (this.drawTrail) this.sceneRef.remove(this.drawTrail.object)
-    this.atmosphere?.dispose()
+    // Inline WorldAtmosphere.dispose — null out fog only (BG.ts owns background).
+    this.sceneRef.fog = null
   }
 
   /** Set camera reference for DrawTrail (unproject cursor to world). */
@@ -548,12 +531,6 @@ export class World extends THREE.Group {
   private _smoothstep(t: number): number {
     // t is 0..1 within a range; ease it so transitions have plateaus
     return t * t * (3 - 2 * t)
-  }
-
-  public async ensureAtmosphere(): Promise<void> {
-    if (this.atmosphere) return
-    const { WorldAtmosphere } = await import('./WorldAtmosphere')
-    this.atmosphere = new WorldAtmosphere(this.sceneRef)
   }
 
   /** Get PhaseConfig for a given phase ID */
@@ -599,7 +576,6 @@ export class World extends THREE.Group {
     const cam = cfg.camera
     const baku = cfg.baku
     const light = cfg.lighting
-    const post = cfg.post
 
     return {
       cameraTarget: {
@@ -610,12 +586,6 @@ export class World extends THREE.Group {
       worldState: {
         currentPhase: cfg.id as unknown as NarrativePhase,
         phaseProgress: 0,
-        globalProgress: 0,
-        bakuPosition: baku.position.clone(),
-        bakuRotation: baku.rotation.clone(),
-        bakuScale: baku.scale.clone(),
-        bakuOpacity: baku.opacity,
-        bakuRole: baku.role as unknown as BakuRole,
         bakuMaterial: {
           role: baku.role as unknown as BakuRole,
           color: baku.material.color.clone(),
@@ -624,14 +594,6 @@ export class World extends THREE.Group {
           metalness: baku.material.metalness,
         },
         envColor: light.ambientColor.clone(),
-        envIntensity: light.intensity,
-        uiShowGallery: cfg.ui.showGallery,
-        post: {
-          bloom: post.bloom,
-          vignette: post.vignette,
-          grain: post.grain,
-          chromatic: post.chromatic,
-        },
       },
     }
   }

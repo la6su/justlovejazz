@@ -13,9 +13,9 @@
 // disabled — body { overflow: hidden }). See STATUS.md + HERMES_RULES §21.
 //
 // The progress (0-1) is the SAME value that animates the 3D scene —
-// World.advance() uses getOverallProgress() which combines currentSection
-// + progress. When idle (progress=0, not transitioning), the 3D scene
-// is static — Experience skips rendering to save GPU.
+// World.updateTransform() consumes getOverallProgress() which combines
+// currentSection + progress. When idle (progress=0, not transitioning),
+// the 3D scene is static — Experience skips rendering to save GPU.
 //
 // BakuCarousel (works section) has its own scroll/drag — it doesn't use
 // CircularNav's drag, only its progress for section positioning.

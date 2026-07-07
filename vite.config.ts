@@ -71,7 +71,7 @@ export default defineConfig({
             },
             {
               name: 'vendor-ui',
-              test: /[\\/]node_modules[\\/](@studio-freight[\\/]lenis|uikit|lenis)[\\/]/,
+              test: /[\\/]node_modules[\\/]uikit[\\/]/,
               priority: 20,
             },
             {

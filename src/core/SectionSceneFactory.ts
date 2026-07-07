@@ -9,24 +9,20 @@ import { createSection4 } from '../Sections/Section4Challenge'
 import { createSection5 } from '../Sections/Section5Innovative'
 import { createSection6 } from '../Sections/Section6Contact'
 
-export class SectionSceneFactory {
-  static createIntro(): THREE.Group { return createSection1() }
-  static createAbout(): THREE.Group { return createSection2() }
-  static createFlexible(): THREE.Group { return createSection3() }
-  static createChallenge(): THREE.Group { return createSection4() }
-  static createInnovative(): THREE.Group { return createSection5() }
-  static createContact(): THREE.Group { return createSection6() }
+// Index → creator function. Single source of truth — no named wrappers.
+const SECTION_CREATORS: ReadonlyArray<() => THREE.Group> = [
+  createSection1,
+  createSection2,
+  createSection3,
+  createSection4,
+  createSection5,
+  createSection6,
+]
 
+export class SectionSceneFactory {
   static byIndex(i: number): THREE.Group {
-    switch (i) {
-      case 0: return this.createIntro()
-      case 1: return this.createAbout()
-      case 2: return this.createFlexible()
-      case 3: return this.createChallenge()
-      case 4: return this.createInnovative()
-      case 5: return this.createContact()
-      default: return this.createIntro()
-    }
+    const fn = SECTION_CREATORS[i] ?? SECTION_CREATORS[0]
+    return (fn ?? SECTION_CREATORS[0]!)()
   }
 
   static hideGeometry(group: THREE.Group): void {

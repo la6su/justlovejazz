@@ -36,22 +36,8 @@ export interface BakuMaterialState {
 export interface WorldState {
   currentPhase: NarrativePhase
   phaseProgress: number
-  globalProgress: number
-  bakuPosition: THREE.Vector3
-  bakuRotation: THREE.Quaternion
-  bakuScale: THREE.Vector3
-  bakuOpacity: number
-  bakuRole: BakuRole
   bakuMaterial: BakuMaterialState
   envColor: THREE.Color
-  envIntensity: number
-  uiShowGallery: boolean
-  post: {
-    bloom: number
-    vignette: number
-    grain: number
-    chromatic: number
-  }
 }
 
 export interface Project {

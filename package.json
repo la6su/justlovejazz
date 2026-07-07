@@ -40,7 +40,6 @@
   },
   "description": "Modern interactive portfolio using **Three.js TSL (Nodes)** with **WebGPU → WebGL fallback**.   Designed with **mobile-first UX** and a **procedural 3D background**.",
   "dependencies": {
-    "lenis": "^1.3.25",
     "three": "^0.184.0",
     "uikit": "^3.25.16"
   },

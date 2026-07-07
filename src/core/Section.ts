@@ -1,4 +1,4 @@
-// src/core/Section.ts — Junni-style: cameraTransform, bakuTransform, viewingState, switchViewingState()
+// src/core/Section.ts — Junni-style: cameraTransform, bakuTransform, viewingState, switchState()
 
 import * as THREE from 'three'
 import { StateBus } from './StateBus'
@@ -134,15 +134,6 @@ export class Section extends THREE.Group {
     })
 
     bus.on(this.opacityChannel, () => this.applyOpacity())
-  }
-
-  // ── Junni: switchViewingState(index) — instant или animated + reduced motion aware
-  public switchViewingState(
-    state: SectionState,
-    duration: number = 1.0,
-    reduced: boolean = false,
-  ): void {
-    this.switchState(state, duration, reduced)
   }
 
   public switchState(target: SectionState, duration: number = 1.0, reduced: boolean = false): void {
