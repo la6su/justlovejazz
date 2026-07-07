@@ -186,6 +186,9 @@ export class BakuCarousel extends THREE.Group {
     this.wheelHandler = (e: WheelEvent) => {
       if (!this._active || this._morphT < 0.5) return
       if (isMenuOpen() || isUiChromeEvent(e)) return
+      // Don't intercept while CircularNav transition is in progress
+      const nav = (window as unknown as { experience?: { _circNav?: { isActive: () => boolean } } }).experience?._circNav
+      if (nav?.isActive()) return
       e.preventDefault()
       this.scroll.target += e.deltaY * WHEEL_SENSITIVITY
       this.scheduleSnap()
@@ -193,6 +196,9 @@ export class BakuCarousel extends THREE.Group {
     this.pointerDownHandler = (e: PointerEvent) => {
       if (!this._active || this._morphT < 0.5) return
       if (isMenuOpen() || isUiChromeEvent(e)) return
+      // Don't intercept while CircularNav transition is in progress
+      const nav = (window as unknown as { experience?: { _circNav?: { isActive: () => boolean } } }).experience?._circNav
+      if (nav?.isActive()) return
       this.isDown = true
       this.dragStartX = e.clientX
       this.dragStartY = e.clientY

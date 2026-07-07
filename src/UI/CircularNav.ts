@@ -249,7 +249,8 @@ export class CircularNav {
     }
   }
 
-  private goToDirection(dir: 1 | -1): void {
+  /** Navigate to neighbor section. dir = +1 (next/down), -1 (prev/up). */
+  goToDirection(dir: 1 | -1): void {
     if (this._transitioning) return
     const next = this._currentSection + dir
     if (next < 0 || next >= this._sectionCount) return
