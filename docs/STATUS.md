@@ -54,7 +54,7 @@ Sections: `position:absolute; inset:0` (stacked). `.section-active` toggles visi
 
 | Module | Why |
 | --- | --- |
-| SmoothScroll/Lenis | SwipeNav/CircularNav drives navigation |
+| SmoothScroll/Lenis | CircularNav drives navigation (no page scroll) |
 | CursorLight | Continuous animation, removed for on-demand |
 | DebugStats | Merged into DevPanel (Tweakpane) |
 | SectionProgress | Replaced by CircularNav |
@@ -78,3 +78,6 @@ Sections: `position:absolute; inset:0` (stacked). `.section-active` toggles visi
 - Built-in materials for particles, ground, cards, edges
 - `try/catch` in `update()` — logs error, skips frame, doesn't stop loop
 - `prefers-reduced-motion` freezes decorative anims
+- Post-processing parity: bloom/vignette/grain/refraction/chromatic-aberration
+  on BOTH WebGPU (TSL graph) and WebGL2 (ShaderMaterial composite). Mouse wheel
+  does NOT navigate — only drag/dots/keyboard (see HERMES_RULES §21).

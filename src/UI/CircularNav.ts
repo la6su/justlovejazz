@@ -6,7 +6,11 @@
 // Swipe DOWN on the visible area → transition to NEXT section.
 // Swipe UP → transition to PREV section.
 // Progress 0→1 (0→100%) during drag drives the 3D scene transition.
-// On release: |progress| > 0.5 commits the transition, < 0.5 snaps back.
+// On release: |progress| > 0.5 commits, < 0.5 snaps back.
+//
+// Navigation inputs: pointer drag on the arc, tap on a dot, keyboard arrows.
+// Mouse wheel / trackpad scroll does NOT navigate sections (page scroll is
+// disabled — body { overflow: hidden }). See STATUS.md + HERMES_RULES §21.
 //
 // The progress (0-1) is the SAME value that animates the 3D scene —
 // World.advance() uses getOverallProgress() which combines currentSection
@@ -27,7 +31,6 @@ const TAP_THRESHOLD = 8 // px — drag < this = tap
 const COMMIT_THRESHOLD = 0.35 // |progress| > this on release → commit (lower = easier to commit)
 const SETTLE_EPS = 0.01 // |progress - target| < this → snapped (completion detection)
 const FLICK_VELOCITY = 0.45 // px/ms — flick faster than this → commit regardless of distance
-const WHEEL_COOLDOWN = 350 // ms — prevent rapid-fire wheel from skipping sections
 
 export class CircularNav {
   /** Public so Experience can place it. */
@@ -48,10 +51,10 @@ export class CircularNav {
   private _dragStartProgress = 0
   private _transitioning = false
   // Settle ease for commit / snap-back animations.
-  // 0.22 = ~10 frames to reach target at 60fps (~167ms) — decisive snap.
+  // 0.10 ≈ 22 frames at 60fps (~370ms) — smooth, cinematic settle.
   // During drag, progress is set directly (1:1 with finger), so this ease
   // only governs the post-release settle, NOT drag responsiveness.
-  private _ease = 0.22
+  private _ease = 0.10
   private _onSectionChange: ((index: number) => void) | null = null
   /** Called when transition starts or ends (for on-demand rendering). */
   private _onActiveChange: ((active: boolean) => void) | null = null
@@ -61,15 +64,12 @@ export class CircularNav {
   private _captureId: number | null = null
   /** Recent drag samples for velocity computation (t, y pairs). */
   private _dragSamples: { t: number; y: number }[] = []
-  /** Last wheel event time (for cooldown). */
-  private _lastWheelTime = 0
 
   // Listeners
   private _pointerDownHandler: ((e: PointerEvent) => void) | null = null
   private _pointerMoveHandler: ((e: PointerEvent) => void) | null = null
   private _pointerUpHandler: ((e: PointerEvent) => void) | null = null
   private _keydownHandler: ((e: KeyboardEvent) => void) | null = null
-  private _wheelHandler: ((e: WheelEvent) => void) | null = null
 
   constructor(sectionCount: number, opts?: Partial<CircularNavOptions>) {
     this._sectionCount = Math.max(2, sectionCount)
@@ -284,32 +284,11 @@ export class CircularNav {
       }
     }
 
-    // ── Mouse wheel / trackpad scroll → section navigation ──
-    // Desktop users instinctively scroll the wheel to navigate. Without this,
-    // the 3D experience feels "broken" on desktop (wheel does nothing).
-    // Cooldown prevents rapid-fire wheel events from skipping sections —
-    // one wheel "tick" = one section, matching the visual transition speed.
-    this._wheelHandler = (e: WheelEvent) => {
-      // Ignore if modal menu is open
-      const menu = document.getElementById('jlz-menu-modal')
-      if (menu && menu.classList.contains('uk-open')) return
-      // Only respond to vertical scroll (ignore horizontal trackpad swipe)
-      if (Math.abs(e.deltaY) < 8) return
-      // Cooldown — prevent rapid-fire from trackpad momentum scroll
-      const now = performance.now()
-      if (now - this._lastWheelTime < WHEEL_COOLDOWN) return
-      this._lastWheelTime = now
-      e.preventDefault()
-      const dir = e.deltaY > 0 ? 1 : -1
-      this.goToDirection(dir as 1 | -1)
-    }
-
     this.arc.addEventListener('pointerdown', this._pointerDownHandler)
     window.addEventListener('pointermove', this._pointerMoveHandler)
     window.addEventListener('pointerup', this._pointerUpHandler)
     window.addEventListener('pointercancel', this._pointerUpHandler)
     window.addEventListener('keydown', this._keydownHandler)
-    window.addEventListener('wheel', this._wheelHandler, { passive: false })
   }
 
   /** Tap on a dot → jump to that section. */
@@ -333,7 +312,7 @@ export class CircularNav {
 
   /** Navigate to neighbor section. dir = +1 (next/down), -1 (prev/up).
    *  If a transition is in progress, it completes immediately before starting
-   *  the new one. With the faster settle ease (0.22), the reset-to-0 stutter
+   *  the new one. With the smooth settle ease (0.10), the reset-to-0 stutter
    *  is barely visible (~1 frame). This preserves multi-press behavior:
    *  pressing ArrowDown twice quickly advances two sections. */
   goToDirection(dir: 1 | -1): void {
@@ -444,7 +423,6 @@ export class CircularNav {
       window.removeEventListener('pointercancel', this._pointerUpHandler)
     }
     if (this._keydownHandler) window.removeEventListener('keydown', this._keydownHandler)
-    if (this._wheelHandler) window.removeEventListener('wheel', this._wheelHandler)
     this.el.remove()
   }
 }

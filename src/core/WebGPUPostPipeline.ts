@@ -5,7 +5,7 @@
 
 import { WebGPURenderer, RenderPipeline as TSLRenderPipeline } from 'three/webgpu'
 import { tslBloom, tslPass } from '../types/tsl-helpers'
-import { uniform, uv, fract, dot, vec2, vec3, mix, smoothstep } from 'three/tsl'
+import { uniform, uv, fract, dot, vec2, vec3, mix, smoothstep, time, normalize, sin, cos, float } from 'three/tsl'
 import * as THREE from 'three'
 import type { Scene, Camera } from 'three'
 
@@ -103,18 +103,42 @@ export class WebGPUPostPipeline {
     const scenePass = tslPass(this._scene, this._camera) as any
     const sceneColor = scenePass.getTextureNode()
 
+    // ── Screen-space refraction (glass-like distortion) ──
+    // Mirrors the WebGL2 COMPOSITE_FSG refraction exactly (same coefficients):
+    // radial UV offset toward edges + sinusoidal organic wobble. The texture
+    // is sampled at the offset UV via .sample(uvNode). When refract=0 the
+    // offset collapses to zero, so sampling equals a plain sceneColor read.
+    const rCenter = uv().sub(0.5)
+    const rDist = rCenter.length()
+    const rStrength = this._refractStrength.mul(float(0.5).add(rDist.mul(1.5)))
+    const rWobble = vec2(
+      sin(uv().y.mul(20.0).add(time.mul(0.5))),
+      cos(uv().x.mul(20.0).add(time.mul(0.5))),
+    ).mul(rStrength.mul(0.003))
+    const refractUv = uv().add(rCenter.mul(rStrength).mul(0.04)).add(rWobble)
+    let scene = (sceneColor as any).sample(refractUv)
+
+    // ── Chromatic aberration (RGB channel shift) ──
+    // Mirrors COMPOSITE_FSG: dir = normalize(uv-0.5) * chromatic; R and B
+    // sampled at offset UVs in opposite directions, G kept at center.
+    // When chromatic=0 the shift is zero → identical to a single sample.
+    const cDir = normalize(uv().sub(0.5)).mul(this._chromaticStrength)
+    const rChan = (sceneColor as any).sample(uv().add(cDir)).x
+    const bChan = (sceneColor as any).sample(uv().sub(cDir)).z
+    scene = vec3(rChan, scene.y, bChan)
+
     // Bloom (mip-chain, ready-made node).
     // bloom() accepts UniformNode at runtime; TS types in three 0.184
     // incorrectly expect numbers. Cast to bypass.
     const bloomNode = tslBloom(
-      sceneColor,
+      scene,
       this._bloomStrength,
       this._bloomRadius,
       this._bloomThreshold,
     )
 
     // Composite: scene + bloom
-    let color = (sceneColor as any).add(bloomNode)
+    let color = scene.add(bloomNode)
 
     // Color grading — luminance-based shadow/highlight tint
     const lum = dot(color, vec3(0.299, 0.587, 0.114))
