@@ -1,5 +1,21 @@
 // Minimal shell entry: keep first paint path tiny, then lazy-load full app.
 // Errors are surfaced to console + ErrorTracker (not silently swallowed).
+
+// Log page unload/reload causes for debugging the ~30s reload issue.
+window.addEventListener('beforeunload', () => {
+  console.warn('[entry-shell] beforeunload triggered — page is about to reload/unload')
+  // Check if this is a WebGPU device loss
+  const exp = (window as any).experience
+  if (exp?.renderer?.instance) {
+    const r = exp.renderer.instance
+    console.warn('[entry-shell] renderer _isDeviceLost:', r._isDeviceLost)
+    console.warn('[entry-shell] renderer backend:', r.backend?.constructor?.name)
+  }
+})
+window.addEventListener('pagehide', (e) => {
+  console.warn('[entry-shell] pagehide triggered — persisted:', e.persisted)
+})
+
 const startApp = () =>
   import('./entry-app')
     .then((m) => m.startApp())

@@ -56,6 +56,7 @@ export class Experience {
   private _portfolioInitialized = false
   private _prevSectionIndex = -1
   private _introEmitted = false
+  private _lastLogTime = 0
   private _onSizesResize: () => void = () => {}
   private _onVisibilityChange: (() => void) | null = null
   public audio: AudioSystem = new AudioSystem()
@@ -378,13 +379,20 @@ export class Experience {
     if (import.meta.env.DEV) {
       const r = this.renderer.instance as unknown as {
         isWebGPURenderer?: boolean
-        info?: { render?: { calls?: number; triangles?: number } }
+        _isDeviceLost?: boolean
+        info?: { render?: { calls?: number; triangles?: number; drawCalls?: number; frameCalls?: number }; memory?: { geometries?: number; textures?: number } }
       }
       PerfMonitor.setRendererInfo(
         r.isWebGPURenderer ? 'webgpu' : 'webgl',
         r.info?.render?.calls ?? null,
         r.info?.render?.triangles ?? null,
       )
+      // Log device loss + memory every 5s for debugging the ~30s reload
+      if (Math.floor(time / 5000) !== Math.floor(this._lastLogTime / 5000)) {
+        this._lastLogTime = time
+        const mem = (performance as unknown as { memory?: { usedJSHeapSize: number; jsHeapSizeLimit: number } }).memory
+        console.warn('[Experience] frame', Math.floor(time / 1000), 's | deviceLost:', r._isDeviceLost, '| mem programs:', r.info?.memory?.geometries, 'textures:', r.info?.memory?.textures, '| heap:', mem ? `${Math.round(mem.usedJSHeapSize / 1048576)}MB / ${Math.round(mem.jsHeapSizeLimit / 1048576)}MB` : 'N/A')
+      }
     }
     // NOTE: do NOT call requestAnimationFrame here — setAnimationLoop (set in
     // init()) drives the loop. Calling rAF on top would double the frame rate
