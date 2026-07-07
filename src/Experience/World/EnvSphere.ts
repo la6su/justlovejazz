@@ -1,96 +1,105 @@
-// EnvSphere.ts — Cinematic mesh-gradient background (21st.dev style)
+// EnvSphere.ts — Atlas Aurora cinematic background (21st.dev port)
 //
-// Large inverted sphere with BackSide rendering. Procedural TSL shader creates
-// a BOLD mesh-gradient with 4 saturated color orbs on the visible hemisphere,
-// horizon glow, and a vignette for a focused "stage" feel.
+// Port of "Atlas Aurora" by hugo_1a34d4f7 (21st.dev component id: 16166) into
+// Three.js TSL. Original is a React/CSS component with 3 slow-drifting blurred
+// colour fields + diagonal sweep, blended with `screen` on a dark base.
 //
-// Design goals (after user feedback "don't see shader background"):
-//   - BOLD: 4 orbs at 65-80% opacity (was 45-55% — too subtle)
-//   - VISIBLE: all orbs on the +Z hemisphere (camera is at +Z, sees inside
-//     of BackSide sphere → only +Z hemisphere is visible). Old code had 2 of
-//     3 orbs on -Z hemisphere → invisible.
-//   - WIDER: falloff radius 1.2-1.4 (was 0.85-1.0) → larger, softer orbs
-//   - STATIC: no animation, no noise, no rotation (user: "should not move")
-//   - CINEMATIC: saturated colors + vignette darken edges → "stage spotlight"
-//
-// The sphere is OPAQUE (no transparency) — TSL NodeMaterial is safe here.
+// Adaptation to our 3D canvas context:
+//   - 3 colour orbs on the +Z (visible) hemisphere of a BackSide sphere
+//   - Each orb drifts on a slow sinusoidal path (period ~30s, like the original
+//     CSS keyframes). This is "calm breathing", NOT "swimming noise" — the
+//     motion is smooth and slow, matching the Atlas Aurora reference.
+//   - `mix()` blend (not `screen`) → orbs visible on ANY background (white
+//     intro OR dark sections). Original used `screen` on a dark base; we have
+//     a white intro section so `screen` would be invisible there.
+//   - Diagonal sweep: a 4th wide radial gradient that translates horizontally
+//     (matches `atlas-aurora-sweep` keyframe).
+//   - Skybox render pattern: depthTest=false, renderOrder=-1000, toneMapped=false
+//     → always renders first, colors stay vivid.
+//   - Honors prefers-reduced-motion: drift is frozen (orbs stay at t=0 positions).
 
 import * as THREE from 'three'
 import { MeshBasicNodeMaterial } from 'three/webgpu'
-import { Fn, vec3, float, uniform, normalLocal, mix, smoothstep } from 'three/tsl'
+import { Fn, vec3, float, uniform, normalLocal, mix, smoothstep, sin, cos } from 'three/tsl'
+import { prefersReducedMotion } from '../../core/motionPolicy'
 
 // Uniforms — updated by EnvSphere.update() each frame
 const envUniforms = {
   uColorA: uniform(new THREE.Color(0x1a0a2e)),  // main bg (horizon)
   uColorB: uniform(new THREE.Color(0x050507)),  // ground / deep shadow
   uColorC: uniform(new THREE.Color(0x2a1a4e)),  // horizon glow tint
-  // 4 BOLD orb colors — saturated, cinematic. Constant across sections (stable
-  // premium identity). mix()'d into the base gradient at high opacity.
-  uOrb1: uniform(new THREE.Color(0x7c3aed)),   // vivid purple
-  uOrb2: uniform(new THREE.Color(0x2563eb)),   // vivid blue
-  uOrb3: uniform(new THREE.Color(0xdb2777)),   // vivid magenta-pink
-  uOrb4: uniform(new THREE.Color(0x0891b2)),   // teal/cyan accent
+  // 3 Atlas Aurora orb colors (calm, premium palette inspired by the original).
+  // Constant across sections — stable premium identity.
+  uOrb1: uniform(new THREE.Color(0x7c3aed)),   // vivid purple (was lime in Atlas)
+  uOrb2: uniform(new THREE.Color(0x2563eb)),   // vivid blue (was amber in Atlas)
+  uOrb3: uniform(new THREE.Color(0xdb2777)),   // vivid magenta (was violet in Atlas)
+  uSweep: uniform(new THREE.Color(0x6b21a8)),  // sweep gradient color
   uTime: uniform(0),
   uBlend: uniform(0),  // 0..1 blend between colorA and colorB
 }
 
-// ── Cinematic mesh-gradient shader (TSL) ──
-// Layer 1: Vertical gradient (ground → horizon → zenith)
-// Layer 2: 4 BOLD color orbs on the +Z (visible) hemisphere
-// Layer 3: Horizon glow band
-// Layer 4: Zenith darkening
-// Layer 5: Vignette — darken nadir + far edges for "stage spotlight" feel
+// ── Atlas Aurora shader (TSL) ──
+// 3 slow-drifting blurred colour fields + diagonal sweep, blended via mix().
+// Period ~30s (matches original CSS keyframes: 30s/33s/30s/26s).
 const envColorNode = Fn(() => {
   const nrm = normalLocal
-  const y = nrm.y            // -1 (bottom) → 1 (top)
+  const y = nrm.y
+  // Time — frozen to 0 when prefers-reduced-motion (no drift, static orbs)
+  const t = envUniforms.uTime
 
   // ── Layer 1: Vertical gradient (ground → horizon → zenith) ──
   const horizonMix = smoothstep(float(-0.3), float(0.4), y)
   let color = mix(envUniforms.uColorB, envUniforms.uColorA, horizonMix)
-
-  // Section blend: mix between colorA and colorB based on uBlend
   color = mix(color, envUniforms.uColorB, envUniforms.uBlend)
 
-  // ── Layer 2: 4 BOLD color orbs — ALL on +Z hemisphere (visible) ──
-  // Camera is at +Z (e.g. [0, 0.5, 7]). EnvSphere is BackSide (we see inside).
-  // Visible surface = +Z hemisphere. All orb centers have z > 0.
-  //
-  // mix() replaces base color with orb color at orb center, fading to base
-  // at edge. High opacity (0.65-0.80) → BOLD, visible on ANY background.
-  // Wide falloff (1.2-1.4) → large, soft, cinematic blobs.
+  // ── Layer 2: 3 Atlas Aurora orbs — slow drift, wide soft falloff ──
+  // Each orb has a base position on the +Z hemisphere and drifts on a slow
+  // sinusoidal path (period ~30s). Amplitude small (±0.08) → "breathing",
+  // not "swimming". mix() blend → visible on white intro AND dark sections.
 
-  // Orb 1 (vivid purple) — upper-left-front
-  const orb1Dist = vec3(float(-0.45), float(0.40), float(0.70)).sub(nrm).length()
+  // Orb 1 (purple) — upper-left-front, drifts right+down (atlas-aurora-a)
+  const orb1Cx = float(-0.40).add(sin(t.mul(0.21)).mul(0.08))   // period ~30s
+  const orb1Cy = float(0.40).add(cos(t.mul(0.21)).mul(0.08))
+  const orb1Cz = float(0.70)
+  const orb1Dist = vec3(orb1Cx, orb1Cy, orb1Cz).sub(nrm).length()
   const orb1Falloff = smoothstep(float(1.3), float(0.0), orb1Dist)
-  color = mix(color, envUniforms.uOrb1, orb1Falloff.mul(0.90))
+  color = mix(color, envUniforms.uOrb1, orb1Falloff.mul(0.85))
 
-  // Orb 2 (vivid blue) — center-right-front
-  const orb2Dist = vec3(float(0.55), float(0.05), float(0.60)).sub(nrm).length()
+  // Orb 2 (blue) — center-right-front, drifts left+up (atlas-aurora-b, 33s)
+  const orb2Cx = float(0.50).add(sin(t.mul(0.19).add(float(1.5))).mul(0.09))
+  const orb2Cy = float(0.05).add(cos(t.mul(0.19).add(float(1.5))).mul(0.07))
+  const orb2Cz = float(0.60)
+  const orb2Dist = vec3(orb2Cx, orb2Cy, orb2Cz).sub(nrm).length()
   const orb2Falloff = smoothstep(float(1.3), float(0.0), orb2Dist)
-  color = mix(color, envUniforms.uOrb2, orb2Falloff.mul(0.85))
+  color = mix(color, envUniforms.uOrb2, orb2Falloff.mul(0.80))
 
-  // Orb 3 (magenta-pink) — upper-center-front
-  const orb3Dist = vec3(float(0.10), float(0.55), float(0.50)).sub(nrm).length()
+  // Orb 3 (magenta) — upper-center-front, drifts in a smaller circle (atlas-aurora-c, 30s)
+  const orb3Cx = float(0.10).add(sin(t.mul(0.21).add(float(3.0))).mul(0.06))
+  const orb3Cy = float(0.50).add(cos(t.mul(0.21).add(float(3.0))).mul(0.08))
+  const orb3Cz = float(0.55)
+  const orb3Dist = vec3(orb3Cx, orb3Cy, orb3Cz).sub(nrm).length()
   const orb3Falloff = smoothstep(float(1.2), float(0.0), orb3Dist)
-  color = mix(color, envUniforms.uOrb3, orb3Falloff.mul(0.85))
+  color = mix(color, envUniforms.uOrb3, orb3Falloff.mul(0.80))
 
-  // Orb 4 (teal/cyan) — lower-front accent
-  const orb4Dist = vec3(float(-0.20), float(-0.30), float(0.65)).sub(nrm).length()
-  const orb4Falloff = smoothstep(float(1.1), float(0.0), orb4Dist)
-  color = mix(color, envUniforms.uOrb4, orb4Falloff.mul(0.75))
+  // ── Layer 3: Diagonal sweep (atlas-aurora-sweep, 26s) ──
+  // A wide horizontal radial gradient that translates left↔right slowly.
+  // Adds a "light sweep" feel — like a spotlight panning across the scene.
+  const sweepPhase = sin(t.mul(0.24))           // period ~26s
+  const sweepX = sweepPhase.mul(0.30)            // -0.30..0.30 horizontal drift
+  // Sweep is a wide band centered at y=0.3, x=sweepX
+  const sweepDistX = nrm.x.sub(sweepX)
+  const sweepDistY = nrm.y.sub(float(0.3))
+  const sweepDist = vec3(sweepDistX, sweepDistY, float(0.5)).length()
+  const sweepFalloff = smoothstep(float(1.0), float(0.0), sweepDist)
+  color = mix(color, envUniforms.uSweep, sweepFalloff.mul(0.35))
 
-  // ── Layer 3: Horizon glow — brighter band at y≈0 ──
+  // ── Layer 4: Horizon glow — brighter band at y≈0 ──
   const glowBand = smoothstep(float(0.15), float(0.0), y.abs())
   color = color.add(envUniforms.uColorC.mul(glowBand.mul(0.3)))
 
-  // ── Layer 4: Zenith darkening — darker at top for depth ──
+  // ── Layer 5: Zenith darkening + nadir vignette for "stage" feel ──
   const zenith = smoothstep(float(0.3), float(1.0), y)
   color = color.mul(float(1.0).sub(zenith.mul(0.4)))
-
-  // ── Layer 5: Vignette — darken nadir (bottom) for "stage spotlight" ──
-  // The camera looks slightly downward at the scene. The bottom of the sphere
-  // (y < 0) should be darker to focus the eye on the center (where the baku
-  // cube lives). This is the cinematic "spotlight" effect.
   const nadir = smoothstep(float(-0.2), float(-0.8), y)
   color = color.mul(float(1.0).sub(nadir.mul(0.6)))
 
@@ -104,70 +113,67 @@ export class EnvSphere extends THREE.Mesh {
   private _orb1: THREE.Color
   private _orb2: THREE.Color
   private _orb3: THREE.Color
-  private _orb4: THREE.Color
+  private _sweep: THREE.Color
   private _targetColorA: THREE.Color
   private _targetColorB: THREE.Color
   private _targetColorC: THREE.Color
   private _time = 0
 
   constructor() {
-    // Large sphere, BackSide (we see the inside)
     const geo = new THREE.SphereGeometry(500, 32, 16)
     const mat = new MeshBasicNodeMaterial({
       side: THREE.BackSide,
       depthWrite: false,
-      depthTest: false,   // always render, never occluded (skybox pattern)
-      fog: false,         // env sphere is not affected by fog (it IS the atmosphere)
-      toneMapped: false,  // keep orb colors vivid (don't ACES-tone-map down)
+      depthTest: false,   // skybox pattern: always render, never occluded
+      fog: false,
+      toneMapped: false,  // keep orb colors vivid (no ACES muting)
     })
     mat.colorNode = envColorNode()
 
     super(geo, mat)
     this.name = 'env-sphere'
-    this.frustumCulled = false // always render (it's the background)
+    this.frustumCulled = false
     this.renderOrder = -1000   // render FIRST, before everything else
 
     this._colorA = new THREE.Color(0x1a0a2e)
     this._colorB = new THREE.Color(0x050507)
     this._colorC = new THREE.Color(0x2a1a4e)
-    this._orb1 = new THREE.Color(0x7c3aed)  // vivid purple
-    this._orb2 = new THREE.Color(0x2563eb)  // vivid blue
-    this._orb3 = new THREE.Color(0xdb2777)  // vivid magenta-pink
-    this._orb4 = new THREE.Color(0x0891b2)  // teal/cyan
+    this._orb1 = new THREE.Color(0x7c3aed)   // vivid purple
+    this._orb2 = new THREE.Color(0x2563eb)   // vivid blue
+    this._orb3 = new THREE.Color(0xdb2777)   // vivid magenta
+    this._sweep = new THREE.Color(0x6b21a8)  // deep purple sweep
     this._targetColorA = this._colorA.clone()
     this._targetColorB = this._colorB.clone()
     this._targetColorC = this._colorC.clone()
 
-    // Set initial uniforms
     ;(envUniforms.uColorA.value as THREE.Color).copy(this._colorA)
     ;(envUniforms.uColorB.value as THREE.Color).copy(this._colorB)
     ;(envUniforms.uColorC.value as THREE.Color).copy(this._colorC)
     ;(envUniforms.uOrb1.value as THREE.Color).copy(this._orb1)
     ;(envUniforms.uOrb2.value as THREE.Color).copy(this._orb2)
     ;(envUniforms.uOrb3.value as THREE.Color).copy(this._orb3)
-    ;(envUniforms.uOrb4.value as THREE.Color).copy(this._orb4)
+    ;(envUniforms.uSweep.value as THREE.Color).copy(this._sweep)
   }
 
-  /** Set section colors (from WorldConfig). Called on section change.
-   *  colorA = main bg color, colorB = ground color, colorC = horizon glow.
-   *  Aurora orb colors stay constant — they're the "premium accent" that
-   *  doesn't shift with sections (gives the bg a stable identity). */
   setSectionColors(mainColor: THREE.Color, groundColor: THREE.Color, glowColor: THREE.Color): void {
     this._targetColorA.copy(mainColor)
     this._targetColorB.copy(groundColor)
     this._targetColorC.copy(glowColor)
   }
 
-  /** Set blend factor (0..1) for cross-section transition. */
   setBlend(blend: number): void {
     envUniforms.uBlend.value = blend
   }
 
   update(dt: number): void {
-    this._time += dt
+    // Advance time only when motion is allowed. Under prefers-reduced-motion,
+    // uTime stays at 0 → all sin/cos terms are sin(0)=0, cos(0)=1 → orbs sit
+    // at their base positions (t=0 state), completely static.
+    if (!prefersReducedMotion()) {
+      this._time += dt
+    }
     envUniforms.uTime.value = this._time
 
-    // Smooth color lerp toward targets (exponential decay)
     const lerp = 1 - Math.exp(-4 * dt)
     this._colorA.lerp(this._targetColorA, lerp)
     this._colorB.lerp(this._targetColorB, lerp)
@@ -175,8 +181,6 @@ export class EnvSphere extends THREE.Mesh {
     ;(envUniforms.uColorA.value as THREE.Color).copy(this._colorA)
     ;(envUniforms.uColorB.value as THREE.Color).copy(this._colorB)
     ;(envUniforms.uColorC.value as THREE.Color).copy(this._colorC)
-
-    // No rotation — background is completely static (user feedback).
   }
 
   dispose(): void {
