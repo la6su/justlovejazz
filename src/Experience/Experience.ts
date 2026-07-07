@@ -241,8 +241,6 @@ export class Experience {
     this.time.update(time)
     const dt = this.time.delta / 1000
     this.bus.tick(dt)
-    this.cursor.update()
-    this.debugStats?.update(time)
 
     // Intro sequence: emit 'intro:done' once stage reaches 1
     const stage = this.bus.get('intro:stage')
@@ -255,34 +253,27 @@ export class Experience {
     this._circNav?.update()
 
     // ── On-demand rendering ──
-    // Only render when something is actually changing:
-    // 1. Section transition in progress (CircularNav progress != 0)
-    // 2. BakuCarousel is active (morphing or scrolling on works section)
-    // 3. Splash/intro animation running
-    // 4. Audio-reactive (worldDNA uniforms changing)
-    // When idle (settled on a section, no BakuCarousel interaction), skip
-    // the expensive renderer.render() to save GPU.
+    // Only render when something is actually changing. When idle (settled
+    // on a section, no transition, no carousel), the last rendered frame
+    // stays on screen and GPU is idle.
     const navActive = this._circNav?.isActive() ?? false
     const introActive = this.bus.isAnimating('intro:stage') || stage < 1
-    const audioActive = this.audio.started
     const carouselActive = this._bakuCarouselActive
-    // Opener active — baku cube face pulse during/after splash
-    const baku = this.world?.baku as unknown as { openerPhase?: string; openerProgress?: number } | undefined
+    const baku = this.world?.baku as unknown as { openerPhase?: string } | undefined
     const openerActive = baku?.openerPhase !== 'done' && baku?.openerPhase !== 'idle'
+    // Camera shake active — needs rendering while shaking
+    const camShaking = this.camera.isShaking
 
-    if (navActive || introActive || audioActive || carouselActive || openerActive) {
+    if (navActive || introActive || carouselActive || openerActive || camShaking) {
       this._needsRender = true
     }
 
     // Always update navigation + world state (cheap), but only render when needed
     const ns = this._circNav?.getOverallProgress() ?? 0
     const { cameraTarget, worldState } = this.world.advance(ns)
-    // World.update: skip decorative animations (baku rotation, particles,
-    // cursor light, draw trail, BakuCarousel) when not rendering
     this.world.update(dt, this._needsRender)
 
-    // Drive baku transition animation — pass transition progress + direction
-    // so the cube rotates only during section changes (not continuously).
+    // Drive baku transition animation
     if (this.world?.baku) {
       const navProgress = this._circNav?._progress ?? 0
       const navDir = navProgress > 0 ? 1 : navProgress < 0 ? -1 : 0
@@ -378,30 +369,24 @@ export class Experience {
       this.world.groundPlane.visible = !showGallery
     }
 
-    // Per-section camera smoothing (Track 5). Fall back to default if cfg absent.
-    const smoothing = cfg?.camSmoothing ?? SECTION_TRANSITION.cameraSmoothing
-    this.camera.updateSmooth(cameraTarget, dt, smoothing)
-    // Lights driven by section config (junni changeSection pattern) —
-    // World.updateTransform() calls lightsGroup.changeSection() on index change.
-    // Here we only tick the lerp update.
-    this.world.lightsGroup.update(dt)
-    this.camera.update(dt)
-
-    // Only call renderer.update (expensive: GPU render) when something changed.
-    // When idle, skip rendering to save GPU — the last rendered frame stays.
+    // Per-section camera smoothing — only when rendering
     if (this._needsRender) {
+      const smoothing = cfg?.camSmoothing ?? SECTION_TRANSITION.cameraSmoothing
+      this.camera.updateSmooth(cameraTarget, dt, smoothing)
+      this.world.lightsGroup.update(dt)
+      this.camera.update(dt)
+      // Audio-reactive: only update FFT + worldDNA when rendering
+      if (this.audio.started) {
+        this.audio.update()
+        updateWorldDNAAudio(this.audio.getBass(), this.audio.getMid(), this.audio.getTreble())
+      }
+      this.cursor.update()
+      this.debugStats?.update(time)
       this.renderer.update(this.scene, this.camera.instance, dt, worldState)
-      // If nothing is actively changing, clear the flag (will be re-set by
-      // transition/cursor/carousel callbacks next frame)
-      if (!navActive && !introActive && !audioActive && !carouselActive && !openerActive) {
+      // Clear flag if nothing is actively changing
+      if (!navActive && !introActive && !carouselActive && !openerActive && !camShaking) {
         this._needsRender = false
       }
-    }
-
-    // Audio-reactive: update FFT + feed worldDNA uniforms.
-    if (this.audio.started) {
-      this.audio.update()
-      updateWorldDNAAudio(this.audio.getBass(), this.audio.getMid(), this.audio.getTreble())
     }
 
     // Performance profiling — feed renderer info to PerfMonitor (DEV only).

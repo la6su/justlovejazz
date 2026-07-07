@@ -209,30 +209,10 @@ export class World extends THREE.Group {
       }
     }
 
-    // ── Particle drift — only visible groups, cached Points refs ──
+    // ── BakuCarousel per-frame (morph + scroll) ──
+    // Particles are STATIC — no drift. They don't animate when idle.
     for (const group of this.sceneGroups) {
       if (!group.visible) continue
-      if (!group.userData._particleCache) {
-        const pts: THREE.Points[] = []
-        group.traverse((obj) => {
-          if (obj instanceof THREE.Points) pts.push(obj)
-        })
-        group.userData._particleCache = pts
-      }
-      const pts = group.userData._particleCache as THREE.Points[]
-      if (!this.isReducedMotion) {
-        for (const p of pts) {
-          const attr = p.geometry.attributes.position!
-          const arr = attr.array as Float32Array
-          for (let i = 1; i < arr.length; i += 3) {
-            arr[i]! += deltaTime * 0.05
-            if (arr[i]! > 4) arr[i]! = -2
-          }
-          attr.needsUpdate = true
-        }
-      }
-
-      // ── Drive BakuCarousel per-frame (morph cube ↔ carousel ring + scroll) ──
       const carousel = group.userData.gallery as
         | import('../Experience/World/BakuCarousel').BakuCarousel
         | undefined

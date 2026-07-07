@@ -87,6 +87,11 @@ export class Camera {
     this.shakeDuration = duration
   }
 
+  /** True while action shake is active (needs rendering). */
+  get isShaking(): boolean {
+    return this.shakePower > 0 && this.shakeDuration > 0
+  }
+
   /** Set FOV offset for cinematic zoom-in on section arrival */
   setFovOffset(value: number, duration = 1) {
     this.fovStartOffset = this.fovOffset
