@@ -1,7 +1,7 @@
 // Section4 — Challenge (Works): baku cube morphs into carousel of projects.
 // Clicking a carousel card opens the fullscreen ProjectOverlay.
 import * as THREE from 'three'
-import { makeParticles } from '../_shared/makeParticles'
+import { makeInstancedParticles } from '../_shared/makeInstancedParticles'
 import { BakuCarousel } from '../../Experience/World/BakuCarousel'
 
 export function createSection4(): THREE.Group {
@@ -14,6 +14,6 @@ export function createSection4(): THREE.Group {
   carousel.userData.keepVisible = true
   g.add(carousel)
   g.userData.gallery = carousel
-  g.add(makeParticles({ count: 20, spread: new THREE.Vector3(14, 6, 8), color: 0x4488ff, size: 0.035, opacity: 0.2 }))
+  g.add(makeInstancedParticles({ count: 500, spread: new THREE.Vector3(14, 6, 8), color: 0x4488ff, size: 0.08, opacity: 0.4 }))
   return g
 }
