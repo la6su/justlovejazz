@@ -13,6 +13,7 @@ import { EnvSphere } from '../Experience/World/EnvSphere'
 import { ShaderBackground } from '../Experience/World/ShaderBackground'
 import { getWorldConfigForPage, type PhaseConfig } from './WorldConfig'
 import { SectionSceneFactory } from './SectionSceneFactory'
+import { updateInstancedParticles } from '../Sections/_shared/makeInstancedParticles'
 import { disposeMaterialDeep } from '../Utils/dispose'
 
 export interface WorldTransformResult {
@@ -217,6 +218,8 @@ export class World extends THREE.Group {
     // Do NOT touch scene.background here — EnvSphere.update() handles it.
     this.envSphere.update(deltaTime)
     this.shaderBg.update(deltaTime)
+    // Update instanced particles (advances uTime for GPU drift). Frozen when
+    // not rendering (on-demand) — only called when needsRender=true (see below).
     this.sections.forEach((s) => s.update(deltaTime))
 
     // ── On-demand: decorative 3D animations only run when rendering ──
@@ -227,6 +230,8 @@ export class World extends THREE.Group {
 
     if (!this.isReducedMotion) {
       this.baku.update(deltaTime)
+      // Update instanced particles (GPU drift) — frozen when idle
+      updateInstancedParticles(deltaTime)
       // DrawTrail only on works section (idx=3)
       if (this.drawTrail && this._camera && this._currentSectionIndex === 3) {
         this.drawTrail.update(deltaTime, this._camera)
