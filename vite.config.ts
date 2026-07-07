@@ -159,5 +159,8 @@ export default defineConfig({
     // causing the page to reload every ~30 seconds.
     // HMR is only useful for local development on localhost:5173.
     hmr: false,
+    // Allow the reverse proxy host so Vite doesn't block requests from
+    // project.6la.ru (Caddy forwards to localhost:5173).
+    allowedHosts: ['project.6la.ru'],
   },
 })
