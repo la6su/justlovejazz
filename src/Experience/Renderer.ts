@@ -138,6 +138,18 @@ export class Renderer {
     this.instance.setSize(this.sizes.width, this.sizes.height)
     this.setupCanvas(this.instance.domElement)
 
+    // ── Diagnostic: log final render path + EnvSphere path ──
+    // Helps debug "I don't see the shader background" — the console will show
+    // which path is active: premium WebGPU (TSL shader) vs parity WebGL2
+    // (CanvasTexture fallback).
+    const finalBackend = (this.instance as any).isWebGPURenderer
+      ? `WebGPU (${(this.instance as any).backend?.constructor?.name})`
+      : 'WebGL2'
+    console.info(
+      `[Renderer.init] Final path: ${finalBackend} | isRealWebGPU=${this.capabilities.isRealWebGPU} | ` +
+      `EnvSphere=${this.capabilities.isRealWebGPU ? 'TSL shader (premium)' : 'CanvasTexture (parity)'}`
+    )
+
     // Pipeline
     this.pipeline = RenderPipeline.create(
       this.instance, this.sizes.width, this.sizes.height, this._pipelineConfig,
