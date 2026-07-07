@@ -1,22 +1,19 @@
-// EnvSphere.ts — Cinematic environment sphere (replaces scene.background Color)
+// EnvSphere.ts — Cinematic mesh-gradient background (21st.dev style)
 //
 // Large inverted sphere with BackSide rendering. Procedural TSL shader creates
-// a mesh-gradient aurora background in the style of 21st.dev: soft color orbs
-// that breathe slowly (not "swim" — no visible noise texture), horizon glow,
-// and section-driven color blending.
+// a BOLD mesh-gradient with 4 saturated color orbs on the visible hemisphere,
+// horizon glow, and a vignette for a focused "stage" feel.
 //
-// Design goals (after user feedback):
-//   - NO animated noise texture (the old mx_noise_float "swam" visibly and
-//     looked cheap). Replaced with smooth sinusoidal aurora bands.
-//   - Smooth mesh-gradient feel: 3 color orbs positioned around the sphere,
-//     blended via smoothstep. They drift VERY slowly (period ~30s) so the
-//     background "breathes" instead of "swimming".
-//   - Horizon glow + zenith darkening preserved (give depth).
+// Design goals (after user feedback "don't see shader background"):
+//   - BOLD: 4 orbs at 65-80% opacity (was 45-55% — too subtle)
+//   - VISIBLE: all orbs on the +Z hemisphere (camera is at +Z, sees inside
+//     of BackSide sphere → only +Z hemisphere is visible). Old code had 2 of
+//     3 orbs on -Z hemisphere → invisible.
+//   - WIDER: falloff radius 1.2-1.4 (was 0.85-1.0) → larger, softer orbs
+//   - STATIC: no animation, no noise, no rotation (user: "should not move")
+//   - CINEMATIC: saturated colors + vignette darken edges → "stage spotlight"
 //
-// The sphere is OPAQUE (no transparency) — TSL NodeMaterial is safe here
-// (the transparency issue only affects transparent materials).
-//
-// Uniforms driven by BG.ts (section color blend) + time (slow drift).
+// The sphere is OPAQUE (no transparency) — TSL NodeMaterial is safe here.
 
 import * as THREE from 'three'
 import { MeshBasicNodeMaterial } from 'three/webgpu'
@@ -27,28 +24,23 @@ const envUniforms = {
   uColorA: uniform(new THREE.Color(0x1a0a2e)),  // main bg (horizon)
   uColorB: uniform(new THREE.Color(0x050507)),  // ground / deep shadow
   uColorC: uniform(new THREE.Color(0x2a1a4e)),  // horizon glow tint
-  // Aurora orb colors — 3 soft color spots that drift slowly.
-  // Kept distinct from section colors so the aurora stays "premium" even
-  // when section bg is dark. Lerped alongside uColorA/B/C on section change.
-  uOrb1: uniform(new THREE.Color(0x6b3fa0)),   // purple
-  uOrb2: uniform(new THREE.Color(0x3a6fb0)),   // blue
-  uOrb3: uniform(new THREE.Color(0xa05fa8)),   // magenta-pink
+  // 4 BOLD orb colors — saturated, cinematic. Constant across sections (stable
+  // premium identity). mix()'d into the base gradient at high opacity.
+  uOrb1: uniform(new THREE.Color(0x7c3aed)),   // vivid purple
+  uOrb2: uniform(new THREE.Color(0x2563eb)),   // vivid blue
+  uOrb3: uniform(new THREE.Color(0xdb2777)),   // vivid magenta-pink
+  uOrb4: uniform(new THREE.Color(0x0891b2)),   // teal/cyan accent
   uTime: uniform(0),
   uBlend: uniform(0),  // 0..1 blend between colorA and colorB
 }
 
-// ── Aurora mesh-gradient shader (TSL) ──
-// Layer 1: Vertical gradient (zenith → horizon → ground)
-// Layer 2: 3 aurora orbs — soft radial spots that drift on a slow sinusoid.
-//          Each orb = smoothstep falloff from a moving center point on the
-//          sphere surface. No noise → no "swimming texture", just smooth
-//          color flow.
-// Layer 3: Horizon glow band (brighter at y≈0)
-// Layer 4: Zenith darkening (darker at top for depth)
-// Layer 5: Subtle horizontal aurora bands (very low amplitude sine waves) —
-//          gives the "northern lights" feel without any noise.
+// ── Cinematic mesh-gradient shader (TSL) ──
+// Layer 1: Vertical gradient (ground → horizon → zenith)
+// Layer 2: 4 BOLD color orbs on the +Z (visible) hemisphere
+// Layer 3: Horizon glow band
+// Layer 4: Zenith darkening
+// Layer 5: Vignette — darken nadir + far edges for "stage spotlight" feel
 const envColorNode = Fn(() => {
-  // normalLocal: unit vector (-1..1) — perfect for sphere-space gradients.
   const nrm = normalLocal
   const y = nrm.y            // -1 (bottom) → 1 (top)
 
@@ -59,33 +51,33 @@ const envColorNode = Fn(() => {
   // Section blend: mix between colorA and colorB based on uBlend
   color = mix(color, envUniforms.uColorB, envUniforms.uBlend)
 
-  // ── Layer 2: 3 STATIC aurora orbs — soft radial spots at fixed positions ──
-  // No time dependence. Each orb = smoothstep falloff from a fixed center on
-  // the sphere surface. This is the 21st.dev mesh-gradient look: 3-4 color
-  // blobs softly blended, completely static, premium and clean.
+  // ── Layer 2: 4 BOLD color orbs — ALL on +Z hemisphere (visible) ──
+  // Camera is at +Z (e.g. [0, 0.5, 7]). EnvSphere is BackSide (we see inside).
+  // Visible surface = +Z hemisphere. All orb centers have z > 0.
   //
-  // IMPORTANT: we use mix() not add(). add() is invisible on bright backgrounds
-  // (intro section has white bg → purple + white = still white). mix() replaces
-  // the base color with the orb color at the orb center, fading to base at the
-  // edge → visible on ANY background (white intro OR dark about/works/etc.).
-  //
-  // Positions chosen for visual balance: orb1 upper-front-left, orb2 lower-
-  // right, orb3 upper-back. Colors: purple / blue / magenta-pink.
+  // mix() replaces base color with orb color at orb center, fading to base
+  // at edge. High opacity (0.65-0.80) → BOLD, visible on ANY background.
+  // Wide falloff (1.2-1.4) → large, soft, cinematic blobs.
 
-  // Orb 1 (purple) — upper-front-left
-  const orb1Dist = vec3(float(-0.5), float(0.35), float(0.5)).sub(nrm).length()
-  const orb1Falloff = smoothstep(float(0.9), float(0.0), orb1Dist)
-  color = mix(color, envUniforms.uOrb1, orb1Falloff.mul(0.55))
+  // Orb 1 (vivid purple) — upper-left-front
+  const orb1Dist = vec3(float(-0.45), float(0.40), float(0.70)).sub(nrm).length()
+  const orb1Falloff = smoothstep(float(1.3), float(0.0), orb1Dist)
+  color = mix(color, envUniforms.uOrb1, orb1Falloff.mul(0.75))
 
-  // Orb 2 (blue) — lower-right
-  const orb2Dist = vec3(float(0.6), float(-0.1), float(-0.2)).sub(nrm).length()
-  const orb2Falloff = smoothstep(float(1.0), float(0.0), orb2Dist)
-  color = mix(color, envUniforms.uOrb2, orb2Falloff.mul(0.50))
+  // Orb 2 (vivid blue) — center-right-front
+  const orb2Dist = vec3(float(0.55), float(0.05), float(0.60)).sub(nrm).length()
+  const orb2Falloff = smoothstep(float(1.3), float(0.0), orb2Dist)
+  color = mix(color, envUniforms.uOrb2, orb2Falloff.mul(0.70))
 
-  // Orb 3 (magenta) — upper-back
-  const orb3Dist = vec3(float(0.3), float(0.55), float(-0.6)).sub(nrm).length()
-  const orb3Falloff = smoothstep(float(0.85), float(0.0), orb3Dist)
-  color = mix(color, envUniforms.uOrb3, orb3Falloff.mul(0.45))
+  // Orb 3 (magenta-pink) — upper-center-front
+  const orb3Dist = vec3(float(0.10), float(0.55), float(0.50)).sub(nrm).length()
+  const orb3Falloff = smoothstep(float(1.2), float(0.0), orb3Dist)
+  color = mix(color, envUniforms.uOrb3, orb3Falloff.mul(0.65))
+
+  // Orb 4 (teal/cyan) — lower-front accent
+  const orb4Dist = vec3(float(-0.20), float(-0.30), float(0.65)).sub(nrm).length()
+  const orb4Falloff = smoothstep(float(1.1), float(0.0), orb4Dist)
+  color = mix(color, envUniforms.uOrb4, orb4Falloff.mul(0.55))
 
   // ── Layer 3: Horizon glow — brighter band at y≈0 ──
   const glowBand = smoothstep(float(0.15), float(0.0), y.abs())
@@ -95,9 +87,12 @@ const envColorNode = Fn(() => {
   const zenith = smoothstep(float(0.3), float(1.0), y)
   color = color.mul(float(1.0).sub(zenith.mul(0.4)))
 
-  // Note: NO Layer 5 aurora bands anymore. User feedback: "should not move".
-  // Bands with time gave movement; bands without time looked like a texture.
-  // Removed entirely → pure mesh-gradient, completely static.
+  // ── Layer 5: Vignette — darken nadir (bottom) for "stage spotlight" ──
+  // The camera looks slightly downward at the scene. The bottom of the sphere
+  // (y < 0) should be darker to focus the eye on the center (where the baku
+  // cube lives). This is the cinematic "spotlight" effect.
+  const nadir = smoothstep(float(-0.2), float(-0.8), y)
+  color = color.mul(float(1.0).sub(nadir.mul(0.6)))
 
   return color
 })
@@ -109,6 +104,7 @@ export class EnvSphere extends THREE.Mesh {
   private _orb1: THREE.Color
   private _orb2: THREE.Color
   private _orb3: THREE.Color
+  private _orb4: THREE.Color
   private _targetColorA: THREE.Color
   private _targetColorB: THREE.Color
   private _targetColorC: THREE.Color
@@ -131,9 +127,10 @@ export class EnvSphere extends THREE.Mesh {
     this._colorA = new THREE.Color(0x1a0a2e)
     this._colorB = new THREE.Color(0x050507)
     this._colorC = new THREE.Color(0x2a1a4e)
-    this._orb1 = new THREE.Color(0x6b3fa0)
-    this._orb2 = new THREE.Color(0x3a6fb0)
-    this._orb3 = new THREE.Color(0xa05fa8)
+    this._orb1 = new THREE.Color(0x7c3aed)  // vivid purple
+    this._orb2 = new THREE.Color(0x2563eb)  // vivid blue
+    this._orb3 = new THREE.Color(0xdb2777)  // vivid magenta-pink
+    this._orb4 = new THREE.Color(0x0891b2)  // teal/cyan
     this._targetColorA = this._colorA.clone()
     this._targetColorB = this._colorB.clone()
     this._targetColorC = this._colorC.clone()
@@ -145,6 +142,7 @@ export class EnvSphere extends THREE.Mesh {
     ;(envUniforms.uOrb1.value as THREE.Color).copy(this._orb1)
     ;(envUniforms.uOrb2.value as THREE.Color).copy(this._orb2)
     ;(envUniforms.uOrb3.value as THREE.Color).copy(this._orb3)
+    ;(envUniforms.uOrb4.value as THREE.Color).copy(this._orb4)
   }
 
   /** Set section colors (from WorldConfig). Called on section change.
@@ -175,10 +173,7 @@ export class EnvSphere extends THREE.Mesh {
     ;(envUniforms.uColorB.value as THREE.Color).copy(this._colorB)
     ;(envUniforms.uColorC.value as THREE.Color).copy(this._colorC)
 
-    // Slow rotation removed — user feedback: background should not move.
-    // The sphere is now completely static (mesh-gradient at fixed positions).
-    // EnvSphere.update() still runs each frame (World.update) to lerp section
-    // colors smoothly on transitions, but does NOT rotate or advance time.
+    // No rotation — background is completely static (user feedback).
   }
 
   dispose(): void {
