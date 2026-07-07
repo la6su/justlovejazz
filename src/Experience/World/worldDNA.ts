@@ -25,7 +25,7 @@
 // → opacity works correctly. The old "TSL nodes break opacity" comment was
 // a stale bug from an earlier three version. All 4 nodes are safe to attach.
 
-import { Fn, vec3, float, uniform, positionLocal, normalLocal, mx_noise_float, mix, sin, cos, smoothstep } from 'three/tsl'
+import { Fn, vec3, float, uniform, positionLocal, normalLocal, normalWorld, positionWorld, cameraPosition, mx_noise_float, mix, sin, cos, pow } from 'three/tsl'
 import * as THREE from 'three'
 
 // Uniforms — shared across all face materials (set once, mutated per section)
@@ -67,36 +67,79 @@ export const worldPositionNode = Fn(() => {
   return pos.add(nrm.mul(displace))
 })
 
-// Color node — section-driven color blend + iridescent shimmer.
+// Color node — section-driven color blend + fresnel iridescence + position shimmer.
 // Returns vec3 (RGB). Opacity is applied separately by NodeMaterial
 // (diffuseColor.a = 1.0 * materialOpacity) — verified safe, see file header.
+//
+// 21st.dev glass look (3 layers):
+//   1. Base color: section blend (colorA → colorB)
+//   2. Fresnel iridescence: rainbow shift at edges (where normal ⊥ view).
+//      Uses dot(normalWorld, viewDir) — varies across EACH face because viewDir
+//      changes from center to edge. This is the KEY fix: normalLocal is constant
+//      per cube face (flat faces), so any shader based on it is uniform. Fresnel
+//      uses view direction → varies across the face → visible rainbow edges.
+//   3. Position shimmer: sin/cos of positionLocal → varies across face surface.
+//      Subtle hue modulation that makes the glass feel "alive" (like oil film).
 export const worldColorNode = Fn(() => {
   const blend = worldDNAUniforms.uSectionBlend
   const baseColor = mix(worldDNAUniforms.uColorA, worldDNAUniforms.uColorB, blend)
 
-  // Iridescent shimmer — shifts hue slightly based on normal + time.
-  // This is the "21st.dev premium" look: subtle rainbow edge play that
-  // makes the glass feel alive without being garish.
-  const nrm = normalLocal
-  const shimmer = sin(nrm.x.mul(3.0).add(worldDNAUniforms.uTime))
-    .mul(0.05)
-    .add(cos(nrm.y.mul(2.0).sub(worldDNAUniforms.uTime.mul(0.7))).mul(0.05))
-    .add(worldDNAUniforms.uAudioTreble.mul(0.1))
+  // ── Fresnel: 0 at face center (facing camera), 1 at silhouette edges ──
+  const viewDir = cameraPosition.sub(positionWorld).normalize()
+  const fresnel = normalWorld.dot(viewDir).oneMinus()      // 1 - dot(N, V)
+  const fresnelEdge = pow(fresnel, float(2.0))              // sharpen to edges
 
-  return baseColor.add(vec3(shimmer, shimmer.mul(0.8), shimmer.mul(1.2)))
+  // ── Iridescent rainbow at edges (the 21st.dev signature look) ──
+  // Spectrum ramp based on fresnel + view angle. sin/cos of fresnel gives
+  // a smooth rainbow shift: R→G→B as the angle increases.
+  const t = worldDNAUniforms.uTime
+  const rainbowPhase = fresnelEdge.mul(3.0).add(t.mul(0.3))
+  const irR = sin(rainbowPhase).mul(0.5).add(0.5)
+  const irG = sin(rainbowPhase.add(float(2.094))).mul(0.5).add(0.5)   // +120°
+  const irB = sin(rainbowPhase.add(float(4.189))).mul(0.5).add(0.5)   // +240°
+  const iridescence = vec3(irR, irG, irB)
+  // Blend iridescence into base color at edges (fresnelEdge = 0 at center → no shift)
+  let color = mix(baseColor, iridescence, fresnelEdge.mul(0.4))
+
+  // ── Position shimmer (oil-film modulation across the face) ──
+  // positionLocal varies across each face (not constant like normalLocal).
+  // Two sine waves at different frequencies + axes → organic hue drift.
+  const pos = positionLocal
+  const shimmer = sin(pos.x.mul(4.0).add(t.mul(0.5)))
+    .mul(0.5)
+    .add(cos(pos.y.mul(3.0).sub(t.mul(0.4))).mul(0.5))
+  // Add subtle shimmer to color (amplitude 0.08 — visible but not garish)
+  color = color.add(vec3(shimmer.mul(0.08), shimmer.mul(0.05), shimmer.mul(0.10)))
+
+  // ── Audio-reactive treble → shimmer boost ──
+  color = color.add(vec3(worldDNAUniforms.uAudioTreble.mul(0.15)))
+
+  return color
 })
 
-// Emissive node — section-driven emissive blend + rim glow.
+// Emissive node — section-driven emissive blend + FRESNEL rim glow.
 // Returns vec3 — safe for emissiveNode (alpha not touched).
+//
+// The rim glow uses fresnel (not normalLocal.z) so it's visible on ALL face
+// edges, not just the Z-perpendicular ones. Amplitude 0.5 (was 0.1) — this is
+// the "lit from within" glass halo, the most visible 21st-style effect.
 export const worldEmissiveNode = Fn(() => {
   const blend = worldDNAUniforms.uSectionBlend
   const baseEmissive = mix(worldDNAUniforms.uEmissiveA, worldDNAUniforms.uEmissiveB, blend)
 
-  // Edge glow — stronger where normal is perpendicular to view (rim).
-  // Gives the glass cube a subtle "lit from within" halo on its edges.
-  const nrm = normalLocal
-  const rim = smoothstep(float(0.3), float(1.0), nrm.z.abs().oneMinus())
-  return baseEmissive.add(vec3(rim.mul(0.1)))
+  // Fresnel rim — bright at silhouette edges, dark at face center
+  const viewDir = cameraPosition.sub(positionWorld).normalize()
+  const fresnel = normalWorld.dot(viewDir).oneMinus()
+  const rim = pow(fresnel, float(1.5))    // 0 at center, 1 at edge, softened
+
+  // Rim color: shift hue with time for iridescent edge glow (not just white)
+  const t = worldDNAUniforms.uTime
+  const rimR = sin(t.mul(0.5)).mul(0.3).add(0.7)
+  const rimG = sin(t.mul(0.5).add(float(2.094))).mul(0.3).add(0.7)
+  const rimB = sin(t.mul(0.5).add(float(4.189))).mul(0.3).add(0.7)
+  const rimColor = vec3(rimR, rimG, rimB)
+
+  return baseEmissive.add(rimColor.mul(rim.mul(0.5)))
 })
 
 // Roughness node — noise-modulated for varied surface response.
