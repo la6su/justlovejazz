@@ -390,11 +390,16 @@ export class RenderPipeline {
         gradeShadows: [this._sectionShadows.x, this._sectionShadows.y, this._sectionShadows.z],
         gradeHighlights: [this._sectionHighlights.x, this._sectionHighlights.y, this._sectionHighlights.z],
       })
-      // TSL graph applies ACES + sRGB encode manually (outputColorTransform=false
-      // on the pipeline prevents automatic renderOutput). No need to swap
-      // renderer.toneMapping — outputColorTransform=false already prevents
-      // any automatic tone mapping / color space conversion.
+      // Disable renderer tone mapping during TSL pipeline render — the TSL
+      // graph applies ACES manually (step 6). outputColorTransform=true
+      // (default) on the pipeline applies renderOutput() which uses
+      // renderer.toneMapping — we set it to NoToneMapping so renderOutput
+      // only applies sRGB encode (exact sRGBTransferOETF), no tone mapping.
+      const renderer = this._renderer as WebGPURenderer
+      const toneMappingBackup = (renderer as any).toneMapping
+      ;(renderer as any).toneMapping = THREE.NoToneMapping
       this._webgpuPipeline.render()
+      ;(renderer as any).toneMapping = toneMappingBackup
       return
     }
 
