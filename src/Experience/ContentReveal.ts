@@ -5,13 +5,9 @@
 // UIKit scrollspy (uk-scrollspy) handles the fade-in/fade-out animation.
 // This class ONLY toggles pointer-events via .section-active class —
 // it does NOT manage opacity or transform (that's UIKit's job).
-//
-// Because sections are stacked (position:absolute, display:none/flex),
-// scrollspy doesn't re-evaluate on display change. We dispatch a
-// window scroll event after the section swap so scrollspy's check()
-// runs and fades in the newly-active section's [uk-scrollspy] children.
 
 import { eventBus, type AppEvents } from '../core/EventBus'
+import UIkit from 'uikit'
 
 export class ContentReveal {
   private sectionHandler: ((payload: AppEvents['jlz:section-change']) => void) | null = null
@@ -37,12 +33,17 @@ export class ContentReveal {
       if (matching) {
         matching.classList.add('section-active')
       }
-      // Sections are display:none → display:flex on activation, but scrollspy
-      // only re-evaluates on scroll/resize events. Dispatch a synthetic scroll
-      // event so scrollspy's check() runs and the newly-visible [uk-scrollspy]
-      // children fade in. (No app code listens to window scroll — only UIkit.)
+      // Trigger UIkit scrollspy re-evaluation on the active section.
+      // Using UIkit.update() instead of dispatching a synthetic scroll event —
+      // the synthetic scroll caused infinite rAF loops in some browsers
+      // (scroll → scrollspy → rAF → scroll → ...) and "ResizeObserver loop"
+      // errors. UIkit.update() re-evaluates scrollspy without side effects.
       requestAnimationFrame(() => {
-        window.dispatchEvent(new Event('scroll'))
+        try {
+          ;(UIkit as unknown as { update: () => void }).update()
+        } catch {
+          /* UIkit not ready yet */
+        }
       })
     }
     eventBus.on('jlz:section-change', this.sectionHandler)

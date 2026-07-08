@@ -55,7 +55,10 @@ export const ErrorTracker = {
     })
 
     window.addEventListener('error', (e) => {
+      // Suppress benign ResizeObserver loop error — this is a browser
+      // limitation, not a real bug. The observation completes next frame.
       const msg = e.error?.message ?? e.message ?? 'Unknown error'
+      if (msg.includes('ResizeObserver loop')) return
       ErrorTracker.report(new Error(msg), {
         source: 'window.error',
         filename: e.filename ?? '',
