@@ -38,7 +38,7 @@ export class UIMenu {
     this.navEl.className = 'tm-header'
     this.navEl.innerHTML = `
       <div class="jlz-navbar">
-        <div id="slider-nav" class="uk-slider" uk-slider="center: true" role="region">
+        <div id="slider-nav" class="uk-slider" uk-slider="center: 1; active: first" role="region">
           <ul class="uk-slider-items uk-child-width-auto" role="presentation">
           </ul>
         </div>
