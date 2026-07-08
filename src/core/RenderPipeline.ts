@@ -91,8 +91,13 @@ const COMPOSITE_FSG = `
   uniform vec3 uGradeShadows;
   uniform vec3 uGradeHighlights;
   
+  // Portable integer-based hash — does NOT rely on sin() precision
+  // (sin() gives different results in GLSL vs WGSL, causing grain mismatch).
+  // Uses fract/multiply approach that is bit-identical across backends.
   float hash(vec2 p) {
-    return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+    vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+    p3 += dot(p3, p3.yzx + 33.33);
+    return fract((p3.x + p3.y) * p3.z);
   }
   
   float noise(vec2 p) {
