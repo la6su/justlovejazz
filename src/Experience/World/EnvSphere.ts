@@ -82,7 +82,8 @@ export class EnvSphere extends THREE.Mesh {
       depthWrite: false,
       depthTest: false,
       fog: false,
-      toneMapped: false,
+      // toneMapped: true (default) — on WebGPU TSL path, toneMapped:false can
+      // cause the material to render black (TSL outputNode handles tone mapping).
     })
 
     super(geo, mat)
