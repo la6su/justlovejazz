@@ -10,7 +10,6 @@ import { CinematicLights } from '../Experience/World/Lights'
 import { DrawTrail } from '../Experience/World/DrawTrail'
 import { SplashCube } from '../Experience/World/SplashCube'
 import { EnvSphere } from '../Experience/World/EnvSphere'
-import { ShaderBackground } from '../Experience/World/ShaderBackground'
 import { ParticleBurst } from '../Experience/World/ParticleBurst'
 import { getWorldConfigForPage, type PhaseConfig } from './WorldConfig'
 import { SectionSceneFactory } from './SectionSceneFactory'
@@ -28,7 +27,6 @@ export class World extends THREE.Group {
   public lightsGroup!: CinematicLights
   public drawTrail?: DrawTrail
   public envSphere!: EnvSphere
-  public shaderBg!: ShaderBackground
   public particleBurst!: ParticleBurst
   public bg!: BG
   public groundPlane!: THREE.Mesh
@@ -74,18 +72,12 @@ export class World extends THREE.Group {
     this.baku.visible = true
     this.add(this.baku)
 
-    // ── EnvSphere — now DISABLED (background provided by ShaderBackground).
-    // Kept for lifecycle compat (other code may reference world.envSphere).
-    // scene.background is NOT set — ShaderBackground plane is the sole bg.
+    // ── EnvSphere — Junni-style per-section background (BackSide sphere + CanvasTexture).
+    // 6 per-section patterns, mixed by uSection[6] weights. Animated on section change.
+    // attachToScene sets scene.background — this is the SOLE background.
     this.envSphere = new EnvSphere()
-    // Do NOT call attachToScene — ShaderBackground replaces it.
-    this.add(this.envSphere)  // added for lifecycle (update/dispose), not rendering
-
-    // ── ShaderBackground — animated paper-shader plane (21st.dev @reuno-ui port).
-    // Dark grey palette, opaque, fullscreen at z=-30. SOLE background.
-    // Vertex displacement (paper undulation) + fragment noise + silver shimmer.
-    this.shaderBg = new ShaderBackground()
-    this.add(this.shaderBg)
+    this.envSphere.attachToScene(scene)
+    this.add(this.envSphere)  // added for lifecycle (update/dispose)
 
     // ── ParticleBurst — one-shot burst from baku cube on opener (intro).
     // 200 particles fly outward + fade over 1.2s. Hidden until triggered.
@@ -170,13 +162,7 @@ export class World extends THREE.Group {
       this.lightsGroup.changeSection(firstCfg)
       // Inline WorldAtmosphere.setFog — fog not yet set on init, so create new.
       this.sceneRef.fog = new THREE.FogExp2(firstCfg.fog.color.clone(), firstCfg.fog.density)
-      // EnvSphere initial colors from first section
-      const glowColor = new THREE.Color(firstCfg.background).offsetHSL(0, 0.1, 0.15)
-      this.envSphere.setSectionColors(
-        new THREE.Color(firstCfg.background),
-        new THREE.Color(firstCfg.ground.color),
-        glowColor,
-      )
+      // EnvSphere starts on section 0 (intro) — no changeSection needed, default weights
     }
 
     // ── Enforce final visibility: only group 0 visible, all others hidden.
@@ -224,7 +210,6 @@ export class World extends THREE.Group {
     // EnvSphere manages scene.background (equirectangular CanvasTexture).
     // Do NOT touch scene.background here — EnvSphere.update() handles it.
     this.envSphere.update(deltaTime)
-    this.shaderBg.update(deltaTime)
     // Update instanced particles (advances uTime for GPU drift). Frozen when
     // not rendering (on-demand) — only called when needsRender=true (see below).
     this.sections.forEach((s) => s.update(deltaTime))
@@ -348,13 +333,8 @@ export class World extends THREE.Group {
         } else {
           this.sceneRef.fog = new THREE.FogExp2(activeCfg.fog.color.clone(), activeCfg.fog.density)
         }
-        // EnvSphere section colors: main bg + ground + horizon glow (derived)
-        const glowColor = new THREE.Color(activeCfg.background).offsetHSL(0, 0.1, 0.15)
-        this.envSphere.setSectionColors(
-          new THREE.Color(activeCfg.background),
-          new THREE.Color(activeCfg.ground.color),
-          glowColor,
-        )
+        // EnvSphere section change — animate uSection weights (junni pattern)
+        this.envSphere.changeSection(fromIndex)
       }
       // DrawTrail visibility — only on works section (idx=3)
       if (this.drawTrail) {
@@ -366,8 +346,7 @@ export class World extends THREE.Group {
     // setProgress() lerps between fromIndex and toIndex colors using eased t,
     // giving pixel-perfect background progression while scrolling.
     this.bg.setProgress(fromIndex, toIndex, bgT)
-    // EnvSphere blend factor for cross-section transition
-    this.envSphere.setBlend(bgT)
+    // EnvSphere changeSection handles the per-section pattern mix (junni style)
 
     // ── Scene group visibility with opacity fade (junni switchVisibility pattern)
     // From group fades out as t→1, to group fades in. Both visible during transition.
@@ -565,8 +544,6 @@ export class World extends THREE.Group {
     this.baku?.dispose()
     // Dispose env sphere GPU resources
     this.envSphere?.dispose()
-    // Dispose shader background
-    this.shaderBg?.dispose()
     // Dispose particle burst
     this.particleBurst?.dispose()
     this.groundPlane.geometry.dispose()
