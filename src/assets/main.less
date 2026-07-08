@@ -153,7 +153,7 @@
   width: 100%;
   height: 100vh;
   height: 100dvh;
-  display: flex;
+  display: none; /* hidden by default — .section-active shows it */
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -588,6 +588,7 @@ canvas {
   pointer-events: none;
 }
 .section-active {
+  display: flex !important;
   pointer-events: auto;
 }
 
@@ -649,102 +650,64 @@ canvas {
 }
 
 /* ════════════════════════════════════════════════════════════════════
-   9. UIKit navbar + uk-subnav-pill — section navigation
+   9. UIKit slider nav — section navigation (uk-slider, uk-sticky)
    ════════════════════════════════════════════════════════════════════ */
 
-/* Transparent navbar over 3D canvas — UIKit component override */
+/* Transparent navbar over 3D canvas */
 .jlz-navbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 10001;
   background: transparent !important;
-  padding-top: 8px;
-  padding-bottom: 8px;
 }
 
-/* Section navigation pills — UIKit uk-subnav-pill override */
-.jlz-section-nav {
-  flex-wrap: nowrap;
-  justify-content: center;
-  gap: 2px;
+/* Slider nav — section pills with infinite scroll */
+.jlz-slider-nav {
+  width: 100%;
 }
-.jlz-section-nav li a {
-  padding: 5px 12px;
-  font-size: 0.7rem;
+.jlz-nav-item {
+  padding: 0 4px;
+  list-style: none;
+}
+.jlz-nav-link {
+  display: block;
+  padding: 6px 16px;
+  font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  border-radius: 100px;
   color: rgba(255, 255, 255, 0.5);
   background: transparent;
-  transition: background 0.2s ease, color 0.2s ease;
+  border-radius: 100px;
   white-space: nowrap;
+  transition: background 0.2s ease, color 0.2s ease;
 }
-.jlz-section-nav li a:hover {
+.jlz-nav-link:hover {
   background: rgba(255, 255, 255, 0.08);
   color: rgba(255, 255, 255, 0.8);
   text-decoration: none;
 }
-.jlz-section-nav li.uk-active a {
+.jlz-nav-item.uk-active .jlz-nav-link {
   background: rgba(255, 255, 255, 0.15);
   color: #fff;
 }
 
-/* Light theme — dark text on light bg */
-body.light-theme .jlz-section-nav li a {
+/* Light theme */
+body.light-theme .jlz-nav-link {
   color: rgba(0, 0, 0, 0.5);
 }
-body.light-theme .jlz-section-nav li a:hover {
+body.light-theme .jlz-nav-link:hover {
   background: rgba(0, 0, 0, 0.06);
   color: rgba(0, 0, 0, 0.8);
 }
-body.light-theme .jlz-section-nav li.uk-active a {
+body.light-theme .jlz-nav-item.uk-active .jlz-nav-link {
   background: rgba(0, 0, 0, 0.1);
   color: #000;
 }
 
-/* Hamburger toggle — hidden on desktop (navbar always visible) */
-.jlz-menu-toggle {
-  display: none;
-}
+/* Hamburger — hidden (slider always visible) */
+.jlz-menu-toggle { display: none !important; }
+
+/* Mobile — slider still visible, items smaller */
 @media (max-width: 640px) {
-  .jlz-menu-toggle {
-    display: flex;
-    position: fixed;
-    top: 12px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 10002;
-    width: 40px;
-    height: 40px;
-    background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 50%;
-    color: rgba(255, 255, 255, 0.9);
-    cursor: pointer;
-    align-items: center;
-    justify-content: center;
-  }
-  .jlz-navbar {
-    padding-top: 56px;
-    background: rgba(10, 10, 14, 0.92) !important;
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    transform: translateY(-100%);
-    transition: transform 0.3s ease;
-  }
-  .jlz-navbar.uk-open {
-    transform: translateY(0);
-  }
-  .jlz-section-nav {
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-  .jlz-section-nav li a {
+  .jlz-nav-link {
     padding: 4px 10px;
     font-size: 0.65rem;
   }
