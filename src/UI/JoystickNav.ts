@@ -1,27 +1,28 @@
 // JoystickNav.ts — Pure DOM joystick for section navigation.
 //
-// Fixed bottom-center overlay. 2D circle base + draggable ball.
-// Works on touch (iPad/mobile) and mouse (desktop).
+// Simple trigger model:
+//   1. Joystick starts at center (default state)
+//   2. User drags in any direction (up/down/left/right)
+//   3. When drag exceeds threshold → trigger ONE section change
+//   4. Ball snaps back to center immediately, ready for next interaction
 //
 // Direction mapping:
-//   Left  → PREV section
-//   Right → NEXT section
-//   Up    → PREV section
-//   Down  → NEXT section
+//   Left  → PREV section (-1)
+//   Right → NEXT section (+1)
+//   Up    → PREV section (-1)
+//   Down  → NEXT section (+1)
 // Uses dominant axis (whichever is larger) to avoid diagonal ambiguity.
 //
-// Progress (0-1) drives 3D scene transition. On release: |progress| > 0.5
-// commits the transition, else snaps back.
+// Strictly ONE section per drag — no continuous scrubbing.
 
 export interface JoystickNavOptions {
   sectionLabels: string[]
 }
 
 const BASE_RADIUS = 55 // px — joystick base radius
-const DEAD_ZONE = 8 // px — ignore movement smaller than this
-const COMMIT_THRESHOLD = 0.5 // |progress| > this on release → commit
-const SETTLE_EPS = 0.01 // |progress - target| < this → snapped
-const EASE = 0.22 // settle speed
+const TRIGGER_DISTANCE = 35 // px — drag this far to trigger a section change
+const DEAD_ZONE = 6 // px — ignore movement smaller than this
+const BALL_RETURN_MS = 200 // ms — ball return animation duration
 
 export class JoystickNav {
   public el: HTMLDivElement
@@ -30,19 +31,19 @@ export class JoystickNav {
   private _hint: HTMLDivElement
   private _currentSection = 0
   private _sectionCount: number
-  public _progress = 0
-  private _targetProgress = 0
-  private _transitioning = false
+  public _progress = 0 // kept for Experience API compat (always 0 or brief pulse)
   private _onSectionChange: ((index: number) => void) | null = null
   private _onActiveChange: ((active: boolean) => void) | null = null
   private _wasActive = false
   private _isDragging = false
+  private _hasTriggered = false // prevent multiple triggers per drag
   private _startX = 0
   private _startY = 0
   private _keydownHandler: ((e: KeyboardEvent) => void) | null = null
   private _pointerDownHandler: ((e: PointerEvent) => void) | null = null
   private _pointerMoveHandler: ((e: PointerEvent) => void) | null = null
   private _pointerUpHandler: ((e: PointerEvent) => void) | null = null
+  private _returnTimer: ReturnType<typeof setTimeout> | null = null
 
   constructor(_scene: unknown, _camera: unknown, sectionCount: number, _opts?: Partial<JoystickNavOptions>) {
     this._sectionCount = Math.max(2, sectionCount)
@@ -52,17 +53,14 @@ export class JoystickNav {
     this.el.id = 'joystick-nav'
     this.el.className = 'jlz-joystick'
 
-    // Base circle (outer ring)
     this._base = document.createElement('div')
     this._base.className = 'jlz-joystick__base'
     this.el.appendChild(this._base)
 
-    // Ball (inner draggable circle)
     this._ball = document.createElement('div')
     this._ball.className = 'jlz-joystick__ball'
     this._base.appendChild(this._ball)
 
-    // Hint text
     this._hint = document.createElement('div')
     this._hint.className = 'jlz-joystick__hint'
     this._hint.textContent = 'drag to navigate'
@@ -72,76 +70,55 @@ export class JoystickNav {
   }
 
   private addEventListeners(): void {
-    // Pointer events on the joystick base (not whole screen)
     this._pointerDownHandler = (e: PointerEvent) => {
       const menu = document.getElementById('jlz-menu-modal')
       if (menu && menu.classList.contains('uk-open')) return
       e.preventDefault()
       this._isDragging = true
+      this._hasTriggered = false
       this._startX = e.clientX
       this._startY = e.clientY
       this._base.classList.add('is-active')
       this._hint.style.opacity = '0'
       this._setActive(true)
-      // Capture pointer for smooth dragging outside base
       try { this._base.setPointerCapture(e.pointerId) } catch { /* ignore */ }
     }
 
     this._pointerMoveHandler = (e: PointerEvent) => {
-      if (!this._isDragging) return
+      if (!this._isDragging || this._hasTriggered) return
       const dx = e.clientX - this._startX
       const dy = e.clientY - this._startY
       const absX = Math.abs(dx)
       const absY = Math.abs(dy)
 
-      // Ignore tiny movements (dead zone)
       if (absX < DEAD_ZONE && absY < DEAD_ZONE) return
 
-      // Use dominant axis
-      const isVertical = absY > absX
-      const rawProgress = isVertical
-        ? dy / (BASE_RADIUS * 1.5)
-        : dx / (BASE_RADIUS * 1.5)
-      const rawBallX = isVertical ? 0 : Math.max(-BASE_RADIUS, Math.min(BASE_RADIUS, dx * 0.4))
-      const rawBallY = isVertical ? Math.max(-BASE_RADIUS, Math.min(BASE_RADIUS, dy * 0.4)) : 0
-
-      // Rubber-band at boundaries
-      const atStart = this._currentSection === 0
-      const atEnd = this._currentSection === this._sectionCount - 1
-      let progress = rawProgress
-      let ballX = rawBallX
-      let ballY = rawBallY
-      if (atStart && progress < 0) {
-        progress *= 0.3
-        ballX *= 0.3
-        ballY *= 0.3
-      }
-      if (atEnd && progress > 0) {
-        progress *= 0.3
-        ballX *= 0.3
-        ballY *= 0.3
-      }
-      progress = Math.max(-1, Math.min(1, progress))
-
-      this._targetProgress = progress
-      this._progress = progress
+      // Move ball visually (clamped to base radius)
+      const dist = Math.sqrt(dx * dx + dy * dy)
+      const maxDist = BASE_RADIUS * 0.7
+      const scale = dist > maxDist ? maxDist / dist : 1
+      const ballX = dx * scale
+      const ballY = dy * scale
       this._ball.style.transform = `translate(${ballX}px, ${ballY}px)`
+
+      // Check trigger threshold — only trigger ONCE per drag
+      if (dist >= TRIGGER_DISTANCE) {
+        this._hasTriggered = true
+        const isVertical = absY > absX
+        // Down or Right → NEXT (+1), Up or Left → PREV (-1)
+        const dir = isVertical ? (dy > 0 ? 1 : -1) : (dx > 0 ? 1 : -1)
+        this.goToDirection(dir as 1 | -1)
+        // Snap ball back to center immediately
+        this._snapBallBack()
+      }
     }
 
     this._pointerUpHandler = (_e: PointerEvent) => {
       if (!this._isDragging) return
       this._isDragging = false
+      this._hasTriggered = false
       this._base.classList.remove('is-active')
-
-      // Commit or snap back
-      if (Math.abs(this._progress) > COMMIT_THRESHOLD) {
-        this.commitTransition(this._progress > 0 ? 1 : -1)
-      } else {
-        this._targetProgress = 0
-      }
-
-      // Animate ball back to center
-      this._ball.style.transform = 'translate(0, 0)'
+      this._snapBallBack()
       setTimeout(() => { this._hint.style.opacity = '' }, 500)
     }
 
@@ -173,6 +150,18 @@ export class JoystickNav {
     window.addEventListener('keydown', this._keydownHandler)
   }
 
+  /** Snap ball back to center with transition. */
+  private _snapBallBack(): void {
+    if (this._returnTimer) clearTimeout(this._returnTimer)
+    this._ball.style.transition = `transform ${BALL_RETURN_MS}ms ease-out`
+    this._ball.style.transform = 'translate(0, 0)'
+    this._returnTimer = setTimeout(() => {
+      this._ball.style.transition = ''
+      this._returnTimer = null
+      this._setActive(false)
+    }, BALL_RETURN_MS)
+  }
+
   onSectionChange(cb: (index: number) => void): void {
     this._onSectionChange = cb
   }
@@ -192,73 +181,35 @@ export class JoystickNav {
   }
 
   isActive(): boolean {
-    return Math.abs(this._progress) > 0.001 || this._transitioning
+    // Brief active pulse on section change for on-demand rendering
+    return this._wasActive
   }
 
   getOverallProgress(): number {
     const span = this._sectionCount - 1
-    return Math.max(0, Math.min(1, (this._currentSection + this._progress) / span))
+    return Math.max(0, Math.min(1, this._currentSection / span))
   }
 
   goToSection(index: number): void {
     index = Math.max(0, Math.min(this._sectionCount - 1, index))
     if (index === this._currentSection) return
     this._currentSection = index
-    this._progress = 0
-    this._targetProgress = 0
-    this._transitioning = false
     this._onSectionChange?.(index)
+    // Brief active pulse so Experience renders the jump
     this._setActive(true)
-    setTimeout(() => this._setActive(false), 300)
+    setTimeout(() => this._setActive(false), 400)
   }
 
   goToDirection(dir: 1 | -1): void {
-    if (this._transitioning) {
-      this._completeTransition()
-    }
     const next = this._currentSection + dir
     if (next < 0 || next >= this._sectionCount) return
-    this.commitTransition(dir)
+    this.goToSection(next)
   }
 
-  private commitTransition(dir: number): void {
-    const next = this._currentSection + dir
-    if (next < 0 || next >= this._sectionCount) {
-      this._targetProgress = 0
-      return
-    }
-    this._transitioning = true
-    this._targetProgress = dir
-  }
-
-  private _completeTransition(): void {
-    if (!this._transitioning) return
-    const dir = this._targetProgress > 0 ? 1 : -1
-    this._currentSection = Math.max(0, Math.min(this._sectionCount - 1, this._currentSection + dir))
-    this._progress = 0
-    this._targetProgress = 0
-    this._transitioning = false
-    this._onSectionChange?.(this._currentSection)
-  }
-
+  /** Called every frame by Experience. No-op for trigger model. */
   update(): void {
-    // Smooth progress toward target (only when not dragging)
-    if (!this._isDragging) {
-      this._progress += (this._targetProgress - this._progress) * EASE
-    }
-    if (Math.abs(this._targetProgress - this._progress) < SETTLE_EPS * 0.1) {
-      this._progress = this._targetProgress
-    }
-    // Commit complete
-    if (this._transitioning && Math.abs(this._targetProgress - this._progress) < SETTLE_EPS) {
-      this._completeTransition()
-    }
-    // Settle complete
-    if (!this._isDragging && !this._transitioning && Math.abs(this._progress) < SETTLE_EPS) {
-      this._progress = 0
-      this._targetProgress = 0
-      this._setActive(false)
-    }
+    // No continuous update needed — trigger model handles everything
+    // in event handlers. This is kept for Experience API compatibility.
   }
 
   dispose(): void {
@@ -269,6 +220,7 @@ export class JoystickNav {
       this._base.removeEventListener('pointerup', this._pointerUpHandler)
       this._base.removeEventListener('pointercancel', this._pointerUpHandler)
     }
+    if (this._returnTimer) clearTimeout(this._returnTimer)
     this.el.remove()
   }
 }
