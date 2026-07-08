@@ -74,7 +74,7 @@ export class ParticleBurst extends THREE.InstancedMesh {
       depthWrite: false,
       blending: THREE.AdditiveBlending,
       side: THREE.DoubleSide,
-      fog: true,
+      fog: false,
     })
     mat.colorNode = burstColorNode()
     ;(mat as unknown as { opacityNode: unknown }).opacityNode = burstOpacityNode()
