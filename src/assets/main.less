@@ -458,16 +458,128 @@ canvas {
 
 /* ════════════════════════════════════════════════════════════════════
    11. Project detail overlay — ProjectOverlay.ts builds its own DOM with
-   inline styles (.jlz-fs-* classes). When closed, the container is
-   pointer-events:none and ALL children inherit none — so events pass
-   through to the 3D canvas / BakuCarousel. When open (.is-open class),
-   the interactive children become pointer-events:auto.
+   UIKit utility classes + .jlz-fs-* bespoke classes.
+   When closed: opacity:0, pointer-events:none (invisible, non-interactive).
+   When open (.is-open): opacity:1, pointer-events:auto on interactive children.
    ════════════════════════════════════════════════════════════════════ */
 
-/* When overlay is open, interactive children get pointer-events:auto.
-   Without this rule, child elements would need inline pointer-events:auto
-   which would make them ALWAYS intercept events — blocking BakuCarousel
-   even when the overlay is closed. */
+#project-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3500;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+#project-overlay.is-open {
+  opacity: 1;
+}
+
+/* Overlay background — blurred dark backdrop */
+.jlz-fs-bg {
+  background: rgba(2, 2, 6, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Top bar: title (left) + counter + close (right) */
+.jlz-fs-top {
+  padding: 2rem 2.5rem;
+}
+.jlz-fs-cat {
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 0.3rem;
+}
+.jlz-fs-title {
+  font-size: clamp(1.5rem, 4vw, 2.5rem);
+  font-weight: 900;
+  color: #fff;
+}
+.jlz-fs-top__right {
+  gap: 1.5rem;
+}
+.jlz-fs-counter {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Close button */
+.jlz-fs-close {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+.jlz-fs-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Prev/Next arrows */
+.jlz-fs-prev,
+.jlz-fs-next {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+.jlz-fs-prev:hover,
+.jlz-fs-next:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Bottom bar: thumbnail + description + tags */
+.jlz-fs-bottom {
+  padding: 2rem 2.5rem;
+  gap: 2rem;
+}
+.jlz-fs-thumb {
+  width: 120px;
+  height: 80px;
+  background-size: cover;
+  background-position: center;
+  border-radius: 6px;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.jlz-fs-desc {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.9rem;
+  max-width: 600px;
+}
+.jlz-fs-tags {
+  gap: 0.5rem;
+}
+.jlz-fs-tag {
+  font-size: 0.7rem;
+  padding: 2px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 100px;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* When overlay is open, interactive children get pointer-events:auto. */
 #project-overlay.is-open .jlz-fs-top,
 #project-overlay.is-open .jlz-fs-prev,
 #project-overlay.is-open .jlz-fs-next,

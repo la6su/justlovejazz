@@ -34,6 +34,7 @@ const CARD_TEXTURE_URLS: string[] = Array.from({ length: CARD_COUNT }, (_, i) =>
 })
 
 const RING_RADIUS = 3.2
+const RING_Y = 1.5 // Y offset for carousel ring — raises cube + cards up
 const CARD_W = 2.0
 const CARD_H = 1.4
 const CUBE_SIZE = 1.6
@@ -371,6 +372,7 @@ export class BakuCarousel extends THREE.Group {
       // ── Cube position (folded state) — face of cube ──
       const cubeFace = CUBE_FACES[i % CUBE_FACES.length]!
       this._tmpCubePos.copy(cubeFace.dir).multiplyScalar(CUBE_HALF)
+      this._tmpCubePos.y += RING_Y // raise cube faces to match ring Y
       const cubeRot = cubeFace.rot
 
       // ── Carousel position (unfolded state) — point on horizontal ring ──
@@ -380,7 +382,7 @@ export class BakuCarousel extends THREE.Group {
       const angle = baseAngle + ringRotation
       this._tmpRingPos.set(
         Math.cos(angle) * RING_RADIUS,
-        0,
+        RING_Y,
         Math.sin(angle) * RING_RADIUS,
       )
       // Card faces inward (toward ring center / camera) — reuse scratch Euler
