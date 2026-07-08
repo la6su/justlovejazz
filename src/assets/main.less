@@ -674,418 +674,80 @@ canvas {
 }
 
 /* ════════════════════════════════════════════════════════════════════
-   14. Circular navigation (bottom-right corner) + Menu modal
-   — #circ-nav (fixed bottom-right, overflow:hidden — only top-left quadrant visible)
-   — .jlz-circnav__arc / __arc-fill (the visible circular track + progress)
-   — .jlz-circnav__dots / __dot / __dot-label (6 section dots on the arc)
-   — .jlz-circnav__center (center anchor dot at the corner)
-   — .jlz-menu-toggle (hamburger button, at the corner center)
-   — .jlz-menu-modal / .jlz-menu-dialog — UIkit modal shell (uk-modal)
-   UIkit handles: overlay bg, show/hide, esc-close, bg-close, focus trap.
+   9. Pill nav — horizontal section navigation (replaces modal menu)
    ════════════════════════════════════════════════════════════════════ */
-
-/* Circular nav — bottom-right corner. The circle center IS the corner.
-   overflow:hidden clips everything except the top-left quadrant. */
-.jlz-circnav {
+.jlz-pill-nav {
   position: fixed;
-  bottom: 0;
-  right: 0;
-  width: 340px;
-  height: 340px;
+  top: 68px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-8px);
   z-index: 10001;
-  /* pointer-events:none on the container — only the visible arc + dots
-     get pointer-events:auto. This prevents the hidden 3/4 of the circle
-     from swallowing clicks/drags in the bottom-right viewport area. */
-  pointer-events: none;
-  overflow: hidden;
-  user-select: none;
-  -webkit-user-select: none;
-  touch-action: none;
-}
-
-/* Vinyl record base — the dark disc. Full circle centered at the corner. */
-.jlz-circnav__vinyl {
-  position: absolute;
-  right: -165px;
-  bottom: -165px;
-  width: 330px;
-  height: 330px;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle at 30% 30%,
-    rgba(45, 42, 48, 0.95) 0%,
-    rgba(18, 16, 22, 0.95) 40%,
-    rgba(8, 6, 12, 0.97) 100%
-  );
-  box-shadow:
-    inset 0 0 30px rgba(0, 0, 0, 0.8),
-    0 0 20px rgba(0, 0, 0, 0.5);
-}
-
-/* Vinyl grooves — concentric circles via repeating-radial-gradient */
-.jlz-circnav__grooves {
-  position: absolute;
-  right: -165px;
-  bottom: -165px;
-  width: 330px;
-  height: 330px;
-  border-radius: 50%;
-  background: repeating-radial-gradient(
-    circle at center,
-    transparent 0px,
-    transparent 3px,
-    rgba(255, 255, 255, 0.02) 3px,
-    rgba(255, 255, 255, 0.02) 4px
-  );
-  pointer-events: none;
-}
-
-/* Vinyl shine — subtle light sweep, like light glancing off a record */
-.jlz-circnav__shine {
-  position: absolute;
-  right: -165px;
-  bottom: -165px;
-  width: 330px;
-  height: 330px;
-  border-radius: 50%;
-  background: linear-gradient(
-    135deg,
-    transparent 30%,
-    rgba(255, 255, 255, 0.04) 50%,
-    transparent 70%
-  );
-  pointer-events: none;
-}
-
-/* Arc background — the visible circular track. A full circle centered at
-   the bottom-right corner. Only the top-left quadrant shows. */
-.jlz-circnav__arc {
-  position: absolute;
-  right: -165px;
-  bottom: -165px;
-  width: 330px;
-  height: 330px;
-  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  background: rgba(10, 10, 14, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  /* Only the arc ring itself is interactive — pointer-events:auto here so
-     drag/swipe works on the visible track. */
-  pointer-events: auto;
-  cursor: grab;
-}
-.jlz-circnav.is-grabbing .jlz-circnav__arc {
-  cursor: grabbing;
-}
-
-/* Arc fill — conic gradient that shows progress. Origin at bottom-right
-   (the corner). Rotates based on progress (see CircularNav.updateUI). */
-.jlz-circnav__arc-fill {
-  position: absolute;
-  inset: -1px;
-  border-radius: 50%;
-  background: conic-gradient(
-    from 180deg,
-    transparent 0deg,
-    rgba(140, 180, 240, 0.15) 0deg,
-    rgba(140, 180, 240, 0.35) 90deg,
-    transparent 90deg
-  );
-  pointer-events: none;
-  transition: transform 0.15s ease-out;
-}
-
-/* Dots wrapper — holds the 6 section dots positioned on the arc */
-.jlz-circnav__dots {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  width: 0;
-  height: 0;
-  pointer-events: none;
-}
-
-/* Section dots — positioned via inline left/top (cos/sin of angle * RADIUS) */
-.jlz-circnav__dot {
-  position: absolute;
-  width: 32px;
-  height: 32px;
-  margin: -16px 0 0 -16px; /* center on the arc point */
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: auto;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-.jlz-circnav__dot:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: scale(1.15);
-}
-.jlz-circnav__dot.is-passed {
-  background: rgba(160, 180, 220, 0.3);
-  border-color: rgba(160, 180, 220, 0.4);
-}
-.jlz-circnav__dot.is-active {
-  background: rgba(255, 255, 255, 0.95);
-  border-color: rgba(255, 255, 255, 0.6);
-  box-shadow: 0 0 16px rgba(255, 255, 255, 0.4);
-}
-
-/* Dot label — appears on hover/active */
-.jlz-circnav__dot-label {
-  position: absolute;
-  bottom: 110%;
-  left: 50%;
-  transform: translateX(-50%);
-  font-family: 'Inter', sans-serif;
-  font-size: 0.6rem;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.8);
-  white-space: nowrap;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  pointer-events: none;
-}
-.jlz-circnav__dot:hover .jlz-circnav__dot-label,
-.jlz-circnav__dot.is-active .jlz-circnav__dot-label {
-  opacity: 1;
-}
-
-/* Center anchor dot — at the corner (the circle center) */
-.jlz-circnav__center {
-  position: absolute;
-  right: -10px;
-  bottom: -10px;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.6);
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  transition:
-    background 0.2s ease,
-    border-color 0.2s ease;
-  pointer-events: none;
-}
-.jlz-circnav__center.is-next {
-  background: rgba(140, 180, 240, 0.95);
-  border-color: rgba(140, 180, 240, 0.6);
-}
-.jlz-circnav__center.is-prev {
-  background: rgba(240, 180, 140, 0.95);
-  border-color: rgba(240, 180, 140, 0.6);
-}
-
-/* Hamburger button — at the corner center, opens UIkit modal */
-.jlz-menu-toggle {
-  position: fixed;
-  top: 16px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10002;
-  width: 44px;
-  height: 44px;
-  padding: 0;
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 50%;
-  color: rgba(255, 255, 255, 0.9);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition:
-    background 0.2s ease,
-    transform 0.2s ease;
-}
-.jlz-menu-toggle:hover {
-  background: rgba(255, 255, 255, 0.18);
-  transform: translateX(-50%) scale(1.08);
-}
-
-/* Modal dialog — tall + narrow for a section list */
-.jlz-menu-dialog {
-  width: 560px;
+  border-radius: 100px;
   max-width: 92vw;
-  background: rgba(10, 10, 14, 0.92);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
-  padding: 2rem 2.25rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
 }
-
-.jlz-menu-title {
-  font-family: 'Inter', sans-serif;
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.25em;
-  text-transform: uppercase;
-  color: rgba(160, 160, 170, 0.6);
-}
-
-.jlz-menu-close {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  background: rgba(40, 40, 46, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 10px;
-  color: rgba(255, 255, 255, 0.9);
-  cursor: pointer;
-}
-
-.jlz-menu-nav {
-  width: 100%;
-  max-width: 100%;
-  gap: 0.35rem;
-}
-
-.jlz-menu-link {
-  gap: 1.25rem;
-  padding: 1rem 1.25rem;
-  background: transparent;
-  border: none;
-  border-radius: 12px;
-  cursor: pointer;
-  color: rgba(255, 255, 255, 0.85);
-  font-family:
-    'Inter',
-    -apple-system,
-    BlinkMacSystemFont,
-    sans-serif;
-  opacity: 0.55;
-  transition:
-    background 0.2s ease,
-    transform 0.2s ease,
-    opacity 0.2s ease;
-}
-.jlz-menu-link:hover {
-  background: rgba(255, 255, 255, 0.06);
-  transform: translateX(6px);
-}
-.jlz-menu-link.is-active {
+.jlz-pill-nav::-webkit-scrollbar { display: none; }
+.jlz-pill-nav.is-visible {
   opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
 }
-
-.jlz-menu-link__num {
-  font-family: var(--jlz-font-mono, 'Inter', monospace);
+.jlz-pill {
+  flex-shrink: 0;
+  padding: 6px 14px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
   font-size: 0.75rem;
-  letter-spacing: 0.2em;
-  min-width: 2rem;
-  color: rgba(180, 180, 180, 0.5);
-  transition: color 0.2s ease;
-}
-.jlz-menu-link.is-active .jlz-menu-link__num {
-  color: rgba(255, 255, 255, 0.95);
-}
-
-.jlz-menu-link__body {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-}
-
-.jlz-menu-link__label {
-  font-size: clamp(1.1rem, 3vw, 1.6rem);
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  font-weight: 500;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  line-height: 1.1;
+  border-radius: 100px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s ease, color 0.2s ease;
 }
-
-.jlz-menu-link__sub {
-  font-size: 0.72rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: rgba(160, 160, 160, 0.55);
-  font-family: var(--jlz-font-mono, 'Inter', monospace);
+.jlz-pill:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.8);
 }
-
-.jlz-menu-link:focus-visible,
-.jlz-menu-toggle:focus-visible,
-.jlz-menu-close:focus-visible {
-  outline: 2px solid rgba(255, 255, 255, 0.5);
-  outline-offset: 2px;
+.jlz-pill.is-active {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
 }
-
-@media (max-width: 600px) {
-  .jlz-circnav {
-    width: 260px;
-    height: 260px;
-  }
-  .jlz-circnav__vinyl,
-  .jlz-circnav__grooves,
-  .jlz-circnav__shine,
-  .jlz-circnav__arc {
-    right: -130px;
-    bottom: -130px;
-    width: 260px;
-    height: 260px;
-  }
-  .jlz-menu-dialog {
-    padding: 1.5rem 1.25rem;
-  }
-  .jlz-menu-link {
-    padding: 0.75rem 1rem;
-    gap: 1rem;
-  }
-  .jlz-menu-link__label {
-    font-size: 1.1rem;
-  }
-}
-
-/* Light-theme sections: keep the circular nav legible on white bg */
-body.light-theme .jlz-circnav__vinyl {
-  background: radial-gradient(
-    circle at 30% 30%,
-    rgba(240, 240, 245, 0.9) 0%,
-    rgba(220, 220, 228, 0.9) 40%,
-    rgba(200, 200, 210, 0.92) 100%
-  );
-}
-body.light-theme .jlz-circnav__grooves {
-  background: repeating-radial-gradient(
-    circle at center,
-    transparent 0px,
-    transparent 3px,
-    rgba(0, 0, 0, 0.03) 3px,
-    rgba(0, 0, 0, 0.03) 4px
-  );
-}
-body.light-theme .jlz-circnav__arc {
+body.light-theme .jlz-pill-nav {
+  background: rgba(255, 255, 255, 0.85);
   border-color: rgba(0, 0, 0, 0.1);
 }
-body.light-theme .jlz-circnav__dot {
+body.light-theme .jlz-pill {
+  color: rgba(0, 0, 0, 0.5);
+}
+body.light-theme .jlz-pill:hover {
   background: rgba(0, 0, 0, 0.06);
-  border-color: rgba(0, 0, 0, 0.15);
-}
-body.light-theme .jlz-circnav__dot.is-active {
-  background: rgba(0, 0, 0, 0.85);
-}
-body.light-theme .jlz-circnav__dot-label {
   color: rgba(0, 0, 0, 0.8);
 }
-body.light-theme .jlz-circnav__center {
-  background: rgba(0, 0, 0, 0.5);
-  border-color: rgba(0, 0, 0, 0.2);
+body.light-theme .jlz-pill.is-active {
+  background: rgba(0, 0, 0, 0.1);
+  color: #000;
 }
-body.light-theme .jlz-menu-toggle {
-  background: rgba(0, 0, 0, 0.05);
-  border-color: rgba(0, 0, 0, 0.12);
-  color: rgba(0, 0, 0, 0.8);
+@media (max-width: 640px) {
+  .jlz-pill {
+    padding: 5px 10px;
+    font-size: 0.65rem;
+  }
 }
-body.light-theme .jlz-menu-toggle:hover {
-  background: rgba(240, 240, 240, 0.85);
-}
-
 /* ════════════════════════════════════════════════════════════════════
    15. UI OVERHAUL — cinematic typography, glassmorphism, 3D symbiosis
    (Appended per ui-overhaul task — DO NOT modify rules above.)
