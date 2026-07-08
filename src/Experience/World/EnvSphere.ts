@@ -40,23 +40,27 @@ const CANVAS_H = 1024
 // Light sections (idx 0, 5): luminance ~0.75-0.85 → dark text contrast > 7:1
 // Dark sections  (idx 1,2,3,4): luminance ~0.10-0.18 → light text contrast > 10:1
 const SECTION_PATTERNS = [
-  // sec1 (intro) — LIGHT: subtle HSV gradient (animated, low saturation, high value)
-  { type: 'hsv', hue: 0.6, sat: 0.08, val: 0.82 },
-  // sec2 (about) — DARK: grey gradient (top darker, bottom lighter)
+  // 0: Lab (secret left) — LIGHT: subtle blue-grey HSV
+  { type: 'hsv', hue: 0.6, sat: 0.06, val: 0.88 },
+  // 1: Intro — LIGHT: pure white with ultra-subtle hue shift
+  { type: 'hsv', hue: 0.0, sat: 0.02, val: 0.98 },
+  // 2: About — DARK: grey gradient
   { type: 'gradient', color1: 0x1a1a1a, color2: 0x2e2e2e },
-  // sec3 (flexible) — DARK: dark grey gradient
-  { type: 'gradient', color1: 0x141414, color2: 0x222222 },
-  // sec4 (works) — DARK: dark blue-grey (gallery feel)
+  // 3: Flexible — DARK: dark purple gradient
+  { type: 'gradient', color1: 0x141414, color2: 0x222232 },
+  // 4: Works — DARK: dark blue-grey (gallery feel)
   { type: 'gradient', color1: 0x1a1a22, color2: 0x2a2a3a },
-  // sec5 (innovative) — DARK: dark with subtle center glow
+  // 5: Innovative — DARK: dark with subtle center glow
   { type: 'glow', glow: 0x2a3a4a },
-  // sec6 (contact) — LIGHT: soft off-white gradient (for dark text)
+  // 6: Contact — LIGHT: soft off-white gradient (for dark text)
   { type: 'gradient', color1: 0xe8e8e8, color2: 0xd8d8d8 },
+  // 7: Process (secret right) — DARK: deep blue-black
+  { type: 'gradient', color1: 0x080810, color2: 0x12121e },
 ] as const
 
 export class EnvSphere extends THREE.Mesh {
-  private _sectionWeights: number[] = [1, 0, 0, 0, 0, 0]  // start on section 0
-  private _targetWeights: number[] = [1, 0, 0, 0, 0, 0]
+  private _sectionWeights: number[] = [0, 1, 0, 0, 0, 0, 0, 0]  // start on section 1 (intro)
+  private _targetWeights: number[] = [0, 1, 0, 0, 0, 0, 0, 0]
   private _time = 0
   private _canvas: HTMLCanvasElement
   private _ctx: CanvasRenderingContext2D
@@ -131,8 +135,8 @@ export class EnvSphere extends THREE.Mesh {
    * target[idx] = 1, all others = 0. Lerped over ~1s.
    */
   changeSection(idx: number): void {
-    if (idx < 0 || idx >= 6) return
-    this._targetWeights = [0, 0, 0, 0, 0, 0]
+    if (idx < 0 || idx >= SECTION_PATTERNS.length) return
+    this._targetWeights = new Array(SECTION_PATTERNS.length).fill(0)
     this._targetWeights[idx] = 1
     this._dirty = true
   }
@@ -143,8 +147,8 @@ export class EnvSphere extends THREE.Mesh {
     }
 
     // Lerp section weights toward targets (junni: ~1s transition)
-    const lerpSpeed = 3.0  // 1/3 ≈ 0.33s time constant
-    for (let i = 0; i < 6; i++) {
+    const lerpSpeed = 3.0
+    for (let i = 0; i < SECTION_PATTERNS.length; i++) {
       const diff = this._targetWeights[i]! - this._sectionWeights[i]!
       if (Math.abs(diff) > 0.001) {
         this._sectionWeights[i]! += diff * Math.min(1, dt * lerpSpeed)
@@ -155,9 +159,9 @@ export class EnvSphere extends THREE.Mesh {
       }
     }
 
-    // Redraw canvas when dirty OR every ~200ms for animated patterns (HSV, horizon)
+    // Redraw canvas when dirty OR every ~200ms for animated patterns (HSV sections)
     this._redrawTimer += dt
-    const hasAnimatedPattern = this._sectionWeights[0]! > 0.01 || this._sectionWeights[5]! > 0.01
+    const hasAnimatedPattern = this._sectionWeights[0]! > 0.01 || this._sectionWeights[1]! > 0.01 || this._sectionWeights[6]! > 0.01
     if (this._dirty || (hasAnimatedPattern && !prefersReducedMotion() && this._redrawTimer >= 0.2)) {
       this._redrawTimer = 0
       this._redrawCanvas()
@@ -177,7 +181,7 @@ export class EnvSphere extends THREE.Mesh {
     ctx.fillRect(0, 0, w, h)
 
     // Render each section pattern to a temp canvas, then composite with weight
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < SECTION_PATTERNS.length; i++) {
       const weight = this._sectionWeights[i]!
       if (weight < 0.01) continue
 

@@ -18,7 +18,7 @@ CSS: import('./assets/main.less?inline') — prevents @vite/client injection
 canvas (z-index:1, fixed, pointer-events:none) — 3D scene
 #spa-content (z-index:2) — DOM sections (absolute-stacked, 100dvh each)
   .section-active { opacity:1; pointer-events:auto } — only visible section
-#circ-nav (z-index:9999, fixed bottom-right) — CircularNav vinyl circle
+#joystick-nav (z-index:9999, fixed bottom-center) — JoystickNav DOM joystick
 #jlz-menu-toggle (z-index:10002) — hamburger button
 #jlz-menu-modal (z-index:10000) — UIkit modal
 .jlz-hint (fixed bottom-center) — Subtitles section hint
@@ -26,45 +26,65 @@ canvas (z-index:1, fixed, pointer-events:none) — 3D scene
 .custom-cursor (z-index:100000) — above all overlays
 ```
 
+## Sections (8)
+
+| Idx | Section | 3D content | BG pattern | Theme |
+| --- | --- | --- | --- | --- |
+| 0 | Lab (secret left) | `makeParticles` | Light blue-grey HSV | light |
+| 1 | Intro (start) | SplashCube + particles | HSV rainbow (light) | light |
+| 2 | About | Particles + WireframeTypography | Grey gradient | dark |
+| 3 | Flexible | Particles | Dark purple gradient | dark |
+| 4 | Works | BakuCarousel + DrawTrail + particles | Blue-grey gradient | dark |
+| 5 | Innovative | Particles | Center glow | dark |
+| 6 | Contact | Particles | Off-white gradient | light |
+| 7 | Process (secret right) | `makeParticles` | Deep blue-black gradient | dark |
+
+World starts on section 1 (Intro). EnvSphere starts on section 1.
+Light sections (1, 6) toggle `light-theme` body class → dark text/nav.
+
 ## Visual tiers
 
-The project has TWO visual paths, gated by `DeviceCapability.isRealWebGPU`:
+Gated by `DeviceCapability.isRealWebGPU` (set in `Renderer.init()`):
 
-| Tier | Path | Baku material | worldDNA TSL nodes | Background |
-| --- | --- | --- | --- | --- |
-| **Premium** | Real WebGPU (WebGPUBackend, non-fallback adapter) | `MeshPhysicalNodeMaterial` + `transmission=1` (real glass) | ✅ 4 nodes attached | EnvSphere (BackSide sphere + CanvasTexture) |
-| **Parity** | WebGL2 / WebGLBackend fallback / SwiftShader | `MeshPhysicalMaterial` + opacity-glass | ❌ no-op | EnvSphere (BackSide sphere + CanvasTexture) |
+| Tier | Path | SplashCube | Background |
+| --- | --- | --- | --- |
+| **Premium** | Real WebGPU (WebGPUBackend, non-fallback adapter) | Same `MeshPhysicalMaterial` + CubeCamera envMap | EnvSphere (BackSide sphere + CanvasTexture) |
+| **Parity** | WebGL2 / WebGLBackend fallback / SwiftShader | Same `MeshPhysicalMaterial` + CubeCamera envMap | EnvSphere (BackSide sphere + CanvasTexture) |
 
-`isRealWebGPU` is set in `Renderer.init()` after `wg.init()` + adapter inspection. Logged to console on startup.
+SplashCube is identical on both paths. `isRealWebGPU` still drives `RenderPipeline` backend selection for post-processing.
 
 ## Navigation
 
-**CircularNav** — vinyl circle, bottom-right. Center = corner (overflow:hidden clips 3/4).
-- Drag DOWN → NEXT section. Drag UP → PREV.
-- Progress 0→1 drives 3D scene transition + baku rotation.
-- `|progress| > 0.35` on release commits; `< 0.35` snaps back. Flick velocity override.
-- `goToDirection(±1)` — public, used by DevPanel + keyboard.
-- `isActive()` — true during transition (feeds `_needsRender`).
+**JoystickNav** — pure DOM joystick (bottom-center). Trigger model: one section per drag.
+- Vertical drag (up/down): cycle 6 MAIN sections (Intro→About→…→Contact)
+- Horizontal drag (left/right): toggle to SECRET side sections (Lab ← center → Process)
+- `TRIGGER_DISTANCE = 35px` — drag past threshold fires ONE section change, ball snaps back
+- `DEAD_ZONE = 6px` — small movements ignored
+- Keyboard: ArrowUp/Down/Left/Right, Home (→ Intro), End (→ Contact)
+- `isActive()` true for ~400ms after trigger (feeds `_needsRender`)
+- `goToSection(i)` — public, used by UIMenu + DevPanel
+- Constructor: `new JoystickNav(scene, camera, 8 /* sectionCount */, { sectionLabels })`
+- NO three-joystick import — pure DOM (pointerdown/move/up + keyboard)
 
-**UIMenu** — UIkit modal (`uk-modal`). Hamburger `uk-toggle` opens. 6 section links.
+**UIMenu** — UIkit modal (`uk-modal`). Hamburger `uk-toggle` opens. 8 section links.
 
-**BakuCarousel** — works §4. Cube morphs into ring. Card click (raycast) → overlay.
+**BakuCarousel** — Works §4. Cube morphs into ring. Card click (raycast) → overlay.
 - `isAnimating` getter — true when morphing/scrolling (feeds `_needsRender`).
-- Scroll/drag blocked while CircularNav transition active.
+- Scroll/drag blocked while JoystickNav active.
 
 **Subtitles** — `.jlz-hint` bottom-center. Created in `Experience.init()`. Listens to
-`jlz:section-change` → shows section hint (e.g. "Scroll to explore", "Drag · Click to open"),
-auto-fades after 4s. `dispose()` clears timer + removes listener.
+`jlz:section-change` → shows short hint (e.g. "Drag · Click to open"), auto-fades 4s.
+`dispose()` clears timer + removes listener.
 
 ## On-demand rendering + ambient breathing
 
 `Experience._needsRender` flag gates `renderer.update()`. Set true when:
-1. `CircularNav.isActive()` — transition in progress
+1. `JoystickNav.isActive()` — 400ms after section trigger
 2. `BakuCarousel.isAnimating` — morph/scroll/drag
 3. Intro/splash animation running
 4. Camera shake active
 5. ParticleBurst active
-6. **Ambient breathing** — when fully idle, schedules 1 render frame every ~2.5s
+6. **Ambient breathing** — 1 render frame every ~2.5s when fully idle
    (advances worldDNA `uTime` on premium, EnvSphere/particle drift on parity). Respects
    `prefers-reduced-motion`.
 
@@ -82,39 +102,37 @@ Cursor (DOM) always updates — not gated by `_needsRender`.
 | `frustumCulled` | `false` |
 | `renderOrder` | `-1000` (renders first) |
 | `attachToScene()` | no-op (mesh is visible — `scene.background` NOT set) |
+| Initial weights | `[0, 1, 0, 0, 0, 0, 0, 0]` — starts on section 1 (Intro) |
 
-6 per-section patterns (mixed by animated `uSection` weights, lerped over ~0.3s):
-- sec1 (intro) — HSV rainbow gradient (animated, low saturation, high value)
-- sec2 (about) — grey gradient (`0x1a1a1a → 0x2e2e2e`)
-- sec3 (flexible) — dark grey gradient (`0x141414 → 0x222222`)
-- sec4 (works) — dark blue-grey gradient (`0x1a1a22 → 0x2a2a3a`)
-- sec5 (innovative) — dark base + radial center glow (`0x2a3a4a`)
-- sec6 (contact) — light off-white gradient (`0xe8e8e8 → 0xd8d8d8`)
+8 per-section patterns (mixed by animated `uSection` weights, lerped over ~0.3s):
+- sec0 (Lab) — light blue-grey HSV (`hue: 0.6, sat: 0.06, val: 0.88`)
+- sec1 (Intro) — HSV rainbow gradient (animated, low saturation, high value)
+- sec2 (About) — grey gradient (`0x1a1a1a → 0x2e2e2e`)
+- sec3 (Flexible) — dark purple gradient (`0x141414 → 0x222232`)
+- sec4 (Works) — dark blue-grey gradient (`0x1a1a22 → 0x2a2a3a`)
+- sec5 (Innovative) — dark base + radial center glow (`0x2a3a4a`)
+- sec6 (Contact) — light off-white gradient (`0xe8e8e8 → 0xd8d8d8`)
+- sec7 (Process) — deep blue-black gradient (`0x080810 → 0x12121e`)
 
 `changeSection(idx)` → `_targetWeights[idx]=1, others=0` → lerped in `update()`.
-Canvas redrawn when dirty, or every ~200ms for animated patterns (HSV, horizon).
+Canvas redrawn when dirty, or every ~200ms for animated patterns (HSV).
 `prefers-reduced-motion` → frozen.
 
 > `ShaderBackground.ts` file still exists but is **dead code** (not imported anywhere).
-> It was the prior @reuno-ui paper-shader port. EnvSphere is the sole background.
+> EnvSphere is the sole background.
 
-## Baku cube (SplashCube) — premium vs parity
+## SplashCube (baku) — current implementation
 
-### Premium path (real WebGPU)
-- `MeshPhysicalNodeMaterial` with `transmission=1.0` — real glass refraction
-- `attachWorldDNA()` connects 4 TSL nodes: `positionNode` (displacement),
-  `colorNode` (fresnel iridescence + shimmer), `emissiveNode` (rim glow),
-  `roughnessNode` (noise-modulated)
-- Audio-reactive: `uAudioBass` kicks displacement, `uAudioTreble` boosts shimmer
+| Property | Value |
+| --- | --- |
+| Geometry | Single `BoxGeometry(1.6, 1.6, 1.6)` |
+| Material | `MeshPhysicalMaterial` (`transmission: 0`, `iridescence: 1.0`, `clearcoat: 1.0`, `roughness: 0.05`, `envMapIntensity: 2.0`) |
+| Reflections | `CubeCamera` renders content scene (6 gradient planes + Apple logo/text textures) into `WebGLCubeRenderTarget(256)`, used as `material.envMap` |
+| Edges | `EdgesGeometry` from BoxGeometry, animated rainbow HSL vertex colors (12 edges) |
+| Opener | Scale pulse (single mesh — NOT face separation) |
+| Update | `cubeCamera.update(renderer, contentScene)` each frame; cube hidden during CubeCamera render |
 
-### Parity path (WebGL2 / fallback)
-- Plain `MeshPhysicalMaterial` with `transmission=0` (opacity-based glass)
-- `attachWorldDNA()` is a no-op — material props driven from JS
-- No fresnel/iridescence/rim glow (normalLocal is constant per flat face → invisible)
-
-### Why fresnel (not normalLocal)
-Cube faces are flat → `normalLocal` is **constant per face** → any shader based on it is uniform → invisible.
-Fresnel uses `cameraPosition - positionWorld` which **varies from face center to edge** → visible rainbow edges.
+No premium/parity material split. `worldDNA.ts` + `attachWorldDNA()` exist but are NOT called by SplashCube.
 
 ## Render pipeline (WebGPU/WebGL2 parity)
 
@@ -128,19 +146,19 @@ Fresnel uses `cameraPosition - positionWorld` which **varies from face center to
 | Effect | Implementation | Why |
 | --- | --- | --- |
 | Bloom bright-extract | `smoothstep(threshold, threshold+0.1, luminance)` matches `BloomNode` exactly | Old `c*(c-threshold)` quadratic diverged from BloomNode |
-| ACES tone map | `color*(6.2*color+0.03) / (color*(4.8*color+1.0) + 0.0001)` | Epsilon (0.0001) prevents NaN on black pixels; both paths lift shadows identically |
+| ACES tone map | `color*(6.2*color+0.03) / (color*(4.8*color+1.0) + 0.0001)` | Epsilon (0.0001) prevents NaN on black pixels |
 | Film grain | Portable integer hash: `p3 = fract(vec3(p.xyx)*0.1031); p3 += dot(p3, p3.yzx+33.33); fract((p3.x+p3.y)*p3.z)` | `sin()` precision differs GLSL vs WGSL — integer hash is bit-identical |
-| sRGB encode | Exact `sRGBTransferOETF`: `mix(pow(c, 0.41666)*1.055 - 0.055, c*12.92, step(c, 0.0031308))` | Manual in WebGL2 GLSL; `TSLRenderPipeline` applies via `outputColorTransform=true` (default) on WebGPU |
+| sRGB encode | Exact `sRGBTransferOETF`: `mix(pow(c, 0.41666)*1.055 - 0.055, c*12.92, step(c, 0.0031308))` | Manual in WebGL2 GLSL; `TSLRenderPipeline` applies via `outputColorTransform=true` on WebGPU |
 
 Color grading: `mix(color*uGradeShadows, color+(uGradeHighlights-1)*max(color-0.5,0), smoothstep(0,1,lum))` at 40% mix.
 
 ## Fog ownership
 
 `World.ts` owns `scene.fog` (per-section `FogExp2`):
-- `World.init()` creates `scene.fog = new FogExp2(cfg.fog.color, cfg.fog.density)` from section 0
+- `World.init()` creates `scene.fog = new FogExp2(cfg.fog.color, cfg.fog.density)` from section 1
 - `World.updateTransform()` updates `fog.color` + `fog.density` on section index change (reuses instance)
 - `World.dispose()` sets `scene.fog = null`
-- `Renderer.ts` does NOT touch `scene.fog` (was overriding with stale envColor before)
+- `Renderer.ts` does NOT touch `scene.fog`
 
 ## Modules
 
@@ -148,18 +166,18 @@ Color grading: `mix(color*uGradeShadows, color+(uGradeHighlights-1)*max(color-0.
 | --- | --- |
 | Experience | Render loop, section transitions, on-demand gating, ambient breathing |
 | World | Sections + sceneGroups + baku + lights + BG + EnvSphere + DrawTrail(works only) + fog |
-| SplashCube | Baku cube. Premium: MeshPhysicalNodeMaterial + TSL worldDNA + transmission. Parity: MeshPhysicalMaterial + opacity-glass. |
-| EnvSphere | BackSide sphere + CanvasTexture. 6 per-section patterns mixed by animated weights. Sole background. |
+| SplashCube | Baku cube. Single BoxGeometry + MeshPhysicalMaterial + CubeCamera reflections + rainbow edges. |
+| EnvSphere | BackSide sphere + CanvasTexture. 8 per-section patterns mixed by animated weights. Sole background. |
 | BakuCarousel | Cube↔ring morph. Raycast card click. `isAnimating` getter. |
-| CircularNav | Vinyl circle nav. `goToDirection`/`goToSection`/`isActive`. |
+| JoystickNav | Pure DOM joystick (2D). `goToDirection`/`goToSection`/`isActive`/`onSectionChange`. |
 | UIMenu | UIkit modal. `onNavigate`/`setActive`. |
 | Subtitles | Bottom-center section hints. Listens to `jlz:section-change`. Auto-fade 4s. |
 | ProjectOverlay | Fullscreen DOM dialog. Card click opens. |
 | WorksPortfolio | Project metadata only (prev/next/goTo). No textures. |
 | DevPanel | Tweakpane: Stats/Navigation/BakuCarousel/Render folders. |
 | Section | No-op `update()`. State machine only (`switchState`). |
-| SectionSceneFactory | `SECTION_CREATORS[6]` array + `hideGeometry()` (keeps Points + InstancedMesh visible). |
-| makeInstancedParticles | GPU-instanced particles (TSL MeshBasicNodeMaterial). 500-2000 instances, 1 draw call. |
+| SectionSceneFactory | `SECTION_CREATORS[8]` array + `hideGeometry()` (keeps Points + InstancedMesh visible). |
+| makeParticles | Shared `THREE.Points` factory. Built-in `PointsMaterial`. 1 draw call per cloud. |
 | Input | Mouse-only (scroll system removed). |
 | NoiseText | Glitch reveal via `jlz:section-change`. `data-rot` for rotation. |
 | WireframeTypography | Section2 About decorative typography. |
@@ -173,10 +191,8 @@ Color grading: `mix(color*uGradeShadows, color+(uGradeHighlights-1)*max(color-0.
 
 ## 21st.dev integration
 
-The project uses [@21st.dev/cli](https://21st.dev) MCP for component discovery:
+[@21st-dev/cli](https://21st.dev) MCP for component discovery:
 - MCP endpoint: `https://21st.dev/api/mcp` (POST, `x-api-key` header)
 - API key format: `21st_sk_...` (NOT `an_sk_...` — rejected by server)
 - Free tier: 2 component-code retrievals/day
-- Used to fetch:
-  - Atlas Aurora (id: 16166) — `get_component({ id: 16166 })`
-  - Background Paper Shaders (id: 5732) — `get_component({ id: 5732 })`
+- Used to fetch: Atlas Aurora (id: 16166), Background Paper Shaders (id: 5732)

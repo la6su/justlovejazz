@@ -35,7 +35,7 @@ export class World extends THREE.Group {
   private configs: readonly PhaseConfig[] = []
   private sceneRef: THREE.Scene
 
-  private _currentSectionIndex: number = 0
+  private _currentSectionIndex: number = 1 // Intro = index 1 (Lab=0 is secret left)
   public get currentSectionIndex(): number {
     return this._currentSectionIndex
   }
@@ -122,7 +122,7 @@ export class World extends THREE.Group {
       const section = new Section(config, index)
       this.add(section)
 
-      if (index === 0) {
+      if (index === 1) { // Intro = index 1 (Lab=0 is secret left)
         section.visible = true
         section.scale.setScalar(1.0)
         section.rotation.y = 0
@@ -144,12 +144,12 @@ export class World extends THREE.Group {
       SectionSceneFactory.hideGeometry(group)
       this.add(group)
       this.sceneGroups.push(group)
-      group.visible = i === 0
+      group.visible = i === 1 // Intro = index 1
     }
 
     // ── Initialize ground from first section config
     const groundMat = this.groundPlane.material as THREE.MeshStandardMaterial
-    const firstGround = this.configs[0]?.ground
+    const firstGround = this.configs[1]?.ground // Intro = index 1
     if (firstGround) {
       groundMat.color.set(firstGround.color)
       groundMat.opacity = firstGround.opacity
@@ -157,20 +157,21 @@ export class World extends THREE.Group {
     }
 
     // ── Apply first section's lights + fog + env sphere colors immediately
-    const firstCfg = this.configs[0]
+    const firstCfg = this.configs[1] // Intro = index 1 (Lab=0 is secret left)
     if (firstCfg) {
       this.lightsGroup.changeSection(firstCfg)
       // Inline WorldAtmosphere.setFog — fog not yet set on init, so create new.
       this.sceneRef.fog = new THREE.FogExp2(firstCfg.fog.color.clone(), firstCfg.fog.density)
-      // EnvSphere starts on section 0 (intro) — no changeSection needed, default weights
+      // EnvSphere starts on section 1 (intro) — default weights match
+      this.envSphere.changeSection(1)
     }
 
-    // ── Enforce final visibility: only group 0 visible, all others hidden.
+    // ── Enforce final visibility: only group 1 (intro) visible, all others hidden.
     // This guard runs after ALL group creation to prevent any upstream call
     // (e.g. a premature updateTransform with t=0 showing from+to) from
     // leaking visibility before init() returns.
     this.sceneGroups.forEach((g, i) => {
-      g.visible = i === 0
+      g.visible = i === 1 // Intro = index 1
     })
 
     // Init BakuCarousel (async texture loading) for the works section (index 3).
