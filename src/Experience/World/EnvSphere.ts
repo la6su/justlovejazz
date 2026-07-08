@@ -76,7 +76,7 @@ export class EnvSphere extends THREE.Mesh {
     //     WebGPU and WebGL2 — sphere geometry has UVs, texture wraps correctly.
     //
     // Skybox pattern: depthTest=false, renderOrder=-1000, depthWrite=false.
-    const geo = new THREE.SphereGeometry(500, 32, 16)
+    const geo = new THREE.SphereGeometry(40, 32, 16)
     const mat = new THREE.MeshBasicMaterial({
       side: THREE.BackSide,
       depthWrite: false,
