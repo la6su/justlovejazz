@@ -1,42 +1,59 @@
-// JoystickNav.ts — Pure DOM joystick for section navigation.
+// JoystickNav.ts — Pure DOM joystick with 2D section navigation.
 //
-// Simple trigger model:
-//   1. Joystick starts at center (default state)
-//   2. User drags in any direction (up/down/left/right)
-//   3. When drag exceeds threshold → trigger ONE section change
-//   4. Ball snaps back to center immediately, ready for next interaction
+// Navigation model:
+//   Vertical (up/down):   cycles through 6 MAIN sections (Intro→About→...→Contact)
+//   Horizontal (left/right): toggles to SECRET side sections (Lab / Process)
 //
-// Direction mapping:
-//   Left  → PREV section (-1)
-//   Right → NEXT section (+1)
-//   Up    → PREV section (-1)
-//   Down  → NEXT section (+1)
-// Uses dominant axis (whichever is larger) to avoid diagonal ambiguity.
+// Layout:
+//                      Intro (start)
+//                         ↓
+//   Lab ←   (current main section)   → Process
+//                         ↓
+//                       About
+//                         ↓
+//                      ... etc
 //
-// Strictly ONE section per drag — no continuous scrubbing.
+// Rules:
+//   - Start at Intro (main section 0, side = center)
+//   - Down → next main section (if in Lab/Process, returns to center first)
+//   - Up → prev main section (if in Lab/Process, returns to center first)
+//   - Left → Lab (if center), or back to center (if Process)
+//   - Right → Process (if center), or back to center (if Lab)
+//   - Strictly ONE action per drag, ball snaps back to center
 
 export interface JoystickNavOptions {
   sectionLabels: string[]
 }
 
-const BASE_RADIUS = 55 // px — joystick base radius
-const TRIGGER_DISTANCE = 35 // px — drag this far to trigger a section change
-const DEAD_ZONE = 6 // px — ignore movement smaller than this
-const BALL_RETURN_MS = 200 // ms — ball return animation duration
+// WorldConfig section indices (8 total: Lab=0, Intro=1, ..., Contact=6, Process=7)
+const LAB_INDEX = 0
+const INTRO_INDEX = 1
+const CONTACT_INDEX = 6
+const PROCESS_INDEX = 7
+const FIRST_MAIN = INTRO_INDEX
+const LAST_MAIN = CONTACT_INDEX
+
+const BASE_RADIUS = 55
+const TRIGGER_DISTANCE = 35
+const DEAD_ZONE = 6
+const BALL_RETURN_MS = 200
+
+type SideState = 'center' | 'lab' | 'process'
 
 export class JoystickNav {
   public el: HTMLDivElement
   private _base: HTMLDivElement
   private _ball: HTMLDivElement
   private _hint: HTMLDivElement
-  private _currentSection = 0
+  private _mainSection = INTRO_INDEX // current main section (1-6)
+  private _side: SideState = 'center'
   private _sectionCount: number
-  public _progress = 0 // kept for Experience API compat (always 0 or brief pulse)
+  public _progress = 0 // kept for Experience API compat
   private _onSectionChange: ((index: number) => void) | null = null
   private _onActiveChange: ((active: boolean) => void) | null = null
   private _wasActive = false
   private _isDragging = false
-  private _hasTriggered = false // prevent multiple triggers per drag
+  private _hasTriggered = false
   private _startX = 0
   private _startY = 0
   private _keydownHandler: ((e: KeyboardEvent) => void) | null = null
@@ -48,7 +65,6 @@ export class JoystickNav {
   constructor(_scene: unknown, _camera: unknown, sectionCount: number, _opts?: Partial<JoystickNavOptions>) {
     this._sectionCount = Math.max(2, sectionCount)
 
-    // ── DOM structure ──
     this.el = document.createElement('div')
     this.el.id = 'joystick-nav'
     this.el.className = 'jlz-joystick'
@@ -67,6 +83,13 @@ export class JoystickNav {
     this.el.appendChild(this._hint)
 
     this.addEventListeners()
+  }
+
+  /** Current WorldConfig section index (what Experience/World reads). */
+  private get _currentSection(): number {
+    if (this._side === 'lab') return LAB_INDEX
+    if (this._side === 'process') return PROCESS_INDEX
+    return this._mainSection
   }
 
   private addEventListeners(): void {
@@ -93,22 +116,23 @@ export class JoystickNav {
 
       if (absX < DEAD_ZONE && absY < DEAD_ZONE) return
 
-      // Move ball visually (clamped to base radius)
+      // Move ball visually (clamped)
       const dist = Math.sqrt(dx * dx + dy * dy)
       const maxDist = BASE_RADIUS * 0.7
       const scale = dist > maxDist ? maxDist / dist : 1
-      const ballX = dx * scale
-      const ballY = dy * scale
-      this._ball.style.transform = `translate(${ballX}px, ${ballY}px)`
+      this._ball.style.transform = `translate(${dx * scale}px, ${dy * scale}px)`
 
-      // Check trigger threshold — only trigger ONCE per drag
+      // Check trigger threshold — only ONCE per drag
       if (dist >= TRIGGER_DISTANCE) {
         this._hasTriggered = true
         const isVertical = absY > absX
-        // Down or Right → NEXT (+1), Up or Left → PREV (-1)
-        const dir = isVertical ? (dy > 0 ? 1 : -1) : (dx > 0 ? 1 : -1)
-        this.goToDirection(dir as 1 | -1)
-        // Snap ball back to center immediately
+        if (isVertical) {
+          // Down = next, Up = prev (always returns to center first)
+          this._navigateVertical(dy > 0 ? 1 : -1)
+        } else {
+          // Left/Right = toggle side sections
+          this._navigateHorizontal(dx > 0 ? 1 : -1)
+        }
         this._snapBallBack()
       }
     }
@@ -133,24 +157,78 @@ export class JoystickNav {
       if (tag === 'INPUT' || tag === 'TEXTAREA') return
       const menu = document.getElementById('jlz-menu-modal')
       if (menu && menu.classList.contains('uk-open')) return
-      if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+      if (e.key === 'ArrowDown') {
         e.preventDefault()
-        this.goToDirection(1)
-      } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+        this._navigateVertical(1)
+      } else if (e.key === 'ArrowUp') {
         e.preventDefault()
-        this.goToDirection(-1)
+        this._navigateVertical(-1)
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault()
+        this._navigateHorizontal(-1)
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault()
+        this._navigateHorizontal(1)
       } else if (e.key === 'Home') {
         e.preventDefault()
-        this.goToSection(0)
+        this._side = 'center'
+        this._mainSection = FIRST_MAIN
+        this._fireSectionChange()
       } else if (e.key === 'End') {
         e.preventDefault()
-        this.goToSection(this._sectionCount - 1)
+        this._side = 'center'
+        this._mainSection = LAST_MAIN
+        this._fireSectionChange()
       }
     }
     window.addEventListener('keydown', this._keydownHandler)
   }
 
-  /** Snap ball back to center with transition. */
+  /** Vertical navigation — up/down through main sections. */
+  private _navigateVertical(dir: 1 | -1): void {
+    // Always return to center first (if in Lab/Process)
+    this._side = 'center'
+    const next = this._mainSection + dir
+    if (next < FIRST_MAIN || next > LAST_MAIN) {
+      // At boundary — just fire to return to center if was in side
+      if (this._currentSection !== this._mainSection) {
+        this._fireSectionChange()
+      }
+      return
+    }
+    this._mainSection = next
+    this._fireSectionChange()
+  }
+
+  /** Horizontal navigation — left/right toggles Lab/Process. */
+  private _navigateHorizontal(dir: 1 | -1): void {
+    if (dir === 1) {
+      // Right: center → Process, Lab → center
+      if (this._side === 'center') {
+        this._side = 'process'
+      } else if (this._side === 'lab') {
+        this._side = 'center'
+      }
+      // If already in Process, stay (no-op)
+    } else {
+      // Left: center → Lab, Process → center
+      if (this._side === 'center') {
+        this._side = 'lab'
+      } else if (this._side === 'process') {
+        this._side = 'center'
+      }
+      // If already in Lab, stay (no-op)
+    }
+    this._fireSectionChange()
+  }
+
+  /** Fire section change callback with current WorldConfig index. */
+  private _fireSectionChange(): void {
+    this._onSectionChange?.(this._currentSection)
+    this._setActive(true)
+    setTimeout(() => this._setActive(false), 400)
+  }
+
   private _snapBallBack(): void {
     if (this._returnTimer) clearTimeout(this._returnTimer)
     this._ball.style.transition = `transform ${BALL_RETURN_MS}ms ease-out`
@@ -181,7 +259,6 @@ export class JoystickNav {
   }
 
   isActive(): boolean {
-    // Brief active pulse on section change for on-demand rendering
     return this._wasActive
   }
 
@@ -193,23 +270,24 @@ export class JoystickNav {
   goToSection(index: number): void {
     index = Math.max(0, Math.min(this._sectionCount - 1, index))
     if (index === this._currentSection) return
-    this._currentSection = index
-    this._onSectionChange?.(index)
-    // Brief active pulse so Experience renders the jump
-    this._setActive(true)
-    setTimeout(() => this._setActive(false), 400)
+    // Map WorldConfig index back to main/side state
+    if (index === LAB_INDEX) {
+      this._side = 'lab'
+    } else if (index === PROCESS_INDEX) {
+      this._side = 'process'
+    } else {
+      this._side = 'center'
+      this._mainSection = index
+    }
+    this._fireSectionChange()
   }
 
   goToDirection(dir: 1 | -1): void {
-    const next = this._currentSection + dir
-    if (next < 0 || next >= this._sectionCount) return
-    this.goToSection(next)
+    this._navigateVertical(dir)
   }
 
-  /** Called every frame by Experience. No-op for trigger model. */
   update(): void {
-    // No continuous update needed — trigger model handles everything
-    // in event handlers. This is kept for Experience API compatibility.
+    // No-op — trigger model
   }
 
   dispose(): void {
