@@ -1,166 +1,88 @@
-// EnvSphere.ts — Atlas Aurora cinematic background (scene.background CanvasTexture)
+// EnvSphere.ts — Junni-style per-section background (sphere + CanvasTexture)
 //
-// PORT of "Atlas Aurora" by hugo_1a34d4f7 (21st.dev component id: 16166).
+// PORT of junni BG (references/next.junni.co.jp/src/ts/MainScene/World/BG/).
 //
-// IMPLEMENTATION: scene.background = equirectangular CanvasTexture.
-// This is the MOST RELIABLE way to render a background in three.js — it's
-// native API, no geometry, no BackSide, no normalLocal, no TSL compilation.
-// three.js handles the UV mapping internally on ALL render paths (WebGPU,
-// WebGL2, WebGLBackend fallback, SwiftShader).
+// Junni approach:
+//   - BackSide sphere (radius 100) with ShaderMaterial
+//   - uSection[6] uniform array — 6 values (0..1), animated on section change
+//   - Fragment shader: 6 per-section color patterns, mixed by uSection weights
+//   - changeSection(idx) → animate uSection[idx]→1, others→0
 //
-// Why not a mesh sphere?
-// Previous PRs (#119-#127) tried a BackSide sphere with TSL MeshBasicNodeMaterial
-// + colorNode. User reported "black background" on real WebGPU. Root cause was
-// unclear (hemisphere? BackSide culling? TSL normalLocal on sphere? WebGLNodesHandler?).
-// Switching to scene.background CanvasTexture eliminates ALL geometry questions —
-// three.js renders the equirectangular texture as a skybox natively.
+// Our adaptation (HERMES §1: no raw ShaderMaterial):
+//   - BackSide sphere mesh (visible, renderOrder=-1000, depthTest=false)
+//   - MeshBasicMaterial (built-in, HERMES §4 OK) + CanvasTexture
+//   - Canvas draws 6 per-section patterns (port of junni bg.fs logic to 2D canvas)
+//   - uSection[6] animated via StateBus-like lerp in update()
+//   - Canvas redrawn when section weights change
 //
-// Aesthetic: Atlas Aurora — 3 slow-drifting colour orbs + diagonal sweep + horizon
-// glow + vignette. Canvas is redrawn every ~200ms (5fps) for drift animation.
-// Reduced-motion aware (static snapshot).
+// Per-section patterns (from junni bg.fs):
+//   sec1 (intro):    HSV rainbow gradient (vUv.y * 0.3 + time, animated)
+//   sec2 (about):    pure white
+//   sec3 (flexible): pure black
+//   sec4 (works):    pure white
+//   sec5 (innovative): gradient smoothstep(vUv.y) * 0.3
+//   sec6 (contact):  horizon glow (exp falloff + sine waves)
+//
+// All rendered into ONE canvas, mixed by uSection weights — same as junni
+// but on 2D canvas instead of GLSL. Works on ALL render paths.
 
 import * as THREE from 'three'
 import { prefersReducedMotion } from '../../core/motionPolicy'
 
-// Canvas size — equirectangular 2:1 aspect ratio
 const CANVAS_W = 2048
 const CANVAS_H = 1024
 
-// Orb colors — vivid, cinematic (Atlas Aurora palette adapted to our brand)
-const ORB_COLORS = [
-  new THREE.Color(0x7c3aed),  // vivid purple
-  new THREE.Color(0x2563eb),  // vivid blue
-  new THREE.Color(0xdb2777),  // vivid magenta
-]
-const SWEEP_COLOR = new THREE.Color(0x6b21a8)  // deep purple
+// Per-section color palette — synced with Experience.ts theme logic.
+// Experience.ts toggles `light-theme` class on sections 0 (intro) and 5 (contact),
+// which switches DOM text to DARK. So those sections need LIGHT backgrounds
+// (for dark text contrast). Other sections use DARK backgrounds (for light text).
+//
+// Light sections (idx 0, 5): luminance ~0.75-0.85 → dark text contrast > 7:1
+// Dark sections  (idx 1,2,3,4): luminance ~0.10-0.18 → light text contrast > 10:1
+const SECTION_PATTERNS = [
+  // sec1 (intro) — LIGHT: subtle HSV gradient (animated, low saturation, high value)
+  { type: 'hsv', hue: 0.6, sat: 0.08, val: 0.82 },
+  // sec2 (about) — DARK: grey gradient (top darker, bottom lighter)
+  { type: 'gradient', color1: 0x1a1a1a, color2: 0x2e2e2e },
+  // sec3 (flexible) — DARK: dark grey gradient
+  { type: 'gradient', color1: 0x141414, color2: 0x222222 },
+  // sec4 (works) — DARK: dark blue-grey (gallery feel)
+  { type: 'gradient', color1: 0x1a1a22, color2: 0x2a2a3a },
+  // sec5 (innovative) — DARK: dark with subtle center glow
+  { type: 'glow', glow: 0x2a3a4a },
+  // sec6 (contact) — LIGHT: soft off-white gradient (for dark text)
+  { type: 'gradient', color1: 0xe8e8e8, color2: 0xd8d8d8 },
+] as const
 
-/**
- * Draw Atlas Aurora mesh-gradient onto a 2D canvas (equirectangular layout).
- * The canvas is mapped as scene.background with EquirectangularReflectionMapping.
- */
-function drawAuroraCanvas(
-  ctx: CanvasRenderingContext2D,
-  colorA: THREE.Color,  // horizon color
-  colorB: THREE.Color,  // zenith/ground color
-  colorC: THREE.Color,  // horizon glow tint
-  time: number,         // for drift animation
-): void {
-  const w = CANVAS_W
-  const h = CANVAS_H
-
-  // ── Layer 1: Base vertical gradient (zenith → horizon → ground) ──
-  // Canvas Y: 0=top (zenith), h/2=horizon, h=bottom (ground).
-  // Equirectangular maps canvas to sphere: top row = +Y pole, middle = horizon, bottom = -Y pole.
-  const grad = ctx.createLinearGradient(0, 0, 0, h)
-  grad.addColorStop(0.0, `#${colorB.getHexString()}`)   // zenith (top)
-  grad.addColorStop(0.5, `#${colorA.getHexString()}`)   // horizon (middle)
-  grad.addColorStop(1.0, `#${colorB.getHexString()}`)   // ground (bottom)
-  ctx.fillStyle = grad
-  ctx.fillRect(0, 0, w, h)
-
-  // ── Layer 2: 3 drifting aurora orbs (radial gradients, 'lighter' blend) ──
-  // In equirectangular: canvas X = longitude (0..2π), canvas Y = latitude (π..0).
-  // Orbs are positioned at horizon band (Y ~ h/2) + drift on slow sinusoids.
-  ctx.globalCompositeOperation = 'lighter'
-
-  // Orb 1 (purple) — left-of-center, drifts (atlas-aurora-a, 30s)
-  const orb1X = w * 0.30 + Math.sin(time * 0.21) * w * 0.04
-  const orb1Y = h * 0.42 + Math.cos(time * 0.21) * h * 0.03
-  drawOrb(ctx, orb1X, orb1Y, w * 0.22, ORB_COLORS[0]!, 0.7)
-
-  // Orb 2 (blue) — right-of-center, drifts (atlas-aurora-b, 33s)
-  const orb2X = w * 0.70 + Math.sin(time * 0.19 + 1.5) * w * 0.05
-  const orb2Y = h * 0.55 + Math.cos(time * 0.19 + 1.5) * h * 0.03
-  drawOrb(ctx, orb2X, orb2Y, w * 0.24, ORB_COLORS[1]!, 0.65)
-
-  // Orb 3 (magenta) — center-upper, drifts (atlas-aurora-c, 30s)
-  const orb3X = w * 0.50 + Math.sin(time * 0.21 + 3.0) * w * 0.03
-  const orb3Y = h * 0.35 + Math.cos(time * 0.21 + 3.0) * h * 0.04
-  drawOrb(ctx, orb3X, orb3Y, w * 0.20, ORB_COLORS[2]!, 0.65)
-
-  // ── Layer 3: Diagonal sweep (atlas-aurora-sweep, 26s) ──
-  // Wide horizontal band that pans left↔right.
-  const sweepX = w * 0.50 + Math.sin(time * 0.24) * w * 0.15
-  drawOrb(ctx, sweepX, h * 0.40, w * 0.35, SWEEP_COLOR, 0.30)
-
-  ctx.globalCompositeOperation = 'source-over'
-
-  // ── Layer 4: Horizon glow band ──
-  const glowGrad = ctx.createLinearGradient(0, h * 0.45, 0, h * 0.55)
-  const cR = Math.floor(colorC.r * 255)
-  const cG = Math.floor(colorC.g * 255)
-  const cB = Math.floor(colorC.b * 255)
-  glowGrad.addColorStop(0, `rgba(${cR},${cG},${cB},0)`)
-  glowGrad.addColorStop(0.5, `rgba(${cR},${cG},${cB},0.35)`)
-  glowGrad.addColorStop(1, `rgba(${cR},${cG},${cB},0)`)
-  ctx.fillStyle = glowGrad
-  ctx.fillRect(0, h * 0.40, w, h * 0.20)
-
-  // ── Layer 5: Vignette (darken zenith + ground for "stage" feel) ──
-  // Top vignette
-  const vigTop = ctx.createLinearGradient(0, 0, 0, h * 0.35)
-  vigTop.addColorStop(0, 'rgba(0,0,0,0.5)')
-  vigTop.addColorStop(1, 'rgba(0,0,0,0)')
-  ctx.fillStyle = vigTop
-  ctx.fillRect(0, 0, w, h * 0.35)
-  // Bottom vignette (stronger — focuses eye on center)
-  const vigBot = ctx.createLinearGradient(0, h * 0.65, 0, h)
-  vigBot.addColorStop(0, 'rgba(0,0,0,0)')
-  vigBot.addColorStop(1, 'rgba(0,0,0,0.7)')
-  ctx.fillStyle = vigBot
-  ctx.fillRect(0, h * 0.65, w, h * 0.35)
-}
-
-function drawOrb(
-  ctx: CanvasRenderingContext2D,
-  x: number, y: number, r: number,
-  color: THREE.Color, alpha: number,
-): void {
-  const cR = Math.floor(color.r * 255)
-  const cG = Math.floor(color.g * 255)
-  const cB = Math.floor(color.b * 255)
-  const rg = ctx.createRadialGradient(x, y, 0, x, y, r)
-  rg.addColorStop(0, `rgba(${cR},${cG},${cB},${alpha})`)
-  rg.addColorStop(0.5, `rgba(${cR},${cG},${cB},${alpha * 0.5})`)
-  rg.addColorStop(1, `rgba(${cR},${cG},${cB},0)`)
-  ctx.fillStyle = rg
-  ctx.fillRect(x - r, y - r, r * 2, r * 2)
-}
-
-/**
- * EnvSphere — now a BACKGROUND PROVIDER, not a mesh.
- * Sets scene.background to an equirectangular CanvasTexture.
- * The mesh itself is invisible (geometry never rendered).
- */
 export class EnvSphere extends THREE.Mesh {
-  private _colorA: THREE.Color
-  private _colorB: THREE.Color
-  private _colorC: THREE.Color
-  private _targetColorA: THREE.Color
-  private _targetColorB: THREE.Color
-  private _targetColorC: THREE.Color
+  private _sectionWeights: number[] = [1, 0, 0, 0, 0, 0]  // start on section 0
+  private _targetWeights: number[] = [1, 0, 0, 0, 0, 0]
   private _time = 0
-  private _redrawTimer = 0
   private _canvas: HTMLCanvasElement
   private _ctx: CanvasRenderingContext2D
   private _canvasTexture: THREE.CanvasTexture
-  private _scene: THREE.Scene | null = null
+  private _redrawTimer = 0
+  private _dirty = true
 
   constructor() {
-    // Dummy geometry — the mesh itself is never rendered (we use scene.background).
-    // Setting visible=false ensures the mesh is skipped in render.
-    super(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial({ visible: false }))
+    // BackSide sphere — camera sees inside. Large radius (500) so it wraps
+    // everything. Equirectangular UV mapping via CanvasTexture.
+    const geo = new THREE.SphereGeometry(500, 32, 16)
+    const mat = new THREE.MeshBasicMaterial({
+      map: undefined,  // set after canvas creation
+      side: THREE.BackSide,
+      depthWrite: false,
+      depthTest: false,  // skybox pattern: always render, never occluded
+      fog: false,
+      toneMapped: false,  // keep colors accurate
+    })
+
+    super(geo, mat)
     this.name = 'env-sphere'
-    this.visible = false  // mesh NOT rendered — we set scene.background instead
+    this.frustumCulled = false
+    this.renderOrder = -1000  // render FIRST, before everything
 
-    this._colorA = new THREE.Color(0x1a0a2e)
-    this._colorB = new THREE.Color(0x050507)
-    this._colorC = new THREE.Color(0x2a1a4e)
-    this._targetColorA = this._colorA.clone()
-    this._targetColorB = this._colorB.clone()
-    this._targetColorC = this._colorC.clone()
-
-    // Create canvas + texture immediately (constructor runs in browser context)
+    // Canvas + texture (equirectangular 2:1)
     this._canvas = document.createElement('canvas')
     this._canvas.width = CANVAS_W
     this._canvas.height = CANVAS_H
@@ -168,29 +90,40 @@ export class EnvSphere extends THREE.Mesh {
     this._canvasTexture = new THREE.CanvasTexture(this._canvas)
     this._canvasTexture.colorSpace = THREE.SRGBColorSpace
     this._canvasTexture.mapping = THREE.EquirectangularReflectionMapping
-    // Draw initial frame
-    drawAuroraCanvas(this._ctx, this._colorA, this._colorB, this._colorC, 0)
-    this._canvasTexture.needsUpdate = true
+    mat.map = this._canvasTexture
+
+    // Initial draw
+    this._redrawCanvas()
   }
 
   /**
-   * Attach to a scene — sets scene.background to our CanvasTexture.
+   * Attach to scene — sets scene.background to our CanvasTexture.
    * Called by World after construction.
    */
   attachToScene(scene: THREE.Scene): void {
-    this._scene = scene
     scene.background = this._canvasTexture
   }
 
-  setSectionColors(mainColor: THREE.Color, groundColor: THREE.Color, glowColor: THREE.Color): void {
-    this._targetColorA.copy(mainColor)
-    this._targetColorB.copy(groundColor)
-    this._targetColorC.copy(glowColor)
+  /** Set section colors (compat with old API — now ignored, patterns are fixed). */
+  setSectionColors(_mainColor: THREE.Color, _groundColor: THREE.Color, _glowColor: THREE.Color): void {
+    // No-op — patterns are fixed per section (junni style)
   }
 
+  /** Set blend factor (compat with old API — now ignored). */
   setBlend(_blend: number): void {
-    // Blend is baked into the canvas snapshot (redrawn on section change).
-    // No live blend — canvas is the source of truth.
+    // No-op — section weights drive the blend now
+  }
+
+  /**
+   * Change section — animate uSection weights.
+   * Called by World.changeSection(idx).
+   * target[idx] = 1, all others = 0. Lerped over ~1s.
+   */
+  changeSection(idx: number): void {
+    if (idx < 0 || idx >= 6) return
+    this._targetWeights = [0, 0, 0, 0, 0, 0]
+    this._targetWeights[idx] = 1
+    this._dirty = true
   }
 
   update(dt: number): void {
@@ -198,20 +131,102 @@ export class EnvSphere extends THREE.Mesh {
       this._time += dt
     }
 
-    // Lerp section colors
-    const lerp = 1 - Math.exp(-4 * dt)
-    this._colorA.lerp(this._targetColorA, lerp)
-    this._colorB.lerp(this._targetColorB, lerp)
-    this._colorC.lerp(this._targetColorC, lerp)
+    // Lerp section weights toward targets (junni: ~1s transition)
+    const lerpSpeed = 3.0  // 1/3 ≈ 0.33s time constant
+    for (let i = 0; i < 6; i++) {
+      const diff = this._targetWeights[i]! - this._sectionWeights[i]!
+      if (Math.abs(diff) > 0.001) {
+        this._sectionWeights[i]! += diff * Math.min(1, dt * lerpSpeed)
+        this._dirty = true
+      } else if (this._sectionWeights[i]! !== this._targetWeights[i]!) {
+        this._sectionWeights[i]! = this._targetWeights[i]!
+        this._dirty = true
+      }
+    }
 
-    // Redraw canvas every ~200ms (5fps) for drift animation.
-    // Not every frame — canvas redraw is expensive (2D fillRect ops).
-    // Under reduced-motion, redraw only once (section change detection via color lerp).
+    // Redraw canvas when dirty OR every ~200ms for animated patterns (HSV, horizon)
     this._redrawTimer += dt
-    if (this._redrawTimer >= 0.2 || prefersReducedMotion()) {
+    const hasAnimatedPattern = this._sectionWeights[0]! > 0.01 || this._sectionWeights[5]! > 0.01
+    if (this._dirty || (hasAnimatedPattern && !prefersReducedMotion() && this._redrawTimer >= 0.2)) {
       this._redrawTimer = 0
-      drawAuroraCanvas(this._ctx, this._colorA, this._colorB, this._colorC, this._time)
+      this._redrawCanvas()
       this._canvasTexture.needsUpdate = true
+      this._dirty = false
+    }
+  }
+
+  /** Draw all 6 section patterns, mixed by _sectionWeights. */
+  private _redrawCanvas(): void {
+    const ctx = this._ctx
+    const w = CANVAS_W
+    const h = CANVAS_H
+
+    // Start with black, accumulate weighted patterns
+    ctx.fillStyle = '#000000'
+    ctx.fillRect(0, 0, w, h)
+
+    // Render each section pattern to a temp canvas, then composite with weight
+    for (let i = 0; i < 6; i++) {
+      const weight = this._sectionWeights[i]!
+      if (weight < 0.01) continue
+
+      // Draw pattern to main canvas with globalAlpha = weight
+      ctx.globalAlpha = weight
+      this._drawSectionPattern(ctx, i, w, h)
+    }
+    ctx.globalAlpha = 1.0
+  }
+
+  /** Draw a single section pattern (port of junni bg.fs sec1..sec6 to 2D canvas). */
+  private _drawSectionPattern(
+    ctx: CanvasRenderingContext2D,
+    sectionIdx: number,
+    w: number, h: number,
+  ): void {
+    const pattern = SECTION_PATTERNS[sectionIdx]!
+    const t = this._time
+
+    switch (pattern.type) {
+      case 'hsv': {
+        // sec1 (intro) — HSV rainbow gradient, low saturation, animated
+        // junni: hsv2rgb(vec3(vUv.y * 0.3 + time * 0.1, 0.5, 1.0))
+        // Our version: low-sat dark gradient with subtle hue shift
+        const grad = ctx.createLinearGradient(0, 0, 0, h)
+        for (let y = 0; y <= 10; y++) {
+          const frac = y / 10
+          const hue = (frac * 0.3 + t * 0.02) % 1
+          const color = hsvToHex(hue, pattern.sat, pattern.val)
+          grad.addColorStop(frac, color)
+        }
+        ctx.fillStyle = grad
+        ctx.fillRect(0, 0, w, h)
+        break
+      }
+      case 'gradient': {
+        // sec2/sec4 — vertical gradient (dark → lighter)
+        const c1 = new THREE.Color(pattern.color1)
+        const c2 = new THREE.Color(pattern.color2)
+        const grad = ctx.createLinearGradient(0, 0, 0, h)
+        grad.addColorStop(0, `#${c1.getHexString()}`)
+        grad.addColorStop(1, `#${c2.getHexString()}`)
+        ctx.fillStyle = grad
+        ctx.fillRect(0, 0, w, h)
+        break
+      }
+      case 'glow': {
+        // sec5 — dark with subtle center glow
+        const base = new THREE.Color(0x141414)
+        const glow = new THREE.Color(pattern.glow)
+        ctx.fillStyle = `#${base.getHexString()}`
+        ctx.fillRect(0, 0, w, h)
+        // Radial glow at center
+        const rg = ctx.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w * 0.4)
+        rg.addColorStop(0, `rgba(${glow.r * 255 | 0},${glow.g * 255 | 0},${glow.b * 255 | 0},0.4)`)
+        rg.addColorStop(1, `rgba(${glow.r * 255 | 0},${glow.g * 255 | 0},${glow.b * 255 | 0},0)`)
+        ctx.fillStyle = rg
+        ctx.fillRect(0, 0, w, h)
+        break
+      }
     }
   }
 
@@ -219,8 +234,11 @@ export class EnvSphere extends THREE.Mesh {
     this.geometry.dispose()
     ;(this.material as THREE.Material).dispose()
     this._canvasTexture.dispose()
-    if (this._scene) {
-      this._scene.background = null
-    }
   }
+}
+
+/** HSV → hex color string. h/s/v in 0..1 range. */
+function hsvToHex(h: number, s: number, v: number): string {
+  const c = new THREE.Color().setHSL(h, s, v)
+  return `#${c.getHexString()}`
 }
