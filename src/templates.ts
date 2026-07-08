@@ -23,7 +23,7 @@ export function homePage(): string {
         <div class="section-bg section-bg--lab uk-position-cover" data-dynamic-content>
           <div class="section-container jlz-layout--between">
             <div class="section-content jlz-hero">
-              <h2 class="studio-title studio-title--about jlz-reveal">LAB</h2>
+              <h2 class="studio-title studio-title--about jlz-reveal">SECRET</h2>
               <p class="studio-body jlz-reveal">
                 Experiments at the edge of what browsers can do. Shader art, audio
                 reactive visuals, generative geometry — this is where we play.
@@ -73,7 +73,7 @@ export function homePage(): string {
               </p>
             </div>
             <div class="jlz-scroll-hint jlz-reveal" aria-hidden="true">
-              <span class="jlz-scroll-hint__label">Joystick</span>
+              <span class="jlz-scroll-hint__label">Let's play?</span>
               <span class="jlz-scroll-hint__line"></span>
             </div>
           </div>
@@ -92,11 +92,7 @@ export function homePage(): string {
             </div>
             <div class="jlz-split__right jlz-reveal">
               <p class="studio-body jlz-body-text" data-content-id="about-text">
-                Craft meets code. We design 3D interfaces that respond to
-                gesture, light, and sound — engineered for the GPU in your pocket.
-              </p>
-              <p class="studio-body jlz-body-text jlz-body-text--muted">
-                Every pixel is choreographed. Every frame, considered.
+                Craft meets code. Every pixel is choreographed. Every frame, considered.
                 We build for browsers, but we design for people.
               </p>
             </div>
@@ -218,7 +214,7 @@ export function homePage(): string {
                   <span>Twitter</span>
                 </a>
               </div>
-              <p class="jlz-contact-footer jlz-reveal">© 2025 JUSTLOVEJAZZ — Crafted in WebGL</p>
+              <p class="jlz-contact-footer jlz-reveal">© 2026 l@6.su — Crafted with Love</p>
             </div>
           </div>
         </div>
@@ -243,15 +239,11 @@ export function homePage(): string {
                 <span class="jlz-timeline__label">Research</span>
                 <span class="jlz-timeline__desc">Understand the problem space</span>
               </div>
+
               <div class="jlz-timeline__item">
                 <span class="jlz-timeline__num">02</span>
-                <span class="jlz-timeline__label">Design</span>
-                <span class="jlz-timeline__desc">Prototype, iterate, refine</span>
-              </div>
-              <div class="jlz-timeline__item">
-                <span class="jlz-timeline__num">03</span>
                 <span class="jlz-timeline__label">Develop</span>
-                <span class="jlz-timeline__desc">Build with cutting-edge tech</span>
+                <span class="jlz-timeline__desc">Prototype, iterate, refine</span>
               </div>
               <div class="jlz-timeline__item">
                 <span class="jlz-timeline__num">04</span>
@@ -259,9 +251,9 @@ export function homePage(): string {
                 <span class="jlz-timeline__desc">Ship, measure, evolve</span>
               </div>
             </div>
-            <div class="jlz-manifesto jlz-reveal">
-              <p>We believe the web is a canvas for emotion.</p>
-              <p>Every pixel earns its place. Every frame tells a story.</p>
+            <div class="uk-margin-top jlz-reveal">
+              <p>We believe the web is a canvas for emotion. <br class="uk-visible@s" />
+              Every pixel earns its place. Every frame tells a story.</p>
               <p class="jlz-manifesto__sig">— JUSTLOVEJAZZ</p>
             </div>
           </div>

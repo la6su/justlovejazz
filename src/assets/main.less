@@ -472,6 +472,7 @@ canvas {
 
 /* Top bar: title (left) + counter + close (right) */
 .jlz-fs-top {
+  margin-top: 40px;
   padding: 2rem 2.5rem;
 }
 .jlz-fs-cat {
@@ -1497,6 +1498,8 @@ body.light-theme .jlz-hint__text {
   background: rgba(255,255,255,0.03);
   border-left: 3px solid rgba(255,255,255,0.2);
   border-radius: 0 8px 8px 0;
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
   transition: border-color 0.3s ease, background 0.3s ease;
 }
 .jlz-timeline__item:hover {
