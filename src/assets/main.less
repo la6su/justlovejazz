@@ -674,80 +674,107 @@ canvas {
 }
 
 /* ════════════════════════════════════════════════════════════════════
-   9. Pill nav — horizontal section navigation (replaces modal menu)
+   9. UIKit navbar + uk-subnav-pill — section navigation
    ════════════════════════════════════════════════════════════════════ */
-.jlz-pill-nav {
+
+/* Transparent navbar over 3D canvas — UIKit component override */
+.jlz-navbar {
   position: fixed;
-  top: 68px;
-  left: 50%;
-  transform: translateX(-50%) translateY(-8px);
+  top: 0;
+  left: 0;
+  right: 0;
   z-index: 10001;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 6px 8px;
-  background: rgba(10, 10, 14, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 100px;
-  max-width: 92vw;
-  overflow-x: auto;
-  scrollbar-width: none;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  background: transparent !important;
+  padding-top: 8px;
+  padding-bottom: 8px;
 }
-.jlz-pill-nav::-webkit-scrollbar { display: none; }
-.jlz-pill-nav.is-visible {
-  opacity: 1;
-  pointer-events: auto;
-  transform: translateX(-50%) translateY(0);
+
+/* Section navigation pills — UIKit uk-subnav-pill override */
+.jlz-section-nav {
+  flex-wrap: nowrap;
+  justify-content: center;
+  gap: 2px;
 }
-.jlz-pill {
-  flex-shrink: 0;
-  padding: 6px 14px;
-  border: none;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 0.75rem;
+.jlz-section-nav li a {
+  padding: 5px 12px;
+  font-size: 0.7rem;
   font-weight: 500;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   border-radius: 100px;
-  cursor: pointer;
-  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.5);
+  background: transparent;
   transition: background 0.2s ease, color 0.2s ease;
+  white-space: nowrap;
 }
-.jlz-pill:hover {
+.jlz-section-nav li a:hover {
   background: rgba(255, 255, 255, 0.08);
   color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
 }
-.jlz-pill.is-active {
+.jlz-section-nav li.uk-active a {
   background: rgba(255, 255, 255, 0.15);
   color: #fff;
 }
-body.light-theme .jlz-pill-nav {
-  background: rgba(255, 255, 255, 0.85);
-  border-color: rgba(0, 0, 0, 0.1);
-}
-body.light-theme .jlz-pill {
+
+/* Light theme — dark text on light bg */
+body.light-theme .jlz-section-nav li a {
   color: rgba(0, 0, 0, 0.5);
 }
-body.light-theme .jlz-pill:hover {
+body.light-theme .jlz-section-nav li a:hover {
   background: rgba(0, 0, 0, 0.06);
   color: rgba(0, 0, 0, 0.8);
 }
-body.light-theme .jlz-pill.is-active {
+body.light-theme .jlz-section-nav li.uk-active a {
   background: rgba(0, 0, 0, 0.1);
   color: #000;
 }
+
+/* Hamburger toggle — hidden on desktop (navbar always visible) */
+.jlz-menu-toggle {
+  display: none;
+}
 @media (max-width: 640px) {
-  .jlz-pill {
-    padding: 5px 10px;
+  .jlz-menu-toggle {
+    display: flex;
+    position: fixed;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10002;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 50%;
+    color: rgba(255, 255, 255, 0.9);
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+  }
+  .jlz-navbar {
+    padding-top: 56px;
+    background: rgba(10, 10, 14, 0.92) !important;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    transform: translateY(-100%);
+    transition: transform 0.3s ease;
+  }
+  .jlz-navbar.uk-open {
+    transform: translateY(0);
+  }
+  .jlz-section-nav {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .jlz-section-nav li a {
+    padding: 4px 10px;
     font-size: 0.65rem;
   }
 }
+
 /* ════════════════════════════════════════════════════════════════════
    15. UI OVERHAUL — cinematic typography, glassmorphism, 3D symbiosis
    (Appended per ui-overhaul task — DO NOT modify rules above.)
