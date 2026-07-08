@@ -23,7 +23,6 @@ export function homePage(): string {
         <div class="section-bg section-bg--lab uk-position-cover" data-dynamic-content>
           <div class="section-container jlz-layout--between">
             <div class="section-content jlz-hero">
-              <span class="jlz-eyebrow jlz-reveal">00 · Secret Lab</span>
               <h2 class="studio-title studio-title--about jlz-reveal">LAB</h2>
               <p class="studio-body jlz-reveal">
                 Experiments at the edge of what browsers can do. Shader art, audio
@@ -87,9 +86,7 @@ export function homePage(): string {
         <div class="section-bg section-bg--about uk-position-cover" data-dynamic-content>
           <div class="section-container jlz-layout--split">
             <div class="jlz-split__left">
-              <p class="jlz-eyebrow jlz-reveal">
-                <span class="jlz-section-index">02</span> About
-              </p>
+
               <h2 class="studio-title studio-title--about jlz-section-title"
                   data-content-id="about-title">About</h2>
             </div>
@@ -114,9 +111,7 @@ export function homePage(): string {
                id="section-flexible" data-section="flexible">
         <div class="section-bg section-bg--flexible uk-position-cover" data-dynamic-content>
           <div class="jlz-corner-label" aria-hidden="true">
-            <p class="jlz-eyebrow">
-              <span class="jlz-section-index">03</span> Works
-            </p>
+
             <p class="jlz-corner-label__hint">Drag the cube · Scroll to morph</p>
           </div>
         </div>
@@ -128,9 +123,7 @@ export function homePage(): string {
         <div class="section-bg section-bg--challenge uk-position-cover" data-dynamic-content>
           <div class="section-container jlz-layout--top">
             <div class="section-content">
-              <p class="jlz-eyebrow jlz-reveal">
-                <span class="jlz-section-index">04</span> Selected Works
-              </p>
+
               <h2 class="studio-title studio-title--challenge jlz-section-title"
                   data-content-id="challenge-title">Works</h2>
               <p class="studio-body jlz-body-text jlz-reveal"
@@ -151,9 +144,7 @@ export function homePage(): string {
         <div class="section-bg section-bg--innovative uk-position-cover" data-dynamic-content>
           <div class="section-container jlz-layout--between">
             <div class="section-content jlz-innovative__head">
-              <p class="jlz-eyebrow jlz-reveal">
-                <span class="jlz-section-index">05</span> Innovative
-              </p>
+
               <h2 class="studio-title jlz-section-title"
                   data-content-id="innovative-title">Innovative</h2>
               <p class="studio-body jlz-body-text jlz-reveal"
@@ -198,9 +189,7 @@ export function homePage(): string {
         <div class="section-bg section-bg--contact uk-position-cover" data-dynamic-content>
           <div class="section-container jlz-layout--top">
             <div class="section-content">
-              <p class="jlz-eyebrow jlz-reveal">
-                <span class="jlz-section-index">06</span> Contact
-              </p>
+
               <h2 class="studio-title jlz-section-title"
                   data-content-id="contact-title">Contact</h2>
               <p class="jlz-contact-tagline jlz-reveal"
@@ -241,7 +230,7 @@ export function homePage(): string {
         <div class="section-bg section-bg--process uk-position-cover" data-dynamic-content>
           <div class="section-container jlz-layout--between">
             <div class="section-content jlz-hero">
-              <span class="jlz-eyebrow jlz-reveal">07 · Process</span>
+
               <h2 class="studio-title studio-title--about jlz-reveal">PROCESS</h2>
               <p class="studio-body jlz-reveal">
                 From concept to launch — every project follows a rhythm.

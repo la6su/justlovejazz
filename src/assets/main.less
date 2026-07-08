@@ -763,28 +763,8 @@ body.light-theme li.uk-active .jlz-nav-link {
   }
 }
 
-/* ── 15.2  Eyebrow label + section index ── */
-.jlz-eyebrow {
-  font-family: var(--jlz-font-mono);
-  font-size: clamp(0.65rem, 0.85vw, 0.78rem);
-  font-weight: 500;
-  letter-spacing: 0.32em;
-  text-transform: uppercase;
-  opacity: 0.72;
-  margin: 0 0 var(--jlz-space-5);
-  display: inline-flex;
-  align-items: center;
-  gap: var(--jlz-space-3);
-}
-.jlz-eyebrow::before {
-  content: '';
-  display: inline-block;
-  width: 28px;
-  height: 1px;
-  background: currentColor;
-  opacity: 0.55;
-  flex-shrink: 0;
-}
+/* ── 15.2  section index ── */
+
 .jlz-section-index {
   font-family: var(--jlz-font-mono);
   font-size: clamp(0.7rem, 0.9vw, 0.85rem);
@@ -979,9 +959,7 @@ section[data-section='contact'] .jlz-scroll-hint {
   pointer-events: none;
   color: rgba(0, 0, 0, 0.75);
 }
-.jlz-corner-label .jlz-eyebrow {
-  margin-bottom: var(--jlz-space-2);
-}
+
 .jlz-corner-label__hint {
   font-family: var(--jlz-font-mono);
   font-size: clamp(0.65rem, 0.85vw, 0.78rem);
