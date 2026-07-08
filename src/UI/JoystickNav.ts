@@ -13,7 +13,7 @@
 // Also supports keyboard arrows for desktop.
 
 import { JoystickControls } from 'three-joystick'
-import type * as THREE from 'three'
+import * as THREE from 'three'
 
 export interface JoystickNavOptions {
   sectionLabels: string[]
@@ -54,10 +54,35 @@ export class JoystickNav {
     // Create joystick controls — adds 3D joystick to scene
     this._joystick = new JoystickControls(camera as THREE.PerspectiveCamera, scene)
 
+    // Override joystick scale — default 20 places joystick too far from camera.
+    // Scale = 1 places it close to camera (in front), visible above all 3D content.
+    this._joystick.joystickScale = 2
+
     // Prevent joystick from activating when modal menu is open
     this._joystick.preventAction = () => {
       const menu = document.getElementById('jlz-menu-modal')
       return !!(menu && menu.classList.contains('uk-open'))
+    }
+
+    // Override attachJoystickUI to use MeshBasicMaterial (always visible,
+    // no lighting needed) and higher renderOrder (above all scene content).
+    // Cast to any because attachJoystickUI is private in the type defs.
+    ;(this._joystick as any).attachJoystickUI = (name: string, position: THREE.Vector3, color: number, radius: number) => {
+      const scale = 1 / (camera as THREE.PerspectiveCamera).zoom
+      const geo = new THREE.CircleGeometry(radius * scale, 72)
+      const mat = new THREE.MeshBasicMaterial({
+        color,
+        opacity: 0.6,
+        transparent: true,
+        depthTest: false,
+        depthWrite: false,
+        fog: false,
+      })
+      const mesh = new THREE.Mesh(geo, mat)
+      mesh.renderOrder = 999 // above everything (cube=2, edges=10)
+      mesh.name = name
+      mesh.position.copy(position)
+      scene.add(mesh)
     }
 
     this.addKeyboardListener()

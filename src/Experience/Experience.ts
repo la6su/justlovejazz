@@ -68,14 +68,17 @@ export class Experience {
   private _reducedMotion = false // cached prefers-reduced-motion (updated in init)
 
   private static readonly SECTION_LABELS = [
+    'Lab',      // secret left — experiments
     'Intro',
     'About',
     'Flexible',
     'Works',
     'Innovative',
     'Contact',
+    'Process',  // secret right — workflow timeline
   ]
   private static readonly SECTION_SUBTITLES = [
+    'Experiments & Lab',
     'Interactive 3D Experience',
     'Art meets technology',
     'Adaptive workflows',
@@ -239,7 +242,7 @@ export class Experience {
     this.setupEnvironment()
 
     // JoystickNav — joystick-based section navigation (replaces CircularNav)
-    this._circNav = new JoystickNav(this.scene, this.camera.instance, 6, {
+    this._circNav = new JoystickNav(this.scene, this.camera.instance, 8, {
       sectionLabels: Experience.SECTION_LABELS,
     })
     this._circNav.onSectionChange((idx) => {
@@ -405,7 +408,7 @@ export class Experience {
     // Drive worldDNA section blend — from→to colors + phaseProgress (scroll t).
     if (this.world?.baku) {
       const fromCfg = this.world.getConfig(this.world.sections[this.world.currentSectionIndex]?.phaseConfig?.id ?? 'sec_intro')
-      const toIdx = Math.min(this.world.currentSectionIndex + 1, 5)
+      const toIdx = Math.min(this.world.currentSectionIndex + 1, 7)
       const toCfg = this.world.getConfig(this.world.sections[toIdx]?.phaseConfig?.id ?? 'sec_intro')
       if (fromCfg && toCfg) {
         this.world.baku.updateWorldBlend(
@@ -432,7 +435,8 @@ export class Experience {
     // These sections have LIGHT backgrounds (EnvSphere patterns) → dark text
     // for contrast. Other sections have DARK backgrounds → light text.
     const idx = this.world.currentSectionIndex
-    const isLightSection = idx === 0 || idx === 5
+    // Light sections: Lab(0), Intro(1), Contact(6) — light bg, dark text
+    const isLightSection = idx === 0 || idx === 1 || idx === 6
     document.documentElement.classList.toggle('light-theme', isLightSection)
     document.body.classList.toggle('light-theme', isLightSection)
     // Give World the camera ref for DrawTrail (once, after init).
@@ -475,12 +479,12 @@ export class Experience {
         this.world.baku.updateMaterial(worldState.bakuMaterial)
       }
       // A-015: Per-section cursor follow (works=0.22, others=0.15)
-      const cursorFollow = idx === 3 ? 0.22 : 0.15
+      const cursorFollow = idx === 4 ? 0.22 : 0.15
       this.camera.setCursorFollow(cursorFollow)
     }
 
     // Works section: baku cube morphs into a carousel ring of project cards
-    // (BakuCarousel). The carousel is a child of sceneGroups[3] and manages
+    // (BakuCarousel). The carousel is a child of sceneGroups[4] and manages
     // its own visibility via morph.
     const showGallery = cfg?.ui?.showGallery ?? false
     // Track BakuCarousel active state for on-demand rendering — when morphing
@@ -627,7 +631,7 @@ export class Experience {
     // Wire BakuCarousel card click → open fullscreen ProjectOverlay.
     // This is the SOLE entry point for opening the fullscreen overlay —
     // the old Show button and cube-tap paths were removed to avoid duplication.
-    // The carousel is a child of sceneGroups[3] (works section).
+    // The carousel is a child of sceneGroups[4] (works section).
     const carousel = this.getCarousel()
     if (carousel && !carousel.userData.clickWired) {
       carousel.userData.clickWired = true

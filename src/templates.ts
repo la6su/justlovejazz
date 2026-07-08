@@ -14,8 +14,47 @@
 // Index: 0=intro, 1=about, 2=flexible, 3=challenge, 4=innovative, 5=contact
 export function homePage(): string {
   return `
-    <!-- ═══ section-studio → 6 child sections (1:1 with 3D scene groups) ═══ -->
+    <!-- ═══ section-studio → 8 child sections (6 main + 2 secret side) ═══ -->
     <div class="section-studio uk-position-relative">
+
+      <!-- 00: LAB (secret left) — Experiments & interactive demos -->
+      <section class="uk-height-viewport uk-flex uk-flex-center" uk-height-viewport="expand: true"
+               id="section-lab" data-section="lab">
+        <div class="section-bg section-bg--lab uk-position-cover" data-dynamic-content>
+          <div class="section-container jlz-layout--between">
+            <div class="section-content jlz-hero">
+              <span class="jlz-eyebrow jlz-reveal">00 · Secret Lab</span>
+              <h2 class="studio-title studio-title--about jlz-reveal">LAB</h2>
+              <p class="studio-body jlz-reveal">
+                Experiments at the edge of what browsers can do. Shader art, audio
+                reactive visuals, generative geometry — this is where we play.
+              </p>
+            </div>
+            <div class="jlz-lab-grid jlz-reveal">
+              <div class="jlz-lab-card" data-lab="shader">
+                <span class="jlz-lab-card__icon">◈</span>
+                <span class="jlz-lab-card__title">Shader Playground</span>
+                <span class="jlz-lab-card__desc">Live GLSL fragments</span>
+              </div>
+              <div class="jlz-lab-card" data-lab="audio">
+                <span class="jlz-lab-card__icon">◉</span>
+                <span class="jlz-lab-card__title">Audio Reactive</span>
+                <span class="jlz-lab-card__desc">Sound → geometry</span>
+              </div>
+              <div class="jlz-lab-card" data-lab="gen">
+                <span class="jlz-lab-card__icon">⬡</span>
+                <span class="jlz-lab-card__title">Generative</span>
+                <span class="jlz-lab-card__desc">Procedural worlds</span>
+              </div>
+              <div class="jlz-lab-card" data-lab="particles">
+                <span class="jlz-lab-card__icon">⁂</span>
+                <span class="jlz-lab-card__title">GPU Particles</span>
+                <span class="jlz-lab-card__desc">10k instances</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       <!-- 01: INTRO — baku cube center, hero at top, scroll hint at bottom -->
       <section class="uk-height-viewport uk-flex uk-flex-center" uk-height-viewport="expand: true"
@@ -196,6 +235,50 @@ export function homePage(): string {
                 </a>
               </div>
               <p class="jlz-contact-footer jlz-reveal">© 2025 JUSTLOVEJAZZ — Crafted in WebGL</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 07: PROCESS (secret right) — Workflow timeline & studio manifesto -->
+      <section class="uk-height-viewport uk-flex uk-flex-center" uk-height-viewport="expand: true"
+               id="section-process" data-section="process">
+        <div class="section-bg section-bg--process uk-position-cover" data-dynamic-content>
+          <div class="section-container jlz-layout--between">
+            <div class="section-content jlz-hero">
+              <span class="jlz-eyebrow jlz-reveal">07 · Process</span>
+              <h2 class="studio-title studio-title--about jlz-reveal">PROCESS</h2>
+              <p class="studio-body jlz-reveal">
+                From concept to launch — every project follows a rhythm.
+                Research, design, develop, ship. Then iterate.
+              </p>
+            </div>
+            <div class="jlz-timeline jlz-reveal">
+              <div class="jlz-timeline__item">
+                <span class="jlz-timeline__num">01</span>
+                <span class="jlz-timeline__label">Research</span>
+                <span class="jlz-timeline__desc">Understand the problem space</span>
+              </div>
+              <div class="jlz-timeline__item">
+                <span class="jlz-timeline__num">02</span>
+                <span class="jlz-timeline__label">Design</span>
+                <span class="jlz-timeline__desc">Prototype, iterate, refine</span>
+              </div>
+              <div class="jlz-timeline__item">
+                <span class="jlz-timeline__num">03</span>
+                <span class="jlz-timeline__label">Develop</span>
+                <span class="jlz-timeline__desc">Build with cutting-edge tech</span>
+              </div>
+              <div class="jlz-timeline__item">
+                <span class="jlz-timeline__num">04</span>
+                <span class="jlz-timeline__label">Launch</span>
+                <span class="jlz-timeline__desc">Ship, measure, evolve</span>
+              </div>
+            </div>
+            <div class="jlz-manifesto jlz-reveal">
+              <p>We believe the web is a canvas for emotion.</p>
+              <p>Every pixel earns its place. Every frame tells a story.</p>
+              <p class="jlz-manifesto__sig">— JUSTLOVEJAZZ</p>
             </div>
           </div>
         </div>

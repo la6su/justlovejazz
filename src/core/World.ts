@@ -58,7 +58,7 @@ export class World extends THREE.Group {
     // ── Lights (= World.lights, аналог Junni Lights)
     this.lightsGroup = new CinematicLights(scene)
 
-    // ── DrawTrail (cursor trail ribbon) — only on works section (idx=3)
+    // ── DrawTrail (cursor trail ribbon) — only on works section (idx=4)
     this.drawTrail = new DrawTrail()
     scene.add(this.drawTrail.object)
     this.drawTrail.object.visible = false // hidden until works section
@@ -176,7 +176,7 @@ export class World extends THREE.Group {
     // Init BakuCarousel (async texture loading) for the works section (index 3).
     // The baku cube morphs into a carousel ring of project cards when the
     // works section becomes active — see BakuCarousel.ts for the morph logic.
-    const worksGroup = this.sceneGroups[3]
+    const worksGroup = this.sceneGroups[4]
     if (worksGroup) {
       const carousel = worksGroup.userData.gallery as
         | import('../Experience/World/BakuCarousel').BakuCarousel
@@ -224,8 +224,8 @@ export class World extends THREE.Group {
       this.baku.update(deltaTime, this._renderer)
       // Update instanced particles (GPU drift) — frozen when idle
       updateInstancedParticles(deltaTime)
-      // DrawTrail only on works section (idx=3)
-      if (this.drawTrail && this._camera && this._currentSectionIndex === 3) {
+      // DrawTrail only on works section (idx=4)
+      if (this.drawTrail && this._camera && this._currentSectionIndex === 4) {
         this.drawTrail.update(deltaTime, this._camera)
       }
     }
@@ -336,9 +336,9 @@ export class World extends THREE.Group {
         // EnvSphere section change — animate uSection weights (junni pattern)
         this.envSphere.changeSection(fromIndex)
       }
-      // DrawTrail visibility — only on works section (idx=3)
+      // DrawTrail visibility — only on works section (idx=4)
       if (this.drawTrail) {
-        this.drawTrail.object.visible = fromIndex === 3
+        this.drawTrail.object.visible = fromIndex === 4
       }
     }
 
