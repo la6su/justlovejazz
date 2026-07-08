@@ -23,6 +23,7 @@
 import * as THREE from 'three'
 import { isMenuOpen, isUiChromeEvent } from '../../UI/uiChrome'
 import { PROJECTS } from '../../Data/Projects'
+import { createRoundedRectGeometry } from '../../Utils/roundedRectGeometry'
 
 // 6 cube faces — textures derived from PROJECTS (4 unique, repeated to fill 6).
 // Loading 4 textures once and referencing by index avoids duplicate GPU resources.
@@ -92,7 +93,8 @@ export class BakuCarousel extends THREE.Group {
   constructor() {
     super()
     this.name = 'baku-carousel'
-    this.geometry = new THREE.PlaneGeometry(1, 1, 16, 8)
+    // Rounded rect geometry (1x1 base, scaled per-card). Radius 0.12 = 12% corner.
+    this.geometry = createRoundedRectGeometry(1, 1, 0.12, 12) as unknown as THREE.PlaneGeometry
   }
 
   /** Activate the carousel — start morphing from cube to ring. */
@@ -231,6 +233,11 @@ export class BakuCarousel extends THREE.Group {
     this.keydownHandler = (e: KeyboardEvent) => {
       if (!this._active || this._morphT < 0.5) return
       if (isMenuOpen() || isUiChromeEvent(e)) return
+      // Don't intercept keys when ProjectOverlay is open — overlay has its own
+      // keyboard handler for ArrowLeft/ArrowRight/Escape. Without this guard,
+      // both handlers fire → double prev/next (carousel jumps 2 cards).
+      const overlayOpen = !!(window as unknown as { jlzOverlayOpen?: boolean }).jlzOverlayOpen
+      if (overlayOpen) return
       const tag = (e.target as HTMLElement)?.tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA') return
       if (e.key === 'ArrowLeft') {
@@ -367,14 +374,16 @@ export class BakuCarousel extends THREE.Group {
       const cubeRot = cubeFace.rot
 
       // ── Carousel position (unfolded state) — point on horizontal ring ──
-      const baseAngle = (i / n) * Math.PI * 2
+      // Offset by π/2 so card 0 is at FRONT (+Z, closest to camera at z=7),
+      // not at the right side (+X). This makes the active card face the camera.
+      const baseAngle = (i / n) * Math.PI * 2 + Math.PI / 2
       const angle = baseAngle + ringRotation
       this._tmpRingPos.set(
         Math.cos(angle) * RING_RADIUS,
         0,
         Math.sin(angle) * RING_RADIUS,
       )
-      // Card faces inward (toward ring center) — reuse scratch Euler
+      // Card faces inward (toward ring center / camera) — reuse scratch Euler
       this._tmpRingRot.set(0, -angle + Math.PI / 2, 0)
 
       // ── ARC trajectory: lerp position, then add arc peak (y-bump) ──

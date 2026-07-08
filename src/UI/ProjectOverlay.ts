@@ -130,6 +130,9 @@ export class ProjectOverlay {
 
   showContainer(): void {
     this._isOpen = true
+    // Set global flag so BakuCarousel keyboard handler can skip ArrowLeft/Right
+    // (prevents double-trigger: both overlay and carousel handling same key).
+    ;(window as unknown as { jlzOverlayOpen?: boolean }).jlzOverlayOpen = true
     this.container.style.opacity = '1'
     this.container.style.pointerEvents = 'auto'
     this.container.classList.add('is-open')
@@ -144,6 +147,8 @@ export class ProjectOverlay {
 
   hide(): void {
     this._isOpen = false
+    // Clear global flag — BakuCarousel can handle keys again.
+    ;(window as unknown as { jlzOverlayOpen?: boolean }).jlzOverlayOpen = false
     this.container.style.opacity = '0'
     this.container.style.pointerEvents = 'none'
     this.container.classList.remove('is-open')
