@@ -259,7 +259,9 @@ export class JoystickNav {
   }
 
   isActive(): boolean {
-    return this._wasActive
+    // Only active during actual drag interaction, NOT during the brief
+    // post-navigation active pulse (which would block BakuCarousel clicks).
+    return this._isDragging
   }
 
   getOverallProgress(): number {

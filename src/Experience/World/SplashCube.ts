@@ -181,17 +181,18 @@ export class SplashCube extends THREE.Mesh {
     // Single BoxGeometry — smooth, continuous edges (no gaps between faces)
     const geo = new THREE.BoxGeometry(size, size, size)
 
-    // MeshPhysicalMaterial with PMREM env reflections (from scene.environment)
-    // + Apple logo texture as map on cube faces
+    // MeshPhysicalMaterial — glass cube with env reflections (Apple Fifth Avenue style)
+    // scene.environment (PMREM from RoomEnvironment) provides the reflections.
+    // No map/emissiveMap — the cube is pure glass, reflections come from env.
     this.cubeMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0x888888, // grey base — logo texture multiplies with this
+      color: 0xffffff,
       emissive: 0x1a2a4a,
-      emissiveIntensity: 0.12,
+      emissiveIntensity: 0.15,
       transparent: true,
-      opacity: 0.85, // more opaque so texture is visible
+      opacity: 0.35,
       side: THREE.DoubleSide,
-      roughness: 0.1,
-      metalness: 0.3,
+      roughness: 0.0,
+      metalness: 0.0,
       iridescence: 1.0,
       iridescenceIOR: 1.3,
       clearcoat: 1.0,
@@ -199,20 +200,8 @@ export class SplashCube extends THREE.Mesh {
       transmission: 0,
       thickness: 1.2,
       ior: 1.52,
-      envMapIntensity: 1.5,
+      envMapIntensity: 2.5, // very strong env reflections
       depthWrite: false,
-    })
-
-    // Apply Apple logo as map + emissiveMap — emissiveMap makes the logo
-    // glow (not affected by lighting), visible through glass transparency.
-    const logoLoader = new THREE.TextureLoader()
-    logoLoader.load('/assets/logo.png', (tex) => {
-      tex.colorSpace = THREE.SRGBColorSpace
-      this.cubeMaterial.map = tex
-      this.cubeMaterial.emissiveMap = tex
-      this.cubeMaterial.emissive.setRGB(0.5, 0.5, 0.5) // grey glow from logo
-      this.cubeMaterial.emissiveIntensity = 0.8
-      this.cubeMaterial.needsUpdate = true
     })
 
     this.cubeMesh = new THREE.Mesh(geo, this.cubeMaterial)
