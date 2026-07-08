@@ -28,7 +28,9 @@ export class SectionSceneFactory {
   static hideGeometry(group: THREE.Group): void {
     group.traverse((obj) => {
       if (obj === group) return
+      // Keep particles visible — both old THREE.Points and new InstancedMesh
       if (obj instanceof THREE.Points) return
+      if (obj instanceof THREE.InstancedMesh) return
       if (obj.userData?.keepVisible) return
       obj.visible = false
     })

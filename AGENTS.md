@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | [STATUS.md](docs/STATUS.md) ⭐ | Canonical state | **Always first** |
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Modules, render path, visual tiers, background system | Understanding structure |
-| [HERMES_RULES.md](docs/HERMES_RULES.md) | Hard rules (36) | Before changing code |
+| [HERMES_RULES.md](docs/HERMES_RULES.md) | Hard rules | Before changing code |
 | [JUNNI_REFERENCE.md](docs/JUNNI_REFERENCE.md) | Junni patterns to port / NOT port | Adding section visuals |
 | [CHANGELOG.md](docs/CHANGELOG.md) | Recent merge log | Understanding history |
 
@@ -22,8 +22,8 @@ The project has TWO visual paths, gated by `DeviceCapability.isRealWebGPU`:
 
 | Tier | Path | Baku | Background |
 | --- | --- | --- | --- |
-| **Premium** | Real WebGPU | `MeshPhysicalNodeMaterial` + `transmission=1` + 4 TSL worldDNA nodes | ShaderBackground (TSL) |
-| **Parity** | WebGL2 / fallback | `MeshPhysicalMaterial` + opacity-glass (no TSL nodes) | ShaderBackground (TSL) |
+| **Premium** | Real WebGPU (WebGPUBackend, non-fallback adapter) | `MeshPhysicalNodeMaterial` + `transmission=1` + 4 TSL worldDNA nodes | EnvSphere (BackSide sphere + CanvasTexture) |
+| **Parity** | WebGL2 / WebGLBackend fallback / SwiftShader | `MeshPhysicalMaterial` + opacity-glass (no TSL nodes) | EnvSphere (BackSide sphere + CanvasTexture) |
 
 `isRealWebGPU` is set in `Renderer.init()` after backend detection. Logged to console on startup.
 
@@ -34,6 +34,7 @@ The project has TWO visual paths, gated by `DeviceCapability.isRealWebGPU`:
 | CircularNav | Bottom-right vinyl circle. Drag DOWN=next, UP=prev | `goToSection(i)`, `goToDirection(±1)`, `isActive()`, `onActiveChange(cb)` |
 | UIMenu | UIkit modal, hamburger button | `onNavigate(cb)`, `setActive(i)` |
 | BakuCarousel | Works §4 — cube morphs into ring. Card click→overlay | `onCardClick(cb)`, `isAnimating` getter |
+| Subtitles | Bottom-center section hint, auto-fades after 4s | Created in `Experience.init()`; listens to `jlz:section-change` |
 
 ## Key rules (see HERMES_RULES.md for full list)
 
@@ -56,17 +57,24 @@ The project has TWO visual paths, gated by `DeviceCapability.isRealWebGPU`:
 17. Always verify: `bun run lint && bun run type-check && bun run build`
 18. **Visual tier doctrine**: premium path (real WebGPU) can diverge from parity (WebGL2).
     Document any divergence in `ARCHITECTURE.md` and log to console.
-19. **Background**: `ShaderBackground` is the sole background. `EnvSphere.attachToScene()`
-    is NOT called. Do NOT set `scene.background` — ShaderBackground plane handles it.
-20. **21st.dev MCP**: API key format `21st_sk_...` (not `an_sk_...`). Endpoint
+19. **Background**: `EnvSphere` is the sole background — a visible BackSide sphere mesh
+    with a procedural CanvasTexture (6 per-section patterns). `attachToScene()` is a
+    no-op kept for lifecycle compat. Do NOT set `scene.background` — EnvSphere renders itself.
+20. **Post-processing parity**: WebGL2 composite shader and WebGPU TSL graph must match
+    bit-for-bit. Use portable integer hash (NOT sin()) for grain, ACES epsilon (0.0001)
+    for black-pixel safety, exact sRGBTransferOETF for encode, BloomNode-matching smoothstep
+    for bright-extract. See HERMES_RULES §41.
+21. **Fog ownership**: `World.ts` owns `scene.fog` (per-section FogExp2). `Renderer.ts` does
+    NOT override fog. Don't add fog logic outside World.
+22. **21st.dev MCP**: API key format `21st_sk_...` (not `an_sk_...`). Endpoint
     `https://21st.dev/api/mcp`. Free tier: 2 retrievals/day.
 
 ## Verification
 
 ```bash
-bun run lint         # 0 errors (56 warnings — all pre-existing no-console/no-explicit-any)
+bun run lint         # 0 errors (59 warnings — all pre-existing no-console/no-explicit-any)
 bun run type-check   # 0 errors (strict)
-bun run build        # must pass (69 modules transformed, ~2s)
+bun run build        # must pass (~2s)
 bun run test:unit    # 54 tests
 ```
 

@@ -1,76 +1,44 @@
-// makeInstancedParticles.ts — GPU-instanced particle system with TSL shader.
+// makeInstancedParticles.ts — GPU-instanced particle system.
 //
-// Replaces the old makeParticles (THREE.Points + PointsMaterial, 20-50 points).
-// New system: InstancedMesh + MeshBasicNodeMaterial with TSL positionNode +
-// opacityNode.
+// Uses InstancedMesh + regular THREE.MeshBasicMaterial (NOT NodeMaterial).
+// NodeMaterial with TSL nodes does not render on WebGL2 through WebGLNodesHandler.
+// Regular MeshBasicMaterial works on ALL backends (WebGLRenderer + WebGPURenderer).
 //
 // Features:
-//   - 500-2000 instances (was 20-50 points) — richer atmosphere
-//   - 1 draw call (instancing) — same perf as old Points
-//   - TSL shader: soft circular sprite (opacityNode discard outside radius),
-//     size attenuation, subtle noise drift (positionNode)
-//   - Static when idle (respects on-demand rendering — drift only advances
-//     when rendering, frozen between frames)
+//   - 500-2000 instances (1 draw call via instancing)
+//   - Soft circular sprite via generated alphaMap texture
+//   - AdditiveBlending for atmospheric glow
+//   - Static when idle (respects on-demand rendering)
 //   - baseOpacity cached in userData for non-destructive fade
 //
 // LOD via count parameter:
 //   - high tier: full count
 //   - medium tier: count / 2
 //   - low tier: count / 4
-//
-// HERMES §1: TSL NodeMaterial only (no raw ShaderMaterial).
-// HERMES §3: ONE shared NodeMaterial (instancing = 1 material, N instances).
-// HERMES §33: no per-frame allocations — positions baked at creation, drift
-//   is GPU-side (TSL sin/cos in vertex shader).
 
 import * as THREE from 'three'
-import { MeshBasicNodeMaterial } from 'three/webgpu'
-import { Fn, vec3, float, uniform, uv, positionLocal, sin, cos, smoothstep } from 'three/tsl'
 import { DeviceCapability } from '../../core/DeviceCapability'
 
-// Shared uniforms across ALL instanced particle systems (1 uniform group).
-const particleUniforms = {
-  uTime: uniform(0),
-  uSizeScale: uniform(1.0),
+// Shared circular alphaMap (generated once, reused across all particle systems)
+let sharedAlphaMap: THREE.Texture | null = null
+
+function getCircleAlphaMap(): THREE.Texture {
+  if (sharedAlphaMap) return sharedAlphaMap
+  const size = 64
+  const canvas = document.createElement('canvas')
+  canvas.width = size
+  canvas.height = size
+  const ctx = canvas.getContext('2d')!
+  const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2)
+  gradient.addColorStop(0, 'rgba(255,255,255,1)')
+  gradient.addColorStop(0.4, 'rgba(255,255,255,0.8)')
+  gradient.addColorStop(1, 'rgba(255,255,255,0)')
+  ctx.fillStyle = gradient
+  ctx.fillRect(0, 0, size, size)
+  sharedAlphaMap = new THREE.CanvasTexture(canvas)
+  sharedAlphaMap.needsUpdate = true
+  return sharedAlphaMap
 }
-
-// ── Vertex shader: GPU-side drift ──
-// Each vertex gets a subtle sine-based position offset that advances with
-// time. This is "breathing" drift — frozen when uTime doesn't advance (idle).
-// Per-instance variation comes from the instance matrix (baked at creation).
-const positionNode = Fn(() => {
-  const pos = positionLocal
-  const t = particleUniforms.uTime
-
-  // Simple drift: sine waves on X/Y based on time + base position
-  const driftX = sin(pos.x.mul(2.0).add(t.mul(0.3))).mul(0.15)
-  const driftY = cos(pos.y.mul(1.5).add(t.mul(0.25))).mul(0.12)
-  const driftZ = sin(pos.z.mul(1.8).add(t.mul(0.2))).mul(0.10)
-
-  return vec3(pos.x.add(driftX), pos.y.add(driftY), pos.z.add(driftZ))
-})
-
-// ── Fragment shader: soft circular sprite + twinkle ──
-// Returns vec3 RGB. Alpha is handled separately by opacityNode.
-const colorNode = Fn(() => {
-  // Base color from material.color (set via material.color.set())
-  // Twinkle: brightness pulse based on time + position
-  const twinkle = sin(particleUniforms.uTime.mul(2.0).add(positionLocal.x.mul(5.0))).mul(0.5).add(0.5)
-  // Return vec3 — material.color is multiplied automatically by NodeMaterial
-  return vec3(twinkle.mul(0.3).add(0.7))
-})
-
-// ── Opacity node: soft circle alpha ──
-// Discard pixels outside a soft circle (UV 0..1, center 0.5).
-// Alpha = soft edge. material.opacity is multiplied by NodeMaterial automatically.
-const opacityNode = Fn(() => {
-  const vUv = uv()
-  const center = vUv.sub(0.5)
-  const dist = center.length()
-  // Soft circle: alpha = 1 at center, 0 at edge (radius 0.5)
-  const alpha = smoothstep(float(0.5), float(0.35), dist)
-  return alpha
-})
 
 export interface InstancedParticleParams {
   count: number
@@ -81,10 +49,10 @@ export interface InstancedParticleParams {
 }
 
 /**
- * Create a GPU-instanced particle system with TSL shader.
+ * Create a GPU-instanced particle system.
  *
  * - InstancedMesh with `count` instances of a small quad (PlaneGeometry).
- * - MeshBasicNodeMaterial with TSL positionNode (drift) + colorNode (twinkle) + opacityNode (soft circle).
+ * - MeshBasicMaterial with alphaMap (soft circle) + AdditiveBlending.
  * - 1 draw call regardless of count (instancing).
  * - `baseOpacity` cached in material.userData for non-destructive fade.
  * - `frustumCulled = false` so particles don't pop.
@@ -101,19 +69,17 @@ export function makeInstancedParticles(params: InstancedParticleParams): THREE.I
   // Base geometry: small quad (will be scaled per-instance)
   const geo = new THREE.PlaneGeometry(1, 1)
 
-  // Material: TSL NodeMaterial (HERMES §1)
-  const mat = new MeshBasicNodeMaterial({
+  // Material: regular MeshBasicMaterial (works on ALL backends)
+  const mat = new THREE.MeshBasicMaterial({
     color,
     transparent: true,
+    opacity,
     depthWrite: false,
     blending: THREE.AdditiveBlending,
     side: THREE.DoubleSide,
     fog: false,
+    alphaMap: getCircleAlphaMap(),
   })
-  mat.positionNode = positionNode()
-  mat.colorNode = colorNode()
-  ;(mat as unknown as { opacityNode: unknown }).opacityNode = opacityNode()
-  mat.opacity = opacity
   mat.userData.baseOpacity = opacity
 
   const mesh = new THREE.InstancedMesh(geo, mat, safeCount)
@@ -123,16 +89,13 @@ export function makeInstancedParticles(params: InstancedParticleParams): THREE.I
   // Per-instance transforms: random position within spread + random scale
   const dummy = new THREE.Object3D()
   for (let i = 0; i < safeCount; i++) {
-    // Random position within spread
     dummy.position.set(
       (Math.random() - 0.5) * spread.x,
       (Math.random() - 0.5) * spread.y,
       (Math.random() - 0.5) * spread.z,
     )
-    // Random rotation (so sprites don't all face same way — though they're circles)
     dummy.rotation.z = Math.random() * Math.PI * 2
-    // Random scale (size variation)
-    const scaleVar = 0.5 + Math.random() * 1.0  // 0.5x to 1.5x
+    const scaleVar = 0.5 + Math.random() * 1.0
     dummy.scale.setScalar(size * scaleVar)
     dummy.updateMatrix()
     mesh.setMatrixAt(i, dummy.matrix)
@@ -144,15 +107,19 @@ export function makeInstancedParticles(params: InstancedParticleParams): THREE.I
 
 /**
  * Update particle uniforms. Called by World.update() when rendering.
- * Advances uTime for drift animation. Frozen when not rendering (on-demand).
+ * Currently a no-op — particles are static (no GPU drift).
+ * Kept for API compat with World.update() call sites.
  */
-export function updateInstancedParticles(dt: number): void {
-  particleUniforms.uTime.value += dt
+export function updateInstancedParticles(_dt: number): void {
+  // No-op — particles are static. Drift can be added later via
+  // onBeforeCompile if needed, but static particles look good and
+  // respect on-demand rendering (frozen when idle).
 }
 
 /**
  * Set global size scale (e.g., for quality tiers). Default 1.0.
+ * Currently a no-op — size is baked per-instance at creation.
  */
-export function setParticleSizeScale(scale: number): void {
-  particleUniforms.uSizeScale.value = scale
+export function setParticleSizeScale(_scale: number): void {
+  // No-op
 }

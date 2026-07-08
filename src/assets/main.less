@@ -1668,3 +1668,61 @@ section[data-section='innovative'] .studio-title {
     font-size: clamp(1.1rem, 5vw, 1.4rem);
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   §16. Section hints — short UI labels per section
+   Positioned at bottom-center, above the dock. Fades in on section change,
+   auto-fades after 4s. Subtle, informative, non-cluttering.
+   ═══════════════════════════════════════════════════════════════════ */
+.jlz-hint {
+  position: fixed;
+  bottom: calc(100px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  z-index: var(--jlz-z-content, 10);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  text-align: center;
+}
+.jlz-hint.is-visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.jlz-hint__text {
+  display: inline-block;
+  padding: 6px 16px;
+  font-family: var(--jlz-font-body, 'Inter', sans-serif);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 100px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  white-space: nowrap;
+}
+/* Light sections (intro, flexible) — dark text on light glass */
+body.light-theme .jlz-hint__text {
+  color: rgba(0, 0, 0, 0.65);
+  background: rgba(255, 255, 255, 0.4);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+@media (max-width: 640px) {
+  .jlz-hint {
+    bottom: calc(90px + env(safe-area-inset-bottom, 0px));
+  }
+  .jlz-hint__text {
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .jlz-hint {
+    transition: opacity 0.2s ease;
+    transform: translateX(-50%);
+  }
+}

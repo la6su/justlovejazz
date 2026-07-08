@@ -12,6 +12,7 @@ import { StateBus } from '../core/StateBus'
 import type { World } from '../core/World'
 import { WorksPortfolio } from './WorksPortfolio'
 import { ProjectOverlay } from '../UI/ProjectOverlay'
+import { Subtitles } from '../UI/Subtitles'
 
 import { AudioSystem } from '../core/AudioSystem'
 import { CircularNav } from '../UI/CircularNav'
@@ -42,6 +43,7 @@ export class Experience {
   renderer!: Renderer
   private contentReveal!: ContentReveal
   private cursor!: Cursor
+  private _subtitles!: Subtitles
   private devPanel: DevPanel | null = null
   public world!: World
   private bus!: StateBus
@@ -221,6 +223,7 @@ export class Experience {
     this._reducedMotion = prefersReducedMotion()
     this.contentReveal = new ContentReveal()
     this.cursor = new Cursor()
+    this._subtitles = new Subtitles()
     await this.renderer.init()
     await this.buildWorld()
     this.bus = StateBus.getInstance()
@@ -535,6 +538,7 @@ export class Experience {
     }
     this.contentReveal.destroy()
     this.cursor.destroy()
+    this._subtitles.dispose()
     this.world.dispose()
     this.bus.cancelAll()
     this.devPanel?.dispose()

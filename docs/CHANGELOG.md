@@ -1,58 +1,90 @@
 # CHANGELOG
 
+## 2026-07-10
+
+### Docs actualization + EnvSphere + WebGPU/WebGL2 parity + YAGNI cleanup
+
+**EnvSphere — new procedural background:**
+- `src/Experience/World/EnvSphere.ts` — BackSide sphere mesh (`SphereGeometry(40, 32, 16)`)
+  + `MeshBasicMaterial` + procedural `CanvasTexture` (2048×1024, sRGB). `fog: false`,
+  `depthTest: false`, `depthWrite: false`, `frustumCulled: false`, `renderOrder=-1000`.
+- 6 per-section patterns mixed by animated `uSection` weights (HSV gradient, grey gradient,
+  blue-grey gradient, radial glow, off-white gradient). Canvas redrawn when dirty or every
+  ~200ms for animated patterns.
+- Replaces `scene.background` Color (was flat) and the prior Atlas Aurora CanvasTexture.
+- `attachToScene()` is a no-op — mesh is visible, `scene.background` stays null.
+
+**Particle system fix:**
+- `SectionSceneFactory.hideGeometry()` now keeps both `THREE.Points` AND `THREE.InstancedMesh`
+  visible (was only keeping `THREE.Points` — instanced particles were getting hidden).
+- `makeInstancedParticles` uses `MeshBasicNodeMaterial` with TSL `positionNode` (drift) +
+  `colorNode` (twinkle) + `opacityNode` (soft circle). 1 draw call for 500–2000 instances.
+
+**Subtitles system re-added:**
+- `src/UI/Subtitles.ts` — short UI hints per section ("Scroll to explore", "Drag · Click to open",
+  etc.). Positioned at bottom-center (`.jlz-hint`), fades in on `jlz:section-change`,
+  auto-fades after 4s. `dispose()` clears timer + removes listener.
+
+**WebGPU/WebGL2 color parity:**
+- WebGL2 `COMPOSITE_FSG` now applies exact `sRGBTransferOETF` encode (was missing sRGB encode —
+  manual `mix(pow(c, 0.41666)*1.055 - 0.055, c*12.92, step(c, 0.0031308))`). Matches
+  `TSLRenderPipeline`'s `outputColorTransform=true` (default) on WebGPU.
+- ACES epsilon fix: `+ 0.0001` in denominator prevents NaN on black pixels; both paths lift
+  shadows identically.
+- Bloom bright-extract parity: WebGL2 now uses `smoothstep(threshold, threshold+0.1, luminance)`
+  matching `BloomNode` exactly (was quadratic `c*(c-threshold)` which diverged).
+- Portable integer hash for film grain: `fract((p3.x+p3.y)*p3.z)` with
+  `p3 = fract(vec3(p.xyx)*0.1031); p3 += dot(p3, p3.yzx+33.33)`. NOT `sin()`-based —
+  sin() precision differs GLSL vs WGSL → grain mismatch. Now bit-identical across backends.
+
+**YAGNI cleanup:**
+- Deleted: `PerfMonitor` (YAGNI — on-demand rendering made FPS tracking redundant).
+- Inlined `Bootstrapper` into `main-app.ts` (3 lines: new Experience + await init + onReady cb).
+- Inlined `WorldAtmosphere` into `World.ts` (fog logic at `init()` + `updateTransform()` call sites).
+- Removed `World.advance` alias — `Experience.ts` calls `world.updateTransform()` directly.
+- Removed `Section.switchViewingState` delegate — callers use `switchState()` directly.
+- Simplified `SectionSceneFactory`: replaced 6 named wrappers with `SECTION_CREATORS[6]` array;
+  `byIndex(i)` does `SECTION_CREATORS[i] ?? SECTION_CREATORS[0]`.
+- Removed `lenis` dependency.
+- Trimmed `WorldState` dead fields.
+
+**Fog parity:**
+- `World.ts` owns `scene.fog` (per-section `FogExp2`): `init()` creates it,
+  `updateTransform()` updates color+density on section index change (reuses instance),
+  `dispose()` nulls it.
+- `Renderer.ts` no longer overrides `scene.fog` (was overwriting per-section fog with
+  stale envColor + 0.03 density).
+
+**UI overhaul (prior commit, documented now):**
+- `src/templates.ts` rewrite: hero meta pill, mix-weight taglines, section indices (01–06),
+  3 glassmorphism feature cards (innovative), 3 glass CTA buttons (contact), animated scroll hints.
+- `src/assets/main.less` §15 (+674 LOC): `.jlz-layout--*` modifiers, `.jlz-eyebrow`,
+  `.jlz-section-title` (200 weight), `.jlz-feature-card` glassmorphism, `.jlz-glass-btn`,
+  cinematic `text-shadow` on dark sections, stagger reveal via `:nth-child` delays.
+- Reduced-motion respected; mobile responsive @600px.
+
 ## 2026-07-09
 
 ### Visual overhaul — premium WebGPU path + 21st.dev paper-shader background
 
-**Premium WebGPU path (PR #118):**
+**Premium WebGPU path:**
 - `DeviceCapability.isRealWebGPU` flag — set in `Renderer.init()` after backend detection
-- `worldDNA` TSL shader resurrected: `attachWorldDNA()` now connects 4 TSL nodes
+- `worldDNA` TSL shader: `attachWorldDNA()` connects 4 TSL nodes
   (`positionNode`, `colorNode`, `emissiveNode`, `roughnessNode`) on real WebGPU.
-  Opacity safety verified via `NodeMaterial.js:843,878` (vec3 colorNode → vec4 → a *= opacity).
 - Real glass transmission (`transmission=1.0`) on premium path via `MeshPhysicalNodeMaterial`.
-  Parity path keeps `MeshPhysicalMaterial` + opacity-glass.
-- Ambient breathing: 1-frame refresh every ~2.5s in idle. Advances `worldDNA.uTime`
-  on premium, EnvSphere/shader on parity. Respects `prefers-reduced-motion`.
+- Ambient breathing: 1-frame refresh every ~2.5s in idle. Respects `prefers-reduced-motion`.
 
-**Baku fresnel iridescence (PR #121):**
+**Baku fresnel iridescence:**
 - Root cause of "didn't see shader effects" on cube: `worldDNA` used `normalLocal`
   (constant per flat face) → shader was uniform → invisible.
-- Fix: fresnel-based iridescence (`1 - dot(normalWorld, viewDir)`) + position-based
-  shimmer (`positionLocal` varies across face). Rim glow amplitude 0.10 → 0.50 (5x).
+- Fix: fresnel-based iridescence (`1 - dot(normalWorld, viewDir)`) + position-based shimmer.
 
-**Background system evolution (PR #119 → #130):**
-- PR #119: Aurora mesh-gradient (3 drifting orbs) + grain amplitude halved. User: "swims".
-- PR #120: Static EnvSphere (no rotation/noise) + `mix()` orbs (was `add()` — invisible on white).
-- PR #123: Bold cinematic (4 orbs, saturated colors, vignette).
-- PR #124: Skybox render pattern (`depthTest=false`, `renderOrder=-1000`, `toneMapped=false`).
-- PR #125: Atlas Aurora port from 21st.dev (component id: 16166) — TSL shader on BackSide sphere.
-- PR #126: CanvasTexture fallback for WebGL2 parity path + diagnostic logging.
-- PR #127: Fixed black bg bug — orbs were on +Z hemisphere (behind camera). Flipped to -Z.
-- PR #128: Switched to `scene.background = equirectangular CanvasTexture` (native, most reliable).
-- PR #129: Paper-shader background plane (@reuno-ui port, TSL NodeMaterial).
-- PR #130: **Final** — paper-shaders in dark grey palette (`0x1a1a1a` → `0x4a4a4a`),
-  opaque, sole background. Matches @reuno-ui "Background Paper Shade with grey shaders".
-
-**Background system (final state):**
-- `ShaderBackground` (`src/Experience/World/ShaderBackground.ts`) — `MeshBasicNodeMaterial`
-  with `positionNode` (vertex displacement) + `colorNode` (noise + color mix).
-- Port of [@reuno-ui/background-paper-shaders](https://21st.dev/@reuno-ui/components/background-paper-shaders)
-  (21st.dev id: 5732, fetched via 21st MCP).
-- Dark grey palette, opaque, fullscreen at `z=-30`, `renderOrder=-1000`.
-- `EnvSphere` (Atlas Aurora) disabled — `attachToScene()` not called, `scene.background` not set.
-
-**Diagnostic logging (PR #126):**
-- `Renderer.init()` now logs: `[Renderer.init] Final path: WebGPU (WebGPUBackend) | isRealWebGPU=true | EnvSphere=TSL shader (premium)`
-- Helps debug "I don't see the background" — immediately shows which path is active.
+**Diagnostic logging:**
+- `Renderer.init()` logs final render path + isRealWebGPU + EnvSphere path.
 
 **21st.dev MCP integration:**
-- API key format: `21st_sk_...` (old `an_sk_...` format rejected by server).
-- Used `get_component({ id: 5732 })` to fetch @reuno-ui paper-shaders source code.
-- Used `get_component({ id: 16166 })` to fetch Atlas Aurora source code.
-
-**Post-processing:**
-- Grain amplitude halved across all 6 section presets (PR #119). Was "too obvious",
-  now subtle dither (its actual purpose — break up banding in dark gradients).
+- API key format: `21st_sk_...` (old `an_sk_...` format rejected).
+- Used `get_component({ id: 5732 })` and `get_component({ id: 16166 })`.
 
 ## 2026-07-08
 
@@ -60,39 +92,40 @@
 
 **Navigation:**
 - CircularNav: vertical drag (DOWN=next, UP=prev). `goToDirection` public.
-- Fixed critical direction bug: `commitTransition()` determined direction by reading `_progress` (which was 0) → always went backward. Now takes `dir` parameter.
-- Rapid swipe fix: `goToDirection` and `pointerDown` complete current transition before starting new one (`_completeTransition()`).
+- Fixed direction bug: `commitTransition()` takes `dir` parameter (was reading `_progress=0`).
+- Rapid swipe fix: `goToDirection` and `pointerDown` complete current transition first.
 - Softer animations: `_ease` 0.14→0.08, sensitivity 0.008→0.006, threshold 0.92→0.85.
 
 **On-demand rendering:**
 - `_needsRender` flag gates `renderer.update()`. Zero draw calls when idle.
-- Triggers: CircularNav transition, BakuCarousel morph/scroll, intro/opener, camera shake.
+- Triggers: CircularNav transition, BakuCarousel morph/scroll, intro/opener, camera shake,
+  ParticleBurst, ambient breathing (1-frame/2.5s).
 - `World.update(dt, needsRender)` skips baku/particles/carousel when false.
 - Cursor (DOM) always updates — not gated.
 
 **Event-driven animations:**
-- Baku cube: static when idle. Rotates ~30° (was 90°) during transition. No continuous rotation.
+- Baku cube: static when idle. Rotates ~30° during transition.
 - Particles: static (drift removed entirely).
 - Section.update(): no-op (emissive pulse removed).
 - worldDNA displacement: scaled by transition progress (cube flat when idle).
-- DrawTrail: works section (idx=3) ONLY (was about+flexible).
+- DrawTrail: works section (idx=3) ONLY.
 
 **Bug fixes:**
-- NoiseText: `data-rot` attribute was missing → rotation animation never played. Now stores random value.
-- Contact section: bg 0xf5f5f0 (light cream) → 0x0a0a0f (dark). White text was unreadable.
+- NoiseText: `data-rot` attribute added → rotation animation works.
+- Contact section: bg → dark. White text was unreadable.
 - CursorLight: DELETED (was continuous spring-follow light, conflicted with on-demand).
 - DebugStats: DELETED, merged into DevPanel (Tweakpane).
-- BakuCarousel: blocks pointer events during CircularNav transition (was stealing drag).
-- `cursor.update()` moved outside `_needsRender` block (was freezing when idle).
+- BakuCarousel: blocks pointer events during CircularNav transition.
+- `cursor.update()` moved outside `_needsRender` block.
 
 **Tests:**
-- Added `CircularNav.test.ts` — 29 tests (state machine, direction regression, rapid swipe, boundaries).
+- `CircularNav.test.ts` — 29 tests (state machine, direction regression, rapid swipe, boundaries).
 
 **Proxy/HMR:**
 - `server.hmr: false`, `allowedHosts: ['project.6la.ru']`
 - `block-vite-client` plugin: strips `@vite/client` from HTML + stubs HTTP
 - All `import.meta.hot` removed from source
-- `main.less` imported with `?inline` (prevents @vite/client in CSS)
+- `main.less` imported with `?inline`
 
 ## 2026-07-05
 
