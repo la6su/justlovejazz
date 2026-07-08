@@ -81,7 +81,7 @@ export class WireframeTypography extends THREE.Mesh {
       transparent: true,
       opacity: 0.6,
       depthWrite: false,
-      fog: true,
+      fog: false,
     })
     mat.positionNode = typoPositionNode()
     mat.colorNode = typoColorNode()

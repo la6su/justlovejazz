@@ -108,7 +108,7 @@ export function makeInstancedParticles(params: InstancedParticleParams): THREE.I
     depthWrite: false,
     blending: THREE.AdditiveBlending,
     side: THREE.DoubleSide,
-    fog: true,
+    fog: false,
   })
   mat.positionNode = positionNode()
   mat.colorNode = colorNode()

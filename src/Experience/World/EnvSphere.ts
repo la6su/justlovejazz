@@ -65,8 +65,17 @@ export class EnvSphere extends THREE.Mesh {
   private _dirty = true
 
   constructor() {
-    // BackSide sphere mesh — INVISIBLE (visible=false). Only used as a lifecycle
-    // container. The actual background is scene.background = CanvasTexture.
+    // BackSide sphere mesh — VISIBLE. Renders the background via MeshBasicMaterial
+    // + map (CanvasTexture with default UV mapping, NOT equirectangular).
+    //
+    // Why a visible mesh (not scene.background)?
+    //   - scene.background with CanvasTexture + EquirectangularReflectionMapping
+    //     fails on WebGPU (creates its own internal sphere mesh, mapping mismatch)
+    //   - scene.background with plain Texture works but wraps as flat 2D (stretched)
+    //   - A visible BackSide sphere with map + default UV mapping works on BOTH
+    //     WebGPU and WebGL2 — sphere geometry has UVs, texture wraps correctly.
+    //
+    // Skybox pattern: depthTest=false, renderOrder=-1000, depthWrite=false.
     const geo = new THREE.SphereGeometry(500, 32, 16)
     const mat = new THREE.MeshBasicMaterial({
       side: THREE.BackSide,
@@ -74,38 +83,35 @@ export class EnvSphere extends THREE.Mesh {
       depthTest: false,
       fog: false,
       toneMapped: false,
-      visible: false,  // mesh material not rendered
     })
 
     super(geo, mat)
     this.name = 'env-sphere'
     this.frustumCulled = false
-    // Mesh is INVISIBLE — we use scene.background (CanvasTexture) as the sole bg.
-    // Rendering a BackSide sphere with MeshBasicMaterial + map on WebGL2 path
-    // can crash (uniform 'value' undefined). scene.background is native API,
-    // works on all paths. The mesh exists only for lifecycle (update/dispose).
-    this.visible = false
+    this.renderOrder = -1000  // render FIRST, before everything
 
-    // Canvas + texture (equirectangular 2:1)
+    // Canvas + texture (2:1 aspect, default UV mapping — sphere geometry
+    // has built-in UVs that wrap the texture around like a globe)
     this._canvas = document.createElement('canvas')
     this._canvas.width = CANVAS_W
     this._canvas.height = CANVAS_H
     this._ctx = this._canvas.getContext('2d')!
     this._canvasTexture = new THREE.CanvasTexture(this._canvas)
     this._canvasTexture.colorSpace = THREE.SRGBColorSpace
-    this._canvasTexture.mapping = THREE.EquirectangularReflectionMapping
-    // mat.map NOT set — mesh is invisible, scene.background is the sole bg.
+    // NO EquirectangularReflectionMapping — use default UV mapping so the
+    // sphere geometry's built-in UVs wrap the canvas texture correctly.
+    mat.map = this._canvasTexture
 
     // Initial draw
     this._redrawCanvas()
   }
 
   /**
-   * Attach to scene — sets scene.background to our CanvasTexture.
-   * Called by World after construction.
+   * Attach to scene — no longer sets scene.background (mesh is visible).
+   * Kept for API compat with World.ts.
    */
-  attachToScene(scene: THREE.Scene): void {
-    scene.background = this._canvasTexture
+  attachToScene(_scene: THREE.Scene): void {
+    // No-op — mesh is visible, renders itself. scene.background stays null.
   }
 
   /** Set section colors (compat with old API — now ignored, patterns are fixed). */
