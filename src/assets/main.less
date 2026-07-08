@@ -1887,3 +1887,92 @@ section[data-section='process'] .studio-title {
     gap: 0.3rem;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   §18. DOM Joystick — fixed bottom-center, 2D circle
+   ═══════════════════════════════════════════════════════════════════ */
+.jlz-joystick {
+  position: fixed;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+.jlz-joystick__base {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 2px solid rgba(255,255,255,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  transition: border-color 0.3s ease, background 0.3s ease;
+  position: relative;
+}
+.jlz-joystick__base.is-active {
+  cursor: grabbing;
+  border-color: rgba(255,255,255,0.4);
+  background: rgba(255,255,255,0.12);
+}
+.jlz-joystick__ball {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.35);
+  border: 1px solid rgba(255,255,255,0.3);
+  transition: transform 0.15s ease-out;
+  pointer-events: none;
+}
+.jlz-joystick__base.is-active .jlz-joystick__ball {
+  transition: none;
+}
+.jlz-joystick__hint {
+  font-family: var(--jlz-font-body, 'Inter', sans-serif);
+  font-size: 0.6rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+  transition: opacity 0.3s ease;
+}
+/* Light theme — dark joystick */
+body.light-theme .jlz-joystick__base {
+  background: rgba(0,0,0,0.06);
+  border-color: rgba(0,0,0,0.12);
+}
+body.light-theme .jlz-joystick__base.is-active {
+  border-color: rgba(0,0,0,0.3);
+  background: rgba(0,0,0,0.1);
+}
+body.light-theme .jlz-joystick__ball {
+  background: rgba(0,0,0,0.2);
+  border-color: rgba(0,0,0,0.15);
+}
+body.light-theme .jlz-joystick__hint {
+  color: rgba(0,0,0,0.4);
+}
+@media (max-width: 640px) {
+  .jlz-joystick__base {
+    width: 90px;
+    height: 90px;
+  }
+  .jlz-joystick__ball {
+    width: 36px;
+    height: 36px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .jlz-joystick__ball {
+    transition: none;
+  }
+}

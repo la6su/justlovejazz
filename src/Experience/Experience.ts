@@ -262,8 +262,8 @@ export class Experience {
       this._circNav?.goToSection(idx)
     })
 
-    // JoystickNav is 3D (adds joystick to scene) — no DOM element needed.
-    // UIMenu button is appended to body.
+    // JoystickNav is a DOM overlay (fixed bottom-center) — append to body.
+    document.body.appendChild(this._circNav.el)
     document.body.appendChild(this._uiMenu.button)
 
     // DevPanel — created AFTER nav so it can read current section

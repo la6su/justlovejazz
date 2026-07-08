@@ -1,91 +1,176 @@
-// JoystickNav.ts — Joystick-based section navigation (replaces CircularNav).
+// JoystickNav.ts — Pure DOM joystick for section navigation.
 //
-// Uses three-joystick for touch/mouse input. The joystick provides moveX/moveY
-// deltas. We interpret:
-//   moveY > threshold → NEXT section (drag down)
-//   moveY < -threshold → PREV section (drag up)
-//   moveX > threshold → NEXT section (drag right)
-//   moveX < -threshold → PREV section (drag left)
+// Fixed bottom-center overlay. 2D circle base + draggable ball.
+// Works on touch (iPad/mobile) and mouse (desktop).
 //
-// On release: if movement exceeded threshold, commit the transition.
-// Progress (0-1) drives the 3D scene transition (same as CircularNav).
+// Direction mapping:
+//   Left  → PREV section
+//   Right → NEXT section
+//   Up    → PREV section
+//   Down  → NEXT section
+// Uses dominant axis (whichever is larger) to avoid diagonal ambiguity.
 //
-// Also supports keyboard arrows for desktop.
-
-import { JoystickControls } from 'three-joystick'
-import * as THREE from 'three'
+// Progress (0-1) drives 3D scene transition. On release: |progress| > 0.5
+// commits the transition, else snaps back.
 
 export interface JoystickNavOptions {
   sectionLabels: string[]
 }
 
-const MOVE_THRESHOLD = 50 // px — movement beyond this triggers transition
+const BASE_RADIUS = 55 // px — joystick base radius
+const DEAD_ZONE = 8 // px — ignore movement smaller than this
 const COMMIT_THRESHOLD = 0.5 // |progress| > this on release → commit
 const SETTLE_EPS = 0.01 // |progress - target| < this → snapped
+const EASE = 0.22 // settle speed
 
 export class JoystickNav {
   public el: HTMLDivElement
-  private _joystick: JoystickControls
+  private _base: HTMLDivElement
+  private _ball: HTMLDivElement
+  private _hint: HTMLDivElement
   private _currentSection = 0
   private _sectionCount: number
-  public _progress = 0 // -1..1 transition progress (0 = settled)
+  public _progress = 0
   private _targetProgress = 0
   private _transitioning = false
-  private _ease = 0.22
   private _onSectionChange: ((index: number) => void) | null = null
   private _onActiveChange: ((active: boolean) => void) | null = null
   private _wasActive = false
-  private _moveAccumX = 0
-  private _moveAccumY = 0
   private _isDragging = false
+  private _startX = 0
+  private _startY = 0
   private _keydownHandler: ((e: KeyboardEvent) => void) | null = null
+  private _pointerDownHandler: ((e: PointerEvent) => void) | null = null
+  private _pointerMoveHandler: ((e: PointerEvent) => void) | null = null
+  private _pointerUpHandler: ((e: PointerEvent) => void) | null = null
 
-  constructor(scene: THREE.Scene, camera: THREE.Camera, sectionCount: number, _opts?: Partial<JoystickNavOptions>) {
+  constructor(_scene: unknown, _camera: unknown, sectionCount: number, _opts?: Partial<JoystickNavOptions>) {
     this._sectionCount = Math.max(2, sectionCount)
 
-    // Create a container element for DOM placement (joystick is 3D, but we
-    // need an element for Experience to position in the layout)
+    // ── DOM structure ──
     this.el = document.createElement('div')
     this.el.id = 'joystick-nav'
-    this.el.className = 'jlz-joystick-nav'
-    this.el.setAttribute('role', 'slider')
-    this.el.setAttribute('aria-label', 'Section navigation')
+    this.el.className = 'jlz-joystick'
 
-    // Create joystick controls — adds 3D joystick to scene
-    this._joystick = new JoystickControls(camera as THREE.PerspectiveCamera, scene)
+    // Base circle (outer ring)
+    this._base = document.createElement('div')
+    this._base.className = 'jlz-joystick__base'
+    this.el.appendChild(this._base)
 
-    // Override joystick scale — default 20 places joystick too far from camera.
-    // Scale = 1 places it close to camera (in front), visible above all 3D content.
-    this._joystick.joystickScale = 2
+    // Ball (inner draggable circle)
+    this._ball = document.createElement('div')
+    this._ball.className = 'jlz-joystick__ball'
+    this._base.appendChild(this._ball)
 
-    // Prevent joystick from activating when modal menu is open
-    this._joystick.preventAction = () => {
+    // Hint text
+    this._hint = document.createElement('div')
+    this._hint.className = 'jlz-joystick__hint'
+    this._hint.textContent = 'drag to navigate'
+    this.el.appendChild(this._hint)
+
+    this.addEventListeners()
+  }
+
+  private addEventListeners(): void {
+    // Pointer events on the joystick base (not whole screen)
+    this._pointerDownHandler = (e: PointerEvent) => {
       const menu = document.getElementById('jlz-menu-modal')
-      return !!(menu && menu.classList.contains('uk-open'))
+      if (menu && menu.classList.contains('uk-open')) return
+      e.preventDefault()
+      this._isDragging = true
+      this._startX = e.clientX
+      this._startY = e.clientY
+      this._base.classList.add('is-active')
+      this._hint.style.opacity = '0'
+      this._setActive(true)
+      // Capture pointer for smooth dragging outside base
+      try { this._base.setPointerCapture(e.pointerId) } catch { /* ignore */ }
     }
 
-    // Override attachJoystickUI to use MeshBasicMaterial (always visible,
-    // no lighting needed) and higher renderOrder (above all scene content).
-    // Cast to any because attachJoystickUI is private in the type defs.
-    ;(this._joystick as any).attachJoystickUI = (name: string, position: THREE.Vector3, color: number, radius: number) => {
-      const scale = 1 / (camera as THREE.PerspectiveCamera).zoom
-      const geo = new THREE.CircleGeometry(radius * scale, 72)
-      const mat = new THREE.MeshBasicMaterial({
-        color,
-        opacity: 0.6,
-        transparent: true,
-        depthTest: false,
-        depthWrite: false,
-        fog: false,
-      })
-      const mesh = new THREE.Mesh(geo, mat)
-      mesh.renderOrder = 999 // above everything (cube=2, edges=10)
-      mesh.name = name
-      mesh.position.copy(position)
-      scene.add(mesh)
+    this._pointerMoveHandler = (e: PointerEvent) => {
+      if (!this._isDragging) return
+      const dx = e.clientX - this._startX
+      const dy = e.clientY - this._startY
+      const absX = Math.abs(dx)
+      const absY = Math.abs(dy)
+
+      // Ignore tiny movements (dead zone)
+      if (absX < DEAD_ZONE && absY < DEAD_ZONE) return
+
+      // Use dominant axis
+      const isVertical = absY > absX
+      const rawProgress = isVertical
+        ? dy / (BASE_RADIUS * 1.5)
+        : dx / (BASE_RADIUS * 1.5)
+      const rawBallX = isVertical ? 0 : Math.max(-BASE_RADIUS, Math.min(BASE_RADIUS, dx * 0.4))
+      const rawBallY = isVertical ? Math.max(-BASE_RADIUS, Math.min(BASE_RADIUS, dy * 0.4)) : 0
+
+      // Rubber-band at boundaries
+      const atStart = this._currentSection === 0
+      const atEnd = this._currentSection === this._sectionCount - 1
+      let progress = rawProgress
+      let ballX = rawBallX
+      let ballY = rawBallY
+      if (atStart && progress < 0) {
+        progress *= 0.3
+        ballX *= 0.3
+        ballY *= 0.3
+      }
+      if (atEnd && progress > 0) {
+        progress *= 0.3
+        ballX *= 0.3
+        ballY *= 0.3
+      }
+      progress = Math.max(-1, Math.min(1, progress))
+
+      this._targetProgress = progress
+      this._progress = progress
+      this._ball.style.transform = `translate(${ballX}px, ${ballY}px)`
     }
 
-    this.addKeyboardListener()
+    this._pointerUpHandler = (_e: PointerEvent) => {
+      if (!this._isDragging) return
+      this._isDragging = false
+      this._base.classList.remove('is-active')
+
+      // Commit or snap back
+      if (Math.abs(this._progress) > COMMIT_THRESHOLD) {
+        this.commitTransition(this._progress > 0 ? 1 : -1)
+      } else {
+        this._targetProgress = 0
+      }
+
+      // Animate ball back to center
+      this._ball.style.transform = 'translate(0, 0)'
+      setTimeout(() => { this._hint.style.opacity = '' }, 500)
+    }
+
+    this._base.addEventListener('pointerdown', this._pointerDownHandler)
+    this._base.addEventListener('pointermove', this._pointerMoveHandler)
+    this._base.addEventListener('pointerup', this._pointerUpHandler)
+    this._base.addEventListener('pointercancel', this._pointerUpHandler)
+
+    // Keyboard
+    this._keydownHandler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return
+      const menu = document.getElementById('jlz-menu-modal')
+      if (menu && menu.classList.contains('uk-open')) return
+      if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+        e.preventDefault()
+        this.goToDirection(1)
+      } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+        e.preventDefault()
+        this.goToDirection(-1)
+      } else if (e.key === 'Home') {
+        e.preventDefault()
+        this.goToSection(0)
+      } else if (e.key === 'End') {
+        e.preventDefault()
+        this.goToSection(this._sectionCount - 1)
+      }
+    }
+    window.addEventListener('keydown', this._keydownHandler)
   }
 
   onSectionChange(cb: (index: number) => void): void {
@@ -96,7 +181,6 @@ export class JoystickNav {
     this._onActiveChange = cb
   }
 
-  /** Notify Experience of active-state changes (deduplicated). */
   private _setActive(active: boolean): void {
     if (active === this._wasActive) return
     this._wasActive = active
@@ -157,96 +241,19 @@ export class JoystickNav {
     this._onSectionChange?.(this._currentSection)
   }
 
-  private addKeyboardListener(): void {
-    this._keydownHandler = (e: KeyboardEvent) => {
-      const tag = (e.target as HTMLElement)?.tagName
-      if (tag === 'INPUT' || tag === 'TEXTAREA') return
-      const menu = document.getElementById('jlz-menu-modal')
-      if (menu && menu.classList.contains('uk-open')) return
-      if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
-        e.preventDefault()
-        this.goToDirection(1)
-      } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
-        e.preventDefault()
-        this.goToDirection(-1)
-      } else if (e.key === 'Home') {
-        e.preventDefault()
-        this.goToSection(0)
-      } else if (e.key === 'End') {
-        e.preventDefault()
-        this.goToSection(this._sectionCount - 1)
-      }
-    }
-    window.addEventListener('keydown', this._keydownHandler)
-  }
-
-  /** Called every frame by Experience. Passes joystick movement. */
   update(): void {
-    // Read joystick movement
-    this._joystick.update((movement) => {
-      if (movement) {
-        if (!this._isDragging) {
-          this._isDragging = true
-          this._moveAccumX = 0
-          this._moveAccumY = 0
-          this._setActive(true)
-        }
-        this._moveAccumX = movement.moveX
-        this._moveAccumY = movement.moveY
-
-        // Use the larger axis for progress
-        const absX = Math.abs(this._moveAccumX)
-        const absY = Math.abs(this._moveAccumY)
-        let target: number
-        if (absY > absX) {
-          // Vertical dominant — down = next, up = prev
-          target = this._moveAccumY / MOVE_THRESHOLD
-        } else {
-          // Horizontal dominant — right = next, left = prev
-          target = this._moveAccumX / MOVE_THRESHOLD
-        }
-
-        // Rubber-band at boundaries
-        const atStart = this._currentSection === 0
-        const atEnd = this._currentSection === this._sectionCount - 1
-        if (atStart && target < 0) target *= 0.3
-        if (atEnd && target > 0) target *= 0.3
-        target = Math.max(-1, Math.min(1, target))
-
-        this._targetProgress = target
-        this._progress = target
-      } else {
-        // Joystick released — commit or snap back
-        if (this._isDragging) {
-          this._isDragging = false
-          const absProgress = Math.abs(this._progress)
-          if (absProgress > COMMIT_THRESHOLD) {
-            this.commitTransition(this._progress > 0 ? 1 : -1)
-          } else {
-            this._targetProgress = 0
-          }
-          this._moveAccumX = 0
-          this._moveAccumY = 0
-        }
-      }
-    })
-
     // Smooth progress toward target (only when not dragging)
     if (!this._isDragging) {
-      this._progress += (this._targetProgress - this._progress) * this._ease
+      this._progress += (this._targetProgress - this._progress) * EASE
     }
-
-    // Snap to target when close enough
     if (Math.abs(this._targetProgress - this._progress) < SETTLE_EPS * 0.1) {
       this._progress = this._targetProgress
     }
-
-    // Commit complete: transitioning + reached target
+    // Commit complete
     if (this._transitioning && Math.abs(this._targetProgress - this._progress) < SETTLE_EPS) {
       this._completeTransition()
     }
-
-    // Settle complete: not dragging, not transitioning, progress ≈ 0
+    // Settle complete
     if (!this._isDragging && !this._transitioning && Math.abs(this._progress) < SETTLE_EPS) {
       this._progress = 0
       this._targetProgress = 0
@@ -256,7 +263,12 @@ export class JoystickNav {
 
   dispose(): void {
     if (this._keydownHandler) window.removeEventListener('keydown', this._keydownHandler)
-    this._joystick.destroy()
+    if (this._pointerDownHandler) this._base.removeEventListener('pointerdown', this._pointerDownHandler)
+    if (this._pointerMoveHandler) this._base.removeEventListener('pointermove', this._pointerMoveHandler)
+    if (this._pointerUpHandler) {
+      this._base.removeEventListener('pointerup', this._pointerUpHandler)
+      this._base.removeEventListener('pointercancel', this._pointerUpHandler)
+    }
     this.el.remove()
   }
 }
