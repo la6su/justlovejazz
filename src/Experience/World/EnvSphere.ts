@@ -65,22 +65,26 @@ export class EnvSphere extends THREE.Mesh {
   private _dirty = true
 
   constructor() {
-    // BackSide sphere — camera sees inside. Large radius (500) so it wraps
-    // everything. Equirectangular UV mapping via CanvasTexture.
+    // BackSide sphere mesh — INVISIBLE (visible=false). Only used as a lifecycle
+    // container. The actual background is scene.background = CanvasTexture.
     const geo = new THREE.SphereGeometry(500, 32, 16)
     const mat = new THREE.MeshBasicMaterial({
-      map: undefined,  // set after canvas creation
       side: THREE.BackSide,
       depthWrite: false,
-      depthTest: false,  // skybox pattern: always render, never occluded
+      depthTest: false,
       fog: false,
-      toneMapped: false,  // keep colors accurate
+      toneMapped: false,
+      visible: false,  // mesh material not rendered
     })
 
     super(geo, mat)
     this.name = 'env-sphere'
     this.frustumCulled = false
-    this.renderOrder = -1000  // render FIRST, before everything
+    // Mesh is INVISIBLE — we use scene.background (CanvasTexture) as the sole bg.
+    // Rendering a BackSide sphere with MeshBasicMaterial + map on WebGL2 path
+    // can crash (uniform 'value' undefined). scene.background is native API,
+    // works on all paths. The mesh exists only for lifecycle (update/dispose).
+    this.visible = false
 
     // Canvas + texture (equirectangular 2:1)
     this._canvas = document.createElement('canvas')
@@ -90,7 +94,7 @@ export class EnvSphere extends THREE.Mesh {
     this._canvasTexture = new THREE.CanvasTexture(this._canvas)
     this._canvasTexture.colorSpace = THREE.SRGBColorSpace
     this._canvasTexture.mapping = THREE.EquirectangularReflectionMapping
-    mat.map = this._canvasTexture
+    // mat.map NOT set — mesh is invisible, scene.background is the sole bg.
 
     // Initial draw
     this._redrawCanvas()
