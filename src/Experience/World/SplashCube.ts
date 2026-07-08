@@ -85,135 +85,34 @@ export class SplashCube extends THREE.Mesh {
     const size = 1.6
     const half = size / 2
 
-    // ── Apple Fifth Avenue-style glass cube shader ──
-    // Custom ShaderMaterial with:
-    //   - borders.glsl: inverted edge mask (smoothstep borders)
-    //   - radial-rainbow.glsl: rainbow gradient by angle from center
-    //   - env-map reflection: scene.environment sampled via reflect()
-    //   - depth-based opacity (faces further from camera more transparent)
-    //   - additive blending for glow
-    //
-    // Works on ALL backends (WebGLRenderer + WebGPURenderer) because it's
-    // a regular ShaderMaterial (no TSL nodes).
-    const cubeVertexShader = /* glsl */`
-      varying vec3 vNormal;
-      varying vec3 vWorldPos;
-      varying vec2 vUv;
-      void main() {
-        vUv = uv;
-        vNormal = normalize(normalMatrix * normal);
-        vec4 worldPos = modelMatrix * vec4(position, 1.0);
-        vWorldPos = worldPos.xyz;
-        gl_Position = projectionMatrix * viewMatrix * worldPos;
-      }
-    `
-
-    const cubeFragmentShader = /* glsl */`
-      precision highp float;
-      varying vec3 vNormal;
-      varying vec3 vWorldPos;
-      varying vec2 vUv;
-
-      uniform float uTime;
-      uniform float uBorderWidth;
-      uniform float uReflectionOpacity;
-      uniform vec3 uColor;
-      uniform float uOpacity;
-      uniform samplerCube uEnvMap;
-      uniform bool uHasEnvMap;
-      uniform vec3 uCameraPos;
-
-      const float PI2 = 6.28318530718;
-
-      // borders.glsl — inverted edge mask
-      float borders(vec2 uv, float strokeWidth) {
-        vec2 bl = smoothstep(vec2(0.0), vec2(strokeWidth), uv);
-        vec2 tr = smoothstep(vec2(0.0), vec2(strokeWidth), 1.0 - uv);
-        return 1.0 - bl.x * bl.y * tr.x * tr.y;
-      }
-
-      // radial-rainbow.glsl — rainbow gradient by angle from center
-      vec4 radialRainbow(vec2 st, float tick) {
-        vec2 toCenter = vec2(0.5) - st;
-        float angle = mod((atan(toCenter.y, toCenter.x) / PI2) + 0.5 + sin(tick * 0.002), 1.0);
-        vec4 a = vec4(0.15, 0.58, 0.96, 1.0);
-        vec4 b = vec4(0.29, 1.00, 0.55, 1.0);
-        vec4 c = vec4(1.00, 0.0, 0.85, 1.0);
-        vec4 d = vec4(0.92, 0.20, 0.14, 1.0);
-        vec4 e = vec4(1.00, 0.96, 0.32, 1.0);
-        float step = 1.0 / 10.0;
-        vec4 color = a;
-        color = mix(color, b, smoothstep(step * 1.0, step * 2.0, angle));
-        color = mix(color, a, smoothstep(step * 2.0, step * 3.0, angle));
-        color = mix(color, b, smoothstep(step * 3.0, step * 4.0, angle));
-        color = mix(color, c, smoothstep(step * 4.0, step * 5.0, angle));
-        color = mix(color, d, smoothstep(step * 5.0, step * 6.0, angle));
-        color = mix(color, c, smoothstep(step * 6.0, step * 7.0, angle));
-        color = mix(color, d, smoothstep(step * 7.0, step * 8.0, angle));
-        color = mix(color, e, smoothstep(step * 8.0, step * 9.0, angle));
-        color = mix(color, a, smoothstep(step * 9.0, step * 10.0, angle));
-        return color;
-      }
-
-      void main() {
-        // Screen-space coordinates for rainbow
-        vec2 st = vUv;
-
-        // Rainbow stroke color (animated)
-        vec4 strokeColor = radialRainbow(st, uTime * 1000.0);
-
-        // Edge borders mask — MUCH wider for visible rainbow edges
-        float border = borders(vUv, 0.08);
-        float border2 = borders(vUv, 0.15) * 0.5;
-        float edgeMask = clamp(border + border2, 0.0, 1.0);
-
-        // Depth-based opacity (faces further from camera more transparent)
-        float depth = clamp(smoothstep(-2.0, 2.0, vWorldPos.z - uCameraPos.z), 0.4, 0.9);
-
-        // Reflection: sample env cube map using reflected view direction
-        vec3 viewDir = normalize(uCameraPos - vWorldPos);
-        vec3 reflectDir = reflect(-viewDir, vNormal);
-        vec4 reflection = vec4(0.0);
-        if (uHasEnvMap) {
-          reflection = textureCube(uEnvMap, reflectDir);
-        }
-        reflection.a *= uReflectionOpacity * depth;
-
-        // Base glass color with subtle tint
-        vec4 glassColor = vec4(uColor, uOpacity * depth);
-
-        // Composite: glass + reflection + rainbow edges
-        // Edges use rainbow color with full opacity
-        vec4 stroke = strokeColor * edgeMask;
-        vec4 finalColor = glassColor + reflection * 0.5;
-
-        // Edges glow on top (additive) — make rainbow prominent
-        finalColor.rgb = mix(finalColor.rgb, stroke.rgb, edgeMask * 0.9);
-        finalColor.a = max(finalColor.a, edgeMask * 0.8);
-
-        gl_FragColor = finalColor;
-      }
-    `
-
-    const sharedMat = new THREE.ShaderMaterial({
-      vertexShader: cubeVertexShader,
-      fragmentShader: cubeFragmentShader,
+    // ── Glass cube: MeshPhysicalMaterial (works on ALL backends) ──
+    // WebGPURenderer auto-wraps built-in materials in TSL — no compatibility
+    // issues. Custom ShaderMaterial with GLSL does NOT work on WebGPU
+    // (NodeBuilder rejects it). MeshPhysicalMaterial gives us:
+    //   - envMap reflections (from scene.environment PMREM)
+    //   - iridescence (rainbow shimmer — the "Apple glass" look)
+    //   - clearcoat (surface gloss)
+    //   - transparency (opacity-based glass)
+    const sharedMat = new THREE.MeshPhysicalMaterial({
+      color: 0xffffff,
+      emissive: 0x1a2a4a,
+      emissiveIntensity: 0.12,
       transparent: true,
+      opacity: 0.45,
       side: THREE.DoubleSide,
+      roughness: 0.02,
+      metalness: 0.0,
+      iridescence: 1.0,
+      iridescenceIOR: 1.3,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.0,
+      transmission: 0,
+      thickness: 1.2,
+      ior: 1.52,
+      envMapIntensity: 1.5,
       depthWrite: false,
-      blending: THREE.AdditiveBlending,
-      uniforms: {
-        uTime: { value: 0 },
-        uBorderWidth: { value: 0.008 },
-        uReflectionOpacity: { value: 0.3 },
-        uColor: { value: new THREE.Color(0x1a2a4a) },
-        uOpacity: { value: 0.45 },
-        uEnvMap: { value: null },
-        uHasEnvMap: { value: false },
-        uCameraPos: { value: new THREE.Vector3() },
-      },
     })
-    this.faceMaterials.push(sharedMat as unknown as THREE.MeshPhysicalMaterial)
+    this.faceMaterials.push(sharedMat)
 
     for (let i = 0; i < 6; i++) {
       const dir = this.faceDirs[i]!
@@ -223,24 +122,49 @@ export class SplashCube extends THREE.Mesh {
       face.userData = { dir: dir.clone(), basePos: dir.clone().multiplyScalar(half) }
       face.position.copy(face.userData.basePos)
       face.lookAt(dir.clone().multiplyScalar(half * 2))
-      // Render order: transparent faces need sorted rendering. Set explicit
-      // renderOrder so faces render back-to-front for correct alpha blending.
       face.renderOrder = 2
 
       this.faces.push(face)
       this.add(face)
 
-      // Glowing edge lines — brighten the glass edges for a "framed" look
+      // ── Rainbow edge lines (Apple Fifth Avenue style) ──
+      // Each edge vertex gets a rainbow color based on its position.
+      // LineBasicMaterial with vertexColors=true renders per-vertex colors.
+      // On WebGPU: LineBasicMaterial auto-wraps in TSL — vertexColors works.
+      // On WebGL2: LineBasicMaterial native GLSL — vertexColors works.
+      // No ShaderMaterial needed → no NodeBuilder compatibility issues.
       const edgeGeo = new THREE.EdgesGeometry(geo)
+      const positions = edgeGeo.attributes.position!
+      const colors = new Float32Array(positions.count * 3)
+      for (let j = 0; j < positions.count; j++) {
+        // Rainbow based on vertex position angle
+        const x = positions.getX(j)
+        const y = positions.getY(j)
+        const angle = (Math.atan2(y, x) / (Math.PI * 2)) + 0.5
+        // HSV to RGB: hue=angle, saturation=1, value=1
+        const h = angle % 1.0
+        const s = 1.0
+        const v = 1.0
+        const c = new THREE.Color().setHSL(h, s, v)
+        colors[j * 3] = c.r
+        colors[j * 3 + 1] = c.g
+        colors[j * 3 + 2] = c.b
+      }
+      edgeGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3))
+
       const edgeMat = new THREE.LineBasicMaterial({
-        color: 0xa0b8e0,
+        vertexColors: true,
         transparent: true,
-        opacity: 0.6,
+        opacity: 1.0,
+        linewidth: 2,
+        blending: THREE.NormalBlending, // additive blends into bg — normal keeps colors
+        depthWrite: false,
+        depthTest: false,
       })
       const edges = new THREE.LineSegments(edgeGeo, edgeMat)
       edges.position.copy(face.position)
       edges.rotation.copy(face.rotation)
-      edges.renderOrder = 3
+      edges.renderOrder = 10 // above faces (renderOrder=2)
       this.edgeLines.push(edges)
       this.add(edges)
     }
@@ -407,14 +331,29 @@ export class SplashCube extends THREE.Mesh {
     }
 
     // ════════════════════════════════════════════════════════════════════
-    // Shader uniforms update — always
+    // Material update — blend section colors
     // ════════════════════════════════════════════════════════════════════
-    const mat = this.faceMaterials[0] as unknown as { uniforms: Record<string, { value: unknown }> }
-    const u = mat.uniforms
-    ;(u.uTime!.value as number) = this.time
-    // Blend color between sections
-    const blendedColor = this._blendFromColor.clone().lerp(this._blendToColor, this._blendT)
-    ;(u.uColor!.value as THREE.Color).copy(blendedColor)
+    const mat = this.faceMaterials[0]!
+    mat.color.copy(this._blendFromColor).lerp(this._blendToColor, this._blendT)
+    mat.emissive.copy(this._blendFromEmissive).lerp(this._blendToEmissive, this._blendT)
+
+    // Animate rainbow edge colors (subtle hue rotation over time)
+    for (const edges of this.edgeLines) {
+      const geo = edges.geometry
+      const colorAttr = geo.attributes.color as THREE.BufferAttribute
+      if (colorAttr) {
+        const positions = geo.attributes.position!
+        for (let j = 0; j < positions.count; j++) {
+          const x = positions.getX(j)
+          const y = positions.getY(j)
+          const angle = (Math.atan2(y, x) / (Math.PI * 2)) + 0.5
+          const hue = (angle + this.time * 0.05) % 1.0
+          const c = new THREE.Color().setHSL(hue, 1.0, 0.6)
+          colorAttr.setXYZ(j, c.r, c.g, c.b)
+        }
+        colorAttr.needsUpdate = true
+      }
+    }
 
     // Apply role/material when role changes
     if (this.targetParams.role !== this._currentRole) {
@@ -432,27 +371,20 @@ export class SplashCube extends THREE.Mesh {
     this._blendT = t
   }
 
-  /** Set env map for reflections + camera position for depth-based opacity.
-   *  Called by Experience.update each frame. */
-  setEnvAndCamera(envMap: THREE.Texture | null, cameraPos: THREE.Vector3): void {
-    const mat = this.faceMaterials[0] as unknown as { uniforms: Record<string, { value: unknown }> }
-    const u = mat.uniforms
-    if (envMap) {
-      u.uEnvMap!.value = envMap
-      u.uHasEnvMap!.value = true
-    } else {
-      u.uHasEnvMap!.value = false
-    }
-    ;(u.uCameraPos!.value as THREE.Vector3).copy(cameraPos)
+  /** Kept for API compat — Experience calls this but env map is set via
+   *  scene.environment (auto-applied to MeshPhysicalMaterial). */
+  setEnvAndCamera(_envMap: THREE.Texture | null, _cameraPos: THREE.Vector3): void {
+    // No-op — MeshPhysicalMaterial reads scene.environment automatically
   }
 
   private applyRoleAndParams(): void {
-    const { color, roughness } = this.targetParams
-    // ShaderMaterial — update uniforms directly
-    const mat = this.faceMaterials[0] as unknown as { uniforms: Record<string, { value: unknown }> }
-    ;(mat.uniforms.uColor!.value as THREE.Color).copy(color)
-    // roughness not used in ShaderMaterial (no PBR), but kept for API compat
-    void roughness
+    const { color, emissive, roughness, metalness } = this.targetParams
+    const mat = this.faceMaterials[0]!
+    mat.color.copy(color)
+    mat.emissive.copy(emissive)
+    mat.roughness = roughness
+    mat.metalness = metalness
+    mat.wireframe = false
   }
 
   dispose(): void {
