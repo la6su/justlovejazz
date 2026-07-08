@@ -7,11 +7,8 @@
 // After opener: cube continues as baku on all sections.
 
 import * as THREE from 'three'
-import { MeshPhysicalNodeMaterial } from 'three/webgpu'
 import { Noise } from '../../Utils/Noise'
-import { attachWorldDNA, updateWorldDNA } from './worldDNA'
 import { BakuRole, type BakuMaterialState } from '../../core/types'
-import { DeviceCapability } from '../../core/DeviceCapability'
 
 export interface BakuMaterialParams {
   color: THREE.Color
@@ -72,7 +69,6 @@ export class SplashCube extends THREE.Mesh {
   private _blendFromEmissive: THREE.Color = new THREE.Color(0x5a5a8a)
   private _blendToEmissive: THREE.Color = new THREE.Color(0x5a5a8a)
   private _blendT: number = 0
-  private _blendDisplace: number = 0.05
   // Pre-allocated scratch vectors — avoid per-face per-frame allocations
   private _tmpFaceOffset: THREE.Vector3 = new THREE.Vector3()
 
@@ -89,74 +85,135 @@ export class SplashCube extends THREE.Mesh {
     const size = 1.6
     const half = size / 2
 
-    // ── ONE shared material for all 6 faces ──
-    // Glassmorphism: studio-grade glass with strong env-map reflections,
-    // low roughness (sharp highlights), high clearcoat (surface gloss),
-    // iridescence (rainbow edge shimmer).
+    // ── Apple Fifth Avenue-style glass cube shader ──
+    // Custom ShaderMaterial with:
+    //   - borders.glsl: inverted edge mask (smoothstep borders)
+    //   - radial-rainbow.glsl: rainbow gradient by angle from center
+    //   - env-map reflection: scene.environment sampled via reflect()
+    //   - depth-based opacity (faces further from camera more transparent)
+    //   - additive blending for glow
     //
-    // PREMIUM PATH (IMPROVEMENT_PLAN A1+A2):
-    // On real WebGPU (DeviceCapability.isRealWebGPU === true) we use
-    // MeshPhysicalNodeMaterial — this allows TSL node overrides (worldDNA:
-    // vertex displacement, iridescent shimmer, rim glow, noise roughness)
-    // AND real `transmission` (true glass refraction through the cube).
-    //
-    // PARITY PATH (WebGL2 / WebGLBackend fallback):
-    // Plain THREE.MeshPhysicalMaterial — no TSL nodes (attachWorldDNA is
-    // a no-op), transmission disabled (crashes on WebGLBackend fallback).
-    // Glass look comes from opacity + envMap reflections only. Visual
-    // outcome is clean but lacks the displacement / shimmer / refraction.
-    //
-    // The env map is set on scene.environment by Experience.setupEnvironment()
-    // (RoomEnvironment PMREM via secondary WebGLRenderer on WebGPU path).
-    //
-    // NOTE: MeshPhysicalNodeMaterial shares all public PBR props with
-    // MeshPhysicalMaterial (color, emissive, roughness, metalness, opacity,
-    // iridescence, clearcoat, transmission, etc.) — the JS-side updates in
-    // update()/applyRoleAndParams() work identically on both paths. The
-    // difference is only whether TSL nodes override the GPU-side color /
-    // position / emissive / roughness (premium) or not (parity).
-    const isPremium = DeviceCapability.getInstance().isRealWebGPU
+    // Works on ALL backends (WebGLRenderer + WebGPURenderer) because it's
+    // a regular ShaderMaterial (no TSL nodes).
+    const cubeVertexShader = /* glsl */`
+      varying vec3 vNormal;
+      varying vec3 vWorldPos;
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        vNormal = normalize(normalMatrix * normal);
+        vec4 worldPos = modelMatrix * vec4(position, 1.0);
+        vWorldPos = worldPos.xyz;
+        gl_Position = projectionMatrix * viewMatrix * worldPos;
+      }
+    `
 
-    const baseProps = {
-      color: 0xffffff,           // neutral white — section tint comes from worldColorNode (premium) or mat.color update (parity)
-      emissive: 0x1a2a4a,        // subtle blue glow at edges
-      emissiveIntensity: 0.12,   // very subtle — glass shouldn't self-illuminate much
+    const cubeFragmentShader = /* glsl */`
+      precision highp float;
+      varying vec3 vNormal;
+      varying vec3 vWorldPos;
+      varying vec2 vUv;
+
+      uniform float uTime;
+      uniform float uBorderWidth;
+      uniform float uReflectionOpacity;
+      uniform vec3 uColor;
+      uniform float uOpacity;
+      uniform samplerCube uEnvMap;
+      uniform bool uHasEnvMap;
+      uniform vec3 uCameraPos;
+
+      const float PI2 = 6.28318530718;
+
+      // borders.glsl — inverted edge mask
+      float borders(vec2 uv, float strokeWidth) {
+        vec2 bl = smoothstep(vec2(0.0), vec2(strokeWidth), uv);
+        vec2 tr = smoothstep(vec2(0.0), vec2(strokeWidth), 1.0 - uv);
+        return 1.0 - bl.x * bl.y * tr.x * tr.y;
+      }
+
+      // radial-rainbow.glsl — rainbow gradient by angle from center
+      vec4 radialRainbow(vec2 st, float tick) {
+        vec2 toCenter = vec2(0.5) - st;
+        float angle = mod((atan(toCenter.y, toCenter.x) / PI2) + 0.5 + sin(tick * 0.002), 1.0);
+        vec4 a = vec4(0.15, 0.58, 0.96, 1.0);
+        vec4 b = vec4(0.29, 1.00, 0.55, 1.0);
+        vec4 c = vec4(1.00, 0.0, 0.85, 1.0);
+        vec4 d = vec4(0.92, 0.20, 0.14, 1.0);
+        vec4 e = vec4(1.00, 0.96, 0.32, 1.0);
+        float step = 1.0 / 10.0;
+        vec4 color = a;
+        color = mix(color, b, smoothstep(step * 1.0, step * 2.0, angle));
+        color = mix(color, a, smoothstep(step * 2.0, step * 3.0, angle));
+        color = mix(color, b, smoothstep(step * 3.0, step * 4.0, angle));
+        color = mix(color, c, smoothstep(step * 4.0, step * 5.0, angle));
+        color = mix(color, d, smoothstep(step * 5.0, step * 6.0, angle));
+        color = mix(color, c, smoothstep(step * 6.0, step * 7.0, angle));
+        color = mix(color, d, smoothstep(step * 7.0, step * 8.0, angle));
+        color = mix(color, e, smoothstep(step * 8.0, step * 9.0, angle));
+        color = mix(color, a, smoothstep(step * 9.0, step * 10.0, angle));
+        return color;
+      }
+
+      void main() {
+        // Screen-space coordinates for rainbow
+        vec2 st = vUv;
+
+        // Rainbow stroke color (animated)
+        vec4 strokeColor = radialRainbow(st, uTime * 1000.0);
+
+        // Edge borders mask — MUCH wider for visible rainbow edges
+        float border = borders(vUv, 0.08);
+        float border2 = borders(vUv, 0.15) * 0.5;
+        float edgeMask = clamp(border + border2, 0.0, 1.0);
+
+        // Depth-based opacity (faces further from camera more transparent)
+        float depth = clamp(smoothstep(-2.0, 2.0, vWorldPos.z - uCameraPos.z), 0.4, 0.9);
+
+        // Reflection: sample env cube map using reflected view direction
+        vec3 viewDir = normalize(uCameraPos - vWorldPos);
+        vec3 reflectDir = reflect(-viewDir, vNormal);
+        vec4 reflection = vec4(0.0);
+        if (uHasEnvMap) {
+          reflection = textureCube(uEnvMap, reflectDir);
+        }
+        reflection.a *= uReflectionOpacity * depth;
+
+        // Base glass color with subtle tint
+        vec4 glassColor = vec4(uColor, uOpacity * depth);
+
+        // Composite: glass + reflection + rainbow edges
+        // Edges use rainbow color with full opacity
+        vec4 stroke = strokeColor * edgeMask;
+        vec4 finalColor = glassColor + reflection * 0.5;
+
+        // Edges glow on top (additive) — make rainbow prominent
+        finalColor.rgb = mix(finalColor.rgb, stroke.rgb, edgeMask * 0.9);
+        finalColor.a = max(finalColor.a, edgeMask * 0.8);
+
+        gl_FragColor = finalColor;
+      }
+    `
+
+    const sharedMat = new THREE.ShaderMaterial({
+      vertexShader: cubeVertexShader,
+      fragmentShader: cubeFragmentShader,
       transparent: true,
-      opacity: 0.45,             // semi-transparent glass (parity path). On premium path, opacity is multiplied by 1.0 in NodeMaterial — same result.
       side: THREE.DoubleSide,
-      roughness: 0.02,           // extremely smooth → razor-sharp reflections
-      metalness: 0.0,            // non-metal (it's dielectric glass)
-      iridescence: 1.0,          // full rainbow shimmer
-      iridescenceIOR: 1.3,       // subtle iridescence shift
-      clearcoat: 1.0,            // full clearcoat — surface gloss
-      clearcoatRoughness: 0.0,   // perfectly smooth clearcoat
-      thickness: 1.2,            // glass thickness for refraction (premium path uses it; parity path ignores when transmission=0)
-      ior: 1.52,                 // crown glass IOR
-      attenuationColor: new THREE.Color(0x8899bb),  // cool blue tint at edges
-      attenuationDistance: 3.0,  // how far light travels before absorbing the tint
-      envMapIntensity: 1.5,      // strong environment reflections (THE key for glass look)
-      depthWrite: false,         // don't write depth — transparent glass shouldn't occlude
-    } as const
-
-    let sharedMat: THREE.MeshPhysicalMaterial
-    if (isPremium) {
-      // Premium WebGPU path: NodeMaterial + TSL worldDNA + REAL transmission.
-      // transmission=1 here is safe — real WebGPUBackend supports it. The old
-      // "crashes on WebGLBackend fallback" comment only applied to the parity
-      // path, which we no longer hit on real WebGPU.
-      const nodeMat = new MeshPhysicalNodeMaterial(baseProps)
-      nodeMat.transmission = 1.0  // A2: true glass refraction
-      sharedMat = nodeMat as unknown as THREE.MeshPhysicalMaterial
-    } else {
-      // Parity path: opacity-based glass (as before).
-      sharedMat = new THREE.MeshPhysicalMaterial({
-        ...baseProps,
-        transmission: 0,           // disabled (crashes on WebGLBackend fallback)
-      })
-    }
-
-    attachWorldDNA(sharedMat)  // premium: attaches 4 TSL nodes. parity: no-op.
-    this.faceMaterials.push(sharedMat)
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      uniforms: {
+        uTime: { value: 0 },
+        uBorderWidth: { value: 0.008 },
+        uReflectionOpacity: { value: 0.3 },
+        uColor: { value: new THREE.Color(0x1a2a4a) },
+        uOpacity: { value: 0.45 },
+        uEnvMap: { value: null },
+        uHasEnvMap: { value: false },
+        uCameraPos: { value: new THREE.Vector3() },
+      },
+    })
+    this.faceMaterials.push(sharedMat as unknown as THREE.MeshPhysicalMaterial)
 
     for (let i = 0; i < 6; i++) {
       const dir = this.faceDirs[i]!
@@ -350,34 +407,14 @@ export class SplashCube extends THREE.Mesh {
     }
 
     // ════════════════════════════════════════════════════════════════════
-    // worldDNA uniforms — ALWAYS update
+    // Shader uniforms update — always
     // ════════════════════════════════════════════════════════════════════
-    // Displacement uses sinT (not transitionT) so it returns to 0 BEFORE
-    // the section commits. When the cube goes idle, the last rendered frame
-    // already has uDisplace=0 → no frozen deformation.
-    const displaceAmount = this._blendDisplace * sinT
-    updateWorldDNA({
-      sectionBlend: this._blendT,
-      colorA: this._blendFromColor,
-      colorB: this._blendToColor,
-      emissiveA: this._blendFromEmissive,
-      emissiveB: this._blendToEmissive,
-      time: this.time,
-      displace: displaceAmount + this.openerProgress * 0.3,
-      pulse: this.openerProgress,
-    })
-
-    // ── Update mat.color + mat.emissive directly ──
-    // On PREMIUM path: these JS props are overridden by TSL worldDNA nodes
-    // (colorNode, emissiveNode) — the GPU reads from uColorA/uColorB uniforms
-    // set above via updateWorldDNA(). The JS copy() here is a harmless no-op
-    // visually (kept for parity-path correctness + future fallback safety).
-    // On PARITY path: these JS props ARE the source of truth — the GPU reads
-    // mat.color / mat.emissive directly. The lerp blends between current +
-    // next section colors smoothly.
-    const mat = this.faceMaterials[0]!
-    mat.color.copy(this._blendFromColor).lerp(this._blendToColor, this._blendT)
-    mat.emissive.copy(this._blendFromEmissive).lerp(this._blendToEmissive, this._blendT)
+    const mat = this.faceMaterials[0] as unknown as { uniforms: Record<string, { value: unknown }> }
+    const u = mat.uniforms
+    ;(u.uTime!.value as number) = this.time
+    // Blend color between sections
+    const blendedColor = this._blendFromColor.clone().lerp(this._blendToColor, this._blendT)
+    ;(u.uColor!.value as THREE.Color).copy(blendedColor)
 
     // Apply role/material when role changes
     if (this.targetParams.role !== this._currentRole) {
@@ -387,32 +424,35 @@ export class SplashCube extends THREE.Mesh {
   }
 
   /** Update worldDNA blend state from scroll progress. Called by Experience.update every frame. */
-  updateWorldBlend(fromColor: THREE.Color, toColor: THREE.Color, fromEmissive: THREE.Color, toEmissive: THREE.Color, t: number, fromDisplace: number = 0.05, toDisplace: number = 0.05): void {
+  updateWorldBlend(fromColor: THREE.Color, toColor: THREE.Color, fromEmissive: THREE.Color, toEmissive: THREE.Color, t: number, _fromDisplace: number = 0.05, _toDisplace: number = 0.05): void {
     this._blendFromColor.copy(fromColor)
     this._blendToColor.copy(toColor)
     this._blendFromEmissive.copy(fromEmissive)
     this._blendToEmissive.copy(toEmissive)
     this._blendT = t
-    // Lerp displacement amplitude between sections
-    this._blendDisplace = fromDisplace * (1 - t) + toDisplace * t
+  }
+
+  /** Set env map for reflections + camera position for depth-based opacity.
+   *  Called by Experience.update each frame. */
+  setEnvAndCamera(envMap: THREE.Texture | null, cameraPos: THREE.Vector3): void {
+    const mat = this.faceMaterials[0] as unknown as { uniforms: Record<string, { value: unknown }> }
+    const u = mat.uniforms
+    if (envMap) {
+      u.uEnvMap!.value = envMap
+      u.uHasEnvMap!.value = true
+    } else {
+      u.uHasEnvMap!.value = false
+    }
+    ;(u.uCameraPos!.value as THREE.Vector3).copy(cameraPos)
   }
 
   private applyRoleAndParams(): void {
-    const { color, emissive, roughness, metalness } = this.targetParams
-    // Single shared material — update once.
-    // NOTE: worldDNA TSL nodes override colorNode, emissiveNode, and
-    // roughnessNode at the shader level. Setting these properties here only
-    // updates the material's "base" values (used as fallback). The actual
-    // rendered color/roughness come from the TSL nodes (section blend).
-    // We DO NOT override glass-defining properties (transmission, clearcoat,
-    // iridescence, envMapIntensity, etc.) — those are set once in buildCube()
-    // and must persist across all sections.
-    const mat = this.faceMaterials[0]!
-    mat.color.copy(color)
-    mat.emissive.copy(emissive)
-    mat.roughness = roughness
-    mat.metalness = metalness
-    mat.wireframe = false
+    const { color, roughness } = this.targetParams
+    // ShaderMaterial — update uniforms directly
+    const mat = this.faceMaterials[0] as unknown as { uniforms: Record<string, { value: unknown }> }
+    ;(mat.uniforms.uColor!.value as THREE.Color).copy(color)
+    // roughness not used in ShaderMaterial (no PBR), but kept for API compat
+    void roughness
   }
 
   dispose(): void {

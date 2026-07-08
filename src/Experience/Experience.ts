@@ -419,6 +419,14 @@ export class Experience {
       }
     }
 
+    // Update cube shader uniforms: env map + camera position
+    if (this.world?.baku) {
+      this.world.baku.setEnvAndCamera(
+        this.scene.environment,
+        this.camera.instance.position,
+      )
+    }
+
     // UI theme: light sections (intro=0, contact=5) need dark text/nav.
     // These sections have LIGHT backgrounds (EnvSphere patterns) → dark text
     // for contrast. Other sections have DARK backgrounds → light text.
