@@ -33,25 +33,25 @@ const CANVAS_W = 2048
 const CANVAS_H = 1024
 
 // Per-section color palette — synced with Experience.ts theme logic.
-// Experience.ts toggles `light-theme` class on sections 0 (intro) and 2 (flexible),
+// Experience.ts toggles `light-theme` class on sections 0 (intro) and 5 (contact),
 // which switches DOM text to DARK. So those sections need LIGHT backgrounds
 // (for dark text contrast). Other sections use DARK backgrounds (for light text).
 //
-// Light sections (idx 0, 2): luminance ~0.75-0.85 → dark text contrast > 7:1
-// Dark sections  (idx 1,3,4,5): luminance ~0.10-0.18 → light text contrast > 10:1
+// Light sections (idx 0, 5): luminance ~0.75-0.85 → dark text contrast > 7:1
+// Dark sections  (idx 1,2,3,4): luminance ~0.10-0.18 → light text contrast > 10:1
 const SECTION_PATTERNS = [
   // sec1 (intro) — LIGHT: subtle HSV gradient (animated, low saturation, high value)
   { type: 'hsv', hue: 0.6, sat: 0.08, val: 0.82 },
   // sec2 (about) — DARK: grey gradient (top darker, bottom lighter)
   { type: 'gradient', color1: 0x1a1a1a, color2: 0x2e2e2e },
-  // sec3 (flexible) — LIGHT: soft off-white (almost solid, slight gradient)
-  { type: 'gradient', color1: 0xe8e8e8, color2: 0xd8d8d8 },
+  // sec3 (flexible) — DARK: dark grey gradient
+  { type: 'gradient', color1: 0x141414, color2: 0x222222 },
   // sec4 (works) — DARK: dark blue-grey (gallery feel)
   { type: 'gradient', color1: 0x1a1a22, color2: 0x2a2a3a },
   // sec5 (innovative) — DARK: dark with subtle center glow
   { type: 'glow', glow: 0x2a3a4a },
-  // sec6 (contact) — DARK: horizon glow (junni sec6 style)
-  { type: 'horizon', glow: 0x3a3a4a },
+  // sec6 (contact) — LIGHT: soft off-white gradient (for dark text)
+  { type: 'gradient', color1: 0xe8e8e8, color2: 0xd8d8d8 },
 ] as const
 
 export class EnvSphere extends THREE.Mesh {
@@ -225,35 +225,6 @@ export class EnvSphere extends THREE.Mesh {
         rg.addColorStop(1, `rgba(${glow.r * 255 | 0},${glow.g * 255 | 0},${glow.b * 255 | 0},0)`)
         ctx.fillStyle = rg
         ctx.fillRect(0, 0, w, h)
-        break
-      }
-      case 'horizon': {
-        // sec6 (contact) — horizon glow (junni sec6 style)
-        // junni: exp(-linearstep(1.0, 0.5, vUv.y) * 10.0) * 0.6 + sine waves
-        const base = new THREE.Color(0x0a0a0a)
-        const glow = new THREE.Color(pattern.glow)
-        ctx.fillStyle = `#${base.getHexString()}`
-        ctx.fillRect(0, 0, w, h)
-        // Horizon glow band at y = h/2 (vUv.y = 0.5)
-        const horizonY = h * 0.5
-        for (let band = 0; band < 3; band++) {
-          const offset = band * 0.015 * h
-          const intensity = 0.6 - band * 0.15
-          const grad = ctx.createLinearGradient(0, horizonY - offset - h * 0.15, 0, horizonY - offset + h * 0.15)
-          grad.addColorStop(0, `rgba(${glow.r * 255 | 0},${glow.g * 255 | 0},${glow.b * 255 | 0},0)`)
-          grad.addColorStop(0.5, `rgba(${glow.r * 255 | 0},${glow.g * 255 | 0},${glow.b * 255 | 0},${intensity})`)
-          grad.addColorStop(1, `rgba(${glow.r * 255 | 0},${glow.g * 255 | 0},${glow.b * 255 | 0},0)`)
-          ctx.fillStyle = grad
-          ctx.fillRect(0, horizonY - offset - h * 0.3, w, h * 0.6)
-        }
-        // Sine wave overlay (subtle)
-        ctx.globalAlpha = 0.1
-        for (let x = 0; x < w; x += 4) {
-          const sy = Math.sin(x / w * 15 - 1 + t) * 0.1 * h
-          ctx.fillStyle = `rgb(${glow.r * 255 | 0},${glow.g * 255 | 0},${glow.b * 255 | 0})`
-          ctx.fillRect(x, horizonY + sy, 4, 2)
-        }
-        ctx.globalAlpha = 1.0
         break
       }
     }

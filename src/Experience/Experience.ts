@@ -416,9 +416,11 @@ export class Experience {
       }
     }
 
-    // UI theme: light sections (intro=0, flexible=2) need dark text/nav.
+    // UI theme: light sections (intro=0, contact=5) need dark text/nav.
+    // These sections have LIGHT backgrounds (EnvSphere patterns) → dark text
+    // for contrast. Other sections have DARK backgrounds → light text.
     const idx = this.world.currentSectionIndex
-    const isLightSection = idx === 0 || idx === 2
+    const isLightSection = idx === 0 || idx === 5
     document.documentElement.classList.toggle('light-theme', isLightSection)
     document.body.classList.toggle('light-theme', isLightSection)
     // Give World the camera ref for DrawTrail (once, after init).
