@@ -55,9 +55,15 @@ export async function startApp(): Promise<void> {
   document.head.appendChild(style)
   ;(UIkit as { use: (p: object) => void }).use(Icons as object)
 
-  // Bug 1: don't init UIkit scrollspy yet — it fires during boot (elements
-  // are in viewport) and the fade-in plays behind the splash overlay.
-  // scrollspy attributes are added dynamically after jlz:webgl-ready.
+  // Bug 1: uk-scrollspy attributes are now baked into the templates.ts
+  // markup directly (per-element). UIkit's MutationObserver auto-inits
+  // scrollspy instances as soon as the HTML lands in #spa-content —
+  // which is *before* the splash curtains open. To keep the fade-in
+  // hidden behind the splash, the `.scrollspy-pending` class on <body>
+  // cancels the animation via `animation: none !important` (see main.less).
+  // When jlz:webgl-ready fires (post-splash), we drop the class — the
+  // animation-name computed value flips from `none` back to `uk-fade`,
+  // which restarts the animation so the fade-in is visible to the user.
   document.body.classList.add('scrollspy-pending')
   initRouter()
 
@@ -66,14 +72,10 @@ export async function startApp(): Promise<void> {
   // jlz:webgl-ready dispatches AFTER splash curtains open, so the animation
   // is visible (not hidden behind splash overlay).
   eventBus.on('jlz:webgl-ready', () => {
-    // Bug 1: NOW init UIkit scrollspy — splash is gone, so fade-in is visible.
-    // Remove scrollspy-pending so CSS opacity:0 no longer applies (would conflict
-    // with uk-animation-fade's fill-mode:both). Then add uk-scrollspy attributes;
-    // UIkit native target: > * + delay: 300 gives a staggered cascade.
+    // Drop scrollspy-pending — CSS `animation: none !important` no longer
+    // applies, so each [uk-scrollspy] element's animation restarts and the
+    // uk-animation-fade plays out (visible now that splash is gone).
     document.body.classList.remove('scrollspy-pending')
-    document.querySelectorAll<HTMLElement>('.section-content').forEach((el) => {
-      el.setAttribute('uk-scrollspy', 'target: > *; cls: uk-animation-fade; delay: 300; repeat: true')
-    })
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ;(UIkit as any).update(document)
     animateNoiseTitles()

@@ -6,7 +6,8 @@
 //   - BakuCarousel: prev/next, trigger morph
 //   - Render: exposure, force render toggle, reload
 //
-// Activation: Backquote (`) or Ctrl+D. State persisted to localStorage.
+// Hidden by default. Toggle with Backquote (`) or Ctrl+D — state is
+// persisted to localStorage so the choice survives reloads.
 // Production: never constructed (Experience.init guards on import.meta.env.DEV).
 
 import { Pane } from 'tweakpane'
@@ -23,7 +24,7 @@ function loadState(): DevPanelState {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) return JSON.parse(raw)
   } catch { /* ignore */ }
-  return { visible: true }
+  return { visible: false }
 }
 
 function saveState(s: DevPanelState): void {
