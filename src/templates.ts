@@ -62,11 +62,10 @@ export function homePage(): string {
         <div class="section-bg section-bg--intro uk-position-cover" data-dynamic-content>
           <div class="section-container jlz-layout--between">
             <div class="section-content jlz-hero">
-              <span class="jlz-hero__meta jlz-reveal">Studio · est. 2025</span>
+              
               <h1 class="studio-title studio-title--hero jlz-hero__title"
                   data-content-id="hero-title">l@6</h1>
-              <p class="studio-subtitle jlz-hero__subtitle jlz-reveal"
-                 data-content-id="hero-subtitle">Interactive 3D Experiences</p>
+              <span class="jlz-hero__meta jlz-reveal">Studio · est. 2019</span>
               <p class="jlz-hero__tagline jlz-reveal">
                 Cinematic interfaces for the modern browser — built from
                 <span class="jlz-weight-medium">glass</span>,
@@ -75,7 +74,7 @@ export function homePage(): string {
               </p>
             </div>
             <div class="jlz-scroll-hint jlz-reveal" aria-hidden="true">
-              <span class="jlz-scroll-hint__label">Scroll</span>
+              <span class="jlz-scroll-hint__label">Joystick</span>
               <span class="jlz-scroll-hint__line"></span>
             </div>
           </div>
@@ -141,11 +140,7 @@ export function homePage(): string {
               </p>
             </div>
           </div>
-          <div class="jlz-works-hint jlz-reveal" aria-hidden="true">
-            <span>Drag</span>
-            <span class="jlz-works-hint__arrow">→</span>
-            <span>Click to open</span>
-          </div>
+
           <div id="project-overlay" class="jlz-works-ui uk-position-z-index"></div>
         </div>
       </section>
