@@ -105,17 +105,6 @@ export class EnvSphere extends THREE.Mesh {
 
     // Initial draw
     this._redrawCanvas()
-
-    // DIAGNOSTIC: verify mesh is set up correctly
-    console.info('[EnvSphere] constructor done', {
-      visible: this.visible,
-      renderOrder: this.renderOrder,
-      materialVisible: (this.material as THREE.Material).visible,
-      hasMap: !!(this.material as THREE.MeshBasicMaterial).map,
-      mapSize: `${CANVAS_W}x${CANVAS_H}`,
-      geometryRadius: 500,
-      side: 'BackSide',
-    })
   }
 
   /**
@@ -197,13 +186,6 @@ export class EnvSphere extends THREE.Mesh {
       this._drawSectionPattern(ctx, i, w, h)
     }
     ctx.globalAlpha = 1.0
-
-    // DIAGNOSTIC: sample center pixel to verify canvas has content
-    const pixel = ctx.getImageData(w / 2, h / 2, 1, 1).data
-    console.info('[EnvSphere] canvas redrawn', {
-      weights: this._sectionWeights.map(w => w.toFixed(2)),
-      centerPixel: `rgb(${pixel[0]},${pixel[1]},${pixel[2]})`,
-    })
   }
 
   /** Draw a single section pattern (port of junni bg.fs sec1..sec6 to 2D canvas). */
