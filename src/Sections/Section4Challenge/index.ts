@@ -14,6 +14,6 @@ export function createSection4(): THREE.Group {
   carousel.userData.keepVisible = true
   g.add(carousel)
   g.userData.gallery = carousel
-  g.add(makeParticles({ count: 500, spread: new THREE.Vector3(14, 6, 8), color: 0x4488ff, size: 0.08, opacity: 0.4 }))
+  g.add(makeParticles({ count: 200, spread: new THREE.Vector3(14, 6, 8), color: 0x4488ff, size: 0.08, opacity: 0.4 }))
   return g
 }

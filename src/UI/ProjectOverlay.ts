@@ -69,11 +69,11 @@ export class ProjectOverlay {
         </div>
         <div style="display:flex;align-items:center;gap:1.5rem;">
           <div class="jlz-fs-counter" style="font-size:.8rem;color:rgba(255,255,255,.5);font-variant-numeric:tabular-nums;"></div>
-          <button class="jlz-fs-close" type="button" aria-label="Close" style="background:none;border:1px solid rgba(255,255,255,.2);color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;">✕</button>
+          <button class="jlz-fs-close" type="button" aria-label="Close" style="background:none;border:1px solid rgba(255,255,255,.2);color:#fff;width:36px;height:36px;border-radius:50%;cursor:inherit;font-size:1rem;display:flex;align-items:center;justify-content:center;">✕</button>
         </div>
       </div>
-      <button class="jlz-fs-prev" type="button" aria-label="Previous" style="position:absolute;left:1.5rem;top:50%;transform:translateY(-50%);background:none;border:1px solid rgba(255,255,255,.2);color:#fff;width:44px;height:44px;border-radius:50%;cursor:pointer;font-size:1.2rem;">←</button>
-      <button class="jlz-fs-next" type="button" aria-label="Next" style="position:absolute;right:1.5rem;top:50%;transform:translateY(-50%);background:none;border:1px solid rgba(255,255,255,.2);color:#fff;width:44px;height:44px;border-radius:50%;cursor:pointer;font-size:1.2rem;">→</button>
+      <button class="jlz-fs-prev" type="button" aria-label="Previous" style="position:absolute;left:1.5rem;top:50%;transform:translateY(-50%);background:none;border:1px solid rgba(255,255,255,.2);color:#fff;width:44px;height:44px;border-radius:50%;cursor:inherit;font-size:1.2rem;">←</button>
+      <button class="jlz-fs-next" type="button" aria-label="Next" style="position:absolute;right:1.5rem;top:50%;transform:translateY(-50%);background:none;border:1px solid rgba(255,255,255,.2);color:#fff;width:44px;height:44px;border-radius:50%;cursor:inherit;font-size:1.2rem;">→</button>
       <div class="jlz-fs-bottom" style="position:absolute;bottom:0;left:0;width:100%;padding:2rem 2.5rem;display:flex;align-items:flex-end;gap:2rem;">
         <div class="jlz-fs-thumb" style="width:120px;height:80px;background-size:cover;background-position:center;border-radius:6px;flex-shrink:0;border:1px solid rgba(255,255,255,.1);"></div>
         <div style="flex:1;">

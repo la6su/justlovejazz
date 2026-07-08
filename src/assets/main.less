@@ -769,13 +769,16 @@ canvas {
 /* Hamburger button — at the corner center, opens UIkit modal */
 .jlz-menu-toggle {
   position: fixed;
-  bottom: 12px;
-  right: 12px;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 10002;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   padding: 0;
   background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 50%;
   color: rgba(255, 255, 255, 0.9);
@@ -789,7 +792,7 @@ canvas {
 }
 .jlz-menu-toggle:hover {
   background: rgba(255, 255, 255, 0.18);
-  transform: scale(1.08);
+  transform: translateX(-50%) scale(1.08);
 }
 
 /* Modal dialog — tall + narrow for a section list */

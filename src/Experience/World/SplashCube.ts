@@ -121,7 +121,7 @@ export class SplashCube extends THREE.Mesh {
       const geo = new THREE.PlaneGeometry(size, size)
       const mat = new THREE.MeshBasicMaterial({
         color: new THREE.Color(d.color[0]!, d.color[1]!, d.color[2]!),
-        side: THREE.FrontSide, // FrontSide — faces inward toward CubeCamera at center
+        side: THREE.DoubleSide, // CubeCamera at center sees back of planes
         fog: false,
       })
       const plane = new THREE.Mesh(geo, mat)
@@ -135,7 +135,7 @@ export class SplashCube extends THREE.Mesh {
     const logoMat = new THREE.MeshBasicMaterial({
       map: logoTex,
       transparent: true,
-      side: THREE.FrontSide,
+      side: THREE.DoubleSide,
       fog: false,
     })
     const logoMesh = new THREE.Mesh(logoGeo, logoMat)
@@ -146,7 +146,7 @@ export class SplashCube extends THREE.Mesh {
     // Add text textures on side faces
     const text1Mesh = new THREE.Mesh(
       new THREE.PlaneGeometry(4, 1.5),
-      new THREE.MeshBasicMaterial({ map: text1Tex, transparent: true, side: THREE.FrontSide, fog: false }),
+      new THREE.MeshBasicMaterial({ map: text1Tex, transparent: true, side: THREE.DoubleSide, fog: false }),
     )
     text1Mesh.position.set(half - 0.1, 0, 0)
     text1Mesh.rotation.y = -Math.PI / 2
@@ -154,7 +154,7 @@ export class SplashCube extends THREE.Mesh {
 
     const text2Mesh = new THREE.Mesh(
       new THREE.PlaneGeometry(4, 1.5),
-      new THREE.MeshBasicMaterial({ map: text2Tex, transparent: true, side: THREE.FrontSide, fog: false }),
+      new THREE.MeshBasicMaterial({ map: text2Tex, transparent: true, side: THREE.DoubleSide, fog: false }),
     )
     text2Mesh.position.set(-half + 0.1, 0, 0)
     text2Mesh.rotation.y = Math.PI / 2
@@ -181,17 +181,17 @@ export class SplashCube extends THREE.Mesh {
     // Single BoxGeometry — smooth, continuous edges (no gaps between faces)
     const geo = new THREE.BoxGeometry(size, size, size)
 
-    // MeshPhysicalMaterial with CubeCamera cubemap as envMap
-    // This gives rich reflections (logo, gradients, text) — Apple Fifth Avenue look
+    // MeshPhysicalMaterial with PMREM env reflections (from scene.environment)
+    // + Apple logo texture as map on cube faces
     this.cubeMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0xffffff,
+      color: 0x888888, // grey base — logo texture multiplies with this
       emissive: 0x1a2a4a,
       emissiveIntensity: 0.12,
       transparent: true,
-      opacity: 0.55,
+      opacity: 0.85, // more opaque so texture is visible
       side: THREE.DoubleSide,
-      roughness: 0.05,
-      metalness: 0.0,
+      roughness: 0.1,
+      metalness: 0.3,
       iridescence: 1.0,
       iridescenceIOR: 1.3,
       clearcoat: 1.0,
@@ -199,12 +199,21 @@ export class SplashCube extends THREE.Mesh {
       transmission: 0,
       thickness: 1.2,
       ior: 1.52,
-      envMapIntensity: 2.0, // strong reflections from CubeCamera
+      envMapIntensity: 1.5,
       depthWrite: false,
     })
 
-    // Set envMap from CubeCamera (works on all backends)
-    this.cubeMaterial.envMap = this.cubeCamera.renderTarget.texture
+    // Apply Apple logo as map + emissiveMap — emissiveMap makes the logo
+    // glow (not affected by lighting), visible through glass transparency.
+    const logoLoader = new THREE.TextureLoader()
+    logoLoader.load('/assets/logo.png', (tex) => {
+      tex.colorSpace = THREE.SRGBColorSpace
+      this.cubeMaterial.map = tex
+      this.cubeMaterial.emissiveMap = tex
+      this.cubeMaterial.emissive.setRGB(0.5, 0.5, 0.5) // grey glow from logo
+      this.cubeMaterial.emissiveIntensity = 0.8
+      this.cubeMaterial.needsUpdate = true
+    })
 
     this.cubeMesh = new THREE.Mesh(geo, this.cubeMaterial)
     this.cubeMesh.renderOrder = 2
@@ -284,13 +293,14 @@ export class SplashCube extends THREE.Mesh {
   // ════════════════════════════════════════════════════════════════════
   // UPDATE — called every frame when rendering
   // ════════════════════════════════════════════════════════════════════
+  private _cubeCamFrame = 0 // frame counter for CubeCamera throttling
+
   update(dt: number, renderer?: THREE.WebGLRenderer): void {
     this.time += dt
+    this._cubeCamFrame++
 
-    // ── Update CubeCamera (renders content scene into cubemap) ──
-    // This provides the rich reflections (logo, gradients, text)
-    if (renderer) {
-      // Make cube invisible during CubeCamera render (avoid self-reflection)
+    // ── Update CubeCamera every ~10 frames (expensive on iOS) ──
+    if (renderer && this._cubeCamFrame % 10 === 0) {
       this.cubeMesh.visible = false
       this.edgeLines.visible = false
       this.cubeCamera.update(renderer, this.contentScene)
