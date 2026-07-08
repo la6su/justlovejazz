@@ -650,68 +650,48 @@ canvas {
 }
 
 /* ════════════════════════════════════════════════════════════════════
-   9. UIKit slider nav — section navigation (uk-slider, uk-sticky)
+   9. Slider nav — simple centered UIKit slider
    ════════════════════════════════════════════════════════════════════ */
 
-/* Transparent navbar over 3D canvas */
+.tm-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10001;
+}
 .jlz-navbar {
   background: transparent !important;
-}
-
-/* Slider nav — section pills with infinite scroll */
-.jlz-slider-nav {
-  width: 100%;
-}
-.jlz-nav-item {
-  padding: 0 4px;
-  list-style: none;
+  padding: 8px 0;
 }
 .jlz-nav-link {
   display: block;
-  padding: 6px 16px;
-  font-size: 0.75rem;
+  padding: 6px 14px;
+  font-size: 0.72rem;
   font-weight: 500;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.5);
-  background: transparent;
-  border-radius: 100px;
+  color: rgba(255, 255, 255, 0.45);
   white-space: nowrap;
-  transition: background 0.2s ease, color 0.2s ease;
+  transition: color 0.2s ease;
 }
 .jlz-nav-link:hover {
-  background: rgba(255, 255, 255, 0.08);
   color: rgba(255, 255, 255, 0.8);
   text-decoration: none;
 }
-.jlz-nav-item.uk-active .jlz-nav-link {
-  background: rgba(255, 255, 255, 0.15);
+li.uk-active .jlz-nav-link {
   color: #fff;
 }
-
-/* Light theme */
 body.light-theme .jlz-nav-link {
-  color: rgba(0, 0, 0, 0.5);
+  color: rgba(0, 0, 0, 0.45);
 }
 body.light-theme .jlz-nav-link:hover {
-  background: rgba(0, 0, 0, 0.06);
   color: rgba(0, 0, 0, 0.8);
 }
-body.light-theme .jlz-nav-item.uk-active .jlz-nav-link {
-  background: rgba(0, 0, 0, 0.1);
+body.light-theme li.uk-active .jlz-nav-link {
   color: #000;
 }
-
-/* Hamburger — hidden (slider always visible) */
 .jlz-menu-toggle { display: none !important; }
-
-/* Mobile — slider still visible, items smaller */
-@media (max-width: 640px) {
-  .jlz-nav-link {
-    padding: 4px 10px;
-    font-size: 0.65rem;
-  }
-}
 
 /* ════════════════════════════════════════════════════════════════════
    15. UI OVERHAUL — cinematic typography, glassmorphism, 3D symbiosis
