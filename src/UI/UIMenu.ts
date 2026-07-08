@@ -51,7 +51,7 @@ export class UIMenu {
         <div class="uk-navbar-container uk-navbar-transparent jlz-navbar">
           <div class="uk-container uk-container-xlarge">
             <nav class="uk-navbar" uk-navbar>
-              <div class="uk-navbar-left uk-width-1-1">
+              <div class="uk-navbar-center uk-width-1-1">
                 <div id="slider-nav" class="uk-slider-container uk-margin uk-slider" uk-slider="center: true; active: first" role="region" aria-roledescription="carousel">
                   <div class="uk-position-relative">
                     <ul class="uk-slider-items uk-grid uk-grid-match uk-child-width-auto" aria-live="polite" role="presentation">
