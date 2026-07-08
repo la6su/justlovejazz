@@ -71,7 +71,13 @@ export class UIMenu {
     inner.appendChild(subnav)
     container.appendChild(inner)
     this.navEl.appendChild(container)
-    document.body.appendChild(this.navEl)
+    // Place navbar into #main-nav container (in templates.ts)
+    const navContainer = document.getElementById('main-nav')
+    if (navContainer) {
+      navContainer.appendChild(this.navEl)
+    } else {
+      document.body.appendChild(this.navEl)
+    }
 
     this.updateActive()
   }

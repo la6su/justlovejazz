@@ -246,21 +246,9 @@ section[data-section='contact'] .uk-button-default:hover {
 
 /* Bug 1: before UIkit scrollspy initializes (during splash), section content
    children are invisible. The .scrollspy-pending class on <body> is removed
-   when scrollspy is initialized after splash — then uk-animation-fade takes over
-   without CSS specificity conflicts. */
+   when scrollspy is initialized after splash — then uk-animation-fade takes over. */
 .scrollspy-pending .section-content > * {
   opacity: 0;
-}
-.section-active {
-  opacity: 1;
-}
-.jlz-works-ui {
-  position: absolute;
-  z-index: 999;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  pointer-events: auto;
 }
 #spa-content {
   position: relative;
@@ -589,36 +577,23 @@ canvas {
 }
 
 /* ════════════════════════════════════════════════════════════════════
-   12. Section reveal state (3D↔UI sync)
-   (Moved from tokens.css — used by ContentReveal.ts which adds/removes
-   .section-active on [data-section] elements.)
+   12. Section reveal — uses UIKit scrollspy (uk-animation-fade)
    ════════════════════════════════════════════════════════════════════ */
 
-/* Sections are stacked (position:absolute). Inactive ones are fully hidden
-   so they don't ghost through the transparent section-bg. The active section
-   fades in. pointer-events disabled on hidden sections so they don't block
-   the 3D canvas / sliders. */
+/* Sections are stacked (position:absolute). Inactive sections hidden
+   via UIKit scrollspy (uk-animation-fade handles opacity/visibility).
+   .section-active is used ONLY for pointer-events toggling — the
+   fade in/out is handled by UIKit animation, NOT custom CSS. */
 [data-section] {
-  opacity: 0;
   pointer-events: none;
-  transform: translateY(8px);
-  transition:
-    opacity var(--jlz-duration-normal) var(--jlz-ease-state),
-    transform var(--jlz-duration-normal) var(--jlz-ease-state);
 }
-
 .section-active {
-  opacity: 1 !important;
-  pointer-events: auto !important;
-  transform: translateY(0) !important;
-  transition:
-    opacity var(--jlz-duration-slow) var(--jlz-ease-entrance),
-    transform var(--jlz-duration-slow) var(--jlz-ease-entrance);
+  pointer-events: auto;
 }
 
 @media (prefers-reduced-motion: reduce) {
   [data-section] {
-    transform: none;
+    transform: none !important;
   }
 }
 

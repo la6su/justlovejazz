@@ -14,6 +14,9 @@
 // Index: 0=intro, 1=about, 2=flexible, 3=challenge, 4=innovative, 5=contact
 export function homePage(): string {
   return `
+    <!-- ═══ #main-nav — UIKit navbar container (populated by UIMenu.ts) ═══ -->
+    <div id="main-nav"></div>
+
     <!-- ═══ section-studio → 8 child sections (6 main + 2 secret side) ═══ -->
     <div class="section-studio uk-position-relative">
 
