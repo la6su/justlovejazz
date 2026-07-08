@@ -39,9 +39,10 @@ export class Renderer {
 
     this._pipelineConfig = {
       bloomThreshold: this.capabilities.postProcessing ? 0.5 : 1.0,
-      bloomPasses: this.capabilities.tier === 'high' ? 4 : this.capabilities.tier === 'medium' ? 3 : 2,
-      bloomResRatio: this.capabilities.tier === 'high' ? 0.5 : 0.25,
-      blurRange: this.capabilities.tier === 'high' ? 2.0 : 3.0,
+      // Reduced bloom passes for Safari/iOS perf — 4→2 on high, 3→1 on medium
+      bloomPasses: this.capabilities.tier === 'high' ? 2 : 1,
+      bloomResRatio: this.capabilities.tier === 'high' ? 0.25 : 0.2,
+      blurRange: this.capabilities.tier === 'high' ? 3.0 : 4.0,
       bloomEnabled: this.capabilities.postProcessing,
       vignetteEnabled: true,
       grainEnabled: this.capabilities.tier !== 'low',

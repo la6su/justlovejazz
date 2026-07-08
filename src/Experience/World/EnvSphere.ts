@@ -29,8 +29,8 @@
 import * as THREE from 'three'
 import { prefersReducedMotion } from '../../core/motionPolicy'
 
-const CANVAS_W = 2048
-const CANVAS_H = 1024
+const CANVAS_W = 1024  // was 2048 — half the GPU upload cost
+const CANVAS_H = 512   // was 1024
 
 // Per-section color palette — synced with Experience.ts theme logic.
 // Experience.ts toggles `light-theme` class on sections 0 (intro) and 5 (contact),
@@ -65,7 +65,6 @@ export class EnvSphere extends THREE.Mesh {
   private _canvas: HTMLCanvasElement
   private _ctx: CanvasRenderingContext2D
   private _canvasTexture: THREE.CanvasTexture
-  private _redrawTimer = 0
   private _dirty = true
 
   constructor() {
@@ -159,11 +158,11 @@ export class EnvSphere extends THREE.Mesh {
       }
     }
 
-    // Redraw canvas when dirty OR every ~200ms for animated patterns (HSV sections)
-    this._redrawTimer += dt
-    const hasAnimatedPattern = this._sectionWeights[0]! > 0.01 || this._sectionWeights[1]! > 0.01 || this._sectionWeights[6]! > 0.01
-    if (this._dirty || (hasAnimatedPattern && !prefersReducedMotion() && this._redrawTimer >= 0.2)) {
-      this._redrawTimer = 0
+    // Redraw canvas ONLY when section weights are actively transitioning.
+    // NO per-frame animation redraw — 2048×1024 canvas + GPU upload every
+    // 200ms was the #1 Safari/iOS perf killer.
+    // HSV sections are now static (no animated hue shift) for performance.
+    if (this._dirty) {
       this._redrawCanvas()
       this._canvasTexture.needsUpdate = true
       this._dirty = false

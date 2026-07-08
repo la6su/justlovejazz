@@ -77,7 +77,6 @@ export class SplashCube extends THREE.Mesh {
   private _prevTransitionDir = 0
 
   // Scratch
-  private _tmpColor = new THREE.Color()
 
   constructor() {
     super(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial({ visible: false }))
@@ -282,20 +281,13 @@ export class SplashCube extends THREE.Mesh {
   // ════════════════════════════════════════════════════════════════════
   // UPDATE — called every frame when rendering
   // ════════════════════════════════════════════════════════════════════
-  private _cubeCamFrame = 0 // frame counter for CubeCamera throttling
-
-  update(dt: number, renderer?: THREE.WebGLRenderer): void {
+  // UPDATE — called every frame when rendering
+  // ════════════════════════════════════════════════════════════════════
+  update(dt: number, _renderer?: THREE.WebGLRenderer): void {
     this.time += dt
-    this._cubeCamFrame++
-
-    // ── Update CubeCamera every ~10 frames (expensive on iOS) ──
-    if (renderer && this._cubeCamFrame % 10 === 0) {
-      this.cubeMesh.visible = false
-      this.edgeLines.visible = false
-      this.cubeCamera.update(renderer, this.contentScene)
-      this.cubeMesh.visible = true
-      this.edgeLines.visible = true
-    }
+    // CubeCamera REMOVED — was 6 extra render passes per update, extremely
+    // expensive on Safari/iOS. Reflections come from scene.environment
+    // (RoomEnvironment PMREM) which is free (pre-computed once).
 
     // ── Transition motion (same as before) ──
     const committed = this._prevTransitionDir !== 0
@@ -341,22 +333,9 @@ export class SplashCube extends THREE.Mesh {
     this.cubeMaterial.color.copy(this._blendFromColor).lerp(this._blendToColor, this._blendT)
     this.cubeMaterial.emissive.copy(this._blendFromEmissive).lerp(this._blendToEmissive, this._blendT)
 
-    // ── Animate rainbow edge colors ──
-    const edgeGeo = this.edgeLines.geometry
-    const colorAttr = edgeGeo.attributes.color as THREE.BufferAttribute
-    if (colorAttr) {
-      const positions = edgeGeo.attributes.position!
-      for (let j = 0; j < positions.count; j++) {
-        const x = positions.getX(j)
-        const y = positions.getY(j)
-        const z = positions.getZ(j)
-        const angle = (Math.atan2(y, x) / (Math.PI * 2)) + 0.5
-        const hue = (angle + z * 0.1 + this.time * 0.05) % 1.0
-        this._tmpColor.setHSL(hue, 1.0, 0.6)
-        colorAttr.setXYZ(j, this._tmpColor.r, this._tmpColor.g, this._tmpColor.b)
-      }
-      colorAttr.needsUpdate = true
-    }
+    // Edge colors are STATIC — set once in buildCube, NOT animated per frame.
+    // Per-frame edge animation was allocating new Color objects + updating
+    // GPU buffer every frame — major Safari/iOS perf killer.
 
     // ── Apply role when changed ──
     if (this.targetParams.role !== this._currentRole) {
