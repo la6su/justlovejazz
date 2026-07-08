@@ -1,15 +1,20 @@
-// UIMenu.ts — UIKit slider nav for section navigation.
+// UIMenu.ts — UIKit slider nav in sticky header.
 //
-// Uses UIKit3 components:
-//   - uk-sticky (sticky header, show-on-up animation)
-//   - uk-navbar-container (navbar shell)
-//   - uk-slider (infinite scroll slider with section pills)
-//   - uk-slider-items + uk-grid (slider items layout)
+// Structure (per user request — UIKit3 components only):
+//   <header class="tm-header">
+//     <div uk-sticky="show-on-up; animation: uk-animation-slide-top">
+//       <div class="uk-navbar-container uk-navbar-transparent">
+//         <div class="uk-container uk-container-xlarge">
+//           <nav class="uk-navbar" uk-navbar>
+//             <div class="uk-navbar-left uk-width-1-1">
+//               <div id="slider-nav" class="uk-slider" uk-slider="center: true; active: first">
+//                 <ul class="uk-slider-items uk-grid uk-grid-match uk-child-width-auto">
+//                   <li class="jlz-nav-item"><a class="jlz-nav-link">Intro</a></li>
+//                   ...
 //
-// Shows 6 MAIN sections only (no Lab/Process in nav).
-// Active slide syncs with JoystickNav section changes.
-// Always visible on desktop + mobile.
-// Click slide → goToSection.
+// Slider provides infinite scroll on mobile (swipe through sections).
+// 6 MAIN sections only (no Lab/Process).
+// Active slide syncs with JoystickNav.
 
 import UIkit from 'uikit'
 
@@ -18,30 +23,27 @@ export interface UIMenuOptions {
   sectionSubtitles?: string[]
 }
 
-// Only main sections appear in nav (skip Lab=0 and Process=7)
-const MAIN_SECTION_INDICES = [1, 2, 3, 4, 5, 6] // Intro, About, Flexible, Works, Innovative, Contact
+const MAIN_SECTION_INDICES = [1, 2, 3, 4, 5, 6]
 
 export class UIMenu {
   public button: HTMLButtonElement
   private navEl: HTMLElement
   private slider: HTMLElement
   private items: HTMLElement[] = []
-  private _activeIndex = 1 // starts on Intro (index 1)
+  private _activeIndex = 1
   private _onNavigate: ((index: number) => void) | null = null
+  private _sliderComponent: { show: (idx: number) => void } | null = null
 
   constructor(opts: UIMenuOptions) {
     const labels = opts.sectionLabels
 
-    // ── Hamburger button — hidden (nav is always visible) ──
+    // Dummy button (hidden — nav is always visible)
     this.button = document.createElement('button')
     this.button.id = 'jlz-menu-toggle'
     this.button.className = 'jlz-menu-toggle'
-    this.button.type = 'button'
     this.button.style.display = 'none'
-    this.button.setAttribute('aria-label', 'Section navigation')
-    this.button.innerHTML = ''
 
-    // ── UIKit sticky header with navbar + slider ──
+    // ── UIKit header with sticky + navbar + slider ──
     this.navEl = document.createElement('header')
     this.navEl.className = 'tm-header'
     this.navEl.innerHTML = `
@@ -50,9 +52,9 @@ export class UIMenu {
           <div class="uk-container uk-container-xlarge">
             <nav class="uk-navbar" uk-navbar>
               <div class="uk-navbar-left uk-width-1-1">
-                <div id="slider-nav" class="uk-slider uk-margin jlz-slider-nav" uk-slider="center: true; active: first" role="region" aria-roledescription="carousel">
+                <div id="slider-nav" class="uk-slider-container uk-margin uk-slider" uk-slider="center: true; active: first" role="region" aria-roledescription="carousel">
                   <div class="uk-position-relative">
-                    <ul class="uk-slider-items uk-grid uk-grid-match uk-child-width-auto" aria-live="polite">
+                    <ul class="uk-slider-items uk-grid uk-grid-match uk-child-width-auto" aria-live="polite" role="presentation">
                     </ul>
                   </div>
                 </div>
@@ -63,7 +65,7 @@ export class UIMenu {
       </div>
     `
 
-    // Build slider items — only main sections
+    // Build slider items
     const ul = this.navEl.querySelector('.uk-slider-items')!
     MAIN_SECTION_INDICES.forEach((sectionIdx) => {
       const li = document.createElement('li')
@@ -88,16 +90,11 @@ export class UIMenu {
 
     this.slider = this.navEl.querySelector('#slider-nav')!
 
-    // Place into #main-nav container (in templates.ts)
-    const navContainer = document.getElementById('main-nav')
-    if (navContainer) {
-      navContainer.appendChild(this.navEl)
-    } else {
-      document.body.appendChild(this.navEl)
-    }
+    // Append to body (before section-studio)
+    document.body.insertBefore(this.navEl, document.body.firstChild)
 
-    // Initialize UIKit slider
-    UIkit.slider(this.slider)
+    // Init UIKit slider
+    this._sliderComponent = UIkit.slider(this.slider)
 
     this.updateActive()
   }
@@ -112,11 +109,14 @@ export class UIMenu {
   }
 
   private updateActive(): void {
-    // Find which main section index matches
     const mainIdx = MAIN_SECTION_INDICES.indexOf(this._activeIndex)
     this.items.forEach((item, i) => {
       item.classList.toggle('uk-active', i === mainIdx)
     })
+    // Scroll slider to active item
+    if (mainIdx >= 0 && this._sliderComponent) {
+      this._sliderComponent.show(mainIdx)
+    }
   }
 
   dispose(): void {
