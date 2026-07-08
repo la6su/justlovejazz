@@ -15,7 +15,7 @@ import { ProjectOverlay } from '../UI/ProjectOverlay'
 import { Subtitles } from '../UI/Subtitles'
 
 import { AudioSystem } from '../core/AudioSystem'
-import { CircularNav } from '../UI/CircularNav'
+import { JoystickNav } from '../UI/JoystickNav'
 import { UIMenu } from '../UI/UIMenu'
 import { updateWorldDNAAudio } from './World/worldDNA'
 import { prefersReducedMotion } from '../core/motionPolicy'
@@ -59,7 +59,7 @@ export class Experience {
   private _onSizesResize: () => void = () => {}
   private _onVisibilityChange: (() => void) | null = null
   public audio: AudioSystem = new AudioSystem()
-  private _circNav: CircularNav | null = null
+  private _circNav: JoystickNav | null = null
   private _needsRender = true // start true to render the first frame
   private _bakuCarouselActive = false // BakuCarousel is morphed/scrolling
   // A4: ambient breathing — periodic 1-frame refresh in idle (no continuous loop)
@@ -238,8 +238,8 @@ export class Experience {
     // WebGPURenderer it may fail (duck-typed), so we fall back gracefully.
     this.setupEnvironment()
 
-    // CircularNav — created BEFORE DevPanel so DevPanel can read nav state
-    this._circNav = new CircularNav(6, {
+    // JoystickNav — joystick-based section navigation (replaces CircularNav)
+    this._circNav = new JoystickNav(this.scene, this.camera.instance, 6, {
       sectionLabels: Experience.SECTION_LABELS,
     })
     this._circNav.onSectionChange((idx) => {
@@ -259,7 +259,8 @@ export class Experience {
       this._circNav?.goToSection(idx)
     })
 
-    document.body.appendChild(this._circNav.el)
+    // JoystickNav is 3D (adds joystick to scene) — no DOM element needed.
+    // UIMenu button is appended to body.
     document.body.appendChild(this._uiMenu.button)
 
     // DevPanel — created AFTER nav so it can read current section
