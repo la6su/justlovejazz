@@ -221,7 +221,7 @@ export class World extends THREE.Group {
     if (!needsRender) return
 
     if (!this.isReducedMotion) {
-      this.baku.update(deltaTime)
+      this.baku.update(deltaTime, this._renderer)
       // Update instanced particles (GPU drift) — frozen when idle
       updateInstancedParticles(deltaTime)
       // DrawTrail only on works section (idx=3)
@@ -563,6 +563,12 @@ export class World extends THREE.Group {
   }
 
   private _camera: THREE.Camera | undefined
+  private _renderer: THREE.WebGLRenderer | undefined
+
+  /** Set renderer reference for CubeCamera updates. */
+  public setRenderer(renderer: THREE.WebGLRenderer): void {
+    this._renderer = renderer
+  }
 
   /** Smoothstep easing: S-curve for comfort zones */
   private _smoothstep(t: number): number {

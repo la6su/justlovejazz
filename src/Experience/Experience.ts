@@ -436,6 +436,7 @@ export class Experience {
     document.body.classList.toggle('light-theme', isLightSection)
     // Give World the camera ref for DrawTrail (once, after init).
     this.world.setCamera(this.camera.instance)
+    this.world.setRenderer(this.renderer.instance as THREE.WebGLRenderer)
 
     // Dispatch section-change on EVERY section index change (not just context).
     // This triggers NoiseText title animation for the new section.

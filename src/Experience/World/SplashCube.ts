@@ -2,9 +2,16 @@
 // Apple Fifth Avenue-style glass cube — IS our Baku.
 //
 // The cube IS the baku: it stays on all sections, rotating, changing materials
-// per section role (GLASS/WIRE/NORMAL). During splash: rotates + edges brighten
-// with progress. At 100%: "opener" — faces pulse outward + back (not dissolve).
-// After opener: cube continues as baku on all sections.
+// per section role. During splash: rotates + edges brighten with progress.
+// At 100%: "opener" — cube scales up + back (breathing).
+//
+// Architecture (porting github.com/lorenzocadamuro/apple-fifth-avenue):
+//   1. Content scene — gradient backgrounds + Apple logo/text textures
+//   2. CubeCamera — renders content scene into a cubemap (6 faces)
+//   3. Cube mesh — single BoxGeometry with MeshPhysicalMaterial
+//      envMap = CubeCamera render target → rich reflections
+//   4. Rainbow edges — EdgesGeometry with vertex colors (HSL by angle)
+//   5. Opener — scale pulse (not face separation — single mesh)
 
 import * as THREE from 'three'
 import { Noise } from '../../Utils/Noise'
@@ -18,42 +25,35 @@ export interface BakuMaterialParams {
   role: BakuRole
 }
 
-// Transmission is DISABLED on the PARITY path (WebGL2 / WebGLBackend fallback).
-// On the PREMIUM path (real WebGPU, see DeviceCapability.isRealWebGPU) we use
-// MeshPhysicalNodeMaterial with transmission=1 — true glass refraction.
-// The parity path uses opacity-based glass instead — consistent visual parity.
-// Env map reflections (from RoomEnvironment PMREM) provide the glass look on
-// both paths; the premium path additionally gets worldDNA TSL displacement +
-// iridescent shimmer + rim glow.
-
-/** Kept for API compat — Renderer.init() imports this but it's a no-op now.
- *  Transmission is gated by `isRealWebGPU` in SplashCube.buildCube(). */
+/** Kept for API compat — Renderer.init() imports this. */
 export function setTransmissionEnabled(_enabled: boolean): void {
-  // No-op — transmission is decided at material-creation time in buildCube()
+  // No-op
 }
 
-/** Rotation per section transition (radians). ~30° = π/6. Persistent —
- *  committed to _idleRotY so the cube stays rotated after each transition. */
+/** Rotation per section transition (radians). ~30° = π/6. */
 const ROT_PER_TRANSITION = Math.PI / 6
 
+// ── Apple Fifth Avenue gradient colors (from gradients.glsl) ──
+const GRADIENT_COLORS = [
+  [0.98, 0.71, 0.0],  // gold
+  [0.95, 0.20, 0.14], // red
+  [0.89, 0.12, 0.78], // magenta
+  [0.30, 0.24, 0.96], // blue
+  [1.0, 0.8, 0.2],    // yellow
+  [0.29, 0.68, 0.95], // cyan
+]
+
 export class SplashCube extends THREE.Mesh {
-  private faces: THREE.Mesh[] = []
-  private faceMaterials: THREE.MeshPhysicalMaterial[] = []
-  private edgeLines: THREE.LineSegments[] = []
+  private cubeMesh!: THREE.Mesh
+  private edgeLines!: THREE.LineSegments
+  private cubeMaterial!: THREE.MeshPhysicalMaterial
+  private cubeCamera!: THREE.CubeCamera
+  private contentScene!: THREE.Scene
+  private contentTextures: THREE.Texture[] = []
   private time = 0
-  private openerProgress = 0 // 0=closed, 1=fully opened (pulsed out)
+  private openerProgress = 0
   private openerTarget = 0
   private openerPhase: 'idle' | 'opening' | 'closing' | 'done' = 'idle'
-
-  // Face directions: +X, -X, +Y, -Y, +Z, -Z
-  private readonly faceDirs = [
-    new THREE.Vector3(1, 0, 0),
-    new THREE.Vector3(-1, 0, 0),
-    new THREE.Vector3(0, 1, 0),
-    new THREE.Vector3(0, -1, 0),
-    new THREE.Vector3(0, 0, 1),
-    new THREE.Vector3(0, 0, -1),
-  ]
 
   private targetParams: BakuMaterialParams = {
     color: new THREE.Color(0x333333),
@@ -63,44 +63,134 @@ export class SplashCube extends THREE.Mesh {
     role: BakuRole.NORMAL,
   }
   private _currentRole: BakuRole | null = null
-  // worldDNA blend state (set by Experience.update every frame)
   private _blendFromColor: THREE.Color = new THREE.Color(0x3a3a5e)
   private _blendToColor: THREE.Color = new THREE.Color(0x3a3a5e)
   private _blendFromEmissive: THREE.Color = new THREE.Color(0x5a5a8a)
   private _blendToEmissive: THREE.Color = new THREE.Color(0x5a5a8a)
   private _blendT: number = 0
-  // Pre-allocated scratch vectors — avoid per-face per-frame allocations
-  private _tmpFaceOffset: THREE.Vector3 = new THREE.Vector3()
+
+  // Transition state
+  private _transitionT = 0
+  private _transitionDir = 0
+  private _idleRotY = 0
+  private _prevTransitionT = 0
+  private _prevTransitionDir = 0
+
+  // Scratch
+  private _tmpColor = new THREE.Color()
 
   constructor() {
-    // Dummy geometry — we render faces as children, not the mesh itself.
-    // Built-in MeshBasicMaterial (NOT NodeMaterial) — reduces uniform group count.
     super(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial({ visible: false }))
     this.name = 'baku-cube'
     this.visible = true
+    this.buildContentScene()
     this.buildCube()
   }
 
+  // ════════════════════════════════════════════════════════════════════
+  // CONTENT SCENE — rendered by CubeCamera into cubemap for reflections
+  // ════════════════════════════════════════════════════════════════════
+  private buildContentScene(): void {
+    this.contentScene = new THREE.Scene()
+
+    // Load Apple textures (logo, text-1, text-2)
+    const loader = new THREE.TextureLoader()
+    const logoTex = loader.load('/assets/logo.png')
+    const text1Tex = loader.load('/assets/text-1.png')
+    const text2Tex = loader.load('/assets/text-2.png')
+    logoTex.colorSpace = THREE.SRGBColorSpace
+    text1Tex.colorSpace = THREE.SRGBColorSpace
+    text2Tex.colorSpace = THREE.SRGBColorSpace
+    this.contentTextures = [logoTex, text1Tex, text2Tex]
+
+    // 6 gradient planes — one per cube face direction.
+    // Each plane faces inward (toward cube center) so CubeCamera sees them.
+    // Colors from Apple gradients.glsl — vibrant, rainbow-like.
+    const size = 10
+    const half = size / 2
+    const dirs: { pos: number[]; rot: number[]; color: number[] }[] = [
+      { pos: [half, 0, 0], rot: [0, -Math.PI / 2, 0], color: GRADIENT_COLORS[0]! },
+      { pos: [-half, 0, 0], rot: [0, Math.PI / 2, 0], color: GRADIENT_COLORS[1]! },
+      { pos: [0, half, 0], rot: [-Math.PI / 2, 0, 0], color: GRADIENT_COLORS[2]! },
+      { pos: [0, -half, 0], rot: [Math.PI / 2, 0, 0], color: GRADIENT_COLORS[3]! },
+      { pos: [0, 0, half], rot: [0, 0, 0], color: GRADIENT_COLORS[4]! },
+      { pos: [0, 0, -half], rot: [0, Math.PI, 0], color: GRADIENT_COLORS[5]! },
+    ]
+
+    for (const d of dirs) {
+      const geo = new THREE.PlaneGeometry(size, size)
+      const mat = new THREE.MeshBasicMaterial({
+        color: new THREE.Color(d.color[0]!, d.color[1]!, d.color[2]!),
+        side: THREE.FrontSide, // FrontSide — faces inward toward CubeCamera at center
+        fog: false,
+      })
+      const plane = new THREE.Mesh(geo, mat)
+      plane.position.set(d.pos[0]!, d.pos[1]!, d.pos[2]!)
+      plane.rotation.set(d.rot[0]!, d.rot[1]!, d.rot[2]!)
+      this.contentScene.add(plane)
+    }
+
+    // Add logo texture on front face (facing inward — CubeCamera sees it)
+    const logoGeo = new THREE.PlaneGeometry(3, 3)
+    const logoMat = new THREE.MeshBasicMaterial({
+      map: logoTex,
+      transparent: true,
+      side: THREE.FrontSide,
+      fog: false,
+    })
+    const logoMesh = new THREE.Mesh(logoGeo, logoMat)
+    logoMesh.position.set(0, 0, half - 0.1)
+    // No rotation needed — default plane faces +Z, position is +Z, CubeCamera sees it
+    this.contentScene.add(logoMesh)
+
+    // Add text textures on side faces
+    const text1Mesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(4, 1.5),
+      new THREE.MeshBasicMaterial({ map: text1Tex, transparent: true, side: THREE.FrontSide, fog: false }),
+    )
+    text1Mesh.position.set(half - 0.1, 0, 0)
+    text1Mesh.rotation.y = -Math.PI / 2
+    this.contentScene.add(text1Mesh)
+
+    const text2Mesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(4, 1.5),
+      new THREE.MeshBasicMaterial({ map: text2Tex, transparent: true, side: THREE.FrontSide, fog: false }),
+    )
+    text2Mesh.position.set(-half + 0.1, 0, 0)
+    text2Mesh.rotation.y = Math.PI / 2
+    this.contentScene.add(text2Mesh)
+
+    // CubeCamera — renders content scene into cubemap
+    // Positioned at cube center, renders 6 faces
+    const cubeRT = new THREE.WebGLCubeRenderTarget(256, {
+      format: THREE.RGBAFormat,
+      generateMipmaps: true,
+      minFilter: THREE.LinearMipmapLinearFilter,
+    })
+    this.cubeCamera = new THREE.CubeCamera(0.1, 100, cubeRT)
+    this.cubeCamera.position.set(0, 0, 0)
+    this.contentScene.add(this.cubeCamera)
+  }
+
+  // ════════════════════════════════════════════════════════════════════
+  // CUBE MESH — single BoxGeometry (smooth edges, no pixelation)
+  // ════════════════════════════════════════════════════════════════════
   private buildCube(): void {
     const size = 1.6
-    const half = size / 2
 
-    // ── Glass cube: MeshPhysicalMaterial (works on ALL backends) ──
-    // WebGPURenderer auto-wraps built-in materials in TSL — no compatibility
-    // issues. Custom ShaderMaterial with GLSL does NOT work on WebGPU
-    // (NodeBuilder rejects it). MeshPhysicalMaterial gives us:
-    //   - envMap reflections (from scene.environment PMREM)
-    //   - iridescence (rainbow shimmer — the "Apple glass" look)
-    //   - clearcoat (surface gloss)
-    //   - transparency (opacity-based glass)
-    const sharedMat = new THREE.MeshPhysicalMaterial({
+    // Single BoxGeometry — smooth, continuous edges (no gaps between faces)
+    const geo = new THREE.BoxGeometry(size, size, size)
+
+    // MeshPhysicalMaterial with CubeCamera cubemap as envMap
+    // This gives rich reflections (logo, gradients, text) — Apple Fifth Avenue look
+    this.cubeMaterial = new THREE.MeshPhysicalMaterial({
       color: 0xffffff,
       emissive: 0x1a2a4a,
       emissiveIntensity: 0.12,
       transparent: true,
-      opacity: 0.45,
+      opacity: 0.55,
       side: THREE.DoubleSide,
-      roughness: 0.02,
+      roughness: 0.05,
       metalness: 0.0,
       iridescence: 1.0,
       iridescenceIOR: 1.3,
@@ -109,80 +199,61 @@ export class SplashCube extends THREE.Mesh {
       transmission: 0,
       thickness: 1.2,
       ior: 1.52,
-      envMapIntensity: 1.5,
+      envMapIntensity: 2.0, // strong reflections from CubeCamera
       depthWrite: false,
     })
-    this.faceMaterials.push(sharedMat)
 
-    for (let i = 0; i < 6; i++) {
-      const dir = this.faceDirs[i]!
+    // Set envMap from CubeCamera (works on all backends)
+    this.cubeMaterial.envMap = this.cubeCamera.renderTarget.texture
 
-      const geo = new THREE.PlaneGeometry(size, size)
-      const face = new THREE.Mesh(geo, sharedMat)
-      face.userData = { dir: dir.clone(), basePos: dir.clone().multiplyScalar(half) }
-      face.position.copy(face.userData.basePos)
-      face.lookAt(dir.clone().multiplyScalar(half * 2))
-      face.renderOrder = 2
+    this.cubeMesh = new THREE.Mesh(geo, this.cubeMaterial)
+    this.cubeMesh.renderOrder = 2
+    this.add(this.cubeMesh)
 
-      this.faces.push(face)
-      this.add(face)
-
-      // ── Rainbow edge lines (Apple Fifth Avenue style) ──
-      // Each edge vertex gets a rainbow color based on its position.
-      // LineBasicMaterial with vertexColors=true renders per-vertex colors.
-      // On WebGPU: LineBasicMaterial auto-wraps in TSL — vertexColors works.
-      // On WebGL2: LineBasicMaterial native GLSL — vertexColors works.
-      // No ShaderMaterial needed → no NodeBuilder compatibility issues.
-      const edgeGeo = new THREE.EdgesGeometry(geo)
-      const positions = edgeGeo.attributes.position!
-      const colors = new Float32Array(positions.count * 3)
-      for (let j = 0; j < positions.count; j++) {
-        // Rainbow based on vertex position angle
-        const x = positions.getX(j)
-        const y = positions.getY(j)
-        const angle = (Math.atan2(y, x) / (Math.PI * 2)) + 0.5
-        // HSV to RGB: hue=angle, saturation=1, value=1
-        const h = angle % 1.0
-        const s = 1.0
-        const v = 1.0
-        const c = new THREE.Color().setHSL(h, s, v)
-        colors[j * 3] = c.r
-        colors[j * 3 + 1] = c.g
-        colors[j * 3 + 2] = c.b
-      }
-      edgeGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3))
-
-      const edgeMat = new THREE.LineBasicMaterial({
-        vertexColors: true,
-        transparent: true,
-        opacity: 1.0,
-        linewidth: 2,
-        blending: THREE.NormalBlending, // additive blends into bg — normal keeps colors
-        depthWrite: false,
-        depthTest: false,
-      })
-      const edges = new THREE.LineSegments(edgeGeo, edgeMat)
-      edges.position.copy(face.position)
-      edges.rotation.copy(face.rotation)
-      edges.renderOrder = 10 // above faces (renderOrder=2)
-      this.edgeLines.push(edges)
-      this.add(edges)
+    // ── Rainbow edges — single EdgesGeometry from BoxGeometry ──
+    // 12 edges total (not 6×4=24 from separate planes). Smoother appearance.
+    const edgeGeo = new THREE.EdgesGeometry(geo)
+    const positions = edgeGeo.attributes.position!
+    const colors = new Float32Array(positions.count * 3)
+    for (let j = 0; j < positions.count; j++) {
+      const x = positions.getX(j)
+      const y = positions.getY(j)
+      const z = positions.getZ(j)
+      // Rainbow based on 3D position angle (spherical)
+      const angle = (Math.atan2(y, x) / (Math.PI * 2)) + 0.5
+      const hue = (angle + z * 0.1) % 1.0
+      const c = new THREE.Color().setHSL(hue, 1.0, 0.6)
+      colors[j * 3] = c.r
+      colors[j * 3 + 1] = c.g
+      colors[j * 3 + 2] = c.b
     }
+    edgeGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3))
+
+    const edgeMat = new THREE.LineBasicMaterial({
+      vertexColors: true,
+      transparent: true,
+      opacity: 1.0,
+      linewidth: 2,
+      blending: THREE.NormalBlending,
+      depthWrite: false,
+      depthTest: false,
+    })
+    this.edgeLines = new THREE.LineSegments(edgeGeo, edgeMat)
+    this.edgeLines.renderOrder = 10
+    this.add(this.edgeLines)
   }
 
-  /** Drive loading progress (0-1). No-op — edge glow was removed for
-   *  on-demand rendering. Kept for API compat (main-app calls it). */
-  setProgress(_p: number): void {
-    // No-op
-  }
+  // ════════════════════════════════════════════════════════════════════
+  // API (kept for Experience compatibility)
+  // ════════════════════════════════════════════════════════════════════
 
-  /** Trigger the opener — faces pulse outward + back (cube "breathes" open). */
+  setProgress(_p: number): void { /* no-op */ }
+
   triggerOpener(): void {
     this.openerPhase = 'opening'
     this.openerTarget = 1
   }
 
-  /** Alias for Experience.update() compatibility (Baku API). */
   updateMaterial(params: BakuMaterialState): void {
     this.targetParams = {
       color: params.color ? new THREE.Color(params.color) : this.targetParams.color,
@@ -193,176 +264,15 @@ export class SplashCube extends THREE.Mesh {
     }
   }
 
-  /** Transition progress (0-1) set by Experience during section change.
-   *  0 = idle (static), 0→1 = transitioning to next section.
-   *  Drives a one-shot rotation + tilt + drift + scale pulse. */
-  private _transitionT = 0
-  private _transitionDir = 0 // +1 = next, -1 = prev
-  private _idleRotY = 0 // accumulated rotation that stays after transition
-  // Previous-frame transition state — used to detect section-commit (the
-  // moment nav._progress snaps from ~1 back to 0, dir goes nonzero→0).
-  private _prevTransitionT = 0
-  private _prevTransitionDir = 0
-
-  /** Called by Experience when a section transition is in progress.
-   *  t = 0..1 (transition progress), dir = +1 (next) or -1 (prev). */
   setTransition(t: number, dir: number): void {
     this._transitionT = t
     this._transitionDir = dir
   }
 
-  update(dt: number): void {
-    this.time += dt
-
-    // ════════════════════════════════════════════════════════════════════
-    // SEAMLESS CINEMATIC TRANSITION
-    // ════════════════════════════════════════════════════════════════════
-    // Two easing curves drive different aspects of the animation:
-    //
-    //   tEase = smoothstep(transitionT)  — 0→1 monotonically (persistent)
-    //   sinT  = sin(tEase * PI)          — 0→1→0 (transient: 0 at both ends)
-    //
-    // PERSISTENT effects (rotation Y) use tEase and are COMMITTED to
-    // _idleRotY when the transition completes, so the cube stays rotated —
-    // no snap-back.
-    //
-    // TRANSIENT effects (tilt X, drift XY, scale, displacement) use sinT
-    // so they are exactly 0 at transition start AND end. When the section
-    // commits (transitionT→0), these are already 0 → no jerk.
-    //
-    // COMMIT DETECTION: nav._progress snaps from ~0.99 to 0 in one frame
-    // when the section changes, so transitionDir goes nonzero→0. We detect
-    // this (prevDir≠0 && dir==0 && prevT>0.5) and accumulate the rotation.
-    // The 0.5 threshold ensures snap-backs (progress<0.5) don't commit.
-    // ════════════════════════════════════════════════════════════════════
-
-    // ── Detect transition completion & commit rotation ──
-    const committed = this._prevTransitionDir !== 0
-      && this._transitionDir === 0
-      && this._prevTransitionT > 0.5
-    if (committed) {
-      this._idleRotY += this._prevTransitionDir * ROT_PER_TRANSITION
-    }
-
-    // ── Easing curves ──
-    const tEase = this._transitionT * this._transitionT * (3 - 2 * this._transitionT)
-    const sinT = Math.sin(tEase * Math.PI) // 0 at t=0 and t=1, 1 at t=0.5
-    // Use the direction that's active this frame; on the commit frame,
-    // _transitionDir is already 0, so fall back to prevDir for one frame
-    // (tEase is 0 on that frame, so the direction doesn't affect the result,
-    // but it keeps the code path clean).
-    const dir = this._transitionDir || this._prevTransitionDir
-
-    // ════════════════════════════════════════════════════════════════════
-    // CINEMATIC MULTI-AXIS MOTION
-    // ════════════════════════════════════════════════════════════════════
-    // Persistent (commits to _idleRotY):
-    //   rotation.y — 30° per transition, accumulates
-    //
-    // Transient (sinT-scaled → 0 at start AND end, no jerk on commit):
-    //   rotation.x — tilt (peaks ~7° at mid)
-    //   rotation.z — Dutch roll (peaks ~3.5° at mid — cinematic flair)
-    //   position.x — organic drift
-    //   position.y — organic drift + upward lift (dir-independent "float")
-    //   scale      — breathe (peaks +5% at mid)
-    //
-    // All transient effects return to exactly 0/1 before the section commits,
-    // so the cube settles cleanly into its new idle state with no snap.
-    // ════════════════════════════════════════════════════════════════════
-
-    // ── Rotation Y (persistent — commits to _idleRotY) ──
-    this.rotation.y = this._idleRotY + dir * tEase * ROT_PER_TRANSITION
-
-    // ── Tilt X (transient — peaks at mid, returns to 0) ──
-    this.rotation.x = sinT * 0.12 * dir
-
-    // ── Dutch roll Z (transient — subtle cinematic angle) ──
-    this.rotation.z = sinT * 0.06 * dir
-
-    // ── Drift XY + lift (transient — organic, returns to origin) ──
-    // X: pure noise drift (directional, peaks at mid)
-    // Y: noise drift (directional) + upward lift (dir-independent "float")
-    // The lift gives the cube a weightless "rising" feel during transitions.
-    this.position.x = Noise.organicValue(this.time, 10, 0.15, 0.08) * sinT * dir
-    this.position.y = Noise.organicValue(this.time, 20, 0.18, 0.08) * sinT * dir
-    this.position.y += sinT * 0.15 // upward lift (always positive — "floats" up)
-
-    // ── Scale pulse (transient — subtle weight at mid) ──
-    this.scale.setScalar(1 + sinT * 0.05)
-
-    // ── Save prev state for next frame's commit detection ──
-    this._prevTransitionT = this._transitionT
-    this._prevTransitionDir = this._transitionDir
-
-    // ════════════════════════════════════════════════════════════════════
-    // OPENER (splash intro only — independent of section transitions)
-    // ════════════════════════════════════════════════════════════════════
-    if (this.openerPhase !== 'done' || this.openerProgress > 0.01) {
-      this.openerProgress += (this.openerTarget - this.openerProgress) * Math.min(1, dt * 4)
-      if (this.openerPhase === 'opening' && this.openerProgress > 0.9) {
-        this.openerPhase = 'closing'
-        this.openerTarget = 0
-      } else if (this.openerPhase === 'closing' && this.openerProgress < 0.05) {
-        this.openerPhase = 'done'
-        this.openerProgress = 0
-        // Snap faces EXACTLY back to base positions
-        for (let i = 0; i < this.faces.length; i++) {
-          const basePos = this.faces[i]!.userData.basePos as THREE.Vector3
-          this.faces[i]!.position.copy(basePos)
-          this.faces[i]!.rotation.z = 0
-          this.edgeLines[i]!.position.copy(basePos)
-          this.edgeLines[i]!.rotation.copy(this.faces[i]!.rotation)
-        }
-      }
-
-      if (this.openerPhase !== 'done') {
-        const pulse = this.openerProgress * 0.8
-        for (let i = 0; i < this.faces.length; i++) {
-          const faceDir = this.faces[i]!.userData.dir as THREE.Vector3
-          const basePos = this.faces[i]!.userData.basePos as THREE.Vector3
-          this._tmpFaceOffset.copy(faceDir).multiplyScalar(pulse)
-          this.faces[i]!.position.copy(basePos).add(this._tmpFaceOffset)
-          this.faces[i]!.rotation.z = this.openerProgress * 0.3 * (i % 2 === 0 ? 1 : -1)
-          this.edgeLines[i]!.position.copy(this.faces[i]!.position)
-          this.edgeLines[i]!.rotation.copy(this.faces[i]!.rotation)
-          this.edgeLines[i]!.rotation.z = this.faces[i]!.rotation.z
-        }
-      }
-    }
-
-    // ════════════════════════════════════════════════════════════════════
-    // Material update — blend section colors
-    // ════════════════════════════════════════════════════════════════════
-    const mat = this.faceMaterials[0]!
-    mat.color.copy(this._blendFromColor).lerp(this._blendToColor, this._blendT)
-    mat.emissive.copy(this._blendFromEmissive).lerp(this._blendToEmissive, this._blendT)
-
-    // Animate rainbow edge colors (subtle hue rotation over time)
-    for (const edges of this.edgeLines) {
-      const geo = edges.geometry
-      const colorAttr = geo.attributes.color as THREE.BufferAttribute
-      if (colorAttr) {
-        const positions = geo.attributes.position!
-        for (let j = 0; j < positions.count; j++) {
-          const x = positions.getX(j)
-          const y = positions.getY(j)
-          const angle = (Math.atan2(y, x) / (Math.PI * 2)) + 0.5
-          const hue = (angle + this.time * 0.05) % 1.0
-          const c = new THREE.Color().setHSL(hue, 1.0, 0.6)
-          colorAttr.setXYZ(j, c.r, c.g, c.b)
-        }
-        colorAttr.needsUpdate = true
-      }
-    }
-
-    // Apply role/material when role changes
-    if (this.targetParams.role !== this._currentRole) {
-      this._currentRole = this.targetParams.role
-      this.applyRoleAndParams()
-    }
+  setEnvAndCamera(_envMap: THREE.Texture | null, _cameraPos: THREE.Vector3): void {
+    // No-op — envMap comes from CubeCamera
   }
 
-  /** Update worldDNA blend state from scroll progress. Called by Experience.update every frame. */
   updateWorldBlend(fromColor: THREE.Color, toColor: THREE.Color, fromEmissive: THREE.Color, toEmissive: THREE.Color, t: number, _fromDisplace: number = 0.05, _toDisplace: number = 0.05): void {
     this._blendFromColor.copy(fromColor)
     this._blendToColor.copy(toColor)
@@ -371,33 +281,106 @@ export class SplashCube extends THREE.Mesh {
     this._blendT = t
   }
 
-  /** Kept for API compat — Experience calls this but env map is set via
-   *  scene.environment (auto-applied to MeshPhysicalMaterial). */
-  setEnvAndCamera(_envMap: THREE.Texture | null, _cameraPos: THREE.Vector3): void {
-    // No-op — MeshPhysicalMaterial reads scene.environment automatically
+  // ════════════════════════════════════════════════════════════════════
+  // UPDATE — called every frame when rendering
+  // ════════════════════════════════════════════════════════════════════
+  update(dt: number, renderer?: THREE.WebGLRenderer): void {
+    this.time += dt
+
+    // ── Update CubeCamera (renders content scene into cubemap) ──
+    // This provides the rich reflections (logo, gradients, text)
+    if (renderer) {
+      // Make cube invisible during CubeCamera render (avoid self-reflection)
+      this.cubeMesh.visible = false
+      this.edgeLines.visible = false
+      this.cubeCamera.update(renderer, this.contentScene)
+      this.cubeMesh.visible = true
+      this.edgeLines.visible = true
+    }
+
+    // ── Transition motion (same as before) ──
+    const committed = this._prevTransitionDir !== 0
+      && this._transitionDir === 0
+      && this._prevTransitionT > 0.5
+    if (committed) {
+      this._idleRotY += this._prevTransitionDir * ROT_PER_TRANSITION
+    }
+
+    const tEase = this._transitionT * this._transitionT * (3 - 2 * this._transitionT)
+    const sinT = Math.sin(tEase * Math.PI)
+    const dir = this._transitionDir || this._prevTransitionDir
+
+    // Rotation Y (persistent)
+    this.rotation.y = this._idleRotY + dir * tEase * ROT_PER_TRANSITION
+    // Tilt X (transient)
+    this.rotation.x = sinT * 0.12 * dir
+    // Dutch roll Z (transient)
+    this.rotation.z = sinT * 0.06 * dir
+    // Drift XY + lift (transient)
+    this.position.x = Noise.organicValue(this.time, 10, 0.15, 0.08) * sinT * dir
+    this.position.y = Noise.organicValue(this.time, 20, 0.18, 0.08) * sinT * dir
+    this.position.y += sinT * 0.15
+    // Scale pulse (transient)
+    this.scale.setScalar(1 + sinT * 0.05)
+
+    this._prevTransitionT = this._transitionT
+    this._prevTransitionDir = this._transitionDir
+
+    // ── Opener (scale pulse, not face separation) ──
+    if (this.openerPhase !== 'done' || this.openerProgress > 0.01) {
+      this.openerProgress += (this.openerTarget - this.openerProgress) * Math.min(1, dt * 4)
+      if (this.openerPhase === 'opening' && this.openerProgress > 0.9) {
+        this.openerPhase = 'closing'
+        this.openerTarget = 0
+      } else if (this.openerPhase === 'closing' && this.openerProgress < 0.05) {
+        this.openerPhase = 'done'
+        this.openerProgress = 0
+      }
+    }
+
+    // ── Material color blend ──
+    this.cubeMaterial.color.copy(this._blendFromColor).lerp(this._blendToColor, this._blendT)
+    this.cubeMaterial.emissive.copy(this._blendFromEmissive).lerp(this._blendToEmissive, this._blendT)
+
+    // ── Animate rainbow edge colors ──
+    const edgeGeo = this.edgeLines.geometry
+    const colorAttr = edgeGeo.attributes.color as THREE.BufferAttribute
+    if (colorAttr) {
+      const positions = edgeGeo.attributes.position!
+      for (let j = 0; j < positions.count; j++) {
+        const x = positions.getX(j)
+        const y = positions.getY(j)
+        const z = positions.getZ(j)
+        const angle = (Math.atan2(y, x) / (Math.PI * 2)) + 0.5
+        const hue = (angle + z * 0.1 + this.time * 0.05) % 1.0
+        this._tmpColor.setHSL(hue, 1.0, 0.6)
+        colorAttr.setXYZ(j, this._tmpColor.r, this._tmpColor.g, this._tmpColor.b)
+      }
+      colorAttr.needsUpdate = true
+    }
+
+    // ── Apply role when changed ──
+    if (this.targetParams.role !== this._currentRole) {
+      this._currentRole = this.targetParams.role
+      this.applyRoleAndParams()
+    }
   }
 
   private applyRoleAndParams(): void {
     const { color, emissive, roughness, metalness } = this.targetParams
-    const mat = this.faceMaterials[0]!
-    mat.color.copy(color)
-    mat.emissive.copy(emissive)
-    mat.roughness = roughness
-    mat.metalness = metalness
-    mat.wireframe = false
+    this.cubeMaterial.color.copy(color)
+    this.cubeMaterial.emissive.copy(emissive)
+    this.cubeMaterial.roughness = roughness
+    this.cubeMaterial.metalness = metalness
   }
 
   dispose(): void {
-    for (const face of this.faces) {
-      face.geometry.dispose()
-    }
-    for (const mat of this.faceMaterials) {
-      mat.dispose()
-    }
-    for (const edges of this.edgeLines) {
-      edges.geometry.dispose()
-      ;(edges.material as THREE.Material).dispose()
-    }
+    this.cubeMesh.geometry.dispose()
+    this.cubeMaterial.dispose()
+    this.edgeLines.geometry.dispose()
+    ;(this.edgeLines.material as THREE.Material).dispose()
+    this.cubeCamera.renderTarget.dispose()
+    for (const tex of this.contentTextures) tex.dispose()
     ;(this.geometry as THREE.BufferGeometry).dispose()
     ;(this.material as THREE.Material).dispose()
     this.clear()
