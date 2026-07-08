@@ -44,7 +44,6 @@ export class JoystickNav {
   public el: HTMLDivElement
   private _base: HTMLDivElement
   private _ball: HTMLDivElement
-  private _hint: HTMLDivElement
   private _mainSection = INTRO_INDEX // current main section (1-6)
   private _side: SideState = 'center'
   private _sectionCount: number
@@ -77,11 +76,6 @@ export class JoystickNav {
     this._ball.className = 'jlz-joystick__ball'
     this._base.appendChild(this._ball)
 
-    this._hint = document.createElement('div')
-    this._hint.className = 'jlz-joystick__hint'
-    this._hint.textContent = 'drag to navigate'
-    this.el.appendChild(this._hint)
-
     this.addEventListeners()
   }
 
@@ -102,7 +96,7 @@ export class JoystickNav {
       this._startX = e.clientX
       this._startY = e.clientY
       this._base.classList.add('is-active')
-      this._hint.style.opacity = '0'
+
       this._setActive(true)
       try { this._base.setPointerCapture(e.pointerId) } catch { /* ignore */ }
     }
@@ -143,7 +137,7 @@ export class JoystickNav {
       this._hasTriggered = false
       this._base.classList.remove('is-active')
       this._snapBallBack()
-      setTimeout(() => { this._hint.style.opacity = '' }, 500)
+
     }
 
     this._base.addEventListener('pointerdown', this._pointerDownHandler)
