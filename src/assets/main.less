@@ -650,7 +650,7 @@ canvas {
 }
 
 /* ════════════════════════════════════════════════════════════════════
-   9. Slider nav — full-width centered with fade mask edges
+   9. Slider nav — full-width, center:1, fade mask (like lemonroom.ru)
    ════════════════════════════════════════════════════════════════════ */
 
 .tm-header {
@@ -659,18 +659,13 @@ canvas {
   left: 0;
   right: 0;
   z-index: 10001;
-}
-.jlz-navbar {
-  width: 100%;
   padding: 10px 0;
-  /* Fade mask on left/right edges — items fade out as they scroll off */
-  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 60px, #000 calc(100% - 60px), transparent 100%);
-  mask-image: linear-gradient(to right, transparent 0, #000 60px, #000 calc(100% - 60px), transparent 100%);
+  /* Fade mask — items fade out at edges */
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 80px, #000 calc(100% - 80px), transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0, #000 80px, #000 calc(100% - 80px), transparent 100%);
 }
 #slider-nav {
   width: 100%;
-  max-width: 600px;
-  margin: 0 auto;
 }
 .jlz-nav-link {
   display: block;
@@ -700,6 +695,7 @@ body.light-theme li.uk-active .jlz-nav-link {
   color: #000;
 }
 .jlz-menu-toggle { display: none !important; }
+
 
 
 /* ════════════════════════════════════════════════════════════════════
