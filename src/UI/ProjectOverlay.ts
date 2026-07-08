@@ -50,35 +50,29 @@ export class ProjectOverlay {
     this.container.setAttribute('role', 'dialog')
     this.container.setAttribute('aria-modal', 'true')
     this.container.setAttribute('aria-label', 'Project details')
-    this.container.style.cssText = `
-      position:fixed;inset:0;z-index:3500;pointer-events:none;
-      opacity:0;transition:opacity .4s ease;
-    `
-    // NOTE: child elements do NOT have inline pointer-events:auto.
-    // When closed, the container is pointer-events:none and ALL children
-    // inherit none — so events pass through to the 3D canvas / BakuCarousel.
-    // When open, showContainer() sets the container to pointer-events:auto
-    // and adds .is-open so the interactive children (buttons, panels) become
-    // clickable via CSS (main.less).
+    // Container shell is styled via #project-overlay in main.less
+    // (position:fixed, inset:0, pointer-events toggled by .is-open).
+    // Child elements use UIKit utility classes (uk-position-*, uk-flex-*)
+    // + bespoke .jlz-fs-* classes for project-specific styling.
     this.container.innerHTML = `
-      <div class="jlz-fs-bg" style="position:absolute;inset:0;background:rgba(2,2,6,.85);backdrop-filter:blur(8px);"></div>
-      <div class="jlz-fs-top" style="position:absolute;top:0;left:0;width:100%;padding:2rem 2.5rem;display:flex;justify-content:space-between;align-items:flex-start;">
+      <div class="jlz-fs-bg uk-position-cover"></div>
+      <div class="jlz-fs-top uk-position-top-left uk-flex uk-flex-between uk-flex-middle uk-width-1-1 uk-padding">
         <div>
-          <div class="jlz-fs-cat" style="font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:.3rem;"></div>
-          <h2 class="jlz-fs-title" style="font-size:clamp(1.5rem,4vw,2.5rem);font-weight:900;color:#fff;margin:0;"></h2>
+          <div class="jlz-fs-cat uk-text-uppercase"></div>
+          <h2 class="jlz-fs-title uk-margin-remove"></h2>
         </div>
-        <div style="display:flex;align-items:center;gap:1.5rem;">
-          <div class="jlz-fs-counter" style="font-size:.8rem;color:rgba(255,255,255,.5);font-variant-numeric:tabular-nums;"></div>
-          <button class="jlz-fs-close" type="button" aria-label="Close" style="background:none;border:1px solid rgba(255,255,255,.2);color:#fff;width:36px;height:36px;border-radius:50%;cursor:inherit;font-size:1rem;display:flex;align-items:center;justify-content:center;">✕</button>
+        <div class="jlz-fs-top__right uk-flex uk-flex-middle">
+          <div class="jlz-fs-counter"></div>
+          <button class="jlz-fs-close" type="button" aria-label="Close">✕</button>
         </div>
       </div>
-      <button class="jlz-fs-prev" type="button" aria-label="Previous" style="position:absolute;left:1.5rem;top:50%;transform:translateY(-50%);background:none;border:1px solid rgba(255,255,255,.2);color:#fff;width:44px;height:44px;border-radius:50%;cursor:inherit;font-size:1.2rem;">←</button>
-      <button class="jlz-fs-next" type="button" aria-label="Next" style="position:absolute;right:1.5rem;top:50%;transform:translateY(-50%);background:none;border:1px solid rgba(255,255,255,.2);color:#fff;width:44px;height:44px;border-radius:50%;cursor:inherit;font-size:1.2rem;">→</button>
-      <div class="jlz-fs-bottom" style="position:absolute;bottom:0;left:0;width:100%;padding:2rem 2.5rem;display:flex;align-items:flex-end;gap:2rem;">
-        <div class="jlz-fs-thumb" style="width:120px;height:80px;background-size:cover;background-position:center;border-radius:6px;flex-shrink:0;border:1px solid rgba(255,255,255,.1);"></div>
-        <div style="flex:1;">
-          <p class="jlz-fs-desc" style="color:rgba(255,255,255,.6);font-size:.9rem;max-width:600px;margin:0 0 .8rem;"></p>
-          <div class="jlz-fs-tags" style="display:flex;gap:.5rem;flex-wrap:wrap;"></div>
+      <button class="jlz-fs-prev uk-position-center-left" type="button" aria-label="Previous">←</button>
+      <button class="jlz-fs-next uk-position-center-right" type="button" aria-label="Next">→</button>
+      <div class="jlz-fs-bottom uk-position-bottom uk-flex uk-flex-bottom uk-width-1-1 uk-padding">
+        <div class="jlz-fs-thumb"></div>
+        <div class="uk-flex-1">
+          <p class="jlz-fs-desc uk-margin-remove"></p>
+          <div class="jlz-fs-tags uk-flex uk-flex-wrap uk-margin-small-top"></div>
         </div>
       </div>
     `
@@ -133,8 +127,7 @@ export class ProjectOverlay {
     // Set global flag so BakuCarousel keyboard handler can skip ArrowLeft/Right
     // (prevents double-trigger: both overlay and carousel handling same key).
     ;(window as unknown as { jlzOverlayOpen?: boolean }).jlzOverlayOpen = true
-    this.container.style.opacity = '1'
-    this.container.style.pointerEvents = 'auto'
+    // Visibility/opacity/pointer-events handled by .is-open class in main.less.
     this.container.classList.add('is-open')
     // Lock background scroll — body overflow:hidden is enough (the page doesn't
     // actually scroll, but this is a defensive measure for any future scroll).
@@ -149,8 +142,7 @@ export class ProjectOverlay {
     this._isOpen = false
     // Clear global flag — BakuCarousel can handle keys again.
     ;(window as unknown as { jlzOverlayOpen?: boolean }).jlzOverlayOpen = false
-    this.container.style.opacity = '0'
-    this.container.style.pointerEvents = 'none'
+    // Visibility/opacity/pointer-events handled by .is-open class in main.less.
     this.container.classList.remove('is-open')
     // Unlock background scroll.
     document.body.style.overflow = ''
@@ -166,10 +158,7 @@ export class ProjectOverlay {
     this.counterEl.textContent = `${index + 1} / ${total}`
     this.tagsEl.innerHTML = (project.tags ?? [])
       .filter(Boolean)
-      .map(
-        (t) =>
-          `<span style="background:rgba(120,140,200,.15);color:#a0b0e0;padding:.2rem .6rem;border-radius:4px;font-size:.7rem;">${t}</span>`,
-      )
+      .map((t) => `<span class="jlz-fs-tag">${t}</span>`)
       .join('')
     // Update thumbnail preview if exists
     const thumb = this.container.querySelector('.jlz-fs-thumb') as HTMLElement | null

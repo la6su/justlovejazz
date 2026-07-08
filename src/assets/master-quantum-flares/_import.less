@@ -1,5 +1,17 @@
-@internal-fonts: 'Source+Sans+3:500,400|Geologica:800,900';
-@global-font-family: 'Source Sans 3';
+// ── Font override: Inter only (single-font policy per AGENTS.md §7) ──
+// Replaces the default 'Source Sans 3' + 'Geologica' pair from the vendored
+// master-quantum-flares theme. Inter is served locally from /public/fonts/inter.css
+// (no Google Fonts request). These overrides propagate to:
+//   - @base-body-font-family (via @global-font-family, see UIKit base.less:15)
+//   - @base-heading-font-family (via @global-font-family, see UIKit base.less:40)
+//   - @base-h4/h5/h6-font-family (via @global-primary-font-family, see lines 75-89)
+//   - @navbar-nav-item-font-family, @nav-default-font-family, etc.
+@internal-fonts: 'Inter:400,500,600,700,800,900';
+@global-font-family:
+  'Inter',
+  -apple-system,
+  BlinkMacSystemFont,
+  sans-serif;
 @global-font-size: 16px;
 @global-line-height: 1.7;
 @global-2xlarge-font-size: 40px;
@@ -7,7 +19,11 @@
 @global-large-font-size: 22px;
 @global-medium-font-size: 18px;
 @global-small-font-size: 14px;
-@global-primary-font-family: Geologica;
+@global-primary-font-family:
+  'Inter',
+  -apple-system,
+  BlinkMacSystemFont,
+  sans-serif;
 @global-primary-font-weight: 800;
 @global-primary-text-transform: uppercase;
 @global-primary-letter-spacing: inherit;

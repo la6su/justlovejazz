@@ -214,8 +214,12 @@ export class Experience {
     // which instantly destroyed the splash ~2.5s BEFORE the cinematic opening
     // sequence could play — so the user saw no opening animation at all.
     this.bus.on('intro:done', () => {
+      // Intro is a light section — set light-theme, clear dark-theme.
+      // (The per-section toggle in _updateInner also keeps these in sync.)
       document.documentElement.classList.add('light-theme')
       document.body.classList.add('light-theme')
+      document.documentElement.classList.remove('dark-theme')
+      document.body.classList.remove('dark-theme')
     })
   }
 
@@ -431,14 +435,19 @@ export class Experience {
       )
     }
 
-    // UI theme: light sections (intro=0, contact=5) need dark text/nav.
+    // UI theme: light sections (Lab=0, Intro=1, Contact=6) need dark text/nav.
     // These sections have LIGHT backgrounds (EnvSphere patterns) → dark text
     // for contrast. Other sections have DARK backgrounds → light text.
+    // Both `light-theme` and `dark-theme` classes are toggled symmetrically
+    // so main.less can use body.light-theme / body.dark-theme selectors
+    // (replaces 63 per-section[data-section=...] rules — see main.less §5).
     const idx = this.world.currentSectionIndex
     // Light sections: Lab(0), Intro(1), Contact(6) — light bg, dark text
     const isLightSection = idx === 0 || idx === 1 || idx === 6
     document.documentElement.classList.toggle('light-theme', isLightSection)
     document.body.classList.toggle('light-theme', isLightSection)
+    document.documentElement.classList.toggle('dark-theme', !isLightSection)
+    document.body.classList.toggle('dark-theme', !isLightSection)
     // Give World the camera ref for DrawTrail (once, after init).
     this.world.setCamera(this.camera.instance)
     this.world.setRenderer(this.renderer.instance as THREE.WebGLRenderer)

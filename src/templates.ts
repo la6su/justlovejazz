@@ -146,7 +146,7 @@ export function homePage(): string {
             <span class="jlz-works-hint__arrow">→</span>
             <span>Click to open</span>
           </div>
-          <div id="project-overlay" class="jlz-works-ui uk-position-z-index"></div>
+          <div id="project-overlay" class="uk-position-z-index"></div>
         </div>
       </section>
 
