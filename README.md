@@ -23,7 +23,7 @@ bun run format       # Prettier
 | [AGENTS.md](AGENTS.md) | **Start here** — rules, navigation model, 21st.dev MCP usage |
 | [STATUS.md](docs/STATUS.md) ⭐ | Canonical state (visual tiers, background system, removed modules) |
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Modules, render path, visual tiers, background system, parity guarantees |
-| [HERMES_RULES.md](docs/HERMES_RULES.md) | Hard rules (43) |
+| [HERMES_RULES.md](docs/RULES.md) | Hard rules (43) |
 | [JUNNI_REFERENCE.md](docs/JUNNI_REFERENCE.md) | Patterns to port / NOT port |
 | [CHANGELOG.md](docs/CHANGELOG.md) | Recent changes (EnvSphere + parity + YAGNI cleanup 2026-07-10) |
 

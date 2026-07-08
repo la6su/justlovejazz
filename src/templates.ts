@@ -64,7 +64,7 @@ export function homePage(): string {
             <div class="section-content jlz-hero">
               <span class="jlz-hero__meta jlz-reveal">Studio · est. 2025</span>
               <h1 class="studio-title studio-title--hero jlz-hero__title"
-                  data-content-id="hero-title">JUSTLOVEJAZZ</h1>
+                  data-content-id="hero-title">l@6</h1>
               <p class="studio-subtitle jlz-hero__subtitle jlz-reveal"
                  data-content-id="hero-subtitle">Interactive 3D Experiences</p>
               <p class="jlz-hero__tagline jlz-reveal">

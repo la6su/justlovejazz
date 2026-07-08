@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | [STATUS.md](docs/STATUS.md) ⭐ | Canonical state | **Always first** |
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Modules, render path, visual tiers, background system | Understanding structure |
-| [HERMES_RULES.md](docs/HERMES_RULES.md) | Hard rules | Before changing code |
+| [HERMES_RULES.md](docs/RULES.md) | Hard rules | Before changing code |
 | [JUNNI_REFERENCE.md](docs/JUNNI_REFERENCE.md) | Junni patterns to port / NOT port | Adding section visuals |
 | [CHANGELOG.md](docs/CHANGELOG.md) | Recent merge log | Understanding history |
 
