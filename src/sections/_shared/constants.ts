@@ -40,7 +40,7 @@ export type PageId = 'home' | 'services' | 'posts'
 export function sectionTop(eyebrow: string, title: string, lead?: string): string {
   return `
     <div class="jlz-section-top uk-text-center uk-flex uk-flex-column uk-flex-middle" ${REVEAL}>
-      <span class="jlz-eyebrow uk-text-meta uk-text-uppercase">&gt; ${eyebrow}</span>
+      <span class="jlz-eyebrow">&gt; ${eyebrow}</span>
       <h2 class="studio-title uk-heading-medium uk-margin-small-top uk-margin-remove-bottom">${title}</h2>
       ${lead ? `<p class="uk-text-meta uk-margin-small-top">${lead}</p>` : ''}
     </div>

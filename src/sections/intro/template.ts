@@ -12,7 +12,7 @@ export function introSection(): string {
         <div class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-text-center uk-height-1-1">
           <!-- TOP: hero -->
           <div class="uk-flex uk-flex-column uk-flex-middle" ${REVEAL}>
-            <span class="jlz-eyebrow uk-text-meta uk-text-uppercase">&gt; WEB DESIGN STUDIO · est. 2019</span>
+            <span class="jlz-eyebrow">&gt; WEB DESIGN STUDIO · est. 2019</span>
             <h1 class="studio-title uk-heading-xlarge uk-margin-small-top"
                 data-content-id="hero-title">l@6</h1>
             <p class="uk-text-lead uk-margin-small-top">

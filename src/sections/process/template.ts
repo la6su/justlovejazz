@@ -12,7 +12,7 @@ export function processSection(): string {
         <div class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-text-center uk-height-1-1">
           <!-- TOP -->
           <div ${REVEAL}>
-            <span class="jlz-eyebrow uk-text-meta uk-text-uppercase">&gt; PROCESS</span>
+            <span class="jlz-eyebrow">&gt; PROCESS</span>
             <h2 class="studio-title uk-heading-medium uk-margin-small-top uk-margin-remove-bottom">PROCESS</h2>
             <p class="uk-text-lead uk-margin-small-top">Discover · Design · Develop · Ship</p>
           </div>

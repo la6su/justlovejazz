@@ -18,7 +18,7 @@ export function servicesPage(): string {
       <section class="jlz-page-section section-active uk-section uk-section-small uk-section-medium@s uk-section-large@m" data-page-section="services-intro">
         <div class="uk-container uk-container-expand uk-flex uk-flex-column uk-flex-between uk-text-center uk-height-1-1" ${PAGE_REVEAL}>
           <div uk-scrollspy-class>
-            <span class="jlz-eyebrow uk-text-meta uk-text-uppercase">&gt; SERVICES</span>
+            <span class="jlz-eyebrow">&gt; SERVICES</span>
             <h1 class="uk-heading-large uk-margin-small-top uk-margin-remove-bottom">What We Build</h1>
             <p class="uk-text-meta">From shader art to shipping product</p>
           </div>
@@ -29,7 +29,7 @@ export function servicesPage(): string {
       <section class="jlz-page-section uk-section uk-section-small uk-section-medium@s uk-section-large@m" data-page-section="services-list">
         <div class="uk-container uk-container-expand uk-flex uk-flex-column uk-flex-between uk-text-center uk-height-1-1" ${PAGE_REVEAL}>
           <div uk-scrollspy-class>
-            <span class="jlz-eyebrow uk-text-meta uk-text-uppercase">&gt; SERVICES LIST</span>
+            <span class="jlz-eyebrow">&gt; SERVICES LIST</span>
           </div>
           <ul class="uk-list uk-margin-top" uk-scrollspy-class>
             ${services.map((s) => `
@@ -49,7 +49,7 @@ export function servicesPage(): string {
       <section class="jlz-page-section uk-section uk-section-small uk-section-medium@s uk-section-large@m" data-page-section="services-stack">
         <div class="uk-container uk-container-expand uk-flex uk-flex-column uk-flex-between uk-text-center uk-height-1-1" ${PAGE_REVEAL}>
           <div uk-scrollspy-class>
-            <span class="jlz-eyebrow uk-text-meta uk-text-uppercase">&gt; STACK</span>
+            <span class="jlz-eyebrow">&gt; STACK</span>
             <h2 class="uk-heading-medium uk-margin-small-top uk-margin-remove-bottom">The toolbox</h2>
           </div>
           <div class="uk-grid uk-child-width-1-2@m uk-margin-top" uk-grid uk-scrollspy-class>
@@ -81,7 +81,7 @@ export function servicesPage(): string {
       <section class="jlz-page-section uk-section uk-section-small uk-section-medium@s uk-section-large@m" data-page-section="services-process">
         <div class="uk-container uk-container-expand uk-flex uk-flex-column uk-flex-between uk-text-center uk-height-1-1" ${PAGE_REVEAL}>
           <div uk-scrollspy-class>
-            <span class="jlz-eyebrow uk-text-meta uk-text-uppercase">&gt; HOW WE WORK</span>
+            <span class="jlz-eyebrow">&gt; HOW WE WORK</span>
             <h2 class="uk-heading-medium uk-margin-small-top uk-margin-remove-bottom">4 steps</h2>
           </div>
           <ul class="uk-list uk-list-divider uk-margin-top" uk-scrollspy-class>
@@ -97,7 +97,7 @@ export function servicesPage(): string {
       <section class="jlz-page-section uk-section uk-section-small uk-section-medium@s uk-section-large@m uk-text-center" data-page-section="services-contact">
         <div class="uk-container uk-container-expand uk-flex uk-flex-column uk-flex-between uk-height-1-1" ${PAGE_REVEAL}>
           <div uk-scrollspy-class>
-            <span class="jlz-eyebrow uk-text-meta uk-text-uppercase">&gt; LET'S TALK</span>
+            <span class="jlz-eyebrow">&gt; LET'S TALK</span>
             <h2 class="uk-heading-large uk-margin-small-top uk-margin-remove-bottom">Start a project</h2>
           </div>
           <div uk-scrollspy-class>
@@ -110,7 +110,7 @@ export function servicesPage(): string {
       <section class="jlz-page-section uk-section uk-section-small uk-section-medium@s uk-section-large@m uk-text-center" data-page-section="services-values">
         <div class="uk-container uk-container-expand uk-flex uk-flex-column uk-flex-between uk-height-1-1" ${PAGE_REVEAL}>
           <div uk-scrollspy-class>
-            <span class="jlz-eyebrow uk-text-meta uk-text-uppercase">&gt; VALUES</span>
+            <span class="jlz-eyebrow">&gt; VALUES</span>
             <h2 class="uk-heading-medium uk-margin-small-top uk-margin-remove-bottom">Craft over speed.</h2>
           </div>
           <div uk-scrollspy-class>
