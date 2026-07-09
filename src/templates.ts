@@ -42,7 +42,7 @@ export function homePage(): string {
 
       <!-- 00: LAB (secret left) — Experiments & interactive demos -->
       <section uk-height-viewport="expand: true"
-               id="section-lab" data-section="lab">
+               class="uk-section" id="section-lab" data-section="lab">
         <div class="uk-position-cover" data-dynamic-content>
           <div class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-text-center uk-height-1-1">
             <div class="uk-flex uk-flex-column uk-flex-middle">
@@ -80,7 +80,7 @@ export function homePage(): string {
 
       <!-- 01: INTRO — baku cube center, hero at top, scroll hint at bottom -->
       <section uk-height-viewport="expand: true"
-               id="section-intro" data-section="intro">
+               class="uk-section" id="section-intro" data-section="intro">
         <div class="uk-position-cover" data-dynamic-content>
           <div class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-text-center uk-height-1-1">
             <div class="uk-flex uk-flex-column uk-flex-middle">
@@ -104,7 +104,7 @@ export function homePage(): string {
 
       <!-- 02: ABOUT — two-column split, cube visible through center gap -->
       <section uk-height-viewport="expand: true"
-               id="section-about" data-section="about">
+               class="uk-section" id="section-about" data-section="about">
         <div class="uk-position-cover" data-dynamic-content>
           <div class="uk-container uk-container-expand uk-padding uk-grid uk-child-width-1-2@m uk-grid-match uk-text-left uk-height-1-1" uk-grid>
             <div class="uk-width-1-2@m uk-flex uk-flex-middle">
@@ -125,7 +125,7 @@ export function homePage(): string {
            Animated text background + full-screen title texture rendered in WebGL.
            Section is kept for scroll positioning only. -->
       <section uk-height-viewport="expand: true"
-               id="section-flexible" data-section="flexible">
+               class="uk-section" id="section-flexible" data-section="flexible">
         <div class="uk-position-cover" data-dynamic-content>
           <div class="jlz-corner-label" aria-hidden="true">
             <p class="jlz-corner-label__hint">Drag the cube · Scroll to morph</p>
@@ -135,7 +135,7 @@ export function homePage(): string {
 
       <!-- 04: CHALLENGE / WORKS — gallery, cube + carousel morph -->
       <section uk-height-viewport="expand: true"
-               id="section-challenge" data-section="challenge">
+               class="uk-section" id="section-challenge" data-section="challenge">
         <div class="uk-position-cover" data-dynamic-content>
           <div class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-top uk-text-center uk-height-1-1">
             <h2 class="studio-title uk-heading-medium"
@@ -153,7 +153,7 @@ export function homePage(): string {
 
       <!-- 05: INNOVATIVE — feature cards with glassmorphism -->
       <section uk-height-viewport="expand: true"
-               id="section-innovative" data-section="innovative">
+               class="uk-section" id="section-innovative" data-section="innovative">
         <div class="uk-position-cover" data-dynamic-content>
           <div class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-text-center uk-height-1-1">
             <div class="uk-flex uk-flex-column uk-flex-middle uk-margin">
@@ -197,7 +197,7 @@ export function homePage(): string {
 
       <!-- 06: CONTACT — large CTA, glass buttons -->
       <section uk-height-viewport="expand: true"
-               id="section-contact" data-section="contact">
+               class="uk-section" id="section-contact" data-section="contact">
         <div class="uk-position-cover" data-dynamic-content>
           <div class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-top uk-text-center uk-height-1-1">
             <h2 class="studio-title uk-heading-medium"
@@ -234,7 +234,7 @@ export function homePage(): string {
 
       <!-- 07: PROCESS (secret right) — Workflow timeline & studio manifesto -->
       <section uk-height-viewport="expand: true"
-               id="section-process" data-section="process">
+               class="uk-section" id="section-process" data-section="process">
         <div class="uk-position-cover" data-dynamic-content>
           <div class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-text-center uk-height-1-1">
             <div class="uk-flex uk-flex-column uk-flex-middle">
