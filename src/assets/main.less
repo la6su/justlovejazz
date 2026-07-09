@@ -753,54 +753,61 @@ body .jlz-page .uk-text-meta {
   cursor: pointer;
 }
 
-.custom-cursor {
+/* ── Custom cursor (codrops-style: inner dot + outer noisy circle) ──
+   Inner dot: 5px, follows mouse instantly, mix-blend-mode: difference.
+   Outer circle: canvas, follows with lerp(0.2), noisy distortion on hover.
+   cursor:none on body only when (hover: hover) AND (pointer: fine) —
+   touch devices keep the system cursor. */
+.custom-cursor-inner {
   position: fixed;
   top: 0;
   left: 0;
-  width: 18px;
-  height: 18px;
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
   background-color: var(--jlz-color-accent);
   border-radius: var(--jlz-radius-full);
   pointer-events: none;
   z-index: 100000;
-  transition:
-    width var(--jlz-duration-normal) var(--jlz-ease-state),
-    height var(--jlz-duration-normal) var(--jlz-ease-state),
-    background-color var(--jlz-duration-normal) var(--jlz-ease-state);
-  transform: translate(-50%, -50%);
   will-change: transform;
   mix-blend-mode: difference;
 }
 
-.custom-cursor.magnetic {
-  width: 40px;
-  height: 40px;
-  background-color: var(--jlz-color-accent-glow);
+.custom-cursor-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 99999;
 }
 
-.custom-cursor.hovering {
-  width: 16px;
-  height: 16px;
-  background-color: var(--jlz-color-text);
-}
-
-/* Reduced-motion: disable cursor size/color transitions (instant snap).
-   The cursor still follows the pointer (transform is JS-driven, not a
-   CSS transition), but the magnetic/hovering size morphs are instant. */
-@media (prefers-reduced-motion: reduce) {
-  .custom-cursor,
-  .custom-cursor.magnetic,
-  .custom-cursor.hovering {
-    transition: none;
+/* Hide custom cursor on touch devices */
+@media (hover: none), (pointer: coarse) {
+  .custom-cursor-inner,
+  .custom-cursor-canvas {
+    display: none !important;
   }
 }
 
+/* Hide system cursor only on precise-pointer devices (desktop) */
 @media (hover: hover) and (pointer: fine) {
   body,
   a,
   button,
   .interactive {
     cursor: none;
+  }
+}
+
+/* Reduced-motion: cursor still follows (JS-driven), but no noisy distortion
+   (the drawCircle isNoisy check is skipped via prefers-reduced-motion in
+   the canvas — but we also disable the transition here for safety). */
+@media (prefers-reduced-motion: reduce) {
+  .custom-cursor-inner,
+  .custom-cursor-canvas {
+    transition: none;
   }
 }
 

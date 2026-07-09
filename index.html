@@ -129,7 +129,8 @@
         background: #050507;
       }
 
-      /* CRT-on curtains — two panels that split apart on Enter */
+      /* CRT-on curtains — hidden by default (SVG squares are the main visual).
+         Curtains only used during fade-out transition on Enter (opacity fade). */
       .jlz-curtain {
         position: absolute;
         left: 0;
@@ -137,14 +138,17 @@
         height: 50%;
         background: #050507;
         z-index: 3002;
-        transition: transform 0.8s cubic-bezier(0.65, 0, 0.35, 1);
+        opacity: 0;
+        transition: opacity 0.4s ease;
+        pointer-events: none;
       }
       .jlz-curtain--top { top: 0; }
       .jlz-curtain--bottom { bottom: 0; }
-      #jlj-splash.entering .jlz-curtain--top { transform: translateY(-100%); }
-      #jlj-splash.entering .jlz-curtain--bottom { transform: translateY(100%); }
+      /* On fade-out (Enter click), curtains fade IN to cover SVG, then page navigates */
+      #jlj-splash.fading .jlz-curtain--top,
+      #jlj-splash.fading .jlz-curtain--bottom { opacity: 1; }
 
-      /* Seam glow at curtain split */
+      /* Seam glow — hidden by default, shows briefly during fade-out */
       .jlz-curtain-seam {
         position: absolute;
         top: 50%;
@@ -154,12 +158,13 @@
         background: linear-gradient(90deg, transparent, rgba(120, 140, 200, 0.6), transparent);
         transform: translateY(-50%);
         z-index: 3003;
-        opacity: 1;
-        transition: opacity 0.4s ease;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        pointer-events: none;
       }
-      #jlj-splash.entering .jlz-curtain-seam { opacity: 0; }
+      #jlj-splash.fading .jlz-curtain-seam { opacity: 1; }
 
-      /* SVG squares — behind curtains */
+      /* SVG squares — main splash visual (curtains hidden by default) */
       .jlz-splash-svg {
         width: 90vmin;
         height: 90vmin;
@@ -329,9 +334,7 @@
       /* ── Reduced motion ── */
       @media (prefers-reduced-motion: reduce) {
         .jlz-splash-text { animation: none; opacity: 1; transform: scale(1); }
-        .jlz-curtain { transition: opacity 0.3s ease; }
-        #jlj-splash.entering .jlz-curtain--top,
-        #jlj-splash.entering .jlz-curtain--bottom { transform: none; opacity: 0; }
+        .jlz-curtain { transition: opacity 0.2s ease; }
       }
 
       /* ── Screen-reader-only (SEO + a11y) ──
