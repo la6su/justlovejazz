@@ -7,46 +7,93 @@
     <meta name="theme-color" content="#050507" />
     <meta name="author" content="JUSTLOVEJAZZ" />
     <meta name="color-scheme" content="dark light" />
-    <title>JUSTLOVEJAZZ — Enter</title>
+    <title>JUSTLOVEJAZZ — Web Design Studio | Interactive 3D Portfolio</title>
 
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
 
-    <!-- Preload 3D stack (cached by browser before Enter → instant app boot) -->
+    <!-- Robots — index, follow. Splash is the canonical entry. -->
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+
+    <!-- Preconnect to font origin (if using Google Fonts — currently self-hosted,
+         but keep for future + for og:image CDN if any) -->
+    <link rel="preconnect" href="https://justlovejazz.dev" crossorigin />
+
+    <!-- Preload 3D stack (cached by browser before Enter → instant app boot).
+         modulepreload downloads but does NOT execute — safe for FCP. -->
     <link rel="modulepreload" href="/src/entry-shell.ts" />
     <link rel="preload" href="/fonts/inter-400.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/inter-700.woff2" as="font" type="font/woff2" crossorigin />
 
-    <!-- Open Graph -->
+    <!-- Open Graph (Facebook, LinkedIn, etc) -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="JUSTLOVEJAZZ" />
-    <meta property="og:title" content="JUSTLOVEJAZZ — Interactive 3D Portfolio" />
-    <meta property="og:description" content="A studio-grade interactive 3D portfolio. A WebGPU/WebGL cinematic experience built with Three.js." />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:title" content="JUSTLOVEJAZZ — Web Design Studio" />
+    <meta property="og:description" content="Studio-grade interactive 3D portfolio. A WebGPU/WebGL cinematic experience built with Three.js. Configure your experience and enter." />
     <meta property="og:url" content="https://justlovejazz.dev/" />
     <meta property="og:image" content="https://justlovejazz.dev/assets/projects/undercurrent/cover.webp" />
+    <meta property="og:image:secure_url" content="https://justlovejazz.dev/assets/projects/undercurrent/cover.webp" />
+    <meta property="og:image:type" content="image/webp" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="JUSTLOVEJAZZ — interactive 3D portfolio preview" />
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="JUSTLOVEJAZZ — Interactive 3D Portfolio" />
-    <meta name="twitter:description" content="A studio-grade interactive 3D portfolio. A WebGPU/WebGL cinematic experience built with Three.js." />
+    <meta name="twitter:site" content="@justlovejazz" />
+    <meta name="twitter:creator" content="@justlovejazz" />
+    <meta name="twitter:title" content="JUSTLOVEJAZZ — Web Design Studio" />
+    <meta name="twitter:description" content="Studio-grade interactive 3D portfolio. A WebGPU/WebGL cinematic experience built with Three.js." />
     <meta name="twitter:image" content="https://justlovejazz.dev/assets/projects/undercurrent/cover.webp" />
+    <meta name="twitter:image:alt" content="JUSTLOVEJAZZ — interactive 3D portfolio preview" />
 
     <!-- Canonical — splash is the root entry -->
     <link rel="canonical" href="https://justlovejazz.dev/" />
 
-    <!-- Structured data — splash page is a WebSite entry point -->
+    <!-- Alternate — landing page (no-JS, same content in semantic HTML) -->
+    <link rel="alternate" href="https://justlovejazz.dev/landing" hreflang="en" />
+
+    <!-- Structured data — WebSite + Organization (combined for rich results) -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "WebSite",
-        "name": "JUSTLOVEJAZZ",
-        "url": "https://justlovejazz.dev/",
-        "description": "Studio-grade interactive 3D portfolio. A WebGPU/WebGL cinematic experience built with Three.js.",
-        "potentialAction": {
-          "@type": "EnterAction",
-          "target": "https://justlovejazz.dev/app",
-          "name": "Enter full experience"
-        }
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "name": "JUSTLOVEJAZZ",
+            "url": "https://justlovejazz.dev/",
+            "description": "Studio-grade interactive 3D portfolio. A WebGPU/WebGL cinematic experience built with Three.js.",
+            "publisher": { "@id": "https://justlovejazz.dev/#organization" },
+            "potentialAction": {
+              "@type": "EnterAction",
+              "target": "https://justlovejazz.dev/app",
+              "name": "Enter full experience"
+            }
+          },
+          {
+            "@type": "Organization",
+            "@id": "https://justlovejazz.dev/#organization",
+            "name": "JUSTLOVEJAZZ",
+            "url": "https://justlovejazz.dev/",
+            "logo": "https://justlovejazz.dev/favicon.svg",
+            "description": "Studio-grade web design portfolio. WebGPU, Three.js, TSL shaders, interactive 3D experiences.",
+            "knowsAbout": [
+              "WebGPU",
+              "Three.js",
+              "TSL NodeMaterial",
+              "Web design",
+              "Interactive 3D",
+              "Shader art",
+              "UIkit 3"
+            ],
+            "sameAs": [
+              "https://github.com/la6su",
+              "https://twitter.com"
+            ]
+          }
+        ]
       }
     </script>
 
@@ -286,9 +333,34 @@
         #jlj-splash.entering .jlz-curtain--top,
         #jlj-splash.entering .jlz-curtain--bottom { transform: none; opacity: 0; }
       }
+
+      /* ── Screen-reader-only (SEO + a11y) ──
+         Visually hidden but visible to crawlers + screen readers.
+         Used for semantic <h1> + <p> that describe the site for SEO. */
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
     </style>
   </head>
   <body data-app-mode="splash">
+    <!-- Semantic HTML for SEO + accessibility.
+         Visually hidden (sr-only) but visible to crawlers + screen readers.
+         The visible splash content is the SVG squares + Enter button below. -->
+    <h1 class="sr-only">JUSTLOVEJAZZ — Web Design Studio</h1>
+    <p class="sr-only">
+      Studio-grade interactive 3D portfolio. A WebGPU/WebGL cinematic experience
+      built with Three.js. Configure your experience and enter the full 3D site,
+      or view the text-only landing page.
+    </p>
+
     <!-- Splash: concentric squares (codrops-inspired) + Enter button + config -->
     <div id="jlj-splash" role="status" aria-live="polite" aria-label="Loading JUSTLOVEJAZZ experience">
       <!-- CRT-on curtains -->
