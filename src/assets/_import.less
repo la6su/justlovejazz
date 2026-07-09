@@ -1,23 +1,227 @@
 /*
- * UIKit 3 LESS imports — declarative theme via tokens
+ * src/assets/_import.less — UIKit 3 theme assembly + design tokens
  *
- * Order matters:
- *   1. tokens.less (design tokens @jlz-*)
- *   2. variables.less (UIKit @* vars with defaults)
- *   3. Theme overrides (map @jlz-* → @*)
- *   4. Component mixins + imports
+ * Single source of truth for:
+ *   1. Design tokens (@jlz-* Less vars + --jlz-* CSS custom properties)
+ *   2. UIKit variable overrides (map @jlz-* → UIKit @*)
+ *   3. UIKit component imports (order-dependent, per UIKit docs)
  *
- * This order ensures patched variables take effect BEFORE components
- * emit their rules, so less compiler generates correctly themed CSS.
+ * Load order (load-bearing — break it and theme overrides stop applying):
+ *   1. @jlz-* token definitions (this file, §1)
+ *   2. UIKit variables.less (defaults we override in §3)
+ *   3. Theme overrides — map @jlz-* → UIKit @* (this file, §3)
+ *   4. UIKit mixin.less (shared by components)
+ *   5. UIKit component *.less (emit rules with overridden vars)
+ *
+ * CSS custom properties (:root { --jlz-* }) are generated in §2 so they're
+ * available at runtime for var(--jlz-*) references in main.less.
+ *
+ * Formerly src/styles/tokens.less was a separate file — merged here to
+ * avoid duplication. See docs/UIKIT3.md §1 (theme assembly).
  */
 
-// ── 1. Design tokens ──
-@import '../styles/tokens.less';
+// ═══════════════════════════════════════════════════════════════════════
+// §1. DESIGN TOKENS (@jlz-* Less variables)
+// ═══════════════════════════════════════════════════════════════════════
 
-// ── 2. UIKit variables (defaults we override below) ──
+// ── Color ──
+@jlz-color-bg: #050507;
+@jlz-color-bg-elevated: #0a0a0f;
+@jlz-color-surface: rgba(255, 255, 255, 0.04);
+@jlz-color-surface-hover: rgba(255, 255, 255, 0.08);
+@jlz-color-border: rgba(255, 255, 255, 0.1);
+@jlz-color-border-strong: rgba(255, 255, 255, 0.2);
+
+@jlz-color-text: rgba(255, 255, 255, 0.92);
+@jlz-color-text-muted: rgba(255, 255, 255, 0.55);
+@jlz-color-text-subtle: rgba(255, 255, 255, 0.35);
+@jlz-color-text-inverse: #050507;
+
+@jlz-color-accent: #515d84;
+@jlz-color-accent-hover: #6b78a3;
+@jlz-color-accent-glow: rgba(81, 93, 132, 0.4);
+
+// ── Typography ──
+@jlz-font-display:
+  'Inter',
+  -apple-system,
+  BlinkMacSystemFont,
+  sans-serif;
+@jlz-font-body:
+  'Inter',
+  -apple-system,
+  BlinkMacSystemFont,
+  'Segoe UI',
+  Roboto,
+  sans-serif;
+@jlz-font-mono: 'Inter', 'SF Mono', monospace;
+
+@jlz-weight-light: 300;
+@jlz-weight-regular: 400;
+@jlz-weight-medium: 500;
+@jlz-weight-semibold: 600;
+@jlz-weight-bold: 700;
+
+@jlz-tracking-tight: -0.02em;
+@jlz-tracking-normal: 0;
+@jlz-tracking-wide: 0.05em;
+@jlz-tracking-wider: 0.15em;
+@jlz-tracking-widest: 0.3em;
+
+// ── Spacing (4px base, rem-based — scales with html font-size) ──
+@jlz-space-0: 0;
+@jlz-space-1: 0.25rem;
+@jlz-space-2: 0.5rem;
+@jlz-space-3: 0.75rem;
+@jlz-space-4: 1rem;
+@jlz-space-5: 1.25rem;
+@jlz-space-6: 1.5rem;
+@jlz-space-8: 2rem;
+@jlz-space-10: 2.5rem;
+@jlz-space-12: 3rem;
+@jlz-space-16: 4rem;
+@jlz-space-20: 5rem;
+@jlz-space-24: 6rem;
+@jlz-space-32: 8rem;
+
+// ── Radius ──
+@jlz-radius-none: 0;
+@jlz-radius-sm: 0.125rem;
+@jlz-radius-md: 0.25rem;
+@jlz-radius-lg: 0.5rem;
+@jlz-radius-full: 9999px;
+
+// ── Z-index ──
+@jlz-z-canvas: 1;
+@jlz-z-content: 10;
+@jlz-z-nav: 100;
+@jlz-z-overlay: 1000;
+@jlz-z-modal: 2000;
+@jlz-z-toast: 3000;
+
+// ── Motion duration ──
+@jlz-duration-instant: 80ms;
+@jlz-duration-fast: 160ms;
+@jlz-duration-normal: 240ms;
+@jlz-duration-slow: 400ms;
+@jlz-duration-cinematic: 800ms;
+@jlz-duration-epic: 1400ms;
+
+// ── Motion easing ──
+@jlz-ease-entrance: cubic-bezier(0.16, 1, 0.3, 1);
+@jlz-ease-exit: cubic-bezier(0.7, 0, 0.84, 0);
+@jlz-ease-emphasis: cubic-bezier(0.34, 1.56, 0.64, 1);
+@jlz-ease-state: cubic-bezier(0.4, 0, 0.2, 1);
+@jlz-ease-cinematic: cubic-bezier(0.65, 0, 0.35, 1);
+
+// ── Layout ──
+@jlz-page-max-width: 90rem;
+@jlz-page-gutter: 5rem;
+@jlz-section-min-height: 100vh;
+
+// ═══════════════════════════════════════════════════════════════════════
+// §2. CSS CUSTOM PROPERTIES (--jlz-* runtime vars for main.less)
+// ═══════════════════════════════════════════════════════════════════════
+
+:root {
+  --jlz-color-bg: @jlz-color-bg;
+  --jlz-color-bg-elevated: @jlz-color-bg-elevated;
+  --jlz-color-surface: @jlz-color-surface;
+  --jlz-color-surface-hover: @jlz-color-surface-hover;
+  --jlz-color-border: @jlz-color-border;
+  --jlz-color-border-strong: @jlz-color-border-strong;
+  --jlz-color-text: @jlz-color-text;
+  --jlz-color-text-muted: @jlz-color-text-muted;
+  --jlz-color-text-subtle: @jlz-color-text-subtle;
+  --jlz-color-text-inverse: @jlz-color-text-inverse;
+  --jlz-color-accent: @jlz-color-accent;
+  --jlz-color-accent-hover: @jlz-color-accent-hover;
+  --jlz-color-accent-glow: @jlz-color-accent-glow;
+
+  --jlz-font-display: @jlz-font-display;
+  --jlz-font-body: @jlz-font-body;
+  --jlz-font-mono: @jlz-font-mono;
+
+  --jlz-weight-light: @jlz-weight-light;
+  --jlz-weight-regular: @jlz-weight-regular;
+  --jlz-weight-medium: @jlz-weight-medium;
+  --jlz-weight-semibold: @jlz-weight-semibold;
+  --jlz-weight-bold: @jlz-weight-bold;
+
+  --jlz-tracking-tight: @jlz-tracking-tight;
+  --jlz-tracking-normal: @jlz-tracking-normal;
+  --jlz-tracking-wide: @jlz-tracking-wide;
+  --jlz-tracking-wider: @jlz-tracking-wider;
+  --jlz-tracking-widest: @jlz-tracking-widest;
+
+  --jlz-space-0: @jlz-space-0;
+  --jlz-space-1: @jlz-space-1;
+  --jlz-space-2: @jlz-space-2;
+  --jlz-space-3: @jlz-space-3;
+  --jlz-space-4: @jlz-space-4;
+  --jlz-space-5: @jlz-space-5;
+  --jlz-space-6: @jlz-space-6;
+  --jlz-space-8: @jlz-space-8;
+  --jlz-space-10: @jlz-space-10;
+  --jlz-space-12: @jlz-space-12;
+  --jlz-space-16: @jlz-space-16;
+  --jlz-space-20: @jlz-space-20;
+  --jlz-space-24: @jlz-space-24;
+  --jlz-space-32: @jlz-space-32;
+
+  --jlz-radius-sm: @jlz-radius-sm;
+  --jlz-radius-md: @jlz-radius-md;
+  --jlz-radius-lg: @jlz-radius-lg;
+  --jlz-radius-full: @jlz-radius-full;
+
+  --jlz-z-canvas: @jlz-z-canvas;
+  --jlz-z-content: @jlz-z-content;
+  --jlz-z-nav: @jlz-z-nav;
+  --jlz-z-overlay: @jlz-z-overlay;
+  --jlz-z-modal: @jlz-z-modal;
+  --jlz-z-toast: @jlz-z-toast;
+
+  --jlz-duration-instant: @jlz-duration-instant;
+  --jlz-duration-fast: @jlz-duration-fast;
+  --jlz-duration-normal: @jlz-duration-normal;
+  --jlz-duration-slow: @jlz-duration-slow;
+  --jlz-duration-cinematic: @jlz-duration-cinematic;
+  --jlz-duration-epic: @jlz-duration-epic;
+
+  --jlz-ease-entrance: @jlz-ease-entrance;
+  --jlz-ease-exit: @jlz-ease-exit;
+  --jlz-ease-emphasis: @jlz-ease-emphasis;
+  --jlz-ease-state: @jlz-ease-state;
+  --jlz-ease-cinematic: @jlz-ease-cinematic;
+
+  --jlz-duration-reduced: 0ms;
+  --jlz-page-max-width: @jlz-page-max-width;
+  --jlz-page-gutter: clamp(1rem, 5vw, 5rem);
+  --jlz-section-min-height: 100dvh;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --jlz-duration-fast: var(--jlz-duration-reduced);
+    --jlz-duration-normal: var(--jlz-duration-reduced);
+    --jlz-duration-slow: var(--jlz-duration-reduced);
+    --jlz-duration-cinematic: var(--jlz-duration-reduced);
+    --jlz-duration-epic: var(--jlz-duration-reduced);
+  }
+}
+
+html.uk-light {
+  --jlz-color-text: #050507;
+  --jlz-color-text-muted: rgba(5, 5, 7, 0.55);
+  --jlz-color-text-subtle: rgba(5, 5, 7, 0.35);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// §3. UIKIT VARIABLE OVERRIDES — map @jlz-* tokens to UIKit @*
+// ═══════════════════════════════════════════════════════════════════════
+
+// ── UIKit variables (defaults we override below) ──
 @import '../../node_modules/uikit/src/less/components/variables.less';
-
-// ── 3. Theme overrides — map @jlz-* tokens to UIKit variables ──
 
 // Typography — rem-based, scales with html font-size (.85rem mob → 1rem desktop)
 @global-font-family: @jlz-font-display;
@@ -44,7 +248,7 @@
 // Z-index
 @global-z-index: @jlz-z-overlay;
 
-// Spacings & gutters
+// Spacings & gutters (rem-based via @jlz-space-* tokens)
 @global-margin: @jlz-space-5;
 @global-small-margin: @jlz-space-3;
 @global-medium-margin: @jlz-space-8;
@@ -56,9 +260,9 @@
 @global-large-gutter: @jlz-space-12;
 
 // Controls
-@global-control-height: 44px;
-@global-control-small-height: 36px;
-@global-control-large-height: 56px;
+@global-control-height: 2.75rem;
+@global-control-small-height: 2.1875rem;
+@global-control-large-height: 4rem;
 
 // Inverse mode — generates `.uk-light` class (inverse colors = dark text
 // in our dark-theme context, for use on light backgrounds). This lets us
@@ -110,10 +314,12 @@
 @search-hover-background: @jlz-color-surface-hover;
 @search-input-color: @jlz-color-text;
 
-// ── 4. Mixin (shared by components) ──
-@import '../../node_modules/uikit/src/less/components/mixin.less';
+// ═══════════════════════════════════════════════════════════════════════
+// §4. UIKIT COMPONENT IMPORTS (order-dependent, per UIKit docs)
+// ═══════════════════════════════════════════════════════════════════════
 
-// ── 5. UIKit component imports ── (order-depentend, per UIKit docs)
+// Mixin (shared by components)
+@import '../../node_modules/uikit/src/less/components/mixin.less';
 
 // Base
 @import '../../node_modules/uikit/src/less/components/base.less';

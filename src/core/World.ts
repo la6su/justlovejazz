@@ -340,7 +340,7 @@ export class World extends THREE.Group {
       }
       // DrawTrail visibility — only on works section (idx=4)
       if (this.drawTrail) {
-        this.drawTrail.object.visible = fromIndex === 4
+        this.drawTrail.object.visible = fromIndex === 3 // Works idx 3 in 6-section layout
       }
     }
 

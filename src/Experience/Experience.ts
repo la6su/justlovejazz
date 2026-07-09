@@ -386,6 +386,13 @@ export class Experience {
     // stays on screen and GPU is idle.
     const navActive = this._circNav?.isActive() ?? false
     const introActive = this.bus.isAnimating('intro:stage') || stage < 1
+    // Compute carousel active state NOW (not from previous frame) — the
+    // carousel may have started morphing this frame via setActive() in
+    // world.updateTransform(). If we use stale _bakuCarouselActive from
+    // last frame, _needsRender stays false and carousel.update() never
+    // runs → morph stalls at ~0.35. See BakuCarousel.ts §update.
+    const carousel = this.getCarousel()
+    this._bakuCarouselActive = carousel?.isAnimating ?? false
     const carouselActive = this._bakuCarouselActive
     const baku = this.world?.baku as unknown as { openerPhase?: string } | undefined
     const openerActive = baku?.openerPhase !== 'done' && baku?.openerPhase !== 'idle'
@@ -429,7 +436,7 @@ export class Experience {
     // Drive worldDNA section blend — from→to colors + phaseProgress (scroll t).
     if (this.world?.baku) {
       const fromCfg = this.world.getConfig(this.world.sections[this.world.currentSectionIndex]?.phaseConfig?.id ?? 'sec_intro')
-      const toIdx = Math.min(this.world.currentSectionIndex + 1, 7)
+      const toIdx = Math.min(this.world.currentSectionIndex + 1, 5) // 6 sections, max idx 5
       const toCfg = this.world.getConfig(this.world.sections[toIdx]?.phaseConfig?.id ?? 'sec_intro')
       if (fromCfg && toCfg) {
         this.world.baku.updateWorldBlend(
@@ -512,18 +519,18 @@ export class Experience {
         this.world.baku.updateMaterial(worldState.bakuMaterial)
       }
       // A-015: Per-section cursor follow (works=0.22, others=0.15)
-      const cursorFollow = idx === 4 ? 0.22 : 0.15
+      // Works is index 3 in 6-section layout (was index 4 in 8-section)
+      const cursorFollow = idx === 3 ? 0.22 : 0.15
       this.camera.setCursorFollow(cursorFollow)
     }
 
     // Works section: baku cube morphs into a carousel ring of project cards
-    // (BakuCarousel). The carousel is a child of sceneGroups[4] and manages
-    // its own visibility via morph.
+    // (BakuCarousel). The carousel is a child of sceneGroups[3] (Works idx 3
+    // in 6-section layout) and manages its own visibility via morph.
     const showGallery = cfg?.ui?.showGallery ?? false
-    // Track BakuCarousel active state for on-demand rendering — when morphing
-    // or scrolling, we need to keep rendering.
-    const carousel = this.getCarousel()
-    this._bakuCarouselActive = carousel?.isAnimating ?? false
+    // Note: _bakuCarouselActive is now computed BEFORE _needsRender check
+    // (see line ~395) — was a race condition where stale value caused
+    // carousel.update() to never run, morph stalled at ~0.35.
     // Sync ProjectOverlay (DOM UI layer) — fullscreen opens on card click.
     if (this.overlay && showGallery && !this._portfolioInitialized) {
       this._portfolioInitialized = true
