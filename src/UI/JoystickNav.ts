@@ -75,6 +75,24 @@ export class JoystickNav {
     this._base.className = 'jlz-joystick__base'
     this.el.appendChild(this._base)
 
+    // 4 direction arrows around the base — discoverability affordance.
+    // Highlight on drag direction (jlz-joystick__arrow--active class,
+    // toggled in _pointerMoveHandler). aria-hidden — decorative, the
+    // keyboard nav + joystick drag are already accessible.
+    const directions: Array<{ cls: string; label: string; icon: string }> = [
+      { cls: 'up', label: 'Previous section', icon: 'triangle-up' },
+      { cls: 'down', label: 'Next section', icon: 'triangle-down' },
+      { cls: 'left', label: 'Lab (secret)', icon: 'triangle-left' },
+      { cls: 'right', label: 'Process (secret)', icon: 'triangle-right' },
+    ]
+    for (const dir of directions) {
+      const arrow = document.createElement('span')
+      arrow.className = `jlz-joystick__arrow jlz-joystick__arrow--${dir.cls}`
+      arrow.setAttribute('uk-icon', `icon: ${dir.icon}; ratio: 0.55`)
+      arrow.setAttribute('aria-hidden', 'true')
+      this._base.appendChild(arrow)
+    }
+
     this._ball = document.createElement('div')
     this._ball.className = 'jlz-joystick__ball'
     this._base.appendChild(this._ball)
@@ -125,10 +143,16 @@ export class JoystickNav {
       const scale = dist > maxDist ? maxDist / dist : 1
       this._ball.style.transform = `translate(${dx * scale}px, ${dy * scale}px)`
 
+      // Highlight the arrow in the dominant drag direction (discoverability).
+      const isVertical = absY > absX
+      const activeDir = isVertical ? (dy > 0 ? 'down' : 'up') : (dx > 0 ? 'right' : 'left')
+      this._base.querySelectorAll('.jlz-joystick__arrow').forEach((a) => {
+        a.classList.toggle('jlz-joystick__arrow--active', a.classList.contains(`jlz-joystick__arrow--${activeDir}`))
+      })
+
       // Check trigger threshold — only ONCE per drag
       if (dist >= TRIGGER_DISTANCE) {
         this._hasTriggered = true
-        const isVertical = absY > absX
         if (isVertical) {
           // Down = next, Up = prev (always returns to center first)
           this._navigateVertical(dy > 0 ? 1 : -1)
@@ -142,6 +166,10 @@ export class JoystickNav {
 
     this._pointerUpHandler = (_e: PointerEvent) => {
       if (!this._isDragging) return
+      // Clear active arrow highlight
+      this._base.querySelectorAll('.jlz-joystick__arrow--active').forEach((a) => {
+        a.classList.remove('jlz-joystick__arrow--active')
+      })
       this._isDragging = false
       this._hasTriggered = false
       this._base.classList.remove('is-active')

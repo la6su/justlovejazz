@@ -338,6 +338,32 @@ body.uk-light #jlz-menu-modal .jlz-theme-toggle .uk-button.uk-active {
   color: #fff;
 }
 
+/* Secret section nav — smaller font than main menu, distinct styling. */
+.jlz-secret-nav > li > a {
+  font-size: 1.25rem;
+  line-height: 1.4;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+  transition: color 0.2s ease;
+}
+
+.jlz-secret-nav > li > a:hover {
+  color: #fff;
+  text-decoration: none;
+}
+
+.jlz-secret-nav__hint {
+  opacity: 0.5;
+}
+
+body.uk-light .jlz-secret-nav > li > a {
+  color: rgba(5, 5, 7, 0.55);
+}
+
+body.uk-light .jlz-secret-nav > li > a:hover {
+  color: #050507;
+}
+
 /* Theme toggle — 3 buttons (Auto/Light/Dark) in uk-button-group. */
 .jlz-theme-toggle .uk-button {
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -885,6 +911,52 @@ section[data-section='process'] .uk-list li:hover {
 
 .jlz-joystick__base.is-active .jlz-joystick__ball {
   transition: none;
+}
+
+/* 4 direction arrows — discoverability affordance.
+   Positioned at N/S/E/W edges of the base. Faint by default, highlight
+   (accent color + opacity 1) when drag direction matches. */
+.jlz-joystick__arrow {
+  position: absolute;
+  color: rgba(255, 255, 255, 0.25);
+  transition: color 0.15s ease, opacity 0.15s ease;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.jlz-joystick__arrow--up {
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.jlz-joystick__arrow--down {
+  bottom: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.jlz-joystick__arrow--left {
+  left: -14px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.jlz-joystick__arrow--right {
+  right: -14px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.jlz-joystick__arrow--active {
+  color: var(--jlz-color-accent);
+  opacity: 1;
+}
+
+body.uk-light .jlz-joystick__arrow {
+  color: rgba(0, 0, 0, 0.3);
+}
+body.uk-light .jlz-joystick__arrow--active {
+  color: var(--jlz-color-accent);
 }
 
 .jlz-joystick__hint {

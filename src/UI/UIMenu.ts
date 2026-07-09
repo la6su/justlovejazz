@@ -67,6 +67,14 @@ export class UIMenu {
             <li><a href="${href}" data-page-link="${href}">${label}</a></li>
           `).join('')}
         </ul>
+        <div class="uk-margin-large-top">
+          <p class="uk-text-meta uk-text-uppercase">Secret Sections</p>
+          <ul class="uk-nav uk-nav-default uk-margin-small-top jlz-secret-nav">
+            <li><a href="#" data-section-jump="0" aria-label="Jump to Lab section">Lab</a></li>
+            <li><a href="#" data-section-jump="5" aria-label="Jump to Process section">Process</a></li>
+          </ul>
+          <p class="uk-text-meta uk-margin-small-top jlz-secret-nav__hint">Hidden side sections — also reachable via horizontal joystick drag.</p>
+        </div>
         <div class="uk-margin-large-top jlz-theme-toggle">
           <p class="uk-text-meta uk-text-uppercase">Theme</p>
           <div class="uk-button-group uk-margin-small-top" role="group" aria-label="Theme mode">
@@ -118,6 +126,20 @@ export class UIMenu {
     })
     this._themeHandler = () => this.updateThemeActive()
     window.addEventListener('jlz:theme-change', this._themeHandler)
+
+    // Secret section jumps — Lab (idx 0) / Process (idx 5).
+    // Calls _onNavigate(sectionIdx) same as slider clicks, then closes modal.
+    this.modalEl.querySelectorAll<HTMLAnchorElement>('[data-section-jump]').forEach((link) => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault()
+        const idx = Number(link.dataset.sectionJump)
+        if (!Number.isNaN(idx)) {
+          this._onNavigate?.(idx)
+          // Close modal — UIkit modal API
+          try { UIkit.modal(this.modalEl).hide() } catch { /* ignore */ }
+        }
+      })
+    })
 
     this.updateActive()
     this.updatePageActive(document.body.dataset.page ?? 'home')
