@@ -1,7 +1,8 @@
 // templates.ts — HTML string templates for SPA rendering.
 // 8 sections matching junni reference (6 main + 2 secret side, 1:1 with 3D scene groups).
 //
-// Built with UIkit 3 utility classes ONLY for layout / spacing / typography:
+// Built with UIkit 3 utility/component classes for layout, spacing,
+// typography, cards, buttons, and modal chrome:
 //   - uk-position-relative + uk-height-viewport   (SPA stack parent)
 //   - uk-position-cover                           (section background layer)
 //   - uk-container uk-container-expand            (section shells)
@@ -27,7 +28,6 @@
 //                                classes applied alongside for sizing/weight)
 //   - .jlz-scroll-hint*        — custom scroll indicator animation
 //   - .jlz-corner-label*       — custom positioning for flexible section
-//   - .jlz-glass-btn (--primary) — glassmorphism modifier for uk-button
 //   - .jlz-fs-*                — ProjectOverlay fullscreen styles
 //                                (defined in main.less, used by ProjectOverlay.ts)
 
@@ -53,22 +53,22 @@ export function homePage(): string {
               </p>
             </div>
             <div class="uk-grid-small uk-child-width-1-2@s" uk-grid ${REVEAL}>
-              <div class="uk-card uk-card-body uk-card-hover uk-flex uk-flex-column uk-flex-middle uk-text-center" data-lab="shader">
+              <div class="uk-card uk-card-default uk-card-body uk-card-hover uk-flex uk-flex-column uk-flex-middle uk-text-center" data-lab="shader">
                 <span class="uk-text-large" aria-hidden="true">◈</span>
                 <h3 class="uk-card-title">Shader Playground</h3>
                 <p class="uk-text-meta">Live GLSL fragments</p>
               </div>
-              <div class="uk-card uk-card-body uk-card-hover uk-flex uk-flex-column uk-flex-middle uk-text-center" data-lab="audio">
+              <div class="uk-card uk-card-default uk-card-body uk-card-hover uk-flex uk-flex-column uk-flex-middle uk-text-center" data-lab="audio">
                 <span class="uk-text-large" aria-hidden="true">◉</span>
                 <h3 class="uk-card-title">Audio Reactive</h3>
                 <p class="uk-text-meta">Sound → geometry</p>
               </div>
-              <div class="uk-card uk-card-body uk-card-hover uk-flex uk-flex-column uk-flex-middle uk-text-center" data-lab="gen">
+              <div class="uk-card uk-card-default uk-card-body uk-card-hover uk-flex uk-flex-column uk-flex-middle uk-text-center" data-lab="gen">
                 <span class="uk-text-large" aria-hidden="true">⬡</span>
                 <h3 class="uk-card-title">Generative</h3>
                 <p class="uk-text-meta">Procedural worlds</p>
               </div>
-              <div class="uk-card uk-card-body uk-card-hover uk-flex uk-flex-column uk-flex-middle uk-text-center" data-lab="particles">
+              <div class="uk-card uk-card-default uk-card-body uk-card-hover uk-flex uk-flex-column uk-flex-middle uk-text-center" data-lab="particles">
                 <span class="uk-text-large" aria-hidden="true">⁂</span>
                 <h3 class="uk-card-title">GPU Particles</h3>
                 <p class="uk-text-meta">10k instances</p>
@@ -166,7 +166,7 @@ export function homePage(): string {
               </p>
             </div>
             <div class="uk-grid-small uk-child-width-1-3@m uk-grid-match" uk-grid>
-              <article class="uk-card uk-card-body uk-card-hover" ${REVEAL}>
+              <article class="uk-card uk-card-default uk-card-body uk-card-hover" ${REVEAL}>
                 <span class="uk-text-meta uk-text-bold">01</span>
                 <h3 class="uk-card-title">WebGPU Native</h3>
                 <p class="uk-text-meta">
@@ -174,7 +174,7 @@ export function homePage(): string {
                   Native performance, zero plugins.
                 </p>
               </article>
-              <article class="uk-card uk-card-body uk-card-hover" ${REVEAL}>
+              <article class="uk-card uk-card-default uk-card-body uk-card-hover" ${REVEAL}>
                 <span class="uk-text-meta uk-text-bold">02</span>
                 <h3 class="uk-card-title">Real-time Shaders</h3>
                 <p class="uk-text-meta">
@@ -182,7 +182,7 @@ export function homePage(): string {
                   react to light, sound, and gesture.
                 </p>
               </article>
-              <article class="uk-card uk-card-body uk-card-hover" ${REVEAL}>
+              <article class="uk-card uk-card-default uk-card-body uk-card-hover" ${REVEAL}>
                 <span class="uk-text-meta uk-text-bold">03</span>
                 <h3 class="uk-card-title">Spatial Design</h3>
                 <p class="uk-text-meta">
@@ -212,16 +212,16 @@ export function homePage(): string {
                  uk-grid ${REVEAL}
                  data-content-id="contact-grid">
               <a href="mailto:hello@justlovejazz.com"
-                 class="uk-button uk-button-default jlz-glass-btn jlz-glass-btn--primary">
+               class="uk-button uk-button-primary uk-button-large">
                 <span uk-icon="icon: mail; ratio: 1.1" aria-hidden="true"></span>
                 <span>Start a project</span>
               </a>
-              <a href="https://github.com" class="uk-button uk-button-default jlz-glass-btn"
+              <a href="https://github.com" class="uk-button uk-button-default uk-button-large"
                  target="_blank" rel="noopener">
                 <span uk-icon="icon: github; ratio: 1.1" aria-hidden="true"></span>
                 <span>GitHub</span>
               </a>
-              <a href="https://twitter.com" class="uk-button uk-button-default jlz-glass-btn"
+              <a href="https://twitter.com" class="uk-button uk-button-default uk-button-large"
                  target="_blank" rel="noopener">
                 <span uk-icon="icon: twitter; ratio: 1.1" aria-hidden="true"></span>
                 <span>Twitter</span>

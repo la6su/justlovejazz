@@ -1,150 +1,18 @@
-// src/assets/main.less — JLZ application styles (Less entry)
-//
-// Load order:
-//   1. _import.less           → JLZ UIKit theme + tokens.less bridge + UIKit components
-//   2. master-quantum-flares   → vendored UIKit theme (DO NOT TOUCH per AGENTS.md)
-//   3. black-blue.less         → master-quantum-flares color variant
-//
-// Then this file adds ONLY:
-//   - Theme overrides on top of UIKit (font family, headings uppercase,
-//     button radius, section colors, text-shadows, etc.)
-//   - Essential SPA layout (section stacking, scrollspy-pending gate)
-//   - Reset / base body / canvas
-//   - Custom cursor
-//   - Splash loader
-//   - ProjectOverlay fullscreen styles (.jlz-fs-*)
-//   - Custom components with no UIKit equivalent:
-//       .studio-title (NoiseText hook), .jlz-scroll-hint*,
-//       .jlz-corner-label*, .jlz-nav-link, .jlz-hint*,
-//       .jlz-joystick*, .jlz-glass-btn (modifier only)
-//
-// All hardcoded colors SHOULD use --jlz-* tokens from src/styles/tokens.css.
-// The token system is the single source of truth for color / type / spacing / motion.
+/*
+ * src/assets/main.less — JLZ app layer on top of UIkit 3.
+ *
+ * Goal: keep UIkit as the foundation, then add only the project-specific
+ * shell, light/dark section theme glue, and bespoke overlays that UIkit
+ * does not provide out of the box.
+ */
 
 @import './_import.less';
-/* Theme variables already defined in _import.less (tokens → UIKit mapping)
- * All UIKit component imports are centralized there too.
- */
 @import './master-quantum-flares/_import.less';
 @import './master-quantum-flares/styles/black-blue.less';
 
-/* ════════════════════════════════════════════════════════════════════
-   0. Force Inter font globally — override master-quantum-flares
-   (which sets 'Source Sans 3' + 'Geologica'). Single font for the
-   entire project per user request.
-   ════════════════════════════════════════════════════════════════════ */
-@global-font-family:
-  'Inter',
-  -apple-system,
-  BlinkMacSystemFont,
-  sans-serif;
-@global-primary-font-family:
-  'Inter',
-  -apple-system,
-  BlinkMacSystemFont,
-  sans-serif;
-@base-heading-font-family:
-  'Inter',
-  -apple-system,
-  BlinkMacSystemFont,
-  sans-serif;
-@base-body-font-family:
-  'Inter',
-  -apple-system,
-  BlinkMacSystemFont,
-  sans-serif;
-
-/* ════════════════════════════════════════════════════════════════════
-   0.5. SPA section layout — essential project structure (no UIKit
-   equivalent). Sections are stacked position:absolute, only the active
-   one is display:flex. UIKit's uk-position-cover + uk-height-viewport
-   handle the wrapper; this rule handles the section stacking itself.
-   ════════════════════════════════════════════════════════════════════ */
-#spa-content section[data-section] {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100vh;
-  height: 100dvh;
-  display: none; /* hidden by default — .section-active shows it */
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  z-index: 2;
-  /* Sections are stacked (absolute). Only the active section is visible.
-     Visibility is toggled via .section-active (set by ContentReveal on
-     jlz:section-change). The SwipeNav scrubber drives section index. */
-}
-
-/* UIKit's uk-height-viewport attribute sets min-height:100vh — extend
-   with 100dvh so iOS Safari's dynamic viewport doesn't leave a gap. */
-.uk-height-viewport {
-  min-height: 100vh !important;
-  min-height: 100dvh !important;
-}
-
-/* Section color themes — light vs dark sections (theme overrides) */
-section[data-section='about'],
-section[data-section='challenge'],
-section[data-section='innovative'],
-section[data-section='process'] {
-  color: #fff;
-}
-section[data-section='about'] .studio-title,
-section[data-section='challenge'] .studio-title,
-section[data-section='innovative'] .studio-title,
-section[data-section='process'] .studio-title {
-  color: #fff;
-}
-section[data-section='intro'],
-section[data-section='flexible'],
-section[data-section='contact'],
-section[data-section='lab'] {
-  color: #111;
-}
-section[data-section='intro'] .studio-title,
-section[data-section='flexible'] .studio-title,
-section[data-section='contact'] .studio-title,
-section[data-section='lab'] .studio-title {
-  color: #111;
-}
-section[data-section='intro'] .uk-button-default,
-section[data-section='flexible'] .uk-button-default,
-section[data-section='contact'] .uk-button-default,
-section[data-section='lab'] .uk-button-default {
-  border-color: #111;
-  color: #111;
-}
-section[data-section='intro'] .uk-button-default:hover,
-section[data-section='flexible'] .uk-button-default:hover,
-section[data-section='contact'] .uk-button-default:hover,
-section[data-section='lab'] .uk-button-default:hover {
-  background: #111;
-  color: #fff;
-  border-color: #111;
-}
-
-/* uk-scrollspy attributes are baked into templates.ts markup directly.
-   UIkit auto-inits scrollspy instances as soon as the HTML lands in
-   #spa-content — which is *before* the splash opens. To keep the
-   fade-in hidden behind the splash, `.scrollspy-pending` cancels the
-   animation via `animation: none !important` and forces `opacity: 0`.
-   When jlz:webgl-ready fires (post-splash), entry-app.ts drops the
-   class — the animation-name computed value flips from `none` back to
-   `uk-fade`, which restarts the animation so the fade-in is visible. */
-.scrollspy-pending [uk-scrollspy] {
-  animation: none !important;
-  opacity: 0 !important;
-}
-#spa-content {
-  position: relative;
-  z-index: 2;
-}
-
-/* ════════════════════════════════════════════════════════════════════
-   1. Reset + base body / canvas
-   ════════════════════════════════════════════════════════════════════ */
+/* ------------------------------------------------------------------
+   Base document
+   ------------------------------------------------------------------ */
 
 * {
   box-sizing: border-box;
@@ -153,8 +21,7 @@ section[data-section='lab'] .uk-button-default:hover {
 html,
 body {
   overflow-x: hidden;
-  /* SwipeNav replaces scroll-snap — no CSS scroll snapping needed. */
-  overflow: hidden; /* lock page scroll — navigation via SwipeNav only */
+  overflow: hidden;
   font-family:
     'Inter',
     -apple-system,
@@ -162,7 +29,14 @@ body {
     sans-serif !important;
 }
 
-/* Headings — uppercase as brand convention (theme override on UIKit) */
+body {
+  margin: 0;
+  background: var(--jlz-color-bg);
+  color: var(--jlz-color-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 h1,
 .uk-h1,
 h2,
@@ -181,25 +55,14 @@ h6,
 .uk-heading-xlarge,
 .uk-heading-2xlarge,
 .uk-heading-3xlarge {
-  font-family: @global-font-family;
+  font-family: inherit;
   text-transform: uppercase;
+  letter-spacing: -0.03em;
 }
 
-body {
-  margin: 0;
-  overflow-x: hidden;
-  background: var(--jlz-color-bg);
-  color: var(--jlz-color-text);
-  font-family: @global-font-family;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-/* 3D canvas — fixed full-screen, behind everything */
 canvas {
   position: fixed;
-  top: 0;
-  left: 0;
+  inset: 0;
   width: 100vw;
   height: 100vh;
   outline: none;
@@ -208,8 +71,8 @@ canvas {
 }
 
 .canvas {
-  height: 100dvh;
   width: 100vw;
+  height: 100dvh;
   min-height: max(0px, 100dvh);
   display: flex;
   justify-content: center;
@@ -217,26 +80,36 @@ canvas {
   z-index: -10;
 }
 
-/* UIKit button hook — applied to all .uk-button via UIKit button.less */
-.hook-button() {
-  border-radius: var(--jlz-radius-md);
-  text-transform: uppercase;
-  font-size: 0.85rem;
+#spa-content {
+  position: relative;
+  z-index: 2;
 }
 
-/* ════════════════════════════════════════════════════════════════════
-   2. Section reveal state (UIKit scrollspy handles the fade)
-   ════════════════════════════════════════════════════════════════════ */
-
-/* Sections are stacked (position:absolute). Inactive sections hidden
-   via display:none. .section-active flips display:flex + pointer-events.
-   The fade in/out is handled by UIKit scrollspy (uk-animation-fade). */
 #spa-content section[data-section] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  z-index: 2;
   pointer-events: none;
+  background: transparent;
+  color: inherit;
 }
+
 .section-active {
   display: flex !important;
   pointer-events: auto;
+}
+
+.scrollspy-pending [uk-scrollspy] {
+  animation: none !important;
+  opacity: 0 !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -245,16 +118,426 @@ canvas {
   }
 }
 
-/* ════════════════════════════════════════════════════════════════════
-   3. Page loader + splash cursor
-   ════════════════════════════════════════════════════════════════════ */
+/* ------------------------------------------------------------------
+   UIkit theme-aligned colors
+   ------------------------------------------------------------------ */
 
-#pageLoader {
+body.light-theme {
+  color: rgba(5, 5, 7, 0.92);
+}
+
+body.light-theme .studio-title,
+body.light-theme .uk-heading-medium,
+body.light-theme .uk-heading-xlarge,
+body.light-theme .uk-text-lead,
+body.light-theme .uk-text-meta,
+body.light-theme .uk-card-title {
+  color: rgba(5, 5, 7, 0.92);
+}
+
+body.light-theme .uk-text-meta {
+  color: rgba(5, 5, 7, 0.55);
+}
+
+body.light-theme .uk-button-default,
+body.light-theme .uk-button-primary {
+  color: rgba(5, 5, 7, 0.92);
+  border-color: rgba(5, 5, 7, 0.14);
+  background: rgba(255, 255, 255, 0.52);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+}
+
+body.light-theme .uk-button-default:hover,
+body.light-theme .uk-button-default:focus-visible,
+body.light-theme .uk-button-primary:hover,
+body.light-theme .uk-button-primary:focus-visible {
+  color: #050507;
+  border-color: rgba(5, 5, 7, 0.24);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+body.light-theme .uk-card-default {
+  background: rgba(255, 255, 255, 0.58);
+  border-color: rgba(5, 5, 7, 0.08);
+  color: rgba(5, 5, 7, 0.9);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+}
+
+body.light-theme .uk-card-default:hover {
+  background: rgba(255, 255, 255, 0.72);
+  border-color: rgba(5, 5, 7, 0.14);
+}
+
+body.light-theme .uk-card-default .uk-text-meta {
+  color: rgba(5, 5, 7, 0.55);
+}
+
+body.light-theme .jlz-nav-link {
+  color: rgba(5, 5, 7, 0.55);
+}
+
+body.light-theme .jlz-nav-link:hover {
+  color: rgba(5, 5, 7, 0.84);
+}
+
+body.light-theme li.uk-active .jlz-nav-link {
+  color: rgba(5, 5, 7, 0.98);
+}
+
+body.light-theme .jlz-hint__text {
+  color: rgba(5, 5, 7, 0.68);
+  background: rgba(255, 255, 255, 0.42);
+  border-color: rgba(5, 5, 7, 0.08);
+}
+
+body.light-theme .jlz-joystick__base {
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+body.light-theme .jlz-joystick__base.is-active {
+  background: rgba(0, 0, 0, 0.1);
+  border-color: rgba(0, 0, 0, 0.3);
+}
+
+body.light-theme .jlz-joystick__ball {
+  background: rgba(0, 0, 0, 0.2);
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+body.light-theme .jlz-joystick__hint {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+/* ------------------------------------------------------------------
+   Header / menu chrome
+   ------------------------------------------------------------------ */
+
+.tm-header {
   position: fixed;
   top: 0;
   left: 0;
+  right: 0;
+  z-index: 10001;
+  padding: 10px 0;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 80px,
+    #000 calc(100% - 80px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 80px,
+    #000 calc(100% - 80px),
+    transparent 100%
+  );
+}
+
+#slider-nav {
   width: 100%;
-  height: 100%;
+}
+
+.jlz-nav-link {
+  display: block;
+  padding: 6px 14px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+
+.jlz-nav-link:hover {
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+}
+
+li.uk-active .jlz-nav-link {
+  color: #fff;
+}
+
+.jlz-menu-toggle {
+  display: none !important;
+}
+
+/* ------------------------------------------------------------------
+   App-specific typography + hints
+   ------------------------------------------------------------------ */
+
+.studio-title.uk-heading-medium {
+  font-size: clamp(2.75rem, 9vw, 6.5rem);
+  font-weight: 200;
+  letter-spacing: -0.035em;
+  line-height: 0.92;
+  margin: 0 0 var(--jlz-space-3);
+}
+
+.studio-title.uk-heading-xlarge {
+  font-size: clamp(3rem, 13vw, 10rem);
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 0.85;
+  margin: 0;
+}
+
+.jlz-scroll-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--jlz-space-3);
+  pointer-events: none;
+  opacity: 0.7;
+  margin-bottom: 40px;
+  color: rgba(5, 5, 7, 0.7);
+}
+
+.jlz-scroll-hint__label {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+}
+
+.jlz-scroll-hint__line {
+  position: relative;
+  width: 1px;
+  height: 56px;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    currentColor 40%,
+    currentColor 60%,
+    transparent 100%
+  );
+  overflow: hidden;
+}
+
+.jlz-scroll-hint__line::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 28%;
+  background: currentColor;
+  animation: jlz-scroll-pulse 2.6s var(--jlz-ease-cinematic) infinite;
+}
+
+@keyframes jlz-scroll-pulse {
+  0% {
+    transform: translateY(-110%);
+    opacity: 0;
+  }
+
+  20% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(420%);
+    opacity: 0;
+  }
+}
+
+.jlz-corner-label {
+  position: absolute;
+  top: clamp(6vh, 10vh, 12vh);
+  left: var(--jlz-page-gutter);
+  z-index: 3;
+  pointer-events: none;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.jlz-corner-label__hint {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: clamp(0.65rem, 0.85vw, 0.78rem);
+  font-weight: 300;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  opacity: 0.6;
+  margin: 0;
+}
+
+.jlz-hint {
+  position: fixed;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  z-index: var(--jlz-z-content);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  text-align: center;
+}
+
+.jlz-hint.is-visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.jlz-hint__text {
+  display: inline-block;
+  padding: 6px 16px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 100px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------
+   Project overlay
+   ------------------------------------------------------------------ */
+
+#project-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3500;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+
+#project-overlay.is-open {
+  opacity: 1;
+}
+
+.jlz-fs-bg {
+  background: rgba(2, 2, 6, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.jlz-fs-top {
+  margin-top: 40px;
+  padding: 2rem 2.5rem;
+}
+
+.jlz-fs-cat {
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 0.3rem;
+}
+
+.jlz-fs-title {
+  font-size: clamp(1.5rem, 4vw, 2.5rem);
+  font-weight: 900;
+  color: #fff;
+}
+
+.jlz-fs-top__right {
+  gap: 1.5rem;
+}
+
+.jlz-fs-counter {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-variant-numeric: tabular-nums;
+}
+
+.jlz-fs-close,
+.jlz-fs-prev,
+.jlz-fs-next {
+  background: none;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.jlz-fs-close {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 1rem;
+}
+
+.jlz-fs-prev,
+.jlz-fs-next {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  font-size: 1.2rem;
+}
+
+.jlz-fs-close:hover,
+.jlz-fs-prev:hover,
+.jlz-fs-next:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.jlz-fs-bottom {
+  padding: 2rem 2.5rem;
+  gap: 2rem;
+}
+
+.jlz-fs-thumb {
+  width: 120px;
+  height: 80px;
+  background-size: cover;
+  background-position: center;
+  border-radius: 6px;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.jlz-fs-desc {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.9rem;
+  max-width: 600px;
+}
+
+.jlz-fs-tags {
+  gap: 0.5rem;
+}
+
+.jlz-fs-tag {
+  font-size: 0.7rem;
+  padding: 2px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 100px;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+#project-overlay.is-open .jlz-fs-top,
+#project-overlay.is-open .jlz-fs-prev,
+#project-overlay.is-open .jlz-fs-next,
+#project-overlay.is-open .jlz-fs-bottom,
+#project-overlay.is-open .jlz-fs-close {
+  pointer-events: auto;
+}
+
+/* ------------------------------------------------------------------
+   Custom cursor + loader
+   ------------------------------------------------------------------ */
+
+#pageLoader {
+  position: fixed;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -265,19 +548,15 @@ canvas {
   color: var(--jlz-color-text);
   transition: opacity var(--jlz-duration-slow) var(--jlz-ease-state);
 }
+
 #pageLoader.fade-out {
   opacity: 0;
   pointer-events: none;
 }
 
-/* Splash cursor — splash CSS is inline in index.html */
 #jlj-enter {
   cursor: pointer;
 }
-
-/* ════════════════════════════════════════════════════════════════════
-   4. Custom cursor
-   ════════════════════════════════════════════════════════════════════ */
 
 .custom-cursor {
   position: fixed;
@@ -288,8 +567,6 @@ canvas {
   background-color: var(--jlz-color-accent);
   border-radius: var(--jlz-radius-full);
   pointer-events: none;
-  /* z-index above ProjectOverlay (3500) + UIkit modal (~10000) so the cursor
-     stays visible on top of fullscreen overlays. */
   z-index: 100000;
   transition:
     width var(--jlz-duration-normal) var(--jlz-ease-state),
@@ -312,8 +589,6 @@ canvas {
   background-color: var(--jlz-color-text);
 }
 
-/* Custom cursor only on precise-pointer devices (desktop mouse).
-   Touch / coarse-pointer / motor-impaired users keep the system cursor (WCAG). */
 @media (hover: hover) and (pointer: fine) {
   body,
   a,
@@ -323,563 +598,16 @@ canvas {
   }
 }
 
-/* ════════════════════════════════════════════════════════════════════
-   5. Project detail overlay — ProjectOverlay.ts builds its own DOM with
-   UIKit utility classes + .jlz-fs-* bespoke classes.
-   When closed: opacity:0, pointer-events:none (invisible, non-interactive).
-   When open (.is-open): opacity:1, pointer-events:auto on interactive children.
-   ════════════════════════════════════════════════════════════════════ */
-
-#project-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 3500;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.4s ease;
-}
-#project-overlay.is-open {
-  opacity: 1;
-}
-
-/* Overlay background — blurred dark backdrop */
-.jlz-fs-bg {
-  background: rgba(2, 2, 6, 0.85);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-
-/* Top bar: title (left) + counter + close (right) */
-.jlz-fs-top {
-  margin-top: 40px;
-  padding: 2rem 2.5rem;
-}
-.jlz-fs-cat {
-  font-size: 0.7rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.4);
-  margin-bottom: 0.3rem;
-}
-.jlz-fs-title {
-  font-size: clamp(1.5rem, 4vw, 2.5rem);
-  font-weight: 900;
-  color: #fff;
-}
-.jlz-fs-top__right {
-  gap: 1.5rem;
-}
-.jlz-fs-counter {
-  font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.5);
-  font-variant-numeric: tabular-nums;
-}
-
-/* Close button */
-.jlz-fs-close {
-  background: none;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #fff;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  font-size: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s ease, border-color 0.2s ease;
-}
-.jlz-fs-close:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.4);
-}
-
-/* Prev/Next arrows */
-.jlz-fs-prev,
-.jlz-fs-next {
-  background: none;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #fff;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  font-size: 1.2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s ease, border-color 0.2s ease;
-}
-.jlz-fs-prev:hover,
-.jlz-fs-next:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.4);
-}
-
-/* Bottom bar: thumbnail + description + tags */
-.jlz-fs-bottom {
-  padding: 2rem 2.5rem;
-  gap: 2rem;
-}
-.jlz-fs-thumb {
-  width: 120px;
-  height: 80px;
-  background-size: cover;
-  background-position: center;
-  border-radius: 6px;
-  flex-shrink: 0;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-.jlz-fs-desc {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.9rem;
-  max-width: 600px;
-}
-.jlz-fs-tags {
-  gap: 0.5rem;
-}
-.jlz-fs-tag {
-  font-size: 0.7rem;
-  padding: 2px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 100px;
-  color: rgba(255, 255, 255, 0.5);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-/* When overlay is open, interactive children get pointer-events:auto. */
-#project-overlay.is-open .jlz-fs-top,
-#project-overlay.is-open .jlz-fs-prev,
-#project-overlay.is-open .jlz-fs-next,
-#project-overlay.is-open .jlz-fs-bottom,
-#project-overlay.is-open .jlz-fs-close {
-  pointer-events: auto;
-}
-
-/* ════════════════════════════════════════════════════════════════════
-   6. Responsive overrides
-   ════════════════════════════════════════════════════════════════════ */
-
-/* Mobile Viewport (0–500px) */
-@media (max-width: 500px) {
-  /* Hide desktop-only cursor completely */
-  .custom-cursor {
-    display: none !important;
-  }
-  body,
-  a,
-  button,
-  .interactive {
-    cursor: auto !important;
-  }
-
-  /* Tighten UIkit grid gaps on mobile */
-  .uk-grid {
-    gap: 0.75rem !important;
-    padding: 0.75rem 1rem !important;
-  }
-}
-
-/* Mobile optimizations (max-width: 768px) */
-@media (max-width: 768px) {
-  html {
-    overscroll-behavior: none;
-    -webkit-overflow-scrolling: auto;
-  }
-  body {
-    touch-action: pan-y;
-    -webkit-tap-highlight-color: transparent;
-  }
-  canvas {
-    touch-action: none;
-  }
-}
-
-/* Phase G — respects-reduced-motion (UIkit + micro-interactions) */
-@media (prefers-reduced-motion: reduce) {
-  .uk-animation-fade,
-  .uk-animation-slide-bottom,
-  .uk-animation-slide-top,
-  .uk-animation-slide-left,
-  .uk-animation-slide-right {
-    animation-duration: 0.001ms !important;
-    animation-iteration-count: 1 !important;
-  }
-}
-
-/* ════════════════════════════════════════════════════════════════════
-   7. Slider nav — full-width, center:1, fade mask (like lemonroom.ru)
-   ════════════════════════════════════════════════════════════════════ */
-
-.tm-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 10001;
-  padding: 10px 0;
-  /* Fade mask — items fade out at edges */
-  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 80px, #000 calc(100% - 80px), transparent 100%);
-  mask-image: linear-gradient(to right, transparent 0, #000 80px, #000 calc(100% - 80px), transparent 100%);
-}
-#slider-nav {
-  width: 100%;
-}
-.jlz-nav-link {
-  display: block;
-  padding: 6px 14px;
-  font-size: 0.72rem;
-  font-weight: 500;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.45);
-  white-space: nowrap;
-  transition: color 0.2s ease;
-}
-.jlz-nav-link:hover {
-  color: rgba(255, 255, 255, 0.8);
-  text-decoration: none;
-}
-li.uk-active .jlz-nav-link {
-  color: #fff;
-}
-body.light-theme .jlz-nav-link {
-  color: rgba(0, 0, 0, 0.45);
-}
-body.light-theme .jlz-nav-link:hover {
-  color: rgba(0, 0, 0, 0.8);
-}
-body.light-theme li.uk-active .jlz-nav-link {
-  color: #000;
-}
-.jlz-menu-toggle { display: none !important; }
-
-/* ════════════════════════════════════════════════════════════════════
-   8. UI OVERHAUL — cinematic typography, glassmorphism, 3D symbiosis
-   Custom components only (no UIKit duplicate). All layout / spacing /
-   typography use UIKit utilities from templates.ts.
-   ════════════════════════════════════════════════════════════════════ */
-
-/* ── 8.1  Section titles — `.studio-title` is the NoiseText animation
-   hook (entry-app.ts selectors key off it). UIkit `uk-heading-medium` /
-   `uk-heading-xlarge` provide the base sizing; the rules below override
-   the weight to the brand's 200-weight cinematic feel (theme override). ── */
-.studio-title.uk-heading-medium {
-  font-size: clamp(2.75rem, 9vw, 6.5rem);
-  font-weight: 200;
-  letter-spacing: -0.035em;
-  line-height: 0.92;
-  text-transform: uppercase;
-  margin: 0 0 var(--jlz-space-3);
-}
-.studio-title.uk-heading-xlarge {
-  font-size: clamp(3rem, 13vw, 10rem);
-  font-weight: 900;
-  letter-spacing: -0.045em;
-  line-height: 0.85;
-  text-transform: uppercase;
-  margin: 0;
-}
-
-/* ── 8.2  Scroll hint (intro bottom) — custom interaction element ── */
-.jlz-scroll-hint {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--jlz-space-3);
-  pointer-events: none;
-  opacity: 0.7;
-  margin-bottom: 40px;
-}
-.jlz-scroll-hint__label {
-  font-family: var(--jlz-font-mono);
-  font-size: 0.62rem;
-  font-weight: 500;
-  letter-spacing: 0.4em;
-  text-transform: uppercase;
-}
-.jlz-scroll-hint__line {
-  position: relative;
-  width: 1px;
-  height: 56px;
-  background: linear-gradient(
-    to bottom,
-    transparent 0%,
-    currentColor 40%,
-    currentColor 60%,
-    transparent 100%
-  );
-  overflow: hidden;
-}
-.jlz-scroll-hint__line::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 28%;
-  background: currentColor;
-  animation: jlz-scroll-pulse 2.6s var(--jlz-ease-cinematic) infinite;
-}
-@keyframes jlz-scroll-pulse {
-  0% {
-    transform: translateY(-110%);
-    opacity: 0;
-  }
-  20% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(420%);
-    opacity: 0;
-  }
-}
-/* Light section variant (intro/flexible — dark text on light bg) */
-section[data-section='intro'] .jlz-scroll-hint,
-section[data-section='flexible'] .jlz-scroll-hint {
-  color: rgba(0, 0, 0, 0.7);
-}
-section[data-section='about'] .jlz-scroll-hint,
-section[data-section='challenge'] .jlz-scroll-hint,
-section[data-section='innovative'] .jlz-scroll-hint,
-section[data-section='contact'] .jlz-scroll-hint {
-  color: rgba(255, 255, 255, 0.7);
-}
-
-/* ── 8.3  Corner label (flexible section — cube is hero) ── */
-.jlz-corner-label {
-  position: absolute;
-  top: clamp(6vh, 10vh, 12vh);
-  left: var(--jlz-page-gutter);
-  z-index: 3;
-  pointer-events: none;
-  color: rgba(0, 0, 0, 0.75);
-}
-.jlz-corner-label__hint {
-  font-family: var(--jlz-font-mono);
-  font-size: clamp(0.65rem, 0.85vw, 0.78rem);
-  font-weight: 300;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  opacity: 0.55;
-  margin: 0;
-}
-
-/* ── 8.4  CTA buttons — `uk-button uk-button-default jlz-glass-btn`
-   UIkit handles the base button look (padding, focus, etc.); .jlz-glass-btn
-   is kept as a modifier for the glassmorphism surface + custom hover. ── */
-.jlz-glass-btn {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--jlz-space-3);
-  padding: 0.95em 1.6em;
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(14px) saturate(140%);
-  -webkit-backdrop-filter: blur(14px) saturate(140%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: var(--jlz-radius-full);
-  color: rgba(255, 255, 255, 0.95);
-  font-family: var(--jlz-font-body);
-  font-size: clamp(0.78rem, 0.95vw, 0.88rem);
-  font-weight: 500;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  text-decoration: none;
-  cursor: pointer;
-  white-space: nowrap;
-  transition:
-    transform var(--jlz-duration-normal) var(--jlz-ease-state),
-    background var(--jlz-duration-normal) var(--jlz-ease-state),
-    border-color var(--jlz-duration-normal) var(--jlz-ease-state),
-    box-shadow var(--jlz-duration-normal) var(--jlz-ease-state),
-    color var(--jlz-duration-normal) var(--jlz-ease-state);
-}
-.jlz-glass-btn:hover,
-.jlz-glass-btn:focus-visible {
-  transform: scale(1.04);
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.28);
-  box-shadow:
-    0 0 36px rgba(140, 180, 240, 0.18),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.04);
-  color: #fff;
-  text-decoration: none;
-  outline: none;
-}
-.jlz-glass-btn--primary {
-  background: rgba(140, 180, 240, 0.18);
-  border-color: rgba(140, 180, 240, 0.42);
-  color: rgba(255, 255, 255, 0.98);
-}
-.jlz-glass-btn--primary:hover,
-.jlz-glass-btn--primary:focus-visible {
-  background: rgba(140, 180, 240, 0.32);
-  border-color: rgba(140, 180, 240, 0.7);
-  box-shadow:
-    0 0 44px rgba(140, 180, 240, 0.28),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.06);
-}
-/* Light-section variant for glass buttons (intro/flexible/contact) */
-section[data-section='intro'] .jlz-glass-btn,
-section[data-section='flexible'] .jlz-glass-btn,
-section[data-section='contact'] .jlz-glass-btn,
-section[data-section='lab'] .jlz-glass-btn {
-  background: rgba(0, 0, 0, 0.04);
-  border-color: rgba(0, 0, 0, 0.14);
-  color: rgba(0, 0, 0, 0.88);
-}
-section[data-section='intro'] .jlz-glass-btn:hover,
-section[data-section='flexible'] .jlz-glass-btn:hover,
-section[data-section='contact'] .jlz-glass-btn:hover,
-section[data-section='lab'] .jlz-glass-btn:hover {
-  background: rgba(0, 0, 0, 0.1);
-  border-color: rgba(0, 0, 0, 0.32);
-  box-shadow: 0 0 24px rgba(0, 0, 0, 0.08);
-  color: #000;
-}
-
-/* ── 8.5  Cinematic text-shadow on dark sections (theme override on
-   UIKit text utilities + headings) ── */
-section[data-section='about'] .uk-text-lead,
-section[data-section='challenge'] .uk-text-lead,
-section[data-section='innovative'] .uk-text-lead,
-section[data-section='process'] .uk-text-lead,
-section[data-section='about'] .uk-text-large,
-section[data-section='innovative'] .uk-text-large,
-section[data-section='innovative'] .uk-text-meta {
-  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.4);
-}
-section[data-section='about'] .uk-heading-medium,
-section[data-section='challenge'] .uk-heading-medium,
-section[data-section='innovative'] .uk-heading-medium,
-section[data-section='process'] .uk-heading-medium,
-section[data-section='about'] .studio-title,
-section[data-section='challenge'] .studio-title,
-section[data-section='innovative'] .studio-title,
-section[data-section='process'] .studio-title {
-  text-shadow: 0 4px 40px rgba(0, 0, 0, 0.45);
-}
-
-/* ── 8.6  Stagger reveal — driven by UIkit scrollspy.
-   Each [uk-scrollspy] element has `cls: uk-animation-fade; delay: 300;
-   repeat: true` baked into templates.ts. UIkit handles the animation; the
-   .scrollspy-pending rule in §0.5 cancels it during splash so the fade
-   replays after the splash curtains open. No custom @keyframes needed. ── */
-
-/* Reduced motion — disable decorative animations (UIkit already disables
-   uk-animation-fade via its own prefers-reduced-motion rules; we just need
-   to neutralize the scroll hint pulse). */
-@media (prefers-reduced-motion: reduce) {
-  .jlz-scroll-hint__line::after {
-    animation: none;
-    opacity: 0.45;
-    transform: translateY(50%);
-  }
-}
-
-/* ── 8.7  Mobile responsive (theme overrides on UIKit utilities) ── */
-@media (max-width: 600px) {
-  .studio-title.uk-heading-xlarge {
-    font-size: clamp(2.4rem, 14vw, 4rem);
-  }
-  .studio-title.uk-heading-medium {
-    font-size: clamp(2rem, 11vw, 3rem);
-  }
-  .uk-text-lead {
-    font-size: 0.9rem;
-  }
-  section[data-section='innovative'] .uk-card {
-    padding: var(--jlz-space-5) var(--jlz-space-4);
-  }
-  /* CTA grid — on small screens stack the buttons full-width. */
-  section[data-section='contact'] .uk-grid-small {
-    flex-direction: column;
-    width: 100%;
-    max-width: 320px;
-    margin-left: auto;
-    margin-right: auto;
-  }
-  .jlz-glass-btn {
-    width: 100%;
-    justify-content: center;
-  }
-  .jlz-corner-label {
-    top: clamp(5vh, 8vh, 10vh);
-  }
-  section[data-section='contact'] .uk-text-large {
-    font-size: clamp(1.1rem, 5vw, 1.4rem);
-  }
-}
-
-/* ═══════════════════════════════════════════════════════════════════
-   §9. Section hints — short UI labels per section
-   Positioned at bottom-center, above the dock. Fades in on section change,
-   auto-fades after 4s. Subtle, informative, non-cluttering.
-   ═══════════════════════════════════════════════════════════════════ */
-.jlz-hint {
-  position: fixed;
-  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
-  left: 50%;
-  transform: translateX(-50%) translateY(8px);
-  z-index: var(--jlz-z-content, 10);
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.5s ease, transform 0.5s ease;
-  text-align: center;
-}
-.jlz-hint.is-visible {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
-.jlz-hint__text {
-  display: inline-block;
-  padding: 6px 16px;
-  font-family: var(--jlz-font-body, 'Inter', sans-serif);
-  font-size: 0.7rem;
-  font-weight: 500;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.7);
-  background: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border-radius: 100px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  white-space: nowrap;
-}
-/* Light sections (intro, flexible) — dark text on light glass */
-body.light-theme .jlz-hint__text {
-  color: rgba(0, 0, 0, 0.65);
-  background: rgba(255, 255, 255, 0.4);
-  border-color: rgba(0, 0, 0, 0.08);
-}
-@media (max-width: 640px) {
-  .jlz-hint {
-    bottom: calc(90px + env(safe-area-inset-bottom, 0px));
-  }
-  .jlz-hint__text {
-    font-size: 0.6rem;
-    letter-spacing: 0.15em;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .jlz-hint {
-    transition: opacity 0.2s ease;
-    transform: translateX(-50%);
-  }
-}
-
-/* ═══════════════════════════════════════════════════════════════════
-   §10. Process section timeline — UIKit list with custom glassmorphism
-   (theme override on `uk-list uk-list-divider`)
-   ═══════════════════════════════════════════════════════════════════ */
+/* ------------------------------------------------------------------
+   Process / timeline
+   ------------------------------------------------------------------ */
 
 section[data-section='process'] .uk-list {
   max-width: 400px;
   width: 100%;
   margin: 0 auto;
 }
+
 section[data-section='process'] .uk-list li {
   display: flex;
   align-items: center;
@@ -890,41 +618,20 @@ section[data-section='process'] .uk-list li {
   border-radius: 0 8px 8px 0;
   backdrop-filter: blur(16px) saturate(140%);
   -webkit-backdrop-filter: blur(16px) saturate(140%);
-  transition: border-color 0.3s ease, background 0.3s ease;
+  transition:
+    border-color 0.3s ease,
+    background 0.3s ease;
 }
+
 section[data-section='process'] .uk-list li:hover {
   border-left-color: rgba(255, 255, 255, 0.5);
   background: rgba(255, 255, 255, 0.06);
 }
 
-/* Lab section — light-section card overrides (theme override on uk-card) */
-section[data-section='lab'] .uk-card {
-  background: rgba(255, 255, 255, 0.5);
-  border-color: rgba(0, 0, 0, 0.08);
-  color: rgba(0, 0, 0, 0.85);
-}
-section[data-section='lab'] .uk-card-title {
-  color: rgba(0, 0, 0, 0.85);
-}
-section[data-section='lab'] .uk-text-meta {
-  color: rgba(0, 0, 0, 0.5);
-}
-section[data-section='lab'] .uk-text-large {
-  color: rgba(0, 0, 0, 0.6);
-}
+/* ------------------------------------------------------------------
+   Joystick
+   ------------------------------------------------------------------ */
 
-@media (max-width: 640px) {
-  /* Timeline items: stack label/desc vertically on small screens */
-  section[data-section='process'] .uk-list li {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.3rem;
-  }
-}
-
-/* ═══════════════════════════════════════════════════════════════════
-   §11. DOM Joystick — fixed bottom-center, 2D circle
-   ═══════════════════════════════════════════════════════════════════ */
 .jlz-joystick {
   position: fixed;
   bottom: calc(60px + env(safe-area-inset-bottom, 0px));
@@ -939,6 +646,7 @@ section[data-section='lab'] .uk-text-large {
   -webkit-user-select: none;
   touch-action: none;
 }
+
 .jlz-joystick__base {
   width: 110px;
   height: 110px;
@@ -951,14 +659,18 @@ section[data-section='lab'] .uk-text-large {
   align-items: center;
   justify-content: center;
   cursor: grab;
-  transition: border-color 0.3s ease, background 0.3s ease;
+  transition:
+    border-color 0.3s ease,
+    background 0.3s ease;
   position: relative;
 }
+
 .jlz-joystick__base.is-active {
   cursor: grabbing;
   border-color: rgba(255, 255, 255, 0.4);
   background: rgba(255, 255, 255, 0.12);
 }
+
 .jlz-joystick__ball {
   width: 44px;
   height: 44px;
@@ -968,45 +680,78 @@ section[data-section='lab'] .uk-text-large {
   transition: transform 0.15s ease-out;
   pointer-events: none;
 }
+
 .jlz-joystick__base.is-active .jlz-joystick__ball {
   transition: none;
 }
+
 .jlz-joystick__hint {
-  font-family: var(--jlz-font-body, 'Inter', sans-serif);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 0.6rem;
   letter-spacing: 0.15em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.4);
   transition: opacity 0.3s ease;
 }
-/* Light theme — dark joystick */
-body.light-theme .jlz-joystick__base {
-  background: rgba(0, 0, 0, 0.06);
-  border-color: rgba(0, 0, 0, 0.12);
-}
-body.light-theme .jlz-joystick__base.is-active {
-  border-color: rgba(0, 0, 0, 0.3);
-  background: rgba(0, 0, 0, 0.1);
-}
-body.light-theme .jlz-joystick__ball {
-  background: rgba(0, 0, 0, 0.2);
-  border-color: rgba(0, 0, 0, 0.15);
-}
-body.light-theme .jlz-joystick__hint {
-  color: rgba(0, 0, 0, 0.4);
-}
+
 @media (max-width: 640px) {
   .jlz-joystick__base {
     width: 90px;
     height: 90px;
   }
+
   .jlz-joystick__ball {
     width: 36px;
     height: 36px;
   }
 }
+
 @media (prefers-reduced-motion: reduce) {
+  .jlz-scroll-hint__line::after {
+    animation: none;
+    opacity: 0.45;
+    transform: translateY(50%);
+  }
+
+  .jlz-hint {
+    transition: opacity 0.2s ease;
+    transform: translateX(-50%);
+  }
+
   .jlz-joystick__ball {
     transition: none;
+  }
+}
+
+/* ------------------------------------------------------------------
+   Responsive cleanup
+   ------------------------------------------------------------------ */
+
+@media (max-width: 500px) {
+  .custom-cursor {
+    display: none !important;
+  }
+
+  body,
+  a,
+  button,
+  .interactive {
+    cursor: auto !important;
+  }
+}
+
+@media (max-width: 768px) {
+  html {
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: auto;
+  }
+
+  body {
+    touch-action: pan-y;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  canvas {
+    touch-action: none;
   }
 }
