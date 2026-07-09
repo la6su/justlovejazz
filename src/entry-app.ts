@@ -80,6 +80,18 @@ export async function startApp(): Promise<void> {
     setupTitleObserver()
   })
 
+  // Fallback: if jlz:webgl-ready doesn't fire within 6s (Experience.init
+  // crashed or hung), fade out the loader anyway so the user isn't stuck
+  // staring at "Loading". The app may still be partially functional.
+  setTimeout(() => {
+    const loader = document.getElementById('jlz-app-loader')
+    if (loader && !loader.classList.contains('fade-out')) {
+      console.warn('[entry-app] jlz:webgl-ready timeout — forcing loader fade-out')
+      document.body.classList.remove('scrollspy-pending')
+      fadeOutLoader()
+    }
+  }, 6000)
+
   // ── Animate titles on section change ──
   eventBus.on('jlz:section-change', (payload) => {
     if (!payload?.sectionId) return

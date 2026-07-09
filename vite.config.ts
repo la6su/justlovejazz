@@ -5,59 +5,108 @@ import { copyFileSync, mkdirSync, readdirSync } from 'fs'
 import { homePage } from './src/templates'
 
 // ── Landing page content (prerendered, no-JS, semantic HTML5) ──
-// Minimal no-JS version of the home sections for /landing. Uses semantic
-// HTML5 (main/section/article/nav/header/footer) + CSS-only navigation
-// (anchor links). No three.js, no UIkit, no JS-dependent classes.
+// Uses UIkit 3 classes (uk-section, uk-container, uk-grid, uk-card, etc)
+// + JLZ semantic classes. The landing.less stylesheet provides UIkit +
+// QF theme + JLZ tokens. No three.js, no app-specific JS.
 function landingContent(): string {
   return `
-      <section id="intro" aria-labelledby="intro-title">
-        <p class="eyebrow">&gt; WEB DESIGN STUDIO · EST. 2019</p>
-        <h1 id="intro-title">JUSTLOVEJAZZ</h1>
-        <p class="lead">glass · motion · light — powered by WebGPU. A studio crafting expressive browser experiences.</p>
-        <a href="/app" class="cta">Launch full 3D experience →</a>
-      </section>
-
-      <section id="about" aria-labelledby="about-title">
-        <p class="eyebrow">&gt; ABOUT</p>
-        <h2 id="about-title">About</h2>
-        <p class="lead">A small studio crafting expressive browser experiences. We merge art direction with web engineering — 3D-first interfaces, spatial design, and real-time shaders that stay fast under pressure.</p>
-        <div class="grid">
-          <div class="card"><h3>7+ Years</h3><p>Crafting interactive web experiences</p></div>
-          <div class="card"><h3>40+ Projects</h3><p>From shader art to shipping product</p></div>
-          <div class="card"><h3>12 Awards</h3><p>Recognition for craft and innovation</p></div>
+      <section id="intro" class="uk-section uk-section-large uk-text-center" aria-labelledby="intro-title">
+        <div class="uk-container uk-container-expand">
+          <p class="jlz-landing-eyebrow">&gt; WEB DESIGN STUDIO · EST. 2019</p>
+          <h1 id="intro-title" class="uk-heading-xlarge uk-margin-remove">JUSTLOVEJAZZ</h1>
+          <p class="uk-text-lead uk-margin-top">glass · motion · light — powered by WebGPU. A studio crafting expressive browser experiences.</p>
+          <a href="/app" class="jlz-landing-cta">Launch full 3D experience →</a>
         </div>
       </section>
 
-      <section id="works" aria-labelledby="works-title">
-        <p class="eyebrow">&gt; SELECTED WORK</p>
-        <h2 id="works-title">Works</h2>
-        <p class="lead">Six interactive experiences — each carries its own material preset.</p>
-        <div class="grid">
-          <article class="card"><h3>Undercurrent</h3><p>WebGPU fluid simulation · 2026</p></article>
-          <article class="card"><h3>Mono Sunday</h3><p>Minimal portfolio · 2026</p></article>
-          <article class="card"><h3>Till at Night</h3><p>Audio-reactive 3D · 2025</p></article>
-          <article class="card"><h3>Ebb Vibes</h3><p>Generative typography · 2025</p></article>
-          <article class="card"><h3>Nocturne Blue</h3><p>Shader-driven hero · 2025</p></article>
-          <article class="card"><h3>Velvet Echo</h3><p>Glassmorphism system · 2024</p></article>
+      <section id="about" class="uk-section uk-section-large" aria-labelledby="about-title">
+        <div class="uk-container uk-container-expand">
+          <p class="jlz-landing-eyebrow">&gt; ABOUT</p>
+          <h2 id="about-title" class="uk-heading-large uk-margin-remove-top">About</h2>
+          <p class="uk-text-lead">A small studio crafting expressive browser experiences. We merge art direction with web engineering — 3D-first interfaces, spatial design, and real-time shaders that stay fast under pressure.</p>
+          <div class="uk-grid uk-child-width-1-3@m uk-margin-medium-top" uk-grid>
+            <div class="uk-card uk-card-default uk-card-body uk-text-center">
+              <h3 class="uk-card-title uk-margin-remove">7+ Years</h3>
+              <p class="uk-text-meta uk-margin-small-top">Crafting interactive web experiences</p>
+            </div>
+            <div class="uk-card uk-card-default uk-card-body uk-text-center">
+              <h3 class="uk-card-title uk-margin-remove">40+ Projects</h3>
+              <p class="uk-text-meta uk-margin-small-top">From shader art to shipping product</p>
+            </div>
+            <div class="uk-card uk-card-default uk-card-body uk-text-center">
+              <h3 class="uk-card-title uk-margin-remove">12 Awards</h3>
+              <p class="uk-text-meta uk-margin-small-top">Recognition for craft and innovation</p>
+            </div>
+          </div>
         </div>
       </section>
 
-      <section id="process" aria-labelledby="process-title">
-        <p class="eyebrow">&gt; PROCESS</p>
-        <h2 id="process-title">How We Work</h2>
-        <div class="grid">
-          <div class="card"><h3>01 Discover</h3><p>Research, audit, define the problem.</p></div>
-          <div class="card"><h3>02 Design</h3><p>Art direction, 3D, interaction prototypes.</p></div>
-          <div class="card"><h3>03 Develop</h3><p>WebGPU, TSL shaders, performance budgets.</p></div>
-          <div class="card"><h3>04 Ship</h3><p>Launch, measure, evolve.</p></div>
+      <section id="works" class="uk-section uk-section-large" aria-labelledby="works-title">
+        <div class="uk-container uk-container-expand">
+          <p class="jlz-landing-eyebrow">&gt; SELECTED WORK</p>
+          <h2 id="works-title" class="uk-heading-large uk-margin-remove-top">Works</h2>
+          <p class="uk-text-lead">Six interactive experiences — each carries its own material preset.</p>
+          <div class="uk-grid uk-child-width-1-2@s uk-child-width-1-3@m uk-margin-medium-top" uk-grid>
+            <article class="uk-card uk-card-default uk-card-body uk-card-hover">
+              <h3 class="uk-card-title">Undercurrent</h3>
+              <p class="uk-text-meta">WebGPU fluid simulation · 2026</p>
+            </article>
+            <article class="uk-card uk-card-default uk-card-body uk-card-hover">
+              <h3 class="uk-card-title">Mono Sunday</h3>
+              <p class="uk-text-meta">Minimal portfolio · 2026</p>
+            </article>
+            <article class="uk-card uk-card-default uk-card-body uk-card-hover">
+              <h3 class="uk-card-title">Till at Night</h3>
+              <p class="uk-text-meta">Audio-reactive 3D · 2025</p>
+            </article>
+            <article class="uk-card uk-card-default uk-card-body uk-card-hover">
+              <h3 class="uk-card-title">Ebb Vibes</h3>
+              <p class="uk-text-meta">Generative typography · 2025</p>
+            </article>
+            <article class="uk-card uk-card-default uk-card-body uk-card-hover">
+              <h3 class="uk-card-title">Nocturne Blue</h3>
+              <p class="uk-text-meta">Shader-driven hero · 2025</p>
+            </article>
+            <article class="uk-card uk-card-default uk-card-body uk-card-hover">
+              <h3 class="uk-card-title">Velvet Echo</h3>
+              <p class="uk-text-meta">Glassmorphism system · 2024</p>
+            </article>
+          </div>
         </div>
       </section>
 
-      <section id="contact" aria-labelledby="contact-title">
-        <p class="eyebrow">&gt; CONTACT</p>
-        <h2 id="contact-title">Let's build together</h2>
-        <p class="lead">Ready to craft something extraordinary? We're open for new projects.</p>
-        <a href="mailto:hello@justlovejazz.com" class="cta">hello@justlovejazz.com</a>
+      <section id="process" class="uk-section uk-section-large" aria-labelledby="process-title">
+        <div class="uk-container uk-container-expand">
+          <p class="jlz-landing-eyebrow">&gt; PROCESS</p>
+          <h2 id="process-title" class="uk-heading-large uk-margin-remove-top">How We Work</h2>
+          <div class="uk-grid uk-child-width-1-2@s uk-child-width-1-4@m uk-margin-medium-top" uk-grid>
+            <div class="uk-card uk-card-default uk-card-body">
+              <h3 class="uk-card-title">01 Discover</h3>
+              <p class="uk-text-meta">Research, audit, define the problem.</p>
+            </div>
+            <div class="uk-card uk-card-default uk-card-body">
+              <h3 class="uk-card-title">02 Design</h3>
+              <p class="uk-text-meta">Art direction, 3D, interaction prototypes.</p>
+            </div>
+            <div class="uk-card uk-card-default uk-card-body">
+              <h3 class="uk-card-title">03 Develop</h3>
+              <p class="uk-text-meta">WebGPU, TSL shaders, performance budgets.</p>
+            </div>
+            <div class="uk-card uk-card-default uk-card-body">
+              <h3 class="uk-card-title">04 Ship</h3>
+              <p class="uk-text-meta">Launch, measure, evolve.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="contact" class="uk-section uk-section-large uk-text-center" aria-labelledby="contact-title">
+        <div class="uk-container uk-container-expand">
+          <p class="jlz-landing-eyebrow">&gt; CONTACT</p>
+          <h2 id="contact-title" class="uk-heading-large uk-margin-remove-top">Let's build together</h2>
+          <p class="uk-text-lead">Ready to craft something extraordinary? We're open for new projects.</p>
+          <a href="mailto:hello@justlovejazz.com" class="jlz-landing-cta">hello@justlovejazz.com</a>
+        </div>
       </section>
   `
 }

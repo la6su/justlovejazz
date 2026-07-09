@@ -67,209 +67,72 @@
       }
     </script>
 
-    <!-- Inline CSS — minimal, just for no-JS landing readability.
-         The full app CSS is NOT loaded here (no JS → no three.js → no glassmorphism).
-         Clean, readable, semantic default styles. -->
+    <!-- Inline CSS — minimal FCP-critical (bg + cursor) before main CSS loads.
+         The full UIkit + QF theme CSS is loaded via landing.less below. -->
     <style>
       * { box-sizing: border-box; }
-      html { scroll-behavior: smooth; }
-      body {
+      html, body {
         margin: 0;
+        padding: 0;
         background: #050507;
         color: rgba(255, 255, 255, 0.9);
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-        line-height: 1.6;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
+        cursor: default;
       }
-      a { color: #6b78a3; text-decoration: none; }
-      a:hover { color: #8b98c3; text-decoration: underline; }
-
-      /* Skip link */
-      .skip-link {
-        position: absolute;
-        left: -9999px;
-        top: 0;
-        z-index: 9999;
-      }
-      .skip-link:focus {
-        left: 1rem;
-        top: 1rem;
-        padding: 0.75rem 1.25rem;
-        background: #fff;
-        color: #050507;
-        border-radius: 6px;
-        font-weight: 700;
-      }
-
-      /* Header */
-      header {
-        position: sticky;
-        top: 0;
-        z-index: 100;
-        background: rgba(5, 5, 7, 0.85);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-        padding: 1rem 1.5rem;
-      }
-      header nav {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        max-width: 1200px;
-        margin: 0 auto;
-      }
-      .brand {
-        font-weight: 800;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: #fff;
-        font-size: 1.1rem;
-      }
-      header nav ul {
-        display: flex;
-        gap: 1.5rem;
-        list-style: none;
-        margin: 0;
-        padding: 0;
-      }
-      header nav a { font-size: 0.85rem; }
-
-      /* Main */
+      button, a { cursor: pointer; }
+      /* Show content immediately even before CSS loads (no white flash) */
       main { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
-
-      /* Sections */
-      section {
-        padding: 6rem 0;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-      }
-      section:last-of-type { border-bottom: none; }
-
-      .eyebrow {
-        font-size: 0.7rem;
-        font-weight: 500;
-        letter-spacing: 0.2em;
-        text-transform: uppercase;
-        opacity: 0.5;
-        margin-bottom: 0.5rem;
-      }
-      h1, h2 {
-        font-weight: 800;
-        letter-spacing: -0.03em;
-        text-transform: uppercase;
-        line-height: 1;
-        margin: 0 0 1rem;
-      }
-      h1 { font-size: clamp(2.5rem, 8vw, 5rem); }
-      h2 { font-size: clamp(2rem, 6vw, 3.5rem); }
-      h3 { font-weight: 700; letter-spacing: -0.02em; margin: 0 0 0.5rem; }
-      p { margin: 0 0 1rem; color: rgba(255, 255, 255, 0.7); }
-      .lead { font-size: 1.15rem; color: rgba(255, 255, 255, 0.85); }
-
-      /* Grid */
-      .grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 1.5rem;
-        margin-top: 2rem;
-      }
-      .card {
-        padding: 1.5rem;
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 8px;
-      }
-      .card h3 { font-size: 1.1rem; }
-      .card p { font-size: 0.9rem; margin: 0; }
-
-      /* CTA */
-      .cta {
-        display: inline-block;
-        margin-top: 1.5rem;
-        padding: 0.75rem 2rem;
-        background: #515d84;
-        color: #fff;
-        font-weight: 700;
-        font-size: 0.85rem;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        border-radius: 4px;
-        text-decoration: none;
-        transition: background 0.2s ease;
-      }
-      .cta:hover { background: #6b78a3; text-decoration: none; }
-
-      /* Launch banner — top of landing, invites to /app */
-      .launch-banner {
-        background: linear-gradient(135deg, rgba(81, 93, 132, 0.15), rgba(81, 93, 132, 0.05));
-        border-bottom: 1px solid rgba(81, 93, 132, 0.3);
-        padding: 0.75rem 1.5rem;
-        text-align: center;
-        font-size: 0.8rem;
-      }
-      .launch-banner a { font-weight: 700; }
-
-      /* Footer */
-      footer {
-        padding: 3rem 1.5rem;
-        text-align: center;
-        border-top: 1px solid rgba(255, 255, 255, 0.08);
-      }
-      footer .social {
-        display: flex;
-        justify-content: center;
-        gap: 1.5rem;
-        list-style: none;
-        margin: 0 0 1rem;
-        padding: 0;
-      }
-      footer .copyright { font-size: 0.8rem; opacity: 0.5; }
-
-      @media (max-width: 640px) {
-        header nav ul { gap: 1rem; }
-        section { padding: 4rem 0; }
-      }
     </style>
+
+    <!-- Landing CSS — UIkit 3 + QF theme + JLZ tokens (NO app-specific styles).
+         ?inline is NOT used here because we want Vite to emit a <link> tag
+         for proper CSS caching + preload. -->
+    <link rel="stylesheet" href="/src/assets/landing.less" />
   </head>
   <body>
     <a href="#main" class="skip-link">Skip to main content</a>
 
     <!-- Launch banner — invites no-JS users to try the full experience -->
-    <div class="launch-banner">
+    <div class="jlz-landing-launch-banner uk-text-center">
       This is the text-only view. <a href="/app">Launch full 3D experience →</a> (requires JavaScript + WebGL2)
     </div>
 
-    <header>
-      <nav aria-label="Main navigation">
-        <a href="/" class="brand">l@6</a>
-        <ul>
-          <li><a href="/#works">Works</a></li>
-          <li><a href="/#about">About</a></li>
-          <li><a href="/#contact">Contact</a></li>
-          <li><a href="/app">Enter 3D →</a></li>
-        </ul>
+    <header class="jlz-landing-header" role="banner">
+      <nav class="uk-container uk-container-expand uk-navbar uk-navbar-transparent" uk-navbar aria-label="Main navigation">
+        <div class="uk-navbar-left">
+          <a href="/" class="uk-navbar-item uk-logo jlz-landing-brand">l@6</a>
+        </div>
+        <div class="uk-navbar-right">
+          <ul class="uk-navbar-nav">
+            <li><a href="/#works">Works</a></li>
+            <li><a href="/#about">About</a></li>
+            <li><a href="/#contact">Contact</a></li>
+            <li><a href="/app">Enter 3D →</a></li>
+          </ul>
+        </div>
       </nav>
     </header>
 
-    <main id="main">
+    <main id="main" role="main">
       <!-- PRERENDERED HOME SECTIONS — injected by vite prerender-landing plugin.
-           Semantic HTML5, no JS dependencies, CSS-only navigation via anchor links.
-           Each section has id for /#anchor navigation. -->
+           Uses UIkit 3 classes (uk-section, uk-container, uk-grid, uk-card, etc)
+           + JLZ semantic classes. No JS dependencies. -->
       <!-- LANDING_CONTENT_PLACEHOLDER -->
     </main>
 
-    <footer>
-      <ul class="social" aria-label="Social links">
-        <li><a href="https://github.com/la6su" rel="noopener">GitHub</a></li>
-        <li><a href="https://twitter.com" rel="noopener">Twitter</a></li>
-        <li><a href="mailto:hello@justlovejazz.com">Email</a></li>
-      </ul>
-      <p class="copyright">© <span id="year">2026</span> JUSTLOVEJAZZ — Web Design Studio</p>
+    <footer class="uk-section uk-section-xsmall" role="contentinfo">
+      <div class="uk-container uk-container-expand uk-text-center">
+        <ul class="uk-iconnav uk-flex-center" aria-label="Social links">
+          <li><a href="https://github.com/la6su" rel="noopener" aria-label="GitHub" uk-icon="icon: github"></a></li>
+          <li><a href="https://twitter.com" rel="noopener" aria-label="Twitter" uk-icon="icon: twitter"></a></li>
+          <li><a href="mailto:hello@justlovejazz.com" aria-label="Email" uk-icon="icon: mail"></a></li>
+        </ul>
+        <p class="uk-text-meta uk-margin-small-top">© <span id="year">2026</span> JUSTLOVEJAZZ — Web Design Studio</p>
+      </div>
     </footer>
 
+    <!-- Minimal no-JS-safe script — just sets the year. No external deps. -->
     <script>
-      // Minimal no-JS-safe script — just sets the year. No external deps.
       document.getElementById('year').textContent = String(new Date().getFullYear());
     </script>
   </body>

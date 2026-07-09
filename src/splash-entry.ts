@@ -73,15 +73,21 @@ function initSoundToggle(): void {
 }
 
 // ── App preload + Enter button ──
-// Progressive enhancement flow (revised — button ALWAYS enabled):
+// Progressive enhancement flow (button ALWAYS enabled, NO dynamic import):
 //   1. HTML default: button enabled, data-destination="/landing" (no-JS fallback)
-//   2. JS boot: button stays enabled, shows "Loading…" indicator
-//   3. import('./entry-shell') success → data-destination="/app", indicator hidden
-//   4. Click (anytime): fade out → navigate to data-destination
+//   2. JS boot: button stays enabled, shows "Preparing 3D…" indicator
+//   3. App bundle preloaded via <link rel="modulepreload"> in HTML (download
+//      only, NO execution — avoids main.less CSS leaking into splash)
+//   4. Short delay → mark ready, destination switches to /app
+//   5. Click (anytime): fade out → navigate to data-destination
 //
-// User can click Enter IMMEDIATELY (goes to /landing fallback). When app
-// bundle is cached, destination silently switches to /app. No disabled state.
-async function initEnterButton(): Promise<void> {
+// IMPORTANT: we do NOT use import('./entry-shell') for preload here because
+// in Vite dev mode it triggers transpilation of the full app graph including
+// main.less?inline, which injects the app's CSS (cursor:none, custom-cursor)
+// into the splash page — hiding the system cursor. The <link rel=modulepreload>
+// in index.html downloads the module without executing it, which is what we
+// want for preload.
+function initEnterButton(): void {
   const enterBtn = document.querySelector<HTMLButtonElement>('.jlz-splash-enter')
   const splash = document.getElementById('jlj-splash')
   if (!enterBtn || !splash) return
@@ -93,26 +99,20 @@ async function initEnterButton(): Promise<void> {
   // Mark ready — shows Enter button, hides Loading text.
   splash.classList.add('ready')
 
-  // Fire-and-forget preload of the app module graph.
-  // On success → switch destination to /app (button stays enabled).
-  // On failure → destination stays /landing (graceful degradation).
-  try {
-    await import('./entry-shell')
+  // The <link rel="modulepreload" href="/src/entry-shell.ts"> in index.html
+  // already told the browser to fetch the module graph in the background.
+  // We don't need to await anything — by the time user reads the splash +
+  // clicks Enter, the bundle is likely cached. If not, /app page loads it
+  // fresh (slightly slower, but works).
+  //
+  // Give a short delay for the modulepreload to make progress, then mark
+  // destination as /app. This is a heuristic — there's no reliable way to
+  // know when a modulepreload finishes without executing the module.
+  setTimeout(() => {
     enterBtn.dataset.destination = '/app'
-    // Hide "Preparing 3D…" status — app bundle is cached, Enter goes to /app.
     const status = document.getElementById('jlz-splash-status')
     if (status) status.classList.add('is-ready')
-  } catch (err) {
-    // Preload failed — keep destination as /landing (HTML default).
-    // User can still click → landing; /app will re-fetch on direct load.
-    console.warn('[splash] App preload failed (non-fatal, fallback to /landing):', err)
-    // Update status to reflect fallback.
-    const status = document.getElementById('jlz-splash-status')
-    if (status) {
-      status.textContent = 'Text view'
-      status.classList.add('is-ready')
-    }
-  }
+  }, 1500)
 }
 
 // ── Enter → fade → navigate to data-destination ──
@@ -139,14 +139,9 @@ function doEnter(): void {
 function boot(): void {
   initThemeToggle()
   initSoundToggle()
-  // Start preloading app immediately (button is enabled from HTML default,
-  // click is wired in initEnterButton). Preload runs in parallel.
-  void initEnterButton().catch((err) => {
-    console.warn('[splash] initEnterButton failed:', err)
-    // Fallback: still show the button with /landing destination.
-    const splash = document.getElementById('jlj-splash')
-    if (splash) splash.classList.add('ready')
-  })
+  // Start app preload (button is enabled from HTML default, click wired
+  // in initEnterButton). modulepreload in HTML downloads the bundle.
+  initEnterButton()
 }
 
 if (document.readyState === 'loading') {

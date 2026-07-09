@@ -1,0 +1,130 @@
+// landing.less — CSS for landing.html (no-JS semantic fallback)
+//
+// Imports UIkit 3 + QF theme + JLZ design tokens, but WITHOUT the app-specific
+// styles from main.less (custom-cursor, joystick, splash, project-overlay, etc).
+// This keeps landing.html lightweight + ensures cursor:none (from app's
+// custom-cursor) doesn't leak into the no-JS page.
+//
+// What's included:
+//   - JLZ design tokens (@jlz-* + :root --jlz-*)
+//   - UIkit 3 components (compiled with JLZ overrides)
+//   - master-quantum-flares visual personality (glow, glitch, scanlines)
+//
+// What's NOT included (app-only, lives in main.less):
+//   - custom-cursor + cursor:none
+//   - joystick + arrows
+//   - splash overlay
+//   - project-overlay (fullscreen)
+//   - section templates styling
+//   - footer fixed-bottom bar
+
+@import './_import.less';
+@import './master-quantum-flares/_import.less';
+@import './master-quantum-flares/styles/black-blue.less';
+
+// ── Base document ──
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+}
+
+body {
+  background: var(--jlz-color-bg);
+  color: var(--jlz-color-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.6;
+}
+
+// ── Headings: uppercase + tight tracking (matches app aesthetic) ──
+h1, .uk-h1, h2, .uk-h2, h3, .uk-h3, h4, .uk-h4, h5, .uk-h5, h6, .uk-h6 {
+  font-family: inherit;
+  text-transform: uppercase;
+  letter-spacing: -0.03em;
+}
+
+a {
+  color: var(--jlz-color-accent);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--jlz-color-accent-hover);
+  text-decoration: underline;
+}
+
+// ── Layout helpers (landing-specific, uses JLZ tokens) ──
+.jlz-landing-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(5, 5, 7, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--jlz-color-border);
+}
+
+.jlz-landing-brand {
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fff;
+  font-size: 1.1rem;
+}
+
+.jlz-landing-eyebrow {
+  font-family: 'Inter', 'SF Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  opacity: 0.5;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+.jlz-landing-cta {
+  display: inline-block;
+  margin-top: 1.5rem;
+  padding: 0.75rem 2rem;
+  background: var(--jlz-color-accent);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-radius: 4px;
+  text-decoration: none;
+  transition: background 0.2s ease;
+}
+
+.jlz-landing-cta:hover {
+  background: var(--jlz-color-accent-hover);
+  text-decoration: none;
+}
+
+.jlz-landing-launch-banner {
+  background: linear-gradient(135deg, rgba(81, 93, 132, 0.15), rgba(81, 93, 132, 0.05));
+  border-bottom: 1px solid rgba(81, 93, 132, 0.3);
+  padding: 0.75rem 1.5rem;
+  text-align: center;
+  font-size: 0.8rem;
+}
+
+.jlz-landing-launch-banner a {
+  font-weight: 700;
+}
