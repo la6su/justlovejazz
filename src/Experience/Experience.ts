@@ -333,7 +333,17 @@ export class Experience {
     document.addEventListener('click', startAudio)
     document.addEventListener('keydown', startAudio)
 
-    // Sound toggle from splash screen
+    // Sound config from splash page (localStorage 'jlz:sound' = 'on'|'off').
+    // Splash writes this before navigation; app reads on boot.
+    // Default: OFF (user must opt in on splash).
+    try {
+      const soundPref = localStorage.getItem('jlz:sound')
+      if (soundPref === 'off') {
+        this.audio.setMuted(true)
+      }
+    } catch { /* localStorage unavailable */ }
+
+    // Runtime sound toggle (from UIMenu or other in-app controls)
     window.addEventListener('jlz:sound-toggle', ((e: Event) => {
       const detail = (e as CustomEvent<{ muted: boolean }>).detail
       if (detail) this.audio.setMuted(detail.muted)

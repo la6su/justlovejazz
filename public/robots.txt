@@ -1,4 +1,7 @@
 User-agent: *
+# Splash (/) and landing (/landing) are crawlable. App (/app) requires
+# JS + WebGL2 — noindex to avoid duplicate content with landing.
 Allow: /
+Disallow: /app
 
 Sitemap: https://justlovejazz.dev/sitemap.xml

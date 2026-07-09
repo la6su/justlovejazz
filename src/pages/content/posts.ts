@@ -54,7 +54,7 @@ export function postsPage(): string {
             <p class="uk-text-meta uk-margin-small-top">The shader stack we've been waiting for</p>
           </div>
           <div uk-scrollspy-class>
-            <a class="uk-button uk-button-default" href="/posts">Read full article →</a>
+            <a class="uk-button uk-button-default" href="/app/posts">Read full article →</a>
           </div>
         </div>
       </section>

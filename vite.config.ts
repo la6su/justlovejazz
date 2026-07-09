@@ -4,6 +4,64 @@ import { resolve } from 'node:path'
 import { copyFileSync, mkdirSync, readdirSync } from 'fs'
 import { homePage } from './src/templates'
 
+// ── Landing page content (prerendered, no-JS, semantic HTML5) ──
+// Minimal no-JS version of the home sections for /landing. Uses semantic
+// HTML5 (main/section/article/nav/header/footer) + CSS-only navigation
+// (anchor links). No three.js, no UIkit, no JS-dependent classes.
+function landingContent(): string {
+  return `
+      <section id="intro" aria-labelledby="intro-title">
+        <p class="eyebrow">&gt; WEB DESIGN STUDIO · EST. 2019</p>
+        <h1 id="intro-title">JUSTLOVEJAZZ</h1>
+        <p class="lead">glass · motion · light — powered by WebGPU. A studio crafting expressive browser experiences.</p>
+        <a href="/app" class="cta">Launch full 3D experience →</a>
+      </section>
+
+      <section id="about" aria-labelledby="about-title">
+        <p class="eyebrow">&gt; ABOUT</p>
+        <h2 id="about-title">About</h2>
+        <p class="lead">A small studio crafting expressive browser experiences. We merge art direction with web engineering — 3D-first interfaces, spatial design, and real-time shaders that stay fast under pressure.</p>
+        <div class="grid">
+          <div class="card"><h3>7+ Years</h3><p>Crafting interactive web experiences</p></div>
+          <div class="card"><h3>40+ Projects</h3><p>From shader art to shipping product</p></div>
+          <div class="card"><h3>12 Awards</h3><p>Recognition for craft and innovation</p></div>
+        </div>
+      </section>
+
+      <section id="works" aria-labelledby="works-title">
+        <p class="eyebrow">&gt; SELECTED WORK</p>
+        <h2 id="works-title">Works</h2>
+        <p class="lead">Six interactive experiences — each carries its own material preset.</p>
+        <div class="grid">
+          <article class="card"><h3>Undercurrent</h3><p>WebGPU fluid simulation · 2026</p></article>
+          <article class="card"><h3>Mono Sunday</h3><p>Minimal portfolio · 2026</p></article>
+          <article class="card"><h3>Till at Night</h3><p>Audio-reactive 3D · 2025</p></article>
+          <article class="card"><h3>Ebb Vibes</h3><p>Generative typography · 2025</p></article>
+          <article class="card"><h3>Nocturne Blue</h3><p>Shader-driven hero · 2025</p></article>
+          <article class="card"><h3>Velvet Echo</h3><p>Glassmorphism system · 2024</p></article>
+        </div>
+      </section>
+
+      <section id="process" aria-labelledby="process-title">
+        <p class="eyebrow">&gt; PROCESS</p>
+        <h2 id="process-title">How We Work</h2>
+        <div class="grid">
+          <div class="card"><h3>01 Discover</h3><p>Research, audit, define the problem.</p></div>
+          <div class="card"><h3>02 Design</h3><p>Art direction, 3D, interaction prototypes.</p></div>
+          <div class="card"><h3>03 Develop</h3><p>WebGPU, TSL shaders, performance budgets.</p></div>
+          <div class="card"><h3>04 Ship</h3><p>Launch, measure, evolve.</p></div>
+        </div>
+      </section>
+
+      <section id="contact" aria-labelledby="contact-title">
+        <p class="eyebrow">&gt; CONTACT</p>
+        <h2 id="contact-title">Let's build together</h2>
+        <p class="lead">Ready to craft something extraordinary? We're open for new projects.</p>
+        <a href="mailto:hello@justlovejazz.com" class="cta">hello@justlovejazz.com</a>
+      </section>
+  `
+}
+
 export default defineConfig({
   base: '/',
   publicDir: 'public',
@@ -13,7 +71,14 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
     cssCodeSplit: true,
     rollupOptions: {
-      input: resolve(__dirname, 'index.html'),
+      // Multi-page entry: splash (/) → app (/app) → landing (/landing).
+      // splash.html is the FCP-critical entry (~12KB inline). app.html is
+      // the full 3D experience. landing.html is the no-JS semantic fallback.
+      input: {
+        splash: resolve(__dirname, 'splash.html'),
+        app: resolve(__dirname, 'app.html'),
+        landing: resolve(__dirname, 'landing.html'),
+      },
       output: {
         // ───────────────────────────────────────────────────────────────────
         // Vite 8 ships rolldown (not rollup). Rolldown's *deprecated*
@@ -149,17 +214,31 @@ export default defineConfig({
       },
     },
     {
-      // Prerender the 6 home sections into index.html at build time so
-      // crawlers (and users with JS disabled / failing) see the real text
-      // content immediately instead of an empty <div id="app"></div>.
-      // router.ts skips re-injection when #spa-content already has children,
-      // so the prerendered HTML is hydrated (UIkit.init) not replaced.
-      name: 'prerender-home',
-      transformIndexHtml(html) {
+      // Prerender the 6 home sections into app.html at build time so the
+      // 3D app boots with DOM content already present (router.ts skips
+      // re-injection when #spa-content already has children → the prerendered
+      // HTML is hydrated by UIkit.init, not replaced).
+      name: 'prerender-app',
+      transformIndexHtml(html, ctx) {
+        // Only inject into app.html (not splash/landing).
+        if (!ctx.path.includes('app.html')) return html
         const sections = homePage()
         return html.replace(
           '<div id="app"></div>',
           `<div id="app"><main id="spa-content" role="main">${sections}</main></div>`,
+        )
+      },
+    },
+    {
+      // Inject semantic no-JS content into landing.html at build time.
+      // landing.html is the prerendered fallback — no three.js, no UIkit,
+      // just semantic HTML5 + CSS for crawlers and no-JS users.
+      name: 'prerender-landing',
+      transformIndexHtml(html, ctx) {
+        if (!ctx.path.includes('landing.html')) return html
+        return html.replace(
+          '<!-- LANDING_CONTENT_PLACEHOLDER -->',
+          landingContent(),
         )
       },
     },

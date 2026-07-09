@@ -11,9 +11,9 @@ export interface UIMenuOptions {
 // 4 main sections shown in the slider (Lab=0 and Process=5 are secret side sections)
 const MAIN_SECTION_INDICES = [1, 2, 3, 4]
 const PAGE_LINKS = [
-  ['/', 'Home'],
-  ['/services', 'Services'],
-  ['/posts', 'Posts'],
+  ['/app', 'Home'],
+  ['/app/services', 'Services'],
+  ['/app/posts', 'Posts'],
 ] as const
 
 export class UIMenu {
@@ -37,7 +37,7 @@ export class UIMenu {
     this.navEl.innerHTML = `
       <nav class="uk-navbar-container uk-navbar-transparent uk-container uk-container-expand" uk-navbar>
         <div class="uk-navbar-left">
-          <a class="uk-navbar-item uk-logo jlz-brand" href="/" aria-label="JUSTLOVEJAZZ home">l@6</a>
+          <a class="uk-navbar-item uk-logo jlz-brand" href="/app" aria-label="JUSTLOVEJAZZ home">l@6</a>
         </div>
         <div class="uk-navbar-center">
           <div id="slider-nav" class="uk-slider-container uk-slider jlz-section-slider" uk-slider="center: 1; active: first" role="region" aria-roledescription="carousel">

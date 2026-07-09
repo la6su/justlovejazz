@@ -12,7 +12,7 @@ export const FOOTER = `
     <div class="uk-container uk-container-expand">
       <div class="uk-flex uk-flex-middle uk-flex-between uk-flex-wrap">
         <div class="uk-flex uk-flex-middle">
-          <a class="uk-navbar-item uk-logo jlz-brand uk-margin-right" href="/" aria-label="JUSTLOVEJAZZ home">l@6</a>
+          <a class="uk-navbar-item uk-logo jlz-brand uk-margin-right" href="/app" aria-label="JUSTLOVEJAZZ home">l@6</a>
           <span class="uk-text-meta jlz-footer__copy">© ${new Date().getFullYear()} JUSTLOVEJAZZ</span>
         </div>
         <ul class="uk-iconnav">

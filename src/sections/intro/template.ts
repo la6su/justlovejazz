@@ -24,9 +24,9 @@ export function introSection(): string {
           <!-- BOTTOM: CTA + scroll hint -->
           <div class="uk-flex uk-flex-column uk-flex-middle" ${REVEAL}>
             <div class="uk-flex uk-flex-center uk-flex-wrap uk-flex-middle jlz-flex-gap-small">
-              <a href="/services" class="uk-button uk-button-primary uk-button-small">Services</a>
-              <a href="/posts" class="uk-button uk-button-default uk-button-small">Posts</a>
-              <a href="/#section-contact" class="uk-button uk-button-default uk-button-small">Contact</a>
+              <a href="/app/services" class="uk-button uk-button-primary uk-button-small">Services</a>
+              <a href="/app/posts" class="uk-button uk-button-default uk-button-small">Posts</a>
+              <a href="/app/#section-contact" class="uk-button uk-button-default uk-button-small">Contact</a>
             </div>
             <div class="jlz-scroll-hint uk-margin-top" aria-hidden="true">
               <span class="jlz-scroll-hint__label">Spin the cube</span>

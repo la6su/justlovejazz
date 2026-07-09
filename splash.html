@@ -2,94 +2,74 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta
-      name="description"
-      content="JUSTLOVEJAZZ — studio-grade interactive 3D portfolio. A WebGPU/WebGL cinematic experience built with Three.js."
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="JUSTLOVEJAZZ — studio-grade interactive 3D portfolio. A WebGPU/WebGL cinematic experience built with Three.js. Configure your experience before entering." />
     <meta name="theme-color" content="#050507" />
     <meta name="author" content="JUSTLOVEJAZZ" />
     <meta name="color-scheme" content="dark light" />
+    <title>JUSTLOVEJAZZ — Enter</title>
 
-    <!-- Open Graph (social sharing) -->
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- Preload 3D stack (cached by browser before Enter → instant app boot) -->
+    <link rel="modulepreload" href="/src/entry-shell.ts" />
+    <link rel="preload" href="/fonts/inter-400.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/inter-700.woff2" as="font" type="font/woff2" crossorigin />
+
+    <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="JUSTLOVEJAZZ" />
     <meta property="og:title" content="JUSTLOVEJAZZ — Interactive 3D Portfolio" />
-    <meta
-      property="og:description"
-      content="A studio-grade interactive 3D portfolio. A WebGPU/WebGL cinematic experience built with Three.js."
-    />
+    <meta property="og:description" content="A studio-grade interactive 3D portfolio. A WebGPU/WebGL cinematic experience built with Three.js." />
     <meta property="og:url" content="https://justlovejazz.dev/" />
     <meta property="og:image" content="https://justlovejazz.dev/assets/projects/undercurrent/cover.webp" />
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="JUSTLOVEJAZZ — Interactive 3D Portfolio" />
-    <meta
-      name="twitter:description"
-      content="A studio-grade interactive 3D portfolio. A WebGPU/WebGL cinematic experience built with Three.js."
-    />
+    <meta name="twitter:description" content="A studio-grade interactive 3D portfolio. A WebGPU/WebGL cinematic experience built with Three.js." />
     <meta name="twitter:image" content="https://justlovejazz.dev/assets/projects/undercurrent/cover.webp" />
 
-    <!-- Canonical — target production domain (justlovejazz.dev).
-         Dev domain is project.6la.ru (vite allowedHosts); replace here
-         once the production domain is live. -->
+    <!-- Canonical — splash is the root entry -->
     <link rel="canonical" href="https://justlovejazz.dev/" />
 
-    <title>JUSTLOVEJAZZ — Interactive 3D Portfolio</title>
-    <link rel="preload" href="/fonts/inter-400.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href="/fonts/inter-700.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href="/fonts/inter-900.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="stylesheet" href="/fonts/inter.css" />
-
-    <!-- Structured data (JSON-LD) — helps search engines understand the site.
-         Organization (not MusicGroup) — this is a web design studio, not a
-         music act. knowsAbout helps Google categorize the expertise. -->
+    <!-- Structured data — splash page is a WebSite entry point -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "Organization",
+        "@type": "WebSite",
         "name": "JUSTLOVEJAZZ",
-        "description": "Studio-grade interactive 3D portfolio. A WebGPU/WebGL cinematic experience built with Three.js.",
         "url": "https://justlovejazz.dev/",
-        "logo": "https://justlovejazz.dev/favicon.svg",
-        "knowsAbout": [
-          "WebGPU",
-          "Three.js",
-          "TSL NodeMaterial",
-          "Web design",
-          "Interactive 3D",
-          "Shader art",
-          "UIkit 3"
-        ],
-        "sameAs": [
-          "https://github.com/la6su",
-          "https://twitter.com"
-        ]
+        "description": "Studio-grade interactive 3D portfolio. A WebGPU/WebGL cinematic experience built with Three.js.",
+        "potentialAction": {
+          "@type": "EnterAction",
+          "target": "https://justlovejazz.dev/app",
+          "name": "Enter full experience"
+        }
       }
     </script>
 
-    <!-- @vite/client stripping is handled by the `block-vite-client` plugin
-         in vite.config.ts — it removes the script tag at transformIndexHtml
-         time and stubs the HTTP request via server middleware. No inline
-         MutationObserver is needed here. -->
-
+    <!-- Inline CSS — ~2KB, FCP-critical only. No external requests. -->
     <style>
       * { box-sizing: border-box; }
-      body { margin: 0; background: #050507; overflow: hidden; }
+      html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #050507; }
+      body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
 
-      /* ── Splash overlay — codrops squares + CRT-on curtain reveal ── */
+      /* ── Splash root ── */
       #jlj-splash {
         position: fixed;
         inset: 0;
         z-index: 3000;
-        pointer-events: none;
-        background: #050507;
         display: flex;
         align-items: center;
         justify-content: center;
         overflow: hidden;
+        background: #050507;
       }
 
       /* CRT-on curtains — two panels that split apart on Enter */
@@ -107,7 +87,7 @@
       #jlj-splash.entering .jlz-curtain--top { transform: translateY(-100%); }
       #jlj-splash.entering .jlz-curtain--bottom { transform: translateY(100%); }
 
-      /* Seam glow at curtain split — bright line that fades */
+      /* Seam glow at curtain split */
       .jlz-curtain-seam {
         position: absolute;
         top: 50%;
@@ -133,13 +113,12 @@
         position: relative;
       }
 
-      /* Square text paths — concentric, decreasing size */
       .jlz-splash-text {
         text-transform: uppercase;
         transform-origin: 700px 700px;
         will-change: transform, opacity;
         fill: #48423c;
-        font-family: Inter, sans-serif;
+        font-family: 'Inter', sans-serif;
         font-weight: 700;
         opacity: 0;
         transform: scale(0.3);
@@ -155,7 +134,64 @@
         100% { opacity: 1; transform: scale(1); }
       }
 
-      /* Splash controls — Enter + Sound toggle (above curtains) */
+      /* ── Config switchers (top-right corner) ── */
+      .jlz-config {
+        position: fixed;
+        top: 1.5rem;
+        right: 1.5rem;
+        z-index: 3005;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        opacity: 0;
+        animation: jlz-config-in 0.6s ease 0.8s forwards;
+      }
+      @keyframes jlz-config-in { to { opacity: 1; } }
+
+      .jlz-config__btn {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 50%;
+        color: rgba(255, 255, 255, 0.6);
+        cursor: pointer;
+        transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+        font-size: 0.9rem;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+      }
+      .jlz-config__btn:hover {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.25);
+        color: #fff;
+      }
+      .jlz-config__btn.is-off {
+        opacity: 0.4;
+      }
+
+      /* ── No-JS link (bottom-left) ── */
+      .jlz-nojs-link {
+        position: fixed;
+        bottom: 1.5rem;
+        left: 1.5rem;
+        z-index: 3005;
+        font-size: 0.7rem;
+        font-weight: 500;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.4);
+        text-decoration: none;
+        transition: color 0.2s ease;
+        opacity: 0;
+        animation: jlz-config-in 0.6s ease 0.8s forwards;
+      }
+      .jlz-nojs-link:hover { color: rgba(255, 255, 255, 0.8); }
+
+      /* ── Enter + Loading (center, above curtains) ── */
       .jlz-splash-controls {
         position: absolute;
         top: 50%;
@@ -167,9 +203,7 @@
         gap: 1rem;
         z-index: 3004;
       }
-      #jlj-splash.ready .jlz-splash-controls {
-        display: flex;
-      }
+      #jlj-splash.ready .jlz-splash-controls { display: flex; }
 
       .jlz-splash-enter {
         width: 100px;
@@ -177,13 +211,12 @@
         border: 2px solid #515d84;
         background: transparent;
         color: #515d84;
-        font-family: Inter, sans-serif;
+        font-family: 'Inter', sans-serif;
         font-weight: 700;
         font-size: 0.75rem;
         text-transform: uppercase;
         letter-spacing: 0.15em;
         cursor: pointer;
-        pointer-events: auto;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -196,41 +229,19 @@
         color: #fff;
         transform: scale(1.08);
       }
-      .jlz-splash-enter:active {
-        transform: scale(0.95);
-      }
-
-      /* Sound toggle button */
-      .jlz-splash-sound {
-        background: none;
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        color: rgba(255, 255, 255, 0.5);
-        width: 36px;
-        height: 36px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        pointer-events: auto;
-        transition: all 0.2s ease;
-        font-size: 1rem;
-      }
-      .jlz-splash-sound:hover {
-        border-color: rgba(255, 255, 255, 0.4);
-        color: rgba(255, 255, 255, 0.8);
-      }
-      .jlz-splash-sound.muted {
+      .jlz-splash-enter:active { transform: scale(0.95); }
+      .jlz-splash-enter:disabled {
         opacity: 0.4;
+        cursor: not-allowed;
+        transform: none;
       }
 
-      /* Loading text — shown before Enter (above curtains) */
       .jlz-splash-loading {
         position: absolute;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
         color: rgba(255, 255, 255, 0.3);
-        font-family: Inter, sans-serif;
         font-size: 0.7rem;
         font-weight: 500;
         letter-spacing: 0.3em;
@@ -241,49 +252,33 @@
       }
       #jlj-splash.ready .jlz-splash-loading { opacity: 0; }
 
-      /* Skip link — visible on focus (WCAG 2.4.1) */
-      .skip-link {
-        position: absolute;
-        left: -9999px;
-        top: 0;
-        width: 1px;
-        height: 1px;
-        overflow: hidden;
-        z-index: 9999;
+      /* ── Fade-out transition to /app ── */
+      #jlj-splash.fading {
+        opacity: 0;
+        transition: opacity 0.4s ease;
+        pointer-events: none;
       }
-      .skip-link:focus {
-        left: 1rem;
-        top: 1rem;
-        width: auto;
-        height: auto;
-        padding: 0.75rem 1.25rem;
-        background: #fff;
-        color: #050507;
-        border-radius: 6px;
-        font-family: Inter, sans-serif;
-        font-weight: 700;
-        text-decoration: none;
+
+      /* ── Reduced motion ── */
+      @media (prefers-reduced-motion: reduce) {
+        .jlz-splash-text { animation: none; opacity: 1; transform: scale(1); }
+        .jlz-curtain { transition: opacity 0.3s ease; }
+        #jlj-splash.entering .jlz-curtain--top,
+        #jlj-splash.entering .jlz-curtain--bottom { transform: none; opacity: 0; }
       }
     </style>
   </head>
-  <body data-app-mode="full" data-page="home">
-    <a href="#section-intro" class="skip-link">Skip to main content</a>
-    <!-- Splash: concentric squares (codrops-inspired) + Enter button.
-         role=status + aria-live=polite announces the loading state to SR users. -->
-    <div
-      id="jlj-splash"
-      role="status"
-      aria-live="polite"
-      aria-label="Loading JUSTLOVEJAZZ experience"
-    >
-      <!-- CRT-on curtains — split apart on Enter -->
+  <body data-app-mode="splash">
+    <!-- Splash: concentric squares (codrops-inspired) + Enter button + config -->
+    <div id="jlj-splash" role="status" aria-live="polite" aria-label="Loading JUSTLOVEJAZZ experience">
+      <!-- CRT-on curtains -->
       <div class="jlz-curtain jlz-curtain--top"></div>
       <div class="jlz-curtain jlz-curtain--bottom"></div>
       <div class="jlz-curtain-seam"></div>
-      <!-- Concentric squares -->
+
+      <!-- Concentric squares with text paths -->
       <svg class="jlz-splash-svg" viewBox="0 0 1400 1400" aria-hidden="true">
         <defs>
-          <!-- 4 concentric square paths (centered at 700,700) -->
           <path id="sq-1" d="M250,250 L1150,250 L1150,1150 L250,1150 Z" />
           <path id="sq-2" d="M382,382 L1018,382 L1018,1018 L382,1018 Z" />
           <path id="sq-3" d="M487,487 L913,487 L913,913 L487,913 Z" />
@@ -302,41 +297,39 @@
           <textPath href="#sq-4" textLength="1064">L@6 · STUDIO&nbsp;</textPath>
         </text>
       </svg>
+
+      <!-- Loading text (shown before ready) -->
       <span class="jlz-splash-loading">Loading</span>
+
+      <!-- Enter button (shown when ready).
+           Progressive enhancement: default destination = /landing (no-JS fallback).
+           JS (splash-entry.ts) disables button during preload, then switches
+           destination to /app when the app bundle is cached. If JS crashes
+           completely, button stays enabled with /landing destination. -->
       <div class="jlz-splash-controls">
-        <button class="jlz-splash-enter" type="button" aria-label="Enter JUSTLOVEJAZZ experience">Enter</button>
-        <button class="jlz-splash-sound" type="button" aria-label="Toggle sound" aria-pressed="true">
-          <span uk-icon="icon: volume; ratio: 0.8" aria-hidden="true"></span>
-        </button>
+        <button class="jlz-splash-enter" type="button" aria-label="Enter JUSTLOVEJAZZ experience" data-destination="/landing">Enter</button>
       </div>
     </div>
-    <div id="app"></div>
+
+    <!-- Config switchers (top-right) -->
+    <div class="jlz-config" role="toolbar" aria-label="Experience configuration">
+      <button class="jlz-config__btn" id="cfg-theme" type="button" aria-label="Toggle theme" aria-pressed="false" title="Toggle theme">
+        <span aria-hidden="true">◐</span>
+      </button>
+      <button class="jlz-config__btn is-off" id="cfg-sound" type="button" aria-label="Toggle sound" aria-pressed="false" title="Toggle sound">
+        <span aria-hidden="true">♪</span>
+      </button>
+    </div>
+
+    <!-- No-JS fallback link (bottom-left) -->
+    <a class="jlz-nojs-link" href="/landing" rel="nofollow">View without JS →</a>
+
+    <!-- No-JS redirect: if JS disabled, go to landing immediately -->
     <noscript>
-      <div
-        style="
-          position: fixed;
-          inset: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: #050507;
-          color: #fff;
-          font-family: Inter, system-ui, sans-serif;
-          text-align: center;
-          padding: 2rem;
-        "
-      >
-        <div>
-          <h1 style="font-size: 2rem; font-weight: 900; letter-spacing: 0.1em; margin: 0 0 1rem">
-            l@6
-          </h1>
-          <p style="max-width: 32rem; color: rgba(255, 255, 255, 0.7); line-height: 1.6">
-            This interactive 3D portfolio requires JavaScript and WebGL2 to run. Please enable
-            JavaScript in your browser to continue.
-          </p>
-        </div>
-      </div>
+      <meta http-equiv="refresh" content="0;url=/landing" />
     </noscript>
-    <script type="module" src="/src/entry-shell.ts"></script>
+
+    <!-- Inline splash logic — ~3KB, FCP-critical. Lazy-loads entry-shell for preload. -->
+    <script type="module" src="/src/splash-entry.ts"></script>
   </body>
 </html>

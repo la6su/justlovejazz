@@ -6,13 +6,15 @@ let initialized = false
 let currentPage: PageId | null = null
 
 const ROUTES: Record<string, PageId> = {
-  '/': 'home',
-  '/services': 'services',
-  '/posts': 'posts',
+  '/app': 'home',
+  '/app/services': 'services',
+  '/app/posts': 'posts',
 }
 
 function getPageFromLocation(): PageId {
-  return ROUTES[window.location.pathname] ?? 'home'
+  // Strip /app prefix if present (multi-page: splash=/, app=/app, landing=/landing)
+  const path = window.location.pathname.replace(/^\/app/, '') || '/'
+  return ROUTES['/app' + path] ?? ROUTES[path] ?? 'home'
 }
 
 const container: HTMLElement | null = (() => {
