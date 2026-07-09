@@ -6,7 +6,6 @@
       "name": "justlovejazz",
       "dependencies": {
         "three": "^0.184.0",
-        "three-joystick": "^1.0.2",
         "uikit": "^3.25.16",
       },
       "devDependencies": {
@@ -480,8 +479,6 @@
     "symbol-tree": ["symbol-tree@3.2.4", "", {}, "sha512-9QNk5KwDF+Bvz+PyObkmSYjI5ksVUYtjW7AU22r2NKcfLJcXp96hkDWU3+XndOsUb+AQ9QhfzfCT2O+CNWT5Tw=="],
 
     "three": ["three@0.184.0", "", {}, "sha512-wtTRjG92pM5eUg/KuUnHsqSAlPM296brTOcLgMRqEeylYTh/CdtvKUvCyyCQTzFuStieWxvZb8mVTMvdPyUpxg=="],
-
-    "three-joystick": ["three-joystick@1.0.2", "", { "peerDependencies": { "three": "^0.131.3" } }, "sha512-HsFuW+2qxlOQVAqOk3FUBfN8Q2tQUtRe7wRLoiSMZmywL+6IAoP+81Iueppe54Qcmj7IKtynxl5hZRQuSvzqQA=="],
 
     "tinybench": ["tinybench@2.9.0", "", {}, "sha512-0+DUvqWMValLmha6lr4kD8iAMK1HzV0/aKnCtWb9v9641TnP/MFb7Pc2bxoxQjTXAErryXVgUOfv2YqNllqGeg=="],
 
