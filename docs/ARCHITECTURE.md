@@ -2,6 +2,11 @@
 
 Vite 8 · TypeScript strict · Three.js 0.184 + TSL · UIkit 3 + Less · bun.
 
+> **UIkit 3 theming layer**: see [`UIKIT3.md`](UIKIT3.md) — theme assembly,
+> section template, custom-vs-UIKit rules, and the hard-won lessons we
+> learned (blend-difference across stacking contexts, scrollspy+splash timing,
+> per-section theme overrides vs global `body.light-theme`, etc.).
+
 ## Entry
 
 ```

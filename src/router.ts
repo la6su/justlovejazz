@@ -40,6 +40,17 @@ function renderView(page: PageId = getPageFromLocation()): void {
   if (!el) return
   document.body.dataset.page = page
   document.documentElement.dataset.page = page
+  // Content pages always render light text over the 3D canvas. Remove
+  // `light-theme` (toggled by Experience.ts on home sections) from both
+  // <html> and <body> so the dark-theme UIKit overrides apply: light text,
+  // glass buttons, glass cards. Experience.ts re-adds `light-theme` when
+  // returning to a light home section. See docs/UIKIT3.md §4 (theme scope).
+  if (page !== 'home') {
+    document.documentElement.classList.remove('light-theme')
+    document.body.classList.remove('light-theme')
+    document.documentElement.classList.add('dark-theme')
+    document.body.classList.add('dark-theme')
+  }
   // Keep the SEO-friendly <title> from index.html — do not clobber it with
   // a shorter tab title on JS boot.
   // document.title is intentionally left as-is.

@@ -214,6 +214,11 @@ export class Experience {
     // which instantly destroyed the splash ~2.5s BEFORE the cinematic opening
     // sequence could play — so the user saw no opening animation at all.
     this.bus.on('intro:done', () => {
+      // Content pages (music, videos, shows, etc.) always render light text
+      // over the 3D canvas — skip the light-theme toggle so the dark-theme
+      // UIKit overrides (light text, glass cards/buttons) stay active.
+      // See docs/UIKIT3.md §4 (theme toggle scope).
+      if (document.body.dataset.page !== 'home') return
       // Intro is a light section — set light-theme, clear dark-theme.
       // (The per-section toggle in _updateInner also keeps these in sync.)
       document.documentElement.classList.add('light-theme')
@@ -440,13 +445,19 @@ export class Experience {
     // Both `light-theme` and `dark-theme` classes are toggled symmetrically
     // so main.less can use body.light-theme / body.dark-theme selectors
     // (replaces 63 per-section[data-section=...] rules — see main.less §5).
+    //
+    // Content pages (music, videos, shows, etc.) always render light text
+    // over the 3D canvas — skip the toggle so the dark-theme UIKit overrides
+    // stay active. See docs/UIKIT3.md §4 (theme toggle scope).
     const idx = this.world.currentSectionIndex
-    // Light sections: Lab(0), Intro(1), Contact(6) — light bg, dark text
-    const isLightSection = idx === 0 || idx === 1 || idx === 6
-    document.documentElement.classList.toggle('light-theme', isLightSection)
-    document.body.classList.toggle('light-theme', isLightSection)
-    document.documentElement.classList.toggle('dark-theme', !isLightSection)
-    document.body.classList.toggle('dark-theme', !isLightSection)
+    if (document.body.dataset.page === 'home') {
+      // Light sections: Lab(0), Intro(1), Contact(6) — light bg, dark text
+      const isLightSection = idx === 0 || idx === 1 || idx === 6
+      document.documentElement.classList.toggle('light-theme', isLightSection)
+      document.body.classList.toggle('light-theme', isLightSection)
+      document.documentElement.classList.toggle('dark-theme', !isLightSection)
+      document.body.classList.toggle('dark-theme', !isLightSection)
+    }
     // Give World the camera ref for DrawTrail (once, after init).
     this.world.setCamera(this.camera.instance)
     this.world.setRenderer(this.renderer.instance as THREE.WebGLRenderer)

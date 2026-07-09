@@ -1,6 +1,8 @@
 # STATUS — Single Source of Truth
 
 > Updated: 2026-07-11. Branch: `main`. Build green.
+>
+> UIkit 3 theming patterns + lessons: see [`UIKIT3.md`](UIKIT3.md).
 
 ## Project
 

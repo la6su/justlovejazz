@@ -325,7 +325,11 @@ body:not([data-page='home']) .jlz-hint {
 }
 
 /* ------------------------------------------------------------------
-   Content pages
+   Content pages — transparent over 3D canvas (like QF background video)
+   `.jlz-page` is transparent so the 3D canvas shows through. A subtle
+   bottom-anchored scrim + text-shadow on headings/body provides
+   readability over any 3D background (uk-blend-difference can't cross
+   stacking contexts — see docs/UIKIT3.md §6.1).
    ------------------------------------------------------------------ */
 
 .jlz-page {
@@ -333,9 +337,9 @@ body:not([data-page='home']) .jlz-hint {
   min-height: 100dvh;
   height: 100dvh;
   color: rgba(255, 255, 255, 0.9);
-  background:
-    linear-gradient(180deg, rgba(5, 5, 7, 0.82), rgba(5, 5, 7, 0.96)),
-    var(--jlz-color-bg);
+  /* Transparent — 3D canvas shows through. Subtle scrim only at the
+     bottom for text readability where content meets the dock/joystick. */
+  background: transparent;
   overflow: hidden;
 }
 
@@ -348,6 +352,14 @@ body:not([data-page='home']) .jlz-hint {
   padding-top: 96px;
   padding-bottom: 144px;
   overflow: hidden;
+  /* Subtle radial scrim behind content for readability over 3D —
+     lighter than a flat overlay, keeps 3D visible at the edges. */
+  background: radial-gradient(
+    ellipse 80% 60% at 50% 50%,
+    rgba(5, 5, 7, 0.28),
+    rgba(5, 5, 7, 0.08) 60%,
+    transparent 100%
+  );
 }
 
 .jlz-page-section.section-active {
@@ -361,15 +373,21 @@ body:not([data-page='home']) .jlz-hint {
   margin-right: auto;
 }
 
-.jlz-page .uk-heading-xlarge,
-.jlz-page .uk-heading-medium,
-.jlz-page .uk-card-title,
-.jlz-page .uk-text-lead {
+/* Content pages always use light text over 3D canvas — `body` prefix
+   raises specificity above `body.light-theme .uk-heading-*` (0,2,1 vs
+   0,2,0) so the light-theme toggle from home sections doesn't darken
+   content page text. */
+body .jlz-page .uk-heading-xlarge,
+body .jlz-page .uk-heading-medium,
+body .jlz-page .uk-card-title,
+body .jlz-page .uk-text-lead {
   color: rgba(255, 255, 255, 0.94);
+  text-shadow: 0 2px 32px rgba(0, 0, 0, 0.55);
 }
 
-.jlz-page .uk-text-meta {
+body .jlz-page .uk-text-meta {
   color: rgba(255, 255, 255, 0.56);
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.5);
 }
 
 .jlz-page .uk-card-default {
@@ -387,6 +405,7 @@ body:not([data-page='home']) .jlz-hint {
 .jlz-event-row {
   gap: 24px;
   padding: 24px 0;
+  text-shadow: 0 1px 16px rgba(0, 0, 0, 0.5);
 }
 
 .jlz-gallery-tile {
@@ -395,6 +414,8 @@ body:not([data-page='home']) .jlz-hint {
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
     rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 @media (max-width: 640px) {
