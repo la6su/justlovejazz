@@ -18,6 +18,7 @@ const PAGE_LINKS = [
 
 const THEME_MODES: { id: ThemeMode; label: string; icon: string }[] = [
   { id: 'auto', label: 'Auto', icon: 'bolt' },
+  { id: 'inverse', label: 'Inverse', icon: 'paint-bucket' },
   { id: 'light', label: 'Light', icon: 'paint-bucket' },
   { id: 'dark', label: 'Dark', icon: 'moon' },
 ]

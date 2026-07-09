@@ -77,6 +77,9 @@ export interface PhaseConfig {
   background: number
   ground: { color: THREE.Color; opacity: number }
   sectionLights?: SectionLightDef[]
+  /** Section theme: 'light' = light background (dark text), 'dark' = dark background (light text).
+   *  Inverse mode flips these. See ThemeManager + Experience.ts. */
+  theme: 'light' | 'dark'
 }
 
 type RawScene = {
@@ -111,6 +114,9 @@ type RawScene = {
   showGallery: boolean
   groundColor: number
   groundOpacity: number
+  /** Per-section theme: 'light' (light bg, dark text) or 'dark' (dark bg, light text).
+   *  Intro + Contact = light, middle sections = dark. Inverse flips. */
+  sectionTheme: 'light' | 'dark'
 }
 
 // 6 sections (4 main + 2 secret side: Lab=0, Process=5) — 1:1 with cube faces
@@ -149,6 +155,7 @@ const RAW: RawScene[] = [
     showGallery: false,
     groundColor: 0xf5f5f8,
     groundOpacity: 0,
+    sectionTheme: 'light',
   },
   // ── Section 1: INTRO — White BG, metal drop ──
   {
@@ -183,6 +190,7 @@ const RAW: RawScene[] = [
     showGallery: false,
     groundColor: 0xffffff,
     groundOpacity: 0,
+    sectionTheme: 'light',
   },
   // ── Section 2: ABOUT — Black BG, blob, reflective floor, grey blocks ──
   {
@@ -217,6 +225,7 @@ const RAW: RawScene[] = [
     showGallery: false,
     groundColor: 0x080812,
     groundOpacity: 0.08,
+    sectionTheme: 'dark',
   },
   // ── Section 3: WORKS (was challenge) — Dark BG, checkered floor, blue lines ──
   {
@@ -251,6 +260,7 @@ const RAW: RawScene[] = [
     showGallery: true,
     groundColor: 0x06080e,
     groundOpacity: 0.1,
+    sectionTheme: 'dark',
   },
   // ── Section 4: CONTACT — Dark BG, closing ──
   {
@@ -285,6 +295,7 @@ const RAW: RawScene[] = [
     showGallery: false,
     groundColor: 0x080812,
     groundOpacity: 0.05,
+    sectionTheme: 'light',
   },
   // ── Section 5: PROCESS (secret right) — Dark BG, workflow timeline ──
   {
@@ -319,6 +330,7 @@ const RAW: RawScene[] = [
     showGallery: false,
     groundColor: 0x080812,
     groundOpacity: 0.05,
+    sectionTheme: 'dark',
   },
 ]
 
@@ -374,6 +386,7 @@ export function toPhaseConfig(raw: RawScene): PhaseConfig {
       color: _toColor(raw.groundColor),
       opacity: raw.groundOpacity,
     },
+    theme: raw.sectionTheme,
   }
 }
 

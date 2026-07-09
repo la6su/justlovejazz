@@ -459,18 +459,16 @@ export class Experience {
       )
     }
 
-    // UI theme: light sections (Lab=0, Intro=1, Contact=6) need dark text/nav.
-    // These sections have LIGHT backgrounds (EnvSphere patterns) → dark text
-    // for contrast. Other sections have DARK backgrounds → light text.
-    //
-    // ThemeManager handles the actual class toggle (uk-light + light-theme
-    // for custom elements) and respects manual override from the menu toggle.
-    // On content pages, skip — always dark (light text over 3D).
+    // UI theme: each section has its own theme ('light' or 'dark') from WorldConfig.
+    // Light sections = light background → dark text (uk-light on body).
+    // Dark sections = dark background → light text (no uk-light).
+    // Inverse mode (menu toggle) flips all sections dark↔light.
     // See docs/UIKIT3.md §4 (theme toggle scope).
     const idx = this.world.currentSectionIndex
     if (document.body.dataset.page === 'home') {
-      const isLightSection = idx === 0 || idx === 1 || idx === 4
-      themeManager.setAutoTheme(isLightSection)
+      const cfg = this.world.getConfig(this.world.sections[idx]?.phaseConfig?.id ?? 'sec_intro')
+      const sectionTheme = cfg?.theme ?? 'dark'
+      themeManager.setAutoTheme(sectionTheme === 'light')
     }
     // Give World the camera ref for DrawTrail (once, after init).
     this.world.setCamera(this.camera.instance)
@@ -683,8 +681,11 @@ export class Experience {
     }
   }
 
-  /** Get the BakuCarousel from the works scene group (index 3 in 6-section layout). */
+  /** Get the BakuCarousel from the works scene group (index 3 in 6-section layout).
+   *  Returns null on non-home pages — carousel is home-only. */
   private getCarousel(): import('./World/BakuCarousel').BakuCarousel | null {
+    // BakuCarousel only exists on home page — content pages don't init it
+    if (document.body.dataset.page !== 'home') return null
     const worksGroup = this.world?.sceneGroups?.[3]
     if (!worksGroup) return null
     return (worksGroup.userData.gallery as
