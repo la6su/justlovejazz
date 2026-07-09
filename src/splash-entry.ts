@@ -73,40 +73,46 @@ function initSoundToggle(): void {
 }
 
 // ── App preload + Enter button ──
-// Progressive enhancement flow:
+// Progressive enhancement flow (revised — button ALWAYS enabled):
 //   1. HTML default: button enabled, data-destination="/landing" (no-JS fallback)
-//   2. JS boot: button.disabled = true (during preload)
-//   3. Preload done: button.disabled = false, data-destination="/app"
-//   4. Click: fade out → navigate to data-destination
+//   2. JS boot: button stays enabled, shows "Loading…" indicator
+//   3. import('./entry-shell') success → data-destination="/app", indicator hidden
+//   4. Click (anytime): fade out → navigate to data-destination
 //
-// If JS crashes completely → button stays enabled with /landing destination
-// (user can still click → landing). If only preload fails → destination
-// stays /landing, button enabled (graceful degradation).
+// User can click Enter IMMEDIATELY (goes to /landing fallback). When app
+// bundle is cached, destination silently switches to /app. No disabled state.
 async function initEnterButton(): Promise<void> {
   const enterBtn = document.querySelector<HTMLButtonElement>('.jlz-splash-enter')
   const splash = document.getElementById('jlj-splash')
   if (!enterBtn || !splash) return
 
-  // Disable button during preload (HTML default is enabled for no-JS fallback).
-  enterBtn.disabled = true
-
-  // Fire-and-forget preload of the app module graph.
-  // On success → switch destination to /app. On failure → keep /landing.
-  try {
-    await import('./entry-shell')
-    enterBtn.dataset.destination = '/app'
-  } catch (err) {
-    // Preload failed — keep destination as /landing (HTML default).
-    // User can still navigate to landing; /app will re-fetch on direct load.
-    console.warn('[splash] App preload failed (non-fatal, fallback to /landing):', err)
-  }
+  // Wire click IMMEDIATELY — button is enabled from HTML default.
+  // destination is /landing until preload completes.
+  enterBtn.addEventListener('click', doEnter)
 
   // Mark ready — shows Enter button, hides Loading text.
   splash.classList.add('ready')
-  enterBtn.disabled = false
 
-  // Wire click — fade transition → navigate to data-destination.
-  enterBtn.addEventListener('click', doEnter)
+  // Fire-and-forget preload of the app module graph.
+  // On success → switch destination to /app (button stays enabled).
+  // On failure → destination stays /landing (graceful degradation).
+  try {
+    await import('./entry-shell')
+    enterBtn.dataset.destination = '/app'
+    // Hide "Preparing 3D…" status — app bundle is cached, Enter goes to /app.
+    const status = document.getElementById('jlz-splash-status')
+    if (status) status.classList.add('is-ready')
+  } catch (err) {
+    // Preload failed — keep destination as /landing (HTML default).
+    // User can still click → landing; /app will re-fetch on direct load.
+    console.warn('[splash] App preload failed (non-fatal, fallback to /landing):', err)
+    // Update status to reflect fallback.
+    const status = document.getElementById('jlz-splash-status')
+    if (status) {
+      status.textContent = 'Text view'
+      status.classList.add('is-ready')
+    }
+  }
 }
 
 // ── Enter → fade → navigate to data-destination ──
@@ -133,20 +139,13 @@ function doEnter(): void {
 function boot(): void {
   initThemeToggle()
   initSoundToggle()
-  // Start preloading app immediately (don't await — Enter button enables
-  // when ready, but preload runs in parallel with splash animation).
-  // Wrap in try/catch — if anything crashes, still show the Enter button
-  // so the user can navigate to /landing (progressive enhancement).
+  // Start preloading app immediately (button is enabled from HTML default,
+  // click is wired in initEnterButton). Preload runs in parallel.
   void initEnterButton().catch((err) => {
-    console.warn('[splash] initEnterButton failed, showing fallback:', err)
+    console.warn('[splash] initEnterButton failed:', err)
+    // Fallback: still show the button with /landing destination.
     const splash = document.getElementById('jlj-splash')
-    const enterBtn = document.querySelector<HTMLButtonElement>('.jlz-splash-enter')
-    if (splash && enterBtn) {
-      splash.classList.add('ready')
-      enterBtn.disabled = false
-      // destination stays /landing (HTML default) — user can click to escape
-      enterBtn.addEventListener('click', doEnter)
-    }
+    if (splash) splash.classList.add('ready')
   })
 }
 

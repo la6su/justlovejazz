@@ -53,12 +53,22 @@
     <!-- Inline CSS — ~2KB, FCP-critical only. No external requests. -->
     <style>
       * { box-sizing: border-box; }
-      html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #050507; }
+      html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        overflow: hidden;
+        background: #050507;
+        cursor: default;
+      }
       body {
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
       }
+      /* Ensure cursor is visible on all interactive elements */
+      button, a { cursor: pointer; }
+      button:disabled { cursor: not-allowed; }
 
       /* ── Splash root ── */
       #jlj-splash {
@@ -230,10 +240,20 @@
         transform: scale(1.08);
       }
       .jlz-splash-enter:active { transform: scale(0.95); }
-      .jlz-splash-enter:disabled {
-        opacity: 0.4;
-        cursor: not-allowed;
-        transform: none;
+
+      /* Status indicator under Enter button — shows "Preparing 3D…" while
+         app bundle loads, disappears when ready (or on click). */
+      .jlz-splash-status {
+        font-size: 0.6rem;
+        font-weight: 500;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.3);
+        opacity: 1;
+        transition: opacity 0.4s ease;
+      }
+      .jlz-splash-status.is-ready {
+        opacity: 0;
       }
 
       .jlz-splash-loading {
@@ -302,12 +322,13 @@
       <span class="jlz-splash-loading">Loading</span>
 
       <!-- Enter button (shown when ready).
-           Progressive enhancement: default destination = /landing (no-JS fallback).
-           JS (splash-entry.ts) disables button during preload, then switches
-           destination to /app when the app bundle is cached. If JS crashes
-           completely, button stays enabled with /landing destination. -->
+           Progressive enhancement: button is ALWAYS enabled.
+           Default destination = /landing (no-JS / preload-fail fallback).
+           JS (splash-entry.ts) switches destination to /app when the app
+           bundle is cached. If JS crashes, button stays enabled with /landing. -->
       <div class="jlz-splash-controls">
         <button class="jlz-splash-enter" type="button" aria-label="Enter JUSTLOVEJAZZ experience" data-destination="/landing">Enter</button>
+        <span class="jlz-splash-status" id="jlz-splash-status" aria-live="polite">Preparing 3D…</span>
       </div>
     </div>
 
