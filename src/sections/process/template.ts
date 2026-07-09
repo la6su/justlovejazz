@@ -6,7 +6,7 @@ import { REVEAL } from '../_shared/constants'
 export function processSection(): string {
   return `
     <!-- 5: PROCESS (secret right, left face -X) -->
-    <section uk-height-viewport="expand: true"
+    <section
              class="uk-section uk-section-small uk-section-medium@s uk-section-large@m" id="section-process" data-section="process">
       <div class="uk-position-cover" data-dynamic-content>
         <div class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-text-center uk-height-1-1">

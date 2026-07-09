@@ -57,7 +57,10 @@ export function sectionBottom(content: string): string {
   `
 }
 
-/** Full section wrapper with Apple Watch layout (TOP / 3D / BOTTOM). */
+/** Full section wrapper with Apple Watch layout (TOP / 3D / BOTTOM).
+ *  Height is handled by CSS `100dvh` on `#spa-content section[data-section]`
+ *  + `.jlz-page-section { min-height: 100dvh }` — no uk-height-viewport needed
+ *  (avoid double computation: UIkit JS vs native CSS, diverges on mobile URL-bar). */
 export function sectionShell(
   id: string,
   dataSection: string,
@@ -66,7 +69,7 @@ export function sectionShell(
   extraAttrs: string = '',
 ): string {
   return `
-    <section uk-height-viewport="expand: true"
+    <section
              class="uk-section uk-section-small uk-section-medium@s uk-section-large@m"
              id="section-${id}" data-section="${dataSection}" ${extraAttrs}>
       <div class="uk-position-cover" data-dynamic-content>

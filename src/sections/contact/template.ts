@@ -6,7 +6,7 @@ import { REVEAL } from '../_shared/constants'
 export function contactSection(): string {
   return `
     <!-- 4: CONTACT (bottom face -Y) -->
-    <section uk-height-viewport="expand: true"
+    <section
              class="uk-section uk-section-small uk-section-medium@s uk-section-large@m" id="section-contact" data-section="contact">
       <div class="uk-position-cover" data-dynamic-content>
         <div class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-text-center uk-height-1-1">

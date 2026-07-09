@@ -6,7 +6,7 @@ import { REVEAL } from '../_shared/constants'
 export function introSection(): string {
   return `
     <!-- 1: INTRO (front face +Z) — hero + cube + CTA -->
-    <section uk-height-viewport="expand: true"
+    <section
              class="uk-section uk-section-small uk-section-medium@s uk-section-large@m" id="section-intro" data-section="intro">
       <div class="uk-position-cover" data-dynamic-content>
         <div class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-text-center uk-height-1-1">
