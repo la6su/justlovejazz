@@ -166,26 +166,26 @@ body.uk-light .jlz-nav-link { color: rgba(5, 5, 7, 0.55); }
 // uk-light natively, zero custom CSS needed.
 ```
 
-**ThemeManager** (`src/core/ThemeManager.ts`) — 3 modes:
-- `'auto'` — follows the active home section (Lab/Intro/Contact = light,
-  others = dark). On content pages, always dark.
-- `'light'` — forced light mode (uk-light on body, dark text)
-- `'dark'` — forced dark mode (no uk-light, light text)
+**ThemeManager** (`src/core/ThemeManager.ts`) — **2 modes**:
+- `'normal'` (default) — follows the active home section (Lab/Intro/Contact = light,
+  others = dark). On content pages, first section is light.
+- `'inverse'` — flips all sections (light↔dark). Manual override wins over auto.
 
-Persisted to `localStorage('jlz:theme')`. Manual override wins over auto.
+Persisted to `localStorage('jlz:theme')`. Manual override (inverse) wins over auto.
 
-**Toggle UI** — 3 buttons (Auto/Light/Dark) in the UIMenu modal
-(`#jlz-menu-modal .jlz-theme-toggle`). Active button gets `uk-active` class
-+ accent background.
+**Toggle UI** — **1 button** "Change mode" in the UIMenu modal
+(`#jlz-menu-modal .jlz-theme-toggle`). Calls `themeManager.toggle()`, label
+updates to show `Normal` / `Inverse`.
 
 **Experience.ts** calls `themeManager.setAutoTheme(isLightSection)` on
-section change. ThemeManager decides whether to apply it (auto mode) or
-ignore it (manual override).
+section change. ThemeManager applies it in `normal` mode, or flips it in
+`inverse` mode. Content pages call `setAutoTheme(true)` on load (first
+section is light).
 
 ### 4.1 Theme toggle scope — home only, NOT content pages
 
-**Symptom:** Content pages (`/services`, `/cases`, `/process`, `/team`, `/journal`,
-`/contact`) render dark text on a dark 3D background — unreadable.
+**Symptom:** Content pages (`/services`, `/posts`) render dark text on a
+dark 3D background — unreadable.
 
 **Cause:** `Experience.ts` adds `uk-light` on init (intro is a light
 section) and toggles it on `jlz:section-change`. On content pages, no
@@ -195,10 +195,11 @@ then darkens all text, which is invisible over the dark 3D canvas.
 
 **Fix (via ThemeManager):**
 
-1. **`router.ts`** — on non-home pages, call `themeManager.setAutoTheme(false)`:
+1. **`router.ts`** — on non-home pages, call `themeManager.setAutoTheme(true)`
+   (first content-page section is light/inverse by design):
    ```ts
    if (page !== 'home') {
-     themeManager.setAutoTheme(false)  // forces dark in auto mode
+     themeManager.setAutoTheme(true)  // first section is light/inverse
    }
    ```
 
@@ -209,8 +210,8 @@ then darkens all text, which is invisible over the dark 3D canvas.
      themeManager.setAutoTheme(isLightSection)
    }
    ```
-   ThemeManager respects manual override (if user set 'light' or 'dark' in
-   the menu, auto-toggle is ignored).
+   ThemeManager respects manual override (if user toggled `inverse` in the menu,
+   auto-toggle is flipped, not ignored — `inverse` inverts the per-section decision).
 
 3. **`main.less`** — content page color rules use `body .jlz-page` prefix
    to ensure light text + text-shadow over the 3D canvas regardless of
@@ -739,17 +740,17 @@ main.less, `@global-line-height` 1.7→1.5, `@global-border-width` 2px→1px.
   (no UIKit globals — those come from `_import.less`)
 - `src/assets/main.less` — app layer (only what UIKit doesn't provide, including
   the mobile-first root `html { font-size: 0.85rem }` knob)
-- `src/core/ThemeManager.ts` — auto/light/dark theme manager (uk-light on body)
-- `src/pages/` — page templates organized by cube face structure:
-  - `src/pages/index.ts` — page registry + `renderPage(page)` router
-  - `src/pages/home.ts` — home page (6 cube-face sections + footer)
-  - `src/pages/sections/` — 6 home section templates (1:1 cube faces):
-    lab, intro, about, works, contact, process
-  - `src/pages/content/` — 6 content page templates:
-    services, cases, process, team, journal, contact
-  - `src/pages/shared/constants.ts` — REVEAL, PAGE_REVEAL, PageId, SectionId,
-    cube face → section mapping table
-  - `src/pages/shared/footer.ts` — unified FOOTER (brand + social only)
+- `src/core/ThemeManager.ts` — normal/inverse theme manager (uk-light on body)
+- `src/pages/` — page registry + content page templates:
+  - `src/pages/index.ts` — page registry + `renderPage(page)` (3 pages: home/services/posts)
+  - `src/pages/home.ts` — home page (assembles 6 cube-face sections + footer)
+  - `src/pages/content/services.ts` — services content page (6 sections)
+  - `src/pages/content/posts.ts` — posts content page (6 sections)
+- `src/sections/` — unified section modules (3D scene + HTML template, 1:1 cube faces):
+  - `lab/`, `intro/`, `about/`, `works/`, `contact/`, `process/` (6 dirs, each has `template.ts` + `scene.ts` + `index.ts`)
+  - `_shared/constants.ts` — REVEAL, PAGE_REVEAL, PageId, SectionId, cube face → section mapping
+  - `_shared/footer.ts` — unified FOOTER (brand + social only)
+  - `_shared/makeParticles.ts`, `_shared/makeInstancedParticles.ts` — particle factories
 - `src/templates.ts` — backward-compat shim, re-exports from `src/pages/`
 - `projects/*.html` — standalone project page pattern (UIKit navbar + container)
 - Worklog (`/home/z/my-project/worklog.md`) — full history of UIKit cleanup tasks

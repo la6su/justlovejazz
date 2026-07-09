@@ -185,11 +185,11 @@ Color grading: `mix(color*uGradeShadows, color+(uGradeHighlights-1)*max(color-0.
 | Section | No-op `update()`. State machine only (`switchState`). |
 | SectionSceneFactory | `SECTION_CREATORS[6]` array + `hideGeometry()` (keeps Points + InstancedMesh visible). |
 | makeParticles | Shared `THREE.Points` factory. Built-in `PointsMaterial`. 1 draw call per cloud. Used by all 6 section creators. |
-| ThemeManager | UIKit `uk-light` body class. auto/light/dark modes. localStorage `jlz:theme`. Manual override wins over auto. |
+| ThemeManager | UIKit `uk-light` body class. normal/inverse modes. localStorage `jlz:theme`. Manual override (inverse) wins over auto. |
 | Input | Mouse-only (scroll system removed). |
 | NoiseText | Glitch reveal via `jlz:section-change`. `data-rot` for rotation. |
 | WireframeTypography | Section2 About decorative typography. |
-| Router | Path-based routing `/`, `/services`, `/cases`, `/process`, `/team`, `/journal`, `/contact`. Renders 6 content pages. |
+| Router | Path-based routing `/`, `/services`, `/posts`. Renders 3 pages (home is the 3D cube experience, services/posts are content pages). |
 | Footer | Fixed bottom bar (brand + 3 social icons). Hidden on home where Contact section serves as the home footer. |
 
 ## Events
@@ -207,15 +207,17 @@ Color grading: `mix(color*uGradeShadows, color+(uGradeHighlights-1)*max(color-0.
 | Property | Value |
 | --- | --- |
 | File | `src/core/ThemeManager.ts` (singleton exported as `themeManager`) |
-| Modes | `'auto'` (default, follows active home section), `'light'` (forced), `'dark'` (forced) |
+| Modes | `'normal'` (default, per-section theme as configured), `'inverse'` (flips all sections) |
 | Persistence | `localStorage('jlz:theme')` — survives reloads |
 | Body class | `uk-light` toggled on `<body>` + `<html>` (UIKit native inverse — 1 class flips ALL UIKit components) |
-| Legacy synonym | `body.light-theme` kept as synonym for custom non-UIKit elements (joystick, hint, brand, corner-label) |
 | Auto source | `Experience.ts` calls `themeManager.setAutoTheme(isLightSection)` on home section change. `isLightSection = idx === 0 || idx === 1 || idx === 4` |
-| Content pages | `router.ts` calls `themeManager.setAutoTheme(false)` — always dark in auto mode |
-| 3D sync | Dispatches `jlz:theme-applied {isLight, mode}` — Experience listens; in manual light/dark mode, overrides EnvSphere pattern (light→Intro, dark→About) so 3D bg stays in sync with text color |
-| Toggle UI | 3 buttons (Auto/Light/Dark) in `#jlz-menu-modal .jlz-theme-toggle` (`uk-button-group`) |
+| Content pages | `router.ts` calls `themeManager.setAutoTheme(true)` — first section is light/inverse |
+| 3D sync | Dispatches `jlz:theme-applied {isLight, mode}` — Experience listens; in inverse mode, overrides EnvSphere pattern to match flipped text color |
+| Toggle UI | **1 button** "Change mode" in `#jlz-menu-modal .jlz-theme-toggle` (calls `themeManager.toggle()`) |
 | Less config | `_import.less`: `@inverse-global-color-mode: light` — generates `uk-light` class |
+
+`normal` mode = per-section theme as configured (light sections show `uk-light`).
+`inverse` mode = flips all sections (light↔dark). Manual override wins over auto.
 
 > See [`UIKIT3.md`](UIKIT3.md) §4 for the full theme toggle design + the home-only
 > scope fix (§4.1) that prevents content pages from rendering dark-on-dark.

@@ -1,5 +1,65 @@
 # CHANGELOG
 
+## 2026-07-12 (docs-reconciliation)
+
+### Documentation aligned with actual code state
+
+This is a **docs-only** commit — no source code changed. All claims in
+docs were verified against the actual code, and the docs were updated
+where they had drifted.
+
+**Key drift fixed:**
+
+- `AGENTS.md` — rewrote from scratch. Was still describing 8 sections
+  (Flexible/Innovative still listed); now correctly shows 6 sections
+  1:1 with cube faces. Added theme system (2-mode normal/inverse,
+  1 toggle button), 3 content pages (home/services/posts), 25 unit
+  tests (was claiming 54 with CircularNav legacy tests that no longer
+  exist).
+- `STATUS.md` — fixed:
+  - ThemeManager: `auto/light/dark` (3 modes, 3 buttons) →
+    `normal/inverse` (2 modes, 1 button)
+  - Content pages: `6 pages (services/cases/process/team/journal/contact)`
+    → `3 pages (home/services/posts)` with section breakdown
+  - Unit tests: `54 (CircularNav legacy…)` → `25 (Easings 10, EventBus
+    5, Noise 8, motionPolicy 2)`
+  - Dead code candidates: all previously-listed dead files were already
+    deleted in commit `a9bab24` — table now reflects this. Only
+    `projects/*.html` (446 LOC, user decision) and `three-joystick`
+    package.json dep (planned `bun remove`) remain.
+  - Router call: `setAutoTheme(false)` → `setAutoTheme(true)` (first
+    content-page section is light/inverse by design).
+- `ARCHITECTURE.md` — fixed:
+  - ThemeManager row: `auto/light/dark` → `normal/inverse`
+  - Router row: `6 content pages (services/cases/process/team/journal/contact)`
+    → `3 pages (home/services/posts)`
+  - Theme system section: full rewrite of the property table (modes,
+    toggle UI = 1 button, content page behavior, 3D sync description).
+- `RULES.md` §45 — rewrote the theme system rule: 3-mode → 2-mode
+  (normal/inverse), 3 buttons → 1 button, `setAutoTheme(false)` →
+  `setAutoTheme(true)`.
+- `UIKIT3.md`:
+  - §4 ThemeManager: `3 modes (auto/light/dark)` → `2 modes
+    (normal/inverse)`, `3 buttons (Auto/Light/Dark)` → `1 button
+    (Change mode)`.
+  - §4.1 Fix code example: `setAutoTheme(false)` → `setAutoTheme(true)`
+    (matches actual `router.ts` line 44).
+  - §4.1 Symptom: `/services, /cases, /process, /team, /journal, /contact`
+    → `/services, /posts`.
+  - §11 References: corrected file tree — `src/pages/sections/` →
+    `src/sections/`, `6 content page templates` → `2 (services, posts)`,
+    `src/pages/shared/` → `src/sections/_shared/`.
+
+**Why this matters:** the project is agent-driven (AGENTS.md is the LLM
+entry point). Stale docs cause agents to make wrong decisions. This
+commit restores the contract: docs match code.
+
+**Verification:** docs-only, no code change. `bun run lint && type-check
+&& build && test:unit` all still pass at the same baseline (25 tests,
+0 errors, 59 pre-existing warnings).
+
+---
+
 ## 2026-07-11 (post-audit)
 
 ### 8→6 sections unification, uk-light theme system, mobile-first, BakuCarousel fixes, tokens merge
@@ -26,16 +86,18 @@ sizing to rem units. Multiple BakuCarousel bugs from the 8→6 refactor were fix
 
 **UIKit native `uk-light` theme system (replaces custom overrides):**
 - `_import.less`: `@inverse-global-color-mode: none → light` (enables `uk-light` class).
-- New `src/core/ThemeManager.ts` — 3 modes (auto/light/dark), localStorage
+- New `src/core/ThemeManager.ts` — 2 modes (normal/inverse), localStorage
   persistence, `jlz:theme-applied` event for 3D sync.
-- `UIMenu.ts`: 3-button toggle (Auto/Light/Dark) in modal with `uk-button-group`.
+- `UIMenu.ts`: 1-button toggle ("Change mode") in modal — calls
+  `themeManager.toggle()`, label shows Normal/Inverse.
 - `Experience.ts`: `themeManager.setAutoTheme(isLightSection)` on section change
   (guarded with `data-page === 'home'`).
-- `router.ts`: `themeManager.setAutoTheme(false)` on content pages.
+- `router.ts`: `themeManager.setAutoTheme(true)` on content pages (first
+  section is light/inverse).
 - `entry-app.ts`: `themeManager.apply()` on startup.
 - Removed 50+ LOC of `body.light-theme .uk-*` overrides from `main.less`.
-- 3D sync: in manual light/dark mode, EnvSphere pattern overrides to match
-  (light→Intro, dark→About) so 3D bg + text color stay readable together.
+- 3D sync: in inverse mode, EnvSphere pattern flips to match the inverted
+  text color per section.
 - Commit: `59be014`.
 
 **Mobile-first rem-based sizing:**

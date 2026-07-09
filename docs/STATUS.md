@@ -1,18 +1,22 @@
 # STATUS — Single Source of Truth
 
-> Updated: 2026-07-11 (post-audit). Branch: `main`. Build green.
+> Updated: 2026-07-12 (docs-reconciliation). Branch: `main`. Build green.
 >
 > UIkit 3 theming patterns + lessons: see [`UIKIT3.md`](UIKIT3.md).
-> Audit report for this session: see [`AUDIT_2026-07-11.md`](AUDIT_2026-07-11.md).
+> Audit report for 2026-07-11: see [`AUDIT_2026-07-11.md`](AUDIT_2026-07-11.md).
 
 ## Project
 
 SPA studio portfolio — **6 sections** (1:1 with cube faces), 3D canvas + transparent
 DOM overlay. Single font: Inter.
 Navigation: JoystickNav (pure DOM, 2D — bottom-center) + UIMenu (UIkit modal) + Subtitles (section hints).
-Theme: UIKit native `uk-light` class via `ThemeManager` (auto/light/dark) —
+Theme: UIKit native `uk-light` class via `ThemeManager` (2 modes: normal/inverse) —
 3D EnvSphere syncs to manual override.
 Mobile-first: `html { font-size: 0.85rem }` mobile → `1rem` ≥640px, all sizing rem-based.
+
+> **3 content pages** (home / services / posts), each with 6 sections. Home is the
+> 3D cube experience; services/posts reuse the same 3D scene with minimal content
+> differentiation (planned improvement — see IMPROVEMENT_PLAN.md).
 
 ## Current state
 
@@ -22,7 +26,7 @@ Mobile-first: `html { font-size: 0.85rem }` mobile → `1rem` ≥640px, all sizi
 | 6 sections (Lab/Intro/About/Works/Contact/Process) — 1:1 cube faces | ✅ |
 | JoystickNav — pure DOM joystick, trigger model (one section per drag) | ✅ |
 | 2D navigation (vertical=main, horizontal=Lab/Process) | ✅ |
-| UIMenu — UIkit modal jump navigation + theme toggle (auto/light/dark) | ✅ |
+| UIMenu — UIkit modal jump navigation + theme toggle (normal/inverse, 1 button) | ✅ |
 | Subtitles — short UI hint per section, auto-fade 4s | ✅ |
 | BakuCarousel — cube morphs into ring (Works §3) | ✅ |
 | ProjectOverlay — card click (raycast) opens fullscreen | ✅ |
@@ -37,17 +41,17 @@ Mobile-first: `html { font-size: 0.85rem }` mobile → `1rem` ≥640px, all sizi
 | `makeParticles` (`THREE.Points`, shared by all 6 sections) | ✅ |
 | SplashCube — single BoxGeometry + CubeCamera + rainbow vertex-color edges | ✅ |
 | WebGPU/WebGL2 color parity (sRGB + ACES + grain + bloom) | ✅ |
-| ThemeManager — UIKit native `uk-light` + auto/light/dark toggle (localStorage) | ✅ |
-| 3D ↔ theme sync (manual light/dark drives EnvSphere pattern) | ✅ |
+| ThemeManager — UIKit native `uk-light` + normal/inverse toggle (localStorage) | ✅ |
+| 3D ↔ theme sync (inverse mode flips EnvSphere pattern) | ✅ |
 | Mobile-first rem sizing (`.85rem` mob → `1rem@s`) | ✅ |
 | Responsive sections (`uk-section-small uk-section-medium@s uk-section-large@m`) | ✅ |
-| 6 content pages: services / cases / process / team / journal / contact | ✅ |
+| 3 content pages: services / posts (each with 6 sections, Apple Watch layout) | ✅ |
 | Unified footer (brand + social, fixed bottom, hidden on home) | ✅ |
 | Cinematic typography + glassmorphism UI | ✅ |
 | TypeScript strict + ESLint + Prettier | ✅ |
 | Prerendered home sections (SEO) | ✅ |
 | a11y (skip-link, focus-trap, noscript) | ✅ |
-| 54 unit tests (CircularNav legacy, Easings, EventBus, Noise, motionPolicy) | ✅ |
+| 25 unit tests (Easings 10, EventBus 5, Noise 8, motionPolicy 2) | ✅ |
 
 ## Sections (6) — 1:1 with cube faces
 
@@ -69,20 +73,20 @@ dark text/nav. Dark sections (2=About, 3=Works, 5=Process) use default theme (li
 > `World.updateTransform()` rotates the SplashCube so the active face points at
 > the camera. BakuCarousel on Works (idx 3) morphs the back face into a ring.
 
-## Content pages (6) — outside the SPA home
+## Content pages (3) — outside the SPA home
 
-| Route | Page | Title |
-| --- | --- | --- |
-| `/services` | services | "What We Build" — 6 service cards + stack |
-| `/cases` | cases | "Selected Work" — 6 case study cards |
-| `/process` | process | "How We Work" — 4-step timeline + principles |
-| `/team` | team | "Who We Are" — 4 roles + values |
-| `/journal` | journal | "Writing" — 4 posts |
-| `/contact` | contact | "Let's Talk" — CTA + FAQ |
+| Route | Page | Title | Sections |
+| --- | --- | --- | --- |
+| `/services` | services | "What We Build" | intro / list / stack / process / contact / values |
+| `/posts` | posts | "Writing" | intro / latest / featured / categories / contact / archive |
 
-Content pages always render light text over the 3D canvas (forced dark in auto mode).
+Content pages always render light text over the 3D canvas (first section is light/inverse).
 Footer (brand + social) is fixed to viewport bottom, hidden on home where Contact
 serves as the home footer.
+
+> **Planned:** content pages currently reuse the home 3D scene (SplashCube + EnvSphere).
+> `getWorldConfigForPage(page)` should return minimal configs for content pages — see
+> [`IMPROVEMENT_PLAN.md`](IMROVEMENT_PLAN.md) Card 03 task 3.6.
 
 ## Visual tiers
 
@@ -140,27 +144,29 @@ When idle (between breaths): zero draw calls, GPU sleeps. Cursor (DOM) always up
 | 5 | Process | Deep blue-black gradient (`0x080810 → 0x12121e`) |
 
 Light sections (0=Lab, 1=Intro, 4=Contact) drive `uk-light` body class via ThemeManager →
-dark text/nav. Manual light/dark override (from the menu toggle) drives EnvSphere to
-match (light forced → Intro pattern, dark forced → About pattern).
+dark text/nav. Inverse mode (from the menu toggle) flips all sections and overrides
+EnvSphere to match (inverse → opposite pattern per section).
 
 ## Theme system — ThemeManager + UIKit `uk-light`
 
 | Property | Value |
 | --- | --- |
 | File | `src/core/ThemeManager.ts` |
-| Modes | `'auto'` (default), `'light'`, `'dark'` |
+| Modes | `'normal'` (default), `'inverse'` |
 | Persistence | `localStorage('jlz:theme')` |
 | Body class | `uk-light` toggled on `<body>` + `<html>` (UIKit native inverse) |
 | Auto source | `Experience.ts` calls `themeManager.setAutoTheme(isLightSection)` on home section change |
-| Content pages | `router.ts` calls `themeManager.setAutoTheme(false)` (always dark in auto) |
+| Content pages | `router.ts` calls `themeManager.setAutoTheme(true)` (first section is light/inverse) |
 | 3D sync | Dispatches `jlz:theme-applied` with `{isLight, mode}` — Experience listens, overrides EnvSphere |
-| Toggle UI | 3 buttons (Auto/Light/Dark) in `#jlz-menu-modal .jlz-theme-toggle` |
+| Toggle UI | **1 button** "Change mode" in `#jlz-menu-modal .jlz-theme-toggle` (calls `themeManager.toggle()`) |
 | `_import.less` | `@inverse-global-color-mode: light` — generates `uk-light` class |
+
+`normal` mode = per-section theme as configured (light sections show `uk-light`).
+`inverse` mode = flips all sections (light↔dark). Manual override wins over auto.
 
 UIKit native inverse (`uk-light`) replaces the former 50+ LOC of custom
 `body.light-theme .uk-*` overrides. Custom non-UIKit elements (joystick, hint,
-corner-label, brand) still keyed on `body.uk-light, body.light-theme` (kept as
-synonym for backwards compat).
+corner-label, brand) still keyed on `body.uk-light` (the native UIKit class).
 
 ## Particle system
 
@@ -201,11 +207,11 @@ No premium/parity split — same `MeshPhysicalMaterial` on both paths. `worldDNA
 | World.advance alias | `Experience.ts` calls `world.updateTransform()` directly |
 | Section.switchViewingState | Callers use `switchState()` directly |
 | SectionSceneFactory named wrappers | Replaced by `SECTION_CREATORS[6]` array |
-| Section3Flexible (active) | Removed in 8→6 unification (dir + creator still on disk as dead code) |
-| Section5Innovative (active) | Removed in 8→6 unification (dir + creator still on disk as dead code) |
-| CircularNav (active) | Replaced by JoystickNav (pure DOM, 2D, trigger model) — file + test still on disk |
-| three-joystick (library import) | JoystickNav is pure DOM — no external joystick lib |
-| ShaderBackground (as active bg) | Replaced by EnvSphere (file kept but unused) |
+| Section3Flexible (active) | Removed in 8→6 unification — dir + creator deleted in `a9bab24` |
+| Section5Innovative (active) | Removed in 8→6 unification — dir + creator deleted in `a9bab24` |
+| CircularNav (active) | Replaced by JoystickNav (pure DOM, 2D, trigger model) — file + test deleted in `a9bab24` |
+| three-joystick (library import) | JoystickNav is pure DOM — no external joystick lib (dep still in package.json, planned removal) |
+| ShaderBackground (as active bg) | Replaced by EnvSphere — file deleted in `a9bab24` |
 | Atlas Aurora CanvasTexture | Replaced by EnvSphere procedural CanvasTexture |
 | Particle drift | Particles are static (event-driven) |
 | `src/styles/tokens.less` | Merged into `src/assets/_import.less` §1 (single source of truth) |
@@ -216,17 +222,21 @@ No premium/parity split — same `MeshPhysicalMaterial` on both paths. `worldDNA
 
 ## Dead code candidates (kept on disk, NOT imported)
 
-These files are still on disk but are not imported by any active module.
-See [`AUDIT_2026-07-11.md`](AUDIT_2026-07-11.md) for the cleanup decision tree.
+All previously-listed dead code was deleted in commit `a9bab24`:
+- ✅ `src/Sections/Section3Flexible/` — removed
+- ✅ `src/Sections/Section5Innovative/` — removed
+- ✅ `src/Experience/World/ShaderBackground.ts` — removed
+- ✅ `src/UI/CircularNav.ts` — removed
+- ✅ `src/__tests__/CircularNav.test.ts` — removed
+
+Remaining on disk but not imported:
 
 | File | LOC | Status |
 | --- | --- | --- |
-| `src/Sections/Section3Flexible/index.ts` | 10 | Not imported — 8→6 unification leftover |
-| `src/Sections/Section5Innovative/index.ts` | 10 | Not imported — 8→6 unification leftover |
-| `src/UI/CircularNav.ts` | 432 | Not imported — replaced by JoystickNav |
-| `src/__tests__/CircularNav.test.ts` | 309 | Tests the dead CircularNav — 29 tests still pass |
-| `src/Experience/World/ShaderBackground.ts` | 132 | Not imported — replaced by EnvSphere |
 | `projects/*.html` (4 standalone pages) | 446 | Standalone HTML, not part of SPA — decision: keep or remove |
+| `three-joystick` (package.json dep) | — | Not imported by any source file — planned `bun remove` |
+
+See [`AUDIT_2026-07-11.md`](AUDIT_2026-07-11.md) for the original cleanup decision tree.
 
 ## Proxy/dev config
 
