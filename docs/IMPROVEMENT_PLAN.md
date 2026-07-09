@@ -36,7 +36,7 @@
 | 3.3 | sceneGroups[idx].visible toggle | ✅ | — | World.ts updateTransform |
 | 3.4 | cfg.theme → themeManager.setAutoTheme | ✅ | — | Experience.ts line 473 |
 | 3.5 | NoiseText title animation on section change | ✅ | — | entry-app.ts jlz:section-change |
-| 3.6 | Content page 3D = minimal (empty cube) | ❌ P1 | Content pages show same 3D scenes as home — should be minimal |
+| 3.6 | Content page 3D = minimal (empty cube) | ✅ | Implemented in `a9bab24` — `getWorldConfigForPage(page)` returns `makeContentScenes(SERVICES_PALETTE|POSTS_PALETTE)` for content pages (minimal baku opacity 0.35, no gallery, distinct palettes) vs full scenes for home |
 | 3.7 | Cube face rotation visible on content pages | ⚠️ P2 | rotateToFace fires but content page sections aren't cube faces |
 
 ## Card 04 — THEME SYSTEM

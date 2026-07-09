@@ -15,8 +15,9 @@ Theme: UIKit native `uk-light` class via `ThemeManager` (3 modes: auto/light/dar
 Mobile-first: `html { font-size: 0.85rem }` mobile → `1rem` ≥640px, all sizing rem-based.
 
 > **3 content pages** (home / services / posts), each with 6 sections. Home is the
-> 3D cube experience; services/posts reuse the same 3D scene with minimal content
-> differentiation (planned improvement — see IMPROVEMENT_PLAN.md).
+> 3D cube experience; services/posts use minimal 3D scenes via `getWorldConfigForPage()`
+> (distinct palettes: SERVICES_PALETTE warm-brown, POSTS_PALETTE cool-teal; bakuOpacity
+> 0.35, no gallery). See `src/core/WorldConfig.ts:474`.
 
 ## Current state
 
