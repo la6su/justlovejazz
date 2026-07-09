@@ -390,11 +390,93 @@ export function toPhaseConfig(raw: RawScene): PhaseConfig {
   }
 }
 
+// ── Content page configs — minimal 3D, unique atmosphere per page ──
+// Services = warm amber tones, Posts = cool teal tones.
+// No BakuCarousel, lighter post-processing, same 6-section structure.
+// First (idx 0) and last (idx 5) = light, middle = dark.
+
+type ContentPalette = {
+  lightBg: number
+  darkBg: number
+  bakuColor: number
+  bakuEmissive: number
+  fogColor: number
+  lightColor: number
+  groundColor: number
+}
+
+const SERVICES_PALETTE: ContentPalette = {
+  lightBg: 0xf5f0e8,
+  darkBg: 0x0a0805,
+  bakuColor: 0x4a3a2a,
+  bakuEmissive: 0x6a5a3a,
+  fogColor: 0x0a0805,
+  lightColor: 0xffffff,
+  groundColor: 0x1a1208,
+}
+
+const POSTS_PALETTE: ContentPalette = {
+  lightBg: 0xe8f0f0,
+  darkBg: 0x050a0a,
+  bakuColor: 0x2a4a4a,
+  bakuEmissive: 0x3a6a6a,
+  fogColor: 0x050a0a,
+  lightColor: 0xffffff,
+  groundColor: 0x081a1a,
+}
+
+function makeContentScenes(palette: ContentPalette, pageId: string): RawScene[] {
+  const themeFor = (idx: number): 'light' | 'dark' => (idx === 0 || idx === 4) ? 'light' : 'dark'
+  const bgFor = (idx: number) => themeFor(idx) === 'light' ? palette.lightBg : palette.darkBg
+  const fogFor = (idx: number) => themeFor(idx) === 'light' ? palette.lightBg : palette.fogColor
+
+  return Array.from({ length: 6 }, (_, idx) => ({
+    id: `content_${pageId}_${idx}`,
+    context: `Content — ${pageId} face ${idx}`,
+    domSection: `content-${idx}`,
+    range: [idx / 5, (idx + 1) / 5] as [number, number],
+    camPos: [0, 0.5, 7] as [number, number, number],
+    camTarget: [0, 0, 0] as [number, number, number],
+    camFov: 50,
+    camFovOffset: 0.3,
+    camFovDuration: 0.8,
+    camSmoothing: 5,
+    bakuRole: BakuRole.GLASS,
+    bakuOpacity: 0.35,
+    bakuDisplace: 0.06,
+    bakuColor: palette.bakuColor,
+    bakuEmissive: palette.bakuEmissive,
+    postBloom: 0.15,
+    postVignette: 0.5,
+    postGrain: 0.015,
+    postChromatic: 0.002,
+    postRefract: 0.05,
+    postBorder: 0.0,
+    postGradeShadows: themeFor(idx) === 'light' ? [1.0, 0.98, 0.95] : [0.9, 0.92, 1.0],
+    postGradeHighlights: themeFor(idx) === 'light' ? [1.0, 1.0, 1.0] : [0.85, 0.9, 1.0],
+    lightColor: palette.lightColor,
+    lightIntensity: 1.0,
+    fogColor: fogFor(idx),
+    fogDensity: 0.02,
+    bgColor: bgFor(idx),
+    showGallery: false,
+    groundColor: palette.groundColor,
+    groundOpacity: 0.05,
+    sectionTheme: themeFor(idx),
+  }))
+}
+
 // ── Public API ──
 export function getAllScenes(): PhaseConfig[] {
   return RAW.map((raw) => toPhaseConfig(raw))
 }
 
-export function getWorldConfigForPage(_pageKey: string): readonly PhaseConfig[] {
-  return getAllScenes()
+export function getWorldConfigForPage(pageKey: string): readonly PhaseConfig[] {
+  if (pageKey === 'services') {
+    return makeContentScenes(SERVICES_PALETTE, 'services').map(toPhaseConfig)
+  }
+  if (pageKey === 'posts') {
+    return makeContentScenes(POSTS_PALETTE, 'posts').map(toPhaseConfig)
+  }
+  return getAllScenes() // home — full scenes
 }

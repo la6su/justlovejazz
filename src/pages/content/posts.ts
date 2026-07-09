@@ -96,7 +96,12 @@ export function postsPage(): string {
             <h2 class="uk-heading-medium uk-margin-small-top uk-margin-remove-bottom">Older notes</h2>
           </div>
           <div uk-scrollspy-class>
-            <p class="uk-text-meta">Short-form writing going back to 2019. Experiments, rants, breakthroughs.</p>
+            <ul class="uk-list uk-list-divider uk-text-left">
+              <li class="uk-flex uk-flex-middle"><span class="uk-text-meta uk-margin-right" style="min-width:3rem;">Mar 26</span><span class="uk-text-bold uk-flex-1">Shader Compilation Pipelines</span><span class="uk-text-meta">3 min</span></li>
+              <li class="uk-flex uk-flex-middle"><span class="uk-text-meta uk-margin-right" style="min-width:3rem;">Feb 26</span><span class="uk-text-bold uk-flex-1">Why We Killed React</span><span class="uk-text-meta">5 min</span></li>
+              <li class="uk-flex uk-flex-middle"><span class="uk-text-meta uk-margin-right" style="min-width:3rem;">Jan 26</span><span class="uk-text-bold uk-flex-1">CubeCamera vs PMREM</span><span class="uk-text-meta">4 min</span></li>
+              <li class="uk-flex uk-flex-middle"><span class="uk-text-meta uk-margin-right" style="min-width:3rem;">Dec 25</span><span class="uk-text-bold uk-flex-1">Glassmorphism on WebGPU</span><span class="uk-text-meta">7 min</span></li>
+            </ul>
           </div>
         </div>
       </section>

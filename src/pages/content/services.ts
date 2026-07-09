@@ -59,7 +59,19 @@ export function servicesPage(): string {
             </div>
             <div class="uk-card uk-card-default uk-card-body">
               <h3 class="uk-h5">UI & Engineering</h3>
-              <p class="uk-text-meta">UIkit 3, TypeScript strict, Bun + Vite.</p>
+              <p class="uk-text-meta">UIkit 3, TypeScript strict, Bun + Vite, Prisma.</p>
+            </div>
+            <div class="uk-card uk-card-default uk-card-body">
+              <h3 class="uk-h5">Performance</h3>
+              <p class="uk-text-meta">On-demand rendering, GPU instancing, chunked bundles.</p>
+            </div>
+            <div class="uk-card uk-card-default uk-card-body">
+              <h3 class="uk-h5">Identity</h3>
+              <p class="uk-text-meta">Typography, motion language, shader-driven hero.</p>
+            </div>
+            <div class="uk-card uk-card-default uk-card-body">
+              <h3 class="uk-h5">Audio Reactive</h3>
+              <p class="uk-text-meta">Web Audio API analyser, frequency-driven visuals.</p>
             </div>
           </div>
         </div>
