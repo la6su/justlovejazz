@@ -4,18 +4,19 @@
 //   1. _import.less           → JLZ UIKit theme + tokens.less bridge + UIKit components
 //   2. master-quantum-flares   → vendored UIKit theme (DO NOT TOUCH per AGENTS.md)
 //   3. black-blue.less         → master-quantum-flares color variant
-//   4. sections.css            → SPA section layout (inline-imported)
 //
-// Then this file adds bespoke component styles on top:
+// Then this file adds ONLY:
+//   - Theme overrides on top of UIKit (font family, headings uppercase,
+//     button radius, section colors, text-shadows, etc.)
+//   - Essential SPA layout (section stacking, scrollspy-pending gate)
 //   - Reset / base body / canvas
-//   - Splash system is inline in index.html (no LESS dependency)
-//   - .custom-cursor (overlay UX)
-//   - .jlz-scroll-hint (custom interaction element)
-//   - .section-active / [data-section] (section reveal state)
-//   - .jlz-section-shell (custom padding/positioning hook that augments
-//     `uk-container uk-container-expand` — UIKit owns the container
-//     behavior, we own the cinematic spacing)
-//   - responsive + reduced-motion overrides
+//   - Custom cursor
+//   - Splash loader
+//   - ProjectOverlay fullscreen styles (.jlz-fs-*)
+//   - Custom components with no UIKit equivalent:
+//       .studio-title (NoiseText hook), .jlz-scroll-hint*,
+//       .jlz-corner-label*, .jlz-nav-link, .jlz-hint*,
+//       .jlz-joystick*, .jlz-glass-btn (modifier only)
 //
 // All hardcoded colors SHOULD use --jlz-* tokens from src/styles/tokens.css.
 // The token system is the single source of truth for color / type / spacing / motion.
@@ -54,108 +55,12 @@
   sans-serif;
 
 /* ════════════════════════════════════════════════════════════════════
-   0.5. SPA section layout (was sections.css — merged into main.less)
+   0.5. SPA section layout — essential project structure (no UIKit
+   equivalent). Sections are stacked position:absolute, only the active
+   one is display:flex. UIKit's uk-position-cover + uk-height-viewport
+   handle the wrapper; this rule handles the section stacking itself.
    ════════════════════════════════════════════════════════════════════ */
-
-/* Section background layers — TRANSPARENT (3D canvas provides background) */
-.section-bg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 0;
-  background: transparent !important;
-}
-.section-bg--intro,
-.section-bg--about,
-.section-bg--flexible,
-.section-bg--challenge,
-.section-bg--innovative,
-.section-bg--contact {
-  background: transparent !important;
-}
-
-.uk-position-cover {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-}
-
-/* .jlz-section-shell — custom hook for the non-UIKit-mappable parts of
-   the section container (responsive padding, z-index, position, min-height,
-   flex column layout). Used alongside `uk-container uk-container-expand`
-   and UIKit flex utilities — see templates.ts. Replaces the old
-   `.section-container` class (now removed) so UIKit can own the container
-   behavior while we own the cinematic spacing. */
-.jlz-section-shell {
-  position: relative;
-  z-index: 1;
-  width: 100%;
-  margin: 0 auto;
-  padding: 5vh 5vw;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  min-height: 100dvh;
-  box-sizing: border-box;
-}
-/* uk-container-expand sets max-width: none — re-apply a sensible cap so the
-   content doesn't stretch edge-to-edge on large displays (matches the
-   pre-UIKit visual). */
-.jlz-section-shell.uk-container-expand {
-  max-width: 1400px;
-}
-
-.studio-title {
-  font-family: var(--jlz-font-display);
-  font-weight: 800;
-  font-size: clamp(2.5rem, 8vw, 5rem);
-  line-height: 1;
-  letter-spacing: -0.02em;
-  text-transform: uppercase;
-  margin: 0 0 var(--jlz-space-8);
-}
-.studio-title--hero {
-  font-size: clamp(3rem, 10vw, 7rem);
-  font-weight: 900;
-  letter-spacing: -0.03em;
-}
-.studio-title--about,
-.studio-title--challenge {
-  font-size: clamp(2.5rem, 8vw, 5rem);
-  font-weight: 800;
-}
-.studio-subtitle {
-  font-family: var(--jlz-font-body);
-  font-size: clamp(0.75rem, 1.2vw, 0.95rem);
-  letter-spacing: 0.25em;
-  text-transform: uppercase;
-  opacity: 0.65;
-  font-weight: 400;
-}
-.studio-body {
-  font-family: var(--jlz-font-body);
-  max-width: 60ch;
-  line-height: 1.7;
-  font-size: clamp(0.9rem, 1.1vw, 1.05rem);
-  font-weight: 300;
-}
-
-.section-studio {
-  position: relative;
-  z-index: var(--jlz-z-content);
-  height: 100vh;
-  height: 100dvh;
-  width: 100vw;
-  overflow: hidden;
-}
-.section-studio section[data-section] {
+#spa-content section[data-section] {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -171,95 +76,63 @@
      Visibility is toggled via .section-active (set by ContentReveal on
      jlz:section-change). The SwipeNav scrubber drives section index. */
 }
+
+/* UIKit's uk-height-viewport attribute sets min-height:100vh — extend
+   with 100dvh so iOS Safari's dynamic viewport doesn't leave a gap. */
 .uk-height-viewport {
   min-height: 100vh !important;
   min-height: 100dvh !important;
 }
 
-.jlz-nav-inner {
-  background: rgba(0, 0, 0, 0.25);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-body.light-theme .jlz-nav-inner {
-  background: rgba(255, 255, 255, 0.6);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-}
-.jlz-nav-inner .uk-navbar-nav a,
-.jlz-nav-inner .uk-navbar-item {
-  color: rgba(255, 255, 255, 0.85);
-  font-family: var(--jlz-font-body);
-  font-weight: 500;
-  font-size: 0.8rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  transition: color 0.3s ease;
-}
-.jlz-nav-inner .uk-navbar-nav a:hover,
-.jlz-nav-inner .uk-navbar-nav a:focus {
-  color: #fff;
-  text-decoration: none;
-}
-body.light-theme .jlz-nav-inner .uk-navbar-nav a,
-body.light-theme .jlz-nav-inner .uk-navbar-item {
-  color: rgba(0, 0, 0, 0.75);
-}
-body.light-theme .jlz-nav-inner .uk-navbar-nav a:hover,
-body.light-theme .jlz-nav-inner .uk-navbar-nav a:focus {
-  color: #000;
-}
-
-section[data-section='about'] .jlz-section-shell,
-section[data-section='challenge'] .jlz-section-shell,
-section[data-section='innovative'] .jlz-section-shell {
+/* Section color themes — light vs dark sections (theme overrides) */
+section[data-section='about'],
+section[data-section='challenge'],
+section[data-section='innovative'],
+section[data-section='process'] {
   color: #fff;
 }
 section[data-section='about'] .studio-title,
 section[data-section='challenge'] .studio-title,
-section[data-section='innovative'] .studio-title {
+section[data-section='innovative'] .studio-title,
+section[data-section='process'] .studio-title {
   color: #fff;
 }
-section[data-section='about'] .studio-subtitle,
-section[data-section='challenge'] .studio-subtitle,
-section[data-section='innovative'] .studio-subtitle {
-  color: rgba(255, 255, 255, 0.6);
-}
-section[data-section='intro'] .jlz-section-shell,
-section[data-section='intro'] .studio-title,
-section[data-section='flexible'] .jlz-section-shell,
-section[data-section='flexible'] .studio-title,
-section[data-section='contact'] .jlz-section-shell,
-section[data-section='contact'] .studio-title {
+section[data-section='intro'],
+section[data-section='flexible'],
+section[data-section='contact'],
+section[data-section='lab'] {
   color: #111;
 }
-section[data-section='intro'] .studio-subtitle,
-section[data-section='flexible'] .studio-subtitle,
-section[data-section='contact'] .studio-subtitle {
-  color: rgba(0, 0, 0, 0.6);
+section[data-section='intro'] .studio-title,
+section[data-section='flexible'] .studio-title,
+section[data-section='contact'] .studio-title,
+section[data-section='lab'] .studio-title {
+  color: #111;
 }
 section[data-section='intro'] .uk-button-default,
 section[data-section='flexible'] .uk-button-default,
-section[data-section='contact'] .uk-button-default {
+section[data-section='contact'] .uk-button-default,
+section[data-section='lab'] .uk-button-default {
   border-color: #111;
   color: #111;
 }
 section[data-section='intro'] .uk-button-default:hover,
 section[data-section='flexible'] .uk-button-default:hover,
-section[data-section='contact'] .uk-button-default:hover {
+section[data-section='contact'] .uk-button-default:hover,
+section[data-section='lab'] .uk-button-default:hover {
   background: #111;
   color: #fff;
   border-color: #111;
 }
 
-/* Bug 1: uk-scrollspy attributes are now baked into templates.ts markup
-   directly. UIkit auto-inits scrollspy instances as soon as the HTML lands
-   in #spa-content — which is *before* the splash opens. To keep the
+/* uk-scrollspy attributes are baked into templates.ts markup directly.
+   UIkit auto-inits scrollspy instances as soon as the HTML lands in
+   #spa-content — which is *before* the splash opens. To keep the
    fade-in hidden behind the splash, `.scrollspy-pending` cancels the
    animation via `animation: none !important` and forces `opacity: 0`.
-   When jlz:webgl-ready fires (post-splash), entry-app.ts drops the class —
-   the animation-name computed value flips from `none` back to `uk-fade`,
-   which restarts the animation so the fade-in is visible to the user. */
+   When jlz:webgl-ready fires (post-splash), entry-app.ts drops the
+   class — the animation-name computed value flips from `none` back to
+   `uk-fade`, which restarts the animation so the fade-in is visible. */
 .scrollspy-pending [uk-scrollspy] {
   animation: none !important;
   opacity: 0 !important;
@@ -289,7 +162,7 @@ body {
     sans-serif !important;
 }
 
-/* Headings — uppercase as brand convention */
+/* Headings — uppercase as brand convention (theme override on UIKit) */
 h1,
 .uk-h1,
 h2,
@@ -352,14 +225,24 @@ canvas {
 }
 
 /* ════════════════════════════════════════════════════════════════════
-   2. Section wrapper
+   2. Section reveal state (UIKit scrollspy handles the fade)
    ════════════════════════════════════════════════════════════════════ */
 
-.section-studio {
-  position: relative;
-  z-index: var(--jlz-z-content);
-  padding: 0; /* was 10vh 5vw — removed for clean scroll-snap alignment */
-  overflow: hidden;
+/* Sections are stacked (position:absolute). Inactive sections hidden
+   via display:none. .section-active flips display:flex + pointer-events.
+   The fade in/out is handled by UIKit scrollspy (uk-animation-fade). */
+#spa-content section[data-section] {
+  pointer-events: none;
+}
+.section-active {
+  display: flex !important;
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #spa-content section[data-section] {
+    transform: none !important;
+  }
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -441,25 +324,7 @@ canvas {
 }
 
 /* ════════════════════════════════════════════════════════════════════
-   5. Debug stats — removed (merged into DevPanel/Tweakpane)
-   ════════════════════════════════════════════════════════════════════ */
-
-/* ════════════════════════════════════════════════════════════════════
-   6. Splash — ALL splash CSS is inline in index.html (for instant FCP).
-   Do NOT add splash styles here — creates duplication + LESS overrides
-   inline CSS, resetting animations mid-flight.
-   ════════════════════════════════════════════════════════════════════ */
-/* Blocks 8 (old .jlz-works-* slider UI) and 9 (.jlz-section-progress*) were
-   removed — the slider UI is now the BakuCarousel (3D, no DOM overlay) and
-   section navigation is the CircularNav (.jlz-circnav*, see §14 below). */
-
-/* ════════════════════════════════════════════════════════════════════
-   10. Section subtitles — DISABLED (will be re-added as 3D later).
-   The old DOM .jlz-subtitles* CSS was removed.
-   ════════════════════════════════════════════════════════════════════ */
-
-/* ════════════════════════════════════════════════════════════════════
-   11. Project detail overlay — ProjectOverlay.ts builds its own DOM with
+   5. Project detail overlay — ProjectOverlay.ts builds its own DOM with
    UIKit utility classes + .jlz-fs-* bespoke classes.
    When closed: opacity:0, pointer-events:none (invisible, non-interactive).
    When open (.is-open): opacity:1, pointer-events:auto on interactive children.
@@ -592,29 +457,7 @@ canvas {
 }
 
 /* ════════════════════════════════════════════════════════════════════
-   12. Section reveal — uses UIKit scrollspy (uk-animation-fade)
-   ════════════════════════════════════════════════════════════════════ */
-
-/* Sections are stacked (position:absolute). Inactive sections hidden
-   via UIKit scrollspy (uk-animation-fade handles opacity/visibility).
-   .section-active is used ONLY for pointer-events toggling — the
-   fade in/out is handled by UIKit animation, NOT custom CSS. */
-[data-section] {
-  pointer-events: none;
-}
-.section-active {
-  display: flex !important;
-  pointer-events: auto;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  [data-section] {
-    transform: none !important;
-  }
-}
-
-/* ════════════════════════════════════════════════════════════════════
-   13. Responsive overrides
+   6. Responsive overrides
    ════════════════════════════════════════════════════════════════════ */
 
 /* Mobile Viewport (0–500px) */
@@ -665,7 +508,7 @@ canvas {
 }
 
 /* ════════════════════════════════════════════════════════════════════
-   9. Slider nav — full-width, center:1, fade mask (like lemonroom.ru)
+   7. Slider nav — full-width, center:1, fade mask (like lemonroom.ru)
    ════════════════════════════════════════════════════════════════════ */
 
 .tm-header {
@@ -711,73 +554,16 @@ body.light-theme li.uk-active .jlz-nav-link {
 }
 .jlz-menu-toggle { display: none !important; }
 
-
-
 /* ════════════════════════════════════════════════════════════════════
-   15. UI OVERHAUL — cinematic typography, glassmorphism, 3D symbiosis
-   (Appended per ui-overhaul task — DO NOT modify rules above.)
-   Design intent:
-   - Center cube stays visible: content uses top / bottom / split layouts
-   - Glassmorphism on feature cards (innovative) + CTA buttons (contact)
-   - Stagger reveal on .section-active (CSS-only — no JS)
-   - Section indices (01–06) as a design element next to eyebrows
+   8. UI OVERHAUL — cinematic typography, glassmorphism, 3D symbiosis
+   Custom components only (no UIKit duplicate). All layout / spacing /
+   typography use UIKit utilities from templates.ts.
    ════════════════════════════════════════════════════════════════════ */
 
-/* ── 15.1  Layout modifiers — paired with UIKit flex utilities ──
-   These provide the cinematic vertical padding (clamp values) that UIKit
-   `uk-padding`/`uk-margin` utilities can't express. Combine with UIKit
-   flex classes from templates.ts:
-     .jlz-section-shell--between  +  uk-flex uk-flex-column uk-flex-between
-     .jlz-section-shell--top      +  uk-flex uk-flex-column uk-flex-top
-     .jlz-section-shell--split    +  uk-grid uk-child-width-1-2@m ── */
-.jlz-section-shell--top {
-  justify-content: flex-start;
-  padding-top: clamp(5vh, 9vh, 12vh);
-  padding-bottom: clamp(4vh, 6vh, 8vh);
-}
-.jlz-section-shell--bottom {
-  justify-content: flex-end;
-  padding-top: clamp(4vh, 6vh, 8vh);
-  padding-bottom: clamp(6vh, 10vh, 14vh);
-}
-.jlz-section-shell--between {
-  justify-content: space-between;
-  padding-top: clamp(5vh, 9vh, 12vh);
-  padding-bottom: clamp(6vh, 10vh, 14vh);
-}
-.jlz-section-shell--center {
-  justify-content: center;
-}
-.jlz-section-shell--split {
-  align-items: center;
-  text-align: left;
-  padding-top: clamp(6vh, 10vh, 14vh);
-  padding-bottom: clamp(6vh, 10vh, 14vh);
-}
-@media (max-width: 900px) {
-  .jlz-section-shell--split {
-    align-items: flex-start;
-    justify-content: flex-start;
-    padding-top: clamp(8vh, 12vh, 16vh);
-  }
-}
-
-/* ── 15.2  section index ── */
-
-.jlz-section-index {
-  font-family: var(--jlz-font-mono);
-  font-size: clamp(0.7rem, 0.9vw, 0.85rem);
-  font-weight: 600;
-  letter-spacing: 0.18em;
-  opacity: 0.55;
-  min-width: 1.6em;
-  display: inline-block;
-}
-
-/* ── 15.3  Section titles — use uk-heading-medium (UIkit) augmented with
-   cinematic weight/letter-spacing. .studio-title provides the NoiseText
-   font hook; uk-heading-medium provides UIKit sizing; the rules below
-   override the weight to the brand's 200-weight cinematic feel. ── */
+/* ── 8.1  Section titles — `.studio-title` is the NoiseText animation
+   hook (entry-app.ts selectors key off it). UIkit `uk-heading-medium` /
+   `uk-heading-xlarge` provide the base sizing; the rules below override
+   the weight to the brand's 200-weight cinematic feel (theme override). ── */
 .studio-title.uk-heading-medium {
   font-size: clamp(2.75rem, 9vw, 6.5rem);
   font-weight: 200;
@@ -786,71 +572,7 @@ body.light-theme li.uk-active .jlz-nav-link {
   text-transform: uppercase;
   margin: 0 0 var(--jlz-space-3);
 }
-
-/* ── 15.4  Body text ── */
-.jlz-body-text {
-  font-family: var(--jlz-font-body);
-  font-size: clamp(0.95rem, 1.15vw, 1.12rem);
-  font-weight: 300;
-  line-height: 1.78;
-  max-width: 56ch;
-  margin: 0;
-}
-.jlz-body-text + .jlz-body-text {
-  margin-top: var(--jlz-space-4);
-}
-.jlz-body-text--muted {
-  opacity: 0.62;
-  font-size: clamp(0.85rem, 1vw, 0.98rem);
-}
-
-/* ── 15.5  Hero (intro) ── */
-.jlz-hero {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--jlz-space-3);
-  margin-top: 40px;
-}
-/* Hero meta is now `uk-text-meta` — keep our bespoke mono+letter-spacing
-   treatment on top of UIkit's base font-size/color. */
-.jlz-hero .uk-text-meta {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--jlz-space-3);
-  padding: 0.42em 1.15em;
-  border: 1px solid rgba(0, 0, 0, 0.18);
-  border-radius: var(--jlz-radius-full);
-  font-family: var(--jlz-font-mono);
-  font-size: clamp(0.62rem, 0.8vw, 0.72rem);
-  font-weight: 500;
-  letter-spacing: 0.32em;
-  text-transform: uppercase;
-  opacity: 0.82;
-  margin-bottom: var(--jlz-space-5);
-  background: rgba(255, 255, 255, 0.4);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-}
-.jlz-hero .uk-text-meta::before {
-  content: '';
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #2ec27e;
-  box-shadow: 0 0 12px rgba(46, 194, 126, 0.7);
-  animation: jlz-pulse-dot 2.4s ease-in-out infinite;
-}
-@keyframes jlz-pulse-dot {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.35;
-  }
-}
-.jlz-hero__title {
+.studio-title.uk-heading-xlarge {
   font-size: clamp(3rem, 13vw, 10rem);
   font-weight: 900;
   letter-spacing: -0.045em;
@@ -858,29 +580,8 @@ body.light-theme li.uk-active .jlz-nav-link {
   text-transform: uppercase;
   margin: 0;
 }
-.jlz-hero__subtitle {
-  font-family: var(--jlz-font-body);
-  font-size: clamp(0.78rem, 1.4vw, 1.05rem);
-  font-weight: 300;
-  letter-spacing: 0.42em;
-  text-transform: uppercase;
-  opacity: 0.72;
-  margin: var(--jlz-space-2) 0 0;
-}
-/* Hero tagline is now `uk-text-lead` — keep our bespoke max-width + opacity
-   on top of UIkit's base font-size/line-height. */
-.jlz-hero .uk-text-lead {
-  font-family: var(--jlz-font-body);
-  font-size: clamp(0.9rem, 1.3vw, 1.08rem);
-  font-weight: 300;
-  line-height: 1.65;
-  max-width: 42ch;
-  margin: var(--jlz-space-6) auto 0;
-  opacity: 0.74;
-  text-align: center;
-}
 
-/* ── 15.6  Scroll hint (intro bottom) ── */
+/* ── 8.2  Scroll hint (intro bottom) — custom interaction element ── */
 .jlz-scroll-hint {
   display: flex;
   flex-direction: column;
@@ -888,7 +589,7 @@ body.light-theme li.uk-active .jlz-nav-link {
   gap: var(--jlz-space-3);
   pointer-events: none;
   opacity: 0.7;
-  margin-bottom: 40px
+  margin-bottom: 40px;
 }
 .jlz-scroll-hint__label {
   font-family: var(--jlz-font-mono);
@@ -945,7 +646,7 @@ section[data-section='contact'] .jlz-scroll-hint {
   color: rgba(255, 255, 255, 0.7);
 }
 
-/* ── 15.7  Corner label (flexible section — cube is hero) ── */
+/* ── 8.3  Corner label (flexible section — cube is hero) ── */
 .jlz-corner-label {
   position: absolute;
   top: clamp(6vh, 10vh, 12vh);
@@ -954,7 +655,6 @@ section[data-section='contact'] .jlz-scroll-hint {
   pointer-events: none;
   color: rgba(0, 0, 0, 0.75);
 }
-
 .jlz-corner-label__hint {
   font-family: var(--jlz-font-mono);
   font-size: clamp(0.65rem, 0.85vw, 0.78rem);
@@ -965,180 +665,9 @@ section[data-section='contact'] .jlz-scroll-hint {
   margin: 0;
 }
 
-/* ── 15.8  Works hint (challenge section bottom) ── */
-.jlz-works-hint {
-  position: absolute;
-  bottom: clamp(3vh, 5vh, 7vh);
-  left: 50%;
-  transform: translateX(-50%);
-  display: inline-flex;
-  align-items: center;
-  gap: var(--jlz-space-3);
-  font-family: var(--jlz-font-mono);
-  font-size: clamp(0.65rem, 0.85vw, 0.78rem);
-  font-weight: 400;
-  letter-spacing: 0.28em;
-  text-transform: uppercase;
-  opacity: 0.62;
-  z-index: 3;
-  pointer-events: none;
-  white-space: nowrap;
-  color: rgba(255, 255, 255, 0.85);
-}
-.jlz-works-hint__arrow {
-  display: inline-block;
-  animation: jlz-arrow-bob 2.2s ease-in-out infinite;
-}
-@keyframes jlz-arrow-bob {
-  0%,
-  100% {
-    transform: translateX(0);
-    opacity: 0.5;
-  }
-  50% {
-    transform: translateX(6px);
-    opacity: 1;
-  }
-}
-
-/* ── 15.9  Feature cards — now `uk-card uk-card-body uk-card-hover` ──
-   The card surface/hover is handled by UIkit; we keep the cinematic
-   glassmorphism (backdrop-blur + gradient border) + sub-element styling
-   (.jlz-feature-card__index / __body) that UIkit doesn't ship. */
-.jlz-feature-grid.uk-grid {
-  max-width: 980px;
-  margin: 0 auto;
-}
-@media (max-width: 760px) {
-  .jlz-feature-grid.uk-grid {
-    max-width: 420px;
-  }
-}
-.jlz-feature-grid .uk-card {
-  position: relative;
-  background: rgba(255, 255, 255, 0.04);
-  backdrop-filter: blur(16px) saturate(140%);
-  -webkit-backdrop-filter: blur(16px) saturate(140%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 14px;
-  text-align: left;
-  overflow: hidden;
-  transition:
-    transform var(--jlz-duration-normal) var(--jlz-ease-state),
-    background var(--jlz-duration-normal) var(--jlz-ease-state),
-    border-color var(--jlz-duration-normal) var(--jlz-ease-state),
-    box-shadow var(--jlz-duration-normal) var(--jlz-ease-state);
-}
-.jlz-feature-grid .uk-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 14px;
-  padding: 1px;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.18) 0%,
-    transparent 40%,
-    transparent 60%,
-    rgba(140, 180, 240, 0.18) 100%
-  );
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  opacity: 0;
-  transition: opacity var(--jlz-duration-normal) var(--jlz-ease-state);
-  pointer-events: none;
-}
-.jlz-feature-grid .uk-card:hover {
-  transform: translateY(-6px);
-  background: rgba(255, 255, 255, 0.07);
-  border-color: rgba(255, 255, 255, 0.18);
-  box-shadow:
-    0 16px 50px rgba(0, 0, 0, 0.35),
-    0 0 32px rgba(140, 180, 240, 0.08);
-}
-.jlz-feature-grid .uk-card:hover::before {
-  opacity: 1;
-}
-.jlz-feature-card__index {
-  display: inline-block;
-  font-family: var(--jlz-font-mono);
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.22em;
-  color: rgba(140, 180, 240, 0.9);
-  margin-bottom: var(--jlz-space-4);
-}
-/* uk-card-title override — match the brand's display font + uppercase */
-.jlz-feature-grid .uk-card-title {
-  font-family: var(--jlz-font-display);
-  font-size: clamp(1.05rem, 1.45vw, 1.3rem);
-  font-weight: 600;
-  letter-spacing: -0.005em;
-  text-transform: uppercase;
-  margin: 0 0 var(--jlz-space-3);
-  color: #fff;
-}
-.jlz-feature-card__body {
-  font-family: var(--jlz-font-body);
-  font-size: clamp(0.82rem, 0.95vw, 0.92rem);
-  font-weight: 300;
-  line-height: 1.65;
-  opacity: 0.72;
-  margin: 0;
-  color: #fff;
-}
-
-/* ── 15.10  Contact ── */
-.jlz-contact-tagline {
-  font-family: var(--jlz-font-display);
-  font-size: clamp(1.3rem, 2.2vw, 1.85rem);
-  font-weight: 200;
-  letter-spacing: -0.015em;
-  line-height: 1.4;
-  max-width: 22ch;
-  margin: var(--jlz-space-4) auto var(--jlz-space-2);
-  opacity: 0.95;
-}
-.jlz-contact-email {
-  display: inline-block;
-  font-family: var(--jlz-font-mono);
-  font-size: clamp(0.9rem, 1.25vw, 1.05rem);
-  font-weight: 400;
-  letter-spacing: 0.08em;
-  opacity: 0.72;
-  margin: var(--jlz-space-5) 0 var(--jlz-space-2);
-  padding-bottom: 3px;
-  color: inherit;
-  text-decoration: none;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.22);
-  transition:
-    opacity var(--jlz-duration-normal) var(--jlz-ease-state),
-    border-color var(--jlz-duration-normal) var(--jlz-ease-state);
-}
-.jlz-contact-email:hover,
-.jlz-contact-email:focus-visible {
-  opacity: 1;
-  border-color: rgba(255, 255, 255, 0.6);
-  text-decoration: none;
-}
-/* Light-section variant (intro/flexible/contact) */
-section[data-section='intro'] .jlz-contact-email,
-section[data-section='flexible'] .jlz-contact-email,
-section[data-section='contact'] .jlz-contact-email {
-  border-color: rgba(0, 0, 0, 0.22);
-}
-section[data-section='intro'] .jlz-contact-email:hover,
-section[data-section='flexible'] .jlz-contact-email:hover,
-section[data-section='contact'] .jlz-contact-email:hover {
-  border-color: rgba(0, 0, 0, 0.6);
-}
-
-/* ── 15.11  CTA buttons — now `uk-button uk-button-default jlz-glass-btn` ──
+/* ── 8.4  CTA buttons — `uk-button uk-button-default jlz-glass-btn`
    UIkit handles the base button look (padding, focus, etc.); .jlz-glass-btn
-   is kept as a modifier for the glassmorphism surface + custom hover. */
+   is kept as a modifier for the glassmorphism surface + custom hover. ── */
 .jlz-glass-btn {
   position: relative;
   display: inline-flex;
@@ -1191,105 +720,79 @@ section[data-section='contact'] .jlz-contact-email:hover {
     0 0 44px rgba(140, 180, 240, 0.28),
     inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
-.jlz-glass-btn__icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-}
-.jlz-glass-btn__icon svg {
-  width: 100%;
-  height: 100%;
-}
 /* Light-section variant for glass buttons (intro/flexible/contact) */
 section[data-section='intro'] .jlz-glass-btn,
 section[data-section='flexible'] .jlz-glass-btn,
-section[data-section='contact'] .jlz-glass-btn {
+section[data-section='contact'] .jlz-glass-btn,
+section[data-section='lab'] .jlz-glass-btn {
   background: rgba(0, 0, 0, 0.04);
   border-color: rgba(0, 0, 0, 0.14);
   color: rgba(0, 0, 0, 0.88);
 }
 section[data-section='intro'] .jlz-glass-btn:hover,
 section[data-section='flexible'] .jlz-glass-btn:hover,
-section[data-section='contact'] .jlz-glass-btn:hover {
+section[data-section='contact'] .jlz-glass-btn:hover,
+section[data-section='lab'] .jlz-glass-btn:hover {
   background: rgba(0, 0, 0, 0.1);
   border-color: rgba(0, 0, 0, 0.32);
   box-shadow: 0 0 24px rgba(0, 0, 0, 0.08);
   color: #000;
 }
 
-.jlz-contact-footer {
-  margin-top: var(--jlz-space-12);
-  font-family: var(--jlz-font-mono);
-  font-size: clamp(0.62rem, 0.8vw, 0.72rem);
-  font-weight: 400;
-  letter-spacing: 0.28em;
-  text-transform: uppercase;
-  opacity: 0.42;
-}
-
-/* ── 15.12  Cinematic text-shadow on dark sections ── */
-section[data-section='about'] .jlz-body-text,
-section[data-section='challenge'] .jlz-body-text,
-section[data-section='innovative'] .jlz-body-text,
-section[data-section='about'] .jlz-contact-tagline,
-section[data-section='innovative'] .jlz-feature-card__body {
+/* ── 8.5  Cinematic text-shadow on dark sections (theme override on
+   UIKit text utilities + headings) ── */
+section[data-section='about'] .uk-text-lead,
+section[data-section='challenge'] .uk-text-lead,
+section[data-section='innovative'] .uk-text-lead,
+section[data-section='process'] .uk-text-lead,
+section[data-section='about'] .uk-text-large,
+section[data-section='innovative'] .uk-text-large,
+section[data-section='innovative'] .uk-text-meta {
   text-shadow: 0 2px 24px rgba(0, 0, 0, 0.4);
 }
 section[data-section='about'] .uk-heading-medium,
 section[data-section='challenge'] .uk-heading-medium,
 section[data-section='innovative'] .uk-heading-medium,
+section[data-section='process'] .uk-heading-medium,
 section[data-section='about'] .studio-title,
 section[data-section='challenge'] .studio-title,
-section[data-section='innovative'] .studio-title {
+section[data-section='innovative'] .studio-title,
+section[data-section='process'] .studio-title {
   text-shadow: 0 4px 40px rgba(0, 0, 0, 0.45);
 }
 
-/* ── 15.13  Stagger reveal — now driven by UIkit scrollspy ──
+/* ── 8.6  Stagger reveal — driven by UIkit scrollspy.
    Each [uk-scrollspy] element has `cls: uk-animation-fade; delay: 300;
    repeat: true` baked into templates.ts. UIkit handles the animation; the
    .scrollspy-pending rule in §0.5 cancels it during splash so the fade
-   replays after the splash curtains open. No custom @keyframes needed. */
+   replays after the splash curtains open. No custom @keyframes needed. ── */
 
 /* Reduced motion — disable decorative animations (UIkit already disables
    uk-animation-fade via its own prefers-reduced-motion rules; we just need
-   to neutralize the hero-meta pulse dot + scroll hint). */
+   to neutralize the scroll hint pulse). */
 @media (prefers-reduced-motion: reduce) {
-  .jlz-scroll-hint__line::after,
-  .jlz-works-hint__arrow,
-  .jlz-hero .uk-text-meta::before {
-    animation: none;
-  }
   .jlz-scroll-hint__line::after {
+    animation: none;
     opacity: 0.45;
     transform: translateY(50%);
   }
-  .jlz-hero .uk-text-meta::before {
-    opacity: 1;
-  }
 }
 
-/* ── 15.14  Mobile responsive ── */
+/* ── 8.7  Mobile responsive (theme overrides on UIKit utilities) ── */
 @media (max-width: 600px) {
-  .jlz-hero__title {
+  .studio-title.uk-heading-xlarge {
     font-size: clamp(2.4rem, 14vw, 4rem);
-  }
-  .jlz-hero__subtitle {
-    letter-spacing: 0.32em;
   }
   .studio-title.uk-heading-medium {
     font-size: clamp(2rem, 11vw, 3rem);
   }
-  .jlz-hero .uk-text-lead {
+  .uk-text-lead {
     font-size: 0.9rem;
   }
-  .jlz-feature-grid .uk-card {
+  section[data-section='innovative'] .uk-card {
     padding: var(--jlz-space-5) var(--jlz-space-4);
   }
-  /* CTA grid is now `uk-grid-small uk-child-width-auto@s uk-flex uk-flex-center`
-     — on small screens stack the buttons full-width. */
+  /* CTA grid — on small screens stack the buttons full-width. */
   section[data-section='contact'] .uk-grid-small {
     flex-direction: column;
     width: 100%;
@@ -1304,13 +807,13 @@ section[data-section='innovative'] .studio-title {
   .jlz-corner-label {
     top: clamp(5vh, 8vh, 10vh);
   }
-  .jlz-contact-tagline {
+  section[data-section='contact'] .uk-text-large {
     font-size: clamp(1.1rem, 5vw, 1.4rem);
   }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   §16. Section hints — short UI labels per section
+   §9. Section hints — short UI labels per section
    Positioned at bottom-center, above the dock. Fades in on section change,
    auto-fades after 4s. Subtle, informative, non-cluttering.
    ═══════════════════════════════════════════════════════════════════ */
@@ -1368,59 +871,10 @@ body.light-theme .jlz-hint__text {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   §17. Secret sections — Lab (left) + Process (right)
+   §10. Process section timeline — UIKit list with custom glassmorphism
+   (theme override on `uk-list uk-list-divider`)
    ═══════════════════════════════════════════════════════════════════ */
 
-/* Lab grid — now `uk-grid-small uk-child-width-1-2@s` from templates.ts.
-   UIKit handles the grid layout; we keep the max-width cap. */
-.jlz-lab-grid.uk-grid {
-  max-width: 480px;
-  width: 100%;
-  margin: 0 auto;
-}
-/* Lab card surface — now `uk-card uk-card-body uk-card-hover`.
-   UIKit handles the card chrome; we add the glassmorphism + cursor. */
-.jlz-lab-grid .uk-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 1.5rem 1rem;
-  background: rgba(255,255,255,0.04);
-  backdrop-filter: blur(16px) saturate(140%);
-  -webkit-backdrop-filter: blur(16px) saturate(140%);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 14px;
-  text-align: center;
-  cursor: pointer;
-  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
-}
-.jlz-lab-grid .uk-card:hover {
-  transform: translateY(-4px);
-  border-color: rgba(255,255,255,0.2);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-}
-.jlz-lab-card__icon {
-  font-size: 1.8rem;
-  color: rgba(255,255,255,0.8);
-  line-height: 1;
-}
-/* uk-card-title override — match the brand's smaller mono-ish label */
-.jlz-lab-grid .uk-card-title {
-  font-size: 0.8rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: rgba(255,255,255,0.9);
-}
-.jlz-lab-card__desc {
-  font-size: 0.7rem;
-  color: rgba(255,255,255,0.5);
-}
-
-/* Timeline — now `uk-list uk-list-divider` with `<li uk-flex uk-flex-middle>`.
-   UIKit handles the divider lines; we keep the glassmorphism + per-step
-   layout + sub-element styling. */
 section[data-section='process'] .uk-list {
   max-width: 400px;
   width: 100%;
@@ -1431,99 +885,35 @@ section[data-section='process'] .uk-list li {
   align-items: center;
   gap: 1rem;
   padding: 1rem 1.5rem;
-  background: rgba(255,255,255,0.03);
-  border-left: 3px solid rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.03);
+  border-left: 3px solid rgba(255, 255, 255, 0.2);
   border-radius: 0 8px 8px 0;
   backdrop-filter: blur(16px) saturate(140%);
   -webkit-backdrop-filter: blur(16px) saturate(140%);
   transition: border-color 0.3s ease, background 0.3s ease;
 }
 section[data-section='process'] .uk-list li:hover {
-  border-left-color: rgba(255,255,255,0.5);
-  background: rgba(255,255,255,0.06);
-}
-.jlz-timeline__num {
-  font-size: 1.2rem;
-  font-weight: 900;
-  color: rgba(255,255,255,0.4);
-  min-width: 2rem;
-}
-.jlz-timeline__label {
-  font-size: 0.9rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: rgba(255,255,255,0.9);
-  min-width: 5rem;
-}
-.jlz-timeline__desc {
-  font-size: 0.8rem;
-  color: rgba(255,255,255,0.5);
+  border-left-color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.06);
 }
 
-/* Manifesto — studio principles */
-.jlz-manifesto {
-  text-align: center;
-  max-width: 500px;
-  margin: 2rem auto 0;
+/* Lab section — light-section card overrides (theme override on uk-card) */
+section[data-section='lab'] .uk-card {
+  background: rgba(255, 255, 255, 0.5);
+  border-color: rgba(0, 0, 0, 0.08);
+  color: rgba(0, 0, 0, 0.85);
 }
-.jlz-manifesto p {
-  font-size: clamp(1rem, 3vw, 1.4rem);
-  font-weight: 300;
-  line-height: 1.6;
-  color: rgba(255,255,255,0.8);
-  margin: 0.5rem 0;
-  font-style: italic;
+section[data-section='lab'] .uk-card-title {
+  color: rgba(0, 0, 0, 0.85);
 }
-.jlz-manifesto__sig {
-  font-size: 0.8rem !important;
-  font-weight: 600 !important;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: rgba(255,255,255,0.5) !important;
-  font-style: normal !important;
-  margin-top: 1rem !important;
+section[data-section='lab'] .uk-text-meta {
+  color: rgba(0, 0, 0, 0.5);
 }
-
-/* Section bg for lab + process */
-.section-bg--lab,
-.section-bg--process {
-  background: transparent !important;
-}
-
-/* Light theme for lab (light section like intro) */
-section[data-section='lab'] .jlz-section-shell,
-section[data-section='lab'] .studio-title {
-  color: #111;
-}
-section[data-section='lab'] .studio-body {
-  color: rgba(0,0,0,0.7);
-}
-section[data-section='lab'] .jlz-lab-grid .uk-card {
-  background: rgba(255,255,255,0.5);
-  border-color: rgba(0,0,0,0.08);
-}
-section[data-section='lab'] .jlz-lab-grid .uk-card-title {
-  color: rgba(0,0,0,0.85);
-}
-section[data-section='lab'] .jlz-lab-card__desc {
-  color: rgba(0,0,0,0.5);
-}
-section[data-section='lab'] .jlz-lab-card__icon {
-  color: rgba(0,0,0,0.6);
-}
-
-/* Dark theme for process */
-section[data-section='process'] .jlz-section-shell,
-section[data-section='process'] .studio-title {
-  color: #fff;
+section[data-section='lab'] .uk-text-large {
+  color: rgba(0, 0, 0, 0.6);
 }
 
 @media (max-width: 640px) {
-  /* Lab grid: stack to 1 column on very small screens */
-  .jlz-lab-grid.uk-grid > * {
-    width: 100%;
-  }
   /* Timeline items: stack label/desc vertically on small screens */
   section[data-section='process'] .uk-list li {
     flex-direction: column;
@@ -1533,7 +923,7 @@ section[data-section='process'] .studio-title {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   §18. DOM Joystick — fixed bottom-center, 2D circle
+   §11. DOM Joystick — fixed bottom-center, 2D circle
    ═══════════════════════════════════════════════════════════════════ */
 .jlz-joystick {
   position: fixed;
@@ -1553,10 +943,10 @@ section[data-section='process'] .studio-title {
   width: 110px;
   height: 110px;
   border-radius: 50%;
-  background: rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 2px solid rgba(255,255,255,0.15);
+  border: 2px solid rgba(255, 255, 255, 0.15);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1566,15 +956,15 @@ section[data-section='process'] .studio-title {
 }
 .jlz-joystick__base.is-active {
   cursor: grabbing;
-  border-color: rgba(255,255,255,0.4);
-  background: rgba(255,255,255,0.12);
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.12);
 }
 .jlz-joystick__ball {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: rgba(255,255,255,0.35);
-  border: 1px solid rgba(255,255,255,0.3);
+  background: rgba(255, 255, 255, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   transition: transform 0.15s ease-out;
   pointer-events: none;
 }
@@ -1586,24 +976,24 @@ section[data-section='process'] .studio-title {
   font-size: 0.6rem;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.4);
+  color: rgba(255, 255, 255, 0.4);
   transition: opacity 0.3s ease;
 }
 /* Light theme — dark joystick */
 body.light-theme .jlz-joystick__base {
-  background: rgba(0,0,0,0.06);
-  border-color: rgba(0,0,0,0.12);
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.12);
 }
 body.light-theme .jlz-joystick__base.is-active {
-  border-color: rgba(0,0,0,0.3);
-  background: rgba(0,0,0,0.1);
+  border-color: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.1);
 }
 body.light-theme .jlz-joystick__ball {
-  background: rgba(0,0,0,0.2);
-  border-color: rgba(0,0,0,0.15);
+  background: rgba(0, 0, 0, 0.2);
+  border-color: rgba(0, 0, 0, 0.15);
 }
 body.light-theme .jlz-joystick__hint {
-  color: rgba(0,0,0,0.4);
+  color: rgba(0, 0, 0, 0.4);
 }
 @media (max-width: 640px) {
   .jlz-joystick__base {
