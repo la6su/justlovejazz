@@ -65,10 +65,6 @@ class ThemeManager {
     const isLight = this.isLight
     document.body.classList.toggle('uk-light', isLight)
     document.documentElement.classList.toggle('uk-light', isLight)
-    document.body.classList.toggle('light-theme', isLight)
-    document.documentElement.classList.toggle('light-theme', isLight)
-    document.body.classList.toggle('dark-theme', !isLight)
-    document.documentElement.classList.toggle('dark-theme', !isLight)
     window.dispatchEvent(new CustomEvent('jlz:theme-applied', { detail: { isLight, mode: this._mode } }))
   }
 

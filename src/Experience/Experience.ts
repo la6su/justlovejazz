@@ -213,11 +213,10 @@ export class Experience {
     // which instantly destroyed the splash ~2.5s BEFORE the cinematic opening
     // sequence could play — so the user saw no opening animation at all.
     this.bus.on('intro:done', () => {
-      // Content pages always render light text over the 3D canvas — skip
-      // the auto theme toggle. See docs/UIKIT3.md §4 (theme toggle scope).
-      if (document.body.dataset.page !== 'home') return
-      // Intro is a light section — tell ThemeManager (respects manual override).
-      themeManager.setAutoTheme(true)
+      // Set initial theme for Intro (light) — _updateInner will keep it in sync.
+      if (document.body.dataset.page === 'home') {
+        themeManager.setAutoTheme(true) // Intro = light
+      }
     })
   }
 
@@ -234,15 +233,12 @@ export class Experience {
     this.bus = StateBus.getInstance()
 
     // ── 3D ↔ theme sync: in inverse mode, EnvSphere follows the flipped theme ──
-    // In normal mode, EnvSphere follows the section's cfg.theme (section-driven).
-    // In inverse mode, EnvSphere is flipped to match the inverted text color:
-    //   section is light → inverse makes it dark → EnvSphere dark pattern
-    //   section is dark → inverse makes it light → EnvSphere light pattern
+    // Only on home page — content pages don't need 3D bg sync on theme toggle.
     window.addEventListener('jlz:theme-applied', ((e: Event) => {
       const detail = (e as CustomEvent<{ isLight: boolean; mode: string }>).detail
-      if (!detail || detail.mode === 'normal') return // normal = section-driven, no override
-      // inverse: override EnvSphere to match the flipped theme
-      const targetIdx = detail.isLight ? 1 : 2 // Intro=light pattern, About=dark pattern
+      if (!detail || detail.mode === 'normal') return
+      if (document.body.dataset.page !== 'home') return // home-only 3D sync
+      const targetIdx = detail.isLight ? 1 : 2
       if (this.world?.envSphere) {
         this.world.envSphere.changeSection(targetIdx)
         this._needsRender = true

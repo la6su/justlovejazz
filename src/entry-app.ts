@@ -4,7 +4,6 @@ import { initRouter } from './router'
 import { bootstrap as bootstrapApp, type BootstrapOptions } from './main-app'
 import { NoiseText } from './Experience/NoiseText'
 import { eventBus } from './core/EventBus'
-import { themeManager } from './core/ThemeManager'
 
 async function boot() {
   const { createSplash } = await import('./splash')
@@ -66,10 +65,9 @@ export async function startApp(): Promise<void> {
   // animation-name computed value flips from `none` back to `uk-fade`,
   // which restarts the animation so the fade-in is visible to the user.
   document.body.classList.add('scrollspy-pending')
-  // Apply persisted theme mode + initial section theme (Intro = light).
-  // Experience.ts will update per-section on navigation.
-  const isHomePage = window.location.pathname === '/' || window.location.pathname === ''
-  themeManager.setAutoTheme(isHomePage) // home starts on Intro (light)
+  // Theme: router.ts handles per-page initial theme (home=light for Intro,
+  // content pages=light for first section). Experience.ts updates per-section
+  // on navigation. No need to set theme here — avoids conflicting calls.
   initRouter()
 
   // NoiseText: animate ALL titles when jlz:webgl-ready fires (after splash).
