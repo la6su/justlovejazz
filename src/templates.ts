@@ -3,7 +3,7 @@
 //
 // Built with UIkit 3 utility/component classes for layout, spacing,
 // typography, cards, buttons, and modal chrome:
-//   - uk-position-relative + uk-height-viewport   (SPA stack parent)
+//   - uk-position-relative + uk-height-viewport   (main#spa-content shell)
 //   - uk-position-cover                           (section background layer)
 //   - uk-container uk-container-expand            (section shells)
 //   - uk-padding                                  (section padding)
@@ -38,49 +38,48 @@ export function homePage(): string {
 
   return `
     <!-- ═══ 8 child sections (6 main + 2 secret side) ═══ -->
-    <div class="uk-position-relative" uk-height-viewport>
 
-      <!-- 00: LAB (secret left) — Experiments & interactive demos -->
-      <section uk-height-viewport="expand: true"
-               class="uk-section" id="section-lab" data-section="lab">
-        <div class="uk-position-cover" data-dynamic-content>
-          <div class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-text-center uk-height-1-1">
-            <div class="uk-flex uk-flex-column uk-flex-middle">
-              <h2 class="studio-title uk-heading-medium" ${REVEAL}>SECRET</h2>
-              <p class="uk-text-lead" ${REVEAL}>
-                Experiments at the edge of what browsers can do. Shader art, audio
-                reactive visuals, generative geometry — this is where we play.
-              </p>
+    <!-- 00: LAB (secret left) — Experiments & interactive demos -->
+    <section uk-height-viewport="expand: true"
+             class="uk-section uk-section-large" id="section-lab" data-section="lab">
+      <div class="uk-position-cover" data-dynamic-content>
+        <div class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-text-center uk-height-1-1">
+          <div class="uk-flex uk-flex-column uk-flex-middle">
+            <h2 class="studio-title uk-heading-medium" ${REVEAL}>SECRET</h2>
+            <p class="uk-text-lead" ${REVEAL}>
+              Experiments at the edge of what browsers can do. Shader art, audio
+              reactive visuals, generative geometry — this is where we play.
+            </p>
+          </div>
+          <div class="uk-grid-small uk-child-width-1-2@s" uk-grid ${REVEAL}>
+            <div class="uk-card uk-card-default uk-card-body uk-card-hover uk-flex uk-flex-column uk-flex-middle uk-text-center" data-lab="shader">
+              <span class="uk-text-large" aria-hidden="true">◈</span>
+              <h3 class="uk-card-title">Shader Playground</h3>
+              <p class="uk-text-meta">Live GLSL fragments</p>
             </div>
-            <div class="uk-grid-small uk-child-width-1-2@s" uk-grid ${REVEAL}>
-              <div class="uk-card uk-card-default uk-card-body uk-card-hover uk-flex uk-flex-column uk-flex-middle uk-text-center" data-lab="shader">
-                <span class="uk-text-large" aria-hidden="true">◈</span>
-                <h3 class="uk-card-title">Shader Playground</h3>
-                <p class="uk-text-meta">Live GLSL fragments</p>
-              </div>
-              <div class="uk-card uk-card-default uk-card-body uk-card-hover uk-flex uk-flex-column uk-flex-middle uk-text-center" data-lab="audio">
-                <span class="uk-text-large" aria-hidden="true">◉</span>
-                <h3 class="uk-card-title">Audio Reactive</h3>
-                <p class="uk-text-meta">Sound → geometry</p>
-              </div>
-              <div class="uk-card uk-card-default uk-card-body uk-card-hover uk-flex uk-flex-column uk-flex-middle uk-text-center" data-lab="gen">
-                <span class="uk-text-large" aria-hidden="true">⬡</span>
-                <h3 class="uk-card-title">Generative</h3>
-                <p class="uk-text-meta">Procedural worlds</p>
-              </div>
-              <div class="uk-card uk-card-default uk-card-body uk-card-hover uk-flex uk-flex-column uk-flex-middle uk-text-center" data-lab="particles">
-                <span class="uk-text-large" aria-hidden="true">⁂</span>
-                <h3 class="uk-card-title">GPU Particles</h3>
-                <p class="uk-text-meta">10k instances</p>
-              </div>
+            <div class="uk-card uk-card-default uk-card-body uk-card-hover uk-flex uk-flex-column uk-flex-middle uk-text-center" data-lab="audio">
+              <span class="uk-text-large" aria-hidden="true">◉</span>
+              <h3 class="uk-card-title">Audio Reactive</h3>
+              <p class="uk-text-meta">Sound → geometry</p>
+            </div>
+            <div class="uk-card uk-card-default uk-card-body uk-card-hover uk-flex uk-flex-column uk-flex-middle uk-text-center" data-lab="gen">
+              <span class="uk-text-large" aria-hidden="true">⬡</span>
+              <h3 class="uk-card-title">Generative</h3>
+              <p class="uk-text-meta">Procedural worlds</p>
+            </div>
+            <div class="uk-card uk-card-default uk-card-body uk-card-hover uk-flex uk-flex-column uk-flex-middle uk-text-center" data-lab="particles">
+              <span class="uk-text-large" aria-hidden="true">⁂</span>
+              <h3 class="uk-card-title">GPU Particles</h3>
+              <p class="uk-text-meta">10k instances</p>
             </div>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <!-- 01: INTRO — baku cube center, hero at top, scroll hint at bottom -->
+    <!-- 01: INTRO — baku cube center, hero at top, scroll hint at bottom -->
       <section uk-height-viewport="expand: true"
-               class="uk-section" id="section-intro" data-section="intro">
+               class="uk-section uk-section-large" id="section-intro" data-section="intro">
         <div class="uk-position-cover" data-dynamic-content>
           <div class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-text-center uk-height-1-1">
             <div class="uk-flex uk-flex-column uk-flex-middle">
@@ -102,9 +101,9 @@ export function homePage(): string {
         </div>
       </section>
 
-      <!-- 02: ABOUT — two-column split, cube visible through center gap -->
+    <!-- 02: ABOUT — two-column split, cube visible through center gap -->
       <section uk-height-viewport="expand: true"
-               class="uk-section" id="section-about" data-section="about">
+               class="uk-section uk-section-large" id="section-about" data-section="about">
         <div class="uk-position-cover" data-dynamic-content>
           <div class="uk-container uk-container-expand uk-padding uk-grid uk-child-width-1-2@m uk-grid-match uk-text-left uk-height-1-1" uk-grid>
             <div class="uk-width-1-2@m uk-flex uk-flex-middle">
@@ -121,11 +120,11 @@ export function homePage(): string {
         </div>
       </section>
 
-      <!-- 03: FLEXIBLE — pure 3D scene. Cube is hero. Minimal corner label only.
-           Animated text background + full-screen title texture rendered in WebGL.
-           Section is kept for scroll positioning only. -->
+    <!-- 03: FLEXIBLE — pure 3D scene. Cube is hero. Minimal corner label only.
+         Animated text background + full-screen title texture rendered in WebGL.
+         Section is kept for scroll positioning only. -->
       <section uk-height-viewport="expand: true"
-               class="uk-section" id="section-flexible" data-section="flexible">
+               class="uk-section uk-section-large" id="section-flexible" data-section="flexible">
         <div class="uk-position-cover" data-dynamic-content>
           <div class="jlz-corner-label" aria-hidden="true">
             <p class="jlz-corner-label__hint">Drag the cube · Scroll to morph</p>
@@ -133,9 +132,9 @@ export function homePage(): string {
         </div>
       </section>
 
-      <!-- 04: CHALLENGE / WORKS — gallery, cube + carousel morph -->
+    <!-- 04: CHALLENGE / WORKS — gallery, cube + carousel morph -->
       <section uk-height-viewport="expand: true"
-               class="uk-section" id="section-challenge" data-section="challenge">
+               class="uk-section uk-section-large" id="section-challenge" data-section="challenge">
         <div class="uk-position-cover" data-dynamic-content>
           <div class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-top uk-text-center uk-height-1-1">
             <h2 class="studio-title uk-heading-medium"
@@ -151,9 +150,9 @@ export function homePage(): string {
         </div>
       </section>
 
-      <!-- 05: INNOVATIVE — feature cards with glassmorphism -->
+    <!-- 05: INNOVATIVE — feature cards with glassmorphism -->
       <section uk-height-viewport="expand: true"
-               class="uk-section" id="section-innovative" data-section="innovative">
+               class="uk-section uk-section-large" id="section-innovative" data-section="innovative">
         <div class="uk-position-cover" data-dynamic-content>
           <div class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-text-center uk-height-1-1">
             <div class="uk-flex uk-flex-column uk-flex-middle uk-margin">
@@ -195,9 +194,9 @@ export function homePage(): string {
         </div>
       </section>
 
-      <!-- 06: CONTACT — large CTA, glass buttons -->
+    <!-- 06: CONTACT — large CTA, glass buttons -->
       <section uk-height-viewport="expand: true"
-               class="uk-section" id="section-contact" data-section="contact">
+               class="uk-section uk-section-large" id="section-contact" data-section="contact">
         <div class="uk-position-cover" data-dynamic-content>
           <div class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-top uk-text-center uk-height-1-1">
             <h2 class="studio-title uk-heading-medium"
@@ -232,9 +231,9 @@ export function homePage(): string {
         </div>
       </section>
 
-      <!-- 07: PROCESS (secret right) — Workflow timeline & studio manifesto -->
+    <!-- 07: PROCESS (secret right) — Workflow timeline & studio manifesto -->
       <section uk-height-viewport="expand: true"
-               class="uk-section" id="section-process" data-section="process">
+               class="uk-section uk-section-large" id="section-process" data-section="process">
         <div class="uk-position-cover" data-dynamic-content>
           <div class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-text-center uk-height-1-1">
             <div class="uk-flex uk-flex-column uk-flex-middle">
@@ -269,8 +268,6 @@ export function homePage(): string {
           </div>
         </div>
       </section>
-
-    </div>
   `
 }
 

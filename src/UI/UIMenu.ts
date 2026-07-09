@@ -62,7 +62,8 @@ export class UIMenu {
     })
 
     this.slider = this.navEl.querySelector('#slider-nav')!
-    document.body.insertBefore(this.navEl, document.body.firstChild)
+    const app = document.getElementById('app') ?? document.body
+    app.appendChild(this.navEl)
     this._sliderComponent = UIkit.slider(this.slider)
     this.updateActive()
   }

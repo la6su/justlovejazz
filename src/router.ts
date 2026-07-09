@@ -15,12 +15,13 @@ const container: HTMLElement | null = (() => {
     el = document.createElement('main')
     el.id = 'spa-content'
     el.setAttribute('role', 'main')
-    const nav = document.getElementById('main-nav')
-    if (nav && nav.nextElementSibling) {
-      nav.parentNode!.insertBefore(el, nav.nextElementSibling)
-    } else if (nav) {
-      nav.parentNode!.appendChild(el)
-    }
+    el.className = 'uk-position-relative'
+    el.setAttribute('uk-height-viewport', '')
+    const app = document.getElementById('app')
+    if (app) app.appendChild(el)
+  } else {
+    el.classList.add('uk-position-relative')
+    el.setAttribute('uk-height-viewport', '')
   }
   return el
 })()
