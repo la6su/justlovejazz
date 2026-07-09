@@ -1,24 +1,30 @@
 # STATUS — Single Source of Truth
 
-> Updated: 2026-07-11. Branch: `main`. Build green.
+> Updated: 2026-07-11 (post-audit). Branch: `main`. Build green.
 >
 > UIkit 3 theming patterns + lessons: see [`UIKIT3.md`](UIKIT3.md).
+> Audit report for this session: see [`AUDIT_2026-07-11.md`](AUDIT_2026-07-11.md).
 
 ## Project
 
-SPA studio portfolio — **8 sections**, 3D canvas + transparent DOM overlay. Single font: Inter.
+SPA studio portfolio — **6 sections** (1:1 with cube faces), 3D canvas + transparent
+DOM overlay. Single font: Inter.
 Navigation: JoystickNav (pure DOM, 2D — bottom-center) + UIMenu (UIkit modal) + Subtitles (section hints).
+Theme: UIKit native `uk-light` class via `ThemeManager` (auto/light/dark) —
+3D EnvSphere syncs to manual override.
+Mobile-first: `html { font-size: 0.85rem }` mobile → `1rem` ≥640px, all sizing rem-based.
 
 ## Current state
 
 | Item | Status |
 | --- | --- |
 | 3D scene (WebGPU + WebGL2 fallback) | ✅ |
+| 6 sections (Lab/Intro/About/Works/Contact/Process) — 1:1 cube faces | ✅ |
 | JoystickNav — pure DOM joystick, trigger model (one section per drag) | ✅ |
 | 2D navigation (vertical=main, horizontal=Lab/Process) | ✅ |
-| UIMenu — UIkit modal jump navigation | ✅ |
+| UIMenu — UIkit modal jump navigation + theme toggle (auto/light/dark) | ✅ |
 | Subtitles — short UI hint per section, auto-fade 4s | ✅ |
-| BakuCarousel — cube morphs into ring (Works §4) | ✅ |
+| BakuCarousel — cube morphs into ring (Works §3) | ✅ |
 | ProjectOverlay — card click (raycast) opens fullscreen | ✅ |
 | On-demand rendering (`_needsRender` flag) | ✅ |
 | Ambient breathing (1-frame refresh every 2.5s in idle) | ✅ |
@@ -27,31 +33,56 @@ Navigation: JoystickNav (pure DOM, 2D — bottom-center) + UIMenu (UIkit modal) 
 | Splash curtain + SplashCube opener | ✅ |
 | DevPanel (Tweakpane) | ✅ |
 | Per-section lighting + fog (World.ts owns `scene.fog`) | ✅ |
-| EnvSphere — procedural CanvasTexture on BackSide sphere, 8 patterns | ✅ |
-| `makeParticles` (`THREE.Points`, shared by all 8 sections) | ✅ |
+| EnvSphere — procedural CanvasTexture on BackSide sphere, 6 patterns | ✅ |
+| `makeParticles` (`THREE.Points`, shared by all 6 sections) | ✅ |
 | SplashCube — single BoxGeometry + CubeCamera + rainbow vertex-color edges | ✅ |
 | WebGPU/WebGL2 color parity (sRGB + ACES + grain + bloom) | ✅ |
+| ThemeManager — UIKit native `uk-light` + auto/light/dark toggle (localStorage) | ✅ |
+| 3D ↔ theme sync (manual light/dark drives EnvSphere pattern) | ✅ |
+| Mobile-first rem sizing (`.85rem` mob → `1rem@s`) | ✅ |
+| Responsive sections (`uk-section-small uk-section-medium@s uk-section-large@m`) | ✅ |
+| 6 content pages: services / cases / process / team / journal / contact | ✅ |
+| Unified footer (brand + social, fixed bottom, hidden on home) | ✅ |
 | Cinematic typography + glassmorphism UI | ✅ |
 | TypeScript strict + ESLint + Prettier | ✅ |
 | Prerendered home sections (SEO) | ✅ |
 | a11y (skip-link, focus-trap, noscript) | ✅ |
-| 54 unit tests (CircularNav legacy, Easings, EventBus, Noise) | ✅ |
+| 54 unit tests (CircularNav legacy, Easings, EventBus, Noise, motionPolicy) | ✅ |
 
-## Sections (8)
+## Sections (6) — 1:1 with cube faces
 
-| Idx | Section | 3D content | BG pattern |
-| --- | --- | --- | --- |
-| 0 | Lab (secret left) | `makeParticles` (THREE.Points) | Light blue-grey HSV |
-| 1 | Intro (start) | SplashCube (baku) + particles | HSV rainbow (light) |
-| 2 | About | Particles + WireframeTypography | Grey gradient (dark) |
-| 3 | Flexible | Particles | Dark purple gradient |
-| 4 | Works | BakuCarousel + DrawTrail + particles | Blue-grey gradient (dark) |
-| 5 | Innovative | Particles | Center glow (dark) |
-| 6 | Contact | Particles | Off-white gradient (light) |
-| 7 | Process (secret right) | `makeParticles` | Deep blue-black gradient |
+| Idx | Section | Cube face | 3D content | BG pattern | Theme |
+| --- | --- | --- | --- | --- | --- |
+| 0 | Lab (secret left) | Top (+Y) | `makeParticles` (THREE.Points) | Light blue-grey HSV | light |
+| 1 | Intro (start) | Front (+Z) | SplashCube (baku) + particles | HSV rainbow (light) | light |
+| 2 | About | Right (+X) | Particles + WireframeTypography | Grey gradient | dark |
+| 3 | Works | Back (-Z) | BakuCarousel + DrawTrail + particles | Blue-grey gradient | dark |
+| 4 | Contact | Bottom (-Y) | Particles | Off-white gradient | light |
+| 5 | Process (secret right) | Left (-X) | `makeParticles` | Deep blue-black gradient | dark |
 
 Sections: `position:absolute; inset:0` (stacked). `.section-active` toggles visibility.
 World initial state: **section 1 (Intro)**. EnvSphere starts on section 1.
+Light sections (0=Lab, 1=Intro, 4=Contact) toggle `uk-light` body class via ThemeManager →
+dark text/nav. Dark sections (2=About, 3=Works, 5=Process) use default theme (light text).
+
+> **Cube face rotation per section** — each section index maps to a cube face.
+> `World.updateTransform()` rotates the SplashCube so the active face points at
+> the camera. BakuCarousel on Works (idx 3) morphs the back face into a ring.
+
+## Content pages (6) — outside the SPA home
+
+| Route | Page | Title |
+| --- | --- | --- |
+| `/services` | services | "What We Build" — 6 service cards + stack |
+| `/cases` | cases | "Selected Work" — 6 case study cards |
+| `/process` | process | "How We Work" — 4-step timeline + principles |
+| `/team` | team | "Who We Are" — 4 roles + values |
+| `/journal` | journal | "Writing" — 4 posts |
+| `/contact` | contact | "Let's Talk" — CTA + FAQ |
+
+Content pages always render light text over the 3D canvas (forced dark in auto mode).
+Footer (brand + social) is fixed to viewport bottom, hidden on home where Contact
+serves as the home footer.
 
 ## Visual tiers
 
@@ -95,26 +126,45 @@ When idle (between breaths): zero draw calls, GPU sleeps. Cursor (DOM) always up
 | `frustumCulled` | `false` |
 | `renderOrder` | `-1000` (renders first) |
 | `attachToScene()` | no-op (mesh is visible — `scene.background` is NOT set) |
-| Initial weights | `[0, 1, 0, 0, 0, 0, 0, 0]` — starts on section 1 (Intro) |
+| Initial weights | `[0, 1, 0, 0, 0, 0]` — starts on section 1 (Intro) |
 
-8 per-section patterns (mixed by animated `uSection` weights, lerped over ~0.3s):
+6 per-section patterns (mixed by animated `uSection` weights, lerped over ~0.3s):
 
 | Idx | Section | Pattern |
 | --- | --- | --- |
 | 0 | Lab | Light blue-grey HSV (`hue: 0.6, sat: 0.06, val: 0.88`) |
 | 1 | Intro | HSV rainbow gradient (low sat, animated hue shift) |
 | 2 | About | Grey vertical gradient (`0x1a1a1a → 0x2e2e2e`) |
-| 3 | Flexible | Dark purple gradient (`0x141414 → 0x222232`) |
-| 4 | Works | Dark blue-grey gradient (`0x1a1a22 → 0x2a2a3a`) |
-| 5 | Innovative | Dark base + radial center glow (`0x2a3a4a`) |
-| 6 | Contact | Light off-white gradient (`0xe8e8e8 → 0xd8d8d8`) for dark text |
-| 7 | Process | Deep blue-black gradient (`0x080810 → 0x12121e`) |
+| 3 | Works | Dark blue-grey gradient (`0x1a1a22 → 0x2a2a3a`) |
+| 4 | Contact | Light off-white gradient (`0xe8e8e8 → 0xd8d8d8`) for dark text |
+| 5 | Process | Deep blue-black gradient (`0x080810 → 0x12121e`) |
 
-Light sections (1=Intro, 6=Contact) drive the `light-theme` body class → dark text/nav.
+Light sections (0=Lab, 1=Intro, 4=Contact) drive `uk-light` body class via ThemeManager →
+dark text/nav. Manual light/dark override (from the menu toggle) drives EnvSphere to
+match (light forced → Intro pattern, dark forced → About pattern).
+
+## Theme system — ThemeManager + UIKit `uk-light`
+
+| Property | Value |
+| --- | --- |
+| File | `src/core/ThemeManager.ts` |
+| Modes | `'auto'` (default), `'light'`, `'dark'` |
+| Persistence | `localStorage('jlz:theme')` |
+| Body class | `uk-light` toggled on `<body>` + `<html>` (UIKit native inverse) |
+| Auto source | `Experience.ts` calls `themeManager.setAutoTheme(isLightSection)` on home section change |
+| Content pages | `router.ts` calls `themeManager.setAutoTheme(false)` (always dark in auto) |
+| 3D sync | Dispatches `jlz:theme-applied` with `{isLight, mode}` — Experience listens, overrides EnvSphere |
+| Toggle UI | 3 buttons (Auto/Light/Dark) in `#jlz-menu-modal .jlz-theme-toggle` |
+| `_import.less` | `@inverse-global-color-mode: light` — generates `uk-light` class |
+
+UIKit native inverse (`uk-light`) replaces the former 50+ LOC of custom
+`body.light-theme .uk-*` overrides. Custom non-UIKit elements (joystick, hint,
+corner-label, brand) still keyed on `body.uk-light, body.light-theme` (kept as
+synonym for backwards compat).
 
 ## Particle system
 
-`src/Sections/_shared/makeParticles.ts` — shared `THREE.Points` factory used by all 8 section creators.
+`src/Sections/_shared/makeParticles.ts` — shared `THREE.Points` factory used by all 6 section creators.
 
 - `THREE.Points` + built-in `PointsMaterial` (NOT NodeMaterial — reduces WebGL2 uniform groups)
 - `baseOpacity` cached in `material.userData` for non-destructive fade
@@ -150,14 +200,33 @@ No premium/parity split — same `MeshPhysicalMaterial` on both paths. `worldDNA
 | WorldAtmosphere | Inlined into `World.ts` (fog logic at 2 call sites) |
 | World.advance alias | `Experience.ts` calls `world.updateTransform()` directly |
 | Section.switchViewingState | Callers use `switchState()` directly |
-| SectionSceneFactory named wrappers | Replaced by `SECTION_CREATORS[8]` array |
-| CircularNav | Replaced by JoystickNav (pure DOM, 2D, trigger model) |
+| SectionSceneFactory named wrappers | Replaced by `SECTION_CREATORS[6]` array |
+| Section3Flexible (active) | Removed in 8→6 unification (dir + creator still on disk as dead code) |
+| Section5Innovative (active) | Removed in 8→6 unification (dir + creator still on disk as dead code) |
+| CircularNav (active) | Replaced by JoystickNav (pure DOM, 2D, trigger model) — file + test still on disk |
 | three-joystick (library import) | JoystickNav is pure DOM — no external joystick lib |
 | ShaderBackground (as active bg) | Replaced by EnvSphere (file kept but unused) |
 | Atlas Aurora CanvasTexture | Replaced by EnvSphere procedural CanvasTexture |
 | Particle drift | Particles are static (event-driven) |
+| `src/styles/tokens.less` | Merged into `src/assets/_import.less` §1 (single source of truth) |
+| Custom `body.light-theme .uk-*` overrides | Replaced by UIKit native `uk-light` (50+ LOC removed) |
+| Per-section px padding on `.jlz-page-section` | Replaced by responsive `uk-section-small/medium@s/large@m` |
 | import.meta.hot | Breaks module loading through proxy |
 | Input.ts scroll system | Mouse-only now |
+
+## Dead code candidates (kept on disk, NOT imported)
+
+These files are still on disk but are not imported by any active module.
+See [`AUDIT_2026-07-11.md`](AUDIT_2026-07-11.md) for the cleanup decision tree.
+
+| File | LOC | Status |
+| --- | --- | --- |
+| `src/Sections/Section3Flexible/index.ts` | 10 | Not imported — 8→6 unification leftover |
+| `src/Sections/Section5Innovative/index.ts` | 10 | Not imported — 8→6 unification leftover |
+| `src/UI/CircularNav.ts` | 432 | Not imported — replaced by JoystickNav |
+| `src/__tests__/CircularNav.test.ts` | 309 | Tests the dead CircularNav — 29 tests still pass |
+| `src/Experience/World/ShaderBackground.ts` | 132 | Not imported — replaced by EnvSphere |
+| `projects/*.html` (4 standalone pages) | 446 | Standalone HTML, not part of SPA — decision: keep or remove |
 
 ## Proxy/dev config
 

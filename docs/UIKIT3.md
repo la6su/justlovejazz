@@ -18,32 +18,46 @@ its `@*` variables before components emit their rules. The import order in
 silently stop applying:
 
 ```
-1. tokens.less            → @jlz-* design tokens (single source of truth)
-2. uikit/variables.less   → UIKit @* defaults (MUST come before overrides)
-3. Theme overrides        → map @jlz-* → UIKit @* (buttons, cards, navbar…)
-4. uikit/mixin.less       → shared mixins (needed by components below)
-5. uikit/components/*.less → component rules, compiled with overridden vars
+1. _import.less §1        → @jlz-* design tokens (single source of truth, formerly src/styles/tokens.less)
+2. _import.less §2        → :root { --jlz-* } CSS custom properties (runtime var() usage)
+3. uikit/variables.less   → UIKit @* defaults (MUST come before overrides)
+4. _import.less §3        → Theme overrides — map @jlz-* → UIKit @* (buttons, cards, navbar…)
+5. uikit/mixin.less       → shared mixins (needed by components below)
+6. uikit/components/*.less → component rules, compiled with overridden vars
+7. master-quantum-flares/_import.less → QF visual personality (font weights, status colors, shadows, glitch/scanline). Does NOT redeclare UIKit globals.
 ```
 
 **Rule:** UIKit variables (`@button-primary-background`, `@card-default-background`,
 `@navbar-background`, …) are set in `_import.less` §3. Never redeclare them in
-`main.less` — it's too late there, components are already compiled.
+`main.less` — it's too late there, components are already compiled. Never redeclare
+UIKit globals (`@global-font-family`, `@global-color`, `@global-margin`,
+`@global-gutter`, `@global-control-height`, `@inverse-global-color-mode`) in
+`master-quantum-flares/_import.less` — those come from `_import.less` §1/§3.
+
+**Tokens location:** Design tokens live in `_import.less` §1 (`@jlz-*` Less vars)
+and §2 (`:root { --jlz-* }` CSS custom properties). The former `src/styles/tokens.less`
+file was DELETED and merged here in 2026-07-11 to remove duplication. Do NOT
+recreate `src/styles/`.
 
 **Custom theme file:** `src/assets/master-quantum-flares/` is a vendored
-YOOtheme Pro theme. **DO NOT TOUCH** (see `RULES.md` §17). It provides the
-`black-blue` style variant we load on top.
+YOOtheme Pro theme. It only adds QF visual personality (font weights, status
+colors, box-shadows, glitch hover, scanline overlays) on top of the UIKit
+globals from `_import.less`. Per RULES.md §17, structural changes are off-limits;
+the file was de-duplicated (76 px→rem conversions, removed duplicated globals)
+in the 2026-07-11 mobile-first refactor.
 
 ---
 
 ## 2. `main.less` — app layer only, never UIKit duplicates
 
-`main.less` (≈757 LOC) contains **only** what UIKit does not provide:
+`main.less` (≈1090 LOC) contains **only** what UIKit does not provide:
 
 | Section | Why it exists (no UIKit equivalent) |
 | --- | --- |
+| `html { font-size: 0.85rem }` + `@media (min-width:640px) { 1rem }` | Mobile-first root font-size — drives ALL UIKit rem sizing (see §10) |
 | `#spa-content section[data-section]` stacking | Absolute-stacked SPA sections, `display:none`/`flex` toggle. UIKit has no SPA-section-stack primitive. |
 | `.scrollspy-pending [uk-scrollspy]` | Cancels UIKit scrollspy animation during splash so it restarts post-splash. |
-| `body.light-theme *` | Global theme toggle (dark↔light) driven by section-active state. UIKit's `uk-light`/`uk-dark` are class-based but don't cascade through our SPA stacking. |
+| `body.uk-light, body.light-theme` custom-element rules | UIKit `uk-light` handles UIKit components natively; custom non-UIKit elements (joystick, hint, brand, corner-label) need explicit overrides. `body.light-theme` kept as synonym. |
 | `.tm-header` mask | Fade-mask edges on the slider nav. UIKit has no edge-fade utility. |
 | `.jlz-nav-link`, `#slider-nav` | Slider nav pill styling (UIKit `uk-subnav-pill` doesn't do horizontal scroll + fade mask). |
 | `.studio-title.uk-heading-*` | NoiseText animation hook + cinematic font-size/weight overrides on UIKit heading classes. |
@@ -52,6 +66,9 @@ YOOtheme Pro theme. **DO NOT TOUCH** (see `RULES.md` §17). It provides the
 | `.custom-cursor` | Magnetic cursor (no UIKit equivalent). |
 | `.jlz-joystick*` | DOM joystick (no UIKit equivalent). |
 | `.jlz-hint*` | Section subtitle pill (UIKit has `uk-notification` but it's toast-style, not inline hint). |
+| `.jlz-footer` | Fixed bottom bar (brand + social). UIKit has no fixed-bottom-bar-with-backdrop primitive. |
+| `.jlz-page`, `.jlz-page-section` | Content page transparency + radial scrim for text over 3D canvas. |
+| `.jlz-theme-toggle` | 3-button theme toggle styling in the menu modal. |
 
 **What does NOT belong in `main.less`:**
 - Layout that `uk-container` / `uk-grid` / `uk-flex` already handle
@@ -70,7 +87,7 @@ Every section in the SPA follows this skeleton:
 
 ```html
 <section uk-height-viewport="expand: true"
-         class="uk-section uk-section-large"
+         class="uk-section uk-section-small uk-section-medium@s uk-section-large@m"
          id="section-NAME" data-section="NAME">
   <div class="uk-position-cover" data-dynamic-content>
     <div class="uk-container uk-container-expand uk-padding
@@ -86,7 +103,7 @@ Every section in the SPA follows this skeleton:
 
 | Class | Purpose | Replaces (former custom class) |
 | --- | --- | --- |
-| `uk-section uk-section-large` | UIKit section primitive — vertical padding rhythm | `.section-studio`, `.jlz-section-shell` |
+| `uk-section uk-section-small uk-section-medium@s uk-section-large@m` | Responsive UIKit section primitive — small (mobile) → medium (≥640px) → large (≥960px). Mobile-first, all rem-based. | `.section-studio`, `.jlz-section-shell`, single `uk-section-large` |
 | `uk-height-viewport="expand: true"` | Make section fill viewport (extends to 100dvh via main.less override) | inline `min-height:100vh` |
 | `uk-position-cover` | Background layer wrapper (3D canvas shines through) | `.section-bg`, `.section-bg--*` |
 | `uk-container uk-container-expand` | Full-bleed container (no max-width cap) | `.jlz-section-shell` |
@@ -167,8 +184,8 @@ ignore it (manual override).
 
 ### 4.1 Theme toggle scope — home only, NOT content pages
 
-**Symptom:** Content pages (`/music`, `/videos`, `/about`, etc.) render dark
-text on a dark 3D background — unreadable.
+**Symptom:** Content pages (`/services`, `/cases`, `/process`, `/team`, `/journal`,
+`/contact`) render dark text on a dark 3D background — unreadable.
 
 **Cause:** `Experience.ts` adds `uk-light` on init (intro is a light
 section) and toggles it on `jlz:section-change`. On content pages, no
@@ -188,7 +205,7 @@ then darkens all text, which is invisible over the dark 3D canvas.
 2. **`Experience.ts`** — guard the theme toggle with `data-page === 'home'`:
    ```ts
    if (document.body.dataset.page === 'home') {
-     const isLightSection = idx === 0 || idx === 1 || idx === 6
+     const isLightSection = idx === 0 || idx === 1 || idx === 4  // Lab/Intro/Contact
      themeManager.setAutoTheme(isLightSection)
    }
    ```
@@ -566,7 +583,7 @@ blocking the 3D canvas; user requested transparency to see the 3D layer.
 ## 9. Workflow — how to add a new section
 
 1. **HTML** (`templates.ts`): Use the canonical skeleton from §3.1. Add
-   `class="uk-section uk-section-large"` + `uk-height-viewport="expand: true"`.
+   `class="uk-section uk-section-small uk-section-medium@s uk-section-large@m"` + `uk-height-viewport="expand: true"`.
    Use `uk-container uk-container-expand uk-padding uk-flex uk-flex-column`
    for the shell. Use UIKit utilities for all layout/spacing/typography.
 
@@ -576,13 +593,13 @@ blocking the 3D canvas; user requested transparency to see the 3D layer.
 
 3. **App layer** (`main.less`): Add rules ONLY for:
    - Section-specific overrides on UIKit classes (scoped by
-     `section[data-section='NAME']` or `body.light-theme`)
+     `section[data-section='NAME']` or `body.uk-light`)
    - Custom interaction elements with no UIKit equivalent
    - SPA layout (`#spa-content section[data-section]` stacking)
 
 4. **Section map** (`ARCHITECTURE.md` §Sections): Add the section to the
-   8-section table with its theme (light/dark) so `ContentReveal.ts` knows
-   whether to toggle `body.light-theme`.
+   6-section table with its theme (light/dark) so `Experience.ts` knows
+   whether to call `themeManager.setAutoTheme(true/false)`.
 
 5. **Verify**: `bun run type-check && bun run lint && bun run build`. Then
    agent-browser check: page loads, 0 console errors, section renders with
@@ -590,12 +607,139 @@ blocking the 3D canvas; user requested transparency to see the 3D layer.
 
 ---
 
-## 10. References
+## 10. Mobile-first rem-based sizing
 
-- `RULES.md` — hard engine rules (TSL, WebGPU, section IDs, etc.)
-- `ARCHITECTURE.md` — runtime layout, z-index map, section table
-- `src/assets/_import.less` — UIKit theme assembly (the canonical source)
-- `src/assets/main.less` — app layer (only what UIKit doesn't provide)
+All sizing in the project is **rem-based** and **mobile-first**. The root
+font-size drives every UIKit dimension (headings, spacing, gutters, control
+heights, box-shadows) so the entire UI scales proportionally with one knob.
+
+### 10.1 Root font-size
+
+```less
+// main.less (top of file)
+html {
+  font-size: 0.85rem;   // mobile (≤639px) — ~13.6px at default 16px root
+}
+
+@media (min-width: 640px) {
+  html {
+    font-size: 1rem;    // tablet+ — full 16px
+  }
+}
+```
+
+Why `.85rem`? Mobile screens are narrow; shrinking the root makes headings,
+buttons, and spacing ~15% smaller so content fits without horizontal overflow
+or aggressive line-wrapping. On tablet+ (≥640px) we restore the full root for
+comfortable desktop density.
+
+### 10.2 UIKit globals (in `_import.less` §3)
+
+Every UIKit `@global-*` dimension is expressed in `rem`, not `px`:
+
+| Variable | Value (mobile → desktop) |
+| --- | --- |
+| `@global-font-size` | `1rem` (was `16px`) |
+| `@global-line-height` | `1.5` (was `1.7` — too spacious for mobile) |
+| `@global-margin` | `1.25rem` (was `20px`) |
+| `@global-small-margin` | `0.625rem` (was `10px`) |
+| `@global-medium-margin` | `2.5rem` (was `40px`) |
+| `@global-large-margin` | `4.375rem` (was `70px`) |
+| `@global-gutter` | `1.875rem` (was `30px`) |
+| `@global-small-gutter` | `0.9375rem` (was `15px`) |
+| `@global-control-height` | `2.75rem` (was `45px`) |
+| `@global-control-small-height` | `2.1875rem` (was `35px`) |
+| `@global-control-large-height` | `4rem` (was `65px`) |
+| `@global-border-width` | `1px` (was `2px` — modern, thinner) |
+
+### 10.3 master-quantum-flares px → rem conversion
+
+The vendored QF theme (`master-quantum-flares/_import.less`) had **76 px values**
+that were converted to rem in the 2026-07-11 mobile-first refactor. Sample:
+
+| Variable | Before | After |
+| --- | --- | --- |
+| `@heading-3xlarge-font-size-l` | `296px` | `18.5rem` |
+| `@divider-icon-height` | `30px` | `1.875rem` |
+| `@button-border-radius` | `500px` | `31.25rem` |
+| `@navbar-nav-item-height` | `60px` | `3.75rem` |
+| `@search-navbar-padding-horizontal` | `18px` | `1.125rem` |
+| `@dropbar-padding-top` | `20px` | `1.25rem` |
+
+Colors were also remapped to `@jlz-*` tokens (single source of truth):
+
+```less
+// Before
+@global-color: rgba(255,255,255,0.8);
+@global-background: #121212;
+
+// After
+@global-color: @jlz-color-text;
+@global-background: @jlz-color-bg;
+```
+
+### 10.4 Hairline borders — the px exception
+
+Seven 1-3px values were **kept as px** because sub-pixel rendering would blur
+them on retina displays:
+
+- `@base-code-padding-vertical`
+- `@base-code-border-radius`
+- `@label-padding-vertical`
+- `@navbar-nav-item-line-hover-height`
+- `@pagination-item-padding-vertical`
+- `@internal-glitch-text-shadow`
+
+### 10.5 Responsive section padding
+
+Section padding is mobile-first via the responsive UIKit section primitive:
+
+```html
+<!-- All sections (home + content pages) -->
+<section class="uk-section uk-section-small uk-section-medium@s uk-section-large@m"
+         ...>
+```
+
+| Breakpoint | Section padding |
+| --- | --- |
+| Mobile (default) | `uk-section-small` ≈ 20px top/bottom |
+| `@s` (≥640px) | `uk-section-medium` ≈ 40px top/bottom |
+| `@m` (≥960px) | `uk-section-large` ≈ 70px top/bottom |
+
+All values are rem-based and scale with the root font-size. Do NOT add custom
+px padding on `.jlz-page-section` (we did before, removed in the refactor —
+let UIKit handle it natively).
+
+### 10.6 Rule of thumb
+
+- ✅ **DO** use `rem` for any new sizing value (font-size, padding, margin,
+  width, height, border-radius, box-shadow blur/spread, gutter, control height)
+- ✅ **DO** keep `px` only for hairline borders (1-3px) that need pixel-crisp edges
+- ❌ **DON'T** add `px` values to `master-quantum-flares/_import.less` — they
+  won't scale with the mobile root font-size
+- ❌ **DON'T** add custom px padding on `.jlz-page-section` — use `uk-section-*`
+- ❌ **DON'T** hardcode `font-size: 16px` (or any px) in component CSS — use `rem`
+
+**Provenance:** Worklog `mobile-first-rem-uikit-theme` task (2026-07-11) —
+76 px values converted in master-qf, mobile-first root font-size added to
+main.less, `@global-line-height` 1.7→1.5, `@global-border-width` 2px→1px.
+
+---
+
+## 11. References
+
+- `RULES.md` — hard engine rules (TSL, WebGPU, section IDs, theme system,
+  mobile-first rem sizing, responsive sections, tokens location)
+- `ARCHITECTURE.md` — runtime layout, z-index map, section table, theme system,
+  mobile-first sizing summary
+- `src/assets/_import.less` — UIKit theme assembly + design tokens (the
+  canonical source — §1 tokens, §2 CSS custom props, §3 UIKit overrides,
+  §4 component imports)
+- `src/assets/master-quantum-flares/_import.less` — QF visual personality only
+  (no UIKit globals — those come from `_import.less`)
+- `src/assets/main.less` — app layer (only what UIKit doesn't provide, including
+  the mobile-first root `html { font-size: 0.85rem }` knob)
+- `src/core/ThemeManager.ts` — auto/light/dark theme manager (uk-light on body)
 - `src/templates.ts` — SPA section templates (UIKit utilities in markup)
 - `projects/*.html` — standalone project page pattern (UIKit navbar + container)
 - Worklog (`/home/z/my-project/worklog.md`) — full history of UIKit cleanup tasks

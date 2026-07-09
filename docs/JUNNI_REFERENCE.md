@@ -6,23 +6,21 @@
 
 Canvas fixed behind DOM. Our adaptation:
 - `canvas` (z-index:1, fixed, pointer-events:none)
-- `#spa-content` (z-index:2) — 8 `<section>` absolute-stacked (100dvh)
+- `#spa-content` (z-index:2) — 6 `<section>` absolute-stacked (100dvh)
 - `body { overflow: hidden }` — no page scroll
 - `.section-active` toggles visibility (ContentReveal on `jlz:section-change`)
 - JoystickNav (pure DOM, 2D) + UIMenu (UIkit modal) drive navigation
 
-## Sections (current — 8)
+## Sections (current — 6, 1:1 with cube faces)
 
-| Idx | Section | 3D content | BG |
-| --- | --- | --- | --- |
-| 0 | Lab (secret left) | `makeParticles` (THREE.Points) | Light HSV |
-| 1 | Intro (start) | SplashCube (baku) + particles | HSV rainbow (light) |
-| 2 | About | Particles + WireframeTypography | Grey gradient (dark) |
-| 3 | Flexible | Particles | Dark purple gradient |
-| 4 | Works | BakuCarousel + DrawTrail + particles | Blue-grey gradient (dark) |
-| 5 | Innovative | Particles | Center glow (dark) |
-| 6 | Contact | Particles | Off-white gradient (light) |
-| 7 | Process (secret right) | `makeParticles` | Deep blue-black gradient |
+| Idx | Section | Cube face | 3D content | BG |
+| --- | --- | --- | --- | --- |
+| 0 | Lab (secret left) | Top (+Y) | `makeParticles` (THREE.Points) | Light HSV |
+| 1 | Intro (start) | Front (+Z) | SplashCube (baku) + particles | HSV rainbow (light) |
+| 2 | About | Right (+X) | Particles + WireframeTypography | Grey gradient |
+| 3 | Works | Back (-Z) | BakuCarousel + DrawTrail + particles | Blue-grey gradient (dark) |
+| 4 | Contact | Bottom (-Y) | Particles | Off-white gradient (light) |
+| 5 | Process (secret right) | Left (-X) | `makeParticles` | Deep blue-black gradient |
 
 All factories use shared `makeParticles` from `src/Sections/_shared/`.
 Particles are STATIC — no drift (event-driven animation model).
@@ -32,7 +30,7 @@ World starts on section 1 (Intro), NOT section 0.
 
 | Pattern | Junni | Ours |
 | --- | --- | --- |
-| BG | Gradient sphere + shader | `EnvSphere.ts` — BackSide sphere + CanvasTexture, 8 per-section patterns |
+| BG | Gradient sphere + shader | `EnvSphere.ts` — BackSide sphere + CanvasTexture, 6 per-section patterns |
 | Baku | GLTF model + physics | SplashCube — single BoxGeometry + MeshPhysicalMaterial + CubeCamera reflections + rainbow edges. Static when idle, ~30° rotation on transition. |
 | DrawTrail | GPU cursor trail ribbon | `DrawTrail.ts` — Line + vertex colors. Works section ONLY. |
 | CameraController | Per-section transforms | `Section.cameraTransform` lerped in `updateTransform` |

@@ -22,7 +22,7 @@ git fetch origin && git checkout main && git pull origin main
 11. Single font: Inter
 12. NoiseText via `jlz:section-change` (not IntersectionObserver — sections are absolute)
 13. `jlz:webgl-ready` must fire
-14. Section IDs (8 total): lab, intro, about, flexible, challenge, innovative, contact, process
+14. Section IDs (6 total): lab, intro, about, challenge (works), contact, process. 1:1 with cube faces (Lab=Top, Intro=Front, About=Right, Works=Back, Contact=Bottom, Process=Left).
 15. Reuse `#project-overlay`
 16. BakuCarousel card click is SOLE overlay opener
 17. master-quantum-flares DO NOT TOUCH
@@ -43,7 +43,7 @@ git fetch origin && git checkout main && git pull origin main
 32. No per-frame allocations — use pre-allocated scratch vectors
 33. On-demand rendering: don't set `_needsRender=true` permanently. Event-driven only.
     Ambient breathing (1-frame refresh every ~2.5s in idle) is the ONLY exception.
-34. DrawTrail: Works section (idx=4) ONLY. Don't re-add to about/flexible.
+34. DrawTrail: Works section (idx=3) ONLY. Don't re-add to about/lab/contact.
 35. CursorLight: DELETED. Don't re-add. (Was continuous spring-follow light.)
 36. **Visual tiers**: `DeviceCapability.isRealWebGPU` gates backend selection. SplashCube is
     the SAME `MeshPhysicalMaterial` on both paths (single BoxGeometry + CubeCamera + rainbow
@@ -52,8 +52,8 @@ git fetch origin && git checkout main && git pull origin main
 37. **Background**: `EnvSphere` is the sole background. Do NOT re-enable `scene.background`
     or import `ShaderBackground` (file exists but is dead code). EnvSphere is a BackSide
     sphere mesh (`SphereGeometry(40, 32, 16)`) with `MeshBasicMaterial` + procedural
-    `CanvasTexture` (8 per-section patterns), `renderOrder=-1000`, `fog: false`,
-    `frustumCulled: false`. Starts on section 1 (Intro) — weights `[0,1,0,0,0,0,0,0]`.
+    `CanvasTexture` (6 per-section patterns), `renderOrder=-1000`, `fog: false`,
+    `frustumCulled: false`. Starts on section 1 (Intro) — weights `[0,1,0,0,0,0]`.
 38. **SplashCube**: single `BoxGeometry` + `MeshPhysicalMaterial` (transmission=0,
     iridescence=1, clearcoat=1) + `CubeCamera` envMap + `EdgesGeometry` with animated
     rainbow HSL vertex colors. NO `MeshPhysicalNodeMaterial`, NO `attachWorldDNA` call
@@ -64,7 +64,7 @@ git fetch origin && git checkout main && git pull origin main
     change, `World.dispose()` nulls it. `Renderer.ts` does NOT touch `scene.fog`.
 40. **Particle system**: `makeParticles` (`src/Sections/_shared/makeParticles.ts`) is the
     canonical factory — `THREE.Points` + built-in `PointsMaterial` (NOT NodeMaterial, NOT
-    `makeInstancedParticles`). Used by all 8 section creators. `baseOpacity` cached in
+    `makeInstancedParticles`). Used by all 6 section creators. `baseOpacity` cached in
     `material.userData`. `SectionSceneFactory.hideGeometry()` MUST keep both `THREE.Points`
     AND `THREE.InstancedMesh` visible.
 41. **Post-processing parity**: WebGL2 composite shader (`RenderPipeline.ts` `COMPOSITE_FSG`)
@@ -84,12 +84,38 @@ git fetch origin && git checkout main && git pull origin main
     shows short hint for 4s then auto-fades. Don't re-add a parallel hint system.
 43. **Navigation — JoystickNav**: `src/UI/JoystickNav.ts` is the canonical nav (pure DOM,
     NO three-joystick library import). Trigger model — ONE section change per drag, ball
-    snaps back to center. 2D: vertical=main sections (1-6), horizontal=Lab(0)/Process(7).
-    `CircularNav` is REMOVED — do not re-add. World initial state is section 1 (Intro),
-    NOT section 0.
+    snaps back to center. 2D: vertical=main sections (1-4 + Lab=0 + Process=5),
+    horizontal=Lab(0)/Process(5). `CircularNav` is REMOVED (file kept as dead code) — do
+    not re-add. World initial state is section 1 (Intro), NOT section 0.
 44. **21st.dev MCP**: API key format `21st_sk_...` (not `an_sk_...` — rejected).
     Endpoint `https://21st.dev/api/mcp`. Free tier: 2 retrievals/day.
     Always port to TSL (Rule 1) — no raw ShaderMaterial from 21st components.
+45. **Theme system — UIKit native `uk-light`**: `src/core/ThemeManager.ts` is the canonical
+    theme manager. Uses UIKit's native inverse class `uk-light` (NOT custom `body.light-theme`
+    per-component overrides — those were 50+ LOC of dead CSS, deleted). `_import.less` MUST
+    have `@inverse-global-color-mode: light` (generates `uk-light`). Three modes:
+    `'auto'` (default, follows active home section), `'light'` (forced), `'dark'` (forced).
+    Manual override wins over auto. Persisted to `localStorage('jlz:theme')`. Content pages
+    always dark in auto mode (`router.ts` calls `setAutoTheme(false)`). Experience listens
+    to `jlz:theme-applied` and syncs EnvSphere pattern (light→Intro, dark→About).
+46. **Mobile-first rem-based sizing**: `html { font-size: 0.85rem }` on mobile,
+    `@media (min-width:640px) { html { font-size: 1rem } }` on tablet+. ALL sizing
+    (UIKit globals, gutters, margins, control heights, box-shadows, custom paddings) MUST
+    use `rem` units so they scale with the root font-size. The only exception is hairline
+    borders (1-3px) which stay as `px` for crispness. master-quantum-flares `_import.less`
+    has 76 px values converted to rem (recorded in worklog `mobile-first-rem-uikit-theme`).
+47. **Responsive sections**: Use `class="uk-section uk-section-small uk-section-medium@s
+    uk-section-large@m"` for ALL sections (home + content pages). The responsive pattern
+    is mobile-first: small padding on mobile → medium at ≥640px → large at ≥960px. Do NOT
+    use `uk-section-large` alone (was the previous pattern, replaced in 2026-07-11 mobile-first
+    refactor). Do NOT add custom px padding on `.jlz-page-section` — let UIKit handle it.
+48. **Design tokens location**: `src/styles/tokens.less` was DELETED — tokens now live in
+    `src/assets/_import.less` §1 (`@jlz-*` Less variables) + §2 (`:root { --jlz-* }`
+    CSS custom properties). Single source of truth — do NOT re-create `src/styles/`.
+    master-quantum-flares `_import.less` MUST NOT duplicate UIKit globals (font-family,
+    color, background, margin, gutter, control-height, inverse-color-mode) — those come
+    from `_import.less`. master-qf only adds QF visual personality (font weights, status
+    colors, box-shadows, glitch/scanline effects).
 
 ## Removed (don't re-add)
 
@@ -100,14 +126,19 @@ git fetch origin && git checkout main && git pull origin main
 | WorldAtmosphere | Inlined into `World.ts` (fog logic at 2 call sites) |
 | World.advance alias | Experience calls `world.updateTransform()` directly |
 | Section.switchViewingState | Callers use `switchState()` directly |
-| SectionSceneFactory named wrappers | Replaced by `SECTION_CREATORS[8]` array |
+| SectionSceneFactory named wrappers | Replaced by `SECTION_CREATORS[6]` array |
 | Lenis / SmoothScroll | JoystickNav drives navigation (no page scroll) |
-| CircularNav | Replaced by JoystickNav (pure DOM, 2D, trigger model) |
+| CircularNav | Replaced by JoystickNav (pure DOM, 2D, trigger model) — file kept as dead code |
 | three-joystick (library import) | JoystickNav is pure DOM — no external joystick lib |
 | ShaderBackground (as active bg) | Replaced by EnvSphere (file kept but unused) |
 | CursorLight | Continuous spring-follow light, conflicts with on-demand |
 | DebugStats | Merged into DevPanel (Tweakpane) |
 | SectionProgress | Replaced by JoystickNav |
+| Section3Flexible (active) | 8→6 unification — directory + creator still on disk as dead code |
+| Section5Innovative (active) | 8→6 unification — directory + creator still on disk as dead code |
+| `src/styles/tokens.less` | Merged into `src/assets/_import.less` §1 — single source of truth |
+| Custom `body.light-theme .uk-*` overrides | Replaced by UIKit native `uk-light` (50+ LOC removed) |
+| Per-section px padding on `.jlz-page-section` | Replaced by responsive `uk-section-small/medium@s/large@m` |
 
 ## Stop conditions
 

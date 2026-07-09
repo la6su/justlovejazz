@@ -23,11 +23,13 @@ CSS: import('./assets/main.less?inline') — prevents @vite/client injection
 canvas (z-index:1, fixed, pointer-events:none) — 3D scene
 #spa-content (z-index:2) — DOM sections (absolute-stacked, 100dvh each)
   .section-active { opacity:1; pointer-events:auto } — only visible section
+.tm-header (z-index:1000) — top nav (uk-navbar + uk-slider)
 #joystick-nav (z-index:9999, fixed bottom-center) — JoystickNav DOM joystick
 #jlz-menu-toggle (z-index:10002) — hamburger button
-#jlz-menu-modal (z-index:10000) — UIkit modal
+#jlz-menu-modal (z-index:10000) — UIkit modal (jump nav + theme toggle)
 .jlz-hint (fixed bottom-center) — Subtitles section hint
 #project-overlay (z-index:3500) — fullscreen project detail
+.jlz-footer (z-index:50, fixed bottom) — brand + social (hidden on home)
 .custom-cursor (z-index:100000) — above all overlays
 ```
 
@@ -121,6 +123,10 @@ Canvas redrawn when dirty, or every ~200ms for animated patterns (HSV).
 
 > `ShaderBackground.ts` file still exists but is **dead code** (not imported anywhere).
 > EnvSphere is the sole background.
+>
+> In manual light/dark mode (not auto), Experience listens to `jlz:theme-applied`
+> and overrides EnvSphere pattern to match — light forced → Intro pattern, dark
+> forced → About pattern — so the 3D bg stays readable when text color flips.
 
 ## SplashCube (baku) — current implementation
 
@@ -168,7 +174,7 @@ Color grading: `mix(color*uGradeShadows, color+(uGradeHighlights-1)*max(color-0.
 | Experience | Render loop, section transitions, on-demand gating, ambient breathing |
 | World | Sections + sceneGroups + baku + lights + BG + EnvSphere + DrawTrail(works only) + fog |
 | SplashCube | Baku cube. Single BoxGeometry + MeshPhysicalMaterial + CubeCamera reflections + rainbow edges. |
-| EnvSphere | BackSide sphere + CanvasTexture. 8 per-section patterns mixed by animated weights. Sole background. |
+| EnvSphere | BackSide sphere + CanvasTexture. 6 per-section patterns mixed by animated weights. Sole background. |
 | BakuCarousel | Cube↔ring morph. Raycast card click. `isAnimating` getter. |
 | JoystickNav | Pure DOM joystick (2D). `goToDirection`/`goToSection`/`isActive`/`onSectionChange`. |
 | UIMenu | UIkit modal. `onNavigate`/`setActive`. |
@@ -177,11 +183,14 @@ Color grading: `mix(color*uGradeShadows, color+(uGradeHighlights-1)*max(color-0.
 | WorksPortfolio | Project metadata only (prev/next/goTo). No textures. |
 | DevPanel | Tweakpane: Stats/Navigation/BakuCarousel/Render folders. |
 | Section | No-op `update()`. State machine only (`switchState`). |
-| SectionSceneFactory | `SECTION_CREATORS[8]` array + `hideGeometry()` (keeps Points + InstancedMesh visible). |
-| makeParticles | Shared `THREE.Points` factory. Built-in `PointsMaterial`. 1 draw call per cloud. |
+| SectionSceneFactory | `SECTION_CREATORS[6]` array + `hideGeometry()` (keeps Points + InstancedMesh visible). |
+| makeParticles | Shared `THREE.Points` factory. Built-in `PointsMaterial`. 1 draw call per cloud. Used by all 6 section creators. |
+| ThemeManager | UIKit `uk-light` body class. auto/light/dark modes. localStorage `jlz:theme`. Manual override wins over auto. |
 | Input | Mouse-only (scroll system removed). |
 | NoiseText | Glitch reveal via `jlz:section-change`. `data-rot` for rotation. |
 | WireframeTypography | Section2 About decorative typography. |
+| Router | Path-based routing `/`, `/services`, `/cases`, `/process`, `/team`, `/journal`, `/contact`. Renders 6 content pages. |
+| Footer | Fixed bottom bar (brand + 3 social icons). Hidden on home where Contact section serves as the home footer. |
 
 ## Events
 
@@ -189,6 +198,40 @@ Color grading: `mix(color*uGradeShadows, color+(uGradeHighlights-1)*max(color-0.
 | --- | --- | --- |
 | `jlz:webgl-ready` | main-app (curtain mid-open) | entry-app (NoiseText + scrollspy) |
 | `jlz:section-change` | Experience (section index change) | entry-app (NoiseText titles), ContentReveal, Subtitles |
+| `jlz:route-change` | router (page navigation) | UIMenu (page link active state), JoystickNav (page-mode) |
+| `jlz:theme-change` | ThemeManager (`setMode`) | UIMenu (highlight active toggle button) |
+| `jlz:theme-applied` | ThemeManager (`apply`) | Experience (sync EnvSphere pattern to manual override) |
+
+## Theme system — ThemeManager + UIKit `uk-light`
+
+| Property | Value |
+| --- | --- |
+| File | `src/core/ThemeManager.ts` (singleton exported as `themeManager`) |
+| Modes | `'auto'` (default, follows active home section), `'light'` (forced), `'dark'` (forced) |
+| Persistence | `localStorage('jlz:theme')` — survives reloads |
+| Body class | `uk-light` toggled on `<body>` + `<html>` (UIKit native inverse — 1 class flips ALL UIKit components) |
+| Legacy synonym | `body.light-theme` kept as synonym for custom non-UIKit elements (joystick, hint, brand, corner-label) |
+| Auto source | `Experience.ts` calls `themeManager.setAutoTheme(isLightSection)` on home section change. `isLightSection = idx === 0 || idx === 1 || idx === 4` |
+| Content pages | `router.ts` calls `themeManager.setAutoTheme(false)` — always dark in auto mode |
+| 3D sync | Dispatches `jlz:theme-applied {isLight, mode}` — Experience listens; in manual light/dark mode, overrides EnvSphere pattern (light→Intro, dark→About) so 3D bg stays in sync with text color |
+| Toggle UI | 3 buttons (Auto/Light/Dark) in `#jlz-menu-modal .jlz-theme-toggle` (`uk-button-group`) |
+| Less config | `_import.less`: `@inverse-global-color-mode: light` — generates `uk-light` class |
+
+> See [`UIKIT3.md`](UIKIT3.md) §4 for the full theme toggle design + the home-only
+> scope fix (§4.1) that prevents content pages from rendering dark-on-dark.
+
+## Mobile-first sizing
+
+| Property | Value |
+| --- | --- |
+| Root font-size | `html { font-size: 0.85rem }` (mobile), `@media (min-width:640px) { 1rem }` (tablet+) |
+| All UIKit sizing | Rem-based (flows from `html` font-size) — headings, spacing, gutters, control heights, box-shadows |
+| Section padding | `uk-section-small uk-section-medium@s uk-section-large@m` (responsive UIKit section primitive) |
+| Custom paddings | `.jlz-footer`, `.jlz-page-section`, `.jlz-case-tile` all use rem units (px values removed in 76-value conversion) |
+| Hairline borders | Kept as px (1-3px) for crispness — `@base-code-padding-vertical`, `@navbar-nav-item-line-hover-height`, etc. |
+
+> See [`UIKIT3.md`](UIKIT3.md) §10 for the full mobile-first rem sizing rationale
+> and the master-quantum-flares px→rem conversion record.
 
 ## 21st.dev integration
 

@@ -91,7 +91,8 @@ JoystickNav (pure DOM, bottom-center) is the canonical nav. Keyboard shortcuts:
 - `ArrowUp` / `ArrowDown` — prev/next MAIN section
 - `ArrowLeft` / `ArrowRight` — toggle Lab/Process side sections
 - `Home` — jump to Intro (section 1)
-- `End` — jump to Contact (section 6)
+- `End` — jump to Contact (section 4)
 
 Hamburger button (top-right) opens UIMenu (UIkit modal) for direct jump to any
-of the 8 sections.
+of the 6 home sections, plus theme toggle (Auto/Light/Dark) and 7 page links
+(Home/Services/Work/Process/Team/Journal/Contact).
