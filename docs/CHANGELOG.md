@@ -1,5 +1,62 @@
 # CHANGELOG
 
+## 2026-07-12 (PR-2 to PR-6)
+
+### P0 fixes + real 3-mode ThemeManager
+
+**PR-2: `@global-primary-background` = `@jlz-color-accent`**
+- `src/assets/_import.less` §3: added `@global-primary-background: @jlz-color-accent`
+  + `@global-primary-hover-background: @jlz-color-accent-hover`.
+- All ~30 QF references to `@global-primary-background` (button glow gradients,
+  alert-primary, marker, dotnav, subnav-pill, progress-bar, navbar-dropdown-nav,
+  icon-button, totop-hover) now resolve to JLZ accent #515d84 instead of
+  UIKit default blue #1e87f0.
+- Commit: `888e2ea`.
+
+**PR-4: removed `three-joystick` (dead dependency)**
+- `bun remove three-joystick` — package was in dependencies but never imported.
+- RULES.md §43 explicitly forbids the import; JoystickNav is pure DOM.
+- Commit: `2b016dd`.
+
+**PR-5: Subtitles hints — add lab/process, remove dead flexible/innovative**
+- `src/UI/Subtitles.ts`: removed `flexible`/`innovative` keys (sections don't
+  exist after 8→6 unification), added `lab`/`process` keys.
+- All 6 sections now have a hint. Secret side sections (Lab/Process) no longer
+  silent on visit.
+- Commit: `9a4d9f4`.
+
+**PR-6: real 3-mode ThemeManager (auto/light/dark) + prefers-color-scheme**
+- `src/core/ThemeManager.ts`: rewrote — `ThemeMode = 'auto' | 'light' | 'dark'`
+  (was `'normal' | 'inverse'`). `'auto'` follows per-section theme from
+  `setAutoTheme()`; `'light'`/`'dark'` force globally. Manual override wins
+  (setAutoTheme is no-op when mode !== 'auto'). First-visit: if no saved mode,
+  check `prefers-color-scheme: light` → start `'light'`; else `'auto'`.
+  Constructor now calls `apply()` (with document.body guard) so theme is
+  correct from first paint. `isInverse` kept as @deprecated alias.
+- `src/UI/UIMenu.ts`: replaced 1 "Change mode" button with 3 buttons
+  (Auto/Light/Dark) in `uk-button-group`. Click → `setMode(mode)`. Active
+  button gets `uk-active` + accent background. Removed `#jlz-theme-mode-label`.
+- `src/Experience/Experience.ts`: `jlz:theme-applied` listener —
+  `mode === 'normal'` → `mode === 'auto'` (3D sync only in forced light/dark,
+  not in auto where EnvSphere follows section).
+- `src/assets/main.less`: added `.jlz-theme-toggle .uk-button.uk-active` style
+  (accent background) + body.uk-light variant. Removed dead
+  `#jlz-theme-mode-label` style.
+- Docs: AGENTS.md, STATUS.md, ARCHITECTURE.md, RULES.md §45, UIKIT3.md §4/§4.1/§11
+  all updated to describe the 3-mode system.
+- Commit: `54f7ef8` + this docs-sync commit.
+
+**Why the 2-mode → 3-mode swap:** RULES.md §45 and STATUS.md had described a
+3-mode system since 2026-07-11, but the code only ever implemented 2-mode
+(normal/inverse). PR-1 (docs-reconciliation) aligned docs to the 2-mode
+reality. PR-6 now brings the CODE up to the originally-intended 3-mode design
+(docs match code again, but now at the higher-fidelity 3-mode level).
+
+**Verification (all PRs):** lint 0 errors (59 pre-existing warnings),
+type-check 0 errors, build green (~2s), 25/25 tests pass.
+
+---
+
 ## 2026-07-12 (docs-reconciliation)
 
 ### Documentation aligned with actual code state

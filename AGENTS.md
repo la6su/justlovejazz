@@ -57,22 +57,24 @@ World initial state: **section 1 (Intro)**, not section 0. EnvSphere starts on s
 - One action per drag, ball snaps back to center, no continuous scrub
 - Keyboard: ArrowUp/Down/Left/Right, Home (→ Intro), End (→ Contact)
 
-## Theme system — ThemeManager (2 modes: normal/inverse)
+## Theme system — ThemeManager (3 modes: auto/light/dark)
 
 | Property | Value |
 | --- | --- |
 | File | `src/core/ThemeManager.ts` |
-| Modes | `'normal'` (default), `'inverse'` |
+| Modes | `'auto'` (default), `'light'`, `'dark'` |
 | Persistence | `localStorage('jlz:theme')` |
+| First-visit | If no saved mode, check `prefers-color-scheme: light` → start `'light'`; else `'auto'` |
 | Body class | `uk-light` toggled on `<body>` + `<html>` (UIKit native inverse) |
 | Auto source | `Experience.ts` calls `themeManager.setAutoTheme(isLightSection)` on home section change |
 | Content pages | `router.ts` calls `themeManager.setAutoTheme(true)` (first section is light) |
-| 3D sync | Dispatches `jlz:theme-applied` with `{isLight, mode}` — Experience listens, overrides EnvSphere |
-| Toggle UI | **1 button** "Change mode" in `#jlz-menu-modal .jlz-theme-toggle` |
+| 3D sync | Dispatches `jlz:theme-applied` with `{isLight, mode}` — Experience listens; in forced light/dark mode, overrides EnvSphere pattern (light→Intro, dark→About) |
+| Toggle UI | **3 buttons** (Auto/Light/Dark) in `#jlz-menu-modal .jlz-theme-toggle` (`uk-button-group`) |
 | `_import.less` | `@inverse-global-color-mode: light` — generates `uk-light` class |
 
-> `normal` mode = per-section theme as configured (light sections show `uk-light`).
-> `inverse` mode = flips all sections (light↔dark). Manual override wins over auto.
+> `auto` mode follows per-section theme from `setAutoTheme()` (Lab/Intro/Contact = light,
+> About/Works/Process = dark). `light`/`dark` modes force the theme globally —
+> `setAutoTheme()` becomes a no-op (manual override wins).
 
 ## Visual tiers
 

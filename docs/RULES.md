@@ -93,14 +93,14 @@ git fetch origin && git checkout main && git pull origin main
 45. **Theme system — UIKit native `uk-light`**: `src/core/ThemeManager.ts` is the canonical
     theme manager. Uses UIKit's native inverse class `uk-light` (NOT custom `body.light-theme`
     per-component overrides — those were 50+ LOC of dead CSS, deleted). `_import.less` MUST
-    have `@inverse-global-color-mode: light` (generates `uk-light`). **Two modes:**
-    `'normal'` (default, per-section theme as configured — light sections show `uk-light`),
-    `'inverse'` (flips all sections light↔dark). Manual override (inverse) wins over auto.
-    Persisted to `localStorage('jlz:theme')`. Content pages start light (router.ts calls
-    `setAutoTheme(true)` — first section is light/inverse). Experience listens to
-    `jlz:theme-applied` and syncs EnvSphere pattern (inverse flips the pattern per section).
-    Toggle UI = **1 button** "Change mode" in `#jlz-menu-modal .jlz-theme-toggle`
-    (calls `themeManager.toggle()`).
+    have `@inverse-global-color-mode: light` (generates `uk-light`). **Three modes:**
+    `'auto'` (default, follows active home section), `'light'` (forced), `'dark'` (forced).
+    Manual override wins over auto. Persisted to `localStorage('jlz:theme')`. First-visit:
+    if no saved mode, check `prefers-color-scheme: light` → start `'light'`; else `'auto'`.
+    Content pages call `setAutoTheme(true)` (first section is light). Experience listens
+    to `jlz:theme-applied` and syncs EnvSphere pattern in forced light/dark mode
+    (light→Intro, dark→About). Toggle UI = **3 buttons** (Auto/Light/Dark) in
+    `#jlz-menu-modal .jlz-theme-toggle` (`uk-button-group`).
 46. **Mobile-first rem-based sizing**: `html { font-size: 0.85rem }` on mobile,
     `@media (min-width:640px) { html { font-size: 1rem } }` on tablet+. ALL sizing
     (UIKit globals, gutters, margins, control heights, box-shadows, custom paddings) MUST

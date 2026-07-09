@@ -10,8 +10,8 @@
 SPA studio portfolio — **6 sections** (1:1 with cube faces), 3D canvas + transparent
 DOM overlay. Single font: Inter.
 Navigation: JoystickNav (pure DOM, 2D — bottom-center) + UIMenu (UIkit modal) + Subtitles (section hints).
-Theme: UIKit native `uk-light` class via `ThemeManager` (2 modes: normal/inverse) —
-3D EnvSphere syncs to manual override.
+Theme: UIKit native `uk-light` class via `ThemeManager` (3 modes: auto/light/dark) —
+3D EnvSphere syncs to forced light/dark override.
 Mobile-first: `html { font-size: 0.85rem }` mobile → `1rem` ≥640px, all sizing rem-based.
 
 > **3 content pages** (home / services / posts), each with 6 sections. Home is the
@@ -26,7 +26,7 @@ Mobile-first: `html { font-size: 0.85rem }` mobile → `1rem` ≥640px, all sizi
 | 6 sections (Lab/Intro/About/Works/Contact/Process) — 1:1 cube faces | ✅ |
 | JoystickNav — pure DOM joystick, trigger model (one section per drag) | ✅ |
 | 2D navigation (vertical=main, horizontal=Lab/Process) | ✅ |
-| UIMenu — UIkit modal jump navigation + theme toggle (normal/inverse, 1 button) | ✅ |
+| UIMenu — UIkit modal jump navigation + theme toggle (auto/light/dark, 3 buttons) | ✅ |
 | Subtitles — short UI hint per section, auto-fade 4s | ✅ |
 | BakuCarousel — cube morphs into ring (Works §3) | ✅ |
 | ProjectOverlay — card click (raycast) opens fullscreen | ✅ |
@@ -41,8 +41,8 @@ Mobile-first: `html { font-size: 0.85rem }` mobile → `1rem` ≥640px, all sizi
 | `makeParticles` (`THREE.Points`, shared by all 6 sections) | ✅ |
 | SplashCube — single BoxGeometry + CubeCamera + rainbow vertex-color edges | ✅ |
 | WebGPU/WebGL2 color parity (sRGB + ACES + grain + bloom) | ✅ |
-| ThemeManager — UIKit native `uk-light` + normal/inverse toggle (localStorage) | ✅ |
-| 3D ↔ theme sync (inverse mode flips EnvSphere pattern) | ✅ |
+| ThemeManager — UIKit native `uk-light` + auto/light/dark toggle (localStorage, prefers-color-scheme on first visit) | ✅ |
+| 3D ↔ theme sync (forced light/dark drives EnvSphere pattern) | ✅ |
 | Mobile-first rem sizing (`.85rem` mob → `1rem@s`) | ✅ |
 | Responsive sections (`uk-section-small uk-section-medium@s uk-section-large@m`) | ✅ |
 | 3 content pages: services / posts (each with 6 sections, Apple Watch layout) | ✅ |
@@ -144,25 +144,27 @@ When idle (between breaths): zero draw calls, GPU sleeps. Cursor (DOM) always up
 | 5 | Process | Deep blue-black gradient (`0x080810 → 0x12121e`) |
 
 Light sections (0=Lab, 1=Intro, 4=Contact) drive `uk-light` body class via ThemeManager →
-dark text/nav. Inverse mode (from the menu toggle) flips all sections and overrides
-EnvSphere to match (inverse → opposite pattern per section).
+dark text/nav. Forced light/dark mode (from the menu toggle) overrides EnvSphere to
+match (light forced → Intro pattern, dark forced → About pattern).
 
 ## Theme system — ThemeManager + UIKit `uk-light`
 
 | Property | Value |
 | --- | --- |
 | File | `src/core/ThemeManager.ts` |
-| Modes | `'normal'` (default), `'inverse'` |
+| Modes | `'auto'` (default), `'light'`, `'dark'` |
+| First-visit | If no saved mode, check `prefers-color-scheme: light` → start `'light'`; else `'auto'` |
 | Persistence | `localStorage('jlz:theme')` |
 | Body class | `uk-light` toggled on `<body>` + `<html>` (UIKit native inverse) |
 | Auto source | `Experience.ts` calls `themeManager.setAutoTheme(isLightSection)` on home section change |
-| Content pages | `router.ts` calls `themeManager.setAutoTheme(true)` (first section is light/inverse) |
-| 3D sync | Dispatches `jlz:theme-applied` with `{isLight, mode}` — Experience listens, overrides EnvSphere |
-| Toggle UI | **1 button** "Change mode" in `#jlz-menu-modal .jlz-theme-toggle` (calls `themeManager.toggle()`) |
+| Content pages | `router.ts` calls `themeManager.setAutoTheme(true)` (first section is light) |
+| 3D sync | Dispatches `jlz:theme-applied` with `{isLight, mode}` — Experience listens; in forced light/dark mode, overrides EnvSphere pattern (light→Intro, dark→About) |
+| Toggle UI | **3 buttons** (Auto/Light/Dark) in `#jlz-menu-modal .jlz-theme-toggle` (`uk-button-group`) |
 | `_import.less` | `@inverse-global-color-mode: light` — generates `uk-light` class |
 
-`normal` mode = per-section theme as configured (light sections show `uk-light`).
-`inverse` mode = flips all sections (light↔dark). Manual override wins over auto.
+`auto` mode follows per-section theme from `setAutoTheme()` (Lab/Intro/Contact = light,
+About/Works/Process = dark). `light`/`dark` modes force the theme globally —
+`setAutoTheme()` becomes a no-op (manual override wins).
 
 UIKit native inverse (`uk-light`) replaces the former 50+ LOC of custom
 `body.light-theme .uk-*` overrides. Custom non-UIKit elements (joystick, hint,
