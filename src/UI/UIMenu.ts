@@ -69,11 +69,11 @@ export class UIMenu {
         </ul>
         <div class="uk-margin-large-top jlz-theme-toggle">
           <p class="uk-text-meta uk-text-uppercase">Theme</p>
-          <button class="uk-button uk-button-default uk-button-small uk-margin-small-top" id="jlz-theme-toggle-btn" type="button">
-            <span uk-icon="icon: paint-bucket; ratio: 0.8" aria-hidden="true"></span>
-            <span>Change mode</span>
-            <span class="uk-text-meta uk-margin-small-left" id="jlz-theme-mode-label">Normal</span>
-          </button>
+          <div class="uk-button-group uk-margin-small-top" role="group" aria-label="Theme mode">
+            <button class="uk-button uk-button-default uk-button-small" data-theme-mode="auto" type="button">Auto</button>
+            <button class="uk-button uk-button-default uk-button-small" data-theme-mode="light" type="button">Light</button>
+            <button class="uk-button uk-button-default uk-button-small" data-theme-mode="dark" type="button">Dark</button>
+          </div>
         </div>
       </div>
     `
@@ -107,17 +107,21 @@ export class UIMenu {
     }
     window.addEventListener('jlz:route-change', this._routeHandler)
 
-    // Theme toggle — single button, toggles normal ↔ inverse
-    const themeBtn = this.modalEl.querySelector<HTMLButtonElement>('#jlz-theme-toggle-btn')
-    themeBtn?.addEventListener('click', () => {
-      themeManager.toggle()
+    // Theme toggle — 3 buttons (Auto/Light/Dark) in uk-button-group.
+    // Click → themeManager.setMode(mode). Active button gets uk-active.
+    const themeBtns = this.modalEl.querySelectorAll<HTMLButtonElement>('[data-theme-mode]')
+    themeBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const mode = btn.dataset.themeMode as 'auto' | 'light' | 'dark'
+        themeManager.setMode(mode)
+      })
     })
-    this._themeHandler = () => this.updateThemeLabel()
+    this._themeHandler = () => this.updateThemeActive()
     window.addEventListener('jlz:theme-change', this._themeHandler)
 
     this.updateActive()
     this.updatePageActive(document.body.dataset.page ?? 'home')
-    this.updateThemeLabel()
+    this.updateThemeActive()
   }
 
   onNavigate(cb: (index: number) => void): void {
@@ -139,12 +143,12 @@ export class UIMenu {
     }
   }
 
-  /** Update the theme mode label (Normal / Inverse). */
-  private updateThemeLabel(): void {
-    const label = this.modalEl.querySelector<HTMLElement>('#jlz-theme-mode-label')
-    if (label) {
-      label.textContent = themeManager.isInverse ? 'Inverse' : 'Normal'
-    }
+  /** Update the theme mode buttons — active button gets uk-active. */
+  private updateThemeActive(): void {
+    const currentMode = themeManager.mode
+    this.modalEl.querySelectorAll<HTMLButtonElement>('[data-theme-mode]').forEach((btn) => {
+      btn.classList.toggle('uk-active', btn.dataset.themeMode === currentMode)
+    })
   }
 
   dispose(): void {

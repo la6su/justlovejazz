@@ -232,11 +232,12 @@ export class Experience {
     await this.buildWorld()
     this.bus = StateBus.getInstance()
 
-    // ── 3D ↔ theme sync: in inverse mode, EnvSphere follows the flipped theme ──
+    // ── 3D ↔ theme sync: in light/dark forced mode, EnvSphere follows the forced theme ──
     // Only on home page — content pages don't need 3D bg sync on theme toggle.
+    // In auto mode, EnvSphere follows the active section (no override needed).
     window.addEventListener('jlz:theme-applied', ((e: Event) => {
       const detail = (e as CustomEvent<{ isLight: boolean; mode: string }>).detail
-      if (!detail || detail.mode === 'normal') return
+      if (!detail || detail.mode === 'auto') return
       if (document.body.dataset.page !== 'home') return // home-only 3D sync
       const targetIdx = detail.isLight ? 1 : 2
       if (this.world?.envSphere) {
@@ -464,7 +465,8 @@ export class Experience {
     // UI theme: each section has its own theme ('light' or 'dark') from WorldConfig.
     // Light sections = light background → dark text (uk-light on body).
     // Dark sections = dark background → light text (no uk-light).
-    // Inverse mode (menu toggle) flips all sections dark↔light.
+    // Manual override (light/dark mode from menu) wins over auto —
+    // setAutoTheme() is a no-op when mode !== 'auto'.
     // See docs/UIKIT3.md §4 (theme toggle scope).
     const idx = this.world.currentSectionIndex
     if (document.body.dataset.page === 'home') {
