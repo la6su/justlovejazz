@@ -63,11 +63,11 @@ export class ProjectOverlay {
         </div>
         <div class="jlz-fs-top__right uk-flex uk-flex-middle">
           <div class="jlz-fs-counter"></div>
-          <button class="jlz-fs-close" type="button" aria-label="Close">✕</button>
+          <button class="jlz-fs-close" type="button" aria-label="Close" uk-close></button>
         </div>
       </div>
-      <button class="jlz-fs-prev uk-position-center-left" type="button" aria-label="Previous">←</button>
-      <button class="jlz-fs-next uk-position-center-right" type="button" aria-label="Next">→</button>
+      <button class="jlz-fs-prev uk-position-center-left uk-flex uk-flex-middle" type="button" aria-label="Previous" uk-slidenav-previous></button>
+      <button class="jlz-fs-next uk-position-center-right uk-flex uk-flex-middle" type="button" aria-label="Next" uk-slidenav-next></button>
       <div class="jlz-fs-bottom uk-position-bottom uk-flex uk-flex-bottom uk-width-1-1 uk-padding">
         <div class="jlz-fs-thumb"></div>
         <div class="uk-flex-1">
