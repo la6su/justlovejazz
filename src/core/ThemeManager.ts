@@ -13,6 +13,9 @@
 //
 // Persists to localStorage('jlz:theme'). Overrides Experience.ts auto-toggle
 // when set to 'light' or 'dark'.
+//
+// 3D sync: dispatches 'jlz:theme-applied' with {isLight} so Experience.ts
+// can sync EnvSphere background + post-processing to match the manual override.
 
 export type ThemeMode = 'auto' | 'light' | 'dark'
 
@@ -30,6 +33,11 @@ class ThemeManager {
     return this._mode
   }
 
+  /** Whether the currently-applied theme is light (uk-light on body). */
+  get isLight(): boolean {
+    return this._mode === 'light' || (this._mode === 'auto' && this._autoIsLight)
+  }
+
   setMode(mode: ThemeMode): void {
     this._mode = mode
     this._saveMode(mode)
@@ -44,9 +52,10 @@ class ThemeManager {
     this.apply()
   }
 
-  /** Apply the current theme to <body>. Idempotent — safe to call repeatedly. */
+  /** Apply the current theme to <body> + dispatch event for 3D sync.
+   *  Idempotent — safe to call repeatedly. */
   apply(): void {
-    const isLight = this._mode === 'light' || (this._mode === 'auto' && this._autoIsLight)
+    const isLight = this.isLight
     document.body.classList.toggle('uk-light', isLight)
     document.documentElement.classList.toggle('uk-light', isLight)
     // Keep body.light-theme as a synonym for custom non-UIKit elements
@@ -56,6 +65,10 @@ class ThemeManager {
     document.documentElement.classList.toggle('light-theme', isLight)
     document.body.classList.toggle('dark-theme', !isLight)
     document.documentElement.classList.toggle('dark-theme', !isLight)
+    // Notify Experience.ts to sync 3D (EnvSphere + post) with the theme.
+    // In auto mode, Experience already drives the section → 3D is in sync.
+    // In manual light/dark mode, Experience listens and overrides the 3D bg.
+    window.dispatchEvent(new CustomEvent('jlz:theme-applied', { detail: { isLight, mode: this._mode } }))
   }
 
   /** Cycle through modes: auto → light → dark → auto.

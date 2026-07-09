@@ -12,12 +12,12 @@ export interface UIMenuOptions {
 const MAIN_SECTION_INDICES = [1, 2, 3, 4]
 const PAGE_LINKS = [
   ['/', 'Home'],
-  ['/music', 'Music'],
-  ['/videos', 'Videos'],
-  ['/shows', 'Shows'],
-  ['/news', 'News'],
-  ['/about', 'About'],
-  ['/gallery', 'Gallery'],
+  ['/services', 'Services'],
+  ['/cases', 'Work'],
+  ['/process', 'Process'],
+  ['/team', 'Team'],
+  ['/journal', 'Journal'],
+  ['/contact', 'Contact'],
 ] as const
 
 const THEME_MODES: { id: ThemeMode; label: string; icon: string }[] = [

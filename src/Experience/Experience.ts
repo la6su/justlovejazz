@@ -233,6 +233,22 @@ export class Experience {
     await this.buildWorld()
     this.bus = StateBus.getInstance()
 
+    // ── 3D ↔ theme sync: when user manually toggles light/dark, sync EnvSphere ──
+    // In 'auto' mode, Experience.ts drives the section → EnvSphere follows.
+    // In 'light'/'dark' mode, override EnvSphere to a matching pattern:
+    //   light → Intro pattern (idx 1, light HSV)
+    //   dark  → About pattern (idx 2, dark grey gradient)
+    // This keeps the 3D background readable with the manually-chosen text color.
+    window.addEventListener('jlz:theme-applied', ((e: Event) => {
+      const detail = (e as CustomEvent<{ isLight: boolean; mode: string }>).detail
+      if (!detail || detail.mode === 'auto') return // auto = section-driven, no override
+      const targetIdx = detail.isLight ? 1 : 2 // Intro=light, About=dark
+      if (this.world?.envSphere) {
+        this.world.envSphere.changeSection(targetIdx)
+        this._needsRender = true
+      }
+    }) as EventListener)
+
     // ── Glassmorphism: studio environment map for realistic glass reflections ──
     // RoomEnvironment is a procedural studio scene (walls + lights) rendered
     // ONCE to a PMREM (pre-filtered mipmap radiance environment) texture.

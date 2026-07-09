@@ -7,12 +7,12 @@ let currentPage: PageId | null = null
 
 const ROUTES: Record<string, PageId> = {
   '/': 'home',
-  '/music': 'music',
-  '/videos': 'videos',
-  '/shows': 'shows',
-  '/news': 'news',
-  '/about': 'about',
-  '/gallery': 'gallery',
+  '/services': 'services',
+  '/cases': 'cases',
+  '/process': 'process',
+  '/team': 'team',
+  '/journal': 'journal',
+  '/contact': 'contact',
 }
 
 function getPageFromLocation(): PageId {
