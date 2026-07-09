@@ -10,14 +10,15 @@ import { eventBus, type AppEvents } from '../core/EventBus'
 
 // Short hints per section — informative, not cluttering.
 // These complement the section's main content (title + body) with a
-// micro-interaction label.
+// micro-interaction label. Keys match `data-section` attribute in DOM
+// (see src/sections/_shared/constants.ts SectionId type).
 const HINTS: Record<string, string> = {
+  lab: 'Experiments & R&D',
   intro: 'Scroll to explore',
   about: 'Studio philosophy',
-  flexible: 'Adaptive workflows',
   challenge: 'Drag · Click to open',
-  innovative: 'Frontier tech',
-  contact: 'Let\'s build together',
+  contact: "Let's build together",
+  process: 'How we work',
 }
 
 export class Subtitles {
