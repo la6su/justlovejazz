@@ -740,6 +740,16 @@ main.less, `@global-line-height` 1.7→1.5, `@global-border-width` 2px→1px.
 - `src/assets/main.less` — app layer (only what UIKit doesn't provide, including
   the mobile-first root `html { font-size: 0.85rem }` knob)
 - `src/core/ThemeManager.ts` — auto/light/dark theme manager (uk-light on body)
-- `src/templates.ts` — SPA section templates (UIKit utilities in markup)
+- `src/pages/` — page templates organized by cube face structure:
+  - `src/pages/index.ts` — page registry + `renderPage(page)` router
+  - `src/pages/home.ts` — home page (6 cube-face sections + footer)
+  - `src/pages/sections/` — 6 home section templates (1:1 cube faces):
+    lab, intro, about, works, contact, process
+  - `src/pages/content/` — 6 content page templates:
+    services, cases, process, team, journal, contact
+  - `src/pages/shared/constants.ts` — REVEAL, PAGE_REVEAL, PageId, SectionId,
+    cube face → section mapping table
+  - `src/pages/shared/footer.ts` — unified FOOTER (brand + social only)
+- `src/templates.ts` — backward-compat shim, re-exports from `src/pages/`
 - `projects/*.html` — standalone project page pattern (UIKit navbar + container)
 - Worklog (`/home/z/my-project/worklog.md`) — full history of UIKit cleanup tasks
