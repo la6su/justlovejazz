@@ -885,14 +885,65 @@ section[data-section='process'] .uk-list li:hover {
 }
 
 /* ------------------------------------------------------------------
-   Unified footer — minimal sticky bottom bar (brand + social only)
-   Uses uk-sticky="position: bottom" so it stays at the bottom of the
-   viewport and scrolls away when the user reaches the end of content.
+   Content page variant styles — QF-inspired layout diversity
+   ------------------------------------------------------------------ */
+
+/* Case study tiles — overlay hover with position number */
+.jlz-case-tile {
+  position: relative;
+  min-height: 240px;
+  transition: transform 0.3s ease, background 0.3s ease;
+  overflow: hidden;
+}
+
+.jlz-case-tile:hover {
+  transform: translateY(-4px);
+}
+
+.jlz-case-tile .uk-position-top-right {
+  font-size: 2rem;
+  opacity: 0.4;
+  transition: opacity 0.3s ease;
+}
+
+.jlz-case-tile:hover .uk-position-top-right {
+  opacity: 0.8;
+}
+
+/* Contact page big email link */
+.jlz-contact-link {
+  display: inline-block;
+  font-weight: 200;
+  letter-spacing: -0.03em;
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+}
+
+.jlz-contact-link:hover {
+  opacity: 0.7;
+  text-decoration: none;
+}
+
+/* Services big-number list */
+.jlz-page .uk-heading-small {
+  font-weight: 200;
+  letter-spacing: -0.02em;
+  opacity: 0.5;
+}
+
+/* ------------------------------------------------------------------
+   Unified footer — fixed bottom bar (brand + social only)
+   Fixed positioning because content pages use position:absolute stacked
+   sections with overflow:hidden — uk-sticky needs scroll to work.
    Navigation lives in the header (UIMenu slider + modal), NOT here.
    Hidden on home (Contact section serves as the home footer).
    ------------------------------------------------------------------ */
 
 .jlz-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
   z-index: 50;
   padding: 10px 24px;
   background: rgba(5, 5, 7, 0.6);
@@ -934,7 +985,7 @@ body.uk-light .jlz-footer .uk-iconnav a:hover {
 
 /* Add bottom padding to content pages so footer doesn't cover content */
 body:not([data-page='home']) .jlz-page-section {
-  padding-bottom: 160px;
+  padding-bottom: 80px;
 }
 
 @media (max-width: 640px) {

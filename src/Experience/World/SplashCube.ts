@@ -76,6 +76,22 @@ export class SplashCube extends THREE.Mesh {
   private _prevTransitionT = 0
   private _prevTransitionDir = 0
 
+  // ── Cube face rotation ──
+  // 6 sections = 6 cube faces. Each section maps to a target Y rotation
+  // so the corresponding face points toward the camera (+Z direction).
+  // Lab=0→front, Intro=1→right, About=2→back, Works=3→left, Contact=4→top, Process=5→bottom.
+  // We animate _idleRotY toward the target on section change.
+  private static readonly FACE_ROTATIONS: number[] = [
+    0,              // 0: Lab — front face (+Z toward camera)
+    -Math.PI / 2,   // 1: Intro — right face (+X toward camera)
+    Math.PI,        // 2: About — back face (-Z toward camera)
+    Math.PI / 2,    // 3: Works — left face (-X toward camera)
+    -Math.PI / 4,   // 4: Contact — slight tilt (top face visible)
+    Math.PI / 4,    // 5: Process — slight tilt (bottom face visible)
+  ]
+  private _targetFaceRotY = 0
+  private _faceLerp = 0 // 0→1, animated on section change
+
   // Scratch
 
   constructor() {
@@ -266,6 +282,16 @@ export class SplashCube extends THREE.Mesh {
     this._transitionDir = dir
   }
 
+  /** Rotate cube to show the face for the given section index.
+   *  6 sections = 6 faces. Animates _idleRotY toward the target rotation
+   *  over the next ~0.8s (lerped in update()). Called by Experience.ts
+   *  on jlz:section-change. */
+  rotateToFace(sectionIndex: number): void {
+    const idx = Math.max(0, Math.min(SplashCube.FACE_ROTATIONS.length - 1, sectionIndex))
+    this._targetFaceRotY = SplashCube.FACE_ROTATIONS[idx] ?? 0
+    this._faceLerp = 0 // start animation
+  }
+
   setEnvAndCamera(_envMap: THREE.Texture | null, _cameraPos: THREE.Vector3): void {
     // No-op — envMap comes from CubeCamera
   }
@@ -297,11 +323,29 @@ export class SplashCube extends THREE.Mesh {
       this._idleRotY += this._prevTransitionDir * ROT_PER_TRANSITION
     }
 
+    // ── Face rotation animation (lerp _idleRotY toward _targetFaceRotY) ──
+    // Triggered by rotateToFace(sectionIndex) on section change. Animates
+    // over ~0.8s with easing. The shortest angular path is taken.
+    if (this._faceLerp < 1) {
+      this._faceLerp = Math.min(1, this._faceLerp + dt * 1.8) // ~0.55s at 60fps
+      const ease = this._faceLerp * this._faceLerp * (3 - 2 * this._faceLerp)
+      // Shortest angular path: normalize delta to [-π, π]
+      let delta = this._targetFaceRotY - this._idleRotY
+      while (delta > Math.PI) delta -= Math.PI * 2
+      while (delta < -Math.PI) delta += Math.PI * 2
+      this._idleRotY += delta * ease * (dt * 1.8) * 2.5
+      // Snap when close enough to avoid jitter
+      if (Math.abs(this._targetFaceRotY - this._idleRotY) < 0.01 && this._faceLerp >= 0.95) {
+        this._idleRotY = this._targetFaceRotY
+        this._faceLerp = 1
+      }
+    }
+
     const tEase = this._transitionT * this._transitionT * (3 - 2 * this._transitionT)
     const sinT = Math.sin(tEase * Math.PI)
     const dir = this._transitionDir || this._prevTransitionDir
 
-    // Rotation Y (persistent)
+    // Rotation Y (persistent) — _idleRotY now driven by face lerp + transition
     this.rotation.y = this._idleRotY + dir * tEase * ROT_PER_TRANSITION
     // Tilt X (transient)
     this.rotation.x = sinT * 0.12 * dir

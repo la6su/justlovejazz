@@ -13,12 +13,13 @@
 // Navigation lives in the header (UIMenu slider + modal), NOT in the footer.
 
 // ── Shared footer (minimal: brand + social, NO nav, NO copyright) ──
+// Fixed bottom bar — content pages use position:absolute stacked sections
+// with overflow:hidden on #spa-content, so uk-sticky doesn't work (no scroll).
+// Fixed positioning keeps it pinned to the viewport bottom on all pages.
 const FOOTER = `
-  <footer class="jlz-footer uk-section uk-section-xsmall" data-footer
-          uk-sticky="position: bottom; overflow-flip: true; start: -100%; end: 0;"
-          uk-scrollspy="target: [uk-scrollspy-class]; cls: uk-animation-fade; delay: 200;">
+  <footer class="jlz-footer" data-footer>
     <div class="uk-container uk-container-expand">
-      <div class="uk-flex uk-flex-middle uk-flex-center uk-flex-wrap" uk-scrollspy-class>
+      <div class="uk-flex uk-flex-middle uk-flex-center uk-flex-wrap">
         <a class="uk-navbar-item uk-logo jlz-brand uk-margin-right" href="/" aria-label="JUSTLOVEJAZZ home">l@6</a>
         <ul class="uk-iconnav">
           <li><a href="https://github.com" target="_blank" rel="noopener" aria-label="GitHub" uk-icon="icon: github"></a></li>
@@ -217,7 +218,7 @@ export type PageId = 'home' | 'services' | 'cases' | 'process' | 'team' | 'journ
 
 const PAGE_REVEAL = 'uk-scrollspy="cls: uk-animation-fade; delay: 120; target: > *"'
 
-// ── Services page — what we do ──
+// ── Services page — big-number list layout (QF-style eyebrow numbers) ──
 export function renderServicesPage(): string {
   const services = [
     { num: '01', title: 'WebGPU Experiences', desc: 'Real-time 3D, compute shaders, and TSL node graphs compiled on the fly. Native performance, zero plugins.' },
@@ -231,24 +232,36 @@ export function renderServicesPage(): string {
     <article class="jlz-page" data-page-view="services">
       <section class="jlz-page-section section-active uk-section uk-section-large" data-page-section="services-overview">
         <div class="uk-container uk-container-expand" ${PAGE_REVEAL}>
-          <p class="uk-text-meta uk-text-uppercase">Services</p>
-          <h1 class="uk-heading-xlarge">What We Build</h1>
-          <p class="uk-text-lead uk-margin-large-top">From shader art to shipping product. We cover the full spectrum of modern web — 3D, motion, and engineering that holds up under real traffic.</p>
-          <div class="uk-grid-large uk-child-width-1-3@m uk-grid-match uk-margin-large-top" uk-grid>
+          <p class="uk-text-meta uk-text-uppercase" uk-scrollspy-class>Services</p>
+          <h1 class="uk-heading-xlarge" uk-scrollspy-class>What We Build</h1>
+          <p class="uk-text-lead uk-margin-large-top" uk-scrollspy-class>From shader art to shipping product. We cover the full spectrum of modern web — 3D, motion, and engineering that holds up under real traffic.</p>
+          <ul class="uk-list uk-margin-large-top" uk-scrollspy-class>
             ${services.map((s) => `
-              <article class="uk-card uk-card-default uk-card-body uk-card-hover" uk-scrollspy-class>
-                <span class="uk-text-meta uk-text-bold">${s.num}</span>
-                <h2 class="uk-card-title uk-margin-top">${s.title}</h2>
-                <p class="uk-text-meta">${s.desc}</p>
-              </article>
+              <li class="uk-flex uk-flex-middle uk-margin-large">
+                <span class="uk-heading-small uk-text-muted uk-margin-large-right" style="min-width: 80px;">${s.num}</span>
+                <div class="uk-flex-1">
+                  <h2 class="uk-h2 uk-margin-remove">${s.title}</h2>
+                  <p class="uk-text-meta uk-margin-small-top">${s.desc}</p>
+                </div>
+              </li>
             `).join('')}
-          </div>
+          </ul>
         </div>
       </section>
       <section class="jlz-page-section uk-section uk-section-large" data-page-section="services-stack">
         <div class="uk-container uk-container-expand" ${PAGE_REVEAL}>
-          <h2 class="uk-heading-medium">Our Stack</h2>
-          <p class="uk-text-lead uk-margin-large-top">Three.js + TSL, WebGPU first with WebGL2 fallback. UIkit 3 for chrome. TypeScript strict. Bun + Vite for dev. Prisma when we need a database.</p>
+          <p class="uk-text-meta uk-text-uppercase" uk-scrollspy-class>Stack</p>
+          <h2 class="uk-heading-large uk-margin-medium-top" uk-scrollspy-class>What's in the toolbox</h2>
+          <div class="uk-grid-large uk-child-width-1-2@m uk-margin-large-top" uk-grid>
+            <div uk-scrollspy-class>
+              <h3 class="uk-h4">3D & Shaders</h3>
+              <p class="uk-text-lead">Three.js + TSL, WebGPU first with WebGL2 fallback. MeshPhysicalMaterial for glass, CubeCamera for reflections, PMREM for image-based lighting.</p>
+            </div>
+            <div uk-scrollspy-class>
+              <h3 class="uk-h4">UI & Engineering</h3>
+              <p class="uk-text-lead">UIkit 3 for chrome. TypeScript strict. Bun + Vite for dev. Prisma when we need a database. Zero runtime errors in production.</p>
+            </div>
+          </div>
         </div>
       </section>
     </article>
@@ -256,7 +269,7 @@ export function renderServicesPage(): string {
   `
 }
 
-// ── Case Studies page — selected work ──
+// ── Case Studies page — overlay tile grid (QF-style hover overlays) ──
 export function renderCasesPage(): string {
   const cases = [
     { num: '01', title: 'Nocturne Blue', cat: 'Studio Portfolio', desc: 'WebGPU portfolio with glass cube morph, audio-reactive shaders, and a Baku-inspired carousel.' },
@@ -270,25 +283,31 @@ export function renderCasesPage(): string {
     <article class="jlz-page" data-page-view="cases">
       <section class="jlz-page-section section-active uk-section uk-section-large" data-page-section="cases-index">
         <div class="uk-container uk-container-expand" ${PAGE_REVEAL}>
-          <p class="uk-text-meta uk-text-uppercase">Case Studies</p>
-          <h1 class="uk-heading-xlarge">Selected Work</h1>
-          <div class="uk-grid-large uk-child-width-1-3@m uk-grid-match uk-margin-large-top" uk-grid>
+          <p class="uk-text-meta uk-text-uppercase" uk-scrollspy-class>Case Studies</p>
+          <h1 class="uk-heading-xlarge" uk-scrollspy-class>Selected Work</h1>
+          <div class="uk-grid-small uk-child-width-1-2@s uk-child-width-1-3@m uk-margin-large-top" uk-grid>
             ${cases.map((c) => `
-              <article class="uk-card uk-card-default uk-card-body uk-card-hover" uk-scrollspy-class>
-                <span class="uk-text-meta">${c.cat}</span>
-                <h2 class="uk-card-title uk-margin-top">${c.title}</h2>
-                <p class="uk-text-meta">${c.desc}</p>
-                <a class="uk-button uk-button-text uk-margin-top" href="/cases">View case →</a>
-              </article>
+              <div uk-scrollspy-class>
+                <a class="uk-inline-clip uk-transition-toggle uk-link-toggle uk-display-block" href="/cases">
+                  <div class="uk-card uk-card-default uk-card-body uk-card-hover jlz-case-tile">
+                    <div class="uk-position-z-index uk-position-relative">
+                      <span class="uk-text-meta uk-text-uppercase">${c.cat}</span>
+                      <h2 class="uk-card-title uk-margin-top uk-margin-remove-bottom">${c.title}</h2>
+                      <p class="uk-text-meta uk-margin-small-top uk-transition-fade uk-transition-opaque">${c.desc}</p>
+                      <span class="uk-position-top-right uk-position-small uk-text-bold uk-text-large">${c.num}</span>
+                    </div>
+                  </div>
+                </a>
+              </div>
             `).join('')}
           </div>
         </div>
       </section>
-      <section class="jlz-page-section uk-section uk-section-large" data-page-section="cases-process">
-        <div class="uk-container uk-container-expand" ${PAGE_REVEAL}>
-          <h2 class="uk-heading-medium">How We Work</h2>
-          <p class="uk-text-lead uk-margin-large-top">Every project starts with a question: what does this feel like? Then we engineer the answer — shader by shader, frame by frame.</p>
-          <a class="uk-button uk-button-default uk-margin-medium-top" href="/process">Read our process</a>
+      <section class="jlz-page-section uk-section uk-section-large" data-page-section="cases-cta">
+        <div class="uk-container uk-container-expand uk-text-center" ${PAGE_REVEAL}>
+          <h2 class="uk-heading-large" uk-scrollspy-class>Have a project in mind?</h2>
+          <p class="uk-text-lead uk-margin-medium-top" uk-scrollspy-class>We take on a limited number of engagements per quarter. Tell us what you're building.</p>
+          <a class="uk-button uk-button-primary uk-button-large uk-margin-medium-top" href="/contact" uk-scrollspy-class>Start a project</a>
         </div>
       </section>
     </article>
@@ -296,36 +315,39 @@ export function renderCasesPage(): string {
   `
 }
 
-// ── Process page — how we work ──
+// ── Process page — vertical timeline (QF-style tour dates) ──
 export function renderProcessPage(): string {
   const steps = [
-    ['01', 'Discover', 'Research the problem space. Audit existing work. Define success metrics. We don\'t write a line of shader until we know what emotion we\'re engineering for.'],
-    ['02', 'Design', 'Art direction, 3D sketches, interaction prototypes. Mood boards become GLSL fragments. We test in the browser early — never in static mockups.'],
-    ['03', 'Develop', 'WebGPU-first with WebGL2 fallback. TSL node graphs, on-demand rendering, performance budgets. TypeScript strict, zero anys in shipping code.'],
-    ['04', 'Ship', 'Launch, measure, evolve. We monitor frame times, not just Lighthouse. The work continues after deploy — we iterate on what users actually do.'],
+    { num: '01', title: 'Discover', desc: 'Research the problem space. Audit existing work. Define success metrics. We don\'t write a line of shader until we know what emotion we\'re engineering for.' },
+    { num: '02', title: 'Design', desc: 'Art direction, 3D sketches, interaction prototypes. Mood boards become GLSL fragments. We test in the browser early — never in static mockups.' },
+    { num: '03', title: 'Develop', desc: 'WebGPU-first with WebGL2 fallback. TSL node graphs, on-demand rendering, performance budgets. TypeScript strict, zero anys in shipping code.' },
+    { num: '04', title: 'Ship', desc: 'Launch, measure, evolve. We monitor frame times, not just Lighthouse. The work continues after deploy — we iterate on what users actually do.' },
   ]
   return `
     <article class="jlz-page" data-page-view="process">
       <section class="jlz-page-section section-active uk-section uk-section-large" data-page-section="process-overview">
         <div class="uk-container uk-container-expand" ${PAGE_REVEAL}>
-          <p class="uk-text-meta uk-text-uppercase">Process</p>
-          <h1 class="uk-heading-xlarge">How We Work</h1>
+          <p class="uk-text-meta uk-text-uppercase" uk-scrollspy-class>Process</p>
+          <h1 class="uk-heading-xlarge" uk-scrollspy-class>How We Work</h1>
           <ul class="uk-list uk-list-divider uk-margin-large-top">
-            ${steps.map(([num, label, desc]) => `
-              <li class="uk-flex uk-flex-middle" uk-scrollspy-class>
-                <span class="uk-text-large uk-text-bold uk-margin-right">${num}</span>
-                <h2 class="uk-h3 uk-margin-remove uk-margin-right">${label}</h2>
-                <span class="uk-text-meta">${desc}</span>
+            ${steps.map((s) => `
+              <li class="uk-flex uk-flex-middle uk-margin-large" uk-scrollspy-class>
+                <span class="uk-heading-small uk-margin-large-right" style="min-width: 100px;">${s.num}</span>
+                <div class="uk-flex-1">
+                  <h2 class="uk-h2 uk-margin-remove">${s.title}</h2>
+                  <p class="uk-text-lead uk-margin-small-top">${s.desc}</p>
+                </div>
               </li>
             `).join('')}
           </ul>
         </div>
       </section>
       <section class="jlz-page-section uk-section uk-section-large" data-page-section="process-principles">
-        <div class="uk-container uk-container-expand" ${PAGE_REVEAL}>
-          <h2 class="uk-heading-medium">Principles</h2>
-          <p class="uk-text-lead uk-margin-large-top">The web is a canvas for emotion. Every pixel earns its place. Every frame tells a story. We build for browsers, but we design for people.</p>
-          <p class="uk-text-meta uk-text-bold uk-margin-top">— JUSTLOVEJAZZ</p>
+        <div class="uk-container uk-container-expand uk-text-center" ${PAGE_REVEAL}>
+          <p class="uk-text-meta uk-text-uppercase" uk-scrollspy-class>Principles</p>
+          <h2 class="uk-heading-large uk-margin-medium-top" uk-scrollspy-class>The web is a canvas for emotion.</h2>
+          <p class="uk-text-lead uk-margin-large-top" uk-scrollspy-class>Every pixel earns its place. Every frame tells a story. We build for browsers, but we design for people.</p>
+          <p class="uk-text-meta uk-text-bold uk-margin-top" uk-scrollspy-class>— JUSTLOVEJAZZ</p>
         </div>
       </section>
     </article>
@@ -333,25 +355,26 @@ export function renderProcessPage(): string {
   `
 }
 
-// ── Team page — who we are ──
+// ── Team page — split bio cards (QF-style 2-column with role headers) ──
 export function renderTeamPage(): string {
   const team = [
-    { role: 'Creative Director', name: 'Lead', bio: '15 years in motion design. Former agency lead. Obsessed with light.' },
-    { role: 'Lead Engineer', name: 'Eng', bio: 'WebGPU early adopter. Ships production TSL. TypeScript maximalist.' },
-    { role: 'Shader Artist', name: 'GLSL', bio: 'Generative art background. Lives in fragment shaders. Audio-reactive everything.' },
-    { role: 'Interaction Designer', name: 'IXD', bio: 'Gesture-driven UI, magnetic cursors, scroll choreography.' },
+    { role: 'Creative Director', bio: '15 years in motion design. Former agency lead. Obsessed with light, timing, and the weight of a single frame.' },
+    { role: 'Lead Engineer', bio: 'WebGPU early adopter. Ships production TSL. TypeScript maximalist. Believes in zero runtime errors.' },
+    { role: 'Shader Artist', bio: 'Generative art background. Lives in fragment shaders. Audio-reactive everything. Glass is a lifestyle.' },
+    { role: 'Interaction Designer', bio: 'Gesture-driven UI, magnetic cursors, scroll choreography. Studies how people actually touch screens.' },
   ]
   return `
     <article class="jlz-page" data-page-view="team">
       <section class="jlz-page-section section-active uk-section uk-section-large" data-page-section="team-intro">
         <div class="uk-container uk-container-expand" ${PAGE_REVEAL}>
-          <p class="uk-text-meta uk-text-uppercase">Team</p>
-          <h1 class="uk-heading-xlarge">Who We Are</h1>
-          <p class="uk-text-lead uk-margin-large-top">A small studio of engineers who design and designers who code. No handoffs, no silos — everyone ships.</p>
-          <div class="uk-grid-large uk-child-width-1-2@m uk-margin-large-top" uk-grid>
-            ${team.map((m) => `
-              <div uk-scrollspy-class>
-                <h2 class="uk-heading-medium">${m.role}</h2>
+          <p class="uk-text-meta uk-text-uppercase" uk-scrollspy-class>Team</p>
+          <h1 class="uk-heading-xlarge" uk-scrollspy-class>Who We Are</h1>
+          <p class="uk-text-lead uk-margin-large-top uk-width-3-4@m" uk-scrollspy-class>A small studio of engineers who design and designers who code. No handoffs, no silos — everyone ships.</p>
+          <div class="uk-grid-large uk-child-width-1-2@m uk-margin-xlarge-top" uk-grid>
+            ${team.map((m, i) => `
+              <div class="uk-card uk-card-default uk-card-body uk-card-hover" uk-scrollspy-class>
+                <span class="uk-text-meta uk-text-bold">0${i + 1}</span>
+                <h2 class="uk-card-title uk-margin-top">${m.role}</h2>
                 <p class="uk-text-lead">${m.bio}</p>
               </div>
             `).join('')}
@@ -360,8 +383,15 @@ export function renderTeamPage(): string {
       </section>
       <section class="jlz-page-section uk-section uk-section-large" data-page-section="team-values">
         <div class="uk-container uk-container-expand" ${PAGE_REVEAL}>
-          <h2 class="uk-heading-medium">Values</h2>
-          <p class="uk-text-lead uk-margin-large-top">Craft over speed. Depth over surface. We'd rather ship one thing that feels alive than ten that feel flat.</p>
+          <div class="uk-grid-large uk-child-width-1-2@m uk-grid-match" uk-grid>
+            <div uk-scrollspy-class>
+              <p class="uk-text-meta uk-text-uppercase">Values</p>
+              <h2 class="uk-heading-large uk-margin-medium-top">Craft over speed.</h2>
+            </div>
+            <div uk-scrollspy-class>
+              <p class="uk-text-lead">Depth over surface. We'd rather ship one thing that feels alive than ten that feel flat. Every project gets our full attention — we book one engagement at a time.</p>
+            </div>
+          </div>
         </div>
       </section>
     </article>
@@ -369,35 +399,39 @@ export function renderTeamPage(): string {
   `
 }
 
-// ── Journal page — writing & notes ──
+// ── Journal page — magazine grid (QF-style label + headline cards) ──
 export function renderJournalPage(): string {
   const posts = [
-    { cat: 'Shaders', title: 'Why TSL Changes Everything', excerpt: 'Three.js TSL node graphs compiled on the fly — WebGPU portability without the boilerplate.' },
-    { cat: 'Process', title: 'Designing in the Browser', excerpt: 'Why we killed static mockups and started sketching directly in WebGL.' },
-    { cat: 'Performance', title: 'On-Demand Rendering', excerpt: 'Zero draw calls when idle. How we keep a 3D site fast without sacrificing the experience.' },
-    { cat: 'WebGPU', title: 'WebGPU or Bust', excerpt: 'Real WebGPU vs WebGLBackend fallback — what actually ships to users in 2026.' },
+    { cat: 'Shaders', title: 'Why TSL Changes Everything', excerpt: 'Three.js TSL node graphs compiled on the fly — WebGPU portability without the boilerplate.', date: 'Jul 2026' },
+    { cat: 'Process', title: 'Designing in the Browser', excerpt: 'Why we killed static mockups and started sketching directly in WebGL.', date: 'Jun 2026' },
+    { cat: 'Performance', title: 'On-Demand Rendering', excerpt: 'Zero draw calls when idle. How we keep a 3D site fast without sacrificing the experience.', date: 'May 2026' },
+    { cat: 'WebGPU', title: 'WebGPU or Bust', excerpt: 'Real WebGPU vs WebGLBackend fallback — what actually ships to users in 2026.', date: 'Apr 2026' },
   ]
   return `
     <article class="jlz-page" data-page-view="journal">
       <section class="jlz-page-section section-active uk-section uk-section-large" data-page-section="journal-latest">
         <div class="uk-container uk-container-expand" ${PAGE_REVEAL}>
-          <p class="uk-text-meta uk-text-uppercase">Journal</p>
-          <h1 class="uk-heading-xlarge">Writing</h1>
-          <div class="uk-grid-large uk-child-width-1-3@m uk-grid-match uk-margin-large-top" uk-grid>
+          <p class="uk-text-meta uk-text-uppercase" uk-scrollspy-class>Journal</p>
+          <h1 class="uk-heading-xlarge" uk-scrollspy-class>Writing</h1>
+          <div class="uk-grid-large uk-child-width-1-2@m uk-margin-large-top" uk-grid>
             ${posts.map((p) => `
               <article class="uk-card uk-card-default uk-card-body uk-card-hover" uk-scrollspy-class>
-                <span class="uk-label">${p.cat}</span>
-                <h2 class="uk-card-title uk-margin-top">${p.title}</h2>
-                <p class="uk-text-meta">${p.excerpt}</p>
+                <div class="uk-flex uk-flex-between uk-flex-middle">
+                  <span class="uk-label">${p.cat}</span>
+                  <span class="uk-text-meta">${p.date}</span>
+                </div>
+                <h2 class="uk-card-title uk-margin-top uk-margin-remove-bottom">${p.title}</h2>
+                <p class="uk-text-lead uk-margin-small-top">${p.excerpt}</p>
+                <a class="uk-button uk-button-text uk-margin-top" href="/journal">Read →</a>
               </article>
             `).join('')}
           </div>
         </div>
       </section>
       <section class="jlz-page-section uk-section uk-section-large" data-page-section="journal-notes">
-        <div class="uk-container uk-container-expand" ${PAGE_REVEAL}>
-          <h2 class="uk-heading-medium">Notes</h2>
-          <p class="uk-text-lead uk-margin-large-top">Short-form writing about tools, releases, visual systems, and the decisions behind the work.</p>
+        <div class="uk-container uk-container-expand uk-text-center" ${PAGE_REVEAL}>
+          <h2 class="uk-heading-large" uk-scrollspy-class>Notes from the studio</h2>
+          <p class="uk-text-lead uk-margin-medium-top uk-width-2-3@m uk-margin-auto" uk-scrollspy-class>Short-form writing about tools, releases, visual systems, and the decisions behind the work. No SEO bait, no listicles.</p>
         </div>
       </section>
     </article>
@@ -405,30 +439,44 @@ export function renderJournalPage(): string {
   `
 }
 
-// ── Contact page — reach out ──
+// ── Contact page — hero CTA + FAQ split (QF-style big text link) ──
 export function renderContactPage(): string {
   return `
     <article class="jlz-page" data-page-view="contact">
       <section class="jlz-page-section section-active uk-section uk-section-large" data-page-section="contact-intro">
-        <div class="uk-container uk-container-expand" ${PAGE_REVEAL}>
-          <p class="uk-text-meta uk-text-uppercase">Contact</p>
-          <h1 class="uk-heading-xlarge">Let's Talk</h1>
-          <p class="uk-text-lead uk-margin-large-top">Got a project that needs glass, motion, and light? We take on a limited number of engagements per quarter.</p>
-          <a href="mailto:hello@justlovejazz.com" class="uk-button uk-button-primary uk-button-large uk-margin-medium-top">
-            <span uk-icon="icon: mail; ratio: 1.1" aria-hidden="true"></span>
-            <span>hello@justlovejazz.com</span>
-          </a>
+        <div class="uk-container uk-container-expand uk-text-center" ${PAGE_REVEAL}>
+          <p class="uk-text-meta uk-text-uppercase" uk-scrollspy-class>Contact</p>
+          <h1 class="uk-heading-xlarge uk-margin-medium-top" uk-scrollspy-class>Let's Talk</h1>
+          <p class="uk-text-lead uk-margin-large-top uk-width-2-3@m uk-margin-auto" uk-scrollspy-class>Got a project that needs glass, motion, and light? We take on a limited number of engagements per quarter.</p>
+          <div class="uk-margin-large-top" uk-scrollspy-class>
+            <a href="mailto:hello@justlovejazz.com" class="uk-link uk-heading-large jlz-contact-link">
+              hello@justlovejazz.com
+            </a>
+          </div>
+          <div class="uk-margin-large-top" uk-scrollspy-class>
+            <a href="mailto:hello@justlovejazz.com" class="uk-button uk-button-primary uk-button-large">
+              <span uk-icon="icon: mail; ratio: 1.1" aria-hidden="true"></span>
+              <span>Start a project</span>
+            </a>
+          </div>
         </div>
       </section>
       <section class="jlz-page-section uk-section uk-section-large" data-page-section="contact-faq">
         <div class="uk-container uk-container-expand" ${PAGE_REVEAL}>
-          <h2 class="uk-heading-medium">Before You Ask</h2>
-          <ul class="uk-list uk-list-divider uk-margin-medium-top">
-            <li><span class="uk-text-bold">Engagements</span> — we book 8-12 week projects, one at a time.</li>
-            <li><span class="uk-text-bold">Budgets</span> — typical projects start at €25k. Shader art and R&D available separately.</li>
-            <li><span class="uk-text-bold">Location</span> — fully remote. Team across EU. We sync async.</li>
-            <li><span class="uk-text-bold">Stack</span> — WebGPU, Three.js, TSL, TypeScript, UIkit. We don't do React-for-everything.</li>
-          </ul>
+          <div class="uk-grid-large uk-child-width-1-2@m uk-grid-match" uk-grid>
+            <div uk-scrollspy-class>
+              <p class="uk-text-meta uk-text-uppercase">Before You Ask</p>
+              <h2 class="uk-heading-large uk-margin-medium-top">FAQ</h2>
+            </div>
+            <div uk-scrollspy-class>
+              <ul class="uk-list uk-list-divider">
+                <li class="uk-margin-small"><span class="uk-text-bold">Engagements</span> — 8-12 week projects, one at a time.</li>
+                <li class="uk-margin-small"><span class="uk-text-bold">Budgets</span> — typical projects start at €25k. Shader art and R&D available separately.</li>
+                <li class="uk-margin-small"><span class="uk-text-bold">Location</span> — fully remote. Team across EU. We sync async.</li>
+                <li class="uk-margin-small"><span class="uk-text-bold">Stack</span> — WebGPU, Three.js, TSL, TypeScript, UIkit. We don't do React-for-everything.</li>
+              </ul>
+            </div>
+          </div>
         </div>
       </section>
     </article>

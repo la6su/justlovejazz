@@ -391,8 +391,12 @@ export class Experience {
     const openerActive = baku?.openerPhase !== 'done' && baku?.openerPhase !== 'idle'
     const burstActive = this.world?.particleBurst?.isActive ?? false
     const camShaking = this.camera.isShaking
+    // Cube face rotation animation — keep rendering while the cube is rotating
+    // to its target face (triggered by rotateToFace on section change).
+    const cubeRotating = (this.world?.baku as unknown as { _faceLerp?: number } | undefined)?._faceLerp !== undefined
+      && (this.world?.baku as unknown as { _faceLerp: number })._faceLerp < 1
 
-    if (navActive || introActive || carouselActive || openerActive || burstActive || camShaking) {
+    if (navActive || introActive || carouselActive || openerActive || burstActive || camShaking || cubeRotating) {
       this._needsRender = true
     }
 
@@ -466,7 +470,7 @@ export class Experience {
     this.world.setRenderer(this.renderer.instance as THREE.WebGLRenderer)
 
     // Dispatch section-change on EVERY section index change (not just context).
-    // This triggers NoiseText title animation for the new section.
+    // This triggers NoiseText title animation for the new section + cube face rotation.
     if (idx !== this._prevSectionIndex) {
       this._prevSectionIndex = idx
       const cfgForSection = this.world.getConfig(worldState.currentPhase)
@@ -477,6 +481,13 @@ export class Experience {
         configId: cfgForSection?.id,
         index: idx,
       })
+      // ── Rotate cube to show the face for this section ──
+      // 6 sections = 6 cube faces. Each section change animates the cube
+      // to its target Y rotation so the corresponding face points to camera.
+      if (this.world?.baku) {
+        this.world.baku.rotateToFace(idx)
+        this._needsRender = true
+      }
     }
 
     // Context switch (post-processing preset)
