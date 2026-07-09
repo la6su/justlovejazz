@@ -331,6 +331,12 @@ export class Experience {
     }
     document.addEventListener('click', startAudio)
     document.addEventListener('keydown', startAudio)
+
+    // Sound toggle from splash screen
+    window.addEventListener('jlz:sound-toggle', ((e: Event) => {
+      const detail = (e as CustomEvent<{ muted: boolean }>).detail
+      if (detail) this.audio.setMuted(detail.muted)
+    }) as EventListener)
   }
 
   update(time: number) {

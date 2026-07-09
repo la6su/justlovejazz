@@ -73,18 +73,19 @@
         align-items: center;
         justify-content: center;
         overflow: hidden;
+        transition: opacity 0.8s ease, transform 0.8s ease;
       }
-      #jlj-splash.hide {
+      #jlj-splash.entering {
         opacity: 0;
-        transition: opacity 0.4s ease;
+        transform: scale(1.05);
       }
 
-      /* SVG squares — centered via flex on parent, not position:fixed */
+      /* SVG squares — centered via flex on parent */
       .jlz-splash-svg {
-        width: 95vmin;
-        height: 95vmin;
-        max-width: 800px;
-        max-height: 800px;
+        width: 90vmin;
+        height: 90vmin;
+        max-width: 700px;
+        max-height: 700px;
         pointer-events: none;
       }
 
@@ -100,53 +101,82 @@
         transform: scale(0.3);
         animation: jlz-splash-in 2.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       }
-      .jlz-splash-text--1 { font-size: clamp(60px, 11vmin, 80px); fill: #515d84; animation-delay: 0s; }
-      .jlz-splash-text--2 { font-size: clamp(45px, 8vmin, 60px); fill: #4a5474; animation-delay: 0.12s; }
-      .jlz-splash-text--3 { font-size: clamp(30px, 6vmin, 45px); fill: #3e4866; animation-delay: 0.24s; }
-      .jlz-splash-text--4 { font-size: clamp(20px, 4vmin, 30px); fill: #333c54; animation-delay: 0.36s; }
+      .jlz-splash-text--1 { font-size: clamp(50px, 9vmin, 70px); fill: #515d84; animation-delay: 0s; }
+      .jlz-splash-text--2 { font-size: clamp(38px, 7vmin, 52px); fill: #4a5474; animation-delay: 0.12s; }
+      .jlz-splash-text--3 { font-size: clamp(26px, 5vmin, 38px); fill: #3e4866; animation-delay: 0.24s; }
+      .jlz-splash-text--4 { font-size: clamp(18px, 3.5vmin, 26px); fill: #333c54; animation-delay: 0.36s; }
 
       @keyframes jlz-splash-in {
         0% { opacity: 0; transform: scale(0.3); }
         100% { opacity: 1; transform: scale(1); }
       }
 
-      /* Enter button — square, centered */
-      .jlz-splash-enter {
+      /* Splash controls — Enter + Sound toggle */
+      .jlz-splash-controls {
         position: absolute;
         top: 50%;
         left: 50%;
-        transform: translate(-50%, -50%) scale(0.3);
-        width: 90px;
-        height: 90px;
-        border: none;
-        background: #515d84;
-        color: #fff;
-        font-family: Inter, sans-serif;
-        font-weight: 700;
-        font-size: 0.875rem;
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-        cursor: pointer;
-        pointer-events: none;
-        opacity: 0;
+        transform: translate(-50%, -50%);
         display: none;
+        flex-direction: column;
         align-items: center;
-        justify-content: center;
-        transition: background 0.2s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s ease;
+        gap: 1rem;
         z-index: 3001;
       }
-      #jlj-splash.ready .jlz-splash-enter {
+      #jlj-splash.ready .jlz-splash-controls {
         display: flex;
+      }
+
+      .jlz-splash-enter {
+        width: 100px;
+        height: 100px;
+        border: 2px solid #515d84;
+        background: transparent;
+        color: #515d84;
+        font-family: Inter, sans-serif;
+        font-weight: 700;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        cursor: pointer;
         pointer-events: auto;
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        opacity: 0;
+        animation: jlz-splash-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
       }
       .jlz-splash-enter:hover {
-        background: #6b78a3;
-        transform: translate(-50%, -50%) scale(1.1);
+        background: #515d84;
+        color: #fff;
+        transform: scale(1.08);
       }
       .jlz-splash-enter:active {
-        transform: translate(-50%, -50%) scale(0.95);
+        transform: scale(0.95);
+      }
+
+      /* Sound toggle button */
+      .jlz-splash-sound {
+        background: none;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: rgba(255, 255, 255, 0.5);
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        pointer-events: auto;
+        transition: all 0.2s ease;
+        font-size: 1rem;
+      }
+      .jlz-splash-sound:hover {
+        border-color: rgba(255, 255, 255, 0.4);
+        color: rgba(255, 255, 255, 0.8);
+      }
+      .jlz-splash-sound.muted {
+        opacity: 0.4;
       }
 
       /* Loading text — shown before Enter */
@@ -155,35 +185,17 @@
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        color: rgba(255, 255, 255, 0.4);
+        color: rgba(255, 255, 255, 0.3);
         font-family: Inter, sans-serif;
-        font-size: 0.75rem;
+        font-size: 0.7rem;
         font-weight: 500;
         letter-spacing: 0.3em;
         text-transform: uppercase;
-        z-index: 3001;
+        z-index: 3000;
         opacity: 1;
-        transition: opacity 0.3s ease;
+        transition: opacity 0.4s ease;
       }
       #jlj-splash.ready .jlz-splash-loading { opacity: 0; }
-
-      /* CRT power-off effect — entering animation */
-      /* Squares explode outward + CRT scanline collapse */
-      #jlj-splash.entering .jlz-splash-text--1 { transform: scale(2.4); opacity: 0; transition: all 1.5s cubic-bezier(0.7, 0, 0.84, 0); }
-      #jlj-splash.entering .jlz-splash-text--2 { transform: scale(2.1); opacity: 0; transition: all 1.5s cubic-bezier(0.7, 0, 0.84, 0) 0.05s; }
-      #jlz-splash.entering .jlz-splash-text--3 { transform: scale(1.8); opacity: 0; transition: all 1.5s cubic-bezier(0.7, 0, 0.84, 0) 0.1s; }
-      #jlz-splash.entering .jlz-splash-text--4 { transform: scale(1.5); opacity: 0; transition: all 1.5s cubic-bezier(0.7, 0, 0.84, 0) 0.15s; }
-      #jlz-splash.entering .jlz-splash-enter { transform: translate(-50%, -50%) scale(0.7); opacity: 0; transition: all 0.5s ease; }
-
-      /* CRT power-off: background collapses to a horizontal line then fades */
-      #jlj-splash.entering {
-        animation: jlz-crt-off 1.5s cubic-bezier(0.7, 0, 0.84, 0) forwards;
-      }
-      @keyframes jlz-crt-off {
-        0% { transform: scaleY(1) scaleX(1); filter: brightness(1); }
-        60% { transform: scaleY(0.008) scaleX(1); filter: brightness(3); }
-        100% { transform: scaleY(0.008) scaleX(0); filter: brightness(0); opacity: 0; }
-      }
 
       /* Skip link — visible on focus (WCAG 2.4.1) */
       .skip-link {
@@ -242,7 +254,12 @@
         </text>
       </svg>
       <span class="jlz-splash-loading">Loading</span>
-      <button class="jlz-splash-enter" type="button" aria-label="Enter JUSTLOVEJAZZ experience">Enter</button>
+      <div class="jlz-splash-controls">
+        <button class="jlz-splash-enter" type="button" aria-label="Enter JUSTLOVEJAZZ experience">Enter</button>
+        <button class="jlz-splash-sound" type="button" aria-label="Toggle sound" aria-pressed="true">
+          <span uk-icon="icon: volume; ratio: 0.8" aria-hidden="true"></span>
+        </button>
+      </div>
     </div>
     <div id="app"></div>
     <noscript>

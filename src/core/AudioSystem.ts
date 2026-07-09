@@ -28,6 +28,13 @@ export class AudioSystem {
     return this._started
   }
 
+  /** Mute/unmute the audio output. */
+  setMuted(muted: boolean): void {
+    if (this.gain && this.ctx) {
+      this.gain.gain.setValueAtTime(muted ? 0 : 0.3, this.ctx.currentTime)
+    }
+  }
+
   /** Initialize the AudioContext + AnalyserNode. Call after user gesture. */
   start(): void {
     if (this._started) return

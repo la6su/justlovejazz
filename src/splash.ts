@@ -1,16 +1,15 @@
 // splash.ts — Splash overlay coordinator (codrops-inspired concentric squares).
 //
-// The splash shows 4 concentric SVG squares with text-on-path + an Enter button.
-// When ready, the Enter button appears. Click triggers the "entering" animation
-// (squares explode outward + CRT power-off) then removes the splash, revealing
-// the 3D scene.
-//
 // Lifecycle:
-//   1. createSplash() — splash is in HTML (index.html), wire Enter button immediately
-//   2. setProgress() — drives 3D cube progress (edge glow brightens)
-//   3. setState('ready') — shows Enter button, hides "Loading" text
-//   4. User clicks Enter → 'entering' class → squares explode + CRT effect
-//   5. After 1.5s animation → hide() + remove() → 3D scene visible
+//   1. Page loads — SVG squares animate in (CSS), "Loading" text shows
+//   2. App boots — setProgress() drives 3D cube loading
+//   3. Boot complete — setState('ready') shows Enter + Sound buttons
+//   4. User clicks Enter → 'entering' class → smooth fade out (0.8s)
+//   5. jlz:webgl-ready fires → NoiseText animates intro title
+//   6. After fade — splash removed, 3D scene fully visible
+//
+// NO auto-enter — user MUST click Enter. The 3D scene loads behind the
+// splash but stays hidden until Enter is pressed.
 
 export interface SplashOverlay {
   show(): void
@@ -28,6 +27,7 @@ export interface SplashOverlay {
 export function createSplash(): SplashOverlay {
   const id = 'jlj-splash'
   let enterHandler: (() => void) | null = null
+  let soundHandler: (() => void) | null = null
   let entered = false
 
   function getExp() {
@@ -46,46 +46,50 @@ export function createSplash(): SplashOverlay {
     entered = true
     const el = document.getElementById(id)
     if (!el) return
+    // Smooth fade out — NOT CRT collapse. The 3D scene is already
+    // rendering behind, so this reveals it seamlessly.
     el.classList.add('entering')
     getExp()?.triggerSplashOpener()
-    setTimeout(() => {
-      el.classList.add('hide')
-      setTimeout(() => el.remove(), 400)
-    }, 1500)
+    // Remove after fade transition (0.8s CSS)
+    setTimeout(() => el.remove(), 900)
   }
 
-  // Wire Enter button IMMEDIATELY — fixes "second click" bug.
-  // The button is in the HTML from page load, so we can attach the handler
-  // before the app finishes booting.
-  function wireEnterButton() {
+  function wireButtons() {
     const btn = document.querySelector<HTMLButtonElement>('.jlz-splash-enter')
     if (btn && !enterHandler) {
       enterHandler = doEnter
       btn.addEventListener('click', doEnter)
     }
+    const soundBtn = document.querySelector<HTMLButtonElement>('.jlz-splash-sound')
+    if (soundBtn && !soundHandler) {
+      soundHandler = () => {
+        const muted = soundBtn.classList.toggle('muted')
+        soundBtn.setAttribute('aria-pressed', String(!muted))
+        // Dispatch event — AudioSystem listens and toggles mute
+        window.dispatchEvent(new CustomEvent('jlz:sound-toggle', { detail: { muted } }))
+      }
+      soundBtn.addEventListener('click', soundHandler)
+    }
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', wireEnterButton)
+    document.addEventListener('DOMContentLoaded', wireButtons)
   } else {
-    wireEnterButton()
+    wireButtons()
   }
 
   return {
-    show(): void {
-      // No-op — splash is in HTML, already visible
-    },
+    show(): void {},
 
     hide(_durationMs?: number): void {
-      document.getElementById(id)?.classList.add('hide')
+      document.getElementById(id)?.classList.add('entering')
     },
 
     remove(): void {
       const btn = document.querySelector<HTMLButtonElement>('.jlz-splash-enter')
-      if (btn && enterHandler) {
-        btn.removeEventListener('click', enterHandler)
-        enterHandler = null
-      }
+      if (btn && enterHandler) btn.removeEventListener('click', enterHandler)
+      const soundBtn = document.querySelector<HTMLButtonElement>('.jlz-splash-sound')
+      if (soundBtn && soundHandler) soundBtn.removeEventListener('click', soundHandler)
       document.getElementById(id)?.remove()
     },
 
@@ -97,7 +101,7 @@ export function createSplash(): SplashOverlay {
       const el = document.getElementById(id)
       if (el && state === 'ready') {
         el.classList.add('ready')
-        wireEnterButton() // re-wire in case button wasn't available before
+        wireButtons()
       }
     },
 
@@ -113,9 +117,7 @@ export function createSplash(): SplashOverlay {
       doEnter()
     },
 
-    markPhase(_phase: string): void {
-      // No-op
-    },
+    markPhase(_phase: string): void {},
 
     getElements() {
       const el = document.getElementById(id)

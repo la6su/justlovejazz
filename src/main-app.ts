@@ -57,15 +57,12 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
     progress(100)
 
     // ── Splash → Enter → reveal 3D scene ──
-    // Flow:
-    //   1. splash.setState('ready') called by entry-app when progress >= 95%
-    //   2. User clicks Enter (or auto-enter after 8s)
-    //   3. splash.ts doEnter() adds 'entering' class → CRT power-off animation
-    //   4. We listen for 'entering' to dispatch jlz:webgl-ready (title animation)
-    //   5. After 1.5s, splash removes itself → 3D scene fully visible
+    // NO auto-enter — user MUST click Enter. The 3D scene loads behind
+    // the splash but stays hidden until Enter is pressed.
+    // jlz:webgl-ready fires when entering starts (for NoiseText animation).
 
     const INTRO_MS = 800
-    const TITLE_START_MS = 500 // fire jlz:webgl-ready 0.5s into entering animation
+    const TITLE_START_MS = 300 // fire jlz:webgl-ready shortly after entering starts
 
     const elapsed = performance.now() - bootStart
     const readyAt = Math.max(0, INTRO_MS - elapsed)
@@ -78,16 +75,8 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
         return
       }
 
-      // Auto-enter after 8s if user doesn't click
-      setTimeout(() => {
-        const el = document.getElementById('jlj-splash')
-        if (el && !el.classList.contains('entering') && !el.classList.contains('hide')) {
-          splash.triggerPortalCollapse()
-        }
-      }, 8000)
-
       // Dispatch jlz:webgl-ready when entering animation starts
-      // (either from Enter click or auto-enter)
+      // (from Enter click — no auto-enter)
       const observer = new MutationObserver(() => {
         const el = document.getElementById('jlj-splash')
         if (el?.classList.contains('entering')) {
