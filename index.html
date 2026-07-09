@@ -21,7 +21,7 @@
       content="A studio-grade interactive 3D portfolio. A WebGPU/WebGL cinematic experience built with Three.js."
     />
     <meta property="og:url" content="https://justlovejazz.dev/" />
-    <meta property="og:image" content="/assets/projects/undercurrent/cover.webp" />
+    <meta property="og:image" content="https://justlovejazz.dev/assets/projects/undercurrent/cover.webp" />
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
@@ -30,9 +30,11 @@
       name="twitter:description"
       content="A studio-grade interactive 3D portfolio. A WebGPU/WebGL cinematic experience built with Three.js."
     />
-    <meta name="twitter:image" content="/assets/projects/undercurrent/cover.webp" />
+    <meta name="twitter:image" content="https://justlovejazz.dev/assets/projects/undercurrent/cover.webp" />
 
-    <!-- Canonical — TODO: replace with the real production domain once deployed -->
+    <!-- Canonical — target production domain (justlovejazz.dev).
+         Dev domain is project.6la.ru (vite allowedHosts); replace here
+         once the production domain is live. -->
     <link rel="canonical" href="https://justlovejazz.dev/" />
 
     <title>JUSTLOVEJAZZ — Interactive 3D Portfolio</title>
@@ -41,15 +43,30 @@
     <link rel="preload" href="/fonts/inter-900.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="/fonts/inter.css" />
 
-    <!-- Structured data (JSON-LD) — helps search engines understand the site -->
+    <!-- Structured data (JSON-LD) — helps search engines understand the site.
+         Organization (not MusicGroup) — this is a web design studio, not a
+         music act. knowsAbout helps Google categorize the expertise. -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "MusicGroup",
+        "@type": "Organization",
         "name": "JUSTLOVEJAZZ",
         "description": "Studio-grade interactive 3D portfolio. A WebGPU/WebGL cinematic experience built with Three.js.",
-        "genre": "Jazz",
-        "url": "https://justlovejazz.dev/"
+        "url": "https://justlovejazz.dev/",
+        "logo": "https://justlovejazz.dev/favicon.svg",
+        "knowsAbout": [
+          "WebGPU",
+          "Three.js",
+          "TSL NodeMaterial",
+          "Web design",
+          "Interactive 3D",
+          "Shader art",
+          "UIkit 3"
+        ],
+        "sameAs": [
+          "https://github.com/la6su",
+          "https://twitter.com"
+        ]
       }
     </script>
 
