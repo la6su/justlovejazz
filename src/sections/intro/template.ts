@@ -5,7 +5,7 @@
 //
 // 3D sync: EnvSphere pattern 1 (light HSV rainbow), SplashCube face 1.
 
-import { REVEAL } from '../shared/constants'
+import { REVEAL } from '../_shared/constants'
 
 export function introSection(): string {
   return `

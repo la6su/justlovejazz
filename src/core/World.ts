@@ -13,7 +13,7 @@ import { EnvSphere } from '../Experience/World/EnvSphere'
 import { ParticleBurst } from '../Experience/World/ParticleBurst'
 import { getWorldConfigForPage, type PhaseConfig } from './WorldConfig'
 import { SectionSceneFactory } from './SectionSceneFactory'
-import { updateInstancedParticles } from '../Sections/_shared/makeInstancedParticles'
+import { updateInstancedParticles } from '../sections/_shared/makeInstancedParticles'
 import { disposeMaterialDeep } from '../Utils/dispose'
 
 export interface WorldTransformResult {

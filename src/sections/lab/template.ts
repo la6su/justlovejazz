@@ -5,7 +5,7 @@
 //
 // 3D sync: EnvSphere pattern 0 (light blue-grey HSV), SplashCube face 0.
 
-import { REVEAL } from '../shared/constants'
+import { REVEAL } from '../_shared/constants'
 
 export function labSection(): string {
   return `

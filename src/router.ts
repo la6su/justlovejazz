@@ -8,11 +8,7 @@ let currentPage: PageId | null = null
 const ROUTES: Record<string, PageId> = {
   '/': 'home',
   '/services': 'services',
-  '/cases': 'cases',
-  '/process': 'process',
-  '/team': 'team',
-  '/journal': 'journal',
-  '/contact': 'contact',
+  '/posts': 'posts',
 }
 
 function getPageFromLocation(): PageId {
@@ -41,13 +37,11 @@ function renderView(page: PageId = getPageFromLocation()): void {
   if (!el) return
   document.body.dataset.page = page
   document.documentElement.dataset.page = page
-  // Content pages always render light text over the 3D canvas — force
-  // dark theme (unless user has a manual 'light' override in localStorage).
-  // ThemeManager.setAutoTheme(false) sets the auto state; if mode is 'auto',
-  // it applies dark. If mode is 'light'/'dark', the manual override wins.
-  // See docs/UIKIT3.md §4 (theme toggle scope).
+  // Content pages: first section (idx 0) is light/inverse by default.
+  // JoystickNav._syncPageSection handles theme on navigation (first/last = light).
+  // On initial load, set light to match the first section.
   if (page !== 'home') {
-    themeManager.setAutoTheme(false)
+    themeManager.setAutoTheme(true) // first section is light/inverse
   }
   // Keep the SEO-friendly <title> from index.html — do not clobber it with
   // a shorter tab title on JS boot.

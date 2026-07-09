@@ -1,59 +1,43 @@
 // src/pages/index.ts — Page registry + router
 //
-// Re-exports all page renderers. This is the public API consumed by
-// src/router.ts and src/templates.ts (backward-compat shim).
+// 3 pages, each with 6 sections (4 unique + 2 secret side):
+//   - home (index)   — Lab/Intro/About/Works/Contact/Process
+//   - services       — Intro/Services-list/Stack/Process/Contact/Values
+//   - posts          — Intro/Latest/Featured/Categories/Contact/Archive
+//
+// Intro (1st) and Contact (last main) are light/inverse by default —
+// black splash → light intro → dark sections → light contact.
 //
 // Structure:
 //   src/pages/
 //   ├── index.ts              ← this file (registry + renderPage)
 //   ├── home.ts               ← home page (6 cube-face sections + footer)
-//   ├── sections/             ← 6 home section templates (1:1 cube faces)
-//   │   ├── lab.ts            ← face 0 (top +Y, secret left)
-//   │   ├── intro.ts          ← face 1 (front +Z, start)
-//   │   ├── about.ts          ← face 2 (right +X)
-//   │   ├── works.ts          ← face 3 (back -Z, BakuCarousel)
-//   │   ├── contact.ts        ← face 4 (bottom -Y)
-//   │   └── process.ts        ← face 5 (left -X, secret right)
-//   ├── content/              ← 6 content page templates
-//   │   ├── services.ts
-//   │   ├── cases.ts
-//   │   ├── process.ts
-//   │   ├── team.ts
-//   │   ├── journal.ts
-//   │   └── contact.ts
-//   └── shared/
-//       ├── constants.ts      ← REVEAL, PAGE_REVEAL, PageId, SectionId
-//       └── footer.ts         ← FOOTER (unified, brand + social only)
+//   ├── content/
+//   │   ├── services.ts       ← services page (6 sections)
+//   │   └── posts.ts          ← posts page (6 sections)
+//   └── shared/               ← (legacy, redirects to sections/_shared)
 //
-// Cube face → section → 3D sync mapping:
-//   See shared/constants.ts for the full table.
-//   SplashCube.FACE_ROTATIONS in src/Experience/World/SplashCube.ts must match.
+//   src/sections/             ← unified section modules (3D scene + HTML template)
+//   ├── _shared/              ← constants, footer, makeParticles
+//   ├── lab/                  ← face 0 (top +Y, secret left)
+//   ├── intro/                ← face 1 (front +Z, start, light/inverse)
+//   ├── about/                ← face 2 (right +X)
+//   ├── works/                ← face 3 (back -Z, BakuCarousel)
+//   ├── contact/              ← face 4 (bottom -Y, light/inverse)
+//   └── process/              ← face 5 (left -X, secret right)
 
 import { homePage } from './home'
 import { servicesPage } from './content/services'
-import { casesPage } from './content/cases'
-import { processPage } from './content/process'
-import { teamPage } from './content/team'
-import { journalPage } from './content/journal'
-import { contactPage } from './content/contact'
-import type { PageId } from './shared/constants'
+import { postsPage } from './content/posts'
 
-export type { PageId, SectionId } from './shared/constants'
+export type PageId = 'home' | 'services' | 'posts'
 
 export function renderPage(page: PageId = 'home'): string {
   switch (page) {
     case 'services':
       return servicesPage()
-    case 'cases':
-      return casesPage()
-    case 'process':
-      return processPage()
-    case 'team':
-      return teamPage()
-    case 'journal':
-      return journalPage()
-    case 'contact':
-      return contactPage()
+    case 'posts':
+      return postsPage()
     case 'home':
     default:
       return homePage()

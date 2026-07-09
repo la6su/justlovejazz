@@ -291,6 +291,35 @@ body:not([data-page='home']) .jlz-hint {
   -webkit-backdrop-filter: blur(18px) saturate(140%);
 }
 
+/* Modal theme-aware — uk-light body class flips to light variant */
+body.uk-light #jlz-menu-modal .uk-modal-dialog {
+  background: rgba(245, 245, 248, 0.94);
+  color: rgba(5, 5, 7, 0.86);
+  border: 1px solid rgba(5, 5, 7, 0.1);
+}
+
+body.uk-light #jlz-menu-modal .uk-text-meta,
+body.uk-light #jlz-menu-modal .jlz-main-menu-nav > li > a {
+  color: rgba(5, 5, 7, 0.55);
+}
+
+body.uk-light #jlz-menu-modal .jlz-main-menu-nav > li.uk-active > a,
+body.uk-light #jlz-menu-modal .jlz-main-menu-nav > li > a:hover {
+  color: #050507;
+}
+
+body.uk-light #jlz-menu-modal .jlz-theme-toggle .uk-button {
+  background: rgba(5, 5, 7, 0.04);
+  border-color: rgba(5, 5, 7, 0.12);
+  color: rgba(5, 5, 7, 0.7);
+}
+
+body.uk-light #jlz-menu-modal .jlz-theme-toggle .uk-button:hover {
+  background: rgba(5, 5, 7, 0.08);
+  border-color: rgba(5, 5, 7, 0.2);
+  color: #050507;
+}
+
 .jlz-main-menu-nav > li > a {
   font-size: clamp(2rem, 7vw, 5rem);
   line-height: 1;

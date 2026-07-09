@@ -5,7 +5,7 @@
 //
 // 3D sync: EnvSphere pattern 4 (light off-white gradient), SplashCube face 4.
 
-import { REVEAL } from '../shared/constants'
+import { REVEAL } from '../_shared/constants'
 
 export function contactSection(): string {
   return `

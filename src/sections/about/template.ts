@@ -4,7 +4,7 @@
 //
 // 3D sync: EnvSphere pattern 2 (dark grey gradient), SplashCube face 2.
 
-import { REVEAL } from '../shared/constants'
+import { REVEAL } from '../_shared/constants'
 
 export function aboutSection(): string {
   return `

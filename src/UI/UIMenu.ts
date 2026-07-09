@@ -13,11 +13,7 @@ const MAIN_SECTION_INDICES = [1, 2, 3, 4]
 const PAGE_LINKS = [
   ['/', 'Home'],
   ['/services', 'Services'],
-  ['/cases', 'Work'],
-  ['/process', 'Process'],
-  ['/team', 'Team'],
-  ['/journal', 'Journal'],
-  ['/contact', 'Contact'],
+  ['/posts', 'Posts'],
 ] as const
 
 const THEME_MODES: { id: ThemeMode; label: string; icon: string }[] = [

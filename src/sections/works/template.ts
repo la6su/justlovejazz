@@ -7,7 +7,7 @@
 // 3D sync: EnvSphere pattern 3 (dark blue-grey gradient), SplashCube face 3.
 // BakuCarousel lives in sceneGroups[3] — see World.ts + Experience.ts getCarousel().
 
-import { REVEAL } from '../shared/constants'
+import { REVEAL } from '../_shared/constants'
 
 export function worksSection(): string {
   return `
