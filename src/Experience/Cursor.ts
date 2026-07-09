@@ -43,12 +43,12 @@ export class Cursor {
   private innerEl: HTMLElement
   private canvas: HTMLCanvasElement
   private ctx: CanvasRenderingContext2D | null
-  private posX = -100
-  private posY = -100
-  private targetX = -100
-  private targetY = -100
-  private innerX = -100
-  private innerY = -100
+  private posX = 0
+  private posY = 0
+  private targetX = 0
+  private targetY = 0
+  private innerX = 0
+  private innerY = 0
   private readonly lerpFactor = 0.2
 
   // Noisy circle state
@@ -80,10 +80,21 @@ export class Cursor {
     this.canvas.height = CANVAS_SIZE
     this.ctx = this.canvas.getContext('2d')
 
-    // Hide on mobile/touch
-    if (DeviceCapability.isMobile) {
+    // Hide on mobile/touch — UNLESS dev override is set.
+    // In DevTools responsive mode, touch emulation triggers isMobile=true,
+    // hiding the cursor. Set localStorage.setItem('jlz:force-cursor', '1')
+    // in DevTools console to force-enable the cursor for debugging.
+    const forceCursor = (() => {
+      try { return localStorage.getItem('jlz:force-cursor') === '1' } catch { return false }
+    })()
+    if (DeviceCapability.isMobile && !forceCursor) {
       this.innerEl.style.display = 'none'
       this.canvas.style.display = 'none'
+    }
+    // Also set a class on <html> so CSS @media (pointer: coarse) can be
+    // overridden when force-cursor is enabled.
+    if (forceCursor) {
+      document.documentElement.classList.add('jlz-force-cursor')
     }
 
     document.body.appendChild(this.innerEl)

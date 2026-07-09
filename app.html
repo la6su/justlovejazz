@@ -45,8 +45,10 @@
       /* ── App loader with CRT curtains opener ──
          Two phases:
          1. Loading: curtains closed (cover screen), progress bar visible
-         2. Ready: curtains split apart (CRT-on), 3D scene revealed
-         The .fade-out class triggers curtain split + fade. */
+         2. Ready: curtains split apart (CRT-on), 3D scene revealed.
+            Loader bg fades to transparent so 3D scene is visible THROUGH
+            the opening curtains (not behind a solid black loader).
+         The .fade-out class triggers curtain split + bg transparency. */
       #jlz-app-loader {
         position: fixed;
         inset: 0;
@@ -56,6 +58,14 @@
         justify-content: center;
         background: #050507;
         overflow: hidden;
+        transition: background-color 0.3s ease;
+      }
+      /* On fade-out: bg becomes transparent immediately (curtains still
+         cover top/bottom halves, so no visual gap). As curtains split,
+         3D scene is revealed through the opening. */
+      #jlz-app-loader.fade-out {
+        background: transparent;
+        pointer-events: none;
       }
 
       /* CRT curtains — two panels that split apart on ready */

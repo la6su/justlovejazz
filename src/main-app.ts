@@ -33,17 +33,21 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
 
     const { progress } = opts
     const bootStart = performance.now()
-    progress(10)
+    // Start at 15% — splash already preloaded entry-shell via modulepreload,
+    // so the app bundle is partially cached. This makes the progress feel
+    // continuous (splash showed 'Preparing 3D…', app continues from there).
+    progress(15)
 
     const { UIManager } = await import('./UI/UIManager')
     const ui = new UIManager()
     await ui.init()
-    progress(50)
+    progress(40)
 
     const { Experience } = await import('./Experience/Experience')
+    progress(55)
 
     const onReadyCb: OnReadyCallback = (_renderer, _scene: THREE.Scene) => {
-      progress(95)
+      progress(85)
     }
 
     // Inline Bootstrapper.init — three lines (construct + init + onReady cb).
@@ -53,7 +57,9 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
       experience.renderer.instance as import('./Experience/Renderer').RenderSurface,
       experience.scene,
     )
-    progress(98)
+    progress(95)
+    // Small delay at 95% so user sees 'Ready' status before 100% + curtain split
+    await new Promise((resolve) => setTimeout(resolve, 150))
     progress(100)
 
     // ── Fire jlz:webgl-ready → fades out #jlz-app-loader + animates titles ──

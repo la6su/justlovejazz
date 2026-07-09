@@ -794,6 +794,19 @@ body .jlz-page .uk-text-meta {
   }
 }
 
+/* Dev override: force-enable cursor in DevTools responsive mode.
+   Set localStorage.setItem('jlz:force-cursor', '1') in console. */
+html.jlz-force-cursor .custom-cursor-inner,
+html.jlz-force-cursor .custom-cursor-canvas {
+  display: block !important;
+}
+html.jlz-force-cursor body,
+html.jlz-force-cursor a,
+html.jlz-force-cursor button,
+html.jlz-force-cursor .interactive {
+  cursor: none;
+}
+
 /* Hide system cursor only on precise-pointer devices (desktop) */
 @media (hover: hover) and (pointer: fine) {
   body,
