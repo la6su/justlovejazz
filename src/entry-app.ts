@@ -5,21 +5,41 @@ import { bootstrap as bootstrapApp, type BootstrapOptions } from './main-app'
 import { NoiseText } from './Experience/NoiseText'
 import { eventBus } from './core/EventBus'
 
-// ── App loader (replaces splash — splash is now a separate /splash page) ──
-// app.html has #jlz-app-loader which shows "Loading" text. We fade it out
-// when Experience.init() completes (jlz:webgl-ready fires).
+// ── App loader (replaces splash — splash is now a separate / page) ──
+// app.html has #jlz-app-loader with CRT curtains + progress bar.
+// We update progress as Experience.init() boots, then trigger curtain
+// split (fade-out class) when jlz:webgl-ready fires.
 function fadeOutLoader(): void {
   const loader = document.getElementById('jlz-app-loader')
   if (!loader) return
-  loader.classList.add('fade-out')
-  setTimeout(() => loader.remove(), 400)
+  // Set progress to 100% before split (visual completeness)
+  updateLoaderProgress(100)
+  // Small delay so user sees 100% before curtains split
+  setTimeout(() => {
+    loader.classList.add('fade-out')
+    // Remove from DOM after curtain split (0.8s) + small buffer
+    setTimeout(() => loader.remove(), 1000)
+  }, 200)
 }
 
 function updateLoaderProgress(pct: number): void {
-  const loader = document.getElementById('jlz-app-loader')
-  if (!loader) return
-  const text = pct >= 95 ? 'Ready' : pct >= 55 ? 'Warming up' : 'Loading'
-  loader.textContent = text
+  const bar = document.getElementById('jlz-loader-bar')
+  const pctEl = document.getElementById('jlz-loader-pct')
+  const statusEl = document.getElementById('jlz-loader-status')
+  const progressbar = document.getElementById('jlz-loader-progress')
+  if (!bar || !pctEl) return
+  const value = Math.min(100, Math.max(0, Math.round(pct)))
+  bar.style.width = `${value}%`
+  pctEl.textContent = `${value}%`
+  // Update ARIA for screen readers
+  if (progressbar) progressbar.setAttribute('aria-valuenow', String(value))
+  // Status text — friendly phases
+  if (statusEl) {
+    if (value >= 95) statusEl.textContent = 'Ready'
+    else if (value >= 55) statusEl.textContent = 'Warming up'
+    else if (value >= 20) statusEl.textContent = 'Loading'
+    else statusEl.textContent = 'Starting'
+  }
 }
 
 async function boot(): Promise<void> {

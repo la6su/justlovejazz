@@ -164,15 +164,30 @@
       }
       #jlj-splash.fading .jlz-curtain-seam { opacity: 1; }
 
-      /* SVG squares — main splash visual (curtains hidden by default) */
+      /* SVG squares — cover full screen (like background-size: cover).
+         Uses min(100vw, 100vh) so the square always fills the viewport
+         without distortion. No max-width — let it be big. */
       .jlz-splash-svg {
-        width: 90vmin;
-        height: 90vmin;
-        max-width: 700px;
-        max-height: 700px;
+        width: min(100vw, 100vh);
+        height: min(100vw, 100vh);
         pointer-events: none;
         z-index: 3000;
         position: relative;
+      }
+
+      /* On landscape (wide screens), stretch to viewport height.
+         On portrait (mobile), stretch to viewport width. */
+      @media (orientation: landscape) {
+        .jlz-splash-svg {
+          width: 100vh;
+          height: 100vh;
+        }
+      }
+      @media (orientation: portrait) {
+        .jlz-splash-svg {
+          width: 100vw;
+          height: 100vw;
+        }
       }
 
       .jlz-splash-text {
@@ -186,10 +201,10 @@
         transform: scale(0.3);
         animation: jlz-splash-in 2.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       }
-      .jlz-splash-text--1 { font-size: clamp(50px, 9vmin, 70px); fill: #515d84; animation-delay: 0s; }
-      .jlz-splash-text--2 { font-size: clamp(38px, 7vmin, 52px); fill: #4a5474; animation-delay: 0.12s; }
-      .jlz-splash-text--3 { font-size: clamp(26px, 5vmin, 38px); fill: #3e4866; animation-delay: 0.24s; }
-      .jlz-splash-text--4 { font-size: clamp(18px, 3.5vmin, 26px); fill: #333c54; animation-delay: 0.36s; }
+      .jlz-splash-text--1 { font-size: clamp(60px, 11vmin, 90px); fill: #515d84; animation-delay: 0s; }
+      .jlz-splash-text--2 { font-size: clamp(46px, 9vmin, 68px); fill: #4a5474; animation-delay: 0.12s; }
+      .jlz-splash-text--3 { font-size: clamp(32px, 6vmin, 48px); fill: #3e4866; animation-delay: 0.24s; }
+      .jlz-splash-text--4 { font-size: clamp(22px, 4.5vmin, 34px); fill: #333c54; animation-delay: 0.36s; }
 
       @keyframes jlz-splash-in {
         0% { opacity: 0; transform: scale(0.3); }
