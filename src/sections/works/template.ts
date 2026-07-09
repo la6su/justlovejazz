@@ -18,7 +18,7 @@ export function worksSection(): string {
             <p class="uk-text-meta uk-margin-small-top">Six interactive experiences</p>
           </div>
           <!-- BOTTOM: drag hint -->
-          <div class="uk-text-meta uk-flex uk-flex-center uk-flex-middle" style="gap: 0.5rem;" ${REVEAL}>
+          <div class="uk-text-meta uk-flex uk-flex-center uk-flex-middle jlz-flex-gap-small" ${REVEAL}>
             <span uk-icon="icon: arrow-left; ratio: 0.7" aria-hidden="true"></span>
             <span>drag to spin</span>
             <span uk-icon="icon: arrow-right; ratio: 0.7" aria-hidden="true"></span>

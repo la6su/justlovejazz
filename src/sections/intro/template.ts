@@ -23,7 +23,7 @@ export function introSection(): string {
           </div>
           <!-- BOTTOM: CTA + scroll hint -->
           <div class="uk-flex uk-flex-column uk-flex-middle" ${REVEAL}>
-            <div class="uk-flex uk-flex-center uk-flex-wrap uk-flex-middle" style="gap: 0.5rem;">
+            <div class="uk-flex uk-flex-center uk-flex-wrap uk-flex-middle jlz-flex-gap-small">
               <a href="/services" class="uk-button uk-button-primary uk-button-small">Services</a>
               <a href="/posts" class="uk-button uk-button-default uk-button-small">Posts</a>
               <a href="/#section-contact" class="uk-button uk-button-default uk-button-small">Contact</a>

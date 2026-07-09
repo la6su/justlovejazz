@@ -1049,6 +1049,31 @@ section[data-section='process'] .uk-list li:hover {
   }
 }
 
+/* ── Numeral / date column helpers (replace inline styles) ──
+   Used by: services list (01-04), services process steps, posts archive
+   dates, process timeline. Replaces style="min-width: 2.5rem; opacity: 0.5;"
+   etc. — keeps scaling rem-based via tokens, theme-aware via opacity. */
+.jlz-numeral {
+  min-width: var(--jlz-space-10); /* 2.5rem */
+  opacity: 0.5;
+  display: inline-block;
+}
+
+.jlz-numeral--sm {
+  min-width: var(--jlz-space-8); /* 2rem */
+}
+
+.jlz-numeral--date {
+  min-width: var(--jlz-space-12); /* 3rem */
+  opacity: 1; /* dates use uk-text-meta for muted color, no opacity dim */
+}
+
+/* Flex gap utility (UIkit uk-flex has no gap control).
+   Used by: intro CTA button row, works drag hint. */
+.jlz-flex-gap-small {
+  gap: var(--jlz-space-2); /* 0.5rem */
+}
+
 /* ------------------------------------------------------------------
    Unified footer — fixed bottom bar (brand + social only)
    Fixed positioning because content pages use position:absolute stacked

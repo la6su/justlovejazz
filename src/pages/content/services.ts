@@ -34,7 +34,7 @@ export function servicesPage(): string {
           <ul class="uk-list uk-margin-top" uk-scrollspy-class>
             ${services.map((s) => `
               <li class="uk-flex uk-flex-middle uk-margin">
-                <span class="uk-h3 uk-text-muted uk-margin-right" style="min-width: 2.5rem; opacity: 0.5;">${s.num}</span>
+                <span class="uk-h3 uk-text-muted uk-margin-right jlz-numeral">${s.num}</span>
                 <div class="uk-flex-1 uk-text-left">
                   <h2 class="uk-h4 uk-margin-remove">${s.title}</h2>
                   <p class="uk-text-meta uk-margin-small-top">${s.desc}</p>
@@ -59,7 +59,7 @@ export function servicesPage(): string {
             </div>
             <div class="uk-card uk-card-default uk-card-body">
               <h3 class="uk-h5">UI & Engineering</h3>
-              <p class="uk-text-meta">UIkit 3, TypeScript strict, Bun + Vite, Prisma.</p>
+              <p class="uk-text-meta">UIkit 3, TypeScript strict, Bun + Vite, Less.</p>
             </div>
             <div class="uk-card uk-card-default uk-card-body">
               <h3 class="uk-h5">Performance</h3>
@@ -85,10 +85,10 @@ export function servicesPage(): string {
             <h2 class="uk-heading-medium uk-margin-small-top uk-margin-remove-bottom">4 steps</h2>
           </div>
           <ul class="uk-list uk-list-divider uk-margin-top" uk-scrollspy-class>
-            <li class="uk-flex uk-flex-middle"><span class="uk-h3 uk-margin-right" style="min-width:2.5rem;opacity:0.5;">01</span><div class="uk-flex-1 uk-text-left"><h3 class="uk-h4 uk-margin-remove">Discover</h3><p class="uk-text-meta">Research, audit, define the problem.</p></div></li>
-            <li class="uk-flex uk-flex-middle"><span class="uk-h3 uk-margin-right" style="min-width:2.5rem;opacity:0.5;">02</span><div class="uk-flex-1 uk-text-left"><h3 class="uk-h4 uk-margin-remove">Design</h3><p class="uk-text-meta">Art direction, 3D, interaction prototypes.</p></div></li>
-            <li class="uk-flex uk-flex-middle"><span class="uk-h3 uk-margin-right" style="min-width:2.5rem;opacity:0.5;">03</span><div class="uk-flex-1 uk-text-left"><h3 class="uk-h4 uk-margin-remove">Develop</h3><p class="uk-text-meta">WebGPU, TSL shaders, performance budgets.</p></div></li>
-            <li class="uk-flex uk-flex-middle"><span class="uk-h3 uk-margin-right" style="min-width:2.5rem;opacity:0.5;">04</span><div class="uk-flex-1 uk-text-left"><h3 class="uk-h4 uk-margin-remove">Ship</h3><p class="uk-text-meta">Launch, measure, evolve.</p></div></li>
+            <li class="uk-flex uk-flex-middle"><span class="uk-h3 uk-margin-right jlz-numeral">01</span><div class="uk-flex-1 uk-text-left"><h3 class="uk-h4 uk-margin-remove">Discover</h3><p class="uk-text-meta">Research, audit, define the problem.</p></div></li>
+            <li class="uk-flex uk-flex-middle"><span class="uk-h3 uk-margin-right jlz-numeral">02</span><div class="uk-flex-1 uk-text-left"><h3 class="uk-h4 uk-margin-remove">Design</h3><p class="uk-text-meta">Art direction, 3D, interaction prototypes.</p></div></li>
+            <li class="uk-flex uk-flex-middle"><span class="uk-h3 uk-margin-right jlz-numeral">03</span><div class="uk-flex-1 uk-text-left"><h3 class="uk-h4 uk-margin-remove">Develop</h3><p class="uk-text-meta">WebGPU, TSL shaders, performance budgets.</p></div></li>
+            <li class="uk-flex uk-flex-middle"><span class="uk-h3 uk-margin-right jlz-numeral">04</span><div class="uk-flex-1 uk-text-left"><h3 class="uk-h4 uk-margin-remove">Ship</h3><p class="uk-text-meta">Launch, measure, evolve.</p></div></li>
           </ul>
         </div>
       </section>
