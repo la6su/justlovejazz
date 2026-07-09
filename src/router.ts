@@ -1,13 +1,22 @@
-/**
- * SPA Router — single-page scroll layout with anchor navigation.
- * 6 sections (intro→contact), scroll-based, footer timeline dots.
- * No hash routes — pure anchor links like junni reference.
- */
-
-import { renderPage } from './templates'
+import { renderPage, type PageId } from './templates'
 import UIkit from 'uikit'
 
 let initialized = false
+let currentPage: PageId | null = null
+
+const ROUTES: Record<string, PageId> = {
+  '/': 'home',
+  '/music': 'music',
+  '/videos': 'videos',
+  '/shows': 'shows',
+  '/news': 'news',
+  '/about': 'about',
+  '/gallery': 'gallery',
+}
+
+function getPageFromLocation(): PageId {
+  return ROUTES[window.location.pathname] ?? 'home'
+}
 
 const container: HTMLElement | null = (() => {
   let el = document.getElementById('spa-content')
@@ -26,25 +35,35 @@ const container: HTMLElement | null = (() => {
   return el
 })()
 
-function renderView(): void {
+function renderView(page: PageId = getPageFromLocation()): void {
   const el = container
   if (!el) return
-  document.body.dataset.page = 'home'
+  document.body.dataset.page = page
+  document.documentElement.dataset.page = page
   // Keep the SEO-friendly <title> from index.html — do not clobber it with
   // a shorter tab title on JS boot.
   // document.title is intentionally left as-is.
-  // Skip re-injection when #spa-content was prerendered at build time
-  // (Vite prerender-home plugin). Re-injecting the same HTML would flash
-  // and re-trigger UIkit init unnecessarily. Still run UIkit.update below
-  // so UIkit attributes (uk-grid, uk-scrollspy, …) hydrate.
-  if (el.children.length === 0) {
-    el.innerHTML = renderPage()
+  if (currentPage !== page || el.children.length === 0) {
+    el.innerHTML = renderPage(page)
+    if (page === 'home') {
+      el.querySelector<HTMLElement>('[data-section="intro"]')?.classList.add('section-active')
+    }
+    currentPage = page
   }
   // Initialize UIkit components on dynamically inserted content
   ;(UIkit as any).update(el)
+  window.dispatchEvent(new CustomEvent('jlz:route-change', { detail: { page } }))
   if ('requestIdleCallback' in window) {
     requestIdleCallback(() => (UIkit as any).update(el), { timeout: 100 })
   }
+}
+
+function navigateToPage(path: string): void {
+  const page = ROUTES[path]
+  if (!page) return
+  history.pushState(null, '', path)
+  renderView(page)
+  window.scrollTo({ top: 0, behavior: 'auto' })
 }
 
 export function navigateTo(anchor: string): void {
@@ -60,7 +79,7 @@ export function initRouter(): void {
   initialized = true
 
   renderView()
-  window.dispatchEvent(new CustomEvent('jlj:navigate', { detail: { page: 'home' } }))
+  window.dispatchEvent(new CustomEvent('jlj:navigate', { detail: { page: getPageFromLocation() } }))
 
   // Handle initial anchor in URL (e.g. #section-about)
   if (location.hash.startsWith('#section-')) {
@@ -74,7 +93,14 @@ export function initRouter(): void {
     const anchorEl = (e.target as HTMLElement)?.closest('a[href]') as HTMLAnchorElement | null
     if (!anchorEl) return
     const href = anchorEl.getAttribute('href')
-    if (!href || !href.startsWith('#')) return
+    if (!href) return
+    const url = new URL(href, window.location.origin)
+    if (url.origin === window.location.origin && ROUTES[url.pathname]) {
+      e.preventDefault()
+      navigateToPage(url.pathname)
+      return
+    }
+    if (!href.startsWith('#')) return
     e.preventDefault()
     const tgt = document.getElementById(href.replace('#', ''))
     if (tgt) {
@@ -85,10 +111,11 @@ export function initRouter(): void {
   document.addEventListener('click', handler, true)
 
   window.addEventListener('popstate', () => {
+    renderView()
     if (location.hash.startsWith('#section-')) {
       const tgt = document.getElementById(location.hash.replace('#', ''))
       if (tgt) tgt.scrollIntoView({ behavior: 'smooth' })
-      window.dispatchEvent(new CustomEvent('jlj:navigate', { detail: { page: 'home' } }))
+      window.dispatchEvent(new CustomEvent('jlj:navigate', { detail: { page: getPageFromLocation() } }))
     }
   })
 }

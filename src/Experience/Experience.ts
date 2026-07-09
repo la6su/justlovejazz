@@ -268,7 +268,6 @@ export class Experience {
 
     // JoystickNav is a DOM overlay (fixed bottom-center) — append to body.
     document.body.appendChild(this._circNav.el)
-    document.body.appendChild(this._uiMenu.button)
 
     // DevPanel — created AFTER nav so it can read current section
     if (import.meta.env.DEV) {

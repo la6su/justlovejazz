@@ -271,6 +271,234 @@ export function homePage(): string {
   `
 }
 
-export function renderPage(): string {
-  return homePage()
+export type PageId = 'home' | 'music' | 'videos' | 'shows' | 'news' | 'about' | 'gallery'
+
+const PAGE_REVEAL = 'uk-scrollspy="cls: uk-animation-fade; delay: 120; target: > *"'
+
+export function renderMusicPage(): string {
+  return `
+    <article class="jlz-page" data-page-view="music">
+      <section class="jlz-page-section section-active uk-section uk-section-large" data-page-section="music-discography">
+        <div class="uk-container uk-container-expand" ${PAGE_REVEAL}>
+          <p class="uk-text-meta uk-text-uppercase">Discography</p>
+          <h1 class="uk-heading-xlarge">Selected Sounds</h1>
+          <div class="uk-grid-large uk-child-width-1-2@m uk-grid-match uk-margin-large-top" uk-grid>
+            ${albumCard('Nocturne Blue', 'Album * 2026', ['After Hours', 'Velvet Echo', 'Mono Sunday', 'Undercurrent'])}
+            ${albumCard('Ebb Vibes', 'Single * 2026', ['Warm Tape', 'Golden Delay', 'Blue Room'])}
+          </div>
+        </div>
+      </section>
+      <section class="jlz-page-section uk-section uk-section-large" data-page-section="music-platforms">
+        <div class="uk-container uk-container-expand" ${PAGE_REVEAL}>
+          <h2 class="uk-heading-medium">Listen Now</h2>
+          <div class="uk-grid-small uk-child-width-auto@s uk-margin-medium-top" uk-grid>
+            ${platformButton('Spotify')}
+            ${platformButton('Apple Music')}
+            ${platformButton('SoundCloud')}
+            ${platformButton('Bandcamp')}
+          </div>
+        </div>
+      </section>
+    </article>
+  `
+}
+
+export function renderVideosPage(): string {
+  const videos = ['Heartbeat Session', 'Golden Days Live', 'Nightscape Cut']
+  return `
+    <article class="jlz-page" data-page-view="videos">
+      <section class="jlz-page-section section-active uk-section uk-section-large" data-page-section="videos-archive">
+        <div class="uk-container uk-container-expand" ${PAGE_REVEAL}>
+          <p class="uk-text-meta uk-text-uppercase">Videos</p>
+          <h1 class="uk-heading-xlarge">Motion Archive</h1>
+          <div class="uk-grid-large uk-child-width-1-3@m uk-grid-match uk-margin-large-top" uk-grid>
+            ${videos.map((title, index) => `
+              <article class="uk-card uk-card-default uk-card-body uk-card-hover">
+                <span class="uk-text-meta">0${index + 1}</span>
+                <h2 class="uk-card-title">${title}</h2>
+                <p class="uk-text-meta">Cinematic live capture with reactive light and spatial sound.</p>
+                <a class="uk-button uk-button-text" href="/videos">Watch</a>
+              </article>
+            `).join('')}
+          </div>
+        </div>
+      </section>
+      <section class="jlz-page-section uk-section uk-section-large" data-page-section="videos-stage">
+        <div class="uk-container uk-container-expand" ${PAGE_REVEAL}>
+          <p class="uk-text-meta uk-text-uppercase">Featured</p>
+          <h2 class="uk-heading-xlarge">Live Capture</h2>
+          <p class="uk-text-lead uk-margin-large-top">A rotating selection of stage edits, studio sketches, and projection tests built for full-screen viewing.</p>
+          <a class="uk-button uk-button-default uk-margin-medium-top" href="/videos">Open Archive</a>
+        </div>
+      </section>
+    </article>
+  `
+}
+
+export function renderShowsPage(): string {
+  const shows = [
+    ['17.06', 'Munich, DE'],
+    ['19.06', 'Hamburg, DE'],
+    ['24.07', 'Los Angeles, US'],
+    ['26.07', 'Mexico City, MX'],
+    ['03.08', 'Barcelona, ES'],
+  ]
+  return `
+    <article class="jlz-page" data-page-view="shows">
+      <section class="jlz-page-section section-active uk-section uk-section-large" data-page-section="shows-events">
+        <div class="uk-container uk-container-expand" ${PAGE_REVEAL}>
+          <p class="uk-text-meta uk-text-uppercase">Past And Future Live</p>
+          <h1 class="uk-heading-xlarge">Events</h1>
+          <ul class="uk-list uk-list-divider uk-margin-large-top">
+            ${shows.map(([date, city]) => `
+              <li class="jlz-event-row uk-flex uk-flex-middle uk-flex-between">
+                <span class="uk-text-large uk-text-bold">${date}</span>
+                <h2 class="uk-h3 uk-margin-remove">${city}</h2>
+                <a class="uk-button uk-button-default" href="/shows">Tickets</a>
+              </li>
+            `).join('')}
+          </ul>
+        </div>
+      </section>
+      <section class="jlz-page-section uk-section uk-section-large" data-page-section="shows-notes">
+        <div class="uk-container uk-container-expand" ${PAGE_REVEAL}>
+          <p class="uk-text-meta uk-text-uppercase">On The Road</p>
+          <h2 class="uk-heading-xlarge">Concert Notes</h2>
+          <p class="uk-text-lead uk-margin-large-top">Compact stage packages, reactive visuals, and lighting cues for intimate rooms and festival screens.</p>
+          <a class="uk-button uk-button-default uk-margin-medium-top" href="/shows">Book A Show</a>
+        </div>
+      </section>
+    </article>
+  `
+}
+
+export function renderNewsPage(): string {
+  const posts = [
+    ['Shows', 'Street Serenades: Live On-The-Go Sessions'],
+    ['Interviews', 'The Story Behind Second of Eternity'],
+    ['Studio', 'How We Compose Interfaces With Light'],
+  ]
+  return `
+    <article class="jlz-page" data-page-view="news">
+      <section class="jlz-page-section section-active uk-section uk-section-large" data-page-section="news-latest">
+        <div class="uk-container uk-container-expand" ${PAGE_REVEAL}>
+          <p class="uk-text-meta uk-text-uppercase">Latest Articles</p>
+          <h1 class="uk-heading-xlarge">Journal</h1>
+          <div class="uk-grid-large uk-child-width-1-3@m uk-grid-match uk-margin-large-top" uk-grid>
+            ${posts.map(([category, title]) => `
+              <article class="uk-card uk-card-default uk-card-body uk-card-hover">
+                <span class="uk-label">${category}</span>
+                <h2 class="uk-card-title uk-margin-top">${title}</h2>
+                <p class="uk-text-meta">Notes from experiments, shows, and production work.</p>
+              </article>
+            `).join('')}
+          </div>
+        </div>
+      </section>
+      <section class="jlz-page-section uk-section uk-section-large" data-page-section="news-dispatch">
+        <div class="uk-container uk-container-expand" ${PAGE_REVEAL}>
+          <p class="uk-text-meta uk-text-uppercase">Dispatch</p>
+          <h2 class="uk-heading-xlarge">Studio Notes</h2>
+          <p class="uk-text-lead uk-margin-large-top">Short-form writing about tools, releases, visual systems, and the decisions behind the work.</p>
+        </div>
+      </section>
+    </article>
+  `
+}
+
+export function renderAboutPage(): string {
+  return `
+    <article class="jlz-page" data-page-view="about">
+      <section class="jlz-page-section section-active uk-section uk-section-large" data-page-section="about-intro">
+        <div class="uk-container uk-container-expand" ${PAGE_REVEAL}>
+          <p class="uk-text-meta uk-text-uppercase">About</p>
+          <h1 class="uk-heading-xlarge">Let Us Introduce Ourselves</h1>
+          <div class="uk-grid-large uk-child-width-1-2@m uk-margin-large-top" uk-grid>
+            <p class="uk-text-lead">JUSTLOVEJAZZ is a small studio for expressive browser work: sound, motion, 3D, and interfaces that feel performed rather than placed.</p>
+            <div>
+              <h2 class="uk-heading-medium">Mix of Sounds</h2>
+              <p>We combine web engineering with art direction, product thinking, and interactive systems built to stay fast under pressure.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="jlz-page-section uk-section uk-section-large" data-page-section="about-awards">
+        <div class="uk-container uk-container-expand" ${PAGE_REVEAL}>
+          <h2 class="uk-heading-medium">Awards & Recognition</h2>
+          <ul class="uk-list uk-list-divider uk-margin-medium-top">
+            <li><span class="uk-text-bold">2026</span> * WebGPU Portfolio Experiment</li>
+            <li><span class="uk-text-bold">2025</span> * Interactive Music Identity</li>
+            <li><span class="uk-text-bold">2024</span> * Generative Visual System</li>
+          </ul>
+        </div>
+      </section>
+    </article>
+  `
+}
+
+export function renderGalleryPage(): string {
+  const items = ['Lab Lights', 'Baku Studies', 'Stage Forms', 'Glass Tests', 'Type Motion', 'Afterimage']
+  return `
+    <article class="jlz-page" data-page-view="gallery">
+      <section class="jlz-page-section section-active uk-section uk-section-large" data-page-section="gallery-index">
+        <div class="uk-container uk-container-expand" ${PAGE_REVEAL}>
+          <p class="uk-text-meta uk-text-uppercase">Gallery</p>
+          <h1 class="uk-heading-xlarge">Visual Index</h1>
+          <div class="uk-grid-small uk-child-width-1-2@s uk-child-width-1-3@m uk-margin-large-top" uk-grid>
+            ${items.map((item, index) => `
+              <div>
+                <div class="jlz-gallery-tile uk-flex uk-flex-bottom uk-padding-small">
+                  <span class="uk-text-bold">${String(index + 1).padStart(2, '0')} * ${item}</span>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </section>
+      <section class="jlz-page-section uk-section uk-section-large" data-page-section="gallery-series">
+        <div class="uk-container uk-container-expand" ${PAGE_REVEAL}>
+          <p class="uk-text-meta uk-text-uppercase">Series</p>
+          <h2 class="uk-heading-xlarge">Studies In Light</h2>
+          <p class="uk-text-lead uk-margin-large-top">Image groups for future case studies: glass, typography, stage identity, and experimental WebGPU sketches.</p>
+        </div>
+      </section>
+    </article>
+  `
+}
+
+export function renderPage(page: PageId = 'home'): string {
+  switch (page) {
+    case 'music':
+      return renderMusicPage()
+    case 'videos':
+      return renderVideosPage()
+    case 'shows':
+      return renderShowsPage()
+    case 'news':
+      return renderNewsPage()
+    case 'about':
+      return renderAboutPage()
+    case 'gallery':
+      return renderGalleryPage()
+    case 'home':
+    default:
+      return homePage()
+  }
+}
+
+function albumCard(title: string, meta: string, tracks: string[]): string {
+  return `
+    <article class="uk-card uk-card-default uk-card-body uk-card-hover">
+      <p class="uk-text-meta">${meta}</p>
+      <h2 class="uk-card-title">${title}</h2>
+      <ul class="uk-list uk-list-divider">
+        ${tracks.map((track, index) => `<li>(${index + 1}) ${track}</li>`).join('')}
+      </ul>
+      <a class="uk-button uk-button-text" href="/music">Listen Now</a>
+    </article>
+  `
+}
+
+function platformButton(label: string): string {
+  return `<a class="uk-button uk-button-default" href="/music">${label}</a>`
 }

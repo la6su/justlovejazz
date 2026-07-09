@@ -56,6 +56,7 @@ export class JoystickNav {
   private _startX = 0
   private _startY = 0
   private _keydownHandler: ((e: KeyboardEvent) => void) | null = null
+  private _routeChangeHandler: ((e: Event) => void) | null = null
   private _pointerDownHandler: ((e: PointerEvent) => void) | null = null
   private _pointerMoveHandler: ((e: PointerEvent) => void) | null = null
   private _pointerUpHandler: ((e: PointerEvent) => void) | null = null
@@ -77,6 +78,7 @@ export class JoystickNav {
     this._base.appendChild(this._ball)
 
     this.addEventListeners()
+    this._syncPageSection(0)
   }
 
   /** Current WorldConfig section index (what Experience/World reads). */
@@ -87,6 +89,11 @@ export class JoystickNav {
   }
 
   private addEventListeners(): void {
+    this._routeChangeHandler = () => {
+      this._syncPageSection(0)
+    }
+    window.addEventListener('jlz:route-change', this._routeChangeHandler)
+
     this._pointerDownHandler = (e: PointerEvent) => {
       const menu = document.getElementById('jlz-menu-modal')
       if (menu && menu.classList.contains('uk-open')) return
@@ -165,11 +172,19 @@ export class JoystickNav {
         this._navigateHorizontal(1)
       } else if (e.key === 'Home') {
         e.preventDefault()
+        if (this._isPageMode()) {
+          this._syncPageSection(0)
+          return
+        }
         this._side = 'center'
         this._mainSection = FIRST_MAIN
         this._fireSectionChange()
       } else if (e.key === 'End') {
         e.preventDefault()
+        if (this._isPageMode()) {
+          this._syncPageSection(this._getPageSections().length - 1)
+          return
+        }
         this._side = 'center'
         this._mainSection = LAST_MAIN
         this._fireSectionChange()
@@ -180,6 +195,12 @@ export class JoystickNav {
 
   /** Vertical navigation — up/down through main sections. */
   private _navigateVertical(dir: 1 | -1): void {
+    if (this._isPageMode()) {
+      this._syncPageSection(this._pageSectionIndex() + dir)
+      this._setActive(true)
+      setTimeout(() => this._setActive(false), 400)
+      return
+    }
     // Always return to center first (if in Lab/Process)
     this._side = 'center'
     const next = this._mainSection + dir
@@ -196,6 +217,12 @@ export class JoystickNav {
 
   /** Horizontal navigation — left/right toggles Lab/Process. */
   private _navigateHorizontal(dir: 1 | -1): void {
+    if (this._isPageMode()) {
+      this._syncPageSection(this._pageSectionIndex() + dir)
+      this._setActive(true)
+      setTimeout(() => this._setActive(false), 400)
+      return
+    }
     if (dir === 1) {
       // Right: center → Process, Lab → center
       if (this._side === 'center') {
@@ -259,11 +286,19 @@ export class JoystickNav {
   }
 
   getOverallProgress(): number {
+    if (this._isPageMode()) {
+      const span = Math.max(1, this._getPageSections().length - 1)
+      return Math.max(0, Math.min(1, this._pageSectionIndex() / span))
+    }
     const span = this._sectionCount - 1
     return Math.max(0, Math.min(1, this._currentSection / span))
   }
 
   goToSection(index: number): void {
+    if (this._isPageMode()) {
+      this._syncPageSection(index)
+      return
+    }
     index = Math.max(0, Math.min(this._sectionCount - 1, index))
     if (index === this._currentSection) return
     // Map WorldConfig index back to main/side state
@@ -286,7 +321,35 @@ export class JoystickNav {
     // No-op — trigger model
   }
 
+  private _isPageMode(): boolean {
+    return document.body.dataset.page !== 'home'
+  }
+
+  private _getPageSections(): HTMLElement[] {
+    return Array.from(document.querySelectorAll<HTMLElement>('#spa-content [data-page-section]'))
+  }
+
+  private _pageSectionIndex(): number {
+    const sections = this._getPageSections()
+    const active = sections.findIndex((section) => section.classList.contains('section-active'))
+    return active >= 0 ? active : 0
+  }
+
+  private _syncPageSection(index: number): void {
+    if (!this._isPageMode()) return
+    const sections = this._getPageSections()
+    if (sections.length === 0) return
+    const nextIndex = Math.max(0, Math.min(sections.length - 1, index))
+    sections.forEach((section, sectionIndex) => {
+      section.classList.toggle('section-active', sectionIndex === nextIndex)
+    })
+    window.dispatchEvent(new CustomEvent('jlz:page-section-change', {
+      detail: { index: nextIndex, count: sections.length },
+    }))
+  }
+
   dispose(): void {
+    if (this._routeChangeHandler) window.removeEventListener('jlz:route-change', this._routeChangeHandler)
     if (this._keydownHandler) window.removeEventListener('keydown', this._keydownHandler)
     if (this._pointerDownHandler) this._base.removeEventListener('pointerdown', this._pointerDownHandler)
     if (this._pointerMoveHandler) this._base.removeEventListener('pointermove', this._pointerMoveHandler)
