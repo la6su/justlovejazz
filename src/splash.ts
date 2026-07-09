@@ -46,12 +46,12 @@ export function createSplash(): SplashOverlay {
     entered = true
     const el = document.getElementById(id)
     if (!el) return
-    // Smooth fade out — NOT CRT collapse. The 3D scene is already
-    // rendering behind, so this reveals it seamlessly.
+    // CRT-on: curtains split apart (0.8s) + squares fade behind them.
+    // The 3D scene is already rendering behind the curtains.
     el.classList.add('entering')
     getExp()?.triggerSplashOpener()
-    // Remove after fade transition (0.8s CSS)
-    setTimeout(() => el.remove(), 900)
+    // Remove after curtain split (0.8s) + small buffer
+    setTimeout(() => el.remove(), 1000)
   }
 
   function wireButtons() {

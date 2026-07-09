@@ -918,6 +918,45 @@ section[data-section='process'] .uk-list li:hover {
 }
 
 /* ------------------------------------------------------------------
+   TUI-like styling — terminal cursor eyebrows, compact layout
+   Apple Watch-inspired: minimal space, 3D always visible
+   ------------------------------------------------------------------ */
+
+.jlz-eyebrow {
+  font-family: 'Inter', 'SF Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  opacity: 0.5;
+  text-transform: uppercase;
+}
+
+.jlz-section-top {
+  flex-shrink: 0;
+}
+
+.jlz-section-bottom {
+  flex-shrink: 0;
+}
+
+/* Subtle scanline overlay for TUI feel — very faint */
+#spa-content section[data-section]::before,
+.jlz-page-section::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0,
+    transparent 3px,
+    rgba(255, 255, 255, 0.008) 3px,
+    rgba(255, 255, 255, 0.008) 4px
+  );
+  z-index: 1;
+}
+
+/* ------------------------------------------------------------------
    Content page variant styles — QF-inspired layout diversity
    ------------------------------------------------------------------ */
 

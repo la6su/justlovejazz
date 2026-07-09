@@ -62,7 +62,7 @@
       * { box-sizing: border-box; }
       body { margin: 0; background: #050507; overflow: hidden; }
 
-      /* ── Splash overlay — codrops-style with concentric squares ── */
+      /* ── Splash overlay — codrops squares + CRT-on curtain reveal ── */
       #jlj-splash {
         position: fixed;
         inset: 0;
@@ -73,12 +73,37 @@
         align-items: center;
         justify-content: center;
         overflow: hidden;
-        transition: opacity 0.8s ease, transform 0.8s ease;
       }
-      #jlj-splash.entering {
-        opacity: 0;
-        transform: scale(1.05);
+
+      /* CRT-on curtains — two panels that split apart on Enter */
+      .jlz-curtain {
+        position: absolute;
+        left: 0;
+        width: 100%;
+        height: 50%;
+        background: #050507;
+        z-index: 3002;
+        transition: transform 0.8s cubic-bezier(0.65, 0, 0.35, 1);
       }
+      .jlz-curtain--top { top: 0; }
+      .jlz-curtain--bottom { bottom: 0; }
+      #jlj-splash.entering .jlz-curtain--top { transform: translateY(-100%); }
+      #jlj-splash.entering .jlz-curtain--bottom { transform: translateY(100%); }
+
+      /* Seam glow at curtain split — bright line that fades */
+      .jlz-curtain-seam {
+        position: absolute;
+        top: 50%;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, rgba(120, 140, 200, 0.6), transparent);
+        transform: translateY(-50%);
+        z-index: 3003;
+        opacity: 1;
+        transition: opacity 0.4s ease;
+      }
+      #jlj-splash.entering .jlz-curtain-seam { opacity: 0; }
 
       /* SVG squares — centered via flex on parent */
       .jlz-splash-svg {
@@ -232,6 +257,11 @@
       aria-live="polite"
       aria-label="Loading JUSTLOVEJAZZ experience"
     >
+      <!-- CRT-on curtains — split apart on Enter -->
+      <div class="jlz-curtain jlz-curtain--top"></div>
+      <div class="jlz-curtain jlz-curtain--bottom"></div>
+      <div class="jlz-curtain-seam"></div>
+      <!-- Concentric squares -->
       <svg class="jlz-splash-svg" viewBox="0 0 1400 1400" aria-hidden="true">
         <defs>
           <!-- 4 concentric square paths (centered at 700,700) -->
