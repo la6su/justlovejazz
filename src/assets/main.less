@@ -817,6 +817,17 @@ body .jlz-page .uk-text-meta {
   background-color: var(--jlz-color-text);
 }
 
+/* Reduced-motion: disable cursor size/color transitions (instant snap).
+   The cursor still follows the pointer (transform is JS-driven, not a
+   CSS transition), but the magnetic/hovering size morphs are instant. */
+@media (prefers-reduced-motion: reduce) {
+  .custom-cursor,
+  .custom-cursor.magnetic,
+  .custom-cursor.hovering {
+    transition: none;
+  }
+}
+
 @media (hover: hover) and (pointer: fine) {
   body,
   a,
@@ -1174,6 +1185,11 @@ body[data-page='home'] .jlz-footer {
 
 .jlz-footer .jlz-brand {
   font-size: 0.9rem;
+}
+
+.jlz-footer__copy {
+  opacity: 0.5;
+  white-space: nowrap;
 }
 
 .jlz-footer .uk-iconnav a {
