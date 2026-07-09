@@ -862,11 +862,8 @@ section[data-section='process'] .uk-list li:hover {
    ------------------------------------------------------------------ */
 
 .jlz-joystick {
-  position: fixed;
-  bottom: calc(60px + env(safe-area-inset-bottom, 0px));
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 100;
+  /* Position/bottom/left/transform/z-index set in the dock section below
+     (joystick sits ON the tools row). Here only layout + interaction props. */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1186,10 +1183,9 @@ body.uk-light .jlz-principle-card:hover {
 }
 
 /* ------------------------------------------------------------------
-   Unified dock — fixed bottom bar (brand + tools + social)
+   Unified dock — 2-row bottom bar (tools + footer)
    The dock reserves space at the bottom of the screen on ALL pages.
-   Three zones: LEFT (brand+copyright), CENTER (tools/joystick), RIGHT (social).
-   Content sections get padding-bottom via CSS to avoid being covered.
+   Joystick is position:fixed, visually sits ON the tools row.
    ------------------------------------------------------------------ */
 
 .jlz-dock {
@@ -1198,24 +1194,37 @@ body.uk-light .jlz-principle-card:hover {
   left: 0;
   right: 0;
   z-index: 50;
-  padding: 0.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Tools row — top row, reserves space for joystick.
+   Joystick (position:fixed) visually overlaps this row. */
+.jlz-dock__tools {
+  height: 70px; /* reserve space for joystick base (110px) to sit on */
+  position: relative;
+  background: rgba(5, 5, 7, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Footer row — bottom row, brand + social */
+.jlz-dock__footer {
   background: rgba(5, 5, 7, 0.7);
   backdrop-filter: blur(12px) saturate(130%);
   -webkit-backdrop-filter: blur(12px) saturate(130%);
   border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.5rem 1rem;
 }
 
-.jlz-dock__inner {
+.jlz-dock__footer-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
   max-width: 1440px;
   margin: 0 auto;
   gap: 1rem;
-}
-
-.jlz-dock__brand {
-  flex-shrink: 0;
 }
 
 .jlz-dock__brand .jlz-brand {
@@ -1229,43 +1238,6 @@ body.uk-light .jlz-principle-card:hover {
   font-size: 0.7rem;
 }
 
-/* Tools area — center zone. Joystick lives here. */
-.jlz-dock__tools {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 1;
-}
-
-/* Joystick inside dock — no longer position:fixed, lives in dock flow.
-   Smaller size to fit in the dock bar. */
-.jlz-dock__tools .jlz-joystick {
-  position: relative !important;
-  bottom: auto !important;
-  left: auto !important;
-  transform: none !important;
-  z-index: auto !important;
-}
-
-.jlz-dock__tools .jlz-joystick__base {
-  width: 44px !important;
-  height: 44px !important;
-}
-
-.jlz-dock__tools .jlz-joystick__ball {
-  width: 20px !important;
-  height: 20px !important;
-}
-
-.jlz-dock__tools .jlz-joystick__hint,
-.jlz-dock__tools .jlz-joystick__arrow {
-  display: none !important;
-}
-
-.jlz-dock__social {
-  flex-shrink: 0;
-}
-
 .jlz-dock__social .uk-iconnav a {
   color: rgba(255, 255, 255, 0.55);
 }
@@ -1274,8 +1246,23 @@ body.uk-light .jlz-principle-card:hover {
   color: #fff;
 }
 
+/* Joystick — position:fixed, centered, sits ON the tools row.
+   bottom = footer height + tools height/2 so the joystick base
+   visually rests on the tools row, not floating above it. */
+.jlz-joystick {
+  position: fixed;
+  bottom: calc(60px + 35px); /* footer(~40px) + half of tools(70px) */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+}
+
 /* Light theme dock variant */
-body.uk-light .jlz-dock {
+body.uk-light .jlz-dock__tools {
+  background: rgba(245, 245, 248, 0.5);
+}
+
+body.uk-light .jlz-dock__footer {
   background: rgba(245, 245, 248, 0.7);
   border-top-color: rgba(5, 5, 7, 0.08);
 }
@@ -1288,30 +1275,39 @@ body.uk-light .jlz-dock__social .uk-iconnav a:hover {
   color: #050507;
 }
 
-/* Reserve bottom space on ALL pages so dock doesn't cover content */
+/* Reserve bottom space on ALL pages so dock doesn't cover content.
+   Total dock height = tools(70px) + footer(~40px) ≈ 110px */
 .jlz-page-section,
 #spa-content section[data-section] {
-  padding-bottom: 5rem;
-}
-
-@media (min-width: 640px) {
-  .jlz-page-section,
-  #spa-content section[data-section] {
-    padding-bottom: 4rem;
-  }
+  padding-bottom: 120px;
 }
 
 @media (max-width: 640px) {
-  .jlz-dock {
+  .jlz-dock__footer {
     padding: 0.5rem 0.75rem;
   }
 
   .jlz-dock__copy {
-    display: none; /* save space on mobile */
+    display: none;
   }
 
-  .jlz-dock__inner {
+  .jlz-dock__footer-inner {
     gap: 0.5rem;
+  }
+
+  /* On mobile, joystick is slightly smaller + closer to bottom */
+  .jlz-joystick {
+    bottom: calc(50px + 30px);
+  }
+
+  .jlz-joystick__base {
+    width: 90px;
+    height: 90px;
+  }
+
+  .jlz-joystick__ball {
+    width: 36px;
+    height: 36px;
   }
 }
 

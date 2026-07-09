@@ -285,13 +285,9 @@ export class Experience {
     })
 
     // JoystickNav is a DOM overlay (fixed bottom-center) — append to body.
-    // JoystickNav lives in the dock's tools area (not floating on body).
-    const dockTools = document.getElementById('jlz-dock-tools')
-    if (dockTools) {
-      dockTools.appendChild(this._circNav.el)
-    } else {
-      document.body.appendChild(this._circNav.el)
-    }
+    // JoystickNav is position:fixed (sits ON the dock tools row, centered).
+    // Append to body — CSS positions it via .jlz-joystick { position: fixed }.
+    document.body.appendChild(this._circNav.el)
 
     // DevPanel — created AFTER nav so it can read current section
     if (import.meta.env.DEV) {
