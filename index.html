@@ -105,13 +105,15 @@
       }
       #jlj-splash.entering .jlz-curtain-seam { opacity: 0; }
 
-      /* SVG squares — centered via flex on parent */
+      /* SVG squares — behind curtains */
       .jlz-splash-svg {
         width: 90vmin;
         height: 90vmin;
         max-width: 700px;
         max-height: 700px;
         pointer-events: none;
+        z-index: 3000;
+        position: relative;
       }
 
       /* Square text paths — concentric, decreasing size */
@@ -136,7 +138,7 @@
         100% { opacity: 1; transform: scale(1); }
       }
 
-      /* Splash controls — Enter + Sound toggle */
+      /* Splash controls — Enter + Sound toggle (above curtains) */
       .jlz-splash-controls {
         position: absolute;
         top: 50%;
@@ -146,7 +148,7 @@
         flex-direction: column;
         align-items: center;
         gap: 1rem;
-        z-index: 3001;
+        z-index: 3004;
       }
       #jlj-splash.ready .jlz-splash-controls {
         display: flex;
@@ -204,7 +206,7 @@
         opacity: 0.4;
       }
 
-      /* Loading text — shown before Enter */
+      /* Loading text — shown before Enter (above curtains) */
       .jlz-splash-loading {
         position: absolute;
         top: 50%;
@@ -216,7 +218,7 @@
         font-weight: 500;
         letter-spacing: 0.3em;
         text-transform: uppercase;
-        z-index: 3000;
+        z-index: 3004;
         opacity: 1;
         transition: opacity 0.4s ease;
       }

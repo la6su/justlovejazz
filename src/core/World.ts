@@ -397,12 +397,14 @@ export class World extends THREE.Group {
         }
 
         // BakuCarousel visibility + active state (morph cube ↔ carousel ring)
+        // ONLY on home page — content pages don't use the carousel.
         const carousel = g.userData.gallery as
           | import('../Experience/World/BakuCarousel').BakuCarousel
           | undefined
         if (carousel) {
-          carousel.visible = fade > 0.01
-          carousel.setActive(fade > 0.5)
+          const isHome = document.body.dataset.page === 'home'
+          carousel.visible = isHome && fade > 0.01
+          carousel.setActive(isHome && fade > 0.5)
         }
       } else {
         g.visible = false
