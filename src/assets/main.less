@@ -1154,82 +1154,164 @@ body.uk-light .jlz-eyebrow {
   gap: var(--jlz-space-2); /* 0.5rem */
 }
 
+/* ── Service + Principle cards (content pages) ──
+   Glassmorphism style — matches the 3D aesthetic. */
+.jlz-service-card,
+.jlz-principle-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px) saturate(130%);
+  -webkit-backdrop-filter: blur(10px) saturate(130%);
+  transition: transform 0.3s ease, background 0.3s ease, border-color 0.3s ease;
+}
+
+.jlz-service-card:hover,
+.jlz-principle-card:hover {
+  transform: translateY(-4px);
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Light theme variant for cards */
+body.uk-light .jlz-service-card,
+body.uk-light .jlz-principle-card {
+  background: rgba(5, 5, 7, 0.04);
+  border-color: rgba(5, 5, 7, 0.1);
+}
+
+body.uk-light .jlz-service-card:hover,
+body.uk-light .jlz-principle-card:hover {
+  background: rgba(5, 5, 7, 0.07);
+  border-color: rgba(5, 5, 7, 0.2);
+}
+
 /* ------------------------------------------------------------------
-   Unified footer — fixed bottom bar (brand + social only)
-   Fixed positioning because content pages use position:absolute stacked
-   sections with overflow:hidden — uk-sticky needs scroll to work.
-   Navigation lives in the header (UIMenu slider + modal), NOT here.
-   Hidden on home (Contact section serves as the home footer).
+   Unified dock — fixed bottom bar (brand + tools + social)
+   The dock reserves space at the bottom of the screen on ALL pages.
+   Three zones: LEFT (brand+copyright), CENTER (tools/joystick), RIGHT (social).
+   Content sections get padding-bottom via CSS to avoid being covered.
    ------------------------------------------------------------------ */
 
-.jlz-footer {
+.jlz-dock {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
   z-index: 50;
   padding: 0.5rem 1rem;
-  background: rgba(5, 5, 7, 0.6);
+  background: rgba(5, 5, 7, 0.7);
   backdrop-filter: blur(12px) saturate(130%);
   -webkit-backdrop-filter: blur(12px) saturate(130%);
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* Hide footer on home — Contact section serves as the home footer */
-body[data-page='home'] .jlz-footer {
-  display: none;
+.jlz-dock__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1440px;
+  margin: 0 auto;
+  gap: 1rem;
 }
 
-.jlz-footer .jlz-brand {
+.jlz-dock__brand {
+  flex-shrink: 0;
+}
+
+.jlz-dock__brand .jlz-brand {
   font-size: 0.9rem;
+  padding: 0;
 }
 
-.jlz-footer__copy {
+.jlz-dock__copy {
   opacity: 0.5;
   white-space: nowrap;
+  font-size: 0.7rem;
 }
 
-.jlz-footer .uk-iconnav a {
+/* Tools area — center zone. Joystick lives here. */
+.jlz-dock__tools {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 1;
+}
+
+/* Joystick inside dock — no longer position:fixed, lives in dock flow.
+   Smaller size to fit in the dock bar. */
+.jlz-dock__tools .jlz-joystick {
+  position: relative !important;
+  bottom: auto !important;
+  left: auto !important;
+  transform: none !important;
+  z-index: auto !important;
+}
+
+.jlz-dock__tools .jlz-joystick__base {
+  width: 44px !important;
+  height: 44px !important;
+}
+
+.jlz-dock__tools .jlz-joystick__ball {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+.jlz-dock__tools .jlz-joystick__hint,
+.jlz-dock__tools .jlz-joystick__arrow {
+  display: none !important;
+}
+
+.jlz-dock__social {
+  flex-shrink: 0;
+}
+
+.jlz-dock__social .uk-iconnav a {
   color: rgba(255, 255, 255, 0.55);
 }
 
-.jlz-footer .uk-iconnav a:hover {
+.jlz-dock__social .uk-iconnav a:hover {
   color: #fff;
 }
 
-/* Light theme footer variant */
-body.uk-light .jlz-footer {
-  background: rgba(245, 245, 248, 0.6);
+/* Light theme dock variant */
+body.uk-light .jlz-dock {
+  background: rgba(245, 245, 248, 0.7);
   border-top-color: rgba(5, 5, 7, 0.08);
 }
 
-body.uk-light .jlz-footer .uk-iconnav a {
+body.uk-light .jlz-dock__social .uk-iconnav a {
   color: rgba(5, 5, 7, 0.55);
 }
 
-body.uk-light .jlz-footer .uk-iconnav a:hover {
+body.uk-light .jlz-dock__social .uk-iconnav a:hover {
   color: #050507;
 }
 
-/* Add bottom padding to content pages so footer doesn't cover content.
-   rem-based — scales with html font-size (.85rem mob → 1rem desktop). */
-body:not([data-page='home']) .jlz-page-section {
-  padding-bottom: 4rem;
+/* Reserve bottom space on ALL pages so dock doesn't cover content */
+.jlz-page-section,
+#spa-content section[data-section] {
+  padding-bottom: 5rem;
 }
 
 @media (min-width: 640px) {
-  body:not([data-page='home']) .jlz-page-section {
-    padding-bottom: 5rem;
+  .jlz-page-section,
+  #spa-content section[data-section] {
+    padding-bottom: 4rem;
   }
 }
 
 @media (max-width: 640px) {
-  .jlz-footer {
+  .jlz-dock {
     padding: 0.5rem 0.75rem;
   }
 
-  .jlz-footer .uk-flex {
-    gap: 0.75rem;
+  .jlz-dock__copy {
+    display: none; /* save space on mobile */
+  }
+
+  .jlz-dock__inner {
+    gap: 0.5rem;
   }
 }
 
