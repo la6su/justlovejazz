@@ -72,17 +72,19 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        overflow: hidden;
       }
-      #jlj-splash.hide { opacity: 0; transition: opacity 0.3s ease; }
+      #jlj-splash.hide {
+        opacity: 0;
+        transition: opacity 0.4s ease;
+      }
 
-      /* SVG squares container */
+      /* SVG squares — centered via flex on parent, not position:fixed */
       .jlz-splash-svg {
-        --dim: 186vmin;
-        width: var(--dim);
-        height: var(--dim);
-        position: fixed;
-        top: calc(50% - var(--dim) / 2);
-        left: calc(50% - var(--dim) / 2);
+        width: 95vmin;
+        height: 95vmin;
+        max-width: 800px;
+        max-height: 800px;
         pointer-events: none;
       }
 
@@ -98,10 +100,10 @@
         transform: scale(0.3);
         animation: jlz-splash-in 2.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       }
-      .jlz-splash-text--1 { font-size: clamp(120px, 22vmin, 160px); fill: #515d84; animation-delay: 0s; }
-      .jlz-splash-text--2 { font-size: clamp(90px, 16vmin, 120px); fill: #4a5474; animation-delay: 0.12s; }
-      .jlz-splash-text--3 { font-size: clamp(60px, 12vmin, 90px); fill: #3e4866; animation-delay: 0.24s; }
-      .jlz-splash-text--4 { font-size: clamp(40px, 8vmin, 60px); fill: #333c54; animation-delay: 0.36s; }
+      .jlz-splash-text--1 { font-size: clamp(60px, 11vmin, 80px); fill: #515d84; animation-delay: 0s; }
+      .jlz-splash-text--2 { font-size: clamp(45px, 8vmin, 60px); fill: #4a5474; animation-delay: 0.12s; }
+      .jlz-splash-text--3 { font-size: clamp(30px, 6vmin, 45px); fill: #3e4866; animation-delay: 0.24s; }
+      .jlz-splash-text--4 { font-size: clamp(20px, 4vmin, 30px); fill: #333c54; animation-delay: 0.36s; }
 
       @keyframes jlz-splash-in {
         0% { opacity: 0; transform: scale(0.3); }
@@ -110,7 +112,7 @@
 
       /* Enter button — square, centered */
       .jlz-splash-enter {
-        position: fixed;
+        position: absolute;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%) scale(0.3);
@@ -128,13 +130,13 @@
         pointer-events: none;
         opacity: 0;
         display: none;
+        align-items: center;
+        justify-content: center;
         transition: background 0.2s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s ease;
         z-index: 3001;
       }
       #jlj-splash.ready .jlz-splash-enter {
         display: flex;
-        align-items: center;
-        justify-content: center;
         pointer-events: auto;
         opacity: 1;
         transform: translate(-50%, -50%) scale(1);
@@ -149,7 +151,7 @@
 
       /* Loading text — shown before Enter */
       .jlz-splash-loading {
-        position: fixed;
+        position: absolute;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
@@ -164,15 +166,24 @@
         transition: opacity 0.3s ease;
       }
       #jlj-splash.ready .jlz-splash-loading { opacity: 0; }
-      #jlj-splash.ready .jlz-splash-enter { pointer-events: auto; }
 
-      /* Enter animation — squares explode outward */
+      /* CRT power-off effect — entering animation */
+      /* Squares explode outward + CRT scanline collapse */
       #jlj-splash.entering .jlz-splash-text--1 { transform: scale(2.4); opacity: 0; transition: all 1.5s cubic-bezier(0.7, 0, 0.84, 0); }
       #jlj-splash.entering .jlz-splash-text--2 { transform: scale(2.1); opacity: 0; transition: all 1.5s cubic-bezier(0.7, 0, 0.84, 0) 0.05s; }
       #jlz-splash.entering .jlz-splash-text--3 { transform: scale(1.8); opacity: 0; transition: all 1.5s cubic-bezier(0.7, 0, 0.84, 0) 0.1s; }
       #jlz-splash.entering .jlz-splash-text--4 { transform: scale(1.5); opacity: 0; transition: all 1.5s cubic-bezier(0.7, 0, 0.84, 0) 0.15s; }
-      #jlz-splash.entering .jlz-splash-enter { transform: translate(-50%, -50%) scale(0.7); opacity: 0; transition: all 1.5s cubic-bezier(0.7, 0, 0.84, 0); }
-      #jlz-splash.entering { background: transparent; transition: background 0.5s ease 0.8s; }
+      #jlz-splash.entering .jlz-splash-enter { transform: translate(-50%, -50%) scale(0.7); opacity: 0; transition: all 0.5s ease; }
+
+      /* CRT power-off: background collapses to a horizontal line then fades */
+      #jlj-splash.entering {
+        animation: jlz-crt-off 1.5s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+      }
+      @keyframes jlz-crt-off {
+        0% { transform: scaleY(1) scaleX(1); filter: brightness(1); }
+        60% { transform: scaleY(0.008) scaleX(1); filter: brightness(3); }
+        100% { transform: scaleY(0.008) scaleX(0); filter: brightness(0); opacity: 0; }
+      }
 
       /* Skip link — visible on focus (WCAG 2.4.1) */
       .skip-link {

@@ -2,13 +2,14 @@
 //
 // The splash shows 4 concentric SVG squares with text-on-path + an Enter button.
 // When ready, the Enter button appears. Click triggers the "entering" animation
-// (squares explode outward) then removes the splash, revealing the 3D scene.
+// (squares explode outward + CRT power-off) then removes the splash, revealing
+// the 3D scene.
 //
 // Lifecycle:
-//   1. createSplash() — splash is in HTML (index.html), just get reference
+//   1. createSplash() — splash is in HTML (index.html), wire Enter button immediately
 //   2. setProgress() — drives 3D cube progress (edge glow brightens)
 //   3. setState('ready') — shows Enter button, hides "Loading" text
-//   4. User clicks Enter → triggerPortalCollapse() → 'entering' class
+//   4. User clicks Enter → 'entering' class → squares explode + CRT effect
 //   5. After 1.5s animation → hide() + remove() → 3D scene visible
 
 export interface SplashOverlay {
@@ -21,15 +22,13 @@ export interface SplashOverlay {
   curtainSplit(duration?: number): void
   markPhase(phase: string): void
   getElements(): { root: HTMLElement } | null
-  /** Open the splash — reveals the 3D cube beneath. */
   openCurtains(): void
 }
 
 export function createSplash(): SplashOverlay {
   const id = 'jlj-splash'
-  let root: HTMLElement | null = null
-  let enterBtn: HTMLButtonElement | null = null
   let enterHandler: (() => void) | null = null
+  let entered = false
 
   function getExp() {
     return (
@@ -42,53 +41,52 @@ export function createSplash(): SplashOverlay {
     ).experience
   }
 
-  function ensureRefs() {
-    if (!root) root = document.getElementById(id)
-    if (!enterBtn && root) {
-      enterBtn = root.querySelector<HTMLButtonElement>('.jlz-splash-enter')
-      // Wire Enter button click
-      if (enterBtn && !enterHandler) {
-        enterHandler = () => {
-          // Trigger entering animation
-          root?.classList.add('entering')
-          // Trigger 3D cube opener (cube scale pulse)
-          getExp()?.triggerSplashOpener()
-          // After animation, hide + remove splash
-          setTimeout(() => {
-            root?.classList.add('hide')
-            setTimeout(() => {
-              root?.remove()
-              root = null
-              enterBtn = null
-            }, 300)
-          }, 1500)
-        }
-        enterBtn.addEventListener('click', enterHandler)
-      }
+  function doEnter() {
+    if (entered) return
+    entered = true
+    const el = document.getElementById(id)
+    if (!el) return
+    el.classList.add('entering')
+    getExp()?.triggerSplashOpener()
+    setTimeout(() => {
+      el.classList.add('hide')
+      setTimeout(() => el.remove(), 400)
+    }, 1500)
+  }
+
+  // Wire Enter button IMMEDIATELY — fixes "second click" bug.
+  // The button is in the HTML from page load, so we can attach the handler
+  // before the app finishes booting.
+  function wireEnterButton() {
+    const btn = document.querySelector<HTMLButtonElement>('.jlz-splash-enter')
+    if (btn && !enterHandler) {
+      enterHandler = doEnter
+      btn.addEventListener('click', doEnter)
     }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', wireEnterButton)
+  } else {
+    wireEnterButton()
   }
 
   return {
     show(): void {
-      ensureRefs()
+      // No-op — splash is in HTML, already visible
     },
 
     hide(_durationMs?: number): void {
-      ensureRefs()
-      if (!root) return
-      root.classList.add('hide')
+      document.getElementById(id)?.classList.add('hide')
     },
 
     remove(): void {
-      if (enterBtn && enterHandler) {
-        enterBtn.removeEventListener('click', enterHandler)
+      const btn = document.querySelector<HTMLButtonElement>('.jlz-splash-enter')
+      if (btn && enterHandler) {
+        btn.removeEventListener('click', enterHandler)
         enterHandler = null
       }
-      if (root) {
-        root.remove()
-        root = null
-        enterBtn = null
-      }
+      document.getElementById(id)?.remove()
     },
 
     setProgress(pct: number): void {
@@ -96,38 +94,23 @@ export function createSplash(): SplashOverlay {
     },
 
     setState(state: 'booting' | 'warming' | 'ready'): void {
-      ensureRefs()
-      if (!root) return
-      if (state === 'ready') {
-        root.classList.add('ready')
-        // CSS handles Enter button display + Loading text fade
+      const el = document.getElementById(id)
+      if (el && state === 'ready') {
+        el.classList.add('ready')
+        wireEnterButton() // re-wire in case button wasn't available before
       }
     },
 
     triggerPortalCollapse(): void {
-      ensureRefs()
-      // Auto-trigger entering if no user interaction (e.g. after timeout)
-      if (root && !root.classList.contains('entering')) {
-        root.classList.add('entering')
-        getExp()?.triggerSplashOpener()
-        setTimeout(() => {
-          root?.classList.add('hide')
-          setTimeout(() => {
-            root?.remove()
-            root = null
-            enterBtn = null
-          }, 300)
-        }, 1500)
-      }
+      doEnter()
     },
 
     openCurtains(): void {
-      // Alias for triggerPortalCollapse — same entering animation
-      this.triggerPortalCollapse()
+      doEnter()
     },
 
     curtainSplit(_duration?: number): void {
-      this.triggerPortalCollapse()
+      doEnter()
     },
 
     markPhase(_phase: string): void {
@@ -135,8 +118,8 @@ export function createSplash(): SplashOverlay {
     },
 
     getElements() {
-      ensureRefs()
-      return root ? { root } : null
+      const el = document.getElementById(id)
+      return el ? { root: el } : null
     },
   }
 }

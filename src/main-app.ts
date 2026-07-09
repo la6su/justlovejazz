@@ -56,14 +56,16 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
     progress(98)
     progress(100)
 
-    // ── Curtain reveal → cube → title animation ──
+    // ── Splash → Enter → reveal 3D scene ──
     // Flow:
-    //   1. Curtains split (CSS 0.8s) — reveals 3D cube beneath
-    //   2. At curtain midpoint (400ms) — dispatch jlz:webgl-ready → NoiseText animate JUSTLOVEJAZZ
-    //   3. Cube continues rotating as baku
-    //   4. Splash overlay hidden + removed
-    const INTRO_MS = 800 // cube establishes by ~0.8s
-    const TITLE_START_MS = 400 // when to fire jlz:webgl-ready after entering starts
+    //   1. splash.setState('ready') called by entry-app when progress >= 95%
+    //   2. User clicks Enter (or auto-enter after 8s)
+    //   3. splash.ts doEnter() adds 'entering' class → CRT power-off animation
+    //   4. We listen for 'entering' to dispatch jlz:webgl-ready (title animation)
+    //   5. After 1.5s, splash removes itself → 3D scene fully visible
+
+    const INTRO_MS = 800
+    const TITLE_START_MS = 500 // fire jlz:webgl-ready 0.5s into entering animation
 
     const elapsed = performance.now() - bootStart
     const readyAt = Math.max(0, INTRO_MS - elapsed)
@@ -76,37 +78,25 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
         return
       }
 
-      // Show Enter button — wait for user click to reveal the scene.
-      // splash.setState('ready') is already called by entry-app progress callback
-      // when progress reaches 95%. The Enter button click handler in splash.ts
-      // triggers the entering animation + cube opener + jlz:webgl-ready.
-
-      // Auto-enter after 8s if user doesn't click (accessibility fallback)
+      // Auto-enter after 8s if user doesn't click
       setTimeout(() => {
-        const splashEl = document.getElementById('jlj-splash')
-        if (splashEl && !splashEl.classList.contains('entering') && !splashEl.classList.contains('hide')) {
+        const el = document.getElementById('jlj-splash')
+        if (el && !el.classList.contains('entering') && !el.classList.contains('hide')) {
           splash.triggerPortalCollapse()
-          setTimeout(() => {
-            eventBus.emit('jlz:webgl-ready')
-          }, TITLE_START_MS)
         }
       }, 8000)
 
-      // Listen for the entering animation start (from Enter button click)
-      // to dispatch jlz:webgl-ready at the right time
-      const enteringObserver = new MutationObserver(() => {
-        const splashEl = document.getElementById('jlj-splash')
-        if (splashEl?.classList.contains('entering')) {
-          setTimeout(() => {
-            eventBus.emit('jlz:webgl-ready')
-          }, TITLE_START_MS)
-          enteringObserver.disconnect()
+      // Dispatch jlz:webgl-ready when entering animation starts
+      // (either from Enter click or auto-enter)
+      const observer = new MutationObserver(() => {
+        const el = document.getElementById('jlj-splash')
+        if (el?.classList.contains('entering')) {
+          setTimeout(() => eventBus.emit('jlz:webgl-ready'), TITLE_START_MS)
+          observer.disconnect()
         }
       })
-      const splashEl = document.getElementById('jlj-splash')
-      if (splashEl) {
-        enteringObserver.observe(splashEl, { attributes: true, attributeFilter: ['class'] })
-      }
+      const el = document.getElementById('jlj-splash')
+      if (el) observer.observe(el, { attributes: true, attributeFilter: ['class'] })
     }, readyAt)
   } catch (e) {
     console.error('[main-app] bootstrap failed:', e)
