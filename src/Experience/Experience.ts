@@ -59,6 +59,8 @@ export class Experience {
   private _introEmitted = false
   private _onSizesResize: () => void = () => {}
   private _onVisibilityChange: (() => void) | null = null
+  private _onMouseMoveForTrail: (() => void) | null = null
+  private _mouseTrailRafPending = false
   public audio: AudioSystem = new AudioSystem()
   private _circNav: JoystickNav | null = null
   private _needsRender = true // start true to render the first frame
@@ -322,6 +324,24 @@ export class Experience {
     this.renderer.pipeline?.setGlobalBorder(0.4)
 
     document.addEventListener('visibilitychange', this._onVisibilityChange)
+
+    // ── DrawTrail: trigger render on mousemove (Works section only) ──
+    // DrawTrail.update() runs inside world.update(needsRender) — if
+    // _needsRender is false, the trail doesn't update. On the Works section
+    // (idx=3), we want the trail to follow the cursor in real time, so we
+    // set _needsRender=true on mousemove. Throttled via rAF flag to avoid
+    // 200+ events/sec flooding the render loop.
+    this._mouseTrailRafPending = false
+    this._onMouseMoveForTrail = () => {
+      if (this._mouseTrailRafPending) return
+      if (this.world?.currentSectionIndex !== 3) return // Works section only
+      this._mouseTrailRafPending = true
+      requestAnimationFrame(() => {
+        this._mouseTrailRafPending = false
+        this._needsRender = true
+      })
+    }
+    window.addEventListener('mousemove', this._onMouseMoveForTrail, { passive: true })
 
     // Audio-reactive: start AudioContext on first user gesture (browser autoplay policy).
     // Analyser runs silently until a track is loaded or mic connected.
@@ -601,6 +621,10 @@ export class Experience {
     if (this._onVisibilityChange) {
       document.removeEventListener('visibilitychange', this._onVisibilityChange)
       this._onVisibilityChange = null
+    }
+    if (this._onMouseMoveForTrail) {
+      window.removeEventListener('mousemove', this._onMouseMoveForTrail)
+      this._onMouseMoveForTrail = null
     }
     this.contentReveal.destroy()
     this.cursor.destroy()
