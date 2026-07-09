@@ -270,6 +270,14 @@ html.uk-light {
 // body.light-theme overrides. See docs/UIKIT3.md §4 (theme toggle).
 @inverse-global-color-mode: light;
 
+// ── Global primary background (QF glow/glitch anchor) ──
+// MUST be set here (before master-qf imports) so all QF effects that reference
+// @global-primary-background (button glow gradients, alert-primary, marker,
+// dotnav, subnav-pill, progress-bar, navbar-dropdown-nav-active) use the JLZ
+// accent color instead of UIKit's default blue (#1e87f0).
+@global-primary-background: @jlz-color-accent;
+@global-primary-hover-background: @jlz-color-accent-hover;
+
 // ── Button overrides ──
 @button-default-color: @jlz-color-accent;
 @button-default-background: @jlz-color-surface;
