@@ -1,5 +1,6 @@
 import { renderPage, type PageId } from './templates'
 import UIkit from 'uikit'
+import { themeManager } from './core/ThemeManager'
 
 let initialized = false
 let currentPage: PageId | null = null
@@ -40,16 +41,13 @@ function renderView(page: PageId = getPageFromLocation()): void {
   if (!el) return
   document.body.dataset.page = page
   document.documentElement.dataset.page = page
-  // Content pages always render light text over the 3D canvas. Remove
-  // `light-theme` (toggled by Experience.ts on home sections) from both
-  // <html> and <body> so the dark-theme UIKit overrides apply: light text,
-  // glass buttons, glass cards. Experience.ts re-adds `light-theme` when
-  // returning to a light home section. See docs/UIKIT3.md §4 (theme scope).
+  // Content pages always render light text over the 3D canvas — force
+  // dark theme (unless user has a manual 'light' override in localStorage).
+  // ThemeManager.setAutoTheme(false) sets the auto state; if mode is 'auto',
+  // it applies dark. If mode is 'light'/'dark', the manual override wins.
+  // See docs/UIKIT3.md §4 (theme toggle scope).
   if (page !== 'home') {
-    document.documentElement.classList.remove('light-theme')
-    document.body.classList.remove('light-theme')
-    document.documentElement.classList.add('dark-theme')
-    document.body.classList.add('dark-theme')
+    themeManager.setAutoTheme(false)
   }
   // Keep the SEO-friendly <title> from index.html — do not clobber it with
   // a shorter tab title on JS boot.

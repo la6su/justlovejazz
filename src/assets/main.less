@@ -125,95 +125,60 @@ body:not([data-page='home']) #spa-content {
 }
 
 /* ------------------------------------------------------------------
-   UIkit theme-aligned colors
+   UIkit theme-aligned colors — native uk-light system
+   ------------------------------------------------------------------
+   UIKit's `uk-light` class (enabled via @inverse-global-color-mode: light
+   in _import.less) handles ALL UIKit components natively: headings, text,
+   buttons, cards, navbar, etc. ThemeManager toggles `uk-light` on <body>.
+
+   Below: overrides ONLY for custom non-UIKit elements (joystick, hint,
+   nav-link, brand, menu toggle) that don't have UIKit inverse hooks.
+   Selectors use `body.uk-light` (the native UIKit class). ThemeManager
+   also toggles `light-theme` as a synonym for backward compat.
    ------------------------------------------------------------------ */
 
-body.light-theme {
+body.uk-light {
   color: rgba(5, 5, 7, 0.92);
 }
 
-body.light-theme .studio-title,
-body.light-theme .uk-heading-medium,
-body.light-theme .uk-heading-xlarge,
-body.light-theme .uk-text-lead,
-body.light-theme .uk-text-meta,
-body.light-theme .uk-card-title {
+body.uk-light .studio-title {
   color: rgba(5, 5, 7, 0.92);
 }
 
-body.light-theme .uk-text-meta {
+body.uk-light .jlz-nav-link {
   color: rgba(5, 5, 7, 0.55);
 }
 
-body.light-theme .uk-button-default,
-body.light-theme .uk-button-primary {
-  color: rgba(5, 5, 7, 0.92);
-  border-color: rgba(5, 5, 7, 0.14);
-  background: rgba(255, 255, 255, 0.52);
-  backdrop-filter: blur(14px) saturate(140%);
-  -webkit-backdrop-filter: blur(14px) saturate(140%);
-}
-
-body.light-theme .uk-button-default:hover,
-body.light-theme .uk-button-default:focus-visible,
-body.light-theme .uk-button-primary:hover,
-body.light-theme .uk-button-primary:focus-visible {
-  color: #050507;
-  border-color: rgba(5, 5, 7, 0.24);
-  background: rgba(255, 255, 255, 0.72);
-}
-
-body.light-theme .uk-card-default {
-  background: rgba(255, 255, 255, 0.58);
-  border-color: rgba(5, 5, 7, 0.08);
-  color: rgba(5, 5, 7, 0.9);
-  backdrop-filter: blur(16px) saturate(140%);
-  -webkit-backdrop-filter: blur(16px) saturate(140%);
-}
-
-body.light-theme .uk-card-default:hover {
-  background: rgba(255, 255, 255, 0.72);
-  border-color: rgba(5, 5, 7, 0.14);
-}
-
-body.light-theme .uk-card-default .uk-text-meta {
-  color: rgba(5, 5, 7, 0.55);
-}
-
-body.light-theme .jlz-nav-link {
-  color: rgba(5, 5, 7, 0.55);
-}
-
-body.light-theme .jlz-nav-link:hover {
+body.uk-light .jlz-nav-link:hover {
   color: rgba(5, 5, 7, 0.84);
 }
 
-body.light-theme li.uk-active .jlz-nav-link {
+body.uk-light li.uk-active .jlz-nav-link {
   color: rgba(5, 5, 7, 0.98);
 }
 
-body.light-theme .jlz-hint__text {
+body.uk-light .jlz-hint__text {
   color: rgba(5, 5, 7, 0.68);
   background: rgba(255, 255, 255, 0.42);
   border-color: rgba(5, 5, 7, 0.08);
 }
 
-body.light-theme .jlz-joystick__base {
+body.uk-light .jlz-joystick__base {
   background: rgba(0, 0, 0, 0.06);
   border-color: rgba(0, 0, 0, 0.12);
 }
 
-body.light-theme .jlz-joystick__base.is-active {
+body.uk-light .jlz-joystick__base.is-active {
   background: rgba(0, 0, 0, 0.1);
   border-color: rgba(0, 0, 0, 0.3);
 }
 
-body.light-theme .jlz-joystick__ball {
+body.uk-light .jlz-joystick__ball {
   background: rgba(0, 0, 0, 0.2);
   border-color: rgba(0, 0, 0, 0.15);
 }
 
-body.light-theme .jlz-joystick__hint {
+body.uk-light .jlz-joystick__hint {
   color: rgba(0, 0, 0, 0.4);
 }
 
@@ -263,14 +228,14 @@ body.light-theme .jlz-joystick__hint {
   color: #fff;
 }
 
-body.light-theme #jlz-menu-toggle,
-body.light-theme .jlz-brand {
+body.uk-light #jlz-menu-toggle,
+body.uk-light .jlz-brand {
   color: rgba(5, 5, 7, 0.84);
 }
 
-body.light-theme #jlz-menu-toggle:hover,
-body.light-theme #jlz-menu-toggle:focus-visible,
-body.light-theme .jlz-brand:hover {
+body.uk-light #jlz-menu-toggle:hover,
+body.uk-light #jlz-menu-toggle:focus-visible,
+body.uk-light .jlz-brand:hover {
   color: #050507;
 }
 
@@ -322,6 +287,35 @@ body:not([data-page='home']) .jlz-hint {
 .jlz-main-menu-nav > li.uk-active > a,
 .jlz-main-menu-nav > li > a:hover {
   color: #fff;
+}
+
+/* Theme toggle — Auto / Light / Dark button group in the menu modal.
+   Active button gets the accent background. */
+.jlz-theme-toggle .uk-button-group {
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.jlz-theme-toggle .uk-button {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.7);
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.jlz-theme-toggle .uk-button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.jlz-theme-toggle .uk-button.uk-active {
+  background: var(--jlz-color-accent);
+  color: #fff;
+  border-color: var(--jlz-color-accent);
 }
 
 /* ------------------------------------------------------------------

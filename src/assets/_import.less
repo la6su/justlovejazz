@@ -60,8 +60,11 @@
 @global-control-small-height: 36px;
 @global-control-large-height: 56px;
 
-// Inverse mode (for navbars on dark bg)
-@inverse-global-color-mode: none;
+// Inverse mode — generates `.uk-light` class (inverse colors = dark text
+// in our dark-theme context, for use on light backgrounds). This lets us
+// use UIKit's native uk-light/uk-dark system instead of custom
+// body.light-theme overrides. See docs/UIKIT3.md §4 (theme toggle).
+@inverse-global-color-mode: light;
 
 // ── Button overrides ──
 @button-default-color: @jlz-color-accent;

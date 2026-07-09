@@ -19,6 +19,7 @@ import { JoystickNav } from '../UI/JoystickNav'
 import { UIMenu } from '../UI/UIMenu'
 import { updateWorldDNAAudio } from './World/worldDNA'
 import { prefersReducedMotion } from '../core/motionPolicy'
+import { themeManager } from '../core/ThemeManager'
 import { eventBus } from '../core/EventBus'
 // DissolveOverlay removed — cover transition in ProjectDetail replaces it.
 
@@ -214,17 +215,11 @@ export class Experience {
     // which instantly destroyed the splash ~2.5s BEFORE the cinematic opening
     // sequence could play — so the user saw no opening animation at all.
     this.bus.on('intro:done', () => {
-      // Content pages (music, videos, shows, etc.) always render light text
-      // over the 3D canvas — skip the light-theme toggle so the dark-theme
-      // UIKit overrides (light text, glass cards/buttons) stay active.
-      // See docs/UIKIT3.md §4 (theme toggle scope).
+      // Content pages always render light text over the 3D canvas — skip
+      // the auto theme toggle. See docs/UIKIT3.md §4 (theme toggle scope).
       if (document.body.dataset.page !== 'home') return
-      // Intro is a light section — set light-theme, clear dark-theme.
-      // (The per-section toggle in _updateInner also keeps these in sync.)
-      document.documentElement.classList.add('light-theme')
-      document.body.classList.add('light-theme')
-      document.documentElement.classList.remove('dark-theme')
-      document.body.classList.remove('dark-theme')
+      // Intro is a light section — tell ThemeManager (respects manual override).
+      themeManager.setAutoTheme(true)
     })
   }
 
@@ -442,21 +437,15 @@ export class Experience {
     // UI theme: light sections (Lab=0, Intro=1, Contact=6) need dark text/nav.
     // These sections have LIGHT backgrounds (EnvSphere patterns) → dark text
     // for contrast. Other sections have DARK backgrounds → light text.
-    // Both `light-theme` and `dark-theme` classes are toggled symmetrically
-    // so main.less can use body.light-theme / body.dark-theme selectors
-    // (replaces 63 per-section[data-section=...] rules — see main.less §5).
     //
-    // Content pages (music, videos, shows, etc.) always render light text
-    // over the 3D canvas — skip the toggle so the dark-theme UIKit overrides
-    // stay active. See docs/UIKIT3.md §4 (theme toggle scope).
+    // ThemeManager handles the actual class toggle (uk-light + light-theme
+    // for custom elements) and respects manual override from the menu toggle.
+    // On content pages, skip — always dark (light text over 3D).
+    // See docs/UIKIT3.md §4 (theme toggle scope).
     const idx = this.world.currentSectionIndex
     if (document.body.dataset.page === 'home') {
-      // Light sections: Lab(0), Intro(1), Contact(6) — light bg, dark text
       const isLightSection = idx === 0 || idx === 1 || idx === 6
-      document.documentElement.classList.toggle('light-theme', isLightSection)
-      document.body.classList.toggle('light-theme', isLightSection)
-      document.documentElement.classList.toggle('dark-theme', !isLightSection)
-      document.body.classList.toggle('dark-theme', !isLightSection)
+      themeManager.setAutoTheme(isLightSection)
     }
     // Give World the camera ref for DrawTrail (once, after init).
     this.world.setCamera(this.camera.instance)

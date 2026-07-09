@@ -4,6 +4,7 @@ import { initRouter } from './router'
 import { bootstrap as bootstrapApp, type BootstrapOptions } from './main-app'
 import { NoiseText } from './Experience/NoiseText'
 import { eventBus } from './core/EventBus'
+import { themeManager } from './core/ThemeManager'
 
 async function boot() {
   const { createSplash } = await import('./splash')
@@ -65,6 +66,9 @@ export async function startApp(): Promise<void> {
   // animation-name computed value flips from `none` back to `uk-fade`,
   // which restarts the animation so the fade-in is visible to the user.
   document.body.classList.add('scrollspy-pending')
+  // Apply persisted theme mode (auto/light/dark) from localStorage before
+  // the router renders. ThemeManager.apply() toggles `uk-light` on <body>.
+  themeManager.apply()
   initRouter()
 
   // NoiseText: animate ALL titles when jlz:webgl-ready fires (after splash).

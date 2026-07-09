@@ -1,6 +1,7 @@
 // UIMenu.ts — Main site header plus the home section slider.
 
 import UIkit from 'uikit'
+import { themeManager, type ThemeMode } from '../core/ThemeManager'
 
 export interface UIMenuOptions {
   sectionLabels: string[]
@@ -18,6 +19,12 @@ const PAGE_LINKS = [
   ['/gallery', 'Gallery'],
 ] as const
 
+const THEME_MODES: { id: ThemeMode; label: string; icon: string }[] = [
+  { id: 'auto', label: 'Auto', icon: 'bolt' },
+  { id: 'light', label: 'Light', icon: 'paint-bucket' },
+  { id: 'dark', label: 'Dark', icon: 'moon' },
+]
+
 export class UIMenu {
   public button: HTMLButtonElement
   private navEl: HTMLElement
@@ -25,10 +32,12 @@ export class UIMenu {
   private slider: HTMLElement
   private items: HTMLElement[] = []
   private pageLinks: HTMLAnchorElement[] = []
+  private themeButtons: HTMLButtonElement[] = []
   private _activeIndex = 1
   private _onNavigate: ((index: number) => void) | null = null
   private _sliderComponent: { show: (idx: number) => void } | null = null
   private _routeHandler: ((event: Event) => void) | null = null
+  private _themeHandler: ((event: Event) => void) | null = null
 
   constructor(opts: UIMenuOptions) {
     const labels = opts.sectionLabels
@@ -68,6 +77,17 @@ export class UIMenu {
             <li><a href="${href}" data-page-link="${href}">${label}</a></li>
           `).join('')}
         </ul>
+        <div class="uk-margin-large-top jlz-theme-toggle">
+          <p class="uk-text-meta uk-text-uppercase">Theme</p>
+          <div class="uk-button-group uk-margin-small-top">
+            ${THEME_MODES.map((m) => `
+              <button class="uk-button uk-button-default uk-button-small" data-theme-mode="${m.id}" type="button">
+                <span uk-icon="icon: ${m.icon}; ratio: 0.8" aria-hidden="true"></span>
+                <span class="uk-visible@s">${m.label}</span>
+              </button>
+            `).join('')}
+          </div>
+        </div>
       </div>
     `
 
@@ -93,14 +113,29 @@ export class UIMenu {
     app.appendChild(this.navEl)
     app.appendChild(this.modalEl)
     this.pageLinks = Array.from(this.modalEl.querySelectorAll<HTMLAnchorElement>('[data-page-link]'))
+    this.themeButtons = Array.from(this.modalEl.querySelectorAll<HTMLButtonElement>('[data-theme-mode]'))
     this._sliderComponent = UIkit.slider(this.slider)
     this._routeHandler = (event: Event) => {
       const page = (event as CustomEvent<{ page?: string }>).detail?.page ?? 'home'
       this.updatePageActive(page)
     }
     window.addEventListener('jlz:route-change', this._routeHandler)
+
+    // Theme toggle buttons — click sets the mode, ThemeManager applies + persists
+    this.themeButtons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const mode = btn.dataset.themeMode as ThemeMode | undefined
+        if (mode) {
+          themeManager.setMode(mode)
+        }
+      })
+    })
+    this._themeHandler = () => this.updateThemeActive()
+    window.addEventListener('jlz:theme-change', this._themeHandler)
+
     this.updateActive()
     this.updatePageActive(document.body.dataset.page ?? 'home')
+    this.updateThemeActive()
   }
 
   onNavigate(cb: (index: number) => void): void {
@@ -122,9 +157,20 @@ export class UIMenu {
     }
   }
 
+  /** Highlight the active theme button (auto/light/dark). */
+  private updateThemeActive(): void {
+    const current = themeManager.mode
+    this.themeButtons.forEach((btn) => {
+      btn.classList.toggle('uk-active', btn.dataset.themeMode === current)
+    })
+  }
+
   dispose(): void {
     if (this._routeHandler) {
       window.removeEventListener('jlz:route-change', this._routeHandler)
+    }
+    if (this._themeHandler) {
+      window.removeEventListener('jlz:theme-change', this._themeHandler)
     }
     try { UIkit.modal(this.modalEl).$destroy() } catch { /* ignore */ }
     try { UIkit.slider(this.slider).$destroy() } catch { /* ignore */ }

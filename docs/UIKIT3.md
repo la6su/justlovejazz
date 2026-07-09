@@ -129,77 +129,75 @@ SPA runtime.
 
 ---
 
-## 4. Theme toggle — `body.light-theme`, not per-section overrides
+## 4. Theme toggle — UIKit native `uk-light` + ThemeManager
 
-**Wrong (former approach, 1012 LOC):**
+**Current approach (UIKit native inverse system):**
+
+UIKit 3 has a built-in inverse component (`uk-light` / `uk-dark`). Our base
+theme is DARK (white text over 3D canvas). The `uk-light` class applies
+INVERSE colors = dark text (for light backgrounds). One class on `<body>`
+flips ALL UIKit components natively — no custom per-component overrides.
+
 ```less
-// ❌ Per-section color overrides — duplicates UIKit, breaks on theme change
-section[data-section='about'] .uk-text-lead { color: #fff; }
-section[data-section='about'] .uk-text-meta { color: rgba(255,255,255,0.55); }
-section[data-section='intro'] .uk-text-lead { color: #111; }
-section[data-section='intro'] .uk-text-meta { color: rgba(0,0,0,0.55); }
-// … ×every UIKit text class ×every section ×every state
+// _import.less — enable uk-light class generation
+@inverse-global-color-mode: light;  // was: none (disabled both classes)
+
+// main.less — ONLY custom non-UIKit elements need overrides
+body.uk-light .jlz-joystick__base { background: rgba(0, 0, 0, 0.06); }
+body.uk-light .jlz-nav-link { color: rgba(5, 5, 7, 0.55); }
+// UIKit components (headings, text, buttons, cards, navbar) — handled by
+// uk-light natively, zero custom CSS needed.
 ```
 
-**Right (current approach, 757 LOC):**
-```less
-// ✅ Global theme toggle — one body class flips everything
-body.light-theme { color: rgba(5, 5, 7, 0.92); }
-body.light-theme .uk-heading-medium,
-body.light-theme .uk-heading-xlarge,
-body.light-theme .uk-text-lead,
-body.light-theme .uk-text-meta,
-body.light-theme .uk-card-title { color: rgba(5, 5, 7, 0.92); }
-body.light-theme .uk-button-default,
-body.light-theme .uk-button-primary { /* glass-on-light variants */ }
-body.light-theme .uk-card-default { /* light glass card variant */ }
-```
+**ThemeManager** (`src/core/ThemeManager.ts`) — 3 modes:
+- `'auto'` — follows the active home section (Lab/Intro/Contact = light,
+  others = dark). On content pages, always dark.
+- `'light'` — forced light mode (uk-light on body, dark text)
+- `'dark'` — forced dark mode (no uk-light, light text)
 
-`Experience.ts` toggles `body.light-theme` on `jlz:section-change` (home page
-only — Lab/Intro/Contact are light sections, the rest are dark). One class
-flip, all UIKit components retheme correctly.
+Persisted to `localStorage('jlz:theme')`. Manual override wins over auto.
+
+**Toggle UI** — 3 buttons (Auto/Light/Dark) in the UIMenu modal
+(`#jlz-menu-modal .jlz-theme-toggle`). Active button gets `uk-active` class
++ accent background.
+
+**Experience.ts** calls `themeManager.setAutoTheme(isLightSection)` on
+section change. ThemeManager decides whether to apply it (auto mode) or
+ignore it (manual override).
 
 ### 4.1 Theme toggle scope — home only, NOT content pages
 
 **Symptom:** Content pages (`/music`, `/videos`, `/about`, etc.) render dark
 text on a dark 3D background — unreadable.
 
-**Cause:** `Experience.ts` adds `light-theme` on init (intro is a light
+**Cause:** `Experience.ts` adds `uk-light` on init (intro is a light
 section) and toggles it on `jlz:section-change`. On content pages, no
 section-change fires (JoystickNav fires `jlz:page-section-change` instead),
-so `light-theme` stays from the last home section state. The
-`body.light-theme .uk-*` rules then darken all text, which is invisible over
-the dark 3D canvas.
+so `uk-light` stays from the last home section state. UIKit's `uk-light`
+then darkens all text, which is invisible over the dark 3D canvas.
 
-**Fix (3 parts):**
+**Fix (via ThemeManager):**
 
-1. **`router.ts`** — on non-home pages, remove `light-theme` from both
-   `<html>` and `<body>`, add `dark-theme`:
+1. **`router.ts`** — on non-home pages, call `themeManager.setAutoTheme(false)`:
    ```ts
    if (page !== 'home') {
-     document.documentElement.classList.remove('light-theme')
-     document.body.classList.remove('light-theme')
-     document.documentElement.classList.add('dark-theme')
-     document.body.classList.add('dark-theme')
+     themeManager.setAutoTheme(false)  // forces dark in auto mode
    }
    ```
 
 2. **`Experience.ts`** — guard the theme toggle with `data-page === 'home'`:
    ```ts
-   // In intro:done handler:
-   if (document.body.dataset.page !== 'home') return
-   // In _updateInner (per-section toggle):
    if (document.body.dataset.page === 'home') {
-     /* toggle light-theme / dark-theme */
+     const isLightSection = idx === 0 || idx === 1 || idx === 6
+     themeManager.setAutoTheme(isLightSection)
    }
    ```
-   This prevents Experience from re-adding `light-theme` after the router
-   removes it. (Experience.init runs AFTER the router, so without this guard
-   it would overwrite the router's fix.)
+   ThemeManager respects manual override (if user set 'light' or 'dark' in
+   the menu, auto-toggle is ignored).
 
 3. **`main.less`** — content page color rules use `body .jlz-page` prefix
-   (specificity 0,2,1) to beat `body.light-theme .uk-*` (also 0,2,1, but
-   `body .jlz-page` comes later in source order):
+   to ensure light text + text-shadow over the 3D canvas regardless of
+   theme state:
    ```less
    body .jlz-page .uk-heading-xlarge,
    body .jlz-page .uk-text-lead {
@@ -207,12 +205,10 @@ the dark 3D canvas.
      text-shadow: 0 2px 32px rgba(0, 0, 0, 0.55);
    }
    ```
-   Belt-and-suspenders: even if `light-theme` leaks through, the `body`
-   prefix ensures content page text stays light.
 
-**Provenance:** This task (2026-07-11) — content pages had invisible dark
-text over dark 3D canvas because `light-theme` from home intro was never
-cleared on route change.
+**Provenance:** Initial fix (2026-07-11) used direct classList manipulation.
+Refactored (same day) to use ThemeManager + `uk-light` for the menu toggle
+feature.
 
 ---
 
