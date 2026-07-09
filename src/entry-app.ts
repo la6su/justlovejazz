@@ -66,9 +66,10 @@ export async function startApp(): Promise<void> {
   // animation-name computed value flips from `none` back to `uk-fade`,
   // which restarts the animation so the fade-in is visible to the user.
   document.body.classList.add('scrollspy-pending')
-  // Apply persisted theme mode (auto/light/dark) from localStorage before
-  // the router renders. ThemeManager.apply() toggles `uk-light` on <body>.
-  themeManager.apply()
+  // Apply persisted theme mode + initial section theme (Intro = light).
+  // Experience.ts will update per-section on navigation.
+  const isHomePage = window.location.pathname === '/' || window.location.pathname === ''
+  themeManager.setAutoTheme(isHomePage) // home starts on Intro (light)
   initRouter()
 
   // NoiseText: animate ALL titles when jlz:webgl-ready fires (after splash).

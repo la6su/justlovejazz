@@ -320,6 +320,10 @@ body.uk-light #jlz-menu-modal .jlz-theme-toggle .uk-button:hover {
   color: #050507;
 }
 
+body.uk-light #jlz-menu-modal #jlz-theme-mode-label {
+  color: rgba(5, 5, 7, 0.5);
+}
+
 .jlz-main-menu-nav > li > a {
   font-size: clamp(2rem, 7vw, 5rem);
   line-height: 1;
@@ -332,13 +336,7 @@ body.uk-light #jlz-menu-modal .jlz-theme-toggle .uk-button:hover {
   color: #fff;
 }
 
-/* Theme toggle — Auto / Light / Dark button group in the menu modal.
-   Active button gets the accent background. */
-.jlz-theme-toggle .uk-button-group {
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
+/* Theme toggle — single "Change mode" button in the menu modal. */
 .jlz-theme-toggle .uk-button {
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(255, 255, 255, 0.04);
@@ -353,12 +351,6 @@ body.uk-light #jlz-menu-modal .jlz-theme-toggle .uk-button:hover {
   background: rgba(255, 255, 255, 0.08);
   color: #fff;
   border-color: rgba(255, 255, 255, 0.2);
-}
-
-.jlz-theme-toggle .uk-button.uk-active {
-  background: var(--jlz-color-accent);
-  color: #fff;
-  border-color: var(--jlz-color-accent);
 }
 
 /* ------------------------------------------------------------------

@@ -233,16 +233,16 @@ export class Experience {
     await this.buildWorld()
     this.bus = StateBus.getInstance()
 
-    // ── 3D ↔ theme sync: when user manually toggles light/dark, sync EnvSphere ──
-    // In 'auto' mode, Experience.ts drives the section → EnvSphere follows.
-    // In 'light'/'dark' mode, override EnvSphere to a matching pattern:
-    //   light → Intro pattern (idx 1, light HSV)
-    //   dark  → About pattern (idx 2, dark grey gradient)
-    // This keeps the 3D background readable with the manually-chosen text color.
+    // ── 3D ↔ theme sync: in inverse mode, EnvSphere follows the flipped theme ──
+    // In normal mode, EnvSphere follows the section's cfg.theme (section-driven).
+    // In inverse mode, EnvSphere is flipped to match the inverted text color:
+    //   section is light → inverse makes it dark → EnvSphere dark pattern
+    //   section is dark → inverse makes it light → EnvSphere light pattern
     window.addEventListener('jlz:theme-applied', ((e: Event) => {
       const detail = (e as CustomEvent<{ isLight: boolean; mode: string }>).detail
-      if (!detail || detail.mode === 'auto') return // auto = section-driven, no override
-      const targetIdx = detail.isLight ? 1 : 2 // Intro=light, About=dark
+      if (!detail || detail.mode === 'normal') return // normal = section-driven, no override
+      // inverse: override EnvSphere to match the flipped theme
+      const targetIdx = detail.isLight ? 1 : 2 // Intro=light pattern, About=dark pattern
       if (this.world?.envSphere) {
         this.world.envSphere.changeSection(targetIdx)
         this._needsRender = true

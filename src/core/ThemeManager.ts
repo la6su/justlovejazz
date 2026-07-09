@@ -1,30 +1,26 @@
-// src/core/ThemeManager.ts — Theme mode manager (auto / inverse / light / dark)
+// src/core/ThemeManager.ts — Theme manager with per-section theme + inverse toggle
 //
-// Uses UIKit 3's native `uk-light` class on <body>:
-//   - Our base theme is DARK (white text over dark 3D canvas)
-//   - `uk-light` class applies INVERSE colors = dark text (for light backgrounds)
-//   - No class = default dark theme (light text)
+// Per-section theme comes from WorldConfig (cfg.theme: 'light' | 'dark'):
+//   Lab=light, Intro=light, About=dark, Works=dark, Contact=light, Process=dark
 //
-// Four modes:
-//   - 'auto'    — follows the active section's theme from WorldConfig
-//                 (light sections → uk-light, dark sections → no uk-light)
-//   - 'inverse' — follows section theme but FLIPPED (light↔dark)
-//                 Light sections become dark, dark sections become light
-//   - 'light'   — forced light mode (uk-light on body) — dark text everywhere
-//   - 'dark'    — forced dark mode (no uk-light) — light text everywhere
+// Two modes:
+//   - 'normal'  — per-section theme as configured (default)
+//   - 'inverse' — flips all sections (light↔dark)
+//
+// uk-light class on <body> = light background → dark text (inverse colors).
+// No uk-light = dark background → light text (default dark theme).
 //
 // Persists to localStorage('jlz:theme').
-//
 // 3D sync: dispatches 'jlz:theme-applied' with {isLight} so Experience.ts
-// can sync EnvSphere background + post-processing to match the manual override.
+// can sync EnvSphere background to match.
 
-export type ThemeMode = 'auto' | 'inverse' | 'light' | 'dark'
+export type ThemeMode = 'normal' | 'inverse'
 
 const STORAGE_KEY = 'jlz:theme'
 
 class ThemeManager {
-  private _mode: ThemeMode = 'auto'
-  private _autoIsLight = false // what Experience.ts thinks the auto state should be
+  private _mode: ThemeMode = 'normal'
+  private _sectionIsLight = false // per-section theme from WorldConfig
 
   constructor() {
     this._mode = this._loadMode()
@@ -34,12 +30,13 @@ class ThemeManager {
     return this._mode
   }
 
+  get isInverse(): boolean {
+    return this._mode === 'inverse'
+  }
+
   /** Whether the currently-applied theme is light (uk-light on body). */
   get isLight(): boolean {
-    if (this._mode === 'light') return true
-    if (this._mode === 'dark') return false
-    if (this._mode === 'inverse') return !this._autoIsLight // flip
-    return this._autoIsLight // auto
+    return this._mode === 'inverse' ? !this._sectionIsLight : this._sectionIsLight
   }
 
   setMode(mode: ThemeMode): void {
@@ -49,11 +46,16 @@ class ThemeManager {
     window.dispatchEvent(new CustomEvent('jlz:theme-change', { detail: { mode } }))
   }
 
-  /** Called by Experience.ts on section change (home page only).
-   *  Sets the auto-detected light/dark state from the section's cfg.theme.
-   *  If mode === 'auto', applies it. If 'inverse', applies flipped. */
+  /** Toggle between normal and inverse. */
+  toggle(): ThemeMode {
+    this.setMode(this._mode === 'normal' ? 'inverse' : 'normal')
+    return this._mode
+  }
+
+  /** Called by Experience.ts/JoystickNav on section change.
+   *  Sets the per-section light/dark state from cfg.theme. */
   setAutoTheme(isLight: boolean): void {
-    this._autoIsLight = isLight
+    this._sectionIsLight = isLight
     this.apply()
   }
 
@@ -63,35 +65,21 @@ class ThemeManager {
     const isLight = this.isLight
     document.body.classList.toggle('uk-light', isLight)
     document.documentElement.classList.toggle('uk-light', isLight)
-    // Keep body.light-theme as a synonym for custom non-UIKit elements
-    // (joystick, hint, corner-label, scroll-hint) that don't have UIKit
-    // inverse hooks. See main.less — `body.uk-light, body.light-theme` selectors.
     document.body.classList.toggle('light-theme', isLight)
     document.documentElement.classList.toggle('light-theme', isLight)
     document.body.classList.toggle('dark-theme', !isLight)
     document.documentElement.classList.toggle('dark-theme', !isLight)
-    // Notify Experience.ts to sync 3D (EnvSphere + post) with the theme.
-    // In auto mode, Experience already drives the section → 3D is in sync.
-    // In inverse/light/dark mode, Experience listens and overrides the 3D bg.
     window.dispatchEvent(new CustomEvent('jlz:theme-applied', { detail: { isLight, mode: this._mode } }))
-  }
-
-  /** Cycle through modes: auto → inverse → light → dark → auto. */
-  cycle(): ThemeMode {
-    const order: ThemeMode[] = ['auto', 'inverse', 'light', 'dark']
-    const next = order[(order.indexOf(this._mode) + 1) % order.length] ?? 'auto'
-    this.setMode(next)
-    return next
   }
 
   private _loadMode(): ThemeMode {
     try {
       const stored = localStorage.getItem(STORAGE_KEY)
-      if (stored === 'auto' || stored === 'inverse' || stored === 'light' || stored === 'dark') return stored
+      if (stored === 'normal' || stored === 'inverse') return stored
     } catch {
       /* localStorage unavailable */
     }
-    return 'auto'
+    return 'normal'
   }
 
   private _saveMode(mode: ThemeMode): void {
