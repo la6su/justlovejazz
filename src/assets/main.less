@@ -754,8 +754,11 @@ body .jlz-page .uk-text-meta {
 }
 
 /* ── Custom cursor (codrops-style: inner dot + outer noisy circle) ──
-   Inner dot: 5px, follows mouse instantly, mix-blend-mode: difference.
-   Outer circle: canvas, follows with lerp(0.2), noisy distortion on hover.
+   Inner dot: 6px, follows mouse instantly, JLZ accent color.
+   Outer circle: small canvas (100×100px), follows with lerp(0.2) via
+   transform, noisy distortion on hover.
+   Both: pointer-events: none, z-index: 100000 (same — they don't overlap).
+   NO mix-blend-mode (breaks inside modal/overlay stacking contexts).
    cursor:none on body only when (hover: hover) AND (pointer: fine) —
    touch devices keep the system cursor. */
 .custom-cursor-inner {
@@ -770,17 +773,17 @@ body .jlz-page .uk-text-meta {
   pointer-events: none;
   z-index: 100000;
   will-change: transform;
-  mix-blend-mode: difference;
 }
 
 .custom-cursor-canvas {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100vw;
-  height: 100vh;
+  width: 100px;
+  height: 100px;
   pointer-events: none;
-  z-index: 99999;
+  z-index: 100000;
+  will-change: transform;
 }
 
 /* Hide custom cursor on touch devices */
@@ -801,9 +804,8 @@ body .jlz-page .uk-text-meta {
   }
 }
 
-/* Reduced-motion: cursor still follows (JS-driven), but no noisy distortion
-   (the drawCircle isNoisy check is skipped via prefers-reduced-motion in
-   the canvas — but we also disable the transition here for safety). */
+/* Reduced-motion: cursor still follows (JS-driven), but disable canvas
+   redraw noise (instant circle, no distortion animation). */
 @media (prefers-reduced-motion: reduce) {
   .custom-cursor-inner,
   .custom-cursor-canvas {
