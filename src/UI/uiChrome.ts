@@ -13,7 +13,7 @@
 /** Selector matching all navigation/UI-chrome elements that should swallow
  *  pointer/wheel/keyboard events before they reach 3D input handlers. */
 const UI_CHROME_SELECTOR =
-  '#joystick-nav, #jlz-menu-toggle, #jlz-menu-modal, #project-overlay, #project-modal, #jlj-splash, .jlz-hint'
+  '#joystick-nav, #jlz-menu-toggle, #jlz-menu-modal, #project-overlay, #jlj-splash, .jlz-hint'
 
 /** Returns true if the event's target is inside (or is) a UI-chrome element. */
 export function isUiChromeEvent(e: Event): boolean {
