@@ -676,9 +676,9 @@ export class Experience {
     }
   }
 
-  /** Get the BakuCarousel from the works scene group (index 4). */
+  /** Get the BakuCarousel from the works scene group (index 3 in 6-section layout). */
   private getCarousel(): import('./World/BakuCarousel').BakuCarousel | null {
-    const worksGroup = this.world?.sceneGroups?.[4]
+    const worksGroup = this.world?.sceneGroups?.[3]
     if (!worksGroup) return null
     return (worksGroup.userData.gallery as
       | import('./World/BakuCarousel').BakuCarousel

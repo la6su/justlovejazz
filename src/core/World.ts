@@ -177,7 +177,8 @@ export class World extends THREE.Group {
     // Init BakuCarousel (async texture loading) for the works section (index 3).
     // The baku cube morphs into a carousel ring of project cards when the
     // works section becomes active — see BakuCarousel.ts for the morph logic.
-    const worksGroup = this.sceneGroups[4]
+    // NOTE: Works is index 3 in the 6-section layout (was index 4 in 8-section).
+    const worksGroup = this.sceneGroups[3]
     if (worksGroup) {
       const carousel = worksGroup.userData.gallery as
         | import('../Experience/World/BakuCarousel').BakuCarousel

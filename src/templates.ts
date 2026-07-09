@@ -90,6 +90,11 @@ export function homePage(): string {
               <span class="uk-text-bold">motion</span>, and
               <span class="uk-text-bold">light</span>, powered by WebGPU.
             </p>
+            <div class="uk-margin-top uk-flex uk-flex-center uk-flex-wrap uk-flex-middle" uk-scrollspy="cls: uk-animation-fade; delay: 600" style="gap: 0.5rem;">
+              <a href="/services" class="uk-button uk-button-primary uk-button-small">Services</a>
+              <a href="/cases" class="uk-button uk-button-default uk-button-small">Work</a>
+              <a href="/contact" class="uk-button uk-button-default uk-button-small">Contact</a>
+            </div>
           </div>
           <div class="jlz-scroll-hint" aria-hidden="true" ${REVEAL}>
             <span class="jlz-scroll-hint__label">Spin the cube</span>
@@ -99,14 +104,17 @@ export function homePage(): string {
       </div>
     </section>
 
-    <!-- 2: ABOUT (right face) — two-column split -->
+    <!-- 2: ABOUT (right face) — two-column split with stats -->
     <section uk-height-viewport="expand: true"
              class="uk-section uk-section-small uk-section-medium@s uk-section-large@m" id="section-about" data-section="about">
       <div class="uk-position-cover" data-dynamic-content>
         <div class="uk-container uk-container-expand uk-padding uk-grid uk-child-width-1-2@m uk-grid-match uk-text-left uk-height-1-1" uk-grid>
           <div class="uk-width-1-2@m uk-flex uk-flex-middle">
-            <h2 class="studio-title uk-heading-medium"
-                data-content-id="about-title">About</h2>
+            <div>
+              <h2 class="studio-title uk-heading-medium"
+                  data-content-id="about-title">About</h2>
+              <p class="uk-text-meta uk-margin-top" ${REVEAL}>WebGPU · Three.js · TSL · UIkit</p>
+            </div>
           </div>
           <div class="uk-width-1-2@m" ${REVEAL}>
             <p class="uk-text-lead" data-content-id="about-text">
@@ -114,6 +122,20 @@ export function homePage(): string {
               art direction with web engineering — 3D-first interfaces, spatial
               design, and real-time shaders that stay fast under pressure.
             </p>
+            <div class="uk-grid-small uk-child-width-1-3 uk-margin-top" uk-grid ${REVEAL}>
+              <div class="uk-text-center">
+                <div class="uk-heading-medium uk-margin-remove">7+</div>
+                <span class="uk-text-meta">Years</span>
+              </div>
+              <div class="uk-text-center">
+                <div class="uk-heading-medium uk-margin-remove">40+</div>
+                <span class="uk-text-meta">Projects</span>
+              </div>
+              <div class="uk-text-center">
+                <div class="uk-heading-medium uk-margin-remove">12</div>
+                <span class="uk-text-meta">Awards</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -124,12 +146,18 @@ export function homePage(): string {
              class="uk-section uk-section-small uk-section-medium@s uk-section-large@m" id="section-challenge" data-section="challenge">
       <div class="uk-position-cover" data-dynamic-content>
         <div class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-top uk-text-center uk-height-1-1">
+          <p class="uk-text-meta uk-text-uppercase" ${REVEAL}>Selected Work</p>
           <h2 class="studio-title uk-heading-medium"
               data-content-id="challenge-title">Works</h2>
           <p class="uk-text-lead" ${REVEAL}
              data-content-id="challenge-text">
-            Selected projects. Drag to spin the carousel, click any card to open.
+            Six interactive experiences. Drag the carousel, click any card to open.
           </p>
+          <div class="uk-margin-top uk-text-meta uk-flex uk-flex-center uk-flex-middle" uk-scrollspy="cls: uk-animation-fade; delay: 500" style="gap: 0.5rem;">
+            <span uk-icon="icon: arrow-left; ratio: 0.7" aria-hidden="true"></span>
+            <span>drag to spin</span>
+            <span uk-icon="icon: arrow-right; ratio: 0.7" aria-hidden="true"></span>
+          </div>
         </div>
 
         <div id="project-overlay" class="uk-position-z-index"></div>
