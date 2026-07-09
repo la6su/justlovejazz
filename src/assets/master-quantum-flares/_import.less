@@ -6,19 +6,26 @@
 //   - @base-heading-font-family (via @global-font-family, see UIKit base.less:40)
 //   - @base-h4/h5/h6-font-family (via @global-primary-font-family, see lines 75-89)
 //   - @navbar-nav-item-font-family, @nav-default-font-family, etc.
+//
+// ── Mobile-first rem-based sizing ──
+// All px values converted to rem so they scale with html font-size
+// (.85rem mobile → 1rem desktop, set in main.less). Colors mapped to
+// @jlz-* design tokens from src/styles/tokens.less for single source of truth.
+// @inverse-global-color-mode: light — generates uk-light class (matches our
+// ThemeManager system, see docs/UIKIT3.md §4).
 @internal-fonts: 'Inter:400,500,600,700,800,900';
 @global-font-family:
   'Inter',
   -apple-system,
   BlinkMacSystemFont,
   sans-serif;
-@global-font-size: 16px;
-@global-line-height: 1.7;
-@global-2xlarge-font-size: 40px;
-@global-xlarge-font-size: 30px;
-@global-large-font-size: 22px;
-@global-medium-font-size: 18px;
-@global-small-font-size: 14px;
+@global-font-size: 1rem;
+@global-line-height: 1.5;
+@global-2xlarge-font-size: 2.5rem;
+@global-xlarge-font-size: 1.875rem;
+@global-large-font-size: 1.375rem;
+@global-medium-font-size: 1.125rem;
+@global-small-font-size: 0.875rem;
 @global-primary-font-family:
   'Inter',
   -apple-system,
@@ -33,38 +40,38 @@
 @global-secondary-text-transform: inherit;
 @global-secondary-letter-spacing: inherit;
 @global-secondary-font-style: inherit;
-@global-color: rgba(255, 255, 255, 0.8);
+@global-color: @jlz-color-text;
 @global-emphasis-color: #fff;
-@global-muted-color: rgba(255, 255, 255, 0.5);
-@global-link-color: #6a6a6a;
-@global-link-hover-color: #fff;
-@global-inverse-color: #1d1d1d;
-@global-background: #121212;
-@global-muted-background: #262626;
+@global-muted-color: @jlz-color-text-muted;
+@global-link-color: @jlz-color-accent;
+@global-link-hover-color: @jlz-color-accent-hover;
+@global-inverse-color: @jlz-color-text-inverse;
+@global-background: @jlz-color-bg;
+@global-muted-background: @jlz-color-surface;
 @global-primary-background: #fff;
-@global-secondary-background: #1d1d1d;
+@global-secondary-background: @jlz-color-bg-elevated;
 @global-success-background: #5ecd89;
 @global-warning-background: #fff138;
 @global-danger-background: #ff464c;
-@global-border-width: 2px;
-@global-border: @global-muted-color;
+@global-border-width: 1px;
+@global-border: @jlz-color-border;
 @global-border-radius: 0;
-@global-small-box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
-@global-medium-box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
-@global-large-box-shadow: 0 14px 25px rgba(0, 0, 0, 0.5);
-@global-xlarge-box-shadow: 0 28px 50px rgba(0, 0, 0, 0.5);
-@global-margin: 20px;
-@global-small-margin: 10px;
-@global-medium-margin: 40px;
-@global-large-margin: 70px;
-@global-xlarge-margin: 140px;
-@global-gutter: 30px;
-@global-small-gutter: 15px;
-@global-medium-gutter: 40px;
-@global-large-gutter: 70px;
-@global-control-height: 45px;
-@global-control-small-height: 35px;
-@global-control-large-height: 65px;
+@global-small-box-shadow: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.5);
+@global-medium-box-shadow: 0 0.3rem 1rem rgba(0, 0, 0, 0.5);
+@global-large-box-shadow: 0 0.875rem 1.5rem rgba(0, 0, 0, 0.5);
+@global-xlarge-box-shadow: 0 1.75rem 3rem rgba(0, 0, 0, 0.5);
+@global-margin: 1.25rem;
+@global-small-margin: 0.625rem;
+@global-medium-margin: 2.5rem;
+@global-large-margin: 4.375rem;
+@global-xlarge-margin: 8.75rem;
+@global-gutter: 1.875rem;
+@global-small-gutter: 0.9375rem;
+@global-medium-gutter: 2.5rem;
+@global-large-gutter: 4.375rem;
+@global-control-height: 2.75rem;
+@global-control-small-height: 2.1875rem;
+@global-control-large-height: 4rem;
 @global-z-index: 1000;
 @base-link-hover-text-decoration: none;
 @base-ins-background: fade(@global-primary-background, 50%);
@@ -82,7 +89,7 @@
 @internal-base-body-mode: overlay;
 @internal-base-body-overlay-image: '../../master-quantum-flares/images/base-body-overlay.gif';
 @internal-base-body-overlay-opacity: 0.03;
-@base-code-padding-horizontal: 6px;
+@base-code-padding-horizontal: 0.375rem;
 @base-code-padding-vertical: 2px;
 @base-blockquote-padding-left: @global-medium-margin;
 @base-pre-padding: @global-margin;
@@ -138,11 +145,11 @@
 @heading-xlarge-font-size-m: 5.6rem;
 @heading-2xlarge-font-size-m: 6.8rem;
 @heading-3xlarge-font-size-m: 12rem;
-@heading-3xlarge-font-size-l: 296px;
+@heading-3xlarge-font-size-l: 18.5rem;
 @inverse-heading-divider-border: @global-secondary-background;
 @inverse-heading-bullet-border: @global-secondary-background;
 @inverse-heading-line-border: @global-secondary-background;
-@divider-icon-height: 30px;
+@divider-icon-height: 1.875rem;
 @divider-icon-color: @global-emphasis-color;
 @internal-divider-icon-image: '../../../../uikit-themes/master-quantum-flares/images/divider-icon.svg';
 @inverse-divider-icon-color: @global-secondary-background;
@@ -181,16 +188,16 @@
 @form-range-track-focus-background: lighten(@global-secondary-background, 10%);
 @form-range-thumb-background: @global-primary-background;
 @form-padding-horizontal: 0;
-@form-multi-line-padding-horizontal: 12px;
-@form-multi-line-padding-vertical: 7px;
+@form-multi-line-padding-horizontal: 0.75rem;
+@form-multi-line-padding-vertical: 0.4375rem;
 @form-background: transparent;
 @form-disabled-background: transparent;
 @form-radio-background: lighten(@global-secondary-background, 8%);
 @form-radio-disabled-background: @global-secondary-background;
 @form-small-padding-horizontal: 0;
-@form-small-multi-line-padding-horizontal: 12px;
+@form-small-multi-line-padding-horizontal: 0.75rem;
 @form-large-padding-horizontal: 0;
-@form-large-multi-line-padding-horizontal: 12px;
+@form-large-multi-line-padding-horizontal: 0.75rem;
 @form-icon-color: @global-color;
 @form-icon-hover-color: @global-muted-color;
 @form-border-mode: -bottom;
@@ -256,7 +263,7 @@
   uk-glitch-color;
 @button-font-weight: 500;
 @button-text-transform: uppercase;
-@button-border-radius: 500px;
+@button-border-radius: 31.25rem;
 @inverse-button-default-background: transparent;
 @inverse-button-default-color: @global-inverse-color;
 @inverse-button-default-hover-background: transparent;
@@ -346,8 +353,8 @@
 @alert-danger-color: @global-emphasis-color;
 @inverse-badge-color: @global-emphasis-color;
 @label-padding-vertical: 3px;
-@label-padding-horizontal: 8px;
-@label-font-size: 12px;
+@label-padding-horizontal: 0.5rem;
+@label-font-size: 0.75rem;
 @label-danger-color: @global-emphasis-color;
 @label-font-weight: 500;
 @label-text-transform: uppercase;
@@ -378,15 +385,15 @@
 @search-default-padding-horizontal: 0;
 @search-default-background: transparent;
 @search-default-focus-background: transparent;
-@search-default-icon-padding: 13px;
-@search-navbar-padding-horizontal: 18px;
+@search-default-icon-padding: 0.8125rem;
+@search-navbar-padding-horizontal: 1.125rem;
 @search-navbar-background: @global-muted-background;
 @search-navbar-focus-background: transparent;
-@search-medium-padding-horizontal: 22px;
+@search-medium-padding-horizontal: 1.375rem;
 @search-medium-background: @global-muted-background;
 @search-medium-font-size: @global-medium-font-size;
 @search-medium-focus-background: transparent;
-@search-large-padding-horizontal: 30px;
+@search-large-padding-horizontal: 1.875rem;
 @search-large-background: @global-muted-background;
 @search-large-font-size: @global-xlarge-font-size;
 @search-large-focus-background: transparent;
@@ -410,9 +417,9 @@
 @search-medium-focus-border: @global-emphasis-color;
 @search-large-border-width: @global-border-width;
 @search-large-focus-border: @global-emphasis-color;
-@search-navbar-border-radius: 500px;
-@search-medium-border-radius: 500px;
-@search-large-border-radius: 500px;
+@search-navbar-border-radius: 31.25rem;
+@search-medium-border-radius: 31.25rem;
+@search-large-border-radius: 31.25rem;
 @inverse-search-default-background: transparent;
 @inverse-search-default-focus-background: transparent;
 @inverse-search-navbar-focus-background: transparent;
@@ -425,7 +432,7 @@
 @inverse-search-navbar-focus-border: @global-inverse-color;
 @inverse-search-medium-focus-border: @global-inverse-color;
 @inverse-search-large-focus-border: @global-inverse-color;
-@accordion-default-item-margin-top: 15px;
+@accordion-default-item-margin-top: 0.9375rem;
 @accordion-default-item-border-width: @global-border-width;
 @accordion-default-item-border: @global-border;
 @dropdown-background: fade(darken(@global-background, 50%), 85%);
@@ -436,16 +443,16 @@
 @dropdown-nav-text-transform: @global-primary-text-transform;
 @dropdown-nav-letter-spacing: @global-primary-letter-spacing;
 @dropdown-nav-font-style: @global-primary-font-style;
-@dropbar-padding-top: 20px;
-@dropbar-padding-horizontal: 20px;
+@dropbar-padding-top: 1.25rem;
+@dropbar-padding-horizontal: 1.25rem;
 @dropbar-background: fade(darken(@global-background, 50%), 85%);
 @dropbar-color-mode: light;
 @dropbar-backdrop-filter: blur(8px);
 @modal-background: fade(darken(@global-background, 50%), 85%);
 @modal-dialog-background: @global-muted-background;
 @modal-backdrop-filter: blur(8px);
-@offcanvas-bar-padding-vertical: 30px;
-@offcanvas-bar-padding-horizontal: 30px;
+@offcanvas-bar-padding-vertical: 1.875rem;
+@offcanvas-bar-padding-horizontal: 1.875rem;
 @offcanvas-bar-background: lighten(@global-background, 8%);
 @offcanvas-overlay-background: fade(darken(@global-background, 50%), 70%);
 @offcanvas-overlay-backdrop-filter: blur(8px);
@@ -456,8 +463,8 @@
 @tooltip-background: fade(darken(@global-background, 50%), 70%);
 @tooltip-color: @global-color;
 @tooltip-backdrop-filter: blur(8px);
-@nav-header-font-size: 12px;
-@nav-default-font-size: 13px;
+@nav-header-font-size: 0.75rem;
+@nav-default-font-size: 0.8125rem;
 @nav-default-item-color: fade(@global-color, 50%);
 @nav-default-item-hover-color: @global-emphasis-color;
 @nav-default-item-active-color: @global-primary-background;
@@ -468,7 +475,7 @@
 @nav-primary-item-active-color: @global-primary-background;
 @nav-primary-subtitle-font-size: @global-small-font-size;
 @nav-primary-sublist-font-size: @global-font-size;
-@nav-secondary-font-size: 13px;
+@nav-secondary-font-size: 0.8125rem;
 @nav-secondary-line-height: 1.4;
 @nav-secondary-item-hover-color: @global-primary-background;
 @nav-secondary-item-active-color: @global-primary-background;
@@ -479,9 +486,9 @@
 @nav-secondary-sublist-item-color: @global-color;
 @nav-secondary-sublist-item-hover-color: @global-emphasis-color;
 @nav-secondary-sublist-item-active-color: @global-primary-background;
-@nav-dividers-margin-top: 12px;
-@nav-primary-item-padding-vertical: 8px;
-@nav-secondary-margin-top: 15px;
+@nav-dividers-margin-top: 0.75rem;
+@nav-primary-item-padding-vertical: 0.5rem;
+@nav-secondary-margin-top: 0.9375rem;
 @nav-primary-siblings-filter: blur(5px);
 @internal-nav-default-item-hover-mode: glitch;
 @internal-nav-default-item-hover-glitch-animation: uk-glitch-opacity, uk-glitch-text-shadow,
@@ -517,7 +524,7 @@
 @nav-secondary-subtitle-font-style: normal;
 @navbar-background: fade(darken(@global-background, 50%), 85%);
 @navbar-color-mode: light;
-@navbar-nav-item-height: 60px;
+@navbar-nav-item-height: 3.75rem;
 @navbar-nav-item-color: @global-emphasis-color;
 @navbar-nav-item-font-family: @global-primary-font-family;
 @navbar-toggle-color: @global-emphasis-color;
@@ -526,17 +533,17 @@
 @navbar-dropdown-background: fade(darken(@global-background, 50%), 85%);
 @navbar-dropdown-color-mode: light;
 @navbar-dropdown-dropbar-padding-top: 0;
-@navbar-dropdown-dropbar-padding-bottom: 40px;
+@navbar-dropdown-dropbar-padding-bottom: 2.5rem;
 @navbar-backdrop-filter: blur(8px);
-@navbar-padding-top: 10px;
-@navbar-padding-bottom: 10px;
-@navbar-padding-top-m: 40px;
-@navbar-padding-bottom-m: 40px;
+@navbar-padding-top: 0.625rem;
+@navbar-padding-bottom: 0.625rem;
+@navbar-padding-top-m: 2.5rem;
+@navbar-padding-bottom-m: 2.5rem;
 @internal-navbar-nav-item-hover-mode: glitch;
 @internal-navbar-nav-item-hover-glitch-animation: uk-glitch-opacity;
 @navbar-nav-item-line-mode: true;
 @navbar-nav-item-line-slide-mode: center;
-@navbar-nav-item-line-margin-vertical: 6px;
+@navbar-nav-item-line-margin-vertical: 0.375rem;
 @navbar-nav-item-line-transition-duration: 0.2s;
 @navbar-nav-item-line-hover-height: 3px;
 @navbar-nav-item-line-active-height: 3px;
@@ -545,12 +552,12 @@
 @navbar-nav-item-text-transform: @global-primary-text-transform;
 @navbar-nav-item-letter-spacing: @global-primary-letter-spacing;
 @navbar-nav-item-font-style: @global-primary-font-style;
-@navbar-primary-toggle-icon-width: 46px;
+@navbar-primary-toggle-icon-width: 2.875rem;
 @navbar-dropdown-nav-font-family: @global-primary-font-family;
 @navbar-dropdown-nav-font-weight: @global-primary-font-weight;
 @navbar-dropdown-nav-text-transform: @global-primary-text-transform;
-@subnav-pill-item-padding-vertical: 9px;
-@subnav-pill-item-padding-horizontal: 24px;
+@subnav-pill-item-padding-vertical: 0.5625rem;
+@subnav-pill-item-padding-horizontal: 1.5rem;
 @subnav-pill-item-hover-background: transparent;
 @subnav-pill-item-hover-color: @global-inverse-color;
 @subnav-pill-item-active-background: transparent;
@@ -574,7 +581,7 @@
 @subnav-item-text-transform: @global-primary-text-transform;
 @subnav-item-letter-spacing: @global-primary-letter-spacing;
 @subnav-item-font-style: @global-primary-font-style;
-@subnav-pill-item-border-radius: 500px;
+@subnav-pill-item-border-radius: 31.25rem;
 @inverse-subnav-pill-item-hover-background: transparent;
 @inverse-subnav-pill-item-hover-color: @global-emphasis-color;
 @inverse-subnav-pill-item-active-background: transparent;
@@ -587,20 +594,20 @@
 @breadcrumb-item-color: lighten(@global-emphasis-color, 30%);
 @breadcrumb-item-hover-color: @global-primary-background;
 @breadcrumb-item-active-color: lighten(@global-primary-background, 10%);
-@breadcrumb-divider-margin-horizontal: 15px;
+@breadcrumb-divider-margin-horizontal: 0.9375rem;
 @breadcrumb-divider-color: lighten(@global-emphasis-color, 30%);
 @breadcrumb-item-text-transform: uppercase;
 @breadcrumb-item-disabled-color: darken(@global-muted-color, 20%);
 @internal-breadcrumb-divider-background-image: '../../../../uikit-themes/master-quantum-flares/images/breadcrumb-divider.svg';
-@pagination-margin-horizontal: 30px;
+@pagination-margin-horizontal: 1.875rem;
 @pagination-item-padding-vertical: 3px;
-@pagination-item-padding-horizontal: 6px;
+@pagination-item-padding-horizontal: 0.375rem;
 @pagination-item-active-color: @global-emphasis-color;
-@pagination-item-height: 25px;
+@pagination-item-height: 1.5625rem;
 @internal-pagination-item-hover-mode: glitch;
 @internal-pagination-item-hover-glitch-animation: uk-glitch-opacity, uk-glitch-text-shadow,
   uk-glitch-color;
-@pagination-item-font-size: 20px;
+@pagination-item-font-size: 1.25rem;
 @pagination-item-font-family: @global-primary-font-family;
 @pagination-item-font-weight: @global-primary-font-weight;
 @pagination-item-text-transform: @global-primary-text-transform;
@@ -641,7 +648,7 @@
 @text-meta-text-transform: @global-primary-text-transform;
 @text-meta-letter-spacing: @global-primary-letter-spacing;
 @text-meta-font-style: @global-primary-font-style;
-@inverse-global-color-mode: dark;
+@inverse-global-color-mode: light;
 @inverse-global-color: @global-inverse-color;
 @inverse-global-muted-color: fade(@global-inverse-color, 60%);
 @inverse-global-inverse-color: @global-inverse-color;

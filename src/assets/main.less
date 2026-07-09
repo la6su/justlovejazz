@@ -18,6 +18,20 @@
   box-sizing: border-box;
 }
 
+/* ── Mobile-first root font-size ──
+   .85rem on mobile → 1rem on tablet+ (≥640px).
+   All UIKit sizing flows from this (rem-based). Headings, text, spacing
+   scale proportionally. */
+html {
+  font-size: 0.85rem;
+}
+
+@media (min-width: 640px) {
+  html {
+    font-size: 1rem;
+  }
+}
+
 html,
 body {
   overflow-x: hidden;
@@ -343,8 +357,9 @@ body:not([data-page='home']) .jlz-hint {
   display: none;
   min-height: 100dvh;
   align-items: center;
-  padding-top: 96px;
-  padding-bottom: 144px;
+  /* Padding handled by uk-section-small / uk-section-medium@s /
+     uk-section-large@m utility classes in templates.ts — UIKit native,
+     responsive, rem-based. No custom px padding here. */
   overflow: hidden;
   /* Subtle radial scrim behind content for readability over 3D —
      lighter than a flat overlay, keeps 3D visible at the edges. */
@@ -413,11 +428,8 @@ body .jlz-page .uk-text-meta {
 }
 
 @media (max-width: 640px) {
-  .jlz-page-section {
-    padding-top: 84px;
-    padding-bottom: 128px;
-  }
-
+  /* Mobile compact — content fits 1 screen. Footer padding handled by
+     .jlz-footer mobile rule below. */
   .jlz-main-menu-nav > li > a {
     font-size: 2rem;
   }
@@ -891,9 +903,17 @@ section[data-section='process'] .uk-list li:hover {
 /* Case study tiles — overlay hover with position number */
 .jlz-case-tile {
   position: relative;
-  min-height: 240px;
+  min-height: 8rem;
   transition: transform 0.3s ease, background 0.3s ease;
   overflow: hidden;
+  padding: 1rem;
+}
+
+@media (min-width: 640px) {
+  .jlz-case-tile {
+    min-height: 12rem;
+    padding: 1.5rem;
+  }
 }
 
 .jlz-case-tile:hover {
@@ -901,9 +921,15 @@ section[data-section='process'] .uk-list li:hover {
 }
 
 .jlz-case-tile .uk-position-top-right {
-  font-size: 2rem;
+  font-size: 1.4rem;
   opacity: 0.4;
   transition: opacity 0.3s ease;
+}
+
+@media (min-width: 640px) {
+  .jlz-case-tile .uk-position-top-right {
+    font-size: 2rem;
+  }
 }
 
 .jlz-case-tile:hover .uk-position-top-right {
@@ -931,6 +957,30 @@ section[data-section='process'] .uk-list li:hover {
   opacity: 0.5;
 }
 
+/* Team cards — compact on mobile, UIKit handles via uk-card-body padding */
+.jlz-page .uk-card-body {
+  padding: 1rem;
+}
+
+@media (min-width: 640px) {
+  .jlz-page .uk-card-body {
+    padding: 1.5rem;
+  }
+}
+
+/* Services list items — tight on mobile, uses uk-margin (rem-based) */
+.jlz-page ul.uk-list > li {
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .jlz-page ul.uk-list > li {
+    margin-top: 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+}
+
 /* ------------------------------------------------------------------
    Unified footer — fixed bottom bar (brand + social only)
    Fixed positioning because content pages use position:absolute stacked
@@ -945,7 +995,7 @@ section[data-section='process'] .uk-list li:hover {
   left: 0;
   right: 0;
   z-index: 50;
-  padding: 10px 24px;
+  padding: 0.5rem 1rem;
   background: rgba(5, 5, 7, 0.6);
   backdrop-filter: blur(12px) saturate(130%);
   -webkit-backdrop-filter: blur(12px) saturate(130%);
@@ -958,7 +1008,7 @@ body[data-page='home'] .jlz-footer {
 }
 
 .jlz-footer .jlz-brand {
-  font-size: 0.85rem;
+  font-size: 0.9rem;
 }
 
 .jlz-footer .uk-iconnav a {
@@ -983,18 +1033,25 @@ body.uk-light .jlz-footer .uk-iconnav a:hover {
   color: #050507;
 }
 
-/* Add bottom padding to content pages so footer doesn't cover content */
+/* Add bottom padding to content pages so footer doesn't cover content.
+   rem-based — scales with html font-size (.85rem mob → 1rem desktop). */
 body:not([data-page='home']) .jlz-page-section {
-  padding-bottom: 80px;
+  padding-bottom: 4rem;
+}
+
+@media (min-width: 640px) {
+  body:not([data-page='home']) .jlz-page-section {
+    padding-bottom: 5rem;
+  }
 }
 
 @media (max-width: 640px) {
   .jlz-footer {
-    padding: 8px 12px;
+    padding: 0.5rem 0.75rem;
   }
 
   .jlz-footer .uk-flex {
-    gap: 12px;
+    gap: 0.75rem;
   }
 }
 
