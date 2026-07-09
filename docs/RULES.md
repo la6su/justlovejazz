@@ -81,7 +81,14 @@ git fetch origin && git checkout main && git pull origin main
       `outputColorTransform=true` (default).
 42. **Subtitles**: `src/UI/Subtitles.ts` is the canonical section-hint UI. Created in
     `Experience.init()`, disposed in `Experience.destroy()`. Listens to `jlz:section-change`,
-    shows short hint for 4s then auto-fades. Don't re-add a parallel hint system.
+    finds the active section's `[data-eyebrow]` element, and runs `NoiseText.for(el).show(0.8, hint)`
+    — the same glitch-reveal animation used for section titles (char-by-char stagger
+    with blur + translateY + rotate, restored from commit `fd6eafa`). Hints are USEFUL
+    and actionable (e.g. '> Drag to spin · Click to open'), NOT duplicating the section
+    title. The old bottom `.jlz-hint` DOM element + auto-fade-4s behavior is REMOVED —
+    hints now live in the eyebrow position at the TOP of each section and stay visible.
+    Home sections only (content pages keep static eyebrows). Don't re-add a parallel
+    hint system.
 43. **Navigation — JoystickNav**: `src/UI/JoystickNav.ts` is the canonical nav (pure DOM,
     NO three-joystick library import). Trigger model — ONE section change per drag, ball
     snaps back to center. 2D: vertical=main sections (1-4 + Lab=0 + Process=5),

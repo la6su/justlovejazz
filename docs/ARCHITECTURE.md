@@ -23,11 +23,11 @@ CSS: import('./assets/main.less?inline') — prevents @vite/client injection
 canvas (z-index:1, fixed, pointer-events:none) — 3D scene
 #spa-content (z-index:2) — DOM sections (absolute-stacked, 100dvh each)
   .section-active { opacity:1; pointer-events:auto } — only visible section
+  [data-eyebrow] — NoiseText hint target (populated by Subtitles on section change)
 .tm-header (z-index:1000) — top nav (uk-navbar + uk-slider)
 #joystick-nav (z-index:9999, fixed bottom-center) — JoystickNav DOM joystick
 #jlz-menu-toggle (z-index:10002) — hamburger button
-#jlz-menu-modal (z-index:10000) — UIkit modal (jump nav + theme toggle)
-.jlz-hint (fixed bottom-center) — Subtitles section hint
+#jlz-menu-modal (z-index:10000) — UIkit modal (jump nav + theme toggle + secret sections)
 #project-overlay (z-index:3500) — fullscreen project detail
 .jlz-footer (z-index:50, fixed bottom) — brand + social (hidden on home)
 .custom-cursor (z-index:100000) — above all overlays
@@ -77,9 +77,10 @@ SplashCube is identical on both paths. `isRealWebGPU` still drives `RenderPipeli
 - `isAnimating` getter — true when morphing/scrolling (feeds `_needsRender`).
 - Scroll/drag blocked while JoystickNav active.
 
-**Subtitles** — `.jlz-hint` bottom-center. Created in `Experience.init()`. Listens to
-`jlz:section-change` → shows short hint (e.g. "Drag · Click to open"), auto-fades 4s.
-`dispose()` clears timer + removes listener.
+**Subtitles** — NoiseText scramble on `[data-eyebrow]`. Created in `Experience.init()`.
+Listens to `jlz:section-change` → finds active section's eyebrow → `NoiseText.for(el).show(0.8, hint)`.
+Hints are useful/actionable (not title duplicates), stay visible (no auto-fade).
+`dispose()` clears NoiseText + removes listener.
 
 ## On-demand rendering + ambient breathing
 
@@ -178,7 +179,7 @@ Color grading: `mix(color*uGradeShadows, color+(uGradeHighlights-1)*max(color-0.
 | BakuCarousel | Cube↔ring morph. Raycast card click. `isAnimating` getter. |
 | JoystickNav | Pure DOM joystick (2D). `goToDirection`/`goToSection`/`isActive`/`onSectionChange`. |
 | UIMenu | UIkit modal. `onNavigate`/`setActive`. |
-| Subtitles | Bottom-center section hints. Listens to `jlz:section-change`. Auto-fade 4s. |
+| Subtitles | NoiseText scramble on [data-eyebrow]. Listens to `jlz:section-change`. Useful hints, no auto-fade. |
 | ProjectOverlay | Fullscreen DOM dialog. Card click opens. |
 | WorksPortfolio | Project metadata only (prev/next/goTo). No textures. |
 | DevPanel | Tweakpane: Stats/Navigation/BakuCarousel/Render folders. |

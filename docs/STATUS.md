@@ -28,7 +28,7 @@ Mobile-first: `html { font-size: 0.85rem }` mobile → `1rem` ≥640px, all sizi
 | JoystickNav — pure DOM joystick, trigger model (one section per drag) | ✅ |
 | 2D navigation (vertical=main, horizontal=Lab/Process) | ✅ |
 | UIMenu — UIkit modal jump navigation + theme toggle (auto/light/dark, 3 buttons) | ✅ |
-| Subtitles — short UI hint per section, auto-fade 4s | ✅ |
+| Subtitles — section hints via NoiseText scramble on [data-eyebrow] | ✅ |
 | BakuCarousel — cube morphs into ring (Works §3) | ✅ |
 | ProjectOverlay — card click (raycast) opens fullscreen | ✅ |
 | On-demand rendering (`_needsRender` flag) | ✅ |

@@ -35,12 +35,14 @@ export type PageId = 'home' | 'services' | 'posts'
 // Every section follows: TOP (eyebrow + title) / 3D CENTER (transparent) / BOTTOM (UI panel)
 // These helpers generate the TUI-like wrapper structure.
 
-/** Generate the TOP header block — eyebrow + title + optional lead text.
- *  TUI-like: monospace eyebrow with terminal cursor `>`, compact, 1-2 lines. */
-export function sectionTop(eyebrow: string, title: string, lead?: string): string {
+/** Generate the TOP header block — eyebrow (empty, populated by Subtitles
+ *  via NoiseText on home sections) + title + optional lead text.
+ *  The eyebrow param is unused (kept for backward compat with existing
+ *  sectionTop() callers like lab/about). Hint text is injected by Subtitles. */
+export function sectionTop(_eyebrow: string, title: string, lead?: string): string {
   return `
     <div class="jlz-section-top uk-text-center uk-flex uk-flex-column uk-flex-middle" ${REVEAL}>
-      <span class="jlz-eyebrow">&gt; ${eyebrow}</span>
+      <span class="jlz-eyebrow" data-eyebrow></span>
       <h2 class="studio-title uk-heading-medium uk-margin-small-top uk-margin-remove-bottom">${title}</h2>
       ${lead ? `<p class="uk-text-meta uk-margin-small-top">${lead}</p>` : ''}
     </div>

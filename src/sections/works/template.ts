@@ -12,7 +12,7 @@ export function worksSection(): string {
         <div class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-text-center uk-height-1-1">
           <!-- TOP -->
           <div ${REVEAL}>
-            <span class="jlz-eyebrow">&gt; SELECTED WORK</span>
+            <span class="jlz-eyebrow" data-eyebrow></span>
             <h2 class="studio-title uk-heading-medium uk-margin-small-top uk-margin-remove-bottom"
                 data-content-id="challenge-title">Works</h2>
             <p class="uk-text-meta uk-margin-small-top">Six interactive experiences</p>

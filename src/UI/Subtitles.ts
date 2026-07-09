@@ -1,44 +1,40 @@
-// Subtitles.ts — Short section hints (UI labels, not long subtitles).
+// Subtitles.ts — Section hints with NoiseText scramble animation.
 //
-// Shows a brief, informative hint for each section — like "Drag · Click to open"
-// on the works section. Positioned at bottom-center near the dock, subtle styling.
-// Fades in on section change, auto-fades after 4s.
+// Merges the old .jlz-eyebrow (static label) + .jlz-hint (bottom flash)
+// into one system: the active section's [data-eyebrow] element gets
+// populated with a useful hint via NoiseText glitch-reveal animation.
+//
+// Why merge: the old eyebrow duplicated the title ("> SELECTED WORK" +
+// "Works" = redundant). The old bottom .jlz-hint flashed for 4s then
+// disappeared. Now the eyebrow shows a USEFUL, actionable hint that
+// stays visible — and animates in with the same NoiseText scramble
+// effect used for section titles (restored from commit fd6eafa).
+//
+// Home sections only — content pages keep their static eyebrows
+// (jlz:section-change fires on home only).
 //
 // Synced with 3D section changes via jlz:section-change event.
 
+import { NoiseText } from '../Experience/NoiseText'
 import { eventBus, type AppEvents } from '../core/EventBus'
 
-// Short hints per section — informative, not cluttering.
-// These complement the section's main content (title + body) with a
-// micro-interaction label. Keys match `data-section` attribute in DOM
-// (see src/sections/_shared/constants.ts SectionId type).
+// Useful, actionable hints per section — NOT duplicating the title.
+// Keys match `data-section` attribute (see SectionId type in constants.ts).
+// The '>' prefix preserves the TUI/terminal eyebrow convention.
 const HINTS: Record<string, string> = {
-  lab: 'Experiments & R&D',
-  intro: 'Scroll to explore',
-  about: 'Studio philosophy',
-  challenge: 'Drag · Click to open',
-  contact: "Let's build together",
-  process: 'How we work',
+  lab: '> Experiments & R&D playground',
+  intro: '> Scroll to explore · WebGPU powered',
+  about: '> Studio philosophy · 7+ years',
+  challenge: '> Drag to spin · Click to open',
+  contact: "> Let's build something extraordinary",
+  process: '> Discover · Design · Develop · Ship',
 }
 
 export class Subtitles {
-  private container: HTMLElement
-  private text: HTMLElement
-  private hideTimer: ReturnType<typeof setTimeout> | null = null
+  private currentEyebrow: HTMLElement | null = null
   private readonly sectionChangeHandler: (payload: AppEvents['jlz:section-change']) => void
 
   constructor() {
-    this.container = document.createElement('div')
-    this.container.className = 'jlz-hint'
-    this.container.setAttribute('aria-live', 'polite')
-    this.container.setAttribute('aria-atomic', 'true')
-
-    this.text = document.createElement('span')
-    this.text.className = 'jlz-hint__text'
-    this.container.appendChild(this.text)
-
-    document.body.appendChild(this.container)
-
     this.sectionChangeHandler = (payload) => {
       if (payload?.sectionId) {
         this.show(payload.sectionId)
@@ -47,39 +43,32 @@ export class Subtitles {
     eventBus.on('jlz:section-change', this.sectionChangeHandler)
   }
 
+  /** Populate the active section's [data-eyebrow] with the hint via NoiseText.
+   *  Finds the eyebrow element inside the section matching sectionId,
+   *  then runs NoiseText.for(el).show() — the same glitch-reveal animation
+   *  used for section titles (char-by-char stagger with blur + translateY). */
   private show(sectionId: string): void {
-    const hint = HINTS[sectionId] ?? ''
-    if (!hint) {
-      this.hide()
-      return
-    }
+    const hint = HINTS[sectionId]
+    if (!hint) return
 
-    if (this.hideTimer) {
-      clearTimeout(this.hideTimer)
-      this.hideTimer = null
-    }
+    // Find the eyebrow placeholder inside the active section.
+    // Home sections have data-section="lab"|"intro"|... and a [data-eyebrow]
+    // child span (empty — text is injected here, not static in the template).
+    const section = document.querySelector(`[data-section="${sectionId}"]`)
+    const eyebrow = section?.querySelector<HTMLElement>('[data-eyebrow]')
+    if (!eyebrow) return
 
-    this.text.textContent = hint
-    this.container.classList.add('is-visible')
-
-    // Auto-hide after 4s — hint is ephemeral, not permanent
-    this.hideTimer = setTimeout(() => {
-      this.container.classList.remove('is-visible')
-      this.hideTimer = null
-    }, 4000)
-  }
-
-  hide(): void {
-    if (this.hideTimer) {
-      clearTimeout(this.hideTimer)
-      this.hideTimer = null
-    }
-    this.container.classList.remove('is-visible')
+    this.currentEyebrow = eyebrow
+    // NoiseText scramble — 0.8s staggered char reveal with blur + rotate.
+    // Singleton per element (WeakMap cache in NoiseText.for()).
+    NoiseText.for(eyebrow).show(0.8, hint)
   }
 
   dispose(): void {
     eventBus.off('jlz:section-change', this.sectionChangeHandler)
-    if (this.hideTimer) clearTimeout(this.hideTimer)
-    this.container.remove()
+    if (this.currentEyebrow) {
+      NoiseText.for(this.currentEyebrow).hide()
+    }
+    this.currentEyebrow = null
   }
 }

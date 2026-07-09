@@ -171,11 +171,9 @@ body.uk-light li.uk-active .jlz-nav-link {
   color: rgba(5, 5, 7, 0.98);
 }
 
-body.uk-light .jlz-hint__text {
-  color: rgba(5, 5, 7, 0.68);
-  background: rgba(255, 255, 255, 0.42);
-  border-color: rgba(5, 5, 7, 0.08);
-}
+/* (body.uk-light .jlz-hint__text removed — .jlz-hint DOM element no longer
+   exists. Subtitles now populates [data-eyebrow] inside the active section,
+   themed via .jlz-eyebrow + body.uk-light .jlz-eyebrow below.) */
 
 body.uk-light .jlz-joystick__base {
   background: rgba(0, 0, 0, 0.06);
@@ -278,8 +276,7 @@ li.uk-active .jlz-nav-link {
   color: #fff;
 }
 
-body:not([data-page='home']) .jlz-section-slider,
-body:not([data-page='home']) .jlz-hint {
+body:not([data-page='home']) .jlz-section-slider {
   display: none !important;
 }
 
@@ -594,39 +591,9 @@ body .jlz-page .uk-text-meta {
   margin: 0;
 }
 
-.jlz-hint {
-  position: fixed;
-  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
-  left: 50%;
-  transform: translateX(-50%) translateY(8px);
-  z-index: var(--jlz-z-content);
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.5s ease, transform 0.5s ease;
-  text-align: center;
-}
-
-.jlz-hint.is-visible {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
-
-.jlz-hint__text {
-  display: inline-block;
-  padding: 6px 16px;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  font-size: 0.7rem;
-  font-weight: 500;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.7);
-  background: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border-radius: 100px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  white-space: nowrap;
-}
+/* (.jlz-hint, .jlz-hint.is-visible, .jlz-hint__text removed — Subtitles
+   no longer creates a bottom .jlz-hint DOM element. Hints now populate
+   the active section's [data-eyebrow] via NoiseText. See .jlz-eyebrow below.) */
 
 /* ------------------------------------------------------------------
    Project overlay
@@ -998,11 +965,6 @@ body.uk-light .jlz-joystick__arrow--active {
     transform: translateY(50%);
   }
 
-  .jlz-hint {
-    transition: opacity 0.2s ease;
-    transform: translateX(-50%);
-  }
-
   .jlz-joystick__ball {
     transition: none;
   }
@@ -1020,10 +982,22 @@ body.uk-light .jlz-joystick__arrow--active {
   letter-spacing: 0.2em;
   opacity: 0.5;
   text-transform: uppercase;
+  /* NoiseText builds per-char spans with display:inline-block + translateY.
+     min-height prevents layout shift during the 0.8s scramble animation
+     (chars start at translateY(20px) and settle to 0). */
+  min-height: 1em;
+  display: inline-block;
+}
+
+body.uk-light .jlz-eyebrow {
+  opacity: 0.55;
 }
 
 .jlz-section-top {
   flex-shrink: 0;
+  /* Push TOP block below the fixed header (.tm-header ~76px tall).
+     Gives breathing room between header nav and section title. */
+  padding-top: calc(80px + var(--jlz-space-4));
 }
 
 .jlz-section-bottom {
