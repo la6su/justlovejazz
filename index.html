@@ -59,63 +59,122 @@
          MutationObserver is needed here. -->
 
     <style>
-      * {
-        box-sizing: border-box;
-      }
-      body {
-        margin: 0;
-        background: #050507;
-        overflow: hidden;
-      }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: #050507; overflow: hidden; }
+
+      /* ── Splash overlay — codrops-style with concentric squares ── */
       #jlj-splash {
         position: fixed;
         inset: 0;
         z-index: 3000;
         pointer-events: none;
+        background: #050507;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
-      #jlj-splash.hide {
+      #jlj-splash.hide { opacity: 0; transition: opacity 0.3s ease; }
+
+      /* SVG squares container */
+      .jlz-splash-svg {
+        --dim: 186vmin;
+        width: var(--dim);
+        height: var(--dim);
+        position: fixed;
+        top: calc(50% - var(--dim) / 2);
+        left: calc(50% - var(--dim) / 2);
+        pointer-events: none;
+      }
+
+      /* Square text paths — concentric, decreasing size */
+      .jlz-splash-text {
+        text-transform: uppercase;
+        transform-origin: 700px 700px;
+        will-change: transform, opacity;
+        fill: #48423c;
+        font-family: Inter, sans-serif;
+        font-weight: 700;
         opacity: 0;
+        transform: scale(0.3);
+        animation: jlz-splash-in 2.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+      .jlz-splash-text--1 { font-size: clamp(120px, 22vmin, 160px); fill: #515d84; animation-delay: 0s; }
+      .jlz-splash-text--2 { font-size: clamp(90px, 16vmin, 120px); fill: #4a5474; animation-delay: 0.12s; }
+      .jlz-splash-text--3 { font-size: clamp(60px, 12vmin, 90px); fill: #3e4866; animation-delay: 0.24s; }
+      .jlz-splash-text--4 { font-size: clamp(40px, 8vmin, 60px); fill: #333c54; animation-delay: 0.36s; }
+
+      @keyframes jlz-splash-in {
+        0% { opacity: 0; transform: scale(0.3); }
+        100% { opacity: 1; transform: scale(1); }
+      }
+
+      /* Enter button — square, centered */
+      .jlz-splash-enter {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0.3);
+        width: 90px;
+        height: 90px;
+        border: none;
+        background: #515d84;
+        color: #fff;
+        font-family: Inter, sans-serif;
+        font-weight: 700;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        cursor: pointer;
+        pointer-events: none;
+        opacity: 0;
+        display: none;
+        transition: background 0.2s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s ease;
+        z-index: 3001;
+      }
+      #jlj-splash.ready .jlz-splash-enter {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: auto;
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+      .jlz-splash-enter:hover {
+        background: #6b78a3;
+        transform: translate(-50%, -50%) scale(1.1);
+      }
+      .jlz-splash-enter:active {
+        transform: translate(-50%, -50%) scale(0.95);
+      }
+
+      /* Loading text — shown before Enter */
+      .jlz-splash-loading {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: rgba(255, 255, 255, 0.4);
+        font-family: Inter, sans-serif;
+        font-size: 0.75rem;
+        font-weight: 500;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        z-index: 3001;
+        opacity: 1;
         transition: opacity 0.3s ease;
       }
-      /* Curtain panels — split apart to reveal the 3D cube beneath */
-      .jlj-curtain {
-        position: absolute;
-        left: 0;
-        width: 100%;
-        height: 50%;
-        background: #050507;
-        transition: transform 0.8s cubic-bezier(0.65, 0, 0.35, 1);
-      }
-      .jlj-curtain--top {
-        top: 0;
-        transform: translateY(0);
-      }
-      .jlj-curtain--bottom {
-        bottom: 0;
-        transform: translateY(0);
-      }
-      #jlj-splash.open .jlj-curtain--top {
-        transform: translateY(-100%);
-      }
-      #jlj-splash.open .jlj-curtain--bottom {
-        transform: translateY(100%);
-      }
-      /* Seam glow line at the curtain split */
-      .jlj-curtain-seam {
-        position: absolute;
-        top: 50%;
-        left: 0;
-        width: 100%;
-        height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(120, 140, 200, 0.4), transparent);
-        transform: translateY(-50%);
-        opacity: 1;
-        transition: opacity 0.4s ease;
-      }
-      #jlj-splash.open .jlj-curtain-seam {
-        opacity: 0;
-      }
-      /* Skip link — visible on focus (WCAG 2.4.1). Previously off-screen with no :focus rule. */
+      #jlj-splash.ready .jlz-splash-loading { opacity: 0; }
+      #jlj-splash.ready .jlz-splash-enter { pointer-events: auto; }
+
+      /* Enter animation — squares explode outward */
+      #jlj-splash.entering .jlz-splash-text--1 { transform: scale(2.4); opacity: 0; transition: all 1.5s cubic-bezier(0.7, 0, 0.84, 0); }
+      #jlj-splash.entering .jlz-splash-text--2 { transform: scale(2.1); opacity: 0; transition: all 1.5s cubic-bezier(0.7, 0, 0.84, 0) 0.05s; }
+      #jlz-splash.entering .jlz-splash-text--3 { transform: scale(1.8); opacity: 0; transition: all 1.5s cubic-bezier(0.7, 0, 0.84, 0) 0.1s; }
+      #jlz-splash.entering .jlz-splash-text--4 { transform: scale(1.5); opacity: 0; transition: all 1.5s cubic-bezier(0.7, 0, 0.84, 0) 0.15s; }
+      #jlz-splash.entering .jlz-splash-enter { transform: translate(-50%, -50%) scale(0.7); opacity: 0; transition: all 1.5s cubic-bezier(0.7, 0, 0.84, 0); }
+      #jlz-splash.entering { background: transparent; transition: background 0.5s ease 0.8s; }
+
+      /* Skip link — visible on focus (WCAG 2.4.1) */
       .skip-link {
         position: absolute;
         left: -9999px;
@@ -142,7 +201,7 @@
   </head>
   <body data-app-mode="full" data-page="home">
     <a href="#section-intro" class="skip-link">Skip to main content</a>
-    <!-- Splash: curtain panels that split apart to reveal the 3D cube.
+    <!-- Splash: concentric squares (codrops-inspired) + Enter button.
          role=status + aria-live=polite announces the loading state to SR users. -->
     <div
       id="jlj-splash"
@@ -150,9 +209,29 @@
       aria-live="polite"
       aria-label="Loading JUSTLOVEJAZZ experience"
     >
-      <div class="jlj-curtain jlj-curtain--top"></div>
-      <div class="jlj-curtain jlj-curtain--bottom"></div>
-      <div class="jlj-curtain-seam"></div>
+      <svg class="jlz-splash-svg" viewBox="0 0 1400 1400" aria-hidden="true">
+        <defs>
+          <!-- 4 concentric square paths (centered at 700,700) -->
+          <path id="sq-1" d="M250,250 L1150,250 L1150,1150 L250,1150 Z" />
+          <path id="sq-2" d="M382,382 L1018,382 L1018,1018 L382,1018 Z" />
+          <path id="sq-3" d="M487,487 L913,487 L913,913 L487,913 Z" />
+          <path id="sq-4" d="M567,567 L833,567 L833,833 L567,833 Z" />
+        </defs>
+        <text class="jlz-splash-text jlz-splash-text--1">
+          <textPath href="#sq-1" textLength="3600">JUSTLOVEJAZZ · WEB DESIGN STUDIO · CRAFTED WITH GLASS MOTION LIGHT&nbsp;</textPath>
+        </text>
+        <text class="jlz-splash-text jlz-splash-text--2">
+          <textPath href="#sq-2" textLength="2544">WEBGPU · THREE.JS · TSL · UIKIT · INTER&nbsp;</textPath>
+        </text>
+        <text class="jlz-splash-text jlz-splash-text--3">
+          <textPath href="#sq-3" textLength="1704">EST 2019 · REMOTE · EU&nbsp;</textPath>
+        </text>
+        <text class="jlz-splash-text jlz-splash-text--4">
+          <textPath href="#sq-4" textLength="1064">L@6 · STUDIO&nbsp;</textPath>
+        </text>
+      </svg>
+      <span class="jlz-splash-loading">Loading</span>
+      <button class="jlz-splash-enter" type="button" aria-label="Enter JUSTLOVEJAZZ experience">Enter</button>
     </div>
     <div id="app"></div>
     <noscript>

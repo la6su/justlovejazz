@@ -63,13 +63,7 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
     //   3. Cube continues rotating as baku
     //   4. Splash overlay hidden + removed
     const INTRO_MS = 800 // cube establishes by ~0.8s
-    const CURTAIN_MS = 800 // curtain split duration (CSS transition)
-    const FADE_MS = 300 // splash opacity fade after curtain fully open
-    // Fire jlz:webgl-ready at curtain mid-open so the JUSTLOVEJAZZ title
-    // animates IN PARALLEL with the cube reveal — no perceived delay after
-    // the splash is gone. (Previously +1150ms after curtain start = ~350ms
-    // dead gap after splash visually disappeared.)
-    const TITLE_START_MS = Math.round(CURTAIN_MS * 0.5) // 400ms — curtains ~half open
+    const TITLE_START_MS = 400 // when to fire jlz:webgl-ready after entering starts
 
     const elapsed = performance.now() - bootStart
     const readyAt = Math.max(0, INTRO_MS - elapsed)
@@ -82,20 +76,37 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
         return
       }
 
-      // Open curtains + trigger cube opener (pulse).
-      splash.triggerPortalCollapse()
+      // Show Enter button — wait for user click to reveal the scene.
+      // splash.setState('ready') is already called by entry-app progress callback
+      // when progress reaches 95%. The Enter button click handler in splash.ts
+      // triggers the entering animation + cube opener + jlz:webgl-ready.
 
-      // Hide + remove splash after curtain fully opens.
+      // Auto-enter after 8s if user doesn't click (accessibility fallback)
       setTimeout(() => {
-        splash.hide()
-        setTimeout(() => splash.remove(), FADE_MS)
-      }, CURTAIN_MS)
+        const splashEl = document.getElementById('jlj-splash')
+        if (splashEl && !splashEl.classList.contains('entering') && !splashEl.classList.contains('hide')) {
+          splash.triggerPortalCollapse()
+          setTimeout(() => {
+            eventBus.emit('jlz:webgl-ready')
+          }, TITLE_START_MS)
+        }
+      }, 8000)
 
-      // Dispatch jlz:webgl-ready AFTER splash is fully removed — NoiseText
-      // starts animating JUSTLOVEJAZZ once the scene is completely visible.
-      setTimeout(() => {
-        eventBus.emit('jlz:webgl-ready')
-      }, TITLE_START_MS)
+      // Listen for the entering animation start (from Enter button click)
+      // to dispatch jlz:webgl-ready at the right time
+      const enteringObserver = new MutationObserver(() => {
+        const splashEl = document.getElementById('jlj-splash')
+        if (splashEl?.classList.contains('entering')) {
+          setTimeout(() => {
+            eventBus.emit('jlz:webgl-ready')
+          }, TITLE_START_MS)
+          enteringObserver.disconnect()
+        }
+      })
+      const splashEl = document.getElementById('jlj-splash')
+      if (splashEl) {
+        enteringObserver.observe(splashEl, { attributes: true, attributeFilter: ['class'] })
+      }
     }, readyAt)
   } catch (e) {
     console.error('[main-app] bootstrap failed:', e)
