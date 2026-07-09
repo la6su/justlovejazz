@@ -28,16 +28,16 @@
 
 import { homePage } from './home'
 import { servicesPage } from './content/services'
-import { postsPage } from './content/posts'
+import { manifestoPage } from './content/manifesto'
 
-export type PageId = 'home' | 'services' | 'posts'
+export type PageId = 'home' | 'services' | 'manifesto'
 
 export function renderPage(page: PageId = 'home'): string {
   switch (page) {
     case 'services':
       return servicesPage()
-    case 'posts':
-      return postsPage()
+    case 'manifesto':
+      return manifestoPage()
     case 'home':
     default:
       return homePage()

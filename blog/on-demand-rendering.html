@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#050507" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="author" content="JUSTLOVEJAZZ" />
+    <meta
+      name="description"
+      content="Process note: On-demand rendering — how we cut idle GPU draw calls to zero by gating renderer.update() behind a _needsRender flag, with ambient breathing as the only exception."
+    />
+    <meta name="keywords" content="on-demand rendering, GPU performance, Three.js, WebGPU, process note" />
+
+    <title>On-Demand Rendering — Zero Idle Draw Calls | JUSTLOVEJAZZ Blog</title>
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="canonical" href="https://justlovejazz.dev/blog/on-demand-rendering" />
+
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="JUSTLOVEJAZZ" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:title" content="On-Demand Rendering — Zero Idle Draw Calls" />
+    <meta property="og:description" content="How we cut idle GPU draw calls to zero by gating renderer.update() behind a _needsRender flag." />
+    <meta property="og:url" content="https://justlovejazz.dev/blog/on-demand-rendering" />
+    <meta property="og:image" content="https://justlovejazz.dev/assets/projects/mono-sunday/cover.webp" />
+    <meta property="og:image:secure_url" content="https://justlovejazz.dev/assets/projects/mono-sunday/cover.webp" />
+    <meta property="og:image:type" content="image/webp" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="On-demand rendering preview" />
+    <meta property="article:published_time" content="2026-05-10T10:00:00Z" />
+    <meta property="article:author" content="JUSTLOVEJAZZ" />
+    <meta property="article:section" content="Process Notes" />
+    <meta property="article:tag" content="Performance" />
+    <meta property="article:tag" content="WebGPU" />
+    <meta property="article:tag" content="Three.js" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@justlovejazz" />
+    <meta name="twitter:creator" content="@justlovejazz" />
+    <meta name="twitter:title" content="On-Demand Rendering — Zero Idle Draw Calls" />
+    <meta name="twitter:description" content="How we cut idle GPU draw calls to zero by gating renderer.update()." />
+    <meta name="twitter:image" content="https://justlovejazz.dev/assets/projects/mono-sunday/cover.webp" />
+    <meta name="twitter:image:alt" content="On-demand rendering preview" />
+
+    <link rel="preload" href="/fonts/inter-400.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/inter-700.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="/fonts/inter.css" />
+    <link rel="stylesheet" href="/src/assets/landing.less" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "headline": "On-Demand Rendering — Zero Idle Draw Calls",
+        "description": "How we cut idle GPU draw calls to zero by gating renderer.update() behind a _needsRender flag.",
+        "image": "https://justlovejazz.dev/assets/projects/mono-sunday/cover.webp",
+        "datePublished": "2026-05-10T10:00:00Z",
+        "dateModified": "2026-05-10T10:00:00Z",
+        "author": { "@type": "Organization", "name": "JUSTLOVEJAZZ", "url": "https://justlovejazz.dev/" },
+        "publisher": {
+          "@type": "Organization",
+          "name": "JUSTLOVEJAZZ",
+          "logo": { "@type": "ImageObject", "url": "https://justlovejazz.dev/favicon.svg" }
+        },
+        "mainEntityOfPage": { "@type": "WebPage", "@id": "https://justlovejazz.dev/blog/on-demand-rendering" },
+        "keywords": "on-demand rendering, GPU performance, Three.js, WebGPU, process note",
+        "articleSection": "Process Notes"
+      }
+    </script>
+  </head>
+  <body>
+    <a href="#main" class="skip-link">Skip to main content</a>
+
+    <header class="jlz-landing-header" role="banner">
+      <nav class="uk-container uk-container-expand uk-navbar uk-navbar-transparent" uk-navbar aria-label="Main navigation">
+        <div class="uk-navbar-left">
+          <a href="/" class="uk-navbar-item uk-logo jlz-landing-brand">l@6</a>
+        </div>
+        <div class="uk-navbar-right">
+          <ul class="uk-navbar-nav">
+            <li><a href="/blog">Blog</a></li>
+            <li><a href="/app">Enter 3D →</a></li>
+          </ul>
+        </div>
+      </nav>
+    </header>
+
+    <main id="main" class="uk-section uk-section-large" role="main">
+      <article class="uk-container uk-container-small">
+        <p class="jlz-landing-eyebrow">&gt; PROCESS NOTE · 10 MAY 2026</p>
+        <h1 class="uk-heading-large uk-margin-remove-top">On-Demand Rendering — Zero Idle Draw Calls</h1>
+        <p class="uk-text-lead uk-margin-medium-top">
+          The 3D portfolio looks alive, but when you're not interacting, the GPU sleeps.
+          Here's the architecture that makes it possible — and the one exception that
+          keeps the scene from feeling dead.
+        </p>
+
+        <hr class="uk-margin-large" />
+
+        <h2>The problem with rAF</h2>
+        <p>
+          The default Three.js pattern is <code>requestAnimationFrame(loop)</code> — render
+          every frame, 60 times a second, forever. For a 3D portfolio where the user spends
+          80% of their time reading text, this means 4,800 draw calls per minute of idle.
+          On a laptop, the fan spins up. On mobile, the battery drains.
+        </p>
+        <p>
+          We wanted the opposite: <strong>zero draw calls when idle</strong>. The scene
+          should render only when something changes — a section transition, a carousel
+          spin, a cursor movement that affects the 3D layer.
+        </p>
+
+        <h2>The _needsRender flag</h2>
+        <p>
+          The core idea is a single boolean: <code>_needsRender</code>. The render loop
+          checks it each frame:
+        </p>
+        <pre class="uk-pre uk-margin-medium"><code>setAnimationLoop(() => {
+  if (_needsRender) {
+    renderer.update()
+    _needsRender = false
+  }
+})</code></pre>
+        <p>
+          When the flag is false, <code>renderer.update()</code> is never called. The GPU
+          sleeps. The animation loop still runs (cheap — just a boolean check), but no
+          render work happens.
+        </p>
+        <p>
+          The flag is set to <code>true</code> by events that change the scene:
+        </p>
+        <ul>
+          <li><strong>JoystickNav section change</strong> — cube rotates to new face</li>
+          <li><strong>BakuCarousel morph/scroll</strong> — carousel ring animates</li>
+          <li><strong>Splash/intro animation</strong> — opening sequence</li>
+          <li><strong>Camera shake</strong> — burst effects</li>
+          <li><strong>ParticleBurst</strong> — active bursts</li>
+        </ul>
+
+        <h2>Ambient breathing — the one exception</h2>
+        <p>
+          A fully frozen scene feels dead. We added a single exception: every 2.5 seconds,
+          one render frame fires to advance the <code>worldDNA</code> time uniform. This
+          gives a subtle "breathing" — particles drift, the background gradient shifts,
+          the glass cube's iridescence animates. Then the GPU sleeps again.
+        </p>
+        <p>
+          The breathing respects <code>prefers-reduced-motion</code> — if the user has
+          requested reduced motion, the scene is truly frozen between interactions.
+        </p>
+
+        <blockquote class="uk-blockquote uk-margin-medium">
+          <p class="uk-margin-remove">
+            "On-demand rendering: don't set <code>_needsRender=true</code> permanently.
+            Event-driven only. Ambient breathing (1-frame refresh every ~2.5s in idle) is
+            the ONLY exception."
+          </p>
+          <footer>— RULES.md §33</footer>
+        </blockquote>
+
+        <h2>What we measured</h2>
+        <table class="uk-table uk-table-divider uk-margin-medium">
+          <thead>
+            <tr><th>State</th><th>Draw calls/frame</th><th>GPU time</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Idle (no breathing)</td><td>0</td><td>0ms</td></tr>
+            <tr><td>Idle (breathing frame)</td><td>~12</td><td>3ms</td></tr>
+            <tr><td>Section transition</td><td>~15</td><td>5ms</td></tr>
+            <tr><td>BakuCarousel scrolling</td><td>~18</td><td>8ms</td></tr>
+          </tbody>
+        </table>
+        <p>
+          Over a 60-second idle period: 24 breathing frames × 3ms = 72ms total GPU time.
+          Compare to rAF: 3600 frames × 5ms = 18,000ms. That's a 250× reduction.
+        </p>
+
+        <h2>The catch</h2>
+        <p>
+          On-demand rendering makes the codebase harder to reason about. Every animation
+          must explicitly set <code>_needsRender = true</code> — forget it, and the
+          animation plays in your head but not on screen. We added a lint rule and a
+          DevPanel toggle to force-render during debugging.
+        </p>
+        <p>
+          The CubeCamera reflection (for the glass cube) also needs the flag — if the
+          cube is visible but <code>_needsRender</code> is false, the reflection is stale.
+          We accept this: the reflection updates on the next interaction, which is usually
+          within a second.
+        </p>
+
+        <hr class="uk-margin-large" />
+
+        <nav class="uk-flex uk-flex-between uk-margin-large" aria-label="Article navigation">
+          <a href="/blog" class="uk-button uk-button-default uk-button-small">← All posts</a>
+          <a href="/blog/tsl-changes-everything" class="uk-button uk-button-default uk-button-small">Next: Why TSL changes everything →</a>
+        </nav>
+      </article>
+    </main>
+
+    <footer class="uk-section uk-section-xsmall" role="contentinfo">
+      <div class="uk-container uk-container-expand uk-text-center">
+        <ul class="uk-iconnav uk-flex-center" aria-label="Social links">
+          <li><a href="https://github.com/la6su" rel="noopener" aria-label="GitHub" uk-icon="icon: github"></a></li>
+          <li><a href="https://twitter.com" rel="noopener" aria-label="Twitter" uk-icon="icon: twitter"></a></li>
+          <li><a href="mailto:hello@justlovejazz.com" aria-label="Email" uk-icon="icon: mail"></a></li>
+        </ul>
+        <p class="uk-text-meta uk-margin-small-top">© <span id="year">2026</span> JUSTLOVEJAZZ — Web Design Studio</p>
+      </div>
+    </footer>
+
+    <script>
+      document.getElementById('year').textContent = String(new Date().getFullYear());
+    </script>
+  </body>
+</html>

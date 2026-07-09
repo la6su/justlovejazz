@@ -13,7 +13,8 @@ const MAIN_SECTION_INDICES = [1, 2, 3, 4]
 const PAGE_LINKS = [
   ['/app', 'Home'],
   ['/app/services', 'Services'],
-  ['/app/posts', 'Posts'],
+  ['/app/manifesto', 'Manifesto'],
+  ['/blog', 'Blog'],
 ] as const
 
 export class UIMenu {

@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#050507" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="author" content="JUSTLOVEJAZZ" />
+    <meta
+      name="description"
+      content="Case study: Undercurrent — a WebGPU fluid simulation portfolio. How we built a real-time GPU fluid solver using TSL node graphs, with performance budget at 60fps on mid-range hardware."
+    />
+    <meta name="keywords" content="WebGPU, TSL, fluid simulation, Three.js, case study, shader art" />
+
+    <title>Undercurrent — WebGPU Fluid Simulation | JUSTLOVEJAZZ Blog</title>
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="canonical" href="https://justlovejazz.dev/blog/undercurrent-webgpu-fluid" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="JUSTLOVEJAZZ" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:title" content="Undercurrent — WebGPU Fluid Simulation" />
+    <meta property="og:description" content="Case study: how we built a real-time GPU fluid solver using TSL node graphs, with performance budget at 60fps." />
+    <meta property="og:url" content="https://justlovejazz.dev/blog/undercurrent-webgpu-fluid" />
+    <meta property="og:image" content="https://justlovejazz.dev/assets/projects/undercurrent/cover.webp" />
+    <meta property="og:image:secure_url" content="https://justlovejazz.dev/assets/projects/undercurrent/cover.webp" />
+    <meta property="og:image:type" content="image/webp" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Undercurrent — WebGPU fluid simulation preview" />
+    <meta property="article:published_time" content="2026-07-15T10:00:00Z" />
+    <meta property="article:author" content="JUSTLOVEJAZZ" />
+    <meta property="article:section" content="Case Studies" />
+    <meta property="article:tag" content="WebGPU" />
+    <meta property="article:tag" content="TSL" />
+    <meta property="article:tag" content="Fluid Simulation" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@justlovejazz" />
+    <meta name="twitter:creator" content="@justlovejazz" />
+    <meta name="twitter:title" content="Undercurrent — WebGPU Fluid Simulation" />
+    <meta name="twitter:description" content="Case study: how we built a real-time GPU fluid solver using TSL node graphs." />
+    <meta name="twitter:image" content="https://justlovejazz.dev/assets/projects/undercurrent/cover.webp" />
+    <meta name="twitter:image:alt" content="Undercurrent — WebGPU fluid simulation preview" />
+
+    <link rel="preload" href="/fonts/inter-400.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/inter-700.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="/fonts/inter.css" />
+    <link rel="stylesheet" href="/src/assets/landing.less" />
+
+    <!-- JSON-LD BlogPosting -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "headline": "Undercurrent — WebGPU Fluid Simulation",
+        "description": "Case study: how we built a real-time GPU fluid solver using TSL node graphs, with performance budget at 60fps.",
+        "image": "https://justlovejazz.dev/assets/projects/undercurrent/cover.webp",
+        "datePublished": "2026-07-15T10:00:00Z",
+        "dateModified": "2026-07-15T10:00:00Z",
+        "author": {
+          "@type": "Organization",
+          "name": "JUSTLOVEJAZZ",
+          "url": "https://justlovejazz.dev/"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "JUSTLOVEJAZZ",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://justlovejazz.dev/favicon.svg"
+          }
+        },
+        "mainEntityOfPage": {
+          "@type": "WebPage",
+          "@id": "https://justlovejazz.dev/blog/undercurrent-webgpu-fluid"
+        },
+        "keywords": "WebGPU, TSL, fluid simulation, Three.js, case study, shader art",
+        "articleSection": "Case Studies"
+      }
+    </script>
+  </head>
+  <body>
+    <a href="#main" class="skip-link">Skip to main content</a>
+
+    <header class="jlz-landing-header" role="banner">
+      <nav class="uk-container uk-container-expand uk-navbar uk-navbar-transparent" uk-navbar aria-label="Main navigation">
+        <div class="uk-navbar-left">
+          <a href="/" class="uk-navbar-item uk-logo jlz-landing-brand">l@6</a>
+        </div>
+        <div class="uk-navbar-right">
+          <ul class="uk-navbar-nav">
+            <li><a href="/blog">Blog</a></li>
+            <li><a href="/app">Enter 3D →</a></li>
+          </ul>
+        </div>
+      </nav>
+    </header>
+
+    <main id="main" class="uk-section uk-section-large" role="main">
+      <article class="uk-container uk-container-small">
+        <p class="jlz-landing-eyebrow">&gt; CASE STUDY · 15 JUL 2026</p>
+        <h1 class="uk-heading-large uk-margin-remove-top">Undercurrent — WebGPU Fluid Simulation</h1>
+        <p class="uk-text-lead uk-margin-medium-top">
+          A real-time GPU fluid solver built with TSL node graphs. This case study walks
+          through the architecture, performance budget, and the compromises we made to hit
+          60fps on mid-range hardware.
+        </p>
+
+        <hr class="uk-margin-large" />
+
+        <h2>The brief</h2>
+        <p>
+          The client wanted a portfolio hero that felt "alive" — not a video, not a canned
+          animation, but something that responded to input in real time. The constraint:
+          it had to run on integrated graphics without dropping below 60fps.
+        </p>
+        <p>
+          We proposed a Navier-Stokes-inspired fluid simulation running entirely on the GPU
+          via WebGPU compute shaders. The visual target was dark, iridescent, with a sense
+          of depth — ink in water, but with light sources inside the flow.
+        </p>
+
+        <h2>Architecture</h2>
+        <p>
+          The simulation uses three ping-pong render targets: velocity, density, and
+          pressure. Each frame runs a five-pass pipeline:
+        </p>
+        <ol>
+          <li><strong>Advection</strong> — semi-Lagrangian, samples previous velocity field</li>
+          <li><strong>Forces</strong> — mouse input injected as velocity impulse</li>
+          <li><strong>Divergence</strong> — compute velocity field divergence</li>
+          <li><strong>Pressure (Jacobi, 20 iterations)</strong> — solve pressure Poisson equation</li>
+          <li><strong>Projection</strong> — subtract pressure gradient from velocity</li>
+        </ol>
+        <p>
+          The density field is advected by the velocity field and rendered with a custom
+          iridescence shader — thin-film interference approximated via a lookup table.
+        </p>
+
+        <blockquote class="uk-blockquote uk-margin-medium">
+          <p class="uk-margin-remove">
+            "The key insight was using TSL node graphs instead of raw WGSL. We could iterate
+            on the shader in TypeScript, with type safety, and the same code compiled to
+            both WebGPU and WebGL2 fallback."
+          </p>
+          <footer>— Lead engineer</footer>
+        </blockquote>
+
+        <h2>Performance budget</h2>
+        <p>
+          Target: 60fps on Intel UHD 620 (lowest supported). Budget per frame: 16.6ms.
+        </p>
+        <table class="uk-table uk-table-divider uk-margin-medium">
+          <thead>
+            <tr><th>Pass</th><th>Time (ms)</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Advection</td><td>1.8</td><td>512×512, bilinear sampling</td></tr>
+            <tr><td>Forces</td><td>0.3</td><td>Single dispatch, mouse uniform</td></tr>
+            <tr><td>Divergence</td><td>0.9</td><td>9-tap stencil</td></tr>
+            <tr><td>Pressure (×20)</td><td>7.2</td><td>20 Jacobi iterations × 0.36ms</td></tr>
+            <tr><td>Projection</td><td>0.8</td><td>9-tap stencil</td></tr>
+            <tr><td>Render (iridescence)</td><td>2.1</td><td>Full-screen quad + LUT</td></tr>
+            <tr><td><strong>Total</strong></td><td><strong>13.1</strong></td><td>3.5ms headroom</td></tr>
+          </tbody>
+        </table>
+
+        <h2>The compromise</h2>
+        <p>
+          We cut the simulation grid from 1024 to 512. The visual difference was minimal —
+          the iridescence shader masks the lower resolution — but the performance gain was
+          4×. On high-end hardware, the grid scales up to 1024 automatically via a
+          capabilities check.
+        </p>
+        <p>
+          The WebGL2 fallback uses a CPU-side Jacobi solver at 256×256. It's 30fps instead
+          of 60, but the visual identity holds. Users on Safari pre-WebGPU still get a
+          fluid hero, just slower.
+        </p>
+
+        <h2>What we learned</h2>
+        <p>
+          TSL node graphs are the real deal. The ability to write GPU code in TypeScript,
+          with autocomplete and type checking, changed how we iterate. A shader bug that
+          used to take 20 minutes of `console.log` triangulation now shows up as a type
+          error in the editor.
+        </p>
+        <p>
+          The five-pass pipeline is harder to debug than a single shader, but the
+          separation of concerns (advection vs. pressure vs. render) made it possible to
+          tune each pass independently. The performance budget table above was the single
+          most useful artifact — we knew exactly which pass to optimize when frame times
+          slipped.
+        </p>
+
+        <hr class="uk-margin-large" />
+
+        <nav class="uk-flex uk-flex-between uk-margin-large" aria-label="Article navigation">
+          <a href="/blog" class="uk-button uk-button-default uk-button-small">← All posts</a>
+          <a href="/blog/designing-in-the-browser" class="uk-button uk-button-default uk-button-small">Next: Designing in the browser →</a>
+        </nav>
+      </article>
+    </main>
+
+    <footer class="uk-section uk-section-xsmall" role="contentinfo">
+      <div class="uk-container uk-container-expand uk-text-center">
+        <ul class="uk-iconnav uk-flex-center" aria-label="Social links">
+          <li><a href="https://github.com/la6su" rel="noopener" aria-label="GitHub" uk-icon="icon: github"></a></li>
+          <li><a href="https://twitter.com" rel="noopener" aria-label="Twitter" uk-icon="icon: twitter"></a></li>
+          <li><a href="mailto:hello@justlovejazz.com" aria-label="Email" uk-icon="icon: mail"></a></li>
+        </ul>
+        <p class="uk-text-meta uk-margin-small-top">© <span id="year">2026</span> JUSTLOVEJAZZ — Web Design Studio</p>
+      </div>
+    </footer>
+
+    <script>
+      document.getElementById('year').textContent = String(new Date().getFullYear());
+    </script>
+  </body>
+</html>

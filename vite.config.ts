@@ -131,6 +131,12 @@ export default defineConfig({
         index: resolve(__dirname, 'index.html'),
         app: resolve(__dirname, 'app.html'),
         landing: resolve(__dirname, 'landing.html'),
+        blog: resolve(__dirname, 'blog.html'),
+        // Blog articles — each is a standalone semantic HTML page
+        'blog/undercurrent-webgpu-fluid': resolve(__dirname, 'blog/undercurrent-webgpu-fluid.html'),
+        'blog/glassmorphism-webgpu': resolve(__dirname, 'blog/glassmorphism-webgpu.html'),
+        'blog/on-demand-rendering': resolve(__dirname, 'blog/on-demand-rendering.html'),
+        'blog/tsl-changes-everything': resolve(__dirname, 'blog/tsl-changes-everything.html'),
       },
       output: {
         // ───────────────────────────────────────────────────────────────────

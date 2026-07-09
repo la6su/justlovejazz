@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#050507" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="author" content="JUSTLOVEJAZZ" />
+    <meta
+      name="description"
+      content="Case study: Glassmorphism on WebGPU — building a real glass material with transmission, clearcoat, and iridescence that works across WebGPU and WebGL2 fallback."
+    />
+    <meta name="keywords" content="glassmorphism, WebGPU, MeshPhysicalMaterial, Three.js, iridescence, case study" />
+
+    <title>Glassmorphism on WebGPU | JUSTLOVEJAZZ Blog</title>
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="canonical" href="https://justlovejazz.dev/blog/glassmorphism-webgpu" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="JUSTLOVEJAZZ" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:title" content="Glassmorphism on WebGPU" />
+    <meta property="og:description" content="Building a real glass material with transmission, clearcoat, and iridescence across WebGPU and WebGL2." />
+    <meta property="og:url" content="https://justlovejazz.dev/blog/glassmorphism-webgpu" />
+    <meta property="og:image" content="https://justlovejazz.dev/assets/projects/velvet-echo/cover.webp" />
+    <meta property="og:image:secure_url" content="https://justlovejazz.dev/assets/projects/velvet-echo/cover.webp" />
+    <meta property="og:image:type" content="image/webp" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Glassmorphism on WebGPU preview" />
+    <meta property="article:published_time" content="2026-06-20T10:00:00Z" />
+    <meta property="article:author" content="JUSTLOVEJAZZ" />
+    <meta property="article:section" content="Case Studies" />
+    <meta property="article:tag" content="Glassmorphism" />
+    <meta property="article:tag" content="WebGPU" />
+    <meta property="article:tag" content="Three.js" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@justlovejazz" />
+    <meta name="twitter:creator" content="@justlovejazz" />
+    <meta name="twitter:title" content="Glassmorphism on WebGPU" />
+    <meta name="twitter:description" content="Building a real glass material with transmission, clearcoat, and iridescence." />
+    <meta name="twitter:image" content="https://justlovejazz.dev/assets/projects/velvet-echo/cover.webp" />
+    <meta name="twitter:image:alt" content="Glassmorphism on WebGPU preview" />
+
+    <link rel="preload" href="/fonts/inter-400.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/inter-700.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="/fonts/inter.css" />
+    <link rel="stylesheet" href="/src/assets/landing.less" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "headline": "Glassmorphism on WebGPU",
+        "description": "Building a real glass material with transmission, clearcoat, and iridescence across WebGPU and WebGL2.",
+        "image": "https://justlovejazz.dev/assets/projects/velvet-echo/cover.webp",
+        "datePublished": "2026-06-20T10:00:00Z",
+        "dateModified": "2026-06-20T10:00:00Z",
+        "author": { "@type": "Organization", "name": "JUSTLOVEJAZZ", "url": "https://justlovejazz.dev/" },
+        "publisher": {
+          "@type": "Organization",
+          "name": "JUSTLOVEJAZZ",
+          "logo": { "@type": "ImageObject", "url": "https://justlovejazz.dev/favicon.svg" }
+        },
+        "mainEntityOfPage": { "@type": "WebPage", "@id": "https://justlovejazz.dev/blog/glassmorphism-webgpu" },
+        "keywords": "glassmorphism, WebGPU, MeshPhysicalMaterial, Three.js, iridescence, case study",
+        "articleSection": "Case Studies"
+      }
+    </script>
+  </head>
+  <body>
+    <a href="#main" class="skip-link">Skip to main content</a>
+
+    <header class="jlz-landing-header" role="banner">
+      <nav class="uk-container uk-container-expand uk-navbar uk-navbar-transparent" uk-navbar aria-label="Main navigation">
+        <div class="uk-navbar-left">
+          <a href="/" class="uk-navbar-item uk-logo jlz-landing-brand">l@6</a>
+        </div>
+        <div class="uk-navbar-right">
+          <ul class="uk-navbar-nav">
+            <li><a href="/blog">Blog</a></li>
+            <li><a href="/app">Enter 3D →</a></li>
+          </ul>
+        </div>
+      </nav>
+    </header>
+
+    <main id="main" class="uk-section uk-section-large" role="main">
+      <article class="uk-container uk-container-small">
+        <p class="jlz-landing-eyebrow">&gt; CASE STUDY · 20 JUN 2026</p>
+        <h1 class="uk-heading-large uk-margin-remove-top">Glassmorphism on WebGPU</h1>
+        <p class="uk-text-lead uk-margin-medium-top">
+          Real glass — not the CSS backdrop-filter approximation. Transmission, clearcoat,
+          iridescence, and a CubeCamera reflection that updates per frame. Here's how we
+          made it work across WebGPU and WebGL2 with bit-identical output.
+        </p>
+
+        <hr class="uk-margin-large" />
+
+        <h2>The material</h2>
+        <p>
+          We used a single <code>MeshPhysicalMaterial</code> with these properties:
+        </p>
+        <pre class="uk-pre uk-margin-medium"><code>transmission: 0      // solid glass, not see-through
+iridescence: 1.0      // thin-film interference (soap bubble)
+clearcoat: 1.0        // glossy top layer
+roughness: 0.05       // polished
+metalness: 0.0        // dielectric
+envMapIntensity: 2.0  // boost reflections</code></pre>
+        <p>
+          The <code>transmission: 0</code> is deliberate — we wanted reflections and
+          iridescence, not refraction. A <code>CubeCamera</code> renders the content scene
+          into a 256×256 cubemap every frame, used as <code>material.envMap</code>.
+        </p>
+
+        <h2>The cube camera problem</h2>
+        <p>
+          A CubeCamera renders 6 views (one per face). At 256×256, that's 6 draw calls per
+          frame just for reflections. On mid-range hardware, this was 4ms — a quarter of
+          our frame budget.
+        </p>
+        <p>
+          The fix: render the CubeCamera <strong>only when the glass object is visible</strong>.
+          Our on-demand rendering pipeline already gated <code>renderer.update()</code> behind
+          a <code>_needsRender</code> flag. We added a check: if the glass mesh is not in
+          the camera frustum, skip the CubeCamera update entirely. Idle frames drop to 0
+          draw calls.
+        </p>
+
+        <blockquote class="uk-blockquote uk-margin-medium">
+          <p class="uk-margin-remove">
+            "The cube hidden during CubeCamera render to avoid self-reflection" — this
+            comment in the codebase is the single most important detail. Without it, you
+            get a black cube reflecting itself into infinity.
+          </p>
+        </blockquote>
+
+        <h2>Iridescence parity</h2>
+        <p>
+          The thin-film interference approximation in <code>MeshPhysicalMaterial</code> uses
+          a different code path on WebGPU (TSL) vs WebGL2 (GLSL). The visual difference is
+          sub-perceptual, but we wanted bit-identical output for our parity guarantee.
+        </p>
+        <p>
+          The solution: a portable integer hash for the iridescence noise, identical in
+          both shaders. We could not use <code>sin()</code>-based hashing — precision
+          differs between GLSL and WGSL. The integer hash <code>fract((p3.x+p3.y)*p3.z)</code>
+          with <code>p3 = fract(vec3(p.xyx)*0.1031)</code> is bit-identical across both.
+        </p>
+
+        <h2>Edges with rainbow vertex colors</h2>
+        <p>
+          The glass cube has <code>EdgesGeometry</code> — 12 edges (not 24 from separate
+          planes). Each vertex gets an animated rainbow HSL color. This is the detail that
+          makes the cube feel alive — the edges shimmer independently of the glass body.
+        </p>
+        <p>
+          Vertex colors are set directly on the geometry's <code>color</code> attribute,
+          updated each frame. No uniform overhead, no draw call increase. The edges render
+          in the same pass as the glass body.
+        </p>
+
+        <h2>Result</h2>
+        <p>
+          A glass cube that reflects its surroundings, shimmers with iridescence, and has
+          rainbow edges. It runs at 60fps on WebGPU, 60fps on WebGL2 (same material,
+          different backend), and 0fps when idle (on-demand rendering). The visual identity
+          is the centerpiece of the portfolio — every visitor sees it within 2 seconds of
+          entering.
+        </p>
+
+        <hr class="uk-margin-large" />
+
+        <nav class="uk-flex uk-flex-between uk-margin-large" aria-label="Article navigation">
+          <a href="/blog" class="uk-button uk-button-default uk-button-small">← All posts</a>
+          <a href="/blog/on-demand-rendering" class="uk-button uk-button-default uk-button-small">Next: On-demand rendering →</a>
+        </nav>
+      </article>
+    </main>
+
+    <footer class="uk-section uk-section-xsmall" role="contentinfo">
+      <div class="uk-container uk-container-expand uk-text-center">
+        <ul class="uk-iconnav uk-flex-center" aria-label="Social links">
+          <li><a href="https://github.com/la6su" rel="noopener" aria-label="GitHub" uk-icon="icon: github"></a></li>
+          <li><a href="https://twitter.com" rel="noopener" aria-label="Twitter" uk-icon="icon: twitter"></a></li>
+          <li><a href="mailto:hello@justlovejazz.com" aria-label="Email" uk-icon="icon: mail"></a></li>
+        </ul>
+        <p class="uk-text-meta uk-margin-small-top">© <span id="year">2026</span> JUSTLOVEJAZZ — Web Design Studio</p>
+      </div>
+    </footer>
+
+    <script>
+      document.getElementById('year').textContent = String(new Date().getFullYear());
+    </script>
+  </body>
+</html>

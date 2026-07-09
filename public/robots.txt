@@ -1,6 +1,6 @@
 User-agent: *
-# Splash (/) and landing (/landing) are crawlable. App (/app) requires
-# JS + WebGL2 — noindex to avoid duplicate content with landing.
+# Splash (/), landing (/landing), and blog (/blog + articles) are crawlable.
+# App (/app) requires JS + WebGL2 — noindex to avoid duplicate content with landing.
 Allow: /
 Disallow: /app
 

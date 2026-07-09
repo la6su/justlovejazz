@@ -415,14 +415,14 @@ const SERVICES_PALETTE: ContentPalette = {
   groundColor: 0x1a1208,
 }
 
-const POSTS_PALETTE: ContentPalette = {
-  lightBg: 0xe8f0f0,
-  darkBg: 0x050a0a,
-  bakuColor: 0x2a4a4a,
-  bakuEmissive: 0x3a6a6a,
-  fogColor: 0x050a0a,
+const MANIFESTO_PALETTE: ContentPalette = {
+  lightBg: 0xf0eee8,
+  darkBg: 0x0a0805,
+  bakuColor: 0x4a3a2a,
+  bakuEmissive: 0x6a5a3a,
+  fogColor: 0x0a0805,
   lightColor: 0xffffff,
-  groundColor: 0x081a1a,
+  groundColor: 0x1a1208,
 }
 
 function makeContentScenes(palette: ContentPalette, pageId: string): RawScene[] {
@@ -475,8 +475,8 @@ export function getWorldConfigForPage(pageKey: string): readonly PhaseConfig[] {
   if (pageKey === 'services') {
     return makeContentScenes(SERVICES_PALETTE, 'services').map(toPhaseConfig)
   }
-  if (pageKey === 'posts') {
-    return makeContentScenes(POSTS_PALETTE, 'posts').map(toPhaseConfig)
+  if (pageKey === 'manifesto') {
+    return makeContentScenes(MANIFESTO_PALETTE, 'manifesto').map(toPhaseConfig)
   }
   return getAllScenes() // home — full scenes
 }
