@@ -1,41 +1,37 @@
-// src/core/ThemeManager.ts — Theme manager with 3 modes (auto/light/dark)
+// src/core/ThemeManager.ts — Theme manager with 2 modes (auto/inverse)
 //
 // Per-section theme comes from WorldConfig (cfg.theme: 'light' | 'dark'):
 //   Lab=light, Intro=light, About=dark, Works=dark, Contact=light, Process=dark
 //
-// Three modes:
-//   - 'auto'  (default) — follows the per-section theme from setAutoTheme()
-//   - 'light' — forced light (uk-light on body, dark text)
-//   - 'dark'  — forced dark (no uk-light, light text)
-//
-// Manual override (light/dark) wins over auto — setAutoTheme() is a no-op
-// when mode !== 'auto'.
+// Two modes:
+//   - 'auto'    (default) — follows the per-section theme from setAutoTheme()
+//   - 'inverse' — flips per-section theme (light↔dark)
 //
 // uk-light class on <body> = light background → dark text (inverse colors).
 // No uk-light = dark background → light text (default dark theme).
 //
+// Mode logic:
+//   auto:    isLight = sectionIsLight
+//   inverse: isLight = !sectionIsLight (flip)
+//
 // First-visit behavior: if localStorage has no saved mode, check
-// prefers-color-scheme. If system is light → start in 'light' mode.
-// Otherwise → 'auto' (follows section theme).
+// prefers-color-scheme. If system is light → start in 'auto' (sections
+// already have light sections). Otherwise → 'auto'.
 //
 // Persists to localStorage('jlz:theme').
 // 3D sync: dispatches 'jlz:theme-applied' with {isLight, mode} so
-// Experience.ts can sync EnvSphere background to match (light/dark forced
-// → override EnvSphere pattern; auto → EnvSphere follows section).
+// Experience.ts can sync EnvSphere background to match.
 
-export type ThemeMode = 'auto' | 'light' | 'dark'
+export type ThemeMode = 'auto' | 'inverse'
 
 const STORAGE_KEY = 'jlz:theme'
 
 class ThemeManager {
   private _mode: ThemeMode = 'auto'
-  private _sectionIsLight = false // per-section theme from WorldConfig (auto mode)
+  private _sectionIsLight = false // per-section theme from WorldConfig
 
   constructor() {
     this._mode = this._loadMode()
-    // Apply on construction so the theme is correct from first paint.
-    // Safe-guard: document.body may not exist yet at module-import time
-    // (singleton), so defer to next microtask if needed.
     if (typeof document !== 'undefined' && document.body) {
       this.apply()
     } else {
@@ -49,14 +45,12 @@ class ThemeManager {
 
   /** Whether the currently-applied theme is light (uk-light on body). */
   get isLight(): boolean {
-    if (this._mode === 'light') return true
-    if (this._mode === 'dark') return false
-    return this._sectionIsLight // auto
+    return this._mode === 'inverse' ? !this._sectionIsLight : this._sectionIsLight
   }
 
-  /** @deprecated Use isLight instead. Kept for backward compat. */
+  /** Whether inverse mode is active (for UI label). */
   get isInverse(): boolean {
-    return this._mode !== 'auto'
+    return this._mode === 'inverse'
   }
 
   setMode(mode: ThemeMode): void {
@@ -68,18 +62,17 @@ class ThemeManager {
 
   /** Called by Experience.ts/JoystickNav on section change.
    *  Sets the per-section light/dark state from cfg.theme.
-   *  In auto mode → applies. In light/dark mode → no-op (manual override wins). */
+   *  - auto: applies section theme
+   *  - inverse: applies FLIPPED section theme
+   *  Both modes depend on section theme, so always apply. */
   setAutoTheme(isLight: boolean): void {
     this._sectionIsLight = isLight
-    if (this._mode === 'auto') {
-      this.apply()
-    }
+    this.apply()
   }
 
-  /** Cycle auto → light → dark → auto. For keyboard / programmatic access. */
+  /** Toggle auto ↔ inverse. */
   toggle(): ThemeMode {
-    const next: ThemeMode = this._mode === 'auto' ? 'light' : this._mode === 'light' ? 'dark' : 'auto'
-    this.setMode(next)
+    this.setMode(this._mode === 'auto' ? 'inverse' : 'auto')
     return this._mode
   }
 
@@ -97,13 +90,7 @@ class ThemeManager {
   private _loadMode(): ThemeMode {
     try {
       const stored = localStorage.getItem(STORAGE_KEY)
-      if (stored === 'auto' || stored === 'light' || stored === 'dark') return stored
-      // First visit (no saved preference) — check system preference.
-      // If user's OS is in light mode, start in light mode (better UX than
-      // forcing dark on a light-system user). Otherwise default to auto.
-      if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
-        return 'light'
-      }
+      if (stored === 'auto' || stored === 'inverse') return stored
     } catch {
       /* localStorage unavailable */
     }

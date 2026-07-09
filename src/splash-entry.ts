@@ -15,31 +15,32 @@
 const THEME_KEY = 'jlz:theme'
 const SOUND_KEY = 'jlz:sound'
 
-// ── Config: theme toggle (1 button, light/dark) ──
-// Writes to localStorage('jlz:theme') = 'light' | 'dark'.
-// App reads this on boot via ThemeManager (which supports auto/light/dark —
-// splash forces light or dark, app respects the override).
+// ── Config: theme toggle (1 button, auto/inverse) ──
+// Writes to localStorage('jlz:theme') = 'auto' | 'inverse'.
+// App reads this on boot via ThemeManager.
+// - auto: sections follow preset theme (Lab/Intro/Contact=light, others=dark)
+// - inverse: flips preset (light↔dark)
 function initThemeToggle(): void {
   const btn = document.getElementById('cfg-theme') as HTMLButtonElement | null
   if (!btn) return
 
-  // Read current state — default to 'dark' (matches splash bg #050507)
-  let isLight = false
+  // Read current state — default to 'auto'
+  let isInverse = false
   try {
     const stored = localStorage.getItem(THEME_KEY)
-    if (stored === 'light') isLight = true
+    if (stored === 'inverse') isInverse = true
   } catch { /* ignore */ }
 
   const update = () => {
-    btn.setAttribute('aria-pressed', String(isLight))
-    btn.classList.toggle('is-off', !isLight)
-    btn.title = isLight ? 'Theme: Light (click for Dark)' : 'Theme: Dark (click for Light)'
+    btn.setAttribute('aria-pressed', String(isInverse))
+    btn.classList.toggle('is-off', !isInverse)
+    btn.title = isInverse ? 'Theme: Inverse (click for Auto)' : 'Theme: Auto (click for Inverse)'
   }
   update()
 
   btn.addEventListener('click', () => {
-    isLight = !isLight
-    try { localStorage.setItem(THEME_KEY, isLight ? 'light' : 'dark') } catch { /* ignore */ }
+    isInverse = !isInverse
+    try { localStorage.setItem(THEME_KEY, isInverse ? 'inverse' : 'auto') } catch { /* ignore */ }
     update()
   })
 }

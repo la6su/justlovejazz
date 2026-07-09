@@ -78,11 +78,11 @@ export class UIMenu {
         </div>
         <div class="uk-margin-large-top jlz-theme-toggle">
           <p class="uk-text-meta uk-text-uppercase">Theme</p>
-          <div class="uk-button-group uk-margin-small-top" role="group" aria-label="Theme mode">
-            <button class="uk-button uk-button-default uk-button-small" data-theme-mode="auto" type="button">Auto</button>
-            <button class="uk-button uk-button-default uk-button-small" data-theme-mode="light" type="button">Light</button>
-            <button class="uk-button uk-button-default uk-button-small" data-theme-mode="dark" type="button">Dark</button>
-          </div>
+          <button class="uk-button uk-button-default uk-button-small uk-margin-small-top" id="jlz-theme-toggle-btn" type="button" aria-pressed="false">
+            <span uk-icon="icon: paint-bucket; ratio: 0.8" aria-hidden="true"></span>
+            <span class="uk-margin-small-left" id="jlz-theme-mode-label">Auto</span>
+          </button>
+          <p class="uk-text-meta uk-margin-small-top" style="opacity: 0.5; font-size: 0.65rem;">Auto = preset · Inverse = flip light↔dark</p>
         </div>
       </div>
     `
@@ -116,16 +116,12 @@ export class UIMenu {
     }
     window.addEventListener('jlz:route-change', this._routeHandler)
 
-    // Theme toggle — 3 buttons (Auto/Light/Dark) in uk-button-group.
-    // Click → themeManager.setMode(mode). Active button gets uk-active.
-    const themeBtns = this.modalEl.querySelectorAll<HTMLButtonElement>('[data-theme-mode]')
-    themeBtns.forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const mode = btn.dataset.themeMode as 'auto' | 'light' | 'dark'
-        themeManager.setMode(mode)
-      })
+    // Theme toggle — single button, toggles auto ↔ inverse.
+    const themeBtn = this.modalEl.querySelector<HTMLButtonElement>('#jlz-theme-toggle-btn')
+    themeBtn?.addEventListener('click', () => {
+      themeManager.toggle()
     })
-    this._themeHandler = () => this.updateThemeActive()
+    this._themeHandler = () => this.updateThemeLabel()
     window.addEventListener('jlz:theme-change', this._themeHandler)
 
     // Secret section jumps — Lab (idx 0) / Process (idx 5).
@@ -144,7 +140,7 @@ export class UIMenu {
 
     this.updateActive()
     this.updatePageActive(document.body.dataset.page ?? 'home')
-    this.updateThemeActive()
+    this.updateThemeLabel()
   }
 
   onNavigate(cb: (index: number) => void): void {
@@ -166,12 +162,17 @@ export class UIMenu {
     }
   }
 
-  /** Update the theme mode buttons — active button gets uk-active. */
-  private updateThemeActive(): void {
-    const currentMode = themeManager.mode
-    this.modalEl.querySelectorAll<HTMLButtonElement>('[data-theme-mode]').forEach((btn) => {
-      btn.classList.toggle('uk-active', btn.dataset.themeMode === currentMode)
-    })
+  /** Update the theme toggle button label + aria-pressed. */
+  private updateThemeLabel(): void {
+    const label = this.modalEl.querySelector<HTMLElement>('#jlz-theme-mode-label')
+    const btn = this.modalEl.querySelector<HTMLButtonElement>('#jlz-theme-toggle-btn')
+    if (label) {
+      label.textContent = themeManager.isInverse ? 'Inverse' : 'Auto'
+    }
+    if (btn) {
+      btn.setAttribute('aria-pressed', String(themeManager.isInverse))
+      btn.classList.toggle('uk-active', themeManager.isInverse)
+    }
   }
 
   dispose(): void {

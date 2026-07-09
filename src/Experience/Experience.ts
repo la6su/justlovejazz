@@ -234,14 +234,19 @@ export class Experience {
     await this.buildWorld()
     this.bus = StateBus.getInstance()
 
-    // ── 3D ↔ theme sync: in light/dark forced mode, EnvSphere follows the forced theme ──
+    // ── 3D ↔ theme sync: in inverse mode, EnvSphere follows the FLIPPED theme ──
     // Only on home page — content pages don't need 3D bg sync on theme toggle.
-    // In auto mode, EnvSphere follows the active section (no override needed).
+    // - auto mode: EnvSphere follows the active section via World.updateTransform
+    //   (no override needed — listener returns early).
+    // - inverse mode: EnvSphere overrides to the FLIPPED section pattern.
+    //   Section Intro (light) + inverse → isLight=false → EnvSphere=About (dark pattern)
+    //   Section About (dark) + inverse → isLight=true → EnvSphere=Intro (light pattern)
     window.addEventListener('jlz:theme-applied', ((e: Event) => {
       const detail = (e as CustomEvent<{ isLight: boolean; mode: string }>).detail
-      if (!detail || detail.mode === 'auto') return
+      if (!detail || detail.mode === 'auto') return // auto: EnvSphere follows section via World
       if (document.body.dataset.page !== 'home') return // home-only 3D sync
-      const targetIdx = detail.isLight ? 1 : 2
+      // inverse mode: flip EnvSphere to match the inverted text color
+      const targetIdx = detail.isLight ? 1 : 2 // 1=Intro(light pattern), 2=About(dark pattern)
       if (this.world?.envSphere) {
         this.world.envSphere.changeSection(targetIdx)
         this._needsRender = true
