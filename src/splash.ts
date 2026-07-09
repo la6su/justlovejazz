@@ -8,8 +8,12 @@
 //   5. jlz:webgl-ready fires → NoiseText animates intro title
 //   6. After fade — splash removed, 3D scene fully visible
 //
-// NO auto-enter — user MUST click Enter. The 3D scene loads behind the
-// splash but stays hidden until Enter is pressed.
+// Auto-skip: if localStorage('jlz:seen-intro') is set (returning user),
+// setState('ready') auto-triggers doEnter() after 1.2s — no Enter click
+// required. First-time visitors still see the full splash + Enter button.
+
+const SEEN_INTRO_KEY = 'jlz:seen-intro'
+const AUTO_ENTER_DELAY_MS = 1200
 
 export interface SplashOverlay {
   show(): void
@@ -29,6 +33,7 @@ export function createSplash(): SplashOverlay {
   let enterHandler: (() => void) | null = null
   let soundHandler: (() => void) | null = null
   let entered = false
+  let autoEnterTimer: ReturnType<typeof setTimeout> | null = null
 
   function getExp() {
     return (
@@ -44,6 +49,9 @@ export function createSplash(): SplashOverlay {
   function doEnter() {
     if (entered) return
     entered = true
+    // Mark as seen — next visit auto-skips the Enter button.
+    try { localStorage.setItem(SEEN_INTRO_KEY, '1') } catch { /* ignore */ }
+    if (autoEnterTimer) { clearTimeout(autoEnterTimer); autoEnterTimer = null }
     const el = document.getElementById(id)
     if (!el) return
     // CRT-on: curtains split apart (0.8s) + squares fade behind them.
@@ -102,6 +110,13 @@ export function createSplash(): SplashOverlay {
       if (el && state === 'ready') {
         el.classList.add('ready')
         wireButtons()
+        // Auto-skip for returning users — no Enter click required.
+        // First-time visitors see the Enter button and must click.
+        let hasSeenIntro = false
+        try { hasSeenIntro = localStorage.getItem(SEEN_INTRO_KEY) === '1' } catch { /* ignore */ }
+        if (hasSeenIntro) {
+          autoEnterTimer = setTimeout(() => doEnter(), AUTO_ENTER_DELAY_MS)
+        }
       }
     },
 

@@ -57,9 +57,10 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
     progress(100)
 
     // ── Splash → Enter → reveal 3D scene ──
-    // NO auto-enter — user MUST click Enter. The 3D scene loads behind
-    // the splash but stays hidden until Enter is pressed.
-    // jlz:webgl-ready fires when entering starts (for NoiseText animation).
+    // First-time visitors MUST click Enter. Returning users (localStorage
+    // 'jlz:seen-intro' set) auto-enter after 1.2s — see splash.ts
+    // setState('ready'). jlz:webgl-ready fires when entering starts
+    // (for NoiseText animation).
 
     const INTRO_MS = 800
     const TITLE_START_MS = 300 // fire jlz:webgl-ready shortly after entering starts
