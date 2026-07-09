@@ -71,11 +71,15 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
     cssCodeSplit: true,
     rollupOptions: {
-      // Multi-page entry: splash (/) → app (/app) → landing (/landing).
-      // splash.html is the FCP-critical entry (~12KB inline). app.html is
+      // Multi-page entry: index (/) → app (/app) → landing (/landing).
+      // index.html is the FCP-critical splash (~12KB inline). app.html is
       // the full 3D experience. landing.html is the no-JS semantic fallback.
+      // Vite dev server serves index.html at / by default (no .html needed).
+      // app.html and landing.html are served at /app.html and /landing.html
+      // in dev; in build, they're at /app.html and /landing.html too
+      // (Vite preserves the filenames).
       input: {
-        splash: resolve(__dirname, 'splash.html'),
+        index: resolve(__dirname, 'index.html'),
         app: resolve(__dirname, 'app.html'),
         landing: resolve(__dirname, 'landing.html'),
       },
@@ -220,7 +224,7 @@ export default defineConfig({
       // HTML is hydrated by UIkit.init, not replaced).
       name: 'prerender-app',
       transformIndexHtml(html, ctx) {
-        // Only inject into app.html (not splash/landing).
+        // Only inject into app.html (not index/landing).
         if (!ctx.path.includes('app.html')) return html
         const sections = homePage()
         return html.replace(
