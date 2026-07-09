@@ -225,8 +225,8 @@ export class World extends THREE.Group {
       this.baku.update(deltaTime, this._renderer)
       // Update instanced particles (GPU drift) — frozen when idle
       updateInstancedParticles(deltaTime)
-      // DrawTrail only on works section (idx=4)
-      if (this.drawTrail && this._camera && this._currentSectionIndex === 4) {
+      // DrawTrail only on works section (idx=3 in 6-section layout)
+      if (this.drawTrail && this._camera && this._currentSectionIndex === 3) {
         this.drawTrail.update(deltaTime, this._camera)
       }
     }

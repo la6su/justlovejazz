@@ -27,7 +27,7 @@
 //   - .studio-title            — NoiseText animation target (UIkit heading
 //                                classes applied alongside for sizing/weight)
 //   - .jlz-scroll-hint*        — custom scroll indicator animation
-//   - .jlz-corner-label*       — custom positioning for flexible section
+//   - .jlz-corner-label*       — custom positioning (kept for future use)
 //   - .jlz-fs-*                — ProjectOverlay fullscreen styles
 //                                (defined in main.less, used by ProjectOverlay.ts)
 
@@ -120,19 +120,7 @@ export function homePage(): string {
         </div>
       </section>
 
-    <!-- 03: FLEXIBLE — pure 3D scene. Cube is hero. Minimal corner label only.
-         Animated text background + full-screen title texture rendered in WebGL.
-         Section is kept for scroll positioning only. -->
-      <section uk-height-viewport="expand: true"
-               class="uk-section uk-section-large" id="section-flexible" data-section="flexible">
-        <div class="uk-position-cover" data-dynamic-content>
-          <div class="jlz-corner-label" aria-hidden="true">
-            <p class="jlz-corner-label__hint">Drag the cube · Scroll to morph</p>
-          </div>
-        </div>
-      </section>
-
-    <!-- 04: CHALLENGE / WORKS — gallery, cube + carousel morph -->
+    <!-- 03: WORKS — gallery, cube + carousel morph -->
       <section uk-height-viewport="expand: true"
                class="uk-section uk-section-large" id="section-challenge" data-section="challenge">
         <div class="uk-position-cover" data-dynamic-content>
@@ -150,51 +138,7 @@ export function homePage(): string {
         </div>
       </section>
 
-    <!-- 05: INNOVATIVE — feature cards with glassmorphism -->
-      <section uk-height-viewport="expand: true"
-               class="uk-section uk-section-large" id="section-innovative" data-section="innovative">
-        <div class="uk-position-cover" data-dynamic-content>
-          <div class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-text-center uk-height-1-1">
-            <div class="uk-flex uk-flex-column uk-flex-middle uk-margin">
-              <h2 class="studio-title uk-heading-medium"
-                  data-content-id="innovative-title">Innovative</h2>
-              <p class="uk-text-lead" ${REVEAL}
-                 data-content-id="innovative-text">
-                We explore every edge of the platform — engineering
-                experiences that feel like stepping into another world.
-              </p>
-            </div>
-            <div class="uk-grid-small uk-child-width-1-3@m uk-grid-match" uk-grid>
-              <article class="uk-card uk-card-default uk-card-body uk-card-hover" ${REVEAL}>
-                <span class="uk-text-meta uk-text-bold">01</span>
-                <h3 class="uk-card-title">WebGPU Native</h3>
-                <p class="uk-text-meta">
-                  Compute shaders and render pipelines on the GPU.
-                  Native performance, zero plugins.
-                </p>
-              </article>
-              <article class="uk-card uk-card-default uk-card-body uk-card-hover" ${REVEAL}>
-                <span class="uk-text-meta uk-text-bold">02</span>
-                <h3 class="uk-card-title">Real-time Shaders</h3>
-                <p class="uk-text-meta">
-                  TSL node graphs compiled on the fly. Materials that
-                  react to light, sound, and gesture.
-                </p>
-              </article>
-              <article class="uk-card uk-card-default uk-card-body uk-card-hover" ${REVEAL}>
-                <span class="uk-text-meta uk-text-bold">03</span>
-                <h3 class="uk-card-title">Spatial Design</h3>
-                <p class="uk-text-meta">
-                  3D-first interfaces built for depth, parallax, and
-                  presence — not flat pages.
-                </p>
-              </article>
-            </div>
-          </div>
-        </div>
-      </section>
-
-    <!-- 06: CONTACT — large CTA, glass buttons -->
+    <!-- 04: CONTACT — large CTA, glass buttons -->
       <section uk-height-viewport="expand: true"
                class="uk-section uk-section-large" id="section-contact" data-section="contact">
         <div class="uk-position-cover" data-dynamic-content>
@@ -231,7 +175,7 @@ export function homePage(): string {
         </div>
       </section>
 
-    <!-- 07: PROCESS (secret right) — Workflow timeline & studio manifesto -->
+    <!-- 05: PROCESS (secret right) — Workflow timeline & studio manifesto -->
       <section uk-height-viewport="expand: true"
                class="uk-section uk-section-large" id="section-process" data-section="process">
         <div class="uk-position-cover" data-dynamic-content>
@@ -268,6 +212,27 @@ export function homePage(): string {
           </div>
         </div>
       </section>
+
+    <!-- ═══ Unified footer — shared across all pages ═══ -->
+    <footer class="jlz-footer uk-section uk-section-xsmall uk-text-center" data-footer>
+      <div class="uk-container uk-container-expand">
+        <div class="uk-flex uk-flex-middle uk-flex-between uk-flex-wrap uk-child-width-auto">
+          <a class="uk-navbar-item uk-logo jlz-brand" href="/" aria-label="JUSTLOVEJAZZ home">l@6</a>
+          <ul class="uk-subnav uk-subnav-divider uk-margin-remove">
+            <li><a href="/">Home</a></li>
+            <li><a href="/#section-about">About</a></li>
+            <li><a href="/#section-challenge">Works</a></li>
+            <li><a href="/#section-contact">Contact</a></li>
+          </ul>
+          <ul class="uk-iconnav">
+            <li><a href="https://github.com" target="_blank" rel="noopener" aria-label="GitHub" uk-icon="icon: github"></a></li>
+            <li><a href="https://twitter.com" target="_blank" rel="noopener" aria-label="Twitter" uk-icon="icon: twitter"></a></li>
+            <li><a href="mailto:hello@justlovejazz.com" aria-label="Email" uk-icon="icon: mail"></a></li>
+          </ul>
+        </div>
+        <p class="uk-text-meta uk-margin-small-top uk-margin-remove-bottom">© 2026 JUSTLOVEJAZZ — Crafted with glass, motion, and light.</p>
+      </div>
+    </footer>
   `
 }
 
@@ -299,6 +264,27 @@ export function renderMusicPage(): string {
           </div>
         </div>
       </section>
+
+    <!-- ═══ Unified footer — shared across all pages ═══ -->
+    <footer class="jlz-footer uk-section uk-section-xsmall uk-text-center" data-footer>
+      <div class="uk-container uk-container-expand">
+        <div class="uk-flex uk-flex-middle uk-flex-between uk-flex-wrap uk-child-width-auto">
+          <a class="uk-navbar-item uk-logo jlz-brand" href="/" aria-label="JUSTLOVEJAZZ home">l@6</a>
+          <ul class="uk-subnav uk-subnav-divider uk-margin-remove">
+            <li><a href="/">Home</a></li>
+            <li><a href="/#section-about">About</a></li>
+            <li><a href="/#section-challenge">Works</a></li>
+            <li><a href="/#section-contact">Contact</a></li>
+          </ul>
+          <ul class="uk-iconnav">
+            <li><a href="https://github.com" target="_blank" rel="noopener" aria-label="GitHub" uk-icon="icon: github"></a></li>
+            <li><a href="https://twitter.com" target="_blank" rel="noopener" aria-label="Twitter" uk-icon="icon: twitter"></a></li>
+            <li><a href="mailto:hello@justlovejazz.com" aria-label="Email" uk-icon="icon: mail"></a></li>
+          </ul>
+        </div>
+        <p class="uk-text-meta uk-margin-small-top uk-margin-remove-bottom">© 2026 JUSTLOVEJAZZ — Crafted with glass, motion, and light.</p>
+      </div>
+    </footer>
     </article>
   `
 }
@@ -318,7 +304,28 @@ export function renderVideosPage(): string {
                 <h2 class="uk-card-title">${title}</h2>
                 <p class="uk-text-meta">Cinematic live capture with reactive light and spatial sound.</p>
                 <a class="uk-button uk-button-text" href="/videos">Watch</a>
-              </article>
+          
+    <!-- ═══ Unified footer — shared across all pages ═══ -->
+    <footer class="jlz-footer uk-section uk-section-xsmall uk-text-center" data-footer>
+      <div class="uk-container uk-container-expand">
+        <div class="uk-flex uk-flex-middle uk-flex-between uk-flex-wrap uk-child-width-auto">
+          <a class="uk-navbar-item uk-logo jlz-brand" href="/" aria-label="JUSTLOVEJAZZ home">l@6</a>
+          <ul class="uk-subnav uk-subnav-divider uk-margin-remove">
+            <li><a href="/">Home</a></li>
+            <li><a href="/#section-about">About</a></li>
+            <li><a href="/#section-challenge">Works</a></li>
+            <li><a href="/#section-contact">Contact</a></li>
+          </ul>
+          <ul class="uk-iconnav">
+            <li><a href="https://github.com" target="_blank" rel="noopener" aria-label="GitHub" uk-icon="icon: github"></a></li>
+            <li><a href="https://twitter.com" target="_blank" rel="noopener" aria-label="Twitter" uk-icon="icon: twitter"></a></li>
+            <li><a href="mailto:hello@justlovejazz.com" aria-label="Email" uk-icon="icon: mail"></a></li>
+          </ul>
+        </div>
+        <p class="uk-text-meta uk-margin-small-top uk-margin-remove-bottom">© 2026 JUSTLOVEJAZZ — Crafted with glass, motion, and light.</p>
+      </div>
+    </footer>
+    </article>
             `).join('')}
           </div>
         </div>
@@ -331,6 +338,27 @@ export function renderVideosPage(): string {
           <a class="uk-button uk-button-default uk-margin-medium-top" href="/videos">Open Archive</a>
         </div>
       </section>
+
+    <!-- ═══ Unified footer — shared across all pages ═══ -->
+    <footer class="jlz-footer uk-section uk-section-xsmall uk-text-center" data-footer>
+      <div class="uk-container uk-container-expand">
+        <div class="uk-flex uk-flex-middle uk-flex-between uk-flex-wrap uk-child-width-auto">
+          <a class="uk-navbar-item uk-logo jlz-brand" href="/" aria-label="JUSTLOVEJAZZ home">l@6</a>
+          <ul class="uk-subnav uk-subnav-divider uk-margin-remove">
+            <li><a href="/">Home</a></li>
+            <li><a href="/#section-about">About</a></li>
+            <li><a href="/#section-challenge">Works</a></li>
+            <li><a href="/#section-contact">Contact</a></li>
+          </ul>
+          <ul class="uk-iconnav">
+            <li><a href="https://github.com" target="_blank" rel="noopener" aria-label="GitHub" uk-icon="icon: github"></a></li>
+            <li><a href="https://twitter.com" target="_blank" rel="noopener" aria-label="Twitter" uk-icon="icon: twitter"></a></li>
+            <li><a href="mailto:hello@justlovejazz.com" aria-label="Email" uk-icon="icon: mail"></a></li>
+          </ul>
+        </div>
+        <p class="uk-text-meta uk-margin-small-top uk-margin-remove-bottom">© 2026 JUSTLOVEJAZZ — Crafted with glass, motion, and light.</p>
+      </div>
+    </footer>
     </article>
   `
 }
@@ -368,6 +396,27 @@ export function renderShowsPage(): string {
           <a class="uk-button uk-button-default uk-margin-medium-top" href="/shows">Book A Show</a>
         </div>
       </section>
+
+    <!-- ═══ Unified footer — shared across all pages ═══ -->
+    <footer class="jlz-footer uk-section uk-section-xsmall uk-text-center" data-footer>
+      <div class="uk-container uk-container-expand">
+        <div class="uk-flex uk-flex-middle uk-flex-between uk-flex-wrap uk-child-width-auto">
+          <a class="uk-navbar-item uk-logo jlz-brand" href="/" aria-label="JUSTLOVEJAZZ home">l@6</a>
+          <ul class="uk-subnav uk-subnav-divider uk-margin-remove">
+            <li><a href="/">Home</a></li>
+            <li><a href="/#section-about">About</a></li>
+            <li><a href="/#section-challenge">Works</a></li>
+            <li><a href="/#section-contact">Contact</a></li>
+          </ul>
+          <ul class="uk-iconnav">
+            <li><a href="https://github.com" target="_blank" rel="noopener" aria-label="GitHub" uk-icon="icon: github"></a></li>
+            <li><a href="https://twitter.com" target="_blank" rel="noopener" aria-label="Twitter" uk-icon="icon: twitter"></a></li>
+            <li><a href="mailto:hello@justlovejazz.com" aria-label="Email" uk-icon="icon: mail"></a></li>
+          </ul>
+        </div>
+        <p class="uk-text-meta uk-margin-small-top uk-margin-remove-bottom">© 2026 JUSTLOVEJAZZ — Crafted with glass, motion, and light.</p>
+      </div>
+    </footer>
     </article>
   `
 }
@@ -390,7 +439,28 @@ export function renderNewsPage(): string {
                 <span class="uk-label">${category}</span>
                 <h2 class="uk-card-title uk-margin-top">${title}</h2>
                 <p class="uk-text-meta">Notes from experiments, shows, and production work.</p>
-              </article>
+          
+    <!-- ═══ Unified footer — shared across all pages ═══ -->
+    <footer class="jlz-footer uk-section uk-section-xsmall uk-text-center" data-footer>
+      <div class="uk-container uk-container-expand">
+        <div class="uk-flex uk-flex-middle uk-flex-between uk-flex-wrap uk-child-width-auto">
+          <a class="uk-navbar-item uk-logo jlz-brand" href="/" aria-label="JUSTLOVEJAZZ home">l@6</a>
+          <ul class="uk-subnav uk-subnav-divider uk-margin-remove">
+            <li><a href="/">Home</a></li>
+            <li><a href="/#section-about">About</a></li>
+            <li><a href="/#section-challenge">Works</a></li>
+            <li><a href="/#section-contact">Contact</a></li>
+          </ul>
+          <ul class="uk-iconnav">
+            <li><a href="https://github.com" target="_blank" rel="noopener" aria-label="GitHub" uk-icon="icon: github"></a></li>
+            <li><a href="https://twitter.com" target="_blank" rel="noopener" aria-label="Twitter" uk-icon="icon: twitter"></a></li>
+            <li><a href="mailto:hello@justlovejazz.com" aria-label="Email" uk-icon="icon: mail"></a></li>
+          </ul>
+        </div>
+        <p class="uk-text-meta uk-margin-small-top uk-margin-remove-bottom">© 2026 JUSTLOVEJAZZ — Crafted with glass, motion, and light.</p>
+      </div>
+    </footer>
+    </article>
             `).join('')}
           </div>
         </div>
@@ -402,6 +472,27 @@ export function renderNewsPage(): string {
           <p class="uk-text-lead uk-margin-large-top">Short-form writing about tools, releases, visual systems, and the decisions behind the work.</p>
         </div>
       </section>
+
+    <!-- ═══ Unified footer — shared across all pages ═══ -->
+    <footer class="jlz-footer uk-section uk-section-xsmall uk-text-center" data-footer>
+      <div class="uk-container uk-container-expand">
+        <div class="uk-flex uk-flex-middle uk-flex-between uk-flex-wrap uk-child-width-auto">
+          <a class="uk-navbar-item uk-logo jlz-brand" href="/" aria-label="JUSTLOVEJAZZ home">l@6</a>
+          <ul class="uk-subnav uk-subnav-divider uk-margin-remove">
+            <li><a href="/">Home</a></li>
+            <li><a href="/#section-about">About</a></li>
+            <li><a href="/#section-challenge">Works</a></li>
+            <li><a href="/#section-contact">Contact</a></li>
+          </ul>
+          <ul class="uk-iconnav">
+            <li><a href="https://github.com" target="_blank" rel="noopener" aria-label="GitHub" uk-icon="icon: github"></a></li>
+            <li><a href="https://twitter.com" target="_blank" rel="noopener" aria-label="Twitter" uk-icon="icon: twitter"></a></li>
+            <li><a href="mailto:hello@justlovejazz.com" aria-label="Email" uk-icon="icon: mail"></a></li>
+          </ul>
+        </div>
+        <p class="uk-text-meta uk-margin-small-top uk-margin-remove-bottom">© 2026 JUSTLOVEJAZZ — Crafted with glass, motion, and light.</p>
+      </div>
+    </footer>
     </article>
   `
 }
@@ -432,6 +523,27 @@ export function renderAboutPage(): string {
           </ul>
         </div>
       </section>
+
+    <!-- ═══ Unified footer — shared across all pages ═══ -->
+    <footer class="jlz-footer uk-section uk-section-xsmall uk-text-center" data-footer>
+      <div class="uk-container uk-container-expand">
+        <div class="uk-flex uk-flex-middle uk-flex-between uk-flex-wrap uk-child-width-auto">
+          <a class="uk-navbar-item uk-logo jlz-brand" href="/" aria-label="JUSTLOVEJAZZ home">l@6</a>
+          <ul class="uk-subnav uk-subnav-divider uk-margin-remove">
+            <li><a href="/">Home</a></li>
+            <li><a href="/#section-about">About</a></li>
+            <li><a href="/#section-challenge">Works</a></li>
+            <li><a href="/#section-contact">Contact</a></li>
+          </ul>
+          <ul class="uk-iconnav">
+            <li><a href="https://github.com" target="_blank" rel="noopener" aria-label="GitHub" uk-icon="icon: github"></a></li>
+            <li><a href="https://twitter.com" target="_blank" rel="noopener" aria-label="Twitter" uk-icon="icon: twitter"></a></li>
+            <li><a href="mailto:hello@justlovejazz.com" aria-label="Email" uk-icon="icon: mail"></a></li>
+          </ul>
+        </div>
+        <p class="uk-text-meta uk-margin-small-top uk-margin-remove-bottom">© 2026 JUSTLOVEJAZZ — Crafted with glass, motion, and light.</p>
+      </div>
+    </footer>
     </article>
   `
 }
@@ -462,6 +574,27 @@ export function renderGalleryPage(): string {
           <p class="uk-text-lead uk-margin-large-top">Image groups for future case studies: glass, typography, stage identity, and experimental WebGPU sketches.</p>
         </div>
       </section>
+
+    <!-- ═══ Unified footer — shared across all pages ═══ -->
+    <footer class="jlz-footer uk-section uk-section-xsmall uk-text-center" data-footer>
+      <div class="uk-container uk-container-expand">
+        <div class="uk-flex uk-flex-middle uk-flex-between uk-flex-wrap uk-child-width-auto">
+          <a class="uk-navbar-item uk-logo jlz-brand" href="/" aria-label="JUSTLOVEJAZZ home">l@6</a>
+          <ul class="uk-subnav uk-subnav-divider uk-margin-remove">
+            <li><a href="/">Home</a></li>
+            <li><a href="/#section-about">About</a></li>
+            <li><a href="/#section-challenge">Works</a></li>
+            <li><a href="/#section-contact">Contact</a></li>
+          </ul>
+          <ul class="uk-iconnav">
+            <li><a href="https://github.com" target="_blank" rel="noopener" aria-label="GitHub" uk-icon="icon: github"></a></li>
+            <li><a href="https://twitter.com" target="_blank" rel="noopener" aria-label="Twitter" uk-icon="icon: twitter"></a></li>
+            <li><a href="mailto:hello@justlovejazz.com" aria-label="Email" uk-icon="icon: mail"></a></li>
+          </ul>
+        </div>
+        <p class="uk-text-meta uk-margin-small-top uk-margin-remove-bottom">© 2026 JUSTLOVEJAZZ — Crafted with glass, motion, and light.</p>
+      </div>
+    </footer>
     </article>
   `
 }
@@ -495,6 +628,27 @@ function albumCard(title: string, meta: string, tracks: string[]): string {
         ${tracks.map((track, index) => `<li>(${index + 1}) ${track}</li>`).join('')}
       </ul>
       <a class="uk-button uk-button-text" href="/music">Listen Now</a>
+
+    <!-- ═══ Unified footer — shared across all pages ═══ -->
+    <footer class="jlz-footer uk-section uk-section-xsmall uk-text-center" data-footer>
+      <div class="uk-container uk-container-expand">
+        <div class="uk-flex uk-flex-middle uk-flex-between uk-flex-wrap uk-child-width-auto">
+          <a class="uk-navbar-item uk-logo jlz-brand" href="/" aria-label="JUSTLOVEJAZZ home">l@6</a>
+          <ul class="uk-subnav uk-subnav-divider uk-margin-remove">
+            <li><a href="/">Home</a></li>
+            <li><a href="/#section-about">About</a></li>
+            <li><a href="/#section-challenge">Works</a></li>
+            <li><a href="/#section-contact">Contact</a></li>
+          </ul>
+          <ul class="uk-iconnav">
+            <li><a href="https://github.com" target="_blank" rel="noopener" aria-label="GitHub" uk-icon="icon: github"></a></li>
+            <li><a href="https://twitter.com" target="_blank" rel="noopener" aria-label="Twitter" uk-icon="icon: twitter"></a></li>
+            <li><a href="mailto:hello@justlovejazz.com" aria-label="Email" uk-icon="icon: mail"></a></li>
+          </ul>
+        </div>
+        <p class="uk-text-meta uk-margin-small-top uk-margin-remove-bottom">© 2026 JUSTLOVEJAZZ — Crafted with glass, motion, and light.</p>
+      </div>
+    </footer>
     </article>
   `
 }

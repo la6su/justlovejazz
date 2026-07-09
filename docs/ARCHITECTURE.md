@@ -31,21 +31,19 @@ canvas (z-index:1, fixed, pointer-events:none) — 3D scene
 .custom-cursor (z-index:100000) — above all overlays
 ```
 
-## Sections (8)
+## Sections (6) — 1:1 with cube faces
 
-| Idx | Section | 3D content | BG pattern | Theme |
-| --- | --- | --- | --- | --- |
-| 0 | Lab (secret left) | `makeParticles` | Light blue-grey HSV | light |
-| 1 | Intro (start) | SplashCube + particles | HSV rainbow (light) | light |
-| 2 | About | Particles + WireframeTypography | Grey gradient | dark |
-| 3 | Flexible | Particles | Dark purple gradient | dark |
-| 4 | Works | BakuCarousel + DrawTrail + particles | Blue-grey gradient | dark |
-| 5 | Innovative | Particles | Center glow | dark |
-| 6 | Contact | Particles | Off-white gradient | light |
-| 7 | Process (secret right) | `makeParticles` | Deep blue-black gradient | dark |
+| Idx | Section | Cube face | 3D content | BG pattern | Theme |
+| --- | --- | --- | --- | --- | --- |
+| 0 | Lab (secret left) | Top (+Y) | `makeParticles` | Light blue-grey HSV | light |
+| 1 | Intro (start) | Front (+Z) | SplashCube + particles | HSV rainbow (light) | light |
+| 2 | About | Right (+X) | Particles + WireframeTypography | Grey gradient | dark |
+| 3 | Works | Back (-Z) | BakuCarousel + DrawTrail + particles | Blue-grey gradient | dark |
+| 4 | Contact | Bottom (-Y) | Particles | Off-white gradient | light |
+| 5 | Process (secret right) | Left (-X) | `makeParticles` | Deep blue-black gradient | dark |
 
 World starts on section 1 (Intro). EnvSphere starts on section 1.
-Light sections (1, 6) toggle `light-theme` body class → dark text/nav.
+Light sections (0, 1, 4) toggle `uk-light` body class via ThemeManager → dark text/nav.
 
 ## Visual tiers
 
@@ -61,19 +59,19 @@ SplashCube is identical on both paths. `isRealWebGPU` still drives `RenderPipeli
 ## Navigation
 
 **JoystickNav** — pure DOM joystick (bottom-center). Trigger model: one section per drag.
-- Vertical drag (up/down): cycle 6 MAIN sections (Intro→About→…→Contact)
+- Vertical drag (up/down): cycle 4 MAIN sections (Intro→About→Works→Contact)
 - Horizontal drag (left/right): toggle to SECRET side sections (Lab ← center → Process)
 - `TRIGGER_DISTANCE = 35px` — drag past threshold fires ONE section change, ball snaps back
 - `DEAD_ZONE = 6px` — small movements ignored
 - Keyboard: ArrowUp/Down/Left/Right, Home (→ Intro), End (→ Contact)
 - `isActive()` true for ~400ms after trigger (feeds `_needsRender`)
 - `goToSection(i)` — public, used by UIMenu + DevPanel
-- Constructor: `new JoystickNav(scene, camera, 8 /* sectionCount */, { sectionLabels })`
+- Constructor: `new JoystickNav(scene, camera, 6 /* sectionCount */, { sectionLabels })`
 - NO three-joystick import — pure DOM (pointerdown/move/up + keyboard)
 
-**UIMenu** — UIkit modal (`uk-modal`). Hamburger `uk-toggle` opens. 8 section links.
+**UIMenu** — UIkit modal (`uk-modal`). Hamburger `uk-toggle` opens. 7 page links + 4 section slider + theme toggle.
 
-**BakuCarousel** — Works §4. Cube morphs into ring. Card click (raycast) → overlay.
+**BakuCarousel** — Works §3. Cube morphs into ring. Card click (raycast) → overlay.
 - `isAnimating` getter — true when morphing/scrolling (feeds `_needsRender`).
 - Scroll/drag blocked while JoystickNav active.
 
@@ -107,17 +105,15 @@ Cursor (DOM) always updates — not gated by `_needsRender`.
 | `frustumCulled` | `false` |
 | `renderOrder` | `-1000` (renders first) |
 | `attachToScene()` | no-op (mesh is visible — `scene.background` NOT set) |
-| Initial weights | `[0, 1, 0, 0, 0, 0, 0, 0]` — starts on section 1 (Intro) |
+| Initial weights | `[0, 1, 0, 0, 0, 0]` — starts on section 1 (Intro) |
 
-8 per-section patterns (mixed by animated `uSection` weights, lerped over ~0.3s):
+6 per-section patterns (mixed by animated `uSection` weights, lerped over ~0.3s):
 - sec0 (Lab) — light blue-grey HSV (`hue: 0.6, sat: 0.06, val: 0.88`)
 - sec1 (Intro) — HSV rainbow gradient (animated, low saturation, high value)
 - sec2 (About) — grey gradient (`0x1a1a1a → 0x2e2e2e`)
-- sec3 (Flexible) — dark purple gradient (`0x141414 → 0x222232`)
-- sec4 (Works) — dark blue-grey gradient (`0x1a1a22 → 0x2a2a3a`)
-- sec5 (Innovative) — dark base + radial center glow (`0x2a3a4a`)
-- sec6 (Contact) — light off-white gradient (`0xe8e8e8 → 0xd8d8d8`)
-- sec7 (Process) — deep blue-black gradient (`0x080810 → 0x12121e`)
+- sec3 (Works) — dark blue-grey gradient (`0x1a1a22 → 0x2a2a3a`)
+- sec4 (Contact) — light off-white gradient (`0xe8e8e8 → 0xd8d8d8`)
+- sec5 (Process) — deep blue-black gradient (`0x080810 → 0x12121e`)
 
 `changeSection(idx)` → `_targetWeights[idx]=1, others=0` → lerped in `update()`.
 Canvas redrawn when dirty, or every ~200ms for animated patterns (HSV).

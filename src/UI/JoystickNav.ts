@@ -25,11 +25,11 @@ export interface JoystickNavOptions {
   sectionLabels: string[]
 }
 
-// WorldConfig section indices (8 total: Lab=0, Intro=1, ..., Contact=6, Process=7)
+// WorldConfig section indices (6 total: Lab=0, Intro=1, About=2, Works=3, Contact=4, Process=5)
 const LAB_INDEX = 0
 const INTRO_INDEX = 1
-const CONTACT_INDEX = 6
-const PROCESS_INDEX = 7
+const CONTACT_INDEX = 4
+const PROCESS_INDEX = 5
 const FIRST_MAIN = INTRO_INDEX
 const LAST_MAIN = CONTACT_INDEX
 

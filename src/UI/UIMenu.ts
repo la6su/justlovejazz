@@ -8,7 +8,8 @@ export interface UIMenuOptions {
   sectionSubtitles?: string[]
 }
 
-const MAIN_SECTION_INDICES = [1, 2, 3, 4, 5, 6]
+// 4 main sections shown in the slider (Lab=0 and Process=5 are secret side sections)
+const MAIN_SECTION_INDICES = [1, 2, 3, 4]
 const PAGE_LINKS = [
   ['/', 'Home'],
   ['/music', 'Music'],

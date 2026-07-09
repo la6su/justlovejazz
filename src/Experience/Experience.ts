@@ -68,24 +68,22 @@ export class Experience {
   private static readonly AMBIENT_BREATH_INTERVAL = 2.5 // seconds between idle refresh frames
   private _reducedMotion = false // cached prefers-reduced-motion (updated in init)
 
+  // 6 sections — 1:1 with cube faces (4 main + Lab=0 secret left + Process=5 secret right)
   private static readonly SECTION_LABELS = [
-    'Lab',      // secret left — experiments
-    'Intro',
-    'About',
-    'Flexible',
-    'Works',
-    'Innovative',
-    'Contact',
-    'Process',  // secret right — workflow timeline
+    'Lab',      // 0: secret left — experiments (top face)
+    'Intro',    // 1: front face
+    'About',    // 2: right face
+    'Works',    // 3: back face
+    'Contact',  // 4: bottom face
+    'Process',  // 5: secret right — workflow (left face)
   ]
   private static readonly SECTION_SUBTITLES = [
     'Experiments & Lab',
     'Interactive 3D Experience',
     'Art meets technology',
-    'Adaptive workflows',
     'Curated projects',
-    'Pushing the frontier',
     'Build something extraordinary',
+    'How we work',
   ]
 
   constructor(_ui: UIManager) {
@@ -246,7 +244,7 @@ export class Experience {
     this.setupEnvironment()
 
     // JoystickNav — joystick-based section navigation (replaces CircularNav)
-    this._circNav = new JoystickNav(this.scene, this.camera.instance, 8, {
+    this._circNav = new JoystickNav(this.scene, this.camera.instance, 6, {
       sectionLabels: Experience.SECTION_LABELS,
     })
     this._circNav.onSectionChange((idx) => {
@@ -444,7 +442,7 @@ export class Experience {
     // See docs/UIKIT3.md §4 (theme toggle scope).
     const idx = this.world.currentSectionIndex
     if (document.body.dataset.page === 'home') {
-      const isLightSection = idx === 0 || idx === 1 || idx === 6
+      const isLightSection = idx === 0 || idx === 1 || idx === 4
       themeManager.setAutoTheme(isLightSection)
     }
     // Give World the camera ref for DrawTrail (once, after init).

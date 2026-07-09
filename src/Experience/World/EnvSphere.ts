@@ -37,8 +37,8 @@ const CANVAS_H = 512   // was 1024
 // which switches DOM text to DARK. So those sections need LIGHT backgrounds
 // (for dark text contrast). Other sections use DARK backgrounds (for light text).
 //
-// Light sections (idx 0, 5): luminance ~0.75-0.85 → dark text contrast > 7:1
-// Dark sections  (idx 1,2,3,4): luminance ~0.10-0.18 → light text contrast > 10:1
+// Light sections (idx 0, 1, 4): luminance ~0.75-0.98 → dark text contrast > 7:1
+// Dark sections  (idx 2, 3, 5): luminance ~0.05-0.18 → light text contrast > 10:1
 const SECTION_PATTERNS = [
   // 0: Lab (secret left) — LIGHT: subtle blue-grey HSV
   { type: 'hsv', hue: 0.6, sat: 0.06, val: 0.88 },
@@ -46,21 +46,17 @@ const SECTION_PATTERNS = [
   { type: 'hsv', hue: 0.0, sat: 0.02, val: 0.98 },
   // 2: About — DARK: grey gradient
   { type: 'gradient', color1: 0x1a1a1a, color2: 0x2e2e2e },
-  // 3: Flexible — DARK: dark purple gradient
-  { type: 'gradient', color1: 0x141414, color2: 0x222232 },
-  // 4: Works — DARK: dark blue-grey (gallery feel)
+  // 3: Works — DARK: dark blue-grey (gallery feel)
   { type: 'gradient', color1: 0x1a1a22, color2: 0x2a2a3a },
-  // 5: Innovative — DARK: dark with subtle center glow
-  { type: 'glow', glow: 0x2a3a4a },
-  // 6: Contact — LIGHT: soft off-white gradient (for dark text)
+  // 4: Contact — LIGHT: soft off-white gradient (for dark text)
   { type: 'gradient', color1: 0xe8e8e8, color2: 0xd8d8d8 },
-  // 7: Process (secret right) — DARK: deep blue-black
+  // 5: Process (secret right) — DARK: deep blue-black
   { type: 'gradient', color1: 0x080810, color2: 0x12121e },
 ] as const
 
 export class EnvSphere extends THREE.Mesh {
-  private _sectionWeights: number[] = [0, 1, 0, 0, 0, 0, 0, 0]  // start on section 1 (intro)
-  private _targetWeights: number[] = [0, 1, 0, 0, 0, 0, 0, 0]
+  private _sectionWeights: number[] = [0, 1, 0, 0, 0, 0]  // start on section 1 (intro)
+  private _targetWeights: number[] = [0, 1, 0, 0, 0, 0]
   private _time = 0
   private _canvas: HTMLCanvasElement
   private _ctx: CanvasRenderingContext2D
@@ -224,20 +220,6 @@ export class EnvSphere extends THREE.Mesh {
         grad.addColorStop(0, `#${c1.getHexString()}`)
         grad.addColorStop(1, `#${c2.getHexString()}`)
         ctx.fillStyle = grad
-        ctx.fillRect(0, 0, w, h)
-        break
-      }
-      case 'glow': {
-        // sec5 — dark with subtle center glow
-        const base = new THREE.Color(0x141414)
-        const glow = new THREE.Color(pattern.glow)
-        ctx.fillStyle = `#${base.getHexString()}`
-        ctx.fillRect(0, 0, w, h)
-        // Radial glow at center
-        const rg = ctx.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w * 0.4)
-        rg.addColorStop(0, `rgba(${glow.r * 255 | 0},${glow.g * 255 | 0},${glow.b * 255 | 0},0.4)`)
-        rg.addColorStop(1, `rgba(${glow.r * 255 | 0},${glow.g * 255 | 0},${glow.b * 255 | 0},0)`)
-        ctx.fillStyle = rg
         ctx.fillRect(0, 0, w, h)
         break
       }
