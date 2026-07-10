@@ -1,362 +1,69 @@
 # CHANGELOG
 
-## 2026-07-12 (PR-2 to PR-6)
+## 2026-07-12 — Multi-page architecture + code review fixes
 
-### P0 fixes + real 3-mode ThemeManager
+### Architecture
+- Multi-page: splash (/) → app (/app) → blog (/blog + /blog/[slug]) → landing (/landing)
+- Vite multi-page input (index + app + landing + blog + 4 articles)
+- Splash: inline CSS+JS ~15KB, FCP-critical. Config switchers (theme/sound). Enter → /app
+- App loader: CRT curtains + progress bar (15→40→55→85→95→100%). 6s timeout fallback
+- Landing: prerendered semantic HTML5, UIkit3 + QF theme, no JS-dependent styles
+- Blog: 4 articles (2 case studies + 2 process notes), JSON-LD BlogPosting, OG/Twitter meta
 
-**PR-2: `@global-primary-background` = `@jlz-color-accent`**
-- `src/assets/_import.less` §3: added `@global-primary-background: @jlz-color-accent`
-  + `@global-primary-hover-background: @jlz-color-accent-hover`.
-- All ~30 QF references to `@global-primary-background` (button glow gradients,
-  alert-primary, marker, dotnav, subnav-pill, progress-bar, navbar-dropdown-nav,
-  icon-button, totop-hover) now resolve to JLZ accent #515d84 instead of
-  UIKit default blue #1e87f0.
-- Commit: `888e2ea`.
+### Theme
+- 2-mode: auto (global light) / inverse (global dark). YooTheme Pro approach
+- ThemeManager: global flip, not per-section. `setAutoTheme()` removed
+- EnvSphere: global theme sync (auto→Intro light pattern, inverse→About dark)
+- `_import.less`: `@global-primary-background = @jlz-color-accent` (QF anchor)
+- Removed: @button-*, @card-*, @progressbar-* overrides (QF handles via @global-*)
 
-**PR-4: removed `three-joystick` (dead dependency)**
-- `bun remove three-joystick` — package was in dependencies but never imported.
-- RULES.md §43 explicitly forbids the import; JoystickNav is pure DOM.
-- Commit: `2b016dd`.
+### Navigation
+- Cube-map layout on ALL pages: 0=secret, 1=intro(start), 2-4=main, 5=secret
+- Vertical cycles 1-4, horizontal toggles 0/5 (same as home Lab↔Process)
+- Slider nav: per-page labels (PAGE_SLIDER_LABELS), visible on all app pages
+- Secret sections removed from UIMenu (hidden = hidden)
+- JoystickNav: `_navigateVertical` boundary fix (wasInSide capture)
 
-**PR-5: Subtitles hints — add lab/process, remove dead flexible/innovative**
-- `src/UI/Subtitles.ts`: removed `flexible`/`innovative` keys (sections don't
-  exist after 8→6 unification), added `lab`/`process` keys.
-- All 6 sections now have a hint. Secret side sections (Lab/Process) no longer
-  silent on visit.
-- Commit: `9a4d9f4`.
+### 3D
+- SplashCube: RoundedBoxGeometry (bevel 0.04) — smooth edges, no aliasing
+- CubeCamera restored (512×512) + material.envMap connected
+- MSAA 4× on scene WebGLRenderTarget (fixes edge aliasing on WebGL2)
+- Opener: scale pulse 1.0→1.3→1.0 (was broken — openerProgress never applied to mesh)
+- Particles: removed from 4 sections (kept only Intro + Works)
+- EnvSphere: removed per-section changeSection (global theme only)
+- BG.ts: deleted (dead computation, bg.color never read)
+- DrawTrail: renders on mousemove (Works section, rAF-throttled)
 
-**PR-6: real 3-mode ThemeManager (auto/light/dark) + prefers-color-scheme**
-- `src/core/ThemeManager.ts`: rewrote — `ThemeMode = 'auto' | 'light' | 'dark'`
-  (was `'normal' | 'inverse'`). `'auto'` follows per-section theme from
-  `setAutoTheme()`; `'light'`/`'dark'` force globally. Manual override wins
-  (setAutoTheme is no-op when mode !== 'auto'). First-visit: if no saved mode,
-  check `prefers-color-scheme: light` → start `'light'`; else `'auto'`.
-  Constructor now calls `apply()` (with document.body guard) so theme is
-  correct from first paint. `isInverse` kept as @deprecated alias.
-- `src/UI/UIMenu.ts`: replaced 1 "Change mode" button with 3 buttons
-  (Auto/Light/Dark) in `uk-button-group`. Click → `setMode(mode)`. Active
-  button gets `uk-active` + accent background. Removed `#jlz-theme-mode-label`.
-- `src/Experience/Experience.ts`: `jlz:theme-applied` listener —
-  `mode === 'normal'` → `mode === 'auto'` (3D sync only in forced light/dark,
-  not in auto where EnvSphere follows section).
-- `src/assets/main.less`: added `.jlz-theme-toggle .uk-button.uk-active` style
-  (accent background) + body.uk-light variant. Removed dead
-  `#jlz-theme-mode-label` style.
-- Docs: AGENTS.md, STATUS.md, ARCHITECTURE.md, RULES.md §45, UIKIT3.md §4/§4.1/§11
-  all updated to describe the 3-mode system.
-- Commit: `54f7ef8` + this docs-sync commit.
+### UI
+- Custom cursor: codrops-style (inner dot + noisy circle). Red on hover. Bump on click. Fill on hover. Magnetic snap to center (small elements). Follow mouse on large menu items
+- Dock: 2-row bottom bar (tools 70px + footer ~48px) on ALL pages. Joystick 110px, centered
+- Subtitles: NoiseText scramble on [data-eyebrow] (merged with old .jlz-eyebrow)
+- Services + Manifesto: cube-map layout, mobile-first content, PROCESS_STEPS shared
 
-**Why the 2-mode → 3-mode swap:** RULES.md §45 and STATUS.md had described a
-3-mode system since 2026-07-11, but the code only ever implemented 2-mode
-(normal/inverse). PR-1 (docs-reconciliation) aligned docs to the 2-mode
-reality. PR-6 now brings the CODE up to the originally-intended 3-mode design
-(docs match code again, but now at the higher-fidelity 3-mode level).
+### Code review fixes (code-review-skill)
+- Experience.destroy(): clear window.experience + Experience.instance + cancel rAF
+- Dead code: setAutoTheme, jlj:navigate, JoystickNavOptions, UIMenuOptions.sectionLabels
+- EventBus: jlz:route-change added to AppEvents
 
-**Verification (all PRs):** lint 0 errors (59 pre-existing warnings),
-type-check 0 errors, build green (~2s), 25/25 tests pass.
+### Ponytail audit (~315 LOC removed)
+- Dead presets (sec_flexible/sec_innovative) in PostProcessingManager + Lights
+- StateBus: snapshot/hasAnimations/activeAnimations/reset
+- DeviceCapability: 6 dead TierConfig fields + 2 dead methods
+- makeInstancedParticles: 2 no-ops + World.ts caller
+- 6 barrel index.ts files (sections)
+- Noise.ts: dead fade/lerp/grad/noise4d (kept organicValue)
+- landing.less: removed duplicates with UIKit base
+- UIManager: empty init() removed
 
----
+### Docs
+- 8 historical docs removed (AUDIT, STORYBOARD, IMPROVEMENT_PLAN, AUTONOMY, etc.)
+- AGENTS/STATUS/RULES/ARCHITECTURE/UIKIT3 rewritten — concise, LLM-optimized
+- CHANGELOG trimmed to latest entry
 
-## 2026-07-12 (docs-reconciliation)
+## 2026-07-11 — 8→6 section unification + uk-light theme
 
-### Documentation aligned with actual code state
-
-This is a **docs-only** commit — no source code changed. All claims in
-docs were verified against the actual code, and the docs were updated
-where they had drifted.
-
-**Key drift fixed:**
-
-- `AGENTS.md` — rewrote from scratch. Was still describing 8 sections
-  (Flexible/Innovative still listed); now correctly shows 6 sections
-  1:1 with cube faces. Added theme system (2-mode normal/inverse,
-  1 toggle button), 3 content pages (home/services/posts), 25 unit
-  tests (was claiming 54 with CircularNav legacy tests that no longer
-  exist).
-- `STATUS.md` — fixed:
-  - ThemeManager: `auto/light/dark` (3 modes, 3 buttons) →
-    `normal/inverse` (2 modes, 1 button)
-  - Content pages: `6 pages (services/cases/process/team/journal/contact)`
-    → `3 pages (home/services/posts)` with section breakdown
-  - Unit tests: `54 (CircularNav legacy…)` → `25 (Easings 10, EventBus
-    5, Noise 8, motionPolicy 2)`
-  - Dead code candidates: all previously-listed dead files were already
-    deleted in commit `a9bab24` — table now reflects this. Only
-    `projects/*.html` (446 LOC, user decision) and `three-joystick`
-    package.json dep (planned `bun remove`) remain.
-  - Router call: `setAutoTheme(false)` → `setAutoTheme(true)` (first
-    content-page section is light/inverse by design).
-- `ARCHITECTURE.md` — fixed:
-  - ThemeManager row: `auto/light/dark` → `normal/inverse`
-  - Router row: `6 content pages (services/cases/process/team/journal/contact)`
-    → `3 pages (home/services/posts)`
-  - Theme system section: full rewrite of the property table (modes,
-    toggle UI = 1 button, content page behavior, 3D sync description).
-- `RULES.md` §45 — rewrote the theme system rule: 3-mode → 2-mode
-  (normal/inverse), 3 buttons → 1 button, `setAutoTheme(false)` →
-  `setAutoTheme(true)`.
-- `UIKIT3.md`:
-  - §4 ThemeManager: `3 modes (auto/light/dark)` → `2 modes
-    (normal/inverse)`, `3 buttons (Auto/Light/Dark)` → `1 button
-    (Change mode)`.
-  - §4.1 Fix code example: `setAutoTheme(false)` → `setAutoTheme(true)`
-    (matches actual `router.ts` line 44).
-  - §4.1 Symptom: `/services, /cases, /process, /team, /journal, /contact`
-    → `/services, /posts`.
-  - §11 References: corrected file tree — `src/pages/sections/` →
-    `src/sections/`, `6 content page templates` → `2 (services, posts)`,
-    `src/pages/shared/` → `src/sections/_shared/`.
-
-**Why this matters:** the project is agent-driven (AGENTS.md is the LLM
-entry point). Stale docs cause agents to make wrong decisions. This
-commit restores the contract: docs match code.
-
-**Verification:** docs-only, no code change. `bun run lint && type-check
-&& build && test:unit` all still pass at the same baseline (25 tests,
-0 errors, 59 pre-existing warnings).
-
----
-
-## 2026-07-11 (post-audit)
-
-### 8→6 sections unification, uk-light theme system, mobile-first, BakuCarousel fixes, tokens merge
-
-This session consolidated the codebase around a 6-section cube model, replaced
-the custom theme override system with UIKit native inverse, and converted all
-sizing to rem units. Multiple BakuCarousel bugs from the 8→6 refactor were fixed.
-
-**8→6 sections — 1:1 with cube faces:**
-- Removed `Section3Flexible` (idx 3) and `Section5Innovative` (idx 5) from active code.
-  Files remain on disk as dead code (see `STATUS.md` → "Dead code candidates").
-- 6 sections × 6 cube faces (Lab=Top, Intro=Front, About=Right, Works=Back,
-  Contact=Bottom, Process=Left). SplashCube now rotates per section to show the
-  active face.
-- `WorldConfig.RAW` renumbered from 7 intervals to 5 (`/5` divisor, 6 buckets).
-- `SectionSceneFactory.SECTION_CREATORS[6]` — `createSection0,1,2,4,6,7` (creators
-  keep their original numbers; index 3 maps to `createSection4` = Works).
-- `Experience.ts` SECTION_LABELS/SUBTITLES trimmed to 6. `isLightSection` now
-  `idx === 0 || idx === 1 || idx === 4` (Lab/Intro/Contact).
-- `JoystickNav` CONTACT_INDEX 6→4, PROCESS_INDEX 7→5, sectionCount 8→6.
-- `UIMenu` MAIN_SECTION_INDICES `[1,2,3,4]` (was `[1,2,3,4,5,6]`).
-- `EnvSphere` 8→6 patterns (removed Flexible purple + Innovative glow).
-- Commits: `7e2f480`, `273684b`, `63c3729`.
-
-**UIKit native `uk-light` theme system (replaces custom overrides):**
-- `_import.less`: `@inverse-global-color-mode: none → light` (enables `uk-light` class).
-- New `src/core/ThemeManager.ts` — 2 modes (normal/inverse), localStorage
-  persistence, `jlz:theme-applied` event for 3D sync.
-- `UIMenu.ts`: 1-button toggle ("Change mode") in modal — calls
-  `themeManager.toggle()`, label shows Normal/Inverse.
-- `Experience.ts`: `themeManager.setAutoTheme(isLightSection)` on section change
-  (guarded with `data-page === 'home'`).
-- `router.ts`: `themeManager.setAutoTheme(true)` on content pages (first
-  section is light/inverse).
-- `entry-app.ts`: `themeManager.apply()` on startup.
-- Removed 50+ LOC of `body.light-theme .uk-*` overrides from `main.less`.
-- 3D sync: in inverse mode, EnvSphere pattern flips to match the inverted
-  text color per section.
-- Commit: `59be014`.
-
-**Mobile-first rem-based sizing:**
-- `main.less`: `html { font-size: 0.85rem }` mobile → `1rem` ≥640px.
-- `master-quantum-flares/_import.less`: 76 px values converted to rem
-  (font-size, margin, gutter, control-height, box-shadow, border-radius).
-  7 hairline borders kept as px for crispness.
-- `@global-line-height: 1.7 → 1.5` (compact for mobile).
-- `@global-border-width: 2px → 1px` (modern).
-- `master-qf` colors mapped to `@jlz-*` tokens (single source of truth).
-- `@inverse-global-color-mode: dark → light` (matches ThemeManager).
-- Commit: `c8da0d9`.
-
-**Responsive sections:**
-- All home + content page sections: `class="uk-section uk-section-small
-  uk-section-medium@s uk-section-large@m"` (was `uk-section uk-section-large`).
-- Custom px padding on `.jlz-page-section` removed (UIKit handles natively).
-
-**BakuCarousel fixes (post-8→6 refactor):**
-- Section index 4→3 in `World.ts` (`sceneGroups[3]` for works) + `Experience.ts`
-  (`getCarousel()`). Commit: `273684b`.
-- Race condition in `Experience.ts`: `_bakuCarouselActive` was computed AFTER the
-  `_needsRender` check — on the frame when `setActive(true)` triggered, the stale
-  `false` value meant `world.update()` was skipped, so `carousel.update()` never
-  ran, and `morphT` stalled at ~0.35. Moved the `isAnimating` computation before
-  the `_needsRender` check. Commit: `63c3729`.
-- Also fixed hardcoded section indices (cursorFollow idx===4→3, `Math.min(idx+1,
-  7)→5`, drawTrail `fromIndex===4→3`).
-
-**Tokens merge (deduplication):**
-- `src/styles/tokens.less` → DELETED (content moved to `src/assets/_import.less`
-  §1 design tokens + §2 CSS custom properties).
-- `src/styles/` directory removed.
-- `master-quantum-flares/_import.less` de-duplicated: removed all UIKit globals
-  (`@global-font-family`, `@global-color`, `@global-background`, `@global-margin`,
-  `@global-gutter`, `@global-control-height`, `@inverse-global-color-mode`, etc.).
-  master-qf now only adds QF visual personality (font weights, status colors,
-  box-shadows, glitch/scanline effects). Commit: `63c3729`.
-
-**Studio portfolio content + footer + 3D↔theme sync:**
-- Home 6 sections reframed as a web design studio portfolio.
-- 6 content pages: services, cases, process, team, journal, contact (was QF
-  music-band theme).
-- `router.ts` ROUTES map updated: `/services /cases /process /team /journal /contact`.
-- `UIMenu` PAGE_LINKS updated: Home/Services/Work/Process/Team/Journal/Contact.
-- Unified footer: minimal bar (brand + 3 social icons), `position: fixed; bottom: 0`,
-  hidden on home where Contact section serves as the home footer.
-- Commit: `be233f8`.
-
-**Docs:**
-- All .md docs audited + updated for the 6-section, uk-light, mobile-first reality.
-- New `docs/AUDIT_2026-07-11.md` comprehensive audit report (LOC, files, structure,
-  current state, dead code candidates, doc status, recommendations).
-- `STATUS.md` rewritten (sections table 8→6, added ThemeManager + mobile-first +
-  content pages + footer rows, added "Dead code candidates" table).
-- `ARCHITECTURE.md` updated (z-index map includes footer + tm-header, added
-  ThemeManager + Router + Footer module rows, added 3 new events, added Theme
-  system + Mobile-first sizing sections, EnvSphere 8→6 patterns).
-- `RULES.md` updated: Rule 14 (6 section IDs + cube face mapping), Rule 34
-  (DrawTrail idx 3), Rule 37 (EnvSphere 6 patterns + `[0,1,0,0,0,0]`), Rule 40
-  (all 6 section creators), Rule 43 (JoystickNav 1-4 + Lab=0/Process=5). New
-  rules 45-48: uk-light theme system, mobile-first rem sizing, responsive
-  sections, tokens location.
-- `UIKIT3.md`: §4 verified (uk-light + ThemeManager), §10 added (mobile-first
-  rem sizing + px→rem conversion record), §3.1 updated (responsive section
-  classes), §1 updated (tokens location), §2 updated (mobile-first html
-  font-size, uk-light scoped overrides).
-- `ENVIRONMENT.md` + `JUNNI_REFERENCE.md` factual fixes (section count 8→6,
-  EnvSphere patterns 8→6, Contact section index 6→4).
-
----
-
-## 2026-07-11
-
-### Navigation rewrite — JoystickNav replaces CircularNav, 8 sections, SplashCube rewrite
-
-**JoystickNav (pure DOM, replaces CircularNav):**
-- `src/UI/JoystickNav.ts` — pure DOM joystick (no `three-joystick` library import).
-  Base + ball + hint, fixed bottom-center.
-- 2D navigation: vertical drag cycles 6 MAIN sections (Intro→About→…→Contact),
-  horizontal drag toggles to SECRET side sections (Lab ← center → Process).
-- Trigger model: ONE section change per drag (`TRIGGER_DISTANCE = 35px`). Ball snaps
-  back to center after trigger. `DEAD_ZONE = 6px` ignores micro-movements.
-- Keyboard: ArrowUp/Down/Left/Right, Home (→ Intro), End (→ Contact).
-- `isActive()` true for ~400ms after trigger (feeds `_needsRender`).
-- Constructor: `new JoystickNav(scene, camera, 8, { sectionLabels })`.
-
-**8 sections (was 6):**
-- Added `Section0Lab` (idx 0, secret left) and `Section7Process` (idx 7, secret right).
-- `WorldConfig.RAW` now has 8 entries. Ranges use `/7` divisor (8 buckets across 0..1).
-- `SectionSceneFactory.SECTION_CREATORS[8]` array — `createSection0` through `createSection7`.
-- World initial state: section 1 (Intro), NOT section 0. EnvSphere starts on section 1
-  (`_sectionWeights = [0, 1, 0, 0, 0, 0, 0, 0]`).
-
-**EnvSphere — 8 patterns:**
-- Added section 0 (Lab): light blue-grey HSV (`hue: 0.6, sat: 0.06, val: 0.88`).
-- Added section 7 (Process): deep blue-black gradient (`0x080810 → 0x12121e`).
-- Existing 6 patterns kept (intro HSV rainbow, about grey, flexible dark purple,
-  works blue-grey, innovative center glow, contact off-white).
-
-**SplashCube rewrite — single BoxGeometry + CubeCamera:**
-- Was: 6 separate plane faces with NodeMaterial + `attachWorldDNA` TSL nodes.
-- Now: single `BoxGeometry(1.6)` + `MeshPhysicalMaterial` (transmission=0, iridescence=1,
-  clearcoat=1, roughness=0.05, envMapIntensity=2.0).
-- Reflections: `CubeCamera` renders a content scene (6 gradient planes + Apple logo/text
-  textures) into `WebGLCubeRenderTarget(256)`, used as `material.envMap`.
-- Edges: `EdgesGeometry` from BoxGeometry with animated rainbow HSL vertex colors
-  (12 edges total, not 6×4=24 from separate planes).
-- Opener: scale pulse (single mesh — NOT face separation).
-- No premium/parity material split — same `MeshPhysicalMaterial` on both paths.
-  `worldDNA.ts` + `attachWorldDNA()` exist but are NOT called by SplashCube.
-
-**Subtitles — short UI hints per section:**
-- `src/UI/Subtitles.ts` — `.jlz-hint` bottom-center. Listens to `jlz:section-change`,
-  shows short hint ("Scroll to explore", "Drag · Click to open", etc.), auto-fades 4s.
-- Hints defined for: intro, about, flexible, challenge, innovative, contact (6 main sections).
-
-**Particle system — `makeParticles` (THREE.Points):**
-- `src/Sections/_shared/makeParticles.ts` — shared `THREE.Points` factory used by all 8
-  section creators.
-- Built-in `PointsMaterial` (NOT NodeMaterial — reduces WebGL2 uniform groups).
-- `baseOpacity` cached in `material.userData`. `frustumCulled = false`. Static when idle.
-- `makeInstancedParticles.ts` still exists (legacy) but is NOT used by section factories.
-
-**Removed (cleanup):**
-- `three-joystick` library import — JoystickNav is pure DOM.
-- `CircularNav` active usage — file kept as legacy but not imported by Experience.
-- `PerfMonitor`, `Bootstrapper`, `WorldAtmosphere`, `lenis` — confirmed gone from active code.
-
-**Docs:**
-- All 9 .md docs (AGENTS, README, STATUS, ARCHITECTURE, RULES, CHANGELOG, ENVIRONMENT,
-  AUTONOMY, JUNNI_REFERENCE) rewritten to reflect 8-section + JoystickNav + SplashCube
-  rewrite. Removed outdated premium/parity material split for SplashCube. Updated
-  navigation model, sections table, EnvSphere patterns, particle system description.
-
-## 2026-07-10
-
-### EnvSphere + WebGPU/WebGL2 parity + YAGNI cleanup
-
-**EnvSphere — procedural background:**
-- `src/Experience/World/EnvSphere.ts` — BackSide sphere mesh + `MeshBasicMaterial` +
-  procedural `CanvasTexture` (2048×1024, sRGB). `fog: false`, `depthTest: false`,
-  `depthWrite: false`, `frustumCulled: false`, `renderOrder=-1000`.
-- Per-section patterns mixed by animated `uSection` weights. Canvas redrawn when dirty
-  or every ~200ms for animated patterns.
-- Replaces `scene.background` Color and prior Atlas Aurora CanvasTexture.
-- `attachToScene()` is a no-op — mesh is visible, `scene.background` stays null.
-
-**WebGPU/WebGL2 color parity:**
-- WebGL2 `COMPOSITE_FSG` applies exact `sRGBTransferOETF` encode.
-- ACES epsilon fix (`+ 0.0001` in denominator) prevents NaN on black pixels.
-- Bloom bright-extract parity: `smoothstep(threshold, threshold+0.1, luminance)`.
-- Portable integer hash for film grain (NOT `sin()`-based — precision differs GLSL vs WGSL).
-
-**YAGNI cleanup:**
-- Deleted `PerfMonitor` (YAGNI). Inlined `Bootstrapper` into `main-app.ts`.
-- Inlined `WorldAtmosphere` into `World.ts`. Removed `World.advance` alias.
-- Removed `Section.switchViewingState` delegate. Simplified `SectionSceneFactory`.
-- Removed `lenis` dependency. Trimmed `WorldState` dead fields.
-
-**Fog parity:**
-- `World.ts` owns `scene.fog` (per-section `FogExp2`). `Renderer.ts` no longer overrides.
-
-**UI overhaul:**
-- `src/templates.ts` rewrite + `src/assets/main.less` §15 (+674 LOC): glassmorphism cards,
-  cinematic typography, stagger reveal, mix-weight taglines, section indices.
-
-## 2026-07-09
-
-### Premium WebGPU path + 21st.dev MCP integration
-
-- `DeviceCapability.isRealWebGPU` flag — set in `Renderer.init()` after backend detection.
-- `worldDNA` TSL shader: `attachWorldDNA()` connects 4 TSL nodes on real WebGPU.
-- Real glass transmission (`transmission=1.0`) on premium path via `MeshPhysicalNodeMaterial`.
-- Ambient breathing: 1-frame refresh every ~2.5s in idle. Respects `prefers-reduced-motion`.
-- 21st.dev MCP integration (API key `21st_sk_...`).
-
-## 2026-07-08
-
-### Event-driven animations + on-demand rendering
-
-- CircularNav (legacy, now replaced by JoystickNav): vertical drag, `goToDirection` public.
-- On-demand rendering: `_needsRender` flag gates `renderer.update()`. Zero draw calls when idle.
-- Event-driven animations: baku/particles/section.update all static when idle.
-- DrawTrail: Works section ONLY. CursorLight: DELETED. DebugStats: merged into DevPanel.
-- `CircularNav.test.ts` — 29 tests (state machine, direction regression, rapid swipe).
-- Vite HMR reload loop fixed (`block-vite-client` plugin, `?inline` CSS imports).
-
-## 2026-07-05
-
-### Dead-code purge + memory-leak fixes + proxy fixes
-
-- Deleted: SmoothScroll, CameraAnchors, BorderOverlay, FlexibleSlides, AssetManager, GPUResourceManager.
-- WorksPortfolio simplified 322→60 LOC (metadata-only).
-- Shared `MeshPhysicalNodeMaterial` (1 uniform group, not 6).
-- Built-in materials for particles/ground/cards.
-- `BakuCarousel.dispose()` called by `World.disposeSceneGroups()`.
-
-## 2026-06-28
-
-### Optimization sprints + a11y + SEO
-
-- `visibilitychange` pauses render loop. Lazy KTX2Loader. `disposeMaterialDeep()` util.
-- Prerendered home sections (SEO). a11y: skip-link, focus-trap, noscript.
-- TypeScript strict mode. ESLint 9 flat config + Prettier.
+- 8→6 sections (Flexible/Innovative removed)
+- UIKit native `uk-light` (replaced 50+ LOC custom overrides)
+- Mobile-first rem sizing
+- BakuCarousel race condition fixes
+- Design tokens merged into `_import.less`

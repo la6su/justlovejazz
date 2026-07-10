@@ -1,141 +1,95 @@
-# AGENTS.md — LLM entry point for justlovejazz. Read first.
+# AGENTS.md — LLM entry point. Read first.
 
-> Studio-grade 3D portfolio. Vite 8 + TypeScript strict + Three.js + UIkit 3. Single-page, **6 sections** (1:1 with cube faces).
+> Studio-grade 3D portfolio. Vite 8 + TypeScript strict + Three.js 0.184 + TSL + UIkit 3 + YooTheme Pro (Quantum Flares). Multi-page: splash → app → blog → landing.
+
+## Architecture
+
+```
+/            → index.html (splash, ~15KB inline, FCP-critical)
+/app         → app.html (3D experience, 6 cube-face sections)
+/app/services → services content page (6 sections, cube-map layout)
+/app/manifesto → manifesto content page (6 sections, cube-map layout)
+/blog        → blog.html (prerendered semantic HTML, SEO)
+/blog/[slug] → 4 articles (BlogPosting JSON-LD)
+/landing     → landing.html (no-JS fallback, semantic HTML5)
+```
 
 ## Docs (priority order)
 
 | File | Content | Read when |
 | --- | --- | --- |
 | [STATUS.md](docs/STATUS.md) ⭐ | Canonical state | **Always first** |
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Modules, render path, sections, background | Structure |
-| [RULES.md](docs/RULES.md) | Hard rules | Before changing code |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Modules, render path, sections | Structure |
+| [RULES.md](docs/RULES.md) | Hard rules (49 rules) | Before changing code |
 | [UIKIT3.md](docs/UIKIT3.md) | UIKit theming patterns + lessons | UI/theme changes |
-| [JUNNI_REFERENCE.md](docs/JUNNI_REFERENCE.md) | Patterns to port / NOT port | Adding section visuals |
-| [CHANGELOG.md](docs/CHANGELOG.md) | Recent merge log | History |
+| [CHANGELOG.md](docs/CHANGELOG.md) | Recent changes | History |
 
 ## Language
 
 User: Russian. Code/commits/docs: English.
 
-## Sections (6 total — 1:1 with cube faces)
+## Sections (6 — 1:1 with cube faces)
 
-| Idx | Section | Cube face | 3D content | BG pattern | Theme |
-| --- | --- | --- | --- | --- | --- |
-| 0 | Lab (secret left) | Top (+Y) | `makeParticles` (THREE.Points) | Light blue-grey HSV | light |
-| 1 | Intro (start) | Front (+Z) | SplashCube (baku) + particles | HSV rainbow (light) | light |
-| 2 | About | Right (+X) | Particles + WireframeTypography | Grey gradient | dark |
-| 3 | Works | Back (-Z) | BakuCarousel + DrawTrail + particles | Blue-grey gradient | dark |
-| 4 | Contact | Bottom (-Y) | Particles | Off-white gradient | light |
-| 5 | Process (secret right) | Left (-X) | `makeParticles` | Deep blue-black gradient | dark |
+| Idx | Section | Cube face | 3D content | Theme |
+| --- | --- | --- | --- | --- |
+| 0 | Lab (secret left) | Top (+Y) | — (clean) | light |
+| 1 | Intro (start) | Front (+Z) | SplashCube + particles | light |
+| 2 | About | Right (+X) | — (clean) | dark |
+| 3 | Works | Back (-Z) | BakuCarousel + DrawTrail + particles | dark |
+| 4 | Contact | Bottom (-Y) | — (clean) | light |
+| 5 | Process (secret right) | Left (-X) | — (clean) | dark |
 
-World initial state: **section 1 (Intro)**, not section 0. EnvSphere starts on section 1.
+World starts on **section 1 (Intro)**. Lab (0) and Process (5) are secret — reachable only via horizontal joystick drag. Same layout on ALL pages (home, services, manifesto): 0=secret, 1=intro(start), 2-4=main, 5=secret.
 
-> **History:** Originally 8 sections (Lab/Intro/About/Flexible/Works/Innovative/Contact/Process).
-> Unified to 6 in 2026-07-11 — Flexible and Innovative removed. Section3Flexible/Section5Innovative
-> directories + ShaderBackground.ts + CircularNav.ts were deleted in commit `a9bab24`.
+## Content pages (3)
 
-## Content pages (3 total — outside the SPA home)
-
-| Route | Page | Title |
+| Route | Page | Slider labels (idx 1-4) |
 | --- | --- | --- |
-| `/` | home | 3D cube experience (6 sections) |
-| `/services` | services | "What We Build" — services list + stack + process + contact + values |
-| `/posts` | posts | "Writing" — latest + featured + categories + contact + archive |
+| `/app` | home | Intro, About, Works, Contact |
+| `/app/services` | services | Intro, Capabilities, Stack, Process |
+| `/app/manifesto` | manifesto | Intro, Principles, Craft, Process |
 
-## Navigation model — JoystickNav (pure DOM, NOT three-joystick)
+## Navigation — JoystickNav (pure DOM, NOT three-joystick)
 
-| Surface | Role | API |
-| --- | --- | --- |
-| JoystickNav | DOM joystick (bottom-center). One section per drag (trigger model). | `goToSection(i)`, `goToDirection(±1)`, `isActive()`, `onSectionChange(cb)`, `onActiveChange(cb)` |
-| UIMenu | UIkit modal, hamburger button. 4 section slider items + 3 page links + 1 theme toggle button | `onNavigate(cb)`, `setActive(i)` |
-| BakuCarousel | Works §3 — cube morphs into ring. Card click → overlay | `onCardClick(cb)`, `isAnimating` |
-| Subtitles | `.jlz-hint` bottom-center, short UI hint per section, auto-fades 4s | Listens to `jlz:section-change` |
-
-**JoystickNav 2D navigation:**
-- Vertical (up/down): cycles 4 MAIN sections (Intro→About→Works→Contact)
-- Horizontal (left/right): toggles to SECRET side sections (Lab ← center → Process)
-- One action per drag, ball snaps back to center, no continuous scrub
-- Keyboard: ArrowUp/Down/Left/Right, Home (→ Intro), End (→ Contact)
-
-## Theme system — ThemeManager (3 modes: auto/light/dark)
-
-| Property | Value |
+| Action | Behavior (ALL pages) |
 | --- | --- |
-| File | `src/core/ThemeManager.ts` |
-| Modes | `'auto'` (default), `'light'`, `'dark'` |
-| Persistence | `localStorage('jlz:theme')` |
-| First-visit | If no saved mode, check `prefers-color-scheme: light` → start `'light'`; else `'auto'` |
-| Body class | `uk-light` toggled on `<body>` + `<html>` (UIKit native inverse) |
-| Auto source | `Experience.ts` calls `themeManager.setAutoTheme(isLightSection)` on home section change |
-| Content pages | `router.ts` calls `themeManager.setAutoTheme(true)` (first section is light) |
-| 3D sync | Dispatches `jlz:theme-applied` with `{isLight, mode}` — Experience listens; in forced light/dark mode, overrides EnvSphere pattern (light→Intro, dark→About) |
-| Toggle UI | **3 buttons** (Auto/Light/Dark) in `#jlz-menu-modal .jlz-theme-toggle` (`uk-button-group`) |
-| `_import.less` | `@inverse-global-color-mode: light` — generates `uk-light` class |
+| Vertical down | 1→2→3→4 (main cycle) |
+| Vertical up | 4→3→2→1 |
+| Horizontal left | → 0 (secret) |
+| Horizontal right | → 5 (secret) |
+| From secret, opposite | → middle |
+| Keyboard | ArrowUp/Down/Left/Right, Home (→1), End (→4) |
 
-> `auto` mode follows per-section theme from `setAutoTheme()` (Lab/Intro/Contact = light,
-> About/Works/Process = dark). `light`/`dark` modes force the theme globally —
-> `setAutoTheme()` becomes a no-op (manual override wins).
+## Theme — 2 modes (auto/inverse)
 
-## Visual tiers
+| Mode | Behavior |
+| --- | --- |
+| `auto` (default) | Global LIGHT — uk-light on body, dark text on light bg |
+| `inverse` | Global DARK — no uk-light, light text on dark bg |
 
-Gated by `DeviceCapability.isRealWebGPU` (set in `Renderer.init()` after backend detection):
+YooTheme Pro inverse approach — global flip, NOT per-section. `localStorage('jlz:theme')`. EnvSphere syncs: auto→Intro pattern (light), inverse→About pattern (dark). Toggle: 1 button in UIMenu.
 
-| Tier | Path | SplashCube | Background |
-| --- | --- | --- | --- |
-| **Premium** | Real WebGPU (WebGPUBackend, non-fallback adapter) | Same `MeshPhysicalMaterial` (transmission=0, iridescence=1) + CubeCamera envMap | EnvSphere (BackSide sphere + CanvasTexture) |
-| **Parity** | WebGL2 / WebGLBackend fallback / SwiftShader | Same `MeshPhysicalMaterial` + CubeCamera envMap | EnvSphere (BackSide sphere + CanvasTexture) |
+## QF theme principle
 
-> SplashCube is the SAME mesh on both paths: single `BoxGeometry` + `MeshPhysicalMaterial` + `CubeCamera` reflections + `EdgesGeometry` rainbow vertex-color edges. No `MeshPhysicalNodeMaterial`, no `attachWorldDNA` call (worldDNA.ts file kept but unused).
+`_import.less` §3 sets `@global-primary-background: @jlz-color-accent` (1 line). QF + UIKit globals manage ALL component styling (buttons, cards, navbar, glitch, glow). Do NOT override `@button-*`, `@card-*`, `@navbar-*` — let QF do its job. Custom styles only for what QF/UIKit don't provide (cursor, joystick, dock, text-shadow).
 
-## Key rules (see RULES.md for full list)
+## Key rules (see RULES.md for full 49)
 
-1. No raw ShaderMaterial in scene — TSL NodeMaterial only
-2. TSL NodeMaterial IS allowed (native WebGPU path)
-3. ONE shared NodeMaterial per multi-face object (not 6/8)
-4. Built-in materials for particles/ground/cards (reduce uniform groups)
-5. `setAnimationLoop` — not rAF
-6. Never remove SplashCube (baku)
-7. Single font: Inter
-8. NoiseText via `jlz:section-change` event (not IntersectionObserver)
-9. `import.meta.hot` — DON'T USE (breaks module loading through proxy)
-10. CSS imports use `?inline` suffix (prevents @vite/client injection)
-11. On-demand rendering: only render when `_needsRender=true`. Don't set it permanently.
-12. Event-driven animations: baku/particles/lights STATIC when idle.
-13. Ambient breathing: 1-frame refresh every ~2.5s in idle (respects reduced-motion).
-14. DrawTrail: Works section (idx=3) ONLY
-15. CursorLight: DELETED — don't re-add
-16. `server.hmr: false` + `block-vite-client` plugin in vite.config.ts
-17. Always verify: `bun run lint && bun run type-check && bun run build && bun run test:unit`
-18. **Background**: `EnvSphere` is sole background — visible BackSide sphere mesh
-    with procedural `CanvasTexture` (6 per-section patterns). `attachToScene()` is a
-    no-op. Do NOT set `scene.background`.
-19. **Post-processing parity**: WebGL2 composite shader and WebGPU TSL graph must
-    match bit-for-bit. Portable integer hash (NOT sin()), ACES epsilon (0.0001),
-    exact `sRGBTransferOETF`, BloomNode-matching smoothstep. See RULES.md §41.
-20. **Fog ownership**: `World.ts` owns `scene.fog` (per-section FogExp2).
-    `Renderer.ts` does NOT override fog.
-21. **Navigation**: JoystickNav is canonical (pure DOM, NO three-joystick library).
-    CircularNav is removed — do not re-add.
-22. **21st.dev MCP**: API key `21st_sk_...` (not `an_sk_...`). Endpoint
-    `https://21st.dev/api/mcp`. Free tier: 2 retrievals/day.
+1. No raw ShaderMaterial — TSL NodeMaterial only
+2. `setAnimationLoop` — not rAF
+3. `scene.background` — NOT set. EnvSphere is sole background
+4. Never remove SplashCube (baku)
+5. Single font: Inter
+6. On-demand rendering: `_needsRender` flag, event-driven
+7. CSS imports use `?inline` suffix
+8. `server.hmr: false` + `block-vite-client` plugin
+9. Always verify: `bun run lint && type-check && build && test:unit`
 
 ## Verification
 
 ```bash
-bun run lint         # 0 errors (warnings tracked, not blocking)
-bun run type-check   # 0 errors (strict)
-bun run build        # must pass (~3s)
-bun run test:unit    # 25 tests (Easings 10, EventBus 5, Noise 8, motionPolicy 2)
+bun run lint         # 0 errors (warnings tracked)
+bun run type-check   # 0 errors (strict + noUncheckedIndexedAccess)
+bun run build        # ~3s
+bun run test:unit    # 19 tests
 ```
-
-## 21st.dev MCP usage
-
-```bash
-curl -s -X POST https://21st.dev/api/mcp \
-  -H "x-api-key: 21st_sk_..." \
-  -H "Content-Type: application/json" \
-  -H "Accept: application/json, text/event-stream" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"search","arguments":{"query":"aurora background","limit":5}}}'
-```
-
-Already fetched: Atlas Aurora (id: 16166), Background Paper Shaders (id: 5732).

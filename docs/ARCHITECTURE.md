@@ -2,245 +2,114 @@
 
 Vite 8 · TypeScript strict · Three.js 0.184 + TSL · UIkit 3 + Less · bun.
 
-> **UIkit 3 theming layer**: see [`UIKIT3.md`](UIKIT3.md) — theme assembly,
-> section template, custom-vs-UIKit rules, and the hard-won lessons we
-> learned (blend-difference across stacking contexts, scrollspy+splash timing,
-> per-section theme overrides vs global `body.light-theme`, etc.).
+> UIKit theming: see [`UIKIT3.md`](UIKIT3.md). Hard rules: see [`RULES.md`](RULES.md).
 
 ## Entry
 
 ```
-index.html → entry-shell.ts → entry-app.ts → main-app.ts → Experience.ts
-Render: renderer.setAnimationLoop (pauses on hidden tab)
-CSS: import('./assets/main.less?inline') — prevents @vite/client injection
+index.html → splash-entry.ts (splash page, ~15KB inline)
+app.html → entry-shell.ts → entry-app.ts → main-app.ts → Experience.ts
+blog.html → standalone (prerendered semantic HTML)
+landing.html → standalone (no-JS fallback)
 ```
-
-`main-app.ts` inlines the former Bootstrapper (3 lines: new Experience + await init + onReady cb).
 
 ## Layout
 
 ```
 canvas (z-index:1, fixed, pointer-events:none) — 3D scene
-#spa-content (z-index:2) — DOM sections (absolute-stacked, 100dvh each)
-  .section-active { opacity:1; pointer-events:auto } — only visible section
-  [data-eyebrow] — NoiseText hint target (populated by Subtitles on section change)
+#spa-content (z-index:2) — DOM sections (absolute-stacked, 100dvh)
+  [data-eyebrow] — NoiseText hint target (Subtitles)
 .tm-header (z-index:1000) — top nav (uk-navbar + uk-slider)
-#joystick-nav (z-index:9999, fixed bottom-center) — JoystickNav DOM joystick
-#jlz-menu-toggle (z-index:10002) — hamburger button
-#jlz-menu-modal (z-index:10000) — UIkit modal (jump nav + theme toggle + secret sections)
+#joystick-nav (z-index:100, fixed) — JoystickNav (inside dock visually)
+#jlz-menu-modal (z-index:10000) — UIkit modal
 #project-overlay (z-index:3500) — fullscreen project detail
-.jlz-footer (z-index:50, fixed bottom) — brand + social (hidden on home)
-.custom-cursor (z-index:100000) — above all overlays
+.jlz-dock (z-index:50, fixed bottom) — 2-row: tools + footer
+.custom-cursor-inner/canvas (z-index:100000) — cursor
 ```
 
-## Sections (6) — 1:1 with cube faces
+## Sections (6) — cube-map layout (ALL pages)
 
-| Idx | Section | Cube face | 3D content | BG pattern | Theme |
-| --- | --- | --- | --- | --- | --- |
-| 0 | Lab (secret left) | Top (+Y) | `makeParticles` | Light blue-grey HSV | light |
-| 1 | Intro (start) | Front (+Z) | SplashCube + particles | HSV rainbow (light) | light |
-| 2 | About | Right (+X) | Particles + WireframeTypography | Grey gradient | dark |
-| 3 | Works | Back (-Z) | BakuCarousel + DrawTrail + particles | Blue-grey gradient | dark |
-| 4 | Contact | Bottom (-Y) | Particles | Off-white gradient | light |
-| 5 | Process (secret right) | Left (-X) | `makeParticles` | Deep blue-black gradient | dark |
+| Idx | Home | Services | Manifesto | Cube face |
+| --- | --- | --- | --- | --- |
+| 0 | Lab (secret) | Secret | Secret | Top (+Y) |
+| 1 | Intro (start) | Intro | Intro | Front (+Z) |
+| 2 | About | Capabilities | Principles | Right (+X) |
+| 3 | Works | Stack | Craft | Back (-Z) |
+| 4 | Contact | Process | Process | Bottom (-Y) |
+| 5 | Process (secret) | Secret | Secret | Left (-X) |
 
-World starts on section 1 (Intro). EnvSphere starts on section 1.
-Light sections (0, 1, 4) toggle `uk-light` body class via ThemeManager → dark text/nav.
+## Navigation — JoystickNav
 
-## Visual tiers
+| Action | Behavior |
+| --- | --- |
+| Vertical (up/down) | Cycle main sections 1→2→3→4 |
+| Horizontal (left/right) | Toggle secret sides: 0↔center↔5 |
+| From secret + opposite | Return to middle |
+| Keyboard | Arrows, Home (→1), End (→4) |
 
-Gated by `DeviceCapability.isRealWebGPU` (set in `Renderer.init()`):
+Slider nav: 4 items (idx 1-4), labels per-page (PAGE_SLIDER_LABELS).
 
-| Tier | Path | SplashCube | Background |
-| --- | --- | --- | --- |
-| **Premium** | Real WebGPU (WebGPUBackend, non-fallback adapter) | Same `MeshPhysicalMaterial` + CubeCamera envMap | EnvSphere (BackSide sphere + CanvasTexture) |
-| **Parity** | WebGL2 / WebGLBackend fallback / SwiftShader | Same `MeshPhysicalMaterial` + CubeCamera envMap | EnvSphere (BackSide sphere + CanvasTexture) |
+## On-demand rendering
 
-SplashCube is identical on both paths. `isRealWebGPU` still drives `RenderPipeline` backend selection for post-processing.
+`_needsRender` flag gates `renderer.update()`. Set by: JoystickNav, BakuCarousel, SplashCube opener, camera shake, ParticleBurst, mousemove (Works DrawTrail), ambient breathing (1 frame/2.5s).
 
-## Navigation
+## Background — EnvSphere
 
-**JoystickNav** — pure DOM joystick (bottom-center). Trigger model: one section per drag.
-- Vertical drag (up/down): cycle 4 MAIN sections (Intro→About→Works→Contact)
-- Horizontal drag (left/right): toggle to SECRET side sections (Lab ← center → Process)
-- `TRIGGER_DISTANCE = 35px` — drag past threshold fires ONE section change, ball snaps back
-- `DEAD_ZONE = 6px` — small movements ignored
-- Keyboard: ArrowUp/Down/Left/Right, Home (→ Intro), End (→ Contact)
-- `isActive()` true for ~400ms after trigger (feeds `_needsRender`)
-- `goToSection(i)` — public, used by UIMenu + DevPanel
-- Constructor: `new JoystickNav(scene, camera, 6 /* sectionCount */, { sectionLabels })`
-- NO three-joystick import — pure DOM (pointerdown/move/up + keyboard)
+Global theme-driven. `jlz:theme-applied` event → `changeSection(isLight ? 1 : 2)`. auto=Intro pattern (light), inverse=About pattern (dark). BackSide sphere, CanvasTexture 1024×512.
 
-**UIMenu** — UIkit modal (`uk-modal`). Hamburger `uk-toggle` opens. 7 page links + 4 section slider + theme toggle.
-
-**BakuCarousel** — Works §3. Cube morphs into ring. Card click (raycast) → overlay.
-- `isAnimating` getter — true when morphing/scrolling (feeds `_needsRender`).
-- Scroll/drag blocked while JoystickNav active.
-
-**Subtitles** — NoiseText scramble on `[data-eyebrow]`. Created in `Experience.init()`.
-Listens to `jlz:section-change` → finds active section's eyebrow → `NoiseText.for(el).show(0.8, hint)`.
-Hints are useful/actionable (not title duplicates), stay visible (no auto-fade).
-`dispose()` clears NoiseText + removes listener.
-
-## On-demand rendering + ambient breathing
-
-`Experience._needsRender` flag gates `renderer.update()`. Set true when:
-1. `JoystickNav.isActive()` — 400ms after section trigger
-2. `BakuCarousel.isAnimating` — morph/scroll/drag
-3. Intro/splash animation running
-4. Camera shake active
-5. ParticleBurst active
-6. **Ambient breathing** — 1 render frame every ~2.5s when fully idle
-   (advances worldDNA `uTime` on premium, EnvSphere/particle drift on parity). Respects
-   `prefers-reduced-motion`.
-
-When idle (between breaths): `World.update(dt, false)` skips baku/particles/carousel. Zero draw calls.
-Cursor (DOM) always updates — not gated by `_needsRender`.
-
-## Background system — EnvSphere
+## SplashCube (baku)
 
 | Property | Value |
 | --- | --- |
-| File | `src/Experience/World/EnvSphere.ts` |
-| Geometry | `SphereGeometry(40, 32, 16)` |
-| Material | `MeshBasicMaterial` (BackSide, `fog: false`, `depthTest: false`, `depthWrite: false`) |
-| Texture | `CanvasTexture` 2048×1024, `SRGBColorSpace`, default UV mapping |
-| `frustumCulled` | `false` |
-| `renderOrder` | `-1000` (renders first) |
-| `attachToScene()` | no-op (mesh is visible — `scene.background` NOT set) |
-| Initial weights | `[0, 1, 0, 0, 0, 0]` — starts on section 1 (Intro) |
+| Geometry | RoundedBoxGeometry(1.6, 6, 0.04) — beveled edges, no aliasing |
+| Material | MeshPhysicalMaterial (iridescence=1, clearcoat=1, roughness=0, opacity=0.35) |
+| Reflections | CubeCamera 512×512, content scene (gradient planes + logo/text) |
+| Opener | Scale pulse 1.0→1.3→1.0 via `triggerOpener()` |
+| MSAA | `samples: 4` on scene WebGLRenderTarget |
 
-6 per-section patterns (mixed by animated `uSection` weights, lerped over ~0.3s):
-- sec0 (Lab) — light blue-grey HSV (`hue: 0.6, sat: 0.06, val: 0.88`)
-- sec1 (Intro) — HSV rainbow gradient (animated, low saturation, high value)
-- sec2 (About) — grey gradient (`0x1a1a1a → 0x2e2e2e`)
-- sec3 (Works) — dark blue-grey gradient (`0x1a1a22 → 0x2a2a3a`)
-- sec4 (Contact) — light off-white gradient (`0xe8e8e8 → 0xd8d8d8`)
-- sec5 (Process) — deep blue-black gradient (`0x080810 → 0x12121e`)
-
-`changeSection(idx)` → `_targetWeights[idx]=1, others=0` → lerped in `update()`.
-Canvas redrawn when dirty, or every ~200ms for animated patterns (HSV).
-`prefers-reduced-motion` → frozen.
-
-> `ShaderBackground.ts` file still exists but is **dead code** (not imported anywhere).
-> EnvSphere is the sole background.
->
-> In manual light/dark mode (not auto), Experience listens to `jlz:theme-applied`
-> and overrides EnvSphere pattern to match — light forced → Intro pattern, dark
-> forced → About pattern — so the 3D bg stays readable when text color flips.
-
-## SplashCube (baku) — current implementation
-
-| Property | Value |
-| --- | --- |
-| Geometry | Single `BoxGeometry(1.6, 1.6, 1.6)` |
-| Material | `MeshPhysicalMaterial` (`transmission: 0`, `iridescence: 1.0`, `clearcoat: 1.0`, `roughness: 0.05`, `envMapIntensity: 2.0`) |
-| Reflections | `CubeCamera` renders content scene (6 gradient planes + Apple logo/text textures) into `WebGLCubeRenderTarget(256)`, used as `material.envMap` |
-| Edges | `EdgesGeometry` from BoxGeometry, animated rainbow HSL vertex colors (12 edges) |
-| Opener | Scale pulse (single mesh — NOT face separation) |
-| Update | `cubeCamera.update(renderer, contentScene)` each frame; cube hidden during CubeCamera render |
-
-No premium/parity material split. `worldDNA.ts` + `attachWorldDNA()` exist but are NOT called by SplashCube.
-
-## Render pipeline (WebGPU/WebGL2 parity)
+## Render pipeline
 
 | Backend | Render | Post |
 | --- | --- | --- |
-| WebGPU | `TSLRenderPipeline` + `PassNode` + `BloomNode` (via `WebGPUPostPipeline`) | ACES + vignette + grain + refraction + chromatic + grade + border + sRGB encode |
-| WebGL2 | scene → RT(bright-extract) → gaussian blur(×2 ping-pong) → composite ShaderMaterial → screen | same chain, manual sRGB encode in GLSL |
+| WebGPU | TSL RenderPipeline + BloomNode | ACES + vignette + grain + chromatic + grade + sRGB |
+| WebGL2 | scene → RT(MSAA 4×) → bright-extract → blur(×2) → composite → screen | same chain, manual sRGB |
 
-**Parity guarantees** (bit-identical output across backends):
-
-| Effect | Implementation | Why |
-| --- | --- | --- |
-| Bloom bright-extract | `smoothstep(threshold, threshold+0.1, luminance)` matches `BloomNode` exactly | Old `c*(c-threshold)` quadratic diverged from BloomNode |
-| ACES tone map | `color*(6.2*color+0.03) / (color*(4.8*color+1.0) + 0.0001)` | Epsilon (0.0001) prevents NaN on black pixels |
-| Film grain | Portable integer hash: `p3 = fract(vec3(p.xyx)*0.1031); p3 += dot(p3, p3.yzx+33.33); fract((p3.x+p3.y)*p3.z)` | `sin()` precision differs GLSL vs WGSL — integer hash is bit-identical |
-| sRGB encode | Exact `sRGBTransferOETF`: `mix(pow(c, 0.41666)*1.055 - 0.055, c*12.92, step(c, 0.0031308))` | Manual in WebGL2 GLSL; `TSLRenderPipeline` applies via `outputColorTransform=true` on WebGPU |
-
-Color grading: `mix(color*uGradeShadows, color+(uGradeHighlights-1)*max(color-0.5,0), smoothstep(0,1,lum))` at 40% mix.
-
-## Fog ownership
-
-`World.ts` owns `scene.fog` (per-section `FogExp2`):
-- `World.init()` creates `scene.fog = new FogExp2(cfg.fog.color, cfg.fog.density)` from section 1
-- `World.updateTransform()` updates `fog.color` + `fog.density` on section index change (reuses instance)
-- `World.dispose()` sets `scene.fog = null`
-- `Renderer.ts` does NOT touch `scene.fog`
+Parity: portable integer hash, ACES epsilon, exact sRGBTransferOETF, BloomNode smoothstep.
 
 ## Modules
 
 | Module | Role |
 | --- | --- |
-| Experience | Render loop, section transitions, on-demand gating, ambient breathing |
-| World | Sections + sceneGroups + baku + lights + BG + EnvSphere + DrawTrail(works only) + fog |
-| SplashCube | Baku cube. Single BoxGeometry + MeshPhysicalMaterial + CubeCamera reflections + rainbow edges. |
-| EnvSphere | BackSide sphere + CanvasTexture. 6 per-section patterns mixed by animated weights. Sole background. |
-| BakuCarousel | Cube↔ring morph. Raycast card click. `isAnimating` getter. |
-| JoystickNav | Pure DOM joystick (2D). `goToDirection`/`goToSection`/`isActive`/`onSectionChange`. |
-| UIMenu | UIkit modal. `onNavigate`/`setActive`. |
-| Subtitles | NoiseText scramble on [data-eyebrow]. Listens to `jlz:section-change`. Useful hints, no auto-fade. |
-| ProjectOverlay | Fullscreen DOM dialog. Card click opens. |
-| WorksPortfolio | Project metadata only (prev/next/goTo). No textures. |
-| DevPanel | Tweakpane: Stats/Navigation/BakuCarousel/Render folders. |
-| Section | No-op `update()`. State machine only (`switchState`). |
-| SectionSceneFactory | `SECTION_CREATORS[6]` array + `hideGeometry()` (keeps Points + InstancedMesh visible). |
-| makeParticles | Shared `THREE.Points` factory. Built-in `PointsMaterial`. 1 draw call per cloud. Used by all 6 section creators. |
-| ThemeManager | UIKit `uk-light` body class. auto/inverse modes (global, not per-section). localStorage `jlz:theme`. auto=LIGHT, inverse=DARK. |
-| Input | Mouse-only (scroll system removed). |
-| NoiseText | Glitch reveal via `jlz:section-change`. `data-rot` for rotation. |
-| WireframeTypography | Section2 About decorative typography. |
-| Router | Path-based routing `/`, `/services`, `/posts`. Renders 3 pages (home is the 3D cube experience, services/posts are content pages). |
-| Footer | Fixed bottom bar (brand + 3 social icons). Hidden on home where Contact section serves as the home footer. |
+| Experience | Render loop, section transitions, on-demand gating, destroy cleanup |
+| World | Sections + baku + lights + EnvSphere + fog + DrawTrail(works) |
+| SplashCube | Glass cube + CubeCamera + opener |
+| EnvSphere | Global theme-driven background |
+| BakuCarousel | Cube↔ring morph (Works §3). Card click → overlay |
+| JoystickNav | Pure DOM 2D nav. Cube-map on ALL pages |
+| UIMenu | UIkit modal + slider (per-page labels) + theme toggle |
+| Subtitles | NoiseText scramble on [data-eyebrow] |
+| ProjectOverlay | Fullscreen DOM dialog |
+| Cursor | Codrops-style: inner dot (red on hover) + noisy circle canvas |
+| ThemeManager | 2-mode (auto/inverse), global, uk-light |
+| Router | Path-based `/app`, `/app/services`, `/app/manifesto` |
+| RenderPipeline | WebGL2 MSAA RT + post-processing parity |
 
 ## Events
 
 | Event | Emitted by | Consumed by |
 | --- | --- | --- |
-| `jlz:webgl-ready` | main-app (curtain mid-open) | entry-app (NoiseText + scrollspy) |
-| `jlz:section-change` | Experience (section index change) | entry-app (NoiseText titles), ContentReveal, Subtitles |
-| `jlz:route-change` | router (page navigation) | UIMenu (page link active state), JoystickNav (page-mode) |
-| `jlz:theme-change` | ThemeManager (`setMode`) | UIMenu (highlight active toggle button) |
-| `jlz:theme-applied` | ThemeManager (`apply`) | Experience (sync EnvSphere pattern to manual override) |
+| `jlz:webgl-ready` | main-app | entry-app (loader fade, opener, NoiseText) |
+| `jlz:section-change` | Experience | entry-app (NoiseText), Subtitles |
+| `jlz:route-change` | router | UIMenu (page active, slider labels), JoystickNav |
+| `jlz:theme-change` | ThemeManager | UIMenu (toggle label) |
+| `jlz:theme-applied` | ThemeManager | Experience (EnvSphere sync) |
+| `jlz:page-section-change` | JoystickNav | (content page section navigation) |
 
-## Theme system — ThemeManager + UIKit `uk-light`
+## Dock — 2-row bottom bar
 
-| Property | Value |
-| --- | --- |
-| File | `src/core/ThemeManager.ts` (singleton exported as `themeManager`) |
-| Modes | `'auto'` (default, global LIGHT), `'inverse'` (global DARK) |
-| First-visit | Default `'auto'` (global light) — splash is dark, app loads light |
-| Persistence | `localStorage('jlz:theme')` — survives reloads |
-| Body class | `uk-light` toggled on `<body>` + `<html>` (UIKit native inverse — 1 class flips ALL UIKit components) |
-| Auto source | Global — no per-section theme. `setAutoTheme()` is a no-op (backward compat). |
-| Content pages | Same global theme (auto=light, inverse=dark) — no per-page override |
-| 3D sync | Dispatches `jlz:theme-applied {isLight, mode}` — Experience listens; auto → Intro (light pattern), inverse → About (dark pattern). Home only. |
-| Toggle UI | **1 button** "Auto/Inverse" in `#jlz-menu-modal .jlz-theme-toggle` (calls `themeManager.toggle()`) |
-| Less config | `_import.less`: `@inverse-global-color-mode: light` — generates `uk-light` class |
+```
+TOOLS ROW (70px) — joystick visually sits here (position:fixed, centered)
+FOOTER ROW (~48px) — brand + © + social icons
+```
 
-`auto` = global LIGHT (uk-light on, dark text on light bg). `inverse` = global DARK
-(no uk-light, light text on dark bg). YooTheme Pro inverse approach — global flip,
-not per-section. `setAutoTheme()` is a no-op (kept for backward compat).
-
-> See [`UIKIT3.md`](UIKIT3.md) §4 for the full theme toggle design.
-
-## Mobile-first sizing
-
-| Property | Value |
-| --- | --- |
-| Root font-size | `html { font-size: 0.85rem }` (mobile), `@media (min-width:640px) { 1rem }` (tablet+) |
-| All UIKit sizing | Rem-based (flows from `html` font-size) — headings, spacing, gutters, control heights, box-shadows |
-| Section padding | `uk-section-small uk-section-medium@s uk-section-large@m` (responsive UIKit section primitive) |
-| Custom paddings | `.jlz-footer`, `.jlz-page-section`, `.jlz-case-tile` all use rem units (px values removed in 76-value conversion) |
-| Hairline borders | Kept as px (1-3px) for crispness — `@base-code-padding-vertical`, `@navbar-nav-item-line-hover-height`, etc. |
-
-> See [`UIKIT3.md`](UIKIT3.md) §10 for the full mobile-first rem sizing rationale
-> and the master-quantum-flares px→rem conversion record.
-
-## 21st.dev integration
-
-[@21st-dev/cli](https://21st.dev) MCP for component discovery:
-- MCP endpoint: `https://21st.dev/api/mcp` (POST, `x-api-key` header)
-- API key format: `21st_sk_...` (NOT `an_sk_...` — rejected by server)
-- Free tier: 2 component-code retrievals/day
-- Used to fetch: Atlas Aurora (id: 16166), Background Paper Shaders (id: 5732)
+`padding-bottom: calc(130px + env(safe-area-inset-bottom))` on all sections.
