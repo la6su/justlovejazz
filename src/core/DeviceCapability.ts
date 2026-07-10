@@ -3,41 +3,17 @@ export type QualityTier = 'high' | 'medium' | 'low'
 
 export interface TierConfig {
   postMultiplier: number
-  resolutionScale: number
-  enableHeavyEffects: boolean
-  maxAnisotropy: number
-  touchTargetSize: number
-  gpuParticles: boolean
-  maxLightCount: number
 }
 
 const TIER_SETTINGS: Record<QualityTier, TierConfig> = {
   low: {
     postMultiplier: 0.4,
-    resolutionScale: 0.5,
-    enableHeavyEffects: false,
-    maxAnisotropy: 2,
-    touchTargetSize: 48,
-    gpuParticles: false,
-    maxLightCount: 2,
   },
   medium: {
     postMultiplier: 0.7,
-    resolutionScale: 0.75,
-    enableHeavyEffects: true,
-    maxAnisotropy: 4,
-    touchTargetSize: 36,
-    gpuParticles: true,
-    maxLightCount: 4,
   },
   high: {
     postMultiplier: 1.0,
-    resolutionScale: 1.0,
-    enableHeavyEffects: true,
-    maxAnisotropy: 16,
-    touchTargetSize: 24,
-    gpuParticles: true,
-    maxLightCount: 8,
   },
 }
 
@@ -277,26 +253,6 @@ export class DeviceCapability {
 
   public scaleIntensity(value: number): number {
     return value * this.config.postMultiplier
-  }
-
-  public canRunHeavyEffects(): boolean {
-    return this.config.enableHeavyEffects
-  }
-
-  public toRendererCapabilities(): {
-    mode: RendererMode
-    tier: QualityTier
-    maxDpr: number
-    postProcessing: boolean
-    floatRenderTargets: boolean
-  } {
-    return {
-      mode: this.mode,
-      tier: this.tier,
-      maxDpr: this.maxDpr,
-      postProcessing: this.postProcessing,
-      floatRenderTargets: this.floatRenderTargets,
-    }
   }
 }
 

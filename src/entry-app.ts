@@ -98,6 +98,13 @@ export async function startApp(): Promise<void> {
     ;(UIkit as any).update(document)
     animateNoiseTitles()
     setupTitleObserver()
+    // After CRT curtains split (~0.8s), trigger SplashCube opener —
+    // the glass cube does a scale pulse + particle burst.
+    // This is the "baku awakens" moment when the 3D scene is revealed.
+    setTimeout(() => {
+      const exp = (window as unknown as { experience?: { triggerSplashOpener?: () => void } }).experience
+      exp?.triggerSplashOpener?.()
+    }, 600) // slightly before curtains finish — cube pulses as they open
   })
 
   // Fallback: if jlz:webgl-ready doesn't fire within 6s (Experience.init

@@ -13,7 +13,7 @@ import { EnvSphere } from '../Experience/World/EnvSphere'
 import { ParticleBurst } from '../Experience/World/ParticleBurst'
 import { getWorldConfigForPage, type PhaseConfig } from './WorldConfig'
 import { SectionSceneFactory } from './SectionSceneFactory'
-import { updateInstancedParticles } from '../sections/_shared/makeInstancedParticles'
+// updateInstancedParticles removed — was a no-op. Particles are static.
 import { disposeMaterialDeep } from '../Utils/dispose'
 
 export interface WorldTransformResult {
@@ -228,8 +228,6 @@ export class World extends THREE.Group {
 
     if (!this.isReducedMotion) {
       this.baku.update(deltaTime, this._renderer)
-      // Update instanced particles (GPU drift) — frozen when idle
-      updateInstancedParticles(deltaTime)
       // DrawTrail only on works section (idx=3 in 6-section layout)
       if (this.drawTrail && this._camera && this._currentSectionIndex === 3) {
         this.drawTrail.update(deltaTime, this._camera)

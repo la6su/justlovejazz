@@ -105,21 +105,5 @@ export function makeInstancedParticles(params: InstancedParticleParams): THREE.I
   return mesh
 }
 
-/**
- * Update particle uniforms. Called by World.update() when rendering.
- * Currently a no-op — particles are static (no GPU drift).
- * Kept for API compat with World.update() call sites.
- */
-export function updateInstancedParticles(_dt: number): void {
-  // No-op — particles are static. Drift can be added later via
-  // onBeforeCompile if needed, but static particles look good and
-  // respect on-demand rendering (frozen when idle).
-}
-
-/**
- * Set global size scale (e.g., for quality tiers). Default 1.0.
- * Currently a no-op — size is baked per-instance at creation.
- */
-export function setParticleSizeScale(_scale: number): void {
-  // No-op
-}
+// (updateInstancedParticles + setParticleSizeScale removed — both were no-ops.
+// World.update() call site removed. Particles are static by design.)

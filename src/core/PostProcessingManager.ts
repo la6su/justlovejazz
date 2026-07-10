@@ -36,14 +36,6 @@ const PHASE_PRESETS: Record<string, PostParams> = {
     bloomRadius: 0.65,
     bloomThreshold: 0.4,
   },
-  sec_flexible: {
-    bloom: 0.2,
-    vignette: 0.55,
-    grain: 0.008,
-    chromatic: 0.002,
-    bloomRadius: 0.4,
-    bloomThreshold: 0.55,
-  },
   sec_challenge: {
     bloom: 0.4,
     vignette: 0.4,
@@ -51,14 +43,6 @@ const PHASE_PRESETS: Record<string, PostParams> = {
     chromatic: 0.005,
     bloomRadius: 0.55,
     bloomThreshold: 0.45,
-  },
-  sec_innovative: {
-    bloom: 0.3,
-    vignette: 0.6,
-    grain: 0.01,
-    chromatic: 0.004,
-    bloomRadius: 0.5,
-    bloomThreshold: 0.5,
   },
   sec_contact: {
     bloom: 0.3,

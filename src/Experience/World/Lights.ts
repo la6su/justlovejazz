@@ -58,20 +58,6 @@ const SECTION_PRESETS: Record<string, SectionLightPreset> = {
     volumetricColor: 0x6677bb,
     volumetricIntensity: 0.8,
   },
-  sec_flexible: {
-    keyColor: 0xe8e8e8, // near-white — soft light section
-    keyIntensity: 1.8,
-    keyPos: [3, 5, 3],
-    fillColor: 0xc0c8d8,
-    fillIntensity: 0.5,
-    rimColor: 0xa8b8c8,
-    rimIntensity: 0.7,
-    hemiSky: 0xeeeeee,
-    hemiGround: 0xdddddd,
-    hemiIntensity: 0.4,
-    volumetricColor: 0xffffff,
-    volumetricIntensity: 0.0,
-  },
   sec_challenge: {
     keyColor: 0x4466aa, // blue gallery light — stage feel
     keyIntensity: 1.8,
@@ -85,20 +71,6 @@ const SECTION_PRESETS: Record<string, SectionLightPreset> = {
     hemiIntensity: 0.2,
     volumetricColor: 0x3355aa,
     volumetricIntensity: 1.0,
-  },
-  sec_innovative: {
-    keyColor: 0x6688bb, // constellation blue
-    keyIntensity: 1.4,
-    keyPos: [2, 4, -2],
-    fillColor: 0x334455,
-    fillIntensity: 0.3,
-    rimColor: 0x88aadd,
-    rimIntensity: 1.2,
-    hemiSky: 0x050810,
-    hemiGround: 0x000000,
-    hemiIntensity: 0.25,
-    volumetricColor: 0x445577,
-    volumetricIntensity: 0.6,
   },
   sec_contact: {
     keyColor: 0x556688, // muted blue — closing feel

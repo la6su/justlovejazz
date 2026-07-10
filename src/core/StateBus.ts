@@ -181,33 +181,8 @@ export class StateBus {
     return this
   }
 
-  activeAnimations(): string[] {
-    return Array.from(this.#animations.keys())
-  }
-
   isAnimating(name: string): boolean {
     return this.#animations.has(name)
-  }
-
-  get hasAnimations(): boolean {
-    return this.#animations.size > 0
-  }
-
-  snapshot(): Record<string, number> {
-    const snap: Record<string, number> = {}
-    for (const [name, val] of this.#channels) {
-      snap[name] = val
-    }
-    return snap
-  }
-
-  reset(): StateBus {
-    for (const [name] of this.#channels) {
-      this.#channels.set(name, 0)
-    }
-    this.#animations.clear()
-    this.#listeners.clear()
-    return this
   }
 }
 
