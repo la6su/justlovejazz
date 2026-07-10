@@ -32,11 +32,8 @@ import { prefersReducedMotion } from '../../core/motionPolicy'
 const CANVAS_W = 1024  // was 2048 — half the GPU upload cost
 const CANVAS_H = 512   // was 1024
 
-// Per-section color palette — used for section-specific visual identity.
-// With global auto/inverse theme, EnvSphere shows ONE pattern for ALL sections:
-//   auto (light) → pattern 1 (Intro: bright white, val=0.98)
-//   inverse (dark) → pattern 2 (About: dark grey gradient)
-// The per-section patterns below are kept for reference/future per-section mode.
+// 2 patterns used: idx 1 (light, auto) + idx 2 (dark, inverse).
+// Others kept for future per-section mode.
 const SECTION_PATTERNS = [
   // 0: Lab — LIGHT: subtle blue-grey HSV
   { type: 'hsv', hue: 0.6, sat: 0.06, val: 0.88 },

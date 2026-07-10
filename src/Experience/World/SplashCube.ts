@@ -5,13 +5,12 @@
 // per section role. During splash: rotates + edges brighten with progress.
 // At 100%: "opener" — cube scales up + back (breathing).
 //
-// Architecture (porting github.com/lorenzocadamuro/apple-fifth-avenue):
-//   1. Content scene — gradient backgrounds + Apple logo/text textures
+// Architecture (JLZ-branded glass cube):
+//   1. Content scene — JLZ gradient planes + monogram/tagline canvas textures
 //   2. CubeCamera — renders content scene into a cubemap (6 faces)
-//   3. Cube mesh — single BoxGeometry with MeshPhysicalMaterial
+//   3. Cube mesh — RoundedBoxGeometry with MeshPhysicalMaterial
 //      envMap = CubeCamera render target → rich reflections
-//   4. Rainbow edges — EdgesGeometry with vertex colors (HSL by angle)
-//   5. Opener — scale pulse (not face separation — single mesh)
+//   4. Opener — scale pulse (1.0 → 1.3 → 1.0)
 
 import * as THREE from 'three'
 import { Noise } from '../../Utils/Noise'
@@ -34,15 +33,7 @@ export function setTransmissionEnabled(_enabled: boolean): void {
 /** Rotation per section transition (radians). ~30° = π/6. */
 const ROT_PER_TRANSITION = Math.PI / 6
 
-// ── Apple Fifth Avenue gradient colors (from gradients.glsl) ──
-const GRADIENT_COLORS = [
-  [0.98, 0.71, 0.0],  // gold
-  [0.95, 0.20, 0.14], // red
-  [0.89, 0.12, 0.78], // magenta
-  [0.30, 0.24, 0.96], // blue
-  [1.0, 0.8, 0.2],    // yellow
-  [0.29, 0.68, 0.95], // cyan
-]
+// (GRADIENT_COLORS removed — was Apple Fifth Avenue port. Now using JLZ palette.)
 
 export class SplashCube extends THREE.Mesh {
   private cubeMesh!: THREE.Mesh
@@ -110,35 +101,39 @@ export class SplashCube extends THREE.Mesh {
   private buildContentScene(): void {
     this.contentScene = new THREE.Scene()
 
-    // Load Apple textures (logo, text-1, text-2)
-    const loader = new THREE.TextureLoader()
-    const logoTex = loader.load('/assets/logo.png')
-    const text1Tex = loader.load('/assets/text-1.png')
-    const text2Tex = loader.load('/assets/text-2.png')
-    logoTex.colorSpace = THREE.SRGBColorSpace
-    text1Tex.colorSpace = THREE.SRGBColorSpace
-    text2Tex.colorSpace = THREE.SRGBColorSpace
+    // JLZ-branded procedural textures (canvas-generated, no external assets).
+    // Replaces Apple Fifth Avenue port textures (logo.png, text-1.png, text-2.png).
+    // Each texture = gradient + JLZ monogram/tagline rendered on canvas.
+    const logoTex = this._createJLZTexture('l@6', '#515d84', '#0a0a0f')
+    const text1Tex = this._createJLZTexture('GLASS · MOTION · LIGHT', '#6b78a3', '#050507', 512, 128)
+    const text2Tex = this._createJLZTexture('WEBGPU · TSL · THREE.JS', '#4a5474', '#050507', 512, 128)
     this.contentTextures = [logoTex, text1Tex, text2Tex]
 
-    // 6 gradient planes — one per cube face direction.
-    // Each plane faces inward (toward cube center) so CubeCamera sees them.
-    // Colors from Apple gradients.glsl — vibrant, rainbow-like.
+    // 6 gradient planes — JLZ accent palette (not Apple rainbow).
     const size = 10
     const half = size / 2
+    const jlzColors = [
+      [0.32, 0.36, 0.52], // accent blue-grey
+      [0.42, 0.47, 0.64], // accent-hover
+      [0.20, 0.22, 0.30], // dark
+      [0.15, 0.17, 0.22], // darker
+      [0.51, 0.55, 0.74], // lighter accent
+      [0.10, 0.12, 0.18], // deepest
+    ]
     const dirs: { pos: number[]; rot: number[]; color: number[] }[] = [
-      { pos: [half, 0, 0], rot: [0, -Math.PI / 2, 0], color: GRADIENT_COLORS[0]! },
-      { pos: [-half, 0, 0], rot: [0, Math.PI / 2, 0], color: GRADIENT_COLORS[1]! },
-      { pos: [0, half, 0], rot: [-Math.PI / 2, 0, 0], color: GRADIENT_COLORS[2]! },
-      { pos: [0, -half, 0], rot: [Math.PI / 2, 0, 0], color: GRADIENT_COLORS[3]! },
-      { pos: [0, 0, half], rot: [0, 0, 0], color: GRADIENT_COLORS[4]! },
-      { pos: [0, 0, -half], rot: [0, Math.PI, 0], color: GRADIENT_COLORS[5]! },
+      { pos: [half, 0, 0], rot: [0, -Math.PI / 2, 0], color: jlzColors[0]! },
+      { pos: [-half, 0, 0], rot: [0, Math.PI / 2, 0], color: jlzColors[1]! },
+      { pos: [0, half, 0], rot: [-Math.PI / 2, 0, 0], color: jlzColors[2]! },
+      { pos: [0, -half, 0], rot: [Math.PI / 2, 0, 0], color: jlzColors[3]! },
+      { pos: [0, 0, half], rot: [0, 0, 0], color: jlzColors[4]! },
+      { pos: [0, 0, -half], rot: [0, Math.PI, 0], color: jlzColors[5]! },
     ]
 
     for (const d of dirs) {
       const geo = new THREE.PlaneGeometry(size, size)
       const mat = new THREE.MeshBasicMaterial({
         color: new THREE.Color(d.color[0]!, d.color[1]!, d.color[2]!),
-        side: THREE.DoubleSide, // CubeCamera at center sees back of planes
+        side: THREE.DoubleSide,
         fog: false,
       })
       const plane = new THREE.Mesh(geo, mat)
@@ -147,7 +142,7 @@ export class SplashCube extends THREE.Mesh {
       this.contentScene.add(plane)
     }
 
-    // Add logo texture on front face (facing inward — CubeCamera sees it)
+    // JLZ monogram on front face
     const logoGeo = new THREE.PlaneGeometry(3, 3)
     const logoMat = new THREE.MeshBasicMaterial({
       map: logoTex,
@@ -157,10 +152,9 @@ export class SplashCube extends THREE.Mesh {
     })
     const logoMesh = new THREE.Mesh(logoGeo, logoMat)
     logoMesh.position.set(0, 0, half - 0.1)
-    // No rotation needed — default plane faces +Z, position is +Z, CubeCamera sees it
     this.contentScene.add(logoMesh)
 
-    // Add text textures on side faces
+    // Tagline textures on side faces
     const text1Mesh = new THREE.Mesh(
       new THREE.PlaneGeometry(4, 1.5),
       new THREE.MeshBasicMaterial({ map: text1Tex, transparent: true, side: THREE.DoubleSide, fog: false }),
@@ -391,6 +385,32 @@ export class SplashCube extends THREE.Mesh {
     this.cubeMaterial.emissive.copy(emissive)
     this.cubeMaterial.roughness = roughness
     this.cubeMaterial.metalness = metalness
+  }
+
+  /** Create a JLZ-branded canvas texture (gradient + text). No external assets. */
+  private _createJLZTexture(text: string, fgColor: string, bgColor: string, w = 256, h = 256): THREE.CanvasTexture {
+    const canvas = document.createElement('canvas')
+    canvas.width = w
+    canvas.height = h
+    const ctx = canvas.getContext('2d')!
+
+    // Background gradient
+    const grad = ctx.createLinearGradient(0, 0, 0, h)
+    grad.addColorStop(0, bgColor)
+    grad.addColorStop(1, '#000000')
+    ctx.fillStyle = grad
+    ctx.fillRect(0, 0, w, h)
+
+    // Text
+    ctx.fillStyle = fgColor
+    ctx.font = `bold ${h > 200 ? '48px' : '24px'} Inter, sans-serif`
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(text, w / 2, h / 2)
+
+    const tex = new THREE.CanvasTexture(canvas)
+    tex.colorSpace = THREE.SRGBColorSpace
+    return tex
   }
 
   dispose(): void {
