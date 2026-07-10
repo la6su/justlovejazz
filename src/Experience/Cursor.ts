@@ -56,11 +56,7 @@ export class Cursor {
   private bumpScale = 1
   private bumpTarget = 1
 
-  // Inner dot visibility (demo4 — hide on hover)
-  private innerOpacity = 1
-  private innerOpacityTarget = 1
-
-  // Fill state (demo4 — fill circle on nav hover)
+  // Fill state (demo4 — fill circle on hover)
   private fillProgress = 0
   private fillTarget = 0
 
@@ -117,11 +113,9 @@ export class Cursor {
         }
         this.isStuck = true
         this.fillTarget = 1
-        this.innerOpacityTarget = 0
       } else {
         this.isStuck = false
         this.fillTarget = 0
-        this.innerOpacityTarget = 1
       }
     }
     this.mouseoutHandler = (e: MouseEvent) => {
@@ -130,7 +124,6 @@ export class Cursor {
       if (target.closest('[data-magnetic], a, button, .interactive, [uk-toggle], [uk-slider]')) {
         this.isStuck = false
         this.fillTarget = 0
-        this.innerOpacityTarget = 1
       }
     }
     this.clickHandler = () => {
@@ -146,11 +139,12 @@ export class Cursor {
   }
 
   update() {
-    // Inner dot — instant follow, centered, opacity fades on hover
+    // Inner dot — instant follow, centered.
+    // Color: accent-hover (idle) → RED (hover) via CSS .is-hover class.
+    // Inner dot stays visible (no opacity fade) — just changes color.
     this.innerX = this.targetX
     this.innerY = this.targetY
-    this.innerOpacity = lerp(this.innerOpacity, this.innerOpacityTarget, 0.15)
-    this.innerEl.style.opacity = String(this.innerOpacity)
+    this.innerEl.classList.toggle('is-hover', this.isStuck)
     this.innerEl.style.transform = `translate(${this.innerX}px, ${this.innerY}px) translate(-50%, -50%)`
 
     // Outer circle — smooth lerp follow
@@ -184,15 +178,10 @@ export class Cursor {
     const radius = this.currentRadius * this.bumpScale
 
     ctx.beginPath()
-    // Color: idle = accent-hover (bright blue-grey), hover = RED (codrops style).
-    // Lerp between idle and hover colors via fillProgress.
-    const idleR = 107, idleG = 120, idleB = 163   // #6b78a3 accent-hover
-    const hoverR = 255, hoverG = 60, hoverB = 60   // red (codrops #ff0000 softened)
-    const cr = Math.round(lerp(idleR, hoverR, this.fillProgress))
-    const cg = Math.round(lerp(idleG, hoverG, this.fillProgress))
-    const cb = Math.round(lerp(idleB, hoverB, this.fillProgress))
+    // Outer circle stroke/fill: always accent-hover color (NOT red).
+    const strokeR = 107, strokeG = 120, strokeB = 163   // #6b78a3 accent-hover
     const alpha = 0.6 + this.fillProgress * 0.3
-    ctx.strokeStyle = `rgba(${cr}, ${cg}, ${cb}, ${alpha})`
+    ctx.strokeStyle = `rgba(${strokeR}, ${strokeG}, ${strokeB}, ${alpha})`
     ctx.lineWidth = 2
 
     // Noisy distortion only when expanded enough
@@ -214,9 +203,9 @@ export class Cursor {
     }
     ctx.closePath()
 
-    // Fill: if fillProgress > 0, fill with current (red) color
+    // Fill: accent color (same as stroke, NOT red)
     if (this.fillProgress > 0.01) {
-      ctx.fillStyle = `rgba(${cr}, ${cg}, ${cb}, ${this.fillProgress * 0.4})`
+      ctx.fillStyle = `rgba(${strokeR}, ${strokeG}, ${strokeB}, ${this.fillProgress * 0.4})`
       ctx.fill()
     }
     ctx.stroke()

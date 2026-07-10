@@ -762,7 +762,13 @@ body.uk-light .jlz-secret-nav > li > a:hover {
   pointer-events: none;
   z-index: 100000;
   will-change: transform;
-  /* Centering done via translate(-50%, -50%) in JS — no margin hack */
+  transition: background-color 0.2s ease;
+  /* Centering done via translate(-50%, -50%) in JS */
+}
+
+/* Inner dot turns RED on hover (codrops reference style) */
+.custom-cursor-inner.is-hover {
+  background-color: #ff3c3c;
 }
 
 .custom-cursor-canvas {
