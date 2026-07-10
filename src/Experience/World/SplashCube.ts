@@ -16,6 +16,7 @@
 import * as THREE from 'three'
 import { Noise } from '../../Utils/Noise'
 import { BakuRole, type BakuMaterialState } from '../../core/types'
+import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js'
 
 export interface BakuMaterialParams {
   color: THREE.Color
@@ -194,8 +195,11 @@ export class SplashCube extends THREE.Mesh {
   private buildCube(): void {
     const size = 1.6
 
-    // Single BoxGeometry — smooth, continuous edges (no gaps between faces)
-    const geo = new THREE.BoxGeometry(size, size, size)
+    // Single RoundedBoxGeometry — beveled edges eliminate aliasing at
+    // sharp face junctions. With roughness:0 (mirror), sharp edges create
+    // maximum pixel-level aliasing. Bevel radius 0.04 = subtle rounding.
+    // (was: BoxGeometry — sharp edges → jagged pixels at face boundaries)
+    const geo = new RoundedBoxGeometry(size, size, size, 6, 0.04)
 
     // MeshPhysicalMaterial — glass cube with env reflections (Apple Fifth Avenue style)
     // scene.environment (PMREM from RoomEnvironment) provides the reflections.
