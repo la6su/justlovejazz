@@ -224,10 +224,26 @@ export class JoystickNav {
     window.addEventListener('keydown', this._keydownHandler)
   }
 
-  /** Vertical navigation — up/down through main sections. */
+  /** Vertical navigation — up/down through main sections (1-4 on all pages). */
   private _navigateVertical(dir: 1 | -1): void {
     if (this._isPageMode()) {
-      this._syncPageSection(this._pageSectionIndex() + dir)
+      // Same as home: vertical cycles main sections (1-4).
+      // If currently on secret side (0 or 5), return to nearest main first.
+      const current = this._pageSectionIndex()
+      let next: number
+      if (current === 0) {
+        // On first secret (left) → go to section 1
+        next = 1
+      } else if (current >= 5) {
+        // On last secret (right) → go to section 4
+        next = 4
+      } else {
+        // On main (1-4) → cycle within 1-4
+        next = current + dir
+        if (next < 1) next = 1
+        if (next > 4) next = 4
+      }
+      this._syncPageSection(next)
       this._setActive(true)
       setTimeout(() => this._setActive(false), 400)
       return
@@ -390,7 +406,11 @@ export class JoystickNav {
     sections.forEach((section, sectionIndex) => {
       section.classList.toggle('section-active', sectionIndex === nextIndex)
     })
-    // Theme is global (auto=light, inverse=dark) — no per-section theme.
+    // Notify UIMenu to update slider active state.
+    // Map page section index (0-5) → slider index (0-3 for main sections 1-4).
+    // Sections 0 and 5 are "secret sides" — not in slider, map to -1 (no active).
+    const sliderIdx = (nextIndex >= 1 && nextIndex <= 4) ? nextIndex : -1
+    this._onSectionChange?.(sliderIdx)
     window.dispatchEvent(new CustomEvent('jlz:page-section-change', {
       detail: { index: nextIndex, count: sections.length },
     }))
