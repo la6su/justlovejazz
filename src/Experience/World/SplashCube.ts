@@ -178,7 +178,7 @@ export class SplashCube extends THREE.Mesh {
 
     // CubeCamera — renders content scene into cubemap
     // Positioned at cube center, renders 6 faces
-    const cubeRT = new THREE.WebGLCubeRenderTarget(256, {
+    const cubeRT = new THREE.WebGLCubeRenderTarget(512, {
       format: THREE.RGBAFormat,
       generateMipmaps: true,
       minFilter: THREE.LinearMipmapLinearFilter,
@@ -223,6 +223,11 @@ export class SplashCube extends THREE.Mesh {
     this.cubeMesh = new THREE.Mesh(geo, this.cubeMaterial)
     this.cubeMesh.renderOrder = 2
     this.add(this.cubeMesh)
+
+    // Connect CubeCamera render target → material envMap
+    // This gives the glass cube dynamic reflections of the content scene
+    // (gradient planes + logo + text). Without this, the cube is flat.
+    this.cubeMaterial.envMap = this.cubeCamera.renderTarget.texture
 
     // ── Rainbow edges — DISABLED (pixelated aliasing) ──
     // LineBasicMaterial.linewidth > 1 is NOT supported in WebGL/WebGPU —
@@ -286,11 +291,17 @@ export class SplashCube extends THREE.Mesh {
   // ════════════════════════════════════════════════════════════════════
   // UPDATE — called every frame when rendering
   // ════════════════════════════════════════════════════════════════════
-  update(dt: number, _renderer?: THREE.WebGLRenderer): void {
+  update(dt: number, renderer?: THREE.WebGLRenderer): void {
     this.time += dt
-    // CubeCamera REMOVED — was 6 extra render passes per update, extremely
-    // expensive on Safari/iOS. Reflections come from scene.environment
-    // (RoomEnvironment PMREM) which is free (pre-computed once).
+
+    // ── CubeCamera — render content scene into cubemap for reflections ──
+    // Render ONLY when cube is visible + renderer available.
+    // Hide cube mesh during CubeCamera render to avoid self-reflection.
+    if (renderer && this.cubeMesh.visible) {
+      this.cubeMesh.visible = false
+      this.cubeCamera.update(renderer, this.contentScene)
+      this.cubeMesh.visible = true
+    }
 
     // ── Transition motion (same as before) ──
     const committed = this._prevTransitionDir !== 0
