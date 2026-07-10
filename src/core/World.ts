@@ -239,11 +239,21 @@ export class World extends THREE.Group {
         | import('../Experience/World/BakuCarousel').BakuCarousel
         | undefined
       if (carousel) carousel.update(deltaTime)
-      // Update wireframe typography (Section2 About)
+      // Update wireframe typography (Section2 About + Section4 Contact)
       const typo = group.userData.typography as
         | import('../Experience/World/WireframeTypography').WireframeTypography
         | undefined
       if (typo) typo.update(deltaTime)
+      // Update shader orb (Section0 Lab)
+      const orb = group.userData.orb as
+        | import('../Experience/World/ShaderOrb').ShaderOrb
+        | undefined
+      if (orb) orb.update(deltaTime)
+      // Update timeline nodes (Section5 Process)
+      const timeline = group.userData.timeline as
+        | import('../Experience/World/TimelineNodes').TimelineNodes
+        | undefined
+      if (timeline) timeline.update(deltaTime)
     }
   }
 
