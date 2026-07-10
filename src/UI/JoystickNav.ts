@@ -262,28 +262,49 @@ export class JoystickNav {
     this._fireSectionChange()
   }
 
-  /** Horizontal navigation — left/right toggles Lab/Process. */
+  /** Horizontal navigation — left/right toggles secret side sections.
+   *  Same logic on ALL pages (home + content):
+   *    center (1-4) + left  → first secret (0)
+   *    center (1-4) + right → last secret (5)
+   *    first secret (0) + right → center (middle)
+   *    first secret (0) + left  → no-op (stay)
+   *    last secret (5) + left  → center (middle)
+   *    last secret (5) + right → no-op (stay) */
   private _navigateHorizontal(dir: 1 | -1): void {
     if (this._isPageMode()) {
-      // On content pages: left = first section (secret), right = last section (secret).
-      // Same pattern as home: horizontal toggles to "side" sections.
       const sections = this._getPageSections()
       if (sections.length === 0) return
       const current = this._pageSectionIndex()
       const first = 0
       const last = sections.length - 1
-      // If in middle → go to first (left) or last (right)
-      // If at first → go to center (middle) on right
-      // If at last → go to center (middle) on left
+      const middle = Math.floor(sections.length / 2)
+
+      let target = -1 // -1 = no-op
       if (dir === -1) {
-        // Left: → first section, or back to middle from first
-        this._syncPageSection(current === first ? Math.floor(sections.length / 2) : first)
+        // Left
+        if (current === first) {
+          // Already on first secret → no-op (stay)
+        } else if (current === last) {
+          target = middle
+        } else {
+          target = first
+        }
       } else {
-        // Right: → last section, or back to middle from last
-        this._syncPageSection(current === last ? Math.floor(sections.length / 2) : last)
+        // Right
+        if (current === last) {
+          // Already on last secret → no-op (stay)
+        } else if (current === first) {
+          target = middle
+        } else {
+          target = last
+        }
       }
-      this._setActive(true)
-      setTimeout(() => this._setActive(false), 400)
+
+      if (target >= 0) {
+        this._syncPageSection(target)
+        this._setActive(true)
+        setTimeout(() => this._setActive(false), 400)
+      }
       return
     }
     if (dir === 1) {
