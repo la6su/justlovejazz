@@ -251,11 +251,12 @@ export class JoystickNav {
       return
     }
     // Always return to center first (if in Lab/Process)
+    const wasInSide = this._side !== 'center'
     this._side = 'center'
     const next = this._mainSection + dir
     if (next < FIRST_MAIN || next > LAST_MAIN) {
-      // At boundary — just fire to return to center if was in side
-      if (this._currentSection !== this._mainSection) {
+      // At boundary — fire to return to center if was in side
+      if (wasInSide) {
         this._fireSectionChange()
       }
       return

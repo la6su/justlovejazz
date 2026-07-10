@@ -625,6 +625,11 @@ export class Experience {
     // Stop the animation loop FIRST — setAnimationLoop(null) cancels the
     // internal callback. Without this, the loop keeps firing after dispose().
     ;(this.renderer.instance as any).setAnimationLoop(null)
+    // Clear global references — prevents stale singleton on hot-reload
+    Experience.instance = undefined as any
+    delete (window as any).experience
+    // Cancel pending rAF for mouse trail (prevents fire after destroy)
+    this._mouseTrailRafPending = false
     if (this._onVisibilityChange) {
       document.removeEventListener('visibilitychange', this._onVisibilityChange)
       this._onVisibilityChange = null

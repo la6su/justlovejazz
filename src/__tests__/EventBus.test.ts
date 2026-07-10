@@ -14,13 +14,13 @@ describe('EventBus', () => {
 
   it('unsubscribes correctly', () => {
     let count = 0
-    const unsub = eventBus.on('jlj:navigate', () => {
+    const unsub = eventBus.on('jlz:route-change', () => {
       count++
     })
-    eventBus.emit('jlj:navigate', { page: 'home' })
+    eventBus.emit('jlz:route-change', { page: 'home' })
     expect(count).toBe(1)
     unsub()
-    eventBus.emit('jlj:navigate', { page: 'home' })
+    eventBus.emit('jlz:route-change', { page: 'home' })
     expect(count).toBe(1)
   })
 
@@ -54,12 +54,12 @@ describe('EventBus', () => {
     eventBus.on('jlz:webgl-ready', () => {
       count++
     })
-    eventBus.on('jlj:navigate', () => {
+    eventBus.on('jlz:route-change', () => {
       count++
     })
     eventBus.clear()
     eventBus.emit('jlz:webgl-ready')
-    eventBus.emit('jlj:navigate', { page: 'home' })
+    eventBus.emit('jlz:route-change', { page: 'home' })
     expect(count).toBe(0)
   })
 })

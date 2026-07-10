@@ -365,6 +365,11 @@ export class SplashCube extends THREE.Mesh {
       }
     }
 
+    // Apply opener scale to cube mesh — scale pulse from 1.0 → 1.3 → 1.0
+    // (was missing — openerProgress was computed but never applied)
+    const openerScale = 1 + this.openerProgress * 0.3
+    this.cubeMesh.scale.setScalar(openerScale)
+
     // ── Material color blend ──
     this.cubeMaterial.color.copy(this._blendFromColor).lerp(this._blendToColor, this._blendT)
     this.cubeMaterial.emissive.copy(this._blendFromEmissive).lerp(this._blendToEmissive, this._blendT)

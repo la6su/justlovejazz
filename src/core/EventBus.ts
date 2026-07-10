@@ -12,8 +12,8 @@ export interface AppEvents {
     configId?: string
     index: number
   }
-  /** Fired by router.ts on navigation — triggers Lenis scroll reset + UIkit refresh. */
-  'jlj:navigate': { page: string }
+  /** Fired by router.ts on page navigation — triggers UIMenu page active + slider labels. */
+  'jlz:route-change': { page?: string }
 }
 
 type Handler<K extends keyof AppEvents> = (payload: AppEvents[K]) => void

@@ -80,7 +80,7 @@ export function initRouter(): void {
   initialized = true
 
   renderView()
-  window.dispatchEvent(new CustomEvent('jlj:navigate', { detail: { page: getPageFromLocation() } }))
+  // jlz:route-change already dispatched in renderView() — covers UIkit refresh + UIMenu.
 
   // Handle initial anchor in URL (e.g. #section-about)
   if (location.hash.startsWith('#section-')) {
@@ -116,7 +116,6 @@ export function initRouter(): void {
     if (location.hash.startsWith('#section-')) {
       const tgt = document.getElementById(location.hash.replace('#', ''))
       if (tgt) tgt.scrollIntoView({ behavior: 'smooth' })
-      window.dispatchEvent(new CustomEvent('jlj:navigate', { detail: { page: getPageFromLocation() } }))
     }
   })
 }

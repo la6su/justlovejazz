@@ -52,13 +52,6 @@ class ThemeManager {
     window.dispatchEvent(new CustomEvent('jlz:theme-change', { detail: { mode } }))
   }
 
-  /** Kept for backward compat — no-op now (theme is global, not per-section).
-   *  All callers (Experience.ts, JoystickNav, router.ts) can keep calling
-   *  this safely — it does nothing. Theme is decided by mode only. */
-  setAutoTheme(_isLight: boolean): void {
-    // No-op — theme is global (auto=light, inverse=dark), not per-section.
-  }
-
   /** Toggle auto ↔ inverse. */
   toggle(): ThemeMode {
     this.setMode(this._mode === 'auto' ? 'inverse' : 'auto')
