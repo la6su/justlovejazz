@@ -1,7 +1,7 @@
 // src/pages/content/manifesto.ts — Manifesto page (6 sections, Apple Watch layout)
 // Mobile-first: 4 principles (not 8), punchy copy. Same cube structure as home.
 
-import { contentSection, contentTop, contentBottom } from '../../sections/_shared/constants'
+import { contentSection, contentTop, contentBottom, PROCESS_STEPS } from '../../sections/_shared/constants'
 import { FOOTER } from '../../sections/_shared/footer'
 
 export function manifestoPage(): string {
@@ -10,12 +10,6 @@ export function manifestoPage(): string {
     { num: '02', title: 'Craft over speed', desc: 'Type-safe GPU code. No raw GLSL strings.' },
     { num: '03', title: 'Performance is a feature', desc: '60fps on mid-range. Zero idle draw calls.' },
     { num: '04', title: 'Parity, not compromise', desc: 'WebGPU + WebGL2. Bit-identical output.' },
-  ]
-  const steps = [
-    { num: '01', title: 'Discover', desc: 'Audit + define.' },
-    { num: '02', title: 'Design', desc: '3D prototypes.' },
-    { num: '03', title: 'Develop', desc: 'WebGPU + TSL.' },
-    { num: '04', title: 'Ship', desc: 'Launch + evolve.' },
   ]
   return `
     <article class="jlz-page" data-page-view="manifesto">
@@ -49,7 +43,7 @@ export function manifestoPage(): string {
         contentTop('PROCESS', '4 steps'),
         contentBottom(`
           <div class="uk-grid uk-child-width-1-2@s uk-child-width-1-4@m" uk-grid>
-            ${steps.map((s) => `
+            ${PROCESS_STEPS.map((s) => `
               <div class="uk-text-center">
                 <div class="uk-heading-large uk-margin-remove jlz-numeral">${s.num}</div>
                 <h3 class="uk-h4 uk-margin-small-top uk-margin-remove-bottom">${s.title}</h3>

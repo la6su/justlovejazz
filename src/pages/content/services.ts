@@ -2,28 +2,22 @@
 // Mobile-first: less content, but precise and punchy. Same cube structure as home.
 // Uses contentSection/contentTop/contentBottom (TOP / 3D CENTER / BOTTOM).
 
-import { contentSection, contentTop, contentBottom } from '../../sections/_shared/constants'
+import { contentSection, contentTop, contentBottom, PROCESS_STEPS } from '../../sections/_shared/constants'
 import { FOOTER } from '../../sections/_shared/footer'
 
 export function servicesPage(): string {
-  // 4 core services (was 6) — punchy, not cluttered
+  // 4 core services — punchy, not cluttered
   const services = [
     { num: '01', title: 'WebGPU 3D', desc: 'Real-time GPU. TSL shaders. 60fps.' },
     { num: '02', title: 'Spatial UI', desc: '3D-first interfaces. Depth + presence.' },
     { num: '03', title: 'Shader Art', desc: 'Glass. Iridescence. Fluid simulation.' },
     { num: '04', title: 'Performance', desc: 'On-demand rendering. Zero idle draw calls.' },
   ]
-  // 3 stack pillars (was 4) — essentials only
+  // 3 stack pillars — essentials only
   const stack = [
     { title: '3D', items: ['Three.js + TSL', 'WebGPU / WebGL2'] },
     { title: 'UI', items: ['UIkit 3 + QF', 'TypeScript strict'] },
     { title: 'Perf', items: ['On-demand render', 'Lighthouse CI'] },
-  ]
-  const steps = [
-    { num: '01', title: 'Discover', desc: 'Audit + define.' },
-    { num: '02', title: 'Design', desc: '3D prototypes.' },
-    { num: '03', title: 'Develop', desc: 'WebGPU + TSL.' },
-    { num: '04', title: 'Ship', desc: 'Launch + evolve.' },
   ]
   return `
     <article class="jlz-page" data-page-view="services">
@@ -65,7 +59,7 @@ export function servicesPage(): string {
         contentTop('PROCESS', '4 steps'),
         contentBottom(`
           <div class="uk-grid uk-child-width-1-2@s uk-child-width-1-4@m" uk-grid>
-            ${steps.map((s) => `
+            ${PROCESS_STEPS.map((s) => `
               <div class="uk-text-center">
                 <div class="uk-heading-large uk-margin-remove jlz-numeral">${s.num}</div>
                 <h3 class="uk-h4 uk-margin-small-top uk-margin-remove-bottom">${s.title}</h3>

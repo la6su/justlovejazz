@@ -7,6 +7,14 @@ export const REVEAL = 'uk-scrollspy="cls: uk-animation-fade; delay: 300; repeat:
 
 export const PAGE_REVEAL = 'uk-scrollspy="cls: uk-animation-fade; delay: 120; target: > *"'
 
+// ── Shared process steps (used by services + manifesto pages) ──
+export const PROCESS_STEPS = [
+  { num: '01', title: 'Discover', desc: 'Audit + define.' },
+  { num: '02', title: 'Design', desc: '3D prototypes.' },
+  { num: '03', title: 'Develop', desc: 'WebGPU + TSL.' },
+  { num: '04', title: 'Ship', desc: 'Launch + evolve.' },
+] as const
+
 // ── Cube face → section mapping ──
 // 6 sections = 6 cube faces. Each section maps to a cube face direction.
 // SplashCube.FACE_ROTATIONS in src/Experience/World/SplashCube.ts must match.
@@ -36,9 +44,7 @@ export type PageId = 'home' | 'services' | 'posts'
 // These helpers generate the TUI-like wrapper structure.
 
 /** Generate the TOP header block — eyebrow (empty, populated by Subtitles
- *  via NoiseText on home sections) + title + optional lead text.
- *  The eyebrow param is unused (kept for backward compat with existing
- *  sectionTop() callers like lab/about). Hint text is injected by Subtitles. */
+ *  via NoiseText on home sections) + title + optional lead text. */
 export function sectionTop(_eyebrow: string, title: string, lead?: string): string {
   return `
     <div class="jlz-section-top uk-text-center uk-flex uk-flex-column uk-flex-middle" ${REVEAL}>
