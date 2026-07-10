@@ -416,12 +416,13 @@ body.uk-light .jlz-secret-nav > li > a:hover {
      uk-section-large@m utility classes in templates.ts — UIKit native,
      responsive, rem-based. No custom px padding here. */
   overflow: hidden;
-  /* Subtle radial scrim behind content for readability over 3D —
-     lighter than a flat overlay, keeps 3D visible at the edges. */
+  /* Radial scrim behind content for readability over 3D —
+     theme-aware via --jlz-scrim-* (dark veil in dark mode, light veil
+     in light mode). Keeps 3D visible at the edges. */
   background: radial-gradient(
     ellipse 80% 60% at 50% 50%,
-    rgba(5, 5, 7, 0.28),
-    rgba(5, 5, 7, 0.08) 60%,
+    var(--jlz-scrim-1),
+    var(--jlz-scrim-2) 60%,
     transparent 100%
   );
 }
@@ -870,8 +871,8 @@ section[data-section='process'] .uk-list li:hover {
 }
 
 .jlz-joystick__base {
-  width: 110px;
-  height: 110px;
+  width: var(--jlz-joystick-size);
+  height: var(--jlz-joystick-size);
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(12px);
@@ -964,8 +965,8 @@ body.uk-light .jlz-joystick__arrow--active {
 
 @media (max-width: 640px) {
   .jlz-joystick__base {
-    width: 90px;
-    height: 90px;
+    width: var(--jlz-joystick-size-sm);
+    height: var(--jlz-joystick-size-sm);
   }
 
   .jlz-joystick__ball {
@@ -1143,7 +1144,7 @@ body.uk-light .jlz-eyebrow {
 /* Tools row — top row, reserves space for joystick.
    Joystick (position:fixed) visually overlaps this row. */
 .jlz-dock__tools {
-  height: 70px; /* reserve space for joystick base (110px) to sit on */
+  height: var(--jlz-dock-tools-height); /* reserve space for joystick base to sit on */
   position: relative;
   background: rgba(5, 5, 7, 0.5);
   backdrop-filter: blur(8px);
@@ -1243,8 +1244,8 @@ body.uk-light .jlz-dock__social .uk-iconnav a:hover {
   }
 
   .jlz-joystick__base {
-    width: 90px;
-    height: 90px;
+    width: var(--jlz-joystick-size-sm);
+    height: var(--jlz-joystick-size-sm);
   }
 
   .jlz-joystick__ball {

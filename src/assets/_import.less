@@ -201,6 +201,18 @@
   --jlz-color-cursor-hover: #ff3c3c;
   --jlz-header-height: 90px;
   --jlz-dock-height: 118px;
+
+  /* Component dimensions — referenced across main.less for structural
+     consistency. Single source of truth for the dock/joystick geometry. */
+  --jlz-joystick-size: 110px;
+  --jlz-joystick-size-sm: 90px;
+  --jlz-dock-tools-height: 70px;
+
+  /* Radial scrim behind content for readability over 3D.
+     Flips with theme: dark veil aids light text (dark mode),
+     light veil aids dark text (light mode). See html.uk-light below. */
+  --jlz-scrim-1: rgba(5, 5, 7, 0.28);
+  --jlz-scrim-2: rgba(5, 5, 7, 0.08);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -217,6 +229,10 @@ html.uk-light {
   --jlz-color-text: #050507;
   --jlz-color-text-muted: rgba(5, 5, 7, 0.55);
   --jlz-color-text-subtle: rgba(5, 5, 7, 0.35);
+  /* Light scrim — soft white veil aids dark-text readability over 3D
+     (mirrors the dark scrim in dark mode). */
+  --jlz-scrim-1: rgba(255, 255, 255, 0.24);
+  --jlz-scrim-2: rgba(255, 255, 255, 0.06);
 }
 
 // ═══════════════════════════════════════════════════════════════════════
