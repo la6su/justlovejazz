@@ -38,8 +38,8 @@ export class Cursor {
   private targetY = 0
   private innerX = 0
   private innerY = 0
-  // Smooth lerp — lower = smoother but more lag. 0.15 = nice balance.
-  private readonly lerpFactor = 0.15
+  // Smooth lerp — lower = smoother. 0.12 = codrops-like smooth snap.
+  private readonly lerpFactor = 0.12
 
   // Noisy circle state
   private isStuck = false
@@ -88,16 +88,14 @@ export class Cursor {
     this.mouseoverHandler = (e: MouseEvent) => {
       const target = e.target as HTMLElement
       if (!target || typeof target.closest !== 'function') return
-      const magnetic = target.closest('[data-magnetic]')
-      if (magnetic) {
-        const rect = magnetic.getBoundingClientRect()
+      const interactive = target.closest('[data-magnetic], a, button, .interactive, [uk-toggle], [uk-slider]')
+      if (interactive) {
+        // Snap to element CENTER (codrops reference behavior).
+        // The outer circle lerps from mouse pos → element center, giving
+        // the magnetic "snap to button" feel.
+        const rect = (interactive as HTMLElement).getBoundingClientRect()
         this.stuckX = rect.left + rect.width / 2
         this.stuckY = rect.top + rect.height / 2
-        this.isStuck = true
-      } else if (target.closest('a, button, .interactive, [uk-toggle], [uk-slider]')) {
-        // On hover, stick to mouse position (not element center) — smoother.
-        this.stuckX = this.targetX
-        this.stuckY = this.targetY
         this.isStuck = true
       } else {
         this.isStuck = false
@@ -106,7 +104,7 @@ export class Cursor {
     this.mouseoutHandler = (e: MouseEvent) => {
       const target = e.target as HTMLElement
       if (!target || typeof target.closest !== 'function') return
-      if (target.closest('[data-magnetic], a, button, .interactive')) {
+      if (target.closest('[data-magnetic], a, button, .interactive, [uk-toggle], [uk-slider]')) {
         this.isStuck = false
       }
     }
