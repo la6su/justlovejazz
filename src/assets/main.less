@@ -755,12 +755,12 @@ body.uk-light .jlz-secret-nav > li > a:hover {
   left: 0;
   width: 6px;
   height: 6px;
-  margin: -3px 0 0 -3px;
   background-color: var(--jlz-color-accent);
   border-radius: var(--jlz-radius-full);
   pointer-events: none;
   z-index: 100000;
   will-change: transform;
+  /* Centering done via translate(-50%, -50%) in JS — no margin hack */
 }
 
 .custom-cursor-canvas {
@@ -772,6 +772,7 @@ body.uk-light .jlz-secret-nav > li > a:hover {
   pointer-events: none;
   z-index: 100000;
   will-change: transform;
+  /* Centering done via translate(-50%, -50%) in JS */
 }
 
 /* Hide custom cursor on touch devices */

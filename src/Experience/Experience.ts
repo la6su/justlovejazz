@@ -250,6 +250,16 @@ export class Experience {
       }
     }) as EventListener)
 
+    // ── Initial EnvSphere sync — ThemeManager.apply() fired in constructor
+    // (before this listener was registered), so the first event was missed.
+    // Re-apply now that world + envSphere exist.
+    {
+      const isLight = document.body.classList.contains('uk-light')
+      const targetIdx = isLight ? 1 : 2
+      this.world?.envSphere?.changeSection(targetIdx)
+      this._needsRender = true
+    }
+
     // ── Glassmorphism: studio environment map for realistic glass reflections ──
     // RoomEnvironment is a procedural studio scene (walls + lights) rendered
     // ONCE to a PMREM (pre-filtered mipmap radiance environment) texture.
