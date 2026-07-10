@@ -598,13 +598,13 @@ export class RenderPipeline {
     this._rtBright?.dispose()
 
     // Scene RT (full res, LINEAR HDR — composite pass applies ACES + sRGB encode once).
-    // Previously colorSpace: SRGB caused the scene to be sRGB-encoded into the RT,
-    // then the composite shader applied ACES on already-encoded values, then the
-    // screen output sRGB-encoded AGAIN → washed-out double-encoded image.
+    // samples: 4 = MSAA anti-aliasing. Without this, rendering to RT bypasses
+    // the renderer's antialias:true flag → jagged edges on cube faces.
     this._rtScene = new THREE.WebGLRenderTarget(w, h, {
       minFilter: THREE.LinearFilter,
       magFilter: THREE.LinearFilter,
       type: THREE.HalfFloatType,
+      samples: 4,
     })
 
     // Bloom RTs (half res, HalfFloat for HDR accumulation)
