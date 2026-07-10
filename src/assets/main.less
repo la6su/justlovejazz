@@ -435,33 +435,20 @@ body.uk-light .jlz-secret-nav > li > a:hover {
   margin-right: auto;
 }
 
-/* Content pages always use light text over 3D canvas — `body` prefix
-   raises specificity above `body.light-theme .uk-heading-*` (0,2,1 vs
-   0,2,0) so the light-theme toggle from home sections doesn't darken
-   content page text. */
-body .jlz-page .uk-heading-xlarge,
-body .jlz-page .uk-heading-medium,
-body .jlz-page .uk-card-title,
-body .jlz-page .uk-text-lead {
-  color: rgba(255, 255, 255, 0.94);
+/* Content pages: text readability over 3D canvas.
+   QF theme already styles headings/cards via @global-* tokens.
+   We only add text-shadow for readability over any 3D background —
+   NO color overrides (QF handles colors via uk-light/uk-dark inverse). */
+.jlz-page .uk-heading-xlarge,
+.jlz-page .uk-heading-medium,
+.jlz-page .uk-heading-large,
+.jlz-page .uk-card-title,
+.jlz-page .uk-text-lead {
   text-shadow: 0 2px 32px rgba(0, 0, 0, 0.55);
 }
 
-body .jlz-page .uk-text-meta {
-  color: rgba(255, 255, 255, 0.56);
+.jlz-page .uk-text-meta {
   text-shadow: 0 1px 12px rgba(0, 0, 0, 0.5);
-}
-
-.jlz-page .uk-card-default {
-  background: rgba(255, 255, 255, 0.045);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.84);
-  backdrop-filter: blur(14px) saturate(130%);
-  -webkit-backdrop-filter: blur(14px) saturate(130%);
-}
-
-.jlz-page .uk-card-default:hover {
-  background: rgba(255, 255, 255, 0.075);
 }
 
 .jlz-event-row {
@@ -1095,36 +1082,9 @@ body.uk-light .jlz-eyebrow {
   text-decoration: none;
 }
 
-/* Services big-number list */
-.jlz-page .uk-heading-small {
-  font-weight: 200;
-  letter-spacing: -0.02em;
-  opacity: 0.5;
-}
-
-/* Team cards — compact on mobile, UIKit handles via uk-card-body padding */
-.jlz-page .uk-card-body {
-  padding: 1rem;
-}
-
-@media (min-width: 640px) {
-  .jlz-page .uk-card-body {
-    padding: 1.5rem;
-  }
-}
-
-/* Services list items — tight on mobile, uses uk-margin (rem-based) */
-.jlz-page ul.uk-list > li {
-  margin-top: 0.75rem;
-  margin-bottom: 0.75rem;
-}
-
-@media (min-width: 640px) {
-  .jlz-page ul.uk-list > li {
-    margin-top: 1.25rem;
-    margin-bottom: 1.25rem;
-  }
-}
+/* (Removed .jlz-page .uk-heading-small, .uk-card-body, ul.uk-list overrides —
+   QF theme + UIKit globals handle these via @global-* tokens. No need to
+   duplicate or fight the theme.) */
 
 /* ── Numeral / date column helpers (replace inline styles) ──
    Used by: services list (01-04), services process steps, posts archive
@@ -1151,36 +1111,9 @@ body.uk-light .jlz-eyebrow {
   gap: var(--jlz-space-2); /* 0.5rem */
 }
 
-/* ── Service + Principle cards (content pages) ──
-   Glassmorphism style — matches the 3D aesthetic. */
-.jlz-service-card,
-.jlz-principle-card {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(10px) saturate(130%);
-  -webkit-backdrop-filter: blur(10px) saturate(130%);
-  transition: transform 0.3s ease, background 0.3s ease, border-color 0.3s ease;
-}
-
-.jlz-service-card:hover,
-.jlz-principle-card:hover {
-  transform: translateY(-4px);
-  background: rgba(255, 255, 255, 0.07);
-  border-color: rgba(255, 255, 255, 0.15);
-}
-
-/* Light theme variant for cards */
-body.uk-light .jlz-service-card,
-body.uk-light .jlz-principle-card {
-  background: rgba(5, 5, 7, 0.04);
-  border-color: rgba(5, 5, 7, 0.1);
-}
-
-body.uk-light .jlz-service-card:hover,
-body.uk-light .jlz-principle-card:hover {
-  background: rgba(5, 5, 7, 0.07);
-  border-color: rgba(5, 5, 7, 0.2);
-}
+/* (Removed .jlz-service-card / .jlz-principle-card — QF uk-card-default
+   + uk-card-hover already provide glassmorphism + hover. No need to
+   duplicate. Use uk-card-default uk-card-hover in templates.) */
 
 /* ------------------------------------------------------------------
    Unified dock — 2-row bottom bar (tools + footer)

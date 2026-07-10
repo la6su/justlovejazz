@@ -275,27 +275,14 @@ html.uk-light {
 // @global-primary-background (button glow gradients, alert-primary, marker,
 // dotnav, subnav-pill, progress-bar, navbar-dropdown-nav-active) use the JLZ
 // accent color instead of UIKit's default blue (#1e87f0).
+// This is the ONLY color override needed — QF handles all component-specific
+// styling (buttons, cards, navbar) via its own variables, which reference
+// @global-primary-background. Do NOT override @button-*, @card-*, @navbar-*
+// here — let QF do its job.
 @global-primary-background: @jlz-color-accent;
 @global-primary-hover-background: @jlz-color-accent-hover;
 
-// ── Button overrides ──
-@button-default-color: @jlz-color-accent;
-@button-default-background: @jlz-color-surface;
-@button-default-border: none;
-@button-primary-background: @jlz-color-accent;
-@button-primary-hover-background: @jlz-color-accent-hover;
-@button-primary-hover-color: #fff;
-@button-secondary-background: @jlz-color-surface;
-@button-secondary-color: @jlz-color-text;
-@button-link-hover-color: @jlz-color-accent;
-@button-secondary-hover-color: #f2f2f2;
-
-// ── Card overrides ──
-@card-default-background: @jlz-color-surface;
-@card-default-hover-background: @jlz-color-surface-hover;
-@card-badge-background: @jlz-color-surface;
-
-// ── Navbar overrides ──
+// ── Navbar background (transparent — we use custom .tm-header) ──
 @navbar-background: transparent;
 @navbar-border: 0;
 @navbar-nav-subtitle: 0;
@@ -313,9 +300,6 @@ html.uk-light {
 // ── Close/Spinner/Overlay ──
 @close-color: @jlz-color-text;
 @close-hover-color: @jlz-color-accent;
-
-// ── Progress overrides ──
-@progressbar-con-face-background: @jlz-color-accent;
 
 // ── Search overrides ──
 @search-background: @jlz-color-surface;

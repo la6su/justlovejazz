@@ -83,7 +83,9 @@
       #jlz-app-loader.fade-out .jlz-loader-curtain--top { transform: translateY(-100%); }
       #jlz-app-loader.fade-out .jlz-loader-curtain--bottom { transform: translateY(100%); }
 
-      /* Seam glow at curtain split — bright line during transition */
+      /* Seam glow at curtain split — bright line that flashes briefly
+         during the split, then fades out. Uses animation (not transition)
+         so it disappears on its own after the curtains open. */
       .jlz-loader-seam {
         position: absolute;
         top: 50%;
@@ -94,9 +96,18 @@
         transform: translateY(-50%);
         z-index: 10002;
         opacity: 0;
-        transition: opacity 0.3s ease;
+        pointer-events: none;
       }
-      #jlz-app-loader.fade-out .jlz-loader-seam { opacity: 1; }
+      /* On fade-out: seam flashes in (0.1s) then fades out (0.4s) — total 0.5s.
+         Curtains take 0.8s to split, so seam is gone before they finish. */
+      #jlz-app-loader.fade-out .jlz-loader-seam {
+        animation: jlz-seam-flash 0.5s ease-out forwards;
+      }
+      @keyframes jlz-seam-flash {
+        0% { opacity: 0; }
+        20% { opacity: 1; }
+        100% { opacity: 0; }
+      }
 
       /* Loader content — progress bar + status text (above curtains) */
       .jlz-loader-content {

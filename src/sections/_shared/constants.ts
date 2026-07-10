@@ -83,3 +83,48 @@ export function sectionShell(
     </section>
   `
 }
+
+/** Content page section wrapper — same Apple Watch layout as sectionShell,
+ *  but uses data-page-section (for JoystickNav page-mode navigation)
+ *  instead of data-section (home cube-face navigation). No data-dynamic-content
+ *  wrapper (content pages don't have 3D scene groups per section).
+ *
+ *  Structure: TOP (eyebrow + title + lead) / 3D CENTER (transparent) / BOTTOM (content).
+ *  Same visual rhythm as home sections — consistent across the site. */
+export function contentSection(
+  id: string,
+  topHtml: string,
+  bottomHtml: string,
+  isActive: boolean = false,
+): string {
+  return `
+    <section class="jlz-page-section ${isActive ? 'section-active' : ''} uk-section uk-section-small uk-section-medium@s uk-section-large@m" data-page-section="${id}">
+      <div class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-text-center uk-height-1-1">
+        ${topHtml}
+        ${bottomHtml}
+      </div>
+    </section>
+  `
+}
+
+/** TOP block for content sections — eyebrow + title + optional lead.
+ *  Same structure as sectionTop (home), but eyebrow is static text
+ *  (content pages don't use NoiseText/Subtitles — home-only feature). */
+export function contentTop(eyebrow: string, title: string, lead?: string): string {
+  return `
+    <div class="jlz-section-top uk-text-center uk-flex uk-flex-column uk-flex-middle" ${PAGE_REVEAL}>
+      <span class="jlz-eyebrow">&gt; ${eyebrow}</span>
+      <h2 class="studio-title uk-heading-medium uk-margin-small-top uk-margin-remove-bottom">${title}</h2>
+      ${lead ? `<p class="uk-text-meta uk-margin-small-top">${lead}</p>` : ''}
+    </div>
+  `
+}
+
+/** BOTTOM block for content sections — wraps cards/grid/list content. */
+export function contentBottom(content: string): string {
+  return `
+    <div class="jlz-section-bottom" ${PAGE_REVEAL}>
+      ${content}
+    </div>
+  `
+}
