@@ -45,7 +45,8 @@ const GRADIENT_COLORS = [
 
 export class SplashCube extends THREE.Mesh {
   private cubeMesh!: THREE.Mesh
-  private edgeLines!: THREE.LineSegments
+  // edgeLines removed — was LineSegments with 1px aliasing. Cube looks
+  // clean with just MeshPhysicalMaterial (iridescence + clearcoat).
   private cubeMaterial!: THREE.MeshPhysicalMaterial
   private cubeCamera!: THREE.CubeCamera
   private contentScene!: THREE.Scene
@@ -223,37 +224,13 @@ export class SplashCube extends THREE.Mesh {
     this.cubeMesh.renderOrder = 2
     this.add(this.cubeMesh)
 
-    // ── Rainbow edges — single EdgesGeometry from BoxGeometry ──
-    // 12 edges total (not 6×4=24 from separate planes). Smoother appearance.
-    const edgeGeo = new THREE.EdgesGeometry(geo)
-    const positions = edgeGeo.attributes.position!
-    const colors = new Float32Array(positions.count * 3)
-    for (let j = 0; j < positions.count; j++) {
-      const x = positions.getX(j)
-      const y = positions.getY(j)
-      const z = positions.getZ(j)
-      // Rainbow based on 3D position angle (spherical)
-      const angle = (Math.atan2(y, x) / (Math.PI * 2)) + 0.5
-      const hue = (angle + z * 0.1) % 1.0
-      const c = new THREE.Color().setHSL(hue, 1.0, 0.6)
-      colors[j * 3] = c.r
-      colors[j * 3 + 1] = c.g
-      colors[j * 3 + 2] = c.b
-    }
-    edgeGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3))
-
-    const edgeMat = new THREE.LineBasicMaterial({
-      vertexColors: true,
-      transparent: true,
-      opacity: 1.0,
-      linewidth: 2,
-      blending: THREE.NormalBlending,
-      depthWrite: false,
-      depthTest: false,
-    })
-    this.edgeLines = new THREE.LineSegments(edgeGeo, edgeMat)
-    this.edgeLines.renderOrder = 10
-    this.add(this.edgeLines)
+    // ── Rainbow edges — DISABLED (pixelated aliasing) ──
+    // LineBasicMaterial.linewidth > 1 is NOT supported in WebGL/WebGPU —
+    // lines render at 1px → jagged aliasing on cube edges.
+    // The glass cube (MeshPhysicalMaterial with iridescence + clearcoat)
+    // looks great on its own. Edges removed for clean rendering.
+    // To re-enable: use tube geometry (MeshLineGeometry) instead of LineSegments.
+    // (edgeLines removed — clean cube without pixelated 1px lines)
   }
 
   // ════════════════════════════════════════════════════════════════════
@@ -399,8 +376,7 @@ export class SplashCube extends THREE.Mesh {
   dispose(): void {
     this.cubeMesh.geometry.dispose()
     this.cubeMaterial.dispose()
-    this.edgeLines.geometry.dispose()
-    ;(this.edgeLines.material as THREE.Material).dispose()
+    // (edgeLines removed — no geometry/material to dispose)
     this.cubeCamera.renderTarget.dispose()
     for (const tex of this.contentTextures) tex.dispose()
     ;(this.geometry as THREE.BufferGeometry).dispose()
