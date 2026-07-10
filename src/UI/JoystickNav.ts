@@ -99,7 +99,9 @@ export class JoystickNav {
     this._base.appendChild(this._ball)
 
     this.addEventListeners()
-    this._syncPageSection(0)
+    // Start on section 1 (intro) — same as home (Lab=0 is secret, Intro=1 is start).
+    // On content pages: section 0 = secret left, 1 = intro (start), 5 = secret right.
+    this._syncPageSection(1)
   }
 
   /** Current WorldConfig section index (what Experience/World reads). */
@@ -111,7 +113,7 @@ export class JoystickNav {
 
   private addEventListeners(): void {
     this._routeChangeHandler = () => {
-      this._syncPageSection(0)
+      this._syncPageSection(1) // start on intro (index 1)
     }
     window.addEventListener('jlz:route-change', this._routeChangeHandler)
 
@@ -204,7 +206,7 @@ export class JoystickNav {
       } else if (e.key === 'Home') {
         e.preventDefault()
         if (this._isPageMode()) {
-          this._syncPageSection(0)
+          this._syncPageSection(1) // Home → intro (index 1)
           return
         }
         this._side = 'center'
