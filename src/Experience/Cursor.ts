@@ -100,11 +100,21 @@ export class Cursor {
     this.mouseoverHandler = (e: MouseEvent) => {
       const target = e.target as HTMLElement
       if (!target || typeof target.closest !== 'function') return
-      const interactive = target.closest('[data-magnetic], a, button, .interactive, [uk-toggle], [uk-slider]')
+      const interactive = target.closest('[data-magnetic], a, button, .interactive, [uk-toggle], [uk-slider]') as HTMLElement | null
       if (interactive) {
-        const rect = (interactive as HTMLElement).getBoundingClientRect()
-        this.stuckX = rect.left + rect.width / 2
-        this.stuckY = rect.top + rect.height / 2
+        // For large menu items (main menu nav links), DON'T snap to center —
+        // the links are huge (clamp 2-5rem), snapping to center looks weird.
+        // Instead, follow mouse + expand + fill (no stuckX/Y override).
+        const isLargeMenu = interactive.closest('.jlz-main-menu-nav, .jlz-secret-nav, #jlz-menu-modal')
+        if (isLargeMenu) {
+          this.stuckX = this.targetX
+          this.stuckY = this.targetY
+        } else {
+          // Normal interactive: snap to element CENTER (codrops behavior)
+          const rect = interactive.getBoundingClientRect()
+          this.stuckX = rect.left + rect.width / 2
+          this.stuckY = rect.top + rect.height / 2
+        }
         this.isStuck = true
         this.fillTarget = 1
         this.innerOpacityTarget = 0
