@@ -1,7 +1,8 @@
 // src/core/World.ts — Junni-style composition: Section[], Baku, Lights, Atmosphere, Ground
 
 import * as THREE from 'three'
-import { BG } from './BG'
+// BG.ts removed — was dead computation (bg.color never read by anyone).
+// EnvSphere is the sole visible background, driven by global theme.
 import { Section, SectionState } from './Section'
 import { StateBus } from './StateBus'
 import { prefersReducedMotion } from './motionPolicy'
@@ -28,7 +29,7 @@ export class World extends THREE.Group {
   public drawTrail?: DrawTrail
   public envSphere!: EnvSphere
   public particleBurst!: ParticleBurst
-  public bg!: BG
+  // BG removed — was dead computation. EnvSphere is the sole background.
   public groundPlane!: THREE.Mesh
   public sceneGroups: THREE.Group[] = []
 
@@ -85,9 +86,7 @@ export class World extends THREE.Group {
     this.add(this.particleBurst)
 
     // ── BG (color provider — still used for lerp logic, but NOT set as
-    // scene.background. EnvSphere renders the background visually. BG.color
-    // is used as a fallback and for section color queries.)
-    this.bg = new BG()
+    // (BG removed — EnvSphere is the sole visible background.)
 
     // ── Ground plane (visual anchor, аналог Junni Ground)
     // Built-in MeshStandardMaterial (NOT NodeMaterial) — reduces uniform group
@@ -212,9 +211,7 @@ export class World extends THREE.Group {
   }
 
   public update(deltaTime: number, needsRender: boolean = true): void {
-    this.bg.update(deltaTime)
-    // EnvSphere manages scene.background (equirectangular CanvasTexture).
-    // Do NOT touch scene.background here — EnvSphere.update() handles it.
+    // EnvSphere manages the visible background.
     this.envSphere.update(deltaTime)
     // Update instanced particles (advances uTime for GPU drift). Frozen when
     // not rendering (on-demand) — only called when needsRender=true (see below).
@@ -337,8 +334,10 @@ export class World extends THREE.Group {
         } else {
           this.sceneRef.fog = new THREE.FogExp2(activeCfg.fog.color.clone(), activeCfg.fog.density)
         }
-        // EnvSphere section change — animate uSection weights (junni pattern)
-        this.envSphere.changeSection(fromIndex)
+        // EnvSphere follows GLOBAL theme (auto=light, inverse=dark) via
+        // jlz:theme-applied listener in Experience.ts. Do NOT call
+        // changeSection per-section here — that would override the global
+        // theme with old per-section patterns.
       }
       // DrawTrail visibility — only on works section (idx=4)
       if (this.drawTrail) {
@@ -348,9 +347,8 @@ export class World extends THREE.Group {
 
     // ── BG sphere section switch (junni pattern: lerp BG color continuously)
     // setProgress() lerps between fromIndex and toIndex colors using eased t,
-    // giving pixel-perfect background progression while scrolling.
-    this.bg.setProgress(fromIndex, toIndex, bgT)
-    // EnvSphere changeSection handles the per-section pattern mix (junni style)
+    // (BG.setProgress removed — bg.color was never read by anyone.)
+    // EnvSphere follows global theme via jlz:theme-applied listener.
 
     // ── Scene group visibility with opacity fade (junni switchVisibility pattern)
     // From group fades out as t→1, to group fades in. Both visible during transition.

@@ -32,25 +32,23 @@ import { prefersReducedMotion } from '../../core/motionPolicy'
 const CANVAS_W = 1024  // was 2048 — half the GPU upload cost
 const CANVAS_H = 512   // was 1024
 
-// Per-section color palette — synced with Experience.ts theme logic.
-// Experience.ts toggles `light-theme` class on sections 0 (intro) and 5 (contact),
-// which switches DOM text to DARK. So those sections need LIGHT backgrounds
-// (for dark text contrast). Other sections use DARK backgrounds (for light text).
-//
-// Light sections (idx 0, 1, 4): luminance ~0.75-0.98 → dark text contrast > 7:1
-// Dark sections  (idx 2, 3, 5): luminance ~0.05-0.18 → light text contrast > 10:1
+// Per-section color palette — used for section-specific visual identity.
+// With global auto/inverse theme, EnvSphere shows ONE pattern for ALL sections:
+//   auto (light) → pattern 1 (Intro: bright white, val=0.98)
+//   inverse (dark) → pattern 2 (About: dark grey gradient)
+// The per-section patterns below are kept for reference/future per-section mode.
 const SECTION_PATTERNS = [
-  // 0: Lab (secret left) — LIGHT: subtle blue-grey HSV
+  // 0: Lab — LIGHT: subtle blue-grey HSV
   { type: 'hsv', hue: 0.6, sat: 0.06, val: 0.88 },
-  // 1: Intro — LIGHT: pure white with ultra-subtle hue shift
+  // 1: Intro — LIGHT: pure white with ultra-subtle hue shift (auto/theme-light target)
   { type: 'hsv', hue: 0.0, sat: 0.02, val: 0.98 },
-  // 2: About — DARK: grey gradient
+  // 2: About — DARK: grey gradient (inverse/theme-dark target)
   { type: 'gradient', color1: 0x1a1a1a, color2: 0x2e2e2e },
-  // 3: Works — DARK: dark blue-grey (gallery feel)
+  // 3: Works — DARK: dark blue-grey
   { type: 'gradient', color1: 0x1a1a22, color2: 0x2a2a3a },
-  // 4: Contact — LIGHT: soft off-white gradient (for dark text)
+  // 4: Contact — LIGHT: soft off-white gradient
   { type: 'gradient', color1: 0xe8e8e8, color2: 0xd8d8d8 },
-  // 5: Process (secret right) — DARK: deep blue-black
+  // 5: Process — DARK: deep blue-black
   { type: 'gradient', color1: 0x080810, color2: 0x12121e },
 ] as const
 
