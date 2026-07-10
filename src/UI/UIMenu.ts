@@ -10,6 +10,14 @@ export interface UIMenuOptions {
 
 // 4 main sections shown in the slider (Lab=0 and Process=5 are secret side sections)
 const MAIN_SECTION_INDICES = [1, 2, 3, 4]
+
+// Per-page slider labels (idx 1-4 = 4 main sections)
+const PAGE_SLIDER_LABELS: Record<string, string[]> = {
+  home: ['Intro', 'About', 'Works', 'Contact'],
+  services: ['Intro', 'Capabilities', 'Stack', 'Process'],
+  manifesto: ['Intro', 'Principles', 'Craft', 'Process'],
+}
+const DEFAULT_LABELS = PAGE_SLIDER_LABELS['home']!
 const PAGE_LINKS = [
   ['/app', 'Home'],
   ['/app/services', 'Services'],
@@ -30,8 +38,9 @@ export class UIMenu {
   private _routeHandler: ((event: Event) => void) | null = null
   private _themeHandler: ((event: Event) => void) | null = null
 
-  constructor(opts: UIMenuOptions) {
-    const labels = opts.sectionLabels
+  constructor(_opts: UIMenuOptions) {
+    // sectionLabels no longer used — slider labels are page-specific
+    // (PAGE_SLIDER_LABELS), updated on route change.
 
     this.navEl = document.createElement('header')
     this.navEl.className = 'tm-header'
@@ -68,14 +77,6 @@ export class UIMenu {
             <li><a href="${href}" data-page-link="${href}">${label}</a></li>
           `).join('')}
         </ul>
-        <div class="uk-margin-large-top">
-          <p class="uk-text-meta uk-text-uppercase">Secret Sections</p>
-          <ul class="uk-nav uk-nav-default uk-margin-small-top jlz-secret-nav">
-            <li><a href="#" data-section-jump="0" aria-label="Jump to Lab section">Lab</a></li>
-            <li><a href="#" data-section-jump="5" aria-label="Jump to Process section">Process</a></li>
-          </ul>
-          <p class="uk-text-meta uk-margin-small-top jlz-secret-nav__hint">Hidden side sections — also reachable via horizontal joystick drag.</p>
-        </div>
         <div class="uk-margin-large-top jlz-theme-toggle">
           <p class="uk-text-meta uk-text-uppercase">Theme</p>
           <button class="uk-button uk-button-default uk-button-small uk-margin-small-top" id="jlz-theme-toggle-btn" type="button" aria-pressed="false">
@@ -88,12 +89,12 @@ export class UIMenu {
     `
 
     const ul = this.navEl.querySelector('.uk-slider-items')!
-    MAIN_SECTION_INDICES.forEach((sectionIdx) => {
+    MAIN_SECTION_INDICES.forEach((sectionIdx, i) => {
       const li = document.createElement('li')
       const a = document.createElement('a')
       a.href = '#'
       a.className = 'jlz-nav-link'
-      a.textContent = labels[sectionIdx] ?? `S${sectionIdx}`
+      a.textContent = DEFAULT_LABELS[i] ?? `S${sectionIdx}`
       a.addEventListener('click', (e) => {
         e.preventDefault()
         this._onNavigate?.(sectionIdx)
@@ -113,6 +114,7 @@ export class UIMenu {
     this._routeHandler = (event: Event) => {
       const page = (event as CustomEvent<{ page?: string }>).detail?.page ?? 'home'
       this.updatePageActive(page)
+      this.updateSliderLabels(page)
     }
     window.addEventListener('jlz:route-change', this._routeHandler)
 
@@ -124,22 +126,9 @@ export class UIMenu {
     this._themeHandler = () => this.updateThemeLabel()
     window.addEventListener('jlz:theme-change', this._themeHandler)
 
-    // Secret section jumps — Lab (idx 0) / Process (idx 5).
-    // Calls _onNavigate(sectionIdx) same as slider clicks, then closes modal.
-    this.modalEl.querySelectorAll<HTMLAnchorElement>('[data-section-jump]').forEach((link) => {
-      link.addEventListener('click', (e) => {
-        e.preventDefault()
-        const idx = Number(link.dataset.sectionJump)
-        if (!Number.isNaN(idx)) {
-          this._onNavigate?.(idx)
-          // Close modal — UIkit modal API
-          try { UIkit.modal(this.modalEl).hide() } catch { /* ignore */ }
-        }
-      })
-    })
-
     this.updateActive()
     this.updatePageActive(document.body.dataset.page ?? 'home')
+    this.updateSliderLabels(document.body.dataset.page ?? 'home')
     this.updateThemeLabel()
   }
 
@@ -160,6 +149,15 @@ export class UIMenu {
     if (mainIdx >= 0 && this._sliderComponent) {
       this._sliderComponent.show(mainIdx)
     }
+  }
+
+  /** Update slider nav labels for the current page. */
+  private updateSliderLabels(page: string): void {
+    const labels = PAGE_SLIDER_LABELS[page] ?? DEFAULT_LABELS
+    this.items.forEach((li, i) => {
+      const a = li.querySelector('.jlz-nav-link')
+      if (a) a.textContent = labels[i] ?? `S${i}`
+    })
   }
 
   /** Update the theme toggle button label + aria-pressed. */

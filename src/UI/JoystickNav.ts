@@ -249,7 +249,23 @@ export class JoystickNav {
   /** Horizontal navigation — left/right toggles Lab/Process. */
   private _navigateHorizontal(dir: 1 | -1): void {
     if (this._isPageMode()) {
-      this._syncPageSection(this._pageSectionIndex() + dir)
+      // On content pages: left = first section (secret), right = last section (secret).
+      // Same pattern as home: horizontal toggles to "side" sections.
+      const sections = this._getPageSections()
+      if (sections.length === 0) return
+      const current = this._pageSectionIndex()
+      const first = 0
+      const last = sections.length - 1
+      // If in middle → go to first (left) or last (right)
+      // If at first → go to center (middle) on right
+      // If at last → go to center (middle) on left
+      if (dir === -1) {
+        // Left: → first section, or back to middle from first
+        this._syncPageSection(current === first ? Math.floor(sections.length / 2) : first)
+      } else {
+        // Right: → last section, or back to middle from last
+        this._syncPageSection(current === last ? Math.floor(sections.length / 2) : last)
+      }
       this._setActive(true)
       setTimeout(() => this._setActive(false), 400)
       return

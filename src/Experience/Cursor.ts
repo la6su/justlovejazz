@@ -181,37 +181,42 @@ export class Cursor {
 
     const cx = CANVAS_HALF
     const cy = CANVAS_HALF
-    const r = this.currentRadius * this.bumpScale
+    const radius = this.currentRadius * this.bumpScale
 
     ctx.beginPath()
-    // Color: accent stroke, brighter on dark bg. Fill on hover.
-    const strokeR = 107, strokeG = 120, strokeB = 163 // #6b78a3 (accent-hover, brighter)
-    const alpha = 0.6 + this.fillProgress * 0.3 // 0.6 → 0.9
-    ctx.strokeStyle = `rgba(${strokeR}, ${strokeG}, ${strokeB}, ${alpha})`
+    // Color: idle = accent-hover (bright blue-grey), hover = RED (codrops style).
+    // Lerp between idle and hover colors via fillProgress.
+    const idleR = 107, idleG = 120, idleB = 163   // #6b78a3 accent-hover
+    const hoverR = 255, hoverG = 60, hoverB = 60   // red (codrops #ff0000 softened)
+    const cr = Math.round(lerp(idleR, hoverR, this.fillProgress))
+    const cg = Math.round(lerp(idleG, hoverG, this.fillProgress))
+    const cb = Math.round(lerp(idleB, hoverB, this.fillProgress))
+    const alpha = 0.6 + this.fillProgress * 0.3
+    ctx.strokeStyle = `rgba(${cr}, ${cg}, ${cb}, ${alpha})`
     ctx.lineWidth = 2
 
     // Noisy distortion only when expanded enough
     const isNoisy = this.isStuck && this.currentRadius > this.baseRadius + 5
     for (let i = 0; i <= this.segments; i++) {
       const angle = (i / this.segments) * Math.PI * 2
-      let radius = r
+      let segRadius = radius
 
       if (isNoisy) {
         const noiseX = noise2D(this.frameCount / this.noiseScale, i)
         const noiseY = noise2D(this.frameCount / this.noiseScale, i + 10)
-        radius += (noiseX + noiseY) * this.noiseRange
+        segRadius += (noiseX + noiseY) * this.noiseRange
       }
 
-      const x = cx + Math.cos(angle) * radius
-      const y = cy + Math.sin(angle) * radius
+      const x = cx + Math.cos(angle) * segRadius
+      const y = cy + Math.sin(angle) * segRadius
       if (i === 0) ctx.moveTo(x, y)
       else ctx.lineTo(x, y)
     }
     ctx.closePath()
 
-    // Fill: if fillProgress > 0, fill with accent color (semi-transparent)
+    // Fill: if fillProgress > 0, fill with current (red) color
     if (this.fillProgress > 0.01) {
-      ctx.fillStyle = `rgba(${strokeR}, ${strokeG}, ${strokeB}, ${this.fillProgress * 0.4})`
+      ctx.fillStyle = `rgba(${cr}, ${cg}, ${cb}, ${this.fillProgress * 0.4})`
       ctx.fill()
     }
     ctx.stroke()
