@@ -276,8 +276,10 @@ li.uk-active .jlz-nav-link {
   color: #fff;
 }
 
-body:not([data-page='home']) .jlz-section-slider {
-  display: none !important;
+/* Slider nav visible on ALL app pages (home + services + manifesto — all
+   have 3D + sections). Hidden on splash/landing/blog (no 3D, no sections). */
+.jlz-section-slider {
+  display: block;
 }
 
 #jlz-menu-modal .uk-modal-dialog {
@@ -753,9 +755,9 @@ body.uk-light .jlz-secret-nav > li > a:hover {
   position: fixed;
   top: 0;
   left: 0;
-  width: 6px;
-  height: 6px;
-  background-color: var(--jlz-color-accent);
+  width: 8px;
+  height: 8px;
+  background-color: var(--jlz-color-accent-hover);
   border-radius: var(--jlz-radius-full);
   pointer-events: none;
   z-index: 100000;
@@ -1003,9 +1005,9 @@ body.uk-light .jlz-eyebrow {
 
 .jlz-section-top {
   flex-shrink: 0;
-  /* Push TOP block below the fixed header (.tm-header ~76px tall).
-     Gives breathing room between header nav and section title. */
-  padding-top: calc(80px + var(--jlz-space-4));
+  /* Push TOP block below the fixed header (.tm-header ~76px tall) +
+     slider nav. Gives breathing room between header and section title. */
+  padding-top: calc(90px + var(--jlz-space-6));
 }
 
 .jlz-section-bottom {
@@ -1210,10 +1212,10 @@ body.uk-light .jlz-dock__social .uk-iconnav a:hover {
 }
 
 /* Reserve bottom space on ALL pages so dock doesn't cover content.
-   Total dock height = tools(70px) + footer(~40px) ≈ 110px */
+   Total dock height = tools(70px) + footer(~48px) ≈ 118px + safe area */
 .jlz-page-section,
 #spa-content section[data-section] {
-  padding-bottom: 120px;
+  padding-bottom: calc(130px + env(safe-area-inset-bottom, 0px));
 }
 
 @media (max-width: 640px) {

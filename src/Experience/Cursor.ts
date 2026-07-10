@@ -44,9 +44,9 @@ export class Cursor {
   private isStuck = false
   private stuckX = 0
   private stuckY = 0
-  private currentRadius = 15
-  private readonly baseRadius = 15
-  private readonly targetRadius = 28
+  private currentRadius = 20
+  private readonly baseRadius = 20
+  private readonly targetRadius = 36
   private readonly segments = 8
   private readonly noiseScale = 150
   private readonly noiseRange = 3
@@ -184,11 +184,11 @@ export class Cursor {
     const r = this.currentRadius * this.bumpScale
 
     ctx.beginPath()
-    // Color: lerp from stroke (white/accent) to fill (accent)
-    const strokeR = 81, strokeG = 93, strokeB = 132 // #515d84 accent
-    const alpha = 0.4 + this.fillProgress * 0.4 // 0.4 → 0.8
+    // Color: accent stroke, brighter on dark bg. Fill on hover.
+    const strokeR = 107, strokeG = 120, strokeB = 163 // #6b78a3 (accent-hover, brighter)
+    const alpha = 0.6 + this.fillProgress * 0.3 // 0.6 → 0.9
     ctx.strokeStyle = `rgba(${strokeR}, ${strokeG}, ${strokeB}, ${alpha})`
-    ctx.lineWidth = 1.5
+    ctx.lineWidth = 2
 
     // Noisy distortion only when expanded enough
     const isNoisy = this.isStuck && this.currentRadius > this.baseRadius + 5
@@ -211,7 +211,7 @@ export class Cursor {
 
     // Fill: if fillProgress > 0, fill with accent color (semi-transparent)
     if (this.fillProgress > 0.01) {
-      ctx.fillStyle = `rgba(${strokeR}, ${strokeG}, ${strokeB}, ${this.fillProgress * 0.3})`
+      ctx.fillStyle = `rgba(${strokeR}, ${strokeG}, ${strokeB}, ${this.fillProgress * 0.4})`
       ctx.fill()
     }
     ctx.stroke()
