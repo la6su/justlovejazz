@@ -1,22 +1,22 @@
 // src/pages/content/manifesto.ts — Manifesto page (6 sections, cube-map layout)
 // Same structure as home: 0=secret, 1=intro(start), 2-4=main, 5=secret.
 
-import { contentSection, contentTop, contentBottom, PROCESS_STEPS } from '../../sections/_shared/constants'
+import { contentSection, contentTop, contentBottom, processTimeline } from '../../sections/_shared/constants'
 import { FOOTER } from '../../sections/_shared/footer'
 
 export function manifestoPage(): string {
   const principles = [
-    { num: '01', title: 'Depth over surface', desc: 'One alive thing > ten flat things.' },
-    { num: '02', title: 'Craft over speed', desc: 'Type-safe GPU code. No raw GLSL strings.' },
-    { num: '03', title: 'Performance is a feature', desc: '60fps on mid-range. Zero idle draw calls.' },
-    { num: '04', title: 'Parity, not compromise', desc: 'WebGPU + WebGL2. Bit-identical output.' },
+    { num: '01', title: 'Depth over surface', desc: 'One alive thing beats ten flat things.', example: 'A single iridescent cube you can rotate beats a gallery of static renders.' },
+    { num: '02', title: 'Craft over speed', desc: 'Type-safe GPU code. No raw GLSL strings.', example: 'TSL nodes give us compile-time checks where GLSL gives us black screens.' },
+    { num: '03', title: 'Performance is a feature', desc: '60fps on mid-range. Zero idle draw calls.', example: 'On-demand rendering means the GPU sleeps when you do — battery stays full.' },
+    { num: '04', title: 'Parity, not compromise', desc: 'WebGPU + WebGL2. Bit-identical output.', example: 'One codebase, two backends. Safari users see what Chrome users see.' },
   ]
   return `
     <article class="jlz-page" data-page-view="manifesto">
       <!-- 0: SECRET LEFT — hidden, reachable via horizontal drag -->
       ${contentSection('manifesto-secret-left',
-        contentTop('HIDDEN', 'Secret', 'Drag back to explore manifesto.'),
-        contentBottom(`<p class="uk-text-meta">← Drag right to return</p>`)
+        contentTop('HIDDEN', 'The other side', 'Every cube has faces you rarely see. Drag right to return.'),
+        contentBottom(`<p class="uk-text-meta uk-margin-remove">← Drag right to return to manifesto</p>`)
       )}
       <!-- 1: INTRO (start, active) -->
       ${contentSection('manifesto-intro',
@@ -34,6 +34,7 @@ export function manifestoPage(): string {
                 <div class="uk-heading-medium uk-margin-remove jlz-numeral">${p.num}</div>
                 <h3 class="uk-card-title uk-margin-small-top uk-margin-remove-bottom">${p.title}</h3>
                 <p class="uk-text-meta uk-margin-small-top">${p.desc}</p>
+                <p class="uk-text-meta jlz-text-subtle uk-margin-small-top uk-margin-remove-bottom">e.g. ${p.example}</p>
               </div>
             `).join('')}
           </div>
@@ -44,28 +45,18 @@ export function manifestoPage(): string {
         contentTop('CRAFT', 'Real-time, not canned'),
         contentBottom(`
           <p class="uk-text-lead">Every pixel is computed. Every frame is alive.</p>
-          <p class="uk-text-meta uk-margin-small-top">No video. No sprites. No tricks.</p>
+          <p class="uk-text-meta uk-margin-small-top">No video. No sprites. No tricks. Just shaders, every frame, on your GPU.</p>
         `)
       )}
-      <!-- 4: Process -->
+      <!-- 4: Process — shared vertical timeline (same as home + services) -->
       ${contentSection('manifesto-process',
-        contentTop('PROCESS', '4 steps'),
-        contentBottom(`
-          <div class="uk-grid uk-child-width-1-2@s uk-child-width-1-4@m" uk-grid>
-            ${PROCESS_STEPS.map((s) => `
-              <div class="uk-text-center">
-                <div class="uk-heading-large uk-margin-remove jlz-numeral">${s.num}</div>
-                <h3 class="uk-h4 uk-margin-small-top uk-margin-remove-bottom">${s.title}</h3>
-                <p class="uk-text-meta uk-margin-small-top">${s.desc}</p>
-              </div>
-            `).join('')}
-          </div>
-        `)
+        contentTop('PROCESS', 'How we ship'),
+        contentBottom(processTimeline())
       )}
       <!-- 5: SECRET RIGHT — hidden, reachable via horizontal drag -->
       ${contentSection('manifesto-secret-right',
-        contentTop('HIDDEN', 'Secret', 'Drag back to explore manifesto.'),
-        contentBottom(`<p class="uk-text-meta">Drag left to return →</p>`)
+        contentTop('HIDDEN', 'The other side', 'You reached the edge of the cube. Drag left to return.'),
+        contentBottom(`<p class="uk-text-meta uk-margin-remove">Drag left to return to manifesto →</p>`)
       )}
     </article>
     ${FOOTER}

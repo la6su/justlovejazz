@@ -1115,6 +1115,84 @@ body.uk-light .jlz-eyebrow {
   opacity: 1; /* dates use uk-text-meta for muted color, no opacity dim */
 }
 
+/* Vertical timeline — shared Process layout (home + services + manifesto).
+   Replaces the divergent list-divider (home) / 4-col grid (content) treatments.
+   Node column carries a connecting line; body holds title + desc. */
+.jlz-timeline {
+  list-style: none;
+  margin: 0 auto;
+  padding: 0;
+  max-width: 38rem; /* 608px — readable measure for 4 steps */
+  text-align: left;
+}
+
+.jlz-timeline__item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--jlz-space-4); /* 1rem */
+  padding-bottom: var(--jlz-space-4);
+}
+
+.jlz-timeline__item:last-child {
+  padding-bottom: 0;
+}
+
+.jlz-timeline__node {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--jlz-space-10); /* 2.5rem — matches jlz-numeral min-width */
+  position: relative;
+}
+
+/* Connecting line dropping from this node to the next */
+.jlz-timeline__node::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  bottom: calc(-1 * var(--jlz-space-4));
+  width: 1px;
+  background: var(--jlz-color-border);
+  transform: translateX(-50%);
+}
+
+.jlz-timeline__item:last-child .jlz-timeline__node::after {
+  display: none;
+}
+
+.jlz-timeline__body {
+  flex: 1;
+  min-width: 0;
+  padding-top: 0.125rem; /* optical alignment with numeral */
+}
+
+.jlz-timeline__title {
+  margin: 0;
+  font-size: 1.0625rem;
+  line-height: 1.4;
+}
+
+.jlz-timeline__desc {
+  margin: 0.25rem 0 0;
+  line-height: 1.5;
+}
+
+/* Inline contact form — mailto-based, no-JS (progressive enhancement).
+   UIKit styles the input/button; we only ensure it wraps cleanly on narrow
+   cube faces. */
+.jlz-contact-form {
+  flex-wrap: wrap;
+  gap: var(--jlz-space-2);
+}
+
+/* Subtle text — one step below uk-text-meta's muted tone. Used for secondary
+   copy inside cards (e.g. manifesto principle examples). Theme-aware. */
+.jlz-text-subtle {
+  opacity: 0.7;
+}
+
 /* Flex gap utility (UIkit uk-flex has no gap control).
    Used by: intro CTA button row, works drag hint. */
 .jlz-flex-gap-small {

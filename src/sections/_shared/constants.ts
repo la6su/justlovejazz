@@ -7,12 +7,13 @@ export const REVEAL = 'uk-scrollspy="cls: uk-animation-fade; delay: 300; repeat:
 
 export const PAGE_REVEAL = 'uk-scrollspy="cls: uk-animation-fade; delay: 120; target: > *"'
 
-// ── Shared process steps (used by services + manifesto pages) ──
+// ── Shared process steps (used by home + services + manifesto pages) ──
+// Rich descriptions — unified across the whole site (audit: 2 divergent copies).
 export const PROCESS_STEPS = [
-  { num: '01', title: 'Discover', desc: 'Audit + define.' },
-  { num: '02', title: 'Design', desc: '3D prototypes.' },
-  { num: '03', title: 'Develop', desc: 'WebGPU + TSL.' },
-  { num: '04', title: 'Ship', desc: 'Launch + evolve.' },
+  { num: '01', title: 'Discover', desc: 'Research, audit, define the problem' },
+  { num: '02', title: 'Design', desc: 'Art direction, 3D, interaction prototypes' },
+  { num: '03', title: 'Develop', desc: 'WebGPU, TSL shaders, performance budgets' },
+  { num: '04', title: 'Ship', desc: 'Launch, measure, evolve' },
 ] as const
 
 // ── Cube face → section mapping ──
@@ -132,5 +133,29 @@ export function contentBottom(content: string): string {
     <div class="jlz-section-bottom" ${PAGE_REVEAL}>
       ${content}
     </div>
+  `
+}
+
+/** Vertical timeline — shared Process layout across home + services + manifesto.
+ *  Replaces the divergent list-divider (home) / 4-col grid (content) treatments
+ *  flagged in the design audit. Single source of truth: PROCESS_STEPS. */
+export function processTimeline(
+  steps: ReadonlyArray<{ num: string; title: string; desc: string }> = PROCESS_STEPS,
+): string {
+  return `
+    <ol class="jlz-timeline">
+      ${steps
+        .map(
+          (s) => `
+        <li class="jlz-timeline__item">
+          <span class="jlz-timeline__node jlz-numeral jlz-numeral--sm">${s.num}</span>
+          <div class="jlz-timeline__body">
+            <h3 class="jlz-timeline__title uk-text-bold">${s.title}</h3>
+            <p class="jlz-timeline__desc uk-text-meta uk-margin-remove-top">${s.desc}</p>
+          </div>
+        </li>`,
+        )
+        .join('')}
+    </ol>
   `
 }

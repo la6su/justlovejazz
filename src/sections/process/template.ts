@@ -1,7 +1,7 @@
 // src/sections/process/template.ts — Face 5: Process (secret right, left face -X)
 // Apple Watch layout: TOP (title + lead) / 3D CENTER / BOTTOM (timeline)
 
-import { REVEAL } from '../_shared/constants'
+import { REVEAL, processTimeline } from '../_shared/constants'
 
 export function processSection(): string {
   return `
@@ -16,29 +16,10 @@ export function processSection(): string {
             <h2 class="studio-title uk-heading-medium uk-margin-small-top uk-margin-remove-bottom">PROCESS</h2>
             <p class="uk-text-lead uk-margin-small-top">Four phases. One shippable milestone per phase.</p>
           </div>
-          <!-- BOTTOM: timeline -->
-          <ul class="uk-list uk-list-divider" ${REVEAL}>
-            <li class="uk-flex uk-flex-middle">
-              <span class="uk-text-bold uk-text-large uk-margin-right jlz-numeral jlz-numeral--sm">01</span>
-              <span class="uk-text-bold uk-margin-right">Discover</span>
-              <span class="uk-text-meta">Research, audit, define the problem</span>
-            </li>
-            <li class="uk-flex uk-flex-middle">
-              <span class="uk-text-bold uk-text-large uk-margin-right jlz-numeral jlz-numeral--sm">02</span>
-              <span class="uk-text-bold uk-margin-right">Design</span>
-              <span class="uk-text-meta">Art direction, 3D, interaction prototypes</span>
-            </li>
-            <li class="uk-flex uk-flex-middle">
-              <span class="uk-text-bold uk-text-large uk-margin-right jlz-numeral jlz-numeral--sm">03</span>
-              <span class="uk-text-bold uk-margin-right">Develop</span>
-              <span class="uk-text-meta">WebGPU, TSL shaders, performance budgets</span>
-            </li>
-            <li class="uk-flex uk-flex-middle">
-              <span class="uk-text-bold uk-text-large uk-margin-right jlz-numeral jlz-numeral--sm">04</span>
-              <span class="uk-text-bold uk-margin-right">Ship</span>
-              <span class="uk-text-meta">Launch, measure, evolve</span>
-            </li>
-          </ul>
+          <!-- BOTTOM: shared vertical timeline (same as services + manifesto pages) -->
+          <div ${REVEAL}>
+            ${processTimeline()}
+          </div>
         </div>
       </div>
     </section>

@@ -1,5 +1,5 @@
 // src/sections/contact/template.ts — Face 4: Contact (bottom face -Y)
-// Apple Watch layout: TOP (title) / 3D CENTER / BOTTOM (email + buttons)
+// Apple Watch layout: TOP (title) / 3D CENTER / BOTTOM (inline form + links)
 
 import { REVEAL } from '../_shared/constants'
 
@@ -17,14 +17,24 @@ export function contactSection(): string {
                 data-content-id="contact-title">Contact</h2>
             <p class="uk-text-lead uk-margin-small-top">Open for new projects. Let's talk.</p>
           </div>
-          <!-- BOTTOM: email + buttons -->
+          <!-- BOTTOM: inline mailto form (no-JS fallback) + social -->
           <div ${REVEAL}>
+            <!-- Inline form: opens visitor's mail client with prefilled subject.
+                 enctype="text/plain" keeps it no-JS (progressive enhancement). -->
+            <form class="jlz-contact-form uk-flex uk-flex-center uk-flex-middle uk-margin-bottom"
+                  action="mailto:hello@justlovejazz.com" method="post" enctype="text/plain">
+              <div class="uk-inline uk-width-1-1 uk-width-medium@s">
+                <span class="uk-form-icon" uk-icon="icon: mail" aria-hidden="true"></span>
+                <input class="uk-input" type="text" name="subject"
+                       placeholder="What's the project?" aria-label="Project subject" />
+              </div>
+              <button class="uk-button uk-button-primary uk-margin-small-left" type="submit">
+                <span uk-icon="icon: push" aria-hidden="true"></span>
+                <span class="uk-margin-small-left">Send</span>
+              </button>
+            </form>
             <a href="mailto:hello@justlovejazz.com" class="uk-link uk-text-large">hello@justlovejazz.com</a>
             <div class="uk-grid-small uk-child-width-auto@s uk-flex uk-flex-center uk-margin-top" uk-grid>
-              <a href="mailto:hello@justlovejazz.com" class="uk-button uk-button-primary uk-button-large">
-                <span uk-icon="icon: mail; ratio: 1.1" aria-hidden="true"></span>
-                <span>Start a project</span>
-              </a>
               <a href="https://github.com/la6su" class="uk-button uk-button-default uk-button-large" target="_blank" rel="noopener">
                 <span uk-icon="icon: github; ratio: 1.1" aria-hidden="true"></span>
                 <span>GitHub</span>
