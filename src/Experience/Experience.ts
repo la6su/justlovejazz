@@ -19,7 +19,8 @@ import { JoystickNav } from '../UI/JoystickNav'
 import { UIMenu } from '../UI/UIMenu'
 import { updateWorldDNAAudio } from './World/worldDNA'
 import { prefersReducedMotion } from '../core/motionPolicy'
-import { themeManager } from '../core/ThemeManager'
+// ThemeManager is not imported here — theme is global (auto/inverse),
+// synced via jlz:theme-applied event listener. No per-section theme logic.
 import { eventBus } from '../core/EventBus'
 // DissolveOverlay removed — cover transition in ProjectDetail replaces it.
 
@@ -215,10 +216,8 @@ export class Experience {
     // which instantly destroyed the splash ~2.5s BEFORE the cinematic opening
     // sequence could play — so the user saw no opening animation at all.
     this.bus.on('intro:done', () => {
-      // Set initial theme for Intro (light) — _updateInner will keep it in sync.
-      if (document.body.dataset.page === 'home') {
-        themeManager.setAutoTheme(true) // Intro = light
-      }
+      // Theme is global (auto=light by default). No per-section theme needed.
+      // EnvSphere syncs via jlz:theme-applied listener.
     })
   }
 
@@ -234,19 +233,17 @@ export class Experience {
     await this.buildWorld()
     this.bus = StateBus.getInstance()
 
-    // ── 3D ↔ theme sync: in inverse mode, EnvSphere follows the FLIPPED theme ──
-    // Only on home page — content pages don't need 3D bg sync on theme toggle.
-    // - auto mode: EnvSphere follows the active section via World.updateTransform
-    //   (no override needed — listener returns early).
-    // - inverse mode: EnvSphere overrides to the FLIPPED section pattern.
-    //   Section Intro (light) + inverse → isLight=false → EnvSphere=About (dark pattern)
-    //   Section About (dark) + inverse → isLight=true → EnvSphere=Intro (light pattern)
+    // ── 3D ↔ theme sync: EnvSphere follows the global theme ──
+    // auto = light pattern (Intro), inverse = dark pattern (About).
+    // Listens to jlz:theme-applied — fires on mode change + on init.
+    // Home page only — content pages have their own EnvSphere palettes.
     window.addEventListener('jlz:theme-applied', ((e: Event) => {
       const detail = (e as CustomEvent<{ isLight: boolean; mode: string }>).detail
-      if (!detail || detail.mode === 'auto') return // auto: EnvSphere follows section via World
+      if (!detail) return
       if (document.body.dataset.page !== 'home') return // home-only 3D sync
-      // inverse mode: flip EnvSphere to match the inverted text color
-      const targetIdx = detail.isLight ? 1 : 2 // 1=Intro(light pattern), 2=About(dark pattern)
+      // auto (isLight=true) → Intro pattern (light bg)
+      // inverse (isLight=false) → About pattern (dark bg)
+      const targetIdx = detail.isLight ? 1 : 2
       if (this.world?.envSphere) {
         this.world.envSphere.changeSection(targetIdx)
         this._needsRender = true
@@ -499,18 +496,11 @@ export class Experience {
       )
     }
 
-    // UI theme: each section has its own theme ('light' or 'dark') from WorldConfig.
-    // Light sections = light background → dark text (uk-light on body).
-    // Dark sections = dark background → light text (no uk-light).
-    // Manual override (light/dark mode from menu) wins over auto —
-    // setAutoTheme() is a no-op when mode !== 'auto'.
-    // See docs/UIKIT3.md §4 (theme toggle scope).
+    // Theme is global now (auto=light, inverse=dark) — no per-section theme.
+    // setAutoTheme is a no-op (kept for backward compat). EnvSphere syncs
+    // via jlz:theme-applied listener above.
+    // See docs/UIKIT3.md §4 (theme toggle).
     const idx = this.world.currentSectionIndex
-    if (document.body.dataset.page === 'home') {
-      const cfg = this.world.getConfig(this.world.sections[idx]?.phaseConfig?.id ?? 'sec_intro')
-      const sectionTheme = cfg?.theme ?? 'dark'
-      themeManager.setAutoTheme(sectionTheme === 'light')
-    }
     // Give World the camera ref for DrawTrail (once, after init).
     this.world.setCamera(this.camera.instance)
     this.world.setRenderer(this.renderer.instance as THREE.WebGLRenderer)

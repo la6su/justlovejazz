@@ -1,6 +1,6 @@
 import { renderPage, type PageId } from './templates'
 import UIkit from 'uikit'
-import { themeManager } from './core/ThemeManager'
+// ThemeManager removed — theme is global (auto=light, inverse=dark).
 
 let initialized = false
 let currentPage: PageId | null = null
@@ -39,12 +39,8 @@ function renderView(page: PageId = getPageFromLocation()): void {
   if (!el) return
   document.body.dataset.page = page
   document.documentElement.dataset.page = page
-  // Content pages: first section (idx 0) is light/inverse by default.
-  // JoystickNav._syncPageSection handles theme on navigation (first/last = light).
-  // On initial load, set light to match the first section.
-  if (page !== 'home') {
-    themeManager.setAutoTheme(true) // first section is light/inverse
-  }
+  // Theme is global (auto=light, inverse=dark) — no per-page theme override.
+  // ThemeManager.apply() runs on init and on mode change.
   // Keep the SEO-friendly <title> from index.html — do not clobber it with
   // a shorter tab title on JS boot.
   // document.title is intentionally left as-is.

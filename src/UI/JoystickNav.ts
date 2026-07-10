@@ -21,7 +21,8 @@
 //   - Right → Process (if center), or back to center (if Lab)
 //   - Strictly ONE action per drag, ball snaps back to center
 
-import { themeManager } from '../core/ThemeManager'
+// ThemeManager removed — theme is global (auto=light, inverse=dark),
+// no per-section theme logic in JoystickNav.
 
 export interface JoystickNavOptions {
   sectionLabels: string[]
@@ -373,11 +374,7 @@ export class JoystickNav {
     sections.forEach((section, sectionIndex) => {
       section.classList.toggle('section-active', sectionIndex === nextIndex)
     })
-    // Theme sync: first (idx 0) and last section are light/inverse,
-    // middle sections are dark. Matches home pattern (Intro + Contact = light).
-    // ThemeManager respects manual override (light/dark mode in menu).
-    const isLight = nextIndex === 0 || nextIndex === sections.length - 1
-    themeManager.setAutoTheme(isLight)
+    // Theme is global (auto=light, inverse=dark) — no per-section theme.
     window.dispatchEvent(new CustomEvent('jlz:page-section-change', {
       detail: { index: nextIndex, count: sections.length },
     }))

@@ -166,25 +166,24 @@ body.uk-light .jlz-nav-link { color: rgba(5, 5, 7, 0.55); }
 // uk-light natively, zero custom CSS needed.
 ```
 
-**ThemeManager** (`src/core/ThemeManager.ts`) — **3 modes**:
-- `'auto'` (default) — follows the active home section (Lab/Intro/Contact = light,
-  others = dark). On content pages, first section is light.
-- `'light'` — forced light mode (uk-light on body, dark text)
-- `'dark'` — forced dark mode (no uk-light, light text)
+**ThemeManager** (`src/core/ThemeManager.ts`) — **2 modes** (global, not per-section):
+- `'auto'` (default) — global LIGHT (uk-light on body, dark text on light bg).
+  Splash is dark → user enters app with LIGHT bg by default.
+- `'inverse'` — global DARK (no uk-light, light text on dark bg).
+  Flips everything — YooTheme Pro inverse approach.
 
-Persisted to `localStorage('jlz:theme')`. Manual override wins over auto.
-First-visit: if no saved mode, check `prefers-color-scheme: light` → start
-`'light'`; else `'auto'`.
+This is a **global flip**, NOT per-section. All `setAutoTheme()` calls are no-ops
+(kept for backward compat). The theme is decided by mode only.
 
-**Toggle UI** — **3 buttons** (Auto/Light/Dark) in the UIMenu modal
-(`#jlz-menu-modal .jlz-theme-toggle` inside a `uk-button-group`). Click →
-`themeManager.setMode(mode)`. Active button gets `uk-active` class + accent
-background.
+Persisted to `localStorage('jlz:theme')`.
 
-**Experience.ts** calls `themeManager.setAutoTheme(isLightSection)` on
-section change. ThemeManager applies it in `auto` mode, or ignores it in
-forced `light`/`dark` mode (manual override wins). Content pages call
-`setAutoTheme(true)` on load (first section is light).
+**Toggle UI** — **1 button** in the UIMenu modal
+(`#jlz-menu-modal .jlz-theme-toggle`). Calls `themeManager.toggle()`.
+Label shows `Auto` / `Inverse`. Active (inverse) gets `uk-active` + accent bg.
+
+**EnvSphere sync** — `jlz:theme-applied` event fires on mode change + init.
+Experience.ts listens (home page only): auto → Intro (light pattern),
+inverse → About (dark pattern). Content pages use their own EnvSphere palettes.
 
 ### 4.1 Theme toggle scope — home only, NOT content pages
 
@@ -744,7 +743,7 @@ main.less, `@global-line-height` 1.7→1.5, `@global-border-width` 2px→1px.
   (no UIKit globals — those come from `_import.less`)
 - `src/assets/main.less` — app layer (only what UIKit doesn't provide, including
   the mobile-first root `html { font-size: 0.85rem }` knob)
-- `src/core/ThemeManager.ts` — auto/light/dark theme manager (uk-light on body, prefers-color-scheme on first visit)
+- `src/core/ThemeManager.ts` — auto/inverse theme manager (global, uk-light on body)
 - `src/pages/` — page registry + content page templates:
   - `src/pages/index.ts` — page registry + `renderPage(page)` (3 pages: home/services/posts)
   - `src/pages/home.ts` — home page (assembles 6 cube-face sections + footer)

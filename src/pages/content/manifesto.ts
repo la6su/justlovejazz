@@ -1,47 +1,37 @@
 // src/pages/content/manifesto.ts — Manifesto page (6 sections, Apple Watch layout)
-// Uses contentSection/contentTop/contentBottom — same cube structure as home.
-// 3D content: WireframeTypography + glass cube + particles (from WorldConfig).
+// Mobile-first: 4 principles (not 8), punchy copy. Same cube structure as home.
 
 import { contentSection, contentTop, contentBottom } from '../../sections/_shared/constants'
 import { FOOTER } from '../../sections/_shared/footer'
 
 export function manifestoPage(): string {
   const principles = [
-    { num: '01', title: 'Depth over surface', desc: 'We would rather ship one thing that feels alive than ten that feel flat.', icon: 'cube' },
-    { num: '02', title: 'Craft over speed', desc: 'Type-safe GPU programming. TSL node graphs, not raw GLSL strings.', icon: 'code' },
-    { num: '03', title: 'Performance is a feature', desc: '60fps on mid-range hardware. Zero idle draw calls. On-demand rendering.', icon: 'bolt' },
-    { num: '04', title: 'Parity, not compromise', desc: 'WebGPU today, WebGL2 fallback — bit-identical output.', icon: 'copy' },
-  ]
-  const craftPoints = [
-    { title: 'Real-time', desc: 'Every frame is computed. No video, no sprites.' },
-    { title: 'Type-safe', desc: 'TSL node graphs compile to WGSL + GLSL from TypeScript.' },
-    { title: 'On-demand', desc: 'Zero draw calls when idle. Ambient breathing every 2.5s.' },
-    { title: 'Parity-guaranteed', desc: 'Portable integer hash. Exact sRGB. ACES with epsilon.' },
+    { num: '01', title: 'Depth over surface', desc: 'One alive thing &gt; ten flat things.' },
+    { num: '02', title: 'Craft over speed', desc: 'Type-safe GPU code. No raw GLSL strings.' },
+    { num: '03', title: 'Performance is a feature', desc: '60fps on mid-range. Zero idle draw calls.' },
+    { num: '04', title: 'Parity, not compromise', desc: 'WebGPU + WebGL2. Bit-identical output.' },
   ]
   const steps = [
-    { num: '01', title: 'Discover', desc: 'Research, audit, define the problem.' },
-    { num: '02', title: 'Design', desc: 'Art direction, 3D, interaction prototypes.' },
-    { num: '03', title: 'Develop', desc: 'WebGPU, TSL shaders, performance budgets.' },
-    { num: '04', title: 'Ship', desc: 'Launch, measure, evolve.' },
+    { num: '01', title: 'Discover', desc: 'Audit + define.' },
+    { num: '02', title: 'Design', desc: '3D prototypes.' },
+    { num: '03', title: 'Develop', desc: 'WebGPU + TSL.' },
+    { num: '04', title: 'Ship', desc: 'Launch + evolve.' },
   ]
   return `
     <article class="jlz-page" data-page-view="manifesto">
       ${contentSection('manifesto-intro',
-        contentTop('MANIFESTO', 'What we believe', 'A studio philosophy in four principles. Built from shipping real work, not theory.'),
+        contentTop('MANIFESTO', 'What we believe', 'Four principles. Built from shipping real work.'),
         contentBottom(`<a href="/app/services" class="uk-button uk-button-primary uk-button-large">See services →</a>`),
         true
       )}
       ${contentSection('manifesto-principles',
-        contentTop('PRINCIPLES', 'Four principles', 'Non-negotiable. Every project, every time.'),
+        contentTop('PRINCIPLES', 'Four principles'),
         contentBottom(`
           <div class="uk-grid uk-child-width-1-2@s" uk-grid>
             ${principles.map((p) => `
               <div class="uk-card uk-card-default uk-card-body uk-card-hover">
-                <div class="uk-flex uk-flex-between uk-flex-top uk-margin-small-bottom">
-                  <span class="uk-heading-medium jlz-numeral">${p.num}</span>
-                  <span uk-icon="icon: ${p.icon}; ratio: 1.5" class="uk-text-muted" aria-hidden="true"></span>
-                </div>
-                <h3 class="uk-card-title uk-margin-remove">${p.title}</h3>
+                <div class="uk-heading-medium uk-margin-remove jlz-numeral">${p.num}</div>
+                <h3 class="uk-card-title uk-margin-small-top uk-margin-remove-bottom">${p.title}</h3>
                 <p class="uk-text-meta uk-margin-small-top">${p.desc}</p>
               </div>
             `).join('')}
@@ -49,21 +39,14 @@ export function manifestoPage(): string {
         `)
       )}
       ${contentSection('manifesto-craft',
-        contentTop('CRAFT', 'Real-time, not canned', 'Every pixel is computed. Every frame is alive.'),
+        contentTop('CRAFT', 'Real-time, not canned'),
         contentBottom(`
-          <div class="uk-grid uk-child-width-1-2@s uk-child-width-1-4@m" uk-grid>
-            ${craftPoints.map((c) => `
-              <div class="uk-text-center">
-                <span uk-icon="icon: bolt; ratio: 2" class="uk-text-primary" aria-hidden="true"></span>
-                <h3 class="uk-h5 uk-margin-small-top uk-margin-remove-bottom">${c.title}</h3>
-                <p class="uk-text-meta uk-margin-small-top">${c.desc}</p>
-              </div>
-            `).join('')}
-          </div>
+          <p class="uk-text-lead">Every pixel is computed. Every frame is alive.</p>
+          <p class="uk-text-meta uk-margin-small-top">No video. No sprites. No tricks.</p>
         `)
       )}
       ${contentSection('manifesto-process',
-        contentTop('HOW WE WORK', '4 steps'),
+        contentTop('PROCESS', '4 steps'),
         contentBottom(`
           <div class="uk-grid uk-child-width-1-2@s uk-child-width-1-4@m" uk-grid>
             ${steps.map((s) => `
@@ -77,15 +60,15 @@ export function manifestoPage(): string {
         `)
       )}
       ${contentSection('manifesto-contact',
-        contentTop("LET'S TALK", 'Start a project', 'If this resonates, we should talk.'),
+        contentTop("LET'S TALK", 'Start a project'),
         contentBottom(`<a href="mailto:hello@justlovejazz.com" class="uk-button uk-button-primary uk-button-large">Get in touch</a>`)
       )}
       ${contentSection('manifesto-values',
-        contentTop('CLOSING', 'Craft over speed.'),
+        contentTop('CLOSING', 'Craft over speed'),
         contentBottom(`
-          <p class="uk-text-lead">Depth over surface. We'd rather ship one thing that feels alive than ten that feel flat.</p>
+          <p class="uk-text-lead">Depth over surface.</p>
           <div class="uk-margin-large-top">
-            <a href="/app" class="uk-button uk-button-default uk-button-large">Enter 3D experience →</a>
+            <a href="/app" class="uk-button uk-button-default uk-button-large">Enter 3D →</a>
           </div>
         `)
       )}

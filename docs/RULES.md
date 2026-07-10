@@ -97,29 +97,36 @@ git fetch origin && git checkout main && git pull origin main
 44. **21st.dev MCP**: API key format `21st_sk_...` (not `an_sk_...` — rejected).
     Endpoint `https://21st.dev/api/mcp`. Free tier: 2 retrievals/day.
     Always port to TSL (Rule 1) — no raw ShaderMaterial from 21st components.
-45. **Theme system — UIKit native `uk-light`**: `src/core/ThemeManager.ts` is the canonical
-    theme manager. Uses UIKit's native inverse class `uk-light` (NOT custom `body.light-theme`
-    per-component overrides — those were 50+ LOC of dead CSS, deleted). `_import.less` MUST
-    have `@inverse-global-color-mode: light` (generates `uk-light`). **Three modes:**
-    `'auto'` (default, follows active home section), `'light'` (forced), `'dark'` (forced).
-    Manual override wins over auto. Persisted to `localStorage('jlz:theme')`. First-visit:
-    if no saved mode, check `prefers-color-scheme: light` → start `'light'`; else `'auto'`.
-    Content pages call `setAutoTheme(true)` (first section is light). Experience listens
-    to `jlz:theme-applied` and syncs EnvSphere pattern in forced light/dark mode
-    (light→Intro, dark→About). Toggle UI = **3 buttons** (Auto/Light/Dark) in
-    `#jlz-menu-modal .jlz-theme-toggle` (`uk-button-group`).
-46. **Mobile-first rem-based sizing**: `html { font-size: 0.85rem }` on mobile,
+45. **Theme system — UIKit native `uk-light` + global inverse**: `src/core/ThemeManager.ts`
+    is the canonical theme manager. Uses UIKit's native inverse class `uk-light` (NOT
+    custom `body.light-theme` per-component overrides — deleted). `_import.less` MUST
+    have `@inverse-global-color-mode: light` (generates `uk-light`). **Two modes:**
+    `'auto'` (default, global LIGHT — light bg, dark text, uk-light on) and `'inverse'`
+    (global DARK — dark bg, light text, uk-light off). This is the YooTheme Pro inverse
+    approach — a global flip, NOT per-section. No per-section theme logic — all
+    `setAutoTheme()` calls are no-ops (kept for backward compat). Persisted to
+    `localStorage('jlz:theme')`. EnvSphere syncs: auto → Intro (light pattern),
+    inverse → About (dark pattern). Home page only — content pages use their own
+    EnvSphere palettes from `getWorldConfigForPage()`.
+46. **QF theme principle — configure ONCE, don't fight it**: `src/assets/_import.less` §3
+    sets `@global-primary-background: @jlz-color-accent` (the QF anchor). QF theme +
+    UIKit globals manage ALL component styling (buttons, cards, navbar, glitch, glow)
+    through `@global-*` tokens. Do NOT override `@button-*`, `@card-*`, `@navbar-*` in
+    `_import.less` — let QF do its job. Custom styles in `main.less` should ONLY add
+    what QF/UIKit don't provide (custom cursor, joystick, dock, text-shadow over 3D).
+    Never duplicate or fight existing QF functionality.
+47. **Mobile-first rem-based sizing**: `html { font-size: 0.85rem }` on mobile,
     `@media (min-width:640px) { html { font-size: 1rem } }` on tablet+. ALL sizing
     (UIKit globals, gutters, margins, control heights, box-shadows, custom paddings) MUST
     use `rem` units so they scale with the root font-size. The only exception is hairline
     borders (1-3px) which stay as `px` for crispness. master-quantum-flares `_import.less`
     has 76 px values converted to rem (recorded in worklog `mobile-first-rem-uikit-theme`).
-47. **Responsive sections**: Use `class="uk-section uk-section-small uk-section-medium@s
+48. **Responsive sections**: Use `class="uk-section uk-section-small uk-section-medium@s
     uk-section-large@m"` for ALL sections (home + content pages). The responsive pattern
     is mobile-first: small padding on mobile → medium at ≥640px → large at ≥960px. Do NOT
     use `uk-section-large` alone (was the previous pattern, replaced in 2026-07-11 mobile-first
     refactor). Do NOT add custom px padding on `.jlz-page-section` — let UIKit handle it.
-48. **Design tokens location**: `src/styles/tokens.less` was DELETED — tokens now live in
+49. **Design tokens location**: `src/styles/tokens.less` was DELETED — tokens now live in
     `src/assets/_import.less` §1 (`@jlz-*` Less variables) + §2 (`:root { --jlz-* }`
     CSS custom properties). Single source of truth — do NOT re-create `src/styles/`.
     master-quantum-flares `_import.less` MUST NOT duplicate UIKit globals (font-family,

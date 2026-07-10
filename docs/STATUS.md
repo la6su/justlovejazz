@@ -10,8 +10,8 @@
 SPA studio portfolio — **6 sections** (1:1 with cube faces), 3D canvas + transparent
 DOM overlay. Single font: Inter.
 Navigation: JoystickNav (pure DOM, 2D — bottom-center) + UIMenu (UIkit modal) + Subtitles (section hints).
-Theme: UIKit native `uk-light` class via `ThemeManager` (3 modes: auto/light/dark) —
-3D EnvSphere syncs to forced light/dark override.
+Theme: UIKit native `uk-light` class via `ThemeManager` (2 modes: auto/inverse) —
+global LIGHT (auto) or DARK (inverse), not per-section.
 Mobile-first: `html { font-size: 0.85rem }` mobile → `1rem` ≥640px, all sizing rem-based.
 
 > **3 content pages** (home / services / posts), each with 6 sections. Home is the
@@ -27,7 +27,7 @@ Mobile-first: `html { font-size: 0.85rem }` mobile → `1rem` ≥640px, all sizi
 | 6 sections (Lab/Intro/About/Works/Contact/Process) — 1:1 cube faces | ✅ |
 | JoystickNav — pure DOM joystick, trigger model (one section per drag) | ✅ |
 | 2D navigation (vertical=main, horizontal=Lab/Process) | ✅ |
-| UIMenu — UIkit modal jump navigation + theme toggle (auto/light/dark, 3 buttons) | ✅ |
+| UIMenu — UIkit modal jump navigation + theme toggle (auto/inverse, 1 button) | ✅ |
 | Subtitles — section hints via NoiseText scramble on [data-eyebrow] | ✅ |
 | BakuCarousel — cube morphs into ring (Works §3) | ✅ |
 | ProjectOverlay — card click (raycast) opens fullscreen | ✅ |
@@ -42,7 +42,7 @@ Mobile-first: `html { font-size: 0.85rem }` mobile → `1rem` ≥640px, all sizi
 | `makeParticles` (`THREE.Points`, shared by all 6 sections) | ✅ |
 | SplashCube — single BoxGeometry + CubeCamera + rainbow vertex-color edges | ✅ |
 | WebGPU/WebGL2 color parity (sRGB + ACES + grain + bloom) | ✅ |
-| ThemeManager — UIKit native `uk-light` + auto/light/dark toggle (localStorage, prefers-color-scheme on first visit) | ✅ |
+| ThemeManager — UIKit native `uk-light` + auto/inverse toggle (global, not per-section) | ✅ |
 | 3D ↔ theme sync (forced light/dark drives EnvSphere pattern) | ✅ |
 | Mobile-first rem sizing (`.85rem` mob → `1rem@s`) | ✅ |
 | Responsive sections (`uk-section-small uk-section-medium@s uk-section-large@m`) | ✅ |
@@ -153,19 +153,21 @@ match (light forced → Intro pattern, dark forced → About pattern).
 | Property | Value |
 | --- | --- |
 | File | `src/core/ThemeManager.ts` |
-| Modes | `'auto'` (default), `'light'`, `'dark'` |
+| Modes | `'auto'` (default, global LIGHT), `'inverse'` (global DARK) |
 | First-visit | If no saved mode, check `prefers-color-scheme: light` → start `'light'`; else `'auto'` |
 | Persistence | `localStorage('jlz:theme')` |
 | Body class | `uk-light` toggled on `<body>` + `<html>` (UIKit native inverse) |
-| Auto source | `Experience.ts` calls `themeManager.setAutoTheme(isLightSection)` on home section change |
-| Content pages | `router.ts` calls `themeManager.setAutoTheme(true)` (first section is light) |
-| 3D sync | Dispatches `jlz:theme-applied` with `{isLight, mode}` — Experience listens; in forced light/dark mode, overrides EnvSphere pattern (light→Intro, dark→About) |
-| Toggle UI | **3 buttons** (Auto/Light/Dark) in `#jlz-menu-modal .jlz-theme-toggle` (`uk-button-group`) |
+| Auto source | Global — no per-section theme. `setAutoTheme()` is a no-op (kept for backward compat). |
+| Content pages | Same global theme (auto=light, inverse=dark) — no per-page override |
+| 3D sync | Dispatches `jlz:theme-applied` with `{isLight, mode}` — Experience listens; auto → Intro (light pattern), inverse → About (dark pattern). Home page only. |
+| Toggle UI | **1 button** "Auto/Inverse" in `#jlz-menu-modal .jlz-theme-toggle` (calls `themeManager.toggle()`) |
 | `_import.less` | `@inverse-global-color-mode: light` — generates `uk-light` class |
 
-`auto` mode follows per-section theme from `setAutoTheme()` (Lab/Intro/Contact = light,
-About/Works/Process = dark). `light`/`dark` modes force the theme globally —
-`setAutoTheme()` becomes a no-op (manual override wins).
+`auto` = global LIGHT (uk-light on, dark text on light bg). `inverse` = global DARK
+(no uk-light, light text on dark bg). This is the YooTheme Pro inverse
+approach — a global flip, NOT per-section. Splash is dark → user enters
+app with LIGHT bg by default. Inverse flips to dark.
+`setAutoTheme()` is a no-op (kept for backward compat — all callers safe).
 
 UIKit native inverse (`uk-light`) replaces the former 50+ LOC of custom
 `body.light-theme .uk-*` overrides. Custom non-UIKit elements (joystick, hint,
