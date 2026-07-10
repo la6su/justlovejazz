@@ -22,12 +22,12 @@ import { eventBus, type AppEvents } from '../core/EventBus'
 // Keys match `data-section` attribute (see SectionId type in constants.ts).
 // The '>' prefix preserves the TUI/terminal eyebrow convention.
 const HINTS: Record<string, string> = {
-  lab: '> Experiments & R&D playground',
-  intro: '> Scroll to explore · WebGPU powered',
-  about: '> Studio philosophy · 7+ years',
+  lab: '> Shader, audio & procedural R&D',
+  intro: '> Drag the joystick to explore',
+  about: '> Remote · EU · since 2019',
   challenge: '> Drag to spin · Click to open',
-  contact: "> Let's build something extraordinary",
-  process: '> Discover · Design · Develop · Ship',
+  contact: '> Open for new projects',
+  process: '> Four phases · one milestone each',
 }
 
 export class Subtitles {

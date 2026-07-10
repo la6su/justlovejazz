@@ -1,5 +1,4 @@
-// src/core/WorldConfig.ts — 6 sections matching junni.co.jp reference
-// Order: Intro → About → Flexible → Challenge → Innovative → Contact (scroll-driven)
+// src/core/WorldConfig.ts — 6 sections (cube-map: 0=secret, 1=intro, 2-4=main, 5=secret)
 
 import * as THREE from 'three'
 import { BakuRole } from './types'
@@ -416,13 +415,13 @@ const SERVICES_PALETTE: ContentPalette = {
 }
 
 const MANIFESTO_PALETTE: ContentPalette = {
-  lightBg: 0xf0eee8,
-  darkBg: 0x0a0805,
-  bakuColor: 0x4a3a2a,
-  bakuEmissive: 0x6a5a3a,
-  fogColor: 0x0a0805,
+  lightBg: 0xf0f4f5,   // cool desaturated teal-white
+  darkBg: 0x051015,    // deep teal-black
+  bakuColor: 0x2a4a5a, // cool steel-teal glass
+  bakuEmissive: 0x3a6a7a,
+  fogColor: 0x051015,
   lightColor: 0xffffff,
-  groundColor: 0x1a1208,
+  groundColor: 0x081a1a,
 }
 
 function makeContentScenes(palette: ContentPalette, pageId: string): RawScene[] {

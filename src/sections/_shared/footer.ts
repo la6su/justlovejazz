@@ -24,8 +24,8 @@ export const FOOTER = `
         </div>
         <div class="jlz-dock__social">
           <ul class="uk-iconnav">
-            <li><a href="https://github.com" target="_blank" rel="noopener" aria-label="GitHub" uk-icon="icon: github"></a></li>
-            <li><a href="https://twitter.com" target="_blank" rel="noopener" aria-label="Twitter" uk-icon="icon: twitter"></a></li>
+            <li><a href="https://github.com/la6su" target="_blank" rel="noopener" aria-label="GitHub" uk-icon="icon: github"></a></li>
+            <li><a href="https://x.com/justlovejazz" target="_blank" rel="noopener" aria-label="Twitter" uk-icon="icon: twitter"></a></li>
             <li><a href="mailto:hello@justlovejazz.com" aria-label="Email" uk-icon="icon: mail"></a></li>
           </ul>
         </div>

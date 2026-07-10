@@ -14,7 +14,7 @@ export function processSection(): string {
           <div ${REVEAL}>
             <span class="jlz-eyebrow" data-eyebrow></span>
             <h2 class="studio-title uk-heading-medium uk-margin-small-top uk-margin-remove-bottom">PROCESS</h2>
-            <p class="uk-text-lead uk-margin-small-top">Discover · Design · Develop · Ship</p>
+            <p class="uk-text-lead uk-margin-small-top">Four phases. One shippable milestone per phase.</p>
           </div>
           <!-- BOTTOM: timeline -->
           <ul class="uk-list uk-list-divider" ${REVEAL}>

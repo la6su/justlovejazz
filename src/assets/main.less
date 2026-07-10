@@ -509,7 +509,7 @@ body.uk-light .jlz-secret-nav > li > a:hover {
   gap: var(--jlz-space-3);
   pointer-events: none;
   opacity: 0.7;
-  margin-bottom: 120px!important;
+  margin-bottom: var(--jlz-dock-height);
   color: rgba(5, 5, 7, 0.7);
 }
 
@@ -768,7 +768,7 @@ body.uk-light .jlz-secret-nav > li > a:hover {
 
 /* Inner dot turns RED on hover (codrops reference style) */
 .custom-cursor-inner.is-hover {
-  background-color: #ff3c3c;
+  background-color: var(--jlz-color-cursor-hover);
 }
 
 .custom-cursor-canvas {
@@ -1013,7 +1013,7 @@ body.uk-light .jlz-eyebrow {
   flex-shrink: 0;
   /* Push TOP block below the fixed header (.tm-header ~76px tall) +
      slider nav. Gives breathing room between header and section title. */
-  padding-top: calc(90px + var(--jlz-space-6));
+  padding-top: calc(var(--jlz-header-height) + var(--jlz-space-6));
 }
 
 .jlz-section-bottom {
@@ -1031,8 +1031,8 @@ body.uk-light .jlz-eyebrow {
     0deg,
     transparent 0,
     transparent 3px,
-    rgba(255, 255, 255, 0.008) 3px,
-    rgba(255, 255, 255, 0.008) 4px
+    rgba(255, 255, 255, 0.02) 3px,
+    rgba(255, 255, 255, 0.02) 4px
   );
   z-index: 1;
 }
@@ -1193,7 +1193,7 @@ body.uk-light .jlz-eyebrow {
    visually rests on the tools row, not floating above it. */
 .jlz-joystick {
   position: fixed;
-  bottom: calc(60px + 35px); /* footer(~40px) + half of tools(70px) */
+  bottom: calc(var(--jlz-dock-height) + var(--jlz-space-4));
   left: 50%;
   transform: translateX(-50%);
   z-index: 100;

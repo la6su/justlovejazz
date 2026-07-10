@@ -25,11 +25,11 @@ export function introSection(): string {
           <div class="uk-flex uk-flex-column uk-flex-middle" ${REVEAL}>
             <div class="uk-flex uk-flex-center uk-flex-wrap uk-flex-middle jlz-flex-gap-small">
               <a href="/app/services" class="uk-button uk-button-primary uk-button-small">Services</a>
-              <a href="/app/posts" class="uk-button uk-button-default uk-button-small">Posts</a>
+              <a href="/app/manifesto" class="uk-button uk-button-default uk-button-small">Manifesto</a>
               <a href="/app/#section-contact" class="uk-button uk-button-default uk-button-small">Contact</a>
             </div>
             <div class="jlz-scroll-hint uk-margin-top" aria-hidden="true">
-              <span class="jlz-scroll-hint__label">Spin the cube</span>
+              <span class="jlz-scroll-hint__label">Drag the joystick</span>
               <span class="jlz-scroll-hint__line"></span>
             </div>
           </div>

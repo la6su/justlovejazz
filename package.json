@@ -26,6 +26,7 @@
     "@types/node": "^25.7.0",
     "@types/three": "^0.184.0",
     "@types/uikit": "^3.23.0",
+    "codebase-memory-mcp": "^0.9.0",
     "esbuild": "^0.28.0",
     "eslint": "^10.6.0",
     "eslint-config-prettier": "^10.1.8",
@@ -54,5 +55,8 @@
   "bugs": {
     "url": "https://github.com/la6su/justlovejazz/issues"
   },
-  "homepage": "https://github.com/la6su/justlovejazz#readme"
+  "homepage": "https://github.com/la6su/justlovejazz#readme",
+  "trustedDependencies": [
+    "codebase-memory-mcp"
+  ]
 }

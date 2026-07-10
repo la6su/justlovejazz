@@ -6,7 +6,7 @@ import { FOOTER } from '../../sections/_shared/footer'
 
 export function manifestoPage(): string {
   const principles = [
-    { num: '01', title: 'Depth over surface', desc: 'One alive thing &gt; ten flat things.' },
+    { num: '01', title: 'Depth over surface', desc: 'One alive thing > ten flat things.' },
     { num: '02', title: 'Craft over speed', desc: 'Type-safe GPU code. No raw GLSL strings.' },
     { num: '03', title: 'Performance is a feature', desc: '60fps on mid-range. Zero idle draw calls.' },
     { num: '04', title: 'Parity, not compromise', desc: 'WebGPU + WebGL2. Bit-identical output.' },

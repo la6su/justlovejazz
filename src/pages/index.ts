@@ -1,29 +1,25 @@
 // src/pages/index.ts — Page registry + router
 //
-// 3 pages, each with 6 sections (4 unique + 2 secret side):
-//   - home (index)   — Lab/Intro/About/Works/Contact/Process
-//   - services       — Intro/Services-list/Stack/Process/Contact/Values
-//   - posts          — Intro/Latest/Featured/Categories/Contact/Archive
-//
-// Intro (1st) and Contact (last main) are light/inverse by default —
-// black splash → light intro → dark sections → light contact.
+// 3 pages, each with 6 sections (cube-map: 0=secret, 1=intro, 2-4=main, 5=secret):
+//   - home       — Lab/Intro/About/Works/Contact/Process
+//   - services   — Secret/Intro/Capabilities/Stack/Process/Secret
+//   - manifesto  — Secret/Intro/Principles/Craft/Process/Secret
 //
 // Structure:
 //   src/pages/
 //   ├── index.ts              ← this file (registry + renderPage)
-//   ├── home.ts               ← home page (6 cube-face sections + footer)
+//   ├── home.ts               ← home page (6 cube-face sections + dock)
 //   ├── content/
-//   │   ├── services.ts       ← services page (6 sections)
-//   │   └── posts.ts          ← posts page (6 sections)
-//   └── shared/               ← (legacy, redirects to sections/_shared)
+//   │   ├── services.ts       ← services content page (6 sections)
+//   │   └── manifesto.ts      ← manifesto content page (6 sections)
 //
 //   src/sections/             ← unified section modules (3D scene + HTML template)
 //   ├── _shared/              ← constants, footer, makeParticles
 //   ├── lab/                  ← face 0 (top +Y, secret left)
-//   ├── intro/                ← face 1 (front +Z, start, light/inverse)
+//   ├── intro/                ← face 1 (front +Z, start)
 //   ├── about/                ← face 2 (right +X)
 //   ├── works/                ← face 3 (back -Z, BakuCarousel)
-//   ├── contact/              ← face 4 (bottom -Y, light/inverse)
+//   ├── contact/              ← face 4 (bottom -Y)
 //   └── process/              ← face 5 (left -X, secret right)
 
 import { homePage } from './home'

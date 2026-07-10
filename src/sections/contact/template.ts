@@ -15,7 +15,7 @@ export function contactSection(): string {
             <span class="jlz-eyebrow" data-eyebrow></span>
             <h2 class="studio-title uk-heading-medium uk-margin-small-top uk-margin-remove-bottom"
                 data-content-id="contact-title">Contact</h2>
-            <p class="uk-text-lead uk-margin-small-top">Let's build something extraordinary.</p>
+            <p class="uk-text-lead uk-margin-small-top">Open for new projects. Let's talk.</p>
           </div>
           <!-- BOTTOM: email + buttons -->
           <div ${REVEAL}>
@@ -25,11 +25,11 @@ export function contactSection(): string {
                 <span uk-icon="icon: mail; ratio: 1.1" aria-hidden="true"></span>
                 <span>Start a project</span>
               </a>
-              <a href="https://github.com" class="uk-button uk-button-default uk-button-large" target="_blank" rel="noopener">
+              <a href="https://github.com/la6su" class="uk-button uk-button-default uk-button-large" target="_blank" rel="noopener">
                 <span uk-icon="icon: github; ratio: 1.1" aria-hidden="true"></span>
                 <span>GitHub</span>
               </a>
-              <a href="https://twitter.com" class="uk-button uk-button-default uk-button-large" target="_blank" rel="noopener">
+              <a href="https://x.com/justlovejazz" class="uk-button uk-button-default uk-button-large" target="_blank" rel="noopener">
                 <span uk-icon="icon: twitter; ratio: 1.1" aria-hidden="true"></span>
                 <span>Twitter</span>
               </a>
