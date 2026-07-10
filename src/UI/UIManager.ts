@@ -8,8 +8,4 @@ export class UIManager {
       window.UIkit = UIkit
     }
   }
-
-  async init() {
-    /* UIManager initialized */
-  }
 }

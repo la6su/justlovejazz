@@ -1,71 +1,24 @@
-// landing.less — CSS for landing.html (no-JS semantic fallback)
+// landing.less — CSS for landing.html + blog pages (no-JS semantic fallback)
 //
 // Imports UIkit 3 + QF theme + JLZ design tokens, but WITHOUT the app-specific
-// styles from main.less (custom-cursor, joystick, splash, project-overlay, etc).
-// This keeps landing.html lightweight + ensures cursor:none (from app's
-// custom-cursor) doesn't leak into the no-JS page.
-//
-// What's included:
-//   - JLZ design tokens (@jlz-* + :root --jlz-*)
-//   - UIkit 3 components (compiled with JLZ overrides)
-//   - master-quantum-flares visual personality (glow, glitch, scanlines)
-//
-// What's NOT included (app-only, lives in main.less):
-//   - custom-cursor + cursor:none
-//   - joystick + arrows
-//   - splash overlay
-//   - project-overlay (fullscreen)
-//   - section templates styling
-//   - footer fixed-bottom bar
+// styles from main.less (custom-cursor, joystick, dock, project-overlay, etc).
+// UIKit base.less (imported via _import.less §4) already provides:
+//   - box-sizing, html/body margin reset, font-family
+//   - heading styles (uppercase via QF @global-primary-text-transform)
+//   - link colors, a:hover
+// So we only add: scroll-behavior, line-height, and landing-specific classes.
 
 @import './_import.less';
 @import './master-quantum-flares/_import.less';
 @import './master-quantum-flares/styles/black-blue.less';
 
-// ── Base document ──
-* {
-  box-sizing: border-box;
-}
-
+// ── Landing-specific overrides (NOT in UIKit base) ──
 html {
   scroll-behavior: smooth;
 }
 
-html,
 body {
-  margin: 0;
-  padding: 0;
-  font-family:
-    'Inter',
-    -apple-system,
-    BlinkMacSystemFont,
-    sans-serif;
-}
-
-body {
-  background: var(--jlz-color-bg);
-  color: var(--jlz-color-text);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
   line-height: 1.6;
-}
-
-// ── Headings: uppercase + tight tracking (matches app aesthetic) ──
-h1, .uk-h1, h2, .uk-h2, h3, .uk-h3, h4, .uk-h4, h5, .uk-h5, h6, .uk-h6 {
-  font-family: inherit;
-  text-transform: uppercase;
-  letter-spacing: -0.03em;
-}
-
-a {
-  color: var(--jlz-color-accent);
-  text-decoration: none;
-  transition: color 0.2s ease;
-}
-
-a:hover {
-  color: var(--jlz-color-accent-hover);
-  text-decoration: underline;
 }
 
 // ── Layout helpers (landing-specific, uses JLZ tokens) ──
@@ -87,6 +40,8 @@ a:hover {
   font-size: 1.1rem;
 }
 
+// Reuse .jlz-eyebrow from main.less concept — but landing doesn't load main.less,
+// so we define it here (same values).
 .jlz-landing-eyebrow {
   font-family: 'Inter', 'SF Mono', monospace;
   font-size: 0.65rem;
