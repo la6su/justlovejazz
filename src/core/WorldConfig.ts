@@ -59,6 +59,28 @@ export interface SectionLightDef {
   position: [number, number, number]
 }
 
+/** Per-section 3D scene control. All optional — sections without these
+ *  use defaults (EnvSphere visible, no 3D objects, standard transition).
+ *  This is the "control panel" for 3D per page section — background,
+ *  3D objects visible/hidden, transition timing. */
+export interface SceneControl {
+  /** EnvSphere background pattern index (0-5). null = hide EnvSphere. */
+  envSpherePattern?: number | null
+  /** 3D objects visibility per section. false = hidden. */
+  objects?: {
+    wireframeText?: boolean   // WireframeTypography (section title in 3D)
+    shaderOrb?: boolean       // ShaderOrb (Lab experiment)
+    timelineNodes?: boolean   // TimelineNodes (Process)
+    bakuCarousel?: boolean    // BakuCarousel (Works gallery)
+    particles?: boolean       // Ambient particles
+  }
+  /** Transition timing for camera + baku morph when entering this section. */
+  transition?: {
+    duration: number   // seconds (0 = instant, 1.0 = slow cinematic)
+    easing: 'linear' | 'ease-out' | 'ease-in-out' | 'cubic-bezier'
+  }
+}
+
 export interface PhaseConfig {
   id: string
   context: string
@@ -76,6 +98,8 @@ export interface PhaseConfig {
   background: number
   ground: { color: THREE.Color; opacity: number }
   sectionLights?: SectionLightDef[]
+  /** Per-section 3D scene control (background pattern, objects, transition). */
+  scene?: SceneControl
   /** Section theme: 'light' = light background (dark text), 'dark' = dark background (light text).
    *  Inverse mode flips these. See ThemeManager + Experience.ts. */
   theme: 'light' | 'dark'
@@ -116,6 +140,10 @@ type RawScene = {
   /** Per-section theme: 'light' (light bg, dark text) or 'dark' (dark bg, light text).
    *  Intro + Contact = light, middle sections = dark. Inverse flips. */
   sectionTheme: 'light' | 'dark'
+  /** Per-section 3D scene control (optional — omitted = defaults). */
+  sceneEnvSpherePattern?: number | null
+  sceneObjects?: SceneControl['objects']
+  sceneTransition?: SceneControl['transition']
 }
 
 // 6 sections (4 main + 2 secret side: Lab=0, Process=5) — 1:1 with cube faces
@@ -155,6 +183,9 @@ const RAW: RawScene[] = [
     groundColor: 0xf5f5f8,
     groundOpacity: 0,
     sectionTheme: 'light',
+    sceneEnvSpherePattern: 0,
+    sceneObjects: { shaderOrb: true, particles: true },
+    sceneTransition: { duration: 0.8, easing: 'ease-out' },
   },
   // ── Section 1: INTRO — White BG, metal drop ──
   {
@@ -190,8 +221,10 @@ const RAW: RawScene[] = [
     groundColor: 0xffffff,
     groundOpacity: 0,
     sectionTheme: 'light',
+    sceneEnvSpherePattern: 1,
+    sceneObjects: { particles: true },
+    sceneTransition: { duration: 1.0, easing: 'ease-in-out' },
   },
-  // ── Section 2: ABOUT — Black BG, blob, reflective floor, grey blocks ──
   {
     id: 'sec_about',
     context: 'TRINITY — About',
@@ -225,6 +258,9 @@ const RAW: RawScene[] = [
     groundColor: 0x080812,
     groundOpacity: 0.08,
     sectionTheme: 'dark',
+    sceneEnvSpherePattern: 2,
+    sceneObjects: { wireframeText: true },
+    sceneTransition: { duration: 0.6, easing: 'ease-out' },
   },
   // ── Section 3: WORKS — BakuCarousel + cube centered, slightly raised ──
   {
@@ -260,6 +296,9 @@ const RAW: RawScene[] = [
     groundColor: 0x06080e,
     groundOpacity: 0.1,
     sectionTheme: 'dark',
+    sceneEnvSpherePattern: 3,
+    sceneObjects: { bakuCarousel: true, particles: true },
+    sceneTransition: { duration: 0.8, easing: 'ease-out' },
   },
   // ── Section 4: CONTACT — Dark BG, closing ──
   {
@@ -295,6 +334,9 @@ const RAW: RawScene[] = [
     groundColor: 0x080812,
     groundOpacity: 0.05,
     sectionTheme: 'light',
+    sceneEnvSpherePattern: 4,
+    sceneObjects: { wireframeText: true },
+    sceneTransition: { duration: 0.6, easing: 'ease-out' },
   },
   // ── Section 5: PROCESS (secret right) — Dark BG, workflow timeline ──
   {
@@ -330,6 +372,9 @@ const RAW: RawScene[] = [
     groundColor: 0x080812,
     groundOpacity: 0.05,
     sectionTheme: 'dark',
+    sceneEnvSpherePattern: 5,
+    sceneObjects: { timelineNodes: true },
+    sceneTransition: { duration: 0.6, easing: 'ease-out' },
   },
 ]
 
@@ -386,6 +431,11 @@ export function toPhaseConfig(raw: RawScene): PhaseConfig {
       opacity: raw.groundOpacity,
     },
     theme: raw.sectionTheme,
+    scene: (raw.sceneEnvSpherePattern !== undefined || raw.sceneObjects || raw.sceneTransition) ? {
+      envSpherePattern: raw.sceneEnvSpherePattern ?? undefined,
+      objects: raw.sceneObjects,
+      transition: raw.sceneTransition,
+    } : undefined,
   }
 }
 
