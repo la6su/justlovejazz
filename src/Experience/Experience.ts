@@ -295,6 +295,7 @@ export class Experience {
       try {
         const { DevPanel: DevPanelCtor } = await import('../core/DevPanel')
         this.devPanel = new DevPanelCtor(this)
+        console.log('[Experience] DevPanel ready — press ` or ~ or Ctrl+D to toggle')
       } catch (e) {
         console.warn('[Experience] DevPanel init failed:', e)
       }

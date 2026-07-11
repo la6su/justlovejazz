@@ -355,6 +355,10 @@
           if (loader.classList.contains('fade-out')) return;
           loader.classList.add('fade-out');
 
+          // Dispatch splash-entered event — triggers BlurFade + NoiseText
+          // animations AFTER splash starts fading (user sees them as 3D reveals)
+          window.dispatchEvent(new CustomEvent('jlz:splash-entered'));
+
           // Trigger bakuCube opener at mid-curtain-split (400ms of 800ms)
           setTimeout(function() {
             if (window.experience && window.experience.triggerSplashOpener) {

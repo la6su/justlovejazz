@@ -249,7 +249,8 @@ export class DevPanel {
 
   private bindToggle(): void {
     this.keydownHandler = (e: KeyboardEvent) => {
-      if (e.key === '`' || (e.ctrlKey && e.key.toLowerCase() === 'd')) {
+      // Toggle on: ` (backtick), ~ (Shift+backtick), or Ctrl+D
+      if (e.key === '`' || e.key === '~' || (e.ctrlKey && e.key.toLowerCase() === 'd')) {
         e.preventDefault()
         this.state.visible = !this.state.visible
         this.applyVisibility()

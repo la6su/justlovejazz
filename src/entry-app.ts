@@ -139,18 +139,24 @@ export async function startApp(): Promise<void> {
   document.body.classList.add('scrollspy-pending')
   initRouter()
 
-  // jlz:webgl-ready fires when Experience.init() completes — show Enter button
-  // (replaces progress bar). User clicks Enter → fade out splash → 3D scene.
-  // NOT auto-fade — user must see splash animations + click Enter.
+  // jlz:webgl-ready fires when Experience.init() completes — show Enter button.
+  // Animations (BlurFade + NoiseText) are DELAYED until jlz:splash-entered
+  // (Enter click) so user sees them as 3D scene reveals, not behind splash.
   eventBus.on('jlz:webgl-ready', () => {
-    document.body.classList.remove('scrollspy-pending')
     showEnterButton()
+  })
+
+  // jlz:splash-entered fires when user clicks Enter — splash starts fading.
+  // NOW trigger animations (titles + scrollspy) so they're visible as 3D reveals.
+  window.addEventListener('jlz:splash-entered', () => {
+    document.body.classList.remove('scrollspy-pending')
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ;(UIkit as any).update(document)
-    animateBlurFadeTitles()
-    setupTitleObserver()
-    // Note: SplashCube opener is triggered on Enter click (initEnterButton),
-    // NOT here — fires when curtains split = seamless "baku awakens" moment.
+    // Small delay — let curtains start splitting so DOM is partially visible
+    setTimeout(() => {
+      animateBlurFadeTitles()
+      setupTitleObserver()
+    }, 300) // 300ms into 800ms curtain split — titles animate as scene reveals
   })
 
   // Fallback: if jlz:webgl-ready doesn't fire within 4s (Experience.init
