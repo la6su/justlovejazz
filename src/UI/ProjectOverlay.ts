@@ -6,7 +6,7 @@
 // Esc closes. Cursor visible (pointer-events: auto on overlay).
 
 import { type Project } from '../core/types'
-import { NoiseText } from '../Experience/NoiseText'
+import { BlurFade } from '../Experience/BlurFade'
 
 export class ProjectOverlay {
   private container: HTMLElement
@@ -153,7 +153,7 @@ export class ProjectOverlay {
 
   show(project: Project, index: number, total: number): void {
     this.catEl.textContent = `${project.year ?? ''} · ${project.category ?? ''}`
-    NoiseText.for(this.titleEl).show(0.8, project.title)
+    BlurFade.for(this.titleEl).show(0.8, project.title)
     this.descEl.textContent = project.description || ''
     this.counterEl.textContent = `${index + 1} / ${total}`
     this.tagsEl.innerHTML = (project.tags ?? [])

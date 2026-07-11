@@ -1,21 +1,26 @@
-// NoiseText — glitch reveal animation.
+// NoiseText — console-style glitch reveal (junni reference).
 //
-// Effect: characters appear with random X/Y offset + blur, then settle
-// into their final position with a stagger. More cinematic than typewriter.
+// Effect: typewriter with random noise symbols trailing the revealed text.
+// Characters appear left-to-right; 1-3 random noise chars follow the cursor
+// position, flickering as the reveal progresses. Pure textContent (no spans)
+// = no layout shift, cheap to animate, perfect for console/TUI eyebrows.
 //
-// Each character: starts offset (translateY + rotate) + blurred, animates
-// to clean position. Staggered timing = wave-like reveal.
+// Reference: references/next.junni.co.jp/src/ts/MainScene/NoiseText/index.ts
+// Adapted: WeakMap singleton (for(el) API), rAF instead of setInterval,
+// configurable noise charset (default: box-drawing + symbols for TUI feel).
+
+const DEFAULT_NOISE = '░▒▓█▄▀▌▐│║╟╠╫╬●○◆◇▪▫•·∴∵≈≠≤≥±÷×'
 
 export class NoiseText {
   private static instances = new WeakMap<HTMLElement, NoiseText>()
 
   private readonly el: HTMLElement
-  private cleanText = ''
+  private text = ''
+  private noise = DEFAULT_NOISE
   private rafId: number | null = null
-  private timeoutId: number | null = null
-  private running = false
   private start = 0
-  private dur = 1000
+  private dur = 600
+  private running = false
 
   private constructor(el: HTMLElement) {
     this.el = el
@@ -30,88 +35,53 @@ export class NoiseText {
     return inst
   }
 
-  show(dur: number = 0.6, sourceText?: string): void {
+  /** Reveal the text with a trailing-noise typewriter effect.
+   *  dur: seconds. sourceText: text to reveal (defaults to el.textContent).
+   *  noise: optional charset for the trailing random symbols. */
+  show(dur: number = 0.6, sourceText?: string, noise?: string): void {
     this.cancel()
-    this.cleanText = sourceText ?? (this.el.textContent || '')
-    if (this.cleanText.length === 0) return
+    this.text = sourceText ?? (this.el.textContent || '')
+    if (this.text.length === 0) return
+    if (noise) this.noise = noise
 
     this.dur = dur * 1000
     this.running = true
     this.start = performance.now()
     this.el.setAttribute('data-visible', 'true')
-
-    // Build spans — each character in its own span for stagger animation
-    this.el.innerHTML = this.cleanText
-      .split('')
-      .map((ch) => {
-        const safeChar = ch === ' ' ? '&nbsp;' : ch
-        const rot = (Math.random() - 0.5) * 30
-        return `<span style="display:inline-block;opacity:0;transform:translateY(20px) rotate(${rot}deg);filter:blur(8px);transition:none;" data-rot="${rot}">${safeChar}</span>`
-      })
-      .join('')
-
-    this.timeoutId = window.setTimeout(() => this.finalize(), this.dur + 200)
+    this.el.textContent = ''
     this.rafId = requestAnimationFrame(this.tick)
   }
 
   hide(): void {
-    this.finalize()
+    this.cancel()
     this.el.removeAttribute('data-visible')
   }
 
   private tick = (ts: number): void => {
     if (!this.running) return
-    const t = Math.min(1, (ts - this.start) / this.dur)
+    const t = (ts - this.start) / this.dur
     if (t >= 1) {
-      this.finalize()
+      this.el.textContent = this.text
+      this.running = false
+      this.rafId = null
       return
     }
 
-    const spans = this.el.children
-    const n = spans.length
-    // Stagger: each character starts at a different time
-    const staggerDelay = 0.3 // 30% of duration for stagger spread
-    for (let i = 0; i < n; i++) {
-      const span = spans[i] as HTMLElement
-      const charDelay = (i / n) * staggerDelay
-      const charT = Math.max(0, Math.min(1, (t - charDelay) / (1 - staggerDelay)))
-      // Ease out cubic
-      const eased = 1 - Math.pow(1 - charT, 3)
-      const opacity = eased
-      const translateY = 20 * (1 - eased)
-      const rotate = parseFloat(span.dataset.rot || '0') * (1 - eased)
-      const blur = 8 * (1 - eased)
-      span.style.opacity = String(opacity)
-      span.style.transform = `translateY(${translateY}px) rotate(${rotate}deg)`
-      span.style.filter = `blur(${blur}px)`
+    // Progress 0→1 → fixed chars 0→text.length
+    const fixedLength = Math.floor(t * this.text.length)
+    // Trailing noise: 1-3 random chars after the cursor
+    const noiseLength = Math.min(3, this.text.length - fixedLength)
+
+    let out = ''
+    for (let i = 0; i < fixedLength; i++) {
+      out += this.text[i] ?? ''
     }
+    for (let i = 0; i < noiseLength; i++) {
+      out += this.noise[Math.floor(Math.random() * this.noise.length)] ?? ''
+    }
+    this.el.textContent = out
 
     this.rafId = requestAnimationFrame(this.tick)
-  }
-
-  finalize(): void {
-    this.running = false
-    if (this.rafId !== null) {
-      cancelAnimationFrame(this.rafId)
-      this.rafId = null
-    }
-    if (this.timeoutId !== null) {
-      clearTimeout(this.timeoutId)
-      this.timeoutId = null
-    }
-    // Set spans to their final resting state IN PLACE (do NOT removeAttribute
-    // style — that drops display:inline-block → inline, causing a letter-spacing
-    // shift). Keep display:inline-block so the box model matches the during-anim
-    // state exactly. Set transform='none' and filter='none' (NOT translateY(0)/
-    // blur(0px)) — 'none' removes the compositing layer + filter pipeline, which
-    // changes subpixel AA vs the animated state. opacity='1' is the final value.
-    const spans = this.el.children
-    for (let i = 0; i < spans.length; i++) {
-      const sp = spans[i] as HTMLElement
-      sp.style.opacity = '1'
-      sp.style.transform = 'none'
-      sp.style.filter = 'none'
-    }
   }
 
   private cancel(): void {
@@ -120,12 +90,8 @@ export class NoiseText {
       cancelAnimationFrame(this.rafId)
       this.rafId = null
     }
-    if (this.timeoutId !== null) {
-      clearTimeout(this.timeoutId)
-      this.timeoutId = null
-    }
-    if (this.cleanText) {
-      this.el.textContent = this.cleanText
+    if (this.text) {
+      this.el.textContent = this.text
     }
   }
 }

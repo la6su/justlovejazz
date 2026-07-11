@@ -425,21 +425,8 @@ body.uk-light .jlz-dropbar-sections li {
   margin-right: auto;
 }
 
-/* Content pages: text readability over 3D canvas.
-   QF theme already styles headings/cards via @global-* tokens.
-   We only add text-shadow for readability over any 3D background —
-   NO color overrides (QF handles colors via uk-light/uk-dark inverse). */
-.jlz-page .uk-heading-xlarge,
-.jlz-page .uk-heading-medium,
-.jlz-page .uk-heading-large,
-.jlz-page .uk-card-title,
-.jlz-page .uk-text-lead {
-  text-shadow: 0 2px 32px rgba(0, 0, 0, 0.55);
-}
-
-.jlz-page .uk-text-meta {
-  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.5);
-}
+/* Content pages: QF theme + _theme-fixes.less handle all text contrast.
+   No text-shadow needed — contrast comes from color-mode overrides. */
 
 /* (Removed .jlz-event-row + .jlz-gallery-tile — dead CSS, 0 template usages) */
 
@@ -467,10 +454,6 @@ body.uk-light .jlz-dropbar-sections li {
   letter-spacing: -0.035em;
   line-height: 0.9;
   margin: 0 0 var(--jlz-space-5);
-  /* Subtle accent glow — gives primary sections a "neon" feel that the
-     ui-ux-pro-max skill recommends for Creative Agency style. Uses the
-     --jlz-color-accent token so it syncs with theme. */
-  text-shadow: 0 0 40px color-mix(in srgb, var(--jlz-color-accent) 35%, transparent);
 }
 
 .studio-title.uk-heading-xlarge {
@@ -974,13 +957,16 @@ body.uk-light .jlz-eyebrow {
 
 .jlz-section-top {
   flex-shrink: 0;
-  /* Push TOP block below the fixed header (.tm-header ~76px tall) +
-     slider nav. Gives breathing room between header and section title. */
-  padding-top: calc(var(--jlz-header-height) + var(--jlz-space-6));
+  /* Push TOP block below the fixed header + breathing room.
+     header-height (64px) + space-8 (2rem) gap = comfortable separation. */
+  padding-top: calc(var(--jlz-header-height) + var(--jlz-space-8));
 }
 
 .jlz-section-bottom {
   flex-shrink: 0;
+  /* Joystick (110px) sits at bottom center — reserve minimal space so
+     bottom content clears it without excessive gap. space-4 = 1rem. */
+  padding-bottom: calc(var(--jlz-joystick-size) * 0.6 + var(--jlz-space-4));
 }
 
 /* Subtle scanline overlay for TUI feel — very faint */
@@ -1029,69 +1015,9 @@ body.uk-light .jlz-eyebrow {
   opacity: 1; /* dates use uk-text-meta for muted color, no opacity dim */
 }
 
-/* Vertical timeline — shared Process layout (home + services + manifesto).
-   Replaces the divergent list-divider (home) / 4-col grid (content) treatments.
-   Node column carries a connecting line; body holds title + desc. */
-.jlz-timeline {
-  list-style: none;
-  margin: 0 auto;
-  padding: 0;
-  max-width: 38rem; /* 608px — readable measure for 4 steps */
-  text-align: left;
-}
-
-.jlz-timeline__item {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--jlz-space-4); /* 1rem */
-  padding-bottom: var(--jlz-space-4);
-}
-
-.jlz-timeline__item:last-child {
-  padding-bottom: 0;
-}
-
-.jlz-timeline__node {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--jlz-space-10); /* 2.5rem — matches jlz-numeral min-width */
-  position: relative;
-}
-
-/* Connecting line dropping from this node to the next */
-.jlz-timeline__node::after {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 100%;
-  bottom: calc(-1 * var(--jlz-space-4));
-  width: 1px;
-  background: var(--jlz-color-border);
-  transform: translateX(-50%);
-}
-
-.jlz-timeline__item:last-child .jlz-timeline__node::after {
-  display: none;
-}
-
-.jlz-timeline__body {
-  flex: 1;
-  min-width: 0;
-  padding-top: 0.125rem; /* optical alignment with numeral */
-}
-
-.jlz-timeline__title {
-  margin: 0;
-  font-size: 1.0625rem;
-  line-height: 1.4;
-}
-
-.jlz-timeline__desc {
-  margin: 0.25rem 0 0;
-  line-height: 1.5;
-}
+/* (Removed .jlz-timeline — timeline layout no longer used. Process content
+   now lives in section templates via the unified homeSection/contentSection
+   pattern with .jlz-service-desc fragments.) */
 
 /* Inline contact form — mailto-based, no-JS (progressive enhancement).
    UIKit styles the input/button; we only ensure it wraps cleanly on narrow
@@ -1167,11 +1093,7 @@ body.uk-light .jlz-eyebrow {
   z-index: 100;
 }
 
-/* Reserve bottom space so joystick doesn't cover content */
-.jlz-page-section,
-#spa-content section[data-section] {
-  padding-bottom: calc(var(--jlz-joystick-size) + var(--jlz-space-8) + env(safe-area-inset-bottom, 0px));
-}
+/* (Bottom padding now handled by .jlz-section-bottom — joystick clearance) */
 
 @media (max-width: 640px) {
   .jlz-joystick {

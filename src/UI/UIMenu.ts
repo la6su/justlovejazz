@@ -76,6 +76,16 @@ const NAV_ITEMS: NavItem[] = [
   },
   { label: 'Blog', href: '/blog', page: 'blog' },
   {
+    label: 'Experiments',
+    href: '/app',
+    page: 'home',
+    sections: [
+      { num: '05', title: 'Lab', subtitle: 'Shader · audio · procedural R&D', idx: 0 },
+      { num: '06', title: 'Playground', subtitle: 'Nothing to sell · just play', idx: 5 },
+    ],
+    featured: { title: 'Open source', subtitle: 'GitHub · experiments + demos', href: 'https://github.com/la6su' },
+  },
+  {
     label: 'Contact',
     href: 'mailto:hello@justlovejazz.com',
     page: 'contact',
@@ -151,19 +161,21 @@ export class UIMenu {
 
     return `
       <nav class="uk-navbar-container uk-navbar-transparent" uk-navbar>
-        <div class="uk-navbar-center">
-          <div class="uk-navbar-center-left">
-            <ul class="uk-navbar-nav jlz-navbar-nav">
-              ${leftHtml}
-            </ul>
-          </div>
-          <button class="uk-icon-button jlz-theme-toggle" type="button" id="jlz-theme-toggle" aria-pressed="false" aria-label="Toggle theme">
-            <span uk-icon="icon: paint-bucket; ratio: 0.8" aria-hidden="true"></span>
-          </button>
-          <div class="uk-navbar-center-right">
-            <ul class="uk-navbar-nav jlz-navbar-nav">
-              ${rightHtml}
-            </ul>
+        <div class="uk-container uk-container-expand">
+          <div class="uk-navbar-center">
+            <div class="uk-navbar-center-left">
+              <ul class="uk-navbar-nav jlz-navbar-nav">
+                ${leftHtml}
+              </ul>
+            </div>
+            <button class="uk-icon-button jlz-theme-toggle" type="button" id="jlz-theme-toggle" aria-pressed="false" aria-label="Toggle theme">
+              <span uk-icon="icon: paint-bucket; ratio: 0.8" aria-hidden="true"></span>
+            </button>
+            <div class="uk-navbar-center-right">
+              <ul class="uk-navbar-nav jlz-navbar-nav">
+                ${rightHtml}
+              </ul>
+            </div>
           </div>
         </div>
       </nav>

@@ -2,6 +2,7 @@ import UIkit from 'uikit'
 import Icons from 'uikit/dist/js/uikit-icons'
 import { initRouter } from './router'
 import { bootstrap as bootstrapApp, type BootstrapOptions } from './main-app'
+import { BlurFade } from './Experience/BlurFade'
 import { NoiseText } from './Experience/NoiseText'
 import { eventBus } from './core/EventBus'
 
@@ -96,8 +97,9 @@ export async function startApp(): Promise<void> {
     fadeOutLoader()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ;(UIkit as any).update(document)
-    animateNoiseTitles()
+    animateBlurFadeTitles()
     setupTitleObserver()
+    setupEyebrowObserver()
     // After CRT curtains split (~0.8s), trigger SplashCube opener —
     // the glass cube does a scale pulse + particle burst.
     // This is the "baku awakens" moment when the 3D scene is revealed.
@@ -127,7 +129,7 @@ export async function startApp(): Promise<void> {
     const title = section.querySelector<HTMLElement>('.studio-title')
     if (title) {
       const text = title.textContent?.trim() || ''
-      if (text) NoiseText.for(title).show(1.5) // 1.5s — softer/longer
+      if (text) BlurFade.for(title).show(1.5) // 1.5s — softer/longer
     }
   })
 
@@ -135,7 +137,7 @@ export async function startApp(): Promise<void> {
 }
 
 /**
- * IntersectionObserver that fires NoiseText when a .studio-title enters the
+ * IntersectionObserver that fires BlurFade when a .studio-title enters the
  * viewport — synchronized with UIkit scrollspy's viewport entry.
  */
 function setupTitleObserver(): void {
@@ -147,7 +149,7 @@ function setupTitleObserver(): void {
         if (entry.isIntersecting) {
           const el = entry.target as HTMLElement
           const text = el.textContent?.trim() || ''
-          if (text) NoiseText.for(el).show(1.2)
+          if (text) BlurFade.for(el).show(1.2)
         }
       }
     },
@@ -157,20 +159,43 @@ function setupTitleObserver(): void {
 }
 
 /**
- * NoiseText animation on studio titles — animates ALL .studio-title elements.
+ * IntersectionObserver that fires NoiseText (console typewriter) when a
+ * [data-eyebrow] enters the viewport. Works alongside BlurFade for titles —
+ * eyebrows get the TUI-style noise reveal, titles get the cinematic blur.
  */
-let noiseAnimating = false
+function setupEyebrowObserver(): void {
+  const eyebrows = document.querySelectorAll<HTMLElement>('[data-eyebrow]')
+  if (eyebrows.length === 0) return
+  const observer = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          const el = entry.target as HTMLElement
+          const text = el.textContent?.trim() || ''
+          if (text) NoiseText.for(el).show(0.6, text)
+        }
+      }
+    },
+    { threshold: 0.15 },
+  )
+  eyebrows.forEach((e) => observer.observe(e))
+}
 
-function animateNoiseTitles(): void {
-  if (noiseAnimating) return
-  noiseAnimating = true
+/**
+ * BlurFade animation on studio titles — animates ALL .studio-title elements.
+ */
+let blurFadeAnimating = false
+
+function animateBlurFadeTitles(): void {
+  if (blurFadeAnimating) return
+  blurFadeAnimating = true
   setTimeout(() => {
-    noiseAnimating = false
+    blurFadeAnimating = false
   }, 2200)
 
   for (const el of document.querySelectorAll<HTMLElement>('.studio-title')) {
     const text = el.textContent?.trim() || ''
     if (!text) continue
-    NoiseText.for(el).show(1.2)
+    BlurFade.for(el).show(1.2)
   }
 }
