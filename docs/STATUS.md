@@ -81,12 +81,8 @@ Blog: standalone HTML (`blog.html` + 4 articles), SEO-optimized.
 
 ## Remaining work
 
-| Item | Priority |
-| --- | --- |
-| 3D objects on content pages (ShaderOrb, WireframeTypography beyond home) | Medium |
-| Blog post design polish (code highlighting, images) | Low |
-| Lighthouse re-run after all changes | Low |
-| i18n: dropbar section titles/subtitles (currently English-only) | Low |
+→ **Moved to [`NEXT.md`](../NEXT.md)** — single source of truth for the backlog.
+   Concrete, actionable, prioritized. Check off items as done.
 
 ## Proxy/dev config
 

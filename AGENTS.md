@@ -10,11 +10,31 @@ Single-page application. **6 SPA routes** (one HTML entry: `index.html`), each w
 
 | File | Content | Read when |
 | --- | --- | --- |
-| [STATUS.md](docs/STATUS.md) ⭐ | Canonical state + remaining work | **Always first** |
+| [NEXT.md](NEXT.md) ⭐⭐ | **Concrete backlog — what to do next** | **FIRST — pick a task** |
+| [WORKLOG.md](WORKLOG.md) ⭐ | Latest session context (decisions + why) | **SECOND — read top entry** |
+| [STATUS.md](docs/STATUS.md) | Canonical state | Third — full current state |
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Modules, render path, sections, events | Structure changes |
 | [RULES.md](docs/RULES.md) | Hard rules with bug provenance | **Before changing code** |
 | [UIKIT3.md](docs/UIKIT3.md) | UIKit theming patterns + lessons | UI / theme changes |
 | [CHANGELOG.md](docs/CHANGELOG.md) | Recent changes (latest 2 entries) | History |
+
+## Session workflow (LLM agent)
+
+```bash
+./scripts/session.sh start   # Print latest worklog + NEXT.md + git sync state
+# ... work on a task from NEXT.md ...
+./scripts/session.sh end     # Draft worklog entry from git log
+# Edit WORKLOG.md (fill placeholders) + update NEXT.md (check off done items)
+./scripts/session.sh push    # Commit + push to GitHub (auto-rebase if behind)
+```
+
+**Fresh context checklist:**
+1. `./scripts/session.sh start` — get oriented
+2. Read `NEXT.md` — pick a TODO item, move to "In Progress"
+3. Read `WORKLOG.md` top entry — latest decisions + context
+4. Read `RULES.md` — before touching code
+5. Work on the task
+6. `./scripts/session.sh end` → edit entry → update NEXT.md → `./scripts/session.sh push`
 
 ## Architecture
 
