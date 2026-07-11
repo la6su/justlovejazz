@@ -17,6 +17,7 @@ export class ContentReveal {
   private sectionHandler: ((payload: AppEvents['jlz:section-change']) => void) | null = null
   private pageSectionHandler: ((e: Event) => void) | null = null
   private themeHandler: (() => void) | null = null
+  private routeHandler: ((e: Event) => void) | null = null
   private currentSectionId: string | null = null
   private currentSectionIndex: number = -1
   private cachedConfigs: readonly PhaseConfig[] | null = null
@@ -106,11 +107,20 @@ export class ContentReveal {
       if (this.currentSectionId) this.applyTheme(this.currentSectionId)
     }
     window.addEventListener('jlz:theme-change', this.themeHandler)
+
+    // Invalidate cached configs on route change (page switched → new configs)
+    this.routeHandler = () => {
+      this.cachedConfigs = null
+      this.currentSectionId = null
+      this.currentSectionIndex = -1
+    }
+    window.addEventListener('jlz:route-change', this.routeHandler)
   }
 
   destroy() {
     if (this.sectionHandler) eventBus.off('jlz:section-change', this.sectionHandler)
     if (this.pageSectionHandler) window.removeEventListener('jlz:page-section-change', this.pageSectionHandler)
     if (this.themeHandler) window.removeEventListener('jlz:theme-change', this.themeHandler)
+    if (this.routeHandler) window.removeEventListener('jlz:route-change', this.routeHandler)
   }
 }

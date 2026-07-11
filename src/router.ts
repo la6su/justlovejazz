@@ -50,6 +50,11 @@ function renderView(page: PageId = getPageFromLocation()): void {
     el.innerHTML = renderPage(page)
     if (page === 'home') {
       el.querySelector<HTMLElement>('[data-section="intro"]')?.classList.add('section-active')
+    } else {
+      // Content pages: activate first [data-page-section] (index 1 = first main section)
+      const firstSection = el.querySelector<HTMLElement>('[data-page-section]:nth-child(2)') 
+        ?? el.querySelector<HTMLElement>('[data-page-section]')
+      firstSection?.classList.add('section-active')
     }
     currentPage = page
   }
