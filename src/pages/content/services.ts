@@ -26,7 +26,7 @@ export function servicesPage(): string {
       )}
       <!-- 1: INTRO (start, active) -->
       ${contentSection('services-intro',
-        contentTop('SERVICES', 'What We Build', 'Real-time 3D for the web. WebGPU first, WebGL2 everywhere.'),
+        contentTop('SERVICES', 'What We Build', 'Real-time 3D for the web. WebGPU first, WebGL2 everywhere.', 'large'),
         contentBottom(`<a href="mailto:hello@justlovejazz.com?subject=New%20project" class="uk-button uk-button-primary uk-button-large">Start a project</a>`),
         true
       )}

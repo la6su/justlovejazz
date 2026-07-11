@@ -45,12 +45,19 @@ export type PageId = 'home' | 'services' | 'manifesto'
 // These helpers generate the TUI-like wrapper structure.
 
 /** Generate the TOP header block — eyebrow (empty, populated by Subtitles
- *  via NoiseText on home sections) + title + optional lead text. */
-export function sectionTop(_eyebrow: string, title: string, lead?: string): string {
+ *  via NoiseText on home sections) + title + optional lead text.
+ *  headingTier: 'medium' (default, secondary sections) | 'large' (primary)
+ *  | 'xlarge' (hero). Creates 3-tier visual hierarchy across sections. */
+export function sectionTop(
+  _eyebrow: string,
+  title: string,
+  lead?: string,
+  headingTier: 'medium' | 'large' | 'xlarge' = 'medium',
+): string {
   return `
     <div class="jlz-section-top uk-text-center uk-flex uk-flex-column uk-flex-middle" ${REVEAL}>
       <span class="jlz-eyebrow" data-eyebrow></span>
-      <h2 class="studio-title uk-heading-medium uk-margin-small-top uk-margin-remove-bottom">${title}</h2>
+      <h2 class="studio-title uk-heading-${headingTier} uk-margin-small-top uk-margin-remove-bottom">${title}</h2>
       ${lead ? `<p class="uk-text-meta uk-margin-small-top">${lead}</p>` : ''}
     </div>
   `
@@ -116,12 +123,18 @@ export function contentSection(
 
 /** TOP block for content sections — eyebrow + title + optional lead.
  *  Same structure as sectionTop (home), but eyebrow is static text
- *  (content pages don't use NoiseText/Subtitles — home-only feature). */
-export function contentTop(eyebrow: string, title: string, lead?: string): string {
+ *  (content pages don't use NoiseText/Subtitles — home-only feature).
+ *  headingTier: 'medium' (default) | 'large' (primary/intro). */
+export function contentTop(
+  eyebrow: string,
+  title: string,
+  lead?: string,
+  headingTier: 'medium' | 'large' = 'medium',
+): string {
   return `
     <div class="jlz-section-top uk-text-center uk-flex uk-flex-column uk-flex-middle" ${PAGE_REVEAL}>
       <span class="jlz-eyebrow">&gt; ${eyebrow}</span>
-      <h2 class="studio-title uk-heading-medium uk-margin-small-top uk-margin-remove-bottom">${title}</h2>
+      <h2 class="studio-title uk-heading-${headingTier} uk-margin-small-top uk-margin-remove-bottom">${title}</h2>
       ${lead ? `<p class="uk-text-meta uk-margin-small-top">${lead}</p>` : ''}
     </div>
   `

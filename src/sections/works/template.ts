@@ -13,7 +13,7 @@ export function worksSection(): string {
           <!-- TOP -->
           <div ${REVEAL}>
             <span class="jlz-eyebrow" data-eyebrow></span>
-            <h2 class="studio-title uk-heading-medium uk-margin-small-top uk-margin-remove-bottom"
+            <h2 class="studio-title uk-heading-large uk-margin-small-top uk-margin-remove-bottom"
                 data-content-id="works-title">Works</h2>
             <p class="uk-text-meta uk-margin-small-top">Six interactive experiences</p>
           </div>

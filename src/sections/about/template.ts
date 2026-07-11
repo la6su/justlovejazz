@@ -4,7 +4,7 @@
 import { sectionTop, sectionBottom, sectionShell } from '../_shared/constants'
 
 export function aboutSection(): string {
-  const top = sectionTop('ABOUT', 'About', 'Remote · EU · since 2019')
+  const top = sectionTop('ABOUT', 'About', 'Remote · EU · since 2019', 'large')
   const bottom = sectionBottom(`
     <p class="uk-text-lead uk-text-left" data-content-id="about-text">
       A small studio crafting expressive browser experiences. We merge

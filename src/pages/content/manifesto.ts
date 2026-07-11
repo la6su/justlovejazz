@@ -20,7 +20,7 @@ export function manifestoPage(): string {
       )}
       <!-- 1: INTRO (start, active) -->
       ${contentSection('manifesto-intro',
-        contentTop('MANIFESTO', 'What we believe', 'Four principles. Built from shipping real work.'),
+        contentTop('MANIFESTO', 'What we believe', 'Four principles. Built from shipping real work.', 'large'),
         contentBottom(`<a href="/app/services" class="uk-button uk-button-primary uk-button-large">See services →</a>`),
         true
       )}

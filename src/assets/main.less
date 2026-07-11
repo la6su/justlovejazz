@@ -487,12 +487,26 @@ body.uk-light .jlz-secret-nav > li > a:hover {
    App-specific typography + hints
    ------------------------------------------------------------------ */
 
+/* ── 3-tier section title hierarchy (was: all sections same size) ──
+   Tier 1 (hero/intro):  xlarge  — 800 weight, 10rem, dramatic
+   Tier 2 (primary):     large   — 600 weight, 5.5rem, confident
+   Tier 3 (secondary):   medium  — 400 weight, 4rem, restrained
+   Progression: 800→600→400 (bold→confident→restrained) + 10→5.5→4rem.
+   Creates real visual hierarchy between sections instead of monotony. */
 .studio-title.uk-heading-medium {
-  font-size: clamp(2.75rem, 9vw, 6.5rem);
-  font-weight: 300;
+  font-size: clamp(2.25rem, 6vw, 4rem);
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  line-height: 0.95;
+  margin: 0 0 var(--jlz-space-5);
+}
+
+.studio-title.uk-heading-large {
+  font-size: clamp(2.75rem, 8vw, 5.5rem);
+  font-weight: 600;
   letter-spacing: -0.035em;
-  line-height: 0.92;
-  margin: 0 0 var(--jlz-space-3);
+  line-height: 0.9;
+  margin: 0 0 var(--jlz-space-5);
 }
 
 .studio-title.uk-heading-xlarge {
@@ -1032,8 +1046,8 @@ body.uk-light .jlz-eyebrow {
     0deg,
     transparent 0,
     transparent 3px,
-    rgba(255, 255, 255, 0.02) 3px,
-    rgba(255, 255, 255, 0.02) 4px
+    rgba(255, 255, 255, 0.035) 3px,
+    rgba(255, 255, 255, 0.035) 4px
   );
   z-index: 1;
 }
