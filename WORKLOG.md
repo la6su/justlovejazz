@@ -9,6 +9,73 @@
 
 ---
 
+## 2026-07-11 — Dead-code cleanup + stale doc sync (fresh-eyes audit follow-up)
+
+### Done
+- Sprint 1: Fixed stale WireframeTypography labels (artifacts of `9d8e0c7` Services/Works
+  swap + `7e2f480` 8→6 section unification — strings were never updated).
+  - `about/scene.ts`: `'SERVICES'` → `'ABOUT'` (matches the About cube face)
+  - `contact/scene.ts`: `'MANIFESTO'` → `'HELLO'` (restores the file-header intent: "3D greeting")
+- Sprint 2: Removed dead per-page `sceneObjects` config from WorldConfig (`-47 LOC`).
+  - `sceneForContentPage()` assigned 3D objects to **wrong cube-face indices** (e.g.
+    `wireframeText: idx === 1` for services, but WireframeTypography only exists on
+    idx 2/4; `bakuCarousel: idx === 1` for works, but carousel is on idx 3). Every
+    assignment was a no-op via the `if (typo)` / `if (orb)` guards in World.ts.
+  - `sceneEnvSpherePattern` field removed — dead (World.ts:352 "REMOVED", EnvSphere
+    follows global theme only, patterns are fixed per section).
+  - `particles` flag removed from `SceneControl.objects` — never read in World.ts.
+  - Kept (alive): `scene.transition` (easing, consumed by `_applyEasing`), `scene.objects.bakuCarousel`
+    (home-only guard in World.ts:419), home RAW sceneObjects (correct indices, objects exist there).
+- Sprint 3: Doc sync (stale metrics + dead-field cleanup).
+  - `STATUS.md` / `AGENTS.md`: 17 tests → 9 (EventBus 5, not 13 — suite was trimmed,
+    docs never updated); `~14.4K LOC` → `~11.6K TS LOC` (TS-only count).
+  - `RULES.md §18`: was a verbatim duplicate of §16 → replaced with a placeholder note
+    so §19+ numbering stays stable (RULES refs §15-17, §20, §50 must not shift).
+  - `ARCHITECTURE.md` SceneControl: removed `particles` + `envSpherePattern` from the
+    type sketch; clarified `scene.objects` is home-only (content pages skip the
+    visibility block — objects show via shared scene groups).
+  - `NEXT.md`: closed the "3D objects on content pages" high-priority item —
+    re-evaluated: SectionSceneFactory is hardcoded, scene groups are shared, objects
+    already render on all pages when their cube-face group is visible.
+
+### Key decisions (WHY)
+- **Labels match cube faces, not content pages**: scene groups are shared across all
+  SPA pages (SectionSceneFactory is hardcoded), so the 3D text anchor must match the
+  cube face (About → 'ABOUT', Contact → 'HELLO'), not any content page that happens
+  to reuse that face.
+- **Removed `sceneForContentPage` rather than "fixing" indices**: the architecture
+  explicitly shares scene groups across pages, so per-page `sceneObjects` contradicts
+  it. True per-page visual variety would need per-page scene factories — an
+  architectural change, not a config tweak. The dead config was misleading (looked
+  like a working feature, actually did nothing).
+- **Kept §18 as a placeholder** instead of renumbering: RULES references (§15-17, §20,
+  §50) in AGENTS.md / ARCHITECTURE.md would silently break if numbers shifted.
+- **Did NOT touch Enter-button init flow**: browser verify showed `enterReady=false`
+  in headless after 22s, but this is pre-existing headless timing (`jlz:webgl-ready`
+  emit uses `setTimeout` which throttles under headless WebGL2 + LAN IP). My changes
+  didn't touch `main-app.ts` / `entry-app.ts` / `Experience.ts` init. STATUS.md
+  confirms the Enter contract works in real browsers (Lighthouse Perf 100).
+
+### Files touched
+- `src/sections/about/scene.ts`, `src/sections/contact/scene.ts` (Sprint 1)
+- `src/core/WorldConfig.ts` (Sprint 2)
+- `docs/STATUS.md`, `docs/RULES.md`, `docs/ARCHITECTURE.md`, `AGENTS.md`, `NEXT.md` (Sprint 3)
+
+### Verification
+- `bun run lint`: 0 errors (61 pre-existing `no-empty-object-type` warnings, tracked per RULES §48)
+- `bun run type-check`: 0 errors (strict + noUncheckedIndexedAccess)
+- `bun run build`: green (~1.8s)
+- `bun run test:unit`: 9 passed (EventBus 5 + Noise 2 + motionPolicy 2)
+- Agent Browser (headless WebGL2, LAN IP): 6 scene groups created, all userData correct
+  (`orb0`/`typo2`/`gallery3`/`typo4`/`timeline5` all `true`), 0 console errors,
+  `Experience.init` complete (DevPanel ready log), `window.experience` defined.
+
+### Next
+- Lighthouse re-run (NEXT.md high priority — after all 2026-07-12 + 2026-07-11 changes)
+- i18n dropbar titles, blog post polish, WorkCards keyboard nav (NEXT.md medium)
+
+---
+
 ## 2026-07-12 — Works page 3D cards + i18n + meta tags + Enter/ground fixes + docs rewrite
 
 ### Done

@@ -55,6 +55,11 @@ _(nothing currently in progress)_
 
 ## Done (recent — for context)
 
+- [x] 2026-07-11: Dead-code cleanup + stale doc sync (fresh-eyes audit)
+      — WireframeTypography labels fixed (ABOUT/HELLO), dead `sceneForContentPage`
+        + `sceneEnvSpherePattern` + `particles` flag removed from WorldConfig (-47 LOC),
+        STATUS/AGENTS test count (17→9) + LOC (~14.4K→~11.6K) corrected, RULES §18
+        duplicate merged, ARCHITECTURE SceneControl updated, NEXT high-priority item closed.
 - [x] 2026-07-12: Works page 3D tilt cards (8 projects, 2 new)
 - [x] 2026-07-12: i18n full implementation (130+ keys, data-i18n on all templates)
 - [x] 2026-07-12: Route-based meta tags (per-page title/description/OG)
