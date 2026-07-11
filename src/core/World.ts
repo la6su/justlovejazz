@@ -318,15 +318,19 @@ export class World extends THREE.Group {
       t = 0 // at the last section, no transition (was t=1)
     }
 
-    // ── Ease t through S-curve for comfort zone
-    // smoothstep creates a plateau at each end of the range
-    t = this._smoothstep(t)
+    // ── Ease t through per-section easing (from scene.transition config)
+    // Default: smoothstep (S-curve, comfort plateaus at section centers).
+    // Per-section: can use 'linear', 'ease-out', 'ease-in-out' for different feels.
+    const fromCfg = this.configs[fromIndex]!
+    const toCfg = this.configs[toIndex]!
+    const easing = toCfg?.scene?.transition?.easing ?? fromCfg?.scene?.transition?.easing ?? 'ease-in-out'
+    t = this._applyEasing(t, easing)
 
-    // Bug 2: double-smoothstep for bg + group fade so each section's color
+    // Bug 2: double-ease for bg + group fade so each section's color
     // holds until mid-transition, then quickly flips. Prevents the about
     // section's dark bg from bleeding into flexible's light bg too early
-    // (white text contrast loss). Camera/baku still use the single-smoothstep t.
-    const bgT = this._smoothstep(t)
+    // (white text contrast loss). Camera/baku still use the single-eased t.
+    const bgT = this._applyEasing(t, easing)
 
     // ── Update current section index + fire per-section systems ──
     if (fromIndex !== this._currentSectionIndex) {
@@ -471,8 +475,8 @@ export class World extends THREE.Group {
     const toLight = toSec.lightData
 
     const bus = StateBus.getInstance()
-    const fromCfg = fromSec.phaseConfig
-    const toCfg = toSec.phaseConfig
+    // fromCfg/toCfg already declared above (for easing selection)
+    // Use the config from section's phaseConfig for ground/post/lighting
 
     // ── Ground plane update (junni pattern: lerp color + opacity per section)
     const fromGround = fromCfg.ground
@@ -607,10 +611,45 @@ export class World extends THREE.Group {
     this._renderer = renderer
   }
 
-  /** Smoothstep easing: S-curve for comfort zones */
-  private _smoothstep(t: number): number {
-    // t is 0..1 within a range; ease it so transitions have plateaus
-    return t * t * (3 - 2 * t)
+  /** Apply easing function to t (0..1) based on scene.transition.easing config.
+   *  'ease-in-out' (default) = smoothstep (S-curve, comfort plateaus)
+   *  'ease-out' = fast start, slow end (decelerate into section)
+   *  'linear' = no easing (raw scroll value)
+   *  'cubic-bezier' = custom cubic-bezier(0.65, 0, 0.35, 1) — cinematic */
+  private _applyEasing(t: number, easing: string): number {
+    const clamped = THREE.MathUtils.clamp(t, 0, 1)
+    switch (easing) {
+      case 'linear':
+        return clamped
+      case 'ease-out':
+        // ease-out cubic: 1 - (1-t)^3 — fast start, slow settle
+        return 1 - Math.pow(1 - clamped, 3)
+      case 'cubic-bezier':
+        // cubic-bezier(0.65, 0, 0.35, 1) — cinematic, similar to CSS
+        return this._cubicBezier(clamped, 0.65, 0, 0.35, 1)
+      case 'ease-in-out':
+      default:
+        // smoothstep: t² * (3 - 2t) — S-curve with plateaus
+        return clamped * clamped * (3 - 2 * clamped)
+    }
+  }
+
+  /** Cubic bezier easing (approximation via Newton-Raphson).
+   *  Matches CSS cubic-bezier(x1, y1, x2, y2) timing function. */
+  private _cubicBezier(t: number, x1: number, y1: number, x2: number, y2: number): number {
+    // Simple approximation: sample the bezier curve
+    // For most use cases, 20 samples is sufficient
+    if (t <= 0) return 0
+    if (t >= 1) return 1
+    let lo = 0, hi = 1
+    for (let i = 0; i < 20; i++) {
+      const mid = (lo + hi) / 2
+      const x = 3 * (1 - mid) * (1 - mid) * mid * x1 + 3 * (1 - mid) * mid * mid * x2 + mid * mid * mid
+      if (x < t) lo = mid
+      else hi = mid
+    }
+    const u = (lo + hi) / 2
+    return 3 * (1 - u) * (1 - u) * u * y1 + 3 * (1 - u) * u * u * y2 + u * u * u
   }
 
   /** Get PhaseConfig for a given phase ID */
