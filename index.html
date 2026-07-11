@@ -357,6 +357,8 @@
 
           // Dispatch splash-entered event — triggers BlurFade + NoiseText
           // animations AFTER splash starts fading (user sees them as 3D reveals)
+          // Also remove scrollspy-pending so content becomes visible.
+          document.body.classList.remove('scrollspy-pending');
           window.dispatchEvent(new CustomEvent('jlz:splash-entered'));
 
           // Trigger bakuCube opener at mid-curtain-split (400ms of 800ms)

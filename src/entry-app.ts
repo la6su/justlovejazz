@@ -160,18 +160,17 @@ export async function startApp(): Promise<void> {
   })
 
   // Fallback: if jlz:webgl-ready doesn't fire within 4s (Experience.init
-  // crashed or hung), show Enter button anyway so the user isn't stuck
-  // staring at "Loading". The app may still be partially functional.
+  // crashed or hung), show Enter button + dispatch splash-entered so
+  // animations still trigger on Enter click.
   setTimeout(() => {
     const enterBtn = document.getElementById('jlz-splash-enter')
     if (enterBtn && !enterBtn.classList.contains('is-ready')) {
       console.warn('[entry-app] jlz:webgl-ready timeout — showing Enter button')
-      document.body.classList.remove('scrollspy-pending')
       showEnterButton()
     }
   }, 4000)
 
-  // ── Animate titles on section change ──
+  // ── Animate titles on section change (home: data-section) ──
   eventBus.on('jlz:section-change', (payload) => {
     if (!payload?.sectionId) return
     const section = document.querySelector(`[data-section="${payload.sectionId}"]`)
@@ -179,9 +178,23 @@ export async function startApp(): Promise<void> {
     const title = section.querySelector<HTMLElement>('.studio-title')
     if (title) {
       const text = title.textContent?.trim() || ''
-      if (text) BlurFade.for(title).show(1.5) // 1.5s — softer/longer
+      if (text) BlurFade.for(title).show(1.5)
     }
   })
+
+  // ── Animate titles on page section change (content: data-page-section) ──
+  window.addEventListener('jlz:page-section-change', ((e: Event) => {
+    const detail = (e as CustomEvent<{ index: number }>).detail
+    if (!detail) return
+    const sections = document.querySelectorAll<HTMLElement>('[data-page-section]')
+    const el = sections[detail.index]
+    if (!el) return
+    const title = el.querySelector<HTMLElement>('.studio-title')
+    if (title) {
+      const text = title.textContent?.trim() || ''
+      if (text) BlurFade.for(title).show(1.5)
+    }
+  }) as EventListener)
 
   void boot()
 }
