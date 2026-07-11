@@ -48,6 +48,7 @@ export class Experience {
   private _sectionChangeHandler: ((payload: import('../core/EventBus').AppEvents['jlz:section-change']) => void) | null = null
   private _themeAppliedHandler: ((e: Event) => void) | null = null
   private _soundToggleHandler: ((e: Event) => void) | null = null
+  private _splashEnteredHandler: (() => void) | null = null
   private devPanel: DevPanel | null = null
   public world!: World
   private bus!: StateBus
@@ -231,13 +232,23 @@ export class Experience {
       const section = document.querySelector(`[data-section="${payload.sectionId}"]`)
       const eyebrow = section?.querySelector<HTMLElement>('[data-eyebrow]')
       if (eyebrow) {
-        // data-eyebrow-text = stable source (set in template, never mutated)
-        // fallback to textContent only if attribute missing
         const text = eyebrow.getAttribute('data-eyebrow-text') ?? eyebrow.textContent ?? ''
         if (text) NoiseText.for(eyebrow).show(0.6, text)
       }
     }
     eventBus.on('jlz:section-change', this._sectionChangeHandler)
+
+    // After splash is dismissed (Enter click), re-trigger NoiseText on the
+    // active section so user sees the eyebrow animation as 3D scene reveals.
+    this._splashEnteredHandler = () => {
+      const activeSection = document.querySelector('.section-active [data-eyebrow]') as HTMLElement | null
+        ?? document.querySelector('[data-section="intro"] [data-eyebrow]') as HTMLElement | null
+      if (activeSection) {
+        const text = activeSection.getAttribute('data-eyebrow-text') ?? activeSection.textContent ?? ''
+        if (text) NoiseText.for(activeSection).show(0.8, text)
+      }
+    }
+    window.addEventListener('jlz:splash-entered', this._splashEnteredHandler)
     await this.renderer.init()
     await this.buildWorld()
     this.bus = StateBus.getInstance()
@@ -309,7 +320,11 @@ export class Experience {
     firstSection?.classList.add('section-active')
     // Apply initial section theme (intro = light in auto, dark in inverse)
     // ContentReveal.applySectionTheme is private — dispatch section-change
-    // so it picks up the initial section.
+    // so it picks up the initial section. BUT delay NoiseText until splash
+    // is dismissed (jlz:splash-entered) — otherwise eyebrow animates behind
+    // splash overlay and user never sees it.
+    // We emit section-change immediately for ContentReveal (theme + active),
+    // but NoiseText handler checks if splash is still visible.
     eventBus.emit('jlz:section-change', {
       sectionId: 'intro',
       context: 'Studio — Home',
@@ -665,6 +680,10 @@ export class Experience {
     if (this._soundToggleHandler) {
       window.removeEventListener('jlz:sound-toggle', this._soundToggleHandler)
       this._soundToggleHandler = null
+    }
+    if (this._splashEnteredHandler) {
+      window.removeEventListener('jlz:splash-entered', this._splashEnteredHandler)
+      this._splashEnteredHandler = null
     }
     this.world.dispose()
     this.bus.cancelAll()

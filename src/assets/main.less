@@ -792,7 +792,8 @@ section[data-section='process'] .uk-list li:hover {
   cursor: grab;
   transition:
     border-color 0.3s ease,
-    background 0.3s ease;
+    background 0.3s ease,
+    transform var(--jlz-duration-fast) var(--jlz-ease-emphasis);
   position: relative;
 }
 
@@ -800,6 +801,7 @@ section[data-section='process'] .uk-list li:hover {
   cursor: grabbing;
   border-color: rgba(255, 255, 255, 0.4);
   background: rgba(255, 255, 255, 0.12);
+  transform: scale(1.08);
 }
 
 .jlz-joystick__ball {
@@ -1064,12 +1066,21 @@ body.uk-light .jlz-eyebrow {
   gap: var(--jlz-space-3);
 }
 
-/* Dotnav timeline — single horizontal row of 4 dots BELOW the joystick.
-   UIKit3 uk-dotnav provides dot styling; we override size + colors. */
+/* (joystick__base transition + scale defined above in joystick section) */
+
+/* Dotnav timeline — strictly horizontal, centered, with margin from joystick.
+   UIKit3 uk-dotnav is <ul> with display:flex — we override to ensure
+   horizontal centering + proper spacing. */
 .jlz-joystick-dotnav {
+  display: flex !important;
+  flex-direction: row;
   flex-wrap: nowrap;
+  justify-content: center;
+  align-items: center;
   gap: 0.5rem;
   margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .jlz-joystick-dotnav li a {
