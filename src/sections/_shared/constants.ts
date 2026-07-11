@@ -39,34 +39,8 @@ export type PageId = 'home' | 'services' | 'works' | 'manifesto' | 'lab' | 'cont
 // Every section follows: TOP (eyebrow + title) / 3D CENTER (transparent) / BOTTOM (UI panel)
 // These helpers generate the TUI-like wrapper structure.
 
-/** Generate the TOP header block — eyebrow shows the section number (01-06)
- *  as a console-like numeral with glitch reveal via NoiseText on section
- *  change (home) or static (content pages). headingTier: 'medium' (default)
- *  | 'large' (primary) | 'xlarge' (hero). */
-export function sectionTop(
-  eyebrow: string,
-  title: string,
-  lead?: string,
-  headingTier: 'medium' | 'large' | 'xlarge' = 'medium',
-): string {
-  return `
-    <div class="jlz-section-top uk-text-center uk-flex uk-flex-column uk-flex-middle" ${REVEAL}>
-      <span class="jlz-eyebrow" data-eyebrow data-eyebrow-text="${eyebrow}">${eyebrow}</span>
-      <h2 class="studio-title uk-heading-${headingTier} uk-margin-small-top uk-margin-remove-bottom">${title}</h2>
-      ${lead ? `<p class="uk-text-lead uk-margin-small-top">${lead}</p>` : ''}
-    </div>
-  `
-}
-
-/** Generate the BOTTOM panel wrapper — for cards/grid/slider/list.
- *  Transparent, slides up, contains UIKit builder elements. */
-export function sectionBottom(content: string): string {
-  return `
-    <div class="jlz-section-bottom" ${REVEAL}>
-      ${content}
-    </div>
-  `
-}
+// (sectionTop/sectionBottom removed — home templates inline TOP/BOTTOM HTML.
+//  Content pages use contentTop/contentBottom which produce the same structure.)
 
 /** Unified section wrapper — ONE function for ALL pages (home + content).
  *  Apple Watch layout: TOP (eyebrow + title + lead) / 3D CENTER / BOTTOM (content).

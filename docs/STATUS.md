@@ -4,46 +4,56 @@
 
 ## Project
 
-SPA studio portfolio — **6 sections** (1:1 with cube faces), 3D canvas + transparent DOM overlay. Single font: Inter.
-Navigation: JoystickNav (pure DOM) + UIMenu (UIkit modal) + Subtitles (NoiseText on [data-eyebrow]).
-Theme: UIKit native `uk-light` via ThemeManager (2 modes: auto=light / inverse=dark) — global flip, not per-section.
+SPA studio portfolio — **6 pages** (one per cube face), each with **4 main sections**.
+3D canvas + transparent DOM overlay. Single font: Inter.
+Navigation: JoystickNav (pure DOM + dotnav) + UIMenu (transparent navbar + dropdowns).
+Theme: UIKit native `uk-light` via ThemeManager (2 modes: auto=light / inverse=dark).
 Mobile-first: `html { font-size: 0.85rem }` mobile → `1rem` ≥640px.
 
 Multi-page: splash (/) → app (/app) → blog (/blog) → landing (/landing).
+
+## Pages (6) — one per cube face
+
+| Page | URL | Sections (joystick down/up) |
+| --- | --- | --- |
+| Studio | `/app` | 01 Studio / 02 Services / 03 Works / 04 Manifesto |
+| Services | `/app/services` | 01 Creative Direction / 02 Interactive Dev / 03 Motion & Realtime / 04 AI Systems |
+| Works | `/app/works` | 01 Undercurrent / 02 Mono Sunday / 03 Till at Night / 04 Ebb Vibes |
+| Manifesto | `/app/manifesto` | 01 Purpose / 02 Clarity / 03 Emotion / 04 Simplicity |
+| Lab | `/app/lab` | 01 Shader Lab / 02 Audio Reactive / 03 Generative / 04 GPU Particles |
+| Contact | `/app/contact` | 01 Email / 02 Social / 03 Location / 04 Form |
 
 ## Current state
 
 | Item | Status |
 | --- | --- |
 | 3D scene (WebGPU + WebGL2 fallback) | ✅ |
-| 6 sections — 1:1 cube faces | ✅ |
-| JoystickNav — pure DOM, trigger model | ✅ |
-| 2D nav (vertical=main 1-4, horizontal=secret 0/5) | ✅ |
-| UIMenu — modal + page links + theme toggle + slider labels per page | ✅ |
-| Subtitles — NoiseText scramble on [data-eyebrow] | ✅ |
-| BakuCarousel — cube morphs into ring (Works §3) | ✅ |
-| SplashCube — RoundedBoxGeometry + CubeCamera + iridescence + opener | ✅ |
+| 6 pages — one per cube face | ✅ |
+| Unified sectionShell() — ONE wrapper for all pages | ✅ |
+| JoystickNav — pure DOM + dotnav timeline | ✅ |
+| UIMenu — transparent navbar + dropdowns + theme toggle | ✅ |
+| BakuCarousel — cube morphs into ring (Works page) | ✅ |
+| SplashCube — RoundedBoxGeometry + CubeCamera + JLZ-branded textures | ✅ |
 | On-demand rendering + ambient breathing | ✅ |
-| EnvSphere — global theme sync (auto=light, inverse=dark) | ✅ |
-| ThemeManager — 2-mode (auto/inverse), 1 toggle button | ✅ |
-| Custom cursor — codrops-style (inner dot + noisy circle, red on hover) | ✅ |
-| Dock — 2-row bottom bar (tools + footer) on ALL pages | ✅ |
+| EnvSphere — global theme sync | ✅ |
+| ThemeManager — 2-mode (auto/inverse), global uk-light | ✅ |
+| Custom cursor — codrops-style (inner dot + noisy circle) | ✅ |
+| BlurFade — cinematic blur+stagger for titles | ✅ |
+| NoiseText — console typewriter for eyebrow numbers | ✅ |
+| Footer removed — joystick sole bottom UI | ✅ |
 | Mobile-first rem sizing | ✅ |
 | Responsive sections | ✅ |
-| 3 content pages (home/services/manifesto) + blog + landing | ✅ |
 | TypeScript strict + ESLint + Prettier | ✅ |
 | 19 unit tests | ✅ |
 
-## Sections (6) — cube-map layout (ALL pages)
+## Navigation — JoystickNav
 
-| Idx | Home | Services | Manifesto | Theme |
-| --- | --- | --- | --- | --- |
-| 0 | Lab (secret) | Secret | Secret | light |
-| 1 | Intro (start) | Intro | Intro | light |
-| 2 | About | Capabilities | Principles | dark |
-| 3 | Works | Stack | Craft | dark |
-| 4 | Contact | Process | Process | light |
-| 5 | Process (secret) | Secret | Secret | dark |
+| Action | Behavior |
+| --- | --- |
+| Vertical (up/down) | Cycle 4 main sections of current page |
+| Horizontal (left/right) | Toggle shared side sections: Lab ↔ center ↔ Contact |
+| Dotnav | 4 dots below joystick — click to jump |
+| Keyboard | Arrows, Home (→1), End (→4) |
 
 ## Visual tiers
 
@@ -52,43 +62,28 @@ Multi-page: splash (/) → app (/app) → blog (/blog) → landing (/landing).
 | Premium | Real WebGPU | MeshPhysicalMaterial + CubeCamera | EnvSphere |
 | Parity | WebGL2 fallback | Same | EnvSphere |
 
-MSAA 4× on scene WebGLRenderTarget (`samples: 4`). RoundedBoxGeometry (bevel 0.04) for smooth edges.
-
-## On-demand rendering
-
-`renderer.update()` only when `_needsRender=true`. Triggers: JoystickNav, BakuCarousel, SplashCube opener, camera shake, ParticleBurst, mousemove (Works section DrawTrail), ambient breathing (1 frame / 2.5s idle).
+MSAA 4× on scene WebGLRenderTarget. RoundedBoxGeometry (bevel 0.04) for smooth edges.
 
 ## Theme system
 
 | Property | Value |
 | --- | --- |
 | File | `src/core/ThemeManager.ts` |
-| Modes | `auto` (light), `inverse` (dark) — global, not per-section |
+| Modes | `auto` (light), `inverse` (dark) — global |
 | Persistence | `localStorage('jlz:theme')` |
 | Body class | `uk-light` on `<body>` + `<html>` |
 | 3D sync | `jlz:theme-applied` event → EnvSphere changeSection |
-| Toggle | 1 button in UIMenu (calls `themeManager.toggle()`) |
+| Toggle | uk-icon-button in navbar center (calls `themeManager.toggle()`) |
+| QF color-mode | `_theme-fixes.less` overrides (dark bg → light text) |
 
-## SplashCube (baku)
+## Text animations
 
-| Property | Value |
-| --- | --- |
-| Geometry | RoundedBoxGeometry(1.6, 6 segments, 0.04 bevel) |
-| Material | MeshPhysicalMaterial (iridescence=1, clearcoat=1, roughness=0, opacity=0.35) |
-| Reflections | CubeCamera 512×512, content scene (gradient planes + logo/text) |
-| Opener | Scale pulse 1.0→1.3→1.0 on `triggerOpener()` (600ms after webgl-ready) |
+| Animation | Target | Effect |
+| --- | --- | --- |
+| BlurFade | `.studio-title` | Blur + stagger reveal (cinematic) |
+| NoiseText | `[data-eyebrow]` | Console typewriter with noise tail (░▒▓█) |
 
-## Dock — 2-row bottom bar
-
-```
-┌──────────────────────────────────────────┐
-│  TOOLS ROW (70px) — joystick sits here   │
-├──────────────────────────────────────────┤
-│  FOOTER ROW — brand + © + social         │
-└──────────────────────────────────────────┘
-```
-
-Visible on ALL pages. `padding-bottom: calc(130px + env(safe-area-inset-bottom))` on sections.
+Stable source: `data-eyebrow-text` attribute (never reads mutated textContent).
 
 ## Proxy/dev config
 
