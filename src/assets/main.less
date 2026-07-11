@@ -507,6 +507,10 @@ body.uk-light .jlz-secret-nav > li > a:hover {
   letter-spacing: -0.035em;
   line-height: 0.9;
   margin: 0 0 var(--jlz-space-5);
+  /* Subtle accent glow — gives primary sections a "neon" feel that the
+     ui-ux-pro-max skill recommends for Creative Agency style. Uses the
+     --jlz-color-accent token so it syncs with theme. */
+  text-shadow: 0 0 40px color-mix(in srgb, var(--jlz-color-accent) 35%, transparent);
 }
 
 .studio-title.uk-heading-xlarge {
@@ -1207,10 +1211,14 @@ body.uk-light .jlz-eyebrow {
   opacity: 0.7;
 }
 
-/* Flex gap utility (UIkit uk-flex has no gap control).
-   Used by: intro CTA button row, works drag hint. */
+/* Flex gap utilities (UIkit uk-flex has no gap control).
+   Used by: intro CTA button row, works drag hint, about stats row. */
 .jlz-flex-gap-small {
   gap: var(--jlz-space-2); /* 0.5rem */
+}
+
+.jlz-flex-gap-large {
+  gap: var(--jlz-space-6); /* 1.5rem */
 }
 
 /* (Removed .jlz-service-card / .jlz-principle-card — QF uk-card-default

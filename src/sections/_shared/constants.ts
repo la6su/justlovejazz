@@ -76,20 +76,24 @@ export function sectionBottom(content: string): string {
 /** Full section wrapper with Apple Watch layout (TOP / 3D / BOTTOM).
  *  Height is handled by CSS `100dvh` on `#spa-content section[data-section]`
  *  + `.jlz-page-section { min-height: 100dvh }` — no uk-height-viewport needed
- *  (avoid double computation: UIkit JS vs native CSS, diverges on mobile URL-bar). */
+ *  (avoid double computation: UIkit JS vs native CSS, diverges on mobile URL-bar).
+ *  align: 'center' (default) | 'left' — left creates editorial asymmetry vs
+ *  the centered sections, breaking visual monotony (design audit finding). */
 export function sectionShell(
   id: string,
   dataSection: string,
   topHtml: string,
   bottomHtml: string,
   extraAttrs: string = '',
+  align: 'center' | 'left' = 'center',
 ): string {
+  const alignClass = align === 'left' ? 'uk-text-left' : 'uk-text-center'
   return `
     <section
              class="uk-section uk-section-small uk-section-medium@s uk-section-large@m"
              id="section-${id}" data-section="${dataSection}" ${extraAttrs}>
       <div class="uk-position-cover" data-dynamic-content>
-        <div class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-text-center uk-height-1-1">
+        <div class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between ${alignClass} uk-height-1-1">
           ${topHtml}
           ${bottomHtml}
         </div>
