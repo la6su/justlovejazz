@@ -160,3 +160,6 @@ references/**/.gitattributes
 # Test output
 test-results/
 playwright-report/
+
+# Lighthouse CI reports (artifacts — regenerate with scripts/lhci.sh)
+.lighthouseci/
