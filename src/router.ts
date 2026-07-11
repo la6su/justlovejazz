@@ -49,13 +49,11 @@ function renderView(page: PageId = getPageFromLocation()): void {
   if (currentPage !== page || el.children.length === 0) {
     el.innerHTML = renderPage(page)
     if (page === 'home') {
+      // Home: activate intro section (sectionShell doesn't add section-active for home mode)
       el.querySelector<HTMLElement>('[data-section="intro"]')?.classList.add('section-active')
-    } else {
-      // Content pages: activate first [data-page-section] (index 1 = first main section)
-      const firstSection = el.querySelector<HTMLElement>('[data-page-section]:nth-child(2)') 
-        ?? el.querySelector<HTMLElement>('[data-page-section]')
-      firstSection?.classList.add('section-active')
     }
+    // Content pages: sectionShell already adds section-active via isActive=true
+    // on the first main section. No need to add it here.
     currentPage = page
   }
   // Initialize UIkit components on dynamically inserted content
