@@ -51,6 +51,19 @@ case "${1:-help}" in
       echo "  Run: ./scripts/session.sh push   (or git pull --rebase first if behind)"
     fi
     echo ""
+    echo "─── CODEBASE-MEMORY-MCP INDEX STATUS ───"
+    if command -v npx &>/dev/null && [ -f node_modules/codebase-memory-mcp/bin.js ]; then
+      CHANGES=$(npx codebase-memory-mcp cli detect_changes '{"project": "home-z-justlovejazz"}' 2>/dev/null | grep -o '"changed_count":[0-9]*' | cut -d: -f2)
+      if [ "$CHANGES" = "0" ] || [ -z "$CHANGES" ]; then
+        echo "✓ Index up to date (0 changed files)"
+      else
+        echo "⚠ Index stale: $CHANGES changed files since last index"
+        echo "  Re-index: npx codebase-memory-mcp cli index_repository '{\"repo_path\": \"'$(pwd)'\"}'"
+      fi
+    else
+      echo "ℹ codebase-memory-mcp not installed (optional — skip if unused)"
+    fi
+    echo ""
     echo "Read AGENTS.md first if this is a fresh context."
     ;;
 
@@ -136,6 +149,14 @@ EOF
     echo "Pushing to origin/main..."
     git push origin main
     echo "✓ Push complete."
+
+    # Re-index codebase-memory-mcp so the graph stays current
+    if [ -f node_modules/codebase-memory-mcp/bin.js ]; then
+      echo ""
+      echo "─── Re-indexing codebase-memory-mcp ───"
+      npx codebase-memory-mcp cli index_repository "{\"repo_path\": \"$(pwd)\"}" 2>/dev/null | grep -o '"status":"[a-z]*"' | head -1
+    fi
+
     echo ""
     git log --oneline -3
     ;;

@@ -36,6 +36,44 @@ Single-page application. **6 SPA routes** (one HTML entry: `index.html`), each w
 5. Work on the task
 6. `./scripts/session.sh end` → edit entry → update NEXT.md → `./scripts/session.sh push`
 
+## Codebase intelligence — codebase-memory-mcp
+
+The project ships with [codebase-memory-mcp](https://github.com/DeusData/codebase-memory-mcp) (v0.9.0) — a tree-sitter code intelligence engine. It indexes the codebase into a knowledge graph (5277 nodes, 7875 edges) and answers structural queries in <1ms. Index stored at `~/.cache/codebase-memory-mcp/home-z-justlovejazz.db` (11MB, outside repo).
+
+**Re-index after code changes** (or before complex refactors):
+```bash
+npx codebase-memory-mcp cli index_repository '{"repo_path": "'$(pwd)'"}'
+# → {"status":"indexed","nodes":NNNN,"edges":NNNN}
+
+npx codebase-memory-mcp cli detect_changes '{"project": "home-z-justlovejazz"}'
+# → list of changed files since last index (run before re-index to see what's stale)
+```
+
+**Useful queries** (all require `"project": "home-z-justlovejazz"`):
+```bash
+# Find a class/function by name pattern
+npx codebase-memory-mcp cli search_graph '{"project":"home-z-justlovejazz","name_pattern":"BakuCarousel","label":"Class"}'
+
+# Trace call graph (both directions) — who calls X, what does X call
+npx codebase-memory-mcp cli trace_call_path '{"project":"home-z-justlovejazz","function_name":"onProjectSelect","direction":"both"}'
+
+# Get architecture overview
+npx codebase-memory-mcp cli get_architecture '{"project":"home-z-justlovejazz","aspects":["all"]}'
+
+# List all indexed projects
+npx codebase-memory-mcp cli list_projects '{}'
+```
+
+**14 tools available:** `index_repository`, `search_graph`, `query_graph`, `trace_path`, `get_code_snippet`, `get_graph_schema`, `get_architecture`, `search_code`, `list_projects`, `delete_project`, `index_status`, `detect_changes`, `manage_adr`, `ingest_traces`.
+
+**When to use:**
+- Before a refactor: trace call paths to understand impact
+- When hunting a bug: trace who calls a function + what it calls
+- To find dead code: search for exported functions with 0 callers
+- After big changes: re-index + `detect_changes` to verify graph is current
+
+**When NOT to use:** for simple lookups (file path, grep) — use Read/Grep tools directly. codebase-memory-mcp shines on structural queries across the whole codebase.
+
 ## Architecture
 
 ```
