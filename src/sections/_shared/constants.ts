@@ -85,7 +85,7 @@ export function sectionShell(
   const alignClass = align === 'left' ? 'uk-text-left' : 'uk-text-center'
   return `
     <section
-             class="uk-section uk-section-small uk-section-medium@s uk-section-large@m"
+             class="uk-section uk-section-small uk-section-large@m"
              id="section-${id}" data-section="${dataSection}" ${extraAttrs}>
       <div class="uk-position-cover" data-dynamic-content>
         <div class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between ${alignClass} uk-height-1-1">
@@ -111,7 +111,7 @@ export function contentSection(
   isActive: boolean = false,
 ): string {
   return `
-    <section class="jlz-page-section ${isActive ? 'section-active' : ''} uk-section uk-section-small uk-section-medium@s uk-section-large@m" data-page-section="${id}">
+    <section class="jlz-page-section ${isActive ? 'section-active' : ''} uk-section uk-section-small uk-section-large@m" data-page-section="${id}">
       <div class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-text-center uk-height-1-1">
         ${topHtml}
         ${bottomHtml}

@@ -109,7 +109,7 @@ export function homeSection(
 
   return `
     <section
-             class="uk-section uk-section-small uk-section-medium@s uk-section-large@m" id="section-${dataSection}" data-section="${dataSection}">
+             class="uk-section uk-section-small uk-section-large@m" id="section-${dataSection}" data-section="${dataSection}">
       <div class="uk-position-cover" data-dynamic-content>
         <div class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-text-center uk-height-1-1">
           <!-- TOP -->

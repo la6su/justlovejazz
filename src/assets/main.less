@@ -399,9 +399,10 @@ body.uk-light .jlz-dropbar-sections li {
   display: none;
   min-height: 100dvh;
   align-items: center;
-  /* Padding handled by uk-section-small / uk-section-medium@s /
-     uk-section-large@m utility classes in templates.ts — UIKit native,
-     responsive, rem-based. No custom px padding here. */
+  /* Padding handled by uk-section-small + uk-section-large@m utility
+     classes (UIKit3 native, responsive). No custom px padding here.
+     Note: UIKit3 has NO uk-section-medium class — only xsmall/small/
+     large/xlarge + the bare uk-section (medium default). */
   overflow: hidden;
   /* Radial scrim behind content for readability over 3D —
      theme-aware via --jlz-scrim-* (dark veil in dark mode, light veil
@@ -728,8 +729,10 @@ body.uk-light .jlz-dropbar-sections li {
   /* Centering done via translate(-50%, -50%) in JS */
 }
 
-/* Hide custom cursor on touch devices */
-@media (hover: none), (pointer: coarse) {
+/* Hide custom cursor on touch devices (pointer: coarse = no precise pointer).
+   Note: (hover: none) alone is too aggressive — some desktops with touch
+   screens report hover:none but still have a mouse. Use pointer: coarse only. */
+@media (pointer: coarse) {
   .custom-cursor-inner,
   .custom-cursor-canvas {
     display: none !important;
