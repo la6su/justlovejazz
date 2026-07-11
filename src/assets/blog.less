@@ -1,0 +1,164 @@
+// blog.less — CSS for blog.html + blog/*.html (standalone semantic pages)
+//
+// Imports UIkit 3 + QF theme + JLZ tokens + theme fixes.
+// NO app-specific styles (cursor, joystick, dock, project-overlay, etc).
+// Minimal: base document, header, content, footer.
+
+@import './_import.less';
+@import './master-quantum-flares/_import.less';
+@import './master-quantum-flares/styles/black-blue.less';
+@import './_theme-fixes.less';
+
+// ── Base ──
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  line-height: 1.6;
+  background: var(--jlz-color-bg);
+  color: var(--jlz-color-text);
+}
+
+// ── Skip link (WCAG) ──
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  z-index: 99999;
+}
+.skip-link:focus {
+  left: 1rem;
+  top: 1rem;
+  width: auto;
+  height: auto;
+  padding: 0.75rem 1.25rem;
+  background: #fff;
+  color: #050507;
+  border-radius: 6px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+// ── Header — transparent navbar (matches app style) ──
+.jlz-blog-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(5, 5, 7, 0.7);
+  backdrop-filter: blur(12px) saturate(130%);
+  -webkit-backdrop-filter: blur(12px) saturate(130%);
+  border-bottom: 1px solid var(--jlz-color-border);
+}
+
+.jlz-blog-header .uk-navbar-container {
+  background: transparent !important;
+  min-height: 56px;
+}
+
+.jlz-blog-brand {
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-size: 1rem;
+  color: var(--jlz-color-text);
+  text-decoration: none;
+}
+
+.jlz-blog-header .uk-navbar-nav > li > a {
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--jlz-color-text-muted);
+}
+
+.jlz-blog-header .uk-navbar-nav > li > a:hover {
+  color: var(--jlz-color-text);
+}
+
+// ── Content ──
+.jlz-blog-content {
+  max-width: 42rem;
+  margin: 0 auto;
+}
+
+.jlz-blog-content p {
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  color: var(--jlz-color-text-muted);
+}
+
+.jlz-blog-content pre {
+  background: var(--jlz-color-bg-elevated);
+  border: 1px solid var(--jlz-color-border);
+  border-radius: var(--jlz-radius-md);
+  padding: 1rem 1.25rem;
+  overflow-x: auto;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.jlz-blog-content code {
+  font-family: 'SF Mono', 'Cascadia Code', monospace;
+  font-size: 0.875em;
+  color: var(--jlz-color-accent);
+}
+
+.jlz-blog-content h2 {
+  margin-top: 2.5rem;
+}
+
+.jlz-blog-content h3 {
+  margin-top: 2rem;
+}
+
+// ── Eyebrow (console style) ──
+.jlz-blog-eyebrow {
+  font-family: 'SF Mono', 'Cascadia Code', monospace;
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  opacity: 0.5;
+  margin-bottom: 0.5rem;
+}
+
+// ── Footer — minimal ──
+.jlz-blog-footer {
+  border-top: 1px solid var(--jlz-color-border);
+  padding: 2rem 0;
+  text-align: center;
+}
+
+.jlz-blog-footer a {
+  color: var(--jlz-color-text-muted);
+  transition: color var(--jlz-duration-fast) ease;
+}
+
+.jlz-blog-footer a:hover {
+  color: var(--jlz-color-accent);
+  text-decoration: none;
+}
+
+// ── Back link ──
+.jlz-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--jlz-color-text-muted);
+  text-decoration: none;
+  transition: color var(--jlz-duration-fast) ease;
+}
+
+.jlz-back-link:hover {
+  color: var(--jlz-color-accent);
+  text-decoration: none;
+}
