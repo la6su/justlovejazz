@@ -182,7 +182,7 @@ export async function startApp(): Promise<void> {
     }, 600) // slightly before curtains finish — cube pulses as they open
   })
 
-  // Fallback: if jlz:webgl-ready doesn't fire within 6s (Experience.init
+  // Fallback: if jlz:webgl-ready doesn't fire within 4s (Experience.init
   // crashed or hung), show Enter button anyway so the user isn't stuck
   // staring at "Loading". The app may still be partially functional.
   setTimeout(() => {
@@ -192,7 +192,7 @@ export async function startApp(): Promise<void> {
       document.body.classList.remove('scrollspy-pending')
       showEnterButton()
     }
-  }, 6000)
+  }, 4000)
 
   // ── Animate titles on section change ──
   eventBus.on('jlz:section-change', (payload) => {

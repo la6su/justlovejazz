@@ -91,7 +91,7 @@
       }
 
       /* SVG squares — centered cover, ABOVE curtains so always visible.
-         z-index 10004 — above curtains (10001), seam (10002), content (10000), config (10003). */
+         Slow ambient rotation during loading for living feel. */
       .jlz-splash-svg {
         position: absolute;
         top: 50%;
@@ -101,8 +101,13 @@
         height: min(100vw, 100vh);
         pointer-events: none;
         z-index: 10004;
+        animation: jlz-splash-rotate 20s linear infinite;
         transition: transform 0.8s cubic-bezier(0.65, 0, 0.35, 1),
                     opacity 0.6s ease 0.2s;
+      }
+      @keyframes jlz-splash-rotate {
+        from { transform: translate(-50%, -50%) rotate(0deg); }
+        to   { transform: translate(-50%, -50%) rotate(360deg); }
       }
       @media (orientation: landscape) {
         .jlz-splash-svg { width: 100vh; height: 100vh; }
@@ -117,23 +122,26 @@
         font-family: 'Inter', sans-serif;
         font-weight: 700;
         opacity: 0;
-        animation: jlz-splash-in 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        animation: jlz-splash-in 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
       }
-      .jlz-splash-text--1 { font-size: clamp(60px, 11vmin, 90px); fill: #6b78a3; animation-delay: 0.1s; }
-      .jlz-splash-text--2 { font-size: clamp(46px, 9vmin, 68px); fill: #5a6a8e; animation-delay: 0.25s; }
-      .jlz-splash-text--3 { font-size: clamp(32px, 6vmin, 48px); fill: #4a5a7e; animation-delay: 0.4s; }
-      .jlz-splash-text--4 { font-size: clamp(22px, 4.5vmin, 34px); fill: #3a4a6e; animation-delay: 0.55s; }
+      .jlz-splash-text--1 { font-size: clamp(60px, 11vmin, 90px); fill: #6b78a3; animation-delay: 0.15s; }
+      .jlz-splash-text--2 { font-size: clamp(46px, 9vmin, 68px); fill: #5a6a8e; animation-delay: 0.35s; }
+      .jlz-splash-text--3 { font-size: clamp(32px, 6vmin, 48px); fill: #4a5a7e; animation-delay: 0.55s; }
+      .jlz-splash-text--4 { font-size: clamp(22px, 4.5vmin, 34px); fill: #3a4a6e; animation-delay: 0.75s; }
       @keyframes jlz-splash-in {
-        0% { opacity: 0; transform: scale(0.3); }
-        100% { opacity: 1; transform: scale(1); }
+        0%   { opacity: 0; transform: scale(0.5) rotate(-8deg); }
+        50%  { opacity: 0.6; }
+        100% { opacity: 1; transform: scale(1) rotate(0deg); }
       }
-      /* OUT animation — SVG above curtains, scales out as curtains split underneath. */
+      /* OUT animation — stop rotation, scale out + fade. */
       #jlz-app-loader.fade-out .jlz-splash-svg {
+        animation: none;
         transform: translate(-50%, -50%) scale(0.6);
         opacity: 0;
       }
       @media (prefers-reduced-motion: reduce) {
         .jlz-splash-text { animation: none; opacity: 1; transform: scale(1); }
+        .jlz-splash-svg { animation: none; }
         #jlz-app-loader.fade-out .jlz-splash-svg { transition: none; opacity: 0; }
       }
 
