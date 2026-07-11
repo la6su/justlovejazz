@@ -26,16 +26,16 @@ function landingContent(): string {
           <p class="uk-text-lead">A small studio crafting expressive browser experiences. We merge art direction with web engineering — 3D-first interfaces, spatial design, and real-time shaders that stay fast under pressure.</p>
           <div class="uk-grid uk-child-width-1-3@m uk-margin-medium-top" uk-grid>
             <div class="uk-card uk-card-default uk-card-body uk-text-center">
-              <h3 class="uk-card-title uk-margin-remove">7+ Years</h3>
-              <p class="uk-text-meta uk-margin-small-top">Crafting interactive web experiences</p>
+              <h3 class="uk-card-title uk-margin-remove">6</h3>
+              <p class="uk-text-meta uk-margin-small-top">Cube-face sections</p>
             </div>
             <div class="uk-card uk-card-default uk-card-body uk-text-center">
-              <h3 class="uk-card-title uk-margin-remove">40+ Projects</h3>
-              <p class="uk-text-meta uk-margin-small-top">From shader art to shipping product</p>
+              <h3 class="uk-card-title uk-margin-remove">2</h3>
+              <p class="uk-text-meta uk-margin-small-top">Engineers</p>
             </div>
             <div class="uk-card uk-card-default uk-card-body uk-text-center">
-              <h3 class="uk-card-title uk-margin-remove">12 Awards</h3>
-              <p class="uk-text-meta uk-margin-small-top">Recognition for craft and innovation</p>
+              <h3 class="uk-card-title uk-margin-remove">1</h3>
+              <p class="uk-text-meta uk-margin-small-top">Designer</p>
             </div>
           </div>
         </div>
@@ -78,7 +78,7 @@ function landingContent(): string {
       <section id="process" class="uk-section uk-section-large" aria-labelledby="process-title">
         <div class="uk-container uk-container-expand">
           <p class="jlz-landing-eyebrow">&gt; PROCESS</p>
-          <h2 id="process-title" class="uk-heading-large uk-margin-remove-top">How We Work</h2>
+          <h2 id="process-title" class="uk-heading-large uk-margin-remove-top">How we ship</h2>
           <div class="uk-grid uk-child-width-1-2@s uk-child-width-1-4@m uk-margin-medium-top" uk-grid>
             <div class="uk-card uk-card-default uk-card-body">
               <h3 class="uk-card-title">01 Discover</h3>
