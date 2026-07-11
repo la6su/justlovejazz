@@ -83,3 +83,147 @@ body {
 .jlz-landing-launch-banner a {
   font-weight: 700;
 }
+
+// ── QF hero layered title — semi-transparent, dramatic scale ──
+// (Quantum Flares pattern: large title that lets background show through)
+.jlz-landing-hero-title {
+  font-size: clamp(3.5rem, 16vw, 12rem);
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  line-height: 0.82;
+  text-transform: uppercase;
+  margin: 0;
+  opacity: 0.92;
+  text-shadow: 0 0 60px color-mix(in srgb, var(--jlz-color-accent) 40%, transparent);
+}
+
+// ── QF marquee/ticker — signature Quantum Flares scrolling banner ──
+// Full-width black bar with bold white uppercase keywords scrolling left.
+// Pure CSS animation (no-JS). Pauses on hover. Respects reduced-motion.
+.jlz-marquee {
+  overflow: hidden;
+  white-space: nowrap;
+  background: #fff;
+  color: #050507;
+  padding: 0.6rem 0;
+  border-top: 1px solid var(--jlz-color-border);
+  border-bottom: 1px solid var(--jlz-color-border);
+}
+
+.jlz-marquee__track {
+  display: inline-flex;
+  align-items: center;
+  animation: jlz-marquee-scroll 18s linear infinite;
+  will-change: transform;
+}
+
+.jlz-marquee:hover .jlz-marquee__track {
+  animation-play-state: paused;
+}
+
+.jlz-marquee__item {
+  font-family: 'Inter', sans-serif;
+  font-weight: 800;
+  font-size: 0.85rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0 0.5rem;
+}
+
+.jlz-marquee__sep {
+  font-weight: 400;
+  opacity: 0.4;
+  padding: 0 0.3rem;
+}
+
+@keyframes jlz-marquee-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jlz-marquee__track {
+    animation: none;
+  }
+}
+
+// ── DM vertical side-label — rotated text, breaks centered monotony ──
+// (Dennis Miller pattern: vertical typography as visual anchor)
+.jlz-works {
+  position: relative;
+}
+
+.jlz-side-label {
+  position: absolute;
+  left: 1.5rem;
+  top: 50%;
+  transform: translateY(-50%) rotate(-90deg);
+  transform-origin: left center;
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  opacity: 0.3;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 0;
+}
+
+// ── DM portfolio overlay cards — reveal on hover ──
+// (Dennis Miller pattern: grid with text overlay treatment)
+.jlz-portfolio-card {
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  transition: transform var(--jlz-duration-normal) var(--jlz-ease-emphasis);
+}
+
+.jlz-portfolio-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--jlz-color-accent) 60%, transparent), transparent);
+  opacity: 0;
+  transition: opacity var(--jlz-duration-normal) var(--jlz-ease-emphasis);
+  pointer-events: none;
+}
+
+.jlz-portfolio-card:hover {
+  transform: translateY(-4px);
+}
+
+.jlz-portfolio-card:hover::before {
+  opacity: 0.15;
+}
+
+// ── DM minimal high-contrast CTA ──
+// (Dennis Miller pattern: sparse, bold, single action)
+.jlz-contact {
+  padding-top: 8rem;
+  padding-bottom: 8rem;
+}
+
+.jlz-contact-title {
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 0.88;
+  margin-bottom: 1.5rem !important;
+}
+
+.jlz-contact-email {
+  display: inline-block;
+  font-size: clamp(1.5rem, 4vw, 2.5rem);
+  font-weight: 600;
+  color: var(--jlz-color-accent);
+  text-decoration: none;
+  letter-spacing: -0.02em;
+  border-bottom: 2px solid transparent;
+  transition: border-color var(--jlz-duration-fast) ease;
+}
+
+.jlz-contact-email:hover {
+  border-bottom-color: var(--jlz-color-accent);
+  text-decoration: none;
+}

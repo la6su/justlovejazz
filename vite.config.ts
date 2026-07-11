@@ -13,11 +13,30 @@ function landingContent(): string {
       <section id="intro" class="uk-section uk-section-large uk-text-center" aria-labelledby="intro-title">
         <div class="uk-container uk-container-expand">
           <p class="jlz-landing-eyebrow">&gt; WEB DESIGN STUDIO · EST. 2019</p>
-          <h1 id="intro-title" class="uk-heading-xlarge uk-margin-remove">JUSTLOVEJAZZ</h1>
+          <h1 id="intro-title" class="jlz-landing-hero-title">JUSTLOVEJAZZ</h1>
           <p class="uk-text-lead uk-margin-top">glass · motion · light — powered by WebGPU. A studio crafting expressive browser experiences.</p>
           <a href="/app" class="jlz-landing-cta">Launch full 3D experience →</a>
         </div>
       </section>
+
+      <!-- QF marquee/ticker — signature Quantum Flares pattern: full-width
+           scrolling banner with repeated keywords. Pure CSS animation (no-JS). -->
+      <div class="jlz-marquee" aria-hidden="true">
+        <div class="jlz-marquee__track">
+          <span class="jlz-marquee__item">GLASS</span><span class="jlz-marquee__sep">·</span>
+          <span class="jlz-marquee__item">MOTION</span><span class="jlz-marquee__sep">·</span>
+          <span class="jlz-marquee__item">LIGHT</span><span class="jlz-marquee__sep">·</span>
+          <span class="jlz-marquee__item">WEBGPU</span><span class="jlz-marquee__sep">·</span>
+          <span class="jlz-marquee__item">TSL</span><span class="jlz-marquee__sep">·</span>
+          <span class="jlz-marquee__item">THREE.JS</span><span class="jlz-marquee__sep">·</span>
+          <span class="jlz-marquee__item">GLASS</span><span class="jlz-marquee__sep">·</span>
+          <span class="jlz-marquee__item">MOTION</span><span class="jlz-marquee__sep">·</span>
+          <span class="jlz-marquee__item">LIGHT</span><span class="jlz-marquee__sep">·</span>
+          <span class="jlz-marquee__item">WEBGPU</span><span class="jlz-marquee__sep">·</span>
+          <span class="jlz-marquee__item">TSL</span><span class="jlz-marquee__sep">·</span>
+          <span class="jlz-marquee__item">THREE.JS</span><span class="jlz-marquee__sep">·</span>
+        </div>
+      </div>
 
       <section id="about" class="uk-section uk-section-large" aria-labelledby="about-title">
         <div class="uk-container uk-container-expand">
@@ -41,33 +60,36 @@ function landingContent(): string {
         </div>
       </section>
 
-      <section id="works" class="uk-section uk-section-large" aria-labelledby="works-title">
+      <section id="works" class="uk-section uk-section-large jlz-works" aria-labelledby="works-title">
+        <!-- DM vertical side-label — rotated text, breaks centered monotony -->
+        <span class="jlz-side-label uk-visible@m" aria-hidden="true">SELECTED · WORK</span>
         <div class="uk-container uk-container-expand">
           <p class="jlz-landing-eyebrow">&gt; SELECTED WORK</p>
           <h2 id="works-title" class="uk-heading-large uk-margin-remove-top">Works</h2>
           <p class="uk-text-lead">Six interactive experiences — each carries its own material preset.</p>
+          <!-- DM portfolio overlay cards — title/desc hidden, revealed on hover -->
           <div class="uk-grid uk-child-width-1-2@s uk-child-width-1-3@m uk-margin-medium-top" uk-grid>
-            <article class="uk-card uk-card-default uk-card-body uk-card-hover">
+            <article class="jlz-portfolio-card uk-card uk-card-default uk-card-hover uk-card-body uk-position-relative uk-overflow-hidden">
               <h3 class="uk-card-title">Undercurrent</h3>
               <p class="uk-text-meta">WebGPU fluid simulation · 2026</p>
             </article>
-            <article class="uk-card uk-card-default uk-card-body uk-card-hover">
+            <article class="jlz-portfolio-card uk-card uk-card-default uk-card-hover uk-card-body uk-position-relative uk-overflow-hidden">
               <h3 class="uk-card-title">Mono Sunday</h3>
               <p class="uk-text-meta">Minimal portfolio · 2026</p>
             </article>
-            <article class="uk-card uk-card-default uk-card-body uk-card-hover">
+            <article class="jlz-portfolio-card uk-card uk-card-default uk-card-hover uk-card-body uk-position-relative uk-overflow-hidden">
               <h3 class="uk-card-title">Till at Night</h3>
               <p class="uk-text-meta">Audio-reactive 3D · 2025</p>
             </article>
-            <article class="uk-card uk-card-default uk-card-body uk-card-hover">
+            <article class="jlz-portfolio-card uk-card uk-card-default uk-card-hover uk-card-body uk-position-relative uk-overflow-hidden">
               <h3 class="uk-card-title">Ebb Vibes</h3>
               <p class="uk-text-meta">Generative typography · 2025</p>
             </article>
-            <article class="uk-card uk-card-default uk-card-body uk-card-hover">
+            <article class="jlz-portfolio-card uk-card uk-card-default uk-card-hover uk-card-body uk-position-relative uk-overflow-hidden">
               <h3 class="uk-card-title">Nocturne Blue</h3>
               <p class="uk-text-meta">Shader-driven hero · 2025</p>
             </article>
-            <article class="uk-card uk-card-default uk-card-body uk-card-hover">
+            <article class="jlz-portfolio-card uk-card uk-card-default uk-card-hover uk-card-body uk-position-relative uk-overflow-hidden">
               <h3 class="uk-card-title">Velvet Echo</h3>
               <p class="uk-text-meta">Glassmorphism system · 2024</p>
             </article>
@@ -100,12 +122,13 @@ function landingContent(): string {
         </div>
       </section>
 
-      <section id="contact" class="uk-section uk-section-large uk-text-center" aria-labelledby="contact-title">
+      <!-- DM minimal high-contrast CTA — sparse, bold, single action -->
+      <section id="contact" class="uk-section uk-section-xlarge uk-text-center jlz-contact" aria-labelledby="contact-title">
         <div class="uk-container uk-container-expand">
           <p class="jlz-landing-eyebrow">&gt; CONTACT</p>
-          <h2 id="contact-title" class="uk-heading-large uk-margin-remove-top">Let's build together</h2>
-          <p class="uk-text-lead">Ready to craft something extraordinary? We're open for new projects.</p>
-          <a href="mailto:hello@justlovejazz.com" class="jlz-landing-cta">hello@justlovejazz.com</a>
+          <h2 id="contact-title" class="uk-heading-xlarge uk-margin-remove-top jlz-contact-title">Let's build together</h2>
+          <a href="mailto:hello@justlovejazz.com" class="jlz-contact-email">hello@justlovejazz.com</a>
+          <p class="uk-text-meta uk-margin-small-top">Open for new projects · Remote · EU</p>
         </div>
       </section>
   `
