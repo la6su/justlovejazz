@@ -347,12 +347,9 @@ export class World extends THREE.Group {
         } else {
           this.sceneRef.fog = new THREE.FogExp2(activeCfg.fog.color.clone(), activeCfg.fog.density)
         }
-        // EnvSphere: if section has scene.envSpherePattern, switch to it.
-        // Otherwise keep global theme-driven pattern (jlz:theme-applied).
-        const envPattern = activeCfg.scene?.envSpherePattern
-        if (envPattern !== undefined && envPattern !== null) {
-          this.envSphere.changeSection(envPattern)
-        }
+        // EnvSphere follows GLOBAL theme only (jlz:theme-applied listener
+        // in Experience.ts). Per-section envSpherePattern REMOVED — it
+        // conflicted with global theme (pattern override → broken contrast).
       }
       // DrawTrail visibility — only on works section (idx=4)
       if (this.drawTrail) {

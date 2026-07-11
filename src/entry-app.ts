@@ -51,27 +51,12 @@ function initLangToggle(): void {
   })
 }
 
-// ── Enter button — appears when 3D is ready, triggers fade-out on click ──
+// ── Enter button click is wired by inline script in index.html ──
+// (single source of truth — works even if entry-app.ts fails to load).
+// entry-app.ts only shows the button (showEnterButton) when 3D is ready.
 function initEnterButton(): void {
-  const enterBtn = document.getElementById('jlz-splash-enter') as HTMLButtonElement | null
-  const loader = document.getElementById('jlz-app-loader')
-  if (!enterBtn || !loader) return
-
-  enterBtn.addEventListener('click', () => {
-    if (loader.classList.contains('fade-out')) return
-    // Fade out splash (curtains split + SVG out)
-    loader.classList.add('fade-out')
-
-    // Trigger SplashCube opener slightly before curtains finish —
-    // cube pulses as curtains open = seamless "baku awakens" moment
-    setTimeout(() => {
-      const exp = (window as unknown as { experience?: { triggerSplashOpener?: () => void } }).experience
-      exp?.triggerSplashOpener?.()
-    }, 400) // curtains take 0.8s, opener at 0.4s = mid-split
-
-    // Remove loader after curtain split completes
-    setTimeout(() => loader.remove(), 1200)
-  })
+  // No-op — click handler is in inline <script> in index.html.
+  // This function kept for API compat (called in startApp).
 }
 
 // ── Show Enter button when 3D is ready ──
