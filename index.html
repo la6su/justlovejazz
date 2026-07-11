@@ -175,77 +175,52 @@
         100% { opacity: 0; }
       }
 
-      /* Loader content — progress bar (loading) / Enter button (ready) */
+      /* Loader content — Enter button centered inside sq-4 */
       .jlz-loader-content {
         position: relative;
         z-index: 10015;
         display: flex;
-        flex-direction: column;
         align-items: center;
-        gap: 1.5rem;
+        justify-content: center;
         opacity: 1;
         transition: opacity 0.3s ease;
       }
       #jlz-app-loader.fade-out .jlz-loader-content { opacity: 0; }
       #jlz-app-loader.fade-out .jlz-config { opacity: 0; transition: opacity 0.3s ease; }
 
-      .jlz-loader-status {
-        font-size: 0.7rem;
-        font-weight: 500;
-        letter-spacing: 0.3em;
-        text-transform: uppercase;
-        color: rgba(255, 255, 255, 0.4);
+      /* Progress ring — SVG stroke-dashoffset driven by JS.
+         Perimeter of sq-4 rect (266×266) = 4×266 = 1064.
+         dashoffset 1064 = 0% (empty), 0 = 100% (full ring). */
+      .jlz-splash-progress-ring {
+        transition: stroke-dashoffset 0.3s ease;
       }
 
-      .jlz-loader-progress {
-        width: 200px;
-        height: 1px;
-        background: rgba(255, 255, 255, 0.1);
-        position: relative;
-        overflow: hidden;
-      }
-      .jlz-loader-progress__bar {
-        position: absolute;
-        top: 0;
-        left: 0;
-        height: 100%;
-        width: 0%;
-        background: var(--jlz-color-accent, #515d84);
-        transition: width 0.3s ease;
-      }
-      .jlz-loader-progress__pct {
-        font-size: 0.6rem;
-        font-weight: 500;
-        letter-spacing: 0.2em;
-        color: rgba(255, 255, 255, 0.3);
-        font-variant-numeric: tabular-nums;
-      }
-
-      /* Enter button — hidden during loading, fades in when ready.
-         Uses visibility (not display:none) so opacity transition works. */
+      /* Enter button — centered inside sq-4 square.
+         Hidden during loading (progress ring fills), appears when ready. */
       .jlz-splash-enter {
         visibility: hidden;
         opacity: 0;
-        padding: 0.75rem 2.5rem;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.04);
+        width: 200px;
+        height: 200px;
+        border: none;
+        background: transparent;
         color: rgba(255, 255, 255, 0.8);
         font-family: 'Inter', sans-serif;
         font-size: 0.75rem;
         font-weight: 600;
-        letter-spacing: 0.2em;
+        letter-spacing: 0.3em;
         text-transform: uppercase;
         cursor: pointer;
-        transition: opacity 0.5s ease, border-color 0.2s ease, background 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: opacity 0.5s ease, color 0.2s ease;
       }
       .jlz-splash-enter.is-ready {
         visibility: visible;
         opacity: 1;
       }
       .jlz-splash-enter:hover {
-        border-color: rgba(255, 255, 255, 0.4);
-        background: rgba(255, 255, 255, 0.08);
         color: #fff;
       }
 
@@ -329,22 +304,23 @@
         <text class="jlz-splash-text jlz-splash-text--3">
           <textPath href="#sq-3" textLength="1704">EST 2019 · REMOTE · EU&nbsp;</textPath>
         </text>
-        <text class="jlz-splash-text jlz-splash-text--4">
-          <textPath href="#sq-4" textLength="1064">L@6 · STUDIO&nbsp;</textPath>
-        </text>
+        <!-- Progress ring — rect on sq-4 path, stroke-dashoffset = progress -->
+        <rect x="567" y="567" width="266" height="266" fill="none"
+              stroke="rgba(107,120,163,0.15)" stroke-width="2"
+              class="jlz-splash-progress-bg" />
+        <rect x="567" y="567" width="266" height="266" fill="none"
+              stroke="#6b78a3" stroke-width="2"
+              class="jlz-splash-progress-ring"
+              stroke-dasharray="1064" stroke-dashoffset="1064"
+              transform="rotate(-90 700 700)" />
       </svg>
 
       <!-- CRT curtains — closed during loading, split apart on ready -->
       <div class="jlz-loader-curtain jlz-loader-curtain--top"></div>
       <div class="jlz-loader-curtain jlz-loader-curtain--bottom"></div>
       <div class="jlz-loader-seam"></div>
-      <!-- Loader content — progress bar (loading) → Enter button (ready) -->
+      <!-- Loader content — Enter button appears inside sq-4 when ready -->
       <div class="jlz-loader-content">
-        <span class="jlz-loader-status" id="jlz-loader-status">Loading</span>
-        <div class="jlz-loader-progress" id="jlz-loader-progress" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Loading progress">
-          <div class="jlz-loader-progress__bar" id="jlz-loader-bar"></div>
-        </div>
-        <span class="jlz-loader-progress__pct" id="jlz-loader-pct">0%</span>
         <button class="jlz-splash-enter" id="jlz-splash-enter" type="button" aria-label="Enter JUSTLOVEJAZZ experience">Enter</button>
       </div>
 
@@ -384,12 +360,9 @@
         // Fallback: show Enter after 5s if not already shown
         setTimeout(function() {
           if (!btn.classList.contains('is-ready')) {
-            var progress = document.getElementById('jlz-loader-progress');
-            var pct = document.getElementById('jlz-loader-pct');
-            var status = document.getElementById('jlz-loader-status');
-            if (progress) progress.style.display = 'none';
-            if (pct) pct.style.display = 'none';
-            if (status) status.textContent = 'Ready';
+            // Fill progress ring to 100%
+            var ring = document.querySelector('.jlz-splash-progress-ring');
+            if (ring) ring.style.strokeDashoffset = '0';
             btn.classList.add('is-ready');
           }
         }, 5000);

@@ -59,24 +59,27 @@ function initEnterButton(): void {
 
   enterBtn.addEventListener('click', () => {
     if (loader.classList.contains('fade-out')) return
-    // Fade out splash (curtains split + SVG out), then remove loader
+    // Fade out splash (curtains split + SVG out)
     loader.classList.add('fade-out')
+
+    // Trigger SplashCube opener slightly before curtains finish —
+    // cube pulses as curtains open = seamless "baku awakens" moment
+    setTimeout(() => {
+      const exp = (window as unknown as { experience?: { triggerSplashOpener?: () => void } }).experience
+      exp?.triggerSplashOpener?.()
+    }, 400) // curtains take 0.8s, opener at 0.4s = mid-split
+
+    // Remove loader after curtain split completes
     setTimeout(() => loader.remove(), 1200)
   })
 }
 
-// ── Show Enter button when 3D is ready (replaces progress bar) ──
+// ── Show Enter button when 3D is ready ──
 function showEnterButton(): void {
   const enterBtn = document.getElementById('jlz-splash-enter') as HTMLButtonElement | null
-  const progress = document.getElementById('jlz-loader-progress')
-  const pct = document.getElementById('jlz-loader-pct')
-  const status = document.getElementById('jlz-loader-status')
   if (!enterBtn) return
-
-  // Hide progress bar, show Enter button
-  if (progress) progress.style.display = 'none'
-  if (pct) pct.style.display = 'none'
-  if (status) status.textContent = 'Ready'
+  // Fill progress ring to 100% then show Enter
+  updateLoaderProgress(100)
   enterBtn.classList.add('is-ready')
 }
 
@@ -88,23 +91,14 @@ function showEnterButton(): void {
 // (sound + language) are inside the loader — they fade out with the splash.
 // Fade-out is triggered by Enter button click (initEnterButton), NOT auto.
 function updateLoaderProgress(pct: number): void {
-  const bar = document.getElementById('jlz-loader-bar')
-  const pctEl = document.getElementById('jlz-loader-pct')
-  const statusEl = document.getElementById('jlz-loader-status')
-  const progressbar = document.getElementById('jlz-loader-progress')
-  if (!bar || !pctEl) return
+  const ring = document.querySelector('.jlz-splash-progress-ring') as SVGRectElement | null
+  if (!ring) return
   const value = Math.min(100, Math.max(0, Math.round(pct)))
-  bar.style.width = `${value}%`
-  pctEl.textContent = `${value}%`
-  // Update ARIA for screen readers
-  if (progressbar) progressbar.setAttribute('aria-valuenow', String(value))
-  // Status text — friendly phases
-  if (statusEl) {
-    if (value >= 95) statusEl.textContent = 'Ready'
-    else if (value >= 55) statusEl.textContent = 'Warming up'
-    else if (value >= 20) statusEl.textContent = 'Loading'
-    else statusEl.textContent = 'Starting'
-  }
+  // Perimeter of sq-4 rect = 4 × 266 = 1064
+  // dashoffset: 1064 (0%, empty) → 0 (100%, full ring)
+  const perimeter = 1064
+  const offset = perimeter - (perimeter * value / 100)
+  ring.style.strokeDashoffset = String(offset)
 }
 
 async function boot(): Promise<void> {
@@ -170,16 +164,8 @@ export async function startApp(): Promise<void> {
     ;(UIkit as any).update(document)
     animateBlurFadeTitles()
     setupTitleObserver()
-    // Note: eyebrow NoiseText is driven by Experience.ts jlz:section-change
-    // handler (single source of truth). No IntersectionObserver — it caused
-    // conflicts (double-trigger + stale noise captured as cleanText).
-    // After CRT curtains split (~0.8s), trigger SplashCube opener —
-    // the glass cube does a scale pulse + particle burst.
-    // This is the "baku awakens" moment when the 3D scene is revealed.
-    setTimeout(() => {
-      const exp = (window as unknown as { experience?: { triggerSplashOpener?: () => void } }).experience
-      exp?.triggerSplashOpener?.()
-    }, 600) // slightly before curtains finish — cube pulses as they open
+    // Note: SplashCube opener is triggered on Enter click (initEnterButton),
+    // NOT here — fires when curtains split = seamless "baku awakens" moment.
   })
 
   // Fallback: if jlz:webgl-ready doesn't fire within 4s (Experience.init
