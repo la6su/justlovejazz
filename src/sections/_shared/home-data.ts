@@ -42,17 +42,17 @@ export const HOME_SECTIONS: readonly HomeSectionData[] = [
   },
   {
     num: '02',
-    title: 'Works',
-    lead: 'Selected projects that define our way.',
-    desc: ['Case studies.', 'Process. Results.'],
-    exploreHref: '/blog',
-  },
-  {
-    num: '03',
     title: 'Services',
     lead: 'From strategy to implementation.',
     desc: ['We cover the full cycle of digital products.', 'Explore our capabilities.'],
     exploreHref: '/app/services',
+  },
+  {
+    num: '03',
+    title: 'Works',
+    lead: 'Selected projects that define our way.',
+    desc: ['Case studies.', 'Process. Results.'],
+    exploreHref: '/blog',
   },
   {
     num: '04',

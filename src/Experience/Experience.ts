@@ -75,8 +75,8 @@ export class Experience {
   private static readonly SECTION_LABELS = [
     'Lab',         // 0: secret left — 05 Lab (top face)
     'Studio',      // 1: front face — 01 Studio (start)
-    'Works',       // 2: right face — 02 Works
-    'Services',    // 3: back face — 03 Services
+    'Services',    // 2: right face — 02 Services
+    'Works',       // 3: back face — 03 Works (BakuCarousel)
     'Manifesto',   // 4: bottom face — 04 Manifesto
     'Contact',     // 5: secret right — 06 Contact (left face)
   ]

@@ -44,8 +44,8 @@ const NAV_ITEMS: NavItem[] = [
     page: 'home',
     sections: [
       { num: '01', title: 'Studio', subtitle: 'Remote · EU · since 2019', idx: 1 },
-      { num: '02', title: 'Works', subtitle: 'Selected projects', idx: 2 },
-      { num: '03', title: 'Services', subtitle: 'Strategy to implementation', idx: 3 },
+      { num: '02', title: 'Services', subtitle: 'Strategy to implementation', idx: 2 },
+      { num: '03', title: 'Works', subtitle: 'Selected projects · gallery', idx: 3 },
       { num: '04', title: 'Manifesto', subtitle: 'What guides us', idx: 4 },
     ],
     featured: { title: 'Lab', subtitle: 'Experiments · always in progress', href: '/app' },

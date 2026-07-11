@@ -226,14 +226,14 @@ const RAW: RawScene[] = [
     groundOpacity: 0.08,
     sectionTheme: 'dark',
   },
-  // ── Section 3: WORKS (was challenge) — Dark BG, checkered floor, blue lines ──
+  // ── Section 3: WORKS — BakuCarousel + cube centered, slightly raised ──
   {
     id: 'sec_challenge',
     context: 'WORKS — Gallery',
     domSection: 'challenge',
     range: [3 / 5, 4 / 5],
-    camPos: [0, 0.5, 7],
-    camTarget: [0, 0.5, 0],
+    camPos: [0, 0.8, 7],
+    camTarget: [0, 0.8, 0],
     camFov: 50,
     camFovOffset: 0.5,
     camFovDuration: 1.0,
