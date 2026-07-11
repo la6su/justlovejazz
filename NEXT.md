@@ -44,9 +44,11 @@ _(nothing currently in progress)_
       titleKey/subtitleKey; renderNavItems emits data-i18n on title + featured
       spans. Works page titles stay English (proper nouns, RULES §32).
 
-- [ ] **Blog post design polish** — code syntax highlighting (Prism.js or highlight.js),
-      better image handling (lazy loading, lightbox), reading progress indicator.
-      Files: `blog/*.html`, `src/assets/blog.less`.
+- [x] **Blog post design polish** — DONE 2026-07-11 (part 1). Prism.js code
+      highlighting (vendored, ~16KB) + reading progress bar. Lazy images: N/A
+      (zero <img> in blog articles). Lightbox: deferred to part 2 (when images
+      are added). Files: `public/vendor/prism/*`, `public/js/blog.js`,
+      `src/assets/blog.less`, `blog/*.html`.
 
 - [x] **WorkCards keyboard navigation** — DONE 2026-07-11. Roving tabindex
       (WAI-ARIA pattern): ArrowLeft/Right move focus within the active section's
@@ -56,17 +58,38 @@ _(nothing currently in progress)_
 
 ## TODO — Low priority
 
-- [ ] **Audio system** — splash config sound toggle exists but no audio content.
-      Add ambient track + audio-reactive visuals on Works section.
+- [x] **Audio system (part 1 — SFX)** — DONE 2026-07-11. SfxSystem: procedural
+      UI sounds via Web Audio API (hover, click, open, close). Integrated into
+      Cursor (magnetic hover + click) + ProjectOverlay (open/close). Mutes with
+      jlz:sound-toggle. Part 2 (ambient track + audio-reactive visuals) still
+      pending — needs audio content + AudioSystem.start() wiring.
+      File: `src/core/SfxSystem.ts`.
 
-- [ ] **DevPanel improvements** — add i18n lang indicator, ground plane toggle,
-      carousel morph force-trigger. File: `src/core/DevPanel.ts`.
+- [x] **DevPanel improvements** — DONE 2026-07-11. Added i18n lang indicator
+      + low-fps ⚠ to Stats; new Scene folder with ground plane toggle + reset.
+      Carousel morph force-trigger already existed. File: `src/core/DevPanel.ts`.
 
-- [ ] **Performance: render budget** — track frame time in DevPanel,
-      auto-reduce particle count if FPS < 30 for 60 frames.
+- [x] **Performance: render budget (tracker)** — DONE 2026-07-11 (part 1).
+      Rolling 60-frame FPS tracker in Experience; _lowFps flag (avg FPS < 30
+      sustained); public lowFps getter; DevPanel shows low-fps ⚠.
+      Auto-reduce particle count: deferred (requires makeParticles.setCount —
+      architectural change, BufferGeometry rebuild). File: `src/Experience/Experience.ts`.
+
+- [ ] **Audio system (part 2 — ambient)** — ambient track + audio-reactive
+      visuals on Works section. Needs audio content + AudioSystem.start()
+      wiring to a UI gesture.
+
+- [ ] **Auto-reduce particle count** — when _lowFps is true, reduce particle
+      count via makeParticles.setCount (requires BufferGeometry rebuild).
+      Foundation (_lowFps flag) is in place from 2026-07-11.
 
 ## Done (recent — for context)
 
+- [x] 2026-07-11c: Blog polish (Prism + reading progress) + meta optimization
+      (favicon/logo.svg, PWA manifest, preview.jpg OG, _headers cache rules)
+      + SfxSystem (procedural UI sounds: cursor hover/click, overlay open/close)
+      + DevPanel (lang/low-fps indicators, ground toggle) + FPS tracker.
+- [x] 2026-07-11b: SANDBOX runbook + WorkCards keyboard nav + i18n dropbar + Lighthouse
 - [x] 2026-07-11: Dead-code cleanup + stale doc sync (fresh-eyes audit)
       — WireframeTypography labels fixed (ABOUT/HELLO), dead `sceneForContentPage`
         + `sceneEnvSpherePattern` + `particles` flag removed from WorldConfig (-47 LOC),

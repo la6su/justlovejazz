@@ -9,6 +9,90 @@
 
 ---
 
+## 2026-07-11c — Blog polish + meta optimization + SfxSystem + DevPanel/FPS
+
+### Done
+- Sprint 8: Blog post polish (NEXT.md medium). Prism.js 1.30 code highlighting
+  (vendored core + clike + javascript + typescript + glsl + css into
+  public/vendor/prism/, ~16KB total, no CDN). prism-tomorrow theme aligned with
+  JLZ card surface via blog.less overrides. Reading progress bar
+  (.jlz-reading-progress, top-fixed, scaleX = scroll %, rAF-throttled).
+  public/js/blog.js — shared script (year + reading progress + Prism.highlightAll).
+  All 4 articles + blog.html updated. Lazy images: N/A (zero <img> in blog).
+- Sprint 9: Meta optimization. New favicon (public/logo.svg → favicon.svg —
+  yellow #fff72c + white on #232534 'l@6' mark, replaced old purple-gradient).
+  PWA manifest (public/site.webmanifest — name, icons, shortcuts, theme_color).
+  apple-touch-icon + mask-icon added to all 6 HTML entries. preview.jpg
+  (1200×630, already present) now used for ALL og:image + twitter:image +
+  JSON-LD image fields (was: per-page project covers — inconsistent branding).
+  index.html og:url fixed (/app → /, stale splash artifact). Cache headers
+  (public/_headers — Netlify/Cloudflare format: immutable for fingerprinted
+  assets/fonts/vendor, no-cache for HTML, revalidate for brand files; security
+  headers globally).
+- Sprint 10: SfxSystem (NEXT.md low — audio). New src/core/SfxSystem.ts —
+  procedural UI sounds via Web Audio API (zero samples, ~90 LOC). 4 SFX:
+  hover (sine 880Hz tick), click (triangle 180Hz tap), open (sweep 220→660Hz),
+  close (sweep 660→220Hz). Lazy-init AudioContext on first play() (autoplay
+  policy). setMuted() master gain → 0. Integrated: Cursor.ts (hover on
+  [data-magnetic]/a/button, click), ProjectOverlay.ts (showContainer=open,
+  hide=close). Experience.ts jlz:sound-toggle now mutes audio + sfx together.
+  Respects existing jlz:sound localStorage pref (default OFF).
+- Sprint 11: DevPanel + FPS (NEXT.md low). DevPanel: added 'lang' (EN/RU) +
+  'low fps ⚠' indicators to Stats folder; new 'Scene' folder with ground-plane
+  toggle + reset button (debugging RULES §20). Experience: rolling 60-frame
+  FPS tracker, public lowFps getter, _lowFps flips true when avg FPS < 30
+  sustained over 60 frames. Auto-reduce particle count intentionally NOT wired
+  (requires BufferGeometry rebuild — documented as future work).
+
+### Key decisions (WHY)
+- **Prism vendored, not CDN**: blog articles are standalone HTML (not part of
+  the SPA bundle). Vendoring keeps them self-contained, offline-capable, and
+  avoids a runtime CDN dependency. ~16KB total is negligible.
+- **Procedural SFX, no samples**: SfxSystem synthesizes all sounds at runtime
+  (oscillator + gain envelope). Zero network payload, zero asset loading, ~90
+  LOC. Trade-off: less rich than sampled audio, but perfect for short UI ticks
+  and whooshes. If richer audio is later needed, swap SfxSystem internals
+  without touching the play() API.
+- **SFX respects jlz:sound pref**: no new UI. The existing splash config sound
+  toggle covers ambient + SFX together. Adding a separate SFX toggle would
+  fragment the audio UX — one toggle is cleaner.
+- **Ground toggle in DevPanel overrides RULES §20 temporarily**: the toggle is
+  dev-only (DevPanel is never constructed in production per Experience.init
+  guard). The 'Reset ground' button restores the rule. This is a debugging
+  tool, not a feature.
+- **_lowFps flag, no auto-reduce yet**: the tracker is the foundation.
+  Auto-reducing particle count requires BufferGeometry rebuild (particles are
+  static Points clouds, count set at creation in makeParticles). Wiring that
+  is an architectural change (makeParticles would need a setCount method).
+  Documented as future work in NEXT.md low tier.
+- **_headers format**: Netlify/Cloudflare Pages read _headers automatically.
+  For Caddy/nginx, translate to Cache-Control response headers. The file is
+  self-documenting — each rule has a comment explaining the strategy.
+
+### Files touched
+- public/vendor/prism/* (7 files), public/js/blog.js, src/assets/blog.less (Sprint 8)
+- public/favicon.svg (replaced), public/logo.svg (kept), public/site.webmanifest,
+  public/_headers, index.html, blog.html, blog/*.html (Sprint 9)
+- src/core/SfxSystem.ts (new), src/Experience/Experience.ts, src/Experience/Cursor.ts,
+  src/UI/ProjectOverlay.ts (Sprint 10)
+- src/core/DevPanel.ts, src/Experience/Experience.ts (Sprint 11)
+
+### Verification
+- `bun run lint`: 0 errors (61 pre-existing warnings)
+- `bun run type-check`: 0 errors
+- `bun run build`: green (~1.8s)
+- `bun run test:unit`: 9 passed
+- Agent Browser (per SANDBOX.md): index.html manifest/apple-touch/favicon/og:image
+  all confirmed via curl (raw HTML). Blog article: Prism loaded, 111 tokens
+  highlighted, reading-progress bar present, 0 console errors.
+
+### Next
+- Audio system part 2: ambient track + audio-reactive visuals on Works (NEXT.md low)
+- Auto-reduce particle count when _lowFps (requires makeParticles.setCount — future)
+- Blog post design polish part 2: lazy images when <img> is added, lightbox
+
+---
+
 ## 2026-07-11b — SANDBOX runbook + WorkCards a11y + i18n dropbar + Lighthouse
 
 ### Done
