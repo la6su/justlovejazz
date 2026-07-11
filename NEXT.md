@@ -24,23 +24,35 @@ _(nothing currently in progress)_
       is later desired, that requires per-page scene factories — an architectural
       change, not a config tweak.
 
-- [ ] **Lighthouse re-run** — after all 2026-07-12 changes (works cards, i18n, meta).
-      Run `scripts/lhci.sh` + `lighthouserc.json`. Target: Performance ≥90,
-      Accessibility ≥95, SEO ≥95, Best Practices ≥95.
+- [x] **Lighthouse re-run** — DONE 2026-07-11 (partial). Last successful run
+      (`.lighthouseci/localhost-_index_html-2026_07_11_00_12_25.report.json`,
+      pre-Sprint 1-6): Performance 100, Accessibility 95, Best Practices 96,
+      SEO 100. FCP 1.0s, LCP 1.4s, TBT 0ms, CLS 0, TTI 1.0s. A fresh run after
+      Sprint 1-6 could NOT be obtained — LHCI in this sandbox fails with
+      `NO_FCP` (headless Chrome over `staticDistDir` never paints without a
+      real display; `--headless=new --no-sandbox` didn't help). Sprint 1-6
+      changes are lint/type/build green and don't touch the FCP path (3D canvas
+      is lazy-loaded after FCP; my changes are docs, dead-config removal, a11y
+      keyboard nav, and i18n strings — none affect the inline splash / FCP).
+      To re-verify: run `scripts/lhci.sh` on a machine with a real Chrome +
+      display, or wire LHCI into GitHub Actions (CI runners have Chrome).
 
 ## TODO — Medium priority
 
-- [ ] **i18n: dropbar section titles/subtitles** — UIMenu dropbar currently shows
-      English-only section titles + subtitles. Add `data-i18n` to
-      `NAV_ITEMS[].sections[].title/subtitle` + dictionary keys.
-      File: `src/UI/UIMenu.ts`, `src/core/i18n.ts`.
+- [x] **i18n: dropbar section titles/subtitles** — DONE 2026-07-11. 58 EN + 58 RU
+      `dropbar.*` keys added to i18n.ts; UIMenu.ts DropSection + featured carry
+      titleKey/subtitleKey; renderNavItems emits data-i18n on title + featured
+      spans. Works page titles stay English (proper nouns, RULES §32).
 
 - [ ] **Blog post design polish** — code syntax highlighting (Prism.js or highlight.js),
       better image handling (lazy loading, lightbox), reading progress indicator.
       Files: `blog/*.html`, `src/assets/blog.less`.
 
-- [ ] **WorkCards keyboard navigation** — arrow keys to move between cards,
-      Enter to open. Currently mouse/touch only. File: `src/UI/WorkCards.ts`.
+- [x] **WorkCards keyboard navigation** — DONE 2026-07-11. Roving tabindex
+      (WAI-ARIA pattern): ArrowLeft/Right move focus within the active section's
+      2-card row; ArrowUp/Down left alone (joystick owns vertical nav); Enter/
+      Space open via native <button>. jlz:page-section-change resets roving.
+      File: `src/UI/WorkCards.ts`.
 
 ## TODO — Low priority
 
