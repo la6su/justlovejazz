@@ -46,6 +46,7 @@ export class Experience {
   private contentReveal!: ContentReveal
   private cursor!: Cursor
   private _sectionChangeHandler: ((payload: import('../core/EventBus').AppEvents['jlz:section-change']) => void) | null = null
+  private _themeAppliedHandler: ((e: Event) => void) | null = null
   private devPanel: DevPanel | null = null
   public world!: World
   private bus!: StateBus
@@ -241,26 +242,18 @@ export class Experience {
     this.bus = StateBus.getInstance()
 
     // ── 3D ↔ theme sync: EnvSphere follows per-section theme ──
-    // ContentReveal dispatches jlz:theme-applied with {isLight} on each
-    // section change. isLight=true → light EnvSphere pattern (idx 1).
-    // isLight=false → dark EnvSphere pattern (idx 2).
-    window.addEventListener('jlz:theme-applied', ((e: Event) => {
-      const detail = (e as CustomEvent<{ isLight: boolean; mode: string }>).detail
+    // ContentReveal dispatches jlz:theme-applied on section change.
+    // isLight=true → pattern 1, isLight=false → pattern 2.
+    this._themeAppliedHandler = (e: Event) => {
+      const detail = (e as CustomEvent<{ isLight: boolean }>).detail
       if (!detail) return
       const targetIdx = detail.isLight ? 1 : 2
       if (this.world?.envSphere) {
         this.world.envSphere.changeSection(targetIdx)
         this._needsRender = true
       }
-    }) as EventListener)
-
-    // ── Initial EnvSphere sync — apply current section theme ──
-    {
-      const isLight = document.body.classList.contains('uk-light')
-      const targetIdx = isLight ? 1 : 2
-      this.world?.envSphere?.changeSection(targetIdx)
-      this._needsRender = true
     }
+    window.addEventListener('jlz:theme-applied', this._themeAppliedHandler)
 
     // ── Glassmorphism: studio environment map for realistic glass reflections ──
     // RoomEnvironment is a procedural studio scene (walls + lights) rendered
@@ -653,6 +646,10 @@ export class Experience {
     if (this._sectionChangeHandler) {
       eventBus.off('jlz:section-change', this._sectionChangeHandler)
       this._sectionChangeHandler = null
+    }
+    if (this._themeAppliedHandler) {
+      window.removeEventListener('jlz:theme-applied', this._themeAppliedHandler)
+      this._themeAppliedHandler = null
     }
     this.world.dispose()
     this.bus.cancelAll()
