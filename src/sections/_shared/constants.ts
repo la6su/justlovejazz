@@ -71,8 +71,7 @@ export function sectionBottom(content: string): string {
 /** Unified section wrapper — ONE function for ALL pages (home + content).
  *  Apple Watch layout: TOP (eyebrow + title + lead) / 3D CENTER / BOTTOM (content).
  *
- *  mode: 'home' (3D cube face, data-section, data-dynamic-content overlay)
- *        | 'content' (page section, data-page-section, no overlay)
+ *  mode: 'home' (3D cube face, data-section) | 'content' (page section, data-page-section)
  *  isActive: only for content mode — toggles .section-active on initial section.
  *  extraAttrs: additional attributes on the <section> (e.g. project-overlay id).
  *
@@ -90,19 +89,13 @@ export function sectionShell(
   const activeClass = mode === 'content' && isActive ? 'section-active' : ''
   const pageClass = mode === 'content' ? 'jlz-page-section' : ''
   const sectionAttr = mode === 'home' ? `data-section="${id}"` : `data-page-section="${id}"`
-  const overlayWrapper = mode === 'home'
-    ? `<div class="uk-position-cover" data-dynamic-content>`
-    : ''
-  const overlayClose = mode === 'home' ? '</div>' : ''
 
   return `
     <section class="${pageClass} ${activeClass} uk-section uk-section-small uk-section-large@m" id="section-${id}" ${sectionAttr} ${extraAttrs}>
-      ${overlayWrapper}
-        <div class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-text-center uk-height-1-1">
-          ${topHtml}
-          ${bottomHtml}
-        </div>
-      ${overlayClose}
+      <div class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-text-center uk-height-1-1">
+        ${topHtml}
+        ${bottomHtml}
+      </div>
     </section>
   `
 }
