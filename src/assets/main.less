@@ -441,29 +441,7 @@ body.uk-light .jlz-dropbar-sections li {
   text-shadow: 0 1px 12px rgba(0, 0, 0, 0.5);
 }
 
-.jlz-event-row {
-  gap: 24px;
-  padding: 24px 0;
-  text-shadow: 0 1px 16px rgba(0, 0, 0, 0.5);
-}
-
-.jlz-gallery-tile {
-  min-height: 220px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
-    rgba(255, 255, 255, 0.04);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-
-@media (max-width: 640px) {
-  /* Mobile compact — content fits 1 screen. */
-  .jlz-event-row {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-}
+/* (Removed .jlz-event-row + .jlz-gallery-tile — dead CSS, 0 template usages) */
 
 /* ------------------------------------------------------------------
    App-specific typography + hints
@@ -563,24 +541,7 @@ body.uk-light .jlz-dropbar-sections li {
   }
 }
 
-.jlz-corner-label {
-  position: absolute;
-  top: clamp(6vh, 10vh, 12vh);
-  left: var(--jlz-page-gutter);
-  z-index: 3;
-  pointer-events: none;
-  color: rgba(255, 255, 255, 0.78);
-}
-
-.jlz-corner-label__hint {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  font-size: clamp(0.65rem, 0.85vw, 0.78rem);
-  font-weight: 300;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  opacity: 0.6;
-  margin: 0;
-}
+/* (Removed .jlz-corner-label + __hint — dead CSS, 0 template usages) */
 
 /* (.jlz-hint, .jlz-hint.is-visible, .jlz-hint__text removed — Subtitles
    no longer creates a bottom .jlz-hint DOM element. Hints now populate
@@ -1043,55 +1004,7 @@ body.uk-light .jlz-eyebrow {
    Content page variant styles — QF-inspired layout diversity
    ------------------------------------------------------------------ */
 
-/* Case study tiles — overlay hover with position number */
-.jlz-case-tile {
-  position: relative;
-  min-height: 8rem;
-  transition: transform 0.3s ease, background 0.3s ease;
-  overflow: hidden;
-  padding: 1rem;
-}
-
-@media (min-width: 640px) {
-  .jlz-case-tile {
-    min-height: 12rem;
-    padding: 1.5rem;
-  }
-}
-
-.jlz-case-tile:hover {
-  transform: translateY(-4px);
-}
-
-.jlz-case-tile .uk-position-top-right {
-  font-size: 1.4rem;
-  opacity: 0.4;
-  transition: opacity 0.3s ease;
-}
-
-@media (min-width: 640px) {
-  .jlz-case-tile .uk-position-top-right {
-    font-size: 2rem;
-  }
-}
-
-.jlz-case-tile:hover .uk-position-top-right {
-  opacity: 0.8;
-}
-
-/* Contact page big email link */
-.jlz-contact-link {
-  display: inline-block;
-  font-weight: 200;
-  letter-spacing: -0.03em;
-  text-decoration: none;
-  transition: opacity 0.2s ease;
-}
-
-.jlz-contact-link:hover {
-  opacity: 0.7;
-  text-decoration: none;
-}
+/* (Removed .jlz-case-tile + .jlz-contact-link — dead CSS, 0 template usages) */
 
 /* (Removed .jlz-page .uk-heading-small, .uk-card-body, ul.uk-list overrides —
    QF theme + UIKit globals handle these via @global-* tokens. No need to
