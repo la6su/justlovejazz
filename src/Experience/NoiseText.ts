@@ -1,18 +1,19 @@
 // NoiseText — junni-style typewriter reveal with noise tail.
 //
-// Port of junni-inc/next.junni.co.jp NoiseText (src/ts/MainScene/NoiseText/index.ts).
-// Commit 64002f9 pattern — proven stable in production.
+// Proven stable pattern: combines 64002f9 (typewriter algorithm) +
+// 39eda64 stability fixes (Frame 0 = clean text, cancel restores cleanText).
 //
-// Effect: characters appear left-to-right. Already-revealed characters
-// are clean (correct). Ahead of the reveal position, 1-3 random noise
-// characters flicker. As the animation progresses, more characters
-// become "fixed" (clean) and the noise tail shrinks. At the end, the
-// full text is displayed clean.
+// Critical guarantees (from 39eda64):
+// 1. Frame 0 = correct text → no flash of empty/noisy state.
+// 2. Final frame = ALWAYS clean text (finalize restores cleanText).
+// 3. cancel() restores cleanText BEFORE new show() reads DOM → no stale
+//    noise captured as cleanText on rapid re-trigger (IntersectionObserver).
+// 4. Safety timeout guarantees finalize() fires even if RAF is throttled.
 //
-// Key stability fix (from 64002f9): safety timeout guarantees finalize()
-// fires even if RAF is throttled (background tab, heavy GPU, etc).
-// finalize() + cancel() both restore this.cleanText so el never gets
-// stuck showing noise symbols.
+// Algorithm (from 64002f9): typewriter with noise tail
+// - Characters appear left-to-right (already-revealed = clean)
+// - 1-3 random noise chars flicker ahead of the reveal position
+// - At t=1.0: full clean text displayed
 
 const CHARS = '░▒▓█▄▀▌▐│║╟╠╫╬●○◆◇▪▫•·∴∵≈≠≤≥±÷×';
 
@@ -50,22 +51,25 @@ export class NoiseText {
    * @param sourceText Explicit clean text. If not provided, reads from DOM.
    */
   show(dur: number = 0.6, sourceText?: string): void {
+    // cancel() restores cleanText to DOM FIRST — so if caller reads
+    // el.textContent below, it gets clean text, not a noisy frame.
     this.cancel();
 
     this.cleanText = sourceText ?? (this.el.textContent || '');
     if (this.cleanText.length === 0) return;
 
-    // Start with empty text — characters will appear left-to-right
-    this.el.textContent = '';
+    // Frame 0 = correct text → no flash of empty state.
+    // (Critical fix from 39eda64 — starting with '' causes a visible
+    // empty flash before the first tick.)
+    this.el.textContent = this.cleanText;
 
     this.dur = dur * 1000;
     this.running = true;
     this.start = performance.now();
     this.el.setAttribute('data-visible', 'true');
 
-    // Safety timeout → guarantees we always stop even if RAF is throttled.
-    // This is the critical fix from commit 64002f9 — without it, a throttled
-    // RAF (background tab, heavy GPU) could leave el stuck mid-noise.
+    // Safety timeout → guarantees finalize() fires even if RAF is throttled
+    // (background tab, heavy GPU, IntersectionObserver during scroll).
     this.timeoutId = window.setTimeout(() => this.finalize(), this.dur + 200);
     this.rafId = requestAnimationFrame(this.tick);
   }
@@ -106,6 +110,7 @@ export class NoiseText {
     this.rafId = requestAnimationFrame(this.tick);
   };
 
+  /** Hard stop with clean text restoration (called on animation end). */
   finalize(): void {
     this.running = false;
     if (this.rafId !== null) {
@@ -116,10 +121,13 @@ export class NoiseText {
       clearTimeout(this.timeoutId);
       this.timeoutId = null;
     }
-    // Restore clean text — guarantees el never stuck on noise symbols
+    // Final frame = ALWAYS clean text (no glitch residue)
     this.el.textContent = this.cleanText;
   }
 
+  /** Lightweight cancel — restores clean text and cancels RAF+timeout.
+   *  MUST restore cleanText before new show() reads DOM (prevents stale
+   *  noise being captured as cleanText on rapid re-trigger). */
   private cancel(): void {
     this.running = false;
     if (this.rafId !== null) {
@@ -130,7 +138,8 @@ export class NoiseText {
       clearTimeout(this.timeoutId);
       this.timeoutId = null;
     }
-    // Restore clean text so el never gets stuck showing noise symbols
+    // Always restore clean text on cancel so a new show() reading from
+    // DOM picks up the correct text, not a noisy frame from the previous run.
     if (this.cleanText) {
       this.el.textContent = this.cleanText;
     }
