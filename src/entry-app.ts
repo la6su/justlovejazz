@@ -5,29 +5,8 @@ import { bootstrap as bootstrapApp, type BootstrapOptions } from './main-app'
 import { BlurFade } from './Experience/BlurFade'
 import { eventBus } from './core/EventBus'
 
-const THEME_KEY = 'jlz:theme'
 const SOUND_KEY = 'jlz:sound'
-
-// ── Config: theme toggle (splash overlay) ──
-function initThemeToggle(): void {
-  const btn = document.getElementById('cfg-theme') as HTMLButtonElement | null
-  if (!btn) return
-  let isInverse = false
-  try {
-    if (localStorage.getItem(THEME_KEY) === 'inverse') isInverse = true
-  } catch { /* ignore */ }
-  const update = () => {
-    btn.setAttribute('aria-pressed', String(isInverse))
-    btn.classList.toggle('is-off', !isInverse)
-    btn.title = isInverse ? 'Theme: Inverse (click for Auto)' : 'Theme: Auto (click for Inverse)'
-  }
-  update()
-  btn.addEventListener('click', () => {
-    isInverse = !isInverse
-    try { localStorage.setItem(THEME_KEY, isInverse ? 'inverse' : 'auto') } catch { /* ignore */ }
-    update()
-  })
-}
+const LANG_KEY = 'jlz:lang'
 
 // ── Config: sound toggle (splash overlay) ──
 function initSoundToggle(): void {
@@ -50,26 +29,64 @@ function initSoundToggle(): void {
   })
 }
 
+// ── Config: language toggle EN/RU (splash overlay — stub for now) ──
+function initLangToggle(): void {
+  const btn = document.getElementById('cfg-lang') as HTMLButtonElement | null
+  if (!btn) return
+  let lang: 'EN' | 'RU' = 'EN'
+  try {
+    const stored = localStorage.getItem(LANG_KEY)
+    if (stored === 'RU') lang = 'RU'
+  } catch { /* ignore */ }
+  const update = () => {
+    btn.querySelector('span')!.textContent = lang
+    btn.setAttribute('aria-pressed', String(lang === 'RU'))
+    btn.title = `Language: ${lang} (click to switch)`
+  }
+  update()
+  btn.addEventListener('click', () => {
+    lang = lang === 'EN' ? 'RU' : 'EN'
+    try { localStorage.setItem(LANG_KEY, lang) } catch { /* ignore */ }
+    update()
+  })
+}
+
+// ── Enter button — appears when 3D is ready, triggers fade-out on click ──
+function initEnterButton(): void {
+  const enterBtn = document.getElementById('jlz-splash-enter') as HTMLButtonElement | null
+  const loader = document.getElementById('jlz-app-loader')
+  if (!enterBtn || !loader) return
+
+  enterBtn.addEventListener('click', () => {
+    if (loader.classList.contains('fade-out')) return
+    // Fade out splash (curtains split + SVG out), then remove loader
+    loader.classList.add('fade-out')
+    setTimeout(() => loader.remove(), 1200)
+  })
+}
+
+// ── Show Enter button when 3D is ready (replaces progress bar) ──
+function showEnterButton(): void {
+  const enterBtn = document.getElementById('jlz-splash-enter') as HTMLButtonElement | null
+  const progress = document.getElementById('jlz-loader-progress')
+  const pct = document.getElementById('jlz-loader-pct')
+  const status = document.getElementById('jlz-loader-status')
+  if (!enterBtn) return
+
+  // Hide progress bar, show Enter button
+  if (progress) progress.style.display = 'none'
+  if (pct) pct.style.display = 'none'
+  if (status) status.textContent = 'Ready'
+  enterBtn.classList.add('is-ready')
+}
+
 // ── Seamless splash loader ──
 // index.html has #jlz-app-loader with SVG squares + CRT curtains + progress.
 // three.js loads LAZY (dynamic import in main-app.ts) — does NOT block FCP.
 // We update progress as Experience.init() boots, then trigger curtain
 // split (fade-out class) when jlz:webgl-ready fires. Config buttons
-// (theme/sound) are inside the loader — they fade out with the splash.
-// After fade, navbar theme toggle takes over.
-function fadeOutLoader(): void {
-  const loader = document.getElementById('jlz-app-loader')
-  if (!loader) return
-  // Set progress to 100% before split (visual completeness)
-  updateLoaderProgress(100)
-  // Small delay so user sees 100% before curtains split
-  setTimeout(() => {
-    loader.classList.add('fade-out')
-    // Remove from DOM after curtain split (0.8s) + small buffer
-    setTimeout(() => loader.remove(), 1000)
-  }, 200)
-}
-
+// (sound + language) are inside the loader — they fade out with the splash.
+// Fade-out is triggered by Enter button click (initEnterButton), NOT auto.
 function updateLoaderProgress(pct: number): void {
   const bar = document.getElementById('jlz-loader-bar')
   const pctEl = document.getElementById('jlz-loader-pct')
@@ -120,10 +137,11 @@ function scheduleUiKitRefresh(): void {
 }
 
 export async function startApp(): Promise<void> {
-  // Init splash config toggles FIRST (theme/sound) — instant, no dependencies.
+  // Init splash config toggles FIRST — instant, no dependencies.
   // These work during loading, before three.js finishes.
-  initThemeToggle()
   initSoundToggle()
+  initLangToggle()
+  initEnterButton()
 
   // Use ?inline to prevent Vite from injecting @vite/client (updateStyle/
   // removeStyle) into the CSS module — through the reverse proxy, /@vite/client
@@ -142,11 +160,12 @@ export async function startApp(): Promise<void> {
   document.body.classList.add('scrollspy-pending')
   initRouter()
 
-  // jlz:webgl-ready fires when Experience.init() completes — fade out
-  // the loader, drop scrollspy-pending, animate titles.
+  // jlz:webgl-ready fires when Experience.init() completes — show Enter button
+  // (replaces progress bar). User clicks Enter → fade out splash → 3D scene.
+  // NOT auto-fade — user must see splash animations + click Enter.
   eventBus.on('jlz:webgl-ready', () => {
     document.body.classList.remove('scrollspy-pending')
-    fadeOutLoader()
+    showEnterButton()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ;(UIkit as any).update(document)
     animateBlurFadeTitles()
@@ -164,14 +183,14 @@ export async function startApp(): Promise<void> {
   })
 
   // Fallback: if jlz:webgl-ready doesn't fire within 6s (Experience.init
-  // crashed or hung), fade out the loader anyway so the user isn't stuck
+  // crashed or hung), show Enter button anyway so the user isn't stuck
   // staring at "Loading". The app may still be partially functional.
   setTimeout(() => {
-    const loader = document.getElementById('jlz-app-loader')
-    if (loader && !loader.classList.contains('fade-out')) {
-      console.warn('[entry-app] jlz:webgl-ready timeout — forcing loader fade-out')
+    const enterBtn = document.getElementById('jlz-splash-enter')
+    if (enterBtn && !enterBtn.classList.contains('is-ready')) {
+      console.warn('[entry-app] jlz:webgl-ready timeout — showing Enter button')
       document.body.classList.remove('scrollspy-pending')
-      fadeOutLoader()
+      showEnterButton()
     }
   }, 6000)
 

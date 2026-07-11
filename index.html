@@ -71,8 +71,8 @@
       #app { position: relative; width: 100%; height: 100dvh; }
 
       /* ── Splash loader (seamless inline overlay) ──
-         Combines: SVG concentric squares (splash identity) + CRT curtains
-         (split on ready) + progress bar (real loading).
+         Flow: SVG squares animate in → progress fills → Enter button appears
+         → user clicks Enter → SVG scales out + curtains split → 3D scene.
          three.js loads LAZY (dynamic import) — does NOT block FCP. */
       #jlz-app-loader {
         position: fixed;
@@ -90,16 +90,16 @@
         pointer-events: none;
       }
 
-      /* SVG squares — splash identity (concentric text paths)
-         Colors: light blue-grey tones visible on dark #050507 background.
-         z-index 9997 — below curtains (9999) and content (10000).
-         On fade-out: SVG scales out + fades, synchronized with curtain split (0.8s). */
+      /* SVG squares — centered cover, scales on the viewport */
       .jlz-splash-svg {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
         width: min(100vw, 100vh);
         height: min(100vw, 100vh);
         pointer-events: none;
         z-index: 9997;
-        position: relative;
         transition: transform 0.8s cubic-bezier(0.65, 0, 0.35, 1),
                     opacity 0.6s ease 0.2s;
       }
@@ -118,19 +118,17 @@
         opacity: 0;
         animation: jlz-splash-in 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       }
-      /* Light blue-grey tones — visible on dark #050507 background */
-      .jlz-splash-text--1 { font-size: clamp(60px, 11vmin, 90px); fill: #6b78a3; animation-delay: 0s; }
-      .jlz-splash-text--2 { font-size: clamp(46px, 9vmin, 68px); fill: #5a6a8e; animation-delay: 0.12s; }
-      .jlz-splash-text--3 { font-size: clamp(32px, 6vmin, 48px); fill: #4a5a7e; animation-delay: 0.24s; }
-      .jlz-splash-text--4 { font-size: clamp(22px, 4.5vmin, 34px); fill: #3a4a6e; animation-delay: 0.36s; }
+      .jlz-splash-text--1 { font-size: clamp(60px, 11vmin, 90px); fill: #6b78a3; animation-delay: 0.1s; }
+      .jlz-splash-text--2 { font-size: clamp(46px, 9vmin, 68px); fill: #5a6a8e; animation-delay: 0.25s; }
+      .jlz-splash-text--3 { font-size: clamp(32px, 6vmin, 48px); fill: #4a5a7e; animation-delay: 0.4s; }
+      .jlz-splash-text--4 { font-size: clamp(22px, 4.5vmin, 34px); fill: #3a4a6e; animation-delay: 0.55s; }
       @keyframes jlz-splash-in {
         0% { opacity: 0; transform: scale(0.3); }
         100% { opacity: 1; transform: scale(1); }
       }
-      /* OUT animation — synchronized with CRT curtain split (0.8s).
-         SVG scales down + fades out as curtains split apart. */
+      /* OUT animation — synchronized with CRT curtain split (0.8s). */
       #jlz-app-loader.fade-out .jlz-splash-svg {
-        transform: scale(0.6);
+        transform: translate(-50%, -50%) scale(0.6);
         opacity: 0;
       }
       @media (prefers-reduced-motion: reduce) {
@@ -138,7 +136,7 @@
         #jlz-app-loader.fade-out .jlz-splash-svg { transition: none; opacity: 0; }
       }
 
-      /* CRT curtains — split apart on ready */
+      /* CRT curtains — split apart on Enter */
       .jlz-loader-curtain {
         position: absolute;
         left: 0;
@@ -175,7 +173,7 @@
         100% { opacity: 0; }
       }
 
-      /* Loader content — progress bar + status text (above curtains) */
+      /* Loader content — progress bar (loading) / Enter button (ready) */
       .jlz-loader-content {
         position: relative;
         z-index: 10000;
@@ -221,7 +219,37 @@
         font-variant-numeric: tabular-nums;
       }
 
-      /* Config buttons (top-right) — theme + sound toggles */
+      /* Enter button — appears when loading completes (100%) */
+      .jlz-splash-enter {
+        display: none;
+        padding: 0.75rem 2.5rem;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.04);
+        color: rgba(255, 255, 255, 0.8);
+        font-family: 'Inter', sans-serif;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        opacity: 0;
+      }
+      .jlz-splash-enter.is-ready {
+        display: block;
+        animation: jlz-enter-in 0.6s ease 0.2s forwards;
+      }
+      @keyframes jlz-enter-in {
+        to { opacity: 1; }
+      }
+      .jlz-splash-enter:hover {
+        border-color: rgba(255, 255, 255, 0.4);
+        background: rgba(255, 255, 255, 0.08);
+        color: #fff;
+      }
+
+      /* Config buttons (top-right) — sound + language */
       .jlz-config {
         position: fixed;
         top: 1rem;
@@ -231,13 +259,16 @@
         gap: 0.5rem;
       }
       .jlz-config__btn {
-        width: 36px;
         height: 36px;
-        border-radius: 50%;
+        min-width: 36px;
+        padding: 0 0.5rem;
+        border-radius: 999px;
         border: 1px solid rgba(255, 255, 255, 0.15);
         background: rgba(255, 255, 255, 0.04);
         color: rgba(255, 255, 255, 0.6);
-        font-size: 1rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
         cursor: pointer;
         display: flex;
         align-items: center;
@@ -307,23 +338,23 @@
       <div class="jlz-loader-curtain jlz-loader-curtain--top"></div>
       <div class="jlz-loader-curtain jlz-loader-curtain--bottom"></div>
       <div class="jlz-loader-seam"></div>
-      <!-- Loader content — status + progress bar (above curtains) -->
+      <!-- Loader content — progress bar (loading) → Enter button (ready) -->
       <div class="jlz-loader-content">
         <span class="jlz-loader-status" id="jlz-loader-status">Loading</span>
-        <div class="jlz-loader-progress" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Loading progress">
+        <div class="jlz-loader-progress" id="jlz-loader-progress" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Loading progress">
           <div class="jlz-loader-progress__bar" id="jlz-loader-bar"></div>
         </div>
         <span class="jlz-loader-progress__pct" id="jlz-loader-pct">0%</span>
+        <button class="jlz-splash-enter" id="jlz-splash-enter" type="button" aria-label="Enter JUSTLOVEJAZZ experience">Enter</button>
       </div>
 
-      <!-- Config switchers (top-right) — inside loader so they fade out with splash.
-           After splash fades, navbar theme toggle takes over. -->
+      <!-- Config switchers (top-right) — sound + language. Fade out with splash. -->
       <div class="jlz-config" role="toolbar" aria-label="Experience configuration">
-        <button class="jlz-config__btn" id="cfg-theme" type="button" aria-label="Toggle theme" aria-pressed="false" title="Toggle theme">
-          <span aria-hidden="true">◐</span>
-        </button>
-        <button class="jlz-config__btn is-off" id="cfg-sound" type="button" aria-label="Toggle sound" aria-pressed="false" title="Toggle sound">
+        <button class="jlz-config__btn is-off" id="cfg-sound" type="button" aria-label="Toggle sound" aria-pressed="false" title="Sound: Off">
           <span aria-hidden="true">♪</span>
+        </button>
+        <button class="jlz-config__btn" id="cfg-lang" type="button" aria-label="Toggle language" aria-pressed="false" title="Language: EN">
+          <span>EN</span>
         </button>
       </div>
     </div>
