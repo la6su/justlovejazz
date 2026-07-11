@@ -66,7 +66,6 @@ export class DevPanel {
 
   // Controls
   private controls = {
-    sectionIdx: 0,
     exposure: 1.0,
     forceRender: false,
     groundVisible: true,
@@ -88,7 +87,6 @@ export class DevPanel {
 
     this.syncControls()
     this.buildStatsFolder()
-    this.buildNavFolder()
     this.buildCarouselFolder()
     this.buildRenderFolder()
     this.buildSceneFolder()
@@ -113,25 +111,13 @@ export class DevPanel {
     f.addBinding(this.stats, 'rendering', { readonly: true, label: 'rendering' })
   }
 
-  // ── Navigation folder ─────────────────────────────────────────────────
-  private buildNavFolder(): void {
-    const f = this.pane.addFolder({ title: 'Navigation', expanded: false })
-    f.addBinding(this.controls, 'sectionIdx', { label: 'section', min: 0, max: 5, step: 1 })
-      .on('change', (ev) => {
-        const idx = ev.value as number
-        // Use the public API — circNav.goToSection triggers the transition
-        const nav = (this.exp as unknown as { _circNav?: { goToSection: (i: number) => void } })._circNav
-        nav?.goToSection(idx)
-      })
-    f.addButton({ title: '← Prev' }).on('click', () => {
-      const nav = (this.exp as unknown as { _circNav?: { goToDirection: (d: 1 | -1) => void } })._circNav
-      nav?.goToDirection(-1)
-    })
-    f.addButton({ title: 'Next →' }).on('click', () => {
-      const nav = (this.exp as unknown as { _circNav?: { goToDirection: (d: 1 | -1) => void } })._circNav
-      nav?.goToDirection(1)
-    })
-  }
+  // ── Navigation folder REMOVED (2026-07-11) — the section slider + prev/next
+  // buttons drove JoystickNav via a private-field cast hack (_circNav is
+  // private on Experience). It was unreliable on content pages (section change
+  // goes through jlz:page-section-change there, not jlz:section-change) and
+  // the slider's 0-5 range didn't map cleanly to the 4-main-sections layout.
+  // Navigation is joystick-only (pure DOM) per ARCHITECTURE.md — DevPanel is
+  // for diagnostics, not a second nav input.
 
   // ── BakuCarousel folder ───────────────────────────────────────────────
   private buildCarouselFolder(): void {
@@ -256,8 +242,6 @@ export class DevPanel {
 
   // ── Helpers ───────────────────────────────────────────────────────────
   private syncControls(): void {
-    const nav = (this.exp as unknown as { _circNav?: { getSectionIndex: () => number } })._circNav
-    this.controls.sectionIdx = nav?.getSectionIndex() ?? 0
     const r = this.exp.renderer.instance as unknown as { toneMappingExposure: number }
     this.controls.exposure = r?.toneMappingExposure ?? 1.0
   }
