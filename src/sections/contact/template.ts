@@ -1,5 +1,5 @@
 // src/sections/contact/template.ts — Face 4: Contact (bottom face -Y)
-// Apple Watch layout: TOP (title) / 3D CENTER / BOTTOM (inline form + links)
+// Apple Watch layout: TOP (num 04 + title + lead) / 3D CENTER / BOTTOM (inline form + social)
 
 import { REVEAL } from '../_shared/constants'
 
@@ -13,14 +13,13 @@ export function contactSection(): string {
           <!-- TOP -->
           <div ${REVEAL}>
             <span class="jlz-eyebrow" data-eyebrow></span>
-            <h2 class="studio-title uk-heading-medium uk-margin-small-top uk-margin-remove-bottom"
+            <div class="jlz-section-num jlz-numeral">04</div>
+            <h2 class="studio-title uk-heading-large uk-margin-small-top uk-margin-remove-bottom"
                 data-content-id="contact-title">Contact</h2>
             <p class="uk-text-lead uk-margin-small-top">Open for new projects. Let's talk.</p>
           </div>
           <!-- BOTTOM: inline mailto form (no-JS fallback) + social -->
           <div ${REVEAL}>
-            <!-- Inline form: opens visitor's mail client with prefilled subject.
-                 enctype="text/plain" keeps it no-JS (progressive enhancement). -->
             <form class="jlz-contact-form uk-flex uk-flex-center uk-flex-middle uk-margin-bottom"
                   action="mailto:hello@justlovejazz.com" method="post" enctype="text/plain">
               <div class="uk-inline uk-width-1-1 uk-width-medium@s">

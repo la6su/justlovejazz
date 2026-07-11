@@ -1,15 +1,14 @@
 // src/sections/about/template.ts — Face 2: About (right face +X)
-// Editorial left-aligned layout — breaks the centered monotony of other sections.
-// Apple Watch layout: TOP (title + lead, left-aligned) / 3D CENTER / BOTTOM (description + inline stats)
+// Editorial left-aligned layout — breaks centered monotony of other sections.
+// Apple Watch layout: TOP (num 02 + title + lead, left-aligned) / 3D CENTER / BOTTOM (description + stats)
 
 import { REVEAL, sectionBottom, sectionShell } from '../_shared/constants'
 
 export function aboutSection(): string {
-  // Custom left-aligned top block — distinct from the centered sectionTop()
-  // helper used by other sections. Creates editorial asymmetry.
   const top = `
     <div class="jlz-section-top uk-text-left uk-flex uk-flex-column" ${REVEAL}>
       <span class="jlz-eyebrow" data-eyebrow></span>
+      <div class="jlz-section-num jlz-numeral">02</div>
       <h2 class="studio-title uk-heading-large uk-margin-small-top uk-margin-remove-bottom">About</h2>
       <p class="uk-text-meta uk-margin-small-top">Remote · EU · since 2019</p>
     </div>

@@ -1,5 +1,5 @@
 // src/sections/process/template.ts — Face 5: Process (secret right, left face -X)
-// Apple Watch layout: TOP (title + lead) / 3D CENTER / BOTTOM (timeline)
+// Apple Watch layout: TOP (num 06 + title + lead) / 3D CENTER (TimelineNodes) / BOTTOM (timeline)
 
 import { REVEAL, processTimeline } from '../_shared/constants'
 
@@ -13,6 +13,7 @@ export function processSection(): string {
           <!-- TOP -->
           <div ${REVEAL}>
             <span class="jlz-eyebrow" data-eyebrow></span>
+            <div class="jlz-section-num jlz-numeral">06</div>
             <h2 class="studio-title uk-heading-medium uk-margin-small-top uk-margin-remove-bottom">PROCESS</h2>
             <p class="uk-text-lead uk-margin-small-top">Four phases. One shippable milestone per phase.</p>
           </div>

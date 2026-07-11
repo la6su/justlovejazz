@@ -1,5 +1,5 @@
 // src/sections/works/template.ts — Face 3: Works (back face -Z)
-// Apple Watch layout: TOP (eyebrow + title + drag hint) / 3D CENTER (BakuCarousel) / BOTTOM (overlay)
+// Apple Watch layout: TOP (num 03 + title + lead) / 3D CENTER (BakuCarousel) / BOTTOM (drag hint)
 
 import { REVEAL } from '../_shared/constants'
 
@@ -13,6 +13,7 @@ export function worksSection(): string {
           <!-- TOP -->
           <div ${REVEAL}>
             <span class="jlz-eyebrow" data-eyebrow></span>
+            <div class="jlz-section-num jlz-numeral">03</div>
             <h2 class="studio-title uk-heading-large uk-margin-small-top uk-margin-remove-bottom"
                 data-content-id="works-title">Works</h2>
             <p class="uk-text-meta uk-margin-small-top">Six interactive experiences</p>

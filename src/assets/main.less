@@ -1038,6 +1038,19 @@ body.uk-light .jlz-eyebrow {
   padding-top: calc(var(--jlz-header-height) + var(--jlz-space-6));
 }
 
+/* Section number — large faded numeral above title (Apple Watch style).
+   Home sections use [data-eyebrow] for dynamic hints (Subtitles.ts), so
+   the number lives here as a separate visual anchor. Matches the num
+   treatment on services/manifesto content pages. */
+.jlz-section-num {
+  font-size: clamp(2.5rem, 8vw, 4rem);
+  font-weight: 200;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  opacity: 0.3;
+  margin-bottom: var(--jlz-space-2);
+}
+
 .jlz-section-bottom {
   flex-shrink: 0;
 }
