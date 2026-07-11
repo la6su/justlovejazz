@@ -161,7 +161,7 @@ export class UIMenu {
 
     return `
       <nav class="uk-navbar-container uk-navbar-transparent" uk-navbar>
-        <div class="uk-container uk-container-expand">
+        <div class="uk-container">
           <div class="uk-navbar-center">
             <div class="uk-navbar-center-left">
               <ul class="uk-navbar-nav jlz-navbar-nav">
@@ -182,21 +182,21 @@ export class UIMenu {
     `
   }
 
-  /** Render nav items HTML (shared by center-left/right). */
+  /** Render nav items HTML (shared by center-left/right).
+   *  Uses UIKit3 uk-navbar-dropdown (positioned under the nav item, NOT
+   *  full-width stretch). Width auto-sizes to content via uk-width-auto. */
   private renderNavItems(items: NavItem[]): string {
     return items.map((item) => {
       if (item.label === 'Contact') {
         return `
           <li>
             <a href="${item.href}" data-nav-item="${item.page}">${item.label}</a>
-            <div class="uk-dropbar uk-dropbar-top" uk-drop="stretch: x; offset: 0; mode: hover; animation: uk-animation-slide-top">
-              <div class="uk-container uk-container-expand">
-                <ul class="uk-nav jlz-dropbar-contact uk-flex uk-flex-center uk-flex-wrap">
-                  ${CONTACT_LINKS.map((c) => `
-                    <li><a href="${c.href}"${c.external ? ' target="_blank" rel="noopener"' : ''}>${c.label}</a></li>
-                  `).join('')}
-                </ul>
-              </div>
+            <div class="uk-navbar-dropdown" uk-drop="mode: hover; animation: uk-animation-slide-top; offset: 0">
+              <ul class="uk-nav uk-navbar-dropdown-nav jlz-dropbar-contact">
+                ${CONTACT_LINKS.map((c) => `
+                  <li><a href="${c.href}"${c.external ? ' target="_blank" rel="noopener"' : ''}>${c.label}</a></li>
+                `).join('')}
+              </ul>
             </div>
           </li>
         `
@@ -205,33 +205,31 @@ export class UIMenu {
         return `
           <li>
             <a href="${item.href}" data-nav-item="${item.page}">${item.label}</a>
-            <div class="uk-dropbar uk-dropbar-top" uk-drop="stretch: x; offset: 0; mode: hover; animation: uk-animation-slide-top">
-              <div class="uk-container uk-container-expand">
-                <div class="uk-grid jlz-dropbar-grid" uk-grid>
-                  <div class="uk-width-2-3@m">
-                    <ul class="uk-nav jlz-dropbar-sections">
-                      ${item.sections.map((s) => `
-                        <li>
-                          <a href="${item.href}#sec-${s.idx}" data-section-idx="${s.idx}" data-page="${item.page}">
-                            <span class="jlz-dropbar__num">${s.num}</span>
-                            <span class="jlz-dropbar__title">${s.title}</span>
-                            <span class="jlz-dropbar__subtitle">${s.subtitle}</span>
-                          </a>
-                        </li>
-                      `).join('')}
-                    </ul>
-                  </div>
-                  ${item.featured ? `
-                    <div class="uk-width-1-3@m">
-                      <a href="${item.featured.href}" class="jlz-dropbar-featured">
-                        <span class="jlz-dropbar-featured__label">Featured</span>
-                        <span class="jlz-dropbar-featured__title">${item.featured.title}</span>
-                        <span class="jlz-dropbar-featured__subtitle">${item.featured.subtitle}</span>
-                        <span class="jlz-dropbar-featured__arrow" aria-hidden="true">→</span>
-                      </a>
-                    </div>
-                  ` : ''}
+            <div class="uk-navbar-dropdown jlz-navbar-dropdown--wide" uk-drop="mode: hover; animation: uk-animation-slide-top; offset: 0">
+              <div class="uk-grid jlz-dropbar-grid" uk-grid>
+                <div class="uk-width-2-3">
+                  <ul class="uk-nav uk-navbar-dropdown-nav jlz-dropbar-sections">
+                    ${item.sections.map((s) => `
+                      <li>
+                        <a href="${item.href}#sec-${s.idx}" data-section-idx="${s.idx}" data-page="${item.page}">
+                          <span class="jlz-dropbar__num">${s.num}</span>
+                          <span class="jlz-dropbar__title">${s.title}</span>
+                          <span class="jlz-dropbar__subtitle">${s.subtitle}</span>
+                        </a>
+                      </li>
+                    `).join('')}
+                  </ul>
                 </div>
+                ${item.featured ? `
+                  <div class="uk-width-1-3">
+                    <a href="${item.featured.href}" class="jlz-dropbar-featured">
+                      <span class="jlz-dropbar-featured__label">Featured</span>
+                      <span class="jlz-dropbar-featured__title">${item.featured.title}</span>
+                      <span class="jlz-dropbar-featured__subtitle">${item.featured.subtitle}</span>
+                      <span class="jlz-dropbar-featured__arrow" aria-hidden="true">→</span>
+                    </a>
+                  </div>
+                ` : ''}
               </div>
             </div>
           </li>

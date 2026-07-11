@@ -15,7 +15,11 @@ export class NoiseText {
   private static instances = new WeakMap<HTMLElement, NoiseText>()
 
   private readonly el: HTMLElement
+  /** The target text to reveal + restore after animation. Set in show(). */
   private text = ''
+  /** Snapshot of el.textContent BEFORE any animation — safety fallback
+   *  to guarantee we can always restore the original. */
+  private originalText = ''
   private noise = DEFAULT_NOISE
   private rafId: number | null = null
   private start = 0
@@ -24,6 +28,8 @@ export class NoiseText {
 
   private constructor(el: HTMLElement) {
     this.el = el
+    // Snapshot original text on first construct (before any animation)
+    this.originalText = el.textContent || ''
   }
 
   static for(el: HTMLElement): NoiseText {
@@ -36,12 +42,14 @@ export class NoiseText {
   }
 
   /** Reveal the text with a trailing-noise typewriter effect.
-   *  dur: seconds. sourceText: text to reveal (defaults to el.textContent).
-   *  noise: optional charset for the trailing random symbols. */
+   *  dur: seconds. sourceText: text to reveal (defaults to el.textContent
+   *  or originalText fallback). noise: optional charset for trailing symbols. */
   show(dur: number = 0.6, sourceText?: string, noise?: string): void {
-    this.cancel()
-    this.text = sourceText ?? (this.el.textContent || '')
-    if (this.text.length === 0) return
+    this.stopAnimation()
+    // Resolve target text: explicit sourceText > current el text > original snapshot
+    const resolved = sourceText ?? (this.el.textContent?.trim() || this.originalText)
+    if (!resolved || resolved.length === 0) return
+    this.text = resolved
     if (noise) this.noise = noise
 
     this.dur = dur * 1000
@@ -52,8 +60,10 @@ export class NoiseText {
     this.rafId = requestAnimationFrame(this.tick)
   }
 
+  /** Stop animation and restore the target text immediately. */
   hide(): void {
-    this.cancel()
+    this.stopAnimation()
+    this.el.textContent = this.text || this.originalText
     this.el.removeAttribute('data-visible')
   }
 
@@ -61,6 +71,7 @@ export class NoiseText {
     if (!this.running) return
     const t = (ts - this.start) / this.dur
     if (t >= 1) {
+      // Animation complete — restore the final clean text
       this.el.textContent = this.text
       this.running = false
       this.rafId = null
@@ -84,12 +95,14 @@ export class NoiseText {
     this.rafId = requestAnimationFrame(this.tick)
   }
 
-  private cancel(): void {
+  /** Stop the rAF loop and restore the target text (cancel mid-animation). */
+  private stopAnimation(): void {
     this.running = false
     if (this.rafId !== null) {
       cancelAnimationFrame(this.rafId)
       this.rafId = null
     }
+    // Restore target text so el never gets stuck showing noise symbols
     if (this.text) {
       this.el.textContent = this.text
     }

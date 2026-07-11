@@ -227,13 +227,17 @@ body.uk-light .jlz-joystick__hint {
   color: var(--jlz-color-accent);
 }
 
-/* Dropbar — uses QF's built-in @dropbar-background/blur/padding.
-   Only add border + extra vertical padding for the Balou multi-column layout. */
-.uk-dropbar {
-  border-top: 1px solid var(--jlz-color-border);
-  border-bottom: 1px solid var(--jlz-color-border);
-  padding-top: 2rem;
-  padding-bottom: 2rem;
+/* Navbar dropdown — positioned under the nav item (UIKit3 uk-navbar-dropdown).
+   QF @navbar-dropdown-background + @navbar-dropdown-backdrop-filter handle
+   base styling. Wide variant for multi-column (sections + featured). */
+.uk-navbar-dropdown {
+  border: 1px solid var(--jlz-color-border);
+}
+
+.jlz-navbar-dropdown--wide {
+  width: 480px;
+  max-width: calc(100vw - 2rem);
+  padding: 1.5rem;
 }
 
 .jlz-dropbar-grid {
@@ -940,16 +944,18 @@ body.uk-light .jlz-joystick__arrow--active {
    ------------------------------------------------------------------ */
 
 .jlz-eyebrow {
-  font-family: 'Inter', 'SF Mono', monospace;
-  /* Console-like section number (01-06) — larger than the old hint text,
-     faded, with glitch reveal via NoiseText on section change. */
+  /* Monospace — console numbers + noise symbols have equal width,
+     no layout shift during NoiseText typewriter animation. */
+  font-family: 'SF Mono', 'Cascadia Code', 'JetBrains Mono', 'Consolas', monospace;
+  /* Console-like section number (01-06) — faded, glitch reveal via NoiseText. */
   font-size: clamp(2rem, 6vw, 3rem);
   font-weight: 200;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   opacity: 0.35;
   line-height: 1;
-  /* NoiseText builds per-char spans with display:inline-block + translateY.
-     min-height prevents layout shift during the scramble animation. */
+  /* Fixed char width (monospace) + min-height prevents any layout shift
+     during the NoiseText typewriter animation (noise symbols = same width
+     as digits, so no width change as chars appear/disappear). */
   min-height: 1em;
   display: inline-block;
 }
