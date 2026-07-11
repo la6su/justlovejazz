@@ -1,62 +1,130 @@
 // src/pages/content/manifesto.ts — Manifesto page (6 sections, cube-map layout)
-// Same structure as home: 0=secret, 1=intro(start), 2-4=main, 5=secret.
+// Apple Watch layout: each cube face = one principle.
+//   TOP: eyebrow (num) + title + lead
+//   BOTTOM: description fragments + READ MORE link
+// Same rhythm as services page — consistent cube-face experience.
+//
+// Cube mapping:
+//   0 (secret left)  → 06 Future
+//   1 (intro/start)  → 01 Purpose (active on load)
+//   2                → 02 Clarity
+//   3                → 03 Emotion
+//   4                → 04 Simplicity
+//   5 (secret right) → 05 Process
 
-import { contentSection, contentTop, contentBottom, processTimeline } from '../../sections/_shared/constants'
+import { contentSection, contentTop, contentBottom } from '../../sections/_shared/constants'
 import { FOOTER } from '../../sections/_shared/footer'
 
+interface Principle {
+  num: string
+  title: string
+  lead: string
+  desc: string[]
+  href: string
+}
+
+const PRINCIPLES: readonly Principle[] = [
+  {
+    num: '01',
+    title: 'Purpose',
+    lead: "We don't build what everyone builds.",
+    desc: ['We solve different problems.', 'We improve experience and understand the pain.'],
+    href: '/blog/tsl-changes-everything',
+  },
+  {
+    num: '02',
+    title: 'Clarity',
+    lead: 'Clean structure.',
+    desc: ['Clear logic.', 'No noise.'],
+    href: '/blog/on-demand-rendering',
+  },
+  {
+    num: '03',
+    title: 'Emotion',
+    lead: 'We use motion, light, and sound to evoke a sense of presence.',
+    desc: [],
+    href: '/blog/undercurrent-webgpu-fluid',
+  },
+  {
+    num: '04',
+    title: 'Simplicity',
+    lead: 'We strive for minimalism — but not emptiness.',
+    desc: [],
+    href: '/blog/glassmorphism-webgpu',
+  },
+  {
+    num: '05',
+    title: 'Process',
+    lead: 'We explore. We prototype. We test. We fail. We improve.',
+    desc: [],
+    href: '/app/services',
+  },
+  {
+    num: '06',
+    title: 'Future',
+    lead: 'Technologies change. Principles remain.',
+    desc: [],
+    href: '/app',
+  },
+] as const
+
+/** Description fragments — each line a short sentence, stacked vertically.
+ *  Reuses .jlz-service-desc from services page (same Apple Watch rhythm). */
+function principleDesc(desc: readonly string[]): string {
+  if (desc.length === 0) return ''
+  return `<div class="jlz-service-desc uk-margin-small-top">${desc
+    .map((line) => `<p class="uk-text-meta uk-margin-remove">${line}</p>`)
+    .join('')}</div>`
+}
+
+/** READ MORE link — pill button with accent dot. Reuses .jlz-service-explore. */
+function principleReadMore(href: string): string {
+  return `<a href="${href}" class="jlz-service-explore uk-button uk-button-default uk-button-small uk-margin-top">
+    <span class="jlz-service-explore__dot" aria-hidden="true"></span>
+    Read more
+  </a>`
+}
+
+/** Secret-section hint — which way to drag to return. */
+function secretHint(direction: 'left' | 'right'): string {
+  const arrow = direction === 'left' ? '← Drag right to return to manifesto' : 'Drag left to return to manifesto →'
+  return `<p class="uk-text-meta uk-margin-top jlz-text-subtle">${arrow}</p>`
+}
+
 export function manifestoPage(): string {
-  const principles = [
-    { num: '01', title: 'Depth over surface', desc: 'One alive thing beats ten flat things.', example: 'A single iridescent cube you can rotate beats a gallery of static renders.' },
-    { num: '02', title: 'Craft over speed', desc: 'Type-safe GPU code. No raw GLSL strings.', example: 'TSL nodes give us compile-time checks where GLSL gives us black screens.' },
-    { num: '03', title: 'Performance is a feature', desc: '60fps on mid-range. Zero idle draw calls.', example: 'On-demand rendering means the GPU sleeps when you do — battery stays full.' },
-    { num: '04', title: 'Parity, not compromise', desc: 'WebGPU + WebGL2. Bit-identical output.', example: 'One codebase, two backends. Safari users see what Chrome users see.' },
-  ]
+  const [p1, p2, p3, p4, p5, p6] = PRINCIPLES
   return `
     <article class="jlz-page" data-page-view="manifesto">
-      <!-- 0: SECRET LEFT — hidden, reachable via horizontal drag -->
-      ${contentSection('manifesto-secret-left',
-        contentTop('HIDDEN', 'The other side', 'Every cube has faces you rarely see. Drag right to return.'),
-        contentBottom(`<p class="uk-text-meta uk-margin-remove">← Drag right to return to manifesto</p>`)
+      <!-- 0: SECRET LEFT → 06 Future -->
+      ${contentSection('manifesto-future',
+        contentTop(p6!.num, p6!.title, p6!.lead, 'large'),
+        contentBottom(`${principleDesc(p6!.desc)}${principleReadMore(p6!.href)}${secretHint('left')}`)
       )}
-      <!-- 1: INTRO (start, active) -->
-      ${contentSection('manifesto-intro',
-        contentTop('MANIFESTO', 'What we believe', 'Four principles. Built from shipping real work.', 'large'),
-        contentBottom(`<a href="/app/services" class="uk-button uk-button-primary uk-button-large">See services →</a>`),
+      <!-- 1: INTRO (start, active) → 01 Purpose -->
+      ${contentSection('manifesto-01',
+        contentTop(p1!.num, p1!.title, p1!.lead, 'large'),
+        contentBottom(`${principleDesc(p1!.desc)}${principleReadMore(p1!.href)}`),
         true
       )}
-      <!-- 2: Principles -->
-      ${contentSection('manifesto-principles',
-        contentTop('PRINCIPLES', 'Four principles'),
-        contentBottom(`
-          <div class="uk-grid uk-child-width-1-2@s" uk-grid>
-            ${principles.map((p) => `
-              <div class="uk-card uk-card-default uk-card-body uk-card-hover">
-                <div class="uk-heading-medium uk-margin-remove jlz-numeral">${p.num}</div>
-                <h3 class="uk-card-title uk-margin-small-top uk-margin-remove-bottom">${p.title}</h3>
-                <p class="uk-text-meta uk-margin-small-top">${p.desc}</p>
-                <p class="uk-text-meta jlz-text-subtle uk-margin-small-top uk-margin-remove-bottom">e.g. ${p.example}</p>
-              </div>
-            `).join('')}
-          </div>
-        `)
+      <!-- 2: → 02 Clarity -->
+      ${contentSection('manifesto-02',
+        contentTop(p2!.num, p2!.title, p2!.lead, 'large'),
+        contentBottom(`${principleDesc(p2!.desc)}${principleReadMore(p2!.href)}`)
       )}
-      <!-- 3: Craft -->
-      ${contentSection('manifesto-craft',
-        contentTop('CRAFT', 'Real-time, not canned'),
-        contentBottom(`
-          <p class="uk-text-lead">Every pixel is computed. Every frame is alive.</p>
-          <p class="uk-text-meta uk-margin-small-top">No video. No sprites. No tricks. Just shaders, every frame, on your GPU.</p>
-        `)
+      <!-- 3: → 03 Emotion -->
+      ${contentSection('manifesto-03',
+        contentTop(p3!.num, p3!.title, p3!.lead, 'large'),
+        contentBottom(`${principleDesc(p3!.desc)}${principleReadMore(p3!.href)}`)
       )}
-      <!-- 4: Process — shared vertical timeline (same as home + services) -->
-      ${contentSection('manifesto-process',
-        contentTop('PROCESS', 'How we ship'),
-        contentBottom(processTimeline())
+      <!-- 4: → 04 Simplicity -->
+      ${contentSection('manifesto-04',
+        contentTop(p4!.num, p4!.title, p4!.lead, 'large'),
+        contentBottom(`${principleDesc(p4!.desc)}${principleReadMore(p4!.href)}`)
       )}
-      <!-- 5: SECRET RIGHT — hidden, reachable via horizontal drag -->
-      ${contentSection('manifesto-secret-right',
-        contentTop('HIDDEN', 'The other side', 'You reached the edge of the cube. Drag left to return.'),
-        contentBottom(`<p class="uk-text-meta uk-margin-remove">Drag left to return to manifesto →</p>`)
+      <!-- 5: SECRET RIGHT → 05 Process -->
+      ${contentSection('manifesto-05',
+        contentTop(p5!.num, p5!.title, p5!.lead, 'large'),
+        contentBottom(`${principleDesc(p5!.desc)}${principleReadMore(p5!.href)}${secretHint('right')}`)
       )}
     </article>
     ${FOOTER}
