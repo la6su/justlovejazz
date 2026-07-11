@@ -25,8 +25,10 @@ export class ProjectOverlay {
   public onPrev: (() => void) | null = null
   public onNext: (() => void) | null = null
   public onClose: (() => void) | null = null
+  private readonly sfx?: { play: (name: 'hover' | 'click' | 'open' | 'close') => void }
 
-  constructor(protected _root: HTMLElement) {
+  constructor(protected _root: HTMLElement, sfx?: { play: (name: 'hover' | 'click' | 'open' | 'close') => void }) {
+    this.sfx = sfx
     // Attach to document.body — NOT to the section. A section ancestor with a
     // CSS transform (UIkit scrollspy uk-animation-scale-up) creates a new
     // containing block, making position:fixed relative to the section instead
@@ -136,6 +138,7 @@ export class ProjectOverlay {
     this._previouslyFocused = document.activeElement as HTMLElement | null
     // Move focus into the dialog (close button) so keyboard users land inside.
     requestAnimationFrame(() => this.closeBtn.focus())
+    this.sfx?.play('open')
   }
 
   hide(): void {
@@ -149,6 +152,7 @@ export class ProjectOverlay {
     // Restore focus to the element that opened the dialog (WCAG 2.4.3).
     this._previouslyFocused?.focus?.()
     this._previouslyFocused = null
+    this.sfx?.play('close')
   }
 
   show(project: Project, index: number, total: number): void {

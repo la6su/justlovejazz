@@ -15,6 +15,7 @@ import { ProjectOverlay } from '../UI/ProjectOverlay'
 import { NoiseText } from './NoiseText'
 
 import { AudioSystem } from '../core/AudioSystem'
+import { SfxSystem } from '../core/SfxSystem'
 import { JoystickNav } from '../UI/JoystickNav'
 import { UIMenu } from '../UI/UIMenu'
 // worldDNA.ts removed — TSL node system never attached (attachWorldDNA never
@@ -68,6 +69,7 @@ export class Experience {
   private _onMouseMoveForTrail: (() => void) | null = null
   private _mouseTrailRafPending = false
   public audio: AudioSystem = new AudioSystem()
+  public sfx: SfxSystem = new SfxSystem()
   private _circNav: JoystickNav | null = null
   private _needsRender = true // start true to render the first frame
   private _bakuCarouselActive = false // BakuCarousel is morphed/scrolling
@@ -216,7 +218,7 @@ export class Experience {
     // directly when the fullscreen overlay is open.
     this._reducedMotion = prefersReducedMotion()
     this.contentReveal = new ContentReveal()
-    this.cursor = new Cursor()
+    this.cursor = new Cursor(this.sfx)
     // Glitch eyebrow — on section change, animate the active section's
     // [data-eyebrow] number with NoiseText random-symbol scramble.
     // Uses data-eyebrow-text attribute as STABLE source (never affected by
@@ -385,13 +387,17 @@ export class Experience {
       const soundPref = localStorage.getItem('jlz:sound')
       if (soundPref === 'off') {
         this.audio.setMuted(true)
+        this.sfx.setMuted(true)
       }
     } catch { /* localStorage unavailable */ }
 
     // Runtime sound toggle (from UIMenu or other in-app controls)
     this._soundToggleHandler = (e: Event) => {
       const detail = (e as CustomEvent<{ muted: boolean }>).detail
-      if (detail) this.audio.setMuted(detail.muted)
+      if (detail) {
+        this.audio.setMuted(detail.muted)
+        this.sfx.setMuted(detail.muted)
+      }
     }
     window.addEventListener('jlz:sound-toggle', this._soundToggleHandler)
 
@@ -713,6 +719,7 @@ export class Experience {
     input.destroy()
     this._circNav?.dispose()
     this.audio.dispose()
+    this.sfx.dispose()
   }
 
   private async ensurePortfolio(): Promise<void> {
@@ -744,7 +751,7 @@ export class Experience {
         document.getElementById('section-challenge') ||
         document.getElementById('section-works') ||
         document.getElementById('spa-content')
-      this.overlay = new ProjectOverlay(worksSection!)
+      this.overlay = new ProjectOverlay(worksSection!, this.sfx)
       // Overlay prev/next → drive the BakuCarousel ring AND update the
       // overlay HTML (title/description/counter). Without the onProjectSelect
       // call, the ring rotates but the overlay UI stays on the old project.

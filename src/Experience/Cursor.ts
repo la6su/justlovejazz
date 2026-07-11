@@ -39,6 +39,7 @@ export class Cursor {
   private innerX = 0
   private innerY = 0
   private readonly lerpFactor = 0.12
+  private readonly sfx?: { play: (name: 'hover' | 'click' | 'open' | 'close') => void }
 
   // Noisy circle state
   private isStuck = false
@@ -72,7 +73,8 @@ export class Cursor {
   private readonly mouseoutHandler: (e: MouseEvent) => void
   private readonly clickHandler: (e: MouseEvent) => void
 
-  constructor() {
+  constructor(sfx?: { play: (name: 'hover' | 'click' | 'open' | 'close') => void }) {
+    this.sfx = sfx
     this.innerEl = document.createElement('div')
     this.innerEl.classList.add('custom-cursor-inner')
 
@@ -120,6 +122,9 @@ export class Cursor {
         }
         this.isStuck = true
         this.fillTarget = 1
+        // Magnetic hover SFX (subtle tick). Only on first entry — the mouseout
+        // handler resets isStuck=false, so re-entry re-fires this.
+        this.sfx?.play('hover')
       } else {
         this.isStuck = false
         this.fillTarget = 0
@@ -137,6 +142,7 @@ export class Cursor {
       // Bump: radius scales down to 0.7, then bounces back to 1.0
       this.bumpScale = 0.6
       this.bumpTarget = 1
+      this.sfx?.play('click')
     }
 
     window.addEventListener('mousemove', this.mousemoveHandler, { passive: true })
