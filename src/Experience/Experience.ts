@@ -240,16 +240,13 @@ export class Experience {
     await this.buildWorld()
     this.bus = StateBus.getInstance()
 
-    // ── 3D ↔ theme sync: EnvSphere follows the global theme ──
-    // auto = light pattern (Intro), inverse = dark pattern (About).
-    // Listens to jlz:theme-applied — fires on mode change + on init.
-    // Home page only — content pages have their own EnvSphere palettes.
+    // ── 3D ↔ theme sync: EnvSphere follows per-section theme ──
+    // ContentReveal dispatches jlz:theme-applied with {isLight} on each
+    // section change. isLight=true → light EnvSphere pattern (idx 1).
+    // isLight=false → dark EnvSphere pattern (idx 2).
     window.addEventListener('jlz:theme-applied', ((e: Event) => {
       const detail = (e as CustomEvent<{ isLight: boolean; mode: string }>).detail
       if (!detail) return
-      if (document.body.dataset.page !== 'home') return // home-only 3D sync
-      // auto (isLight=true) → Intro pattern (light bg)
-      // inverse (isLight=false) → About pattern (dark bg)
       const targetIdx = detail.isLight ? 1 : 2
       if (this.world?.envSphere) {
         this.world.envSphere.changeSection(targetIdx)
@@ -257,9 +254,7 @@ export class Experience {
       }
     }) as EventListener)
 
-    // ── Initial EnvSphere sync — ThemeManager.apply() fired in constructor
-    // (before this listener was registered), so the first event was missed.
-    // Re-apply now that world + envSphere exist.
+    // ── Initial EnvSphere sync — apply current section theme ──
     {
       const isLight = document.body.classList.contains('uk-light')
       const targetIdx = isLight ? 1 : 2
@@ -317,6 +312,15 @@ export class Experience {
     // event fires for the initial section).
     const firstSection = document.querySelector('[data-section="intro"]')
     firstSection?.classList.add('section-active')
+    // Apply initial section theme (intro = light in auto, dark in inverse)
+    // ContentReveal.applySectionTheme is private — dispatch section-change
+    // so it picks up the initial section.
+    eventBus.emit('jlz:section-change', {
+      sectionId: 'intro',
+      context: 'Studio — Home',
+      configId: 'sec_intro',
+      index: 1,
+    })
     // Always build portfolio — single-page, always needs works slider
     void this.ensurePortfolio()
     this.camera.instance.position.set(0, 5, 10)
