@@ -7,7 +7,7 @@ import { NoiseText } from './Experience/NoiseText'
 import { eventBus } from './core/EventBus'
 
 const SOUND_KEY = 'jlz:sound'
-const LANG_KEY = 'jlz:lang'
+// LANG_KEY handled by i18n.ts
 
 // ── Config: sound toggle (splash overlay) ──
 function initSoundToggle(): void {
@@ -30,24 +30,22 @@ function initSoundToggle(): void {
   })
 }
 
-// ── Config: language toggle EN/RU (splash overlay — stub for now) ──
+// ── Config: language toggle EN/RU ──
+import { initI18n, toggleLang, getLang } from './core/i18n'
+
 function initLangToggle(): void {
   const btn = document.getElementById('cfg-lang') as HTMLButtonElement | null
   if (!btn) return
-  let lang: 'EN' | 'RU' = 'EN'
-  try {
-    const stored = localStorage.getItem(LANG_KEY)
-    if (stored === 'RU') lang = 'RU'
-  } catch { /* ignore */ }
+  initI18n()
   const update = () => {
+    const lang = getLang()
     btn.querySelector('span')!.textContent = lang
     btn.setAttribute('aria-pressed', String(lang === 'RU'))
     btn.title = `Language: ${lang} (click to switch)`
   }
   update()
   btn.addEventListener('click', () => {
-    lang = lang === 'EN' ? 'RU' : 'EN'
-    try { localStorage.setItem(LANG_KEY, lang) } catch { /* ignore */ }
+    toggleLang()
     update()
   })
 }
