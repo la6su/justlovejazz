@@ -198,7 +198,7 @@ body.uk-light .jlz-joystick__hint {
 }
 
 /* ------------------------------------------------------------------
-   Header / menu chrome
+   Header — dropbar navbar (Balou-inspired, tech-savvy, minimal)
    ------------------------------------------------------------------ */
 
 .tm-header {
@@ -207,125 +207,245 @@ body.uk-light .jlz-joystick__hint {
   left: 0;
   right: 0;
   z-index: 10001;
-  padding: 8px 0;
+  background: rgba(5, 5, 7, 0.6);
+  backdrop-filter: blur(12px) saturate(130%);
+  -webkit-backdrop-filter: blur(12px) saturate(130%);
+  border-bottom: 1px solid var(--jlz-color-border);
+}
+
+.tm-header .uk-navbar-container {
+  min-height: 56px;
+  background: transparent !important;
 }
 
 .jlz-brand {
   font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-#slider-nav {
-  width: 100%;
-}
-
-.jlz-nav-link {
-  display: block;
-  padding: 6px 14px;
-  font-size: 0.72rem;
-  font-weight: 500;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.45);
-  white-space: nowrap;
-  transition: color 0.2s ease;
-}
-
-.jlz-nav-link:hover {
-  color: rgba(255, 255, 255, 0.8);
+  font-size: 1rem;
+  color: var(--jlz-color-text);
   text-decoration: none;
 }
 
-li.uk-active .jlz-nav-link {
-  color: #fff;
+/* Nav items — compact, uppercase, tech feel */
+.jlz-navbar-nav > li > a {
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--jlz-color-text-muted);
+  padding: 0 1rem;
+  transition: color var(--jlz-duration-fast) ease;
 }
 
-/* Slider nav visible on ALL app pages (home + services + manifesto — all
-   have 3D + sections). Hidden on splash/landing/blog (no 3D, no sections). */
-.jlz-section-slider {
-  display: block;
+.jlz-navbar-nav > li > a:hover,
+.jlz-navbar-nav > li.uk-active > a {
+  color: var(--jlz-color-text);
+  text-decoration: none;
 }
 
-#jlz-menu-modal .uk-modal-dialog {
-  background: rgba(5, 5, 7, 0.94);
-  color: rgba(255, 255, 255, 0.86);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(18px) saturate(140%);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
+/* Theme button — compact icon circle */
+.jlz-theme-btn {
+  background: none;
+  border: 1px solid var(--jlz-color-border-strong);
+  border-radius: var(--jlz-radius-full);
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--jlz-color-text-muted);
+  transition: border-color var(--jlz-duration-fast) ease,
+              color var(--jlz-duration-fast) ease;
 }
 
-/* Modal theme-aware — uk-light body class flips to light variant */
-body.uk-light #jlz-menu-modal .uk-modal-dialog {
-  background: rgba(245, 245, 248, 0.94);
-  color: rgba(5, 5, 7, 0.86);
-  border: 1px solid rgba(5, 5, 7, 0.1);
-}
-
-body.uk-light #jlz-menu-modal .uk-text-meta,
-body.uk-light #jlz-menu-modal .jlz-main-menu-nav > li > a {
-  color: rgba(5, 5, 7, 0.55);
-}
-
-body.uk-light #jlz-menu-modal .jlz-main-menu-nav > li.uk-active > a,
-body.uk-light #jlz-menu-modal .jlz-main-menu-nav > li > a:hover {
-  color: #050507;
-}
-
-body.uk-light #jlz-menu-modal .jlz-theme-toggle .uk-button {
-  background: rgba(5, 5, 7, 0.04);
-  border-color: rgba(5, 5, 7, 0.12);
-  color: rgba(5, 5, 7, 0.7);
-}
-
-body.uk-light #jlz-menu-modal .jlz-theme-toggle .uk-button:hover {
-  background: rgba(5, 5, 7, 0.08);
-  border-color: rgba(5, 5, 7, 0.2);
-  color: #050507;
-}
-
-body.uk-light #jlz-menu-modal .jlz-theme-toggle .uk-button.uk-active {
-  background: var(--jlz-color-accent);
-  color: #fff;
+.jlz-theme-btn:hover,
+.jlz-theme-btn--active {
   border-color: var(--jlz-color-accent);
+  color: var(--jlz-color-accent);
 }
 
-.jlz-main-menu-nav > li > a {
-  font-size: clamp(2rem, 7vw, 5rem);
-  line-height: 1;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.55);
+/* Mobile menu button — same style as theme btn */
+.jlz-menu-btn {
+  background: none;
+  border: 1px solid var(--jlz-color-border-strong);
+  border-radius: var(--jlz-radius-full);
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--jlz-color-text-muted);
+  transition: border-color var(--jlz-duration-fast) ease;
 }
 
-.jlz-main-menu-nav > li.uk-active > a,
-.jlz-main-menu-nav > li > a:hover {
-  color: #fff;
+.jlz-menu-btn:hover {
+  border-color: var(--jlz-color-accent);
+  color: var(--jlz-color-accent);
 }
 
-/* Secret section nav — smaller font than main menu, distinct styling. */
-.jlz-secret-nav > li > a {
-  font-size: 1.25rem;
-  line-height: 1.4;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.55);
-  transition: color 0.2s ease;
+/* Dropbar — full-width stretch panel (Balou-inspired multi-column) */
+.uk-dropbar {
+  background: rgba(5, 5, 7, 0.95);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border-bottom: 1px solid var(--jlz-color-border);
+  border-top: 1px solid var(--jlz-color-border);
+  padding: 2rem 0;
 }
 
-.jlz-secret-nav > li > a:hover {
-  color: #fff;
+.jlz-dropbar-grid {
+  gap: 2rem;
+  align-items: stretch;
+}
+
+/* Sections list — title + subtitle per item (Balou pattern) */
+.jlz-dropbar-sections {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.jlz-dropbar-sections li {
+  border-bottom: 1px solid var(--jlz-color-border);
+}
+
+.jlz-dropbar-sections li:last-child {
+  border-bottom: none;
+}
+
+.jlz-dropbar-sections a {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas: "num title" "num subtitle";
+  column-gap: 1rem;
+  row-gap: 0.1rem;
+  padding: 0.875rem 0;
+  text-decoration: none;
+  transition: color var(--jlz-duration-fast) ease;
+}
+
+.jlz-dropbar__num {
+  grid-area: num;
+  font-family: 'Inter', 'SF Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  color: var(--jlz-color-text-subtle);
+  align-self: center;
+}
+
+.jlz-dropbar__title {
+  grid-area: title;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--jlz-color-text);
+}
+
+.jlz-dropbar__subtitle {
+  grid-area: subtitle;
+  font-size: 0.75rem;
+  color: var(--jlz-color-text-muted);
+}
+
+.jlz-dropbar-sections a:hover .jlz-dropbar__title {
+  color: var(--jlz-color-accent);
+}
+
+.jlz-dropbar-sections a:hover .jlz-dropbar__num {
+  color: var(--jlz-color-accent);
+}
+
+/* Featured CTA block — right column (Balou promotional pattern) */
+.jlz-dropbar-featured {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  background: color-mix(in srgb, var(--jlz-color-accent) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--jlz-color-accent) 25%, transparent);
+  border-radius: var(--jlz-radius-md);
+  text-decoration: none;
+  height: 100%;
+  transition: background var(--jlz-duration-fast) ease,
+              border-color var(--jlz-duration-fast) ease;
+}
+
+.jlz-dropbar-featured:hover {
+  background: color-mix(in srgb, var(--jlz-color-accent) 20%, transparent);
+  border-color: color-mix(in srgb, var(--jlz-color-accent) 40%, transparent);
   text-decoration: none;
 }
 
-.jlz-secret-nav__hint {
-  opacity: 0.5;
+.jlz-dropbar-featured__label {
+  font-family: 'Inter', 'SF Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--jlz-color-accent);
 }
 
-body.uk-light .jlz-secret-nav > li > a {
-  color: rgba(5, 5, 7, 0.55);
+.jlz-dropbar-featured__title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--jlz-color-text);
 }
 
-body.uk-light .jlz-secret-nav > li > a:hover {
-  color: #050507;
+.jlz-dropbar-featured__subtitle {
+  font-size: 0.8rem;
+  color: var(--jlz-color-text-muted);
+  line-height: 1.4;
+}
+
+.jlz-dropbar-featured__arrow {
+  margin-top: auto;
+  font-size: 1.2rem;
+  color: var(--jlz-color-accent);
+}
+
+/* Contact dropbar — simple centered links */
+.jlz-dropbar-contact {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  gap: 2rem;
+}
+
+.jlz-dropbar-contact a {
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  color: var(--jlz-color-text-muted);
+  text-decoration: none;
+  transition: color var(--jlz-duration-fast) ease;
+}
+
+.jlz-dropbar-contact a:hover {
+  color: var(--jlz-color-accent);
+}
+
+/* Light theme header + dropbar */
+body.uk-light .tm-header {
+  background: rgba(245, 245, 248, 0.6);
+  border-bottom-color: rgba(5, 5, 7, 0.1);
+}
+
+body.uk-light .jlz-brand {
+  color: var(--jlz-color-text);
+}
+
+body.uk-light .uk-dropbar {
+  background: rgba(245, 245, 248, 0.95);
+  border-color: rgba(5, 5, 7, 0.1);
+}
+
+body.uk-light .jlz-dropbar-sections li {
+  border-bottom-color: rgba(5, 5, 7, 0.08);
 }
 
 /* Theme toggle — single button (Auto ↔ Inverse). */
@@ -493,7 +613,7 @@ body.uk-light .jlz-secret-nav > li > a:hover {
   gap: var(--jlz-space-3);
   pointer-events: none;
   opacity: 0.7;
-  margin-bottom: var(--jlz-dock-height);
+  margin-bottom: calc(var(--jlz-joystick-size) + var(--jlz-space-6));
   color: rgba(5, 5, 7, 0.7);
 }
 
@@ -1225,132 +1345,27 @@ body.uk-light .jlz-eyebrow {
    duplicate. Use uk-card-default uk-card-hover in templates.) */
 
 /* ------------------------------------------------------------------
-   Compact dock — single row bottom bar + joystick overlay
-   Mobile-first: brand + nav (desktop) + menu button.
-   Joystick sits on top, centered. Contacts in modal (not footer).
+   Joystick — sole bottom UI element (minimalism).
+   Footer/dock removed entirely. Joystick floats at bottom center.
    ------------------------------------------------------------------ */
 
-.jlz-dock {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 50;
-  background: rgba(5, 5, 7, 0.7);
-  backdrop-filter: blur(12px) saturate(130%);
-  -webkit-backdrop-filter: blur(12px) saturate(130%);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.jlz-dock__bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: var(--jlz-dock-height);
-  padding: 0 1rem;
-  max-width: 1440px;
-  margin: 0 auto;
-  gap: 1rem;
-}
-
-.jlz-dock__brand .jlz-brand {
-  font-size: 0.9rem;
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: #fff;
-  text-decoration: none;
-}
-
-.jlz-dock__nav {
-  display: flex;
-  gap: 1.5rem;
-  flex: 1;
-  justify-content: center;
-}
-
-.jlz-dock__nav a {
-  font-size: 0.75rem;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--jlz-color-text-muted);
-  text-decoration: none;
-  transition: color var(--jlz-duration-fast) ease;
-}
-
-.jlz-dock__nav a:hover,
-.jlz-dock__nav a[aria-current="page"] {
-  color: var(--jlz-color-text);
-}
-
-.jlz-dock__menu-btn {
-  background: none;
-  border: 1px solid var(--jlz-color-border-strong);
-  border-radius: var(--jlz-radius-full);
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: var(--jlz-color-text);
-  transition: border-color var(--jlz-duration-fast) ease;
-  flex-shrink: 0;
-}
-
-.jlz-dock__menu-btn:hover {
-  border-color: var(--jlz-color-accent);
-}
-
-/* Joystick — position:fixed, centered, sits ON the dock bar.
-   bottom = dock height + small gap so the joystick base visually
-   rests on the bar, not floating above it. */
 .jlz-joystick {
   position: fixed;
-  bottom: calc(var(--jlz-dock-height) + var(--jlz-space-3));
+  bottom: calc(var(--jlz-space-6) + env(safe-area-inset-bottom, 0px));
   left: 50%;
   transform: translateX(-50%);
   z-index: 100;
 }
 
-/* Light theme dock variant */
-body.uk-light .jlz-dock {
-  background: rgba(245, 245, 248, 0.7);
-  border-top-color: rgba(5, 5, 7, 0.08);
-}
-
-body.uk-light .jlz-dock__nav a {
-  color: var(--jlz-color-text-muted);
-}
-
-body.uk-light .jlz-dock__brand .jlz-brand {
-  color: #050507;
-}
-
-/* Reserve bottom space on ALL pages so dock doesn't cover content.
-   Total dock height = tools(70px) + footer(~48px) ≈ 118px + safe area */
+/* Reserve bottom space so joystick doesn't cover content */
 .jlz-page-section,
 #spa-content section[data-section] {
-  padding-bottom: calc(130px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(var(--jlz-joystick-size) + var(--jlz-space-8) + env(safe-area-inset-bottom, 0px));
 }
 
 @media (max-width: 640px) {
-  .jlz-dock__footer {
-    padding: 0.5rem 0.75rem;
-  }
-
-  .jlz-dock__copy {
-    display: none;
-  }
-
-  .jlz-dock__footer-inner {
-    gap: 0.5rem;
-  }
-
-  /* On mobile, joystick is slightly smaller + closer to bottom */
   .jlz-joystick {
-    bottom: calc(50px + 30px);
+    bottom: calc(var(--jlz-space-4) + env(safe-area-inset-bottom, 0px));
   }
 
   .jlz-joystick__base {
