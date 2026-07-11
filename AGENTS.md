@@ -15,6 +15,7 @@ Single-page application. **6 SPA routes** (one HTML entry: `index.html`), each w
 | [STATUS.md](docs/STATUS.md) | Canonical state | Third — full current state |
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Modules, render path, sections, events | Structure changes |
 | [RULES.md](docs/RULES.md) | Hard rules with bug provenance | **Before changing code** |
+| [SANDBOX.md](docs/SANDBOX.md) | Dev-server + Agent Browser verify in GLM sandbox | **Before running `vite dev` / browser verify** |
 | [UIKIT3.md](docs/UIKIT3.md) | UIKit theming patterns + lessons | UI / theme changes |
 | [CHANGELOG.md](docs/CHANGELOG.md) | Recent changes (latest 2 entries) | History |
 
@@ -211,3 +212,8 @@ bun run type-check   # 0 errors (strict + noUncheckedIndexedAccess)
 bun run build        # ~3s
 bun run test:unit    # 9 tests (EventBus 5 + Noise 2 + motionPolicy 2)
 ```
+
+**Browser verify (Agent Browser) in the GLM sandbox:** see
+[SANDBOX.md](docs/SANDBOX.md) — background processes die between Bash calls,
+localhost is unreachable from the browser, and `allowedHosts` must be
+temporarily flipped. The single-command recipe there avoids all 5 gotchas.
