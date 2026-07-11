@@ -15,10 +15,11 @@ export class NoiseText {
   private static instances = new WeakMap<HTMLElement, NoiseText>()
 
   private readonly el: HTMLElement
-  /** The target text to reveal + restore after animation. Set in show(). */
+  /** The clean target text to reveal + restore after animation. */
   private text = ''
   /** Snapshot of el.textContent BEFORE any animation — safety fallback
-   *  to guarantee we can always restore the original. */
+   *  to guarantee we can always restore the original. Re-snapshotted on
+   *  every show() call (in case el was mutated externally between runs). */
   private originalText = ''
   private noise = DEFAULT_NOISE
   private rafId: number | null = null
@@ -28,7 +29,6 @@ export class NoiseText {
 
   private constructor(el: HTMLElement) {
     this.el = el
-    // Snapshot original text on first construct (before any animation)
     this.originalText = el.textContent || ''
   }
 
@@ -45,14 +45,25 @@ export class NoiseText {
    *  dur: seconds. sourceText: text to reveal (defaults to el.textContent
    *  or originalText fallback). noise: optional charset for trailing symbols. */
   show(dur: number = 0.6, sourceText?: string, noise?: string): void {
+    // Snapshot current text BEFORE clearing (in case el has the clean text
+    // from a previous completed animation or external mutation).
+    const currentText = this.el.textContent || ''
     this.stopAnimation()
-    // Resolve target text: explicit sourceText > current el text > original snapshot
-    const resolved = sourceText ?? (this.el.textContent?.trim() || this.originalText)
-    if (!resolved || resolved.length === 0) return
-    this.text = resolved
     if (noise) this.noise = noise
 
-    this.dur = dur * 1000
+    // Resolve target text: explicit sourceText > current el text (if non-empty
+    // and not mid-animation noise) > original snapshot
+    let resolved = sourceText
+    if (!resolved) {
+      // If current text looks like clean text (not noise), use it
+      resolved = currentText.length > 0 ? currentText : this.originalText
+    }
+    if (!resolved || resolved.length === 0) return
+
+    this.text = resolved
+    this.originalText = this.originalText || resolved
+
+    this.dur = Math.max(100, dur * 1000)
     this.running = true
     this.start = performance.now()
     this.el.setAttribute('data-visible', 'true')
@@ -60,21 +71,19 @@ export class NoiseText {
     this.rafId = requestAnimationFrame(this.tick)
   }
 
-  /** Stop animation and restore the target text immediately. */
+  /** Stop animation and restore the clean text immediately. */
   hide(): void {
     this.stopAnimation()
-    this.el.textContent = this.text || this.originalText
     this.el.removeAttribute('data-visible')
   }
 
   private tick = (ts: number): void => {
     if (!this.running) return
-    const t = (ts - this.start) / this.dur
+    const elapsed = ts - this.start
+    const t = elapsed / this.dur
     if (t >= 1) {
-      // Animation complete — restore the final clean text
-      this.el.textContent = this.text
-      this.running = false
-      this.rafId = null
+      // Animation complete — finalize with clean text
+      this.finalize()
       return
     }
 
@@ -95,6 +104,18 @@ export class NoiseText {
     this.rafId = requestAnimationFrame(this.tick)
   }
 
+  /** Finalize animation — restore the clean target text. Called when
+   *  animation completes naturally (t >= 1). Guarantees el shows the
+   *  final clean text, never stuck on noise symbols. */
+  private finalize(): void {
+    this.running = false
+    if (this.rafId !== null) {
+      cancelAnimationFrame(this.rafId)
+      this.rafId = null
+    }
+    this.el.textContent = this.text
+  }
+
   /** Stop the rAF loop and restore the target text (cancel mid-animation). */
   private stopAnimation(): void {
     this.running = false
@@ -102,7 +123,7 @@ export class NoiseText {
       cancelAnimationFrame(this.rafId)
       this.rafId = null
     }
-    // Restore target text so el never gets stuck showing noise symbols
+    // Restore clean text so el never gets stuck showing noise symbols
     if (this.text) {
       this.el.textContent = this.text
     }
