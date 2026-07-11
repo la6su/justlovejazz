@@ -12,7 +12,7 @@
 //   4                → 04 Simplicity
 //   5 (secret right) → 05 Process
 
-import { contentSection, contentTop, contentBottom } from '../../sections/_shared/constants'
+import { sectionShell, contentTop, contentBottom } from '../../sections/_shared/constants'
 import { FOOTER } from '../../sections/_shared/footer'
 
 interface Principle {
@@ -96,33 +96,33 @@ export function manifestoPage(): string {
   return `
     <article class="jlz-page" data-page-view="manifesto">
       <!-- 0: SECRET LEFT → 06 Future -->
-      ${contentSection('manifesto-future',
+      ${sectionShell('manifesto-future',
         contentTop(p6!.num, p6!.title, p6!.lead, 'large'),
         contentBottom(`${principleDesc(p6!.desc)}${principleReadMore(p6!.href)}${secretHint('left')}`)
       )}
       <!-- 1: INTRO (start, active) → 01 Purpose -->
-      ${contentSection('manifesto-01',
+      ${sectionShell('manifesto-01',
         contentTop(p1!.num, p1!.title, p1!.lead, 'large'),
         contentBottom(`${principleDesc(p1!.desc)}${principleReadMore(p1!.href)}`),
-        true
+        'content', true
       )}
       <!-- 2: → 02 Clarity -->
-      ${contentSection('manifesto-02',
+      ${sectionShell('manifesto-02',
         contentTop(p2!.num, p2!.title, p2!.lead, 'large'),
         contentBottom(`${principleDesc(p2!.desc)}${principleReadMore(p2!.href)}`)
       )}
       <!-- 3: → 03 Emotion -->
-      ${contentSection('manifesto-03',
+      ${sectionShell('manifesto-03',
         contentTop(p3!.num, p3!.title, p3!.lead, 'large'),
         contentBottom(`${principleDesc(p3!.desc)}${principleReadMore(p3!.href)}`)
       )}
       <!-- 4: → 04 Simplicity -->
-      ${contentSection('manifesto-04',
+      ${sectionShell('manifesto-04',
         contentTop(p4!.num, p4!.title, p4!.lead, 'large'),
         contentBottom(`${principleDesc(p4!.desc)}${principleReadMore(p4!.href)}`)
       )}
       <!-- 5: SECRET RIGHT → 05 Process -->
-      ${contentSection('manifesto-05',
+      ${sectionShell('manifesto-05',
         contentTop(p5!.num, p5!.title, p5!.lead, 'large'),
         contentBottom(`${principleDesc(p5!.desc)}${principleReadMore(p5!.href)}${secretHint('right')}`)
       )}

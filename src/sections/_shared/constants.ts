@@ -68,54 +68,41 @@ export function sectionBottom(content: string): string {
   `
 }
 
-/** Full section wrapper with Apple Watch layout (TOP / 3D / BOTTOM).
- *  Height is handled by CSS `100dvh` on `#spa-content section[data-section]`
- *  + `.jlz-page-section { min-height: 100dvh }` — no uk-height-viewport needed
- *  (avoid double computation: UIkit JS vs native CSS, diverges on mobile URL-bar).
- *  align: 'center' (default) | 'left' — left creates editorial asymmetry vs
- *  the centered sections, breaking visual monotony (design audit finding). */
+/** Unified section wrapper — ONE function for ALL pages (home + content).
+ *  Apple Watch layout: TOP (eyebrow + title + lead) / 3D CENTER / BOTTOM (content).
+ *
+ *  mode: 'home' (3D cube face, data-section, data-dynamic-content overlay)
+ *        | 'content' (page section, data-page-section, no overlay)
+ *  isActive: only for content mode — toggles .section-active on initial section.
+ *  extraAttrs: additional attributes on the <section> (e.g. project-overlay id).
+ *
+ *  UIKit3: uk-section-small + uk-section-large@m (responsive padding),
+ *  uk-container-expand, uk-flex uk-flex-between uk-height-1-1 (Apple Watch
+ *  TOP/CENTER/BOTTOM layout). align via uk-text-left/uk-text-center in topHtml. */
 export function sectionShell(
   id: string,
-  dataSection: string,
   topHtml: string,
   bottomHtml: string,
+  mode: 'home' | 'content' = 'content',
+  isActive: boolean = false,
   extraAttrs: string = '',
-  align: 'center' | 'left' = 'center',
 ): string {
-  const alignClass = align === 'left' ? 'uk-text-left' : 'uk-text-center'
+  const activeClass = mode === 'content' && isActive ? 'section-active' : ''
+  const pageClass = mode === 'content' ? 'jlz-page-section' : ''
+  const sectionAttr = mode === 'home' ? `data-section="${id}"` : `data-page-section="${id}"`
+  const overlayWrapper = mode === 'home'
+    ? `<div class="uk-position-cover" data-dynamic-content>`
+    : ''
+  const overlayClose = mode === 'home' ? '</div>' : ''
+
   return `
-    <section
-             class="uk-section uk-section-small uk-section-large@m"
-             id="section-${id}" data-section="${dataSection}" ${extraAttrs}>
-      <div class="uk-position-cover" data-dynamic-content>
-        <div class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between ${alignClass} uk-height-1-1">
+    <section class="${pageClass} ${activeClass} uk-section uk-section-small uk-section-large@m" id="section-${id}" ${sectionAttr} ${extraAttrs}>
+      ${overlayWrapper}
+        <div class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-text-center uk-height-1-1">
           ${topHtml}
           ${bottomHtml}
         </div>
-      </div>
-    </section>
-  `
-}
-
-/** Content page section wrapper — same Apple Watch layout as sectionShell,
- *  but uses data-page-section (for JoystickNav page-mode navigation)
- *  instead of data-section (home cube-face navigation). No data-dynamic-content
- *  wrapper (content pages don't have 3D scene groups per section).
- *
- *  Structure: TOP (eyebrow + title + lead) / 3D CENTER (transparent) / BOTTOM (content).
- *  Same visual rhythm as home sections — consistent across the site. */
-export function contentSection(
-  id: string,
-  topHtml: string,
-  bottomHtml: string,
-  isActive: boolean = false,
-): string {
-  return `
-    <section class="jlz-page-section ${isActive ? 'section-active' : ''} uk-section uk-section-small uk-section-large@m" data-page-section="${id}">
-      <div class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-text-center uk-height-1-1">
-        ${topHtml}
-        ${bottomHtml}
-      </div>
+      ${overlayClose}
     </section>
   `
 }

@@ -12,7 +12,7 @@
 //   4                → 04 AI Systems
 //   5 (secret right) → 06 PLAYGROUND
 
-import { contentSection, contentTop, contentBottom } from '../../sections/_shared/constants'
+import { sectionShell, contentTop, contentBottom } from '../../sections/_shared/constants'
 import { FOOTER } from '../../sections/_shared/footer'
 
 interface Service {
@@ -99,33 +99,33 @@ export function servicesPage(): string {
   return `
     <article class="jlz-page" data-page-view="services">
       <!-- 0: SECRET LEFT → 05 LAB -->
-      ${contentSection('services-lab',
+      ${sectionShell('services-lab',
         contentTop(s5!.num, s5!.title, s5!.lead, 'large'),
         contentBottom(`${serviceDesc(s5!.desc)}${serviceExplore(s5!.href)}${secretHint('left')}`)
       )}
       <!-- 1: INTRO (start, active) → 01 Creative Direction -->
-      ${contentSection('services-01',
+      ${sectionShell('services-01',
         contentTop(s1!.num, s1!.title, s1!.lead, 'large'),
         contentBottom(`${serviceDesc(s1!.desc)}${serviceExplore(s1!.href)}`),
-        true
+        'content', true
       )}
       <!-- 2: → 02 Interactive Development -->
-      ${contentSection('services-02',
+      ${sectionShell('services-02',
         contentTop(s2!.num, s2!.title, s2!.lead, 'large'),
         contentBottom(`${serviceDesc(s2!.desc)}${serviceExplore(s2!.href)}`)
       )}
       <!-- 3: → 03 Motion & Realtime -->
-      ${contentSection('services-03',
+      ${sectionShell('services-03',
         contentTop(s3!.num, s3!.title, s3!.lead, 'large'),
         contentBottom(`${serviceDesc(s3!.desc)}${serviceExplore(s3!.href)}`)
       )}
       <!-- 4: → 04 AI Systems -->
-      ${contentSection('services-04',
+      ${sectionShell('services-04',
         contentTop(s4!.num, s4!.title, s4!.lead, 'large'),
         contentBottom(`${serviceDesc(s4!.desc)}${serviceExplore(s4!.href)}`)
       )}
       <!-- 5: SECRET RIGHT → 06 PLAYGROUND -->
-      ${contentSection('services-playground',
+      ${sectionShell('services-playground',
         contentTop(s6!.num, s6!.title, s6!.lead, 'large'),
         contentBottom(`${serviceDesc(s6!.desc)}${serviceExplore(s6!.href)}${secretHint('right')}`)
       )}

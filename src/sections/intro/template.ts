@@ -1,9 +1,26 @@
-// src/sections/intro/template.ts — Face 1: Philosophy (front face +Z, start section)
+// src/sections/intro/template.ts — Face 1: Studio (front face +Z, start section)
 // Hero tier — uk-heading-xlarge. Active on load.
-// data-section="intro" matches WorldConfig domSection (3D sync).
-import { HOME_SECTIONS, homeSection } from '../_shared/home-data'
+import { REVEAL, sectionShell } from '../_shared/constants'
 
 export function introSection(): string {
-  // HOME_SECTIONS[1] = 01 Philosophy (active on load)
-  return homeSection(HOME_SECTIONS[1]!, 'intro', 'xlarge')
+  const top = `
+    <div class="jlz-section-top uk-text-center uk-flex uk-flex-column uk-flex-middle" ${REVEAL}>
+      <span class="jlz-eyebrow" data-eyebrow data-eyebrow-text="01">01</span>
+      <h2 class="studio-title uk-heading-xlarge uk-margin-small-top uk-margin-remove-bottom">Studio</h2>
+      <p class="uk-text-lead uk-margin-small-top">Remote · EU · since 2019.</p>
+    </div>
+  `
+  const bottom = `
+    <div ${REVEAL}>
+      <div class="jlz-service-desc uk-margin-small-top">
+        <p class="uk-text-meta uk-margin-remove">A small studio crafting expressive browser experiences.</p>
+        <p class="uk-text-meta uk-margin-remove">Glass · motion · light — powered by WebGPU.</p>
+      </div>
+      <a href="/app/services" class="jlz-service-explore uk-button uk-button-default uk-button-small uk-margin-top">
+        <span class="jlz-service-explore__dot" aria-hidden="true"></span>
+        Explore
+      </a>
+    </div>
+  `
+  return sectionShell('intro', top, bottom, 'home')
 }
