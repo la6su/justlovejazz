@@ -90,7 +90,8 @@
         pointer-events: none;
       }
 
-      /* SVG squares — centered cover, scales on the viewport */
+      /* SVG squares — centered cover, ABOVE curtains so always visible.
+         z-index 10004 — above curtains (10001), seam (10002), content (10000), config (10003). */
       .jlz-splash-svg {
         position: absolute;
         top: 50%;
@@ -99,7 +100,7 @@
         width: min(100vw, 100vh);
         height: min(100vw, 100vh);
         pointer-events: none;
-        z-index: 9997;
+        z-index: 10004;
         transition: transform 0.8s cubic-bezier(0.65, 0, 0.35, 1),
                     opacity 0.6s ease 0.2s;
       }
@@ -126,7 +127,7 @@
         0% { opacity: 0; transform: scale(0.3); }
         100% { opacity: 1; transform: scale(1); }
       }
-      /* OUT animation — synchronized with CRT curtain split (0.8s). */
+      /* OUT animation — SVG above curtains, scales out as curtains split underneath. */
       #jlz-app-loader.fade-out .jlz-splash-svg {
         transform: translate(-50%, -50%) scale(0.6);
         opacity: 0;
