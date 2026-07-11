@@ -1100,6 +1100,37 @@ body.uk-light .jlz-eyebrow {
   left: 50%;
   transform: translateX(-50%);
   z-index: 100;
+  /* Flex row: left dotnav | joystick base | right dotnav (symmetry) */
+  display: flex;
+  align-items: center;
+  gap: var(--jlz-space-4);
+}
+
+/* Dotnav timeline — minimalist section progress (UIKit3 uk-dotnav base).
+   Vertical orientation (column) so dots stack vertically beside the joystick.
+   UIKit3 uk-dotnav provides dot styling; we override layout + colors. */
+.jlz-joystick-dotnav {
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.jlz-joystick-dotnav li a {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--jlz-radius-full);
+  background: var(--jlz-color-border-strong);
+  transition: background var(--jlz-duration-fast) ease,
+              transform var(--jlz-duration-fast) ease;
+}
+
+.jlz-joystick-dotnav li.uk-active a {
+  background: var(--jlz-color-accent);
+  transform: scale(1.4);
+}
+
+.jlz-joystick-dotnav li a:hover {
+  background: var(--jlz-color-text-muted);
 }
 
 /* (Bottom padding now handled by .jlz-section-bottom — joystick clearance) */
@@ -1107,6 +1138,7 @@ body.uk-light .jlz-eyebrow {
 @media (max-width: 640px) {
   .jlz-joystick {
     bottom: calc(var(--jlz-space-4) + env(safe-area-inset-bottom, 0px));
+    gap: var(--jlz-space-2);
   }
 
   .jlz-joystick__base {
@@ -1117,6 +1149,11 @@ body.uk-light .jlz-eyebrow {
   .jlz-joystick__ball {
     width: 36px;
     height: 36px;
+  }
+
+  /* Hide dotnav on mobile — joystick-only for minimal mobile footprint */
+  .jlz-joystick-dotnav {
+    display: none;
   }
 }
 

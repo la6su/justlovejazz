@@ -51,6 +51,8 @@ export class JoystickNav {
   private _side: SideState = 'center'
   private _sectionCount: number
   public _progress = 0 // kept for Experience API compat
+  private _dotnavLeft!: HTMLElement
+  private _dotnavRight!: HTMLElement
   private _onSectionChange: ((index: number) => void) | null = null
   private _onActiveChange: ((active: boolean) => void) | null = null
   private _wasActive = false
@@ -98,10 +100,20 @@ export class JoystickNav {
     this._ball.className = 'jlz-joystick__ball'
     this._base.appendChild(this._ball)
 
+    // Dotnav timeline — minimalist section progress indicator (UIKit3 uk-dotnav).
+    // Shows 4 main sections (1-4); secret sections (0=Lab, 5=Process) are NOT
+    // shown — they're hidden by design. Active dot syncs via onSectionChange.
+    // Positioned left of the joystick; mirrored copy on the right for symmetry.
+    this._dotnavLeft = this._buildDotnav()
+    this._dotnavRight = this._buildDotnav()
+    this.el.appendChild(this._dotnavLeft)
+    this.el.appendChild(this._dotnavRight)
+
     this.addEventListeners()
     // Start on section 1 (intro) — same as home (Lab=0 is secret, Intro=1 is start).
     // On content pages: section 0 = secret left, 1 = intro (start), 5 = secret right.
     this._syncPageSection(1)
+    this._updateDotnav()
   }
 
   /** Current WorldConfig section index (what Experience/World reads). */
@@ -333,6 +345,7 @@ export class JoystickNav {
   /** Fire section change callback with current WorldConfig index. */
   private _fireSectionChange(): void {
     this._onSectionChange?.(this._currentSection)
+    this._updateDotnav()
     this._setActive(true)
     setTimeout(() => this._setActive(false), 400)
   }
@@ -354,6 +367,43 @@ export class JoystickNav {
 
   onActiveChange(cb: (active: boolean) => void): void {
     this._onActiveChange = cb
+  }
+
+  /** Build a UIKit3 uk-dotnav element for the 4 main sections (1-4).
+   *  Secret sections (0=Lab, 5=Process) are NOT shown — hidden by design. */
+  private _buildDotnav(): HTMLElement {
+    const nav = document.createElement('ul')
+    nav.className = 'uk-dotnav jlz-joystick-dotnav'
+    nav.setAttribute('aria-label', 'Section progress')
+    // 4 dots for main sections (idx 1-4)
+    for (let i = 1; i <= 4; i++) {
+      const li = document.createElement('li')
+      const a = document.createElement('a')
+      a.href = '#'
+      a.setAttribute('role', 'button')
+      a.setAttribute('aria-label', `Go to section ${i}`)
+      a.addEventListener('click', (e) => {
+        e.preventDefault()
+        this.goToSection(i)
+      })
+      li.appendChild(a)
+      nav.appendChild(li)
+    }
+    return nav
+  }
+
+  /** Sync dotnav active state to current section. Called on section change.
+   *  Secret sections (0, 5) deactivate all dots (no dot for them). */
+  private _updateDotnav(): void {
+    const mainIdx = this._side === 'center' ? this._mainSection : -1
+    for (const nav of [this._dotnavLeft, this._dotnavRight]) {
+      if (!nav) continue
+      const items = nav.querySelectorAll('li')
+      items.forEach((li, i) => {
+        // dot i maps to section i+1 (dots 0-3 = sections 1-4)
+        li.classList.toggle('uk-active', i + 1 === mainIdx)
+      })
+    }
   }
 
   private _setActive(active: boolean): void {
@@ -435,6 +485,10 @@ export class JoystickNav {
     // Sections 0 and 5 are "secret sides" — not in slider, map to -1 (no active).
     const sliderIdx = (nextIndex >= 1 && nextIndex <= 4) ? nextIndex : -1
     this._onSectionChange?.(sliderIdx)
+    // Update dotnav to reflect the active main section
+    this._mainSection = nextIndex
+    this._side = nextIndex === 0 ? 'lab' : nextIndex === 5 ? 'process' : 'center'
+    this._updateDotnav()
     window.dispatchEvent(new CustomEvent('jlz:page-section-change', {
       detail: { index: nextIndex, count: sections.length },
     }))
