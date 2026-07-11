@@ -11,7 +11,7 @@ export function worksSection(): string {
     </div>
   `
   const bottom = `
-    <div ${REVEAL}>
+    <div class="jlz-section-bottom" ${REVEAL}>
       <div class="jlz-service-desc uk-margin-small-top">
         <p class="uk-text-meta uk-margin-remove">Case studies.</p>
         <p class="uk-text-meta uk-margin-remove">Process. Results.</p>

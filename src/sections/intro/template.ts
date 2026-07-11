@@ -11,7 +11,7 @@ export function introSection(): string {
     </div>
   `
   const bottom = `
-    <div ${REVEAL}>
+    <div class="jlz-section-bottom" ${REVEAL}>
       <div class="jlz-service-desc uk-margin-small-top">
         <p class="uk-text-meta uk-margin-remove">A small studio crafting expressive browser experiences.</p>
         <p class="uk-text-meta uk-margin-remove">Glass · motion · light — powered by WebGPU.</p>

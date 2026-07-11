@@ -11,7 +11,7 @@ export function processSection(): string {
     </div>
   `
   const bottom = `
-    <div ${REVEAL}>
+    <div class="jlz-section-bottom" ${REVEAL}>
       <p class="uk-text-meta uk-margin-small-top jlz-text-subtle">@ justlovejazz</p>
       <div class="uk-flex uk-flex-center uk-flex-wrap uk-margin-top jlz-flex-gap-small">
         <a href="mailto:hello@justlovejazz.com" class="jlz-service-explore uk-button uk-button-default uk-button-small">

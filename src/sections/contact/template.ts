@@ -11,7 +11,7 @@ export function contactSection(): string {
     </div>
   `
   const bottom = `
-    <div ${REVEAL}>
+    <div class="jlz-section-bottom" ${REVEAL}>
       <div class="jlz-service-desc uk-margin-small-top">
         <p class="uk-text-meta uk-margin-remove">Our principles.</p>
         <p class="uk-text-meta uk-margin-remove">Our way of thinking.</p>

@@ -11,7 +11,7 @@ export function aboutSection(): string {
     </div>
   `
   const bottom = `
-    <div ${REVEAL}>
+    <div class="jlz-section-bottom" ${REVEAL}>
       <div class="jlz-service-desc uk-margin-small-top">
         <p class="uk-text-meta uk-margin-remove">We cover the full cycle of digital products.</p>
         <p class="uk-text-meta uk-margin-remove">Explore our capabilities.</p>
