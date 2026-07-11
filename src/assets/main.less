@@ -1214,6 +1214,39 @@ body.uk-light .jlz-eyebrow {
   opacity: 0.7;
 }
 
+/* ── Service page (Apple Watch cube faces) — description + explore ──
+   Each cube face shows one service: TOP (num + title + lead via contentTop),
+   BOTTOM (description fragments + EXPLORE pill link). Mobile-first: concise
+   copy, stacked lines, touch-friendly explore button. Responsive via UIKit3
+   utilities; only the dot + pill shape need custom CSS. */
+.jlz-service-desc {
+  display: flex;
+  flex-direction: column;
+  gap: var(--jlz-space-2);
+  max-width: 34rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.jlz-service-explore {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: var(--jlz-radius-full);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.jlz-service-explore__dot {
+  display: inline-block;
+  width: 0.35rem;
+  height: 0.35rem;
+  border-radius: var(--jlz-radius-full);
+  background: var(--jlz-color-accent);
+}
+
 /* Flex gap utilities (UIkit uk-flex has no gap control).
    Used by: intro CTA button row, works drag hint, about stats row. */
 .jlz-flex-gap-small {

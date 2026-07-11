@@ -1,75 +1,133 @@
 // src/pages/content/services.ts — Services page (6 sections, cube-map layout)
-// Same structure as home: 0=secret, 1=intro(start), 2-4=main, 5=secret.
-// Vertical cycles 1-4, horizontal toggles 0/5 (secret sides).
+// Apple Watch layout: each cube face = one service.
+//   TOP: eyebrow (num) + title
+//   BOTTOM: description fragments + EXPLORE link
+// Left/right cube faces (0/5) are "secret" — LAB + PLAYGROUND experiments.
+//
+// Cube mapping:
+//   0 (secret left)  → 05 LAB
+//   1 (intro/start)  → 01 Creative Direction (active on load)
+//   2                → 02 Interactive Development
+//   3                → 03 Motion & Realtime
+//   4                → 04 AI Systems
+//   5 (secret right) → 06 PLAYGROUND
 
-import { contentSection, contentTop, contentBottom, processTimeline } from '../../sections/_shared/constants'
+import { contentSection, contentTop, contentBottom } from '../../sections/_shared/constants'
 import { FOOTER } from '../../sections/_shared/footer'
 
+interface Service {
+  num: string
+  title: string
+  lead: string
+  desc: string[]
+  href: string
+}
+
+const SERVICES: readonly Service[] = [
+  {
+    num: '01',
+    title: 'Creative Direction',
+    lead: 'From concept to visual identity.',
+    desc: [
+      'We design interfaces that feel like digital products, not websites.',
+      'Every interaction has purpose.',
+      'Every transition tells a story.',
+    ],
+    href: '/blog/glassmorphism-webgpu',
+  },
+  {
+    num: '02',
+    title: 'Interactive Development',
+    lead: 'Realtime experiences built with modern web technologies.',
+    desc: ['Performance comes first.', 'Motion follows purpose.'],
+    href: '/blog/on-demand-rendering',
+  },
+  {
+    num: '03',
+    title: 'Motion & Realtime',
+    lead: 'Motion is part of the interface. Not decoration.',
+    desc: ['Navigation.', 'Feedback.', 'Emotion.'],
+    href: '/blog/tsl-changes-everything',
+  },
+  {
+    num: '04',
+    title: 'AI Systems',
+    lead: 'Creative workflows powered by AI.',
+    desc: ['Generation.', 'Automation.', 'Iteration.'],
+    href: '/blog/undercurrent-webgpu-fluid',
+  },
+  {
+    num: '05',
+    title: 'LAB',
+    lead: 'Experiments. Always in progress.',
+    desc: ['A sandbox for shader, audio, and procedural R&D.'],
+    href: '/app',
+  },
+  {
+    num: '06',
+    title: 'PLAYGROUND',
+    lead: 'Nothing to sell. Just play.',
+    desc: ['Open experiments, half-broken demos, things we build for joy.'],
+    href: '/app',
+  },
+] as const
+
+/** Description fragments — each line a short sentence, stacked vertically.
+ *  Mobile-first: concise copy, generous line-height, muted color. */
+function serviceDesc(desc: readonly string[]): string {
+  return `<div class="jlz-service-desc uk-margin-small-top">${desc
+    .map((line) => `<p class="uk-text-meta uk-margin-remove">${line}</p>`)
+    .join('')}</div>`
+}
+
+/** EXPLORE link — pill button with accent dot. UIKit3 button base + custom. */
+function serviceExplore(href: string): string {
+  return `<a href="${href}" class="jlz-service-explore uk-button uk-button-default uk-button-small uk-margin-top">
+    <span class="jlz-service-explore__dot" aria-hidden="true"></span>
+    Explore
+  </a>`
+}
+
+/** Secret-section hint — which way to drag to return. */
+function secretHint(direction: 'left' | 'right'): string {
+  const arrow = direction === 'left' ? '← Drag right to return to services' : 'Drag left to return to services →'
+  return `<p class="uk-text-meta uk-margin-top jlz-text-subtle">${arrow}</p>`
+}
+
 export function servicesPage(): string {
-  const services = [
-    { num: '01', title: 'WebGPU 3D', desc: 'Real-time GPU rendering with TSL shaders. 60fps on mid-range hardware.' },
-    { num: '02', title: 'Spatial UI', desc: '3D-first interfaces with depth and presence. Beyond the flat screen.' },
-    { num: '03', title: 'Shader Art', desc: 'Glass, iridescence, fluid simulation. Hand-written GPU programs.' },
-    { num: '04', title: 'Performance', desc: 'On-demand rendering. Zero idle draw calls. Lighthouse-verified.' },
-  ]
-  const stack = [
-    { title: '3D', items: ['Three.js + TSL', 'WebGPU / WebGL2'] },
-    { title: 'UI', items: ['UIkit 3 + YooTheme Pro', 'TypeScript strict'] },
-    { title: 'Perf', items: ['On-demand render', 'Lighthouse CI'] },
-  ]
+  const [s1, s2, s3, s4, s5, s6] = SERVICES
   return `
     <article class="jlz-page" data-page-view="services">
-      <!-- 0: SECRET LEFT — hidden, reachable via horizontal drag -->
-      ${contentSection('services-secret-left',
-        contentTop('HIDDEN', 'The other side', 'Every cube has faces you rarely see. Drag right to return.'),
-        contentBottom(`<p class="uk-text-meta uk-margin-remove">← Drag right to return to services</p>`)
+      <!-- 0: SECRET LEFT → 05 LAB -->
+      ${contentSection('services-lab',
+        contentTop(s5!.num, s5!.title, s5!.lead, 'large'),
+        contentBottom(`${serviceDesc(s5!.desc)}${serviceExplore(s5!.href)}${secretHint('left')}`)
       )}
-      <!-- 1: INTRO (start, active) -->
-      ${contentSection('services-intro',
-        contentTop('SERVICES', 'What We Build', 'Real-time 3D for the web. WebGPU first, WebGL2 everywhere.', 'large'),
-        contentBottom(`<a href="mailto:hello@justlovejazz.com?subject=New%20project" class="uk-button uk-button-primary uk-button-large">Start a project</a>`),
+      <!-- 1: INTRO (start, active) → 01 Creative Direction -->
+      ${contentSection('services-01',
+        contentTop(s1!.num, s1!.title, s1!.lead, 'large'),
+        contentBottom(`${serviceDesc(s1!.desc)}${serviceExplore(s1!.href)}`),
         true
       )}
-      <!-- 2: Capabilities -->
-      ${contentSection('services-list',
-        contentTop('CAPABILITIES', 'Four disciplines'),
-        contentBottom(`
-          <div class="uk-grid uk-child-width-1-2@s uk-child-width-1-4@m" uk-grid>
-            ${services.map((s) => `
-              <div class="uk-card uk-card-default uk-card-body uk-card-hover uk-text-center">
-                <div class="uk-heading-large uk-margin-remove jlz-numeral">${s.num}</div>
-                <h3 class="uk-card-title uk-margin-small-top uk-margin-remove-bottom">${s.title}</h3>
-                <p class="uk-text-meta uk-margin-small-top">${s.desc}</p>
-              </div>
-            `).join('')}
-          </div>
-        `)
+      <!-- 2: → 02 Interactive Development -->
+      ${contentSection('services-02',
+        contentTop(s2!.num, s2!.title, s2!.lead, 'large'),
+        contentBottom(`${serviceDesc(s2!.desc)}${serviceExplore(s2!.href)}`)
       )}
-      <!-- 3: Stack -->
-      ${contentSection('services-stack',
-        contentTop('STACK', 'The toolbox'),
-        contentBottom(`
-          <div class="uk-grid uk-child-width-1-3@m" uk-grid>
-            ${stack.map((s) => `
-              <div class="uk-card uk-card-default uk-card-body">
-                <h3 class="uk-h5 uk-margin-small-bottom">${s.title}</h3>
-                <ul class="uk-list uk-list-divider uk-text-meta">
-                  ${s.items.map((item) => `<li>${item}</li>`).join('')}
-                </ul>
-              </div>
-            `).join('')}
-          </div>
-        `)
+      <!-- 3: → 03 Motion & Realtime -->
+      ${contentSection('services-03',
+        contentTop(s3!.num, s3!.title, s3!.lead, 'large'),
+        contentBottom(`${serviceDesc(s3!.desc)}${serviceExplore(s3!.href)}`)
       )}
-      <!-- 4: Process — shared vertical timeline (same as home + manifesto) -->
-      ${contentSection('services-process',
-        contentTop('PROCESS', 'How we ship'),
-        contentBottom(processTimeline())
+      <!-- 4: → 04 AI Systems -->
+      ${contentSection('services-04',
+        contentTop(s4!.num, s4!.title, s4!.lead, 'large'),
+        contentBottom(`${serviceDesc(s4!.desc)}${serviceExplore(s4!.href)}`)
       )}
-      <!-- 5: SECRET RIGHT — hidden, reachable via horizontal drag -->
-      ${contentSection('services-secret-right',
-        contentTop('HIDDEN', 'The other side', 'You reached the edge of the cube. Drag left to return.'),
-        contentBottom(`<p class="uk-text-meta uk-margin-remove">Drag left to return to services →</p>`)
+      <!-- 5: SECRET RIGHT → 06 PLAYGROUND -->
+      ${contentSection('services-playground',
+        contentTop(s6!.num, s6!.title, s6!.lead, 'large'),
+        contentBottom(`${serviceDesc(s6!.desc)}${serviceExplore(s6!.href)}${secretHint('right')}`)
       )}
     </article>
     ${FOOTER}
