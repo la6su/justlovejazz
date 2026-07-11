@@ -44,19 +44,19 @@ export type PageId = 'home' | 'services' | 'manifesto'
 // Every section follows: TOP (eyebrow + title) / 3D CENTER (transparent) / BOTTOM (UI panel)
 // These helpers generate the TUI-like wrapper structure.
 
-/** Generate the TOP header block — eyebrow (empty, populated by Subtitles
- *  via NoiseText on home sections) + title + optional lead text.
- *  headingTier: 'medium' (default, secondary sections) | 'large' (primary)
- *  | 'xlarge' (hero). Creates 3-tier visual hierarchy across sections. */
+/** Generate the TOP header block — eyebrow shows the section number (01-06)
+ *  as a console-like numeral with glitch reveal via NoiseText on section
+ *  change (home) or static (content pages). headingTier: 'medium' (default)
+ *  | 'large' (primary) | 'xlarge' (hero). */
 export function sectionTop(
-  _eyebrow: string,
+  eyebrow: string,
   title: string,
   lead?: string,
   headingTier: 'medium' | 'large' | 'xlarge' = 'medium',
 ): string {
   return `
     <div class="jlz-section-top uk-text-center uk-flex uk-flex-column uk-flex-middle" ${REVEAL}>
-      <span class="jlz-eyebrow" data-eyebrow></span>
+      <span class="jlz-eyebrow" data-eyebrow>${eyebrow}</span>
       <h2 class="studio-title uk-heading-${headingTier} uk-margin-small-top uk-margin-remove-bottom">${title}</h2>
       ${lead ? `<p class="uk-text-meta uk-margin-small-top">${lead}</p>` : ''}
     </div>

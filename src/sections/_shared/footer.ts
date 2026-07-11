@@ -1,35 +1,32 @@
-// src/sections/_shared/footer.ts — Unified dock (2-row: tools + footer)
+// src/sections/_shared/footer.ts — Compact dock (single row + joystick)
 //
+// Mobile-first, functional, navigation-focused.
 // Layout (bottom of screen, all pages):
-//   ┌──────────────────────────────────────┐
-//   │  TOOLS ROW  (joystick sits here)     │  ← .jlz-dock__tools
-//   ├──────────────────────────────────────┤
-//   │  FOOTER ROW (brand + social)         │  ← .jlz-dock__footer
-//   └──────────────────────────────────────┘
+//   ┌────────────────────────────────────────────────┐
+//   │ l@6   Home  Works  Services  Manifesto    ☰   │  ← single compact row
+//   └────────────────────────────────────────────────┘
+//             [joystick — position:fixed, centered, on top]
 //
-// The joystick is position:fixed (110px, centered, bottom anchored to the
-// tools row). It visually overlaps the tools row — its base sits ON the
-// tools bar. The tools row reserves space for it.
+// - Brand (left) + main menu nav (center, hidden on mobile) + menu toggle (right)
+// - Menu toggle opens UIMenu modal (contacts + theme toggle)
+// - Contact buttons moved to modal (not in footer)
+// - Joystick remains the primary cube-face navigation
 
 export const FOOTER = `
   <footer class="jlz-dock" data-footer role="contentinfo">
-    <!-- Tools row — joystick visually sits on top of this -->
-    <div class="jlz-dock__tools" id="jlz-dock-tools"></div>
-    <!-- Footer row — brand + copyright + social -->
-    <div class="jlz-dock__footer">
-      <div class="jlz-dock__footer-inner">
-        <div class="jlz-dock__brand uk-flex uk-flex-middle">
-          <a class="uk-navbar-item uk-logo jlz-brand" href="/app" aria-label="JUSTLOVEJAZZ home">l@6</a>
-          <span class="uk-text-meta jlz-dock__copy">© ${new Date().getFullYear()} JUSTLOVEJAZZ</span>
-        </div>
-        <div class="jlz-dock__social">
-          <ul class="uk-iconnav">
-            <li><a href="https://github.com/la6su" target="_blank" rel="noopener" aria-label="GitHub" uk-icon="icon: github"></a></li>
-            <li><a href="https://x.com/justlovejazz" target="_blank" rel="noopener" aria-label="Twitter" uk-icon="icon: twitter"></a></li>
-            <li><a href="mailto:hello@justlovejazz.com" aria-label="Email" uk-icon="icon: mail"></a></li>
-          </ul>
-        </div>
+    <div class="jlz-dock__bar">
+      <div class="jlz-dock__brand">
+        <a class="uk-logo jlz-brand" href="/app" aria-label="JUSTLOVEJAZZ home">l@6</a>
       </div>
+      <nav class="jlz-dock__nav uk-visible@s" aria-label="Main navigation">
+        <a href="/app" data-nav-link="home">Home</a>
+        <a href="/app/services" data-nav-link="services">Services</a>
+        <a href="/app/manifesto" data-nav-link="manifesto">Manifesto</a>
+        <a href="/blog" data-nav-link="blog">Blog</a>
+      </nav>
+      <button class="jlz-dock__menu-btn" type="button" uk-toggle="target: #jlz-menu-modal" aria-label="Open menu">
+        <span uk-icon="icon: menu; ratio: 1.1" aria-hidden="true"></span>
+      </button>
     </div>
   </footer>
 `

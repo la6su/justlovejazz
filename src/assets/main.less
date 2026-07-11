@@ -207,51 +207,13 @@ body.uk-light .jlz-joystick__hint {
   left: 0;
   right: 0;
   z-index: 10001;
-  padding: 10px 0;
-  -webkit-mask-image: linear-gradient(
-    to right,
-    transparent 0,
-    #000 80px,
-    #000 calc(100% - 80px),
-    transparent 100%
-  );
-  mask-image: linear-gradient(
-    to right,
-    transparent 0,
-    #000 80px,
-    #000 calc(100% - 80px),
-    transparent 100%
-  );
-}
-
-.tm-header .uk-navbar-container {
-  min-height: 56px;
+  padding: 8px 0;
 }
 
 .jlz-brand {
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-}
-
-#jlz-menu-toggle {
-  color: rgba(255, 255, 255, 0.72);
-}
-
-#jlz-menu-toggle:hover,
-#jlz-menu-toggle:focus-visible {
-  color: #fff;
-}
-
-body.uk-light #jlz-menu-toggle,
-body.uk-light .jlz-brand {
-  color: rgba(5, 5, 7, 0.84);
-}
-
-body.uk-light #jlz-menu-toggle:hover,
-body.uk-light #jlz-menu-toggle:focus-visible,
-body.uk-light .jlz-brand:hover {
-  color: #050507;
 }
 
 #slider-nav {
@@ -1015,14 +977,15 @@ body.uk-light .jlz-joystick__arrow--active {
 
 .jlz-eyebrow {
   font-family: 'Inter', 'SF Mono', monospace;
-  font-size: 0.65rem;
-  font-weight: 500;
-  letter-spacing: 0.2em;
-  opacity: 0.5;
-  text-transform: uppercase;
+  /* Console-like section number (01-06) — larger than the old hint text,
+     faded, with glitch reveal via NoiseText on section change. */
+  font-size: clamp(2rem, 6vw, 3rem);
+  font-weight: 200;
+  letter-spacing: -0.02em;
+  opacity: 0.35;
+  line-height: 1;
   /* NoiseText builds per-char spans with display:inline-block + translateY.
-     min-height prevents layout shift during the 0.8s scramble animation
-     (chars start at translateY(20px) and settle to 0). */
+     min-height prevents layout shift during the scramble animation. */
   min-height: 1em;
   display: inline-block;
 }
@@ -1036,19 +999,6 @@ body.uk-light .jlz-eyebrow {
   /* Push TOP block below the fixed header (.tm-header ~76px tall) +
      slider nav. Gives breathing room between header and section title. */
   padding-top: calc(var(--jlz-header-height) + var(--jlz-space-6));
-}
-
-/* Section number — large faded numeral above title (Apple Watch style).
-   Home sections use [data-eyebrow] for dynamic hints (Subtitles.ts), so
-   the number lives here as a separate visual anchor. Matches the num
-   treatment on services/manifesto content pages. */
-.jlz-section-num {
-  font-size: clamp(2.5rem, 8vw, 4rem);
-  font-weight: 200;
-  line-height: 1;
-  letter-spacing: -0.04em;
-  opacity: 0.3;
-  margin-bottom: var(--jlz-space-2);
 }
 
 .jlz-section-bottom {
@@ -1275,9 +1225,9 @@ body.uk-light .jlz-eyebrow {
    duplicate. Use uk-card-default uk-card-hover in templates.) */
 
 /* ------------------------------------------------------------------
-   Unified dock — 2-row bottom bar (tools + footer)
-   The dock reserves space at the bottom of the screen on ALL pages.
-   Joystick is position:fixed, visually sits ON the tools row.
+   Compact dock — single row bottom bar + joystick overlay
+   Mobile-first: brand + nav (desktop) + menu button.
+   Joystick sits on top, centered. Contacts in modal (not footer).
    ------------------------------------------------------------------ */
 
 .jlz-dock {
@@ -1286,34 +1236,18 @@ body.uk-light .jlz-eyebrow {
   left: 0;
   right: 0;
   z-index: 50;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Tools row — top row, reserves space for joystick.
-   Joystick (position:fixed) visually overlaps this row. */
-.jlz-dock__tools {
-  height: var(--jlz-dock-tools-height); /* reserve space for joystick base to sit on */
-  position: relative;
-  background: rgba(5, 5, 7, 0.5);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-/* Footer row — bottom row, brand + social */
-.jlz-dock__footer {
   background: rgba(5, 5, 7, 0.7);
   backdrop-filter: blur(12px) saturate(130%);
   -webkit-backdrop-filter: blur(12px) saturate(130%);
   border-top: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 0.5rem 1rem;
 }
 
-.jlz-dock__footer-inner {
+.jlz-dock__bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  height: var(--jlz-dock-height);
+  padding: 0 1rem;
   max-width: 1440px;
   margin: 0 auto;
   gap: 1rem;
@@ -1321,49 +1255,76 @@ body.uk-light .jlz-eyebrow {
 
 .jlz-dock__brand .jlz-brand {
   font-size: 0.9rem;
-  padding: 0;
-}
-
-.jlz-dock__copy {
-  opacity: 0.5;
-  white-space: nowrap;
-  font-size: 0.7rem;
-}
-
-.jlz-dock__social .uk-iconnav a {
-  color: rgba(255, 255, 255, 0.55);
-}
-
-.jlz-dock__social .uk-iconnav a:hover {
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   color: #fff;
+  text-decoration: none;
 }
 
-/* Joystick — position:fixed, centered, sits ON the tools row.
-   bottom = footer height + tools height/2 so the joystick base
-   visually rests on the tools row, not floating above it. */
+.jlz-dock__nav {
+  display: flex;
+  gap: 1.5rem;
+  flex: 1;
+  justify-content: center;
+}
+
+.jlz-dock__nav a {
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--jlz-color-text-muted);
+  text-decoration: none;
+  transition: color var(--jlz-duration-fast) ease;
+}
+
+.jlz-dock__nav a:hover,
+.jlz-dock__nav a[aria-current="page"] {
+  color: var(--jlz-color-text);
+}
+
+.jlz-dock__menu-btn {
+  background: none;
+  border: 1px solid var(--jlz-color-border-strong);
+  border-radius: var(--jlz-radius-full);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--jlz-color-text);
+  transition: border-color var(--jlz-duration-fast) ease;
+  flex-shrink: 0;
+}
+
+.jlz-dock__menu-btn:hover {
+  border-color: var(--jlz-color-accent);
+}
+
+/* Joystick — position:fixed, centered, sits ON the dock bar.
+   bottom = dock height + small gap so the joystick base visually
+   rests on the bar, not floating above it. */
 .jlz-joystick {
   position: fixed;
-  bottom: calc(var(--jlz-dock-height) + var(--jlz-space-4));
+  bottom: calc(var(--jlz-dock-height) + var(--jlz-space-3));
   left: 50%;
   transform: translateX(-50%);
   z-index: 100;
 }
 
 /* Light theme dock variant */
-body.uk-light .jlz-dock__tools {
-  background: rgba(245, 245, 248, 0.5);
-}
-
-body.uk-light .jlz-dock__footer {
+body.uk-light .jlz-dock {
   background: rgba(245, 245, 248, 0.7);
   border-top-color: rgba(5, 5, 7, 0.08);
 }
 
-body.uk-light .jlz-dock__social .uk-iconnav a {
-  color: rgba(5, 5, 7, 0.55);
+body.uk-light .jlz-dock__nav a {
+  color: var(--jlz-color-text-muted);
 }
 
-body.uk-light .jlz-dock__social .uk-iconnav a:hover {
+body.uk-light .jlz-dock__brand .jlz-brand {
   color: #050507;
 }
 

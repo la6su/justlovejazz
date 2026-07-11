@@ -5,7 +5,6 @@ import { themeManager } from '../core/ThemeManager'
 
 export interface UIMenuOptions {
   sectionLabels: string[]
-  sectionSubtitles?: string[]
 }
 
 // 4 main sections shown in the slider (Lab=0 and Process=5 are secret side sections)
@@ -13,9 +12,9 @@ const MAIN_SECTION_INDICES = [1, 2, 3, 4]
 
 // Per-page slider labels (idx 1-4 = 4 main sections)
 const PAGE_SLIDER_LABELS: Record<string, string[]> = {
-  home: ['Intro', 'About', 'Works', 'Contact'],
-  services: ['Intro', 'Capabilities', 'Stack', 'Process'],
-  manifesto: ['Intro', 'Principles', 'Craft', 'Process'],
+  home: ['Studio', 'Works', 'Services', 'Manifesto'],
+  services: ['Creative Direction', 'Interactive Dev', 'Motion & Realtime', 'AI Systems'],
+  manifesto: ['Purpose', 'Clarity', 'Emotion', 'Simplicity'],
 }
 const DEFAULT_LABELS = PAGE_SLIDER_LABELS['home']!
 const PAGE_LINKS = [
@@ -26,7 +25,6 @@ const PAGE_LINKS = [
 ] as const
 
 export class UIMenu {
-  public button: HTMLButtonElement
   private navEl: HTMLElement
   private modalEl: HTMLElement
   private slider: HTMLElement
@@ -45,24 +43,14 @@ export class UIMenu {
     this.navEl = document.createElement('header')
     this.navEl.className = 'tm-header'
     this.navEl.innerHTML = `
-      <nav class="uk-navbar-container uk-navbar-transparent uk-container uk-container-expand" uk-navbar>
-        <div class="uk-navbar-left">
-          <a class="uk-navbar-item uk-logo jlz-brand" href="/app" aria-label="JUSTLOVEJAZZ home">l@6</a>
-        </div>
-        <div class="uk-navbar-center">
-          <div id="slider-nav" class="uk-slider-container uk-slider jlz-section-slider" uk-slider="center: 1; active: first" role="region" aria-roledescription="carousel">
-            <div class="uk-position-relative">
-              <ul class="uk-slider-items uk-grid uk-grid-match uk-child-width-auto" aria-live="polite" role="presentation">
-              </ul>
-            </div>
+      <div class="uk-container uk-container-expand uk-padding-small">
+        <div id="slider-nav" class="uk-slider-container uk-slider jlz-section-slider" uk-slider="center: 1; active: first" role="region" aria-roledescription="carousel">
+          <div class="uk-position-relative">
+            <ul class="uk-slider-items uk-grid uk-grid-match uk-child-width-auto" aria-live="polite" role="presentation">
+            </ul>
           </div>
         </div>
-        <div class="uk-navbar-right">
-          <button id="jlz-menu-toggle" class="uk-navbar-toggle" type="button" uk-toggle="target: #jlz-menu-modal" aria-label="Open main menu">
-            <span uk-navbar-toggle-icon aria-hidden="true"></span>
-          </button>
-        </div>
-      </nav>
+      </div>
     `
 
     this.modalEl = document.createElement('div')
@@ -77,13 +65,21 @@ export class UIMenu {
             <li><a href="${href}" data-page-link="${href}">${label}</a></li>
           `).join('')}
         </ul>
+        <div class="uk-margin-large-top">
+          <p class="uk-text-meta uk-text-uppercase">Contact</p>
+          <ul class="uk-nav uk-nav-default jlz-main-menu-nav uk-margin-small-top">
+            <li><a href="mailto:hello@justlovejazz.com">Email</a></li>
+            <li><a href="https://t.me/justlovejazz" target="_blank" rel="noopener">Telegram</a></li>
+            <li><a href="https://github.com/la6su" target="_blank" rel="noopener">GitHub</a></li>
+          </ul>
+        </div>
         <div class="uk-margin-large-top jlz-theme-toggle">
           <p class="uk-text-meta uk-text-uppercase">Theme</p>
           <button class="uk-button uk-button-default uk-button-small uk-margin-small-top" id="jlz-theme-toggle-btn" type="button" aria-pressed="false">
             <span uk-icon="icon: paint-bucket; ratio: 0.8" aria-hidden="true"></span>
             <span class="uk-margin-small-left" id="jlz-theme-mode-label">Auto</span>
           </button>
-          <p class="uk-text-meta uk-margin-small-top" style="opacity: 0.5; font-size: 0.65rem;">Auto = preset · Inverse = flip light↔dark</p>
+          <p class="uk-text-meta uk-margin-small-top jlz-text-subtle" style="font-size: 0.65rem;">Auto = preset · Inverse = flip light↔dark</p>
         </div>
       </div>
     `
@@ -104,7 +100,6 @@ export class UIMenu {
       this.items.push(li)
     })
 
-    this.button = this.navEl.querySelector<HTMLButtonElement>('#jlz-menu-toggle')!
     this.slider = this.navEl.querySelector('#slider-nav')!
     const app = document.getElementById('app') ?? document.body
     app.appendChild(this.navEl)

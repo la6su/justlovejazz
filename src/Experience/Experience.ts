@@ -12,7 +12,7 @@ import { StateBus } from '../core/StateBus'
 import type { World } from '../core/World'
 import { WorksPortfolio } from './WorksPortfolio'
 import { ProjectOverlay } from '../UI/ProjectOverlay'
-import { Subtitles } from '../UI/Subtitles'
+import { NoiseText } from './NoiseText'
 
 import { AudioSystem } from '../core/AudioSystem'
 import { JoystickNav } from '../UI/JoystickNav'
@@ -45,7 +45,7 @@ export class Experience {
   renderer!: Renderer
   private contentReveal!: ContentReveal
   private cursor!: Cursor
-  private _subtitles!: Subtitles
+  private _sectionChangeHandler: ((payload: import('../core/EventBus').AppEvents['jlz:section-change']) => void) | null = null
   private devPanel: DevPanel | null = null
   public world!: World
   private bus!: StateBus
@@ -73,22 +73,13 @@ export class Experience {
 
   // 6 sections — 1:1 with cube faces (4 main + Lab=0 secret left + Process=5 secret right)
   private static readonly SECTION_LABELS = [
-    'Lab',      // 0: secret left — experiments (top face)
-    'Intro',    // 1: front face
-    'About',    // 2: right face
-    'Works',    // 3: back face
-    'Contact',  // 4: bottom face
-    'Process',  // 5: secret right — workflow (left face)
+    'Lab',         // 0: secret left — 05 Lab (top face)
+    'Studio',      // 1: front face — 01 Studio (start)
+    'Works',       // 2: right face — 02 Works
+    'Services',    // 3: back face — 03 Services
+    'Manifesto',   // 4: bottom face — 04 Manifesto
+    'Contact',     // 5: secret right — 06 Contact (left face)
   ]
-  private static readonly SECTION_SUBTITLES = [
-    'Experiments & Lab',
-    'Interactive 3D Experience',
-    'Art meets technology',
-    'Curated projects',
-    'Build something extraordinary',
-    'How we work',
-  ]
-
   constructor(_ui: UIManager) {
     this.sizes = new Sizes()
     this.time = new Time()
@@ -228,7 +219,20 @@ export class Experience {
     this._reducedMotion = prefersReducedMotion()
     this.contentReveal = new ContentReveal()
     this.cursor = new Cursor()
-    this._subtitles = new Subtitles()
+    // Glitch eyebrow — on section change, animate the active section's
+    // [data-eyebrow] number with NoiseText random-symbol scramble.
+    // Replaces the old Subtitles hint system (removed — eyebrows now show
+    // console-like section numbers, not hint text).
+    this._sectionChangeHandler = (payload) => {
+      if (!payload?.sectionId) return
+      const section = document.querySelector(`[data-section="${payload.sectionId}"]`)
+      const eyebrow = section?.querySelector<HTMLElement>('[data-eyebrow]')
+      if (eyebrow) {
+        const text = eyebrow.textContent ?? ''
+        if (text) NoiseText.for(eyebrow).show(0.6, text)
+      }
+    }
+    eventBus.on('jlz:section-change', this._sectionChangeHandler)
     await this.renderer.init()
     await this.buildWorld()
     this.bus = StateBus.getInstance()
@@ -285,7 +289,6 @@ export class Experience {
     // UIMenu
     this._uiMenu = new UIMenu({
       sectionLabels: Experience.SECTION_LABELS,
-      sectionSubtitles: Experience.SECTION_SUBTITLES,
     })
     this._uiMenu.onNavigate((idx) => {
       this._circNav?.goToSection(idx)
@@ -640,7 +643,10 @@ export class Experience {
     }
     this.contentReveal.destroy()
     this.cursor.destroy()
-    this._subtitles.dispose()
+    if (this._sectionChangeHandler) {
+      eventBus.off('jlz:section-change', this._sectionChangeHandler)
+      this._sectionChangeHandler = null
+    }
     this.world.dispose()
     this.bus.cancelAll()
     this.devPanel?.dispose()
