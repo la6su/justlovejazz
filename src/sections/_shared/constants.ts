@@ -77,18 +77,25 @@ export function sectionShell(
 /** TOP block for content sections — eyebrow + title + optional lead.
  *  Same structure as sectionTop (home), but eyebrow is static text
  *  (content pages don't use NoiseText — home-only feature).
- *  headingTier: 'medium' (default) | 'large' (primary/intro). */
+ *  headingTier: 'medium' (default) | 'large' (primary/intro).
+ *  titleKey/leadKey: optional i18n keys — when provided, data-i18n attrs
+ *  are added so applyTranslations() replaces the text at runtime. The
+ *  English text passed in title/lead stays as the no-JS fallback. */
 export function contentTop(
   eyebrow: string,
   title: string,
   lead?: string,
   headingTier: 'medium' | 'large' = 'medium',
+  titleKey?: string,
+  leadKey?: string,
 ): string {
+  const titleAttr = titleKey ? ` data-i18n="${titleKey}"` : ''
+  const leadAttr = leadKey ? ` data-i18n="${leadKey}"` : ''
   return `
     <div class="jlz-section-top uk-text-center uk-flex uk-flex-column uk-flex-middle" ${PAGE_REVEAL}>
       <span class="jlz-eyebrow" data-eyebrow data-eyebrow-text="${eyebrow}">${eyebrow}</span>
-      <h2 class="studio-title uk-heading-${headingTier} uk-margin-small-top uk-margin-remove-bottom">${title}</h2>
-      ${lead ? `<p class="uk-text-lead uk-margin-small-top">${lead}</p>` : ''}
+      <h2 class="studio-title uk-heading-${headingTier} uk-margin-small-top uk-margin-remove-bottom"${titleAttr}>${title}</h2>
+      ${lead ? `<p class="uk-text-lead uk-margin-small-top"${leadAttr}>${lead}</p>` : ''}
     </div>
   `
 }

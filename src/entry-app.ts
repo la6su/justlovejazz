@@ -5,6 +5,7 @@ import { bootstrap as bootstrapApp, type BootstrapOptions } from './main-app'
 import { BlurFade } from './Experience/BlurFade'
 import { NoiseText } from './Experience/NoiseText'
 import { eventBus } from './core/EventBus'
+import { initWorkCards } from './UI/WorkCards'
 
 const SOUND_KEY = 'jlz:sound'
 // LANG_KEY handled by i18n.ts
@@ -65,6 +66,31 @@ function showEnterButton(): void {
   // Fill progress ring to 100% then show Enter
   updateLoaderProgress(100)
   enterBtn.classList.add('is-ready')
+}
+
+// ── Show a load error when 3D fails to initialize ──
+// Replaces the Enter button with an error message + retry link. This runs
+// if Experience.init() throws (jlz:webgl-failed) or if jlz:webgl-ready
+// doesn't fire within 30s (init hung). The Enter button must NEVER appear
+// when 3D isn't ready — clicking it would fade the splash to reveal an
+// uninitialized scene (no carousel, no baku, broken camera).
+function showLoadError(): void {
+  const enterBtn = document.getElementById('jlz-splash-enter')
+  const loader = document.getElementById('jlz-app-loader')
+  if (!loader) return
+  // Replace the Enter button area with an error message
+  if (enterBtn) {
+    const parent = enterBtn.parentElement
+    if (parent) {
+      parent.innerHTML = `
+        <div style="text-align:center; color: rgba(255,255,255,0.7); font-family:Inter,sans-serif; max-width: 320px;">
+          <p style="font-size:0.75rem; font-weight:700; letter-spacing:0.2em; text-transform:uppercase; color:rgba(255,100,100,0.8); margin:0 0 0.5rem;">3D Failed</p>
+          <p style="font-size:0.8rem; line-height:1.4; margin:0 0 1rem;">The 3D experience couldn't load. Your browser may not support WebGL2, or the GPU is unavailable.</p>
+          <a href="/" style="font-size:0.7rem; font-weight:600; letter-spacing:0.15em; text-transform:uppercase; color:#6b78a3; text-decoration:none; border:1px solid rgba(107,120,163,0.3); padding:0.5rem 1rem; border-radius:999px;">Retry</a>
+        </div>
+      `
+    }
+  }
 }
 
 // ── Seamless splash loader ──
@@ -138,11 +164,24 @@ export async function startApp(): Promise<void> {
   document.body.classList.add('scrollspy-pending')
   initRouter()
 
+  // ── Works page 3D cards: bind tilt + click on every route change ──
+  // initWorkCards() is idempotent (skips already-bound cards).
+  window.addEventListener('jlz:route-change', () => {
+    initWorkCards()
+  })
+  initWorkCards()
+
   // jlz:webgl-ready fires when Experience.init() completes — show Enter button.
   // Animations (BlurFade + NoiseText) are DELAYED until jlz:splash-entered
   // (Enter click) so user sees them as 3D scene reveals, not behind splash.
   eventBus.on('jlz:webgl-ready', () => {
     showEnterButton()
+  })
+
+  // jlz:webgl-failed fires if Experience.init() throws — show an error message
+  // instead of the Enter button, so the user knows the 3D failed (not just slow).
+  eventBus.on('jlz:webgl-failed', () => {
+    showLoadError()
   })
 
   // jlz:splash-entered fires when user clicks Enter — splash starts fading.
@@ -158,16 +197,18 @@ export async function startApp(): Promise<void> {
     }, 300) // 300ms into 800ms curtain split — titles animate as scene reveals
   })
 
-  // Fallback: if jlz:webgl-ready doesn't fire within 4s (Experience.init
-  // crashed or hung), show Enter button + dispatch splash-entered so
-  // animations still trigger on Enter click.
+  // Fallback: if jlz:webgl-ready doesn't fire within 60s (Experience.init
+  // crashed or hung), show a load error. The Enter button stays DISABLED
+  // (greyed, non-clickable) the entire time — it never activates until 3D
+  // is truly ready. Under CPU/network throttling, init() can take 10-20s;
+  // that's expected and the progress ring keeps the user informed.
   setTimeout(() => {
     const enterBtn = document.getElementById('jlz-splash-enter')
     if (enterBtn && !enterBtn.classList.contains('is-ready')) {
-      console.warn('[entry-app] jlz:webgl-ready timeout — showing Enter button')
-      showEnterButton()
+      console.error('[entry-app] jlz:webgl-ready did not fire within 60s — showing load error')
+      showLoadError()
     }
-  }, 4000)
+  }, 60000)
 
   // ── Animate titles on section change (home: data-section) ──
   eventBus.on('jlz:section-change', (payload) => {

@@ -196,31 +196,35 @@
       }
 
       /* Enter button — centered inside sq-4 square.
-         Hidden during loading (progress ring fills), appears when ready. */
+         Always visible, but DISABLED (greyed, non-interactive) until 3D is
+         fully ready (progress = 100% + jlz:webgl-ready). When ready, the
+         .is-ready class enables pointer events + full opacity. */
       .jlz-splash-enter {
-        visibility: hidden;
-        opacity: 0;
         width: 200px;
         height: 200px;
         border: none;
         background: transparent;
-        color: rgba(255, 255, 255, 0.8);
+        color: rgba(255, 255, 255, 0.25);
         font-family: 'Inter', sans-serif;
         font-size: 0.75rem;
         font-weight: 600;
         letter-spacing: 0.3em;
         text-transform: uppercase;
-        cursor: pointer;
+        cursor: not-allowed;
+        pointer-events: none;
         display: flex;
         align-items: center;
         justify-content: center;
         transition: opacity 0.5s ease, color 0.2s ease;
+        opacity: 0.5;
       }
       .jlz-splash-enter.is-ready {
-        visibility: visible;
+        color: rgba(255, 255, 255, 0.8);
+        cursor: pointer;
+        pointer-events: auto;
         opacity: 1;
       }
-      .jlz-splash-enter:hover {
+      .jlz-splash-enter.is-ready:hover {
         color: #fff;
       }
 
@@ -350,8 +354,12 @@
         var loader = document.getElementById('jlz-app-loader');
         if (!btn || !loader) return;
 
-        // Single click handler — works with or without entry-app.ts
+        // Single click handler — works with or without entry-app.ts.
+        // Button is disabled (pointer-events:none) until .is-ready is added
+        // by entry-app.ts when jlz:webgl-ready fires. This guard is a second
+        // line of defense against clicks during the disabled state.
         btn.addEventListener('click', function() {
+          if (!btn.classList.contains('is-ready')) return;
           if (loader.classList.contains('fade-out')) return;
           loader.classList.add('fade-out');
 
@@ -372,14 +380,20 @@
           setTimeout(function() { loader.remove(); }, 1200);
         });
 
-        // Fallback: show Enter after 5s if entry-app.ts failed to load
+        // No premature fallback — the Enter button stays DISABLED until
+        // entry-app.ts fires jlz:webgl-ready (3D fully initialized). Under
+        // CPU/network throttling this can take 10-20s; that's expected. The
+        // progress ring + "Loading" state keeps the user informed. If init()
+        // crashes, entry-app.ts fires jlz:webgl-failed and shows an error.
+        // The only hard fallback here is a 60s safety net for total failure.
         setTimeout(function() {
           if (!btn.classList.contains('is-ready')) {
-            var ring = document.querySelector('.jlz-splash-progress-ring');
-            if (ring) ring.style.strokeDashoffset = '0';
-            btn.classList.add('is-ready');
+            var content = btn.parentElement;
+            if (content) {
+              content.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,0.7);font-family:Inter,sans-serif;max-width:320px;"><p style="font-size:0.75rem;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,100,100,0.8);margin:0 0 0.5rem;">3D Failed</p><p style="font-size:0.8rem;line-height:1.4;margin:0 0 1rem;">The 3D experience could not load. Your browser may not support WebGL2, or the app bundle failed to download.</p><a href="/" style="font-size:0.7rem;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;color:#6b78a3;text-decoration:none;border:1px solid rgba(107,120,163,0.3);padding:0.5rem 1rem;border-radius:999px;">Retry</a></div>';
+            }
           }
-        }, 5000);
+        }, 60000);
       })();
     </script>
   </body>

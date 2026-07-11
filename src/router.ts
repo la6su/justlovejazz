@@ -1,5 +1,7 @@
 import { renderPage, type PageId } from './templates'
 import UIkit from 'uikit'
+import { applyTranslations } from './core/i18n'
+import { applyMetaTags } from './core/pageMeta'
 // ThemeManager removed — theme is global (auto=light, inverse=dark).
 
 let initialized = false
@@ -56,6 +58,11 @@ function renderView(page: PageId = getPageFromLocation()): void {
     // on the first main section. No need to add it here.
     currentPage = page
   }
+  // Apply i18n translations to the freshly-rendered DOM + per-page meta tags.
+  // These run on every renderView (initial + navigation) so dynamic content
+  // gets translated and <title>/description update per route.
+  applyTranslations()
+  applyMetaTags(page)
   // Initialize UIkit components on dynamically inserted content
   ;(UIkit as any).update(el)
   window.dispatchEvent(new CustomEvent('jlz:route-change', { detail: { page } }))
@@ -78,6 +85,14 @@ export function initRouter(): void {
 
   renderView()
   // jlz:route-change already dispatched in renderView() — covers UIkit refresh + UIMenu.
+
+  // ── Re-apply translations + meta tags on language change (EN ↔ RU) ──
+  // applyTranslations rewrites all [data-i18n] textContent; applyMetaTags
+  // updates <title>/description/og to the new language.
+  window.addEventListener('jlz:lang-change', () => {
+    applyTranslations()
+    if (currentPage) applyMetaTags(currentPage)
+  })
 
   // Handle initial anchor in URL (e.g. #section-about)
   if (location.hash.startsWith('#section-')) {

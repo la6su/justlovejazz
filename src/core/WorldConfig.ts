@@ -332,7 +332,7 @@ const RAW: RawScene[] = [
     bgColor: 0xe8e8e8,
     showGallery: false,
     groundColor: 0x080812,
-    groundOpacity: 0.05,
+    groundOpacity: 0.25,
     sectionTheme: 'light',
     sceneEnvSpherePattern: 4,
     sceneObjects: { wireframeText: true },

@@ -75,5 +75,8 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
     }, prefersReducedMotion() ? 0 : readyAt)
   } catch (e) {
     console.error('[main-app] bootstrap failed:', e)
+    // Notify entry-app that 3D init crashed — it will show a load error
+    // instead of the Enter button (Enter must never appear when 3D isn't ready).
+    eventBus.emit('jlz:webgl-failed')
   }
 }

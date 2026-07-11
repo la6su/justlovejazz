@@ -5,6 +5,8 @@
 export interface AppEvents {
   /** Fired by main-app.ts at curtain mid-open — triggers NoiseText title animation. */
   'jlz:webgl-ready': void
+  /** Fired by main-app.ts if Experience.init() throws — shows load error, NOT Enter. */
+  'jlz:webgl-failed': void
   /** Fired by Experience.update() on section index change — drives ContentReveal + NoiseText. */
   'jlz:section-change': {
     sectionId: string

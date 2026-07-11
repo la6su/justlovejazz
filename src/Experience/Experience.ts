@@ -50,6 +50,7 @@ export class Experience {
   private _themeAppliedHandler: ((e: Event) => void) | null = null
   private _soundToggleHandler: ((e: Event) => void) | null = null
   private _splashEnteredHandler: (() => void) | null = null
+  private _openProjectHandler: ((e: Event) => void) | null = null
   private devPanel: DevPanel | null = null
   public world!: World
   private bus!: StateBus
@@ -393,6 +394,20 @@ export class Experience {
       if (detail) this.audio.setMuted(detail.muted)
     }
     window.addEventListener('jlz:sound-toggle', this._soundToggleHandler)
+
+    // ── Works page card click → open fullscreen ProjectOverlay ──
+    // Dispatched by WorkCards.ts when a .jlz-work-card is clicked (works page).
+    // Same overlay as the home BakuCarousel — onProjectSelect sets content,
+    // showContainer() reveals it. ensurePortfolio() guarantees the overlay exists.
+    this._openProjectHandler = (e: Event) => {
+      const detail = (e as CustomEvent<{ idx: number }>).detail
+      if (!detail || typeof detail.idx !== 'number') return
+      void this.ensurePortfolio().then(() => {
+        this.onProjectSelect(detail.idx)
+        this.overlay?.showContainer()
+      })
+    }
+    window.addEventListener('jlz:open-project', this._openProjectHandler)
   }
 
   update(time: number) {
@@ -595,9 +610,12 @@ export class Experience {
       // Preload the first project into the overlay (hidden until card click)
       this.onProjectSelect(0)
     }
-    // On works page: hide ground plane (only carousel + fog).
+    // Ground plane (floor) — visible ONLY on the bottom visible section.
+    // Section index 4 = cube face -Y (bottom) on all pages. On every other
+    // section the floor is hidden so the 3D scene floats in void. This gives
+    // the bottom section a "grounded" feel while upper sections feel airborne.
     if (this.world) {
-      this.world.groundPlane.visible = !showGallery
+      this.world.groundPlane.visible = this.world.currentSectionIndex === 4
     }
 
     // Per-section camera smoothing — only when rendering
@@ -673,6 +691,10 @@ export class Experience {
     if (this._splashEnteredHandler) {
       window.removeEventListener('jlz:splash-entered', this._splashEnteredHandler)
       this._splashEnteredHandler = null
+    }
+    if (this._openProjectHandler) {
+      window.removeEventListener('jlz:open-project', this._openProjectHandler)
+      this._openProjectHandler = null
     }
     this.world.dispose()
     this.bus.cancelAll()

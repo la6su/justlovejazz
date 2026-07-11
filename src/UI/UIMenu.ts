@@ -23,6 +23,8 @@ interface DropSection {
 }
 interface NavItem {
   label: string
+  /** i18n key for the top-level nav label (e.g. 'nav.studio'). */
+  labelKey: string
   href: string
   page: string
   sections?: DropSection[]
@@ -33,6 +35,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   {
     label: 'Studio',
+    labelKey: 'nav.studio',
     href: '/',
     page: 'home',
     sections: [
@@ -45,6 +48,7 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     label: 'Services',
+    labelKey: 'nav.services',
     href: '/services',
     page: 'services',
     sections: [
@@ -57,6 +61,7 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     label: 'Works',
+    labelKey: 'nav.works',
     href: '/works',
     page: 'works',
     sections: [
@@ -69,6 +74,7 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     label: 'Manifesto',
+    labelKey: 'nav.manifesto',
     href: '/manifesto',
     page: 'manifesto',
     sections: [
@@ -81,6 +87,7 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     label: 'Lab',
+    labelKey: 'nav.lab',
     href: '/lab',
     page: 'lab',
     sections: [
@@ -93,6 +100,7 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     label: 'Contact',
+    labelKey: 'nav.contact',
     href: '/contact',
     page: 'contact',
     sections: [
@@ -198,7 +206,7 @@ export class UIMenu {
       if (item.sections) {
         return `
           <li>
-            <a href="${item.href}" data-nav-item="${item.page}">${item.label}</a>
+            <a href="${item.href}" data-nav-item="${item.page}" data-i18n="${item.labelKey}">${item.label}</a>
             <div class="uk-navbar-dropdown jlz-navbar-dropdown--wide" uk-drop="mode: hover; animation: uk-animation-slide-top; offset: 0">
               <div class="uk-grid jlz-dropbar-grid uk-grid-small" uk-grid>
                 <div class="uk-width-expand">
@@ -226,7 +234,7 @@ export class UIMenu {
           </li>
         `
       }
-      return `<li><a href="${item.href}" data-nav-item="${item.page}">${item.label}</a></li>`
+      return `<li><a href="${item.href}" data-nav-item="${item.page}" data-i18n="${item.labelKey}">${item.label}</a></li>`
     }).join('')
   }
 
