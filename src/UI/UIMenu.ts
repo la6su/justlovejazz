@@ -31,11 +31,6 @@ interface NavItem {
   /** Featured block — promotional CTA in the dropbar (Balou pattern). */
   featured?: { title: string; subtitle: string; href: string }
 }
-interface ContactLink {
-  label: string
-  href: string
-  external?: boolean
-}
 
 const NAV_ITEMS: NavItem[] = [
   {
@@ -48,7 +43,7 @@ const NAV_ITEMS: NavItem[] = [
       { num: '03', title: 'Works', subtitle: 'Selected projects · gallery', idx: 3 },
       { num: '04', title: 'Manifesto', subtitle: 'What guides us', idx: 4 },
     ],
-    featured: { title: 'Lab', subtitle: 'Experiments · always in progress', href: '/app' },
+    featured: { title: 'Lab', subtitle: 'Experiments · always in progress', href: '/app/lab' },
   },
   {
     label: 'Services',
@@ -60,7 +55,19 @@ const NAV_ITEMS: NavItem[] = [
       { num: '03', title: 'Motion & Realtime', subtitle: 'Motion as interface', idx: 3 },
       { num: '04', title: 'AI Systems', subtitle: 'Generation · automation', idx: 4 },
     ],
-    featured: { title: 'Start a project', subtitle: 'Open for new work', href: 'mailto:hello@justlovejazz.com?subject=New%20project' },
+    featured: { title: 'Start a project', subtitle: 'Open for new work', href: '/app/contact' },
+  },
+  {
+    label: 'Works',
+    href: '/app/works',
+    page: 'works',
+    sections: [
+      { num: '01', title: 'Undercurrent', subtitle: 'WebGPU fluid simulation', idx: 1 },
+      { num: '02', title: 'Mono Sunday', subtitle: 'Minimal portfolio', idx: 2 },
+      { num: '03', title: 'Till at Night', subtitle: 'Audio-reactive 3D', idx: 3 },
+      { num: '04', title: 'Ebb Vibes', subtitle: 'Generative typography', idx: 4 },
+    ],
+    featured: { title: 'Blog', subtitle: 'Process notes + case studies', href: '/blog' },
   },
   {
     label: 'Manifesto',
@@ -74,29 +81,33 @@ const NAV_ITEMS: NavItem[] = [
     ],
     featured: { title: 'Process', subtitle: 'Explore · prototype · test · fail · improve', href: '/app/services' },
   },
-  { label: 'Blog', href: '/blog', page: 'blog' },
   {
-    label: 'Experiments',
-    href: '/app',
-    page: 'home',
+    label: 'Lab',
+    href: '/app/lab',
+    page: 'lab',
     sections: [
-      { num: '05', title: 'Lab', subtitle: 'Shader · audio · procedural R&D', idx: 0 },
-      { num: '06', title: 'Playground', subtitle: 'Nothing to sell · just play', idx: 5 },
+      { num: '01', title: 'Shader Lab', subtitle: 'GLSL & TSL fragments', idx: 1 },
+      { num: '02', title: 'Audio Reactive', subtitle: 'Web Audio → visuals', idx: 2 },
+      { num: '03', title: 'Generative', subtitle: 'Procedural worlds', idx: 3 },
+      { num: '04', title: 'GPU Particles', subtitle: '10k instanced points', idx: 4 },
     ],
     featured: { title: 'Open source', subtitle: 'GitHub · experiments + demos', href: 'https://github.com/la6su' },
   },
   {
     label: 'Contact',
-    href: 'mailto:hello@justlovejazz.com',
+    href: '/app/contact',
     page: 'contact',
+    sections: [
+      { num: '01', title: 'Email', subtitle: 'Direct line', idx: 1 },
+      { num: '02', title: 'Social', subtitle: 'Telegram + GitHub', idx: 2 },
+      { num: '03', title: 'Location', subtitle: 'Remote · EU', idx: 3 },
+      { num: '04', title: 'Form', subtitle: 'Tell us about your project', idx: 4 },
+    ],
+    featured: { title: 'Start a project', subtitle: 'Open for new work', href: 'mailto:hello@justlovejazz.com?subject=New%20project' },
   },
 ]
 
-const CONTACT_LINKS: ContactLink[] = [
-  { label: 'Email', href: 'mailto:hello@justlovejazz.com' },
-  { label: 'Telegram', href: 'https://t.me/justlovejazz', external: true },
-  { label: 'GitHub', href: 'https://github.com/la6su', external: true },
-]
+// Contact links moved to /app/contact page (no longer a dropdown)
 
 export class UIMenu {
   private navEl: HTMLElement
@@ -186,20 +197,6 @@ export class UIMenu {
    *  Minimalist dropdown: compact list (num + title only) + slim featured. */
   private renderNavItems(items: NavItem[]): string {
     return items.map((item) => {
-      if (item.label === 'Contact') {
-        return `
-          <li>
-            <a href="${item.href}" data-nav-item="${item.page}">${item.label}</a>
-            <div class="uk-navbar-dropdown" uk-drop="mode: hover; animation: uk-animation-slide-top; offset: 0">
-              <ul class="uk-nav uk-navbar-dropdown-nav jlz-dropbar-contact">
-                ${CONTACT_LINKS.map((c) => `
-                  <li><a href="${c.href}"${c.external ? ' target="_blank" rel="noopener"' : ''}>${c.label}</a></li>
-                `).join('')}
-              </ul>
-            </div>
-          </li>
-        `
-      }
       if (item.sections) {
         return `
           <li>

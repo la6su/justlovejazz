@@ -33,7 +33,7 @@ export type SectionId = 'lab' | 'intro' | 'about' | 'challenge' | 'contact' | 'p
 // touch Phase enum (types.ts), WorldConfig id, PostProcessingManager keys,
 // Lights keys, scene.ts group name. RULES.md §14 documents this mapping.
 
-export type PageId = 'home' | 'services' | 'manifesto'
+export type PageId = 'home' | 'services' | 'works' | 'manifesto' | 'lab' | 'contact'
 
 // ── Apple Watch layout helpers ──
 // Every section follows: TOP (eyebrow + title) / 3D CENTER (transparent) / BOTTOM (UI panel)

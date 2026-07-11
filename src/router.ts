@@ -8,7 +8,10 @@ let currentPage: PageId | null = null
 const ROUTES: Record<string, PageId> = {
   '/app': 'home',
   '/app/services': 'services',
+  '/app/works': 'works',
   '/app/manifesto': 'manifesto',
+  '/app/lab': 'lab',
+  '/app/contact': 'contact',
 }
 
 function getPageFromLocation(): PageId {
