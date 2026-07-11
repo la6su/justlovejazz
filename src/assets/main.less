@@ -249,120 +249,84 @@ body.uk-light .jlz-joystick__hint {
 }
 
 .jlz-navbar-dropdown--wide {
-  width: 480px;
+  width: 360px;
   max-width: calc(100vw - 2rem);
-  padding: 1.5rem;
+  padding: 1rem;
 }
 
 .jlz-dropbar-grid {
-  gap: 2rem;
+  gap: 1rem;
   align-items: stretch;
 }
 
-/* Sections list — title + subtitle per item (Balou pattern) */
+/* Sections list — compact: num + title only (minimalist) */
 .jlz-dropbar-sections {
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
-.jlz-dropbar-sections li {
-  border-bottom: 1px solid var(--jlz-color-border);
-}
-
-.jlz-dropbar-sections li:last-child {
-  border-bottom: none;
-}
-
 .jlz-dropbar-sections a {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  grid-template-areas: "num title" "num subtitle";
-  column-gap: 1rem;
-  row-gap: 0.1rem;
-  padding: 0.875rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
   text-decoration: none;
   transition: color var(--jlz-duration-fast) ease;
 }
 
 .jlz-dropbar__num {
-  grid-area: num;
-  font-family: 'Inter', 'SF Mono', monospace;
-  font-size: 0.7rem;
+  font-family: 'SF Mono', 'Cascadia Code', monospace;
+  font-size: 0.65rem;
   font-weight: 500;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.1em;
   color: var(--jlz-color-text-subtle);
-  align-self: center;
+  min-width: 1.5rem;
 }
 
 .jlz-dropbar__title {
-  grid-area: title;
-  font-size: 0.95rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+  font-size: 0.85rem;
+  font-weight: 500;
   color: var(--jlz-color-text);
 }
 
-.jlz-dropbar__subtitle {
-  grid-area: subtitle;
-  font-size: 0.75rem;
-  color: var(--jlz-color-text-muted);
-}
-
-.jlz-dropbar-sections a:hover .jlz-dropbar__title {
-  color: var(--jlz-color-accent);
-}
-
+.jlz-dropbar-sections a:hover .jlz-dropbar__title,
 .jlz-dropbar-sections a:hover .jlz-dropbar__num {
   color: var(--jlz-color-accent);
 }
 
-/* Featured CTA block — right column (Balou promotional pattern) */
+/* Featured — slim CTA (title + arrow only) */
+.jlz-dropbar-featured-col {
+  display: flex;
+}
+
 .jlz-dropbar-featured {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
   gap: 0.5rem;
-  padding: 1.5rem;
-  background: color-mix(in srgb, var(--jlz-color-accent) 12%, transparent);
-  border: 1px solid color-mix(in srgb, var(--jlz-color-accent) 25%, transparent);
+  padding: 0.75rem 1rem;
+  background: color-mix(in srgb, var(--jlz-color-accent) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--jlz-color-accent) 20%, transparent);
   border-radius: var(--jlz-radius-md);
   text-decoration: none;
-  height: 100%;
-  transition: background var(--jlz-duration-fast) ease,
-              border-color var(--jlz-duration-fast) ease;
+  width: 100%;
+  transition: background var(--jlz-duration-fast) ease;
 }
 
 .jlz-dropbar-featured:hover {
-  background: color-mix(in srgb, var(--jlz-color-accent) 20%, transparent);
-  border-color: color-mix(in srgb, var(--jlz-color-accent) 40%, transparent);
+  background: color-mix(in srgb, var(--jlz-color-accent) 18%, transparent);
   text-decoration: none;
 }
 
-.jlz-dropbar-featured__label {
-  font-family: 'Inter', 'SF Mono', monospace;
-  font-size: 0.6rem;
-  font-weight: 500;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--jlz-color-accent);
-}
-
 .jlz-dropbar-featured__title {
-  font-size: 1.1rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
+  font-size: 0.8rem;
+  font-weight: 600;
   color: var(--jlz-color-text);
 }
 
-.jlz-dropbar-featured__subtitle {
-  font-size: 0.8rem;
-  color: var(--jlz-color-text-muted);
-  line-height: 1.4;
-}
-
 .jlz-dropbar-featured__arrow {
-  margin-top: auto;
-  font-size: 1.2rem;
+  font-size: 0.9rem;
   color: var(--jlz-color-accent);
 }
 
@@ -387,10 +351,7 @@ body.uk-light .jlz-joystick__hint {
   color: var(--jlz-color-accent);
 }
 
-/* Light theme dropbar — QF handles background via color-mode, only border */
-body.uk-light .jlz-dropbar-sections li {
-  border-bottom-color: rgba(5, 5, 7, 0.08);
-}
+/* (Light theme: QF color-mode handles dropdown bg, no overrides needed) */
 
 /* ------------------------------------------------------------------
    Content pages — transparent over 3D canvas (like QF background video)
