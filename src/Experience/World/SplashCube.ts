@@ -292,8 +292,6 @@ export class SplashCube extends THREE.Mesh {
   // ════════════════════════════════════════════════════════════════════
   // UPDATE — called every frame when rendering
   // ════════════════════════════════════════════════════════════════════
-  // UPDATE — called every frame when rendering
-  // ════════════════════════════════════════════════════════════════════
   update(dt: number, renderer?: THREE.WebGLRenderer): void {
     this.time += dt
 

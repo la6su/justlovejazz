@@ -76,7 +76,7 @@ export function sectionShell(
 
 /** TOP block for content sections — eyebrow + title + optional lead.
  *  Same structure as sectionTop (home), but eyebrow is static text
- *  (content pages don't use NoiseText/Subtitles — home-only feature).
+ *  (content pages don't use NoiseText — home-only feature).
  *  headingTier: 'medium' (default) | 'large' (primary/intro). */
 export function contentTop(
   eyebrow: string,

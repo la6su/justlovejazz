@@ -5,7 +5,7 @@
 export interface AppEvents {
   /** Fired by main-app.ts at curtain mid-open — triggers NoiseText title animation. */
   'jlz:webgl-ready': void
-  /** Fired by Experience.update() on section index change — drives Subtitles, ContentReveal, NoiseText. */
+  /** Fired by Experience.update() on section index change — drives ContentReveal + NoiseText. */
   'jlz:section-change': {
     sectionId: string
     context?: string

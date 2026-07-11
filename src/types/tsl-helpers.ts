@@ -35,13 +35,5 @@ export function tslBloom(
   return (_bloom as any)(color, strength, radius, threshold)
 }
 
-/**
- * Cast a NodeMaterial to THREE.Material for Mesh constructor compatibility.
- * NodeMaterials have slightly different TS types than built-in Materials.
- */
-export function asMaterial<T>(mat: T): T {
-  return mat
-}
-
 // Silence unused import (pass imported but used via tslPass wrapper)
 void _pass

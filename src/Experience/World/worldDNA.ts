@@ -195,29 +195,13 @@ export function attachWorldDNA(mat: THREE.MeshPhysicalMaterial): void {
   nodeMat.roughnessNode = worldRoughnessNode()
 }
 
-/** Update audio-reactive uniforms. Called by Experience.update each frame. */
+/** Update audio-reactive uniforms. Called by Experience.update each frame.
+ *  NOTE: only effective on WebGPU premium path (attachWorldDNA attached
+ *  these uniforms to TSL nodes). On WebGL2, uniforms are set but not read. */
 export function updateWorldDNAAudio(bass: number, _mid: number, treble: number): void {
   worldDNAUniforms.uAudioBass.value = bass
   worldDNAUniforms.uAudioTreble.value = treble
 }
 
-/** Update worldDNA uniforms from section state. Called by SplashCube.updateMaterial. */
-export function updateWorldDNA(params: {
-  sectionBlend: number
-  colorA: THREE.Color
-  colorB: THREE.Color
-  emissiveA: THREE.Color
-  emissiveB: THREE.Color
-  time: number
-  displace: number
-  pulse: number
-}): void {
-  worldDNAUniforms.uSectionBlend.value = params.sectionBlend
-  ;(worldDNAUniforms.uColorA.value as THREE.Color).copy(params.colorA)
-  ;(worldDNAUniforms.uColorB.value as THREE.Color).copy(params.colorB)
-  ;(worldDNAUniforms.uEmissiveA.value as THREE.Color).copy(params.emissiveA)
-  ;(worldDNAUniforms.uEmissiveB.value as THREE.Color).copy(params.emissiveB)
-  worldDNAUniforms.uTime.value = params.time
-  worldDNAUniforms.uDisplace.value = params.displace
-  worldDNAUniforms.uPulse.value = params.pulse
-}
+// (updateWorldDNA removed — was never called. SplashCube uses
+// updateWorldBlend() directly on MeshPhysicalMaterial props.)
