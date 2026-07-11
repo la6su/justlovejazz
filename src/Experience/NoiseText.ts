@@ -1,131 +1,138 @@
-// NoiseText — console-style glitch reveal (junni reference).
+// NoiseText — junni-style typewriter reveal with noise tail.
 //
-// Effect: typewriter with random noise symbols trailing the revealed text.
-// Characters appear left-to-right; 1-3 random noise chars follow the cursor
-// position, flickering as the reveal progresses. Pure textContent (no spans)
-// = no layout shift, cheap to animate, perfect for console/TUI eyebrows.
+// Port of junni-inc/next.junni.co.jp NoiseText (src/ts/MainScene/NoiseText/index.ts).
+// Commit 64002f9 pattern — proven stable in production.
 //
-// Reference: references/next.junni.co.jp/src/ts/MainScene/NoiseText/index.ts
-// Adapted: WeakMap singleton (for(el) API), rAF instead of setInterval,
-// configurable noise charset (default: box-drawing + symbols for TUI feel).
+// Effect: characters appear left-to-right. Already-revealed characters
+// are clean (correct). Ahead of the reveal position, 1-3 random noise
+// characters flicker. As the animation progresses, more characters
+// become "fixed" (clean) and the noise tail shrinks. At the end, the
+// full text is displayed clean.
+//
+// Key stability fix (from 64002f9): safety timeout guarantees finalize()
+// fires even if RAF is throttled (background tab, heavy GPU, etc).
+// finalize() + cancel() both restore this.cleanText so el never gets
+// stuck showing noise symbols.
 
-const DEFAULT_NOISE = '░▒▓█▄▀▌▐│║╟╠╫╬●○◆◇▪▫•·∴∵≈≠≤≥±÷×'
+const CHARS = '░▒▓█▄▀▌▐│║╟╠╫╬●○◆◇▪▫•·∴∵≈≠≤≥±÷×';
 
 export class NoiseText {
-  private static instances = new WeakMap<HTMLElement, NoiseText>()
+  /** Global registry: one instance per DOM element, prevents overlap. */
+  private static instances = new WeakMap<HTMLElement, NoiseText>();
 
-  private readonly el: HTMLElement
-  /** The clean target text to reveal + restore after animation. */
-  private text = ''
-  /** Snapshot of el.textContent BEFORE any animation — safety fallback
-   *  to guarantee we can always restore the original. Re-snapshotted on
-   *  every show() call (in case el was mutated externally between runs). */
-  private originalText = ''
-  private noise = DEFAULT_NOISE
-  private rafId: number | null = null
-  private start = 0
-  private dur = 600
-  private running = false
+  private readonly el: HTMLElement;
+  private cleanText = '';
+
+  private rafId: number | null = null;
+  private timeoutId: number | null = null;
+  private running = false;
+  private start = 0;
+  private dur = 1000;
 
   private constructor(el: HTMLElement) {
-    this.el = el
-    this.originalText = el.textContent || ''
+    this.el = el;
   }
 
   static for(el: HTMLElement): NoiseText {
-    let inst = this.instances.get(el)
+    let inst = this.instances.get(el);
     if (!inst) {
-      inst = new NoiseText(el)
-      this.instances.set(el, inst)
+      inst = new NoiseText(el);
+      this.instances.set(el, inst);
     }
-    return inst
+    return inst;
   }
 
-  /** Reveal the text with a trailing-noise typewriter effect.
-   *  dur: seconds. sourceText: text to reveal (defaults to el.textContent
-   *  or originalText fallback). noise: optional charset for trailing symbols. */
-  show(dur: number = 0.6, sourceText?: string, noise?: string): void {
-    // Snapshot current text BEFORE clearing (in case el has the clean text
-    // from a previous completed animation or external mutation).
-    const currentText = this.el.textContent || ''
-    this.stopAnimation()
-    if (noise) this.noise = noise
+  /**
+   * Start noise animation for `dur` seconds.
+   * Junni pattern: typewriter reveal with noise tail.
+   *
+   * @param dur Duration in seconds.
+   * @param sourceText Explicit clean text. If not provided, reads from DOM.
+   */
+  show(dur: number = 0.6, sourceText?: string): void {
+    this.cancel();
 
-    // Resolve target text: explicit sourceText > current el text (if non-empty
-    // and not mid-animation noise) > original snapshot
-    let resolved = sourceText
-    if (!resolved) {
-      // If current text looks like clean text (not noise), use it
-      resolved = currentText.length > 0 ? currentText : this.originalText
-    }
-    if (!resolved || resolved.length === 0) return
+    this.cleanText = sourceText ?? (this.el.textContent || '');
+    if (this.cleanText.length === 0) return;
 
-    this.text = resolved
-    this.originalText = this.originalText || resolved
+    // Start with empty text — characters will appear left-to-right
+    this.el.textContent = '';
 
-    this.dur = Math.max(100, dur * 1000)
-    this.running = true
-    this.start = performance.now()
-    this.el.setAttribute('data-visible', 'true')
-    this.el.textContent = ''
-    this.rafId = requestAnimationFrame(this.tick)
+    this.dur = dur * 1000;
+    this.running = true;
+    this.start = performance.now();
+    this.el.setAttribute('data-visible', 'true');
+
+    // Safety timeout → guarantees we always stop even if RAF is throttled.
+    // This is the critical fix from commit 64002f9 — without it, a throttled
+    // RAF (background tab, heavy GPU) could leave el stuck mid-noise.
+    this.timeoutId = window.setTimeout(() => this.finalize(), this.dur + 200);
+    this.rafId = requestAnimationFrame(this.tick);
   }
 
-  /** Stop animation and restore the clean text immediately. */
   hide(): void {
-    this.stopAnimation()
-    this.el.removeAttribute('data-visible')
+    this.finalize();
+    this.el.removeAttribute('data-visible');
   }
 
   private tick = (ts: number): void => {
-    if (!this.running) return
-    const elapsed = ts - this.start
-    const t = elapsed / this.dur
+    if (!this.running) return;
+
+    const t = Math.min(1, (ts - this.start) / this.dur);
+
     if (t >= 1) {
-      // Animation complete — finalize with clean text
-      this.finalize()
-      return
+      this.finalize();
+      return;
     }
 
-    // Progress 0→1 → fixed chars 0→text.length
-    const fixedLength = Math.floor(t * this.text.length)
-    // Trailing noise: 1-3 random chars after the cursor
-    const noiseLength = Math.min(3, this.text.length - fixedLength)
+    // Progressive reveal: fixedLength grows from 0 to text.length
+    const fixedLength = Math.floor(t * this.cleanText.length);
+    // Noise tail: 1-3 random characters after the fixed portion
+    const noiseLength = Math.min(3, this.cleanText.length - fixedLength);
 
-    let out = ''
+    let text = '';
+
+    // Fixed (clean) characters — already revealed
     for (let i = 0; i < fixedLength; i++) {
-      out += this.text[i] ?? ''
+      text += this.cleanText[i];
     }
+
+    // Noise tail — random characters that flicker
     for (let i = 0; i < noiseLength; i++) {
-      out += this.noise[Math.floor(Math.random() * this.noise.length)] ?? ''
+      text += CHARS[Math.floor(Math.random() * CHARS.length)];
     }
-    this.el.textContent = out
 
-    this.rafId = requestAnimationFrame(this.tick)
+    this.el.textContent = text;
+    this.rafId = requestAnimationFrame(this.tick);
+  };
+
+  finalize(): void {
+    this.running = false;
+    if (this.rafId !== null) {
+      cancelAnimationFrame(this.rafId);
+      this.rafId = null;
+    }
+    if (this.timeoutId !== null) {
+      clearTimeout(this.timeoutId);
+      this.timeoutId = null;
+    }
+    // Restore clean text — guarantees el never stuck on noise symbols
+    this.el.textContent = this.cleanText;
   }
 
-  /** Finalize animation — restore the clean target text. Called when
-   *  animation completes naturally (t >= 1). Guarantees el shows the
-   *  final clean text, never stuck on noise symbols. */
-  private finalize(): void {
-    this.running = false
+  private cancel(): void {
+    this.running = false;
     if (this.rafId !== null) {
-      cancelAnimationFrame(this.rafId)
-      this.rafId = null
+      cancelAnimationFrame(this.rafId);
+      this.rafId = null;
     }
-    this.el.textContent = this.text
-  }
-
-  /** Stop the rAF loop and restore the target text (cancel mid-animation). */
-  private stopAnimation(): void {
-    this.running = false
-    if (this.rafId !== null) {
-      cancelAnimationFrame(this.rafId)
-      this.rafId = null
+    if (this.timeoutId !== null) {
+      clearTimeout(this.timeoutId);
+      this.timeoutId = null;
     }
     // Restore clean text so el never gets stuck showing noise symbols
-    if (this.text) {
-      this.el.textContent = this.text
+    if (this.cleanText) {
+      this.el.textContent = this.cleanText;
     }
   }
 }
