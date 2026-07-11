@@ -90,8 +90,8 @@
         pointer-events: none;
       }
 
-      /* SVG squares — centered cover, ABOVE curtains so always visible.
-         Slow ambient rotation during loading for living feel. */
+      /* SVG squares — centered, ABOVE curtains. No rotation (causes repaint lag
+         on SVG textPath). GPU-accelerated opacity + transform only. */
       .jlz-splash-svg {
         position: absolute;
         top: 50%;
@@ -101,13 +101,9 @@
         height: min(100vw, 100vh);
         pointer-events: none;
         z-index: 10004;
-        animation: jlz-splash-rotate 20s linear infinite;
+        will-change: transform, opacity;
         transition: transform 0.8s cubic-bezier(0.65, 0, 0.35, 1),
-                    opacity 0.6s ease 0.2s;
-      }
-      @keyframes jlz-splash-rotate {
-        from { transform: translate(-50%, -50%) rotate(0deg); }
-        to   { transform: translate(-50%, -50%) rotate(360deg); }
+                    opacity 0.5s ease 0.2s;
       }
       @media (orientation: landscape) {
         .jlz-splash-svg { width: 100vh; height: 100vh; }
@@ -115,33 +111,30 @@
       @media (orientation: portrait) {
         .jlz-splash-svg { width: 100vw; height: 100vw; }
       }
+      /* Text reveal — opacity-only (GPU-accelerated, no repaint).
+         Staggered fade-in, no transform (avoids SVG layout thrash). */
       .jlz-splash-text {
         text-transform: uppercase;
-        transform-origin: 700px 700px;
-        will-change: transform, opacity;
         font-family: 'Inter', sans-serif;
         font-weight: 700;
         opacity: 0;
-        animation: jlz-splash-in 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        animation: jlz-splash-fade 0.8s ease forwards;
       }
-      .jlz-splash-text--1 { font-size: clamp(60px, 11vmin, 90px); fill: #6b78a3; animation-delay: 0.15s; }
-      .jlz-splash-text--2 { font-size: clamp(46px, 9vmin, 68px); fill: #5a6a8e; animation-delay: 0.35s; }
-      .jlz-splash-text--3 { font-size: clamp(32px, 6vmin, 48px); fill: #4a5a7e; animation-delay: 0.55s; }
-      .jlz-splash-text--4 { font-size: clamp(22px, 4.5vmin, 34px); fill: #3a4a6e; animation-delay: 0.75s; }
-      @keyframes jlz-splash-in {
-        0%   { opacity: 0; transform: scale(0.5) rotate(-8deg); }
-        50%  { opacity: 0.6; }
-        100% { opacity: 1; transform: scale(1) rotate(0deg); }
+      .jlz-splash-text--1 { font-size: clamp(60px, 11vmin, 90px); fill: #6b78a3; animation-delay: 0.2s; }
+      .jlz-splash-text--2 { font-size: clamp(46px, 9vmin, 68px); fill: #5a6a8e; animation-delay: 0.4s; }
+      .jlz-splash-text--3 { font-size: clamp(32px, 6vmin, 48px); fill: #4a5a7e; animation-delay: 0.6s; }
+      .jlz-splash-text--4 { font-size: clamp(22px, 4.5vmin, 34px); fill: #3a4a6e; animation-delay: 0.8s; }
+      @keyframes jlz-splash-fade {
+        from { opacity: 0; }
+        to   { opacity: 1; }
       }
-      /* OUT animation — stop rotation, scale out + fade. */
+      /* OUT — scale down + fade. No animation conflict. */
       #jlz-app-loader.fade-out .jlz-splash-svg {
-        animation: none;
-        transform: translate(-50%, -50%) scale(0.6);
+        transform: translate(-50%, -50%) scale(0.7);
         opacity: 0;
       }
       @media (prefers-reduced-motion: reduce) {
-        .jlz-splash-text { animation: none; opacity: 1; transform: scale(1); }
-        .jlz-splash-svg { animation: none; }
+        .jlz-splash-text { animation: none; opacity: 1; }
         #jlz-app-loader.fade-out .jlz-splash-svg { transition: none; opacity: 0; }
       }
 
@@ -228,9 +221,11 @@
         font-variant-numeric: tabular-nums;
       }
 
-      /* Enter button — appears when loading completes (100%) */
+      /* Enter button — hidden during loading, fades in when ready.
+         Uses visibility (not display:none) so opacity transition works. */
       .jlz-splash-enter {
-        display: none;
+        visibility: hidden;
+        opacity: 0;
         padding: 0.75rem 2.5rem;
         border: 1px solid rgba(255, 255, 255, 0.2);
         border-radius: 999px;
@@ -242,15 +237,11 @@
         letter-spacing: 0.2em;
         text-transform: uppercase;
         cursor: pointer;
-        transition: all 0.3s ease;
-        opacity: 0;
+        transition: opacity 0.5s ease, border-color 0.2s ease, background 0.2s ease;
       }
       .jlz-splash-enter.is-ready {
-        display: block;
-        animation: jlz-enter-in 0.6s ease 0.2s forwards;
-      }
-      @keyframes jlz-enter-in {
-        to { opacity: 1; }
+        visibility: visible;
+        opacity: 1;
       }
       .jlz-splash-enter:hover {
         border-color: rgba(255, 255, 255, 0.4);
