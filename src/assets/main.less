@@ -1107,11 +1107,11 @@ body.uk-light .jlz-eyebrow {
 }
 
 /* Dotnav timeline — minimalist section progress (UIKit3 uk-dotnav base).
-   Vertical orientation (column) so dots stack vertically beside the joystick.
-   UIKit3 uk-dotnav provides dot styling; we override layout + colors. */
+   Horizontal row of 4 dots on each side of the joystick base.
+   UIKit3 uk-dotnav provides dot styling; we override size + colors. */
 .jlz-joystick-dotnav {
-  flex-direction: column;
-  gap: 0.5rem;
+  flex-wrap: nowrap;
+  gap: 0.4rem;
   margin: 0;
 }
 
