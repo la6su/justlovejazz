@@ -18,6 +18,7 @@ export class ContentReveal {
   private pageSectionHandler: ((e: Event) => void) | null = null
   private themeHandler: (() => void) | null = null
   private currentSectionId: string | null = null
+  private currentSectionIndex: number = -1
   private cachedConfigs: readonly PhaseConfig[] | null = null
 
   constructor() {
@@ -43,6 +44,7 @@ export class ContentReveal {
     eventBus.on('jlz:section-change', this.sectionHandler)
 
     // Content pages: jlz:page-section-change (data-page-section)
+    // detail.index = section index (0-5), matches WorldConfig array index
     this.pageSectionHandler = (e: Event) => {
       const detail = (e as CustomEvent<{ index: number }>).detail
       if (!detail) return
@@ -51,6 +53,7 @@ export class ContentReveal {
       if (el) {
         const id = el.getAttribute('data-page-section') ?? ''
         this.currentSectionId = id
+        this.currentSectionIndex = detail.index
         this.activateSection(`[data-page-section="${id}"]`)
       }
     }
@@ -74,18 +77,23 @@ export class ContentReveal {
     })
   }
 
-  /** Apply per-section theme. KISS: one toggle, one event. */
+  /** Apply per-section theme. KISS: one toggle, one event.
+   *  Home: find config by domSection === sectionId.
+   *  Content: find config by array index (currentSectionIndex). */
   private applyTheme(sectionId: string): void {
-    const cfg = this.getConfigs().find((c) => c.domSection === sectionId || c.id === sectionId)
-    const sectionIsLight = cfg?.theme === 'light'
+    const configs = this.getConfigs()
+    // Try domSection match (home), then index match (content pages)
+    let cfg = configs.find((c) => c.domSection === sectionId || c.id === sectionId)
+    if (!cfg && this.currentSectionIndex >= 0) {
+      cfg = configs[this.currentSectionIndex]
+    }
+    const sectionIsLight = cfg?.theme === 'light' || !cfg // default light if no config
     const isInverse = themeManager.isInverse
     const shouldUseLight = isInverse ? !sectionIsLight : sectionIsLight
 
-    // Toggle uk-light on both <html> and <body> — UIKit3 cascade + custom CSS
     document.documentElement.classList.toggle('uk-light', shouldUseLight)
     document.body.classList.toggle('uk-light', shouldUseLight)
 
-    // Notify EnvSphere
     window.dispatchEvent(
       new CustomEvent('jlz:theme-applied', {
         detail: { isLight: shouldUseLight, mode: isInverse ? 'inverse' : 'auto' },
