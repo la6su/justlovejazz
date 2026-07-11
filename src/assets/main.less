@@ -198,7 +198,8 @@ body.uk-light .jlz-joystick__hint {
 }
 
 /* ------------------------------------------------------------------
-   Header — dropbar navbar (Balou-inspired, tech-savvy, minimal)
+   Header — transparent dropbar navbar (Balou-inspired, minimal)
+   Uses QF's built-in navbar line-mode + glitch hover (no custom nav CSS).
    ------------------------------------------------------------------ */
 
 .tm-header {
@@ -207,93 +208,32 @@ body.uk-light .jlz-joystick__hint {
   left: 0;
   right: 0;
   z-index: 10001;
-  background: rgba(5, 5, 7, 0.6);
-  backdrop-filter: blur(12px) saturate(130%);
-  -webkit-backdrop-filter: blur(12px) saturate(130%);
-  border-bottom: 1px solid var(--jlz-color-border);
 }
 
 .tm-header .uk-navbar-container {
-  min-height: 56px;
   background: transparent !important;
 }
 
-.jlz-brand {
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  font-size: 1rem;
-  color: var(--jlz-color-text);
-  text-decoration: none;
-}
-
-/* Nav items — compact, uppercase, tech feel */
-.jlz-navbar-nav > li > a {
-  font-size: 0.72rem;
-  font-weight: 500;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--jlz-color-text-muted);
-  padding: 0 1rem;
-  transition: color var(--jlz-duration-fast) ease;
-}
-
-.jlz-navbar-nav > li > a:hover,
-.jlz-navbar-nav > li.uk-active > a {
-  color: var(--jlz-color-text);
-  text-decoration: none;
-}
-
-/* Theme button — compact icon circle */
-.jlz-theme-btn {
-  background: none;
+/* Theme toggle — uk-icon-button base + accent on active */
+.jlz-theme-toggle.uk-icon-button {
   border: 1px solid var(--jlz-color-border-strong);
-  border-radius: var(--jlz-radius-full);
-  width: 36px;
-  height: 36px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: var(--jlz-color-text-muted);
   transition: border-color var(--jlz-duration-fast) ease,
               color var(--jlz-duration-fast) ease;
 }
 
-.jlz-theme-btn:hover,
-.jlz-theme-btn--active {
+.jlz-theme-toggle.uk-icon-button:hover,
+.jlz-theme-toggle.uk-active {
   border-color: var(--jlz-color-accent);
   color: var(--jlz-color-accent);
 }
 
-/* Mobile menu button — same style as theme btn */
-.jlz-menu-btn {
-  background: none;
-  border: 1px solid var(--jlz-color-border-strong);
-  border-radius: var(--jlz-radius-full);
-  width: 36px;
-  height: 36px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: var(--jlz-color-text-muted);
-  transition: border-color var(--jlz-duration-fast) ease;
-}
-
-.jlz-menu-btn:hover {
-  border-color: var(--jlz-color-accent);
-  color: var(--jlz-color-accent);
-}
-
-/* Dropbar — full-width stretch panel (Balou-inspired multi-column) */
+/* Dropbar — uses QF's built-in @dropbar-background/blur/padding.
+   Only add border + extra vertical padding for the Balou multi-column layout. */
 .uk-dropbar {
-  background: rgba(5, 5, 7, 0.95);
-  backdrop-filter: blur(20px) saturate(140%);
-  -webkit-backdrop-filter: blur(20px) saturate(140%);
-  border-bottom: 1px solid var(--jlz-color-border);
   border-top: 1px solid var(--jlz-color-border);
-  padding: 2rem 0;
+  border-bottom: 1px solid var(--jlz-color-border);
+  padding-top: 2rem;
+  padding-bottom: 2rem;
 }
 
 .jlz-dropbar-grid {
@@ -429,47 +369,9 @@ body.uk-light .jlz-joystick__hint {
   color: var(--jlz-color-accent);
 }
 
-/* Light theme header + dropbar */
-body.uk-light .tm-header {
-  background: rgba(245, 245, 248, 0.6);
-  border-bottom-color: rgba(5, 5, 7, 0.1);
-}
-
-body.uk-light .jlz-brand {
-  color: var(--jlz-color-text);
-}
-
-body.uk-light .uk-dropbar {
-  background: rgba(245, 245, 248, 0.95);
-  border-color: rgba(5, 5, 7, 0.1);
-}
-
+/* Light theme dropbar — QF handles background via color-mode, only border */
 body.uk-light .jlz-dropbar-sections li {
   border-bottom-color: rgba(5, 5, 7, 0.08);
-}
-
-/* Theme toggle — single button (Auto ↔ Inverse). */
-.jlz-theme-toggle .uk-button {
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.7);
-  transition:
-    background 0.2s ease,
-    color 0.2s ease,
-    border-color 0.2s ease;
-}
-
-.jlz-theme-toggle .uk-button:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.2);
-}
-
-/* Active (inverse mode) — accent background */
-.jlz-theme-toggle .uk-button.uk-active {
-  background: var(--jlz-color-accent);
-  color: #fff;
-  border-color: var(--jlz-color-accent);
 }
 
 /* ------------------------------------------------------------------
@@ -556,12 +458,7 @@ body.uk-light .jlz-dropbar-sections li {
 }
 
 @media (max-width: 640px) {
-  /* Mobile compact — content fits 1 screen. Footer padding handled by
-     .jlz-footer mobile rule below. */
-  .jlz-main-menu-nav > li > a {
-    font-size: 2rem;
-  }
-
+  /* Mobile compact — content fits 1 screen. */
   .jlz-event-row {
     align-items: flex-start;
     flex-direction: column;

@@ -141,15 +141,45 @@ export class UIMenu {
 
   /** Build the navbar HTML with dropbars. */
   private buildNavbar(): string {
-    const navItemsHtml = NAV_ITEMS.map((item) => {
-      // Contact item — special dropbar with contact links (not sections)
+    // Split nav items into two halves for center-left / center-right layout.
+    // Theme toggle sits in the center between them (replaces logo).
+    const half = Math.ceil(NAV_ITEMS.length / 2)
+    const leftItems = NAV_ITEMS.slice(0, half)
+    const rightItems = NAV_ITEMS.slice(half)
+    const leftHtml = this.renderNavItems(leftItems)
+    const rightHtml = this.renderNavItems(rightItems)
+
+    return `
+      <nav class="uk-navbar-container uk-navbar-transparent" uk-navbar>
+        <div class="uk-navbar-center">
+          <div class="uk-navbar-center-left">
+            <ul class="uk-navbar-nav jlz-navbar-nav">
+              ${leftHtml}
+            </ul>
+          </div>
+          <button class="uk-icon-button jlz-theme-toggle" type="button" id="jlz-theme-toggle" aria-pressed="false" aria-label="Toggle theme">
+            <span uk-icon="icon: paint-bucket; ratio: 0.8" aria-hidden="true"></span>
+          </button>
+          <div class="uk-navbar-center-right">
+            <ul class="uk-navbar-nav jlz-navbar-nav">
+              ${rightHtml}
+            </ul>
+          </div>
+        </div>
+      </nav>
+    `
+  }
+
+  /** Render nav items HTML (shared by center-left/right). */
+  private renderNavItems(items: NavItem[]): string {
+    return items.map((item) => {
       if (item.label === 'Contact') {
         return `
           <li>
             <a href="${item.href}" data-nav-item="${item.page}">${item.label}</a>
             <div class="uk-dropbar uk-dropbar-top" uk-drop="stretch: x; offset: 0; mode: hover; animation: uk-animation-slide-top">
               <div class="uk-container uk-container-expand">
-                <ul class="uk-nav uk-navbar-dropdown-nav uk-flex uk-flex-center uk-flex-wrap jlz-dropbar-contact">
+                <ul class="uk-nav jlz-dropbar-contact uk-flex uk-flex-center uk-flex-wrap">
                   ${CONTACT_LINKS.map((c) => `
                     <li><a href="${c.href}"${c.external ? ' target="_blank" rel="noopener"' : ''}>${c.label}</a></li>
                   `).join('')}
@@ -159,7 +189,6 @@ export class UIMenu {
           </li>
         `
       }
-      // Items with section dropbars — Balou-style 2-column: sections + featured
       if (item.sections) {
         return `
           <li>
@@ -167,7 +196,6 @@ export class UIMenu {
             <div class="uk-dropbar uk-dropbar-top" uk-drop="stretch: x; offset: 0; mode: hover; animation: uk-animation-slide-top">
               <div class="uk-container uk-container-expand">
                 <div class="uk-grid jlz-dropbar-grid" uk-grid>
-                  <!-- Left: sections list (title + subtitle) -->
                   <div class="uk-width-2-3@m">
                     <ul class="uk-nav jlz-dropbar-sections">
                       ${item.sections.map((s) => `
@@ -181,7 +209,6 @@ export class UIMenu {
                       `).join('')}
                     </ul>
                   </div>
-                  <!-- Right: featured CTA (Balou pattern) -->
                   ${item.featured ? `
                     <div class="uk-width-1-3@m">
                       <a href="${item.featured.href}" class="jlz-dropbar-featured">
@@ -198,47 +225,8 @@ export class UIMenu {
           </li>
         `
       }
-      // Simple link (Blog)
       return `<li><a href="${item.href}" data-nav-item="${item.page}">${item.label}</a></li>`
     }).join('')
-
-    return `
-      <nav class="uk-navbar-container uk-navbar-transparent" uk-navbar>
-        <div class="uk-container uk-container-expand uk-flex uk-flex-between uk-flex-middle">
-          <div class="uk-navbar-left">
-            <a class="uk-navbar-item uk-logo jlz-brand" href="/app" aria-label="JUSTLOVEJAZZ home">l@6</a>
-          </div>
-          <div class="uk-navbar-center uk-visible@s">
-            <ul class="uk-navbar-nav jlz-navbar-nav">
-              ${navItemsHtml}
-            </ul>
-          </div>
-          <div class="uk-navbar-right">
-            <button class="jlz-theme-btn" type="button" id="jlz-theme-toggle" aria-pressed="false" aria-label="Toggle theme">
-              <span uk-icon="icon: paint-bucket; ratio: 0.8" aria-hidden="true"></span>
-            </button>
-            <button class="jlz-menu-btn uk-hidden@s" type="button" uk-toggle="target: #jlz-mobile-nav" aria-label="Open menu">
-              <span uk-icon="icon: menu; ratio: 1.1" aria-hidden="true"></span>
-            </button>
-          </div>
-        </div>
-      </nav>
-      <!-- Mobile nav (off-canvas, shown on <640px) -->
-      <div id="jlz-mobile-nav" uk-offcanvas="flip: true; overlay: true">
-        <div class="uk-offcanvas-bar">
-          <button class="uk-offcanvas-close" type="button" uk-close aria-label="Close menu"></button>
-          <ul class="uk-nav uk-nav-default jlz-mobile-nav">
-            ${NAV_ITEMS.map((item) => `<li><a href="${item.href}">${item.label}</a></li>`).join('')}
-            <li class="uk-nav-divider"></li>
-            ${CONTACT_LINKS.map((c) => `<li><a href="${c.href}"${c.external ? ' target="_blank" rel="noopener"' : ''}>${c.label}</a></li>`).join('')}
-          </ul>
-          <button class="uk-button uk-button-default uk-button-small uk-margin-top" type="button" id="jlz-mobile-theme" aria-pressed="false">
-            <span uk-icon="icon: paint-bucket; ratio: 0.8" aria-hidden="true"></span>
-            <span class="uk-margin-small-left" id="jlz-mobile-theme-label">Auto</span>
-          </button>
-        </div>
-      </div>
-    `
   }
 
   onNavigate(cb: (index: number) => void): void {
