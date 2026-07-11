@@ -77,6 +77,15 @@ export class Experience {
   private _ambientBreathTimer = 0
   private static readonly AMBIENT_BREATH_INTERVAL = 2.5 // seconds between idle refresh frames
   private _reducedMotion = false // cached prefers-reduced-motion (updated in init)
+  // Render-budget FPS tracker — rolling window of frame times. If FPS < 30
+  // sustained over LOW_FPS_WINDOW consecutive frames, _lowFps flips true.
+  // Read by DevPanel (low fps ⚠ indicator). Future: auto-reduce particle count.
+  private _fpsFrameTimes: number[] = []
+  private _lowFps = false
+  private static readonly LOW_FPS_THRESHOLD = 30 // FPS below this = low
+  private static readonly LOW_FPS_WINDOW = 60 // frames to sustain before flag
+  /** True when FPS < 30 sustained over 60 frames. Read by DevPanel. */
+  public get lowFps(): boolean { return this._lowFps }
 
   // (SECTION_LABELS removed — was passed to UIMenu/JoystickNav via options
   //  that are no longer used. Section labels are in WorldConfig.domSection.)
@@ -432,6 +441,18 @@ export class Experience {
   private _updateInner(time: number) {
     this.time.update(time)
     const dt = this.time.delta / 1000
+    // ── Render-budget FPS tracker (rolling 60-frame window) ──
+    // Push frame time (ms), cap window, compute current FPS, flip _lowFps
+    // when FPS < threshold sustained over the whole window.
+    this._fpsFrameTimes.push(this.time.delta)
+    if (this._fpsFrameTimes.length > Experience.LOW_FPS_WINDOW) {
+      this._fpsFrameTimes.shift()
+    }
+    if (this._fpsFrameTimes.length === Experience.LOW_FPS_WINDOW) {
+      const avgMs = this._fpsFrameTimes.reduce((a, b) => a + b, 0) / this._fpsFrameTimes.length
+      const avgFps = 1000 / Math.max(1, avgMs)
+      this._lowFps = avgFps < Experience.LOW_FPS_THRESHOLD
+    }
     this.bus.tick(dt)
     // Cursor always updates (DOM, cheap — not GPU rendering)
     this.cursor.update()

@@ -12,6 +12,7 @@
 
 import { Pane } from 'tweakpane'
 import type { Experience } from '../Experience/Experience'
+import { getLang } from './i18n'
 
 const STORAGE_KEY = 'jlz:devpanel'
 
@@ -59,6 +60,8 @@ export class DevPanel {
     backend: '?',
     section: 0,
     rendering: false,
+    lang: '?',
+    lowFps: false,
   }
 
   // Controls
@@ -66,6 +69,7 @@ export class DevPanel {
     sectionIdx: 0,
     exposure: 1.0,
     forceRender: false,
+    groundVisible: true,
   }
 
   constructor(exp: Experience) {
@@ -87,6 +91,7 @@ export class DevPanel {
     this.buildNavFolder()
     this.buildCarouselFolder()
     this.buildRenderFolder()
+    this.buildSceneFolder()
 
     this.bindToggle()
     this.applyVisibility()
@@ -98,7 +103,9 @@ export class DevPanel {
     const f = this.pane.addFolder({ title: 'Stats', expanded: true })
     f.addBinding(this.stats, 'fps', { readonly: true, label: 'fps' })
     f.addBinding(this.stats, 'frameMs', { readonly: true, label: 'frame ms' })
+    f.addBinding(this.stats, 'lowFps', { readonly: true, label: 'low fps ⚠' })
     f.addBinding(this.stats, 'backend', { readonly: true, label: 'backend' })
+    f.addBinding(this.stats, 'lang', { readonly: true, label: 'lang' })
     f.addBinding(this.stats, 'drawCalls', { readonly: true, label: 'draw calls' })
     f.addBinding(this.stats, 'triangles', { readonly: true, label: 'triangles' })
     f.addBinding(this.stats, 'heap', { readonly: true, label: 'heap MB' })
@@ -140,6 +147,23 @@ export class DevPanel {
         getCarousel?: () => { setActive: (a: boolean) => void; isActive: boolean } | null
       }).getCarousel?.()
       carousel?.setActive(!carousel.isActive)
+    })
+  }
+
+  // ── Scene folder (ground plane + diagnostics) ───────────────────────
+  private buildSceneFolder(): void {
+    const f = this.pane.addFolder({ title: 'Scene', expanded: false })
+    f.addBinding(this.controls, 'groundVisible', { label: 'ground plane' })
+      .on('change', (ev) => {
+        const world = (this.exp as unknown as { world?: { groundPlane?: { visible: boolean } } }).world
+        if (world?.groundPlane) world.groundPlane.visible = ev.value as boolean
+      })
+    f.addButton({ title: 'Reset ground (section 4 only)' }).on('click', () => {
+      // Restore RULES §20 behavior: ground visible only on section 4.
+      const world = (this.exp as unknown as { world?: { groundPlane?: { visible: boolean }, currentSectionIndex?: number } }).world
+      if (world?.groundPlane) world.groundPlane.visible = world.currentSectionIndex === 4
+      this.controls.groundVisible = world?.groundPlane?.visible ?? false
+      this.pane.refresh()
     })
   }
 
@@ -187,6 +211,8 @@ export class DevPanel {
       this.stats.section = nav?.getSectionIndex() ?? 0
       const exp = this.exp as unknown as { _needsRender?: boolean }
       this.stats.rendering = exp?._needsRender ?? false
+      this.stats.lowFps = this.exp.lowFps
+      this.stats.lang = getLang()
 
       // Force render if toggle is on
       if (this.controls.forceRender && exp) {
