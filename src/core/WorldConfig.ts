@@ -60,19 +60,19 @@ export interface SectionLightDef {
 }
 
 /** Per-section 3D scene control. All optional — sections without these
- *  use defaults (EnvSphere visible, no 3D objects, standard transition).
- *  This is the "control panel" for 3D per page section — background,
- *  3D objects visible/hidden, transition timing. */
+ *  use defaults (objects visible when their scene group is visible,
+ *  standard transition).
+ *
+ *  NOTE: envSpherePattern was REMOVED — EnvSphere follows global theme only
+ *  (see World.ts §EnvSphere). particles flag was REMOVED — particle visibility
+ *  is driven by scene-group visibility, no per-section toggle exists. */
 export interface SceneControl {
-  /** EnvSphere background pattern index (0-5). null = hide EnvSphere. */
-  envSpherePattern?: number | null
   /** 3D objects visibility per section. false = hidden. */
   objects?: {
     wireframeText?: boolean   // WireframeTypography (section title in 3D)
     shaderOrb?: boolean       // ShaderOrb (Lab experiment)
     timelineNodes?: boolean   // TimelineNodes (Process)
     bakuCarousel?: boolean    // BakuCarousel (Works gallery)
-    particles?: boolean       // Ambient particles
   }
   /** Transition timing for camera + baku morph when entering this section. */
   transition?: {
@@ -141,7 +141,6 @@ type RawScene = {
    *  Intro + Contact = light, middle sections = dark. Inverse flips. */
   sectionTheme: 'light' | 'dark'
   /** Per-section 3D scene control (optional — omitted = defaults). */
-  sceneEnvSpherePattern?: number | null
   sceneObjects?: SceneControl['objects']
   sceneTransition?: SceneControl['transition']
 }
@@ -183,8 +182,7 @@ const RAW: RawScene[] = [
     groundColor: 0xf5f5f8,
     groundOpacity: 0,
     sectionTheme: 'light',
-    sceneEnvSpherePattern: 0,
-    sceneObjects: { shaderOrb: true, particles: true },
+    sceneObjects: { shaderOrb: true },
     sceneTransition: { duration: 0.8, easing: 'ease-out' },
   },
   // ── Section 1: INTRO — White BG, metal drop ──
@@ -221,8 +219,6 @@ const RAW: RawScene[] = [
     groundColor: 0xffffff,
     groundOpacity: 0,
     sectionTheme: 'light',
-    sceneEnvSpherePattern: 1,
-    sceneObjects: { particles: true },
     sceneTransition: { duration: 1.0, easing: 'ease-in-out' },
   },
   {
@@ -258,7 +254,6 @@ const RAW: RawScene[] = [
     groundColor: 0x080812,
     groundOpacity: 0.08,
     sectionTheme: 'dark',
-    sceneEnvSpherePattern: 2,
     sceneObjects: { wireframeText: true },
     sceneTransition: { duration: 0.6, easing: 'ease-out' },
   },
@@ -296,8 +291,7 @@ const RAW: RawScene[] = [
     groundColor: 0x06080e,
     groundOpacity: 0.1,
     sectionTheme: 'dark',
-    sceneEnvSpherePattern: 3,
-    sceneObjects: { bakuCarousel: true, particles: true },
+    sceneObjects: { bakuCarousel: true },
     sceneTransition: { duration: 0.8, easing: 'ease-out' },
   },
   // ── Section 4: CONTACT — Dark BG, closing ──
@@ -334,7 +328,6 @@ const RAW: RawScene[] = [
     groundColor: 0x080812,
     groundOpacity: 0.25,
     sectionTheme: 'light',
-    sceneEnvSpherePattern: 4,
     sceneObjects: { wireframeText: true },
     sceneTransition: { duration: 0.6, easing: 'ease-out' },
   },
@@ -372,7 +365,6 @@ const RAW: RawScene[] = [
     groundColor: 0x080812,
     groundOpacity: 0.05,
     sectionTheme: 'dark',
-    sceneEnvSpherePattern: 5,
     sceneObjects: { timelineNodes: true },
     sceneTransition: { duration: 0.6, easing: 'ease-out' },
   },
@@ -431,8 +423,7 @@ function toPhaseConfig(raw: RawScene): PhaseConfig {
       opacity: raw.groundOpacity,
     },
     theme: raw.sectionTheme,
-    scene: (raw.sceneEnvSpherePattern !== undefined || raw.sceneObjects || raw.sceneTransition) ? {
-      envSpherePattern: raw.sceneEnvSpherePattern ?? undefined,
+    scene: (raw.sceneObjects || raw.sceneTransition) ? {
       objects: raw.sceneObjects,
       transition: raw.sceneTransition,
     } : undefined,
@@ -504,34 +495,13 @@ const CONTACT_PALETTE: ContentPalette = {
   groundColor: 0x08141a,
 }
 
-/** Per-page scene configs for content pages. Each page gets distinct
- *  3D objects + EnvSphere patterns per section, matching the page theme.
- *  idx 0 = secret-left, 1-4 = main sections, 5 = secret-right. */
-function sceneForContentPage(pageId: string, idx: number): Pick<RawScene, 'sceneEnvSpherePattern' | 'sceneObjects' | 'sceneTransition'> {
-  const patternBase = pageId === 'services' ? 0
-    : pageId === 'works' ? 1
-    : pageId === 'manifesto' ? 2
-    : pageId === 'lab' ? 3
-    : pageId === 'contact' ? 4
-    : 0
-
-  // Per-page 3D objects per section
-  const objectsFor = (pageId: string, idx: number): SceneControl['objects'] | undefined => {
-    if (idx === 0 || idx === 5) return undefined // secret sections — minimal
-    if (pageId === 'services') return { wireframeText: idx === 1 }
-    if (pageId === 'works') return { bakuCarousel: idx === 1, particles: true }
-    if (pageId === 'manifesto') return { wireframeText: true }
-    if (pageId === 'lab') return { shaderOrb: true, particles: idx === 1 }
-    if (pageId === 'contact') return { wireframeText: idx === 1 }
-    return undefined
-  }
-
-  return {
-    sceneEnvSpherePattern: patternBase + (idx % 6),
-    sceneObjects: objectsFor(pageId, idx),
-    sceneTransition: { duration: 0.6, easing: 'ease-out' },
-  }
-}
+// sceneForContentPage REMOVED — it generated per-page sceneObjects that
+// referenced 3D objects on the wrong cube-face indices (e.g. wireframeText on
+// idx 1, but WireframeTypography only exists on idx 2/4). The `if (typo)` /
+// `if (orb)` guards in World.ts made every assignment a no-op. Scene groups are
+// shared across all SPA pages (SectionSceneFactory is hardcoded), so per-page
+// sceneObjects config contradicts the architecture. Objects are now visible
+// whenever their scene group is visible (see World.ts visibility block).
 
 function makeContentScenes(palette: ContentPalette, pageId: string): RawScene[] {
   const themeFor = (idx: number): 'light' | 'dark' => (idx === 0 || idx === 4) ? 'light' : 'dark'
@@ -571,7 +541,7 @@ function makeContentScenes(palette: ContentPalette, pageId: string): RawScene[] 
     groundColor: palette.groundColor,
     groundOpacity: 0.05,
     sectionTheme: themeFor(idx),
-    ...sceneForContentPage(pageId, idx),
+    sceneTransition: { duration: 0.6, easing: 'ease-out' },
   }))
 }
 
