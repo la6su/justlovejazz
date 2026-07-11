@@ -50,6 +50,7 @@
     <link rel="preload" href="/fonts/inter-700.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="/fonts/inter.css" />
     <link rel="stylesheet" href="/src/assets/blog.less" />
+    <link rel="stylesheet" href="/vendor/prism/prism-tomorrow.css" />
 
     <!-- JSON-LD BlogPosting -->
     <script type="application/ld+json">
@@ -84,6 +85,7 @@
     </script>
   </head>
   <body>
+    <div class="jlz-reading-progress" aria-hidden="true"><div class="jlz-reading-progress__bar"></div></div>
     <a href="#main" class="skip-link">Skip to main content</a>
 
     <header class="jlz-blog-header" role="banner">
@@ -220,5 +222,12 @@
     <script>
       document.getElementById('year').textContent = String(new Date().getFullYear());
     </script>
+      <script defer src="/vendor/prism/prism-core.min.js"></script>
+    <script defer src="/vendor/prism/prism-clike.min.js"></script>
+    <script defer src="/vendor/prism/prism-javascript.min.js"></script>
+    <script defer src="/vendor/prism/prism-typescript.min.js"></script>
+    <script defer src="/vendor/prism/prism-glsl.min.js"></script>
+    <script defer src="/vendor/prism/prism-css.min.js"></script>
+    <script defer src="/js/blog.js"></script>
   </body>
 </html>

@@ -48,6 +48,7 @@
     <link rel="preload" href="/fonts/inter-700.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="/fonts/inter.css" />
     <link rel="stylesheet" href="/src/assets/blog.less" />
+    <link rel="stylesheet" href="/vendor/prism/prism-tomorrow.css" />
 
     <script type="application/ld+json">
       {
@@ -71,6 +72,7 @@
     </script>
   </head>
   <body>
+    <div class="jlz-reading-progress" aria-hidden="true"><div class="jlz-reading-progress__bar"></div></div>
     <a href="#main" class="skip-link">Skip to main content</a>
 
     <header class="jlz-blog-header" role="banner">
@@ -106,7 +108,7 @@
           bug that crashed the whole pipeline would show up as a black screen with a
           console warning buried in three.js internals.
         </p>
-        <pre class="uk-pre uk-margin-medium"><code>// The old way — raw GLSL string
+        <pre class="uk-pre uk-margin-medium"><code class="language-typescript">// The old way — raw GLSL string
 const material = new THREE.ShaderMaterial({
   vertexShader: \`
     varying vec3 vNormal;
@@ -134,7 +136,7 @@ const material = new THREE.ShaderMaterial({
           a node. Nodes compose into graphs. The graph compiles to WGSL (WebGPU) or GLSL
           (WebGL2) at runtime — same code, both backends.
         </p>
-        <pre class="uk-pre uk-margin-medium"><code>// The new way — TSL node graph
+        <pre class="uk-pre uk-margin-medium"><code class="language-typescript">// The new way — TSL node graph
 import { Fn, vec3, uniform, positionLocal, normalLocal, mx_noise_float, sin, mix } from 'three/tsl'
 
 const uTime = uniform(0)
@@ -235,5 +237,12 @@ const positionNode = Fn(() => {
     <script>
       document.getElementById('year').textContent = String(new Date().getFullYear());
     </script>
+      <script defer src="/vendor/prism/prism-core.min.js"></script>
+    <script defer src="/vendor/prism/prism-clike.min.js"></script>
+    <script defer src="/vendor/prism/prism-javascript.min.js"></script>
+    <script defer src="/vendor/prism/prism-typescript.min.js"></script>
+    <script defer src="/vendor/prism/prism-glsl.min.js"></script>
+    <script defer src="/vendor/prism/prism-css.min.js"></script>
+    <script defer src="/js/blog.js"></script>
   </body>
 </html>

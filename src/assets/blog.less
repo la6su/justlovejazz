@@ -43,6 +43,58 @@ body {
   text-decoration: none;
 }
 
+// ── Reading progress bar (top-fixed, scaleX = scroll %) ──
+.jlz-reading-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: transparent;
+  z-index: 101; // above the sticky header (z-index: 100)
+  pointer-events: none;
+}
+.jlz-reading-progress__bar {
+  height: 100%;
+  width: 100%;
+  background: var(--jlz-color-accent, #863bff);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.05s linear; // smooth micro-updates without rAF jitter
+  will-change: transform;
+}
+
+// ── Prism code highlighting (prism-tomorrow theme overrides) ──
+// The prism-tomorrow.css ships its own background + padding; we align it with
+// the JLZ card surface so code blocks feel native to the theme.
+.jlz-blog-content pre[class*='language-'],
+.jlz-blog-content pre:not([class]) {
+  background: var(--jlz-color-bg-elevated, #1a1a2e) !important;
+  border: 1px solid var(--jlz-color-border);
+  border-radius: var(--jlz-radius-md);
+  padding: 1rem 1.25rem;
+  overflow-x: auto;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin: 1.5rem 0;
+}
+.jlz-blog-content code[class*='language-'] {
+  font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;
+  font-size: 0.875rem;
+  color: inherit; // let prism-tomorrow token colors apply
+  background: transparent;
+  padding: 0;
+}
+// Inline code (no language class) — keep the accent tint from blog.less
+.jlz-blog-content :not(pre) > code {
+  font-family: 'SF Mono', 'Cascadia Code', monospace;
+  font-size: 0.85em;
+  color: var(--jlz-color-accent);
+  background: var(--jlz-color-bg-elevated, rgba(134, 59, 255, 0.08));
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+}
+
 // ── Header — transparent navbar (matches app style) ──
 .jlz-blog-header {
   position: sticky;
