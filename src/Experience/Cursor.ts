@@ -51,6 +51,13 @@ export class Cursor {
   private readonly noiseScale = 150
   private readonly noiseRange = 3
   private frameCount = 0
+  // Last-draw state — skip canvas redraw when nothing changed
+  private _lastDrawX = 0
+  private _lastDrawY = 0
+  private _lastDrawR = 0
+  private _lastDrawFill = 0
+  private _lastDrawBump = 1
+  private _lastDrawStuck = false
 
   // Click bump state (demo1)
   private bumpScale = 1
@@ -163,8 +170,22 @@ export class Cursor {
     // Fill progress — 0 = stroke only, 1 = filled
     this.fillProgress = lerp(this.fillProgress, this.fillTarget, 0.12)
 
-    // Draw noisy circle
-    this.drawCircle()
+    // Draw noisy circle — ONLY when something changed (avoids redraw when idle)
+    const moved = Math.abs(this.posX - this._lastDrawX) > 0.3
+      || Math.abs(this.posY - this._lastDrawY) > 0.3
+      || Math.abs(this.currentRadius - this._lastDrawR) > 0.3
+      || Math.abs(this.fillProgress - this._lastDrawFill) > 0.01
+      || Math.abs(this.bumpScale - this._lastDrawBump) > 0.01
+      || this.isStuck !== this._lastDrawStuck
+    if (moved) {
+      this.drawCircle()
+      this._lastDrawX = this.posX
+      this._lastDrawY = this.posY
+      this._lastDrawR = this.currentRadius
+      this._lastDrawFill = this.fillProgress
+      this._lastDrawBump = this.bumpScale
+      this._lastDrawStuck = this.isStuck
+    }
     this.frameCount++
   }
 

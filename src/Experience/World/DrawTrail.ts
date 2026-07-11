@@ -179,11 +179,13 @@ export class DrawTrail {
       this.initialized = true
     }
 
-    // Shift ring buffer
-    for (let i = this.trailPositions.length - 1; i > 0; i--) {
-      this.trailPositions[i]!.copy(this.trailPositions[i - 1]!)
+    // Shift ring buffer — SKIP when mouse hasn't moved (saves 48 Vector3.copy)
+    if (velNdc > 0.0001) {
+      for (let i = this.trailPositions.length - 1; i > 0; i--) {
+        this.trailPositions[i]!.copy(this.trailPositions[i - 1]!)
+      }
+      this.trailPositions[0]!.copy(this._ndc)
     }
-    this.trailPositions[0]!.copy(this._ndc)
 
     // Rebuild ribbon geometry every 2 frames (cheaper than every frame)
     this._frameCount++

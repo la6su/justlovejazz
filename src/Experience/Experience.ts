@@ -47,6 +47,7 @@ export class Experience {
   private cursor!: Cursor
   private _sectionChangeHandler: ((payload: import('../core/EventBus').AppEvents['jlz:section-change']) => void) | null = null
   private _themeAppliedHandler: ((e: Event) => void) | null = null
+  private _soundToggleHandler: ((e: Event) => void) | null = null
   private devPanel: DevPanel | null = null
   public world!: World
   private bus!: StateBus
@@ -382,10 +383,11 @@ export class Experience {
     } catch { /* localStorage unavailable */ }
 
     // Runtime sound toggle (from UIMenu or other in-app controls)
-    window.addEventListener('jlz:sound-toggle', ((e: Event) => {
+    this._soundToggleHandler = (e: Event) => {
       const detail = (e as CustomEvent<{ muted: boolean }>).detail
       if (detail) this.audio.setMuted(detail.muted)
-    }) as EventListener)
+    }
+    window.addEventListener('jlz:sound-toggle', this._soundToggleHandler)
   }
 
   update(time: number) {
@@ -651,6 +653,10 @@ export class Experience {
     if (this._themeAppliedHandler) {
       window.removeEventListener('jlz:theme-applied', this._themeAppliedHandler)
       this._themeAppliedHandler = null
+    }
+    if (this._soundToggleHandler) {
+      window.removeEventListener('jlz:sound-toggle', this._soundToggleHandler)
+      this._soundToggleHandler = null
     }
     this.world.dispose()
     this.bus.cancelAll()

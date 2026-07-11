@@ -65,6 +65,7 @@ export class JoystickNav {
   private _pointerMoveHandler: ((e: PointerEvent) => void) | null = null
   private _pointerUpHandler: ((e: PointerEvent) => void) | null = null
   private _returnTimer: ReturnType<typeof setTimeout> | null = null
+  private _activeTimer: ReturnType<typeof setTimeout> | null = null
 
   constructor(_scene: unknown, _camera: unknown, sectionCount: number, _opts?: Partial<JoystickNavOptions>) {
     this._sectionCount = Math.max(2, sectionCount)
@@ -256,7 +257,7 @@ export class JoystickNav {
       }
       this._syncPageSection(next)
       this._setActive(true)
-      setTimeout(() => this._setActive(false), 400)
+      this._setActiveDelayed(400)
       return
     }
     // Always return to center first (if in Lab/Process)
@@ -315,7 +316,7 @@ export class JoystickNav {
       if (target >= 0) {
         this._syncPageSection(target)
         this._setActive(true)
-        setTimeout(() => this._setActive(false), 400)
+        this._setActiveDelayed(400)
       }
       return
     }
@@ -344,7 +345,7 @@ export class JoystickNav {
     this._onSectionChange?.(this._currentSection)
     this._updateDotnav()
     this._setActive(true)
-    setTimeout(() => this._setActive(false), 400)
+    this._setActiveDelayed(400)
   }
 
   private _snapBallBack(): void {
@@ -405,6 +406,15 @@ export class JoystickNav {
     if (active === this._wasActive) return
     this._wasActive = active
     this._onActiveChange?.(active)
+  }
+
+  /** Delayed setActive(false) — tracked so it can be cancelled on dispose. */
+  private _setActiveDelayed(ms: number): void {
+    if (this._activeTimer) clearTimeout(this._activeTimer)
+    this._activeTimer = setTimeout(() => {
+      this._setActive(false)
+      this._activeTimer = null
+    }, ms)
   }
 
   getSectionIndex(): number {
@@ -499,6 +509,7 @@ export class JoystickNav {
       this._base.removeEventListener('pointercancel', this._pointerUpHandler)
     }
     if (this._returnTimer) clearTimeout(this._returnTimer)
+    if (this._activeTimer) clearTimeout(this._activeTimer)
     this.el.remove()
   }
 }

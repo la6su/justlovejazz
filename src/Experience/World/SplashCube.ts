@@ -432,9 +432,17 @@ export class SplashCube extends THREE.Mesh {
   dispose(): void {
     this.cubeMesh.geometry.dispose()
     this.cubeMaterial.dispose()
-    // (edgeLines removed — no geometry/material to dispose)
     this.cubeCamera.renderTarget.dispose()
     for (const tex of this.contentTextures) tex.dispose()
+    // Dispose contentScene objects (gradient planes + text meshes + camera)
+    this.contentScene.traverse((obj) => {
+      if (obj instanceof THREE.Mesh) {
+        obj.geometry?.dispose()
+        const mat = obj.material
+        if (Array.isArray(mat)) mat.forEach((m) => m.dispose())
+        else mat?.dispose()
+      }
+    })
     ;(this.geometry as THREE.BufferGeometry).dispose()
     ;(this.material as THREE.Material).dispose()
     this.clear()
