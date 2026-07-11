@@ -8,7 +8,7 @@ export function createSection6(): THREE.Group {
   const g = new THREE.Group()
   g.name = 'contact'
 
-  const typography = new WireframeTypography('MANIFESTO', 1.0)
+  const typography = new WireframeTypography('HELLO', 1.0)
   typography.userData.keepVisible = true
   typography.position.set(0, 0, -2)
   g.add(typography)
