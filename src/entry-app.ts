@@ -3,6 +3,7 @@ import Icons from 'uikit/dist/js/uikit-icons'
 import { initRouter } from './router'
 import { bootstrap as bootstrapApp, type BootstrapOptions } from './main-app'
 import { BlurFade } from './Experience/BlurFade'
+import { NoiseText } from './Experience/NoiseText'
 import { eventBus } from './core/EventBus'
 
 const SOUND_KEY = 'jlz:sound'
@@ -189,10 +190,17 @@ export async function startApp(): Promise<void> {
     const sections = document.querySelectorAll<HTMLElement>('[data-page-section]')
     const el = sections[detail.index]
     if (!el) return
+    // BlurFade on title
     const title = el.querySelector<HTMLElement>('.studio-title')
     if (title) {
       const text = title.textContent?.trim() || ''
       if (text) BlurFade.for(title).show(1.5)
+    }
+    // NoiseText on eyebrow
+    const eyebrow = el.querySelector<HTMLElement>('[data-eyebrow]')
+    if (eyebrow) {
+      const text = eyebrow.getAttribute('data-eyebrow-text') ?? eyebrow.textContent ?? ''
+      if (text) NoiseText.for(eyebrow).show(0.6, text)
     }
   }) as EventListener)
 
