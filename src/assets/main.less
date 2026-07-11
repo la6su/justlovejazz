@@ -1114,18 +1114,18 @@ body.uk-light .jlz-eyebrow {
   left: 50%;
   transform: translateX(-50%);
   z-index: 100;
-  /* Flex row: left dotnav | joystick base | right dotnav (symmetry) */
+  /* Flex column: joystick base on top, dotnav timeline below */
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: var(--jlz-space-4);
+  gap: var(--jlz-space-3);
 }
 
-/* Dotnav timeline — minimalist section progress (UIKit3 uk-dotnav base).
-   Horizontal row of 4 dots on each side of the joystick base.
+/* Dotnav timeline — single horizontal row of 4 dots BELOW the joystick.
    UIKit3 uk-dotnav provides dot styling; we override size + colors. */
 .jlz-joystick-dotnav {
   flex-wrap: nowrap;
-  gap: 0.4rem;
+  gap: 0.5rem;
   margin: 0;
 }
 

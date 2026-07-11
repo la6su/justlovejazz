@@ -53,7 +53,7 @@ export function sectionTop(
     <div class="jlz-section-top uk-text-center uk-flex uk-flex-column uk-flex-middle" ${REVEAL}>
       <span class="jlz-eyebrow" data-eyebrow data-eyebrow-text="${eyebrow}">${eyebrow}</span>
       <h2 class="studio-title uk-heading-${headingTier} uk-margin-small-top uk-margin-remove-bottom">${title}</h2>
-      ${lead ? `<p class="uk-text-meta uk-margin-small-top">${lead}</p>` : ''}
+      ${lead ? `<p class="uk-text-lead uk-margin-small-top">${lead}</p>` : ''}
     </div>
   `
 }
@@ -132,9 +132,9 @@ export function contentTop(
 ): string {
   return `
     <div class="jlz-section-top uk-text-center uk-flex uk-flex-column uk-flex-middle" ${PAGE_REVEAL}>
-      <span class="jlz-eyebrow">&gt; ${eyebrow}</span>
+      <span class="jlz-eyebrow" data-eyebrow data-eyebrow-text="${eyebrow}">${eyebrow}</span>
       <h2 class="studio-title uk-heading-${headingTier} uk-margin-small-top uk-margin-remove-bottom">${title}</h2>
-      ${lead ? `<p class="uk-text-meta uk-margin-small-top">${lead}</p>` : ''}
+      ${lead ? `<p class="uk-text-lead uk-margin-small-top">${lead}</p>` : ''}
     </div>
   `
 }

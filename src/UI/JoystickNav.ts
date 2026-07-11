@@ -51,8 +51,7 @@ export class JoystickNav {
   private _side: SideState = 'center'
   private _sectionCount: number
   public _progress = 0 // kept for Experience API compat
-  private _dotnavLeft!: HTMLElement
-  private _dotnavRight!: HTMLElement
+  private _dotnav!: HTMLElement
   private _onSectionChange: ((index: number) => void) | null = null
   private _onActiveChange: ((active: boolean) => void) | null = null
   private _wasActive = false
@@ -101,13 +100,11 @@ export class JoystickNav {
     this._base.appendChild(this._ball)
 
     // Dotnav timeline — minimalist section progress indicator (UIKit3 uk-dotnav).
-    // Shows 4 main sections (1-4); secret sections (0=Lab, 5=Process) are NOT
-    // shown — they're hidden by design. Active dot syncs via onSectionChange.
-    // Positioned left of the joystick; mirrored copy on the right for symmetry.
-    this._dotnavLeft = this._buildDotnav()
-    this._dotnavRight = this._buildDotnav()
-    this.el.appendChild(this._dotnavLeft)
-    this.el.appendChild(this._dotnavRight)
+    // Single horizontal timeline BELOW the joystick base. Shows 4 main sections
+    // (1-4); secret sections (0=Lab, 5=Process) are NOT shown — hidden by design.
+    // Active dot syncs via onSectionChange.
+    this._dotnav = this._buildDotnav()
+    this.el.appendChild(this._dotnav)
 
     this.addEventListeners()
     // Start on section 1 (intro) — same as home (Lab=0 is secret, Intro=1 is start).
@@ -395,15 +392,13 @@ export class JoystickNav {
   /** Sync dotnav active state to current section. Called on section change.
    *  Secret sections (0, 5) deactivate all dots (no dot for them). */
   private _updateDotnav(): void {
+    if (!this._dotnav) return
     const mainIdx = this._side === 'center' ? this._mainSection : -1
-    for (const nav of [this._dotnavLeft, this._dotnavRight]) {
-      if (!nav) continue
-      const items = nav.querySelectorAll('li')
-      items.forEach((li, i) => {
-        // dot i maps to section i+1 (dots 0-3 = sections 1-4)
-        li.classList.toggle('uk-active', i + 1 === mainIdx)
-      })
-    }
+    const items = this._dotnav.querySelectorAll('li')
+    items.forEach((li, i) => {
+      // dot i maps to section i+1 (dots 0-3 = sections 1-4)
+      li.classList.toggle('uk-active', i + 1 === mainIdx)
+    })
   }
 
   private _setActive(active: boolean): void {
