@@ -658,36 +658,38 @@ export class RenderPipeline {
     renderer.setRenderTarget(rtScene)
     renderer.render(scene, camera)
 
-    // 2. Bright-extract: rtScene → rtBright
-    this._renderQuad(passBright, { uScene: rtScene.texture }, rtBright, renderer)
+    // 2-3. Bloom passes — SKIP when bloom intensity = 0 (saves 5+ draw calls)
+    const bloomIntensity = this._params.bloom
+    let bloomTex: THREE.Texture | null = null
 
-    // 3. Gaussian blur (ping-pong)
-    let inputRT = rtBright
-    let outputRT = rtBloomA
+    if (bloomIntensity > 0.001) {
+      // Bright-extract: rtScene → rtBright
+      this._renderQuad(passBright, { uScene: rtScene.texture }, rtBright, renderer)
 
-    for (let i = 0; i < this._config.bloomPasses; i++) {
-      // Horizontal
-      passBlur.uniforms.uInput!.value = inputRT.texture
-      passBlur.uniforms.uHorizontal!.value = true
-      this._renderQuad(passBlur, {}, outputRT, renderer)
+      // Gaussian blur (ping-pong)
+      let inputRT = rtBright
+      let outputRT = rtBloomA
 
-      // Vertical — swap RO/point
-      passBlur.uniforms.uInput!.value = outputRT.texture
-      passBlur.uniforms.uHorizontal!.value = false
-      this._renderQuad(passBlur, {}, inputRT, renderer)
+      for (let i = 0; i < this._config.bloomPasses; i++) {
+        passBlur.uniforms.uInput!.value = inputRT.texture
+        passBlur.uniforms.uHorizontal!.value = true
+        this._renderQuad(passBlur, {}, outputRT, renderer)
 
-      // Swap for next iteration
-      ;[inputRT, outputRT] = [outputRT, inputRT]
+        passBlur.uniforms.uInput!.value = outputRT.texture
+        passBlur.uniforms.uHorizontal!.value = false
+        this._renderQuad(passBlur, {}, inputRT, renderer)
+
+        ;[inputRT, outputRT] = [outputRT, inputRT]
+      }
+
+      bloomTex = rtBloomA.texture
     }
-
-    // Final bloom result is in rtBloomA
-    const bloomTex = rtBloomA.texture
 
     // 4. Composite: scene + bloom → screen
     renderer.setRenderTarget(null)
     passComposite.uniforms.uScene!.value = rtScene.texture
-    passComposite.uniforms.uBloom!.value = bloomTex
-    passComposite.uniforms.uBloomIntensity!.value = this._params.bloom
+    passComposite.uniforms.uBloom!.value = bloomTex ?? rtScene.texture // null → use scene tex (bloom*0 = no effect)
+    passComposite.uniforms.uBloomIntensity!.value = bloomIntensity
     passComposite.uniforms.uVignette!.value = this._params.vignette
     passComposite.uniforms.uGrain!.value = this._params.grain
     passComposite.uniforms.uChromatic!.value = this._params.chromatic ?? 0

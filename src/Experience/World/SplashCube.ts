@@ -47,6 +47,11 @@ export class SplashCube extends THREE.Mesh {
   private openerProgress = 0
   private openerTarget = 0
   private openerPhase: 'idle' | 'opening' | 'closing' | 'done' = 'idle'
+  /** CubeCamera update counter — throttles cubemap refresh to every N frames.
+   *  Content scene is static (canvas textures), so 6-face render every frame
+   *  is 54 wasted draw calls. Update every 6 frames (~10Hz) or on transition. */
+  private _cubeCamCounter = 0
+  private static readonly CUBE_CAM_INTERVAL = 6
 
   private targetParams: BakuMaterialParams = {
     color: new THREE.Color(0x333333),
@@ -292,12 +297,23 @@ export class SplashCube extends THREE.Mesh {
   update(dt: number, renderer?: THREE.WebGLRenderer): void {
     this.time += dt
 
-    // ── CubeCamera — render content scene into cubemap for reflections ──
-    // Render ONLY when cube is visible + renderer available.
-    // Hide cube mesh during CubeCamera render to avoid self-reflection.
-    if (renderer && this.cubeMesh.visible) {
+    // ── CubeCamera — throttled cubemap refresh ──
+    // Content scene is static (canvas textures don't change). Render cubemap
+    // every CUBE_CAM_INTERVAL frames (~10Hz) OR during face transitions
+    // (cube is rotating, reflections need to update).
+    this._cubeCamCounter++
+    const needsCubeUpdate = renderer
+      && this.cubeMesh.visible
+      && (
+        this._cubeCamCounter >= SplashCube.CUBE_CAM_INTERVAL
+        || this._transitionDir !== 0
+        || this._faceLerp < 1
+      )
+
+    if (needsCubeUpdate) {
+      this._cubeCamCounter = 0
       this.cubeMesh.visible = false
-      this.cubeCamera.update(renderer, this.contentScene)
+      this.cubeCamera.update(renderer!, this.contentScene)
       this.cubeMesh.visible = true
     }
 

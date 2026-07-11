@@ -34,6 +34,7 @@ export class World extends THREE.Group {
   public sceneGroups: THREE.Group[] = []
 
   private configs: readonly PhaseConfig[] = []
+  private _configMap: Map<string, PhaseConfig> | null = null
   private sceneRef: THREE.Scene
 
   private _currentSectionIndex: number = 1 // Intro = index 1 (Lab=0 is secret left)
@@ -649,9 +650,12 @@ export class World extends THREE.Group {
     return 3 * (1 - u) * (1 - u) * u * y1 + 3 * (1 - u) * u * u * y2 + u * u * u
   }
 
-  /** Get PhaseConfig for a given phase ID */
+  /** Get PhaseConfig for a given phase ID. Uses cached Map for O(1) lookup. */
   public getConfig(phase: string): PhaseConfig | undefined {
-    return this.configs.find((c) => c.id === phase)
+    if (!this._configMap) {
+      this._configMap = new Map(this.configs.map((c) => [c.id, c]))
+    }
+    return this._configMap.get(phase)
   }
 
   private defaultResult(): WorldTransformResult {
