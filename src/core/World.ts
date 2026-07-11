@@ -408,13 +408,15 @@ export class World extends THREE.Group {
           m.opacity = (m.userData.baseOpacity ?? 1) * fade
         }
 
-        // BakuCarousel visibility + active state (morph cube ↔ carousel ring)
+        // BakuCarousel visibility — ONLY on home page (3D cube morph feature).
+        // Content pages don't use the carousel (no cube morphing).
         const carousel = g.userData.gallery as
           | import('../Experience/World/BakuCarousel').BakuCarousel
           | undefined
         if (carousel) {
+          const isHome = document.body.dataset.page === 'home'
           const cfg = this.configs[i]
-          const showCarousel = cfg?.scene?.objects?.bakuCarousel !== false
+          const showCarousel = isHome && cfg?.scene?.objects?.bakuCarousel === true
           carousel.visible = showCarousel && fade > 0.01
           carousel.setActive(showCarousel && fade > 0.5)
         }
