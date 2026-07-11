@@ -527,12 +527,20 @@ export class Experience {
       this._prevSectionIndex = idx
       const cfgForSection = this.world.getConfig(worldState.currentPhase)
       const sectionId = cfgForSection?.domSection ?? `section-${idx}`
-      eventBus.emit('jlz:section-change', {
-        sectionId,
-        context: cfgForSection?.context,
-        configId: cfgForSection?.id,
-        index: idx,
-      })
+      // On content pages the sectionId is 'content-N' — it doesn't correspond
+      // to any [data-section] DOM element. ContentReveal's sectionHandler
+      // guards against this, but we also skip the dispatch here to avoid
+      // spurious events + cube face rotation that doesn't make sense on
+      // content pages (cube rotation is home-only visual feedback).
+      const isHomePage = document.body.dataset.page === 'home'
+      if (isHomePage) {
+        eventBus.emit('jlz:section-change', {
+          sectionId,
+          context: cfgForSection?.context,
+          configId: cfgForSection?.id,
+          index: idx,
+        })
+      }
       // ── Rotate cube to show the face for this section ──
       // 6 sections = 6 cube faces. Each section change animates the cube
       // to its target Y rotation so the corresponding face points to camera.

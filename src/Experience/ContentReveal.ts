@@ -25,6 +25,15 @@ export class ContentReveal {
   constructor() {
     this.setupSectionSync()
     this.setupThemeSync()
+    // Invalidate cached configs on SPA navigation — getWorldConfigForPage
+    // returns different configs per page, but this class caches them on first
+    // access. Without this, navigating from / to /services keeps home configs.
+    window.addEventListener('jlz:route-change', this.invalidateConfigs)
+  }
+
+  private invalidateConfigs = () => {
+    this.cachedConfigs = null
+    this.currentSectionIndex = -1
   }
 
   private getConfigs(): readonly PhaseConfig[] {
@@ -37,8 +46,16 @@ export class ContentReveal {
 
   private setupSectionSync() {
     // Home: jlz:section-change (data-section)
+    // Only handles home sections — content pages use pageSectionHandler below.
+    // Experience.ts dispatches jlz:section-change on ALL pages with
+    // sectionId = cfgForSection.domSection. On content pages that's
+    // 'content-0' / 'content-1' / etc., which don't exist as [data-section]
+    // elements — so we MUST skip them (activateSection guards too, but this
+    // avoids unnecessary theme re-applies and UIkit updates).
     this.sectionHandler = (payload) => {
       if (!payload?.sectionId) return
+      const matching = document.querySelector<HTMLElement>(`[data-section="${payload.sectionId}"]`)
+      if (!matching) return // not a home section — pageSectionHandler handles content pages
       this.currentSectionId = payload.sectionId
       this.activateSection(`[data-section="${payload.sectionId}"]`)
     }
@@ -62,16 +79,20 @@ export class ContentReveal {
   }
 
   private activateSection(selector: string): void {
+    // Find matching FIRST — if not found, bail out without touching existing
+    // active sections. This prevents the bug where jlz:section-change fires
+    // with a home-only sectionId ('content-1') on content pages and wipes
+    // .section-active from all [data-page-section] elements.
+    const matching = document.querySelector<HTMLElement>(selector)
+    if (!matching) return
+
     // Remove active from all
     document.querySelectorAll<HTMLElement>('[data-section], [data-page-section]').forEach((el) => {
       el.classList.remove('section-active')
     })
     // Add to matching
-    const matching = document.querySelector<HTMLElement>(selector)
-    if (matching) {
-      matching.classList.add('section-active')
-      this.applyTheme(this.currentSectionId ?? '')
-    }
+    matching.classList.add('section-active')
+    this.applyTheme(this.currentSectionId ?? '')
     // UIKit refresh
     requestAnimationFrame(() => {
       try { (UIkit as unknown as { update: () => void }).update() } catch { /* not ready */ }
@@ -121,6 +142,7 @@ export class ContentReveal {
     if (this.sectionHandler) eventBus.off('jlz:section-change', this.sectionHandler)
     if (this.pageSectionHandler) window.removeEventListener('jlz:page-section-change', this.pageSectionHandler)
     if (this.themeHandler) window.removeEventListener('jlz:theme-change', this.themeHandler)
+    window.removeEventListener('jlz:route-change', this.invalidateConfigs)
     if (this.routeHandler) window.removeEventListener('jlz:route-change', this.routeHandler)
   }
 }
