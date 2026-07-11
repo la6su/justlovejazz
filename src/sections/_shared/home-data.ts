@@ -114,7 +114,7 @@ export function homeSection(
         <div class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-text-center uk-height-1-1">
           <!-- TOP -->
           <div ${REVEAL}>
-            <span class="jlz-eyebrow" data-eyebrow>${data.num}</span>
+            <span class="jlz-eyebrow" data-eyebrow data-eyebrow-text="${data.num}">${data.num}</span>
             <h2 class="studio-title uk-heading-${headingTier} uk-margin-small-top uk-margin-remove-bottom">${data.title}</h2>
             <p class="uk-text-lead uk-margin-small-top">${data.lead}</p>
           </div>

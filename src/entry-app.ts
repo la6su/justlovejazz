@@ -3,7 +3,6 @@ import Icons from 'uikit/dist/js/uikit-icons'
 import { initRouter } from './router'
 import { bootstrap as bootstrapApp, type BootstrapOptions } from './main-app'
 import { BlurFade } from './Experience/BlurFade'
-import { NoiseText } from './Experience/NoiseText'
 import { eventBus } from './core/EventBus'
 
 // ── App loader (replaces splash — splash is now a separate / page) ──
@@ -99,7 +98,9 @@ export async function startApp(): Promise<void> {
     ;(UIkit as any).update(document)
     animateBlurFadeTitles()
     setupTitleObserver()
-    setupEyebrowObserver()
+    // Note: eyebrow NoiseText is driven by Experience.ts jlz:section-change
+    // handler (single source of truth). No IntersectionObserver — it caused
+    // conflicts (double-trigger + stale noise captured as cleanText).
     // After CRT curtains split (~0.8s), trigger SplashCube opener —
     // the glass cube does a scale pulse + particle burst.
     // This is the "baku awakens" moment when the 3D scene is revealed.
@@ -156,29 +157,6 @@ function setupTitleObserver(): void {
     { threshold: 0.15 },
   )
   titles.forEach((t) => observer.observe(t))
-}
-
-/**
- * IntersectionObserver that fires NoiseText (console typewriter) when a
- * [data-eyebrow] enters the viewport. Works alongside BlurFade for titles —
- * eyebrows get the TUI-style noise reveal, titles get the cinematic blur.
- */
-function setupEyebrowObserver(): void {
-  const eyebrows = document.querySelectorAll<HTMLElement>('[data-eyebrow]')
-  if (eyebrows.length === 0) return
-  const observer = new IntersectionObserver(
-    (entries) => {
-      for (const entry of entries) {
-        if (entry.isIntersecting) {
-          const el = entry.target as HTMLElement
-          const text = el.textContent?.trim() || ''
-          if (text) NoiseText.for(el).show(0.6, text)
-        }
-      }
-    },
-    { threshold: 0.15 },
-  )
-  eyebrows.forEach((e) => observer.observe(e))
 }
 
 /**

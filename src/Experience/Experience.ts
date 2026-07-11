@@ -221,14 +221,17 @@ export class Experience {
     this.cursor = new Cursor()
     // Glitch eyebrow — on section change, animate the active section's
     // [data-eyebrow] number with NoiseText random-symbol scramble.
-    // Replaces the old Subtitles hint system (removed — eyebrows now show
-    // console-like section numbers, not hint text).
+    // Uses data-eyebrow-text attribute as STABLE source (never affected by
+    // animation). Reading textContent is unsafe — it could be mid-noise
+    // from a previous animation, causing permanent glitch residue.
     this._sectionChangeHandler = (payload) => {
       if (!payload?.sectionId) return
       const section = document.querySelector(`[data-section="${payload.sectionId}"]`)
       const eyebrow = section?.querySelector<HTMLElement>('[data-eyebrow]')
       if (eyebrow) {
-        const text = eyebrow.textContent ?? ''
+        // data-eyebrow-text = stable source (set in template, never mutated)
+        // fallback to textContent only if attribute missing
+        const text = eyebrow.getAttribute('data-eyebrow-text') ?? eyebrow.textContent ?? ''
         if (text) NoiseText.for(eyebrow).show(0.6, text)
       }
     }
