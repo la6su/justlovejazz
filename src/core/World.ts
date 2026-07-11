@@ -343,10 +343,12 @@ export class World extends THREE.Group {
         } else {
           this.sceneRef.fog = new THREE.FogExp2(activeCfg.fog.color.clone(), activeCfg.fog.density)
         }
-        // EnvSphere follows GLOBAL theme (auto=light, inverse=dark) via
-        // jlz:theme-applied listener in Experience.ts. Do NOT call
-        // changeSection per-section here — that would override the global
-        // theme with old per-section patterns.
+        // EnvSphere: if section has scene.envSpherePattern, switch to it.
+        // Otherwise keep global theme-driven pattern (jlz:theme-applied).
+        const envPattern = activeCfg.scene?.envSpherePattern
+        if (envPattern !== undefined && envPattern !== null) {
+          this.envSphere.changeSection(envPattern)
+        }
       }
       // DrawTrail visibility — only on works section (idx=4)
       if (this.drawTrail) {
@@ -405,14 +407,36 @@ export class World extends THREE.Group {
         }
 
         // BakuCarousel visibility + active state (morph cube ↔ carousel ring)
-        // ONLY on home page — content pages don't use the carousel.
         const carousel = g.userData.gallery as
           | import('../Experience/World/BakuCarousel').BakuCarousel
           | undefined
         if (carousel) {
-          const isHome = document.body.dataset.page === 'home'
-          carousel.visible = isHome && fade > 0.01
-          carousel.setActive(isHome && fade > 0.5)
+          const cfg = this.configs[i]
+          const showCarousel = cfg?.scene?.objects?.bakuCarousel !== false
+          carousel.visible = showCarousel && fade > 0.01
+          carousel.setActive(showCarousel && fade > 0.5)
+        }
+
+        // ── Per-section 3D object visibility (SceneControl) ──
+        // Toggle WireframeTypography, ShaderOrb, TimelineNodes based on config.
+        // objects undefined = defaults (visible if present in scene group).
+        const cfg = this.configs[i]
+        const sceneObjects = cfg?.scene?.objects
+        if (sceneObjects) {
+          const typo = g.userData.typography as
+            | import('../Experience/World/WireframeTypography').WireframeTypography
+            | undefined
+          if (typo) typo.visible = sceneObjects.wireframeText !== false && fade > 0.01
+
+          const orb = g.userData.orb as
+            | import('../Experience/World/ShaderOrb').ShaderOrb
+            | undefined
+          if (orb) orb.visible = sceneObjects.shaderOrb !== false && fade > 0.01
+
+          const timeline = g.userData.timeline as
+            | import('../Experience/World/TimelineNodes').TimelineNodes
+            | undefined
+          if (timeline) timeline.visible = sceneObjects.timelineNodes !== false && fade > 0.01
         }
       } else {
         g.visible = false

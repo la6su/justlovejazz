@@ -474,6 +474,65 @@ const MANIFESTO_PALETTE: ContentPalette = {
   groundColor: 0x081a1a,
 }
 
+const WORKS_PALETTE: ContentPalette = {
+  lightBg: 0xf0f0f4,
+  darkBg: 0x080814,
+  bakuColor: 0x2a2a4e,
+  bakuEmissive: 0x4a4a7a,
+  fogColor: 0x080814,
+  lightColor: 0xffffff,
+  groundColor: 0x101020,
+}
+
+const LAB_PALETTE: ContentPalette = {
+  lightBg: 0xf5f5f0,
+  darkBg: 0x0a0805,
+  bakuColor: 0x3a2a1a,
+  bakuEmissive: 0x5a4a2a,
+  fogColor: 0x0a0805,
+  lightColor: 0xffffff,
+  groundColor: 0x1a1408,
+}
+
+const CONTACT_PALETTE: ContentPalette = {
+  lightBg: 0xf0f4f5,
+  darkBg: 0x050a0f,
+  bakuColor: 0x1a3a4a,
+  bakuEmissive: 0x2a5a6a,
+  fogColor: 0x050a0f,
+  lightColor: 0xffffff,
+  groundColor: 0x08141a,
+}
+
+/** Per-page scene configs for content pages. Each page gets distinct
+ *  3D objects + EnvSphere patterns per section, matching the page theme.
+ *  idx 0 = secret-left, 1-4 = main sections, 5 = secret-right. */
+function sceneForContentPage(pageId: string, idx: number): Pick<RawScene, 'sceneEnvSpherePattern' | 'sceneObjects' | 'sceneTransition'> {
+  const patternBase = pageId === 'services' ? 0
+    : pageId === 'works' ? 1
+    : pageId === 'manifesto' ? 2
+    : pageId === 'lab' ? 3
+    : pageId === 'contact' ? 4
+    : 0
+
+  // Per-page 3D objects per section
+  const objectsFor = (pageId: string, idx: number): SceneControl['objects'] | undefined => {
+    if (idx === 0 || idx === 5) return undefined // secret sections — minimal
+    if (pageId === 'services') return { wireframeText: idx === 1 }
+    if (pageId === 'works') return { bakuCarousel: idx === 1, particles: true }
+    if (pageId === 'manifesto') return { wireframeText: true }
+    if (pageId === 'lab') return { shaderOrb: true, particles: idx === 1 }
+    if (pageId === 'contact') return { wireframeText: idx === 1 }
+    return undefined
+  }
+
+  return {
+    sceneEnvSpherePattern: patternBase + (idx % 6),
+    sceneObjects: objectsFor(pageId, idx),
+    sceneTransition: { duration: 0.6, easing: 'ease-out' },
+  }
+}
+
 function makeContentScenes(palette: ContentPalette, pageId: string): RawScene[] {
   const themeFor = (idx: number): 'light' | 'dark' => (idx === 0 || idx === 4) ? 'light' : 'dark'
   const bgFor = (idx: number) => themeFor(idx) === 'light' ? palette.lightBg : palette.darkBg
@@ -512,6 +571,7 @@ function makeContentScenes(palette: ContentPalette, pageId: string): RawScene[] 
     groundColor: palette.groundColor,
     groundOpacity: 0.05,
     sectionTheme: themeFor(idx),
+    ...sceneForContentPage(pageId, idx),
   }))
 }
 
@@ -524,8 +584,17 @@ export function getWorldConfigForPage(pageKey: string): readonly PhaseConfig[] {
   if (pageKey === 'services') {
     return makeContentScenes(SERVICES_PALETTE, 'services').map(toPhaseConfig)
   }
+  if (pageKey === 'works') {
+    return makeContentScenes(WORKS_PALETTE, 'works').map(toPhaseConfig)
+  }
   if (pageKey === 'manifesto') {
     return makeContentScenes(MANIFESTO_PALETTE, 'manifesto').map(toPhaseConfig)
+  }
+  if (pageKey === 'lab') {
+    return makeContentScenes(LAB_PALETTE, 'lab').map(toPhaseConfig)
+  }
+  if (pageKey === 'contact') {
+    return makeContentScenes(CONTACT_PALETTE, 'contact').map(toPhaseConfig)
   }
   return getAllScenes() // home — full scenes
 }
