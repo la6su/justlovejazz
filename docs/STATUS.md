@@ -1,6 +1,6 @@
 # STATUS — Single Source of Truth
 
-> Updated: 2026-07-12. Branch: `main`. Build green. ~14.4K LOC, 81 TS files.
+> Updated: 2026-07-12 (docs sync: 2026-07-11). Branch: `main`. Build green. ~11.6K TS LOC, 81 TS files.
 
 ## Project
 
@@ -57,7 +57,7 @@ Blog: standalone HTML (`blog.html` + 4 articles), SEO-optimized.
 | Lighthouse — Performance 100 (FCP ~200ms) | ✅ |
 | Ponytail audit — -632 LOC dead code removed | ✅ |
 | TypeScript strict + ESLint + Prettier | ✅ |
-| 17 unit tests (EventBus 13 + Noise 2 + motionPolicy 2) | ✅ |
+| 9 unit tests (EventBus 5 + Noise 2 + motionPolicy 2) | ✅ |
 
 ## Recent work (2026-07-12)
 

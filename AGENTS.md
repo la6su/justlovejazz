@@ -209,5 +209,5 @@ User: Russian. Code/commits/docs: English.
 bun run lint         # 0 errors (warnings tracked)
 bun run type-check   # 0 errors (strict + noUncheckedIndexedAccess)
 bun run build        # ~3s
-bun run test:unit    # 17 tests (EventBus 13 + Noise 2 + motionPolicy 2)
+bun run test:unit    # 9 tests (EventBus 5 + Noise 2 + motionPolicy 2)
 ```

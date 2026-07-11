@@ -13,11 +13,16 @@ _(nothing currently in progress)_
 
 ## TODO — High priority
 
-- [ ] **3D objects on content pages** — ShaderOrb, WireframeTypography currently
-      only on home. Add per-section `sceneObjects` config for content pages
-      (services, manifesto, lab) so they have visual variety beyond the baku cube.
-      Files: `src/core/WorldConfig.ts` (content page configs), `src/core/World.ts`
-      (scene group visibility logic already supports it — just needs config).
+- [x] **3D objects on content pages** — DONE 2026-07-11 (re-evaluated). The
+      old item assumed per-page `sceneObjects` config was needed; in reality
+      `SectionSceneFactory` is hardcoded and scene groups are shared across all
+      SPA pages, so ShaderOrb (idx 0), WireframeTypography (idx 2/4),
+      BakuCarousel (idx 3, home-only), and TimelineNodes (idx 5) already render
+      on every page when their cube-face group is visible. The dead
+      `sceneForContentPage()` config (which assigned objects to wrong indices →
+      no-op via `if (typo)` guards) was removed. If true per-page visual variety
+      is later desired, that requires per-page scene factories — an architectural
+      change, not a config tweak.
 
 - [ ] **Lighthouse re-run** — after all 2026-07-12 changes (works cards, i18n, meta).
       Run `scripts/lhci.sh` + `lighthouserc.json`. Target: Performance ≥90,

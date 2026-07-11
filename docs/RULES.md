@@ -31,7 +31,7 @@ git fetch origin && git checkout main && git pull origin main
 15. **Enter button DISABLED until `jlz:webgl-ready`.** The button is always visible but `pointer-events:none; opacity:0.5` until 3D is fully initialized. Under CPU/network throttling, `Experience.init()` takes 10-20s — that's expected. NEVER activate Enter early via a timeout fallback (was 4s/5s — caused users to click into uninitialized scene: no carousel, no baku cube). The ONLY valid signal is `jlz:webgl-ready`.
 16. **`jlz:webgl-ready` must fire** — emitted by `main-app.ts` when `Experience.init()` completes. If init() throws, emit `jlz:webgl-failed` instead → load error shown (NOT Enter).
 17. **Hard fallback = load error, NOT Enter.** 60s timeout in `entry-app.ts` + `index.html`. If `jlz:webgl-ready` hasn't fired, something is broken — show an error + Retry link, not a button that leads to a broken scene.
-18. **`jlz:webgl-ready` must fire** — emitted by `main-app.ts` after `Experience.init()` resolves. Never emit before init completes.
+18. **(Removed — duplicate of §16.)** `jlz:webgl-ready` firing is fully covered by §16 (which also adds the `jlz:webgl-failed` crash path). This rule was a verbatim restatement; kept as a placeholder so downstream §19+ numbering stays stable (RULES references like §20, §50 must not shift).
 19. **Splash is inline in `index.html`** — no separate splash page, no navigation flash. Fades out via `fade-out` class on `#jlz-app-loader`.
 
 ## Ground plane

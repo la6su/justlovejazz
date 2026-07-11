@@ -206,15 +206,25 @@ once on app start. Single batched rAF for all card tilt updates.
 
 ## 3D scene control (SceneControl)
 
-Per-section config in WorldConfig:
+Per-section config in WorldConfig (home RAW only — content pages omit `objects`
+since scene groups are shared across all SPA pages via the hardcoded
+`SectionSceneFactory`):
 ```typescript
 scene?: {
-  objects?: { wireframeText?, shaderOrb?, timelineNodes?, bakuCarousel?, particles? }
+  objects?: { wireframeText?, shaderOrb?, timelineNodes?, bakuCarousel? }
   transition?: { duration, easing: 'linear'|'ease-out'|'ease-in-out'|'cubic-bezier' }
 }
 ```
 
-Easing applied to camera lerp + bg fade via `_applyEasing()`.
+- `objects.*` toggles 3D-object visibility on a section (home only). `particles`
+  and `envSpherePattern` were removed — particle visibility is driven by
+  scene-group visibility, and EnvSphere follows the global theme only.
+- `transition.easing` is applied to camera lerp + bg fade via `_applyEasing()`.
+
+On content pages `scene.objects` is `undefined`, so the visibility block in
+`World.ts` is skipped — objects appear whenever their scene group is visible
+(shared cube-face anchors: ShaderOrb on idx 0, WireframeTypography on idx 2/4,
+BakuCarousel on idx 3 home-only, TimelineNodes on idx 5).
 
 ## Modules
 
