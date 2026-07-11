@@ -1,0 +1,45 @@
+// _theme-fixes.less — QF color-mode overrides for dark site
+//
+// PROBLEM: Quantum Flares sets @*-color-mode: light for card/section/tile/
+// navbar/dropdown/overlay/dropbar. In UIKit3, color-mode: light means
+// "component has a LIGHT background → use DARK text" (via .uk-light extend).
+// But our entire site is dark-themed (@global-background: #050507,
+// @global-muted-background: rgba(255,255,255,0.04)). So these components
+// render DARK text on DARK backgrounds = invisible.
+//
+// FIX: override all color-modes to dark (= "dark background → light text")
+// AFTER QF imports. This is NOT touching QF files (RULES §17) — it's
+// standard Less variable override in our own file.
+//
+// Import this file AFTER _import.less + master-quantum-flares/_import.less +
+// master-quantum-flares/styles/black-blue.less in both main.less + landing.less.
+
+// ── Cards: dark bg → light text ──
+@card-default-color-mode: dark;
+@card-overlay-color-mode: dark;
+// card-primary is accent-colored (solid bg) — keep QF's light (dark text on accent)
+@card-primary-color-mode: light;
+// card-secondary uses @global-secondary-background (solid #23242f) — light text
+@card-secondary-color-mode: dark;
+
+// ── Sections: dark bg → light text ──
+@section-default-color-mode: dark;
+@section-muted-color-mode: dark;
+// section-primary is accent-colored — keep QF's dark (light text on accent)
+@section-primary-color-mode: dark;
+@section-secondary-color-mode: dark;
+
+// ── Tiles: dark bg → light text ──
+@tile-default-color-mode: dark;
+@tile-muted-color-mode: dark;
+@tile-primary-color-mode: dark;
+
+// ── Overlays: dark bg → light text ──
+@overlay-default-color-mode: dark;
+@overlay-primary-color-mode: dark;
+
+// ── Navbar + dropdowns: dark bg → light text ──
+@navbar-color-mode: dark;
+@navbar-dropdown-color-mode: dark;
+@dropdown-color-mode: dark;
+@dropbar-color-mode: dark;

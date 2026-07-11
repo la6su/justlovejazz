@@ -11,6 +11,9 @@
 @import './_import.less';
 @import './master-quantum-flares/_import.less';
 @import './master-quantum-flares/styles/black-blue.less';
+// QF color-mode overrides — must come AFTER QF imports (Less last-wins).
+// Fixes dark-text-on-dark-bg for cards/sections/tiles/navbar/overlays.
+@import './_theme-fixes.less';
 
 // ── Landing-specific overrides (NOT in UIKit base) ──
 html {
