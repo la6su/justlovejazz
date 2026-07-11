@@ -148,6 +148,25 @@ Easing applied to camera lerp + bg fade via `_applyEasing()`.
 | RenderPipeline | WebGL2 MSAA RT + post-processing parity (bloom skip when 0) |
 | BlurFade | Cinematic blur+stagger reveal for titles |
 | NoiseText | Console typewriter with noise tail for eyebrow numbers |
+| i18n | EN/RU translation system (t(), data-i18n attributes, lang toggle) |
+
+## Blog pages
+
+Standalone HTML (blog.html + blog/*.html) — not part of SPA.
+CSS: `blog.less` (QF theme + _theme-fixes, no app-specific styles).
+Header: transparent sticky navbar (`.jlz-blog-header`).
+Footer: minimal (`.jlz-blog-footer`).
+SEO: BlogPosting JSON-LD + meta tags per post.
+
+## i18n
+
+`src/core/i18n.ts` — EN/RU translation system.
+- `t(key)` — translate a key
+- `data-i18n` attributes on elements — auto-translated on load + toggle
+- `toggleLang()` — EN ↔ RU, persists to localStorage
+- Wired to splash config lang button
+- 40+ translation keys defined (nav, sections, actions, process)
+- TODO: apply `data-i18n` attributes to templates
 
 ## Events
 
