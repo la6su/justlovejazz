@@ -1,15 +1,7 @@
 // AudioSystem.ts — Web Audio API analyser for audio-reactive visuals.
 //
-// Provides bass/mid/treble frequency bands (0..1) that can drive worldDNA
-// uniforms, material properties, or any visual parameter. Must be started
+// Provides bass/mid/treble frequency bands (0..1). Must be started
 // after a user gesture (browser autoplay policy).
-//
-// Usage:
-//   const audio = new AudioSystem()
-//   audio.start()          // after user click/keypress
-//   audio.load('/track.mp3') // optional: load a track
-//   audio.getBass()        // 0..1 bass amplitude
-//   audio.update()         // call each frame to refresh bands
 
 export class AudioSystem {
   private ctx: AudioContext | null = null
@@ -20,22 +12,18 @@ export class AudioSystem {
   private _bass = 0
   private _mid = 0
   private _treble = 0
-  private _level = 0
   private _started = false
 
-  /** Whether the audio system is initialized. */
   get started(): boolean {
     return this._started
   }
 
-  /** Mute/unmute the audio output. */
   setMuted(muted: boolean): void {
     if (this.gain && this.ctx) {
       this.gain.gain.setValueAtTime(muted ? 0 : 0.3, this.ctx.currentTime)
     }
   }
 
-  /** Initialize the AudioContext + AnalyserNode. Call after user gesture. */
   start(): void {
     if (this._started) return
     try {
@@ -55,53 +43,13 @@ export class AudioSystem {
     }
   }
 
-  /** Load and play an audio track. Returns a promise that resolves when playing. */
-  async load(url: string): Promise<void> {
-    if (!this.ctx || !this.gain) return
-    try {
-      const res = await fetch(url)
-      const buf = await res.arrayBuffer()
-      const audioBuf = await this.ctx.decodeAudioData(buf)
-      if (this.source) {
-        this.source.stop()
-        this.source.disconnect()
-      }
-      this.source = this.ctx.createBufferSource()
-      this.source.buffer = audioBuf
-      this.source.loop = true
-      this.source.connect(this.gain)
-      this.source.start()
-    } catch (e) {
-      console.warn('[AudioSystem] Failed to load audio:', url, e)
-    }
-  }
-
-  /** Connect microphone input (for live audio-reactive). Requires permission. */
-  async connectMicrophone(): Promise<void> {
-    if (!this.ctx || !this.gain) return
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      const source = this.ctx.createMediaStreamSource(stream)
-      source.connect(this.gain)
-      // Don't connect to destination (avoid feedback)
-      this.gain.disconnect()
-      this.gain.connect(this.analyser!)
-    } catch (e) {
-      console.warn('[AudioSystem] Microphone access denied:', e)
-    }
-  }
-
-  /** Update frequency bands. Call each frame. */
   update(): void {
     if (!this.analyser || !this._started) return
     this.analyser.getByteFrequencyData(this.freqData)
 
     const bins = this.freqData.length
-    // Bass: 0-15% of bins (low frequencies)
     const bassEnd = Math.floor(bins * 0.15)
-    // Mid: 15-50%
     const midEnd = Math.floor(bins * 0.5)
-    // Treble: 50-100%
 
     let bassSum = 0
     let midSum = 0
@@ -116,34 +64,15 @@ export class AudioSystem {
     this._bass = bassSum / Math.max(1, bassEnd)
     this._mid = midSum / Math.max(1, midEnd - bassEnd)
     this._treble = trebleSum / Math.max(1, bins - midEnd)
-    this._level = (this._bass + this._mid + this._treble) / 3
   }
 
-  /** Bass amplitude (0..1). */
-  getBass(): number {
-    return this._bass
-  }
-  /** Mid amplitude (0..1). */
-  getMid(): number {
-    return this._mid
-  }
-  /** Treble amplitude (0..1). */
-  getTreble(): number {
-    return this._treble
-  }
-  /** Overall level (0..1). */
-  getLevel(): number {
-    return this._level
-  }
+  getBass(): number { return this._bass }
+  getMid(): number { return this._mid }
+  getTreble(): number { return this._treble }
 
-  /** Dispose all audio resources. */
   dispose(): void {
     if (this.source) {
-      try {
-        this.source.stop()
-      } catch {
-        /* already stopped */
-      }
+      try { this.source.stop() } catch { /* already stopped */ }
       this.source.disconnect()
       this.source = null
     }

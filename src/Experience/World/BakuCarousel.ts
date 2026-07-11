@@ -21,7 +21,15 @@
 // this component renders the carousel cards on top, independently.
 
 import * as THREE from 'three'
-import { isMenuOpen, isUiChromeEvent } from '../../UI/uiChrome'
+// uiChrome.ts removed — inline the guard here
+function isUiChromeEvent(e: Event): boolean {
+  const target = e.target as HTMLElement | null
+  if (!target) return false
+  return !!target.closest('#joystick-nav, #jlz-menu-modal, #project-overlay, #jlz-app-loader')
+}
+function isMenuOpen(): boolean {
+  return !!document.querySelector('#jlz-menu-modal.uk-open')
+}
 import { PROJECTS } from '../../Data/Projects'
 import { createRoundedRectGeometry } from '../../Utils/roundedRectGeometry'
 

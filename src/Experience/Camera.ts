@@ -2,7 +2,7 @@
 import * as THREE from 'three'
 import { Sizes } from './Sizes'
 import { input } from './Input'
-import { Easings } from '../Utils/Easings'
+// (Easings import removed — inline easeInOutQuart, only function used)
 import { Device } from '../core/DeviceCapability'
 import { prefersReducedMotion } from '../core/motionPolicy'
 import type { CameraTarget } from '../core/types'
@@ -159,7 +159,9 @@ export class Camera {
     // ── 5. FOV — dynamic offset (pop zoom) ──
     if (this.fovTransitionT < 1) {
       this.fovTransitionT = Math.min(1, this.fovTransitionT + dt / this.fovDuration)
-      const easeT = Easings.easeInOutQuart(this.fovTransitionT)
+      const easeT = this.fovTransitionT < 0.5
+        ? 8 * this.fovTransitionT ** 4
+        : 1 - 8 * (this.fovTransitionT - 1) ** 4
       this.fovOffset = this.fovStartOffset + (this.targetFovOffset - this.fovStartOffset) * easeT
     }
 

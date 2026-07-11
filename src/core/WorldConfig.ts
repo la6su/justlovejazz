@@ -382,7 +382,7 @@ const RAW: RawScene[] = [
 const _toVec = (v: [number, number, number]) => new THREE.Vector3(...v)
 const _toColor = (hex: number) => new THREE.Color(hex)
 
-export function toPhaseConfig(raw: RawScene): PhaseConfig {
+function toPhaseConfig(raw: RawScene): PhaseConfig {
   const pos = _toVec(raw.camPos)
   const tgt = _toVec(raw.camTarget)
   return {
@@ -575,10 +575,8 @@ function makeContentScenes(palette: ContentPalette, pageId: string): RawScene[] 
   }))
 }
 
-// ── Public API ──
-export function getAllScenes(): PhaseConfig[] {
-  return RAW.map((raw) => toPhaseConfig(raw))
-}
+// (getAllScenes removed — 0 external callers)
+// (toPhaseConfig kept private — only used internally by getWorldConfigForPage)
 
 export function getWorldConfigForPage(pageKey: string): readonly PhaseConfig[] {
   if (pageKey === 'services') {
@@ -596,5 +594,5 @@ export function getWorldConfigForPage(pageKey: string): readonly PhaseConfig[] {
   if (pageKey === 'contact') {
     return makeContentScenes(CONTACT_PALETTE, 'contact').map(toPhaseConfig)
   }
-  return getAllScenes() // home — full scenes
+  return RAW.map(toPhaseConfig) // home — full scenes
 }

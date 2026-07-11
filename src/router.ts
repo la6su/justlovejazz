@@ -72,14 +72,6 @@ function navigateToPage(path: string): void {
   window.scrollTo({ top: 0, behavior: 'auto' })
 }
 
-export function navigateTo(anchor: string): void {
-  const targetId = anchor.replace('#', '')
-  const target = document.getElementById(targetId)
-  if (target) {
-    target.scrollIntoView({ behavior: 'smooth' })
-  }
-}
-
 export function initRouter(): void {
   if (initialized) return
   initialized = true
@@ -91,7 +83,10 @@ export function initRouter(): void {
   if (location.hash.startsWith('#section-')) {
     const anchor = location.hash
     history.replaceState(null, '', anchor)
-    setTimeout(() => navigateTo(anchor), 100)
+    setTimeout(() => {
+      const target = document.getElementById(anchor.replace('#', ''))
+      target?.scrollIntoView({ behavior: 'smooth' })
+    }, 100)
   }
 
   // Click handler for anchor links

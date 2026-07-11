@@ -17,7 +17,8 @@ import { NoiseText } from './NoiseText'
 import { AudioSystem } from '../core/AudioSystem'
 import { JoystickNav } from '../UI/JoystickNav'
 import { UIMenu } from '../UI/UIMenu'
-import { updateWorldDNAAudio } from './World/worldDNA'
+// worldDNA.ts removed — TSL node system never attached (attachWorldDNA never
+// called). updateWorldDNAAudio set uniforms nobody read. All dead.
 import { prefersReducedMotion } from '../core/motionPolicy'
 // ThemeManager is not imported here — theme is global (auto/inverse),
 // synced via jlz:theme-applied event listener. No per-section theme logic.
@@ -74,15 +75,8 @@ export class Experience {
   private static readonly AMBIENT_BREATH_INTERVAL = 2.5 // seconds between idle refresh frames
   private _reducedMotion = false // cached prefers-reduced-motion (updated in init)
 
-  // 6 sections — 1:1 with cube faces (4 main + Lab=0 secret left + Process=5 secret right)
-  private static readonly SECTION_LABELS = [
-    'Lab',         // 0: secret left — 05 Lab (top face)
-    'Studio',      // 1: front face — 01 Studio (start)
-    'Services',    // 2: right face — 02 Services
-    'Works',       // 3: back face — 03 Works (BakuCarousel)
-    'Manifesto',   // 4: bottom face — 04 Manifesto
-    'Contact',     // 5: secret right — 06 Contact (left face)
-  ]
+  // (SECTION_LABELS removed — was passed to UIMenu/JoystickNav via options
+  //  that are no longer used. Section labels are in WorldConfig.domSection.)
   constructor(_ui: UIManager) {
     this.sizes = new Sizes()
     this.time = new Time()
@@ -277,10 +271,8 @@ export class Experience {
     // WebGPURenderer it may fail (duck-typed), so we fall back gracefully.
     this.setupEnvironment()
 
-    // JoystickNav — joystick-based section navigation (replaces CircularNav)
-    this._circNav = new JoystickNav(this.scene, this.camera.instance, 6, {
-      sectionLabels: Experience.SECTION_LABELS,
-    })
+    // JoystickNav — joystick-based section navigation
+    this._circNav = new JoystickNav(this.scene, this.camera.instance, 6)
     this._circNav.onSectionChange((idx) => {
       this._uiMenu?.setActive(idx)
       this._needsRender = true
@@ -290,9 +282,7 @@ export class Experience {
     })
 
     // UIMenu
-    this._uiMenu = new UIMenu({
-      sectionLabels: Experience.SECTION_LABELS,
-    })
+    this._uiMenu = new UIMenu()
     this._uiMenu.onNavigate((idx) => {
       this._circNav?.goToSection(idx)
     })
@@ -618,7 +608,6 @@ export class Experience {
       this.camera.update(dt)
       if (this.audio.started) {
         this.audio.update()
-        updateWorldDNAAudio(this.audio.getBass(), this.audio.getMid(), this.audio.getTreble())
       }
       this.renderer.update(this.scene, this.camera.instance, dt, worldState)
       // Clear flag if nothing is actively changing

@@ -24,9 +24,7 @@
 // ThemeManager removed — theme is global (auto=light, inverse=dark),
 // no per-section theme logic in JoystickNav.
 
-export interface JoystickNavOptions {
-  sectionLabels: string[]
-}
+// (JoystickNavOptions removed — _opts param never read, YAGNI)
 
 // WorldConfig section indices (6 total: Lab=0, Intro=1, About=2, Works=3, Contact=4, Process=5)
 const LAB_INDEX = 0
@@ -67,7 +65,7 @@ export class JoystickNav {
   private _returnTimer: ReturnType<typeof setTimeout> | null = null
   private _activeTimer: ReturnType<typeof setTimeout> | null = null
 
-  constructor(_scene: unknown, _camera: unknown, sectionCount: number, _opts?: Partial<JoystickNavOptions>) {
+  constructor(_scene: unknown, _camera: unknown, sectionCount: number) {
     this._sectionCount = Math.max(2, sectionCount)
 
     this.el = document.createElement('div')

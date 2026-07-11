@@ -13,11 +13,11 @@
 //   4. Opener — scale pulse (1.0 → 1.3 → 1.0)
 
 import * as THREE from 'three'
-import { Noise } from '../../Utils/Noise'
+import { organicValue } from '../../Utils/Noise'
 import { BakuRole, type BakuMaterialState } from '../../core/types'
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js'
 
-export interface BakuMaterialParams {
+interface BakuMaterialParams {
   color: THREE.Color
   emissive: THREE.Color
   roughness: number
@@ -352,8 +352,8 @@ export class SplashCube extends THREE.Mesh {
     // Dutch roll Z (transient)
     this.rotation.z = sinT * 0.06 * dir
     // Drift XY + lift (transient)
-    this.position.x = Noise.organicValue(this.time, 10, 0.15, 0.08) * sinT * dir
-    this.position.y = Noise.organicValue(this.time, 20, 0.18, 0.08) * sinT * dir
+    this.position.x = organicValue(this.time, 10, 0.15, 0.08) * sinT * dir
+    this.position.y = organicValue(this.time, 20, 0.18, 0.08) * sinT * dir
     this.position.y += sinT * 0.15
     // Scale pulse (transient)
     this.scale.setScalar(1 + sinT * 0.05)

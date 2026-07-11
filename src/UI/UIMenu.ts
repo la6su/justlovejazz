@@ -11,9 +11,7 @@
 
 import { themeManager } from '../core/ThemeManager'
 
-export interface UIMenuOptions {
-  sectionLabels: string[]
-}
+// (UIMenuOptions removed — sectionLabels never used, YAGNI)
 
 // Page → sections shown in its dropbar (idx = cube-face index on that page)
 // Balou-inspired: each section has a title + subtitle (short descriptor).
@@ -117,7 +115,7 @@ export class UIMenu {
   private _themeHandler: ((event: Event) => void) | null = null
   private _themeBtn: HTMLButtonElement | null = null
 
-  constructor(_opts: UIMenuOptions) {
+  constructor() {
     this.navEl = document.createElement('header')
     this.navEl.className = 'tm-header'
     this.navEl.innerHTML = this.buildNavbar()

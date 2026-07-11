@@ -10,8 +10,8 @@
 //   bus.tick(dt)
 //   uniform.value = bus.get('bloom')
 
-export type EasingFn = (t: number) => number
-export type StateListener = (channel: string, data: unknown) => void
+type EasingFn = (t: number) => number
+type StateListener = (channel: string, data: unknown) => void
 
 const EASINGS: Record<string, EasingFn> = {
   linear: (t) => t,
@@ -28,7 +28,7 @@ const EASINGS: Record<string, EasingFn> = {
 
 const identityEasing: EasingFn = (t) => t
 
-export const resolveEasing = (name: string | EasingFn): EasingFn => {
+const resolveEasing = (name: string | EasingFn): EasingFn => {
   if (typeof name === 'function') return name
   return EASINGS[name] ?? identityEasing
 }
