@@ -9,6 +9,87 @@
 
 ---
 
+## 2026-07-11b — SANDBOX runbook + WorkCards a11y + i18n dropbar + Lighthouse
+
+### Done
+- Sprint 4: Created `docs/SANDBOX.md` — operational runbook for dev-server + Agent
+  Browser verify in the GLM sandbox. Captures the 5 gotchas observed during the
+  prior session's verify loops (background processes die between Bash calls;
+  localhost unreachable from browser; `allowedHosts` blocks JS via LAN IP;
+  headless WebGL2 throttles `jlz:webgl-ready`; screenshots time out on 3D canvas).
+  AGENTS.md now links it in the docs table + after the Verification section.
+- Sprint 5: WorkCards keyboard navigation (NEXT.md medium). Roving tabindex
+  (WAI-ARIA pattern): one card per `.jlz-works-grid` is `tabindex=0` (Tab entry),
+  rest `tabindex=-1`. ArrowLeft/Right move focus within the active section's
+  2-card row + re-anchor roving. ArrowUp/Down left alone (joystick owns vertical
+  section nav). Enter/Space open via native `<button>`. `jlz:page-section-change`
+  resets roving in all grids. Single document-level keydown listener, tracked
+  for cleanup in `disposeWorkCards()`. CSS `:focus-visible` already existed.
+- Sprint 6: i18n dropbar (NEXT.md medium). 58 EN + 58 RU `dropbar.*` keys added
+  to `src/core/i18n.ts` (`dropbar.<page>.s<idx>.title/subtitle` +
+  `dropbar.<page>.featured.title/subtitle`). `UIMenu.ts` `DropSection` + `featured`
+  interfaces gained `titleKey`/`subtitleKey`; `NAV_ITEMS` data carries the keys;
+  `renderNavItems()` emits `data-i18n` on `.jlz-dropbar__title` + featured title
+  spans. Works page section titles are project names (proper nouns, RULES §32) →
+  `titleKey` intentionally undefined there (English stays).
+- Sprint 7: Lighthouse re-run (NEXT.md high) — closed with caveat. Last
+  successful report (pre-Sprint 1-6): Performance 100, Accessibility 95, Best
+  Practices 96, SEO 100. A fresh post-Sprint-1-6 run could NOT be obtained in
+  this sandbox — LHCI over `staticDistDir` fails with `NO_FCP` (headless Chrome
+  never paints without a real display; `--headless=new --no-sandbox` didn't
+  help). Sprint 1-6 changes don't touch the FCP path (3D canvas is lazy-loaded
+  after FCP; changes are docs, dead-config removal, a11y keyboard nav, i18n
+  strings). Recommend re-running on a real-Chrome machine or in GitHub Actions.
+- Cleanup: `.lighthouseci/` added to `.gitignore` (was missing — LHCI reports
+  were being committed as source). Removed from tracking.
+
+### Key decisions (WHY)
+- **SANDBOX.md separate from RULES.md**: RULES is bug-provenance for code;
+  sandbox is environment operational knowledge. Different audience, different
+  update cadence. Keeping them separate prevents RULES from bloating with
+  non-code rules.
+- **Roving tabindex over a simple keydown-only approach**: the WAI-ARIA
+  pattern is the accessible standard (Tab enters the grid at one anchor,
+  arrows move within). A naive "all cards tabindex=0" would pollute the Tab
+  order (8 cards across 4 sections = Tab hell). Roving keeps Tab order clean
+  (one entry per section) while still allowing arrow navigation.
+- **ArrowUp/Down NOT handled in WorkCards**: the joystick owns vertical
+  section navigation (1→2→3→4). Intercepting arrows here would break that.
+  The keydown handler explicitly checks focus context before acting, so it
+  never steals arrows from the joystick, inputs, or overlays.
+- **Works page titles stay English in dropbar**: RULES §32 (project names are
+  proper nouns). `titleKey` is `undefined` for those — `renderNavItems` emits
+  no `data-i18n`, so `applyTranslations()` leaves the English text. Subtitles
+  still translate (they're descriptive, not proper nouns).
+- **subtitleKey fields kept even though subtitles aren't rendered**: the
+  dropbar template currently shows only num + title (subtitle is in the data
+  but not in the DOM). The keys are future-proofing — when subtitles get
+  rendered, they'll translate with zero i18n.ts changes.
+
+### Files touched
+- `docs/SANDBOX.md` (NEW), `AGENTS.md` (Sprint 4)
+- `src/UI/WorkCards.ts` (Sprint 5 — roving tabindex + keydown)
+- `src/core/i18n.ts`, `src/UI/UIMenu.ts` (Sprint 6 — dropbar i18n)
+- `NEXT.md` (Sprint 7 — closed Lighthouse + i18n dropbar + WorkCards items)
+- `.gitignore`, `.lighthouseci/*` removed from tracking (cleanup)
+
+### Verification
+- `bun run lint`: 0 errors (61 pre-existing warnings)
+- `bun run type-check`: 0 errors
+- `bun run build`: green (~1.8s)
+- `bun run test:unit`: 9 passed
+- Agent Browser (per SANDBOX.md procedure): works page loaded, 0 console errors.
+  - Dropbar: 20 title spans + 6 featured spans carry `data-i18n` (sample
+    `dropbar.home.s1.title`, `dropbar.home.featured.title`).
+  - WorkCards: 4 grids, 2 cards each, roving tabindex `["0","-1"]` confirmed
+    on first grid.
+
+### Next
+- Blog post design polish (code highlighting, lazy images, reading progress) — NEXT.md medium
+- Audio system, DevPanel improvements, render-budget FPS tracking — NEXT.md low
+
+---
+
 ## 2026-07-11 — Dead-code cleanup + stale doc sync (fresh-eyes audit follow-up)
 
 ### Done
