@@ -61,14 +61,14 @@ const SERVICES: readonly Service[] = [
     title: 'LAB',
     lead: 'Experiments. Always in progress.',
     desc: ['A sandbox for shader, audio, and procedural R&D.'],
-    href: '/app',
+    href: '/',
   },
   {
     num: '06',
     title: 'PLAYGROUND',
     lead: 'Nothing to sell. Just play.',
     desc: ['Open experiments, half-broken demos, things we build for joy.'],
-    href: '/app',
+    href: '/',
   },
 ] as const
 

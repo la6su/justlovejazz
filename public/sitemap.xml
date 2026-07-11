@@ -1,16 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <!-- Splash page — canonical entry (FCP-optimized, config switchers) -->
+  <!-- Main page — 3D experience with inline splash (canonical entry) -->
   <url>
     <loc>https://justlovejazz.dev/</loc>
     <changefreq>monthly</changefreq>
     <priority>1.0</priority>
-  </url>
-  <!-- Landing page — no-JS semantic content (SEO primary target) -->
-  <url>
-    <loc>https://justlovejazz.dev/landing</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
   </url>
   <!-- Blog — list page -->
   <url>
@@ -42,11 +36,5 @@
     <lastmod>2026-04-05</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
-  </url>
-  <!-- App page — 3D experience (noindex, but listed for completeness) -->
-  <url>
-    <loc>https://justlovejazz.dev/app</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.3</priority>
   </url>
 </urlset>

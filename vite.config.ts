@@ -4,135 +4,6 @@ import { resolve } from 'node:path'
 import { copyFileSync, mkdirSync, readdirSync } from 'fs'
 import { homePage } from './src/templates'
 
-// ── Landing page content (prerendered, no-JS, semantic HTML5) ──
-// Uses UIkit 3 classes (uk-section, uk-container, uk-grid, uk-card, etc)
-// + JLZ semantic classes. The landing.less stylesheet provides UIkit +
-// QF theme + JLZ tokens. No three.js, no app-specific JS.
-function landingContent(): string {
-  return `
-      <section id="intro" class="uk-section uk-section-large uk-text-center" aria-labelledby="intro-title">
-        <div class="uk-container uk-container-expand">
-          <p class="jlz-landing-eyebrow">&gt; WEB DESIGN STUDIO · EST. 2019</p>
-          <h1 id="intro-title" class="jlz-landing-hero-title">JUSTLOVEJAZZ</h1>
-          <p class="uk-text-lead uk-margin-top">glass · motion · light — powered by WebGPU. A studio crafting expressive browser experiences.</p>
-          <a href="/app" class="jlz-landing-cta">Launch full 3D experience →</a>
-        </div>
-      </section>
-
-      <!-- QF marquee/ticker — signature Quantum Flares pattern: full-width
-           scrolling banner with repeated keywords. Pure CSS animation (no-JS). -->
-      <div class="jlz-marquee" aria-hidden="true">
-        <div class="jlz-marquee__track">
-          <span class="jlz-marquee__item">GLASS</span><span class="jlz-marquee__sep">·</span>
-          <span class="jlz-marquee__item">MOTION</span><span class="jlz-marquee__sep">·</span>
-          <span class="jlz-marquee__item">LIGHT</span><span class="jlz-marquee__sep">·</span>
-          <span class="jlz-marquee__item">WEBGPU</span><span class="jlz-marquee__sep">·</span>
-          <span class="jlz-marquee__item">TSL</span><span class="jlz-marquee__sep">·</span>
-          <span class="jlz-marquee__item">THREE.JS</span><span class="jlz-marquee__sep">·</span>
-          <span class="jlz-marquee__item">GLASS</span><span class="jlz-marquee__sep">·</span>
-          <span class="jlz-marquee__item">MOTION</span><span class="jlz-marquee__sep">·</span>
-          <span class="jlz-marquee__item">LIGHT</span><span class="jlz-marquee__sep">·</span>
-          <span class="jlz-marquee__item">WEBGPU</span><span class="jlz-marquee__sep">·</span>
-          <span class="jlz-marquee__item">TSL</span><span class="jlz-marquee__sep">·</span>
-          <span class="jlz-marquee__item">THREE.JS</span><span class="jlz-marquee__sep">·</span>
-        </div>
-      </div>
-
-      <section id="about" class="uk-section uk-section-large" aria-labelledby="about-title">
-        <div class="uk-container uk-container-expand">
-          <p class="jlz-landing-eyebrow">&gt; ABOUT</p>
-          <h2 id="about-title" class="uk-heading-large uk-margin-remove-top">About</h2>
-          <p class="uk-text-lead">A small studio crafting expressive browser experiences. We merge art direction with web engineering — 3D-first interfaces, spatial design, and real-time shaders that stay fast under pressure.</p>
-          <div class="uk-grid uk-child-width-1-3@m uk-margin-medium-top" uk-grid>
-            <div class="uk-card uk-card-default uk-card-body uk-text-center">
-              <h3 class="uk-card-title uk-margin-remove">6</h3>
-              <p class="uk-text-meta uk-margin-small-top">Cube-face sections</p>
-            </div>
-            <div class="uk-card uk-card-default uk-card-body uk-text-center">
-              <h3 class="uk-card-title uk-margin-remove">2</h3>
-              <p class="uk-text-meta uk-margin-small-top">Engineers</p>
-            </div>
-            <div class="uk-card uk-card-default uk-card-body uk-text-center">
-              <h3 class="uk-card-title uk-margin-remove">1</h3>
-              <p class="uk-text-meta uk-margin-small-top">Designer</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="works" class="uk-section uk-section-large jlz-works" aria-labelledby="works-title">
-        <!-- DM vertical side-label — rotated text, breaks centered monotony -->
-        <span class="jlz-side-label uk-visible@m" aria-hidden="true">SELECTED · WORK</span>
-        <div class="uk-container uk-container-expand">
-          <p class="jlz-landing-eyebrow">&gt; SELECTED WORK</p>
-          <h2 id="works-title" class="uk-heading-large uk-margin-remove-top">Works</h2>
-          <p class="uk-text-lead">Six interactive experiences — each carries its own material preset.</p>
-          <!-- DM portfolio overlay cards — title/desc hidden, revealed on hover -->
-          <div class="uk-grid uk-child-width-1-2@s uk-child-width-1-3@m uk-margin-medium-top" uk-grid>
-            <article class="jlz-portfolio-card uk-card uk-card-default uk-card-hover uk-card-body uk-position-relative uk-overflow-hidden">
-              <h3 class="uk-card-title">Undercurrent</h3>
-              <p class="uk-text-meta">WebGPU fluid simulation · 2026</p>
-            </article>
-            <article class="jlz-portfolio-card uk-card uk-card-default uk-card-hover uk-card-body uk-position-relative uk-overflow-hidden">
-              <h3 class="uk-card-title">Mono Sunday</h3>
-              <p class="uk-text-meta">Minimal portfolio · 2026</p>
-            </article>
-            <article class="jlz-portfolio-card uk-card uk-card-default uk-card-hover uk-card-body uk-position-relative uk-overflow-hidden">
-              <h3 class="uk-card-title">Till at Night</h3>
-              <p class="uk-text-meta">Audio-reactive 3D · 2025</p>
-            </article>
-            <article class="jlz-portfolio-card uk-card uk-card-default uk-card-hover uk-card-body uk-position-relative uk-overflow-hidden">
-              <h3 class="uk-card-title">Ebb Vibes</h3>
-              <p class="uk-text-meta">Generative typography · 2025</p>
-            </article>
-            <article class="jlz-portfolio-card uk-card uk-card-default uk-card-hover uk-card-body uk-position-relative uk-overflow-hidden">
-              <h3 class="uk-card-title">Nocturne Blue</h3>
-              <p class="uk-text-meta">Shader-driven hero · 2025</p>
-            </article>
-            <article class="jlz-portfolio-card uk-card uk-card-default uk-card-hover uk-card-body uk-position-relative uk-overflow-hidden">
-              <h3 class="uk-card-title">Velvet Echo</h3>
-              <p class="uk-text-meta">Glassmorphism system · 2024</p>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      <section id="process" class="uk-section uk-section-large" aria-labelledby="process-title">
-        <div class="uk-container uk-container-expand">
-          <p class="jlz-landing-eyebrow">&gt; PROCESS</p>
-          <h2 id="process-title" class="uk-heading-large uk-margin-remove-top">How we ship</h2>
-          <div class="uk-grid uk-child-width-1-2@s uk-child-width-1-4@m uk-margin-medium-top" uk-grid>
-            <div class="uk-card uk-card-default uk-card-body">
-              <h3 class="uk-card-title">01 Discover</h3>
-              <p class="uk-text-meta">Research, audit, define the problem.</p>
-            </div>
-            <div class="uk-card uk-card-default uk-card-body">
-              <h3 class="uk-card-title">02 Design</h3>
-              <p class="uk-text-meta">Art direction, 3D, interaction prototypes.</p>
-            </div>
-            <div class="uk-card uk-card-default uk-card-body">
-              <h3 class="uk-card-title">03 Develop</h3>
-              <p class="uk-text-meta">WebGPU, TSL shaders, performance budgets.</p>
-            </div>
-            <div class="uk-card uk-card-default uk-card-body">
-              <h3 class="uk-card-title">04 Ship</h3>
-              <p class="uk-text-meta">Launch, measure, evolve.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- DM minimal high-contrast CTA — sparse, bold, single action -->
-      <section id="contact" class="uk-section uk-section-xlarge uk-text-center jlz-contact" aria-labelledby="contact-title">
-        <div class="uk-container uk-container-expand">
-          <p class="jlz-landing-eyebrow">&gt; CONTACT</p>
-          <h2 id="contact-title" class="uk-heading-xlarge uk-margin-remove-top jlz-contact-title">Let's build together</h2>
-          <a href="mailto:hello@justlovejazz.com" class="jlz-contact-email">hello@justlovejazz.com</a>
-          <p class="uk-text-meta uk-margin-small-top">Open for new projects · Remote · EU</p>
-        </div>
-      </section>
-  `
-}
 
 export default defineConfig({
   base: '/',
@@ -143,17 +14,12 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
     cssCodeSplit: true,
     rollupOptions: {
-      // Multi-page entry: index (/) → app (/app) → landing (/landing).
-      // index.html is the FCP-critical splash (~12KB inline). app.html is
-      // the full 3D experience. landing.html is the no-JS semantic fallback.
-      // Vite dev server serves index.html at / by default (no .html needed).
-      // app.html and landing.html are served at /app.html and /landing.html
-      // in dev; in build, they're at /app.html and /landing.html too
-      // (Vite preserves the filenames).
+      // Multi-page entry: index (/) → blog (/blog).
+      // index.html is the seamless 3D experience with inline splash overlay.
+      // three.js loads LAZY (dynamic import) — does NOT block FCP.
+      // blog.html + blog/*.html are standalone semantic pages (SEO).
       input: {
         index: resolve(__dirname, 'index.html'),
-        app: resolve(__dirname, 'app.html'),
-        landing: resolve(__dirname, 'landing.html'),
         blog: resolve(__dirname, 'blog.html'),
         // Blog articles — each is a standalone semantic HTML page
         'blog/undercurrent-webgpu-fluid': resolve(__dirname, 'blog/undercurrent-webgpu-fluid.html'),
@@ -296,31 +162,18 @@ export default defineConfig({
       },
     },
     {
-      // Prerender the 6 home sections into app.html at build time so the
+      // Prerender the 6 home sections into index.html at build time so the
       // 3D app boots with DOM content already present (router.ts skips
       // re-injection when #spa-content already has children → the prerendered
       // HTML is hydrated by UIkit.init, not replaced).
-      name: 'prerender-app',
+      name: 'prerender-index',
       transformIndexHtml(html, ctx) {
-        // Only inject into app.html (not index/landing).
-        if (!ctx.path.includes('app.html')) return html
+        // Only inject into index.html (not blog).
+        if (!ctx.path.endsWith('index.html')) return html
         const sections = homePage()
         return html.replace(
           '<div id="app"></div>',
           `<div id="app"><main id="spa-content" role="main">${sections}</main></div>`,
-        )
-      },
-    },
-    {
-      // Inject semantic no-JS content into landing.html at build time.
-      // landing.html is the prerendered fallback — no three.js, no UIkit,
-      // just semantic HTML5 + CSS for crawlers and no-JS users.
-      name: 'prerender-landing',
-      transformIndexHtml(html, ctx) {
-        if (!ctx.path.includes('landing.html')) return html
-        return html.replace(
-          '<!-- LANDING_CONTENT_PLACEHOLDER -->',
-          landingContent(),
         )
       },
     },

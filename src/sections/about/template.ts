@@ -16,7 +16,7 @@ export function aboutSection(): string {
         <p class="uk-text-meta uk-margin-remove">We cover the full cycle of digital products.</p>
         <p class="uk-text-meta uk-margin-remove">Explore our capabilities.</p>
       </div>
-      <a href="/app/services" class="jlz-service-explore uk-button uk-button-default uk-button-small uk-margin-top">
+      <a href="/services" class="jlz-service-explore uk-button uk-button-default uk-button-small uk-margin-top">
         <span class="jlz-service-explore__dot" aria-hidden="true"></span>
         Explore
       </a>

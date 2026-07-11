@@ -57,14 +57,14 @@ const PRINCIPLES: readonly Principle[] = [
     title: 'Process',
     lead: 'We explore. We prototype. We test. We fail. We improve.',
     desc: [],
-    href: '/app/services',
+    href: '/services',
   },
   {
     num: '06',
     title: 'Future',
     lead: 'Technologies change. Principles remain.',
     desc: [],
-    href: '/app',
+    href: '/',
   },
 ] as const
 

@@ -1,6 +1,6 @@
-// src/main-app.ts — lazy bootstrap entry (app page, no splash)
-// Splash is now a separate page (/splash.html). This module boots the 3D
-// experience directly — app.html has #jlz-app-loader which fades out
+// src/main-app.ts — lazy bootstrap entry.
+// three.js loads LAZY here (dynamic import) — does NOT block FCP.
+// index.html has #jlz-app-loader (inline splash overlay) which fades out
 // when jlz:webgl-ready fires.
 import type * as THREE from 'three'
 import { syncReducedMotionDataset, prefersReducedMotion } from './core/motionPolicy'

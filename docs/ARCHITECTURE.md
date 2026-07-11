@@ -7,22 +7,27 @@ Vite 8 · TypeScript strict · Three.js 0.184 + TSL · UIkit 3 + Less · bun.
 ## Entry
 
 ```
-index.html → splash-entry.ts (splash page, ~15KB inline)
-app.html → entry-shell.ts → entry-app.ts → main-app.ts → Experience.ts
-blog.html → standalone (prerendered semantic HTML)
-landing.html → standalone (no-JS fallback)
+index.html → entry-shell.ts → entry-app.ts → main-app.ts → Experience.ts
+  ↑ seamless inline splash overlay (SVG squares + CRT curtains + progress)
+  ↑ three.js loads LAZY (dynamic import) — does NOT block FCP
+blog.html → standalone (prerendered semantic HTML, SEO)
 ```
 
-## Pages (6) — one per cube face
+No separate splash page. No landing page. One HTML entry (index.html) with
+inline splash overlay that fades out when 3D scene is ready.
 
-| Page | URL | Sections (joystick down/up) |
+## Pages (6) — SPA routes
+
+| Page | Route | Sections (joystick down/up) |
 | --- | --- | --- |
-| Studio | `/app` | 01 Studio / 02 Services / 03 Works / 04 Manifesto |
-| Services | `/app/services` | 01 Creative Direction / 02 Interactive Dev / 03 Motion & Realtime / 04 AI Systems |
-| Works | `/app/works` | 01 Undercurrent / 02 Mono Sunday / 03 Till at Night / 04 Ebb Vibes |
-| Manifesto | `/app/manifesto` | 01 Purpose / 02 Clarity / 03 Emotion / 04 Simplicity |
-| Lab | `/app/lab` | 01 Shader Lab / 02 Audio Reactive / 03 Generative / 04 GPU Particles |
-| Contact | `/app/contact` | 01 Email / 02 Social / 03 Location / 04 Form |
+| Studio | `/` | 01 Studio / 02 Services / 03 Works / 04 Manifesto |
+| Services | `/services` | 01 Creative Direction / 02 Interactive Dev / 03 Motion & Realtime / 04 AI Systems |
+| Works | `/works` | 01 Undercurrent / 02 Mono Sunday / 03 Till at Night / 04 Ebb Vibes |
+| Manifesto | `/manifesto` | 01 Purpose / 02 Clarity / 03 Emotion / 04 Simplicity |
+| Lab | `/lab` | 01 Shader Lab / 02 Audio Reactive / 03 Generative / 04 GPU Particles |
+| Contact | `/contact` | 01 Email / 02 Social / 03 Location / 04 Form |
+
+Blog (`/blog` + `/blog/[slug]`) — standalone HTML pages, not part of SPA.
 
 ## Navigation — JoystickNav
 
@@ -35,7 +40,7 @@ landing.html → standalone (no-JS fallback)
 
 ## Layout — unified sectionShell()
 
-ONE wrapper for ALL pages (home + content). Apple Watch layout:
+ONE wrapper for ALL pages. Apple Watch layout:
 TOP (eyebrow + title + lead) / 3D CENTER / BOTTOM (content).
 
 ```typescript
@@ -43,35 +48,32 @@ sectionShell(id, topHtml, bottomHtml, mode='content', isActive=false, extraAttrs
 // mode: 'home' (data-section, 3D cube face) | 'content' (data-page-section)
 ```
 
-```html
-<section data-section|data-page-section class="uk-section uk-section-small uk-section-large@m">
-  <div class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-text-center uk-height-1-1">
-    topHtml   ← .jlz-section-top (eyebrow + title + lead)
-    bottomHtml ← .jlz-section-bottom (content + EXPLORE button)
-  </div>
-</section>
-```
+UIKit3: uk-section-small + uk-section-large@m, uk-container-expand,
+uk-flex uk-flex-between uk-height-1-1.
 
-UIKit3 utilities: uk-section-small + uk-section-large@m (responsive padding),
-uk-container-expand, uk-flex uk-flex-between uk-height-1-1 (Apple Watch layout).
-
-## Header — transparent navbar (Balou-inspired)
+## Header — transparent navbar
 
 ```
 [center-left nav]  [theme button]  [center-right nav]
   Studio / Services / Works    |    Manifesto / Lab / Contact
 ```
 
-- `uk-navbar-transparent` — no background bar
-- `uk-navbar-center` + `uk-navbar-center-left/right` — centered split layout
-- `uk-navbar-dropdown` — under nav item (not full-width stretch)
-- Theme toggle: `uk-icon-button` in center (replaces logo)
-- QF `@navbar-nav-item-line-mode: true` (underline animation) + glitch hover
+uk-navbar-transparent, uk-navbar-dropdown (under nav item),
+uk-icon-button (theme toggle). QF line-mode + glitch hover.
 
-## Footer — removed (minimalism)
+## Splash — seamless inline overlay
 
-Joystick is the sole bottom UI element. `position: fixed`, floats at bottom
-center with safe-area inset. Dotnav timeline below joystick base.
+```
+#jlz-app-loader (z-index:9999, fixed)
+  ├── SVG concentric squares (splash identity)
+  ├── CRT curtains (split on ready)
+  ├── Progress bar (real loading %)
+  └── Config buttons (theme/sound — fade out with splash)
+```
+
+Flow: HTML parse → inline splash renders (FCP ~200ms) → dynamic import('three')
+→ progress bar fills → jlz:webgl-ready → curtains split → 3D scene revealed.
+No navigation, no flash. Config buttons inside loader (disappear on fade).
 
 ## Z-index layers
 
@@ -79,6 +81,7 @@ center with safe-area inset. Dotnav timeline below joystick base.
 canvas (z-index:1, fixed, pointer-events:none) — 3D scene
 #spa-content (z-index:2) — DOM sections
 .tm-header (z-index:10001) — transparent navbar + dropdowns
+#jlz-app-loader (z-index:9999) — splash overlay (removed after fade)
 #joystick-nav (z-index:100, fixed) — joystick + dotnav
 .custom-cursor-inner/canvas (z-index:100000) — cursor
 ```
@@ -89,31 +92,6 @@ canvas (z-index:1, fixed, pointer-events:none) — 3D scene
 SplashCube opener, camera shake, ParticleBurst, mousemove (Works DrawTrail),
 ambient breathing (1 frame/2.5s).
 
-## Background — EnvSphere
-
-Global theme-driven. `jlz:theme-applied` event → `changeSection(isLight ? 1 : 2)`.
-auto=Intro pattern (light), inverse=About pattern (dark).
-BackSide sphere, CanvasTexture 1024×512.
-
-## SplashCube (baku)
-
-| Property | Value |
-| --- | --- |
-| Geometry | RoundedBoxGeometry(1.6, 6, 0.04) — beveled edges |
-| Material | MeshPhysicalMaterial (iridescence=1, clearcoat=1, opacity=0.35) |
-| Reflections | CubeCamera 512×512, JLZ-branded content scene |
-| Opener | Scale pulse 1.0→1.3→1.0 |
-| MSAA | `samples: 4` on scene WebGLRenderTarget |
-
-## Render pipeline
-
-| Backend | Render | Post |
-| --- | --- | --- |
-| WebGPU | TSL RenderPipeline + BloomNode | ACES + vignette + grain + chromatic + grade + sRGB |
-| WebGL2 | scene → RT(MSAA 4×) → bright-extract → blur(×2) → composite → screen | same chain, manual sRGB |
-
-Parity: portable integer hash, ACES epsilon, exact sRGBTransferOETF, BloomNode smoothstep.
-
 ## Text animations
 
 | Animation | Target | Trigger |
@@ -122,7 +100,7 @@ Parity: portable integer hash, ACES epsilon, exact sRGBTransferOETF, BloomNode s
 | NoiseText | `[data-eyebrow]` (section numbers) | jlz:section-change (Experience.ts handler) |
 
 NoiseText: console-style typewriter with trailing noise symbols (░▒▓█).
-Stable source via `data-eyebrow-text` attribute (never reads mutated textContent).
+Stable source via `data-eyebrow-text` attribute.
 
 ## Modules
 
@@ -138,7 +116,7 @@ Stable source via `data-eyebrow-text` attribute (never reads mutated textContent
 | ProjectOverlay | Fullscreen DOM dialog |
 | Cursor | Codrops-style: inner dot (red on hover) + noisy circle canvas |
 | ThemeManager | 2-mode (auto/inverse), global, uk-light |
-| Router | Path-based `/app`, `/app/services`, `/app/works`, `/app/manifesto`, `/app/lab`, `/app/contact` |
+| Router | Path-based `/`, `/services`, `/works`, `/manifesto`, `/lab`, `/contact` |
 | RenderPipeline | WebGL2 MSAA RT + post-processing parity |
 | BlurFade | Cinematic blur+stagger reveal for titles |
 | NoiseText | Console typewriter with noise tail for eyebrow numbers |
@@ -159,3 +137,5 @@ Stable source via `data-eyebrow-text` attribute (never reads mutated textContent
 2 modes: `auto` (light) / `inverse` (dark). Global `uk-light` on `<html>`.
 QF color-mode overrides in `_theme-fixes.less` (dark bg → light text).
 CSS vars (`--jlz-color-*`) flip via `html.uk-light` overrides.
+Splash config buttons write localStorage during loading; navbar toggle
+takes over after splash fades.

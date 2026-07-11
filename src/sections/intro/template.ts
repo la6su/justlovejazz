@@ -16,7 +16,7 @@ export function introSection(): string {
         <p class="uk-text-meta uk-margin-remove">A small studio crafting expressive browser experiences.</p>
         <p class="uk-text-meta uk-margin-remove">Glass · motion · light — powered by WebGPU.</p>
       </div>
-      <a href="/app/services" class="jlz-service-explore uk-button uk-button-default uk-button-small uk-margin-top">
+      <a href="/services" class="jlz-service-explore uk-button uk-button-default uk-button-small uk-margin-top">
         <span class="jlz-service-explore__dot" aria-hidden="true"></span>
         Explore
       </a>

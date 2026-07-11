@@ -35,7 +35,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   {
     label: 'Studio',
-    href: '/app',
+    href: '/',
     page: 'home',
     sections: [
       { num: '01', title: 'Studio', subtitle: 'Remote · EU · since 2019', idx: 1 },
@@ -43,11 +43,11 @@ const NAV_ITEMS: NavItem[] = [
       { num: '03', title: 'Works', subtitle: 'Selected projects · gallery', idx: 3 },
       { num: '04', title: 'Manifesto', subtitle: 'What guides us', idx: 4 },
     ],
-    featured: { title: 'Lab', subtitle: 'Experiments · always in progress', href: '/app/lab' },
+    featured: { title: 'Lab', subtitle: 'Experiments · always in progress', href: '/lab' },
   },
   {
     label: 'Services',
-    href: '/app/services',
+    href: '/services',
     page: 'services',
     sections: [
       { num: '01', title: 'Creative Direction', subtitle: 'Concept → visual identity', idx: 1 },
@@ -55,11 +55,11 @@ const NAV_ITEMS: NavItem[] = [
       { num: '03', title: 'Motion & Realtime', subtitle: 'Motion as interface', idx: 3 },
       { num: '04', title: 'AI Systems', subtitle: 'Generation · automation', idx: 4 },
     ],
-    featured: { title: 'Start a project', subtitle: 'Open for new work', href: '/app/contact' },
+    featured: { title: 'Start a project', subtitle: 'Open for new work', href: '/contact' },
   },
   {
     label: 'Works',
-    href: '/app/works',
+    href: '/works',
     page: 'works',
     sections: [
       { num: '01', title: 'Undercurrent', subtitle: 'WebGPU fluid simulation', idx: 1 },
@@ -71,7 +71,7 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     label: 'Manifesto',
-    href: '/app/manifesto',
+    href: '/manifesto',
     page: 'manifesto',
     sections: [
       { num: '01', title: 'Purpose', subtitle: 'We don\'t build what everyone builds', idx: 1 },
@@ -79,11 +79,11 @@ const NAV_ITEMS: NavItem[] = [
       { num: '03', title: 'Emotion', subtitle: 'Motion, light, sound', idx: 3 },
       { num: '04', title: 'Simplicity', subtitle: 'Minimalism, not emptiness', idx: 4 },
     ],
-    featured: { title: 'Process', subtitle: 'Explore · prototype · test · fail · improve', href: '/app/services' },
+    featured: { title: 'Process', subtitle: 'Explore · prototype · test · fail · improve', href: '/services' },
   },
   {
     label: 'Lab',
-    href: '/app/lab',
+    href: '/lab',
     page: 'lab',
     sections: [
       { num: '01', title: 'Shader Lab', subtitle: 'GLSL & TSL fragments', idx: 1 },
@@ -95,7 +95,7 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     label: 'Contact',
-    href: '/app/contact',
+    href: '/contact',
     page: 'contact',
     sections: [
       { num: '01', title: 'Email', subtitle: 'Direct line', idx: 1 },

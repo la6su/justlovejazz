@@ -174,13 +174,12 @@ export class World extends THREE.Group {
     })
 
     // Init BakuCarousel (async texture loading) for the works section (index 3).
-    // ONLY on home page — content pages (services/posts) don't use the carousel.
-    // App lives at /app (multi-page: splash=/, app=/app, landing=/landing).
-    // Home page = /app or /app/ (root of the app). Content pages = /app/services, /app/posts.
+    // ONLY on home page — content pages don't use the carousel.
+    // Home page = / (root). Content pages = /services, /works, /manifesto, /lab, /contact.
     // Use window.location.pathname because data-page may not be updated yet
     // (router.ts runs after world.init()).
     const path = window.location.pathname
-    const isHomePage = path === '/app' || path === '/app/' || path === '/' || path === ''
+    const isHomePage = path === '/' || path === ''
     const worksGroup = isHomePage ? this.sceneGroups[3] : undefined
     if (worksGroup) {
       const carousel = worksGroup.userData.gallery as

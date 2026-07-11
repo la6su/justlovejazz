@@ -17,7 +17,7 @@ export function contactSection(): string {
         <p class="uk-text-meta uk-margin-remove">Our way of thinking.</p>
         <p class="uk-text-meta uk-margin-remove">Our promises.</p>
       </div>
-      <a href="/app/manifesto" class="jlz-service-explore uk-button uk-button-default uk-button-small uk-margin-top">
+      <a href="/manifesto" class="jlz-service-explore uk-button uk-button-default uk-button-small uk-margin-top">
         <span class="jlz-service-explore__dot" aria-hidden="true"></span>
         Explore
       </a>

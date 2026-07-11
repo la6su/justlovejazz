@@ -5,10 +5,58 @@ import { bootstrap as bootstrapApp, type BootstrapOptions } from './main-app'
 import { BlurFade } from './Experience/BlurFade'
 import { eventBus } from './core/EventBus'
 
-// ── App loader (replaces splash — splash is now a separate / page) ──
-// app.html has #jlz-app-loader with CRT curtains + progress bar.
+const THEME_KEY = 'jlz:theme'
+const SOUND_KEY = 'jlz:sound'
+
+// ── Config: theme toggle (splash overlay) ──
+function initThemeToggle(): void {
+  const btn = document.getElementById('cfg-theme') as HTMLButtonElement | null
+  if (!btn) return
+  let isInverse = false
+  try {
+    if (localStorage.getItem(THEME_KEY) === 'inverse') isInverse = true
+  } catch { /* ignore */ }
+  const update = () => {
+    btn.setAttribute('aria-pressed', String(isInverse))
+    btn.classList.toggle('is-off', !isInverse)
+    btn.title = isInverse ? 'Theme: Inverse (click for Auto)' : 'Theme: Auto (click for Inverse)'
+  }
+  update()
+  btn.addEventListener('click', () => {
+    isInverse = !isInverse
+    try { localStorage.setItem(THEME_KEY, isInverse ? 'inverse' : 'auto') } catch { /* ignore */ }
+    update()
+  })
+}
+
+// ── Config: sound toggle (splash overlay) ──
+function initSoundToggle(): void {
+  const btn = document.getElementById('cfg-sound') as HTMLButtonElement | null
+  if (!btn) return
+  let soundOn = false
+  try {
+    if (localStorage.getItem(SOUND_KEY) === 'on') soundOn = true
+  } catch { /* ignore */ }
+  const update = () => {
+    btn.setAttribute('aria-pressed', String(soundOn))
+    btn.classList.toggle('is-off', !soundOn)
+    btn.title = soundOn ? 'Sound: On (click to mute)' : 'Sound: Off (click to enable)'
+  }
+  update()
+  btn.addEventListener('click', () => {
+    soundOn = !soundOn
+    try { localStorage.setItem(SOUND_KEY, soundOn ? 'on' : 'off') } catch { /* ignore */ }
+    update()
+  })
+}
+
+// ── Seamless splash loader ──
+// index.html has #jlz-app-loader with SVG squares + CRT curtains + progress.
+// three.js loads LAZY (dynamic import in main-app.ts) — does NOT block FCP.
 // We update progress as Experience.init() boots, then trigger curtain
-// split (fade-out class) when jlz:webgl-ready fires.
+// split (fade-out class) when jlz:webgl-ready fires. Config buttons
+// (theme/sound) are inside the loader — they fade out with the splash.
+// After fade, navbar theme toggle takes over.
 function fadeOutLoader(): void {
   const loader = document.getElementById('jlz-app-loader')
   if (!loader) return
@@ -72,6 +120,11 @@ function scheduleUiKitRefresh(): void {
 }
 
 export async function startApp(): Promise<void> {
+  // Init splash config toggles FIRST (theme/sound) — instant, no dependencies.
+  // These work during loading, before three.js finishes.
+  initThemeToggle()
+  initSoundToggle()
+
   // Use ?inline to prevent Vite from injecting @vite/client (updateStyle/
   // removeStyle) into the CSS module — through the reverse proxy, /@vite/client
   // resolves to the Next.js app which returns HTML instead of JS, breaking

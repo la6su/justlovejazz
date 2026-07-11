@@ -17,7 +17,7 @@ export function labSection(): string {
         <p class="uk-text-meta uk-margin-remove">We prototype.</p>
         <p class="uk-text-meta uk-margin-remove">We push boundaries.</p>
       </div>
-      <a href="/app" class="jlz-service-explore uk-button uk-button-default uk-button-small uk-margin-top">
+      <a href="/" class="jlz-service-explore uk-button uk-button-default uk-button-small uk-margin-top">
         <span class="jlz-service-explore__dot" aria-hidden="true"></span>
         Explore
       </a>
