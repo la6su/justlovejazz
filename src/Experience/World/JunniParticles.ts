@@ -126,7 +126,11 @@ export class JunniParticles extends THREE.InstancedMesh {
     const uRange = uniform(range)
     const uSize = uniform(size)
     const uSpeed = uniform(speed)
-    const uTex = opts.texture ? uniform(opts.texture as unknown as TSLNode) : null
+    // TSL texture() expects a raw THREE.Texture — NOT wrapped in uniform().
+    // TSL creates the TextureNode internally. Wrapping in uniform() causes
+    // "texture(value) function expects a valid instance of THREE.Texture".
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const uTex = opts.texture ?? null
     const uTiles = uniform(new THREE.Vector2(tiles[0], tiles[1]))
 
     // ── positionNode: Section3 vertex logic ──
@@ -196,7 +200,8 @@ export class JunniParticles extends THREE.InstancedMesh {
 
     // ── colorNode + opacityNode: texture or procedural circle ──
     // Cast helpers for TSL node typing (three 0.184 .d.ts is incomplete here)
-    const texSampler = uTex as unknown as TSLNode
+    // texSampler is the raw Texture — texture() TSL node accepts it directly.
+    const texSampler = uTex
     const buildSheetUv = () => {
       const num = attribute('num') as unknown as TSLVec2
       const vUv = uv()
@@ -219,7 +224,7 @@ export class JunniParticles extends THREE.InstancedMesh {
       colorNode = Fn(() => {
         const num = attribute('num') as unknown as TSLVec2
         const sheetUv = buildSheetUv() as unknown as TSLVec2
-        const texColor = texture(texSampler, sheetUv) as unknown as TSLVec3
+        const texColor = texture(texSampler!, sheetUv) as unknown as TSLVec3
         // HSV hue cycling
         const hsv = mx_rgbtohsv(texColor.rgb) as unknown as TSLVec3
         const hueShift = (uTime as unknown as TSLNode).mul(0.1).add(num.y.mul(0.4))
@@ -229,7 +234,7 @@ export class JunniParticles extends THREE.InstancedMesh {
 
       opacityNode = Fn(() => {
         const sheetUv = buildSheetUv() as unknown as TSLVec2
-        const texColor = texture(texSampler, sheetUv) as unknown as TSLVec3
+        const texColor = texture(texSampler!, sheetUv) as unknown as TSLVec3
         return texColor.a.mul(uVisibility as unknown as TSLNode)
       })
     } else {
