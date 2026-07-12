@@ -3,17 +3,20 @@
 // Port of next.junni.co.jp Section6 Particle to our TSL/WebGPU stack.
 // Reference: references/next.junni.co.jp/src/ts/MainScene/World/Sections/Section6/Particle/
 //
-// Key differences from the old makeParticles() (PointsMaterial):
+// Implementation: THREE.InstancedMesh + SpriteNodeMaterial.
+//   - SpriteNodeMaterial is purpose-built for billboarded quads — it handles
+//     the camera-facing rotation internally via modelViewMatrix. We only need
+//     to provide `positionNode` (world-space per-instance position) + `scaleNode`
+//     (size). No manual billboarding math.
+//   - WebGPU doesn't support resizable THREE.Points (pixel size 1 only), so
+//     instanced sprites are the portable path (RULES §14 parity).
+//
+// Key features vs old makeParticles (PointsMaterial):
 //   - GPU-side movement (drift + sin wave + mod wrap) — no CPU per-frame cost
-//   - Circle mask (discard outside radius) — soft round particles, not squares
-//   - Edge alpha fade (smoothstep) — particles fade at field boundaries
+//   - Circle mask (smoothstep) — soft round particles, not squares
 //   - Additive blending — luminous accumulation
 //   - Visibility uniform — smooth fade in/out via setVisibility()
-//
-// WebGPU parity: uses InstancedMesh + PlaneGeometry (billboarded) instead of
-// THREE.Points. WebGPU only supports point primitives with pixel size 1, so
-// pure Points can't have resizable sprites. InstancedMesh + billboarding TSL
-// node works on both WebGPU + WebGL2 (RULES §14 parity).
+//   - setCount(n) — rebuilds geometry for auto-reduce
 //
 // RULES §1: TSL NodeMaterial only (no raw ShaderMaterial).
 // RULES §2: TSL NodeMaterial IS allowed.
@@ -21,7 +24,7 @@
 //            by the caller (World.update only runs when needsRender=true).
 
 import * as THREE from 'three'
-import { MeshBasicNodeMaterial } from 'three/webgpu'
+import { SpriteNodeMaterial } from 'three/webgpu'
 import {
   Fn,
   vec3,
@@ -32,7 +35,6 @@ import {
   sin,
   mod,
   attribute,
-  billboarding,
 } from 'three/tsl'
 
 export interface JunniParticlesOptions {
@@ -40,7 +42,7 @@ export interface JunniParticlesOptions {
   count?: number
   /** Field spread [x, y, z]. Particles wrap around this volume. */
   range?: [number, number, number]
-  /** Base particle size (world units, before depth scaling). */
+  /** Base particle size (world units). */
   size?: number
   /** Drift speed multiplier (affects X-drift + sin wave frequency). */
   speed?: number
@@ -48,15 +50,15 @@ export interface JunniParticlesOptions {
   color?: number
 }
 
-// TSL node types in three 0.184 are deeply nested (UniformNode vs VarNode vs
-// AttributeNode) and don't compose cleanly. We use `unknown` casts at the
-// storage boundary and access .value through a minimal interface — this
-// matches how three.js TSL examples handle the incomplete .d.ts.
+// TSL node types in three 0.184 .d.ts are deeply nested (UniformNode vs
+// VarNode vs AttributeNode) and don't compose cleanly. We use `unknown`
+// storage + minimal casts at the access boundary — matches how three.js TSL
+// examples handle the incomplete .d.ts.
 type UniformVal = { value: unknown }
-// Inside Fn closures, cast to a minimal shape that supports the TSL operator
-// methods (.mul, .add, .sub, .div, .y, etc.). The actual runtime objects DO
-// have these methods (TSL adds them via prototype), but TS .d.ts doesn't
-// express the cross-type operator overloads cleanly.
+// Inside Fn closures, cast to a minimal shape that supports TSL operator
+// methods (.mul, .add, .sub, .div, .y, etc.). Runtime objects DO have these
+// (TSL adds them via prototype), but TS .d.ts doesn't express cross-type
+// operator overloads cleanly.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type TSLNode = any
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -68,12 +70,10 @@ export class JunniParticles extends THREE.InstancedMesh {
   private readonly _range: THREE.Vector3
   private _reduced = false
 
-  // Per-instance uniforms (each JunniParticles gets its own set via closure).
-  // Stored as unknown — TSL node types in three 0.184 .d.ts are incomplete,
-  // we access .value through UniformVal cast (see update/setVisibility).
+  // Per-instance uniforms. Stored as unknown — TSL node types in three 0.184
+  // .d.ts are incomplete; we access .value through UniformVal cast.
   private readonly _uTime: unknown
   private readonly _uVisibility: unknown
-  private readonly _uSize: unknown
 
   constructor(opts: JunniParticlesOptions = {}) {
     const count = opts.count ?? 300
@@ -82,10 +82,14 @@ export class JunniParticles extends THREE.InstancedMesh {
     const speed = opts.speed ?? 1
     const color = opts.color ?? 0xffffff
 
-    // Base geometry — unit plane, scaled per-instance via instanceMatrix
+    // Base geometry — unit plane. SpriteNodeMaterial billboards it
+    // automatically; per-instance position comes from positionNode.
     const geo = new THREE.PlaneGeometry(1, 1)
 
-    // Per-instance offset positions (random spread in range volume)
+    // Per-instance offset positions (random spread in range volume).
+    // Stored as InstancedBufferAttribute — read in positionNode via
+    // attribute('offsetPos'). This is the particle's base position; the
+    // shader adds drift + wave + mod wrap on top.
     const offsetPos = new Float32Array(count * 3)
     for (let i = 0; i < count; i++) {
       offsetPos[i * 3] = Math.random() * range.x
@@ -101,10 +105,14 @@ export class JunniParticles extends THREE.InstancedMesh {
     const uSize = uniform(size)
     const uSpeed = uniform(speed)
 
-    // ── Vertex: billboard + offset + drift + sin wave + mod wrap ──
+    // ── positionNode: per-instance world position with drift + wave + wrap ──
     // Mirrors Section6 particle.vs:
-    //   pos += t * 4.0 + sin(t + position.y * 10) * 0.3   (drift + wave)
-    //   pos = mod(pos, range) - range/2                    (wrap)
+    //   pos = offset + vec3(t*4 + sin(t + offset.y*10)*0.3, 0, 0)
+    //   pos = mod(pos, range) - range/2
+    //
+    // SpriteNodeMaterial takes this positionNode as the sprite's world-space
+    // center + handles billboarding + sizeAttenuation internally. We don't
+    // need manual billboarding math.
     const positionNode = Fn(() => {
       const offset = attribute('offsetPos') as unknown as TSLVec3
       const t = (uTime as unknown as TSLNode).mul((uSpeed as unknown as TSLNode).mul(0.5))
@@ -115,11 +123,11 @@ export class JunniParticles extends THREE.InstancedMesh {
       const pos = offset.add(vec3(driftX, float(0.0), float(0.0)))
 
       // mod wrap — keep particles inside the range volume, center at origin
-      const wrapped = mod(pos, rangeVec).sub(rangeVec.div(2.0))
-
-      // Billboard the base plane quad to face the camera, positioned at `pos`.
-      return billboarding({ position: wrapped })
+      return mod(pos, rangeVec).sub(rangeVec.div(2.0))
     })
+
+    // ── scaleNode: per-instance size (uniform — all particles same size) ──
+    const scaleNode = Fn(() => uSize as unknown as TSLNode)
 
     // ── Fragment: circle mask + visibility ──
     // Mirrors Section6 particle.fs:
@@ -136,8 +144,9 @@ export class JunniParticles extends THREE.InstancedMesh {
 
     const colorNode = Fn(() => vec3(float(1.0)))
 
-    // TSL NodeMaterial
-    const mat = new MeshBasicNodeMaterial({
+    // SpriteNodeMaterial — purpose-built for billboarded particles.
+    // Handles camera-facing rotation + size attenuation internally.
+    const mat = new SpriteNodeMaterial({
       color,
       transparent: true,
       depthWrite: false,
@@ -146,6 +155,7 @@ export class JunniParticles extends THREE.InstancedMesh {
       fog: false,
     })
     mat.positionNode = positionNode()
+    mat.scaleNode = scaleNode()
     mat.colorNode = colorNode()
     ;(mat as unknown as { opacityNode: unknown }).opacityNode = opacityNode()
 
@@ -153,11 +163,13 @@ export class JunniParticles extends THREE.InstancedMesh {
     this.name = 'junni-particles'
     this.frustumCulled = false
 
-    // Per-instance scale (size) — all instances same size, depth scaling is
-    // implicit via billboarding (closer to camera = bigger on screen).
+    // Instance matrices — identity (position comes from positionNode, not
+    // instanceMatrix). We still need to set them so InstancedMesh renders
+    // the right count. Scale is handled by scaleNode.
     const dummy = new THREE.Object3D()
     for (let i = 0; i < count; i++) {
-      dummy.scale.setScalar(size)
+      dummy.position.set(0, 0, 0)
+      dummy.scale.setScalar(1)
       dummy.updateMatrix()
       this.setMatrixAt(i, dummy.matrix)
     }
@@ -167,9 +179,8 @@ export class JunniParticles extends THREE.InstancedMesh {
     this._range = range
     this._uTime = uTime
     this._uVisibility = uVisibility
-    this._uSize = uSize
-    // uRange + uSpeed are captured by the Fn closures above — no need to store
-    // as fields (they're only read during material compilation, not at runtime).
+    // uRange + uSize + uSpeed are captured by the Fn closures — no need to
+    // store as fields (only read during material compilation).
   }
 
   /** Advance the particle animation. Call each frame while rendering. */
@@ -213,11 +224,11 @@ export class JunniParticles extends THREE.InstancedMesh {
     geo.setAttribute('offsetPos', new THREE.InstancedBufferAttribute(offsetPos, 3))
     this.geometry = geo
 
-    // Resize instanceMatrix + repopulate scale
-    const size = (this._uSize as UniformVal).value as number
+    // Identity instance matrices (position comes from positionNode)
     const dummy = new THREE.Object3D()
     for (let i = 0; i < newCount; i++) {
-      dummy.scale.setScalar(size)
+      dummy.position.set(0, 0, 0)
+      dummy.scale.setScalar(1)
       dummy.updateMatrix()
       this.setMatrixAt(i, dummy.matrix)
     }
