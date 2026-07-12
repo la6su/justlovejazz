@@ -21,12 +21,12 @@ import { test, expect, type Page } from '@playwright/test'
  */
 
 const SECTION_IDS = [
+  'section-lab',
   'section-intro',
   'section-about',
-  'section-flexible',
   'section-challenge',
-  'section-innovative',
   'section-contact',
+  'section-process',
 ] as const
 
 /**
@@ -79,8 +79,8 @@ test.describe('JustLoveJazz — page boot smoke', () => {
   test('splash container + populated <main> render within timeout', async ({ page }) => {
     await page.goto('/')
 
-    // Splash overlay is present in the initial HTML (curtain panels).
-    await expect(page.locator('#jlj-splash')).toHaveCount(1)
+    // Splash overlay is inline in index.html — #jlz-app-loader with curtain panels.
+    await expect(page.locator('#jlz-app-loader')).toHaveCount(1)
 
     // The router creates <main id="spa-content" role="main"> after JS boots.
     // #app stays empty by design — content lives in #spa-content.
@@ -97,7 +97,7 @@ test.describe('JustLoveJazz — page boot smoke', () => {
     await expect(skip).toHaveAttribute('href', '#section-intro')
   })
 
-  test('all 6 anchor sections render with correct IDs and data-section', async ({ page }) => {
+  test('all 6 sections render with correct IDs and data-section', async ({ page }) => {
     await page.goto('/')
 
     for (const id of SECTION_IDS) {
