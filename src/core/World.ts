@@ -267,7 +267,7 @@ export class World extends THREE.Group {
     }
 
     // ── BakuCarousel per-frame (morph + scroll) ──
-    // Particles are STATIC — no drift. They don't animate when idle.
+    // JunniParticles animate via GPU-side drift (update advances uTime uniform).
     for (const group of this.sceneGroups) {
       if (!group.visible) continue
       const carousel = group.userData.gallery as
@@ -289,6 +289,11 @@ export class World extends THREE.Group {
         | import('../Experience/World/TimelineNodes').TimelineNodes
         | undefined
       if (timeline) timeline.update(deltaTime)
+      // Update JunniParticles (Intro + Works sections) — GPU-side drift.
+      const particles = group.userData.particles as
+        | import('../Experience/World/JunniParticles').JunniParticles
+        | undefined
+      if (particles) particles.update(deltaTime)
     }
   }
 

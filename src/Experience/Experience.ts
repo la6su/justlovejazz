@@ -86,6 +86,10 @@ export class Experience {
   private static readonly LOW_FPS_WINDOW = 60 // frames to sustain before flag
   /** True when FPS < 30 sustained over 60 frames. Read by DevPanel. */
   public get lowFps(): boolean { return this._lowFps }
+  // Auto-reduce: when _lowFps flips true, halve all JunniParticles counts.
+  // One-way (never restore) — restoring causes a GPU spike that re-triggers
+  // low FPS. User can manually restore via DevPanel (future) or page reload.
+  private _particleReductionApplied = false
   // startAudio handler — saved so destroy() can remove it if the user never
   // interacted (click/keydown listeners would otherwise leak on teardown).
   private _startAudioHandler: (() => void) | null = null
@@ -666,6 +670,22 @@ export class Experience {
       // Clear flag if nothing is actively changing
       if (!navActive && !introActive && !carouselActive && !openerActive && !camShaking) {
         this._needsRender = false
+      }
+    }
+
+    // ── Auto-reduce particle count when FPS is sustained low ──
+    // One-way: once reduced, never auto-restore (GPU spike would re-trigger).
+    // Iterates all scene groups, finds JunniParticles via userData.particles,
+    // halves their count. DevPanel shows the reduction (low fps ⚠ indicator).
+    if (this._lowFps && !this._particleReductionApplied && this.world) {
+      this._particleReductionApplied = true
+      for (const group of this.world.sceneGroups) {
+        const particles = group.userData.particles as
+          | import('../Experience/World/JunniParticles').JunniParticles
+          | undefined
+        if (particles && !particles.isReduced) {
+          particles.setCount(Math.floor(particles.baseCount / 2))
+        }
       }
     }
 

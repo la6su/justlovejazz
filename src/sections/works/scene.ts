@@ -1,7 +1,7 @@
 // Section4 — Challenge (Works): baku cube morphs into carousel of projects.
 // Clicking a carousel card opens the fullscreen ProjectOverlay.
 import * as THREE from 'three'
-import { makeParticles } from '../_shared/makeParticles'
+import { JunniParticles } from '../../Experience/World/JunniParticles'
 import { BakuCarousel } from '../../Experience/World/BakuCarousel'
 
 export function createSection4(): THREE.Group {
@@ -14,6 +14,19 @@ export function createSection4(): THREE.Group {
   carousel.userData.keepVisible = true
   g.add(carousel)
   g.userData.gallery = carousel
-  g.add(makeParticles({ count: 200, spread: new THREE.Vector3(14, 6, 8), color: 0x4488ff, size: 0.08, opacity: 0.4 }))
+
+  // JunniParticles: GPU-animated field around the carousel. Blue tint
+  // (0x4488ff) matches the original works-section accent. 200 count.
+  const particles = new JunniParticles({
+    count: 200,
+    range: [14, 6, 8],
+    size: 0.08,
+    speed: 0.8,
+    color: 0x4488ff,
+  })
+  particles.userData.keepVisible = true
+  g.add(particles)
+  g.userData.particles = particles
+
   return g
 }
