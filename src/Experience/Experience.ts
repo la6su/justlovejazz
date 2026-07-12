@@ -86,6 +86,9 @@ export class Experience {
   private static readonly LOW_FPS_WINDOW = 60 // frames to sustain before flag
   /** True when FPS < 30 sustained over 60 frames. Read by DevPanel. */
   public get lowFps(): boolean { return this._lowFps }
+  // startAudio handler — saved so destroy() can remove it if the user never
+  // interacted (click/keydown listeners would otherwise leak on teardown).
+  private _startAudioHandler: (() => void) | null = null
 
   // (SECTION_LABELS removed — was passed to UIMenu/JoystickNav via options
   //  that are no longer used. Section labels are in WorldConfig.domSection.)
@@ -209,16 +212,13 @@ export class Experience {
       .animate('intro:opacity', 0, 0.5, 'easeOutCubic')
     this.bus.animate('intro:stage', 1, 0.6, 'easeOutCubic')
 
-    // After the Experience intro: switch to the light hero theme.
-    // NOTE: do NOT touch the splash DOM here. The splash lifecycle (opening
-    // animation + hide + remove) is owned entirely by main-app.ts. Previously
-    // this handler force-set splash.style.display='none' ~0.6s after boot,
-    // which instantly destroyed the splash ~2.5s BEFORE the cinematic opening
-    // sequence could play — so the user saw no opening animation at all.
-    this.bus.on('intro:done', () => {
-      // Theme is global (auto=light by default). No per-section theme needed.
-      // EnvSphere syncs via jlz:theme-applied listener.
-    })
+    // intro:done handler removed (2026-07-11 audit). The previous handler was
+    // empty — theme is global (auto=light), EnvSphere syncs via
+    // jlz:theme-applied, and the splash lifecycle is owned by main-app.ts.
+    // The bus.emit('intro:done') in _updateInner is kept as a public
+    // extension point (fire-once event, cheap to emit with no subscribers).
+    // Do NOT re-add splash DOM logic here — see main-app.ts for the splash
+    // lifecycle (previously a handler force-hid the splash ~2.5s early).
   }
 
   async init() {
@@ -381,13 +381,18 @@ export class Experience {
 
     // Audio-reactive: start AudioContext on first user gesture (browser autoplay policy).
     // Analyser runs silently until a track is loaded or mic connected.
-    const startAudio = () => {
+    // Handler saved to _startAudioHandler so destroy() can remove it if the
+    // user never interacted (listeners would otherwise leak on teardown).
+    this._startAudioHandler = () => {
       this.audio.start()
-      document.removeEventListener('click', startAudio)
-      document.removeEventListener('keydown', startAudio)
+      if (this._startAudioHandler) {
+        document.removeEventListener('click', this._startAudioHandler)
+        document.removeEventListener('keydown', this._startAudioHandler)
+        this._startAudioHandler = null
+      }
     }
-    document.addEventListener('click', startAudio)
-    document.addEventListener('keydown', startAudio)
+    document.addEventListener('click', this._startAudioHandler)
+    document.addEventListener('keydown', this._startAudioHandler)
 
     // Sound config from splash page (localStorage 'jlz:sound' = 'on'|'off').
     // Splash writes this before navigation; app reads on boot.
@@ -741,6 +746,20 @@ export class Experience {
     this._circNav?.dispose()
     this.audio.dispose()
     this.sfx.dispose()
+    // startAudio listeners — remove if the user never interacted (the handler
+    // self-removes on first click/keydown, so this only matters when destroy()
+    // runs before any gesture, e.g. HMR teardown).
+    if (this._startAudioHandler) {
+      document.removeEventListener('click', this._startAudioHandler)
+      document.removeEventListener('keydown', this._startAudioHandler)
+      this._startAudioHandler = null
+    }
+    // scene.environment PMREM texture — not previously disposed (leak on
+    // HMR teardown). Dispose the texture + clear the reference.
+    if (this.scene.environment) {
+      this.scene.environment.dispose()
+      this.scene.environment = null
+    }
   }
 
   private async ensurePortfolio(): Promise<void> {

@@ -559,12 +559,20 @@ export class World extends THREE.Group {
       // If the group hosts a BakuCarousel (userData.gallery), call its
       // dispose() FIRST — it removes 6 window listeners + clears snapTimer
       // + disposes card materials/textures/geometry. The traverse below
-      // then handles any remaining mesh resources.
+      // SKIPS the gallery's descendants (already disposed) to avoid a
+      // fragile double-dispose on the same materials/geometries.
       const gallery = group.userData.gallery as
-        | { dispose?: () => void }
+        | ({ dispose?: () => void } & THREE.Object3D)
         | undefined
+      // Collect gallery + all its descendants so the traverse can skip them.
+      const galleryDescendants = new Set<THREE.Object3D>()
+      if (gallery) {
+        galleryDescendants.add(gallery)
+        gallery.traverse((o) => galleryDescendants.add(o))
+      }
       gallery?.dispose?.()
       group.traverse((obj) => {
+        if (galleryDescendants.has(obj)) return // already disposed by gallery.dispose()
         if (obj instanceof THREE.Mesh) {
           obj.geometry?.dispose()
           if (Array.isArray(obj.material)) obj.material.forEach((m) => disposeMaterialDeep(m))

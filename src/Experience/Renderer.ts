@@ -146,10 +146,12 @@ export class Renderer {
     const finalBackend = (this.instance as any).isWebGPURenderer
       ? `WebGPU (${(this.instance as any).backend?.constructor?.name})`
       : 'WebGL2'
-    console.info(
-      `[Renderer.init] Final path: ${finalBackend} | isRealWebGPU=${this.capabilities.isRealWebGPU} | ` +
-      `EnvSphere=${this.capabilities.isRealWebGPU ? 'TSL shader (premium)' : 'CanvasTexture (parity)'}`
-    )
+    if (import.meta.env.DEV) {
+      console.info(
+        `[Renderer.init] Final path: ${finalBackend} | isRealWebGPU=${this.capabilities.isRealWebGPU} | ` +
+        `EnvSphere=${this.capabilities.isRealWebGPU ? 'TSL shader (premium)' : 'CanvasTexture (parity)'}`
+      )
+    }
 
     // Pipeline
     this.pipeline = RenderPipeline.create(

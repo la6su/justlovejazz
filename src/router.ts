@@ -2,6 +2,7 @@ import { renderPage, type PageId } from './templates'
 import UIkit from 'uikit'
 import { applyTranslations } from './core/i18n'
 import { applyMetaTags } from './core/pageMeta'
+import { disposeWorkCards } from './UI/WorkCards'
 // ThemeManager removed — theme is global (auto=light, inverse=dark).
 
 let initialized = false
@@ -49,6 +50,11 @@ function renderView(page: PageId = getPageFromLocation()): void {
   // a shorter tab title on JS boot.
   // document.title is intentionally left as-is.
   if (currentPage !== page || el.children.length === 0) {
+    // Dispose WorkCards listeners + clear the cards[] array BEFORE replacing
+    // innerHTML. Without this, pointermove/click listeners on the old (detached)
+    // .jlz-work-card elements keep the nodes alive (leak). Each /works visit
+    // would otherwise add 8 more cards to the array.
+    disposeWorkCards()
     el.innerHTML = renderPage(page)
     if (page === 'home') {
       // Home: activate intro section (sectionShell doesn't add section-active for home mode)
