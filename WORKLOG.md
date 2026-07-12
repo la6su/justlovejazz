@@ -9,6 +9,71 @@
 
 ---
 
+## 2026-07-13 — JunniParticles (TSL GPU-animated) + auto-reduce
+
+### Done
+- Analyzed next.junni.co.jp reference (Section6 Particle) — raw GLSL ShaderMaterial
+  on THREE.Points with drift + sin wave + mod wrap + circle mask + AdditiveBlending.
+- Created `src/Experience/World/JunniParticles.ts` — TSL port to our stack:
+  - InstancedMesh + PlaneGeometry (billboarded via TSL `billboarding` node) instead
+    of THREE.Points — WebGPU only supports point primitives with pixel size 1, so
+    pure Points can't have resizable sprites. InstancedMesh + billboarding works on
+    both WebGPU + WebGL2 (RULES §14 parity).
+  - GPU-side movement: `t*4 + sin(t + offset.y*10)*0.3` drift + `mod(pos, range)`
+    wrap-around. Mirrors Section6 particle.vs. No CPU per-frame cost — only uTime
+    uniform advances.
+  - Circle mask: `smoothstep(0.5, 0.35, distance(uv*2-1))` — soft round particles.
+  - Additive blending — luminous accumulation.
+  - `setVisibility(v)` — smooth fade via uVisibility uniform.
+  - `setCount(n)` — rebuilds geometry for auto-reduce.
+- Replaced `makeParticles()` (static PointsMaterial) in intro/scene.ts (300
+  particles) + works/scene.ts (200 particles, blue 0x4488ff). Deleted the now-unused
+  `src/sections/_shared/makeParticles.ts`.
+- Wired `particles.update(dt)` into World.update() scene-group loop (same pattern as
+  typo/orb/timeline/carousel).
+- Auto-reduce: Experience.update() now halves all JunniParticles counts when `_lowFps`
+  (FPS < 30 for 60 frames) flips true. One-way (`_particleReductionApplied` flag) —
+  never auto-restore (GPU spike would re-trigger). Foundation (`_lowFps`) was already
+  in place from Sprint 11; this wires the actual adaptive reduction.
+
+### Key decisions (WHY)
+- **InstancedMesh over THREE.Points**: WebGPU limitation — point primitives are
+  pixel-size-1 only. The reference uses THREE.Points + raw GLSL (WebGL-only). For
+  parity we use instanced billboards — works on both backends, same visual.
+- **TSL NodeMaterial (RULES §1/§2)**: reference uses raw ShaderMaterial. We port to
+  TSL — `Fn()` closures + `attribute('offsetPos')` + `billboarding({position})` +
+  `smoothstep`/`mod`/`sin` TSL nodes. Same shader logic, portable to WebGPU.
+- **GPU-side movement over CPU**: ParticleBurst (existing) does CPU-side matrix
+  updates per frame (200 matrices). For continuous ambient particles (300+), GPU-side
+  is cheaper — only one uniform update per frame, the shader does all position math.
+- **One-way auto-reduce**: restoring count causes a geometry rebuild + GPU upload
+  spike → FPS drops again → loop. Better to stay reduced. User can reload page to
+  reset. DevPanel shows 'low fps ⚠' so it's visible.
+
+### Files touched
+- `src/Experience/World/JunniParticles.ts` (NEW — 220 LOC)
+- `src/sections/intro/scene.ts` (makeParticles → JunniParticles)
+- `src/sections/works/scene.ts` (makeParticles → JunniParticles)
+- `src/sections/_shared/makeParticles.ts` (DELETED — unused)
+- `src/core/World.ts` (particles.update() in scene-group loop)
+- `src/Experience/Experience.ts` (_particleReductionApplied + auto-reduce block)
+
+### Verification
+- type-check: 0 errors
+- lint: 0 errors (61 pre-existing warnings)
+- build: green
+- test:unit: 69 passed
+- Agent Browser: 6 scene groups, intro=300 particles, works=200, isReduced=false,
+  0 console errors. (WebGL2 fallback — WebGPU premium path needs vision QA via
+  Hermes on project.6la.ru.)
+
+### Next
+- Vision QA via Hermes: verify particles render + animate on real WebGPU
+- Optional: visibility animation on section enter/leave (fade in/out)
+- Optional: boost effect (Section6 particleTimeScale 10x on trigger)
+
+---
+
 ## 2026-07-12 — Cursor audit: 5 memory/lifecycle fixes
 
 ### Done
