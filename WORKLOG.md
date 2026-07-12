@@ -9,6 +9,67 @@
 
 ---
 
+## 2026-07-12 — Cursor audit: 5 memory/lifecycle fixes
+
+### Done
+- P1 (real leak): WorkCards listeners survived SPA navigation. router.ts did
+  `el.innerHTML = renderPage(page)` — old DOM nodes died, but `cards[]` array
+  in WorkCards.ts kept references + pointermove/click listeners on detached
+  nodes → GC-blocked. Each /works visit added 8 more cards. Fix: call
+  `disposeWorkCards()` in router.renderView() BEFORE innerHTML replacement.
+- P2: console.info in Renderer.ts:149 (render path log) without
+  `import.meta.env.DEV` gate → production console noise. Wrapped in DEV check.
+- P2: empty `bus.on('intro:done')` handler in Experience.ts:218 — dead listener
+  (body was empty; theme is global, splash owned by main-app.ts). Removed the
+  handler; kept `bus.emit('intro:done')` as a public extension point. Left a
+  comment explaining why no splash logic belongs here.
+- P3: `scene.environment` PMREM texture not disposed in destroy() — leak on
+  HMR teardown. Added `scene.environment.dispose()` + null the reference.
+- P3: startAudio click/keydown listeners not removed in destroy() — leaked
+  if destroy() ran before any user gesture (HMR). Saved handler to
+  `_startAudioHandler` field; destroy() removes it if still attached.
+- P3: World.disposeSceneGroups() double-dispose on BakuCarousel children —
+  gallery.dispose() ran first, then traverse() called disposeMaterialDeep on
+  the same materials. Three.js Material.dispose() is idempotent so it worked,
+  but fragile. Now collects gallery + descendants into a Set and skips them
+  in the traverse.
+
+### Key decisions (WHY)
+- **disposeWorkCards in router, not in entry-app**: router.renderView() is the
+  single point where DOM replacement happens. Calling dispose there (before
+  innerHTML) guarantees cleanup regardless of which page is being left. The
+  jlz:route-change handler in entry-app.ts (which calls initWorkCards) runs
+  AFTER the new DOM is in place — wrong place for dispose.
+- **Kept bus.emit('intro:done') despite removing the listener**: the event is
+  a public API contract (fire-once after intro animation). Removing the emit
+  would be a breaking change for any future subscriber. The emit is cheap
+  (no subscribers = no-op). The empty listener was the dead code, not the emit.
+- **Gallery descendants Set in World**: the alternative (checking `obj.parent`
+  chain) is O(depth) per node and fragile against nesting changes. A Set built
+  once via gallery.traverse is O(1) lookup and self-maintaining.
+
+### Files touched
+- src/router.ts (P1 — disposeWorkCards import + call)
+- src/Experience/Renderer.ts (P2 — DEV gate on console.info)
+- src/Experience/Experience.ts (P2 intro:done removal + P3 startAudio field +
+  P3 scene.environment dispose)
+- src/core/World.ts (P3 — gallery descendants skip in disposeSceneGroups)
+
+### Verification
+- lint: 0 errors (61 pre-existing warnings)
+- type-check: 0 errors
+- build: green
+- test:unit: 9/9 passed
+
+### Next
+- Cursor audit also flagged: 61 ESLint warnings (no-console in dev-only paths,
+  no-explicit-any on WebGPU/Three.js API). Not bugs — tracked for future
+  type-safety pass on the WebGPU layer.
+- vendor-three 1.2MB (gzip 334KB) — already lazy-loaded, further code-splitting
+  is a separate perf task.
+
+---
+
 ## 2026-07-11c — Blog polish + meta optimization + SfxSystem + DevPanel/FPS
 
 ### Done
