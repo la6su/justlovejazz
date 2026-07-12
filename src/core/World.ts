@@ -49,6 +49,13 @@ export class World extends THREE.Group {
   private _poolBakuEmissive = new THREE.Color()
   private _poolEnvColor = new THREE.Color()
   private _poolGroundColor = new THREE.Color()
+  // Theme-aware ground adjustment. updateTransform() lerps ground color/opacity
+  // from WorldConfig on every section change — this multiplier overrides the
+  // result so the ground stays visible on both light + dark themes.
+  // syncGroundTheme(isLight) sets it; updateTransform applies it.
+  private _groundThemeColor: THREE.Color = new THREE.Color(0x1a1a2e)
+  private _groundThemeOpacity = 0.4
+  private _groundThemeActive = false
   private _targetGroundOpacity = 0
 
   constructor(scene: THREE.Scene) {
@@ -216,20 +223,26 @@ export class World extends THREE.Group {
    *  theme (near-white EnvSphere) but visible on inverse (dark). We flip the
    *  ground to a contrasting tone per theme so it's always perceivable.
    *  RULES §20 — ground still ONLY visible on section 4 (visibility is gated
-   *  in Experience.ts, this method only adjusts appearance). */
+   *  in Experience.ts, this method only adjusts appearance).
+   *
+   *  NOTE: sets _groundThemeActive=true so updateTransform() knows to override
+   *  the WorldConfig lerp (which would otherwise reset opacity to 0.25). */
   public syncGroundTheme(isLight: boolean): void {
-    const groundMat = this.groundPlane.material as THREE.MeshStandardMaterial
     if (isLight) {
-      // Light theme (auto on light sections / inverse on dark sections):
-      // dark ground on near-white bg = visible contrast.
-      groundMat.color.set(0x1a1a2e)
-      this._targetGroundOpacity = 0.4
+      // Light theme: dark ground on near-white bg = visible contrast.
+      this._groundThemeColor.set(0x1a1a2e)
+      this._groundThemeOpacity = 0.4
     } else {
-      // Dark theme: light ground on dark bg = visible contrast.
-      groundMat.color.set(0x3a3a4e)
-      this._targetGroundOpacity = 0.3
+      // Dark theme: lighter ground on dark bg = visible contrast.
+      this._groundThemeColor.set(0x3a3a4e)
+      this._groundThemeOpacity = 0.3
     }
-    groundMat.opacity = this._targetGroundOpacity
+    this._groundThemeActive = true
+    // Apply immediately (in case updateTransform doesn't run soon)
+    const groundMat = this.groundPlane.material as THREE.MeshStandardMaterial
+    groundMat.color.copy(this._groundThemeColor)
+    groundMat.opacity = this._groundThemeOpacity
+    this._targetGroundOpacity = this._groundThemeOpacity
   }
 
   public update(deltaTime: number, needsRender: boolean = true): void {
@@ -501,12 +514,21 @@ export class World extends THREE.Group {
     // Use the config from section's phaseConfig for ground/post/lighting
 
     // ── Ground plane update (junni pattern: lerp color + opacity per section)
-    const fromGround = fromCfg.ground
-    const toGround = toCfg.ground
+    // BUT: if syncGroundTheme() has been called (theme-applied), override the
+    // WorldConfig lerp — otherwise section navigation resets the theme-aware
+    // color/opacity back to the faint config values (ground invisible on light).
     const groundMat = this.groundPlane.material as THREE.MeshStandardMaterial
-    groundMat.color.copy(this._poolGroundColor.lerpColors(fromGround.color, toGround.color, t))
-    this._targetGroundOpacity = THREE.MathUtils.lerp(fromGround.opacity, toGround.opacity, t)
-    groundMat.opacity = this._targetGroundOpacity
+    if (this._groundThemeActive) {
+      groundMat.color.copy(this._groundThemeColor)
+      this._targetGroundOpacity = this._groundThemeOpacity
+      groundMat.opacity = this._groundThemeOpacity
+    } else {
+      const fromGround = fromCfg.ground
+      const toGround = toCfg.ground
+      groundMat.color.copy(this._poolGroundColor.lerpColors(fromGround.color, toGround.color, t))
+      this._targetGroundOpacity = THREE.MathUtils.lerp(fromGround.opacity, toGround.opacity, t)
+      groundMat.opacity = this._targetGroundOpacity
+    }
 
     // Crossfade opacity (bgT holds each section's opacity longer)
     bus.set(`section:${fromCfg.id}:opacity`, 1 - bgT)
