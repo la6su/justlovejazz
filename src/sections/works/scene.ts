@@ -4,6 +4,11 @@ import * as THREE from 'three'
 import { JunniParticles } from '../../Experience/World/JunniParticles'
 import { BakuCarousel } from '../../Experience/World/BakuCarousel'
 
+// Shared sprite sheet texture (6 frames, 768×128 — junni pattern.jpg).
+// TODO: replace with a custom JLZ texture.
+const particleTexture = new THREE.TextureLoader().load('/textures/sec3-particles.jpg')
+particleTexture.colorSpace = THREE.SRGBColorSpace
+
 export function createSection4(): THREE.Group {
   const g = new THREE.Group()
   g.name = 'challenge'
@@ -15,14 +20,17 @@ export function createSection4(): THREE.Group {
   g.add(carousel)
   g.userData.gallery = carousel
 
-  // JunniParticles: GPU-animated field around the carousel. Blue tint
-  // (0x4488ff) matches the original works-section accent. 200 count.
+  // JunniParticles (Section3 behavior): textured sprites + Y-drift +
+  // XZ orbit + spin + pulse + HSV hue cycling. Blue tint (0x4488ff) to
+  // match the works-section accent. 200 count.
   const particles = new JunniParticles({
     count: 200,
     range: [14, 6, 8],
-    size: 0.08,
+    size: 0.2,
     speed: 0.8,
     color: 0x4488ff,
+    texture: particleTexture,
+    textureTiles: [6, 1],
   })
   particles.userData.keepVisible = true
   g.add(particles)

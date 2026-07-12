@@ -1,22 +1,21 @@
 // JunniParticles.ts — GPU-side animated particle field (TSL NodeMaterial).
 //
-// Port of next.junni.co.jp Section6 Particle to our TSL/WebGPU stack.
-// Reference: references/next.junni.co.jp/src/ts/MainScene/World/Sections/Section6/Particle/
+// Port of next.junni.co.jp Section3 Sec3Particle to our TSL/WebGPU stack.
+// Reference: references/next.junni.co.jp/src/ts/MainScene/World/Sections/Section3/Sec3Particle/
 //
-// Implementation: THREE.InstancedMesh + SpriteNodeMaterial.
-//   - SpriteNodeMaterial is purpose-built for billboarded quads — it handles
-//     the camera-facing rotation internally via modelViewMatrix. We only need
-//     to provide `positionNode` (world-space per-instance position) + `scaleNode`
-//     (size). No manual billboarding math.
-//   - WebGPU doesn't support resizable THREE.Points (pixel size 1 only), so
-//     instanced sprites are the portable path (RULES §14 parity).
-//
-// Key features vs old makeParticles (PointsMaterial):
-//   - GPU-side movement (drift + sin wave + mod wrap) — no CPU per-frame cost
-//   - Circle mask (smoothstep) — soft round particles, not squares
+// Section3 behavior (textured sprites + rotation + HSV hue shift):
+//   - Sprite sheet texture (6 frames in a 768×128 atlas → 6×128 tiles)
+//   - Per-instance: offsetPos (base position) + num (frame index, scale variant)
+//   - Y-drift (particles rise upward, faster near center)
+//   - XZ rotation around center (particles orbit)
+//   - Per-particle XY rotation (spinning sprites)
+//   - Pulse scale (exp curve — particles periodically grow)
+//   - HSV hue cycling in fragment (color shifts over time + per-particle)
 //   - Additive blending — luminous accumulation
-//   - Visibility uniform — smooth fade in/out via setVisibility()
-//   - setCount(n) — rebuilds geometry for auto-reduce
+//
+// WebGPU parity: InstancedMesh + SpriteNodeMaterial (billboarded quads).
+// WebGPU doesn't support resizable THREE.Points (pixel size 1 only), so
+// instanced sprites are the portable path (RULES §14 parity).
 //
 // RULES §1: TSL NodeMaterial only (no raw ShaderMaterial).
 // RULES §2: TSL NodeMaterial IS allowed.
@@ -27,14 +26,23 @@ import * as THREE from 'three'
 import { SpriteNodeMaterial } from 'three/webgpu'
 import {
   Fn,
+  vec2,
   vec3,
   float,
   uniform,
   uv,
   smoothstep,
   sin,
+  cos,
   mod,
+  floor,
+  exp,
+  abs,
+  length,
   attribute,
+  texture,
+  mx_rgbtohsv,
+  mx_hsvtorgb,
 } from 'three/tsl'
 
 export interface JunniParticlesOptions {
@@ -42,12 +50,19 @@ export interface JunniParticlesOptions {
   count?: number
   /** Field spread [x, y, z]. Particles wrap around this volume. */
   range?: [number, number, number]
-  /** Base particle size (world units). */
+  /** Base particle size (world units, before pulse scaling). */
   size?: number
-  /** Drift speed multiplier (affects X-drift + sin wave frequency). */
+  /** Drift speed multiplier (affects Y-rise + rotation frequency). */
   speed?: number
-  /** Particle color (default white — additive blending makes it luminous). */
+  /** Particle color tint (default white — additive blending makes it luminous).
+   *  When a texture is provided, this tints the texture samples. */
   color?: number
+  /** Sprite sheet texture (Section3-style). When provided, particles sample
+   *  this texture with per-instance frame selection + HSV hue cycling.
+   *  When null, particles are procedural white circles (Section6-style). */
+  texture?: THREE.Texture | null
+  /** Sprite sheet tile count [x, y] (e.g. [6, 1] for a 6-frame horizontal strip). */
+  textureTiles?: [number, number]
 }
 
 // TSL node types in three 0.184 .d.ts are deeply nested (UniformNode vs
@@ -61,6 +76,8 @@ type UniformVal = { value: unknown }
 // operator overloads cleanly.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type TSLNode = any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type TSLVec2 = any
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type TSLVec3 = any
 
@@ -81,22 +98,27 @@ export class JunniParticles extends THREE.InstancedMesh {
     const size = opts.size ?? 0.1
     const speed = opts.speed ?? 1
     const color = opts.color ?? 0xffffff
+    const useTexture = !!opts.texture
+    const tiles = opts.textureTiles ?? [6, 1]
 
-    // Base geometry — unit plane. SpriteNodeMaterial billboards it
-    // automatically; per-instance position comes from positionNode.
+    // Base geometry — unit plane. SpriteNodeMaterial billboards it.
     const geo = new THREE.PlaneGeometry(1, 1)
 
-    // Per-instance offset positions (random spread in range volume).
-    // Stored as InstancedBufferAttribute — read in positionNode via
-    // attribute('offsetPos'). This is the particle's base position; the
-    // shader adds drift + wave + mod wrap on top.
+    // Per-instance attributes:
+    // - offsetPos: base position in range volume (random spread)
+    // - num: vec2 — x = frame index (for sprite sheet), y = scale variant (0.05-1.0)
+    //   Matches Section3: numArray.push(i, Math.random() * 0.95 + 0.05)
     const offsetPos = new Float32Array(count * 3)
+    const numAttr = new Float32Array(count * 2)
     for (let i = 0; i < count; i++) {
       offsetPos[i * 3] = Math.random() * range.x
       offsetPos[i * 3 + 1] = Math.random() * range.y
       offsetPos[i * 3 + 2] = Math.random() * range.z
+      numAttr[i * 2] = i // frame index (used as num.x / 4.0 in sprite selector)
+      numAttr[i * 2 + 1] = Math.random() * 0.95 + 0.05 // scale variant 0.05-1.0
     }
     geo.setAttribute('offsetPos', new THREE.InstancedBufferAttribute(offsetPos, 3))
+    geo.setAttribute('num', new THREE.InstancedBufferAttribute(numAttr, 2))
 
     // Per-instance uniforms (created BEFORE the TSL Fn closures that capture them)
     const uTime = uniform(0)
@@ -104,48 +126,124 @@ export class JunniParticles extends THREE.InstancedMesh {
     const uRange = uniform(range)
     const uSize = uniform(size)
     const uSpeed = uniform(speed)
+    const uTex = opts.texture ? uniform(opts.texture as unknown as TSLNode) : null
+    const uTiles = uniform(new THREE.Vector2(tiles[0], tiles[1]))
 
-    // ── positionNode: per-instance world position with drift + wave + wrap ──
-    // Mirrors Section6 particle.vs:
-    //   pos = offset + vec3(t*4 + sin(t + offset.y*10)*0.3, 0, 0)
-    //   pos = mod(pos, range) - range/2
-    //
-    // SpriteNodeMaterial takes this positionNode as the sprite's world-space
-    // center + handles billboarding + sizeAttenuation internally. We don't
-    // need manual billboarding math.
+    // ── positionNode: Section3 vertex logic ──
+    //   oPos = offsetPos
+    //   center = linearstep(5, 1, length(oPos.xz - range.xz/2))  (1 at center, 0 at edges)
+    //   oPos.y += time * center           (rise faster near center)
+    //   oPos = mod(oPos, range) - range/2 (wrap)
+    //   oPos.xz *= rotate(time * center)  (orbit around center)
+    //   oPos.xz *= 1 + (1 - uVisibility)  (expand when fading out)
+    //   pos = position * smoothstep(...) * num.y * pulse * rotate(time * num.y)
+    //   pos += oPos
     const positionNode = Fn(() => {
       const offset = attribute('offsetPos') as unknown as TSLVec3
+      const num = attribute('num') as unknown as TSLVec2
       const t = (uTime as unknown as TSLNode).mul((uSpeed as unknown as TSLNode).mul(0.5))
       const rangeVec = uRange as unknown as TSLVec3
+      const rangeHalf = rangeVec.div(2.0)
 
-      // Drift + sin wave (Section6: t*4 + sin(t + offset.y*10)*0.3)
-      const driftX = t.mul(4.0).add(sin(t.add(offset.y.mul(10.0))).mul(0.3))
-      const pos = offset.add(vec3(driftX, float(0.0), float(0.0)))
+      // center: 1 at center of xz, 0 at edges (linearstep(5, 1, dist))
+      const xzCenter = rangeVec.xz.div(2.0)
+      const distFromCenter = length(offset.xz.sub(xzCenter))
+      // linearstep(5, 1, dist) = clamp((5 - dist) / (5 - 1), 0, 1)
+      const center = float(5.0).sub(distFromCenter).div(4.0).clamp(0.0, 1.0)
 
-      // mod wrap — keep particles inside the range volume, center at origin
-      return mod(pos, rangeVec).sub(rangeVec.div(2.0))
+      // Y-drift (rise faster near center) + mod wrap
+      let oPos = offset.add(vec3(float(0.0), t.mul(center), float(0.0)))
+      oPos = mod(oPos, rangeVec).sub(rangeHalf)
+
+      // XZ rotation around center (orbit)
+      const rotAngle = t.mul(center)
+      const cosR = cos(rotAngle)
+      const sinR = sin(rotAngle)
+      // 2D rotation matrix on xz: mat2(cos, sin, -sin, cos)
+      const rx = oPos.x.mul(cosR).sub(oPos.z.mul(sinR))
+      const rz = oPos.x.mul(sinR).add(oPos.z.mul(cosR))
+      oPos = vec3(rx, oPos.y, rz)
+
+      // Expand when fading out (visibility → 0 makes particles spread)
+      const expand = float(1.0).add(float(1.0).sub(uVisibility as unknown as TSLNode))
+      oPos = vec3(oPos.x.mul(expand), oPos.y, oPos.z.mul(expand))
+
+      // Per-particle quad scaling:
+      //   pos = position (unit plane) * edgeFade * num.y * pulse * spin
+      // Edge fade on Y boundary (smoothstep)
+      const edgeFade = smoothstep(rangeHalf.y, rangeHalf.y.sub(0.5), abs(oPos.y))
+
+      // Pulse: exp(-mod(time + num.y*2, 1) * 7) * 3 * num.y
+      const pulsePhase = mod(t.add(num.y.mul(2.0)), float(1.0))
+      const pulse = exp(pulsePhase.mul(-7.0)).mul(3.0).mul(num.y)
+      const scale = edgeFade.mul(num.y).mul(float(1.0).add(pulse)).mul(uSize as unknown as TSLNode)
+
+      // Spin the quad (rotate xy by time * num.y)
+      const spinAngle = t.mul(num.y)
+      const cosS = cos(spinAngle)
+      const sinS = sin(spinAngle)
+      // Get positionLocal (unit plane [-0.5, 0.5])
+      const lp = (attribute('position') as unknown as TSLVec3)
+      const sx = lp.x.mul(cosS).sub(lp.y.mul(sinS))
+      const sy = lp.x.mul(sinS).add(lp.y.mul(cosS))
+      const spun = vec3(sx.mul(scale), sy.mul(scale), lp.z.mul(scale))
+
+      return spun.add(oPos)
     })
 
-    // ── scaleNode: per-instance size (uniform — all particles same size) ──
-    const scaleNode = Fn(() => uSize as unknown as TSLNode)
+    // ── scaleNode: 1 (scaling done in positionNode for Section3 pulse) ──
+    const scaleNode = Fn(() => float(1.0))
 
-    // ── Fragment: circle mask + visibility ──
-    // Mirrors Section6 particle.fs:
-    //   cuv = uv * 2 - 1; if (length(cuv) > 0.5) discard
-    //   gl_FragColor = vec4(white, uVisibility)
-    const opacityNode = Fn(() => {
+    // ── colorNode + opacityNode: texture or procedural circle ──
+    // Cast helpers for TSL node typing (three 0.184 .d.ts is incomplete here)
+    const texSampler = uTex as unknown as TSLNode
+    const buildSheetUv = () => {
+      const num = attribute('num') as unknown as TSLVec2
       const vUv = uv()
-      const cuv = vUv.mul(2.0).sub(1.0)
-      const dist = cuv.length()
-      // smoothstep gives soft circle edge (0.5 → 0.35)
-      const circle = smoothstep(float(0.5), float(0.35), dist)
-      return circle.mul(uVisibility as unknown as TSLNode)
-    })
+      const tilesVec = uTiles as unknown as TSLVec2
+      // spriteUVSelector: pick frame from sprite sheet
+      const frameTime = num.x.div(4.0)
+      const t = floor(float(6.0).mul(mod(frameTime, float(1.0))))
+      const sx = vUv.x.add(mod(t, tilesVec.x))
+      const sy = vUv.y.sub(floor(t.div(tilesVec.x)))
+      return vec2(sx, sy).div(tilesVec)
+    }
 
-    const colorNode = Fn(() => vec3(float(1.0)))
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let colorNode: any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let opacityNode: any
 
+    if (useTexture && uTex) {
+      // Section3 fragment: sprite sheet UV + HSV hue cycling
+      colorNode = Fn(() => {
+        const num = attribute('num') as unknown as TSLVec2
+        const sheetUv = buildSheetUv() as unknown as TSLVec2
+        const texColor = texture(texSampler, sheetUv) as unknown as TSLVec3
+        // HSV hue cycling
+        const hsv = mx_rgbtohsv(texColor.rgb) as unknown as TSLVec3
+        const hueShift = (uTime as unknown as TSLNode).mul(0.1).add(num.y.mul(0.4))
+        const shifted = vec3(hsv.x.add(hueShift).mod(1.0), hsv.y, hsv.z)
+        return mx_hsvtorgb(shifted)
+      })
+
+      opacityNode = Fn(() => {
+        const sheetUv = buildSheetUv() as unknown as TSLVec2
+        const texColor = texture(texSampler, sheetUv) as unknown as TSLVec3
+        return texColor.a.mul(uVisibility as unknown as TSLNode)
+      })
+    } else {
+      // Section6 fallback: procedural white circle
+      colorNode = Fn(() => vec3(float(1.0)))
+      opacityNode = Fn(() => {
+        const vUv = uv()
+        const cuv = vUv.mul(2.0).sub(1.0)
+        const dist = cuv.length()
+        const circle = smoothstep(float(0.5), float(0.35), dist)
+        return circle.mul(uVisibility as unknown as TSLNode)
+      })
+    }
     // SpriteNodeMaterial — purpose-built for billboarded particles.
-    // Handles camera-facing rotation + size attenuation internally.
     const mat = new SpriteNodeMaterial({
       color,
       transparent: true,
@@ -163,9 +261,7 @@ export class JunniParticles extends THREE.InstancedMesh {
     this.name = 'junni-particles'
     this.frustumCulled = false
 
-    // Instance matrices — identity (position comes from positionNode, not
-    // instanceMatrix). We still need to set them so InstancedMesh renders
-    // the right count. Scale is handled by scaleNode.
+    // Instance matrices — identity (position comes from positionNode)
     const dummy = new THREE.Object3D()
     for (let i = 0; i < count; i++) {
       dummy.position.set(0, 0, 0)
@@ -179,8 +275,6 @@ export class JunniParticles extends THREE.InstancedMesh {
     this._range = range
     this._uTime = uTime
     this._uVisibility = uVisibility
-    // uRange + uSize + uSpeed are captured by the Fn closures — no need to
-    // store as fields (only read during material compilation).
   }
 
   /** Advance the particle animation. Call each frame while rendering. */
@@ -210,21 +304,22 @@ export class JunniParticles extends THREE.InstancedMesh {
     if (newCount === this.count) return
     if (newCount < 1) newCount = 1
 
-    // Dispose old geometry (attribute lives on geometry)
     this.geometry.dispose()
 
-    // New geometry + offset attribute
     const geo = new THREE.PlaneGeometry(1, 1)
     const offsetPos = new Float32Array(newCount * 3)
+    const numAttr = new Float32Array(newCount * 2)
     for (let i = 0; i < newCount; i++) {
       offsetPos[i * 3] = Math.random() * this._range.x
       offsetPos[i * 3 + 1] = Math.random() * this._range.y
       offsetPos[i * 3 + 2] = Math.random() * this._range.z
+      numAttr[i * 2] = i
+      numAttr[i * 2 + 1] = Math.random() * 0.95 + 0.05
     }
     geo.setAttribute('offsetPos', new THREE.InstancedBufferAttribute(offsetPos, 3))
+    geo.setAttribute('num', new THREE.InstancedBufferAttribute(numAttr, 2))
     this.geometry = geo
 
-    // Identity instance matrices (position comes from positionNode)
     const dummy = new THREE.Object3D()
     for (let i = 0; i < newCount; i++) {
       dummy.position.set(0, 0, 0)
@@ -234,18 +329,14 @@ export class JunniParticles extends THREE.InstancedMesh {
     }
     this.instanceMatrix.needsUpdate = true
 
-    // Update count (InstancedMesh.count controls how many instances render)
     this.count = newCount
-
     if (markReduced) this._reduced = newCount < this._baseCount
   }
 
-  /** Whether auto-reduce has halved the count. */
   get isReduced(): boolean {
     return this._reduced
   }
 
-  /** Original (full) particle count — for restore. */
   get baseCount(): number {
     return this._baseCount
   }
