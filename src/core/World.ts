@@ -210,6 +210,28 @@ export class World extends THREE.Group {
     }
   }
 
+  /** Sync ground plane color/opacity to the active theme.
+   *  Called by Experience on jlz:theme-applied (same trigger EnvSphere uses).
+   *  Without this, a dark ground color (0x1a1a2e) is invisible on the light
+   *  theme (near-white EnvSphere) but visible on inverse (dark). We flip the
+   *  ground to a contrasting tone per theme so it's always perceivable.
+   *  RULES §20 — ground still ONLY visible on section 4 (visibility is gated
+   *  in Experience.ts, this method only adjusts appearance). */
+  public syncGroundTheme(isLight: boolean): void {
+    const groundMat = this.groundPlane.material as THREE.MeshStandardMaterial
+    if (isLight) {
+      // Light theme (auto on light sections / inverse on dark sections):
+      // dark ground on near-white bg = visible contrast.
+      groundMat.color.set(0x1a1a2e)
+      this._targetGroundOpacity = 0.4
+    } else {
+      // Dark theme: light ground on dark bg = visible contrast.
+      groundMat.color.set(0x3a3a4e)
+      this._targetGroundOpacity = 0.3
+    }
+    groundMat.opacity = this._targetGroundOpacity
+  }
+
   public update(deltaTime: number, needsRender: boolean = true): void {
     // EnvSphere manages the visible background.
     this.envSphere.update(deltaTime)

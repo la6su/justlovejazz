@@ -268,6 +268,9 @@ export class Experience {
       const targetIdx = detail.isLight ? 1 : 2
       if (this.world?.envSphere) {
         this.world.envSphere.changeSection(targetIdx)
+        // Sync ground plane color/opacity to the active theme — otherwise
+        // a dark ground is invisible on the light theme (near-white bg).
+        this.world.syncGroundTheme(detail.isLight)
         this._needsRender = true
       }
     }
