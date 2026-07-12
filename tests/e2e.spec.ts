@@ -98,11 +98,17 @@ test.describe('JustLoveJazz — page boot smoke', () => {
   })
 
   test('all 6 sections render with correct IDs and data-section', async ({ page }) => {
-    await page.goto('/')
+    // Sections are prerendered into index.html by vite build (prerender-index
+    // plugin) — they're in the DOM at domcontentloaded. BUT Experience.init()
+    // blocks the main thread during WebGL/WebGPU setup (15-40s in headless),
+    // which delays Playwright's toBeAttached polling for the last 2 sections.
+    // 90s test timeout + 60s per-section timeout covers the worst case.
+    test.setTimeout(90000)
+    await page.goto('/', { waitUntil: 'domcontentloaded' })
 
     for (const id of SECTION_IDS) {
       const loc = page.locator(`#${id}`)
-      await expect(loc).toBeAttached({ timeout: 20000 })
+      await expect(loc).toBeAttached({ timeout: 60000 })
       const ds = await loc.getAttribute('data-section')
       expect(ds, `#${id} should have data-section`).toBeTruthy()
     }
