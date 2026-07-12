@@ -106,8 +106,18 @@ export class ContentReveal {
         this.currentSectionIndex = -1
         return
       }
-      // jlz:theme-change — re-apply current section theme
-      if (this.currentSectionId) this.applyTheme(this.currentSectionId)
+      // jlz:theme-change — re-apply current section theme.
+      // Fallback chain if currentSectionId was cleared (e.g. by a prior
+      // route-change): 1) active DOM section (.section-active), 2) 'intro'.
+      // Without this, toggling theme right after page load (before any
+      // section navigation) would no-op — currentSectionId was null.
+      let sectionId = this.currentSectionId
+      if (!sectionId) {
+        const active = document.querySelector<HTMLElement>('[data-section].section-active, [data-page-section].section-active')
+        sectionId = active?.getAttribute('data-section') ?? active?.getAttribute('data-page-section') ?? 'intro'
+        this.currentSectionId = sectionId
+      }
+      this.applyTheme(sectionId)
     }
     window.addEventListener('jlz:theme-change', this.themeHandler)
     window.addEventListener('jlz:route-change', this.themeHandler)
