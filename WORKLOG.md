@@ -1,4 +1,45 @@
 
+## 2026-07-13 — PLAN-v3: 8 phases complete (navigation architecture change)
+
+### Done
+- **Phase 1+2: Navigation + Lab overlays as secret sections**
+  - NEW: src/sections/nav/template.ts — Navigation overlay (section 5, joystick right)
+  - NEW: src/sections/lab-overlay/template.ts — Lab overlay (section 0, joystick left)
+  - All pages updated: section 0 = Lab overlay, section 5 = Navigation overlay
+  - Home: labSection → labOverlaySection, processSection → navOverlaySection
+  - Content pages (services/manifesto/lab/contact/works): sections 0+5 replaced with overlays
+- **Phase 3+4: Header by UIKit3, dropbar removed**
+  - UIMenu.ts rewritten: minimal header (logo + lang + sound + theme + hamburger)
+  - Hamburger dispatches jlz:goto-nav → Experience.ts → joystick.goToSection(5)
+  - Dropbar completely removed (navigation is now section overlay)
+- **Phase 5: Showreel modal UI polished**
+  - Seek bar: gradient progress fill via --jlz-seek-progress CSS variable
+  - Seek bar: height 6px (8px on hover) — interactive feel
+- **Phase 6: Cursor smoothed wobble edges**
+  - lineTo → quadraticCurveTo (midpoint method) — smoothed curves
+  - Segments 8 → 16 (more points = smoother)
+  - lineCap/lineJoin: round on all cursor paths
+- **Phase 7: Works scale up enhanced**
+  - Scale 0.8 + rotateY(12deg) + translateZ(-40px) + blur(8px) → scale(1) + rotateY(0) + blur(0)
+  - Stagger 0.2s/0.4s, duration 0.7s, perspective 1000px
+- **Phase 8: Shader transitions on click — chromatic burst**
+  - triggerWobblePulse: uWobble 0.95→2.5 (dramatic jelly)
+  - Chromatic burst: dispersion 15→30 (WebGPU) / chromaticAberration 0.5→1.0 (WebGL2)
+  - Scale pulse: triggerOpener (1.0→1.2→1.0)
+  - Duration 1.2s (cinematic)
+
+### Architecture change
+Navigation is now a SECTION (section 5), not a dropbar navbar.
+- Joystick right → Navigation overlay (hamburger menu)
+- Joystick left → Lab overlay (works list)
+- Both overlays shared across ALL pages (home + content)
+
+### Verified
+- tsc 0 errors, lint 0 errors (63 warnings), 69 tests pass
+- Browser: cube uWobble=0.95, all UI elements present, 0 console errors
+
+---
+
 ## 2026-07-13 — PLAN-v2: 9 phases complete (7 brief items)
 
 ### Done
