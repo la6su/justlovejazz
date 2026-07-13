@@ -1,14 +1,13 @@
 // Section1 — Intro: white BG, baku cube. No particles (moved to Works only).
 //
-// Particles were here but caused visibility issues on light theme (additive
-// blending = invisible on white). JunniParticles now lives on the Works
-// section only (dark theme, better contrast). See works/scene.ts.
+// Particles were here but AdditiveBlending white particles on light/white
+// EnvSphere background = invisible (white + white = white). JunniParticles
+// now lives on the Works section only (dark theme, better contrast).
 import * as THREE from 'three'
 
 export function createSection1(): THREE.Group {
   const g = new THREE.Group()
   g.name = 'intro'
   // No particles — baku cube + EnvSphere provide enough visual depth here.
-  // Works section (idx 3) has the JunniParticles field (dark bg, good contrast).
   return g
 }
