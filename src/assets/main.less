@@ -1033,9 +1033,9 @@ body.uk-light .jlz-eyebrow {
 
 .jlz-section-top {
   flex-shrink: 0;
-  /* (Header removed — top padding now just breathing room, no header offset.)
-     Kept var(--jlz-header-height) as 0 fallback so layout doesn't shift. */
-  padding-top: var(--jlz-space-8);
+  /* Top bar (jlz-topbar) is fixed at top with ~48px height (8px padding +
+     32px button). Reserve space so section content clears it. */
+  padding-top: calc(48px + var(--jlz-space-6));
 }
 
 .jlz-section-bottom {
@@ -1740,7 +1740,44 @@ body.uk-light .jlz-header .uk-navbar-container {
   .jlz-lang-label { font-size: 0.65rem; }
 }
 
-// (Header/navbar removed — config controls now live in the joystick stack.
+// ── Top bar (minimalist fixed-top centered config controls) ──
+// Replaces the old header/navbar. Just a slim transparent strip at the top
+// with lang/theme/sound buttons centered. No logo, no hamburger — the
+// joystick owns navigation, this bar owns settings.
+.jlz-topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10001;
+  padding: 8px 16px;
+  pointer-events: none; // container doesn't block clicks; buttons re-enable
+}
+
+.jlz-topbar-controls {
+  pointer-events: auto;
+  gap: 10px;
+}
+
+.jlz-topbar-controls .uk-icon-button {
+  width: 32px;
+  height: 32px;
+}
+
+@media (max-width: 500px) {
+  .jlz-topbar {
+    padding: 6px 12px;
+  }
+  .jlz-topbar-controls {
+    gap: 8px;
+  }
+  .jlz-topbar-controls .uk-icon-button {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+// (Header/navbar removed — config controls now live in the top bar above.
 //  Old .jlz-navbar-toggle, .jlz-toggle-icon, .jlz-help-dropdown, .jlz-help-title,
 //  .jlz-help-content, .jlz-help-joystick, .jlz-joystick-svg, .jlz-help-text,
 //  .jlz-help-text-row, .jlz-help-key, .jlz-help-divider CSS removed.)
@@ -1756,16 +1793,7 @@ body.uk-light .jlz-header .uk-navbar-container {
   white-space: nowrap;
 }
 
-// Config controls row — below hint, inside joystick stack
-.jlz-help-controls {
-  gap: 10px;
-  margin-top: 4px;
-}
-
-.jlz-help-controls .uk-icon-button {
-  width: 32px;
-  height: 32px;
-}
+// (Old .jlz-help-controls CSS removed — controls now in .jlz-topbar-controls above.)
 
 // (Dropdown-specific responsive rules removed — dropdown no longer exists.
 //  Joystick is always visible, hint + controls are part of its stack.)
@@ -1773,13 +1801,6 @@ body.uk-light .jlz-header .uk-navbar-container {
 @media (max-width: 500px) {
   .jlz-help-hint {
     font-size: 0.6rem;
-  }
-  .jlz-help-controls {
-    gap: 8px;
-  }
-  .jlz-help-controls .uk-icon-button {
-    width: 28px;
-    height: 28px;
   }
   .jlz-joystick__arrow-label {
     font-size: 0.5rem;

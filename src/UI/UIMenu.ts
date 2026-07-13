@@ -1,14 +1,8 @@
-// UIMenu.ts — Config controls (lang/theme/sound) for the joystick area.
+// UIMenu.ts — Minimalist top bar with config controls (lang/theme/sound).
 //
-// No header/navbar — the header was removed entirely. Config controls
-// (language EN/RU + sound on/off + theme auto/inverse) are rendered into
-// the #jlz-joystick-controls container inside the joystick element.
-//
-// The joystick itself (JoystickNav.ts) owns the layout:
-//   [joystick base with 4 labeled arrows]
-//   [jlz-help-hint]
-//   [jlz-help-controls ← THIS module populates it]
-//   [jlz-joystick-dotnav]
+// No full navbar — just a slim fixed-top centered row with 3 icon buttons:
+// language (EN/RU), theme (auto/inverse), sound (on/off).
+// The joystick (bottom center) owns navigation; this top bar owns settings.
 //
 // Menu (section 5) is a SECRET section — accessible ONLY via joystick → right
 // or ArrowRight key.
@@ -37,7 +31,7 @@ const SUN_SVG = `<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="tr
 const MOON_SVG = `<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" class="jlz-theme-svg jlz-theme-svg--moon"><path fill="currentColor" d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.4 5.4 0 0 1-7.54-7.54C12.92 3.04 12.46 3 12 3z"/></svg>`
 
 export class UIMenu {
-  private controlsEl: HTMLElement
+  private navEl: HTMLElement
   private _langBtn: HTMLButtonElement | null = null
   private _themeBtn: HTMLButtonElement | null = null
   private _soundBtn: HTMLButtonElement | null = null
@@ -47,47 +41,39 @@ export class UIMenu {
   private _soundMuted = readSoundMuted()
 
   constructor() {
-    // Find the controls container inside the joystick element.
-    // JoystickNav creates #jlz-joystick-controls in its constructor.
-    // UIMenu is constructed AFTER JoystickNav in Experience.init, so the
-    // container exists.
-    this.controlsEl = document.getElementById('jlz-joystick-controls')
-      ?? (() => {
-        // Fallback: create a standalone container appended to body
-        // (shouldn't happen in normal flow, but prevents crash)
-        const el = document.createElement('div')
-        el.id = 'jlz-joystick-controls'
-        el.className = 'jlz-help-controls uk-flex uk-flex-middle uk-flex-center'
-        document.body.appendChild(el)
-        return el
-      })()
-
-    this.controlsEl.innerHTML = `
-      <button class="uk-icon-button jlz-lang-toggle" type="button" id="jlz-lang-toggle"
-              aria-label="Switch language" title="Language"
-              uk-tooltip="pos: top; delay: 200">
-        <span class="jlz-lang-label">EN</span>
-      </button>
-      <button class="uk-icon-button jlz-theme-toggle" type="button" id="jlz-theme-toggle"
-              aria-label="Toggle inverse theme" aria-pressed="false" title="Theme: auto"
-              uk-tooltip="pos: top; delay: 200">
-        ${SUN_SVG}${MOON_SVG}
-      </button>
-      <button class="uk-icon-button jlz-sound-toggle" type="button" id="jlz-sound-toggle"
-              aria-label="Toggle sound" aria-pressed="true" title="Sound: off"
-              uk-tooltip="pos: top; delay: 200">
-        <span class="jlz-sound-bars" aria-hidden="true">
-          <span class="jlz-sound-bar"></span>
-          <span class="jlz-sound-bar"></span>
-          <span class="jlz-sound-bar"></span>
-          <span class="jlz-sound-bar"></span>
-        </span>
-      </button>
+    this.navEl = document.createElement('div')
+    this.navEl.className = 'jlz-topbar'
+    this.navEl.innerHTML = `
+      <div class="jlz-topbar-controls uk-flex uk-flex-middle uk-flex-center">
+        <button class="uk-icon-button jlz-lang-toggle" type="button" id="jlz-lang-toggle"
+                aria-label="Switch language" title="Language"
+                uk-tooltip="pos: bottom; delay: 200">
+          <span class="jlz-lang-label">EN</span>
+        </button>
+        <button class="uk-icon-button jlz-theme-toggle" type="button" id="jlz-theme-toggle"
+                aria-label="Toggle inverse theme" aria-pressed="false" title="Theme: auto"
+                uk-tooltip="pos: bottom; delay: 200">
+          ${SUN_SVG}${MOON_SVG}
+        </button>
+        <button class="uk-icon-button jlz-sound-toggle" type="button" id="jlz-sound-toggle"
+                aria-label="Toggle sound" aria-pressed="true" title="Sound: off"
+                uk-tooltip="pos: bottom; delay: 200">
+          <span class="jlz-sound-bars" aria-hidden="true">
+            <span class="jlz-sound-bar"></span>
+            <span class="jlz-sound-bar"></span>
+            <span class="jlz-sound-bar"></span>
+            <span class="jlz-sound-bar"></span>
+          </span>
+        </button>
+      </div>
     `
 
-    this._langBtn = this.controlsEl.querySelector<HTMLButtonElement>('#jlz-lang-toggle')
-    this._themeBtn = this.controlsEl.querySelector<HTMLButtonElement>('#jlz-theme-toggle')
-    this._soundBtn = this.controlsEl.querySelector<HTMLButtonElement>('#jlz-sound-toggle')
+    const app = document.getElementById('app') ?? document.body
+    app.appendChild(this.navEl)
+
+    this._langBtn = this.navEl.querySelector<HTMLButtonElement>('#jlz-lang-toggle')
+    this._themeBtn = this.navEl.querySelector<HTMLButtonElement>('#jlz-theme-toggle')
+    this._soundBtn = this.navEl.querySelector<HTMLButtonElement>('#jlz-sound-toggle')
 
     // Language toggle
     this._langBtn?.addEventListener('click', () => toggleLang())
@@ -159,6 +145,6 @@ export class UIMenu {
     if (this._langHandler) window.removeEventListener('jlz:lang-change', this._langHandler)
     if (this._themeChangeHandler) window.removeEventListener('jlz:theme-change', this._themeChangeHandler)
     if (this._soundToggleHandler) window.removeEventListener('jlz:sound-toggle', this._soundToggleHandler)
-    this.controlsEl.innerHTML = ''
+    this.navEl.remove()
   }
 }

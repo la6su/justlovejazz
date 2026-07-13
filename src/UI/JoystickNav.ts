@@ -111,11 +111,7 @@ export class JoystickNav {
     hint.textContent = 'Drag the joystick or use arrow keys'
     this.el.appendChild(hint)
 
-    // Config controls container (lang/theme/sound) — populated by UIMenu
-    const controls = document.createElement('div')
-    controls.className = 'jlz-help-controls uk-flex uk-flex-middle uk-flex-center'
-    controls.id = 'jlz-joystick-controls'
-    this.el.appendChild(controls)
+    // (Config controls live in the top bar — see UIMenu.ts)
 
     // Dotnav timeline — minimalist section progress indicator (UIKit3 uk-dotnav).
     this._dotnav = this._buildDotnav()
