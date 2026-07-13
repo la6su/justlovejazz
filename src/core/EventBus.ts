@@ -38,14 +38,25 @@ class EventBus {
     this.listeners.get(event)?.delete(cb as (payload: unknown) => void)
   }
 
-  /** Emit an event to all subscribers. */
+  /** Emit an event to all subscribers.
+   *  Also bridges to window.dispatchEvent so legacy/raw window.addEventListener
+   *  consumers (UIMenu, ContentReveal, entry-app) receive typed events without
+   *  each call site needing to dispatch raw. This fixes the contract gap where
+   *  jlz:section-change was emitted via eventBus.emit() but UIMenu listened on
+   *  window — the hamburger↔X sync was dead on home routes. */
   emit<K extends keyof AppEvents>(
     event: K,
     ...args: AppEvents[K] extends void ? [] : [AppEvents[K]]
   ): void {
     const set = this.listeners.get(event)
-    if (!set) return
-    for (const cb of set) cb(args[0])
+    if (set) {
+      for (const cb of set) cb(args[0])
+    }
+    // Bridge to window for raw listeners. Guard for SSR/jsdom without window.
+    if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+      const payload = args[0]
+      window.dispatchEvent(new CustomEvent(event, payload === undefined ? undefined : { detail: payload }))
+    }
   }
 
   /** Remove all listeners (for HMR / teardown). */

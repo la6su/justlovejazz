@@ -62,8 +62,10 @@ export class UIMenu {
     window.addEventListener('jlz:lang-change', this._langHandler)
 
     // Sync hamburger icon (hamburger ↔ X) on every section change.
-    // jlz:section-change fires on home (eventBus → window), jlz:page-section-change
-    // fires on content pages (window CustomEvent from JoystickNav._syncPageSection).
+    // jlz:section-change is emitted via eventBus.emit() in Experience.ts (home),
+    // and EventBus bridges emit() to window.dispatchEvent — so this window
+    // listener receives it. jlz:page-section-change is dispatched raw on window
+    // by JoystickNav._syncPageSection (content pages). Both reach this listener.
     this._sectionChangeHandler = () => this._syncToggleState()
     this._pageSectionChangeHandler = () => this._syncToggleState()
     window.addEventListener('jlz:section-change', this._sectionChangeHandler)

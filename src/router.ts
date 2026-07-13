@@ -4,6 +4,7 @@ import { applyTranslations } from './core/i18n'
 import { applyMetaTags } from './core/pageMeta'
 import { disposeWorkCards } from './UI/WorkCards'
 import { initMenuToolbar } from './sections/nav/template'
+import { eventBus } from './core/EventBus'
 // ThemeManager removed — theme is global (auto=light, inverse=dark).
 
 let initialized = false
@@ -74,18 +75,34 @@ function renderView(page: PageId = getPageFromLocation()): void {
   initMenuToolbar()
   // Initialize UIkit components on dynamically inserted content
   ;(UIkit as any).update(el)
-  window.dispatchEvent(new CustomEvent('jlz:route-change', { detail: { page } }))
+  // Emit jlz:route-change via typed eventBus (bridges to window automatically).
+  // This satisfies RULES §44 (no raw window.dispatchEvent for typed events).
+  eventBus.emit('jlz:route-change', { page })
   if ('requestIdleCallback' in window) {
     requestIdleCallback(() => (UIkit as any).update(el), { timeout: 100 })
   }
 }
 
 function navigateToPage(path: string): void {
-  const page = ROUTES[path]
+  // Parse hash (e.g. "/manifesto#section-manifesto-02" → path="/manifesto", hash="#section-manifesto-02")
+  // The hash targets a section element inside a [data-page-section] (content pages)
+  // or a [data-section] (home). After renderView, we dispatch jlz:goto-section-by-hash
+  // so JoystickNav can activate the target section.
+  const hashIdx = path.indexOf('#')
+  const purePath = hashIdx >= 0 ? path.slice(0, hashIdx) : path
+  const hash = hashIdx >= 0 ? path.slice(hashIdx) : ''
+  const page = ROUTES[purePath]
   if (!page) return
-  history.pushState(null, '', path)
+  history.pushState(null, '', path) // keep hash in URL for shareable links
   renderView(page)
   window.scrollTo({ top: 0, behavior: 'auto' })
+  // If hash targets a section, dispatch event for JoystickNav to activate it.
+  // Delayed via requestAnimationFrame so the freshly-rendered DOM is settled.
+  if (hash) {
+    requestAnimationFrame(() => {
+      window.dispatchEvent(new CustomEvent('jlz:goto-section-by-hash', { detail: { hash } }))
+    })
+  }
 }
 
 export function initRouter(): void {
@@ -131,6 +148,12 @@ export function initRouter(): void {
     if (!anchorEl) return
     const href = anchorEl.getAttribute('href')
     if (!href) return
+    // Skip anchors tagged data-nav-href — the nav sub-link listener
+    // (src/sections/nav/template.ts) handles them and dispatches jlz:navigate
+    // WITH the hash preserved. Without this skip, the document capture handler
+    // fires first and calls navigateToPage(url.pathname) — DROPPING the hash,
+    // so menu subsection clicks always land on section 1 instead of the target.
+    if (anchorEl.dataset.navHref !== undefined) return
     const url = new URL(href, window.location.origin)
     if (url.origin === window.location.origin && ROUTES[url.pathname]) {
       e.preventDefault()

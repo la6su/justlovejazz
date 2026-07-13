@@ -210,6 +210,11 @@ export class JoystickNav {
 
     // Keyboard
     this._keydownHandler = (e: KeyboardEvent) => {
+      // Bail when a fullscreen overlay is open — FullscreenOverlay owns
+      // ArrowLeft/Right (prev/next project) + Space (play/pause) while open.
+      // Without this, both handlers fire: overlay goes prev-project AND
+      // JoystickNav navigates section behind the overlay.
+      if ((window as unknown as { jlzOverlayOpen?: boolean }).jlzOverlayOpen === true) return
       const tag = (e.target as HTMLElement)?.tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA') return
       if (e.key === 'ArrowDown') {
@@ -290,45 +295,36 @@ export class JoystickNav {
    *  Same logic on ALL pages (home + content):
    *    center (1-4) + left  → first secret (0)
    *    center (1-4) + right → last secret (5)
-   *    first secret (0) + right → center (middle)
+   *    first secret (0) + right → center (previous main)
    *    first secret (0) + left  → no-op (stay)
-   *    last secret (5) + left  → center (middle)
+   *    last secret (5) + left  → center (previous main)
    *    last secret (5) + right → no-op (stay) */
   private _navigateHorizontal(dir: 1 | -1): void {
     if (this._isPageMode()) {
+      // Page mode: reuse the same _side / _mainSection model as home mode.
+      // _mainSection holds the last main section (1-4) the user was on,
+      // preserved across side-section visits (fix: was clobbered to 5/0).
       const sections = this._getPageSections()
       if (sections.length === 0) return
-      const current = this._pageSectionIndex()
-      const first = 0
-      const last = sections.length - 1
-      const middle = Math.floor(sections.length / 2)
-
-      let target = -1 // -1 = no-op
-      if (dir === -1) {
-        // Left
-        if (current === first) {
-          // Already on first secret → no-op (stay)
-        } else if (current === last) {
-          target = middle
-        } else {
-          target = first
+      if (dir === 1) {
+        // Right: center → Menu, Lab → center
+        if (this._side === 'center') {
+          this._syncPageSection(MENU_INDEX)
+        } else if (this._side === 'lab') {
+          this._syncPageSection(this._mainSection)
         }
+        // If already in Menu, stay (no-op)
       } else {
-        // Right
-        if (current === last) {
-          // Already on last secret → no-op (stay)
-        } else if (current === first) {
-          target = middle
-        } else {
-          target = last
+        // Left: center → Lab, Menu → center
+        if (this._side === 'center') {
+          this._syncPageSection(LAB_INDEX)
+        } else if (this._side === 'menu') {
+          this._syncPageSection(this._mainSection)
         }
+        // If already in Lab, stay (no-op)
       }
-
-      if (target >= 0) {
-        this._syncPageSection(target)
-        this._setActive(true)
-        this._setActiveDelayed(400)
-      }
+      this._setActive(true)
+      this._setActiveDelayed(400)
       return
     }
     if (dir === 1) {
@@ -470,6 +466,29 @@ export class JoystickNav {
     this._navigateVertical(dir)
   }
 
+  /** Navigate to the section containing the element with the given hash ID.
+   *  Used by hash-navigation from the menu overlay (e.g. /manifesto#section-manifesto-02).
+   *  - Home mode: finds [data-section] element by ID, maps to WorldConfig index.
+   *  - Page mode: finds [data-page-section] ancestor, maps to page-section index. */
+  goToSectionByHash(hash: string): void {
+    const id = hash.replace('#', '')
+    const target = document.getElementById(id)
+    if (!target) return
+    if (this._isPageMode()) {
+      const section = target.closest('[data-page-section]')
+      if (!section) return
+      const all = Array.from(document.querySelectorAll('[data-page-section]'))
+      const idx = all.indexOf(section)
+      if (idx >= 0) this._syncPageSection(idx)
+    } else {
+      // Home: target may BE the [data-section] element or inside it
+      const section = target.closest('[data-section]') ?? target
+      const all = Array.from(document.querySelectorAll('[data-section]'))
+      const idx = all.indexOf(section as HTMLElement)
+      if (idx >= 0) this.goToSection(idx)
+    }
+  }
+
   update(): void {
     // No-op — trigger model
   }
@@ -496,13 +515,16 @@ export class JoystickNav {
     sections.forEach((section, sectionIndex) => {
       section.classList.toggle('section-active', sectionIndex === nextIndex)
     })
-    // Notify UIMenu to update slider active state.
-    // Map page section index (0-5) → slider index (0-3 for main sections 1-4).
-    // Sections 0 and 5 are "secret sides" — not in slider, map to -1 (no active).
-    const sliderIdx = (nextIndex >= 1 && nextIndex <= 4) ? nextIndex : -1
-    this._onSectionChange?.(sliderIdx)
-    // Update dotnav to reflect the active main section
-    this._mainSection = nextIndex
+    // Notify Experience to mark a render dirty (idx is the page-section index).
+    this._onSectionChange?.(nextIndex)
+    // Track _mainSection ONLY for main indices (1-4). Secret sides (0=Lab,
+    // 5=Menu) must NOT clobber _mainSection — otherwise close-nav / arrow-left
+    // from a side falls back to section 1 instead of the previous main.
+    // This mirrors the home-mode contract: _side tracks the side, _mainSection
+    // tracks the last main section the user was on.
+    if (nextIndex >= FIRST_MAIN && nextIndex <= LAST_MAIN) {
+      this._mainSection = nextIndex
+    }
     this._side = nextIndex === 0 ? 'lab' : nextIndex === 5 ? 'menu' : 'center'
     this._updateDotnav()
     window.dispatchEvent(new CustomEvent('jlz:page-section-change', {

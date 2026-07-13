@@ -52,6 +52,9 @@ export class Experience {
   private _soundToggleHandler: ((e: Event) => void) | null = null
   private _splashEnteredHandler: (() => void) | null = null
   private _openProjectHandler: ((e: Event) => void) | null = null
+  private _gotoNavHandler: (() => void) | null = null
+  private _wobblePulseHandler: (() => void) | null = null
+  private _gotoSectionByHashHandler: ((e: Event) => void) | null = null
   private devPanel: DevPanel | null = null
   public world!: World
   private bus!: StateBus
@@ -315,9 +318,10 @@ export class Experience {
     })
 
     // PLAN-v3: Hamburger button → navigate to section 5 (navigation overlay)
-    window.addEventListener('jlz:goto-nav', () => {
+    this._gotoNavHandler = () => {
       this._circNav?.goToSection(5)
-    })
+    }
+    window.addEventListener('jlz:goto-nav', this._gotoNavHandler)
 
     // JoystickNav is a DOM overlay (fixed bottom-center) — append to body.
     // JoystickNav is position:fixed (sits ON the dock tools row, centered).
@@ -448,10 +452,23 @@ export class Experience {
     window.addEventListener('jlz:open-project', this._openProjectHandler)
 
     // Phase 5: Wobble pulse on card click (work cards + carousel)
-    window.addEventListener('jlz:wobble-pulse', () => {
+    this._wobblePulseHandler = () => {
       const cube = this.world?.baku as unknown as { triggerWobblePulse?: () => void } | undefined
       cube?.triggerWobblePulse?.()
-    })
+    }
+    window.addEventListener('jlz:wobble-pulse', this._wobblePulseHandler)
+
+    // ── Hash navigation from menu overlay (e.g. /manifesto#section-manifesto-02) ──
+    // Dispatched by router.navigateToPage after renderView. JoystickNav finds
+    // the target section by hash ID and activates it. Without this, menu
+    // subsection clicks always land on section 1 (hash silently dropped).
+    this._gotoSectionByHashHandler = (e: Event) => {
+      const detail = (e as CustomEvent<{ hash: string }>).detail
+      if (detail?.hash) {
+        this._circNav?.goToSectionByHash(detail.hash)
+      }
+    }
+    window.addEventListener('jlz:goto-section-by-hash', this._gotoSectionByHashHandler)
   }
 
   update(time: number) {
@@ -781,6 +798,18 @@ export class Experience {
     if (this._openProjectHandler) {
       window.removeEventListener('jlz:open-project', this._openProjectHandler)
       this._openProjectHandler = null
+    }
+    if (this._gotoNavHandler) {
+      window.removeEventListener('jlz:goto-nav', this._gotoNavHandler)
+      this._gotoNavHandler = null
+    }
+    if (this._wobblePulseHandler) {
+      window.removeEventListener('jlz:wobble-pulse', this._wobblePulseHandler)
+      this._wobblePulseHandler = null
+    }
+    if (this._gotoSectionByHashHandler) {
+      window.removeEventListener('jlz:goto-section-by-hash', this._gotoSectionByHashHandler)
+      this._gotoSectionByHashHandler = null
     }
     this.world.dispose()
     this.bus.cancelAll()

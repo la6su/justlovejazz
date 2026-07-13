@@ -10,10 +10,9 @@ import { JoystickNav } from '../UI/JoystickNav'
 //     onSectionChange with _mainSection (the previous main section).
 //   - Home mode: when _side='center' (menu not open), close-nav is a no-op
 //     (does not fire section change).
-//
-// Content-page mode requires [data-page-section] DOM elements + is tested
-// via integration (browser), not here — the home-mode test covers the
-// core _closeNavHandler logic which is shared.
+//   - Content-page mode: close-nav from menu returns to the PREVIOUS main
+//     section (not always section 1). Regression test for the bug where
+//     _syncPageSection clobbered _mainSection to 5 when entering menu.
 
 describe('JoystickNav — jlz:close-nav (menu exit)', () => {
   let joy: JoystickNav | null = null
@@ -164,5 +163,88 @@ describe('JoystickNav — goto-nav (menu open)', () => {
 
     // Should have fired: 5 (open), 2 (close)
     expect(indices).toEqual([5, 2])
+  })
+})
+
+// ── Content-page mode tests ──────────────────────────────────────────────
+// Regression tests for the bug where _syncPageSection clobbered _mainSection
+// to 5 when entering menu, causing close-nav to fall back to section 1
+// instead of the previous main section. The home-mode tests above cover the
+// home branch; these cover the page-mode branch (separate code path).
+
+describe('JoystickNav — content-page mode close-nav', () => {
+  let joy: JoystickNav | null = null
+
+  beforeEach(() => {
+    // Content-page mode: body.dataset.page !== 'home'
+    document.body.dataset.page = 'works'
+    // Set up [data-page-section] DOM (6 sections: 0=lab, 1-4=main, 5=menu)
+    const spa = document.createElement('div')
+    spa.id = 'spa-content'
+    for (let i = 0; i < 6; i++) {
+      const s = document.createElement('section')
+      s.setAttribute('data-page-section', `page-${i}`)
+      s.classList.toggle('section-active', i === 1) // start on section 1
+      spa.appendChild(s)
+    }
+    document.body.appendChild(spa)
+  })
+
+  afterEach(() => {
+    joy?.dispose()
+    joy = null
+    document.getElementById('spa-content')?.remove()
+    delete document.body.dataset.page
+  })
+
+  it('close-nav from menu returns to the previous main section (not section 1)', () => {
+    joy = new JoystickNav(null, null, 6)
+
+    // Navigate to section 3 (works main) via goToSection
+    joy.goToSection(3)
+    // Open menu (section 5)
+    joy.goToSection(5)
+    expect(joy.getSectionIndex()).toBe(5)
+
+    // Close menu — should return to section 3, NOT section 1
+    window.dispatchEvent(new CustomEvent('jlz:close-nav'))
+
+    expect(joy.getSectionIndex()).toBe(3)
+    // Verify the DOM section-active is on section 3
+    const active = document.querySelector('[data-page-section].section-active')
+    expect(active?.getAttribute('data-page-section')).toBe('page-3')
+  })
+
+  it('close-nav from menu returns to section 2 when that was the previous main', () => {
+    joy = new JoystickNav(null, null, 6)
+
+    joy.goToSection(2)
+    joy.goToSection(5) // menu
+    window.dispatchEvent(new CustomEvent('jlz:close-nav'))
+
+    expect(joy.getSectionIndex()).toBe(2)
+  })
+
+  it('horizontal right from Lab returns to the previous main section (not hardcoded middle)', () => {
+    joy = new JoystickNav(null, null, 6)
+
+    // Navigate to section 4, then left to Lab (section 0)
+    joy.goToSection(4)
+    joy.goToSection(0) // Lab
+    expect(joy.getSectionIndex()).toBe(0)
+
+    // Right from Lab should return to section 4 (previous main), NOT hardcoded middle=3
+    joy.goToSection(joy.getSectionIndex()) // no-op, just to confirm state
+    // Simulate joystick right: call _navigateHorizontal via goToSection to center
+    // Actually, _navigateHorizontal is private. We test via the public path:
+    // ArrowRight from Lab → center → previous main. Use goToSection to simulate
+    // the side-toggle by going to the main section the side-tracking remembers.
+    // Since _mainSection is preserved (fix), going right from Lab should target _mainSection=4.
+    // We verify by dispatching the keyboard event (ArrowRight) which calls _navigateHorizontal.
+    const ev = new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true })
+    window.dispatchEvent(ev)
+
+    // Should have returned to section 4 (previous main), not section 3 (hardcoded middle)
+    expect(joy.getSectionIndex()).toBe(4)
   })
 })

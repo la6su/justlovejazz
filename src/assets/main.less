@@ -445,6 +445,14 @@ body.uk-light .jlz-joystick__hint {
   display: none !important;
 }
 
+// Raise overlay above the fixed navbar (z-index: 10001). Without this, the
+// header (lang + logo + hamburger) stays visible on top of the fullscreen
+// overlay, and clicking hamburger dispatches jlz:goto-nav behind the overlay
+// (no way to close the overlay from the navbar). 10010 > 10001.
+.jlz-fs-overlay.uk-open {
+  z-index: 10010 !important;
+}
+
 // Dialog — transparent, sized to content
 .jlz-fs-dialog {
   position: relative;

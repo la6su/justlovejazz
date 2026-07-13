@@ -212,14 +212,22 @@ export class FullscreenOverlay {
     })
 
     // Keyboard: Space (play/pause), ArrowLeft/Right (prev/next)
+    // stopImmediatePropagation prevents JoystickNav's window keydown from
+    // also firing — without it, ArrowLeft in the overlay simultaneously
+    // goes to prev-project AND navigates section to Lab behind the overlay.
     this._keydownHandler = (e: KeyboardEvent) => {
       if (!this._isOpen) return
       if (e.key === ' ') {
         e.preventDefault()
+        e.stopImmediatePropagation()
         togglePlay()
       } else if (e.key === 'ArrowLeft') {
+        e.preventDefault()
+        e.stopImmediatePropagation()
         this.onPrev?.()
       } else if (e.key === 'ArrowRight') {
+        e.preventDefault()
+        e.stopImmediatePropagation()
         this.onNext?.()
       }
     }

@@ -181,9 +181,15 @@ function moveFocus(grid: HTMLElement, dir: 1 | -1): void {
 
 /** Global keydown handler — processes ArrowLeft/ArrowRight when a card (or
  *  nothing in the active grid) is focused. ArrowUp/Down are intentionally
- *  ignored (joystick owns vertical section navigation). */
+ *  ignored (joystick owns vertical section navigation).
+ *  stopImmediatePropagation prevents JoystickNav's window keydown from also
+ *  firing — without it, ArrowRight on /works moves card focus AND opens the
+ *  Menu overlay simultaneously. */
 function onKeydown(e: KeyboardEvent): void {
   if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
+  // Bail when a fullscreen overlay is open — FullscreenOverlay owns
+  // ArrowLeft/Right (prev/next project) while open.
+  if ((window as unknown as { jlzOverlayOpen?: boolean }).jlzOverlayOpen === true) return
   // Only act if focus is within a work card, OR within the active section
   // (so arrows work even before the user has tabbed into a card).
   const active = document.activeElement
@@ -197,6 +203,7 @@ function onKeydown(e: KeyboardEvent): void {
     if (active !== document.body) return
   }
   e.preventDefault()
+  e.stopImmediatePropagation()
   moveFocus(grid, e.key === 'ArrowRight' ? 1 : -1)
 }
 
