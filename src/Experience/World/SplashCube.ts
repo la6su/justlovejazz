@@ -385,11 +385,9 @@ export class SplashCube extends THREE.Mesh {
   }
 
   private applyRoleAndParams(): void {
-    const { color, emissive, roughness, metalness } = this.targetParams
+    const { color } = this.targetParams
     this.cubeMaterial.color.copy(color)
-    this.cubeMaterial.emissive.copy(emissive)
-    this.cubeMaterial.roughness = roughness
-    this.cubeMaterial.metalness = metalness
+    // MeshBasicMaterial: no emissive/roughness/metalness (was MeshPhysicalMaterial)
   }
 
   /** Create a JLZ-branded canvas texture (gradient + text). No external assets. */
