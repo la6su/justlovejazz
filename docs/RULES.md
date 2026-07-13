@@ -40,7 +40,7 @@ git fetch origin && git checkout main && git pull origin main
 
 ## Navigation & sections
 
-21. **Section IDs**: `lab`, `intro`, `about`, `challenge` (works), `contact`, `process`. 1:1 cube faces. `challenge` is the historical name for Works — kept for backward compat (renaming touches Phase enum, WorldConfig, PostProcessingManager, Lights, scene group names). Documented in RULES.
+21. **Section IDs**: `lab`, `intro`, `about`, `challenge` (works), `contact`, `menu`. 1:1 cube faces. `challenge` is the historical name for Works — kept for backward compat (renaming touches Phase enum, WorldConfig, PostProcessingManager, Lights, scene group names). Section 5 was renamed Process→Menu semantically (NEXT.md 2026-07-13); the directory `src/sections/menu/` reflects this. RULES §21 updated 2026-07-13 post-audit.
 22. **Cube-map layout on ALL pages**: 0=secret, 1=intro(start), 2-4=main, 5=secret. Vertical cycles 1-4, horizontal toggles 0/5.
 23. **JoystickNav — pure DOM, NO three-joystick.** Trigger model. 2D: vertical=1-4, horizontal=0/5 secret. Same on ALL pages.
 24. **Footer removed** — joystick is the sole bottom UI element. Do NOT re-add a footer/dock bar.
@@ -65,7 +65,7 @@ git fetch origin && git checkout main && git pull origin main
 ## Theme & styling
 
 36. **QF theme principle**: `@global-primary-background = @jlz-color-accent` (1 line in `_import.less` §3). QF manages ALL components. Do NOT override `@button-*`, `@card-*`, `@navbar-*`.
-37. **Theme system**: 2-mode (auto=light/inverse=dark). Global flip, NOT per-section. `uk-light` on body. `localStorage('jlz:theme')`. EnvSphere syncs via `jlz:theme-applied`.
+37. **Theme system**: per-section inverse. Each section has `sectionTheme: 'light' | 'dark'` in WorldConfig. On section change, ContentReveal toggles `uk-light` on `<html>` + `<body>`: auto mode → light=uk-light, dark=no uk-light; inverse mode → FLIPPED. `localStorage('jlz:theme')`. EnvSphere syncs via `jlz:theme-applied`. (Updated 2026-07-13 post-audit: was documented as "global flip" but code is per-section.)
 38. **Single font: Inter.** Preloaded in `index.html` (3 weights: 400, 700, 900).
 39. **Mobile-first rem sizing**: `html { font-size: 0.85rem }` mobile → `1rem` ≥640px. ALL sizing rem-based (hairline borders exception).
 40. **Responsive sections**: `uk-section-small uk-section-large@m` (UIKit3 has NO `uk-section-medium` — only xsmall/small/large/xlarge + bare).
@@ -104,7 +104,28 @@ git fetch origin && git checkout main && git pull origin main
 | EdgesGeometry (rainbow edges) | LineSegments linewidth>1 unsupported → aliasing |
 | Landing page (`/landing`) | Removed — no no-JS fallback needed, SPA renders synchronously |
 | Footer/dock bar | Joystick is sole bottom UI |
-| `jlz:navigate` event | Use `jlz:route-change` (typed in EventBus) |
+| `jlz:navigate` event | Re-instated 2026-07-13: jlz:navigate is the navigation REQUEST (menu subsection click), jlz:route-change is the post-render NOTIFICATION. Separate events prevent infinite loops. |
 | `PROCESS_STEPS` constant | Inline in section templates now |
 | `worldDNA.ts` | TSL node system dead code |
 | `Easings.ts` | Inline `easeInOutQuart` only |
+| `AudioSystem.ts` | Dead code (source never assigned, zero callers) — removed 2026-07-13 |
+| `PlayButton3D.ts` | Dead render path (created+hidden, never shown) — removed 2026-07-13 |
+| `FOOTER` empty export | Dead ceremony — removed 2026-07-13 |
+| `templates.ts` shim | Router imports directly from ./pages — removed 2026-07-13 |
+| `three-webgpu-node-materials.d.ts` | Duplicate type file (declared IridescentMaterial which doesn't exist) — removed 2026-07-13 |
+
+## Senior-auditor pass (2026-07-13) — new rules
+
+52. **EventBus.emit() bridges to window.dispatchEvent.** Typed events emitted via `eventBus.emit()` automatically also fire on `window` for raw `window.addEventListener` consumers. Do NOT dispatch typed events raw via `window.dispatchEvent` — use `eventBus.emit()` instead (the bridge handles window). This fixes the contract gap where `jlz:section-change` was emitted via `eventBus.emit()` but UIMenu listened on window.
+
+53. **JoystickNav._mainSection tracks only main indices (1-4).** Secret sides (0=Lab, 5=Menu) must NOT clobber `_mainSection`. Close-nav / ArrowLeft from a side returns to the PREVIOUS main section. Page-mode `_navigateHorizontal` reuses the same `_mainSection/_side` model as home-mode (was: hardcoded `middle = Math.floor(sections.length / 2)`).
+
+54. **Hash navigation from menu preserves the hash.** `navigateToPage(path)` parses `#hash` from path, preserves it in URL, and dispatches `jlz:goto-section-by-hash` after render. Document-capture handler skips `data-nav-href`-tagged anchors (nav sub-links handle themselves). Menu subsection clicks must land on the target section, not section 1.
+
+55. **Keyboard ArrowLeft/Right must not double-dispatch.** FullscreenOverlay + WorkCards call `e.stopImmediatePropagation()` for Arrow keys they consume. JoystickNav `_keydownHandler` early-returns when `window.jlzOverlayOpen === true`. WorkCards also bails when overlay is open.
+
+56. **FullscreenOverlay z-index (10010) must be above navbar (10001).** `.jlz-fs-overlay.uk-open { z-index: 10010 !important }`. Without this, the header stays visible on top of the overlay and hamburger click dispatches `jlz:goto-nav` behind it.
+
+57. **All window listeners must be stored as fields + removed in destroy().** This includes `jlz:goto-nav`, `jlz:wobble-pulse`, `jlz:goto-section-by-hash`, Camera.pulse timer, BakuCarousel canvas pointerenter/leave, SplashCube pulse timers. Anonymous arrow functions that close over `this` are NEVER safe for window listeners — they can't be removed.
+
+58. **triggerWobblePulse must write BOTH paths.** WebGPU: `_uWobble` TSL uniform. WebGL2: `cubeMaterial.wobble` property. Writing only one makes PLAN-v3 Phase 8 wobble pulse silently inactive for the fallback audience.

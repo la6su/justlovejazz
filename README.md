@@ -11,7 +11,7 @@ bun run dev          # dev server (localhost:5173)
 bun run type-check   # tsc --noEmit (strict)
 bun run lint         # ESLint
 bun run build        # production build
-bun run test:unit    # 19 unit tests
+bun run test:unit    # 87 unit tests
 bun run format       # Prettier
 ```
 
@@ -40,7 +40,7 @@ Multi-page: splash → app → blog → landing.
 | Navigation | JoystickNav (pure DOM, 2D) + Menu overlay (section 5, unique 3-col template) |
 | Background | EnvSphere (BackSide sphere + CanvasTexture) |
 | Lint | ESLint 9 + Prettier |
-| Test | Vitest (19 tests) |
+| Test | Vitest (87 tests) |
 | PM | bun |
 
 ## Docs

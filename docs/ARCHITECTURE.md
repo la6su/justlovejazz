@@ -103,9 +103,9 @@ until `jlz:webgl-ready`. Under throttling, init takes 10-20s — that's expected
 10014: SVG splash squares
 10012: seam glow
 10011: CRT curtains
-10010: #jlz-app-loader container
-3500:  #project-overlay (fullscreen works dialog)
-1001:  .tm-header (navbar — below splash, above content)
+10010: #jlz-app-loader container + .jlz-fs-overlay.uk-open (fullscreen overlay)
+10001: .tm-header (navbar — below splash, above content + overlay)
+3500:  #project-overlay (legacy — fullscreen overlay is 10010)
 100:   joystick + dotnav
 2:     #spa-content
 1:     canvas (3D scene, fixed, pointer-events:none)
@@ -232,24 +232,28 @@ BakuCarousel on idx 3 home-only, TimelineNodes on idx 5).
 | --- | --- | --- |
 | Experience | `src/Experience/Experience.ts` | Render loop, section transitions, on-demand gating, destroy cleanup, `jlz:open-project` handler |
 | World | `src/core/World.ts` | Sections + baku + lights + EnvSphere + fog + groundPlane + DrawTrail(works) |
-| SplashCube | `src/Experience/World/SplashCube.ts` | Glass cube + CubeCamera (throttled 6 frames) + opener |
+| SplashCube | `src/Experience/World/SplashCube.ts` | Glass cube + CubeCamera (throttled 6 frames) + opener + wobble pulse (both WebGPU/WebGL2) |
 | EnvSphere | `src/Experience/World/EnvSphere.ts` | Per-section theme-driven background (sole background) |
-| BakuCarousel | `src/Experience/World/BakuCarousel.ts` | Cube↔ring morph (home Works section). Card click → overlay |
+| BakuCarousel | `src/Experience/World/BakuCarousel.ts` | Cube↔ring morph (home Works section). Card click → overlay. Canvas hover listeners tracked for dispose. |
 | WorksPortfolio | `src/Experience/WorksPortfolio.ts` | Project metadata container (drives overlay prev/next) |
 | WorkCards | `src/UI/WorkCards.ts` | Works page 3D tilt cards + click → `jlz:open-project` |
-| JoystickNav | `src/UI/JoystickNav.ts` | Pure DOM 2D nav + dotnav timeline |
-| UIMenu | `src/UI/UIMenu.ts` | Transparent navbar + dropdowns + theme toggle |
-| ProjectOverlay | `src/UI/ProjectOverlay.ts` | Fullscreen DOM dialog (reused by home + works) |
-| ContentReveal | `src/Experience/ContentReveal.ts` | Section activation + per-section theme (uk-light) |
+| JoystickNav | `src/UI/JoystickNav.ts` | Pure DOM 2D nav + dotnav timeline + goToSectionByHash (menu hash nav) |
+| UIMenu | `src/UI/UIMenu.ts` | Transparent navbar + hamburger↔X toggle (syncs via jlz:section-change through EventBus→window bridge) |
+| FullscreenOverlay | `src/UI/FullscreenOverlay.ts` | Unified fullscreen overlay (video + project info). z-index 10010 (above navbar). stopImmediatePropagation on Arrow keys. |
+| ContentReveal | `src/Experience/ContentReveal.ts` | Section activation + per-section theme (uk-light). Re-applies theme on route-change (no flash). |
 | Cursor | `src/Experience/Cursor.ts` | Codrops-style: inner dot + noisy circle (skip redraw when idle) |
-| ThemeManager | `src/core/ThemeManager.ts` | 2-mode (auto/inverse), global flip |
-| Router | `src/router.ts` | Path-based routes + `applyTranslations()` + `applyMetaTags()` on every render |
-| i18n | `src/core/i18n.ts` | EN/RU dictionary + `t()` + `applyTranslations()` + `toggleLang()` |
+| ThemeManager | `src/core/ThemeManager.ts` | 2-mode (auto/inverse), per-section flip via ContentReveal |
+| Router | `src/router.ts` | Path-based routes + hash nav + `applyTranslations()` + `applyMetaTags()` + `eventBus.emit('jlz:route-change')` on every render |
+| EventBus | `src/core/EventBus.ts` | Typed event bus. emit() bridges to window.dispatchEvent for raw listeners. |
 | pageMeta | `src/core/pageMeta.ts` | `applyMetaTags(page)` — route-based title/description/OG/canonical |
-| RenderPipeline | `src/core/RenderPipeline.ts` | WebGL2 MSAA RT + post-processing parity (bloom skip when 0) |
+| i18n | `src/core/i18n.ts` | EN/RU dictionary (200+ keys) + `t()` + `applyTranslations()` + `toggleLang()` |
 | BlurFade | `src/Experience/BlurFade.ts` | Cinematic blur+stagger reveal for titles |
 | NoiseText | `src/Experience/NoiseText.ts` | Console typewriter with noise tail for eyebrow numbers |
+| RenderPipeline | `src/core/RenderPipeline.ts` | WebGL2 MSAA RT + post-processing parity (bloom skip when 0). Crash guard at line 644 (comment at 641). |
 | WorldConfig | `src/core/WorldConfig.ts` | 6 section configs (camera, baku, post, ground, scene objects) |
+| WireframeTypography | `src/Experience/World/WireframeTypography.ts` | 3D wireframe text. Font loaded via Vite JSON import (no sync XHR). |
+| Camera | `src/Experience/Camera.ts` | Cinematic camera. pulse() timer tracked for destroy(). |
+| SfxSystem | `src/core/SfxSystem.ts` | Procedural UI sounds (hover/click/open/close). Shares AudioContext. |
 
 ## Blog pages
 
@@ -274,3 +278,8 @@ SEO: BlogPosting JSON-LD + meta tags per post.
 | `jlz:theme-applied` | ContentReveal | Experience (EnvSphere sync) |
 | `jlz:open-project` | WorkCards (works page card click) | Experience (open ProjectOverlay) |
 | `jlz:sound-toggle` | entry-app (config button) | Experience (audio mute) |
+| `jlz:goto-nav` | UIMenu (hamburger click) | Experience (joystick.goToSection(5)) |
+| `jlz:close-nav` | UIMenu (hamburger X click) | JoystickNav (return to previous main) |
+| `jlz:goto-section-by-hash` | router (after navigateToPage with hash) | Experience (joystick.goToSectionByHash) |
+| `jlz:wobble-pulse` | WorkCards / BakuCarousel (card click) | Experience (cube.triggerWobblePulse) |
+| `jlz:navigate` | nav/template (menu subsection click) | router (navigateToPage — REQUEST event, pre-render) |

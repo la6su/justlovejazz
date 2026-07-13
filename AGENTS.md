@@ -164,7 +164,7 @@ event (Experience.ts listens, mutes AudioSystem + SfxSystem).
 
 ## i18n — EN/RU
 
-`src/core/i18n.ts` — full EN/RU dictionary (130+ keys).
+`src/core/i18n.ts` — full EN/RU dictionary (200+ keys).
 - `t(key)` — translate a key
 - `data-i18n` attributes on elements — auto-translated on load + route change
 - `data-i18n-placeholder` — for input placeholder attributes
@@ -233,7 +233,7 @@ User: Russian. Code/commits/docs: English.
 bun run lint         # 0 errors (warnings tracked)
 bun run type-check   # 0 errors (strict + noUncheckedIndexedAccess)
 bun run build        # ~3s
-bun run test:unit    # 9 tests (EventBus 5 + Noise 2 + motionPolicy 2)
+bun run test:unit    # 87 tests (pageMeta 32 + i18n 20 + motionPolicy 10 + ThemeManager 9 + JoystickNav 9 + EventBus 5 + Noise 2)
 ```
 
 **Browser verify (Agent Browser) in the GLM sandbox:** see

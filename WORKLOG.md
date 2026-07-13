@@ -1,4 +1,118 @@
 
+## 2026-07-13 — Senior-auditor pass (Tier 0-3)
+
+### Context
+
+Senior TS/Three.js developer-auditor pass on the whole repo. 4 parallel
+audit agents (ponytail, navigation, 3D-pipeline, core-infra) produced a
+ranked findings list. Executed all fixes autonomously in 3 tiers, each
+committed + pushed separately.
+
+### Tier 0 — Navigation logic (6 Critical + 1 High)
+
+- **C1+C2**: `JoystickNav._syncPageSection` now only updates `_mainSection`
+  for indices 1-4 (not 0/5). `_navigateHorizontal` page-mode reuses the
+  `_mainSection/_side` model instead of hardcoded `middle=3`. Hamburger X /
+  ArrowLeft from menu on content pages now returns to the PREVIOUS main
+  section (was always section 1). Added 3 page-mode regression tests.
+- **C3**: `navigateToPage` parses hash from path, preserves it in URL,
+  dispatches `jlz:goto-section-by-hash` after render. `JoystickNav.goToSectionByHash()`
+  finds the target section. Document-capture handler skips `data-nav-href`
+  anchors. Menu subsection clicks now land on the target section.
+- **C4+C5**: `FullscreenOverlay` + `WorkCards` call `e.stopImmediatePropagation()`
+  for Arrow keys. `JoystickNav._keydownHandler` early-returns when
+  `window.jlzOverlayOpen === true`. No more double-dispatch.
+- **C6**: `EventBus.emit()` now bridges to `window.dispatchEvent(CustomEvent)`.
+  Fixes hamburger↔X sync dead on home routes (UIMenu listened on window,
+  jlz:section-change was emitted via eventBus.emit which didn't bridge).
+  Router now uses `eventBus.emit('jlz:route-change')` (RULES §44).
+- **H1**: `.jlz-fs-overlay.uk-open` z-index raised to 10010 (above navbar
+  z-index 10001). Overlay now truly covers the header.
+
+### Tier 1 — 3D pipeline (6 Critical + 5 High)
+
+- **C7**: `triggerWobblePulse` writes `cubeMaterial.wobble` on the WebGL2
+  branch (was WebGPU-only). PLAN-v3 Phase 8 wobble pulse now works on the
+  fallback audience.
+- **C8**: Noise parity gap documented (WebGPU `mx_noise_float` vs WebGL2
+  Ashima `snoise`). Both produce good-looking wobble; true port deferred.
+- **C9**: `jlz:goto-nav` + `jlz:wobble-pulse` listeners stored as fields
+  (`_gotoNavHandler`, `_wobblePulseHandler`), removed in `destroy()`.
+  Also added `_gotoSectionByHashHandler` for C3.
+- **C10**: `SplashCube.dispose()` clears `_wobblePulseTimer`/`_chromaticPulseTimer`
+  + disposes `_speckleTex` (glass-flakes.png normalMap). Was VRAM leak.
+- **C11**: `BakuCarousel` canvas `pointerenter`/`pointerleave` stored as
+  fields (`_canvasEnterHandler`, `_canvasLeaveHandler`), removed in `dispose()`.
+- **C12**: `Camera.pulse()` setTimeout stored as `_pulseTimer`, cleared in
+  `destroy()`.
+- **H4**: Deleted `PlayButton3D.ts` (129 LOC) — fully dead render path.
+- **H5**: `WireframeTypography` uses Vite JSON import (no sync XHR). Moved
+  font to `src/assets/fonts/`. Added `resolveJsonModule` to tsconfig.
+- **H6**: `MeshTransmissionMaterial` samples tier-gated (low=2, medium=4,
+  high=6).
+- **H9**: `CubeCamera.update()` wrapped in `try/finally` — `cubeMesh.visible`
+  restored even if update throws.
+- **H13**: `ContentReveal` re-applies theme on `jlz:route-change` (was
+  early-returning without `applyTheme()` → wrong-theme flash).
+
+### Tier 2 — Over-engineering cleanup (-~300 LOC, -1 dep, -1 type file)
+
+- **Deleted**: `AudioSystem.ts` (87 LOC dead), `footer.ts` (6 LOC),
+  `templates.ts` (6 LOC), `lab/template.ts` (27 LOC),
+  `three-webgpu-node-materials.d.ts` (42 LOC duplicate).
+- **Cut 4 no-op methods**: `setTransmissionEnabled`, `SplashCube.setProgress`,
+  `SplashCube.setEnvAndCamera`, `Experience.setSplashProgress`.
+- **Removed dead**: `floatRenderTargets` field, `JoystickNav._progress`,
+  `bus.emit('intro:done')`, `initEnterButton`, `Section.ts` bus.on/off
+  listeners.
+- **Renamed**: `sections/process/` → `sections/menu/`.
+- **Shrunk**: `ErrorTracker` sendBeacon infra (dead `__ERROR_ENDPOINT__`).
+- **Removed**: `codebase-memory-mcp` from `package.json` (MCP server, not
+  imported by source).
+
+### Tier 3 — Doc sync
+
+- STATUS.md: test count 9 → 87, i18n keys 130+ → 200+, wobble values
+  (0.70/0.07 → 0.95/0.09), theme (global flip → per-section), LOC/files
+  updated, audit entry added.
+- README.md: test count 19 → 87.
+- AGENTS.md: test count 9 → 87, i18n keys 130+ → 200+.
+- RULES.md: §21 (process → menu), §37 (global flip → per-section), added
+  §52-58 (new rules from audit), updated "Removed" table (jlz:navigate
+  re-instated, AudioSystem/PlayButton3D/FOOTER/templates/type file added).
+- ARCHITECTURE.md: z-index block (navbar 1001 → 10001, overlay 10010),
+  Events table (added goto-nav/close-nav/goto-section-by-hash/wobble-pulse/
+  navigate), Modules table (updated roles, added WireframeTypography/Camera/
+  SfxSystem, removed AudioSystem/PlayButton3D).
+- NEXT.md: added audit item as done, fixed jlz:route-change → jlz:navigate
+  reference.
+
+### Verification
+
+- `tsc --noEmit` — 0 errors.
+- `bun run lint` — 0 errors (62 warnings, was 63 — one `{}` warning gone
+  with the deleted type file).
+- `bun run test:unit` — 87/87 tests pass (84 + 3 new page-mode regression).
+- 3 commits pushed: `a2f0229` (Tier 0), `b235df7` (Tier 1), `0506f74`
+  (Tier 2), plus this Tier 3 docs commit.
+
+### Files touched
+
+- Tier 0 (9): Experience.ts, FullscreenOverlay.ts, JoystickNav.ts, UIMenu.ts,
+  WorkCards.ts, __tests__/JoystickNav.test.ts, main.less, EventBus.ts, router.ts
+- Tier 1 (8): Camera.ts, ContentReveal.ts, BakuCarousel.ts, PlayButton3D.ts
+  (deleted), SplashCube.ts, WireframeTypography.ts, src/assets/fonts/
+  helvetiker_bold.typeface.json (added), tsconfig.json
+- Tier 2 (23): package.json, Experience.ts, SplashCube.ts, JoystickNav.ts,
+  AudioSystem.ts (deleted), DeviceCapability.ts, ErrorTracker.ts, Section.ts,
+  SectionSceneFactory.ts, entry-app.ts, 6 page files, pages/index.ts,
+  router.ts, footer.ts (deleted), lab/template.ts (deleted), process/ → menu/
+  (renamed), templates.ts (deleted), three-webgpu-node-materials.d.ts (deleted)
+- Tier 3 (7): STATUS.md, README.md, AGENTS.md, RULES.md, ARCHITECTURE.md,
+  NEXT.md, WORKLOG.md
+
+---
+
 ## 2026-07-13 — Lazy video + card wobble + 3D Works plan
 
 ### Done

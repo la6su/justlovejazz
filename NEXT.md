@@ -24,12 +24,20 @@ _(nothing currently in progress)_
       Strategy: thumbnails eager, video lazy on click. Wobble already works
       on cube (WorkCards.ts:107 → jlz:wobble-pulse), needs to be on card too.
 
+- [x] **Senior-auditor pass — Tier 0-3** — DONE 2026-07-13. 6 Critical nav
+      bugs (C1-C6) + 6 Critical 3D bugs (C7-C12) + 5 High (H1,H4-H6,H9,H13)
+      + over-engineering cleanup (-~300 LOC, -1 dep, -1 type file). Navigation
+      contracts now match docs; WebGPU/WebGL2 wobble parity restored; all
+      window listeners tracked + removed in destroy(). See docs/STATUS.md
+      "Recent work (2026-07-13 — Senior-auditor pass)" for the full list.
+      Verification: tsc 0 errors, lint 0 errors (62 warnings), 87/87 tests.
+
 - [x] **Menu section overlap + fullscreen overlay visible on works** — DONE
       2026-07-13. Two bugs fixed:
-      1. Menu overlap: router.ts now listens for `jlz:route-change` event
-         (dispatched by menu subsection clicks) and calls `navigateToPage()`.
-         Previously the event was dispatched but nobody navigated → menu
-         section stayed active + new page rendered → overlap.
+      1. Menu overlap: router.ts listens for `jlz:navigate` event (the
+         navigation REQUEST, dispatched by menu subsection clicks) and calls
+         `navigateToPage()`. jlz:navigate is separate from jlz:route-change
+         (the post-render NOTIFICATION) to prevent infinite loops.
       2. Fullscreen overlay visible on works: added
          `this.container.style.display = 'none'` after modal creation in
          FullscreenOverlay.ts. UIKit3 modal can leave `display:flex` after
