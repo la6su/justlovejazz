@@ -18,6 +18,7 @@ import { BakuRole, type BakuMaterialState } from '../../core/types'
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js'
 import { MeshPhysicalNodeMaterial } from 'three/webgpu'
 import { Fn, uniform, positionLocal, normalLocal, mx_noise_float, sin } from 'three/tsl'
+import { DeviceCapability } from '../../core/DeviceCapability'
 
 interface BakuMaterialParams {
   color: THREE.Color
@@ -206,21 +207,21 @@ export class SplashCube extends THREE.Mesh {
     const geo = new RoundedBoxGeometry(size, size, size, 6, 0.04)
 
     // Glass cube — MeshPhysicalNodeMaterial (TSL) with transmission.
-    // Based on dasprinzip.com/tinker/day34 reference:
-    //   transmission: 1.0 (full refraction, not just transparency)
-    //   thickness: 5 (thick glass for visible refraction)
-    //   ior: 1.21 (low IOR for subtle distortion)
-    //   TSL positionNode wobble (noise displacement for living cube)
-    // transmission replaces opacity — cube refracts the background instead
-    // of being semi-transparent (which showed dark EnvSphere through it).
+    // Based on dasprinzip.com/tinker/day34 reference.
+    // transmission: 1.0 (full refraction) — WebGPU only.
+    // WebGL2 doesn't support renderer.getCanvasTarget (transmission backing
+    // store) → crash. Fallback: opacity 0.4 (semi-transparent, no refraction).
+    const caps = DeviceCapability.getInstance()
+    const isWebGPU = caps.isRealWebGPU
     this.cubeMaterial = new MeshPhysicalNodeMaterial({
       color: new THREE.Color(0x88aaff),
       metalness: 0.0,
       roughness: 0.0,
-      transmission: 1.0,
+      transmission: isWebGPU ? 1.0 : 0.0,
       thickness: 5,
       ior: 1.21,
       transparent: true,
+      opacity: isWebGPU ? 1.0 : 0.4,
       side: THREE.FrontSide,
       envMapIntensity: 1.0,
       attenuationColor: new THREE.Color(1.0, 1.0, 1.0),
