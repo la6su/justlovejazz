@@ -246,16 +246,15 @@ export class SplashCube extends THREE.Mesh {
         return pos
       })()
     } else {
-      // ── WebGL2: built-in MeshPhysicalMaterial (no NodeMaterial crash) ──
-      this.cubeMaterial = new THREE.MeshPhysicalMaterial({
+      // ── WebGL2: MeshBasicMaterial (no lighting, no transmission artifacts) ──
+      // MeshPhysicalMaterial with transmission=0 still creates a transmission
+      // render target on WebGL2 → renders a dark hexagonal backing shape.
+      // MeshBasicMaterial has NO transmission pipeline → clean transparent cube.
+      this.cubeMaterial = new THREE.MeshBasicMaterial({
         color: new THREE.Color(0x88aaff),
-        metalness: 0.0,
-        roughness: 0.1,
-        transmission: 0,
         transparent: true,
         opacity: 0.4,
-        side: THREE.DoubleSide,
-        envMapIntensity: 0.8,
+        side: THREE.FrontSide, // DoubleSide renders back faces dark through transparent front
         depthWrite: false,
       }) as unknown as MeshPhysicalNodeMaterial
     }

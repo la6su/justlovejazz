@@ -419,6 +419,7 @@ export class World extends THREE.Group {
       if (shouldShow) {
         g.visible = fade > 0.001
         // A-006: Use cached mesh list instead of traverse every frame.
+        // A-006: Use cached mesh list instead of traverse every frame.
         // Cache stored in group.userData._meshCache (lazy-init).
         let meshCache = g.userData._meshCache as THREE.Mesh[] | undefined
         if (!meshCache) {
