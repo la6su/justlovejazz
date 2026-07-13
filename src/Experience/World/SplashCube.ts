@@ -39,7 +39,7 @@ export class SplashCube extends THREE.Mesh {
   private cubeMesh!: THREE.Mesh
   // edgeLines removed — was LineSegments with 1px aliasing. Cube looks
   // clean with just MeshPhysicalMaterial (iridescence + clearcoat).
-  private cubeMaterial!: THREE.MeshPhysicalMaterial
+  private cubeMaterial!: THREE.MeshBasicMaterial
   private cubeCamera!: THREE.CubeCamera
   private contentScene!: THREE.Scene
   private contentTextures: THREE.Texture[] = []
@@ -200,16 +200,17 @@ export class SplashCube extends THREE.Mesh {
     // (was: BoxGeometry — sharp edges → jagged pixels at face boundaries)
     const geo = new RoundedBoxGeometry(size, size, size, 6, 0.04)
 
-    // TEMP: MeshBasicMaterial to isolate 'black hole' cause.
-    // If black shape disappears → was MeshPhysicalMaterial lighting issue.
-    // If remains → something else (post-processing, render target, etc.)
+    // MeshBasicMaterial — no lighting dependency, consistent color on both
+    // WebGPU + WebGL2. MeshPhysicalMaterial caused 'black hole' (dark metal
+    // reflections at close camera distance). Basic material always renders
+    // the correct color regardless of PMREM/lighting.
     this.cubeMaterial = new THREE.MeshBasicMaterial({
       color: 0x88aaff,
       transparent: true,
       opacity: 0.4,
       side: THREE.DoubleSide,
       depthWrite: false,
-    }) as unknown as THREE.MeshPhysicalMaterial
+    })
 
     this.cubeMesh = new THREE.Mesh(geo, this.cubeMaterial)
     this.cubeMesh.renderOrder = 2
@@ -370,7 +371,7 @@ export class SplashCube extends THREE.Mesh {
 
     // ── Material color blend ──
     this.cubeMaterial.color.copy(this._blendFromColor).lerp(this._blendToColor, this._blendT)
-    this.cubeMaterial.emissive.copy(this._blendFromEmissive).lerp(this._blendToEmissive, this._blendT)
+    // MeshBasicMaterial has no emissive — skip emissive blend (was for MeshPhysicalMaterial)
 
     // Edge colors are STATIC — set once in buildCube, NOT animated per frame.
     // Per-frame edge animation was allocating new Color objects + updating
