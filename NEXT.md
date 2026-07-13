@@ -13,6 +13,25 @@ _(nothing currently in progress)_
 
 ## TODO — High priority
 
+- [ ] **Showreel button as TSL shader plane + video on plane with genie effect**
+      — PLAN: replace DOM showreel button with a Three.js TSL shader plane
+      positioned in front of the cube (like PlayButton3D). On click → video
+      plays on a separate plane with a "genie" transition (scale + opacity
+      from button position to fullscreen). See detailed plan in
+      `docs/PLAN-showreel-shader-plane.md`.
+
+- [x] **Menu section overlap + fullscreen overlay visible on works** — DONE
+      2026-07-13. Two bugs fixed:
+      1. Menu overlap: router.ts now listens for `jlz:route-change` event
+         (dispatched by menu subsection clicks) and calls `navigateToPage()`.
+         Previously the event was dispatched but nobody navigated → menu
+         section stayed active + new page rendered → overlap.
+      2. Fullscreen overlay visible on works: added
+         `this.container.style.display = 'none'` after modal creation in
+         FullscreenOverlay.ts. UIKit3 modal can leave `display:flex` after
+         creation, making the overlay visible immediately.
+      See WORKLOG.md 2026-07-13 entry for details.
+
 - [x] **Menu close button + unique VOSK template + glassmorphism + docs audit** —
       DONE 2026-07-13. Joystick fix (`touch-action: none` on `.jlz-joystick__base`
       directly — not inherited from parent). Hamburger ↔ X toggle: `#jlz-hamburger`

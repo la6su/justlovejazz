@@ -293,6 +293,22 @@ signature of the works page.
     ONE-OFF cases in HTML markup. For elements that ALWAYS need overflow hidden
     (e.g. `.jlz-menu-overlay`, `.jlz-joystick`), keep it in CSS — adding the
     class to every instance is redundant and the CSS is already there.
+29. **UIKit3 modal leaves `display: flex` after creation** — `UIkit.modal(el)`
+    can leave inline `style="display: flex"` on the modal element after
+    creation, making it visible immediately (not just on `show()`). This is
+    a UIKit3 JS behavior — the `.uk-modal { display: none }` CSS rule is
+    overridden by the inline style. Fix: explicitly set
+    `this.container.style.display = 'none'` after `appendChild` in the
+    constructor. UIKit3 overrides this when `show()` is called. See
+    `FullscreenOverlay.ts` constructor.
+30. **Custom events need explicit listeners** — dispatching a
+    `window.dispatchEvent(new CustomEvent('jlz:route-change'))` does NOT
+    trigger navigation unless someone listens for it. Router.ts only
+    dispatched `jlz:route-change` internally (after `renderView`) — it did
+    not listen for it. Menu nav dispatched the event expecting navigation,
+    but nothing happened → menu section stayed active + new page rendered
+    → overlap. Fix: added `window.addEventListener('jlz:route-change', ...)`
+    in `initRouter()` that calls `navigateToPage(detail.page)`.
 
 ## 8. When to add a custom class vs. use UIKit
 
