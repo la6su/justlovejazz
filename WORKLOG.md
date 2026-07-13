@@ -1,4 +1,48 @@
 
+## 2026-07-13 — PLAN-v2: 9 phases complete (7 brief items)
+
+### Done
+- **Phase 1: Wobble cube** — uWobble 0.70→0.95, SIZE_SCALE 0.07→0.09 (visible motion)
+- **Phase 2: Cursor** — larger (28/44px), smoother spring (0.18/0.7), custom states
+  (play/drag/view via data-cursor attribute)
+- **Phase 3: Showreel** — play button centered on intro cube + fullscreen video modal
+  with custom controls (play/pause/mute/seek/close)
+- **Phase 4: Works cards scale up** — CSS transition opacity+scale(0.85→1) with
+  stagger (0.15s/0.3s) on .section-active
+- **Phase 5: Wobble pulse on click** — triggerWobblePulse() boosts uWobble to 1.8
+  for 0.8s + scale pulse, triggered by jlz:wobble-pulse event from WorkCards +
+  BakuCarousel
+- **Phase 6: Navbar** — logo left (l@6), nav center, controls right (lang+sound+theme),
+  works dropbar with cover thumbnails, mobile offcanvas hamburger
+- **Phase 7: Brand identity** — docs/BRAND.md (colors, typography, voice, manifesto),
+  CSS variables (--jlz-accent #c4ff00, --jlz-bg, --jlz-fg)
+- **Phase 8: RU services** — shortened titles (Креатив/Разработка/Моушн/AI-системы/Лаб/Плейграунд)
+- **Phase 9: Content** — works leads shortened, all pages verified meaningful + CTA
+
+### Files
+- src/Experience/World/SplashCube.ts (wobble + triggerWobblePulse)
+- src/Experience/World/MeshTransmissionMaterial.ts (GLSL wobble sync)
+- src/Experience/Cursor.ts (larger + spring + custom states)
+- src/UI/ShowreelModal.ts (NEW — video modal)
+- src/UI/UIMenu.ts (rewritten — logo + lang + sound + dropbar previews)
+- src/UI/UIManager.ts (wire ShowreelModal)
+- src/UI/WorkCards.ts (wobble pulse dispatch + data-cursor=view)
+- src/Experience/World/BakuCarousel.ts (wobble pulse dispatch)
+- src/Experience/Experience.ts (jlz:wobble-pulse listener)
+- src/sections/intro/template.ts (play button)
+- src/pages/content/works.ts (data-cursor=view + shorter leads)
+- src/core/i18n.ts (RU services shortened + showreel key)
+- src/assets/main.less (navbar + showreel + work cards + brand vars CSS)
+- docs/BRAND.md (NEW — brand guidelines)
+- docs/PLAN-v2.md (NEW — detailed plan)
+
+### Verified
+- tsc 0 errors, lint 0 errors (63 warnings), 69 tests pass
+- Browser: cube wobble visible, sound panel, showreel btn, navbar with logo,
+  lang btn, nav sound, cursor — all present, 0 console errors
+
+---
+
 ## 2026-07-13 — Cube wobble day34-accurate + autonomous improvement plan
 
 ### Done
