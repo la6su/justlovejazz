@@ -112,7 +112,7 @@ export class World extends THREE.Group {
       }),
     )
     this.groundPlane.rotation.x = -Math.PI / 2
-    this.groundPlane.position.y = -2
+    this.groundPlane.position.y = -1
     this.groundPlane.name = 'ground'
     this.add(this.groundPlane)
   }

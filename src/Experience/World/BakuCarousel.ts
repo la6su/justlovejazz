@@ -41,12 +41,12 @@ const CARD_TEXTURE_URLS: string[] = Array.from({ length: CARD_COUNT }, (_, i) =>
   return p.textureUrl || p.detailTextureUrl
 })
 
-const RING_RADIUS = 3.2
-const CARD_W = 2.0
-const CARD_H = 1.4
-const CUBE_SIZE = 1.6
+const RING_RADIUS = 1.6
+const CARD_W = 1.0
+const CARD_H = 0.7
+const CUBE_SIZE = 0.8
 const CUBE_HALF = CUBE_SIZE / 2
-const ARC_PEAK = 1.6 // y-height of the arc trajectory peak (mid-morph bloom)
+const ARC_PEAK = 0.8 // y-height of the arc trajectory peak (mid-morph bloom)
 const SCROLL_EASE = 0.1
 const WHEEL_SENSITIVITY = 0.012
 const DRAG_SENSITIVITY = 0.01

@@ -115,7 +115,7 @@ export class SplashCube extends THREE.Mesh {
     this.contentTextures = [logoTex, text1Tex, text2Tex]
 
     // 6 gradient planes — JLZ accent palette (not Apple rainbow).
-    const size = 10
+    const size = 5
     const half = size / 2
     const jlzColors = [
       [0.32, 0.36, 0.52], // accent blue-grey
@@ -192,7 +192,7 @@ export class SplashCube extends THREE.Mesh {
   // CUBE MESH — single BoxGeometry (smooth edges, no pixelation)
   // ════════════════════════════════════════════════════════════════════
   private buildCube(): void {
-    const size = 1.6
+    const size = 0.8
 
     // Single RoundedBoxGeometry — beveled edges eliminate aliasing at
     // sharp face junctions. With roughness:0 (mirror), sharp edges create
