@@ -80,6 +80,24 @@ Blog: standalone HTML (`blog.html` + 4 articles), SEO-optimized.
 - **Autonomous plan created** — `docs/PLAN.md` with 8 phases: zoom on works,
   sound panel, custom carousel physics, DrawTrail rewrite, wobble cursor,
   typography + theme polish.
+- **Phase 2: Zoom pulse** — Camera.pulse() method (two-phase FOV transition),
+  triggered on section change + cube.triggerOpener() for combined effect.
+- **Phase 3: Sound panel** — `src/UI/SoundPanel.ts` with 4 EQ bars, animated
+  via CSS keyframes. Off by default, click toggles mute. Dispatches
+  jlz:sound-toggle event (Experience.ts already listens). Wired via
+  UIManager.init() in main-app.ts.
+- **Phase 4: Carousel enhancements** — momentum (velocity decay 0.92/frame),
+  rubber-band (0.35x resistance beyond half-card-width), auto-advance
+  (4500ms interval, pause on hover/drag), snap-back on release. New methods:
+  getNearestSnapAngle(), startAutoAdvance(), stopAutoAdvance(), setHovered().
+- **Phase 5: DrawTrail junni-style** — tapered tail (width 100%→10% head to
+  tail, smoothstep curve), white hot core at head, brighter flowing energy.
+  Replaces uniform-width "brush" with comet-like tail.
+- **Phase 6: Wobble cursor** — spring-damper physics replaces lerp for outer
+  circle (skaltenegger pattern). Magnetic fix: spring eases cursor to element
+  center with organic wobble instead of instant snap. stiffness=0.25, damping=0.55.
+- **All 6 phases verified** — tsc 0 errors, lint 0 errors, browser test:
+  cube wobble visible, sound panel toggles, cursor exists, 0 console errors.
 
 ## Recent work (2026-07-12)
 
