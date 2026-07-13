@@ -147,6 +147,16 @@ body:not([data-page='home']) #spa-content {
   pointer-events: auto;
 }
 
+// Higher-specificity override for home-page sections (data-section).
+// #spa-content section[data-section] has specificity (1,1,1) which beats
+// .section-active (0,1,0) — so pointer-events:none would win and block all
+// clicks in home-page sections (including menu overlay nav items). This
+// rule matches the same specificity + .section-active class to ensure
+// pointer-events: auto takes effect when the section is active.
+#spa-content section[data-section].section-active {
+  pointer-events: auto;
+}
+
 .scrollspy-pending [uk-scrollspy] {
   animation: none !important;
   opacity: 0 !important;
@@ -412,31 +422,157 @@ body.uk-light .jlz-joystick__hint {
    the active section's [data-eyebrow] via NoiseText. See .jlz-eyebrow below.) */
 
 /* ------------------------------------------------------------------
-   Project overlay
+   Fullscreen overlay (unified: showreel + project info)
+   Replaces old #project-overlay + .jlz-showreel-modal.
+   Uses UIKit3 uk-modal for visibility/animation/Esc/focus-trap.
    ------------------------------------------------------------------ */
 
-#project-overlay {
-  position: fixed;
+// Modal background — dark + blur
+.jlz-fs-overlay {
+  background: rgba(0, 0, 0, 0.9) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+// Dialog — transparent, sized to content
+.jlz-fs-dialog {
+  position: relative;
+  width: min(90vw, 1100px);
+  max-height: 90vh;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+// Close button — top-right, above content
+.jlz-fs-close {
+  position: absolute;
+  top: -48px;
+  right: 0;
+  z-index: 2;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: none;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.jlz-fs-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.4);
+  color: @global-primary-background;
+}
+
+// Prev/next nav arrows — screen sides
+.jlz-fs-prev,
+.jlz-fs-next {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: none;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.jlz-fs-prev { left: -60px; }
+.jlz-fs-next { right: -60px; }
+
+.jlz-fs-prev:hover,
+.jlz-fs-next:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.4);
+  color: @global-primary-background;
+}
+
+// Video wrapper — 16:9 aspect ratio
+.jlz-fs-video-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+// Poster image (first frame / textureUrl) — shown before play
+.jlz-fs-poster {
+  position: absolute;
   inset: 0;
-  z-index: 3500;
-  opacity: 0;
-  pointer-events: none;
+  background-size: cover;
+  background-position: center;
+  background-color: #0a0a0f;
   transition: opacity 0.4s ease;
+  z-index: 1;
 }
 
-#project-overlay.is-open {
-  opacity: 1;
+.jlz-fs-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  z-index: 2;
 }
 
-.jlz-fs-bg {
-  background: rgba(2, 2, 6, 0.85);
+// Big play button overlay
+.jlz-fs-big-play {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+  transition: opacity 0.3s ease;
+}
+
+.jlz-fs-big-play__icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease, border-color 0.2s ease;
 }
 
-.jlz-fs-top {
-  margin-top: 40px;
-  padding: 2rem 2.5rem;
+.jlz-fs-big-play__icon::after {
+  content: '';
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 12px 0 12px 20px;
+  border-color: transparent transparent transparent #fff;
+  margin-left: 4px;
+}
+
+.jlz-fs-video-wrap:hover .jlz-fs-big-play__icon {
+  transform: scale(1.1);
+  border-color: @global-primary-background;
+}
+
+// Project info section (below video)
+.jlz-fs-info {
+  padding: 1.5rem 0 0;
+}
+
+.jlz-fs-info-top {
+  margin-bottom: 0.75rem;
 }
 
 .jlz-fs-cat {
@@ -453,65 +589,10 @@ body.uk-light .jlz-joystick__hint {
   color: #fff;
 }
 
-.jlz-fs-top__right {
-  gap: 1.5rem;
-}
-
 .jlz-fs-counter {
   font-size: 0.8rem;
   color: rgba(255, 255, 255, 0.5);
   font-variant-numeric: tabular-nums;
-}
-
-.jlz-fs-close,
-.jlz-fs-prev,
-.jlz-fs-next {
-  background: none;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  transition:
-    background 0.2s ease,
-    border-color 0.2s ease;
-}
-
-.jlz-fs-close {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  font-size: 1rem;
-}
-
-.jlz-fs-prev,
-.jlz-fs-next {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  font-size: 1.2rem;
-}
-
-.jlz-fs-close:hover,
-.jlz-fs-prev:hover,
-.jlz-fs-next:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.4);
-}
-
-.jlz-fs-bottom {
-  padding: 2rem 2.5rem;
-  gap: 2rem;
-}
-
-.jlz-fs-thumb {
-  width: 120px;
-  height: 80px;
-  background-size: cover;
-  background-position: center;
-  border-radius: 6px;
-  flex-shrink: 0;
-  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .jlz-fs-desc {
@@ -534,12 +615,57 @@ body.uk-light .jlz-joystick__hint {
   letter-spacing: 0.05em;
 }
 
-#project-overlay.is-open .jlz-fs-top,
-#project-overlay.is-open .jlz-fs-prev,
-#project-overlay.is-open .jlz-fs-next,
-#project-overlay.is-open .jlz-fs-bottom,
-#project-overlay.is-open .jlz-fs-close {
-  pointer-events: auto;
+// Video controls (play/pause/mute/seek/time)
+.jlz-fs-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.jlz-fs-seek {
+  flex: 1;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  background-image: linear-gradient(
+    to right,
+    @global-primary-background 0%,
+    @global-primary-background var(--jlz-seek-progress, 0%),
+    rgba(255, 255, 255, 0.1) var(--jlz-seek-progress, 0%),
+    rgba(255, 255, 255, 0.1) 100%
+  );
+}
+
+.jlz-fs-seek::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: @global-primary-background;
+  cursor: pointer;
+  border: 2px solid #fff;
+}
+
+.jlz-fs-seek::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: @global-primary-background;
+  cursor: pointer;
+  border: 2px solid #fff;
+}
+
+.jlz-fs-time {
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.5);
+  white-space: nowrap;
 }
 
 /* ------------------------------------------------------------------
@@ -1294,200 +1420,6 @@ body.uk-light .jlz-eyebrow {
 }
 
 // ════════════════════════════════════════════════════════════════════
-// SHOWREEL PLAY BUTTON + MODAL (PLAN-v2 Phase 3)
-// ════════════════════════════════════════════════════════════════════
-
-// Showreel overlay — DOM label only (3D play button is in the scene)
-.jlz-showreel-overlay {
-  position: absolute;
-  bottom: 15%;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 5;
-  pointer-events: auto;
-}
-
-.jlz-showreel-trigger {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem 1.5rem;
-  border: 1px solid rgba(245, 245, 247, 0.15);
-  border-radius: 100px;
-  background: rgba(10, 10, 15, 0.4);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.jlz-showreel-trigger:hover {
-  border-color: var(--jlz-accent, #c4ff00);
-  background: rgba(196, 255, 0, 0.08);
-}
-
-.jlz-showreel-trigger__label {
-  font-family: "Inter", sans-serif;
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.25em;
-  text-transform: uppercase;
-  color: rgba(245, 245, 247, 0.7);
-  transition: color 0.2s ease;
-}
-
-.jlz-showreel-trigger:hover .jlz-showreel-trigger__label {
-  color: var(--jlz-accent, #c4ff00);
-}
-
-@media (max-width: 640px) {
-  .jlz-showreel-trigger__label { font-size: 0.6rem; }
-}
-
-
-// ── Showreel modal (UIKit3 uk-modal) ──
-.jlz-showreel-modal {
-  background: rgba(0, 0, 0, 0.9) !important;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-
-.jlz-showreel-dialog {
-  position: relative;
-  width: min(90vw, 1100px);
-  max-height: 90vh;
-  background: transparent !important;
-  padding: 0 !important;
-}
-
-.jlz-showreel-close {
-  position: absolute;
-  top: -48px;
-  right: 0;
-  z-index: 2;
-}
-
-.jlz-showreel-close:hover {
-  color: var(--jlz-accent, #c4ff00);
-}
-
-.jlz-showreel-video-wrap {
-  position: relative;
-  width: 100%;
-  background: #000;
-  border-radius: 8px;
-  overflow: hidden;
-  aspect-ratio: 16 / 9;
-}
-
-.jlz-showreel-video {
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: contain;
-}
-
-.jlz-showreel-big-play {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-  transition: opacity 0.3s ease;
-}
-
-.jlz-showreel-big-play__icon {
-  display: block;
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  background: rgba(196, 255, 0, 0.9);
-  position: relative;
-}
-
-.jlz-showreel-big-play__icon::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 55%;
-  transform: translate(-50%, -50%);
-  width: 0;
-  height: 0;
-  border-left: 24px solid #0a0a0f;
-  border-top: 16px solid transparent;
-  border-bottom: 16px solid transparent;
-}
-
-.jlz-showreel-controls {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem 0 0;
-  color: rgba(245, 245, 247, 0.8);
-}
-
-// Showreel controls use uk-icon-button (QF styled) — no custom CSS needed
-
-.jlz-showreel-seek {
-  flex: 1;
-  height: 6px;
-  -webkit-appearance: none;
-  appearance: none;
-  background: linear-gradient(to right,
-    var(--jlz-accent, #c4ff00) 0%,
-    var(--jlz-accent, #c4ff00) var(--jlz-seek-progress, 0%),
-    rgba(245, 245, 247, 0.15) var(--jlz-seek-progress, 0%),
-    rgba(245, 245, 247, 0.15) 100%);
-  border-radius: 3px;
-  outline: none;
-  cursor: pointer;
-  transition: height 0.2s ease;
-}
-
-.jlz-showreel-seek:hover {
-  height: 8px;
-}
-
-.jlz-showreel-seek::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--jlz-accent, #c4ff00);
-  cursor: pointer;
-}
-
-.jlz-showreel-seek::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--jlz-accent, #c4ff00);
-  border: none;
-  cursor: pointer;
-}
-
-.jlz-showreel-time {
-  font-family: 'Inter', monospace;
-  font-size: 0.75rem;
-  font-weight: 500;
-  letter-spacing: 0.05em;
-  color: rgba(245, 245, 247, 0.5);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-@media (max-width: 640px) {
-  .jlz-showreel-dialog { width: 95vw; }
-  .jlz-showreel-close { top: -42px; }
-  .jlz-showreel-big-play__icon { width: 56px; height: 56px; }
-  .jlz-showreel-controls { gap: 0.5rem; padding: 0.75rem 0 0; }
-  .jlz-showreel-time { display: none; }
-}
-
-// ════════════════════════════════════════════════════════════════════
 // WORK CARDS SCALE UP ON SECTION ACTIVE (PLAN-v2 Phase 4)
 // ════════════════════════════════════════════════════════════════════
 
@@ -1694,6 +1626,11 @@ body.uk-light .jlz-header .uk-navbar-container {
 .jlz-menu-overlay {
   position: absolute;
   inset: 0;
+  // z-index: 10 — above other sections (z-index: 2) inside #spa-content,
+  // but below header (z-index: 10001) and joystick (z-index: 100) which
+  // are outside #spa-content. Ensures nav items are clickable and dropdown
+  // panels appear above sibling sections.
+  z-index: 10;
   // Visibility: hidden by default (section[data-section] { display: none }).
   // Shown via .section-active { display: flex !important }.
   // Do NOT set display: flex !important here — it overrides the hide rule.

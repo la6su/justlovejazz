@@ -1,10 +1,10 @@
 import UIkit from 'uikit'
 import Icons from 'uikit/dist/js/uikit-icons'
-import { ShowreelModal } from './ShowreelModal'
+import { FullscreenOverlay } from './FullscreenOverlay'
 import { wireMenuToolbarGlobals } from '../sections/nav/template'
 
 export class UIManager {
-  public showreelModal: ShowreelModal | null = null
+  public overlay: FullscreenOverlay | null = null
   private _showreelHandler: (() => void) | null = null
 
   constructor() {
@@ -16,17 +16,20 @@ export class UIManager {
 
   /** Initialize UI components (call after DOM ready). */
   init(): void {
-    this.showreelModal = new ShowreelModal()
+    this.overlay = new FullscreenOverlay()
 
     // Wire global listeners for the menu-overlay config toolbar
     // (theme toggle + sound toggle). Per-render init happens in router.ts.
     wireMenuToolbarGlobals()
 
-    // Wire showreel play button (intro section)
+    // Wire showreel play button (intro section) — opens overlay in showreel mode
     this._showreelHandler = () => {
-      this.showreelModal?.open()
+      this.overlay?.open({
+        videoSrc: '/assets/video/coming-soon.mp4',
+        title: 'Showreel',
+        category: '2026 · COMING SOON',
+      })
     }
-    // Use event delegation — button may not exist yet (home page only)
     document.addEventListener('click', (e) => {
       const target = e.target as HTMLElement
       if (target.closest('#jlz-showreel-trigger')) {
@@ -38,7 +41,7 @@ export class UIManager {
 
   /** Clean up UI components. */
   dispose(): void {
-    this.showreelModal?.dispose()
-    this.showreelModal = null
+    this.overlay?.dispose()
+    this.overlay = null
   }
 }

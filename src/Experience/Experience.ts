@@ -11,7 +11,7 @@ import { input } from './Input'
 import { StateBus } from '../core/StateBus'
 import type { World } from '../core/World'
 import { WorksPortfolio } from './WorksPortfolio'
-import { ProjectOverlay } from '../UI/ProjectOverlay'
+import { FullscreenOverlay } from '../UI/FullscreenOverlay'
 import { NoiseText } from './NoiseText'
 
 import { AudioSystem } from '../core/AudioSystem'
@@ -58,7 +58,7 @@ export class Experience {
 
   // Works portfolio (public for DevPanel access)
   public portfolio: WorksPortfolio | null = null
-  private overlay: ProjectOverlay | null = null
+  private overlay: FullscreenOverlay | null = null
   private _uiMenu: UIMenu | null = null
   private currentSectionContext: string | null = null
   private _portfolioInitialized = false
@@ -96,7 +96,7 @@ export class Experience {
 
   // (SECTION_LABELS removed — was passed to UIMenu/JoystickNav via options
   //  that are no longer used. Section labels are in WorldConfig.domSection.)
-  constructor(_ui: UIManager) {
+  constructor(private _ui: UIManager) {
     this.sizes = new Sizes()
     this.time = new Time()
     Experience.instance = this
@@ -435,16 +435,14 @@ export class Experience {
     }
     window.addEventListener('jlz:sound-toggle', this._soundToggleHandler)
 
-    // ── Works page card click → open fullscreen ProjectOverlay ──
+    // ── Works page card click → open fullscreen overlay ──
     // Dispatched by WorkCards.ts when a .jlz-work-card is clicked (works page).
-    // Same overlay as the home BakuCarousel — onProjectSelect sets content,
-    // showContainer() reveals it. ensurePortfolio() guarantees the overlay exists.
+    // onProjectSelect calls overlay.open() with project info + poster.
     this._openProjectHandler = (e: Event) => {
       const detail = (e as CustomEvent<{ idx: number }>).detail
       if (!detail || typeof detail.idx !== 'number') return
       void this.ensurePortfolio().then(() => {
         this.onProjectSelect(detail.idx)
-        this.overlay?.showContainer()
       })
     }
     window.addEventListener('jlz:open-project', this._openProjectHandler)
@@ -843,13 +841,11 @@ export class Experience {
     this.world.add(this.portfolio.group)
 
     if (!this.overlay) {
-      const worksSection =
-        document.getElementById('section-works') ||
-        document.getElementById('section-works') ||
-        document.getElementById('spa-content')
-      this.overlay = new ProjectOverlay(worksSection!, this.sfx)
+      // FullscreenOverlay is created by UIManager.init() — reuse it if available,
+      // otherwise create a standalone instance (works page without UIManager).
+      this.overlay = this._ui.overlay ?? new FullscreenOverlay()
       // Overlay prev/next → drive the BakuCarousel ring AND update the
-      // overlay HTML (title/description/counter). Without the onProjectSelect
+      // overlay content (title/description/counter). Without the onProjectSelect
       // call, the ring rotates but the overlay UI stays on the old project.
       this.overlay.onPrev = () => {
         const carousel = this.getCarousel()
@@ -874,7 +870,7 @@ export class Experience {
       }
     }
 
-    // Wire BakuCarousel card click → open fullscreen ProjectOverlay.
+    // Wire BakuCarousel card click → open fullscreen overlay.
     // This is the SOLE entry point for opening the fullscreen overlay —
     // the old Show button and cube-tap paths were removed to avoid duplication.
     // The carousel is a child of sceneGroups[4] (works section).
@@ -884,7 +880,6 @@ export class Experience {
       carousel.setCamera(this.camera.instance)
       carousel.onCardClick((idx) => {
         this.onProjectSelect(idx)
-        this.overlay?.showContainer()
       })
     }
   }
@@ -909,8 +904,19 @@ export class Experience {
     const project = projs[safeIdx]
     if (!project) return
 
-    // Direct show — no dissolve transition (removed, cover transition in ProjectDetail).
-    this.overlay.show(project as never, safeIdx, projs.length)
+    // Open fullscreen overlay with project info + poster (first frame / texture).
+    // Video is optional — if project has no video, poster-only mode is used.
+    const p = project as { title?: string; category?: string; description?: string; tags?: string[]; textureUrl?: string; detailTextureUrl?: string; year?: string }
+    this.overlay.open({
+      poster: p.detailTextureUrl || p.textureUrl,
+      title: p.title,
+      category: `${p.year ?? ''} · ${p.category ?? ''}`,
+      description: p.description,
+      tags: p.tags,
+      counter: `${safeIdx + 1} / ${projs.length}`,
+      hasPrev: true,
+      hasNext: true,
+    })
   }
 
   // Note: the old activateCard() (tap on baku cube → open overlay) was
