@@ -96,7 +96,9 @@ export class BakuCarousel extends THREE.Group {
   private pointerDownHandler: ((e: PointerEvent) => void) | null = null
   private pointerMoveHandler: ((e: PointerEvent) => void) | null = null
   private pointerUpHandler: ((e: PointerEvent) => void) | null = null
-  private keydownHandler: ((e: KeyboardEvent) => void) | null = null
+  // (keydownHandler removed — arrow keys now handled ONLY by JoystickNav.
+  //  BakuCarousel was intercepting ArrowLeft/Right for its own card navigation,
+  //  which prevented the joystick keyboard arrows from cycling sections.)
   // C11 fix: canvas hover listeners stored as fields so they can be removed
   // in dispose(). Previously anonymous → leaked on every Works-section-enter.
   private _canvasEnterHandler: ((e: PointerEvent) => void) | null = null
@@ -291,36 +293,14 @@ export class BakuCarousel extends THREE.Group {
       // Resume auto-advance after drag ends (if not hovering)
       if (this._active && !this.isHovered) this.startAutoAdvance()
     }
-    this.keydownHandler = (e: KeyboardEvent) => {
-      if (!this._active || this._morphT < 0.5) return
-      if (isMenuOpen() || isUiChromeEvent(e)) return
-      // Don't intercept keys when ProjectOverlay is open — overlay has its own
-      // keyboard handler for ArrowLeft/ArrowRight/Escape. Without this guard,
-      // both handlers fire → double prev/next (carousel jumps 2 cards).
-      const overlayOpen = !!(window as unknown as { jlzOverlayOpen?: boolean }).jlzOverlayOpen
-      if (overlayOpen) return
-      const tag = (e.target as HTMLElement)?.tagName
-      if (tag === 'INPUT' || tag === 'TEXTAREA') return
-      if (e.key === 'ArrowLeft') {
-        e.preventDefault()
-        this.prev()
-      }
-      if (e.key === 'ArrowRight') {
-        e.preventDefault()
-        this.next()
-      }
-      if (e.key === 'Enter' || e.key === ' ') {
-        // Enter/Space opens the front-facing card
-        e.preventDefault()
-        this._onCardClick?.(this.getFrontCardIndex())
-      }
-    }
+    // (keyboard handler removed — arrow keys now owned by JoystickNav only.
+    //  BakuCarousel navigation is via wheel + pointer drag. Enter/Space to
+    //  open the front card is handled by Experience.ts click raycaster.)
     window.addEventListener('wheel', this.wheelHandler, { passive: false })
     window.addEventListener('pointerdown', this.pointerDownHandler)
     window.addEventListener('pointermove', this.pointerMoveHandler, { passive: false })
     window.addEventListener('pointerup', this.pointerUpHandler)
     window.addEventListener('pointercancel', this.pointerUpHandler)
-    window.addEventListener('keydown', this.keydownHandler)
 
     // Phase 4: hover detection on canvas — pause auto-advance.
     // C11 fix: store handlers as fields so dispose() can remove them.
@@ -538,7 +518,7 @@ export class BakuCarousel extends THREE.Group {
       window.removeEventListener('pointerup', this.pointerUpHandler)
       window.removeEventListener('pointercancel', this.pointerUpHandler)
     }
-    if (this.keydownHandler) window.removeEventListener('keydown', this.keydownHandler)
+    // (keydownHandler removal — arrow keys now owned by JoystickNav only)
     // C11 fix: remove canvas hover listeners (canvas persists across carousel
     // disposal — it's owned by Renderer — so handlers would accumulate without this).
     if (this._canvasEnterHandler || this._canvasLeaveHandler) {

@@ -260,6 +260,8 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     // Help dropdown (navbar hamburger → joystick infographic)
     'help.title': 'Navigation',
     'help.sections': 'Sections',
+    'help.up': 'Up',
+    'help.down': 'Down',
     'help.lab': 'Lab',
     'help.menu': 'Menu',
     'help.hint': 'Drag the joystick or use arrow keys',
@@ -514,6 +516,8 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     // Help dropdown (navbar hamburger → joystick infographic)
     'help.title': 'Навигация',
     'help.sections': 'Секции',
+    'help.up': 'вверх',
+    'help.down': 'вниз',
     'help.lab': 'Лаборатория',
     'help.menu': 'Меню',
     'help.hint': 'Тяните джойстик или используйте стрелки клавиатуры',

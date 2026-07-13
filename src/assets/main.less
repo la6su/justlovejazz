@@ -1722,9 +1722,9 @@ body.uk-light .jlz-header .uk-navbar-container {
   justify-content: center;
 }
 
-// ── Help dropdown (joystick infographic) ──
+// ── Help dropdown (joystick infographic + config controls) ──
 .jlz-help-dropdown {
-  min-width: 280px;
+  min-width: 320px;
   padding: 20px;
   background: var(--jlz-color-bg, #0a0a0f);
   border: 1px solid var(--jlz-color-border, rgba(255,255,255,0.1));
@@ -1738,15 +1738,32 @@ body.uk-light .jlz-help-dropdown {
   box-shadow: 0 8px 32px rgba(0,0,0,0.15);
 }
 
+// Title — full width, centered
+.jlz-help-title {
+  margin: 0 0 12px 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--jlz-color-text);
+  opacity: 0.8;
+  text-align: center;
+}
+
+// 3-column row: left text | joystick (center) | right text
 .jlz-help-content {
   display: flex;
-  gap: 16px;
   align-items: center;
+  justify-content: center;
+  gap: 16px;
 }
 
 .jlz-help-joystick {
   flex-shrink: 0;
   color: var(--jlz-color-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 body.uk-light .jlz-help-joystick {
@@ -1757,35 +1774,34 @@ body.uk-light .jlz-help-joystick {
   display: block;
 }
 
+// Text columns — left + right of the joystick
 .jlz-help-text {
-  flex: 1;
-  min-width: 0;
-}
-
-.jlz-help-title {
-  margin: 0 0 8px 0;
-  font-size: 0.85rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 70px;
+  font-size: 0.8rem;
+  line-height: 1.4;
   color: var(--jlz-color-text);
-  opacity: 0.8;
+  opacity: 0.85;
+  text-align: center;
 }
 
-.jlz-help-list {
-  list-style: none;
-  padding: 0;
-  margin: 0 0 8px 0;
+.jlz-help-text--left {
+  align-items: flex-end;
+  text-align: right;
+}
 
-  li {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.8rem;
-    line-height: 1.6;
-    color: var(--jlz-color-text);
-    opacity: 0.85;
-  }
+.jlz-help-text--right {
+  align-items: flex-start;
+  text-align: left;
+}
+
+.jlz-help-text-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .jlz-help-key {
@@ -1803,29 +1819,56 @@ body.uk-light .jlz-help-joystick {
   flex-shrink: 0;
 }
 
+// Hint — full width, centered
 .jlz-help-hint {
-  margin: 0;
+  margin: 12px 0 0 0;
   font-size: 0.7rem;
   line-height: 1.4;
   color: var(--jlz-color-text-muted);
   opacity: 0.6;
+  text-align: center;
 }
 
 @media (max-width: 500px) {
   .jlz-help-dropdown {
-    min-width: 240px;
+    min-width: 260px;
     padding: 16px;
   }
   .jlz-help-content {
-    gap: 12px;
+    gap: 10px;
   }
   .jlz-joystick-svg {
-    width: 90px;
-    height: 90px;
+    width: 80px;
+    height: 80px;
+  }
+  .jlz-help-text {
+    min-width: 56px;
+    font-size: 0.75rem;
   }
 }
 
-// ── Sound EQ-bars (used inside uk-icon-button in the menu overlay) ──
+// ── Help dropdown: divider + config controls row ──
+.jlz-help-divider {
+  margin: 16px 0 12px 0;
+  border: 0;
+  border-top: 1px solid var(--jlz-color-border, rgba(255,255,255,0.1));
+}
+
+body.uk-light .jlz-help-divider {
+  border-top-color: rgba(0,0,0,0.1);
+}
+
+.jlz-help-controls {
+  gap: 12px;
+}
+
+.jlz-help-controls .uk-icon-button {
+  // Slightly larger touch target in dropdown
+  width: 36px;
+  height: 36px;
+}
+
+// ── Sound EQ-bars (used in help dropdown config controls) ──
 // Custom visual per project decision — UIKit3 has no EQ-bars icon.
 // Container is .jlz-sound-bars (4 spans); state via .is-playing / .is-muted
 // on the parent .jlz-sound-toggle button.
