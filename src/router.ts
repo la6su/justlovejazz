@@ -93,17 +93,17 @@ export function initRouter(): void {
   initialized = true
 
   renderView()
-  // jlz:route-change already dispatched in renderView() — covers UIkit refresh + UIMenu.
 
-  // ── Listen for jlz:route-change from menu subsection clicks ──
-  // Menu nav (src/sections/nav/template.ts → initMenuNav) dispatches this event
-  // with { detail: { page: path } } when a subsection link is clicked.
-  // Without this listener, the event was dispatched but nobody navigated →
-  // menu section stayed active + new page rendered → overlap.
-  window.addEventListener('jlz:route-change', (e: Event) => {
-    const detail = (e as CustomEvent<{ page: string }>).detail
-    if (detail && detail.page && detail.page !== currentPage) {
-      navigateToPage(detail.page)
+  // ── Listen for jlz:navigate (navigation REQUEST from menu subsection clicks) ──
+  // Menu nav (src/sections/nav/template.ts → initMenuNav) dispatches jlz:navigate
+  // with { detail: { path } } when a subsection link is clicked.
+  // This is SEPARATE from jlz:route-change (which is a notification dispatched
+  // AFTER renderView completes). Using separate events prevents infinite loops:
+  //   jlz:navigate → navigateToPage → renderView → jlz:route-change (notification only)
+  window.addEventListener('jlz:navigate', (e: Event) => {
+    const detail = (e as CustomEvent<{ path: string }>).detail
+    if (detail && detail.path) {
+      navigateToPage(detail.path)
     }
   })
 
