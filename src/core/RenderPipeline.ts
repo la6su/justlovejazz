@@ -266,9 +266,9 @@ export class RenderPipeline {
   // Dummy camera for fullscreen quad rendering (Firefox crashes on null camera)
   private static _dummyCam: THREE.OrthographicCamera | null = null
   // Section grade values (stored so setSectionGrade works before WebGL composite is built)
-  private _sectionRefract = 0.0
+  private _sectionRefract = 0.05
   private _sectionBorder = 0.0
-  private _globalBorder = 0.0
+  private _globalBorder = 0.4
   private _sectionShadows = new THREE.Vector3(1, 1, 1)
   private _sectionHighlights = new THREE.Vector3(1, 1, 1)
 

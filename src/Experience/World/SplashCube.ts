@@ -202,16 +202,16 @@ export class SplashCube extends THREE.Mesh {
     const geo = new RoundedBoxGeometry(size, size, size, 6, 0.04)
 
     // Glass cube — MeshTransmissionMaterial (works on BOTH WebGL2 + WebGPU).
-    // Based on drei MeshTransmissionMaterial: chromatic aberration +
-    // anisotropic blur + distortion. Uses onBeforeCompile to inject custom
-    // GLSL into MeshPhysicalMaterial's transmission pipeline.
+    // Based on drei MeshTransmissionMaterial + dasprinzip day34 glass.
     //   - transmission: 1.0 (full refraction)
     //   - thickness: 0.5 (thin glass)
     //   - ior: 1.21 (low IOR for subtle distortion)
     //   - chromaticAberration: 0.05 (RGB split at edges)
     //   - anisotrophicBlur: 0.1 (directional blur)
-    //   - distortion: 0.0 (noise displacement, off by default)
-    //   - temporalDistortion: 0.0 (time-based distortion, off by default)
+    //   - distortion: 0.3 (noise wobble — subtle organic motion)
+    //   - temporalDistortion: 0.1 (animation speed)
+    //   - normalMap: glass-flakes.png (speckle texture for micro-detail)
+    //   - CubeCamera envMap: contentScene reflections on glass
     this.cubeMaterial = new MeshTransmissionMaterial(6)
     this.cubeMaterial.color = new THREE.Color(0x88aaff)
     this.cubeMaterial.metalness = 0.0
@@ -227,14 +227,20 @@ export class SplashCube extends THREE.Mesh {
     this.cubeMaterial.attenuationDistance = 100
     this.cubeMaterial.specularIntensity = 1.0
     this.cubeMaterial.depthWrite = false
+    // Normal map — glass speckle texture (dasprinzip day34 seDv-flakes.png)
+    // Gives the glass surface micro-detail: tiny imperfections, sparkle.
+    const speckleTex = new THREE.TextureLoader().load('/textures/glass-flakes.png')
+    speckleTex.wrapS = THREE.RepeatWrapping
+    speckleTex.wrapT = THREE.RepeatWrapping
+    speckleTex.repeat.set(6, 6)
+    speckleTex.colorSpace = THREE.SRGBColorSpace
+    this.cubeMaterial.normalMap = speckleTex
+    this.cubeMaterial.normalScale = new THREE.Vector2(0.24, 0.24)
     // MeshTransmissionMaterial custom uniforms
     this.cubeMaterial.chromaticAberration = 0.05
     this.cubeMaterial.anisotrophicBlur = 0.1
-    // Wobble — noise-based normal distortion (works on BOTH WebGL2 + WebGPU
-    // via onBeforeCompile GLSL injection). distortion = amplitude,
-    // distortionScale = noise frequency, temporalDistortion = animation speed.
-    // Subtle values to avoid cube sides collapsing inward.
-    this.cubeMaterial.distortion = 0.2
+    // Wobble — noise-based normal distortion (works on BOTH WebGL2 + WebGPU)
+    this.cubeMaterial.distortion = 0.3
     this.cubeMaterial.distortionScale = 0.3
     this.cubeMaterial.temporalDistortion = 0.1
 
@@ -247,7 +253,7 @@ export class SplashCube extends THREE.Mesh {
     // Cube now uses scene.environment (PMREM RoomEnvironment) only —
     // bright studio reflections, no dark cubemap.
     // CubeCamera still updates (harmless) but its texture is not applied.
-    // this.cubeMaterial.envMap = this.cubeCamera.renderTarget.texture
+    this.cubeMaterial.envMap = this.cubeCamera.renderTarget.texture
 
     // ── Rainbow edges — DISABLED (pixelated aliasing) ──
     // LineBasicMaterial.linewidth > 1 is NOT supported in WebGL/WebGPU —
@@ -330,9 +336,9 @@ export class SplashCube extends THREE.Mesh {
       // CubeCamera update DISABLED — envMap disconnected (was causing black
       // hole). CubeCamera + contentScene still exist (disposed in dispose())
       // but no longer rendered. Saves 6 draw calls per update.
-      // this.cubeMesh.visible = false
-      // this.cubeCamera.update(renderer!, this.contentScene)
-      // this.cubeMesh.visible = true
+      this.cubeMesh.visible = false
+      this.cubeCamera.update(renderer!, this.contentScene)
+      this.cubeMesh.visible = true
     }
 
     // ── Transition motion (same as before) ──
