@@ -1763,3 +1763,222 @@ body.uk-light .jlz-eyebrow {
     transition: none;
   }
 }
+
+// ════════════════════════════════════════════════════════════════════
+// NAVBAR — logo, lang, sound, dropbar previews (PLAN-v2 Phase 6)
+// ════════════════════════════════════════════════════════════════════
+
+.jlz-navbar {
+  border-bottom: 1px solid rgba(245, 245, 247, 0.06);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background: rgba(10, 10, 15, 0.7);
+}
+
+body.uk-light .jlz-navbar {
+  background: rgba(245, 245, 247, 0.8);
+  border-bottom-color: rgba(10, 10, 15, 0.08);
+}
+
+// Logo
+.jlz-navbar-logo {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  padding: 0 0.5rem;
+}
+
+.jlz-logo-text {
+  font-family: 'Inter', sans-serif;
+  font-weight: 900;
+  font-size: 1.1rem;
+  letter-spacing: -0.02em;
+  color: rgba(245, 245, 247, 0.9);
+  transition: color 0.2s ease;
+}
+
+.jlz-navbar-logo:hover .jlz-logo-text {
+  color: var(--jlz-accent, #c4ff00);
+}
+
+body.uk-light .jlz-logo-text {
+  color: rgba(10, 10, 15, 0.9);
+}
+
+// Nav items
+.jlz-navbar-nav-wrap {
+  flex: 1;
+  justify-content: center;
+}
+
+.jlz-navbar-nav > li > a {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgba(245, 245, 247, 0.6);
+  transition: color 0.2s ease;
+  padding: 0 0.75rem;
+}
+
+.jlz-navbar-nav > li > a:hover,
+.jlz-navbar-nav > li.uk-active > a {
+  color: var(--jlz-accent, #c4ff00);
+}
+
+body.uk-light .jlz-navbar-nav > li > a {
+  color: rgba(10, 10, 15, 0.6);
+}
+
+body.uk-light .jlz-navbar-nav > li > a:hover,
+body.uk-light .jlz-navbar-nav > li.uk-active > a {
+  color: var(--jlz-accent, #c4ff00);
+}
+
+// Controls (right side)
+.jlz-navbar-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.jlz-navbar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 0.5rem;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(245, 245, 247, 0.6);
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.jlz-navbar-btn:hover {
+  color: var(--jlz-accent, #c4ff00);
+  border-color: rgba(196, 255, 0, 0.3);
+  background: rgba(196, 255, 0, 0.05);
+}
+
+body.uk-light .jlz-navbar-btn {
+  color: rgba(10, 10, 15, 0.6);
+}
+
+.jlz-lang-label {
+  text-transform: uppercase;
+}
+
+// Hide mobile toggle on desktop
+.jlz-mobile-toggle { display: none; }
+
+// ── Dropbar with cover previews (works page) ──
+.jlz-dropbar--covers {
+  min-width: 480px !important;
+}
+
+.jlz-dropbar-sections--covers li a {
+  display: grid !important;
+  grid-template-columns: 48px auto 1fr;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem !important;
+  border-radius: 6px;
+  transition: background 0.2s ease;
+}
+
+.jlz-dropbar-sections--covers li a:hover {
+  background: rgba(196, 255, 0, 0.05);
+}
+
+.jlz-dropbar__cover {
+  display: block;
+  width: 48px;
+  height: 32px;
+  background-size: cover;
+  background-position: center;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.jlz-dropbar__subtitle {
+  display: block;
+  font-size: 0.7rem;
+  color: rgba(245, 245, 247, 0.4);
+  margin-top: 0.15rem;
+}
+
+body.uk-light .jlz-dropbar__subtitle {
+  color: rgba(10, 10, 15, 0.4);
+}
+
+.jlz-dropbar-featured__subtitle {
+  display: block;
+  font-size: 0.7rem;
+  color: rgba(245, 245, 247, 0.4);
+  margin-top: 0.25rem;
+}
+
+body.uk-light .jlz-dropbar-featured__subtitle {
+  color: rgba(10, 10, 15, 0.4);
+}
+
+// ── Mobile offcanvas menu ──
+.jlz-mobile-menu-bar {
+  background: rgba(10, 10, 15, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.jlz-mobile-nav {
+  margin-top: 2rem;
+}
+
+.jlz-mobile-nav li a {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: rgba(245, 245, 247, 0.8);
+  padding: 0.75rem 0;
+  border-bottom: 1px solid rgba(245, 245, 247, 0.06);
+  transition: color 0.2s ease;
+}
+
+.jlz-mobile-nav li a:hover {
+  color: var(--jlz-accent, #c4ff00);
+}
+
+.jlz-mobile-controls {
+  position: absolute;
+  bottom: 2rem;
+  left: 2rem;
+  display: flex;
+  gap: 1rem;
+}
+
+// ── Responsive: hide center nav on mobile, show hamburger ──
+@media (max-width: 960px) {
+  .jlz-navbar-nav-wrap { display: none; }
+  .jlz-mobile-toggle { display: flex; }
+  .jlz-navbar-controls {
+    gap: 0.125rem;
+  }
+}
+
+@media (max-width: 500px) {
+  .jlz-navbar-btn {
+    min-width: 32px;
+    height: 32px;
+    padding: 0 0.35rem;
+    font-size: 0.7rem;
+  }
+  .jlz-logo-text { font-size: 1rem; }
+}
