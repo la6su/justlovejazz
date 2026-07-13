@@ -434,6 +434,17 @@ body.uk-light .jlz-joystick__hint {
   -webkit-backdrop-filter: blur(10px);
 }
 
+// CRITICAL: ensure modal is display:none when NOT open.
+// UIKit3 modal has z-index: 1010 (@global-z-index + 10), which is WAY above
+// the menu overlay (z-index: 10 inside #spa-content). If the modal element
+// is visible at all (even transparent), it blocks all clicks on the menu.
+// UIKit3's .uk-modal { display: none } default should handle this, but
+// some UIKit3 versions add display:flex on init. This !important rule
+// guarantees the modal stays hidden until .uk-open is added.
+.jlz-fs-overlay:not(.uk-open) {
+  display: none !important;
+}
+
 // Dialog — transparent, sized to content
 .jlz-fs-dialog {
   position: relative;
@@ -1808,19 +1819,10 @@ body.uk-light .jlz-header .uk-navbar-container {
 .jlz-menu-topbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start; // toolbar left-aligned (brand removed)
   padding-bottom: var(--jlz-space-3);
   border-bottom: 1px solid var(--jlz-color-border);
   margin-bottom: var(--jlz-space-4);
-}
-
-.jlz-menu-brand {
-  font-family: @global-font-family;
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--jlz-color-text-muted);
 }
 
 // ── Config toolbar (theme + sound) — glassmorphism via .hook-icon-button ──
@@ -1833,11 +1835,12 @@ body.uk-light .jlz-header .uk-navbar-container {
   height: 36px;
 }
 
-// ── 3-column grid ──
+// ── 2-column grid: stat | nav ──
+// Contact column removed — dropdown submenu expands into the free space.
 .jlz-menu-grid {
   flex: 1;
   display: grid;
-  grid-template-columns: 1fr 1.5fr 1fr;
+  grid-template-columns: 1fr 1.5fr;
   gap: var(--jlz-space-8);
   align-items: start;
   min-height: 0; // allow grid to shrink within flex column
@@ -2062,32 +2065,8 @@ body.uk-light .jlz-header .uk-navbar-container {
   color: @global-primary-background;
 }
 
-// ── Right column: contacts ──
-.jlz-menu-contact-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.jlz-menu-contact-link {
-  display: inline-block;
-  font-family: @global-font-family;
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: var(--jlz-color-text-muted);
-  text-decoration: none;
-  transition: color 0.2s ease;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.jlz-menu-contact-link:hover,
-.jlz-menu-contact-link:focus-visible {
-  color: @global-primary-background;
-  outline: none;
-}
+// (Contact column removed — dropdown submenu expands into the free space.
+//  Contact info now lives in the Contact page section, not in the menu.)
 
 // ── Footer ──
 .jlz-menu-footer {
@@ -2175,22 +2154,6 @@ body.uk-light .jlz-header .uk-navbar-container {
     padding-bottom: 0.5rem;
   }
 
-  .jlz-menu-col--contact {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: var(--jlz-space-4);
-  }
-
-  .jlz-menu-col--contact .jlz-menu-col-title {
-    width: 100%;
-    margin-bottom: 0;
-  }
-
-  .jlz-menu-contact-list {
-    flex: 1;
-    min-width: 140px;
-  }
-
   .jlz-menu-footer {
     flex-wrap: wrap;
     gap: 0.25rem var(--jlz-space-2);
@@ -2199,7 +2162,6 @@ body.uk-light .jlz-header .uk-navbar-container {
 
 // ── Light theme overrides ──
 body.uk-light {
-  .jlz-menu-brand { color: var(--jlz-color-text-muted); }
   .jlz-menu-col-title { color: var(--jlz-color-text-subtle); }
   .jlz-menu-stat__num { color: var(--jlz-color-text); }
   .jlz-menu-stat__label { color: var(--jlz-color-text-subtle); }
@@ -2210,7 +2172,6 @@ body.uk-light {
   .jlz-menu-nav__arrow { color: var(--jlz-color-text-subtle); }
   .jlz-menu-nav__sub-link { color: var(--jlz-color-text-subtle); }
   .jlz-menu-nav__sub-num { color: var(--jlz-color-text-subtle); }
-  .jlz-menu-contact-link { color: var(--jlz-color-text-muted); }
   .jlz-menu-footer__text { color: var(--jlz-color-text-subtle); }
 }
 

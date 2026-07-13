@@ -184,30 +184,8 @@ function navColumn(): string {
   `
 }
 
-// ── Right column: contacts + socials ──
-function contactsColumn(): string {
-  return `
-    <div class="jlz-menu-col jlz-menu-col--contact">
-      <span class="jlz-menu-col-title" data-i18n="menu.contact">CONTACT</span>
-      <ul class="jlz-menu-contact-list">
-        <li><a href="mailto:hello@justlovejazz.com" class="jlz-menu-contact-link" data-magnetic>
-          <span data-i18n="common.email">Email</span>
-        </a></li>
-        <li><a href="https://t.me/justlovejazz" target="_blank" rel="noopener" class="jlz-menu-contact-link" data-magnetic>
-          <span data-i18n="common.telegram">Telegram</span>
-        </a></li>
-        <li><a href="https://github.com/la6su" target="_blank" rel="noopener" class="jlz-menu-contact-link" data-magnetic>
-          <span data-i18n="common.github">GitHub</span>
-        </a></li>
-      </ul>
-      <span class="jlz-menu-col-title jlz-menu-col-title--follow" data-i18n="menu.follow">FOLLOW</span>
-      <ul class="jlz-menu-contact-list">
-        <li><a href="https://x.com/justlovejazz" target="_blank" rel="noopener" class="jlz-menu-contact-link" data-magnetic>X</a></li>
-        <li><a href="https://www.instagram.com/justlovejazz" target="_blank" rel="noopener" class="jlz-menu-contact-link" data-magnetic>Instagram</a></li>
-      </ul>
-    </div>
-  `
-}
+// (contactsColumn removed — contact info lives in the Contact page section,
+//  not in the menu. Dropdown submenu expands into the free space.)
 
 // ── Footer ──
 function menuFooter(): string {
@@ -233,16 +211,15 @@ export function navOverlaySection(mode: 'home' | 'content' = 'content'): string 
   return `
     <section class="jlz-menu-overlay uk-section uk-section-xsmall" id="section-menu" ${sectionAttr}>
       <div class="uk-container uk-container-expand jlz-menu-container">
-        <!-- Top bar: config toolbar + brand -->
+        <!-- Top bar: config toolbar only (brand removed per design decision) -->
         <div class="jlz-menu-topbar">
           ${configToolbar()}
-          <span class="jlz-menu-brand">JUSTLOVEJAZZ</span>
         </div>
-        <!-- Main 3-column grid -->
+        <!-- Main 2-column grid: stat | nav (contact column removed — dropdown
+             submenu expands into the free space on the right) -->
         <div class="jlz-menu-grid">
           ${statColumn()}
           ${navColumn()}
-          ${contactsColumn()}
         </div>
         <!-- Footer -->
         ${menuFooter()}
