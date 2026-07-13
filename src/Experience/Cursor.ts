@@ -38,13 +38,21 @@ export class Cursor {
   private targetY = 0
   private innerX = 0
   private innerY = 0
-  private readonly lerpFactor = 0.12
   private readonly sfx?: { play: (name: 'hover' | 'click' | 'open' | 'close') => void }
+
+  // Phase 6: spring physics for wobble (skaltenegger-style)
+  // Outer circle lags behind mouse with spring-damper, giving organic wobble
+  private velX = 0
+  private velY = 0
+  private readonly springStiffness = 0.25
+  private readonly springDamping = 0.55
 
   // Noisy circle state
   private isStuck = false
   private stuckX = 0
   private stuckY = 0
+  // Phase 6: spring physics replaces instant magnetic snap — cursor eases
+  // toward element center with spring-damper (organic wobble, not instant jump)
   private currentRadius = 20
   private readonly baseRadius = 20
   private readonly targetRadius = 36
@@ -160,11 +168,18 @@ export class Cursor {
     this.innerEl.classList.toggle('is-hover', this.isStuck)
     this.innerEl.style.transform = `translate(${this.innerX}px, ${this.innerY}px) translate(-50%, -50%)`
 
-    // Outer circle — smooth lerp follow
+    // Phase 6: spring physics for outer circle (skaltenegger wobble pattern)
+    // Goal: magnetic element center (if stuck) or mouse position (if free)
     const goalX = this.isStuck ? this.stuckX : this.targetX
     const goalY = this.isStuck ? this.stuckY : this.targetY
-    this.posX = lerp(this.posX, goalX, this.lerpFactor)
-    this.posY = lerp(this.posY, goalY, this.lerpFactor)
+    // Spring-damper: F = -k*(pos - goal) - d*vel
+    // Integration: vel += (goal - pos) * stiffness - vel * damping
+    const dx = goalX - this.posX
+    const dy = goalY - this.posY
+    this.velX = (this.velX + dx * this.springStiffness) * this.springDamping
+    this.velY = (this.velY + dy * this.springStiffness) * this.springDamping
+    this.posX += this.velX
+    this.posY += this.velY
     this.canvas.style.transform = `translate(${this.posX}px, ${this.posY}px) translate(-50%, -50%)`
 
     // Radius — smooth expand/shrink + click bump
