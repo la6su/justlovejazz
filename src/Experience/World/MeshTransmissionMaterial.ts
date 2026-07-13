@@ -111,15 +111,16 @@ export class MeshTransmissionMaterial extends THREE.MeshPhysicalMaterial {
         '#include <begin_vertex>',
         /*glsl*/ `
         vec3 transformed = vec3( position );
-        // Wobble — noise displacement along normal (dasprinzip day34)
+        // Wobble — noise displacement along normal (dasprinzip day34).
+        // max(0.0, ...) prevents negative displacement → no inward collapse.
         float t = time * 0.5;
         vec3 np = position * 0.12;
-        float n1 = snoise(np + vec3(t * 0.3, 0.0, 0.0)) * 0.5 * wobble;
-        float n2 = snoise(np * 2.5 + vec3(0.0, t * 0.5, 7.0)) * 0.2 * wobble;
-        float n3 = snoise(np * 5.0 + vec3(0.0, 0.0, t * 0.8 + 13.0)) * 0.1 * wobble;
-        float displacement = n1 + n2 + n3;
-        float breathe = sin(t * 0.7 + position.y * 0.3) * 0.12 * wobble;
-        float squash = sin(t * 0.4) * 0.08 * wobble;
+        float n1 = snoise(np + vec3(t * 0.3, 0.0, 0.0)) * 0.5;
+        float n2 = snoise(np * 2.5 + vec3(0.0, t * 0.5, 7.0)) * 0.2;
+        float n3 = snoise(np * 5.0 + vec3(0.0, 0.0, t * 0.8 + 13.0)) * 0.1;
+        float displacement = max(0.0, n1 + n2 + n3) * wobble;
+        float breathe = max(0.0, sin(t * 0.7 + position.y * 0.3) * 0.12) * wobble;
+        float squash = sin(t * 0.4) * 0.04 * wobble;
         transformed += normal * (displacement + breathe);
         transformed.y += transformed.y * squash;
         `

@@ -215,9 +215,9 @@ export class SplashCube extends THREE.Mesh {
     this.cubeMaterial = new MeshTransmissionMaterial(6)
     this.cubeMaterial.color = new THREE.Color(0x88aaff)
     this.cubeMaterial.metalness = 0.0
-    this.cubeMaterial.roughness = 0.05
+    this.cubeMaterial.roughness = 0.0
     this.cubeMaterial.transmission = 1.0
-    this.cubeMaterial.thickness = 0.5
+    this.cubeMaterial.thickness = 5
     this.cubeMaterial.ior = 1.21
     this.cubeMaterial.transparent = true
     this.cubeMaterial.opacity = 1.0
@@ -228,14 +228,13 @@ export class SplashCube extends THREE.Mesh {
     this.cubeMaterial.specularIntensity = 1.0
     this.cubeMaterial.depthWrite = false
     // Normal map — glass speckle texture (dasprinzip day34 seDv-flakes.png)
-    // Gives the glass surface micro-detail: tiny imperfections, sparkle.
     const speckleTex = new THREE.TextureLoader().load('/textures/glass-flakes.png')
     speckleTex.wrapS = THREE.RepeatWrapping
     speckleTex.wrapT = THREE.RepeatWrapping
     speckleTex.repeat.set(6, 6)
     speckleTex.colorSpace = THREE.SRGBColorSpace
     this.cubeMaterial.normalMap = speckleTex
-    this.cubeMaterial.normalScale = new THREE.Vector2(0.24, 0.24)
+    this.cubeMaterial.normalScale = new THREE.Vector2(0.1, 0.1)
     // MeshTransmissionMaterial custom uniforms
     this.cubeMaterial.chromaticAberration = 0.05
     this.cubeMaterial.anisotrophicBlur = 0.1
