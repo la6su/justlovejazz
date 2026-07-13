@@ -275,6 +275,14 @@ export class Experience {
         // Sync ground plane color/opacity to the active theme — otherwise
         // a dark ground is invisible on the light theme (near-white bg).
         this.world.syncGroundTheme(detail.isLight)
+        // Sync particle blending: Additive on dark (glow), Normal on light (visible).
+        // Without this, additive-blended particles are invisible on white backgrounds.
+        for (const group of this.world.sceneGroups) {
+          const particles = group.userData.particles as
+            | import('../Experience/World/JunniParticles').JunniParticles
+            | undefined
+          if (particles) particles.setBlending(!detail.isLight)
+        }
         this._needsRender = true
       }
     }

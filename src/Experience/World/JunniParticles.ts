@@ -264,7 +264,7 @@ export class JunniParticles extends THREE.InstancedMesh {
       color,
       transparent: true,
       depthWrite: false,
-      blending: THREE.NormalBlending,
+      blending: THREE.NormalBlending, // default; setBlending() updates per theme
       side: THREE.DoubleSide,
       fog: false,
     })
@@ -306,6 +306,15 @@ export class JunniParticles extends THREE.InstancedMesh {
 
   get visibility(): number {
     return (this._uVisibility as UniformVal).value as number
+  }
+
+  /** Switch blending mode for theme parity.
+   *  Additive: dark theme (glow accumulation — particles add light to dark bg).
+   *  Normal: light theme (alpha-over — particles visible on white bg).
+   *  Called by Experience on jlz:theme-applied. */
+  setBlending(additive: boolean): void {
+    const mat = this.material as THREE.Material & { blending: number }
+    mat.blending = additive ? THREE.AdditiveBlending : THREE.NormalBlending
   }
 
   /**
