@@ -243,7 +243,12 @@ export class JunniParticles extends THREE.InstancedMesh {
       opacityNode = Fn(() => {
         const sheetUv = buildSheetUv() as unknown as TSLVec2
         const texColor = texture(texSampler!, sheetUv) as unknown as TSLVec3
-        return texColor.a.mul(uVisibility as unknown as TSLNode)
+        // pattern.jpg is JPEG (no alpha). Use brightness threshold to mask
+        // out the black background: particles with luminance < 0.1 are
+        // discarded. This makes the black bg transparent on light themes.
+        const lum = texColor.r.mul(0.299).add(texColor.g.mul(0.587)).add(texColor.b.mul(0.114))
+        const masked = smoothstep(float(0.1), float(0.3), lum)
+        return masked.mul(uVisibility as unknown as TSLNode)
       })
     } else {
       // Section6 fallback: procedural circle tinted with uColor
