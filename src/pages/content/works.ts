@@ -75,15 +75,15 @@ export function worksPage(): string {
         'content', true
       )}
       ${sectionShell('works-02',
-        worksTop('02', 'Case Studies', 'Process, craft, and results.', 'works.section2.title', 'works.section2.lead'),
+        worksTop('02', 'Case Studies', 'Process, craft, result.', 'works.section2.title', 'works.section2.lead'),
         contentBottom(workCardsGrid(2, 3))
       )}
       ${sectionShell('works-03',
-        worksTop('03', 'Experiments', 'Where R&D meets production.', 'works.section3.title', 'works.section3.lead'),
+        worksTop('03', 'Experiments', 'R&D meets production.', 'works.section3.title', 'works.section3.lead'),
         contentBottom(workCardsGrid(4, 5))
       )}
       ${sectionShell('works-04',
-        worksTop('04', 'Recent', 'The latest from the studio.', 'works.section4.title', 'works.section4.lead'),
+        worksTop('04', 'Recent', 'Latest from the studio.', 'works.section4.title', 'works.section4.lead'),
         contentBottom(workCardsGrid(6, 7))
       )}
     </article>

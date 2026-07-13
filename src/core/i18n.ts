@@ -180,11 +180,11 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'works.section1.title': 'Selected Works',
     'works.section1.lead': 'Projects that define our way.',
     'works.section2.title': 'Case Studies',
-    'works.section2.lead': 'Process, craft, and results.',
+    'works.section2.lead': 'Process, craft, result.',
     'works.section3.title': 'Experiments',
-    'works.section3.lead': 'Where R&D meets production.',
+    'works.section3.lead': 'R&D meets production.',
     'works.section4.title': 'Recent',
-    'works.section4.lead': 'The latest from the studio.',
+    'works.section4.lead': 'Latest from the studio.',
 
     // Manifesto page
     'manifesto.purpose.title': 'Purpose',
