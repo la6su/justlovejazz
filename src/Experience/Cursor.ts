@@ -14,7 +14,8 @@
 //
 // No GSAP, no paper.js — pure Canvas 2D + custom noise2D.
 
-import { DeviceCapability } from '../core/DeviceCapability'
+// (DeviceCapability import removed — mobile detection now handled by CSS
+//  @media (pointer: coarse) in main.less, which is more reliable than JS.)
 
 function noise2D(x: number, y: number): number {
   const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453
@@ -102,10 +103,10 @@ export class Cursor {
     const forceCursor = (() => {
       try { return localStorage.getItem('jlz:force-cursor') === '1' } catch { return false }
     })()
-    if (DeviceCapability.isMobile && !forceCursor) {
-      this.innerEl.style.display = 'none'
-      this.canvas.style.display = 'none'
-    }
+    // (Mobile detection removed — CSS @media (pointer: coarse) already hides
+    //  the cursor elements via display:none. The old DeviceCapability.isMobile
+    //  check was hiding the cursor on touch-screen laptops even when a mouse
+    //  was present. CSS media query is more reliable.)
     if (forceCursor) {
       document.documentElement.classList.add('jlz-force-cursor')
     }

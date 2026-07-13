@@ -1033,16 +1033,18 @@ body.uk-light .jlz-eyebrow {
 
 .jlz-section-top {
   flex-shrink: 0;
-  /* Push TOP block below the fixed header + breathing room.
-     header-height (64px) + space-8 (2rem) gap = comfortable separation. */
-  padding-top: calc(var(--jlz-header-height) + var(--jlz-space-8));
+  /* (Header removed — top padding now just breathing room, no header offset.)
+     Kept var(--jlz-header-height) as 0 fallback so layout doesn't shift. */
+  padding-top: var(--jlz-space-8);
 }
 
 .jlz-section-bottom {
   flex-shrink: 0;
-  /* Joystick (110px) sits at bottom center — reserve minimal space so
-     bottom content clears it without excessive gap. space-4 = 1rem. */
-  padding-bottom: calc(var(--jlz-joystick-size) * 0.6 + var(--jlz-space-4));
+  /* Joystick stack at bottom center: base (110px) + hint (~16px) +
+     controls (~32px) + dotnav (~16px) + gaps ≈ 200px total height.
+     Reserve space so bottom content clears the full stack without overlap.
+     Was: joystick-size * 0.6 + space-4 (too small for the new stack). */
+  padding-bottom: calc(var(--jlz-joystick-size) * 1.8 + var(--jlz-space-6));
 }
 
 /* Subtle scanline overlay for TUI feel — very faint.
