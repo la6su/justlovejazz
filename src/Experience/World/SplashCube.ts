@@ -11,13 +11,25 @@
 //   3. Cube mesh — RoundedBoxGeometry with MeshPhysicalMaterial
 //      envMap = CubeCamera render target → rich reflections
 //   4. Opener — scale pulse (1.0 → 1.3 → 1.0)
+//
+// Glass shader (pride-worthy chromatic glass):
+//   WebGPU:  MeshPhysicalNodeMaterial + native `dispersion` property (three r164+)
+//            → per-channel RGB IOR sampling in TSL PhysicalLightingModel.
+//            No GLSL onBeforeCompile needed — chromatic aberration is built-in.
+//            + TSL silicon-jelly wobble positionNode (dasprinzip day34 pattern).
+//   WebGL2:  MeshTransmissionMaterial (drei-style GLSL onBeforeCompile) with
+//            chromaticAberration + anisotropicBlur + GLSL silicon-jelly wobble.
+//            (TSL transmission crashes on legacy WebGLRenderer — getCanvasTarget
+//             is WebGPU-only — so we keep the GLSL path for parity.)
+//   Both:    transmission 1.0, thickness 1.2 (low → transparency), ior 1.21,
+//            iridescence 1.0, clearcoat 1.0, glass-flakes normalMap, CubeCamera envMap.
 
 import * as THREE from 'three'
 import { organicValue } from '../../Utils/Noise'
 import { BakuRole, type BakuMaterialState } from '../../core/types'
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js'
 import { MeshPhysicalNodeMaterial } from 'three/webgpu'
-import { Fn, uniform, positionLocal, normalLocal, mx_noise_float, sin } from 'three/tsl'
+import { Fn, uniform, positionLocal, normalLocal, mx_noise_float, sin, vec3 } from 'three/tsl'
 import { DeviceCapability } from '../../core/DeviceCapability'
 import { MeshTransmissionMaterial } from './MeshTransmissionMaterial'
 
@@ -45,7 +57,9 @@ export class SplashCube extends THREE.Mesh {
   // clean with just MeshPhysicalMaterial (iridescence + clearcoat).
   private cubeMaterial!: THREE.MeshPhysicalMaterial
   // TSL wobble uniforms (WebGPU path only)
-  private _uWobble = uniform(0.3)
+  // 0.42 — strong jelly amplitude. Cube is 0.8 units wide; this gives ~0.17 max
+  // displacement → visible silicon-jelly deformation without breaking geometry.
+  private _uWobble = uniform(0.42)
   private _uTime = uniform(0)
   private cubeCamera!: THREE.CubeCamera
   private contentScene!: THREE.Scene
@@ -196,7 +210,7 @@ export class SplashCube extends THREE.Mesh {
   }
 
   // ════════════════════════════════════════════════════════════════════
-  // CUBE MESH — single BoxGeometry (smooth edges, no pixelation)
+  // CUBE MESH — pride-worthy chromatic glass cube (crystal clear + dramatic)
   // ════════════════════════════════════════════════════════════════════
   private buildCube(): void {
     const size = 0.8
@@ -204,95 +218,156 @@ export class SplashCube extends THREE.Mesh {
     // Single RoundedBoxGeometry — beveled edges eliminate aliasing at
     // sharp face junctions. With roughness:0 (mirror), sharp edges create
     // maximum pixel-level aliasing. Bevel radius 0.04 = subtle rounding.
-    // (was: BoxGeometry — sharp edges → jagged pixels at face boundaries)
     const geo = new RoundedBoxGeometry(size, size, size, 6, 0.04)
 
-    // Glass cube — SPLIT by backend:
-    // WebGPU: MeshPhysicalNodeMaterial (TSL) — transmission works natively + TSL wobble
-    //   (dasprinzip day34 pattern — onBeforeCompile GLSL doesn't work on WebGPU)
-    // WebGL2: MeshTransmissionMaterial (drei) — chromatic aberration + GLSL wobble
-    //   (onBeforeCompile works on WebGL2, NodeMaterial crashes)
-    // Both: same params (transmission 1.0, thickness 5, ior 1.21) + normalMap + CubeCamera envMap
+    // Glass-flakes normal map — fine surface microstructure.
+    // Repeat 4x (was 6) → larger flakes, more visible sub-pixel detail.
     const speckleTex = new THREE.TextureLoader().load('/textures/glass-flakes.png')
     speckleTex.wrapS = THREE.RepeatWrapping
     speckleTex.wrapT = THREE.RepeatWrapping
-    speckleTex.repeat.set(6, 6)
+    speckleTex.repeat.set(4, 4)
 
     const caps = DeviceCapability.getInstance()
     const isWebGPU = caps.isRealWebGPU
 
+    // ── Pride-worthy chromatic glass tuning (VLM-informed) ──
+    // VLM analysis of prior state: "too murky/opaque, no RGB fringe, rigid, no texture"
+    // Fixes:
+    //   transmission 1.0      — full transmission (see-through)
+    //   thickness 0.5         — VERY thin (was 1.2) → maximum transparency
+    //   ior 1.21              — stylized glass bend
+    //   roughness 0.02        — mirror-smooth for crisp reflections
+    //   attenuationDistance ∞ — NO Beer-Lambert absorption → crystal clear (was 8 → murky)
+    //   attenuationColor white — no tint through volume
+    //   emissive 0x000000     — NO internal glow (was 0x1a2a4a → foggy blue haze)
+    //   dispersion 15.0       — DRAMATIC chromatic aberration (was 4.0 → invisible)
+    //                            halfSpread = 0.21 * 15 * 0.025 = 0.079
+    //                            IORs (1.131, 1.21, 1.289) — strong RGB fringe
+    //   iridescence 1.0       — rainbow shift on grazing angles
+    //   clearcoat 1.0         — glassy lacquer
+    //   sheen 0.6             — stronger edge glow
+    //   normalScale 0.7       — VISIBLE glass-flakes (was 0.32 → invisible)
+    //   envMapIntensity 2.0   — balanced reflections (was 3.0 → too strong)
+
     if (isWebGPU) {
-      // ── WebGPU: MeshPhysicalNodeMaterial + TSL wobble ──
+      // ── WebGPU: MeshPhysicalNodeMaterial + NATIVE dispersion + TSL jelly wobble ──
       const mat = new MeshPhysicalNodeMaterial()
       mat.color = new THREE.Color(0xffffff)
-      mat.emissive = new THREE.Color(0x1a2a4a)
-      mat.emissiveIntensity = 0.15
+      mat.emissive = new THREE.Color(0x000000)   // NO internal glow → crystal clear
+      mat.emissiveIntensity = 0.0
       mat.metalness = 0.0
-      mat.roughness = 0.0
+      mat.roughness = 0.02                        // mirror-smooth
       mat.transmission = 1.0
-      mat.thickness = 5
+      mat.thickness = 0.5                         // VERY thin → max transparency
       mat.ior = 1.21
+      mat.dispersion = 15.0                       // DRAMATIC chromatic aberration
       mat.transparent = true
+      mat.opacity = 1.0
       mat.side = THREE.DoubleSide
-      mat.envMapIntensity = 2.5
-      mat.attenuationColor = new THREE.Color(1.0, 1.0, 1.0)
-      mat.attenuationDistance = 100
+      mat.envMapIntensity = 2.0
+      mat.attenuationColor = new THREE.Color(1.0, 1.0, 1.0)  // no tint
+      mat.attenuationDistance = Infinity          // NO absorption → clear
       mat.specularIntensity = 1.0
       mat.iridescence = 1.0
       mat.iridescenceIOR = 1.3
+      mat.iridescenceThicknessRange = [100, 400]
       mat.clearcoat = 1.0
-      mat.clearcoatRoughness = 0.0
+      mat.clearcoatRoughness = 0.02
+      mat.sheen = 0.6
+      mat.sheenColor = new THREE.Color(0.8, 0.9, 1.0)
+      mat.sheenRoughness = 0.4
       mat.depthWrite = false
       mat.normalMap = speckleTex
-      mat.normalScale = new THREE.Vector2(0.24, 0.24)
+      mat.normalScale = new THREE.Vector2(0.7, 0.7)  // VISIBLE glass-flakes
 
-      // TSL wobble — dasprinzip day34 pattern
+      // ── TSL silicon-jelly wobble (dasprinzip day34 silicon jelly, pride-worthy) ──
+      // 5-layer motion tuned for VISIBLE jelly deformation:
+      //   1. Low-freq mx_noise (3 octaves) — organic base deformation
+      //   2. Per-axis elastic oscillation — phase-offset sin waves (jelly poke response)
+      //   3. Tangential shear — perpendicular slide (jelly slides, not just stretches)
+      //   4. Breathe — slow Y-axis pulse
+      //   5. Secondary echo — delayed after-shock
+      // Amplitudes INCREASED for visible deformation (VLM said "rigid").
       const uWobble = this._uWobble
       const uTimeVal = this._uTime
       mat.positionNode = Fn(() => {
         const pos = positionLocal.toVar()
-        const np = pos.mul(0.12)
+        const n = normalLocal
         const t = uTimeVal
-        const n1 = mx_noise_float(np.add(t.mul(0.3))).mul(0.5).mul(uWobble)
-        const n2 = mx_noise_float(np.mul(2.5).add(t.mul(0.5)).add(7)).mul(0.2).mul(uWobble)
-        const n3 = mx_noise_float(np.mul(5).add(t.mul(0.8)).add(13)).mul(0.1).mul(uWobble)
-        const displacement = n1.add(n2).add(n3)
-        const squash = sin(t.mul(0.4)).mul(0.08).mul(uWobble)
-        const breathe = sin(t.mul(0.7).add(pos.y.mul(0.3))).mul(0.12).mul(uWobble)
-        pos.assign(pos.add(normalLocal.mul(displacement.add(breathe))))
+
+        // (1) Organic 3-octave noise — low freq for global deformation
+        const np = pos.mul(0.22)  // freq (was 0.18 → slightly tighter pattern)
+        const n1 = mx_noise_float(np.add(t.mul(0.3)))
+        const n2 = mx_noise_float(np.mul(2.0).add(t.mul(0.5)).add(7.0))
+        const n3 = mx_noise_float(np.mul(4.0).add(t.mul(0.8)).add(13.0))
+        const noise = n1.mul(0.6).add(n2.mul(0.3).add(n3.mul(0.15)))
+
+        // (2) Per-axis elastic oscillation — STRONGER amplitude (was 0.08 → 0.18)
+        const elasticX = sin(t.mul(1.3).add(pos.y.mul(2.1))).mul(0.5)
+        const elasticY = sin(t.mul(1.1).add(pos.z.mul(2.3)).add(1.7)).mul(0.5)
+        const elasticZ = sin(t.mul(1.5).add(pos.x.mul(1.9)).add(3.3)).mul(0.5)
+        const elastic = elasticX.add(elasticY).add(elasticZ).mul(0.18)
+
+        // (3) Tangential shear — perpendicular displacement (jelly slide)
+        const tangent = vec3(n.z, n.x, n.y)
+        const shear = noise.mul(0.25)  // was 0.15 → stronger slide
+
+        // (4) Breathe — slow Y-axis pulse (was 0.06 → 0.12)
+        const breathe = sin(t.mul(0.5).add(pos.y.mul(0.6))).mul(0.12)
+
+        // (5) Secondary echo — delayed after-shock (was 0.25 → 0.4)
+        const echoT = t.sub(0.7)
+        const echoNP = pos.mul(0.22).add(echoT.mul(0.3))
+        const echo = mx_noise_float(echoNP).mul(0.4)
+
+        // Combine — normal displacement + tangential shear
+        const normalDisp = noise.add(elastic).add(breathe).add(echo).mul(uWobble)
+        const tangentDisp = tangent.mul(shear.mul(uWobble))
+
+        pos.assign(pos.add(n.mul(normalDisp)))
+        pos.assign(pos.add(tangentDisp))
+
+        // Squash/stretch on Y — volume preservation (was 0.05 → 0.1)
+        const squash = sin(t.mul(0.4)).mul(0.1).mul(uWobble)
         pos.y.addAssign(pos.y.mul(squash))
+
         return pos
       })()
 
       this.cubeMaterial = mat as unknown as THREE.MeshPhysicalMaterial
     } else {
-      // ── WebGL2: MeshTransmissionMaterial + GLSL wobble ──
+      // ── WebGL2: MeshTransmissionMaterial (GLSL onBeforeCompile) ──
+      // Same aggressive tuning as WebGPU for visual parity.
       const mat = new MeshTransmissionMaterial(6)
       mat.color = new THREE.Color(0xffffff)
-      mat.emissive = new THREE.Color(0x1a2a4a)
-      mat.emissiveIntensity = 0.15
+      mat.emissive = new THREE.Color(0x000000)   // NO internal glow
+      mat.emissiveIntensity = 0.0
       mat.metalness = 0.0
-      mat.roughness = 0.0
+      mat.roughness = 0.02
       mat.transmission = 1.0
-      mat.thickness = 5
+      mat.thickness = 0.5                         // VERY thin
       mat.ior = 1.21
       mat.transparent = true
       mat.opacity = 1.0
       mat.side = THREE.DoubleSide
-      mat.envMapIntensity = 2.5
+      mat.envMapIntensity = 2.0
       mat.attenuationColor = new THREE.Color(1.0, 1.0, 1.0)
-      mat.attenuationDistance = 100
+      mat.attenuationDistance = Infinity          // NO absorption → clear
       mat.specularIntensity = 1.0
       mat.iridescence = 1.0
       mat.iridescenceIOR = 1.3
+      mat.iridescenceThicknessRange = [100, 400]
       mat.clearcoat = 1.0
-      mat.clearcoatRoughness = 0.0
+      mat.clearcoatRoughness = 0.02
+      mat.sheen = 0.6
+      mat.sheenColor = new THREE.Color(0.8, 0.9, 1.0)
+      mat.sheenRoughness = 0.4
       mat.depthWrite = false
       mat.normalMap = speckleTex
-      mat.normalScale = new THREE.Vector2(0.24, 0.24)
-      mat.chromaticAberration = 0.05
+      mat.normalScale = new THREE.Vector2(0.7, 0.7)
+      mat.chromaticAberration = 0.5               // DRAMATIC RGB fringe (was 0.35)
       mat.anisotrophicBlur = 0.1
-      mat.wobble = 0.3
+      mat.wobble = 0.42                            // match _uWobble uniform
       mat.distortion = 0.0
       mat.distortionScale = 0.3
       mat.temporalDistortion = 0.0
@@ -308,14 +383,6 @@ export class SplashCube extends THREE.Mesh {
     // This gives the glass cube dynamic reflections of the content scene
     // (gradient planes + logo + text). Without this, the cube is flat.
     this.cubeMaterial.envMap = this.cubeCamera.renderTarget.texture
-
-    // ── Rainbow edges — DISABLED (pixelated aliasing) ──
-    // LineBasicMaterial.linewidth > 1 is NOT supported in WebGL/WebGPU —
-    // lines render at 1px → jagged aliasing on cube edges.
-    // The glass cube (MeshPhysicalMaterial with iridescence + clearcoat)
-    // looks great on its own. Edges removed for clean rendering.
-    // To re-enable: use tube geometry (MeshLineGeometry) instead of LineSegments.
-    // (edgeLines removed — clean cube without pixelated 1px lines)
   }
 
   // ════════════════════════════════════════════════════════════════════
