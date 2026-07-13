@@ -16,6 +16,8 @@ import * as THREE from 'three'
 import { organicValue } from '../../Utils/Noise'
 import { BakuRole, type BakuMaterialState } from '../../core/types'
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js'
+import { MeshPhysicalNodeMaterial } from 'three/webgpu'
+import { Fn, uniform, positionLocal, normalLocal, mx_noise_float, sin } from 'three/tsl'
 
 interface BakuMaterialParams {
   color: THREE.Color
@@ -39,7 +41,10 @@ export class SplashCube extends THREE.Mesh {
   private cubeMesh!: THREE.Mesh
   // edgeLines removed — was LineSegments with 1px aliasing. Cube looks
   // clean with just MeshPhysicalMaterial (iridescence + clearcoat).
-  private cubeMaterial!: THREE.MeshBasicMaterial
+  private cubeMaterial!: MeshPhysicalNodeMaterial
+  // TSL wobble uniform — controls displacement amplitude
+  private _uWobble = uniform(1.0)
+  private _uTime = uniform(0)
   private cubeCamera!: THREE.CubeCamera
   private contentScene!: THREE.Scene
   private contentTextures: THREE.Texture[] = []
@@ -200,17 +205,47 @@ export class SplashCube extends THREE.Mesh {
     // (was: BoxGeometry — sharp edges → jagged pixels at face boundaries)
     const geo = new RoundedBoxGeometry(size, size, size, 6, 0.04)
 
-    // MeshBasicMaterial — no lighting dependency, consistent color on both
-    // WebGPU + WebGL2. MeshPhysicalMaterial caused 'black hole' (dark metal
-    // reflections at close camera distance). Basic material always renders
-    // the correct color regardless of PMREM/lighting.
-    this.cubeMaterial = new THREE.MeshBasicMaterial({
-      color: 0x88aaff,
+    // Glass cube — MeshPhysicalNodeMaterial (TSL) with transmission.
+    // Based on dasprinzip.com/tinker/day34 reference:
+    //   transmission: 1.0 (full refraction, not just transparency)
+    //   thickness: 5 (thick glass for visible refraction)
+    //   ior: 1.21 (low IOR for subtle distortion)
+    //   TSL positionNode wobble (noise displacement for living cube)
+    // transmission replaces opacity — cube refracts the background instead
+    // of being semi-transparent (which showed dark EnvSphere through it).
+    this.cubeMaterial = new MeshPhysicalNodeMaterial({
+      color: new THREE.Color(0x88aaff),
+      metalness: 0.0,
+      roughness: 0.0,
+      transmission: 1.0,
+      thickness: 5,
+      ior: 1.21,
       transparent: true,
-      opacity: 0.4,
-      side: THREE.DoubleSide,
+      side: THREE.FrontSide,
+      envMapIntensity: 1.0,
+      attenuationColor: new THREE.Color(1.0, 1.0, 1.0),
+      attenuationDistance: 100,
+      specularIntensity: 1.0,
       depthWrite: false,
     })
+
+    // TSL wobble — noise displacement (dasprinzip pattern)
+    const uWobble = this._uWobble
+    const uTimeVal = this._uTime
+    this.cubeMaterial.positionNode = Fn(() => {
+      const pos = positionLocal.toVar()
+      const np = pos.mul(0.12)
+      const t = uTimeVal
+      const n1 = mx_noise_float(np.add(t.mul(0.3))).mul(0.5).mul(uWobble)
+      const n2 = mx_noise_float(np.mul(2.5).add(t.mul(0.5)).add(7)).mul(0.2).mul(uWobble)
+      const n3 = mx_noise_float(np.mul(5).add(t.mul(0.8)).add(13)).mul(0.1).mul(uWobble)
+      const displacement = n1.add(n2).add(n3)
+      const squash = sin(t.mul(0.4)).mul(0.08).mul(uWobble)
+      const breathe = sin(t.mul(0.7).add(pos.y.mul(0.3))).mul(0.12).mul(uWobble)
+      pos.assign(pos.add(normalLocal.mul(displacement.add(breathe))))
+      pos.y.addAssign(pos.y.mul(squash))
+      return pos
+    })()
 
     this.cubeMesh = new THREE.Mesh(geo, this.cubeMaterial)
     this.cubeMesh.renderOrder = 2
@@ -369,9 +404,11 @@ export class SplashCube extends THREE.Mesh {
     const openerScale = 1 + this.openerProgress * 0.3
     this.cubeMesh.scale.setScalar(openerScale)
 
+    // Advance TSL wobble time uniform
+    ;(this._uTime as unknown as { value: number }).value = this.time
+
     // ── Material color blend ──
     this.cubeMaterial.color.copy(this._blendFromColor).lerp(this._blendToColor, this._blendT)
-    // MeshBasicMaterial has no emissive — skip emissive blend (was for MeshPhysicalMaterial)
 
     // Edge colors are STATIC — set once in buildCube, NOT animated per frame.
     // Per-frame edge animation was allocating new Color objects + updating
@@ -387,7 +424,7 @@ export class SplashCube extends THREE.Mesh {
   private applyRoleAndParams(): void {
     const { color } = this.targetParams
     this.cubeMaterial.color.copy(color)
-    // MeshBasicMaterial: no emissive/roughness/metalness (was MeshPhysicalMaterial)
+    // Glass material — no emissive/roughness/metalness changes per role
   }
 
   /** Create a JLZ-branded canvas texture (gradient + text). No external assets. */
