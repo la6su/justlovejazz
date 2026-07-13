@@ -57,16 +57,16 @@ export class SplashCube extends THREE.Mesh {
   // clean with just MeshPhysicalMaterial (iridescence + clearcoat).
   private cubeMaterial!: THREE.MeshPhysicalMaterial
   // TSL wobble uniforms (WebGPU path only)
-  // day34 reference uses uWobble=1.30 on a cube of size 16.
-  // Our cube is 0.8 → scale ratio = 0.8/16 = 0.05. Displacement in the
-  // positionNode is multiplied by SIZE_SCALE so the visual ratio matches
-  // day34 exactly (6.5% max deformation relative to cube size).
-  // uWobble stays at 1.30 (day34 default) — amplitude scaling is done in-shader.
-  private _uWobble = uniform(1.30)
+  // day34: cube=16, camera=26 → cube ~50% screen → displacement 6.5% = ~4% screen (very visible)
+  // ours: cube=0.8, camera=3.5, FOV=60 → cube ~13% screen → displacement 6.5% = ~0.85% screen (invisible)
+  // FIX: SIZE_SCALE=0.20 (4x day34 ratio) → displacement ~3.4% screen (close to day34 visibility)
+  // uWobble=1.50 (day34 default=1.30, max=3.0 — slight boost for visibility on small cube)
+  private _uWobble = uniform(1.50)
   private _uTime = uniform(0)
-  /** Scale ratio: our cube (0.8) / day34 cube (16). Displacement is multiplied
-   *  by this so a uWobble=1.30 gives the same visual deformation as day34. */
-  private static readonly SIZE_SCALE = 0.8 / 16
+  /** Visual scale multiplier — compensates for our small cube (0.8) being far from
+   *  camera (3.5) vs day34's large cube (16) at distance 26. 0.20 = 4x day34 ratio
+   *  so wobble displacement is equally visible on screen. */
+  private static readonly SIZE_SCALE = 0.20
   private cubeCamera!: THREE.CubeCamera
   private contentScene!: THREE.Scene
   private contentTextures: THREE.Texture[] = []
@@ -285,34 +285,33 @@ export class SplashCube extends THREE.Mesh {
       mat.normalMap = speckleTex
       mat.normalScale = new THREE.Vector2(0.24, 0.24)  // day34 (was 0.7 → too strong)
 
-      // ── TSL wobble — EXACT day34 pattern, scaled for our cube size ──
-      // day34 (cube=16, uWobble=1.30):
-      //   np = pos.mul(0.12) → noise period ≈ 8.3 → ~2 periods per face
-      //   displacement max = (0.5+0.2+0.1) * 1.30 = 1.04 → 6.5% of cube size
-      //   breathe max = 0.12 * 1.30 = 0.156 → 1% of cube size
-      //   squash max = 0.08 * 1.30 = 0.104 → 10% Y squash
+      // ── TSL wobble — day34 pattern, scaled for screen visibility ──
+      // day34 (cube=16, cam=26, uWobble=1.30):
+      //   np = pos.mul(0.12) → ~2 noise periods per face
+      //   displacement max = 0.8 * 1.30 = 1.04 = 6.5% of cube = ~4% screen (very visible)
       //
-      // Our cube=0.8 → SIZE_SCALE = 0.8/16 = 0.05.
-      // np = pos.mul(0.12) → noise period ≈ 8.3 → only 0.1 periods per face (WAVES TOO BIG).
-      // FIX: np = pos.mul(0.12 / SIZE_SCALE) = pos.mul(2.4) → 2 periods per face (matches day34).
-      // Displacement multiplied by SIZE_SCALE so 6.5% ratio is preserved.
+      // ours (cube=0.8, cam=3.5, FOV=60):
+      //   cube ~13% screen → 6.5% of cube = ~0.85% screen (invisible!)
+      //   FIX: SIZE_SCALE=0.20 (4x day34) → displacement ~3.4% screen (matches day34)
+      //   NOISE_FREQ=0.6 → keeps ~2 noise periods per face (day34 density)
+      //   uWobble=1.50 (slight boost, day34 max=3.0)
       const uWobble = this._uWobble
       const uTimeVal = this._uTime
-      const SIZE_SCALE = SplashCube.SIZE_SCALE
-      const NOISE_FREQ = 0.12 / SIZE_SCALE  // = 2.4 — scales noise to match day34 density
+      const SIZE_SCALE = SplashCube.SIZE_SCALE   // 0.20
+      const NOISE_FREQ = 0.6                      // ~2 periods per face
       mat.positionNode = Fn(() => {
         const pos = positionLocal.toVar()
         const np = pos.mul(NOISE_FREQ)
         const t = uTimeVal
-        // 3-octave noise (day34 exact)
+        // 3-octave noise (day34 exact pattern)
         const n1 = mx_noise_float(np.add(t.mul(0.3))).mul(0.5).mul(uWobble)
         const n2 = mx_noise_float(np.mul(2.5).add(t.mul(0.5)).add(7)).mul(0.2).mul(uWobble)
         const n3 = mx_noise_float(np.mul(5).add(t.mul(0.8)).add(13)).mul(0.1).mul(uWobble)
         const displacement = n1.add(n2).add(n3)
-        // Squash + breathe (day34 exact) — NOT scaled by SIZE_SCALE (proportional)
+        // Squash + breathe (day34 exact) — proportional, not scaled by SIZE_SCALE
         const squash = sin(t.mul(0.4)).mul(0.08).mul(uWobble)
         const breathe = sin(t.mul(0.7).add(pos.y.mul(0.3))).mul(0.12).mul(uWobble)
-        // Apply — displacement scaled by SIZE_SCALE for correct visual ratio
+        // Apply — displacement scaled by SIZE_SCALE for screen visibility
         pos.assign(pos.add(normalLocal.mul(displacement.add(breathe).mul(SIZE_SCALE))))
         pos.y.addAssign(pos.y.mul(squash))
         return pos
@@ -352,7 +351,7 @@ export class SplashCube extends THREE.Mesh {
       mat.normalScale = new THREE.Vector2(0.24, 0.24)
       mat.chromaticAberration = 0.5                  // chromatic fringe
       mat.anisotrophicBlur = 0.1
-      mat.wobble = 1.30                              // day34 default (match _uWobble)
+      mat.wobble = 1.50                              // match _uWobble uniform
       mat.distortion = 0.0
       mat.distortionScale = 0.3
       mat.temporalDistortion = 0.0
