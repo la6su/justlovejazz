@@ -50,6 +50,10 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'navOverlay.lab.desc': 'Experiments',
     'navOverlay.contact.desc': 'Start a project',
 
+    // Menu overlay (section 5, unique 3-column template)
+    'menu.navigate': 'Navigate',
+    'menu.stat.sections': 'Sections',
+
     // PLAN-v3: Lab overlay (section 0, joystick left)
     'labOverlay.title': 'Lab',
     'labOverlay.lead': 'Experiments · works · R&D.',
@@ -292,6 +296,10 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'navOverlay.manifesto.desc': 'Принципы',
     'navOverlay.lab.desc': 'Эксперименты',
     'navOverlay.contact.desc': 'Начать проект',
+
+    // Menu overlay (RU)
+    'menu.navigate': 'Навигация',
+    'menu.stat.sections': 'Разделы',
 
     // PLAN-v3: Lab overlay (RU)
     'labOverlay.title': 'Лаб',

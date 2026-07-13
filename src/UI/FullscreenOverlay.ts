@@ -154,6 +154,8 @@ export class FullscreenOverlay {
       this.playBtn.querySelector('[uk-icon]')?.setAttribute('uk-icon', 'icon: play; ratio: 1.2')
     })
     this.video.addEventListener('timeupdate', () => {
+      // Guard: duration is NaN until metadata loads (and stays NaN if no source)
+      if (!isFinite(this.video.duration) || this.video.duration === 0) return
       const pct = (this.video.currentTime / this.video.duration) * 100
       const pctStr = String(isNaN(pct) ? 0 : pct)
       this.seekBar.value = pctStr
@@ -164,8 +166,12 @@ export class FullscreenOverlay {
 
     // Seek
     this.seekBar.addEventListener('input', () => {
+      // Guard: don't set currentTime if duration is NaN/Infinity/0
+      // (happens when video has no source or metadata not loaded yet)
+      const duration = this.video.duration
+      if (!isFinite(duration) || duration === 0) return
       const pct = Number(this.seekBar.value)
-      this.video.currentTime = (pct / 100) * this.video.duration
+      this.video.currentTime = (pct / 100) * duration
     })
 
     // Nav buttons
