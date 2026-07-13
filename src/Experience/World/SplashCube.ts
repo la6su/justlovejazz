@@ -118,12 +118,12 @@ export class SplashCube extends THREE.Mesh {
     const size = 5
     const half = size / 2
     const jlzColors = [
-      [0.32, 0.36, 0.52], // accent blue-grey
-      [0.42, 0.47, 0.64], // accent-hover
-      [0.20, 0.22, 0.30], // dark
-      [0.15, 0.17, 0.22], // darker
-      [0.51, 0.55, 0.74], // lighter accent
-      [0.10, 0.12, 0.18], // deepest
+      [0.52, 0.56, 0.72], // accent blue-grey (brighter)
+      [0.62, 0.67, 0.84], // accent-hover (brighter)
+      [0.40, 0.42, 0.50], // dark (brighter)
+      [0.35, 0.37, 0.42], // darker (brighter)
+      [0.71, 0.75, 0.94], // lighter accent (brighter)
+      [0.30, 0.32, 0.38], // deepest (brighter)
     ]
     const dirs: { pos: number[]; rot: number[]; color: number[] }[] = [
       { pos: [half, 0, 0], rot: [0, -Math.PI / 2, 0], color: jlzColors[0]! },
@@ -219,7 +219,7 @@ export class SplashCube extends THREE.Mesh {
       transmission: 0,
       thickness: 1.2,
       ior: 1.52,
-      envMapIntensity: 2.5, // very strong env reflections
+      envMapIntensity: 1.0, // balanced — PMREM + CubeCamera
       depthWrite: false,
     })
 
