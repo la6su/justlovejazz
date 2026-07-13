@@ -103,7 +103,10 @@ export class ShowreelModal {
     })
     this.video.addEventListener('timeupdate', () => {
       const pct = (this.video.currentTime / this.video.duration) * 100
-      this.seekBar.value = String(isNaN(pct) ? 0 : pct)
+      const pctStr = String(isNaN(pct) ? 0 : pct)
+      this.seekBar.value = pctStr
+      // Update CSS variable for gradient progress fill
+      this.seekBar.style.setProperty('--jlz-seek-progress', `${pctStr}%`)
       this.updateTimeDisplay()
     })
     this.video.addEventListener('loadedmetadata', () => this.updateTimeDisplay())

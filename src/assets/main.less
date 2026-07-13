@@ -1700,13 +1700,22 @@ body.uk-light .jlz-eyebrow {
 
 .jlz-showreel-seek {
   flex: 1;
-  height: 4px;
+  height: 6px;
   -webkit-appearance: none;
   appearance: none;
-  background: rgba(245, 245, 247, 0.15);
-  border-radius: 2px;
+  background: linear-gradient(to right,
+    var(--jlz-accent, #c4ff00) 0%,
+    var(--jlz-accent, #c4ff00) var(--jlz-seek-progress, 0%),
+    rgba(245, 245, 247, 0.15) var(--jlz-seek-progress, 0%),
+    rgba(245, 245, 247, 0.15) 100%);
+  border-radius: 3px;
   outline: none;
   cursor: pointer;
+  transition: height 0.2s ease;
+}
+
+.jlz-showreel-seek:hover {
+  height: 8px;
 }
 
 .jlz-showreel-seek::-webkit-slider-thumb {
