@@ -27,7 +27,7 @@
 import * as THREE from 'three'
 import { organicValue } from '../../Utils/Noise'
 import { BakuRole, type BakuMaterialState } from '../../core/types'
-import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js'
+import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js'
 import { MeshPhysicalNodeMaterial } from 'three/webgpu'
 import { Fn, uniform, positionLocal, normalLocal, mx_noise_float, sin } from 'three/tsl'
 import { DeviceCapability } from '../../core/DeviceCapability'
@@ -59,13 +59,13 @@ export class SplashCube extends THREE.Mesh {
   // TSL wobble uniforms (WebGPU path only)
   // EXACT day34 pattern, only scaled for our cube size (0.8 vs day34's 16):
   //   - NOISE_FREQ = 0.12 * (16/0.8) = 2.4 — keeps 2 periods/face like day34
-  //   - SIZE_SCALE = 0.12 — displacement amplitude (0.8/16 * ~2.4 visual boost)
-  //   - uWobble = 1.30 (day34 default, range 0-3)
+  //   - SIZE_SCALE = 0.08 — displacement amplitude (tuned 0.7× day34 for subtle jelly)
+  //   - uWobble = 0.91 (day34 1.30 × 0.7 for subtle jelly)
   // day34 wobble is: 3-octave noise + breathe + squash. Simple. No bend, no echo.
-  private _uWobble = uniform(1.30)
+  private _uWobble = uniform(0.91)
   private _uTime = uniform(0)
   /** Displacement amplitude — compensates for small cube + far camera. */
-  private static readonly SIZE_SCALE = 0.12
+  private static readonly SIZE_SCALE = 0.08
   private cubeCamera!: THREE.CubeCamera
   private contentScene!: THREE.Scene
   private contentTextures: THREE.Texture[] = []
@@ -220,12 +220,35 @@ export class SplashCube extends THREE.Mesh {
   private buildCube(): void {
     const size = 0.8
 
-    // ── Geometry: high-segment rounded box (day34 pattern) ──
-    // day34 uses BoxGeometry(16,16,16, 64,64,64) with manual vertex rounding.
-    // We use RoundedBoxGeometry with 32 segments — enough vertices for smooth
-    // wobble deformation (was 6 → wobble collapsed: too few vertices).
-    // 32 segments = 32*32 = 1024 vertices per face → smooth noise deformation.
-    const geo = new RoundedBoxGeometry(size, size, size, 32, 0.04)
+    // ── Geometry: day34 exact pattern (BoxGeometry + manual rounding + mergeVertices) ──
+    // day34: BoxGeometry(16,16,16, 64,64,64) + manual vertex rounding + mergeVertices
+    // Our: BoxGeometry(0.8,0.8,0.8, 32,32,32) scaled by factor 0.05
+    // RoundedBoxGeometry was causing normals to bleed from edges into face interiors,
+    // producing flat-plane shift instead of jelly bulge. day34's mergeVertices +
+    // computeVertexNormals ensures perpendicular normals → correct displacement.
+    let geo: THREE.BufferGeometry = new THREE.BoxGeometry(size, size, size, 32, 32, 32)
+    {
+      const pos = geo.getAttribute('position')
+      const r = 0.175  // 3.5 * 0.05 (day34 rounding radius scaled for cube 0.8)
+      const h = size / 2  // 0.4
+      for (let i = 0; i < pos.count; i++) {
+        let x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i)
+        const ix = Math.min(Math.abs(x), h - r) * Math.sign(x)
+        const iy = Math.min(Math.abs(y), h - r) * Math.sign(y)
+        const iz = Math.min(Math.abs(z), h - r) * Math.sign(z)
+        const dx = x - ix, dy = y - iy, dz = z - iz
+        const dl = Math.sqrt(dx * dx + dy * dy + dz * dz)
+        if (dl > 0.001) {
+          x = ix + dx * (r / dl)
+          y = iy + dy * (r / dl)
+          z = iz + dz * (r / dl)
+        }
+        pos.setXYZ(i, x, y, z)
+      }
+      pos.needsUpdate = true
+      geo = mergeVertices(geo, 0.01) as THREE.BufferGeometry
+      geo.computeVertexNormals()
+    }
 
     // ── Glass-flakes normal map (day34-accurate) ──
     // day34: repeat (6,6), normalScale (0.24, 0.24).
@@ -356,7 +379,7 @@ export class SplashCube extends THREE.Mesh {
       mat.normalScale = new THREE.Vector2(0.24, 0.24)
       mat.chromaticAberration = 0.5                  // chromatic fringe
       mat.anisotrophicBlur = 0.1
-      mat.wobble = 1.30                              // day34 default (match _uWobble)
+      mat.wobble = 0.91
       mat.distortion = 0.0
       mat.distortionScale = 0.3
       mat.temporalDistortion = 0.0

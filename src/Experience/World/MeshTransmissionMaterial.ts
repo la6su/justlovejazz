@@ -38,7 +38,7 @@ export class MeshTransmissionMaterial extends THREE.MeshPhysicalMaterial {
       distortion: { value: 0.0 },
       distortionScale: { value: 0.5 },
       temporalDistortion: { value: 0.0 },
-      wobble: { value: 0.3 },
+      wobble: { value: 0.91 },
     }
 
     this.onBeforeCompile = (shader) => {
@@ -125,7 +125,7 @@ export class MeshTransmissionMaterial extends THREE.MeshPhysicalMaterial {
         '#include <begin_vertex>',
         /*glsl*/ `
         vec3 transformed = vec3( position );
-        const float SIZE_SCALE = 0.12;       // displacement amplitude
+        const float SIZE_SCALE = 0.08;       // displacement amplitude
         const float NOISE_FREQ = 2.4;        // 0.12 * (16/0.8) → 2 periods/face
         float t = time;                       // raw time (day34)
         vec3 np = position * NOISE_FREQ;
