@@ -57,17 +57,15 @@ export class SplashCube extends THREE.Mesh {
   // clean with just MeshPhysicalMaterial (iridescence + clearcoat).
   private cubeMaterial!: THREE.MeshPhysicalMaterial
   // TSL wobble uniforms (WebGPU path only)
-  // Tuned for TRUE jelly (not flat-plane shift):
-  //   day34: cube=16, np=0.12 → 2 noise periods per face (smooth waves)
-  //   ours:  cube=0.8, np=3.0 → 2.4 periods per face (matching day34 density)
-  //   SIZE_SCALE=0.35 — displacement amplitude for screen visibility
-  //   uWobble=1.0 — day34 default
-  // Key: HIGH noise freq = vertices on same face move DIFFERENTLY = real jelly waves
-  //      (was 0.6 → 0.5 periods/face = entire face moved as blob = flat plane shift)
-  private _uWobble = uniform(1.0)
+  // EXACT day34 pattern, only scaled for our cube size (0.8 vs day34's 16):
+  //   - NOISE_FREQ = 0.12 * (16/0.8) = 2.4 — keeps 2 periods/face like day34
+  //   - SIZE_SCALE = 0.12 — displacement amplitude (0.8/16 * ~2.4 visual boost)
+  //   - uWobble = 1.30 (day34 default, range 0-3)
+  // day34 wobble is: 3-octave noise + breathe + squash. Simple. No bend, no echo.
+  private _uWobble = uniform(1.30)
   private _uTime = uniform(0)
-  /** Displacement amplitude multiplier. 0.35 = strong enough to see on small cube. */
-  private static readonly SIZE_SCALE = 0.35
+  /** Displacement amplitude — compensates for small cube + far camera. */
+  private static readonly SIZE_SCALE = 0.12
   private cubeCamera!: THREE.CubeCamera
   private contentScene!: THREE.Scene
   private contentTextures: THREE.Texture[] = []
@@ -286,48 +284,41 @@ export class SplashCube extends THREE.Mesh {
       mat.normalMap = speckleTex
       mat.normalScale = new THREE.Vector2(0.24, 0.24)  // day34 (was 0.7 → too strong)
 
-      // ── TSL wobble — TRUE jelly (high-freq noise + bend, not flat-plane shift) ──
-      // day34: cube=16, np=0.12 → 2 noise periods per face → smooth waves on each face
-      // ours:  cube=0.8, np=3.0 → 2.4 periods per face → matching day34 wave density
+      // ── TSL wobble — EXACT day34 pattern, scaled for cube size ──
+      // day34 source (cube=16, np=0.12, uWobble=1.30):
+      //   const np = pos.mul(0.12);
+      //   const n1 = mx_noise_float(np.add(t.mul(0.3))).mul(0.5).mul(uWobble);
+      //   const n2 = mx_noise_float(np.mul(2.5).add(t.mul(0.5)).add(7)).mul(0.2).mul(uWobble);
+      //   const n3 = mx_noise_float(np.mul(5).add(t.mul(0.8)).add(13)).mul(0.1).mul(uWobble);
+      //   const displacement = n1.add(n2).add(n3);
+      //   const squash = sin(t.mul(0.4)).mul(0.08).mul(uWobble);
+      //   const breathe = sin(t.mul(0.7).add(pos.y.mul(0.3))).mul(0.12).mul(uWobble);
+      //   pos.assign(pos.add(normalLocal.mul(displacement.add(breathe))));
+      //   pos.y.addAssign(pos.y.mul(squash));
       //
-      // KEY INSIGHT: low noise freq (0.6) = entire face moves as ONE blob = flat plane shift.
-      //              high noise freq (3.0) = vertices on face move DIFFERENTLY = real jelly waves.
-      //
-      // Layered motion for organic jelly:
-      //   1. High-freq 3-octave noise — ripples across faces (jelly surface waves)
-      //   2. Bend — slow low-freq global tilt (whole cube bends like soft body)
-      //   3. Breathe — slow Y pulse (volume change)
-      // NO squash (it shifts Y uniformly = flat plane effect).
+      // Our cube=0.8 (20x smaller than day34's 16):
+      //   - NOISE_FREQ = 0.12 * 20 = 2.4 → same 2 periods/face as day34
+      //   - SIZE_SCALE = 0.12 → displacement scaled for screen visibility
+      //   - squash/breathe NOT scaled (proportional to position.y, works at any size)
       const uWobble = this._uWobble
       const uTimeVal = this._uTime
-      const SIZE_SCALE = SplashCube.SIZE_SCALE   // 0.35
+      const SIZE_SCALE = SplashCube.SIZE_SCALE   // 0.12
+      const NOISE_FREQ = 2.4                      // 0.12 * (16/0.8)
       mat.positionNode = Fn(() => {
         const pos = positionLocal.toVar()
+        const np = pos.mul(NOISE_FREQ)
         const t = uTimeVal
-
-        // (1) High-freq 3-octave noise — jelly surface ripples
-        //     np=pos*3.0 → ~2.4 periods per face (matches day34 density)
-        //     Amplitudes: 0.5 + 0.2 + 0.1 = 0.8 max (day34 exact)
-        const np = pos.mul(3.0)
-        const n1 = mx_noise_float(np.add(t.mul(0.3))).mul(0.5)
-        const n2 = mx_noise_float(np.mul(2.5).add(t.mul(0.5)).add(7)).mul(0.2)
-        const n3 = mx_noise_float(np.mul(5).add(t.mul(0.8)).add(13)).mul(0.1)
-        const ripple = n1.add(n2).add(n3).mul(uWobble)
-
-        // (2) Bend — slow low-freq global deformation (whole cube as soft body)
-        //     Uses noise at LOW freq (0.3 period/face) — bends the cube as a unit,
-        //     not per-face. This is what makes it "jelly" not "flat planes".
-        const bendNP = pos.mul(1.2)  // ~0.67 periods/face → whole-cube bend
-        const bend = mx_noise_float(bendNP.add(t.mul(0.15))).mul(0.3).mul(uWobble)
-
-        // (3) Breathe — slow Y-axis volume pulse (day34 pattern)
+        // 3-octave noise (day34 exact — amplitudes 0.5/0.2/0.1)
+        const n1 = mx_noise_float(np.add(t.mul(0.3))).mul(0.5).mul(uWobble)
+        const n2 = mx_noise_float(np.mul(2.5).add(t.mul(0.5)).add(7)).mul(0.2).mul(uWobble)
+        const n3 = mx_noise_float(np.mul(5).add(t.mul(0.8)).add(13)).mul(0.1).mul(uWobble)
+        const displacement = n1.add(n2).add(n3)
+        // squash + breathe (day34 exact)
+        const squash = sin(t.mul(0.4)).mul(0.08).mul(uWobble)
         const breathe = sin(t.mul(0.7).add(pos.y.mul(0.3))).mul(0.12).mul(uWobble)
-
-        // Combine: ripple (high-freq surface) + bend (low-freq whole-body) + breathe
-        // ALL scaled by SIZE_SCALE for screen visibility
-        const totalDisp = ripple.add(bend).add(breathe).mul(SIZE_SCALE)
-        pos.assign(pos.add(normalLocal.mul(totalDisp)))
-
+        // Apply — displacement scaled by SIZE_SCALE, squash proportional (day34 exact)
+        pos.assign(pos.add(normalLocal.mul(displacement.add(breathe).mul(SIZE_SCALE))))
+        pos.y.addAssign(pos.y.mul(squash))
         return pos
       })()
 
@@ -365,7 +356,7 @@ export class SplashCube extends THREE.Mesh {
       mat.normalScale = new THREE.Vector2(0.24, 0.24)
       mat.chromaticAberration = 0.5                  // chromatic fringe
       mat.anisotrophicBlur = 0.1
-      mat.wobble = 1.0                               // match _uWobble uniform
+      mat.wobble = 1.30                              // day34 default (match _uWobble)
       mat.distortion = 0.0
       mat.distortionScale = 0.3
       mat.temporalDistortion = 0.0
