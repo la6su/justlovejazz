@@ -107,33 +107,31 @@ export class MeshTransmissionMaterial extends THREE.MeshPhysicalMaterial {
       \n` + shader.vertexShader
 
       // Inject wobble displacement after 'begin_vertex' (where transformed = position is set)
-      // ── day34 pattern, smoothed for organic jelly (synced with TSL WebGPU path) ──
-      // day34 (cube=16, np=0.12, uWobble=1.30):
-      //   np = pos * 0.12  (2 periods per face)
-      //   3-octave noise (0.5/0.2/0.1) + squash + breathe
+      // ── subtle elegant jelly (synced with TSL WebGPU path) ──
+      // day34 (cube=16, np=0.12, uWobble=1.30): 3-octave noise + squash + breathe
       //
-      // Our smoothing tweaks (VLM: "make smoother"):
-      //   - n3 amplitude 0.1 → 0.06 (reduce high-freq crunch)
-      //   - n2 amplitude 0.2 → 0.18 (slightly reduce mid-freq)
-      //   - Time speeds reduced (0.3→0.25, 0.5→0.4, 0.8→0.65) for slower motion
-      //   - Squash freq 0.4 → 0.3, Breathe freq 0.7 → 0.55
-      // Our cube=0.8 (20x smaller): NOISE_FREQ=2.4 (2 periods/face), SIZE_SCALE=0.10.
+      // VLM-tuned for "barely visible, elegant" look:
+      //   - n3 (high-freq) REMOVED — was causing surface crunch
+      //   - n2 amplitude 0.2 → 0.12, n1 amplitude 0.5 → 0.4 (gentle)
+      //   - Time speeds slowed: 0.25→0.2, 0.4→0.3 (graceful)
+      //   - Squash 0.08 → 0.04, Breathe 0.12 → 0.08 (preserves cube shape)
+      //   - Squash freq 0.3 → 0.25, Breathe freq 0.55 → 0.45 (slower)
+      // Our cube=0.8 (20x smaller): NOISE_FREQ=2.4, SIZE_SCALE=0.05.
       shader.vertexShader = shader.vertexShader.replace(
         '#include <begin_vertex>',
         /*glsl*/ `
         vec3 transformed = vec3( position );
-        const float SIZE_SCALE = 0.10;       // displacement amplitude (synced with TSL)
+        const float SIZE_SCALE = 0.05;       // subtle displacement (synced with TSL)
         const float NOISE_FREQ = 2.4;        // 0.12 * (16/0.8) → 2 periods/face
         float t = time;                       // raw time (day34)
         vec3 np = position * NOISE_FREQ;
-        // 3-octave noise (day34 pattern, smoothed amplitudes)
-        float n1 = snoise(np + vec3(t * 0.25, 0.0, 0.0)) * 0.5;
-        float n2 = snoise(np * 2.5 + vec3(0.0, t * 0.4, 7.0)) * 0.18;
-        float n3 = snoise(np * 5.0 + vec3(0.0, 0.0, t * 0.65 + 13.0)) * 0.06;
-        float displacement = (n1 + n2 + n3) * wobble;
-        // squash + breathe (day34 pattern, slowed for smoother motion)
-        float squash = sin(t * 0.3) * 0.08 * wobble;
-        float breathe = sin(t * 0.55 + position.y * 0.3) * 0.12 * wobble;
+        // 2-octave noise (high-freq removed for smooth surface)
+        float n1 = snoise(np + vec3(t * 0.2, 0.0, 0.0)) * 0.4;
+        float n2 = snoise(np * 2.5 + vec3(0.0, t * 0.3, 7.0)) * 0.12;
+        float displacement = (n1 + n2) * wobble;
+        // squash + breathe (gentle, preserves cube shape)
+        float squash = sin(t * 0.25) * 0.04 * wobble;
+        float breathe = sin(t * 0.45 + position.y * 0.3) * 0.08 * wobble;
         // Apply — displacement scaled, squash proportional
         transformed += normal * (displacement + breathe) * SIZE_SCALE;
         transformed.y += transformed.y * squash;

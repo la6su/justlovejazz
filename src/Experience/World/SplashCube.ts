@@ -57,15 +57,15 @@ export class SplashCube extends THREE.Mesh {
   // clean with just MeshPhysicalMaterial (iridescence + clearcoat).
   private cubeMaterial!: THREE.MeshPhysicalMaterial
   // TSL wobble uniforms (WebGPU path only)
-  // EXACT day34 pattern, scaled for our cube size (0.8 vs day34's 16):
+  // day34 pattern, tuned for SUBTLE elegant jelly (VLM: "barely visible, elegant"):
   //   - NOISE_FREQ = 0.12 * (16/0.8) = 2.4 — keeps 2 periods/face like day34
-  //   - SIZE_SCALE = 0.10 — displacement amplitude (tuned for visible-but-smooth jelly)
-  //   - uWobble = 1.20 (day34 1.30 × 0.92 — slightly subtle, smooth)
-  // day34 wobble is: 3-octave noise + breathe + squash. Simple. No bend, no echo.
-  private _uWobble = uniform(1.20)
+  //   - SIZE_SCALE = 0.05 — small displacement (was 0.10 → too much deformation)
+  //   - uWobble = 0.50 — subtle amplitude (was 1.20 → cube lost shape)
+  // Goal: cube stays cube-shaped, with gentle organic breathing — not dramatic jelly.
+  private _uWobble = uniform(0.50)
   private _uTime = uniform(0)
-  /** Displacement amplitude — compensates for small cube + far camera. */
-  private static readonly SIZE_SCALE = 0.10
+  /** Displacement amplitude — subtle, preserves cube shape. */
+  private static readonly SIZE_SCALE = 0.05
   private cubeCamera!: THREE.CubeCamera
   private contentScene!: THREE.Scene
   private contentTextures: THREE.Texture[] = []
@@ -309,33 +309,32 @@ export class SplashCube extends THREE.Mesh {
       mat.normalMap = speckleTex
       mat.normalScale = new THREE.Vector2(0.24, 0.24)  // day34 (was 0.7 → too strong)
 
-      // ── TSL wobble — day34 pattern, smoothed for organic jelly ──
-      // day34 source (cube=16, np=0.12, uWobble=1.30):
-      //   np = pos.mul(0.12); 3-octave noise (0.5/0.2/0.1) + squash + breathe
+      // ── TSL wobble — subtle elegant jelly (VLM-tuned: "barely visible, elegant") ──
+      // day34 source: 3-octave noise (0.5/0.2/0.1) + squash + breathe
       //
-      // Our smoothing tweaks (VLM: "make smoother"):
-      //   - n3 amplitude 0.1 → 0.06 (reduce high-freq crunch for smoother surface)
-      //   - n2 amplitude 0.2 → 0.18 (slightly reduce mid-freq)
-      //   - Time speeds slightly reduced (0.3→0.25, 0.5→0.4, 0.8→0.65) for slower,
-      //     more graceful motion
-      //   - Squash freq 0.4 → 0.3 (slower volume pulse)
-      //   - Breathe freq 0.7 → 0.55 (slower breathing)
+      // Smoothed + reduced for elegant look:
+      //   - n3 (high-freq) REMOVED — was causing surface crunch
+      //   - n2 (mid-freq) amplitude 0.2 → 0.12 (softer)
+      //   - n1 (low-freq) amplitude 0.5 → 0.4 (gentle base wave)
+      //   - Time speeds slowed: 0.25→0.2, 0.4→0.3 (graceful motion)
+      //   - Squash amplitude 0.08 → 0.04 (less Y distortion, preserves cube shape)
+      //   - Breathe amplitude 0.12 → 0.08 (gentler volume pulse)
+      //   - Squash freq 0.3 → 0.25, Breathe freq 0.55 → 0.45 (slower, more elegant)
       const uWobble = this._uWobble
       const uTimeVal = this._uTime
-      const SIZE_SCALE = SplashCube.SIZE_SCALE   // 0.10
+      const SIZE_SCALE = SplashCube.SIZE_SCALE   // 0.05
       const NOISE_FREQ = 2.4                      // 0.12 * (16/0.8)
       mat.positionNode = Fn(() => {
         const pos = positionLocal.toVar()
         const np = pos.mul(NOISE_FREQ)
         const t = uTimeVal
-        // 3-octave noise (day34 pattern, smoothed amplitudes)
-        const n1 = mx_noise_float(np.add(t.mul(0.25))).mul(0.5).mul(uWobble)
-        const n2 = mx_noise_float(np.mul(2.5).add(t.mul(0.4)).add(7)).mul(0.18).mul(uWobble)
-        const n3 = mx_noise_float(np.mul(5).add(t.mul(0.65)).add(13)).mul(0.06).mul(uWobble)
-        const displacement = n1.add(n2).add(n3)
-        // squash + breathe (day34 pattern, slowed for smoother motion)
-        const squash = sin(t.mul(0.3)).mul(0.08).mul(uWobble)
-        const breathe = sin(t.mul(0.55).add(pos.y.mul(0.3))).mul(0.12).mul(uWobble)
+        // 2-octave noise (high-freq removed for smooth surface)
+        const n1 = mx_noise_float(np.add(t.mul(0.2))).mul(0.4).mul(uWobble)
+        const n2 = mx_noise_float(np.mul(2.5).add(t.mul(0.3)).add(7)).mul(0.12).mul(uWobble)
+        const displacement = n1.add(n2)
+        // squash + breathe (gentle, preserves cube shape)
+        const squash = sin(t.mul(0.25)).mul(0.04).mul(uWobble)
+        const breathe = sin(t.mul(0.45).add(pos.y.mul(0.3))).mul(0.08).mul(uWobble)
         // Apply — displacement scaled by SIZE_SCALE, squash proportional
         pos.assign(pos.add(normalLocal.mul(displacement.add(breathe).mul(SIZE_SCALE))))
         pos.y.addAssign(pos.y.mul(squash))
@@ -376,7 +375,7 @@ export class SplashCube extends THREE.Mesh {
       mat.normalScale = new THREE.Vector2(0.24, 0.24)
       mat.chromaticAberration = 0.5                  // chromatic fringe
       mat.anisotrophicBlur = 0.1
-      mat.wobble = 1.20                              // synced with _uWobble (WebGPU)
+      mat.wobble = 0.50                              // synced with _uWobble (WebGPU)
       mat.distortion = 0.0
       mat.distortionScale = 0.3
       mat.temporalDistortion = 0.0
