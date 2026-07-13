@@ -63,7 +63,6 @@ export class Cursor {
   private currentRadius = 28
   private readonly baseRadius = 28
   private readonly targetRadius = 44
-  private readonly segments = 8
   private readonly noiseScale = 150
   private readonly noiseRange = 3
   private frameCount = 0
@@ -247,18 +246,23 @@ export class Cursor {
       return
     }
 
-    // Default: noisy circle (original behavior)
+    // Default: noisy circle with SMOOTHED edges (quadraticCurveTo)
     ctx.beginPath()
     // Outer circle stroke/fill: always accent-hover color (NOT red).
     const strokeR = 107, strokeG = 120, strokeB = 163   // #6b78a3 accent-hover
     const alpha = 0.6 + this.fillProgress * 0.3
     ctx.strokeStyle = `rgba(${strokeR}, ${strokeG}, ${strokeB}, ${alpha})`
     ctx.lineWidth = 2
+    ctx.lineCap = 'round'
+    ctx.lineJoin = 'round'
 
     // Noisy distortion only when expanded enough
     const isNoisy = this.isStuck && this.currentRadius > this.baseRadius + 5
-    for (let i = 0; i <= this.segments; i++) {
-      const angle = (i / this.segments) * Math.PI * 2
+    // Phase 6: more segments (8→16) + quadraticCurveTo for smoothed edges
+    const smoothSegments = 16
+    const points: Array<{ x: number; y: number }> = []
+    for (let i = 0; i < smoothSegments; i++) {
+      const angle = (i / smoothSegments) * Math.PI * 2
       let segRadius = radius
 
       if (isNoisy) {
@@ -267,12 +271,24 @@ export class Cursor {
         segRadius += (noiseX + noiseY) * this.noiseRange
       }
 
-      const x = cx + Math.cos(angle) * segRadius
-      const y = cy + Math.sin(angle) * segRadius
-      if (i === 0) ctx.moveTo(x, y)
-      else ctx.lineTo(x, y)
+      points.push({
+        x: cx + Math.cos(angle) * segRadius,
+        y: cy + Math.sin(angle) * segRadius,
+      })
     }
-    ctx.closePath()
+
+    // Draw smoothed curve through points using quadraticCurveTo (midpoint method)
+    if (points.length > 0) {
+      ctx.moveTo((points[0]!.x + points[points.length - 1]!.x) / 2, (points[0]!.y + points[points.length - 1]!.y) / 2)
+      for (let i = 0; i < points.length; i++) {
+        const curr = points[i]!
+        const next = points[(i + 1) % points.length]!
+        const midX = (curr.x + next.x) / 2
+        const midY = (curr.y + next.y) / 2
+        ctx.quadraticCurveTo(curr.x, curr.y, midX, midY)
+      }
+      ctx.closePath()
+    }
 
     // Fill: accent color (same as stroke, NOT red)
     if (this.fillProgress > 0.01) {
@@ -310,10 +326,12 @@ export class Cursor {
     ctx.strokeStyle = 'rgba(107, 120, 163, 0.6)'
     ctx.lineWidth = 2
     ctx.stroke()
-    // Left-right arrows
+    // Left-right arrows (smoothed with round caps)
     const arrowSize = r * 0.4
     ctx.strokeStyle = 'rgba(107, 120, 163, 0.9)'
     ctx.lineWidth = 2.5
+    ctx.lineCap = 'round'
+    ctx.lineJoin = 'round'
     // Left arrow
     ctx.beginPath()
     ctx.moveTo(cx - arrowSize, cy)
