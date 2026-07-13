@@ -1,4 +1,45 @@
 
+## 2026-07-13 — Menu overlap + fullscreen overlay visible + showreel plan
+
+### Done
+
+- **Bug 1: Menu section overlap on subsection click** — root cause: menu nav
+  dispatched `jlz:route-change` but router.ts didn't listen for it (only
+  dispatched it internally). Menu section stayed active + new page rendered
+  → both sections visible, overlapping.
+  Fix: added `jlz:route-change` listener in `initRouter()` that calls
+  `navigateToPage(detail.page)`. Now router handles menu-initiated navigation
+  the same way as link clicks.
+
+- **Bug 2: Fullscreen overlay visible on works section** — root cause: UIKit3
+  modal can leave `display: flex` inline style after `UIkit.modal()` creation,
+  making the overlay visible immediately (not just on `show()`).
+  Fix: added `this.container.style.display = 'none'` after `appendChild` in
+  FullscreenOverlay constructor. UIKit3 overrides this when `show()` is called.
+
+- **Showreel shader plane plan** — created
+  `docs/PLAN-showreel-shader-plane.md` with 4-phase plan:
+  1. ShowreelButton3D.ts — TSL shader button plane (replaces DOM button).
+  2. VideoPlane3D.ts — Video texture plane + genie transition.
+  3. Genie transition (scale + opacity + chromatic aberration).
+  4. Integration + cleanup (Experience.ts, intro/template.ts, UIManager.ts).
+  Plan added to NEXT.md as high-priority TODO.
+
+### Verification
+
+- `bun run type-check` — 0 errors.
+- `bun run lint` — 0 errors (63 pre-existing warnings).
+- `bun run build` — 4.70s.
+- `bun run test:unit` — 84/84 tests passed.
+
+### Files touched (4)
+
+- Modified: `src/router.ts`, `src/UI/FullscreenOverlay.ts`,
+  `src/sections/nav/template.ts`, `WORKLOG.md`, `NEXT.md`.
+- New: `docs/PLAN-showreel-shader-plane.md`.
+
+---
+
 ## 2026-07-13 — Menu close button + unique VOSK template + glassmorphism + docs audit
 
 ### Context

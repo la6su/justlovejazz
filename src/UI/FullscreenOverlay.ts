@@ -104,6 +104,11 @@ export class FullscreenOverlay {
 
     document.body.appendChild(this.container)
 
+    // CRITICAL: ensure modal is hidden on init. UIKit3 modal can leave
+    // display:flex after creation, making the overlay visible immediately.
+    // This inline style is overridden by UIKit3 when show() is called.
+    this.container.style.display = 'none'
+
     // Wire elements
     this.video = this.container.querySelector('.jlz-fs-video')!
     this.posterEl = this.container.querySelector('.jlz-fs-poster')!

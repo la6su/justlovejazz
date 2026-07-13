@@ -95,6 +95,18 @@ export function initRouter(): void {
   renderView()
   // jlz:route-change already dispatched in renderView() — covers UIkit refresh + UIMenu.
 
+  // ── Listen for jlz:route-change from menu subsection clicks ──
+  // Menu nav (src/sections/nav/template.ts → initMenuNav) dispatches this event
+  // with { detail: { page: path } } when a subsection link is clicked.
+  // Without this listener, the event was dispatched but nobody navigated →
+  // menu section stayed active + new page rendered → overlap.
+  window.addEventListener('jlz:route-change', (e: Event) => {
+    const detail = (e as CustomEvent<{ page: string }>).detail
+    if (detail && detail.page && detail.page !== currentPage) {
+      navigateToPage(detail.page)
+    }
+  })
+
   // ── Re-apply translations + meta tags on language change (EN ↔ RU) ──
   // applyTranslations rewrites all [data-i18n] textContent; applyMetaTags
   // updates <title>/description/og to the new language.
