@@ -57,15 +57,15 @@ export class SplashCube extends THREE.Mesh {
   // clean with just MeshPhysicalMaterial (iridescence + clearcoat).
   private cubeMaterial!: THREE.MeshPhysicalMaterial
   // TSL wobble uniforms (WebGPU path only)
-  // day34 pattern, tuned for elegant subtle jelly with VISIBLE motion:
-  //   - NOISE_FREQ = 0.12 * (16/0.8) = 2.4 — keeps 2 periods/face like day34
-  //   - SIZE_SCALE = 0.07 — displacement (was 0.05 → invisible, 0.10 → too much)
-  //   - uWobble = 0.70 — amplitude (was 0.50 → barely visible, 1.20 → lost shape)
-  // Goal: cube stays cube-shaped, gentle organic breathing VISIBLE when watching.
-  private _uWobble = uniform(0.70)
+  // day34 pattern, tuned for VISIBLE elegant jelly:
+  //   - NOISE_FREQ = 2.4 — 2 periods/face like day34
+  //   - SIZE_SCALE = 0.09 — displacement (visible but preserves cube shape)
+  //   - uWobble = 0.95 — amplitude (was 0.70 → too subtle, 1.20 → lost shape)
+  // Goal: cube wobble clearly visible, shape preserved, smooth motion.
+  private _uWobble = uniform(0.95)
   private _uTime = uniform(0)
   /** Displacement amplitude — visible but elegant. */
-  private static readonly SIZE_SCALE = 0.07
+  private static readonly SIZE_SCALE = 0.09
   private cubeCamera!: THREE.CubeCamera
   private contentScene!: THREE.Scene
   private contentTextures: THREE.Texture[] = []
@@ -375,7 +375,7 @@ export class SplashCube extends THREE.Mesh {
       mat.normalScale = new THREE.Vector2(0.24, 0.24)
       mat.chromaticAberration = 0.5                  // chromatic fringe
       mat.anisotrophicBlur = 0.1
-      mat.wobble = 0.70                              // synced with _uWobble (WebGPU)
+      mat.wobble = 0.95                              // synced with _uWobble (WebGPU)
       mat.distortion = 0.0
       mat.distortionScale = 0.3
       mat.temporalDistortion = 0.0
