@@ -22,12 +22,12 @@ export function createSection4(): THREE.Group {
 
   // JunniParticles (Section3 behavior): textured sprites + Y-drift +
   // XZ orbit + spin + pulse + HSV hue cycling. Blue tint (0x4488ff).
-  // Params matched to junni reference: count 100, range [7,8,7] (deeper
-  // Z spread), size 0.2, speed 1.0 (faster than the previous 0.8).
+  // NormalBlending (not Additive) so particles are visible on both light
+  // + dark themes. Deeper Z spread (14), smaller size (0.12).
   const particles = new JunniParticles({
-    count: 100,
-    range: [7, 8, 7],
-    size: 0.2,
+    count: 120,
+    range: [7, 8, 14],
+    size: 0.12,
     speed: 1.0,
     color: 0x4488ff,
     texture: particleTexture,

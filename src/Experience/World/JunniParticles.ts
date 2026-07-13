@@ -264,7 +264,7 @@ export class JunniParticles extends THREE.InstancedMesh {
       color,
       transparent: true,
       depthWrite: false,
-      blending: THREE.AdditiveBlending,
+      blending: THREE.NormalBlending,
       side: THREE.DoubleSide,
       fog: false,
     })
