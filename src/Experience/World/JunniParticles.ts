@@ -98,6 +98,7 @@ export class JunniParticles extends THREE.InstancedMesh {
     const size = opts.size ?? 0.1
     const speed = opts.speed ?? 1
     const color = opts.color ?? 0xffffff
+    const colorObj = new THREE.Color(color)
     const useTexture = !!opts.texture
     const tiles = opts.textureTiles ?? [6, 1]
 
@@ -126,6 +127,9 @@ export class JunniParticles extends THREE.InstancedMesh {
     const uRange = uniform(range)
     const uSize = uniform(size)
     const uSpeed = uniform(speed)
+    // Tint color — multiplies the texture/HSV color so particles aren't pure
+    // white (which is invisible on light backgrounds with AdditiveBlending).
+    const uColor = uniform(colorObj)
     // TSL texture() expects a raw THREE.Texture — NOT wrapped in uniform().
     // TSL creates the TextureNode internally. Wrapping in uniform() causes
     // "texture(value) function expects a valid instance of THREE.Texture".
@@ -220,7 +224,7 @@ export class JunniParticles extends THREE.InstancedMesh {
     let opacityNode: any
 
     if (useTexture && uTex) {
-      // Section3 fragment: sprite sheet UV + HSV hue cycling
+      // Section3 fragment: sprite sheet UV + HSV hue cycling + tint
       colorNode = Fn(() => {
         const num = attribute('num') as unknown as TSLVec2
         const sheetUv = buildSheetUv() as unknown as TSLVec2
@@ -229,7 +233,11 @@ export class JunniParticles extends THREE.InstancedMesh {
         const hsv = mx_rgbtohsv(texColor.rgb) as unknown as TSLVec3
         const hueShift = (uTime as unknown as TSLNode).mul(0.1).add(num.y.mul(0.4))
         const shifted = vec3(hsv.x.add(hueShift).mod(1.0), hsv.y, hsv.z)
-        return mx_hsvtorgb(shifted)
+        const cycled = mx_hsvtorgb(shifted) as unknown as TSLVec3
+        // Multiply by tint color so particles take the section accent color
+        // (without this, pure white texture + AdditiveBlending = invisible
+        // on light backgrounds).
+        return cycled.mul(uColor as unknown as TSLVec3)
       })
 
       opacityNode = Fn(() => {
@@ -238,8 +246,11 @@ export class JunniParticles extends THREE.InstancedMesh {
         return texColor.a.mul(uVisibility as unknown as TSLNode)
       })
     } else {
-      // Section6 fallback: procedural white circle
-      colorNode = Fn(() => vec3(float(1.0)))
+      // Section6 fallback: procedural circle tinted with uColor
+      colorNode = Fn(() => {
+        const c = uColor as unknown as TSLVec3
+        return vec3(c.x, c.y, c.z)
+      })
       opacityNode = Fn(() => {
         const vUv = uv()
         const cuv = vUv.mul(2.0).sub(1.0)

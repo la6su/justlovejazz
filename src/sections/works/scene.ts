@@ -21,14 +21,14 @@ export function createSection4(): THREE.Group {
   g.userData.gallery = carousel
 
   // JunniParticles (Section3 behavior): textured sprites + Y-drift +
-  // XZ orbit + spin + pulse + HSV hue cycling. Blue tint (0x4488ff) to
-  // match the works-section accent. Reduced count (80) — enough for
-  // atmosphere without GPU load.
+  // XZ orbit + spin + pulse + HSV hue cycling. Blue tint (0x4488ff).
+  // Params matched to junni reference: count 100, range [7,8,7] (deeper
+  // Z spread), size 0.2, speed 1.0 (faster than the previous 0.8).
   const particles = new JunniParticles({
-    count: 80,
-    range: [14, 6, 8],
+    count: 100,
+    range: [7, 8, 7],
     size: 0.2,
-    speed: 0.8,
+    speed: 1.0,
     color: 0x4488ff,
     texture: particleTexture,
     textureTiles: [6, 1],
