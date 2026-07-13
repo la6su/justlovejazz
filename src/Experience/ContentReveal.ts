@@ -104,6 +104,19 @@ export class ContentReveal {
         this.cachedConfigs = null
         this.currentSectionId = null
         this.currentSectionIndex = -1
+        // H13 fix: re-apply theme for the active section on the NEW page.
+        // Without this, uk-light from the last active section on the PREVIOUS
+        // page persists on <body> until the first section nav on the new page
+        // → wrong-theme flash + EnvSphere desync. Find the active section in
+        // the freshly-rendered DOM and apply its theme immediately.
+        const active = document.querySelector<HTMLElement>(
+          '[data-section].section-active, [data-page-section].section-active',
+        )
+        const sectionId = active?.getAttribute('data-section')
+          ?? active?.getAttribute('data-page-section')
+          ?? 'intro'
+        this.currentSectionId = sectionId
+        this.applyTheme(sectionId)
         return
       }
       // jlz:theme-change — re-apply current section theme.

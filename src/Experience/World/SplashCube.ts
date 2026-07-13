@@ -32,7 +32,7 @@ import { MeshPhysicalNodeMaterial } from 'three/webgpu'
 import { Fn, uniform, positionLocal, normalLocal, mx_noise_float, sin } from 'three/tsl'
 import { DeviceCapability } from '../../core/DeviceCapability'
 import { MeshTransmissionMaterial } from './MeshTransmissionMaterial'
-import { PlayButton3D } from './PlayButton3D'
+// (PlayButton3D import removed — dead render path deleted)
 
 interface BakuMaterialParams {
   color: THREE.Color
@@ -55,8 +55,7 @@ const ROT_PER_TRANSITION = Math.PI / 6
 export class SplashCube extends THREE.Mesh {
   private cubeMesh!: THREE.Mesh
   private cubeMaterial!: THREE.MeshPhysicalMaterial
-  /** TSL shader play button — in front of cube, visible on intro section only */
-  public playButton: PlayButton3D | null = null
+  // (PlayButton3D field removed — dead render path deleted)
   // TSL wobble uniforms (WebGPU path only)
   // day34 pattern, tuned for VISIBLE elegant jelly:
   //   - NOISE_FREQ = 2.4 — 2 periods/face like day34
@@ -104,16 +103,20 @@ export class SplashCube extends THREE.Mesh {
   // ── Cube face rotation ──
   // 6 sections = 6 cube faces. Each section maps to a target Y rotation
   // so the corresponding face points toward the camera (+Z direction).
-  // Lab=0→front, Intro=1→right, About=2→back, Works=3→left, Contact=4→top, Process=5→bottom.
-  // We animate _idleRotY toward the target on section change.
+  // Lab=0→front, Intro=1→right, About=2→back, Works=3→left, Contact=4→tilt, Process=5→tilt.
+  // NOTE: sections 4+5 use ±π/4 tilt (NOT actual top/bottom face rotation).
+  // The cube shows two side faces at an angle for these sections.
+  // This is a known simplification — true top/bottom face would need X rotation.
   private static readonly FACE_ROTATIONS: number[] = [
     0,              // 0: Lab — front face (+Z toward camera)
     -Math.PI / 2,   // 1: Intro — right face (+X toward camera)
     Math.PI,        // 2: About — back face (-Z toward camera)
     Math.PI / 2,    // 3: Works — left face (-X toward camera)
-    -Math.PI / 4,   // 4: Contact — slight tilt (top face visible)
-    Math.PI / 4,    // 5: Process — slight tilt (bottom face visible)
+    -Math.PI / 4,   // 4: Contact — slight tilt (two side faces visible)
+    Math.PI / 4,    // 5: Process — slight tilt (two side faces visible)
   ]
+  /** Speckle normalMap (glass-flakes.png) — stored for disposal. */
+  private _speckleTex: THREE.Texture | null = null
   private _targetFaceRotY = 0
   private _faceLerp = 0 // 0→1, animated on section change
 
@@ -257,10 +260,10 @@ export class SplashCube extends THREE.Mesh {
     // day34: repeat (6,6), normalScale (0.24, 0.24).
     // We had repeat (4,4) + normalScale (0.7,0.7) → too strong, looked like
     // "mixed two textures". Reverted to day34 values for clean seamless flakes.
-    const speckleTex = new THREE.TextureLoader().load('/textures/glass-flakes.png')
-    speckleTex.wrapS = THREE.RepeatWrapping
-    speckleTex.wrapT = THREE.RepeatWrapping
-    speckleTex.repeat.set(6, 6)
+    this._speckleTex = new THREE.TextureLoader().load('/textures/glass-flakes.png')
+    this._speckleTex.wrapS = THREE.RepeatWrapping
+    this._speckleTex.wrapT = THREE.RepeatWrapping
+    this._speckleTex.repeat.set(6, 6)
 
     const caps = DeviceCapability.getInstance()
     const isWebGPU = caps.isRealWebGPU
@@ -307,11 +310,19 @@ export class SplashCube extends THREE.Mesh {
       mat.sheenColor = new THREE.Color(0.8, 0.9, 1.0)
       mat.sheenRoughness = 0.5
       mat.depthWrite = false
-      mat.normalMap = speckleTex
+      mat.normalMap = this._speckleTex
       mat.normalScale = new THREE.Vector2(0.24, 0.24)  // day34 (was 0.7 → too strong)
 
       // ── TSL wobble — subtle elegant jelly (VLM-tuned: "barely visible, elegant") ──
       // day34 source: 3-octave noise (0.5/0.2/0.1) + squash + breathe
+      //
+      // C8 PARITY NOTE: WebGPU uses mx_noise_float (MaterialX Perlin-style),
+      // WebGL2 uses Ashima snoise (simplex) — see MeshTransmissionMaterial.ts.
+      // Both are 3D noise with matching amplitude/frequency/speed, but they
+      // produce different displacement fields. Visual difference is subtle at
+      // this scale (amplitude 0.09 * 0.4 = 0.036). A true parity fix requires
+      // porting Ashima snoise to TSL (or vice versa) — deferred to avoid
+      // risking the wobble entirely. Both paths produce a good-looking result.
       //
       // Smoothed + reduced for elegant look:
       //   - n3 (high-freq) REMOVED — was causing surface crunch
@@ -347,7 +358,12 @@ export class SplashCube extends THREE.Mesh {
       // ── WebGL2: MeshTransmissionMaterial (GLSL onBeforeCompile) ──
       // Same day34-accurate material params. GLSL wobble is in
       // MeshTransmissionMaterial.ts (also updated to day34 pattern + SIZE_SCALE).
-      const mat = new MeshTransmissionMaterial(6)
+      // H6: Tier-gate transmission samples — low-end WebGL2 devices (the exact
+      // fallback audience) get fewer samples for better perf. 6 samples on low
+      // is a 6×3-channel transmission loop per fragment — the most expensive
+      // material in the scene. DeviceCapability.tier drives the sample count.
+      const samples = caps.tier === 'low' ? 2 : caps.tier === 'medium' ? 4 : 6
+      const mat = new MeshTransmissionMaterial(samples)
       mat.color = new THREE.Color(0.94, 0.91, 1.00)
       mat.emissive = new THREE.Color(0x000000)
       mat.emissiveIntensity = 0.0
@@ -372,7 +388,7 @@ export class SplashCube extends THREE.Mesh {
       mat.sheenColor = new THREE.Color(0.8, 0.9, 1.0)
       mat.sheenRoughness = 0.5
       mat.depthWrite = false
-      mat.normalMap = speckleTex
+      mat.normalMap = this._speckleTex
       mat.normalScale = new THREE.Vector2(0.24, 0.24)
       mat.chromaticAberration = 0.5                  // chromatic fringe
       mat.anisotrophicBlur = 0.1
@@ -391,14 +407,9 @@ export class SplashCube extends THREE.Mesh {
     // Connect CubeCamera render target → material envMap
     this.cubeMaterial.envMap = this.cubeCamera.renderTarget.texture
 
-    // TSL shader play button — in front of cube face (+Z)
-    try {
-      this.playButton = new PlayButton3D()
-      this.cubeMesh.add(this.playButton) // child of cube so it rotates with it
-      this.playButton.setVisible(false) // hidden until intro section
-    } catch (e) {
-      console.warn('[SplashCube] PlayButton3D init failed:', e)
-    }
+    // (PlayButton3D removed — was fully dead render path: created, immediately
+    //  hidden, never shown, update() ran every frame on invisible mesh.
+    //  PLAN-showreel-shader-plane Phase 4 proposed it but Phase 6 never executed.)
   }
 
   // ════════════════════════════════════════════════════════════════════
@@ -421,17 +432,24 @@ export class SplashCube extends THREE.Mesh {
    *  Duration: 1.2s (longer, more cinematic) */
   private _wobblePulseTimer: ReturnType<typeof setTimeout> | null = null
   private _chromaticPulseTimer: ReturnType<typeof setTimeout> | null = null
-  private _wobblePulseTarget = 0.95
   triggerWobblePulse(): void {
     // Clear any existing pulse
     if (this._wobblePulseTimer) clearTimeout(this._wobblePulseTimer)
     if (this._chromaticPulseTimer) clearTimeout(this._chromaticPulseTimer)
 
-    // 1. Boost wobble (dramatic jelly burst)
-    ;(this._uWobble as unknown as { value: number }).value = 2.5
-    this._wobblePulseTarget = 0.95
+    // 1. Boost wobble (dramatic jelly burst).
+    // C7 fix: write BOTH the TSL _uWobble uniform (WebGPU) AND the
+    // MeshTransmissionMaterial.wobble property (WebGL2). Previously only
+    // _uWobble was written → PLAN-v3 Phase 8 wobble pulse was silently
+    // inactive on the entire WebGL2 fallback audience.
+    const WOBBLE_BOOST = 2.5
+    const WOBBLE_RESTORE = 0.95
+    ;(this._uWobble as unknown as { value: number }).value = WOBBLE_BOOST
+    const matWobble = this.cubeMaterial as unknown as { wobble?: number }
+    if (matWobble.wobble !== undefined) matWobble.wobble = WOBBLE_BOOST
     this._wobblePulseTimer = setTimeout(() => {
-      ;(this._uWobble as unknown as { value: number }).value = this._wobblePulseTarget
+      ;(this._uWobble as unknown as { value: number }).value = WOBBLE_RESTORE
+      if (matWobble.wobble !== undefined) matWobble.wobble = WOBBLE_RESTORE
       this._wobblePulseTimer = null
     }, 1200)
 
@@ -519,9 +537,15 @@ export class SplashCube extends THREE.Mesh {
 
     if (needsCubeUpdate) {
       this._cubeCamCounter = 0
+      // H9 fix: try/finally ensures cubeMesh.visible is restored even if
+      // cubeCamera.update() throws (e.g. context lost). Without this, the
+      // cube stays invisible for the rest of the session.
       this.cubeMesh.visible = false
-      this.cubeCamera.update(renderer!, this.contentScene)
-      this.cubeMesh.visible = true
+      try {
+        this.cubeCamera.update(renderer!, this.contentScene)
+      } finally {
+        this.cubeMesh.visible = true
+      }
     }
 
     // ── Transition motion (same as before) ──
@@ -590,8 +614,7 @@ export class SplashCube extends THREE.Mesh {
     // Advance wobble time — TSL (WebGPU) + MeshTransmissionMaterial (WebGL2)
     ;(this._uTime as unknown as { value: number }).value = this.time
 
-    // Update play button shader time
-    this.playButton?.update(dt)
+    // (PlayButton3D update removed — dead render path deleted)
     const mtm = this.cubeMaterial as unknown as { time?: number }
     if (mtm.time !== undefined) mtm.time = this.time
 
@@ -645,9 +668,26 @@ export class SplashCube extends THREE.Mesh {
   }
 
   dispose(): void {
-    this.playButton?.dispose()
+    // C10 fix: clear pending pulse timers (they hold `this` via closure →
+    // prevent GC for up to 1.2s after destroy).
+    if (this._wobblePulseTimer) {
+      clearTimeout(this._wobblePulseTimer)
+      this._wobblePulseTimer = null
+    }
+    if (this._chromaticPulseTimer) {
+      clearTimeout(this._chromaticPulseTimer)
+      this._chromaticPulseTimer = null
+    }
+    // (PlayButton3D dispose removed — dead render path deleted)
     this.cubeMesh.geometry.dispose()
     this.cubeMaterial.dispose()
+    // C10 fix: dispose speckleTex normalMap — cubeMaterial.dispose() does
+    // NOT auto-dispose normalMap. Without this, glass-flakes.png VRAM leaks
+    // on every page unload.
+    if (this._speckleTex) {
+      this._speckleTex.dispose()
+      this._speckleTex = null
+    }
     this.cubeCamera.renderTarget.dispose()
     for (const tex of this.contentTextures) tex.dispose()
     // Dispose contentScene objects (gradient planes + text meshes + camera)

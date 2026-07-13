@@ -41,6 +41,9 @@ export class Camera {
   private fovTransitionT = 0
   private fovStartOffset = 0
   private fovDuration = 1.0
+  // C12 fix: pulse phase-2 timer stored so destroy() can clear it.
+  // Previously untracked → fired on destroyed Camera after HMR.
+  private _pulseTimer: ReturnType<typeof setTimeout> | null = null
 
   // A-015: Per-section cursor follow strength
   private _cursorFollowStrength: number | null = null
@@ -69,6 +72,11 @@ export class Camera {
   /** Remove the window resize listener. Call from Experience.destroy(). */
   destroy(): void {
     window.removeEventListener('resize', this._onResize)
+    // C12 fix: clear pending pulse timer so it doesn't fire on a destroyed Camera.
+    if (this._pulseTimer) {
+      clearTimeout(this._pulseTimer)
+      this._pulseTimer = null
+    }
   }
 
   /** Lerp camera base state toward target with exponential smoothing */
@@ -104,17 +112,23 @@ export class Camera {
    *  Positive amount = zoom in (FOV decreases). ~0.04 = subtle, ~0.08 = noticeable.
    *  Uses a two-phase transition: dips to -amount over half duration, then back to 0. */
   pulse(amount = 0.05, duration = 0.8): void {
+    // Clear any pending pulse timer (rapid section changes can overlap pulses)
+    if (this._pulseTimer) {
+      clearTimeout(this._pulseTimer)
+      this._pulseTimer = null
+    }
     // Phase 1: dip to -amount (zoom in)
     this.fovStartOffset = this.fovOffset
     this.targetFovOffset = -amount
     this.fovDuration = duration * 0.4
     this.fovTransitionT = 0
     // Phase 2: return to 0 after dip completes
-    setTimeout(() => {
+    this._pulseTimer = setTimeout(() => {
       this.fovStartOffset = this.fovOffset
       this.targetFovOffset = 0
       this.fovDuration = duration * 0.6
       this.fovTransitionT = 0
+      this._pulseTimer = null
     }, duration * 400)
   }
 

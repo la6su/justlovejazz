@@ -97,6 +97,10 @@ export class BakuCarousel extends THREE.Group {
   private pointerMoveHandler: ((e: PointerEvent) => void) | null = null
   private pointerUpHandler: ((e: PointerEvent) => void) | null = null
   private keydownHandler: ((e: KeyboardEvent) => void) | null = null
+  // C11 fix: canvas hover listeners stored as fields so they can be removed
+  // in dispose(). Previously anonymous → leaked on every Works-section-enter.
+  private _canvasEnterHandler: ((e: PointerEvent) => void) | null = null
+  private _canvasLeaveHandler: ((e: PointerEvent) => void) | null = null
   private snapTimer: ReturnType<typeof setTimeout> | null = null
 
   // Phase 4: momentum + rubber-band + auto-advance
@@ -318,11 +322,15 @@ export class BakuCarousel extends THREE.Group {
     window.addEventListener('pointercancel', this.pointerUpHandler)
     window.addEventListener('keydown', this.keydownHandler)
 
-    // Phase 4: hover detection on canvas — pause auto-advance
-    const canvas = document.querySelector('canvas.canvas')
+    // Phase 4: hover detection on canvas — pause auto-advance.
+    // C11 fix: store handlers as fields so dispose() can remove them.
+    // Previously anonymous → accumulated on canvas across section-enter cycles.
+    const canvas = document.querySelector<HTMLElement>('canvas.canvas')
     if (canvas) {
-      canvas.addEventListener('pointerenter', () => this.setHovered(true))
-      canvas.addEventListener('pointerleave', () => this.setHovered(false))
+      this._canvasEnterHandler = () => this.setHovered(true)
+      this._canvasLeaveHandler = () => this.setHovered(false)
+      canvas.addEventListener('pointerenter', this._canvasEnterHandler)
+      canvas.addEventListener('pointerleave', this._canvasLeaveHandler)
     }
   }
 
@@ -531,6 +539,17 @@ export class BakuCarousel extends THREE.Group {
       window.removeEventListener('pointercancel', this.pointerUpHandler)
     }
     if (this.keydownHandler) window.removeEventListener('keydown', this.keydownHandler)
+    // C11 fix: remove canvas hover listeners (canvas persists across carousel
+    // disposal — it's owned by Renderer — so handlers would accumulate without this).
+    if (this._canvasEnterHandler || this._canvasLeaveHandler) {
+      const canvas = document.querySelector<HTMLElement>('canvas.canvas')
+      if (canvas) {
+        if (this._canvasEnterHandler) canvas.removeEventListener('pointerenter', this._canvasEnterHandler)
+        if (this._canvasLeaveHandler) canvas.removeEventListener('pointerleave', this._canvasLeaveHandler)
+      }
+      this._canvasEnterHandler = null
+      this._canvasLeaveHandler = null
+    }
     if (this.snapTimer) clearTimeout(this.snapTimer)
     this.stopAutoAdvance() // Phase 4: clean up auto-advance timer
     this.geometry.dispose()

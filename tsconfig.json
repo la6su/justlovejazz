@@ -6,6 +6,9 @@
     "types": ["vite/client"],
     "skipLibCheck": true,
 
+    /* JSON imports (font data, etc.) */
+    "resolveJsonModule": true,
+
     /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,

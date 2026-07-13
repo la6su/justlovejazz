@@ -18,6 +18,15 @@ import { MeshBasicNodeMaterial } from 'three/webgpu'
 import { Fn, vec3, uniform, positionLocal, normalLocal, mx_noise_float, sin, mix } from 'three/tsl'
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js'
 import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js'
+// H5 fix: import font JSON directly — Vite bundles it at build time.
+// Previously used synchronous XMLHttpRequest which is deprecated, blocks the
+// main thread during World.init(), and bypasses the Vite module graph.
+// The JSON import resolves at build time → zero runtime XHR, zero blocking.
+import fontJson from '../../assets/fonts/helvetiker_bold.typeface.json'
+
+// Parse once at module load (not per-instance) — FontLoader.parse is cheap
+// but there's no reason to re-parse the same JSON for every WireframeTypography.
+const _parsedFont = new FontLoader().parse(fontJson as never)
 
 // Uniforms — shared across all wireframe typography instances
 const typoUniforms = {
@@ -59,10 +68,8 @@ export class WireframeTypography extends THREE.Mesh {
   private _time = 0
 
   constructor(text: string = 'ABOUT', size: number = 0.6) {
-    // Load font synchronously from public/fonts (copied from three/examples)
-    // FontLoader.parse() accepts the parsed JSON directly.
-    const fontJson = loadFontSync()
-    const font = new FontLoader().parse(fontJson as never)
+    // Use the module-level parsed font (H5 fix — no sync XHR).
+    const font = _parsedFont
 
     // Create TextGeometry — centered, extruded for 3D depth
     const geo = new TextGeometry(text, {
@@ -102,21 +109,4 @@ export class WireframeTypography extends THREE.Mesh {
   }
 }
 
-/**
- * Load font JSON synchronously. Uses a cached XHR to /fonts/helvetiker_bold.typeface.json.
- * Falls back to an empty font if loading fails (text won't render, but no crash).
- */
-function loadFontSync(): unknown {
-  try {
-    const xhr = new XMLHttpRequest()
-    xhr.open('GET', '/fonts/helvetiker_bold.typeface.json', false)  // synchronous
-    xhr.send()
-    if (xhr.status === 200) {
-      return JSON.parse(xhr.responseText)
-    }
-  } catch (e) {
-    console.warn('[WireframeTypography] Failed to load font:', e)
-  }
-  // Fallback: empty font (text won't render, but no crash)
-  return { glyphs: {}, familyName: 'fallback', resolution: 1, boundingBox: { ymin: 0, ymax: 0 } }
-}
+// (loadFontSync removed — H5 fix: replaced by build-time JSON import.)
