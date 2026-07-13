@@ -70,7 +70,7 @@ export class FullscreenOverlay {
         <button class="uk-modal-close-default jlz-fs-close" type="button" uk-close aria-label="Close"></button>
         <button class="jlz-fs-prev" type="button" aria-label="Previous" uk-slidenav-previous></button>
         <button class="jlz-fs-next" type="button" aria-label="Next" uk-slidenav-next></button>
-        <div class="jlz-fs-video-wrap" data-cursor="play">
+        <div class="jlz-fs-video-wrap">
           <div class="jlz-fs-poster" aria-hidden="true"></div>
           <video class="jlz-fs-video" preload="metadata" playsinline>
           </video>
@@ -182,6 +182,22 @@ export class FullscreenOverlay {
     UIkit.util.on(this.container, 'show', () => {
       this._isOpen = true
       ;(window as unknown as { jlzOverlayOpen?: boolean }).jlzOverlayOpen = true
+      // Autoplay video when modal opens (muted autoplay is allowed by browsers).
+      // Only if video has a source — project-mode (poster only) skips this.
+      const source = this.video.querySelector('source')
+      if (source && source.src) {
+        // Guard: only reset currentTime if duration is finite (metadata loaded)
+        if (isFinite(this.video.duration)) {
+          this.video.currentTime = 0
+        }
+        // Small delay to let modal animation finish before play()
+        setTimeout(() => {
+          this.video.play().catch(() => {
+            // Autoplay blocked — show big play button for user to click
+            this.bigPlay.style.opacity = '1'
+          })
+        }, 300)
+      }
     })
     UIkit.util.on(this.container, 'hide', () => {
       this._isOpen = false
@@ -261,7 +277,8 @@ export class FullscreenOverlay {
 
     // Reset video state
     if (opts.videoSrc) {
-      this.video.currentTime = 0
+      // Guard: don't set currentTime until metadata loads (duration is NaN
+      // right after load()). Reset will happen on 'show' event instead.
       this.bigPlay.style.display = ''
     }
 

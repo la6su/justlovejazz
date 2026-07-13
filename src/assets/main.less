@@ -1482,9 +1482,12 @@ body.uk-light .jlz-eyebrow {
 
 .jlz-showreel-overlay {
   position: absolute;
-  bottom: 15%;
+  // Center on the cube (cube is at viewport center, camera looks straight at it).
+  // Mobile-first: button sits at vertical center, slightly below to avoid
+  // overlapping the cube's top edge. Uses top: 50% + transform for true centering.
+  top: 50%;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translate(-50%, -50%);
   z-index: 5;
   pointer-events: auto;
 }
@@ -1593,7 +1596,8 @@ body.uk-light .jlz-showreel-trigger:focus-visible {
 
 @media (max-width: 639px) {
   .jlz-showreel-overlay {
-    bottom: 12%;
+    // Mobile: keep centered, smaller offset to avoid cube overlap
+    transform: translate(-50%, -30%);
   }
   .jlz-showreel-trigger__ring {
     width: 52px;
@@ -1804,6 +1808,9 @@ body.uk-light .jlz-header .uk-navbar-container {
   display: flex;
   flex-direction: column;
   height: 100dvh;
+  // Vertically center content (topbar + grid + footer).
+  // Topbar and footer are auto-sized; grid takes flex:1 and centers its content.
+  justify-content: center;
   padding-top: calc(var(--jlz-header-height, 60px) + var(--jlz-space-4));
   padding-bottom: var(--jlz-space-4);
 }

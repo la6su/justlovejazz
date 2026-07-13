@@ -264,7 +264,9 @@ export function initMenuNav(): void {
     })
   })
 
-  // Subsection links — intercept for SPA navigation + auto-close menu
+  // Subsection links — intercept for SPA navigation.
+  // Click → navigate to target page + section. Menu closes automatically
+  // because the new page renders without .section-active on menu.
   const subLinks = nav.querySelectorAll<HTMLAnchorElement>('.jlz-menu-nav__sub-link')
   subLinks.forEach((link) => {
     link.addEventListener('click', (e) => {
@@ -277,29 +279,35 @@ export function initMenuNav(): void {
 
       e.preventDefault()
 
-      // Navigate via SPA router (pushState + renderView)
       const path = url.pathname
       const hash = url.hash
 
-      // Dispatch close-nav FIRST (returns to previous main section, which
-      // closes the menu overlay). Then navigate.
-      window.dispatchEvent(new CustomEvent('jlz:close-nav'))
-
-      // Small delay so menu-close animation starts before route change
-      setTimeout(() => {
-        if (path !== window.location.pathname) {
-          // Navigate to a different page — use history + route-change
-          history.pushState(null, '', path)
-          window.dispatchEvent(new CustomEvent('jlz:route-change', { detail: { page: path } }))
-        }
-        // If hash present, scroll to section after route renders
+      // Navigate via SPA router. renderView() replaces #spa-content innerHTML,
+      // which removes the menu section from DOM entirely — no need to close it.
+      // The new page renders with its first main section active.
+      if (path !== window.location.pathname) {
+        // Cross-page navigation: use pushState + jlz:route-change (router listens)
+        history.pushState(null, '', path + (hash || ''))
+        window.dispatchEvent(new CustomEvent('jlz:route-change', { detail: { page: path } }))
+      } else {
+        // Same-page navigation: just scroll to hash target.
+        // Menu stays open — user can close it via hamburger X / joystick left.
         if (hash) {
-          setTimeout(() => {
-            const target = document.querySelector(hash)
-            target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-          }, 150)
+          const target = document.querySelector(hash)
+          target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
         }
-      }, 100)
+        // Close menu after same-page navigation
+        window.dispatchEvent(new CustomEvent('jlz:close-nav'))
+      }
+
+      // Cross-page: scroll to hash after route renders (router fires
+      // jlz:route-change → renderView → DOM ready)
+      if (path !== window.location.pathname && hash) {
+        setTimeout(() => {
+          const target = document.querySelector(hash)
+          target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }, 300)
+      }
     })
   })
 }
