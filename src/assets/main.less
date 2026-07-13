@@ -46,6 +46,23 @@ body {
     sans-serif !important;
 }
 
+// Phase 7: Brand identity CSS variables (see docs/BRAND.md)
+:root {
+  --jlz-accent: #c4ff00;           // neon-lime
+  --jlz-accent-hover: #d4ff4d;     // lighter lime
+  --jlz-bg: #0a0a0f;               // deep black
+  --jlz-fg: #f5f5f7;               // near-white
+  --jlz-muted: rgba(245, 245, 247, 0.5);
+  --jlz-border: rgba(245, 245, 247, 0.06);
+}
+
+body.uk-light {
+  --jlz-bg: #f5f5f7;
+  --jlz-fg: #0a0a0f;
+  --jlz-muted: rgba(10, 10, 15, 0.5);
+  --jlz-border: rgba(10, 10, 15, 0.08);
+}
+
 body {
   margin: 0;
   background: var(--jlz-color-bg);
