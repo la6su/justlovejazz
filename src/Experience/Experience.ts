@@ -449,6 +449,11 @@ export class Experience {
       if (this.overlay?.isOpen) {
         this.overlay.close()
       }
+      // Safety net: ensure jlzOverlayOpen is cleared on every route change,
+      // even if close()/hide() hasn't fully completed or the UIKit 'hide'
+      // event failed to fire. Without this, the flag can stay stuck true
+      // and block JoystickNav keyboard navigation (arrow keys).
+      ;(window as unknown as { jlzOverlayOpen?: boolean }).jlzOverlayOpen = false
     }
     window.addEventListener('jlz:route-change', this._routeChangeCloseOverlayHandler)
 

@@ -181,8 +181,16 @@ function menuFooter(): string {
  */
 export function navOverlaySection(mode: 'home' | 'content' = 'content'): string {
   const sectionAttr = mode === 'home' ? 'data-section="menu"' : 'data-page-section="page-menu"'
+  // On content pages, add jlz-page-section class so the standard hiding rule
+  // (.jlz-page-section { display: none }) applies. Without it, the menu section
+  // only has the jlz-menu-overlay class (which has no display:none) and stays
+  // visible (display:block) on content pages even when not active — the menu
+  // overlay appears stuck after cross-page subnav navigation. On home, the
+  // data-section attribute already triggers #spa-content section[data-section]
+  // { display: none }, so the class is not needed there.
+  const pageClass = mode === 'content' ? 'jlz-page-section' : ''
   return `
-    <section class="jlz-menu-overlay uk-section uk-section-xsmall" id="section-menu" ${sectionAttr}>
+    <section class="jlz-menu-overlay ${pageClass} uk-section uk-section-xsmall" id="section-menu" ${sectionAttr}>
       <div class="uk-container uk-container-expand jlz-menu-container">
         <!-- (Top bar removed — config controls (lang/sound/theme) moved to
              the header help dropdown in UIMenu.ts. Menu section is now

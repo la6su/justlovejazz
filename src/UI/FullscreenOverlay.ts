@@ -313,6 +313,18 @@ export class FullscreenOverlay {
 
   close(): void {
     UIkit.modal(this.container).hide()
+    // Safety net: clear state synchronously. The UIKit 'hide' event (which
+    // also clears these) fires asynchronously after the close animation. If
+    // 'hide' fails to fire (UIKit race when show/hide overlap), _isOpen and
+    // jlzOverlayOpen stay stuck true — blocking JoystickNav keyboard nav
+    // (arrow keys early-return on jlzOverlayOpen) while the FullscreenOverlay
+    // keydown handler keeps intercepting ArrowLeft/Right/Space (via _isOpen).
+    // The joystick drag still works because pointer handlers don't check
+    // these flags. Clearing here guarantees flags are always in sync with
+    // the explicit close() call.
+    this._isOpen = false
+    ;(window as unknown as { jlzOverlayOpen?: boolean }).jlzOverlayOpen = false
+    this.video.pause()
   }
 
   get isOpen(): boolean {
