@@ -32,6 +32,7 @@ import { MeshPhysicalNodeMaterial } from 'three/webgpu'
 import { Fn, uniform, positionLocal, normalLocal, mx_noise_float, sin } from 'three/tsl'
 import { DeviceCapability } from '../../core/DeviceCapability'
 import { MeshTransmissionMaterial } from './MeshTransmissionMaterial'
+import { PlayButton3D } from './PlayButton3D'
 
 interface BakuMaterialParams {
   color: THREE.Color
@@ -53,9 +54,9 @@ const ROT_PER_TRANSITION = Math.PI / 6
 
 export class SplashCube extends THREE.Mesh {
   private cubeMesh!: THREE.Mesh
-  // edgeLines removed — was LineSegments with 1px aliasing. Cube looks
-  // clean with just MeshPhysicalMaterial (iridescence + clearcoat).
   private cubeMaterial!: THREE.MeshPhysicalMaterial
+  /** TSL shader play button — in front of cube, visible on intro section only */
+  public playButton: PlayButton3D | null = null
   // TSL wobble uniforms (WebGPU path only)
   // day34 pattern, tuned for VISIBLE elegant jelly:
   //   - NOISE_FREQ = 2.4 — 2 periods/face like day34
@@ -388,9 +389,16 @@ export class SplashCube extends THREE.Mesh {
     this.add(this.cubeMesh)
 
     // Connect CubeCamera render target → material envMap
-    // This gives the glass cube dynamic reflections of the content scene
-    // (gradient planes + logo + text). Without this, the cube is flat.
     this.cubeMaterial.envMap = this.cubeCamera.renderTarget.texture
+
+    // TSL shader play button — in front of cube face (+Z)
+    try {
+      this.playButton = new PlayButton3D()
+      this.cubeMesh.add(this.playButton) // child of cube so it rotates with it
+      this.playButton.setVisible(false) // hidden until intro section
+    } catch (e) {
+      console.warn('[SplashCube] PlayButton3D init failed:', e)
+    }
   }
 
   // ════════════════════════════════════════════════════════════════════
@@ -581,6 +589,9 @@ export class SplashCube extends THREE.Mesh {
 
     // Advance wobble time — TSL (WebGPU) + MeshTransmissionMaterial (WebGL2)
     ;(this._uTime as unknown as { value: number }).value = this.time
+
+    // Update play button shader time
+    this.playButton?.update(dt)
     const mtm = this.cubeMaterial as unknown as { time?: number }
     if (mtm.time !== undefined) mtm.time = this.time
 
@@ -634,6 +645,7 @@ export class SplashCube extends THREE.Mesh {
   }
 
   dispose(): void {
+    this.playButton?.dispose()
     this.cubeMesh.geometry.dispose()
     this.cubeMaterial.dispose()
     this.cubeCamera.renderTarget.dispose()

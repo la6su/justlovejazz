@@ -1,8 +1,7 @@
-// UIMenu.ts — Minimal header: 3 buttons only (lang, hamburger, sound).
+// UIMenu.ts — Header with 3 zones: RU/EN left, logo+sound center, hamburger right.
 //
-// No logo, no quicknav, no theme toggle in header.
+// Glass-morphism style (backdrop-filter blur, semi-transparent bg).
 // Hamburger → opens navigation overlay section (joystick right, section 5).
-// Navigation overlay uses UIKit3 uk-accordion for expand/collapse.
 
 import { toggleLang, getLang } from '../core/i18n'
 
@@ -28,15 +27,15 @@ export class UIMenu {
     // Language toggle
     this._langBtn?.addEventListener('click', () => toggleLang())
 
-    // Sound toggle (syncs with SoundPanel via jlz:sound-toggle event)
+    // Sound toggle — animated bars + syncs with SoundPanel
     let soundMuted = true
     this._soundBtn?.addEventListener('click', () => {
       soundMuted = !soundMuted
-      this.updateSoundLabel(soundMuted)
+      this.updateSoundState(soundMuted)
       window.dispatchEvent(new CustomEvent('jlz:sound-toggle', { detail: { muted: soundMuted } }))
     })
 
-    // Hamburger → navigate to section 5 (navigation overlay) via joystick
+    // Hamburger → navigate to section 5 (navigation overlay)
     this._hamburgerBtn?.addEventListener('click', () => {
       window.dispatchEvent(new CustomEvent('jlz:goto-nav'))
     })
@@ -46,7 +45,7 @@ export class UIMenu {
       const detail = (e as CustomEvent<{ muted: boolean }>).detail
       if (detail) {
         soundMuted = detail.muted
-        this.updateSoundLabel(soundMuted)
+        this.updateSoundState(soundMuted)
       }
     })
 
@@ -54,24 +53,38 @@ export class UIMenu {
     window.addEventListener('jlz:lang-change', this._langHandler)
 
     this.updateLangLabel()
-    this.updateSoundLabel(soundMuted)
+    this.updateSoundState(soundMuted)
   }
 
-  /** Build the navbar HTML — minimal: 3 buttons only (lang, hamburger, sound). */
+  /** Build navbar — 3 zones: left (lang), center (logo + sound), right (hamburger). */
   private buildNavbar(): string {
     return `
       <nav class="uk-navbar-container uk-navbar-transparent jlz-navbar" uk-navbar>
-        <div class="uk-container uk-container-expand uk-flex uk-flex-right uk-flex-middle">
-          <!-- 3 controls only — lang / hamburger / sound -->
-          <div class="uk-navbar-right jlz-navbar-controls">
-            <button class="uk-icon-button jlz-lang-toggle" type="button" id="jlz-lang-toggle" aria-label="Switch language">
+        <div class="uk-container uk-container-expand uk-flex uk-flex-between uk-flex-middle">
+          <!-- Left: RU/EN switch -->
+          <div class="uk-navbar-left">
+            <button class="jlz-glass-btn jlz-lang-toggle" type="button" id="jlz-lang-toggle" aria-label="Switch language">
               <span class="jlz-lang-label">EN</span>
             </button>
-            <button class="uk-icon-button jlz-hamburger" type="button" id="jlz-hamburger" aria-label="Open navigation">
-              <span uk-icon="icon: menu; ratio: 1.1" aria-hidden="true"></span>
+          </div>
+          <!-- Center: SVG logo + sound toggle -->
+          <div class="uk-navbar-center jlz-navbar-center-group">
+            <a href="/" class="jlz-navbar-logo" aria-label="JUSTLOVEJAZZ home">
+              <img src="/logo.svg" alt="JUSTLOVEJAZZ" width="28" height="28" />
+            </a>
+            <button class="jlz-glass-btn jlz-sound-toggle" type="button" id="jlz-navbar-sound" aria-label="Toggle sound" aria-pressed="true">
+              <span class="jlz-sound-bars" aria-hidden="true">
+                <span class="jlz-sound-bar"></span>
+                <span class="jlz-sound-bar"></span>
+                <span class="jlz-sound-bar"></span>
+                <span class="jlz-sound-bar"></span>
+              </span>
             </button>
-            <button class="uk-icon-button jlz-sound-toggle" type="button" id="jlz-navbar-sound" aria-label="Toggle sound" aria-pressed="true">
-              <span uk-icon="icon: muted; ratio: 0.9" aria-hidden="true"></span>
+          </div>
+          <!-- Right: Hamburger -->
+          <div class="uk-navbar-right">
+            <button class="jlz-glass-btn jlz-hamburger" type="button" id="jlz-hamburger" aria-label="Open navigation">
+              <span uk-icon="icon: menu; ratio: 1.2" aria-hidden="true"></span>
             </button>
           </div>
         </div>
@@ -88,10 +101,10 @@ export class UIMenu {
     if (label) label.textContent = lang
   }
 
-  private updateSoundLabel(muted: boolean): void {
+  private updateSoundState(muted: boolean): void {
     this._soundBtn?.setAttribute('aria-pressed', String(muted))
-    const icon = this._soundBtn?.querySelector('[uk-icon]')
-    icon?.setAttribute('uk-icon', `icon: ${muted ? 'muted' : 'sound'}; ratio: 0.9`)
+    this._soundBtn?.classList.toggle('is-muted', muted)
+    this._soundBtn?.classList.toggle('is-playing', !muted)
   }
 
   dispose(): void {

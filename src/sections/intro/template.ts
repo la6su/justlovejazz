@@ -1,6 +1,7 @@
 // src/sections/intro/template.ts — Face 1: Studio (front face +Z, start section)
 // Hero tier — uk-heading-xlarge. Active on load.
-// Phase 3: Play button centered on cube for showreel modal.
+// Play button is rendered as a 3D TSL shader mesh in front of the cube
+// (see SplashCube.ts → PlayButton3D). DOM overlay only for the label.
 import { REVEAL, sectionShell } from '../_shared/constants'
 
 export function introSection(): string {
@@ -23,22 +24,15 @@ export function introSection(): string {
       </a>
     </div>
   `
-  // Phase 3: Play button centered on cube — opens showreel modal
-  const playButton = `
-    <div class="jlz-showreel-play-wrap" ${REVEAL}>
-      <button class="jlz-showreel-play" type="button" id="jlz-showreel-trigger"
+  // DOM overlay for showreel label (3D play button is in SplashCube scene)
+  const playOverlay = `
+    <div class="jlz-showreel-overlay" ${REVEAL}>
+      <button class="jlz-showreel-trigger" type="button" id="jlz-showreel-trigger"
               aria-label="Play showreel"
               data-cursor="play" data-magnetic>
-        <span class="jlz-showreel-play__ring" aria-hidden="true"></span>
-        <span class="jlz-showreel-play__icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
-            <path d="M8 5v14l11-7z"/>
-          </svg>
-        </span>
-        <span class="jlz-showreel-play__label" data-i18n="home.studio.showreel">Showreel</span>
+        <span class="jlz-showreel-trigger__label" data-i18n="home.studio.showreel">Showreel</span>
       </button>
     </div>
   `
-  // Pass playButton as extraHtml (inserted INSIDE section, after container div)
-  return sectionShell('intro', top, bottom, 'home', false, '', playButton)
+  return sectionShell('intro', top, bottom, 'home', false, '', playOverlay)
 }

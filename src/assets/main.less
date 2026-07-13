@@ -1371,103 +1371,54 @@ body.uk-light .jlz-eyebrow {
 // SHOWREEL PLAY BUTTON + MODAL (PLAN-v2 Phase 3)
 // ════════════════════════════════════════════════════════════════════
 
-// Play button — centered on cube (intro section)
-.jlz-showreel-play-wrap {
+// Showreel overlay — DOM label only (3D play button is in the scene)
+.jlz-showreel-overlay {
   position: absolute;
-  top: 50%;
+  bottom: 15%;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translateX(-50%);
   z-index: 5;
   pointer-events: auto;
 }
 
-.jlz-showreel-play {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0;
-  border: none;
-  background: none;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.jlz-showreel-play__ring {
-  display: block;
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  border: 2px solid rgba(245, 245, 247, 0.4);
-  background: rgba(10, 10, 15, 0.3);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  transition: border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
-  position: relative;
-}
-
-.jlz-showreel-play:hover .jlz-showreel-play__ring {
-  border-color: var(--jlz-accent, #c4ff00);
-  transform: scale(1.08);
-  box-shadow: 0 0 40px rgba(196, 255, 0, 0.3);
-}
-
-.jlz-showreel-play__icon {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-45%, -50%); // visual center triangle
+.jlz-showreel-trigger {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(245, 245, 247, 0.9);
-  transition: color 0.3s ease;
+  padding: 0.5rem 1.5rem;
+  border: 1px solid rgba(245, 245, 247, 0.15);
+  border-radius: 100px;
+  background: rgba(10, 10, 15, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.jlz-showreel-play:hover .jlz-showreel-play__icon {
-  color: var(--jlz-accent, #c4ff00);
+.jlz-showreel-trigger:hover {
+  border-color: var(--jlz-accent, #c4ff00);
+  background: rgba(196, 255, 0, 0.08);
 }
 
-.jlz-showreel-play__label {
-  font-family: 'Inter', sans-serif;
+.jlz-showreel-trigger__label {
+  font-family: "Inter", sans-serif;
   font-size: 0.7rem;
   font-weight: 600;
   letter-spacing: 0.25em;
   text-transform: uppercase;
-  color: rgba(245, 245, 247, 0.6);
-  transition: color 0.3s ease;
+  color: rgba(245, 245, 247, 0.7);
+  transition: color 0.2s ease;
 }
 
-.jlz-showreel-play:hover .jlz-showreel-play__label {
+.jlz-showreel-trigger:hover .jlz-showreel-trigger__label {
   color: var(--jlz-accent, #c4ff00);
 }
 
-// Pulse animation on ring (subtle attention)
-.jlz-showreel-play__ring::before {
-  content: '';
-  position: absolute;
-  inset: -2px;
-  border-radius: 50%;
-  border: 2px solid rgba(196, 255, 0, 0.4);
-  opacity: 0;
-  animation: jlz-showreel-pulse 2.5s ease-out infinite;
-}
-
-@keyframes jlz-showreel-pulse {
-  0% { transform: scale(1); opacity: 0.6; }
-  100% { transform: scale(1.6); opacity: 0; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .jlz-showreel-play__ring::before { animation: none; }
-}
-
-// Mobile — smaller play button
 @media (max-width: 640px) {
-  .jlz-showreel-play__ring { width: 64px; height: 64px; }
-  .jlz-showreel-play__label { font-size: 0.6rem; }
+  .jlz-showreel-trigger__label { font-size: 0.6rem; }
 }
+
 
 // ── Showreel modal (UIKit3 uk-modal) ──
 .jlz-showreel-modal {
@@ -1551,27 +1502,7 @@ body.uk-light .jlz-eyebrow {
   color: rgba(245, 245, 247, 0.8);
 }
 
-.jlz-showreel-play,
-.jlz-showreel-mute {
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(245, 245, 247, 0.15);
-  border-radius: 50%;
-  background: rgba(10, 10, 15, 0.4);
-  color: rgba(245, 245, 247, 0.8);
-  cursor: pointer;
-  transition: border-color 0.2s ease, color 0.2s ease;
-  flex-shrink: 0;
-}
-
-.jlz-showreel-play:hover,
-.jlz-showreel-mute:hover {
-  border-color: var(--jlz-accent, #c4ff00);
-  color: var(--jlz-accent, #c4ff00);
-}
+// Showreel controls use uk-icon-button (QF styled) — no custom CSS needed
 
 .jlz-showreel-seek {
   flex: 1;
@@ -1672,37 +1603,137 @@ body.uk-light .jlz-eyebrow {
 }
 
 // ════════════════════════════════════════════════════════════════════
-// NAVBAR — logo, lang, sound, dropbar previews (PLAN-v2 Phase 6)
+// NAVBAR — glass-morphism, 3 zones (lang left, logo+sound center, hamburger right)
 // ════════════════════════════════════════════════════════════════════
 
 .jlz-navbar {
   border-bottom: 1px solid rgba(245, 245, 247, 0.06);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  background: rgba(10, 10, 15, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  background: rgba(10, 10, 15, 0.6);
 }
 
 body.uk-light .jlz-navbar {
-  background: rgba(245, 245, 247, 0.8);
+  background: rgba(245, 245, 247, 0.6);
   border-bottom-color: rgba(10, 10, 15, 0.08);
 }
 
-
-// Controls (right side)
-.jlz-navbar-controls {
+// Center group — logo + sound
+.jlz-navbar-center-group {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 0.75rem;
 }
 
+.jlz-navbar-logo {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  opacity: 0.85;
+  transition: opacity 0.2s ease;
+}
+
+.jlz-navbar-logo:hover {
+  opacity: 1;
+}
+
+.jlz-navbar-logo img {
+  width: 28px;
+  height: 28px;
+  display: block;
+}
+
+// ── Glass-morphism buttons ──
+.jlz-glass-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 0.5rem;
+  border: 1px solid rgba(245, 245, 247, 0.12);
+  border-radius: 8px;
+  background: rgba(245, 245, 247, 0.06);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: rgba(245, 245, 247, 0.7);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.jlz-glass-btn:hover {
+  border-color: rgba(196, 255, 0, 0.3);
+  background: rgba(196, 255, 0, 0.08);
+  color: var(--jlz-accent, #c4ff00);
+}
+
+body.uk-light .jlz-glass-btn {
+  border-color: rgba(10, 10, 15, 0.12);
+  background: rgba(10, 10, 15, 0.06);
+  color: rgba(10, 10, 15, 0.7);
+}
 
 .jlz-lang-label {
   text-transform: uppercase;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
 }
 
-// Hamburger always visible (no quicknav anymore)
+// ── Sound bars animation (in header) ──
+.jlz-sound-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 16px;
+}
+
+.jlz-glass-btn.jlz-sound-toggle .jlz-sound-bar {
+  display: block;
+  width: 3px;
+  height: 30%;
+  background: rgba(245, 245, 247, 0.3);
+  border-radius: 1px;
+  transition: background 0.2s ease, height 0.2s ease;
+}
+
+.jlz-glass-btn.jlz-sound-toggle.is-playing .jlz-sound-bar {
+  background: var(--jlz-accent, #c4ff00);
+  animation: jlz-sound-eq 800ms ease-in-out infinite alternate;
+}
+
+.jlz-glass-btn.jlz-sound-toggle.is-playing .jlz-sound-bar:nth-child(1) { animation-delay: 0ms; }
+.jlz-glass-btn.jlz-sound-toggle.is-playing .jlz-sound-bar:nth-child(2) { animation-delay: 150ms; }
+.jlz-glass-btn.jlz-sound-toggle.is-playing .jlz-sound-bar:nth-child(3) { animation-delay: 300ms; }
+.jlz-glass-btn.jlz-sound-toggle.is-playing .jlz-sound-bar:nth-child(4) { animation-delay: 450ms; }
+
+@keyframes jlz-sound-eq {
+  0% { height: 20%; }
+  25% { height: 80%; }
+  50% { height: 40%; }
+  75% { height: 95%; }
+  100% { height: 30%; }
+}
+
+.jlz-glass-btn.jlz-sound-toggle.is-muted .jlz-sound-bar {
+  height: 30%;
+  background: rgba(245, 245, 247, 0.25);
+  animation: none;
+}
+
+body.uk-light .jlz-glass-btn.jlz-sound-toggle .jlz-sound-bar {
+  background: rgba(10, 10, 15, 0.3);
+}
+
+body.uk-light .jlz-glass-btn.jlz-sound-toggle.is-muted .jlz-sound-bar {
+  background: rgba(10, 10, 15, 0.2);
+}
+
 @media (max-width: 500px) {
   .jlz-lang-label { font-size: 0.65rem; }
+  .jlz-glass-btn { min-width: 32px; height: 32px; }
+  .jlz-navbar-logo img { width: 24px; height: 24px; }
 }
 
 // ════════════════════════════════════════════════════════════════════

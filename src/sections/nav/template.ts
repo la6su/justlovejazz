@@ -1,13 +1,11 @@
 // src/sections/nav/template.ts — Navigation overlay (secret right section on all pages)
 //
-// This is the "hamburger menu" — fullscreen navigation overlay shown when
-// user drags joystick RIGHT (section 5 on all pages) or clicks hamburger button.
-//
-// ACCORDION: uses UIKit3 native uk-accordion (no custom JS needed).
-// Click a nav item to expand its sub-sections. Only one open at a time.
-// Clicking a sub-section navigates to that page + section (via hash).
+// Fullscreen navigation overlay with centered menu + blur backdrop.
+// Uses UIKit3 native uk-accordion — click a nav item to expand sub-sections.
+// initNavAccordion() must be called after DOM insertion to init UIKit3 accordion.
 
 import { sectionShell } from '../_shared/constants'
+import UIkit from 'uikit'
 
 interface SubSection {
   num: string
@@ -28,12 +26,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   {
-    num: '01',
-    label: 'Studio',
-    labelKey: 'nav.studio',
-    href: '/',
-    desc: 'Home · cube experience',
-    descKey: 'navOverlay.studio.desc',
+    num: '01', label: 'Studio', labelKey: 'nav.studio', href: '/', desc: 'Home · cube experience', descKey: 'navOverlay.studio.desc',
     subs: [
       { num: '01', title: 'Studio', titleKey: 'dropbar.home.s1.title', href: '/#section-intro' },
       { num: '02', title: 'Services', titleKey: 'dropbar.home.s2.title', href: '/#section-about' },
@@ -42,12 +35,7 @@ const NAV_ITEMS: NavItem[] = [
     ],
   },
   {
-    num: '02',
-    label: 'Services',
-    labelKey: 'nav.services',
-    href: '/services',
-    desc: 'What we do',
-    descKey: 'navOverlay.services.desc',
+    num: '02', label: 'Services', labelKey: 'nav.services', href: '/services', desc: 'What we do', descKey: 'navOverlay.services.desc',
     subs: [
       { num: '01', title: 'Creative Direction', titleKey: 'dropbar.services.s1.title', href: '/services#section-services-01' },
       { num: '02', title: 'Interactive Development', titleKey: 'dropbar.services.s2.title', href: '/services#section-services-02' },
@@ -56,12 +44,7 @@ const NAV_ITEMS: NavItem[] = [
     ],
   },
   {
-    num: '03',
-    label: 'Works',
-    labelKey: 'nav.works',
-    href: '/works',
-    desc: 'Selected projects',
-    descKey: 'navOverlay.works.desc',
+    num: '03', label: 'Works', labelKey: 'nav.works', href: '/works', desc: 'Selected projects', descKey: 'navOverlay.works.desc',
     subs: [
       { num: '01', title: 'Selected Works', titleKey: 'works.section1.title', href: '/works#section-works-01' },
       { num: '02', title: 'Case Studies', titleKey: 'works.section2.title', href: '/works#section-works-02' },
@@ -70,12 +53,7 @@ const NAV_ITEMS: NavItem[] = [
     ],
   },
   {
-    num: '04',
-    label: 'Manifesto',
-    labelKey: 'nav.manifesto',
-    href: '/manifesto',
-    desc: 'Principles',
-    descKey: 'navOverlay.manifesto.desc',
+    num: '04', label: 'Manifesto', labelKey: 'nav.manifesto', href: '/manifesto', desc: 'Principles', descKey: 'navOverlay.manifesto.desc',
     subs: [
       { num: '01', title: 'Purpose', titleKey: 'dropbar.manifesto.s1.title', href: '/manifesto#section-manifesto-01' },
       { num: '02', title: 'Clarity', titleKey: 'dropbar.manifesto.s2.title', href: '/manifesto#section-manifesto-02' },
@@ -84,12 +62,7 @@ const NAV_ITEMS: NavItem[] = [
     ],
   },
   {
-    num: '05',
-    label: 'Lab',
-    labelKey: 'nav.lab',
-    href: '/lab',
-    desc: 'Experiments',
-    descKey: 'navOverlay.lab.desc',
+    num: '05', label: 'Lab', labelKey: 'nav.lab', href: '/lab', desc: 'Experiments', descKey: 'navOverlay.lab.desc',
     subs: [
       { num: '01', title: 'Shader Lab', titleKey: 'dropbar.lab.s1.title', href: '/lab#section-lab-01' },
       { num: '02', title: 'Audio Reactive', titleKey: 'dropbar.lab.s2.title', href: '/lab#section-lab-02' },
@@ -98,12 +71,7 @@ const NAV_ITEMS: NavItem[] = [
     ],
   },
   {
-    num: '06',
-    label: 'Contact',
-    labelKey: 'nav.contact',
-    href: '/contact',
-    desc: 'Start a project',
-    descKey: 'navOverlay.contact.desc',
+    num: '06', label: 'Contact', labelKey: 'nav.contact', href: '/contact', desc: 'Start a project', descKey: 'navOverlay.contact.desc',
     subs: [
       { num: '01', title: 'Email', titleKey: 'dropbar.contact.s1.title', href: '/contact#section-contact-01' },
       { num: '02', title: 'Social', titleKey: 'dropbar.contact.s2.title', href: '/contact#section-contact-02' },
@@ -113,10 +81,9 @@ const NAV_ITEMS: NavItem[] = [
   },
 ]
 
-/** Navigation overlay section — shown as section 5 (joystick right) on ALL pages.
- *  Uses UIKit3 native uk-accordion for expand/collapse behavior.
- *  On home page it replaces the old processSection. On content pages it replaces
- *  the old "secret right" section. */
+/** Navigation overlay section — fullscreen centered menu with blur backdrop.
+ *  Uses UIKit3 uk-accordion for expand/collapse.
+ *  Shown as section 5 (joystick right) on ALL pages. */
 export function navOverlaySection(mode: 'home' | 'content' = 'content'): string {
   const top = `
     <div class="jlz-section-top jlz-nav-overlay-top uk-text-center uk-flex uk-flex-column uk-flex-middle">
@@ -127,7 +94,7 @@ export function navOverlaySection(mode: 'home' | 'content' = 'content'): string 
   `
   const bottom = `
     <div class="jlz-section-bottom jlz-nav-overlay-bottom">
-      <ul class="jlz-nav-accordion uk-accordion" uk-accordion="collapsible: true; multiple: false; animation: true; duration: 300">
+      <ul class="jlz-nav-accordion uk-accordion" id="jlz-nav-accordion" uk-accordion="collapsible: true; multiple: false; active: -1">
         ${NAV_ITEMS.map(item => `
           <li class="jlz-nav-accordion__item">
             <a class="jlz-nav-accordion__header uk-accordion-title" href="#" data-magnetic>
@@ -159,9 +126,20 @@ export function navOverlaySection(mode: 'home' | 'content' = 'content'): string 
   return sectionShell('page-nav', top, bottom, 'content')
 }
 
-/** No-op — UIKit3 accordion is initialized automatically via uk-accordion attribute.
- *  Kept for backward compat (router.ts imports it). */
+/** Initialize UIKit3 accordion on dynamically inserted nav content.
+ *  Must be called AFTER DOM insertion (router.ts calls this after innerHTML). */
 export function initNavAccordion(): void {
-  // UIKit3 handles accordion via uk-accordion attribute + UIkit.update()
-  // No custom JS needed.
+  const el = document.getElementById('jlz-nav-accordion')
+  if (!el) return
+  // UIKit3 needs explicit init on dynamically inserted content
+  try {
+    ;(UIkit as unknown as { accordion: (el: Element, opts?: Record<string, unknown>) => void }).accordion(el, {
+      collapsible: true,
+      multiple: false,
+      active: -1,
+    })
+  } catch {
+    // Already initialized or UIKit not ready — try update
+    try { ;(UIkit as unknown as { update: (el: Element) => void }).update(el) } catch { /* ignore */ }
+  }
 }
