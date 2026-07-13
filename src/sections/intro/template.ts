@@ -39,6 +39,6 @@ export function introSection(): string {
       </button>
     </div>
   `
-  // Pass playButton as extraAttrs (inserted into section, positioned absolute center)
-  return sectionShell('intro', top, bottom, 'home', false, playButton)
+  // Pass playButton as extraHtml (inserted INSIDE section, after container div)
+  return sectionShell('intro', top, bottom, 'home', false, '', playButton)
 }

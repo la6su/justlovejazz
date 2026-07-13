@@ -48,6 +48,7 @@ export type PageId = 'home' | 'services' | 'works' | 'manifesto' | 'lab' | 'cont
  *  mode: 'home' (3D cube face, data-section) | 'content' (page section, data-page-section)
  *  isActive: only for content mode — toggles .section-active on initial section.
  *  extraAttrs: additional attributes on the <section> (e.g. project-overlay id).
+ *  extraHtml: additional HTML content INSIDE the section (e.g. play button overlay).
  *
  *  UIKit3: uk-section-small + uk-section-large@m (responsive padding),
  *  uk-container-expand, uk-flex uk-flex-between uk-height-1-1 (Apple Watch
@@ -59,6 +60,7 @@ export function sectionShell(
   mode: 'home' | 'content' = 'content',
   isActive: boolean = false,
   extraAttrs: string = '',
+  extraHtml: string = '',
 ): string {
   const activeClass = mode === 'content' && isActive ? 'section-active' : ''
   const pageClass = mode === 'content' ? 'jlz-page-section' : ''
@@ -70,6 +72,7 @@ export function sectionShell(
         ${topHtml}
         ${bottomHtml}
       </div>
+      ${extraHtml}
     </section>
   `
 }

@@ -89,6 +89,17 @@ export class UIMenu {
               <span class="jlz-logo-text">l@6</span>
             </a>
           </div>
+          <!-- Center: Quick nav links (desktop only, hidden on mobile) -->
+          <div class="uk-navbar-center jlz-navbar-quicknav">
+            <ul class="uk-navbar-nav">
+              <li><a href="/" data-i18n="nav.studio">Studio</a></li>
+              <li><a href="/services" data-i18n="nav.services">Services</a></li>
+              <li><a href="/works" data-i18n="nav.works">Works</a></li>
+              <li><a href="/manifesto" data-i18n="nav.manifesto">Manifesto</a></li>
+              <li><a href="/lab" data-i18n="nav.lab">Lab</a></li>
+              <li><a href="/contact" data-i18n="nav.contact">Contact</a></li>
+            </ul>
+          </div>
           <!-- Right: Controls (lang + sound + theme + hamburger) -->
           <div class="uk-navbar-right jlz-navbar-controls">
             <button class="jlz-navbar-btn jlz-lang-toggle" type="button" id="jlz-lang-toggle" aria-label="Switch language">
