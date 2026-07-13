@@ -116,12 +116,12 @@ export class MeshTransmissionMaterial extends THREE.MeshPhysicalMaterial {
       //   - Time speeds slowed: 0.25→0.2, 0.4→0.3 (graceful)
       //   - Squash 0.08 → 0.04, Breathe 0.12 → 0.08 (preserves cube shape)
       //   - Squash freq 0.3 → 0.25, Breathe freq 0.55 → 0.45 (slower)
-      // Our cube=0.8 (20x smaller): NOISE_FREQ=2.4, SIZE_SCALE=0.05.
+      // Our cube=0.8 (20x smaller): NOISE_FREQ=2.4, SIZE_SCALE=0.07.
       shader.vertexShader = shader.vertexShader.replace(
         '#include <begin_vertex>',
         /*glsl*/ `
         vec3 transformed = vec3( position );
-        const float SIZE_SCALE = 0.05;       // subtle displacement (synced with TSL)
+        const float SIZE_SCALE = 0.07;       // visible displacement (synced with TSL)
         const float NOISE_FREQ = 2.4;        // 0.12 * (16/0.8) → 2 periods/face
         float t = time;                       // raw time (day34)
         vec3 np = position * NOISE_FREQ;

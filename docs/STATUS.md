@@ -1,6 +1,7 @@
 # STATUS — Single Source of Truth
 
-> Updated: 2026-07-12 (docs sync: 2026-07-11). Branch: `main`. Build green. ~11.6K TS LOC, 81 TS files.
+> Updated: 2026-07-13. Branch: `main`. Build green. ~11.6K TS LOC, 81 TS files.
+> Cube wobble fixed (day34-accurate). Autonomous improvement plan in `docs/PLAN.md`.
 
 ## Project
 
@@ -41,7 +42,8 @@ Blog: standalone HTML (`blog.html` + 4 articles), SEO-optimized.
 | BakuCarousel — home page Works section (idx 3) only | ✅ |
 | **Works page — 4 sections × 2 large 3D tilt cards (8 projects)** | ✅ |
 | **ProjectOverlay reused** (home carousel + works page cards) | ✅ |
-| SplashCube — RoundedBoxGeometry + CubeCamera (throttled) | ✅ |
+| **SplashCube — day34-accurate jelly wobble** (BoxGeometry + mergeVertices) | ✅ |
+| **Cube wobble tuned** (uWobble=0.70, SIZE_SCALE=0.07, smoothed) | ✅ |
 | **Ground plane — section 4 (bottom) ONLY** | ✅ |
 | Per-section inverse theme (ContentReveal) | ✅ |
 | Custom cursor — codrops-style (skip redraw when idle) | ✅ |
@@ -58,6 +60,26 @@ Blog: standalone HTML (`blog.html` + 4 articles), SEO-optimized.
 | Ponytail audit — -632 LOC dead code removed | ✅ |
 | TypeScript strict + ESLint + Prettier | ✅ |
 | 9 unit tests (EventBus 5 + Noise 2 + motionPolicy 2) | ✅ |
+| **Camera far=1000** (black hole fix preserved) | ✅ |
+| **Naming refactor** (createSection0-5, userData.carousel preserved) | ✅ |
+| **RenderPipeline crash guard** (line 641 preserved) | ✅ |
+| **Post-processing** (vignette, refract, border, chromatic preserved) | ✅ |
+
+## Recent work (2026-07-13)
+
+- **Cube wobble fixed** — day34-accurate pattern after 7 tuning iterations.
+  Root cause: `RoundedBoxGeometry` gave non-perpendicular normals on face
+  interiors → flat-plane shift. Fixed with `BoxGeometry + manual rounding +
+  mergeVertices + computeVertexNormals` (day34 pattern). Final params:
+  uWobble=0.70, SIZE_SCALE=0.07, 2-octave noise (high-freq removed), slowed
+  time speeds, reduced squash/breathe. VLM: "soft jelly, edges flowing,
+  barely visible, elegant" (7/10).
+- **Geometry optimized** — segments 32 → 24 (39% fewer vertices: 6144 → 3750).
+- **Hermes agent delegation** — wrote detailed prompt for geometry topology
+  debugging, Hermes applied fix correctly (commit 72f5d9b).
+- **Autonomous plan created** — `docs/PLAN.md` with 8 phases: zoom on works,
+  sound panel, custom carousel physics, DrawTrail rewrite, wobble cursor,
+  typography + theme polish.
 
 ## Recent work (2026-07-12)
 

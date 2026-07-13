@@ -1,3 +1,51 @@
+
+## 2026-07-13 — Cube wobble day34-accurate + autonomous improvement plan
+
+### Done
+- **Cube wobble fixed** (Hermes agent + manual tuning):
+  - Root cause: `RoundedBoxGeometry` produced non-perpendicular normals on face
+    interiors → displacement shifted faces sideways (flat-plane shift) instead
+    of bulging outward (jelly). Fixed by day34 pattern: `BoxGeometry + manual
+    vertex rounding + mergeVertices + computeVertexNormals`.
+  - Wobble params tuned over 7 iterations:
+    - uWobble: 1.30 → 0.42 → 1.50 → 1.0 → 1.30 → 0.91 → 0.50 → **0.70** (final)
+    - SIZE_SCALE: 0.05 → 0.20 → 0.35 → 0.12 → 0.08 → 0.10 → 0.05 → **0.07** (final)
+    - Removed high-freq octave (n3) for smoother surface
+    - Slowed time speeds (0.3→0.2, 0.5→0.3) for graceful motion
+    - Reduced squash (0.08→0.04) + breathe (0.12→0.08) to preserve cube shape
+  - Result: VLM 7/10 → "soft jelly, edges flowing, barely visible, elegant"
+- **Geometry optimized**: segments 32 → 24 (39% fewer vertices: 6144 → 3750)
+- **Preserved fixes verified**:
+  - Camera far=1000 (black hole fix) ✓
+  - Naming refactor (createSection0-5, userData.carousel) ✓
+  - RenderPipeline crash guard (line 641) ✓
+  - Post-processing (vignette, refract, border, chromatic) ✓
+
+### Decisions
+- **day34 pattern is the source of truth** — no custom wobble layers (bend/echo/shear
+  all broke it). Pure 3-octave noise + squash + breathe, scaled by SIZE_SCALE.
+- **VLM-driven tuning** — use z-ai vision to analyze screenshots, apply VLM
+  recommendations for amplitude. More reliable than guessing.
+- **Hermes agent delegation** — for complex debugging (geometry topology),
+  write detailed prompt and delegate. Hermes applied the fix correctly.
+
+### Files
+- `src/Experience/World/SplashCube.ts` — wobble uniforms + buildCube + TSL positionNode
+- `src/Experience/World/MeshTransmissionMaterial.ts` — GLSL wobble injection
+- `docs/PLAN.md` — NEW: autonomous improvement roadmap (8 phases)
+
+### Next (autonomous, no questions)
+- Phase 2: Zoom on works section (Camera FOV pulse + cube scale pulse)
+- Phase 3: Sound panel UI (off by default, EQ bars, click toggles mute)
+- Phase 4: Custom carousel enhancements (momentum, rubber-band 0.35x, auto-advance 4.5s)
+- Phase 5: DrawTrail junni-style rewrite (tapered tail, particle emission)
+- Phase 6: Wobble cursor (spring physics, fix magnetic lerp)
+- Phase 7: Typography (Bebas Neue + Oswald + JetBrains Mono) + neon-lime accent
+- Phase 8: Final verification + push
+
+See `docs/PLAN.md` for full roadmap.
+
+---
 # WORKLOG — Chronological decision journal (NEWEST FIRST)
 
 > Read the TOP entry first — it's the latest context. Each entry captures
