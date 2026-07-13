@@ -1,4 +1,116 @@
 
+## 2026-07-13 — Menu close button + unique VOSK template + glassmorphism + docs audit
+
+### Context
+
+Follow-up to the navbar-conformance refactor. Three issues reported:
+1. Joystick nav stopped working (root cause: `touch-action: none` not on the
+   drag target itself — only on the parent).
+2. Accordion removed but menu template needed to be UNIQUE (not sectionShell),
+   VOSK-style 3-column, responsive in 1 screen.
+3. `uk-icon-button` instances needed glassmorphism styling per project theme.
+4. New requirement: explicit exit from menu — joystick arrow-left duplicated
+   with an X (close) button that appears when menu is open.
+5. Documentation out of sync — HERMES agent prompt + project .md files still
+   referenced SoundPanel, uk-accordion, paint-bucket, nav/toolbar.ts.
+
+### Done
+
+- **Joystick fix** — added `touch-action: none` directly on
+  `.jlz-joystick__base` (was only on parent `.jlz-joystick`; `touch-action`
+  is NOT inherited). Verified: real mouse drag now fires pointermove beyond
+  the dead zone; vertical drag cycles sections 1→4, horizontal opens Lab/Menu.
+
+- **Menu close button (hamburger ↔ X toggle)** — `UIMenu.ts` rewritten:
+  - `#jlz-hamburger` button contains TWO inline SVGs (hamburger + X).
+  - CSS-driven swap via `.jlz-header--menu-open` class on `<header>`.
+  - Click handler checks `_isMenuOpen()` → dispatches `jlz:goto-nav` (open)
+    or `jlz:close-nav` (close).
+  - `_syncToggleState()` runs on every `jlz:section-change` +
+    `jlz:page-section-change` to keep icon in sync with actual menu state.
+  - `JoystickNav` listens for `jlz:close-nav`: home → `_side='center'` +
+    `_fireSectionChange()`; content pages → `_syncPageSection(_mainSection)`.
+  - Returns to the PREVIOUS main section (the one from which menu was invoked),
+    not to a hardcoded index. Duplicates joystick arrow-left with explicit
+    on-screen button.
+
+- **Unique menu template (VOSK-style 3-column grid)** —
+  `src/sections/nav/template.ts` fully rewritten (NOT `sectionShell()`):
+  - Top bar: config toolbar (theme + sound) + brand
+  - Main: 3-column grid (stat | nav list | contacts)
+  - Left: giant "06" + "SECTIONS" + "EST 2019 · REMOTE · EU"
+  - Center: 6 flat nav items (Studio/Services/Works/Manifesto/Lab/Contact)
+    with numbers + hover arrow
+  - Right: contacts (Email, Telegram, GitHub) + socials (X, Instagram)
+  - Footer: © 2026 + tech stack
+  - `100dvh`, `overflow: hidden` — fits in 1 screen, no scroll
+  - Responsive: 3-col desktop (≥640px), single-col mobile (<640px)
+  - Accordion removed; `initNavAccordion` removed from router.ts
+
+- **Glassmorphism on `uk-icon-button` via `.hook-icon-button()`** —
+  new §3.5 UIKIT HOOK OVERRIDES section in `_import.less` (before §4
+  component imports — hooks must be defined BEFORE component .less):
+  - `.hook-icon-button()`: surface bg + backdrop-filter blur(8px) + border +
+    border-radius 8px
+  - `.hook-icon-button-hover()`: accent border + accent-tinted bg
+  - `.hook-icon-button-active()`: stronger accent
+  - `.hook-navbar-container()`: transparent bg
+  - Applies to ALL `uk-icon-button` (lang, theme, sound)
+
+- **LESS cleanup** — deleted `.jlz-nav-accordion` (196 LOC), added
+  `.jlz-menu-overlay`, `.jlz-menu-grid`, `.jlz-menu-col`, `.jlz-menu-nav`,
+  `.jlz-menu-contact-*`, `.jlz-menu-footer`, `.jlz-toggle-icon` styles.
+  Deleted `.jlz-glass-btn`, `.jlz-sound-toggle` (floating), `.jlz-config__btn`
+  mobile rule. Deleted `src/sections/nav/toolbar.ts` (merged into template.ts).
+
+- **Documentation audit + sync**:
+  - `docs/UIKIT3.md §1`: import order updated with §3.5 hooks step.
+  - `docs/UIKIT3.md §3`: noted section 5 (menu) as exception to sectionShell.
+  - `docs/UIKIT3.md §4`: theme toggle location corrected (menu overlay, not
+    UIMenu; paint-bucket reference removed).
+  - `docs/UIKIT3.md §7`: added lessons 21–24 (hamburger toggle pattern,
+    unique menu template, glassmorphism hooks, touch-action inheritance).
+    Lesson 20 updated with note that .jlz-nav-accordion was removed.
+  - `docs/UIKIT3.md §8`: table expanded — hamburger/close toggle, menu overlay,
+    glassmorphism rows added; accordion row marked as not-used-in-menu;
+    joystick row notes touch-action requirement.
+  - `README.md`: Navigation section updated (3-col template, hamburger/close
+    toggle, explicit exit).
+  - `AGENTS.md`: navigation table updated with explicit-exit row; hamburger
+    toggle documented; menu template noted as unique; theme toggle location
+    corrected to `nav/template.ts::initMenuToolbar`.
+  - `docs/STATUS.md`: Phase 3 sound panel entry updated — SoundPanel.ts
+    removed, sound now in menu overlay.
+  - `WORKLOG.md`: this entry.
+  - `NEXT.md`: item checked off.
+
+### Verification
+
+- `bun run type-check` — 0 errors.
+- `bun run lint` — 0 errors (63 pre-existing warnings).
+- `bun run build` — 5.17s, all chunks emitted.
+- `bun run test:unit` — 69/69 tests passed.
+- Agent Browser verify:
+  - Joystick vertical drag (real mouse): intro→about→works→contact ✅
+  - Joystick horizontal right: →menu overlay ✅
+  - Hamburger click: opens menu (hamburger icon → X) ✅
+  - Hamburger click when menu open: closes, returns to previous section ✅
+  - Theme toggle: sun↔moon swap, body.uk-light toggled ✅
+  - Sound toggle: muted↔playing, localStorage jlz:sound ✅
+  - Glassmorphism: blur(8px), border 1px, radius 8px on all uk-icon-button ✅
+  - Menu layout desktop 1280×800: 3-col grid, overlay=viewport, no scroll ✅
+  - Menu layout mobile 375×667: single-col, overlay=viewport, no scroll ✅
+
+### Files touched (10)
+
+- Modified: `src/UI/UIMenu.ts`, `src/UI/JoystickNav.ts`, `src/assets/_import.less`,
+  `src/assets/main.less`, `src/sections/nav/template.ts`, `src/router.ts`,
+  `src/UI/UIManager.ts`, `AGENTS.md`, `README.md`, `docs/UIKIT3.md`,
+  `docs/STATUS.md`, `WORKLOG.md`, `NEXT.md`.
+- Deleted: `src/sections/nav/toolbar.ts`.
+
+---
+
 ## 2026-07-13 — UIkit3 navbar conformance + Menu overlay toolbar
 
 ### Context

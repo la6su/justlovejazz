@@ -82,10 +82,12 @@ Blog: standalone HTML (`blog.html` + 4 articles), SEO-optimized.
   typography + theme polish.
 - **Phase 2: Zoom pulse** — Camera.pulse() method (two-phase FOV transition),
   triggered on section change + cube.triggerOpener() for combined effect.
-- **Phase 3: Sound panel** — `src/UI/SoundPanel.ts` with 4 EQ bars, animated
-  via CSS keyframes. Off by default, click toggles mute. Dispatches
-  jlz:sound-toggle event (Experience.ts already listens). Wired via
-  UIManager.init() in main-app.ts.
+- **Phase 3: Sound panel** — originally `src/UI/SoundPanel.ts` (floating
+  bottom-right button). **REMOVED** in the UIkit3 navbar conformance refactor
+  — sound toggle now lives in the menu overlay config toolbar
+  (`#jlz-menu-sound` inside `src/sections/nav/template.ts::configToolbar`).
+  Same 4-bar EQ animation, same `jlz:sound-toggle` event, same localStorage
+  key. See WORKLOG.md 2026-07-13 entry.
 - **Phase 4: Carousel enhancements** — momentum (velocity decay 0.92/frame),
   rubber-band (0.35x resistance beyond half-card-width), auto-advance
   (4500ms interval, pause on hover/drag), snap-back on release. New methods:

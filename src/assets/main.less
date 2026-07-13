@@ -1573,6 +1573,44 @@ body.uk-light .jlz-header .uk-navbar-container {
   .jlz-navbar-logo img { width: 24px; height: 24px; }
 }
 
+// ── Hamburger ↔ Close toggle (in navbar right zone) ──
+// The #jlz-hamburger button contains TWO inline SVGs: hamburger (default)
+// and X (close). CSS toggles visibility via .jlz-header--menu-open on the
+// <header> element (added by UIMenu._syncToggleState when menu is active).
+// Inline SVG avoids UIKit3's uk-icon deferred-render issue (§7.14).
+.jlz-navbar-toggle {
+  // uk-navbar-toggle gives flex centering; ensure our SVGs inherit color.
+  color: var(--jlz-color-text-muted);
+  transition: color 0.2s ease;
+}
+
+.jlz-navbar-toggle:hover,
+.jlz-navbar-toggle:focus-visible {
+  color: @global-primary-background;
+  outline: none;
+}
+
+.jlz-toggle-icon {
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+// Default (menu closed): show hamburger
+.jlz-header:not(.jlz-header--menu-open) .jlz-toggle-icon--open {
+  display: inline-flex;
+}
+
+// Menu open: show X (close)
+.jlz-header.jlz-header--menu-open .jlz-toggle-icon--close {
+  display: inline-flex;
+}
+
+// When menu is open, hint the toggle is a close action via accent color
+.jlz-header.jlz-header--menu-open .jlz-navbar-toggle {
+  color: @global-primary-background;
+}
+
 // ── Sound EQ-bars (used inside uk-icon-button in the menu overlay) ──
 // Custom visual per project decision — UIKit3 has no EQ-bars icon.
 // Container is .jlz-sound-bars (4 spans); state via .is-playing / .is-muted

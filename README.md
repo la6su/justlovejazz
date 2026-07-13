@@ -37,7 +37,7 @@ Multi-page: splash → app → blog → landing.
 | 3D | Three.js 0.184 + TSL NodeMaterial |
 | Renderer | WebGPURenderer (WebGPU/WebGL2 auto-fallback) |
 | UI | UIkit 3 + Less (master-quantum-flares YooTheme Pro) |
-| Navigation | JoystickNav (pure DOM, 2D) + Menu overlay (section 5, UIKit3 accordion) |
+| Navigation | JoystickNav (pure DOM, 2D) + Menu overlay (section 5, unique 3-col template) |
 | Background | EnvSphere (BackSide sphere + CanvasTexture) |
 | Lint | ESLint 9 + Prettier |
 | Test | Vitest (19 tests) |
@@ -57,9 +57,9 @@ Multi-page: splash → app → blog → landing.
 ## Navigation
 
 - **JoystickNav** (bottom-center, pure DOM): vertical = main sections (1-4), horizontal = secret sides (0=Lab / 5=Menu)
-- **Menu overlay** (section 5, joystick right or hamburger click): UIKit3 `uk-accordion` — 6 top items × 4 sub-sections. Hosts the config toolbar (theme toggle sun/moon + sound toggle EQ-bars).
+- **Menu overlay** (section 5, joystick right or hamburger click): unique 3-column VOSK-style template (stat | nav list | contacts + footer). Hosts the config toolbar (theme toggle sun/moon + sound toggle EQ-bars). Fits in 1 screen, no scroll.
 - **Lab overlay** (section 0, joystick left): grid of project experiment cards.
-- **Header** (UIkit3 3-zone navbar): lang (left) · logo (center) · hamburger (right). Hamburger opens section 5 (menu overlay).
+- **Header** (UIkit3 3-zone navbar): lang (left) · logo (center) · hamburger/close toggle (right). Hamburger opens section 5; when menu is open, icon swaps to X (close) and click returns to the previous main section (duplicates joystick arrow-left).
 - **Keyboard**: ArrowUp/Down/Left/Right, Home, End
 
 ## Theme

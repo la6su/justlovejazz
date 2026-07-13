@@ -11,13 +11,16 @@ Import order (load-bearing — break it and theme overrides stop applying):
 2. _import.less §2 → :root { --jlz-* } CSS custom properties
 3. uikit/variables.less → UIKit @* defaults
 4. _import.less §3 → Theme overrides (map @jlz-* → UIKit @*)
-5. uikit/mixin.less → shared mixins
-6. uikit/components/*.less → component rules (compiled with overridden vars)
-7. master-quantum-flares/_import.less → QF visual personality (no UIKit globals)
+5. _import.less §3.5 → UIKIT HOOK OVERRIDES (.hook-icon-button(), .hook-navbar-container(), etc.)
+   ⚠️ Hooks MUST be defined BEFORE the component .less import in §4 — UIKit
+   components call these mixins during compilation. See §7.23.
+6. uikit/mixin.less → shared mixins
+7. uikit/components/*.less → component rules (compiled with overridden vars + hooks)
+8. master-quantum-flares/_import.less → QF visual personality (no UIKit globals)
 ```
 
-**Rule:** UIKit variables set in `_import.less` §3. Never redeclare in `main.less`.
-master-qf MUST NOT duplicate UIKit globals.
+**Rule:** UIKit variables set in `_import.less` §3. Hooks in §3.5. Never
+redeclare either in `main.less`. master-qf MUST NOT duplicate UIKit globals.
 
 **QF principle:** `@global-primary-background: @jlz-color-accent` (1 line). QF
 manages ALL components through `@global-*` tokens. Do NOT override `@button-*`,
@@ -54,6 +57,10 @@ contentBottom(content)  // wraps cards/grid/list content
 Both produce: TOP (eyebrow + title + lead) / 3D CENTER (transparent) / BOTTOM (content).
 6 sections per page: 0=secret, 1=intro(start), 2-4=main, 5=secret.
 
+**EXCEPTION:** Section 5 (Menu overlay) does NOT use `sectionShell()`. It has
+its own `navOverlaySection()` in `src/sections/nav/template.ts` — a unique
+3-column VOSK-style grid (stat | nav list | contacts + footer). See §7.22.
+
 ## 4. Theme toggle — 2-mode (auto/inverse)
 
 | Mode | `uk-light` | Background | Text |
@@ -61,8 +68,10 @@ Both produce: TOP (eyebrow + title + lead) / 3D CENTER (transparent) / BOTTOM (c
 | auto (default) | on `body` | light | dark |
 | inverse | off | dark | light |
 
-Global flip (YooTheme Pro approach), NOT per-section. 1 toggle button in UIMenu
-(paint-bucket icon). `localStorage('jlz:theme')`. EnvSphere syncs via
+Global flip (YooTheme Pro approach), NOT per-section. Toggle button (`#jlz-theme-toggle`)
+lives in the menu overlay config toolbar (`src/sections/nav/template.ts`), NOT
+in the header. UIKit3 has no sun/moon icons → inline SVG, swapped via `.is-inverse`
+class. `localStorage('jlz:theme')`. EnvSphere syncs via
 `jlz:theme-applied`.
 
 ContentReveal applies `uk-light` per-section based on `sectionTheme` in WorldConfig:
@@ -204,6 +213,56 @@ signature of the works page.
     (`.jlz-nav-accordion__header:hover`) for now because the grid layout
     requires custom selectors anyway — but do not add MORE color overrides
     there; extend the hooks instead.
+    **UPDATE:** `.jlz-nav-accordion` was REMOVED in the menu-template refactor.
+    The menu overlay now uses a unique 3-column VOSK-style template (flat nav
+    list, no accordion). Lesson 20 is retained for historical context — if you
+    ever reintroduce an accordion, follow the hook pattern above.
+21. **Hamburger ↔ Close toggle: inline SVG, CSS-driven swap** — the
+    `#jlz-hamburger` button is a toggle (menu closed → hamburger; menu open →
+    X). Do NOT use `uk-navbar-toggle-icon` + JS to swap the attribute — UIKit3's
+    icon component does not re-render reliably on attribute change (§7.15).
+    Instead, put BOTH SVGs in the button and toggle visibility via a state class
+    on the `<header>` (`jlz-header--menu-open`). CSS:
+    ```less
+    .jlz-toggle-icon { display: none; }
+    .jlz-header:not(.jlz-header--menu-open) .jlz-toggle-icon--open { display: inline-flex; }
+    .jlz-header.jlz-header--menu-open .jlz-toggle-icon--close { display: inline-flex; }
+    ```
+    JS (`UIMenu._syncToggleState`) toggles the class on every `jlz:section-change`
+    + `jlz:page-section-change` event. The click handler checks `_isMenuOpen()`
+    and dispatches `jlz:goto-nav` (open) or `jlz:close-nav` (close).
+22. **Menu overlay = unique template, NOT `sectionShell()`** — the menu
+    overlay (section 5) is the ONE section that does not use `sectionShell()`.
+    It has its own `navOverlaySection()` in `src/sections/nav/template.ts` that
+    emits a 3-column grid (stat | nav | contacts + footer). Reason: VOSK-style
+    layout with a giant stat number, flat nav list (no accordion), and contacts
+    column — none of which fit the `sectionShell(top/center/bottom)` Apple-Watch
+    layout. All other sections (0-4) still use `sectionShell()`.
+23. **Glassmorphism on uk-icon-button via `.hook-icon-button()`** — UIKit3
+    hooks are Less mixins that components call during compilation. They MUST be
+    defined in `_import.less` BEFORE the component `.less` import (§4). We have
+    a dedicated §3.5 section for hooks:
+    ```less
+    .hook-icon-button() {
+      background: @jlz-color-surface;
+      backdrop-filter: blur(8px);
+      border: 1px solid @jlz-color-border;
+      border-radius: 8px;
+    }
+    .hook-icon-button-hover() {
+      border-color: fade(@global-primary-background, 40%);
+      background: fade(@global-primary-background, 10%);
+      color: @global-primary-background;
+    }
+    ```
+    This applies to ALL `uk-icon-button` instances (lang, theme, sound). Do NOT
+    add per-instance glassmorphism overrides in `main.less` — extend the hooks.
+24. **`touch-action: none` is NOT inherited** — it must be on the drag target
+    itself, not just the parent. The joystick base (`.jlz-joystick__base`) is
+    the pointer-down target, but `touch-action: none` was only on the parent
+    `.jlz-joystick`. On touch devices, the browser intercepted the drag as a
+    scroll gesture and `pointermove` never fired beyond the dead zone. Fix:
+    add `touch-action: none` directly on `.jlz-joystick__base`.
 
 ## 8. When to add a custom class vs. use UIKit
 
@@ -217,16 +276,18 @@ signature of the works page.
 | Section padding | `uk-section uk-section-small uk-section-large@m` |
 | Navbar (3-zone) | `<nav uk-navbar-container><div uk-container><div uk-navbar>[left/center/right]</div></div></nav>` |
 | Navbar (centered split-menu) | `uk-navbar-center > [uk-navbar-center-left, uk-logo, uk-navbar-center-right]` |
-| Hamburger toggle | `uk-navbar-toggle` + `uk-navbar-toggle-icon` (native, do NOT custom-build) |
+| Hamburger/close toggle | `uk-navbar-toggle` + inline SVG (hamburger + X), CSS-driven swap via `.jlz-header--menu-open` (see §7.21) |
 | Modal/dialog | `uk-modal` (or custom `#project-overlay` for fullscreen) |
-| Accordion | `uk-accordion` + `uk-accordion-title` + `uk-accordion-content` (init via `UIkit.accordion(el, opts)` on dynamic DOM) |
+| Accordion | `uk-accordion` + `uk-accordion-title` + `uk-accordion-content` (NOT used in menu — menu is flat nav list now) |
 | Tooltip | `uk-tooltip="pos: bottom; delay: 200; title: ..."` |
 | Eyebrow text | `.jlz-eyebrow` (custom — TUI terminal style, monospace) |
 | Numeral | `.jlz-numeral` (custom — min-width + opacity) |
 | Flex gap | `.jlz-flex-gap-small` / `.jlz-flex-gap-large` (custom — UIKit has no gap) |
 | Works 3D card | `.jlz-work-card` (custom — CSS 3D perspective tilt, no UIKit equivalent) |
-| Joystick | `.jlz-joystick` (custom — 3D nav, no UIKit equivalent) |
+| Joystick | `.jlz-joystick` (custom — 2D nav, no UIKit equivalent; `touch-action: none` on `.jlz-joystick__base` is REQUIRED) |
 | CTA pill | `.jlz-service-explore` (custom — pill button + accent dot) |
-| Theme toggle (sun/moon) | `uk-icon-button` + inline SVG (UIKit has no sun/moon icons) |
-| Sound toggle (EQ-bars) | `uk-icon-button` + `.jlz-sound-bars` custom spans (UIKit has no EQ icon) |
+| Theme toggle (sun/moon) | `uk-icon-button` (glassmorphism via `.hook-icon-button()`) + inline SVG (UIKit has no sun/moon icons) |
+| Sound toggle (EQ-bars) | `uk-icon-button` (glassmorphism via `.hook-icon-button()`) + `.jlz-sound-bars` custom spans |
 | Config toolbar | `.jlz-menu-toolbar` (custom container; children are `uk-icon-button`) |
+| Menu overlay (section 5) | `.jlz-menu-overlay` (UNIQUE template — 3-col grid, NOT `sectionShell()`; see §7.22) |
+| Glassmorphism on icon buttons | `.hook-icon-button()` in `_import.less §3.5` (applies to ALL `uk-icon-button`; see §7.23) |
