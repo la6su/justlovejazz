@@ -28,7 +28,7 @@ const trailUniforms = {
   uVelocity: uniform(0),  // cursor velocity (0..1), drives width
 }
 
-// ── Fragment: flowing energy gradient + head-to-tail fade ──
+// ── Fragment: junni-style tapered tail with flowing energy ──
 // UV.x = along ribbon (0=head/bright, 1=tail/transparent)
 // UV.y = across ribbon (0..1, center=0.5)
 const trailColorNode = Fn(() => {
@@ -36,17 +36,21 @@ const trailColorNode = Fn(() => {
   const along = vUv.x   // 0 (head) → 1 (tail)
   const across = vUv.y  // 0 → 1
 
-  // Flowing energy: color shifts along ribbon + time
-  const flow = sin(along.mul(8.0).sub(trailUniforms.uTime.mul(3.0))).mul(0.5).add(0.5)
-  const flow2 = cos(along.mul(12.0).add(trailUniforms.uTime.mul(2.0))).mul(0.5).add(0.5)
+  // Flowing energy: color shifts along ribbon + time (junni-style)
+  const flow = sin(along.mul(6.0).sub(trailUniforms.uTime.mul(4.0))).mul(0.5).add(0.5)
+  const flow2 = cos(along.mul(10.0).add(trailUniforms.uTime.mul(2.5))).mul(0.5).add(0.5)
 
-  // Base color: blue-cyan energy
-  const colorA = vec3(0.3, 0.5, 1.0)   // blue
-  const colorB = vec3(0.5, 0.8, 1.0)   // cyan
+  // Base color: blue-cyan energy (junni palette)
+  const colorA = vec3(0.2, 0.6, 1.0)   // blue
+  const colorB = vec3(0.6, 0.9, 1.0)   // cyan
   let color = mix(colorA, colorB, flow)
 
-  // Add white hot core at flow2 peaks
-  color = mix(color, vec3(1.0), flow2.mul(0.3))
+  // White hot core at head (along < 0.3) — brightest at cursor position
+  const headGlow = smoothstep(float(0.3), float(0.0), along)
+  color = mix(color, vec3(1.0), headGlow.mul(0.5))
+
+  // Add subtle flow2 sparkle
+  color = mix(color, vec3(1.0), flow2.mul(0.2))
 
   // Soft across ribbon (brighter at center)
   const acrossSoft = smoothstep(float(0.0), float(0.5), across).mul(smoothstep(float(1.0), float(0.5), across))
@@ -60,9 +64,14 @@ const trailOpacityNode = Fn(() => {
   const along = vUv.x   // 0 (head) → 1 (tail)
   const across = vUv.y  // 0 → 1
 
-  // Fade from head (1) to tail (0)
+  // Junni-style: bright head, long fading tail
+  // Head (along=0): full opacity, Tail (along=1): 0
+  // Quadratic fade for organic taper
   const fade = float(1.0).sub(along)
   const fadeInt = fade.mul(fade)  // quadratic fade
+
+  // Extra head brightness boost (along < 0.2)
+  const headBoost = smoothstep(float(0.2), float(0.0), along).mul(0.3)
 
   // Soft across ribbon
   const acrossSoft = smoothstep(float(0.0), float(0.5), across).mul(smoothstep(float(1.0), float(0.5), across))
@@ -70,7 +79,7 @@ const trailOpacityNode = Fn(() => {
   // Velocity boost — wider/brighter when cursor moves fast
   const velBoost = trailUniforms.uVelocity.mul(0.5).add(0.5)
 
-  return fadeInt.mul(acrossSoft).mul(velBoost)
+  return fadeInt.add(headBoost).mul(acrossSoft).mul(velBoost)
 })
 
 export class DrawTrail {
@@ -196,10 +205,14 @@ export class DrawTrail {
     trailUniforms.uTime.value += _dt
   }
 
-  /** Rebuild ribbon vertex positions from trail ring buffer. */
+  /** Rebuild ribbon vertex positions from trail ring buffer.
+   *  Junni-style: tapered tail — width decreases from head (i=0) to tail (i=N-1).
+   *  Width profile: head = full width, tail = 10% width (smooth taper).
+   *  Velocity boosts head width (faster cursor = thicker head). */
   private _rebuildRibbon(camera: THREE.Camera): void {
-    // Width scales with velocity
-    const width = RIBBON_WIDTH * (0.5 + trailUniforms.uVelocity.value * 1.5)
+    // Base width scales with velocity (head width)
+    const headWidth = RIBBON_WIDTH * (0.5 + trailUniforms.uVelocity.value * 1.5)
+    const tailWidth = headWidth * 0.1 // tapered tail = 10% of head
 
     // Camera right vector (for ribbon offset direction)
     const camRight = new THREE.Vector3()
@@ -208,6 +221,11 @@ export class DrawTrail {
     for (let i = 0; i < TRAIL_LENGTH; i++) {
       const p = this.trailPositions[i]!
       const i6 = i * 6
+      // Taper: 0 at head (i=0) → 1 at tail (i=N-1), smoothstep for organic curve
+      const taperT = i / (TRAIL_LENGTH - 1)
+      const taper = taperT * taperT * (3 - 2 * taperT) // smoothstep
+      // Width interpolates from headWidth to tailWidth
+      const width = headWidth * (1 - taper) + tailWidth * taper
 
       // Left vertex (offset by -camRight * width/2)
       this.positions[i6] = p.x - camRight.x * width * 0.5
