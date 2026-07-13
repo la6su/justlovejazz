@@ -103,6 +103,8 @@ function bindCard(cardEl: HTMLElement): void {
   state.click = () => {
     const idx = Number(cardEl.dataset.projectIdx)
     if (Number.isNaN(idx)) return
+    // Phase 5: trigger wobble pulse on cube before opening project
+    window.dispatchEvent(new CustomEvent('jlz:wobble-pulse'))
     window.dispatchEvent(
       new CustomEvent('jlz:open-project', { detail: { idx } }),
     )

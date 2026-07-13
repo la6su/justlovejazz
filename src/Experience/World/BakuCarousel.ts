@@ -329,6 +329,8 @@ export class BakuCarousel extends THREE.Group {
     if (!this._camera) {
       // No camera — fall back to front card
       this._onCardClick?.(this.getFrontCardIndex())
+      // Phase 5: wobble pulse on tap
+      window.dispatchEvent(new CustomEvent('jlz:wobble-pulse'))
       return
     }
     // Convert screen coords to NDC
@@ -347,6 +349,8 @@ export class BakuCarousel extends THREE.Group {
     if (intersects.length > 0) {
       const hit = intersects[0]!.object as THREE.Mesh
       const idx = hit.userData.cardIndex as number
+      // Phase 5: trigger wobble pulse on cube before opening project
+      window.dispatchEvent(new CustomEvent('jlz:wobble-pulse'))
       this._onCardClick?.(idx)
     }
     // No hit → tap was on cube or empty space → ignore (no overlay open)

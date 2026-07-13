@@ -443,6 +443,12 @@ export class Experience {
       })
     }
     window.addEventListener('jlz:open-project', this._openProjectHandler)
+
+    // Phase 5: Wobble pulse on card click (work cards + carousel)
+    window.addEventListener('jlz:wobble-pulse', () => {
+      const cube = this.world?.baku as unknown as { triggerWobblePulse?: () => void } | undefined
+      cube?.triggerWobblePulse?.()
+    })
   }
 
   update(time: number) {
