@@ -265,7 +265,7 @@ export function initMenuNav(): void {
   })
 
   // Subsection links — intercept for SPA navigation.
-  // Click → dispatch jlz:route-change (router listens → navigateToPage).
+  // Click → dispatch jlz:navigate (router listens → navigateToPage).
   // renderView() replaces #spa-content innerHTML entirely, removing the menu
   // section from DOM. No overlap possible.
   const subLinks = nav.querySelectorAll<HTMLAnchorElement>('.jlz-menu-nav__sub-link')
@@ -283,23 +283,15 @@ export function initMenuNav(): void {
       const path = url.pathname
       const hash = url.hash
 
-      // Dispatch jlz:route-change — router.ts listens and calls navigateToPage,
-      // which does pushState + renderView. renderView replaces #spa-content
-      // innerHTML, removing the menu section entirely.
       if (path !== window.location.pathname) {
-        // Cross-page: router handles pushState + renderView.
-        // Hash is included in URL for post-render scroll.
-        history.pushState(null, '', path + (hash || ''))
-        window.dispatchEvent(new CustomEvent('jlz:route-change', { detail: { page: path } }))
-        // Scroll to hash after route renders
-        if (hash) {
-          setTimeout(() => {
-            const target = document.querySelector(hash)
-            target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-          }, 300)
-        }
+        // Cross-page: dispatch jlz:navigate — router.ts listens and calls
+        // navigateToPage (pushState + renderView). Menu section is removed
+        // from DOM by renderView. No overlap possible.
+        window.dispatchEvent(new CustomEvent('jlz:navigate', {
+          detail: { path: path + (hash || '') },
+        }))
       } else {
-        // Same-page: just scroll to hash + close menu
+        // Same-page: scroll to hash + close menu (return to previous section)
         if (hash) {
           const target = document.querySelector(hash)
           target?.scrollIntoView({ behavior: 'smooth', block: 'start' })

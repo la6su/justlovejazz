@@ -103,11 +103,18 @@ function bindCard(cardEl: HTMLElement): void {
   state.click = () => {
     const idx = Number(cardEl.dataset.projectIdx)
     if (Number.isNaN(idx)) return
-    // Phase 5: trigger wobble pulse on cube before opening project
+    // Phase 2: wobble scale animation on card itself (0.6s CSS animation).
+    // + wobble pulse on cube (jlz:wobble-pulse) for synced visual effect.
+    // Open overlay AFTER wobble completes (300ms = mid-animation, user sees
+    // the wobble start before overlay takes over).
+    cardEl.classList.add('is-wobbling')
     window.dispatchEvent(new CustomEvent('jlz:wobble-pulse'))
-    window.dispatchEvent(
-      new CustomEvent('jlz:open-project', { detail: { idx } }),
-    )
+    setTimeout(() => {
+      cardEl.classList.remove('is-wobbling')
+      window.dispatchEvent(
+        new CustomEvent('jlz:open-project', { detail: { idx } }),
+      )
+    }, 300)
   }
 
   cardEl.addEventListener('pointermove', state.pointerMove)
