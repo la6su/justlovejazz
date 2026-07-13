@@ -107,30 +107,42 @@ export class MeshTransmissionMaterial extends THREE.MeshPhysicalMaterial {
       \n` + shader.vertexShader
 
       // Inject wobble displacement after 'begin_vertex' (where transformed = position is set)
-      // ── day34-accurate silicon-jelly wobble, scaled for screen visibility ──
-      // day34 (cube=16, cam=26): displacement 6.5% of cube = ~4% screen (very visible)
-      // ours (cube=0.8, cam=3.5, FOV=60): 6.5% of cube = ~0.85% screen (invisible)
-      // FIX: SIZE_SCALE=0.20 (4x day34) → displacement ~3.4% screen (matches day34 visibility)
-      // NOISE_FREQ=0.6 keeps ~2 noise periods per face (day34 density).
-      // NO max(0.0, ...) — day34 allows bidirectional displacement.
-      // time NOT halved — day34 uses raw uTimeVal.
+      // ── TRUE jelly wobble (high-freq ripples + low-freq bend, not flat-plane shift) ──
+      // day34: cube=16, np=0.12 → 2 noise periods/face → smooth waves
+      // ours:  cube=0.8, np=3.0 → 2.4 periods/face → matching day34 wave density
+      //
+      // KEY: high noise freq = vertices on same face move DIFFERENTLY = real jelly waves.
+      //      (low freq = entire face moves as blob = flat plane shift — BAD)
+      //
+      // Layers:
+      //   1. High-freq 3-octave noise — surface ripples
+      //   2. Bend — low-freq whole-cube soft body deformation
+      //   3. Breathe — slow Y-axis volume pulse
+      // NO squash (uniform Y shift = flat plane effect).
       shader.vertexShader = shader.vertexShader.replace(
         '#include <begin_vertex>',
         /*glsl*/ `
         vec3 transformed = vec3( position );
-        // day34 wobble — scaled for screen visibility on our small cube
-        const float SIZE_SCALE = 0.20;       // 4x day34 ratio (screen visibility)
-        const float NOISE_FREQ = 0.6;        // 0.12 / 0.20 → 2 periods per face
-        float t = time;                       // day34 raw time
-        vec3 np = position * NOISE_FREQ;
+        const float SIZE_SCALE = 0.35;       // screen visibility amplitude
+        float t = time;                       // raw time (day34)
+
+        // (1) High-freq 3-octave noise — jelly surface ripples
+        vec3 np = position * 3.0;             // ~2.4 periods per face
         float n1 = snoise(np + vec3(t * 0.3, 0.0, 0.0)) * 0.5;
         float n2 = snoise(np * 2.5 + vec3(0.0, t * 0.5, 7.0)) * 0.2;
         float n3 = snoise(np * 5.0 + vec3(0.0, 0.0, t * 0.8 + 13.0)) * 0.1;
-        float displacement = (n1 + n2 + n3) * wobble;        // NO max(0.0, ...)
+        float ripple = (n1 + n2 + n3) * wobble;
+
+        // (2) Bend — slow low-freq whole-cube deformation (soft body)
+        vec3 bendNP = position * 1.2;         // ~0.67 periods/face → whole-cube bend
+        float bend = snoise(bendNP + vec3(t * 0.15, 0.0, 0.0)) * 0.3 * wobble;
+
+        // (3) Breathe — slow Y-axis volume pulse (day34)
         float breathe = sin(t * 0.7 + position.y * 0.3) * 0.12 * wobble;
-        float squash = sin(t * 0.4) * 0.08 * wobble;          // day34 exact
-        transformed += normal * (displacement + breathe) * SIZE_SCALE;
-        transformed.y += transformed.y * squash;
+
+        // Combine — all scaled by SIZE_SCALE for screen visibility
+        float totalDisp = (ripple + bend + breathe) * SIZE_SCALE;
+        transformed += normal * totalDisp;
         `
       )
 
