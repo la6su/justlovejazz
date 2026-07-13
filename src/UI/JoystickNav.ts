@@ -133,7 +133,19 @@ export class JoystickNav {
 
   private addEventListeners(): void {
     this._routeChangeHandler = () => {
-      this._syncPageSection(1) // start on intro (index 1)
+      // Reset to section 1 (intro) on every route change.
+      // On content pages: _syncPageSection(1) sets section-active on section 1
+      //   + resets _side='center' + _mainSection=1.
+      // On home: _syncPageSection early-returns (_isPageMode=false), so we
+      //   manually reset _side='center' + _mainSection=1 + fire section change.
+      //   This ensures the cube face resets from menu(5)/lab(0) to intro(1).
+      if (this._isPageMode()) {
+        this._syncPageSection(1)
+      } else {
+        this._side = 'center'
+        this._mainSection = INTRO_INDEX
+        this._fireSectionChange()
+      }
     }
     window.addEventListener('jlz:route-change', this._routeChangeHandler)
 

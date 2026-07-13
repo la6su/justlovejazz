@@ -51,6 +51,7 @@ export class Experience {
   private _soundToggleHandler: ((e: Event) => void) | null = null
   private _splashEnteredHandler: (() => void) | null = null
   private _openProjectHandler: ((e: Event) => void) | null = null
+  private _routeChangeCloseOverlayHandler: (() => void) | null = null
   // (_gotoNavHandler removed — hamburger no longer dispatches jlz:goto-nav.
   //  Menu is now accessible ONLY via joystick → right or ArrowRight key.)
   private _wobblePulseHandler: (() => void) | null = null
@@ -438,6 +439,18 @@ export class Experience {
       })
     }
     window.addEventListener('jlz:open-project', this._openProjectHandler)
+
+    // ── Close overlay on route change ──
+    // When SPA navigates (joystick menu subnav click, browser back, etc.),
+    // close any open FullscreenOverlay. Without this, the overlay stays open
+    // across page changes → window.jlzOverlayOpen stays true → JoystickNav
+    // keydown handler early-returns → arrow keys stop working.
+    this._routeChangeCloseOverlayHandler = () => {
+      if (this.overlay?.isOpen) {
+        this.overlay.close()
+      }
+    }
+    window.addEventListener('jlz:route-change', this._routeChangeCloseOverlayHandler)
 
     // Phase 5: Wobble pulse on card click (work cards + carousel)
     this._wobblePulseHandler = () => {
@@ -839,6 +852,10 @@ export class Experience {
     if (this._openProjectHandler) {
       window.removeEventListener('jlz:open-project', this._openProjectHandler)
       this._openProjectHandler = null
+    }
+    if (this._routeChangeCloseOverlayHandler) {
+      window.removeEventListener('jlz:route-change', this._routeChangeCloseOverlayHandler)
+      this._routeChangeCloseOverlayHandler = null
     }
     if (this._wobblePulseHandler) {
       window.removeEventListener('jlz:wobble-pulse', this._wobblePulseHandler)
