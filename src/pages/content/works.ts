@@ -11,6 +11,8 @@
 import { sectionShell, contentBottom } from '../../sections/_shared/constants'
 import { FOOTER } from '../../sections/_shared/footer'
 import { PROJECTS } from '../../Data/Projects'
+import { labOverlaySection } from '../../sections/lab-overlay/template'
+import { navOverlaySection } from '../../sections/nav/template'
 
 /** A pair of projects shown together in one section's card grid. */
 function workCardsGrid(idxA: number, idxB: number): string {
@@ -69,23 +71,31 @@ export function worksPage(): string {
   // 8 projects → 4 sections × 2 cards
   return `
     <article class="jlz-page jlz-works-page" data-page-view="works">
+      <!-- 0: LAB OVERLAY (joystick left) -->
+      ${labOverlaySection('content')}
+      <!-- 1: Selected Works (start, active) -->
       ${sectionShell('works-01',
         worksTop('01', 'Selected Works', 'Projects that define our way.', 'works.section1.title', 'works.section1.lead'),
         contentBottom(workCardsGrid(0, 1)),
         'content', true
       )}
+      <!-- 2: Case Studies -->
       ${sectionShell('works-02',
         worksTop('02', 'Case Studies', 'Process, craft, result.', 'works.section2.title', 'works.section2.lead'),
         contentBottom(workCardsGrid(2, 3))
       )}
+      <!-- 3: Experiments -->
       ${sectionShell('works-03',
         worksTop('03', 'Experiments', 'R&D meets production.', 'works.section3.title', 'works.section3.lead'),
         contentBottom(workCardsGrid(4, 5))
       )}
+      <!-- 4: Recent -->
       ${sectionShell('works-04',
         worksTop('04', 'Recent', 'Latest from the studio.', 'works.section4.title', 'works.section4.lead'),
         contentBottom(workCardsGrid(6, 7))
       )}
+      <!-- 5: NAVIGATION OVERLAY (joystick right) -->
+      ${navOverlaySection('content')}
     </article>
     ${FOOTER}
   `

@@ -40,6 +40,20 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'nav.contact': 'Contact',
     'nav.blog': 'Blog',
 
+    // PLAN-v3: Navigation overlay (section 5, joystick right)
+    'navOverlay.title': 'Navigate',
+    'navOverlay.lead': 'Choose your destination.',
+    'navOverlay.studio.desc': 'Home · cube experience',
+    'navOverlay.services.desc': 'What we do',
+    'navOverlay.works.desc': 'Selected projects',
+    'navOverlay.manifesto.desc': 'Principles',
+    'navOverlay.lab.desc': 'Experiments',
+    'navOverlay.contact.desc': 'Start a project',
+
+    // PLAN-v3: Lab overlay (section 0, joystick left)
+    'labOverlay.title': 'Lab',
+    'labOverlay.lead': 'Experiments · works · R&D.',
+
     // Dropbar — section titles + subtitles shown in the header dropbar (UIMenu)
     // Works page section titles are project names (proper nouns) — NOT translated (RULES §32),
     // so only subtitles get keys for works.
@@ -268,6 +282,20 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'nav.lab': 'Лаборатория',
     'nav.contact': 'Контакты',
     'nav.blog': 'Блог',
+
+    // PLAN-v3: Navigation overlay (RU)
+    'navOverlay.title': 'Навигация',
+    'navOverlay.lead': 'Выберите направление.',
+    'navOverlay.studio.desc': 'Главная · куб',
+    'navOverlay.services.desc': 'Что мы делаем',
+    'navOverlay.works.desc': 'Избранные проекты',
+    'navOverlay.manifesto.desc': 'Принципы',
+    'navOverlay.lab.desc': 'Эксперименты',
+    'navOverlay.contact.desc': 'Начать проект',
+
+    // PLAN-v3: Lab overlay (RU)
+    'labOverlay.title': 'Лаб',
+    'labOverlay.lead': 'Эксперименты · работы · R&D.',
 
     // Dropbar — section titles + subtitles shown in the header dropbar (UIMenu)
     // Works page section titles are project names (proper nouns) — NOT translated (RULES §32),

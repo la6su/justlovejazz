@@ -1,7 +1,12 @@
-// src/pages/content/contact.ts — Contact page (4 sections)
-// Email / Social / Location / Form
+// src/pages/content/contact.ts — Contact page (4 sections + 2 overlays)
+//
+// PLAN-v3: section 0 = Lab overlay, section 5 = Navigation overlay.
+// Main sections (1-4): Email, Social, Location, Form.
+
 import { sectionShell, contentTop, contentBottom } from '../../sections/_shared/constants'
 import { FOOTER } from '../../sections/_shared/footer'
+import { labOverlaySection } from '../../sections/lab-overlay/template'
+import { navOverlaySection } from '../../sections/nav/template'
 
 // Section 1: Email — big mailto link
 const emailSection = sectionShell('contact-01',
@@ -63,10 +68,18 @@ const formSection = sectionShell('contact-04',
 export function contactPage(): string {
   return `
     <article class="jlz-page" data-page-view="contact">
+      <!-- 0: LAB OVERLAY (joystick left) -->
+      ${labOverlaySection('content')}
+      <!-- 1: Email (start, active) -->
       ${emailSection}
+      <!-- 2: Social -->
       ${socialSection}
+      <!-- 3: Location -->
       ${locationSection}
+      <!-- 4: Form -->
       ${formSection}
+      <!-- 5: NAVIGATION OVERLAY (joystick right) -->
+      ${navOverlaySection('content')}
     </article>
     ${FOOTER}
   `
