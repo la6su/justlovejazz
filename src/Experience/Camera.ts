@@ -51,7 +51,7 @@ export class Camera {
   }
 
   constructor(sizes: Sizes) {
-    this.instance = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
+    this.instance = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 1000)
     this.smoothPosition.set(0, 0, 3)
     this.instance.position.copy(this.smoothPosition)
 
