@@ -233,11 +233,13 @@ export class JoystickNav {
 
     // Keyboard
     this._keydownHandler = (e: KeyboardEvent) => {
-      // Bail when a fullscreen overlay is open — FullscreenOverlay owns
+      // Bail when a UIKit modal is open — FullscreenOverlay owns
       // ArrowLeft/Right (prev/next project) + Space (play/pause) while open.
-      // Without this, both handlers fire: overlay goes prev-project AND
-      // JoystickNav navigates section behind the overlay.
-      if ((window as unknown as { jlzOverlayOpen?: boolean }).jlzOverlayOpen === true) return
+      // Uses UIKit's native uk-open class (authoritative modal state) instead
+      // of a custom flag that can get out of sync. See UIkit modal docs:
+      // https://getuikit.com/docs/modal — uk-open is added/removed by UIKit
+      // synchronously on show/hide.
+      if (document.querySelector('.uk-modal.uk-open')) return
       const tag = (e.target as HTMLElement)?.tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA') return
       if (e.key === 'ArrowDown') {

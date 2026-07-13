@@ -52,7 +52,6 @@ export class FullscreenOverlay {
   private tagsEl: HTMLElement
   private counterEl: HTMLElement
   private controlsEl: HTMLElement
-  private _isOpen = false
   private _keydownHandler: ((e: KeyboardEvent) => void) | null = null
 
   public onPrev: (() => void) | null = null
@@ -183,10 +182,10 @@ export class FullscreenOverlay {
     this.prevBtn.addEventListener('click', () => this.onPrev?.())
     this.nextBtn.addEventListener('click', () => this.onNext?.())
 
-    // UIKit3 modal events
+    // UIKit3 modal events — uk-open class is the authoritative state.
+    // No custom flag needed: UIKit adds uk-open on show (synchronously via
+    // _toggle) and removes it on hide. isOpen getter checks uk-open directly.
     UIkit.util.on(this.container, 'show', () => {
-      this._isOpen = true
-      ;(window as unknown as { jlzOverlayOpen?: boolean }).jlzOverlayOpen = true
       // Autoplay video when modal opens (muted autoplay is allowed by browsers).
       // Only if video has a source — project-mode (poster only) skips this.
       const source = this.video.querySelector('source')
@@ -205,18 +204,17 @@ export class FullscreenOverlay {
       }
     })
     UIkit.util.on(this.container, 'hide', () => {
-      this._isOpen = false
-      ;(window as unknown as { jlzOverlayOpen?: boolean }).jlzOverlayOpen = false
       this.video.pause()
       this.onClose?.()
     })
 
     // Keyboard: Space (play/pause), ArrowLeft/Right (prev/next)
+    // Only active when the UIKit modal is open (uk-open class present).
     // stopImmediatePropagation prevents JoystickNav's window keydown from
     // also firing — without it, ArrowLeft in the overlay simultaneously
     // goes to prev-project AND navigates section to Lab behind the overlay.
     this._keydownHandler = (e: KeyboardEvent) => {
-      if (!this._isOpen) return
+      if (!this.container.classList.contains('uk-open')) return
       if (e.key === ' ') {
         e.preventDefault()
         e.stopImmediatePropagation()
@@ -253,9 +251,9 @@ export class FullscreenOverlay {
   /** Preload content into the overlay WITHOUT showing it.
    *  Used by Experience.ts to preload the first project so card click is
    *  instant. Calling open() instead was a BUG — it called UIkit.modal().show()
-   *  which added the uk-open class + fired the 'show' event (setting
-   *  window.jlzOverlayOpen=true) even though display:none hid the overlay.
-   *  The stale jlzOverlayOpen flag then blocked JoystickNav + BakuCarousel. */
+   *  which added the uk-open class, making the overlay visible prematurely.
+   *  preload() only sets content; the uk-open class is NOT added, so the
+   *  overlay stays hidden (CSS: .jlz-fs-overlay:not(.uk-open) { display:none }). */
   preload(opts: OverlayOptions): void {
     this._applyOptions(opts)
     // Do NOT call UIkit.modal().show() — stay hidden.
@@ -313,22 +311,13 @@ export class FullscreenOverlay {
 
   close(): void {
     UIkit.modal(this.container).hide()
-    // Safety net: clear state synchronously. The UIKit 'hide' event (which
-    // also clears these) fires asynchronously after the close animation. If
-    // 'hide' fails to fire (UIKit race when show/hide overlap), _isOpen and
-    // jlzOverlayOpen stay stuck true — blocking JoystickNav keyboard nav
-    // (arrow keys early-return on jlzOverlayOpen) while the FullscreenOverlay
-    // keydown handler keeps intercepting ArrowLeft/Right/Space (via _isOpen).
-    // The joystick drag still works because pointer handlers don't check
-    // these flags. Clearing here guarantees flags are always in sync with
-    // the explicit close() call.
-    this._isOpen = false
-    ;(window as unknown as { jlzOverlayOpen?: boolean }).jlzOverlayOpen = false
     this.video.pause()
   }
 
+  /** Whether the UIKit modal is currently open (uk-open class present).
+   *  This is UIKit's native state — always accurate, no custom flag to sync. */
   get isOpen(): boolean {
-    return this._isOpen
+    return this.container.classList.contains('uk-open')
   }
 
   dispose(): void {

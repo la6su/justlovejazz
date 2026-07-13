@@ -442,18 +442,12 @@ export class Experience {
 
     // ── Close overlay on route change ──
     // When SPA navigates (joystick menu subnav click, browser back, etc.),
-    // close any open FullscreenOverlay. Without this, the overlay stays open
-    // across page changes → window.jlzOverlayOpen stays true → JoystickNav
-    // keydown handler early-returns → arrow keys stop working.
+    // close any open FullscreenOverlay. isOpen checks UIKit's native uk-open
+    // class — no custom flag to get out of sync.
     this._routeChangeCloseOverlayHandler = () => {
       if (this.overlay?.isOpen) {
         this.overlay.close()
       }
-      // Safety net: ensure jlzOverlayOpen is cleared on every route change,
-      // even if close()/hide() hasn't fully completed or the UIKit 'hide'
-      // event failed to fire. Without this, the flag can stay stuck true
-      // and block JoystickNav keyboard navigation (arrow keys).
-      ;(window as unknown as { jlzOverlayOpen?: boolean }).jlzOverlayOpen = false
     }
     window.addEventListener('jlz:route-change', this._routeChangeCloseOverlayHandler)
 
@@ -504,8 +498,8 @@ export class Experience {
       // Only raycast on home + intro section
       if (document.body.dataset.page !== 'home') return
       if (this.world?.currentSectionIndex !== 1) return
-      // Skip when overlay is open
-      if ((window as unknown as { jlzOverlayOpen?: boolean }).jlzOverlayOpen === true) return
+      // Skip when overlay is open (UIKit native uk-open check)
+      if (this.overlay?.isOpen) return
 
       this._showreelNdc.x = (e.clientX / window.innerWidth) * 2 - 1
       this._showreelNdc.y = -(e.clientY / window.innerHeight) * 2 + 1
@@ -525,7 +519,7 @@ export class Experience {
       if (!btn || !this._showreelRaycaster || !this._showreelNdc) return
       if (document.body.dataset.page !== 'home') return
       if (this.world?.currentSectionIndex !== 1) return
-      if ((window as unknown as { jlzOverlayOpen?: boolean }).jlzOverlayOpen === true) return
+      if (this.overlay?.isOpen) return
 
       this._showreelNdc.x = (e.clientX / window.innerWidth) * 2 - 1
       this._showreelNdc.y = -(e.clientY / window.innerHeight) * 2 + 1
@@ -757,8 +751,8 @@ export class Experience {
       this._portfolioInitialized = true
       // Preload the first project into the overlay (hidden until card click).
       // Uses preload() NOT open() — open() calls UIkit.modal().show() which
-      // sets window.jlzOverlayOpen=true even though display:none hides the
-      // overlay. The stale flag then blocks JoystickNav + BakuCarousel.
+      // adds the uk-open class (making the overlay visible). preload() only
+      // sets content without showing, so the overlay stays hidden.
       this.onProjectSelect(0, true) // preload=true
     }
     // Ground plane (floor) — visible ONLY on the bottom visible section.
