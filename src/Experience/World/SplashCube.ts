@@ -44,7 +44,7 @@ export class SplashCube extends THREE.Mesh {
   // clean with just MeshPhysicalMaterial (iridescence + clearcoat).
   private cubeMaterial!: MeshPhysicalNodeMaterial
   // TSL wobble uniform — controls displacement amplitude
-  private _uWobble = uniform(1.0)
+  private _uWobble = uniform(0.3)
   private _uTime = uniform(0)
   private cubeCamera!: THREE.CubeCamera
   private contentScene!: THREE.Scene
@@ -237,12 +237,12 @@ export class SplashCube extends THREE.Mesh {
       const pos = positionLocal.toVar()
       const np = pos.mul(0.12)
       const t = uTimeVal
-      const n1 = mx_noise_float(np.add(t.mul(0.3))).mul(0.5).mul(uWobble)
-      const n2 = mx_noise_float(np.mul(2.5).add(t.mul(0.5)).add(7)).mul(0.2).mul(uWobble)
-      const n3 = mx_noise_float(np.mul(5).add(t.mul(0.8)).add(13)).mul(0.1).mul(uWobble)
+      const n1 = mx_noise_float(np.add(t.mul(0.3))).mul(0.15).mul(uWobble)
+      const n2 = mx_noise_float(np.mul(2.5).add(t.mul(0.5)).add(7)).mul(0.06).mul(uWobble)
+      const n3 = mx_noise_float(np.mul(5).add(t.mul(0.8)).add(13)).mul(0.03).mul(uWobble)
       const displacement = n1.add(n2).add(n3)
-      const squash = sin(t.mul(0.4)).mul(0.08).mul(uWobble)
-      const breathe = sin(t.mul(0.7).add(pos.y.mul(0.3))).mul(0.12).mul(uWobble)
+      const squash = sin(t.mul(0.4)).mul(0.02).mul(uWobble)
+      const breathe = sin(t.mul(0.7).add(pos.y.mul(0.3))).mul(0.04).mul(uWobble)
       pos.assign(pos.add(normalLocal.mul(displacement.add(breathe))))
       pos.y.addAssign(pos.y.mul(squash))
       return pos
@@ -337,9 +337,12 @@ export class SplashCube extends THREE.Mesh {
 
     if (needsCubeUpdate) {
       this._cubeCamCounter = 0
-      this.cubeMesh.visible = false
-      this.cubeCamera.update(renderer!, this.contentScene)
-      this.cubeMesh.visible = true
+      // CubeCamera update DISABLED — envMap disconnected (was causing black
+      // hole). CubeCamera + contentScene still exist (disposed in dispose())
+      // but no longer rendered. Saves 6 draw calls per update.
+      // this.cubeMesh.visible = false
+      // this.cubeCamera.update(renderer!, this.contentScene)
+      // this.cubeMesh.visible = true
     }
 
     // ── Transition motion (same as before) ──

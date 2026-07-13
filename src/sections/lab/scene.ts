@@ -8,7 +8,7 @@ export function createSection0(): THREE.Group {
   const g = new THREE.Group()
   g.name = 'lab'
 
-  const orb = new ShaderOrb(1.4, 2)
+  const orb = new ShaderOrb(0.7, 2)
   orb.userData.keepVisible = true
   orb.position.set(0, 0, -2)
   g.add(orb)
