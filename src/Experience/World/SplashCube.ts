@@ -15,7 +15,7 @@
 import * as THREE from 'three'
 import { organicValue } from '../../Utils/Noise'
 import { BakuRole, type BakuMaterialState } from '../../core/types'
-import { MeshTransmissionMaterial } from './MeshTransmissionMaterial'
+import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js'
 
 interface BakuMaterialParams {
   color: THREE.Color
@@ -118,12 +118,12 @@ export class SplashCube extends THREE.Mesh {
     const size = 5
     const half = size / 2
     const jlzColors = [
-      [0.52, 0.56, 0.72], // accent blue-grey (brighter)
-      [0.62, 0.67, 0.84], // accent-hover (brighter)
-      [0.40, 0.42, 0.50], // dark (brighter)
-      [0.35, 0.37, 0.42], // darker (brighter)
-      [0.71, 0.75, 0.94], // lighter accent (brighter)
-      [0.30, 0.32, 0.38], // deepest (brighter)
+      [0.32, 0.36, 0.52], // accent blue-grey
+      [0.42, 0.47, 0.64], // accent-hover
+      [0.20, 0.22, 0.30], // dark
+      [0.15, 0.17, 0.22], // darker
+      [0.51, 0.55, 0.74], // lighter accent
+      [0.10, 0.12, 0.18], // deepest
     ]
     const dirs: { pos: number[]; rot: number[]; color: number[] }[] = [
       { pos: [half, 0, 0], rot: [0, -Math.PI / 2, 0], color: jlzColors[0]! },
@@ -194,58 +194,104 @@ export class SplashCube extends THREE.Mesh {
   private buildCube(): void {
     const size = 0.8
 
-    // BoxGeometry(32,32,32) — dense vertices for smooth wobble displacement.
-    // RoundedBoxGeometry only has 6 segments → wobble looks jagged.
-    const geo = new THREE.BoxGeometry(size, size, size, 32, 32, 32)
+    // Single RoundedBoxGeometry — beveled edges eliminate aliasing at
+    // sharp face junctions. With roughness:0 (mirror), sharp edges create
+    // maximum pixel-level aliasing. Bevel radius 0.04 = subtle rounding.
+    // (was: BoxGeometry — sharp edges → jagged pixels at face boundaries)
+    const geo = new RoundedBoxGeometry(size, size, size, 6, 0.04)
 
-    // Glass cube — SINGLE material for BOTH WebGPU + WebGL2:
-    // MeshTransmissionMaterial (drei) with:
-    //   - Custom chromatic aberration + anisotropic blur (fragment shader)
-    //   - GLSL vertex wobble (dasprinzip day34 — snoise displacement)
-    //   - normalMap glass-flakes.png (speckle texture)
-    //   - CubeCamera envMap (contentScene reflections)
-    // All via onBeforeCompile — works on both backends.
+    // MeshPhysicalMaterial — glass cube with env reflections (Apple Fifth Avenue style)
+    // scene.environment (PMREM from RoomEnvironment) provides the reflections.
+    // Now with: normalMap (glass-flakes speckle) + onBeforeCompile wobble.
+    this.cubeMaterial = new THREE.MeshPhysicalMaterial({
+      color: 0xffffff,
+      emissive: 0x1a2a4a,
+      emissiveIntensity: 0.15,
+      transparent: true,
+      opacity: 0.35,
+      side: THREE.DoubleSide,
+      roughness: 0.0,
+      metalness: 0.0,
+      iridescence: 1.0,
+      iridescenceIOR: 1.3,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.0,
+      transmission: 0,
+      thickness: 1.2,
+      ior: 1.52,
+      envMapIntensity: 2.5,
+      depthWrite: false,
+    })
+
+    // Normal map — glass speckle texture (dasprinzip day34 seDv-flakes.png)
     const speckleTex = new THREE.TextureLoader().load('/textures/glass-flakes.png')
     speckleTex.wrapS = THREE.RepeatWrapping
     speckleTex.wrapT = THREE.RepeatWrapping
     speckleTex.repeat.set(6, 6)
-    speckleTex.colorSpace = THREE.SRGBColorSpace
+    this.cubeMaterial.normalMap = speckleTex
+    this.cubeMaterial.normalScale = new THREE.Vector2(0.24, 0.24)
 
-    const mat = new MeshTransmissionMaterial(6)
-    mat.color = new THREE.Color(0x88aaff)
-    mat.metalness = 0.0
-    mat.roughness = 0.0
-    mat.transmission = 1.0
-    mat.thickness = 5
-    mat.ior = 1.21
-    mat.transparent = true
-    mat.opacity = 1.0
-    mat.side = THREE.FrontSide
-    mat.envMapIntensity = 1.0
-    mat.attenuationColor = new THREE.Color(1.0, 1.0, 1.0)
-    mat.attenuationDistance = 100
-    mat.specularIntensity = 1.0
-    mat.depthWrite = false
-    mat.normalMap = speckleTex
-    mat.normalScale = new THREE.Vector2(1.0, 1.0)
-    // MeshTransmissionMaterial custom uniforms
-    mat.chromaticAberration = 0.05
-    mat.anisotrophicBlur = 0.1
-    // Wobble — vertex noise displacement (dasprinzip day34 pattern)
-    // GLSL injected via onBeforeCompile, works on BOTH WebGL2 + WebGPU
-    mat.wobble = 0.3
-    // Fragment distortion (normal perturbation) — off, wobble handles motion
-    mat.distortion = 0.0
-    mat.distortionScale = 0.3
-    mat.temporalDistortion = 0.0
+    // Wobble — GLSL vertex displacement via onBeforeCompile (dasprinzip day34).
+    // Works on BOTH WebGL2 + WebGPU. Simplex noise along normals + breathe + squash.
+    const wobbleUniform = { value: 0.3 }
+    const timeUniform = { value: 0 }
+    this.cubeMaterial.onBeforeCompile = (shader) => {
+      shader.uniforms.uWobble = wobbleUniform
+      shader.uniforms.uTime = timeUniform
 
-    this.cubeMaterial = mat as unknown as typeof this.cubeMaterial
+      shader.vertexShader = `
+        uniform float uWobble;
+        uniform float uTime;
+        // Simplex noise (Ashima Arts, MIT)
+        vec3 mod289(vec3 x){return x-floor(x*(1.0/289.0))*289.0;}
+        vec4 mod289(vec4 x){return x-floor(x*(1.0/289.0))*289.0;}
+        vec4 permute(vec4 x){return mod289(((x*34.0)+1.0)*x);}
+        vec4 taylorInvSqrt(vec4 r){return 1.79284291400159-0.85373472095314*r;}
+        float snoise(vec3 v){
+          const vec2 C=vec2(1.0/6.0,1.0/3.0);const vec4 D=vec4(0.0,0.5,1.0,2.0);
+          vec3 i=floor(v+dot(v,C.yyy));vec3 x0=v-i+dot(i,C.xxx);
+          vec3 g=step(x0.yzx,x0.xyz);vec3 l=1.0-g;vec3 i1=min(g.xyz,l.zxy);vec3 i2=max(g.xyz,l.zxy);
+          vec3 x1=x0-i1+C.xxx;vec3 x2=x0-i2+C.yyy;vec3 x3=x0-D.yyy;
+          i=mod289(i);vec4 p=permute(permute(permute(i.z+vec4(0.0,i1.z,i2.z,1.0))+i.y+vec4(0.0,i1.y,i2.y,1.0))+i.x+vec4(0.0,i1.x,i2.x,1.0));
+          float n_=0.142857142857;vec3 ns=n_*D.wyz-D.xzx;vec4 j=p-49.0*floor(p*ns.z*ns.z);
+          vec4 x_=floor(j*ns.z);vec4 y_=floor(j-7.0*x_);vec4 x=x_*ns.x+ns.yyyy;vec4 y=y_*ns.x+ns.yyyy;
+          vec4 h=1.0-abs(x)-abs(y);vec4 b0=vec4(x.xy,y.xy);vec4 b1=vec4(x.zw,y.zw);
+          vec4 s0=floor(b0)*2.0+1.0;vec4 s1=floor(b1)*2.0+1.0;vec4 sh=-step(h,vec4(0.0));
+          vec4 a0=b0.xzyw+s0.xzyw*sh.xxyy;vec4 a1=b1.xzyw+s1.xzyw*sh.zzww;
+          vec3 p0=vec3(a0.xy,h.x);vec3 p1=vec3(a0.zw,h.y);vec3 p2=vec3(a1.xy,h.z);vec3 p3=vec3(a1.zw,h.w);
+          vec4 norm=taylorInvSqrt(vec4(dot(p0,p0),dot(p1,p1),dot(p2,p2),dot(p3,p3)));
+          p0*=norm.x;p1*=norm.y;p2*=norm.z;p3*=norm.w;
+          vec4 m=max(0.6-vec4(dot(x0,x0),dot(x1,x1),dot(x2,x2),dot(x3,x3)),0.0);m=m*m;
+          return 42.0*dot(m*m,vec4(dot(p0,x0),dot(p1,x1),dot(p2,x2),dot(p3,x3)));
+        }
+      ` + shader.vertexShader
+
+      shader.vertexShader = shader.vertexShader.replace(
+        '#include <begin_vertex>',
+        `vec3 transformed = vec3( position );
+        float t = uTime * 0.5;
+        vec3 np = position * 0.12;
+        float n1 = snoise(np + vec3(t * 0.3, 0.0, 0.0)) * 0.5;
+        float n2 = snoise(np * 2.5 + vec3(0.0, t * 0.5, 7.0)) * 0.2;
+        float n3 = snoise(np * 5.0 + vec3(0.0, 0.0, t * 0.8 + 13.0)) * 0.1;
+        float displacement = (n1 + n2 + n3) * uWobble;
+        float breathe = sin(t * 0.7 + position.y * 0.3) * 0.12 * uWobble;
+        float squash = sin(t * 0.4) * 0.04 * uWobble;
+        transformed += normal * (displacement + breathe);
+        transformed.y += transformed.y * squash;`
+      )
+    }
+    // Store uniforms for update()
+    ;(this.cubeMaterial as unknown as { _wobbleUniform: typeof wobbleUniform })._wobbleUniform = wobbleUniform
+    ;(this.cubeMaterial as unknown as { _timeUniform: typeof timeUniform })._timeUniform = timeUniform
 
     this.cubeMesh = new THREE.Mesh(geo, this.cubeMaterial)
     this.cubeMesh.renderOrder = 2
     this.add(this.cubeMesh)
 
     // Connect CubeCamera render target → material envMap
+    // This gives the glass cube dynamic reflections of the content scene
+    // (gradient planes + logo + text). Without this, the cube is flat.
     this.cubeMaterial.envMap = this.cubeCamera.renderTarget.texture
 
     // ── Rainbow edges — DISABLED (pixelated aliasing) ──
@@ -394,12 +440,13 @@ export class SplashCube extends THREE.Mesh {
     const openerScale = 1 + this.openerProgress * 0.3
     this.cubeMesh.scale.setScalar(openerScale)
 
-    // Advance MeshTransmissionMaterial time uniform (drives wobble + temporalDistortion)
-    const mtm = this.cubeMaterial as unknown as { time?: number }
-    if (mtm.time !== undefined) mtm.time = this.time
+    // Advance wobble time uniform
+    const tu = (this.cubeMaterial as unknown as { _timeUniform?: { value: number } })._timeUniform
+    if (tu) tu.value = this.time
 
     // ── Material color blend ──
     this.cubeMaterial.color.copy(this._blendFromColor).lerp(this._blendToColor, this._blendT)
+    this.cubeMaterial.emissive.copy(this._blendFromEmissive).lerp(this._blendToEmissive, this._blendT)
 
     // Edge colors are STATIC — set once in buildCube, NOT animated per frame.
     // Per-frame edge animation was allocating new Color objects + updating
@@ -413,9 +460,11 @@ export class SplashCube extends THREE.Mesh {
   }
 
   private applyRoleAndParams(): void {
-    const { color } = this.targetParams
+    const { color, emissive, roughness, metalness } = this.targetParams
     this.cubeMaterial.color.copy(color)
-    // Glass material — no emissive/roughness/metalness changes per role
+    this.cubeMaterial.emissive.copy(emissive)
+    this.cubeMaterial.roughness = roughness
+    this.cubeMaterial.metalness = metalness
   }
 
   /** Create a JLZ-branded canvas texture (gradient + text). No external assets. */
