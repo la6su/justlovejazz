@@ -15,7 +15,6 @@
 import * as THREE from 'three'
 import { organicValue } from '../../Utils/Noise'
 import { BakuRole, type BakuMaterialState } from '../../core/types'
-import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js'
 import { MeshTransmissionMaterial } from './MeshTransmissionMaterial'
 
 interface BakuMaterialParams {
@@ -195,11 +194,11 @@ export class SplashCube extends THREE.Mesh {
   private buildCube(): void {
     const size = 0.8
 
-    // Single RoundedBoxGeometry — beveled edges eliminate aliasing at
-    // sharp face junctions. With roughness:0 (mirror), sharp edges create
-    // maximum pixel-level aliasing. Bevel radius 0.04 = subtle rounding.
-    // (was: BoxGeometry — sharp edges → jagged pixels at face boundaries)
-    const geo = new RoundedBoxGeometry(size, size, size, 6, 0.04)
+    // BoxGeometry with 32 segments per face — enough vertices for smooth
+    // wobble displacement (dasprinzip uses 64, but 32 is sufficient at our
+    // cube size 0.8). RoundedBoxGeometry only has 6 segments → wobble looks
+    // jagged. Use BoxGeometry + high segments for smooth vertex displacement.
+    const geo = new THREE.BoxGeometry(size, size, size, 32, 32, 32)
 
     // Glass cube — MeshTransmissionMaterial (works on BOTH WebGL2 + WebGPU).
     // Based on drei MeshTransmissionMaterial + dasprinzip day34 glass.
@@ -234,7 +233,7 @@ export class SplashCube extends THREE.Mesh {
     speckleTex.repeat.set(6, 6)
     speckleTex.colorSpace = THREE.SRGBColorSpace
     this.cubeMaterial.normalMap = speckleTex
-    this.cubeMaterial.normalScale = new THREE.Vector2(0.1, 0.1)
+    this.cubeMaterial.normalScale = new THREE.Vector2(1.0, 1.0)
     // MeshTransmissionMaterial custom uniforms
     this.cubeMaterial.chromaticAberration = 0.05
     this.cubeMaterial.anisotrophicBlur = 0.1
