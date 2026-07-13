@@ -205,8 +205,8 @@ export class SplashCube extends THREE.Mesh {
     // No map/emissiveMap — the cube is pure glass, reflections come from env.
     this.cubeMaterial = new THREE.MeshPhysicalMaterial({
       color: 0xffffff,
-      emissive: 0x1a2a4a,
-      emissiveIntensity: 0.15,
+      emissive: 0x000000,
+      emissiveIntensity: 0.0,
       transparent: true,
       opacity: 0.35,
       side: THREE.DoubleSide,

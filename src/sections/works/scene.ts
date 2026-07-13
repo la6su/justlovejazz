@@ -20,15 +20,14 @@ export function createSection4(): THREE.Group {
   g.add(carousel)
   g.userData.gallery = carousel
 
-  // JunniParticles (Section3 behavior): textured sprites + Y-drift +
-  // XZ orbit + spin + pulse + HSV hue cycling. Blue tint (0x4488ff).
-  // Blending is theme-aware (setBlending via jlz:theme-applied):
-  //   dark → Additive (glow), light → Normal (visible on white).
-  // Tiny + sparse — matches junni reference (few, subtle, 3/10 visibility).
+  // JunniParticles — exact junni Section3 params:
+  //   num=100, range=[7,8,7], size=0.2 (PlaneGeometry base), speed=1.0
+  // scaleNode = num.y * size (num.y = 0.05-1.0 → final 0.01-0.2)
+  // Blending is theme-aware (setBlending via jlz:theme-applied).
   const particles = new JunniParticles({
-    count: 60,
-    range: [7, 8, 14],
-    size: 0.06,
+    count: 100,
+    range: [7, 8, 7],
+    size: 0.2,
     speed: 1.0,
     color: 0x4488ff,
     texture: particleTexture,
