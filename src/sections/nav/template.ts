@@ -1,21 +1,13 @@
-// src/sections/nav/template.ts — Menu overlay (secret right section on all pages)
+// src/sections/nav/template.ts — Menu section (section 5, joystick right)
 //
-// UNIQUE template — does NOT use sectionShell(). VOSK-inspired 3-column grid.
+// UNIQUE template — does NOT use sectionShell(). VOSK-inspired 2-column grid.
+// This is a FULL SECTION (not an overlay): hidden by default via
+// section[data-section] { display: none }, shown via .section-active.
+// Same visibility pattern as Lab (section 0) and all main sections.
 //
-// Layout:
-//   ┌──────────────────────────────────────────────┐
-//   │ [theme] [sound]            JUSTLOVEJAZZ      │  top bar
-//   ├──────────────────────────────────────────────┤
-//   │  STAT          NAVIGATE          CONTACT     │  3-column grid
-//   │  06            01 Studio ▸       hello@      │
-//   │  SECTIONS      02 Services ▸    Telegram    │
-//   │  EST 2019      03 Works ▸        GitHub      │
-//   │                04 Manifesto ▸                │
-//   │                05 Lab ▸                      │
-//   │                06 Contact ▸                  │
-//   ├──────────────────────────────────────────────┤
-//   │ © 2026 · WEBGPU · TSL · UIKIT                │  footer
-//   └──────────────────────────────────────────────┘
+// Joystick right OR hamburger click → JoystickNav switches to section 5.
+// Hamburger X click OR joystick left → returns to previous main section.
+// Menu section is SHARED across all pages (same as Lab section 0).
 //
 // Nav item click behavior:
 //   - Desktop (≥640px): dropdown panel appears to the RIGHT of nav list,
@@ -199,10 +191,15 @@ function menuFooter(): string {
 }
 
 /**
- * Menu overlay section — UNIQUE template (not sectionShell).
+ * Menu section — UNIQUE template (not sectionShell).
  *
- * Visibility: hidden by default (section[data-section] { display: none }).
- * Shown when .section-active is added by JoystickNav / ContentReveal.
+ * This is a FULL SECTION (not an overlay). Visibility is controlled by the
+ * same CSS as all other sections:
+ *   - Hidden: section[data-section] { display: none } (home) / .jlz-page-section { display: none } (content)
+ *   - Shown: .section-active { display: flex !important }
+ *
+ * Joystick right OR hamburger click → JoystickNav.goToSection(5) →
+ * ContentReveal adds .section-active to [data-section="menu"].
  *
  * @param mode 'home' = data-section (3D cube face sync) | 'content' = data-page-section
  */

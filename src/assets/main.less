@@ -1780,23 +1780,16 @@ body.uk-light .jlz-header .uk-navbar-container {
 // VOSK-inspired: stat (left) | nav list (center) | contacts (right) + footer.
 // Fits in 1 screen (100dvh, no scroll). Responsive: 3-col desktop, 1-col mobile.
 
+// Menu section — full section (NOT overlay). Same visibility pattern as all
+// other sections: hidden by default (section[data-section] { display: none }),
+// shown via .section-active { display: flex !important }.
+// No position: absolute, no z-index, no backdrop-filter — it's a regular
+// section that takes over the viewport when active, just like Lab/Intro/etc.
 .jlz-menu-overlay {
-  position: absolute;
-  inset: 0;
-  // z-index: 10 — above other sections (z-index: 2) inside #spa-content,
-  // but below header (z-index: 10001) and joystick (z-index: 100) which
-  // are outside #spa-content. Ensures nav items are clickable and dropdown
-  // panels appear above sibling sections.
-  z-index: 10;
-  // Visibility: hidden by default (section[data-section] { display: none }).
-  // Shown via .section-active { display: flex !important }.
-  // Do NOT set display: flex !important here — it overrides the hide rule.
   flex-direction: column;
   min-height: 100dvh;
   overflow: hidden;
-  // Glass-morphism backdrop: blur the 3D canvas behind the overlay.
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  // Radial scrim for readability over 3D canvas (same as .jlz-page-section).
   background: radial-gradient(
     ellipse 80% 60% at 50% 50%,
     var(--jlz-scrim-1),
