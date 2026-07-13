@@ -200,30 +200,16 @@ export class SplashCube extends THREE.Mesh {
     // (was: BoxGeometry — sharp edges → jagged pixels at face boundaries)
     const geo = new RoundedBoxGeometry(size, size, size, 6, 0.04)
 
-    // MeshPhysicalMaterial — glass cube.
-    // Reflections come from scene.environment (PMREM RoomEnvironment) ONLY.
-    // CubeCamera cubemap was removed — it reflected dark contentScene gradient
-    // planes, creating a 'black hole' behind the cube at close camera distance.
-    // PMREM studio light is bright + neutral → clean glass reflections.
-    this.cubeMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0xffffff,
-      emissive: 0x000000,
-      emissiveIntensity: 0.0,
+    // TEMP: MeshBasicMaterial to isolate 'black hole' cause.
+    // If black shape disappears → was MeshPhysicalMaterial lighting issue.
+    // If remains → something else (post-processing, render target, etc.)
+    this.cubeMaterial = new THREE.MeshBasicMaterial({
+      color: 0x88aaff,
       transparent: true,
-      opacity: 0.6,
+      opacity: 0.4,
       side: THREE.DoubleSide,
-      roughness: 0.0,
-      metalness: 0.0,
-      iridescence: 1.0,
-      iridescenceIOR: 1.3,
-      clearcoat: 1.0,
-      clearcoatRoughness: 0.0,
-      transmission: 0,
-      thickness: 1.2,
-      ior: 1.52,
-      envMapIntensity: 1.0, // PMREM only (CubeCamera disconnected below)
       depthWrite: false,
-    })
+    }) as unknown as THREE.MeshPhysicalMaterial
 
     this.cubeMesh = new THREE.Mesh(geo, this.cubeMaterial)
     this.cubeMesh.renderOrder = 2
