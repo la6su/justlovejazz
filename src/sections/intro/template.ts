@@ -1,5 +1,6 @@
 // src/sections/intro/template.ts — Face 1: Studio (front face +Z, start section)
 // Hero tier — uk-heading-xlarge. Active on load.
+// Phase 3: Play button centered on cube for showreel modal.
 import { REVEAL, sectionShell } from '../_shared/constants'
 
 export function introSection(): string {
@@ -22,5 +23,22 @@ export function introSection(): string {
       </a>
     </div>
   `
-  return sectionShell('intro', top, bottom, 'home')
+  // Phase 3: Play button centered on cube — opens showreel modal
+  const playButton = `
+    <div class="jlz-showreel-play-wrap" ${REVEAL}>
+      <button class="jlz-showreel-play" type="button" id="jlz-showreel-trigger"
+              aria-label="Play showreel"
+              data-cursor="play" data-magnetic>
+        <span class="jlz-showreel-play__ring" aria-hidden="true"></span>
+        <span class="jlz-showreel-play__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+            <path d="M8 5v14l11-7z"/>
+          </svg>
+        </span>
+        <span class="jlz-showreel-play__label" data-i18n="home.studio.showreel">Showreel</span>
+      </button>
+    </div>
+  `
+  // Pass playButton as extraAttrs (inserted into section, positioned absolute center)
+  return sectionShell('intro', top, bottom, 'home', false, playButton)
 }

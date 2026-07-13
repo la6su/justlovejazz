@@ -116,6 +116,7 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'home.studio.lead': 'Remote · EU · since 2019.',
     'home.studio.desc1': 'A small studio crafting expressive browser experiences.',
     'home.studio.desc2': 'Glass · motion · light — powered by WebGPU.',
+    'home.studio.showreel': 'Showreel',
 
     // Home — about (Services)
     'home.about.title': 'Services',
@@ -344,6 +345,7 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'home.studio.lead': 'Удалённо · ЕС · с 2019.',
     'home.studio.desc1': 'Небольшая студия, создающая выразительные браузерные опыты.',
     'home.studio.desc2': 'Стекло · движение · свет — на WebGPU.',
+    'home.studio.showreel': 'Шоурил',
 
     // Home — about (Services)
     'home.about.title': 'Услуги',
