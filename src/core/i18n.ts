@@ -257,6 +257,13 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'hint.returnLeft': '← Drag right to return',
     'hint.returnRight': 'Drag left to return →',
 
+    // Help dropdown (navbar hamburger → joystick infographic)
+    'help.title': 'Navigation',
+    'help.sections': 'Sections',
+    'help.lab': 'Lab',
+    'help.menu': 'Menu',
+    'help.hint': 'Drag the joystick or use arrow keys',
+
     // Meta (route-based SEO)
     'meta.home.title': 'JUSTLOVEJAZZ — Web Design Studio | Interactive 3D Portfolio',
     'meta.home.description': 'JUSTLOVEJAZZ — interactive 3D portfolio experience. WebGPU/WebGL cinematic, Three.js TSL, UIkit 3.',
@@ -503,6 +510,13 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     // Secret-section hints
     'hint.returnLeft': '← Тяните вправо для возврата',
     'hint.returnRight': 'Тяните влево для возврата →',
+
+    // Help dropdown (navbar hamburger → joystick infographic)
+    'help.title': 'Навигация',
+    'help.sections': 'Секции',
+    'help.lab': 'Лаборатория',
+    'help.menu': 'Меню',
+    'help.hint': 'Тяните джойстик или используйте стрелки клавиатуры',
 
     // Meta (route-based SEO)
     'meta.home.title': 'JUSTLOVEJAZZ — Студия веб-дизайна | Интерактивное 3D-портфолио',

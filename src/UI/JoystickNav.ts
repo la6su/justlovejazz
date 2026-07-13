@@ -253,10 +253,11 @@ export class JoystickNav {
     window.addEventListener('keydown', this._keydownHandler)
   }
 
-  /** Vertical navigation — up/down through main sections (1-4 on all pages). */
+  /** Vertical navigation — up/down through main sections (1-4 on all pages).
+   *  Wraps around: 4→1 (down) and 1→4 (up). Matches docs "cycles 1→2→3→4". */
   private _navigateVertical(dir: 1 | -1): void {
     if (this._isPageMode()) {
-      // Same as home: vertical cycles main sections (1-4).
+      // Page mode: vertical cycles main sections (1-4) with wraparound.
       // If currently on secret side (0 or 5), return to nearest main first.
       const current = this._pageSectionIndex()
       let next: number
@@ -267,25 +268,29 @@ export class JoystickNav {
         // On last secret (right) → go to section 4
         next = 4
       } else {
-        // On main (1-4) → cycle within 1-4
+        // On main (1-4) → cycle within 1-4 WITH WRAPAROUND
+        // dir=1 (down): 1→2→3→4→1; dir=-1 (up): 4→3→2→1→4
         next = current + dir
-        if (next < 1) next = 1
-        if (next > 4) next = 4
+        if (next < FIRST_MAIN) next = LAST_MAIN  // 1→4
+        if (next > LAST_MAIN) next = FIRST_MAIN  // 4→1
       }
       this._syncPageSection(next)
       this._setActive(true)
       this._setActiveDelayed(400)
       return
     }
-    // Always return to center first (if in Lab/Process)
+    // Home mode: always return to center first (if in Lab/Menu)
     const wasInSide = this._side !== 'center'
     this._side = 'center'
-    const next = this._mainSection + dir
-    if (next < FIRST_MAIN || next > LAST_MAIN) {
-      // At boundary — fire to return to center if was in side
-      if (wasInSide) {
-        this._fireSectionChange()
-      }
+    // Cycle with WRAPAROUND: 1→2→3→4→1 (down) and 4→3→2→1→4 (up)
+    let next = this._mainSection + dir
+    if (next < FIRST_MAIN) next = LAST_MAIN  // 1→4
+    if (next > LAST_MAIN) next = FIRST_MAIN  // 4→1
+    // If was in side and wrapped, still fire to return to center
+    if (wasInSide && next === this._mainSection) {
+      // No actual section change (wrapped back to same), but need to fire
+      // to exit the side section
+      this._fireSectionChange()
       return
     }
     this._mainSection = next

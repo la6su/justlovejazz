@@ -51,9 +51,16 @@ export class Experience {
   private _soundToggleHandler: ((e: Event) => void) | null = null
   private _splashEnteredHandler: (() => void) | null = null
   private _openProjectHandler: ((e: Event) => void) | null = null
-  private _gotoNavHandler: (() => void) | null = null
+  // (_gotoNavHandler removed — hamburger no longer dispatches jlz:goto-nav.
+  //  Menu is now accessible ONLY via joystick → right or ArrowRight key.)
   private _wobblePulseHandler: (() => void) | null = null
   private _gotoSectionByHashHandler: ((e: Event) => void) | null = null
+  private _showreelPlayHandler: (() => void) | null = null
+  private _showreelClickHandler: ((e: PointerEvent) => void) | null = null
+  private _showreelMoveHandler: ((e: PointerEvent) => void) | null = null
+  private _showreelRaycaster: THREE.Raycaster | null = null
+  private _showreelNdc: THREE.Vector2 | null = null
+  private _showreelHovered = false
   private devPanel: DevPanel | null = null
   public world!: World
   private bus!: StateBus
@@ -313,11 +320,9 @@ export class Experience {
       this._circNav?.goToSection(idx)
     })
 
-    // PLAN-v3: Hamburger button → navigate to section 5 (navigation overlay)
-    this._gotoNavHandler = () => {
-      this._circNav?.goToSection(5)
-    }
-    window.addEventListener('jlz:goto-nav', this._gotoNavHandler)
+    // (jlz:goto-nav listener removed — hamburger is now a help dropdown,
+    //  not a menu toggle. Menu section 5 is accessible ONLY via joystick
+    //  → right or ArrowRight key.)
 
     // JoystickNav is a DOM overlay (fixed bottom-center) — append to body.
     // JoystickNav is position:fixed (sits ON the dock tools row, centered).
@@ -452,6 +457,72 @@ export class Experience {
       }
     }
     window.addEventListener('jlz:goto-section-by-hash', this._gotoSectionByHashHandler)
+
+    // ── Showreel button (3D TSL shader plane on intro section) ──
+    // Click on the ShowreelButton3D mesh → dispatches jlz:showreel-play
+    // → opens FullscreenOverlay with the showreel video.
+    this._showreelRaycaster = new THREE.Raycaster()
+    this._showreelNdc = new THREE.Vector2()
+
+    this._showreelPlayHandler = () => {
+      if (!this.overlay) return
+      // Open overlay with showreel video (coming-soon.mp4 placeholder).
+      this.overlay.open({
+        videoSrc: '/assets/video/coming-soon.mp4',
+        poster: '/assets/video/coming-soon-cover.jpg',
+        title: 'Showreel',
+        category: '2026 · Reel',
+        hasPrev: false,
+        hasNext: false,
+      })
+    }
+    window.addEventListener('jlz:showreel-play', this._showreelPlayHandler)
+
+    // Raycast on pointermove (hover) + click (select) for the showreel button.
+    // Only active on home page, intro section (idx 1).
+    this._showreelMoveHandler = (e: PointerEvent) => {
+      const btn = this._getShowreelButton()
+      if (!btn || !this._showreelRaycaster || !this._showreelNdc) return
+      // Only raycast on home + intro section
+      if (document.body.dataset.page !== 'home') return
+      if (this.world?.currentSectionIndex !== 1) return
+      // Skip when overlay is open
+      if ((window as unknown as { jlzOverlayOpen?: boolean }).jlzOverlayOpen === true) return
+
+      this._showreelNdc.x = (e.clientX / window.innerWidth) * 2 - 1
+      this._showreelNdc.y = -(e.clientY / window.innerHeight) * 2 + 1
+      this._showreelRaycaster.setFromCamera(this._showreelNdc, this.camera.instance)
+      const intersects = this._showreelRaycaster.intersectObject(btn, false)
+      const hovered = intersects.length > 0
+      if (hovered !== this._showreelHovered) {
+        this._showreelHovered = hovered
+        btn.setHover(hovered)
+        this._needsRender = true
+      }
+    }
+    window.addEventListener('pointermove', this._showreelMoveHandler, { passive: true })
+
+    this._showreelClickHandler = (e: PointerEvent) => {
+      const btn = this._getShowreelButton()
+      if (!btn || !this._showreelRaycaster || !this._showreelNdc) return
+      if (document.body.dataset.page !== 'home') return
+      if (this.world?.currentSectionIndex !== 1) return
+      if ((window as unknown as { jlzOverlayOpen?: boolean }).jlzOverlayOpen === true) return
+
+      this._showreelNdc.x = (e.clientX / window.innerWidth) * 2 - 1
+      this._showreelNdc.y = -(e.clientY / window.innerHeight) * 2 + 1
+      this._showreelRaycaster.setFromCamera(this._showreelNdc, this.camera.instance)
+      const intersects = this._showreelRaycaster.intersectObject(btn, false)
+      if (intersects.length > 0) {
+        btn.triggerClick()
+        // Dispatch showreel-play after a brief delay (let click pulse play)
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('jlz:showreel-play'))
+        }, 200)
+        this._needsRender = true
+      }
+    }
+    window.addEventListener('click', this._showreelClickHandler)
   }
 
   update(time: number) {
@@ -516,12 +587,15 @@ export class Experience {
     const openerActive = baku?.openerPhase !== 'done' && baku?.openerPhase !== 'idle'
     const burstActive = this.world?.particleBurst?.isActive ?? false
     const camShaking = this.camera.isShaking
+    // Showreel button animation (hover lerp + click pulse)
+    const showreelBtn = this._getShowreelButton()
+    const showreelActive = showreelBtn?.isAnimating ?? false
     // Cube face rotation animation — keep rendering while the cube is rotating
     // to its target face (triggered by rotateToFace on section change).
     const cubeRotating = (this.world?.baku as unknown as { _faceLerp?: number } | undefined)?._faceLerp !== undefined
       && (this.world?.baku as unknown as { _faceLerp: number })._faceLerp < 1
 
-    if (navActive || introActive || carouselActive || openerActive || burstActive || camShaking || cubeRotating) {
+    if (navActive || introActive || carouselActive || openerActive || burstActive || camShaking || cubeRotating || showreelActive) {
       this._needsRender = true
     }
 
@@ -556,6 +630,8 @@ export class Experience {
     const ns = this._circNav?.getOverallProgress() ?? 0
     const { cameraTarget, worldState } = this.world.updateTransform(ns)
     this.world.update(dt, this._needsRender)
+    // Update showreel button shader (TSL uniforms + hover/click animation)
+    showreelBtn?.update(dt)
 
     // Drive worldDNA section blend — from→to colors + phaseProgress (scroll t).
     if (this.world?.baku) {
@@ -761,17 +837,26 @@ export class Experience {
       window.removeEventListener('jlz:open-project', this._openProjectHandler)
       this._openProjectHandler = null
     }
-    if (this._gotoNavHandler) {
-      window.removeEventListener('jlz:goto-nav', this._gotoNavHandler)
-      this._gotoNavHandler = null
-    }
     if (this._wobblePulseHandler) {
       window.removeEventListener('jlz:wobble-pulse', this._wobblePulseHandler)
       this._wobblePulseHandler = null
     }
+    // (_gotoNavHandler removal — was already commented out above)
     if (this._gotoSectionByHashHandler) {
       window.removeEventListener('jlz:goto-section-by-hash', this._gotoSectionByHashHandler)
       this._gotoSectionByHashHandler = null
+    }
+    if (this._showreelPlayHandler) {
+      window.removeEventListener('jlz:showreel-play', this._showreelPlayHandler)
+      this._showreelPlayHandler = null
+    }
+    if (this._showreelMoveHandler) {
+      window.removeEventListener('pointermove', this._showreelMoveHandler)
+      this._showreelMoveHandler = null
+    }
+    if (this._showreelClickHandler) {
+      window.removeEventListener('click', this._showreelClickHandler)
+      this._showreelClickHandler = null
     }
     this.world.dispose()
     this.bus.cancelAll()
@@ -875,6 +960,17 @@ export class Experience {
     if (!worksGroup) return null
     return (worksGroup.userData.carousel as
       | import('./World/BakuCarousel').BakuCarousel
+      | undefined) ?? null
+  }
+
+  /** Get the ShowreelButton3D from the intro scene group (index 1).
+   *  Returns null on non-home pages. */
+  private _getShowreelButton(): import('./World/ShowreelButton3D').ShowreelButton3D | null {
+    if (document.body.dataset.page !== 'home') return null
+    const introGroup = this.world?.sceneGroups?.[1]
+    if (!introGroup) return null
+    return (introGroup.userData.showreelButton as
+      | import('./World/ShowreelButton3D').ShowreelButton3D
       | undefined) ?? null
   }
 

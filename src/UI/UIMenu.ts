@@ -6,32 +6,28 @@
 //       <div[uk-navbar]>
 //         <div.uk-navbar-left>   → uk-icon-button (lang: EN/RU)
 //         <div.uk-navbar-center> → uk-navbar-item.uk-logo (logo.svg)
-//         <div.uk-navbar-right>  → uk-navbar-toggle (hamburger ↔ close X)
+//         <div.uk-navbar-right>  → uk-navbar-toggle (help dropdown trigger)
 //
-// Hamburger toggle:
-//   - Menu CLOSED: shows hamburger icon, aria-label="Open navigation".
-//     Click → dispatches `jlz:goto-nav` → JoystickNav goes to section 5 (menu).
-//   - Menu OPEN: shows X (close) icon, aria-label="Close navigation".
-//     Click → dispatches `jlz:close-nav` → JoystickNav returns to the previous
-//     main section (the one from which the menu was invoked).
-//   - This duplicates the joystick arrow-left behavior (menu → center) with
-//     an explicit on-screen button, so users have a visible exit from the menu.
+// Hamburger = HELP DROPDOWN trigger (NOT menu toggle):
+//   - Click opens a small dropdown with an SVG joystick infographic
+//     showing how to navigate: ↑↓ sections, ← Lab, → Menu.
+//   - Menu (section 5) is a SECRET section — accessible ONLY via
+//     joystick → right or ArrowRight key. No hamburger→menu path.
+//   - This simplifies the navigation model: no toggle state, no
+//     "previous main section" tracking for hamburger, no sync bugs.
 //
 // Theme + sound controls live INSIDE the menu overlay (see nav/template.ts),
-// not in the header — header stays minimal: lang + logo + hamburger/close.
+// not in the header — header stays minimal: lang + logo + help dropdown.
 //
 // Uses QF-themed UIKit3 components (uk-icon-button via .hook-icon-button(),
-// uk-navbar-toggle). NO custom .jlz-glass-btn. See docs/UIKIT3.md.
+// uk-navbar-toggle, uk-dropdown). See docs/UIKIT3.md.
 
 import { toggleLang, getLang } from '../core/i18n'
 
 export class UIMenu {
   private navEl: HTMLElement
   private _langBtn: HTMLButtonElement | null = null
-  private _hamburgerBtn: HTMLButtonElement | null = null
   private _langHandler: (() => void) | null = null
-  private _sectionChangeHandler: (() => void) | null = null
-  private _pageSectionChangeHandler: ((e: Event) => void) | null = null
 
   constructor() {
     this.navEl = document.createElement('header')
@@ -42,66 +38,49 @@ export class UIMenu {
     app.appendChild(this.navEl)
 
     this._langBtn = this.navEl.querySelector<HTMLButtonElement>('#jlz-lang-toggle')
-    this._hamburgerBtn = this.navEl.querySelector<HTMLButtonElement>('#jlz-hamburger')
 
     // Language toggle — calls i18n.toggleLang() which persists + fires jlz:lang-change
     this._langBtn?.addEventListener('click', () => toggleLang())
 
-    // Hamburger ↔ Close toggle.
-    //   Menu closed → open (jlz:goto-nav → section 5)
-    //   Menu open   → close (jlz:close-nav → return to previous main section)
-    this._hamburgerBtn?.addEventListener('click', () => {
-      if (this._isMenuOpen()) {
-        window.dispatchEvent(new CustomEvent('jlz:close-nav'))
-      } else {
-        window.dispatchEvent(new CustomEvent('jlz:goto-nav'))
-      }
-    })
-
     this._langHandler = () => this.updateLangLabel()
     window.addEventListener('jlz:lang-change', this._langHandler)
 
-    // Sync hamburger icon (hamburger ↔ X) on every section change.
-    // jlz:section-change is emitted via eventBus.emit() in Experience.ts (home),
-    // and EventBus bridges emit() to window.dispatchEvent — so this window
-    // listener receives it. jlz:page-section-change is dispatched raw on window
-    // by JoystickNav._syncPageSection (content pages). Both reach this listener.
-    this._sectionChangeHandler = () => this._syncToggleState()
-    this._pageSectionChangeHandler = () => this._syncToggleState()
-    window.addEventListener('jlz:section-change', this._sectionChangeHandler)
-    window.addEventListener('jlz:page-section-change', this._pageSectionChangeHandler)
-
     this.updateLangLabel()
-    this._syncToggleState()
-  }
-
-  /** Check if the menu overlay is currently the active section. */
-  private _isMenuOpen(): boolean {
-    return !!document.querySelector(
-      '[data-section="menu"].section-active, [data-page-section="page-menu"].section-active',
-    )
-  }
-
-  /** Sync hamburger button: icon (hamburger ↔ X), aria-label, aria-expanded. */
-  private _syncToggleState(): void {
-    const open = this._isMenuOpen()
-    this.navEl.classList.toggle('jlz-header--menu-open', open)
-    if (this._hamburgerBtn) {
-      this._hamburgerBtn.setAttribute('aria-label', open ? 'Close navigation' : 'Open navigation')
-      this._hamburgerBtn.setAttribute('aria-expanded', String(open))
-    }
   }
 
   /** Build navbar — UIkit3 3-zone pattern (uk-navbar-left/center/right).
-   *  Hamburger button contains TWO inline SVGs (hamburger + X); CSS toggles
-   *  visibility via .jlz-header--menu-open on the <header> element.
+   *  Right zone: hamburger icon triggers a uk-dropdown with joystick help.
    *  Inline SVG avoids UIKit3's uk-icon deferred-render issue in hidden
    *  sections (see docs/UIKIT3.md §7.14). */
   private buildNavbar(): string {
-    // Hamburger icon (3 lines) — matches UIKit3 uk-navbar-toggle-icon visually.
-    const hamburgerSvg = `<svg class="jlz-toggle-icon jlz-toggle-icon--open" width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.4" d="M3 5 L17 5 M3 10 L17 10 M3 15 L17 15"/></svg>`
-    // Close icon (X) — shown when menu is open.
-    const closeSvg = `<svg class="jlz-toggle-icon jlz-toggle-icon--close" width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" d="M16 16 L4 4 M16 4 L4 16"/></svg>`
+    // Hamburger icon (3 lines) — now a help dropdown trigger, not menu toggle.
+    const hamburgerSvg = `<svg class="jlz-toggle-icon" width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.4" d="M3 5 L17 5 M3 10 L17 10 M3 15 L17 15"/></svg>`
+
+    // SVG joystick infographic — shows navigation controls visually.
+    // 120×120 viewBox: outer ring (joystick base), inner ball, 4 arrows + labels.
+    const joystickSvg = `
+      <svg class="jlz-joystick-svg" viewBox="0 0 140 140" width="120" height="120" aria-hidden="true">
+        <!-- Joystick base ring -->
+        <circle cx="70" cy="70" r="42" fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.4"/>
+        <circle cx="70" cy="70" r="36" fill="none" stroke="currentColor" stroke-width="0.8" opacity="0.2"/>
+        <!-- Joystick ball (center) -->
+        <circle cx="70" cy="70" r="11" fill="currentColor" opacity="0.5"/>
+        <circle cx="70" cy="70" r="11" fill="none" stroke="currentColor" stroke-width="1.2"/>
+        <!-- Up arrow (Previous section) -->
+        <path d="M70 14 L64 26 L76 26 Z" fill="currentColor"/>
+        <text x="70" y="8" text-anchor="middle" font-size="8" fill="currentColor" opacity="0.7">↑</text>
+        <!-- Down arrow (Next section) -->
+        <path d="M70 126 L64 114 L76 114 Z" fill="currentColor"/>
+        <text x="70" y="138" text-anchor="middle" font-size="8" fill="currentColor" opacity="0.7">↓</text>
+        <!-- Left arrow (Lab) -->
+        <path d="M14 70 L26 64 L26 76 Z" fill="currentColor"/>
+        <text x="8" y="73" text-anchor="middle" font-size="8" fill="currentColor" opacity="0.7">←</text>
+        <!-- Right arrow (Menu) -->
+        <path d="M126 70 L114 64 L114 76 Z" fill="currentColor"/>
+        <text x="132" y="73" text-anchor="middle" font-size="8" fill="currentColor" opacity="0.7">→</text>
+      </svg>
+    `
+
     return `
       <nav class="uk-navbar-container uk-navbar-transparent">
         <div class="uk-container uk-container-expand">
@@ -124,15 +103,31 @@ export class UIMenu {
                 <img src="/logo.svg" alt="JUSTLOVEJAZZ" width="28" height="28" />
               </a>
             </div>
-            <!-- RIGHT: hamburger ↔ close toggle (native uk-navbar-toggle base) -->
+            <!-- RIGHT: help dropdown (hamburger icon → joystick infographic) -->
             <div class="uk-navbar-right">
               <ul class="uk-navbar-nav">
                 <li>
-                  <button class="uk-navbar-toggle jlz-navbar-toggle" type="button" id="jlz-hamburger"
-                          aria-label="Open navigation" aria-expanded="false"
-                          uk-tooltip="pos: bottom; delay: 200; title: Menu">
-                    ${hamburgerSvg}${closeSvg}
+                  <button class="uk-navbar-toggle jlz-navbar-toggle" type="button"
+                          aria-label="Navigation help" aria-expanded="false"
+                          uk-tooltip="pos: bottom; delay: 200; title: Help">
+                    ${hamburgerSvg}
                   </button>
+                  <div class="uk-dropdown jlz-help-dropdown" uk-dropdown="mode: click; pos: bottom-right; offset: 8; animation: uk-animation-fade">
+                    <div class="jlz-help-content">
+                      <div class="jlz-help-joystick" aria-hidden="true">
+                        ${joystickSvg}
+                      </div>
+                      <div class="jlz-help-text">
+                        <h4 class="jlz-help-title" data-i18n="help.title">Navigation</h4>
+                        <ul class="jlz-help-list">
+                          <li><span class="jlz-help-key">↑ ↓</span><span data-i18n="help.sections">Sections</span></li>
+                          <li><span class="jlz-help-key">←</span><span data-i18n="help.lab">Lab</span></li>
+                          <li><span class="jlz-help-key">→</span><span data-i18n="help.menu">Menu</span></li>
+                        </ul>
+                        <p class="jlz-help-hint" data-i18n="help.hint">Drag the joystick or use arrow keys</p>
+                      </div>
+                    </div>
+                  </div>
                 </li>
               </ul>
             </div>
@@ -153,8 +148,6 @@ export class UIMenu {
 
   dispose(): void {
     if (this._langHandler) window.removeEventListener('jlz:lang-change', this._langHandler)
-    if (this._sectionChangeHandler) window.removeEventListener('jlz:section-change', this._sectionChangeHandler)
-    if (this._pageSectionChangeHandler) window.removeEventListener('jlz:page-section-change', this._pageSectionChangeHandler)
     this.navEl.remove()
   }
 }

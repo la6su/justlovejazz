@@ -1,12 +1,10 @@
 // src/sections/intro/template.ts — Face 1: Studio (front face +Z, start section)
 // Hero tier — uk-heading-xlarge. Active on load.
-// Play button is rendered as a 3D TSL shader mesh in front of the cube
-// (see SplashCube.ts → PlayButton3D). DOM overlay only for the label.
 //
-// Showreel button: NO data-magnetic (was too aggressive — cursor snapped to
-// center constantly). Instead: custom cursor via data-cursor="play" + inline
-// SVG play icon with CSS stroke-animation on hover (see docs/UIKIT3.md §7.26
-// for uk-svg stroke-animation pattern).
+// The showreel play button is a 3D TSL shader plane (ShowreelButton3D) in
+// front of the cube — see src/sections/intro/scene.ts. No DOM button.
+// Experience.ts raycasts on pointermove/click to detect hover + click on
+// the 3D button → dispatches jlz:showreel-play → opens FullscreenOverlay.
 import { REVEAL, sectionShell } from '../_shared/constants'
 
 export function introSection(): string {
@@ -29,25 +27,7 @@ export function introSection(): string {
       </a>
     </div>
   `
-  // DOM overlay for showreel label (3D play button is in SplashCube scene).
-  // NO data-magnetic, NO data-cursor — button has its own SVG play icon.
-  // Custom cursor would duplicate the play icon visually. Instead: default
-  // cursor behavior, SVG ring animates stroke on hover.
-  const playOverlay = `
-    <div class="jlz-showreel-overlay" ${REVEAL}>
-      <button class="jlz-showreel-trigger" type="button" id="jlz-showreel-trigger"
-              aria-label="Play showreel">
-        <span class="jlz-showreel-trigger__ring" aria-hidden="true">
-          <svg viewBox="0 0 64 64" width="64" height="64">
-            <circle class="jlz-showreel-trigger__circle" cx="32" cy="32" r="28" fill="none" stroke="currentColor" stroke-width="1.5" />
-          </svg>
-        </span>
-        <span class="jlz-showreel-trigger__icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M8 5v14l11-7z"/></svg>
-        </span>
-        <span class="jlz-showreel-trigger__label" data-i18n="home.studio.showreel">Showreel</span>
-      </button>
-    </div>
-  `
-  return sectionShell('intro', top, bottom, 'home', false, '', playOverlay)
+  // No DOM showreel button — the 3D TSL shader plane (ShowreelButton3D)
+  // handles play. Click raycasting is in Experience.ts.
+  return sectionShell('intro', top, bottom, 'home', false, '')
 }
