@@ -37,7 +37,6 @@ import {
   mod,
   floor,
   exp,
-  abs,
   length,
   attribute,
   texture,
@@ -148,7 +147,6 @@ export class JunniParticles extends THREE.InstancedMesh {
     //   pos += oPos
     const positionNode = Fn(() => {
       const offset = attribute('offsetPos') as unknown as TSLVec3
-      const num = attribute('num') as unknown as TSLVec2
       const t = (uTime as unknown as TSLNode).mul((uSpeed as unknown as TSLNode).mul(0.5))
       const rangeVec = uRange as unknown as TSLVec3
       const rangeHalf = rangeVec.div(2.0)
@@ -186,7 +184,6 @@ export class JunniParticles extends THREE.InstancedMesh {
     const scaleNode = Fn(() => {
       const num = attribute('num') as unknown as TSLVec2
       const t = (uTime as unknown as TSLNode).mul((uSpeed as unknown as TSLNode).mul(0.5))
-      const rangeHalf = (uRange as unknown as TSLVec3).div(2.0)
       // Pulse: exp(-mod(time + num.y*2, 1) * 7) * 3
       const pulsePhase = mod(t.add(num.y.mul(2.0)), float(1.0))
       const pulse = exp(pulsePhase.mul(-7.0)).mul(3.0)
