@@ -230,21 +230,19 @@ export class SplashCube extends THREE.Mesh {
       depthWrite: false,
     })
 
-    // TSL wobble — noise displacement (dasprinzip pattern)
+    // TSL wobble — very subtle noise displacement (dasprinzip pattern, reduced).
+    // Previous amplitude (0.3) caused cube sides to collapse inward at negative
+    // displacement values. Reduced to 0.1 for gentle organic motion.
     const uWobble = this._uWobble
     const uTimeVal = this._uTime
     this.cubeMaterial.positionNode = Fn(() => {
       const pos = positionLocal.toVar()
       const np = pos.mul(0.12)
       const t = uTimeVal
-      const n1 = mx_noise_float(np.add(t.mul(0.3))).mul(0.15).mul(uWobble)
-      const n2 = mx_noise_float(np.mul(2.5).add(t.mul(0.5)).add(7)).mul(0.06).mul(uWobble)
-      const n3 = mx_noise_float(np.mul(5).add(t.mul(0.8)).add(13)).mul(0.03).mul(uWobble)
-      const displacement = n1.add(n2).add(n3)
-      const squash = sin(t.mul(0.4)).mul(0.02).mul(uWobble)
-      const breathe = sin(t.mul(0.7).add(pos.y.mul(0.3))).mul(0.04).mul(uWobble)
+      // Single octave only — multi-octave was too strong + caused collapse
+      const displacement = mx_noise_float(np.add(t.mul(0.3))).mul(0.05).mul(uWobble)
+      const breathe = sin(t.mul(0.7).add(pos.y.mul(0.3))).mul(0.02).mul(uWobble)
       pos.assign(pos.add(normalLocal.mul(displacement.add(breathe))))
-      pos.y.addAssign(pos.y.mul(squash))
       return pos
     })()
 
