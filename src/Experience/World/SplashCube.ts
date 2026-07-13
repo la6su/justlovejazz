@@ -239,10 +239,13 @@ export class SplashCube extends THREE.Mesh {
     // MeshTransmissionMaterial custom uniforms
     this.cubeMaterial.chromaticAberration = 0.05
     this.cubeMaterial.anisotrophicBlur = 0.1
-    // Wobble — noise-based normal distortion (works on BOTH WebGL2 + WebGPU)
-    this.cubeMaterial.distortion = 0.3
+    // Wobble — vertex noise displacement (dasprinzip day34 pattern)
+    // Works on BOTH WebGL2 + WebGPU via onBeforeCompile GLSL injection.
+    this.cubeMaterial.wobble = 0.3
+    // Refraction distortion — noise on normals (fragment shader)
+    this.cubeMaterial.distortion = 0.0
     this.cubeMaterial.distortionScale = 0.3
-    this.cubeMaterial.temporalDistortion = 0.1
+    this.cubeMaterial.temporalDistortion = 0.0
 
     this.cubeMesh = new THREE.Mesh(geo, this.cubeMaterial)
     this.cubeMesh.renderOrder = 2
@@ -404,9 +407,8 @@ export class SplashCube extends THREE.Mesh {
     const openerScale = 1 + this.openerProgress * 0.3
     this.cubeMesh.scale.setScalar(openerScale)
 
-    // Advance TSL wobble time uniform
-    // Advance MeshTransmissionMaterial time uniform (for temporalDistortion)
-    this.cubeMaterial.uniforms.time!.value = this.time
+    // Advance MeshTransmissionMaterial time uniform (drives wobble + temporalDistortion)
+    this.cubeMaterial.time = this.time
 
     // ── Material color blend ──
     this.cubeMaterial.color.copy(this._blendFromColor).lerp(this._blendToColor, this._blendT)
