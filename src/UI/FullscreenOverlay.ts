@@ -72,7 +72,7 @@ export class FullscreenOverlay {
         <button class="jlz-fs-next" type="button" aria-label="Next" uk-slidenav-next></button>
         <div class="jlz-fs-video-wrap">
           <div class="jlz-fs-poster" aria-hidden="true"></div>
-          <video class="jlz-fs-video" preload="metadata" playsinline>
+          <video class="jlz-fs-video" preload="none" playsinline>
           </video>
           <div class="jlz-fs-big-play" aria-hidden="true">
             <span class="jlz-fs-big-play__icon"></span>

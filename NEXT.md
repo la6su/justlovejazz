@@ -13,12 +13,16 @@ _(nothing currently in progress)_
 
 ## TODO — High priority
 
-- [ ] **Showreel button as TSL shader plane + video on plane with genie effect**
-      — PLAN: replace DOM showreel button with a Three.js TSL shader plane
-      positioned in front of the cube (like PlayButton3D). On click → video
-      plays on a separate plane with a "genie" transition (scale + opacity
-      from button position to fullscreen). See detailed plan in
-      `docs/PLAN-showreel-shader-plane.md`.
+- [ ] **3D Works page + Showreel shader plane + lazy video** — 6-phase plan
+      in `docs/PLAN-showreel-shader-plane.md`:
+      1. Lazy video loading (preload="none", src on open) — 30 min
+      2. Wobble scale on card click (CSS animation quick win) — 1 hour
+      3. 3D portfolio grid (PortfolioGrid3D.ts, instanced mesh) — 4-6 hours
+      4. Showreel button as TSL shader plane — 2-3 hours
+      5. Video plane with genie transition — 3-4 hours
+      6. Integration + cleanup — 1-2 hours
+      Strategy: thumbnails eager, video lazy on click. Wobble already works
+      on cube (WorkCards.ts:107 → jlz:wobble-pulse), needs to be on card too.
 
 - [x] **Menu section overlap + fullscreen overlay visible on works** — DONE
       2026-07-13. Two bugs fixed:

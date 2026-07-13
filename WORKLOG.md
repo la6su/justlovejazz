@@ -1,4 +1,47 @@
 
+## 2026-07-13 — Lazy video + card wobble + 3D Works plan
+
+### Done
+
+- **Phase 1: Lazy video loading** — changed `<video preload="metadata">` to
+  `preload="none"` in FullscreenOverlay.ts. Video source set only when
+  `open()` is called with `videoSrc`. No bandwidth cost until user clicks.
+  Thumbnails (textureUrl) still load eagerly with PROJECTS data.
+
+- **Phase 2: Wobble scale on card click** — added CSS animation
+  `.jlz-work-card.is-wobbling .jlz-work-card__inner` with spring wobble
+  (scale 1.0 → 1.15 → 0.95 → 1.0, 0.6s) + chromatic glow burst at peak.
+  WorkCards.ts: click adds `is-wobbling` class + dispatches
+  `jlz:wobble-pulse` (cube wobble) + opens overlay after 300ms (mid-animation).
+  Reduced-motion: animation disabled.
+  This gives the visual feedback the user requested — card wobbles before
+  overlay opens, synced with cube wobble.
+
+- **3D Works plan updated** — `docs/PLAN-showreel-shader-plane.md` now has
+  6-phase plan covering:
+  1. Lazy video (DONE this session)
+  2. Card wobble (DONE this session)
+  3. 3D portfolio grid (PortfolioGrid3D.ts, instanced mesh) — next major
+  4. Showreel button as TSL shader plane
+  5. Video plane with genie transition
+  6. Integration + cleanup
+  Strategy documented: thumbnails eager, video lazy on click.
+
+### Verification
+
+- `bun run type-check` — 0 errors.
+- `bun run lint` — 0 errors (63 pre-existing warnings).
+- `bun run build` — 4.68s.
+- `bun run test:unit` — 84/84 tests passed.
+
+### Files touched (5)
+
+- Modified: `src/UI/FullscreenOverlay.ts`, `src/UI/WorkCards.ts`,
+  `src/assets/main.less`, `docs/PLAN-showreel-shader-plane.md`, `NEXT.md`.
+- Updated plan: 6-phase architecture for 3D Works + showreel shader plane.
+
+---
+
 ## 2026-07-13 — Menu overlap + fullscreen overlay visible + showreel plan
 
 ### Done
