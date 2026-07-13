@@ -1694,10 +1694,15 @@ body.uk-light .jlz-header .uk-navbar-container {
 .jlz-menu-overlay {
   position: absolute;
   inset: 0;
-  display: flex !important;
+  // Visibility: hidden by default (section[data-section] { display: none }).
+  // Shown via .section-active { display: flex !important }.
+  // Do NOT set display: flex !important here — it overrides the hide rule.
   flex-direction: column;
   min-height: 100dvh;
   overflow: hidden;
+  // Glass-morphism backdrop: blur the 3D canvas behind the overlay.
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   background: radial-gradient(
     ellipse 80% 60% at 50% 50%,
     var(--jlz-scrim-1),
@@ -1832,21 +1837,28 @@ body.uk-light .jlz-header .uk-navbar-container {
 
 .jlz-menu-nav__item {
   border-bottom: 1px solid var(--jlz-color-border);
+  position: relative;
 }
 
-.jlz-menu-nav__link {
+// Nav item toggle button (click to expand/collapse subsections)
+.jlz-menu-nav__toggle {
   display: flex;
   align-items: baseline;
   gap: var(--jlz-space-3);
+  width: 100%;
   padding: var(--jlz-space-2) 0;
-  text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
   color: var(--jlz-color-text-muted);
   transition: color 0.2s ease, padding-left 0.2s ease;
   -webkit-tap-highlight-color: transparent;
 }
 
-.jlz-menu-nav__link:hover,
-.jlz-menu-nav__link:focus-visible {
+.jlz-menu-nav__toggle:hover,
+.jlz-menu-nav__toggle:focus-visible {
   color: @global-primary-background;
   padding-left: var(--jlz-space-2);
   outline: none;
@@ -1862,7 +1874,8 @@ body.uk-light .jlz-header .uk-navbar-container {
   min-width: 2rem;
 }
 
-.jlz-menu-nav__link:hover .jlz-menu-nav__num {
+.jlz-menu-nav__toggle:hover .jlz-menu-nav__num,
+.jlz-menu-nav__item.is-expanded .jlz-menu-nav__num {
   color: @global-primary-background;
 }
 
@@ -1876,14 +1889,89 @@ body.uk-light .jlz-header .uk-navbar-container {
 }
 
 .jlz-menu-nav__arrow {
-  font-size: 1rem;
+  font-size: 0.85rem;
+  color: var(--jlz-color-text-subtle);
+  opacity: 0.6;
+  transition: transform 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+}
+
+.jlz-menu-nav__toggle:hover .jlz-menu-nav__arrow {
+  color: @global-primary-background;
+  opacity: 1;
+}
+
+.jlz-menu-nav__item.is-expanded .jlz-menu-nav__arrow {
+  transform: rotate(90deg);
+  color: @global-primary-background;
+  opacity: 1;
+}
+
+// ── Subsections (hidden by default) ──
+// Desktop (≥640px): dropdown panel positioned to the RIGHT of nav list.
+// Mobile (<640px): accordion unfold inline below the nav item.
+.jlz-menu-nav__subs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: none; // hidden by default; .is-expanded shows it
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.jlz-menu-nav__item.is-expanded > .jlz-menu-nav__subs {
+  display: flex;
+}
+
+.jlz-menu-nav__sub-link {
+  display: flex;
+  align-items: center;
+  gap: var(--jlz-space-2);
+  padding: 0.4rem var(--jlz-space-2);
+  text-decoration: none;
+  color: var(--jlz-color-text-subtle);
+  font-size: 0.85rem;
+  font-weight: 500;
+  border-radius: 4px;
+  transition: color 0.2s ease, background 0.2s ease, padding-left 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.jlz-menu-nav__sub-link:hover,
+.jlz-menu-nav__sub-link:focus-visible {
+  color: @global-primary-background;
+  background: fade(@global-primary-background, 8%);
+  padding-left: var(--jlz-space-3);
+  outline: none;
+}
+
+.jlz-menu-nav__sub-num {
+  font-family: @global-font-family;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--jlz-color-text-subtle);
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+.jlz-menu-nav__sub-link:hover .jlz-menu-nav__sub-num {
+  color: @global-primary-background;
+  opacity: 1;
+}
+
+.jlz-menu-nav__sub-title {
+  flex: 1;
+}
+
+.jlz-menu-nav__sub-arrow {
+  font-size: 0.75rem;
   color: var(--jlz-color-text-subtle);
   opacity: 0;
-  transform: translateX(-4px);
+  transform: translateX(-3px);
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
-.jlz-menu-nav__link:hover .jlz-menu-nav__arrow {
+.jlz-menu-nav__sub-link:hover .jlz-menu-nav__sub-arrow {
   opacity: 1;
   transform: translateX(0);
   color: @global-primary-background;
@@ -1940,6 +2028,27 @@ body.uk-light .jlz-header .uk-navbar-container {
   opacity: 0.5;
 }
 
+// ── Responsive: desktop dropdown (≥640px) ──
+// Subsections appear as a dropdown panel to the RIGHT of the nav list,
+// positioned absolutely relative to the nav column.
+@media (min-width: 640px) {
+  .jlz-menu-nav__item.is-expanded > .jlz-menu-nav__subs {
+    position: absolute;
+    // Position to the right of the nav column, aligned with the item top.
+    left: calc(100% + var(--jlz-space-4));
+    top: 0;
+    min-width: 220px;
+    padding: var(--jlz-space-2);
+    background: var(--jlz-color-bg-elevated);
+    border: 1px solid var(--jlz-color-border);
+    border-radius: 8px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    z-index: 10;
+  }
+}
+
 // ── Responsive: mobile single column ──
 @media (max-width: 639px) {
   .jlz-menu-grid {
@@ -1974,6 +2083,13 @@ body.uk-light .jlz-header .uk-navbar-container {
     font-size: 1.15rem;
   }
 
+  // Mobile: subsections unfold inline (accordion) — no absolute positioning.
+  .jlz-menu-nav__subs {
+    padding-left: var(--jlz-space-4);
+    padding-top: 0.25rem;
+    padding-bottom: 0.5rem;
+  }
+
   .jlz-menu-col--contact {
     flex-direction: row;
     flex-wrap: wrap;
@@ -2003,10 +2119,12 @@ body.uk-light {
   .jlz-menu-stat__num { color: var(--jlz-color-text); }
   .jlz-menu-stat__label { color: var(--jlz-color-text-subtle); }
   .jlz-menu-eyebrow { color: var(--jlz-color-text-subtle); }
-  .jlz-menu-nav__link { color: var(--jlz-color-text-muted); }
+  .jlz-menu-nav__toggle { color: var(--jlz-color-text-muted); }
   .jlz-menu-nav__num { color: var(--jlz-color-text-subtle); }
   .jlz-menu-nav__label { color: inherit; }
   .jlz-menu-nav__arrow { color: var(--jlz-color-text-subtle); }
+  .jlz-menu-nav__sub-link { color: var(--jlz-color-text-subtle); }
+  .jlz-menu-nav__sub-num { color: var(--jlz-color-text-subtle); }
   .jlz-menu-contact-link { color: var(--jlz-color-text-muted); }
   .jlz-menu-footer__text { color: var(--jlz-color-text-subtle); }
 }

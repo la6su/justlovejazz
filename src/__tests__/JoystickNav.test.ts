@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { JoystickNav } from '../UI/JoystickNav'
 
 // JoystickNav close-nav behavior is critical: it's the explicit exit from
@@ -31,9 +31,9 @@ describe('JoystickNav — jlz:close-nav (menu exit)', () => {
 
   it('returns from menu to the previous main section on jlz:close-nav', () => {
     joy = new JoystickNav(null, null, 6)
-    let lastIndex = -1
+    const indices: number[] = []
     joy.onSectionChange((index) => {
-      lastIndex = index
+      indices.push(index)
     })
 
     // Navigate to menu (section 5) — simulates hamburger click / joystick right
@@ -41,19 +41,19 @@ describe('JoystickNav — jlz:close-nav (menu exit)', () => {
     expect(joy.getSectionIndex()).toBe(5)
 
     // Dispatch close-nav — simulates hamburger X click
-    lastIndex = -1 // reset
     window.dispatchEvent(new CustomEvent('jlz:close-nav'))
 
     // Should return to the previous main section (intro = 1, the default)
     expect(joy.getSectionIndex()).toBe(1)
-    expect(lastIndex).toBe(1)
+    // Last fired index should be 1 (the close-nav return)
+    expect(indices[indices.length - 1]).toBe(1)
   })
 
   it('returns to the main section that was active before opening menu', () => {
     joy = new JoystickNav(null, null, 6)
-    let lastIndex = -1
+    const indices: number[] = []
     joy.onSectionChange((index) => {
-      lastIndex = index
+      indices.push(index)
     })
 
     // Navigate: intro(1) → about(2) → works(3) → then open menu(5)
@@ -65,11 +65,11 @@ describe('JoystickNav — jlz:close-nav (menu exit)', () => {
     expect(joy.getSectionIndex()).toBe(5)
 
     // Close menu — should return to works(3), NOT to intro(1)
-    lastIndex = -1
     window.dispatchEvent(new CustomEvent('jlz:close-nav'))
 
     expect(joy.getSectionIndex()).toBe(3)
-    expect(lastIndex).toBe(3)
+    // Last fired index should be 3 (the close-nav return to works)
+    expect(indices[indices.length - 1]).toBe(3)
   })
 
   it('is a no-op when menu is not open (center state)', () => {
@@ -130,20 +130,19 @@ describe('JoystickNav — goto-nav (menu open)', () => {
     // Note: jlz:goto-nav event is listened by Experience.ts (not JoystickNav),
     // which calls joystick.goToSection(5). We test goToSection directly.
     joy = new JoystickNav(null, null, 6)
-    let lastIndex = -1
+    const indices: number[] = []
     joy.onSectionChange((index) => {
-      lastIndex = index
+      indices.push(index)
     })
 
     // Start on intro (default)
     expect(joy.getSectionIndex()).toBe(1)
 
     // Go to menu — simulates what Experience.ts does on jlz:goto-nav
-    lastIndex = -1
     joy.goToSection(5)
 
     expect(joy.getSectionIndex()).toBe(5)
-    expect(lastIndex).toBe(5)
+    expect(indices[indices.length - 1]).toBe(5)
   })
 
   it('can toggle: goToSection(5) opens menu, close-nav returns to previous', () => {
