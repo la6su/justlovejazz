@@ -986,9 +986,12 @@ body.uk-light .jlz-eyebrow {
   padding-bottom: calc(var(--jlz-joystick-size) * 0.6 + var(--jlz-space-4));
 }
 
-/* Subtle scanline overlay for TUI feel — very faint */
-#spa-content section[data-section]::before,
-.jlz-page-section::before {
+/* Subtle scanline overlay for TUI feel — very faint.
+   EXCLUDED for .jlz-menu-overlay — the scanline ::before with z-index: 1
+   was creating a stacking context issue that blocked clicks on nav items
+   inside the menu overlay. Menu overlay doesn't need scanlines. */
+#spa-content section[data-section]:not(.jlz-menu-overlay)::before,
+.jlz-page-section:not(.jlz-menu-overlay)::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -1461,6 +1464,149 @@ body.uk-light .jlz-eyebrow {
 }
 
 // ════════════════════════════════════════════════════════════════════
+// SHOWREEL TRIGGER — play button with animated SVG ring (stroke-animation)
+// NO data-magnetic — was too aggressive (cursor snapped to center constantly).
+// Instead: data-cursor="play" changes cursor, SVG ring animates stroke on hover.
+// ════════════════════════════════════════════════════════════════════
+
+.jlz-showreel-overlay {
+  position: absolute;
+  bottom: 15%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  pointer-events: auto;
+}
+
+.jlz-showreel-trigger {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: rgba(245, 245, 247, 0.7);
+  transition: color 0.3s ease;
+  -webkit-tap-highlight-color: transparent;
+  padding: 0;
+}
+
+.jlz-showreel-trigger:hover,
+.jlz-showreel-trigger:focus-visible {
+  color: @global-primary-background;
+  outline: none;
+}
+
+// Ring container — 64×64, holds the SVG circle
+.jlz-showreel-trigger__ring {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+}
+
+// SVG circle — stroke-dasharray + stroke-dashoffset animation on hover.
+// This is the manual CSS version of uk-svg="stroke-animation: true" —
+// we use inline SVG (not <img uk-svg>) so we animate via CSS directly.
+.jlz-showreel-trigger__circle {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  // dasharray = 2πr = 2π × 28 ≈ 176 (full circumference)
+  stroke-dasharray: 176;
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 0.6s ease, stroke-width 0.3s ease;
+  transform-origin: center;
+  transform: rotate(-90deg); // start from top
+}
+
+.jlz-showreel-trigger:hover .jlz-showreel-trigger__circle,
+.jlz-showreel-trigger:focus-visible .jlz-showreel-trigger__circle {
+  // Animate stroke drawing around the circle
+  stroke-dashoffset: 176; // fully "undrawn" → animated to 0 on hover
+  animation: jlz-showreel-stroke 1.2s ease-in-out infinite;
+  stroke-width: 2;
+}
+
+@keyframes jlz-showreel-stroke {
+  0% { stroke-dashoffset: 176; }
+  50% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -176; }
+}
+
+// Play icon (triangle) — centered inside the ring
+.jlz-showreel-trigger__icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: currentColor;
+  transition: transform 0.3s ease;
+}
+
+.jlz-showreel-trigger:hover .jlz-showreel-trigger__icon,
+.jlz-showreel-trigger:focus-visible .jlz-showreel-trigger__icon {
+  transform: translate(-50%, -50%) scale(1.15);
+}
+
+.jlz-showreel-trigger__label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: currentColor;
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+
+.jlz-showreel-trigger:hover .jlz-showreel-trigger__label,
+.jlz-showreel-trigger:focus-visible .jlz-showreel-trigger__label {
+  opacity: 1;
+}
+
+body.uk-light .jlz-showreel-trigger {
+  color: rgba(5, 5, 7, 0.7);
+}
+
+body.uk-light .jlz-showreel-trigger:hover,
+body.uk-light .jlz-showreel-trigger:focus-visible {
+  color: @global-primary-background;
+}
+
+@media (max-width: 639px) {
+  .jlz-showreel-overlay {
+    bottom: 12%;
+  }
+  .jlz-showreel-trigger__ring {
+    width: 52px;
+    height: 52px;
+  }
+  .jlz-showreel-trigger__label {
+    font-size: 0.6rem;
+  }
+}
+
+// Reduced motion — no stroke animation, just color change
+@media (prefers-reduced-motion: reduce) {
+  .jlz-showreel-trigger__circle {
+    transition: none;
+  }
+  .jlz-showreel-trigger:hover .jlz-showreel-trigger__circle,
+  .jlz-showreel-trigger:focus-visible .jlz-showreel-trigger__circle {
+    animation: none;
+    stroke-dashoffset: 0;
+    stroke-width: 2;
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════
 // NAVBAR — UIkit3 native centered-logo pattern (uk-navbar-center)
 // See https://getuikit.com/docs/navbar#centered-logo
 // Layout: uk-navbar-center > [uk-navbar-center-left: lang] [uk-navbar-item.uk-logo: logo]
@@ -1649,6 +1795,8 @@ body.uk-light .jlz-header .uk-navbar-container {
 }
 
 .jlz-menu-container {
+  position: relative;
+  z-index: 2; // above any ::before scanline overlay (excluded, but defensive)
   display: flex;
   flex-direction: column;
   height: 100dvh;
