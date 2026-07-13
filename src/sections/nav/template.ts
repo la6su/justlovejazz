@@ -259,9 +259,11 @@ export function initMenuNav(): void {
       const hash = url.hash
 
       if (path !== window.location.pathname) {
-        // Cross-page: dispatch jlz:navigate — router.ts listens and calls
-        // navigateToPage (pushState + renderView). Menu section is removed
-        // from DOM by renderView. No overlap possible.
+        // Cross-page: close menu FIRST (reset JoystickNav to center), then
+        // dispatch jlz:navigate — router listens and calls navigateToPage
+        // (pushState + renderView). Without close-nav, JoystickNav stays in
+        // side='menu' state and the cube face doesn't reset.
+        window.dispatchEvent(new CustomEvent('jlz:close-nav'))
         window.dispatchEvent(new CustomEvent('jlz:navigate', {
           detail: { path: path + (hash || '') },
         }))

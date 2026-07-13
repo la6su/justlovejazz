@@ -33,7 +33,6 @@ interface CardState {
 
 let cards: CardState[] = []
 let globalRafScheduled = false
-let keydownHandler: ((e: KeyboardEvent) => void) | null = null
 let sectionChangeHandler: ((e: Event) => void) | null = null
 
 /** Update all card tilts in a single rAF pass (batched, not per-card). */
@@ -123,15 +122,17 @@ function bindCard(cardEl: HTMLElement): void {
   cards.push(state)
 }
 
-// ── Keyboard navigation (roving tabindex) ──────────────────────────────────
+// ── Keyboard navigation (roving tabindex) ──────────────────────────────
 //
 // Layout: 4 sections × 2 cards. Each section's cards live inside one
-// .jlz-works-grid. Only the active section's cards are keyboard-reachable
-// via Tab; ArrowLeft/Right cycle focus within that row.
+// .jlz-works-grid. Cards are keyboard-reachable via Tab (roving tabindex).
+//
+// ArrowLeft/ArrowRight are NOT handled here — they are owned by JoystickNav
+// for section navigation (vertical = sections 1-4, horizontal = Lab/Menu).
+// Card focus cycling is via Tab/Shift+Tab (native browser tabindex).
 //
 // Roving tabindex: in each grid, exactly one card has tabindex=0 (the Tab
 // entry point), the rest have tabindex=-1 (focusable via JS but not Tab).
-// ArrowLeft/Right move focus + update the roving anchor.
 
 /** All card grids on the page, in DOM order (matches section order). */
 function grids(): HTMLElement[] {
@@ -143,17 +144,7 @@ function cardsInGrid(grid: HTMLElement): HTMLElement[] {
   return Array.from(grid.querySelectorAll<HTMLElement>('.jlz-work-card'))
 }
 
-/** Which grid is currently active (its parent section has .section-active)?
- *  Falls back to the first grid if none is active (initial load). */
-function activeGrid(): HTMLElement | null {
-  const gridsList = grids()
-  if (gridsList.length === 0) return null
-  for (const g of gridsList) {
-    const section = g.closest('[data-page-section]')
-    if (section?.classList.contains('section-active')) return g
-  }
-  return gridsList[0] ?? null
-}
+// (activeGrid removed — was only used by the deleted keyboard handler.)
 
 /** Apply roving tabindex to a single grid: first card = 0, rest = -1. */
 function applyRoving(grid: HTMLElement): void {
@@ -163,49 +154,8 @@ function applyRoving(grid: HTMLElement): void {
   })
 }
 
-/** Move focus within a grid in the given direction (+1 = right, -1 = left).
- *  Wraps around at the edges. Updates the roving anchor so Tab re-enters
- *  at the newly-focused card. */
-function moveFocus(grid: HTMLElement, dir: 1 | -1): void {
-  const gridCards = cardsInGrid(grid)
-  if (gridCards.length === 0) return
-  const current = gridCards.findIndex((c) => c === document.activeElement)
-  // If nothing focused yet, start at the roving anchor (tabindex=0).
-  const startIdx = current >= 0 ? current : gridCards.findIndex((c) => c.getAttribute('tabindex') === '0')
-  const baseIdx = startIdx >= 0 ? startIdx : 0
-  const nextIdx = (baseIdx + dir + gridCards.length) % gridCards.length
-  // Update roving: the newly-focused card becomes the Tab entry point.
-  gridCards.forEach((card, i) => card.setAttribute('tabindex', i === nextIdx ? '0' : '-1'))
-  gridCards[nextIdx]!.focus({ preventScroll: false })
-}
-
-/** Global keydown handler — processes ArrowLeft/ArrowRight when a card (or
- *  nothing in the active grid) is focused. ArrowUp/Down are intentionally
- *  ignored (joystick owns vertical section navigation).
- *  stopImmediatePropagation prevents JoystickNav's window keydown from also
- *  firing — without it, ArrowRight on /works moves card focus AND opens the
- *  Menu overlay simultaneously. */
-function onKeydown(e: KeyboardEvent): void {
-  if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
-  // Bail when a fullscreen overlay is open — FullscreenOverlay owns
-  // ArrowLeft/Right (prev/next project) while open.
-  if ((window as unknown as { jlzOverlayOpen?: boolean }).jlzOverlayOpen === true) return
-  // Only act if focus is within a work card, OR within the active section
-  // (so arrows work even before the user has tabbed into a card).
-  const active = document.activeElement
-  const grid = activeGrid()
-  if (!grid) return
-  const isOnCard = active instanceof HTMLElement && active.classList.contains('jlz-work-card')
-  const isInActiveSection = active instanceof HTMLElement && grid.contains(active)
-  if (!isOnCard && !isInActiveSection) {
-    // Still allow arrows if the active section's grid has no focused element
-    // — but only when focus is on body (post-tab-into-page state).
-    if (active !== document.body) return
-  }
-  e.preventDefault()
-  e.stopImmediatePropagation()
-  moveFocus(grid, e.key === 'ArrowRight' ? 1 : -1)
-}
+// (moveFocus + onKeydown removed — ArrowLeft/Right now owned by JoystickNav
+//  for section navigation. Card focus is via Tab/Shift+Tab only.)
 
 /** jlz:page-section-change handler — when the active section changes, reset
  *  roving in ALL grids (new section's first card becomes Tab entry). */
@@ -222,11 +172,8 @@ export function initWorkCards(): void {
   // Initialize roving tabindex on all grids (first card per grid = Tab entry).
   grids().forEach(applyRoving)
 
-  // Attach keyboard + section-change handlers once.
-  if (!keydownHandler) {
-    keydownHandler = onKeydown
-    document.addEventListener('keydown', keydownHandler)
-  }
+  // Attach section-change handler once (keyboard handler removed — arrows
+  // owned by JoystickNav for section navigation, card focus via Tab).
   if (!sectionChangeHandler) {
     sectionChangeHandler = onPageSectionChange
     window.addEventListener('jlz:page-section-change', sectionChangeHandler)
@@ -244,10 +191,6 @@ export function disposeWorkCards(): void {
     c.el.removeAttribute('tabindex')
   }
   cards = []
-  if (keydownHandler) {
-    document.removeEventListener('keydown', keydownHandler)
-    keydownHandler = null
-  }
   if (sectionChangeHandler) {
     window.removeEventListener('jlz:page-section-change', sectionChangeHandler)
     sectionChangeHandler = null
