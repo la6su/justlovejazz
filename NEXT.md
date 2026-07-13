@@ -13,6 +13,20 @@ _(nothing currently in progress)_
 
 ## TODO — High priority
 
+- [x] **Menu close button + unique VOSK template + glassmorphism + docs audit** —
+      DONE 2026-07-13. Joystick fix (`touch-action: none` on `.jlz-joystick__base`
+      directly — not inherited from parent). Hamburger ↔ X toggle: `#jlz-hamburger`
+      contains two inline SVGs, CSS-driven swap via `.jlz-header--menu-open`;
+      click dispatches `jlz:goto-nav` (open) or `jlz:close-nav` (close → returns
+      to previous main section). Unique menu template (NOT `sectionShell()`) —
+      VOSK-style 3-column grid (stat | nav | contacts + footer), 100dvh, no
+      scroll, responsive 3-col/1-col. Glassmorphism on `uk-icon-button` via
+      `.hook-icon-button()` in new `_import.less §3.5` (hooks before component
+      imports). Accordion removed; `initNavAccordion` removed from router.ts.
+      Documentation synced across AGENTS.md, README.md, docs/UIKIT3.md (§1, §3,
+      §4, §7 lessons 21–24, §8 table), docs/STATUS.md, WORKLOG.md, NEXT.md.
+      See WORKLOG.md 2026-07-13 (second entry) for full details.
+
 - [x] **UIkit3 navbar conformance + Menu overlay toolbar** — DONE 2026-07-13.
       Refactored header to the official UIkit3 3-zone navbar pattern
       (`uk-navbar-left` + `uk-navbar-center` + `uk-navbar-right` with

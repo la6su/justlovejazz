@@ -59,6 +59,7 @@ export class JoystickNav {
   private _startY = 0
   private _keydownHandler: ((e: KeyboardEvent) => void) | null = null
   private _routeChangeHandler: ((e: Event) => void) | null = null
+  private _closeNavHandler: (() => void) | null = null
   private _pointerDownHandler: ((e: PointerEvent) => void) | null = null
   private _pointerMoveHandler: ((e: PointerEvent) => void) | null = null
   private _pointerUpHandler: ((e: PointerEvent) => void) | null = null
@@ -124,6 +125,22 @@ export class JoystickNav {
       this._syncPageSection(1) // start on intro (index 1)
     }
     window.addEventListener('jlz:route-change', this._routeChangeHandler)
+
+    // Close-nav event (from hamburger X click). Returns from menu overlay
+    // to the previous main section. Duplicates joystick arrow-left behavior
+    // with an explicit on-screen button (see UIMenu.ts).
+    this._closeNavHandler = () => {
+      if (this._isPageMode()) {
+        // Content pages: _mainSection holds the last main section (1-4).
+        // _syncPageSection handles the DOM toggle + dispatches page-section-change.
+        this._syncPageSection(this._mainSection >= 1 && this._mainSection <= 4 ? this._mainSection : 1)
+      } else if (this._side === 'menu') {
+        // Home: menu → center (return to previous main section)
+        this._side = 'center'
+        this._fireSectionChange()
+      }
+    }
+    window.addEventListener('jlz:close-nav', this._closeNavHandler)
 
     this._pointerDownHandler = (e: PointerEvent) => {
       e.preventDefault()
@@ -495,6 +512,7 @@ export class JoystickNav {
 
   dispose(): void {
     if (this._routeChangeHandler) window.removeEventListener('jlz:route-change', this._routeChangeHandler)
+    if (this._closeNavHandler) window.removeEventListener('jlz:close-nav', this._closeNavHandler)
     if (this._keydownHandler) window.removeEventListener('keydown', this._keydownHandler)
     if (this._pointerDownHandler) this._base.removeEventListener('pointerdown', this._pointerDownHandler)
     if (this._pointerMoveHandler) this._base.removeEventListener('pointermove', this._pointerMoveHandler)

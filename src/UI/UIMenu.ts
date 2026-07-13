@@ -1,19 +1,27 @@
-// UIMenu.ts — Header navbar (UIkit3 native centered-logo pattern).
+// UIMenu.ts — Header navbar (UIkit3 native 3-zone pattern).
 //
-// Layout (official UIkit3 navbar#centered-logo):
-//   uk-navbar-container > uk-container > uk-navbar > uk-navbar-center >
-//     [uk-navbar-center-left: lang] [uk-navbar-item.uk-logo: logo]
-//     [uk-navbar-center-right: hamburger toggle]
+// Layout (official UIkit3 navbar alignment):
+//   <nav.uk-navbar-container>
+//     <div.uk-container>
+//       <div[uk-navbar]>
+//         <div.uk-navbar-left>   → uk-icon-button (lang: EN/RU)
+//         <div.uk-navbar-center> → uk-navbar-item.uk-logo (logo.svg)
+//         <div.uk-navbar-right>  → uk-navbar-toggle (hamburger ↔ close X)
 //
-// - lang: uk-icon-button (text "EN"/"RU" inside) — switches EN ↔ RU
-// - logo: uk-navbar-item uk-logo — centered, links to "/"
-// - hamburger: uk-navbar-toggle (native UIkit3) — opens menu overlay (section 5)
+// Hamburger toggle:
+//   - Menu CLOSED: shows hamburger icon, aria-label="Open navigation".
+//     Click → dispatches `jlz:goto-nav` → JoystickNav goes to section 5 (menu).
+//   - Menu OPEN: shows X (close) icon, aria-label="Close navigation".
+//     Click → dispatches `jlz:close-nav` → JoystickNav returns to the previous
+//     main section (the one from which the menu was invoked).
+//   - This duplicates the joystick arrow-left behavior (menu → center) with
+//     an explicit on-screen button, so users have a visible exit from the menu.
 //
 // Theme + sound controls live INSIDE the menu overlay (see nav/template.ts),
-// not in the header — header stays minimal per project decision.
+// not in the header — header stays minimal: lang + logo + hamburger/close.
 //
-// Uses QF-themed UIKit3 components (uk-icon-button, uk-navbar-toggle) — NO
-// custom .jlz-glass-btn. See docs/UIKIT3.md §3 (centered-logo pattern).
+// Uses QF-themed UIKit3 components (uk-icon-button via .hook-icon-button(),
+// uk-navbar-toggle). NO custom .jlz-glass-btn. See docs/UIKIT3.md.
 
 import { toggleLang, getLang } from '../core/i18n'
 
@@ -22,6 +30,8 @@ export class UIMenu {
   private _langBtn: HTMLButtonElement | null = null
   private _hamburgerBtn: HTMLButtonElement | null = null
   private _langHandler: (() => void) | null = null
+  private _sectionChangeHandler: (() => void) | null = null
+  private _pageSectionChangeHandler: ((e: Event) => void) | null = null
 
   constructor() {
     this.navEl = document.createElement('header')
@@ -37,27 +47,59 @@ export class UIMenu {
     // Language toggle — calls i18n.toggleLang() which persists + fires jlz:lang-change
     this._langBtn?.addEventListener('click', () => toggleLang())
 
-    // Hamburger → open menu overlay (section 5 on all pages)
+    // Hamburger ↔ Close toggle.
+    //   Menu closed → open (jlz:goto-nav → section 5)
+    //   Menu open   → close (jlz:close-nav → return to previous main section)
     this._hamburgerBtn?.addEventListener('click', () => {
-      window.dispatchEvent(new CustomEvent('jlz:goto-nav'))
+      if (this._isMenuOpen()) {
+        window.dispatchEvent(new CustomEvent('jlz:close-nav'))
+      } else {
+        window.dispatchEvent(new CustomEvent('jlz:goto-nav'))
+      }
     })
 
     this._langHandler = () => this.updateLangLabel()
     window.addEventListener('jlz:lang-change', this._langHandler)
 
+    // Sync hamburger icon (hamburger ↔ X) on every section change.
+    // jlz:section-change fires on home (eventBus → window), jlz:page-section-change
+    // fires on content pages (window CustomEvent from JoystickNav._syncPageSection).
+    this._sectionChangeHandler = () => this._syncToggleState()
+    this._pageSectionChangeHandler = () => this._syncToggleState()
+    window.addEventListener('jlz:section-change', this._sectionChangeHandler)
+    window.addEventListener('jlz:page-section-change', this._pageSectionChangeHandler)
+
     this.updateLangLabel()
+    this._syncToggleState()
+  }
+
+  /** Check if the menu overlay is currently the active section. */
+  private _isMenuOpen(): boolean {
+    return !!document.querySelector(
+      '[data-section="menu"].section-active, [data-page-section="page-menu"].section-active',
+    )
+  }
+
+  /** Sync hamburger button: icon (hamburger ↔ X), aria-label, aria-expanded. */
+  private _syncToggleState(): void {
+    const open = this._isMenuOpen()
+    this.navEl.classList.toggle('jlz-header--menu-open', open)
+    if (this._hamburgerBtn) {
+      this._hamburgerBtn.setAttribute('aria-label', open ? 'Close navigation' : 'Open navigation')
+      this._hamburgerBtn.setAttribute('aria-expanded', String(open))
+    }
   }
 
   /** Build navbar — UIkit3 3-zone pattern (uk-navbar-left/center/right).
-   *  - uk-navbar-left:   language switch (anchored to left edge of container)
-   *  - uk-navbar-center: logo (centered in the container)
-   *  - uk-navbar-right:  hamburger toggle (anchored to right edge of container)
-   *
-   *  We use the 3-zone layout (not the "centered-logo" split-menu pattern)
-   *  because we have only ONE item per side and want them pinned to the
-   *  container edges, not clustered around the logo.
-   *  See https://getuikit.com/docs/navbar#alignment */
+   *  Hamburger button contains TWO inline SVGs (hamburger + X); CSS toggles
+   *  visibility via .jlz-header--menu-open on the <header> element.
+   *  Inline SVG avoids UIKit3's uk-icon deferred-render issue in hidden
+   *  sections (see docs/UIKIT3.md §7.14). */
   private buildNavbar(): string {
+    // Hamburger icon (3 lines) — matches UIKit3 uk-navbar-toggle-icon visually.
+    const hamburgerSvg = `<svg class="jlz-toggle-icon jlz-toggle-icon--open" width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.4" d="M3 5 L17 5 M3 10 L17 10 M3 15 L17 15"/></svg>`
+    // Close icon (X) — shown when menu is open.
+    const closeSvg = `<svg class="jlz-toggle-icon jlz-toggle-icon--close" width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" d="M16 16 L4 4 M16 4 L4 16"/></svg>`
     return `
       <nav class="uk-navbar-container uk-navbar-transparent">
         <div class="uk-container uk-container-expand">
@@ -80,13 +122,15 @@ export class UIMenu {
                 <img src="/logo.svg" alt="JUSTLOVEJAZZ" width="28" height="28" />
               </a>
             </div>
-            <!-- RIGHT: hamburger toggle (native uk-navbar-toggle) -->
+            <!-- RIGHT: hamburger ↔ close toggle (native uk-navbar-toggle base) -->
             <div class="uk-navbar-right">
               <ul class="uk-navbar-nav">
                 <li>
-                  <button class="uk-navbar-toggle" type="button" id="jlz-hamburger"
-                          aria-label="Open navigation" uk-navbar-toggle-icon
-                          uk-tooltip="pos: bottom; delay: 200; title: Menu"></button>
+                  <button class="uk-navbar-toggle jlz-navbar-toggle" type="button" id="jlz-hamburger"
+                          aria-label="Open navigation" aria-expanded="false"
+                          uk-tooltip="pos: bottom; delay: 200; title: Menu">
+                    ${hamburgerSvg}${closeSvg}
+                  </button>
                 </li>
               </ul>
             </div>
@@ -107,6 +151,8 @@ export class UIMenu {
 
   dispose(): void {
     if (this._langHandler) window.removeEventListener('jlz:lang-change', this._langHandler)
+    if (this._sectionChangeHandler) window.removeEventListener('jlz:section-change', this._sectionChangeHandler)
+    if (this._pageSectionChangeHandler) window.removeEventListener('jlz:page-section-change', this._pageSectionChangeHandler)
     this.navEl.remove()
   }
 }

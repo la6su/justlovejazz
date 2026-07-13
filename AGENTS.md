@@ -124,11 +124,22 @@ reachable only via horizontal joystick drag. Same layout on ALL pages:
 | Vertical up | 4→3→2→1 |
 | Horizontal left | → 0 (secret Lab overlay) |
 | Horizontal right | → 5 (secret Menu overlay) |
-| From secret, opposite | → middle (section 1-4) |
+| From menu, hamburger click / ArrowLeft | → previous main section (explicit exit) |
 | Dotnav | 4 dots — click to jump |
 | Keyboard | ArrowUp/Down/Left/Right, Home (→1), End (→4) |
 
-Hamburger button in the header (UIkit3 `uk-navbar-toggle`) also opens section 5 (menu overlay) via `jlz:goto-nav` event. The menu overlay hosts the config toolbar (theme + sound toggles).
+**Hamburger ↔ Close toggle** (`src/UI/UIMenu.ts`): the `#jlz-hamburger` button
+in the header is a toggle. Menu closed → hamburger icon, click dispatches
+`jlz:goto-nav` → JoystickNav goes to section 5. Menu open → X (close) icon,
+click dispatches `jlz:close-nav` → JoystickNav returns to the **previous
+main section** (the one from which the menu was invoked). This duplicates
+joystick arrow-left with an explicit on-screen exit button. Icon swap is
+CSS-driven via `.jlz-header--menu-open` class on `<header>`.
+
+**Menu overlay** (section 5) uses a **unique 3-column VOSK-style template**
+(`src/sections/nav/template.ts`, NOT `sectionShell()`): stat (left) | nav
+list (center) | contacts (right) + footer. Fits in 1 screen (100dvh, no
+scroll). Hosts the config toolbar (theme + sound toggles).
 
 ## Theme — 2 modes (auto/inverse)
 
@@ -140,8 +151,9 @@ Hamburger button in the header (UIkit3 `uk-navbar-toggle`) also opens section 5 
 YOOtheme Pro inverse approach — global flip, NOT per-section.
 `localStorage('jlz:theme')`. EnvSphere syncs via `jlz:theme-applied`.
 Toggle: `#jlz-theme-toggle` button in the menu overlay config toolbar
-(`src/sections/nav/toolbar.ts`). UIKit3 has no sun/moon icons, so we use
-inline SVG and swap visibility via the `.is-inverse` class on the button.
+(`src/sections/nav/template.ts::initMenuToolbar`). UIKit3 has no sun/moon
+icons, so we use inline SVG and swap visibility via the `.is-inverse`
+class on the button.
 
 ## Sound — toggle in menu overlay
 
