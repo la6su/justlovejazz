@@ -527,6 +527,12 @@ export class Experience {
       this._needsRender = true
     }
 
+    // ── Zoom pulse active (PLAN.md Phase 2) ──
+    // Camera.pulse() sets a two-phase FOV transition — keep rendering while it animates.
+    const camPulsing = (this.camera as unknown as { fovTransitionT?: number }).fovTransitionT !== undefined
+      && (this.camera as unknown as { fovTransitionT: number }).fovTransitionT < 1
+    if (camPulsing) this._needsRender = true
+
     // ── A4: Ambient breathing (IMPROVEMENT_PLAN) ──
     // When fully idle, schedule a single render frame every ~2.5 s so the
     // scene doesn't look frozen. On premium path this advances worldDNA's
@@ -615,6 +621,14 @@ export class Experience {
         this.world.baku.rotateToFace(idx)
         this._needsRender = true
       }
+
+      // ── Zoom pulse on section change (PLAN.md Phase 2) ──
+      // Camera FOV dips slightly then returns — "push-in" cinematic feel.
+      // Also triggers cube opener (scale pulse 1.0→1.3→1.0) for combined effect.
+      this.camera.pulse(0.05, 0.8)
+      const cube = this.world?.baku as unknown as { triggerOpener?: () => void } | undefined
+      cube?.triggerOpener?.()
+      this._needsRender = true
     }
 
     // Context switch (post-processing preset)
