@@ -404,23 +404,52 @@ export class SplashCube extends THREE.Mesh {
     this.openerTarget = 1
   }
 
-  /** Phase 5: Wobble pulse — temporarily boost uWobble for dramatic jelly effect.
+  /** Phase 8: Wobble pulse — dramatic shader transition on click.
    *  Triggered by jlz:wobble-pulse event (work card click, carousel card click).
-   *  Boosts uWobble to 1.8 for 0.8s, then eases back to default (0.95). */
+   *  Combined effects:
+   *    1. Wobble boost: uWobble 0.95 → 2.5 (dramatic jelly burst)
+   *    2. Chromatic burst: dispersion 15 → 30 (WebGPU) / chromaticAberration 0.5 → 1.0 (WebGL2)
+   *    3. Scale pulse: 1.0 → 1.2 → 1.0 (triggerOpener)
+   *  Duration: 1.2s (longer, more cinematic) */
   private _wobblePulseTimer: ReturnType<typeof setTimeout> | null = null
+  private _chromaticPulseTimer: ReturnType<typeof setTimeout> | null = null
   private _wobblePulseTarget = 0.95
   triggerWobblePulse(): void {
     // Clear any existing pulse
     if (this._wobblePulseTimer) clearTimeout(this._wobblePulseTimer)
-    // Boost wobble
-    ;(this._uWobble as unknown as { value: number }).value = 1.8
+    if (this._chromaticPulseTimer) clearTimeout(this._chromaticPulseTimer)
+
+    // 1. Boost wobble (dramatic jelly burst)
+    ;(this._uWobble as unknown as { value: number }).value = 2.5
     this._wobblePulseTarget = 0.95
-    // Ease back after 0.8s
     this._wobblePulseTimer = setTimeout(() => {
       ;(this._uWobble as unknown as { value: number }).value = this._wobblePulseTarget
       this._wobblePulseTimer = null
-    }, 800)
-    // Also trigger opener (scale pulse) for combined effect
+    }, 1200)
+
+    // 2. Chromatic burst — temporarily boost dispersion/chromaticAberration
+    const mat = this.cubeMaterial as unknown as {
+      dispersion?: number
+      chromaticAberration?: number
+    }
+    const isWebGPU = DeviceCapability.getInstance().isRealWebGPU
+    if (isWebGPU && mat.dispersion !== undefined) {
+      const origDispersion = 15.0
+      mat.dispersion = 30.0
+      this._chromaticPulseTimer = setTimeout(() => {
+        mat.dispersion = origDispersion
+        this._chromaticPulseTimer = null
+      }, 1200)
+    } else if (mat.chromaticAberration !== undefined) {
+      const origChromatic = 0.5
+      mat.chromaticAberration = 1.0
+      this._chromaticPulseTimer = setTimeout(() => {
+        mat.chromaticAberration = origChromatic
+        this._chromaticPulseTimer = null
+      }, 1200)
+    }
+
+    // 3. Scale pulse (opener) for combined wobble+chromatic+scale effect
     this.triggerOpener()
   }
 
