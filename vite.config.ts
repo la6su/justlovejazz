@@ -2,7 +2,7 @@ import { defineConfig } from 'vite'
 import { resolve } from 'node:path'
 
 import { copyFileSync, mkdirSync, readdirSync } from 'fs'
-import { homePage } from './src/templates'
+import { homePage } from './src/pages/home'
 
 
 export default defineConfig({
