@@ -314,6 +314,11 @@ export class Experience {
       this._circNav?.goToSection(idx)
     })
 
+    // PLAN-v3: Hamburger button → navigate to section 5 (navigation overlay)
+    window.addEventListener('jlz:goto-nav', () => {
+      this._circNav?.goToSection(5)
+    })
+
     // JoystickNav is a DOM overlay (fixed bottom-center) — append to body.
     // JoystickNav is position:fixed (sits ON the dock tools row, centered).
     // Append to body — CSS positions it via .jlz-joystick { position: fixed }.
