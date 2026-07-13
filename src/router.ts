@@ -3,8 +3,7 @@ import UIkit from 'uikit'
 import { applyTranslations } from './core/i18n'
 import { applyMetaTags } from './core/pageMeta'
 import { disposeWorkCards } from './UI/WorkCards'
-import { initNavAccordion } from './sections/nav/template'
-import { initMenuToolbar } from './sections/nav/toolbar'
+import { initMenuToolbar } from './sections/nav/template'
 // ThemeManager removed — theme is global (auto=light, inverse=dark).
 
 let initialized = false
@@ -71,8 +70,6 @@ function renderView(page: PageId = getPageFromLocation()): void {
   // gets translated and <title>/description update per route.
   applyTranslations()
   applyMetaTags(page)
-  // Initialize nav accordion (click-to-expand sub-sections)
-  initNavAccordion()
   // Initialize config toolbar (theme toggle sun/moon + sound toggle EQ-bars)
   initMenuToolbar()
   // Initialize UIkit components on dynamically inserted content

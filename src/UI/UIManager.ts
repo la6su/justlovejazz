@@ -1,7 +1,7 @@
 import UIkit from 'uikit'
 import Icons from 'uikit/dist/js/uikit-icons'
 import { ShowreelModal } from './ShowreelModal'
-import { wireMenuToolbarGlobals } from '../sections/nav/toolbar'
+import { wireMenuToolbarGlobals } from '../sections/nav/template'
 
 export class UIManager {
   public showreelModal: ShowreelModal | null = null

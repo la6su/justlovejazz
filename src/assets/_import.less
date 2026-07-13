@@ -328,6 +328,43 @@ html.uk-light {
 @search-input-color: @jlz-color-text;
 
 // ═══════════════════════════════════════════════════════════════════════
+// §3.5 UIKIT HOOK OVERRIDES (must be defined BEFORE component .less imports)
+// ═══════════════════════════════════════════════════════════════════════
+// Hooks are Less mixins that UIKit components call during compilation.
+// They must be defined BEFORE the component .less is imported (§4 below).
+// This is the canonical UIKit theming pattern — see:
+// https://getuikit.com/docs/less → "Hooks" section.
+
+// ── Icon button: glassmorphism (used by lang, theme, sound, hamburger) ──
+// UIKit's default uk-icon-button is a solid-colored circle. We override via
+// hooks to get the glass-morphism look: semi-transparent bg + backdrop-blur
+// + accent glow on hover. This applies to ALL uk-icon-button instances.
+.hook-icon-button() {
+  background: @jlz-color-surface;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid @jlz-color-border;
+  border-radius: 8px;
+  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.hook-icon-button-hover() {
+  border-color: fade(@global-primary-background, 40%);
+  background: fade(@global-primary-background, 10%);
+  color: @global-primary-background;
+}
+
+.hook-icon-button-active() {
+  border-color: @global-primary-background;
+  background: fade(@global-primary-background, 15%);
+}
+
+// ── Navbar container: transparent by default (app-layer CSS adds glass) ──
+.hook-navbar-container() {
+  background: transparent;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
 // §4. UIKIT COMPONENT IMPORTS (order-dependent, per UIKit docs)
 // ═══════════════════════════════════════════════════════════════════════
 
