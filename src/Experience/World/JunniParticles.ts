@@ -33,13 +33,9 @@ import {
   uv,
   smoothstep,
   sin,
-  cos,
   mod,
   floor,
-  exp,
-  abs,
-  length,
-  attribute,
+  instancedBufferAttribute,
   texture,
   mx_rgbtohsv,
   mx_hsvtorgb,
@@ -133,77 +129,43 @@ export class JunniParticles extends THREE.InstancedMesh {
     const uTex = opts.texture ?? null
     const uTiles = uniform(new THREE.Vector2(tiles[0], tiles[1]))
 
-    // ── positionNode: Section3 vertex logic ──
-    //   oPos = offsetPos
-    //   center = linearstep(5, 1, length(oPos.xz - range.xz/2))  (1 at center, 0 at edges)
-    //   oPos.y += time * center           (rise faster near center)
-    //   oPos = mod(oPos, range) - range/2 (wrap)
-    //   oPos.xz *= rotate(time * center)  (orbit around center)
-    //   oPos.xz *= 1 + (1 - uVisibility)  (expand when fading out)
-    //   pos = position * smoothstep(...) * num.y * pulse * rotate(time * num.y)
-    //   pos += oPos
+    // ── positionNode: per-instance world position (sprite center) ──
+    // SpriteNodeMaterial takes this as the sprite's world-space center + handles
+    // billboarding + sizeAttenuation internally. We only compute the position:
+    //   pos = offset + drift(t) + sin wave
+    //   pos = mod(pos, range) - range/2   (wrap — infinite field)
+    //
+    // IMPORTANT: use instancedBufferAttribute() (NOT attribute()) —
+    // SpriteNodeMaterial docs show this pattern. attribute() reads regular
+    // vertex attributes, instancedBufferAttribute() reads per-instance data.
     const positionNode = Fn(() => {
-      const offset = attribute('offsetPos') as unknown as TSLVec3
-      const num = attribute('num') as unknown as TSLVec2
+      const offset = instancedBufferAttribute(offsetPos, 'vec3') as unknown as TSLVec3
       const t = (uTime as unknown as TSLNode).mul((uSpeed as unknown as TSLNode).mul(0.5))
       const rangeVec = uRange as unknown as TSLVec3
       const rangeHalf = rangeVec.div(2.0)
 
-      // center: 1 at center of xz, 0 at edges (linearstep(5, 1, dist))
-      const xzCenter = rangeVec.xz.div(2.0)
-      const distFromCenter = length(offset.xz.sub(xzCenter))
-      // linearstep(5, 1, dist) = clamp((5 - dist) / (5 - 1), 0, 1)
-      const center = float(5.0).sub(distFromCenter).div(4.0).clamp(0.0, 1.0)
+      // Drift: X-drift (t*4) + sin wave on X (sin(t + offset.y*10)*0.3)
+      // Y-rise: particles slowly rise (t * 0.5)
+      const driftX = t.mul(4.0).add(sin(t.add(offset.y.mul(10.0))).mul(0.3))
+      const driftY = t.mul(0.5)
+      const pos = offset.add(vec3(driftX, driftY, float(0.0)))
 
-      // Y-drift (rise faster near center) + mod wrap
-      let oPos = offset.add(vec3(float(0.0), t.mul(center), float(0.0)))
-      oPos = mod(oPos, rangeVec).sub(rangeHalf)
-
-      // XZ rotation around center (orbit)
-      const rotAngle = t.mul(center)
-      const cosR = cos(rotAngle)
-      const sinR = sin(rotAngle)
-      // 2D rotation matrix on xz: mat2(cos, sin, -sin, cos)
-      const rx = oPos.x.mul(cosR).sub(oPos.z.mul(sinR))
-      const rz = oPos.x.mul(sinR).add(oPos.z.mul(cosR))
-      oPos = vec3(rx, oPos.y, rz)
-
-      // Expand when fading out (visibility → 0 makes particles spread)
-      const expand = float(1.0).add(float(1.0).sub(uVisibility as unknown as TSLNode))
-      oPos = vec3(oPos.x.mul(expand), oPos.y, oPos.z.mul(expand))
-
-      // Per-particle quad scaling:
-      //   pos = position (unit plane) * edgeFade * num.y * pulse * spin
-      // Edge fade on Y boundary (smoothstep)
-      const edgeFade = smoothstep(rangeHalf.y, rangeHalf.y.sub(0.5), abs(oPos.y))
-
-      // Pulse: exp(-mod(time + num.y*2, 1) * 7) * 3 * num.y
-      const pulsePhase = mod(t.add(num.y.mul(2.0)), float(1.0))
-      const pulse = exp(pulsePhase.mul(-7.0)).mul(3.0).mul(num.y)
-      const scale = edgeFade.mul(num.y).mul(float(1.0).add(pulse)).mul(uSize as unknown as TSLNode)
-
-      // Spin the quad (rotate xy by time * num.y)
-      const spinAngle = t.mul(num.y)
-      const cosS = cos(spinAngle)
-      const sinS = sin(spinAngle)
-      // Get positionLocal (unit plane [-0.5, 0.5])
-      const lp = (attribute('position') as unknown as TSLVec3)
-      const sx = lp.x.mul(cosS).sub(lp.y.mul(sinS))
-      const sy = lp.x.mul(sinS).add(lp.y.mul(cosS))
-      const spun = vec3(sx.mul(scale), sy.mul(scale), lp.z.mul(scale))
-
-      return spun.add(oPos)
+      // mod wrap — keep particles inside the range volume, center at origin
+      return mod(pos, rangeVec).sub(rangeHalf)
     })
 
-    // ── scaleNode: 1 (scaling done in positionNode for Section3 pulse) ──
-    const scaleNode = Fn(() => float(1.0))
+    // ── scaleNode: per-instance size (num.y = scale variant 0.05-1.0) ──
+    const scaleNode = Fn(() => {
+      const num = instancedBufferAttribute(numAttr, 'vec2') as unknown as TSLVec2
+      return num.y.mul(uSize as unknown as TSLNode)
+    })
 
     // ── colorNode + opacityNode: texture or procedural circle ──
     // Cast helpers for TSL node typing (three 0.184 .d.ts is incomplete here)
     // texSampler is the raw Texture — texture() TSL node accepts it directly.
     const texSampler = uTex
     const buildSheetUv = () => {
-      const num = attribute('num') as unknown as TSLVec2
+      const num = instancedBufferAttribute(numAttr, 'vec2') as unknown as TSLVec2
       const vUv = uv()
       const tilesVec = uTiles as unknown as TSLVec2
       // spriteUVSelector: pick frame from sprite sheet
@@ -222,7 +184,7 @@ export class JunniParticles extends THREE.InstancedMesh {
     if (useTexture && uTex) {
       // Section3 fragment: sprite sheet UV + HSV hue cycling
       colorNode = Fn(() => {
-        const num = attribute('num') as unknown as TSLVec2
+        const num = instancedBufferAttribute(numAttr, 'vec2') as unknown as TSLVec2
         const sheetUv = buildSheetUv() as unknown as TSLVec2
         const texColor = texture(texSampler!, sheetUv) as unknown as TSLVec3
         // HSV hue cycling
