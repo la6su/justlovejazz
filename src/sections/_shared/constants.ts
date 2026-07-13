@@ -27,8 +27,8 @@ export const PAGE_REVEAL = 'uk-scrollspy="cls: uk-animation-fade; delay: 120; ta
 // Navigation: JoystickNav vertical cycles 1→2→3→4 (main sections),
 // horizontal toggles 0 (Lab) ↔ center ↔ 5 (Process) (secret side sections).
 
-export type SectionId = 'lab' | 'intro' | 'about' | 'challenge' | 'contact' | 'process'
-// Note: 'challenge' is the historical SectionId for the Works section
+export type SectionId = 'lab' | 'intro' | 'about' | 'works' | 'contact' | 'process'
+// Works section
 // (cube face 3, back -Z). It's kept for backward compat — renaming would
 // touch Phase enum (types.ts), WorldConfig id, PostProcessingManager keys,
 // Lights keys, scene.ts group name. RULES.md §14 documents this mapping.

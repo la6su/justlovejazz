@@ -819,7 +819,7 @@ export class Experience {
 
     if (!this.overlay) {
       const worksSection =
-        document.getElementById('section-challenge') ||
+        document.getElementById('section-works') ||
         document.getElementById('section-works') ||
         document.getElementById('spa-content')
       this.overlay = new ProjectOverlay(worksSection!, this.sfx)
@@ -871,7 +871,7 @@ export class Experience {
     if (document.body.dataset.page !== 'home') return null
     const worksGroup = this.world?.sceneGroups?.[3]
     if (!worksGroup) return null
-    return (worksGroup.userData.gallery as
+    return (worksGroup.userData.carousel as
       | import('./World/BakuCarousel').BakuCarousel
       | undefined) ?? null
   }

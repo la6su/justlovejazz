@@ -146,7 +146,7 @@ type RawScene = {
 }
 
 // 6 sections (4 main + 2 secret side: Lab=0, Process=5) — 1:1 with cube faces
-// Index: 0=lab, 1=intro, 2=about, 3=works(challenge), 4=contact, 5=process
+// Index: 0=lab, 1=intro, 2=about, 3=works, 4=contact, 5=process
 const RAW: RawScene[] = [
   // ── Section 0: LAB (secret left) — Light BG, experiments ──
   {
@@ -259,9 +259,9 @@ const RAW: RawScene[] = [
   },
   // ── Section 3: WORKS — BakuCarousel + cube centered, slightly raised ──
   {
-    id: 'sec_challenge',
+    id: 'sec_works',
     context: 'WORKS — Gallery',
-    domSection: 'challenge',
+    domSection: 'works',
     range: [3 / 5, 4 / 5],
     camPos: [0, 0, 3.5],
     camTarget: [0, 0, 0],

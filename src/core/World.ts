@@ -190,7 +190,7 @@ export class World extends THREE.Group {
     const isHomePage = path === '/' || path === ''
     const worksGroup = isHomePage ? this.sceneGroups[3] : undefined
     if (worksGroup) {
-      const carousel = worksGroup.userData.gallery as
+      const carousel = worksGroup.userData.carousel as
         | import('../Experience/World/BakuCarousel').BakuCarousel
         | undefined
       if (carousel) {
@@ -270,7 +270,7 @@ export class World extends THREE.Group {
     // JunniParticles animate via GPU-side drift (update advances uTime uniform).
     for (const group of this.sceneGroups) {
       if (!group.visible) continue
-      const carousel = group.userData.gallery as
+      const carousel = group.userData.carousel as
         | import('../Experience/World/BakuCarousel').BakuCarousel
         | undefined
       if (carousel) carousel.update(deltaTime)
@@ -450,7 +450,7 @@ export class World extends THREE.Group {
 
         // BakuCarousel visibility — ONLY on home page (3D cube morph feature).
         // Content pages don't use the carousel (no cube morphing).
-        const carousel = g.userData.gallery as
+        const carousel = g.userData.carousel as
           | import('../Experience/World/BakuCarousel').BakuCarousel
           | undefined
         if (carousel) {
@@ -605,12 +605,12 @@ export class World extends THREE.Group {
 
   private disposeSceneGroups(): void {
     this.sceneGroups.forEach((group) => {
-      // If the group hosts a BakuCarousel (userData.gallery), call its
+      // If the group hosts a BakuCarousel (userData.carousel), call its
       // dispose() FIRST — it removes 6 window listeners + clears snapTimer
       // + disposes card materials/textures/geometry. The traverse below
       // SKIPS the gallery's descendants (already disposed) to avoid a
       // fragile double-dispose on the same materials/geometries.
-      const gallery = group.userData.gallery as
+      const gallery = group.userData.carousel as
         | ({ dispose?: () => void } & THREE.Object3D)
         | undefined
       // Collect gallery + all its descendants so the traverse can skip them.

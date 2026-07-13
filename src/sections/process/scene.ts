@@ -4,7 +4,7 @@
 import * as THREE from 'three'
 import { TimelineNodes } from '../../Experience/World/TimelineNodes'
 
-export function createSection7(): THREE.Group {
+export function createSection5(): THREE.Group {
   const g = new THREE.Group()
   g.name = 'process'
 

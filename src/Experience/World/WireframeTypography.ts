@@ -87,7 +87,7 @@ export class WireframeTypography extends THREE.Mesh {
     mat.colorNode = typoColorNode()
 
     super(geo, mat)
-    this.name = 'wireframe-typography'
+    this.name = 'wireframe-text'
     this.frustumCulled = false
   }
 

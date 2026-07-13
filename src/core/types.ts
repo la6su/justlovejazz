@@ -6,7 +6,7 @@ import * as THREE from 'three'
 export enum NarrativePhase {
   INTRO = 'sec_intro',
   ABOUT = 'sec_about',
-  CHALLENGE = 'sec_challenge',
+  WORKS = 'sec_works',
   CONTACT = 'sec_contact',
 }
 

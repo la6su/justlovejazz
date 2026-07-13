@@ -9,16 +9,16 @@ import { BakuCarousel } from '../../Experience/World/BakuCarousel'
 const particleTexture = new THREE.TextureLoader().load('/textures/sec3-particles.jpg')
 particleTexture.colorSpace = THREE.SRGBColorSpace
 
-export function createSection4(): THREE.Group {
+export function createSection3(): THREE.Group {
   const g = new THREE.Group()
-  g.name = 'challenge'
+  g.name = 'works'
   // BakuCarousel — the baku cube unfolds into a ring of project cards.
   // When morphed out (morphT > 0.5) the ring can be scrolled/dragged,
   // and clicking a card opens the fullscreen ProjectOverlay.
   const carousel = new BakuCarousel()
   carousel.userData.keepVisible = true
   g.add(carousel)
-  g.userData.gallery = carousel
+  g.userData.carousel = carousel
 
   // JunniParticles — exact junni Section3 params:
   //   num=100, range=[7,8,7], size=0.2 (PlaneGeometry base), speed=1.0

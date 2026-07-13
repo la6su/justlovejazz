@@ -267,7 +267,7 @@ export class JunniParticles extends THREE.InstancedMesh {
     ;(mat as unknown as { opacityNode: unknown }).opacityNode = opacityNode()
 
     super(geo, mat, count)
-    this.name = 'junni-particles'
+    this.name = 'particles'
     this.frustumCulled = false
 
     // Instance matrices — identity (position comes from positionNode)

@@ -4,7 +4,7 @@
 import * as THREE from 'three'
 import { WireframeTypography } from '../../Experience/World/WireframeTypography'
 
-export function createSection6(): THREE.Group {
+export function createSection4(): THREE.Group {
   const g = new THREE.Group()
   g.name = 'contact'
 
