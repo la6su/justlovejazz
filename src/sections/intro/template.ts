@@ -30,14 +30,13 @@ export function introSection(): string {
     </div>
   `
   // DOM overlay for showreel label (3D play button is in SplashCube scene).
-  // NO data-magnetic — button is too aggressive with magnetic snap. Instead:
-  // data-cursor="play" changes cursor to play icon, and the SVG ring animates
-  // its stroke on hover (stroke-dashoffset animation, see main.less).
+  // NO data-magnetic, NO data-cursor — button has its own SVG play icon.
+  // Custom cursor would duplicate the play icon visually. Instead: default
+  // cursor behavior, SVG ring animates stroke on hover.
   const playOverlay = `
     <div class="jlz-showreel-overlay" ${REVEAL}>
       <button class="jlz-showreel-trigger" type="button" id="jlz-showreel-trigger"
-              aria-label="Play showreel"
-              data-cursor="play">
+              aria-label="Play showreel">
         <span class="jlz-showreel-trigger__ring" aria-hidden="true">
           <svg viewBox="0 0 64 64" width="64" height="64">
             <circle class="jlz-showreel-trigger__circle" cx="32" cy="32" r="28" fill="none" stroke="currentColor" stroke-width="1.5" />
