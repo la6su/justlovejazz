@@ -100,18 +100,18 @@ export class UIMenu {
               <li><a href="/contact" data-i18n="nav.contact">Contact</a></li>
             </ul>
           </div>
-          <!-- Right: Controls (lang + sound + theme + hamburger) -->
+          <!-- Right: Controls — UIKit3 uk-icon-button (QF styled) -->
           <div class="uk-navbar-right jlz-navbar-controls">
-            <button class="jlz-navbar-btn jlz-lang-toggle" type="button" id="jlz-lang-toggle" aria-label="Switch language">
+            <button class="uk-icon-button jlz-lang-toggle" type="button" id="jlz-lang-toggle" aria-label="Switch language">
               <span class="jlz-lang-label">EN</span>
             </button>
-            <button class="jlz-navbar-btn jlz-sound-toggle" type="button" id="jlz-navbar-sound" aria-label="Toggle sound" aria-pressed="true">
+            <button class="uk-icon-button jlz-sound-toggle" type="button" id="jlz-navbar-sound" aria-label="Toggle sound" aria-pressed="true">
               <span uk-icon="icon: muted; ratio: 0.9" aria-hidden="true"></span>
             </button>
-            <button class="jlz-navbar-btn jlz-theme-toggle" type="button" id="jlz-theme-toggle" aria-pressed="false" aria-label="Toggle theme">
+            <button class="uk-icon-button jlz-theme-toggle" type="button" id="jlz-theme-toggle" aria-pressed="false" aria-label="Toggle theme">
               <span uk-icon="icon: paint-bucket; ratio: 0.9" aria-hidden="true"></span>
             </button>
-            <button class="jlz-navbar-btn jlz-hamburger" type="button" id="jlz-hamburger" aria-label="Open navigation">
+            <button class="uk-icon-button jlz-hamburger" type="button" id="jlz-hamburger" aria-label="Open navigation">
               <span uk-icon="icon: menu; ratio: 1.1" aria-hidden="true"></span>
             </button>
           </div>

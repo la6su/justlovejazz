@@ -1,37 +1,32 @@
-// ShowreelModal.ts — Fullscreen video modal for showreel playback.
+// ShowreelModal.ts — Fullscreen video modal using UIKit3 uk-modal.
 //
-// Opens on play button click (intro section). Fullscreen overlay with
-// HTML5 <video>, custom controls (play/pause, mute, close, seek bar).
-// Custom cursor 'play' state on video element. Esc closes.
+// Uses UIKit3 native modal (uk-modal) for overlay, backdrop, animation,
+// Esc-to-close, focus trap. Custom controls (play/pause, mute, seek, close)
+// on top of the modal structure.
 //
 // Video source: /assets/video/coming-soon.mp4 (placeholder in public/).
+
+import UIkit from 'uikit'
 
 export class ShowreelModal {
   private container: HTMLDivElement
   private video: HTMLVideoElement
   private playBtn: HTMLButtonElement
   private muteBtn: HTMLButtonElement
-  private closeBtn: HTMLButtonElement
   private seekBar: HTMLInputElement
   private _isOpen = false
   private _keydownHandler: ((e: KeyboardEvent) => void) | null = null
 
   constructor() {
-    // Container — fullscreen overlay
+    // UIKit3 modal structure: <div uk-modal><div class="uk-modal-dialog">...</div></div>
     this.container = document.createElement('div')
     this.container.id = 'jlz-showreel-modal'
-    this.container.className = 'jlz-showreel-modal'
-    this.container.setAttribute('role', 'dialog')
-    this.container.setAttribute('aria-modal', 'true')
-    this.container.setAttribute('aria-label', 'Showreel video')
-    this.container.style.display = 'none'
+    this.container.setAttribute('uk-modal', 'bg-close: true; esc-close: true; stack: false')
+    this.container.className = 'jlz-showreel-modal uk-modal uk-flex uk-flex-top'
 
     this.container.innerHTML = `
-      <div class="jlz-showreel-backdrop" aria-hidden="true"></div>
-      <div class="jlz-showreel-content">
-        <button class="jlz-showreel-close" type="button" aria-label="Close showreel">
-          <span uk-icon="icon: close; ratio: 1.4" aria-hidden="true"></span>
-        </button>
+      <div class="uk-modal-dialog jlz-showreel-dialog uk-margin-auto-vertical">
+        <button class="uk-modal-close-default jlz-showreel-close" type="button" uk-close aria-label="Close showreel"></button>
         <div class="jlz-showreel-video-wrap" data-cursor="play">
           <video class="jlz-showreel-video" preload="metadata" playsinline>
             <source src="/assets/video/coming-soon.mp4" type="video/mp4" />
@@ -41,13 +36,13 @@ export class ShowreelModal {
           </div>
         </div>
         <div class="jlz-showreel-controls">
-          <button class="jlz-showreel-play" type="button" aria-label="Play/Pause">
-            <span class="jlz-showreel-play__icon" uk-icon="icon: play; ratio: 1.2" aria-hidden="true"></span>
+          <button class="jlz-showreel-play uk-icon-button" type="button" aria-label="Play/Pause">
+            <span uk-icon="icon: play; ratio: 1.2" aria-hidden="true"></span>
           </button>
-          <button class="jlz-showreel-mute" type="button" aria-label="Mute/Unmute" aria-pressed="true">
+          <button class="jlz-showreel-mute uk-icon-button" type="button" aria-label="Mute/Unmute" aria-pressed="true">
             <span uk-icon="icon: muted; ratio: 1.2" aria-hidden="true"></span>
           </button>
-          <input class="jlz-showreel-seek" type="range" min="0" max="100" value="0" step="0.1" aria-label="Seek" />
+          <input class="jlz-showreel-seek uk-range" type="range" min="0" max="100" value="0" step="0.1" aria-label="Seek" />
           <span class="jlz-showreel-time">0:00 / 0:00</span>
         </div>
       </div>
@@ -59,10 +54,8 @@ export class ShowreelModal {
     this.video = this.container.querySelector('.jlz-showreel-video')!
     this.playBtn = this.container.querySelector('.jlz-showreel-play')!
     this.muteBtn = this.container.querySelector('.jlz-showreel-mute')!
-    this.closeBtn = this.container.querySelector('.jlz-showreel-close')!
     this.seekBar = this.container.querySelector('.jlz-showreel-seek')!
     const bigPlay = this.container.querySelector('.jlz-showreel-big-play') as HTMLElement
-    const backdrop = this.container.querySelector('.jlz-showreel-backdrop') as HTMLElement
 
     // Start muted (browser autoplay policy)
     this.video.muted = true
@@ -87,11 +80,6 @@ export class ShowreelModal {
       icon?.setAttribute('uk-icon', `icon: ${this.video.muted ? 'muted' : 'sound'}; ratio: 1.2`)
     })
 
-    // Close
-    const close = () => this.close()
-    this.closeBtn.addEventListener('click', close)
-    backdrop.addEventListener('click', close)
-
     // Video events
     this.video.addEventListener('play', () => {
       bigPlay.style.opacity = '0'
@@ -105,7 +93,6 @@ export class ShowreelModal {
       const pct = (this.video.currentTime / this.video.duration) * 100
       const pctStr = String(isNaN(pct) ? 0 : pct)
       this.seekBar.value = pctStr
-      // Update CSS variable for gradient progress fill
       this.seekBar.style.setProperty('--jlz-seek-progress', `${pctStr}%`)
       this.updateTimeDisplay()
     })
@@ -117,12 +104,19 @@ export class ShowreelModal {
       this.video.currentTime = (pct / 100) * this.video.duration
     })
 
-    // Esc to close
+    // UIKit3 modal events — sync our state
+    UIkit.util.on(this.container, 'show', () => {
+      this._isOpen = true
+      this.video.currentTime = 0
+      this.video.play().catch(() => { /* user must click play */ })
+    })
+    UIkit.util.on(this.container, 'hide', () => {
+      this._isOpen = false
+      this.video.pause()
+    })
+
+    // Space to toggle play (when modal is open)
     this._keydownHandler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && this._isOpen) {
-        e.preventDefault()
-        this.close()
-      }
       if (e.key === ' ' && this._isOpen) {
         e.preventDefault()
         togglePlay()
@@ -144,22 +138,12 @@ export class ShowreelModal {
 
   open(): void {
     if (this._isOpen) return
-    this._isOpen = true
-    this.container.style.display = 'flex'
-    requestAnimationFrame(() => this.container.classList.add('is-open'))
-    // Try autoplay (muted — browser policy compliant)
-    this.video.currentTime = 0
-    this.video.play().catch(() => { /* user must click play */ })
+    UIkit.modal(this.container).show()
   }
 
   close(): void {
     if (!this._isOpen) return
-    this._isOpen = false
-    this.container.classList.remove('is-open')
-    this.video.pause()
-    setTimeout(() => {
-      if (!this._isOpen) this.container.style.display = 'none'
-    }, 300)
+    UIkit.modal(this.container).hide()
   }
 
   get isOpen(): boolean {
@@ -171,6 +155,7 @@ export class ShowreelModal {
       document.removeEventListener('keydown', this._keydownHandler)
       this._keydownHandler = null
     }
+    UIkit.modal(this.container).$destroy()
     this.container.remove()
   }
 }

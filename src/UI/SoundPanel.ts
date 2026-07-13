@@ -24,7 +24,8 @@ export class SoundPanel {
     this.btn = document.createElement('button')
     this.btn.type = 'button'
     this.btn.id = 'jlz-sound-toggle'
-    this.btn.className = 'jlz-sound-toggle'
+    // UIKit3 uk-icon-button as base (QF styled with glitch hover) + custom EQ bars
+    this.btn.className = 'jlz-sound-toggle uk-icon-button'
     this.btn.setAttribute('aria-label', 'Toggle sound')
     this.btn.setAttribute('aria-pressed', 'false')
     this.btn.title = 'Sound: off'

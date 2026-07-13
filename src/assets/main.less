@@ -265,91 +265,6 @@ body.uk-light .jlz-joystick__hint {
   background: var(--jlz-color-bg-elevated);
 }
 
-.jlz-navbar-dropdown--wide {
-  width: 360px;
-  max-width: calc(100vw - 2rem);
-  padding: 1rem;
-}
-
-.jlz-dropbar-grid {
-  gap: 1rem;
-  align-items: stretch;
-}
-
-/* Sections list — compact: num + title only (minimalist) */
-.jlz-dropbar-sections {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.jlz-dropbar-sections a {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.5rem 0;
-  text-decoration: none;
-  transition: color var(--jlz-duration-fast) ease;
-}
-
-.jlz-dropbar__num {
-  font-family: 'SF Mono', 'Cascadia Code', monospace;
-  font-size: 0.65rem;
-  font-weight: 500;
-  letter-spacing: 0.1em;
-  color: var(--jlz-color-text-subtle);
-  min-width: 1.5rem;
-}
-
-.jlz-dropbar__title {
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: var(--jlz-color-text);
-}
-
-.jlz-dropbar-sections a:hover .jlz-dropbar__title,
-.jlz-dropbar-sections a:hover .jlz-dropbar__num {
-  color: var(--jlz-color-accent);
-}
-
-/* Featured — slim CTA (title + arrow only) */
-.jlz-dropbar-featured-col {
-  display: flex;
-}
-
-.jlz-dropbar-featured {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  background: color-mix(in srgb, var(--jlz-color-accent) 10%, transparent);
-  border: 1px solid color-mix(in srgb, var(--jlz-color-accent) 20%, transparent);
-  border-radius: var(--jlz-radius-md);
-  text-decoration: none;
-  width: 100%;
-  transition: background var(--jlz-duration-fast) ease;
-}
-
-.jlz-dropbar-featured:hover {
-  background: color-mix(in srgb, var(--jlz-color-accent) 18%, transparent);
-  text-decoration: none;
-}
-
-.jlz-dropbar-featured__title {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--jlz-color-text);
-}
-
-.jlz-dropbar-featured__arrow {
-  font-size: 0.9rem;
-  color: var(--jlz-color-accent);
-}
-
-/* (Removed .jlz-dropbar-contact — Contact is now a full page, not dropdown) */
-
-/* (Light theme: QF color-mode handles dropdown bg, no overrides needed) */
 
 /* ------------------------------------------------------------------
    Content pages — transparent over 3D canvas (like QF background video)
@@ -1567,56 +1482,29 @@ body.uk-light .jlz-eyebrow {
   .jlz-showreel-play__label { font-size: 0.6rem; }
 }
 
-// ── Showreel modal ──
+// ── Showreel modal (UIKit3 uk-modal) ──
 .jlz-showreel-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 10000;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.jlz-showreel-modal.is-open {
-  opacity: 1;
-}
-
-.jlz-showreel-backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.9);
+  background: rgba(0, 0, 0, 0.9) !important;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
 
-.jlz-showreel-content {
+.jlz-showreel-dialog {
   position: relative;
-  z-index: 1;
   width: min(90vw, 1100px);
   max-height: 90vh;
+  background: transparent !important;
+  padding: 0 !important;
 }
 
 .jlz-showreel-close {
   position: absolute;
   top: -48px;
   right: 0;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(245, 245, 247, 0.2);
-  border-radius: 50%;
-  background: rgba(10, 10, 15, 0.6);
-  color: rgba(245, 245, 247, 0.8);
-  cursor: pointer;
-  transition: border-color 0.2s ease, color 0.2s ease;
+  z-index: 2;
 }
 
 .jlz-showreel-close:hover {
-  border-color: var(--jlz-accent, #c4ff00);
   color: var(--jlz-accent, #c4ff00);
 }
 
@@ -1748,8 +1636,8 @@ body.uk-light .jlz-eyebrow {
 }
 
 @media (max-width: 640px) {
-  .jlz-showreel-content { width: 95vw; }
-  .jlz-showreel-close { top: -42px; width: 36px; height: 36px; }
+  .jlz-showreel-dialog { width: 95vw; }
+  .jlz-showreel-close { top: -42px; }
   .jlz-showreel-big-play__icon { width: 56px; height: 56px; }
   .jlz-showreel-controls { gap: 0.5rem; padding: 0.75rem 0 0; }
   .jlz-showreel-time { display: none; }
@@ -1875,144 +1763,30 @@ body.uk-light .jlz-navbar-nav > li.uk-active > a {
   gap: 0.25rem;
 }
 
-.jlz-navbar-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 36px;
-  height: 36px;
-  padding: 0 0.5rem;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  background: transparent;
-  color: rgba(245, 245, 247, 0.6);
-  cursor: pointer;
-  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
-  font-family: 'Inter', sans-serif;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-}
-
-.jlz-navbar-btn:hover {
-  color: var(--jlz-accent, #c4ff00);
-  border-color: rgba(196, 255, 0, 0.3);
-  background: rgba(196, 255, 0, 0.05);
-}
-
-body.uk-light .jlz-navbar-btn {
-  color: rgba(10, 10, 15, 0.6);
-}
 
 .jlz-lang-label {
   text-transform: uppercase;
 }
 
 // Hide mobile toggle on desktop
-.jlz-mobile-toggle { display: none; }
-
-// ── Dropbar with cover previews (works page) ──
-.jlz-dropbar--covers {
-  min-width: 480px !important;
-}
-
-.jlz-dropbar-sections--covers li a {
-  display: grid !important;
-  grid-template-columns: 48px auto 1fr;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.5rem 0.75rem !important;
-  border-radius: 6px;
-  transition: background 0.2s ease;
-}
-
-.jlz-dropbar-sections--covers li a:hover {
-  background: rgba(196, 255, 0, 0.05);
-}
-
-.jlz-dropbar__cover {
-  display: block;
-  width: 48px;
-  height: 32px;
-  background-size: cover;
-  background-position: center;
-  border-radius: 4px;
-  flex-shrink: 0;
-}
-
-.jlz-dropbar__subtitle {
-  display: block;
-  font-size: 0.7rem;
-  color: rgba(245, 245, 247, 0.4);
-  margin-top: 0.15rem;
-}
-
-body.uk-light .jlz-dropbar__subtitle {
-  color: rgba(10, 10, 15, 0.4);
-}
-
-.jlz-dropbar-featured__subtitle {
-  display: block;
-  font-size: 0.7rem;
-  color: rgba(245, 245, 247, 0.4);
-  margin-top: 0.25rem;
-}
-
-body.uk-light .jlz-dropbar-featured__subtitle {
-  color: rgba(10, 10, 15, 0.4);
-}
-
-// ── Mobile offcanvas menu ──
-.jlz-mobile-menu-bar {
-  background: rgba(10, 10, 15, 0.95);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-}
-
-.jlz-mobile-nav {
-  margin-top: 2rem;
-}
-
-.jlz-mobile-nav li a {
-  font-family: 'Inter', sans-serif;
-  font-size: 1.2rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  color: rgba(245, 245, 247, 0.8);
-  padding: 0.75rem 0;
-  border-bottom: 1px solid rgba(245, 245, 247, 0.06);
-  transition: color 0.2s ease;
-}
-
-.jlz-mobile-nav li a:hover {
-  color: var(--jlz-accent, #c4ff00);
-}
-
-.jlz-mobile-controls {
-  position: absolute;
-  bottom: 2rem;
-  left: 2rem;
-  display: flex;
-  gap: 1rem;
-}
-
-// ── Responsive: hide center nav on mobile, show hamburger ──
 @media (max-width: 960px) {
-  .jlz-navbar-nav-wrap { display: none; }
-  .jlz-mobile-toggle { display: flex; }
-  .jlz-navbar-controls {
-    gap: 0.125rem;
-  }
+  .jlz-navbar-quicknav { display: none; }
+}
+
+// Small desktop: show hamburger, hide quicknav
+@media (max-width: 1100px) {
+  .jlz-navbar-quicknav { display: none; }
+  .jlz-hamburger { display: inline-flex !important; }
+}
+
+// Desktop: hide hamburger (quicknav is visible)
+@media (min-width: 1101px) {
+  .jlz-hamburger { display: none !important; }
 }
 
 @media (max-width: 500px) {
-  .jlz-navbar-btn {
-    min-width: 32px;
-    height: 32px;
-    padding: 0 0.35rem;
-    font-size: 0.7rem;
-  }
   .jlz-logo-text { font-size: 1rem; }
+  .jlz-lang-label { font-size: 0.65rem; }
 }
 
 // ════════════════════════════════════════════════════════════════════
