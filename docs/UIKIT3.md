@@ -263,6 +263,36 @@ signature of the works page.
     `.jlz-joystick`. On touch devices, the browser intercepted the drag as a
     scroll gesture and `pointermove` never fired beyond the dead zone. Fix:
     add `touch-action: none` directly on `.jlz-joystick__base`.
+25. **Cursor interactive selector must cover ALL UIkit3 interactive attributes** —
+    the custom cursor (`Cursor.ts`) detects interactive elements via
+    `target.closest(selector)`. The selector MUST include all UIkit3 attribute
+    components, not just `a, button`:
+    ```
+    [data-magnetic], a, button, .interactive,
+    [uk-toggle], [uk-slider], [uk-dropdown], [uk-tooltip], [uk-modal], [uk-lightbox]
+    ```
+    `[uk-tooltip]` and `[uk-dropdown]` can be on non-`<a>`/`<button>` elements
+    (e.g. `<span uk-tooltip>` or `<li uk-dropdown>`). Without them in the
+    selector, the cursor won't show hover state on those elements.
+26. **`uk-svg` is for EXTERNAL SVG files, not inline SVG** — the SVG component
+    (`<img src="logo.svg" uk-svg>`) injects an external `.svg` file as inline
+    SVG, allowing CSS targeting of individual paths. If your SVG is ALREADY
+    inline (template string), do NOT add `uk-svg` — it's redundant. We use
+    inline SVG for sun/moon/hamburger/close icons (see `nav/template.ts`).
+    `uk-svg="stroke-animation: true"` is only useful for stroke-based SVGs
+    (line art) — our icons use `fill="currentColor"`, so it doesn't apply.
+27. **Section visibility: `.section-active` class toggle ≠ `uk-hidden`** —
+    UIkit3 `uk-hidden` / `uk-visible@*` are for STATIC/RESPONSIVE hiding
+    (hide on mobile, show on desktop). Our sections toggle DYNAMICALLY via JS
+    (joystick nav + 3D cube sync). The `.section-active { display: flex !important }`
+    pattern is correct — it's the same approach UIkit3's own Switcher component
+    uses internally. Do NOT replace with `uk-hidden` (it won't toggle via JS
+    without also toggling the class, which defeats the purpose).
+28. **`overflow: hidden` in CSS vs `uk-overflow-hidden` class** — UIkit3 provides
+    `uk-overflow-hidden` / `uk-overflow-auto` utility classes. Use them for
+    ONE-OFF cases in HTML markup. For elements that ALWAYS need overflow hidden
+    (e.g. `.jlz-menu-overlay`, `.jlz-joystick`), keep it in CSS — adding the
+    class to every instance is redundant and the CSS is already there.
 
 ## 8. When to add a custom class vs. use UIKit
 

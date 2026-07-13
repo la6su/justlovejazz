@@ -1,47 +1,114 @@
 // src/sections/nav/template.ts — Menu overlay (secret right section on all pages)
 //
-// UNIQUE template — does NOT use sectionShell(). VOSK-inspired 3-column grid:
+// UNIQUE template — does NOT use sectionShell(). VOSK-inspired 3-column grid.
+//
+// Layout:
 //   ┌──────────────────────────────────────────────┐
 //   │ [theme] [sound]            JUSTLOVEJAZZ      │  top bar
 //   ├──────────────────────────────────────────────┤
 //   │  STAT          NAVIGATE          CONTACT     │  3-column grid
-//   │  06            01 Studio         hello@      │
-//   │  SECTIONS      02 Services       Telegram    │
-//   │  EST 2019      03 Works          GitHub      │
-//   │                04 Manifesto                  │
-//   │                05 Lab                       │
-//   │                06 Contact                   │
+//   │  06            01 Studio ▸       hello@      │
+//   │  SECTIONS      02 Services ▸    Telegram    │
+//   │  EST 2019      03 Works ▸        GitHub      │
+//   │                04 Manifesto ▸                │
+//   │                05 Lab ▸                      │
+//   │                06 Contact ▸                  │
 //   ├──────────────────────────────────────────────┤
 //   │ © 2026 · WEBGPU · TSL · UIKIT                │  footer
 //   └──────────────────────────────────────────────┘
 //
-// Responsive:
-//   - Desktop (≥640px): 3-column grid, all content visible in 1 screen.
-//   - Mobile (<640px): single column, stacked (stat → nav → contacts),
-//     still fits 1 screen via clamp() font sizing.
+// Nav item click behavior:
+//   - Desktop (≥640px): dropdown panel appears to the RIGHT of nav list,
+//     showing subsections. Click subsection → navigate to that section.
+//   - Mobile (<640px): accordion unfold — subsections appear INLINE below
+//     the nav item. Click subsection → navigate.
+//   - Only ONE nav item expanded at a time (clicking another closes the first).
 //
-// The menu overlay is section 5 (joystick right) on home, page-menu on
-// content pages. Config toolbar (theme toggle sun/moon + sound toggle EQ)
-// lives in the top bar — NOT in the header.
+// Visibility:
+//   - Hidden by default (section[data-section] { display: none }).
+//   - Shown when .section-active is added (joystick right / hamburger click).
+//   - backdrop-filter: blur(20px) on overlay for glass-morphism separation
+//     from the 3D canvas behind.
+//
+// Exit (close menu):
+//   - Hamburger X click → jlz:close-nav → return to previous main section.
+//   - Joystick arrow left → same behavior.
+//   - Subsection click → navigate to target section (menu auto-closes).
 
 import { themeManager } from '../../core/ThemeManager'
 import { getLang } from '../../core/i18n'
 
-// ── Navigation items (flat list — no accordion, VOSK-style) ──
+// ── Navigation items with subsections ──
+interface SubSection {
+  num: string
+  title: string
+  titleKey: string
+  href: string
+}
+
 interface NavItem {
   num: string
   label: string
   labelKey: string
   href: string
+  subs: SubSection[]
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { num: '01', label: 'Studio', labelKey: 'nav.studio', href: '/' },
-  { num: '02', label: 'Services', labelKey: 'nav.services', href: '/services' },
-  { num: '03', label: 'Works', labelKey: 'nav.works', href: '/works' },
-  { num: '04', label: 'Manifesto', labelKey: 'nav.manifesto', href: '/manifesto' },
-  { num: '05', label: 'Lab', labelKey: 'nav.lab', href: '/lab' },
-  { num: '06', label: 'Contact', labelKey: 'nav.contact', href: '/contact' },
+  {
+    num: '01', label: 'Studio', labelKey: 'nav.studio', href: '/',
+    subs: [
+      { num: '01', title: 'Studio', titleKey: 'dropbar.home.s1.title', href: '/#section-intro' },
+      { num: '02', title: 'Services', titleKey: 'dropbar.home.s2.title', href: '/#section-about' },
+      { num: '03', title: 'Works', titleKey: 'dropbar.home.s3.title', href: '/#section-works' },
+      { num: '04', title: 'Manifesto', titleKey: 'dropbar.home.s4.title', href: '/#section-contact' },
+    ],
+  },
+  {
+    num: '02', label: 'Services', labelKey: 'nav.services', href: '/services',
+    subs: [
+      { num: '01', title: 'Creative Direction', titleKey: 'dropbar.services.s1.title', href: '/services#section-services-01' },
+      { num: '02', title: 'Interactive Development', titleKey: 'dropbar.services.s2.title', href: '/services#section-services-02' },
+      { num: '03', title: 'Motion & Realtime', titleKey: 'dropbar.services.s3.title', href: '/services#section-services-03' },
+      { num: '04', title: 'AI Systems', titleKey: 'dropbar.services.s4.title', href: '/services#section-services-04' },
+    ],
+  },
+  {
+    num: '03', label: 'Works', labelKey: 'nav.works', href: '/works',
+    subs: [
+      { num: '01', title: 'Selected Works', titleKey: 'works.section1.title', href: '/works#section-works-01' },
+      { num: '02', title: 'Case Studies', titleKey: 'works.section2.title', href: '/works#section-works-02' },
+      { num: '03', title: 'Experiments', titleKey: 'works.section3.title', href: '/works#section-works-03' },
+      { num: '04', title: 'Recent', titleKey: 'works.section4.title', href: '/works#section-works-04' },
+    ],
+  },
+  {
+    num: '04', label: 'Manifesto', labelKey: 'nav.manifesto', href: '/manifesto',
+    subs: [
+      { num: '01', title: 'Purpose', titleKey: 'dropbar.manifesto.s1.title', href: '/manifesto#section-manifesto-01' },
+      { num: '02', title: 'Clarity', titleKey: 'dropbar.manifesto.s2.title', href: '/manifesto#section-manifesto-02' },
+      { num: '03', title: 'Emotion', titleKey: 'dropbar.manifesto.s3.title', href: '/manifesto#section-manifesto-03' },
+      { num: '04', title: 'Simplicity', titleKey: 'dropbar.manifesto.s4.title', href: '/manifesto#section-manifesto-04' },
+    ],
+  },
+  {
+    num: '05', label: 'Lab', labelKey: 'nav.lab', href: '/lab',
+    subs: [
+      { num: '01', title: 'Shader Lab', titleKey: 'dropbar.lab.s1.title', href: '/lab#section-lab-01' },
+      { num: '02', title: 'Audio Reactive', titleKey: 'dropbar.lab.s2.title', href: '/lab#section-lab-02' },
+      { num: '03', title: 'Generative', titleKey: 'dropbar.lab.s3.title', href: '/lab#section-lab-03' },
+      { num: '04', title: 'GPU Particles', titleKey: 'dropbar.lab.s4.title', href: '/lab#section-lab-04' },
+    ],
+  },
+  {
+    num: '06', label: 'Contact', labelKey: 'nav.contact', href: '/contact',
+    subs: [
+      { num: '01', title: 'Email', titleKey: 'dropbar.contact.s1.title', href: '/contact#section-contact-01' },
+      { num: '02', title: 'Social', titleKey: 'dropbar.contact.s2.title', href: '/contact#section-contact-02' },
+      { num: '03', title: 'Location', titleKey: 'dropbar.contact.s3.title', href: '/contact#section-contact-03' },
+      { num: '04', title: 'Form', titleKey: 'dropbar.contact.s4.title', href: '/contact#section-contact-04' },
+    ],
+  },
 ]
 
 // ── Inline SVG icons (UIKit3 has no sun/moon — see docs/UIKIT3.md §7.13) ──
@@ -87,15 +154,26 @@ function statColumn(): string {
   `
 }
 
-// ── Center column: main navigation list ──
+// ── Center column: nav list with subsections ──
 function navColumn(): string {
   const items = NAV_ITEMS.map((item) => `
-    <li class="jlz-menu-nav__item">
-      <a href="${item.href}" class="jlz-menu-nav__link" data-magnetic>
+    <li class="jlz-menu-nav__item" data-nav-item="${item.num}">
+      <button class="jlz-menu-nav__toggle" type="button" aria-expanded="false" data-magnetic>
         <span class="jlz-menu-nav__num">${item.num}</span>
         <span class="jlz-menu-nav__label" data-i18n="${item.labelKey}">${item.label}</span>
-        <span class="jlz-menu-nav__arrow" aria-hidden="true">→</span>
-      </a>
+        <span class="jlz-menu-nav__arrow" aria-hidden="true">▸</span>
+      </button>
+      <ul class="jlz-menu-nav__subs">
+        ${item.subs.map(sub => `
+          <li class="jlz-menu-nav__sub-item">
+            <a href="${sub.href}" class="jlz-menu-nav__sub-link" data-magnetic data-nav-href="${sub.href}">
+              <span class="jlz-menu-nav__sub-num">${sub.num}</span>
+              <span class="jlz-menu-nav__sub-title" data-i18n="${sub.titleKey}">${sub.title}</span>
+              <span class="jlz-menu-nav__sub-arrow" aria-hidden="true">→</span>
+            </a>
+          </li>
+        `).join('')}
+      </ul>
     </li>
   `).join('')
   return `
@@ -145,14 +223,8 @@ function menuFooter(): string {
 /**
  * Menu overlay section — UNIQUE template (not sectionShell).
  *
- * Layout: fullscreen 3-column grid, fits in 1 screen (100dvh, no scroll).
- *   - Top bar: config toolbar (left) + logo/brand (right)
- *   - Main: 3-column grid (stat | nav | contacts)
- *   - Footer: copyright + tech stack
- *
- * Responsive:
- *   - Desktop (≥640px): 3-column grid.
- *   - Mobile (<640px): single column, stacked (stat → nav → contacts).
+ * Visibility: hidden by default (section[data-section] { display: none }).
+ * Shown when .section-active is added by JoystickNav / ContentReveal.
  *
  * @param mode 'home' = data-section (3D cube face sync) | 'content' = data-page-section
  */
@@ -177,6 +249,85 @@ export function navOverlaySection(mode: 'home' | 'content' = 'content'): string 
       </div>
     </section>
   `
+}
+
+// ── Nav item toggle (desktop dropdown / mobile accordion) ──
+
+/**
+ * Initialize nav item click handlers.
+ * Called by router.ts after every renderView().
+ *
+ * Behavior:
+ *   - Click nav item toggle → expand/collapse subsections.
+ *   - Only ONE item expanded at a time (clicking another closes the first).
+ *   - Subsection click → navigate via SPA router (intercepted, no full reload).
+ *   - After subsection navigation → auto-close menu (dispatch jlz:close-nav).
+ */
+export function initMenuNav(): void {
+  const nav = document.querySelector('.jlz-menu-nav')
+  if (!nav) return
+
+  // Nav item toggles
+  const toggles = nav.querySelectorAll<HTMLButtonElement>('.jlz-menu-nav__toggle')
+  toggles.forEach((toggle) => {
+    toggle.addEventListener('click', (e) => {
+      e.preventDefault()
+      const item = toggle.closest('.jlz-menu-nav__item')
+      if (!item) return
+      const isExpanded = item.classList.contains('is-expanded')
+
+      // Close all other items (only one open at a time)
+      nav.querySelectorAll('.jlz-menu-nav__item.is-expanded').forEach((other) => {
+        if (other !== item) {
+          other.classList.remove('is-expanded')
+          other.querySelector<HTMLButtonElement>('.jlz-menu-nav__toggle')?.setAttribute('aria-expanded', 'false')
+        }
+      })
+
+      // Toggle current item
+      item.classList.toggle('is-expanded', !isExpanded)
+      toggle.setAttribute('aria-expanded', String(!isExpanded))
+    })
+  })
+
+  // Subsection links — intercept for SPA navigation + auto-close menu
+  const subLinks = nav.querySelectorAll<HTMLAnchorElement>('.jlz-menu-nav__sub-link')
+  subLinks.forEach((link) => {
+    link.addEventListener('click', (e) => {
+      const href = link.getAttribute('data-nav-href') || link.getAttribute('href') || ''
+      if (!href) return
+
+      // Parse path + hash (e.g. "/services#section-services-02")
+      const url = new URL(href, window.location.origin)
+      if (url.origin !== window.location.origin) return // external link, let it pass
+
+      e.preventDefault()
+
+      // Navigate via SPA router (pushState + renderView)
+      const path = url.pathname
+      const hash = url.hash
+
+      // Dispatch close-nav FIRST (returns to previous main section, which
+      // closes the menu overlay). Then navigate.
+      window.dispatchEvent(new CustomEvent('jlz:close-nav'))
+
+      // Small delay so menu-close animation starts before route change
+      setTimeout(() => {
+        if (path !== window.location.pathname) {
+          // Navigate to a different page — use history + route-change
+          history.pushState(null, '', path)
+          window.dispatchEvent(new CustomEvent('jlz:route-change', { detail: { page: path } }))
+        }
+        // If hash present, scroll to section after route renders
+        if (hash) {
+          setTimeout(() => {
+            const target = document.querySelector(hash)
+            target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          }, 150)
+        }
+      }, 100)
+    })
+  })
 }
 
 // ── Theme + sound toggle wiring ──
@@ -217,7 +368,7 @@ function syncSoundButton(btn: HTMLButtonElement, muted: boolean): void {
 let _soundMuted = readSoundMuted()
 
 /**
- * Initialize the menu-overlay config toolbar.
+ * Initialize the menu-overlay config toolbar + nav items.
  * Called by router.ts after every renderView() (DOM is fresh each time).
  */
 export function initMenuToolbar(): void {
@@ -242,6 +393,9 @@ export function initMenuToolbar(): void {
       }))
     })
   }
+
+  // Initialize nav item toggle handlers (desktop dropdown / mobile accordion)
+  initMenuNav()
 }
 
 /**
