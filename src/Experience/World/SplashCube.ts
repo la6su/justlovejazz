@@ -15,9 +15,6 @@
 import * as THREE from 'three'
 import { organicValue } from '../../Utils/Noise'
 import { BakuRole, type BakuMaterialState } from '../../core/types'
-import { MeshPhysicalNodeMaterial } from 'three/webgpu'
-import { Fn, uniform, positionLocal, normalLocal, mx_noise_float, sin } from 'three/tsl'
-import { DeviceCapability } from '../../core/DeviceCapability'
 import { MeshTransmissionMaterial } from './MeshTransmissionMaterial'
 
 interface BakuMaterialParams {
@@ -42,10 +39,7 @@ export class SplashCube extends THREE.Mesh {
   private cubeMesh!: THREE.Mesh
   // edgeLines removed — was LineSegments with 1px aliasing. Cube looks
   // clean with just MeshPhysicalMaterial (iridescence + clearcoat).
-  private cubeMaterial!: MeshPhysicalNodeMaterial
-  // TSL wobble uniform — controls displacement amplitude
-  private _uWobble = uniform(1.0)
-  private _uTime = uniform(0)
+  private cubeMaterial!: THREE.MeshPhysicalMaterial
   private cubeCamera!: THREE.CubeCamera
   private contentScene!: THREE.Scene
   private contentTextures: THREE.Texture[] = []
@@ -204,89 +198,48 @@ export class SplashCube extends THREE.Mesh {
     // RoundedBoxGeometry only has 6 segments → wobble looks jagged.
     const geo = new THREE.BoxGeometry(size, size, size, 32, 32, 32)
 
-    // Glass cube — two paths:
-    // WebGPU: MeshPhysicalNodeMaterial (TSL) + transmission + TSL wobble
-    //   (dasprinzip day34 — the version user said 'almost good')
-    // WebGL2: MeshTransmissionMaterial (drei) + onBeforeCompile wobble
-    //   (codesandbox meshtransmission-vanilla — chromatic aberration + blur)
-    // Both paths: normalMap glass-flakes.png + CubeCamera envMap
-    const caps = DeviceCapability.getInstance()
-    const isWebGPU = caps.isRealWebGPU
-
-    // Normal map — glass speckle texture (dasprinzip day34 seDv-flakes.png)
+    // Glass cube — SINGLE material for BOTH WebGPU + WebGL2:
+    // MeshTransmissionMaterial (drei) with:
+    //   - Custom chromatic aberration + anisotropic blur (fragment shader)
+    //   - GLSL vertex wobble (dasprinzip day34 — snoise displacement)
+    //   - normalMap glass-flakes.png (speckle texture)
+    //   - CubeCamera envMap (contentScene reflections)
+    // All via onBeforeCompile — works on both backends.
     const speckleTex = new THREE.TextureLoader().load('/textures/glass-flakes.png')
     speckleTex.wrapS = THREE.RepeatWrapping
     speckleTex.wrapT = THREE.RepeatWrapping
     speckleTex.repeat.set(6, 6)
     speckleTex.colorSpace = THREE.SRGBColorSpace
 
-    if (isWebGPU) {
-      // ── WebGPU: TSL glass with transmission + wobble (dasprinzip day34) ──
-      const mat = new MeshPhysicalNodeMaterial({
-        color: new THREE.Color(0x88aaff),
-        metalness: 0.0,
-        roughness: 0.0,
-        transmission: 1.0,
-        thickness: 5,
-        ior: 1.21,
-        transparent: true,
-        side: THREE.FrontSide,
-        envMapIntensity: 1.0,
-        attenuationColor: new THREE.Color(1.0, 1.0, 1.0),
-        attenuationDistance: 100,
-        specularIntensity: 1.0,
-        depthWrite: false,
-      })
-      mat.normalMap = speckleTex
-      mat.normalScale = new THREE.Vector2(1.0, 1.0)
+    const mat = new MeshTransmissionMaterial(6)
+    mat.color = new THREE.Color(0x88aaff)
+    mat.metalness = 0.0
+    mat.roughness = 0.0
+    mat.transmission = 1.0
+    mat.thickness = 5
+    mat.ior = 1.21
+    mat.transparent = true
+    mat.opacity = 1.0
+    mat.side = THREE.FrontSide
+    mat.envMapIntensity = 1.0
+    mat.attenuationColor = new THREE.Color(1.0, 1.0, 1.0)
+    mat.attenuationDistance = 100
+    mat.specularIntensity = 1.0
+    mat.depthWrite = false
+    mat.normalMap = speckleTex
+    mat.normalScale = new THREE.Vector2(1.0, 1.0)
+    // MeshTransmissionMaterial custom uniforms
+    mat.chromaticAberration = 0.05
+    mat.anisotrophicBlur = 0.1
+    // Wobble — vertex noise displacement (dasprinzip day34 pattern)
+    // GLSL injected via onBeforeCompile, works on BOTH WebGL2 + WebGPU
+    mat.wobble = 0.3
+    // Fragment distortion (normal perturbation) — off, wobble handles motion
+    mat.distortion = 0.0
+    mat.distortionScale = 0.3
+    mat.temporalDistortion = 0.0
 
-      // TSL wobble — noise displacement (dasprinzip pattern)
-      const uWobble = this._uWobble
-      const uTimeVal = this._uTime
-      mat.positionNode = Fn(() => {
-        const pos = positionLocal.toVar()
-        const np = pos.mul(0.12)
-        const t = uTimeVal
-        const n1 = mx_noise_float(np.add(t.mul(0.3))).mul(0.5).mul(uWobble)
-        const n2 = mx_noise_float(np.mul(2.5).add(t.mul(0.5)).add(7)).mul(0.2).mul(uWobble)
-        const n3 = mx_noise_float(np.mul(5).add(t.mul(0.8)).add(13)).mul(0.1).mul(uWobble)
-        const displacement = n1.add(n2).add(n3)
-        const squash = sin(t.mul(0.4)).mul(0.08).mul(uWobble)
-        const breathe = sin(t.mul(0.7).add(pos.y.mul(0.3))).mul(0.12).mul(uWobble)
-        pos.assign(pos.add(normalLocal.mul(displacement.add(breathe))))
-        pos.y.addAssign(pos.y.mul(squash))
-        return pos
-      })()
-
-      this.cubeMaterial = mat as unknown as typeof this.cubeMaterial
-    } else {
-      // ── WebGL2: MeshTransmissionMaterial (drei) + GLSL wobble ──
-      const mat = new MeshTransmissionMaterial(6)
-      mat.color = new THREE.Color(0x88aaff)
-      mat.metalness = 0.0
-      mat.roughness = 0.0
-      mat.transmission = 1.0
-      mat.thickness = 5
-      mat.ior = 1.21
-      mat.transparent = true
-      mat.opacity = 1.0
-      mat.side = THREE.FrontSide
-      mat.envMapIntensity = 1.0
-      mat.attenuationColor = new THREE.Color(1.0, 1.0, 1.0)
-      mat.attenuationDistance = 100
-      mat.specularIntensity = 1.0
-      mat.depthWrite = false
-      mat.normalMap = speckleTex
-      mat.normalScale = new THREE.Vector2(1.0, 1.0)
-      mat.chromaticAberration = 0.05
-      mat.anisotrophicBlur = 0.1
-      mat.wobble = 0.3
-      mat.distortion = 0.0
-      mat.distortionScale = 0.3
-      mat.temporalDistortion = 0.0
-
-      this.cubeMaterial = mat as unknown as typeof this.cubeMaterial
-    }
+    this.cubeMaterial = mat as unknown as typeof this.cubeMaterial
 
     this.cubeMesh = new THREE.Mesh(geo, this.cubeMaterial)
     this.cubeMesh.renderOrder = 2
@@ -441,11 +394,9 @@ export class SplashCube extends THREE.Mesh {
     const openerScale = 1 + this.openerProgress * 0.3
     this.cubeMesh.scale.setScalar(openerScale)
 
-    // Advance TSL wobble time uniform (WebGPU) + MeshTransmissionMaterial time (WebGL2)
-    ;(this._uTime as unknown as { value: number }).value = this.time
-    const mtm = this.cubeMaterial as unknown as { time?: number; uniforms?: { time?: { value: number } } }
-    if (mtm.uniforms?.time) mtm.uniforms.time.value = this.time
-    else if (mtm.time !== undefined) mtm.time = this.time
+    // Advance MeshTransmissionMaterial time uniform (drives wobble + temporalDistortion)
+    const mtm = this.cubeMaterial as unknown as { time?: number }
+    if (mtm.time !== undefined) mtm.time = this.time
 
     // ── Material color blend ──
     this.cubeMaterial.color.copy(this._blendFromColor).lerp(this._blendToColor, this._blendT)
