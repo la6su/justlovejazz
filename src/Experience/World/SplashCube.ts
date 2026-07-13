@@ -200,15 +200,17 @@ export class SplashCube extends THREE.Mesh {
     // (was: BoxGeometry — sharp edges → jagged pixels at face boundaries)
     const geo = new RoundedBoxGeometry(size, size, size, 6, 0.04)
 
-    // MeshPhysicalMaterial — glass cube with env reflections (Apple Fifth Avenue style)
-    // scene.environment (PMREM from RoomEnvironment) provides the reflections.
-    // No map/emissiveMap — the cube is pure glass, reflections come from env.
+    // MeshPhysicalMaterial — glass cube.
+    // Reflections come from scene.environment (PMREM RoomEnvironment) ONLY.
+    // CubeCamera cubemap was removed — it reflected dark contentScene gradient
+    // planes, creating a 'black hole' behind the cube at close camera distance.
+    // PMREM studio light is bright + neutral → clean glass reflections.
     this.cubeMaterial = new THREE.MeshPhysicalMaterial({
       color: 0xffffff,
       emissive: 0x000000,
       emissiveIntensity: 0.0,
       transparent: true,
-      opacity: 0.35,
+      opacity: 0.6,
       side: THREE.DoubleSide,
       roughness: 0.0,
       metalness: 0.0,
@@ -219,7 +221,7 @@ export class SplashCube extends THREE.Mesh {
       transmission: 0,
       thickness: 1.2,
       ior: 1.52,
-      envMapIntensity: 1.0, // balanced — PMREM + CubeCamera
+      envMapIntensity: 1.0, // PMREM only (CubeCamera disconnected below)
       depthWrite: false,
     })
 
@@ -227,10 +229,12 @@ export class SplashCube extends THREE.Mesh {
     this.cubeMesh.renderOrder = 2
     this.add(this.cubeMesh)
 
-    // Connect CubeCamera render target → material envMap
-    // This gives the glass cube dynamic reflections of the content scene
-    // (gradient planes + logo + text). Without this, the cube is flat.
-    this.cubeMaterial.envMap = this.cubeCamera.renderTarget.texture
+    // CubeCamera envMap DISCONNECTED — was causing 'black hole' (dark
+    // contentScene gradient planes reflected on glass at close camera).
+    // Cube now uses scene.environment (PMREM RoomEnvironment) only —
+    // bright studio reflections, no dark cubemap.
+    // CubeCamera still updates (harmless) but its texture is not applied.
+    // this.cubeMaterial.envMap = this.cubeCamera.renderTarget.texture
 
     // ── Rainbow edges — DISABLED (pixelated aliasing) ──
     // LineBasicMaterial.linewidth > 1 is NOT supported in WebGL/WebGPU —
