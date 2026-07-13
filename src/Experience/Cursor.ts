@@ -123,14 +123,13 @@ export class Cursor {
       // Phase 2: check for custom cursor state (data-cursor attribute)
       const stateEl = target.closest('[data-cursor]') as HTMLElement | null
       this.cursorState = stateEl?.dataset.cursor ?? null
-      const interactive = target.closest('[data-magnetic], a, button, .interactive, [uk-toggle], [uk-slider]') as HTMLElement | null
+      const interactive = target.closest('[data-magnetic], a, button, .interactive, [uk-toggle], [uk-slider], [uk-dropdown], [uk-tooltip], [uk-modal], [uk-lightbox]') as HTMLElement | null
       if (interactive) {
-        // For large menu items (main menu nav links), DON'T snap to center —
-        // the links are huge (clamp 2-5rem), snapping to center looks weird.
+        // For large menu items (nav toggle + sub-links), DON'T snap to center —
+        // the labels are large (clamp 1.25-1.75rem), snapping to center looks weird.
         // Instead, follow mouse + expand + fill (no stuckX/Y override).
-        // #jlz-menu-modal no longer exists — menu is now section 5 overlay.
-        // Large-menu items: nav-accordion labels + sub-items (big text, don't snap-to-center).
-        const isLargeMenu = interactive.closest('.jlz-nav-accordion__header, .jlz-nav-accordion__sub, [data-section="menu"], [data-page-section="page-menu"]')
+        // Menu overlay = [data-section="menu"] (home) / [data-page-section="page-menu"] (content).
+        const isLargeMenu = interactive.closest('.jlz-menu-nav__toggle, .jlz-menu-nav__sub-link, [data-section="menu"], [data-page-section="page-menu"]')
         if (isLargeMenu) {
           this.stuckX = this.targetX
           this.stuckY = this.targetY
@@ -153,7 +152,7 @@ export class Cursor {
     this.mouseoutHandler = (e: MouseEvent) => {
       const target = e.target as HTMLElement
       if (!target || typeof target.closest !== 'function') return
-      if (target.closest('[data-magnetic], a, button, .interactive, [uk-toggle], [uk-slider]')) {
+      if (target.closest('[data-magnetic], a, button, .interactive, [uk-toggle], [uk-slider], [uk-dropdown], [uk-tooltip], [uk-modal], [uk-lightbox]')) {
         this.isStuck = false
         this.fillTarget = 0
       }

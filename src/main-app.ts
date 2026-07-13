@@ -40,7 +40,7 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
 
     const { UIManager } = await import('./UI/UIManager')
     const ui = new UIManager()
-    ui.init()  // Initialize UI components (SoundPanel, etc.)
+    ui.init()  // Initialize UI components (ShowreelModal, menu toolbar globals)
     progress(40)
 
     const { Experience } = await import('./Experience/Experience')
