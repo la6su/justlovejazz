@@ -206,45 +206,59 @@ export class SplashCube extends THREE.Mesh {
     // (was: BoxGeometry — sharp edges → jagged pixels at face boundaries)
     const geo = new RoundedBoxGeometry(size, size, size, 6, 0.04)
 
-    // Glass cube — MeshPhysicalNodeMaterial (TSL) with transmission.
-    // Based on dasprinzip.com/tinker/day34 reference.
-    // transmission: 1.0 (full refraction) — WebGPU only.
-    // WebGL2 doesn't support renderer.getCanvasTarget (transmission backing
-    // store) → crash. Fallback: opacity 0.4 (semi-transparent, no refraction).
+    // Glass cube — two paths:
+    // WebGPU: MeshPhysicalNodeMaterial (TSL) with transmission 1.0 + wobble
+    // WebGL2: MeshPhysicalMaterial (built-in) with opacity 0.4, no wobble
+    //   (MeshPhysicalNodeMaterial crashes on WebGL2 — NodeMaterial uniforms
+    //    not supported by WebGLBackend)
     const caps = DeviceCapability.getInstance()
     const isWebGPU = caps.isRealWebGPU
-    this.cubeMaterial = new MeshPhysicalNodeMaterial({
-      color: new THREE.Color(0x88aaff),
-      metalness: 0.0,
-      roughness: 0.0,
-      transmission: isWebGPU ? 1.0 : 0.0,
-      thickness: 5,
-      ior: 1.21,
-      transparent: true,
-      opacity: isWebGPU ? 1.0 : 0.4,
-      side: THREE.FrontSide,
-      envMapIntensity: 1.0,
-      attenuationColor: new THREE.Color(1.0, 1.0, 1.0),
-      attenuationDistance: 100,
-      specularIntensity: 1.0,
-      depthWrite: false,
-    })
 
-    // TSL wobble — very subtle noise displacement (dasprinzip pattern, reduced).
-    // Previous amplitude (0.3) caused cube sides to collapse inward at negative
-    // displacement values. Reduced to 0.1 for gentle organic motion.
-    const uWobble = this._uWobble
-    const uTimeVal = this._uTime
-    this.cubeMaterial.positionNode = Fn(() => {
-      const pos = positionLocal.toVar()
-      const np = pos.mul(0.12)
-      const t = uTimeVal
-      // Single octave only — multi-octave was too strong + caused collapse
-      const displacement = mx_noise_float(np.add(t.mul(0.3))).mul(0.05).mul(uWobble)
-      const breathe = sin(t.mul(0.7).add(pos.y.mul(0.3))).mul(0.02).mul(uWobble)
-      pos.assign(pos.add(normalLocal.mul(displacement.add(breathe))))
-      return pos
-    })()
+    if (isWebGPU) {
+      // ── WebGPU: TSL glass with transmission + wobble ──
+      this.cubeMaterial = new MeshPhysicalNodeMaterial({
+        color: new THREE.Color(0x88aaff),
+        metalness: 0.0,
+        roughness: 0.0,
+        transmission: 1.0,
+        thickness: 5,
+        ior: 1.21,
+        transparent: true,
+        opacity: 1.0,
+        side: THREE.FrontSide,
+        envMapIntensity: 1.0,
+        attenuationColor: new THREE.Color(1.0, 1.0, 1.0),
+        attenuationDistance: 100,
+        specularIntensity: 1.0,
+        depthWrite: false,
+      })
+
+      // TSL wobble — very subtle noise displacement
+      const uWobble = this._uWobble
+      const uTimeVal = this._uTime
+      this.cubeMaterial.positionNode = Fn(() => {
+        const pos = positionLocal.toVar()
+        const np = pos.mul(0.12)
+        const t = uTimeVal
+        const displacement = mx_noise_float(np.add(t.mul(0.3))).mul(0.05).mul(uWobble)
+        const breathe = sin(t.mul(0.7).add(pos.y.mul(0.3))).mul(0.02).mul(uWobble)
+        pos.assign(pos.add(normalLocal.mul(displacement.add(breathe))))
+        return pos
+      })()
+    } else {
+      // ── WebGL2: built-in MeshPhysicalMaterial (no NodeMaterial crash) ──
+      this.cubeMaterial = new THREE.MeshPhysicalMaterial({
+        color: new THREE.Color(0x88aaff),
+        metalness: 0.0,
+        roughness: 0.1,
+        transmission: 0,
+        transparent: true,
+        opacity: 0.4,
+        side: THREE.DoubleSide,
+        envMapIntensity: 0.8,
+        depthWrite: false,
+      }) as unknown as MeshPhysicalNodeMaterial
+    }
 
     this.cubeMesh = new THREE.Mesh(geo, this.cubeMaterial)
     this.cubeMesh.renderOrder = 2
