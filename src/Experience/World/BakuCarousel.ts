@@ -28,7 +28,7 @@ import * as THREE from 'three'
 function isUiChromeEvent(e: Event): boolean {
   const target = e.target as HTMLElement | null
   if (!target) return false
-  return !!target.closest('#joystick-nav, #project-overlay, #jlz-app-loader, [data-section="menu"], [data-page-section="page-menu"]')
+  return !!target.closest('#joystick-nav, #jlz-fs-overlay, #jlz-app-loader, [data-section="menu"], [data-page-section="page-menu"]')
 }
 function isMenuOpen(): boolean {
   // Menu overlay is active when its section has .section-active
