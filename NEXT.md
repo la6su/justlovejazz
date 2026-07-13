@@ -13,6 +13,24 @@ _(nothing currently in progress)_
 
 ## TODO — High priority
 
+- [x] **UIkit3 navbar conformance + Menu overlay toolbar** — DONE 2026-07-13.
+      Refactored header to the official UIkit3 3-zone navbar pattern
+      (`uk-navbar-left` + `uk-navbar-center` + `uk-navbar-right` with
+      `uk-navbar` attribute on the INNER `<div>`, not on `<nav>`). Logo is
+      pixel-exact centered (verified `logoCenterX = navCenterX = 640` on
+      1280px viewport). Removed `.jlz-glass-btn` (duplicate of `uk-button` /
+      `uk-icon-button`), `.jlz-navbar-center-group`, and the floating
+      `SoundPanel.ts`. Theme toggle (sun/moon inline SVG — UIKit3 has no
+      celestial icons) + sound toggle (custom 4-bar EQ) now live in the menu
+      overlay config toolbar (`src/sections/nav/toolbar.ts`). Renamed section
+      5 "Process" → "Menu" semantically across `SectionId`, `WorldConfig`,
+      `JoystickNav.SideState`, `nav/template.ts`, `process/scene.ts`. Deleted
+      dead `src/sections/process/template.ts` + `src/sections/nav/scene.ts`.
+      Removed `#jlz-menu-modal` guards (modal was replaced by section-5
+      overlay in PLAN-v3 but guards stayed). `docs/UIKIT3.md §7` gained 10
+      new lessons (11–20) documenting all gotchas. See WORKLOG.md 2026-07-13
+      entry for full details.
+
 - [x] **3D objects on content pages** — DONE 2026-07-11 (re-evaluated). The
       old item assumed per-page `sceneObjects` config was needed; in reality
       `SectionSceneFactory` is hardcoded and scene groups are shared across all

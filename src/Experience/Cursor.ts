@@ -128,7 +128,9 @@ export class Cursor {
         // For large menu items (main menu nav links), DON'T snap to center —
         // the links are huge (clamp 2-5rem), snapping to center looks weird.
         // Instead, follow mouse + expand + fill (no stuckX/Y override).
-        const isLargeMenu = interactive.closest('.jlz-main-menu-nav, .jlz-secret-nav, #jlz-menu-modal')
+        // #jlz-menu-modal no longer exists — menu is now section 5 overlay.
+        // Large-menu items: nav-accordion labels + sub-items (big text, don't snap-to-center).
+        const isLargeMenu = interactive.closest('.jlz-nav-accordion__header, .jlz-nav-accordion__sub, [data-section="menu"], [data-page-section="page-menu"]')
         if (isLargeMenu) {
           this.stuckX = this.targetX
           this.stuckY = this.targetY

@@ -110,9 +110,9 @@ Blog (`/blog` + `/blog/[slug]`) — standalone HTML, NOT part of SPA.
 | 2 | About | Right (+X) | — (clean) | dark |
 | 3 | Works | Back (-Z) | BakuCarousel + DrawTrail + particles | dark |
 | 4 | Contact (bottom) | Bottom (-Y) | Ground plane (ONLY here) | light |
-| 5 | Process (secret right) | Left (-X) | — (clean) | dark |
+| 5 | Menu (secret right) | Left (-X) | — (clean) | dark |
 
-World starts on **section 1 (Intro)**. Lab (0) and Process (5) are secret —
+World starts on **section 1 (Intro)**. Lab (0) and Menu (5) are secret —
 reachable only via horizontal joystick drag. Same layout on ALL pages:
 0=secret, 1=intro(start), 2-4=main, 5=secret.
 
@@ -122,22 +122,33 @@ reachable only via horizontal joystick drag. Same layout on ALL pages:
 | --- | --- |
 | Vertical down | 1→2→3→4 (main cycle) |
 | Vertical up | 4→3→2→1 |
-| Horizontal left | → 0 (secret Lab) |
-| Horizontal right | → 5 (secret Process) |
+| Horizontal left | → 0 (secret Lab overlay) |
+| Horizontal right | → 5 (secret Menu overlay) |
 | From secret, opposite | → middle (section 1-4) |
 | Dotnav | 4 dots — click to jump |
 | Keyboard | ArrowUp/Down/Left/Right, Home (→1), End (→4) |
+
+Hamburger button in the header (UIkit3 `uk-navbar-toggle`) also opens section 5 (menu overlay) via `jlz:goto-nav` event. The menu overlay hosts the config toolbar (theme + sound toggles).
 
 ## Theme — 2 modes (auto/inverse)
 
 | Mode | Behavior |
 | --- | --- |
-| `auto` (default) | Global LIGHT — `uk-light` on body, dark text on light bg |
-| `inverse` | Global DARK — no `uk-light`, light text on dark bg |
+| `auto` (default) | Global LIGHT — `uk-light` on body, dark text on light bg, sun icon |
+| `inverse` | Global DARK — no `uk-light`, light text on dark bg, moon icon |
 
-YooTheme Pro inverse approach — global flip, NOT per-section.
+YOOtheme Pro inverse approach — global flip, NOT per-section.
 `localStorage('jlz:theme')`. EnvSphere syncs via `jlz:theme-applied`.
-Toggle: 1 button in UIMenu (paint-bucket icon).
+Toggle: `#jlz-theme-toggle` button in the menu overlay config toolbar
+(`src/sections/nav/toolbar.ts`). UIKit3 has no sun/moon icons, so we use
+inline SVG and swap visibility via the `.is-inverse` class on the button.
+
+## Sound — toggle in menu overlay
+
+Default OFF (user must opt in). `#jlz-menu-sound` button in the menu overlay
+config toolbar — custom 4-bar EQ animation inside UIKit3 `uk-icon-button`.
+`localStorage('jlz:sound') = 'on' | 'off'`. Dispatches `jlz:sound-toggle`
+event (Experience.ts listens, mutes AudioSystem + SfxSystem).
 
 ## i18n — EN/RU
 

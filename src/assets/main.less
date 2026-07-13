@@ -1274,92 +1274,14 @@ body.uk-light .jlz-eyebrow {
 }
 
 // ════════════════════════════════════════════════════════════════════
-// SOUND PANEL — equalizer toggle button (PLAN.md Phase 3)
+// SOUND TOGGLE — moved into menu overlay (see NAVBAR section above for
+// .jlz-sound-toggle / .jlz-sound-bars / .jlz-sound-bar styles).
+// The old floating SoundPanel button (position: fixed bottom-right) was
+// removed — sound now lives inside the menu overlay config toolbar.
 // ════════════════════════════════════════════════════════════════════
 
-.jlz-sound-toggle {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  z-index: 100;
-  display: flex;
-  align-items: flex-end;
-  gap: 3px;
-  width: 36px;
-  height: 36px;
-  padding: 6px 8px;
-  background: transparent;
-  border: 1px solid var(--jlz-border, rgba(255, 255, 255, 0.15));
-  border-radius: 6px;
-  cursor: pointer;
-  transition: border-color 0.2s ease, background 0.2s ease;
-  appearance: none;
-  -webkit-appearance: none;
-}
-
-.jlz-sound-toggle:hover {
-  border-color: var(--jlz-accent, #c4ff00);
-  background: rgba(196, 255, 0, 0.05);
-}
-
-.jlz-sound-toggle:focus-visible {
-  outline: 2px solid var(--jlz-accent, #c4ff00);
-  outline-offset: 2px;
-}
-
-.jlz-sound-bar {
-  display: block;
-  width: 3px;
-  height: 30%;
-  background: var(--jlz-muted, rgba(255, 255, 255, 0.3));
-  border-radius: 1px;
-  transform-origin: bottom;
-  transition: background 0.2s ease, height 0.2s ease;
-}
-
-// Playing state — animated equalizer bars
-.jlz-sound-toggle.is-playing .jlz-sound-bar {
-  background: var(--jlz-accent, #c4ff00);
-  animation: jlz-eq-bounce 800ms ease-in-out infinite alternate;
-}
-
-.jlz-sound-toggle.is-playing .jlz-sound-bar:nth-child(1) { animation-delay: 0ms; }
-.jlz-sound-toggle.is-playing .jlz-sound-bar:nth-child(2) { animation-delay: 150ms; }
-.jlz-sound-toggle.is-playing .jlz-sound-bar:nth-child(3) { animation-delay: 300ms; }
-.jlz-sound-toggle.is-playing .jlz-sound-bar:nth-child(4) { animation-delay: 450ms; }
-
-@keyframes jlz-eq-bounce {
-  0% { height: 20%; }
-  25% { height: 80%; }
-  50% { height: 40%; }
-  75% { height: 95%; }
-  100% { height: 30%; }
-}
-
-// Muted state — flat bars
-.jlz-sound-toggle.is-muted .jlz-sound-bar {
-  height: 30%;
-  background: var(--jlz-muted, rgba(255, 255, 255, 0.3));
-  animation: none;
-}
-
-// Mobile — keep visible but smaller
-@media (max-width: 500px) {
-  .jlz-sound-toggle {
-    bottom: 16px;
-    right: 16px;
-    width: 32px;
-    height: 32px;
-    padding: 5px 6px;
-    gap: 2px;
-  }
-  
-  .jlz-sound-bar {
-    width: 2px;
-  }
-}
-
-// Reduced motion — no animation, just color change
+// Reduced motion — no EQ animation, just color change (applies to the
+// menu-overlay sound toggle).
 @media (prefers-reduced-motion: reduce) {
   .jlz-sound-toggle.is-playing .jlz-sound-bar {
     animation: none;
@@ -1603,85 +1525,54 @@ body.uk-light .jlz-eyebrow {
 }
 
 // ════════════════════════════════════════════════════════════════════
-// NAVBAR — glass-morphism, 3 zones (lang left, logo+sound center, hamburger right)
+// NAVBAR — UIkit3 native centered-logo pattern (uk-navbar-center)
+// See https://getuikit.com/docs/navbar#centered-logo
+// Layout: uk-navbar-center > [uk-navbar-center-left: lang] [uk-navbar-item.uk-logo: logo]
+//                           [uk-navbar-center-right: hamburger]
+// Theme/sound controls live INSIDE the menu overlay (see MENU OVERLAY section).
 // ════════════════════════════════════════════════════════════════════
 
-.jlz-navbar {
-  border-bottom: 1px solid rgba(245, 245, 247, 0.06);
+// Glassmorphism on the navbar container — app-layer styling (NOT a UIKit
+// variable override; @navbar-background stays transparent in _import.less §3).
+// We scope it to .jlz-header so it only applies to OUR header, not any other
+// uk-navbar-container that might appear in blog/landing pages.
+.jlz-header .uk-navbar-container {
+  border-bottom: 1px solid var(--jlz-color-border);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   background: rgba(10, 10, 15, 0.6);
 }
 
-body.uk-light .jlz-navbar {
+body.uk-light .jlz-header .uk-navbar-container {
   background: rgba(245, 245, 247, 0.6);
   border-bottom-color: rgba(10, 10, 15, 0.08);
 }
 
-// Center group — logo + sound
-.jlz-navbar-center-group {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.jlz-navbar-logo {
-  display: flex;
-  align-items: center;
-  text-decoration: none;
-  opacity: 0.85;
-  transition: opacity 0.2s ease;
-}
-
-.jlz-navbar-logo:hover {
-  opacity: 1;
-}
-
+// Logo — uk-navbar-item.uk-logo gives padding + flex; we just size the image.
 .jlz-navbar-logo img {
   width: 28px;
   height: 28px;
   display: block;
 }
 
-// ── Glass-morphism buttons ──
-.jlz-glass-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 36px;
-  height: 36px;
-  padding: 0 0.5rem;
-  border: 1px solid rgba(245, 245, 247, 0.12);
-  border-radius: 8px;
-  background: rgba(245, 245, 247, 0.06);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  color: rgba(245, 245, 247, 0.7);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.jlz-glass-btn:hover {
-  border-color: rgba(196, 255, 0, 0.3);
-  background: rgba(196, 255, 0, 0.08);
-  color: var(--jlz-accent, #c4ff00);
-}
-
-body.uk-light .jlz-glass-btn {
-  border-color: rgba(10, 10, 15, 0.12);
-  background: rgba(10, 10, 15, 0.06);
-  color: rgba(10, 10, 15, 0.7);
-}
-
+// Language label inside uk-icon-button — uppercase mono-style text.
 .jlz-lang-label {
   text-transform: uppercase;
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.05em;
+  line-height: 1;
 }
 
-// ── Sound bars animation (in header) ──
+@media (max-width: 500px) {
+  .jlz-lang-label { font-size: 0.65rem; }
+  .jlz-navbar-logo img { width: 24px; height: 24px; }
+}
+
+// ── Sound EQ-bars (used inside uk-icon-button in the menu overlay) ──
+// Custom visual per project decision — UIKit3 has no EQ-bars icon.
+// Container is .jlz-sound-bars (4 spans); state via .is-playing / .is-muted
+// on the parent .jlz-sound-toggle button.
 .jlz-sound-bars {
   display: flex;
   align-items: flex-end;
@@ -1689,24 +1580,26 @@ body.uk-light .jlz-glass-btn {
   height: 16px;
 }
 
-.jlz-glass-btn.jlz-sound-toggle .jlz-sound-bar {
+.jlz-sound-toggle .jlz-sound-bar {
   display: block;
   width: 3px;
   height: 30%;
-  background: rgba(245, 245, 247, 0.3);
+  background: currentColor;
+  opacity: 0.4;
   border-radius: 1px;
-  transition: background 0.2s ease, height 0.2s ease;
+  transition: opacity 0.2s ease, height 0.2s ease;
 }
 
-.jlz-glass-btn.jlz-sound-toggle.is-playing .jlz-sound-bar {
-  background: var(--jlz-accent, #c4ff00);
+.jlz-sound-toggle.is-playing .jlz-sound-bar {
+  opacity: 1;
+  background: @global-primary-background;
   animation: jlz-sound-eq 800ms ease-in-out infinite alternate;
 }
 
-.jlz-glass-btn.jlz-sound-toggle.is-playing .jlz-sound-bar:nth-child(1) { animation-delay: 0ms; }
-.jlz-glass-btn.jlz-sound-toggle.is-playing .jlz-sound-bar:nth-child(2) { animation-delay: 150ms; }
-.jlz-glass-btn.jlz-sound-toggle.is-playing .jlz-sound-bar:nth-child(3) { animation-delay: 300ms; }
-.jlz-glass-btn.jlz-sound-toggle.is-playing .jlz-sound-bar:nth-child(4) { animation-delay: 450ms; }
+.jlz-sound-toggle.is-playing .jlz-sound-bar:nth-child(1) { animation-delay: 0ms; }
+.jlz-sound-toggle.is-playing .jlz-sound-bar:nth-child(2) { animation-delay: 150ms; }
+.jlz-sound-toggle.is-playing .jlz-sound-bar:nth-child(3) { animation-delay: 300ms; }
+.jlz-sound-toggle.is-playing .jlz-sound-bar:nth-child(4) { animation-delay: 450ms; }
 
 @keyframes jlz-sound-eq {
   0% { height: 20%; }
@@ -1716,24 +1609,40 @@ body.uk-light .jlz-glass-btn {
   100% { height: 30%; }
 }
 
-.jlz-glass-btn.jlz-sound-toggle.is-muted .jlz-sound-bar {
+.jlz-sound-toggle.is-muted .jlz-sound-bar {
   height: 30%;
-  background: rgba(245, 245, 247, 0.25);
+  opacity: 0.35;
   animation: none;
 }
 
-body.uk-light .jlz-glass-btn.jlz-sound-toggle .jlz-sound-bar {
-  background: rgba(10, 10, 15, 0.3);
+// ── Menu overlay config toolbar (theme toggle + sound toggle) ──
+// uk-icon-button gives the square 36px base + QF hover. We add spacing.
+.jlz-menu-toolbar {
+  gap: 0.75rem;
 }
 
-body.uk-light .jlz-glass-btn.jlz-sound-toggle.is-muted .jlz-sound-bar {
-  background: rgba(10, 10, 15, 0.2);
+.jlz-menu-toolbar .uk-icon-button {
+  // Slightly larger hit area for the two settings buttons
+  width: 40px;
+  height: 40px;
 }
 
-@media (max-width: 500px) {
-  .jlz-lang-label { font-size: 0.65rem; }
-  .jlz-glass-btn { min-width: 32px; height: 32px; }
-  .jlz-navbar-logo img { width: 24px; height: 24px; }
+// Theme icon (sun/moon) — inline SVGs (UIKit3 has no sun/moon icons).
+// Both SVGs live in the button; .is-inverse class on the button toggles
+// which is visible. Both use currentColor so uk-light/uk-dark auto-flip works.
+.jlz-theme-toggle .jlz-theme-svg {
+  display: none;
+  color: inherit;
+}
+
+// auto mode (default) → show sun
+.jlz-theme-toggle:not(.is-inverse) .jlz-theme-svg--sun {
+  display: block;
+}
+
+// inverse mode → show moon
+.jlz-theme-toggle.is-inverse .jlz-theme-svg--moon {
+  display: block;
 }
 
 // ════════════════════════════════════════════════════════════════════

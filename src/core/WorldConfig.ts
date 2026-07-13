@@ -145,8 +145,8 @@ type RawScene = {
   sceneTransition?: SceneControl['transition']
 }
 
-// 6 sections (4 main + 2 secret side: Lab=0, Process=5) — 1:1 with cube faces
-// Index: 0=lab, 1=intro, 2=about, 3=works, 4=contact, 5=process
+// 6 sections (4 main + 2 secret side: Lab=0, Menu=5) — 1:1 with cube faces
+// Index: 0=lab, 1=intro, 2=about, 3=works, 4=contact, 5=menu
 const RAW: RawScene[] = [
   // ── Section 0: LAB (secret left) — Light BG, experiments ──
   {
@@ -331,11 +331,11 @@ const RAW: RawScene[] = [
     sceneObjects: { wireframeText: true },
     sceneTransition: { duration: 0.6, easing: 'ease-out' },
   },
-  // ── Section 5: PROCESS (secret right) — Dark BG, workflow timeline ──
+  // ── Section 5: MENU (secret right) — Dark BG, navigation overlay ──
   {
-    id: 'sec_process',
-    context: 'PROCESS — Workflow',
-    domSection: 'process',
+    id: 'sec_menu',
+    context: 'MENU — Navigation',
+    domSection: 'menu',
     range: [5 / 5, 6 / 5],
     camPos: [0, 0, 3.5],
     camTarget: [0, 0, 0],

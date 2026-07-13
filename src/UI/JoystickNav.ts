@@ -26,11 +26,11 @@
 
 // (JoystickNavOptions removed — _opts param never read, YAGNI)
 
-// WorldConfig section indices (6 total: Lab=0, Intro=1, About=2, Works=3, Contact=4, Process=5)
+// WorldConfig section indices (6 total: Lab=0, Intro=1, About=2, Works=3, Contact=4, Menu=5)
 const LAB_INDEX = 0
 const INTRO_INDEX = 1
 const CONTACT_INDEX = 4
-const PROCESS_INDEX = 5
+const MENU_INDEX = 5
 const FIRST_MAIN = INTRO_INDEX
 const LAST_MAIN = CONTACT_INDEX
 
@@ -39,7 +39,7 @@ const TRIGGER_DISTANCE = 35
 const DEAD_ZONE = 6
 const BALL_RETURN_MS = 200
 
-type SideState = 'center' | 'lab' | 'process'
+type SideState = 'center' | 'lab' | 'menu'
 
 export class JoystickNav {
   public el: HTMLDivElement
@@ -83,8 +83,8 @@ export class JoystickNav {
     const directions: Array<{ cls: string; label: string; icon: string }> = [
       { cls: 'up', label: 'Previous section', icon: 'triangle-up' },
       { cls: 'down', label: 'Next section', icon: 'triangle-down' },
-      { cls: 'left', label: 'Lab (secret)', icon: 'triangle-left' },
-      { cls: 'right', label: 'Process (secret)', icon: 'triangle-right' },
+      { cls: 'left', label: 'Lab experiments', icon: 'triangle-left' },
+      { cls: 'right', label: 'Menu', icon: 'triangle-right' },
     ]
     for (const dir of directions) {
       const arrow = document.createElement('span')
@@ -115,7 +115,7 @@ export class JoystickNav {
   /** Current WorldConfig section index (what Experience/World reads). */
   private get _currentSection(): number {
     if (this._side === 'lab') return LAB_INDEX
-    if (this._side === 'process') return PROCESS_INDEX
+    if (this._side === 'menu') return MENU_INDEX
     return this._mainSection
   }
 
@@ -126,8 +126,6 @@ export class JoystickNav {
     window.addEventListener('jlz:route-change', this._routeChangeHandler)
 
     this._pointerDownHandler = (e: PointerEvent) => {
-      const menu = document.getElementById('jlz-menu-modal')
-      if (menu && menu.classList.contains('uk-open')) return
       e.preventDefault()
       this._isDragging = true
       this._hasTriggered = false
@@ -197,8 +195,6 @@ export class JoystickNav {
     this._keydownHandler = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA') return
-      const menu = document.getElementById('jlz-menu-modal')
-      if (menu && menu.classList.contains('uk-open')) return
       if (e.key === 'ArrowDown') {
         e.preventDefault()
         this._navigateVertical(1)
@@ -319,18 +315,18 @@ export class JoystickNav {
       return
     }
     if (dir === 1) {
-      // Right: center → Process, Lab → center
+      // Right: center → Menu, Lab → center
       if (this._side === 'center') {
-        this._side = 'process'
+        this._side = 'menu'
       } else if (this._side === 'lab') {
         this._side = 'center'
       }
-      // If already in Process, stay (no-op)
+      // If already in Menu, stay (no-op)
     } else {
-      // Left: center → Lab, Process → center
+      // Left: center → Lab, Menu → center
       if (this._side === 'center') {
         this._side = 'lab'
-      } else if (this._side === 'process') {
+      } else if (this._side === 'menu') {
         this._side = 'center'
       }
       // If already in Lab, stay (no-op)
@@ -444,8 +440,8 @@ export class JoystickNav {
     // Map WorldConfig index back to main/side state
     if (index === LAB_INDEX) {
       this._side = 'lab'
-    } else if (index === PROCESS_INDEX) {
-      this._side = 'process'
+    } else if (index === MENU_INDEX) {
+      this._side = 'menu'
     } else {
       this._side = 'center'
       this._mainSection = index
@@ -490,7 +486,7 @@ export class JoystickNav {
     this._onSectionChange?.(sliderIdx)
     // Update dotnav to reflect the active main section
     this._mainSection = nextIndex
-    this._side = nextIndex === 0 ? 'lab' : nextIndex === 5 ? 'process' : 'center'
+    this._side = nextIndex === 0 ? 'lab' : nextIndex === 5 ? 'menu' : 'center'
     this._updateDotnav()
     window.dispatchEvent(new CustomEvent('jlz:page-section-change', {
       detail: { index: nextIndex, count: sections.length },

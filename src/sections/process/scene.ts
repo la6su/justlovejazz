@@ -1,12 +1,12 @@
-// Section5 — Process (secret right): TimelineNodes — 4 instanced spheres
-// arranged vertically, mirroring the DOM .jlz-timeline below. Each node
-// breathes (phase-offset scale pulse) so the face has a living 3D anchor.
+// Section5 — Menu (secret right, nav overlay): TimelineNodes — 4 instanced spheres
+// arranged vertically. Each node breathes (phase-offset scale pulse) so the
+// face has a living 3D anchor behind the nav overlay.
 import * as THREE from 'three'
 import { TimelineNodes } from '../../Experience/World/TimelineNodes'
 
 export function createSection5(): THREE.Group {
   const g = new THREE.Group()
-  g.name = 'process'
+  g.name = 'menu'
 
   const nodes = new TimelineNodes(0.08)
   nodes.position.set(0, 0, -2)
