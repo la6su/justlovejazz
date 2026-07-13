@@ -36,6 +36,7 @@ function workCard(
   return `
     <button class="jlz-work-card" type="button" data-project-idx="${idx}"
             aria-label="Open project: ${title}"
+            data-cursor="view" data-magnetic
             style="--jlz-card-accent: ${accent}">
       <div class="jlz-work-card__inner">
         <div class="jlz-work-card__image" style="background-image: url('${cover}')"></div>
