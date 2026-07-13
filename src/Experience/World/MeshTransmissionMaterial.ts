@@ -107,37 +107,34 @@ export class MeshTransmissionMaterial extends THREE.MeshPhysicalMaterial {
       \n` + shader.vertexShader
 
       // Inject wobble displacement after 'begin_vertex' (where transformed = position is set)
-      // ── EXACT day34 pattern, scaled for our cube size ──
+      // ── day34 pattern, smoothed for organic jelly (synced with TSL WebGPU path) ──
       // day34 (cube=16, np=0.12, uWobble=1.30):
       //   np = pos * 0.12  (2 periods per face)
-      //   n1 = mx_noise(np + t*0.3) * 0.5
-      //   n2 = mx_noise(np*2.5 + t*0.5 + 7) * 0.2
-      //   n3 = mx_noise(np*5 + t*0.8 + 13) * 0.1
-      //   displacement = (n1+n2+n3) * uWobble
-      //   squash = sin(t*0.4) * 0.08 * uWobble
-      //   breathe = sin(t*0.7 + pos.y*0.3) * 0.12 * uWobble
-      //   pos += normal * (displacement + breathe)
-      //   pos.y += pos.y * squash
+      //   3-octave noise (0.5/0.2/0.1) + squash + breathe
       //
-      // Our cube=0.8 (20x smaller): NOISE_FREQ=2.4 (2 periods/face), SIZE_SCALE=0.12.
-      // squash/breathe NOT scaled (proportional to pos.y — works at any size).
+      // Our smoothing tweaks (VLM: "make smoother"):
+      //   - n3 amplitude 0.1 → 0.06 (reduce high-freq crunch)
+      //   - n2 amplitude 0.2 → 0.18 (slightly reduce mid-freq)
+      //   - Time speeds reduced (0.3→0.25, 0.5→0.4, 0.8→0.65) for slower motion
+      //   - Squash freq 0.4 → 0.3, Breathe freq 0.7 → 0.55
+      // Our cube=0.8 (20x smaller): NOISE_FREQ=2.4 (2 periods/face), SIZE_SCALE=0.10.
       shader.vertexShader = shader.vertexShader.replace(
         '#include <begin_vertex>',
         /*glsl*/ `
         vec3 transformed = vec3( position );
-        const float SIZE_SCALE = 0.08;       // displacement amplitude
+        const float SIZE_SCALE = 0.10;       // displacement amplitude (synced with TSL)
         const float NOISE_FREQ = 2.4;        // 0.12 * (16/0.8) → 2 periods/face
         float t = time;                       // raw time (day34)
         vec3 np = position * NOISE_FREQ;
-        // 3-octave noise (day34 exact — amplitudes 0.5/0.2/0.1)
-        float n1 = snoise(np + vec3(t * 0.3, 0.0, 0.0)) * 0.5;
-        float n2 = snoise(np * 2.5 + vec3(0.0, t * 0.5, 7.0)) * 0.2;
-        float n3 = snoise(np * 5.0 + vec3(0.0, 0.0, t * 0.8 + 13.0)) * 0.1;
+        // 3-octave noise (day34 pattern, smoothed amplitudes)
+        float n1 = snoise(np + vec3(t * 0.25, 0.0, 0.0)) * 0.5;
+        float n2 = snoise(np * 2.5 + vec3(0.0, t * 0.4, 7.0)) * 0.18;
+        float n3 = snoise(np * 5.0 + vec3(0.0, 0.0, t * 0.65 + 13.0)) * 0.06;
         float displacement = (n1 + n2 + n3) * wobble;
-        // squash + breathe (day34 exact)
-        float squash = sin(t * 0.4) * 0.08 * wobble;
-        float breathe = sin(t * 0.7 + position.y * 0.3) * 0.12 * wobble;
-        // Apply — displacement scaled, squash proportional (day34 exact)
+        // squash + breathe (day34 pattern, slowed for smoother motion)
+        float squash = sin(t * 0.3) * 0.08 * wobble;
+        float breathe = sin(t * 0.55 + position.y * 0.3) * 0.12 * wobble;
+        // Apply — displacement scaled, squash proportional
         transformed += normal * (displacement + breathe) * SIZE_SCALE;
         transformed.y += transformed.y * squash;
         `
