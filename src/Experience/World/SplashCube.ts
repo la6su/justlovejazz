@@ -230,9 +230,13 @@ export class SplashCube extends THREE.Mesh {
     // MeshTransmissionMaterial custom uniforms
     this.cubeMaterial.chromaticAberration = 0.05
     this.cubeMaterial.anisotrophicBlur = 0.1
-    this.cubeMaterial.distortion = 0.0
-    this.cubeMaterial.distortionScale = 0.5
-    this.cubeMaterial.temporalDistortion = 0.0
+    // Wobble — noise-based normal distortion (works on BOTH WebGL2 + WebGPU
+    // via onBeforeCompile GLSL injection). distortion = amplitude,
+    // distortionScale = noise frequency, temporalDistortion = animation speed.
+    // Subtle values to avoid cube sides collapsing inward.
+    this.cubeMaterial.distortion = 0.2
+    this.cubeMaterial.distortionScale = 0.3
+    this.cubeMaterial.temporalDistortion = 0.1
 
     this.cubeMesh = new THREE.Mesh(geo, this.cubeMaterial)
     this.cubeMesh.renderOrder = 2
