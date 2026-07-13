@@ -1,14 +1,25 @@
-// UIMenu.ts — Header with 3 zones: RU/EN left, logo+sound center, hamburger right.
+// UIMenu.ts — Header navbar (UIkit3 native centered-logo pattern).
 //
-// Glass-morphism style (backdrop-filter blur, semi-transparent bg).
-// Hamburger → opens navigation overlay section (joystick right, section 5).
+// Layout (official UIkit3 navbar#centered-logo):
+//   uk-navbar-container > uk-container > uk-navbar > uk-navbar-center >
+//     [uk-navbar-center-left: lang] [uk-navbar-item.uk-logo: logo]
+//     [uk-navbar-center-right: hamburger toggle]
+//
+// - lang: uk-icon-button (text "EN"/"RU" inside) — switches EN ↔ RU
+// - logo: uk-navbar-item uk-logo — centered, links to "/"
+// - hamburger: uk-navbar-toggle (native UIkit3) — opens menu overlay (section 5)
+//
+// Theme + sound controls live INSIDE the menu overlay (see nav/template.ts),
+// not in the header — header stays minimal per project decision.
+//
+// Uses QF-themed UIKit3 components (uk-icon-button, uk-navbar-toggle) — NO
+// custom .jlz-glass-btn. See docs/UIKIT3.md §3 (centered-logo pattern).
 
 import { toggleLang, getLang } from '../core/i18n'
 
 export class UIMenu {
   private navEl: HTMLElement
   private _langBtn: HTMLButtonElement | null = null
-  private _soundBtn: HTMLButtonElement | null = null
   private _hamburgerBtn: HTMLButtonElement | null = null
   private _langHandler: (() => void) | null = null
 
@@ -21,71 +32,64 @@ export class UIMenu {
     app.appendChild(this.navEl)
 
     this._langBtn = this.navEl.querySelector<HTMLButtonElement>('#jlz-lang-toggle')
-    this._soundBtn = this.navEl.querySelector<HTMLButtonElement>('#jlz-navbar-sound')
     this._hamburgerBtn = this.navEl.querySelector<HTMLButtonElement>('#jlz-hamburger')
 
-    // Language toggle
+    // Language toggle — calls i18n.toggleLang() which persists + fires jlz:lang-change
     this._langBtn?.addEventListener('click', () => toggleLang())
 
-    // Sound toggle — animated bars + syncs with SoundPanel
-    let soundMuted = true
-    this._soundBtn?.addEventListener('click', () => {
-      soundMuted = !soundMuted
-      this.updateSoundState(soundMuted)
-      window.dispatchEvent(new CustomEvent('jlz:sound-toggle', { detail: { muted: soundMuted } }))
-    })
-
-    // Hamburger → navigate to section 5 (navigation overlay)
+    // Hamburger → open menu overlay (section 5 on all pages)
     this._hamburgerBtn?.addEventListener('click', () => {
       window.dispatchEvent(new CustomEvent('jlz:goto-nav'))
-    })
-
-    // Listen for external sound toggles (from SoundPanel)
-    window.addEventListener('jlz:sound-toggle', (e: Event) => {
-      const detail = (e as CustomEvent<{ muted: boolean }>).detail
-      if (detail) {
-        soundMuted = detail.muted
-        this.updateSoundState(soundMuted)
-      }
     })
 
     this._langHandler = () => this.updateLangLabel()
     window.addEventListener('jlz:lang-change', this._langHandler)
 
     this.updateLangLabel()
-    this.updateSoundState(soundMuted)
   }
 
-  /** Build navbar — 3 zones: left (lang), center (logo + sound), right (hamburger). */
+  /** Build navbar — UIkit3 3-zone pattern (uk-navbar-left/center/right).
+   *  - uk-navbar-left:   language switch (anchored to left edge of container)
+   *  - uk-navbar-center: logo (centered in the container)
+   *  - uk-navbar-right:  hamburger toggle (anchored to right edge of container)
+   *
+   *  We use the 3-zone layout (not the "centered-logo" split-menu pattern)
+   *  because we have only ONE item per side and want them pinned to the
+   *  container edges, not clustered around the logo.
+   *  See https://getuikit.com/docs/navbar#alignment */
   private buildNavbar(): string {
     return `
-      <nav class="uk-navbar-container uk-navbar-transparent jlz-navbar" uk-navbar>
-        <div class="uk-container uk-container-expand uk-flex uk-flex-between uk-flex-middle">
-          <!-- Left: RU/EN switch -->
-          <div class="uk-navbar-left">
-            <button class="jlz-glass-btn jlz-lang-toggle" type="button" id="jlz-lang-toggle" aria-label="Switch language">
-              <span class="jlz-lang-label">EN</span>
-            </button>
-          </div>
-          <!-- Center: SVG logo + sound toggle -->
-          <div class="uk-navbar-center jlz-navbar-center-group">
-            <a href="/" class="jlz-navbar-logo" aria-label="JUSTLOVEJAZZ home">
-              <img src="/logo.svg" alt="JUSTLOVEJAZZ" width="28" height="28" />
-            </a>
-            <button class="jlz-glass-btn jlz-sound-toggle" type="button" id="jlz-navbar-sound" aria-label="Toggle sound" aria-pressed="true">
-              <span class="jlz-sound-bars" aria-hidden="true">
-                <span class="jlz-sound-bar"></span>
-                <span class="jlz-sound-bar"></span>
-                <span class="jlz-sound-bar"></span>
-                <span class="jlz-sound-bar"></span>
-              </span>
-            </button>
-          </div>
-          <!-- Right: Hamburger -->
-          <div class="uk-navbar-right">
-            <button class="jlz-glass-btn jlz-hamburger" type="button" id="jlz-hamburger" aria-label="Open navigation">
-              <span uk-icon="icon: menu; ratio: 1.2" aria-hidden="true"></span>
-            </button>
+      <nav class="uk-navbar-container uk-navbar-transparent">
+        <div class="uk-container uk-container-expand">
+          <div uk-navbar>
+            <!-- LEFT: language switch -->
+            <div class="uk-navbar-left">
+              <ul class="uk-navbar-nav">
+                <li>
+                  <button class="uk-icon-button jlz-lang-toggle" type="button" id="jlz-lang-toggle"
+                          aria-label="Switch language" title="Language"
+                          uk-tooltip="pos: bottom; delay: 200">
+                    <span class="jlz-lang-label">EN</span>
+                  </button>
+                </li>
+              </ul>
+            </div>
+            <!-- CENTER: logo (uk-navbar-item uk-logo — official UIkit3 logo slot) -->
+            <div class="uk-navbar-center">
+              <a class="uk-navbar-item uk-logo jlz-navbar-logo" href="/" aria-label="JUSTLOVEJAZZ home">
+                <img src="/logo.svg" alt="JUSTLOVEJAZZ" width="28" height="28" />
+              </a>
+            </div>
+            <!-- RIGHT: hamburger toggle (native uk-navbar-toggle) -->
+            <div class="uk-navbar-right">
+              <ul class="uk-navbar-nav">
+                <li>
+                  <button class="uk-navbar-toggle" type="button" id="jlz-hamburger"
+                          aria-label="Open navigation" uk-navbar-toggle-icon
+                          uk-tooltip="pos: bottom; delay: 200; title: Menu"></button>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </nav>
@@ -99,12 +103,6 @@ export class UIMenu {
     const lang = getLang()
     const label = this._langBtn?.querySelector('.jlz-lang-label')
     if (label) label.textContent = lang
-  }
-
-  private updateSoundState(muted: boolean): void {
-    this._soundBtn?.setAttribute('aria-pressed', String(muted))
-    this._soundBtn?.classList.toggle('is-muted', muted)
-    this._soundBtn?.classList.toggle('is-playing', !muted)
   }
 
   dispose(): void {

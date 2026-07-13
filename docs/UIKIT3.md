@@ -126,21 +126,107 @@ signature of the works page.
    not to a section.
 10. **`uk-grid` has no gap** — use `.jlz-flex-gap-small` / `.jlz-flex-gap-large`
     custom utilities (UIKit uk-flex has no gap control).
+11. **`uk-navbar` attribute goes on the INNER `<div>`, NOT on `<nav class="uk-navbar-container">`** —
+    the navbar component applies `display:flex` + the left/center/right margin-auto
+    layout to the element with the `uk-navbar` attribute. If you put it on `<nav>`,
+    the inner `uk-container` (`display: flow-root`) breaks the flex chain and all
+    three zones collapse to the center. Correct structure (verbatim from
+    https://getuikit.com/docs/navbar):
+    ```html
+    <nav class="uk-navbar-container uk-navbar-transparent">
+      <div class="uk-container uk-container-expand">
+        <div uk-navbar>
+          <div class="uk-navbar-left">…</div>
+          <div class="uk-navbar-center">…</div>
+          <div class="uk-navbar-right">…</div>
+        </div>
+      </div>
+    </nav>
+    ```
+    Verified geometry (1280px viewport): `lang.left=40`, `logo.centerX=640=nav.centerX`,
+    `hamburger.right=1240`. Logo is pixel-exact centered; side items pinned to
+    container padding edges.
+12. **3-zone vs centered-logo split-menu** — UIkit3 ships TWO navbar layouts:
+    - **3-zone** (`uk-navbar-left` + `uk-navbar-center` + `uk-navbar-right`): each
+      zone is a flex child; `uk-navbar-right { margin-left: auto }` pins right to
+      the edge; center sits between. Use when you have ONE item per side and want
+      them at the container edges. THIS IS WHAT WE USE.
+    - **Centered-logo** (`uk-navbar-center > [uk-navbar-center-left, uk-logo, uk-navbar-center-right]`):
+      all three live INSIDE `uk-navbar-center`; logo is pixel-centered but side
+      items cluster around it, not at container edges. Use for split menus with
+      many items per side.
+    Pick ONE; do not mix. Mixing produces a centered cluster with side items
+    floating in the middle of the bar.
+13. **UIKit3 does NOT ship `sun` / `moon` icons** — the icon library
+    (162 icons in `uikit/dist/js/uikit-icons.js`) has `paint-bucket`, `bolt`,
+    `eye`, `eye-slash`, `star`, but no celestial icons. For theme toggles use
+    inline SVG (we use Material Design Icons, Apache 2.0) and toggle visibility
+    via a state class (`.is-inverse` on the button). Do NOT use `uk-icon="icon: sun"`
+    — it silently renders nothing.
+14. **`UIkit.icon(el, opts)` creates a component but does NOT retro-render SVG
+    in hidden sections** — UIKit3's icon component defers SVG injection until
+    the element is visible. If you dynamically insert `uk-icon` markup into a
+    `display:none` section (our secret side overlays), the SVG never appears
+    even after the section becomes visible. Workaround: inline SVG in the
+    template string (see §13) so no JS rendering is needed.
+15. **`UIkit.update(el)` does NOT re-scan for new `uk-*` attributes** — it only
+    refreshes already-initialized components. If you add a `uk-icon` attribute
+    to an existing element via `setAttribute`, you must call `UIkit.icon(el).$setOption('icon', name)`
+    or replace the element. Inline SVG (§13) avoids this entirely.
+16. **`.jlz-glass-btn` was a duplicate of `uk-button` / `uk-icon-button`** —
+    the old custom class redefined background, border, backdrop-filter, hover
+    state, bypassing the QF `@global-primary-background` cascade. REMOVED in
+    the navbar-conformance refactor. Use `uk-button uk-button-default` (text
+    buttons) or `uk-icon-button` (icon buttons) and customize via
+    `.hook-button-default()` / `.hook-icon-button()` in `_import.less` if needed.
+17. **`#jlz-menu-modal` is dead** — the old UIKit modal navbar dropdown was
+    replaced by a section-5 nav overlay (joystick right / hamburger click).
+    Any guard checking `#jlz-menu-modal.uk-open` is a no-op; replace with
+    `[data-section="menu"].section-active, [data-page-section="page-menu"].section-active`
+    if you need to detect the open state.
+18. **`@navbar-color-mode: dark` (in `_theme-fixes.less`) is the canonical way
+    to make navbar text flip in inverse mode** — do NOT write
+    `body.uk-light .uk-navbar-nav > li > a { color: … }` overrides. The color-mode
+    variable + `uk-light` class on `<body>` handle it automatically via UIKit's
+    Inverse component.
+19. **`.hook-navbar-container()` is the right place for glassmorphism** —
+    `backdrop-filter`, semi-transparent background, and border belong in the
+    `.hook-navbar-container()` mixin in `_import.less §3` (or scoped to
+    `.jlz-header .uk-navbar-container` in `main.less` if you want it ONLY on
+    our header). Do NOT override `@navbar-background` with a complex rgba+blur
+    expression — keep `@navbar-background: transparent` and add visual styling
+    in the hook / app-layer CSS.
+20. **Accordion: use `.hook-accordion-default-title()` for hover colors** —
+    the `.jlz-nav-accordion` block in `main.less` has a legit custom grid layout
+    for `num/label/desc` (UIKit has no equivalent) but its hover-color and
+    chevron rules should ideally go through `.hook-accordion-default-title-hover()`
+    and `.hook-accordion-default-icon()`. We keep them as scoped CSS
+    (`.jlz-nav-accordion__header:hover`) for now because the grid layout
+    requires custom selectors anyway — but do not add MORE color overrides
+    there; extend the hooks instead.
 
 ## 8. When to add a custom class vs. use UIKit
 
 | Need | Use |
 | --- | --- |
 | Button | `uk-button uk-button-default` / `uk-button-primary` (QF glow) |
+| Icon button (square) | `uk-icon-button` (QF styled, 36px, circle) |
 | Card | `uk-card uk-card-default uk-card-hover` (QF glassmorphism) |
 | Grid | `uk-grid uk-child-width-1-2@s uk-child-width-1-4@m` |
-| Icon | `uk-icon="icon: bolt; ratio: 1.5"` |
+| Icon | `uk-icon="icon: bolt; ratio: 1.5"` (built-in 162 icons; NO sun/moon — use inline SVG) |
 | Section padding | `uk-section uk-section-small uk-section-large@m` |
-| Navbar | `uk-navbar-container uk-navbar-transparent` + `uk-navbar-dropdown` |
+| Navbar (3-zone) | `<nav uk-navbar-container><div uk-container><div uk-navbar>[left/center/right]</div></div></nav>` |
+| Navbar (centered split-menu) | `uk-navbar-center > [uk-navbar-center-left, uk-logo, uk-navbar-center-right]` |
+| Hamburger toggle | `uk-navbar-toggle` + `uk-navbar-toggle-icon` (native, do NOT custom-build) |
 | Modal/dialog | `uk-modal` (or custom `#project-overlay` for fullscreen) |
+| Accordion | `uk-accordion` + `uk-accordion-title` + `uk-accordion-content` (init via `UIkit.accordion(el, opts)` on dynamic DOM) |
+| Tooltip | `uk-tooltip="pos: bottom; delay: 200; title: ..."` |
 | Eyebrow text | `.jlz-eyebrow` (custom — TUI terminal style, monospace) |
 | Numeral | `.jlz-numeral` (custom — min-width + opacity) |
 | Flex gap | `.jlz-flex-gap-small` / `.jlz-flex-gap-large` (custom — UIKit has no gap) |
 | Works 3D card | `.jlz-work-card` (custom — CSS 3D perspective tilt, no UIKit equivalent) |
 | Joystick | `.jlz-joystick` (custom — 3D nav, no UIKit equivalent) |
 | CTA pill | `.jlz-service-explore` (custom — pill button + accent dot) |
+| Theme toggle (sun/moon) | `uk-icon-button` + inline SVG (UIKit has no sun/moon icons) |
+| Sound toggle (EQ-bars) | `uk-icon-button` + `.jlz-sound-bars` custom spans (UIKit has no EQ icon) |
+| Config toolbar | `.jlz-menu-toolbar` (custom container; children are `uk-icon-button`) |

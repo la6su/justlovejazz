@@ -22,12 +22,12 @@ export const PAGE_REVEAL = 'uk-scrollspy="cls: uk-animation-fade; delay: 120; ta
 //   2     | About    | Right (+X)   | right          | dark
 //   3     | Works    | Back (-Z)    | away           | dark (carousel)
 //   4     | Contact  | Bottom (-Y)  | down           | light
-//   5     | Process  | Left (-X)    | left           | dark (secret right)
+//   5     | Menu     | Left (-X)    | left           | dark (secret right, nav overlay)
 //
 // Navigation: JoystickNav vertical cycles 1→2→3→4 (main sections),
-// horizontal toggles 0 (Lab) ↔ center ↔ 5 (Process) (secret side sections).
+// horizontal toggles 0 (Lab) ↔ center ↔ 5 (Menu) (secret side sections).
 
-export type SectionId = 'lab' | 'intro' | 'about' | 'works' | 'contact' | 'process'
+export type SectionId = 'lab' | 'intro' | 'about' | 'works' | 'contact' | 'menu'
 // Works section
 // (cube face 3, back -Z). It's kept for backward compat — renaming would
 // touch Phase enum (types.ts), WorldConfig id, PostProcessingManager keys,

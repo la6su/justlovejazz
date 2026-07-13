@@ -1,10 +1,9 @@
 import UIkit from 'uikit'
 import Icons from 'uikit/dist/js/uikit-icons'
-import { SoundPanel } from './SoundPanel'
 import { ShowreelModal } from './ShowreelModal'
+import { wireMenuToolbarGlobals } from '../sections/nav/toolbar'
 
 export class UIManager {
-  public soundPanel: SoundPanel | null = null
   public showreelModal: ShowreelModal | null = null
   private _showreelHandler: (() => void) | null = null
 
@@ -17,8 +16,11 @@ export class UIManager {
 
   /** Initialize UI components (call after DOM ready). */
   init(): void {
-    this.soundPanel = new SoundPanel()
     this.showreelModal = new ShowreelModal()
+
+    // Wire global listeners for the menu-overlay config toolbar
+    // (theme toggle + sound toggle). Per-render init happens in router.ts.
+    wireMenuToolbarGlobals()
 
     // Wire showreel play button (intro section)
     this._showreelHandler = () => {
@@ -36,8 +38,6 @@ export class UIManager {
 
   /** Clean up UI components. */
   dispose(): void {
-    this.soundPanel?.dispose()
-    this.soundPanel = null
     this.showreelModal?.dispose()
     this.showreelModal = null
   }

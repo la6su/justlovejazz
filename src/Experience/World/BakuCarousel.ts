@@ -21,14 +21,18 @@
 // this component renders the carousel cards on top, independently.
 
 import * as THREE from 'three'
-// uiChrome.ts removed — inline the guard here
+// uiChrome.ts removed — inline the guard here.
+// #jlz-menu-modal no longer exists (menu is now section 5 / page-menu overlay).
+// Guard against: joystick, project overlay, app loader, and the menu overlay
+// itself (data-section="menu" on home, data-page-section="page-menu" on content).
 function isUiChromeEvent(e: Event): boolean {
   const target = e.target as HTMLElement | null
   if (!target) return false
-  return !!target.closest('#joystick-nav, #jlz-menu-modal, #project-overlay, #jlz-app-loader')
+  return !!target.closest('#joystick-nav, #project-overlay, #jlz-app-loader, [data-section="menu"], [data-page-section="page-menu"]')
 }
 function isMenuOpen(): boolean {
-  return !!document.querySelector('#jlz-menu-modal.uk-open')
+  // Menu overlay is active when its section has .section-active
+  return !!document.querySelector('[data-section="menu"].section-active, [data-page-section="page-menu"].section-active')
 }
 import { PROJECTS } from '../../Data/Projects'
 import { createRoundedRectGeometry } from '../../Utils/roundedRectGeometry'

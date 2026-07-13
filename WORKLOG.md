@@ -1,4 +1,142 @@
 
+## 2026-07-13 — UIkit3 navbar conformance + Menu overlay toolbar
+
+### Context
+
+Audit of UIkit3 / YOOtheme Pro conformance revealed 6 issues:
+1. Navbar used custom `.jlz-glass-btn` + non-official `uk-navbar-center` group
+   (logo + sound clustered together, not centered).
+2. Theme toggle UI button was MISSING (ThemeManager existed but no button
+   wired to `themeManager.toggle()`).
+3. Sound button was in the navbar center group; user wanted it in the menu
+   overlay.
+4. `.jlz-glass-btn` duplicated `uk-button` / `uk-icon-button`, bypassing the
+   QF `@global-primary-background` cascade.
+5. `.jlz-navbar` redefined background/border/backdrop-filter that QF already
+   provides via `@navbar-background`.
+6. Dead `#jlz-menu-modal` references in JoystickNav, BakuCarousel, Cursor
+   (modal was replaced by section-5 nav overlay in PLAN-v3 but guards stayed).
+
+### Done
+
+- **Phase 1a — dead code removed**
+  - Deleted `src/sections/process/template.ts` (unused — `navOverlaySection`
+    replaced it in PLAN-v3).
+  - Deleted `src/sections/nav/scene.ts` (unused — `createSection5` is imported
+    from `src/sections/process/scene.ts`).
+  - Removed `#jlz-menu-modal` guards from `JoystickNav.ts` (pointerdown +
+    keydown) and `BakuCarousel.ts` (`isUiChromeEvent`, `isMenuOpen`).
+  - `Cursor.ts` large-menu selector now targets `.jlz-nav-accordion__header,
+    .jlz-nav-accordion__sub, [data-section="menu"], [data-page-section="page-menu"]`.
+
+- **Phase 1b — Process → Menu rename (semantic)**
+  - `SectionId` type: `'process'` → `'menu'`.
+  - `WorldConfig` section 5: `id: 'sec_menu'`, `domSection: 'menu'`,
+    `context: 'MENU — Navigation'`.
+  - `process/scene.ts`: `g.name = 'menu'`.
+  - `JoystickNav`: `SideState = 'center' | 'lab' | 'menu'`,
+    `PROCESS_INDEX` → `MENU_INDEX`, joystick arrow labels "Lab experiments"
+    + "Menu".
+  - `nav/template.ts`: `sectionShell('menu', …)` (home) /
+    `sectionShell('page-menu', …)` (content).
+  - Section id 5 is now semantically "Menu" everywhere user-facing; the
+    cube-face 3D group name is also 'menu' for consistency.
+
+- **Phase 2 — UIMenu rewrite (UIkit3 3-zone navbar)**
+  - `UIMenu.ts::buildNavbar()` rewritten to the official UIkit3 navbar
+    structure: `<nav.uk-navbar-container><div.uk-container><div[uk-navbar]>
+    [uk-navbar-left/center/right]</div></div></nav>`.
+  - Left: `uk-icon-button` with "EN"/"RU" label (language switch).
+  - Center: `uk-navbar-item.uk-logo` with logo.svg (pixel-exact centered:
+    `logoCenterX = navCenterX = 640` on 1280px viewport).
+  - Right: native `uk-navbar-toggle` + `uk-navbar-toggle-icon` (hamburger).
+  - Sound button removed from navbar (moved to menu overlay).
+  - `.jlz-glass-btn` and `.jlz-navbar-center-group` custom classes deleted.
+
+- **Phase 3 — Menu overlay config toolbar (theme + sound)**
+  - New `src/sections/nav/toolbar.ts`: `initMenuToolbar()` (per-render) +
+    `wireMenuToolbarGlobals()` (once). Wires `#jlz-theme-toggle` +
+    `#jlz-menu-sound` buttons inside the menu overlay.
+  - Theme toggle: `uk-icon-button` with inline SVG sun + moon (UIKit3 has
+    no sun/moon icons). `.is-inverse` class on the button toggles which SVG
+    is visible (CSS in `main.less`). Calls `themeManager.toggle()`.
+  - Sound toggle: `uk-icon-button` with custom 4-bar EQ spans (`.jlz-sound-bars`).
+    Persists `localStorage('jlz:sound')`, dispatches `jlz:sound-toggle`
+    (Experience.ts listens, mutes AudioSystem + SfxSystem).
+  - `UIManager.ts`: removed `SoundPanel` import + init; calls
+    `wireMenuToolbarGlobals()` once.
+  - `router.ts`: calls `initMenuToolbar()` after `initNavAccordion()` on
+    every `renderView()`.
+  - Deleted `src/UI/SoundPanel.ts` (floating bottom-right button) — sound
+    now lives in the menu overlay.
+  - `nav/template.ts::configToolbar()` emits the toolbar HTML; both buttons
+    use `uk-tooltip` for hover hints.
+
+- **Phase 4 — LESS cleanup**
+  - `main.less`: deleted `.jlz-glass-btn`, `.jlz-navbar-center-group`,
+    `.jlz-sound-toggle` (floating), `.jlz-sound-bars` (header variant),
+    `.jlz-config__btn` mobile rule.
+  - Navbar glassmorphism now scoped to `.jlz-header .uk-navbar-container`
+    (app-layer CSS; `@navbar-background` stays `transparent` in `_import.less`
+    so other uk-navbar-containers are unaffected).
+  - New `.jlz-sound-toggle` / `.jlz-sound-bars` / `.jlz-sound-bar` styles
+    for the menu-overlay sound button (uses `@global-primary-background`
+    for the playing state — keeps QF cascade).
+  - New `.jlz-menu-toolbar`, `.jlz-theme-toggle`, `.jlz-theme-svg` styles
+    for the menu-overlay config toolbar.
+  - `index.html` splash `.jlz-config__btn` left as-is (FCP-critical inline
+    CSS, not UIkit — splash is a standalone overlay).
+
+- **Phase 5 — Documentation**
+  - `docs/UIKIT3.md §7`: added 10 new hard-won lessons (11–20) covering
+    navbar `uk-navbar` attribute placement, 3-zone vs centered-logo,
+    missing sun/moon icons, `UIkit.icon` hidden-section limitation,
+    `UIkit.update` re-scan limitation, `.jlz-glass-btn` deprecation,
+    `#jlz-menu-modal` death, `@navbar-color-mode`, `.hook-navbar-container`,
+    accordion hooks.
+  - `docs/UIKIT3.md §8`: added 7 new rows to the "custom class vs UIKit"
+    table (icon button, both navbar patterns, hamburger toggle, accordion,
+    tooltip, theme toggle, sound toggle, config toolbar).
+  - `README.md`: updated Navigation + Theme + Sound sections; tech stack
+    row updated.
+  - `AGENTS.md`: section 5 renamed to "Menu"; navigation table updated;
+    theme/sound sections rewritten to reflect menu-overlay location;
+    paint-bucket reference removed.
+
+### Verification
+
+- `bun run type-check` — 0 errors.
+- `bun run lint` — 0 errors (63 pre-existing warnings, none new).
+- `bun run build` — 2.68s, 103 modules, all chunks emitted.
+- `bun run test:unit` — 69/69 tests passed (5 files).
+- Agent Browser verify:
+  - Navbar geometry: `lang.left=40`, `logo.centerX=640=nav.centerX`,
+    `hamburger.right=1240` on 1280px viewport. Logo pixel-exact centered.
+  - Hamburger click → menu overlay opens (`[data-section="menu"].section-active`).
+  - Theme toggle: initial `aria-pressed=false`, `is-inverse=false`, sun
+    visible; after click → `aria-pressed=true`, `is-inverse=true`, moon
+    visible, `body.uk-light` toggled.
+  - Sound toggle: initial `aria-pressed=false`, `is-muted=true`,
+    `localStorage.jlz:sound=null`; after click → `aria-pressed=true`,
+    `is-playing=true`, `localStorage.jlz:sound='on'`.
+  - Accordion: 6 items, click first → `uk-open` class added.
+  - Dev console: 0 errors, 0 warnings beyond expected WebGPU fallback notice.
+
+### Files touched (16)
+
+- Deleted: `src/sections/process/template.ts`, `src/sections/nav/scene.ts`,
+  `src/UI/SoundPanel.ts`.
+- New: `src/sections/nav/toolbar.ts`.
+- Modified: `src/UI/UIMenu.ts`, `src/UI/UIManager.ts`, `src/UI/JoystickNav.ts`,
+  `src/Experience/World/BakuCarousel.ts`, `src/Experience/Cursor.ts`,
+  `src/sections/nav/template.ts`, `src/sections/process/scene.ts`,
+  `src/sections/_shared/constants.ts`, `src/core/WorldConfig.ts`,
+  `src/router.ts`, `src/assets/main.less`, `index.html` (no change — splash
+  left as-is), `docs/UIKIT3.md`, `README.md`, `AGENTS.md`, `WORKLOG.md`,
+  `NEXT.md`.
+
+---
+
 ## 2026-07-13 — PLAN-v3: 8 phases complete (navigation architecture change)
 
 ### Done

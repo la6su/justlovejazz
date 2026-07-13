@@ -4,6 +4,7 @@ import { applyTranslations } from './core/i18n'
 import { applyMetaTags } from './core/pageMeta'
 import { disposeWorkCards } from './UI/WorkCards'
 import { initNavAccordion } from './sections/nav/template'
+import { initMenuToolbar } from './sections/nav/toolbar'
 // ThemeManager removed — theme is global (auto=light, inverse=dark).
 
 let initialized = false
@@ -72,6 +73,8 @@ function renderView(page: PageId = getPageFromLocation()): void {
   applyMetaTags(page)
   // Initialize nav accordion (click-to-expand sub-sections)
   initNavAccordion()
+  // Initialize config toolbar (theme toggle sun/moon + sound toggle EQ-bars)
+  initMenuToolbar()
   // Initialize UIkit components on dynamically inserted content
   ;(UIkit as any).update(el)
   window.dispatchEvent(new CustomEvent('jlz:route-change', { detail: { page } }))
