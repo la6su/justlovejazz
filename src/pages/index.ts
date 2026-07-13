@@ -37,6 +37,3 @@ export function renderPage(page: PageId = 'home'): string {
       return homePage()
   }
 }
-
-// Re-export homePage for backward compat (templates.ts shim uses it)
-export { homePage } from './home'

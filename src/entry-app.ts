@@ -52,12 +52,8 @@ function initLangToggle(): void {
 }
 
 // ── Enter button click is wired by inline script in index.html ──
-// (single source of truth — works even if entry-app.ts fails to load).
-// entry-app.ts only shows the button (showEnterButton) when 3D is ready.
-function initEnterButton(): void {
-  // No-op — click handler is in inline <script> in index.html.
-  // This function kept for API compat (called in startApp).
-}
+// (initEnterButton removed — was empty no-op. Click handler is in inline
+//  <script> in index.html. Was called in startApp but did nothing.)
 
 // ── Show Enter button when 3D is ready ──
 function showEnterButton(): void {
@@ -99,7 +95,7 @@ function showLoadError(): void {
 // We update progress as Experience.init() boots, then trigger curtain
 // split (fade-out class) when jlz:webgl-ready fires. Config buttons
 // (sound + language) are inside the loader — they fade out with the splash.
-// Fade-out is triggered by Enter button click (initEnterButton), NOT auto.
+// Fade-out is triggered by Enter button click (inline script in index.html), NOT auto.
 function updateLoaderProgress(pct: number): void {
   const ring = document.querySelector('.jlz-splash-progress-ring') as SVGRectElement | null
   if (!ring) return
@@ -145,7 +141,7 @@ export async function startApp(): Promise<void> {
   // These work during loading, before three.js finishes.
   initSoundToggle()
   initLangToggle()
-  initEnterButton()
+  // (initEnterButton call removed — was a no-op.)
 
   // Use ?inline to prevent Vite from injecting @vite/client (updateStyle/
   // removeStyle) into the CSS module — through the reverse proxy, /@vite/client

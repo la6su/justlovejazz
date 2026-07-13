@@ -4,7 +4,6 @@
 // Main sections (1-4): Purpose, Clarity, Emotion, Simplicity.
 
 import { sectionShell, contentTop, contentBottom } from '../../sections/_shared/constants'
-import { FOOTER } from '../../sections/_shared/footer'
 import { labOverlaySection } from '../../sections/lab-overlay/template'
 import { navOverlaySection } from '../../sections/nav/template'
 
@@ -96,6 +95,5 @@ export function manifestoPage(): string {
       <!-- 5: NAVIGATION OVERLAY (joystick right) -->
       ${navOverlaySection('content')}
     </article>
-    ${FOOTER}
   `
 }

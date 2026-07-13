@@ -14,7 +14,6 @@ import { WorksPortfolio } from './WorksPortfolio'
 import { FullscreenOverlay } from '../UI/FullscreenOverlay'
 import { NoiseText } from './NoiseText'
 
-import { AudioSystem } from '../core/AudioSystem'
 import { SfxSystem } from '../core/SfxSystem'
 import { JoystickNav } from '../UI/JoystickNav'
 import { UIMenu } from '../UI/UIMenu'
@@ -66,12 +65,11 @@ export class Experience {
   private currentSectionContext: string | null = null
   private _portfolioInitialized = false
   private _prevSectionIndex = -1
-  private _introEmitted = false
+  // (_introEmitted removed — bus.emit('intro:done') had zero subscribers.)
   private _onSizesResize: () => void = () => {}
   private _onVisibilityChange: (() => void) | null = null
   private _onMouseMoveForTrail: (() => void) | null = null
   private _mouseTrailRafPending = false
-  public audio: AudioSystem = new AudioSystem()
   public sfx: SfxSystem = new SfxSystem()
   private _circNav: JoystickNav | null = null
   private _needsRender = true // start true to render the first frame
@@ -93,9 +91,7 @@ export class Experience {
   // One-way (never restore) — restoring causes a GPU spike that re-triggers
   // low FPS. User can manually restore via DevPanel (future) or page reload.
   private _particleReductionApplied = false
-  // startAudio handler — saved so destroy() can remove it if the user never
-  // interacted (click/keydown listeners would otherwise leak on teardown).
-  private _startAudioHandler: (() => void) | null = null
+  // (startAudioHandler removed — AudioSystem deleted, was dead code)
 
   // (SECTION_LABELS removed — was passed to UIMenu/JoystickNav via options
   //  that are no longer used. Section labels are in WorldConfig.domSection.)
@@ -403,20 +399,9 @@ export class Experience {
     }
     window.addEventListener('mousemove', this._onMouseMoveForTrail, { passive: true })
 
-    // Audio-reactive: start AudioContext on first user gesture (browser autoplay policy).
-    // Analyser runs silently until a track is loaded or mic connected.
-    // Handler saved to _startAudioHandler so destroy() can remove it if the
-    // user never interacted (listeners would otherwise leak on teardown).
-    this._startAudioHandler = () => {
-      this.audio.start()
-      if (this._startAudioHandler) {
-        document.removeEventListener('click', this._startAudioHandler)
-        document.removeEventListener('keydown', this._startAudioHandler)
-        this._startAudioHandler = null
-      }
-    }
-    document.addEventListener('click', this._startAudioHandler)
-    document.addEventListener('keydown', this._startAudioHandler)
+    // (AudioSystem removed — was functionally dead: source field never
+    //  assigned, getBass/getMid/getTreble had zero callers, update() ran
+    //  every frame computing zeros. SfxSystem is alive via Cursor.ts.)
 
     // Sound config from splash page (localStorage 'jlz:sound' = 'on'|'off').
     // Splash writes this before navigation; app reads on boot.
@@ -424,7 +409,6 @@ export class Experience {
     try {
       const soundPref = localStorage.getItem('jlz:sound')
       if (soundPref === 'off') {
-        this.audio.setMuted(true)
         this.sfx.setMuted(true)
       }
     } catch { /* localStorage unavailable */ }
@@ -433,7 +417,6 @@ export class Experience {
     this._soundToggleHandler = (e: Event) => {
       const detail = (e as CustomEvent<{ muted: boolean }>).detail
       if (detail) {
-        this.audio.setMuted(detail.muted)
         this.sfx.setMuted(detail.muted)
       }
     }
@@ -503,28 +486,17 @@ export class Experience {
     // Cursor always updates (DOM, cheap — not GPU rendering)
     this.cursor.update()
 
-    // Intro sequence: emit 'intro:done' once stage reaches 1
+    // Intro sequence: 'intro:done' emit removed (zero subscribers, YAGNI).
+    // stage is still needed for the on-demand rendering check below.
     const stage = this.bus.get('intro:stage')
-    if (stage >= 1 && !this.bus.isAnimating('intro:stage') && !this._introEmitted) {
-      this._introEmitted = true
-      this.bus.emit('intro:done')
-    }
 
     // Navigation: CircularNav update
     this._circNav?.update()
 
-    // ── Drive baku transition state BEFORE world.update ──
-    // baku.update() (inside world.update) reads _transitionT/_transitionDir
-    // to detect section-commit (dir goes nonzero→0) and commit the rotation.
-    // If setTransition is called AFTER world.update, baku always sees the
-    // PREVIOUS frame's state — commit detection is one frame late and may
-    // be skipped entirely if the next frame doesn't render (on-demand mode).
-    // Calling it here ensures baku.update sees the current frame's state.
-    if (this.world?.baku) {
-      const navProgress = this._circNav?._progress ?? 0
-      const navDir = navProgress > 0 ? 1 : navProgress < 0 ? -1 : 0
-      this.world.baku.setTransition(Math.abs(navProgress), navDir)
-    }
+    // (baku.setTransition block removed — _circNav._progress was always 0
+    //  (dead field), so this always evaluated to setTransition(0, 0) = no-op.
+    //  baku's _transitionT/_transitionDir stay at 0/0, which is correct for
+    //  the trigger-model navigation — transitions are driven by rotateToFace.)
 
     // ── On-demand rendering ──
     // Only render when something is actually changing. When idle (settled
@@ -603,13 +575,8 @@ export class Experience {
       }
     }
 
-    // Update cube shader uniforms: env map + camera position
-    if (this.world?.baku) {
-      this.world.baku.setEnvAndCamera(
-        this.scene.environment,
-        this.camera.instance.position,
-      )
-    }
+    // (setEnvAndCamera call removed — SplashCube method was a no-op.
+    //  envMap comes from CubeCamera, cameraPos was never read.)
 
     // Theme is global now (auto=light, inverse=dark) — no per-section theme.
     // setAutoTheme is a no-op (kept for backward compat). EnvSphere syncs
@@ -711,9 +678,7 @@ export class Experience {
       this.camera.updateSmooth(cameraTarget, dt, smoothing)
       this.world.lightsGroup.update(dt)
       this.camera.update(dt)
-      if (this.audio.started) {
-        this.audio.update()
-      }
+      // (AudioSystem.update() removed — AudioSystem deleted, was dead code)
       this.renderer.update(this.scene, this.camera.instance, dt, worldState)
       // Clear flag if nothing is actively changing
       if (!navActive && !introActive && !carouselActive && !openerActive && !camShaking) {
@@ -742,11 +707,8 @@ export class Experience {
     // and fight the WebGPU swap chain synchronization.
   }
 
-  /** Set splash cube loading progress (0-100). Cube = baku. */
-  public setSplashProgress(pct: number): void {
-    const cube = this.world?.baku as unknown as { setProgress?: (v: number) => void } | undefined
-    cube?.setProgress?.(pct / 100)
-  }
+  // (setSplashProgress removed — dead method, zero callers. Was calling
+  //  SplashCube.setProgress which was also a no-op.)
 
   /** Trigger the cube opener — faces pulse outward + back. Cube stays as baku.
    *  Also triggers the particle burst (B1-a) — 200 particles fly outward from cube. */
@@ -827,16 +789,7 @@ export class Experience {
     this.sizes.destroy()
     input.destroy()
     this._circNav?.dispose()
-    this.audio.dispose()
     this.sfx.dispose()
-    // startAudio listeners — remove if the user never interacted (the handler
-    // self-removes on first click/keydown, so this only matters when destroy()
-    // runs before any gesture, e.g. HMR teardown).
-    if (this._startAudioHandler) {
-      document.removeEventListener('click', this._startAudioHandler)
-      document.removeEventListener('keydown', this._startAudioHandler)
-      this._startAudioHandler = null
-    }
     // scene.environment PMREM texture — not previously disposed (leak on
     // HMR teardown). Dispose the texture + clear the reference.
     if (this.scene.environment) {

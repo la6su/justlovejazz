@@ -48,7 +48,8 @@ export class JoystickNav {
   private _mainSection = INTRO_INDEX // current main section (1-6)
   private _side: SideState = 'center'
   private _sectionCount: number
-  public _progress = 0 // kept for Experience API compat
+  // (_progress field removed — was always 0, never written. Dead read in
+  //  Experience.ts:507-509 also removed — baku.setTransition(0,0) was a no-op.)
   private _dotnav!: HTMLElement
   private _onSectionChange: ((index: number) => void) | null = null
   private _onActiveChange: ((active: boolean) => void) | null = null

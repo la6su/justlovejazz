@@ -9,7 +9,7 @@ import { createSection1 } from '../sections/intro/scene'
 import { createSection2 } from '../sections/about/scene'
 import { createSection3 } from '../sections/works/scene'
 import { createSection4 } from '../sections/contact/scene'
-import { createSection5 } from '../sections/process/scene'
+import { createSection5 } from '../sections/menu/scene'
 
 // Index → creator function. 6 sections (1:1 cube faces).
 const SECTION_CREATORS: ReadonlyArray<() => THREE.Group> = [

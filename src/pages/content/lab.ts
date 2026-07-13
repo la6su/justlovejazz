@@ -4,7 +4,6 @@
 // Main sections (1-4): Shader Lab, Audio Reactive, Generative, GPU Particles.
 
 import { sectionShell, contentTop, contentBottom } from '../../sections/_shared/constants'
-import { FOOTER } from '../../sections/_shared/footer'
 import { labOverlaySection } from '../../sections/lab-overlay/template'
 import { navOverlaySection } from '../../sections/nav/template'
 
@@ -95,6 +94,5 @@ export function labPage(): string {
       <!-- 5: NAVIGATION OVERLAY (joystick right) -->
       ${navOverlaySection('content')}
     </article>
-    ${FOOTER}
   `
 }

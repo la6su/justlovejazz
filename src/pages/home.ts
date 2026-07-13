@@ -17,7 +17,6 @@ import { aboutSection } from '../sections/about/template'
 import { worksSection } from '../sections/works/template'
 import { contactSection } from '../sections/contact/template'
 import { navOverlaySection } from '../sections/nav/template'
-import { FOOTER } from '../sections/_shared/footer'
 
 export function homePage(): string {
   return `
@@ -29,6 +28,5 @@ export function homePage(): string {
     ${contactSection()}
     ${navOverlaySection('home')}
 
-    ${FOOTER}
   `
 }

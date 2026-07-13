@@ -44,7 +44,6 @@ export class DeviceCapability {
   public readonly isMobile: boolean
   public readonly isTouch: boolean
   public postProcessing: boolean
-  public floatRenderTargets: boolean
 
   /**
    * True ONLY when WebGPURenderer actually got WebGPUBackend (not WebGLBackend
@@ -76,7 +75,6 @@ export class DeviceCapability {
     this.maxDpr = this.calculateMaxDpr()
     this.config = TIER_SETTINGS[this.tier]
     this.postProcessing = this.tier !== 'low' && this.mode !== 'unsupported'
-    this.floatRenderTargets = this.mode === 'webgpu' && this.tier !== 'low'
   }
 
   public static getInstance(): DeviceCapability {
@@ -150,7 +148,6 @@ export class DeviceCapability {
         this.maxDpr = this.calculateMaxDpr()
         this.config = TIER_SETTINGS[this.tier]
         this.postProcessing = this.tier !== 'low' && this.mode !== 'unsupported'
-        this.floatRenderTargets = false
       }
       return !!adapter
     } catch (e) {
@@ -163,7 +160,6 @@ export class DeviceCapability {
       this.maxDpr = this.calculateMaxDpr()
       this.config = TIER_SETTINGS[this.tier]
       this.postProcessing = this.tier !== 'low' && this.mode !== 'unsupported'
-      this.floatRenderTargets = false
       return false
     }
   }

@@ -42,10 +42,7 @@ interface BakuMaterialParams {
   role: BakuRole
 }
 
-/** Kept for API compat — Renderer.init() imports this. */
-export function setTransmissionEnabled(_enabled: boolean): void {
-  // No-op
-}
+// (setTransmissionEnabled removed — dead export, zero callers.)
 
 /** Rotation per section transition (radians). ~30° = π/6. */
 const ROT_PER_TRANSITION = Math.PI / 6
@@ -416,7 +413,7 @@ export class SplashCube extends THREE.Mesh {
   // API (kept for Experience compatibility)
   // ════════════════════════════════════════════════════════════════════
 
-  setProgress(_p: number): void { /* no-op */ }
+  // (setProgress removed — dead no-op, zero callers.)
 
   triggerOpener(): void {
     this.openerPhase = 'opening'
@@ -504,9 +501,8 @@ export class SplashCube extends THREE.Mesh {
     this._faceLerp = 0 // start animation
   }
 
-  setEnvAndCamera(_envMap: THREE.Texture | null, _cameraPos: THREE.Vector3): void {
-    // No-op — envMap comes from CubeCamera
-  }
+  // (setEnvAndCamera removed — dead no-op, body was '// No-op'.
+  //  Experience.ts call site removed too.)
 
   updateWorldBlend(fromColor: THREE.Color, toColor: THREE.Color, fromEmissive: THREE.Color, toEmissive: THREE.Color, t: number, _fromDisplace: number = 0.05, _toDisplace: number = 0.05): void {
     this._blendFromColor.copy(fromColor)

@@ -4,7 +4,6 @@
 // Main sections (1-4): Creative Direction, Interactive Dev, Motion & Realtime, AI Systems.
 
 import { sectionShell, contentTop, contentBottom } from '../../sections/_shared/constants'
-import { FOOTER } from '../../sections/_shared/footer'
 import { labOverlaySection } from '../../sections/lab-overlay/template'
 import { navOverlaySection } from '../../sections/nav/template'
 
@@ -99,6 +98,5 @@ export function servicesPage(): string {
       <!-- 5: NAVIGATION OVERLAY (joystick right) -->
       ${navOverlaySection('content')}
     </article>
-    ${FOOTER}
   `
 }

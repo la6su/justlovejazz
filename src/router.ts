@@ -1,4 +1,4 @@
-import { renderPage, type PageId } from './templates'
+import { renderPage, type PageId } from './pages'
 import UIkit from 'uikit'
 import { applyTranslations } from './core/i18n'
 import { applyMetaTags } from './core/pageMeta'

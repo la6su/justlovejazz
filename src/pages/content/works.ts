@@ -9,7 +9,6 @@
 //
 // 8 projects sourced from PROJECTS (Data/Projects.ts) — 2 added for this grid.
 import { sectionShell, contentBottom } from '../../sections/_shared/constants'
-import { FOOTER } from '../../sections/_shared/footer'
 import { PROJECTS } from '../../Data/Projects'
 import { labOverlaySection } from '../../sections/lab-overlay/template'
 import { navOverlaySection } from '../../sections/nav/template'
@@ -97,6 +96,5 @@ export function worksPage(): string {
       <!-- 5: NAVIGATION OVERLAY (joystick right) -->
       ${navOverlaySection('content')}
     </article>
-    ${FOOTER}
   `
 }

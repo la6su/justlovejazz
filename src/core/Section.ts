@@ -121,19 +121,10 @@ export class Section extends THREE.Group {
     const bus = StateBus.getInstance()
     bus.channel(this.stateChannel, STATE_VALUE[SectionState.READY])
     bus.channel(this.opacityChannel, 0)
-
-    bus.on(this.stateChannel, () => {
-      const raw = bus.get(this.stateChannel)
-      const val = Math.round(THREE.MathUtils.clamp(raw, 0, 2))
-      const newState =
-        val === 1 ? SectionState.VIEWING : val === 2 ? SectionState.PASSED : SectionState.READY
-      if (newState !== this._state) {
-        this._state = newState
-        this.applyState()
-      }
-    })
-
-    bus.on(this.opacityChannel, () => this.applyOpacity())
+    // (bus.on listeners removed — dead code. bus.tick() only emits on
+    //  'change'/'done:${name}', NOT on the channel name, so these handlers
+    //  never fired. State/opacity changes are driven by forceState() /
+    //  switchState() which call applyState()/applyOpacity() directly.)
   }
 
   public switchState(target: SectionState, duration: number = 1.0, reduced: boolean = false): void {
@@ -242,8 +233,7 @@ export class Section extends THREE.Group {
     const bus = StateBus.getInstance()
     bus.cancel(this.stateChannel)
     bus.cancel(this.opacityChannel)
-    bus.off(this.stateChannel)
-    bus.off(this.opacityChannel)
+    // (bus.off calls removed — matched the dead bus.on calls above.)
     this._opacityMeshCache = null
     this.traverse((obj: THREE.Object3D) => {
       if (obj instanceof THREE.Mesh) {
