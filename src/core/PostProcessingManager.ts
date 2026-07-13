@@ -36,7 +36,7 @@ const PHASE_PRESETS: Record<string, PostParams> = {
     bloomRadius: 0.65,
     bloomThreshold: 0.4,
   },
-  sec_challenge: {
+  sec_works: {
     bloom: 0.4,
     vignette: 0.4,
     grain: 0.01,

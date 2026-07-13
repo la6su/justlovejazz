@@ -41,17 +41,23 @@ const CARD_TEXTURE_URLS: string[] = Array.from({ length: CARD_COUNT }, (_, i) =>
   return p.textureUrl || p.detailTextureUrl
 })
 
-const RING_RADIUS = 3.2
-const CARD_W = 2.0
-const CARD_H = 1.4
-const CUBE_SIZE = 1.6
+const RING_RADIUS = 1.6
+const CARD_W = 1.0
+const CARD_H = 0.7
+const CUBE_SIZE = 0.8
 const CUBE_HALF = CUBE_SIZE / 2
-const ARC_PEAK = 1.6 // y-height of the arc trajectory peak (mid-morph bloom)
+const ARC_PEAK = 0.8 // y-height of the arc trajectory peak (mid-morph bloom)
 const SCROLL_EASE = 0.1
 const WHEEL_SENSITIVITY = 0.012
 const DRAG_SENSITIVITY = 0.01
 const MORPH_EASE = 0.07
 const TAP_THRESHOLD = 6 // px — if pointerup within this distance of down, it's a tap
+// Phase 4: momentum + rubber-band + auto-advance
+const MOMENTUM_DECAY = 0.92 // per-frame velocity decay after drag release
+const MOMENTUM_THRESHOLD = 0.0005 // below this → snap to nearest card
+const RUBBER_BAND_RESISTANCE = 0.35 // drag beyond bounds = 35% effective
+const AUTO_ADVANCE_INTERVAL = 4500 // ms — auto-advance every 4.5s
+const SNAP_ANGLE = (Math.PI * 2) / 6 // 6 cards = 60° between each
 
 // Cube face directions (+X, -X, +Y, -Y, +Z, -Z) — matches SplashCube
 const CUBE_FACES = [
@@ -89,6 +95,11 @@ export class BakuCarousel extends THREE.Group {
   private keydownHandler: ((e: KeyboardEvent) => void) | null = null
   private snapTimer: ReturnType<typeof setTimeout> | null = null
 
+  // Phase 4: momentum + rubber-band + auto-advance
+  private velocity = 0 // current scroll velocity (for momentum after drag)
+  private autoAdvanceTimer: ReturnType<typeof setInterval> | null = null
+  private isHovered = false // pause auto-advance on hover
+
   // Callback — fired when user taps/clicks a carousel card
   private _onCardClick: ((index: number) => void) | null = null
 
@@ -109,6 +120,15 @@ export class BakuCarousel extends THREE.Group {
   setActive(active: boolean): void {
     this._active = active
     this._morphTarget = active ? 1 : 0
+    // Phase 4: start/stop auto-advance with carousel active state
+    if (active) {
+      // Delay start until morph is mostly complete
+      setTimeout(() => {
+        if (this._active && !this.isHovered) this.startAutoAdvance()
+      }, 800)
+    } else {
+      this.stopAutoAdvance()
+    }
   }
 
   get isActive(): boolean {
@@ -213,6 +233,9 @@ export class BakuCarousel extends THREE.Group {
       this.dragStartX = e.clientX
       this.dragStartY = e.clientY
       this.dragMoved = false
+      this.velocity = 0 // reset velocity on new drag
+      // Stop auto-advance while dragging
+      this.stopAutoAdvance()
     }
     this.pointerMoveHandler = (e: PointerEvent) => {
       if (!this.isDown || !this._active) return
@@ -223,7 +246,25 @@ export class BakuCarousel extends THREE.Group {
         this.dragMoved = true
       }
       if (this.dragMoved && e.cancelable) e.preventDefault()
-      this.scroll.target -= dx * DRAG_SENSITIVITY
+
+      // Phase 4: track velocity for momentum
+      const delta = -dx * DRAG_SENSITIVITY
+      this.velocity = delta
+
+      // Phase 4: rubber-band — if beyond bounds, apply resistance
+      const nearestSnap = this.getNearestSnapAngle()
+      const distFromSnap = this.scroll.target - nearestSnap
+      const maxDrag = SNAP_ANGLE * 0.5 // half a card width beyond snap = rubber band zone
+      if (Math.abs(distFromSnap) > maxDrag) {
+        // Beyond bounds — apply 0.35x resistance
+        const excess = Math.abs(distFromSnap) - maxDrag
+        const sign = Math.sign(distFromSnap)
+        const resistedExcess = excess * RUBBER_BAND_RESISTANCE
+        this.scroll.target = nearestSnap + sign * (maxDrag + resistedExcess)
+      } else {
+        this.scroll.target += delta
+      }
+
       this.dragStartX = e.clientX
       this.dragStartY = e.clientY
       this.scheduleSnap()
@@ -235,8 +276,12 @@ export class BakuCarousel extends THREE.Group {
       if (!this.dragMoved) {
         this.handleTap(e.clientX, e.clientY)
       } else {
-        this.scheduleSnap()
+        // Phase 4: momentum — apply velocity decay in update() until threshold
+        // scheduleSnap() will fire after momentum settles
+        this.scheduleSnap(300) // delayed snap — give momentum time to settle
       }
+      // Resume auto-advance after drag ends (if not hovering)
+      if (this._active && !this.isHovered) this.startAutoAdvance()
     }
     this.keydownHandler = (e: KeyboardEvent) => {
       if (!this._active || this._morphT < 0.5) return
@@ -268,6 +313,13 @@ export class BakuCarousel extends THREE.Group {
     window.addEventListener('pointerup', this.pointerUpHandler)
     window.addEventListener('pointercancel', this.pointerUpHandler)
     window.addEventListener('keydown', this.keydownHandler)
+
+    // Phase 4: hover detection on canvas — pause auto-advance
+    const canvas = document.querySelector('canvas.canvas')
+    if (canvas) {
+      canvas.addEventListener('pointerenter', () => this.setHovered(true))
+      canvas.addEventListener('pointerleave', () => this.setHovered(false))
+    }
   }
 
   /** Tap detected → raycast to check if a card was actually hit.
@@ -277,6 +329,8 @@ export class BakuCarousel extends THREE.Group {
     if (!this._camera) {
       // No camera — fall back to front card
       this._onCardClick?.(this.getFrontCardIndex())
+      // Phase 5: wobble pulse on tap
+      window.dispatchEvent(new CustomEvent('jlz:wobble-pulse'))
       return
     }
     // Convert screen coords to NDC
@@ -295,6 +349,8 @@ export class BakuCarousel extends THREE.Group {
     if (intersects.length > 0) {
       const hit = intersects[0]!.object as THREE.Mesh
       const idx = hit.userData.cardIndex as number
+      // Phase 5: trigger wobble pulse on cube before opening project
+      window.dispatchEvent(new CustomEvent('jlz:wobble-pulse'))
       this._onCardClick?.(idx)
     }
     // No hit → tap was on cube or empty space → ignore (no overlay open)
@@ -321,9 +377,16 @@ export class BakuCarousel extends THREE.Group {
     return ((idx % n) + n) % n
   }
 
-  private scheduleSnap(): void {
+  private scheduleSnap(delay = 180): void {
     if (this.snapTimer) clearTimeout(this.snapTimer)
-    this.snapTimer = setTimeout(() => this.snap(), 180)
+    this.snapTimer = setTimeout(() => this.snap(), delay)
+  }
+
+  /** Phase 4: nearest snap angle (for rubber-band + momentum target). */
+  private getNearestSnapAngle(): number {
+    const step = this.anglePerCard()
+    const idx = Math.round(this.scroll.target / step)
+    return idx * step
   }
 
   private anglePerCard(): number {
@@ -332,16 +395,49 @@ export class BakuCarousel extends THREE.Group {
 
   next(): void {
     this.scroll.target -= this.anglePerCard()
+    this.stopAutoAdvance()
+    if (this._active && !this.isHovered) this.startAutoAdvance()
   }
 
   prev(): void {
     this.scroll.target += this.anglePerCard()
+    this.stopAutoAdvance()
+    if (this._active && !this.isHovered) this.startAutoAdvance()
   }
 
   private snap(): void {
     const step = this.anglePerCard()
     const idx = Math.round(this.scroll.target / step)
     this.scroll.target = idx * step
+    this.velocity = 0 // clear velocity after snap
+  }
+
+  /** Phase 4: start auto-advance every 4.5s (pause on hover). */
+  startAutoAdvance(): void {
+    if (this.autoAdvanceTimer) return // already running
+    if (!this._active || this._morphT < 0.5) return
+    this.autoAdvanceTimer = setInterval(() => {
+      if (this.isHovered || this.isDown) return // pause on hover/drag
+      this.scroll.target -= this.anglePerCard()
+    }, AUTO_ADVANCE_INTERVAL)
+  }
+
+  /** Phase 4: stop auto-advance. */
+  stopAutoAdvance(): void {
+    if (this.autoAdvanceTimer) {
+      clearInterval(this.autoAdvanceTimer)
+      this.autoAdvanceTimer = null
+    }
+  }
+
+  /** Phase 4: set hover state (pause auto-advance). */
+  setHovered(hovered: boolean): void {
+    this.isHovered = hovered
+    if (hovered) {
+      this.stopAutoAdvance()
+    } else if (this._active) {
+      this.startAutoAdvance()
+    }
   }
 
   /** Smoothstep easing: S-curve for organic ease-in/ease-out. */
@@ -361,6 +457,16 @@ export class BakuCarousel extends THREE.Group {
 
     // Eased morph for animations (smoothstep gives ease-in/ease-out)
     const easedT = this.smoothstep(this._morphT)
+
+    // Phase 4: momentum — apply velocity after drag release
+    if (!this.isDown && Math.abs(this.velocity) > MOMENTUM_THRESHOLD) {
+      this.scroll.target += this.velocity
+      this.velocity *= MOMENTUM_DECAY
+      if (Math.abs(this.velocity) < MOMENTUM_THRESHOLD) {
+        this.velocity = 0
+        this.scheduleSnap(120) // snap after momentum settles
+      }
+    }
 
     // Scroll lerp (only matters when morphed into carousel)
     this.scroll.current += (this.scroll.target - this.scroll.current) * SCROLL_EASE
@@ -422,6 +528,7 @@ export class BakuCarousel extends THREE.Group {
     }
     if (this.keydownHandler) window.removeEventListener('keydown', this.keydownHandler)
     if (this.snapTimer) clearTimeout(this.snapTimer)
+    this.stopAutoAdvance() // Phase 4: clean up auto-advance timer
     this.geometry.dispose()
     // Dispose card materials. Textures are SHARED across cards (4 unique for 6
     // faces), so dispose each unique texture only once.

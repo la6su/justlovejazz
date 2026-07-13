@@ -58,7 +58,7 @@ const typoColorNode = Fn(() => {
 export class WireframeTypography extends THREE.Mesh {
   private _time = 0
 
-  constructor(text: string = 'ABOUT', size: number = 1.2) {
+  constructor(text: string = 'ABOUT', size: number = 0.6) {
     // Load font synchronously from public/fonts (copied from three/examples)
     // FontLoader.parse() accepts the parsed JSON directly.
     const fontJson = loadFontSync()
@@ -87,7 +87,7 @@ export class WireframeTypography extends THREE.Mesh {
     mat.colorNode = typoColorNode()
 
     super(geo, mat)
-    this.name = 'wireframe-typography'
+    this.name = 'wireframe-text'
     this.frustumCulled = false
   }
 

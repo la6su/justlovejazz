@@ -47,7 +47,7 @@ const orbColorNode = Fn(() => {
 export class ShaderOrb extends THREE.Mesh {
   private _time = 0
 
-  constructor(radius: number = 1.4, detail: number = 2) {
+  constructor(radius: number = 0.7, detail: number = 2) {
     const geo = new THREE.IcosahedronGeometry(radius, detail)
 
     const mat = new MeshBasicNodeMaterial({

@@ -27,8 +27,8 @@ export const PAGE_REVEAL = 'uk-scrollspy="cls: uk-animation-fade; delay: 120; ta
 // Navigation: JoystickNav vertical cycles 1→2→3→4 (main sections),
 // horizontal toggles 0 (Lab) ↔ center ↔ 5 (Process) (secret side sections).
 
-export type SectionId = 'lab' | 'intro' | 'about' | 'challenge' | 'contact' | 'process'
-// Note: 'challenge' is the historical SectionId for the Works section
+export type SectionId = 'lab' | 'intro' | 'about' | 'works' | 'contact' | 'process'
+// Works section
 // (cube face 3, back -Z). It's kept for backward compat — renaming would
 // touch Phase enum (types.ts), WorldConfig id, PostProcessingManager keys,
 // Lights keys, scene.ts group name. RULES.md §14 documents this mapping.
@@ -48,6 +48,7 @@ export type PageId = 'home' | 'services' | 'works' | 'manifesto' | 'lab' | 'cont
  *  mode: 'home' (3D cube face, data-section) | 'content' (page section, data-page-section)
  *  isActive: only for content mode — toggles .section-active on initial section.
  *  extraAttrs: additional attributes on the <section> (e.g. project-overlay id).
+ *  extraHtml: additional HTML content INSIDE the section (e.g. play button overlay).
  *
  *  UIKit3: uk-section-small + uk-section-large@m (responsive padding),
  *  uk-container-expand, uk-flex uk-flex-between uk-height-1-1 (Apple Watch
@@ -59,6 +60,7 @@ export function sectionShell(
   mode: 'home' | 'content' = 'content',
   isActive: boolean = false,
   extraAttrs: string = '',
+  extraHtml: string = '',
 ): string {
   const activeClass = mode === 'content' && isActive ? 'section-active' : ''
   const pageClass = mode === 'content' ? 'jlz-page-section' : ''
@@ -70,6 +72,7 @@ export function sectionShell(
         ${topHtml}
         ${bottomHtml}
       </div>
+      ${extraHtml}
     </section>
   `
 }

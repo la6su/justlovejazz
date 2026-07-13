@@ -1,5 +1,5 @@
 // src/sections/works/template.ts — Face 3: Works (back face -Z, BakuCarousel)
-// data-section="challenge" matches WorldConfig domSection (3D sync).
+// data-section="works" matches WorldConfig domSection (3D sync).
 import { REVEAL, sectionShell } from '../_shared/constants'
 
 export function worksSection(): string {
@@ -22,5 +22,5 @@ export function worksSection(): string {
       </a>
     </div>
   `
-  return sectionShell('challenge', top, bottom, 'home')
+  return sectionShell('works', top, bottom, 'home')
 }

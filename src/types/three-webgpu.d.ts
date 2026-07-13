@@ -72,4 +72,15 @@ declare module 'three/webgpu' {
     blending: number
     sizeAttenuation: boolean
   }
+
+  export class SpriteNodeMaterial extends Material {
+    constructor(parameters?: {})
+    colorNode: any
+    positionNode: any
+    rotationNode: any
+    scaleNode: any
+    transparent: boolean
+    sizeAttenuation: boolean
+    fog: boolean
+  }
 }

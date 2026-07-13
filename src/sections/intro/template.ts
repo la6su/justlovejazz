@@ -1,5 +1,7 @@
 // src/sections/intro/template.ts — Face 1: Studio (front face +Z, start section)
 // Hero tier — uk-heading-xlarge. Active on load.
+// Play button is rendered as a 3D TSL shader mesh in front of the cube
+// (see SplashCube.ts → PlayButton3D). DOM overlay only for the label.
 import { REVEAL, sectionShell } from '../_shared/constants'
 
 export function introSection(): string {
@@ -22,5 +24,15 @@ export function introSection(): string {
       </a>
     </div>
   `
-  return sectionShell('intro', top, bottom, 'home')
+  // DOM overlay for showreel label (3D play button is in SplashCube scene)
+  const playOverlay = `
+    <div class="jlz-showreel-overlay" ${REVEAL}>
+      <button class="jlz-showreel-trigger" type="button" id="jlz-showreel-trigger"
+              aria-label="Play showreel"
+              data-cursor="play" data-magnetic>
+        <span class="jlz-showreel-trigger__label" data-i18n="home.studio.showreel">Showreel</span>
+      </button>
+    </div>
+  `
+  return sectionShell('intro', top, bottom, 'home', false, '', playOverlay)
 }

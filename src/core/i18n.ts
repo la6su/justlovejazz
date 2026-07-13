@@ -40,6 +40,20 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'nav.contact': 'Contact',
     'nav.blog': 'Blog',
 
+    // PLAN-v3: Navigation overlay (section 5, joystick right)
+    'navOverlay.title': 'Navigate',
+    'navOverlay.lead': 'Choose your destination.',
+    'navOverlay.studio.desc': 'Home · cube experience',
+    'navOverlay.services.desc': 'What we do',
+    'navOverlay.works.desc': 'Selected projects',
+    'navOverlay.manifesto.desc': 'Principles',
+    'navOverlay.lab.desc': 'Experiments',
+    'navOverlay.contact.desc': 'Start a project',
+
+    // PLAN-v3: Lab overlay (section 0, joystick left)
+    'labOverlay.title': 'Lab',
+    'labOverlay.lead': 'Experiments · works · R&D.',
+
     // Dropbar — section titles + subtitles shown in the header dropbar (UIMenu)
     // Works page section titles are project names (proper nouns) — NOT translated (RULES §32),
     // so only subtitles get keys for works.
@@ -116,6 +130,7 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'home.studio.lead': 'Remote · EU · since 2019.',
     'home.studio.desc1': 'A small studio crafting expressive browser experiences.',
     'home.studio.desc2': 'Glass · motion · light — powered by WebGPU.',
+    'home.studio.showreel': 'Showreel',
 
     // Home — about (Services)
     'home.about.title': 'Services',
@@ -179,11 +194,11 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'works.section1.title': 'Selected Works',
     'works.section1.lead': 'Projects that define our way.',
     'works.section2.title': 'Case Studies',
-    'works.section2.lead': 'Process, craft, and results.',
+    'works.section2.lead': 'Process, craft, result.',
     'works.section3.title': 'Experiments',
-    'works.section3.lead': 'Where R&D meets production.',
+    'works.section3.lead': 'R&D meets production.',
     'works.section4.title': 'Recent',
-    'works.section4.lead': 'The latest from the studio.',
+    'works.section4.lead': 'Latest from the studio.',
 
     // Manifesto page
     'manifesto.purpose.title': 'Purpose',
@@ -268,6 +283,20 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'nav.contact': 'Контакты',
     'nav.blog': 'Блог',
 
+    // PLAN-v3: Navigation overlay (RU)
+    'navOverlay.title': 'Навигация',
+    'navOverlay.lead': 'Выберите направление.',
+    'navOverlay.studio.desc': 'Главная · куб',
+    'navOverlay.services.desc': 'Что мы делаем',
+    'navOverlay.works.desc': 'Избранные проекты',
+    'navOverlay.manifesto.desc': 'Принципы',
+    'navOverlay.lab.desc': 'Эксперименты',
+    'navOverlay.contact.desc': 'Начать проект',
+
+    // PLAN-v3: Lab overlay (RU)
+    'labOverlay.title': 'Лаб',
+    'labOverlay.lead': 'Эксперименты · работы · R&D.',
+
     // Dropbar — section titles + subtitles shown in the header dropbar (UIMenu)
     // Works page section titles are project names (proper nouns) — NOT translated (RULES §32),
     // so only subtitles get keys for works.
@@ -281,13 +310,13 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'dropbar.home.s4.subtitle': 'Что нами движет',
     'dropbar.home.featured.title': 'Лаборатория',
     'dropbar.home.featured.subtitle': 'Эксперименты · всегда в процессе',
-    'dropbar.services.s1.title': 'Креативное направление',
-    'dropbar.services.s1.subtitle': 'Концепция → визуальная идентичность',
-    'dropbar.services.s2.title': 'Интерактивная разработка',
-    'dropbar.services.s2.subtitle': 'Реальное время · производительность прежде всего',
-    'dropbar.services.s3.title': 'Движение и реальное время',
+    'dropbar.services.s1.title': 'Креатив',
+    'dropbar.services.s1.subtitle': 'Концепция → идентичность',
+    'dropbar.services.s2.title': 'Разработка',
+    'dropbar.services.s2.subtitle': 'Реальное время · перфоманс',
+    'dropbar.services.s3.title': 'Моушн',
     'dropbar.services.s3.subtitle': 'Движение как интерфейс',
-    'dropbar.services.s4.title': 'ИИ-системы',
+    'dropbar.services.s4.title': 'AI-системы',
     'dropbar.services.s4.subtitle': 'Генерация · автоматизация',
     'dropbar.services.featured.title': 'Начать проект',
     'dropbar.services.featured.subtitle': 'Открыты для новых проектов',
@@ -344,6 +373,7 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'home.studio.lead': 'Удалённо · ЕС · с 2019.',
     'home.studio.desc1': 'Небольшая студия, создающая выразительные браузерные опыты.',
     'home.studio.desc2': 'Стекло · движение · свет — на WebGPU.',
+    'home.studio.showreel': 'Шоурил',
 
     // Home — about (Services)
     'home.about.title': 'Услуги',
@@ -377,31 +407,31 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'home.lab.desc3': 'Мы расширяем границы.',
 
     // Services page
-    'services.creativeDirection.title': 'Креативное направление',
-    'services.creativeDirection.lead': 'От концепции до визуальной идентичности.',
-    'services.creativeDirection.desc1': 'Мы создаём интерфейсы, которые ощущаются как цифровые продукты, а не сайты.',
-    'services.creativeDirection.desc2': 'Каждое взаимодействие имеет цель.',
-    'services.creativeDirection.desc3': 'Каждый переход рассказывает историю.',
-    'services.interactiveDev.title': 'Интерактивная разработка',
-    'services.interactiveDev.lead': 'Реалтайм-опыт на современных веб-технологиях.',
-    'services.interactiveDev.desc1': 'Производительность прежде всего.',
+    'services.creativeDirection.title': 'Креатив',
+    'services.creativeDirection.lead': 'От концепции до идентичности.',
+    'services.creativeDirection.desc1': 'Интерфейсы как продукты, не сайты.',
+    'services.creativeDirection.desc2': 'Каждое действие имеет цель.',
+    'services.creativeDirection.desc3': 'Каждый переход — история.',
+    'services.interactiveDev.title': 'Разработка',
+    'services.interactiveDev.lead': 'Реальное время. Современный веб.',
+    'services.interactiveDev.desc1': 'Перфоманс прежде всего.',
     'services.interactiveDev.desc2': 'Движение следует за целью.',
-    'services.motionRealtime.title': 'Движение и реальное время',
-    'services.motionRealtime.lead': 'Движение — часть интерфейса. Не декорация.',
+    'services.motionRealtime.title': 'Моушн',
+    'services.motionRealtime.lead': 'Движение — часть интерфейса.',
     'services.motionRealtime.desc1': 'Навигация.',
     'services.motionRealtime.desc2': 'Отклик.',
     'services.motionRealtime.desc3': 'Эмоция.',
-    'services.aiSystems.title': 'ИИ-системы',
-    'services.aiSystems.lead': 'Креативные рабочие процессы на базе ИИ.',
+    'services.aiSystems.title': 'AI-системы',
+    'services.aiSystems.lead': 'Креативные процессы на базе AI.',
     'services.aiSystems.desc1': 'Генерация.',
     'services.aiSystems.desc2': 'Автоматизация.',
     'services.aiSystems.desc3': 'Итерация.',
-    'services.lab.title': 'ЛАБОРАТОРИЯ',
+    'services.lab.title': 'Лаб',
     'services.lab.lead': 'Эксперименты. Всегда в процессе.',
-    'services.lab.desc1': 'Песочница для шейдеров, звука и процедурного R&D.',
-    'services.playground.title': 'ПЛОЩАДКА',
+    'services.lab.desc1': 'Песочница для шейдеров, звука, R&D.',
+    'services.playground.title': 'Плейграунд',
     'services.playground.lead': 'Нечего продавать. Просто игра.',
-    'services.playground.desc1': 'Открытые эксперименты, полу-сломанные демо, вещи, которые мы строим для радости.',
+    'services.playground.desc1': 'Открытые эксперименты, демо, вещи для радости.',
 
     // Works page — section headers
     'works.section1.title': 'Избранные работы',
@@ -470,7 +500,7 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'meta.home.title': 'JUSTLOVEJAZZ — Студия веб-дизайна | Интерактивное 3D-портфолио',
     'meta.home.description': 'JUSTLOVEJAZZ — интерактивное 3D-портфолио. WebGPU/WebGL кинематографичность, Three.js TSL, UIkit 3.',
     'meta.services.title': 'Услуги — JUSTLOVEJAZZ',
-    'meta.services.description': 'Креативное направление, интерактивная разработка, движение и реальное время, ИИ-системы. От концепции до реализации.',
+    'meta.services.description': 'Креатив, разработка, моушн, AI-системы. От концепции до реализации.',
     'meta.works.title': 'Работы — JUSTLOVEJAZZ',
     'meta.works.description': 'Избранные проекты и кейсы. WebGPU симуляции жидкостей, аудио-реактивное 3D, генеративная типографика и другое.',
     'meta.manifesto.title': 'Манифест — JUSTLOVEJAZZ',

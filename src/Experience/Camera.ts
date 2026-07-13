@@ -51,7 +51,7 @@ export class Camera {
   }
 
   constructor(sizes: Sizes) {
-    this.instance = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
+    this.instance = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 1000)
     this.smoothPosition.set(0, 0, 3)
     this.instance.position.copy(this.smoothPosition)
 
@@ -98,6 +98,24 @@ export class Camera {
     this.targetFovOffset = value
     this.fovDuration = duration
     this.fovTransitionT = 0
+  }
+
+  /** Zoom pulse — FOV dips then returns for a "push-in" feel on section change.
+   *  Positive amount = zoom in (FOV decreases). ~0.04 = subtle, ~0.08 = noticeable.
+   *  Uses a two-phase transition: dips to -amount over half duration, then back to 0. */
+  pulse(amount = 0.05, duration = 0.8): void {
+    // Phase 1: dip to -amount (zoom in)
+    this.fovStartOffset = this.fovOffset
+    this.targetFovOffset = -amount
+    this.fovDuration = duration * 0.4
+    this.fovTransitionT = 0
+    // Phase 2: return to 0 after dip completes
+    setTimeout(() => {
+      this.fovStartOffset = this.fovOffset
+      this.targetFovOffset = 0
+      this.fovDuration = duration * 0.6
+      this.fovTransitionT = 0
+    }, duration * 400)
   }
 
   update(deltaT: number) {

@@ -36,7 +36,7 @@ git fetch origin && git checkout main && git pull origin main
 
 ## Ground plane
 
-20. **Ground plane visible ONLY on section 4 (bottom cube face -Y).** `Experience.ts`: `this.world.groundPlane.visible = this.world.currentSectionIndex === 4`. On all other sections the floor is hidden — the 3D scene floats in void. Section 4's `groundOpacity` is 0.25 (visibly grounded). Do NOT re-enable ground on other sections or tie it to `showGallery` (old bug: `!showGallery` showed ground everywhere except Works).
+20. **Ground plane visible ONLY on section 4 (bottom cube face -Y).** `Experience.ts`: `this.world.groundPlane.visible = this.world.currentSectionIndex === 4`. On all other sections the floor is hidden — the 3D scene floats in void. Section 4's `groundOpacity` is 0.4 with `groundColor: 0x1a1a2e` (visibly grounded on the light theme — was 0.25/0x080812, too faint for vision/contrast). Do NOT re-enable ground on other sections or tie it to `showGallery` (old bug: `!showGallery` showed ground everywhere except Works).
 
 ## Navigation & sections
 

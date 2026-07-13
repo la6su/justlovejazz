@@ -1,7 +1,12 @@
-// src/pages/content/lab.ts — Lab page (4 experiments)
-// Each section = one R&D area.
+// src/pages/content/lab.ts — Lab page (4 experiments + 2 overlays)
+//
+// PLAN-v3: section 0 = Lab overlay (works list), section 5 = Navigation overlay.
+// Main sections (1-4): Shader Lab, Audio Reactive, Generative, GPU Particles.
+
 import { sectionShell, contentTop, contentBottom } from '../../sections/_shared/constants'
 import { FOOTER } from '../../sections/_shared/footer'
+import { labOverlaySection } from '../../sections/lab-overlay/template'
+import { navOverlaySection } from '../../sections/nav/template'
 
 interface Experiment {
   num: string
@@ -9,7 +14,6 @@ interface Experiment {
   lead: string
   desc: string[]
   href: string
-  /** i18n key prefix — e.g. 'lab.shaderLab' → title/lead/descN keys. */
   key: string
 }
 
@@ -48,15 +52,12 @@ const EXPERIMENTS: readonly Experiment[] = [
   },
 ] as const
 
-/** Description fragments — each line a short sentence, stacked vertically.
- *  key: i18n prefix — generates data-i18n="${key}.desc${i+1}" per line. */
 function expDesc(key: string, desc: readonly string[]): string {
   return `<div class="jlz-service-desc uk-margin-small-top">${desc
     .map((line, i) => `<p class="uk-text-meta uk-margin-remove" data-i18n="${key}.desc${i + 1}">${line}</p>`)
     .join('')}</div>`
 }
 
-/** EXPLORE link — pill button with accent dot. key defaults to 'common.explore'. */
 function expExplore(href: string, key: string = 'common.explore'): string {
   return `<a href="${href}" class="jlz-service-explore uk-button uk-button-default uk-button-small uk-margin-top">
     <span class="jlz-service-explore__dot" aria-hidden="true"></span>
@@ -68,23 +69,31 @@ export function labPage(): string {
   const [e1, e2, e3, e4] = EXPERIMENTS
   return `
     <article class="jlz-page" data-page-view="lab">
+      <!-- 0: LAB OVERLAY (joystick left) -->
+      ${labOverlaySection('content')}
+      <!-- 1: Shader Lab (start, active) -->
       ${sectionShell('lab-01',
         contentTop(e1!.num, e1!.title, e1!.lead, 'large', e1!.key + '.title', e1!.key + '.lead'),
         contentBottom(`${expDesc(e1!.key, e1!.desc)}${expExplore(e1!.href)}`),
         'content', true
       )}
+      <!-- 2: Audio Reactive -->
       ${sectionShell('lab-02',
         contentTop(e2!.num, e2!.title, e2!.lead, 'large', e2!.key + '.title', e2!.key + '.lead'),
         contentBottom(`${expDesc(e2!.key, e2!.desc)}${expExplore(e2!.href)}`)
       )}
+      <!-- 3: Generative -->
       ${sectionShell('lab-03',
         contentTop(e3!.num, e3!.title, e3!.lead, 'large', e3!.key + '.title', e3!.key + '.lead'),
         contentBottom(`${expDesc(e3!.key, e3!.desc)}${expExplore(e3!.href)}`)
       )}
+      <!-- 4: GPU Particles -->
       ${sectionShell('lab-04',
         contentTop(e4!.num, e4!.title, e4!.lead, 'large', e4!.key + '.title', e4!.key + '.lead'),
         contentBottom(`${expDesc(e4!.key, e4!.desc)}${expExplore(e4!.href)}`)
       )}
+      <!-- 5: NAVIGATION OVERLAY (joystick right) -->
+      ${navOverlaySection('content')}
     </article>
     ${FOOTER}
   `

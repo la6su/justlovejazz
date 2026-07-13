@@ -49,6 +49,13 @@ export class World extends THREE.Group {
   private _poolBakuEmissive = new THREE.Color()
   private _poolEnvColor = new THREE.Color()
   private _poolGroundColor = new THREE.Color()
+  // Theme-aware ground adjustment. updateTransform() lerps ground color/opacity
+  // from WorldConfig on every section change — this multiplier overrides the
+  // result so the ground stays visible on both light + dark themes.
+  // syncGroundTheme(isLight) sets it; updateTransform applies it.
+  private _groundThemeColor: THREE.Color = new THREE.Color(0x1a1a2e)
+  private _groundThemeOpacity = 0.4
+  private _groundThemeActive = false
   private _targetGroundOpacity = 0
 
   constructor(scene: THREE.Scene) {
@@ -105,7 +112,7 @@ export class World extends THREE.Group {
       }),
     )
     this.groundPlane.rotation.x = -Math.PI / 2
-    this.groundPlane.position.y = -2
+    this.groundPlane.position.y = -1
     this.groundPlane.name = 'ground'
     this.add(this.groundPlane)
   }
@@ -183,7 +190,7 @@ export class World extends THREE.Group {
     const isHomePage = path === '/' || path === ''
     const worksGroup = isHomePage ? this.sceneGroups[3] : undefined
     if (worksGroup) {
-      const carousel = worksGroup.userData.gallery as
+      const carousel = worksGroup.userData.carousel as
         | import('../Experience/World/BakuCarousel').BakuCarousel
         | undefined
       if (carousel) {
@@ -210,6 +217,34 @@ export class World extends THREE.Group {
     }
   }
 
+  /** Sync ground plane color/opacity to the active theme.
+   *  Called by Experience on jlz:theme-applied (same trigger EnvSphere uses).
+   *  Without this, a dark ground color (0x1a1a2e) is invisible on the light
+   *  theme (near-white EnvSphere) but visible on inverse (dark). We flip the
+   *  ground to a contrasting tone per theme so it's always perceivable.
+   *  RULES §20 — ground still ONLY visible on section 4 (visibility is gated
+   *  in Experience.ts, this method only adjusts appearance).
+   *
+   *  NOTE: sets _groundThemeActive=true so updateTransform() knows to override
+   *  the WorldConfig lerp (which would otherwise reset opacity to 0.25). */
+  public syncGroundTheme(isLight: boolean): void {
+    if (isLight) {
+      // Light theme: dark ground on near-white bg = visible contrast.
+      this._groundThemeColor.set(0x1a1a2e)
+      this._groundThemeOpacity = 0.4
+    } else {
+      // Dark theme: lighter ground on dark bg = visible contrast.
+      this._groundThemeColor.set(0x3a3a4e)
+      this._groundThemeOpacity = 0.3
+    }
+    this._groundThemeActive = true
+    // Apply immediately (in case updateTransform doesn't run soon)
+    const groundMat = this.groundPlane.material as THREE.MeshStandardMaterial
+    groundMat.color.copy(this._groundThemeColor)
+    groundMat.opacity = this._groundThemeOpacity
+    this._targetGroundOpacity = this._groundThemeOpacity
+  }
+
   public update(deltaTime: number, needsRender: boolean = true): void {
     // EnvSphere manages the visible background.
     this.envSphere.update(deltaTime)
@@ -232,10 +267,10 @@ export class World extends THREE.Group {
     }
 
     // ── BakuCarousel per-frame (morph + scroll) ──
-    // Particles are STATIC — no drift. They don't animate when idle.
+    // JunniParticles animate via GPU-side drift (update advances uTime uniform).
     for (const group of this.sceneGroups) {
       if (!group.visible) continue
-      const carousel = group.userData.gallery as
+      const carousel = group.userData.carousel as
         | import('../Experience/World/BakuCarousel').BakuCarousel
         | undefined
       if (carousel) carousel.update(deltaTime)
@@ -254,6 +289,11 @@ export class World extends THREE.Group {
         | import('../Experience/World/TimelineNodes').TimelineNodes
         | undefined
       if (timeline) timeline.update(deltaTime)
+      // Update JunniParticles (Intro + Works sections) — GPU-side drift.
+      const particles = group.userData.particles as
+        | import('../Experience/World/JunniParticles').JunniParticles
+        | undefined
+      if (particles) particles.update(deltaTime)
     }
   }
 
@@ -379,6 +419,7 @@ export class World extends THREE.Group {
       if (shouldShow) {
         g.visible = fade > 0.001
         // A-006: Use cached mesh list instead of traverse every frame.
+        // A-006: Use cached mesh list instead of traverse every frame.
         // Cache stored in group.userData._meshCache (lazy-init).
         let meshCache = g.userData._meshCache as THREE.Mesh[] | undefined
         if (!meshCache) {
@@ -410,7 +451,7 @@ export class World extends THREE.Group {
 
         // BakuCarousel visibility — ONLY on home page (3D cube morph feature).
         // Content pages don't use the carousel (no cube morphing).
-        const carousel = g.userData.gallery as
+        const carousel = g.userData.carousel as
           | import('../Experience/World/BakuCarousel').BakuCarousel
           | undefined
         if (carousel) {
@@ -479,12 +520,21 @@ export class World extends THREE.Group {
     // Use the config from section's phaseConfig for ground/post/lighting
 
     // ── Ground plane update (junni pattern: lerp color + opacity per section)
-    const fromGround = fromCfg.ground
-    const toGround = toCfg.ground
+    // BUT: if syncGroundTheme() has been called (theme-applied), override the
+    // WorldConfig lerp — otherwise section navigation resets the theme-aware
+    // color/opacity back to the faint config values (ground invisible on light).
     const groundMat = this.groundPlane.material as THREE.MeshStandardMaterial
-    groundMat.color.copy(this._poolGroundColor.lerpColors(fromGround.color, toGround.color, t))
-    this._targetGroundOpacity = THREE.MathUtils.lerp(fromGround.opacity, toGround.opacity, t)
-    groundMat.opacity = this._targetGroundOpacity
+    if (this._groundThemeActive) {
+      groundMat.color.copy(this._groundThemeColor)
+      this._targetGroundOpacity = this._groundThemeOpacity
+      groundMat.opacity = this._groundThemeOpacity
+    } else {
+      const fromGround = fromCfg.ground
+      const toGround = toCfg.ground
+      groundMat.color.copy(this._poolGroundColor.lerpColors(fromGround.color, toGround.color, t))
+      this._targetGroundOpacity = THREE.MathUtils.lerp(fromGround.opacity, toGround.opacity, t)
+      groundMat.opacity = this._targetGroundOpacity
+    }
 
     // Crossfade opacity (bgT holds each section's opacity longer)
     bus.set(`section:${fromCfg.id}:opacity`, 1 - bgT)
@@ -556,12 +606,12 @@ export class World extends THREE.Group {
 
   private disposeSceneGroups(): void {
     this.sceneGroups.forEach((group) => {
-      // If the group hosts a BakuCarousel (userData.gallery), call its
+      // If the group hosts a BakuCarousel (userData.carousel), call its
       // dispose() FIRST — it removes 6 window listeners + clears snapTimer
       // + disposes card materials/textures/geometry. The traverse below
       // SKIPS the gallery's descendants (already disposed) to avoid a
       // fragile double-dispose on the same materials/geometries.
-      const gallery = group.userData.gallery as
+      const gallery = group.userData.carousel as
         | ({ dispose?: () => void } & THREE.Object3D)
         | undefined
       // Collect gallery + all its descendants so the traverse can skip them.

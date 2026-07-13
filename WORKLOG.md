@@ -1,3 +1,136 @@
+
+## 2026-07-13 — PLAN-v3: 8 phases complete (navigation architecture change)
+
+### Done
+- **Phase 1+2: Navigation + Lab overlays as secret sections**
+  - NEW: src/sections/nav/template.ts — Navigation overlay (section 5, joystick right)
+  - NEW: src/sections/lab-overlay/template.ts — Lab overlay (section 0, joystick left)
+  - All pages updated: section 0 = Lab overlay, section 5 = Navigation overlay
+  - Home: labSection → labOverlaySection, processSection → navOverlaySection
+  - Content pages (services/manifesto/lab/contact/works): sections 0+5 replaced with overlays
+- **Phase 3+4: Header by UIKit3, dropbar removed**
+  - UIMenu.ts rewritten: minimal header (logo + lang + sound + theme + hamburger)
+  - Hamburger dispatches jlz:goto-nav → Experience.ts → joystick.goToSection(5)
+  - Dropbar completely removed (navigation is now section overlay)
+- **Phase 5: Showreel modal UI polished**
+  - Seek bar: gradient progress fill via --jlz-seek-progress CSS variable
+  - Seek bar: height 6px (8px on hover) — interactive feel
+- **Phase 6: Cursor smoothed wobble edges**
+  - lineTo → quadraticCurveTo (midpoint method) — smoothed curves
+  - Segments 8 → 16 (more points = smoother)
+  - lineCap/lineJoin: round on all cursor paths
+- **Phase 7: Works scale up enhanced**
+  - Scale 0.8 + rotateY(12deg) + translateZ(-40px) + blur(8px) → scale(1) + rotateY(0) + blur(0)
+  - Stagger 0.2s/0.4s, duration 0.7s, perspective 1000px
+- **Phase 8: Shader transitions on click — chromatic burst**
+  - triggerWobblePulse: uWobble 0.95→2.5 (dramatic jelly)
+  - Chromatic burst: dispersion 15→30 (WebGPU) / chromaticAberration 0.5→1.0 (WebGL2)
+  - Scale pulse: triggerOpener (1.0→1.2→1.0)
+  - Duration 1.2s (cinematic)
+
+### Architecture change
+Navigation is now a SECTION (section 5), not a dropbar navbar.
+- Joystick right → Navigation overlay (hamburger menu)
+- Joystick left → Lab overlay (works list)
+- Both overlays shared across ALL pages (home + content)
+
+### Verified
+- tsc 0 errors, lint 0 errors (63 warnings), 69 tests pass
+- Browser: cube uWobble=0.95, all UI elements present, 0 console errors
+
+---
+
+## 2026-07-13 — PLAN-v2: 9 phases complete (7 brief items)
+
+### Done
+- **Phase 1: Wobble cube** — uWobble 0.70→0.95, SIZE_SCALE 0.07→0.09 (visible motion)
+- **Phase 2: Cursor** — larger (28/44px), smoother spring (0.18/0.7), custom states
+  (play/drag/view via data-cursor attribute)
+- **Phase 3: Showreel** — play button centered on intro cube + fullscreen video modal
+  with custom controls (play/pause/mute/seek/close)
+- **Phase 4: Works cards scale up** — CSS transition opacity+scale(0.85→1) with
+  stagger (0.15s/0.3s) on .section-active
+- **Phase 5: Wobble pulse on click** — triggerWobblePulse() boosts uWobble to 1.8
+  for 0.8s + scale pulse, triggered by jlz:wobble-pulse event from WorkCards +
+  BakuCarousel
+- **Phase 6: Navbar** — logo left (l@6), nav center, controls right (lang+sound+theme),
+  works dropbar with cover thumbnails, mobile offcanvas hamburger
+- **Phase 7: Brand identity** — docs/BRAND.md (colors, typography, voice, manifesto),
+  CSS variables (--jlz-accent #c4ff00, --jlz-bg, --jlz-fg)
+- **Phase 8: RU services** — shortened titles (Креатив/Разработка/Моушн/AI-системы/Лаб/Плейграунд)
+- **Phase 9: Content** — works leads shortened, all pages verified meaningful + CTA
+
+### Files
+- src/Experience/World/SplashCube.ts (wobble + triggerWobblePulse)
+- src/Experience/World/MeshTransmissionMaterial.ts (GLSL wobble sync)
+- src/Experience/Cursor.ts (larger + spring + custom states)
+- src/UI/ShowreelModal.ts (NEW — video modal)
+- src/UI/UIMenu.ts (rewritten — logo + lang + sound + dropbar previews)
+- src/UI/UIManager.ts (wire ShowreelModal)
+- src/UI/WorkCards.ts (wobble pulse dispatch + data-cursor=view)
+- src/Experience/World/BakuCarousel.ts (wobble pulse dispatch)
+- src/Experience/Experience.ts (jlz:wobble-pulse listener)
+- src/sections/intro/template.ts (play button)
+- src/pages/content/works.ts (data-cursor=view + shorter leads)
+- src/core/i18n.ts (RU services shortened + showreel key)
+- src/assets/main.less (navbar + showreel + work cards + brand vars CSS)
+- docs/BRAND.md (NEW — brand guidelines)
+- docs/PLAN-v2.md (NEW — detailed plan)
+
+### Verified
+- tsc 0 errors, lint 0 errors (63 warnings), 69 tests pass
+- Browser: cube wobble visible, sound panel, showreel btn, navbar with logo,
+  lang btn, nav sound, cursor — all present, 0 console errors
+
+---
+
+## 2026-07-13 — Cube wobble day34-accurate + autonomous improvement plan
+
+### Done
+- **Cube wobble fixed** (Hermes agent + manual tuning):
+  - Root cause: `RoundedBoxGeometry` produced non-perpendicular normals on face
+    interiors → displacement shifted faces sideways (flat-plane shift) instead
+    of bulging outward (jelly). Fixed by day34 pattern: `BoxGeometry + manual
+    vertex rounding + mergeVertices + computeVertexNormals`.
+  - Wobble params tuned over 7 iterations:
+    - uWobble: 1.30 → 0.42 → 1.50 → 1.0 → 1.30 → 0.91 → 0.50 → **0.70** (final)
+    - SIZE_SCALE: 0.05 → 0.20 → 0.35 → 0.12 → 0.08 → 0.10 → 0.05 → **0.07** (final)
+    - Removed high-freq octave (n3) for smoother surface
+    - Slowed time speeds (0.3→0.2, 0.5→0.3) for graceful motion
+    - Reduced squash (0.08→0.04) + breathe (0.12→0.08) to preserve cube shape
+  - Result: VLM 7/10 → "soft jelly, edges flowing, barely visible, elegant"
+- **Geometry optimized**: segments 32 → 24 (39% fewer vertices: 6144 → 3750)
+- **Preserved fixes verified**:
+  - Camera far=1000 (black hole fix) ✓
+  - Naming refactor (createSection0-5, userData.carousel) ✓
+  - RenderPipeline crash guard (line 641) ✓
+  - Post-processing (vignette, refract, border, chromatic) ✓
+
+### Decisions
+- **day34 pattern is the source of truth** — no custom wobble layers (bend/echo/shear
+  all broke it). Pure 3-octave noise + squash + breathe, scaled by SIZE_SCALE.
+- **VLM-driven tuning** — use z-ai vision to analyze screenshots, apply VLM
+  recommendations for amplitude. More reliable than guessing.
+- **Hermes agent delegation** — for complex debugging (geometry topology),
+  write detailed prompt and delegate. Hermes applied the fix correctly.
+
+### Files
+- `src/Experience/World/SplashCube.ts` — wobble uniforms + buildCube + TSL positionNode
+- `src/Experience/World/MeshTransmissionMaterial.ts` — GLSL wobble injection
+- `docs/PLAN.md` — NEW: autonomous improvement roadmap (8 phases)
+
+### Next (autonomous, no questions)
+- Phase 2: Zoom on works section (Camera FOV pulse + cube scale pulse)
+- Phase 3: Sound panel UI (off by default, EQ bars, click toggles mute)
+- Phase 4: Custom carousel enhancements (momentum, rubber-band 0.35x, auto-advance 4.5s)
+- Phase 5: DrawTrail junni-style rewrite (tapered tail, particle emission)
+- Phase 6: Wobble cursor (spring physics, fix magnetic lerp)
+- Phase 7: Typography (Bebas Neue + Oswald + JetBrains Mono) + neon-lime accent
+- Phase 8: Final verification + push
+
+See `docs/PLAN.md` for full roadmap.
+
+---
 # WORKLOG — Chronological decision journal (NEWEST FIRST)
 
 > Read the TOP entry first — it's the latest context. Each entry captures
@@ -6,6 +139,71 @@
 > "why" journal that survives context window resets.
 >
 > Format: `## YYYY-MM-DD — Session goal` → Done / Decisions / Files / Next
+
+---
+
+## 2026-07-13 — JunniParticles (TSL GPU-animated) + auto-reduce
+
+### Done
+- Analyzed next.junni.co.jp reference (Section6 Particle) — raw GLSL ShaderMaterial
+  on THREE.Points with drift + sin wave + mod wrap + circle mask + AdditiveBlending.
+- Created `src/Experience/World/JunniParticles.ts` — TSL port to our stack:
+  - InstancedMesh + PlaneGeometry (billboarded via TSL `billboarding` node) instead
+    of THREE.Points — WebGPU only supports point primitives with pixel size 1, so
+    pure Points can't have resizable sprites. InstancedMesh + billboarding works on
+    both WebGPU + WebGL2 (RULES §14 parity).
+  - GPU-side movement: `t*4 + sin(t + offset.y*10)*0.3` drift + `mod(pos, range)`
+    wrap-around. Mirrors Section6 particle.vs. No CPU per-frame cost — only uTime
+    uniform advances.
+  - Circle mask: `smoothstep(0.5, 0.35, distance(uv*2-1))` — soft round particles.
+  - Additive blending — luminous accumulation.
+  - `setVisibility(v)` — smooth fade via uVisibility uniform.
+  - `setCount(n)` — rebuilds geometry for auto-reduce.
+- Replaced `makeParticles()` (static PointsMaterial) in intro/scene.ts (300
+  particles) + works/scene.ts (200 particles, blue 0x4488ff). Deleted the now-unused
+  `src/sections/_shared/makeParticles.ts`.
+- Wired `particles.update(dt)` into World.update() scene-group loop (same pattern as
+  typo/orb/timeline/carousel).
+- Auto-reduce: Experience.update() now halves all JunniParticles counts when `_lowFps`
+  (FPS < 30 for 60 frames) flips true. One-way (`_particleReductionApplied` flag) —
+  never auto-restore (GPU spike would re-trigger). Foundation (`_lowFps`) was already
+  in place from Sprint 11; this wires the actual adaptive reduction.
+
+### Key decisions (WHY)
+- **InstancedMesh over THREE.Points**: WebGPU limitation — point primitives are
+  pixel-size-1 only. The reference uses THREE.Points + raw GLSL (WebGL-only). For
+  parity we use instanced billboards — works on both backends, same visual.
+- **TSL NodeMaterial (RULES §1/§2)**: reference uses raw ShaderMaterial. We port to
+  TSL — `Fn()` closures + `attribute('offsetPos')` + `billboarding({position})` +
+  `smoothstep`/`mod`/`sin` TSL nodes. Same shader logic, portable to WebGPU.
+- **GPU-side movement over CPU**: ParticleBurst (existing) does CPU-side matrix
+  updates per frame (200 matrices). For continuous ambient particles (300+), GPU-side
+  is cheaper — only one uniform update per frame, the shader does all position math.
+- **One-way auto-reduce**: restoring count causes a geometry rebuild + GPU upload
+  spike → FPS drops again → loop. Better to stay reduced. User can reload page to
+  reset. DevPanel shows 'low fps ⚠' so it's visible.
+
+### Files touched
+- `src/Experience/World/JunniParticles.ts` (NEW — 220 LOC)
+- `src/sections/intro/scene.ts` (makeParticles → JunniParticles)
+- `src/sections/works/scene.ts` (makeParticles → JunniParticles)
+- `src/sections/_shared/makeParticles.ts` (DELETED — unused)
+- `src/core/World.ts` (particles.update() in scene-group loop)
+- `src/Experience/Experience.ts` (_particleReductionApplied + auto-reduce block)
+
+### Verification
+- type-check: 0 errors
+- lint: 0 errors (61 pre-existing warnings)
+- build: green
+- test:unit: 69 passed
+- Agent Browser: 6 scene groups, intro=300 particles, works=200, isReduced=false,
+  0 console errors. (WebGL2 fallback — WebGPU premium path needs vision QA via
+  Hermes on project.6la.ru.)
+
+### Next
+- Vision QA via Hermes: verify particles render + animate on real WebGPU
+- Optional: visibility animation on section enter/leave (fade in/out)
+- Optional: boost effect (Section6 particleTimeScale 10x on trigger)
 
 ---
 

@@ -86,6 +86,10 @@ export class Experience {
   private static readonly LOW_FPS_WINDOW = 60 // frames to sustain before flag
   /** True when FPS < 30 sustained over 60 frames. Read by DevPanel. */
   public get lowFps(): boolean { return this._lowFps }
+  // Auto-reduce: when _lowFps flips true, halve all JunniParticles counts.
+  // One-way (never restore) — restoring causes a GPU spike that re-triggers
+  // low FPS. User can manually restore via DevPanel (future) or page reload.
+  private _particleReductionApplied = false
   // startAudio handler — saved so destroy() can remove it if the user never
   // interacted (click/keydown listeners would otherwise leak on teardown).
   private _startAudioHandler: (() => void) | null = null
@@ -268,6 +272,17 @@ export class Experience {
       const targetIdx = detail.isLight ? 1 : 2
       if (this.world?.envSphere) {
         this.world.envSphere.changeSection(targetIdx)
+        // Sync ground plane color/opacity to the active theme — otherwise
+        // a dark ground is invisible on the light theme (near-white bg).
+        this.world.syncGroundTheme(detail.isLight)
+        // Sync particle blending: Additive on dark (glow), Normal on light (visible).
+        // Without this, additive-blended particles are invisible on white backgrounds.
+        for (const group of this.world.sceneGroups) {
+          const particles = group.userData.particles as
+            | import('../Experience/World/JunniParticles').JunniParticles
+            | undefined
+          if (particles) particles.setBlending(!detail.isLight)
+        }
         this._needsRender = true
       }
     }
@@ -297,6 +312,11 @@ export class Experience {
     this._uiMenu = new UIMenu()
     this._uiMenu.onNavigate((idx) => {
       this._circNav?.goToSection(idx)
+    })
+
+    // PLAN-v3: Hamburger button → navigate to section 5 (navigation overlay)
+    window.addEventListener('jlz:goto-nav', () => {
+      this._circNav?.goToSection(5)
     })
 
     // JoystickNav is a DOM overlay (fixed bottom-center) — append to body.
@@ -428,6 +448,12 @@ export class Experience {
       })
     }
     window.addEventListener('jlz:open-project', this._openProjectHandler)
+
+    // Phase 5: Wobble pulse on card click (work cards + carousel)
+    window.addEventListener('jlz:wobble-pulse', () => {
+      const cube = this.world?.baku as unknown as { triggerWobblePulse?: () => void } | undefined
+      cube?.triggerWobblePulse?.()
+    })
   }
 
   update(time: number) {
@@ -511,6 +537,12 @@ export class Experience {
     if (navActive || introActive || carouselActive || openerActive || burstActive || camShaking || cubeRotating) {
       this._needsRender = true
     }
+
+    // ── Zoom pulse active (PLAN.md Phase 2) ──
+    // Camera.pulse() sets a two-phase FOV transition — keep rendering while it animates.
+    const camPulsing = (this.camera as unknown as { fovTransitionT?: number }).fovTransitionT !== undefined
+      && (this.camera as unknown as { fovTransitionT: number }).fovTransitionT < 1
+    if (camPulsing) this._needsRender = true
 
     // ── A4: Ambient breathing (IMPROVEMENT_PLAN) ──
     // When fully idle, schedule a single render frame every ~2.5 s so the
@@ -600,6 +632,14 @@ export class Experience {
         this.world.baku.rotateToFace(idx)
         this._needsRender = true
       }
+
+      // ── Zoom pulse on section change (PLAN.md Phase 2) ──
+      // Camera FOV dips slightly then returns — "push-in" cinematic feel.
+      // Also triggers cube opener (scale pulse 1.0→1.3→1.0) for combined effect.
+      this.camera.pulse(0.05, 0.8)
+      const cube = this.world?.baku as unknown as { triggerOpener?: () => void } | undefined
+      cube?.triggerOpener?.()
+      this._needsRender = true
     }
 
     // Context switch (post-processing preset)
@@ -663,6 +703,22 @@ export class Experience {
       // Clear flag if nothing is actively changing
       if (!navActive && !introActive && !carouselActive && !openerActive && !camShaking) {
         this._needsRender = false
+      }
+    }
+
+    // ── Auto-reduce particle count when FPS is sustained low ──
+    // One-way: once reduced, never auto-restore (GPU spike would re-trigger).
+    // Iterates all scene groups, finds JunniParticles via userData.particles,
+    // halves their count. DevPanel shows the reduction (low fps ⚠ indicator).
+    if (this._lowFps && !this._particleReductionApplied && this.world) {
+      this._particleReductionApplied = true
+      for (const group of this.world.sceneGroups) {
+        const particles = group.userData.particles as
+          | import('../Experience/World/JunniParticles').JunniParticles
+          | undefined
+        if (particles && !particles.isReduced) {
+          particles.setCount(Math.floor(particles.baseCount / 2))
+        }
       }
     }
 
@@ -788,7 +844,7 @@ export class Experience {
 
     if (!this.overlay) {
       const worksSection =
-        document.getElementById('section-challenge') ||
+        document.getElementById('section-works') ||
         document.getElementById('section-works') ||
         document.getElementById('spa-content')
       this.overlay = new ProjectOverlay(worksSection!, this.sfx)
@@ -840,7 +896,7 @@ export class Experience {
     if (document.body.dataset.page !== 'home') return null
     const worksGroup = this.world?.sceneGroups?.[3]
     if (!worksGroup) return null
-    return (worksGroup.userData.gallery as
+    return (worksGroup.userData.carousel as
       | import('./World/BakuCarousel').BakuCarousel
       | undefined) ?? null
   }

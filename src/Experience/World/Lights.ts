@@ -58,7 +58,7 @@ const SECTION_PRESETS: Record<string, SectionLightPreset> = {
     volumetricColor: 0x6677bb,
     volumetricIntensity: 0.8,
   },
-  sec_challenge: {
+  sec_works: {
     keyColor: 0x4466aa, // blue gallery light — stage feel
     keyIntensity: 1.8,
     keyPos: [0, 5, 5],

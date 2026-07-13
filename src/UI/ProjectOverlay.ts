@@ -39,7 +39,7 @@ export class ProjectOverlay {
       this.container.id = 'project-overlay'
     }
     // Always attach to body — if the overlay was prerendered inside a section
-    // (templates.ts has it inside #section-challenge), move it to body so
+    // (templates.ts has it inside #section-works), move it to body so
     // position:fixed is viewport-relative (section transforms break fixed).
     if (this.container.parentElement !== document.body) {
       document.body.appendChild(this.container)

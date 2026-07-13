@@ -637,6 +637,15 @@ export class RenderPipeline {
 
   private _renderWebGL(scene: THREE.Scene, camera: THREE.Camera): void {
     const renderer = this._renderer as THREE.WebGLRenderer
+
+    // Guard: if passes aren't initialized yet (early render before _setupWebGL
+    // completes), fall back to direct render. Prevents 'Cannot set properties
+    // of undefined (setting value)' crash when uniforms are null.
+    if (!this._passComposite || !this._rtScene || !this._params) {
+      renderer.render(scene, camera)
+      return
+    }
+
     const autoClearBackup = renderer.autoClear
     // Render the scene to a LINEAR HDR RT (no tone mapping) so the composite pass
     // can apply ACES exactly once. Restored before returning so the WebGPU

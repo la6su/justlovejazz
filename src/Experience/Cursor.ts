@@ -25,7 +25,8 @@ function lerp(a: number, b: number, n: number): number {
   return (1 - n) * a + n * b
 }
 
-const CANVAS_SIZE = 100
+// Phase 2: canvas 100→120 for larger cursor (baseRadius 28 + targetRadius 44)
+const CANVAS_SIZE = 120
 const CANVAS_HALF = CANVAS_SIZE / 2
 
 export class Cursor {
@@ -38,17 +39,30 @@ export class Cursor {
   private targetY = 0
   private innerX = 0
   private innerY = 0
-  private readonly lerpFactor = 0.12
   private readonly sfx?: { play: (name: 'hover' | 'click' | 'open' | 'close') => void }
+
+  // Phase 2: spring physics for wobble (skaltenegger-style, smoothed)
+  // Outer circle lags behind mouse with spring-damper, giving organic wobble
+  // Stiffness lowered (0.25→0.18) + damping raised (0.55→0.7) for smoother motion
+  private velX = 0
+  private velY = 0
+  private readonly springStiffness = 0.18
+  private readonly springDamping = 0.7
+
+  // Phase 2: custom cursor states (data-cursor attribute)
+  // 'play' → triangle, 'drag' → hand, 'view' → eye, 'muted'/'unmuted' → speaker
+  private cursorState: string | null = null
 
   // Noisy circle state
   private isStuck = false
   private stuckX = 0
   private stuckY = 0
-  private currentRadius = 20
-  private readonly baseRadius = 20
-  private readonly targetRadius = 36
-  private readonly segments = 8
+  // Phase 6: spring physics replaces instant magnetic snap — cursor eases
+  // toward element center with spring-damper (organic wobble, not instant jump)
+  // Phase 2: larger cursor (baseRadius 20→28, targetRadius 36→44)
+  private currentRadius = 28
+  private readonly baseRadius = 28
+  private readonly targetRadius = 44
   private readonly noiseScale = 150
   private readonly noiseRange = 3
   private frameCount = 0
@@ -59,6 +73,7 @@ export class Cursor {
   private _lastDrawFill = 0
   private _lastDrawBump = 1
   private _lastDrawStuck = false
+  private _lastDrawState: string | null = null
 
   // Click bump state (demo1)
   private bumpScale = 1
@@ -105,6 +120,9 @@ export class Cursor {
     this.mouseoverHandler = (e: MouseEvent) => {
       const target = e.target as HTMLElement
       if (!target || typeof target.closest !== 'function') return
+      // Phase 2: check for custom cursor state (data-cursor attribute)
+      const stateEl = target.closest('[data-cursor]') as HTMLElement | null
+      this.cursorState = stateEl?.dataset.cursor ?? null
       const interactive = target.closest('[data-magnetic], a, button, .interactive, [uk-toggle], [uk-slider]') as HTMLElement | null
       if (interactive) {
         // For large menu items (main menu nav links), DON'T snap to center —
@@ -160,11 +178,18 @@ export class Cursor {
     this.innerEl.classList.toggle('is-hover', this.isStuck)
     this.innerEl.style.transform = `translate(${this.innerX}px, ${this.innerY}px) translate(-50%, -50%)`
 
-    // Outer circle — smooth lerp follow
+    // Phase 6: spring physics for outer circle (skaltenegger wobble pattern)
+    // Goal: magnetic element center (if stuck) or mouse position (if free)
     const goalX = this.isStuck ? this.stuckX : this.targetX
     const goalY = this.isStuck ? this.stuckY : this.targetY
-    this.posX = lerp(this.posX, goalX, this.lerpFactor)
-    this.posY = lerp(this.posY, goalY, this.lerpFactor)
+    // Spring-damper: F = -k*(pos - goal) - d*vel
+    // Integration: vel += (goal - pos) * stiffness - vel * damping
+    const dx = goalX - this.posX
+    const dy = goalY - this.posY
+    this.velX = (this.velX + dx * this.springStiffness) * this.springDamping
+    this.velY = (this.velY + dy * this.springStiffness) * this.springDamping
+    this.posX += this.velX
+    this.posY += this.velY
     this.canvas.style.transform = `translate(${this.posX}px, ${this.posY}px) translate(-50%, -50%)`
 
     // Radius — smooth expand/shrink + click bump
@@ -176,13 +201,14 @@ export class Cursor {
     // Fill progress — 0 = stroke only, 1 = filled
     this.fillProgress = lerp(this.fillProgress, this.fillTarget, 0.12)
 
-    // Draw noisy circle — ONLY when something changed (avoids redraw when idle)
+    // Draw cursor — ONLY when something changed (avoids redraw when idle)
     const moved = Math.abs(this.posX - this._lastDrawX) > 0.3
       || Math.abs(this.posY - this._lastDrawY) > 0.3
       || Math.abs(this.currentRadius - this._lastDrawR) > 0.3
       || Math.abs(this.fillProgress - this._lastDrawFill) > 0.01
       || Math.abs(this.bumpScale - this._lastDrawBump) > 0.01
       || this.isStuck !== this._lastDrawStuck
+      || this.cursorState !== this._lastDrawState
     if (moved) {
       this.drawCircle()
       this._lastDrawX = this.posX
@@ -191,6 +217,7 @@ export class Cursor {
       this._lastDrawFill = this.fillProgress
       this._lastDrawBump = this.bumpScale
       this._lastDrawStuck = this.isStuck
+      this._lastDrawState = this.cursorState
     }
     this.frameCount++
   }
@@ -204,17 +231,38 @@ export class Cursor {
     const cy = CANVAS_HALF
     const radius = this.currentRadius * this.bumpScale
 
+    // Phase 2: custom cursor states (data-cursor attribute)
+    // Draw different shapes based on cursorState
+    if (this.cursorState === 'play') {
+      this.drawPlayIcon(ctx, cx, cy, radius)
+      return
+    }
+    if (this.cursorState === 'drag') {
+      this.drawDragIcon(ctx, cx, cy, radius)
+      return
+    }
+    if (this.cursorState === 'view') {
+      this.drawViewIcon(ctx, cx, cy, radius)
+      return
+    }
+
+    // Default: noisy circle with SMOOTHED edges (quadraticCurveTo)
     ctx.beginPath()
     // Outer circle stroke/fill: always accent-hover color (NOT red).
     const strokeR = 107, strokeG = 120, strokeB = 163   // #6b78a3 accent-hover
     const alpha = 0.6 + this.fillProgress * 0.3
     ctx.strokeStyle = `rgba(${strokeR}, ${strokeG}, ${strokeB}, ${alpha})`
     ctx.lineWidth = 2
+    ctx.lineCap = 'round'
+    ctx.lineJoin = 'round'
 
     // Noisy distortion only when expanded enough
     const isNoisy = this.isStuck && this.currentRadius > this.baseRadius + 5
-    for (let i = 0; i <= this.segments; i++) {
-      const angle = (i / this.segments) * Math.PI * 2
+    // Phase 6: more segments (8→16) + quadraticCurveTo for smoothed edges
+    const smoothSegments = 16
+    const points: Array<{ x: number; y: number }> = []
+    for (let i = 0; i < smoothSegments; i++) {
+      const angle = (i / smoothSegments) * Math.PI * 2
       let segRadius = radius
 
       if (isNoisy) {
@@ -223,12 +271,24 @@ export class Cursor {
         segRadius += (noiseX + noiseY) * this.noiseRange
       }
 
-      const x = cx + Math.cos(angle) * segRadius
-      const y = cy + Math.sin(angle) * segRadius
-      if (i === 0) ctx.moveTo(x, y)
-      else ctx.lineTo(x, y)
+      points.push({
+        x: cx + Math.cos(angle) * segRadius,
+        y: cy + Math.sin(angle) * segRadius,
+      })
     }
-    ctx.closePath()
+
+    // Draw smoothed curve through points using quadraticCurveTo (midpoint method)
+    if (points.length > 0) {
+      ctx.moveTo((points[0]!.x + points[points.length - 1]!.x) / 2, (points[0]!.y + points[points.length - 1]!.y) / 2)
+      for (let i = 0; i < points.length; i++) {
+        const curr = points[i]!
+        const next = points[(i + 1) % points.length]!
+        const midX = (curr.x + next.x) / 2
+        const midY = (curr.y + next.y) / 2
+        ctx.quadraticCurveTo(curr.x, curr.y, midX, midY)
+      }
+      ctx.closePath()
+    }
 
     // Fill: accent color (same as stroke, NOT red)
     if (this.fillProgress > 0.01) {
@@ -236,6 +296,82 @@ export class Cursor {
       ctx.fill()
     }
     ctx.stroke()
+  }
+
+  /** Phase 2: Play triangle icon — for showreel/video elements. */
+  private drawPlayIcon(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number): void {
+    // Filled circle + triangle
+    ctx.beginPath()
+    ctx.arc(cx, cy, r, 0, Math.PI * 2)
+    ctx.fillStyle = 'rgba(196, 255, 0, 0.15)'  // accent-lime
+    ctx.fill()
+    ctx.strokeStyle = 'rgba(196, 255, 0, 0.9)'
+    ctx.lineWidth = 2
+    ctx.stroke()
+    // Triangle (play icon)
+    const size = r * 0.5
+    ctx.beginPath()
+    ctx.moveTo(cx - size * 0.5, cy - size)
+    ctx.lineTo(cx - size * 0.5, cy + size)
+    ctx.lineTo(cx + size * 0.8, cy)
+    ctx.closePath()
+    ctx.fillStyle = 'rgba(196, 255, 0, 0.95)'
+    ctx.fill()
+  }
+
+  /** Phase 2: Drag arrows icon — for carousel/slider elements. */
+  private drawDragIcon(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number): void {
+    ctx.beginPath()
+    ctx.arc(cx, cy, r, 0, Math.PI * 2)
+    ctx.strokeStyle = 'rgba(107, 120, 163, 0.6)'
+    ctx.lineWidth = 2
+    ctx.stroke()
+    // Left-right arrows (smoothed with round caps)
+    const arrowSize = r * 0.4
+    ctx.strokeStyle = 'rgba(107, 120, 163, 0.9)'
+    ctx.lineWidth = 2.5
+    ctx.lineCap = 'round'
+    ctx.lineJoin = 'round'
+    // Left arrow
+    ctx.beginPath()
+    ctx.moveTo(cx - arrowSize, cy)
+    ctx.lineTo(cx - arrowSize * 2, cy)
+    ctx.moveTo(cx - arrowSize * 2, cy)
+    ctx.lineTo(cx - arrowSize * 1.5, cy - arrowSize * 0.4)
+    ctx.moveTo(cx - arrowSize * 2, cy)
+    ctx.lineTo(cx - arrowSize * 1.5, cy + arrowSize * 0.4)
+    ctx.stroke()
+    // Right arrow
+    ctx.beginPath()
+    ctx.moveTo(cx + arrowSize, cy)
+    ctx.lineTo(cx + arrowSize * 2, cy)
+    ctx.moveTo(cx + arrowSize * 2, cy)
+    ctx.lineTo(cx + arrowSize * 1.5, cy - arrowSize * 0.4)
+    ctx.moveTo(cx + arrowSize * 2, cy)
+    ctx.lineTo(cx + arrowSize * 1.5, cy + arrowSize * 0.4)
+    ctx.stroke()
+  }
+
+  /** Phase 2: View/eye icon — for project cards. */
+  private drawViewIcon(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number): void {
+    ctx.beginPath()
+    ctx.arc(cx, cy, r, 0, Math.PI * 2)
+    ctx.strokeStyle = 'rgba(107, 120, 163, 0.6)'
+    ctx.lineWidth = 2
+    ctx.stroke()
+    // Eye shape
+    const eyeW = r * 0.9
+    const eyeH = r * 0.5
+    ctx.strokeStyle = 'rgba(107, 120, 163, 0.9)'
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    ctx.ellipse(cx, cy, eyeW, eyeH, 0, 0, Math.PI * 2)
+    ctx.stroke()
+    // Pupil
+    ctx.beginPath()
+    ctx.arc(cx, cy, r * 0.2, 0, Math.PI * 2)
+    ctx.fillStyle = 'rgba(107, 120, 163, 0.9)'
+    ctx.fill()
   }
 
   destroy() {

@@ -8,7 +8,7 @@ export function createSection2(): THREE.Group {
   const g = new THREE.Group()
   g.name = 'about'
 
-  const typography = new WireframeTypography('ABOUT', 1.1)
+  const typography = new WireframeTypography('ABOUT', 0.55)
   // keepVisible: SectionSceneFactory.hideGeometry() hides everything except
   // Points/InstancedMesh/keepVisible — the wireframe text must stay visible.
   typography.userData.keepVisible = true

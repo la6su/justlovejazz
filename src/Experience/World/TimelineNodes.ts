@@ -18,7 +18,7 @@ export class TimelineNodes extends THREE.InstancedMesh {
   private _time = 0
   private _dummy = new THREE.Object3D()
 
-  constructor(radius: number = 0.16) {
+  constructor(radius: number = 0.08) {
     const geo = new THREE.IcosahedronGeometry(radius, 1) // low-poly facetted nodes
     const mat = new MeshBasicNodeMaterial({
       color: 0x6fb7d8,

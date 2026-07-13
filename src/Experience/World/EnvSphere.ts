@@ -70,12 +70,14 @@ export class EnvSphere extends THREE.Mesh {
     //     WebGPU and WebGL2 — sphere geometry has UVs, texture wraps correctly.
     //
     // Skybox pattern: depthTest=false, renderOrder=-1000, depthWrite=false.
-    const geo = new THREE.SphereGeometry(40, 32, 16)
+    const geo = new THREE.SphereGeometry(100, 64, 32)
     const mat = new THREE.MeshBasicMaterial({
       side: THREE.BackSide,
       depthWrite: false,
       depthTest: false,
       fog: false,
+      toneMapped: false,
+      
       // toneMapped: true (default) — on WebGPU TSL path, toneMapped:false can
       // cause the material to render black (TSL outputNode handles tone mapping).
     })

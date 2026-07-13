@@ -21,12 +21,12 @@ import { test, expect, type Page } from '@playwright/test'
  */
 
 const SECTION_IDS = [
+  'section-lab',
   'section-intro',
   'section-about',
-  'section-flexible',
   'section-challenge',
-  'section-innovative',
   'section-contact',
+  'section-process',
 ] as const
 
 /**
@@ -79,8 +79,8 @@ test.describe('JustLoveJazz — page boot smoke', () => {
   test('splash container + populated <main> render within timeout', async ({ page }) => {
     await page.goto('/')
 
-    // Splash overlay is present in the initial HTML (curtain panels).
-    await expect(page.locator('#jlj-splash')).toHaveCount(1)
+    // Splash overlay is inline in index.html — #jlz-app-loader with curtain panels.
+    await expect(page.locator('#jlz-app-loader')).toHaveCount(1)
 
     // The router creates <main id="spa-content" role="main"> after JS boots.
     // #app stays empty by design — content lives in #spa-content.
@@ -97,12 +97,18 @@ test.describe('JustLoveJazz — page boot smoke', () => {
     await expect(skip).toHaveAttribute('href', '#section-intro')
   })
 
-  test('all 6 anchor sections render with correct IDs and data-section', async ({ page }) => {
-    await page.goto('/')
+  test('all 6 sections render with correct IDs and data-section', async ({ page }) => {
+    // Sections are prerendered into index.html by vite build (prerender-index
+    // plugin) — they're in the DOM at domcontentloaded. BUT Experience.init()
+    // blocks the main thread during WebGL/WebGPU setup (15-40s in headless),
+    // which delays Playwright's toBeAttached polling for the last 2 sections.
+    // 90s test timeout + 60s per-section timeout covers the worst case.
+    test.setTimeout(90000)
+    await page.goto('/', { waitUntil: 'domcontentloaded' })
 
     for (const id of SECTION_IDS) {
       const loc = page.locator(`#${id}`)
-      await expect(loc).toBeAttached({ timeout: 20000 })
+      await expect(loc).toBeAttached({ timeout: 60000 })
       const ds = await loc.getAttribute('data-section')
       expect(ds, `#${id} should have data-section`).toBeTruthy()
     }

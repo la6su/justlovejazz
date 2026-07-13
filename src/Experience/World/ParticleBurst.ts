@@ -67,7 +67,7 @@ export class ParticleBurst extends THREE.InstancedMesh {
   private _elapsed = 0
 
   constructor() {
-    const geo = new THREE.PlaneGeometry(0.15, 0.15)
+    const geo = new THREE.PlaneGeometry(0.08, 0.08)
     const mat = new MeshBasicNodeMaterial({
       color: 0xffffff,
       transparent: true,

@@ -11,11 +11,28 @@
 //   3. Cube mesh — RoundedBoxGeometry with MeshPhysicalMaterial
 //      envMap = CubeCamera render target → rich reflections
 //   4. Opener — scale pulse (1.0 → 1.3 → 1.0)
+//
+// Glass shader (pride-worthy chromatic glass):
+//   WebGPU:  MeshPhysicalNodeMaterial + native `dispersion` property (three r164+)
+//            → per-channel RGB IOR sampling in TSL PhysicalLightingModel.
+//            No GLSL onBeforeCompile needed — chromatic aberration is built-in.
+//            + TSL silicon-jelly wobble positionNode (dasprinzip day34 pattern).
+//   WebGL2:  MeshTransmissionMaterial (drei-style GLSL onBeforeCompile) with
+//            chromaticAberration + anisotropicBlur + GLSL silicon-jelly wobble.
+//            (TSL transmission crashes on legacy WebGLRenderer — getCanvasTarget
+//             is WebGPU-only — so we keep the GLSL path for parity.)
+//   Both:    transmission 1.0, thickness 1.2 (low → transparency), ior 1.21,
+//            iridescence 1.0, clearcoat 1.0, glass-flakes normalMap, CubeCamera envMap.
 
 import * as THREE from 'three'
 import { organicValue } from '../../Utils/Noise'
 import { BakuRole, type BakuMaterialState } from '../../core/types'
-import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js'
+import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js'
+import { MeshPhysicalNodeMaterial } from 'three/webgpu'
+import { Fn, uniform, positionLocal, normalLocal, mx_noise_float, sin } from 'three/tsl'
+import { DeviceCapability } from '../../core/DeviceCapability'
+import { MeshTransmissionMaterial } from './MeshTransmissionMaterial'
+import { PlayButton3D } from './PlayButton3D'
 
 interface BakuMaterialParams {
   color: THREE.Color
@@ -37,9 +54,19 @@ const ROT_PER_TRANSITION = Math.PI / 6
 
 export class SplashCube extends THREE.Mesh {
   private cubeMesh!: THREE.Mesh
-  // edgeLines removed — was LineSegments with 1px aliasing. Cube looks
-  // clean with just MeshPhysicalMaterial (iridescence + clearcoat).
   private cubeMaterial!: THREE.MeshPhysicalMaterial
+  /** TSL shader play button — in front of cube, visible on intro section only */
+  public playButton: PlayButton3D | null = null
+  // TSL wobble uniforms (WebGPU path only)
+  // day34 pattern, tuned for VISIBLE elegant jelly:
+  //   - NOISE_FREQ = 2.4 — 2 periods/face like day34
+  //   - SIZE_SCALE = 0.09 — displacement (visible but preserves cube shape)
+  //   - uWobble = 0.95 — amplitude (was 0.70 → too subtle, 1.20 → lost shape)
+  // Goal: cube wobble clearly visible, shape preserved, smooth motion.
+  private _uWobble = uniform(0.95)
+  private _uTime = uniform(0)
+  /** Displacement amplitude — visible but elegant. */
+  private static readonly SIZE_SCALE = 0.09
   private cubeCamera!: THREE.CubeCamera
   private contentScene!: THREE.Scene
   private contentTextures: THREE.Texture[] = []
@@ -115,7 +142,7 @@ export class SplashCube extends THREE.Mesh {
     this.contentTextures = [logoTex, text1Tex, text2Tex]
 
     // 6 gradient planes — JLZ accent palette (not Apple rainbow).
-    const size = 10
+    const size = 5
     const half = size / 2
     const jlzColors = [
       [0.32, 0.36, 0.52], // accent blue-grey
@@ -189,56 +216,189 @@ export class SplashCube extends THREE.Mesh {
   }
 
   // ════════════════════════════════════════════════════════════════════
-  // CUBE MESH — single BoxGeometry (smooth edges, no pixelation)
+  // CUBE MESH — pride-worthy chromatic glass cube (day34-accurate wobble)
   // ════════════════════════════════════════════════════════════════════
   private buildCube(): void {
-    const size = 1.6
+    const size = 0.8
 
-    // Single RoundedBoxGeometry — beveled edges eliminate aliasing at
-    // sharp face junctions. With roughness:0 (mirror), sharp edges create
-    // maximum pixel-level aliasing. Bevel radius 0.04 = subtle rounding.
-    // (was: BoxGeometry — sharp edges → jagged pixels at face boundaries)
-    const geo = new RoundedBoxGeometry(size, size, size, 6, 0.04)
+    // ── Geometry: day34 pattern (BoxGeometry + manual rounding + mergeVertices) ──
+    // day34: BoxGeometry(16,16,16, 64,64,64) + manual vertex rounding + mergeVertices
+    // Our: BoxGeometry(0.8,0.8,0.8, 24,24,24) — 24 segments (perf-optimized from 32).
+    // 24² = 576 verts/face × 6 = 3456 verts total (was 6144 with 32 segs — 44% reduction).
+    // Still smooth enough for 2 noise periods/face (12 verts/period vs day34's 32).
+    // RoundedBoxGeometry was causing normals to bleed from edges into face interiors,
+    // producing flat-plane shift instead of jelly bulge. day34's mergeVertices +
+    // computeVertexNormals ensures perpendicular normals → correct displacement.
+    let geo: THREE.BufferGeometry = new THREE.BoxGeometry(size, size, size, 24, 24, 24)
+    {
+      const pos = geo.getAttribute('position')
+      const r = 0.175  // 3.5 * 0.05 (day34 rounding radius scaled for cube 0.8)
+      const h = size / 2  // 0.4
+      for (let i = 0; i < pos.count; i++) {
+        let x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i)
+        const ix = Math.min(Math.abs(x), h - r) * Math.sign(x)
+        const iy = Math.min(Math.abs(y), h - r) * Math.sign(y)
+        const iz = Math.min(Math.abs(z), h - r) * Math.sign(z)
+        const dx = x - ix, dy = y - iy, dz = z - iz
+        const dl = Math.sqrt(dx * dx + dy * dy + dz * dz)
+        if (dl > 0.001) {
+          x = ix + dx * (r / dl)
+          y = iy + dy * (r / dl)
+          z = iz + dz * (r / dl)
+        }
+        pos.setXYZ(i, x, y, z)
+      }
+      pos.needsUpdate = true
+      geo = mergeVertices(geo, 0.01) as THREE.BufferGeometry
+      geo.computeVertexNormals()
+    }
 
-    // MeshPhysicalMaterial — glass cube with env reflections (Apple Fifth Avenue style)
-    // scene.environment (PMREM from RoomEnvironment) provides the reflections.
-    // No map/emissiveMap — the cube is pure glass, reflections come from env.
-    this.cubeMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0xffffff,
-      emissive: 0x1a2a4a,
-      emissiveIntensity: 0.15,
-      transparent: true,
-      opacity: 0.35,
-      side: THREE.DoubleSide,
-      roughness: 0.0,
-      metalness: 0.0,
-      iridescence: 1.0,
-      iridescenceIOR: 1.3,
-      clearcoat: 1.0,
-      clearcoatRoughness: 0.0,
-      transmission: 0,
-      thickness: 1.2,
-      ior: 1.52,
-      envMapIntensity: 2.5, // very strong env reflections
-      depthWrite: false,
-    })
+    // ── Glass-flakes normal map (day34-accurate) ──
+    // day34: repeat (6,6), normalScale (0.24, 0.24).
+    // We had repeat (4,4) + normalScale (0.7,0.7) → too strong, looked like
+    // "mixed two textures". Reverted to day34 values for clean seamless flakes.
+    const speckleTex = new THREE.TextureLoader().load('/textures/glass-flakes.png')
+    speckleTex.wrapS = THREE.RepeatWrapping
+    speckleTex.wrapT = THREE.RepeatWrapping
+    speckleTex.repeat.set(6, 6)
+
+    const caps = DeviceCapability.getInstance()
+    const isWebGPU = caps.isRealWebGPU
+
+    // ── Material params (day34-accurate + chromatic dispersion) ──
+    // day34 glass material:
+    //   color (0.94, 0.91, 1.00) — slight lavender tint
+    //   metalness 0.0, roughness 0.0
+    //   transmission 1.0, thickness 5, ior 1.21
+    //   side FrontSide (NOT DoubleSide — DoubleSide causes double refraction)
+    //   envMapIntensity 1.0
+    //   attenuationColor (1,1,1), attenuationDistance 100
+    //   specularIntensity 1.0, depthWrite false
+    //   normalMap = speckleTex, normalScale (0.24, 0.24)
+    // We ADD: dispersion 15.0 (WebGPU) / chromaticAberration 0.5 (WebGL2) for
+    // chromatic aberration (day34 doesn't have it, but user wants it).
+    // We ADD: iridescence 1.0 + clearcoat 1.0 + sheen 0.4 for extra glassiness.
+
+    if (isWebGPU) {
+      // ── WebGPU: MeshPhysicalNodeMaterial + NATIVE dispersion + day34 TSL wobble ──
+      const mat = new MeshPhysicalNodeMaterial()
+      mat.color = new THREE.Color(0.94, 0.91, 1.00)  // day34 lavender tint
+      mat.emissive = new THREE.Color(0x000000)
+      mat.emissiveIntensity = 0.0
+      mat.metalness = 0.0
+      mat.roughness = 0.0                            // day34 mirror-smooth
+      mat.transmission = 1.0
+      mat.thickness = 5                              // day34 value (was 0.5 → no refraction)
+      mat.ior = 1.21
+      mat.dispersion = 15.0                          // chromatic aberration (day34 doesn't have)
+      mat.transparent = true
+      mat.opacity = 1.0
+      mat.side = THREE.FrontSide                     // day34 (was DoubleSide → double refraction)
+      mat.envMapIntensity = 1.0                      // day34 (was 2.0 → too strong)
+      mat.attenuationColor = new THREE.Color(1.0, 1.0, 1.0)
+      mat.attenuationDistance = 100                  // day34 (was Infinity → no depth)
+      mat.specularIntensity = 1.0
+      mat.iridescence = 1.0
+      mat.iridescenceIOR = 1.3
+      mat.iridescenceThicknessRange = [100, 400]
+      mat.clearcoat = 1.0
+      mat.clearcoatRoughness = 0.0
+      mat.sheen = 0.4
+      mat.sheenColor = new THREE.Color(0.8, 0.9, 1.0)
+      mat.sheenRoughness = 0.5
+      mat.depthWrite = false
+      mat.normalMap = speckleTex
+      mat.normalScale = new THREE.Vector2(0.24, 0.24)  // day34 (was 0.7 → too strong)
+
+      // ── TSL wobble — subtle elegant jelly (VLM-tuned: "barely visible, elegant") ──
+      // day34 source: 3-octave noise (0.5/0.2/0.1) + squash + breathe
+      //
+      // Smoothed + reduced for elegant look:
+      //   - n3 (high-freq) REMOVED — was causing surface crunch
+      //   - n2 (mid-freq) amplitude 0.2 → 0.12 (softer)
+      //   - n1 (low-freq) amplitude 0.5 → 0.4 (gentle base wave)
+      //   - Time speeds slowed: 0.25→0.2, 0.4→0.3 (graceful motion)
+      //   - Squash amplitude 0.08 → 0.04 (less Y distortion, preserves cube shape)
+      //   - Breathe amplitude 0.12 → 0.08 (gentler volume pulse)
+      //   - Squash freq 0.3 → 0.25, Breathe freq 0.55 → 0.45 (slower, more elegant)
+      const uWobble = this._uWobble
+      const uTimeVal = this._uTime
+      const SIZE_SCALE = SplashCube.SIZE_SCALE   // 0.05
+      const NOISE_FREQ = 2.4                      // 0.12 * (16/0.8)
+      mat.positionNode = Fn(() => {
+        const pos = positionLocal.toVar()
+        const np = pos.mul(NOISE_FREQ)
+        const t = uTimeVal
+        // 2-octave noise (high-freq removed for smooth surface)
+        const n1 = mx_noise_float(np.add(t.mul(0.2))).mul(0.4).mul(uWobble)
+        const n2 = mx_noise_float(np.mul(2.5).add(t.mul(0.3)).add(7)).mul(0.12).mul(uWobble)
+        const displacement = n1.add(n2)
+        // squash + breathe (gentle, preserves cube shape)
+        const squash = sin(t.mul(0.25)).mul(0.04).mul(uWobble)
+        const breathe = sin(t.mul(0.45).add(pos.y.mul(0.3))).mul(0.08).mul(uWobble)
+        // Apply — displacement scaled by SIZE_SCALE, squash proportional
+        pos.assign(pos.add(normalLocal.mul(displacement.add(breathe).mul(SIZE_SCALE))))
+        pos.y.addAssign(pos.y.mul(squash))
+        return pos
+      })()
+
+      this.cubeMaterial = mat as unknown as THREE.MeshPhysicalMaterial
+    } else {
+      // ── WebGL2: MeshTransmissionMaterial (GLSL onBeforeCompile) ──
+      // Same day34-accurate material params. GLSL wobble is in
+      // MeshTransmissionMaterial.ts (also updated to day34 pattern + SIZE_SCALE).
+      const mat = new MeshTransmissionMaterial(6)
+      mat.color = new THREE.Color(0.94, 0.91, 1.00)
+      mat.emissive = new THREE.Color(0x000000)
+      mat.emissiveIntensity = 0.0
+      mat.metalness = 0.0
+      mat.roughness = 0.0
+      mat.transmission = 1.0
+      mat.thickness = 5                              // day34
+      mat.ior = 1.21
+      mat.transparent = true
+      mat.opacity = 1.0
+      mat.side = THREE.FrontSide                     // day34
+      mat.envMapIntensity = 1.0
+      mat.attenuationColor = new THREE.Color(1.0, 1.0, 1.0)
+      mat.attenuationDistance = 100
+      mat.specularIntensity = 1.0
+      mat.iridescence = 1.0
+      mat.iridescenceIOR = 1.3
+      mat.iridescenceThicknessRange = [100, 400]
+      mat.clearcoat = 1.0
+      mat.clearcoatRoughness = 0.0
+      mat.sheen = 0.4
+      mat.sheenColor = new THREE.Color(0.8, 0.9, 1.0)
+      mat.sheenRoughness = 0.5
+      mat.depthWrite = false
+      mat.normalMap = speckleTex
+      mat.normalScale = new THREE.Vector2(0.24, 0.24)
+      mat.chromaticAberration = 0.5                  // chromatic fringe
+      mat.anisotrophicBlur = 0.1
+      mat.wobble = 0.95                              // synced with _uWobble (WebGPU)
+      mat.distortion = 0.0
+      mat.distortionScale = 0.3
+      mat.temporalDistortion = 0.0
+
+      this.cubeMaterial = mat as unknown as THREE.MeshPhysicalMaterial
+    }
 
     this.cubeMesh = new THREE.Mesh(geo, this.cubeMaterial)
     this.cubeMesh.renderOrder = 2
     this.add(this.cubeMesh)
 
     // Connect CubeCamera render target → material envMap
-    // This gives the glass cube dynamic reflections of the content scene
-    // (gradient planes + logo + text). Without this, the cube is flat.
     this.cubeMaterial.envMap = this.cubeCamera.renderTarget.texture
 
-    // ── Rainbow edges — DISABLED (pixelated aliasing) ──
-    // LineBasicMaterial.linewidth > 1 is NOT supported in WebGL/WebGPU —
-    // lines render at 1px → jagged aliasing on cube edges.
-    // The glass cube (MeshPhysicalMaterial with iridescence + clearcoat)
-    // looks great on its own. Edges removed for clean rendering.
-    // To re-enable: use tube geometry (MeshLineGeometry) instead of LineSegments.
-    // (edgeLines removed — clean cube without pixelated 1px lines)
+    // TSL shader play button — in front of cube face (+Z)
+    try {
+      this.playButton = new PlayButton3D()
+      this.cubeMesh.add(this.playButton) // child of cube so it rotates with it
+      this.playButton.setVisible(false) // hidden until intro section
+    } catch (e) {
+      console.warn('[SplashCube] PlayButton3D init failed:', e)
+    }
   }
 
   // ════════════════════════════════════════════════════════════════════
@@ -250,6 +410,55 @@ export class SplashCube extends THREE.Mesh {
   triggerOpener(): void {
     this.openerPhase = 'opening'
     this.openerTarget = 1
+  }
+
+  /** Phase 8: Wobble pulse — dramatic shader transition on click.
+   *  Triggered by jlz:wobble-pulse event (work card click, carousel card click).
+   *  Combined effects:
+   *    1. Wobble boost: uWobble 0.95 → 2.5 (dramatic jelly burst)
+   *    2. Chromatic burst: dispersion 15 → 30 (WebGPU) / chromaticAberration 0.5 → 1.0 (WebGL2)
+   *    3. Scale pulse: 1.0 → 1.2 → 1.0 (triggerOpener)
+   *  Duration: 1.2s (longer, more cinematic) */
+  private _wobblePulseTimer: ReturnType<typeof setTimeout> | null = null
+  private _chromaticPulseTimer: ReturnType<typeof setTimeout> | null = null
+  private _wobblePulseTarget = 0.95
+  triggerWobblePulse(): void {
+    // Clear any existing pulse
+    if (this._wobblePulseTimer) clearTimeout(this._wobblePulseTimer)
+    if (this._chromaticPulseTimer) clearTimeout(this._chromaticPulseTimer)
+
+    // 1. Boost wobble (dramatic jelly burst)
+    ;(this._uWobble as unknown as { value: number }).value = 2.5
+    this._wobblePulseTarget = 0.95
+    this._wobblePulseTimer = setTimeout(() => {
+      ;(this._uWobble as unknown as { value: number }).value = this._wobblePulseTarget
+      this._wobblePulseTimer = null
+    }, 1200)
+
+    // 2. Chromatic burst — temporarily boost dispersion/chromaticAberration
+    const mat = this.cubeMaterial as unknown as {
+      dispersion?: number
+      chromaticAberration?: number
+    }
+    const isWebGPU = DeviceCapability.getInstance().isRealWebGPU
+    if (isWebGPU && mat.dispersion !== undefined) {
+      const origDispersion = 15.0
+      mat.dispersion = 30.0
+      this._chromaticPulseTimer = setTimeout(() => {
+        mat.dispersion = origDispersion
+        this._chromaticPulseTimer = null
+      }, 1200)
+    } else if (mat.chromaticAberration !== undefined) {
+      const origChromatic = 0.5
+      mat.chromaticAberration = 1.0
+      this._chromaticPulseTimer = setTimeout(() => {
+        mat.chromaticAberration = origChromatic
+        this._chromaticPulseTimer = null
+      }, 1200)
+    }
+
+    // 3. Scale pulse (opener) for combined wobble+chromatic+scale effect
+    this.triggerOpener()
   }
 
   updateMaterial(params: BakuMaterialState): void {
@@ -378,6 +587,14 @@ export class SplashCube extends THREE.Mesh {
     const openerScale = 1 + this.openerProgress * 0.3
     this.cubeMesh.scale.setScalar(openerScale)
 
+    // Advance wobble time — TSL (WebGPU) + MeshTransmissionMaterial (WebGL2)
+    ;(this._uTime as unknown as { value: number }).value = this.time
+
+    // Update play button shader time
+    this.playButton?.update(dt)
+    const mtm = this.cubeMaterial as unknown as { time?: number }
+    if (mtm.time !== undefined) mtm.time = this.time
+
     // ── Material color blend ──
     this.cubeMaterial.color.copy(this._blendFromColor).lerp(this._blendToColor, this._blendT)
     this.cubeMaterial.emissive.copy(this._blendFromEmissive).lerp(this._blendToEmissive, this._blendT)
@@ -428,6 +645,7 @@ export class SplashCube extends THREE.Mesh {
   }
 
   dispose(): void {
+    this.playButton?.dispose()
     this.cubeMesh.geometry.dispose()
     this.cubeMaterial.dispose()
     this.cubeCamera.renderTarget.dispose()
