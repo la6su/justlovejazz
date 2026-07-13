@@ -79,14 +79,12 @@ export class JoystickNav {
     this.el.appendChild(this._base)
 
     // 4 direction arrows around the base — discoverability affordance.
-    // Highlight on drag direction (jlz-joystick__arrow--active class,
-    // toggled in _pointerMoveHandler). aria-hidden — decorative, the
-    // keyboard nav + joystick drag are already accessible.
-    const directions: Array<{ cls: string; label: string; icon: string }> = [
-      { cls: 'up', label: 'Previous section', icon: 'triangle-up' },
-      { cls: 'down', label: 'Next section', icon: 'triangle-down' },
-      { cls: 'left', label: 'Lab experiments', icon: 'triangle-left' },
-      { cls: 'right', label: 'Menu', icon: 'triangle-right' },
+    // Each arrow has a visible label (up/down/sections, left=Lab, right=Menu).
+    const directions: Array<{ cls: string; labelKey: string; label: string; icon: string }> = [
+      { cls: 'up', labelKey: 'help.up', label: 'Up', icon: 'triangle-up' },
+      { cls: 'down', labelKey: 'help.down', label: 'Down', icon: 'triangle-down' },
+      { cls: 'left', labelKey: 'help.lab', label: 'Lab', icon: 'triangle-left' },
+      { cls: 'right', labelKey: 'help.menu', label: 'Menu', icon: 'triangle-right' },
     ]
     for (const dir of directions) {
       const arrow = document.createElement('span')
@@ -94,16 +92,32 @@ export class JoystickNav {
       arrow.setAttribute('uk-icon', `icon: ${dir.icon}; ratio: 0.55`)
       arrow.setAttribute('aria-hidden', 'true')
       this._base.appendChild(arrow)
+      // Visible label below each arrow icon
+      const lbl = document.createElement('span')
+      lbl.className = `jlz-joystick__arrow-label jlz-joystick__arrow-label--${dir.cls}`
+      lbl.setAttribute('data-i18n', dir.labelKey)
+      lbl.textContent = dir.label
+      this._base.appendChild(lbl)
     }
 
     this._ball = document.createElement('div')
     this._ball.className = 'jlz-joystick__ball'
     this._base.appendChild(this._ball)
 
+    // Hint text below the joystick base
+    const hint = document.createElement('p')
+    hint.className = 'jlz-help-hint'
+    hint.setAttribute('data-i18n', 'help.hint')
+    hint.textContent = 'Drag the joystick or use arrow keys'
+    this.el.appendChild(hint)
+
+    // Config controls container (lang/theme/sound) — populated by UIMenu
+    const controls = document.createElement('div')
+    controls.className = 'jlz-help-controls uk-flex uk-flex-middle uk-flex-center'
+    controls.id = 'jlz-joystick-controls'
+    this.el.appendChild(controls)
+
     // Dotnav timeline — minimalist section progress indicator (UIKit3 uk-dotnav).
-    // Single horizontal timeline BELOW the joystick base. Shows 4 main sections
-    // (1-4); secret sections (0=Lab, 5=Process) are NOT shown — hidden by design.
-    // Active dot syncs via onSectionChange.
     this._dotnav = this._buildDotnav()
     this.el.appendChild(this._dotnav)
 

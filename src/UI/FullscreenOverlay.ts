@@ -246,6 +246,23 @@ export class FullscreenOverlay {
 
   /** Open overlay with given options. */
   open(opts: OverlayOptions): void {
+    this._applyOptions(opts)
+    UIkit.modal(this.container).show()
+  }
+
+  /** Preload content into the overlay WITHOUT showing it.
+   *  Used by Experience.ts to preload the first project so card click is
+   *  instant. Calling open() instead was a BUG — it called UIkit.modal().show()
+   *  which added the uk-open class + fired the 'show' event (setting
+   *  window.jlzOverlayOpen=true) even though display:none hid the overlay.
+   *  The stale jlzOverlayOpen flag then blocked JoystickNav + BakuCarousel. */
+  preload(opts: OverlayOptions): void {
+    this._applyOptions(opts)
+    // Do NOT call UIkit.modal().show() — stay hidden.
+  }
+
+  /** Apply overlay options to the DOM (shared by open + preload). */
+  private _applyOptions(opts: OverlayOptions): void {
     // Video source
     const source = this.video.querySelector('source')
     if (opts.videoSrc && source) {
@@ -290,12 +307,8 @@ export class FullscreenOverlay {
 
     // Reset video state
     if (opts.videoSrc) {
-      // Guard: don't set currentTime until metadata loads (duration is NaN
-      // right after load()). Reset will happen on 'show' event instead.
       this.bigPlay.style.display = ''
     }
-
-    UIkit.modal(this.container).show()
   }
 
   close(): void {

@@ -737,8 +737,11 @@ export class Experience {
     // Sync ProjectOverlay (DOM UI layer) — fullscreen opens on card click.
     if (this.overlay && showGallery && !this._portfolioInitialized) {
       this._portfolioInitialized = true
-      // Preload the first project into the overlay (hidden until card click)
-      this.onProjectSelect(0)
+      // Preload the first project into the overlay (hidden until card click).
+      // Uses preload() NOT open() — open() calls UIkit.modal().show() which
+      // sets window.jlzOverlayOpen=true even though display:none hides the
+      // overlay. The stale flag then blocks JoystickNav + BakuCarousel.
+      this.onProjectSelect(0, true) // preload=true
     }
     // Ground plane (floor) — visible ONLY on the bottom visible section.
     // Section index 4 = cube face -Y (bottom) on all pages. On every other
@@ -974,7 +977,7 @@ export class Experience {
       | undefined) ?? null
   }
 
-  private onProjectSelect(idx: number): void {
+  private onProjectSelect(idx: number, preload: boolean = false): void {
     if (!this.portfolio || !this.overlay) return
     const projs = this.portfolio.projects
     if (!Array.isArray(projs) || projs.length === 0) return
@@ -982,10 +985,11 @@ export class Experience {
     const project = projs[safeIdx]
     if (!project) return
 
-    // Open fullscreen overlay with project info + poster (first frame / texture).
-    // Video is optional — if project has no video, poster-only mode is used.
+    // Open/preload fullscreen overlay with project info + poster.
+    // preload=true: set content WITHOUT showing (for initial load).
+    // preload=false: show the overlay (user clicked a card).
     const p = project as { title?: string; category?: string; description?: string; tags?: string[]; textureUrl?: string; detailTextureUrl?: string; year?: string }
-    this.overlay.open({
+    const opts = {
       poster: p.detailTextureUrl || p.textureUrl,
       title: p.title,
       category: `${p.year ?? ''} · ${p.category ?? ''}`,
@@ -994,7 +998,12 @@ export class Experience {
       counter: `${safeIdx + 1} / ${projs.length}`,
       hasPrev: true,
       hasNext: true,
-    })
+    }
+    if (preload) {
+      this.overlay.preload(opts)
+    } else {
+      this.overlay.open(opts)
+    }
   }
 
   // Note: the old activateCard() (tap on baku cube → open overlay) was

@@ -920,6 +920,46 @@ section[data-section='process'] .uk-list li:hover {
   transform: translateY(-50%);
 }
 
+// Arrow labels — visible text below each arrow icon (Up/Down/Lab/Menu)
+.jlz-joystick__arrow-label {
+  position: absolute;
+  font-size: 0.55rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.4);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.jlz-joystick__arrow-label--up {
+  top: -28px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.jlz-joystick__arrow-label--down {
+  bottom: -28px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.jlz-joystick__arrow-label--left {
+  left: -32px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.jlz-joystick__arrow-label--right {
+  right: -32px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+body.uk-light .jlz-joystick__arrow-label {
+  color: rgba(0, 0, 0, 0.5);
+}
+
 .jlz-joystick__arrow--active {
   color: var(--jlz-color-accent);
   opacity: 1;
@@ -1696,179 +1736,64 @@ body.uk-light .jlz-header .uk-navbar-container {
 
 @media (max-width: 500px) {
   .jlz-lang-label { font-size: 0.65rem; }
-  .jlz-navbar-logo img { width: 24px; height: 24px; }
 }
 
-// ── Hamburger → Help dropdown (navbar right zone) ──
-// The hamburger icon is now a HELP DROPDOWN trigger (not a menu toggle).
-// Click opens a uk-dropdown with a joystick infographic showing navigation.
-// Menu (section 5) is a secret section — accessible ONLY via joystick → right
-// or ArrowRight key. This eliminates the toggle-state sync bugs.
-.jlz-navbar-toggle {
-  // uk-navbar-toggle gives flex centering; ensure our SVG inherits color.
-  color: var(--jlz-color-text-muted);
-  transition: color 0.2s ease;
-}
+// (Header/navbar removed — config controls now live in the joystick stack.
+//  Old .jlz-navbar-toggle, .jlz-toggle-icon, .jlz-help-dropdown, .jlz-help-title,
+//  .jlz-help-content, .jlz-help-joystick, .jlz-joystick-svg, .jlz-help-text,
+//  .jlz-help-text-row, .jlz-help-key, .jlz-help-divider CSS removed.)
 
-.jlz-navbar-toggle:hover,
-.jlz-navbar-toggle:focus-visible {
-  color: @global-primary-background;
-  outline: none;
-}
-
-.jlz-toggle-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-// ── Help dropdown (joystick infographic + config controls) ──
-.jlz-help-dropdown {
-  min-width: 320px;
-  padding: 20px;
-  background: var(--jlz-color-bg, #0a0a0f);
-  border: 1px solid var(--jlz-color-border, rgba(255,255,255,0.1));
-  border-radius: 8px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-}
-
-body.uk-light .jlz-help-dropdown {
-  background: #ffffff;
-  border-color: rgba(0,0,0,0.1);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
-}
-
-// Title — full width, centered
-.jlz-help-title {
-  margin: 0 0 12px 0;
-  font-size: 0.85rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--jlz-color-text);
-  opacity: 0.8;
-  text-align: center;
-}
-
-// 3-column row: left text | joystick (center) | right text
-.jlz-help-content {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-}
-
-.jlz-help-joystick {
-  flex-shrink: 0;
-  color: var(--jlz-color-text-muted);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-body.uk-light .jlz-help-joystick {
-  color: #666;
-}
-
-.jlz-joystick-svg {
-  display: block;
-}
-
-// Text columns — left + right of the joystick
-.jlz-help-text {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  min-width: 70px;
-  font-size: 0.8rem;
-  line-height: 1.4;
-  color: var(--jlz-color-text);
-  opacity: 0.85;
-  text-align: center;
-}
-
-.jlz-help-text--left {
-  align-items: flex-end;
-  text-align: right;
-}
-
-.jlz-help-text--right {
-  align-items: flex-start;
-  text-align: left;
-}
-
-.jlz-help-text-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.jlz-help-key {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 28px;
-  padding: 2px 6px;
-  font-family: 'Inter', sans-serif;
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: @global-primary-background;
-  background: fade(@global-primary-background, 12%);
-  border-radius: 4px;
-  flex-shrink: 0;
-}
-
-// Hint — full width, centered
+// Hint — below joystick base, centered (part of joystick vertical stack)
 .jlz-help-hint {
-  margin: 12px 0 0 0;
-  font-size: 0.7rem;
-  line-height: 1.4;
+  margin: 6px 0 0 0;
+  font-size: 0.65rem;
+  line-height: 1.3;
   color: var(--jlz-color-text-muted);
-  opacity: 0.6;
+  opacity: 0.5;
   text-align: center;
+  white-space: nowrap;
 }
 
-@media (max-width: 500px) {
-  .jlz-help-dropdown {
-    min-width: 260px;
-    padding: 16px;
-  }
-  .jlz-help-content {
-    gap: 10px;
-  }
-  .jlz-joystick-svg {
-    width: 80px;
-    height: 80px;
-  }
-  .jlz-help-text {
-    min-width: 56px;
-    font-size: 0.75rem;
-  }
-}
-
-// ── Help dropdown: divider + config controls row ──
-.jlz-help-divider {
-  margin: 16px 0 12px 0;
-  border: 0;
-  border-top: 1px solid var(--jlz-color-border, rgba(255,255,255,0.1));
-}
-
-body.uk-light .jlz-help-divider {
-  border-top-color: rgba(0,0,0,0.1);
-}
-
+// Config controls row — below hint, inside joystick stack
 .jlz-help-controls {
-  gap: 12px;
+  gap: 10px;
+  margin-top: 4px;
 }
 
 .jlz-help-controls .uk-icon-button {
-  // Slightly larger touch target in dropdown
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
 }
 
-// ── Sound EQ-bars (used in help dropdown config controls) ──
+// (Dropdown-specific responsive rules removed — dropdown no longer exists.
+//  Joystick is always visible, hint + controls are part of its stack.)
+
+@media (max-width: 500px) {
+  .jlz-help-hint {
+    font-size: 0.6rem;
+  }
+  .jlz-help-controls {
+    gap: 8px;
+  }
+  .jlz-help-controls .uk-icon-button {
+    width: 28px;
+    height: 28px;
+  }
+  .jlz-joystick__arrow-label {
+    font-size: 0.5rem;
+  }
+  .jlz-joystick__arrow-label--left {
+    left: -26px;
+  }
+  .jlz-joystick__arrow-label--right {
+    right: -26px;
+  }
+}
+
+// (Old .jlz-help-divider + .jlz-help-controls dropdown-specific CSS removed.
+//  .jlz-help-controls is now styled in the joystick stack section above.)
+
+// ── Sound EQ-bars (used in joystick config controls) ──
 // Custom visual per project decision — UIKit3 has no EQ-bars icon.
 // Container is .jlz-sound-bars (4 spans); state via .is-playing / .is-muted
 // on the parent .jlz-sound-toggle button.
