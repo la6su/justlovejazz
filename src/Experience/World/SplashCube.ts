@@ -214,7 +214,7 @@ export class SplashCube extends THREE.Mesh {
       mat.metalness = 0.0
       mat.roughness = 0.0                            // day34 mirror-smooth
       mat.transmission = 1.0
-      mat.thickness = 2.5                            // day34 refraction volume (was 5, tuned lower for our smaller cube)
+      mat.thickness = 0.5                            // thin glass for real transparency (was 2.5 → too thick, light attenuated → opaque look)
       mat.ior = 1.21                                 // day34 IOR
       mat.dispersion = 0.0                           // no idle dispersion (RGB blobs). Chromatic only on click pulse.
       mat.transparent = true
@@ -222,7 +222,7 @@ export class SplashCube extends THREE.Mesh {
       mat.side = THREE.FrontSide                     // day34 (was DoubleSide → double refraction)
       mat.envMapIntensity = 1.0                      // day34 (synced with WebGL2 path, was 1.5 — chromatic debug leftover)
       mat.attenuationColor = new THREE.Color(1.0, 1.0, 1.0)
-      mat.attenuationDistance = 12                   // visible tint gradient (was 8)
+      mat.attenuationDistance = Infinity             // no attenuation (was 12 → strong tint → opaque). Infinity = clear glass.
       mat.specularIntensity = 0.5                    // reduced (was 1.0 → harsh edge highlights during wobble)
       mat.iridescence = 0.0                          // disabled (was 0.3 → edge color artifacts during wobble)
       mat.iridescenceIOR = 1.3
@@ -293,14 +293,14 @@ export class SplashCube extends THREE.Mesh {
       mat.metalness = 0.0
       mat.roughness = 0.0                            // day34 mirror-smooth (synced)
       mat.transmission = 1.0
-      mat.thickness = 2.5                            // day34 (synced)
+      mat.thickness = 0.5                            // thin glass (synced, was 2.5)
       mat.ior = 1.21                                 // day34 IOR (synced)
       mat.transparent = true
       mat.opacity = 1.0
       mat.side = THREE.FrontSide                     // day34
       mat.envMapIntensity = 1.0                      // day34 (synced, procedural env)
       mat.attenuationColor = new THREE.Color(1.0, 1.0, 1.0)
-      mat.attenuationDistance = 12                   // visible tint (synced, was 8)
+      mat.attenuationDistance = Infinity             // no attenuation (synced, was 12)
       mat.specularIntensity = 0.5                    // reduced (synced, was 1.0 → edge highlights)
       mat.iridescence = 0.0                          // disabled (synced, was 0.3 → edge artifacts)
       mat.iridescenceIOR = 1.3
