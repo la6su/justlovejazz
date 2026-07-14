@@ -239,7 +239,11 @@ export class SplashCube extends THREE.Mesh {
       const mat = new MeshPhysicalNodeMaterial()
       mat.color = new THREE.Color(0.94, 0.91, 1.00)  // day34 lavender tint
       mat.emissive = new THREE.Color(0x000000)
-      mat.emissiveIntensity = 0.0
+      // Emissive intensity — lets the per-section bakuEmissive color glow
+      // softly from within the glass. On dark sections (about/works/manifesto)
+      // the EnvSphere is dark, so the cube would look flat/dark without
+      // emissive. 0.3 is subtle — adds depth without washing out the glass.
+      mat.emissiveIntensity = 0.3
       mat.metalness = 0.0
       mat.roughness = 0.05                           // synced with WebGL2
       mat.transmission = 1.0
@@ -321,7 +325,7 @@ export class SplashCube extends THREE.Mesh {
       const mat = new MeshTransmissionMaterial(samples)
       mat.color = new THREE.Color(0.94, 0.91, 1.00)  // day34 lavender tint (synced)
       mat.emissive = new THREE.Color(0x000000)
-      mat.emissiveIntensity = 0.0
+      mat.emissiveIntensity = 0.3                    // synced (subtle inner glow)
       mat.metalness = 0.0
       mat.roughness = 0.05                           // synced
       mat.transmission = 1.0
