@@ -77,20 +77,17 @@ export class SplashCube extends THREE.Mesh {
   private static readonly DISPERSION_BOOST = 5.0 // pulse peak 5 (brief, no idle blobs)
   private static readonly CHROMATIC_IDLE = 0.0
   private static readonly CHROMATIC_BOOST = 0.5 // pulse peak 0.5 (synced, no idle)
-  private cubeCamera!: THREE.CubeCamera
-  private contentScene!: THREE.Scene
-  private contentTextures: THREE.Texture[] = []
+  // (CubeCamera + contentScene + contentTextures REMOVED — glass now uses
+  //  scene.environment (PMREM RoomEnvironment) for reflections. This removed
+  //  ~30% GPU cost (6-face cubemap render every 3rd frame) and eliminated the
+  //  'blob' artifacts caused by high-contrast content planes refracting
+  //  through wobble-deformed glass.)
   private time = 0
   private openerProgress = 0
   private openerTarget = 0
   private openerPhase: 'idle' | 'opening' | 'closing' | 'done' = 'idle'
-  /** CubeCamera update counter — throttles cubemap refresh to every N frames.
-   *  Content scene is static (canvas textures), so 6-face render every frame
-   *  is 54 wasted draw calls. Update every 3 frames (~20Hz) or on transition.
-   *  Was 6 (10Hz) — reflections felt laggy/stuttery during cube rotation.
-   *  3 gives smoother reflection tracking at acceptable perf cost. */
-  private _cubeCamCounter = 0
-  private static readonly CUBE_CAM_INTERVAL = 3
+  /** (CubeCamera throttle REMOVED — no more cubemap refresh. Glass uses
+   *   scene.environment PMREM which is static, zero per-frame cost.) */
 
   private targetParams: BakuMaterialParams = {
     color: new THREE.Color(0x333333),
@@ -139,103 +136,9 @@ export class SplashCube extends THREE.Mesh {
     super(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial({ visible: false }))
     this.name = 'baku-cube'
     this.visible = true
-    this.buildContentScene()
+    // (buildContentScene() REMOVED — CubeCamera + content scene deleted.
+    //  Glass uses scene.environment PMREM for reflections, zero per-frame cost.)
     this.buildCube()
-  }
-
-  // ════════════════════════════════════════════════════════════════════
-  // CONTENT SCENE — rendered by CubeCamera into cubemap for reflections
-  // ════════════════════════════════════════════════════════════════════
-  private buildContentScene(): void {
-    this.contentScene = new THREE.Scene()
-
-    // JLZ-branded procedural textures (canvas-generated, no external assets).
-    // Replaces Apple Fifth Avenue port textures (logo.png, text-1.png, text-2.png).
-    // Each texture = gradient + JLZ monogram/tagline rendered on canvas.
-    const logoTex = this._createJLZTexture('l@6', '#515d84', '#0a0a0f')
-    const text1Tex = this._createJLZTexture('GLASS · MOTION · LIGHT', '#6b78a3', '#050507', 512, 128)
-    const text2Tex = this._createJLZTexture('WEBGPU · TSL · THREE.JS', '#4a5474', '#050507', 512, 128)
-    this.contentTextures = [logoTex, text1Tex, text2Tex]
-
-    // 6 gradient planes — soft mid-tones for natural glass reflections.
-    // High-contrast planes (0.95 bright vs 0.40 dark) refracted through
-    // wobble-deformed glass into sharp unnatural 'blob' artifacts. Narrowed
-    // range to 0.45–0.65: uniform soft gradients → smooth refraction,
-    // no harsh spots. The glass wobble bends light gently without creating
-    // concentrated bright patches.
-    const size = 5
-    const half = size / 2
-    const jlzColors = [
-      [0.60, 0.60, 0.62], // soft light grey
-      [0.55, 0.55, 0.58], // soft neutral
-      [0.48, 0.48, 0.52], // mid grey
-      [0.62, 0.60, 0.58], // soft warm grey
-      [0.52, 0.52, 0.55], // light neutral
-      [0.45, 0.45, 0.48], // dark grey (was 0.40)
-    ]
-    const dirs: { pos: number[]; rot: number[]; color: number[] }[] = [
-      { pos: [half, 0, 0], rot: [0, -Math.PI / 2, 0], color: jlzColors[0]! },
-      { pos: [-half, 0, 0], rot: [0, Math.PI / 2, 0], color: jlzColors[1]! },
-      { pos: [0, half, 0], rot: [-Math.PI / 2, 0, 0], color: jlzColors[2]! },
-      { pos: [0, -half, 0], rot: [Math.PI / 2, 0, 0], color: jlzColors[3]! },
-      { pos: [0, 0, half], rot: [0, 0, 0], color: jlzColors[4]! },
-      { pos: [0, 0, -half], rot: [0, Math.PI, 0], color: jlzColors[5]! },
-    ]
-
-    for (const d of dirs) {
-      const geo = new THREE.PlaneGeometry(size, size)
-      const mat = new THREE.MeshBasicMaterial({
-        color: new THREE.Color(d.color[0]!, d.color[1]!, d.color[2]!),
-        side: THREE.DoubleSide,
-        fog: false,
-      })
-      const plane = new THREE.Mesh(geo, mat)
-      plane.position.set(d.pos[0]!, d.pos[1]!, d.pos[2]!)
-      plane.rotation.set(d.rot[0]!, d.rot[1]!, d.rot[2]!)
-      this.contentScene.add(plane)
-    }
-
-    // JLZ monogram on front face
-    const logoGeo = new THREE.PlaneGeometry(3, 3)
-    const logoMat = new THREE.MeshBasicMaterial({
-      map: logoTex,
-      transparent: true,
-      side: THREE.DoubleSide,
-      fog: false,
-    })
-    const logoMesh = new THREE.Mesh(logoGeo, logoMat)
-    logoMesh.position.set(0, 0, half - 0.1)
-    this.contentScene.add(logoMesh)
-
-    // Tagline textures on side faces
-    const text1Mesh = new THREE.Mesh(
-      new THREE.PlaneGeometry(4, 1.5),
-      new THREE.MeshBasicMaterial({ map: text1Tex, transparent: true, side: THREE.DoubleSide, fog: false }),
-    )
-    text1Mesh.position.set(half - 0.1, 0, 0)
-    text1Mesh.rotation.y = -Math.PI / 2
-    this.contentScene.add(text1Mesh)
-
-    const text2Mesh = new THREE.Mesh(
-      new THREE.PlaneGeometry(4, 1.5),
-      new THREE.MeshBasicMaterial({ map: text2Tex, transparent: true, side: THREE.DoubleSide, fog: false }),
-    )
-    text2Mesh.position.set(-half + 0.1, 0, 0)
-    text2Mesh.rotation.y = Math.PI / 2
-    this.contentScene.add(text2Mesh)
-
-    // CubeCamera — renders content scene into cubemap
-    // Positioned at cube center, renders 6 faces.
-    // Resolution 1024 (was 512 — reflections were pixelated/aliased on WebGPU).
-    // Mipmaps + LinearMipmapLinearFilter give smooth reflections at any distance.
-    const cubeRT = new THREE.WebGLCubeRenderTarget(1024, {
-      format: THREE.RGBAFormat,
-      generateMipmaps: true,
-      minFilter: THREE.LinearMipmapLinearFilter,
-    })
-    this.cubeCamera = new THREE.CubeCamera(0.1, 100, cubeRT)
-    this.cubeCamera.position.set(0, 0, 0)
-    this.contentScene.add(this.cubeCamera)
   }
 
   // ════════════════════════════════════════════════════════════════════
@@ -424,8 +327,9 @@ export class SplashCube extends THREE.Mesh {
     this.cubeMesh.renderOrder = 2
     this.add(this.cubeMesh)
 
-    // Connect CubeCamera render target → material envMap
-    this.cubeMaterial.envMap = this.cubeCamera.renderTarget.texture
+    // (cubeMaterial.envMap binding REMOVED — was CubeCamera render target.
+    //  Glass now uses scene.environment (PMREM RoomEnvironment) automatically
+    //  via three.js PBR — no explicit envMap needed on the material.)
 
     // (PlayButton3D removed — was fully dead render path: created, immediately
     //  hidden, never shown, update() ran every frame on invisible mesh.
@@ -548,34 +452,12 @@ export class SplashCube extends THREE.Mesh {
   // ════════════════════════════════════════════════════════════════════
   // UPDATE — called every frame when rendering
   // ════════════════════════════════════════════════════════════════════
-  update(dt: number, renderer?: THREE.WebGLRenderer): void {
+  update(dt: number, _renderer?: THREE.WebGLRenderer): void {
     this.time += dt
 
-    // ── CubeCamera — throttled cubemap refresh ──
-    // Content scene is static (canvas textures don't change). Render cubemap
-    // every CUBE_CAM_INTERVAL frames (~10Hz) OR during face transitions
-    // (cube is rotating, reflections need to update).
-    this._cubeCamCounter++
-    const needsCubeUpdate = renderer
-      && this.cubeMesh.visible
-      && (
-        this._cubeCamCounter >= SplashCube.CUBE_CAM_INTERVAL
-        || this._transitionDir !== 0
-        || this._faceLerp < 1
-      )
-
-    if (needsCubeUpdate) {
-      this._cubeCamCounter = 0
-      // H9 fix: try/finally ensures cubeMesh.visible is restored even if
-      // cubeCamera.update() throws (e.g. context lost). Without this, the
-      // cube stays invisible for the rest of the session.
-      this.cubeMesh.visible = false
-      try {
-        this.cubeCamera.update(renderer!, this.contentScene)
-      } finally {
-        this.cubeMesh.visible = true
-      }
-    }
+    // (CubeCamera refresh REMOVED — glass uses scene.environment PMREM which
+    //  is static, zero per-frame cost. This was the #1 GPU consumer: 6-face
+    //  cubemap render every 3rd frame = ~30% of frame budget.)
 
     // ── Transition motion (same as before) ──
     const committed = this._prevTransitionDir !== 0
@@ -674,36 +556,14 @@ export class SplashCube extends THREE.Mesh {
     this.cubeMaterial.metalness = metalness
   }
 
-  /** Create a JLZ-branded canvas texture (gradient + text). No external assets. */
-  private _createJLZTexture(text: string, fgColor: string, bgColor: string, w = 256, h = 256): THREE.CanvasTexture {
-    const canvas = document.createElement('canvas')
-    canvas.width = w
-    canvas.height = h
-    const ctx = canvas.getContext('2d')!
-
-    // Background gradient
-    const grad = ctx.createLinearGradient(0, 0, 0, h)
-    grad.addColorStop(0, bgColor)
-    grad.addColorStop(1, '#000000')
-    ctx.fillStyle = grad
-    ctx.fillRect(0, 0, w, h)
-
-    // Text
-    ctx.fillStyle = fgColor
-    ctx.font = `bold ${h > 200 ? '48px' : '24px'} Inter, sans-serif`
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    ctx.fillText(text, w / 2, h / 2)
-
-    const tex = new THREE.CanvasTexture(canvas)
-    tex.colorSpace = THREE.SRGBColorSpace
-    return tex
-  }
+  // (_createJLZTexture REMOVED — was only used by buildContentScene which is
+  //  deleted. JLZ branding no longer rendered inside the glass cube.)
 
   dispose(): void {
     // (Pulse timers removed — triggerWobblePulse now uses animated sin-envelope
     //  in update() instead of setTimeout, so there are no timers to clear.)
     // (PlayButton3D dispose removed — dead render path deleted)
+    // (CubeCamera + contentScene dispose REMOVED — deleted with the feature.)
     this.cubeMesh.geometry.dispose()
     this.cubeMaterial.dispose()
     // C10 fix: dispose speckleTex normalMap — cubeMaterial.dispose() does
@@ -713,17 +573,6 @@ export class SplashCube extends THREE.Mesh {
       this._speckleTex.dispose()
       this._speckleTex = null
     }
-    this.cubeCamera.renderTarget.dispose()
-    for (const tex of this.contentTextures) tex.dispose()
-    // Dispose contentScene objects (gradient planes + text meshes + camera)
-    this.contentScene.traverse((obj) => {
-      if (obj instanceof THREE.Mesh) {
-        obj.geometry?.dispose()
-        const mat = obj.material
-        if (Array.isArray(mat)) mat.forEach((m) => m.dispose())
-        else mat?.dispose()
-      }
-    })
     ;(this.geometry as THREE.BufferGeometry).dispose()
     ;(this.material as THREE.Material).dispose()
     this.clear()
