@@ -32,15 +32,20 @@ interface SectionLightPreset {
 const SECTION_PRESETS: Record<string, SectionLightPreset> = {
   sec_intro: {
     keyColor: 0xffffff,
-    keyIntensity: 0.0, // lights OFF on intro — glass cube lit only by env map (PMREM)
+    // Moderate key light — gives glass cube a directional specular highlight
+    // (the "light reacting" the cube was missing when all lights were 0.0).
+    // 0.8 is bright enough for a visible highlight but not so bright it
+    // creates a blown-out white dot. Combined with env map soft spot, the
+    // cube now shows clear specular response to light direction.
+    keyIntensity: 0.8,
     keyPos: [4, 6, 4],
     fillColor: 0xd0d8e8,
-    fillIntensity: 0.0,
+    fillIntensity: 0.3,  // soft fill from opposite side — prevents flat look
     rimColor: 0xb0c0d8,
-    rimIntensity: 0.0,
+    rimIntensity: 0.6,   // rim light defines cube edges (Fresnel-like edge brightness)
     hemiSky: 0xffffff,
     hemiGround: 0xe8e8e8,
-    hemiIntensity: 0.0,
+    hemiIntensity: 0.2,   // subtle ambient — lifts shadows without washing out
     volumetricColor: 0xffffff,
     volumetricIntensity: 0.0,
   },

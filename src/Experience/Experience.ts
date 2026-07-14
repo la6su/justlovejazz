@@ -176,17 +176,28 @@ export class Experience {
       envCanvas.height = 512
       const ctx = envCanvas.getContext('2d')!
       // Vertical gradient: warm horizon → bright sky → cool zenith
-      // NO sun spots — they created a bright white dot on the cube (env map
-      // is sampled by ALL materials including MeshBasicMaterial via
-      // BasicEnvironmentNode on WebGPU). Uniform gradient gives smooth IBL
-      // without concentrated bright spots.
+      // + ONE soft bright area (radial gradient, large radius) for a gentle
+      // reflection point on the glass. Previously sun spots were SHARP (small
+      // radius, high brightness) → concentrated white dot on cube. This soft
+      // area is large (radius 300px on 1024x512 canvas) and moderate brightness
+      // (220 vs 255 max) → creates a broad, diffused highlight that moves
+      // across the glass as the cube rotates, giving "light reacting" feel
+      // without a pinpoint dot. PMREM further softens it via prefiltering.
       const grad = ctx.createLinearGradient(0, 0, 0, 512)
       grad.addColorStop(0.0, 'rgb(150,140,120)')   // horizon (warm)
       grad.addColorStop(0.5, 'rgb(200,200,210)')   // mid sky
       grad.addColorStop(1.0, 'rgb(180,210,240)')   // zenith (cool blue)
       ctx.fillStyle = grad
       ctx.fillRect(0, 0, 1024, 512)
-      // (Sun spots REMOVED — were causing white dot artifact on cube)
+      // Soft bright area (upper-left sky region) — broad, diffused light source
+      // for glass reflections. Large radius (300px) + moderate brightness (220)
+      // = soft highlight, NOT a sharp sun spot.
+      const softSpot = ctx.createRadialGradient(280, 140, 0, 280, 140, 300)
+      softSpot.addColorStop(0.0, 'rgba(255,250,240,0.6)')
+      softSpot.addColorStop(0.5, 'rgba(240,235,225,0.25)')
+      softSpot.addColorStop(1.0, 'rgba(220,215,205,0)')
+      ctx.fillStyle = softSpot
+      ctx.fillRect(0, 0, 1024, 512)
       const envTex = new THREE.CanvasTexture(envCanvas)
       envTex.mapping = THREE.EquirectangularReflectionMapping
       envTex.colorSpace = THREE.SRGBColorSpace

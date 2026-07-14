@@ -243,8 +243,12 @@ export class SplashCube extends THREE.Mesh {
       mat.iridescence = 0.0
       mat.iridescenceIOR = 1.3
       mat.iridescenceThicknessRange = [100, 400]
-      mat.clearcoat = 0.3
-      mat.clearcoatRoughness = 0.3
+      // Clearcoat: stronger + smoother for crisp specular highlights that
+      // respond to light direction (the "light reacting" feel). 0.3/0.3 was
+      // too muted — glass looked flat. 0.6/0.08 gives a visible highlight that
+      // moves as the cube rotates, matching real glass clearcoat behavior.
+      mat.clearcoat = 0.6
+      mat.clearcoatRoughness = 0.08
       mat.sheen = 0.0
       mat.sheenColor = new THREE.Color(1.0, 1.0, 1.0)
       mat.sheenRoughness = 0.5
@@ -306,8 +310,8 @@ export class SplashCube extends THREE.Mesh {
       mat.iridescence = 0.0                          // synced
       mat.iridescenceIOR = 1.3
       mat.iridescenceThicknessRange = [100, 400]
-      mat.clearcoat = 0.3                            // synced
-      mat.clearcoatRoughness = 0.3                   // synced
+      mat.clearcoat = 0.6                            // synced (stronger for specular)
+      mat.clearcoatRoughness = 0.08                   // synced (smoother for crisp highlight)
       mat.sheen = 0.0                                // synced
       mat.sheenColor = new THREE.Color(1.0, 1.0, 1.0)
       mat.sheenRoughness = 0.5
