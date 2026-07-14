@@ -212,6 +212,12 @@ export class Experience {
       // (WebGPU appeared darker than WebGL2). Explicit 1.0 on both ensures
       // identical IBL strength; material envMapIntensity controls the rest.
       ;(this.scene as unknown as { environmentIntensity?: number }).environmentIntensity = 1.0
+      // Bind the PMREM texture directly to the glass cube material's envMap.
+      // On WebGPU, scene.environment may not reach MeshPhysicalNodeMaterial
+      // reliably through the TSL post-pipeline (PassNode RT caching drift).
+      // Explicit mat.envMap guarantees the glass sees the environment on BOTH
+      // paths → parity. Shared texture, no extra VRAM.
+      this.world?.baku?.bindEnvironment(envRT.texture)
       pmrem.dispose()
       envScene.traverse((obj) => {
         const mesh = obj as THREE.Mesh

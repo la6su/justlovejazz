@@ -413,6 +413,19 @@ export class SplashCube extends THREE.Mesh {
     }
   }
 
+  /** Bind an environment texture directly to the cube material's envMap.
+   *  On WebGPU, scene.environment (PMREM) may not reach MeshPhysicalNodeMaterial
+   *  reliably through the TSL post-pipeline (PassNode renders to RT, env node
+   *  caching can drift → glass appears dark). Explicit mat.envMap binding
+   *  guarantees the glass sees the environment on BOTH paths.
+   *  Called by Experience.setupEnvironment() after PMREM is generated. */
+  bindEnvironment(envTexture: THREE.Texture): void {
+    if (this.cubeMaterial) {
+      ;(this.cubeMaterial as unknown as { envMap: THREE.Texture | null }).envMap = envTexture
+      this.cubeMaterial.needsUpdate = true
+    }
+  }
+
   updateMaterial(params: BakuMaterialState): void {
     this.targetParams = {
       color: params.color ? new THREE.Color(params.color) : this.targetParams.color,
