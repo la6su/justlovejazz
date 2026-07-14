@@ -2075,7 +2075,7 @@ body.uk-light .jlz-header .uk-navbar-container {
 }
 
 .jlz-menu-nav__toggle:hover .jlz-menu-nav__num,
-.jlz-menu-nav__item.is-expanded .jlz-menu-nav__num {
+.jlz-menu-nav__item.uk-open .jlz-menu-nav__num {
   color: @global-primary-background;
 }
 
@@ -2100,26 +2100,23 @@ body.uk-light .jlz-header .uk-navbar-container {
   opacity: 1;
 }
 
-.jlz-menu-nav__item.is-expanded .jlz-menu-nav__arrow {
+.jlz-menu-nav__item.uk-open .jlz-menu-nav__arrow {
   transform: rotate(90deg);
   color: @global-primary-background;
   opacity: 1;
 }
 
-// ── Subsections (hidden by default) ──
+// ── Subsections (uk-nav-sub) ──
+// UIKit uk-nav handles show/hide via the uk-open class on the parent <li>.
+// We style the layout; UIKit handles visibility (display + animation).
 // Desktop (≥640px): dropdown panel positioned to the RIGHT of nav list.
 // Mobile (<640px): accordion unfold inline below the nav item.
 .jlz-menu-nav__subs {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: none; // hidden by default; .is-expanded shows it
   flex-direction: column;
   gap: 0.125rem;
-}
-
-.jlz-menu-nav__item.is-expanded > .jlz-menu-nav__subs {
-  display: flex;
 }
 
 .jlz-menu-nav__sub-link {
@@ -2208,7 +2205,7 @@ body.uk-light .jlz-header .uk-navbar-container {
 // Subsections appear as a dropdown panel to the RIGHT of the nav list,
 // positioned absolutely relative to the nav column.
 @media (min-width: 640px) {
-  .jlz-menu-nav__item.is-expanded > .jlz-menu-nav__subs {
+  .jlz-menu-nav__item.uk-open > .jlz-menu-nav__subs {
     position: absolute;
     // Position to the right of the nav column, aligned with the item top.
     left: calc(100% + var(--jlz-space-4));

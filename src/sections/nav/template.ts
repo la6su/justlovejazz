@@ -123,15 +123,21 @@ function statColumn(): string {
 }
 
 // ── Center column: nav list with subsections ──
+// Uses UIKit3 native uk-nav (extends Accordion) for expand/collapse behavior.
+// uk-nav handles: toggle on click, uk-open class (authoritative state),
+// accordion (only one open at a time via multiple:false default),
+// aria-expanded + aria-controls (accessibility), keyboard (Space).
+// UIKit auto-initializes on DOM insertion — UIkit.update(el) in router.ts.
+// See: https://getuikit.com/docs/nav
 function navColumn(): string {
   const items = NAV_ITEMS.map((item) => `
-    <li class="jlz-menu-nav__item" data-nav-item="${item.num}">
-      <button class="jlz-menu-nav__toggle" type="button" aria-expanded="false" data-magnetic>
+    <li class="jlz-menu-nav__item uk-parent">
+      <a href="#" class="jlz-menu-nav__toggle" data-magnetic>
         <span class="jlz-menu-nav__num">${item.num}</span>
         <span class="jlz-menu-nav__label" data-i18n="${item.labelKey}">${item.label}</span>
-        <span class="jlz-menu-nav__arrow" aria-hidden="true">▸</span>
-      </button>
-      <ul class="jlz-menu-nav__subs">
+        <span class="jlz-menu-nav__arrow uk-nav-parent-icon" aria-hidden="true"></span>
+      </a>
+      <ul class="jlz-menu-nav__subs uk-nav-sub">
         ${item.subs.map(sub => `
           <li class="jlz-menu-nav__sub-item">
             <a href="${sub.href}" class="jlz-menu-nav__sub-link" data-magnetic data-nav-href="${sub.href}">
@@ -147,7 +153,7 @@ function navColumn(): string {
   return `
     <div class="jlz-menu-col jlz-menu-col--nav">
       <span class="jlz-menu-col-title" data-i18n="menu.navigate">NAVIGATE</span>
-      <ul class="jlz-menu-nav">${items}</ul>
+      <ul class="jlz-menu-nav uk-nav uk-nav-default">${items}</ul>
     </div>
   `
 }
@@ -214,38 +220,20 @@ export function navOverlaySection(mode: 'home' | 'content' = 'content'): string 
  * Initialize nav item click handlers.
  * Called by router.ts after every renderView().
  *
- * Behavior:
- *   - Click nav item toggle → expand/collapse subsections.
- *   - Only ONE item expanded at a time (clicking another closes the first).
- *   - Subsection click → navigate via SPA router (intercepted, no full reload).
- *   - After subsection navigation → auto-close menu (dispatch jlz:close-nav).
+ * UIKit3 uk-nav (extends Accordion) handles expand/collapse natively:
+ *   - Click .uk-parent > a toggles .uk-open on the parent <li>
+ *   - Accordion behavior: only one .uk-parent open at a time (multiple:false)
+ *   - aria-expanded + aria-controls set automatically by UIKit
+ *   - Keyboard: Space toggles (handled by UIKit)
+ *   - Auto-initialized on DOM insertion (UIkit.update in router.ts)
+ *
+ * We ONLY wire the subsection link click for SPA navigation — that's app-specific
+ * (intercept the link, dispatch jlz:navigate + jlz:close-nav). UIKit handles the
+ * rest. No custom .is-expanded class, no manual toggle listeners.
  */
 export function initMenuNav(): void {
   const nav = document.querySelector('.jlz-menu-nav')
   if (!nav) return
-
-  // Nav item toggles
-  const toggles = nav.querySelectorAll<HTMLButtonElement>('.jlz-menu-nav__toggle')
-  toggles.forEach((toggle) => {
-    toggle.addEventListener('click', (e) => {
-      e.preventDefault()
-      const item = toggle.closest('.jlz-menu-nav__item')
-      if (!item) return
-      const isExpanded = item.classList.contains('is-expanded')
-
-      // Close all other items (only one open at a time)
-      nav.querySelectorAll('.jlz-menu-nav__item.is-expanded').forEach((other) => {
-        if (other !== item) {
-          other.classList.remove('is-expanded')
-          other.querySelector<HTMLButtonElement>('.jlz-menu-nav__toggle')?.setAttribute('aria-expanded', 'false')
-        }
-      })
-
-      // Toggle current item
-      item.classList.toggle('is-expanded', !isExpanded)
-      toggle.setAttribute('aria-expanded', String(!isExpanded))
-    })
-  })
 
   // Subsection links — intercept for SPA navigation.
   // Click → dispatch jlz:navigate (router listens → navigateToPage).
@@ -253,6 +241,9 @@ export function initMenuNav(): void {
   // section from DOM. No overlap possible.
   const subLinks = nav.querySelectorAll<HTMLAnchorElement>('.jlz-menu-nav__sub-link')
   subLinks.forEach((link) => {
+    // Skip already-bound links (initMenuNav is called on every renderView)
+    if (link.dataset.jlzBound === '1') return
+    link.dataset.jlzBound = '1'
     link.addEventListener('click', (e) => {
       const href = link.getAttribute('data-nav-href') || link.getAttribute('href') || ''
       if (!href) return
