@@ -70,12 +70,13 @@ export class SplashCube extends THREE.Mesh {
   /** Displacement amplitude — visible but shape-preserving. */
   private static readonly SIZE_SCALE = 0.08
   // Chromatic pulse baseline + boost (animated via same sin-envelope as wobble)
-  // Baseline lowered: dispersion 15 → 3 (high value caused RGB blobs on faces).
-  // Boost adds a brief chromatic fringe on click pulse (peak 6, was 25).
-  private static readonly DISPERSION_IDLE = 3.0
-  private static readonly DISPERSION_BOOST = 3.0 // peak 6 (was 25 → RGB blobs)
-  private static readonly CHROMATIC_IDLE = 0.5
-  private static readonly CHROMATIC_BOOST = 0.4 // peak 0.9 (was 1.0)
+  // IDLE is 0 — any idle dispersion causes RGB blobs on cube faces (visible
+  // color separation when bright env planes refract through the glass).
+  // BOOST gives a brief chromatic fringe ONLY on click pulse (peak 5).
+  private static readonly DISPERSION_IDLE = 0.0
+  private static readonly DISPERSION_BOOST = 5.0 // pulse peak 5 (brief, no idle blobs)
+  private static readonly CHROMATIC_IDLE = 0.0
+  private static readonly CHROMATIC_BOOST = 0.5 // pulse peak 0.5 (synced, no idle)
   private cubeCamera!: THREE.CubeCamera
   private contentScene!: THREE.Scene
   private contentTextures: THREE.Texture[] = []
@@ -310,7 +311,7 @@ export class SplashCube extends THREE.Mesh {
       mat.transmission = 1.0
       mat.thickness = 2.5                            // refraction volume (1.2 was too thin → no bend)
       mat.ior = 1.45                                 // stronger refraction (was 1.21 → barely visible bend)
-      mat.dispersion = 3.0                           // subtle chromatic dispersion (was 15 → RGB blobs on faces)
+      mat.dispersion = 0.0                           // no idle dispersion (was 3 → still RGB blobs). Chromatic only on click pulse.
       mat.transparent = true
       mat.opacity = 1.0
       mat.side = THREE.FrontSide                     // day34 (was DoubleSide → double refraction)
@@ -407,9 +408,9 @@ export class SplashCube extends THREE.Mesh {
       mat.depthWrite = false
       mat.normalMap = this._speckleTex
       mat.normalScale = new THREE.Vector2(0.24, 0.24)
-      mat.chromaticAberration = 0.5                  // chromatic fringe
+      mat.chromaticAberration = 0.0                  // no idle chromatic (was 0.5 → RGB blobs, synced with WebGPU dispersion=0)
       mat.anisotrophicBlur = 0.1
-      mat.wobble = 0.95                              // synced with _uWobble (WebGPU)
+      mat.wobble = 0.85                              // synced with WOBBLE_IDLE (was 0.95)
       mat.distortion = 0.0
       mat.distortionScale = 0.3
       mat.temporalDistortion = 0.0
