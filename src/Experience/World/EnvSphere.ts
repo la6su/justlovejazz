@@ -69,12 +69,21 @@ export class EnvSphere extends THREE.Mesh {
     //   - A visible BackSide sphere with map + default UV mapping works on BOTH
     //     WebGPU and WebGL2 — sphere geometry has UVs, texture wraps correctly.
     //
-    // Skybox pattern: depthTest=false, renderOrder=-1000, depthWrite=false.
+    // Skybox pattern: renderOrder=-1000 (render first).
+    // depthTest=true + depthWrite=true: keep EnvSphere in the OPAQUE render
+    // list (not transparent). This is CRITICAL for WebGPU transmission —
+    // MeshPhysicalNodeMaterial.transmission samples viewportFrontSideTexture
+    // which copies the opaque framebuffer. If EnvSphere is in the transparent
+    // list (depthTest=false forces it there), transmission doesn't see the
+    // background → glass cube looks dark/opaque on WebGPU.
+    // BackSide + large radius (100) + renderOrder=-1000 ensures it renders
+    // first and fills the depth buffer so other opaque objects correctly
+    // z-sort in front of it.
     const geo = new THREE.SphereGeometry(100, 64, 32)
     const mat = new THREE.MeshBasicMaterial({
       side: THREE.BackSide,
-      depthWrite: false,
-      depthTest: false,
+      depthWrite: true,
+      depthTest: true,
       fog: false,
       toneMapped: false,
       
