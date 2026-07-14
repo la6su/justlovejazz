@@ -13,6 +13,35 @@ _(nothing currently in progress)_
 
 ## TODO — High priority
 
+- [x] **Glass cube WebGPU/WebGL2 parity** — DONE 2026-07-14. 6 commits: vignette
+      sync, wobble noise coords, PMREM isPMREMTexture flag, WorldConfig
+      metalness 0.8→0.0, light colors re-enabled, premium glass params
+      (dispersion, iridescence, sheen, attenuation, clearcoat), richer 3-zone
+      env map. VLM-verified parity on WebGL2, code-sync verified on WebGPU.
+
+- [x] **Full project audit** — DONE 2026-07-14. 4-agent audit (memory, perf,
+      render quality, logic). 73 issues found, 45 fixed across 3 commits
+      (CRITICAL+HIGH, MEDIUM, LOW). tsc 0 errors, lint 0 errors (57 warnings),
+      87/87 tests. See docs/STATUS.md "Recent work (2026-07-14)".
+
+- [x] **PLAN-v3 Phase 7+8 (dramatic click feedback)** — DONE 2026-07-14.
+      Wobble boost 0.9→1.8, dispersion boost 4.5→9.5, chromatic boost 0.45→0.95,
+      pulse duration 0.9→1.2s, opener scale 1.3→1.4. Works card wobble: scale
+      1.2, rotateY ±6deg, blur at peak.
+
+- [x] **PLAN-v3 Phase 6 (Cursor wobble smoothed edges)** — DONE (already
+      uses quadraticCurveTo, 16 segments). Verified in Cursor.ts drawCircle.
+
+- [x] **PLAN-v3 Phase 5 (Showreel modal UI)** — DONE. FullscreenOverlay has
+      custom controls (play/pause, mute, seek bar, time display, big play
+      button, prev/next, keyboard). D-1 fix added `<source>` element (was
+      missing → showreel never played).
+
+- [x] **PLAN.md all phases (2-6)** — DONE. Phase 2 (zoom on works), 3 (sound
+      panel with EQ bars), 4 (carousel momentum/rubber-band/auto-advance),
+      5 (DrawTrail tapered tail), 6 (cursor spring physics). All verified
+      in code.
+
 - [ ] **3D Works page + Showreel shader plane + lazy video** — 6-phase plan
       in `docs/PLAN-showreel-shader-plane.md`:
       1. Lazy video loading (preload="none", src on open) — 30 min
@@ -23,6 +52,8 @@ _(nothing currently in progress)_
       6. Integration + cleanup — 1-2 hours
       Strategy: thumbnails eager, video lazy on click. Wobble already works
       on cube (WorkCards.ts:107 → jlz:wobble-pulse), needs to be on card too.
+      Phases 1-2 DONE. Phase 4 exists but disabled (visual clutter). Phases
+      3, 5, 6 remain (major architecture — instanced mesh + video plane).
 
 - [x] **Senior-auditor pass — Tier 0-3** — DONE 2026-07-13. 6 Critical nav
       bugs (C1-C6) + 6 Critical 3D bugs (C7-C12) + 5 High (H1,H4-H6,H9,H13)
@@ -142,9 +173,14 @@ _(nothing currently in progress)_
       visuals on Works section. Needs audio content + AudioSystem.start()
       wiring to a UI gesture.
 
-- [ ] **Auto-reduce particle count** — when _lowFps is true, reduce particle
-      count via makeParticles.setCount (requires BufferGeometry rebuild).
-      Foundation (_lowFps flag) is in place from 2026-07-11.
+- [x] **Auto-reduce particle count** — DONE 2026-07-14. Experience.ts:870
+      halves JunniParticles count when _lowFps is sustained. JunniParticles
+      has setCount() method that rebuilds the geometry. One-way (never
+      auto-restore — GPU spike would re-trigger).
+
+- [ ] **Audio system (part 2 — ambient)** — ambient track + audio-reactive
+      visuals on Works section. Needs audio content + AudioSystem.start()
+      wiring to a UI gesture.
 
 ## Done (recent — for context)
 

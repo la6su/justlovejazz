@@ -1,8 +1,9 @@
 # STATUS — Single Source of Truth
 
-> Updated: 2026-07-13 (post-audit). Branch: `main`. Build green. ~10.9K TS LOC, 74 TS files.
-> Cube wobble fixed (day34-accurate). Senior-auditor pass complete (Tier 0-3).
-> Autonomous improvement plan in `docs/PLAN.md`.
+> Updated: 2026-07-14 (post-audit + glass polish). Branch: `main`. Build green. ~10.9K TS LOC, 74 TS files.
+> Glass cube premium quality (dispersion, iridescence, sheen, attenuation).
+> Full 4-agent audit complete (73 issues found, 45 fixed across CRITICAL/HIGH/MEDIUM/LOW).
+> PLAN-v3 Phase 7+8 done (dramatic click feedback). All PLAN.md phases complete.
 
 ## Project
 
@@ -66,6 +67,33 @@ Blog: standalone HTML (`blog.html` + 4 articles), SEO-optimized.
 | **Naming refactor** (createSection0-5, userData.carousel preserved) | ✅ |
 | **RenderPipeline crash guard** (line 644 — the actual `if`, line 641 is the comment) | ✅ |
 | **Post-processing** (vignette, refract, border, chromatic preserved) | ✅ |
+
+## Recent work (2026-07-14 — Glass cube polish + full audit + PLAN-v3)
+
+- **Glass cube WebGPU/WebGL2 parity** (6 commits): vignette sync, wobble noise
+  coords, PMREM isPMREMTexture flag, WorldConfig metalness 0.8→0.0 (was metal!),
+  light colors re-enabled, premium glass params (dispersion 0.5, iridescence 0.3,
+  sheen 0.4, attenuation 2.0, clearcoat 0.6/0.08), richer 3-zone env map.
+- **Full 4-agent audit** (73 issues found, 45 fixed):
+  - CRITICAL (3): FullscreenOverlay video `<source>`, Section state machine,
+    BakuCarousel setTimeout leak.
+  - HIGH (8): IntersectionObserver, JoystickNav querySelectorAll cache, Cursor
+    DOM write gating, StateBus lazy alloc, BakuCarousel texture mipmaps +
+    depthWrite, JunniParticles sprite mipmaps, BlurFade/NoiseText i18n,
+    SfxSystem AudioContext resume.
+  - MEDIUM (20): perf (FPS circular buffer, WebGPU params reuse), render
+    (ParticleBurst scale flicker, EnvSphere toneMapped, fog colors, bloom
+    resRatio, border gate), logic (bootstrap retry, UIMenu sound, sound default,
+    bigPlay opacity, Camera FOV dt-lerp, Cursor flicker, SplashCube rotation).
+  - LOW (14): UIManager listener, particleTexture dispose, ErrorTracker guard,
+    ground depthWrite, additive glow toneMapped, PostProcessing presets,
+    BakuCarousel click guard, WorkCards debounce, Camera shake, dead verifyWebGPU.
+- **PLAN-v3 Phase 7+8** (dramatic click feedback): wobble boost 0.9→1.8,
+  dispersion boost 4.5→9.5, chromatic boost 0.45→0.95, pulse duration 0.9→1.2s,
+  opener scale 1.3→1.4. Works card wobble: scale 1.2, rotateY ±6deg, blur at peak.
+- **PLAN.md all phases complete**: Phase 2 (zoom), 3 (sound panel), 4 (carousel
+  momentum), 5 (DrawTrail tapered), 6 (cursor spring) all implemented.
+- Verification: tsc 0 errors, lint 0 errors (57 warnings), 87/87 tests pass.
 
 ## Recent work (2026-07-13 — Senior-auditor pass)
 
