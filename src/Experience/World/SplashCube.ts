@@ -54,15 +54,26 @@ export class SplashCube extends THREE.Mesh {
   private cubeMaterial!: THREE.MeshPhysicalMaterial
   // (PlayButton3D field removed — dead render path deleted)
   // TSL wobble uniforms (WebGPU path only)
-  // day34 pattern, tuned for VISIBLE elegant jelly:
+  // day34 pattern, tuned for SOFT elegant jelly:
   //   - NOISE_FREQ = 2.4 — 2 periods/face like day34
-  //   - SIZE_SCALE = 0.09 — displacement (visible but preserves cube shape)
-  //   - uWobble = 0.95 — amplitude (was 0.70 → too subtle, 1.20 → lost shape)
-  // Goal: cube wobble clearly visible, shape preserved, smooth motion.
-  private _uWobble = uniform(0.95)
+  //   - SIZE_SCALE = 0.06 — gentle displacement (was 0.09, softer now)
+  //   - uWobble = 0.55 — amplitude (was 0.95 → too rough; 0.55 = subtle breathing)
+  // Goal: cube wobble barely visible, elegant, never jarring.
+  // Pulse on click: animated via sin-envelope in update() (smooth rise+fall),
+  // NOT a hard setTimeout cut — the old hard cut was the #1 "rough" cause.
+  private static readonly WOBBLE_IDLE = 0.55
+  private static readonly WOBBLE_BOOST = 0.85 // peak = IDLE + BOOST = 1.4 (was 0.95+2.5=3.45)
+  private static readonly PULSE_DURATION = 0.9 // seconds (was 1.2)
+  private _wobblePulseT = 1 // 0=just triggered, 1=settled (animated in update)
+  private _uWobble = uniform(SplashCube.WOBBLE_IDLE)
   private _uTime = uniform(0)
-  /** Displacement amplitude — visible but elegant. */
-  private static readonly SIZE_SCALE = 0.09
+  /** Displacement amplitude — gentle, elegant (was 0.09 → too rough). */
+  private static readonly SIZE_SCALE = 0.06
+  // Chromatic pulse baseline + boost (animated via same sin-envelope as wobble)
+  private static readonly DISPERSION_IDLE = 15.0
+  private static readonly DISPERSION_BOOST = 10.0 // peak 25 (was 30)
+  private static readonly CHROMATIC_IDLE = 0.5
+  private static readonly CHROMATIC_BOOST = 0.4 // peak 0.9 (was 1.0)
   private cubeCamera!: THREE.CubeCamera
   private contentScene!: THREE.Scene
   private contentTextures: THREE.Texture[] = []
@@ -331,19 +342,19 @@ export class SplashCube extends THREE.Mesh {
       //   - Squash freq 0.3 → 0.25, Breathe freq 0.55 → 0.45 (slower, more elegant)
       const uWobble = this._uWobble
       const uTimeVal = this._uTime
-      const SIZE_SCALE = SplashCube.SIZE_SCALE   // 0.05
+      const SIZE_SCALE = SplashCube.SIZE_SCALE   // 0.06 — gentle
       const NOISE_FREQ = 2.4                      // 0.12 * (16/0.8)
       mat.positionNode = Fn(() => {
         const pos = positionLocal.toVar()
         const np = pos.mul(NOISE_FREQ)
         const t = uTimeVal
-        // 2-octave noise (high-freq removed for smooth surface)
-        const n1 = mx_noise_float(np.add(t.mul(0.2))).mul(0.4).mul(uWobble)
-        const n2 = mx_noise_float(np.mul(2.5).add(t.mul(0.3)).add(7)).mul(0.12).mul(uWobble)
+        // 2-octave noise — soft amplitudes (was 0.4/0.12 → 0.28/0.08)
+        const n1 = mx_noise_float(np.add(t.mul(0.15))).mul(0.28).mul(uWobble)
+        const n2 = mx_noise_float(np.mul(2.5).add(t.mul(0.22)).add(7)).mul(0.08).mul(uWobble)
         const displacement = n1.add(n2)
-        // squash + breathe (gentle, preserves cube shape)
-        const squash = sin(t.mul(0.25)).mul(0.04).mul(uWobble)
-        const breathe = sin(t.mul(0.45).add(pos.y.mul(0.3))).mul(0.08).mul(uWobble)
+        // squash + breathe — gentle (was 0.04/0.08 → 0.025/0.05), slower freq
+        const squash = sin(t.mul(0.18)).mul(0.025).mul(uWobble)
+        const breathe = sin(t.mul(0.32).add(pos.y.mul(0.3))).mul(0.05).mul(uWobble)
         // Apply — displacement scaled by SIZE_SCALE, squash proportional
         pos.assign(pos.add(normalLocal.mul(displacement.add(breathe).mul(SIZE_SCALE))))
         pos.y.addAssign(pos.y.mul(squash))
@@ -420,60 +431,70 @@ export class SplashCube extends THREE.Mesh {
     this.openerTarget = 1
   }
 
-  /** Phase 8: Wobble pulse — dramatic shader transition on click.
+  /** Phase 8: Wobble pulse — soft shader transition on click.
    *  Triggered by jlz:wobble-pulse event (work card click, carousel card click).
-   *  Combined effects:
-   *    1. Wobble boost: uWobble 0.95 → 2.5 (dramatic jelly burst)
-   *    2. Chromatic burst: dispersion 15 → 30 (WebGPU) / chromaticAberration 0.5 → 1.0 (WebGL2)
-   *    3. Scale pulse: 1.0 → 1.2 → 1.0 (triggerOpener)
-   *  Duration: 1.2s (longer, more cinematic) */
-  private _wobblePulseTimer: ReturnType<typeof setTimeout> | null = null
-  private _chromaticPulseTimer: ReturnType<typeof setTimeout> | null = null
+   *  Combined effects (ALL animated via sin-envelope in update() — smooth rise+fall):
+   *    1. Wobble boost: uWobble IDLE → IDLE+BOOST → IDLE (gentle jelly burst)
+   *    2. Chromatic burst: dispersion/chromaticAberration IDLE → IDLE+BOOST → IDLE
+   *    3. Scale pulse: 1.0 → 1.2 → 1.0 (triggerOpener, already eased)
+   *
+   *  The old implementation used hard setTimeout cuts (snap to peak, snap back
+   *  after 1200ms) — this was the #1 cause of "rough" wobble. The new approach
+   *  animates _wobblePulseT from 0→1 in update(), applies a sin(PI*t) envelope
+   *  (0→1→0, zero derivative at both endpoints = smooth in+out), and multiplies
+   *  the BOOST amount by that envelope. Peak is at t=0.5 (midpoint of duration).
+   *
+   *  Duration: 0.9s (was 1.2s — snappier but smoother due to easing). */
   triggerWobblePulse(): void {
-    // Clear any existing pulse
-    if (this._wobblePulseTimer) clearTimeout(this._wobblePulseTimer)
-    if (this._chromaticPulseTimer) clearTimeout(this._chromaticPulseTimer)
+    // Reset pulse timer to 0 — update() will animate it to 1 over PULSE_DURATION.
+    this._wobblePulseT = 0
 
-    // 1. Boost wobble (dramatic jelly burst).
-    // C7 fix: write BOTH the TSL _uWobble uniform (WebGPU) AND the
-    // MeshTransmissionMaterial.wobble property (WebGL2). Previously only
-    // _uWobble was written → PLAN-v3 Phase 8 wobble pulse was silently
-    // inactive on the entire WebGL2 fallback audience.
-    const WOBBLE_BOOST = 2.5
-    const WOBBLE_RESTORE = 0.95
-    ;(this._uWobble as unknown as { value: number }).value = WOBBLE_BOOST
+    // Scale pulse (opener) for combined wobble+chromatic+scale effect.
+    // triggerOpener is already eased (lerp in update), no change needed.
+    this.triggerOpener()
+  }
+
+  /** Animate the wobble + chromatic pulse via sin-envelope.
+   *  Called every frame from update(). When _wobblePulseT < 1, the pulse is
+   *  active — compute the envelope (0→1→0 smooth) and apply boost to wobble
+   *  + chromatic on BOTH WebGPU (TSL _uWobble + mat.dispersion) and WebGL2
+   *  (mat.wobble + mat.chromaticAberration) paths. */
+  private _updateWobblePulse(dt: number): void {
+    if (this._wobblePulseT >= 1) return
+
+    // Advance pulse time (clamped to 1)
+    this._wobblePulseT = Math.min(1, this._wobblePulseT + dt / SplashCube.PULSE_DURATION)
+
+    // Sin envelope: 0 at t=0, 1 at t=0.5, 0 at t=1. Zero derivative at both
+    // endpoints → smooth rise + fall, no snap. This replaces the old hard cut.
+    const envelope = Math.sin(this._wobblePulseT * Math.PI)
+
+    // Wobble: IDLE + BOOST * envelope (peak at midpoint, returns to IDLE)
+    const wobbleVal = SplashCube.WOBBLE_IDLE + SplashCube.WOBBLE_BOOST * envelope
+    ;(this._uWobble as unknown as { value: number }).value = wobbleVal
     const matWobble = this.cubeMaterial as unknown as { wobble?: number }
-    if (matWobble.wobble !== undefined) matWobble.wobble = WOBBLE_BOOST
-    this._wobblePulseTimer = setTimeout(() => {
-      ;(this._uWobble as unknown as { value: number }).value = WOBBLE_RESTORE
-      if (matWobble.wobble !== undefined) matWobble.wobble = WOBBLE_RESTORE
-      this._wobblePulseTimer = null
-    }, 1200)
+    if (matWobble.wobble !== undefined) matWobble.wobble = wobbleVal
 
-    // 2. Chromatic burst — temporarily boost dispersion/chromaticAberration
+    // Chromatic: same envelope, separate IDLE/BOOST for WebGPU (dispersion)
+    // and WebGL2 (chromaticAberration).
     const mat = this.cubeMaterial as unknown as {
       dispersion?: number
       chromaticAberration?: number
     }
     const isWebGPU = DeviceCapability.getInstance().isRealWebGPU
     if (isWebGPU && mat.dispersion !== undefined) {
-      const origDispersion = 15.0
-      mat.dispersion = 30.0
-      this._chromaticPulseTimer = setTimeout(() => {
-        mat.dispersion = origDispersion
-        this._chromaticPulseTimer = null
-      }, 1200)
+      mat.dispersion = SplashCube.DISPERSION_IDLE + SplashCube.DISPERSION_BOOST * envelope
     } else if (mat.chromaticAberration !== undefined) {
-      const origChromatic = 0.5
-      mat.chromaticAberration = 1.0
-      this._chromaticPulseTimer = setTimeout(() => {
-        mat.chromaticAberration = origChromatic
-        this._chromaticPulseTimer = null
-      }, 1200)
+      mat.chromaticAberration = SplashCube.CHROMATIC_IDLE + SplashCube.CHROMATIC_BOOST * envelope
     }
 
-    // 3. Scale pulse (opener) for combined wobble+chromatic+scale effect
-    this.triggerOpener()
+    // When pulse settles, ensure baseline values are exact (avoid float drift)
+    if (this._wobblePulseT >= 1) {
+      ;(this._uWobble as unknown as { value: number }).value = SplashCube.WOBBLE_IDLE
+      if (matWobble.wobble !== undefined) matWobble.wobble = SplashCube.WOBBLE_IDLE
+      if (isWebGPU && mat.dispersion !== undefined) mat.dispersion = SplashCube.DISPERSION_IDLE
+      else if (mat.chromaticAberration !== undefined) mat.chromaticAberration = SplashCube.CHROMATIC_IDLE
+    }
   }
 
   updateMaterial(params: BakuMaterialState): void {
@@ -607,6 +628,10 @@ export class SplashCube extends THREE.Mesh {
     const openerScale = 1 + this.openerProgress * 0.3
     this.cubeMesh.scale.setScalar(openerScale)
 
+    // Animate wobble + chromatic pulse (sin-envelope, smooth rise+fall).
+    // Replaces the old hard setTimeout cut that caused "rough" wobble.
+    this._updateWobblePulse(dt)
+
     // Advance wobble time — TSL (WebGPU) + MeshTransmissionMaterial (WebGL2)
     ;(this._uTime as unknown as { value: number }).value = this.time
 
@@ -664,16 +689,8 @@ export class SplashCube extends THREE.Mesh {
   }
 
   dispose(): void {
-    // C10 fix: clear pending pulse timers (they hold `this` via closure →
-    // prevent GC for up to 1.2s after destroy).
-    if (this._wobblePulseTimer) {
-      clearTimeout(this._wobblePulseTimer)
-      this._wobblePulseTimer = null
-    }
-    if (this._chromaticPulseTimer) {
-      clearTimeout(this._chromaticPulseTimer)
-      this._chromaticPulseTimer = null
-    }
+    // (Pulse timers removed — triggerWobblePulse now uses animated sin-envelope
+    //  in update() instead of setTimeout, so there are no timers to clear.)
     // (PlayButton3D dispose removed — dead render path deleted)
     this.cubeMesh.geometry.dispose()
     this.cubeMaterial.dispose()

@@ -126,6 +126,6 @@ git fetch origin && git checkout main && git pull origin main
 
 56. **FullscreenOverlay z-index (10010) must be above navbar (10001).** `.jlz-fs-overlay.uk-open { z-index: 10010 !important }`. Without this, the header stays visible on top of the overlay and hamburger click dispatches `jlz:goto-nav` behind it.
 
-57. **All window listeners must be stored as fields + removed in destroy().** This includes `jlz:goto-nav`, `jlz:wobble-pulse`, `jlz:goto-section-by-hash`, Camera.pulse timer, BakuCarousel canvas pointerenter/leave, SplashCube pulse timers. Anonymous arrow functions that close over `this` are NEVER safe for window listeners — they can't be removed.
+57. **All window listeners must be stored as fields + removed in destroy().** This includes `jlz:goto-nav`, `jlz:wobble-pulse`, `jlz:goto-section-by-hash`, Camera.pulse timer, BakuCarousel canvas pointerenter/leave. Anonymous arrow functions that close over `this` are NEVER safe for window listeners — they can't be removed. (SplashCube pulse timers removed — pulse now uses animated sin-envelope in `update()`, no setTimeout.)
 
-58. **triggerWobblePulse must write BOTH paths.** WebGPU: `_uWobble` TSL uniform. WebGL2: `cubeMaterial.wobble` property. Writing only one makes PLAN-v3 Phase 8 wobble pulse silently inactive for the fallback audience.
+58. **triggerWobblePulse must write BOTH paths.** WebGPU: `_uWobble` TSL uniform. WebGL2: `cubeMaterial.wobble` property. Writing only one makes PLAN-v3 Phase 8 wobble pulse silently inactive for the fallback audience. The pulse is animated via `_wobblePulseT` (0→1) in `update()` using a `sin(PI*t)` envelope — smooth rise+fall, no hard setTimeout cut. Both paths are written every frame in `_updateWobblePulse(dt)`.

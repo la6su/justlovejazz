@@ -455,6 +455,10 @@ export class Experience {
     this._wobblePulseHandler = () => {
       const cube = this.world?.baku as unknown as { triggerWobblePulse?: () => void } | undefined
       cube?.triggerWobblePulse?.()
+      // Keep rendering while the pulse animates (sin-envelope in SplashCube.update).
+      // Without this, _needsRender stays false after the first frame and the
+      // pulse never animates — update() isn't called, _wobblePulseT stays at 0.
+      this._needsRender = true
     }
     window.addEventListener('jlz:wobble-pulse', this._wobblePulseHandler)
 
@@ -606,8 +610,14 @@ export class Experience {
     // to its target face (triggered by rotateToFace on section change).
     const cubeRotating = (this.world?.baku as unknown as { _faceLerp?: number } | undefined)?._faceLerp !== undefined
       && (this.world?.baku as unknown as { _faceLerp: number })._faceLerp < 1
+    // Wobble pulse animation — keep rendering while the sin-envelope pulse is
+    // active (triggered by jlz:wobble-pulse on card click). The pulse animates
+    // _wobblePulseT from 0→1 in SplashCube.update(); without keeping the render
+    // loop alive, update() isn't called and the pulse stalls at t=0.
+    const wobblePulsing = (this.world?.baku as unknown as { _wobblePulseT?: number } | undefined)?._wobblePulseT !== undefined
+      && (this.world?.baku as unknown as { _wobblePulseT: number })._wobblePulseT < 1
 
-    if (navActive || introActive || carouselActive || openerActive || burstActive || camShaking || cubeRotating || showreelActive) {
+    if (navActive || introActive || carouselActive || openerActive || burstActive || camShaking || cubeRotating || showreelActive || wobblePulsing) {
       this._needsRender = true
     }
 
