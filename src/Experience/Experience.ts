@@ -176,24 +176,17 @@ export class Experience {
       envCanvas.height = 512
       const ctx = envCanvas.getContext('2d')!
       // Vertical gradient: warm horizon → bright sky → cool zenith
+      // NO sun spots — they created a bright white dot on the cube (env map
+      // is sampled by ALL materials including MeshBasicMaterial via
+      // BasicEnvironmentNode on WebGPU). Uniform gradient gives smooth IBL
+      // without concentrated bright spots.
       const grad = ctx.createLinearGradient(0, 0, 0, 512)
       grad.addColorStop(0.0, 'rgb(150,140,120)')   // horizon (warm)
       grad.addColorStop(0.5, 'rgb(200,200,210)')   // mid sky
       grad.addColorStop(1.0, 'rgb(180,210,240)')   // zenith (cool blue)
       ctx.fillStyle = grad
       ctx.fillRect(0, 0, 1024, 512)
-      // 3 bright sun spots for visible reflections (day34 pattern)
-      const drawSun = (x: number, y: number, r: number, color: string) => {
-        const sunGrad = ctx.createRadialGradient(x, y, 0, x, y, r)
-        sunGrad.addColorStop(0, color)
-        sunGrad.addColorStop(0.5, color)
-        sunGrad.addColorStop(1, 'rgba(0,0,0,0)')
-        ctx.fillStyle = sunGrad
-        ctx.fillRect(0, 0, 1024, 512)
-      }
-      drawSun(780, 120, 80, 'rgba(255,240,210,0.95)')   // bright warm sun (key light)
-      drawSun(200, 200, 100, 'rgba(200,220,255,0.6)')   // cool fill (rim light)
-      drawSun(500, 350, 70, 'rgba(255,220,180,0.5)')    // warm bounce
+      // (Sun spots REMOVED — were causing white dot artifact on cube)
       const envTex = new THREE.CanvasTexture(envCanvas)
       envTex.mapping = THREE.EquirectangularReflectionMapping
       envTex.colorSpace = THREE.SRGBColorSpace
