@@ -38,7 +38,7 @@ export class MeshTransmissionMaterial extends THREE.MeshPhysicalMaterial {
       distortion: { value: 0.0 },
       distortionScale: { value: 0.5 },
       temporalDistortion: { value: 0.0 },
-      wobble: { value: 0.55 }, // synced with SplashCube.WOBBLE_IDLE (was 0.91)
+      wobble: { value: 0.85 }, // synced with SplashCube.WOBBLE_IDLE (was 0.55 → invisible)
     }
 
     this.onBeforeCompile = (shader) => {
@@ -107,30 +107,30 @@ export class MeshTransmissionMaterial extends THREE.MeshPhysicalMaterial {
       \n` + shader.vertexShader
 
       // Inject wobble displacement after 'begin_vertex' (where transformed = position is set)
-      // ── soft elegant jelly (synced with TSL WebGPU path) ──
+      // ── visible elegant jelly (synced with TSL WebGPU path) ──
       // day34 pattern, 2-octave noise + squash + breathe
       //
-      // Softened for gentle, non-rough motion (synced with SplashCube TSL path):
-      //   - n1 amplitude 0.4 → 0.28, n2 amplitude 0.12 → 0.08 (gentler)
-      //   - Time speeds slowed: 0.2→0.15, 0.3→0.22 (smoother)
-      //   - Squash 0.04 → 0.025, Breathe 0.08 → 0.05 (preserves cube shape)
-      //   - Squash freq 0.25 → 0.18, Breathe freq 0.45 → 0.32 (slower, elegant)
-      //   - SIZE_SCALE 0.09 → 0.06 (less displacement)
+      // Synced with SplashCube TSL path (visible amplitudes, was too subtle):
+      //   - n1 amplitude 0.38, n2 amplitude 0.11 (visible noise)
+      //   - Time speeds: 0.2, 0.3 (smooth, not too slow)
+      //   - Squash 0.035, Breathe 0.07 (visible volume pulse, preserves cube shape)
+      //   - Squash freq 0.22, Breathe freq 0.4 (elegant)
+      //   - SIZE_SCALE 0.08 (visible displacement)
       shader.vertexShader = shader.vertexShader.replace(
         '#include <begin_vertex>',
         /*glsl*/ `
         vec3 transformed = vec3( position );
-        const float SIZE_SCALE = 0.06;       // gentle displacement (synced with TSL)
+        const float SIZE_SCALE = 0.08;       // visible displacement (synced with TSL)
         const float NOISE_FREQ = 2.4;        // 0.12 * (16/0.8) → 2 periods/face
         float t = time;                       // raw time (day34)
         vec3 np = position * NOISE_FREQ;
         // 2-octave noise (high-freq removed for smooth surface)
-        float n1 = snoise(np + vec3(t * 0.15, 0.0, 0.0)) * 0.28;
-        float n2 = snoise(np * 2.5 + vec3(0.0, t * 0.22, 7.0)) * 0.08;
+        float n1 = snoise(np + vec3(t * 0.2, 0.0, 0.0)) * 0.38;
+        float n2 = snoise(np * 2.5 + vec3(0.0, t * 0.3, 7.0)) * 0.11;
         float displacement = (n1 + n2) * wobble;
-        // squash + breathe (gentle, preserves cube shape)
-        float squash = sin(t * 0.18) * 0.025 * wobble;
-        float breathe = sin(t * 0.32 + position.y * 0.3) * 0.05 * wobble;
+        // squash + breathe (visible, preserves cube shape)
+        float squash = sin(t * 0.22) * 0.035 * wobble;
+        float breathe = sin(t * 0.4 + position.y * 0.3) * 0.07 * wobble;
         // Apply — displacement scaled, squash proportional
         transformed += normal * (displacement + breathe) * SIZE_SCALE;
         transformed.y += transformed.y * squash;
