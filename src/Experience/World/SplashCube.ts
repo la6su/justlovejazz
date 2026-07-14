@@ -157,19 +157,19 @@ export class SplashCube extends THREE.Mesh {
     const text2Tex = this._createJLZTexture('WEBGPU · TSL · THREE.JS', '#4a5474', '#050507', 512, 128)
     this.contentTextures = [logoTex, text1Tex, text2Tex]
 
-    // 6 gradient planes — JLZ accent palette, brightened for richer reflections.
-    // Previous values were too dark (0.10–0.52) → cube reflections looked dull.
-    // Brighter accent + a couple of near-white "studio light" planes give the
-    // glass cube distinct specular blooms and color contrast on each face.
+    // 6 gradient planes — neutral/bright for clean glass reflections.
+    // Previous blue palette (0.55–0.95 blue-grey) tinted the cube blue via
+    // refraction. Neutral whites + warm accents give the glass a clean look
+    // with distinct specular blooms without color cast.
     const size = 5
     const half = size / 2
     const jlzColors = [
-      [0.55, 0.62, 0.85], // accent blue-grey (brightened from 0.32/0.36/0.52)
-      [0.70, 0.78, 0.95], // accent-hover (brightened)
-      [0.35, 0.40, 0.55], // mid blue-grey (brightened)
-      [0.90, 0.92, 1.00], // near-white "studio light" (was darkest — now bright)
-      [0.80, 0.85, 1.00], // lighter accent (brightened)
-      [0.45, 0.50, 0.70], // deep accent (brightened from 0.10/0.12/0.18)
+      [0.85, 0.85, 0.88], // light warm grey (was blue 0.55/0.62/0.85)
+      [0.95, 0.95, 0.95], // near-white studio light (was blue 0.70/0.78/0.95)
+      [0.50, 0.50, 0.55], // mid neutral grey (was blue 0.35/0.40/0.55)
+      [0.90, 0.88, 0.85], // warm white (was blue 0.90/0.92/1.00)
+      [0.75, 0.75, 0.78], // light neutral (was blue 0.80/0.85/1.00)
+      [0.40, 0.40, 0.45], // dark neutral (was blue 0.45/0.50/0.70)
     ]
     const dirs: { pos: number[]; rot: number[]; color: number[] }[] = [
       { pos: [half, 0, 0], rot: [0, -Math.PI / 2, 0], color: jlzColors[0]! },
@@ -303,7 +303,7 @@ export class SplashCube extends THREE.Mesh {
     if (isWebGPU) {
       // ── WebGPU: MeshPhysicalNodeMaterial + NATIVE dispersion + day34 TSL wobble ──
       const mat = new MeshPhysicalNodeMaterial()
-      mat.color = new THREE.Color(0.94, 0.91, 1.00)  // day34 lavender tint
+      mat.color = new THREE.Color(1.0, 1.0, 1.0)    // neutral clear glass (was 0.94/0.91/1.00 lavender → blue tint)
       mat.emissive = new THREE.Color(0x000000)
       mat.emissiveIntensity = 0.0
       mat.metalness = 0.0
@@ -319,13 +319,13 @@ export class SplashCube extends THREE.Mesh {
       mat.attenuationColor = new THREE.Color(1.0, 1.0, 1.0)
       mat.attenuationDistance = 12                   // visible tint gradient (was 8)
       mat.specularIntensity = 1.0
-      mat.iridescence = 1.0
+      mat.iridescence = 0.3                          // reduced (was 1.0 → strong blue/rainbow tint)
       mat.iridescenceIOR = 1.3
       mat.iridescenceThicknessRange = [100, 400]
       mat.clearcoat = 1.0
       mat.clearcoatRoughness = 0.0
-      mat.sheen = 0.4
-      mat.sheenColor = new THREE.Color(0.8, 0.9, 1.0)
+      mat.sheen = 0.2                                // reduced (was 0.4 → too visible)
+      mat.sheenColor = new THREE.Color(1.0, 1.0, 1.0) // neutral (was 0.8/0.9/1.0 blue sheen)
       mat.sheenRoughness = 0.5
       mat.depthWrite = false
       mat.normalMap = this._speckleTex
@@ -382,7 +382,7 @@ export class SplashCube extends THREE.Mesh {
       // material in the scene. DeviceCapability.tier drives the sample count.
       const samples = caps.tier === 'low' ? 2 : caps.tier === 'medium' ? 4 : 6
       const mat = new MeshTransmissionMaterial(samples)
-      mat.color = new THREE.Color(0.94, 0.91, 1.00)
+      mat.color = new THREE.Color(1.0, 1.0, 1.0)    // neutral clear glass (synced, was lavender)
       mat.emissive = new THREE.Color(0x000000)
       mat.emissiveIntensity = 0.0
       mat.metalness = 0.0
@@ -397,13 +397,13 @@ export class SplashCube extends THREE.Mesh {
       mat.attenuationColor = new THREE.Color(1.0, 1.0, 1.0)
       mat.attenuationDistance = 12                   // visible tint (synced, was 8)
       mat.specularIntensity = 1.0
-      mat.iridescence = 1.0
+      mat.iridescence = 0.3                          // reduced (synced, was 1.0 → blue tint)
       mat.iridescenceIOR = 1.3
       mat.iridescenceThicknessRange = [100, 400]
       mat.clearcoat = 1.0
       mat.clearcoatRoughness = 0.0
-      mat.sheen = 0.4
-      mat.sheenColor = new THREE.Color(0.8, 0.9, 1.0)
+      mat.sheen = 0.2                                // reduced (synced, was 0.4)
+      mat.sheenColor = new THREE.Color(1.0, 1.0, 1.0) // neutral (synced, was blue)
       mat.sheenRoughness = 0.5
       mat.depthWrite = false
       mat.normalMap = this._speckleTex
