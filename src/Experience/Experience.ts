@@ -210,7 +210,9 @@ export class Experience {
       // reliably through the TSL post-pipeline (PassNode RT caching drift).
       // Explicit mat.envMap guarantees the glass sees the environment on BOTH
       // paths → parity. Shared texture, no extra VRAM.
-      this.world?.baku?.bindEnvironment(envRT.texture)
+      // DIAGNOSTIC: bindEnvironment DISABLED — was binding envMap to the
+      // diagnostic MeshBasicMaterial, causing white dot (env reflection).
+      // this.world?.baku?.bindEnvironment(envRT.texture)
       pmrem.dispose()
       envScene.traverse((obj) => {
         const mesh = obj as THREE.Mesh
@@ -688,6 +690,10 @@ export class Experience {
       const toIdx = Math.min(this.world.currentSectionIndex + 1, 5) // 6 sections, max idx 5
       const toCfg = this.world.getConfig(this.world.sections[toIdx]?.phaseConfig?.id ?? 'sec_intro')
       if (fromCfg && toCfg) {
+        // DIAGNOSTIC: updateWorldBlend DISABLED — was overwriting the diagnostic
+        // blue color with WorldConfig colors (0x3a3a5e dark blue-grey).
+        // Will re-enable when glass material is restored.
+        /*
         this.world.baku.updateWorldBlend(
           fromCfg.baku.material.color,
           toCfg.baku.material.color,
@@ -697,6 +703,7 @@ export class Experience {
           fromCfg.baku.displace,
           toCfg.baku.displace,
         )
+        */
       }
     }
 

@@ -132,7 +132,11 @@ const COMPOSITE_FSG = `
     
     // Chromatic aberration — RGB channel shift
     if (uChromatic > 0.0) {
-      vec2 dir = normalize(vUv - vec2(0.5)) * uChromatic;
+      // Guard: normalize(0,0) is undefined → NaN at exact screen center.
+      // Use max(length, 0.001) to avoid NaN.
+      vec2 cCenter = vUv - vec2(0.5);
+      float cLen = max(length(cCenter), 0.001);
+      vec2 dir = (cCenter / cLen) * uChromatic;
       scene = vec3(
         texture2D(uScene, uv + dir).r,
         scene.g,

@@ -5,7 +5,7 @@
 
 import { WebGPURenderer, RenderPipeline as TSLRenderPipeline } from 'three/webgpu'
 import { tslBloom, tslPass } from '../types/tsl-helpers'
-import { uniform, uv, dot, vec2, vec3, mix, smoothstep, step, time, normalize, sin, cos, float, div, fract, floor } from 'three/tsl'
+import { uniform, uv, dot, vec2, vec3, mix, smoothstep, step, time, sin, cos, float, div, fract, floor, max } from 'three/tsl'
 import * as THREE from 'three'
 import type { Scene, Camera } from 'three'
 
@@ -129,7 +129,11 @@ export class WebGPUPostPipeline {
     // ── 3. Chromatic aberration ──
     // WebGL2: samples uScene at uv+dir and uv-dir (using SAME refracted uv)
     // WebGPU: must sample sceneColor at refractUv+dir, not uv+dir
-    const cDir = normalize(uv().sub(0.5)).mul(this._chromaticStrength)
+    // Guard: normalize(0,0) is undefined → NaN at exact screen center.
+    // Use max(length, 0.001) to avoid NaN (zero chromatic at center is fine).
+    const cCenter = uv().sub(0.5)
+    const cLen = max(cCenter.length(), float(0.001))
+    const cDir = cCenter.div(cLen).mul(this._chromaticStrength)
     const rChan = (sceneColor as any).sample(refractUv.add(cDir)).x
     const bChan = (sceneColor as any).sample(refractUv.sub(cDir)).z
     scene = vec3(rChan, scene.y, bChan)
