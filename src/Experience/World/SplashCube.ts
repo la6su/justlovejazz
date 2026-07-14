@@ -83,9 +83,11 @@ export class SplashCube extends THREE.Mesh {
   private openerPhase: 'idle' | 'opening' | 'closing' | 'done' = 'idle'
   /** CubeCamera update counter — throttles cubemap refresh to every N frames.
    *  Content scene is static (canvas textures), so 6-face render every frame
-   *  is 54 wasted draw calls. Update every 6 frames (~10Hz) or on transition. */
+   *  is 54 wasted draw calls. Update every 3 frames (~20Hz) or on transition.
+   *  Was 6 (10Hz) — reflections felt laggy/stuttery during cube rotation.
+   *  3 gives smoother reflection tracking at acceptable perf cost. */
   private _cubeCamCounter = 0
-  private static readonly CUBE_CAM_INTERVAL = 6
+  private static readonly CUBE_CAM_INTERVAL = 3
 
   private targetParams: BakuMaterialParams = {
     color: new THREE.Color(0x333333),
@@ -152,16 +154,19 @@ export class SplashCube extends THREE.Mesh {
     const text2Tex = this._createJLZTexture('WEBGPU · TSL · THREE.JS', '#4a5474', '#050507', 512, 128)
     this.contentTextures = [logoTex, text1Tex, text2Tex]
 
-    // 6 gradient planes — JLZ accent palette (not Apple rainbow).
+    // 6 gradient planes — JLZ accent palette, brightened for richer reflections.
+    // Previous values were too dark (0.10–0.52) → cube reflections looked dull.
+    // Brighter accent + a couple of near-white "studio light" planes give the
+    // glass cube distinct specular blooms and color contrast on each face.
     const size = 5
     const half = size / 2
     const jlzColors = [
-      [0.32, 0.36, 0.52], // accent blue-grey
-      [0.42, 0.47, 0.64], // accent-hover
-      [0.20, 0.22, 0.30], // dark
-      [0.15, 0.17, 0.22], // darker
-      [0.51, 0.55, 0.74], // lighter accent
-      [0.10, 0.12, 0.18], // deepest
+      [0.55, 0.62, 0.85], // accent blue-grey (brightened from 0.32/0.36/0.52)
+      [0.70, 0.78, 0.95], // accent-hover (brightened)
+      [0.35, 0.40, 0.55], // mid blue-grey (brightened)
+      [0.90, 0.92, 1.00], // near-white "studio light" (was darkest — now bright)
+      [0.80, 0.85, 1.00], // lighter accent (brightened)
+      [0.45, 0.50, 0.70], // deep accent (brightened from 0.10/0.12/0.18)
     ]
     const dirs: { pos: number[]; rot: number[]; color: number[] }[] = [
       { pos: [half, 0, 0], rot: [0, -Math.PI / 2, 0], color: jlzColors[0]! },
@@ -215,8 +220,10 @@ export class SplashCube extends THREE.Mesh {
     this.contentScene.add(text2Mesh)
 
     // CubeCamera — renders content scene into cubemap
-    // Positioned at cube center, renders 6 faces
-    const cubeRT = new THREE.WebGLCubeRenderTarget(512, {
+    // Positioned at cube center, renders 6 faces.
+    // Resolution 1024 (was 512 — reflections were pixelated/aliased on WebGPU).
+    // Mipmaps + LinearMipmapLinearFilter give smooth reflections at any distance.
+    const cubeRT = new THREE.WebGLCubeRenderTarget(1024, {
       format: THREE.RGBAFormat,
       generateMipmaps: true,
       minFilter: THREE.LinearMipmapLinearFilter,
@@ -299,15 +306,15 @@ export class SplashCube extends THREE.Mesh {
       mat.metalness = 0.0
       mat.roughness = 0.0                            // day34 mirror-smooth
       mat.transmission = 1.0
-      mat.thickness = 5                              // day34 value (was 0.5 → no refraction)
+      mat.thickness = 1.2                            // thin glass (was 5 → opaque, no see-through)
       mat.ior = 1.21
       mat.dispersion = 15.0                          // chromatic aberration (day34 doesn't have)
       mat.transparent = true
       mat.opacity = 1.0
       mat.side = THREE.FrontSide                     // day34 (was DoubleSide → double refraction)
-      mat.envMapIntensity = 1.0                      // day34 (was 2.0 → too strong)
+      mat.envMapIntensity = 1.5                      // boost PMREM reflections (was 1.0 → dull)
       mat.attenuationColor = new THREE.Color(1.0, 1.0, 1.0)
-      mat.attenuationDistance = 100                  // day34 (was Infinity → no depth)
+      mat.attenuationDistance = 8                    // short → visible tint gradient (was 100 → flat)
       mat.specularIntensity = 1.0
       mat.iridescence = 1.0
       mat.iridescenceIOR = 1.3
@@ -378,14 +385,14 @@ export class SplashCube extends THREE.Mesh {
       mat.metalness = 0.0
       mat.roughness = 0.0
       mat.transmission = 1.0
-      mat.thickness = 5                              // day34
+      mat.thickness = 1.2                            // thin glass (synced with WebGPU, was 5)
       mat.ior = 1.21
       mat.transparent = true
       mat.opacity = 1.0
       mat.side = THREE.FrontSide                     // day34
-      mat.envMapIntensity = 1.0
+      mat.envMapIntensity = 1.5                      // boost reflections (synced with WebGPU)
       mat.attenuationColor = new THREE.Color(1.0, 1.0, 1.0)
-      mat.attenuationDistance = 100
+      mat.attenuationDistance = 8                    // short → visible tint (synced, was 100)
       mat.specularIntensity = 1.0
       mat.iridescence = 1.0
       mat.iridescenceIOR = 1.3
