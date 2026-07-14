@@ -64,8 +64,11 @@ export class SplashCube extends THREE.Mesh {
   // Pulse on click: animated via sin-envelope in update() (smooth rise+fall),
   // NOT a hard setTimeout cut — the old hard cut was the #1 "rough" cause.
   private static readonly WOBBLE_IDLE = 0.7
-  private static readonly WOBBLE_BOOST = 0.9 // peak = IDLE + BOOST = 1.6 (gentle burst)
-  private static readonly PULSE_DURATION = 0.9 // seconds (was 1.2)
+  // PLAN-v3 Phase 8: boosted wobble pulse for dramatic click feedback.
+  // Was 0.9 (peak 1.6, gentle). Now 1.8 (peak 2.5, dramatic jelly burst).
+  private static readonly WOBBLE_BOOST = 1.8
+  // PLAN-v3 Phase 8: longer duration for cinematic feel (was 0.9s).
+  private static readonly PULSE_DURATION = 1.2
   private _wobblePulseT = 1 // 0=just triggered, 1=settled (animated in update)
   private _uWobble = uniform(SplashCube.WOBBLE_IDLE)
   private _uTime = uniform(0)
@@ -78,9 +81,13 @@ export class SplashCube extends THREE.Mesh {
   // was caused by HIGH idle values (15.0); 0.5 is gentle enough to only show
   // at edges. BOOST gives a brief stronger chromatic fringe on click pulse.
   private static readonly DISPERSION_IDLE = 0.5
-  private static readonly DISPERSION_BOOST = 4.5  // pulse peak = IDLE+BOOST = 5.0
+  // PLAN-v3 Phase 8: stronger chromatic burst on click (was 4.5, peak 5.0).
+  // Now 9.5 (peak 10.0) — visible rainbow fringe burst during the pulse.
+  private static readonly DISPERSION_BOOST = 9.5
   private static readonly CHROMATIC_IDLE = 0.05
-  private static readonly CHROMATIC_BOOST = 0.45  // pulse peak = IDLE+BOOST = 0.5
+  // PLAN-v3 Phase 8: stronger chromatic aberration burst (was 0.45, peak 0.5).
+  // Now 0.95 (peak 1.0) — visible RGB fringe on click.
+  private static readonly CHROMATIC_BOOST = 0.95
   // (CubeCamera + contentScene + contentTextures REMOVED — glass now uses
   //  scene.environment (PMREM RoomEnvironment) for reflections. This removed
   //  ~30% GPU cost (6-face cubemap render every 3rd frame) and eliminated the
@@ -564,9 +571,9 @@ export class SplashCube extends THREE.Mesh {
       }
     }
 
-    // Apply opener scale to cube mesh — scale pulse from 1.0 → 1.3 → 1.0
-    // (was missing — openerProgress was computed but never applied)
-    const openerScale = 1 + this.openerProgress * 0.3
+    // Apply opener scale to cube mesh — scale pulse from 1.0 → 1.4 → 1.0
+    // PLAN-v3 Phase 8: boosted scale pulse (was 1.3) for more dramatic click.
+    const openerScale = 1 + this.openerProgress * 0.4
     this.cubeMesh.scale.setScalar(openerScale)
 
     // Animate wobble + chromatic pulse (sin-envelope, smooth rise+fall).
