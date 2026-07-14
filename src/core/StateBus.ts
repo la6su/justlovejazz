@@ -153,7 +153,9 @@ export class StateBus {
   /** Core tick — advances all animations */
   tick(dt: number): StateBus {
     if (dt <= 0) return this
-    const changed: string[] = []
+    // PERF-4 fix: lazy-allocate changed array — avoids 60 empty-array allocs/sec
+    // when idle (no animations active or none crossing the change threshold).
+    let changed: string[] | null = null
 
     for (const [name, anim] of this.#animations) {
       anim.progress += dt
@@ -164,6 +166,7 @@ export class StateBus {
       this.#channels.set(name, newValue)
 
       if (Math.abs(newValue - prev) > 1e-6) {
+        if (changed === null) changed = []
         changed.push(name)
       }
 
@@ -174,7 +177,7 @@ export class StateBus {
       }
     }
 
-    if (changed.length > 0) {
+    if (changed !== null && changed.length > 0) {
       this.#notify('change', changed)
     }
 

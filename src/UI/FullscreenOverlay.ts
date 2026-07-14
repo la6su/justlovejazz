@@ -72,6 +72,7 @@ export class FullscreenOverlay {
         <div class="jlz-fs-video-wrap">
           <div class="jlz-fs-poster" aria-hidden="true"></div>
           <video class="jlz-fs-video" preload="none" playsinline>
+            <source src="" type="video/mp4" />
           </video>
           <div class="jlz-fs-big-play" aria-hidden="true">
             <span class="jlz-fs-big-play__icon"></span>

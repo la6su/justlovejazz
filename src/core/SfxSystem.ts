@@ -36,6 +36,14 @@ export class SfxSystem {
     if (this._muted) return
     if (!this._started) this.init()
     if (!this.ctx || !this.master) return
+    // D-4 fix: resume AudioContext if suspended. Browsers suspend AudioContext
+    // when the tab is backgrounded (visibilitychange). Without resume(), SFX
+    // are silent after returning to the tab until the next user gesture that
+    // happens to call play(). ctx.resume() is async but scheduling still works
+    // (the sound plays once the context resumes, ~1 frame later).
+    if (this.ctx.state === 'suspended') {
+      void this.ctx.resume().catch(() => { /* ignore — will retry next play() */ })
+    }
     switch (name) {
       case 'hover': this.tick(880, 0.04, 0.08); break
       case 'click': this.tap(180, 0.08, 0.18); break

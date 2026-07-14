@@ -34,8 +34,13 @@ export class BlurFade {
   }
 
   show(dur: number = 0.6, sourceText?: string): void {
+    // D-3 fix: read sourceText BEFORE cancel(). cancel() restores the PREVIOUS
+    // cleanText into textContent — if translations were applied between shows,
+    // the old-language text would be read back as the new source. Reading first
+    // captures the current (possibly just-translated) textContent correctly.
+    const text = sourceText ?? (this.el.textContent || '')
     this.cancel()
-    this.cleanText = sourceText ?? (this.el.textContent || '')
+    this.cleanText = text
     if (this.cleanText.length === 0) return
 
     this.dur = dur * 1000

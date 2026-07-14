@@ -8,6 +8,11 @@ import { BakuCarousel } from '../../Experience/World/BakuCarousel'
 // TODO: replace with a custom JLZ texture.
 const particleTexture = new THREE.TextureLoader().load('/textures/sec3-particles.jpg')
 particleTexture.colorSpace = THREE.SRGBColorSpace
+// R-3 fix: disable mipmaps on sprite sheet — default LinearMipmapLinearFilter
+// averages across frame boundaries at distance → visible color bleeding between
+// adjacent animation frames. LinearFilter (no mipmaps) keeps frames crisp.
+particleTexture.minFilter = THREE.LinearFilter
+particleTexture.generateMipmaps = false
 
 export function createSection3(): THREE.Group {
   const g = new THREE.Group()

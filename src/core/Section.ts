@@ -64,6 +64,7 @@ export class Section extends THREE.Group {
 
   // ── Viewing state machinery (Junni: ready/viewing/passed)
   private _state: SectionState = SectionState.READY
+  private _stateDoneHandler: ((name: string) => void) | null = null
   public get state(): SectionState {
     return this._state
   }
@@ -121,10 +122,24 @@ export class Section extends THREE.Group {
     const bus = StateBus.getInstance()
     bus.channel(this.stateChannel, STATE_VALUE[SectionState.READY])
     bus.channel(this.opacityChannel, 0)
-    // (bus.on listeners removed — dead code. bus.tick() only emits on
-    //  'change'/'done:${name}', NOT on the channel name, so these handlers
-    //  never fired. State/opacity changes are driven by forceState() /
-    //  switchState() which call applyState()/applyOpacity() directly.)
+    // D-2 fix: listen for animation completion to sync _state. Previously
+    // switchState(reduced=false) animated the channel value but never updated
+    // _state → the READY→VIEWING→PASSED state machine was dead (forceState
+    // was the only path that set _state). Now when the animate() completes,
+    // StateBus emits 'done:${name}' and we resolve _state from the final value.
+    this._stateDoneHandler = (name: string) => {
+      const val = bus.get(name)
+      // Resolve enum from numeric value (0=READY, 1=VIEWING, 2=PASSED)
+      let resolved: SectionState
+      if (val < 0.5) resolved = SectionState.READY
+      else if (val < 1.5) resolved = SectionState.VIEWING
+      else resolved = SectionState.PASSED
+      if (resolved !== this._state) {
+        this._state = resolved
+        this.applyState(false)
+      }
+    }
+    bus.on(`done:${this.stateChannel}`, this._stateDoneHandler)
   }
 
   public switchState(target: SectionState, duration: number = 1.0, reduced: boolean = false): void {
@@ -233,7 +248,11 @@ export class Section extends THREE.Group {
     const bus = StateBus.getInstance()
     bus.cancel(this.stateChannel)
     bus.cancel(this.opacityChannel)
-    // (bus.off calls removed — matched the dead bus.on calls above.)
+    // D-2 fix: remove the done listener added in constructor
+    if (this._stateDoneHandler) {
+      bus.off(`done:${this.stateChannel}`, this._stateDoneHandler)
+      this._stateDoneHandler = null
+    }
     this._opacityMeshCache = null
     this.traverse((obj: THREE.Object3D) => {
       if (obj instanceof THREE.Mesh) {

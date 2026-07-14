@@ -35,6 +35,10 @@ export class World extends THREE.Group {
 
   private configs: readonly PhaseConfig[] = []
   private _configMap: Map<string, PhaseConfig> | null = null
+  // PERF-1 fix: cache ranges (configs.map(c => c.range) was called every frame
+  // in updateTransform → 360 array allocs/sec at 60fps). Ranges are immutable
+  // after init(), so cache once.
+  private _rangesCache: [number, number][] | null = null
   private sceneRef: THREE.Scene
 
   private _currentSectionIndex: number = 1 // Intro = index 1 (Lab=0 is secret left)
@@ -332,7 +336,9 @@ export class World extends THREE.Group {
     if (this.sections.length === 0) return this.defaultResult()
 
     // ── Find from/to indices from range config
-    const ranges = this.configs.map((c) => c.range)
+    // PERF-1 fix: use cached ranges (built once in init) instead of map() every frame
+    const ranges = this._rangesCache ?? this.configs.map((c) => c.range)
+    if (!this._rangesCache) this._rangesCache = ranges
     let fromIndex = 0
     let toIndex = 1
     let t = 0

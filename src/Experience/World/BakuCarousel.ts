@@ -104,6 +104,7 @@ export class BakuCarousel extends THREE.Group {
   private _canvasEnterHandler: ((e: PointerEvent) => void) | null = null
   private _canvasLeaveHandler: ((e: PointerEvent) => void) | null = null
   private snapTimer: ReturnType<typeof setTimeout> | null = null
+  private _startAdvanceTimer: ReturnType<typeof setTimeout> | null = null
 
   // Phase 4: momentum + rubber-band + auto-advance
   private velocity = 0 // current scroll velocity (for momentum after drag)
@@ -126,17 +127,30 @@ export class BakuCarousel extends THREE.Group {
     this.geometry = createRoundedRectGeometry(1, 1, 0.12, 12) as unknown as THREE.PlaneGeometry
   }
 
-  /** Activate the carousel — start morphing from cube to ring. */
+  /** Activate the carousel — start morphing from cube to ring.
+   *  A-1 fix: guard against re-entry — World.ts calls setActive() every frame
+   *  on the Works section (fade > 0.5). Previously each call scheduled a new
+   *  800ms setTimeout that was never stored → timer leak + the callback fired
+   *  after dispose() (startAutoAdvance on a disposed carousel). Now we only
+   *  act on false→true transitions and store/clear the timer in a field. */
   setActive(active: boolean): void {
+    if (active === this._active) return // no-op on repeated calls (fixes A-1)
     this._active = active
     this._morphTarget = active ? 1 : 0
     // Phase 4: start/stop auto-advance with carousel active state
     if (active) {
+      // Clear any pending start timer, then schedule a new one
+      if (this._startAdvanceTimer) clearTimeout(this._startAdvanceTimer)
       // Delay start until morph is mostly complete
-      setTimeout(() => {
+      this._startAdvanceTimer = setTimeout(() => {
+        this._startAdvanceTimer = null
         if (this._active && !this.isHovered) this.startAutoAdvance()
       }, 800)
     } else {
+      if (this._startAdvanceTimer) {
+        clearTimeout(this._startAdvanceTimer)
+        this._startAdvanceTimer = null
+      }
       this.stopAutoAdvance()
     }
   }
@@ -186,8 +200,12 @@ export class BakuCarousel extends THREE.Group {
               url,
               (tex) => {
                 tex.colorSpace = THREE.SRGBColorSpace
-                tex.minFilter = THREE.LinearFilter
+                // R-1 fix: use mipmaps for minification (was LinearFilter = no
+                // mipmaps → aliasing/shimmering on angled cards around the ring).
+                // Default LinearMipmapLinearFilter gives smooth minification.
+                tex.minFilter = THREE.LinearMipmapLinearFilter
                 tex.magFilter = THREE.LinearFilter
+                tex.generateMipmaps = true
                 resolve(tex)
               },
               undefined,
@@ -203,6 +221,10 @@ export class BakuCarousel extends THREE.Group {
       const mat = new THREE.MeshBasicMaterial({
         map: tex,
         transparent: true,
+        // R-2 fix: depthWrite=false on transparent cards (was default true →
+        // z-fighting/popping when cards pass through similar depths during
+        // cube→ring morph + auto-advance rotation).
+        depthWrite: false,
         side: THREE.DoubleSide,
         opacity: 0,
       })
@@ -531,6 +553,7 @@ export class BakuCarousel extends THREE.Group {
       this._canvasLeaveHandler = null
     }
     if (this.snapTimer) clearTimeout(this.snapTimer)
+    if (this._startAdvanceTimer) clearTimeout(this._startAdvanceTimer) // A-1 fix
     this.stopAutoAdvance() // Phase 4: clean up auto-advance timer
     this.geometry.dispose()
     // Dispose card materials. Textures are SHARED across cards (4 unique for 6
