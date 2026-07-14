@@ -31,18 +31,18 @@ interface SectionLightPreset {
 // Design intent: key light echoes section accent, fill/hemi give depth.
 const SECTION_PRESETS: Record<string, SectionLightPreset> = {
   sec_intro: {
-    keyColor: 0xffffff, // clean white — bright studio feel
-    keyIntensity: 2.0,
+    keyColor: 0xffffff,
+    keyIntensity: 0.0, // lights OFF on intro — glass cube lit only by env map (PMREM)
     keyPos: [4, 6, 4],
     fillColor: 0xd0d8e8,
-    fillIntensity: 0.6,
+    fillIntensity: 0.0,
     rimColor: 0xb0c0d8,
-    rimIntensity: 0.8,
+    rimIntensity: 0.0,
     hemiSky: 0xffffff,
     hemiGround: 0xe8e8e8,
-    hemiIntensity: 0.5,
+    hemiIntensity: 0.0,
     volumetricColor: 0xffffff,
-    volumetricIntensity: 0.0, // off on white bg
+    volumetricIntensity: 0.0,
   },
   sec_about: {
     keyColor: 0x8899cc, // cool blue-grey — dark section
@@ -118,10 +118,9 @@ export class CinematicLights {
     this.group.name = 'cinematic-lights'
 
     // ── Key light (main directional, casts shadow) ──
-    // Intensity 1.2 (was 2.0 → too bright, created harsh specular point on
-    // glass cube top face). 1.2 gives natural studio lighting without
-    // blown-out highlights on mirror-smooth glass.
-    this.keyLight = new THREE.DirectionalLight(0xffffff, 1.2)
+    // Initial intensity 2.0 — sec_intro preset overrides to 0.0 (lights off
+    // on intro). Other sections set their own via changeSection().
+    this.keyLight = new THREE.DirectionalLight(0xffffff, 2.0)
     this.keyLight.position.set(4, 6, 4)
     this.keyLight.castShadow = false // shadow disabled for perf (WebGPU)
     this.group.add(this.keyLight)
