@@ -163,8 +163,8 @@ const RAW: RawScene[] = [
     bakuRole: BakuRole.GLASS,
     bakuOpacity: 0.4,
     bakuDisplace: 0.08,
-    bakuColor: 0x2a4a6e,
-    bakuEmissive: 0x4a6a8a,
+    bakuColor: 0xb4bed3,  // light glass-blue (was 0x2a4a6e dark — made cube too dark with transmission)
+    bakuEmissive: 0x6a8aaa,
     postBloom: 0,
     postVignette: 1.0,
     postGrain: 0.02,
@@ -200,8 +200,8 @@ const RAW: RawScene[] = [
     bakuRole: BakuRole.GLASS,
     bakuOpacity: 0.4,
     bakuDisplace: 0.08,
-    bakuColor: 0x3a3a5e,
-    bakuEmissive: 0x5a5a8a,
+    bakuColor: 0xb9b9ce,  // light lavender glass (was 0x3a3a5e dark — matched buildCube tint)
+    bakuEmissive: 0x7a7aaa,
     postBloom: 0,
     postVignette: 1.5,
     postGrain: 0.02,
@@ -235,8 +235,8 @@ const RAW: RawScene[] = [
     bakuRole: BakuRole.GLASS,
     bakuOpacity: 0.35,
     bakuDisplace: 0.15,
-    bakuColor: 0x2a2a3e,
-    bakuEmissive: 0x4a4a6a,
+    bakuColor: 0xb4b4c5,  // light glass (was 0x2a2a3e dark)
+    bakuEmissive: 0x6a6a9a,
     postBloom: 0.4,
     postVignette: 0.5,
     postGrain: 0.02,
@@ -272,8 +272,8 @@ const RAW: RawScene[] = [
     bakuRole: BakuRole.GLASS,
     bakuOpacity: 0.4,
     bakuDisplace: 0.05,
-    bakuColor: 0x2a2a3e,
-    bakuEmissive: 0x4a4a6a,
+    bakuColor: 0xb4b4c5,  // light glass (was 0x2a2a3e dark)
+    bakuEmissive: 0x6a6a9a,
     postBloom: 0.4,
     postVignette: 0.4,
     postGrain: 0.02,
@@ -309,8 +309,8 @@ const RAW: RawScene[] = [
     bakuRole: BakuRole.GLASS,
     bakuOpacity: 0.4,
     bakuDisplace: 0.06,
-    bakuColor: 0x1a1a2e,
-    bakuEmissive: 0x3a3a5a,
+    bakuColor: 0xafafc0,  // light glass (was 0x1a1a2e dark)
+    bakuEmissive: 0x5a5a8a,
     postBloom: 0.2,
     postVignette: 0.4,
     postGrain: 0.015,
@@ -346,8 +346,8 @@ const RAW: RawScene[] = [
     bakuRole: BakuRole.GLASS,
     bakuOpacity: 0.35,
     bakuDisplace: 0.06,
-    bakuColor: 0x1a1a2e,
-    bakuEmissive: 0x3a3a5a,
+    bakuColor: 0xafafc0,  // light glass (was 0x1a1a2e dark)
+    bakuEmissive: 0x5a5a8a,
     postBloom: 0.2,
     postVignette: 0.4,
     postGrain: 0.015,
@@ -394,10 +394,18 @@ function toPhaseConfig(raw: RawScene): PhaseConfig {
       role: raw.bakuRole as unknown as BakuRole,
       displace: raw.bakuDisplace,
       material: {
+        // GLASS cube: metalness MUST be 0 (glass is a dielectric, not metal).
+        // metalness=0.8 made the cube a dark reflective metal — not glass.
+        // roughness=0.05 matches SplashCube.buildCube (mirror-smooth glass).
+        // color/emissive from config still drive per-section tint, but the
+        // cube stays transparent glass on ALL paths (WebGPU + WebGL2).
+        // Before this fix, the cube rendered dark blue-gray metallic on WebGPU
+        // (single-sample transmission × dark metal = very dark) while WebGL2
+        // masked it via multisample brightness — visual parity was impossible.
         color: _toColor(raw.bakuColor),
         emissive: _toColor(raw.bakuEmissive),
-        roughness: 0.2,
-        metalness: 0.8,
+        roughness: 0.05,
+        metalness: 0.0,
       },
     },
     lighting: {
@@ -448,8 +456,8 @@ type ContentPalette = {
 const SERVICES_PALETTE: ContentPalette = {
   lightBg: 0xf5f0e8,
   darkBg: 0x0a0805,
-  bakuColor: 0x4a3a2a,
-  bakuEmissive: 0x6a5a3a,
+  bakuColor: 0xc0b0a0,  // light warm glass (was 0x4a3a2a dark)
+  bakuEmissive: 0x8a7a5a,
   fogColor: 0x0a0805,
   lightColor: 0xffffff,
   groundColor: 0x1a1208,
@@ -458,8 +466,8 @@ const SERVICES_PALETTE: ContentPalette = {
 const MANIFESTO_PALETTE: ContentPalette = {
   lightBg: 0xf0f4f5,   // cool desaturated teal-white
   darkBg: 0x051015,    // deep teal-black
-  bakuColor: 0x2a4a5a, // cool steel-teal glass
-  bakuEmissive: 0x3a6a7a,
+  bakuColor: 0xaac4cc, // light cool glass (was 0x2a4a5a dark)
+  bakuEmissive: 0x6a9aaa,
   fogColor: 0x051015,
   lightColor: 0xffffff,
   groundColor: 0x081a1a,
@@ -468,8 +476,8 @@ const MANIFESTO_PALETTE: ContentPalette = {
 const WORKS_PALETTE: ContentPalette = {
   lightBg: 0xf0f0f4,
   darkBg: 0x080814,
-  bakuColor: 0x2a2a4e,
-  bakuEmissive: 0x4a4a7a,
+  bakuColor: 0xb0b0ce,  // light glass (was 0x2a2a4e dark)
+  bakuEmissive: 0x7a7aaa,
   fogColor: 0x080814,
   lightColor: 0xffffff,
   groundColor: 0x101020,
@@ -478,8 +486,8 @@ const WORKS_PALETTE: ContentPalette = {
 const LAB_PALETTE: ContentPalette = {
   lightBg: 0xf5f5f0,
   darkBg: 0x0a0805,
-  bakuColor: 0x3a2a1a,
-  bakuEmissive: 0x5a4a2a,
+  bakuColor: 0xc0b0a0,  // light warm glass (was 0x3a2a1a dark)
+  bakuEmissive: 0x8a7a5a,
   fogColor: 0x0a0805,
   lightColor: 0xffffff,
   groundColor: 0x1a1408,
@@ -488,8 +496,8 @@ const LAB_PALETTE: ContentPalette = {
 const CONTACT_PALETTE: ContentPalette = {
   lightBg: 0xf0f4f5,
   darkBg: 0x050a0f,
-  bakuColor: 0x1a3a4a,
-  bakuEmissive: 0x2a5a6a,
+  bakuColor: 0xa0c0cc,  // light cool glass (was 0x1a3a4a dark)
+  bakuEmissive: 0x6a8a9a,
   fogColor: 0x050a0f,
   lightColor: 0xffffff,
   groundColor: 0x08141a,

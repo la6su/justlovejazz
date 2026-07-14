@@ -210,12 +210,25 @@ export class SplashCube extends THREE.Mesh {
 
     if (isWebGPU) {
       // ── WebGPU: MeshPhysicalNodeMaterial + NATIVE dispersion + day34 TSL wobble ──
+      // PARITY: all scalar params synced with the WebGL2 MeshTransmissionMaterial
+      // path below. The remaining visual difference (WebGPU slightly sharper single-
+      // sample transmission vs WebGL2 softer multisample) is an inherent three.js
+      // architectural difference (PhysicalLightingModel.getTransmissionSample uses
+      // viewportOpaqueMipTexture + textureBicubicLevel single-sample; WebGL2 drei
+      // MeshTransmissionMaterial loops 4-6 samples with jittered normals+thickness).
+      // The PRIMARY brightness discrepancy was NOT here — it was in WorldConfig:
+      // baku material transform used metalness=0.8 (metal, not glass) + dark colors
+      // (0x1a-0x3a) which, multiplied by transmitted light on the single-sample
+      // WebGPU path, made the cube dark blue-gray metallic. Fixed in WorldConfig.ts
+      // (metalness→0.0, roughness→0.05, colors→light glass tints). These buildCube
+      // params are the INITIAL values before the first section-change applies the
+      // WorldConfig transform — they match WebGL2 exactly for the pre-transition frame.
       const mat = new MeshPhysicalNodeMaterial()
       mat.color = new THREE.Color(0.94, 0.91, 1.00)  // day34 lavender tint
       mat.emissive = new THREE.Color(0x000000)
       mat.emissiveIntensity = 0.0
       mat.metalness = 0.0
-      mat.roughness = 0.05                           // slightly off-mirror
+      mat.roughness = 0.05                           // synced with WebGL2
       mat.transmission = 1.0
       mat.thickness = 0.5                            // thin glass for transparency
       mat.ior = 1.21                                 // day34 IOR
@@ -226,7 +239,7 @@ export class SplashCube extends THREE.Mesh {
       mat.envMapIntensity = 1.0
       mat.attenuationColor = new THREE.Color(1.0, 1.0, 1.0)
       mat.attenuationDistance = Infinity             // no attenuation = clear glass
-      mat.specularIntensity = 0.5
+      mat.specularIntensity = 0.5                    // synced with WebGL2
       mat.iridescence = 0.0
       mat.iridescenceIOR = 1.3
       mat.iridescenceThicknessRange = [100, 400]
