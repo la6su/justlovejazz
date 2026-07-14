@@ -202,19 +202,27 @@ export class FullscreenOverlay {
           })
         }, 300)
       }
+      // Attach keyboard listener ONLY while modal is open.
+      // UIKit's own Esc-listener follows the same show/hide lifecycle pattern.
+      // When the modal is closed, there are ZERO document keydown listeners
+      // from FullscreenOverlay → zero chance of interfering with JoystickNav's
+      // window-level keydown handler (which drives arrow-key section nav).
+      document.addEventListener('keydown', this._keydownHandler!)
     })
     UIkit.util.on(this.container, 'hide', () => {
       this.video.pause()
       this.onClose?.()
+      // Remove keyboard listener when modal closes — clean lifecycle, no
+      // stale listeners intercepting events while the overlay is hidden.
+      document.removeEventListener('keydown', this._keydownHandler!)
     })
 
     // Keyboard: Space (play/pause), ArrowLeft/Right (prev/next)
-    // Only active when the UIKit modal is open (uk-open class present).
+    // Attached to document on 'show', removed on 'hide' (see above).
     // stopImmediatePropagation prevents JoystickNav's window keydown from
     // also firing — without it, ArrowLeft in the overlay simultaneously
     // goes to prev-project AND navigates section to Lab behind the overlay.
     this._keydownHandler = (e: KeyboardEvent) => {
-      if (!this.container.classList.contains('uk-open')) return
       if (e.key === ' ') {
         e.preventDefault()
         e.stopImmediatePropagation()
@@ -229,7 +237,6 @@ export class FullscreenOverlay {
         this.onNext?.()
       }
     }
-    document.addEventListener('keydown', this._keydownHandler)
   }
 
   private updateTimeDisplay(): void {
