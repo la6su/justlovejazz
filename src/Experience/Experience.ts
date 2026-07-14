@@ -198,6 +198,18 @@ export class Experience {
       envScene.add(envMesh)
 
       const envRT = pmrem.fromEquirectangular(envTex)
+      // PARITY FIX: Mark the PMREM texture so WebGPU's common PMREMNode passes
+      // it through instead of re-processing. The classic PMREMGenerator (from
+      // 'three') sets mapping=CubeUVReflectionMapping but does NOT set
+      // isPMREMTexture — while the common PMREMNode (used by WebGPU
+      // NodeMaterials like MeshPhysicalNodeMaterial) checks this flag to decide
+      // pass-through vs re-generation. Without it, WebGPU double-PMREMs the
+      // already-PMREM'd texture → degraded (blurrier/darker) IBL → glass cube
+      // renders DARKER on WebGPU with a concentrated bright-spot artifact.
+      // WebGL2's classic renderer detects PMREM via mapping (not this flag),
+      // so setting it is a no-op there. This is the root cause of the
+      // WebGPU/WebGL2 brightness + white-spot discrepancy.
+      ;(envRT.texture as unknown as { isPMREMTexture?: boolean }).isPMREMTexture = true
       this.scene.environment = envRT.texture
       // Set environmentIntensity explicitly (day34 pattern). Without this,
       // WebGPU MeshPhysicalNodeMaterial and WebGL2 MeshPhysicalMaterial can
