@@ -79,13 +79,14 @@ export class UIMenu {
     this._langBtn?.addEventListener('click', () => toggleLang())
     // Theme toggle
     this._themeBtn?.addEventListener('click', () => themeManager.toggle())
-    // Sound toggle
+    // Sound toggle — D-6 fix: click handler ONLY dispatches the event (single
+    // code path). The _soundToggleHandler does the actual state mutation +
+    // localStorage + button sync. Previously the click handler did the work
+    // AND dispatched the event → the event listener re-did the same work
+    // (double localStorage write, double button sync on every click).
     this._soundBtn?.addEventListener('click', () => {
-      this._soundMuted = !this._soundMuted
-      writeSoundMuted(this._soundMuted)
-      this._syncSoundButton()
       window.dispatchEvent(new CustomEvent('jlz:sound-toggle', {
-        detail: { muted: this._soundMuted },
+        detail: { muted: !this._soundMuted },
       }))
     })
 
@@ -96,6 +97,9 @@ export class UIMenu {
     this._themeChangeHandler = () => this._syncThemeButton()
     window.addEventListener('jlz:theme-change', this._themeChangeHandler)
 
+    // D-6 fix: single handler for jlz:sound-toggle — does ALL the work
+    // (state + localStorage + button sync). Both the click handler above
+    // and external triggers (if any) route through this one path.
     this._soundToggleHandler = (e: Event) => {
       const detail = (e as CustomEvent<{ muted: boolean }>).detail
       if (detail) {

@@ -234,8 +234,11 @@ export class WebGPUPostPipeline {
     const edge = innerEdge.mul(outerEdge)  // Node<"vec2">
     const edgeScalar: any = (edge.x as any).mul(edge.y as any)  // scalar (Node<"float">)
     // MIRROR WebGL2: color *= edge.x * edge.y (full, no mix attenuate)
-    // Use step(0.0, _borderStrength) as 0/1 gate: 0 when disabled, 1 when any border.
-    const borderGate = step(float(0.0), this._borderStrength)
+    // R-10 fix: use step(0.001, borderStrength) — was step(0.0, x) which
+    // returns 1 when x>=0 (always true for non-negative) → border applied even
+    // when border=0. WebGL2 uses `if (uBorder > 0.0)`. step(0.001, x) returns
+    // 1 only when x > 0.001, mirroring the WebGL2 skip-when-zero behavior.
+    const borderGate = step(float(0.001), this._borderStrength)
     const borderFactor = mix(float(1.0), edgeScalar, borderGate)
     color = color.mul(borderFactor)
 

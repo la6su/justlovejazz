@@ -134,6 +134,10 @@ export class SplashCube extends THREE.Mesh {
   private _speckleTex: THREE.Texture | null = null
   private _targetFaceRotY = 0
   private _faceLerp = 0 // 0→1, animated on section change
+  // D-16 fix: store start rotation + delta at rotateToFace time for
+  // absolute positioning (was incremental with wrong formula → undershoot+snap).
+  private _startFaceRotY = 0
+  private _startFaceDelta = 0
 
   // Scratch
 
@@ -475,6 +479,12 @@ export class SplashCube extends THREE.Mesh {
   rotateToFace(sectionIndex: number): void {
     const idx = Math.max(0, Math.min(SplashCube.FACE_ROTATIONS.length - 1, sectionIndex))
     this._targetFaceRotY = SplashCube.FACE_ROTATIONS[idx] ?? 0
+    // D-16 fix: capture start rotation + shortest-path delta for absolute lerp.
+    this._startFaceRotY = this._idleRotY
+    let delta = this._targetFaceRotY - this._startFaceRotY
+    while (delta > Math.PI) delta -= Math.PI * 2
+    while (delta < -Math.PI) delta += Math.PI * 2
+    this._startFaceDelta = delta
     this._faceLerp = 0 // start animation
   }
 
@@ -507,21 +517,18 @@ export class SplashCube extends THREE.Mesh {
       this._idleRotY += this._prevTransitionDir * ROT_PER_TRANSITION
     }
 
-    // ── Face rotation animation (lerp _idleRotY toward _targetFaceRotY) ──
-    // Triggered by rotateToFace(sectionIndex) on section change. Animates
-    // over ~0.8s with easing. The shortest angular path is taken.
+    // ── Face rotation animation (absolute lerp from start to target) ──
+    // D-16 fix: was using incremental `delta * ease * dt * 4.5` which
+    // undershoots the target (cumulative sum < delta) then snaps at the end.
+    // Now uses absolute positioning: idleRotY = start + delta * ease — smooth,
+    // exact arrival, no snap. The shortest angular path was already normalized
+    // in rotateToFace() and stored in _startFaceDelta.
     if (this._faceLerp < 1) {
       this._faceLerp = Math.min(1, this._faceLerp + dt * 1.8) // ~0.55s at 60fps
       const ease = this._faceLerp * this._faceLerp * (3 - 2 * this._faceLerp)
-      // Shortest angular path: normalize delta to [-π, π]
-      let delta = this._targetFaceRotY - this._idleRotY
-      while (delta > Math.PI) delta -= Math.PI * 2
-      while (delta < -Math.PI) delta += Math.PI * 2
-      this._idleRotY += delta * ease * (dt * 1.8) * 2.5
-      // Snap when close enough to avoid jitter
-      if (Math.abs(this._targetFaceRotY - this._idleRotY) < 0.01 && this._faceLerp >= 0.95) {
+      this._idleRotY = this._startFaceRotY + this._startFaceDelta * ease
+      if (this._faceLerp >= 1) {
         this._idleRotY = this._targetFaceRotY
-        this._faceLerp = 1
       }
     }
 

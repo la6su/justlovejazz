@@ -90,6 +90,9 @@ export class Experience {
   // sustained over LOW_FPS_WINDOW consecutive frames, _lowFps flips true.
   // Read by DevPanel (low fps ⚠ indicator). Future: auto-reduce particle count.
   private _fpsFrameTimes: number[] = []
+  // PERF-7 fix: circular buffer index + running sum for O(1) FPS tracking.
+  private _fpsIdx = 0
+  private _fpsSum = 0
   private _lowFps = false
   private static readonly LOW_FPS_THRESHOLD = 30 // FPS below this = low
   private static readonly LOW_FPS_WINDOW = 60 // frames to sustain before flag
@@ -471,12 +474,14 @@ export class Experience {
 
     // Sound config from splash page (localStorage 'jlz:sound' = 'on'|'off').
     // Splash writes this before navigation; app reads on boot.
-    // Default: OFF (user must opt in on splash).
+    // D-7 fix: default to MUTED (matches UIMenu's readSoundMuted default:
+    // `localStorage.getItem('jlz:sound') !== 'on'` → true/muted when no key).
+    // Previously Experience only muted when 'off' was set → first-visit had
+    // UIMenu showing "off" but SFX actually playing. Now both agree: muted
+    // unless explicitly 'on'.
     try {
       const soundPref = localStorage.getItem('jlz:sound')
-      if (soundPref === 'off') {
-        this.sfx.setMuted(true)
-      }
+      this.sfx.setMuted(soundPref !== 'on')
     } catch { /* localStorage unavailable */ }
 
     // Runtime sound toggle (from UIMenu or other in-app controls)
@@ -618,16 +623,27 @@ export class Experience {
     this.time.update(time)
     const dt = this.time.delta / 1000
     // ── Render-budget FPS tracker (rolling 60-frame window) ──
-    // Push frame time (ms), cap window, compute current FPS, flip _lowFps
-    // when FPS < threshold sustained over the whole window.
-    this._fpsFrameTimes.push(this.time.delta)
-    if (this._fpsFrameTimes.length > Experience.LOW_FPS_WINDOW) {
-      this._fpsFrameTimes.shift()
-    }
-    if (this._fpsFrameTimes.length === Experience.LOW_FPS_WINDOW) {
-      const avgMs = this._fpsFrameTimes.reduce((a, b) => a + b, 0) / this._fpsFrameTimes.length
-      const avgFps = 1000 / Math.max(1, avgMs)
-      this._lowFps = avgFps < Experience.LOW_FPS_THRESHOLD
+    // PERF-7 fix: circular buffer + running sum (was array.shift() O(N) +
+    // reduce() O(N) every frame → ~7200 element-touches/sec). Now O(1) per
+    // frame: subtract outgoing, add incoming, advance ring index.
+    const ft = this.time.delta
+    if (this._fpsIdx < Experience.LOW_FPS_WINDOW) {
+      // Fill phase: accumulate
+      this._fpsSum += ft
+      this._fpsFrameTimes[this._fpsIdx] = ft
+      this._fpsIdx++
+      if (this._fpsIdx === Experience.LOW_FPS_WINDOW) {
+        const avgMs = this._fpsSum / Experience.LOW_FPS_WINDOW
+        this._lowFps = (1000 / Math.max(1, avgMs)) < Experience.LOW_FPS_THRESHOLD
+      }
+    } else {
+      // Circular phase: subtract outgoing, add incoming
+      const idx = this._fpsIdx % Experience.LOW_FPS_WINDOW
+      this._fpsSum += ft - this._fpsFrameTimes[idx]!
+      this._fpsFrameTimes[idx] = ft
+      this._fpsIdx++
+      const avgMs = this._fpsSum / Experience.LOW_FPS_WINDOW
+      this._lowFps = (1000 / Math.max(1, avgMs)) < Experience.LOW_FPS_THRESHOLD
     }
     this.bus.tick(dt)
     // Cursor always updates (DOM, cheap — not GPU rendering)

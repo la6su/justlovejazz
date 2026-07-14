@@ -247,7 +247,7 @@ const RAW: RawScene[] = [
     postGradeHighlights: [0.85, 0.9, 1.0],
     lightColor: 0x040408,
     lightIntensity: 1.2,
-    fogColor: 0x040408,
+    fogColor: 0x242424,  // R-8: matches EnvSphere mid-tone (was 0x040408 — too dark, caused fog halo)
     fogDensity: 0.005,
     bgColor: 0x020204,
     showGallery: false,
@@ -284,7 +284,7 @@ const RAW: RawScene[] = [
     postGradeHighlights: [0.9, 0.92, 1.0],
     lightColor: 0x06080e,
     lightIntensity: 1.2,
-    fogColor: 0x06080e,
+    fogColor: 0x22222e,  // R-8: matches EnvSphere mid-tone (was 0x06080e)
     fogDensity: 0.005,
     bgColor: 0x060608,
     showGallery: true,
@@ -358,7 +358,7 @@ const RAW: RawScene[] = [
     postGradeHighlights: [1.0, 0.98, 0.95],
     lightColor: 0x0a0a0f,
     lightIntensity: 1.2,
-    fogColor: 0x0a0a0f,
+    fogColor: 0x0d0d17,  // R-8: matches EnvSphere mid-tone (was 0x0a0a0f)
     fogDensity: 0.005,
     bgColor: 0x0a0a0f,
     showGallery: false,

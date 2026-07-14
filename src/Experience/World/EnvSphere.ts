@@ -85,10 +85,11 @@ export class EnvSphere extends THREE.Mesh {
       depthWrite: true,
       depthTest: true,
       fog: false,
-      toneMapped: false,
-      
-      // toneMapped: true (default) — on WebGPU TSL path, toneMapped:false can
-      // cause the material to render black (TSL outputNode handles tone mapping).
+      // R-5 fix: removed toneMapped:false (was contradicting its own comment).
+      // On WebGL2 composite path, the scene renders to RT with NoToneMapping
+      // then ACES is applied in composite — toneMapped flag is irrelevant there.
+      // On WebGPU TSL path, toneMapped is ignored (NodeMaterial output goes
+      // through the pipeline's outputNode). Default (true) is correct + safe.
     })
 
     super(geo, mat)

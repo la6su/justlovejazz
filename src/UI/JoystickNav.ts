@@ -48,6 +48,10 @@ export class JoystickNav {
   private _mainSection = INTRO_INDEX // current main section (1-6)
   private _side: SideState = 'center'
   private _sectionCount: number
+  // PERF-2 fix: cached page-section index + count (set in _syncPageSection).
+  // getOverallProgress() reads these instead of querySelectorAll every frame.
+  private _cachedPageSectionIdx = 0
+  private _cachedPageSectionCount = 0
   // (_progress field removed — was always 0, never written. Dead read in
   //  Experience.ts:507-509 also removed — baku.setTransition(0,0) was a no-op.)
   private _dotnav!: HTMLElement
@@ -466,8 +470,13 @@ export class JoystickNav {
 
   getOverallProgress(): number {
     if (this._isPageMode()) {
-      const span = Math.max(1, this._getPageSections().length - 1)
-      return Math.max(0, Math.min(1, this._pageSectionIndex() / span))
+      // PERF-2 fix: use cached values (set in _syncPageSection) instead of
+      // querySelectorAll + findIndex every frame. Was 2 DOM queries +
+      // 2 array allocs × 60fps = 120 DOM queries/sec on content pages.
+      const count = this._cachedPageSectionCount
+      if (count === 0) return 0
+      const span = Math.max(1, count - 1)
+      return Math.max(0, Math.min(1, this._cachedPageSectionIdx / span))
     }
     const span = this._sectionCount - 1
     return Math.max(0, Math.min(1, this._currentSection / span))
@@ -545,6 +554,10 @@ export class JoystickNav {
     sections.forEach((section, sectionIndex) => {
       section.classList.toggle('section-active', sectionIndex === nextIndex)
     })
+    // PERF-2 fix: cache the active index + count so getOverallProgress()
+    // doesn't need to re-query the DOM every frame.
+    this._cachedPageSectionIdx = nextIndex
+    this._cachedPageSectionCount = sections.length
     // Notify Experience to mark a render dirty (idx is the page-section index).
     this._onSectionChange?.(nextIndex)
     // Track _mainSection ONLY for main indices (1-4). Secret sides (0=Lab,

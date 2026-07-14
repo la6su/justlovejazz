@@ -314,6 +314,11 @@ export class FullscreenOverlay {
     // Reset video state
     if (opts.videoSrc) {
       this.bigPlay.style.display = ''
+      // D-8 fix: reset opacity — a previous video's 'play' event set opacity
+      // to '0', and it was never restored. On second open, display='' but
+      // opacity stayed '0' → play button invisible. Reset to '1' so the user
+      // can see it to start the video.
+      this.bigPlay.style.opacity = '1'
     }
   }
 

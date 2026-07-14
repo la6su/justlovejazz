@@ -41,7 +41,10 @@ export class Renderer {
       bloomThreshold: this.capabilities.postProcessing ? 0.5 : 1.0,
       // Reduced bloom passes for Safari/iOS perf — 4→2 on high, 3→1 on medium
       bloomPasses: this.capabilities.tier === 'high' ? 2 : 1,
-      bloomResRatio: this.capabilities.tier === 'high' ? 0.25 : 0.2,
+      // R-9 fix: half-res bloom on high tier (was 0.25 = quarter-res → blocky).
+      // Half-res with 2 passes gives smooth gaussian falloff. Medium/low keep
+      // 0.2 (perf-bound on weaker GPUs).
+      bloomResRatio: this.capabilities.tier === 'high' ? 0.5 : 0.2,
       blurRange: this.capabilities.tier === 'high' ? 3.0 : 4.0,
       bloomEnabled: this.capabilities.postProcessing,
       vignetteEnabled: true,
@@ -240,5 +243,8 @@ export class Renderer {
     window.removeEventListener('resize', this._onResize)
     this.pipeline?.dispose()
     this.instance.dispose()
+    // A-3 fix: remove the canvas DOM element (was appended to document.body
+    // in setupCanvas but never removed → old canvases accumulated on HMR).
+    this.instance.domElement?.remove()
   }
 }

@@ -210,8 +210,16 @@ export class Camera {
     const portraitWeight = Math.max(0, Math.min(1, 1 - aspect / 1.5))
     const portraitBoost = portraitWeight * 20 // up to +20° on narrow portrait
     const targetFov = this.smoothFov + this.fovOffset + fovBreath + portraitBoost
-    this.instance.fov += (targetFov - this.instance.fov) * 0.25
-    this.instance.updateProjectionMatrix()
+    // D-13 fix: delta-time-aware FOV lerp (was fixed 0.25/frame → frame-rate
+    // dependent: slower on low-FPS, faster on high-FPS). Now converges at the
+    // same rate regardless of FPS. 10 = convergence rate (≈0.25 at 60fps).
+    const fovLerp = 1 - Math.exp(-10 * deltaT)
+    this.instance.fov += (targetFov - this.instance.fov) * fovLerp
+    // PERF-13: only recompute projection matrix when fov actually changed
+    // (sub-threshold float drift would cause needless matrix recompute).
+    if (Math.abs(targetFov - this.instance.fov) > 0.001) {
+      this.instance.updateProjectionMatrix()
+    }
 
     // ── 6. Action shake ──
     if (this.shakePower > 0 && this.shakeDuration > 0) {

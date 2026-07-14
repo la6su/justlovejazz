@@ -62,6 +62,10 @@ const burstOpacityNode = Fn(() => {
 
 export class ParticleBurst extends THREE.InstancedMesh {
   private _velocities: Float32Array
+  // R-4 fix: per-particle base scale (set at trigger time, fixed for the
+  // burst lifetime). Previously update() re-randomized scale every frame via
+  // `Math.random() * 0.3` → particles flickered in size as they flew outward.
+  private _scales: Float32Array
   private _dummy = new THREE.Object3D()
   private _active = false
   private _elapsed = 0
@@ -86,6 +90,7 @@ export class ParticleBurst extends THREE.InstancedMesh {
 
     this._velocities = new Float32Array(BURST_COUNT * 3)
     this._positions = new Float32Array(BURST_COUNT * 3)
+    this._scales = new Float32Array(BURST_COUNT)
 
     // Initialize all instances at origin (will be reset on trigger)
     for (let i = 0; i < BURST_COUNT; i++) {
@@ -108,7 +113,9 @@ export class ParticleBurst extends THREE.InstancedMesh {
     // Reset all particles to origin + random outward velocities
     for (let i = 0; i < BURST_COUNT; i++) {
       this._dummy.position.set(originX, originY, originZ)
-      this._dummy.scale.setScalar(0.5 + Math.random() * 0.8)
+      const baseScale = 0.5 + Math.random() * 0.8
+      this._scales![i] = baseScale  // R-4: store fixed per-particle scale
+      this._dummy.scale.setScalar(baseScale)
       this._dummy.updateMatrix()
       this.setMatrixAt(i, this._dummy.matrix)
 
@@ -153,9 +160,10 @@ export class ParticleBurst extends THREE.InstancedMesh {
 
       // Update instance matrix
       this._dummy.position.set(positions[i3]!, positions[i3 + 1]!, positions[i3 + 2]!)
-      // Shrink over time
+      // R-4 fix: use FIXED per-particle base scale (stored at trigger) × shrink.
+      // Was `(0.5 + Math.random() * 0.3) * shrink` → flickered every frame.
       const shrink = 1.0 - (this._elapsed / BURST_DURATION) * 0.5
-      this._dummy.scale.setScalar((0.5 + Math.random() * 0.3) * shrink)
+      this._dummy.scale.setScalar((this._scales?.[i] ?? 0.5) * shrink)
       this._dummy.updateMatrix()
       this.setMatrixAt(i, this._dummy.matrix)
     }

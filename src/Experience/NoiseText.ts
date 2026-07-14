@@ -51,11 +51,15 @@ export class NoiseText {
    * @param sourceText Explicit clean text. If not provided, reads from DOM.
    */
   show(dur: number = 0.6, sourceText?: string): void {
+    // D-9 fix (same as BlurFade D-3): read sourceText BEFORE cancel().
+    // cancel() restores the PREVIOUS cleanText to the DOM — if translations
+    // were applied between shows, the old-language text would be read back.
+    const text = sourceText ?? (this.el.textContent || '');
     // cancel() restores cleanText to DOM FIRST — so if caller reads
     // el.textContent below, it gets clean text, not a noisy frame.
     this.cancel();
 
-    this.cleanText = sourceText ?? (this.el.textContent || '');
+    this.cleanText = text;
     if (this.cleanText.length === 0) return;
 
     // Frame 0 = correct text → no flash of empty state.

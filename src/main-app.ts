@@ -21,11 +21,14 @@ type OnReadyCallback = (
 
 export async function bootstrap(opts: BootstrapOptions): Promise<void> {
   if (_bootstrapped) return
-  _bootstrapped = true
 
   const mode = document.body.dataset.appMode ?? 'full'
   if (mode !== 'full') return
 
+  // D-5 fix: set _bootstrapped AFTER the try block. Previously it was set
+  // BEFORE → a failed Experience.init() left _bootstrapped=true, preventing
+  // retry (user had to reload the page). Now if init throws, the catch block
+  // fires jlz:webgl-failed and _bootstrapped stays false → user can retry.
   try {
     const { ErrorTracker } = await import('./core/ErrorTracker')
     ErrorTracker.init()
@@ -74,10 +77,12 @@ export async function bootstrap(opts: BootstrapOptions): Promise<void> {
       // reduced-motion: fire immediately, no delay
       eventBus.emit('jlz:webgl-ready')
     }, prefersReducedMotion() ? 0 : readyAt)
+    _bootstrapped = true  // D-5: mark success AFTER init completes
   } catch (e) {
     console.error('[main-app] bootstrap failed:', e)
     // Notify entry-app that 3D init crashed — it will show a load error
     // instead of the Enter button (Enter must never appear when 3D isn't ready).
     eventBus.emit('jlz:webgl-failed')
+    // D-5: _bootstrapped stays false → allows retry without page reload
   }
 }

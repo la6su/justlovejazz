@@ -152,7 +152,10 @@ export class StateBus {
 
   /** Core tick — advances all animations */
   tick(dt: number): StateBus {
-    if (dt <= 0) return this
+    // D-22 fix: guard against NaN dt (NaN <= 0 is false → would proceed and
+    // poison all channel values with NaN). Time.ts clamps to [0,100] but a
+    // buggy rAF timestamp could still produce NaN.
+    if (!Number.isFinite(dt) || dt <= 0) return this
     // PERF-4 fix: lazy-allocate changed array — avoids 60 empty-array allocs/sec
     // when idle (no animations active or none crossing the change threshold).
     let changed: string[] | null = null

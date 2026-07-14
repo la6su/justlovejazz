@@ -75,6 +75,13 @@ export class Cursor {
   private _lastDrawBump = 1
   private _lastDrawStuck = false
   private _lastDrawState: string | null = null
+  // PERF-3 fix: track last-written DOM values to skip redundant style writes.
+  // Was writing style.transform + classList.toggle every frame even when idle.
+  private _lastInnerX = -Infinity
+  private _lastInnerY = -Infinity
+  private _lastCanvasX = -Infinity
+  private _lastCanvasY = -Infinity
+  private _lastIsStuck = false
 
   // Click bump state (demo1)
   private bumpScale = 1
@@ -121,10 +128,21 @@ export class Cursor {
     this.mouseoverHandler = (e: MouseEvent) => {
       const target = e.target as HTMLElement
       if (!target || typeof target.closest !== 'function') return
+      // D-14 fix: skip intra-element transitions (mouseout→mouseover between
+      // child elements of the same interactive). Checks relatedTarget — if the
+      // mouse is moving TO another element within the same interactive, skip.
+      const INTERACTIVE_SEL = '[data-magnetic], a, button, .interactive, [uk-toggle], [uk-slider], [uk-dropdown], [uk-tooltip], [uk-modal], [uk-lightbox]'
+      const related = e.relatedTarget as HTMLElement | null
+      if (related && typeof related.closest === 'function' && related.closest(INTERACTIVE_SEL)) {
+        // Moving to another interactive (or child of same) — let that mouseover
+        // handle it. Prevents the flicker where mouseout fires for a child then
+        // mouseover re-fires for the parent (isStuck briefly goes false→true).
+        return
+      }
       // Phase 2: check for custom cursor state (data-cursor attribute)
       const stateEl = target.closest('[data-cursor]') as HTMLElement | null
       this.cursorState = stateEl?.dataset.cursor ?? null
-      const interactive = target.closest('[data-magnetic], a, button, .interactive, [uk-toggle], [uk-slider], [uk-dropdown], [uk-tooltip], [uk-modal], [uk-lightbox]') as HTMLElement | null
+      const interactive = target.closest(INTERACTIVE_SEL) as HTMLElement | null
       if (interactive) {
         // For large menu items (nav toggle + sub-links), DON'T snap to center —
         // the labels are large (clamp 1.25-1.75rem), snapping to center looks weird.
@@ -140,11 +158,12 @@ export class Cursor {
           this.stuckX = rect.left + rect.width / 2
           this.stuckY = rect.top + rect.height / 2
         }
+        // D-14 fix: only play hover SFX on false→true transition (was playing
+        // on every mouseover, including intra-element moves — SFX spam).
+        const wasStuck = this.isStuck
         this.isStuck = true
         this.fillTarget = 1
-        // Magnetic hover SFX (subtle tick). Only on first entry — the mouseout
-        // handler resets isStuck=false, so re-entry re-fires this.
-        this.sfx?.play('hover')
+        if (!wasStuck) this.sfx?.play('hover')
       } else {
         this.isStuck = false
         this.fillTarget = 0
@@ -153,7 +172,14 @@ export class Cursor {
     this.mouseoutHandler = (e: MouseEvent) => {
       const target = e.target as HTMLElement
       if (!target || typeof target.closest !== 'function') return
-      if (target.closest('[data-magnetic], a, button, .interactive, [uk-toggle], [uk-slider], [uk-dropdown], [uk-tooltip], [uk-modal], [uk-lightbox]')) {
+      // D-14 fix: skip if moving to a related element that's also interactive
+      // (intra-element transition). Prevents the isStuck flicker.
+      const INTERACTIVE_SEL = '[data-magnetic], a, button, .interactive, [uk-toggle], [uk-slider], [uk-dropdown], [uk-tooltip], [uk-modal], [uk-lightbox]'
+      const related = e.relatedTarget as HTMLElement | null
+      if (related && typeof related.closest === 'function' && related.closest(INTERACTIVE_SEL)) {
+        return
+      }
+      if (target.closest(INTERACTIVE_SEL)) {
         this.isStuck = false
         this.fillTarget = 0
       }
@@ -177,8 +203,17 @@ export class Cursor {
     // Inner dot stays visible (no opacity fade) — just changes color.
     this.innerX = this.targetX
     this.innerY = this.targetY
-    this.innerEl.classList.toggle('is-hover', this.isStuck)
-    this.innerEl.style.transform = `translate(${this.innerX}px, ${this.innerY}px) translate(-50%, -50%)`
+    // PERF-3 fix: only write DOM when values actually changed (was writing
+    // style.transform + classList.toggle every frame even when mouse idle).
+    if (this.isStuck !== this._lastIsStuck) {
+      this.innerEl.classList.toggle('is-hover', this.isStuck)
+      this._lastIsStuck = this.isStuck
+    }
+    if (this.innerX !== this._lastInnerX || this.innerY !== this._lastInnerY) {
+      this.innerEl.style.transform = `translate(${this.innerX}px, ${this.innerY}px) translate(-50%, -50%)`
+      this._lastInnerX = this.innerX
+      this._lastInnerY = this.innerY
+    }
 
     // Phase 6: spring physics for outer circle (skaltenegger wobble pattern)
     // Goal: magnetic element center (if stuck) or mouse position (if free)
@@ -192,7 +227,13 @@ export class Cursor {
     this.velY = (this.velY + dy * this.springStiffness) * this.springDamping
     this.posX += this.velX
     this.posY += this.velY
-    this.canvas.style.transform = `translate(${this.posX}px, ${this.posY}px) translate(-50%, -50%)`
+    // PERF-3 fix: only write canvas transform when position changed (sub-pixel
+    // spring jitter still updates, but idle mouse = no writes).
+    if (this.posX !== this._lastCanvasX || this.posY !== this._lastCanvasY) {
+      this.canvas.style.transform = `translate(${this.posX}px, ${this.posY}px) translate(-50%, -50%)`
+      this._lastCanvasX = this.posX
+      this._lastCanvasY = this.posY
+    }
 
     // Radius — smooth expand/shrink + click bump
     const targetR = this.isStuck ? this.targetRadius : this.baseRadius
