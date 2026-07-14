@@ -206,6 +206,12 @@ export class Experience {
 
       const envRT = pmrem.fromEquirectangular(envTex)
       this.scene.environment = envRT.texture
+      // Set environmentIntensity explicitly (day34 pattern). Without this,
+      // WebGPU MeshPhysicalNodeMaterial and WebGL2 MeshPhysicalMaterial can
+      // apply scene.environment at different strengths → parity drift
+      // (WebGPU appeared darker than WebGL2). Explicit 1.0 on both ensures
+      // identical IBL strength; material envMapIntensity controls the rest.
+      ;(this.scene as unknown as { environmentIntensity?: number }).environmentIntensity = 1.0
       pmrem.dispose()
       envScene.traverse((obj) => {
         const mesh = obj as THREE.Mesh

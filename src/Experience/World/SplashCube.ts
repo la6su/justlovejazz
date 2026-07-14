@@ -220,7 +220,7 @@ export class SplashCube extends THREE.Mesh {
       mat.transparent = true
       mat.opacity = 1.0
       mat.side = THREE.FrontSide                     // day34 (was DoubleSide → double refraction)
-      mat.envMapIntensity = 1.0                      // day34 (procedural env has bright sun spots, no boost needed)
+      mat.envMapIntensity = 1.5                      // WebGPU needs slight boost (MeshPhysicalNodeMaterial applies env dimmer than WebGL2 in transmission). day34=1.0 but their cube is 16x larger.
       mat.attenuationColor = new THREE.Color(1.0, 1.0, 1.0)
       mat.attenuationDistance = 12                   // visible tint gradient (was 8)
       mat.specularIntensity = 1.0
