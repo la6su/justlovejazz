@@ -93,6 +93,9 @@ export class Camera {
   shake(power = 0.1, duration = 0.5) {
     this.shakePower = power
     this.shakeDuration = duration
+    // D-27 fix: reset shakeTime so the new shake starts at phase 0 (was
+    // continuing from the previous shake's phase → phase discontinuity).
+    this.shakeTime = 0
   }
 
   /** True while action shake is active (needs rendering). */

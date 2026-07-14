@@ -6,6 +6,9 @@ import { wireMenuToolbarGlobals } from '../sections/nav/template'
 export class UIManager {
   public overlay: FullscreenOverlay | null = null
   private _showreelHandler: (() => void) | null = null
+  // A-4 fix: store document click listener as field so dispose() can remove it
+  // (was anonymous → leaked on HMR, accumulated one listener per UIManager re-init).
+  private _documentClickHandler: ((e: MouseEvent) => void) | null = null
 
   constructor() {
     UIkit.use(Icons)
@@ -30,17 +33,24 @@ export class UIManager {
         category: '2026 · COMING SOON',
       })
     }
-    document.addEventListener('click', (e) => {
+    // A-4 fix: store as field, remove in dispose() (was anonymous → HMR leak).
+    this._documentClickHandler = (e: MouseEvent) => {
       const target = e.target as HTMLElement
       if (target.closest('#jlz-showreel-trigger')) {
         e.preventDefault()
         this._showreelHandler?.()
       }
-    })
+    }
+    document.addEventListener('click', this._documentClickHandler)
   }
 
   /** Clean up UI components. */
   dispose(): void {
+    // A-4 fix: remove the document click listener stored as field
+    if (this._documentClickHandler) {
+      document.removeEventListener('click', this._documentClickHandler)
+      this._documentClickHandler = null
+    }
     this.overlay?.dispose()
     this.overlay = null
   }

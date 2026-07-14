@@ -84,85 +84,9 @@ export class DeviceCapability {
     return DeviceCapability.instance
   }
 
-  private _webgpuAdapterAvailable: boolean | null = null
-
-  /** Check if WebGPU adapter is actually available (async). 'gpu' in navigator
-   *  only means the API exists — the adapter might be unavailable (driver,
-   *  Wayland+ANGLE, etc). Call this before trusting mode === 'webgpu'.
-   *  If adapter is unavailable, updates mode to 'webgl' so the rest of the
-   *  system (tier detection, postProcessing, etc) uses WebGL2 settings. */
-  async verifyWebGPU(): Promise<boolean> {
-    if (this._webgpuAdapterAvailable !== null) return this._webgpuAdapterAvailable
-    if (!('gpu' in navigator)) {
-      this._webgpuAdapterAvailable = false
-      return false
-    }
-    try {
-      // Try multiple requestAdapter() strategies — different browsers/configs
-      // may return null for some option combinations but not others.
-
-      // Strategy 1: Request high-performance adapter (real GPU)
-      let adapter = await (navigator as any).gpu.requestAdapter({ powerPreference: 'high-performance' })
-      if (import.meta.env.DEV) {
-        console.info('[DeviceCapability] requestAdapter(high-performance):', adapter ? 'found' : 'null')
-      }
-
-      // Strategy 2: If null, try without options (browser default)
-      if (!adapter) {
-        adapter = await (navigator as any).gpu.requestAdapter()
-        if (import.meta.env.DEV) {
-          console.info('[DeviceCapability] requestAdapter(default):', adapter ? 'found' : 'null')
-        }
-      }
-
-      // Strategy 3: If still null, try low-power (fallback adapter — SwiftShader etc)
-      if (!adapter) {
-        adapter = await (navigator as any).gpu.requestAdapter({ powerPreference: 'low-power' })
-        if (import.meta.env.DEV) {
-          console.info('[DeviceCapability] requestAdapter(low-power):', adapter ? 'found' : 'null')
-        }
-      }
-
-      // Accept ANY adapter — even fallback (SwiftShader) is still WebGPU,
-      // just software-rendered. Better than WebGL2.
-      this._webgpuAdapterAvailable = !!adapter
-
-      if (adapter) {
-        // Log adapter info for debugging
-        if (import.meta.env.DEV) {
-          try {
-            const info = await adapter.requestAdapterInfo?.() ?? adapter.info
-            console.info('[DeviceCapability] WebGPU adapter:', {
-              isFallback: adapter.isFallbackAdapter,
-              architecture: info?.architecture,
-              vendor: info?.vendor,
-            })
-          } catch { /* info not available */ }
-        }
-      } else {
-        if (import.meta.env.DEV) {
-          console.info('[DeviceCapability] All requestAdapter() strategies returned null — falling back to WebGL2')
-        }
-        this.mode = 'webgl' as RendererMode
-        this.tier = this.detectTier()
-        this.maxDpr = this.calculateMaxDpr()
-        this.config = TIER_SETTINGS[this.tier]
-        this.postProcessing = this.tier !== 'low' && this.mode !== 'unsupported'
-      }
-      return !!adapter
-    } catch (e) {
-      if (import.meta.env.DEV) {
-        console.info('[DeviceCapability] requestAdapter() threw:', e)
-      }
-      this._webgpuAdapterAvailable = false
-      this.mode = 'webgl' as RendererMode
-      this.tier = this.detectTier()
-      this.maxDpr = this.calculateMaxDpr()
-      this.config = TIER_SETTINGS[this.tier]
-      this.postProcessing = this.tier !== 'low' && this.mode !== 'unsupported'
-      return false
-    }
-  }
+  // D-17 fix: removed verifyWebGPU() + _webgpuAdapterAvailable — was 70 lines
+  // of dead code (never called anywhere; Renderer.ts does its own post-hoc
+  // WebGPU adapter check after wg.init() via backend name + isFallback).
 
   private detectRenderMode(): RendererMode {
     // WebGPU requires a SECURE CONTEXT (HTTPS or localhost).

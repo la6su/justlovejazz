@@ -258,6 +258,10 @@ export class BakuCarousel extends THREE.Group {
     this.pointerDownHandler = (e: PointerEvent) => {
       if (!this._active || this._morphT < 0.5) return
       if (isMenuOpen() || isUiChromeEvent(e)) return
+      // D-15 fix: only intercept on home page (carousel is home-only; on
+      // content pages the window listener would block WorkCard clicks if
+      // the carousel's _active flag were stuck true from a prior home visit).
+      if (document.body.dataset.page !== 'home') return
       // Don't intercept while CircularNav transition is in progress
       const nav = (window as unknown as { experience?: { _circNav?: { isActive: () => boolean } } }).experience?._circNav
       if (nav?.isActive()) return

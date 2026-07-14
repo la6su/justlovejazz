@@ -109,6 +109,10 @@ export class World extends THREE.Group {
       new THREE.MeshStandardMaterial({
         color: 0x000000,
         transparent: true,
+        // R-14 fix: depthWrite=false on transparent ground (was default true
+        // → writes depth across huge area, would occlude future transparent
+        // objects below y=-1). Standard practice for transparent surfaces.
+        depthWrite: false,
         opacity: 0.3,
         roughness: 1,
         metalness: 0,
@@ -611,6 +615,11 @@ export class World extends THREE.Group {
   }
 
   private disposeSceneGroups(): void {
+    // A-8 fix: dispose module-level particleTexture (HMR GPU leak).
+    // Use dynamic import to avoid circular dep + ES module compatibility.
+    void import('../sections/works/scene')
+      .then(({ disposeSection3Textures }) => disposeSection3Textures())
+      .catch(() => { /* section3 not loaded — no-op */ })
     this.sceneGroups.forEach((group) => {
       // If the group hosts a BakuCarousel (userData.carousel), call its
       // dispose() FIRST — it removes 6 window listeners + clears snapTimer

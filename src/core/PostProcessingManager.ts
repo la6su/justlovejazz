@@ -20,6 +20,16 @@ interface PostParams {
 // Presets keyed by PhaseConfig.id (sec_intro..sec_contact) — must match
 // WorldConfig.ts RAW[i].id exactly so applyPreset(cfg.id) resolves correctly.
 const PHASE_PRESETS: Record<string, PostParams> = {
+  // D-10 fix: added sec_lab + sec_menu presets (were missing → fell back to
+  // sec_intro silently. Now explicit — matches WorldConfig RAW phase IDs).
+  sec_lab: {
+    bloom: 0.0,
+    vignette: 0.6,
+    grain: 0.012,
+    chromatic: 0.002,
+    bloomRadius: 0.5,
+    bloomThreshold: 0.55,
+  },
   sec_intro: {
     bloom: 0.0,
     vignette: 0.65,
@@ -51,6 +61,15 @@ const PHASE_PRESETS: Record<string, PostParams> = {
     chromatic: 0.004,
     bloomRadius: 0.5,
     bloomThreshold: 0.5,
+  },
+  // D-10 fix: sec_menu preset (was missing → fell back to sec_intro).
+  sec_menu: {
+    bloom: 0.15,
+    vignette: 0.55,
+    grain: 0.012,
+    chromatic: 0.002,
+    bloomRadius: 0.5,
+    bloomThreshold: 0.55,
   },
 }
 

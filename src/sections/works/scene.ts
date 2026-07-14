@@ -44,3 +44,10 @@ export function createSection3(): THREE.Group {
 
   return g
 }
+
+// A-8 fix: dispose the module-level particleTexture (HMR GPU leak — without
+// this, each hot-reload of this module creates a new texture; old one's GPU
+// resource persists until context loss). Called from World.disposeSceneGroups.
+export function disposeSection3Textures(): void {
+  particleTexture.dispose()
+}

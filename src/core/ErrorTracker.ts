@@ -13,7 +13,12 @@ export const ErrorTracker = {
     console.error('[ErrorTracker]', message, context ?? '')
   },
 
-  init: () => {
+  // A-10/D-24 fix: guard against double-init (HMR re-evaluates the module,
+  // init() would add duplicate window listeners without this flag).
+  _initialized: false,
+  init: function () {
+    if (ErrorTracker._initialized) return
+    ErrorTracker._initialized = true
     window.addEventListener('unhandledrejection', (e) => {
       e.preventDefault()
       ErrorTracker.report(e.reason as Error, { source: 'unhandledrejection' })

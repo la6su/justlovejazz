@@ -281,6 +281,17 @@ export class RenderPipeline {
 
   /** TSL post-processing pipeline for WebGPU path (lazy-built on first render). */
   private _webgpuPipeline: WebGPUPostPipeline | null = null
+  // PERF-11 fix: reuse the WebGPU params object (was allocating a new object
+  // + 2 arrays every frame → 180 allocs/sec on WebGPU path). Mutate in place.
+  private _webgpuParamsCache: {
+    bloom: number; bloomRadius: number; bloomThreshold: number;
+    vignette: number; grain: number; chromatic: number; refract: number;
+    border: number; gradeShadows: [number, number, number]; gradeHighlights: [number, number, number];
+  } = {
+    bloom: 0, bloomRadius: 0, bloomThreshold: 0,
+    vignette: 0, grain: 0, chromatic: 0, refract: 0, border: 0,
+    gradeShadows: [1, 1, 1], gradeHighlights: [1, 1, 1],
+  }
 
   private constructor() {
     this._params = {
@@ -397,18 +408,25 @@ export class RenderPipeline {
         )
       }
       this._webgpuPipeline.setScene(scene, camera)
-      this._webgpuPipeline.updateParams({
-        bloom: this._params.bloom,
-        bloomRadius: this._params.bloomRadius,
-        bloomThreshold: this._params.bloomThreshold,
-        vignette: this._params.vignette,
-        grain: this._params.grain,
-        chromatic: this._params.chromatic,
-        refract: this._sectionRefract,
-        border: Math.max(this._sectionBorder, this._globalBorder),
-        gradeShadows: [this._sectionShadows.x, this._sectionShadows.y, this._sectionShadows.z],
-        gradeHighlights: [this._sectionHighlights.x, this._sectionHighlights.y, this._sectionHighlights.z],
-      })
+      // PERF-11 fix: mutate cached params object instead of allocating a new
+      // one + 2 arrays every frame. gradeShadows/Highlights are tuple arrays
+      // reused in place (updateParams copies into uniforms).
+      const p = this._webgpuParamsCache
+      p.bloom = this._params.bloom
+      p.bloomRadius = this._params.bloomRadius
+      p.bloomThreshold = this._params.bloomThreshold
+      p.vignette = this._params.vignette
+      p.grain = this._params.grain
+      p.chromatic = this._params.chromatic
+      p.refract = this._sectionRefract
+      p.border = Math.max(this._sectionBorder, this._globalBorder)
+      p.gradeShadows[0] = this._sectionShadows.x
+      p.gradeShadows[1] = this._sectionShadows.y
+      p.gradeShadows[2] = this._sectionShadows.z
+      p.gradeHighlights[0] = this._sectionHighlights.x
+      p.gradeHighlights[1] = this._sectionHighlights.y
+      p.gradeHighlights[2] = this._sectionHighlights.z
+      this._webgpuPipeline.updateParams(p)
       // Disable renderer tone mapping during TSL pipeline render — the TSL
       // graph applies ACES manually (step 6). outputColorTransform=true
       // (default) on the pipeline applies renderOutput() which uses

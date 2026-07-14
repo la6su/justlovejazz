@@ -143,6 +143,8 @@ export class DrawTrail {
       blending: THREE.AdditiveBlending,
       side: THREE.DoubleSide,
       fog: false,
+      // R-11 fix: toneMapped=false on additive glow (same as ParticleBurst).
+      toneMapped: false,
     })
     material.colorNode = trailColorNode()
     ;(material as unknown as { opacityNode: unknown }).opacityNode = trailOpacityNode()

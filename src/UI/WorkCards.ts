@@ -29,6 +29,7 @@ interface CardState {
   pointerMove: ((e: PointerEvent) => void) | null
   pointerLeave: (() => void) | null
   click: (() => void) | null
+  _clickDebounce?: boolean  // D-25: rapid double-click guard
 }
 
 let cards: CardState[] = []
@@ -102,6 +103,11 @@ function bindCard(cardEl: HTMLElement): void {
   state.click = () => {
     const idx = Number(cardEl.dataset.projectIdx)
     if (Number.isNaN(idx)) return
+    // D-25 fix: debounce rapid double-clicks (was dispatching 2 wobble-pulse
+    // + 2 open-project events 300ms apart → overlay flicker). Ignore clicks
+    // within 400ms of the last one (covers the 300ms wobble delay).
+    if (state._clickDebounce) return
+    state._clickDebounce = true
     // Phase 2: wobble scale animation on card itself (0.6s CSS animation).
     // + wobble pulse on cube (jlz:wobble-pulse) for synced visual effect.
     // Open overlay AFTER wobble completes (300ms = mid-animation, user sees
@@ -113,6 +119,8 @@ function bindCard(cardEl: HTMLElement): void {
       window.dispatchEvent(
         new CustomEvent('jlz:open-project', { detail: { idx } }),
       )
+      // Allow next click after overlay open + small buffer
+      setTimeout(() => { state._clickDebounce = false }, 100)
     }, 300)
   }
 

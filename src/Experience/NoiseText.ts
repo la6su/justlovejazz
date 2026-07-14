@@ -98,19 +98,21 @@ export class NoiseText {
     // Noise tail: 1-3 random characters after the fixed portion
     const noiseLength = Math.min(3, this.cleanText.length - fixedLength);
 
-    let text = '';
+    // PERF-15 fix: build via array + join (was `text +=` in a loop = O(N²)
+    // string allocation). For a 20-char title: ~23 string allocs/frame → 1.
+    const chars: string[] = new Array(fixedLength + noiseLength);
 
     // Fixed (clean) characters — already revealed
     for (let i = 0; i < fixedLength; i++) {
-      text += this.cleanText[i];
+      chars[i] = this.cleanText[i]!;
     }
 
     // Noise tail — random characters that flicker
     for (let i = 0; i < noiseLength; i++) {
-      text += CHARS[Math.floor(Math.random() * CHARS.length)];
+      chars[fixedLength + i] = CHARS[Math.floor(Math.random() * CHARS.length)]!;
     }
 
-    this.el.textContent = text;
+    this.el.textContent = chars.join('');
     this.rafId = requestAnimationFrame(this.tick);
   };
 

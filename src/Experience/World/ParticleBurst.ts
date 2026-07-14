@@ -79,6 +79,10 @@ export class ParticleBurst extends THREE.InstancedMesh {
       blending: THREE.AdditiveBlending,
       side: THREE.DoubleSide,
       fog: false,
+      // R-11 fix: toneMapped=false on additive glow — let additive accumulation
+      // speak for itself (was default true → ACES desaturates bright cores
+      // when 200 particles accumulate >1.0 HDR values).
+      toneMapped: false,
     })
     mat.colorNode = burstColorNode()
     ;(mat as unknown as { opacityNode: unknown }).opacityNode = burstOpacityNode()

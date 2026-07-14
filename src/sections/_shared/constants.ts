@@ -17,12 +17,14 @@ export const PAGE_REVEAL = 'uk-scrollspy="cls: uk-animation-fade; delay: 120; ta
 //
 //   Index | Section  | Cube face    | Face direction | Theme
 //   ------|----------|--------------|----------------|-------
-//   0     | Lab      | Top (+Y)     | up             | light (secret left)
-//   1     | Intro    | Front (+Z)   | toward camera  | light (start)
-//   2     | About    | Right (+X)   | right          | dark
-//   3     | Works    | Back (-Z)    | away           | dark (carousel)
-//   4     | Contact  | Bottom (-Y)  | down           | light
-//   5     | Menu     | Left (-X)    | left           | dark (secret right, nav overlay)
+//   0     | Lab      | Front (+Z)   | toward camera  | light (secret left)
+//   1     | Intro    | Right (+X)   | right          | light (start)
+//   2     | About    | Back (-Z)    | away           | dark
+//   3     | Works    | Left (-X)    | left           | dark (carousel)
+//   4     | Contact  | Front (+Z)*  | tilt ±π/4      | light
+//   5     | Menu     | Front (+Z)*  | tilt ±π/4      | dark (secret right, nav overlay)
+//   * Sections 4-5 use ±π/4 tilt (two side faces visible), not true top/bottom.
+//   D-23 fix: updated to match SplashCube.FACE_ROTATIONS (was stale).
 //
 // Navigation: JoystickNav vertical cycles 1→2→3→4 (main sections),
 // horizontal toggles 0 (Lab) ↔ center ↔ 5 (Menu) (secret side sections).
