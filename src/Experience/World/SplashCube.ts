@@ -103,6 +103,7 @@ export class SplashCube extends THREE.Mesh {
   private _blendToColor: THREE.Color = new THREE.Color(0x3a3a5e)
   private _blendFromEmissive: THREE.Color = new THREE.Color(0x5a5a8a)
   private _blendToEmissive: THREE.Color = new THREE.Color(0x5a5a8a)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private _blendT: number = 0
 
   // Transition state
@@ -208,30 +209,41 @@ export class SplashCube extends THREE.Mesh {
     // We ADD: iridescence 1.0 + clearcoat 1.0 + sheen 0.4 for extra glassiness.
 
     if (isWebGPU) {
-      // ── DIAGNOSTIC: simple MeshBasicMaterial (no glass effects) ──
-      // Temporary test material to isolate the 'white smear' artifact.
-      // Pure transparent color — no transmission, no env, no normalMap,
-      // no specular, no wobble. If the white dot/smear persists → it's from
-      // post-processing or scene setup, NOT the glass material.
-      const mat = new THREE.MeshBasicMaterial()
-      mat.color = new THREE.Color(0.4, 0.6, 0.9) // clear blue tint for comparison
+      // ── WebGPU: MeshPhysicalNodeMaterial + NATIVE dispersion + day34 TSL wobble ──
+      const mat = new MeshPhysicalNodeMaterial()
+      mat.color = new THREE.Color(0.94, 0.91, 1.00)  // day34 lavender tint
+      mat.emissive = new THREE.Color(0x000000)
+      mat.emissiveIntensity = 0.0
+      mat.metalness = 0.0
+      mat.roughness = 0.05                           // slightly off-mirror
+      mat.transmission = 1.0
+      mat.thickness = 0.5                            // thin glass for transparency
+      mat.ior = 1.21                                 // day34 IOR
+      mat.dispersion = 0.0                           // no idle dispersion (RGB blobs)
       mat.transparent = true
-      mat.opacity = 0.5
+      mat.opacity = 1.0
       mat.side = THREE.FrontSide
+      mat.envMapIntensity = 1.0
+      mat.attenuationColor = new THREE.Color(1.0, 1.0, 1.0)
+      mat.attenuationDistance = Infinity             // no attenuation = clear glass
+      mat.specularIntensity = 0.5
+      mat.iridescence = 0.0
+      mat.iridescenceIOR = 1.3
+      mat.iridescenceThicknessRange = [100, 400]
+      mat.clearcoat = 0.3
+      mat.clearcoatRoughness = 0.3
+      mat.sheen = 0.0
+      mat.sheenColor = new THREE.Color(1.0, 1.0, 1.0)
+      mat.sheenRoughness = 0.5
       mat.depthWrite = false
-      // (envMap, normalMap, roughness, transmission all at default = none)
-      // Reference unused imports to satisfy noUnusedLocals during diagnostic.
-      void MeshPhysicalNodeMaterial; void Fn; void uniform; void positionLocal
-      void normalLocal; void mx_noise_float; void sin; void SplashCube.SIZE_SCALE
+      mat.normalMap = this._speckleTex
+      mat.normalScale = new THREE.Vector2(0.24, 0.24)
 
-      // (DIAGNOSTIC: TSL wobble DISABLED — pure static cube to isolate
-      //  whether the white smear comes from wobble deformation or material.
-      /*
-      // ── TSL wobble — subtle elegant jelly (VLM-tuned: "barely visible, elegant") ──
+      // ── TSL wobble — visible elegant jelly ──
       const uWobble = this._uWobble
       const uTimeVal = this._uTime
-      const SIZE_SCALE = SplashCube.SIZE_SCALE   // 0.06 — moderate
-      const NOISE_FREQ = 2.4                      // 0.12 * (16/0.8)
+      const SIZE_SCALE = SplashCube.SIZE_SCALE
+      const NOISE_FREQ = 2.4
       mat.positionNode = Fn(() => {
         const pos = positionLocal.toVar()
         const np = pos.mul(NOISE_FREQ)
@@ -245,20 +257,44 @@ export class SplashCube extends THREE.Mesh {
         pos.y.addAssign(pos.y.mul(squash))
         return pos
       })()
-      */
 
       this.cubeMaterial = mat as unknown as THREE.MeshPhysicalMaterial
     } else {
-      // ── DIAGNOSTIC: simple MeshBasicMaterial (no glass effects) ──
-      // Same simple material as WebGPU path — for parity comparison.
-      const mat = new THREE.MeshBasicMaterial()
-      mat.color = new THREE.Color(0.4, 0.6, 0.9) // clear blue tint (synced with WebGPU diagnostic)
+      // ── WebGL2: MeshTransmissionMaterial (GLSL onBeforeCompile) ──
+      const samples = caps.tier === 'low' ? 2 : caps.tier === 'medium' ? 4 : 6
+      const mat = new MeshTransmissionMaterial(samples)
+      mat.color = new THREE.Color(0.94, 0.91, 1.00)  // day34 lavender tint (synced)
+      mat.emissive = new THREE.Color(0x000000)
+      mat.emissiveIntensity = 0.0
+      mat.metalness = 0.0
+      mat.roughness = 0.05                           // synced
+      mat.transmission = 1.0
+      mat.thickness = 0.5                            // thin glass (synced)
+      mat.ior = 1.21                                 // day34 IOR (synced)
       mat.transparent = true
-      mat.opacity = 0.5
+      mat.opacity = 1.0
       mat.side = THREE.FrontSide
+      mat.envMapIntensity = 1.0
+      mat.attenuationColor = new THREE.Color(1.0, 1.0, 1.0)
+      mat.attenuationDistance = Infinity             // no attenuation (synced)
+      mat.specularIntensity = 0.5                    // synced
+      mat.iridescence = 0.0                          // synced
+      mat.iridescenceIOR = 1.3
+      mat.iridescenceThicknessRange = [100, 400]
+      mat.clearcoat = 0.3                            // synced
+      mat.clearcoatRoughness = 0.3                   // synced
+      mat.sheen = 0.0                                // synced
+      mat.sheenColor = new THREE.Color(1.0, 1.0, 1.0)
+      mat.sheenRoughness = 0.5
       mat.depthWrite = false
-      // Reference unused import to satisfy noUnusedLocals during diagnostic.
-      void MeshTransmissionMaterial; void caps
+      mat.normalMap = this._speckleTex
+      mat.normalScale = new THREE.Vector2(0.24, 0.24)
+      mat.chromaticAberration = 0.0
+      mat.anisotrophicBlur = 0.1
+      mat.wobble = 0.7                               // synced with WOBBLE_IDLE
+      mat.distortion = 0.0
+      mat.distortionScale = 0.3
+      mat.temporalDistortion = 0.0
 
       this.cubeMaterial = mat as unknown as THREE.MeshPhysicalMaterial
     }
@@ -487,8 +523,6 @@ export class SplashCube extends THREE.Mesh {
     if (mtm.time !== undefined) mtm.time = this.time
 
     // ── Material color blend ──
-    // DIAGNOSTIC: guard emissive/roughness/metalness — MeshBasicMaterial
-    // doesn't have these properties (only MeshPhysicalMaterial does).
     const diagMat = this.cubeMaterial as unknown as {
       color: THREE.Color
       emissive?: THREE.Color
@@ -513,7 +547,6 @@ export class SplashCube extends THREE.Mesh {
 
   private applyRoleAndParams(): void {
     const { color, emissive, roughness, metalness } = this.targetParams
-    // DIAGNOSTIC: guard emissive/roughness/metalness for MeshBasicMaterial.
     const m = this.cubeMaterial as unknown as {
       color: THREE.Color
       emissive?: THREE.Color
