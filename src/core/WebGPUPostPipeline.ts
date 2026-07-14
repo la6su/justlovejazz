@@ -194,6 +194,23 @@ export class WebGPUPostPipeline {
     // grain = (noise - 0.5) * 2.0 * strength → adds ±strength per pixel
     const grain = grainNoise.sub(0.5).mul(2.0).mul(this._grainStrength)
     color = color.add(vec3(grain))
+
+    // ── 8. Vignette (radial falloff) ──
+    // MIRROR WebGL2 COMPOSITE_FSG vignette EXACTLY (was missing → WebGPU frame
+    // stayed full-brightness while WebGL2 darkened edges; on intro postVignette=1.5
+    // this made the cube+background appear uniformly bright on WebGPU vs edge-
+    // darkened on WebGL2 → perceived "lighter/more transparent" discrepancy).
+    // WebGL2 formula (RenderPipeline.ts COMPOSITE_FSG):
+    //   center = vUv - 0.5; dist = length(center);
+    //   vig = 1.0 - dist * uVignette; vig = smoothstep(0,1,vig); color *= vig;
+    // When vignette=0: vig = smoothstep(0,1, 1-0) = smoothstep(0,1,1) = 1 → no
+    // change (matches WebGL2 `if (uVignette > 0.0)` skip — visually identical).
+    const vCenter = uv().sub(0.5)
+    const vDist = vCenter.length()
+    const vigRaw = float(1.0).sub(vDist.mul(this._vignetteStrength))
+    const vig = smoothstep(0.0, 1.0, vigRaw as any) as any
+    color = color.mul(vig)
+
     // ── 9. Screen border ──
     // MIRROR WebGL2 COMPOSITE_FSG barrel distortion + edge masking exactly
     // WebGL2: curveUV = vUv * 2 - 1; offset = curveUV.yx * 0.25;

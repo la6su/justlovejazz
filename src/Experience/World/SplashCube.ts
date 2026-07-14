@@ -31,7 +31,7 @@ import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { MeshPhysicalNodeMaterial } from 'three/webgpu'
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { Fn, uniform, positionLocal, normalLocal, mx_noise_float, sin } from 'three/tsl'
+import { Fn, uniform, positionLocal, normalLocal, mx_noise_float, sin, vec3, float } from 'three/tsl'
 import { DeviceCapability } from '../../core/DeviceCapability'
 import { MeshTransmissionMaterial } from './MeshTransmissionMaterial'
 // (PlayButton3D import removed — dead render path deleted)
@@ -240,6 +240,15 @@ export class SplashCube extends THREE.Mesh {
       mat.normalScale = new THREE.Vector2(0.24, 0.24)
 
       // ── TSL wobble — visible elegant jelly ──
+      // PARITY: noise sampling coords use COMPONENT-WISE vec3 offsets to match
+      // the WebGL2 GLSL path (MeshTransmissionMaterial.ts snoise calls).
+      // Previously `np.add(t.mul(0.2))` broadcast the scalar to all 3 axes
+      // (np + (t*0.2,t*0.2,t*0.2)) → noise flowed diagonally, different from
+      // WebGL2 which animates only the X axis (vec3(t*0.2,0,0)). This made the
+      // wobble pattern visibly different between paths. Now both paths sample
+      // noise at identical coordinates (modulo the noise function itself:
+      // mx_noise_float vs Ashima snoise — a documented, accepted gap per
+      // WORKLOG C8 / RULES §C8; both produce good-looking centered wobble).
       const uWobble = this._uWobble
       const uTimeVal = this._uTime
       const SIZE_SCALE = SplashCube.SIZE_SCALE
@@ -248,8 +257,11 @@ export class SplashCube extends THREE.Mesh {
         const pos = positionLocal.toVar()
         const np = pos.mul(NOISE_FREQ)
         const t = uTimeVal
-        const n1 = mx_noise_float(np.add(t.mul(0.2))).mul(0.32).mul(uWobble)
-        const n2 = mx_noise_float(np.mul(2.5).add(t.mul(0.3)).add(7)).mul(0.09).mul(uWobble)
+        // Component-wise offsets mirror GLSL exactly:
+        //   n1: snoise(np + vec3(t*0.2, 0, 0))     — X axis animated
+        //   n2: snoise(np*2.5 + vec3(0, t*0.3, 7)) — Y axis animated, Z offset 7
+        const n1 = mx_noise_float(np.add(vec3(t.mul(0.2), float(0.0), float(0.0)))).mul(0.32).mul(uWobble)
+        const n2 = mx_noise_float(np.mul(2.5).add(vec3(float(0.0), t.mul(0.3), float(7.0)))).mul(0.09).mul(uWobble)
         const displacement = n1.add(n2)
         const squash = sin(t.mul(0.22)).mul(0.03).mul(uWobble)
         const breathe = sin(t.mul(0.4).add(pos.y.mul(0.3))).mul(0.06).mul(uWobble)
