@@ -157,19 +157,21 @@ export class SplashCube extends THREE.Mesh {
     const text2Tex = this._createJLZTexture('WEBGPU · TSL · THREE.JS', '#4a5474', '#050507', 512, 128)
     this.contentTextures = [logoTex, text1Tex, text2Tex]
 
-    // 6 gradient planes — neutral/bright for clean glass reflections.
-    // Previous blue palette (0.55–0.95 blue-grey) tinted the cube blue via
-    // refraction. Neutral whites + warm accents give the glass a clean look
-    // with distinct specular blooms without color cast.
+    // 6 gradient planes — soft mid-tones for natural glass reflections.
+    // High-contrast planes (0.95 bright vs 0.40 dark) refracted through
+    // wobble-deformed glass into sharp unnatural 'blob' artifacts. Narrowed
+    // range to 0.45–0.65: uniform soft gradients → smooth refraction,
+    // no harsh spots. The glass wobble bends light gently without creating
+    // concentrated bright patches.
     const size = 5
     const half = size / 2
     const jlzColors = [
-      [0.85, 0.85, 0.88], // light warm grey (was blue 0.55/0.62/0.85)
-      [0.95, 0.95, 0.95], // near-white studio light (was blue 0.70/0.78/0.95)
-      [0.50, 0.50, 0.55], // mid neutral grey (was blue 0.35/0.40/0.55)
-      [0.90, 0.88, 0.85], // warm white (was blue 0.90/0.92/1.00)
-      [0.75, 0.75, 0.78], // light neutral (was blue 0.80/0.85/1.00)
-      [0.40, 0.40, 0.45], // dark neutral (was blue 0.45/0.50/0.70)
+      [0.60, 0.60, 0.62], // soft light grey
+      [0.55, 0.55, 0.58], // soft neutral
+      [0.48, 0.48, 0.52], // mid grey
+      [0.62, 0.60, 0.58], // soft warm grey
+      [0.52, 0.52, 0.55], // light neutral
+      [0.45, 0.45, 0.48], // dark grey (was 0.40)
     ]
     const dirs: { pos: number[]; rot: number[]; color: number[] }[] = [
       { pos: [half, 0, 0], rot: [0, -Math.PI / 2, 0], color: jlzColors[0]! },
@@ -307,7 +309,7 @@ export class SplashCube extends THREE.Mesh {
       mat.emissive = new THREE.Color(0x000000)
       mat.emissiveIntensity = 0.0
       mat.metalness = 0.0
-      mat.roughness = 0.0                            // day34 mirror-smooth
+      mat.roughness = 0.05                           // slightly off-mirror (was 0.0 → razor-sharp refraction blobs). 0.05 softens.
       mat.transmission = 1.0
       mat.thickness = 2.5                            // refraction volume (1.2 was too thin → no bend)
       mat.ior = 1.45                                 // stronger refraction (was 1.21 → barely visible bend)
@@ -315,7 +317,7 @@ export class SplashCube extends THREE.Mesh {
       mat.transparent = true
       mat.opacity = 1.0
       mat.side = THREE.FrontSide                     // day34 (was DoubleSide → double refraction)
-      mat.envMapIntensity = 1.3                      // PMREM reflections (was 1.5 → slightly blown out)
+      mat.envMapIntensity = 1.0                      // softer reflections (was 1.3 → harsh spots)
       mat.attenuationColor = new THREE.Color(1.0, 1.0, 1.0)
       mat.attenuationDistance = 12                   // visible tint gradient (was 8)
       mat.specularIntensity = 1.0
@@ -386,14 +388,14 @@ export class SplashCube extends THREE.Mesh {
       mat.emissive = new THREE.Color(0x000000)
       mat.emissiveIntensity = 0.0
       mat.metalness = 0.0
-      mat.roughness = 0.0
+      mat.roughness = 0.05                           // slightly off-mirror (synced, was 0.0)
       mat.transmission = 1.0
       mat.thickness = 2.5                            // refraction volume (synced with WebGPU, was 1.2)
       mat.ior = 1.45                                 // stronger refraction (synced, was 1.21)
       mat.transparent = true
       mat.opacity = 1.0
       mat.side = THREE.FrontSide                     // day34
-      mat.envMapIntensity = 1.3                      // reflections (synced, was 1.5)
+      mat.envMapIntensity = 1.0                      // softer reflections (synced, was 1.3)
       mat.attenuationColor = new THREE.Color(1.0, 1.0, 1.0)
       mat.attenuationDistance = 12                   // visible tint (synced, was 8)
       mat.specularIntensity = 1.0
