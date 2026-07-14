@@ -337,3 +337,196 @@ signature of the works page.
 | Config toolbar | `.jlz-menu-toolbar` (custom container; children are `uk-icon-button`) |
 | Menu overlay (section 5) | `.jlz-menu-overlay` (UNIQUE template — 3-col grid, NOT `sectionShell()`; see §7.22) |
 | Glassmorphism on icon buttons | `.hook-icon-button()` in `_import.less §3.5` (applies to ALL `uk-icon-button`; see §7.23) |
+
+## 9. SKILL — UIKit 3 audit checklist (read before writing UI code)
+
+> This section is the actionable SKILL. Before writing ANY UI code (JS or CSS),
+> run through this checklist. Every rule below was paid for in debugging time.
+
+### 9.1 The golden rule
+
+**UIKit 3 is a framework, not a CSS reset.** It ships 30+ JS components that
+auto-initialize via `uk-*` attributes + manage their own state via `uk-open` /
+`uk-active` classes. If you find yourself writing `addEventListener('click')` +
+`classList.toggle('is-something')` + `setAttribute('aria-expanded')` by hand,
+STOP — UIKit probably already does this. Check the [component list](https://getuikit.com/docs/javascript)
+first.
+
+### 9.2 State management — NEVER use a custom flag
+
+UIKit components track their own state via CSS classes. These classes are
+**authoritative** — added/removed synchronously by UIKit's `_toggle()` method.
+Never duplicate this state in a JS variable or `window` property.
+
+| Component | State class | How to check (native) |
+| --- | --- | --- |
+| Modal | `uk-open` on `.uk-modal` | `el.classList.contains('uk-open')` |
+| Dropdown | `uk-open` on `.uk-dropdown` | `el.classList.contains('uk-open')` |
+| Accordion | `uk-open` on `.uk-accordion-item` | `el.classList.contains('uk-open')` |
+| Nav (parent) | `uk-open` on `.uk-parent` | `el.classList.contains('uk-open')` |
+| Off-canvas | `uk-open` on `.uk-offcanvas` | `el.classList.contains('uk-open')` |
+| Tab | `uk-active` on `<li>` | `el.classList.contains('uk-active')` |
+| Toggle | `uk-open` / `uk-active` on target | `el.classList.contains('uk-open')` |
+
+**Anti-pattern (DELETED in commit 5969fe1):**
+```ts
+// WRONG — custom flag that gets out of sync with UIKit
+UIkit.util.on(this.container, 'show', () => {
+  this._isOpen = true
+  window.jlzOverlayOpen = true  // ❌ reinventing uk-open
+})
+// ...elsewhere...
+if (window.jlzOverlayOpen === true) return  // ❌ stale flag blocks keyboard
+```
+
+**Correct pattern:**
+```ts
+// RIGHT — UIKit's uk-open class is the single source of truth
+get isOpen(): boolean {
+  return this.container.classList.contains('uk-open')
+}
+// ...elsewhere...
+if (this.overlay?.isOpen) return  // ✅ always accurate
+```
+
+### 9.3 Accordion / Nav — never hand-roll expand/collapse
+
+If you have a list where clicking an item expands sub-items, use UIKit `uk-nav`
+or `uk-accordion`. Both extend the Accordion mixin and handle:
+- Click toggle (on `<a>` inside `<li>`)
+- `uk-open` class on the parent `<li>` (authoritative state)
+- Accordion behavior (only one open at a time, `multiple: false` default)
+- `aria-expanded` + `aria-controls` (set automatically in `update()`)
+- Keyboard: Space toggles (handled by UIKit's `click keydown` event)
+
+**Anti-pattern (DELETED in commit 155df7b):**
+```ts
+// WRONG — 30 lines of manual toggle logic
+toggles.forEach((toggle) => {
+  toggle.addEventListener('click', (e) => {
+    e.preventDefault()
+    const item = toggle.closest('.jlz-menu-nav__item')
+    const isExpanded = item.classList.contains('is-expanded')  // ❌ custom class
+    // Close all others
+    nav.querySelectorAll('.is-expanded').forEach((other) => {
+      other.classList.remove('is-expanded')
+      other.querySelector('.jlz-menu-nav__toggle')
+        ?.setAttribute('aria-expanded', 'false')  // ❌ manual aria
+    })
+    item.classList.toggle('is-expanded', !isExpanded)
+    toggle.setAttribute('aria-expanded', String(!isExpanded))
+  })
+})
+```
+
+**Correct pattern:**
+```html
+<!-- RIGHT — UIKit uk-nav handles everything -->
+<ul class="uk-nav uk-nav-default">
+  <li class="uk-parent">
+    <a href="#">Parent <span class="uk-nav-parent-icon"></span></a>
+    <ul class="uk-nav-sub">
+      <li><a href="/path">Child</a></li>
+    </ul>
+  </li>
+</ul>
+```
+No JS needed for toggle — UIKit auto-initializes on DOM insertion
+(`UIkit.update(el)` in router.ts handles re-init after SPA navigation).
+Only add a click handler for app-specific behavior (e.g. SPA link interception).
+
+### 9.4 Modal — never manage visibility yourself
+
+UIKit modal handles: show/hide animation, `uk-open` state, Esc-to-close,
+bg-click-to-close, focus trap, scroll lock (`uk-modal-page` on `<html>`),
+z-index stacking. Your code should only call `.show()` / `.hide()` and listen
+to `show` / `hide` events for app logic.
+
+**Do:**
+```ts
+UIkit.modal(el).show()   // UIKit adds uk-open, locks scroll, traps focus
+UIkit.modal(el).hide()   // UIKit removes uk-open, restores scroll
+// Check state:
+if (el.classList.contains('uk-open')) { /* open */ }
+```
+
+**Don't:**
+- Set `el.style.display = 'block'` manually — UIKit does this in its `show` handler
+- Track `_isOpen` in a field — use `classList.contains('uk-open')`
+- Add a `window.jlzSomethingOpen` flag — it WILL get out of sync
+- Call `e.stopImmediatePropagation()` on arrow keys based on a custom flag —
+  check `el.classList.contains('uk-open')` instead
+
+### 9.5 Pre-flight checklist before writing UI code
+
+Before writing a new UI feature, answer these:
+
+1. **Is there a UIKit component for this?** Check https://getuikit.com/docs/javascript
+   - Expand/collapse list → `uk-nav` or `uk-accordion`
+   - Overlay/popup → `uk-modal` or `uk-dropdown`
+   - Tab switching → `uk-tab` + `uk-switcher`
+   - Show/hide toggle → `uk-toggle`
+   - Slide-out panel → `uk-offcanvas`
+   - Hover tooltip → `uk-tooltip`
+
+2. **Am I tracking state in a JS variable?** If yes, check if UIKit already
+   tracks it via a class (`uk-open`, `uk-active`). Use the class, not the variable.
+
+3. **Am I writing `addEventListener('click')` for a toggle?** If yes, check
+   if a UIKit component handles the click natively (uk-nav, uk-accordion,
+   uk-toggle, uk-tab all do).
+
+4. **Am I setting `aria-expanded` / `aria-controls` manually?** If yes,
+   UIKit's Accordion/Nav/Tab components set these automatically in their
+   `update()` method. Don't duplicate.
+
+5. **Am I writing `style.display = 'none'` / `'block'`?** If yes, consider
+   `uk-hidden` class (for static hiding) or a UIKit component (for dynamic
+   show/hide). Exception: custom overlays not backed by UIKit modal.
+
+6. **Am I writing CSS for a layout that UIKit provides?** Check:
+   `uk-grid`, `uk-flex`, `uk-position-*`, `uk-text-*`, `uk-width-*`,
+   `uk-height-*`, `uk-margin-*`, `uk-padding-*`.
+
+### 9.6 When custom code IS justified
+
+Custom code is fine when UIKit genuinely can't do it:
+
+- **3D-specific logic** — raycaster clicks, Three.js object picking, camera sync
+- **SPA routing** — intercepting `<a>` clicks for client-side navigation
+- **Custom widgets with no UIKit equivalent** — joystick nav, 3D tilt cards,
+  custom cursor, NoiseText/BlurFade text animations
+- **Cross-component orchestration** — e.g. closing modal on route change
+  (UIKit doesn't know about your router)
+- **Programmatic scroll** — `scrollIntoView()` for SPA hash navigation
+  (UIKit's `uk-scroll` is for anchor links, not programmatic)
+
+The test: **if UIKit has a component that does 90% of what you need, use it
+and add a thin wrapper for the remaining 10%.** Don't write 100% custom
+when 90% is already in the framework.
+
+### 9.7 Audit grep recipes
+
+Run these to find reinvented UIKit in any PR:
+
+```bash
+# Custom class toggling (UIKit components use uk-open/uk-active)
+rg -n "classList\.(add|remove|toggle)\(['\"]?(is-|active|open|expanded)" src/
+
+# Manual aria (UIKit Accordion/Nav/Tab set these automatically)
+rg -n "setAttribute\(['\"]aria-(expanded|controls|selected)" src/
+
+# Manual display toggling (consider uk-hidden or a UIKit component)
+rg -n "style\.display\s*=" src/
+
+# Custom focus trap (UIKit modal handles this)
+rg -n "focus\(\)|focusin" src/
+
+# Custom smooth scroll (UIKit uk-scroll for anchors)
+rg -n "scrollIntoView|scrollTo" src/
+
+# Custom IntersectionObserver for reveals (UIKit uk-scrollspy)
+rg -n "IntersectionObserver" src/
+```
+
+Review each match: is it justified (3D/SPA/custom widget) or reinventing UIKit?
