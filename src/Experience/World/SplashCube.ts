@@ -28,7 +28,9 @@ import * as THREE from 'three'
 import { organicValue } from '../../Utils/Noise'
 import { BakuRole, type BakuMaterialState } from '../../core/types'
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js'
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { MeshPhysicalNodeMaterial } from 'three/webgpu'
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Fn, uniform, positionLocal, normalLocal, mx_noise_float, sin } from 'three/tsl'
 import { DeviceCapability } from '../../core/DeviceCapability'
 import { MeshTransmissionMaterial } from './MeshTransmissionMaterial'
@@ -206,55 +208,26 @@ export class SplashCube extends THREE.Mesh {
     // We ADD: iridescence 1.0 + clearcoat 1.0 + sheen 0.4 for extra glassiness.
 
     if (isWebGPU) {
-      // ── WebGPU: MeshPhysicalNodeMaterial + NATIVE dispersion + day34 TSL wobble ──
-      const mat = new MeshPhysicalNodeMaterial()
-      mat.color = new THREE.Color(0.94, 0.91, 1.00)  // day34 lavender tint (reference: dasprinzip day34)
-      mat.emissive = new THREE.Color(0x000000)
-      mat.emissiveIntensity = 0.0
-      mat.metalness = 0.0
-      mat.roughness = 0.05                           // slightly off-mirror (was 0.0 → razor-sharp specular point from keyLight). 0.05 softens highlight.
-      mat.transmission = 1.0
-      mat.thickness = 0.3                            // very thin glass for max transparency (was 0.5)
-      mat.ior = 1.21                                 // day34 IOR
-      mat.dispersion = 0.0                           // no idle dispersion (RGB blobs). Chromatic only on click pulse.
+      // ── DIAGNOSTIC: simple MeshBasicMaterial (no glass effects) ──
+      // Temporary test material to isolate the 'white smear' artifact.
+      // Pure transparent color — no transmission, no env, no normalMap,
+      // no specular, no wobble. If the white dot/smear persists → it's from
+      // post-processing or scene setup, NOT the glass material.
+      const mat = new THREE.MeshBasicMaterial()
+      mat.color = new THREE.Color(0.4, 0.6, 0.9) // clear blue tint for comparison
       mat.transparent = true
-      mat.opacity = 0.7                            // semi-transparent glass (was 1.0 → opaque body). 0.7 lets background show through.
-      mat.side = THREE.FrontSide                     // day34 (was DoubleSide → double refraction)
-      mat.envMapIntensity = 1.0                      // day34 (synced with WebGL2 path, was 1.5 — chromatic debug leftover)
-      mat.attenuationColor = new THREE.Color(1.0, 1.0, 1.0)
-      mat.attenuationDistance = Infinity             // no attenuation (was 12 → strong tint → opaque). Infinity = clear glass.
-      mat.specularIntensity = 0.5                    // reduced (was 1.0 → harsh edge highlights during wobble)
-      mat.iridescence = 0.0                          // disabled (was 0.3 → edge color artifacts during wobble)
-      mat.iridescenceIOR = 1.3
-      mat.iridescenceThicknessRange = [100, 400]
-      mat.clearcoat = 0.3                            // reduced (was 1.0 → sharp white edges on deformed normals)
-      mat.clearcoatRoughness = 0.3                   // softer (was 0.0 → razor-sharp clearcoat highlights)
-      mat.sheen = 0.0                                // disabled (was 0.2 → edge glow artifacts)
-      mat.sheenColor = new THREE.Color(1.0, 1.0, 1.0)
-      mat.sheenRoughness = 0.5
+      mat.opacity = 0.5
+      mat.side = THREE.FrontSide
       mat.depthWrite = false
-      mat.normalMap = this._speckleTex
-      mat.normalScale = new THREE.Vector2(0.24, 0.24)  // day34 (was 0.7 → too strong)
+      // (envMap, normalMap, roughness, transmission all at default = none)
+      // Reference unused imports to satisfy noUnusedLocals during diagnostic.
+      void MeshPhysicalNodeMaterial; void Fn; void uniform; void positionLocal
+      void normalLocal; void mx_noise_float; void sin; void SplashCube.SIZE_SCALE
 
+      // (DIAGNOSTIC: TSL wobble DISABLED — pure static cube to isolate
+      //  whether the white smear comes from wobble deformation or material.
+      /*
       // ── TSL wobble — subtle elegant jelly (VLM-tuned: "barely visible, elegant") ──
-      // day34 source: 3-octave noise (0.5/0.2/0.1) + squash + breathe
-      //
-      // C8 PARITY NOTE: WebGPU uses mx_noise_float (MaterialX Perlin-style),
-      // WebGL2 uses Ashima snoise (simplex) — see MeshTransmissionMaterial.ts.
-      // Both are 3D noise with matching amplitude/frequency/speed, but they
-      // produce different displacement fields. Visual difference is subtle at
-      // this scale (amplitude 0.09 * 0.4 = 0.036). A true parity fix requires
-      // porting Ashima snoise to TSL (or vice versa) — deferred to avoid
-      // risking the wobble entirely. Both paths produce a good-looking result.
-      //
-      // Smoothed + reduced for elegant look:
-      //   - n3 (high-freq) REMOVED — was causing surface crunch
-      //   - n2 (mid-freq) amplitude 0.2 → 0.12 (softer)
-      //   - n1 (low-freq) amplitude 0.5 → 0.4 (gentle base wave)
-      //   - Time speeds slowed: 0.25→0.2, 0.4→0.3 (graceful motion)
-      //   - Squash amplitude 0.08 → 0.04 (less Y distortion, preserves cube shape)
-      //   - Breathe amplitude 0.12 → 0.08 (gentler volume pulse)
-      //   - Squash freq 0.3 → 0.25, Breathe freq 0.55 → 0.45 (slower, more elegant)
       const uWobble = this._uWobble
       const uTimeVal = this._uTime
       const SIZE_SCALE = SplashCube.SIZE_SCALE   // 0.06 — moderate
@@ -263,18 +236,16 @@ export class SplashCube extends THREE.Mesh {
         const pos = positionLocal.toVar()
         const np = pos.mul(NOISE_FREQ)
         const t = uTimeVal
-        // 2-octave noise — moderate amplitudes (0.38/0.11 was strong → 0.32/0.09)
         const n1 = mx_noise_float(np.add(t.mul(0.2))).mul(0.32).mul(uWobble)
         const n2 = mx_noise_float(np.mul(2.5).add(t.mul(0.3)).add(7)).mul(0.09).mul(uWobble)
         const displacement = n1.add(n2)
-        // squash + breathe — gentle (0.035/0.07 was strong → 0.03/0.06)
         const squash = sin(t.mul(0.22)).mul(0.03).mul(uWobble)
         const breathe = sin(t.mul(0.4).add(pos.y.mul(0.3))).mul(0.06).mul(uWobble)
-        // Apply — displacement scaled by SIZE_SCALE, squash proportional
         pos.assign(pos.add(normalLocal.mul(displacement.add(breathe).mul(SIZE_SCALE))))
         pos.y.addAssign(pos.y.mul(squash))
         return pos
       })()
+      */
 
       this.cubeMaterial = mat as unknown as THREE.MeshPhysicalMaterial
     } else {
