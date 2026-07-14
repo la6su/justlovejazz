@@ -1,100 +1,114 @@
-// WireframeTypography.ts — 3D wireframe text with TSL noise displacement.
+// WireframeTypography.ts — 3D inflated text with TSL jelly wobble.
 //
-// Creates a TextGeometry word (e.g. "ABOUT") rendered as wireframe with
-// TSL MeshBasicNodeMaterial. Vertex displacement via noise gives the text
-// an organic, "living" feel — subtle undulation that respects on-demand
-// rendering (frozen when idle).
+// Creates a TextGeometry word (e.g. "ABOUT") rendered as a SOLID, puffy,
+// inflated balloon-like 3D text. Vertex displacement via 2-octave noise +
+// breathe + squash gives the text a "living, breathing" jelly wobble —
+// the text inflates and deflates rhythmically, like a balloon.
 //
-// Used in Section2 (About) as the signature 3D object — replaces the empty
-// placeholder particles with a real visual anchor.
+// Material: MeshPhysicalNodeMaterial with clearcoat + iridescence for a
+// glossy, soap-bubble-like surface that catches light and shifts color.
 //
-// HERMES §1: TSL NodeMaterial only (no raw ShaderMaterial).
-// HERMES §11: Single font: Inter (for DOM). This is 3D text — uses
-//   helvetiker_bold (three.js built-in typeface) because Inter doesn't have
-//   a typeface.json format. The 3D text is a visual element, not body copy.
+// Used in Section2 (About) as "ABOUT" and Section4 (Contact) as "HELLO".
+//
+// HERMES §1-2: TSL NodeMaterial only (no raw ShaderMaterial). Works on both
+// WebGPU (native) and WebGL2 (via WebGLNodesHandler compilation).
 
 import * as THREE from 'three'
-import { MeshBasicNodeMaterial } from 'three/webgpu'
-import { Fn, vec3, uniform, positionLocal, normalLocal, mx_noise_float, sin, mix } from 'three/tsl'
+import { MeshPhysicalNodeMaterial } from 'three/webgpu'
+import { Fn, vec3, uniform, positionLocal, normalLocal, mx_noise_float, sin, float } from 'three/tsl'
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js'
 import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js'
-// H5 fix: import font JSON directly — Vite bundles it at build time.
-// Previously used synchronous XMLHttpRequest which is deprecated, blocks the
-// main thread during World.init(), and bypasses the Vite module graph.
-// The JSON import resolves at build time → zero runtime XHR, zero blocking.
 import fontJson from '../../assets/fonts/helvetiker_bold.typeface.json'
 
-// Parse once at module load (not per-instance) — FontLoader.parse is cheap
-// but there's no reason to re-parse the same JSON for every WireframeTypography.
+// Parse once at module load (not per-instance)
 const _parsedFont = new FontLoader().parse(fontJson as never)
 
-// Uniforms — shared across all wireframe typography instances
+// Uniforms — shared across all typography instances
 const typoUniforms = {
   uTime: uniform(0),
-  uDisplace: uniform(0.08),  // displacement amplitude
+  uWobble: uniform(1.0),  // full amplitude (text is small, needs full wobble)
 }
 
-// ── Vertex: noise displacement along normal ──
+// Wobble constants — mirrors SplashCube jelly pattern but tuned for text.
+// Larger SIZE_SCALE than the cube (0.08 vs 0.06) because text is smaller
+// and needs more visible displacement for the "inflated" feel.
+const SIZE_SCALE = 0.08
+const NOISE_FREQ = 2.0
+
+// ── Vertex: inflated jelly wobble (2-octave noise + breathe + squash) ──
+// Same pattern as SplashCube: noise displacement along normals + breathe
+// (inflate/deflate cycle) + squash (Y compression). The breathe term is
+// the key "inflated balloon" feel — text rhythmically puffs up and down.
 const typoPositionNode = Fn(() => {
-  const pos = positionLocal
+  const pos = positionLocal.toVar()
   const nrm = normalLocal
   const t = typoUniforms.uTime
+  const uWobble = typoUniforms.uWobble
 
-  // Multi-octave noise for organic undulation
-  const n1 = mx_noise_float(pos.mul(1.5).add(vec3(t.mul(0.2), 0, 0)))
-  const n2 = mx_noise_float(pos.mul(3.0).add(vec3(0, t.mul(0.3), 0)))
-  const noise = n1.mul(0.7).add(n2.mul(0.3))
+  // 2-octave noise — organic surface displacement (same as cube)
+  const np = pos.mul(NOISE_FREQ)
+  const n1 = mx_noise_float(np.add(vec3(t.mul(0.3), float(0.0), float(0.0)))).mul(0.32).mul(uWobble)
+  const n2 = mx_noise_float(np.mul(2.0).add(vec3(float(0.0), t.mul(0.4), float(5.0)))).mul(0.09).mul(uWobble)
+  const displacement = n1.add(n2)
 
-  // Displace along normal
-  return pos.add(nrm.mul(noise.mul(typoUniforms.uDisplace)))
-})
+  // Breathe: inflate/deflate cycle — the "inflated balloon" feel.
+  // Stronger than the cube's breathe (0.06 → 0.10) for visible inflation.
+  const breathe = sin(t.mul(0.8)).mul(0.10).mul(uWobble)
 
-// ── Fragment: subtle color shift based on displacement + time ──
-const typoColorNode = Fn(() => {
-  const pos = positionLocal
-  const t = typoUniforms.uTime
+  // Squash: subtle Y compression (organic jelly, same as cube)
+  const squash = sin(t.mul(0.5)).mul(0.03).mul(uWobble)
 
-  // Color gradient: blue → cyan based on position + time
-  const shift = sin(pos.y.mul(0.5).add(t.mul(0.5))).mul(0.5).add(0.5)
-  const colorA = vec3(0.4, 0.6, 1.0)  // blue
-  const colorB = vec3(0.6, 0.9, 1.0)  // cyan
+  // Apply: displace along normal (inflation) + breathe (puff) + squash (Y)
+  pos.assign(pos.add(nrm.mul(displacement.add(breathe).mul(SIZE_SCALE))))
+  pos.y.addAssign(pos.y.mul(squash))
 
-  // Mix with slight noise variation
-  const noise = mx_noise_float(pos.mul(2.0)).mul(0.1)
-  return mix(colorA, colorB, shift).add(vec3(noise))
+  return pos
 })
 
 export class WireframeTypography extends THREE.Mesh {
   private _time = 0
 
   constructor(text: string = 'ABOUT', size: number = 0.6) {
-    // Use the module-level parsed font (H5 fix — no sync XHR).
     const font = _parsedFont
 
-    // Create TextGeometry — centered, extruded for 3D depth
+    // Inflated geometry: thicker depth + bevels for puffy/balloon volume.
+    // Was: depth 0.15, no bevels (thin flat slab). Now: depth 0.3, bevels
+    // for rounded puffy edges that catch light like a real balloon.
     const geo = new TextGeometry(text, {
       font,
       size,
-      depth: 0.15,           // extrusion depth (thin slab)
-      curveSegments: 4,      // low poly (wireframe doesn't need smooth curves)
-      bevelEnabled: false,
+      depth: 0.3,             // thicker for 3D volume (was 0.15)
+      curveSegments: 6,       // smoother for bevels (was 4)
+      bevelEnabled: true,     // rounded edges = puffy/balloon look (was false)
+      bevelThickness: 0.03,
+      bevelSize: 0.02,
+      bevelSegments: 3,
     })
-    geo.center()  // center geometry at origin
+    geo.center()
 
-    // Wireframe NodeMaterial with TSL displacement
-    const mat = new MeshBasicNodeMaterial({
-      color: 0x88aaff,
-      wireframe: true,
-      transparent: true,
-      opacity: 0.6,
-      depthWrite: false,
-      fog: false,
-    })
+    // Glossy balloon material: PBR with clearcoat + iridescence.
+    // Was: MeshBasicNodeMaterial (flat, no lighting, wireframe).
+    // Now: MeshPhysicalNodeMaterial (PBR, responds to lights, glossy coating).
+    const mat = new MeshPhysicalNodeMaterial()
+    mat.color = new THREE.Color(0x6688ff)       // blue (shifts via iridescence)
+    mat.emissive = new THREE.Color(0x223366)     // subtle inner glow (visible on dark sections)
+    mat.emissiveIntensity = 0.3
+    mat.metalness = 0.0
+    mat.roughness = 0.15                         // shiny (was no lighting)
+    mat.clearcoat = 1.0                          // glossy balloon coating
+    mat.clearcoatRoughness = 0.1
+    mat.iridescence = 0.6                        // soap-bubble rainbow shift
+    mat.iridescenceIOR = 1.3
+    mat.iridescenceThicknessRange = [100, 400]
+    mat.transparent = true
+    mat.opacity = 0.85                           // slightly transparent (glass-balloon)
+    mat.depthWrite = false
+    mat.fog = false
+
     mat.positionNode = typoPositionNode()
-    mat.colorNode = typoColorNode()
 
     super(geo, mat)
-    this.name = 'wireframe-text'
+    this.name = 'inflated-text'
     this.frustumCulled = false
   }
 
@@ -108,5 +122,3 @@ export class WireframeTypography extends THREE.Mesh {
     ;(this.material as THREE.Material).dispose()
   }
 }
-
-// (loadFontSync removed — H5 fix: replaced by build-time JSON import.)
