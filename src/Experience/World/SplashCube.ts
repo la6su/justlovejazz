@@ -70,8 +70,10 @@ export class SplashCube extends THREE.Mesh {
   /** Displacement amplitude — visible but shape-preserving. */
   private static readonly SIZE_SCALE = 0.08
   // Chromatic pulse baseline + boost (animated via same sin-envelope as wobble)
-  private static readonly DISPERSION_IDLE = 15.0
-  private static readonly DISPERSION_BOOST = 10.0 // peak 25 (was 30)
+  // Baseline lowered: dispersion 15 → 3 (high value caused RGB blobs on faces).
+  // Boost adds a brief chromatic fringe on click pulse (peak 6, was 25).
+  private static readonly DISPERSION_IDLE = 3.0
+  private static readonly DISPERSION_BOOST = 3.0 // peak 6 (was 25 → RGB blobs)
   private static readonly CHROMATIC_IDLE = 0.5
   private static readonly CHROMATIC_BOOST = 0.4 // peak 0.9 (was 1.0)
   private cubeCamera!: THREE.CubeCamera
@@ -308,7 +310,7 @@ export class SplashCube extends THREE.Mesh {
       mat.transmission = 1.0
       mat.thickness = 2.5                            // refraction volume (1.2 was too thin → no bend)
       mat.ior = 1.45                                 // stronger refraction (was 1.21 → barely visible bend)
-      mat.dispersion = 15.0                          // chromatic aberration (day34 doesn't have)
+      mat.dispersion = 3.0                           // subtle chromatic dispersion (was 15 → RGB blobs on faces)
       mat.transparent = true
       mat.opacity = 1.0
       mat.side = THREE.FrontSide                     // day34 (was DoubleSide → double refraction)
