@@ -220,7 +220,7 @@ export class SplashCube extends THREE.Mesh {
       mat.transparent = true
       mat.opacity = 1.0
       mat.side = THREE.FrontSide                     // day34 (was DoubleSide → double refraction)
-      mat.envMapIntensity = 0.9                      // softer reflections (was 1.0 → still some harsh spots)
+      mat.envMapIntensity = 3.0                      // boost PMREM (RoomEnvironment is soft; CubeCamera was bright. Was 0.9 → too dark)
       mat.attenuationColor = new THREE.Color(1.0, 1.0, 1.0)
       mat.attenuationDistance = 12                   // visible tint gradient (was 8)
       mat.specularIntensity = 1.0
@@ -298,7 +298,7 @@ export class SplashCube extends THREE.Mesh {
       mat.transparent = true
       mat.opacity = 1.0
       mat.side = THREE.FrontSide                     // day34
-      mat.envMapIntensity = 0.9                      // softer reflections (synced, was 1.0)
+      mat.envMapIntensity = 3.0                      // boost PMREM (synced, was 0.9 → too dark)
       mat.attenuationColor = new THREE.Color(1.0, 1.0, 1.0)
       mat.attenuationDistance = 12                   // visible tint (synced, was 8)
       mat.specularIntensity = 1.0
