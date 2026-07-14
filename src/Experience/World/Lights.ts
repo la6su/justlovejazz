@@ -118,7 +118,10 @@ export class CinematicLights {
     this.group.name = 'cinematic-lights'
 
     // ── Key light (main directional, casts shadow) ──
-    this.keyLight = new THREE.DirectionalLight(0xffffff, 2.0)
+    // Intensity 1.2 (was 2.0 → too bright, created harsh specular point on
+    // glass cube top face). 1.2 gives natural studio lighting without
+    // blown-out highlights on mirror-smooth glass.
+    this.keyLight = new THREE.DirectionalLight(0xffffff, 1.2)
     this.keyLight.position.set(4, 6, 4)
     this.keyLight.castShadow = false // shadow disabled for perf (WebGPU)
     this.group.add(this.keyLight)

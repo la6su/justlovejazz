@@ -212,7 +212,7 @@ export class SplashCube extends THREE.Mesh {
       mat.emissive = new THREE.Color(0x000000)
       mat.emissiveIntensity = 0.0
       mat.metalness = 0.0
-      mat.roughness = 0.0                            // day34 mirror-smooth
+      mat.roughness = 0.05                           // slightly off-mirror (was 0.0 → razor-sharp specular point from keyLight). 0.05 softens highlight.
       mat.transmission = 1.0
       mat.thickness = 0.5                            // thin glass for real transparency (was 2.5 → too thick, light attenuated → opaque look)
       mat.ior = 1.21                                 // day34 IOR
@@ -291,7 +291,7 @@ export class SplashCube extends THREE.Mesh {
       mat.emissive = new THREE.Color(0x000000)
       mat.emissiveIntensity = 0.0
       mat.metalness = 0.0
-      mat.roughness = 0.0                            // day34 mirror-smooth (synced)
+      mat.roughness = 0.05                           // slightly off-mirror (was 0.0 → razor-sharp specular point from keyLight). 0.05 softens highlight. (synced)
       mat.transmission = 1.0
       mat.thickness = 0.5                            // thin glass (synced, was 2.5)
       mat.ior = 1.21                                 // day34 IOR (synced)
