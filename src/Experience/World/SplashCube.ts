@@ -72,13 +72,15 @@ export class SplashCube extends THREE.Mesh {
   /** Displacement amplitude — moderate, avoids light-focusing lens effect. */
   private static readonly SIZE_SCALE = 0.06
   // Chromatic pulse baseline + boost (animated via same sin-envelope as wobble)
-  // IDLE is 0 — any idle dispersion causes RGB blobs on cube faces (visible
-  // color separation when bright env planes refract through the glass).
-  // BOOST gives a brief chromatic fringe ONLY on click pulse (peak 5).
-  private static readonly DISPERSION_IDLE = 0.0
-  private static readonly DISPERSION_BOOST = 5.0 // pulse peak 5 (brief, no idle blobs)
-  private static readonly CHROMATIC_IDLE = 0.0
-  private static readonly CHROMATIC_BOOST = 0.5 // pulse peak 0.5 (synced, no idle)
+  // IDLE is now a LOW non-zero value (0.5 dispersion / 0.05 chromaticAberration)
+  // — gives subtle rainbow fringe at refraction edges (the "real glass" look).
+  // Previously 0.0 (disabled to kill RGB blobs on flat faces). The blob issue
+  // was caused by HIGH idle values (15.0); 0.5 is gentle enough to only show
+  // at edges. BOOST gives a brief stronger chromatic fringe on click pulse.
+  private static readonly DISPERSION_IDLE = 0.5
+  private static readonly DISPERSION_BOOST = 4.5  // pulse peak = IDLE+BOOST = 5.0
+  private static readonly CHROMATIC_IDLE = 0.05
+  private static readonly CHROMATIC_BOOST = 0.45  // pulse peak = IDLE+BOOST = 0.5
   // (CubeCamera + contentScene + contentTextures REMOVED — glass now uses
   //  scene.environment (PMREM RoomEnvironment) for reflections. This removed
   //  ~30% GPU cost (6-face cubemap render every 3rd frame) and eliminated the
@@ -232,15 +234,27 @@ export class SplashCube extends THREE.Mesh {
       mat.transmission = 1.0
       mat.thickness = 0.5                            // thin glass for transparency
       mat.ior = 1.21                                 // day34 IOR
-      mat.dispersion = 0.0                           // no idle dispersion (RGB blobs)
+      // Dispersion: LOW idle value gives subtle rainbow fringe at edges (the
+      // chromatic aberration that makes glass look "real"). Was 0.0 (disabled
+      // to kill RGB blobs). 0.5 is gentle — visible only at refraction edges,
+      // not on flat faces. Boost on click pulse still goes to 5.0 (see
+      // _updateWobblePulse DISPERSION_BOOST).
+      mat.dispersion = 0.5
       mat.transparent = true
       mat.opacity = 1.0
       mat.side = THREE.FrontSide
       mat.envMapIntensity = 1.0
-      mat.attenuationColor = new THREE.Color(1.0, 1.0, 1.0)
-      mat.attenuationDistance = Infinity             // no attenuation = clear glass
+      mat.attenuationColor = new THREE.Color(0.98, 0.97, 1.0)
+      // Finite attenuation gives the glass a subtle thickness gradient —
+      // thicker areas (edges) absorb slightly more light → depth perception.
+      // Infinity (previous) made the cube look flat (no depth cue). 2.0 is
+      // subtle (clear glass, not tinted).
+      mat.attenuationDistance = 2.0
       mat.specularIntensity = 0.5                    // synced with WebGL2
-      mat.iridescence = 0.0
+      // Iridescence: subtle thin-film interference (soap-bubble sheen).
+      // Gives the glass surface a faint color shift at grazing angles —
+      // the "premium glass" look. 0.3 is gentle, not a full rainbow.
+      mat.iridescence = 0.3
       mat.iridescenceIOR = 1.3
       mat.iridescenceThicknessRange = [100, 400]
       // Clearcoat: stronger + smoother for crisp specular highlights that
@@ -249,7 +263,9 @@ export class SplashCube extends THREE.Mesh {
       // moves as the cube rotates, matching real glass clearcoat behavior.
       mat.clearcoat = 0.6
       mat.clearcoatRoughness = 0.08
-      mat.sheen = 0.0
+      // Sheen: soft edge glow at grazing angles (Fresnel-like rim light).
+      // Adds depth + separates the cube from the background. 0.4 is subtle.
+      mat.sheen = 0.4
       mat.sheenColor = new THREE.Color(1.0, 1.0, 1.0)
       mat.sheenRoughness = 0.5
       mat.depthWrite = false
@@ -304,26 +320,32 @@ export class SplashCube extends THREE.Mesh {
       mat.opacity = 1.0
       mat.side = THREE.FrontSide
       mat.envMapIntensity = 1.0
-      mat.attenuationColor = new THREE.Color(1.0, 1.0, 1.0)
-      mat.attenuationDistance = Infinity             // no attenuation (synced)
+      mat.attenuationColor = new THREE.Color(0.98, 0.97, 1.0)
+      mat.attenuationDistance = 2.0                  // synced (finite for depth gradient)
       mat.specularIntensity = 0.5                    // synced
-      mat.iridescence = 0.0                          // synced
+      mat.iridescence = 0.3                          // synced (subtle thin-film)
       mat.iridescenceIOR = 1.3
       mat.iridescenceThicknessRange = [100, 400]
       mat.clearcoat = 0.6                            // synced (stronger for specular)
       mat.clearcoatRoughness = 0.08                   // synced (smoother for crisp highlight)
-      mat.sheen = 0.0                                // synced
+      mat.sheen = 0.4                                // synced (soft edge glow)
       mat.sheenColor = new THREE.Color(1.0, 1.0, 1.0)
       mat.sheenRoughness = 0.5
       mat.depthWrite = false
       mat.normalMap = this._speckleTex
       mat.normalScale = new THREE.Vector2(0.24, 0.24)
-      mat.chromaticAberration = 0.0
+      // Chromatic aberration: subtle idle rainbow fringe at refraction edges
+      // (mirrors WebGPU dispersion=0.5). Was 0.0 (disabled to kill RGB blobs).
+      // 0.05 is gentle — visible only at edges, not on flat faces.
+      mat.chromaticAberration = 0.05
       mat.anisotrophicBlur = 0.1
       mat.wobble = 0.7                               // synced with WOBBLE_IDLE
-      mat.distortion = 0.0
+      // Distortion: subtle organic warping of the refraction (junni-style).
+      // Gives the glass a "living" quality — the background shimmers slightly.
+      // Was 0.0 (disabled). 0.2 is subtle, driven by snoiseFractal.
+      mat.distortion = 0.2
       mat.distortionScale = 0.3
-      mat.temporalDistortion = 0.0
+      mat.temporalDistortion = 0.1                   // slow temporal drift on distortion
 
       this.cubeMaterial = mat as unknown as THREE.MeshPhysicalMaterial
     }
