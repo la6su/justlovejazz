@@ -140,80 +140,102 @@ export class Experience {
   private setupEnvironment(): void {
     const isWebGLRenderer = !((this.renderer.instance as unknown as { isWebGPURenderer?: boolean }).isWebGPURenderer)
 
-    // Dynamic import — RoomEnvironment is in three/addons (not in the
-    // main three bundle). Keeps it out of the initial chunk.
-    void import('three/examples/jsm/environments/RoomEnvironment.js')
-      .then(({ RoomEnvironment }) => {
-        try {
-          let pmremRenderer: THREE.WebGLRenderer
-          let isSecondary = false
+    // Procedural environment map (day34 pattern) — bright sky gradient + 3 sun
+    // spots for visible glass reflections. RoomEnvironment was too dim (soft
+    // architectural studio light) → glass looked dark. This procedural env
+    // gives strong directional highlights like day34 reference.
+    try {
+      let pmremRenderer: THREE.WebGLRenderer
+      let isSecondary = false
 
-          if (isWebGLRenderer) {
-            // Main renderer IS a WebGLRenderer — use it directly.
-            pmremRenderer = this.renderer.instance as unknown as THREE.WebGLRenderer
-          } else {
-            // WebGPURenderer — create an offscreen WebGLRenderer just for PMREM.
-            // PMREMGenerator needs renderer.state.buffers.depth (WebGLRenderer-only).
-            // The resulting texture is renderer-agnostic, so it can be applied
-            // to scene.environment on the WebGPURenderer main scene.
-            const offscreenCanvas = document.createElement('canvas')
-            offscreenCanvas.width = 16
-            offscreenCanvas.height = 16
-            pmremRenderer = new THREE.WebGLRenderer({
-              canvas: offscreenCanvas,
-              antialias: false,
-              alpha: false,
-              powerPreference: 'high-performance',
-            })
-            pmremRenderer.setSize(16, 16)
-            isSecondary = true
-            if (import.meta.env.DEV) {
-              console.info('[Experience] Created secondary WebGLRenderer for PMREM generation (WebGPU main path)')
-            }
-          }
+      if (isWebGLRenderer) {
+        pmremRenderer = this.renderer.instance as unknown as THREE.WebGLRenderer
+      } else {
+        // WebGPURenderer — create an offscreen WebGLRenderer just for PMREM.
+        const offscreenCanvas = document.createElement('canvas')
+        offscreenCanvas.width = 16
+        offscreenCanvas.height = 16
+        pmremRenderer = new THREE.WebGLRenderer({
+          canvas: offscreenCanvas,
+          antialias: false,
+          alpha: false,
+          powerPreference: 'high-performance',
+        })
+        pmremRenderer.setSize(16, 16)
+        isSecondary = true
+      }
 
-          const pmrem = new THREE.PMREMGenerator(pmremRenderer)
-          const envScene = new RoomEnvironment()
-          const envRT = pmrem.fromScene(envScene, 0.04)
-          this.scene.environment = envRT.texture
-          // Dispose the PMREM generator (the texture stays on the GPU).
-          pmrem.dispose()
-          // Dispose the RoomEnvironment scene's geometries/materials.
-          envScene.traverse((obj) => {
-            const mesh = obj as THREE.Mesh
-            if (mesh.geometry) mesh.geometry.dispose()
-            const mat = mesh.material
-            if (mat) {
-              if (Array.isArray(mat)) mat.forEach((m) => m.dispose())
-              else (mat as THREE.Material).dispose()
-            }
-          })
-          // Dispose the secondary renderer + its canvas (no longer needed).
-          // forceContextLoss() releases the WebGL context immediately (browsers
-          // limit ~16 concurrent WebGL contexts — must free this one).
-          if (isSecondary) {
-            pmremRenderer.dispose()
-            pmremRenderer.forceContextLoss()
-            const canvas = pmremRenderer.domElement
-            canvas.width = 0
-            canvas.height = 0
-            // Remove from DOM if accidentally attached (shouldn't be — offscreen)
-            canvas.remove()
-          }
-          if (import.meta.env.DEV) {
-            console.info('[Experience] RoomEnvironment PMREM set — glass reflections active' + (isSecondary ? ' (via secondary WebGLRenderer)' : ''))
-          }
-        } catch (e) {
-          if (import.meta.env.DEV) {
-            console.warn('[Experience] RoomEnvironment PMREM generation failed:', e)
-          }
+      const pmrem = new THREE.PMREMGenerator(pmremRenderer)
+      // Build a procedural env scene: inverted sphere with gradient + sun spots.
+      // Uses MeshBasicMaterial (renderer-agnostic, works in PMREM on both paths).
+      const envScene = new THREE.Scene()
+      const envGeo = new THREE.SphereGeometry(50, 32, 16)
+      // Procedural gradient texture on canvas (sky gradient + 3 sun spots).
+      const envCanvas = document.createElement('canvas')
+      envCanvas.width = 1024
+      envCanvas.height = 512
+      const ctx = envCanvas.getContext('2d')!
+      // Vertical gradient: warm horizon → bright sky → cool zenith
+      const grad = ctx.createLinearGradient(0, 0, 0, 512)
+      grad.addColorStop(0.0, 'rgb(150,140,120)')   // horizon (warm)
+      grad.addColorStop(0.5, 'rgb(200,200,210)')   // mid sky
+      grad.addColorStop(1.0, 'rgb(180,210,240)')   // zenith (cool blue)
+      ctx.fillStyle = grad
+      ctx.fillRect(0, 0, 1024, 512)
+      // 3 bright sun spots for visible reflections (day34 pattern)
+      const drawSun = (x: number, y: number, r: number, color: string) => {
+        const sunGrad = ctx.createRadialGradient(x, y, 0, x, y, r)
+        sunGrad.addColorStop(0, color)
+        sunGrad.addColorStop(0.5, color)
+        sunGrad.addColorStop(1, 'rgba(0,0,0,0)')
+        ctx.fillStyle = sunGrad
+        ctx.fillRect(0, 0, 1024, 512)
+      }
+      drawSun(780, 120, 80, 'rgba(255,240,210,0.95)')   // bright warm sun (key light)
+      drawSun(200, 200, 100, 'rgba(200,220,255,0.6)')   // cool fill (rim light)
+      drawSun(500, 350, 70, 'rgba(255,220,180,0.5)')    // warm bounce
+      const envTex = new THREE.CanvasTexture(envCanvas)
+      envTex.mapping = THREE.EquirectangularReflectionMapping
+      envTex.colorSpace = THREE.SRGBColorSpace
+      const envMat = new THREE.MeshBasicMaterial({
+        map: envTex,
+        side: THREE.BackSide,
+      })
+      const envMesh = new THREE.Mesh(envGeo, envMat)
+      envScene.add(envMesh)
+
+      const envRT = pmrem.fromEquirectangular(envTex)
+      this.scene.environment = envRT.texture
+      pmrem.dispose()
+      envScene.traverse((obj) => {
+        const mesh = obj as THREE.Mesh
+        if (mesh.geometry) mesh.geometry.dispose()
+        const mat = mesh.material
+        if (mat) {
+          if (Array.isArray(mat)) mat.forEach((m) => m.dispose())
+          else (mat as THREE.Material).dispose()
         }
       })
-      .catch((e) => {
-        if (import.meta.env.DEV) {
-          console.warn('[Experience] RoomEnvironment import failed:', e)
-        }
-      })
+      envTex.dispose()
+      // Dispose the secondary renderer + its canvas (no longer needed).
+      // forceContextLoss() releases the WebGL context immediately (browsers
+      // limit ~16 concurrent WebGL contexts — must free this one).
+      if (isSecondary) {
+        pmremRenderer.dispose()
+        pmremRenderer.forceContextLoss()
+        const canvas = pmremRenderer.domElement
+        canvas.width = 0
+        canvas.height = 0
+        canvas.remove()
+      }
+      if (import.meta.env.DEV) {
+        console.info('[Experience] Procedural env map (gradient + sun spots) set — glass reflections active' + (isSecondary ? ' (via secondary WebGLRenderer)' : ''))
+      }
+    } catch (e) {
+      if (import.meta.env.DEV) {
+        console.warn('[Experience] Procedural env map generation failed:', e)
+      }
+    }
   }
 
   private setupIntro(): void {

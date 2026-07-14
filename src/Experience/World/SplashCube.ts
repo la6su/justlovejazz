@@ -208,19 +208,19 @@ export class SplashCube extends THREE.Mesh {
     if (isWebGPU) {
       // ── WebGPU: MeshPhysicalNodeMaterial + NATIVE dispersion + day34 TSL wobble ──
       const mat = new MeshPhysicalNodeMaterial()
-      mat.color = new THREE.Color(1.0, 1.0, 1.0)    // neutral clear glass (was 0.94/0.91/1.00 lavender → blue tint)
+      mat.color = new THREE.Color(0.94, 0.91, 1.00)  // day34 lavender tint (reference: dasprinzip day34)
       mat.emissive = new THREE.Color(0x000000)
       mat.emissiveIntensity = 0.0
       mat.metalness = 0.0
-      mat.roughness = 0.1                            // softer glass (was 0.05 → still sharp refraction). 0.1 smooths blobs.
+      mat.roughness = 0.0                            // day34 mirror-smooth
       mat.transmission = 1.0
-      mat.thickness = 1.8                            // less lensing (was 2.5 → strong focus effect concentrating light)
-      mat.ior = 1.35                                 // gentler bend (was 1.45 → too strong, acted as magnifying lens)
-      mat.dispersion = 0.0                           // no idle dispersion (was 3 → still RGB blobs). Chromatic only on click pulse.
+      mat.thickness = 2.5                            // day34 refraction volume (was 5, tuned lower for our smaller cube)
+      mat.ior = 1.21                                 // day34 IOR
+      mat.dispersion = 0.0                           // no idle dispersion (RGB blobs). Chromatic only on click pulse.
       mat.transparent = true
       mat.opacity = 1.0
       mat.side = THREE.FrontSide                     // day34 (was DoubleSide → double refraction)
-      mat.envMapIntensity = 3.0                      // boost PMREM (RoomEnvironment is soft; CubeCamera was bright. Was 0.9 → too dark)
+      mat.envMapIntensity = 1.0                      // day34 (procedural env has bright sun spots, no boost needed)
       mat.attenuationColor = new THREE.Color(1.0, 1.0, 1.0)
       mat.attenuationDistance = 12                   // visible tint gradient (was 8)
       mat.specularIntensity = 1.0
@@ -287,18 +287,18 @@ export class SplashCube extends THREE.Mesh {
       // material in the scene. DeviceCapability.tier drives the sample count.
       const samples = caps.tier === 'low' ? 2 : caps.tier === 'medium' ? 4 : 6
       const mat = new MeshTransmissionMaterial(samples)
-      mat.color = new THREE.Color(1.0, 1.0, 1.0)    // neutral clear glass (synced, was lavender)
+      mat.color = new THREE.Color(0.94, 0.91, 1.00)  // day34 lavender tint (synced)
       mat.emissive = new THREE.Color(0x000000)
       mat.emissiveIntensity = 0.0
       mat.metalness = 0.0
-      mat.roughness = 0.1                            // softer glass (synced, was 0.05)
+      mat.roughness = 0.0                            // day34 mirror-smooth (synced)
       mat.transmission = 1.0
-      mat.thickness = 1.8                            // less lensing (synced, was 2.5)
-      mat.ior = 1.35                                 // gentler bend (synced, was 1.45)
+      mat.thickness = 2.5                            // day34 (synced)
+      mat.ior = 1.21                                 // day34 IOR (synced)
       mat.transparent = true
       mat.opacity = 1.0
       mat.side = THREE.FrontSide                     // day34
-      mat.envMapIntensity = 3.0                      // boost PMREM (synced, was 0.9 → too dark)
+      mat.envMapIntensity = 1.0                      // day34 (synced, procedural env)
       mat.attenuationColor = new THREE.Color(1.0, 1.0, 1.0)
       mat.attenuationDistance = 12                   // visible tint (synced, was 8)
       mat.specularIntensity = 1.0
