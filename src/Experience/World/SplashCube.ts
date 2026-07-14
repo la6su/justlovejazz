@@ -54,21 +54,21 @@ export class SplashCube extends THREE.Mesh {
   private cubeMaterial!: THREE.MeshPhysicalMaterial
   // (PlayButton3D field removed — dead render path deleted)
   // TSL wobble uniforms (WebGPU path only)
-  // day34 pattern — VISIBLE elegant jelly (not static, not rough):
+  // day34 pattern — VISIBLE elegant jelly, tuned to avoid 'blob' artifacts:
   //   - NOISE_FREQ = 2.4 — 2 periods/face like day34
-  //   - SIZE_SCALE = 0.08 — visible displacement
-  //   - uWobble = 0.85 — amplitude (0.55 was too subtle → invisible; 0.85 = clearly visible)
-  // Goal: cube wobble clearly visible, smooth, never jarring.
+  //   - SIZE_SCALE = 0.06 — moderate displacement (0.08 was concentrating light into blobs)
+  //   - uWobble = 0.7 — amplitude (0.85 was too strong → wobble acted as lens, focusing light)
+  // Goal: cube wobble visible but gentle — bends light smoothly, no concentrated spots.
   // Pulse on click: animated via sin-envelope in update() (smooth rise+fall),
   // NOT a hard setTimeout cut — the old hard cut was the #1 "rough" cause.
-  private static readonly WOBBLE_IDLE = 0.85
-  private static readonly WOBBLE_BOOST = 1.1 // peak = IDLE + BOOST = 1.95 (visible burst)
+  private static readonly WOBBLE_IDLE = 0.7
+  private static readonly WOBBLE_BOOST = 0.9 // peak = IDLE + BOOST = 1.6 (gentle burst)
   private static readonly PULSE_DURATION = 0.9 // seconds (was 1.2)
   private _wobblePulseT = 1 // 0=just triggered, 1=settled (animated in update)
   private _uWobble = uniform(SplashCube.WOBBLE_IDLE)
   private _uTime = uniform(0)
-  /** Displacement amplitude — visible but shape-preserving. */
-  private static readonly SIZE_SCALE = 0.08
+  /** Displacement amplitude — moderate, avoids light-focusing lens effect. */
+  private static readonly SIZE_SCALE = 0.06
   // Chromatic pulse baseline + boost (animated via same sin-envelope as wobble)
   // IDLE is 0 — any idle dispersion causes RGB blobs on cube faces (visible
   // color separation when bright env planes refract through the glass).
@@ -309,15 +309,15 @@ export class SplashCube extends THREE.Mesh {
       mat.emissive = new THREE.Color(0x000000)
       mat.emissiveIntensity = 0.0
       mat.metalness = 0.0
-      mat.roughness = 0.05                           // slightly off-mirror (was 0.0 → razor-sharp refraction blobs). 0.05 softens.
+      mat.roughness = 0.1                            // softer glass (was 0.05 → still sharp refraction). 0.1 smooths blobs.
       mat.transmission = 1.0
-      mat.thickness = 2.5                            // refraction volume (1.2 was too thin → no bend)
-      mat.ior = 1.45                                 // stronger refraction (was 1.21 → barely visible bend)
+      mat.thickness = 1.8                            // less lensing (was 2.5 → strong focus effect concentrating light)
+      mat.ior = 1.35                                 // gentler bend (was 1.45 → too strong, acted as magnifying lens)
       mat.dispersion = 0.0                           // no idle dispersion (was 3 → still RGB blobs). Chromatic only on click pulse.
       mat.transparent = true
       mat.opacity = 1.0
       mat.side = THREE.FrontSide                     // day34 (was DoubleSide → double refraction)
-      mat.envMapIntensity = 1.0                      // softer reflections (was 1.3 → harsh spots)
+      mat.envMapIntensity = 0.9                      // softer reflections (was 1.0 → still some harsh spots)
       mat.attenuationColor = new THREE.Color(1.0, 1.0, 1.0)
       mat.attenuationDistance = 12                   // visible tint gradient (was 8)
       mat.specularIntensity = 1.0
@@ -354,19 +354,19 @@ export class SplashCube extends THREE.Mesh {
       //   - Squash freq 0.3 → 0.25, Breathe freq 0.55 → 0.45 (slower, more elegant)
       const uWobble = this._uWobble
       const uTimeVal = this._uTime
-      const SIZE_SCALE = SplashCube.SIZE_SCALE   // 0.08 — visible
+      const SIZE_SCALE = SplashCube.SIZE_SCALE   // 0.06 — moderate
       const NOISE_FREQ = 2.4                      // 0.12 * (16/0.8)
       mat.positionNode = Fn(() => {
         const pos = positionLocal.toVar()
         const np = pos.mul(NOISE_FREQ)
         const t = uTimeVal
-        // 2-octave noise — visible amplitudes (0.28/0.08 was too subtle → 0.38/0.11)
-        const n1 = mx_noise_float(np.add(t.mul(0.2))).mul(0.38).mul(uWobble)
-        const n2 = mx_noise_float(np.mul(2.5).add(t.mul(0.3)).add(7)).mul(0.11).mul(uWobble)
+        // 2-octave noise — moderate amplitudes (0.38/0.11 was strong → 0.32/0.09)
+        const n1 = mx_noise_float(np.add(t.mul(0.2))).mul(0.32).mul(uWobble)
+        const n2 = mx_noise_float(np.mul(2.5).add(t.mul(0.3)).add(7)).mul(0.09).mul(uWobble)
         const displacement = n1.add(n2)
-        // squash + breathe — visible (0.025/0.05 was too subtle → 0.035/0.07)
-        const squash = sin(t.mul(0.22)).mul(0.035).mul(uWobble)
-        const breathe = sin(t.mul(0.4).add(pos.y.mul(0.3))).mul(0.07).mul(uWobble)
+        // squash + breathe — gentle (0.035/0.07 was strong → 0.03/0.06)
+        const squash = sin(t.mul(0.22)).mul(0.03).mul(uWobble)
+        const breathe = sin(t.mul(0.4).add(pos.y.mul(0.3))).mul(0.06).mul(uWobble)
         // Apply — displacement scaled by SIZE_SCALE, squash proportional
         pos.assign(pos.add(normalLocal.mul(displacement.add(breathe).mul(SIZE_SCALE))))
         pos.y.addAssign(pos.y.mul(squash))
@@ -388,14 +388,14 @@ export class SplashCube extends THREE.Mesh {
       mat.emissive = new THREE.Color(0x000000)
       mat.emissiveIntensity = 0.0
       mat.metalness = 0.0
-      mat.roughness = 0.05                           // slightly off-mirror (synced, was 0.0)
+      mat.roughness = 0.1                            // softer glass (synced, was 0.05)
       mat.transmission = 1.0
-      mat.thickness = 2.5                            // refraction volume (synced with WebGPU, was 1.2)
-      mat.ior = 1.45                                 // stronger refraction (synced, was 1.21)
+      mat.thickness = 1.8                            // less lensing (synced, was 2.5)
+      mat.ior = 1.35                                 // gentler bend (synced, was 1.45)
       mat.transparent = true
       mat.opacity = 1.0
       mat.side = THREE.FrontSide                     // day34
-      mat.envMapIntensity = 1.0                      // softer reflections (synced, was 1.3)
+      mat.envMapIntensity = 0.9                      // softer reflections (synced, was 1.0)
       mat.attenuationColor = new THREE.Color(1.0, 1.0, 1.0)
       mat.attenuationDistance = 12                   // visible tint (synced, was 8)
       mat.specularIntensity = 1.0
