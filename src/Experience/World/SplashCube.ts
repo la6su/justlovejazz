@@ -249,47 +249,16 @@ export class SplashCube extends THREE.Mesh {
 
       this.cubeMaterial = mat as unknown as THREE.MeshPhysicalMaterial
     } else {
-      // ── WebGL2: MeshTransmissionMaterial (GLSL onBeforeCompile) ──
-      // Same day34-accurate material params. GLSL wobble is in
-      // MeshTransmissionMaterial.ts (also updated to day34 pattern + SIZE_SCALE).
-      // H6: Tier-gate transmission samples — low-end WebGL2 devices (the exact
-      // fallback audience) get fewer samples for better perf. 6 samples on low
-      // is a 6×3-channel transmission loop per fragment — the most expensive
-      // material in the scene. DeviceCapability.tier drives the sample count.
-      const samples = caps.tier === 'low' ? 2 : caps.tier === 'medium' ? 4 : 6
-      const mat = new MeshTransmissionMaterial(samples)
-      mat.color = new THREE.Color(0.94, 0.91, 1.00)  // day34 lavender tint (synced)
-      mat.emissive = new THREE.Color(0x000000)
-      mat.emissiveIntensity = 0.0
-      mat.metalness = 0.0
-      mat.roughness = 0.05                           // slightly off-mirror (was 0.0 → razor-sharp specular point from keyLight). 0.05 softens highlight. (synced)
-      mat.transmission = 1.0
-      mat.thickness = 0.5                            // thin glass (synced, was 2.5)
-      mat.ior = 1.21                                 // day34 IOR (synced)
+      // ── DIAGNOSTIC: simple MeshBasicMaterial (no glass effects) ──
+      // Same simple material as WebGPU path — for parity comparison.
+      const mat = new THREE.MeshBasicMaterial()
+      mat.color = new THREE.Color(0.4, 0.6, 0.9) // clear blue tint (synced with WebGPU diagnostic)
       mat.transparent = true
-      mat.opacity = 0.7                            // semi-transparent glass (was 1.0 → opaque body). 0.7 lets background show through.
-      mat.side = THREE.FrontSide                     // day34
-      mat.envMapIntensity = 1.0                      // day34 (synced, procedural env)
-      mat.attenuationColor = new THREE.Color(1.0, 1.0, 1.0)
-      mat.attenuationDistance = Infinity             // no attenuation (synced, was 12)
-      mat.specularIntensity = 0.5                    // reduced (synced, was 1.0 → edge highlights)
-      mat.iridescence = 0.0                          // disabled (synced, was 0.3 → edge artifacts)
-      mat.iridescenceIOR = 1.3
-      mat.iridescenceThicknessRange = [100, 400]
-      mat.clearcoat = 0.3                            // reduced (synced, was 1.0 → sharp edges)
-      mat.clearcoatRoughness = 0.3                   // softer (synced, was 0.0)
-      mat.sheen = 0.0                                // disabled (synced, was 0.2)
-      mat.sheenColor = new THREE.Color(1.0, 1.0, 1.0)
-      mat.sheenRoughness = 0.5
+      mat.opacity = 0.5
+      mat.side = THREE.FrontSide
       mat.depthWrite = false
-      mat.normalMap = this._speckleTex
-      mat.normalScale = new THREE.Vector2(0.24, 0.24)
-      mat.chromaticAberration = 0.0                  // no idle chromatic (was 0.5 → RGB blobs, synced with WebGPU dispersion=0)
-      mat.anisotrophicBlur = 0.1
-      mat.wobble = 0.85                              // synced with WOBBLE_IDLE (was 0.95)
-      mat.distortion = 0.0
-      mat.distortionScale = 0.3
-      mat.temporalDistortion = 0.0
+      // Reference unused import to satisfy noUnusedLocals during diagnostic.
+      void MeshTransmissionMaterial; void caps
 
       this.cubeMaterial = mat as unknown as THREE.MeshPhysicalMaterial
     }
@@ -518,8 +487,18 @@ export class SplashCube extends THREE.Mesh {
     if (mtm.time !== undefined) mtm.time = this.time
 
     // ── Material color blend ──
-    this.cubeMaterial.color.copy(this._blendFromColor).lerp(this._blendToColor, this._blendT)
-    this.cubeMaterial.emissive.copy(this._blendFromEmissive).lerp(this._blendToEmissive, this._blendT)
+    // DIAGNOSTIC: guard emissive/roughness/metalness — MeshBasicMaterial
+    // doesn't have these properties (only MeshPhysicalMaterial does).
+    const diagMat = this.cubeMaterial as unknown as {
+      color: THREE.Color
+      emissive?: THREE.Color
+      roughness?: number
+      metalness?: number
+    }
+    diagMat.color.copy(this._blendFromColor).lerp(this._blendToColor, this._blendT)
+    if (diagMat.emissive) {
+      diagMat.emissive.copy(this._blendFromEmissive).lerp(this._blendToEmissive, this._blendT)
+    }
 
     // Edge colors are STATIC — set once in buildCube, NOT animated per frame.
     // Per-frame edge animation was allocating new Color objects + updating
@@ -534,10 +513,17 @@ export class SplashCube extends THREE.Mesh {
 
   private applyRoleAndParams(): void {
     const { color, emissive, roughness, metalness } = this.targetParams
-    this.cubeMaterial.color.copy(color)
-    this.cubeMaterial.emissive.copy(emissive)
-    this.cubeMaterial.roughness = roughness
-    this.cubeMaterial.metalness = metalness
+    // DIAGNOSTIC: guard emissive/roughness/metalness for MeshBasicMaterial.
+    const m = this.cubeMaterial as unknown as {
+      color: THREE.Color
+      emissive?: THREE.Color
+      roughness?: number
+      metalness?: number
+    }
+    m.color.copy(color)
+    if (m.emissive) m.emissive.copy(emissive)
+    if (m.roughness !== undefined) m.roughness = roughness
+    if (m.metalness !== undefined) m.metalness = metalness
   }
 
   // (_createJLZTexture REMOVED — was only used by buildContentScene which is
