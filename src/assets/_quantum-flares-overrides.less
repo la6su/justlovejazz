@@ -34,3 +34,15 @@
 @inverse-search-default-focus-border: @jlz-color-accent;
 @inverse-subnav-item-active-color: @jlz-color-accent;
 @marker-hover-background: @jlz-color-accent;
+
+// ── Asset paths ──
+// UIkit and QF ship source-relative SVG paths. Once their Less files are
+// assembled by Vite from `src/assets`, those original locations no longer
+// resolve. Rebind the existing variables instead of duplicating form/divider
+// rules so Vite fingerprints the supplied assets in the production build.
+@internal-divider-icon-image: './master-quantum-flares/images/divider-icon.svg';
+@internal-form-select-image: '../../node_modules/uikit/src/images/backgrounds/form-select.svg';
+@internal-form-datalist-image: '../../node_modules/uikit/src/images/backgrounds/form-datalist.svg';
+@internal-form-radio-image: '../../node_modules/uikit/src/images/backgrounds/form-radio.svg';
+@internal-form-checkbox-image: '../../node_modules/uikit/src/images/backgrounds/form-checkbox.svg';
+@internal-form-checkbox-indeterminate-image: '../../node_modules/uikit/src/images/backgrounds/form-checkbox-indeterminate.svg';
