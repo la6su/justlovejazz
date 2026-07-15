@@ -1,28 +1,25 @@
 // JoystickNav.ts — Pure DOM joystick with 2D section navigation.
 //
 // Navigation model:
-//   Vertical (up/down):   cycles through 6 MAIN sections (Intro→About→...→Contact)
-//   Horizontal (left/right): toggles to SECRET side sections (Lab / Process)
+//   Vertical (up/down):     cycles through 4 main sections (Intro→About→Works→Contact)
+//   Horizontal (left/right): toggles secret side sections (Lab / Menu)
 //
 // Layout:
 //                      Intro (start)
 //                         ↓
-//   Lab ←   (current main section)   → Process
+//   Lab ←   (current main section)   → Menu
 //                         ↓
 //                       About
 //                         ↓
 //                      ... etc
 //
 // Rules:
-//   - Start at Intro (main section 0, side = center)
-//   - Down → next main section (if in Lab/Process, returns to center first)
-//   - Up → prev main section (if in Lab/Process, returns to center first)
-//   - Left → Lab (if center), or back to center (if Process)
-//   - Right → Process (if center), or back to center (if Lab)
+//   - Start at Intro (main section 1, side = center)
+//   - Down → next main section (if in Lab/Menu, returns to center first)
+//   - Up → previous main section (if in Lab/Menu, returns to center first)
+//   - Left → Lab (if centered), or back to center (if in Menu)
+//   - Right → Menu (if centered), or back to center (if in Lab)
 //   - Strictly ONE action per drag, ball snaps back to center
-
-// ThemeManager removed — theme is global (auto=light, inverse=dark),
-// no per-section theme logic in JoystickNav.
 
 // (JoystickNavOptions removed — _opts param never read, YAGNI)
 
@@ -153,9 +150,8 @@ export class JoystickNav {
     }
     window.addEventListener('jlz:route-change', this._routeChangeHandler)
 
-    // Close-nav event (from hamburger X click). Returns from menu overlay
-    // to the previous main section. Duplicates joystick arrow-left behavior
-    // with an explicit on-screen button (see UIMenu.ts).
+    // Close-nav event returns from the menu overlay to the previous main
+    // section. It is the programmatic counterpart to joystick/ArrowLeft.
     this._closeNavHandler = () => {
       if (this._isPageMode()) {
         // Content pages: _mainSection holds the last main section (1-4).
@@ -409,7 +405,7 @@ export class JoystickNav {
   }
 
   /** Build a UIKit3 uk-dotnav element for the 4 main sections (1-4).
-   *  Secret sections (0=Lab, 5=Process) are NOT shown — hidden by design. */
+   *  Secret sections (0=Lab, 5=Menu) are not shown — hidden by design. */
   private _buildDotnav(): HTMLElement {
     const nav = document.createElement('ul')
     nav.className = 'uk-dotnav jlz-joystick-dotnav'
@@ -440,6 +436,9 @@ export class JoystickNav {
     items.forEach((li, i) => {
       // dot i maps to section i+1 (dots 0-3 = sections 1-4)
       li.classList.toggle('uk-active', i + 1 === mainIdx)
+      const link = li.querySelector('a')
+      if (i + 1 === mainIdx) link?.setAttribute('aria-current', 'step')
+      else link?.removeAttribute('aria-current')
     })
   }
 

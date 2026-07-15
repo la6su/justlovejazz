@@ -17,7 +17,7 @@
  * available at runtime for var(--jlz-*) references in main.less.
  *
  * Formerly src/styles/tokens.less was a separate file — merged here to
- * avoid duplication. See docs/UIKIT3.md §1 (theme assembly).
+ * avoid duplication. See docs/UIKIT3.md (Theme assembly).
  */
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -288,7 +288,7 @@ html.uk-light {
 // Inverse mode — generates `.uk-light` class (inverse colors = dark text
 // in our dark-theme context, for use on light backgrounds). This lets us
 // use UIKit's native uk-light/uk-dark system instead of custom
-// body.light-theme overrides. See docs/UIKIT3.md §4 (theme toggle).
+// body.light-theme overrides. See docs/UIKIT3.md (State and accessibility).
 @inverse-global-color-mode: light;
 
 // ── Global primary background (QF glow/glitch anchor) ──
@@ -335,7 +335,7 @@ html.uk-light {
 // This is the canonical UIKit theming pattern — see:
 // https://getuikit.com/docs/less → "Hooks" section.
 
-// ── Icon button: glassmorphism (used by lang, theme, sound, hamburger) ──
+// ── Icon button: glassmorphism (used by language, theme and sound controls) ──
 // UIKit's default uk-icon-button is a solid-colored circle. We override via
 // hooks to get the glass-morphism look: semi-transparent bg + backdrop-blur
 // + accent glow on hover. This applies to ALL uk-icon-button instances.

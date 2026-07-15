@@ -45,7 +45,7 @@ const SECTION_PATTERNS = [
   { type: 'gradient', color1: 0x2a2a30, color2: 0x3a3a44 },
   // 4: Contact — LIGHT: soft off-white gradient
   { type: 'gradient', color1: 0xe8e8e8, color2: 0xd8d8d8 },
-  // 5: Process — DARK: dark blue-black (lighter for cube visibility)
+  // 5: Menu — DARK: dark blue-black (lighter for cube visibility)
   { type: 'gradient', color1: 0x1a1a22, color2: 0x2a2a32 },
 ] as const
 

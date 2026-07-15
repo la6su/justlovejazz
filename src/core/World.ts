@@ -2,7 +2,7 @@
 
 import * as THREE from 'three'
 // BG.ts removed — was dead computation (bg.color never read by anyone).
-// EnvSphere is the sole visible background, driven by global theme.
+// EnvSphere is the sole visible background, driven by the active section theme.
 import { Section, SectionState } from './Section'
 import { StateBus } from './StateBus'
 import { prefersReducedMotion } from './motionPolicy'
@@ -61,6 +61,7 @@ export class World extends THREE.Group {
   private _groundThemeOpacity = 0.4
   private _groundThemeActive = false
   private _targetGroundOpacity = 0
+  private _carouselInitPromise: Promise<void> | null = null
 
   constructor(scene: THREE.Scene) {
     super()
@@ -189,33 +190,10 @@ export class World extends THREE.Group {
       g.visible = i === 1 // Intro = index 1
     })
 
-    // Init BakuCarousel (async texture loading) for the works section (index 3).
-    // ONLY on home page — content pages don't use the carousel.
-    // Home page = / (root). Content pages = /services, /works, /manifesto, /lab, /contact.
-    // Use window.location.pathname because data-page may not be updated yet
-    // (router.ts runs after world.init()).
-    const path = window.location.pathname
-    const isHomePage = path === '/' || path === ''
-    const worksGroup = isHomePage ? this.sceneGroups[3] : undefined
-    if (worksGroup) {
-      const carousel = worksGroup.userData.carousel as
-        | import('../Experience/World/BakuCarousel').BakuCarousel
-        | undefined
-      if (carousel) {
-        void carousel.init().then(
-          () => {
-            if (import.meta.env.DEV) {
-              console.info('[World] BakuCarousel initialized (works section)')
-            }
-          },
-          (err) => {
-            if (import.meta.env.DEV) {
-              console.error('[World] BakuCarousel init FAILED — textures may not load, event listeners NOT attached:', err)
-            }
-          },
-        )
-      }
-    }
+    // Content deep-links create the shared world before the user reaches home.
+    // Defer carousel setup in that case; Experience calls the idempotent method
+    // on every route change and initializes it when home is actually selected.
+    if (pageKey === 'home') void this.ensureCarouselInitialized()
 
     if (import.meta.env.DEV) {
       console.debug(
@@ -225,13 +203,34 @@ export class World extends THREE.Group {
     }
   }
 
+  /** Initialize the home-only carousel once, including after a deep-link visit. */
+  public ensureCarouselInitialized(): Promise<void> {
+    if (this._carouselInitPromise) return this._carouselInitPromise
+    const carousel = this.sceneGroups[3]?.userData.carousel as
+      | import('../Experience/World/BakuCarousel').BakuCarousel
+      | undefined
+    if (!carousel) return Promise.resolve()
+
+    this._carouselInitPromise = carousel.init().then(
+      () => {
+        if (import.meta.env.DEV) console.info('[World] BakuCarousel initialized (works section)')
+      },
+      (err) => {
+        if (import.meta.env.DEV) {
+          console.error('[World] BakuCarousel init FAILED — textures may not load, event listeners NOT attached:', err)
+        }
+      },
+    )
+    return this._carouselInitPromise
+  }
+
   /** Sync ground plane color/opacity to the active theme.
    *  Called by Experience on jlz:theme-applied (same trigger EnvSphere uses).
    *  Without this, a dark ground color (0x1a1a2e) is invisible on the light
    *  theme (near-white EnvSphere) but visible on inverse (dark). We flip the
    *  ground to a contrasting tone per theme so it's always perceivable.
-   *  RULES §20 — ground still ONLY visible on section 4 (visibility is gated
-   *  in Experience.ts, this method only adjusts appearance).
+   *  The ground remains visible only on section 4; visibility is gated in
+   *  Experience.ts and this method adjusts appearance only.
    *
    *  NOTE: sets _groundThemeActive=true so updateTransform() knows to override
    *  the WorldConfig lerp (which would otherwise reset opacity to 0.25). */
@@ -253,17 +252,39 @@ export class World extends THREE.Group {
     this._targetGroundOpacity = this._groundThemeOpacity
   }
 
+  /**
+   * True when any visible scene group hosts JunniParticles.
+   * Experience uses this to keep on-demand rendering alive so GPU drift
+   * (uTime) advances every frame — without it particles freeze on settled
+   * sections (only ambient-breath frames every 2.5s).
+   * Currently only Works (home idx 3) creates particles; Intro removed them
+   * (white-on-white AdditiveBlending was invisible).
+   */
+  public hasVisibleParticles(): boolean {
+    for (const group of this.sceneGroups) {
+      if (!group.visible) continue
+      if (group.userData.particles) return true
+    }
+    return false
+  }
+
   public update(deltaTime: number, needsRender: boolean = true): void {
     // EnvSphere manages the visible background.
     this.envSphere.update(deltaTime)
-    // Update instanced particles (advances uTime for GPU drift). Frozen when
-    // not rendering (on-demand) — only called when needsRender=true (see below).
     this.sections.forEach((s) => s.update(deltaTime))
+
+    // ParticleBurst is one-shot — advance even when on-demand would otherwise
+    // skip decorative updates, but only while active. Experience keeps
+    // _needsRender true while isActive; update here advances positions.
+    if (this.particleBurst.isActive) {
+      this.particleBurst.update(deltaTime)
+    }
 
     // ── On-demand: decorative 3D animations only run when rendering ──
     // When idle (settled on a section, no transition, no cursor movement),
     // skip baku rotation, cursor light, draw trail, particle drift, and
     // BakuCarousel updates — the last rendered frame stays on screen.
+    // Exception: Experience forces needsRender while hasVisibleParticles().
     if (!needsRender) return
 
     if (!this.isReducedMotion) {
@@ -274,8 +295,9 @@ export class World extends THREE.Group {
       }
     }
 
-    // ── BakuCarousel per-frame (morph + scroll) ──
-    // JunniParticles animate via GPU-side drift (update advances uTime uniform).
+    // ── BakuCarousel + per-section modules (morph, particles, orbs, …) ──
+    // JunniParticles: GPU drift via uTime — only present on Works currently
+    // (see sections/works/scene.ts + intro/scene.ts header comment).
     for (const group of this.sceneGroups) {
       if (!group.visible) continue
       const carousel = group.userData.carousel as
@@ -292,12 +314,12 @@ export class World extends THREE.Group {
         | import('../Experience/World/ShaderOrb').ShaderOrb
         | undefined
       if (orb) orb.update(deltaTime)
-      // Update timeline nodes (Section5 Process)
+      // Update timeline nodes (section 5: Menu)
       const timeline = group.userData.timeline as
         | import('../Experience/World/TimelineNodes').TimelineNodes
         | undefined
       if (timeline) timeline.update(deltaTime)
-      // Update JunniParticles (Intro + Works sections) — GPU-side drift.
+      // Update JunniParticles — GPU-side drift (Works section).
       const particles = group.userData.particles as
         | import('../Experience/World/JunniParticles').JunniParticles
         | undefined
@@ -398,9 +420,9 @@ export class World extends THREE.Group {
         } else {
           this.sceneRef.fog = new THREE.FogExp2(activeCfg.fog.color.clone(), activeCfg.fog.density)
         }
-        // EnvSphere follows GLOBAL theme only (jlz:theme-applied listener
-        // in Experience.ts). Per-section envSpherePattern REMOVED — it
-        // conflicted with global theme (pattern override → broken contrast).
+        // EnvSphere follows the active theme through the jlz:theme-applied
+        // listener in Experience.ts. Per-section pattern overrides were
+        // removed because they could break theme contrast.
       }
       // DrawTrail visibility — only on works section (idx=4)
       if (this.drawTrail) {
@@ -411,12 +433,13 @@ export class World extends THREE.Group {
     // ── BG sphere section switch (junni pattern: lerp BG color continuously)
     // setProgress() lerps between fromIndex and toIndex colors using eased t,
     // (BG.setProgress removed — bg.color was never read by anyone.)
-    // EnvSphere follows global theme via jlz:theme-applied listener.
+    // EnvSphere follows the active theme via jlz:theme-applied.
 
     // ── Scene group visibility with opacity fade (junni switchVisibility pattern)
     // From group fades out as t→1, to group fades in. Both visible during transition.
     // NON-DESTRUCTIVE: cache baseOpacity in userData, apply fade multiplicatively.
-    // (HERMES_RULES §3 — never overwrite factory opacity values.)
+    // Keep factory opacity values as the base and apply the transition fade
+    // multiplicatively.
     this.sceneGroups.forEach((g, i) => {
       const isFrom = i === fromIndex
       const isTo = i === toIndex

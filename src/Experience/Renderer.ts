@@ -27,7 +27,7 @@ export class Renderer {
   // Junni-style multi-pass post-processing pipeline (typed, explicit fallback)
   /** Public for Experience to call setSectionGrade (refraction + color grade). */
   pipeline: RenderPipeline | null = null
-  // Pipeline config built in constructor, applied in init() after backend ready.
+  // Pipeline config is built after backend initialization, when fallback is known.
   private _pipelineConfig!: RenderPipelineConfig
 
   constructor(sizes: Sizes) {
@@ -36,8 +36,12 @@ export class Renderer {
       this.showUnsupportedMessage()
       throw new Error('Neither WebGPU nor WebGL2 is supported by this browser.')
     }
+    this._onResize = () => this.resize()
+    window.addEventListener('resize', this._onResize, { passive: true })
+  }
 
-    this._pipelineConfig = {
+  private buildPipelineConfig(): RenderPipelineConfig {
+    return {
       bloomThreshold: this.capabilities.postProcessing ? 0.5 : 1.0,
       // Reduced bloom passes for Safari/iOS perf — 4→2 on high, 3→1 on medium
       bloomPasses: this.capabilities.tier === 'high' ? 2 : 1,
@@ -50,9 +54,6 @@ export class Renderer {
       vignetteEnabled: true,
       grainEnabled: this.capabilities.tier !== 'low',
     }
-
-    this._onResize = () => this.resize()
-    window.addEventListener('resize', this._onResize, { passive: true })
   }
 
   // Resize handler ref — cleaned up in dispose().
@@ -121,11 +122,12 @@ export class Renderer {
         this.instance.domElement.remove()
         wg.dispose?.()
         this.instance = this.createWebGLRenderer()
+        this.capabilities.setFinalRendererMode('webgl')
       } else {
         // Real WebGPU on real hardware — enable premium visual path
         // (TSL node overrides on SplashCube, real glass transmission).
         // See IMPROVEMENT_PLAN A1/A2.
-        this.capabilities.isRealWebGPU = true
+        this.capabilities.setFinalRendererMode('webgpu')
         if (import.meta.env.DEV) {
           console.info('[Renderer.init] Premium WebGPU path active — TSL worldDNA nodes + real transmission enabled')
         }
@@ -135,12 +137,17 @@ export class Renderer {
         console.info('[Renderer.init] Using WebGLRenderer (no WebGPU API)')
       }
       this.instance = this.createWebGLRenderer()
+      this.capabilities.setFinalRendererMode('webgl')
     }
 
     // Size + canvas
     this.instance.setPixelRatio(Math.min(this.sizes.dpr, this.capabilities.maxDpr))
     this.instance.setSize(this.sizes.width, this.sizes.height)
     this.setupCanvas(this.instance.domElement)
+    // Capability tier and post settings must reflect the backend selected
+    // above, not merely the initial navigator.gpu feature detection.
+    this.postManager.refreshQualityTier()
+    this._pipelineConfig = this.buildPipelineConfig()
 
     // ── Diagnostic: log final render path + EnvSphere path ──
     // Helps debug "I don't see the shader background" — the console will show
@@ -217,6 +224,9 @@ export class Renderer {
         vignette: this.capabilities.scaleIntensity(params.vignette),
         grain: this.capabilities.scaleIntensity(params.grain),
         chromatic: this.capabilities.scaleIntensity(params.chromatic),
+        // Track B: per-section bloom shape (NOT intensity-scaled — shape params)
+        bloomRadius: params.bloomRadius,
+        bloomThreshold: params.bloomThreshold,
       }
       this.pipeline.updateParams(pp)
     }

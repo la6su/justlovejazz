@@ -20,8 +20,8 @@ import { UIMenu } from '../UI/UIMenu'
 // worldDNA.ts removed — TSL node system never attached (attachWorldDNA never
 // called). updateWorldDNAAudio set uniforms nobody read. All dead.
 import { prefersReducedMotion } from '../core/motionPolicy'
-// ThemeManager is not imported here — theme is global (auto/inverse),
-// synced via jlz:theme-applied event listener. No per-section theme logic.
+// ContentReveal owns per-section auto/inverse themes and sends this runtime
+// jlz:theme-applied events for 3D synchronisation.
 import { eventBus } from '../core/EventBus'
 // DissolveOverlay removed — cover transition in ProjectDetail replaces it.
 
@@ -52,8 +52,8 @@ export class Experience {
   private _splashEnteredHandler: (() => void) | null = null
   private _openProjectHandler: ((e: Event) => void) | null = null
   private _routeChangeCloseOverlayHandler: (() => void) | null = null
-  // (_gotoNavHandler removed — hamburger no longer dispatches jlz:goto-nav.
-  //  Menu is now accessible ONLY via joystick → right or ArrowRight key.)
+  // No dedicated header control opens the secret menu; joystick right and
+  // ArrowRight are its entry points.
   private _wobblePulseHandler: (() => void) | null = null
   private _gotoSectionByHashHandler: ((e: Event) => void) | null = null
   private _showreelPlayHandler: (() => void) | null = null
@@ -287,8 +287,8 @@ export class Experience {
     this.bus.animate('intro:stage', 1, 0.6, 'easeOutCubic')
 
     // intro:done handler removed (2026-07-11 audit). The previous handler was
-    // empty — theme is global (auto=light), EnvSphere syncs via
-    // jlz:theme-applied, and the splash lifecycle is owned by main-app.ts.
+    // empty — ContentReveal synchronises the active section theme through
+    // jlz:theme-applied, and main-app.ts owns the splash lifecycle.
     // The bus.emit('intro:done') in _updateInner is kept as a public
     // extension point (fire-once event, cheap to emit with no subscribers).
     // Do NOT re-add splash DOM logic here — see main-app.ts for the splash
@@ -384,9 +384,8 @@ export class Experience {
       this._circNav?.goToSection(idx)
     })
 
-    // (jlz:goto-nav listener removed — hamburger is now a help dropdown,
-    //  not a menu toggle. Menu section 5 is accessible ONLY via joystick
-    //  → right or ArrowRight key.)
+    // Menu section 5 is entered through joystick right or ArrowRight; no
+    // separate jlz:goto-nav listener is needed.
 
     // JoystickNav is a DOM overlay (fixed bottom-center) — append to body.
     // JoystickNav is position:fixed (sits ON the dock tools row, centered).
@@ -513,6 +512,10 @@ export class Experience {
       if (this.overlay?.isOpen) {
         this.overlay.close()
       }
+      if (document.body.dataset.page === 'home') {
+        void this.world?.ensureCarouselInitialized()
+      }
+      this._needsRender = true
     }
     window.addEventListener('jlz:route-change', this._routeChangeCloseOverlayHandler)
 
@@ -693,27 +696,53 @@ export class Experience {
     const wobblePulsing = (this.world?.baku as unknown as { _wobblePulseT?: number } | undefined)?._wobblePulseT !== undefined
       && (this.world?.baku as unknown as { _wobblePulseT: number })._wobblePulseT < 1
 
-    if (navActive || introActive || carouselActive || openerActive || burstActive || camShaking || cubeRotating || showreelActive || wobblePulsing) {
-      this._needsRender = true
-    }
+    // ── Visible JunniParticles need continuous frames ──
+    // Particles only exist on certain sections (Works on home — intro removed
+    // them for white-on-white). Their animation is GPU-side via uTime; if
+    // on-demand freezes the loop, drift only advances on ambient-breath
+    // frames (~2.5s) and looks stuck. Keep rendering while a particle field
+    // is on a visible group (respects prefers-reduced-motion).
+    const particlesActive =
+      !this._reducedMotion && (this.world?.hasVisibleParticles() ?? false)
 
-    // ── Zoom pulse active (PLAN.md Phase 2) ──
+    // ── Zoom pulse active ──
     // Camera.pulse() sets a two-phase FOV transition — keep rendering while it animates.
     const camPulsing = (this.camera as unknown as { fovTransitionT?: number }).fovTransitionT !== undefined
       && (this.camera as unknown as { fovTransitionT: number }).fovTransitionT < 1
-    if (camPulsing) this._needsRender = true
+
+    if (
+      navActive ||
+      introActive ||
+      carouselActive ||
+      openerActive ||
+      burstActive ||
+      camShaking ||
+      cubeRotating ||
+      showreelActive ||
+      wobblePulsing ||
+      camPulsing ||
+      particlesActive
+    ) {
+      this._needsRender = true
+    }
 
     // ── A4: Ambient breathing (IMPROVEMENT_PLAN) ──
-    // When fully idle, schedule a single render frame every ~2.5 s so the
-    // scene doesn't look frozen. On premium path this advances worldDNA's
-    // uTime → the baku cube's vertex displacement subtly morphs (breathing
-    // effect). On parity path it advances EnvSphere rotation + particle
-    // drift timers. Cost: ~0.4 fps equivalent (1 frame / 2.5 s) — still
-    // "zero draw calls when idle" in spirit (no continuous loop).
+    // When fully idle (no particles/nav/carousel/…), schedule a single render
+    // frame every ~2.5 s so the scene doesn't look frozen. Particle sections
+    // already run continuous frames above — skip breath timer there.
     //
     // Respects: prefers-reduced-motion (frozen entirely), document.hidden
     // (setAnimationLoop already paused, but guard is cheap).
-    if (!navActive && !introActive && !carouselActive && !openerActive && !camShaking && !this._reducedMotion) {
+    if (
+      !navActive &&
+      !introActive &&
+      !carouselActive &&
+      !openerActive &&
+      !camShaking &&
+      !particlesActive &&
+      !burstActive &&
+      !this._reducedMotion
+    ) {
       this._ambientBreathTimer += dt
       if (this._ambientBreathTimer >= Experience.AMBIENT_BREATH_INTERVAL) {
         this._ambientBreathTimer = 0
@@ -752,10 +781,9 @@ export class Experience {
     // (setEnvAndCamera call removed — SplashCube method was a no-op.
     //  envMap comes from CubeCamera, cameraPos was never read.)
 
-    // Theme is global now (auto=light, inverse=dark) — no per-section theme.
-    // setAutoTheme is a no-op (kept for backward compat). EnvSphere syncs
-    // via jlz:theme-applied listener above.
-    // See docs/UIKIT3.md §4 (theme toggle).
+    // ContentReveal applies the active section's auto/inverse theme and the
+    // jlz:theme-applied listener above keeps the 3D layer in sync.
+    // See docs/UIKIT3.md (State and accessibility).
     const idx = this.world.currentSectionIndex
     // Give World the camera ref for DrawTrail (once, after init).
     this.world.setCamera(this.camera.instance)
@@ -789,7 +817,7 @@ export class Experience {
         this._needsRender = true
       }
 
-      // ── Zoom pulse on section change (PLAN.md Phase 2) ──
+      // ── Zoom pulse on section change ──
       // Camera FOV dips slightly then returns — "push-in" cinematic feel.
       // Also triggers cube opener (scale pulse 1.0→1.3→1.0) for combined effect.
       this.camera.pulse(0.05, 0.8)
@@ -857,8 +885,22 @@ export class Experience {
       this.camera.update(dt)
       // (AudioSystem.update() removed — AudioSystem deleted, was dead code)
       this.renderer.update(this.scene, this.camera.instance, dt, worldState)
-      // Clear flag if nothing is actively changing
-      if (!navActive && !introActive && !carouselActive && !openerActive && !camShaking) {
+      // Clear flag if nothing is actively changing. Include particles/burst/
+      // wobble/cube/showreel/cam pulse so we don't drop a mid-animation frame
+      // and rely on the next tick's re-raise (which worked, but was fragile).
+      if (
+        !navActive &&
+        !introActive &&
+        !carouselActive &&
+        !openerActive &&
+        !camShaking &&
+        !particlesActive &&
+        !burstActive &&
+        !wobblePulsing &&
+        !cubeRotating &&
+        !showreelActive &&
+        !camPulsing
+      ) {
         this._needsRender = false
       }
     }

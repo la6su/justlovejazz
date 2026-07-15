@@ -64,10 +64,10 @@ export class SplashCube extends THREE.Mesh {
   // Pulse on click: animated via sin-envelope in update() (smooth rise+fall),
   // NOT a hard setTimeout cut — the old hard cut was the #1 "rough" cause.
   private static readonly WOBBLE_IDLE = 0.7
-  // PLAN-v3 Phase 8: boosted wobble pulse for dramatic click feedback.
+  // Boosted wobble pulse for clear click feedback.
   // Was 0.9 (peak 1.6, gentle). Now 1.8 (peak 2.5, dramatic jelly burst).
   private static readonly WOBBLE_BOOST = 1.8
-  // PLAN-v3 Phase 8: longer duration for cinematic feel (was 0.9s).
+  // Longer duration gives the pulse a more cinematic feel.
   private static readonly PULSE_DURATION = 1.2
   private _wobblePulseT = 1 // 0=just triggered, 1=settled (animated in update)
   private _uWobble = uniform(SplashCube.WOBBLE_IDLE)
@@ -81,11 +81,11 @@ export class SplashCube extends THREE.Mesh {
   // was caused by HIGH idle values (15.0); 0.5 is gentle enough to only show
   // at edges. BOOST gives a brief stronger chromatic fringe on click pulse.
   private static readonly DISPERSION_IDLE = 0.5
-  // PLAN-v3 Phase 8: stronger chromatic burst on click (was 4.5, peak 5.0).
+  // Stronger chromatic burst on click.
   // Now 9.5 (peak 10.0) — visible rainbow fringe burst during the pulse.
   private static readonly DISPERSION_BOOST = 9.5
   private static readonly CHROMATIC_IDLE = 0.05
-  // PLAN-v3 Phase 8: stronger chromatic aberration burst (was 0.45, peak 0.5).
+  // Stronger chromatic aberration burst on click.
   // Now 0.95 (peak 1.0) — visible RGB fringe on click.
   private static readonly CHROMATIC_BOOST = 0.95
   // (CubeCamera + contentScene + contentTextures REMOVED — glass now uses
@@ -125,7 +125,7 @@ export class SplashCube extends THREE.Mesh {
   // ── Cube face rotation ──
   // 6 sections = 6 cube faces. Each section maps to a target Y rotation
   // so the corresponding face points toward the camera (+Z direction).
-  // Lab=0→front, Intro=1→right, About=2→back, Works=3→left, Contact=4→tilt, Process=5→tilt.
+  // Lab=0→front, Intro=1→right, About=2→back, Works=3→left, Contact=4→tilt, Menu=5→tilt.
   // NOTE: sections 4+5 use ±π/4 tilt (NOT actual top/bottom face rotation).
   // The cube shows two side faces at an angle for these sections.
   // This is a known simplification — true top/bottom face would need X rotation.
@@ -135,7 +135,7 @@ export class SplashCube extends THREE.Mesh {
     Math.PI,        // 2: About — back face (-Z toward camera)
     Math.PI / 2,    // 3: Works — left face (-X toward camera)
     -Math.PI / 4,   // 4: Contact — slight tilt (two side faces visible)
-    Math.PI / 4,    // 5: Process — slight tilt (two side faces visible)
+    Math.PI / 4,    // 5: Menu — slight tilt (two side faces visible)
   ]
   /** Speckle normalMap (glass-flakes.png) — stored for disposal. */
   private _speckleTex: THREE.Texture | null = null
@@ -295,8 +295,8 @@ export class SplashCube extends THREE.Mesh {
       // WebGL2 which animates only the X axis (vec3(t*0.2,0,0)). This made the
       // wobble pattern visibly different between paths. Now both paths sample
       // noise at identical coordinates (modulo the noise function itself:
-      // mx_noise_float vs Ashima snoise — a documented, accepted gap per
-      // WORKLOG C8 / RULES §C8; both produce good-looking centered wobble).
+      // mx_noise_float vs Ashima snoise — an accepted visual difference; both
+      // produce a centred, visually stable wobble).
       const uWobble = this._uWobble
       const uTimeVal = this._uTime
       const SIZE_SCALE = SplashCube.SIZE_SCALE
@@ -586,7 +586,7 @@ export class SplashCube extends THREE.Mesh {
     }
 
     // Apply opener scale to cube mesh — scale pulse from 1.0 → 1.4 → 1.0
-    // PLAN-v3 Phase 8: boosted scale pulse (was 1.3) for more dramatic click.
+    // Boosted scale pulse for clearer click feedback.
     const openerScale = 1 + this.openerProgress * 0.4
     this.cubeMesh.scale.setScalar(openerScale)
 

@@ -47,6 +47,7 @@ export class BlurFade {
     this.running = true
     this.start = performance.now()
     this.el.setAttribute('data-visible', 'true')
+    this.el.setAttribute('aria-label', this.cleanText)
 
     // Build spans — each character in its own span for stagger animation
     this.el.innerHTML = this.cleanText
@@ -54,7 +55,7 @@ export class BlurFade {
       .map((ch) => {
         const safeChar = ch === ' ' ? '&nbsp;' : ch
         const rot = (Math.random() - 0.5) * 30
-        return `<span style="display:inline-block;opacity:0;transform:translateY(20px) rotate(${rot}deg);filter:blur(8px);transition:none;" data-rot="${rot}">${safeChar}</span>`
+        return `<span aria-hidden="true" style="display:inline-block;opacity:0;transform:translateY(20px) rotate(${rot}deg);filter:blur(8px);transition:none;" data-rot="${rot}">${safeChar}</span>`
       })
       .join('')
 

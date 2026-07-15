@@ -33,7 +33,8 @@ export type SectionId = 'lab' | 'intro' | 'about' | 'works' | 'contact' | 'menu'
 // Works section
 // (cube face 3, back -Z). It's kept for backward compat — renaming would
 // touch Phase enum (types.ts), WorldConfig id, PostProcessingManager keys,
-// Lights keys, scene.ts group name. RULES.md §14 documents this mapping.
+// Lights keys and scene.ts group names. docs/ARCHITECTURE.md documents this
+// stable mapping.
 
 export type PageId = 'home' | 'services' | 'works' | 'manifesto' | 'lab' | 'contact'
 

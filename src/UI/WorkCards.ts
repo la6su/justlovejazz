@@ -30,6 +30,8 @@ interface CardState {
   pointerLeave: (() => void) | null
   click: (() => void) | null
   _clickDebounce?: boolean  // D-25: rapid double-click guard
+  openTimer?: number
+  releaseTimer?: number
 }
 
 let cards: CardState[] = []
@@ -114,13 +116,17 @@ function bindCard(cardEl: HTMLElement): void {
     // the wobble start before overlay takes over).
     cardEl.classList.add('is-wobbling')
     window.dispatchEvent(new CustomEvent('jlz:wobble-pulse'))
-    setTimeout(() => {
+    state.openTimer = window.setTimeout(() => {
+      state.openTimer = undefined
       cardEl.classList.remove('is-wobbling')
       window.dispatchEvent(
         new CustomEvent('jlz:open-project', { detail: { idx } }),
       )
       // Allow next click after overlay open + small buffer
-      setTimeout(() => { state._clickDebounce = false }, 100)
+      state.releaseTimer = window.setTimeout(() => {
+        state.releaseTimer = undefined
+        state._clickDebounce = false
+      }, 100)
     }, 300)
   }
 
@@ -191,6 +197,8 @@ export function initWorkCards(): void {
 /** Remove all card listeners (e.g. on full teardown). */
 export function disposeWorkCards(): void {
   for (const c of cards) {
+    if (c.openTimer !== undefined) clearTimeout(c.openTimer)
+    if (c.releaseTimer !== undefined) clearTimeout(c.releaseTimer)
     if (c.pointerMove) c.el.removeEventListener('pointermove', c.pointerMove)
     if (c.pointerLeave) c.el.removeEventListener('pointerleave', c.pointerLeave)
     if (c.click) c.el.removeEventListener('click', c.click)

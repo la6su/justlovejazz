@@ -43,7 +43,7 @@ class EventBus {
    *  consumers (UIMenu, ContentReveal, entry-app) receive typed events without
    *  each call site needing to dispatch raw. This fixes the contract gap where
    *  jlz:section-change was emitted via eventBus.emit() but UIMenu listened on
-   *  window — the hamburger↔X sync was dead on home routes. */
+   *  window — otherwise typed and DOM consumers could silently diverge. */
   emit<K extends keyof AppEvents>(
     event: K,
     ...args: AppEvents[K] extends void ? [] : [AppEvents[K]]

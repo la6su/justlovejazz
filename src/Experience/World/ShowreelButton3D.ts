@@ -13,7 +13,7 @@
 // Click → dispatches jlz:showreel-play → opens FullscreenOverlay with video.
 //
 // TSL NodeMaterial works on BOTH WebGPU and WebGL2 (compiles to WGSL / GLSL).
-// RULES §1-2: TSL NodeMaterial only, no raw ShaderMaterial.
+// Rendering invariant: TSL NodeMaterial only; no raw ShaderMaterial.
 
 import * as THREE from 'three'
 import { MeshBasicNodeMaterial } from 'three/webgpu'

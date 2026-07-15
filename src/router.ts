@@ -5,7 +5,7 @@ import { applyMetaTags } from './core/pageMeta'
 import { disposeWorkCards } from './UI/WorkCards'
 import { initMenuToolbar } from './sections/nav/template'
 import { eventBus } from './core/EventBus'
-// ThemeManager removed — theme is global (auto=light, inverse=dark).
+// ContentReveal owns the per-section auto/inverse theme application.
 
 let initialized = false
 let currentPage: PageId | null = null
@@ -46,8 +46,8 @@ function renderView(page: PageId = getPageFromLocation()): void {
   if (!el) return
   document.body.dataset.page = page
   document.documentElement.dataset.page = page
-  // Theme is global (auto=light, inverse=dark) — no per-page theme override.
-  // ThemeManager.apply() runs on init and on mode change.
+  // ContentReveal re-applies the active page section's auto/inverse theme
+  // after the route-change event emitted below.
   // Keep the SEO-friendly <title> from index.html — do not clobber it with
   // a shorter tab title on JS boot.
   // document.title is intentionally left as-is.
@@ -71,12 +71,12 @@ function renderView(page: PageId = getPageFromLocation()): void {
   // gets translated and <title>/description update per route.
   applyTranslations()
   applyMetaTags(page)
-  // Initialize config toolbar (theme toggle sun/moon + sound toggle EQ-bars)
+  // Initialize SPA-aware menu subsection links in the freshly rendered DOM.
   initMenuToolbar()
   // Initialize UIkit components on dynamically inserted content
   ;(UIkit as any).update(el)
   // Emit jlz:route-change via typed eventBus (bridges to window automatically).
-  // This satisfies RULES §44 (no raw window.dispatchEvent for typed events).
+  // Typed EventBus emission also bridges the lifecycle notification to window.
   eventBus.emit('jlz:route-change', { page })
   if ('requestIdleCallback' in window) {
     requestIdleCallback(() => (UIkit as any).update(el), { timeout: 100 })
@@ -154,18 +154,25 @@ export function initRouter(): void {
     // fires first and calls navigateToPage(url.pathname) — DROPPING the hash,
     // so menu subsection clicks always land on section 1 instead of the target.
     if (anchorEl.dataset.navHref !== undefined) return
+    // A bare hash is used by UIKit accordions and the joystick dotnav. It is
+    // not a route to `/`: handle hashes before resolving them against the
+    // current URL, otherwise `new URL('#', origin)` incorrectly becomes '/'.
+    if (href.startsWith('#')) {
+      e.preventDefault()
+      if (href === '#') return
+      const tgt = document.getElementById(href.slice(1))
+      if (tgt) {
+        history.pushState(null, '', href)
+        tgt.scrollIntoView({ behavior: 'smooth' })
+      }
+      return
+    }
+
     const url = new URL(href, window.location.origin)
     if (url.origin === window.location.origin && ROUTES[url.pathname]) {
       e.preventDefault()
-      navigateToPage(url.pathname)
-      return
-    }
-    if (!href.startsWith('#')) return
-    e.preventDefault()
-    const tgt = document.getElementById(href.replace('#', ''))
-    if (tgt) {
-      history.pushState(null, '', href)
-      tgt.scrollIntoView({ behavior: 'smooth' })
+      // Preserve a section hash for absolute links such as /#section-works.
+      navigateToPage(url.pathname + url.hash)
     }
   }
   document.addEventListener('click', handler, true)

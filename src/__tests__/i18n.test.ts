@@ -109,7 +109,7 @@ describe('i18n', () => {
     })
 
     it('returns the same value for a key that is identical across languages', () => {
-      // Project names are proper nouns — identical in EN + RU (RULES §32).
+      // Proper nouns deliberately use the same value in EN and RU.
       // 'common.github' should be 'GitHub' in both.
       const en = t('common.github')
       toggleLang()

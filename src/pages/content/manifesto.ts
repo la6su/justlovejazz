@@ -1,6 +1,6 @@
 // src/pages/content/manifesto.ts — Manifesto page (4 main sections + 2 overlays)
 //
-// PLAN-v3: section 0 = Lab overlay, section 5 = Navigation overlay.
+// Sections 0 (Lab) and 5 (Navigation) are shared across all SPA pages.
 // Main sections (1-4): Purpose, Clarity, Emotion, Simplicity.
 
 import { sectionShell, contentTop, contentBottom } from '../../sections/_shared/constants'

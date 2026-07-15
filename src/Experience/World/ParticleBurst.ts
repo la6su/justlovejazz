@@ -114,8 +114,17 @@ export class ParticleBurst extends THREE.InstancedMesh {
     burstUniforms.uTime.value = 0
     burstUniforms.uActive.value = 1
 
-    // Reset all particles to origin + random outward velocities
+    // Reset all particles to origin + random outward velocities.
+    // Must also seed _positions — update() integrates from this array, not
+    // from instance matrices. Leaving it at zeros after a non-zero origin
+    // made the burst jump back to world origin on frame 1.
+    const positions = this._positions!
     for (let i = 0; i < BURST_COUNT; i++) {
+      const i3 = i * 3
+      positions[i3] = originX
+      positions[i3 + 1] = originY
+      positions[i3 + 2] = originZ
+
       this._dummy.position.set(originX, originY, originZ)
       const baseScale = 0.5 + Math.random() * 0.8
       this._scales![i] = baseScale  // R-4: store fixed per-particle scale
@@ -127,9 +136,9 @@ export class ParticleBurst extends THREE.InstancedMesh {
       const theta = Math.random() * Math.PI * 2
       const phi = Math.acos(2 * Math.random() - 1)
       const speed = 2.0 + Math.random() * 3.0  // 2-5 units/sec
-      this._velocities[i * 3] = Math.sin(phi) * Math.cos(theta) * speed
-      this._velocities[i * 3 + 1] = Math.sin(phi) * Math.sin(theta) * speed
-      this._velocities[i * 3 + 2] = Math.cos(phi) * speed
+      this._velocities[i3] = Math.sin(phi) * Math.cos(theta) * speed
+      this._velocities[i3 + 1] = Math.sin(phi) * Math.sin(theta) * speed
+      this._velocities[i3 + 2] = Math.cos(phi) * speed
     }
     this.instanceMatrix.needsUpdate = true
   }

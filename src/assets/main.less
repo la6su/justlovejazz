@@ -268,7 +268,7 @@ body.uk-light .jlz-joystick__hint {
    `.jlz-page` is transparent so the 3D canvas shows through. A subtle
    bottom-anchored scrim + text-shadow on headings/body provides
    readability over any 3D background (uk-blend-difference can't cross
-   stacking contexts — see docs/UIKIT3.md §6.1).
+   stacking contexts — see docs/UIKIT3.md for theme layering).
    ------------------------------------------------------------------ */
 
 .jlz-page {
@@ -445,10 +445,9 @@ body.uk-light .jlz-joystick__hint {
   display: none !important;
 }
 
-// Raise overlay above the fixed navbar (z-index: 10001). Without this, the
-// header (lang + logo + hamburger) stays visible on top of the fullscreen
-// overlay, and clicking hamburger dispatches jlz:goto-nav behind the overlay
-// (no way to close the overlay from the navbar). 10010 > 10001.
+// Raise the overlay above the fixed top bar (z-index: 10001), so the
+// configuration controls cannot remain visible or interactive over a project.
+// 10010 > 10001.
 .jlz-fs-overlay.uk-open {
   z-index: 10010 !important;
 }
@@ -1426,7 +1425,7 @@ body.uk-light .jlz-eyebrow {
 
 // Wobble scale animation on card click (Phase 2 of 3D Works plan).
 // Triggered by .is-wobbling class added on click (WorkCards.ts).
-// PLAN-v3 Phase 7: enhanced wobble — scale 1.0 → 1.2 → 0.92 → 1.0 (bigger),
+// Enhanced wobble: scale 1.0 → 1.2 → 0.92 → 1.0,
 // + dynamic rotateY swing ±6deg + blur at peak for depth.
 // Chromatic glow burst at peak (matches SplashCube wobble visual language).
 .jlz-work-card.is-wobbling .jlz-work-card__inner {
@@ -1510,7 +1509,7 @@ body.uk-light .jlz-eyebrow {
 }
 
 // ════════════════════════════════════════════════════════════════════
-// WORK CARDS SCALE UP ON SECTION ACTIVE (PLAN-v2 Phase 4)
+// WORK CARDS SCALE UP ON SECTION ACTIVE
 // ════════════════════════════════════════════════════════════════════
 
 // Cards start hidden + scaled down + 3D rotate + blur, animate to full on section active
@@ -1698,17 +1697,13 @@ body.uk-light .jlz-showreel-trigger:focus-visible {
 }
 
 // ════════════════════════════════════════════════════════════════════
-// NAVBAR — UIkit3 native centered-logo pattern (uk-navbar-center)
-// See https://getuikit.com/docs/navbar#centered-logo
-// Layout: uk-navbar-center > [uk-navbar-center-left: lang] [uk-navbar-item.uk-logo: logo]
-//                           [uk-navbar-center-right: hamburger]
-// Theme/sound controls live INSIDE the menu overlay (see MENU OVERLAY section).
+// LEGACY UIkit navbar support. The current SPA uses `.jlz-topbar` below;
+// these selectors are retained only for standalone markup that supplies
+// `.jlz-header`.
 // ════════════════════════════════════════════════════════════════════
 
-// Glassmorphism on the navbar container — app-layer styling (NOT a UIKit
-// variable override; @navbar-background stays transparent in _import.less §3).
-// We scope it to .jlz-header so it only applies to OUR header, not any other
-// uk-navbar-container that might appear in blog/landing pages.
+// Glassmorphism on a legacy navbar container. It is scoped to `.jlz-header`
+// so it does not affect unrelated UIkit navigation.
 .jlz-header .uk-navbar-container {
   border-bottom: 1px solid var(--jlz-color-border);
   backdrop-filter: blur(16px);
@@ -1893,9 +1888,8 @@ body.uk-light .jlz-header .uk-navbar-container {
   display: block;
 }
 
-// MENU OVERLAY — unique 3-column grid template (section 5, joystick right)
-// VOSK-inspired: stat (left) | nav list (center) | contacts (right) + footer.
-// Fits in 1 screen (100dvh, no scroll). Responsive: 3-col desktop, 1-col mobile.
+// MENU SECTION — two-column grid (section 5, joystick right):
+// stat (left) | navigation (right) plus footer. It stays within one viewport.
 
 // Menu section — full section (NOT overlay). Same visibility pattern as all
 // other sections: hidden by default (section[data-section] { display: none }),
@@ -1928,7 +1922,8 @@ body.uk-light .jlz-header .uk-navbar-container {
   padding-bottom: var(--jlz-space-4);
 }
 
-// ── Top bar ──
+// ── Legacy menu-local toolbar styles ──
+// Current language/theme/sound controls live in the fixed `.jlz-topbar`.
 .jlz-menu-topbar {
   display: flex;
   align-items: center;
@@ -1938,7 +1933,7 @@ body.uk-light .jlz-header .uk-navbar-container {
   margin-bottom: var(--jlz-space-4);
 }
 
-// ── Config toolbar (theme + sound) — glassmorphism via .hook-icon-button ──
+// ── Legacy menu-local config toolbar ──
 .jlz-menu-toolbar {
   gap: 0.5rem;
 }
@@ -1966,7 +1961,7 @@ body.uk-light .jlz-header .uk-navbar-container {
   min-height: 0;
 }
 
-// ── Column titles (NAVIGATE / CONTACT / FOLLOW) ──
+// ── Column title (NAVIGATE) ──
 .jlz-menu-col-title {
   font-family: @global-font-family;
   font-size: 0.68rem;
@@ -2287,7 +2282,7 @@ body.uk-light {
 
 
 // ════════════════════════════════════════════════════════════════════
-// LAB OVERLAY (section 0, joystick left) — PLAN-v3
+// LAB SECTION (section 0, joystick left)
 // ════════════════════════════════════════════════════════════════════
 
 .jlz-lab-grid {
@@ -2388,6 +2383,5 @@ body.uk-light {
 }
 
 // ════════════════════════════════════════════════════════════════════
-// QUICKNAV — desktop nav links, hidden on mobile (PLAN-v3 fix)
+// QUICKNAV — desktop nav links, hidden on mobile
 // ════════════════════════════════════════════════════════════════════
-

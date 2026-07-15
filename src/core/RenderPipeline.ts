@@ -217,21 +217,23 @@ void main() {
 }
 `
 
-// Pre-computed gaussian weights (5-tap, sigma=2.0)
+// Pre-computed gaussian weights for the separable 5-tap blur shader.
+// Shader layout (matches GAUSSIAN_BLUR_FSG):
+//   uWeights[0] = center (offset 0)
+//   uWeights[1] = ±1 sample
+//   uWeights[2] = ±2 sample
+//   uWeights[3..4] unused (kept for uniform array size stability)
+// Previously weights were built as [w(d=2), w(d=1), w(d=0), ...] and the
+// shader used index 0 at center → inverted kernel (ring instead of gaussian).
 const GAUSSIAN_WEIGHTS: number[] = (() => {
   const sigma = 2.0
-  const n = 5
-  const weights = new Array(n)
-  let sum = 0.0
-  for (let i = 0; i < n; i++) {
-    const d = Math.abs(i - 2) // distance from center (2)
-    weights[i] = Math.exp((-0.5 * (d * d)) / (sigma * sigma))
-    sum += weights[i]
-  }
-  for (let i = 0; i < n; i++) {
-    weights[i] /= sum
-  }
-  return weights
+  // Unnormalized kernel values at distances 0, 1, 2
+  const w0 = Math.exp(0) // d=0
+  const w1 = Math.exp((-0.5 * 1) / (sigma * sigma)) // d=1
+  const w2 = Math.exp((-0.5 * 4) / (sigma * sigma)) // d=2
+  // Full kernel sum: center once + each side twice
+  const sum = w0 + 2 * w1 + 2 * w2
+  return [w0 / sum, w1 / sum, w2 / sum, 0, 0]
 })()
 
 // ─── RenderPipeline Class ──────────────────────────────────────
@@ -359,6 +361,15 @@ export class RenderPipeline {
       ;(this._passComposite.uniforms.uGradeShadows!.value as THREE.Vector3).copy(this._sectionShadows)
       ;(this._passComposite.uniforms.uGradeHighlights!.value as THREE.Vector3).copy(this._sectionHighlights)
     }
+    // Track B: per-section bloom threshold → bright-extract pass
+    if (this._passBright) {
+      this._passBright.uniforms.uThreshold!.value = this._params.bloomThreshold
+    }
+    // Track B: per-section bloom radius → blur range (map 0..1 → config range)
+    if (this._passBlur) {
+      const base = this._config.blurRange
+      this._passBlur.uniforms.uBlurRange!.value = base * (0.5 + this._params.bloomRadius)
+    }
   }
 
   /** Update the WebGPU flag after a renderer switch (WebGPURenderer → WebGLRenderer). */
@@ -387,7 +398,8 @@ export class RenderPipeline {
     this._sectionHighlights.copy(highlightTint)
     if (this._passComposite) {
       this._passComposite.uniforms.uRefract!.value = refract
-      this._passComposite.uniforms.uBorder!.value = border
+      // Match updateParams / render path: global border can never drop below section
+      this._passComposite.uniforms.uBorder!.value = Math.max(border, this._globalBorder)
       ;(this._passComposite.uniforms.uGradeShadows!.value as THREE.Vector3).copy(shadowTint)
       ;(this._passComposite.uniforms.uGradeHighlights!.value as THREE.Vector3).copy(highlightTint)
     }
@@ -492,10 +504,6 @@ export class RenderPipeline {
     this._passBlur?.dispose()
     this._passComposite?.dispose()
 
-    if (this._quad) {
-      this._quad.geometry.dispose()
-    }
-
     // Clear refs to free GC
     this._rtScene = null
     this._rtBloomA = null
@@ -504,6 +512,9 @@ export class RenderPipeline {
     this._passBright = null
     this._passBlur = null
     this._passComposite = null
+    // Do NOT dispose _quad.geometry — it is the shared module-level
+    // QUAD_GEOMETRY. Disposing it on teardown (HMR / Experience.destroy)
+    // breaks any subsequent RenderPipeline instance.
     this._quad = null
 
     // WebGPU TSL pipeline cleanup.
