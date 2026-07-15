@@ -14,8 +14,8 @@ inventories or release notes here. Git history retains the detailed record.
 Removed a duplicate post-processing preset layer that overrode `WorldConfig`
 and left WebGPU chromatic aberration active. The 3D words now use a compact,
 bundled Comfortaa Bold subset with independently floating glyph meshes. The
-cube uses a transparent reflective shell plus a CPU-driven jelly deformation
-and a neutral inner absorption volume for legibility on light sections. Physical transmission in
+cube uses one transparent reflective shell plus a low-frequency CPU-driven
+jelly deformation for legibility without duplicated contours. Physical transmission in
 the current WebGPU post path samples an incompatible scene-colour target and
 turns the cube dark and milky; the shared shell keeps the intended motion and
 silhouette consistent on both backends.

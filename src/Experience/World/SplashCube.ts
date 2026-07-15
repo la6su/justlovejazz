@@ -40,8 +40,6 @@ const ROT_PER_TRANSITION = Math.PI / 6
 export class SplashCube extends THREE.Mesh {
   private cubeMesh!: THREE.Mesh
   private cubeMaterial!: THREE.MeshPhysicalMaterial
-  private cubeCore!: THREE.Mesh
-  private coreMaterial!: THREE.MeshBasicMaterial
   private cubePositions!: THREE.BufferAttribute
   private cubeBasePositions!: Float32Array
   private cubeNormals!: Float32Array
@@ -76,8 +74,6 @@ export class SplashCube extends THREE.Mesh {
   // It gives the transparent volume enough contrast on a white UI without
   // reading as an added wireframe or a flat blue block.
   private _themeTint = new THREE.Color(0x5e5667)
-  /** Darker neutral volume inside the shell: contrast, not a diagnostic line. */
-  private _coreTint = new THREE.Color(0x0b0a10)
 
   // Transition state
   private _transitionT = 0
@@ -170,33 +166,16 @@ export class SplashCube extends THREE.Mesh {
     this.cubeBasePositions = new Float32Array(this.cubePositions.array)
     this.cubeNormals = new Float32Array(geo.getAttribute('normal').array)
 
-    // ── Interior absorption + lit transparent shell ──
-    // A compact inner volume is the stable counterpart to volumetric
-    // absorption. It establishes a readable silhouette on white while the
-    // outer physical shell remains responsible for actual light, PMREM and
-    // iridescent highlights. Unlike screen-space transmission it needs no
-    // scene-color sample, so WebGPU and WebGL2 compose it identically.
-    this.coreMaterial = new THREE.MeshBasicMaterial({
-      color: this._coreTint,
-      transparent: true,
-      opacity: 0.62,
-      // Front-facing, recessed geometry creates a clean smoky mass. BackSide
-      // made the volume almost disappear on white after alpha compositing.
-      side: THREE.FrontSide,
-      depthWrite: false,
-      toneMapped: false,
-    })
-    this.cubeCore = new THREE.Mesh(geo, this.coreMaterial)
-    this.cubeCore.scale.setScalar(0.9)
-    this.cubeCore.renderOrder = 1
-    this.add(this.cubeCore)
-
+    // ── One lit, transparent jelly shell ──
+    // A recessed second mesh created a visible echo when the shell wobbled.
+    // One continuous physical surface keeps silhouette, highlights and motion
+    // inseparable — like silicone glass rather than several nested objects.
     const mat = new THREE.MeshPhysicalMaterial({
       color: new THREE.Color(0.94, 0.91, 1.0),
       emissive: new THREE.Color(0x000000),
       emissiveIntensity: 0.02,
       transparent: true,
-      opacity: 0.68,
+      opacity: 0.72,
       side: THREE.FrontSide,
       depthWrite: false,
       metalness: 0.12,
@@ -253,8 +232,7 @@ export class SplashCube extends THREE.Mesh {
   /** Keep the transparent shell legible when UI theme flips light ↔ dark. */
   setTheme(isLight: boolean): void {
     this._isLightTheme = isLight
-    this._themeTint.setHex(isLight ? 0x7d7285 : 0xd0c5dc)
-    this._coreTint.setHex(isLight ? 0x0b0a10 : 0xafa1bb)
+    this._themeTint.setHex(isLight ? 0x5f536b : 0xd0c5dc)
   }
 
   updateMaterial(params: BakuMaterialState): void {
@@ -377,7 +355,6 @@ export class SplashCube extends THREE.Mesh {
     // Boosted scale pulse for clearer click feedback.
     const openerScale = 1 + this.openerProgress * 0.4
     this.cubeMesh.scale.setScalar(openerScale)
-    this.cubeCore.scale.setScalar(openerScale * 0.9)
     this.cubeMesh.rotation.set(
       Math.sin(this.time * 0.73) * 0.035,
       Math.sin(this.time * 0.51) * 0.05,
@@ -390,10 +367,8 @@ export class SplashCube extends THREE.Mesh {
     // A controlled neutral tint keeps glass visible on white without a
     // debug-looking outline. The visible shape is a real PBR surface: PMREM,
     // clearcoat and iridescence create the moving chromatic highlights.
-    this.cubeMaterial.color.lerp(this._themeTint, this._isLightTheme ? 0.82 : 0.3)
-    this.cubeMaterial.opacity = this._isLightTheme ? 0.68 : 0.34
-    this.coreMaterial.color.copy(this._coreTint)
-    this.coreMaterial.opacity = this._isLightTheme ? 0.62 : 0.16
+    this.cubeMaterial.color.lerp(this._themeTint, this._isLightTheme ? 0.9 : 0.3)
+    this.cubeMaterial.opacity = this._isLightTheme ? 0.72 : 0.34
 
     // Edge colors are STATIC — set once in buildCube, NOT animated per frame.
     // Per-frame edge animation was allocating new Color objects + updating
@@ -431,9 +406,11 @@ export class SplashCube extends THREE.Mesh {
       const nx = this.cubeNormals[i] ?? 0
       const ny = this.cubeNormals[i + 1] ?? 0
       const nz = this.cubeNormals[i + 2] ?? 0
+      // Long, low-frequency waves read as one soft silicone body. The old
+      // high-frequency pair created several competing rims in the silhouette.
       const ripple =
-        Math.sin(x * 13 + y * 9 + z * 7 + t * 1.35) * 0.018 +
-        Math.sin(x * 22 - z * 15 - t * 0.8) * 0.01
+        Math.sin(x * 6 + y * 5 + z * 4 + t * 0.85) * 0.012 +
+        Math.sin(x * 9 - z * 6 - t * 0.54) * 0.005
       out[i] = x + nx * ripple
       out[i + 1] = y + ny * ripple
       out[i + 2] = z + nz * ripple
@@ -451,7 +428,6 @@ export class SplashCube extends THREE.Mesh {
     // (CubeCamera + contentScene dispose REMOVED — deleted with the feature.)
     this.cubeMesh.geometry.dispose()
     this.cubeMaterial.dispose()
-    this.coreMaterial.dispose()
     ;(this.geometry as THREE.BufferGeometry).dispose()
     ;(this.material as THREE.Material).dispose()
     this.clear()

@@ -355,6 +355,7 @@ export class Experience {
         // a dark ground is invisible on the light theme (near-white bg).
         this.world.syncGroundTheme(detail.isLight)
         this.world.baku.setTheme(detail.isLight)
+        this.world.syncTypographyTheme(detail.isLight)
         // Sync particle blending: Additive on dark (glow), Normal on light (visible).
         // Without this, additive-blended particles are invisible on white backgrounds.
         for (const group of this.world.sceneGroups) {
