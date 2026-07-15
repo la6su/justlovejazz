@@ -14,6 +14,7 @@ import { EnvSphere } from '../Experience/World/EnvSphere'
 import { ParticleBurst } from '../Experience/World/ParticleBurst'
 import { getWorldConfigForPage, type PhaseConfig } from './WorldConfig'
 import { SectionSceneFactory } from './SectionSceneFactory'
+import { disposeSection3Textures } from '../sections/works/scene'
 // updateInstancedParticles removed — was a no-op. Particles are static.
 import { disposeMaterialDeep } from '../Utils/dispose'
 
@@ -638,11 +639,10 @@ export class World extends THREE.Group {
   }
 
   private disposeSceneGroups(): void {
-    // A-8 fix: dispose module-level particleTexture (HMR GPU leak).
-    // Use dynamic import to avoid circular dep + ES module compatibility.
-    void import('../sections/works/scene')
-      .then(({ disposeSection3Textures }) => disposeSection3Textures())
-      .catch(() => { /* section3 not loaded — no-op */ })
+    // Dispose the module-level Works particle texture. The section factory
+    // already imports this module to create section 3, so a dynamic import here
+    // only produced an ineffective split and a build warning.
+    disposeSection3Textures()
     this.sceneGroups.forEach((group) => {
       // If the group hosts a BakuCarousel (userData.carousel), call its
       // dispose() FIRST — it removes 6 window listeners + clears snapTimer

@@ -1,0 +1,36 @@
+// _quantum-flares-overrides.less — project-owned bridge for the selected QF variation
+//
+// Quantum Flares' `black-blue` variation is imported for its composition,
+// effects and assets. It also assigns global colour variables. Re-apply the
+// project semantic tokens after that import so all UIKit components and QF
+// effects share one intentional palette. Keep component behaviour in UIKit/QF;
+// add a component-specific variable here only when a visual effect has no
+// global token.
+
+// ── Global semantic palette ──
+@global-primary-background: @jlz-color-accent;
+@global-primary-hover-background: @jlz-color-accent-hover;
+@global-link-color: @jlz-color-accent;
+@global-link-hover-color: @jlz-color-accent-hover;
+@inverse-global-primary-background: @jlz-color-accent;
+
+// ── Quantum Flares' semantic accents ──
+// These are QF variables, not replacement component rules. They preserve the
+// supplied glow/gradient treatment while deriving its hue from project tokens.
+@text-primary-color: @jlz-color-accent;
+@inverse-badge-background: @jlz-color-accent;
+@inverse-form-focus-border: @jlz-color-accent;
+@inverse-icon-button-background: @jlz-color-accent;
+@inverse-icon-link-hover-color: @jlz-color-accent;
+@inverse-iconnav-item-hover-color: @jlz-color-accent;
+@inverse-marker-hover-background: @jlz-color-accent;
+@inverse-nav-default-item-active-color: @jlz-color-accent;
+@inverse-nav-primary-item-active-color: @jlz-color-accent;
+@inverse-nav-secondary-item-hover-color: @jlz-color-accent;
+@inverse-nav-secondary-sublist-item-hover-color: @jlz-color-accent;
+@inverse-nav-secondary-subtitle-hover-color: @jlz-color-accent;
+@inverse-nav-secondary-item-active-color: @jlz-color-accent;
+@inverse-nav-secondary-subtitle-active-color: @jlz-color-accent;
+@inverse-search-default-focus-border: @jlz-color-accent;
+@inverse-subnav-item-active-color: @jlz-color-accent;
+@marker-hover-background: @jlz-color-accent;

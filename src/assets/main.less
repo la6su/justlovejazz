@@ -9,6 +9,9 @@
 @import './_import.less';
 @import './master-quantum-flares/_import.less';
 @import './master-quantum-flares/styles/black-blue.less';
+// Project palette bridge — re-applies semantic JLZ tokens after the selected
+// QF variation, without duplicating UIKit component rules.
+@import './_quantum-flares-overrides.less';
 // QF color-mode overrides — must come AFTER QF imports (Less last-wins).
 // Fixes dark-text-on-dark-bg for cards/sections/tiles/navbar/overlays.
 @import './_theme-fixes.less';
@@ -44,23 +47,6 @@ body {
     -apple-system,
     BlinkMacSystemFont,
     sans-serif !important;
-}
-
-// Phase 7: Brand identity CSS variables (see docs/BRAND.md)
-:root {
-  --jlz-accent: #c4ff00;           // neon-lime
-  --jlz-accent-hover: #d4ff4d;     // lighter lime
-  --jlz-bg: #0a0a0f;               // deep black
-  --jlz-fg: #f5f5f7;               // near-white
-  --jlz-muted: rgba(245, 245, 247, 0.5);
-  --jlz-border: rgba(245, 245, 247, 0.06);
-}
-
-body.uk-light {
-  --jlz-bg: #f5f5f7;
-  --jlz-fg: #0a0a0f;
-  --jlz-muted: rgba(10, 10, 15, 0.5);
-  --jlz-border: rgba(10, 10, 15, 0.08);
 }
 
 body {
@@ -262,7 +248,6 @@ body.uk-light .jlz-joystick__hint {
   background: var(--jlz-color-bg-elevated);
 }
 
-
 /* ------------------------------------------------------------------
    Content pages — transparent over 3D canvas (like QF background video)
    `.jlz-page` is transparent so the 3D canvas shows through. A subtle
@@ -367,7 +352,11 @@ body.uk-light .jlz-joystick__hint {
 }
 
 .jlz-scroll-hint__label {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
   font-size: 0.62rem;
   font-weight: 500;
   letter-spacing: 0.4em;
@@ -476,7 +465,10 @@ body.uk-light .jlz-joystick__hint {
   align-items: center;
   justify-content: center;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
 }
 
 .jlz-fs-close:hover {
@@ -501,11 +493,18 @@ body.uk-light .jlz-joystick__hint {
   align-items: center;
   justify-content: center;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
 }
 
-.jlz-fs-prev { left: -60px; }
-.jlz-fs-next { right: -60px; }
+.jlz-fs-prev {
+  left: -60px;
+}
+.jlz-fs-next {
+  right: -60px;
+}
 
 .jlz-fs-prev:hover,
 .jlz-fs-next:hover {
@@ -566,7 +565,9 @@ body.uk-light .jlz-joystick__hint {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .jlz-fs-big-play__icon::after {
@@ -796,36 +797,6 @@ html.jlz-force-cursor .interactive {
 }
 
 /* ------------------------------------------------------------------
-   Process / timeline
-   ------------------------------------------------------------------ */
-
-section[data-section='process'] .uk-list {
-  max-width: 400px;
-  width: 100%;
-  margin: 0 auto;
-}
-
-section[data-section='process'] .uk-list li {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem 1.5rem;
-  background: rgba(255, 255, 255, 0.03);
-  border-left: 3px solid rgba(255, 255, 255, 0.2);
-  border-radius: 0 8px 8px 0;
-  backdrop-filter: blur(16px) saturate(140%);
-  -webkit-backdrop-filter: blur(16px) saturate(140%);
-  transition:
-    border-color 0.3s ease,
-    background 0.3s ease;
-}
-
-section[data-section='process'] .uk-list li:hover {
-  border-left-color: rgba(255, 255, 255, 0.5);
-  background: rgba(255, 255, 255, 0.06);
-}
-
-/* ------------------------------------------------------------------
    Joystick
    ------------------------------------------------------------------ */
 
@@ -891,7 +862,9 @@ section[data-section='process'] .uk-list li:hover {
 .jlz-joystick__arrow {
   position: absolute;
   color: rgba(255, 255, 255, 0.25);
-  transition: color 0.15s ease, opacity 0.15s ease;
+  transition:
+    color 0.15s ease,
+    opacity 0.15s ease;
   pointer-events: none;
   display: flex;
   align-items: center;
@@ -972,7 +945,11 @@ body.uk-light .jlz-joystick__arrow--active {
 }
 
 .jlz-joystick__hint {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
   font-size: 0.6rem;
   letter-spacing: 0.15em;
   text-transform: uppercase;
@@ -1203,8 +1180,9 @@ body.uk-light .jlz-eyebrow {
   height: 6px;
   border-radius: var(--jlz-radius-full);
   background: var(--jlz-color-border-strong);
-  transition: background var(--jlz-duration-fast) ease,
-              transform var(--jlz-duration-fast) ease;
+  transition:
+    background var(--jlz-duration-fast) ease,
+    transform var(--jlz-duration-fast) ease;
 }
 
 .jlz-joystick-dotnav li.uk-active a {
@@ -1297,7 +1275,9 @@ body.uk-light .jlz-eyebrow {
   overflow: hidden;
   transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
   transform-style: preserve-3d;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
   box-shadow:
     0 10px 40px rgba(0, 0, 0, 0.4),
     0 0 0 1px rgba(255, 255, 255, 0.06) inset;
@@ -1416,7 +1396,9 @@ body.uk-light .jlz-eyebrow {
   font-size: 1.1rem;
   color: rgba(255, 255, 255, 0.5);
   transform: translateZ(10px) translate(0, 0);
-  transition: transform 0.3s ease, color 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    color 0.3s ease;
 }
 .jlz-work-card:hover .jlz-work-card__arrow {
   color: #fff;
@@ -1437,10 +1419,22 @@ body.uk-light .jlz-eyebrow {
 }
 
 @keyframes jlz-card-wobble {
-  0%   { transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) scale(1)    ; filter: blur(0px); }
-  25%  { transform: rotateX(var(--rx, 0deg)) rotateY(calc(var(--ry, 0deg) + 6deg)) scale(1.2)  ; filter: blur(1px); }
-  55%  { transform: rotateX(var(--rx, 0deg)) rotateY(calc(var(--ry, 0deg) - 4deg)) scale(0.92) ; filter: blur(0px); }
-  100% { transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) scale(1)    ; filter: blur(0px); }
+  0% {
+    transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) scale(1);
+    filter: blur(0px);
+  }
+  25% {
+    transform: rotateX(var(--rx, 0deg)) rotateY(calc(var(--ry, 0deg) + 6deg)) scale(1.2);
+    filter: blur(1px);
+  }
+  55% {
+    transform: rotateX(var(--rx, 0deg)) rotateY(calc(var(--ry, 0deg) - 4deg)) scale(0.92);
+    filter: blur(0px);
+  }
+  100% {
+    transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) scale(1);
+    filter: blur(0px);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1517,9 +1511,10 @@ body.uk-light .jlz-eyebrow {
   opacity: 0;
   transform: scale(0.8) rotateY(12deg) translateZ(-40px);
   filter: blur(8px);
-  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
-              transform 0.7s cubic-bezier(0.16, 1, 0.3, 1),
-              filter 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  transition:
+    opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+    filter 0.7s cubic-bezier(0.16, 1, 0.3, 1);
   transform-origin: center center;
   perspective: 1000px;
 }
@@ -1608,7 +1603,9 @@ body.uk-light .jlz-eyebrow {
   // dasharray = 2πr = 2π × 28 ≈ 176 (full circumference)
   stroke-dasharray: 176;
   stroke-dashoffset: 0;
-  transition: stroke-dashoffset 0.6s ease, stroke-width 0.3s ease;
+  transition:
+    stroke-dashoffset 0.6s ease,
+    stroke-width 0.3s ease;
   transform-origin: center;
   transform: rotate(-90deg); // start from top
 }
@@ -1622,9 +1619,15 @@ body.uk-light .jlz-eyebrow {
 }
 
 @keyframes jlz-showreel-stroke {
-  0% { stroke-dashoffset: 176; }
-  50% { stroke-dashoffset: 0; }
-  100% { stroke-dashoffset: -176; }
+  0% {
+    stroke-dashoffset: 176;
+  }
+  50% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: -176;
+  }
 }
 
 // Play icon (triangle) — centered inside the ring
@@ -1696,33 +1699,6 @@ body.uk-light .jlz-showreel-trigger:focus-visible {
   }
 }
 
-// ════════════════════════════════════════════════════════════════════
-// LEGACY UIkit navbar support. The current SPA uses `.jlz-topbar` below;
-// these selectors are retained only for standalone markup that supplies
-// `.jlz-header`.
-// ════════════════════════════════════════════════════════════════════
-
-// Glassmorphism on a legacy navbar container. It is scoped to `.jlz-header`
-// so it does not affect unrelated UIkit navigation.
-.jlz-header .uk-navbar-container {
-  border-bottom: 1px solid var(--jlz-color-border);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  background: rgba(10, 10, 15, 0.6);
-}
-
-body.uk-light .jlz-header .uk-navbar-container {
-  background: rgba(245, 245, 247, 0.6);
-  border-bottom-color: rgba(10, 10, 15, 0.08);
-}
-
-// Logo — uk-navbar-item.uk-logo gives padding + flex; we just size the image.
-.jlz-navbar-logo img {
-  width: 28px;
-  height: 28px;
-  display: block;
-}
-
 // Language label inside uk-icon-button — uppercase mono-style text.
 .jlz-lang-label {
   text-transform: uppercase;
@@ -1733,7 +1709,9 @@ body.uk-light .jlz-header .uk-navbar-container {
 }
 
 @media (max-width: 500px) {
-  .jlz-lang-label { font-size: 0.65rem; }
+  .jlz-lang-label {
+    font-size: 0.65rem;
+  }
 }
 
 // ── Top bar (minimalist fixed-top centered config controls) ──
@@ -1830,7 +1808,9 @@ body.uk-light .jlz-header .uk-navbar-container {
   background: currentColor;
   opacity: 0.4;
   border-radius: 1px;
-  transition: opacity 0.2s ease, height 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    height 0.2s ease;
 }
 
 .jlz-sound-toggle.is-playing .jlz-sound-bar {
@@ -1839,35 +1819,41 @@ body.uk-light .jlz-header .uk-navbar-container {
   animation: jlz-sound-eq 800ms ease-in-out infinite alternate;
 }
 
-.jlz-sound-toggle.is-playing .jlz-sound-bar:nth-child(1) { animation-delay: 0ms; }
-.jlz-sound-toggle.is-playing .jlz-sound-bar:nth-child(2) { animation-delay: 150ms; }
-.jlz-sound-toggle.is-playing .jlz-sound-bar:nth-child(3) { animation-delay: 300ms; }
-.jlz-sound-toggle.is-playing .jlz-sound-bar:nth-child(4) { animation-delay: 450ms; }
+.jlz-sound-toggle.is-playing .jlz-sound-bar:nth-child(1) {
+  animation-delay: 0ms;
+}
+.jlz-sound-toggle.is-playing .jlz-sound-bar:nth-child(2) {
+  animation-delay: 150ms;
+}
+.jlz-sound-toggle.is-playing .jlz-sound-bar:nth-child(3) {
+  animation-delay: 300ms;
+}
+.jlz-sound-toggle.is-playing .jlz-sound-bar:nth-child(4) {
+  animation-delay: 450ms;
+}
 
 @keyframes jlz-sound-eq {
-  0% { height: 20%; }
-  25% { height: 80%; }
-  50% { height: 40%; }
-  75% { height: 95%; }
-  100% { height: 30%; }
+  0% {
+    height: 20%;
+  }
+  25% {
+    height: 80%;
+  }
+  50% {
+    height: 40%;
+  }
+  75% {
+    height: 95%;
+  }
+  100% {
+    height: 30%;
+  }
 }
 
 .jlz-sound-toggle.is-muted .jlz-sound-bar {
   height: 30%;
   opacity: 0.35;
   animation: none;
-}
-
-// ── Menu overlay config toolbar (theme toggle + sound toggle) ──
-// uk-icon-button gives the square 36px base + QF hover. We add spacing.
-.jlz-menu-toolbar {
-  gap: 0.75rem;
-}
-
-.jlz-menu-toolbar .uk-icon-button {
-  // Slightly larger hit area for the two settings buttons
-  width: 40px;
-  height: 40px;
 }
 
 // Theme icon (sun/moon) — inline SVGs (UIKit3 has no sun/moon icons).
@@ -1920,27 +1906,6 @@ body.uk-light .jlz-header .uk-navbar-container {
   justify-content: center;
   padding-top: calc(var(--jlz-header-height, 60px) + var(--jlz-space-4));
   padding-bottom: var(--jlz-space-4);
-}
-
-// ── Legacy menu-local toolbar styles ──
-// Current language/theme/sound controls live in the fixed `.jlz-topbar`.
-.jlz-menu-topbar {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start; // toolbar left-aligned (brand removed)
-  padding-bottom: var(--jlz-space-3);
-  border-bottom: 1px solid var(--jlz-color-border);
-  margin-bottom: var(--jlz-space-4);
-}
-
-// ── Legacy menu-local config toolbar ──
-.jlz-menu-toolbar {
-  gap: 0.5rem;
-}
-
-.jlz-menu-toolbar .uk-icon-button {
-  width: 36px;
-  height: 36px;
 }
 
 // ── 2-column grid: stat | nav ──
@@ -2049,7 +2014,9 @@ body.uk-light .jlz-header .uk-navbar-container {
   text-align: left;
   font-family: inherit;
   color: var(--jlz-color-text-muted);
-  transition: color 0.2s ease, padding-left 0.2s ease;
+  transition:
+    color 0.2s ease,
+    padding-left 0.2s ease;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -2088,7 +2055,10 @@ body.uk-light .jlz-header .uk-navbar-container {
   font-size: 0.85rem;
   color: var(--jlz-color-text-subtle);
   opacity: 0.6;
-  transition: transform 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    color 0.2s ease,
+    opacity 0.2s ease;
 }
 
 .jlz-menu-nav__toggle:hover .jlz-menu-nav__arrow {
@@ -2125,7 +2095,10 @@ body.uk-light .jlz-header .uk-navbar-container {
   font-size: 0.85rem;
   font-weight: 500;
   border-radius: 4px;
-  transition: color 0.2s ease, background 0.2s ease, padding-left 0.2s ease;
+  transition:
+    color 0.2s ease,
+    background 0.2s ease,
+    padding-left 0.2s ease;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -2161,7 +2134,9 @@ body.uk-light .jlz-header .uk-navbar-container {
   color: var(--jlz-color-text-subtle);
   opacity: 0;
   transform: translateX(-3px);
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
 }
 
 .jlz-menu-nav__sub-link:hover .jlz-menu-nav__sub-arrow {
@@ -2267,19 +2242,40 @@ body.uk-light .jlz-header .uk-navbar-container {
 
 // ── Light theme overrides ──
 body.uk-light {
-  .jlz-menu-col-title { color: var(--jlz-color-text-subtle); }
-  .jlz-menu-stat__num { color: var(--jlz-color-text); }
-  .jlz-menu-stat__label { color: var(--jlz-color-text-subtle); }
-  .jlz-menu-eyebrow { color: var(--jlz-color-text-subtle); }
-  .jlz-menu-nav__toggle { color: var(--jlz-color-text-muted); }
-  .jlz-menu-nav__num { color: var(--jlz-color-text-subtle); }
-  .jlz-menu-nav__label { color: inherit; }
-  .jlz-menu-nav__arrow { color: var(--jlz-color-text-subtle); }
-  .jlz-menu-nav__sub-link { color: var(--jlz-color-text-subtle); }
-  .jlz-menu-nav__sub-num { color: var(--jlz-color-text-subtle); }
-  .jlz-menu-footer__text { color: var(--jlz-color-text-subtle); }
+  .jlz-menu-col-title {
+    color: var(--jlz-color-text-subtle);
+  }
+  .jlz-menu-stat__num {
+    color: var(--jlz-color-text);
+  }
+  .jlz-menu-stat__label {
+    color: var(--jlz-color-text-subtle);
+  }
+  .jlz-menu-eyebrow {
+    color: var(--jlz-color-text-subtle);
+  }
+  .jlz-menu-nav__toggle {
+    color: var(--jlz-color-text-muted);
+  }
+  .jlz-menu-nav__num {
+    color: var(--jlz-color-text-subtle);
+  }
+  .jlz-menu-nav__label {
+    color: inherit;
+  }
+  .jlz-menu-nav__arrow {
+    color: var(--jlz-color-text-subtle);
+  }
+  .jlz-menu-nav__sub-link {
+    color: var(--jlz-color-text-subtle);
+  }
+  .jlz-menu-nav__sub-num {
+    color: var(--jlz-color-text-subtle);
+  }
+  .jlz-menu-footer__text {
+    color: var(--jlz-color-text-subtle);
+  }
 }
-
 
 // ════════════════════════════════════════════════════════════════════
 // LAB SECTION (section 0, joystick left)
@@ -2301,7 +2297,9 @@ body.uk-light {
   overflow: hidden;
   aspect-ratio: 4 / 3;
   border: 1px solid rgba(245, 245, 247, 0.06);
-  transition: border-color 0.2s ease, transform 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    transform 0.2s ease;
 }
 
 .jlz-lab-card:hover {
@@ -2315,7 +2313,9 @@ body.uk-light {
   background-size: cover;
   background-position: center;
   filter: saturate(0.85) brightness(0.7);
-  transition: filter 0.3s ease, transform 0.3s ease;
+  transition:
+    filter 0.3s ease,
+    transform 0.3s ease;
 }
 
 .jlz-lab-card:hover .jlz-lab-card__cover {
@@ -2360,7 +2360,9 @@ body.uk-light {
   color: rgba(245, 245, 247, 0.6);
   opacity: 0;
   transform: translateY(8px);
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
   z-index: 1;
 }
 
@@ -2370,9 +2372,16 @@ body.uk-light {
 }
 
 body.uk-light {
-  .jlz-lab-card { border-color: rgba(10, 10, 15, 0.08); }
-  .jlz-lab-card__num { color: rgba(10, 10, 15, 0.7); border-color: rgba(10, 10, 15, 0.2); }
-  .jlz-lab-card__title { color: rgba(10, 10, 15, 0.95); }
+  .jlz-lab-card {
+    border-color: rgba(10, 10, 15, 0.08);
+  }
+  .jlz-lab-card__num {
+    color: rgba(10, 10, 15, 0.7);
+    border-color: rgba(10, 10, 15, 0.2);
+  }
+  .jlz-lab-card__title {
+    color: rgba(10, 10, 15, 0.95);
+  }
 }
 
 @media (max-width: 640px) {

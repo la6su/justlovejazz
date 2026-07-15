@@ -7,6 +7,24 @@ inventories or release notes here. Git history retains the detailed record.
 
 <!-- WORKLOG:ENTRIES -->
 
+## 2026-07-16 — UIkit/YOOtheme composition and CI parity
+
+### Decision
+
+Added a project-owned Quantum Flares palette bridge after the selected
+variation, keeping the vendored theme untouched while restoring semantic JLZ
+tokens for UIkit and QF effects. Documented the same layer ownership and
+licensed-theme adoption workflow for future agents. CI now runs the required
+Vitest suite before its production build.
+
+### Verification
+
+- The personal `uikit-yootheme-theme` skill passed its validator.
+- Workflow YAML parsed successfully; 89 unit tests passed locally.
+- Earlier in this session, lint (0 errors), type-check, production build, 89
+  unit tests and 7 Playwright tests passed. Repository-wide Prettier remains a
+  separate baseline task.
+
 ## 2026-07-15 — Documentation consolidation
 
 ### Decision
