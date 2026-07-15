@@ -7,6 +7,23 @@ inventories or release notes here. Git history retains the detailed record.
 
 <!-- WORKLOG:ENTRIES -->
 
+## 2026-07-16 — Glass-cube backend parity baseline
+
+### Decision
+
+Kept the required WebGL GLSL transmission fallback because the current Three.js
+NodeMaterial transmission path calls `getCanvasTarget`, unavailable on
+`WebGLRenderer`. Removed its Drei-derived multi-sampling, anisotropic blur and
+temporal distortion: those were a second optical model, not a renderer
+equivalent. The fallback now uses one restrained sample and the same physical
+parameters, PMREM and motion intent as WebGPU.
+
+### Verification
+
+- Type-check, lint and production build passed; the 89-unit-test suite passed.
+- A forced-WebGL experiment confirmed the shared TSL transmission path fails
+  exactly at the unsupported `getCanvasTarget` call, so it was not retained.
+
 ## 2026-07-16 — Splash import boundary and performance budgets
 
 ### Decision
