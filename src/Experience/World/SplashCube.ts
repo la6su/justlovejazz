@@ -308,13 +308,23 @@ export class SplashCube extends THREE.Mesh {
         // Component-wise offsets mirror GLSL exactly:
         //   n1: snoise(np + vec3(t*0.2, 0, 0))     — X axis animated
         //   n2: snoise(np*2.5 + vec3(0, t*0.3, 7)) — Y axis animated, Z offset 7
-        const n1 = mx_noise_float(np.add(vec3(t.mul(0.2), float(0.0), float(0.0)))).mul(0.32).mul(uWobble)
-        const n2 = mx_noise_float(np.mul(2.5).add(vec3(float(0.0), t.mul(0.3), float(7.0)))).mul(0.09).mul(uWobble)
+        // Reduced amplitudes (0.32→0.20, 0.09→0.05) to eliminate thin lines
+        // on cube faces — per-vertex noise via normalLocal.mul() causes
+        // barely-visible gaps at non-welded edges. Lower amplitude = smaller
+        // gaps = invisible lines, while wobble remains visible.
+        const n1 = mx_noise_float(np.add(vec3(t.mul(0.2), float(0.0), float(0.0)))).mul(0.20).mul(uWobble)
+        const n2 = mx_noise_float(np.mul(2.5).add(vec3(float(0.0), t.mul(0.3), float(7.0)))).mul(0.05).mul(uWobble)
         const displacement = n1.add(n2)
         const squash = sin(t.mul(0.22)).mul(0.03).mul(uWobble)
-        const breathe = sin(t.mul(0.4).add(pos.y.mul(0.3))).mul(0.06).mul(uWobble)
-        pos.assign(pos.add(normalLocal.mul(displacement.add(breathe).mul(SIZE_SCALE))))
-        pos.y.addAssign(pos.y.mul(squash))
+        // Breathe: SCALE from center (not normal displacement) — prevents
+        // thin lines on faces. Was: normalLocal.mul(breathe) which drifted
+        // faces sideways. Now: pos.mul(1+breathe) which scales uniformly.
+        const breathe = sin(t.mul(0.4)).mul(0.04).mul(uWobble)
+        // Noise displacement along normals (surface undulation) — small
+        const noiseDisp = normalLocal.mul(displacement.mul(SIZE_SCALE))
+        pos.assign(pos.mul(float(1.0).add(breathe.mul(SIZE_SCALE))))
+        pos.assign(pos.add(noiseDisp))
+        pos.y.mulAssign(float(1.0).sub(squash))
         return pos
       })()
 

@@ -12,7 +12,7 @@
 
 import * as THREE from 'three'
 import { MeshPhysicalNodeMaterial } from 'three/webgpu'
-import { Fn, uniform, positionLocal, normalLocal, sin } from 'three/tsl'
+import { Fn, uniform, positionLocal, sin, float } from 'three/tsl'
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js'
 import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js'
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js'
@@ -27,24 +27,34 @@ const typoUniforms = {
   uWobble: uniform(1.0),
 }
 
-// ── Vertex: global inflate/deflate wobble (geometry stays intact) ──
-// Only GLOBAL displacement (same value for ALL vertices) — per-vertex
-// noise would tear the mesh at welded seams.
+// ── Vertex: inflate/deflate via SCALE from center (not normal displacement) ──
+//
+// CRITICAL: normal-based displacement (pos + nrm * breathe) causes DRIFT —
+// flat faces translate sideways instead of scaling from center. This makes
+// the text "drift outward and narrow" instead of inflating like a balloon.
+//
+// Fix: use pos * (1 + breathe) — uniform scale from center. All vertices
+// move radially outward/inward relative to the text center, creating a true
+// "balloon inflate/deflate" effect. Geometry stays intact (welded seams
+// scale uniformly, no tearing).
 const typoPositionNode = Fn(() => {
   const pos = positionLocal.toVar()
-  const nrm = normalLocal
   const t = typoUniforms.uTime
   const uWobble = typoUniforms.uWobble
 
-  // Breathe: global inflate/deflate — dominant "balloon puffing" effect
-  const breathe = sin(t.mul(0.8)).mul(0.04).mul(uWobble)
+  // Breathe: uniform scale from center — the "balloon puffing" effect.
+  // sin gives -1..1, * 0.05 gives ±5% scale. At peak (sin=1): 1.05x scale.
+  // At trough (sin=-1): 0.95x scale. Text rhythmically grows/shrinks.
+  const breathe = sin(t.mul(0.8)).mul(0.05).mul(uWobble)
 
-  // Squash: global Y compression
+  // Squash: Y-axis scale offset (slight, adds organic jelly feel).
+  // Applied as additional Y scale — text squashes vertically while expanding.
   const squash = sin(t.mul(0.5)).mul(0.02).mul(uWobble)
 
-  // Apply: global displacement along normal
-  pos.assign(pos.add(nrm.mul(breathe)))
-  pos.y.addAssign(pos.y.mul(squash))
+  // Apply: uniform scale from center (inflate/deflate)
+  pos.assign(pos.mul(float(1.0).add(breathe)))
+  // Squash: additional Y compression (scale, not translate)
+  pos.y.mulAssign(float(1.0).sub(squash))
 
   return pos
 })

@@ -124,16 +124,20 @@ export class MeshTransmissionMaterial extends THREE.MeshPhysicalMaterial {
         const float NOISE_FREQ = 2.4;        // 0.12 * (16/0.8) → 2 periods/face
         float t = time;                       // raw time (day34)
         vec3 np = position * NOISE_FREQ;
-        // 2-octave noise (high-freq removed for smooth surface)
-        float n1 = snoise(np + vec3(t * 0.2, 0.0, 0.0)) * 0.32;
-        float n2 = snoise(np * 2.5 + vec3(0.0, t * 0.3, 7.0)) * 0.09;
+        // 2-octave noise — reduced amplitudes (0.32→0.20, 0.09→0.05) to
+        // eliminate thin lines on cube faces (per-vertex normal displacement
+        // causes barely-visible gaps at non-welded edges).
+        float n1 = snoise(np + vec3(t * 0.2, 0.0, 0.0)) * 0.20;
+        float n2 = snoise(np * 2.5 + vec3(0.0, t * 0.3, 7.0)) * 0.05;
         float displacement = (n1 + n2) * wobble;
-        // squash + breathe (gentle, preserves cube shape)
+        // squash + breathe — breathe now SCALE from center (not normal
+        // displacement) to prevent thin lines on faces.
         float squash = sin(t * 0.22) * 0.03 * wobble;
-        float breathe = sin(t * 0.4 + position.y * 0.3) * 0.06 * wobble;
-        // Apply — displacement scaled, squash proportional
-        transformed += normal * (displacement + breathe) * SIZE_SCALE;
-        transformed.y += transformed.y * squash;
+        float breathe = sin(t * 0.4) * 0.04 * wobble;
+        // Apply: scale from center (breathe) + normal displacement (noise)
+        transformed *= (1.0 + breathe * SIZE_SCALE);
+        transformed += normal * displacement * SIZE_SCALE;
+        transformed.y *= (1.0 - squash);
         `
       )
 
