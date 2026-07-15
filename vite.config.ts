@@ -4,7 +4,6 @@ import { resolve } from 'node:path'
 import { copyFileSync, mkdirSync, readdirSync } from 'fs'
 import { homePage } from './src/pages/home'
 
-
 export default defineConfig({
   base: '/',
   publicDir: 'public',
@@ -71,6 +70,14 @@ export default defineConfig({
           // chunks.
           groups: [
             // ── Vendor chunks (highest priority — matched first) ──────────
+            // Vite injects this virtual module into the splash shell for
+            // dynamic imports. Isolate it so the shell cannot inherit the
+            // heavy 3D chunk that also uses the helper.
+            {
+              name: 'chunk-runtime',
+              test: /\0vite\/preload-helper\.js$/,
+              priority: 40,
+            },
             {
               name: 'vendor-three',
               // Match every three / three-stdlib module EXCEPT the
@@ -138,23 +145,22 @@ export default defineConfig({
       apply: 'serve',
       transformIndexHtml(html) {
         // Remove the @vite/client script tag from the HTML
-        return html.replace(
-          /<script[^>]*src="[^"]*\/@vite\/client[^"]*"[^>]*><\/script>\s*/g,
-          '',
-        )
+        return html.replace(/<script[^>]*src="[^"]*\/@vite\/client[^"]*"[^>]*><\/script>\s*/g, '')
       },
       configureServer(server) {
         server.middlewares.use((req, res, next) => {
           if (req.url && req.url.includes('/@vite/client')) {
             res.setHeader('Content-Type', 'text/javascript')
-            res.end([
-              '// Vite client stub — prevents reload loop through proxy',
-              'export function createHotContext() { return { accept() {}, dispose() {}, prune() {} } }',
-              'export function updateStyle() {}',
-              'export function removeStyle() {}',
-              'export function defineDevServer() {}',
-              'export const transport = null',
-            ].join('\n'))
+            res.end(
+              [
+                '// Vite client stub — prevents reload loop through proxy',
+                'export function createHotContext() { return { accept() {}, dispose() {}, prune() {} } }',
+                'export function updateStyle() {}',
+                'export function removeStyle() {}',
+                'export function defineDevServer() {}',
+                'export const transport = null',
+              ].join('\n'),
+            )
             return
           }
           next()

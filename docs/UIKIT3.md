@@ -1,54 +1,78 @@
-# UIkit and Less conventions
+# UIkit, Quantum Flares and Less conventions
 
-UIkit provides component behaviour and Quantum Flares provides the base visual
-language. Project CSS should extend that system rather than recreate it.
+Use `$uikit-yootheme-theme` whenever a task changes a UIkit component, Less theme assembly, Quantum Flares variation, or a visual pattern that may already exist in UIkit/YOOtheme Pro. It makes the official component documentation and this project's ownership boundaries part of the work.
 
-## Theme assembly
+## Sources and ownership
 
-`src/assets/_import.less` is the theme entry point. It defines project tokens,
-configures Quantum Flares/UIKit import order and exposes runtime CSS custom
-properties. Keep framework imports and token setup there.
+UIkit is the component framework: consult its [Introduction](https://getuikit.com/docs/introduction), the relevant component page, and the [Less theming guide](https://getuikit.com/docs/less) before creating a component or a broad override. The local dependency is `uikit`; its upstream source is [uikit/uikit](https://github.com/uikit/uikit).
 
-`src/assets/main.less` is the application layer: layout, canvas overlays,
-joystick, work cards, top bar and the menu section. Use it for behaviour that
-UIKit does not provide.
+`src/assets/master-quantum-flares/` is a vendored snapshot of the licensed YOOtheme Pro **Quantum Flares** UIkit theme. It supplies the visual composition, component variables, effects and assets; it is not a collection of snippets to copy into application CSS. The active starting variation is `master-quantum-flares/styles/black-blue.less`.
 
-Do not edit vendored Quantum Flares files. Do not add broad overrides for
-UIKit's button, card or navbar variables merely to reproduce a project style
-that the theme already supplies.
+Do not edit files under `master-quantum-flares`. Project-owned adaptations live next to them in `src/assets`; this is the Vite equivalent of YOOtheme Pro's child-theme approach, so an upstream theme refresh remains reviewable.
+
+| Layer                                                          | Owner                                            | Change it for                                                               |
+| -------------------------------------------------------------- | ------------------------------------------------ | --------------------------------------------------------------------------- |
+| Semantics, keyboard behaviour, ARIA and component state        | UIkit                                            | A documented UIkit component/attribute solves the problem                   |
+| Visual language, effects, variation variables and theme assets | Quantum Flares                                   | The selected baseline provides the intended feature                         |
+| Brand tokens and QF-variation palette bridge                   | `_import.less`, `_quantum-flares-overrides.less` | A project-wide semantic color, font, spacing or QF effect needs adaptation  |
+| Dark-surface color-mode bridge                                 | `_theme-fixes.less`                              | A QF component needs the correct inverse text mode on project dark surfaces |
+| 3D shell, joystick, bespoke overlays and route-specific layout | `main.less`                                      | No UIkit component covers the interaction or layout                         |
+| Standalone blog layout                                         | `blog.less`                                      | Semantic blog-only presentation                                             |
+
+## Less assembly
+
+Both Less entries compile in the same order:
+
+```less
+@import './_import.less';
+@import './master-quantum-flares/_import.less';
+@import './master-quantum-flares/styles/black-blue.less';
+@import './_quantum-flares-overrides.less';
+@import './_theme-fixes.less';
+```
+
+This order is intentional. The selected QF variation is allowed to define its own values; the project bridge then reapplies semantic JLZ tokens so UIkit and QF controls share the same accent. Do not move imports, edit the vendored files, or add a second token system in `main.less`.
+
+Prefer this order of solutions:
+
+1. Use documented UIkit markup, utility classes and JavaScript attributes.
+2. Change a UIkit global/component Less variable or a documented hook.
+3. Use an existing QF variable/effect in `_quantum-flares-overrides.less` when it is the smallest way to retint or adapt that QF treatment.
+4. Add a scoped `.jlz-*` rule only for a real application-specific gap.
+
+Never reproduce a UIkit component in custom CSS/JavaScript just to change its appearance. In particular, do not rebuild modal, off-canvas, navbar, nav, accordion, grid, button, icon button or form behaviour. Keep one state owner: UIkit owns its `uk-open`/`uk-active` and accessibility state; application code owns route, joystick and 3D state.
+
+## Using YOOtheme Pro themes as a design library
+
+Quantum Flares is the chosen baseline, not an immutable identity. Other themes available through the YOOtheme Pro subscription may be inspected for useful composition, hooks, variables, textures and interaction styling. Treat every adoption as a deliberate, project-owned adaptation:
+
+1. Record the source theme, variation, asset and reason in the change.
+2. Inspect its `_import.less` and variation first; prefer variables/hooks over compiled CSS or copied selectors.
+3. Import/copy only the licensed source or asset needed into a clearly named, versioned vendor snapshot; preserve attribution and license terms.
+4. Translate the chosen treatment into project tokens or the QF bridge. Avoid forks and do not mix whole style packages opportunistically.
+5. Test the affected UI in auto and inverse modes, with keyboard navigation and reduced motion.
+
+YOOtheme Pro's style customizer itself is organised around global variables, theme variables, inverse colors and UIkit component variables. Its child-theme guidance similarly extends a selected style/variation rather than patching the parent. Those are the design principles replicated here, even though this site uses Vite instead of WordPress. See [YOOtheme Pro child themes](https://yootheme.com/docs/wordpress/developers-child-themes) and the [Style Customizer](https://yootheme.com/docs/wordpress/style-customizer).
 
 ## Current component model
 
-| Concern                             | Owner                      | Convention                                            |
-| ----------------------------------- | -------------------------- | ----------------------------------------------------- |
-| Dynamic component refresh           | `router.ts`                | Call `UIkit.update()` after route content is rendered |
-| Menu expandable items               | `sections/nav/template.ts` | `uk-nav` / `uk-parent` state is authoritative         |
-| Fullscreen project/showreel overlay | `FullscreenOverlay.ts`     | UIKit modal owns visibility and focus                 |
-| Fixed configuration controls        | `UIMenu.ts`                | `.jlz-topbar` with language, theme and sound buttons  |
-| Section navigation                  | `JoystickNav.ts`           | Custom DOM component; no equivalent UIKit component   |
-| Works tilt cards                    | `WorkCards.ts`             | Custom interaction layered on semantic controls       |
+| Concern                             | Owner                      | Convention                                           |
+| ----------------------------------- | -------------------------- | ---------------------------------------------------- |
+| Dynamic component refresh           | `router.ts`                | Call `UIkit.update()` after route content renders    |
+| Menu expandable items               | `sections/nav/template.ts` | `uk-nav` / `uk-parent` state is authoritative        |
+| Fullscreen project/showreel overlay | `FullscreenOverlay.ts`     | UIkit modal owns visibility and focus                |
+| Fixed configuration controls        | `UIMenu.ts`                | `.jlz-topbar` with language, theme and sound buttons |
+| Section navigation                  | `JoystickNav.ts`           | Custom DOM component; no equivalent UIkit component  |
+| Works tilt cards                    | `WorkCards.ts`             | Custom interaction layered on semantic controls      |
 
-The menu is a two-column navigation section, not a modal and not a three-column
-header/dropbar. Its sub-links are SPA-aware; UIKit owns expansion while the
-application owns route changes.
+The menu is a two-column navigation section, not a modal or a dropbar. Its sub-links are SPA-aware; UIkit owns expansion while the application owns route changes.
 
-## State and accessibility
+## State, accessibility and verification
 
-- Prefer UIKit's `uk-open`/`uk-active` classes to parallel custom flags.
-- Let UIKit modal/nav components manage their own keyboard and ARIA state.
-- When custom controls are necessary, expose an accessible name and preserve
-  keyboard operation. The dotnav marks the active target with `aria-current`.
-- Dynamic content must remain compatible with the per-section auto/inverse
-  theme applied by `ContentReveal`.
-- Respect reduced-motion policy rather than adding independent animation
-  preference checks.
+- Prefer UIkit's `uk-open`/`uk-active` classes to parallel custom flags.
+- Let UIkit modal/nav components manage their own keyboard and ARIA state.
+- Custom controls need an accessible name and keyboard operation. The dotnav marks the active target with `aria-current`.
+- Keep custom rules compatible with the app's auto/inverse theme and its reduced-motion policy.
+- After a visual change, verify dynamic route rendering and both theme modes; run the project checks in `docs/DEVELOPMENT.md`.
 
-## Before adding a custom class or script
-
-1. Check whether UIKit already supplies the component behaviour.
-2. Use a project class only for a genuine visual or interaction gap.
-3. Keep state in one owner; do not synchronize duplicate booleans.
-4. Verify the result after dynamic route rendering and in both theme modes.
-
-For runtime composition see [ARCHITECTURE.md](ARCHITECTURE.md); for the design
-intent see [BRAND.md](BRAND.md).
+For runtime composition see [ARCHITECTURE.md](ARCHITECTURE.md); for visual intent see [BRAND.md](BRAND.md).

@@ -23,6 +23,10 @@ them. Read only the documents relevant to the change, in this order:
 document. Do not update a document merely because another document mentions the
 same topic; update its owner.
 
+For UIkit 3, Quantum Flares, YOOtheme Pro or Less theme work, invoke the
+personal `$uikit-yootheme-theme` skill before editing. It directs the agent to
+the official UIkit source and the project-owned theme layers.
+
 ## Session workflow
 
 ```bash
