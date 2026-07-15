@@ -39,14 +39,14 @@ const SECTION_PATTERNS = [
   { type: 'hsv', hue: 0.6, sat: 0.06, val: 0.88 },
   // 1: Intro — LIGHT: pure white with ultra-subtle hue shift (auto/theme-light target)
   { type: 'hsv', hue: 0.0, sat: 0.02, val: 0.98 },
-  // 2: About — DARK: grey gradient (inverse/theme-dark target)
-  { type: 'gradient', color1: 0x1a1a1a, color2: 0x2e2e2e },
-  // 3: Works — DARK: dark blue-grey
-  { type: 'gradient', color1: 0x1a1a22, color2: 0x2a2a3a },
+  // 2: About — DARK: medium grey gradient (lighter so glass cube is visible)
+  { type: 'gradient', color1: 0x2a2a2a, color2: 0x3e3e3e },
+  // 3: Works — DARK: medium dark blue-grey (lighter for cube visibility)
+  { type: 'gradient', color1: 0x2a2a30, color2: 0x3a3a44 },
   // 4: Contact — LIGHT: soft off-white gradient
   { type: 'gradient', color1: 0xe8e8e8, color2: 0xd8d8d8 },
-  // 5: Process — DARK: deep blue-black
-  { type: 'gradient', color1: 0x080810, color2: 0x12121e },
+  // 5: Process — DARK: dark blue-black (lighter for cube visibility)
+  { type: 'gradient', color1: 0x1a1a22, color2: 0x2a2a32 },
 ] as const
 
 export class EnvSphere extends THREE.Mesh {
