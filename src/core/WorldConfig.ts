@@ -236,7 +236,7 @@ const RAW: RawScene[] = [
     bakuOpacity: 0.35,
     bakuDisplace: 0.15,
     bakuColor: 0xb4b4c5,  // light glass (was 0x2a2a3e dark)
-    bakuEmissive: 0x6a6a9a,
+    bakuEmissive: 0x9a9ada,  // brighter for dark sections
     postBloom: 0.4,
     postVignette: 0.5,
     postGrain: 0.02,
@@ -273,7 +273,7 @@ const RAW: RawScene[] = [
     bakuOpacity: 0.4,
     bakuDisplace: 0.05,
     bakuColor: 0xb4b4c5,  // light glass (was 0x2a2a3e dark)
-    bakuEmissive: 0x6a6a9a,
+    bakuEmissive: 0x9a9ada,  // brighter for dark sections
     postBloom: 0.4,
     postVignette: 0.4,
     postGrain: 0.02,
@@ -310,7 +310,7 @@ const RAW: RawScene[] = [
     bakuOpacity: 0.4,
     bakuDisplace: 0.06,
     bakuColor: 0xafafc0,  // light glass (was 0x1a1a2e dark)
-    bakuEmissive: 0x5a5a8a,
+    bakuEmissive: 0x8a8aba,  // brighter for dark sections
     postBloom: 0.2,
     postVignette: 0.4,
     postGrain: 0.015,
@@ -347,7 +347,7 @@ const RAW: RawScene[] = [
     bakuOpacity: 0.35,
     bakuDisplace: 0.06,
     bakuColor: 0xafafc0,  // light glass (was 0x1a1a2e dark)
-    bakuEmissive: 0x5a5a8a,
+    bakuEmissive: 0x8a8aba,  // brighter for dark sections
     postBloom: 0.2,
     postVignette: 0.4,
     postGrain: 0.015,
