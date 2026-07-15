@@ -30,6 +30,10 @@ For a representative manual check, verify:
 4. `/services` followed by a return to `/` leaves the home Works carousel usable.
 5. Auto and inverse theme modes both keep text and background readable.
 
+To inspect the WebGL2 fallback on a development server, open
+`http://127.0.0.1:5173/?renderer=webgl`. This switch is development-only and
+exists for parity QA; do not add it to user-facing links.
+
 ## Required checks
 
 Run the complete local gate before a pull request:

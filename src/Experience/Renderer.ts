@@ -84,10 +84,16 @@ export class Renderer {
   }
 
   async init(): Promise<void> {
+    // Development-only parity switch: `?renderer=webgl` bypasses WebGPU so
+    // the fallback can be inspected on hardware that supports both backends.
+    // Vite removes this branch from production builds.
+    const forceWebGL =
+      import.meta.env.DEV && new URLSearchParams(window.location.search).get('renderer') === 'webgl'
+
     // Create renderer based on DeviceCapability mode (sync detection via
     // 'gpu' in navigator). WebGPURenderer.init() will configure the backend —
     // if WebGPU is not available, it falls back to WebGLBackend internally.
-    if (this.capabilities.mode === 'webgpu') {
+    if (!forceWebGL && this.capabilities.mode === 'webgpu') {
       this.instance = new WebGPURenderer({ antialias: true, alpha: false })
       const wg = this.instance as any
       wg.toneMapping = THREE.ACESFilmicToneMapping
@@ -106,16 +112,21 @@ export class Renderer {
       const adapter = wg.backend?.adapter?.info ?? wg.backend?.gpu?._adapter
       const isFallback = adapter?.isFallbackAdapter ?? false
       if (import.meta.env.DEV) {
-        console.info('[Renderer.init] WebGPU adapter isFallback:', isFallback,
-          '| architecture:', adapter?.architecture ?? '?')
+        console.info(
+          '[Renderer.init] WebGPU adapter isFallback:',
+          isFallback,
+          '| architecture:',
+          adapter?.architecture ?? '?',
+        )
       }
 
       if (backendName !== 'WebGPUBackend' || isFallback) {
         // Either WebGLBackend fallback OR WebGPUBackend with SwiftShader (software).
         // Both cases → use hardware-accelerated WebGLRenderer instead.
-        const reason = backendName !== 'WebGPUBackend'
-          ? `backend is ${backendName}`
-          : 'adapter is SwiftShader (software rendering — would give ~2 FPS)'
+        const reason =
+          backendName !== 'WebGPUBackend'
+            ? `backend is ${backendName}`
+            : 'adapter is SwiftShader (software rendering — would give ~2 FPS)'
         if (import.meta.env.DEV) {
           console.info('[Renderer.init] Switching to WebGLRenderer:', reason)
         }
@@ -129,12 +140,18 @@ export class Renderer {
         // See IMPROVEMENT_PLAN A1/A2.
         this.capabilities.setFinalRendererMode('webgpu')
         if (import.meta.env.DEV) {
-          console.info('[Renderer.init] Premium WebGPU path active — TSL worldDNA nodes + real transmission enabled')
+          console.info(
+            '[Renderer.init] Premium WebGPU path active — TSL worldDNA nodes + real transmission enabled',
+          )
         }
       }
     } else {
       if (import.meta.env.DEV) {
-        console.info('[Renderer.init] Using WebGLRenderer (no WebGPU API)')
+        console.info(
+          forceWebGL
+            ? '[Renderer.init] Using WebGLRenderer (forced for parity QA)'
+            : '[Renderer.init] Using WebGLRenderer (no WebGPU API)',
+        )
       }
       this.instance = this.createWebGLRenderer()
       this.capabilities.setFinalRendererMode('webgl')
@@ -159,13 +176,16 @@ export class Renderer {
     if (import.meta.env.DEV) {
       console.info(
         `[Renderer.init] Final path: ${finalBackend} | isRealWebGPU=${this.capabilities.isRealWebGPU} | ` +
-        `EnvSphere=${this.capabilities.isRealWebGPU ? 'TSL shader (premium)' : 'CanvasTexture (parity)'}`
+          `EnvSphere=${this.capabilities.isRealWebGPU ? 'TSL shader (premium)' : 'CanvasTexture (parity)'}`,
       )
     }
 
     // Pipeline
     this.pipeline = RenderPipeline.create(
-      this.instance, this.sizes.width, this.sizes.height, this._pipelineConfig,
+      this.instance,
+      this.sizes.width,
+      this.sizes.height,
+      this._pipelineConfig,
     )
     if (!(this.instance instanceof WebGPURenderer)) {
       this.pipeline.setWebGPU(false)
@@ -175,8 +195,9 @@ export class Renderer {
     // Transmission is disabled on ALL paths (see SplashCube.ts comment).
     // setTransmissionEnabled() is now a no-op, kept for API compat.
     // WebGPU device-loss logging (DEV only).
-    const isRealWebGPU = (this.instance as any).isWebGPURenderer
-      && (this.instance as any).backend?.constructor?.name === 'WebGPUBackend'
+    const isRealWebGPU =
+      (this.instance as any).isWebGPURenderer &&
+      (this.instance as any).backend?.constructor?.name === 'WebGPUBackend'
     if (isRealWebGPU && import.meta.env.DEV) {
       const wg = this.instance as any
       if (wg.onDeviceLost) {
@@ -192,13 +213,19 @@ export class Renderer {
   /** Create WebGLRenderer with NodeMaterial support. */
   private createWebGLRenderer(): THREE.WebGLRenderer {
     const gl = new THREE.WebGLRenderer({
-      antialias: true, powerPreference: 'high-performance', stencil: false, depth: true,
+      antialias: true,
+      powerPreference: 'high-performance',
+      stencil: false,
+      depth: true,
     })
     gl.outputColorSpace = THREE.SRGBColorSpace
     gl.toneMapping = THREE.ACESFilmicToneMapping
     gl.toneMappingExposure = 1.0
-    try { ;(gl as any).setNodesHandler(new WebGLNodesHandler()) }
-    catch (e) { console.error('[Renderer] WebGLNodesHandler failed:', e) }
+    try {
+      ;(gl as any).setNodesHandler(new WebGLNodesHandler())
+    } catch (e) {
+      console.error('[Renderer] WebGLNodesHandler failed:', e)
+    }
     return gl
   }
 
