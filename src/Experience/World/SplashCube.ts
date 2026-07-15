@@ -10,11 +10,11 @@
 //   2. PMREM environment bound once after scene setup
 //   3. Opener — scale pulse (1.0 → 1.3 → 1.0)
 //
-// Glass shader: one transparent reflective shell on WebGPU and WebGL2.
+// Glass shader: one lit, alpha-transparent physical shell on WebGPU and WebGL2.
 // Physical transmission samples an incompatible scene-color target in the
-// current WebGPU post path, which makes the cube dark and milky. The shell is
-// deliberately alpha-transparent, with an environment reflection, so it stays
-// clear and visually stable on both renderers.
+// current WebGPU post path, which makes the cube dark and milky. We retain the
+// physical reflection/clearcoat/iridescence response, but use alpha for the
+// transparent body so PMREM and the section lights remain stable on both paths.
 
 import * as THREE from 'three'
 import { organicValue } from '../../Utils/Noise'
@@ -39,8 +39,9 @@ const ROT_PER_TRANSITION = Math.PI / 6
 
 export class SplashCube extends THREE.Mesh {
   private cubeMesh!: THREE.Mesh
-  private cubeMaterial!: THREE.MeshBasicMaterial
-  private cubeOutline!: THREE.LineSegments
+  private cubeMaterial!: THREE.MeshPhysicalMaterial
+  private cubeCore!: THREE.Mesh
+  private coreMaterial!: THREE.MeshBasicMaterial
   private cubePositions!: THREE.BufferAttribute
   private cubeBasePositions!: Float32Array
   private cubeNormals!: Float32Array
@@ -70,6 +71,13 @@ export class SplashCube extends THREE.Mesh {
   private _blendFromEmissive: THREE.Color = new THREE.Color(0x5a5a8a)
   private _blendToEmissive: THREE.Color = new THREE.Color(0x5a5a8a)
   private _blendT: number = 0
+  private _isLightTheme = true
+  // Neutral violet-grey, rather than the previous blue diagnostic colour.
+  // It gives the transparent volume enough contrast on a white UI without
+  // reading as an added wireframe or a flat blue block.
+  private _themeTint = new THREE.Color(0x5e5667)
+  /** Darker neutral volume inside the shell: contrast, not a diagnostic line. */
+  private _coreTint = new THREE.Color(0x0b0a10)
 
   // Transition state
   private _transitionT = 0
@@ -162,36 +170,49 @@ export class SplashCube extends THREE.Mesh {
     this.cubeBasePositions = new Float32Array(this.cubePositions.array)
     this.cubeNormals = new Float32Array(geo.getAttribute('normal').array)
 
-    // ── Shared transparent shell ──
-    const mat = new THREE.MeshBasicMaterial({
-      color: new THREE.Color(0.94, 0.91, 1.0),
+    // ── Interior absorption + lit transparent shell ──
+    // A compact inner volume is the stable counterpart to volumetric
+    // absorption. It establishes a readable silhouette on white while the
+    // outer physical shell remains responsible for actual light, PMREM and
+    // iridescent highlights. Unlike screen-space transmission it needs no
+    // scene-color sample, so WebGPU and WebGL2 compose it identically.
+    this.coreMaterial = new THREE.MeshBasicMaterial({
+      color: this._coreTint,
       transparent: true,
-      opacity: 0.3,
+      opacity: 0.62,
+      // Front-facing, recessed geometry creates a clean smoky mass. BackSide
+      // made the volume almost disappear on white after alpha compositing.
       side: THREE.FrontSide,
       depthWrite: false,
-      combine: THREE.MixOperation,
-      reflectivity: 0.35,
+      toneMapped: false,
+    })
+    this.cubeCore = new THREE.Mesh(geo, this.coreMaterial)
+    this.cubeCore.scale.setScalar(0.9)
+    this.cubeCore.renderOrder = 1
+    this.add(this.cubeCore)
+
+    const mat = new THREE.MeshPhysicalMaterial({
+      color: new THREE.Color(0.94, 0.91, 1.0),
+      emissive: new THREE.Color(0x000000),
+      emissiveIntensity: 0.02,
+      transparent: true,
+      opacity: 0.68,
+      side: THREE.FrontSide,
+      depthWrite: false,
+      metalness: 0.12,
+      roughness: 0.055,
+      envMapIntensity: 2.05,
+      clearcoat: 0.85,
+      clearcoatRoughness: 0.07,
+      iridescence: 0.48,
+      iridescenceIOR: 1.3,
+      iridescenceThicknessRange: [120, 360],
     })
     this.cubeMaterial = mat
 
     this.cubeMesh = new THREE.Mesh(geo, this.cubeMaterial)
     this.cubeMesh.renderOrder = 2
     this.add(this.cubeMesh)
-
-    // The contour keeps the translucent shell legible on white sections. It
-    // is deliberately a neutral cool highlight, not chromatic screen-space
-    // aberration, so the two renderer paths retain the same silhouette.
-    this.cubeOutline = new THREE.LineSegments(
-      new THREE.EdgesGeometry(new THREE.BoxGeometry(size * 1.015, size * 1.015, size * 1.015)),
-      new THREE.LineBasicMaterial({
-        color: 0x7188c4,
-        transparent: true,
-        opacity: 0.9,
-        depthWrite: false,
-      }),
-    )
-    this.cubeOutline.renderOrder = 3
-    this.add(this.cubeOutline)
 
     // (cubeMaterial.envMap binding REMOVED — was CubeCamera render target.
     //  Glass now uses scene.environment (PMREM RoomEnvironment) automatically
@@ -227,6 +248,13 @@ export class SplashCube extends THREE.Mesh {
       this.cubeMaterial.envMap = envTexture
       this.cubeMaterial.needsUpdate = true
     }
+  }
+
+  /** Keep the transparent shell legible when UI theme flips light ↔ dark. */
+  setTheme(isLight: boolean): void {
+    this._isLightTheme = isLight
+    this._themeTint.setHex(isLight ? 0x7d7285 : 0xd0c5dc)
+    this._coreTint.setHex(isLight ? 0x0b0a10 : 0xafa1bb)
   }
 
   updateMaterial(params: BakuMaterialState): void {
@@ -349,25 +377,23 @@ export class SplashCube extends THREE.Mesh {
     // Boosted scale pulse for clearer click feedback.
     const openerScale = 1 + this.openerProgress * 0.4
     this.cubeMesh.scale.setScalar(openerScale)
+    this.cubeCore.scale.setScalar(openerScale * 0.9)
     this.cubeMesh.rotation.set(
       Math.sin(this.time * 0.73) * 0.035,
       Math.sin(this.time * 0.51) * 0.05,
       Math.sin(this.time * 0.66) * 0.025,
     )
-    this.cubeOutline.rotation.copy(this.cubeMesh.rotation)
 
     // (PlayButton3D update removed — dead render path deleted)
     // ── Material color blend ──
-    const diagMat = this.cubeMaterial as unknown as {
-      color: THREE.Color
-      emissive?: THREE.Color
-      roughness?: number
-      metalness?: number
-    }
-    diagMat.color.copy(this._blendFromColor).lerp(this._blendToColor, this._blendT)
-    if (diagMat.emissive) {
-      diagMat.emissive.copy(this._blendFromEmissive).lerp(this._blendToEmissive, this._blendT)
-    }
+    this.cubeMaterial.color.copy(this._blendFromColor).lerp(this._blendToColor, this._blendT)
+    // A controlled neutral tint keeps glass visible on white without a
+    // debug-looking outline. The visible shape is a real PBR surface: PMREM,
+    // clearcoat and iridescence create the moving chromatic highlights.
+    this.cubeMaterial.color.lerp(this._themeTint, this._isLightTheme ? 0.82 : 0.3)
+    this.cubeMaterial.opacity = this._isLightTheme ? 0.68 : 0.34
+    this.coreMaterial.color.copy(this._coreTint)
+    this.coreMaterial.opacity = this._isLightTheme ? 0.62 : 0.16
 
     // Edge colors are STATIC — set once in buildCube, NOT animated per frame.
     // Per-frame edge animation was allocating new Color objects + updating
@@ -382,19 +408,12 @@ export class SplashCube extends THREE.Mesh {
 
   private applyRoleAndParams(): void {
     const { color, emissive, roughness, metalness } = this.targetParams
-    const m = this.cubeMaterial as unknown as {
-      color: THREE.Color
-      emissive?: THREE.Color
-      roughness?: number
-      metalness?: number
-    }
-    m.color.copy(color)
-    // The parity shell intentionally only consumes colour. Keep the wider
-    // material-state contract so scene configuration does not need a special
-    // case if physical glass is restored after a WebGPU pipeline fix.
-    if (m.emissive) m.emissive.copy(emissive)
-    if (m.roughness !== undefined) m.roughness = roughness
-    if (m.metalness !== undefined) m.metalness = metalness
+    this.cubeMaterial.color.copy(color)
+    this.cubeMaterial.emissive.copy(emissive)
+    this.cubeMaterial.roughness = Math.min(roughness, 0.055)
+    // The small reflective floor makes PMREM highlights legible. It is not a
+    // metal look: dielectric glass remains the dominant response.
+    this.cubeMaterial.metalness = Math.max(metalness, 0.12)
   }
 
   /**
@@ -432,8 +451,7 @@ export class SplashCube extends THREE.Mesh {
     // (CubeCamera + contentScene dispose REMOVED — deleted with the feature.)
     this.cubeMesh.geometry.dispose()
     this.cubeMaterial.dispose()
-    this.cubeOutline.geometry.dispose()
-    ;(this.cubeOutline.material as THREE.Material).dispose()
+    this.coreMaterial.dispose()
     ;(this.geometry as THREE.BufferGeometry).dispose()
     ;(this.material as THREE.Material).dispose()
     this.clear()
