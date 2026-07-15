@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { JoystickNav } from '../UI/JoystickNav'
 
 // JoystickNav close-nav behavior is critical: it's the explicit exit from
-// the menu overlay (hamburger X click). If broken, users can't leave the menu
-// via the on-screen button (only via joystick drag or keyboard).
+// the menu overlay (the `jlz:close-nav` event). If broken, callers cannot
+// restore the prior main section through the explicit close contract.
 //
 // We test the jlz:close-nav event listener:
 //   - Home mode: when _side='menu', close-nav → _side='center', fires
@@ -35,11 +35,11 @@ describe('JoystickNav — jlz:close-nav (menu exit)', () => {
       indices.push(index)
     })
 
-    // Navigate to menu (section 5) — simulates hamburger click / joystick right
+    // Navigate to menu (section 5) — simulates joystick/keyboard right.
     joy.goToSection(5) // menu
     expect(joy.getSectionIndex()).toBe(5)
 
-    // Dispatch close-nav — simulates hamburger X click
+    // Dispatch close-nav — an explicit programmatic menu close.
     window.dispatchEvent(new CustomEvent('jlz:close-nav'))
 
     // Should return to the previous main section (intro = 1, the default)

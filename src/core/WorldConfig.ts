@@ -63,15 +63,15 @@ export interface SectionLightDef {
  *  use defaults (objects visible when their scene group is visible,
  *  standard transition).
  *
- *  NOTE: envSpherePattern was REMOVED — EnvSphere follows global theme only
- *  (see World.ts §EnvSphere). particles flag was REMOVED — particle visibility
+ *  NOTE: envSpherePattern was removed — EnvSphere follows the active theme
+ *  through Experience. The particles flag was removed — particle visibility
  *  is driven by scene-group visibility, no per-section toggle exists. */
 export interface SceneControl {
   /** 3D objects visibility per section. false = hidden. */
   objects?: {
     wireframeText?: boolean   // WireframeTypography (section title in 3D)
     shaderOrb?: boolean       // ShaderOrb (Lab experiment)
-    timelineNodes?: boolean   // TimelineNodes (Process)
+    timelineNodes?: boolean   // TimelineNodes (Menu)
     bakuCarousel?: boolean    // BakuCarousel (Works gallery)
   }
   /** Transition timing for camera + baku morph when entering this section. */
@@ -101,7 +101,7 @@ export interface PhaseConfig {
   /** Per-section 3D scene control (background pattern, objects, transition). */
   scene?: SceneControl
   /** Section theme: 'light' = light background (dark text), 'dark' = dark background (light text).
-   *  Inverse mode flips these. See ThemeManager + Experience.ts. */
+   *  Inverse mode flips these. See ThemeManager + ContentReveal. */
   theme: 'light' | 'dark'
 }
 

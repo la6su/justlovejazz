@@ -5,8 +5,8 @@
 // section[data-section] { display: none }, shown via .section-active.
 // Same visibility pattern as Lab (section 0) and all main sections.
 //
-// Joystick right OR hamburger click → JoystickNav switches to section 5.
-// Hamburger X click OR joystick left → returns to previous main section.
+// Joystick right or ArrowRight → JoystickNav switches to section 5.
+// Joystick left, ArrowLeft or jlz:close-nav → returns to the previous main section.
 // Menu section is SHARED across all pages (same as Lab section 0).
 //
 // Nav item click behavior:
@@ -18,13 +18,13 @@
 //
 // Visibility:
 //   - Hidden by default (section[data-section] { display: none }).
-//   - Shown when .section-active is added (joystick right / hamburger click).
+//   - Shown when .section-active is added (joystick right / ArrowRight).
 //   - backdrop-filter: blur(20px) on overlay for glass-morphism separation
 //     from the 3D canvas behind.
 //
 // Exit (close menu):
-//   - Hamburger X click → jlz:close-nav → return to previous main section.
-//   - Joystick arrow left → same behavior.
+//   - `jlz:close-nav` → return to the previous main section.
+//   - Joystick or keyboard arrow left → same behavior.
 //   - Subsection click → navigate to target section (menu auto-closes).
 
 // (themeManager + getLang imports removed — UIMenu.ts owns all config controls now.)
@@ -103,7 +103,7 @@ const NAV_ITEMS: NavItem[] = [
 ]
 
 // (Inline SVG icons (SUN_SVG/MOON_SVG) + configToolbar removed —
-//  controls moved to UIMenu.ts header help dropdown. Menu overlay is
+//  controls moved to UIMenu.ts fixed top bar. Menu section is
 //  navigation-only now.)
 
 // ── Left column: stat / studio identity ──
@@ -180,7 +180,7 @@ function menuFooter(): string {
  *   - Hidden: section[data-section] { display: none } (home) / .jlz-page-section { display: none } (content)
  *   - Shown: .section-active { display: flex !important }
  *
- * Joystick right OR hamburger click → JoystickNav.goToSection(5) →
+ * Joystick right or ArrowRight → JoystickNav.goToSection(5) →
  * ContentReveal adds .section-active to [data-section="menu"].
  *
  * @param mode 'home' = data-section (3D cube face sync) | 'content' = data-page-section
@@ -198,8 +198,8 @@ export function navOverlaySection(mode: 'home' | 'content' = 'content'): string 
   return `
     <section class="jlz-menu-overlay ${pageClass} uk-section uk-section-xsmall" id="section-menu" ${sectionAttr}>
       <div class="uk-container uk-container-expand jlz-menu-container">
-        <!-- (Top bar removed — config controls (lang/sound/theme) moved to
-             the header help dropdown in UIMenu.ts. Menu section is now
+        <!-- (Top bar removed — config controls (lang/sound/theme) live in the
+             fixed UIMenu.ts top bar. Menu section is now
              navigation-only: stat + nav list + footer.) -->
         <!-- Main 2-column grid: stat | nav (contact column removed — dropdown
              submenu expands into the free space on the right) -->

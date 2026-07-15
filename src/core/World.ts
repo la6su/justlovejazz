@@ -2,7 +2,7 @@
 
 import * as THREE from 'three'
 // BG.ts removed — was dead computation (bg.color never read by anyone).
-// EnvSphere is the sole visible background, driven by global theme.
+// EnvSphere is the sole visible background, driven by the active section theme.
 import { Section, SectionState } from './Section'
 import { StateBus } from './StateBus'
 import { prefersReducedMotion } from './motionPolicy'
@@ -229,8 +229,8 @@ export class World extends THREE.Group {
    *  Without this, a dark ground color (0x1a1a2e) is invisible on the light
    *  theme (near-white EnvSphere) but visible on inverse (dark). We flip the
    *  ground to a contrasting tone per theme so it's always perceivable.
-   *  RULES §20 — ground still ONLY visible on section 4 (visibility is gated
-   *  in Experience.ts, this method only adjusts appearance).
+   *  The ground remains visible only on section 4; visibility is gated in
+   *  Experience.ts and this method adjusts appearance only.
    *
    *  NOTE: sets _groundThemeActive=true so updateTransform() knows to override
    *  the WorldConfig lerp (which would otherwise reset opacity to 0.25). */
@@ -314,7 +314,7 @@ export class World extends THREE.Group {
         | import('../Experience/World/ShaderOrb').ShaderOrb
         | undefined
       if (orb) orb.update(deltaTime)
-      // Update timeline nodes (Section5 Process)
+      // Update timeline nodes (section 5: Menu)
       const timeline = group.userData.timeline as
         | import('../Experience/World/TimelineNodes').TimelineNodes
         | undefined
@@ -420,9 +420,9 @@ export class World extends THREE.Group {
         } else {
           this.sceneRef.fog = new THREE.FogExp2(activeCfg.fog.color.clone(), activeCfg.fog.density)
         }
-        // EnvSphere follows GLOBAL theme only (jlz:theme-applied listener
-        // in Experience.ts). Per-section envSpherePattern REMOVED — it
-        // conflicted with global theme (pattern override → broken contrast).
+        // EnvSphere follows the active theme through the jlz:theme-applied
+        // listener in Experience.ts. Per-section pattern overrides were
+        // removed because they could break theme contrast.
       }
       // DrawTrail visibility — only on works section (idx=4)
       if (this.drawTrail) {
@@ -433,12 +433,13 @@ export class World extends THREE.Group {
     // ── BG sphere section switch (junni pattern: lerp BG color continuously)
     // setProgress() lerps between fromIndex and toIndex colors using eased t,
     // (BG.setProgress removed — bg.color was never read by anyone.)
-    // EnvSphere follows global theme via jlz:theme-applied listener.
+    // EnvSphere follows the active theme via jlz:theme-applied.
 
     // ── Scene group visibility with opacity fade (junni switchVisibility pattern)
     // From group fades out as t→1, to group fades in. Both visible during transition.
     // NON-DESTRUCTIVE: cache baseOpacity in userData, apply fade multiplicatively.
-    // (HERMES_RULES §3 — never overwrite factory opacity values.)
+    // Keep factory opacity values as the base and apply the transition fade
+    // multiplicatively.
     this.sceneGroups.forEach((g, i) => {
       const isFrom = i === fromIndex
       const isTo = i === toIndex

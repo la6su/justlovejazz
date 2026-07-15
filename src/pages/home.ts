@@ -4,12 +4,11 @@
 // are stacked absolutely in #spa-content. JoystickNav cycles through them.
 // The 3D canvas (SplashCube + EnvSphere) is synchronized via section index.
 //
-// Section order matches cube face order (see _shared/constants.ts):
-//   0=Lab overlay (joystick left), 1=Intro (front), 2=About (right),
-//   3=Works (back), 4=Contact (bottom), 5=Navigation overlay (joystick right)
+// Section order matches the displayed cube orientation (see _shared/constants.ts):
+//   0=Lab (front), 1=Intro (right), 2=About (back), 3=Works (left),
+//   4=Contact (negative Y tilt), 5=Navigation (positive Y tilt).
 //
-// PLAN-v3: section 0 = Lab overlay (works list), section 5 = Navigation overlay (hamburger menu).
-// Both overlays are shared across ALL pages (home + content).
+// Sections 0 (Lab) and 5 (Navigation) are shared across all SPA pages.
 
 import { labOverlaySection } from '../sections/lab-overlay/template'
 import { introSection } from '../sections/intro/template'

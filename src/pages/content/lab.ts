@@ -1,6 +1,6 @@
 // src/pages/content/lab.ts — Lab page (4 experiments + 2 overlays)
 //
-// PLAN-v3: section 0 = Lab overlay (works list), section 5 = Navigation overlay.
+// Sections 0 (Lab) and 5 (Navigation) are shared across all SPA pages.
 // Main sections (1-4): Shader Lab, Audio Reactive, Generative, GPU Particles.
 
 import { sectionShell, contentTop, contentBottom } from '../../sections/_shared/constants'

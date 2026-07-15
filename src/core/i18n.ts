@@ -40,7 +40,7 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'nav.contact': 'Contact',
     'nav.blog': 'Blog',
 
-    // PLAN-v3: Navigation overlay (section 5, joystick right)
+    // Navigation section (section 5, joystick right)
     'navOverlay.title': 'Navigate',
     'navOverlay.lead': 'Choose your destination.',
     'navOverlay.studio.desc': 'Home · cube experience',
@@ -50,16 +50,16 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'navOverlay.lab.desc': 'Experiments',
     'navOverlay.contact.desc': 'Start a project',
 
-    // Menu overlay (section 5, unique 3-column template)
+    // Menu section (section 5, two-column navigation template)
     'menu.navigate': 'Navigate',
     'menu.stat.sections': 'Sections',
 
-    // PLAN-v3: Lab overlay (section 0, joystick left)
+    // Lab section (section 0, joystick left)
     'labOverlay.title': 'Lab',
     'labOverlay.lead': 'Experiments · works · R&D.',
 
-    // Dropbar — section titles + subtitles shown in the header dropbar (UIMenu)
-    // Works page section titles are project names (proper nouns) — NOT translated (RULES §32),
+    // Navigation submenu section titles and subtitles.
+    // Works page section titles are project names (proper nouns), so they are not translated;
     // so only subtitles get keys for works.
     'dropbar.home.s1.title': 'Studio',
     'dropbar.home.s1.subtitle': 'Remote · EU · since 2019',
@@ -81,7 +81,7 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'dropbar.services.s4.subtitle': 'Generation · automation',
     'dropbar.services.featured.title': 'Start a project',
     'dropbar.services.featured.subtitle': 'Open for new work',
-    // Works page — project names stay English (proper nouns, RULES §32)
+    // Works page — project names stay English because they are proper nouns.
     'dropbar.works.s1.subtitle': 'WebGPU fluid simulation',
     'dropbar.works.s2.subtitle': 'Minimal portfolio',
     'dropbar.works.s3.subtitle': 'Audio-reactive 3D',
@@ -155,7 +155,7 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'home.manifesto.desc2': 'Our way of thinking.',
     'home.manifesto.desc3': 'Our promises.',
 
-    // Home — process (Contact face)
+    // Home — Contact
     'home.contact.title': 'Contact',
     'home.contact.lead': "Let's create something great together.",
     'home.contact.tag': '@ justlovejazz',
@@ -257,7 +257,7 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'hint.returnLeft': '← Drag right to return',
     'hint.returnRight': 'Drag left to return →',
 
-    // Help dropdown (navbar hamburger → joystick infographic)
+    // Navigation help labels
     'help.title': 'Navigation',
     'help.sections': 'Sections',
     'help.up': 'Up',
@@ -296,7 +296,7 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'nav.contact': 'Контакты',
     'nav.blog': 'Блог',
 
-    // PLAN-v3: Navigation overlay (RU)
+    // Navigation section (RU)
     'navOverlay.title': 'Навигация',
     'navOverlay.lead': 'Выберите направление.',
     'navOverlay.studio.desc': 'Главная · куб',
@@ -310,12 +310,12 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'menu.navigate': 'Навигация',
     'menu.stat.sections': 'Разделы',
 
-    // PLAN-v3: Lab overlay (RU)
+    // Lab section (RU)
     'labOverlay.title': 'Лаб',
     'labOverlay.lead': 'Эксперименты · работы · R&D.',
 
-    // Dropbar — section titles + subtitles shown in the header dropbar (UIMenu)
-    // Works page section titles are project names (proper nouns) — NOT translated (RULES §32),
+    // Navigation submenu section titles and subtitles.
+    // Works page section titles are project names (proper nouns), so they are not translated;
     // so only subtitles get keys for works.
     'dropbar.home.s1.title': 'Студия',
     'dropbar.home.s1.subtitle': 'Удалённо · ЕС · с 2019',
@@ -337,7 +337,7 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'dropbar.services.s4.subtitle': 'Генерация · автоматизация',
     'dropbar.services.featured.title': 'Начать проект',
     'dropbar.services.featured.subtitle': 'Открыты для новых проектов',
-    // Works page — project names stay English (proper nouns, RULES §32)
+    // Works page — project names stay English because they are proper nouns.
     'dropbar.works.s1.subtitle': 'WebGPU симуляция жидкостей',
     'dropbar.works.s2.subtitle': 'Минималистичное портфолио',
     'dropbar.works.s3.subtitle': 'Аудио-реактивное 3D',
@@ -411,7 +411,7 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'home.manifesto.desc2': 'Наш образ мысли.',
     'home.manifesto.desc3': 'Наши обещания.',
 
-    // Home — process (Contact face)
+    // Home — Contact
     'home.contact.title': 'Контакты',
     'home.contact.lead': 'Давайте создадим что-то великое вместе.',
     'home.contact.tag': '@ justlovejazz',
@@ -513,7 +513,7 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'hint.returnLeft': '← Тяните вправо для возврата',
     'hint.returnRight': 'Тяните влево для возврата →',
 
-    // Help dropdown (navbar hamburger → joystick infographic)
+    // Navigation help labels
     'help.title': 'Навигация',
     'help.sections': 'Секции',
     'help.up': 'вверх',

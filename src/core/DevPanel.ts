@@ -145,7 +145,7 @@ export class DevPanel {
         if (world?.groundPlane) world.groundPlane.visible = ev.value as boolean
       })
     f.addButton({ title: 'Reset ground (section 4 only)' }).on('click', () => {
-      // Restore RULES §20 behavior: ground visible only on section 4.
+      // Restore the contact-only ground visibility invariant.
       const world = (this.exp as unknown as { world?: { groundPlane?: { visible: boolean }, currentSectionIndex?: number } }).world
       if (world?.groundPlane) world.groundPlane.visible = world.currentSectionIndex === 4
       this.controls.groundVisible = world?.groundPlane?.visible ?? false

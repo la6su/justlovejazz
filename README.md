@@ -1,71 +1,53 @@
-# justlovejazz
+# JUSTLOVEJAZZ
 
-Studio-grade interactive 3D portfolio. Vite 8 (rolldown) + TypeScript (strict).
-Three.js 0.184 + WebGPU/WebGL2 + TSL NodeMaterial + UIkit 3 + Less + bun.
+Interactive studio portfolio built as a Vite single-page application. The
+experience combines an inline, FCP-friendly splash with a Three.js scene that
+uses TSL NodeMaterials and selects WebGPU or WebGL2 at runtime.
 
-## Run
+## Quick start
 
 ```bash
 bun install
-bun run dev          # dev server (localhost:5173)
-bun run type-check   # tsc --noEmit (strict)
-bun run lint         # ESLint
-bun run build        # production build
-bun run test:unit    # 87 unit tests
-bun run format       # Prettier
+bun run dev
 ```
 
-## Architecture
+For the local end-to-end suite, install Playwright's managed Chromium once:
 
-Multi-page: splash → app → blog → landing.
+```bash
+bunx playwright install chromium
+bun run test
+```
 
-| Route | Page | Description |
-| --- | --- | --- |
-| `/` | splash | FCP-critical (~15KB inline), config switchers, Enter |
-| `/app` | 3D experience | 6 cube-face sections, JoystickNav, SplashCube |
-| `/app/services` | services | 6 sections, cube-map layout |
-| `/app/manifesto` | manifesto | 6 sections, cube-map layout |
-| `/blog` | blog | Prerendered semantic HTML, SEO |
-| `/blog/[slug]` | articles | 4 articles, JSON-LD BlogPosting |
-| `/landing` | no-JS fallback | Semantic HTML5, UIkit3 + QF theme |
+The full quality gate is documented in
+[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
 
-## Stack
+## Routes
 
-| Layer | Tech |
-| --- | --- |
-| Framework | Vite 8 (rolldown) + TypeScript strict |
-| 3D | Three.js 0.184 + TSL NodeMaterial |
-| Renderer | WebGPURenderer (WebGPU/WebGL2 auto-fallback) |
-| UI | UIkit 3 + Less (master-quantum-flares YooTheme Pro) |
-| Navigation | JoystickNav (pure DOM, 2D) + Menu overlay (section 5, unique 3-col template) |
-| Background | EnvSphere (BackSide sphere + CanvasTexture) |
-| Lint | ESLint 9 + Prettier |
-| Test | Vitest (87 tests) |
-| PM | bun |
+| Route                      | Page                              |
+| -------------------------- | --------------------------------- |
+| `/`                        | Studio home                       |
+| `/services`                | Services                          |
+| `/works`                   | Works                             |
+| `/manifesto`               | Manifesto                         |
+| `/lab`                     | Lab                               |
+| `/contact`                 | Contact                           |
+| `/blog` and `/blog/[slug]` | Standalone prerendered blog pages |
 
-## Docs
+Each SPA route uses the same six-face navigation model: four visible main
+sections plus secret Lab and Menu sections. The menu supports deep links such
+as `/services#section-services-02`.
 
-| File | Content |
-| --- | --- |
-| [AGENTS.md](AGENTS.md) | **Start here** — LLM entry point |
-| [STATUS.md](docs/STATUS.md) ⭐ | Canonical state |
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Modules, render path, sections |
-| [RULES.md](docs/RULES.md) | 49 hard rules |
-| [UIKIT3.md](docs/UIKIT3.md) | UIKit theming patterns + lessons |
-| [CHANGELOG.md](docs/CHANGELOG.md) | Recent changes |
+## Runtime at a glance
 
-## Navigation
+`index.html → entry-shell.ts → entry-app.ts → main-app.ts → Experience.ts`
 
-- **JoystickNav** (bottom-center, pure DOM): vertical = main sections (1-4), horizontal = secret sides (0=Lab / 5=Menu)
-- **Menu overlay** (section 5, joystick right or hamburger click): unique 3-column VOSK-style template (stat | nav list | contacts + footer). Hosts the config toolbar (theme toggle sun/moon + sound toggle EQ-bars). Fits in 1 screen, no scroll.
-- **Lab overlay** (section 0, joystick left): grid of project experiment cards.
-- **Header** (UIkit3 3-zone navbar): lang (left) · logo (center) · hamburger/close toggle (right). Hamburger opens section 5; when menu is open, icon swaps to X (close) and click returns to the previous main section (duplicates joystick arrow-left).
-- **Keyboard**: ArrowUp/Down/Left/Right, Home, End
+The inline splash is visible before the Three.js import. The Enter control only
+activates after `jlz:webgl-ready`; failure shows an error state rather than an
+uninitialised scene. A fixed top bar provides language, theme and sound
+controls, while the joystick and keyboard control sections.
 
-## Theme
+## Documentation
 
-2 modes: `auto` (global light, sun icon) / `inverse` (global dark, moon icon). YOOtheme Pro inverse approach — global flip via `uk-light` on `<body>`. Toggle lives in the menu overlay config toolbar. `localStorage('jlz:theme')`.
-
-## Sound
-
-Default off (user opt-in). Toggle lives in the menu overlay config toolbar — custom 4-bar EQ animation inside UIKit3 `uk-icon-button`. `localStorage('jlz:sound') = 'on' | 'off'`. Dispatches `jlz:sound-toggle` event (Experience.ts listens, mutes AudioSystem + SfxSystem).
+Use [docs/README.md](docs/README.md) for the ownership map. The primary
+technical reference is [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md); hard
+engineering constraints live in [docs/RULES.md](docs/RULES.md).

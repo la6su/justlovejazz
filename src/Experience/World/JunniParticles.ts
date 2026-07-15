@@ -15,12 +15,11 @@
 //
 // WebGPU parity: InstancedMesh + SpriteNodeMaterial (billboarded quads).
 // WebGPU doesn't support resizable THREE.Points (pixel size 1 only), so
-// instanced sprites are the portable path (RULES §14 parity).
+// instanced sprites are the portable path.
 //
-// RULES §1: TSL NodeMaterial only (no raw ShaderMaterial).
-// RULES §2: TSL NodeMaterial IS allowed.
-// RULES §11: on-demand rendering — update() advances uTime, _needsRender set
-//            by the caller (World.update only runs when needsRender=true).
+// Use TSL NodeMaterial only; raw ShaderMaterial is not allowed.
+// On-demand rendering: update() advances uTime only when the caller has
+// requested rendering (World.update runs only while needsRender is true).
 
 import * as THREE from 'three'
 import { SpriteNodeMaterial } from 'three/webgpu'
