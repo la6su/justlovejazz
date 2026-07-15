@@ -4,10 +4,7 @@
 import { DeviceCapability } from './DeviceCapability'
 import type { QualityTier } from './DeviceCapability'
 
-/**
- * Post-processing intensity presets per section.
- * Controls bloom, vignette, grain, chromatic aberration strength.
- */
+/** Runtime values shared by the WebGL and WebGPU post-processing paths. */
 interface PostParams {
   bloom: number // 0–1, bloom intensity multiplier
   vignette: number // 0–1, vignette radius/darkness
@@ -17,60 +14,56 @@ interface PostParams {
   bloomThreshold: number // 0–1, luminance gate for bloom (Track B)
 }
 
-// Presets keyed by PhaseConfig.id (sec_intro..sec_contact) — must match
-// WorldConfig.ts RAW[i].id exactly so applyPreset(cfg.id) resolves correctly.
-const PHASE_PRESETS: Record<string, PostParams> = {
-  // D-10 fix: added sec_lab + sec_menu presets (were missing → fell back to
-  // sec_intro silently. Now explicit — matches WorldConfig RAW phase IDs).
+/**
+ * Values authored in WorldConfig. Keeping them separate from bloom shape
+ * prevents a second, stale set of visual intensities from overriding a scene.
+ */
+export interface SectionPostParams {
+  bloom: number
+  vignette: number
+  grain: number
+  chromatic: number
+}
+
+interface BloomShape {
+  bloomRadius: number
+  bloomThreshold: number
+}
+
+// Bloom's blur shape is renderer-specific implementation detail. All visible
+// section intensities come from WorldConfig via applyPreset(..., cfg.post).
+const PHASE_BLOOM_SHAPES: Record<string, BloomShape> = {
   sec_lab: {
-    bloom: 0.0,
-    vignette: 0.6,
-    grain: 0.012,
-    chromatic: 0.002,
     bloomRadius: 0.5,
     bloomThreshold: 0.55,
   },
   sec_intro: {
-    bloom: 0.0,
-    vignette: 0.65,
-    grain: 0.012,
-    chromatic: 0.002,
     bloomRadius: 0.5,
     bloomThreshold: 0.55,
   },
   sec_about: {
-    bloom: 0.45,
-    vignette: 0.5,
-    grain: 0.01,
-    chromatic: 0.003,
     bloomRadius: 0.65,
     bloomThreshold: 0.4,
   },
   sec_works: {
-    bloom: 0.4,
-    vignette: 0.4,
-    grain: 0.01,
-    chromatic: 0.005,
     bloomRadius: 0.55,
     bloomThreshold: 0.45,
   },
   sec_contact: {
-    bloom: 0.3,
-    vignette: 0.6,
-    grain: 0.01,
-    chromatic: 0.004,
     bloomRadius: 0.5,
     bloomThreshold: 0.5,
   },
-  // D-10 fix: sec_menu preset (was missing → fell back to sec_intro).
   sec_menu: {
-    bloom: 0.15,
-    vignette: 0.55,
-    grain: 0.012,
-    chromatic: 0.002,
     bloomRadius: 0.5,
     bloomThreshold: 0.55,
   },
+}
+
+const DEFAULT_SECTION_POST: SectionPostParams = {
+  bloom: 0,
+  vignette: 0.65,
+  grain: 0.012,
+  chromatic: 0,
 }
 
 /** Quality tier scalers */
@@ -108,17 +101,22 @@ export class PostProcessingManager {
 
   private tier: QualityTier = 'high'
   private phase = 'sec_intro'
+  private sectionPost: SectionPostParams = DEFAULT_SECTION_POST
 
   constructor() {
     this.tier = this.capability.tier
     this.applyPreset('sec_intro')
   }
 
-  /** Apply preset for a given phase (pass PhaseConfig.id, e.g. 'sec_about') */
-  applyPreset(phase: string): void {
+  /**
+   * Apply the scene's authored values. `phase` only selects bloom blur shape;
+   * WorldConfig remains the single source of visible post-processing values.
+   */
+  applyPreset(phase: string, sectionPost: SectionPostParams = this.sectionPost): void {
     this.phase = phase
-    const preset = PHASE_PRESETS[phase] ?? PHASE_PRESETS['sec_intro']!
-    this.current = { ...preset }
+    this.sectionPost = sectionPost
+    const bloomShape = PHASE_BLOOM_SHAPES[phase] ?? PHASE_BLOOM_SHAPES['sec_intro']!
+    this.current = { ...sectionPost, ...bloomShape }
 
     // Apply quality tier scaling
     const scaler = QUALITY_SCALARS[this.tier]

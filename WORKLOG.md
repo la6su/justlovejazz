@@ -7,6 +7,26 @@ inventories or release notes here. Git history retains the detailed record.
 
 <!-- WORKLOG:ENTRIES -->
 
+## 2026-07-16 — WebGPU/WebGL glass and typography parity
+
+### Decision
+
+Removed a duplicate post-processing preset layer that overrode `WorldConfig`
+and left WebGPU chromatic aberration active. The 3D words now use a compact,
+bundled Comfortaa Bold subset with independently floating glyph meshes. The
+cube uses a transparent reflective shell plus a CPU-driven jelly deformation
+and a neutral inner absorption volume for legibility on light sections. Physical transmission in
+the current WebGPU post path samples an incompatible scene-colour target and
+turns the cube dark and milky; the shared shell keeps the intended motion and
+silhouette consistent on both backends.
+
+### Verification
+
+- Forced WebGPU and WebGL2 captures of the 3D-text section have no RGB fringe,
+  runtime errors or material-colour divergence; the cube and individual glyphs
+  move between consecutive captures.
+- Type-check, lint, production build and the 89-unit-test suite passed.
+
 ## 2026-07-16 — Glass-cube backend parity baseline
 
 ### Decision

@@ -46,7 +46,8 @@ export class Experience {
   renderer!: Renderer
   private contentReveal!: ContentReveal
   private cursor!: Cursor
-  private _sectionChangeHandler: ((payload: import('../core/EventBus').AppEvents['jlz:section-change']) => void) | null = null
+  private _sectionChangeHandler:
+    ((payload: import('../core/EventBus').AppEvents['jlz:section-change']) => void) | null = null
   private _themeAppliedHandler: ((e: Event) => void) | null = null
   private _soundToggleHandler: ((e: Event) => void) | null = null
   private _splashEnteredHandler: (() => void) | null = null
@@ -97,7 +98,9 @@ export class Experience {
   private static readonly LOW_FPS_THRESHOLD = 30 // FPS below this = low
   private static readonly LOW_FPS_WINDOW = 60 // frames to sustain before flag
   /** True when FPS < 30 sustained over 60 frames. Read by DevPanel. */
-  public get lowFps(): boolean { return this._lowFps }
+  public get lowFps(): boolean {
+    return this._lowFps
+  }
   // Auto-reduce: when _lowFps flips true, halve all JunniParticles counts.
   // One-way (never restore) — restoring causes a GPU spike that re-triggers
   // low FPS. User can manually restore via DevPanel (future) or page reload.
@@ -141,7 +144,8 @@ export class Experience {
    *  so it works as scene.environment on WebGPURenderer too. This gives both
    *  paths identical image-based lighting → visual parity. */
   private setupEnvironment(): void {
-    const isWebGLRenderer = !((this.renderer.instance as unknown as { isWebGPURenderer?: boolean }).isWebGPURenderer)
+    const isWebGLRenderer = !(this.renderer.instance as unknown as { isWebGPURenderer?: boolean })
+      .isWebGPURenderer
 
     // Procedural environment map (day34 pattern) — bright sky gradient + 3 sun
     // spots for visible glass reflections. RoomEnvironment was too dim (soft
@@ -187,11 +191,11 @@ export class Experience {
       // reflections looked flat/uniform. Now: sky gradient + bright spot
       // (upper-left) + dark ground (bottom) = 3-zone env for interesting IBL.
       const grad = ctx.createLinearGradient(0, 0, 0, 512)
-      grad.addColorStop(0.0, 'rgb(150,140,120)')   // horizon (warm)
-      grad.addColorStop(0.4, 'rgb(210,210,220)')   // mid sky (brighter for contrast)
-      grad.addColorStop(0.7, 'rgb(190,215,240)')   // zenith (cool blue)
-      grad.addColorStop(0.71, 'rgb(70,65,75)')     // ground line (dark — contrast zone)
-      grad.addColorStop(1.0, 'rgb(40,38,45)')      // ground (dark)
+      grad.addColorStop(0.0, 'rgb(150,140,120)') // horizon (warm)
+      grad.addColorStop(0.4, 'rgb(210,210,220)') // mid sky (brighter for contrast)
+      grad.addColorStop(0.7, 'rgb(190,215,240)') // zenith (cool blue)
+      grad.addColorStop(0.71, 'rgb(70,65,75)') // ground line (dark — contrast zone)
+      grad.addColorStop(1.0, 'rgb(40,38,45)') // ground (dark)
       ctx.fillStyle = grad
       ctx.fillRect(0, 0, 1024, 512)
       // Soft bright area (upper-left sky region) — broad, diffused light source
@@ -270,7 +274,10 @@ export class Experience {
         canvas.remove()
       }
       if (import.meta.env.DEV) {
-        console.info('[Experience] Procedural env map (gradient + sun spots) set — glass reflections active' + (isSecondary ? ' (via secondary WebGLRenderer)' : ''))
+        console.info(
+          '[Experience] Procedural env map (gradient + sun spots) set — glass reflections active' +
+            (isSecondary ? ' (via secondary WebGLRenderer)' : ''),
+        )
       }
     } catch (e) {
       if (import.meta.env.DEV) {
@@ -321,10 +328,12 @@ export class Experience {
     // After splash is dismissed (Enter click), re-trigger NoiseText on the
     // active section so user sees the eyebrow animation as 3D scene reveals.
     this._splashEnteredHandler = () => {
-      const activeSection = document.querySelector('.section-active [data-eyebrow]') as HTMLElement | null
-        ?? document.querySelector('[data-section="intro"] [data-eyebrow]') as HTMLElement | null
+      const activeSection =
+        (document.querySelector('.section-active [data-eyebrow]') as HTMLElement | null) ??
+        (document.querySelector('[data-section="intro"] [data-eyebrow]') as HTMLElement | null)
       if (activeSection) {
-        const text = activeSection.getAttribute('data-eyebrow-text') ?? activeSection.textContent ?? ''
+        const text =
+          activeSection.getAttribute('data-eyebrow-text') ?? activeSection.textContent ?? ''
         if (text) NoiseText.for(activeSection).show(0.8, text)
       }
     }
@@ -345,12 +354,12 @@ export class Experience {
         // Sync ground plane color/opacity to the active theme — otherwise
         // a dark ground is invisible on the light theme (near-white bg).
         this.world.syncGroundTheme(detail.isLight)
+        this.world.baku.setTheme(detail.isLight)
         // Sync particle blending: Additive on dark (glow), Normal on light (visible).
         // Without this, additive-blended particles are invisible on white backgrounds.
         for (const group of this.world.sceneGroups) {
           const particles = group.userData.particles as
-            | import('../Experience/World/JunniParticles').JunniParticles
-            | undefined
+            import('../Experience/World/JunniParticles').JunniParticles | undefined
           if (particles) particles.setBlending(!detail.isLight)
         }
         this._needsRender = true
@@ -481,7 +490,9 @@ export class Experience {
     try {
       const soundPref = localStorage.getItem('jlz:sound')
       this.sfx.setMuted(soundPref !== 'on')
-    } catch { /* localStorage unavailable */ }
+    } catch {
+      /* localStorage unavailable */
+    }
 
     // Runtime sound toggle (from UIMenu or other in-app controls)
     this._soundToggleHandler = (e: Event) => {
@@ -637,7 +648,7 @@ export class Experience {
       this._fpsIdx++
       if (this._fpsIdx === Experience.LOW_FPS_WINDOW) {
         const avgMs = this._fpsSum / Experience.LOW_FPS_WINDOW
-        this._lowFps = (1000 / Math.max(1, avgMs)) < Experience.LOW_FPS_THRESHOLD
+        this._lowFps = 1000 / Math.max(1, avgMs) < Experience.LOW_FPS_THRESHOLD
       }
     } else {
       // Circular phase: subtract outgoing, add incoming
@@ -646,7 +657,7 @@ export class Experience {
       this._fpsFrameTimes[idx] = ft
       this._fpsIdx++
       const avgMs = this._fpsSum / Experience.LOW_FPS_WINDOW
-      this._lowFps = (1000 / Math.max(1, avgMs)) < Experience.LOW_FPS_THRESHOLD
+      this._lowFps = 1000 / Math.max(1, avgMs) < Experience.LOW_FPS_THRESHOLD
     }
     this.bus.tick(dt)
     // Cursor always updates (DOM, cheap — not GPU rendering)
@@ -687,28 +698,24 @@ export class Experience {
     const showreelActive = showreelBtn?.isAnimating ?? false
     // Cube face rotation animation — keep rendering while the cube is rotating
     // to its target face (triggered by rotateToFace on section change).
-    const cubeRotating = (this.world?.baku as unknown as { _faceLerp?: number } | undefined)?._faceLerp !== undefined
-      && (this.world?.baku as unknown as { _faceLerp: number })._faceLerp < 1
-    // Wobble pulse animation — keep rendering while the sin-envelope pulse is
-    // active (triggered by jlz:wobble-pulse on card click). The pulse animates
-    // _wobblePulseT from 0→1 in SplashCube.update(); without keeping the render
-    // loop alive, update() isn't called and the pulse stalls at t=0.
-    const wobblePulsing = (this.world?.baku as unknown as { _wobblePulseT?: number } | undefined)?._wobblePulseT !== undefined
-      && (this.world?.baku as unknown as { _wobblePulseT: number })._wobblePulseT < 1
-
+    const cubeRotating =
+      (this.world?.baku as unknown as { _faceLerp?: number } | undefined)?._faceLerp !==
+        undefined && (this.world?.baku as unknown as { _faceLerp: number })._faceLerp < 1
     // ── Visible JunniParticles need continuous frames ──
     // Particles only exist on certain sections (Works on home — intro removed
     // them for white-on-white). Their animation is GPU-side via uTime; if
     // on-demand freezes the loop, drift only advances on ambient-breath
     // frames (~2.5s) and looks stuck. Keep rendering while a particle field
     // is on a visible group (respects prefers-reduced-motion).
-    const particlesActive =
-      !this._reducedMotion && (this.world?.hasVisibleParticles() ?? false)
+    const particlesActive = !this._reducedMotion && (this.world?.hasVisibleParticles() ?? false)
+    const ambientSceneActive =
+      !this._reducedMotion && (this.world?.hasVisibleAmbientMotion() ?? false)
 
     // ── Zoom pulse active ──
     // Camera.pulse() sets a two-phase FOV transition — keep rendering while it animates.
-    const camPulsing = (this.camera as unknown as { fovTransitionT?: number }).fovTransitionT !== undefined
-      && (this.camera as unknown as { fovTransitionT: number }).fovTransitionT < 1
+    const camPulsing =
+      (this.camera as unknown as { fovTransitionT?: number }).fovTransitionT !== undefined &&
+      (this.camera as unknown as { fovTransitionT: number }).fovTransitionT < 1
 
     if (
       navActive ||
@@ -719,9 +726,9 @@ export class Experience {
       camShaking ||
       cubeRotating ||
       showreelActive ||
-      wobblePulsing ||
       camPulsing ||
-      particlesActive
+      particlesActive ||
+      ambientSceneActive
     ) {
       this._needsRender = true
     }
@@ -741,6 +748,7 @@ export class Experience {
       !camShaking &&
       !particlesActive &&
       !burstActive &&
+      !ambientSceneActive &&
       !this._reducedMotion
     ) {
       this._ambientBreathTimer += dt
@@ -762,7 +770,9 @@ export class Experience {
 
     // Drive worldDNA section blend — from→to colors + phaseProgress (scroll t).
     if (this.world?.baku) {
-      const fromCfg = this.world.getConfig(this.world.sections[this.world.currentSectionIndex]?.phaseConfig?.id ?? 'sec_intro')
+      const fromCfg = this.world.getConfig(
+        this.world.sections[this.world.currentSectionIndex]?.phaseConfig?.id ?? 'sec_intro',
+      )
       const toIdx = Math.min(this.world.currentSectionIndex + 1, 5) // 6 sections, max idx 5
       const toCfg = this.world.getConfig(this.world.sections[toIdx]?.phaseConfig?.id ?? 'sec_intro')
       if (fromCfg && toCfg) {
@@ -831,7 +841,7 @@ export class Experience {
     if (cfg && cfg.context !== this.currentSectionContext) {
       // Fog is now managed by World.updateTransform() on section index change —
       // no need to set it here. PostProcessing + FOV still triggered on context change.
-      this.renderer.postManager.applyPreset(cfg.id)
+      this.renderer.postManager.applyPreset(cfg.id, cfg.post)
       // Section-driven screen-space refraction + color grading (glass + LUT-like tint).
       this.renderer.pipeline?.setSectionGrade(
         cfg.post.refract,
@@ -886,7 +896,7 @@ export class Experience {
       // (AudioSystem.update() removed — AudioSystem deleted, was dead code)
       this.renderer.update(this.scene, this.camera.instance, dt, worldState)
       // Clear flag if nothing is actively changing. Include particles/burst/
-      // wobble/cube/showreel/cam pulse so we don't drop a mid-animation frame
+      // cube/showreel/cam pulse so we don't drop a mid-animation frame
       // and rely on the next tick's re-raise (which worked, but was fragile).
       if (
         !navActive &&
@@ -896,10 +906,10 @@ export class Experience {
         !camShaking &&
         !particlesActive &&
         !burstActive &&
-        !wobblePulsing &&
         !cubeRotating &&
         !showreelActive &&
-        !camPulsing
+        !camPulsing &&
+        !ambientSceneActive
       ) {
         this._needsRender = false
       }
@@ -913,8 +923,7 @@ export class Experience {
       this._particleReductionApplied = true
       for (const group of this.world.sceneGroups) {
         const particles = group.userData.particles as
-          | import('../Experience/World/JunniParticles').JunniParticles
-          | undefined
+          import('../Experience/World/JunniParticles').JunniParticles | undefined
         if (particles && !particles.isReduced) {
           particles.setCount(Math.floor(particles.baseCount / 2))
         }
@@ -937,7 +946,7 @@ export class Experience {
     // B1-a: trigger particle burst from cube center
     this.world?.particleBurst?.trigger(0, 0, 0)
     if (this.world?.particleBurst?.isActive) {
-      this._needsRender = true  // keep rendering while burst is active
+      this._needsRender = true // keep rendering while burst is active
     }
   }
 
@@ -1105,9 +1114,10 @@ export class Experience {
     if (document.body.dataset.page !== 'home') return null
     const worksGroup = this.world?.sceneGroups?.[3]
     if (!worksGroup) return null
-    return (worksGroup.userData.carousel as
-      | import('./World/BakuCarousel').BakuCarousel
-      | undefined) ?? null
+    return (
+      (worksGroup.userData.carousel as import('./World/BakuCarousel').BakuCarousel | undefined) ??
+      null
+    )
   }
 
   /** Get the ShowreelButton3D from the intro scene group (index 1).
@@ -1116,9 +1126,10 @@ export class Experience {
     if (document.body.dataset.page !== 'home') return null
     const introGroup = this.world?.sceneGroups?.[1]
     if (!introGroup) return null
-    return (introGroup.userData.showreelButton as
-      | import('./World/ShowreelButton3D').ShowreelButton3D
-      | undefined) ?? null
+    return (
+      (introGroup.userData.showreelButton as
+        import('./World/ShowreelButton3D').ShowreelButton3D | undefined) ?? null
+    )
   }
 
   private onProjectSelect(idx: number, preload: boolean = false): void {
@@ -1132,7 +1143,15 @@ export class Experience {
     // Open/preload fullscreen overlay with project info + poster.
     // preload=true: set content WITHOUT showing (for initial load).
     // preload=false: show the overlay (user clicked a card).
-    const p = project as { title?: string; category?: string; description?: string; tags?: string[]; textureUrl?: string; detailTextureUrl?: string; year?: string }
+    const p = project as {
+      title?: string
+      category?: string
+      description?: string
+      tags?: string[]
+      textureUrl?: string
+      detailTextureUrl?: string
+      year?: string
+    }
     const opts = {
       poster: p.detailTextureUrl || p.textureUrl,
       title: p.title,

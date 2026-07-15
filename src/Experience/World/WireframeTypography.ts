@@ -1,115 +1,90 @@
-// WireframeTypography.ts — 3D bubble text with TSL jelly wobble.
+// WireframeTypography.ts — floating 3D bubble lettering with backend parity.
 //
-// Creates a TextGeometry word (e.g. "ABOUT") using helvetiker_bold — a
-// reliable, well-supported three.js built-in font. The "bubble/balloon"
-// look comes from: large rounded bevels + mergeVertices (smooth normals)
-// + glossy PBR material (clearcoat + iridescence). The jelly wobble
-// (global inflate/deflate) adds the "living" feel.
-//
-// Used in Section2 (About) as "ABOUT" and Section4 (Contact) as "HELLO".
-//
-// HERMES §1-2: TSL NodeMaterial only (no raw ShaderMaterial).
+// Every glyph is its own mesh, so the word can breathe as a small flock rather
+// than as one rigid slab. Motion is CPU-side transforms only: this avoids a
+// second renderer-specific shader path while keeping WebGPU and WebGL2 aligned.
 
 import * as THREE from 'three'
-import { MeshPhysicalNodeMaterial } from 'three/webgpu'
-import { Fn, uniform, positionLocal, sin, float } from 'three/tsl'
-import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js'
+import { FontLoader } from 'three/addons/loaders/FontLoader.js'
 import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js'
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js'
-import fontJson from '../../assets/fonts/helvetiker_bold.typeface.json'
+import fontJson from '../../assets/fonts/comfortaa_bold_subset.typeface.json'
 
-// Parse once at module load
-const _parsedFont = new FontLoader().parse(fontJson as never)
+const bubbleFont = new FontLoader().parse(fontJson as never)
 
-// Uniforms — shared across all typography instances
-const typoUniforms = {
-  uTime: uniform(0),
-  uWobble: uniform(1.0),
+type FloatingGlyph = {
+  mesh: THREE.Mesh
+  x: number
+  phase: number
 }
 
-// ── Vertex: inflate/deflate via SCALE from center (not normal displacement) ──
-//
-// CRITICAL: normal-based displacement (pos + nrm * breathe) causes DRIFT —
-// flat faces translate sideways instead of scaling from center. This makes
-// the text "drift outward and narrow" instead of inflating like a balloon.
-//
-// Fix: use pos * (1 + breathe) — uniform scale from center. All vertices
-// move radially outward/inward relative to the text center, creating a true
-// "balloon inflate/deflate" effect. Geometry stays intact (welded seams
-// scale uniformly, no tearing).
-const typoPositionNode = Fn(() => {
-  const pos = positionLocal.toVar()
-  const t = typoUniforms.uTime
-  const uWobble = typoUniforms.uWobble
-
-  // Breathe: uniform scale from center — the "balloon puffing" effect.
-  // sin gives -1..1, * 0.05 gives ±5% scale. At peak (sin=1): 1.05x scale.
-  // At trough (sin=-1): 0.95x scale. Text rhythmically grows/shrinks.
-  const breathe = sin(t.mul(0.8)).mul(0.05).mul(uWobble)
-
-  // Squash: Y-axis scale offset (slight, adds organic jelly feel).
-  // Applied as additional Y scale — text squashes vertically while expanding.
-  const squash = sin(t.mul(0.5)).mul(0.02).mul(uWobble)
-
-  // Apply: uniform scale from center (inflate/deflate)
-  pos.assign(pos.mul(float(1.0).add(breathe)))
-  // Squash: additional Y compression (scale, not translate)
-  pos.y.mulAssign(float(1.0).sub(squash))
-
-  return pos
-})
-
-export class WireframeTypography extends THREE.Mesh {
-  private _time = 0
+export class WireframeTypography extends THREE.Group {
+  private time = 0
+  private glyphs: FloatingGlyph[] = []
+  private material = new THREE.MeshBasicMaterial({
+    color: 0xe8ebff,
+    fog: false,
+    toneMapped: false,
+  })
 
   constructor(text: string = 'ABOUT', size: number = 0.6) {
-    // Bubble geometry: helvetiker_bold + thick depth + LARGE rounded bevels
-    // for puffy/balloon edges + mergeVertices for smooth surface.
-    let geo: THREE.BufferGeometry = new TextGeometry(text, {
-      font: _parsedFont,
-      size,
-      depth: 0.25,
-      curveSegments: 8,
-      bevelEnabled: true,
-      bevelThickness: 0.08,    // thick bevel = puffy
-      bevelSize: 0.06,         // large bevel = rounded/bubble
-      bevelSegments: 4,
-    })
-    geo.center()
-    geo = mergeVertices(geo, 0.01) as THREE.BufferGeometry
-    geo.computeVertexNormals()
-
-    // Glossy balloon material: PBR with clearcoat + iridescence
-    const mat = new MeshPhysicalNodeMaterial()
-    mat.color = new THREE.Color(0x6688ff)
-    mat.emissive = new THREE.Color(0x223366)
-    mat.emissiveIntensity = 0.3
-    mat.metalness = 0.0
-    mat.roughness = 0.15
-    mat.clearcoat = 1.0
-    mat.clearcoatRoughness = 0.1
-    mat.iridescence = 0.6
-    mat.iridescenceIOR = 1.3
-    mat.iridescenceThicknessRange = [100, 400]
-    mat.transparent = true
-    mat.opacity = 0.85
-    mat.depthWrite = false
-    mat.flatShading = false
-    mat.fog = false
-    mat.positionNode = typoPositionNode()
-
-    super(geo, mat)
+    super()
     this.name = 'bubble-text'
-    this.frustumCulled = false
+
+    const geometries = [...text].map((letter) => this.createGlyph(letter, size))
+    const spacing = size * 0.075
+    const widths = geometries.map((geometry) => {
+      geometry.computeBoundingBox()
+      const box = geometry.boundingBox
+      return box ? box.max.x - box.min.x : 0
+    })
+    const totalWidth = widths.reduce((sum, width) => sum + width, 0) + spacing * (text.length - 1)
+    let cursor = -totalWidth / 2
+
+    geometries.forEach((geometry, index) => {
+      const width = widths[index] ?? 0
+      geometry.center()
+      const mesh = new THREE.Mesh(geometry, this.material)
+      mesh.userData.keepVisible = true
+      mesh.frustumCulled = false
+      const x = cursor + width / 2
+      this.glyphs.push({ mesh, x, phase: index * 1.71 })
+      this.add(mesh)
+      cursor += width + spacing
+    })
+  }
+
+  private createGlyph(letter: string, size: number): THREE.BufferGeometry {
+    let geometry: THREE.BufferGeometry = new TextGeometry(letter, {
+      font: bubbleFont,
+      size,
+      depth: 0.2,
+      curveSegments: 10,
+      bevelEnabled: true,
+      bevelThickness: 0.06,
+      bevelSize: 0.05,
+      bevelSegments: 5,
+    })
+    geometry = mergeVertices(geometry, 0.01) as THREE.BufferGeometry
+    geometry.computeVertexNormals()
+    return geometry
   }
 
   update(dt: number): void {
-    this._time += dt
-    typoUniforms.uTime.value = this._time
+    this.time += dt
+    for (const { mesh, x, phase } of this.glyphs) {
+      const bob = Math.sin(this.time * 1.05 + phase)
+      const sway = Math.sin(this.time * 0.62 + phase * 1.3)
+      const breathe = 1 + Math.sin(this.time * 1.3 + phase) * 0.06
+      mesh.position.set(x + sway * 0.04, bob * 0.08, sway * 0.08)
+      mesh.rotation.set(bob * 0.06, sway * 0.09, bob * 0.1)
+      mesh.scale.set(breathe, breathe * (1 - bob * 0.025), breathe)
+    }
   }
 
   dispose(): void {
-    this.geometry.dispose()
-    ;(this.material as THREE.Material).dispose()
+    for (const { mesh } of this.glyphs) mesh.geometry.dispose()
+    this.material.dispose()
+    this.clear()
   }
 }
