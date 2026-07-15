@@ -288,6 +288,15 @@ export class World extends THREE.Group {
     })
   }
 
+  /** Match the opaque 3D words to the effective section/theme contrast. */
+  public syncTypographyTheme(isLight: boolean): void {
+    for (const group of this.sceneGroups) {
+      const typo = group.userData.typography as
+        import('../Experience/World/WireframeTypography').WireframeTypography | undefined
+      typo?.setTheme(isLight)
+    }
+  }
+
   public update(deltaTime: number, needsRender: boolean = true): void {
     // EnvSphere manages the visible background.
     this.envSphere.update(deltaTime)

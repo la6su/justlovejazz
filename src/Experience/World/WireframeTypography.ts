@@ -7,7 +7,6 @@
 import * as THREE from 'three'
 import { FontLoader } from 'three/addons/loaders/FontLoader.js'
 import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js'
-import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js'
 import fontJson from '../../assets/fonts/comfortaa_bold_subset.typeface.json'
 
 const bubbleFont = new FontLoader().parse(fontJson as never)
@@ -21,10 +20,16 @@ type FloatingGlyph = {
 export class WireframeTypography extends THREE.Group {
   private time = 0
   private glyphs: FloatingGlyph[] = []
-  private material = new THREE.MeshBasicMaterial({
-    color: 0xe8ebff,
+  private material = new THREE.MeshPhysicalMaterial({
+    color: 0xf4efff,
+    emissive: 0x08050c,
+    emissiveIntensity: 0.05,
+    roughness: 0.28,
+    metalness: 0,
+    clearcoat: 0.45,
+    clearcoatRoughness: 0.18,
+    envMapIntensity: 1.1,
     fog: false,
-    toneMapped: false,
   })
 
   constructor(text: string = 'ABOUT', size: number = 0.6) {
@@ -55,19 +60,24 @@ export class WireframeTypography extends THREE.Group {
   }
 
   private createGlyph(letter: string, size: number): THREE.BufferGeometry {
-    let geometry: THREE.BufferGeometry = new TextGeometry(letter, {
+    const geometry = new TextGeometry(letter, {
       font: bubbleFont,
       size,
-      depth: 0.2,
-      curveSegments: 10,
+      depth: 0.16,
+      curveSegments: 8,
       bevelEnabled: true,
-      bevelThickness: 0.06,
-      bevelSize: 0.05,
-      bevelSegments: 5,
+      bevelThickness: 0.028,
+      bevelSize: 0.024,
+      bevelSegments: 3,
     })
-    geometry = mergeVertices(geometry, 0.01) as THREE.BufferGeometry
-    geometry.computeVertexNormals()
     return geometry
+  }
+
+  /** Keep the opaque bubble letters legible on either UI theme. */
+  setTheme(isLight: boolean): void {
+    this.material.color.setHex(isLight ? 0x1d1725 : 0xf4efff)
+    this.material.emissive.setHex(isLight ? 0x020103 : 0x08050c)
+    this.material.emissiveIntensity = isLight ? 0.025 : 0.05
   }
 
   update(dt: number): void {
