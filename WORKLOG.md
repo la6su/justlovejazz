@@ -7,6 +7,22 @@ inventories or release notes here. Git history retains the detailed record.
 
 <!-- WORKLOG:ENTRIES -->
 
+## 2026-07-16 — Splash import boundary and performance budgets
+
+### Decision
+
+Isolated Vite's virtual preload helper into its own runtime chunk. Previously,
+the helper shared the 3D Experience chunk and made the HTML preload Three.js,
+despite the dynamic import in the splash shell. The shell now preloads only its
+1.9 KB gzip startup graph; the lazy app bootstrap owns Three.js delivery.
+
+### Verification
+
+- Production `index.html` preloads only `chunk-runtime`; it has no direct
+  Three.js, UIkit or World preload.
+- Production build, type-check, unit and Playwright suites passed after the
+  change.
+
 ## 2026-07-16 — UIkit/YOOtheme composition and CI parity
 
 ### Decision

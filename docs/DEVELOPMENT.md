@@ -46,6 +46,23 @@ bun run test
 `bun run test` builds the application and starts a preview server itself. It
 uses Playwright Chromium; no separate development server is required.
 
+## Performance budgets
+
+Inspect the production build whenever changing entry points, imports or render
+startup. These budgets protect first paint rather than trying to make Three.js
+artificially small:
+
+| Metric                                     | Budget                                                  | Current baseline                       |
+| ------------------------------------------ | ------------------------------------------------------- | -------------------------------------- |
+| Splash startup graph                       | ≤ 5 KB gzip of JS and no Three/UIkit/World preload      | 1.9 KB gzip (`index` + runtime helper) |
+| Three delivery                             | ≤ 350 KB gzip and loaded only by the lazy app bootstrap | 333 KB gzip                            |
+| Idle frame time on tested desktop hardware | p95 ≤ 16.7 ms                                           | Record during real-device QA           |
+| Idle frame time on tested mobile hardware  | p95 ≤ 33.3 ms                                           | Record during real-device QA           |
+
+The bundle-size warning for `vendor-three` is expected while it stays inside
+this budget. Do not silence it by raising `chunkSizeWarningLimit`; inspect the
+entry graph first. The cross-backend QA task owns hardware frame-time evidence.
+
 ## CI
 
 The GitHub Actions workflow currently runs type-checking, linting, production

@@ -3,15 +3,6 @@
 This is the only active backlog. Completed tasks belong in Git history and the
 changelog, not here. Move one item to **In progress** before implementation.
 
-## In progress
-
-- [ ] **Render performance budget and code-splitting** — profile the current
-      production bundle, remove ineffective dynamic imports, and define measurable
-      budgets for Three.js delivery, initial JavaScript and GPU frame time. Preserve
-      the non-blocking splash contract while changing chunks. The current build
-      reports an ineffective Works-scene dynamic import and a 1.23 MB minified
-      `vendor-three` chunk.
-
 ## High priority
 
 - [ ] **Cross-backend visual QA matrix** — test representative light/dark
