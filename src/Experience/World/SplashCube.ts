@@ -258,14 +258,14 @@ export class SplashCube extends THREE.Mesh {
       mat.transparent = true
       mat.opacity = 1.0
       mat.side = THREE.FrontSide
-      mat.envMapIntensity = 1.0
+      mat.envMapIntensity = 1.5  // stronger reflections
       mat.attenuationColor = new THREE.Color(0.98, 0.97, 1.0)
       // Finite attenuation gives the glass a subtle thickness gradient —
       // thicker areas (edges) absorb slightly more light → depth perception.
       // Infinity (previous) made the cube look flat (no depth cue). 2.0 is
       // subtle (clear glass, not tinted).
       mat.attenuationDistance = 2.0
-      mat.specularIntensity = 0.5                    // synced with WebGL2
+      mat.specularIntensity = 0.8  // brighter specular highlights                    // synced with WebGL2
       // Iridescence: subtle thin-film interference (soap-bubble sheen).
       // Gives the glass surface a faint color shift at grazing angles —
       // the "premium glass" look. 0.3 is gentle, not a full rainbow.
@@ -334,10 +334,10 @@ export class SplashCube extends THREE.Mesh {
       mat.transparent = true
       mat.opacity = 1.0
       mat.side = THREE.FrontSide
-      mat.envMapIntensity = 1.0
+      mat.envMapIntensity = 1.5  // stronger reflections
       mat.attenuationColor = new THREE.Color(0.98, 0.97, 1.0)
       mat.attenuationDistance = 2.0                  // synced (finite for depth gradient)
-      mat.specularIntensity = 0.5                    // synced
+      mat.specularIntensity = 0.8  // brighter specular highlights                    // synced
       mat.iridescence = 0.3                          // synced (subtle thin-film)
       mat.iridescenceIOR = 1.3
       mat.iridescenceThicknessRange = [100, 400]

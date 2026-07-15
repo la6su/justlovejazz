@@ -163,7 +163,7 @@ const RAW: RawScene[] = [
     bakuRole: BakuRole.GLASS,
     bakuOpacity: 0.4,
     bakuDisplace: 0.08,
-    bakuColor: 0xb4bed3,  // light glass-blue (was 0x2a4a6e dark — made cube too dark with transmission)
+    bakuColor: 0x6888bb,  // saturated blue glass
     bakuEmissive: 0x6a8aaa,
     postBloom: 0,
     postVignette: 1.0,
@@ -200,7 +200,7 @@ const RAW: RawScene[] = [
     bakuRole: BakuRole.GLASS,
     bakuOpacity: 0.4,
     bakuDisplace: 0.08,
-    bakuColor: 0xb9b9ce,  // light lavender glass (was 0x3a3a5e dark — matched buildCube tint)
+    bakuColor: 0x8868bb,  // saturated lavender glass
     bakuEmissive: 0x7a7aaa,
     postBloom: 0,
     postVignette: 1.5,
@@ -235,7 +235,7 @@ const RAW: RawScene[] = [
     bakuRole: BakuRole.GLASS,
     bakuOpacity: 0.35,
     bakuDisplace: 0.15,
-    bakuColor: 0xb4b4c5,  // light glass (was 0x2a2a3e dark)
+    bakuColor: 0x6868aa,  // saturated purple glass
     bakuEmissive: 0x9a9ada,  // brighter for dark sections
     postBloom: 0.4,
     postVignette: 0.5,
@@ -272,7 +272,7 @@ const RAW: RawScene[] = [
     bakuRole: BakuRole.GLASS,
     bakuOpacity: 0.4,
     bakuDisplace: 0.05,
-    bakuColor: 0xb4b4c5,  // light glass (was 0x2a2a3e dark)
+    bakuColor: 0x6868aa,  // saturated purple glass
     bakuEmissive: 0x9a9ada,  // brighter for dark sections
     postBloom: 0.4,
     postVignette: 0.4,
@@ -309,7 +309,7 @@ const RAW: RawScene[] = [
     bakuRole: BakuRole.GLASS,
     bakuOpacity: 0.4,
     bakuDisplace: 0.06,
-    bakuColor: 0xafafc0,  // light glass (was 0x1a1a2e dark)
+    bakuColor: 0x6878b0,  // saturated blue-purple glass
     bakuEmissive: 0x8a8aba,  // brighter for dark sections
     postBloom: 0.2,
     postVignette: 0.4,
@@ -346,7 +346,7 @@ const RAW: RawScene[] = [
     bakuRole: BakuRole.GLASS,
     bakuOpacity: 0.35,
     bakuDisplace: 0.06,
-    bakuColor: 0xafafc0,  // light glass (was 0x1a1a2e dark)
+    bakuColor: 0x6878b0,  // saturated blue-purple glass
     bakuEmissive: 0x8a8aba,  // brighter for dark sections
     postBloom: 0.2,
     postVignette: 0.4,
