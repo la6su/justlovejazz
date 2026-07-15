@@ -1,9 +1,10 @@
 # STATUS — Single Source of Truth
 
-> Updated: 2026-07-14 (post-audit + glass polish). Branch: `main`. Build green. ~10.9K TS LOC, 74 TS files.
-> Glass cube premium quality (dispersion, iridescence, sheen, attenuation).
-> Full 4-agent audit complete (73 issues found, 45 fixed across CRITICAL/HIGH/MEDIUM/LOW).
-> PLAN-v3 Phase 7+8 done (dramatic click feedback). All PLAN.md phases complete.
+> Updated: 2026-07-15 (cube visibility + bubble text). Branch: `main`. Build green. ~10.9K TS LOC, 74 TS files.
+> Glass cube: premium glass (dispersion, iridescence, sheen, attenuation) + vibrant saturated colors.
+> 3D text: solid bubble text (helvetiker + puffy bevels + glossy clearcoat + jelly wobble).
+> Full 4-agent audit complete (73 issues found, 45 fixed). All PLAN-v3 + PLAN.md phases complete.
+> Cube visible on all sections (lighter EnvSphere + stronger emissive + darker tint on light sections).
 
 ## Project
 
