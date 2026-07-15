@@ -81,7 +81,9 @@ the route first and then asks `JoystickNav` to activate the target section.
 4. `setFinalRendererMode()` recalculates renderer mode, DPR cap, quality tier
    and post-processing from the backend actually selected.
 5. `PostProcessingManager` and the pipeline configuration refresh after that
-   final decision.
+   final decision. Visible post-processing intensities are supplied by the
+   active `WorldConfig` section; backend code only owns its implementation
+   details such as bloom blur shape.
 
 The scene uses `setAnimationLoop`. Rendering is event-driven through
 `Experience._needsRender`, with small, explicit exceptions for active

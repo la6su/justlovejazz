@@ -92,7 +92,7 @@ export class World extends THREE.Group {
     // attachToScene sets scene.background — this is the SOLE background.
     this.envSphere = new EnvSphere()
     this.envSphere.attachToScene(scene)
-    this.add(this.envSphere)  // added for lifecycle (update/dispose)
+    this.add(this.envSphere) // added for lifecycle (update/dispose)
 
     // ── ParticleBurst — one-shot burst from baku cube on opener (intro).
     // 200 particles fly outward + fade over 1.2s. Hidden until triggered.
@@ -139,7 +139,8 @@ export class World extends THREE.Group {
       const section = new Section(config, index)
       this.add(section)
 
-      if (index === 1) { // Intro = index 1 (Lab=0 is secret left)
+      if (index === 1) {
+        // Intro = index 1 (Lab=0 is secret left)
         section.visible = true
         section.scale.setScalar(1.0)
         section.rotation.y = 0
@@ -208,8 +209,7 @@ export class World extends THREE.Group {
   public ensureCarouselInitialized(): Promise<void> {
     if (this._carouselInitPromise) return this._carouselInitPromise
     const carousel = this.sceneGroups[3]?.userData.carousel as
-      | import('../Experience/World/BakuCarousel').BakuCarousel
-      | undefined
+      import('../Experience/World/BakuCarousel').BakuCarousel | undefined
     if (!carousel) return Promise.resolve()
 
     this._carouselInitPromise = carousel.init().then(
@@ -218,7 +218,10 @@ export class World extends THREE.Group {
       },
       (err) => {
         if (import.meta.env.DEV) {
-          console.error('[World] BakuCarousel init FAILED — textures may not load, event listeners NOT attached:', err)
+          console.error(
+            '[World] BakuCarousel init FAILED — textures may not load, event listeners NOT attached:',
+            err,
+          )
         }
       },
     )
@@ -302,28 +305,23 @@ export class World extends THREE.Group {
     for (const group of this.sceneGroups) {
       if (!group.visible) continue
       const carousel = group.userData.carousel as
-        | import('../Experience/World/BakuCarousel').BakuCarousel
-        | undefined
+        import('../Experience/World/BakuCarousel').BakuCarousel | undefined
       if (carousel) carousel.update(deltaTime)
       // Update wireframe typography (Section2 About + Section4 Contact)
       const typo = group.userData.typography as
-        | import('../Experience/World/WireframeTypography').WireframeTypography
-        | undefined
+        import('../Experience/World/WireframeTypography').WireframeTypography | undefined
       if (typo) typo.update(deltaTime)
       // Update shader orb (Section0 Lab)
       const orb = group.userData.orb as
-        | import('../Experience/World/ShaderOrb').ShaderOrb
-        | undefined
+        import('../Experience/World/ShaderOrb').ShaderOrb | undefined
       if (orb) orb.update(deltaTime)
       // Update timeline nodes (section 5: Menu)
       const timeline = group.userData.timeline as
-        | import('../Experience/World/TimelineNodes').TimelineNodes
-        | undefined
+        import('../Experience/World/TimelineNodes').TimelineNodes | undefined
       if (timeline) timeline.update(deltaTime)
       // Update JunniParticles — GPU-side drift (Works section).
       const particles = group.userData.particles as
-        | import('../Experience/World/JunniParticles').JunniParticles
-        | undefined
+        import('../Experience/World/JunniParticles').JunniParticles | undefined
       if (particles) particles.update(deltaTime)
     }
   }
@@ -397,7 +395,8 @@ export class World extends THREE.Group {
     // Per-section: can use 'linear', 'ease-out', 'ease-in-out' for different feels.
     const fromCfg = this.configs[fromIndex]!
     const toCfg = this.configs[toIndex]!
-    const easing = toCfg?.scene?.transition?.easing ?? fromCfg?.scene?.transition?.easing ?? 'ease-in-out'
+    const easing =
+      toCfg?.scene?.transition?.easing ?? fromCfg?.scene?.transition?.easing ?? 'ease-in-out'
     t = this._applyEasing(t, easing)
 
     // Bug 2: double-ease for bg + group fade so each section's color
@@ -486,8 +485,7 @@ export class World extends THREE.Group {
         // BakuCarousel visibility — ONLY on home page (3D cube morph feature).
         // Content pages don't use the carousel (no cube morphing).
         const carousel = g.userData.carousel as
-          | import('../Experience/World/BakuCarousel').BakuCarousel
-          | undefined
+          import('../Experience/World/BakuCarousel').BakuCarousel | undefined
         if (carousel) {
           const isHome = document.body.dataset.page === 'home'
           const cfg = this.configs[i]
@@ -503,18 +501,15 @@ export class World extends THREE.Group {
         const sceneObjects = cfg?.scene?.objects
         if (sceneObjects) {
           const typo = g.userData.typography as
-            | import('../Experience/World/WireframeTypography').WireframeTypography
-            | undefined
+            import('../Experience/World/WireframeTypography').WireframeTypography | undefined
           if (typo) typo.visible = sceneObjects.wireframeText !== false && fade > 0.01
 
           const orb = g.userData.orb as
-            | import('../Experience/World/ShaderOrb').ShaderOrb
-            | undefined
+            import('../Experience/World/ShaderOrb').ShaderOrb | undefined
           if (orb) orb.visible = sceneObjects.shaderOrb !== false && fade > 0.01
 
           const timeline = g.userData.timeline as
-            | import('../Experience/World/TimelineNodes').TimelineNodes
-            | undefined
+            import('../Experience/World/TimelineNodes').TimelineNodes | undefined
           if (timeline) timeline.visible = sceneObjects.timelineNodes !== false && fade > 0.01
         }
       } else {
@@ -650,8 +645,7 @@ export class World extends THREE.Group {
       // SKIPS the gallery's descendants (already disposed) to avoid a
       // fragile double-dispose on the same materials/geometries.
       const gallery = group.userData.carousel as
-        | ({ dispose?: () => void } & THREE.Object3D)
-        | undefined
+        ({ dispose?: () => void } & THREE.Object3D) | undefined
       // Collect gallery + all its descendants so the traverse can skip them.
       const galleryDescendants = new Set<THREE.Object3D>()
       if (gallery) {
@@ -737,10 +731,12 @@ export class World extends THREE.Group {
     // For most use cases, 20 samples is sufficient
     if (t <= 0) return 0
     if (t >= 1) return 1
-    let lo = 0, hi = 1
+    let lo = 0,
+      hi = 1
     for (let i = 0; i < 20; i++) {
       const mid = (lo + hi) / 2
-      const x = 3 * (1 - mid) * (1 - mid) * mid * x1 + 3 * (1 - mid) * mid * mid * x2 + mid * mid * mid
+      const x =
+        3 * (1 - mid) * (1 - mid) * mid * x1 + 3 * (1 - mid) * mid * mid * x2 + mid * mid * mid
       if (x < t) lo = mid
       else hi = mid
     }
@@ -779,7 +775,17 @@ export class World extends THREE.Group {
       },
       lighting: { ambient: new THREE.Color(), ambientColor: new THREE.Color(), intensity: 1 },
       fog: { color: new THREE.Color(), density: 0.03 },
-      post: { bloom: 0.2, vignette: 0.5, grain: 0.03, chromatic: 0.005, refract: 0.05, border: 0.0, gradeShadows: [1,1,1], gradeHighlights: [1,1,1] },
+      // This fallback must preserve cross-backend visual parity too.
+      post: {
+        bloom: 0.2,
+        vignette: 0.5,
+        grain: 0.03,
+        chromatic: 0,
+        refract: 0,
+        border: 0.0,
+        gradeShadows: [1, 1, 1],
+        gradeHighlights: [1, 1, 1],
+      },
       ui: { showGallery: false },
       background: 0x050507,
       ground: { color: new THREE.Color(0x000000), opacity: 0 },

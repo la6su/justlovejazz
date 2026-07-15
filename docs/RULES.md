@@ -17,10 +17,12 @@ tests first, then correct the stale document or implementation deliberately.
    end when its animation ends.
 6. Keep the ground-plane visibility gated to the contact section in
    `WorldConfig`/`World`.
-7. Keep the SplashCube's WebGL fallback optically conservative: it may use
-   the required GLSL transmission workaround, but do not add multi-sample,
-   distortion or blur effects merely to imitate WebGPU. Shared material and
-   environment parameters are the parity baseline.
+7. `WorldConfig` is the only source of visible section post-processing values.
+   Do not reintroduce independent renderer presets that override them.
+8. Keep SplashCube on the shared transparent reflective material until the
+   WebGPU post path provides a compatible scene-colour target for physical
+   transmission. Do not add screen-space chromatic/refractive effects to
+   imitate glass: the cube must remain comparable on WebGPU and WebGL2.
 
 ## Startup and routing
 

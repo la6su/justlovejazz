@@ -69,14 +69,14 @@ export interface SectionLightDef {
 export interface SceneControl {
   /** 3D objects visibility per section. false = hidden. */
   objects?: {
-    wireframeText?: boolean   // WireframeTypography (section title in 3D)
-    shaderOrb?: boolean       // ShaderOrb (Lab experiment)
-    timelineNodes?: boolean   // TimelineNodes (Menu)
-    bakuCarousel?: boolean    // BakuCarousel (Works gallery)
+    wireframeText?: boolean // WireframeTypography (section title in 3D)
+    shaderOrb?: boolean // ShaderOrb (Lab experiment)
+    timelineNodes?: boolean // TimelineNodes (Menu)
+    bakuCarousel?: boolean // BakuCarousel (Works gallery)
   }
   /** Transition timing for camera + baku morph when entering this section. */
   transition?: {
-    duration: number   // seconds (0 = instant, 1.0 = slow cinematic)
+    duration: number // seconds (0 = instant, 1.0 = slow cinematic)
     easing: 'linear' | 'ease-out' | 'ease-in-out' | 'cubic-bezier'
   }
 }
@@ -163,13 +163,13 @@ const RAW: RawScene[] = [
     bakuRole: BakuRole.GLASS,
     bakuOpacity: 0.4,
     bakuDisplace: 0.08,
-    bakuColor: 0x6888bb,  // saturated blue glass
-    bakuEmissive: 0x6a8aaa,
+    bakuColor: 0xe8f0ff,
+    bakuEmissive: 0x020408,
     postBloom: 0,
     postVignette: 1.0,
     postGrain: 0.02,
-    postChromatic: 0.006,
-    postRefract: 0.02,
+    postChromatic: 0,
+    postRefract: 0,
     postBorder: 0.0,
     postGradeShadows: [1.0, 0.98, 0.95],
     postGradeHighlights: [1.0, 1.0, 1.0],
@@ -200,13 +200,13 @@ const RAW: RawScene[] = [
     bakuRole: BakuRole.GLASS,
     bakuOpacity: 0.4,
     bakuDisplace: 0.08,
-    bakuColor: 0x8868bb,  // saturated lavender glass
-    bakuEmissive: 0x7a7aaa,
+    bakuColor: 0xf0eaff,
+    bakuEmissive: 0x030208,
     postBloom: 0,
     postVignette: 1.5,
     postGrain: 0.02,
-    postChromatic: 0.006,
-    postRefract: 0.02,
+    postChromatic: 0,
+    postRefract: 0,
     postBorder: 0.0,
     postGradeShadows: [1.0, 0.98, 0.95],
     postGradeHighlights: [1.0, 1.0, 1.0],
@@ -235,19 +235,22 @@ const RAW: RawScene[] = [
     bakuRole: BakuRole.GLASS,
     bakuOpacity: 0.35,
     bakuDisplace: 0.15,
-    bakuColor: 0x6868aa,  // saturated purple glass
-    bakuEmissive: 0x9a9ada,  // brighter for dark sections
+    bakuColor: 0xeeecff,
+    bakuEmissive: 0x030208,
     postBloom: 0.4,
     postVignette: 0.5,
     postGrain: 0.02,
-    postChromatic: 0.008,
-    postRefract: 0.02,
+    // Screen-space chromatic aberration has no equivalent WebGL fallback and
+    // turns the opaque bubble text into RGB fringes. The transparent cube
+    // shell stays colour-neutral instead.
+    postChromatic: 0,
+    postRefract: 0,
     postBorder: 0.0,
     postGradeShadows: [0.9, 0.92, 1.0],
     postGradeHighlights: [0.85, 0.9, 1.0],
     lightColor: 0x040408,
     lightIntensity: 1.2,
-    fogColor: 0x242424,  // R-8: matches EnvSphere mid-tone (was 0x040408 — too dark, caused fog halo)
+    fogColor: 0x242424, // R-8: matches EnvSphere mid-tone (was 0x040408 — too dark, caused fog halo)
     fogDensity: 0.005,
     bgColor: 0x020204,
     showGallery: false,
@@ -272,19 +275,19 @@ const RAW: RawScene[] = [
     bakuRole: BakuRole.GLASS,
     bakuOpacity: 0.4,
     bakuDisplace: 0.05,
-    bakuColor: 0x6868aa,  // saturated purple glass
-    bakuEmissive: 0x9a9ada,  // brighter for dark sections
+    bakuColor: 0xeeecff,
+    bakuEmissive: 0x030208,
     postBloom: 0.4,
     postVignette: 0.4,
     postGrain: 0.02,
-    postChromatic: 0.01,
-    postRefract: 0.02,
+    postChromatic: 0,
+    postRefract: 0,
     postBorder: 0.0,
     postGradeShadows: [0.88, 0.9, 1.0],
     postGradeHighlights: [0.9, 0.92, 1.0],
     lightColor: 0x06080e,
     lightIntensity: 1.2,
-    fogColor: 0x22222e,  // R-8: matches EnvSphere mid-tone (was 0x06080e)
+    fogColor: 0x22222e, // R-8: matches EnvSphere mid-tone (was 0x06080e)
     fogDensity: 0.005,
     bgColor: 0x060608,
     showGallery: true,
@@ -309,13 +312,14 @@ const RAW: RawScene[] = [
     bakuRole: BakuRole.GLASS,
     bakuOpacity: 0.4,
     bakuDisplace: 0.06,
-    bakuColor: 0x3050a0,  // darker blue for contrast on light bg
-    bakuEmissive: 0x4060c0,  // stronger blue emissive
+    bakuColor: 0xe4edff,
+    bakuEmissive: 0x020408,
     postBloom: 0.2,
     postVignette: 0.4,
     postGrain: 0.015,
-    postChromatic: 0.006,
-    postRefract: 0.02,
+    // See sec_about: keep typography sections free of backend-specific RGB split.
+    postChromatic: 0,
+    postRefract: 0,
     postBorder: 0.0,
     postGradeShadows: [1.0, 0.96, 0.92],
     postGradeHighlights: [1.0, 0.98, 0.95],
@@ -346,19 +350,19 @@ const RAW: RawScene[] = [
     bakuRole: BakuRole.GLASS,
     bakuOpacity: 0.35,
     bakuDisplace: 0.06,
-    bakuColor: 0x3050a0,  // darker blue for contrast on light bg
-    bakuEmissive: 0x4060c0,  // stronger blue emissive
+    bakuColor: 0xe4edff,
+    bakuEmissive: 0x020408,
     postBloom: 0.2,
     postVignette: 0.4,
     postGrain: 0.015,
-    postChromatic: 0.006,
-    postRefract: 0.02,
+    postChromatic: 0,
+    postRefract: 0,
     postBorder: 0.0,
     postGradeShadows: [1.0, 0.96, 0.92],
     postGradeHighlights: [1.0, 0.98, 0.95],
     lightColor: 0x0a0a0f,
     lightIntensity: 1.2,
-    fogColor: 0x0d0d17,  // R-8: matches EnvSphere mid-tone (was 0x0a0a0f)
+    fogColor: 0x0d0d17, // R-8: matches EnvSphere mid-tone (was 0x0a0a0f)
     fogDensity: 0.005,
     bgColor: 0x0a0a0f,
     showGallery: false,
@@ -431,10 +435,13 @@ function toPhaseConfig(raw: RawScene): PhaseConfig {
       opacity: raw.groundOpacity,
     },
     theme: raw.sectionTheme,
-    scene: (raw.sceneObjects || raw.sceneTransition) ? {
-      objects: raw.sceneObjects,
-      transition: raw.sceneTransition,
-    } : undefined,
+    scene:
+      raw.sceneObjects || raw.sceneTransition
+        ? {
+            objects: raw.sceneObjects,
+            transition: raw.sceneTransition,
+          }
+        : undefined,
   }
 }
 
@@ -456,7 +463,7 @@ type ContentPalette = {
 const SERVICES_PALETTE: ContentPalette = {
   lightBg: 0xf5f0e8,
   darkBg: 0x0a0805,
-  bakuColor: 0xc0b0a0,  // light warm glass (was 0x4a3a2a dark)
+  bakuColor: 0xc0b0a0, // light warm glass (was 0x4a3a2a dark)
   bakuEmissive: 0x8a7a5a,
   fogColor: 0x0a0805,
   lightColor: 0xffffff,
@@ -464,8 +471,8 @@ const SERVICES_PALETTE: ContentPalette = {
 }
 
 const MANIFESTO_PALETTE: ContentPalette = {
-  lightBg: 0xf0f4f5,   // cool desaturated teal-white
-  darkBg: 0x051015,    // deep teal-black
+  lightBg: 0xf0f4f5, // cool desaturated teal-white
+  darkBg: 0x051015, // deep teal-black
   bakuColor: 0xaac4cc, // light cool glass (was 0x2a4a5a dark)
   bakuEmissive: 0x6a9aaa,
   fogColor: 0x051015,
@@ -476,7 +483,7 @@ const MANIFESTO_PALETTE: ContentPalette = {
 const WORKS_PALETTE: ContentPalette = {
   lightBg: 0xf0f0f4,
   darkBg: 0x080814,
-  bakuColor: 0xb0b0ce,  // light glass (was 0x2a2a4e dark)
+  bakuColor: 0xb0b0ce, // light glass (was 0x2a2a4e dark)
   bakuEmissive: 0x7a7aaa,
   fogColor: 0x080814,
   lightColor: 0xffffff,
@@ -486,7 +493,7 @@ const WORKS_PALETTE: ContentPalette = {
 const LAB_PALETTE: ContentPalette = {
   lightBg: 0xf5f5f0,
   darkBg: 0x0a0805,
-  bakuColor: 0xc0b0a0,  // light warm glass (was 0x3a2a1a dark)
+  bakuColor: 0xc0b0a0, // light warm glass (was 0x3a2a1a dark)
   bakuEmissive: 0x8a7a5a,
   fogColor: 0x0a0805,
   lightColor: 0xffffff,
@@ -496,7 +503,7 @@ const LAB_PALETTE: ContentPalette = {
 const CONTACT_PALETTE: ContentPalette = {
   lightBg: 0xf0f4f5,
   darkBg: 0x050a0f,
-  bakuColor: 0xa0c0cc,  // light cool glass (was 0x1a3a4a dark)
+  bakuColor: 0xa0c0cc, // light cool glass (was 0x1a3a4a dark)
   bakuEmissive: 0x6a8a9a,
   fogColor: 0x050a0f,
   lightColor: 0xffffff,
@@ -512,9 +519,9 @@ const CONTACT_PALETTE: ContentPalette = {
 // whenever their scene group is visible (see World.ts visibility block).
 
 function makeContentScenes(palette: ContentPalette, pageId: string): RawScene[] {
-  const themeFor = (idx: number): 'light' | 'dark' => (idx === 0 || idx === 4) ? 'light' : 'dark'
-  const bgFor = (idx: number) => themeFor(idx) === 'light' ? palette.lightBg : palette.darkBg
-  const fogFor = (idx: number) => themeFor(idx) === 'light' ? palette.lightBg : palette.fogColor
+  const themeFor = (idx: number): 'light' | 'dark' => (idx === 0 || idx === 4 ? 'light' : 'dark')
+  const bgFor = (idx: number) => (themeFor(idx) === 'light' ? palette.lightBg : palette.darkBg)
+  const fogFor = (idx: number) => (themeFor(idx) === 'light' ? palette.lightBg : palette.fogColor)
 
   return Array.from({ length: 6 }, (_, idx) => ({
     id: `content_${pageId}_${idx}`,
@@ -535,8 +542,8 @@ function makeContentScenes(palette: ContentPalette, pageId: string): RawScene[] 
     postBloom: 0.15,
     postVignette: 0.5,
     postGrain: 0.015,
-    postChromatic: 0.006,
-    postRefract: 0.02,
+    postChromatic: 0,
+    postRefract: 0,
     postBorder: 0.0,
     postGradeShadows: themeFor(idx) === 'light' ? [1.0, 0.98, 0.95] : [0.9, 0.92, 1.0],
     postGradeHighlights: themeFor(idx) === 'light' ? [1.0, 1.0, 1.0] : [0.85, 0.9, 1.0],
