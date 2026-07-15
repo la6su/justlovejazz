@@ -1,3 +1,32 @@
+## 2026-07-15 — Audit remediation: navigation, lifecycle, and fallback quality
+
+### Context
+
+Follow-up implementation from the project audit, focused on defects that could
+break navigation, leave state out of sync, or apply WebGPU quality decisions
+after the renderer had fallen back to WebGL.
+
+### Changes
+
+- Fixed router capture handling for bare/hash anchors. Dotnav and other local
+  controls no longer resolve `href="#"` as a route to `/`.
+- Fixed `Section` StateBus completion handling to read the event payload rather
+  than the event name; section states now advance after their transition.
+- Made `World.ensureCarouselInitialized()` idempotent and call it when the
+  route changes back to home, so content-page deep links do not leave the home
+  Works carousel uninitialized.
+- Recomputed renderer capability settings, post-processing tier, and pipeline
+  config after the final WebGPU/WebGL backend is known.
+- Added `aria-current` to the active dotnav item, exposed BlurFade text once to
+  assistive technology, and clear pending WorkCards timers on disposal.
+- Updated stale Playwright selectors and added StateBus regression tests.
+
+### Verification
+
+- Browser: direct `/services` boot, dotnav section change, and `/services → /`
+  menu navigation verified. The console confirmed `BakuCarousel initialized`.
+- `bun run lint`, `bun run type-check`, `bun run build`, and `bun run test:unit`.
+- Playwright cannot start locally because its managed Chromium binary is absent.
 
 ## 2026-07-13 — Senior-auditor pass (Tier 0-3)
 

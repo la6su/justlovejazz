@@ -64,7 +64,7 @@ export class Section extends THREE.Group {
 
   // ── Viewing state machinery (Junni: ready/viewing/passed)
   private _state: SectionState = SectionState.READY
-  private _stateDoneHandler: ((name: string) => void) | null = null
+  private _stateDoneHandler: ((eventName: string, data: unknown) => void) | null = null
   public get state(): SectionState {
     return this._state
   }
@@ -127,8 +127,12 @@ export class Section extends THREE.Group {
     // _state → the READY→VIEWING→PASSED state machine was dead (forceState
     // was the only path that set _state). Now when the animate() completes,
     // StateBus emits 'done:${name}' and we resolve _state from the final value.
-    this._stateDoneHandler = (name: string) => {
-      const val = bus.get(name)
+    this._stateDoneHandler = (_eventName: string, data: unknown) => {
+      // StateBus listeners receive `(eventName, data)`. For a completed
+      // animation, `data` is the original state-channel name; using the event
+      // name (`done:section:...`) tried to read a channel that does not exist.
+      if (data !== this.stateChannel) return
+      const val = bus.get(this.stateChannel)
       // Resolve enum from numeric value (0=READY, 1=VIEWING, 2=PASSED)
       let resolved: SectionState
       if (val < 0.5) resolved = SectionState.READY

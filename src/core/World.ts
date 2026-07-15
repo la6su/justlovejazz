@@ -61,6 +61,7 @@ export class World extends THREE.Group {
   private _groundThemeOpacity = 0.4
   private _groundThemeActive = false
   private _targetGroundOpacity = 0
+  private _carouselInitPromise: Promise<void> | null = null
 
   constructor(scene: THREE.Scene) {
     super()
@@ -189,33 +190,10 @@ export class World extends THREE.Group {
       g.visible = i === 1 // Intro = index 1
     })
 
-    // Init BakuCarousel (async texture loading) for the works section (index 3).
-    // ONLY on home page — content pages don't use the carousel.
-    // Home page = / (root). Content pages = /services, /works, /manifesto, /lab, /contact.
-    // Use window.location.pathname because data-page may not be updated yet
-    // (router.ts runs after world.init()).
-    const path = window.location.pathname
-    const isHomePage = path === '/' || path === ''
-    const worksGroup = isHomePage ? this.sceneGroups[3] : undefined
-    if (worksGroup) {
-      const carousel = worksGroup.userData.carousel as
-        | import('../Experience/World/BakuCarousel').BakuCarousel
-        | undefined
-      if (carousel) {
-        void carousel.init().then(
-          () => {
-            if (import.meta.env.DEV) {
-              console.info('[World] BakuCarousel initialized (works section)')
-            }
-          },
-          (err) => {
-            if (import.meta.env.DEV) {
-              console.error('[World] BakuCarousel init FAILED — textures may not load, event listeners NOT attached:', err)
-            }
-          },
-        )
-      }
-    }
+    // Content deep-links create the shared world before the user reaches home.
+    // Defer carousel setup in that case; Experience calls the idempotent method
+    // on every route change and initializes it when home is actually selected.
+    if (pageKey === 'home') void this.ensureCarouselInitialized()
 
     if (import.meta.env.DEV) {
       console.debug(
@@ -223,6 +201,27 @@ export class World extends THREE.Group {
         this.sceneGroups.map((g, i) => `g[${i}]=${g.visible}`),
       )
     }
+  }
+
+  /** Initialize the home-only carousel once, including after a deep-link visit. */
+  public ensureCarouselInitialized(): Promise<void> {
+    if (this._carouselInitPromise) return this._carouselInitPromise
+    const carousel = this.sceneGroups[3]?.userData.carousel as
+      | import('../Experience/World/BakuCarousel').BakuCarousel
+      | undefined
+    if (!carousel) return Promise.resolve()
+
+    this._carouselInitPromise = carousel.init().then(
+      () => {
+        if (import.meta.env.DEV) console.info('[World] BakuCarousel initialized (works section)')
+      },
+      (err) => {
+        if (import.meta.env.DEV) {
+          console.error('[World] BakuCarousel init FAILED — textures may not load, event listeners NOT attached:', err)
+        }
+      },
+    )
+    return this._carouselInitPromise
   }
 
   /** Sync ground plane color/opacity to the active theme.

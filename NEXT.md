@@ -13,6 +13,8 @@ _(nothing currently in progress)_
 
 ## TODO — High priority
 
+- [x] **Audit remediation: navigation, lifecycle, fallback quality and test drift** — DONE 2026-07-15. Fixed router handling for bare/hash anchors (dotnav no longer routes to `/`), corrected `Section` StateBus completion payload handling, made home BakuCarousel initialization idempotent after deep-link navigation, and recalculates quality/pipeline configuration after WebGPU → WebGL fallback. Added dotnav/blur accessibility state, cleared WorkCards timers on disposal, refreshed stale E2E selectors, and added StateBus regression coverage. Browser-verified `/services → /` initializes BakuCarousel; full static checks pass.
+
 - [x] **Glass cube WebGPU/WebGL2 parity** — DONE 2026-07-14. 6 commits: vignette
       sync, wobble noise coords, PMREM isPMREMTexture flag, WorldConfig
       metalness 0.8→0.0, light colors re-enabled, premium glass params

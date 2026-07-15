@@ -440,6 +440,9 @@ export class JoystickNav {
     items.forEach((li, i) => {
       // dot i maps to section i+1 (dots 0-3 = sections 1-4)
       li.classList.toggle('uk-active', i + 1 === mainIdx)
+      const link = li.querySelector('a')
+      if (i + 1 === mainIdx) link?.setAttribute('aria-current', 'step')
+      else link?.removeAttribute('aria-current')
     })
   }
 

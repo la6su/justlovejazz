@@ -154,18 +154,25 @@ export function initRouter(): void {
     // fires first and calls navigateToPage(url.pathname) — DROPPING the hash,
     // so menu subsection clicks always land on section 1 instead of the target.
     if (anchorEl.dataset.navHref !== undefined) return
+    // A bare hash is used by UIKit accordions and the joystick dotnav. It is
+    // not a route to `/`: handle hashes before resolving them against the
+    // current URL, otherwise `new URL('#', origin)` incorrectly becomes '/'.
+    if (href.startsWith('#')) {
+      e.preventDefault()
+      if (href === '#') return
+      const tgt = document.getElementById(href.slice(1))
+      if (tgt) {
+        history.pushState(null, '', href)
+        tgt.scrollIntoView({ behavior: 'smooth' })
+      }
+      return
+    }
+
     const url = new URL(href, window.location.origin)
     if (url.origin === window.location.origin && ROUTES[url.pathname]) {
       e.preventDefault()
-      navigateToPage(url.pathname)
-      return
-    }
-    if (!href.startsWith('#')) return
-    e.preventDefault()
-    const tgt = document.getElementById(href.replace('#', ''))
-    if (tgt) {
-      history.pushState(null, '', href)
-      tgt.scrollIntoView({ behavior: 'smooth' })
+      // Preserve a section hash for absolute links such as /#section-works.
+      navigateToPage(url.pathname + url.hash)
     }
   }
   document.addEventListener('click', handler, true)

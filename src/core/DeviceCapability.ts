@@ -88,6 +88,19 @@ export class DeviceCapability {
     return DeviceCapability.instance
   }
 
+  /**
+   * Commit the renderer that was actually created. WebGPU availability is only
+   * a hint: WebGPURenderer can still fall back to WebGL after async init.
+   */
+  public setFinalRendererMode(mode: Exclude<RendererMode, 'unsupported'>): void {
+    this.mode = mode
+    this.isRealWebGPU = mode === 'webgpu'
+    this.maxDpr = this.calculateMaxDpr()
+    this.tier = this.detectTier()
+    this.config = TIER_SETTINGS[this.tier]
+    this.postProcessing = this.tier !== 'low'
+  }
+
   // D-17 fix: removed verifyWebGPU() + _webgpuAdapterAvailable — was 70 lines
   // of dead code (never called anywhere; Renderer.ts does its own post-hoc
   // WebGPU adapter check after wg.init() via backend name + isFallback).

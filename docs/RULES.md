@@ -45,7 +45,7 @@ git fetch origin && git checkout main && git pull origin main
 23. **JoystickNav — pure DOM, NO three-joystick.** Trigger model. 2D: vertical=1-4, horizontal=0/5 secret. Same on ALL pages.
 24. **Footer removed** — joystick is the sole bottom UI element. Do NOT re-add a footer/dock bar.
 25. **`#project-overlay` reused** — single fullscreen overlay for both home BakuCarousel card click AND works page WorkCards click. Opened via `jlz:open-project` event (works page) or direct `showContainer()` (home carousel).
-26. **BakuCarousel — home page Works section ONLY.** Content pages don't init the carousel (no cube morphing). `World.ts` checks `document.body.dataset.page === 'home'`.
+26. **BakuCarousel — home page Works section ONLY.** Content pages do not initialize the carousel. When a user reaches home from a content-page deep link, `World.ensureCarouselInitialized()` initializes it lazily; that method must remain idempotent.
 27. **DrawTrail — Works section (idx=3) ONLY.** Mouse trail follows cursor only on the works section of the home page.
 
 ## i18n & meta tags

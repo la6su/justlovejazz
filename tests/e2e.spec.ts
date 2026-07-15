@@ -24,9 +24,9 @@ const SECTION_IDS = [
   'section-lab',
   'section-intro',
   'section-about',
-  'section-challenge',
+  'section-works',
   'section-contact',
-  'section-process',
+  'section-menu',
 ] as const
 
 /**
@@ -116,39 +116,37 @@ test.describe('JustLoveJazz — page boot smoke', () => {
 })
 
 test.describe('JustLoveJazz — accessibility & DOM UI', () => {
-  test('UIMenu toggle + section links render with aria-labels', async ({ page }) => {
+  test('top-bar controls and menu section links render with aria-labels', async ({ page }) => {
     await page.goto('/')
 
-    // UIMenu injects #jlz-menu-toggle (hamburger) + #jlz-menu-overlay with
-    // .jlz-menu-link buttons (one per section). It is only constructed after
+    // UIMenu injects top-bar controls. The menu is rendered as secret section 5
+    // and uses .jlz-menu-nav__sub-link anchors. UIMenu is only constructed after
     // the Experience finishes init() — which requires WebGPU or WebGL2. In
     // headless CI without a real GPU this may never happen, so skip gracefully.
-    const toggle = page.locator('#jlz-menu-toggle')
-    const attached = await toggle
+    const soundToggle = page.locator('#jlz-sound-toggle')
+    const attached = await soundToggle
       .waitFor({ state: 'attached', timeout: 25000 })
       .then(() => true)
       .catch(() => false)
 
     test.skip(
       !attached,
-      'UIMenu did not render — GPU/WebGL init likely failed in headless',
+      'Top bar did not render — GPU/WebGL init likely failed in headless',
     )
 
-    // Toggle has an accessible label.
-    const label = await toggle.getAttribute('aria-label')
+    // The sound control has an accessible label.
+    const label = await soundToggle.getAttribute('aria-label')
     expect(label).toBeTruthy()
-    expect(label!.toLowerCase()).toContain('menu')
+    expect(label!.toLowerCase()).toContain('sound')
 
-    // Open the menu and verify section links.
-    await toggle.click()
-    const links = page.locator('.jlz-menu-link')
-    await expect(links.first()).toBeVisible({ timeout: 5000 })
+    // The navigation template is rendered with one sub-link per visible section.
+    const links = page.locator('.jlz-menu-nav__sub-link')
+    await expect(links.first()).toBeAttached({ timeout: 5000 })
     const count = await links.count()
-    expect(count).toBeGreaterThanOrEqual(6)
+    expect(count).toBeGreaterThanOrEqual(20)
 
-    const firstLinkLabel = await links.first().getAttribute('aria-label')
-    expect(firstLinkLabel).toBeTruthy()
-    expect(firstLinkLabel!.toLowerCase()).toContain('section')
+    const firstLinkHref = await links.first().getAttribute('data-nav-href')
+    expect(firstLinkHref).toMatch(/^\//)
   })
 
   test('keyboard: Tab from top of page reaches the skip link first', async ({ page }) => {

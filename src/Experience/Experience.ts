@@ -513,6 +513,10 @@ export class Experience {
       if (this.overlay?.isOpen) {
         this.overlay.close()
       }
+      if (document.body.dataset.page === 'home') {
+        void this.world?.ensureCarouselInitialized()
+      }
+      this._needsRender = true
     }
     window.addEventListener('jlz:route-change', this._routeChangeCloseOverlayHandler)
 

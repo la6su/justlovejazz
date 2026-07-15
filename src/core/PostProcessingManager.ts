@@ -107,6 +107,7 @@ export class PostProcessingManager {
   private crossfadeSpeed = 2.0 // 1 / 0.5 = 2.0
 
   private tier: QualityTier = 'high'
+  private phase = 'sec_intro'
 
   constructor() {
     this.tier = this.capability.tier
@@ -115,6 +116,7 @@ export class PostProcessingManager {
 
   /** Apply preset for a given phase (pass PhaseConfig.id, e.g. 'sec_about') */
   applyPreset(phase: string): void {
+    this.phase = phase
     const preset = PHASE_PRESETS[phase] ?? PHASE_PRESETS['sec_intro']!
     this.current = { ...preset }
 
@@ -126,6 +128,12 @@ export class PostProcessingManager {
     this.current.chromatic *= scaler.chromatic ?? 1
     // bloomRadius + bloomThreshold are NOT scaled by quality tier (they are
     // shape parameters, not intensity — scaling would distort the look).
+  }
+
+  /** Refresh quality scalars after WebGPU initialization selected WebGL. */
+  refreshQualityTier(): void {
+    this.tier = this.capability.tier
+    this.applyPreset(this.phase)
   }
 
   /** Update display values (call each frame with dt) */
