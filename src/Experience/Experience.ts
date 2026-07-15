@@ -693,27 +693,53 @@ export class Experience {
     const wobblePulsing = (this.world?.baku as unknown as { _wobblePulseT?: number } | undefined)?._wobblePulseT !== undefined
       && (this.world?.baku as unknown as { _wobblePulseT: number })._wobblePulseT < 1
 
-    if (navActive || introActive || carouselActive || openerActive || burstActive || camShaking || cubeRotating || showreelActive || wobblePulsing) {
-      this._needsRender = true
-    }
+    // ── Visible JunniParticles need continuous frames ──
+    // Particles only exist on certain sections (Works on home — intro removed
+    // them for white-on-white). Their animation is GPU-side via uTime; if
+    // on-demand freezes the loop, drift only advances on ambient-breath
+    // frames (~2.5s) and looks stuck. Keep rendering while a particle field
+    // is on a visible group (respects prefers-reduced-motion).
+    const particlesActive =
+      !this._reducedMotion && (this.world?.hasVisibleParticles() ?? false)
 
     // ── Zoom pulse active (PLAN.md Phase 2) ──
     // Camera.pulse() sets a two-phase FOV transition — keep rendering while it animates.
     const camPulsing = (this.camera as unknown as { fovTransitionT?: number }).fovTransitionT !== undefined
       && (this.camera as unknown as { fovTransitionT: number }).fovTransitionT < 1
-    if (camPulsing) this._needsRender = true
+
+    if (
+      navActive ||
+      introActive ||
+      carouselActive ||
+      openerActive ||
+      burstActive ||
+      camShaking ||
+      cubeRotating ||
+      showreelActive ||
+      wobblePulsing ||
+      camPulsing ||
+      particlesActive
+    ) {
+      this._needsRender = true
+    }
 
     // ── A4: Ambient breathing (IMPROVEMENT_PLAN) ──
-    // When fully idle, schedule a single render frame every ~2.5 s so the
-    // scene doesn't look frozen. On premium path this advances worldDNA's
-    // uTime → the baku cube's vertex displacement subtly morphs (breathing
-    // effect). On parity path it advances EnvSphere rotation + particle
-    // drift timers. Cost: ~0.4 fps equivalent (1 frame / 2.5 s) — still
-    // "zero draw calls when idle" in spirit (no continuous loop).
+    // When fully idle (no particles/nav/carousel/…), schedule a single render
+    // frame every ~2.5 s so the scene doesn't look frozen. Particle sections
+    // already run continuous frames above — skip breath timer there.
     //
     // Respects: prefers-reduced-motion (frozen entirely), document.hidden
     // (setAnimationLoop already paused, but guard is cheap).
-    if (!navActive && !introActive && !carouselActive && !openerActive && !camShaking && !this._reducedMotion) {
+    if (
+      !navActive &&
+      !introActive &&
+      !carouselActive &&
+      !openerActive &&
+      !camShaking &&
+      !particlesActive &&
+      !burstActive &&
+      !this._reducedMotion
+    ) {
       this._ambientBreathTimer += dt
       if (this._ambientBreathTimer >= Experience.AMBIENT_BREATH_INTERVAL) {
         this._ambientBreathTimer = 0
@@ -857,8 +883,22 @@ export class Experience {
       this.camera.update(dt)
       // (AudioSystem.update() removed — AudioSystem deleted, was dead code)
       this.renderer.update(this.scene, this.camera.instance, dt, worldState)
-      // Clear flag if nothing is actively changing
-      if (!navActive && !introActive && !carouselActive && !openerActive && !camShaking) {
+      // Clear flag if nothing is actively changing. Include particles/burst/
+      // wobble/cube/showreel/cam pulse so we don't drop a mid-animation frame
+      // and rely on the next tick's re-raise (which worked, but was fragile).
+      if (
+        !navActive &&
+        !introActive &&
+        !carouselActive &&
+        !openerActive &&
+        !camShaking &&
+        !particlesActive &&
+        !burstActive &&
+        !wobblePulsing &&
+        !cubeRotating &&
+        !showreelActive &&
+        !camPulsing
+      ) {
         this._needsRender = false
       }
     }

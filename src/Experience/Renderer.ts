@@ -217,6 +217,9 @@ export class Renderer {
         vignette: this.capabilities.scaleIntensity(params.vignette),
         grain: this.capabilities.scaleIntensity(params.grain),
         chromatic: this.capabilities.scaleIntensity(params.chromatic),
+        // Track B: per-section bloom shape (NOT intensity-scaled — shape params)
+        bloomRadius: params.bloomRadius,
+        bloomThreshold: params.bloomThreshold,
       }
       this.pipeline.updateParams(pp)
     }

@@ -71,8 +71,12 @@ export class DeviceCapability {
     this.isTouch = navigator.maxTouchPoints > 0
 
     this.mode = this.detectRenderMode()
-    this.tier = this.detectTier()
+    // maxDpr MUST be computed before detectTier() — tier uses this.maxDpr
+    // (cores >= 8 && maxDpr >= 2 → high). Previously maxDpr was assigned after
+    // detectTier, so `undefined >= 2` was always false and desktop WebGPU
+    // never reached 'high' tier (stuck on medium postMultiplier / grain).
     this.maxDpr = this.calculateMaxDpr()
+    this.tier = this.detectTier()
     this.config = TIER_SETTINGS[this.tier]
     this.postProcessing = this.tier !== 'low' && this.mode !== 'unsupported'
   }
@@ -157,9 +161,8 @@ export class DeviceCapability {
 
   private calculateMaxDpr(): number {
     // WebGPU: desktop 2.0 (sharp on Retina), mobile 1.5 (perf).
-    // The TSL bloom pipeline was slow at 2× DPR on older builds, but
-    // post-processing is bypassed on WebGPU (RenderPipeline renders directly),
-    // so 2× DPR is now safe on desktop.
+    // TSL post (BloomNode + grain + vignette) runs on real WebGPU; 2× DPR
+    // is still acceptable on desktop high tier. Mobile stays 1.5.
     if (this.mode === 'webgpu') {
       return this.isMobile ? 1.5 : 2.0
     }

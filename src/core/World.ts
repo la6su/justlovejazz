@@ -253,17 +253,39 @@ export class World extends THREE.Group {
     this._targetGroundOpacity = this._groundThemeOpacity
   }
 
+  /**
+   * True when any visible scene group hosts JunniParticles.
+   * Experience uses this to keep on-demand rendering alive so GPU drift
+   * (uTime) advances every frame — without it particles freeze on settled
+   * sections (only ambient-breath frames every 2.5s).
+   * Currently only Works (home idx 3) creates particles; Intro removed them
+   * (white-on-white AdditiveBlending was invisible).
+   */
+  public hasVisibleParticles(): boolean {
+    for (const group of this.sceneGroups) {
+      if (!group.visible) continue
+      if (group.userData.particles) return true
+    }
+    return false
+  }
+
   public update(deltaTime: number, needsRender: boolean = true): void {
     // EnvSphere manages the visible background.
     this.envSphere.update(deltaTime)
-    // Update instanced particles (advances uTime for GPU drift). Frozen when
-    // not rendering (on-demand) — only called when needsRender=true (see below).
     this.sections.forEach((s) => s.update(deltaTime))
+
+    // ParticleBurst is one-shot — advance even when on-demand would otherwise
+    // skip decorative updates, but only while active. Experience keeps
+    // _needsRender true while isActive; update here advances positions.
+    if (this.particleBurst.isActive) {
+      this.particleBurst.update(deltaTime)
+    }
 
     // ── On-demand: decorative 3D animations only run when rendering ──
     // When idle (settled on a section, no transition, no cursor movement),
     // skip baku rotation, cursor light, draw trail, particle drift, and
     // BakuCarousel updates — the last rendered frame stays on screen.
+    // Exception: Experience forces needsRender while hasVisibleParticles().
     if (!needsRender) return
 
     if (!this.isReducedMotion) {
@@ -274,8 +296,9 @@ export class World extends THREE.Group {
       }
     }
 
-    // ── BakuCarousel per-frame (morph + scroll) ──
-    // JunniParticles animate via GPU-side drift (update advances uTime uniform).
+    // ── BakuCarousel + per-section modules (morph, particles, orbs, …) ──
+    // JunniParticles: GPU drift via uTime — only present on Works currently
+    // (see sections/works/scene.ts + intro/scene.ts header comment).
     for (const group of this.sceneGroups) {
       if (!group.visible) continue
       const carousel = group.userData.carousel as
@@ -297,7 +320,7 @@ export class World extends THREE.Group {
         | import('../Experience/World/TimelineNodes').TimelineNodes
         | undefined
       if (timeline) timeline.update(deltaTime)
-      // Update JunniParticles (Intro + Works sections) — GPU-side drift.
+      // Update JunniParticles — GPU-side drift (Works section).
       const particles = group.userData.particles as
         | import('../Experience/World/JunniParticles').JunniParticles
         | undefined
