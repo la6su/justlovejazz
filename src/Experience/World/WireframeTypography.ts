@@ -1,15 +1,8 @@
-// WireframeTypography.ts — 3D bubble text with cross-backend PBR parity.
+// WireframeTypography.ts — floating 3D bubble lettering with backend parity.
 //
-// Creates a TextGeometry word (e.g. "ABOUT") using a compact Comfortaa Bold
-// subset. Comfortaa is OFL-licensed and has Cyrillic coverage; this subset only
-// includes the glyphs currently used by the two English 3D words. The
-// "bubble/balloon" look comes from rounded glyphs, large bevels, smooth normals
-// and an opaque parity-safe material.
-// The motion is object-space scaling, not a renderer-specific node shader.
-//
-// Used in Section2 (About) as "ABOUT" and Section4 (Contact) as "HELLO".
-//
-// HERMES §1-2: no raw ShaderMaterial.
+// Every glyph is its own mesh, so the word can breathe as a small flock rather
+// than as one rigid slab. Motion is CPU-side transforms only: this avoids a
+// second renderer-specific shader path while keeping WebGPU and WebGL2 aligned.
 
 import * as THREE from 'three'
 import { FontLoader } from 'three/addons/loaders/FontLoader.js'
@@ -17,18 +10,52 @@ import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js'
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js'
 import fontJson from '../../assets/fonts/comfortaa_bold_subset.typeface.json'
 
-// The subset intentionally contains the letters needed by the current 3D
-// words (ABOUT / HELLO). It avoids adding a TTF parser and a network request to
-// the lazy 3D bundle.
 const bubbleFont = new FontLoader().parse(fontJson as never)
 
-export class WireframeTypography extends THREE.Mesh {
-  private _time = 0
+type FloatingGlyph = {
+  mesh: THREE.Mesh
+  x: number
+  phase: number
+}
+
+export class WireframeTypography extends THREE.Group {
+  private time = 0
+  private glyphs: FloatingGlyph[] = []
+  private material = new THREE.MeshBasicMaterial({
+    color: 0xe8ebff,
+    fog: false,
+    toneMapped: false,
+  })
 
   constructor(text: string = 'ABOUT', size: number = 0.6) {
-    // Rounded glyphs + thick depth + generous bevels make the silhouette
-    // read as an inflated word before lighting is applied.
-    let geo: THREE.BufferGeometry = new TextGeometry(text, {
+    super()
+    this.name = 'bubble-text'
+
+    const geometries = [...text].map((letter) => this.createGlyph(letter, size))
+    const spacing = size * 0.075
+    const widths = geometries.map((geometry) => {
+      geometry.computeBoundingBox()
+      const box = geometry.boundingBox
+      return box ? box.max.x - box.min.x : 0
+    })
+    const totalWidth = widths.reduce((sum, width) => sum + width, 0) + spacing * (text.length - 1)
+    let cursor = -totalWidth / 2
+
+    geometries.forEach((geometry, index) => {
+      const width = widths[index] ?? 0
+      geometry.center()
+      const mesh = new THREE.Mesh(geometry, this.material)
+      mesh.userData.keepVisible = true
+      mesh.frustumCulled = false
+      const x = cursor + width / 2
+      this.glyphs.push({ mesh, x, phase: index * 1.71 })
+      this.add(mesh)
+      cursor += width + spacing
+    })
+  }
+
+  private createGlyph(letter: string, size: number): THREE.BufferGeometry {
+    let geometry: THREE.BufferGeometry = new TextGeometry(letter, {
       font: bubbleFont,
       size,
       depth: 0.2,
@@ -38,35 +65,26 @@ export class WireframeTypography extends THREE.Mesh {
       bevelSize: 0.05,
       bevelSegments: 5,
     })
-    geo.center()
-    geo = mergeVertices(geo, 0.01) as THREE.BufferGeometry
-    geo.computeVertexNormals()
-
-    // Text needs a predictable visual anchor, not a second backend-specific
-    // lighting experiment. MeshBasicMaterial preserves the rounded volume and
-    // depth occlusion while keeping its colour identical on WebGPU and WebGL2.
-    const mat = new THREE.MeshBasicMaterial({
-      color: 0xe8ebff,
-      fog: false,
-      toneMapped: false,
-    })
-
-    super(geo, mat)
-    this.name = 'bubble-text'
-    this.frustumCulled = false
+    geometry = mergeVertices(geometry, 0.01) as THREE.BufferGeometry
+    geometry.computeVertexNormals()
+    return geometry
   }
 
   update(dt: number): void {
-    this._time += dt
-    // Object-space scaling keeps the bubble motion identical on WebGPU and
-    // WebGL2 while retaining a fully opaque, depth-writing material.
-    const breathe = 1 + Math.sin(this._time * 0.8) * 0.035
-    const squash = Math.sin(this._time * 0.5) * 0.015
-    this.scale.set(breathe, breathe * (1 - squash), breathe)
+    this.time += dt
+    for (const { mesh, x, phase } of this.glyphs) {
+      const bob = Math.sin(this.time * 1.05 + phase)
+      const sway = Math.sin(this.time * 0.62 + phase * 1.3)
+      const breathe = 1 + Math.sin(this.time * 1.3 + phase) * 0.06
+      mesh.position.set(x + sway * 0.04, bob * 0.08, sway * 0.08)
+      mesh.rotation.set(bob * 0.06, sway * 0.09, bob * 0.1)
+      mesh.scale.set(breathe, breathe * (1 - bob * 0.025), breathe)
+    }
   }
 
   dispose(): void {
-    this.geometry.dispose()
-    ;(this.material as THREE.Material).dispose()
+    for (const { mesh } of this.glyphs) mesh.geometry.dispose()
+    this.material.dispose()
+    this.clear()
   }
 }

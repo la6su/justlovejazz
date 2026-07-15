@@ -1,6 +1,4 @@
-// Section4 — Contact: WireframeTypography "HELLO" as a 3D greeting.
-// Reuses the same TSL-displaced wireframe text class as About — gives the
-// contact face a warm 3D anchor alongside the inline mailto form below.
+// Section4 — Contact: floating "HELLO" bubble lettering as a 3D greeting.
 import * as THREE from 'three'
 import { WireframeTypography } from '../../Experience/World/WireframeTypography'
 

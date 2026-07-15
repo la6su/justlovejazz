@@ -272,6 +272,22 @@ export class World extends THREE.Group {
     return false
   }
 
+  /**
+   * Intentional continuous motion: the glass cube and visible floating words
+   * are primary scene objects, not ambient decoration. Experience uses this
+   * explicit signal to keep their CPU animation alive under on-demand render.
+   */
+  public hasVisibleAmbientMotion(): boolean {
+    if (this.isReducedMotion) return false
+    if (this.baku.isAmbientlyAnimated) return true
+    return this.sceneGroups.some((group) => {
+      if (!group.visible) return false
+      const typo = group.userData.typography as
+        import('../Experience/World/WireframeTypography').WireframeTypography | undefined
+      return Boolean(typo?.visible)
+    })
+  }
+
   public update(deltaTime: number, needsRender: boolean = true): void {
     // EnvSphere manages the visible background.
     this.envSphere.update(deltaTime)

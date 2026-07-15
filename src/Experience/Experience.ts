@@ -707,6 +707,8 @@ export class Experience {
     // frames (~2.5s) and looks stuck. Keep rendering while a particle field
     // is on a visible group (respects prefers-reduced-motion).
     const particlesActive = !this._reducedMotion && (this.world?.hasVisibleParticles() ?? false)
+    const ambientSceneActive =
+      !this._reducedMotion && (this.world?.hasVisibleAmbientMotion() ?? false)
 
     // ── Zoom pulse active ──
     // Camera.pulse() sets a two-phase FOV transition — keep rendering while it animates.
@@ -724,7 +726,8 @@ export class Experience {
       cubeRotating ||
       showreelActive ||
       camPulsing ||
-      particlesActive
+      particlesActive ||
+      ambientSceneActive
     ) {
       this._needsRender = true
     }
@@ -744,6 +747,7 @@ export class Experience {
       !camShaking &&
       !particlesActive &&
       !burstActive &&
+      !ambientSceneActive &&
       !this._reducedMotion
     ) {
       this._ambientBreathTimer += dt
@@ -903,7 +907,8 @@ export class Experience {
         !burstActive &&
         !cubeRotating &&
         !showreelActive &&
-        !camPulsing
+        !camPulsing &&
+        !ambientSceneActive
       ) {
         this._needsRender = false
       }

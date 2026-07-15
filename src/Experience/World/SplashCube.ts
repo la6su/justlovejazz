@@ -40,6 +40,10 @@ const ROT_PER_TRANSITION = Math.PI / 6
 export class SplashCube extends THREE.Mesh {
   private cubeMesh!: THREE.Mesh
   private cubeMaterial!: THREE.MeshBasicMaterial
+  private cubeOutline!: THREE.LineSegments
+  private cubePositions!: THREE.BufferAttribute
+  private cubeBasePositions!: Float32Array
+  private cubeNormals!: Float32Array
   // (PlayButton3D field removed — dead render path deleted)
   // (CubeCamera + contentScene + contentTextures REMOVED — glass now uses
   //  scene.environment (PMREM RoomEnvironment) for reflections. This removed
@@ -96,6 +100,11 @@ export class SplashCube extends THREE.Mesh {
   private _startFaceRotY = 0
   private _startFaceDelta = 0
 
+  /** The shared shell has a CPU wobble, so both backends see identical motion. */
+  get isAmbientlyAnimated(): boolean {
+    return this.visible
+  }
+
   // Scratch
 
   constructor() {
@@ -149,11 +158,15 @@ export class SplashCube extends THREE.Mesh {
       geo.computeVertexNormals()
     }
 
+    this.cubePositions = geo.getAttribute('position') as THREE.BufferAttribute
+    this.cubeBasePositions = new Float32Array(this.cubePositions.array)
+    this.cubeNormals = new Float32Array(geo.getAttribute('normal').array)
+
     // ── Shared transparent shell ──
     const mat = new THREE.MeshBasicMaterial({
       color: new THREE.Color(0.94, 0.91, 1.0),
       transparent: true,
-      opacity: 0.18,
+      opacity: 0.3,
       side: THREE.FrontSide,
       depthWrite: false,
       combine: THREE.MixOperation,
@@ -164,6 +177,21 @@ export class SplashCube extends THREE.Mesh {
     this.cubeMesh = new THREE.Mesh(geo, this.cubeMaterial)
     this.cubeMesh.renderOrder = 2
     this.add(this.cubeMesh)
+
+    // The contour keeps the translucent shell legible on white sections. It
+    // is deliberately a neutral cool highlight, not chromatic screen-space
+    // aberration, so the two renderer paths retain the same silhouette.
+    this.cubeOutline = new THREE.LineSegments(
+      new THREE.EdgesGeometry(new THREE.BoxGeometry(size * 1.015, size * 1.015, size * 1.015)),
+      new THREE.LineBasicMaterial({
+        color: 0x7188c4,
+        transparent: true,
+        opacity: 0.9,
+        depthWrite: false,
+      }),
+    )
+    this.cubeOutline.renderOrder = 3
+    this.add(this.cubeOutline)
 
     // (cubeMaterial.envMap binding REMOVED — was CubeCamera render target.
     //  Glass now uses scene.environment (PMREM RoomEnvironment) automatically
@@ -185,12 +213,7 @@ export class SplashCube extends THREE.Mesh {
     this.openerTarget = 1
   }
 
-  /** Phase 8: soft cube pulse on click.
-   *  Triggered by jlz:wobble-pulse event (work card click, carousel card click).
-   *  Combined effects (ALL animated via sin-envelope in update() — smooth rise+fall):
-   *  The previous shader wobble and chromatic burst used different WebGPU and
-   *  WebGL programs. The shared material now keeps only the existing smooth
-   *  scale pulse, which is renderer-independent. */
+  /** Trigger a scale pulse alongside the continuous jelly motion. */
   triggerWobblePulse(): void {
     this.triggerOpener()
   }
@@ -262,6 +285,8 @@ export class SplashCube extends THREE.Mesh {
   update(dt: number, _renderer?: THREE.WebGLRenderer): void {
     this.time += dt
 
+    this.updateJellyGeometry()
+
     // (CubeCamera refresh REMOVED — glass uses scene.environment PMREM which
     //  is static, zero per-frame cost. This was the #1 GPU consumer: 6-face
     //  cubemap render every 3rd frame = ~30% of frame budget.)
@@ -324,6 +349,12 @@ export class SplashCube extends THREE.Mesh {
     // Boosted scale pulse for clearer click feedback.
     const openerScale = 1 + this.openerProgress * 0.4
     this.cubeMesh.scale.setScalar(openerScale)
+    this.cubeMesh.rotation.set(
+      Math.sin(this.time * 0.73) * 0.035,
+      Math.sin(this.time * 0.51) * 0.05,
+      Math.sin(this.time * 0.66) * 0.025,
+    )
+    this.cubeOutline.rotation.copy(this.cubeMesh.rotation)
 
     // (PlayButton3D update removed — dead render path deleted)
     // ── Material color blend ──
@@ -366,6 +397,31 @@ export class SplashCube extends THREE.Mesh {
     if (m.metalness !== undefined) m.metalness = metalness
   }
 
+  /**
+   * A tiny vertex displacement recreates the silicon-glass wobble without
+   * depending on a WebGPU-only transmission/node graph. The geometry has only
+   * ~3.5K vertices and uses no allocations in the frame loop.
+   */
+  private updateJellyGeometry(): void {
+    const out = this.cubePositions.array as Float32Array
+    const t = this.time
+    for (let i = 0; i < out.length; i += 3) {
+      const x = this.cubeBasePositions[i] ?? 0
+      const y = this.cubeBasePositions[i + 1] ?? 0
+      const z = this.cubeBasePositions[i + 2] ?? 0
+      const nx = this.cubeNormals[i] ?? 0
+      const ny = this.cubeNormals[i + 1] ?? 0
+      const nz = this.cubeNormals[i + 2] ?? 0
+      const ripple =
+        Math.sin(x * 13 + y * 9 + z * 7 + t * 1.35) * 0.018 +
+        Math.sin(x * 22 - z * 15 - t * 0.8) * 0.01
+      out[i] = x + nx * ripple
+      out[i + 1] = y + ny * ripple
+      out[i + 2] = z + nz * ripple
+    }
+    this.cubePositions.needsUpdate = true
+  }
+
   // (_createJLZTexture REMOVED — was only used by buildContentScene which is
   //  deleted. JLZ branding no longer rendered inside the glass cube.)
 
@@ -376,6 +432,8 @@ export class SplashCube extends THREE.Mesh {
     // (CubeCamera + contentScene dispose REMOVED — deleted with the feature.)
     this.cubeMesh.geometry.dispose()
     this.cubeMaterial.dispose()
+    this.cubeOutline.geometry.dispose()
+    ;(this.cubeOutline.material as THREE.Material).dispose()
     ;(this.geometry as THREE.BufferGeometry).dispose()
     ;(this.material as THREE.Material).dispose()
     this.clear()
