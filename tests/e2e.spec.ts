@@ -76,6 +76,13 @@ function attachErrorCapture(page: Page, errors: string[]): void {
 }
 
 test.describe('JustLoveJazz — page boot smoke', () => {
+  test('splash HTML does not preload the 3D dependency graph', async ({ request }) => {
+    const response = await request.get('/')
+    const html = await response.text()
+
+    expect(html).not.toMatch(/modulepreload[^>]+(?:vendor-three|vendor-ui|chunk-core-world)/)
+  })
+
   test('splash container + populated <main> render within timeout', async ({ page }) => {
     await page.goto('/')
 
@@ -129,10 +136,7 @@ test.describe('JustLoveJazz — accessibility & DOM UI', () => {
       .then(() => true)
       .catch(() => false)
 
-    test.skip(
-      !attached,
-      'Top bar did not render — GPU/WebGL init likely failed in headless',
-    )
+    test.skip(!attached, 'Top bar did not render — GPU/WebGL init likely failed in headless')
 
     // The sound control has an accessible label.
     const label = await soundToggle.getAttribute('aria-label')
