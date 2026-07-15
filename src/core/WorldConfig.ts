@@ -309,8 +309,8 @@ const RAW: RawScene[] = [
     bakuRole: BakuRole.GLASS,
     bakuOpacity: 0.4,
     bakuDisplace: 0.06,
-    bakuColor: 0x6878b0,  // saturated blue-purple glass
-    bakuEmissive: 0x8a8aba,  // brighter for dark sections
+    bakuColor: 0x3050a0,  // darker blue for contrast on light bg
+    bakuEmissive: 0x4060c0,  // stronger blue emissive
     postBloom: 0.2,
     postVignette: 0.4,
     postGrain: 0.015,
@@ -346,8 +346,8 @@ const RAW: RawScene[] = [
     bakuRole: BakuRole.GLASS,
     bakuOpacity: 0.35,
     bakuDisplace: 0.06,
-    bakuColor: 0x6878b0,  // saturated blue-purple glass
-    bakuEmissive: 0x8a8aba,  // brighter for dark sections
+    bakuColor: 0x3050a0,  // darker blue for contrast on light bg
+    bakuEmissive: 0x4060c0,  // stronger blue emissive
     postBloom: 0.2,
     postVignette: 0.4,
     postGrain: 0.015,
