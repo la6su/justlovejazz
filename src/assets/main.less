@@ -1138,17 +1138,19 @@ body.uk-light .jlz-eyebrow {
    duplicate. Use uk-card-default uk-card-hover in templates.) */
 
 /* ------------------------------------------------------------------
-   Joystick — sole bottom UI element (minimalism).
-   Footer/dock removed entirely. Joystick floats at bottom center.
+   Joystick + section navigator.
+   Joystick remains bottom-centre; the UIKit dotnav becomes a fixed right rail.
    ------------------------------------------------------------------ */
 
 .jlz-joystick {
   position: fixed;
   bottom: calc(var(--jlz-space-6) + env(safe-area-inset-bottom, 0px));
-  left: 50%;
-  transform: translateX(-50%);
+  /* Do not use transform for centering: transforms create a containing block
+     that would trap the fixed right-side dotnav inside the joystick. */
+  left: calc(50% - (var(--jlz-joystick-size) / 2));
+  width: var(--jlz-joystick-size);
   z-index: 100;
-  /* Flex column: joystick base on top, dotnav timeline below */
+  /* The section navigator is independently fixed at the right edge. */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1157,41 +1159,105 @@ body.uk-light .jlz-eyebrow {
 
 /* (joystick__base transition + scale defined above in joystick section) */
 
-/* Dotnav timeline — strictly horizontal, centered, with margin from joystick.
-   UIKit3 uk-dotnav is <ul> with display:flex — we override to ensure
-   horizontal centering + proper spacing. */
+/* Right-side section navigator.
+   Keep UIkit's uk-dotnav / uk-dotnav-vertical markup and active state. These
+   scoped rules only supply the bespoke menu-rail layout not covered by UIkit. */
 .jlz-joystick-dotnav {
+  position: fixed;
+  top: 50%;
+  right: calc(var(--jlz-space-5) + env(safe-area-inset-right, 0px));
+  z-index: var(--jlz-z-nav);
   display: flex !important;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  justify-content: center;
-  align-items: center;
-  gap: 0.5rem;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.15rem;
+  width: min(12rem, 16vw);
   margin: 0;
   padding: 0;
   list-style: none;
-}
-.jlz-joystick-dotnav li {
-  padding: 12px;
+  transform: translateY(-50%);
 }
 
-.jlz-joystick-dotnav li a {
-  width: 6px;
-  height: 6px;
-  border-radius: var(--jlz-radius-full);
+.jlz-joystick-dotnav > li {
+  padding: 0;
+}
+
+.jlz-joystick-dotnav > li > a {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 3rem;
+  align-items: center;
+  width: 100%;
+  min-height: 2.5rem;
+  height: auto;
+  border-radius: 0;
+  background: transparent !important;
+  color: var(--jlz-color-text-subtle);
+  text-decoration: none;
+  text-indent: 0;
+  overflow: visible;
+  white-space: normal;
+  transition:
+    color var(--jlz-duration-fast) ease,
+    opacity var(--jlz-duration-fast) ease;
+}
+
+.jlz-joystick-dotnav__label {
+  overflow: hidden;
+  font-size: 0.625rem;
+  font-weight: var(--jlz-weight-semibold);
+  letter-spacing: 0.22em;
+  line-height: 1.2;
+  text-align: right;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.jlz-joystick-dotnav__marker {
+  position: relative;
+  display: block;
+  width: 2.5rem;
+  height: 1px;
+  margin-left: 0.5rem;
   background: var(--jlz-color-border-strong);
   transition:
-    background var(--jlz-duration-fast) ease,
-    transform var(--jlz-duration-fast) ease;
+    width var(--jlz-duration-fast) ease,
+    height var(--jlz-duration-fast) ease,
+    background var(--jlz-duration-fast) ease;
 }
 
-.jlz-joystick-dotnav li.uk-active a {
-  background: var(--jlz-color-accent);
-  transform: scale(1.4);
+.jlz-joystick-dotnav__marker::after {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  width: 3px;
+  height: 3px;
+  border-radius: var(--jlz-radius-full);
+  background: currentColor;
+  content: '';
+  transform: translateY(-50%);
 }
 
-.jlz-joystick-dotnav li a:hover {
+.jlz-joystick-dotnav > li > a:hover,
+.jlz-joystick-dotnav > li > a:focus-visible,
+.jlz-joystick-dotnav > li.uk-active > a {
+  color: var(--jlz-color-text);
+}
+
+.jlz-joystick-dotnav > li > a:hover .jlz-joystick-dotnav__marker,
+.jlz-joystick-dotnav > li > a:focus-visible .jlz-joystick-dotnav__marker {
   background: var(--jlz-color-text-muted);
+}
+
+.jlz-joystick-dotnav > li.uk-active > a .jlz-joystick-dotnav__marker {
+  width: 3rem;
+  height: 2px;
+  background: var(--jlz-color-accent);
+}
+
+.jlz-joystick-dotnav > li > a:focus-visible {
+  outline: 1px solid var(--jlz-color-accent);
+  outline-offset: 3px;
 }
 
 /* (Bottom padding now handled by .jlz-section-bottom — joystick clearance) */
@@ -1199,6 +1265,8 @@ body.uk-light .jlz-eyebrow {
 @media (max-width: 640px) {
   .jlz-joystick {
     bottom: calc(var(--jlz-space-4) + env(safe-area-inset-bottom, 0px));
+    left: calc(50% - (var(--jlz-joystick-size-sm) / 2));
+    width: var(--jlz-joystick-size-sm);
     gap: var(--jlz-space-2);
   }
 
@@ -1212,9 +1280,39 @@ body.uk-light .jlz-eyebrow {
     height: 36px;
   }
 
-  /* Hide dotnav on mobile — joystick-only for minimal mobile footprint */
+  /* Mobile retains tap targets and state markers, but not text labels. */
   .jlz-joystick-dotnav {
-    display: none;
+    right: calc(var(--jlz-space-2) + env(safe-area-inset-right, 0px));
+    width: auto;
+    gap: 0.25rem;
+  }
+
+  .jlz-joystick-dotnav > li > a {
+    display: flex;
+    justify-content: flex-end;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+  }
+
+  .jlz-joystick-dotnav__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .jlz-joystick-dotnav__marker {
+    width: 1.5rem;
+    margin-left: 0;
+  }
+
+  .jlz-joystick-dotnav > li.uk-active > a .jlz-joystick-dotnav__marker {
+    width: 2rem;
   }
 }
 

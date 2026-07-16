@@ -61,6 +61,7 @@ export class JoystickNav {
   private _startY = 0
   private _keydownHandler: ((e: KeyboardEvent) => void) | null = null
   private _routeChangeHandler: ((e: Event) => void) | null = null
+  private _langChangeHandler: (() => void) | null = null
   private _closeNavHandler: (() => void) | null = null
   private _pointerDownHandler: ((e: PointerEvent) => void) | null = null
   private _pointerMoveHandler: ((e: PointerEvent) => void) | null = null
@@ -117,6 +118,7 @@ export class JoystickNav {
     // Dotnav timeline — minimalist section progress indicator (UIKit3 uk-dotnav).
     this._dotnav = this._buildDotnav()
     this.el.appendChild(this._dotnav)
+    this._refreshDotnavLabels()
 
     this.addEventListeners()
     // Start on section 1 (intro) — same as home (Lab=0 is secret, Intro=1 is start).
@@ -147,8 +149,13 @@ export class JoystickNav {
         this._mainSection = INTRO_INDEX
         this._fireSectionChange()
       }
+      this._refreshDotnavLabels()
     }
     window.addEventListener('jlz:route-change', this._routeChangeHandler)
+
+    // Labels mirror translated headings instead of owning a second dictionary.
+    this._langChangeHandler = () => this._refreshDotnavLabels()
+    window.addEventListener('jlz:lang-change', this._langChangeHandler)
 
     // Close-nav event returns from the menu overlay to the previous main
     // section. It is the programmatic counterpart to joystick/ArrowLeft.
@@ -404,19 +411,27 @@ export class JoystickNav {
     this._onActiveChange = cb
   }
 
-  /** Build a UIKit3 uk-dotnav element for the 4 main sections (1-4).
-   *  Secret sections (0=Lab, 5=Menu) are not shown — hidden by design. */
+  /** Build the UIKit dotnav for the four main sections (1-4).
+   *  Secret sections (0=Lab, 5=Menu) are intentionally excluded. */
   private _buildDotnav(): HTMLElement {
     const nav = document.createElement('ul')
-    nav.className = 'uk-dotnav jlz-joystick-dotnav'
+    nav.className = 'uk-dotnav uk-dotnav-vertical jlz-joystick-dotnav'
     nav.setAttribute('aria-label', 'Section progress')
-    // 4 dots for main sections (idx 1-4)
+    // One UIkit item per main section. Project-owned children only provide
+    // the right-rail treatment while UIKit keeps the dotnav active state.
     for (let i = 1; i <= 4; i++) {
       const li = document.createElement('li')
       const a = document.createElement('a')
       a.href = '#'
-      a.setAttribute('role', 'button')
       a.setAttribute('aria-label', `Go to section ${i}`)
+      const label = document.createElement('span')
+      label.className = 'jlz-joystick-dotnav__label'
+      label.dataset.dotnavLabel = ''
+      label.textContent = `Section ${i}`
+      const marker = document.createElement('span')
+      marker.className = 'jlz-joystick-dotnav__marker'
+      marker.setAttribute('aria-hidden', 'true')
+      a.append(label, marker)
       a.addEventListener('click', (e) => {
         e.preventDefault()
         this.goToSection(i)
@@ -425,6 +440,22 @@ export class JoystickNav {
       nav.appendChild(li)
     }
     return nav
+  }
+
+  /** Copy page headings into labels after route and language changes. */
+  private _refreshDotnavLabels(): void {
+    if (!this._dotnav) return
+    const sections = [...document.querySelectorAll<HTMLElement>('section[data-section], section[data-page-section]')]
+      .filter((section) => {
+        const id = section.dataset.section ?? section.dataset.pageSection
+        return id !== 'lab' && id !== 'menu' && id !== 'page-lab' && id !== 'page-menu'
+      })
+    this._dotnav.querySelectorAll<HTMLAnchorElement>('a').forEach((link, index) => {
+      const label = sections[index]?.querySelector('h2')?.textContent?.trim() || `Section ${index + 1}`
+      const labelEl = link.querySelector<HTMLElement>('[data-dotnav-label]')
+      if (labelEl) labelEl.textContent = label
+      link.setAttribute('aria-label', `Go to ${label}`)
+    })
   }
 
   /** Sync dotnav active state to current section. Called on section change.
@@ -576,6 +607,7 @@ export class JoystickNav {
 
   dispose(): void {
     if (this._routeChangeHandler) window.removeEventListener('jlz:route-change', this._routeChangeHandler)
+    if (this._langChangeHandler) window.removeEventListener('jlz:lang-change', this._langChangeHandler)
     if (this._closeNavHandler) window.removeEventListener('jlz:close-nav', this._closeNavHandler)
     if (this._keydownHandler) window.removeEventListener('keydown', this._keydownHandler)
     if (this._pointerDownHandler) this._base.removeEventListener('pointerdown', this._pointerDownHandler)

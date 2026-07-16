@@ -7,6 +7,21 @@ inventories or release notes here. Git history retains the detailed record.
 
 <!-- WORKLOG:ENTRIES -->
 
+## 2026-07-16 — Right-rail section navigator
+
+### Decision
+
+Kept the existing UIkit `uk-dotnav` and moved it into a project-specific,
+fixed right rail using UIkit's vertical modifier. Desktop labels mirror the
+current page headings so route and language changes do not create a second
+navigation dictionary. Mobile keeps the same accessible controls as compact
+markers without visible labels.
+
+### Verification
+
+- Checked desktop and 390px layouts in auto/inverse modes; the rail keeps
+  contrast and no longer shares the joystick's transformed positioning context.
+
 ## 2026-07-16 — WebGPU/WebGL glass and typography parity
 
 ### Decision
