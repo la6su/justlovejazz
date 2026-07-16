@@ -70,8 +70,6 @@ export interface SceneControl {
   /** 3D objects visibility per section. false = hidden. */
   objects?: {
     wireframeText?: boolean // WireframeTypography (section title in 3D)
-    shaderOrb?: boolean // ShaderOrb (Lab experiment)
-    timelineNodes?: boolean // TimelineNodes (Menu)
     bakuCarousel?: boolean // BakuCarousel (Works gallery)
   }
   /** Transition timing for camera + baku morph when entering this section. */
@@ -182,7 +180,6 @@ const RAW: RawScene[] = [
     groundColor: 0xf5f5f8,
     groundOpacity: 0,
     sectionTheme: 'light',
-    sceneObjects: { shaderOrb: true },
     sceneTransition: { duration: 0.8, easing: 'ease-out' },
   },
   // ── Section 1: INTRO — White BG, metal drop ──
@@ -369,7 +366,6 @@ const RAW: RawScene[] = [
     groundColor: 0x080812,
     groundOpacity: 0.05,
     sectionTheme: 'dark',
-    sceneObjects: { timelineNodes: true },
     sceneTransition: { duration: 0.6, easing: 'ease-out' },
   },
 ]

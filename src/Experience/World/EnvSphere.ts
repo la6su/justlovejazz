@@ -1,4 +1,4 @@
-// EnvSphere.ts — Junni-style per-section background (sphere + CanvasTexture)
+// EnvSphere.ts — shared background (CanvasTexture + lightweight secret shader)
 //
 // PORT of junni BG (references/next.junni.co.jp/src/ts/MainScene/World/BG/).
 //
@@ -29,8 +29,8 @@
 import * as THREE from 'three'
 import { prefersReducedMotion } from '../../core/motionPolicy'
 
-const CANVAS_W = 1024  // was 2048 — half the GPU upload cost
-const CANVAS_H = 512   // was 1024
+const CANVAS_W = 1024 // was 2048 — half the GPU upload cost
+const CANVAS_H = 512 // was 1024
 
 // 2 patterns used: idx 1 (light, auto) + idx 2 (dark, inverse).
 // Others kept for future per-section mode.
@@ -50,17 +50,21 @@ const SECTION_PATTERNS = [
 ] as const
 
 export class EnvSphere extends THREE.Mesh {
-  private _sectionWeights: number[] = [0, 1, 0, 0, 0, 0]  // start on section 1 (intro)
+  private _sectionWeights: number[] = [0, 1, 0, 0, 0, 0] // start on section 1 (intro)
   private _targetWeights: number[] = [0, 1, 0, 0, 0, 0]
   private _time = 0
   private _canvas: HTMLCanvasElement
   private _ctx: CanvasRenderingContext2D
   private _canvasTexture: THREE.CanvasTexture
+  private _activeSection = 1
+  private _secretOpacity = 0
+  private _secretTargetOpacity = 0
+  private _secretRedrawTimer = 0
   private _dirty = true
 
   constructor() {
-    // BackSide sphere mesh — VISIBLE. Renders the background via MeshBasicMaterial
-    // + map (CanvasTexture with default UV mapping, NOT equirectangular).
+    // BackSide sphere mesh — VISIBLE. Renders the background through a
+    // CanvasTexture (not equirectangular), reliable on WebGPU and WebGL2.
     //
     // Why a visible mesh (not scene.background)?
     //   - scene.background with CanvasTexture + EquirectangularReflectionMapping
@@ -95,7 +99,7 @@ export class EnvSphere extends THREE.Mesh {
     super(geo, mat)
     this.name = 'env-sphere'
     this.frustumCulled = false
-    this.renderOrder = -1000  // render FIRST, before everything
+    this.renderOrder = -1000 // render FIRST, before everything
 
     // Canvas + texture (2:1 aspect, default UV mapping — sphere geometry
     // has built-in UVs that wrap the texture around like a globe)
@@ -122,7 +126,11 @@ export class EnvSphere extends THREE.Mesh {
   }
 
   /** Set section colors (compat with old API — now ignored, patterns are fixed). */
-  setSectionColors(_mainColor: THREE.Color, _groundColor: THREE.Color, _glowColor: THREE.Color): void {
+  setSectionColors(
+    _mainColor: THREE.Color,
+    _groundColor: THREE.Color,
+    _glowColor: THREE.Color,
+  ): void {
     // No-op — patterns are fixed per section (junni style)
   }
 
@@ -143,9 +151,39 @@ export class EnvSphere extends THREE.Mesh {
     this._dirty = true
   }
 
+  /** Select the secret-section visual without changing the page theme. */
+  setActiveSection(idx: number): void {
+    this._activeSection = idx
+    const isSecret = idx === 0 || idx === 5
+    this._secretTargetOpacity = isSecret ? 0.72 : 0
+    this._dirty = true
+  }
+
+  get hasVisibleAmbientMotion(): boolean {
+    return this._activeSection === 0 || this._activeSection === 5 || this._secretOpacity > 0.001
+  }
+
   update(dt: number): void {
     if (!prefersReducedMotion()) {
       this._time += dt
+    }
+
+    const opacitySpeed = prefersReducedMotion() ? 1 : Math.min(1, dt * 3.5)
+    this._secretOpacity += (this._secretTargetOpacity - this._secretOpacity) * opacitySpeed
+    if (Math.abs(this._secretOpacity - this._secretTargetOpacity) < 0.001) {
+      this._secretOpacity = this._secretTargetOpacity
+    }
+    if (this._secretOpacity > 0.001) {
+      this._secretRedrawTimer += dt
+      // The TSL field is continuous on supported node renderers. This canvas
+      // fallback moves at 10 fps, keeping WebGL2 equally colourful without a
+      // costly texture upload every frame.
+      if (this._secretRedrawTimer >= 0.1) {
+        this._secretRedrawTimer = 0
+        this._dirty = true
+      }
+    } else {
+      this._secretRedrawTimer = 0
     }
 
     // Lerp section weights toward targets (junni: ~1s transition)
@@ -191,6 +229,11 @@ export class EnvSphere extends THREE.Mesh {
       ctx.globalAlpha = weight
       this._drawSectionPattern(ctx, i, w, h)
     }
+
+    if (this._secretOpacity > 0.001) {
+      ctx.globalAlpha = this._secretOpacity * 0.5
+      this._drawSecretPattern(ctx, w, h)
+    }
     ctx.globalAlpha = 1.0
   }
 
@@ -198,7 +241,8 @@ export class EnvSphere extends THREE.Mesh {
   private _drawSectionPattern(
     ctx: CanvasRenderingContext2D,
     sectionIdx: number,
-    w: number, h: number,
+    w: number,
+    h: number,
   ): void {
     const pattern = SECTION_PATTERNS[sectionIdx]!
     const t = this._time
@@ -231,6 +275,26 @@ export class EnvSphere extends THREE.Mesh {
         break
       }
     }
+  }
+
+  /** Colourful, low-frequency WebGL2 fallback for the secret TSL field. */
+  private _drawSecretPattern(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+    const phase = this._time * 0.08
+    const isMenu = this._activeSection === 5
+    const gradient = ctx.createLinearGradient(0, 0, w, h)
+
+    if (isMenu) {
+      gradient.addColorStop(0, `hsl(${222 + Math.sin(phase) * 12} 72% 16%)`)
+      gradient.addColorStop(0.52, `hsl(${274 + Math.sin(phase + 1.4) * 16} 74% 21%)`)
+      gradient.addColorStop(1, `hsl(${198 + Math.sin(phase + 2.7) * 14} 74% 15%)`)
+    } else {
+      gradient.addColorStop(0, `hsl(${204 + Math.sin(phase) * 14} 88% 55%)`)
+      gradient.addColorStop(0.5, `hsl(${255 + Math.sin(phase + 1.4) * 18} 82% 58%)`)
+      gradient.addColorStop(1, `hsl(${308 + Math.sin(phase + 2.7) * 14} 82% 57%)`)
+    }
+
+    ctx.fillStyle = gradient
+    ctx.fillRect(0, 0, w, h)
   }
 
   dispose(): void {

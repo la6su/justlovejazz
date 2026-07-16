@@ -7,6 +7,45 @@ inventories or release notes here. Git history retains the detailed record.
 
 <!-- WORKLOG:ENTRIES -->
 
+## 2026-07-16 — Video-first project presentation
+
+### Decision
+
+Rebuilt the Works route as four responsive editorial compositions on UIkit's
+native grid, with asymmetric desktop layouts and two full-width mobile frames.
+The fullscreen viewer remains a UIkit full modal but now reserves separate
+regions for compact metadata, video and controls; project films autoplay muted
+and loop, while a staged 1.45-second reveal makes the transition legible. The
+shared placeholder film is used until each project receives its own video.
+
+### Verification
+
+- Visually checked Works and the fullscreen viewer at 1440 × 900 and 390 × 844;
+  project-edge spacing is equal to the subpixel on both viewports and autoplay
+  is active in the open modal.
+- Scoped formatting, lint (0 errors), type-check, production build and all 89
+  unit tests pass. The full Chromium suite passed 8 of 9 tests; the unrelated
+  secret-accordion test repeatedly timed out while headless GPU startup held
+  the page, before its assertions ran.
+
+## 2026-07-16 — Secret-section shader backdrop
+
+### Decision
+
+Removed the Lab `ShaderOrb` and Menu `TimelineNodes` entirely. `EnvSphere`
+remains the sole background owner and now adds a single low-frequency
+procedural colour field only while either secret section is active. Lab uses a
+cool cyan-to-violet wash; Menu uses a midnight indigo-to-plum wash. The layer
+fades in and out, respects reduced motion, and refreshes its CanvasTexture at
+10 fps only on secret sections, with no particles or render targets.
+
+### Verification
+
+- Confirmed Lab and Menu joystick transitions in Chromium; neither section
+  reports a browser runtime error.
+- Type-check, lint, production build, 89 unit tests and 9 Chromium E2E tests
+  passed.
+
 ## 2026-07-16 — Unified secret-section accordions
 
 ### Decision

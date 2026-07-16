@@ -381,6 +381,9 @@ export class Experience {
     // JoystickNav — joystick-based section navigation
     this._circNav = new JoystickNav(this.scene, this.camera.instance, 6)
     this._circNav.onSectionChange((idx) => {
+      // Secret sides do not wait for the scroll-progress transform: their
+      // background must begin its reveal as soon as the joystick selects them.
+      this.world?.envSphere.setActiveSection(idx)
       this._uiMenu?.setActive(idx)
       this._needsRender = true
     })
@@ -1151,9 +1154,14 @@ export class Experience {
       tags?: string[]
       textureUrl?: string
       detailTextureUrl?: string
+      videoSrc?: string
       year?: string
     }
     const opts = {
+      // Each project will eventually provide its own film. Until then the
+      // shared reel keeps every case study genuinely video-first and lets the
+      // fullscreen autoplay path be exercised consistently.
+      videoSrc: p.videoSrc ?? '/assets/video/coming-soon.mp4',
       poster: p.detailTextureUrl || p.textureUrl,
       title: p.title,
       category: `${p.year ?? ''} · ${p.category ?? ''}`,

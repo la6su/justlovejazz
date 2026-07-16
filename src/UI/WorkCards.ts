@@ -1,4 +1,4 @@
-// WorkCards.ts — 3D tilt + click + keyboard handler for the works page card grid.
+// WorkCards.ts — restrained depth interaction + project opening for Works.
 //
 // Each .jlz-work-card tilts toward the cursor via CSS custom properties
 // (--rx/--ry) updated on pointermove. The inner .jlz-work-card__inner element
@@ -29,7 +29,7 @@ interface CardState {
   pointerMove: ((e: PointerEvent) => void) | null
   pointerLeave: (() => void) | null
   click: (() => void) | null
-  _clickDebounce?: boolean  // D-25: rapid double-click guard
+  _clickDebounce?: boolean // D-25: rapid double-click guard
   openTimer?: number
   releaseTimer?: number
 }
@@ -105,29 +105,24 @@ function bindCard(cardEl: HTMLElement): void {
   state.click = () => {
     const idx = Number(cardEl.dataset.projectIdx)
     if (Number.isNaN(idx)) return
-    // D-25 fix: debounce rapid double-clicks (was dispatching 2 wobble-pulse
-    // + 2 open-project events 300ms apart → overlay flicker). Ignore clicks
-    // within 400ms of the last one (covers the 300ms wobble delay).
+    // Keep a single transition in flight. The card gets a short, restrained
+    // focus transition before the fullscreen modal takes over.
     if (state._clickDebounce) return
     state._clickDebounce = true
-    // Phase 2: wobble scale animation on card itself (0.6s CSS animation).
-    // + wobble pulse on cube (jlz:wobble-pulse) for synced visual effect.
-    // Open overlay AFTER wobble completes (300ms = mid-animation, user sees
-    // the wobble start before overlay takes over).
-    cardEl.classList.add('is-wobbling')
-    window.dispatchEvent(new CustomEvent('jlz:wobble-pulse'))
-    state.openTimer = window.setTimeout(() => {
-      state.openTimer = undefined
-      cardEl.classList.remove('is-wobbling')
-      window.dispatchEvent(
-        new CustomEvent('jlz:open-project', { detail: { idx } }),
-      )
-      // Allow next click after overlay open + small buffer
-      state.releaseTimer = window.setTimeout(() => {
-        state.releaseTimer = undefined
-        state._clickDebounce = false
-      }, 100)
-    }, 300)
+    cardEl.classList.add('is-opening')
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    state.openTimer = window.setTimeout(
+      () => {
+        state.openTimer = undefined
+        cardEl.classList.remove('is-opening')
+        window.dispatchEvent(new CustomEvent('jlz:open-project', { detail: { idx } }))
+        state.releaseTimer = window.setTimeout(() => {
+          state.releaseTimer = undefined
+          state._clickDebounce = false
+        }, 100)
+      },
+      reducedMotion ? 80 : 620,
+    )
   }
 
   cardEl.addEventListener('pointermove', state.pointerMove)
