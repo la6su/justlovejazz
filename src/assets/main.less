@@ -1972,8 +1972,7 @@ body.uk-light .jlz-showreel-trigger:focus-visible {
   display: block;
 }
 
-// MENU SECTION — two-column grid (section 5, joystick right):
-// stat (left) | navigation (right) plus footer. It stays within one viewport.
+// MENU SECTION — vertically centred stat + navigation accordion (section 5).
 
 // Menu section — full section (NOT overlay). Same visibility pattern as all
 // other sections: hidden by default (section[data-section] { display: none }),
@@ -1999,22 +1998,25 @@ body.uk-light .jlz-showreel-trigger:focus-visible {
   display: flex;
   flex-direction: column;
   height: 100dvh;
-  // Vertically center content (topbar + grid + footer).
-  // Topbar and footer are auto-sized; grid takes flex:1 and centers its content.
+  // Centre the compact panel within the usable viewport, clear of the fixed
+  // top bar and joystick.
   justify-content: center;
   padding-top: calc(var(--jlz-header-height, 60px) + var(--jlz-space-4));
-  padding-bottom: var(--jlz-space-4);
+  padding-bottom: calc(var(--jlz-joystick-size) * 1.35 + var(--jlz-space-4));
 }
 
 // ── 2-column grid: stat | nav ──
-// Contact column removed — dropdown submenu expands into the free space.
 .jlz-menu-grid {
-  flex: 1;
   display: grid;
   grid-template-columns: 1fr 1.5fr;
   gap: var(--jlz-space-8);
-  align-items: start;
-  min-height: 0; // allow grid to shrink within flex column
+  align-items: center;
+  width: min(100%, 64rem);
+  max-height: calc(100dvh - var(--jlz-header-height, 60px) - (var(--jlz-joystick-size) * 1.35) - var(--jlz-space-8));
+  margin: auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .jlz-menu-col {
@@ -2035,13 +2037,9 @@ body.uk-light .jlz-showreel-trigger:focus-visible {
   margin-bottom: var(--jlz-space-2);
 }
 
-.jlz-menu-col-title--follow {
-  margin-top: var(--jlz-space-4);
-}
-
 // ── Left column: stat ──
 .jlz-menu-col--stat {
-  align-self: center;
+  align-self: auto;
 }
 
 .jlz-menu-stat {
@@ -2067,22 +2065,6 @@ body.uk-light .jlz-showreel-trigger:focus-visible {
   text-transform: uppercase;
   color: var(--jlz-color-text-subtle);
   margin-top: var(--jlz-space-2);
-}
-
-.jlz-menu-stat-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  margin-top: var(--jlz-space-4);
-}
-
-.jlz-menu-eyebrow {
-  font-family: @global-font-family;
-  font-size: 0.65rem;
-  font-weight: 600;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--jlz-color-text-subtle);
 }
 
 // ── Center column: nav list ──
@@ -2171,10 +2153,8 @@ body.uk-light .jlz-showreel-trigger:focus-visible {
 }
 
 // ── Subsections (uk-nav-sub) ──
-// UIKit uk-nav handles show/hide via the uk-open class on the parent <li>.
-// We style the layout; UIKit handles visibility (display + animation).
-// Desktop (≥640px): dropdown panel positioned to the RIGHT of nav list.
-// Mobile (<640px): accordion unfold inline below the nav item.
+// UIKit uk-nav owns show/hide via .uk-open at every viewport. These items
+// stay inline below their parent so Menu remains one minimal accordion.
 .jlz-menu-nav__subs {
   list-style: none;
   margin: 0;
@@ -2243,59 +2223,10 @@ body.uk-light .jlz-showreel-trigger:focus-visible {
   color: @global-primary-background;
 }
 
-// (Contact column removed — dropdown submenu expands into the free space.
-//  Contact info now lives in the Contact page section, not in the menu.)
-
-// ── Footer ──
-.jlz-menu-footer {
-  display: flex;
-  align-items: center;
-  gap: var(--jlz-space-2);
-  padding-top: var(--jlz-space-3);
-  border-top: 1px solid var(--jlz-color-border);
-  margin-top: var(--jlz-space-4);
-}
-
-.jlz-menu-footer__text {
-  font-family: @global-font-family;
-  font-size: 0.65rem;
-  font-weight: 600;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--jlz-color-text-subtle);
-}
-
-.jlz-menu-footer__sep {
-  color: var(--jlz-color-text-subtle);
-  opacity: 0.5;
-}
-
-// ── Responsive: desktop dropdown (≥640px) ──
-// Subsections appear as a dropdown panel to the RIGHT of the nav list,
-// positioned absolutely relative to the nav column.
-@media (min-width: 640px) {
-  .jlz-menu-nav__item.uk-open > .jlz-menu-nav__subs {
-    position: absolute;
-    // Position to the right of the nav column, aligned with the item top.
-    left: calc(100% + var(--jlz-space-4));
-    top: 0;
-    min-width: 220px;
-    padding: var(--jlz-space-2);
-    background: var(--jlz-color-bg-elevated);
-    border: 1px solid var(--jlz-color-border);
-    border-radius: 8px;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-    z-index: 10;
-  }
-}
-
 // ── Responsive: mobile single column ──
 @media (max-width: 639px) {
   .jlz-menu-container {
-    // Keep the scrollable navigation and footer clear of the persistent
-    // joystick while retaining the fixed top-bar safe area.
+    // Keep the centred navigation clear of the persistent joystick.
     padding-top: calc(var(--jlz-header-height, 60px) + var(--jlz-space-3));
     padding-bottom: calc(var(--jlz-joystick-size) * 1.35 + var(--jlz-space-4));
   }
@@ -2303,26 +2234,11 @@ body.uk-light .jlz-showreel-trigger:focus-visible {
   .jlz-menu-grid {
     grid-template-columns: 1fr;
     gap: var(--jlz-space-4);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .jlz-menu-col--stat {
-    align-self: flex-start;
-    flex-direction: row;
-    align-items: baseline;
-    gap: var(--jlz-space-3);
+    width: 100%;
   }
 
   .jlz-menu-stat__num {
     font-size: clamp(2.5rem, 14vw, 4rem);
-  }
-
-  .jlz-menu-stat-meta {
-    flex-direction: row;
-    gap: var(--jlz-space-3);
-    margin-top: 0;
   }
 
   .jlz-menu-stat__label {
@@ -2340,10 +2256,6 @@ body.uk-light .jlz-showreel-trigger:focus-visible {
     padding-bottom: 0.5rem;
   }
 
-  .jlz-menu-footer {
-    flex-wrap: wrap;
-    gap: 0.25rem var(--jlz-space-2);
-  }
 }
 
 // ── Light theme overrides ──
@@ -2355,9 +2267,6 @@ body.uk-light {
     color: var(--jlz-color-text);
   }
   .jlz-menu-stat__label {
-    color: var(--jlz-color-text-subtle);
-  }
-  .jlz-menu-eyebrow {
     color: var(--jlz-color-text-subtle);
   }
   .jlz-menu-nav__toggle {
@@ -2378,132 +2287,132 @@ body.uk-light {
   .jlz-menu-nav__sub-num {
     color: var(--jlz-color-text-subtle);
   }
-  .jlz-menu-footer__text {
-    color: var(--jlz-color-text-subtle);
-  }
 }
 
 // ════════════════════════════════════════════════════════════════════
 // LAB SECTION (section 0, joystick left)
 // ════════════════════════════════════════════════════════════════════
 
-.jlz-lab-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 1rem;
-  max-width: 900px;
-  margin: 0 auto;
+// The same UIkit Accordion is used on every viewport. The compact list keeps
+// the secret section focused and its height predictable above the joystick.
+[data-lab-overlay] > .uk-container {
+  justify-content: center;
+  gap: var(--jlz-space-4);
+  padding-top: calc(var(--jlz-header-height, 60px) + var(--jlz-space-4));
+  padding-bottom: calc(var(--jlz-joystick-size) * 1.35 + var(--jlz-space-4));
 }
 
-// Mobile uses UIkit's Accordion behaviour rather than trying to compress a
-// six-card visual gallery into the area between the fixed top bar and joystick.
-// Desktop keeps the gallery; both views are generated from the same project list.
+.jlz-lab-overlay-top {
+  padding-top: 0;
+}
+
+.jlz-lab-overlay-bottom {
+  width: min(100%, 46rem);
+  padding-bottom: 0;
+}
+
 .jlz-lab-accordion {
-  display: none;
+  width: 100%;
+  max-height: min(46dvh, 30rem);
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  list-style: none;
+  -webkit-overflow-scrolling: touch;
 }
 
-.jlz-lab-card {
-  display: block;
+.jlz-lab-accordion__item {
+  border-bottom: 1px solid var(--jlz-color-border);
+}
+
+.jlz-lab-accordion__title {
+  display: flex;
+  align-items: center;
+  min-height: 3.25rem;
+  gap: var(--jlz-space-2);
+  padding: 0.6rem 0.25rem;
+  color: var(--jlz-color-text);
+  font-size: clamp(0.95rem, 1.2vw, 1.1rem);
+  font-weight: 700;
   text-decoration: none;
-  position: relative;
-  border-radius: 8px;
+}
+
+.jlz-lab-accordion__title:hover,
+.jlz-lab-accordion__title:focus-visible {
+  color: @global-primary-background;
+  outline: none;
+}
+
+.jlz-lab-accordion__num,
+.jlz-lab-accordion__meta {
+  flex: 0 0 auto;
+  color: var(--jlz-color-text-subtle);
+  font-family: @global-font-family;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.jlz-lab-accordion__num {
+  min-width: 1.9rem;
+}
+
+.jlz-lab-accordion__name {
+  min-width: 0;
+  flex: 1;
+}
+
+.jlz-lab-accordion__meta {
+  max-width: 7rem;
   overflow: hidden;
-  aspect-ratio: 4 / 3;
-  border: 1px solid rgba(245, 245, 247, 0.06);
-  transition:
-    border-color 0.2s ease,
-    transform 0.2s ease;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.jlz-lab-card:hover {
-  border-color: rgba(196, 255, 0, 0.3);
-  transform: scale(1.03);
+.jlz-lab-accordion__content {
+  margin-top: 0;
+  padding: 0 0 0.75rem;
 }
 
-.jlz-lab-card__cover {
+.jlz-lab-accordion__preview {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  min-height: 7rem;
+  overflow: hidden;
+  border: 1px solid var(--jlz-color-border);
+  border-radius: 0.5rem;
+  color: #fff;
+  text-decoration: none;
+}
+
+.jlz-lab-accordion__image {
   position: absolute;
   inset: 0;
-  background-size: cover;
   background-position: center;
-  filter: saturate(0.85) brightness(0.7);
-  transition:
-    filter 0.3s ease,
-    transform 0.3s ease;
+  background-size: cover;
+  filter: saturate(0.85) brightness(0.55);
 }
 
-.jlz-lab-card:hover .jlz-lab-card__cover {
-  filter: saturate(1) brightness(0.85);
-  transform: scale(1.05);
-}
-
-.jlz-lab-card__num {
-  position: absolute;
-  top: 0.75rem;
-  left: 0.75rem;
-  font-family: 'Inter', monospace;
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.2em;
-  color: rgba(245, 245, 247, 0.7);
-  padding: 0.2rem 0.5rem;
-  border: 1px solid rgba(245, 245, 247, 0.2);
-  border-radius: 100px;
-  backdrop-filter: blur(4px);
-  z-index: 1;
-}
-
-.jlz-lab-card__title {
-  position: absolute;
-  bottom: 0.75rem;
-  left: 0.75rem;
-  right: 0.75rem;
-  font-family: 'Inter', sans-serif;
-  font-size: 1rem;
+.jlz-lab-accordion__action {
+  position: relative;
+  margin: 0.75rem;
+  font-size: 0.68rem;
   font-weight: 700;
-  color: rgba(245, 245, 247, 0.95);
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
-  z-index: 1;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
 
-.jlz-lab-card__meta {
-  position: absolute;
-  bottom: 0.75rem;
-  left: 0.75rem;
-  font-size: 0.7rem;
-  color: rgba(245, 245, 247, 0.6);
-  opacity: 0;
-  transform: translateY(8px);
-  transition:
-    opacity 0.2s ease,
-    transform 0.2s ease;
-  z-index: 1;
-}
-
-.jlz-lab-card:hover .jlz-lab-card__meta {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-body.uk-light {
-  .jlz-lab-card {
-    border-color: rgba(10, 10, 15, 0.08);
-  }
-  .jlz-lab-card__num {
-    color: rgba(10, 10, 15, 0.7);
-    border-color: rgba(10, 10, 15, 0.2);
-  }
-  .jlz-lab-card__title {
-    color: rgba(10, 10, 15, 0.95);
-  }
+.jlz-lab-accordion__preview:focus-visible {
+  outline: 2px solid @global-primary-background;
+  outline-offset: -3px;
 }
 
 @media (max-width: 640px) {
-  .jlz-lab-grid {
-    display: none;
-  }
-
   .jlz-lab-overlay-top {
-    padding-top: calc(48px + var(--jlz-space-3));
+    gap: 0;
   }
 
   .jlz-lab-overlay-top .studio-title {
@@ -2516,110 +2425,12 @@ body.uk-light {
 
   .jlz-lab-overlay-bottom {
     width: min(100%, 34rem);
-    padding-bottom: calc(var(--jlz-joystick-size) * 1.35 + var(--jlz-space-4));
   }
 
   .jlz-lab-accordion {
-    display: block;
-    width: 100%;
     max-height: min(43dvh, 24rem);
-    margin: 0;
-    padding: 0;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    list-style: none;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .jlz-lab-accordion__item {
-    border-bottom: 1px solid var(--jlz-color-border);
-  }
-
-  .jlz-lab-accordion__title {
-    display: flex;
-    align-items: center;
-    min-height: 3.25rem;
-    gap: var(--jlz-space-2);
-    padding: 0.6rem 0.25rem;
-    color: var(--jlz-color-text);
-    font-size: 0.95rem;
-    font-weight: 700;
-    text-decoration: none;
-  }
-
-  .jlz-lab-accordion__title:hover,
-  .jlz-lab-accordion__title:focus-visible {
-    color: @global-primary-background;
-    outline: none;
-  }
-
-  .jlz-lab-accordion__num,
-  .jlz-lab-accordion__meta {
-    flex: 0 0 auto;
-    color: var(--jlz-color-text-subtle);
-    font-family: @global-font-family;
-    font-size: 0.62rem;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-  }
-
-  .jlz-lab-accordion__num {
-    min-width: 1.9rem;
-  }
-
-  .jlz-lab-accordion__name {
-    min-width: 0;
-    flex: 1;
-  }
-
-  .jlz-lab-accordion__meta {
-    max-width: 7rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .jlz-lab-accordion__content {
-    margin-top: 0;
-    padding: 0 0 0.75rem;
-  }
-
-  .jlz-lab-accordion__preview {
-    position: relative;
-    display: flex;
-    align-items: flex-end;
-    min-height: 7rem;
-    overflow: hidden;
-    border: 1px solid var(--jlz-color-border);
-    border-radius: 0.5rem;
-    color: #fff;
-    text-decoration: none;
-  }
-
-  .jlz-lab-accordion__image {
-    position: absolute;
-    inset: 0;
-    background-position: center;
-    background-size: cover;
-    filter: saturate(0.85) brightness(0.55);
-  }
-
-  .jlz-lab-accordion__action {
-    position: relative;
-    margin: 0.75rem;
-    font-size: 0.68rem;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-  }
-
-  .jlz-lab-accordion__preview:focus-visible {
-    outline: 2px solid @global-primary-background;
-    outline-offset: -3px;
   }
 }
-
 // ════════════════════════════════════════════════════════════════════
 // QUICKNAV — desktop nav links, hidden on mobile
 // ════════════════════════════════════════════════════════════════════

@@ -174,7 +174,7 @@ test.describe('JustLoveJazz — accessibility & DOM UI', () => {
     expect(activeClass, 'First Tab should focus the skip link').toContain('skip-link')
   })
 
-  test('mobile secret sections use compact UIkit accordions', async ({ browser }) => {
+  test('secret sections use one UIkit accordion composition', async ({ browser }) => {
     const context = await browser.newContext({ viewport: { width: 390, height: 844 } })
     const page = await context.newPage()
 
@@ -194,7 +194,7 @@ test.describe('JustLoveJazz — accessibility & DOM UI', () => {
 
       const labAccordion = page.locator('#section-lab .jlz-lab-accordion')
       await expect(labAccordion).toBeVisible()
-      await expect(page.locator('#section-lab .jlz-lab-grid')).toBeHidden()
+      await expect(page.locator('#section-lab .jlz-lab-grid')).toHaveCount(0)
 
       const labToggle = labAccordion.locator('.uk-accordion-title').first()
       await labToggle.click()

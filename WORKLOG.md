@@ -7,21 +7,21 @@ inventories or release notes here. Git history retains the detailed record.
 
 <!-- WORKLOG:ENTRIES -->
 
-## 2026-07-16 — Responsive secret sections
+## 2026-07-16 — Unified secret-section accordions
 
 ### Decision
 
-Made the two persistent secret sections compact on phones without creating a
-second data source. Lab renders its six existing projects as a native UIkit
-Accordion below the desktop breakpoint, while Menu now activates its existing
-UIkit Nav accordion with the required `uk-nav` attribute. Both panels reserve
-space for the fixed top bar and joystick, and their scroll areas contain
-overscroll within the section.
+Made the two persistent secret sections one compact pattern at every viewport.
+Lab now renders its six existing projects only as a native UIkit Accordion;
+Menu uses its native UIkit Nav accordion inline rather than a desktop dropdown.
+Both panels are vertically centred within the usable viewport, reserve space
+for the fixed top bar and joystick, and remove the nonessential Menu footer
+and studio meta copy.
 
 ### Verification
 
-- Added a 390 × 844 Chromium regression check for Lab's compact accordion and
-  Menu's native accordion accessibility state.
+- Added a 390 × 844 Chromium regression check for the shared Lab/Menu
+  accordion accessibility state.
 - Lint (0 errors), type-check, unit tests, production build and 9 Chromium
   E2E tests passed.
 

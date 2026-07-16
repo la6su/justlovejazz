@@ -3,30 +3,17 @@
 // This is the "experiments" section — styled list of works/experiments shown
 // when user drags joystick LEFT (section 0 on all pages).
 //
-// Content: grid of project cards (from PROJECTS) with cover thumbnails.
-// Style: compact list, accent-lime hover, backdrop blur.
+// Content: project accordion (from PROJECTS) with cover previews.
 
 import { sectionShell } from '../_shared/constants'
 import { PROJECTS } from '../../Data/Projects'
 
 const LAB_PROJECTS = PROJECTS.slice(0, 6)
 
-function projectCard(project: (typeof LAB_PROJECTS)[number], index: number): string {
-  return `
-    <a href="/works" class="jlz-lab-card" data-magnetic data-cursor="view">
-      <span class="jlz-lab-card__cover" style="background-image: url('${project.textureUrl || project.detailTextureUrl}')"></span>
-      <span class="jlz-lab-card__num">${String(index + 1).padStart(2, '0')}</span>
-      <span class="jlz-lab-card__title">${project.title}</span>
-      <span class="jlz-lab-card__meta">${project.category ?? ''}</span>
-    </a>
-  `
-}
-
 /**
- * The compact Lab representation is intentionally a native UIkit Accordion.
- * It exists only below the desktop breakpoint, where a six-card gallery does
- * not fit above the joystick. Both layouts render from LAB_PROJECTS so the
- * project selection cannot drift between desktop and mobile.
+ * Lab uses one native UIkit Accordion at every breakpoint. This keeps the
+ * secret panel focused and ensures the desktop and mobile project lists cannot
+ * drift apart.
  */
 function projectAccordionItem(project: (typeof LAB_PROJECTS)[number], index: number): string {
   const number = String(index + 1).padStart(2, '0')
@@ -50,7 +37,7 @@ function projectAccordionItem(project: (typeof LAB_PROJECTS)[number], index: num
 }
 
 /** Lab overlay section — shown as section 0 (joystick left) on ALL pages.
- *  Styled list of works/experiments with cover thumbnails.
+ *  Styled accordion of works/experiments with cover previews.
  *  On home page it replaces the old labSection. On content pages it replaces
  *  the old "secret left" section. */
 export function labOverlaySection(mode: 'home' | 'content' = 'content'): string {
@@ -61,14 +48,10 @@ export function labOverlaySection(mode: 'home' | 'content' = 'content'): string 
       <p class="uk-text-lead uk-margin-small-top" data-i18n="labOverlay.lead">Experiments · works · R&D.</p>
     </div>
   `
-  const projectsHtml = LAB_PROJECTS.map(projectCard).join('')
   const projectsAccordionHtml = LAB_PROJECTS.map(projectAccordionItem).join('')
 
   const bottom = `
     <div class="jlz-section-bottom jlz-lab-overlay-bottom">
-      <div class="jlz-lab-grid">
-        ${projectsHtml}
-      </div>
       <ul class="jlz-lab-accordion" uk-accordion="multiple: false; duration: 180">
         ${projectsAccordionHtml}
       </ul>
@@ -77,7 +60,7 @@ export function labOverlaySection(mode: 'home' | 'content' = 'content'): string 
   // On home: data-section="lab" (keeps 3D cube face sync)
   // On content: data-page-section (regular content section)
   if (mode === 'home') {
-    return sectionShell('lab', top, bottom, 'home')
+    return sectionShell('lab', top, bottom, 'home', false, 'data-lab-overlay')
   }
-  return sectionShell('page-lab', top, bottom, 'content')
+  return sectionShell('page-lab', top, bottom, 'content', false, 'data-lab-overlay')
 }

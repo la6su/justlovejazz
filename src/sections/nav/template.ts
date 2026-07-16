@@ -114,10 +114,6 @@ function statColumn(): string {
         <span class="jlz-menu-stat__num">06</span>
         <span class="jlz-menu-stat__label" data-i18n="menu.stat.sections">SECTIONS</span>
       </div>
-      <div class="jlz-menu-stat-meta">
-        <span class="jlz-menu-eyebrow">EST 2019</span>
-        <span class="jlz-menu-eyebrow">REMOTE · EU</span>
-      </div>
     </div>
   `
 }
@@ -161,17 +157,6 @@ function navColumn(): string {
 // (contactsColumn removed — contact info lives in the Contact page section,
 //  not in the menu. Dropdown submenu expands into the free space.)
 
-// ── Footer ──
-function menuFooter(): string {
-  return `
-    <footer class="jlz-menu-footer">
-      <span class="jlz-menu-footer__text">© 2026 JUSTLOVEJAZZ</span>
-      <span class="jlz-menu-footer__sep" aria-hidden="true">·</span>
-      <span class="jlz-menu-footer__text">WEBGPU · TSL · UIKIT</span>
-    </footer>
-  `
-}
-
 /**
  * Menu section — UNIQUE template (not sectionShell).
  *
@@ -200,21 +185,18 @@ export function navOverlaySection(mode: 'home' | 'content' = 'content'): string 
       <div class="uk-container uk-container-expand jlz-menu-container">
         <!-- (Top bar removed — config controls (lang/sound/theme) live in the
              fixed UIMenu.ts top bar. Menu section is now
-             navigation-only: stat + nav list + footer.) -->
-        <!-- Main 2-column grid: stat | nav (contact column removed — dropdown
-             submenu expands into the free space on the right) -->
+             navigation-only: stat + nav accordion.) -->
+        <!-- Main 2-column grid: stat | nav accordion -->
         <div class="jlz-menu-grid">
           ${statColumn()}
           ${navColumn()}
         </div>
-        <!-- Footer -->
-        ${menuFooter()}
       </div>
     </section>
   `
 }
 
-// ── Nav item toggle (desktop dropdown / mobile accordion) ──
+// ── Nav item toggle (accordion at every viewport) ──
 
 /**
  * Initialize nav item click handlers.
