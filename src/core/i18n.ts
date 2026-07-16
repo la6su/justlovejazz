@@ -57,6 +57,7 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     // Lab section (section 0, joystick left)
     'labOverlay.title': 'Lab',
     'labOverlay.lead': 'Experiments · works · R&D.',
+    'labOverlay.openWorks': 'Open works',
 
     // Navigation submenu section titles and subtitles.
     // Works page section titles are project names (proper nouns), so they are not translated;
@@ -313,6 +314,7 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     // Lab section (RU)
     'labOverlay.title': 'Лаб',
     'labOverlay.lead': 'Эксперименты · работы · R&D.',
+    'labOverlay.openWorks': 'Открыть работы',
 
     // Navigation submenu section titles and subtitles.
     // Works page section titles are project names (proper nouns), so they are not translated;

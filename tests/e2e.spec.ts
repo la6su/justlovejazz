@@ -173,6 +173,50 @@ test.describe('JustLoveJazz — accessibility & DOM UI', () => {
     )
     expect(activeClass, 'First Tab should focus the skip link').toContain('skip-link')
   })
+
+  test('secret sections use one UIkit accordion composition', async ({ browser }) => {
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 } })
+    const page = await context.newPage()
+
+    try {
+      await page.goto('/')
+      await expect(page.locator('main#spa-content')).toBeAttached({ timeout: 20000 })
+
+      // The two secret sections are normally reached through the joystick.
+      // Activate them directly here so the responsive composition can be
+      // checked without depending on GPU initialisation in headless Chromium.
+      await page.evaluate(() => {
+        document
+          .querySelectorAll('.section-active')
+          .forEach((section) => section.classList.remove('section-active'))
+        document.getElementById('section-lab')?.classList.add('section-active')
+      })
+
+      const labAccordion = page.locator('#section-lab .jlz-lab-accordion')
+      await expect(labAccordion).toBeVisible()
+      await expect(page.locator('#section-lab .jlz-lab-grid')).toHaveCount(0)
+
+      const labToggle = labAccordion.locator('.uk-accordion-title').first()
+      await labToggle.click()
+      await expect(labToggle).toHaveAttribute('aria-expanded', 'true')
+      await expect(labAccordion.locator('.jlz-lab-accordion__preview').first()).toBeVisible()
+
+      await page.evaluate(() => {
+        document
+          .querySelectorAll('.section-active')
+          .forEach((section) => section.classList.remove('section-active'))
+        document.getElementById('section-menu')?.classList.add('section-active')
+      })
+
+      const menuToggle = page.locator('#section-menu .jlz-menu-nav__toggle').first()
+      await expect(menuToggle).toHaveAttribute('role', 'button')
+      await menuToggle.click()
+      await expect(menuToggle).toHaveAttribute('aria-expanded', 'true')
+      await expect(page.locator('#section-menu .jlz-menu-nav__subs').first()).toBeVisible()
+    } finally {
+      await context.close()
+    }
+  })
 })
 
 test.describe('JustLoveJazz — runtime health', () => {

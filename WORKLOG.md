@@ -7,6 +7,39 @@ inventories or release notes here. Git history retains the detailed record.
 
 <!-- WORKLOG:ENTRIES -->
 
+## 2026-07-16 — Unified secret-section accordions
+
+### Decision
+
+Made the two persistent secret sections one compact pattern at every viewport.
+Lab now renders its six existing projects only as a native UIkit Accordion;
+Menu uses its native UIkit Nav accordion inline rather than a desktop dropdown.
+Both panels are vertically centred within the usable viewport, reserve space
+for the fixed top bar and joystick, and remove the nonessential Menu footer
+and studio meta copy.
+
+### Verification
+
+- Added a 390 × 844 Chromium regression check for the shared Lab/Menu
+  accordion accessibility state.
+- Lint (0 errors), type-check, unit tests, production build and 9 Chromium
+  E2E tests passed.
+
+## 2026-07-16 — Right-rail section navigator
+
+### Decision
+
+Kept the existing UIkit `uk-dotnav` and moved it into a project-specific,
+fixed right rail using UIkit's vertical modifier. Desktop labels mirror the
+current page headings so route and language changes do not create a second
+navigation dictionary. Mobile keeps the same accessible controls as compact
+markers without visible labels.
+
+### Verification
+
+- Checked desktop and 390px layouts in auto/inverse modes; the rail keeps
+  contrast and no longer shares the joystick's transformed positioning context.
+
 ## 2026-07-16 — WebGPU/WebGL glass and typography parity
 
 ### Decision
