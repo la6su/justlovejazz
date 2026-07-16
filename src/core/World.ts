@@ -279,6 +279,7 @@ export class World extends THREE.Group {
    */
   public hasVisibleAmbientMotion(): boolean {
     if (this.isReducedMotion) return false
+    if (this.envSphere.hasVisibleAmbientMotion) return true
     if (this.baku.isAmbientlyAnimated) return true
     return this.sceneGroups.some((group) => {
       if (!group.visible) return false
@@ -336,14 +337,6 @@ export class World extends THREE.Group {
       const typo = group.userData.typography as
         import('../Experience/World/WireframeTypography').WireframeTypography | undefined
       if (typo) typo.update(deltaTime)
-      // Update shader orb (Section0 Lab)
-      const orb = group.userData.orb as
-        import('../Experience/World/ShaderOrb').ShaderOrb | undefined
-      if (orb) orb.update(deltaTime)
-      // Update timeline nodes (section 5: Menu)
-      const timeline = group.userData.timeline as
-        import('../Experience/World/TimelineNodes').TimelineNodes | undefined
-      if (timeline) timeline.update(deltaTime)
       // Update JunniParticles — GPU-side drift (Works section).
       const particles = group.userData.particles as
         import('../Experience/World/JunniParticles').JunniParticles | undefined
@@ -520,7 +513,7 @@ export class World extends THREE.Group {
         }
 
         // ── Per-section 3D object visibility (SceneControl) ──
-        // Toggle WireframeTypography, ShaderOrb, TimelineNodes based on config.
+        // Toggle section-specific 3D content based on config.
         // objects undefined = defaults (visible if present in scene group).
         const cfg = this.configs[i]
         const sceneObjects = cfg?.scene?.objects
@@ -528,14 +521,6 @@ export class World extends THREE.Group {
           const typo = g.userData.typography as
             import('../Experience/World/WireframeTypography').WireframeTypography | undefined
           if (typo) typo.visible = sceneObjects.wireframeText !== false && fade > 0.01
-
-          const orb = g.userData.orb as
-            import('../Experience/World/ShaderOrb').ShaderOrb | undefined
-          if (orb) orb.visible = sceneObjects.shaderOrb !== false && fade > 0.01
-
-          const timeline = g.userData.timeline as
-            import('../Experience/World/TimelineNodes').TimelineNodes | undefined
-          if (timeline) timeline.visible = sceneObjects.timelineNodes !== false && fade > 0.01
         }
       } else {
         g.visible = false

@@ -53,6 +53,8 @@ export class FullscreenOverlay {
   private counterEl: HTMLElement
   private controlsEl: HTMLElement
   private _keydownHandler: ((e: KeyboardEvent) => void) | null = null
+  private _autoplayTimer: ReturnType<typeof setTimeout> | null = null
+  private _enterRaf: number | null = null
 
   public onPrev: (() => void) | null = null
   public onNext: (() => void) | null = null
@@ -62,52 +64,47 @@ export class FullscreenOverlay {
     this.container = document.createElement('div')
     this.container.id = 'jlz-fs-overlay'
     this.container.setAttribute('uk-modal', 'bg-close: true; esc-close: true; stack: false')
-    this.container.className = 'jlz-fs-overlay uk-modal uk-flex uk-flex-top'
+    this.container.className = 'jlz-fs-overlay uk-modal uk-modal-full'
 
     this.container.innerHTML = `
-      <div class="uk-modal-dialog jlz-fs-dialog uk-margin-auto-vertical">
-        <button class="uk-modal-close-default jlz-fs-close" type="button" uk-close aria-label="Close"></button>
-        <button class="jlz-fs-prev" type="button" aria-label="Previous" uk-slidenav-previous></button>
-        <button class="jlz-fs-next" type="button" aria-label="Next" uk-slidenav-next></button>
-        <div class="jlz-fs-video-wrap">
+      <div class="uk-modal-dialog jlz-fs-dialog">
+        <button class="uk-modal-close-full uk-close-large jlz-fs-close" type="button" uk-close aria-label="Close"></button>
+        <header class="jlz-fs-meta uk-flex uk-flex-between uk-flex-bottom">
+          <div class="jlz-fs-info">
+            <div class="jlz-fs-cat uk-text-uppercase"></div>
+            <h2 class="jlz-fs-title uk-margin-remove"></h2>
+            <p class="jlz-fs-desc uk-margin-small-top uk-margin-remove-bottom"></p>
+          </div>
+          <div class="jlz-fs-meta-end uk-text-right">
+            <div class="jlz-fs-counter uk-text-meta"></div>
+            <div class="jlz-fs-tags uk-flex uk-flex-wrap uk-flex-right uk-margin-small-top"></div>
+          </div>
+        </header>
+        <main class="jlz-fs-media-stage">
           <div class="jlz-fs-poster" aria-hidden="true"></div>
-          <video class="jlz-fs-video" preload="none" playsinline>
+          <video class="jlz-fs-video" preload="auto" playsinline muted loop>
             <source src="" type="video/mp4" />
           </video>
-          <div class="jlz-fs-big-play" aria-hidden="true">
-            <span class="jlz-fs-big-play__icon"></span>
-          </div>
-        </div>
-        <div class="jlz-fs-info">
-          <div class="jlz-fs-info-top uk-flex uk-flex-between uk-flex-middle">
-            <div class="jlz-fs-info-left">
-              <div class="jlz-fs-cat uk-text-uppercase"></div>
-              <h2 class="jlz-fs-title uk-margin-remove"></h2>
-            </div>
-            <div class="jlz-fs-counter"></div>
-          </div>
-          <p class="jlz-fs-desc uk-margin-remove"></p>
-          <div class="jlz-fs-tags uk-flex uk-flex-wrap uk-margin-small-top"></div>
-        </div>
-        <div class="jlz-fs-controls">
+          <button class="jlz-fs-big-play" type="button" aria-label="Play video">
+            <span class="jlz-fs-big-play__icon" aria-hidden="true"></span>
+          </button>
+        </main>
+        <footer class="jlz-fs-controls">
           <button class="jlz-fs-play uk-icon-button" type="button" aria-label="Play/Pause">
             <span uk-icon="icon: play; ratio: 1.2" aria-hidden="true"></span>
           </button>
-          <button class="jlz-fs-mute uk-icon-button" type="button" aria-label="Mute/Unmute" aria-pressed="true">
-            <span uk-icon="icon: muted; ratio: 1.2" aria-hidden="true"></span>
+          <button class="jlz-fs-mute uk-icon-button is-muted" type="button" aria-label="Mute/Unmute" aria-pressed="true">
+            <span class="jlz-fs-volume" aria-hidden="true"><i></i><i></i><i></i></span>
           </button>
           <input class="jlz-fs-seek uk-range" type="range" min="0" max="100" value="0" step="0.1" aria-label="Seek" />
           <span class="jlz-fs-time">0:00 / 0:00</span>
-        </div>
+        </footer>
+        <button class="jlz-fs-prev" type="button" aria-label="Previous" uk-slidenav-previous></button>
+        <button class="jlz-fs-next" type="button" aria-label="Next" uk-slidenav-next></button>
       </div>
     `
 
     document.body.appendChild(this.container)
-
-    // CRITICAL: ensure modal is hidden on init. UIKit3 modal can leave
-    // display:flex after creation, making the overlay visible immediately.
-    // This inline style is overridden by UIKit3 when show() is called.
-    this.container.style.display = 'none'
 
     // Wire elements
     this.video = this.container.querySelector('.jlz-fs-video')!
@@ -131,7 +128,9 @@ export class FullscreenOverlay {
     // Play/Pause
     const togglePlay = () => {
       if (this.video.paused) {
-        this.video.play().catch(() => { /* autoplay blocked */ })
+        this.video.play().catch(() => {
+          /* autoplay blocked */
+        })
       } else {
         this.video.pause()
       }
@@ -144,17 +143,18 @@ export class FullscreenOverlay {
     this.muteBtn.addEventListener('click', () => {
       this.video.muted = !this.video.muted
       this.muteBtn.setAttribute('aria-pressed', String(this.video.muted))
-      const icon = this.muteBtn.querySelector('[uk-icon]')
-      icon?.setAttribute('uk-icon', `icon: ${this.video.muted ? 'muted' : 'sound'}; ratio: 1.2`)
+      this.muteBtn.classList.toggle('is-muted', this.video.muted)
     })
 
     // Video events
     this.video.addEventListener('play', () => {
+      this.container.classList.add('is-playing')
       this.bigPlay.style.opacity = '0'
       this.posterEl.style.opacity = '0'
       this.playBtn.querySelector('[uk-icon]')?.setAttribute('uk-icon', 'icon: pause; ratio: 1.2')
     })
     this.video.addEventListener('pause', () => {
+      this.container.classList.remove('is-playing')
       this.bigPlay.style.opacity = '1'
       this.playBtn.querySelector('[uk-icon]')?.setAttribute('uk-icon', 'icon: play; ratio: 1.2')
     })
@@ -187,30 +187,44 @@ export class FullscreenOverlay {
     // No custom flag needed: UIKit adds uk-open on show (synchronously via
     // _toggle) and removes it on hide. isOpen getter checks uk-open directly.
     UIkit.util.on(this.container, 'show', () => {
-      // Autoplay video when modal opens (muted autoplay is allowed by browsers).
-      // Only if video has a source — project-mode (poster only) skips this.
+      this.container.classList.remove('is-entered')
+      this.container.classList.add('is-opening')
+      document.addEventListener('keydown', this._keydownHandler!)
+      // UIKit owns modal visibility and focus. Two paint frames only stage the
+      // project-specific reveal so the browser always renders its first frame
+      // before transitioning to the fullscreen state.
+      this._enterRaf = requestAnimationFrame(() => {
+        this._enterRaf = requestAnimationFrame(() => {
+          this._enterRaf = null
+          this.container.classList.add('is-entered')
+        })
+      })
+    })
+    UIkit.util.on(this.container, 'shown', () => {
+      this.container.classList.remove('is-opening')
       const source = this.video.querySelector('source')
       if (source && source.src) {
-        // Guard: only reset currentTime if duration is finite (metadata loaded)
         if (isFinite(this.video.duration)) {
           this.video.currentTime = 0
         }
-        // Small delay to let modal animation finish before play()
-        setTimeout(() => {
+        this._autoplayTimer = setTimeout(() => {
+          this._autoplayTimer = null
           this.video.play().catch(() => {
-            // Autoplay blocked — show big play button for user to click
             this.bigPlay.style.opacity = '1'
           })
-        }, 300)
+        }, 160)
       }
-      // Attach keyboard listener ONLY while modal is open.
-      // UIKit's own Esc-listener follows the same show/hide lifecycle pattern.
-      // When the modal is closed, there are ZERO document keydown listeners
-      // from FullscreenOverlay → zero chance of interfering with JoystickNav's
-      // window-level keydown handler (which drives arrow-key section nav).
-      document.addEventListener('keydown', this._keydownHandler!)
     })
     UIkit.util.on(this.container, 'hide', () => {
+      if (this._autoplayTimer) {
+        clearTimeout(this._autoplayTimer)
+        this._autoplayTimer = null
+      }
+      if (this._enterRaf !== null) {
+        cancelAnimationFrame(this._enterRaf)
+        this._enterRaf = null
+      }
+      this.container.classList.remove('is-opening', 'is-entered', 'is-playing')
       this.video.pause()
       this.onClose?.()
       // Remove keyboard listener when modal closes — clean lifecycle, no
@@ -334,6 +348,14 @@ export class FullscreenOverlay {
   }
 
   dispose(): void {
+    if (this._autoplayTimer) {
+      clearTimeout(this._autoplayTimer)
+      this._autoplayTimer = null
+    }
+    if (this._enterRaf !== null) {
+      cancelAnimationFrame(this._enterRaf)
+      this._enterRaf = null
+    }
     if (this._keydownHandler) {
       document.removeEventListener('keydown', this._keydownHandler)
       this._keydownHandler = null

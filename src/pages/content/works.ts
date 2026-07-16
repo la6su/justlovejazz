@@ -1,100 +1,95 @@
-// src/pages/content/works.ts — Works page (4 sections × 2 large 3D cards)
-//
-// Layout: 4 joystick-navigable sections, each containing a 2-card grid row.
-// Together the 4 sections form a conceptual 4×2 grid of 8 case studies.
-// Each card is near-fullscreen-large with a CSS 3D tilt effect (perspective +
-// rotateY/X tracked to mouse). Clicking a card opens the fullscreen
-// ProjectOverlay (same overlay used by the home BakuCarousel) via the
-// jlz:open-project CustomEvent → Experience.ts.
-//
-// 8 projects sourced from PROJECTS (Data/Projects.ts) — 2 added for this grid.
-import { sectionShell, contentBottom } from '../../sections/_shared/constants'
+// Works is intentionally composed outside the shared content-page shell.
+// The page keeps the six-section navigation contract, while each project pair
+// gets an editorial composition sized by UIkit's responsive grid.
+
 import { PROJECTS } from '../../Data/Projects'
 import { labOverlaySection } from '../../sections/lab-overlay/template'
 import { navOverlaySection } from '../../sections/nav/template'
 
-/** A pair of projects shown together in one section's card grid. */
-function workCardsGrid(idxA: number, idxB: number): string {
-  const a = PROJECTS[idxA]!
-  const b = PROJECTS[idxB]!
-  return `<div class="jlz-works-grid uk-grid uk-grid-large uk-child-width-1-2@m" uk-grid>
-    ${workCard(idxA, a.title, a.year ?? '', a.category ?? '', a.textureUrl, a.color)}
-    ${workCard(idxB, b.title, b.year ?? '', b.category ?? '', b.textureUrl, b.color)}
-  </div>`
+type WorksLayout = 'feature' | 'equal' | 'reverse' | 'cinematic'
+
+const SECTION_TITLES = [
+  ['Selected works', 'works.section1.title'],
+  ['Case studies', 'works.section2.title'],
+  ['Experiments', 'works.section3.title'],
+  ['Recent', 'works.section4.title'],
+] as const
+
+function cardWidth(layout: WorksLayout, position: 0 | 1): string {
+  const widths: Record<WorksLayout, [string, string]> = {
+    feature: ['uk-width-2-3@m', 'uk-width-1-3@m'],
+    equal: ['uk-width-1-2@m', 'uk-width-1-2@m'],
+    reverse: ['uk-width-1-3@m', 'uk-width-2-3@m'],
+    cinematic: ['uk-width-3-5@m', 'uk-width-2-5@m'],
+  }
+  return widths[layout][position]
 }
 
-/** One 3D tilt card. data-project-idx drives the click → overlay open.
- *  CSS custom props --rx/--ry are set by WorkCards.ts on pointermove. */
-function workCard(
-  idx: number,
-  title: string,
-  year: string,
-  category: string,
-  cover: string,
-  accent: string,
-): string {
-  const num = String(idx + 1).padStart(2, '0')
+function workCard(idx: number, prominence: 'primary' | 'secondary'): string {
+  const project = PROJECTS[idx]!
+  const number = String(idx + 1).padStart(2, '0')
+  const meta = [project.year, project.category].filter(Boolean).join(' · ')
+
   return `
-    <button class="jlz-work-card" type="button" data-project-idx="${idx}"
-            aria-label="Open project: ${title}"
-            data-cursor="view" data-magnetic
-            style="--jlz-card-accent: ${accent}">
-      <div class="jlz-work-card__inner">
-        <div class="jlz-work-card__image" style="background-image: url('${cover}')"></div>
-        <div class="jlz-work-card__sheen" aria-hidden="true"></div>
-        <div class="jlz-work-card__overlay">
-          <span class="jlz-work-card__num">${num}</span>
-          <div class="jlz-work-card__info">
-            <h3 class="jlz-work-card__title">${title}</h3>
-            <span class="jlz-work-card__meta">${year}${category ? ` · ${category}` : ''}</span>
+    <div class="${prominence === 'primary' ? 'jlz-work-slot--primary' : 'jlz-work-slot--secondary'}">
+      <button class="jlz-work-card uk-inline uk-transition-toggle" type="button"
+              data-project-idx="${idx}" data-cursor="view" data-magnetic
+              aria-label="Open project: ${project.title}"
+              style="--jlz-card-accent: ${project.color}">
+        <span class="jlz-work-card__inner">
+          <img class="jlz-work-card__image uk-transition-scale-up uk-transition-opaque"
+               src="${project.textureUrl}" alt="" loading="${idx < 2 ? 'eager' : 'lazy'}" uk-cover>
+          <span class="jlz-work-card__number">${number}</span>
+          <span class="jlz-work-card__overlay uk-overlay uk-overlay-gradient uk-position-bottom">
+            <span class="jlz-work-card__copy">
+              <strong class="jlz-work-card__title">${project.title}</strong>
+              <span class="jlz-work-card__meta">${meta}</span>
+            </span>
+            <span class="jlz-work-card__arrow" aria-hidden="true" uk-icon="icon: arrow-up-right; ratio: 1.1"></span>
+          </span>
+        </span>
+      </button>
+    </div>`
+}
+
+function worksSection(
+  sectionIndex: number,
+  projectA: number,
+  projectB: number,
+  layout: WorksLayout,
+  active = false,
+): string {
+  const number = String(sectionIndex).padStart(2, '0')
+  const [title, titleKey] = SECTION_TITLES[sectionIndex - 1]!
+
+  return `
+    <section class="jlz-page-section jlz-works-section jlz-works-section--${layout}${active ? ' section-active' : ''}"
+             id="section-works-${number}" data-page-section="works-${number}">
+      <div class="jlz-works-stage uk-container uk-container-expand">
+        <header class="jlz-works-index uk-flex uk-flex-middle uk-flex-between">
+          <div class="uk-flex uk-flex-middle">
+            <span class="jlz-works-index__number">${number}</span>
+            <h2 class="jlz-works-index__title uk-margin-remove" data-i18n="${titleKey}">${title}</h2>
           </div>
-          <span class="jlz-work-card__arrow" aria-hidden="true">↗</span>
+          <span class="jlz-works-index__progress">${number} / 04</span>
+        </header>
+
+        <div class="jlz-works-grid jlz-works-composition jlz-works-composition--${layout} uk-grid uk-grid-small uk-height-1-1" uk-grid>
+          <div class="${cardWidth(layout, 0)}">${workCard(projectA, 'primary')}</div>
+          <div class="${cardWidth(layout, 1)}">${workCard(projectB, 'secondary')}</div>
         </div>
       </div>
-    </button>
-  `
-}
-
-/** Section TOP — compact eyebrow + title (cards are the visual hero). */
-function worksTop(num: string, title: string, lead: string, titleKey: string, leadKey: string): string {
-  return `
-    <div class="jlz-section-top jlz-section-top--compact uk-text-center uk-flex uk-flex-column uk-flex-middle">
-      <span class="jlz-eyebrow" data-eyebrow data-eyebrow-text="${num}">${num}</span>
-      <h2 class="studio-title uk-heading-large uk-margin-small-top uk-margin-remove-bottom" data-i18n="${titleKey}">${title}</h2>
-      <p class="uk-text-lead uk-margin-small-top" data-i18n="${leadKey}">${lead}</p>
-    </div>
-  `
+    </section>`
 }
 
 export function worksPage(): string {
-  // 8 projects → 4 sections × 2 cards
   return `
     <article class="jlz-page jlz-works-page" data-page-view="works">
-      <!-- 0: LAB OVERLAY (joystick left) -->
       ${labOverlaySection('content')}
-      <!-- 1: Selected Works (start, active) -->
-      ${sectionShell('works-01',
-        worksTop('01', 'Selected Works', 'Projects that define our way.', 'works.section1.title', 'works.section1.lead'),
-        contentBottom(workCardsGrid(0, 1)),
-        'content', true
-      )}
-      <!-- 2: Case Studies -->
-      ${sectionShell('works-02',
-        worksTop('02', 'Case Studies', 'Process, craft, result.', 'works.section2.title', 'works.section2.lead'),
-        contentBottom(workCardsGrid(2, 3))
-      )}
-      <!-- 3: Experiments -->
-      ${sectionShell('works-03',
-        worksTop('03', 'Experiments', 'R&D meets production.', 'works.section3.title', 'works.section3.lead'),
-        contentBottom(workCardsGrid(4, 5))
-      )}
-      <!-- 4: Recent -->
-      ${sectionShell('works-04',
-        worksTop('04', 'Recent', 'Latest from the studio.', 'works.section4.title', 'works.section4.lead'),
-        contentBottom(workCardsGrid(6, 7))
-      )}
-      <!-- 5: NAVIGATION OVERLAY (joystick right) -->
+      ${worksSection(1, 0, 1, 'feature', true)}
+      ${worksSection(2, 2, 3, 'equal')}
+      ${worksSection(3, 4, 5, 'reverse')}
+      ${worksSection(4, 6, 7, 'cinematic')}
       ${navOverlaySection('content')}
-    </article>
-  `
+    </article>`
 }
