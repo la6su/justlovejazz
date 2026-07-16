@@ -153,7 +153,7 @@ function navColumn(): string {
   return `
     <div class="jlz-menu-col jlz-menu-col--nav">
       <span class="jlz-menu-col-title" data-i18n="menu.navigate">NAVIGATE</span>
-      <ul class="jlz-menu-nav uk-nav uk-nav-default">${items}</ul>
+      <ul class="jlz-menu-nav uk-nav uk-nav-default" uk-nav>${items}</ul>
     </div>
   `
 }

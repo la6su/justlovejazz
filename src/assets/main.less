@@ -2293,10 +2293,18 @@ body.uk-light .jlz-showreel-trigger:focus-visible {
 
 // ── Responsive: mobile single column ──
 @media (max-width: 639px) {
+  .jlz-menu-container {
+    // Keep the scrollable navigation and footer clear of the persistent
+    // joystick while retaining the fixed top-bar safe area.
+    padding-top: calc(var(--jlz-header-height, 60px) + var(--jlz-space-3));
+    padding-bottom: calc(var(--jlz-joystick-size) * 1.35 + var(--jlz-space-4));
+  }
+
   .jlz-menu-grid {
     grid-template-columns: 1fr;
     gap: var(--jlz-space-4);
     overflow-y: auto;
+    overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
   }
 
@@ -2385,6 +2393,13 @@ body.uk-light {
   gap: 1rem;
   max-width: 900px;
   margin: 0 auto;
+}
+
+// Mobile uses UIkit's Accordion behaviour rather than trying to compress a
+// six-card visual gallery into the area between the fixed top bar and joystick.
+// Desktop keeps the gallery; both views are generated from the same project list.
+.jlz-lab-accordion {
+  display: none;
 }
 
 .jlz-lab-card {
@@ -2484,8 +2499,124 @@ body.uk-light {
 
 @media (max-width: 640px) {
   .jlz-lab-grid {
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 0.75rem;
+    display: none;
+  }
+
+  .jlz-lab-overlay-top {
+    padding-top: calc(48px + var(--jlz-space-3));
+  }
+
+  .jlz-lab-overlay-top .studio-title {
+    margin-bottom: var(--jlz-space-2);
+  }
+
+  .jlz-lab-overlay-top .uk-text-lead {
+    font-size: 0.95rem;
+  }
+
+  .jlz-lab-overlay-bottom {
+    width: min(100%, 34rem);
+    padding-bottom: calc(var(--jlz-joystick-size) * 1.35 + var(--jlz-space-4));
+  }
+
+  .jlz-lab-accordion {
+    display: block;
+    width: 100%;
+    max-height: min(43dvh, 24rem);
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    list-style: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .jlz-lab-accordion__item {
+    border-bottom: 1px solid var(--jlz-color-border);
+  }
+
+  .jlz-lab-accordion__title {
+    display: flex;
+    align-items: center;
+    min-height: 3.25rem;
+    gap: var(--jlz-space-2);
+    padding: 0.6rem 0.25rem;
+    color: var(--jlz-color-text);
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .jlz-lab-accordion__title:hover,
+  .jlz-lab-accordion__title:focus-visible {
+    color: @global-primary-background;
+    outline: none;
+  }
+
+  .jlz-lab-accordion__num,
+  .jlz-lab-accordion__meta {
+    flex: 0 0 auto;
+    color: var(--jlz-color-text-subtle);
+    font-family: @global-font-family;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .jlz-lab-accordion__num {
+    min-width: 1.9rem;
+  }
+
+  .jlz-lab-accordion__name {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .jlz-lab-accordion__meta {
+    max-width: 7rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .jlz-lab-accordion__content {
+    margin-top: 0;
+    padding: 0 0 0.75rem;
+  }
+
+  .jlz-lab-accordion__preview {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    min-height: 7rem;
+    overflow: hidden;
+    border: 1px solid var(--jlz-color-border);
+    border-radius: 0.5rem;
+    color: #fff;
+    text-decoration: none;
+  }
+
+  .jlz-lab-accordion__image {
+    position: absolute;
+    inset: 0;
+    background-position: center;
+    background-size: cover;
+    filter: saturate(0.85) brightness(0.55);
+  }
+
+  .jlz-lab-accordion__action {
+    position: relative;
+    margin: 0.75rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .jlz-lab-accordion__preview:focus-visible {
+    outline: 2px solid @global-primary-background;
+    outline-offset: -3px;
   }
 }
 

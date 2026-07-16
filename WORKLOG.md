@@ -7,6 +7,24 @@ inventories or release notes here. Git history retains the detailed record.
 
 <!-- WORKLOG:ENTRIES -->
 
+## 2026-07-16 — Responsive secret sections
+
+### Decision
+
+Made the two persistent secret sections compact on phones without creating a
+second data source. Lab renders its six existing projects as a native UIkit
+Accordion below the desktop breakpoint, while Menu now activates its existing
+UIkit Nav accordion with the required `uk-nav` attribute. Both panels reserve
+space for the fixed top bar and joystick, and their scroll areas contain
+overscroll within the section.
+
+### Verification
+
+- Added a 390 × 844 Chromium regression check for Lab's compact accordion and
+  Menu's native accordion accessibility state.
+- Lint (0 errors), type-check, unit tests, production build and 9 Chromium
+  E2E tests passed.
+
 ## 2026-07-16 — Right-rail section navigator
 
 ### Decision
