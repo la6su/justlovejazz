@@ -520,9 +520,9 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'help.sections': 'Секции',
     'help.up': 'вверх',
     'help.down': 'вниз',
-    'help.lab': 'Лаборатория',
-    'help.menu': 'Меню',
-    'help.hint': 'Тяните джойстик или используйте стрелки клавиатуры',
+    'help.lab': 'lab',
+    'help.menu': 'меню',
+    'help.hint': 'используйте джойстик для навигации',
 
     // Meta (route-based SEO)
     'meta.home.title': 'JUSTLOVEJAZZ — Студия веб-дизайна | Интерактивное 3D-портфолио',

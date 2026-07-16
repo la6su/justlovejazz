@@ -110,7 +110,7 @@ export class JoystickNav {
     const hint = document.createElement('p')
     hint.className = 'jlz-help-hint'
     hint.setAttribute('data-i18n', 'help.hint')
-    hint.textContent = 'Drag the joystick or use arrow keys'
+    hint.textContent = 'Drag the joystick to use navigation'
     this.el.appendChild(hint)
 
     // (Config controls live in the top bar — see UIMenu.ts)
