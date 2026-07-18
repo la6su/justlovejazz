@@ -135,6 +135,7 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
 
     // Common CTAs
     'common.explore': 'Explore',
+    'common.showreel': 'Showreel',
     'common.readMore': 'Read more',
     'common.send': 'Send',
     'common.startProject': 'Start a project',
@@ -418,6 +419,7 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
 
     // Common CTAs
     'common.explore': 'Исследовать',
+    'common.showreel': 'Шоурил',
     'common.readMore': 'Подробнее',
     'common.send': 'Отправить',
     'common.startProject': 'Начать проект',

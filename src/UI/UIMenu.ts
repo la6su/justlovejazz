@@ -64,12 +64,7 @@ export class UIMenu {
           <button class="uk-icon-button jlz-sound-toggle uk-visible@s" type="button" id="jlz-sound-toggle"
                   aria-label="Toggle sound" aria-pressed="true" title="Sound: off"
                   uk-tooltip="pos: bottom; delay: 200">
-            <span class="jlz-sound-bars" aria-hidden="true">
-              <span class="jlz-sound-bar"></span>
-              <span class="jlz-sound-bar"></span>
-              <span class="jlz-sound-bar"></span>
-              <span class="jlz-sound-bar"></span>
-            </span>
+            <span uk-icon="icon: muted" aria-hidden="true"></span>
           </button>
           <button class="uk-button uk-button-default jlz-menu-launcher" type="button" id="jlz-menu-launcher"
                   aria-controls="section-menu" aria-expanded="false">
@@ -159,10 +154,11 @@ export class UIMenu {
     this._soundBtn.setAttribute('aria-pressed', String(!muted))
     this._soundBtn.title = muted ? 'Sound: off' : 'Sound: on'
     this._soundBtn.classList.toggle('is-muted', muted)
-    this._soundBtn.classList.toggle('is-playing', !muted)
-    this._soundBtn.querySelectorAll<HTMLElement>('.jlz-sound-bar').forEach((bar) => {
-      bar.style.animationPlayState = muted ? 'paused' : 'running'
-    })
+    // Swap icon: muted → sound (speaker with waves)
+    const iconSpan = this._soundBtn.querySelector('[uk-icon]')
+    if (iconSpan) {
+      iconSpan.setAttribute('uk-icon', `icon: ${muted ? 'muted' : 'sound'}`)
+    }
   }
 
   onNavigate(callback: (index: number) => void): void {

@@ -263,19 +263,41 @@ export class CasePlane extends THREE.Mesh {
       )
     })()
 
-    const opacityNoise = sin(
-      uv()
-        .y.mul(37)
-        .add(sin(uv().x.mul(13)).mul(1.2)),
-    ).mul(0.022)
-    const opacityCoord = uv().x.add(opacityNoise)
-    const opacityFront = reveal.mul(1.24).sub(0.1)
-    const arrivalMask = smoothstep(
-      opacityFront.sub(0.075),
-      opacityFront.add(0.012),
-      opacityCoord,
-    ).oneMinus()
-    ;(material as unknown as { opacityNode: unknown }).opacityNode = reveal.mul(arrivalMask)
+    // ── Opacity via Film Burn mask (same multi-source SDF as colorNode) ──
+    // The plane appears/disappears through the SAME burn pattern that drives
+    // the color transition — seamless morph, no separate arrival effect.
+    // Reuses the `burned` mask from colorNode scope (closures share TSL nodes).
+    ;(material as unknown as { opacityNode: unknown }).opacityNode = Fn(() => {
+      const screenUv = uv()
+      // Same angular noise + 4 burn sources + radial circles as colorNode
+      const angle = atan(screenUv.y.sub(0.5).div(screenUv.x.sub(0.5)))
+      const angNoise = cos(angle.mul(3.0).add(reveal.mul(PI))).add(1.0).mul(0.5)
+        .add(sin(angle.mul(5.0).add(time.mul(0.3))).add(1.0).mul(0.5).mul(0.3))
+      const burnWarp = angNoise.mul(0.12)
+      const tEase = reveal.mul(reveal).mul(reveal)
+
+      // 4 burn sources (same positions as colorNode)
+      const distA = screenUv.sub(vec2(float(0.18), float(0.72))).length().add(burnWarp.mul(0.8))
+      const distB = screenUv.sub(vec2(float(0.78), float(0.25))).length().add(burnWarp.mul(0.6))
+      const distC = screenUv.sub(vec2(float(0.5), float(0.5))).length().add(burnWarp)
+      const distD = screenUv.sub(vec2(float(0.72), float(0.68))).length().add(burnWarp.mul(0.7))
+
+      const frontA = tEase.mul(1.3).sub(0.1)
+      const frontB = tEase.mul(1.15).sub(0.18)
+      const frontC = tEase.mul(1.0).sub(0.05)
+      const frontD = tEase.mul(1.2).sub(0.28)
+
+      const burnA = smoothstep(frontA.sub(0.04), frontA.add(0.02), distA).oneMinus()
+      const burnB = smoothstep(frontB.sub(0.04), frontB.add(0.02), distB).oneMinus()
+      const burnC = smoothstep(frontC.sub(0.04), frontC.add(0.02), distC).oneMinus()
+      const burnD = smoothstep(frontD.sub(0.04), frontD.add(0.02), distD).oneMinus()
+
+      // Merge → opacity mask (burned = visible, not burned = transparent)
+      const opacityMask = burnA.max(burnB).max(burnC).max(burnD)
+      // Also fade with transition (so plane disappears at end of fullscreen handoff)
+      const fadeOut = float(1.0).sub(transition.mul(0.3))
+      return opacityMask.mul(reveal).mul(fadeOut)
+    })()
 
     super(geometry, material)
     this._state = uState as unknown as { value: THREE.Vector3 }

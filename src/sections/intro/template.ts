@@ -21,10 +21,16 @@ export function introSection(): string {
         <p class="uk-text-meta uk-margin-remove" data-i18n="home.studio.desc1">Interfaces and realtime scenes that make a product legible.</p>
         <p class="uk-text-meta uk-margin-remove" data-i18n="home.studio.desc2">Strategy, design and WebGPU in one system.</p>
       </div>
-      <a href="/services" class="jlz-service-explore uk-button uk-button-default uk-button-small uk-margin-top">
-        <span class="jlz-service-explore__dot" aria-hidden="true"></span>
-        <span data-i18n="common.explore">Explore</span>
-      </a>
+      <div class="uk-flex uk-flex-center uk-flex-middle uk-margin-top" style="gap: 0.75rem;">
+        <a href="/services" class="jlz-service-explore uk-button uk-button-default uk-button-small">
+          <span class="jlz-service-explore__dot" aria-hidden="true"></span>
+          <span data-i18n="common.explore">Explore</span>
+        </a>
+        <button type="button" class="uk-button uk-button-default uk-button-small" id="jlz-showreel-trigger" data-cursor="play">
+          <span uk-icon="icon: play; ratio: 0.7" aria-hidden="true"></span>
+          <span data-i18n="common.showreel">Showreel</span>
+        </button>
+      </div>
   `,
     '01',
   )

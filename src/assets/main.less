@@ -1945,15 +1945,6 @@ body[data-page='works'] .jlz-work-card.is-opening .jlz-work-card__inner {
 // removed — sound now lives inside the menu overlay config toolbar.
 // ════════════════════════════════════════════════════════════════════
 
-// Reduced motion — no EQ animation, just color change (applies to the
-// menu-overlay sound toggle).
-@media (prefers-reduced-motion: reduce) {
-  .jlz-sound-toggle.is-playing .jlz-sound-bar {
-    animation: none;
-    height: 60%;
-  }
-}
-
 // ════════════════════════════════════════════════════════════════════
 // SHOWREEL TRIGGER — play button with animated SVG ring (stroke-animation)
 // NO data-magnetic — was too aggressive (cursor snapped to center constantly).
@@ -2897,14 +2888,11 @@ body[data-cinematic-sheet]
   }
 }
 
-// (Header/navbar removed — config controls now live in the top bar above.
 //  Old .jlz-navbar-toggle, .jlz-toggle-icon, .jlz-help-dropdown, .jlz-help-title,
 //  .jlz-help-content, .jlz-help-joystick, .jlz-joystick-svg, .jlz-help-text,
 //  .jlz-help-text-row, .jlz-help-key, .jlz-help-divider CSS removed.)
 
-// (Old .jlz-help-controls CSS removed — controls now in .jlz-topbar-controls above.)
 
-// (Dropdown-specific responsive rules removed — dropdown no longer exists.
 //  Joystick is always visible, hint + controls are part of its stack.)
 
 @media (max-width: 500px) {
@@ -2922,73 +2910,8 @@ body[data-cinematic-sheet]
   }
 }
 
-// (Old .jlz-help-divider + .jlz-help-controls dropdown-specific CSS removed.
-//  .jlz-help-controls is now styled in the joystick stack section above.)
 
-// ── Sound EQ-bars (used in cinematic top-bar controls) ──
-// Custom visual per project decision — UIKit3 has no EQ-bars icon.
-// Container is .jlz-sound-bars (4 spans); state via .is-playing / .is-muted
-// on the parent .jlz-sound-toggle button.
-.jlz-sound-bars {
-  display: flex;
-  align-items: flex-end;
-  gap: 0.16rem;
-  height: 0.95rem;
-}
-
-.jlz-sound-toggle .jlz-sound-bar {
-  display: block;
-  width: 0.13rem;
-  height: 34%;
-  background: currentColor;
-  opacity: 0.72;
-  border-radius: 999px;
-  transition:
-    opacity 0.2s ease,
-    height 0.2s ease;
-}
-
-.jlz-sound-toggle.is-playing .jlz-sound-bar {
-  opacity: 1;
-  animation: jlz-sound-eq 800ms ease-in-out infinite alternate;
-}
-
-.jlz-sound-toggle.is-playing .jlz-sound-bar:nth-child(1) {
-  animation-delay: 0ms;
-}
-.jlz-sound-toggle.is-playing .jlz-sound-bar:nth-child(2) {
-  animation-delay: 150ms;
-}
-.jlz-sound-toggle.is-playing .jlz-sound-bar:nth-child(3) {
-  animation-delay: 300ms;
-}
-.jlz-sound-toggle.is-playing .jlz-sound-bar:nth-child(4) {
-  animation-delay: 450ms;
-}
-
-@keyframes jlz-sound-eq {
-  0% {
-    height: 20%;
-  }
-  25% {
-    height: 80%;
-  }
-  50% {
-    height: 40%;
-  }
-  75% {
-    height: 95%;
-  }
-  100% {
-    height: 30%;
-  }
-}
-
-.jlz-sound-toggle.is-muted .jlz-sound-bar {
-  height: 30%;
-  opacity: 0.35;
-  animation: none;
-}
+// ── Sound toggle — now uses uk-icon (muted/sound), no CSS bars needed ──
 
 // Theme icon (sun/moon) — inline SVGs (UIKit3 has no sun/moon icons).
 // Both SVGs live in the button; .is-inverse class on the button toggles
