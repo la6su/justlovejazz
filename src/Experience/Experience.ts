@@ -385,8 +385,14 @@ export class Experience {
       this._storyNav?.goToSection(idx)
     })
 
-    // The compact storyline stays visible while the scene and DOM track move.
-    document.body.appendChild(this._storyNav.el)
+    // The compact storyline lives inside the console bar (bottom strip).
+    // If the console bar exists, append there; otherwise fall back to body.
+    const consoleBar = document.querySelector('.jlz-console-bar')
+    if (consoleBar) {
+      consoleBar.appendChild(this._storyNav.el)
+    } else {
+      document.body.appendChild(this._storyNav.el)
+    }
 
     // DevPanel — created AFTER nav so it can read current section
     if (import.meta.env.DEV) {

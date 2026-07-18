@@ -78,13 +78,16 @@ export class UIMenu {
           </button>
         </div>
       </header>
-      <div class="jlz-contact-launcher">
-        <button class="uk-button uk-button-primary jlz-contact-launcher__button" type="button"
-                id="jlz-contact-launcher" aria-controls="section-lab" aria-expanded="false">
-          <span class="jlz-contact-launcher__orb" aria-hidden="true"></span>
-          <span data-i18n="story.contact">Contact</span>
-          <span class="jlz-contact-launcher__arrow" uk-icon="icon: arrow-up; ratio: 0.8" aria-hidden="true"></span>
-        </button>
+      <div class="jlz-console-bar">
+        <div class="jlz-contact-launcher">
+          <button class="uk-button uk-button-primary jlz-contact-launcher__button" type="button"
+                  id="jlz-contact-launcher" aria-controls="section-lab" aria-expanded="false">
+            <span class="jlz-contact-launcher__orb" aria-hidden="true"></span>
+            <span data-i18n="story.contact">Contact</span>
+            <span class="jlz-contact-launcher__arrow" uk-icon="icon: arrow-up; ratio: 0.8" aria-hidden="true"></span>
+          </button>
+        </div>
+        <!-- Storyline (section dots) is injected here by CinematicNav -->
       </div>
     `
 

@@ -975,8 +975,83 @@ body.uk-light .jlz-eyebrow {
 
 .jlz-section-bottom {
   flex-shrink: 0;
-  /* Leave a clear runway for the compact contact + chapter controls. */
   padding-bottom: calc(4.6rem + env(safe-area-inset-bottom, 0px));
+}
+
+// ── Bottom console module — the signature "console" element of the theme ──
+// A thin, translucent, monospaced meta strip above the story content.
+// Reads like a terminal status line: label | divider | content.
+.jlz-bottom-module {
+  display: flex;
+  align-items: baseline;
+  gap: var(--jlz-space-3);
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--jlz-color-border);
+  border-radius: var(--jlz-radius-md);
+  background: color-mix(in srgb, var(--jlz-color-surface) 70%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  font-family: var(--jlz-font-mono);
+  font-size: 0.7rem;
+  letter-spacing: var(--jlz-tracking-wide);
+  text-transform: uppercase;
+  color: var(--jlz-color-text-muted);
+  line-height: 1.4;
+  transition: border-color var(--jlz-duration-fast) ease;
+}
+
+.jlz-bottom-module__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--jlz-space-2);
+  flex-shrink: 0;
+  color: var(--jlz-color-accent);
+  font-weight: var(--jlz-weight-medium);
+  white-space: nowrap;
+
+  // Divider dash between label and content
+  > span:last-child {
+    color: var(--jlz-color-text-subtle);
+  }
+}
+
+.jlz-bottom-module__content {
+  color: var(--jlz-color-text-muted);
+  font-family: var(--jlz-font-body);
+  font-size: 0.78rem;
+  letter-spacing: 0;
+  text-transform: none;
+  line-height: 1.5;
+  flex: 1;
+  min-width: 0;
+
+  p {
+    margin: 0;
+  }
+}
+
+// Console module in light/inverse theme
+body.uk-light .jlz-bottom-module {
+  background: color-mix(in srgb, var(--jlz-color-surface) 70%, transparent);
+  border-color: var(--jlz-color-border);
+}
+
+// Mobile: stack meta above content
+@media (max-width: 639px) {
+  .jlz-bottom-module {
+    flex-direction: column;
+    gap: var(--jlz-space-1);
+    padding: 0.4rem 0.6rem;
+    font-size: 0.62rem;
+  }
+
+  .jlz-bottom-module__meta {
+    font-size: 0.6rem;
+  }
+
+  .jlz-bottom-module__content {
+    font-size: 0.72rem;
+  }
 }
 
 /* ------------------------------------------------------------------
@@ -3302,5 +3377,150 @@ body.uk-light {
     right: 0.55rem;
     min-height: 2.35rem;
     padding: 0.2rem 0;
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════
+// BOTTOM CONSOLE BAR — unified console-themed bottom navigation strip
+// ════════════════════════════════════════════════════════════════════
+// The storyline (section dots) + contact launcher sit on a shared console
+// surface — a thin translucent bar pinned to the bottom of the viewport.
+// This is the signature "console" element of the theme.
+
+.jlz-console-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10017;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--jlz-space-4);
+  padding: 0.4rem clamp(0.55rem, 2vw, 1rem);
+  padding-bottom: max(0.4rem, env(safe-area-inset-bottom, 0px));
+  background: color-mix(in srgb, var(--jlz-color-bg) 82%, transparent);
+  border-top: 1px solid var(--jlz-color-border);
+  backdrop-filter: blur(12px) saturate(1.2);
+  -webkit-backdrop-filter: blur(12px) saturate(1.2);
+  pointer-events: auto;
+  transition: opacity var(--jlz-duration-normal) ease;
+}
+
+// When a cinematic sheet (menu/contact) is open, dim the console bar
+body[data-cinematic-sheet] .jlz-console-bar {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+// Console bar adapts to light theme
+body.uk-light .jlz-console-bar {
+  background: color-mix(in srgb, var(--jlz-color-bg) 82%, transparent);
+  border-top-color: var(--jlz-color-border);
+}
+
+// ════════════════════════════════════════════════════════════════════
+// MOBILE MENU — full-screen centered overlay
+// ════════════════════════════════════════════════════════════════════
+@media (max-width: 639px) {
+  // Menu becomes full-screen, vertically centered
+  .jlz-menu-overlay .jlz-menu-container {
+    height: 100dvh;
+    padding: 3.5rem 1.25rem 2rem;
+    justify-content: center;
+  }
+
+  .jlz-menu-overlay .jlz-menu-grid {
+    grid-template-columns: 1fr;
+    align-items: center;
+    gap: 1.5rem;
+    height: 100%;
+    justify-content: center;
+    justify-items: center;
+  }
+
+  // Hide stat column on mobile — nav is the focus
+  .jlz-menu-overlay .jlz-menu-col--stat {
+    display: none;
+  }
+
+  // Center nav items, larger touch targets
+  .jlz-menu-overlay .jlz-menu-nav {
+    width: 100%;
+    max-width: 20rem;
+    text-align: center;
+  }
+
+  .jlz-menu-overlay .jlz-menu-nav__toggle {
+    min-height: 3rem;
+    justify-content: center;
+  }
+
+  .jlz-menu-overlay .jlz-menu-nav__label {
+    font-size: clamp(1.5rem, 7vw, 2.5rem);
+  }
+
+  // Header centered on mobile
+  .jlz-menu-overlay .jlz-menu-sheet__header {
+    justify-content: center;
+    text-align: center;
+  }
+
+  // Console bar smaller on mobile
+  .jlz-console-bar {
+    padding: 0.3rem 0.55rem;
+    gap: var(--jlz-space-2);
+  }
+
+  // Storyline items smaller on mobile
+  .jlz-storyline {
+    right: 0.55rem;
+    bottom: 0.55rem;
+  }
+
+  .jlz-storyline__item {
+    width: 1.6rem;
+    min-width: 1.6rem;
+    min-height: 1.6rem;
+  }
+
+  .jlz-contact-launcher {
+    left: 0.55rem;
+    bottom: 0.55rem;
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════
+// INVERSE CONTRAST FIXES — ensure readability in light theme
+// ════════════════════════════════════════════════════════════════════
+body.uk-light {
+  // Console bar in light theme — darker text on light translucent surface
+  .jlz-console-bar {
+    background: color-mix(in srgb, var(--jlz-color-bg) 88%, transparent);
+  }
+
+  // Storyline items — ensure contrast on light bg
+  .jlz-storyline__item {
+    background: var(--jlz-color-surface);
+    color: var(--jlz-color-text-subtle);
+  }
+
+  .jlz-storyline__item:hover,
+  .jlz-storyline__item:focus-visible,
+  .jlz-storyline__item.is-active {
+    color: var(--jlz-color-text);
+    background: color-mix(in srgb, var(--jlz-color-accent) 12%, var(--jlz-color-surface));
+  }
+
+  // Menu overlay — ensure dark text on light surfaces
+  .jlz-menu-overlay .jlz-menu-col--stat {
+    background: var(--jlz-color-surface);
+    border-color: var(--jlz-color-border);
+  }
+
+  // Contact footer — ensure contrast
+  [data-contact-footer] {
+    background: var(--jlz-color-bg-elevated);
+    color: var(--jlz-color-text);
   }
 }
