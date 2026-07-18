@@ -5,9 +5,16 @@ changelog, not here. Move one item to **In progress** before implementation.
 
 ## High priority
 
-- [ ] **Works 3D/showreel evolution** — continue the accepted editorial Works
-      foundation with the bounded 3D prototype and real video decisions in
+- [ ] **Works 3D/showreel evolution (In progress)** — refine the three-plane
+      horizontal parallax stream and its selected-plane TSL handoff into one
+      fullscreen still; keep the approved reel exclusive to Play Showreel and
+      evaluate the bounded `/works` companion in
       [`docs/PLAN-showreel-shader-plane.md`](docs/PLAN-showreel-shader-plane.md).
+
+- [ ] **Studio Console theme evolution** — continue the staged, project-owned
+      migration in [`docs/PLAN-studio-console-theme.md`](docs/PLAN-studio-console-theme.md);
+      adopt one Vibe-informed pattern at a time and remove superseded styling
+      only after visual, accessibility and performance verification.
 
 - [ ] **Shared transition language** — prototype one temporary TSL fullscreen
       transition for SPA routes, Menu and project overlay; use lightweight
@@ -34,8 +41,9 @@ changelog, not here. Move one item to **In progress** before implementation.
       preference and `SfxSystem`; do not restore the removed `AudioSystem` by
       default.
 
-- [ ] **Telegram design-system extension** — deferred until its copy and
-      product scope are rewritten; keep the current Contact CTA unchanged.
+- [ ] **Telegram design-system extension** — the contrast/inverse treatment is
+      now aligned with Studio Console; defer further copy and product-scope
+      changes until they are rewritten.
 
 - [ ] **Portfolio-wide editorial system** — replace placeholder copy and
       repeated brochure layouts route by route with the capability → problem →

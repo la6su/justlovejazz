@@ -19,6 +19,7 @@ export class ContentReveal {
   private themeHandler: ((e: Event) => void) | null = null
   private currentSectionId: string | null = null
   private currentSectionIndex: number = -1
+  private currentIsLight: boolean | null = null
   private cachedConfigs: readonly PhaseConfig[] | null = null
 
   constructor() {
@@ -71,7 +72,11 @@ export class ContentReveal {
     matching.classList.add('section-active')
     this.applyTheme(this.currentSectionId ?? '')
     requestAnimationFrame(() => {
-      try { (UIkit as unknown as { update: () => void }).update() } catch { /* not ready */ }
+      try {
+        ;(UIkit as unknown as { update: () => void }).update()
+      } catch {
+        /* not ready */
+      }
     })
   }
 
@@ -85,8 +90,16 @@ export class ContentReveal {
     const isInverse = themeManager.isInverse
     const shouldUseLight = isInverse ? !sectionIsLight : sectionIsLight
 
+    // Consecutive story frames can share the same visual mode. Re-emitting the
+    // event in that case restarts EnvSphere's interpolation, which reads as a
+    // hitch while scrolling even though the DOM palette did not change.
+    const themeChanged = this.currentIsLight !== shouldUseLight
+    this.currentIsLight = shouldUseLight
+
     document.documentElement.classList.toggle('uk-light', shouldUseLight)
     document.body.classList.toggle('uk-light', shouldUseLight)
+
+    if (!themeChanged) return
 
     window.dispatchEvent(
       new CustomEvent('jlz:theme-applied', {
@@ -112,9 +125,10 @@ export class ContentReveal {
         const active = document.querySelector<HTMLElement>(
           '[data-section].section-active, [data-page-section].section-active',
         )
-        const sectionId = active?.getAttribute('data-section')
-          ?? active?.getAttribute('data-page-section')
-          ?? 'intro'
+        const sectionId =
+          active?.getAttribute('data-section') ??
+          active?.getAttribute('data-page-section') ??
+          'intro'
         this.currentSectionId = sectionId
         this.applyTheme(sectionId)
         return
@@ -126,8 +140,13 @@ export class ContentReveal {
       // section navigation) would no-op — currentSectionId was null.
       let sectionId = this.currentSectionId
       if (!sectionId) {
-        const active = document.querySelector<HTMLElement>('[data-section].section-active, [data-page-section].section-active')
-        sectionId = active?.getAttribute('data-section') ?? active?.getAttribute('data-page-section') ?? 'intro'
+        const active = document.querySelector<HTMLElement>(
+          '[data-section].section-active, [data-page-section].section-active',
+        )
+        sectionId =
+          active?.getAttribute('data-section') ??
+          active?.getAttribute('data-page-section') ??
+          'intro'
         this.currentSectionId = sectionId
       }
       this.applyTheme(sectionId)
@@ -138,7 +157,8 @@ export class ContentReveal {
 
   destroy() {
     if (this.sectionHandler) eventBus.off('jlz:section-change', this.sectionHandler)
-    if (this.pageSectionHandler) window.removeEventListener('jlz:page-section-change', this.pageSectionHandler)
+    if (this.pageSectionHandler)
+      window.removeEventListener('jlz:page-section-change', this.pageSectionHandler)
     if (this.themeHandler) {
       window.removeEventListener('jlz:theme-change', this.themeHandler)
       window.removeEventListener('jlz:route-change', this.themeHandler)

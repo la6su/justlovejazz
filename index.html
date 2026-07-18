@@ -485,8 +485,7 @@
     <!-- App entry — lazy-loaded. three.js loads via dynamic import inside. -->
     <script type="module" src="/src/entry-shell.ts"></script>
 
-    <!-- Inline: Enter click handler (single source of truth) + 5s fallback.
-         Calls window.experience.triggerSplashOpener() if available.
+    <!-- Inline Enter click handler (single source of truth).
          entry-app.ts does NOT wire its own click — only shows Enter button. -->
     <script>
       ;(function () {
@@ -504,17 +503,8 @@
           loader.classList.add('fade-out')
 
           // Dispatch splash-entered event — triggers BlurFade + NoiseText
-          // animations AFTER splash starts fading (user sees them as 3D reveals)
-          // Also remove scrollspy-pending so content becomes visible.
-          document.body.classList.remove('scrollspy-pending')
+          // animations after the splash starts fading (user sees them as 3D reveals).
           window.dispatchEvent(new CustomEvent('jlz:splash-entered'))
-
-          // Trigger bakuCube opener at mid-curtain-split (400ms of 800ms)
-          setTimeout(function () {
-            if (window.experience && window.experience.triggerSplashOpener) {
-              window.experience.triggerSplashOpener()
-            }
-          }, 400)
 
           // Remove loader after curtains fully split
           setTimeout(function () {

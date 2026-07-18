@@ -63,19 +63,19 @@ const NAV_ITEMS: NavItem[] = [
       },
       {
         num: '02',
-        title: 'Interactive Development',
+        title: 'Realtime build',
         titleKey: 'dropbar.services.s2.title',
         href: '/services#section-services-02',
       },
       {
         num: '03',
-        title: 'Motion & Realtime',
+        title: 'Motion',
         titleKey: 'dropbar.services.s3.title',
         href: '/services#section-services-03',
       },
       {
         num: '04',
-        title: 'AI Systems',
+        title: 'AI',
         titleKey: 'dropbar.services.s4.title',
         href: '/services#section-services-04',
       },

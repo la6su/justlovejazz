@@ -1,11 +1,8 @@
 // src/sections/_shared/constants.ts — Shared constants for page templates
 //
-// REVEAL: scrollspy attribute for home sections (per-element, repeatable)
-// PAGE_REVEAL: scrollspy attribute for content pages (target children)
-
-export const REVEAL = 'uk-scrollspy="cls: uk-animation-fade; delay: 300; repeat: true"'
-
-export const PAGE_REVEAL = 'uk-scrollspy="cls: uk-animation-fade; delay: 120; target: > *"'
+// Section motion is owned by CinematicNav's continuous scroll state. Do not
+// layer UIkit scrollspy animations over those same top/bottom blocks: the
+// duplicate fade introduces delayed, non-seamless section handoffs.
 
 // (PROCESS_STEPS + processTimeline() removed — timeline layout no longer used.
 // Process content now lives in the home/services/manifesto section templates
@@ -99,7 +96,7 @@ export function contentTop(
   const titleAttr = titleKey ? ` data-i18n="${titleKey}"` : ''
   const leadAttr = leadKey ? ` data-i18n="${leadKey}"` : ''
   return `
-    <div class="jlz-section-top uk-text-center uk-flex uk-flex-column uk-flex-middle" ${PAGE_REVEAL}>
+    <div class="jlz-section-top uk-text-center uk-flex uk-flex-column uk-flex-middle">
       <span class="jlz-eyebrow" data-eyebrow data-eyebrow-text="${eyebrow}">${eyebrow}</span>
       <h2 class="studio-title uk-heading-${headingTier} uk-margin-small-top uk-margin-remove-bottom"${titleAttr}>${title}</h2>
       ${lead ? `<p class="uk-text-lead uk-margin-small-top"${leadAttr}>${lead}</p>` : ''}
@@ -107,11 +104,24 @@ export function contentTop(
   `
 }
 
-/** BOTTOM block for content sections — wraps cards/grid/list content. */
-export function contentBottom(content: string): string {
+/** Shared console module for the lower story beat. */
+export function storyBottom(content: string, marker: string = '—'): string {
   return `
-    <div class="jlz-section-bottom" ${PAGE_REVEAL}>
-      ${content}
+    <div class="jlz-section-bottom">
+      <div class="jlz-bottom-module">
+        <div class="jlz-bottom-module__meta">
+          <span data-i18n="story.bottomLabel">Field note</span>
+          <span aria-hidden="true">${marker}</span>
+        </div>
+        <div class="jlz-bottom-module__content">
+          ${content}
+        </div>
+      </div>
     </div>
   `
+}
+
+/** BOTTOM block for content sections — wraps cards/grid/list content. */
+export function contentBottom(content: string): string {
+  return storyBottom(content)
 }

@@ -6,17 +6,20 @@ history.
 
 ## 2026-07-18 — Cinematic vertical navigation
 
+- Reframed the standalone Blog as an editorial featured-story index and made
+  Lab's research catalogue explicit about isolated, separately loaded scenes.
 - Replaced the joystick with native vertical scroll/swipe, snap frames and a
   compact chapter control beside Contact.
-- Added a progress-driven TSL fluid field that connects section transitions in
-  the 3D scene.
+- Removed the decorative progress-driven TSL fluid field; EnvSphere and the
+  cube now carry the 3D atmosphere without competing with the copy.
 - Reframed Menu as a responsive top sheet and the internal section-0 slot as a
   Contact finale with a styled Telegram action.
-- Removed CRT scanlines and the runtime CRT border; raised splash and full-modal
-  layers above application chrome and refined the fullscreen transition.
+- Removed CRT scanlines/noise while restoring the shared curved CRT frame;
+  raised splash and full-modal layers above application chrome and refined the
+  fullscreen transition.
 - Established Onest Variable typography with Latin/Cyrillic subsets and an
   editorial Works stage; fixed project-card opening and inverse overlay
-  contrast, and removed the pipeline's remaining default CRT frame.
+  contrast, then unified the interface around a dark console baseline.
 - Updated the splash copy within its concentric square geometry and centered
   Enter control; expanded Menu with Lab and a direct Blog route, refined UIkit
   controls and restricted delayed 3D type to the lower Contact/Manifesto frame.

@@ -114,11 +114,16 @@ export class DeviceCapability {
       return 'webgpu'
     }
     // WebGPU API exists but not available — likely non-secure context
-    if (typeof navigator !== 'undefined' && !('gpu' in navigator) && typeof isSecureContext !== 'undefined' && !isSecureContext) {
+    if (
+      typeof navigator !== 'undefined' &&
+      !('gpu' in navigator) &&
+      typeof isSecureContext !== 'undefined' &&
+      !isSecureContext
+    ) {
       console.warn(
         '[DeviceCapability] WebGPU not available — page is not a secure context.\n' +
-        'WebGPU requires HTTPS or localhost. Accessing via LAN IP (http://192.168.x.x) will NOT work.\n' +
-        'Use http://localhost:5173/ or configure Vite with HTTPS for LAN access.'
+          'WebGPU requires HTTPS or localhost. Accessing via LAN IP (http://192.168.x.x) will NOT work.\n' +
+          'Use http://localhost:5173/ or configure Vite with HTTPS for LAN access.',
       )
     }
     const canvas = document.createElement('canvas')
@@ -149,7 +154,7 @@ export class DeviceCapability {
     // Low-end desktops still fall through to 'low'/'medium' via isLowEndDesktop.
     if (isWebGPU) {
       if (isLowEndDesktop()) return 'low'
-      if (cores >= 8 && this.maxDpr >= 2) return 'high'
+      if (cores >= 8 && dpr >= 1.5) return 'high'
       return 'medium'
     }
 
@@ -173,14 +178,18 @@ export class DeviceCapability {
   }
 
   private calculateMaxDpr(): number {
-    // WebGPU: desktop 2.0 (sharp on Retina), mobile 1.5 (perf).
-    // TSL post (BloomNode + grain + vignette) runs on real WebGPU; 2× DPR
-    // is still acceptable on desktop high tier. Mobile stays 1.5.
+    // Full-screen TSL post scales with pixel count. A 2× desktop DPR renders
+    // four pixels per CSS pixel and can miss every other v-sync on 120/144Hz
+    // panels even when scene geometry is light. 1.5 preserves a crisp image
+    // while cutting fill work by 44%; quality tier still controls effects.
     if (this.mode === 'webgpu') {
-      return this.isMobile ? 1.5 : 2.0
+      return 1.5
     }
     if (this.mode === 'webgl') {
-      return this.isMobile ? 1 : 2
+      // WebGL2's explicit post chain composites to the default framebuffer.
+      // DPR 2 makes that final full-screen pass four times the CSS pixel area;
+      // 1.5 remains crisp on Retina while restoring animation headroom.
+      return this.isMobile ? 1 : 1.5
     }
     return 1
   }

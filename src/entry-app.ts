@@ -161,9 +161,6 @@ export async function startApp(): Promise<void> {
   document.head.appendChild(style)
   ;(UIkit as { use: (p: object) => void }).use(Icons as object)
 
-  // scrollspy-pending: cancel scrollspy animations until jlz:webgl-ready
-  // fires (prevents fade-in playing behind loader).
-  document.body.classList.add('scrollspy-pending')
   initRouter()
 
   // ── Works page 3D cards: bind tilt + click on every route change ──
@@ -187,11 +184,8 @@ export async function startApp(): Promise<void> {
   })
 
   // jlz:splash-entered fires when user clicks Enter — splash starts fading.
-  // NOW trigger animations (titles + scrollspy) so they're visible as 3D reveals.
+  // Trigger title animations once the curtain starts revealing the scene.
   window.addEventListener('jlz:splash-entered', () => {
-    document.body.classList.remove('scrollspy-pending')
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ;(UIkit as any).update(document)
     // Small delay — let curtains start splitting so DOM is partially visible
     setTimeout(() => {
       animateBlurFadeTitles()

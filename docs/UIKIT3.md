@@ -10,14 +10,15 @@ UIkit is the component framework: consult its [Introduction](https://getuikit.co
 
 Do not edit files under `master-quantum-flares`. Project-owned adaptations live next to them in `src/assets`; this is the Vite equivalent of YOOtheme Pro's child-theme approach, so an upstream theme refresh remains reviewable.
 
-| Layer                                                          | Owner                                            | Change it for                                                               |
-| -------------------------------------------------------------- | ------------------------------------------------ | --------------------------------------------------------------------------- |
-| Semantics, keyboard behaviour, ARIA and component state        | UIkit                                            | A documented UIkit component/attribute solves the problem                   |
-| Visual language, effects, variation variables and theme assets | Quantum Flares                                   | The selected baseline provides the intended feature                         |
-| Brand tokens and QF-variation palette bridge                   | `_import.less`, `_quantum-flares-overrides.less` | A project-wide semantic color, font, spacing or QF effect needs adaptation  |
-| Dark-surface color-mode bridge                                 | `_theme-fixes.less`                              | A QF component needs the correct inverse text mode on project dark surfaces |
-| 3D shell, cinematic story/sheets and route-specific layout     | `main.less`                                      | No UIkit component covers the interaction or layout                         |
-| Standalone blog layout                                         | `blog.less`                                      | Semantic blog-only presentation                                             |
+| Layer                                                      | Owner                                                 | Change it for                                                 |
+| ---------------------------------------------------------- | ----------------------------------------------------- | ------------------------------------------------------------- |
+| Semantics, keyboard behaviour, ARIA and component state    | UIkit                                                 | A documented UIkit component/attribute solves the problem     |
+| UI behavior, state and accessibility                       | UIkit                                                 | A documented component owns the interaction                   |
+| Studio Console visual language                             | `studio-console/`                                     | Every new shared visual decision and migrated project pattern |
+| Legacy QF compatibility bridge                             | `_quantum-flares-overrides.less`, `_theme-fixes.less` | A remaining QF baseline detail needs safe compatibility       |
+| Vendor/reference themes                                    | `master-quantum-flares/`, `master-vibe/`              | Read-only source of patterns during the gradual migration     |
+| 3D shell, cinematic story/sheets and route-specific layout | `main.less`                                           | No UIkit component covers the interaction or layout           |
+| Standalone blog layout                                     | `blog.less`                                           | Semantic blog-only presentation                               |
 
 ## Less assembly
 
@@ -25,13 +26,15 @@ Both Less entries compile in the same order:
 
 ```less
 @import './_import.less';
-@import './master-quantum-flares/_import.less';
-@import './master-quantum-flares/styles/black-blue.less';
-@import './_quantum-flares-overrides.less';
-@import './_theme-fixes.less';
+@import './_theme.less';
 ```
 
-This order is intentional. The selected QF variation is allowed to define its own values; the project bridge then reapplies semantic JLZ tokens so UIkit and QF controls share the same accent. Do not move imports, edit the vendored files, or add a second token system in `main.less`.
+`_theme.less` is the temporary assembly boundary: it imports the retained QF
+baseline and its compatibility bridge, then the project-owned `studio-console/`
+layer. New visual work belongs in `studio-console/`; the root `_import.less`
+remains the current UIkit compiler entry and token adapter until that migration
+can be made mechanically. Do not move imports, edit vendor files, or add a
+second token system in `main.less`.
 
 The vendored Quantum Flares snapshot retains its historical Inter declaration,
 but the active project tokens map UIkit globals to self-hosted Onest Variable.
@@ -42,8 +45,9 @@ Prefer this order of solutions:
 
 1. Use documented UIkit markup, utility classes and JavaScript attributes.
 2. Change a UIkit global/component Less variable or a documented hook.
-3. Use an existing QF variable/effect in `_quantum-flares-overrides.less` when it is the smallest way to retint or adapt that QF treatment.
-4. Add a scoped `.jlz-*` rule only for a real application-specific gap.
+3. Put the project-owned styling decision in `studio-console/`.
+4. Touch the QF bridge only when retaining a baseline compatibility detail.
+5. Add a scoped `.jlz-*` rule only for a real application-specific gap.
 
 Never reproduce a UIkit component in custom CSS/JavaScript just to change its appearance. In particular, do not rebuild modal, off-canvas, navbar, nav, accordion, grid, button, icon button or form behaviour. Keep one state owner: UIkit owns its `uk-open`/`uk-active` and accessibility state; application code owns route, story/sheet and 3D state.
 
@@ -61,20 +65,24 @@ YOOtheme Pro's style customizer itself is organised around global variables, the
 
 ## Current component model
 
-| Concern                             | Owner                      | Convention                                           |
-| ----------------------------------- | -------------------------- | ---------------------------------------------------- |
-| Dynamic component refresh           | `router.ts`                | Call `UIkit.update()` after route content renders    |
-| Menu expandable items               | `sections/nav/template.ts` | `uk-nav` / `uk-parent` state is authoritative        |
-| Fullscreen project/showreel overlay | `FullscreenOverlay.ts`     | UIkit modal owns visibility and focus                |
-| Fixed configuration controls        | `UIMenu.ts`                | `.jlz-topbar` with language, theme and sound buttons |
-| Section navigation                  | `CinematicNav.ts`          | Native scroll track plus custom progress composition |
-| Works tilt cards                    | `WorkCards.ts`             | Custom interaction layered on semantic controls      |
+| Concern                             | Owner                                 | Convention                                           |
+| ----------------------------------- | ------------------------------------- | ---------------------------------------------------- |
+| Dynamic component refresh           | `router.ts`                           | Call `UIkit.update()` after route content renders    |
+| Menu expandable items               | `sections/nav/template.ts`            | `uk-nav` / `uk-parent` state is authoritative        |
+| Fullscreen project/showreel overlay | `FullscreenOverlay.ts`                | UIkit owns state; explicit still/video media modes   |
+| Fixed configuration controls        | `UIMenu.ts`                           | `.jlz-topbar` with language, theme and sound buttons |
+| Section navigation                  | `CinematicNav.ts`                     | Native scroll track plus custom progress composition |
+| Works case planes                   | `WorkCards.ts` + `WorksPlaneStage.ts` | DOM controls/captions + real Three.js media planes   |
 
 The menu is a full-viewport two-column composition on desktop and a compact
 top sheet on mobile, not a modal or a dropbar. Its sub-links are SPA-aware;
 UIkit owns expansion while the application owns route and sheet changes.
 
 ## State, accessibility and verification
+
+CinematicNav is the sole owner of story-section reveal state. Do not add
+`uk-scrollspy` or `uk-animation-*` classes to section top/bottom panels: their
+opacity and offset are already updated continuously from scroll progress.
 
 - Prefer UIkit's `uk-open`/`uk-active` classes to parallel custom flags.
 - Let UIkit modal/nav components manage their own keyboard and ARIA state.

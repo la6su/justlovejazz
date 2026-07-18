@@ -10,11 +10,11 @@ fallback, keyboard access or the existing project overlay.
 
 ## Current implementation slice
 
-Build the editorial DOM foundation before deciding whether the 3D grid should
-replace or complement it. The Works route keeps UIkit Grid/Cover, semantic
-buttons and `FullscreenOverlay`, while gaining oversized typographic layers,
-more deliberate asymmetric media framing and restrained reveal motion. The
-home Baku carousel remains intact during this slice.
+Keep the editorial DOM foundation as the accessible project owner while the
+home Works scene demonstrates the same media through real Three.js planes. The
+Works route keeps UIkit Grid/Cover, semantic buttons and `FullscreenOverlay`;
+the home Baku slider provides the spatial counterpart without replacing those
+controls.
 
 Telegram sharing, generated social cards and Contact-system extensions are
 explicitly deferred until their product copy and scope are rewritten.
@@ -30,6 +30,24 @@ project category.
   when a video is opened.
 - Works cards provide a CSS wobble and synchronise a cube wobble pulse before
   opening the project overlay.
+- The former circular Baku carousel is now a non-autoplay flat infinite media
+  strip. Its large `CasePlane` cards are TSL NodeMaterials with buffered UV
+  counter-travel, asymmetric contact-sheet arrival and explicit resource
+  disposal. Home deliberately frames large cases with clipped neighbours;
+  arrows are the only visible DOM interaction in that section.
+- Plane-origin fullscreen handoff settles the selected plane's texture
+  parallax, aligns that real plane with the camera and runs one bounded TSL
+  multi-origin photographic film burn while it fills the viewport. UIkit then
+  crossfades the same decoded still above it. Works does not inherit, load or
+  autoplay the studio reel;
+  that asset belongs exclusively to Play Showreel. `/works` mirrors UIkit's
+  compact vertical grid in `WorksPlaneStage`, including its safe-area and
+  caption treatment; fullscreen navigation uses large controls.
+- `/works` now uses a lazy `WorksPlaneStage`: DOM buttons remain accessible
+  captions and keyboard controls, while all visible case media is rendered by
+  true Three.js planes. A selected plane expands and burns into the shared
+  UIkit `FullscreenOverlay`; the overlay receives one copy of the same source
+  texture so there is no image or aspect swap during the handoff.
 - `ShowreelButton3D.ts` exists as a TSL implementation, but the intro scene
   deliberately does not instantiate it because the previous composition was
   visually cluttered.
@@ -42,9 +60,10 @@ Decide whether the 3D trigger should return, be redesigned, or remain absent.
 If it returns, instantiate `ShowreelButton3D` only after validating its scale,
 placement and contrast against the glass cube on both renderer backends.
 
-### 2. Prototype a 3D Works grid
+### 2. Evaluate a 3D Works route companion
 
-Prototype a small, disposable `PortfolioGrid3D` behind a feature boundary:
+Only if the accepted planar slider needs a counterpart on `/works`, prototype a
+small, disposable `PortfolioGrid3D` behind a feature boundary:
 
 - use TSL materials and an explicit texture strategy;
 - retain semantic DOM fallback and keyboard access until the prototype is
@@ -52,8 +71,8 @@ Prototype a small, disposable `PortfolioGrid3D` behind a feature boundary:
 - profile raycasting, textures and DPR on real WebGPU and WebGL2 devices;
 - keep `FullscreenOverlay` as the project-detail owner.
 
-Do not replace `WorkCards` until the prototype passes visual, accessibility and
-performance review.
+Do not replace `WorkCards`; any 3D companion remains secondary to the semantic
+DOM grid until it passes visual, accessibility and performance review.
 
 ### 3. Decide on video-plane integration
 

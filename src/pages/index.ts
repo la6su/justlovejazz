@@ -2,7 +2,7 @@
 //
 // 6 pages (one per cube face), each with 4 main sections:
 //   - home       — Studio / Philosophy / Approach / Team
-//   - services   — Creative Direction / Interactive Dev / Motion & Realtime / AI Systems
+//   - services   — Creative Direction / Realtime build / Motion / AI
 //   - works      — Case studies (4 selected projects)
 //   - manifesto  — Purpose / Clarity / Emotion / Simplicity
 //   - lab        — Experiments (4 R&D areas)

@@ -41,14 +41,20 @@ export class Renderer {
   }
 
   private buildPipelineConfig(): RenderPipelineConfig {
+    const isWebGL = this.capabilities.mode === 'webgl'
     return {
       bloomThreshold: this.capabilities.postProcessing ? 0.5 : 1.0,
-      // Reduced bloom passes for Safari/iOS perf — 4→2 on high, 3→1 on medium
-      bloomPasses: this.capabilities.tier === 'high' ? 2 : 1,
-      // R-9 fix: half-res bloom on high tier (was 0.25 = quarter-res → blocky).
-      // Half-res with 2 passes gives smooth gaussian falloff. Medium/low keep
-      // 0.2 (perf-bound on weaker GPUs).
-      bloomResRatio: this.capabilities.tier === 'high' ? 0.5 : 0.2,
+      // Native WebGL2 pays for explicit bright/blur/composite passes. One
+      // separable blur at one-third resolution preserves the soft bloom while
+      // keeping the continuously animated Works field inside frame budget.
+      bloomPasses: isWebGL ? 1 : this.capabilities.tier === 'high' ? 2 : 1,
+      bloomResRatio: isWebGL
+        ? this.capabilities.tier === 'high'
+          ? 0.33
+          : 0.2
+        : this.capabilities.tier === 'high'
+          ? 0.5
+          : 0.2,
       blurRange: this.capabilities.tier === 'high' ? 3.0 : 4.0,
       bloomEnabled: this.capabilities.postProcessing,
       vignetteEnabled: true,

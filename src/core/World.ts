@@ -11,13 +11,13 @@ import { CinematicLights } from '../Experience/World/Lights'
 import { DrawTrail } from '../Experience/World/DrawTrail'
 import { SplashCube } from '../Experience/World/SplashCube'
 import { EnvSphere } from '../Experience/World/EnvSphere'
-import { CinematicField } from '../Experience/World/CinematicField'
 import { ParticleBurst } from '../Experience/World/ParticleBurst'
 import { getWorldConfigForPage, type PhaseConfig } from './WorldConfig'
 import { SectionSceneFactory } from './SectionSceneFactory'
 import { disposeSection3Textures } from '../sections/works/scene'
 // updateInstancedParticles removed — was a no-op. Particles are static.
 import { disposeMaterialDeep } from '../Utils/dispose'
+import { WorksPlaneStage } from '../Experience/World/WorksPlaneStage'
 
 export interface WorldTransformResult {
   cameraTarget: CameraTarget
@@ -30,11 +30,12 @@ export class World extends THREE.Group {
   public lightsGroup!: CinematicLights
   public drawTrail?: DrawTrail
   public envSphere!: EnvSphere
-  public cinematicField!: CinematicField
   public particleBurst!: ParticleBurst
   // BG removed — was dead computation. EnvSphere is the sole background.
   public groundPlane!: THREE.Mesh
   public sceneGroups: THREE.Group[] = []
+  /** Lazy `/works` media owner. The DOM keeps semantics; this group owns pixels. */
+  public worksPlaneStage: WorksPlaneStage | null = null
 
   private configs: readonly PhaseConfig[] = []
   private _configMap: Map<string, PhaseConfig> | null = null
@@ -65,6 +66,7 @@ export class World extends THREE.Group {
   private _groundThemeActive = false
   private _targetGroundOpacity = 0
   private _carouselInitPromise: Promise<void> | null = null
+  private _worksPlaneStagePromise: Promise<void> | null = null
 
   constructor(scene: THREE.Scene) {
     super()
@@ -75,7 +77,7 @@ export class World extends THREE.Group {
     // ── Lights (= World.lights, аналог Junni Lights)
     this.lightsGroup = new CinematicLights(scene)
 
-    // ── DrawTrail (cursor trail ribbon) — only on works section (idx=4)
+    // ── DrawTrail — a route-only cursor signal, never over the home stream.
     this.drawTrail = new DrawTrail()
     scene.add(this.drawTrail.object)
     this.drawTrail.object.visible = false // hidden until works section
@@ -96,13 +98,8 @@ export class World extends THREE.Group {
     this.envSphere.attachToScene(scene)
     this.add(this.envSphere) // added for lifecycle (update/dispose)
 
-    // Scroll-driven TSL ribbons form the visual through-line across all six
-    // runtime states. EnvSphere remains the sole background owner.
-    this.cinematicField = new CinematicField()
-    this.add(this.cinematicField)
-
-    // ── Intro light frames — one-shot square-path echo from the splash.
-    // 12 deterministic strokes contract into the cube; hidden until triggered.
+    // One-shot portal-like echo of the inline splash squares. Despite its
+    // legacy name this is a single instanced draw call, not a particle field.
     this.particleBurst = new ParticleBurst()
     this.add(this.particleBurst)
 
@@ -202,7 +199,10 @@ export class World extends THREE.Group {
     // Content deep-links create the shared world before the user reaches home.
     // Defer carousel setup in that case; Experience calls the idempotent method
     // on every route change and initializes it when home is actually selected.
-    if (pageKey === 'home') void this.ensureCarouselInitialized()
+    // The home stream must finish texture decode before Enter becomes ready;
+    // otherwise its first section visit performs image work inside navigation.
+    if (pageKey === 'home') await this.ensureCarouselInitialized()
+    if (pageKey === 'works') void this.ensureWorksPlaneStageInitialized()
 
     if (import.meta.env.DEV) {
       console.debug(
@@ -235,10 +235,70 @@ export class World extends THREE.Group {
     return this._carouselInitPromise
   }
 
+  /**
+   * Compile the home Works and one-shot portal materials while the inline
+   * splash still covers the scene. They are exposed only to the compiler.
+   */
+  public async prewarmHomeMedia(renderer: object, camera: THREE.Camera): Promise<void> {
+    const compiler = renderer as {
+      compileAsync?: (scene: THREE.Scene, camera: THREE.Camera) => Promise<unknown>
+      compile?: (scene: THREE.Scene, camera: THREE.Camera) => void
+    }
+    if (document.body.dataset.page !== 'home') return
+    await this.ensureCarouselInitialized()
+
+    const group = this.sceneGroups[3]
+    if (!group) return
+    const wasVisible = group.visible
+    const wasPortalVisible = this.particleBurst.visible
+    group.visible = true
+    this.particleBurst.visible = true
+    try {
+      if (compiler.compileAsync) await compiler.compileAsync(this.sceneRef, camera)
+      else compiler.compile?.(this.sceneRef, camera)
+    } catch (error) {
+      // Prewarming is an optimisation, not a startup requirement. Rendering
+      // remains safe if a backend does not expose compatible async compilation.
+      if (import.meta.env.DEV) console.warn('[World] Home media prewarm skipped:', error)
+    } finally {
+      group.visible = wasVisible
+      this.particleBurst.visible = wasPortalVisible
+    }
+  }
+
+  /** Lazily create rich `/works` media only on that route, never on first paint. */
+  public ensureWorksPlaneStageInitialized(): Promise<void> {
+    if (this._worksPlaneStagePromise) return this._worksPlaneStagePromise
+    const stage = new WorksPlaneStage()
+    this.worksPlaneStage = stage
+    this.add(stage)
+    this._worksPlaneStagePromise = stage.init().then(
+      () => {
+        stage.setActive(document.body.dataset.page === 'works', 0)
+        stage.resize(window.innerWidth)
+        if (this._camera) stage.setCamera(this._camera)
+      },
+      (error) => {
+        stage.dispose()
+        this.remove(stage)
+        this.worksPlaneStage = null
+        this._worksPlaneStagePromise = null
+        if (import.meta.env.DEV) console.error('[World] WorksPlaneStage init failed:', error)
+      },
+    )
+    return this._worksPlaneStagePromise
+  }
+
+  /** Sync the 3D Works composition with CinematicNav's active DOM chapter. */
+  public setWorksPlaneStageSection(index: number): void {
+    this.worksPlaneStageSection = index
+    this.worksPlaneStage?.setActive(document.body.dataset.page === 'works', index)
+  }
+
   /** Sync ground plane color/opacity to the active theme.
    *  Called by Experience on jlz:theme-applied (same trigger EnvSphere uses).
-   *  Without this, a dark ground color (0x1a1a2e) is invisible on the light
-   *  theme (near-white EnvSphere) but visible on inverse (dark). We flip the
+   *  Without this, a dark ground is invisible on the light theme (near-white
+   *  EnvSphere) but visible on inverse (dark). We flip the
    *  ground to a contrasting tone per theme so it's always perceivable.
    *  The ground remains visible only on section 4; visibility is gated in
    *  Experience.ts and this method adjusts appearance only.
@@ -248,11 +308,11 @@ export class World extends THREE.Group {
   public syncGroundTheme(isLight: boolean): void {
     if (isLight) {
       // Light theme: dark ground on near-white bg = visible contrast.
-      this._groundThemeColor.set(0x1a1a2e)
+      this._groundThemeColor.set(0x161616)
       this._groundThemeOpacity = 0.4
     } else {
       // Dark theme: lighter ground on dark bg = visible contrast.
-      this._groundThemeColor.set(0x3a3a4e)
+      this._groundThemeColor.set(0x2a2a2a)
       this._groundThemeOpacity = 0.3
     }
     this._groundThemeActive = true
@@ -298,7 +358,6 @@ export class World extends THREE.Group {
 
   /** Match the opaque 3D words to the effective section/theme contrast. */
   public syncTypographyTheme(isLight: boolean): void {
-    this.cinematicField.setTheme(isLight)
     for (const group of this.sceneGroups) {
       const typo = group.userData.typography as
         import('../Experience/World/WireframeTypography').WireframeTypography | undefined
@@ -311,11 +370,9 @@ export class World extends THREE.Group {
     this.envSphere.update(deltaTime)
     this.sections.forEach((s) => s.update(deltaTime))
 
-    // The splash handoff is one-shot — advance it even when on-demand would
-    // otherwise skip decorative updates. Experience keeps rendering active.
-    if (this.particleBurst.isActive) {
-      this.particleBurst.update(deltaTime)
-    }
+    // The splash handoff owns its short render window, independent of ambient
+    // scene animation. Experience keeps `_needsRender` raised while active.
+    if (this.particleBurst.isActive) this.particleBurst.update(deltaTime)
 
     // ── On-demand: decorative 3D animations only run when rendering ──
     // When idle (settled on a section, no transition, no cursor movement),
@@ -324,12 +381,19 @@ export class World extends THREE.Group {
     // Exception: Experience forces needsRender while hasVisibleParticles().
     if (!needsRender) return
 
-    this.cinematicField.update(deltaTime)
+    if (this.worksPlaneStage) {
+      this.worksPlaneStage.setActive(
+        document.body.dataset.page === 'works',
+        this.worksPlaneStageSection,
+      )
+      this.worksPlaneStage.update(deltaTime)
+    }
 
     if (!this.isReducedMotion) {
       this.baku.update(deltaTime, this._renderer)
-      // DrawTrail only on works section (idx=3 in 6-section layout)
-      if (this.drawTrail && this._camera && this._currentSectionIndex === 3) {
+      const isStandaloneWorks = document.body.dataset.page === 'works'
+      const isWorksStoryFrame = this._currentSectionIndex === 3
+      if (this.drawTrail && this._camera && (isStandaloneWorks || isWorksStoryFrame)) {
         this.drawTrail.update(deltaTime, this._camera)
       }
     }
@@ -338,10 +402,20 @@ export class World extends THREE.Group {
     // JunniParticles: GPU drift via uTime — only present on Works currently
     // (see sections/works/scene.ts + intro/scene.ts header comment).
     for (const group of this.sceneGroups) {
-      if (!group.visible) continue
       const carousel = group.userData.carousel as
         import('../Experience/World/BakuCarousel').BakuCarousel | undefined
-      if (carousel) carousel.update(deltaTime)
+      // Let a departing slider settle its morph even after the section group
+      // falls below the visual fade threshold. Otherwise on-demand rendering
+      // can freeze the planes half-folded and keep a persistent render reason.
+      if (carousel && (group.visible || carousel.isAnimating)) carousel.update(deltaTime)
+      if (carousel) {
+        // Works becomes a pure media field once the cube-face handoff settles:
+        // only the planes and the existing particle field remain visible.
+        this.baku.visible =
+          document.body.dataset.page !== 'home' ||
+          !(carousel.isActive && carousel.morphProgress > 0.82)
+      }
+      if (!group.visible) continue
       // Update the lower Contact typography only after its own reveal begins.
       const typo = group.userData.typography as
         import('../Experience/World/WireframeTypography').WireframeTypography | undefined
@@ -385,7 +459,6 @@ export class World extends THREE.Group {
   public updateTransform(scrollValue: number): WorldTransformResult {
     if (!Number.isFinite(scrollValue)) scrollValue = 0
     scrollValue = THREE.MathUtils.clamp(scrollValue, 0, 1)
-    this.cinematicField.setProgress(scrollValue)
     if (this.sections.length === 0) return this.defaultResult()
 
     // ── Find from/to indices from range config
@@ -434,10 +507,16 @@ export class World extends THREE.Group {
     const bgT = this._applyEasing(t, easing)
 
     // ── Update current section index + fire per-section systems ──
-    if (fromIndex !== this._currentSectionIndex) {
-      this._currentSectionIndex = fromIndex
+    // CinematicNav changes its active DOM chapter at the midpoint between two
+    // native scroll frames. Keep the 3D arrival in that same neutral point.
+    // Using `fromIndex` here made down-scroll arrivals happen at the *end* of
+    // a frame while up-scroll arrivals happened immediately after leaving it,
+    // creating a visible direction-dependent second beat.
+    const activeIndex = Math.round(scrollValue * (this.sections.length - 1))
+    if (activeIndex !== this._currentSectionIndex) {
+      this._currentSectionIndex = activeIndex
       // Junni changeSection() pattern: lights + fog + env sphere driven by section data
-      const activeCfg = this.configs[fromIndex]
+      const activeCfg = this.configs[activeIndex]
       if (activeCfg) {
         this.lightsGroup.changeSection(activeCfg)
         // Inline WorldAtmosphere.setFog — fog exists from init(), reuse instance.
@@ -452,10 +531,18 @@ export class World extends THREE.Group {
         // listener in Experience.ts. Per-section pattern overrides were
         // removed because they could break theme contrast.
       }
-      // DrawTrail visibility — only on works section (idx=4)
-      if (this.drawTrail) {
-        this.drawTrail.object.visible = fromIndex === 3 // Works idx 3 in 6-section layout
-      }
+    }
+
+    // The cursor signal belongs to the standalone Works route. On home it
+    // remains outside the large media stream, where it would cut across the
+    // case artwork instead of supporting it. Route replacement can retain the
+    // same section index, so this must run outside the arrival-only branch.
+    if (this.drawTrail) {
+      const carousel = this.sceneGroups[3]?.userData.carousel as
+        import('../Experience/World/BakuCarousel').BakuCarousel | undefined
+      const isStandaloneWorks = document.body.dataset.page === 'works'
+      this.drawTrail.object.visible =
+        isStandaloneWorks || (activeIndex === 3 && !carousel?.isActive)
     }
 
     // ── BG sphere section switch (junni pattern: lerp BG color continuously)
@@ -611,7 +698,9 @@ export class World extends THREE.Group {
         fov: THREE.MathUtils.lerp(fromCam.fov, toCam.fov, t),
       },
       worldState: {
-        currentPhase: fromCfg.id as unknown as NarrativePhase,
+        // Arrival metadata drives discrete systems (theme, post, cube) while
+        // the transform/material values above remain a continuous from→to blend.
+        currentPhase: this.configs[activeIndex]!.id as unknown as NarrativePhase,
         phaseProgress: t,
         bakuMaterial: {
           role: toBaku.role as unknown as BakuRole,
@@ -645,7 +734,7 @@ export class World extends THREE.Group {
     this.sceneGroups.forEach((g) => {
       g.scale.setScalar(scale)
     })
-    this.cinematicField.resize(width, height)
+    this.worksPlaneStage?.resize(width)
     // Ground plane: always covers viewport (large geometry, no change needed).
     // Baku: position stays at origin, no resize needed.
     // Atmosphere: fog density stays per-section.
@@ -701,8 +790,6 @@ export class World extends THREE.Group {
     this.baku?.dispose()
     // Dispose env sphere GPU resources
     this.envSphere?.dispose()
-    this.cinematicField?.dispose()
-    // Dispose intro splash handoff
     this.particleBurst?.dispose()
     this.groundPlane.geometry.dispose()
     const groundMat = this.groundPlane.material
@@ -711,6 +798,10 @@ export class World extends THREE.Group {
     this.lightsGroup.dispose()
     this.drawTrail?.dispose()
     if (this.drawTrail) this.sceneRef.remove(this.drawTrail.object)
+    this.worksPlaneStage?.dispose()
+    if (this.worksPlaneStage) this.remove(this.worksPlaneStage)
+    this.worksPlaneStage = null
+    this._worksPlaneStagePromise = null
     // Inline WorldAtmosphere.dispose — null out fog only (BG.ts owns background).
     this.sceneRef.fog = null
   }
@@ -718,9 +809,11 @@ export class World extends THREE.Group {
   /** Set camera reference for DrawTrail (unproject cursor to world). */
   public setCamera(cam: THREE.Camera): void {
     this._camera = cam
+    this.worksPlaneStage?.setCamera(cam)
   }
 
   private _camera: THREE.Camera | undefined
+  private worksPlaneStageSection = 0
   private _renderer: THREE.WebGLRenderer | undefined
 
   /** Set renderer reference for CubeCamera updates. */

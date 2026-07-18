@@ -1,100 +1,83 @@
-// DrawTrail — GPU ribbon cursor trail (works section only, HERMES §35).
+// DrawTrail — restrained GPU cursor signal for the standalone Works route.
 //
-// Replaces the old Line + LineBasicMaterial with a triangle-strip ribbon
-// + TSL MeshBasicNodeMaterial. Flowing energy gradient + width ∝ cursor
-// velocity. Rebuild geometry every 2 frames (not every frame — cheaper).
-//
-// Trail tracks cursor position in a ring buffer (48 points), renders as a
-// ribbon (triangle strip) with:
-//   - Flowing energy gradient (U-coordinate → time-based color shift)
-//   - Width proportional to cursor velocity (faster = wider)
-//   - Fade from head (bright) to tail (transparent)
-//   - Additive blending for glow
+// A real triangle-strip ribbon stays attached to the cursor's world-space
+// history. The material uses the Studio Console's lime/teal signals, and the
+// whole trace decays after the pointer stops so it never leaves a frozen line.
 //
 // HERMES §1: TSL NodeMaterial only.
 // HERMES §35: works section (idx=3) ONLY.
 
 import * as THREE from 'three'
 import { MeshBasicNodeMaterial } from 'three/webgpu'
-import { Fn, vec3, float, uniform, uv, sin, cos, mix, smoothstep } from 'three/tsl'
+import { Fn, vec3, float, uniform, uv, sin, mix, smoothstep } from 'three/tsl'
 import { input } from '../Input'
 
-const TRAIL_LENGTH = 48
-const RIBBON_WIDTH = 0.15
+const TRAIL_LENGTH = 36
+const RIBBON_WIDTH = 0.115
 
 // Uniforms
 const trailUniforms = {
   uTime: uniform(0),
-  uVelocity: uniform(0),  // cursor velocity (0..1), drives width
+  uVelocity: uniform(0),
+  uEnergy: uniform(0),
 }
 
-// ── Fragment: junni-style tapered tail with flowing energy ──
+// ── Fragment: a low-noise Studio Console signal ──
 // UV.x = along ribbon (0=head/bright, 1=tail/transparent)
 // UV.y = across ribbon (0..1, center=0.5)
 const trailColorNode = Fn(() => {
   const vUv = uv()
-  const along = vUv.x   // 0 (head) → 1 (tail)
-  const across = vUv.y  // 0 → 1
+  const along = vUv.x
+  const across = vUv.y
+  const signal = sin(along.mul(9.0).sub(trailUniforms.uTime.mul(5.0)))
+    .mul(0.5)
+    .add(0.5)
+  const head = smoothstep(float(0.22), float(0.0), along)
+  let color = mix(vec3(0.271, 0.843, 0.737), vec3(0.722, 0.929, 0.412), signal)
+  color = mix(color, vec3(1.0), head.mul(0.32))
 
-  // Flowing energy: color shifts along ribbon + time (junni-style)
-  const flow = sin(along.mul(6.0).sub(trailUniforms.uTime.mul(4.0))).mul(0.5).add(0.5)
-  const flow2 = cos(along.mul(10.0).add(trailUniforms.uTime.mul(2.5))).mul(0.5).add(0.5)
-
-  // Base color: blue-cyan energy (junni palette)
-  const colorA = vec3(0.2, 0.6, 1.0)   // blue
-  const colorB = vec3(0.6, 0.9, 1.0)   // cyan
-  let color = mix(colorA, colorB, flow)
-
-  // White hot core at head (along < 0.3) — brightest at cursor position
-  const headGlow = smoothstep(float(0.3), float(0.0), along)
-  color = mix(color, vec3(1.0), headGlow.mul(0.5))
-
-  // Add subtle flow2 sparkle
-  color = mix(color, vec3(1.0), flow2.mul(0.2))
-
-  // Soft across ribbon (brighter at center)
-  const acrossSoft = smoothstep(float(0.0), float(0.5), across).mul(smoothstep(float(1.0), float(0.5), across))
-  color = color.mul(acrossSoft.mul(0.5).add(0.5))
+  const acrossSoft = smoothstep(float(0.0), float(0.5), across).mul(
+    smoothstep(float(1.0), float(0.5), across),
+  )
+  color = color.mul(acrossSoft.mul(0.38).add(0.62))
 
   return color
 })
 
 const trailOpacityNode = Fn(() => {
   const vUv = uv()
-  const along = vUv.x   // 0 (head) → 1 (tail)
-  const across = vUv.y  // 0 → 1
-
-  // Junni-style: bright head, long fading tail
-  // Head (along=0): full opacity, Tail (along=1): 0
-  // Quadratic fade for organic taper
+  const along = vUv.x
+  const across = vUv.y
   const fade = float(1.0).sub(along)
-  const fadeInt = fade.mul(fade)  // quadratic fade
+  const fadeInt = fade.mul(fade).mul(fade)
+  const headBoost = smoothstep(float(0.18), float(0.0), along).mul(0.18)
+  const acrossSoft = smoothstep(float(0.0), float(0.5), across).mul(
+    smoothstep(float(1.0), float(0.5), across),
+  )
+  const velocity = trailUniforms.uVelocity.mul(0.32).add(0.68)
 
-  // Extra head brightness boost (along < 0.2)
-  const headBoost = smoothstep(float(0.2), float(0.0), along).mul(0.3)
-
-  // Soft across ribbon
-  const acrossSoft = smoothstep(float(0.0), float(0.5), across).mul(smoothstep(float(1.0), float(0.5), across))
-
-  // Velocity boost — wider/brighter when cursor moves fast
-  const velBoost = trailUniforms.uVelocity.mul(0.5).add(0.5)
-
-  return fadeInt.add(headBoost).mul(acrossSoft).mul(velBoost)
+  return fadeInt.add(headBoost).mul(acrossSoft).mul(velocity).mul(trailUniforms.uEnergy)
 })
 
 export class DrawTrail {
   private group: THREE.Group
   private mesh: THREE.Mesh
   private geometry: THREE.BufferGeometry
-  private positions: Float32Array        // ribbon vertex positions (TRAIL_LENGTH * 2 * 3)
-  private uvs: Float32Array              // UVs (TRAIL_LENGTH * 2 * 2)
-  private indices: Uint16Array           // triangle strip indices
+  private positions: Float32Array // ribbon vertex positions (TRAIL_LENGTH * 2 * 3)
+  private uvs: Float32Array // UVs (TRAIL_LENGTH * 2 * 2)
+  private indices: Uint16Array // triangle strip indices
   private trailPositions: THREE.Vector3[] = []
   private initialized = false
   private _ndc = new THREE.Vector3()
   private _prevNdc = new THREE.Vector2()
   private _frameCount = 0
   private _velocity = 0
+  private _energy = 0
+  private _geometryDirty = true
+
+  public get isAnimating(): boolean {
+    return this._energy > 0.008
+  }
 
   constructor() {
     this.group = new THREE.Group()
@@ -108,27 +91,27 @@ export class DrawTrail {
     // Triangle strip via indexed geometry
     this.positions = new Float32Array(TRAIL_LENGTH * 2 * 3)
     this.uvs = new Float32Array(TRAIL_LENGTH * 2 * 2)
-    this.indices = new Uint16Array((TRAIL_LENGTH - 1) * 6)  // 2 triangles per segment
+    this.indices = new Uint16Array((TRAIL_LENGTH - 1) * 6) // 2 triangles per segment
 
     // Build UVs (static): along = i/(N-1), across = 0 or 1
     for (let i = 0; i < TRAIL_LENGTH; i++) {
       const along = i / (TRAIL_LENGTH - 1)
-      this.uvs[i * 4] = along       // left vertex U
-      this.uvs[i * 4 + 1] = 0       // left vertex V
-      this.uvs[i * 4 + 2] = along   // right vertex U
-      this.uvs[i * 4 + 3] = 1       // right vertex V
+      this.uvs[i * 4] = along // left vertex U
+      this.uvs[i * 4 + 1] = 0 // left vertex V
+      this.uvs[i * 4 + 2] = along // right vertex U
+      this.uvs[i * 4 + 3] = 1 // right vertex V
     }
 
     // Build indices (static): 2 triangles per segment
     for (let i = 0; i < TRAIL_LENGTH - 1; i++) {
       const idx = i * 6
-      const vi = i * 2  // vertex index
-      this.indices[idx] = vi        // triangle 1: left-current
-      this.indices[idx + 1] = vi + 1  // right-current
-      this.indices[idx + 2] = vi + 2  // left-next
-      this.indices[idx + 3] = vi + 1  // triangle 2: right-current
-      this.indices[idx + 4] = vi + 3  // right-next
-      this.indices[idx + 5] = vi + 2  // left-next
+      const vi = i * 2 // vertex index
+      this.indices[idx] = vi // triangle 1: left-current
+      this.indices[idx + 1] = vi + 1 // right-current
+      this.indices[idx + 2] = vi + 2 // left-next
+      this.indices[idx + 3] = vi + 1 // triangle 2: right-current
+      this.indices[idx + 4] = vi + 3 // right-next
+      this.indices[idx + 5] = vi + 2 // left-next
     }
 
     this.geometry = new THREE.BufferGeometry()
@@ -143,7 +126,7 @@ export class DrawTrail {
       blending: THREE.AdditiveBlending,
       side: THREE.DoubleSide,
       fog: false,
-      // R-11 fix: toneMapped=false on additive glow (same as ParticleBurst).
+      // R-11 fix: toneMapped=false keeps additive glow energy predictable.
       toneMapped: false,
     })
     material.colorNode = trailColorNode()
@@ -151,7 +134,7 @@ export class DrawTrail {
 
     this.mesh = new THREE.Mesh(this.geometry, material)
     this.mesh.frustumCulled = false
-    this.mesh.renderOrder = 5  // above baku cube
+    this.mesh.renderOrder = 7
     this.mesh.name = 'trail-ribbon'
     this.group.add(this.mesh)
   }
@@ -163,9 +146,9 @@ export class DrawTrail {
   update(_dt: number, camera: THREE.Camera): void {
     const mouse = input.getMouse()
 
-    // Track velocity (NDC units per frame)
+    // Track velocity (NDC units per frame).
     const velNdc = Math.hypot(mouse.x - this._prevNdc.x, mouse.y - this._prevNdc.y)
-    this._velocity = this._velocity * 0.8 + velNdc * 0.2  // smooth
+    this._velocity = this._velocity * 0.78 + velNdc * 0.22
     this._prevNdc.set(mouse.x, mouse.y)
     trailUniforms.uVelocity.value = Math.min(1, this._velocity * 20)
 
@@ -188,56 +171,66 @@ export class DrawTrail {
         p.copy(this._ndc)
       }
       this.initialized = true
+      this._geometryDirty = true
     }
 
-    // Shift ring buffer — SKIP when mouse hasn't moved (saves 48 Vector3.copy)
+    // Shift only for a meaningful pointer change; retain the trace while it
+    // fades when idle.
     if (velNdc > 0.0001) {
       for (let i = this.trailPositions.length - 1; i > 0; i--) {
         this.trailPositions[i]!.copy(this.trailPositions[i - 1]!)
       }
       this.trailPositions[0]!.copy(this._ndc)
+      this._energy = 1
+      this._geometryDirty = true
+    } else {
+      this._energy *= Math.exp(-_dt * 5.5)
     }
+    trailUniforms.uEnergy.value = this._energy
 
-    // Rebuild ribbon geometry every 2 frames (cheaper than every frame)
+    // Rebuild immediately after input, then at a restrained cadence while the
+    // trace settles.
     this._frameCount++
-    if (this._frameCount % 2 === 0) {
+    if (this._geometryDirty || this._frameCount % 2 === 0) {
       this._rebuildRibbon(camera)
+      this._geometryDirty = false
     }
 
     trailUniforms.uTime.value += _dt
   }
 
-  /** Rebuild ribbon vertex positions from trail ring buffer.
-   *  Junni-style: tapered tail — width decreases from head (i=0) to tail (i=N-1).
-   *  Width profile: head = full width, tail = 10% width (smooth taper).
-   *  Velocity boosts head width (faster cursor = thicker head). */
+  /** Rebuild a camera-facing ribbon perpendicular to each segment.
+   *
+   * Offsetting every point only by the camera-right vector made horizontal
+   * cursor travel collapse into zero-area triangles. A local perpendicular is
+   * stable for horizontal, vertical and diagonal gestures. */
   private _rebuildRibbon(camera: THREE.Camera): void {
-    // Base width scales with velocity (head width)
-    const headWidth = RIBBON_WIDTH * (0.5 + trailUniforms.uVelocity.value * 1.5)
-    const tailWidth = headWidth * 0.1 // tapered tail = 10% of head
-
-    // Camera right vector (for ribbon offset direction)
+    const headWidth = RIBBON_WIDTH * (0.75 + trailUniforms.uVelocity.value * 0.85)
+    const tailWidth = headWidth * 0.045
     const camRight = new THREE.Vector3()
     camera.matrixWorld.extractBasis(camRight, new THREE.Vector3(), new THREE.Vector3())
 
     for (let i = 0; i < TRAIL_LENGTH; i++) {
       const p = this.trailPositions[i]!
       const i6 = i * 6
-      // Taper: 0 at head (i=0) → 1 at tail (i=N-1), smoothstep for organic curve
       const taperT = i / (TRAIL_LENGTH - 1)
-      const taper = taperT * taperT * (3 - 2 * taperT) // smoothstep
-      // Width interpolates from headWidth to tailWidth
+      const taper = taperT * taperT * (3 - 2 * taperT)
       const width = headWidth * (1 - taper) + tailWidth * taper
+      const before = this.trailPositions[Math.max(0, i - 1)]!
+      const after = this.trailPositions[Math.min(TRAIL_LENGTH - 1, i + 1)]!
+      const tangentX = before.x - after.x
+      const tangentY = before.y - after.y
+      const tangentLength = Math.hypot(tangentX, tangentY)
+      const offsetX = tangentLength > 0.00001 ? -tangentY / tangentLength : camRight.x
+      const offsetY = tangentLength > 0.00001 ? tangentX / tangentLength : camRight.y
+      const halfWidth = width * 0.5
 
-      // Left vertex (offset by -camRight * width/2)
-      this.positions[i6] = p.x - camRight.x * width * 0.5
-      this.positions[i6 + 1] = p.y - camRight.y * width * 0.5
-      this.positions[i6 + 2] = p.z - camRight.z * width * 0.5
-
-      // Right vertex (offset by +camRight * width/2)
-      this.positions[i6 + 3] = p.x + camRight.x * width * 0.5
-      this.positions[i6 + 4] = p.y + camRight.y * width * 0.5
-      this.positions[i6 + 5] = p.z + camRight.z * width * 0.5
+      this.positions[i6] = p.x - offsetX * halfWidth
+      this.positions[i6 + 1] = p.y - offsetY * halfWidth
+      this.positions[i6 + 2] = p.z
+      this.positions[i6 + 3] = p.x + offsetX * halfWidth
+      this.positions[i6 + 4] = p.y + offsetY * halfWidth
+      this.positions[i6 + 5] = p.z
     }
 
     this.geometry.attributes.position!.needsUpdate = true
@@ -245,6 +238,11 @@ export class DrawTrail {
 
   setVisible(visible: boolean): void {
     this.group.visible = visible
+    if (!visible) {
+      this._energy = 0
+      trailUniforms.uEnergy.value = 0
+      this.initialized = false
+    }
   }
 
   dispose(): void {

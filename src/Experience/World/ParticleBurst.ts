@@ -1,12 +1,9 @@
-// ParticleBurst.ts — geometric splash handoff for the intro opener.
+// ParticleBurst — geometric splash handoff for the intro opener.
 //
-// The former random, gravity-driven particle explosion made the handoff from
-// the square-path splash feel like a separate visual language. This keeps the
-// public owner/API but renders three deterministic, broken-square light frames
-// that contract toward the cube and dissolve into the first scene.
-//
-// It uses one InstancedMesh (12 planes) and TSL MeshBasicNodeMaterial. There is
-// no simulation, random motion, texture or post-processing allocation.
+// The historical class name is retained for lifecycle compatibility, but this
+// is not a particle simulation. Three deterministic broken-square light frames
+// contract toward the cube and dissolve into the first scene. All twelve
+// strokes share one instanced draw call and one TSL material.
 
 import * as THREE from 'three'
 import { MeshBasicNodeMaterial } from 'three/webgpu'
@@ -24,17 +21,17 @@ const traceUniforms = {
 }
 
 const traceColorNode = Fn(() => {
-  const entrance = smoothstep(float(0.0), float(0.14), traceUniforms.uTime)
-  const exit = float(1.0).sub(
+  const entrance = smoothstep(float(0), float(0.14), traceUniforms.uTime)
+  const exit = float(1).sub(
     smoothstep(traceUniforms.uDuration.mul(0.42), traceUniforms.uDuration, traceUniforms.uTime),
   )
   const intensity = entrance.mul(exit)
-  return vec3(0.48, 0.62, 1.0).mul(intensity.mul(0.7).add(0.3))
+  return vec3(0.72, 0.93, 0.41).mul(intensity.mul(0.7).add(0.3))
 })
 
 const traceOpacityNode = Fn(() => {
-  const entrance = smoothstep(float(0.0), float(0.1), traceUniforms.uTime)
-  const exit = float(1.0).sub(
+  const entrance = smoothstep(float(0), float(0.1), traceUniforms.uTime)
+  const exit = float(1).sub(
     smoothstep(traceUniforms.uDuration.mul(0.38), traceUniforms.uDuration, traceUniforms.uTime),
   )
   return entrance.mul(exit).mul(0.78)
@@ -45,10 +42,6 @@ interface TraceSegment {
   side: number
 }
 
-/**
- * A one-shot 3D echo of the splash squares. The legacy name is retained so
- * World/Experience ownership and disposal remain stable.
- */
 export class ParticleBurst extends THREE.InstancedMesh {
   private readonly _dummy = new THREE.Object3D()
   private readonly _segments: TraceSegment[] = []
@@ -81,7 +74,6 @@ export class ParticleBurst extends THREE.InstancedMesh {
     }
   }
 
-  /** Begin the square-frame handoff from the splash into the 3D scene. */
   trigger(originX = 0, originY = 0, originZ = 0): void {
     this._active = true
     this._elapsed = 0
@@ -91,7 +83,6 @@ export class ParticleBurst extends THREE.InstancedMesh {
     this.updateMatrices(0)
   }
 
-  /** Advance the short handoff. Returns true while it still needs rendering. */
   update(dt: number): boolean {
     if (!this._active) return false
 

@@ -1,8 +1,8 @@
-// WorkCards.ts — restrained depth interaction + project opening for Works.
+// WorkCards.ts — semantic controls for real 3D Works planes.
 //
-// Each .jlz-work-card tilts toward the cursor via CSS custom properties
-// (--rx/--ry) updated on pointermove. The inner .jlz-work-card__inner element
-// consumes those vars in its transform: perspective() rotateX/Y.
+// Visible project media and motion live in WorksPlaneStage. These native
+// buttons remain as focusable caption/hit-target layers and request a project
+// opening; Experience chooses the corresponding 3D plane when it exists.
 //
 // Clicking a card dispatches jlz:open-project { idx } → Experience.ts opens
 // the fullscreen ProjectOverlay (same overlay as the home BakuCarousel).
@@ -13,9 +13,6 @@
 //
 // init() is idempotent — safe to call on every route change. Listeners are
 // attached per-card and tracked for cleanup.
-
-const TILT_MAX = 8 // degrees — max rotateX/Y at card edges
-const TILT_EASE = 0.18 // lerp factor for smooth follow
 
 interface CardState {
   el: HTMLElement
@@ -31,40 +28,11 @@ interface CardState {
   _clickDebounce?: boolean // D-25: rapid double-click guard
   openTimer?: number
   releaseTimer?: number
+  wobbleTimer?: number
 }
 
 let cards: CardState[] = []
-let globalRafScheduled = false
 let sectionChangeHandler: ((e: Event) => void) | null = null
-
-/** Update all card tilts in a single rAF pass (batched, not per-card). */
-function tick(): void {
-  globalRafScheduled = false
-  let needsAnother = false
-  for (const c of cards) {
-    const dx = c.targetRx - c.currentRx
-    const dy = c.targetRy - c.currentRy
-    if (Math.abs(dx) > 0.05 || Math.abs(dy) > 0.05) {
-      c.currentRx += dx * TILT_EASE
-      c.currentRy += dy * TILT_EASE
-      c.inner.style.setProperty('--rx', `${c.currentRx.toFixed(2)}deg`)
-      c.inner.style.setProperty('--ry', `${c.currentRy.toFixed(2)}deg`)
-      needsAnother = true
-    } else {
-      c.currentRx = c.targetRx
-      c.currentRy = c.targetRy
-      c.inner.style.setProperty('--rx', `${c.currentRx.toFixed(2)}deg`)
-      c.inner.style.setProperty('--ry', `${c.currentRy.toFixed(2)}deg`)
-    }
-  }
-  if (needsAnother) scheduleTick()
-}
-
-function scheduleTick(): void {
-  if (globalRafScheduled) return
-  globalRafScheduled = true
-  requestAnimationFrame(tick)
-}
 
 /** Attach listeners to one card. */
 function bindCard(cardEl: HTMLElement): void {
@@ -87,41 +55,26 @@ function bindCard(cardEl: HTMLElement): void {
     click: null,
   }
 
-  state.pointerMove = (e: PointerEvent) => {
-    const rect = cardEl.getBoundingClientRect()
-    const px = (e.clientX - rect.left) / rect.width // 0..1
-    const py = (e.clientY - rect.top) / rect.height // 0..1
-    // Center-origin: -1..1. rotateY from horizontal, rotateX from vertical.
-    state.targetRy = (px - 0.5) * 2 * TILT_MAX
-    state.targetRx = -(py - 0.5) * 2 * TILT_MAX
-    scheduleTick()
-  }
+  state.pointerMove = () => {}
   state.pointerLeave = () => {
     state.targetRx = 0
     state.targetRy = 0
-    scheduleTick()
   }
   state.click = () => {
     const idx = Number(cardEl.dataset.projectIdx)
     if (Number.isNaN(idx)) return
-    // Keep a single transition in flight. The card gets a short, restrained
-    // focus transition before the fullscreen modal takes over.
+    // The clicked 3D plane begins expanding in the same event turn. Delaying
+    // this dispatch would leave a perceptible gap between DOM activation and
+    // the shader-driven fullscreen transition.
     if (state._clickDebounce) return
     state._clickDebounce = true
     cardEl.classList.add('is-opening')
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    state.openTimer = window.setTimeout(
-      () => {
-        state.openTimer = undefined
-        cardEl.classList.remove('is-opening')
-        window.dispatchEvent(new CustomEvent('jlz:open-project', { detail: { idx } }))
-        state.releaseTimer = window.setTimeout(() => {
-          state.releaseTimer = undefined
-          state._clickDebounce = false
-        }, 100)
-      },
-      reducedMotion ? 80 : 620,
-    )
+    window.dispatchEvent(new CustomEvent('jlz:open-project', { detail: { idx } }))
+    state.releaseTimer = window.setTimeout(() => {
+      state.releaseTimer = undefined
+      state._clickDebounce = false
+      cardEl.classList.remove('is-opening')
+    }, 700)
   }
 
   cardEl.addEventListener('pointermove', state.pointerMove)
@@ -193,6 +146,7 @@ export function disposeWorkCards(): void {
   for (const c of cards) {
     if (c.openTimer !== undefined) clearTimeout(c.openTimer)
     if (c.releaseTimer !== undefined) clearTimeout(c.releaseTimer)
+    if (c.wobbleTimer !== undefined) clearTimeout(c.wobbleTimer)
     if (c.pointerMove) c.el.removeEventListener('pointermove', c.pointerMove)
     if (c.pointerLeave) c.el.removeEventListener('pointerleave', c.pointerLeave)
     if (c.click) c.el.removeEventListener('click', c.click)

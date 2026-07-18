@@ -59,6 +59,9 @@ export class Experience {
   private _showreelPlayHandler: (() => void) | null = null
   private _showreelClickHandler: ((e: PointerEvent) => void) | null = null
   private _showreelMoveHandler: ((e: PointerEvent) => void) | null = null
+  private _worksPlaneTapHandler: ((e: PointerEvent) => void) | null = null
+  private _worksPageSectionHandler: ((e: Event) => void) | null = null
+  private _projectNavigateHandler: ((e: Event) => void) | null = null
   private _showreelRaycaster: THREE.Raycaster | null = null
   private _showreelNdc: THREE.Vector2 | null = null
   private _showreelHovered = false
@@ -69,6 +72,7 @@ export class Experience {
   // Works portfolio (public for DevPanel access)
   public portfolio: WorksPortfolio | null = null
   private overlay: FullscreenOverlay | null = null
+  private _activeProjectIndex = 0
   private _uiMenu: UIMenu | null = null
   private currentSectionContext: string | null = null
   private _portfolioInitialized = false
@@ -128,6 +132,7 @@ export class Experience {
     this.world = new World(this.scene)
     await this.world.init()
     this.scene.add(this.world)
+    await this.world.prewarmHomeMedia(this.renderer.instance, this.camera.instance)
   }
 
   /** Create a studio environment map (RoomEnvironment → PMREM) for glass
@@ -172,56 +177,49 @@ export class Experience {
       }
 
       const pmrem = new THREE.PMREMGenerator(pmremRenderer)
-      // Build a procedural env scene: inverted sphere with gradient + sun spots.
-      // Uses MeshBasicMaterial (renderer-agnostic, works in PMREM on both paths).
-      const envScene = new THREE.Scene()
-      const envGeo = new THREE.SphereGeometry(50, 32, 16)
-      // Procedural gradient texture on canvas (sky gradient + 3 sun spots).
+      // Procedural grayscale texture (sky-to-ground tonal contrast + soft spots).
+      // 512×256 is sufficient for the deliberately soft PMREM reflections and
+      // quarters the synchronous startup work of the previous 1024×512 source.
+      const envWidth = 512
+      const envHeight = 256
       const envCanvas = document.createElement('canvas')
-      envCanvas.width = 1024
-      envCanvas.height = 512
+      envCanvas.width = envWidth
+      envCanvas.height = envHeight
       const ctx = envCanvas.getContext('2d')!
-      // Vertical gradient: warm horizon → bright sky → cool zenith
-      // + ONE soft bright area (radial gradient, large radius) for a gentle
+      // Vertical gradient: neutral horizon → bright sky → graphite ground,
+      // plus one soft bright area for a gentle
       // reflection point on the glass + darker ground area for contrast.
       // The contrast between bright sky and dark ground gives the glass rich,
       // dynamic reflections (you can see the "horizon line" refract through
-      // the cube as it rotates). Previously just a flat gradient + one spot →
-      // reflections looked flat/uniform. Now: sky gradient + bright spot
-      // (upper-left) + dark ground (bottom) = 3-zone env for interesting IBL.
-      const grad = ctx.createLinearGradient(0, 0, 0, 512)
-      grad.addColorStop(0.0, 'rgb(150,140,120)') // horizon (warm)
-      grad.addColorStop(0.4, 'rgb(210,210,220)') // mid sky (brighter for contrast)
-      grad.addColorStop(0.7, 'rgb(190,215,240)') // zenith (cool blue)
-      grad.addColorStop(0.71, 'rgb(70,65,75)') // ground line (dark — contrast zone)
-      grad.addColorStop(1.0, 'rgb(40,38,45)') // ground (dark)
+      // the cube as it rotates). The palette stays neutral so it does not
+      // introduce a third colour system behind lime and teal UI signals.
+      const grad = ctx.createLinearGradient(0, 0, 0, envHeight)
+      grad.addColorStop(0.0, 'rgb(170,170,170)')
+      grad.addColorStop(0.4, 'rgb(225,225,225)')
+      grad.addColorStop(0.7, 'rgb(205,205,205)')
+      grad.addColorStop(0.71, 'rgb(58,58,58)')
+      grad.addColorStop(1.0, 'rgb(24,24,24)')
       ctx.fillStyle = grad
-      ctx.fillRect(0, 0, 1024, 512)
+      ctx.fillRect(0, 0, envWidth, envHeight)
       // Soft bright area (upper-left sky region) — broad, diffused light source
-      // for glass reflections. Large radius (300px) + moderate brightness (220)
+      // for glass reflections. Broad radius + moderate brightness
       // = soft highlight, NOT a sharp sun spot.
-      const softSpot = ctx.createRadialGradient(280, 140, 0, 280, 140, 300)
-      softSpot.addColorStop(0.0, 'rgba(255,250,240,0.6)')
-      softSpot.addColorStop(0.5, 'rgba(240,235,225,0.25)')
-      softSpot.addColorStop(1.0, 'rgba(220,215,205,0)')
+      const softSpot = ctx.createRadialGradient(140, 70, 0, 140, 70, 150)
+      softSpot.addColorStop(0.0, 'rgba(255,255,255,0.6)')
+      softSpot.addColorStop(0.5, 'rgba(235,235,235,0.25)')
+      softSpot.addColorStop(1.0, 'rgba(220,220,220,0)')
       ctx.fillStyle = softSpot
-      ctx.fillRect(0, 0, 1024, 512)
+      ctx.fillRect(0, 0, envWidth, envHeight)
       // Second soft highlight (lower-right, dimmer) — gives the cube a second
       // reflection point that appears as it rotates, adding visual interest.
-      const softSpot2 = ctx.createRadialGradient(760, 360, 0, 760, 360, 200)
-      softSpot2.addColorStop(0.0, 'rgba(200,210,230,0.35)')
-      softSpot2.addColorStop(1.0, 'rgba(180,190,210,0)')
+      const softSpot2 = ctx.createRadialGradient(380, 180, 0, 380, 180, 100)
+      softSpot2.addColorStop(0.0, 'rgba(205,205,205,0.35)')
+      softSpot2.addColorStop(1.0, 'rgba(185,185,185,0)')
       ctx.fillStyle = softSpot2
-      ctx.fillRect(0, 0, 1024, 512)
+      ctx.fillRect(0, 0, envWidth, envHeight)
       const envTex = new THREE.CanvasTexture(envCanvas)
       envTex.mapping = THREE.EquirectangularReflectionMapping
       envTex.colorSpace = THREE.SRGBColorSpace
-      const envMat = new THREE.MeshBasicMaterial({
-        map: envTex,
-        side: THREE.BackSide,
-      })
-      const envMesh = new THREE.Mesh(envGeo, envMat)
-      envScene.add(envMesh)
 
       const envRT = pmrem.fromEquirectangular(envTex)
       // PARITY FIX: Mark the PMREM texture so WebGPU's common PMREMNode passes
@@ -251,15 +249,6 @@ export class Experience {
       // Bind the PMREM texture directly to the glass cube material's envMap.
       this.world?.baku?.bindEnvironment(envRT.texture)
       pmrem.dispose()
-      envScene.traverse((obj) => {
-        const mesh = obj as THREE.Mesh
-        if (mesh.geometry) mesh.geometry.dispose()
-        const mat = mesh.material
-        if (mat) {
-          if (Array.isArray(mat)) mat.forEach((m) => m.dispose())
-          else (mat as THREE.Material).dispose()
-        }
-      })
       envTex.dispose()
       // Dispose the secondary renderer + its canvas (no longer needed).
       // forceContextLoss() releases the WebGL context immediately (browsers
@@ -286,11 +275,10 @@ export class Experience {
   }
 
   private setupIntro(): void {
-    this.bus
-      .channel('intro:opacity', 1)
-      .channel('intro:stage', 0)
-      .animate('intro:opacity', 0, 0.5, 'easeOutCubic')
-    this.bus.animate('intro:stage', 1, 0.6, 'easeOutCubic')
+    // The inline splash already owns the entrance. Start the 3D scene settled
+    // so its first frames are used to warm the renderer, not to run a second
+    // hidden appearance animation behind the curtain.
+    this.bus.channel('intro:opacity', 0).channel('intro:stage', 1)
 
     // intro:done handler removed (2026-07-11 audit). The previous handler was
     // empty — ContentReveal synchronises the active section theme through
@@ -327,6 +315,7 @@ export class Experience {
     // After splash is dismissed (Enter click), re-trigger NoiseText on the
     // active section so user sees the eyebrow animation as 3D scene reveals.
     this._splashEnteredHandler = () => {
+      this.triggerSplashOpener()
       const activeSection =
         (document.querySelector('.section-active [data-eyebrow]') as HTMLElement | null) ??
         (document.querySelector('[data-section="intro"] [data-eyebrow]') as HTMLElement | null)
@@ -461,7 +450,9 @@ export class Experience {
     this._mouseTrailRafPending = false
     this._onMouseMoveForTrail = () => {
       if (this._mouseTrailRafPending) return
-      if (this.world?.currentSectionIndex !== 3) return // Works section only
+      const isWorksStoryFrame = this.world?.currentSectionIndex === 3
+      const isStandaloneWorks = document.body.dataset.page === 'works'
+      if (!isWorksStoryFrame && !isStandaloneWorks) return
       this._mouseTrailRafPending = true
       requestAnimationFrame(() => {
         this._mouseTrailRafPending = false
@@ -504,10 +495,34 @@ export class Experience {
       const detail = (e as CustomEvent<{ idx: number }>).detail
       if (!detail || typeof detail.idx !== 'number') return
       void this.ensurePortfolio().then(() => {
+        const openOverlay = () => this.onProjectSelect(detail.idx, false, 'plane')
+        if (document.body.dataset.page === 'works') {
+          const stage = this.world?.worksPlaneStage
+          if (stage?.openProject(detail.idx, openOverlay)) {
+            this._needsRender = true
+            return
+          }
+        }
         this.onProjectSelect(detail.idx)
       })
     }
     window.addEventListener('jlz:open-project', this._openProjectHandler)
+
+    this._projectNavigateHandler = (e: Event) => {
+      if (!this.overlay?.isOpen) return
+      const direction = (e as CustomEvent<{ direction?: number }>).detail?.direction
+      if (direction !== -1 && direction !== 1) return
+      const carousel = this.getCarousel()
+      if (direction < 0) {
+        carousel?.prev()
+        if (!carousel) this.portfolio?.prev()
+      } else {
+        carousel?.next()
+        if (!carousel) this.portfolio?.next()
+      }
+      this.onProjectSelect(this._activeProjectIndex + direction)
+    }
+    window.addEventListener('jlz:project-navigate', this._projectNavigateHandler)
 
     // ── Close overlay on route change ──
     // When SPA navigates (Menu subnav click, browser back, etc.),
@@ -519,6 +534,12 @@ export class Experience {
       }
       if (document.body.dataset.page === 'home') {
         void this.world?.ensureCarouselInitialized()
+      }
+      if (document.body.dataset.page === 'works') {
+        void this.world?.ensureWorksPlaneStageInitialized().then(() => {
+          this.world?.setWorksPlaneStageSection(0)
+          this._needsRender = true
+        })
       }
       this._needsRender = true
     }
@@ -534,6 +555,36 @@ export class Experience {
       this._needsRender = true
     }
     window.addEventListener('jlz:wobble-pulse', this._wobblePulseHandler)
+
+    // `/works` keeps DOM buttons for accessibility, while its visible media is
+    // raycast from the actual Three.js planes. Story navigation remains native.
+    this._worksPageSectionHandler = (e: Event) => {
+      if (document.body.dataset.page !== 'works') return
+      const detail = (e as CustomEvent<{ index?: number }>).detail
+      this.world?.setWorksPlaneStageSection(detail?.index ?? 0)
+      this._needsRender = true
+    }
+    window.addEventListener('jlz:page-section-change', this._worksPageSectionHandler)
+
+    this._worksPlaneTapHandler = (e: PointerEvent) => {
+      if (document.body.dataset.page !== 'works' || this.overlay?.isOpen) return
+      // The Enter pointerup is dispatched while the splash curtains are still
+      // present. It must not be reinterpreted as a click on the first 3D plane.
+      if (document.getElementById('jlz-app-loader')) return
+      const target = e.target as HTMLElement | null
+      if (target?.closest('.jlz-work-card, #jlz-fs-overlay, .jlz-topbar, [data-cinematic-menu]'))
+        return
+      void this.ensurePortfolio().then(() => {
+        const stage = this.world?.worksPlaneStage
+        if (!stage) return
+        if (
+          stage.handleTap(e.clientX, e.clientY, (idx) => this.onProjectSelect(idx, false, 'plane'))
+        ) {
+          this._needsRender = true
+        }
+      })
+    }
+    window.addEventListener('pointerup', this._worksPlaneTapHandler)
 
     // ── Hash navigation from menu overlay (e.g. /manifesto#section-manifesto-02) ──
     // Dispatched by router.navigateToPage after renderView. CinematicNav finds
@@ -557,6 +608,7 @@ export class Experience {
       if (!this.overlay) return
       // Open overlay with showreel video (coming-soon.mp4 placeholder).
       this.overlay.open({
+        mode: 'video',
         videoSrc: '/assets/video/coming-soon.mp4',
         poster: '/assets/video/coming-soon-cover.jpg',
         title: 'Showreel',
@@ -681,6 +733,8 @@ export class Experience {
     const carousel = this.getCarousel()
     this._bakuCarouselActive = carousel?.isAnimating ?? false
     const carouselActive = this._bakuCarouselActive
+    const worksPlaneActive = this.world?.worksPlaneStage?.isAnimating ?? false
+    const drawTrailActive = this.world?.drawTrail?.isAnimating ?? false
     const baku = this.world?.baku as unknown as { openerPhase?: string } | undefined
     const openerActive = baku?.openerPhase !== 'done' && baku?.openerPhase !== 'idle'
     const burstActive = this.world?.particleBurst?.isActive ?? false
@@ -713,6 +767,8 @@ export class Experience {
       navActive ||
       introActive ||
       carouselActive ||
+      worksPlaneActive ||
+      drawTrailActive ||
       openerActive ||
       burstActive ||
       camShaking ||
@@ -736,10 +792,11 @@ export class Experience {
       !navActive &&
       !introActive &&
       !carouselActive &&
+      !worksPlaneActive &&
       !openerActive &&
+      !burstActive &&
       !camShaking &&
       !particlesActive &&
-      !burstActive &&
       !ambientSceneActive &&
       !this._reducedMotion
     ) {
@@ -794,6 +851,7 @@ export class Experience {
     // Dispatch section-change on EVERY section index change (not just context).
     // This triggers NoiseText title animation for the new section + cube face rotation.
     if (idx !== this._prevSectionIndex) {
+      const isInitialSectionSync = this._prevSectionIndex === -1
       this._prevSectionIndex = idx
       const cfgForSection = this.world.getConfig(worldState.currentPhase)
       const sectionId = cfgForSection?.domSection ?? `section-${idx}`
@@ -803,7 +861,7 @@ export class Experience {
       // spurious events + cube face rotation that doesn't make sense on
       // content pages (cube rotation is home-only visual feedback).
       const isHomePage = document.body.dataset.page === 'home'
-      if (isHomePage) {
+      if (isHomePage && !isInitialSectionSync) {
         eventBus.emit('jlz:section-change', {
           sectionId,
           context: cfgForSection?.context,
@@ -815,16 +873,19 @@ export class Experience {
       // 6 sections = 6 cube faces. Each section change animates the cube
       // to its target Y rotation so the corresponding face points to camera.
       if (this.world?.baku) {
-        this.world.baku.rotateToFace(idx)
+        if (isInitialSectionSync) this.world.baku.snapToFace(idx)
+        else this.world.baku.rotateToFace(idx)
         this._needsRender = true
       }
 
       // ── Zoom pulse on section change ──
       // Camera FOV dips slightly then returns — "push-in" cinematic feel.
       // Also triggers cube opener (scale pulse 1.0→1.3→1.0) for combined effect.
-      this.camera.pulse(0.05, 0.8)
-      const cube = this.world?.baku as unknown as { triggerOpener?: () => void } | undefined
-      cube?.triggerOpener?.()
+      if (!isInitialSectionSync) {
+        this.camera.pulse(0.05, 0.8)
+        const cube = this.world?.baku as unknown as { triggerOpener?: () => void } | undefined
+        cube?.triggerOpener?.()
+      }
       this._needsRender = true
     }
 
@@ -855,7 +916,7 @@ export class Experience {
       this.camera.setCursorFollow(cursorFollow)
     }
 
-    // Works section: baku cube morphs into a carousel ring of project cards
+    // Works section: the baku gives way to an infinite stream of project cards
     // (BakuCarousel). The carousel is a child of sceneGroups[3] (Works idx 3
     // in 6-section layout) and manages its own visibility via morph.
     const showGallery = cfg?.ui?.showGallery ?? false
@@ -869,7 +930,9 @@ export class Experience {
       // Uses preload() NOT open() — open() calls UIkit.modal().show() which
       // adds the uk-open class (making the overlay visible). preload() only
       // sets content without showing, so the overlay stays hidden.
-      this.onProjectSelect(0, true) // preload=true
+      // Prepare the same authored texture that the first 3D plane uses. The
+      // overlay can then decode it before the first plane-to-modal handoff.
+      this.onProjectSelect(0, true, 'plane')
     }
     // Ground plane (floor) — visible ONLY on the bottom visible section.
     // Section index 4 = cube face -Y (bottom) on all pages. On every other
@@ -887,19 +950,22 @@ export class Experience {
       this.camera.update(dt)
       // (AudioSystem.update() removed — AudioSystem deleted, was dead code)
       this.renderer.update(this.scene, this.camera.instance, dt, worldState)
-      // Clear flag if nothing is actively changing. Include particles/burst/
-      // cube/showreel/cam pulse so we don't drop a mid-animation frame
+      this.devPanel?.recordRenderFrame()
+      // Clear flag if nothing is actively changing. Include particles/cube/
+      // showreel/cam pulse so we don't drop a mid-animation frame
       // and rely on the next tick's re-raise (which worked, but was fragile).
       if (
         !navActive &&
         !introActive &&
         !carouselActive &&
+        !worksPlaneActive &&
         !openerActive &&
+        !burstActive &&
         !camShaking &&
         !particlesActive &&
-        !burstActive &&
         !cubeRotating &&
         !showreelActive &&
+        !drawTrailActive &&
         !camPulsing &&
         !ambientSceneActive
       ) {
@@ -930,16 +996,13 @@ export class Experience {
   // (setSplashProgress removed — dead method, zero callers. Was calling
   //  SplashCube.setProgress which was also a no-op.)
 
-  /** Trigger the cube opener — faces pulse outward + back. Cube stays as baku.
-   *  Also triggers the splash-square handoff around the cube. */
+  /** Start the authored cube reaction and its one-shot portal-frame echo. */
   public triggerSplashOpener(): void {
     const cube = this.world?.baku as unknown as { triggerOpener?: () => void } | undefined
     cube?.triggerOpener?.()
-    // Trigger the deterministic square-frame echo from the cube center.
+    if (this._reducedMotion) return
     this.world?.particleBurst?.trigger(0, 0, 0)
-    if (this.world?.particleBurst?.isActive) {
-      this._needsRender = true // keep rendering while burst is active
-    }
+    if (this.world?.particleBurst?.isActive) this._needsRender = true
   }
 
   destroy() {
@@ -981,6 +1044,10 @@ export class Experience {
       window.removeEventListener('jlz:open-project', this._openProjectHandler)
       this._openProjectHandler = null
     }
+    if (this._projectNavigateHandler) {
+      window.removeEventListener('jlz:project-navigate', this._projectNavigateHandler)
+      this._projectNavigateHandler = null
+    }
     if (this._routeChangeCloseOverlayHandler) {
       window.removeEventListener('jlz:route-change', this._routeChangeCloseOverlayHandler)
       this._routeChangeCloseOverlayHandler = null
@@ -1005,6 +1072,14 @@ export class Experience {
     if (this._showreelClickHandler) {
       window.removeEventListener('click', this._showreelClickHandler)
       this._showreelClickHandler = null
+    }
+    if (this._worksPlaneTapHandler) {
+      window.removeEventListener('pointerup', this._worksPlaneTapHandler)
+      this._worksPlaneTapHandler = null
+    }
+    if (this._worksPageSectionHandler) {
+      window.removeEventListener('jlz:page-section-change', this._worksPageSectionHandler)
+      this._worksPageSectionHandler = null
     }
     this.world.dispose()
     this.bus.cancelAll()
@@ -1055,34 +1130,14 @@ export class Experience {
     this.portfolio.group.position.set(0, 1, 0)
     this.world.add(this.portfolio.group)
 
-    if (!this.overlay) {
-      // FullscreenOverlay is created by UIManager.init() — reuse it if available,
-      // otherwise create a standalone instance (works page without UIManager).
-      this.overlay = this._ui.overlay ?? new FullscreenOverlay()
-      // Overlay prev/next → drive the BakuCarousel ring AND update the
-      // overlay content (title/description/counter). Without the onProjectSelect
-      // call, the ring rotates but the overlay UI stays on the old project.
-      this.overlay.onPrev = () => {
-        const carousel = this.getCarousel()
-        if (carousel) {
-          carousel.prev()
-          this.onProjectSelect(carousel.getTargetCardIndex())
-        } else {
-          this.portfolio?.prev()
-        }
-      }
-      this.overlay.onNext = () => {
-        const carousel = this.getCarousel()
-        if (carousel) {
-          carousel.next()
-          this.onProjectSelect(carousel.getTargetCardIndex())
-        } else {
-          this.portfolio?.next()
-        }
-      }
-      this.overlay.onClose = () => {
-        // Close fullscreen — nothing to clear (carousel cards stay morphed)
-      }
+    // FullscreenOverlay is normally created by UIManager. Project navigation
+    // is routed through `jlz:project-navigate` so arrows and keyboard use the
+    // same owner even if the overlay was created before this async portfolio.
+    this.overlay ??= this._ui.overlay ?? new FullscreenOverlay()
+    this.overlay.onClose = () => {
+      this.world?.worksPlaneStage?.resetTransition()
+      this.getCarousel()?.resetTransition()
+      this._needsRender = true
     }
 
     // Wire BakuCarousel card click → open fullscreen overlay.
@@ -1094,7 +1149,7 @@ export class Experience {
       carousel.userData.clickWired = true
       carousel.setCamera(this.camera.instance)
       carousel.onCardClick((idx) => {
-        this.onProjectSelect(idx)
+        this.onProjectSelect(idx, false, 'plane')
       })
     }
   }
@@ -1124,11 +1179,12 @@ export class Experience {
     )
   }
 
-  private onProjectSelect(idx: number, preload: boolean = false): void {
+  private onProjectSelect(idx: number, preload: boolean = false, origin?: 'plane'): void {
     if (!this.portfolio || !this.overlay) return
     const projs = this.portfolio.projects
     if (!Array.isArray(projs) || projs.length === 0) return
     const safeIdx = ((idx % projs.length) + projs.length) % projs.length
+    this._activeProjectIndex = safeIdx
     const project = projs[safeIdx]
     if (!project) return
 
@@ -1146,11 +1202,11 @@ export class Experience {
       year?: string
     }
     const opts = {
-      // Each project will eventually provide its own film. Until then the
-      // shared reel keeps every case study genuinely video-first and lets the
-      // fullscreen autoplay path be exercised consistently.
-      videoSrc: p.videoSrc ?? '/assets/video/coming-soon.mp4',
-      poster: p.detailTextureUrl || p.textureUrl,
+      mode: 'image' as const,
+      // Works fullscreen is the selected still, not a second carousel. The
+      // same texture is already on the WebGL plane, so UIkit can take over
+      // without an aspect-ratio or content swap.
+      poster: p.textureUrl,
       title: p.title,
       category: `${p.year ?? ''} · ${p.category ?? ''}`,
       description: p.description,
@@ -1162,7 +1218,7 @@ export class Experience {
     if (preload) {
       this.overlay.preload(opts)
     } else {
-      this.overlay.open(opts)
+      this.overlay.open({ ...opts, origin })
     }
   }
 

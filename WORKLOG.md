@@ -1,11 +1,372 @@
 # Worklog
 
+## 2026-07-18 — Parallax plane-to-still Works fullscreen
+
+### Decision
+
+Separated the content models that had become mixed together. The home Works
+stream is a flat infinite horizontal parallax strip: drag moves real TSL planes
+while their textures counter-travel inside a generous UV buffer. Frames keep a
+single scale and horizon; the viewport clips their neighbours instead of using
+card rotation, fabric bend or depth staggering. `/works` retains
+its semantic UIkit composition and lazy real-plane companion. A selected plane
+settles its parallax, aligns with the camera and fills the viewport while a
+bounded TSL film burn opens several softly warped emulsion holes with an amber
+exposure wash, a dark char band and a white-hot edge. The centre case resolves
+first on section arrival; right and left neighbours register on asymmetric
+beats, and texture parallax begins only after each still becomes legible.
+UIkit then crossfades one decoded
+fullscreen still over it; there is no nested three-image gallery, horizontal
+aperture, autoplay or shared-video fallback. The approved `coming-soon` film
+and poster now belong exclusively to Play Showreel.
+
+Works post grading is neutral while `CasePlane` pre-inverts the shared filmic
+curve. The same authored sRGB still therefore keeps its density between the
+TSL plane and DOM fullscreen instead of becoming brighter or developing bloom
+artefacts during parallax. A restrained anisotropy level stabilises the moving
+texture on high-DPI displays.
+
+Generated a coherent eight-image Studio Console preview set from the approved
+reference direction. Every project preview is a versioned 1440×810 JPEG with a
+monochrome base and restrained `#b8ed69` / `#45d7bc` signals; the previous
+assets remain intact for comparison.
+
+### Verification
+
+- Browser-checked the home strip drag and `/works` on native WebGPU: frames
+  counter-travel without bending; the selected real plane expands,
+  the fullscreen shell contains exactly one matching still, video source stays
+  empty and the unobscured previous arrow updates title, counter and poster.
+- Browser-checked the centre/right/left arrival, source-colour parity and the
+  multi-origin burn handoff. The active transition reached the 144 Hz display
+  cadence during the final pass.
+- Type-check, production build and all 86 unit tests pass. Full repository
+  gates are recorded after the final polish.
+
+## 2026-07-18 — Editorial Works reveal and high-refresh diagnostics
+
+### Decision
+
+Replaced the home Works cube-face unfold with a centre-first depth reveal that
+keeps all real `CasePlane` surfaces in their final three-card composition. A
+shared TSL alpha wipe resolves each image from its centre. Fullscreen handoff is
+now a 0.96s focus → travel gesture: neighbouring planes fade first, the CRT
+signal arrives late and UIkit takes ownership only after the selected plane has
+nearly reached the camera. Plane-origin metadata and controls join with a short
+project-owned fade while UIkit remains the modal state/focus owner.
+
+Restored the intended post-splash broken-square portal echo as one precompiled
+instanced draw call, not a random particle system. Corrected DevPanel FPS to
+measure real pipeline renders: an idle on-demand scene now reports 0 instead of
+the browser callback rate. Capped native WebGPU DPR at 1.5 (matching the desktop
+WebGL2 ceiling) to cut full-screen post fill work by 44% on high-refresh Retina
+setups without reducing geometry or effect quality tier.
+
+### Verification
+
+- Browser-checked the splash portal, centre-first home Works arrival, the
+  slower mid-handoff frame and successful first-video fullscreen takeover on
+  native WebGPU.
+- Static Studio reports 0 rendered FPS; active Works reports the actual browser
+  render cadence rather than an unrelated `requestAnimationFrame` counter.
+- Lint (0 errors, 54 existing warnings), type-check, production build and all
+  86 unit tests pass. The parallel Playwright run passed 10/12; both timing-
+  sensitive mobile route/menu scenarios pass together with one worker.
+- Repository-wide `format:check` remains blocked by 30 pre-existing unrelated
+  files; every file touched for this change is formatted and `git diff --check`
+  passes.
+
+## 2026-07-18 — Stable startup and Works frame pacing
+
+### Decision
+
+Made the inline splash the only startup entrance: the cube now starts settled,
+the redundant 3D trace opener was removed and the procedural PMREM source was
+reduced to the resolution its soft reflections actually need. Home Works
+textures and TSL planes now prewarm before Enter becomes ready.
+
+The cube's CPU deformation retains its 30fps upload cadence but now follows a
+damped energy envelope instead of stopping on a timer. `/works` render activity
+is scoped to its two visible cards, so hidden reveal values cannot keep the
+renderer alive after the route settles. Removed the unused BoxGeometry UV
+attribute before vertex welding so rounded edges share normals without seams.
+WebGL2 now uses a 1.5 DPR ceiling and one third-resolution separable bloom pass;
+the native WebGPU premium profile is unchanged.
+
+### Verification
+
+- Target-file formatting, lint (0 errors, 54 existing warnings), type-check,
+  production build, 86 unit tests and all 12 Playwright scenarios pass.
+- Browser QA reached the display limit at 72 FPS on WebGPU. The tested WebGL2
+  Works frame improved from 46 FPS / 21.7 ms to 87 FPS / 11.5 ms; both backends
+  return the intro renderer to idle after the splash reveal.
+- Repository-wide `format:check` remains blocked by 32 pre-existing unrelated
+  files, tracked in `NEXT.md`.
+
+## 2026-07-18 — Works cursor signal repair
+
+### Decision
+
+Rebuilt the legacy blue DrawTrail as a short-lived Studio Console signal: a
+real TSL ribbon in lime and teal, with its width aligned perpendicular to the
+pointer path. The former fixed camera-right offset made horizontal movement
+collapse into zero-area triangles, which is why the tail looked broken or
+absent. The trace now receives an explicit idle-energy decay and keeps the
+on-demand renderer alive only while it settles. It appears throughout the
+standalone `/works` route and remains absent from the home media stream.
+
+### Verification
+
+- Browser-checked the standalone Works composition and its cursor-safe media
+  field after the route visibility change.
+- Type-check, lint (0 errors, 54 existing warnings), production build and 86
+  unit tests pass.
+
+## 2026-07-18 — CRT-first Works fullscreen handoff
+
+### Decision
+
+Replaced the sequential plane-to-overlay choreography with one short 0.34s
+handoff. The selected real `CasePlane` owns the TSL CRT-on pulse; the UIkit
+overlay then takes over directly without an aperture or delayed metadata
+animation. The decoded poster remains the continuity surface until the first
+video frame has composited. A case without a dedicated film now explicitly
+uses the approved studio reel, so opening the first playable case cannot settle
+on a black video stage. Fullscreen previous/next controls are deliberately
+large on both desktop and mobile.
+
+### Verification
+
+- Browser-checked the first `EBB VIBES` case: the studio reel is visible on
+  first open, including during the short transition; the enlarged controls are
+  present.
+- Type-check, lint (0 errors, 54 existing warnings), production build and 86
+  unit tests pass. The full Playwright run passed 11 of 12 scenarios; its only
+  failure was a parallel `/works` semantic-grid mount timeout. The exact
+  scenario passes when rerun in isolation.
+
+## 2026-07-18 — Works handoff and compact staging
+
+### Decision
+
+Kept a real 3D plane visible through the plane-to-modal seam until its matching
+DOM poster has decoded. This removes the first-project black frame without
+substituting an unrelated fallback video. Video posters now remain visible
+until the browser has rendered the first video frame, so arrow navigation uses
+the same no-black-frame contract.
+
+Below UIkit's `@m` grid breakpoint, `WorksPlaneStage` switches from its
+two-column coordinates to a deliberate vertical pair. The compact route hides
+the decorative background title, removes duplicate card telemetry and reserves
+safe space for the topbar and lower navigator. The semantic UIkit grid and the
+visible Three.js planes now describe the same layout.
+
+### Verification
+
+- Browser-checked the first `EBB VIBES` plane handoff and the following
+  `MONO SUNDAY` video path: both kept authored media visible.
+- Added a 390 × 844 Chromium check for the mobile `/works` pair. Type-check,
+  lint (0 errors, 54 existing warnings), production build, 86 unit tests and
+  12 Playwright scenarios pass.
+
+## 2026-07-18 — Infinite Works media and plane handoff
+
+### Decision
+
+Replaced the small planar Works slider with an infinite, non-autoplay media
+stream of twelve large, texture-shared TSL `CasePlane` instances. Drag velocity
+now bends the actual subdivided planes, so the effect is material resistance
+rather than a rotating-card carousel. Added a lazy `WorksPlaneStage` for
+`/works`: DOM controls retain semantics, focus and keyboard access but the
+visible case imagery is real Three.js media. Both the home stream and route
+stage expand a selected plane before the UIkit detail opens, with the exact
+same source texture during the handoff. The legacy cursor trail stays out of
+the home stream so it cannot cross its artwork.
+
+The home composition now deliberately frames three substantial cases at once,
+with breathing room, restrained fabric-like bending at the two outer edges and
+large previous/next controls. It has no visible DOM copy or console module:
+the only title is a quiet outlined `WORKS` CanvasTexture on a real plane behind
+the media, revealed with the cube-to-stream handoff.
+
+### Verification
+
+- Visually checked the desktop `/works` 3D stage, velocity distortion, direct
+  plane opening, three-case home composition, title-plane depth and arrow
+  controls; no browser errors.
+- Type-check, lint and production build pass; full regression checks follow
+  before the change is staged.
+
+## 2026-07-18 — Planar Works case slider
+
+### Decision
+
+Replaced the rotating home Works ring with a non-autoplay horizontal slider of
+real Three.js `CasePlane` surfaces. Each plane owns a TSL vertex wobble,
+per-plane reveal and explicit GPU disposal; the shared fullscreen overlay
+remains the detail owner. The semantic `/works` grid now uses the same compact
+plane response, signal-edge treatment and click wobble rather than oversized
+card tilt or project-colour gradients.
+
+### Verification
+
+- Visually checked the home slider, `/works` desktop composition and opening a
+  case directly from a 3D plane; no browser errors were reported.
+- Lint (0 errors; 54 existing warnings), type-check, production build, 86 unit
+  tests and all 11 Playwright Chromium scenarios pass.
+
+## 2026-07-18 — Monochrome console contrast
+
+### Decision
+
+Reduced the active visual system to a black/white environment and two fixed UI
+signals: lime `#b8ed69` and teal `#45d7bc`. The console frame keeps its
+character through discrete signal segments rather than gradients. Telegram,
+storyline controls and bottom modules now define both dark and inverse surfaces
+explicitly; EnvSphere, fog, ground and glass reflections are neutral grayscale.
+
+### Verification
+
+- Visually checked the light Contact CTA and the settled dark frame.
+- Type-check, production build and 86 unit tests pass. The targeted Works
+  Playwright scenario passes; the previous full parallel run had one isolated
+  `/works` timeout while the other 10 scenarios passed.
+
+## 2026-07-18 — Console Field note module
+
+### Decision
+
+Moved the lower story surface into the Studio Console layer and rebuilt it as a
+terminal-like output module: signal header, readable mono output and one clear
+command. It uses local transparency and a 14px blur only where desktop content
+crosses the active 3D stage. Mobile disables the blur and increases opacity;
+inverse receives its own light surface and contrast values.
+
+### Verification
+
+- Visually checked dark desktop, 390 × 844 mobile and inverse desktop states.
+- Type-check, lint (0 errors; 54 existing warnings), production build, 86 unit
+  tests and all 11 sequential Playwright Chromium tests pass.
+
+## 2026-07-18 — Studio Console theme boundary
+
+### Decision
+
+Created `src/assets/studio-console/` as the destination for all new shared
+visual decisions. UIkit remains responsible for component semantics and state;
+Quantum Flares and Vibe are now read-only donor/compatibility layers that can
+be reduced only after each migrated treatment is verified. The first adopted
+Vibe pattern is a static acid-green/teal signal edge for focus, active
+navigation and story-module boundaries—without its glitch loops, texture or
+type system.
+
+### Verification
+
+- The layer is imported after the retained QF compatibility bridge, so it wins
+  without modifying either vendored snapshot.
+- Type-check, lint (0 errors; 54 existing warnings), production build, 86 unit
+  tests and all 11 sequential Playwright Chromium tests pass.
+
+## 2026-07-18 — Dark console mobile baseline
+
+### Decision
+
+Consolidated the SPA around a dark technical-console system: restored the
+renderer-owned CRT edge frame, retained the removal of scanlines and grain,
+and removed the decorative progress shader. EnvSphere now stays within a
+single low-luminance dark family across every story frame. Rebuilt each lower
+story beat as one semantic `Field note` module with an aligned action, then
+gave mobile its own single-column rhythm, contrast and touch target treatment.
+Menus, the Contact sheet and Telegram action use the same opaque technical
+planes rather than glass gradients or oversized rounded cards.
+
+### Rationale
+
+The earlier light/dark sections and fluid panels made the portfolio feel like
+separate art directions. A persistent frame, one restrained palette and
+consistent lower-module geometry let the 3D object carry the atmosphere while
+the interface remains readable at phone scale.
+
+### Verification
+
+- Visually checked the 390 × 844 Studio and Services frames after splash,
+  including the final state of the forward transition and fixed controls.
+
+## 2026-07-18 — Single-owner story transition timing
+
+### Decision
+
+Removed UIkit Scrollspy reveal effects from story section panels and stopped
+easing CSS values that `CinematicNav` updates on every scroll frame. Theme
+updates now dispatch only when the visual mode changes, preventing redundant
+environment interpolation between adjacent sections of the same mode. Aligned
+the discrete 3D arrival with the DOM chapter midpoint in both directions while
+keeping camera and material interpolation continuous across each scroll frame.
+
+### Rationale
+
+The parallel CSS/UIkit/Three timelines made content trail behind scroll and
+occasionally restarted the dark/light transition. A single continuous timeline
+keeps section changes responsive without sacrificing the intentional title
+motion after the splash.
+
+### Verification
+
+- Type-check, lint (0 errors; 54 existing warnings), production build, 86 unit
+  tests and all 11 Playwright Chromium tests pass in the sequential full run.
+
 Short, newest-first decisions that help the next maintainer. Do not copy task
 inventories or release notes here. Git history retains the detailed record.
 
 ---
 
 <!-- WORKLOG:ENTRIES -->
+
+## 2026-07-18 — Glass control refinement
+
+### Decision
+
+Reworked UIkit default and icon-button hooks as one restrained glass material:
+translucent layers, internal highlight, thin edge and a small depth response
+replace opaque controls and rotational hover. Replaced the filled theme glyphs
+with matching outline icons, refined the sound bars, and removed the redundant
+storyline status/progress DOM so the active chapter item is the only status.
+
+### Verification
+
+- Type-check, lint (0 errors; 54 existing warnings), production build, 86 unit
+  tests and all 11 Playwright Chromium tests pass.
+
+## 2026-07-18 — One owned theme boundary
+
+### Decision
+
+Kept Quantum Flares as an immutable vendor baseline and consolidated the two
+duplicate Less assembly chains into project-owned `_theme.less`. The bridge now
+explicitly disables QF's legacy texture/glitch effects through variation
+variables, leaving the current Onest, calm glass, fluid surfaces and purposeful
+motion as the only visual language across SPA and Blog.
+
+### Verification
+
+- Production build, type-check, lint (0 errors; 54 existing warnings), 86 unit
+  tests and all 11 Playwright Chromium tests pass.
+
+## 2026-07-18 — Editorial Blog and honest Lab catalogue
+
+### Decision
+
+Turned the Blog index into an editorial entry with one featured engineering
+story and a compact note list, replacing the repeated generic card rhythm.
+Lab copy now describes concrete research questions and labels every item as an
+isolated scene in development; its only current action is a linked development
+note. This prevents an unfinished experiment catalogue from masquerading as
+client work or loading a future scene runtime into the shared application.
+
+### Verification
+
+- Type-check, lint (0 errors; 54 existing warnings), production build, 86 unit
+  tests and all 11 Playwright Chromium tests pass.
 
 ## 2026-07-18 — Entry typography and navigation refinement
 

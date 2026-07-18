@@ -123,88 +123,73 @@
         <div class="uk-navbar-right">
           <ul class="uk-navbar-nav">
             <li><a href="/blog">Blog</a></li>
-            <li><a href="/app">Enter 3D →</a></li>
+            <li><a href="/">Enter studio ↗</a></li>
           </ul>
         </div>
       </nav>
     </header>
 
     <main id="main" class="uk-section uk-section-large" role="main">
-      <div class="uk-container uk-container-expand">
-        <p class="jlz-landing-eyebrow">&gt; JOURNAL</p>
-        <h1 class="uk-heading-xlarge uk-margin-remove-top">Writing</h1>
-        <p class="uk-text-lead uk-margin-medium-top">
-          Case studies and process notes from the studio. Real engineering stories — what we built,
-          how it works, and what we learned.
-        </p>
+      <div class="uk-container uk-container-expand jlz-journal">
+        <section class="jlz-journal-hero" aria-labelledby="journal-title">
+          <p class="jlz-landing-eyebrow">01 / FIELD NOTES</p>
+          <h1 id="journal-title" class="uk-heading-xlarge uk-margin-remove-top">
+            Built to be felt.
+          </h1>
+          <p class="jlz-journal-hero__lead">
+            Short notes from inside interactive systems: the material, the constraint, and the
+            decision that made the work hold together.
+          </p>
+        </section>
 
-        <!-- Case Studies -->
-        <h2 class="uk-heading-medium uk-margin-xlarge-top">Case Studies</h2>
-        <div class="uk-grid uk-child-width-1-2@s uk-margin-medium-top" uk-grid>
-          <article class="uk-card uk-card-default uk-card-body uk-card-hover">
-            <div class="uk-flex uk-flex-between uk-flex-middle uk-margin-small-bottom">
-              <span class="uk-label">WebGPU</span>
-              <time class="uk-text-meta" datetime="2026-07-15">15 Jul 2026</time>
-            </div>
-            <h3 class="uk-card-title uk-margin-remove">
-              <a href="/blog/undercurrent-webgpu-fluid" class="uk-link-reset"
-                >Undercurrent — WebGPU Fluid Simulation</a
-              >
-            </h3>
-            <p class="uk-text-meta uk-margin-small-top">
-              How we built a real-time GPU fluid solver using TSL node graphs, with a 60fps budget
-              on mid-range hardware.
+        <article class="jlz-journal-feature">
+          <div class="jlz-journal-feature__index" aria-hidden="true">01</div>
+          <div>
+            <p class="jlz-journal-meta">
+              <span>WebGPU / fluid</span><time datetime="2026-07-15">15 Jul 2026</time>
             </p>
-          </article>
-          <article class="uk-card uk-card-default uk-card-body uk-card-hover">
-            <div class="uk-flex uk-flex-between uk-flex-middle uk-margin-small-bottom">
-              <span class="uk-label">Materials</span>
-              <time class="uk-text-meta" datetime="2026-06-20">20 Jun 2026</time>
-            </div>
-            <h3 class="uk-card-title uk-margin-remove">
-              <a href="/blog/glassmorphism-webgpu" class="uk-link-reset">Glassmorphism on WebGPU</a>
-            </h3>
-            <p class="uk-text-meta uk-margin-small-top">
-              Real glass — transmission, clearcoat, iridescence, CubeCamera reflections.
-              Bit-identical across WebGPU and WebGL2.
-            </p>
-          </article>
-        </div>
+            <h2>
+              <a href="/blog/undercurrent-webgpu-fluid">Undercurrent: fluid with a frame budget.</a>
+            </h2>
+          </div>
+          <p class="jlz-journal-feature__summary">
+            A real-time solver only becomes a design tool when it stays responsive. We map the
+            render budget before we start chasing the image.
+          </p>
+          <a
+            class="jlz-journal-arrow"
+            href="/blog/undercurrent-webgpu-fluid"
+            aria-label="Read Undercurrent"
+            >↗</a
+          >
+        </article>
 
-        <!-- Process Notes -->
-        <h2 class="uk-heading-medium uk-margin-xlarge-top">Process Notes</h2>
-        <div class="uk-grid uk-child-width-1-2@s uk-margin-medium-top" uk-grid>
-          <article class="uk-card uk-card-default uk-card-body uk-card-hover">
-            <div class="uk-flex uk-flex-between uk-flex-middle uk-margin-small-bottom">
-              <span class="uk-label">Performance</span>
-              <time class="uk-text-meta" datetime="2026-05-10">10 May 2026</time>
-            </div>
-            <h3 class="uk-card-title uk-margin-remove">
-              <a href="/blog/on-demand-rendering" class="uk-link-reset"
-                >On-Demand Rendering — Zero Idle Draw Calls</a
-              >
-            </h3>
-            <p class="uk-text-meta uk-margin-small-top">
-              How we cut idle GPU draw calls to zero by gating renderer.update() behind a
-              _needsRender flag.
-            </p>
-          </article>
-          <article class="uk-card uk-card-default uk-card-body uk-card-hover">
-            <div class="uk-flex uk-flex-between uk-flex-middle uk-margin-small-bottom">
-              <span class="uk-label">TSL</span>
-              <time class="uk-text-meta" datetime="2026-04-05">05 Apr 2026</time>
-            </div>
-            <h3 class="uk-card-title uk-margin-remove">
-              <a href="/blog/tsl-changes-everything" class="uk-link-reset"
-                >Why TSL Changes Everything</a
-              >
-            </h3>
-            <p class="uk-text-meta uk-margin-small-top">
-              TypeScript-safe shader programming, cross-backend compilation, and the end of raw GLSL
-              string concatenation.
-            </p>
-          </article>
-        </div>
+        <section class="jlz-journal-list" aria-labelledby="journal-notes-title">
+          <div class="jlz-journal-list__head">
+            <p class="jlz-landing-eyebrow">02 / ENGINEERING NOTES</p>
+            <h2 id="journal-notes-title" class="uk-heading-medium">
+              The decisions behind the surface.
+            </h2>
+          </div>
+          <a class="jlz-journal-note" href="/blog/glassmorphism-webgpu">
+            <span class="jlz-journal-note__number">02</span>
+            <span class="jlz-journal-note__title">Glassmorphism on WebGPU</span>
+            <span class="jlz-journal-note__tag">Materials</span>
+            <span class="jlz-journal-note__arrow" aria-hidden="true">↗</span>
+          </a>
+          <a class="jlz-journal-note" href="/blog/on-demand-rendering">
+            <span class="jlz-journal-note__number">03</span>
+            <span class="jlz-journal-note__title">On-demand rendering</span>
+            <span class="jlz-journal-note__tag">Performance</span>
+            <span class="jlz-journal-note__arrow" aria-hidden="true">↗</span>
+          </a>
+          <a class="jlz-journal-note" href="/blog/tsl-changes-everything">
+            <span class="jlz-journal-note__number">04</span>
+            <span class="jlz-journal-note__title">Why TSL changes everything</span>
+            <span class="jlz-journal-note__tag">Tooling</span>
+            <span class="jlz-journal-note__arrow" aria-hidden="true">↗</span>
+          </a>
+        </section>
       </div>
     </main>
 

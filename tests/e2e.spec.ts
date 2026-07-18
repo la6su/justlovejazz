@@ -256,6 +256,36 @@ test.describe('JustLoveJazz — accessibility & DOM UI', () => {
       await context.close()
     }
   })
+
+  test('mobile Works stacks its two semantic case controls', async ({ browser }) => {
+    test.setTimeout(60000)
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 } })
+    const page = await context.newPage()
+
+    try {
+      await page.goto('/works')
+      await expect(page.locator('main#spa-content')).toBeAttached({ timeout: 20000 })
+
+      const stage = page.locator('.jlz-works-stage').first()
+      const cards = stage.locator('.jlz-work-card')
+      await expect(cards).toHaveCount(2)
+
+      const [stageBox, firstCardBox, secondCardBox] = await Promise.all([
+        stage.boundingBox(),
+        cards.nth(0).boundingBox(),
+        cards.nth(1).boundingBox(),
+      ])
+      expect(stageBox).not.toBeNull()
+      expect(firstCardBox).not.toBeNull()
+      expect(secondCardBox).not.toBeNull()
+      expect(stageBox!.height).toBeCloseTo(844, 0)
+      expect(firstCardBox!.width).toBeGreaterThan(330)
+      expect(secondCardBox!.width).toBeGreaterThan(330)
+      expect(secondCardBox!.y).toBeGreaterThan(firstCardBox!.y)
+    } finally {
+      await context.close()
+    }
+  })
 })
 
 test.describe('JustLoveJazz — runtime health', () => {

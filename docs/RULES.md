@@ -43,11 +43,13 @@ tests first, then correct the stale document or implementation deliberately.
 
 1. Use UIkit for behaviour it already owns (modal, nav/accordion, focus and
    state classes); do not add competing hand-rolled state.
-2. Keep Quantum Flares/UIKit globals as the component styling baseline. Put
-   project-specific styling in `main.less` or the documented theme layer; do
-   not duplicate component overrides without a concrete missing capability.
-3. The runtime theme is per-section auto/inverse. Do not replace it with a
-   global light/dark switch without redesigning `ContentReveal` and the 3D sync.
+2. Keep UIkit as the component and accessibility baseline. Put every new shared
+   visual decision in `studio-console/`; Quantum Flares remains only a temporary
+   compatibility layer during migration. Do not duplicate component behavior
+   without a concrete missing capability.
+3. The runtime default is the shared dark Studio Console mode; inverse remains
+   an explicit accessibility preference and must stay synchronized through
+   `ContentReveal` and the 3D layer.
 4. All user-visible copy must be translatable unless it is deliberately a
    proper name. Router-driven translation and metadata updates remain the only
    normal update path.

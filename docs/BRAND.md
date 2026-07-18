@@ -1,7 +1,8 @@
 # Brand direction
 
-JUSTLOVEJAZZ presents technology as a calm, cinematic material: glass, motion,
-light and controlled negative space. The tone is precise rather than loud.
+JUSTLOVEJAZZ presents technology as a dark cinematic console: precise type,
+framed imagery, controlled light and deliberate negative space. The tone is
+technical rather than loud.
 
 ## Visual intent
 
@@ -14,17 +15,19 @@ light and controlled negative space. The tone is precise rather than loud.
 - Keep motion purposeful: navigation feedback, state change, material response
   and focus. Honour reduced-motion settings.
 
-The 2026 interface direction combines calm editorial scale with fluid,
-frosted islands and a shader-driven narrative line. References inform
-composition and motion principles, not copied product chrome. Prefer one
-memorable 3D gesture over several standard UI cards, while keeping text and
-primary actions semantic in the DOM.
+The interface uses dark technical planes, a shared CRT frame and restrained
+acid-green/teal signals instead of scanlines or decorative shader fields. A
+small, local blur is allowed only where a console module needs separation from
+an active 3D scene; it must not turn the overall interface back into frosted
+cards. References inform composition and motion principles, not copied product
+chrome. Prefer one memorable 3D gesture over several standard UI cards, while
+keeping text and primary actions semantic in the DOM.
 
 Runtime colour, typography and spacing values belong to
 `src/assets/_import.less` and `src/assets/main.less`. Do not copy hexadecimal
 tokens or font stacks here: those source files are the implementation truth.
-The app's visual theme is per-section and can be inverted by the user; it is
-not a permanently dark or permanently light brand mode.
+The app's normal visual theme is dark across every section. Inverse remains an
+explicit accessibility preference, not a section-by-section art direction.
 
 ## Typography and voice
 

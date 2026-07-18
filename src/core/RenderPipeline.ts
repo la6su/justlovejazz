@@ -274,9 +274,10 @@ export class RenderPipeline {
   // Section grade values (stored so setSectionGrade works before WebGL composite is built)
   private _sectionRefract = 0.05
   private _sectionBorder = 0.0
-  // The old CRT/barrel frame is disabled by default. A section may still opt
-  // into a border explicitly, but the shared presentation stays full-bleed.
-  private _globalBorder = 0.0
+  // One shared curved CRT frame gives the console composition a fixed edge.
+  // It is independent from the removed scanline/noise treatments and remains
+  // identical on the WebGPU and WebGL2 post-processing paths.
+  private _globalBorder = 0.4
   private _sectionShadows = new THREE.Vector3(1, 1, 1)
   private _sectionHighlights = new THREE.Vector3(1, 1, 1)
 

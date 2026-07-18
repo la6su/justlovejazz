@@ -15,51 +15,29 @@
 //   - uSection[6] animated via StateBus-like lerp in update()
 //   - Canvas redrawn when section weights change
 //
-// Per-section patterns (from junni bg.fs):
-//   sec1 (intro):    HSV rainbow gradient (vUv.y * 0.3 + time, animated)
-//   sec2 (about):    pure white
-//   sec3 (flexible): pure black
-//   sec4 (works):    pure white
-//   sec5 (innovative): gradient smoothstep(vUv.y) * 0.3
-//   sec6 (contact):  horizon glow (exp falloff + sine waves)
-//
-// All rendered into ONE canvas, mixed by uSection weights — same as junni
-// but on 2D canvas instead of GLSL. Works on ALL render paths.
-
 import * as THREE from 'three'
-import { prefersReducedMotion } from '../../core/motionPolicy'
 
 const CANVAS_W = 1024 // was 2048 — half the GPU upload cost
 const CANVAS_H = 512 // was 1024
 
-// 2 patterns used: idx 1 (light, auto) + idx 2 (dark, inverse).
-// Others kept for future per-section mode.
+// The console baseline is deliberately monochrome. Inverse mode can therefore
+// move from near-black to near-white without a coloured environmental cast;
+// lime and teal remain reserved for interface state.
 const SECTION_PATTERNS = [
-  // 0: canonical Lab / public Contact finale — LIGHT: subtle blue-grey HSV
-  { type: 'hsv', hue: 0.6, sat: 0.06, val: 0.88 },
-  // 1: Intro — LIGHT: pure white with ultra-subtle hue shift (auto/theme-light target)
-  { type: 'hsv', hue: 0.0, sat: 0.02, val: 0.98 },
-  // 2: About — DARK: medium grey gradient (lighter so glass cube is visible)
-  { type: 'gradient', color1: 0x2a2a2a, color2: 0x3e3e3e },
-  // 3: Works — DARK: medium dark blue-grey (lighter for cube visibility)
-  { type: 'gradient', color1: 0x2a2a30, color2: 0x3a3a44 },
-  // 4: Contact — LIGHT: soft off-white gradient
-  { type: 'gradient', color1: 0xe8e8e8, color2: 0xd8d8d8 },
-  // 5: Menu — DARK: dark blue-black (lighter for cube visibility)
-  { type: 'gradient', color1: 0x1a1a22, color2: 0x2a2a32 },
+  { type: 'solid', color: 0x000000 }, // Lab / contact sheet
+  { type: 'solid', color: 0xf8f8f5 }, // inverse stage
+  { type: 'solid', color: 0x000000 }, // default dark stage
+  { type: 'solid', color: 0x050505 }, // media frame
+  { type: 'solid', color: 0x000000 }, // contact finale
+  { type: 'solid', color: 0x000000 }, // menu sheet
 ] as const
 
 export class EnvSphere extends THREE.Mesh {
   private _sectionWeights: number[] = [0, 1, 0, 0, 0, 0] // start on section 1 (intro)
   private _targetWeights: number[] = [0, 1, 0, 0, 0, 0]
-  private _time = 0
   private _canvas: HTMLCanvasElement
   private _ctx: CanvasRenderingContext2D
   private _canvasTexture: THREE.CanvasTexture
-  private _activeSection = 1
-  private _secretOpacity = 0
-  private _secretTargetOpacity = 0
-  private _secretRedrawTimer = 0
   private _dirty = true
 
   constructor() {
@@ -151,41 +129,16 @@ export class EnvSphere extends THREE.Mesh {
     this._dirty = true
   }
 
-  /** Select the Menu/Contact-sheet visual without changing the page theme. */
-  setActiveSection(idx: number): void {
-    this._activeSection = idx
-    const isSecret = idx === 0 || idx === 5
-    this._secretTargetOpacity = isSecret ? 0.72 : 0
-    this._dirty = true
+  /** Keep the API used by sheets; the mono field has no separate sheet effect. */
+  setActiveSection(_idx: number): void {
+    // Intentionally no-op: sheets share the same monochrome environment.
   }
 
   get hasVisibleAmbientMotion(): boolean {
-    return this._activeSection === 0 || this._activeSection === 5 || this._secretOpacity > 0.001
+    return false
   }
 
   update(dt: number): void {
-    if (!prefersReducedMotion()) {
-      this._time += dt
-    }
-
-    const opacitySpeed = prefersReducedMotion() ? 1 : Math.min(1, dt * 3.5)
-    this._secretOpacity += (this._secretTargetOpacity - this._secretOpacity) * opacitySpeed
-    if (Math.abs(this._secretOpacity - this._secretTargetOpacity) < 0.001) {
-      this._secretOpacity = this._secretTargetOpacity
-    }
-    if (this._secretOpacity > 0.001) {
-      this._secretRedrawTimer += dt
-      // The TSL field is continuous on supported node renderers. This canvas
-      // fallback moves at 10 fps, keeping WebGL2 equally colourful without a
-      // costly texture upload every frame.
-      if (this._secretRedrawTimer >= 0.1) {
-        this._secretRedrawTimer = 0
-        this._dirty = true
-      }
-    } else {
-      this._secretRedrawTimer = 0
-    }
-
     // Lerp section weights toward targets (junni: ~1s transition)
     const lerpSpeed = 3.0
     for (let i = 0; i < SECTION_PATTERNS.length; i++) {
@@ -202,7 +155,6 @@ export class EnvSphere extends THREE.Mesh {
     // Redraw canvas ONLY when section weights are actively transitioning.
     // NO per-frame animation redraw — 2048×1024 canvas + GPU upload every
     // 200ms was the #1 Safari/iOS perf killer.
-    // HSV sections are now static (no animated hue shift) for performance.
     if (this._dirty) {
       this._redrawCanvas()
       this._canvasTexture.needsUpdate = true
@@ -230,14 +182,10 @@ export class EnvSphere extends THREE.Mesh {
       this._drawSectionPattern(ctx, i, w, h)
     }
 
-    if (this._secretOpacity > 0.001) {
-      ctx.globalAlpha = this._secretOpacity * 0.5
-      this._drawSecretPattern(ctx, w, h)
-    }
     ctx.globalAlpha = 1.0
   }
 
-  /** Draw a single section pattern (port of junni bg.fs sec1..sec6 to 2D canvas). */
+  /** Draw one flat, colour-managed section tone. */
   private _drawSectionPattern(
     ctx: CanvasRenderingContext2D,
     sectionIdx: number,
@@ -245,56 +193,13 @@ export class EnvSphere extends THREE.Mesh {
     h: number,
   ): void {
     const pattern = SECTION_PATTERNS[sectionIdx]!
-    const t = this._time
-
     switch (pattern.type) {
-      case 'hsv': {
-        // sec1 (intro) — HSV rainbow gradient, low saturation, animated
-        // junni: hsv2rgb(vec3(vUv.y * 0.3 + time * 0.1, 0.5, 1.0))
-        // Our version: low-sat dark gradient with subtle hue shift
-        const grad = ctx.createLinearGradient(0, 0, 0, h)
-        for (let y = 0; y <= 10; y++) {
-          const frac = y / 10
-          const hue = (frac * 0.3 + t * 0.02) % 1
-          const color = hsvToHex(hue, pattern.sat, pattern.val)
-          grad.addColorStop(frac, color)
-        }
-        ctx.fillStyle = grad
-        ctx.fillRect(0, 0, w, h)
-        break
-      }
-      case 'gradient': {
-        // sec2/sec4 — vertical gradient (dark → lighter)
-        const c1 = new THREE.Color(pattern.color1)
-        const c2 = new THREE.Color(pattern.color2)
-        const grad = ctx.createLinearGradient(0, 0, 0, h)
-        grad.addColorStop(0, `#${c1.getHexString()}`)
-        grad.addColorStop(1, `#${c2.getHexString()}`)
-        ctx.fillStyle = grad
+      case 'solid': {
+        ctx.fillStyle = `#${new THREE.Color(pattern.color).getHexString()}`
         ctx.fillRect(0, 0, w, h)
         break
       }
     }
-  }
-
-  /** Colourful, low-frequency WebGL2 fallback for the sheet field. */
-  private _drawSecretPattern(ctx: CanvasRenderingContext2D, w: number, h: number): void {
-    const phase = this._time * 0.08
-    const isMenu = this._activeSection === 5
-    const gradient = ctx.createLinearGradient(0, 0, w, h)
-
-    if (isMenu) {
-      gradient.addColorStop(0, `hsl(${222 + Math.sin(phase) * 12} 72% 16%)`)
-      gradient.addColorStop(0.52, `hsl(${274 + Math.sin(phase + 1.4) * 16} 74% 21%)`)
-      gradient.addColorStop(1, `hsl(${198 + Math.sin(phase + 2.7) * 14} 74% 15%)`)
-    } else {
-      gradient.addColorStop(0, `hsl(${204 + Math.sin(phase) * 14} 88% 55%)`)
-      gradient.addColorStop(0.5, `hsl(${255 + Math.sin(phase + 1.4) * 18} 82% 58%)`)
-      gradient.addColorStop(1, `hsl(${308 + Math.sin(phase + 2.7) * 14} 82% 57%)`)
-    }
-
-    ctx.fillStyle = gradient
-    ctx.fillRect(0, 0, w, h)
   }
 
   dispose(): void {
@@ -302,10 +207,4 @@ export class EnvSphere extends THREE.Mesh {
     ;(this.material as THREE.Material).dispose()
     this._canvasTexture.dispose()
   }
-}
-
-/** HSV → hex color string. h/s/v in 0..1 range. */
-function hsvToHex(h: number, s: number, v: number): string {
-  const c = new THREE.Color().setHSL(h, s, v)
-  return `#${c.getHexString()}`
 }

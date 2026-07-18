@@ -27,14 +27,14 @@ only after `jlz:webgl-ready`.
 
 `router.ts` owns the SPA routes, DOM rendering, translations and page metadata.
 
-| Route        | Page key    | Main sections                                                              |
-| ------------ | ----------- | -------------------------------------------------------------------------- |
-| `/`          | `home`      | Studio, Services, Works, Manifesto                                         |
-| `/services`  | `services`  | Creative Direction, Interactive Development, Motion & Realtime, AI Systems |
-| `/works`     | `works`     | Four case-study groups                                                     |
-| `/manifesto` | `manifesto` | Purpose, Clarity, Emotion, Simplicity                                      |
-| `/lab`       | `lab`       | Shader Lab, Audio Reactive, Generative, GPU Particles                      |
-| `/contact`   | `contact`   | Email, Social, Location, Form                                              |
+| Route        | Page key    | Main sections                                         |
+| ------------ | ----------- | ----------------------------------------------------- |
+| `/`          | `home`      | Studio, Services, Works, Manifesto                    |
+| `/services`  | `services`  | Creative Direction, Realtime build, Motion, AI        |
+| `/works`     | `works`     | Four case-study groups                                |
+| `/manifesto` | `manifesto` | Purpose, Clarity, Emotion, Simplicity                 |
+| `/lab`       | `lab`       | Shader Lab, Audio Reactive, Generative, GPU Particles |
+| `/contact`   | `contact`   | Email, Social, Location, Form                         |
 
 The world is always six sections, in this fixed order. `WorldConfig.ts` is the
 source for their IDs and section data; `SplashCube.FACE_ROTATIONS` is the
@@ -69,6 +69,8 @@ progress signal.
 
 - The four main sections are full-viewport scroll-snap frames. Trackpad,
   mouse-wheel and touch retain their native vertical scrolling behavior.
+- DOM and 3D discrete arrivals share the midpoint between adjacent frames;
+  transform and material values continue blending across the complete interval.
 - The storyline jumps among frames. Up/down, Page Up/Page Down, Home and
   End provide keyboard equivalents.
 - Menu (5) enters as a top sheet; the Contact finale (0) enters from the
@@ -76,7 +78,7 @@ progress signal.
 - The Menu is a navigation-only, two-column desktop composition and a compact
   mobile sheet. UIkit `uk-nav` owns its expandable parents; sub-links carry
   `data-nav-href` for SPA navigation.
-- `UIMenu.ts` creates the fluid fixed top bar, preference controls and the
+- `UIMenu.ts` creates the compact fixed top bar, preference controls and the
   Contact launcher. `data-cinematic-sheet` is the single application-owned
   sheet state; opening a sheet makes background frames inert and closing it
   restores focus to the launcher.
@@ -106,20 +108,59 @@ The scene uses `setAnimationLoop`. Rendering is event-driven through
 animation. `EnvSphere` owns the visible background; the ground plane is only
 visible on the contact section.
 
+The inline splash is the only startup entrance animation. The shared cube is
+already settled when the curtain opens. On home, the case-stream textures are
+decoded and its TSL materials are compiled before Enter becomes ready, keeping
+first-use GPU work out of the Works navigation transition.
+
 `World` creates the six section scene groups through `SectionSceneFactory`.
-`CinematicField` adds a TSL NodeMaterial narrative line, travelling energy
-packet and fluid islands in front of the environment. It consumes continuous
-story progress and does not replace `EnvSphere` as the background owner. The
-home-only Baku carousel is initialized by the idempotent
+`EnvSphere` remains the only ambient background layer; the former decorative
+story-line shader was removed to preserve a single dark console field. The
+inline splash hands off through one short instanced broken-square portal echo;
+it is precompiled behind the loader, renders for about one second and does not
+create a persistent particle simulation. The
+home-only Baku case stream is initialized by the idempotent
 `World.ensureCarouselInitialized()` method, including when a user reaches home
-after a content-route deep link.
+after a content-route deep link. Its large `CasePlane` surfaces wrap as a flat
+infinite media strip. The frame and its buffered texture counter-travel at
+different rates, producing horizontal parallax without bending, rotating,
+shrinking or depth-staggering the case planes. The viewport deliberately clips
+the neighbouring cases. On arrival, a contact-sheet exposure resolves the
+centre plane first, then the right and left neighbours on asymmetric beats;
+texture parallax stays at rest until each plane is legible. Its only DOM
+controls are the accessible previous/next buttons. `/works` lazily
+initializes `WorksPlaneStage`: it renders the visible case imagery as genuine
+Three.js planes while semantic DOM buttons retain keyboard/focus behaviour.
+`DrawTrail` is a transient Studio Console cursor signal on the standalone
+`/works` route only; it decays after pointer movement and stays out of the home
+media stream.
+At UIkit's `@m` breakpoint the stage mirrors the semantic grid's vertical pair
+instead of retaining desktop coordinates. The home stream counter-travels each
+texture inside its real plane while drag moves the planes themselves. On open,
+both paths fade neighbouring planes, settle that texture parallax and align the
+selected plane with the camera until it covers the viewport. A bounded TSL
+film burn grows several low-frequency emulsion holes with an amber exposure
+wash, dark char band and white-hot edge during this travel, then releases all
+transition work. The Works section keeps its post grade neutral and the plane
+pre-compensates the shared filmic curve so the authored sRGB still matches its
+DOM fullscreen copy. The UIkit fullscreen
+detail then crossfades the same decoded still above it, with no second carousel,
+cinema aperture, video fallback or source/aspect swap. UIkit remains the owner
+of visibility, focus, Escape and arrow-key navigation. The only fullscreen
+video source is the approved Play Showreel asset; its poster remains visible
+until the first video frame is composited.
+
+The development FPS panel counts actual calls to the render pipeline, not the
+browser's independent animation callback cadence; an idle on-demand scene reads
+zero. Native WebGPU and WebGL2 both cap DPR at 1.5 so full-screen post processing
+does not unnecessarily miss alternate v-sync deadlines on high-refresh panels.
 
 ## Theme, language and metadata
 
 `ThemeManager` stores `auto` or `inverse` in `localStorage('jlz:theme')`.
-`ContentReveal` applies the result per section: auto uses the light/dark value
-from `WorldConfig`; inverse flips it. It also notifies the 3D layer through
-`jlz:theme-applied`.
+`ContentReveal` applies the result per section: auto resolves to the shared
+dark console mode; inverse is the explicit accessibility alternative. It also
+notifies the 3D layer through `jlz:theme-applied`.
 
 `i18n.ts` owns EN/RU strings and language persistence. `router.ts` applies
 translations and `pageMeta.ts` updates title, description, canonical, Open

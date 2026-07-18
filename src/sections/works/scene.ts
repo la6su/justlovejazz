@@ -1,4 +1,4 @@
-// Section4 — Challenge (Works): baku cube morphs into carousel of projects.
+// Section4 — Works: an infinite stream of real case planes.
 // Clicking a carousel card opens the fullscreen ProjectOverlay.
 import * as THREE from 'three'
 import { JunniParticles } from '../../Experience/World/JunniParticles'
@@ -17,8 +17,8 @@ particleTexture.generateMipmaps = false
 export function createSection3(): THREE.Group {
   const g = new THREE.Group()
   g.name = 'works'
-  // BakuCarousel — the baku cube unfolds into a ring of project cards.
-  // When morphed out (morphT > 0.5) the ring can be scrolled/dragged,
+  // BakuCarousel — the project stream resolves from depth around the baku.
+  // Once revealed (morphT > 0.5) the stream can be scrolled/dragged,
   // and clicking a card opens the fullscreen ProjectOverlay.
   const carousel = new BakuCarousel()
   carousel.userData.keepVisible = true

@@ -43,10 +43,9 @@ function workCard(idx: number, prominence: 'primary' | 'secondary'): string {
 
   return `
     <div class="${prominence === 'primary' ? 'jlz-work-slot--primary' : 'jlz-work-slot--secondary'}">
-      <button class="jlz-work-card jlz-work-card--${prominence} uk-inline uk-transition-toggle" type="button"
+      <button class="jlz-work-card jlz-case-plane jlz-work-card--${prominence} uk-inline uk-transition-toggle" type="button"
               data-project-idx="${idx}" data-project-id="${project.id}" data-cursor="view" data-magnetic
-              aria-label="Open project: ${project.title}"
-              style="--jlz-card-accent: ${project.color}">
+              aria-label="Open project: ${project.title}">
         <span class="jlz-work-card__inner">
           <span class="jlz-work-card__media uk-cover-container">
             <img class="jlz-work-card__image uk-transition-scale-up uk-transition-opaque"
@@ -55,7 +54,7 @@ function workCard(idx: number, prominence: 'primary' | 'secondary'): string {
           </span>
           <span class="jlz-work-card__number">${number}</span>
           <span class="jlz-work-card__discipline">${disciplines}</span>
-          <span class="jlz-work-card__overlay uk-overlay uk-overlay-gradient uk-position-bottom">
+          <span class="jlz-work-card__overlay uk-position-bottom">
             <span class="jlz-work-card__copy">
               <strong class="jlz-work-card__title">${project.title}</strong>
               <span class="jlz-work-card__meta">${meta}</span>
@@ -80,7 +79,7 @@ function worksSection(
   return `
     <section class="jlz-page-section jlz-works-section jlz-works-section--${layout}${active ? ' section-active' : ''}"
              id="section-works-${number}" data-page-section="works-${number}"
-             style="--jlz-works-accent: ${PROJECTS[projectA]!.color}">
+             >
       <div class="jlz-works-stage uk-container uk-container-expand">
         <header class="jlz-works-index uk-flex uk-flex-middle uk-flex-between">
           <div class="uk-flex uk-flex-middle">

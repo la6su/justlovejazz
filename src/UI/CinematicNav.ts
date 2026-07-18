@@ -38,8 +38,6 @@ export class CinematicNav {
   private _keydownHandler: ((event: KeyboardEvent) => void) | null = null
   private _scrollHandler: (() => void) | null = null
   private _sheetClickHandler: ((event: MouseEvent) => void) | null = null
-  private _progressFill!: HTMLElement
-  private _currentLabel!: HTMLElement
   private _navButtons: HTMLButtonElement[] = []
 
   constructor(_scene: unknown, _camera: unknown, sectionCount: number) {
@@ -54,23 +52,6 @@ export class CinematicNav {
     nav.id = 'cinematic-nav'
     nav.className = 'jlz-storyline'
     nav.setAttribute('aria-label', 'Narrative sections')
-
-    const status = document.createElement('div')
-    status.className = 'jlz-storyline__status'
-    this._currentLabel = document.createElement('span')
-    this._currentLabel.className = 'jlz-storyline__current'
-    this._currentLabel.textContent = '01'
-    const total = document.createElement('span')
-    total.className = 'jlz-storyline__total'
-    total.textContent = `/ ${String(MAIN_COUNT).padStart(2, '0')}`
-    status.append(this._currentLabel, total)
-
-    const progress = document.createElement('span')
-    progress.className = 'jlz-storyline__progress'
-    progress.setAttribute('aria-hidden', 'true')
-    this._progressFill = document.createElement('span')
-    this._progressFill.className = 'jlz-storyline__progress-fill'
-    progress.appendChild(this._progressFill)
 
     const items = document.createElement('div')
     items.className = 'jlz-storyline__items'
@@ -99,7 +80,7 @@ export class CinematicNav {
     hint.dataset.i18n = 'story.hint'
     hint.textContent = 'Scroll · swipe'
 
-    nav.append(status, progress, items, hint)
+    nav.append(items, hint)
     return nav
   }
 
@@ -224,11 +205,6 @@ export class CinematicNav {
       section.style.setProperty('--jlz-story-title-opacity', String(1 - distance * 0.7))
       section.style.setProperty('--jlz-story-panel-opacity', String(1 - distance * 0.82))
     })
-
-    const progress =
-      this._mainSections.length > 1 ? (position / (this._mainSections.length - 1)) * 100 : 0
-    this._progressFill.style.width = `${progress}%`
-    this._currentLabel.textContent = String(nearest + 1).padStart(2, '0')
 
     this._navButtons.forEach((button, index) => {
       const active = index === nearest && this._side === 'center'
