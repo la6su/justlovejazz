@@ -11,6 +11,7 @@ import { CinematicLights } from '../Experience/World/Lights'
 import { DrawTrail } from '../Experience/World/DrawTrail'
 import { SplashCube } from '../Experience/World/SplashCube'
 import { EnvSphere } from '../Experience/World/EnvSphere'
+import { CinematicField } from '../Experience/World/CinematicField'
 import { ParticleBurst } from '../Experience/World/ParticleBurst'
 import { getWorldConfigForPage, type PhaseConfig } from './WorldConfig'
 import { SectionSceneFactory } from './SectionSceneFactory'
@@ -29,6 +30,7 @@ export class World extends THREE.Group {
   public lightsGroup!: CinematicLights
   public drawTrail?: DrawTrail
   public envSphere!: EnvSphere
+  public cinematicField!: CinematicField
   public particleBurst!: ParticleBurst
   // BG removed — was dead computation. EnvSphere is the sole background.
   public groundPlane!: THREE.Mesh
@@ -42,7 +44,7 @@ export class World extends THREE.Group {
   private _rangesCache: [number, number][] | null = null
   private sceneRef: THREE.Scene
 
-  private _currentSectionIndex: number = 1 // Intro = index 1 (Lab=0 is secret left)
+  private _currentSectionIndex: number = 1 // Intro = index 1 (canonical Lab/Contact finale = 0)
   public get currentSectionIndex(): number {
     return this._currentSectionIndex
   }
@@ -94,6 +96,11 @@ export class World extends THREE.Group {
     this.envSphere.attachToScene(scene)
     this.add(this.envSphere) // added for lifecycle (update/dispose)
 
+    // Scroll-driven TSL ribbons form the visual through-line across all six
+    // runtime states. EnvSphere remains the sole background owner.
+    this.cinematicField = new CinematicField()
+    this.add(this.cinematicField)
+
     // ── ParticleBurst — one-shot burst from baku cube on opener (intro).
     // 200 particles fly outward + fade over 1.2s. Hidden until triggered.
     this.particleBurst = new ParticleBurst()
@@ -140,7 +147,7 @@ export class World extends THREE.Group {
       this.add(section)
 
       if (index === 1) {
-        // Intro = index 1 (Lab=0 is secret left)
+        // Intro = index 1 (canonical Lab/Contact finale = 0)
         section.visible = true
         section.scale.setScalar(1.0)
         section.rotation.y = 0
@@ -175,7 +182,7 @@ export class World extends THREE.Group {
     }
 
     // ── Apply first section's lights + fog + env sphere colors immediately
-    const firstCfg = this.configs[1] // Intro = index 1 (Lab=0 is secret left)
+    const firstCfg = this.configs[1] // Intro = index 1 (canonical Lab/Contact finale = 0)
     if (firstCfg) {
       this.lightsGroup.changeSection(firstCfg)
       // Inline WorldAtmosphere.setFog — fog not yet set on init, so create new.
@@ -291,6 +298,7 @@ export class World extends THREE.Group {
 
   /** Match the opaque 3D words to the effective section/theme contrast. */
   public syncTypographyTheme(isLight: boolean): void {
+    this.cinematicField.setTheme(isLight)
     for (const group of this.sceneGroups) {
       const typo = group.userData.typography as
         import('../Experience/World/WireframeTypography').WireframeTypography | undefined
@@ -316,6 +324,8 @@ export class World extends THREE.Group {
     // BakuCarousel updates — the last rendered frame stays on screen.
     // Exception: Experience forces needsRender while hasVisibleParticles().
     if (!needsRender) return
+
+    this.cinematicField.update(deltaTime)
 
     if (!this.isReducedMotion) {
       this.baku.update(deltaTime, this._renderer)
@@ -376,6 +386,7 @@ export class World extends THREE.Group {
   public updateTransform(scrollValue: number): WorldTransformResult {
     if (!Number.isFinite(scrollValue)) scrollValue = 0
     scrollValue = THREE.MathUtils.clamp(scrollValue, 0, 1)
+    this.cinematicField.setProgress(scrollValue)
     if (this.sections.length === 0) return this.defaultResult()
 
     // ── Find from/to indices from range config
@@ -630,6 +641,7 @@ export class World extends THREE.Group {
     this.sceneGroups.forEach((g) => {
       g.scale.setScalar(scale)
     })
+    this.cinematicField.resize(width, height)
     // Ground plane: always covers viewport (large geometry, no change needed).
     // Baku: position stays at origin, no resize needed.
     // Atmosphere: fog density stays per-section.
@@ -685,6 +697,7 @@ export class World extends THREE.Group {
     this.baku?.dispose()
     // Dispose env sphere GPU resources
     this.envSphere?.dispose()
+    this.cinematicField?.dispose()
     // Dispose particle burst
     this.particleBurst?.dispose()
     this.groundPlane.geometry.dispose()

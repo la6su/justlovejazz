@@ -8,9 +8,8 @@
 // the fullscreen ProjectOverlay (same overlay as the home BakuCarousel).
 //
 // Keyboard navigation (a11y): roving tabindex within the active section's
-// 2-card row. ArrowLeft/ArrowRight move focus between cards; ArrowUp/Down are
-// left alone (joystick vertical section navigation). Enter/Space open the
-// focused card (native <button> behavior — no handler needed).
+// 2-card row. Story arrows are left to CinematicNav; Enter/Space open the
+// focused card through native <button> behavior.
 //
 // init() is idempotent — safe to call on every route change. Listeners are
 // attached per-card and tracked for cleanup.
@@ -136,8 +135,8 @@ function bindCard(cardEl: HTMLElement): void {
 // Layout: 4 sections × 2 cards. Each section's cards live inside one
 // .jlz-works-grid. Cards are keyboard-reachable via Tab (roving tabindex).
 //
-// ArrowLeft/ArrowRight are NOT handled here — they are owned by JoystickNav
-// for section navigation (vertical = sections 1-4, horizontal = Lab/Menu).
+// ArrowLeft/ArrowRight are NOT handled here — CinematicNav owns them for the
+// horizontal story.
 // Card focus cycling is via Tab/Shift+Tab (native browser tabindex).
 //
 // Roving tabindex: in each grid, exactly one card has tabindex=0 (the Tab
@@ -163,8 +162,8 @@ function applyRoving(grid: HTMLElement): void {
   })
 }
 
-// (moveFocus + onKeydown removed — ArrowLeft/Right now owned by JoystickNav
-//  for section navigation. Card focus is via Tab/Shift+Tab only.)
+// (moveFocus + onKeydown removed — story arrows are owned by CinematicNav.
+//  Card focus is via Tab/Shift+Tab only.)
 
 /** jlz:page-section-change handler — when the active section changes, reset
  *  roving in ALL grids (new section's first card becomes Tab entry). */
@@ -181,8 +180,8 @@ export function initWorkCards(): void {
   // Initialize roving tabindex on all grids (first card per grid = Tab entry).
   grids().forEach(applyRoving)
 
-  // Attach section-change handler once (keyboard handler removed — arrows
-  // owned by JoystickNav for section navigation, card focus via Tab).
+  // Attach section-change handler once (story arrows remain owned by
+  // CinematicNav; card focus uses Tab).
   if (!sectionChangeHandler) {
     sectionChangeHandler = onPageSectionChange
     window.addEventListener('jlz:page-section-change', sectionChangeHandler)

@@ -17,17 +17,18 @@ export const PAGE_REVEAL = 'uk-scrollspy="cls: uk-animation-fade; delay: 120; ta
 //
 //   Index | Section  | Cube face    | Face direction | Theme
 //   ------|----------|--------------|----------------|-------
-//   0     | Lab      | Front (+Z)   | toward camera  | light (secret left)
+//   0     | Lab*     | Front (+Z)   | toward camera  | light (Contact finale)
 //   1     | Intro    | Right (+X)   | right          | light (start)
 //   2     | About    | Back (-Z)    | away           | dark
 //   3     | Works    | Left (-X)    | left           | dark (carousel)
 //   4     | Contact  | Front (+Z)*  | tilt ±π/4      | light
-//   5     | Menu     | Front (+Z)*  | tilt ±π/4      | dark (secret right, nav overlay)
+//   5     | Menu     | Front (+Z)*  | tilt ±π/4      | dark (top sheet)
 //   * Sections 4-5 use ±π/4 tilt (two side faces visible), not true top/bottom.
+//   * Section 0 keeps the canonical Lab id but publicly renders Contact.
 //   D-23 fix: updated to match SplashCube.FACE_ROTATIONS (was stale).
 //
-// Navigation: JoystickNav vertical cycles 1→2→3→4 (main sections),
-// horizontal toggles 0 (Lab) ↔ center ↔ 5 (Menu) (secret side sections).
+// Navigation: CinematicNav scrolls horizontally through 1→2→3→4 and opens
+// 0 (Contact footer) / 5 (Menu) as bottom/top sheets.
 
 export type SectionId = 'lab' | 'intro' | 'about' | 'works' | 'contact' | 'menu'
 // Works section

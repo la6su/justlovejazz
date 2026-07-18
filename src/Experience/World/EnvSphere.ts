@@ -1,4 +1,4 @@
-// EnvSphere.ts — shared background (CanvasTexture + lightweight secret shader)
+// EnvSphere.ts — shared background (CanvasTexture + lightweight sheet field)
 //
 // PORT of junni BG (references/next.junni.co.jp/src/ts/MainScene/World/BG/).
 //
@@ -35,7 +35,7 @@ const CANVAS_H = 512 // was 1024
 // 2 patterns used: idx 1 (light, auto) + idx 2 (dark, inverse).
 // Others kept for future per-section mode.
 const SECTION_PATTERNS = [
-  // 0: Lab — LIGHT: subtle blue-grey HSV
+  // 0: canonical Lab / public Contact finale — LIGHT: subtle blue-grey HSV
   { type: 'hsv', hue: 0.6, sat: 0.06, val: 0.88 },
   // 1: Intro — LIGHT: pure white with ultra-subtle hue shift (auto/theme-light target)
   { type: 'hsv', hue: 0.0, sat: 0.02, val: 0.98 },
@@ -151,7 +151,7 @@ export class EnvSphere extends THREE.Mesh {
     this._dirty = true
   }
 
-  /** Select the secret-section visual without changing the page theme. */
+  /** Select the Menu/Contact-sheet visual without changing the page theme. */
   setActiveSection(idx: number): void {
     this._activeSection = idx
     const isSecret = idx === 0 || idx === 5
@@ -277,7 +277,7 @@ export class EnvSphere extends THREE.Mesh {
     }
   }
 
-  /** Colourful, low-frequency WebGL2 fallback for the secret TSL field. */
+  /** Colourful, low-frequency WebGL2 fallback for the sheet field. */
   private _drawSecretPattern(ctx: CanvasRenderingContext2D, w: number, h: number): void {
     const phase = this._time * 0.08
     const isMenu = this._activeSection === 5

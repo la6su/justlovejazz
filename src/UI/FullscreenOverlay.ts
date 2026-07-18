@@ -64,7 +64,7 @@ export class FullscreenOverlay {
     this.container = document.createElement('div')
     this.container.id = 'jlz-fs-overlay'
     this.container.setAttribute('uk-modal', 'bg-close: true; esc-close: true; stack: false')
-    this.container.className = 'jlz-fs-overlay uk-modal uk-modal-full'
+    this.container.className = 'jlz-fs-overlay uk-modal uk-modal-full uk-light'
 
     this.container.innerHTML = `
       <div class="uk-modal-dialog jlz-fs-dialog">
@@ -234,9 +234,8 @@ export class FullscreenOverlay {
 
     // Keyboard: Space (play/pause), ArrowLeft/Right (prev/next)
     // Attached to document on 'show', removed on 'hide' (see above).
-    // stopImmediatePropagation prevents JoystickNav's window keydown from
-    // also firing — without it, ArrowLeft in the overlay simultaneously
-    // goes to prev-project AND navigates section to Lab behind the overlay.
+    // stopImmediatePropagation prevents CinematicNav's window keydown from
+    // also firing, so project arrows do not move the story behind the modal.
     this._keydownHandler = (e: KeyboardEvent) => {
       if (e.key === ' ') {
         e.preventDefault()

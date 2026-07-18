@@ -72,7 +72,7 @@ export function servicesPage(): string {
   const [s1, s2, s3, s4] = SERVICES
   return `
     <article class="jlz-page" data-page-view="services">
-      <!-- 0: LAB OVERLAY (joystick left) -->
+      <!-- 0: CONTACT FINALE (canonical Lab runtime slot) -->
       ${labOverlaySection('content')}
       <!-- 1: Creative Direction (start, active) -->
       ${sectionShell('services-01',
@@ -95,7 +95,7 @@ export function servicesPage(): string {
         contentTop(s4!.num, s4!.title, s4!.lead, 'large', s4!.key + '.title', s4!.key + '.lead'),
         contentBottom(`${serviceDesc(s4!.key, s4!.desc)}${serviceExplore(s4!.href)}`)
       )}
-      <!-- 5: NAVIGATION OVERLAY (joystick right) -->
+      <!-- 5: MENU SHEET -->
       ${navOverlaySection('content')}
     </article>
   `

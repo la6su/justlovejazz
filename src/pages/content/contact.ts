@@ -67,7 +67,7 @@ const formSection = sectionShell('contact-04',
 export function contactPage(): string {
   return `
     <article class="jlz-page" data-page-view="contact">
-      <!-- 0: LAB OVERLAY (joystick left) -->
+      <!-- 0: CONTACT FINALE (canonical Lab runtime slot) -->
       ${labOverlaySection('content')}
       <!-- 1: Email (start, active) -->
       ${emailSection}
@@ -77,7 +77,7 @@ export function contactPage(): string {
       ${locationSection}
       <!-- 4: Form -->
       ${formSection}
-      <!-- 5: NAVIGATION OVERLAY (joystick right) -->
+      <!-- 5: MENU SHEET -->
       ${navOverlaySection('content')}
     </article>
   `

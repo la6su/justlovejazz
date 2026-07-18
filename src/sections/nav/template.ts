@@ -1,30 +1,15 @@
-// src/sections/nav/template.ts — Menu section (section 5, joystick right)
+// src/sections/nav/template.ts — responsive cinematic Menu (section 5)
 //
-// UNIQUE template — does NOT use sectionShell(). VOSK-inspired 2-column grid.
-// This is a FULL SECTION (not an overlay): hidden by default via
-// section[data-section] { display: none }, shown via .section-active.
-// Same visibility pattern as Lab (section 0) and all main sections.
+// UNIQUE template — does NOT use sectionShell(). Editorial 2-column grid.
+// It is a full-screen desktop scene and a compact top sheet on mobile. The
+// same UIkit Nav markup owns expansion, keyboard state and ARIA in both modes.
 //
-// Joystick right or ArrowRight → JoystickNav switches to section 5.
-// Joystick left, ArrowLeft or jlz:close-nav → returns to the previous main section.
-// Menu section is SHARED across all pages (same as Lab section 0).
-//
-// Nav item click behavior:
-//   - Desktop (≥640px): dropdown panel appears to the RIGHT of nav list,
-//     showing subsections. Click subsection → navigate to that section.
-//   - Mobile (<640px): accordion unfold — subsections appear INLINE below
-//     the nav item. Click subsection → navigate.
-//   - Only ONE nav item expanded at a time (clicking another closes the first).
-//
-// Visibility:
-//   - Hidden by default (section[data-section] { display: none }).
-//   - Shown when .section-active is added (joystick right / ArrowRight).
-//   - backdrop-filter: blur(20px) on overlay for glass-morphism separation
-//     from the 3D canvas behind.
+// UIkit Nav keeps one expandable item open and owns its ARIA state. The layout
+// reveals subsections beside the navigation on desktop and inline on mobile.
+// CinematicNav owns visibility through body[data-cinematic-sheet="menu"].
 //
 // Exit (close menu):
 //   - `jlz:close-nav` → return to the previous main section.
-//   - Joystick or keyboard arrow left → same behavior.
 //   - Subsection click → navigate to target section (menu auto-closes).
 
 // (themeManager + getLang imports removed — UIMenu.ts owns all config controls now.)
@@ -83,16 +68,7 @@ const NAV_ITEMS: NavItem[] = [
     ],
   },
   {
-    num: '05', label: 'Lab', labelKey: 'nav.lab', href: '/lab',
-    subs: [
-      { num: '01', title: 'Shader Lab', titleKey: 'dropbar.lab.s1.title', href: '/lab#section-lab-01' },
-      { num: '02', title: 'Audio Reactive', titleKey: 'dropbar.lab.s2.title', href: '/lab#section-lab-02' },
-      { num: '03', title: 'Generative', titleKey: 'dropbar.lab.s3.title', href: '/lab#section-lab-03' },
-      { num: '04', title: 'GPU Particles', titleKey: 'dropbar.lab.s4.title', href: '/lab#section-lab-04' },
-    ],
-  },
-  {
-    num: '06', label: 'Contact', labelKey: 'nav.contact', href: '/contact',
+    num: '05', label: 'Contact', labelKey: 'nav.contact', href: '/contact',
     subs: [
       { num: '01', title: 'Email', titleKey: 'dropbar.contact.s1.title', href: '/contact#section-contact-01' },
       { num: '02', title: 'Social', titleKey: 'dropbar.contact.s2.title', href: '/contact#section-contact-02' },
@@ -111,7 +87,7 @@ function statColumn(): string {
   return `
     <div class="jlz-menu-col jlz-menu-col--stat">
       <div class="jlz-menu-stat">
-        <span class="jlz-menu-stat__num">06</span>
+        <span class="jlz-menu-stat__num">05</span>
         <span class="jlz-menu-stat__label" data-i18n="menu.stat.sections">SECTIONS</span>
       </div>
     </div>
@@ -160,13 +136,9 @@ function navColumn(): string {
 /**
  * Menu section — UNIQUE template (not sectionShell).
  *
- * This is a FULL SECTION (not an overlay). Visibility is controlled by the
- * same CSS as all other sections:
- *   - Hidden: section[data-section] { display: none } (home) / .jlz-page-section { display: none } (content)
- *   - Shown: .section-active { display: flex !important }
- *
- * Joystick right or ArrowRight → JoystickNav.goToSection(5) →
- * ContentReveal adds .section-active to [data-section="menu"].
+ * This is a responsive top sheet backed by canonical runtime section 5.
+ * CinematicNav exposes its state on body[data-cinematic-sheet="menu"], while
+ * ContentReveal continues synchronizing the 3D section configuration.
  *
  * @param mode 'home' = data-section (3D cube face sync) | 'content' = data-page-section
  */
@@ -181,11 +153,13 @@ export function navOverlaySection(mode: 'home' | 'content' = 'content'): string 
   // { display: none }, so the class is not needed there.
   const pageClass = mode === 'content' ? 'jlz-page-section' : ''
   return `
-    <section class="jlz-menu-overlay ${pageClass} uk-section uk-section-xsmall" id="section-menu" ${sectionAttr}>
+    <section class="jlz-menu-overlay ${pageClass} uk-section uk-section-xsmall" id="section-menu" ${sectionAttr} data-cinematic-menu>
       <div class="uk-container uk-container-expand jlz-menu-container">
-        <!-- (Top bar removed — config controls (lang/sound/theme) live in the
-             fixed UIMenu.ts top bar. Menu section is now
-             navigation-only: stat + nav accordion.) -->
+        <div class="jlz-menu-sheet__header uk-flex uk-flex-middle uk-flex-between">
+          <span class="jlz-menu-sheet__eyebrow" data-i18n="menu.navigate">Navigate</span>
+          <button class="uk-close-large jlz-sheet-close" type="button" uk-close
+                  data-close-cinematic-sheet aria-label="Close menu"></button>
+        </div>
         <!-- Main 2-column grid: stat | nav accordion -->
         <div class="jlz-menu-grid">
           ${statColumn()}
@@ -240,10 +214,9 @@ export function initMenuNav(): void {
       const hash = url.hash
 
       if (path !== window.location.pathname) {
-        // Cross-page: close menu FIRST (reset JoystickNav to center), then
+        // Cross-page: close Menu first (restore the current story frame), then
         // dispatch jlz:navigate — router listens and calls navigateToPage
-        // (pushState + renderView). Without close-nav, JoystickNav stays in
-        // side='menu' state and the cube face doesn't reset.
+        // dispatch jlz:navigate so the router renders the new horizontal track.
         window.dispatchEvent(new CustomEvent('jlz:close-nav'))
         window.dispatchEvent(new CustomEvent('jlz:navigate', {
           detail: { path: path + (hash || '') },
@@ -252,7 +225,7 @@ export function initMenuNav(): void {
         // Same-page: scroll to hash + close menu (return to previous section)
         if (hash) {
           const target = document.querySelector(hash)
-          target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          target?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' })
         }
         window.dispatchEvent(new CustomEvent('jlz:close-nav'))
       }
@@ -270,6 +243,13 @@ export function initMenuNav(): void {
  */
 export function initMenuToolbar(): void {
   initMenuNav()
+  document.querySelectorAll<HTMLElement>('[data-close-cinematic-sheet]').forEach((button) => {
+    if (button.dataset.jlzBound === '1') return
+    button.dataset.jlzBound = '1'
+    button.addEventListener('click', () => {
+      window.dispatchEvent(new CustomEvent('jlz:close-nav'))
+    })
+  })
 }
 
 /**

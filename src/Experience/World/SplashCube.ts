@@ -85,12 +85,13 @@ export class SplashCube extends THREE.Mesh {
   // ── Cube face rotation ──
   // 6 sections = 6 cube faces. Each section maps to a target Y rotation
   // so the corresponding face points toward the camera (+Z direction).
-  // Lab=0→front, Intro=1→right, About=2→back, Works=3→left, Contact=4→tilt, Menu=5→tilt.
+  // Lab/Contact finale=0→front, Intro=1→right, About=2→back,
+  // Works=3→left, Contact=4→tilt, Menu=5→tilt.
   // NOTE: sections 4+5 use ±π/4 tilt (NOT actual top/bottom face rotation).
   // The cube shows two side faces at an angle for these sections.
   // This is a known simplification — true top/bottom face would need X rotation.
   private static readonly FACE_ROTATIONS: number[] = [
-    0, // 0: Lab — front face (+Z toward camera)
+    0, // 0: canonical Lab / public Contact finale — front face
     -Math.PI / 2, // 1: Intro — right face (+X toward camera)
     Math.PI, // 2: About — back face (-Z toward camera)
     Math.PI / 2, // 3: Works — left face (-X toward camera)

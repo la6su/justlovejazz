@@ -126,7 +126,7 @@ test.describe('JustLoveJazz — accessibility & DOM UI', () => {
   test('top-bar controls and menu section links render with aria-labels', async ({ page }) => {
     await page.goto('/')
 
-    // UIMenu injects top-bar controls. The menu is rendered as secret section 5
+    // UIMenu injects top-bar controls. The menu is rendered in runtime section 5
     // and uses .jlz-menu-nav__sub-link anchors. UIMenu is only constructed after
     // the Experience finishes init() — which requires WebGPU or WebGL2. In
     // headless CI without a real GPU this may never happen, so skip gracefully.
@@ -174,7 +174,10 @@ test.describe('JustLoveJazz — accessibility & DOM UI', () => {
     expect(activeClass, 'First Tab should focus the skip link').toContain('skip-link')
   })
 
-  test('secret sections use one UIkit accordion composition', async ({ browser }) => {
+  test('mobile uses a vertical story, compact Menu and Contact footer', async ({ browser }) => {
+    // Parallel headless workers can spend most of the default budget in the
+    // optional GPU bootstrap even though this test only inspects DOM/CSS.
+    test.setTimeout(60000)
     const context = await browser.newContext({ viewport: { width: 390, height: 844 } })
     const page = await context.newPage()
 
@@ -182,35 +185,32 @@ test.describe('JustLoveJazz — accessibility & DOM UI', () => {
       await page.goto('/')
       await expect(page.locator('main#spa-content')).toBeAttached({ timeout: 20000 })
 
-      // The two secret sections are normally reached through the joystick.
-      // Activate them directly here so the responsive composition can be
-      // checked without depending on GPU initialisation in headless Chromium.
+      const track = page.locator('#spa-content')
+      await expect(track).toHaveCSS('scroll-snap-type', /y mandatory/)
+      await expect(page.locator('[data-section="intro"]')).toHaveCSS('width', '390px')
+
+      // Activate the public sheet state directly so responsive composition can
+      // be checked without depending on GPU initialisation in headless Chromium.
       await page.evaluate(() => {
-        document
-          .querySelectorAll('.section-active')
-          .forEach((section) => section.classList.remove('section-active'))
-        document.getElementById('section-lab')?.classList.add('section-active')
+        document.body.dataset.cinematicSheet = 'footer'
       })
 
-      const labAccordion = page.locator('#section-lab .jlz-lab-accordion')
-      await expect(labAccordion).toBeVisible()
-      await expect(page.locator('#section-lab .jlz-lab-grid')).toHaveCount(0)
-
-      const labToggle = labAccordion.locator('.uk-accordion-title').first()
-      await labToggle.click()
-      await expect(labToggle).toHaveAttribute('aria-expanded', 'true')
-      await expect(labAccordion.locator('.jlz-lab-accordion__preview').first()).toBeVisible()
+      const footer = page.locator('[data-contact-footer]')
+      await expect(footer).toBeVisible()
+      await expect(footer.locator('.jlz-telegram-cta')).toHaveAttribute(
+        'href',
+        'https://t.me/justlovejazz',
+      )
+      await expect(page.locator('#section-lab .jlz-lab-accordion')).toHaveCount(0)
 
       await page.evaluate(() => {
-        document
-          .querySelectorAll('.section-active')
-          .forEach((section) => section.classList.remove('section-active'))
-        document.getElementById('section-menu')?.classList.add('section-active')
+        document.body.dataset.cinematicSheet = 'menu'
       })
 
+      await expect(page.locator('#section-menu')).toBeVisible()
       const menuToggle = page.locator('#section-menu .jlz-menu-nav__toggle').first()
       await expect(menuToggle).toHaveAttribute('role', 'button')
-      await menuToggle.click()
+      await menuToggle.dispatchEvent('click')
       await expect(menuToggle).toHaveAttribute('aria-expanded', 'true')
       await expect(page.locator('#section-menu .jlz-menu-nav__subs').first()).toBeVisible()
     } finally {

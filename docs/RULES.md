@@ -32,6 +32,8 @@ tests first, then correct the stale document or implementation deliberately.
    an error state, never an enabled Enter button.
 3. Preserve the six-section order: Lab, Intro, About, Works, Contact, Menu.
    Do not reintroduce historical `challenge` or `process` identifiers.
+   The public Contact finale may occupy the canonical Lab runtime/DOM slot,
+   but the stable identifier and `/lab` route contract must remain intact.
 4. Treat bare `href="#"` as a local control. Preserve `#section-*` hashes when
    navigating across SPA routes.
 5. Keep `World.ensureCarouselInitialized()` idempotent and home-only. Deep-link

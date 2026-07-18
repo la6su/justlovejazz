@@ -90,7 +90,7 @@ function showLoadError(): void {
 }
 
 // ── Seamless splash loader ──
-// index.html has #jlz-app-loader with SVG squares + CRT curtains + progress.
+// index.html has #jlz-app-loader with SVG squares + split curtains + progress.
 // three.js loads LAZY (dynamic import in main-app.ts) — does NOT block FCP.
 // We update progress as Experience.init() boots, then trigger curtain
 // split (fade-out class) when jlz:webgl-ready fires. Config buttons
@@ -212,7 +212,7 @@ export async function startApp(): Promise<void> {
     const section = document.querySelector(`[data-section="${payload.sectionId}"]`)
     if (!section) return
     const title = section.querySelector<HTMLElement>('.studio-title')
-    if (title) {
+    if (title && title.dataset.blurFade !== 'off') {
       const text = title.textContent?.trim() || ''
       if (text) BlurFade.for(title).show(1.5)
     }
@@ -227,7 +227,7 @@ export async function startApp(): Promise<void> {
     if (!el) return
     // BlurFade on title
     const title = el.querySelector<HTMLElement>('.studio-title')
-    if (title) {
+    if (title && title.dataset.blurFade !== 'off') {
       const text = title.textContent?.trim() || ''
       if (text) BlurFade.for(title).show(1.5)
     }
@@ -247,7 +247,7 @@ export async function startApp(): Promise<void> {
  * viewport — synchronized with UIkit scrollspy's viewport entry.
  */
 function setupTitleObserver(): void {
-  const titles = document.querySelectorAll<HTMLElement>('.studio-title')
+  const titles = document.querySelectorAll<HTMLElement>('.studio-title:not([data-blur-fade="off"])')
   if (titles.length === 0) return
   const observer = new IntersectionObserver(
     (entries) => {
@@ -276,7 +276,7 @@ function animateBlurFadeTitles(): void {
     blurFadeAnimating = false
   }, 2200)
 
-  for (const el of document.querySelectorAll<HTMLElement>('.studio-title')) {
+  for (const el of document.querySelectorAll<HTMLElement>('.studio-title:not([data-blur-fade="off"])')) {
     const text = el.textContent?.trim() || ''
     if (!text) continue
     BlurFade.for(el).show(1.2)

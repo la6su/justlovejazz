@@ -68,7 +68,7 @@ export function labPage(): string {
   const [e1, e2, e3, e4] = EXPERIMENTS
   return `
     <article class="jlz-page" data-page-view="lab">
-      <!-- 0: LAB OVERLAY (joystick left) -->
+      <!-- 0: CONTACT FINALE (canonical Lab runtime slot) -->
       ${labOverlaySection('content')}
       <!-- 1: Shader Lab (start, active) -->
       ${sectionShell('lab-01',
@@ -91,7 +91,7 @@ export function labPage(): string {
         contentTop(e4!.num, e4!.title, e4!.lead, 'large', e4!.key + '.title', e4!.key + '.lead'),
         contentBottom(`${expDesc(e4!.key, e4!.desc)}${expExplore(e4!.href)}`)
       )}
-      <!-- 5: NAVIGATION OVERLAY (joystick right) -->
+      <!-- 5: MENU SHEET -->
       ${navOverlaySection('content')}
     </article>
   `

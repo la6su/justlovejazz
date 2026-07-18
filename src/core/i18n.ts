@@ -40,7 +40,7 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'nav.contact': 'Contact',
     'nav.blog': 'Blog',
 
-    // Navigation section (section 5, joystick right)
+    // Navigation sheet (section 5)
     'navOverlay.title': 'Navigate',
     'navOverlay.lead': 'Choose your destination.',
     'navOverlay.studio.desc': 'Home · cube experience',
@@ -54,7 +54,16 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'menu.navigate': 'Navigate',
     'menu.stat.sections': 'Sections',
 
-    // Lab section (section 0, joystick left)
+    // Cinematic shell + contact finale
+    'story.system': 'Cinematic web system · 2026',
+    'story.hint': 'Scroll · swipe',
+    'story.contact': 'Contact',
+    'contactFooter.kicker': 'Final frame · open channel',
+    'contactFooter.title': 'Let’s make something worth remembering.',
+    'contactFooter.lead': 'Tell us where the story should go next.',
+    'contactFooter.telegram': 'Open Telegram',
+
+    // Legacy Lab overlay keys retained for route/content compatibility.
     'labOverlay.title': 'Lab',
     'labOverlay.lead': 'Experiments · works · R&D.',
     'labOverlay.openWorks': 'Open works',
@@ -265,7 +274,7 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'help.down': 'Down',
     'help.lab': 'Lab',
     'help.menu': 'Menu',
-    'help.hint': 'Drag the joystick or use arrow keys',
+    'help.hint': 'Scroll, swipe or use arrow keys',
 
     // Meta (route-based SEO)
     'meta.home.title': 'JUSTLOVEJAZZ — Web Design Studio | Interactive 3D Portfolio',
@@ -310,6 +319,15 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     // Menu overlay (RU)
     'menu.navigate': 'Навигация',
     'menu.stat.sections': 'Разделы',
+
+    // Cinematic shell + contact finale
+    'story.system': 'Кинематографическая web-система · 2026',
+    'story.hint': 'Листайте · свайпайте',
+    'story.contact': 'Связаться',
+    'contactFooter.kicker': 'Финальный кадр · открытый канал',
+    'contactFooter.title': 'Давайте создадим то, что хочется запомнить.',
+    'contactFooter.lead': 'Расскажите, куда должна продолжиться эта история.',
+    'contactFooter.telegram': 'Открыть Telegram',
 
     // Lab section (RU)
     'labOverlay.title': 'Лаб',

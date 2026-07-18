@@ -4,6 +4,17 @@ This is a concise release-level record. Implementation decisions belong in
 [`WORKLOG.md`](../WORKLOG.md); completed plans remain available through Git
 history.
 
+## 2026-07-18 — Cinematic vertical navigation
+
+- Replaced the joystick with native vertical scroll/swipe, snap frames and a
+  compact chapter control beside Contact.
+- Added a progress-driven TSL fluid field that connects section transitions in
+  the 3D scene.
+- Reframed Menu as a responsive top sheet and the internal section-0 slot as a
+  Contact finale with a styled Telegram action.
+- Removed CRT scanlines and the runtime CRT border; raised splash and full-modal
+  layers above application chrome and refined the fullscreen transition.
+
 ## 2026-07-15 — Runtime hardening and documentation consolidation
 
 - Fixed hash/dotnav routing, section state completion and home carousel

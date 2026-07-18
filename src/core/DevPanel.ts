@@ -112,12 +112,12 @@ export class DevPanel {
   }
 
   // ── Navigation folder REMOVED (2026-07-11) — the section slider + prev/next
-  // buttons drove JoystickNav via a private-field cast hack (_circNav is
-  // private on Experience). It was unreliable on content pages (section change
+  // buttons drove the old joystick via a private-field cast hack. It was
+  // unreliable on content pages (section change
   // goes through jlz:page-section-change there, not jlz:section-change) and
   // the slider's 0-5 range didn't map cleanly to the 4-main-sections layout.
-  // Navigation is joystick-only (pure DOM) per ARCHITECTURE.md — DevPanel is
-  // for diagnostics, not a second nav input.
+  // Navigation is owned by the cinematic story track; DevPanel remains a
+  // diagnostics surface rather than a second navigation input.
 
   // ── BakuCarousel folder ───────────────────────────────────────────────
   private buildCarouselFolder(): void {
@@ -193,7 +193,7 @@ export class DevPanel {
       this.stats.heap = perf.memory ? Math.round(perf.memory.usedJSHeapSize / 1048576) : 0
 
       // Section + rendering state
-      const nav = (this.exp as unknown as { _circNav?: { getSectionIndex: () => number; isActive: () => boolean } })._circNav
+      const nav = (this.exp as unknown as { _storyNav?: { getSectionIndex: () => number; isActive: () => boolean } })._storyNav
       this.stats.section = nav?.getSectionIndex() ?? 0
       const exp = this.exp as unknown as { _needsRender?: boolean }
       this.stats.rendering = exp?._needsRender ?? false

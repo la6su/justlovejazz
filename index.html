@@ -14,7 +14,10 @@
     <meta name="theme-color" content="#050507" />
     <meta name="author" content="JUSTLOVEJAZZ" />
     <meta name="color-scheme" content="dark light" />
-    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta
+      name="robots"
+      content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+    />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
@@ -36,7 +39,10 @@
     <meta name="twitter:site" content="@justlovejazz" />
     <meta name="twitter:creator" content="@justlovejazz" />
     <meta name="twitter:title" content="JUSTLOVEJAZZ — Interactive 3D Portfolio" />
-    <meta name="twitter:description" content="A studio-grade interactive 3D portfolio. WebGPU/WebGL cinematic experience built with Three.js." />
+    <meta
+      name="twitter:description"
+      content="A studio-grade interactive 3D portfolio. WebGPU/WebGL cinematic experience built with Three.js."
+    />
     <meta name="twitter:image" content="https://justlovejazz.dev/preview.jpg" />
     <meta name="twitter:image:alt" content="JUSTLOVEJAZZ — interactive 3D portfolio preview" />
 
@@ -64,10 +70,7 @@
             "url": "https://justlovejazz.dev/",
             "logo": "https://justlovejazz.dev/favicon.svg",
             "description": "Studio-grade web design portfolio. WebGPU, Three.js, TSL shaders, interactive 3D experiences.",
-            "sameAs": [
-              "https://github.com/la6su",
-              "https://x.com/justlovejazz"
-            ]
+            "sameAs": ["https://github.com/la6su", "https://x.com/justlovejazz"]
           }
         ]
       }
@@ -81,10 +84,28 @@
 
     <!-- Inline CSS — minimal, just bg to prevent white flash before app CSS loads -->
     <style>
-      * { box-sizing: border-box; }
-      html, body { margin: 0; padding: 0; background: #050507; overflow: hidden; }
-      body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
-      #app { position: relative; width: 100%; height: 100dvh; }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: #050507;
+        overflow: hidden;
+      }
+      body {
+        font-family:
+          'Inter',
+          -apple-system,
+          BlinkMacSystemFont,
+          sans-serif;
+      }
+      #app {
+        position: relative;
+        width: 100%;
+        height: 100dvh;
+      }
 
       /* ── Splash loader (seamless inline overlay) ──
          Flow: SVG squares animate in → progress fills → Enter button appears
@@ -93,7 +114,7 @@
       #jlz-app-loader {
         position: fixed;
         inset: 0;
-        z-index: 10010;
+        z-index: 30000;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -118,14 +139,21 @@
         pointer-events: none;
         z-index: 10014;
         will-change: transform, opacity;
-        transition: transform 0.8s cubic-bezier(0.65, 0, 0.35, 1),
-                    opacity 0.5s ease 0.2s;
+        transition:
+          transform 0.8s cubic-bezier(0.65, 0, 0.35, 1),
+          opacity 0.5s ease 0.2s;
       }
       @media (orientation: landscape) {
-        .jlz-splash-svg { width: 100vh; height: 100vh; }
+        .jlz-splash-svg {
+          width: 100vh;
+          height: 100vh;
+        }
       }
       @media (orientation: portrait) {
-        .jlz-splash-svg { width: 100vw; height: 100vw; }
+        .jlz-splash-svg {
+          width: 100vw;
+          height: 100vw;
+        }
       }
       /* Text reveal — opacity-only (GPU-accelerated, no repaint).
          Staggered fade-in, no transform (avoids SVG layout thrash). */
@@ -136,13 +164,33 @@
         opacity: 0;
         animation: jlz-splash-fade 0.8s ease forwards;
       }
-      .jlz-splash-text--1 { font-size: clamp(60px, 11vmin, 90px); fill: #6b78a3; animation-delay: 0.2s; }
-      .jlz-splash-text--2 { font-size: clamp(46px, 9vmin, 68px); fill: #5a6a8e; animation-delay: 0.4s; }
-      .jlz-splash-text--3 { font-size: clamp(32px, 6vmin, 48px); fill: #4a5a7e; animation-delay: 0.6s; }
-      .jlz-splash-text--4 { font-size: clamp(22px, 4.5vmin, 34px); fill: #3a4a6e; animation-delay: 0.8s; }
+      .jlz-splash-text--1 {
+        font-size: clamp(60px, 11vmin, 90px);
+        fill: #6b78a3;
+        animation-delay: 0.2s;
+      }
+      .jlz-splash-text--2 {
+        font-size: clamp(46px, 9vmin, 68px);
+        fill: #5a6a8e;
+        animation-delay: 0.4s;
+      }
+      .jlz-splash-text--3 {
+        font-size: clamp(32px, 6vmin, 48px);
+        fill: #4a5a7e;
+        animation-delay: 0.6s;
+      }
+      .jlz-splash-text--4 {
+        font-size: clamp(22px, 4.5vmin, 34px);
+        fill: #3a4a6e;
+        animation-delay: 0.8s;
+      }
       @keyframes jlz-splash-fade {
-        from { opacity: 0; }
-        to   { opacity: 1; }
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
       }
       /* OUT — scale down + fade. No animation conflict. */
       #jlz-app-loader.fade-out .jlz-splash-svg {
@@ -150,11 +198,17 @@
         opacity: 0;
       }
       @media (prefers-reduced-motion: reduce) {
-        .jlz-splash-text { animation: none; opacity: 1; }
-        #jlz-app-loader.fade-out .jlz-splash-svg { transition: none; opacity: 0; }
+        .jlz-splash-text {
+          animation: none;
+          opacity: 1;
+        }
+        #jlz-app-loader.fade-out .jlz-splash-svg {
+          transition: none;
+          opacity: 0;
+        }
       }
 
-      /* CRT curtains — split apart on Enter */
+      /* Split curtains — open on Enter */
       .jlz-loader-curtain {
         position: absolute;
         left: 0;
@@ -164,10 +218,18 @@
         z-index: 10011;
         transition: transform 0.8s cubic-bezier(0.65, 0, 0.35, 1);
       }
-      .jlz-loader-curtain--top { top: 0; }
-      .jlz-loader-curtain--bottom { bottom: 0; }
-      #jlz-app-loader.fade-out .jlz-loader-curtain--top { transform: translateY(-100%); }
-      #jlz-app-loader.fade-out .jlz-loader-curtain--bottom { transform: translateY(100%); }
+      .jlz-loader-curtain--top {
+        top: 0;
+      }
+      .jlz-loader-curtain--bottom {
+        bottom: 0;
+      }
+      #jlz-app-loader.fade-out .jlz-loader-curtain--top {
+        transform: translateY(-100%);
+      }
+      #jlz-app-loader.fade-out .jlz-loader-curtain--bottom {
+        transform: translateY(100%);
+      }
 
       /* Seam glow at curtain split */
       .jlz-loader-seam {
@@ -186,9 +248,15 @@
         animation: jlz-seam-flash 0.5s ease-out forwards;
       }
       @keyframes jlz-seam-flash {
-        0% { opacity: 0; }
-        20% { opacity: 1; }
-        100% { opacity: 0; }
+        0% {
+          opacity: 0;
+        }
+        20% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 0;
+        }
       }
 
       /* Loader content — Enter button centered inside sq-4 */
@@ -201,8 +269,13 @@
         opacity: 1;
         transition: opacity 0.3s ease;
       }
-      #jlz-app-loader.fade-out .jlz-loader-content { opacity: 0; }
-      #jlz-app-loader.fade-out .jlz-config { opacity: 0; transition: opacity 0.3s ease; }
+      #jlz-app-loader.fade-out .jlz-loader-content {
+        opacity: 0;
+      }
+      #jlz-app-loader.fade-out .jlz-config {
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
 
       /* Progress ring — SVG stroke-dashoffset driven by JS.
          Perimeter of sq-4 rect (266×266) = 4×266 = 1064.
@@ -231,7 +304,9 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: opacity 0.5s ease, color 0.2s ease;
+        transition:
+          opacity 0.5s ease,
+          color 0.2s ease;
         opacity: 0.5;
       }
       .jlz-splash-enter.is-ready {
@@ -274,7 +349,9 @@
         border-color: rgba(255, 255, 255, 0.3);
         color: #fff;
       }
-      .jlz-config__btn.is-off { opacity: 0.4; }
+      .jlz-config__btn.is-off {
+        opacity: 0.4;
+      }
 
       /* Skip link — visible on focus (WCAG 2.4.1) */
       .skip-link {
@@ -303,7 +380,7 @@
   <body data-app-mode="full" data-page="home">
     <a href="#section-intro" class="skip-link">Skip to main content</a>
 
-    <!-- App loader — seamless splash overlay. SVG squares + CRT curtains + progress.
+    <!-- App loader — seamless splash overlay. SVG squares + split curtains + progress.
          three.js loads LAZY (dynamic import in entry-app.ts) — does NOT block FCP.
          Fades out (curtains split) when Experience.init() completes. -->
     <div id="jlz-app-loader" aria-live="polite" aria-label="Loading 3D experience">
@@ -316,40 +393,80 @@
           <path id="sq-4" d="M567,567 L833,567 L833,833 L567,833 Z" />
         </defs>
         <text class="jlz-splash-text jlz-splash-text--1">
-          <textPath href="#sq-1" textLength="3600">JUSTLOVEJAZZ · WEB DESIGN STUDIO · CRAFTED WITH GLASS MOTION LIGHT&nbsp;</textPath>
+          <textPath href="#sq-1" textLength="3600">
+            JUSTLOVEJAZZ · WEB DESIGN STUDIO · CRAFTED WITH GLASS MOTION LIGHT&nbsp;
+          </textPath>
         </text>
         <text class="jlz-splash-text jlz-splash-text--2">
-          <textPath href="#sq-2" textLength="2544">WEBGPU · THREE.JS · TSL · UIKIT · INTER&nbsp;</textPath>
+          <textPath href="#sq-2" textLength="2544">
+            WEBGPU · THREE.JS · TSL · UIKIT · INTER&nbsp;
+          </textPath>
         </text>
         <text class="jlz-splash-text jlz-splash-text--3">
           <textPath href="#sq-3" textLength="1704">EST 2019 · REMOTE · EU&nbsp;</textPath>
         </text>
         <!-- Progress ring — rect on sq-4 path, stroke-dashoffset = progress -->
-        <rect x="567" y="567" width="266" height="266" fill="none"
-              stroke="rgba(107,120,163,0.15)" stroke-width="2"
-              class="jlz-splash-progress-bg" />
-        <rect x="567" y="567" width="266" height="266" fill="none"
-              stroke="#6b78a3" stroke-width="2"
-              class="jlz-splash-progress-ring"
-              stroke-dasharray="1064" stroke-dashoffset="1064"
-              transform="rotate(-90 700 700)" />
+        <rect
+          x="567"
+          y="567"
+          width="266"
+          height="266"
+          fill="none"
+          stroke="rgba(107,120,163,0.15)"
+          stroke-width="2"
+          class="jlz-splash-progress-bg"
+        />
+        <rect
+          x="567"
+          y="567"
+          width="266"
+          height="266"
+          fill="none"
+          stroke="#6b78a3"
+          stroke-width="2"
+          class="jlz-splash-progress-ring"
+          stroke-dasharray="1064"
+          stroke-dashoffset="1064"
+          transform="rotate(-90 700 700)"
+        />
       </svg>
 
-      <!-- CRT curtains — closed during loading, split apart on ready -->
+      <!-- Split curtains — closed during loading, open once ready -->
       <div class="jlz-loader-curtain jlz-loader-curtain--top"></div>
       <div class="jlz-loader-curtain jlz-loader-curtain--bottom"></div>
       <div class="jlz-loader-seam"></div>
       <!-- Loader content — Enter button appears inside sq-4 when ready -->
       <div class="jlz-loader-content">
-        <button class="jlz-splash-enter" id="jlz-splash-enter" type="button" aria-label="Enter JUSTLOVEJAZZ experience">Enter</button>
+        <button
+          class="jlz-splash-enter"
+          id="jlz-splash-enter"
+          type="button"
+          aria-label="Enter JUSTLOVEJAZZ experience"
+        >
+          Enter
+        </button>
       </div>
 
       <!-- Config switchers (top-right) — sound + language. Fade out with splash. -->
       <div class="jlz-config" role="toolbar" aria-label="Experience configuration">
-        <button class="jlz-config__btn is-off" id="cfg-sound" type="button" aria-label="Toggle sound" aria-pressed="false" title="Sound: Off">
+        <button
+          class="jlz-config__btn is-off"
+          id="cfg-sound"
+          type="button"
+          aria-label="Toggle sound"
+          aria-pressed="false"
+          title="Sound: Off"
+        >
           <span aria-hidden="true">♪</span>
         </button>
-        <button class="jlz-config__btn" id="cfg-lang" type="button" aria-label="Toggle language" aria-pressed="false" title="Language: EN">
+        <button
+          class="jlz-config__btn"
+          id="cfg-lang"
+          type="button"
+          aria-label="Toggle language"
+          aria-pressed="false"
+          title="Language: EN"
+        >
           <span>EN</span>
         </button>
       </div>
@@ -365,36 +482,38 @@
          Calls window.experience.triggerSplashOpener() if available.
          entry-app.ts does NOT wire its own click — only shows Enter button. -->
     <script>
-      (function() {
-        var btn = document.getElementById('jlz-splash-enter');
-        var loader = document.getElementById('jlz-app-loader');
-        if (!btn || !loader) return;
+      ;(function () {
+        var btn = document.getElementById('jlz-splash-enter')
+        var loader = document.getElementById('jlz-app-loader')
+        if (!btn || !loader) return
 
         // Single click handler — works with or without entry-app.ts.
         // Button is disabled (pointer-events:none) until .is-ready is added
         // by entry-app.ts when jlz:webgl-ready fires. This guard is a second
         // line of defense against clicks during the disabled state.
-        btn.addEventListener('click', function() {
-          if (!btn.classList.contains('is-ready')) return;
-          if (loader.classList.contains('fade-out')) return;
-          loader.classList.add('fade-out');
+        btn.addEventListener('click', function () {
+          if (!btn.classList.contains('is-ready')) return
+          if (loader.classList.contains('fade-out')) return
+          loader.classList.add('fade-out')
 
           // Dispatch splash-entered event — triggers BlurFade + NoiseText
           // animations AFTER splash starts fading (user sees them as 3D reveals)
           // Also remove scrollspy-pending so content becomes visible.
-          document.body.classList.remove('scrollspy-pending');
-          window.dispatchEvent(new CustomEvent('jlz:splash-entered'));
+          document.body.classList.remove('scrollspy-pending')
+          window.dispatchEvent(new CustomEvent('jlz:splash-entered'))
 
           // Trigger bakuCube opener at mid-curtain-split (400ms of 800ms)
-          setTimeout(function() {
+          setTimeout(function () {
             if (window.experience && window.experience.triggerSplashOpener) {
-              window.experience.triggerSplashOpener();
+              window.experience.triggerSplashOpener()
             }
-          }, 400);
+          }, 400)
 
           // Remove loader after curtains fully split
-          setTimeout(function() { loader.remove(); }, 1200);
-        });
+          setTimeout(function () {
+            loader.remove()
+          }, 1200)
+        })
 
         // No premature fallback — the Enter button stays DISABLED until
         // entry-app.ts fires jlz:webgl-ready (3D fully initialized). Under
@@ -402,15 +521,16 @@
         // progress ring + "Loading" state keeps the user informed. If init()
         // crashes, entry-app.ts fires jlz:webgl-failed and shows an error.
         // The only hard fallback here is a 60s safety net for total failure.
-        setTimeout(function() {
+        setTimeout(function () {
           if (!btn.classList.contains('is-ready')) {
-            var content = btn.parentElement;
+            var content = btn.parentElement
             if (content) {
-              content.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,0.7);font-family:Inter,sans-serif;max-width:320px;"><p style="font-size:0.75rem;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,100,100,0.8);margin:0 0 0.5rem;">3D Failed</p><p style="font-size:0.8rem;line-height:1.4;margin:0 0 1rem;">The 3D experience could not load. Your browser may not support WebGL2, or the app bundle failed to download.</p><a href="/" style="font-size:0.7rem;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;color:#6b78a3;text-decoration:none;border:1px solid rgba(107,120,163,0.3);padding:0.5rem 1rem;border-radius:999px;">Retry</a></div>';
+              content.innerHTML =
+                '<div style="text-align:center;color:rgba(255,255,255,0.7);font-family:Inter,sans-serif;max-width:320px;"><p style="font-size:0.75rem;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,100,100,0.8);margin:0 0 0.5rem;">3D Failed</p><p style="font-size:0.8rem;line-height:1.4;margin:0 0 1rem;">The 3D experience could not load. Your browser may not support WebGL2, or the app bundle failed to download.</p><a href="/" style="font-size:0.7rem;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;color:#6b78a3;text-decoration:none;border:1px solid rgba(107,120,163,0.3);padding:0.5rem 1rem;border-radius:999px;">Retry</a></div>'
             }
           }
-        }, 60000);
-      })();
+        }, 60000)
+      })()
     </script>
   </body>
 </html>

@@ -1,4 +1,4 @@
-// Section0 — Lab (secret left).
+// Section0 — canonical Lab scene behind the public Contact finale.
 // The ambient visual belongs to EnvSphere so the DOM content remains the focus.
 import * as THREE from 'three'
 

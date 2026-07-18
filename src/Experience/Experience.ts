@@ -15,7 +15,7 @@ import { FullscreenOverlay } from '../UI/FullscreenOverlay'
 import { NoiseText } from './NoiseText'
 
 import { SfxSystem } from '../core/SfxSystem'
-import { JoystickNav } from '../UI/JoystickNav'
+import { CinematicNav } from '../UI/CinematicNav'
 import { UIMenu } from '../UI/UIMenu'
 // worldDNA.ts removed — TSL node system never attached (attachWorldDNA never
 // called). updateWorldDNAAudio set uniforms nobody read. All dead.
@@ -53,8 +53,7 @@ export class Experience {
   private _splashEnteredHandler: (() => void) | null = null
   private _openProjectHandler: ((e: Event) => void) | null = null
   private _routeChangeCloseOverlayHandler: (() => void) | null = null
-  // No dedicated header control opens the secret menu; joystick right and
-  // ArrowRight are its entry points.
+  // Menu and Contact finale are opened from the persistent cinematic shell.
   private _wobblePulseHandler: (() => void) | null = null
   private _gotoSectionByHashHandler: ((e: Event) => void) | null = null
   private _showreelPlayHandler: (() => void) | null = null
@@ -80,7 +79,7 @@ export class Experience {
   private _onMouseMoveForTrail: (() => void) | null = null
   private _mouseTrailRafPending = false
   public sfx: SfxSystem = new SfxSystem()
-  private _circNav: JoystickNav | null = null
+  private _storyNav: CinematicNav | null = null
   private _needsRender = true // start true to render the first frame
   private _bakuCarouselActive = false // BakuCarousel is morphed/scrolling
   // A4: ambient breathing — periodic 1-frame refresh in idle (no continuous loop)
@@ -107,8 +106,8 @@ export class Experience {
   private _particleReductionApplied = false
   // (startAudioHandler removed — AudioSystem deleted, was dead code)
 
-  // (SECTION_LABELS removed — was passed to UIMenu/JoystickNav via options
-  //  that are no longer used. Section labels are in WorldConfig.domSection.)
+  // SECTION_LABELS removed — the cinematic navigator derives labels from the
+  // rendered, translated section headings.
   constructor(private _ui: UIManager) {
     this.sizes = new Sizes()
     this.time = new Time()
@@ -303,9 +302,9 @@ export class Experience {
   }
 
   async init() {
-    // NOTE: SmoothScroll/Lenis was removed — SwipeNav drives section
-    // navigation (no page scroll). ProjectOverlay locks body overflow
-    // directly when the fullscreen overlay is open.
+    // NOTE: SmoothScroll/Lenis remains unnecessary: CinematicNav uses the
+    // browser's vertical scrolling and snap behavior. ProjectOverlay locks
+    // body overflow directly while the fullscreen overlay is open.
     this._reducedMotion = prefersReducedMotion()
     this.contentReveal = new ContentReveal()
     this.cursor = new Cursor(this.sfx)
@@ -378,32 +377,27 @@ export class Experience {
     // WebGPURenderer it may fail (duck-typed), so we fall back gracefully.
     this.setupEnvironment()
 
-    // JoystickNav — joystick-based section navigation
-    this._circNav = new JoystickNav(this.scene, this.camera.instance, 6)
-    this._circNav.onSectionChange((idx) => {
-      // Secret sides do not wait for the scroll-progress transform: their
-      // background must begin its reveal as soon as the joystick selects them.
+    // CinematicNav — vertical native story track plus top/bottom sheets.
+    this._storyNav = new CinematicNav(this.scene, this.camera.instance, 6)
+    this._storyNav.onSectionChange((idx) => {
+      // Sheets do not wait for scroll progress: the background begins its
+      // reveal as soon as Menu or Contact is selected.
       this.world?.envSphere.setActiveSection(idx)
       this._uiMenu?.setActive(idx)
       this._needsRender = true
     })
-    this._circNav.onActiveChange((active) => {
+    this._storyNav.onActiveChange((active) => {
       if (active) this._needsRender = true
     })
 
     // UIMenu
     this._uiMenu = new UIMenu()
     this._uiMenu.onNavigate((idx) => {
-      this._circNav?.goToSection(idx)
+      this._storyNav?.goToSection(idx)
     })
 
-    // Menu section 5 is entered through joystick right or ArrowRight; no
-    // separate jlz:goto-nav listener is needed.
-
-    // JoystickNav is a DOM overlay (fixed bottom-center) — append to body.
-    // JoystickNav is position:fixed (sits ON the dock tools row, centered).
-    // Append to body — CSS positions it via .jlz-joystick { position: fixed }.
-    document.body.appendChild(this._circNav.el)
+    // The compact storyline stays visible while the scene and DOM track move.
+    document.body.appendChild(this._storyNav.el)
 
     // DevPanel — created AFTER nav so it can read current section
     if (import.meta.env.DEV) {
@@ -456,10 +450,6 @@ export class Experience {
       if (document.hidden) r.setAnimationLoop(null)
       else r.setAnimationLoop((t: number) => this.update(t))
     }
-    // Global screen border — CRT curved shader border, applied via
-    // RenderPipeline composite (works on both WebGL2 and WebGPU paths).
-    this.renderer.pipeline?.setGlobalBorder(0.4)
-
     document.addEventListener('visibilitychange', this._onVisibilityChange)
 
     // ── DrawTrail: trigger render on mousemove (Works section only) ──
@@ -520,7 +510,7 @@ export class Experience {
     window.addEventListener('jlz:open-project', this._openProjectHandler)
 
     // ── Close overlay on route change ──
-    // When SPA navigates (joystick menu subnav click, browser back, etc.),
+    // When SPA navigates (Menu subnav click, browser back, etc.),
     // close any open FullscreenOverlay. isOpen checks UIKit's native uk-open
     // class — no custom flag to get out of sync.
     this._routeChangeCloseOverlayHandler = () => {
@@ -546,13 +536,13 @@ export class Experience {
     window.addEventListener('jlz:wobble-pulse', this._wobblePulseHandler)
 
     // ── Hash navigation from menu overlay (e.g. /manifesto#section-manifesto-02) ──
-    // Dispatched by router.navigateToPage after renderView. JoystickNav finds
+    // Dispatched by router.navigateToPage after renderView. CinematicNav finds
     // the target section by hash ID and activates it. Without this, menu
     // subsection clicks always land on section 1 (hash silently dropped).
     this._gotoSectionByHashHandler = (e: Event) => {
       const detail = (e as CustomEvent<{ hash: string }>).detail
       if (detail?.hash) {
-        this._circNav?.goToSectionByHash(detail.hash)
+        this._storyNav?.goToSectionByHash(detail.hash)
       }
     }
     window.addEventListener('jlz:goto-section-by-hash', this._gotoSectionByHashHandler)
@@ -671,19 +661,17 @@ export class Experience {
     // stage is still needed for the on-demand rendering check below.
     const stage = this.bus.get('intro:stage')
 
-    // Navigation: CircularNav update
-    this._circNav?.update()
+    // Navigation: read the native vertical story track.
+    this._storyNav?.update()
 
-    // (baku.setTransition block removed — _circNav._progress was always 0
-    //  (dead field), so this always evaluated to setTransition(0, 0) = no-op.
-    //  baku's _transitionT/_transitionDir stay at 0/0, which is correct for
-    //  the trigger-model navigation — transitions are driven by rotateToFace.)
+    // World reads continuous story progress directly; section arrivals still
+    // trigger the cube face rotation below.
 
     // ── On-demand rendering ──
     // Only render when something is actually changing. When idle (settled
     // on a section, no transition, no carousel), the last rendered frame
     // stays on screen and GPU is idle.
-    const navActive = this._circNav?.isActive() ?? false
+    const navActive = this._storyNav?.isActive() ?? false
     const introActive = this.bus.isAnimating('intro:stage') || stage < 1
     // Compute carousel active state NOW (not from previous frame) — the
     // carousel may have started morphing this frame via setActive() in
@@ -766,7 +754,7 @@ export class Experience {
     }
 
     // Always update navigation + world state (cheap), but only render when needed
-    const ns = this._circNav?.getOverallProgress() ?? 0
+    const ns = this._storyNav?.getOverallProgress() ?? 0
     const { cameraTarget, worldState } = this.world.updateTransform(ns)
     this.world.update(dt, this._needsRender)
     // Update showreel button shader (TSL uniforms + hover/click animation)
@@ -1033,7 +1021,7 @@ export class Experience {
     // on hot-reload (Vite HMR) and on explicit teardown.
     this.sizes.destroy()
     input.destroy()
-    this._circNav?.dispose()
+    this._storyNav?.dispose()
     this.sfx.dispose()
     // scene.environment PMREM texture — not previously disposed (leak on
     // HMR teardown). Dispose the texture + clear the reference.

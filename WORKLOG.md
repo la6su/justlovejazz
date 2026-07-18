@@ -7,6 +7,50 @@ inventories or release notes here. Git history retains the detailed record.
 
 <!-- WORKLOG:ENTRIES -->
 
+## 2026-07-18 — Vertical interaction and layer polish
+
+### Decision
+
+Restored native vertical scrolling for the four story frames after interaction
+testing showed that horizontal navigation was less discoverable. The Works
+carousel now ignores the wheel, claims only a horizontal drag after a small
+axis check, and has lower rotational response and momentum. The splash and
+project modal each own a higher layer than the fixed chrome; the modal also
+declares its own dark UIkit inverse mode. Removed the scanline overlay and the
+active CRT screen-border pass.
+
+### Verification
+
+- Checked the splash layering in a live desktop browser session.
+- Type-check, lint (0 errors; 54 existing warnings), production build, 86 unit
+  tests and all 9 Playwright Chromium tests pass.
+
+## 2026-07-18 — Vertical cinematic narrative
+
+### Decision
+
+Replaced the joystick interaction with a native vertical scroll-snap story
+across the four main frames. A TSL `CinematicField` now carries one continuous
+line, travelling energy and fluid islands through the 3D scene. Menu uses the
+canonical section-5 state as a full-screen desktop/compact mobile top sheet;
+the canonical section-0 slot keeps its stable Lab identity internally but now
+presents a public Contact finale with Telegram as the primary action. UIkit
+continues to own Menu nav expansion and close-button semantics. The remaining
+chrome is deliberately lighter: the top bar has no shared glass backing, the
+chapter control sits beside Contact, and section footers use an editorial rule
+instead of a second floating panel. The app no longer enables CRT scanlines or
+the renderer's global screen-border pass. The Works carousel only owns a
+horizontal drag, preserving native vertical scrolling and direct card taps.
+
+### Verification
+
+- Visually checked Studio, Services, Menu and Contact at 1440 × 900 and
+  390 × 844, including sheet close behavior, story jumps and the shader layer.
+- Browser console remained clear. Lint has 0 errors; type-check, production
+  build, all 86 unit tests and all 9 Chromium tests pass. The Three bundle is
+  332.53 KB gzip, inside its 350 KB budget. Repository-wide formatting still
+  reports the known baseline (43 files) tracked by the dedicated backlog item.
+
 ## 2026-07-16 — Video-first project presentation
 
 ### Decision

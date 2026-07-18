@@ -219,7 +219,7 @@ export class WebGPUPostPipeline {
     //         color *= (edge.x * edge.y)  if uBorder > 0
     //
     // edge is vec2, but edge.x * edge.y = scalar. All RGB channels multiply by same
-    // scalar → uniform blackening at edges (true CRT frame effect).
+    // scalar → uniform blackening at edges (disabled by project presets).
     // Gate: step(0.0, _borderStrength) → 0 when off, 1 when any border > 0.
     // mix(1.0, edgeScalar, gate) = edgeScalar when border enabled, 1.0 when off.
     // TSL note: smoothstep() types only accept FloatOrNumber but at runtime WGSL compiles

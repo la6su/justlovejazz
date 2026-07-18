@@ -21,18 +21,17 @@
 // this component renders the carousel cards on top, independently.
 
 import * as THREE from 'three'
-// uiChrome.ts removed — inline the guard here.
-// #jlz-menu-modal no longer exists (menu is now section 5 / page-menu overlay).
-// Guard against: joystick, project overlay, app loader, and the menu overlay
-// itself (data-section="menu" on home, data-page-section="page-menu" on content).
+// uiChrome.ts removed — inline the guard here. Guard against the cinematic
+// navigator, project overlay, app loader and both responsive sheets.
 function isUiChromeEvent(e: Event): boolean {
   const target = e.target as HTMLElement | null
   if (!target) return false
-  return !!target.closest('#joystick-nav, #jlz-fs-overlay, #jlz-app-loader, [data-section="menu"], [data-page-section="page-menu"]')
+  return !!target.closest(
+    '#cinematic-nav, #jlz-fs-overlay, #jlz-app-loader, [data-cinematic-menu], [data-contact-footer]',
+  )
 }
 function isMenuOpen(): boolean {
-  // Menu overlay is active when its section has .section-active
-  return !!document.querySelector('[data-section="menu"].section-active, [data-page-section="page-menu"].section-active')
+  return document.body.dataset.cinematicSheet === 'menu'
 }
 import { PROJECTS } from '../../Data/Projects'
 import { createRoundedRectGeometry } from '../../Utils/roundedRectGeometry'
@@ -51,14 +50,13 @@ const CARD_H = 0.7
 const CUBE_SIZE = 0.8
 const CUBE_HALF = CUBE_SIZE / 2
 const ARC_PEAK = 0.8 // y-height of the arc trajectory peak (mid-morph bloom)
-const SCROLL_EASE = 0.1
-const WHEEL_SENSITIVITY = 0.012
-const DRAG_SENSITIVITY = 0.01
+const SCROLL_EASE = 0.065
+const DRAG_SENSITIVITY = 0.006
 const MORPH_EASE = 0.07
 const TAP_THRESHOLD = 6 // px — if pointerup within this distance of down, it's a tap
 // Phase 4: momentum + rubber-band + auto-advance
-const MOMENTUM_DECAY = 0.92 // per-frame velocity decay after drag release
-const MOMENTUM_THRESHOLD = 0.0005 // below this → snap to nearest card
+const MOMENTUM_DECAY = 0.84 // per-frame velocity decay after drag release
+const MOMENTUM_THRESHOLD = 0.0007 // below this → snap to nearest card
 const RUBBER_BAND_RESISTANCE = 0.35 // drag beyond bounds = 35% effective
 const AUTO_ADVANCE_INTERVAL = 4500 // ms — auto-advance every 4.5s
 const SNAP_ANGLE = (Math.PI * 2) / 6 // 6 cards = 60° between each
@@ -92,13 +90,11 @@ export class BakuCarousel extends THREE.Group {
   private dragStartX = 0
   private dragStartY = 0
   private dragMoved = false
-  private wheelHandler: ((e: WheelEvent) => void) | null = null
+  private dragAxis: 'pending' | 'carousel' | 'scroll' = 'pending'
   private pointerDownHandler: ((e: PointerEvent) => void) | null = null
   private pointerMoveHandler: ((e: PointerEvent) => void) | null = null
   private pointerUpHandler: ((e: PointerEvent) => void) | null = null
-  // (keydownHandler removed — arrow keys now handled ONLY by JoystickNav.
-  //  BakuCarousel was intercepting ArrowLeft/Right for its own card navigation,
-  //  which prevented the joystick keyboard arrows from cycling sections.)
+  // (keydownHandler removed — story arrows are owned by CinematicNav.)
   // C11 fix: canvas hover listeners stored as fields so they can be removed
   // in dispose(). Previously anonymous → leaked on every Works-section-enter.
   private _canvasEnterHandler: ((e: PointerEvent) => void) | null = null
@@ -245,16 +241,6 @@ export class BakuCarousel extends THREE.Group {
   }
 
   private addEventListeners(): void {
-    this.wheelHandler = (e: WheelEvent) => {
-      if (!this._active || this._morphT < 0.5) return
-      if (isMenuOpen() || isUiChromeEvent(e)) return
-      // Don't intercept while CircularNav transition is in progress
-      const nav = (window as unknown as { experience?: { _circNav?: { isActive: () => boolean } } }).experience?._circNav
-      if (nav?.isActive()) return
-      e.preventDefault()
-      this.scroll.target += e.deltaY * WHEEL_SENSITIVITY
-      this.scheduleSnap()
-    }
     this.pointerDownHandler = (e: PointerEvent) => {
       if (!this._active || this._morphT < 0.5) return
       if (isMenuOpen() || isUiChromeEvent(e)) return
@@ -262,13 +248,11 @@ export class BakuCarousel extends THREE.Group {
       // content pages the window listener would block WorkCard clicks if
       // the carousel's _active flag were stuck true from a prior home visit).
       if (document.body.dataset.page !== 'home') return
-      // Don't intercept while CircularNav transition is in progress
-      const nav = (window as unknown as { experience?: { _circNav?: { isActive: () => boolean } } }).experience?._circNav
-      if (nav?.isActive()) return
       this.isDown = true
       this.dragStartX = e.clientX
       this.dragStartY = e.clientY
       this.dragMoved = false
+      this.dragAxis = 'pending'
       this.velocity = 0 // reset velocity on new drag
       // Stop auto-advance while dragging
       this.stopAutoAdvance()
@@ -277,11 +261,20 @@ export class BakuCarousel extends THREE.Group {
       if (!this.isDown || !this._active) return
       const dx = e.clientX - this.dragStartX
       const dy = e.clientY - this.dragStartY
-      // Mark as moved if beyond tap threshold (so pointerup knows it was a drag, not a tap)
-      if (Math.abs(dx) > TAP_THRESHOLD || Math.abs(dy) > TAP_THRESHOLD) {
+      if (
+        this.dragAxis === 'pending' &&
+        (Math.abs(dx) > TAP_THRESHOLD || Math.abs(dy) > TAP_THRESHOLD)
+      ) {
+        this.dragAxis = Math.abs(dx) > Math.abs(dy) ? 'carousel' : 'scroll'
         this.dragMoved = true
       }
-      if (this.dragMoved && e.cancelable) e.preventDefault()
+      if (this.dragAxis === 'scroll') {
+        this.isDown = false
+        if (this._active && !this.isHovered) this.startAutoAdvance()
+        return
+      }
+      if (this.dragAxis !== 'carousel') return
+      if (e.cancelable) e.preventDefault()
 
       // Phase 4: track velocity for momentum
       const delta = -dx * DRAG_SENSITIVITY
@@ -309,7 +302,7 @@ export class BakuCarousel extends THREE.Group {
       if (!this.isDown) return
       this.isDown = false
       // If pointer didn't move much → treat as a TAP on a carousel card
-      if (!this.dragMoved) {
+      if (!this.dragMoved && this.dragAxis === 'pending') {
         this.handleTap(e.clientX, e.clientY)
       } else {
         // Phase 4: momentum — apply velocity decay in update() until threshold
@@ -319,10 +312,9 @@ export class BakuCarousel extends THREE.Group {
       // Resume auto-advance after drag ends (if not hovering)
       if (this._active && !this.isHovered) this.startAutoAdvance()
     }
-    // (keyboard handler removed — arrow keys now owned by JoystickNav only.
-    //  BakuCarousel navigation is via wheel + pointer drag. Enter/Space to
+    // (keyboard handler removed — story arrows are owned by CinematicNav.
+    //  BakuCarousel navigation is via horizontal pointer drag. Enter/Space to
     //  open the front card is handled by Experience.ts click raycaster.)
-    window.addEventListener('wheel', this.wheelHandler, { passive: false })
     window.addEventListener('pointerdown', this.pointerDownHandler)
     window.addEventListener('pointermove', this.pointerMoveHandler, { passive: false })
     window.addEventListener('pointerup', this.pointerUpHandler)
@@ -510,11 +502,7 @@ export class BakuCarousel extends THREE.Group {
       // not at the right side (+X). This makes the active card face the camera.
       const baseAngle = (i / n) * Math.PI * 2 + Math.PI / 2
       const angle = baseAngle + ringRotation
-      this._tmpRingPos.set(
-        Math.cos(angle) * RING_RADIUS,
-        0,
-        Math.sin(angle) * RING_RADIUS,
-      )
+      this._tmpRingPos.set(Math.cos(angle) * RING_RADIUS, 0, Math.sin(angle) * RING_RADIUS)
       // Card faces inward (toward ring center / camera) — reuse scratch Euler
       this._tmpRingRot.set(0, -angle + Math.PI / 2, 0)
 
@@ -537,21 +525,22 @@ export class BakuCarousel extends THREE.Group {
   }
 
   dispose(): void {
-    if (this.wheelHandler) window.removeEventListener('wheel', this.wheelHandler)
     if (this.pointerDownHandler) window.removeEventListener('pointerdown', this.pointerDownHandler)
     if (this.pointerMoveHandler) window.removeEventListener('pointermove', this.pointerMoveHandler)
     if (this.pointerUpHandler) {
       window.removeEventListener('pointerup', this.pointerUpHandler)
       window.removeEventListener('pointercancel', this.pointerUpHandler)
     }
-    // (keydownHandler removal — arrow keys now owned by JoystickNav only)
+    // (keydownHandler removal — story arrows are owned by CinematicNav)
     // C11 fix: remove canvas hover listeners (canvas persists across carousel
     // disposal — it's owned by Renderer — so handlers would accumulate without this).
     if (this._canvasEnterHandler || this._canvasLeaveHandler) {
       const canvas = document.querySelector<HTMLElement>('canvas.canvas')
       if (canvas) {
-        if (this._canvasEnterHandler) canvas.removeEventListener('pointerenter', this._canvasEnterHandler)
-        if (this._canvasLeaveHandler) canvas.removeEventListener('pointerleave', this._canvasLeaveHandler)
+        if (this._canvasEnterHandler)
+          canvas.removeEventListener('pointerenter', this._canvasEnterHandler)
+        if (this._canvasLeaveHandler)
+          canvas.removeEventListener('pointerleave', this._canvasLeaveHandler)
       }
       this._canvasEnterHandler = null
       this._canvasLeaveHandler = null

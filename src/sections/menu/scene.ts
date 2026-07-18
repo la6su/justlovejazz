@@ -1,4 +1,4 @@
-// Section5 — Menu (secret right, nav overlay).
+// Section5 — Menu sheet scene.
 // EnvSphere owns the understated backdrop; no foreground object sits behind nav.
 import * as THREE from 'three'
 

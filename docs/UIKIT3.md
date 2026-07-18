@@ -16,7 +16,7 @@ Do not edit files under `master-quantum-flares`. Project-owned adaptations live 
 | Visual language, effects, variation variables and theme assets | Quantum Flares                                   | The selected baseline provides the intended feature                         |
 | Brand tokens and QF-variation palette bridge                   | `_import.less`, `_quantum-flares-overrides.less` | A project-wide semantic color, font, spacing or QF effect needs adaptation  |
 | Dark-surface color-mode bridge                                 | `_theme-fixes.less`                              | A QF component needs the correct inverse text mode on project dark surfaces |
-| 3D shell, joystick, bespoke overlays and route-specific layout | `main.less`                                      | No UIkit component covers the interaction or layout                         |
+| 3D shell, cinematic story/sheets and route-specific layout     | `main.less`                                      | No UIkit component covers the interaction or layout                         |
 | Standalone blog layout                                         | `blog.less`                                      | Semantic blog-only presentation                                             |
 
 ## Less assembly
@@ -40,7 +40,7 @@ Prefer this order of solutions:
 3. Use an existing QF variable/effect in `_quantum-flares-overrides.less` when it is the smallest way to retint or adapt that QF treatment.
 4. Add a scoped `.jlz-*` rule only for a real application-specific gap.
 
-Never reproduce a UIkit component in custom CSS/JavaScript just to change its appearance. In particular, do not rebuild modal, off-canvas, navbar, nav, accordion, grid, button, icon button or form behaviour. Keep one state owner: UIkit owns its `uk-open`/`uk-active` and accessibility state; application code owns route, joystick and 3D state.
+Never reproduce a UIkit component in custom CSS/JavaScript just to change its appearance. In particular, do not rebuild modal, off-canvas, navbar, nav, accordion, grid, button, icon button or form behaviour. Keep one state owner: UIkit owns its `uk-open`/`uk-active` and accessibility state; application code owns route, story/sheet and 3D state.
 
 ## Using YOOtheme Pro themes as a design library
 
@@ -62,16 +62,20 @@ YOOtheme Pro's style customizer itself is organised around global variables, the
 | Menu expandable items               | `sections/nav/template.ts` | `uk-nav` / `uk-parent` state is authoritative        |
 | Fullscreen project/showreel overlay | `FullscreenOverlay.ts`     | UIkit modal owns visibility and focus                |
 | Fixed configuration controls        | `UIMenu.ts`                | `.jlz-topbar` with language, theme and sound buttons |
-| Section navigation                  | `JoystickNav.ts`           | Custom DOM component; no equivalent UIkit component  |
+| Section navigation                  | `CinematicNav.ts`          | Native scroll track plus custom progress composition |
 | Works tilt cards                    | `WorkCards.ts`             | Custom interaction layered on semantic controls      |
 
-The menu is a two-column navigation section, not a modal or a dropbar. Its sub-links are SPA-aware; UIkit owns expansion while the application owns route changes.
+The menu is a full-viewport two-column composition on desktop and a compact
+top sheet on mobile, not a modal or a dropbar. Its sub-links are SPA-aware;
+UIkit owns expansion while the application owns route and sheet changes.
 
 ## State, accessibility and verification
 
 - Prefer UIkit's `uk-open`/`uk-active` classes to parallel custom flags.
 - Let UIkit modal/nav components manage their own keyboard and ARIA state.
-- Custom controls need an accessible name and keyboard operation. The dotnav marks the active target with `aria-current`.
+- Custom controls need an accessible name and keyboard operation. The
+  storyline marks the active target with `aria-current`; cinematic sheets make
+  background frames inert and restore launcher focus when closed.
 - Keep custom rules compatible with the app's auto/inverse theme and its reduced-motion policy.
 - After a visual change, verify dynamic route rendering and both theme modes; run the project checks in `docs/DEVELOPMENT.md`.
 

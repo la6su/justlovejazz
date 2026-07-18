@@ -8,8 +8,8 @@
 //   - lab        — Experiments (4 R&D areas)
 //   - contact    — Email / Social / Location / Form
 //
-// Joystick: down/up cycles 4 main sections; left → Lab, right → Contact
-// (shared side sections reachable from any page).
+// CinematicNav scrolls/swipes across each page's four main frames. Contact and
+// Menu are shared bottom/top sheets reachable from every page.
 
 import { homePage } from './home'
 import { servicesPage } from './content/services'

@@ -1,4 +1,4 @@
-// src/core/WorldConfig.ts — 6 sections (cube-map: 0=secret, 1=intro, 2-4=main, 5=secret)
+// src/core/WorldConfig.ts — 6 sections (0=Contact finale slot, 1-4=story, 5=Menu)
 
 import * as THREE from 'three'
 import { BakuRole } from './types'
@@ -143,10 +143,10 @@ type RawScene = {
   sceneTransition?: SceneControl['transition']
 }
 
-// 6 sections (4 main + 2 secret side: Lab=0, Menu=5) — 1:1 with cube faces
+// 6 sections (4 story frames + Contact finale/Lab=0 + Menu=5)
 // Index: 0=lab, 1=intro, 2=about, 3=works, 4=contact, 5=menu
 const RAW: RawScene[] = [
-  // ── Section 0: LAB (secret left) — Light BG, experiments ──
+  // ── Section 0: canonical LAB config, public Contact finale ──
   {
     id: 'sec_lab',
     context: 'LAB — Experiments',
@@ -332,7 +332,7 @@ const RAW: RawScene[] = [
     sceneObjects: { wireframeText: true },
     sceneTransition: { duration: 0.6, easing: 'ease-out' },
   },
-  // ── Section 5: MENU (secret right) — Dark BG, navigation overlay ──
+  // ── Section 5: MENU sheet — Dark BG, positive Y tilt ──
   {
     id: 'sec_menu',
     context: 'MENU — Navigation',

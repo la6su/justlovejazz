@@ -69,7 +69,7 @@ export function manifestoPage(): string {
   const [p1, p2, p3, p4] = PRINCIPLES
   return `
     <article class="jlz-page" data-page-view="manifesto">
-      <!-- 0: LAB OVERLAY (joystick left) -->
+      <!-- 0: CONTACT FINALE (canonical Lab runtime slot) -->
       ${labOverlaySection('content')}
       <!-- 1: Purpose (start, active) -->
       ${sectionShell('manifesto-01',
@@ -92,7 +92,7 @@ export function manifestoPage(): string {
         contentTop(p4!.num, p4!.title, p4!.lead, 'large', p4!.key + '.title', p4!.key + '.lead'),
         contentBottom(`${principleDesc(p4!.key, p4!.desc)}${principleReadMore(p4!.href)}`)
       )}
-      <!-- 5: NAVIGATION OVERLAY (joystick right) -->
+      <!-- 5: MENU SHEET -->
       ${navOverlaySection('content')}
     </article>
   `

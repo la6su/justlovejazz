@@ -27,4 +27,6 @@ changelog, not here. Move one item to **In progress** before implementation.
 
 - Keep entries actionable, uncompleted and short.
 - Put a detailed multi-phase design in one linked plan, not in this file.
+- Move only one scoped outcome into implementation at a time; define its
+  visible acceptance criteria and proportional checks before editing.
 - Update `WORKLOG.md` with decisions after completing a task.

@@ -161,8 +161,8 @@ body:not([data-page='home']) #spa-content {
    in _import.less) handles ALL UIKit components natively: headings, text,
    buttons, cards, navbar, etc. ThemeManager toggles `uk-light` on <body>.
 
-   Below: overrides ONLY for custom non-UIKit elements (joystick, hint,
-   nav-link, brand, menu toggle) that don't have UIKit inverse hooks.
+   Below: overrides ONLY for custom non-UIkit elements that do not have
+   inverse hooks. Some legacy selectors remain until the formatting cleanup.
    Selectors use `body.uk-light` (the native UIKit class). ThemeManager
    also toggles `light-theme` as a synonym for backward compat.
    ------------------------------------------------------------------ */
@@ -190,25 +190,6 @@ body.uk-light li.uk-active .jlz-nav-link {
 /* (body.uk-light .jlz-hint__text removed — .jlz-hint DOM element no longer
    exists. Subtitles now populates [data-eyebrow] inside the active section,
    themed via .jlz-eyebrow + body.uk-light .jlz-eyebrow below.) */
-
-body.uk-light .jlz-joystick__base {
-  background: rgba(0, 0, 0, 0.06);
-  border-color: rgba(0, 0, 0, 0.12);
-}
-
-body.uk-light .jlz-joystick__base.is-active {
-  background: rgba(0, 0, 0, 0.1);
-  border-color: rgba(0, 0, 0, 0.3);
-}
-
-body.uk-light .jlz-joystick__ball {
-  background: rgba(0, 0, 0, 0.2);
-  border-color: rgba(0, 0, 0, 0.15);
-}
-
-body.uk-light .jlz-joystick__hint {
-  color: rgba(0, 0, 0, 0.4);
-}
 
 /* ------------------------------------------------------------------
    Header — transparent dropbar navbar (Balou-inspired, minimal)
@@ -426,7 +407,7 @@ body.uk-light .jlz-joystick__hint {
 }
 
 .jlz-fs-overlay.uk-open {
-  z-index: 10010 !important;
+  z-index: 30010 !important;
 }
 
 .jlz-fs-dialog {
@@ -1038,31 +1019,8 @@ body.uk-light .jlz-eyebrow {
 
 .jlz-section-bottom {
   flex-shrink: 0;
-  /* Joystick stack at bottom center: base (110px) + hint (~16px) +
-     controls (~32px) + dotnav (~16px) + gaps ≈ 200px total height.
-     Reserve space so bottom content clears the full stack without overlap.
-     Was: joystick-size * 0.6 + space-4 (too small for the new stack). */
-  padding-bottom: calc(var(--jlz-joystick-size) * 1.8 + var(--jlz-space-6));
-}
-
-/* Subtle scanline overlay for TUI feel — very faint.
-   EXCLUDED for .jlz-menu-overlay — the scanline ::before with z-index: 1
-   was creating a stacking context issue that blocked clicks on nav items
-   inside the menu overlay. Menu overlay doesn't need scanlines. */
-#spa-content section[data-section]:not(.jlz-menu-overlay)::before,
-.jlz-page-section:not(.jlz-menu-overlay)::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent 0,
-    transparent 3px,
-    rgba(255, 255, 255, 0.035) 3px,
-    rgba(255, 255, 255, 0.035) 4px
-  );
-  z-index: 1;
+  /* Leave a clear runway for the compact contact + chapter controls. */
+  padding-bottom: calc(4.6rem + env(safe-area-inset-bottom, 0px));
 }
 
 /* ------------------------------------------------------------------
@@ -1846,16 +1804,828 @@ body.uk-light .jlz-showreel-trigger:focus-visible {
   line-height: 1;
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   CINEMATIC VERTICAL NARRATIVE
+   Project-owned layer over UIkit + Quantum Flares. UIkit continues to own
+   buttons, nav accordion, icon rendering and accessibility state; this layer
+   supplies the spatial composition and Fluid AI-inspired surfaces.
+   ═══════════════════════════════════════════════════════════════════ */
+
+body[data-page='home'] #spa-content,
+body:not([data-page='home']) #spa-content > .jlz-page {
+  width: 100vw;
+  height: 100dvh;
+  display: flex;
+  flex-flow: column nowrap;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  touch-action: pan-y pinch-zoom;
+  -webkit-overflow-scrolling: touch;
+}
+
+body[data-page='home'] #spa-content::-webkit-scrollbar,
+body:not([data-page='home']) #spa-content > .jlz-page::-webkit-scrollbar {
+  display: none;
+}
+
+body[data-page='home'] #spa-content > section[data-section]:not(.jlz-menu-overlay):not([data-contact-footer]),
+body:not([data-page='home']) .jlz-page > .jlz-page-section:not(.jlz-menu-overlay):not([data-contact-footer]) {
+  position: relative;
+  inset: auto;
+  flex: 0 0 100dvh;
+  width: 100vw;
+  min-height: 100dvh;
+  height: 100dvh;
+  display: flex !important;
+  overflow: clip;
+  pointer-events: auto;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  background: transparent;
+}
+
+body[data-page='home'] #spa-content > section[data-section]:not(.jlz-menu-overlay):not([data-contact-footer]) > .uk-container,
+body:not([data-page='home']) .jlz-page > .jlz-page-section:not(.jlz-menu-overlay):not([data-contact-footer]) > .uk-container {
+  width: min(100%, 96rem);
+  padding: clamp(6.2rem, 10vh, 8rem) clamp(1.25rem, 5vw, 5rem) clamp(6.5rem, 11vh, 8.5rem);
+}
+
+// The 3D canvas remains the dominant visual. Text is treated as editorial
+// captions, with a slim baseline rather than a second glass panel.
+[data-story-state] .jlz-section-top,
+[data-story-state] .jlz-section-bottom {
+  will-change: transform, opacity;
+  transition:
+    transform var(--jlz-duration-cinematic) var(--jlz-ease-entrance),
+    opacity var(--jlz-duration-slow) ease;
+}
+
+[data-story-state] .jlz-section-top {
+  width: min(100%, 52rem);
+  align-items: flex-start !important;
+  text-align: left !important;
+  transform: translate3d(var(--jlz-story-shift, 0), 0, 0);
+  opacity: var(--jlz-story-title-opacity, 1);
+}
+
+[data-story-state] .jlz-section-bottom {
+  width: min(100%, 32rem);
+  align-self: flex-end;
+  padding: 0.85rem 0 0;
+  border-top: 1px solid var(--jlz-color-fluid-border);
+  transform: translate3d(var(--jlz-story-shift-opposite, 0), 0, 0);
+  opacity: var(--jlz-story-panel-opacity, 1);
+}
+
+[data-section='about'] .jlz-section-top,
+[data-section='contact'] .jlz-section-top,
+[data-page-section$='-02'] .jlz-section-top,
+[data-page-section$='-04'] .jlz-section-top {
+  margin-left: auto;
+  align-items: flex-end !important;
+  text-align: right !important;
+}
+
+[data-section='about'] .jlz-section-bottom,
+[data-section='contact'] .jlz-section-bottom,
+[data-page-section$='-02'] .jlz-section-bottom,
+[data-page-section$='-04'] .jlz-section-bottom {
+  align-self: flex-start;
+  border-top-color: var(--jlz-color-fluid-border);
+}
+
+.jlz-section-bottom .jlz-service-desc {
+  margin-top: 0 !important;
+}
+
+// ── Persistent cinematic header ──
+.jlz-cinematic-shell {
+  position: relative;
+  z-index: 10020;
+}
+
+.jlz-topbar {
+  top: 0.85rem;
+  left: 0.85rem;
+  right: 0.85rem;
+  width: auto;
+  min-height: 2.75rem;
+  padding: 0.25rem 0;
+  pointer-events: auto;
+}
+
+.jlz-topbar__brand {
+  color: inherit;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  text-decoration: none;
+}
+
+.jlz-topbar__signal {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--jlz-color-text-subtle);
+  font-size: 0.64rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.jlz-topbar__signal-dot,
+.jlz-contact-launcher__orb {
+  width: 0.52rem;
+  height: 0.52rem;
+  display: inline-block;
+  border-radius: 50%;
+  background: var(--jlz-color-fluid-warm);
+  box-shadow: 0 0 0.85rem var(--jlz-color-fluid-warm);
+}
+
+.jlz-topbar-controls .uk-icon-button {
+  width: 2.55rem;
+  height: 2.55rem;
+  color: inherit;
+  background: transparent;
+}
+
+.jlz-menu-launcher {
+  min-height: 2.55rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0 1rem;
+  border-color: var(--jlz-color-fluid-border);
+  border-radius: var(--jlz-radius-full);
+  background: rgba(255, 255, 255, 0.09);
+  color: inherit;
+}
+
+.jlz-menu-launcher__glyph {
+  width: 1.1rem;
+  display: grid;
+  gap: 0.24rem;
+}
+
+.jlz-menu-launcher__glyph i {
+  height: 1px;
+  display: block;
+  background: currentColor;
+  transition: transform var(--jlz-duration-normal) var(--jlz-ease-state);
+}
+
+.is-menu-open .jlz-menu-launcher__glyph i:first-child {
+  transform: translateY(0.125rem) rotate(22deg);
+}
+
+.is-menu-open .jlz-menu-launcher__glyph i:last-child {
+  transform: translateY(-0.125rem) rotate(-22deg);
+}
+
+// ── Compact chapter control, paired with the contact launcher ──
+.jlz-storyline {
+  position: fixed;
+  left: 9.4rem;
+  bottom: 0.85rem;
+  z-index: 10018;
+  width: auto;
+  min-height: 3.55rem;
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  color: inherit;
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+  transition:
+    opacity var(--jlz-duration-normal) ease,
+    transform var(--jlz-duration-slow) var(--jlz-ease-entrance);
+}
+
+.jlz-storyline__status {
+  display: flex;
+  gap: 0.3rem;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+}
+
+.jlz-storyline__total {
+  color: var(--jlz-color-text-subtle);
+}
+
+.jlz-storyline__progress {
+  display: none;
+  overflow: hidden;
+  background: var(--jlz-color-border);
+}
+
+.jlz-storyline__progress-fill {
+  height: 100%;
+  display: block;
+  background: linear-gradient(90deg, var(--jlz-color-telegram), var(--jlz-color-fluid-warm));
+  box-shadow: 0 0 0.6rem currentColor;
+  transition: width 80ms linear;
+}
+
+.jlz-storyline__items {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.jlz-storyline__item {
+  width: 1.8rem;
+  min-width: 1.8rem;
+  min-height: 1.8rem;
+  padding: 0;
+  border: 0;
+  border-radius: var(--jlz-radius-full);
+  color: var(--jlz-color-text-subtle);
+  background: color-mix(in srgb, var(--jlz-color-text) 8%, transparent);
+  cursor: pointer;
+  font: inherit;
+  transition:
+    color var(--jlz-duration-fast) ease,
+    background var(--jlz-duration-fast) ease;
+}
+
+.jlz-storyline__item:hover,
+.jlz-storyline__item:focus-visible,
+.jlz-storyline__item.is-active {
+  color: var(--jlz-color-text);
+  background: rgba(255, 255, 255, 0.1);
+  outline: none;
+}
+
+.jlz-storyline__label {
+  display: none;
+}
+
+.jlz-storyline__number,
+.jlz-storyline__hint {
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.jlz-storyline__hint {
+  display: none;
+}
+
+.jlz-contact-launcher {
+  position: fixed;
+  left: 0.85rem;
+  bottom: 0.85rem;
+  z-index: 10019;
+  transition:
+    opacity var(--jlz-duration-normal) ease,
+    transform var(--jlz-duration-slow) var(--jlz-ease-entrance);
+}
+
+.jlz-contact-launcher__button {
+  min-height: 3.55rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0 1.15rem;
+  border: 1px solid var(--jlz-color-fluid-border);
+  border-radius: var(--jlz-radius-full) var(--jlz-radius-full) 1rem var(--jlz-radius-full);
+  background: var(--jlz-color-fluid-surface-strong);
+  color: var(--jlz-color-text);
+  box-shadow: var(--jlz-fluid-shadow);
+  backdrop-filter: blur(var(--jlz-fluid-blur));
+  -webkit-backdrop-filter: blur(var(--jlz-fluid-blur));
+}
+
+// ── Menu: full-screen desktop scene, compact top sheet on mobile ──
+#spa-content > .jlz-menu-overlay,
+.jlz-page > .jlz-menu-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 10010 !important;
+  width: 100vw;
+  height: 100dvh;
+  min-height: 0;
+  display: flex !important;
+  overflow: hidden;
+  visibility: hidden;
+  pointer-events: none !important;
+  opacity: 0;
+  color: var(--jlz-color-text);
+  background:
+    radial-gradient(circle at 76% 24%, rgba(255, 110, 64, 0.3), transparent 27%),
+    radial-gradient(circle at 31% 72%, rgba(92, 117, 255, 0.2), transparent 32%),
+    var(--jlz-color-fluid-surface);
+  backdrop-filter: blur(22px) saturate(145%);
+  -webkit-backdrop-filter: blur(22px) saturate(145%);
+  transform: translate3d(0, -104%, 0) scale(0.985);
+  transition:
+    transform var(--jlz-duration-epic) var(--jlz-ease-entrance),
+    opacity var(--jlz-duration-slow) ease,
+    visibility 0s linear var(--jlz-duration-epic);
+}
+
+body[data-cinematic-sheet='menu'] #spa-content > .jlz-menu-overlay,
+body[data-cinematic-sheet='menu'] .jlz-page > .jlz-menu-overlay {
+  visibility: visible;
+  pointer-events: auto !important;
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
+  transition-delay: 0s;
+}
+
+.jlz-menu-overlay .jlz-menu-container {
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  justify-content: flex-end;
+  padding: 6.4rem clamp(1.25rem, 5vw, 5rem) 4.5rem;
+}
+
+.jlz-menu-sheet__header,
+.jlz-menu-overlay .jlz-menu-col--stat,
+.jlz-menu-overlay .jlz-menu-nav__toggle {
+  opacity: 0;
+  transform: translate3d(0, 1.25rem, 0);
+  transition:
+    opacity var(--jlz-duration-normal) ease,
+    transform var(--jlz-duration-slow) var(--jlz-ease-entrance);
+}
+
+body[data-cinematic-sheet='menu'] .jlz-menu-sheet__header,
+body[data-cinematic-sheet='menu'] .jlz-menu-overlay .jlz-menu-col--stat,
+body[data-cinematic-sheet='menu'] .jlz-menu-overlay .jlz-menu-nav__toggle {
+  opacity: 1;
+  transform: none;
+}
+
+body[data-cinematic-sheet='menu'] .jlz-menu-overlay .jlz-menu-col--stat {
+  transition-delay: 100ms;
+}
+
+body[data-cinematic-sheet='menu'] .jlz-menu-overlay .jlz-menu-nav__toggle {
+  transition-delay: 150ms;
+}
+
+.jlz-menu-sheet__header {
+  margin-bottom: auto;
+  color: var(--jlz-color-text-subtle);
+  font-size: 0.68rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.jlz-sheet-close {
+  color: inherit;
+}
+
+.jlz-menu-overlay .jlz-menu-grid {
+  width: 100%;
+  max-width: none;
+  max-height: none;
+  grid-template-columns: minmax(18rem, 0.8fr) minmax(26rem, 1.55fr);
+  align-items: end;
+  gap: clamp(2rem, 8vw, 9rem);
+  margin: 0;
+  overflow: visible;
+}
+
+.jlz-menu-overlay .jlz-menu-col--stat {
+  min-height: 21rem;
+  justify-content: flex-end;
+  padding: clamp(1.5rem, 4vw, 3.5rem);
+  border: 1px solid var(--jlz-color-fluid-border);
+  border-radius: 5rem 5rem 1.4rem 5rem;
+  background:
+    radial-gradient(circle at 20% 15%, rgba(255, 255, 255, 0.22), transparent 30%),
+    rgba(255, 255, 255, 0.055);
+  box-shadow: var(--jlz-fluid-shadow);
+}
+
+.jlz-menu-overlay .jlz-menu-stat__num {
+  font-size: clamp(6rem, 16vw, 14rem);
+  color: inherit;
+}
+
+.jlz-menu-overlay .jlz-menu-nav__toggle {
+  min-height: clamp(3.6rem, 7vh, 5.4rem);
+  padding: 0.4rem 0;
+  color: var(--jlz-color-text-muted);
+}
+
+.jlz-menu-overlay .jlz-menu-nav__label {
+  font-size: clamp(1.7rem, 4vw, 4.5rem);
+  line-height: 0.94;
+  letter-spacing: -0.045em;
+}
+
+.jlz-menu-overlay .jlz-menu-nav__sub-link {
+  border-radius: var(--jlz-radius-full);
+}
+
+// ── Contact footer: bottom reveal with a shader-backed finale ──
+#spa-content > [data-contact-footer],
+.jlz-page > [data-contact-footer] {
+  position: fixed !important;
+  inset: auto 0 0 !important;
+  z-index: 10011 !important;
+  width: 100vw;
+  height: min(78dvh, 52rem) !important;
+  min-height: 30rem;
+  display: flex !important;
+  overflow: hidden;
+  visibility: hidden;
+  pointer-events: none !important;
+  opacity: 0;
+  color: var(--jlz-color-text);
+  border: 1px solid var(--jlz-color-fluid-border);
+  border-bottom: 0;
+  border-radius: 4.5rem 4.5rem 0 0;
+  background:
+    radial-gradient(circle at 18% 20%, rgba(42, 171, 238, 0.25), transparent 28%),
+    radial-gradient(circle at 78% 72%, rgba(255, 102, 51, 0.25), transparent 32%),
+    var(--jlz-color-fluid-surface);
+  box-shadow: 0 -30px 100px rgba(0, 0, 0, 0.36);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  transform: translate3d(0, 106%, 0) scale(0.985);
+  transition:
+    transform var(--jlz-duration-epic) var(--jlz-ease-entrance),
+    opacity var(--jlz-duration-slow) ease,
+    visibility 0s linear var(--jlz-duration-epic);
+}
+
+body[data-cinematic-sheet='footer'] #spa-content > [data-contact-footer],
+body[data-cinematic-sheet='footer'] .jlz-page > [data-contact-footer] {
+  visibility: visible;
+  pointer-events: auto !important;
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
+  transition-delay: 0s;
+}
+
+[data-contact-footer] > .uk-container {
+  position: relative;
+  z-index: 2;
+  width: min(100%, 96rem);
+  padding: clamp(3.2rem, 8vh, 6rem) clamp(1.3rem, 6vw, 6rem) clamp(2rem, 5vh, 4rem);
+}
+
+.jlz-contact-footer__intro {
+  width: min(100%, 72rem);
+  align-items: flex-start !important;
+  text-align: left !important;
+}
+
+.jlz-contact-footer__intro .studio-title {
+  max-width: 13ch;
+  font-size: clamp(2.6rem, 7.4vw, 7rem);
+  line-height: 0.88;
+}
+
+.jlz-contact-footer__kicker {
+  font-size: 0.67rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--jlz-color-text-subtle);
+}
+
+.jlz-contact-footer__actions {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.jlz-telegram-cta {
+  position: relative;
+  min-width: min(27rem, 100%);
+  min-height: 5.4rem;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 1rem;
+  overflow: hidden;
+  padding: 0.7rem 1.1rem;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: var(--jlz-radius-full) var(--jlz-radius-full) 1.6rem var(--jlz-radius-full);
+  color: #fff;
+  background: linear-gradient(120deg, #177cb8, var(--jlz-color-telegram));
+  box-shadow: 0 1.4rem 4rem rgba(42, 171, 238, 0.3);
+  text-align: left;
+  transition:
+    transform var(--jlz-duration-normal) var(--jlz-ease-emphasis),
+    box-shadow var(--jlz-duration-normal) ease;
+}
+
+.jlz-telegram-cta:hover,
+.jlz-telegram-cta:focus-visible {
+  color: #fff;
+  transform: translate3d(0, -0.25rem, 0) rotate(-0.5deg);
+  box-shadow: 0 1.8rem 5rem rgba(42, 171, 238, 0.42);
+  outline: none;
+}
+
+.jlz-telegram-cta__halo {
+  position: absolute;
+  width: 12rem;
+  height: 12rem;
+  right: -2rem;
+  top: -6rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.28);
+  filter: blur(1.2rem);
+}
+
+.jlz-telegram-cta__icon,
+.jlz-telegram-cta__arrow,
+.jlz-telegram-cta__copy {
+  position: relative;
+  z-index: 1;
+}
+
+.jlz-telegram-cta__icon {
+  width: 3.5rem;
+  height: 3.5rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.17);
+}
+
+.jlz-telegram-cta__copy {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.18;
+}
+
+.jlz-telegram-cta__label {
+  font-size: 1rem;
+  font-weight: 700;
+  text-transform: none;
+}
+
+.jlz-telegram-cta__handle {
+  font-size: 0.72rem;
+  opacity: 0.72;
+  text-transform: none;
+}
+
+.jlz-telegram-cta__arrow {
+  font-size: 1.35rem;
+}
+
+.jlz-contact-footer__email {
+  color: inherit;
+  font-size: 0.74rem;
+  letter-spacing: 0.05em;
+}
+
+.jlz-contact-footer__actions .jlz-sheet-close {
+  margin-left: auto;
+}
+
+body[data-cinematic-sheet] .jlz-storyline,
+body[data-cinematic-sheet] .jlz-contact-launcher {
+  opacity: 0;
+  pointer-events: none;
+  transform: translate3d(0, 1.2rem, 0);
+}
+
+body[data-cinematic-sheet] .jlz-contact-launcher {
+  transform: translate3d(0, 1.2rem, 0);
+}
+
+// A sheet is a new cinematic frame: keep the WebGPU scene, but dissolve the
+// previous chapter's DOM captions so translucent surfaces do not create a
+// typographic double exposure.
+body[data-cinematic-sheet] #spa-content > section[data-section]:not(.jlz-menu-overlay):not([data-contact-footer]) > .uk-container,
+body[data-cinematic-sheet] .jlz-page > .jlz-page-section:not(.jlz-menu-overlay):not([data-contact-footer]) > .uk-container {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.94);
+  transition:
+    opacity var(--jlz-duration-normal) ease,
+    transform var(--jlz-duration-cinematic) var(--jlz-ease-exit);
+}
+
+@media (max-width: 900px) {
+  .jlz-storyline {
+    left: 8.35rem;
+  }
+
+  .jlz-contact-launcher {
+    bottom: 5.1rem;
+  }
+
+  .jlz-contact-launcher__button {
+    min-height: 2.9rem;
+  }
+
+  .jlz-menu-overlay .jlz-menu-grid {
+    grid-template-columns: minmax(12rem, 0.7fr) minmax(20rem, 1.3fr);
+    gap: 2rem;
+  }
+}
+
+@media (max-width: 639px) {
+  .jlz-topbar {
+    top: 0.55rem;
+    left: 0.55rem;
+    right: 0.55rem;
+    min-height: 3.15rem;
+    padding: 0.35rem 0.38rem 0.35rem 0.85rem;
+  }
+
+  .jlz-topbar-controls {
+    gap: 0.2rem;
+  }
+
+  .jlz-topbar-controls .uk-icon-button {
+    width: 2.35rem;
+    height: 2.35rem;
+  }
+
+  .jlz-menu-launcher {
+    min-height: 2.35rem;
+    padding: 0 0.8rem;
+  }
+
+  body[data-page='home'] #spa-content > section[data-section]:not(.jlz-menu-overlay):not([data-contact-footer]) > .uk-container,
+  body:not([data-page='home']) .jlz-page > .jlz-page-section:not(.jlz-menu-overlay):not([data-contact-footer]) > .uk-container {
+    padding: 5.4rem 1.15rem 9rem;
+  }
+
+  [data-story-state] .jlz-section-top,
+  [data-story-state] .jlz-section-bottom {
+    width: 100%;
+  }
+
+  [data-story-state] .jlz-section-top,
+  [data-section='about'] .jlz-section-top,
+  [data-section='contact'] .jlz-section-top {
+    align-items: flex-start !important;
+    text-align: left !important;
+  }
+
+  [data-story-state] .jlz-section-bottom,
+  [data-section='about'] .jlz-section-bottom,
+  [data-section='contact'] .jlz-section-bottom {
+    align-self: center;
+    padding: 0.75rem 0 0;
+    border-radius: 0;
+  }
+
+  .jlz-storyline {
+    bottom: 0.55rem;
+    left: 7.7rem;
+    min-height: 2.75rem;
+    gap: 0.32rem;
+  }
+
+  .jlz-storyline__item {
+    width: 1.65rem;
+    min-width: 1.65rem;
+    min-height: 1.65rem;
+  }
+
+  .jlz-contact-launcher {
+    left: 0.55rem;
+    bottom: 0.55rem;
+  }
+
+  .jlz-contact-launcher__button {
+    min-height: 2.75rem;
+    padding: 0 0.9rem;
+  }
+
+  #spa-content > .jlz-menu-overlay,
+  .jlz-page > .jlz-menu-overlay {
+    inset: 0 0 auto !important;
+    height: min(84dvh, 48rem) !important;
+    border: 1px solid var(--jlz-color-fluid-border);
+    border-top: 0;
+    border-radius: 0 0 2.6rem 2.6rem;
+  }
+
+  .jlz-menu-overlay .jlz-menu-container {
+    justify-content: flex-start;
+    padding: 4.8rem 1rem 1.2rem;
+    overflow-y: auto;
+  }
+
+  .jlz-menu-sheet__header {
+    margin-bottom: 1rem;
+  }
+
+  .jlz-menu-overlay .jlz-menu-grid {
+    display: block;
+    overflow: visible;
+  }
+
+  .jlz-menu-overlay .jlz-menu-col--stat {
+    min-height: 0;
+    margin-bottom: 0.9rem;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .jlz-menu-overlay .jlz-menu-stat {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 0.55rem;
+  }
+
+  .jlz-menu-overlay .jlz-menu-stat__num {
+    font-size: 2.6rem;
+  }
+
+  .jlz-menu-overlay .jlz-menu-col-title {
+    display: none;
+  }
+
+  .jlz-menu-overlay .jlz-menu-nav__toggle {
+    min-height: 3.25rem;
+  }
+
+  .jlz-menu-overlay .jlz-menu-nav__label {
+    font-size: 1.45rem;
+    line-height: 1;
+  }
+
+  #spa-content > [data-contact-footer],
+  .jlz-page > [data-contact-footer] {
+    height: min(88dvh, 48rem) !important;
+    min-height: 33rem;
+    border-radius: 2.6rem 2.6rem 0 0;
+  }
+
+  [data-contact-footer] > .uk-container {
+    padding: 3.2rem 1.15rem 1.2rem;
+  }
+
+  .jlz-contact-footer__intro .studio-title {
+    max-width: 11ch;
+    font-size: clamp(2.5rem, 13vw, 4.5rem);
+  }
+
+  .jlz-contact-footer__intro .uk-text-lead {
+    font-size: 1rem;
+  }
+
+  .jlz-contact-footer__actions {
+    flex-wrap: wrap;
+  }
+
+  .jlz-telegram-cta {
+    min-width: 100%;
+    min-height: 4.8rem;
+  }
+
+  .jlz-contact-footer__actions .jlz-sheet-close {
+    margin-left: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-page='home'] #spa-content,
+  body:not([data-page='home']) #spa-content > .jlz-page {
+    scroll-behavior: auto;
+  }
+
+  [data-story-state] .jlz-section-top,
+  [data-story-state] .jlz-section-bottom,
+  #spa-content > .jlz-menu-overlay,
+  .jlz-page > .jlz-menu-overlay,
+  #spa-content > [data-contact-footer],
+  .jlz-page > [data-contact-footer],
+  .jlz-storyline,
+  .jlz-contact-launcher {
+    transition-duration: 0ms !important;
+  }
+}
+
 @media (max-width: 500px) {
   .jlz-lang-label {
     font-size: 0.65rem;
   }
 }
 
-// ── Top bar (minimalist fixed-top centered config controls) ──
-// Replaces the old header/navbar. Just a slim transparent strip at the top
-// with lang/theme/sound buttons centered. No logo, no hamburger — the
-// joystick owns navigation, this bar owns settings.
+// ── Shared top-bar control internals ──
+// Cinematic shell geometry is defined in the vertical-narrative layer;
+// these rules keep the language/theme/sound controls consistent.
 .jlz-topbar {
   position: fixed;
   top: 0;
@@ -1928,7 +2698,7 @@ body.uk-light .jlz-showreel-trigger:focus-visible {
 // (Old .jlz-help-divider + .jlz-help-controls dropdown-specific CSS removed.
 //  .jlz-help-controls is now styled in the joystick stack section above.)
 
-// ── Sound EQ-bars (used in joystick config controls) ──
+// ── Sound EQ-bars (used in cinematic top-bar controls) ──
 // Custom visual per project decision — UIKit3 has no EQ-bars icon.
 // Container is .jlz-sound-bars (4 spans); state via .is-playing / .is-muted
 // on the parent .jlz-sound-toggle button.
@@ -2033,7 +2803,7 @@ body.uk-light .jlz-showreel-trigger:focus-visible {
 
 .jlz-menu-container {
   position: relative;
-  z-index: 2; // above any ::before scanline overlay (excluded, but defensive)
+  z-index: 2; // above section decoration
   display: flex;
   flex-direction: column;
   height: 100dvh;
@@ -2474,3 +3244,25 @@ body.uk-light {
 // ════════════════════════════════════════════════════════════════════
 // QUICKNAV — desktop nav links, hidden on mobile
 // ════════════════════════════════════════════════════════════════════
+
+// Keep the header geometry authoritative over the legacy topbar spacing rules
+// above. These late declarations only preserve control sizing.
+.jlz-cinematic-shell .jlz-topbar {
+  top: 0.85rem;
+  left: 0.85rem;
+  right: 0.85rem;
+  width: auto;
+  min-height: 2.75rem;
+  padding: 0.25rem 0;
+  pointer-events: auto;
+}
+
+@media (max-width: 639px) {
+  .jlz-cinematic-shell .jlz-topbar {
+    top: 0.55rem;
+    left: 0.55rem;
+    right: 0.55rem;
+    min-height: 2.35rem;
+    padding: 0.2rem 0;
+  }
+}

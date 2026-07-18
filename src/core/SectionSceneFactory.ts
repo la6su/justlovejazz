@@ -1,7 +1,7 @@
 // SectionSceneFactory — creates 3D scene groups for each section.
 // Delegates to unified section modules (src/sections/*/scene.ts).
 //
-// 6 sections (4 main + Lab=0 + Menu=5) — 1:1 with displayed cube states.
+// 6 sections (4 story frames + canonical Lab/Contact finale=0 + Menu=5).
 
 import * as THREE from 'three'
 import { createSection0 } from '../sections/lab/scene'
@@ -13,12 +13,12 @@ import { createSection5 } from '../sections/menu/scene'
 
 // Index → creator function. 6 sections (1:1 cube faces).
 const SECTION_CREATORS: ReadonlyArray<() => THREE.Group> = [
-  createSection0, // 0: Lab (secret left — top face)
+  createSection0, // 0: canonical Lab scene behind the public Contact finale
   createSection1, // 1: Intro (front face)
   createSection2, // 2: About (right face)
   createSection3, // 3: Works (back face — BakuCarousel)
   createSection4, // 4: Contact (bottom face)
-  createSection5, // 5: Menu (secret right — positive Y tilt)
+  createSection5, // 5: Menu sheet — positive Y tilt
 ]
 
 export class SectionSceneFactory {

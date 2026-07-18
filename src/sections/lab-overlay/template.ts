@@ -1,66 +1,52 @@
-// src/sections/lab-overlay/template.ts — Lab overlay (secret left section on all pages)
+// Bottom Contact finale.
 //
-// This is the "experiments" section — styled list of works/experiments shown
-// when user drags joystick LEFT (section 0 on all pages).
-//
-// Content: project accordion (from PROJECTS) with cover previews.
+// The runtime keeps the canonical section-0 `lab` identifier for renderer and
+// deep-link compatibility, but the former Lab overlay is intentionally absent
+// from the public interface. Its spatial slot now presents a cinematic contact
+// footer with Telegram as the primary action.
 
 import { sectionShell } from '../_shared/constants'
-import { PROJECTS } from '../../Data/Projects'
 
-const LAB_PROJECTS = PROJECTS.slice(0, 6)
-
-/**
- * Lab uses one native UIkit Accordion at every breakpoint. This keeps the
- * secret panel focused and ensures the desktop and mobile project lists cannot
- * drift apart.
- */
-function projectAccordionItem(project: (typeof LAB_PROJECTS)[number], index: number): string {
-  const number = String(index + 1).padStart(2, '0')
-  const image = project.textureUrl || project.detailTextureUrl
-  return `
-    <li class="jlz-lab-accordion__item">
-      <a class="uk-accordion-title jlz-lab-accordion__title" href="#">
-        <span class="jlz-lab-accordion__num">${number}</span>
-        <span class="jlz-lab-accordion__name">${project.title}</span>
-        <span class="jlz-lab-accordion__meta">${project.category ?? ''}</span>
-        <span uk-accordion-icon aria-hidden="true"></span>
-      </a>
-      <div class="uk-accordion-content jlz-lab-accordion__content">
-        <a href="/works" class="jlz-lab-accordion__preview" data-magnetic data-cursor="view">
-          <span class="jlz-lab-accordion__image" style="background-image: url('${image}')"></span>
-          <span class="jlz-lab-accordion__action" data-i18n="labOverlay.openWorks">Open works</span>
-        </a>
-      </div>
-    </li>
-  `
-}
-
-/** Lab overlay section — shown as section 0 (joystick left) on ALL pages.
- *  Styled accordion of works/experiments with cover previews.
- *  On home page it replaces the old labSection. On content pages it replaces
- *  the old "secret left" section. */
-export function labOverlaySection(mode: 'home' | 'content' = 'content'): string {
+function contactFooterContent(): { top: string; bottom: string } {
   const top = `
-    <div class="jlz-section-top jlz-lab-overlay-top uk-text-center uk-flex uk-flex-column uk-flex-middle">
-      <span class="jlz-eyebrow" data-eyebrow data-eyebrow-text="←">←</span>
-      <h2 class="studio-title uk-heading-large uk-margin-small-top uk-margin-remove-bottom" data-i18n="labOverlay.title">Lab</h2>
-      <p class="uk-text-lead uk-margin-small-top" data-i18n="labOverlay.lead">Experiments · works · R&D.</p>
+    <div class="jlz-section-top jlz-contact-footer__intro uk-flex uk-flex-column uk-flex-middle uk-text-center">
+      <span class="jlz-contact-footer__kicker" data-i18n="contactFooter.kicker">Final frame · open channel</span>
+      <h2 class="studio-title uk-heading-large uk-margin-small-top uk-margin-remove-bottom" data-blur-fade="off"
+          data-i18n="contactFooter.title">Let’s make something worth remembering.</h2>
+      <p class="uk-text-lead uk-margin-small-top" data-i18n="contactFooter.lead">Tell us where the story should go next.</p>
     </div>
   `
-  const projectsAccordionHtml = LAB_PROJECTS.map(projectAccordionItem).join('')
 
   const bottom = `
-    <div class="jlz-section-bottom jlz-lab-overlay-bottom">
-      <ul class="jlz-lab-accordion" uk-accordion="multiple: false; duration: 180">
-        ${projectsAccordionHtml}
-      </ul>
+    <div class="jlz-section-bottom jlz-contact-footer__actions">
+      <a class="uk-button uk-button-primary jlz-telegram-cta" href="https://t.me/justlovejazz"
+         target="_blank" rel="noopener" data-magnetic data-cursor="view">
+        <span class="jlz-telegram-cta__halo" aria-hidden="true"></span>
+        <span class="jlz-telegram-cta__icon" uk-icon="icon: commenting; ratio: 1.15" aria-hidden="true"></span>
+        <span class="jlz-telegram-cta__copy">
+          <span class="jlz-telegram-cta__label" data-i18n="contactFooter.telegram">Open Telegram</span>
+          <span class="jlz-telegram-cta__handle">@justlovejazz</span>
+        </span>
+        <span class="jlz-telegram-cta__arrow" aria-hidden="true">↗</span>
+      </a>
+      <a class="jlz-contact-footer__email" href="mailto:hello@justlovejazz.com">hello@justlovejazz.com</a>
+      <button class="uk-close-large jlz-sheet-close" type="button" uk-close
+              data-close-cinematic-sheet aria-label="Close contact footer"></button>
     </div>
   `
-  // On home: data-section="lab" (keeps 3D cube face sync)
-  // On content: data-page-section (regular content section)
+
+  return { top, bottom }
+}
+
+/**
+ * Render the Contact finale into the legacy section-0 DOM slot.
+ * `data-contact-footer` is the public styling/interaction contract; callers
+ * should not expose the internal `lab` identifier in navigation copy.
+ */
+export function labOverlaySection(mode: 'home' | 'content' = 'content'): string {
+  const { top, bottom } = contactFooterContent()
   if (mode === 'home') {
-    return sectionShell('lab', top, bottom, 'home', false, 'data-lab-overlay')
+    return sectionShell('lab', top, bottom, 'home', false, 'data-contact-footer')
   }
-  return sectionShell('page-lab', top, bottom, 'content', false, 'data-lab-overlay')
+  return sectionShell('page-lab', top, bottom, 'content', false, 'data-contact-footer')
 }

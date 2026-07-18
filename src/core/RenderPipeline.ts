@@ -178,7 +178,7 @@ const COMPOSITE_FSG = `
       color *= vig;
     }
 
-    // Screen border — CRT curved black frame (from reference shader)
+    // Optional screen-edge frame; project presets keep this disabled.
     // Barrel distortion: curveUV = uv*2-1; offset = curveUV.yx * 0.25;
     // curveUV += curveUV * offset * offset; curveUV = curveUV * 0.5 + 0.5;
     // edge = smoothstep(0, 0.02, curveUV) * (1 - smoothstep(1-0.02, 1, curveUV))
