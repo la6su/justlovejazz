@@ -42,6 +42,28 @@ export class Cursor {
   private innerY = 0
   private readonly sfx?: { play: (name: 'hover' | 'click' | 'open' | 'close') => void }
 
+  // Cached theme colors — read once from CSS variables, refreshed on theme change.
+  // Avoids 4× getComputedStyle per redraw (was a per-frame allocation hotspot).
+  private _cachedAccent = '#b8ed69'
+  private _cachedAccentGlow = 'rgba(184,237,105,0.22)'
+  private _cachedTeal = '#45d7bc'
+  private _cacheDirty = true
+
+  /** Refresh cached theme colors from CSS variables. Call on theme change. */
+  refreshThemeCache(): void {
+    const styles = getComputedStyle(document.documentElement)
+    this._cachedAccent = styles.getPropertyValue('--jlz-color-accent').trim() || '#b8ed69'
+    this._cachedAccentGlow = styles.getPropertyValue('--jlz-color-accent-glow').trim() || 'rgba(184,237,105,0.22)'
+    this._cachedTeal = styles.getPropertyValue('--jlz-color-signal-teal').trim() || '#45d7bc'
+    this._cacheDirty = false
+  }
+
+  /** Get cached colors, refreshing if dirty. */
+  private _getThemeColors(): { accent: string; accentGlow: string; teal: string } {
+    if (this._cacheDirty) this.refreshThemeCache()
+    return { accent: this._cachedAccent, accentGlow: this._cachedAccentGlow, teal: this._cachedTeal }
+  }
+
   // Phase 2: spring physics for wobble (skaltenegger-style, smoothed)
   // Outer circle lags behind mouse with spring-damper, giving organic wobble
   // Stiffness lowered (0.25→0.18) + damping raised (0.55→0.7) for smoother motion
@@ -292,10 +314,7 @@ export class Cursor {
     // Console reticle: thin ring + 4 crosshair ticks at N/E/S/W.
     // Colors read from CSS variables so the cursor follows the active theme
     // (dark console green / light inverse) without hardcoded RGB values.
-    const styles = getComputedStyle(document.documentElement)
-    const accent = styles.getPropertyValue('--jlz-color-accent').trim() || '#b8ed69'
-    const accentGlow = styles.getPropertyValue('--jlz-color-accent-glow').trim() || 'rgba(184,237,105,0.22)'
-    const signalTeal = styles.getPropertyValue('--jlz-color-signal-teal').trim() || '#45d7bc'
+    const { accent, accentGlow, teal: signalTeal } = this._getThemeColors()
 
     const alpha = 0.55 + this.fillProgress * 0.35
     ctx.strokeStyle = accent
@@ -369,9 +388,7 @@ export class Cursor {
 
   /** Console play icon — accent green circle + triangle. */
   private drawPlayIcon(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number): void {
-    const styles = getComputedStyle(document.documentElement)
-    const accent = styles.getPropertyValue('--jlz-color-accent').trim() || '#b8ed69'
-    const glow = styles.getPropertyValue('--jlz-color-accent-glow').trim() || 'rgba(184,237,105,0.22)'
+    const { accent, accentGlow: glow } = this._getThemeColors()
     ctx.beginPath()
     ctx.arc(cx, cy, r, 0, Math.PI * 2)
     ctx.fillStyle = glow
@@ -392,8 +409,7 @@ export class Cursor {
 
   /** Console drag icon — signal teal circle + left-right arrows. */
   private drawDragIcon(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number): void {
-    const styles = getComputedStyle(document.documentElement)
-    const teal = styles.getPropertyValue('--jlz-color-signal-teal').trim() || '#45d7bc'
+    const { teal } = this._getThemeColors()
     ctx.beginPath()
     ctx.arc(cx, cy, r, 0, Math.PI * 2)
     ctx.strokeStyle = teal
@@ -428,8 +444,7 @@ export class Cursor {
 
   /** Console view icon — signal teal circle + eye shape. */
   private drawViewIcon(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number): void {
-    const styles = getComputedStyle(document.documentElement)
-    const teal = styles.getPropertyValue('--jlz-color-signal-teal').trim() || '#45d7bc'
+    const { teal } = this._getThemeColors()
     ctx.beginPath()
     ctx.arc(cx, cy, r, 0, Math.PI * 2)
     ctx.strokeStyle = teal

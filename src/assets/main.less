@@ -235,7 +235,7 @@ body.uk-light li.uk-active .jlz-nav-link {
   position: relative;
   min-height: 100dvh;
   height: 100dvh;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--jlz-color-text);
   /* Transparent — 3D canvas shows through. Subtle scrim only at the
      bottom for text readability where content meets the dock/joystick. */
   background: transparent;
@@ -400,8 +400,8 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
 
 // Modal background — dark + blur
 .jlz-fs-overlay {
-  color: rgba(255, 255, 255, 0.9) !important;
-  background: #050507 !important;
+  color: var(--jlz-color-text) !important;
+  background: var(--jlz-color-bg) !important;
 }
 
 // The overlay is an intentionally fixed dark viewing room. Global inverse
@@ -412,7 +412,7 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
 .jlz-fs-overlay .jlz-fs-next,
 .jlz-fs-overlay .jlz-fs-big-play,
 .jlz-fs-overlay .jlz-fs-controls .uk-button {
-  color: #fff !important;
+  color: var(--jlz-color-text) !important;
 }
 
 .jlz-fs-overlay:not(.uk-open) {
@@ -430,8 +430,8 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
   height: 100vh;
   height: 100dvh;
   overflow: hidden;
-  color: rgba(255, 255, 255, 0.9);
-  background: #050507 !important;
+  color: var(--jlz-color-text);
+  background: var(--jlz-color-bg) !important;
   clip-path: inset(50% 50% 50% 50% round 24px);
   transform: scale(0.94);
   opacity: 0;
@@ -500,7 +500,7 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
   min-height: 6.5rem;
   gap: 2rem;
   padding: 1.25rem clamp(4.5rem, 7vw, 7rem) 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+  border-bottom: 1px solid var(--jlz-color-border);
   opacity: 0;
   transform: translateY(-0.75rem);
   transition:
@@ -514,7 +514,7 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
 }
 
 .jlz-fs-title {
-  color: #fff;
+  color: var(--jlz-color-text);
   font-size: clamp(1.3rem, 2.4vw, 2.25rem);
   font-weight: 800;
   line-height: 1;
@@ -522,7 +522,7 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
 
 .jlz-fs-cat,
 .jlz-fs-counter {
-  color: rgba(255, 255, 255, 0.48);
+  color: var(--jlz-color-text-muted);
   font-size: 0.68rem;
   letter-spacing: 0.18em;
   font-variant-numeric: tabular-nums;
@@ -531,7 +531,7 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
 .jlz-fs-desc {
   max-width: 44rem;
   overflow: hidden;
-  color: rgba(255, 255, 255, 0.52);
+  color: var(--jlz-color-text-muted);
   font-size: 0.78rem;
   line-height: 1.35;
   text-overflow: ellipsis;
@@ -543,7 +543,7 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
 }
 
 .jlz-fs-tag {
-  color: rgba(255, 255, 255, 0.48);
+  color: var(--jlz-color-text-muted);
   font-size: 0.62rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -593,7 +593,7 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
   display: grid;
   place-items: center;
   border: 0;
-  color: #fff;
+  color: var(--jlz-color-text);
   background: transparent;
   transition: opacity 0.4s ease;
 }
@@ -630,8 +630,8 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem clamp(4.5rem, 7vw, 7rem);
-  border-top: 1px solid rgba(255, 255, 255, 0.09);
-  background: #050507;
+  border-top: 1px solid var(--jlz-color-border);
+  background: var(--jlz-color-bg);
   opacity: 0;
   transform: translateY(0.75rem);
   transition:
@@ -650,7 +650,7 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
 }
 
 .jlz-fs-time {
-  color: rgba(255, 255, 255, 0.48);
+  color: var(--jlz-color-text-muted);
   font-size: 0.7rem;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -689,7 +689,7 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
 
 .jlz-fs-close {
   z-index: 6;
-  color: #fff;
+  color: var(--jlz-color-text);
 }
 
 .jlz-fs-prev,
@@ -702,7 +702,7 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
   padding: 0;
   border: 1px solid rgba(255, 255, 255, 0.4);
   border-radius: 50%;
-  color: #fff;
+  color: var(--jlz-color-text);
   background: rgba(5, 5, 7, 0.66);
   backdrop-filter: blur(12px);
   transform: translateY(-50%);
@@ -1386,7 +1386,7 @@ body[data-page='works'] .jlz-joystick-dotnav__label {
   padding: 0;
   overflow: visible;
   border: 0;
-  color: #fff;
+  color: var(--jlz-color-text);
   background: none;
   cursor: pointer;
   perspective: 1100px;
@@ -1534,7 +1534,7 @@ body[data-page='works'] .jlz-joystick-dotnav__label {
 .jlz-work-card__title {
   --jlz-vf-weight: 620;
   overflow: hidden;
-  color: #fff;
+  color: var(--jlz-color-text);
   font-size: clamp(1.15rem, 2.1vw, 2rem);
   font-weight: 800;
   letter-spacing: -0.03em;
