@@ -13,6 +13,8 @@ import {
   mix,
   positionLocal,
   sin,
+  cos,
+  atan,
   smoothstep,
   sqrt,
   texture,
@@ -20,6 +22,7 @@ import {
   uv,
   vec2,
   vec3,
+  PI,
 } from 'three/tsl'
 
 export class CasePlane extends THREE.Mesh {
@@ -96,105 +99,76 @@ export class CasePlane extends THREE.Mesh {
       const crtColor = base.rgb
         .mul(scanline)
         .add(vec3(float(0.045), float(0.06), float(0.03)).mul(crt))
-      // Photographic film burn: several low-frequency warped SDFs ignite on
-      // separate beats. Their broad amber halo, white-hot core and dark char
-      // band read as softened emulsion holes rather than electric contour
-      // lines. The fields merge only near the fullscreen handoff.
-      const burnNoiseA = sin(
-        screenUv.x
-          .mul(8.5)
-          .add(sin(screenUv.y.mul(7.0)).mul(1.65))
-          .add(time.mul(0.38)),
-      )
-        .mul(0.105)
-        .add(sin(screenUv.y.mul(13).sub(time.mul(0.31))).mul(0.048))
-      const burnNoiseB = sin(
-        screenUv.y
-          .mul(9.5)
-          .sub(sin(screenUv.x.mul(6.5)).mul(1.8))
-          .sub(time.mul(0.3)),
-      )
-        .mul(0.098)
-        .add(sin(screenUv.x.add(screenUv.y).mul(14)).mul(0.043))
-      const burnNoiseC = sin(
-        screenUv.x
-          .add(screenUv.y.mul(0.72))
-          .mul(10.5)
-          .add(sin(screenUv.x.mul(5.5)).mul(1.55))
-          .add(time.mul(0.27)),
-      )
-        .mul(0.094)
-        .add(sin(screenUv.y.mul(15)).mul(0.04))
-      const burnNoiseD = sin(
-        screenUv.y
-          .sub(screenUv.x.mul(0.58))
-          .mul(11.5)
-          .add(sin(screenUv.y.mul(6.0)).mul(1.4))
-          .sub(time.mul(0.24)),
-      ).mul(0.085)
-      const burnDistanceA = screenUv
-        .sub(vec2(float(0.18), float(0.68)))
-        .mul(vec2(float(0.86), float(1.16)))
-        .length()
-        .add(burnNoiseA)
-      const burnDistanceB = screenUv
-        .sub(vec2(float(0.75), float(0.28)))
-        .mul(vec2(float(1.05), float(0.84)))
-        .length()
-        .add(burnNoiseB)
-      const burnDistanceC = screenUv
-        .sub(vec2(float(0.62), float(0.82)))
-        .mul(vec2(float(0.9), float(1.24)))
-        .length()
-        .add(burnNoiseC)
-      const burnDistanceD = screenUv
-        .sub(vec2(float(0.38), float(0.3)))
-        .mul(vec2(float(1.18), float(0.92)))
-        .length()
-        .add(burnNoiseD)
-      const burnFrontA = transition.mul(1.25).sub(0.1)
-      const burnFrontB = transition.mul(1.18).sub(0.19)
-      const burnFrontC = transition.mul(1.3).sub(0.3)
-      const burnFrontD = transition.mul(1.08).sub(0.34)
-      const burnA = smoothstep(
-        burnFrontA.sub(0.025),
-        burnFrontA.add(0.035),
-        burnDistanceA,
+
+      // ── Film Burn (Arrlindii-inspired) ──
+      // Reference: github.com/Arrlindii/Shader-Image-Transition
+      // Pattern: angular noise warp + circle SDF + radial circles + softMin
+      // merge → organic burn edge with amber halo, hot core, and char band.
+      //
+      // Key improvements over the previous fixed-point SDF approach:
+      // 1. Angular noise (atan2 + sin/cos waves) warps the burn radius —
+      //    the edge breathes and shifts direction, like real emulsion burn.
+      // 2. Radial circles arranged at N points create a jagged, irregular
+      //    burn front (not a clean circle).
+      // 3. softMin merge blends the SDFs smoothly — no hard seams between
+      //    burn sources.
+      // 4. The burn grows from center outward, driven by `transition` (0→1).
+
+      // Angular noise — warps the burn radius organically (Arrlindii pattern)
+      const angle = atan(screenUv.y.sub(0.5).div(screenUv.x.sub(0.5)))
+      const angNoise = cos(angle.mul(3.0).add(transition.mul(PI))).add(1.0).mul(0.5)
+        .add(sin(angle.mul(5.0).add(time.mul(0.3))).add(1.0).mul(0.5).mul(0.3))
+      const burnWarp = angNoise.mul(0.12) // warp amplitude
+
+      // Center distance with noise warp
+      const centerDist = screenUv.sub(vec2(float(0.5))).length()
+      const warpedDist = centerDist.add(burnWarp.mul(centerDist))
+
+      // Burn front grows from center, eased
+      const tEase = transition.mul(transition).mul(transition) // cubic ease-in
+      const burnRadius = tEase.mul(1.1) // grows past 1.0 to cover full plane
+      const burnEdge = smoothstep(
+        burnRadius.sub(0.04),
+        burnRadius.add(0.02),
+        warpedDist,
       ).oneMinus()
-      const burnB = smoothstep(
-        burnFrontB.sub(0.025),
-        burnFrontB.add(0.035),
-        burnDistanceB,
+
+      // Radial circles — 3 jagged burn sources at 120° offsets (Arrlindii pattern)
+      const radialOffset = float(0.15)
+      const radialDist1 = screenUv.sub(vec2(
+        float(0.5).add(cos(float(0.0)).mul(radialOffset)),
+        float(0.5).add(sin(float(0.0)).mul(radialOffset)),
+      )).length().add(burnWarp.mul(0.5))
+      const radialDist2 = screenUv.sub(vec2(
+        float(0.5).add(cos(float(2.094)).mul(radialOffset)),
+        float(0.5).add(sin(float(2.094)).mul(radialOffset)),
+      )).length().add(burnWarp.mul(0.5))
+      const radialDist3 = screenUv.sub(vec2(
+        float(0.5).add(cos(float(4.189)).mul(radialOffset)),
+        float(0.5).add(sin(float(4.189)).mul(radialOffset)),
+      )).length().add(burnWarp.mul(0.5))
+
+      // softMin merge of the radial SDFs (Arrlindii pattern)
+      const radialMerged = radialDist1.add(radialDist2).add(radialDist3).div(float(3.0))
+
+      // Final burned mask: center burn + radial burn, merged
+      const radialBurn = smoothstep(
+        burnRadius.mul(0.9),
+        burnRadius.mul(0.9).add(0.03),
+        radialMerged,
       ).oneMinus()
-      const burnC = smoothstep(
-        burnFrontC.sub(0.025),
-        burnFrontC.add(0.035),
-        burnDistanceC,
-      ).oneMinus()
-      const burnD = smoothstep(
-        burnFrontD.sub(0.022),
-        burnFrontD.add(0.032),
-        burnDistanceD,
-      ).oneMinus()
-      const burned = burnA.max(burnB).max(burnC).max(burnD)
-      const deltaA = burnDistanceA.sub(burnFrontA).abs()
-      const deltaB = burnDistanceB.sub(burnFrontB).abs()
-      const deltaC = burnDistanceC.sub(burnFrontC).abs()
-      const deltaD = burnDistanceD.sub(burnFrontD).abs()
-      const halo = smoothstep(0.016, 0.105, deltaA)
-        .oneMinus()
-        .add(smoothstep(0.016, 0.105, deltaB).oneMinus())
-        .add(smoothstep(0.016, 0.105, deltaC).oneMinus())
-        .add(smoothstep(0.014, 0.095, deltaD).oneMinus())
-        .clamp(0, 1)
-      const hotCore = smoothstep(0.004, 0.03, deltaA)
-        .oneMinus()
-        .add(smoothstep(0.004, 0.03, deltaB).oneMinus())
-        .add(smoothstep(0.004, 0.03, deltaC).oneMinus())
-        .add(smoothstep(0.004, 0.027, deltaD).oneMinus())
-        .clamp(0, 1)
+      const burned = burnEdge.max(radialBurn.mul(float(0.6)))
+
+      // Edge effects: amber halo + white-hot core + char band
+      const burnDelta = warpedDist.sub(burnRadius).abs()
+      const halo = smoothstep(float(0.02), float(0.12), burnDelta).oneMinus()
+      const hotCore = smoothstep(float(0.003), float(0.025), burnDelta).oneMinus()
       const charBand = halo.sub(hotCore).clamp(0, 1)
-      const burnPulse = sin(transition.mul(3.14159265)).clamp(0, 1)
+
+      // Burn pulse — peaks at mid-transition, fades at start/end
+      const burnPulse = sin(transition.mul(PI)).clamp(0, 1)
+
+      // Color layers: exposed image → charred → amber veil → ember
       const exposed = mix(
         base.rgb,
         vec3(float(1), float(0.2), float(0.025)),
