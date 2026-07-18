@@ -1,0 +1,80 @@
+// console-theme/_import.less — JLZ console theme variables.
+//
+// This file is the SINGLE source of truth for the console theme.
+// It replaces the former Quantum Flares vendor layer + bridge files
+// (_quantum-flares-overrides.less, _theme-fixes.less, _theme.less).
+//
+// What lives here:
+//   1. Font declaration (Inter)
+//   2. Primary/secondary font weight + transform (bold uppercase headings)
+//   3. Status colors (success/warning/danger)
+//   4. Box-shadows (cinematic depth)
+//   5. Heading font-sizes (rem-based, mobile-first)
+//   6. Color-mode overrides (dark surfaces → light text)
+//
+// What does NOT live here (defined in ../_import.less):
+//   - @jlz-* design tokens (colors, spacing, radius, z-index, motion)
+//   - UIKit component imports
+//   - UIKit variable overrides (@global-margin, @global-gutter, etc.)
+
+// ── Font ──
+@internal-fonts: 'Inter:400,500,600,700,800,900';
+
+// ── Primary/secondary font (bold uppercase for headings, nav, labels) ──
+@global-primary-font-family: @global-font-family;
+@global-primary-font-weight: 800;
+@global-primary-text-transform: uppercase;
+@global-primary-letter-spacing: inherit;
+@global-primary-font-style: inherit;
+
+@global-secondary-font-family: inherit;
+@global-secondary-font-weight: inherit;
+@global-secondary-text-transform: inherit;
+@global-secondary-letter-spacing: inherit;
+@global-secondary-font-style: inherit;
+
+// ── Status colors ──
+@global-success-background: #5ecd89;
+@global-warning-background: #fff138;
+@global-danger-background: #ff464c;
+
+// ── Box-shadows (cinematic depth) ──
+@global-small-box-shadow: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.5);
+@global-medium-box-shadow: 0 0.3rem 1rem rgba(0, 0, 0, 0.5);
+@global-large-box-shadow: 0 0.875rem 1.5rem rgba(0, 0, 0, 0.5);
+@global-xlarge-box-shadow: 0 1.75rem 3rem rgba(0, 0, 0, 0.5);
+
+// ── Heading font-sizes (rem-based, mobile-first) ──
+@global-2xlarge-font-size: 2.5rem;
+@global-xlarge-font-size: 1.875rem;
+@global-large-font-size: 1.375rem;
+@global-medium-font-size: 1.125rem;
+@global-small-font-size: 0.875rem;
+@base-blockquote-font-size: @global-large-font-size;
+@base-blockquote-footer-font-size: @global-font-size;
+@heading-small-font-size: 2.2rem;
+
+// ── Color-mode overrides (dark surfaces → light text) ──
+// UIKit3 color-mode: dark = "dark background → light text".
+// Our surfaces (cards, sections, overlays, navbar) are dark → need light text.
+@card-default-color-mode: dark;
+@card-overlay-color-mode: dark;
+@card-primary-color-mode: light;  // accent-colored (solid bg) → dark text
+@card-secondary-color-mode: dark;
+
+@section-default-color-mode: dark;
+@section-muted-color-mode: dark;
+@section-primary-color-mode: dark;
+@section-secondary-color-mode: dark;
+
+@tile-default-color-mode: dark;
+@tile-muted-color-mode: dark;
+@tile-primary-color-mode: dark;
+
+@overlay-default-color-mode: dark;
+@overlay-primary-color-mode: dark;
+
+@navbar-color-mode: dark;
+@navbar-dropdown-color-mode: dark;
+@dropdown-color-mode: dark;
+@dropbar-color-mode: dark;
