@@ -254,12 +254,17 @@ export class World extends THREE.Group {
     group.visible = true
     this.particleBurst.visible = true
     try {
-      if (compiler.compileAsync) await compiler.compileAsync(this.sceneRef, camera)
-      else compiler.compile?.(this.sceneRef, camera)
-    } catch (error) {
-      // Prewarming is an optimisation, not a startup requirement. Rendering
-      // remains safe if a backend does not expose compatible async compilation.
-      if (import.meta.env.DEV) console.warn('[World] Home media prewarm skipped:', error)
+      // Prewarm is an optimisation. Some backends (WebGLRenderer fallback
+      // before first render) don't have a render stack yet → compile throws.
+      // Guard with a feature check + silent skip on failure.
+      if (compiler.compileAsync) {
+        await compiler.compileAsync(this.sceneRef, camera)
+      } else if (compiler.compile) {
+        compiler.compile(this.sceneRef, camera)
+      }
+    } catch {
+      // Silent — prewarming is not a startup requirement. The first render
+      // will compile shaders on demand (slightly slower first frame only).
     } finally {
       group.visible = wasVisible
       this.particleBurst.visible = wasPortalVisible

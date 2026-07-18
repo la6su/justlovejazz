@@ -1,0 +1,24 @@
+// _theme.less — Bridge between UIKit base and Quantum Flares theme layer.
+//
+// This file imports the QF master theme + project overrides that sit on top
+// of the UIKit foundation built in _import.less. Without this file, main.less
+// fails to compile (CSS doesn't load → 3D never initializes).
+//
+// Import order (matters — Less is cascade-sensitive):
+//   1. _import.less (already imported in main.less before this file)
+//      → design tokens + UIKit components + UIKit variable overrides
+//   2. master-quantum-flares/_import.less (here)
+//      → QF visual personality (glow, glitch, scanlines, shadows)
+//   3. _quantum-flares-overrides.less (here)
+//      → project semantic palette mapped to QF variables
+//   4. _theme-fixes.less (here)
+//      → QF color-mode overrides for dark surfaces
+
+// ── QF visual personality (glow, glitch, scanlines, cinematic shadows) ──
+@import './master-quantum-flares/_import.less';
+
+// ── Project semantic palette → QF variables ──
+@import './_quantum-flares-overrides.less';
+
+// ── QF color-mode overrides (dark bg → light text) ──
+@import './_theme-fixes.less';

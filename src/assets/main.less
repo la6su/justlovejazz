@@ -173,10 +173,6 @@ body.uk-light .studio-title {
   color: rgba(5, 5, 7, 0.92);
 }
 
-body.uk-light .jlz-nav-link {
-  color: rgba(5, 5, 7, 0.55);
-}
-
 body.uk-light .jlz-nav-link:hover {
   color: rgba(5, 5, 7, 0.84);
 }
@@ -361,33 +357,6 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
 .jlz-menu-nav__item.uk-open .jlz-menu-nav__label {
   --jlz-vf-weight: 820;
   letter-spacing: -0.035em;
-}
-
-.jlz-scroll-hint {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--jlz-space-3);
-  pointer-events: none;
-  opacity: 0.7;
-  margin-bottom: calc(var(--jlz-joystick-size) + var(--jlz-space-6));
-  color: rgba(5, 5, 7, 0.7);
-}
-
-.jlz-scroll-hint__label {
-  font-family: var(--jlz-font-body);
-  font-size: 0.62rem;
-  font-weight: 500;
-  letter-spacing: 0.4em;
-  text-transform: uppercase;
-}
-
-.jlz-scroll-hint__line {
-  position: relative;
-  width: 1px;
-  height: 56px;
-  background: currentColor;
-  overflow: hidden;
 }
 
 .jlz-scroll-hint__line::after {
@@ -920,44 +889,11 @@ html.jlz-force-cursor .interactive {
   touch-action: none;
 }
 
-.jlz-joystick__base {
-  width: var(--jlz-joystick-size);
-  height: var(--jlz-joystick-size);
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 2px solid rgba(255, 255, 255, 0.15);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: grab;
-  /* touch-action MUST be on the drag target itself (not inherited from parent).
-     Without this, touch devices intercept the drag as a scroll gesture and
-     the joystick never fires pointermove beyond the dead zone. */
-  touch-action: none;
-  transition:
-    border-color 0.3s ease,
-    background 0.3s ease,
-    transform var(--jlz-duration-fast) var(--jlz-ease-emphasis);
-  position: relative;
-}
-
 .jlz-joystick__base.is-active {
   cursor: grabbing;
   border-color: rgba(255, 255, 255, 0.4);
   background: rgba(255, 255, 255, 0.12);
   transform: scale(1.08);
-}
-
-.jlz-joystick__ball {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  transition: transform 0.15s ease-out;
-  pointer-events: none;
 }
 
 .jlz-joystick__base.is-active .jlz-joystick__ball {
@@ -967,82 +903,8 @@ html.jlz-force-cursor .interactive {
 /* 4 direction arrows — discoverability affordance.
    Positioned at N/S/E/W edges of the base. Faint by default, highlight
    (accent color + opacity 1) when drag direction matches. */
-.jlz-joystick__arrow {
-  position: absolute;
-  color: rgba(255, 255, 255, 0.25);
-  transition:
-    color 0.15s ease,
-    opacity 0.15s ease;
-  pointer-events: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.jlz-joystick__arrow--up {
-  top: -14px;
-  left: 50%;
-  transform: translateX(-50%);
-}
-.jlz-joystick__arrow--down {
-  bottom: -14px;
-  left: 50%;
-  transform: translateX(-50%);
-}
-.jlz-joystick__arrow--left {
-  left: -14px;
-  top: 50%;
-  transform: translateY(-50%);
-}
-.jlz-joystick__arrow--right {
-  right: -14px;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-// Arrow labels — visible text below each arrow icon (Up/Down/Lab/Menu)
-.jlz-joystick__arrow-label {
-  position: absolute;
-  font-size: 0.55rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: rgba(255, 255, 255, 0.4);
-  pointer-events: none;
-  white-space: nowrap;
-}
-
-.jlz-joystick__arrow-label--up {
-  top: -28px;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.jlz-joystick__arrow-label--down {
-  bottom: -28px;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.jlz-joystick__arrow-label--left {
-  left: -32px;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-.jlz-joystick__arrow-label--right {
-  right: -44px;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
 body.uk-light .jlz-joystick__arrow-label {
   color: rgba(0, 0, 0, 0.5);
-}
-
-.jlz-joystick__arrow--active {
-  color: var(--jlz-color-accent);
-  opacity: 1;
 }
 
 body.uk-light .jlz-joystick__arrow {
@@ -1050,15 +912,6 @@ body.uk-light .jlz-joystick__arrow {
 }
 body.uk-light .jlz-joystick__arrow--active {
   color: var(--jlz-color-accent);
-}
-
-.jlz-joystick__hint {
-  font-family: var(--jlz-font-body);
-  font-size: 0.6rem;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.4);
-  transition: opacity 0.3s ease;
 }
 
 @media (max-width: 640px) {
@@ -1138,21 +991,6 @@ body.uk-light .jlz-eyebrow {
    Used by: services list (01-04), services process steps, posts archive
    dates, process timeline. Replaces style="min-width: 2.5rem; opacity: 0.5;"
    etc. — keeps scaling rem-based via tokens, theme-aware via opacity. */
-.jlz-numeral {
-  min-width: var(--jlz-space-10); /* 2.5rem */
-  opacity: 0.5;
-  display: inline-block;
-}
-
-.jlz-numeral--sm {
-  min-width: var(--jlz-space-8); /* 2rem */
-}
-
-.jlz-numeral--date {
-  min-width: var(--jlz-space-12); /* 3rem */
-  opacity: 1; /* dates use uk-text-meta for muted color, no opacity dim */
-}
-
 /* (Removed .jlz-timeline — timeline layout no longer used. Process content
    now lives in section templates via the unified homeSection/contentSection
    pattern with .jlz-service-desc fragments.) */
@@ -1167,10 +1005,6 @@ body.uk-light .jlz-eyebrow {
 
 /* Subtle text — one step below uk-text-meta's muted tone. Used for secondary
    copy inside cards (e.g. manifesto principle examples). Theme-aware. */
-.jlz-text-subtle {
-  opacity: 0.7;
-}
-
 /* ── Service page (Apple Watch cube faces) — description + explore ──
    Each cube face shows one service: TOP (num + title + lead via contentTop),
    BOTTOM (description fragments + EXPLORE pill link). Mobile-first: concise
@@ -1257,10 +1091,6 @@ body.uk-light .jlz-eyebrow {
   gap: var(--jlz-space-2); /* 0.5rem */
 }
 
-.jlz-flex-gap-large {
-  gap: var(--jlz-space-6); /* 1.5rem */
-}
-
 /* (Removed .jlz-service-card / .jlz-principle-card — QF uk-card-default
    + uk-card-hover already provide glassmorphism + hover. No need to
    duplicate. Use uk-card-default uk-card-hover in templates.) */
@@ -1290,22 +1120,6 @@ body.uk-light .jlz-eyebrow {
 /* Right-side section navigator.
    Keep UIkit's uk-dotnav / uk-dotnav-vertical markup and active state. These
    scoped rules only supply the bespoke menu-rail layout not covered by UIkit. */
-.jlz-joystick-dotnav {
-  position: fixed;
-  top: 50%;
-  right: calc(var(--jlz-space-5) + env(safe-area-inset-right, 0px));
-  z-index: var(--jlz-z-nav);
-  display: flex !important;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.15rem;
-  width: min(12rem, 16vw);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  transform: translateY(-50%);
-}
-
 .jlz-joystick-dotnav > li {
   padding: 0;
 }
@@ -1327,31 +1141,6 @@ body.uk-light .jlz-eyebrow {
   transition:
     color var(--jlz-duration-fast) ease,
     opacity var(--jlz-duration-fast) ease;
-}
-
-.jlz-joystick-dotnav__label {
-  overflow: hidden;
-  font-size: 0.625rem;
-  font-weight: var(--jlz-weight-semibold);
-  letter-spacing: 0.22em;
-  line-height: 1.2;
-  text-align: right;
-  text-overflow: ellipsis;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.jlz-joystick-dotnav__marker {
-  position: relative;
-  display: block;
-  width: 2.5rem;
-  height: 1px;
-  margin-left: 0.5rem;
-  background: var(--jlz-color-border-strong);
-  transition:
-    width var(--jlz-duration-fast) ease,
-    height var(--jlz-duration-fast) ease,
-    background var(--jlz-duration-fast) ease;
 }
 
 .jlz-joystick-dotnav__marker::after {
@@ -1581,22 +1370,6 @@ body[data-page='works'] .jlz-joystick-dotnav__label {
 
 .jlz-works-composition > * > * {
   width: 100%;
-}
-
-.jlz-works-composition--feature > :last-child,
-.jlz-works-composition--cinematic > :last-child {
-  height: 76%;
-  align-self: end;
-}
-
-.jlz-works-composition--reverse > :first-child {
-  height: 72%;
-  align-self: center;
-}
-
-.jlz-works-composition--equal > :first-child {
-  height: 88%;
-  align-self: start;
 }
 
 .jlz-works-composition--equal > :last-child {
@@ -2080,18 +1853,6 @@ body[data-page='works'] .jlz-work-card.is-opening .jlz-work-card__inner {
 // Instead: data-cursor="play" changes cursor, SVG ring animates stroke on hover.
 // ════════════════════════════════════════════════════════════════════
 
-.jlz-showreel-overlay {
-  position: absolute;
-  // Center on the cube (cube is at viewport center, camera looks straight at it).
-  // Mobile-first: button sits at vertical center, slightly below to avoid
-  // overlapping the cube's top edge. Uses top: 50% + transform for true centering.
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 5;
-  pointer-events: auto;
-}
-
 .jlz-showreel-trigger {
   position: relative;
   display: flex;
@@ -2113,33 +1874,8 @@ body[data-page='works'] .jlz-work-card.is-opening .jlz-work-card__inner {
   outline: none;
 }
 
-// Ring container — 64×64, holds the SVG circle
-.jlz-showreel-trigger__ring {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 64px;
-  height: 64px;
-}
-
 // SVG circle — stroke-dasharray + stroke-dashoffset animation on hover.
 // This is the manual CSS version of uk-svg="stroke-animation: true" —
-// we use inline SVG (not <img uk-svg>) so we animate via CSS directly.
-.jlz-showreel-trigger__circle {
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.5;
-  // dasharray = 2πr = 2π × 28 ≈ 176 (full circumference)
-  stroke-dasharray: 176;
-  stroke-dashoffset: 0;
-  transition:
-    stroke-dashoffset 0.6s ease,
-    stroke-width 0.3s ease;
-  transform-origin: center;
-  transform: rotate(-90deg); // start from top
-}
-
 .jlz-showreel-trigger:hover .jlz-showreel-trigger__circle,
 .jlz-showreel-trigger:focus-visible .jlz-showreel-trigger__circle {
   // Animate stroke drawing around the circle
@@ -2160,32 +1896,9 @@ body[data-page='works'] .jlz-work-card.is-opening .jlz-work-card__inner {
   }
 }
 
-// Play icon (triangle) — centered inside the ring
-.jlz-showreel-trigger__icon {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: currentColor;
-  transition: transform 0.3s ease;
-}
-
 .jlz-showreel-trigger:hover .jlz-showreel-trigger__icon,
 .jlz-showreel-trigger:focus-visible .jlz-showreel-trigger__icon {
   transform: translate(-50%, -50%) scale(1.15);
-}
-
-.jlz-showreel-trigger__label {
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: currentColor;
-  opacity: 0.7;
-  transition: opacity 0.3s ease;
 }
 
 .jlz-showreel-trigger:hover .jlz-showreel-trigger__label,
@@ -3094,17 +2807,6 @@ body[data-cinematic-sheet]
 //  .jlz-help-content, .jlz-help-joystick, .jlz-joystick-svg, .jlz-help-text,
 //  .jlz-help-text-row, .jlz-help-key, .jlz-help-divider CSS removed.)
 
-// Hint — below joystick base, centered (part of joystick vertical stack)
-.jlz-help-hint {
-  margin: 26px 0 0 0;
-  font-size: 0.65rem;
-  line-height: 1.3;
-  color: var(--jlz-color-text-muted);
-  opacity: 0.5;
-  text-align: center;
-  white-space: nowrap;
-}
-
 // (Old .jlz-help-controls CSS removed — controls now in .jlz-topbar-controls above.)
 
 // (Dropdown-specific responsive rules removed — dropdown no longer exists.
@@ -3536,66 +3238,10 @@ body.uk-light {
   padding-bottom: calc(var(--jlz-joystick-size) * 1.35 + var(--jlz-space-4));
 }
 
-.jlz-lab-overlay-top {
-  padding-top: 0;
-}
-
-.jlz-lab-overlay-bottom {
-  width: min(100%, 46rem);
-  padding-bottom: 0;
-}
-
-.jlz-lab-accordion {
-  width: 100%;
-  max-height: min(46dvh, 30rem);
-  margin: 0;
-  padding: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  list-style: none;
-  -webkit-overflow-scrolling: touch;
-}
-
-.jlz-lab-accordion__item {
-  border-bottom: 1px solid var(--jlz-color-border);
-}
-
-.jlz-lab-accordion__title {
-  display: flex;
-  align-items: center;
-  min-height: 3.25rem;
-  gap: var(--jlz-space-2);
-  padding: 0.6rem 0.25rem;
-  color: var(--jlz-color-text);
-  font-size: clamp(0.95rem, 1.2vw, 1.1rem);
-  font-weight: 700;
-  text-decoration: none;
-}
-
 .jlz-lab-accordion__title:hover,
 .jlz-lab-accordion__title:focus-visible {
   color: @global-primary-background;
   outline: none;
-}
-
-.jlz-lab-accordion__num,
-.jlz-lab-accordion__meta {
-  flex: 0 0 auto;
-  color: var(--jlz-color-text-subtle);
-  font-family: @global-font-family;
-  font-size: 0.62rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-.jlz-lab-accordion__num {
-  min-width: 1.9rem;
-}
-
-.jlz-lab-accordion__name {
-  min-width: 0;
-  flex: 1;
 }
 
 .jlz-lab-accordion__meta {
@@ -3603,40 +3249,6 @@ body.uk-light {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.jlz-lab-accordion__content {
-  margin-top: 0;
-  padding: 0 0 0.75rem;
-}
-
-.jlz-lab-accordion__preview {
-  position: relative;
-  display: flex;
-  align-items: flex-end;
-  min-height: 7rem;
-  overflow: hidden;
-  border: 1px solid var(--jlz-color-border);
-  border-radius: 0.5rem;
-  color: #fff;
-  text-decoration: none;
-}
-
-.jlz-lab-accordion__image {
-  position: absolute;
-  inset: 0;
-  background-position: center;
-  background-size: cover;
-  filter: saturate(0.85) brightness(0.55);
-}
-
-.jlz-lab-accordion__action {
-  position: relative;
-  margin: 0.75rem;
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
 }
 
 .jlz-lab-accordion__preview:focus-visible {
