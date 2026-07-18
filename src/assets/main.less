@@ -1054,6 +1054,36 @@ body.uk-light .jlz-bottom-module {
   }
 }
 
+// ── Console scanline overlay — very faint TUI texture ──
+// Restored from 5e3a288. Excluded for .jlz-menu-overlay (stacking context).
+#spa-content section[data-section]:not(.jlz-menu-overlay)::before,
+.jlz-page-section:not(.jlz-menu-overlay)::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0,
+    transparent 3px,
+    rgba(255, 255, 255, 0.025) 3px,
+    rgba(255, 255, 255, 0.025) 4px
+  );
+  z-index: 1;
+}
+
+// Light theme — darker scanlines for visibility on white bg
+body.uk-light #spa-content section[data-section]:not(.jlz-menu-overlay)::before,
+body.uk-light .jlz-page-section:not(.jlz-menu-overlay)::before {
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0,
+    transparent 3px,
+    rgba(0, 0, 0, 0.02) 3px,
+    rgba(0, 0, 0, 0.02) 4px
+  );
+}
+
 /* ------------------------------------------------------------------
    Content page variant styles — QF-inspired layout diversity
    ------------------------------------------------------------------ */
@@ -2218,22 +2248,49 @@ body:not([data-page='home'])
   z-index: 10020;
 }
 
+// Topbar — slim full-width transparent strip at the top of the screen.
+// Console aesthetic: edge-to-edge, minimal padding, pointer-events: none
+// on container (buttons re-enable). Matches 5e3a288 style.
 .jlz-topbar {
-  top: 0.85rem;
-  left: 0.85rem;
-  right: 0.85rem;
-  width: auto;
-  min-height: 2.75rem;
-  padding: 0.25rem 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10001;
+  padding: 0.5rem 1rem;
+  padding-top: max(0.5rem, env(safe-area-inset-top, 0px));
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--jlz-color-bg) 72%, transparent),
+    transparent
+  );
+}
+
+.jlz-topbar-controls {
   pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.jlz-topbar-controls .uk-icon-button {
+  width: 2.2rem;
+  height: 2.2rem;
+  color: inherit;
 }
 
 .jlz-topbar__brand {
+  pointer-events: auto;
   color: inherit;
-  font-size: 0.74rem;
+  font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.13em;
   text-decoration: none;
+  text-transform: uppercase;
 }
 
 .jlz-contact-launcher__orb {
@@ -2641,11 +2698,8 @@ body[data-cinematic-sheet]
 
 @media (max-width: 639px) {
   .jlz-topbar {
-    top: 0.55rem;
-    left: 0.55rem;
-    right: 0.55rem;
-    min-height: 3.15rem;
-    padding: 0.35rem 0.38rem 0.35rem 0.85rem;
+    padding: 0.4rem 0.6rem;
+    padding-top: max(0.4rem, env(safe-area-inset-top, 0px));
   }
 
   .jlz-topbar-controls {
@@ -2653,8 +2707,8 @@ body[data-cinematic-sheet]
   }
 
   .jlz-topbar-controls .uk-icon-button {
-    width: 2.35rem;
-    height: 2.35rem;
+    width: 2rem;
+    height: 2rem;
   }
 
   .jlz-menu-launcher {
@@ -2840,42 +2894,6 @@ body[data-cinematic-sheet]
 @media (max-width: 500px) {
   .jlz-lang-label {
     font-size: 0.65rem;
-  }
-}
-
-// ── Shared top-bar control internals ──
-// Cinematic shell geometry is defined in the vertical-narrative layer;
-// these rules keep the language/theme/sound controls consistent.
-.jlz-topbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 10001;
-  padding: 8px 16px;
-  pointer-events: none; // container doesn't block clicks; buttons re-enable
-}
-
-.jlz-topbar-controls {
-  pointer-events: auto;
-  gap: 10px;
-}
-
-.jlz-topbar-controls .uk-icon-button {
-  width: 32px;
-  height: 32px;
-}
-
-@media (max-width: 500px) {
-  .jlz-topbar {
-    padding: 6px 12px;
-  }
-  .jlz-topbar-controls {
-    gap: 8px;
-  }
-  .jlz-topbar-controls .uk-icon-button {
-    width: 28px;
-    height: 28px;
   }
 }
 
