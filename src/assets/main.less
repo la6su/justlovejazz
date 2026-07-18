@@ -270,7 +270,7 @@ body.uk-light li.uk-active .jlz-nav-link {
   margin-right: auto;
 }
 
-/* Content pages: QF theme + _theme-fixes.less handle all text contrast.
+/* Content pages: console-theme handles all text contrast via color-mode overrides.
    No text-shadow needed — contrast comes from color-mode overrides. */
 
 /* (Removed .jlz-event-row + .jlz-gallery-tile — dead CSS, 0 template usages) */
@@ -576,7 +576,7 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
 
 .jlz-fs-poster {
   z-index: 1;
-  background: #08090d center / cover no-repeat;
+  background: var(--jlz-color-bg) center / cover no-repeat;
   transition: opacity 0.65s ease;
 }
 
@@ -1513,7 +1513,7 @@ body[data-page='works'] .jlz-joystick-dotnav__label {
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: var(--jlz-radius-sm);
-  background: #070807;
+  background: var(--jlz-color-bg);
   box-shadow: 0 1.2rem 3.5rem rgba(0, 0, 0, 0.32);
   transform: translateZ(0) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
   transform-style: preserve-3d;
