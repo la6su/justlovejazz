@@ -803,20 +803,22 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
   position: fixed;
   top: 0;
   left: 0;
-  width: 8px;
-  height: 8px;
-  background-color: var(--jlz-color-accent-hover);
-  border-radius: var(--jlz-radius-full);
+  width: 6px;
+  height: 6px;
+  background-color: var(--jlz-color-signal-teal);
+  border-radius: 50%;
   pointer-events: none;
   z-index: 100000;
   will-change: transform;
-  transition: background-color 0.2s ease;
-  /* Centering done via translate(-50%, -50%) in JS */
+  transition: background-color 0.15s ease, width 0.15s ease, height 0.15s ease;
+  /* Console: small teal dot — centering via translate(-50%, -50%) in JS */
 }
 
-/* Inner dot turns RED on hover (codrops reference style) */
+/* Inner dot becomes accent green on hover (console reticle focus) */
 .custom-cursor-inner.is-hover {
-  background-color: var(--jlz-color-cursor-hover);
+  background-color: var(--jlz-color-accent);
+  width: 4px;
+  height: 4px;
 }
 
 .custom-cursor-canvas {
