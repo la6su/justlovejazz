@@ -1,87 +1,60 @@
-// BakuCarousel.ts — Baku cube morphs into a circular carousel on the works section.
+// BakuCarousel.ts — an infinite 3D media stream for the home Works section.
 //
-// Concept: the baku cube IS the carousel. When the works section becomes
-// active, the cube's 6 faces "unfold" — each face travels outward along an
-// arc and settles into a ring of carousel cards. Scrolling/dragging rotates
-// the ring. Clicking a card opens the fullscreen ProjectOverlay. When
-// leaving the section, the ring collapses back into a cube.
-//
-// Morph animation details:
-//   - morphT: 0 = cube (folded), 1 = carousel (unfolded)
-//   - Eased with smoothstep so the morph has ease-in/ease-out (not linear)
-//   - Each card travels along an ARC (not a straight line) from its cube
-//     face position to its ring position — the arc peaks at y=+1.5 mid-morph,
-//     giving a "bloom" feel
-//   - Card opacity: 0 while cube (morphT < 0.25), fades in 0.25→0.7, full at 0.7+
-//   - Cube spin slows as morphT→1 (carousel takes over rotation)
-//   - Ring rotation (scroll.current) is scaled by morphT so the ring only
-//     rotates when mostly unfolded
-//
-// The baku cube's own update() (rotation, drift, worldDNA) still runs —
-// this component renders the carousel cards on top, independently.
+// The planes keep their final editorial composition while entering like an
+// exposed contact sheet: the centre case resolves first, then the right and
+// left neighbours register with an asymmetric stagger.
+// Horizontal drag moves the media beneath the viewer without rotating the world.
+// Clicking a case uses a focus → travel handoff before UIkit takes ownership.
 
 import * as THREE from 'three'
-// uiChrome.ts removed — inline the guard here.
-// #jlz-menu-modal no longer exists (menu is now section 5 / page-menu overlay).
-// Guard against: joystick, project overlay, app loader, and the menu overlay
-// itself (data-section="menu" on home, data-page-section="page-menu" on content).
+// uiChrome.ts removed — inline the guard here. Guard against the cinematic
+// navigator, project overlay, app loader and both responsive sheets.
 function isUiChromeEvent(e: Event): boolean {
   const target = e.target as HTMLElement | null
   if (!target) return false
-  return !!target.closest('#joystick-nav, #jlz-fs-overlay, #jlz-app-loader, [data-section="menu"], [data-page-section="page-menu"]')
+  return !!target.closest(
+    '#cinematic-nav, #jlz-fs-overlay, #jlz-app-loader, [data-cinematic-menu], [data-contact-footer], [data-baku-carousel-control]',
+  )
 }
 function isMenuOpen(): boolean {
-  // Menu overlay is active when its section has .section-active
-  return !!document.querySelector('[data-section="menu"].section-active, [data-page-section="page-menu"].section-active')
+  return document.body.dataset.cinematicSheet === 'menu'
 }
 import { PROJECTS } from '../../Data/Projects'
-import { createRoundedRectGeometry } from '../../Utils/roundedRectGeometry'
+import { prefersReducedMotion } from '../../core/motionPolicy'
+import { CasePlane } from './CasePlane'
 
-// 6 cube faces — textures derived from PROJECTS (4 unique, repeated to fill 6).
-// Loading 4 textures once and referencing by index avoids duplicate GPU resources.
-const CARD_COUNT = 6
+// A dozen plane instances preserve the infinite wrap while the framing exposes
+// only the centre case and its two adjacent neighbours. They share four
+// project textures, so the added continuity does not multiply GPU media.
+const CARD_COUNT = 12
 const CARD_TEXTURE_URLS: string[] = Array.from({ length: CARD_COUNT }, (_, i) => {
   const p = PROJECTS[i % PROJECTS.length]!
   return p.textureUrl || p.detailTextureUrl
 })
 
-const RING_RADIUS = 1.6
-const CARD_W = 1.0
-const CARD_H = 0.7
-const CUBE_SIZE = 0.8
-const CUBE_HALF = CUBE_SIZE / 2
-const ARC_PEAK = 0.8 // y-height of the arc trajectory peak (mid-morph bloom)
-const SCROLL_EASE = 0.1
-const WHEEL_SENSITIVITY = 0.012
-const DRAG_SENSITIVITY = 0.01
-const MORPH_EASE = 0.07
+// At the configured Works camera distance these dimensions frame exactly
+// three large cards, with a deliberate breathing gap between each one.
+const CARD_SCALE = 3.05
+const CARD_SPACING = 3.34
+const MORPH_DAMPING = 3.0
+const SCROLL_DAMPING = 8.8
+const DRAG_SENSITIVITY = 0.0046
 const TAP_THRESHOLD = 6 // px — if pointerup within this distance of down, it's a tap
-// Phase 4: momentum + rubber-band + auto-advance
-const MOMENTUM_DECAY = 0.92 // per-frame velocity decay after drag release
-const MOMENTUM_THRESHOLD = 0.0005 // below this → snap to nearest card
-const RUBBER_BAND_RESISTANCE = 0.35 // drag beyond bounds = 35% effective
-const AUTO_ADVANCE_INTERVAL = 4500 // ms — auto-advance every 4.5s
-const SNAP_ANGLE = (Math.PI * 2) / 6 // 6 cards = 60° between each
-
-// Cube face directions (+X, -X, +Y, -Y, +Z, -Z) — matches SplashCube
-const CUBE_FACES = [
-  { dir: new THREE.Vector3(1, 0, 0), rot: new THREE.Euler(0, Math.PI / 2, 0) },
-  { dir: new THREE.Vector3(-1, 0, 0), rot: new THREE.Euler(0, -Math.PI / 2, 0) },
-  { dir: new THREE.Vector3(0, 1, 0), rot: new THREE.Euler(-Math.PI / 2, 0, 0) },
-  { dir: new THREE.Vector3(0, -1, 0), rot: new THREE.Euler(Math.PI / 2, 0, 0) },
-  { dir: new THREE.Vector3(0, 0, 1), rot: new THREE.Euler(0, 0, 0) },
-  { dir: new THREE.Vector3(0, 0, -1), rot: new THREE.Euler(0, Math.PI, 0) },
-]
+// Momentum only; the slider never auto-advances and has no hard endpoints.
+const MOMENTUM_DECAY = 0.84 // per-frame velocity decay after drag release
+const MOMENTUM_THRESHOLD = 0.0007 // below this → snap to nearest card
+const SNAP_STEP = 1
+const FULLSCREEN_DURATION = 1.15
+const FULLSCREEN_TAKEOVER = 0.86
+const CRT_TRIGGER = 0.42
+const CASE_PLANE_HEIGHT = 9 / 16
 
 export class BakuCarousel extends THREE.Group {
-  private cards: THREE.Mesh[] = []
-  private cardMaterials: THREE.MeshBasicMaterial[] = []
-  private geometry: THREE.PlaneGeometry
+  private cards: CasePlane[] = []
   private scroll = { current: 0, target: 0 }
   private _morphT = 0 // 0 = cube, 1 = carousel (raw, before easing)
   private _morphTarget = 0
   private _active = false
-  private time = 0
   private initialized = false
   private _camera: THREE.Camera | null = null
   private _raycaster: THREE.Raycaster = new THREE.Raycaster()
@@ -92,67 +65,51 @@ export class BakuCarousel extends THREE.Group {
   private dragStartX = 0
   private dragStartY = 0
   private dragMoved = false
-  private wheelHandler: ((e: WheelEvent) => void) | null = null
+  private dragAxis: 'pending' | 'carousel' | 'scroll' = 'pending'
   private pointerDownHandler: ((e: PointerEvent) => void) | null = null
   private pointerMoveHandler: ((e: PointerEvent) => void) | null = null
   private pointerUpHandler: ((e: PointerEvent) => void) | null = null
-  // (keydownHandler removed — arrow keys now handled ONLY by JoystickNav.
-  //  BakuCarousel was intercepting ArrowLeft/Right for its own card navigation,
-  //  which prevented the joystick keyboard arrows from cycling sections.)
-  // C11 fix: canvas hover listeners stored as fields so they can be removed
-  // in dispose(). Previously anonymous → leaked on every Works-section-enter.
-  private _canvasEnterHandler: ((e: PointerEvent) => void) | null = null
-  private _canvasLeaveHandler: ((e: PointerEvent) => void) | null = null
+  private controlClickHandler: ((e: MouseEvent) => void) | null = null
+  // (keydownHandler removed — story arrows are owned by CinematicNav.)
   private snapTimer: ReturnType<typeof setTimeout> | null = null
-  private _startAdvanceTimer: ReturnType<typeof setTimeout> | null = null
 
-  // Phase 4: momentum + rubber-band + auto-advance
+  // Momentum is only applied after a deliberate horizontal drag.
   private velocity = 0 // current scroll velocity (for momentum after drag)
-  private autoAdvanceTimer: ReturnType<typeof setInterval> | null = null
-  private isHovered = false // pause auto-advance on hover
 
   // Callback — fired when user taps/clicks a carousel card
   private _onCardClick: ((index: number) => void) | null = null
+  private _opening: {
+    card: CasePlane
+    index: number
+    time: number
+    started: boolean
+    crtTriggered: boolean
+    reducedMotion: boolean
+    startPosition: THREE.Vector3
+    startScale: number
+    startQuaternion: THREE.Quaternion
+  } | null = null
 
   // Reusable temp vectors (avoid per-frame alloc)
-  private _tmpCubePos = new THREE.Vector3()
-  private _tmpRingPos = new THREE.Vector3()
-  private _tmpArcPos = new THREE.Vector3()
+  private _tmpStreamPos = new THREE.Vector3()
   private _tmpRingRot = new THREE.Euler()
+  private _tmpCameraPosition = new THREE.Vector3()
+  private _tmpCameraDirection = new THREE.Vector3()
+  private _tmpFullscreenPosition = new THREE.Vector3()
+  private _tmpCameraQuaternion = new THREE.Quaternion()
+  private _tmpGroupWorldQuaternion = new THREE.Quaternion()
+  private _fullscreenScale = 1
 
   constructor() {
     super()
     this.name = 'baku-carousel'
-    // Rounded rect geometry (1x1 base, scaled per-card). Radius 0.12 = 12% corner.
-    this.geometry = createRoundedRectGeometry(1, 1, 0.12, 12) as unknown as THREE.PlaneGeometry
   }
 
-  /** Activate the carousel — start morphing from cube to ring.
-   *  A-1 fix: guard against re-entry — World.ts calls setActive() every frame
-   *  on the Works section (fade > 0.5). Previously each call scheduled a new
-   *  800ms setTimeout that was never stored → timer leak + the callback fired
-   *  after dispose() (startAutoAdvance on a disposed carousel). Now we only
-   *  act on false→true transitions and store/clear the timer in a field. */
+  /** Activate the slider — start morphing from cube faces to case planes. */
   setActive(active: boolean): void {
     if (active === this._active) return // no-op on repeated calls (fixes A-1)
     this._active = active
     this._morphTarget = active ? 1 : 0
-    // Phase 4: start/stop auto-advance with carousel active state
-    if (active) {
-      // Clear any pending start timer, then schedule a new one
-      if (this._startAdvanceTimer) clearTimeout(this._startAdvanceTimer)
-      // Delay start until morph is mostly complete
-      this._startAdvanceTimer = setTimeout(() => {
-        this._startAdvanceTimer = null
-        if (this._active && !this.isHovered) this.startAutoAdvance()
-      }, 800)
-    } else {
-      if (this._startAdvanceTimer) {
-        clearTimeout(this._startAdvanceTimer)
-        this._startAdvanceTimer = null
-      }
-      this.stopAutoAdvance()
-    }
   }
 
   get isActive(): boolean {
@@ -171,7 +128,8 @@ export class BakuCarousel extends THREE.Group {
     const scrolling = Math.abs(this.scroll.target - this.scroll.current) > 0.001
     // Active drag
     const dragging = this.isDown
-    return morphing || scrolling || dragging
+    const planeMotion = this.cards.some((card) => card.isAnimating)
+    return morphing || scrolling || dragging || planeMotion || this._opening !== null
   }
 
   /** Set camera reference for raycast-based tap detection. */
@@ -201,11 +159,14 @@ export class BakuCarousel extends THREE.Group {
               (tex) => {
                 tex.colorSpace = THREE.SRGBColorSpace
                 // R-1 fix: use mipmaps for minification (was LinearFilter = no
-                // mipmaps → aliasing/shimmering on angled cards around the ring).
+                // mipmaps → aliasing/shimmering on receding slider planes).
                 // Default LinearMipmapLinearFilter gives smooth minification.
                 tex.minFilter = THREE.LinearMipmapLinearFilter
                 tex.magFilter = THREE.LinearFilter
                 tex.generateMipmaps = true
+                // A modest anisotropy level keeps the moving crop stable on
+                // high-DPI displays without the cost of maxing every texture.
+                tex.anisotropy = 4
                 resolve(tex)
               },
               undefined,
@@ -218,88 +179,58 @@ export class BakuCarousel extends THREE.Group {
 
     CARD_TEXTURE_URLS.forEach((url, i) => {
       const tex = urlToTexture.get(url)!
-      const mat = new THREE.MeshBasicMaterial({
-        map: tex,
-        transparent: true,
-        // R-2 fix: depthWrite=false on transparent cards (was default true →
-        // z-fighting/popping when cards pass through similar depths during
-        // cube→ring morph + auto-advance rotation).
-        depthWrite: false,
-        side: THREE.DoubleSide,
-        opacity: 0,
-      })
-      const mesh = new THREE.Mesh(this.geometry, mat)
-      mesh.scale.set(CARD_W, CARD_H, 1)
-      mesh.userData.texIdx = i
+      const plane = new CasePlane(tex)
+      plane.scale.setScalar(CARD_SCALE)
+      plane.userData.texIdx = i
       // cardIndex = which PROJECT (0..3) — used by onCardClick → onProjectSelect
-      mesh.userData.cardIndex = i % PROJECTS.length
+      plane.userData.cardIndex = i % PROJECTS.length
       // keepVisible = true so SectionSceneFactory.hideGeometry() doesn't
       // hide the carousel cards (it hides all non-Points, non-keepVisible meshes)
-      mesh.userData.keepVisible = true
-      this.cards.push(mesh)
-      this.cardMaterials.push(mat)
-      this.add(mesh)
+      plane.userData.keepVisible = true
+      this.cards.push(plane)
+      this.add(plane)
     })
 
     this.addEventListeners()
   }
 
   private addEventListeners(): void {
-    this.wheelHandler = (e: WheelEvent) => {
-      if (!this._active || this._morphT < 0.5) return
-      if (isMenuOpen() || isUiChromeEvent(e)) return
-      // Don't intercept while CircularNav transition is in progress
-      const nav = (window as unknown as { experience?: { _circNav?: { isActive: () => boolean } } }).experience?._circNav
-      if (nav?.isActive()) return
-      e.preventDefault()
-      this.scroll.target += e.deltaY * WHEEL_SENSITIVITY
-      this.scheduleSnap()
-    }
     this.pointerDownHandler = (e: PointerEvent) => {
-      if (!this._active || this._morphT < 0.5) return
+      if (!this._active || this._morphT < 0.5 || this._opening) return
       if (isMenuOpen() || isUiChromeEvent(e)) return
       // D-15 fix: only intercept on home page (carousel is home-only; on
       // content pages the window listener would block WorkCard clicks if
       // the carousel's _active flag were stuck true from a prior home visit).
       if (document.body.dataset.page !== 'home') return
-      // Don't intercept while CircularNav transition is in progress
-      const nav = (window as unknown as { experience?: { _circNav?: { isActive: () => boolean } } }).experience?._circNav
-      if (nav?.isActive()) return
       this.isDown = true
       this.dragStartX = e.clientX
       this.dragStartY = e.clientY
       this.dragMoved = false
+      this.dragAxis = 'pending'
       this.velocity = 0 // reset velocity on new drag
-      // Stop auto-advance while dragging
-      this.stopAutoAdvance()
     }
     this.pointerMoveHandler = (e: PointerEvent) => {
-      if (!this.isDown || !this._active) return
+      if (!this.isDown || !this._active || this._opening) return
       const dx = e.clientX - this.dragStartX
       const dy = e.clientY - this.dragStartY
-      // Mark as moved if beyond tap threshold (so pointerup knows it was a drag, not a tap)
-      if (Math.abs(dx) > TAP_THRESHOLD || Math.abs(dy) > TAP_THRESHOLD) {
+      if (
+        this.dragAxis === 'pending' &&
+        (Math.abs(dx) > TAP_THRESHOLD || Math.abs(dy) > TAP_THRESHOLD)
+      ) {
+        this.dragAxis = Math.abs(dx) > Math.abs(dy) ? 'carousel' : 'scroll'
         this.dragMoved = true
       }
-      if (this.dragMoved && e.cancelable) e.preventDefault()
+      if (this.dragAxis === 'scroll') {
+        this.isDown = false
+        return
+      }
+      if (this.dragAxis !== 'carousel') return
+      if (e.cancelable) e.preventDefault()
 
-      // Phase 4: track velocity for momentum
+      // Track velocity for momentum and the plane deformation field.
       const delta = -dx * DRAG_SENSITIVITY
       this.velocity = delta
-
-      // Phase 4: rubber-band — if beyond bounds, apply resistance
-      const nearestSnap = this.getNearestSnapAngle()
-      const distFromSnap = this.scroll.target - nearestSnap
-      const maxDrag = SNAP_ANGLE * 0.5 // half a card width beyond snap = rubber band zone
-      if (Math.abs(distFromSnap) > maxDrag) {
-        // Beyond bounds — apply 0.35x resistance
-        const excess = Math.abs(distFromSnap) - maxDrag
-        const sign = Math.sign(distFromSnap)
-        const resistedExcess = excess * RUBBER_BAND_RESISTANCE
-        this.scroll.target = nearestSnap + sign * (maxDrag + resistedExcess)
-      } else {
-        this.scroll.target += delta
-      }
+      this.scroll.target += delta
 
       this.dragStartX = e.clientX
       this.dragStartY = e.clientY
@@ -309,35 +240,33 @@ export class BakuCarousel extends THREE.Group {
       if (!this.isDown) return
       this.isDown = false
       // If pointer didn't move much → treat as a TAP on a carousel card
-      if (!this.dragMoved) {
+      if (!this.dragMoved && this.dragAxis === 'pending') {
         this.handleTap(e.clientX, e.clientY)
       } else {
         // Phase 4: momentum — apply velocity decay in update() until threshold
         // scheduleSnap() will fire after momentum settles
         this.scheduleSnap(300) // delayed snap — give momentum time to settle
       }
-      // Resume auto-advance after drag ends (if not hovering)
-      if (this._active && !this.isHovered) this.startAutoAdvance()
     }
-    // (keyboard handler removed — arrow keys now owned by JoystickNav only.
-    //  BakuCarousel navigation is via wheel + pointer drag. Enter/Space to
+    // (keyboard handler removed — story arrows are owned by CinematicNav.
+    //  BakuCarousel navigation is via horizontal pointer drag. Enter/Space to
     //  open the front card is handled by Experience.ts click raycaster.)
-    window.addEventListener('wheel', this.wheelHandler, { passive: false })
     window.addEventListener('pointerdown', this.pointerDownHandler)
     window.addEventListener('pointermove', this.pointerMoveHandler, { passive: false })
     window.addEventListener('pointerup', this.pointerUpHandler)
     window.addEventListener('pointercancel', this.pointerUpHandler)
-
-    // Phase 4: hover detection on canvas — pause auto-advance.
-    // C11 fix: store handlers as fields so dispose() can remove them.
-    // Previously anonymous → accumulated on canvas across section-enter cycles.
-    const canvas = document.querySelector<HTMLElement>('canvas.canvas')
-    if (canvas) {
-      this._canvasEnterHandler = () => this.setHovered(true)
-      this._canvasLeaveHandler = () => this.setHovered(false)
-      canvas.addEventListener('pointerenter', this._canvasEnterHandler)
-      canvas.addEventListener('pointerleave', this._canvasLeaveHandler)
+    this.controlClickHandler = (event: MouseEvent) => {
+      const control = (event.target as HTMLElement | null)?.closest<HTMLElement>(
+        '[data-baku-carousel-control]',
+      )
+      if (!control || !this._active || this._opening || document.body.dataset.page !== 'home')
+        return
+      event.preventDefault()
+      const direction = control.dataset.bakuCarouselControl
+      if (direction === 'prev') this.prev()
+      if (direction === 'next') this.next()
     }
+    window.addEventListener('click', this.controlClickHandler)
   }
 
   /** Tap detected → raycast to check if a card was actually hit.
@@ -355,11 +284,11 @@ export class BakuCarousel extends THREE.Group {
     this._ndc.x = (clientX / window.innerWidth) * 2 - 1
     this._ndc.y = -(clientY / window.innerHeight) * 2 + 1
     this._raycaster.setFromCamera(this._ndc, this._camera)
-    // Raycast against visible cards only (opacity > 0 means morphed enough)
+    // Raycast against revealed case planes only.
     const hitTargets: THREE.Object3D[] = []
     for (let i = 0; i < this.cards.length; i++) {
       const card = this.cards[i]!
-      if (this.cardMaterials[i]!.opacity > 0.1) {
+      if (card.visible) {
         hitTargets.push(card)
       }
     }
@@ -367,21 +296,17 @@ export class BakuCarousel extends THREE.Group {
     if (intersects.length > 0) {
       const hit = intersects[0]!.object as THREE.Mesh
       const idx = hit.userData.cardIndex as number
-      // Phase 5: trigger wobble pulse on cube before opening project
-      window.dispatchEvent(new CustomEvent('jlz:wobble-pulse'))
-      this._onCardClick?.(idx)
+      this.beginFullscreenTransition(hit as CasePlane, idx)
     }
     // No hit → tap was on cube or empty space → ignore (no overlay open)
   }
 
-  /** Get the index of the card currently facing the camera (front of ring).
+  /** Get the project index currently facing the camera (front of stream).
    *  Uses scroll.current (the settled value). */
   getFrontCardIndex(): number {
     if (this.cards.length === 0) return 0
-    const n = this.cards.length
-    const step = (Math.PI * 2) / n
-    const idx = Math.round(-this.scroll.current / step)
-    return ((idx % n) + n) % n
+    const idx = Math.round(-this.scroll.current / SNAP_STEP)
+    return ((idx % PROJECTS.length) + PROJECTS.length) % PROJECTS.length
   }
 
   /** Get the index of the card that WILL face the camera after the current
@@ -389,10 +314,8 @@ export class BakuCarousel extends THREE.Group {
    *  Use this right after prev()/next() to know which project to load. */
   getTargetCardIndex(): number {
     if (this.cards.length === 0) return 0
-    const n = this.cards.length
-    const step = (Math.PI * 2) / n
-    const idx = Math.round(-this.scroll.target / step)
-    return ((idx % n) + n) % n
+    const idx = Math.round(-this.scroll.target / SNAP_STEP)
+    return ((idx % PROJECTS.length) + PROJECTS.length) % PROJECTS.length
   }
 
   private scheduleSnap(delay = 180): void {
@@ -400,62 +323,46 @@ export class BakuCarousel extends THREE.Group {
     this.snapTimer = setTimeout(() => this.snap(), delay)
   }
 
-  /** Phase 4: nearest snap angle (for rubber-band + momentum target). */
-  private getNearestSnapAngle(): number {
-    const step = this.anglePerCard()
-    const idx = Math.round(this.scroll.target / step)
-    return idx * step
-  }
-
-  private anglePerCard(): number {
-    return (Math.PI * 2) / this.cards.length
-  }
-
   next(): void {
-    this.scroll.target -= this.anglePerCard()
-    this.stopAutoAdvance()
-    if (this._active && !this.isHovered) this.startAutoAdvance()
+    this.scroll.target -= SNAP_STEP
   }
 
   prev(): void {
-    this.scroll.target += this.anglePerCard()
-    this.stopAutoAdvance()
-    if (this._active && !this.isHovered) this.startAutoAdvance()
+    this.scroll.target += SNAP_STEP
   }
 
   private snap(): void {
-    const step = this.anglePerCard()
-    const idx = Math.round(this.scroll.target / step)
-    this.scroll.target = idx * step
+    this.scroll.target = Math.round(this.scroll.target / SNAP_STEP) * SNAP_STEP
     this.velocity = 0 // clear velocity after snap
   }
 
-  /** Phase 4: start auto-advance every 4.5s (pause on hover). */
-  startAutoAdvance(): void {
-    if (this.autoAdvanceTimer) return // already running
-    if (!this._active || this._morphT < 0.5) return
-    this.autoAdvanceTimer = setInterval(() => {
-      if (this.isHovered || this.isDown) return // pause on hover/drag
-      this.scroll.target -= this.anglePerCard()
-    }, AUTO_ADVANCE_INTERVAL)
+  /** Wrap an unbounded position into the physical instances around the camera. */
+  private wrapSlot(value: number, count: number): number {
+    return ((((value + count / 2) % count) + count) % count) - count / 2
   }
 
-  /** Phase 4: stop auto-advance. */
-  stopAutoAdvance(): void {
-    if (this.autoAdvanceTimer) {
-      clearInterval(this.autoAdvanceTimer)
-      this.autoAdvanceTimer = null
+  /** Let a physically deforming plane reach fullscreen before the DOM modal
+   * takes over. This avoids the old click → dark-frame → modal discontinuity. */
+  private beginFullscreenTransition(card: CasePlane, index: number): void {
+    if (this._opening) return
+    this._opening = {
+      card,
+      index,
+      time: 0,
+      started: false,
+      crtTriggered: false,
+      reducedMotion: prefersReducedMotion(),
+      startPosition: card.position.clone(),
+      startScale: card.scale.x,
+      startQuaternion: card.quaternion.clone(),
     }
+    if (!this._opening.reducedMotion) card.pulse(0.42)
   }
 
-  /** Phase 4: set hover state (pause auto-advance). */
-  setHovered(hovered: boolean): void {
-    this.isHovered = hovered
-    if (hovered) {
-      this.stopAutoAdvance()
-    } else if (this._active) {
-      this.startAutoAdvance()
-    }
+  /** Called after the UIkit overlay closes, returning the stream to normal. */
+  resetTransition(): void {
+    this._opening?.card.setTransition(0)
+    this._opening = null
   }
 
   /** Smoothstep easing: S-curve for organic ease-in/ease-out. */
@@ -465,10 +372,8 @@ export class BakuCarousel extends THREE.Group {
   }
 
   update(dt: number): void {
-    this.time += dt
-
-    // Morph lerp (cube ↔ carousel) — raw value
-    this._morphT += (this._morphTarget - this._morphT) * MORPH_EASE
+    // Time-based damping keeps reveal timing identical at 60/90/120Hz.
+    this._morphT = THREE.MathUtils.damp(this._morphT, this._morphTarget, MORPH_DAMPING, dt)
     if (Math.abs(this._morphTarget - this._morphT) < 0.001) {
       this._morphT = this._morphTarget
     }
@@ -486,93 +391,140 @@ export class BakuCarousel extends THREE.Group {
       }
     }
 
-    // Scroll lerp (only matters when morphed into carousel)
-    this.scroll.current += (this.scroll.target - this.scroll.current) * SCROLL_EASE
-    // Scale ring rotation by morphT — ring only rotates when mostly unfolded
-    const ringRotation = this.scroll.current * easedT
+    // Scroll lerp (only matters when morphed into the media stream).
+    const previousScroll = this.scroll.current
+    this.scroll.current = THREE.MathUtils.damp(
+      this.scroll.current,
+      this.scroll.target,
+      SCROLL_DAMPING,
+      dt,
+    )
+    const scrollVelocity = THREE.MathUtils.clamp((this.scroll.current - previousScroll) / dt, -8, 8)
+    const opening = this._opening
+    if (opening) {
+      opening.time = opening.reducedMotion
+        ? 1
+        : Math.min(1, opening.time + dt / FULLSCREEN_DURATION)
+      if (this._camera) {
+        this._camera.getWorldPosition(this._tmpCameraPosition)
+        this._camera.getWorldDirection(this._tmpCameraDirection)
+        this._tmpFullscreenPosition
+          .copy(this._tmpCameraPosition)
+          .addScaledVector(this._tmpCameraDirection, 0.92)
+        this.updateWorldMatrix(true, false)
+        this.worldToLocal(this._tmpFullscreenPosition)
+        this._camera.getWorldQuaternion(this._tmpCameraQuaternion)
+        this.getWorldQuaternion(this._tmpGroupWorldQuaternion)
+        this._tmpCameraQuaternion.premultiply(this._tmpGroupWorldQuaternion.invert())
+        const camera = this._camera as THREE.PerspectiveCamera
+        if (camera.isPerspectiveCamera) {
+          const frameHeight = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov * 0.5)) * 0.92
+          const frameWidth = frameHeight * camera.aspect
+          this._fullscreenScale = Math.max(frameWidth, frameHeight / CASE_PLANE_HEIGHT) * 1.015
+        }
+      }
+    }
 
-    // Card opacity: invisible while cube (morphT < 0.25), fade in 0.25→0.7
-    const cardOpacity = THREE.MathUtils.clamp((this._morphT - 0.25) / 0.45, 0, 1)
-
+    const neighboursOpacity = opening
+      ? 1 - this.smoothstep(THREE.MathUtils.clamp(opening.time / 0.56, 0, 1))
+      : 1
     const n = this.cards.length
     for (let i = 0; i < n; i++) {
       const card = this.cards[i]!
-      const mat = this.cardMaterials[i]!
-      mat.opacity = cardOpacity
 
-      // ── Cube position (folded state) — face of cube ──
-      const cubeFace = CUBE_FACES[i % CUBE_FACES.length]!
-      this._tmpCubePos.copy(cubeFace.dir).multiplyScalar(CUBE_HALF)
-      const cubeRot = cubeFace.rot
+      // ── Infinite media-stream target ──
+      // The nearest physical slot is reused at each edge. The viewer gets a
+      // continuous sequence rather than a carousel with a first and last card.
+      const rawSlot = i + this.scroll.current / SNAP_STEP
+      const slot = this.wrapSlot(rawSlot, n)
+      const distance = Math.abs(slot)
+      this._tmpStreamPos.set(slot * CARD_SPACING, 0, 0)
+      this._tmpRingRot.set(0, 0, 0)
 
-      // ── Carousel position (unfolded state) — point on horizontal ring ──
-      // Offset by π/2 so card 0 is at FRONT (+Z, closest to camera at z=7),
-      // not at the right side (+X). This makes the active card face the camera.
-      const baseAngle = (i / n) * Math.PI * 2 + Math.PI / 2
-      const angle = baseAngle + ringRotation
-      this._tmpRingPos.set(
-        Math.cos(angle) * RING_RADIUS,
-        0,
-        Math.sin(angle) * RING_RADIUS,
+      // Contact-sheet reveal: the centre establishes the composition, then the
+      // right and left frames register on deliberately different beats. The
+      // asymmetry avoids the generic "all cards fade at once" entrance while
+      // keeping the final strip perfectly flat.
+      const delay =
+        distance < 0.5
+          ? 0.02
+          : slot > 0
+            ? 0.2 + Math.min(distance - 1, 2) * 0.055
+            : 0.4 + Math.min(distance - 1, 2) * 0.04
+      const localReveal = this.smoothstep(THREE.MathUtils.clamp((easedT - delay) / 0.55, 0, 1))
+      card.position.copy(this._tmpStreamPos)
+      const entranceDirection = distance < 0.5 ? 0 : Math.sign(slot)
+      card.position.x += entranceDirection * (1 - localReveal) * 0.28
+      card.position.y += (1 - localReveal) * (distance < 0.5 ? -0.055 : slot > 0 ? 0.065 : -0.075)
+      card.rotation.copy(this._tmpRingRot)
+
+      // A flat editorial strip: every frame keeps one scale and one horizon.
+      // Edge instances are clipped by the viewport like the Codrops gallery.
+      const scale = THREE.MathUtils.lerp(distance < 0.5 ? 0.955 : 0.94, 1, localReveal)
+      card.scale.setScalar(CARD_SCALE * scale)
+      const streamReveal = localReveal * THREE.MathUtils.clamp(3.25 - distance, 0, 1)
+      card.setReveal(opening?.card === card ? 1 : streamReveal * neighboursOpacity)
+      card.setMotion(0, scrollVelocity)
+      card.setEdgeWarp(0)
+      // Let the authored still become legible before texture counter-travel
+      // starts. This separates the entrance cue from the interaction cue.
+      const parallaxReady = this.smoothstep(
+        THREE.MathUtils.clamp((localReveal - 0.72) / 0.28, 0, 1),
       )
-      // Card faces inward (toward ring center / camera) — reuse scratch Euler
-      this._tmpRingRot.set(0, -angle + Math.PI / 2, 0)
+      card.setParallax(THREE.MathUtils.clamp(slot * -0.42 * parallaxReady, -1, 1))
+      card.setTransition(0)
+      if (opening?.card === card) {
+        const focus = this.smoothstep(THREE.MathUtils.clamp(opening.time / 0.9, 0, 1))
+        if (this._camera) {
+          card.position.lerpVectors(opening.startPosition, this._tmpFullscreenPosition, focus)
+          card.quaternion.slerpQuaternions(
+            opening.startQuaternion,
+            this._tmpCameraQuaternion,
+            focus,
+          )
+        }
+        card.scale.setScalar(THREE.MathUtils.lerp(opening.startScale, this._fullscreenScale, focus))
+        card.setReveal(1)
+        card.setMotion(0, 1)
+        card.setEdgeWarp(0)
+        card.setParallax(0)
+        card.setTransition(this.smoothstep(opening.time))
+      }
+      card.update(dt, this._active)
+    }
 
-      // ── ARC trajectory: lerp position, then add arc peak (y-bump) ──
-      // The arc peaks at mid-morph (easedT=0.5) and is 0 at start+end.
-      // sin(π·t) = 0 at t=0,1 and 1 at t=0.5 — perfect arc bump.
-      const arcBump = Math.sin(Math.PI * easedT) * ARC_PEAK
-      this._tmpArcPos.lerpVectors(this._tmpCubePos, this._tmpRingPos, easedT)
-      this._tmpArcPos.y += arcBump
+    if (opening && !opening.crtTriggered && opening.time >= CRT_TRIGGER) {
+      opening.crtTriggered = true
+      if (!opening.reducedMotion) opening.card.triggerCrtOn()
+    }
 
-      card.position.copy(this._tmpArcPos)
-      card.rotation.x = THREE.MathUtils.lerp(cubeRot.x, this._tmpRingRot.x, easedT)
-      card.rotation.y = THREE.MathUtils.lerp(cubeRot.y, this._tmpRingRot.y, easedT)
-      card.rotation.z = THREE.MathUtils.lerp(cubeRot.z, this._tmpRingRot.z, easedT)
-
-      // Scale: smaller in cube state (face of 1.6 cube), full in carousel
-      const scale = THREE.MathUtils.lerp(0.8, 1.0, easedT)
-      card.scale.set(CARD_W * scale, CARD_H * scale, 1)
+    if (opening && !opening.started && opening.time >= FULLSCREEN_TAKEOVER) {
+      opening.started = true
+      this._onCardClick?.(opening.index)
     }
   }
 
   dispose(): void {
-    if (this.wheelHandler) window.removeEventListener('wheel', this.wheelHandler)
     if (this.pointerDownHandler) window.removeEventListener('pointerdown', this.pointerDownHandler)
     if (this.pointerMoveHandler) window.removeEventListener('pointermove', this.pointerMoveHandler)
     if (this.pointerUpHandler) {
       window.removeEventListener('pointerup', this.pointerUpHandler)
       window.removeEventListener('pointercancel', this.pointerUpHandler)
     }
-    // (keydownHandler removal — arrow keys now owned by JoystickNav only)
-    // C11 fix: remove canvas hover listeners (canvas persists across carousel
-    // disposal — it's owned by Renderer — so handlers would accumulate without this).
-    if (this._canvasEnterHandler || this._canvasLeaveHandler) {
-      const canvas = document.querySelector<HTMLElement>('canvas.canvas')
-      if (canvas) {
-        if (this._canvasEnterHandler) canvas.removeEventListener('pointerenter', this._canvasEnterHandler)
-        if (this._canvasLeaveHandler) canvas.removeEventListener('pointerleave', this._canvasLeaveHandler)
-      }
-      this._canvasEnterHandler = null
-      this._canvasLeaveHandler = null
-    }
+    if (this.controlClickHandler) window.removeEventListener('click', this.controlClickHandler)
     if (this.snapTimer) clearTimeout(this.snapTimer)
-    if (this._startAdvanceTimer) clearTimeout(this._startAdvanceTimer) // A-1 fix
-    this.stopAutoAdvance() // Phase 4: clean up auto-advance timer
-    this.geometry.dispose()
-    // Dispose card materials. Textures are SHARED across cards (4 unique for 6
-    // faces), so dispose each unique texture only once.
+    // Textures are SHARED across cards (4 unique for 6 faces), so dispose each
+    // one only once while CasePlane releases its own geometry/material.
     const disposedTextures = new Set<THREE.Texture>()
-    for (const mat of this.cardMaterials) {
-      const m = mat as unknown as { map?: THREE.Texture }
-      if (m.map && !disposedTextures.has(m.map)) {
-        m.map.dispose()
-        disposedTextures.add(m.map)
+    for (const card of this.cards) {
+      const texture = card.texture
+      if (texture && !disposedTextures.has(texture)) {
+        texture.dispose()
+        disposedTextures.add(texture)
       }
-      mat.dispose()
+      card.dispose()
     }
     this.cards = []
-    this.cardMaterials = []
     this.clear()
   }
 }

@@ -87,7 +87,7 @@ function navigateToPage(path: string): void {
   // Parse hash (e.g. "/manifesto#section-manifesto-02" → path="/manifesto", hash="#section-manifesto-02")
   // The hash targets a section element inside a [data-page-section] (content pages)
   // or a [data-section] (home). After renderView, we dispatch jlz:goto-section-by-hash
-  // so JoystickNav can activate the target section.
+  // so CinematicNav can move the horizontal track to the target section.
   const hashIdx = path.indexOf('#')
   const purePath = hashIdx >= 0 ? path.slice(0, hashIdx) : path
   const hash = hashIdx >= 0 ? path.slice(hashIdx) : ''
@@ -96,7 +96,7 @@ function navigateToPage(path: string): void {
   history.pushState(null, '', path) // keep hash in URL for shareable links
   renderView(page)
   window.scrollTo({ top: 0, behavior: 'auto' })
-  // If hash targets a section, dispatch event for JoystickNav to activate it.
+  // If hash targets a section, dispatch an event for CinematicNav to activate it.
   // Delayed via requestAnimationFrame so the freshly-rendered DOM is settled.
   if (hash) {
     requestAnimationFrame(() => {
@@ -154,7 +154,7 @@ export function initRouter(): void {
     // fires first and calls navigateToPage(url.pathname) — DROPPING the hash,
     // so menu subsection clicks always land on section 1 instead of the target.
     if (anchorEl.dataset.navHref !== undefined) return
-    // A bare hash is used by UIKit accordions and the joystick dotnav. It is
+    // A bare hash is used by UIkit nav toggles and local controls. It is
     // not a route to `/`: handle hashes before resolving them against the
     // current URL, otherwise `new URL('#', origin)` incorrectly becomes '/'.
     if (href.startsWith('#')) {

@@ -7,6 +7,23 @@
 // add a component-specific variable here only when a visual effect has no
 // global token.
 
+// ── Remove legacy QF personality that conflicts with the JLZ material system ──
+// QF remains the component baseline, but scanline-like body texture and glitch
+// responses compete with the selected calm glass/motion language. Variables
+// are intentionally overridden here rather than patching the vendor snapshot.
+@internal-base-body-mode: none;
+@internal-link-muted-hover-mode: none;
+@internal-link-text-hover-mode: none;
+@internal-link-heading-hover-mode: none;
+@internal-icon-button-hover-mode: none;
+@internal-button-default-mode: none;
+@internal-button-primary-mode: none;
+@internal-button-secondary-mode: none;
+@internal-button-default-hover-mode: none;
+@internal-button-primary-hover-mode: none;
+@internal-button-secondary-hover-mode: none;
+@internal-button-text-hover-mode: none;
+
 // ── Global semantic palette ──
 @global-primary-background: @jlz-color-accent;
 @global-primary-hover-background: @jlz-color-accent-hover;

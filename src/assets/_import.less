@@ -25,36 +25,40 @@
 // ═══════════════════════════════════════════════════════════════════════
 
 // ── Color ──
-@jlz-color-bg: #050507;
-@jlz-color-bg-elevated: #0a0a0f;
-@jlz-color-surface: rgba(255, 255, 255, 0.04);
-@jlz-color-surface-hover: rgba(255, 255, 255, 0.08);
-@jlz-color-border: rgba(255, 255, 255, 0.1);
-@jlz-color-border-strong: rgba(255, 255, 255, 0.2);
+@jlz-color-bg: #070908;
+@jlz-color-bg-elevated: #0d110f;
+@jlz-color-surface: #101612;
+@jlz-color-surface-hover: #151d18;
+@jlz-color-border: rgba(220, 245, 224, 0.14);
+@jlz-color-border-strong: rgba(220, 245, 224, 0.32);
 
-@jlz-color-text: rgba(255, 255, 255, 0.95);
-@jlz-color-text-muted: rgba(255, 255, 255, 0.72);
-@jlz-color-text-subtle: rgba(255, 255, 255, 0.5);
-@jlz-color-text-inverse: #050507;
+@jlz-color-text: #f2f6ef;
+@jlz-color-text-muted: rgba(226, 238, 228, 0.68);
+@jlz-color-text-subtle: rgba(226, 238, 228, 0.42);
+@jlz-color-text-inverse: #070908;
 
-@jlz-color-accent: #515d84;
-@jlz-color-accent-hover: #6b78a3;
-@jlz-color-accent-glow: rgba(81, 93, 132, 0.4);
+@jlz-color-accent: #b8ed69;
+@jlz-color-accent-hover: #d4ff90;
+@jlz-color-accent-glow: rgba(184, 237, 105, 0.22);
+// Secondary signal is reserved for direction, focus and realtime state.
+// It originates in the Vibe dark-green variation, but remains a JLZ token.
+@jlz-color-signal-teal: #45d7bc;
+@jlz-color-signal-teal-muted: rgba(69, 215, 188, 0.28);
 
 // ── Typography ──
 @jlz-font-display:
-  'Inter',
+  'Onest',
   -apple-system,
   BlinkMacSystemFont,
   sans-serif;
 @jlz-font-body:
-  'Inter',
+  'Onest',
   -apple-system,
   BlinkMacSystemFont,
   'Segoe UI',
   Roboto,
   sans-serif;
-@jlz-font-mono: 'Inter', 'SF Mono', monospace;
+@jlz-font-mono: 'SFMono-Regular', 'Cascadia Code', 'JetBrains Mono', 'Consolas', monospace;
 
 @jlz-weight-light: 300;
 @jlz-weight-regular: 400;
@@ -87,9 +91,20 @@
 // ── Radius ──
 @jlz-radius-none: 0;
 @jlz-radius-sm: 0.125rem;
-@jlz-radius-md: 0.25rem;
-@jlz-radius-lg: 0.5rem;
-@jlz-radius-full: 9999px;
+@jlz-radius-md: 0;
+@jlz-radius-lg: 0.125rem;
+@jlz-radius-xl: 0.25rem;
+@jlz-radius-fluid: 0.25rem;
+@jlz-radius-full: 0.125rem;
+
+// ── Console interface surfaces ──
+// Shared technical planes replace the former translucent fluid islands.
+@jlz-color-fluid-surface: #0d120f;
+@jlz-color-fluid-surface-strong: #141b16;
+@jlz-color-fluid-border: rgba(220, 245, 224, 0.2);
+@jlz-color-fluid-highlight: rgba(220, 245, 224, 0.1);
+@jlz-color-fluid-warm: #b8ed69;
+@jlz-color-telegram: #2aabee;
 
 // ── Z-index ──
 @jlz-z-canvas: 1;
@@ -137,6 +152,8 @@
   --jlz-color-accent: @jlz-color-accent;
   --jlz-color-accent-hover: @jlz-color-accent-hover;
   --jlz-color-accent-glow: @jlz-color-accent-glow;
+  --jlz-color-signal-teal: @jlz-color-signal-teal;
+  --jlz-color-signal-teal-muted: @jlz-color-signal-teal-muted;
 
   --jlz-font-display: @jlz-font-display;
   --jlz-font-body: @jlz-font-body;
@@ -172,7 +189,18 @@
   --jlz-radius-sm: @jlz-radius-sm;
   --jlz-radius-md: @jlz-radius-md;
   --jlz-radius-lg: @jlz-radius-lg;
+  --jlz-radius-xl: @jlz-radius-xl;
+  --jlz-radius-fluid: @jlz-radius-fluid;
   --jlz-radius-full: @jlz-radius-full;
+
+  --jlz-color-fluid-surface: @jlz-color-fluid-surface;
+  --jlz-color-fluid-surface-strong: @jlz-color-fluid-surface-strong;
+  --jlz-color-fluid-border: @jlz-color-fluid-border;
+  --jlz-color-fluid-highlight: @jlz-color-fluid-highlight;
+  --jlz-color-fluid-warm: @jlz-color-fluid-warm;
+  --jlz-color-telegram: @jlz-color-telegram;
+  --jlz-fluid-blur: 0px;
+  --jlz-fluid-shadow: none;
 
   --jlz-z-canvas: @jlz-z-canvas;
   --jlz-z-content: @jlz-z-content;
@@ -206,11 +234,9 @@
   --jlz-joystick-size: 110px;
   --jlz-joystick-size-sm: 90px;
 
-  /* Radial scrim behind content for readability over 3D.
-     Flips with theme: dark veil aids light text (dark mode),
-     light veil aids dark text (light mode). See html.uk-light below. */
-  --jlz-scrim-1: rgba(5, 5, 7, 0.15);
-  --jlz-scrim-2: rgba(5, 5, 7, 0.04);
+  /* A single dark field keeps DOM captions legible without soft glass veils. */
+  --jlz-scrim-1: rgba(3, 5, 4, 0.42);
+  --jlz-scrim-2: rgba(3, 5, 4, 0.18);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -231,6 +257,12 @@ html.uk-light {
      Needed for dropdown/overlay components that use CSS vars. */
   --jlz-color-bg: #fafafa;
   --jlz-color-bg-elevated: #ffffff;
+  --jlz-color-fluid-surface: rgba(255, 255, 255, 0.58);
+  --jlz-color-fluid-surface-strong: rgba(255, 255, 255, 0.82);
+  --jlz-color-fluid-border: rgba(5, 5, 7, 0.12);
+  --jlz-color-fluid-highlight: rgba(255, 255, 255, 0.85);
+  --jlz-color-signal-teal: #45d7bc;
+  --jlz-color-signal-teal-muted: rgba(69, 215, 188, 0.28);
   /* Light scrim — soft white veil aids dark-text readability over 3D
      (mirrors the dark scrim in dark mode). */
   --jlz-scrim-1: rgba(255, 255, 255, 0.12);
@@ -335,28 +367,78 @@ html.uk-light {
 // This is the canonical UIKit theming pattern — see:
 // https://getuikit.com/docs/less → "Hooks" section.
 
-// ── Icon button: glassmorphism (used by language, theme and sound controls) ──
-// UIKit's default uk-icon-button is a solid-colored circle. We override via
-// hooks to get the glass-morphism look: semi-transparent bg + backdrop-blur
-// + accent glow on hover. This applies to ALL uk-icon-button instances.
+// ── Buttons: compact glass controls, still owned by UIKit semantics. ──
+.hook-button() {
+  border-radius: @jlz-radius-md;
+  font-weight: @jlz-weight-semibold;
+  letter-spacing: 0.035em;
+  transition:
+    transform @jlz-duration-fast @jlz-ease-state,
+    border-color @jlz-duration-fast ease,
+    background @jlz-duration-fast ease,
+    box-shadow @jlz-duration-fast ease;
+}
+
+.hook-button-hover() {
+  transform: translateY(-1px);
+}
+
+.hook-button-active() {
+  transform: translateY(0) scale(0.98);
+}
+
+.hook-button-default() {
+  border-color: @jlz-color-border-strong;
+  background: @jlz-color-surface;
+  box-shadow: inset 0 0 0 1px fade(@global-primary-background, 5%);
+}
+
+.hook-button-default-hover() {
+  border-color: @global-primary-background;
+  background: @jlz-color-surface-hover;
+  box-shadow:
+    inset 2px 0 0 @jlz-color-signal-teal,
+    inset 0 0 0 1px fade(@global-primary-background, 26%);
+}
+
+.hook-button-primary() {
+  color: @jlz-color-text-inverse;
+  background: @global-primary-background;
+  box-shadow: none;
+}
+
+.hook-button-primary-hover() {
+  color: @jlz-color-text-inverse;
+  background: @global-primary-hover-background;
+  box-shadow: none;
+}
+
+// Icon buttons remain compact UIkit controls, but use the same technical plane.
 .hook-icon-button() {
   background: @jlz-color-surface;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
   border: 1px solid @jlz-color-border;
-  border-radius: 8px;
-  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+  border-radius: @jlz-radius-md;
+  box-shadow: none;
+  transition:
+    transform @jlz-duration-fast @jlz-ease-state,
+    border-color @jlz-duration-fast ease,
+    background @jlz-duration-fast ease,
+    color @jlz-duration-fast ease,
+    box-shadow @jlz-duration-fast ease;
 }
 
 .hook-icon-button-hover() {
-  border-color: fade(@global-primary-background, 40%);
-  background: fade(@global-primary-background, 10%);
+  border-color: @global-primary-background;
+  background: @jlz-color-surface-hover;
   color: @global-primary-background;
+  box-shadow: inset 2px 0 0 @jlz-color-signal-teal;
+  transform: translateY(-1px);
 }
 
 .hook-icon-button-active() {
   border-color: @global-primary-background;
-  background: fade(@global-primary-background, 15%);
+  background: fade(@global-primary-background, 18%);
+  transform: scale(0.96);
 }
 
 // ── Navbar container: transparent by default (app-layer CSS adds glass) ──

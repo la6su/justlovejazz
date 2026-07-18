@@ -24,18 +24,28 @@ function loadState(): DevPanelState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) return JSON.parse(raw)
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return { visible: false }
 }
 
 function saveState(s: DevPanelState): void {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)) } catch { /* ignore */ }
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(s))
+  } catch {
+    /* ignore */
+  }
 }
 
 interface PaneLike {
   element: HTMLElement
   addFolder(opts: { title: string; expanded?: boolean }): PaneLike
-  addBinding(target: object, key: string, opts?: Record<string, unknown>): {
+  addBinding(
+    target: object,
+    key: string,
+    opts?: Record<string, unknown>,
+  ): {
     on(evt: 'change', cb: (ev: { value: unknown }) => void): void
   }
   addButton(opts: { title: string }): { on(evt: 'click', cb: () => void): void }
@@ -112,12 +122,12 @@ export class DevPanel {
   }
 
   // ── Navigation folder REMOVED (2026-07-11) — the section slider + prev/next
-  // buttons drove JoystickNav via a private-field cast hack (_circNav is
-  // private on Experience). It was unreliable on content pages (section change
+  // buttons drove the old joystick via a private-field cast hack. It was
+  // unreliable on content pages (section change
   // goes through jlz:page-section-change there, not jlz:section-change) and
   // the slider's 0-5 range didn't map cleanly to the 4-main-sections layout.
-  // Navigation is joystick-only (pure DOM) per ARCHITECTURE.md — DevPanel is
-  // for diagnostics, not a second nav input.
+  // Navigation is owned by the cinematic story track; DevPanel remains a
+  // diagnostics surface rather than a second navigation input.
 
   // ── BakuCarousel folder ───────────────────────────────────────────────
   private buildCarouselFolder(): void {
@@ -129,9 +139,11 @@ export class DevPanel {
       this.exp.portfolio?.next()
     })
     f.addButton({ title: 'Trigger morph' }).on('click', () => {
-      const carousel = (this.exp as unknown as {
-        getCarousel?: () => { setActive: (a: boolean) => void; isActive: boolean } | null
-      }).getCarousel?.()
+      const carousel = (
+        this.exp as unknown as {
+          getCarousel?: () => { setActive: (a: boolean) => void; isActive: boolean } | null
+        }
+      ).getCarousel?.()
       carousel?.setActive(!carousel.isActive)
     })
   }
@@ -139,14 +151,18 @@ export class DevPanel {
   // ── Scene folder (ground plane + diagnostics) ───────────────────────
   private buildSceneFolder(): void {
     const f = this.pane.addFolder({ title: 'Scene', expanded: false })
-    f.addBinding(this.controls, 'groundVisible', { label: 'ground plane' })
-      .on('change', (ev) => {
-        const world = (this.exp as unknown as { world?: { groundPlane?: { visible: boolean } } }).world
-        if (world?.groundPlane) world.groundPlane.visible = ev.value as boolean
-      })
+    f.addBinding(this.controls, 'groundVisible', { label: 'ground plane' }).on('change', (ev) => {
+      const world = (this.exp as unknown as { world?: { groundPlane?: { visible: boolean } } })
+        .world
+      if (world?.groundPlane) world.groundPlane.visible = ev.value as boolean
+    })
     f.addButton({ title: 'Reset ground (section 4 only)' }).on('click', () => {
       // Restore the contact-only ground visibility invariant.
-      const world = (this.exp as unknown as { world?: { groundPlane?: { visible: boolean }, currentSectionIndex?: number } }).world
+      const world = (
+        this.exp as unknown as {
+          world?: { groundPlane?: { visible: boolean }; currentSectionIndex?: number }
+        }
+      ).world
       if (world?.groundPlane) world.groundPlane.visible = world.currentSectionIndex === 4
       this.controls.groundVisible = world?.groundPlane?.visible ?? false
       this.pane.refresh()
@@ -156,18 +172,19 @@ export class DevPanel {
   // ── Render folder ─────────────────────────────────────────────────────
   private buildRenderFolder(): void {
     const f = this.pane.addFolder({ title: 'Render', expanded: false })
-    f.addBinding(this.controls, 'exposure', { label: 'exposure', min: 0, max: 3, step: 0.05 })
-      .on('change', (ev) => {
+    f.addBinding(this.controls, 'exposure', { label: 'exposure', min: 0, max: 3, step: 0.05 }).on(
+      'change',
+      (ev) => {
         const r = this.exp.renderer.instance as unknown as { toneMappingExposure: number }
         r.toneMappingExposure = ev.value as number
-      })
-    f.addBinding(this.controls, 'forceRender', { label: 'force render' })
-      .on('change', (ev) => {
-        if (ev.value as boolean) {
-          // Set the flag every frame via interval
-          if (!this.refreshInterval) this.startRefresh()
-        }
-      })
+      },
+    )
+    f.addBinding(this.controls, 'forceRender', { label: 'force render' }).on('change', (ev) => {
+      if (ev.value as boolean) {
+        // Set the flag every frame via interval
+        if (!this.refreshInterval) this.startRefresh()
+      }
+    })
     f.addButton({ title: 'Reload page' }).on('click', () => location.reload())
   }
 
@@ -193,7 +210,11 @@ export class DevPanel {
       this.stats.heap = perf.memory ? Math.round(perf.memory.usedJSHeapSize / 1048576) : 0
 
       // Section + rendering state
-      const nav = (this.exp as unknown as { _circNav?: { getSectionIndex: () => number; isActive: () => boolean } })._circNav
+      const nav = (
+        this.exp as unknown as {
+          _storyNav?: { getSectionIndex: () => number; isActive: () => boolean }
+        }
+      )._storyNav
       this.stats.section = nav?.getSectionIndex() ?? 0
       const exp = this.exp as unknown as { _needsRender?: boolean }
       this.stats.rendering = exp?._needsRender ?? false
@@ -205,39 +226,44 @@ export class DevPanel {
         exp._needsRender = true
       }
 
-      // FPS — simple rAF-based counter
+      // Actual rendered frames, not the browser's independent rAF cadence.
+      if (performance.now() - this._lastRenderedAt > 750) {
+        this._fps = 0
+        this._frameMs = 0
+      }
       this.stats.fps = this._fps
       this.stats.frameMs = this._frameMs
 
       this.pane.refresh()
     }, 500)
-
-    // FPS counter via rAF (separate from the 500ms stats refresh)
-    this._startFpsCounter()
   }
 
   private _fps = 0
   private _frameMs = 0
-  private _rafId: number | null = null
-  private _fpsLastTime = 0
+  private _fpsLastTime: number | null = null
+  private _lastRenderedAt = 0
   private _fpsFrames = 0
 
-  private _startFpsCounter(): void {
-    if (this._rafId !== null) return
-    this._fpsLastTime = performance.now()
-    this._fpsFrames = 0
-    const tick = (now: number) => {
-      this._fpsFrames++
-      const delta = now - this._fpsLastTime
-      if (delta >= 500) {
-        this._fps = Math.round((this._fpsFrames * 1000) / delta)
-        this._frameMs = Math.round(delta / this._fpsFrames * 10) / 10
-        this._fpsFrames = 0
-        this._fpsLastTime = now
-      }
-      this._rafId = requestAnimationFrame(tick)
+  /** Record one real scene render. Idle on-demand frames intentionally read 0. */
+  recordRenderFrame(now = performance.now()): void {
+    const gap = this._lastRenderedAt > 0 ? now - this._lastRenderedAt : 0
+    this._lastRenderedAt = now
+    if (this._fpsLastTime === null || gap > 100) {
+      this._fps = 0
+      this._frameMs = 0
+      this._fpsLastTime = now
+      this._fpsFrames = 0
+      return
     }
-    this._rafId = requestAnimationFrame(tick)
+
+    this._fpsFrames += 1
+    const delta = now - this._fpsLastTime
+    if (delta < 500) return
+
+    this._fps = Math.round((this._fpsFrames * 1000) / delta)
+    this._frameMs = Math.round((delta / this._fpsFrames) * 10) / 10
+    this._fpsFrames = 0
+    this._fpsLastTime = now
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────
@@ -274,10 +300,6 @@ export class DevPanel {
     if (this.refreshInterval) {
       clearInterval(this.refreshInterval)
       this.refreshInterval = null
-    }
-    if (this._rafId !== null) {
-      cancelAnimationFrame(this._rafId)
-      this._rafId = null
     }
     if (this.keydownHandler) {
       window.removeEventListener('keydown', this.keydownHandler)

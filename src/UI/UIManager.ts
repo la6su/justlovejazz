@@ -28,7 +28,9 @@ export class UIManager {
     // Wire showreel play button (intro section) — opens overlay in showreel mode
     this._showreelHandler = () => {
       this.overlay?.open({
+        mode: 'video',
         videoSrc: '/assets/video/coming-soon.mp4',
+        poster: '/assets/video/coming-soon-cover.jpg',
         title: 'Showreel',
         category: '2026 · COMING SOON',
       })

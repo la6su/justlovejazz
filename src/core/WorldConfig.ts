@@ -1,4 +1,4 @@
-// src/core/WorldConfig.ts — 6 sections (cube-map: 0=secret, 1=intro, 2-4=main, 5=secret)
+// src/core/WorldConfig.ts — 6 sections (0=Contact finale slot, 1-4=story, 5=Menu)
 
 import * as THREE from 'three'
 import { BakuRole } from './types'
@@ -136,17 +136,17 @@ type RawScene = {
   groundColor: number
   groundOpacity: number
   /** Per-section theme: 'light' (light bg, dark text) or 'dark' (dark bg, light text).
-   *  Intro + Contact = light, middle sections = dark. Inverse flips. */
+   *  The console baseline uses dark throughout; inverse remains an explicit preference. */
   sectionTheme: 'light' | 'dark'
   /** Per-section 3D scene control (optional — omitted = defaults). */
   sceneObjects?: SceneControl['objects']
   sceneTransition?: SceneControl['transition']
 }
 
-// 6 sections (4 main + 2 secret side: Lab=0, Menu=5) — 1:1 with cube faces
+// 6 sections (4 story frames + Contact finale/Lab=0 + Menu=5)
 // Index: 0=lab, 1=intro, 2=about, 3=works, 4=contact, 5=menu
 const RAW: RawScene[] = [
-  // ── Section 0: LAB (secret left) — Light BG, experiments ──
+  // ── Section 0: canonical LAB config, public Contact finale ──
   {
     id: 'sec_lab',
     context: 'LAB — Experiments',
@@ -161,11 +161,11 @@ const RAW: RawScene[] = [
     bakuRole: BakuRole.GLASS,
     bakuOpacity: 0.4,
     bakuDisplace: 0.08,
-    bakuColor: 0x8ea4d8,
-    bakuEmissive: 0x020408,
+    bakuColor: 0xb8b8b8,
+    bakuEmissive: 0x050505,
     postBloom: 0,
-    postVignette: 1.0,
-    postGrain: 0.02,
+    postVignette: 0,
+    postGrain: 0,
     postChromatic: 0,
     postRefract: 0,
     postBorder: 0.0,
@@ -173,16 +173,16 @@ const RAW: RawScene[] = [
     postGradeHighlights: [1.0, 1.0, 1.0],
     lightColor: 0xffffff,
     lightIntensity: 1,
-    fogColor: 0xffffff,
+    fogColor: 0x000000,
     fogDensity: 0.005,
-    bgColor: 0xf5f5f8,
+    bgColor: 0x000000,
     showGallery: false,
-    groundColor: 0xf5f5f8,
+    groundColor: 0x101010,
     groundOpacity: 0,
-    sectionTheme: 'light',
+    sectionTheme: 'dark',
     sceneTransition: { duration: 0.8, easing: 'ease-out' },
   },
-  // ── Section 1: INTRO — White BG, metal drop ──
+  // ── Section 1: INTRO — dark console field, metal drop ──
   {
     id: 'sec_intro',
     context: 'Studio — Home',
@@ -197,11 +197,11 @@ const RAW: RawScene[] = [
     bakuRole: BakuRole.GLASS,
     bakuOpacity: 0.4,
     bakuDisplace: 0.08,
-    bakuColor: 0x9c91d8,
-    bakuEmissive: 0x030208,
+    bakuColor: 0xb8b8b8,
+    bakuEmissive: 0x050505,
     postBloom: 0,
-    postVignette: 1.5,
-    postGrain: 0.02,
+    postVignette: 0,
+    postGrain: 0,
     postChromatic: 0,
     postRefract: 0,
     postBorder: 0.0,
@@ -209,13 +209,13 @@ const RAW: RawScene[] = [
     postGradeHighlights: [1.0, 1.0, 1.0],
     lightColor: 0xffffff,
     lightIntensity: 1,
-    fogColor: 0xffffff,
+    fogColor: 0x000000,
     fogDensity: 0.005,
-    bgColor: 0xffffff,
+    bgColor: 0x000000,
     showGallery: false,
-    groundColor: 0xffffff,
+    groundColor: 0x101010,
     groundOpacity: 0,
-    sectionTheme: 'light',
+    sectionTheme: 'dark',
     sceneTransition: { duration: 1.0, easing: 'ease-in-out' },
   },
   {
@@ -232,11 +232,11 @@ const RAW: RawScene[] = [
     bakuRole: BakuRole.GLASS,
     bakuOpacity: 0.35,
     bakuDisplace: 0.15,
-    bakuColor: 0x9aa6df,
-    bakuEmissive: 0x030208,
+    bakuColor: 0xc0c0c0,
+    bakuEmissive: 0x050505,
     postBloom: 0.4,
-    postVignette: 0.5,
-    postGrain: 0.02,
+    postVignette: 0,
+    postGrain: 0,
     // Screen-space chromatic aberration has no equivalent WebGL fallback and
     // turns the opaque bubble text into RGB fringes. The transparent cube
     // shell stays colour-neutral instead.
@@ -245,16 +245,15 @@ const RAW: RawScene[] = [
     postBorder: 0.0,
     postGradeShadows: [0.9, 0.92, 1.0],
     postGradeHighlights: [0.85, 0.9, 1.0],
-    lightColor: 0x040408,
+    lightColor: 0x050505,
     lightIntensity: 1.2,
-    fogColor: 0x242424, // R-8: matches EnvSphere mid-tone (was 0x040408 — too dark, caused fog halo)
+    fogColor: 0x000000,
     fogDensity: 0.005,
-    bgColor: 0x020204,
+    bgColor: 0x000000,
     showGallery: false,
-    groundColor: 0x080812,
+    groundColor: 0x101010,
     groundOpacity: 0.08,
     sectionTheme: 'dark',
-    sceneObjects: { wireframeText: true },
     sceneTransition: { duration: 0.6, easing: 'ease-out' },
   },
   // ── Section 3: WORKS — BakuCarousel + cube centered, slightly raised ──
@@ -272,23 +271,27 @@ const RAW: RawScene[] = [
     bakuRole: BakuRole.GLASS,
     bakuOpacity: 0.4,
     bakuDisplace: 0.05,
-    bakuColor: 0x90a0da,
-    bakuEmissive: 0x030208,
-    postBloom: 0.4,
-    postVignette: 0.4,
-    postGrain: 0.02,
+    bakuColor: 0xc0c0c0,
+    bakuEmissive: 0x050505,
+    // Project stills are authored display colour. Keep the Works presentation
+    // neutral so the WebGPU plane matches the same sRGB image in fullscreen;
+    // bloom and blue grading made highlights look washed out and introduced
+    // apparent edge artefacts during parallax.
+    postBloom: 0,
+    postVignette: 0,
+    postGrain: 0,
     postChromatic: 0,
     postRefract: 0,
     postBorder: 0.0,
-    postGradeShadows: [0.88, 0.9, 1.0],
-    postGradeHighlights: [0.9, 0.92, 1.0],
-    lightColor: 0x06080e,
+    postGradeShadows: [1.0, 1.0, 1.0],
+    postGradeHighlights: [1.0, 1.0, 1.0],
+    lightColor: 0x050505,
     lightIntensity: 1.2,
-    fogColor: 0x22222e, // R-8: matches EnvSphere mid-tone (was 0x06080e)
+    fogColor: 0x000000,
     fogDensity: 0.005,
-    bgColor: 0x060608,
+    bgColor: 0x000000,
     showGallery: true,
-    groundColor: 0x06080e,
+    groundColor: 0x101010,
     groundOpacity: 0.1,
     sectionTheme: 'dark',
     sceneObjects: { bakuCarousel: true },
@@ -309,11 +312,11 @@ const RAW: RawScene[] = [
     bakuRole: BakuRole.GLASS,
     bakuOpacity: 0.4,
     bakuDisplace: 0.06,
-    bakuColor: 0x7d96cd,
-    bakuEmissive: 0x020408,
+    bakuColor: 0xb8b8b8,
+    bakuEmissive: 0x050505,
     postBloom: 0.2,
-    postVignette: 0.4,
-    postGrain: 0.015,
+    postVignette: 0,
+    postGrain: 0,
     // See sec_about: keep typography sections free of backend-specific RGB split.
     postChromatic: 0,
     postRefract: 0,
@@ -322,17 +325,17 @@ const RAW: RawScene[] = [
     postGradeHighlights: [1.0, 0.98, 0.95],
     lightColor: 0xffffff,
     lightIntensity: 1.5,
-    fogColor: 0xe8e8e8,
+    fogColor: 0x000000,
     fogDensity: 0.005,
-    bgColor: 0xe8e8e8,
+    bgColor: 0x000000,
     showGallery: false,
-    groundColor: 0x1a1a2e,
+    groundColor: 0x121212,
     groundOpacity: 0.4,
-    sectionTheme: 'light',
+    sectionTheme: 'dark',
     sceneObjects: { wireframeText: true },
     sceneTransition: { duration: 0.6, easing: 'ease-out' },
   },
-  // ── Section 5: MENU (secret right) — Dark BG, navigation overlay ──
+  // ── Section 5: MENU sheet — Dark BG, positive Y tilt ──
   {
     id: 'sec_menu',
     context: 'MENU — Navigation',
@@ -347,23 +350,23 @@ const RAW: RawScene[] = [
     bakuRole: BakuRole.GLASS,
     bakuOpacity: 0.35,
     bakuDisplace: 0.06,
-    bakuColor: 0x7d96cd,
-    bakuEmissive: 0x020408,
+    bakuColor: 0xb8b8b8,
+    bakuEmissive: 0x050505,
     postBloom: 0.2,
-    postVignette: 0.4,
-    postGrain: 0.015,
+    postVignette: 0,
+    postGrain: 0,
     postChromatic: 0,
     postRefract: 0,
     postBorder: 0.0,
     postGradeShadows: [1.0, 0.96, 0.92],
     postGradeHighlights: [1.0, 0.98, 0.95],
-    lightColor: 0x0a0a0f,
+    lightColor: 0x050505,
     lightIntensity: 1.2,
-    fogColor: 0x0d0d17, // R-8: matches EnvSphere mid-tone (was 0x0a0a0f)
+    fogColor: 0x000000,
     fogDensity: 0.005,
-    bgColor: 0x0a0a0f,
+    bgColor: 0x000000,
     showGallery: false,
-    groundColor: 0x080812,
+    groundColor: 0x101010,
     groundOpacity: 0.05,
     sectionTheme: 'dark',
     sceneTransition: { duration: 0.6, easing: 'ease-out' },
@@ -515,9 +518,9 @@ const CONTACT_PALETTE: ContentPalette = {
 // whenever their scene group is visible (see World.ts visibility block).
 
 function makeContentScenes(palette: ContentPalette, pageId: string): RawScene[] {
-  const themeFor = (idx: number): 'light' | 'dark' => (idx === 0 || idx === 4 ? 'light' : 'dark')
-  const bgFor = (idx: number) => (themeFor(idx) === 'light' ? palette.lightBg : palette.darkBg)
-  const fogFor = (idx: number) => (themeFor(idx) === 'light' ? palette.lightBg : palette.fogColor)
+  const themeFor = (): 'dark' => 'dark'
+  const bgFor = () => palette.darkBg
+  const fogFor = () => palette.fogColor
 
   return Array.from({ length: 6 }, (_, idx) => ({
     id: `content_${pageId}_${idx}`,
@@ -536,22 +539,22 @@ function makeContentScenes(palette: ContentPalette, pageId: string): RawScene[] 
     bakuColor: palette.bakuColor,
     bakuEmissive: palette.bakuEmissive,
     postBloom: 0.15,
-    postVignette: 0.5,
-    postGrain: 0.015,
+    postVignette: 0,
+    postGrain: 0,
     postChromatic: 0,
     postRefract: 0,
     postBorder: 0.0,
-    postGradeShadows: themeFor(idx) === 'light' ? [1.0, 0.98, 0.95] : [0.9, 0.92, 1.0],
-    postGradeHighlights: themeFor(idx) === 'light' ? [1.0, 1.0, 1.0] : [0.85, 0.9, 1.0],
+    postGradeShadows: [0.9, 0.92, 1.0],
+    postGradeHighlights: [0.85, 0.9, 1.0],
     lightColor: palette.lightColor,
     lightIntensity: 1.0,
-    fogColor: fogFor(idx),
+    fogColor: fogFor(),
     fogDensity: 0.005,
-    bgColor: bgFor(idx),
+    bgColor: bgFor(),
     showGallery: false,
     groundColor: palette.groundColor,
     groundOpacity: 0.05,
-    sectionTheme: themeFor(idx),
+    sectionTheme: themeFor(),
     sceneTransition: { duration: 0.6, easing: 'ease-out' },
   }))
 }

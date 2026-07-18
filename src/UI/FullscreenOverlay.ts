@@ -1,4 +1,4 @@
-// FullscreenOverlay.ts — Unified fullscreen overlay for video content + project info.
+// FullscreenOverlay.ts — One UIkit fullscreen shell with two explicit media modes.
 //
 // Replaces both ShowreelModal (video-only) and ProjectOverlay (project-info-only).
 // Single overlay with:
@@ -8,18 +8,14 @@
 //   - Prev/next navigation arrows (optional)
 //   - UIKit3 uk-modal base (Esc to close, bg-close, focus trap)
 //
-// Two usage modes:
-//   1. Showreel mode: open({ videoSrc, poster?, title? }) — video-focused
-//   2. Project mode: open({ poster, title, desc, tags, counter, hasPrev, hasNext })
-//      — project-info-focused, video optional
-//
-// The overlay auto-adapts: if videoSrc provided → shows video + controls;
-// if not → shows poster image only. Project info shows if title/desc provided.
+// Showreel owns the only video source. Works uses one decoded still that
+// visually replaces the already-expanded WebGL plane after its TSL handoff.
 
 import UIkit from 'uikit'
 import { BlurFade } from '../Experience/BlurFade'
 
 export interface OverlayOptions {
+  mode?: 'video' | 'image'
   // Video source (optional — if omitted, poster image only)
   videoSrc?: string
   // Poster image URL (first frame / textureUrl) — shown before play
@@ -33,6 +29,8 @@ export interface OverlayOptions {
   // Navigation (optional)
   hasPrev?: boolean
   hasNext?: boolean
+  /** The source plane already expanded in the WebGL scene. */
+  origin?: 'plane'
 }
 
 export class FullscreenOverlay {
@@ -55,6 +53,9 @@ export class FullscreenOverlay {
   private _keydownHandler: ((e: KeyboardEvent) => void) | null = null
   private _autoplayTimer: ReturnType<typeof setTimeout> | null = null
   private _enterRaf: number | null = null
+  private _posterRequestId = 0
+  private _posterUrl: string | null = null
+  private _mediaGeneration = 0
 
   public onPrev: (() => void) | null = null
   public onNext: (() => void) | null = null
@@ -64,7 +65,7 @@ export class FullscreenOverlay {
     this.container = document.createElement('div')
     this.container.id = 'jlz-fs-overlay'
     this.container.setAttribute('uk-modal', 'bg-close: true; esc-close: true; stack: false')
-    this.container.className = 'jlz-fs-overlay uk-modal uk-modal-full'
+    this.container.className = 'jlz-fs-overlay uk-modal uk-modal-full uk-light'
 
     this.container.innerHTML = `
       <div class="uk-modal-dialog jlz-fs-dialog">
@@ -147,10 +148,10 @@ export class FullscreenOverlay {
     })
 
     // Video events
-    this.video.addEventListener('play', () => {
+    this.video.addEventListener('playing', () => {
       this.container.classList.add('is-playing')
       this.bigPlay.style.opacity = '0'
-      this.posterEl.style.opacity = '0'
+      this.revealVideoAfterFirstFrame()
       this.playBtn.querySelector('[uk-icon]')?.setAttribute('uk-icon', 'icon: pause; ratio: 1.2')
     })
     this.video.addEventListener('pause', () => {
@@ -180,8 +181,8 @@ export class FullscreenOverlay {
     })
 
     // Nav buttons
-    this.prevBtn.addEventListener('click', () => this.onPrev?.())
-    this.nextBtn.addEventListener('click', () => this.onNext?.())
+    this.prevBtn.addEventListener('click', () => this.navigate(-1))
+    this.nextBtn.addEventListener('click', () => this.navigate(1))
 
     // UIKit3 modal events — uk-open class is the authoritative state.
     // No custom flag needed: UIKit adds uk-open on show (synchronously via
@@ -203,7 +204,7 @@ export class FullscreenOverlay {
     UIkit.util.on(this.container, 'shown', () => {
       this.container.classList.remove('is-opening')
       const source = this.video.querySelector('source')
-      if (source && source.src) {
+      if (this.container.classList.contains('is-video-mode') && source && source.src) {
         if (isFinite(this.video.duration)) {
           this.video.currentTime = 0
         }
@@ -212,7 +213,7 @@ export class FullscreenOverlay {
           this.video.play().catch(() => {
             this.bigPlay.style.opacity = '1'
           })
-        }, 160)
+        }, 0)
       }
     })
     UIkit.util.on(this.container, 'hide', () => {
@@ -234,22 +235,22 @@ export class FullscreenOverlay {
 
     // Keyboard: Space (play/pause), ArrowLeft/Right (prev/next)
     // Attached to document on 'show', removed on 'hide' (see above).
-    // stopImmediatePropagation prevents JoystickNav's window keydown from
-    // also firing — without it, ArrowLeft in the overlay simultaneously
-    // goes to prev-project AND navigates section to Lab behind the overlay.
+    // stopImmediatePropagation prevents CinematicNav's window keydown from
+    // also firing, so project arrows do not move the story behind the modal.
     this._keydownHandler = (e: KeyboardEvent) => {
       if (e.key === ' ') {
+        if (!this.container.classList.contains('is-video-mode')) return
         e.preventDefault()
         e.stopImmediatePropagation()
         togglePlay()
       } else if (e.key === 'ArrowLeft') {
         e.preventDefault()
         e.stopImmediatePropagation()
-        this.onPrev?.()
+        this.navigate(-1)
       } else if (e.key === 'ArrowRight') {
         e.preventDefault()
         e.stopImmediatePropagation()
-        this.onNext?.()
+        this.navigate(1)
       }
     }
   }
@@ -264,9 +265,43 @@ export class FullscreenOverlay {
     this.timeEl.textContent = `${fmt(this.video.currentTime)} / ${fmt(this.video.duration)}`
   }
 
+  private navigate(direction: -1 | 1): void {
+    if (direction < 0) this.onPrev?.()
+    else this.onNext?.()
+    window.dispatchEvent(
+      new CustomEvent('jlz:project-navigate', {
+        detail: { direction },
+      }),
+    )
+  }
+
+  /**
+   * `play`/`playing` can fire before the browser has composited a video
+   * frame. Keep the decoded poster in place until that first frame arrives so
+   * the handoff never exposes the video element's black backing surface.
+   */
+  private revealVideoAfterFirstFrame(): void {
+    const generation = this._mediaGeneration
+    const reveal = () => {
+      if (generation !== this._mediaGeneration) return
+      this.posterEl.style.opacity = '0'
+    }
+    const videoWithFrameCallback = this.video as HTMLVideoElement & {
+      requestVideoFrameCallback?: (callback: () => void) => number
+    }
+
+    if (videoWithFrameCallback.requestVideoFrameCallback) {
+      videoWithFrameCallback.requestVideoFrameCallback(reveal)
+      return
+    }
+
+    requestAnimationFrame(() => requestAnimationFrame(reveal))
+  }
+
   /** Open overlay with given options. */
   open(opts: OverlayOptions): void {
     this._applyOptions(opts)
+    this.container.classList.toggle('is-plane-origin', opts.origin === 'plane')
     UIkit.modal(this.container).show()
   }
 
@@ -277,35 +312,40 @@ export class FullscreenOverlay {
    *  preload() only sets content; the uk-open class is NOT added, so the
    *  overlay stays hidden (CSS: .jlz-fs-overlay:not(.uk-open) { display:none }). */
   preload(opts: OverlayOptions): void {
-    this._applyOptions(opts)
+    // Decode the visual poster, but keep video user-triggered so initial page
+    // work never fetches a case film before the visitor opens it.
+    this._applyOptions({ ...opts, videoSrc: undefined })
+    this.container.classList.remove('is-plane-origin')
     // Do NOT call UIkit.modal().show() — stay hidden.
   }
 
   /** Apply overlay options to the DOM (shared by open + preload). */
   private _applyOptions(opts: OverlayOptions): void {
+    this._mediaGeneration += 1
+    const mode = opts.mode ?? (opts.videoSrc ? 'video' : 'image')
+    const videoMode = mode === 'video'
+    this.container.classList.toggle('is-image-mode', !videoMode)
+    this.container.classList.toggle('is-video-mode', videoMode)
     // Video source
     const source = this.video.querySelector('source')
-    if (opts.videoSrc && source) {
+    if (videoMode && opts.videoSrc && source) {
       source.src = opts.videoSrc
       source.setAttribute('type', 'video/mp4')
       this.video.load()
       this.controlsEl.style.display = ''
       this.video.style.display = ''
     } else {
-      // No video — poster only mode
+      // Works image mode never inherits or autoplays the showreel source.
+      if (source) {
+        source.removeAttribute('src')
+        this.video.load()
+      }
       this.controlsEl.style.display = 'none'
       this.video.style.display = 'none'
       this.bigPlay.style.display = 'none'
     }
 
-    // Poster image (first frame / textureUrl)
-    if (opts.poster) {
-      this.posterEl.style.backgroundImage = `url('${opts.poster}')`
-      this.posterEl.style.opacity = '1'
-    } else {
-      this.posterEl.style.backgroundImage = ''
-      this.posterEl.style.opacity = '0'
-    }
+    this.setPoster(opts.poster)
 
     // Project info
     if (opts.title) {
@@ -326,7 +366,7 @@ export class FullscreenOverlay {
     this.nextBtn.style.display = opts.hasNext ? '' : 'none'
 
     // Reset video state
-    if (opts.videoSrc) {
+    if (videoMode && opts.videoSrc) {
       this.bigPlay.style.display = ''
       // D-8 fix: reset opacity — a previous video's 'play' event set opacity
       // to '0', and it was never restored. On second open, display='' but
@@ -334,6 +374,45 @@ export class FullscreenOverlay {
       // can see it to start the video.
       this.bigPlay.style.opacity = '1'
     }
+  }
+
+  /**
+   * Decode the DOM poster before exposing it. During a plane-origin handoff
+   * the modal stays transparent until this succeeds, leaving the already
+   * fullscreen Three.js plane visible instead of a transient black frame.
+   */
+  private setPoster(poster?: string): void {
+    if (poster === this._posterUrl && this.container.classList.contains('is-poster-ready')) {
+      this.posterEl.style.opacity = '1'
+      return
+    }
+
+    const requestId = ++this._posterRequestId
+    this._posterUrl = poster ?? null
+    this.container.classList.remove('is-poster-ready')
+    this.posterEl.style.backgroundImage = ''
+    this.posterEl.style.opacity = '0'
+    if (!poster) return
+
+    const image = new Image()
+    image.decoding = 'async'
+    const reveal = () => {
+      if (requestId !== this._posterRequestId) return
+      this.posterEl.style.backgroundImage = `url('${poster}')`
+      this.posterEl.style.opacity = '1'
+      this.container.classList.add('is-poster-ready')
+    }
+    image.addEventListener(
+      'load',
+      () => {
+        void image
+          .decode()
+          .catch(() => undefined)
+          .then(reveal)
+      },
+      { once: true },
+    )
+    image.src = poster
   }
 
   close(): void {
@@ -348,6 +427,8 @@ export class FullscreenOverlay {
   }
 
   dispose(): void {
+    this._posterRequestId += 1
+    this._mediaGeneration += 1
     if (this._autoplayTimer) {
       clearTimeout(this._autoplayTimer)
       this._autoplayTimer = null

@@ -178,7 +178,7 @@ const COMPOSITE_FSG = `
       color *= vig;
     }
 
-    // Screen border — CRT curved black frame (from reference shader)
+    // Optional screen-edge frame; project presets keep this disabled.
     // Barrel distortion: curveUV = uv*2-1; offset = curveUV.yx * 0.25;
     // curveUV += curveUV * offset * offset; curveUV = curveUV * 0.5 + 0.5;
     // edge = smoothstep(0, 0.02, curveUV) * (1 - smoothstep(1-0.02, 1, curveUV))
@@ -274,6 +274,9 @@ export class RenderPipeline {
   // Section grade values (stored so setSectionGrade works before WebGL composite is built)
   private _sectionRefract = 0.05
   private _sectionBorder = 0.0
+  // One shared curved CRT frame gives the console composition a fixed edge.
+  // It is independent from the removed scanline/noise treatments and remains
+  // identical on the WebGPU and WebGL2 post-processing paths.
   private _globalBorder = 0.4
   private _sectionShadows = new THREE.Vector3(1, 1, 1)
   private _sectionHighlights = new THREE.Vector3(1, 1, 1)
@@ -286,13 +289,27 @@ export class RenderPipeline {
   // PERF-11 fix: reuse the WebGPU params object (was allocating a new object
   // + 2 arrays every frame → 180 allocs/sec on WebGPU path). Mutate in place.
   private _webgpuParamsCache: {
-    bloom: number; bloomRadius: number; bloomThreshold: number;
-    vignette: number; grain: number; chromatic: number; refract: number;
-    border: number; gradeShadows: [number, number, number]; gradeHighlights: [number, number, number];
+    bloom: number
+    bloomRadius: number
+    bloomThreshold: number
+    vignette: number
+    grain: number
+    chromatic: number
+    refract: number
+    border: number
+    gradeShadows: [number, number, number]
+    gradeHighlights: [number, number, number]
   } = {
-    bloom: 0, bloomRadius: 0, bloomThreshold: 0,
-    vignette: 0, grain: 0, chromatic: 0, refract: 0, border: 0,
-    gradeShadows: [1, 1, 1], gradeHighlights: [1, 1, 1],
+    bloom: 0,
+    bloomRadius: 0,
+    bloomThreshold: 0,
+    vignette: 0,
+    grain: 0,
+    chromatic: 0,
+    refract: 0,
+    border: 0,
+    gradeShadows: [1, 1, 1],
+    gradeHighlights: [1, 1, 1],
   }
 
   private constructor() {
@@ -357,9 +374,16 @@ export class RenderPipeline {
       // Re-apply section grade (stored in _sectionRefract/Shadows/Highlights)
       // so it survives updateParams calls from PostProcessingManager.
       this._passComposite.uniforms.uRefract!.value = this._sectionRefract
-      this._passComposite.uniforms.uBorder!.value = Math.max(this._sectionBorder, this._globalBorder)
-      ;(this._passComposite.uniforms.uGradeShadows!.value as THREE.Vector3).copy(this._sectionShadows)
-      ;(this._passComposite.uniforms.uGradeHighlights!.value as THREE.Vector3).copy(this._sectionHighlights)
+      this._passComposite.uniforms.uBorder!.value = Math.max(
+        this._sectionBorder,
+        this._globalBorder,
+      )
+      ;(this._passComposite.uniforms.uGradeShadows!.value as THREE.Vector3).copy(
+        this._sectionShadows,
+      )
+      ;(this._passComposite.uniforms.uGradeHighlights!.value as THREE.Vector3).copy(
+        this._sectionHighlights,
+      )
     }
     // Track B: per-section bloom threshold → bright-extract pass
     if (this._passBright) {
@@ -391,7 +415,12 @@ export class RenderPipeline {
   }
 
   /** Set section-driven color grading (shadows tint, highlights tint, refraction). */
-  public setSectionGrade(refract: number, shadowTint: THREE.Vector3, highlightTint: THREE.Vector3, border: number = 0): void {
+  public setSectionGrade(
+    refract: number,
+    shadowTint: THREE.Vector3,
+    highlightTint: THREE.Vector3,
+    border: number = 0,
+  ): void {
     this._sectionRefract = refract
     this._sectionBorder = border
     this._sectionShadows.copy(shadowTint)
@@ -408,7 +437,8 @@ export class RenderPipeline {
   /** Render: scene → post passes → screen */
   public render(scene: THREE.Scene, camera: THREE.Camera): void {
     // Check if we're on REAL WebGPU (not WebGL2 fallback via WebGPURenderer)
-    const isRealWebGPU = this._isWebGPU && (this._renderer as any).backend?.constructor?.name === 'WebGPUBackend'
+    const isRealWebGPU =
+      this._isWebGPU && (this._renderer as any).backend?.constructor?.name === 'WebGPUBackend'
 
     if (isRealWebGPU) {
       // WebGPU native: TSL RenderPipeline + PassNode + BloomNode + vignette/grain Fn.
@@ -464,7 +494,13 @@ export class RenderPipeline {
     }
 
     // Native WebGL2 path (WebGLRenderer, not WebGPURenderer).
-    if (!this._config.bloomEnabled && !this._config.vignetteEnabled && !this._config.grainEnabled && this._sectionBorder <= 0 && this._globalBorder <= 0) {
+    if (
+      !this._config.bloomEnabled &&
+      !this._config.vignetteEnabled &&
+      !this._config.grainEnabled &&
+      this._sectionBorder <= 0 &&
+      this._globalBorder <= 0
+    ) {
       this._renderer.render(scene, camera)
       return
     }

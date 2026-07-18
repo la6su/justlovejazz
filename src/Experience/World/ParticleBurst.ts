@@ -1,191 +1,128 @@
-// ParticleBurst.ts — One-shot particle burst from the baku cube (intro opener).
+// ParticleBurst — geometric splash handoff for the intro opener.
 //
-// When the baku cube "opens" (opener animation), this fires a burst of N
-// particles that fly outward from the cube center, scatter, and fade out.
-// Uses InstancedMesh + TSL MeshBasicNodeMaterial (HERMES §1).
-//
-// Lifecycle:
-//   1. burst.trigger() — called by SplashCube.triggerOpener()
-//   2. Particles start at cube center (0,0,0) with random outward velocities
-//   3. GPU shader advances positions by velocity * time + gravity
-//   4. Alpha fades from 1 → 0 over burst duration (~1.2s)
-//   5. After duration: visible=false, ready for next trigger
-//
-// One-shot, not continuous — respects on-demand rendering (only animates
-// during the burst window, then freezes).
+// The historical class name is retained for lifecycle compatibility, but this
+// is not a particle simulation. Three deterministic broken-square light frames
+// contract toward the cube and dissolve into the first scene. All twelve
+// strokes share one instanced draw call and one TSL material.
 
 import * as THREE from 'three'
 import { MeshBasicNodeMaterial } from 'three/webgpu'
-import { Fn, vec3, float, uniform, uv, smoothstep } from 'three/tsl'
+import { Fn, float, smoothstep, uniform, vec3 } from 'three/tsl'
 
-const BURST_COUNT = 200
-const BURST_DURATION = 1.2  // seconds
+const FRAME_COUNT = 3
+const SEGMENTS_PER_FRAME = 4
+const TRACE_COUNT = FRAME_COUNT * SEGMENTS_PER_FRAME
+const TRACE_DURATION = 1.05
+const FRAME_RADII = [1.65, 1.15, 0.72] as const
 
-// Per-instance data (CPU → GPU via instanceMatrix)
-// We bake initial positions + velocities into instanceMatrix at trigger time.
-
-// Uniforms
-const burstUniforms = {
-  uTime: uniform(0),           // elapsed since trigger
-  uDuration: uniform(BURST_DURATION),
-  uActive: uniform(0),         // 0 = inactive, 1 = active
+const traceUniforms = {
+  uTime: uniform(0),
+  uDuration: uniform(TRACE_DURATION),
 }
 
-// ── Vertex: advance position by velocity * time ──
-// instanceMatrix contains the INITIAL position (translation) + scale.
-// Velocity is encoded in the instanceMatrix rotation (hack: we use rotation
-// columns as velocity vectors since we don't need rotation for particles).
-//
-// Simpler approach: we store velocity in a separate InstancedBufferAttribute
-// and read it in the shader. But TSL doesn't expose instance attributes easily.
-//
-// Simplest: CPU-side, we update instanceMatrix each frame (position += vel*dt).
-// This is 200 matrix updates/frame — cheap. GPU shader just renders at the
-// instance position (no positionNode needed).
-
-// ── Fragment: soft circle + fade out over duration ──
-const burstColorNode = Fn(() => {
-  // Brightness pulse at start (flash)
-  const flash = smoothstep(float(0.3), float(0.0), burstUniforms.uTime)
-  return vec3(flash.mul(0.5).add(0.5))
+const traceColorNode = Fn(() => {
+  const entrance = smoothstep(float(0), float(0.14), traceUniforms.uTime)
+  const exit = float(1).sub(
+    smoothstep(traceUniforms.uDuration.mul(0.42), traceUniforms.uDuration, traceUniforms.uTime),
+  )
+  const intensity = entrance.mul(exit)
+  return vec3(0.72, 0.93, 0.41).mul(intensity.mul(0.7).add(0.3))
 })
 
-const burstOpacityNode = Fn(() => {
-  const vUv = uv()
-  const center = vUv.sub(0.5)
-  const dist = center.length()
-  const circleAlpha = smoothstep(float(0.5), float(0.2), dist)
-  const fade = float(1.0).sub(burstUniforms.uTime.div(burstUniforms.uDuration))
-  const fadeClamped = fade.max(0.0)
-  return circleAlpha.mul(fadeClamped)
+const traceOpacityNode = Fn(() => {
+  const entrance = smoothstep(float(0), float(0.1), traceUniforms.uTime)
+  const exit = float(1).sub(
+    smoothstep(traceUniforms.uDuration.mul(0.38), traceUniforms.uDuration, traceUniforms.uTime),
+  )
+  return entrance.mul(exit).mul(0.78)
 })
+
+interface TraceSegment {
+  frame: number
+  side: number
+}
 
 export class ParticleBurst extends THREE.InstancedMesh {
-  private _velocities: Float32Array
-  // R-4 fix: per-particle base scale (set at trigger time, fixed for the
-  // burst lifetime). Previously update() re-randomized scale every frame via
-  // `Math.random() * 0.3` → particles flickered in size as they flew outward.
-  private _scales: Float32Array
-  private _dummy = new THREE.Object3D()
+  private readonly _dummy = new THREE.Object3D()
+  private readonly _segments: TraceSegment[] = []
   private _active = false
   private _elapsed = 0
+  private _origin = new THREE.Vector3()
 
   constructor() {
-    const geo = new THREE.PlaneGeometry(0.08, 0.08)
-    const mat = new MeshBasicNodeMaterial({
-      color: 0xffffff,
+    const geometry = new THREE.PlaneGeometry(1, 1)
+    const material = new MeshBasicNodeMaterial({
       transparent: true,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
       side: THREE.DoubleSide,
       fog: false,
-      // R-11 fix: toneMapped=false on additive glow — let additive accumulation
-      // speak for itself (was default true → ACES desaturates bright cores
-      // when 200 particles accumulate >1.0 HDR values).
       toneMapped: false,
     })
-    mat.colorNode = burstColorNode()
-    ;(mat as unknown as { opacityNode: unknown }).opacityNode = burstOpacityNode()
+    material.colorNode = traceColorNode()
+    ;(material as unknown as { opacityNode: unknown }).opacityNode = traceOpacityNode()
 
-    super(geo, mat, BURST_COUNT)
-    this.name = 'particle-burst'
+    super(geometry, material, TRACE_COUNT)
+    this.name = 'intro-light-frames'
     this.frustumCulled = false
-    this.visible = false  // hidden until triggered
+    this.visible = false
 
-    this._velocities = new Float32Array(BURST_COUNT * 3)
-    this._positions = new Float32Array(BURST_COUNT * 3)
-    this._scales = new Float32Array(BURST_COUNT)
-
-    // Initialize all instances at origin (will be reset on trigger)
-    for (let i = 0; i < BURST_COUNT; i++) {
-      this._dummy.position.set(0, 0, 0)
-      this._dummy.scale.setScalar(0.5 + Math.random() * 0.8)
-      this._dummy.updateMatrix()
-      this.setMatrixAt(i, this._dummy.matrix)
+    for (let frame = 0; frame < FRAME_COUNT; frame++) {
+      for (let side = 0; side < SEGMENTS_PER_FRAME; side++) {
+        this._segments.push({ frame, side })
+      }
     }
-    this.instanceMatrix.needsUpdate = true
   }
 
-  /** Trigger the burst — particles fly outward from the given origin. */
   trigger(originX = 0, originY = 0, originZ = 0): void {
     this._active = true
     this._elapsed = 0
+    this._origin.set(originX, originY, originZ)
     this.visible = true
-    burstUniforms.uTime.value = 0
-    burstUniforms.uActive.value = 1
-
-    // Reset all particles to origin + random outward velocities.
-    // Must also seed _positions — update() integrates from this array, not
-    // from instance matrices. Leaving it at zeros after a non-zero origin
-    // made the burst jump back to world origin on frame 1.
-    const positions = this._positions!
-    for (let i = 0; i < BURST_COUNT; i++) {
-      const i3 = i * 3
-      positions[i3] = originX
-      positions[i3 + 1] = originY
-      positions[i3 + 2] = originZ
-
-      this._dummy.position.set(originX, originY, originZ)
-      const baseScale = 0.5 + Math.random() * 0.8
-      this._scales![i] = baseScale  // R-4: store fixed per-particle scale
-      this._dummy.scale.setScalar(baseScale)
-      this._dummy.updateMatrix()
-      this.setMatrixAt(i, this._dummy.matrix)
-
-      // Random direction (sphere) + random speed
-      const theta = Math.random() * Math.PI * 2
-      const phi = Math.acos(2 * Math.random() - 1)
-      const speed = 2.0 + Math.random() * 3.0  // 2-5 units/sec
-      this._velocities[i3] = Math.sin(phi) * Math.cos(theta) * speed
-      this._velocities[i3 + 1] = Math.sin(phi) * Math.sin(theta) * speed
-      this._velocities[i3 + 2] = Math.cos(phi) * speed
-    }
-    this.instanceMatrix.needsUpdate = true
+    traceUniforms.uTime.value = 0
+    this.updateMatrices(0)
   }
 
-  /** Advance the burst. Call each frame while active. Returns true while active. */
   update(dt: number): boolean {
     if (!this._active) return false
 
     this._elapsed += dt
-    burstUniforms.uTime.value = this._elapsed
-
-    if (this._elapsed >= BURST_DURATION) {
-      // Burst finished
+    traceUniforms.uTime.value = this._elapsed
+    if (this._elapsed >= TRACE_DURATION) {
       this._active = false
       this.visible = false
-      burstUniforms.uActive.value = 0
       return false
     }
 
-    // Update positions: pos += vel * dt + gravity
-    const gravity = -2.0  // downward pull
-    const positions = this._positions!
-
-    for (let i = 0; i < BURST_COUNT; i++) {
-      const i3 = i * 3
-      // Advance position
-      positions[i3]! += this._velocities[i3]! * dt
-      positions[i3 + 1]! += this._velocities[i3 + 1]! * dt
-      positions[i3 + 2]! += this._velocities[i3 + 2]! * dt
-      // Apply gravity to velocity
-      this._velocities[i3 + 1]! += gravity * dt
-
-      // Update instance matrix
-      this._dummy.position.set(positions[i3]!, positions[i3 + 1]!, positions[i3 + 2]!)
-      // R-4 fix: use FIXED per-particle base scale (stored at trigger) × shrink.
-      // Was `(0.5 + Math.random() * 0.3) * shrink` → flickered every frame.
-      const shrink = 1.0 - (this._elapsed / BURST_DURATION) * 0.5
-      this._dummy.scale.setScalar((this._scales?.[i] ?? 0.5) * shrink)
-      this._dummy.updateMatrix()
-      this.setMatrixAt(i, this._dummy.matrix)
-    }
-    this.instanceMatrix.needsUpdate = true
-
+    this.updateMatrices(this._elapsed / TRACE_DURATION)
     return true
   }
 
-  private _positions: Float32Array
+  private updateMatrices(progress: number): void {
+    const eased = 1 - (1 - progress) ** 3
+    const depth = -eased * 0.72
+    const rotation = eased * 0.1
+
+    this._segments.forEach(({ frame, side }, index) => {
+      const radius = FRAME_RADII[frame]! * (1 - eased * 0.58)
+      const long = radius * 1.62
+      const short = 0.024 + frame * 0.006
+      const horizontal = side === 0 || side === 2
+
+      this._dummy.position.copy(this._origin)
+      this._dummy.position.z += depth - frame * 0.035
+      if (side === 0) this._dummy.position.y += radius
+      if (side === 1) this._dummy.position.x += radius
+      if (side === 2) this._dummy.position.y -= radius
+      if (side === 3) this._dummy.position.x -= radius
+
+      this._dummy.rotation.set(0, 0, rotation + (horizontal ? 0 : Math.PI / 2))
+      this._dummy.scale.set(long, short, 1)
+      this._dummy.updateMatrix()
+      this.setMatrixAt(index, this._dummy.matrix)
+    })
+    this.instanceMatrix.needsUpdate = true
+  }
 
   get isActive(): boolean {
     return this._active

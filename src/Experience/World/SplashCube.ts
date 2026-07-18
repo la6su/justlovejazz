@@ -35,6 +35,14 @@ interface BakuMaterialParams {
 /** Rotation per section transition (radians). ~30° = π/6. */
 const ROT_PER_TRANSITION = Math.PI / 6
 
+/**
+ * The glass shell is CPU-deformed. Updating it every display frame makes the
+ * first visible scene compete with renderer and post-pipeline warm-up. The
+ * eye reads this soft material motion at a lower cadence, so reserve full-rate
+ * rendering for transforms and upload vertex changes only during reactions.
+ */
+const JELLY_UPDATE_INTERVAL = 1 / 30
+
 // (GRADIENT_COLORS removed — was Apple Fifth Avenue port. Now using JLZ palette.)
 
 export class SplashCube extends THREE.Mesh {
@@ -50,6 +58,10 @@ export class SplashCube extends THREE.Mesh {
   //  'blob' artifacts caused by high-contrast content planes refracting
   //  through wobble-deformed glass.)
   private time = 0
+  private jellyEnergy = 0
+  private jellyTarget = 0
+  private nextJellyUpdateAt = 0
+  private jellyWasActive = false
   private openerProgress = 0
   private openerTarget = 0
   private openerPhase: 'idle' | 'opening' | 'closing' | 'done' = 'idle'
@@ -85,12 +97,13 @@ export class SplashCube extends THREE.Mesh {
   // ── Cube face rotation ──
   // 6 sections = 6 cube faces. Each section maps to a target Y rotation
   // so the corresponding face points toward the camera (+Z direction).
-  // Lab=0→front, Intro=1→right, About=2→back, Works=3→left, Contact=4→tilt, Menu=5→tilt.
+  // Lab/Contact finale=0→front, Intro=1→right, About=2→back,
+  // Works=3→left, Contact=4→tilt, Menu=5→tilt.
   // NOTE: sections 4+5 use ±π/4 tilt (NOT actual top/bottom face rotation).
   // The cube shows two side faces at an angle for these sections.
   // This is a known simplification — true top/bottom face would need X rotation.
   private static readonly FACE_ROTATIONS: number[] = [
-    0, // 0: Lab — front face (+Z toward camera)
+    0, // 0: canonical Lab / public Contact finale — front face
     -Math.PI / 2, // 1: Intro — right face (+X toward camera)
     Math.PI, // 2: About — back face (-Z toward camera)
     Math.PI / 2, // 3: Works — left face (-X toward camera)
@@ -104,9 +117,9 @@ export class SplashCube extends THREE.Mesh {
   private _startFaceRotY = 0
   private _startFaceDelta = 0
 
-  /** The shared shell has a CPU wobble, so both backends see identical motion. */
+  /** True only while an authored cube reaction still needs animation frames. */
   get isAmbientlyAnimated(): boolean {
-    return this.visible
+    return this.visible && (this.jellyEnergy > 0.001 || this.jellyTarget > 0.001)
   }
 
   // Scratch
@@ -158,6 +171,12 @@ export class SplashCube extends THREE.Mesh {
         pos.setXYZ(i, x, y, z)
       }
       pos.needsUpdate = true
+      // MeshPhysicalMaterial uses the procedural environment only: this cube
+      // has no texture map, so UVs are dead data. Keeping BoxGeometry's six
+      // independent UV islands prevents mergeVertices() from welding the
+      // rounded face edges, which exposes hairline normal seams while it moves.
+      geo.deleteAttribute('uv')
+      geo.deleteAttribute('normal')
       geo = mergeVertices(geo, 0.01) as THREE.BufferGeometry
       geo.computeVertexNormals()
     }
@@ -211,6 +230,7 @@ export class SplashCube extends THREE.Mesh {
   triggerOpener(): void {
     this.openerPhase = 'opening'
     this.openerTarget = 1
+    this.requestJellyPulse()
   }
 
   /** Trigger a scale pulse alongside the continuous jelly motion. */
@@ -264,6 +284,19 @@ export class SplashCube extends THREE.Mesh {
     while (delta < -Math.PI) delta += Math.PI * 2
     this._startFaceDelta = delta
     this._faceLerp = 0 // start animation
+    this.requestJellyPulse(0.45)
+  }
+
+  /** Apply the boot section without replaying a visible entrance animation. */
+  snapToFace(sectionIndex: number): void {
+    const idx = Math.max(0, Math.min(SplashCube.FACE_ROTATIONS.length - 1, sectionIndex))
+    const rotation = SplashCube.FACE_ROTATIONS[idx] ?? 0
+    this._targetFaceRotY = rotation
+    this._startFaceRotY = rotation
+    this._startFaceDelta = 0
+    this._idleRotY = rotation
+    this._faceLerp = 1
+    this.rotation.set(0, rotation, 0)
   }
 
   // (setEnvAndCamera removed — dead no-op, body was '// No-op'.
@@ -291,7 +324,22 @@ export class SplashCube extends THREE.Mesh {
   update(dt: number, _renderer?: THREE.WebGLRenderer): void {
     this.time += dt
 
-    this.updateJellyGeometry()
+    // A driven envelope gives the silicone wobble a quick response and a long,
+    // natural tail. There is no fixed cut-off and therefore no final snap.
+    this.jellyTarget *= Math.exp(-dt * 3.4)
+    this.jellyEnergy = THREE.MathUtils.damp(this.jellyEnergy, this.jellyTarget, 9, dt)
+    if (this.jellyTarget < 0.0005) this.jellyTarget = 0
+    if (this.jellyEnergy < 0.0005) this.jellyEnergy = 0
+    const jellyActive = this.jellyEnergy > 0 || this.jellyTarget > 0
+    if (jellyActive && this.time >= this.nextJellyUpdateAt) {
+      this.updateJellyGeometry(this.jellyEnergy)
+      this.nextJellyUpdateAt = this.time + JELLY_UPDATE_INTERVAL
+    } else if (!jellyActive && this.jellyWasActive) {
+      // A reaction returns to the exact rounded base shape; leaving the last
+      // sampled ripple in place would make a one-shot pulse look accidental.
+      this.resetJellyGeometry()
+    }
+    this.jellyWasActive = jellyActive
 
     // (CubeCamera refresh REMOVED — glass uses scene.environment PMREM which
     //  is static, zero per-frame cost. This was the #1 GPU consumer: 6-face
@@ -391,12 +439,19 @@ export class SplashCube extends THREE.Mesh {
     this.cubeMaterial.metalness = Math.max(metalness, 0.12)
   }
 
+  /** Add energy to the damped material reaction without a timer cut-off. */
+  private requestJellyPulse(amount: number = 1): void {
+    this.jellyTarget = Math.max(this.jellyTarget, amount)
+    // Do not wait for the cadence after an interaction.
+    this.nextJellyUpdateAt = 0
+  }
+
   /**
    * A tiny vertex displacement recreates the silicon-glass wobble without
    * depending on a WebGPU-only transmission/node graph. The geometry has only
    * ~3.5K vertices and uses no allocations in the frame loop.
    */
-  private updateJellyGeometry(): void {
+  private updateJellyGeometry(amplitude: number): void {
     const out = this.cubePositions.array as Float32Array
     const t = this.time
     for (let i = 0; i < out.length; i += 3) {
@@ -411,10 +466,15 @@ export class SplashCube extends THREE.Mesh {
       const ripple =
         Math.sin(x * 6 + y * 5 + z * 4 + t * 0.85) * 0.012 +
         Math.sin(x * 9 - z * 6 - t * 0.54) * 0.005
-      out[i] = x + nx * ripple
-      out[i + 1] = y + ny * ripple
-      out[i + 2] = z + nz * ripple
+      out[i] = x + nx * ripple * amplitude
+      out[i + 1] = y + ny * ripple * amplitude
+      out[i + 2] = z + nz * ripple * amplitude
     }
+    this.cubePositions.needsUpdate = true
+  }
+
+  private resetJellyGeometry(): void {
+    ;(this.cubePositions.array as Float32Array).set(this.cubeBasePositions)
     this.cubePositions.needsUpdate = true
   }
 

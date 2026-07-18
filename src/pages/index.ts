@@ -2,14 +2,14 @@
 //
 // 6 pages (one per cube face), each with 4 main sections:
 //   - home       — Studio / Philosophy / Approach / Team
-//   - services   — Creative Direction / Interactive Dev / Motion & Realtime / AI Systems
+//   - services   — Creative Direction / Realtime build / Motion / AI
 //   - works      — Case studies (4 selected projects)
 //   - manifesto  — Purpose / Clarity / Emotion / Simplicity
 //   - lab        — Experiments (4 R&D areas)
 //   - contact    — Email / Social / Location / Form
 //
-// Joystick: down/up cycles 4 main sections; left → Lab, right → Contact
-// (shared side sections reachable from any page).
+// CinematicNav scrolls/swipes across each page's four main frames. Contact and
+// Menu are shared bottom/top sheets reachable from every page.
 
 import { homePage } from './home'
 import { servicesPage } from './content/services'

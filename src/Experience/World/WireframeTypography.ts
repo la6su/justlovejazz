@@ -19,6 +19,9 @@ type FloatingGlyph = {
 
 export class WireframeTypography extends THREE.Group {
   private time = 0
+  private revealElapsed = 0
+  private revealProgress = 0
+  private active = false
   private glyphs: FloatingGlyph[] = []
   private material = new THREE.MeshPhysicalMaterial({
     color: 0xf4efff,
@@ -55,6 +58,7 @@ export class WireframeTypography extends THREE.Group {
       const x = cursor + width / 2
       this.glyphs.push({ mesh, x, phase: index * 1.71 })
       this.add(mesh)
+      mesh.scale.setScalar(0)
       cursor += width + spacing
     })
   }
@@ -80,14 +84,40 @@ export class WireframeTypography extends THREE.Group {
     this.material.emissiveIntensity = isLight ? 0.025 : 0.05
   }
 
+  /** Reveal only after the lower contact frame has settled into view. */
+  setActive(active: boolean): void {
+    if (this.active === active) return
+    this.active = active
+    this.revealElapsed = 0
+    this.revealProgress = active && this.userData.reducedMotion === true ? 1 : 0
+    if (!active) {
+      for (const { mesh } of this.glyphs) mesh.scale.setScalar(0)
+    }
+  }
+
+  get isAnimating(): boolean {
+    return this.active && this.revealProgress < 1
+  }
+
   update(dt: number): void {
     this.time += dt
+    if (!this.active) return
+
+    this.revealElapsed += dt
+    const revealDelay = this.userData.reducedMotion === true ? 0 : 0.72
+    const revealDuration = 0.72
+    const revealT = Math.min(1, Math.max(0, (this.revealElapsed - revealDelay) / revealDuration))
+    this.revealProgress = 1 - Math.pow(1 - revealT, 3)
     for (const { mesh, x, phase } of this.glyphs) {
       const bob = Math.sin(this.time * 1.05 + phase)
       const sway = Math.sin(this.time * 0.62 + phase * 1.3)
-      const breathe = 1 + Math.sin(this.time * 1.3 + phase) * 0.06
+      const breathe = (1 + Math.sin(this.time * 1.3 + phase) * 0.06) * this.revealProgress
       mesh.position.set(x + sway * 0.04, bob * 0.08, sway * 0.08)
-      mesh.rotation.set(bob * 0.06, sway * 0.09, bob * 0.1)
+      mesh.rotation.set(
+        bob * 0.06 + (1 - this.revealProgress) * 0.28,
+        sway * 0.09,
+        bob * 0.1 + (1 - this.revealProgress) * (phase % 2 ? -0.2 : 0.2),
+      )
       mesh.scale.set(breathe, breathe * (1 - bob * 0.025), breathe)
     }
   }

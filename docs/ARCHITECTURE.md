@@ -3,8 +3,10 @@
 ## System boundary
 
 The product is one Vite SPA entry (`index.html`) plus standalone blog pages.
-The SPA owns the 3D scene and a transparent DOM layer; blog pages do not boot
-the scene.
+The SPA owns the shared 3D scene and a transparent DOM layer; blog pages do not
+boot the scene. The product itself is the portfolio: each route must demonstrate
+the capability it describes through its composition, interaction and content,
+not act as a generic brochure around a separate gallery.
 
 ```text
 index.html
@@ -25,50 +27,66 @@ only after `jlz:webgl-ready`.
 
 `router.ts` owns the SPA routes, DOM rendering, translations and page metadata.
 
-| Route        | Page key    | Main sections                                                              |
-| ------------ | ----------- | -------------------------------------------------------------------------- |
-| `/`          | `home`      | Studio, Services, Works, Manifesto                                         |
-| `/services`  | `services`  | Creative Direction, Interactive Development, Motion & Realtime, AI Systems |
-| `/works`     | `works`     | Four case-study groups                                                     |
-| `/manifesto` | `manifesto` | Purpose, Clarity, Emotion, Simplicity                                      |
-| `/lab`       | `lab`       | Shader Lab, Audio Reactive, Generative, GPU Particles                      |
-| `/contact`   | `contact`   | Email, Social, Location, Form                                              |
+| Route        | Page key    | Main sections                                         |
+| ------------ | ----------- | ----------------------------------------------------- |
+| `/`          | `home`      | Studio, Services, Works, Manifesto                    |
+| `/services`  | `services`  | Creative Direction, Realtime build, Motion, AI        |
+| `/works`     | `works`     | Four case-study groups                                |
+| `/manifesto` | `manifesto` | Purpose, Clarity, Emotion, Simplicity                 |
+| `/lab`       | `lab`       | Shader Lab, Audio Reactive, Generative, GPU Particles |
+| `/contact`   | `contact`   | Email, Social, Location, Form                         |
 
 The world is always six sections, in this fixed order. `WorldConfig.ts` is the
 source for their IDs and section data; `SplashCube.FACE_ROTATIONS` is the
 source for the cube's displayed orientation.
 
-| Index | Canonical ID              | Role                 | Cube face     | Primary source module                                |
-| ----- | ------------------------- | -------------------- | ------------- | ---------------------------------------------------- |
-| 0     | `lab` / `sec_lab`         | Secret left section  | Front (+Z)    | `sections/lab/scene.ts`                              |
-| 1     | `intro` / `sec_intro`     | Start section        | Right (+X)    | `sections/intro/scene.ts`                            |
-| 2     | `about` / `sec_about`     | Main section         | Back (-Z)     | `sections/about/scene.ts`                            |
-| 3     | `works` / `sec_works`     | Main section         | Left (-X)     | `sections/works/scene.ts`                            |
-| 4     | `contact` / `sec_contact` | Main section         | Y tilt `−π/4` | `sections/contact/scene.ts`                          |
-| 5     | `menu` / `sec_menu`       | Secret right section | Y tilt `+π/4` | `sections/menu/scene.ts`; `sections/nav/template.ts` |
+| Index | Canonical ID              | Role           | Cube face     | Primary source module                                       |
+| ----- | ------------------------- | -------------- | ------------- | ----------------------------------------------------------- |
+| 0     | `lab` / `sec_lab`         | Contact finale | Front (+Z)    | `sections/lab/scene.ts`; `sections/lab-overlay/template.ts` |
+| 1     | `intro` / `sec_intro`     | Story frame 1  | Right (+X)    | `sections/intro/scene.ts`                                   |
+| 2     | `about` / `sec_about`     | Story frame 2  | Back (-Z)     | `sections/about/scene.ts`                                   |
+| 3     | `works` / `sec_works`     | Story frame 3  | Left (-X)     | `sections/works/scene.ts`                                   |
+| 4     | `contact` / `sec_contact` | Story frame 4  | Y tilt `−π/4` | `sections/contact/scene.ts`                                 |
+| 5     | `menu` / `sec_menu`       | Menu sheet     | Y tilt `+π/4` | `sections/menu/scene.ts`; `sections/nav/template.ts`        |
 
 Home sections use `data-section`; content-page sections use
-`data-page-section`. The menu template is the one intentional exception to
-the shared content section shell. Contact and Menu deliberately use tilted
-side-face views rather than literal top/bottom cube rotations; changing that
-visual model requires updating `SplashCube.FACE_ROTATIONS` and this table.
+`data-page-section`. The public Contact finale intentionally reuses the stable
+section-0 `lab` identifier so renderer configuration, deep links and the
+six-section contract do not fork. The `/lab` route is a catalogue of
+experiments, not a Works category. Each accepted experiment is an isolated 3D
+scene loaded only after the visitor opens it; experiment dependencies and
+assets must not join the shared startup bundle. The catalogue can remain
+lightweight and semantic before those scenes load. The menu template is the
+one intentional exception to the shared content section shell. Contact and Menu deliberately
+use tilted side-face views rather than literal top/bottom cube rotations;
+changing that visual model requires updating `SplashCube.FACE_ROTATIONS` and
+this table.
 
 ## Navigation and UI composition
 
-`JoystickNav` is a DOM control, not a Three.js joystick.
+`CinematicNav` owns a native vertical story track and its continuous
+progress signal.
 
-- Up/down move through the current page's main sections (1–4).
-- Left opens Lab (0); right opens Menu (5); leaving a side restores the prior
-  main section.
-- Dotnav jumps among main sections. Keyboard supports arrows, Home and End.
-- The Menu is a navigation-only, two-column section. UIkit `uk-nav` owns its
-  expandable parents; sub-links carry `data-nav-href` for SPA navigation.
-- `UIMenu.ts` creates the fixed `.jlz-topbar` with language, theme and sound
-  controls. There is no hamburger-driven navbar or menu toolbar.
+- The four main sections are full-viewport scroll-snap frames. Trackpad,
+  mouse-wheel and touch retain their native vertical scrolling behavior.
+- DOM and 3D discrete arrivals share the midpoint between adjacent frames;
+  transform and material values continue blending across the complete interval.
+- The storyline jumps among frames. Up/down, Page Up/Page Down, Home and
+  End provide keyboard equivalents.
+- Menu (5) enters as a top sheet; the Contact finale (0) enters from the
+  bottom. Escape or their close controls restore the current story frame.
+- The Menu is a navigation-only, two-column desktop composition and a compact
+  mobile sheet. UIkit `uk-nav` owns its expandable parents; sub-links carry
+  `data-nav-href` for SPA navigation.
+- `UIMenu.ts` creates the compact fixed top bar, preference controls and the
+  Contact launcher. `data-cinematic-sheet` is the single application-owned
+  sheet state; opening a sheet makes background frames inert and closing it
+  restores focus to the launcher.
 
 `navigateToPage()` preserves same-origin hashes. Bare `href="#"` links are
 local controls, never routes. A link such as `/works#section-works-02` renders
-the route first and then asks `JoystickNav` to activate the target section.
+the route first and then asks `CinematicNav` to move the vertical track to
+the target frame.
 
 ## Rendering path
 
@@ -90,21 +108,84 @@ The scene uses `setAnimationLoop`. Rendering is event-driven through
 animation. `EnvSphere` owns the visible background; the ground plane is only
 visible on the contact section.
 
+The inline splash is the only startup entrance animation. The shared cube is
+already settled when the curtain opens. On home, the case-stream textures are
+decoded and its TSL materials are compiled before Enter becomes ready, keeping
+first-use GPU work out of the Works navigation transition.
+
 `World` creates the six section scene groups through `SectionSceneFactory`.
-The home-only Baku carousel is initialized by the idempotent
+`EnvSphere` remains the only ambient background layer; the former decorative
+story-line shader was removed to preserve a single dark console field. The
+inline splash hands off through one short instanced broken-square portal echo;
+it is precompiled behind the loader, renders for about one second and does not
+create a persistent particle simulation. The
+home-only Baku case stream is initialized by the idempotent
 `World.ensureCarouselInitialized()` method, including when a user reaches home
-after a content-route deep link.
+after a content-route deep link. Its large `CasePlane` surfaces wrap as a flat
+infinite media strip. The frame and its buffered texture counter-travel at
+different rates, producing horizontal parallax without bending, rotating,
+shrinking or depth-staggering the case planes. The viewport deliberately clips
+the neighbouring cases. On arrival, a contact-sheet exposure resolves the
+centre plane first, then the right and left neighbours on asymmetric beats;
+texture parallax stays at rest until each plane is legible. Its only DOM
+controls are the accessible previous/next buttons. `/works` lazily
+initializes `WorksPlaneStage`: it renders the visible case imagery as genuine
+Three.js planes while semantic DOM buttons retain keyboard/focus behaviour.
+`DrawTrail` is a transient Studio Console cursor signal on the standalone
+`/works` route only; it decays after pointer movement and stays out of the home
+media stream.
+At UIkit's `@m` breakpoint the stage mirrors the semantic grid's vertical pair
+instead of retaining desktop coordinates. The home stream counter-travels each
+texture inside its real plane while drag moves the planes themselves. On open,
+both paths fade neighbouring planes, settle that texture parallax and align the
+selected plane with the camera until it covers the viewport. A bounded TSL
+film burn grows several low-frequency emulsion holes with an amber exposure
+wash, dark char band and white-hot edge during this travel, then releases all
+transition work. The Works section keeps its post grade neutral and the plane
+pre-compensates the shared filmic curve so the authored sRGB still matches its
+DOM fullscreen copy. The UIkit fullscreen
+detail then crossfades the same decoded still above it, with no second carousel,
+cinema aperture, video fallback or source/aspect swap. UIkit remains the owner
+of visibility, focus, Escape and arrow-key navigation. The only fullscreen
+video source is the approved Play Showreel asset; its poster remains visible
+until the first video frame is composited.
+
+The development FPS panel counts actual calls to the render pipeline, not the
+browser's independent animation callback cadence; an idle on-demand scene reads
+zero. Native WebGPU and WebGL2 both cap DPR at 1.5 so full-screen post processing
+does not unnecessarily miss alternate v-sync deadlines on high-refresh panels.
 
 ## Theme, language and metadata
 
 `ThemeManager` stores `auto` or `inverse` in `localStorage('jlz:theme')`.
-`ContentReveal` applies the result per section: auto uses the light/dark value
-from `WorldConfig`; inverse flips it. It also notifies the 3D layer through
-`jlz:theme-applied`.
+`ContentReveal` applies the result per section: auto resolves to the shared
+dark console mode; inverse is the explicit accessibility alternative. It also
+notifies the 3D layer through `jlz:theme-applied`.
 
 `i18n.ts` owns EN/RU strings and language persistence. `router.ts` applies
 translations and `pageMeta.ts` updates title, description, canonical, Open
 Graph and Twitter values on route and language changes.
+
+Onest Variable is self-hosted in separate Latin and Cyrillic subsets. The
+Unicode ranges in `public/fonts/onest.css` let the browser request only the
+needed subset; `_import.less` owns the application font tokens. Weight-axis
+animation is a progressive typographic layer and must settle immediately when
+reduced motion is requested.
+
+## Editorial content model
+
+Every primary route follows a compact narrative rhythm: capability, problem,
+response, proof. These are story beats, not a mandatory four-card layout; the
+page composition should express them with typography, media, 3D state and
+transition timing. Copy stays short, concrete and useful in both languages.
+
+- Works presents authored case studies and showreel/video material.
+- Blog turns the same proof into readable process, decisions and outcomes; its
+  standalone pages share brand typography and editorial rhythm without loading
+  the 3D runtime.
+- Lab presents separately loaded interactive 3D experiments. An experiment may
+  prove a technique later used in a case study, but it is never labelled as a
+  client work merely because it is visually complete.
 
 ## Lifecycle and events
 
@@ -120,14 +201,14 @@ the DOM.
 
 ## Key modules
 
-| Area            | Primary modules                                                       |
-| --------------- | --------------------------------------------------------------------- |
-| Bootstrap       | `entry-shell.ts`, `entry-app.ts`, `main-app.ts`                       |
-| Routing/content | `router.ts`, `pages/`, `sections/*/template.ts`                       |
-| Runtime         | `Experience.ts`, `Renderer.ts`, `World.ts`, `WorldConfig.ts`          |
-| Scene elements  | `Experience/World/*`, `SectionSceneFactory.ts`                        |
-| UI              | `JoystickNav.ts`, `UIMenu.ts`, `FullscreenOverlay.ts`, `WorkCards.ts` |
-| Core services   | `ThemeManager.ts`, `i18n.ts`, `pageMeta.ts`, `EventBus.ts`            |
+| Area            | Primary modules                                                        |
+| --------------- | ---------------------------------------------------------------------- |
+| Bootstrap       | `entry-shell.ts`, `entry-app.ts`, `main-app.ts`                        |
+| Routing/content | `router.ts`, `pages/`, `sections/*/template.ts`                        |
+| Runtime         | `Experience.ts`, `Renderer.ts`, `World.ts`, `WorldConfig.ts`           |
+| Scene elements  | `Experience/World/*`, `SectionSceneFactory.ts`                         |
+| UI              | `CinematicNav.ts`, `UIMenu.ts`, `FullscreenOverlay.ts`, `WorkCards.ts` |
+| Core services   | `ThemeManager.ts`, `i18n.ts`, `pageMeta.ts`, `EventBus.ts`             |
 
 For code-level invariants see [RULES.md](RULES.md); for running and testing
 the project see [DEVELOPMENT.md](DEVELOPMENT.md).

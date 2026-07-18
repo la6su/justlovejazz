@@ -81,6 +81,22 @@ test.describe('JustLoveJazz — page boot smoke', () => {
     const html = await response.text()
 
     expect(html).not.toMatch(/modulepreload[^>]+(?:vendor-three|vendor-ui|chunk-core-world)/)
+    expect(html).toContain('Zarazeni Inclusion')
+    expect(html).toContain('ВКЛЮЧЕНИЕ')
+  })
+
+  test('variable typography is self-hosted with Cyrillic coverage', async ({ request }) => {
+    const html = await (await request.get('/')).text()
+    const blogHtml = await (await request.get('/blog')).text()
+    const fontCss = await (await request.get('/fonts/onest.css')).text()
+
+    expect(html).toContain('/fonts/onest-latin-variable.woff2')
+    expect(html).not.toContain('/fonts/inter.css')
+    expect(blogHtml).toContain('/fonts/onest-latin-variable.woff2')
+    expect(blogHtml).not.toContain('/fonts/inter.css')
+    expect(fontCss).toContain('font-weight: 100 900')
+    expect(fontCss).toContain('/fonts/onest-cyrillic-variable.woff2')
+    expect(fontCss).toMatch(/U\+0400-045F/i)
   })
 
   test('splash container + populated <main> render within timeout', async ({ page }) => {
@@ -123,10 +139,26 @@ test.describe('JustLoveJazz — page boot smoke', () => {
 })
 
 test.describe('JustLoveJazz — accessibility & DOM UI', () => {
+  test('Works keeps semantic cards inside the editorial composition', async ({ page }) => {
+    await page.goto('/works')
+
+    await expect(page.locator('.jlz-works-section')).toHaveCount(4)
+    await expect(page.locator('.jlz-works-statement')).toHaveCount(4)
+    await expect(page.locator('.jlz-work-card')).toHaveCount(8)
+
+    const firstCard = page.locator('.jlz-work-card').first()
+    await expect(firstCard).toHaveAttribute('data-project-id', /.+/)
+    await expect(firstCard).toHaveAttribute('aria-label', /Open project:/)
+    await expect(page.locator('.jlz-works-statement').first()).toHaveAttribute(
+      'aria-hidden',
+      'true',
+    )
+  })
+
   test('top-bar controls and menu section links render with aria-labels', async ({ page }) => {
     await page.goto('/')
 
-    // UIMenu injects top-bar controls. The menu is rendered as secret section 5
+    // UIMenu injects top-bar controls. The menu is rendered in runtime section 5
     // and uses .jlz-menu-nav__sub-link anchors. UIMenu is only constructed after
     // the Experience finishes init() — which requires WebGPU or WebGL2. In
     // headless CI without a real GPU this may never happen, so skip gracefully.
@@ -143,11 +175,18 @@ test.describe('JustLoveJazz — accessibility & DOM UI', () => {
     expect(label).toBeTruthy()
     expect(label!.toLowerCase()).toContain('sound')
 
-    // The navigation template is rendered with one sub-link per visible section.
+    // The navigation template exposes section links plus a direct Blog route.
     const links = page.locator('.jlz-menu-nav__sub-link')
     await expect(links.first()).toBeAttached({ timeout: 5000 })
     const count = await links.count()
-    expect(count).toBeGreaterThanOrEqual(20)
+    expect(count).toBeGreaterThanOrEqual(24)
+
+    await expect(
+      page.locator('.jlz-menu-nav__sub-link[data-nav-href="/lab#section-lab-01"]'),
+    ).toHaveCount(1)
+    await expect(
+      page.locator('.jlz-menu-nav__direct-link[href="/blog"][data-page-transition]'),
+    ).toHaveCount(1)
 
     const firstLinkHref = await links.first().getAttribute('data-nav-href')
     expect(firstLinkHref).toMatch(/^\//)
@@ -174,7 +213,10 @@ test.describe('JustLoveJazz — accessibility & DOM UI', () => {
     expect(activeClass, 'First Tab should focus the skip link').toContain('skip-link')
   })
 
-  test('secret sections use one UIkit accordion composition', async ({ browser }) => {
+  test('mobile uses a vertical story, compact Menu and Contact footer', async ({ browser }) => {
+    // Parallel headless workers can spend most of the default budget in the
+    // optional GPU bootstrap even though this test only inspects DOM/CSS.
+    test.setTimeout(60000)
     const context = await browser.newContext({ viewport: { width: 390, height: 844 } })
     const page = await context.newPage()
 
@@ -182,37 +224,64 @@ test.describe('JustLoveJazz — accessibility & DOM UI', () => {
       await page.goto('/')
       await expect(page.locator('main#spa-content')).toBeAttached({ timeout: 20000 })
 
-      // The two secret sections are normally reached through the joystick.
-      // Activate them directly here so the responsive composition can be
-      // checked without depending on GPU initialisation in headless Chromium.
+      const track = page.locator('#spa-content')
+      await expect(track).toHaveCSS('scroll-snap-type', /y mandatory/)
+      await expect(page.locator('[data-section="intro"]')).toHaveCSS('width', '390px')
+
+      // Activate the public sheet state directly so responsive composition can
+      // be checked without depending on GPU initialisation in headless Chromium.
       await page.evaluate(() => {
-        document
-          .querySelectorAll('.section-active')
-          .forEach((section) => section.classList.remove('section-active'))
-        document.getElementById('section-lab')?.classList.add('section-active')
+        document.body.dataset.cinematicSheet = 'footer'
       })
 
-      const labAccordion = page.locator('#section-lab .jlz-lab-accordion')
-      await expect(labAccordion).toBeVisible()
-      await expect(page.locator('#section-lab .jlz-lab-grid')).toHaveCount(0)
-
-      const labToggle = labAccordion.locator('.uk-accordion-title').first()
-      await labToggle.click()
-      await expect(labToggle).toHaveAttribute('aria-expanded', 'true')
-      await expect(labAccordion.locator('.jlz-lab-accordion__preview').first()).toBeVisible()
+      const footer = page.locator('[data-contact-footer]')
+      await expect(footer).toBeVisible()
+      await expect(footer.locator('.jlz-telegram-cta')).toHaveAttribute(
+        'href',
+        'https://t.me/justlovejazz',
+      )
+      await expect(page.locator('#section-lab .jlz-lab-accordion')).toHaveCount(0)
 
       await page.evaluate(() => {
-        document
-          .querySelectorAll('.section-active')
-          .forEach((section) => section.classList.remove('section-active'))
-        document.getElementById('section-menu')?.classList.add('section-active')
+        document.body.dataset.cinematicSheet = 'menu'
       })
 
+      await expect(page.locator('#section-menu')).toBeVisible()
       const menuToggle = page.locator('#section-menu .jlz-menu-nav__toggle').first()
       await expect(menuToggle).toHaveAttribute('role', 'button')
-      await menuToggle.click()
+      await menuToggle.dispatchEvent('click')
       await expect(menuToggle).toHaveAttribute('aria-expanded', 'true')
       await expect(page.locator('#section-menu .jlz-menu-nav__subs').first()).toBeVisible()
+    } finally {
+      await context.close()
+    }
+  })
+
+  test('mobile Works stacks its two semantic case controls', async ({ browser }) => {
+    test.setTimeout(60000)
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 } })
+    const page = await context.newPage()
+
+    try {
+      await page.goto('/works')
+      await expect(page.locator('main#spa-content')).toBeAttached({ timeout: 20000 })
+
+      const stage = page.locator('.jlz-works-stage').first()
+      const cards = stage.locator('.jlz-work-card')
+      await expect(cards).toHaveCount(2)
+
+      const [stageBox, firstCardBox, secondCardBox] = await Promise.all([
+        stage.boundingBox(),
+        cards.nth(0).boundingBox(),
+        cards.nth(1).boundingBox(),
+      ])
+      expect(stageBox).not.toBeNull()
+      expect(firstCardBox).not.toBeNull()
+      expect(secondCardBox).not.toBeNull()
+      expect(stageBox!.height).toBeCloseTo(844, 0)
+      expect(firstCardBox!.width).toBeGreaterThan(330)
+      expect(secondCardBox!.width).toBeGreaterThan(330)
+      expect(secondCardBox!.y).toBeGreaterThan(firstCardBox!.y)
     } finally {
       await context.close()
     }

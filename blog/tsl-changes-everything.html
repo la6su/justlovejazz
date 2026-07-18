@@ -24,7 +24,10 @@
     <meta property="og:site_name" content="JUSTLOVEJAZZ" />
     <meta property="og:locale" content="en_US" />
     <meta property="og:title" content="Why TSL Changes Everything" />
-    <meta property="og:description" content="TypeScript-safe shader programming, cross-backend compilation, and the end of raw GLSL string concatenation." />
+    <meta
+      property="og:description"
+      content="TypeScript-safe shader programming, cross-backend compilation, and the end of raw GLSL string concatenation."
+    />
     <meta property="og:url" content="https://justlovejazz.dev/blog/tsl-changes-everything" />
     <meta property="og:image" content="https://justlovejazz.dev/preview.jpg" />
     <meta property="og:image:secure_url" content="https://justlovejazz.dev/preview.jpg" />
@@ -43,13 +46,21 @@
     <meta name="twitter:site" content="@justlovejazz" />
     <meta name="twitter:creator" content="@justlovejazz" />
     <meta name="twitter:title" content="Why TSL Changes Everything" />
-    <meta name="twitter:description" content="TypeScript-safe shader programming, cross-backend compilation." />
+    <meta
+      name="twitter:description"
+      content="TypeScript-safe shader programming, cross-backend compilation."
+    />
     <meta name="twitter:image" content="https://justlovejazz.dev/preview.jpg" />
     <meta name="twitter:image:alt" content="TSL preview" />
 
-    <link rel="preload" href="/fonts/inter-400.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href="/fonts/inter-700.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="stylesheet" href="/fonts/inter.css" />
+    <link
+      rel="preload"
+      href="/fonts/onest-latin-variable.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link rel="stylesheet" href="/fonts/onest.css" />
     <link rel="stylesheet" href="/src/assets/blog.less" />
     <link rel="stylesheet" href="/vendor/prism/prism-tomorrow.css" />
 
@@ -62,24 +73,37 @@
         "image": "https://justlovejazz.dev/preview.jpg",
         "datePublished": "2026-04-05T10:00:00Z",
         "dateModified": "2026-04-05T10:00:00Z",
-        "author": { "@type": "Organization", "name": "JUSTLOVEJAZZ", "url": "https://justlovejazz.dev/" },
+        "author": {
+          "@type": "Organization",
+          "name": "JUSTLOVEJAZZ",
+          "url": "https://justlovejazz.dev/"
+        },
         "publisher": {
           "@type": "Organization",
           "name": "JUSTLOVEJAZZ",
           "logo": { "@type": "ImageObject", "url": "https://justlovejazz.dev/favicon.svg" }
         },
-        "mainEntityOfPage": { "@type": "WebPage", "@id": "https://justlovejazz.dev/blog/tsl-changes-everything" },
+        "mainEntityOfPage": {
+          "@type": "WebPage",
+          "@id": "https://justlovejazz.dev/blog/tsl-changes-everything"
+        },
         "keywords": "TSL, Three.js, WebGPU, shaders, TypeScript, process note",
         "articleSection": "Process Notes"
       }
     </script>
   </head>
   <body>
-    <div class="jlz-reading-progress" aria-hidden="true"><div class="jlz-reading-progress__bar"></div></div>
+    <div class="jlz-reading-progress" aria-hidden="true">
+      <div class="jlz-reading-progress__bar"></div>
+    </div>
     <a href="#main" class="skip-link">Skip to main content</a>
 
     <header class="jlz-blog-header" role="banner">
-      <nav class="uk-container uk-container-expand uk-navbar uk-navbar-transparent" uk-navbar aria-label="Main navigation">
+      <nav
+        class="uk-container uk-container-expand uk-navbar uk-navbar-transparent"
+        uk-navbar
+        aria-label="Main navigation"
+      >
         <div class="uk-navbar-left">
           <a href="/" class="uk-navbar-item uk-logo jlz-blog-brand">l@6</a>
         </div>
@@ -97,9 +121,9 @@
         <p class="jlz-landing-eyebrow">&gt; PROCESS NOTE · 05 APR 2026</p>
         <h1 class="uk-heading-large uk-margin-remove-top">Why TSL Changes Everything</h1>
         <p class="uk-text-lead uk-margin-medium-top">
-          Three.js Shading Language (TSL) is not just a new API. It's a fundamental shift
-          in how we write GPU code. Type safety, cross-backend compilation, and the end of
-          raw GLSL string concatenation. Here's why we're all-in.
+          Three.js Shading Language (TSL) is not just a new API. It's a fundamental shift in how we
+          write GPU code. Type safety, cross-backend compilation, and the end of raw GLSL string
+          concatenation. Here's why we're all-in.
         </p>
 
         <hr class="uk-margin-large" />
@@ -107,11 +131,13 @@
         <h2>The old way: GLSL strings</h2>
         <p>
           Writing a shader used to mean writing a GLSL string inside a JavaScript file. No
-          autocomplete. No type checking. No way to catch a typo until runtime. A shader
-          bug that crashed the whole pipeline would show up as a black screen with a
-          console warning buried in three.js internals.
+          autocomplete. No type checking. No way to catch a typo until runtime. A shader bug that
+          crashed the whole pipeline would show up as a black screen with a console warning buried
+          in three.js internals.
         </p>
-        <pre class="uk-pre uk-margin-medium"><code class="language-typescript">// The old way — raw GLSL string
+        <pre
+          class="uk-pre uk-margin-medium"
+        ><code class="language-typescript">// The old way — raw GLSL string
 const material = new THREE.ShaderMaterial({
   vertexShader: \`
     varying vec3 vNormal;
@@ -128,18 +154,20 @@ const material = new THREE.ShaderMaterial({
   \`,
 })</code></pre>
         <p>
-          This works. But it doesn't scale. Add a uniform? String concatenation. Add a
-          chunk from another file? <code>#include</code> with a path that breaks if you
-          move files. Share a function between shaders? Copy-paste.
+          This works. But it doesn't scale. Add a uniform? String concatenation. Add a chunk from
+          another file? <code>#include</code> with a path that breaks if you move files. Share a
+          function between shaders? Copy-paste.
         </p>
 
         <h2>The new way: TSL node graphs</h2>
         <p>
-          TSL turns shaders into TypeScript. Each GPU operation is a function that returns
-          a node. Nodes compose into graphs. The graph compiles to WGSL (WebGPU) or GLSL
-          (WebGL2) at runtime — same code, both backends.
+          TSL turns shaders into TypeScript. Each GPU operation is a function that returns a node.
+          Nodes compose into graphs. The graph compiles to WGSL (WebGPU) or GLSL (WebGL2) at runtime
+          — same code, both backends.
         </p>
-        <pre class="uk-pre uk-margin-medium"><code class="language-typescript">// The new way — TSL node graph
+        <pre
+          class="uk-pre uk-margin-medium"
+        ><code class="language-typescript">// The new way — TSL node graph
 import { Fn, vec3, uniform, positionLocal, normalLocal, mx_noise_float, sin, mix } from 'three/tsl'
 
 const uTime = uniform(0)
@@ -151,71 +179,68 @@ const positionNode = Fn(() => {
   return pos.add(normalLocal.mul(noise.mul(uDisplace)))
 })</code></pre>
         <p>
-          Type safety: <code>positionLocal</code> is a <code>vec3</code> node. <code>mx_noise_float</code>
-          takes a <code>vec3</code> and returns a <code>float</code>. The TypeScript compiler
-          catches type mismatches before you run the code.
+          Type safety: <code>positionLocal</code> is a <code>vec3</code> node.
+          <code>mx_noise_float</code> takes a <code>vec3</code> and returns a <code>float</code>.
+          The TypeScript compiler catches type mismatches before you run the code.
         </p>
 
         <h2>Cross-backend compilation</h2>
-        <p>
-          The same TSL graph compiles to:
-        </p>
+        <p>The same TSL graph compiles to:</p>
         <ul>
           <li><strong>WGSL</strong> for WebGPU (native, fast)</li>
           <li><strong>GLSL ES 3.0</strong> for WebGL2 (fallback, widely supported)</li>
         </ul>
         <p>
-          We maintain a <strong>parity guarantee</strong>: the visual output is bit-identical
-          across both backends. This required portable primitives — an integer hash that
-          produces the same bits in GLSL and WGSL (we couldn't use <code>sin()</code> —
-          precision differs), an exact sRGB transfer function, and an ACES tonemap with
-          an epsilon to prevent NaN on black pixels.
+          We maintain a <strong>parity guarantee</strong>: the visual output is bit-identical across
+          both backends. This required portable primitives — an integer hash that produces the same
+          bits in GLSL and WGSL (we couldn't use <code>sin()</code> — precision differs), an exact
+          sRGB transfer function, and an ACES tonemap with an epsilon to prevent NaN on black
+          pixels.
         </p>
 
         <blockquote class="uk-blockquote uk-margin-medium">
           <p class="uk-margin-remove">
-            "A shader bug that used to take 20 minutes of console.log triangulation now
-            shows up as a type error in the editor."
+            "A shader bug that used to take 20 minutes of console.log triangulation now shows up as
+            a type error in the editor."
           </p>
         </blockquote>
 
         <h2>What this unlocks</h2>
         <p>
-          <strong>Iteration speed</strong>: change a node, see the result. No shader
-          recompilation pipeline to manage — three.js handles it.
+          <strong>Iteration speed</strong>: change a node, see the result. No shader recompilation
+          pipeline to manage — three.js handles it.
         </p>
         <p>
-          <strong>Refactoring</strong>: extract a function, reuse it across materials.
-          The type system ensures you wire it up correctly.
+          <strong>Refactoring</strong>: extract a function, reuse it across materials. The type
+          system ensures you wire it up correctly.
         </p>
         <p>
-          <strong>Debugging</strong>: inspect the generated WGSL/GLSL if something looks
-          wrong. But you rarely need to — the node graph is the source of truth.
+          <strong>Debugging</strong>: inspect the generated WGSL/GLSL if something looks wrong. But
+          you rarely need to — the node graph is the source of truth.
         </p>
         <p>
-          <strong>Fallback for free</strong>: write once, run on WebGPU or WebGL2. No
-          separate shader codebases to maintain.
+          <strong>Fallback for free</strong>: write once, run on WebGPU or WebGL2. No separate
+          shader codebases to maintain.
         </p>
 
         <h2>The catch</h2>
         <p>
-          TSL is still evolving. The API has breaking changes between three.js minor
-          versions. We pin three.js to <code>0.184</code> and update deliberately. The
-          type definitions in <code>src/types/tsl.ts</code> are our adapter shim — they
-          smooth over the rough edges.
+          TSL is still evolving. The API has breaking changes between three.js minor versions. We
+          pin three.js to <code>0.184</code> and update deliberately. The type definitions in
+          <code>src/types/tsl.ts</code> are our adapter shim — they smooth over the rough edges.
         </p>
         <p>
-          Documentation is sparse. The best reference is the three.js examples and the
-          TSL source itself. We've built up a library of patterns in <code>docs/UIKIT3.md</code>
-          and <code>docs/ARCHITECTURE.md</code> — the hard-won lessons are recorded there.
+          Documentation is sparse. The best reference is the three.js examples and the TSL source
+          itself. We've built up a library of patterns in <code>docs/UIKIT3.md</code> and
+          <code>docs/ARCHITECTURE.md</code> — the hard-won lessons are recorded there.
         </p>
 
         <h2>The verdict</h2>
         <p>
-          TSL is the future of shader programming on the web. The type safety alone is
-          worth the migration — but the cross-backend compilation is the killer feature.
-          We can target WebGPU today without abandoning WebGL2 users. When WebGPU
-          adoption crosses 80%, we drop the fallback with zero code changes.
+          TSL is the future of shader programming on the web. The type safety alone is worth the
+          migration — but the cross-backend compilation is the killer feature. We can target WebGPU
+          today without abandoning WebGL2 users. When WebGPU adoption crosses 80%, we drop the
+          fallback with zero code changes.
         </p>
 
         <hr class="uk-margin-large" />
@@ -229,18 +254,36 @@ const positionNode = Fn(() => {
     <footer class="jlz-blog-footer" role="contentinfo">
       <div class="uk-container uk-container-expand uk-text-center">
         <ul class="uk-iconnav uk-flex-center" aria-label="Social links">
-          <li><a href="https://github.com/la6su" rel="noopener" aria-label="GitHub" uk-icon="icon: github"></a></li>
-          <li><a href="https://x.com/justlovejazz" rel="noopener" aria-label="Twitter" uk-icon="icon: twitter"></a></li>
-          <li><a href="mailto:hello@justlovejazz.com" aria-label="Email" uk-icon="icon: mail"></a></li>
+          <li>
+            <a
+              href="https://github.com/la6su"
+              rel="noopener"
+              aria-label="GitHub"
+              uk-icon="icon: github"
+            ></a>
+          </li>
+          <li>
+            <a
+              href="https://x.com/justlovejazz"
+              rel="noopener"
+              aria-label="Twitter"
+              uk-icon="icon: twitter"
+            ></a>
+          </li>
+          <li>
+            <a href="mailto:hello@justlovejazz.com" aria-label="Email" uk-icon="icon: mail"></a>
+          </li>
         </ul>
-        <p class="uk-text-meta uk-margin-small-top">© <span id="year">2026</span> JUSTLOVEJAZZ — Web Design Studio</p>
+        <p class="uk-text-meta uk-margin-small-top">
+          © <span id="year">2026</span> JUSTLOVEJAZZ — Web Design Studio
+        </p>
       </div>
     </footer>
 
     <script>
-      document.getElementById('year').textContent = String(new Date().getFullYear());
+      document.getElementById('year').textContent = String(new Date().getFullYear())
     </script>
-      <script defer src="/vendor/prism/prism-core.min.js"></script>
+    <script defer src="/vendor/prism/prism-core.min.js"></script>
     <script defer src="/vendor/prism/prism-clike.min.js"></script>
     <script defer src="/vendor/prism/prism-javascript.min.js"></script>
     <script defer src="/vendor/prism/prism-typescript.min.js"></script>
