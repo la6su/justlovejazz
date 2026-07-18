@@ -4,6 +4,12 @@
 // NO app-specific styles (cursor, joystick, dock, project-overlay, etc).
 // Minimal: base document, header, content, footer.
 
+// Pair with the home entry's opt-in. Blog stays a separate document while
+// supported browsers animate the navigation without JavaScript orchestration.
+@view-transition {
+  navigation: auto;
+}
+
 @import './_import.less';
 @import './master-quantum-flares/_import.less';
 @import './master-quantum-flares/styles/black-blue.less';
@@ -19,6 +25,30 @@ body {
   line-height: 1.6;
   background: var(--jlz-color-bg);
   color: var(--jlz-color-text);
+}
+
+.jlz-blog-brand,
+.jlz-landing-eyebrow,
+.jlz-blog-content h1,
+.jlz-blog-content h2,
+.uk-card-title {
+  font-variation-settings: 'wght' var(--jlz-blog-weight, 650);
+  transition: font-variation-settings 360ms var(--jlz-ease-out-quint, ease-out);
+}
+
+.uk-card:hover .uk-card-title,
+.uk-card:focus-within .uk-card-title {
+  --jlz-blog-weight: 820;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jlz-blog-brand,
+  .jlz-landing-eyebrow,
+  .jlz-blog-content h1,
+  .jlz-blog-content h2,
+  .uk-card-title {
+    transition: none;
+  }
 }
 
 // ── Skip link (WCAG) ──

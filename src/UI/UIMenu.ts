@@ -48,10 +48,6 @@ export class UIMenu {
     this.navEl.innerHTML = `
       <header class="jlz-topbar uk-flex uk-flex-middle uk-flex-between">
         <a class="jlz-topbar__brand" href="/" aria-label="JUSTLOVEJAZZ — Studio">JUSTLOVEJAZZ</a>
-        <div class="jlz-topbar__signal uk-visible@m" aria-hidden="true">
-          <span class="jlz-topbar__signal-dot"></span>
-          <span data-i18n="story.system">Cinematic web system · 2026</span>
-        </div>
         <div class="jlz-topbar-controls uk-flex uk-flex-middle">
           <button class="uk-icon-button jlz-lang-toggle" type="button" id="jlz-lang-toggle"
                   aria-label="Switch language" title="Language"

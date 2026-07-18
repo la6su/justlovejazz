@@ -3,8 +3,10 @@
 ## System boundary
 
 The product is one Vite SPA entry (`index.html`) plus standalone blog pages.
-The SPA owns the 3D scene and a transparent DOM layer; blog pages do not boot
-the scene.
+The SPA owns the shared 3D scene and a transparent DOM layer; blog pages do not
+boot the scene. The product itself is the portfolio: each route must demonstrate
+the capability it describes through its composition, interaction and content,
+not act as a generic brochure around a separate gallery.
 
 ```text
 index.html
@@ -50,9 +52,12 @@ source for the cube's displayed orientation.
 Home sections use `data-section`; content-page sections use
 `data-page-section`. The public Contact finale intentionally reuses the stable
 section-0 `lab` identifier so renderer configuration, deep links and the
-six-section contract do not fork. The `/lab` content route is retained, but it
-is not exposed in the primary Menu. The menu template is the one intentional
-exception to the shared content section shell. Contact and Menu deliberately
+six-section contract do not fork. The `/lab` route is a catalogue of
+experiments, not a Works category. Each accepted experiment is an isolated 3D
+scene loaded only after the visitor opens it; experiment dependencies and
+assets must not join the shared startup bundle. The catalogue can remain
+lightweight and semantic before those scenes load. The menu template is the
+one intentional exception to the shared content section shell. Contact and Menu deliberately
 use tilted side-face views rather than literal top/bottom cube rotations;
 changing that visual model requires updating `SplashCube.FACE_ROTATIONS` and
 this table.
@@ -119,6 +124,27 @@ from `WorldConfig`; inverse flips it. It also notifies the 3D layer through
 `i18n.ts` owns EN/RU strings and language persistence. `router.ts` applies
 translations and `pageMeta.ts` updates title, description, canonical, Open
 Graph and Twitter values on route and language changes.
+
+Onest Variable is self-hosted in separate Latin and Cyrillic subsets. The
+Unicode ranges in `public/fonts/onest.css` let the browser request only the
+needed subset; `_import.less` owns the application font tokens. Weight-axis
+animation is a progressive typographic layer and must settle immediately when
+reduced motion is requested.
+
+## Editorial content model
+
+Every primary route follows a compact narrative rhythm: capability, problem,
+response, proof. These are story beats, not a mandatory four-card layout; the
+page composition should express them with typography, media, 3D state and
+transition timing. Copy stays short, concrete and useful in both languages.
+
+- Works presents authored case studies and showreel/video material.
+- Blog turns the same proof into readable process, decisions and outcomes; its
+  standalone pages share brand typography and editorial rhythm without loading
+  the 3D runtime.
+- Lab presents separately loaded interactive 3D experiments. An experiment may
+  prove a technique later used in a case study, but it is never labelled as a
+  client work merely because it is visually complete.
 
 ## Lifecycle and events
 

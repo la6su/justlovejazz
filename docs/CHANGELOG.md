@@ -14,6 +14,14 @@ history.
   Contact finale with a styled Telegram action.
 - Removed CRT scanlines and the runtime CRT border; raised splash and full-modal
   layers above application chrome and refined the fullscreen transition.
+- Established Onest Variable typography with Latin/Cyrillic subsets and an
+  editorial Works stage; fixed project-card opening and inverse overlay
+  contrast, and removed the pipeline's remaining default CRT frame.
+- Updated the splash copy within its concentric square geometry and centered
+  Enter control; expanded Menu with Lab and a direct Blog route, refined UIkit
+  controls and restricted delayed 3D type to the lower Contact/Manifesto frame.
+- Replaced the random splash particle burst with a lightweight geometric
+  square-frame handoff that continues the entry composition into the 3D scene.
 
 ## 2026-07-15 — Runtime hardening and documentation consolidation
 

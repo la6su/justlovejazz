@@ -17,7 +17,9 @@ function initSoundToggle(): void {
   let soundOn = false
   try {
     if (localStorage.getItem(SOUND_KEY) === 'on') soundOn = true
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   const update = () => {
     btn.setAttribute('aria-pressed', String(soundOn))
     btn.classList.toggle('is-off', !soundOn)
@@ -26,7 +28,11 @@ function initSoundToggle(): void {
   update()
   btn.addEventListener('click', () => {
     soundOn = !soundOn
-    try { localStorage.setItem(SOUND_KEY, soundOn ? 'on' : 'off') } catch { /* ignore */ }
+    try {
+      localStorage.setItem(SOUND_KEY, soundOn ? 'on' : 'off')
+    } catch {
+      /* ignore */
+    }
     update()
   })
 }
@@ -79,7 +85,7 @@ function showLoadError(): void {
     const parent = enterBtn.parentElement
     if (parent) {
       parent.innerHTML = `
-        <div style="text-align:center; color: rgba(255,255,255,0.7); font-family:Inter,sans-serif; max-width: 320px;">
+        <div style="text-align:center; color: rgba(255,255,255,0.7); font-family:Onest,sans-serif; max-width: 320px;">
           <p style="font-size:0.75rem; font-weight:700; letter-spacing:0.2em; text-transform:uppercase; color:rgba(255,100,100,0.8); margin:0 0 0.5rem;">3D Failed</p>
           <p style="font-size:0.8rem; line-height:1.4; margin:0 0 1rem;">The 3D experience couldn't load. Your browser may not support WebGL2, or the GPU is unavailable.</p>
           <a href="/" style="font-size:0.7rem; font-weight:600; letter-spacing:0.15em; text-transform:uppercase; color:#6b78a3; text-decoration:none; border:1px solid rgba(107,120,163,0.3); padding:0.5rem 1rem; border-radius:999px;">Retry</a>
@@ -103,7 +109,7 @@ function updateLoaderProgress(pct: number): void {
   // Perimeter of sq-4 rect = 4 × 266 = 1064
   // dashoffset: 1064 (0%, empty) → 0 (100%, full ring)
   const perimeter = 1064
-  const offset = perimeter - (perimeter * value / 100)
+  const offset = perimeter - (perimeter * value) / 100
   ring.style.strokeDashoffset = String(offset)
 }
 
@@ -276,7 +282,9 @@ function animateBlurFadeTitles(): void {
     blurFadeAnimating = false
   }, 2200)
 
-  for (const el of document.querySelectorAll<HTMLElement>('.studio-title:not([data-blur-fade="off"])')) {
+  for (const el of document.querySelectorAll<HTMLElement>(
+    '.studio-title:not([data-blur-fade="off"])',
+  )) {
     const text = el.textContent?.trim() || ''
     if (!text) continue
     BlurFade.for(el).show(1.2)

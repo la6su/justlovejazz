@@ -7,6 +7,53 @@ inventories or release notes here. Git history retains the detailed record.
 
 <!-- WORKLOG:ENTRIES -->
 
+## 2026-07-18 — Entry typography and navigation refinement
+
+### Decision
+
+Moved the 3D word treatment to the lower Contact/Manifesto frame only. Its
+glyphs now wait for the frame to settle, then reveal once through CPU-side
+transforms that remain identical on WebGPU and WebGL2; reduced motion resolves
+immediately. Updated the existing square-path splash copy into a multilingual
+entry while preserving its concentric geometry and centered Enter control,
+removed the top-bar signal, moved the chapter control to the right and
+expanded Menu to seven destinations including Lab and a direct Blog route.
+UIkit button and
+icon-button hooks now share the compact cinematic control language, while the
+Contact launcher is deliberately black-on-white in both runtime theme modes.
+The entry handoff no longer throws random gravity-driven particles: three
+deterministic broken-square light frames now echo the splash geometry, contract
+through the cube and dissolve in 1.05 seconds using one 12-instance mesh.
+
+### Verification
+
+- Visually checked the splash, top bar, Menu, contact CTA and lower 3D HELLO
+  frame in a live desktop browser.
+- Type-check, lint (0 errors; 54 existing warnings), build, 86 unit tests and
+  all 11 Playwright Chromium tests pass.
+
+## 2026-07-18 — Editorial Works and variable typography foundation
+
+### Decision
+
+Made the Works route a dark editorial media stage with asymmetric UIkit grids,
+oversized type and restrained weight animation while keeping semantic project
+buttons and `FullscreenOverlay`. Onest Variable is now self-hosted as separate
+Latin and Cyrillic subsets across the SPA and standalone Blog. Removed the
+renderer pipeline's hidden default CRT border and all section vignette values;
+the fullscreen viewer now owns a fixed dark contrast contract in inverse mode.
+Works no longer calls production projects “Experiments”: Lab is reserved for
+separately loaded 3D R&D scenes. The product-wide content model is capability,
+problem, response and proof, expressed as rhythm rather than repeated lists.
+
+### Verification
+
+- Visually checked Works in both theme modes and Russian, then opened a project
+  from its card and checked the fullscreen viewer contrast and controls.
+- Type-check, lint (0 errors; 54 existing warnings), production build, 86 unit
+  tests and all 11 Playwright Chromium tests pass, including the mobile story.
+  Repository-wide formatting now reports the known 32-file baseline.
+
 ## 2026-07-18 — Vertical interaction and layer polish
 
 ### Decision

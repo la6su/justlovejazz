@@ -76,11 +76,15 @@
       }
     </script>
 
-    <!-- Preload fonts (app needs all 3 weights) -->
-    <link rel="preload" href="/fonts/inter-400.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href="/fonts/inter-700.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href="/fonts/inter-900.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="stylesheet" href="/fonts/inter.css" />
+    <!-- Preload the initial Latin subset; Cyrillic loads on demand by unicode-range. -->
+    <link
+      rel="preload"
+      href="/fonts/onest-latin-variable.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link rel="stylesheet" href="/fonts/onest.css" />
 
     <!-- Inline CSS — minimal, just bg to prevent white flash before app CSS loads -->
     <style>
@@ -96,7 +100,7 @@
       }
       body {
         font-family:
-          'Inter',
+          'Onest',
           -apple-system,
           BlinkMacSystemFont,
           sans-serif;
@@ -105,6 +109,12 @@
         position: relative;
         width: 100%;
         height: 100dvh;
+      }
+
+      /* Native cross-document fade for the standalone Blog. Unsupported
+         browsers retain a normal, semantic navigation. */
+      @view-transition {
+        navigation: auto;
       }
 
       /* ── Splash loader (seamless inline overlay) ──
@@ -155,11 +165,10 @@
           height: 100vw;
         }
       }
-      /* Text reveal — opacity-only (GPU-accelerated, no repaint).
-         Staggered fade-in, no transform (avoids SVG layout thrash). */
+      /* Text follows the concentric-square paths; only its copy changes. */
       .jlz-splash-text {
         text-transform: uppercase;
-        font-family: 'Inter', sans-serif;
+        font-family: 'Onest', sans-serif;
         font-weight: 700;
         opacity: 0;
         animation: jlz-splash-fade 0.8s ease forwards;
@@ -178,11 +187,6 @@
         font-size: clamp(32px, 6vmin, 48px);
         fill: #4a5a7e;
         animation-delay: 0.6s;
-      }
-      .jlz-splash-text--4 {
-        font-size: clamp(22px, 4.5vmin, 34px);
-        fill: #3a4a6e;
-        animation-delay: 0.8s;
       }
       @keyframes jlz-splash-fade {
         from {
@@ -259,7 +263,7 @@
         }
       }
 
-      /* Loader content — Enter button centered inside sq-4 */
+      /* Loader content — Enter remains centered inside the inner square. */
       .jlz-loader-content {
         position: relative;
         z-index: 10015;
@@ -294,7 +298,7 @@
         border: none;
         background: transparent;
         color: rgba(255, 255, 255, 0.25);
-        font-family: 'Inter', sans-serif;
+        font-family: 'Onest', sans-serif;
         font-size: 0.75rem;
         font-weight: 600;
         letter-spacing: 0.3em;
@@ -394,16 +398,18 @@
         </defs>
         <text class="jlz-splash-text jlz-splash-text--1">
           <textPath href="#sq-1" textLength="3600">
-            JUSTLOVEJAZZ · WEB DESIGN STUDIO · CRAFTED WITH GLASS MOTION LIGHT&nbsp;
+            Zarazeni Inclusion · ВКЛЮЧЕНИЕ · Kemasukan Aufnahme · Aisällyttäminen&nbsp;
           </textPath>
         </text>
         <text class="jlz-splash-text jlz-splash-text--2">
           <textPath href="#sq-2" textLength="2544">
-            WEBGPU · THREE.JS · TSL · UIKIT · INTER&nbsp;
+            JUSTLOVEJAZZ · INTERACTIVE DESIGN STUDIO · WEBGPU · THREE.JS · TSL&nbsp;
           </textPath>
         </text>
         <text class="jlz-splash-text jlz-splash-text--3">
-          <textPath href="#sq-3" textLength="1704">EST 2019 · REMOTE · EU&nbsp;</textPath>
+          <textPath href="#sq-3" textLength="1704">
+            CRAFTED WITH GLASS · MOTION · LIGHT · EST 2019&nbsp;
+          </textPath>
         </text>
         <!-- Progress ring — rect on sq-4 path, stroke-dashoffset = progress -->
         <rect
@@ -435,7 +441,8 @@
       <div class="jlz-loader-curtain jlz-loader-curtain--top"></div>
       <div class="jlz-loader-curtain jlz-loader-curtain--bottom"></div>
       <div class="jlz-loader-seam"></div>
-      <!-- Loader content — Enter button appears inside sq-4 when ready -->
+      <!-- Square-path typography and centered Enter preserve the splash geometry. -->
+      <!-- Loader content — Enter stays disabled until WebGL is ready. -->
       <div class="jlz-loader-content">
         <button
           class="jlz-splash-enter"
@@ -526,7 +533,7 @@
             var content = btn.parentElement
             if (content) {
               content.innerHTML =
-                '<div style="text-align:center;color:rgba(255,255,255,0.7);font-family:Inter,sans-serif;max-width:320px;"><p style="font-size:0.75rem;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,100,100,0.8);margin:0 0 0.5rem;">3D Failed</p><p style="font-size:0.8rem;line-height:1.4;margin:0 0 1rem;">The 3D experience could not load. Your browser may not support WebGL2, or the app bundle failed to download.</p><a href="/" style="font-size:0.7rem;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;color:#6b78a3;text-decoration:none;border:1px solid rgba(107,120,163,0.3);padding:0.5rem 1rem;border-radius:999px;">Retry</a></div>'
+                '<div style="text-align:center;color:rgba(255,255,255,0.7);font-family:Onest,sans-serif;max-width:320px;"><p style="font-size:0.75rem;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,100,100,0.8);margin:0 0 0.5rem;">3D Failed</p><p style="font-size:0.8rem;line-height:1.4;margin:0 0 1rem;">The 3D experience could not load. Your browser may not support WebGL2, or the app bundle failed to download.</p><a href="/" style="font-size:0.7rem;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;color:#6b78a3;text-decoration:none;border:1px solid rgba(107,120,163,0.3);padding:0.5rem 1rem;border-radius:999px;">Retry</a></div>'
             }
           }
         }, 60000)

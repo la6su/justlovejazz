@@ -33,6 +33,11 @@ Both Less entries compile in the same order:
 
 This order is intentional. The selected QF variation is allowed to define its own values; the project bridge then reapplies semantic JLZ tokens so UIkit and QF controls share the same accent. Do not move imports, edit the vendored files, or add a second token system in `main.less`.
 
+The vendored Quantum Flares snapshot retains its historical Inter declaration,
+but the active project tokens map UIkit globals to self-hosted Onest Variable.
+Latin and Cyrillic are separate WOFF2 unicode-range subsets; do not add static
+weight files or a remote font request for UIkit components.
+
 Prefer this order of solutions:
 
 1. Use documented UIkit markup, utility classes and JavaScript attributes.

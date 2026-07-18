@@ -49,6 +49,9 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'navOverlay.manifesto.desc': 'Principles',
     'navOverlay.lab.desc': 'Experiments',
     'navOverlay.contact.desc': 'Start a project',
+    'blog.undercurrent.title': 'Undercurrent',
+    'blog.glass.title': 'Glassmorphism',
+    'blog.rendering.title': 'On-demand Rendering',
 
     // Menu section (section 5, two-column navigation template)
     'menu.navigate': 'Navigate',
@@ -180,7 +183,8 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     // Services page
     'services.creativeDirection.title': 'Creative Direction',
     'services.creativeDirection.lead': 'From concept to visual identity.',
-    'services.creativeDirection.desc1': 'We design interfaces that feel like digital products, not websites.',
+    'services.creativeDirection.desc1':
+      'We design interfaces that feel like digital products, not websites.',
     'services.creativeDirection.desc2': 'Every interaction has purpose.',
     'services.creativeDirection.desc3': 'Every transition tells a story.',
     'services.interactiveDev.title': 'Interactive Development',
@@ -209,8 +213,8 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'works.section1.lead': 'Projects that define our way.',
     'works.section2.title': 'Case Studies',
     'works.section2.lead': 'Process, craft, result.',
-    'works.section3.title': 'Experiments',
-    'works.section3.lead': 'R&D meets production.',
+    'works.section3.title': 'Interactive Systems',
+    'works.section3.lead': 'Technology shaped into experience.',
     'works.section4.title': 'Recent',
     'works.section4.lead': 'Latest from the studio.',
 
@@ -278,17 +282,23 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
 
     // Meta (route-based SEO)
     'meta.home.title': 'JUSTLOVEJAZZ — Web Design Studio | Interactive 3D Portfolio',
-    'meta.home.description': 'JUSTLOVEJAZZ — interactive 3D portfolio experience. WebGPU/WebGL cinematic, Three.js TSL, UIkit 3.',
+    'meta.home.description':
+      'JUSTLOVEJAZZ — interactive 3D portfolio experience. WebGPU/WebGL cinematic, Three.js TSL, UIkit 3.',
     'meta.services.title': 'Services — JUSTLOVEJAZZ',
-    'meta.services.description': 'Creative direction, interactive development, motion & realtime, and AI systems. From concept to implementation.',
+    'meta.services.description':
+      'Creative direction, interactive development, motion & realtime, and AI systems. From concept to implementation.',
     'meta.works.title': 'Works — JUSTLOVEJAZZ',
-    'meta.works.description': 'Selected projects and case studies. WebGPU fluid simulations, audio-reactive 3D, generative typography, and more.',
+    'meta.works.description':
+      'Selected projects and case studies. WebGPU fluid simulations, audio-reactive 3D, generative typography, and more.',
     'meta.manifesto.title': 'Manifesto — JUSTLOVEJAZZ',
-    'meta.manifesto.description': 'Purpose, clarity, emotion, simplicity. The principles that guide our work.',
+    'meta.manifesto.description':
+      'Purpose, clarity, emotion, simplicity. The principles that guide our work.',
     'meta.lab.title': 'Lab — JUSTLOVEJAZZ',
-    'meta.lab.description': 'Experiments in shaders, audio-reactive visuals, generative worlds, and GPU particles. Always in progress.',
+    'meta.lab.description':
+      'Experiments in shaders, audio-reactive visuals, generative worlds, and GPU particles. Always in progress.',
     'meta.contact.title': 'Contact — JUSTLOVEJAZZ',
-    'meta.contact.description': 'Get in touch. Email, Telegram, GitHub. Remote · EU · open for new projects.',
+    'meta.contact.description':
+      'Get in touch. Email, Telegram, GitHub. Remote · EU · open for new projects.',
   },
 
   RU: {
@@ -315,6 +325,9 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'navOverlay.manifesto.desc': 'Принципы',
     'navOverlay.lab.desc': 'Эксперименты',
     'navOverlay.contact.desc': 'Начать проект',
+    'blog.undercurrent.title': 'Undercurrent',
+    'blog.glass.title': 'Glassmorphism',
+    'blog.rendering.title': 'Рендеринг по требованию',
 
     // Menu overlay (RU)
     'menu.navigate': 'Навигация',
@@ -475,8 +488,8 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'works.section1.lead': 'Проекты, определяющие наш подход.',
     'works.section2.title': 'Кейсы',
     'works.section2.lead': 'Процесс, ремесло и результаты.',
-    'works.section3.title': 'Эксперименты',
-    'works.section3.lead': 'Где R&D встречается с продакшеном.',
+    'works.section3.title': 'Интерактивные системы',
+    'works.section3.lead': 'Технология становится опытом.',
     'works.section4.title': 'Недавнее',
     'works.section4.lead': 'Свежее из студии.',
 
@@ -490,11 +503,13 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'manifesto.clarity.desc1': 'Чёткая логика.',
     'manifesto.clarity.desc2': 'Без шума.',
     'manifesto.emotion.title': 'Эмоция',
-    'manifesto.emotion.lead': 'Мы используем движение, свет и звук, чтобы вызвать чувство присутствия.',
+    'manifesto.emotion.lead':
+      'Мы используем движение, свет и звук, чтобы вызвать чувство присутствия.',
     'manifesto.simplicity.title': 'Простота',
     'manifesto.simplicity.lead': 'Мы стремимся к минимализму — но не к пустоте.',
     'manifesto.process.title': 'Процесс',
-    'manifesto.process.lead': 'Мы исследуем. Мы прототипируем. Мы тестируем. Мы ошибаемся. Мы улучшаем.',
+    'manifesto.process.lead':
+      'Мы исследуем. Мы прототипируем. Мы тестируем. Мы ошибаемся. Мы улучшаем.',
     'manifesto.future.title': 'Будущее',
     'manifesto.future.lead': 'Технологии меняются. Принципы остаются.',
 
@@ -544,17 +559,23 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
 
     // Meta (route-based SEO)
     'meta.home.title': 'JUSTLOVEJAZZ — Студия веб-дизайна | Интерактивное 3D-портфолио',
-    'meta.home.description': 'JUSTLOVEJAZZ — интерактивное 3D-портфолио. WebGPU/WebGL кинематографичность, Three.js TSL, UIkit 3.',
+    'meta.home.description':
+      'JUSTLOVEJAZZ — интерактивное 3D-портфолио. WebGPU/WebGL кинематографичность, Three.js TSL, UIkit 3.',
     'meta.services.title': 'Услуги — JUSTLOVEJAZZ',
-    'meta.services.description': 'Креатив, разработка, моушн, AI-системы. От концепции до реализации.',
+    'meta.services.description':
+      'Креатив, разработка, моушн, AI-системы. От концепции до реализации.',
     'meta.works.title': 'Работы — JUSTLOVEJAZZ',
-    'meta.works.description': 'Избранные проекты и кейсы. WebGPU симуляции жидкостей, аудио-реактивное 3D, генеративная типографика и другое.',
+    'meta.works.description':
+      'Избранные проекты и кейсы. WebGPU симуляции жидкостей, аудио-реактивное 3D, генеративная типографика и другое.',
     'meta.manifesto.title': 'Манифест — JUSTLOVEJAZZ',
-    'meta.manifesto.description': 'Цель, ясность, эмоция, простота. Принципы, направляющие нашу работу.',
+    'meta.manifesto.description':
+      'Цель, ясность, эмоция, простота. Принципы, направляющие нашу работу.',
     'meta.lab.title': 'Лаборатория — JUSTLOVEJAZZ',
-    'meta.lab.description': 'Эксперименты с шейдерами, аудио-реактивной графикой, генеративными мирами и GPU-частицами. Всегда в процессе.',
+    'meta.lab.description':
+      'Эксперименты с шейдерами, аудио-реактивной графикой, генеративными мирами и GPU-частицами. Всегда в процессе.',
     'meta.contact.title': 'Контакты — JUSTLOVEJAZZ',
-    'meta.contact.description': 'Свяжитесь с нами. Почта, Telegram, GitHub. Удалённо · ЕС · открыты для новых проектов.',
+    'meta.contact.description':
+      'Свяжитесь с нами. Почта, Telegram, GitHub. Удалённо · ЕС · открыты для новых проектов.',
   },
 }
 
@@ -565,7 +586,9 @@ export function initI18n(): void {
   try {
     const saved = localStorage.getItem(STORAGE_KEY)
     if (saved === 'RU') currentLang = 'RU'
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   applyTranslations()
 }
 
@@ -577,7 +600,11 @@ export function getLang(): Lang {
 /** Toggle EN ↔ RU. */
 export function toggleLang(): Lang {
   currentLang = currentLang === 'EN' ? 'RU' : 'EN'
-  try { localStorage.setItem(STORAGE_KEY, currentLang) } catch { /* ignore */ }
+  try {
+    localStorage.setItem(STORAGE_KEY, currentLang)
+  } catch {
+    /* ignore */
+  }
   applyTranslations()
   window.dispatchEvent(new CustomEvent('jlz:lang-change', { detail: { lang: currentLang } }))
   return currentLang

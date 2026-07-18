@@ -81,6 +81,22 @@ test.describe('JustLoveJazz — page boot smoke', () => {
     const html = await response.text()
 
     expect(html).not.toMatch(/modulepreload[^>]+(?:vendor-three|vendor-ui|chunk-core-world)/)
+    expect(html).toContain('Zarazeni Inclusion')
+    expect(html).toContain('ВКЛЮЧЕНИЕ')
+  })
+
+  test('variable typography is self-hosted with Cyrillic coverage', async ({ request }) => {
+    const html = await (await request.get('/')).text()
+    const blogHtml = await (await request.get('/blog')).text()
+    const fontCss = await (await request.get('/fonts/onest.css')).text()
+
+    expect(html).toContain('/fonts/onest-latin-variable.woff2')
+    expect(html).not.toContain('/fonts/inter.css')
+    expect(blogHtml).toContain('/fonts/onest-latin-variable.woff2')
+    expect(blogHtml).not.toContain('/fonts/inter.css')
+    expect(fontCss).toContain('font-weight: 100 900')
+    expect(fontCss).toContain('/fonts/onest-cyrillic-variable.woff2')
+    expect(fontCss).toMatch(/U\+0400-045F/i)
   })
 
   test('splash container + populated <main> render within timeout', async ({ page }) => {
@@ -123,6 +139,22 @@ test.describe('JustLoveJazz — page boot smoke', () => {
 })
 
 test.describe('JustLoveJazz — accessibility & DOM UI', () => {
+  test('Works keeps semantic cards inside the editorial composition', async ({ page }) => {
+    await page.goto('/works')
+
+    await expect(page.locator('.jlz-works-section')).toHaveCount(4)
+    await expect(page.locator('.jlz-works-statement')).toHaveCount(4)
+    await expect(page.locator('.jlz-work-card')).toHaveCount(8)
+
+    const firstCard = page.locator('.jlz-work-card').first()
+    await expect(firstCard).toHaveAttribute('data-project-id', /.+/)
+    await expect(firstCard).toHaveAttribute('aria-label', /Open project:/)
+    await expect(page.locator('.jlz-works-statement').first()).toHaveAttribute(
+      'aria-hidden',
+      'true',
+    )
+  })
+
   test('top-bar controls and menu section links render with aria-labels', async ({ page }) => {
     await page.goto('/')
 
@@ -143,11 +175,18 @@ test.describe('JustLoveJazz — accessibility & DOM UI', () => {
     expect(label).toBeTruthy()
     expect(label!.toLowerCase()).toContain('sound')
 
-    // The navigation template is rendered with one sub-link per visible section.
+    // The navigation template exposes section links plus a direct Blog route.
     const links = page.locator('.jlz-menu-nav__sub-link')
     await expect(links.first()).toBeAttached({ timeout: 5000 })
     const count = await links.count()
-    expect(count).toBeGreaterThanOrEqual(20)
+    expect(count).toBeGreaterThanOrEqual(24)
+
+    await expect(
+      page.locator('.jlz-menu-nav__sub-link[data-nav-href="/lab#section-lab-01"]'),
+    ).toHaveCount(1)
+    await expect(
+      page.locator('.jlz-menu-nav__direct-link[href="/blog"][data-page-transition]'),
+    ).toHaveCount(1)
 
     const firstLinkHref = await links.first().getAttribute('data-nav-href')
     expect(firstLinkHref).toMatch(/^\//)

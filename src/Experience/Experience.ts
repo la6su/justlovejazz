@@ -931,11 +931,11 @@ export class Experience {
   //  SplashCube.setProgress which was also a no-op.)
 
   /** Trigger the cube opener — faces pulse outward + back. Cube stays as baku.
-   *  Also triggers the particle burst (B1-a) — 200 particles fly outward from cube. */
+   *  Also triggers the splash-square handoff around the cube. */
   public triggerSplashOpener(): void {
     const cube = this.world?.baku as unknown as { triggerOpener?: () => void } | undefined
     cube?.triggerOpener?.()
-    // B1-a: trigger particle burst from cube center
+    // Trigger the deterministic square-frame echo from the cube center.
     this.world?.particleBurst?.trigger(0, 0, 0)
     if (this.world?.particleBurst?.isActive) {
       this._needsRender = true // keep rendering while burst is active

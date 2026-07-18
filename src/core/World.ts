@@ -101,8 +101,8 @@ export class World extends THREE.Group {
     this.cinematicField = new CinematicField()
     this.add(this.cinematicField)
 
-    // ── ParticleBurst — one-shot burst from baku cube on opener (intro).
-    // 200 particles fly outward + fade over 1.2s. Hidden until triggered.
+    // ── Intro light frames — one-shot square-path echo from the splash.
+    // 12 deterministic strokes contract into the cube; hidden until triggered.
     this.particleBurst = new ParticleBurst()
     this.add(this.particleBurst)
 
@@ -292,7 +292,7 @@ export class World extends THREE.Group {
       if (!group.visible) return false
       const typo = group.userData.typography as
         import('../Experience/World/WireframeTypography').WireframeTypography | undefined
-      return Boolean(typo?.visible)
+      return Boolean(typo?.visible && (typo.isAnimating || !this.isReducedMotion))
     })
   }
 
@@ -311,9 +311,8 @@ export class World extends THREE.Group {
     this.envSphere.update(deltaTime)
     this.sections.forEach((s) => s.update(deltaTime))
 
-    // ParticleBurst is one-shot — advance even when on-demand would otherwise
-    // skip decorative updates, but only while active. Experience keeps
-    // _needsRender true while isActive; update here advances positions.
+    // The splash handoff is one-shot — advance it even when on-demand would
+    // otherwise skip decorative updates. Experience keeps rendering active.
     if (this.particleBurst.isActive) {
       this.particleBurst.update(deltaTime)
     }
@@ -343,7 +342,7 @@ export class World extends THREE.Group {
       const carousel = group.userData.carousel as
         import('../Experience/World/BakuCarousel').BakuCarousel | undefined
       if (carousel) carousel.update(deltaTime)
-      // Update wireframe typography (Section2 About + Section4 Contact)
+      // Update the lower Contact typography only after its own reveal begins.
       const typo = group.userData.typography as
         import('../Experience/World/WireframeTypography').WireframeTypography | undefined
       if (typo) typo.update(deltaTime)
@@ -531,7 +530,12 @@ export class World extends THREE.Group {
         if (sceneObjects) {
           const typo = g.userData.typography as
             import('../Experience/World/WireframeTypography').WireframeTypography | undefined
-          if (typo) typo.visible = sceneObjects.wireframeText !== false && fade > 0.01
+          if (typo) {
+            const visible = sceneObjects.wireframeText !== false && fade > 0.01
+            typo.visible = visible
+            typo.userData.reducedMotion = this.isReducedMotion
+            typo.setActive(visible && i === 4 && fade > 0.5)
+          }
         }
       } else {
         g.visible = false
@@ -698,7 +702,7 @@ export class World extends THREE.Group {
     // Dispose env sphere GPU resources
     this.envSphere?.dispose()
     this.cinematicField?.dispose()
-    // Dispose particle burst
+    // Dispose intro splash handoff
     this.particleBurst?.dispose()
     this.groundPlane.geometry.dispose()
     const groundMat = this.groundPlane.material

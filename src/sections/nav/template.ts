@@ -28,52 +28,213 @@ interface NavItem {
   labelKey: string
   href: string
   subs: SubSection[]
+  direct?: boolean
 }
 
 const NAV_ITEMS: NavItem[] = [
   {
-    num: '01', label: 'Studio', labelKey: 'nav.studio', href: '/',
+    num: '01',
+    label: 'Studio',
+    labelKey: 'nav.studio',
+    href: '/',
     subs: [
       { num: '01', title: 'Studio', titleKey: 'dropbar.home.s1.title', href: '/#section-intro' },
       { num: '02', title: 'Services', titleKey: 'dropbar.home.s2.title', href: '/#section-about' },
       { num: '03', title: 'Works', titleKey: 'dropbar.home.s3.title', href: '/#section-works' },
-      { num: '04', title: 'Manifesto', titleKey: 'dropbar.home.s4.title', href: '/#section-contact' },
+      {
+        num: '04',
+        title: 'Manifesto',
+        titleKey: 'dropbar.home.s4.title',
+        href: '/#section-contact',
+      },
     ],
   },
   {
-    num: '02', label: 'Services', labelKey: 'nav.services', href: '/services',
+    num: '02',
+    label: 'Services',
+    labelKey: 'nav.services',
+    href: '/services',
     subs: [
-      { num: '01', title: 'Creative Direction', titleKey: 'dropbar.services.s1.title', href: '/services#section-services-01' },
-      { num: '02', title: 'Interactive Development', titleKey: 'dropbar.services.s2.title', href: '/services#section-services-02' },
-      { num: '03', title: 'Motion & Realtime', titleKey: 'dropbar.services.s3.title', href: '/services#section-services-03' },
-      { num: '04', title: 'AI Systems', titleKey: 'dropbar.services.s4.title', href: '/services#section-services-04' },
+      {
+        num: '01',
+        title: 'Creative Direction',
+        titleKey: 'dropbar.services.s1.title',
+        href: '/services#section-services-01',
+      },
+      {
+        num: '02',
+        title: 'Interactive Development',
+        titleKey: 'dropbar.services.s2.title',
+        href: '/services#section-services-02',
+      },
+      {
+        num: '03',
+        title: 'Motion & Realtime',
+        titleKey: 'dropbar.services.s3.title',
+        href: '/services#section-services-03',
+      },
+      {
+        num: '04',
+        title: 'AI Systems',
+        titleKey: 'dropbar.services.s4.title',
+        href: '/services#section-services-04',
+      },
     ],
   },
   {
-    num: '03', label: 'Works', labelKey: 'nav.works', href: '/works',
+    num: '03',
+    label: 'Works',
+    labelKey: 'nav.works',
+    href: '/works',
     subs: [
-      { num: '01', title: 'Selected Works', titleKey: 'works.section1.title', href: '/works#section-works-01' },
-      { num: '02', title: 'Case Studies', titleKey: 'works.section2.title', href: '/works#section-works-02' },
-      { num: '03', title: 'Experiments', titleKey: 'works.section3.title', href: '/works#section-works-03' },
-      { num: '04', title: 'Recent', titleKey: 'works.section4.title', href: '/works#section-works-04' },
+      {
+        num: '01',
+        title: 'Selected Works',
+        titleKey: 'works.section1.title',
+        href: '/works#section-works-01',
+      },
+      {
+        num: '02',
+        title: 'Case Studies',
+        titleKey: 'works.section2.title',
+        href: '/works#section-works-02',
+      },
+      {
+        num: '03',
+        title: 'Interactive Systems',
+        titleKey: 'works.section3.title',
+        href: '/works#section-works-03',
+      },
+      {
+        num: '04',
+        title: 'Recent',
+        titleKey: 'works.section4.title',
+        href: '/works#section-works-04',
+      },
     ],
   },
   {
-    num: '04', label: 'Manifesto', labelKey: 'nav.manifesto', href: '/manifesto',
+    num: '04',
+    label: 'Manifesto',
+    labelKey: 'nav.manifesto',
+    href: '/manifesto',
     subs: [
-      { num: '01', title: 'Purpose', titleKey: 'dropbar.manifesto.s1.title', href: '/manifesto#section-manifesto-01' },
-      { num: '02', title: 'Clarity', titleKey: 'dropbar.manifesto.s2.title', href: '/manifesto#section-manifesto-02' },
-      { num: '03', title: 'Emotion', titleKey: 'dropbar.manifesto.s3.title', href: '/manifesto#section-manifesto-03' },
-      { num: '04', title: 'Simplicity', titleKey: 'dropbar.manifesto.s4.title', href: '/manifesto#section-manifesto-04' },
+      {
+        num: '01',
+        title: 'Purpose',
+        titleKey: 'dropbar.manifesto.s1.title',
+        href: '/manifesto#section-manifesto-01',
+      },
+      {
+        num: '02',
+        title: 'Clarity',
+        titleKey: 'dropbar.manifesto.s2.title',
+        href: '/manifesto#section-manifesto-02',
+      },
+      {
+        num: '03',
+        title: 'Emotion',
+        titleKey: 'dropbar.manifesto.s3.title',
+        href: '/manifesto#section-manifesto-03',
+      },
+      {
+        num: '04',
+        title: 'Simplicity',
+        titleKey: 'dropbar.manifesto.s4.title',
+        href: '/manifesto#section-manifesto-04',
+      },
     ],
   },
   {
-    num: '05', label: 'Contact', labelKey: 'nav.contact', href: '/contact',
+    num: '05',
+    label: 'Lab',
+    labelKey: 'nav.lab',
+    href: '/lab',
     subs: [
-      { num: '01', title: 'Email', titleKey: 'dropbar.contact.s1.title', href: '/contact#section-contact-01' },
-      { num: '02', title: 'Social', titleKey: 'dropbar.contact.s2.title', href: '/contact#section-contact-02' },
-      { num: '03', title: 'Location', titleKey: 'dropbar.contact.s3.title', href: '/contact#section-contact-03' },
-      { num: '04', title: 'Form', titleKey: 'dropbar.contact.s4.title', href: '/contact#section-contact-04' },
+      {
+        num: '01',
+        title: 'Shader Lab',
+        titleKey: 'lab.shaderLab.title',
+        href: '/lab#section-lab-01',
+      },
+      {
+        num: '02',
+        title: 'Audio Reactive',
+        titleKey: 'lab.audioReactive.title',
+        href: '/lab#section-lab-02',
+      },
+      {
+        num: '03',
+        title: 'Generative',
+        titleKey: 'lab.generative.title',
+        href: '/lab#section-lab-03',
+      },
+      {
+        num: '04',
+        title: 'GPU Particles',
+        titleKey: 'lab.gpuParticles.title',
+        href: '/lab#section-lab-04',
+      },
+    ],
+  },
+  {
+    num: '06',
+    label: 'Blog',
+    labelKey: 'nav.blog',
+    href: '/blog',
+    direct: true,
+    subs: [
+      { num: '01', title: 'Journal', titleKey: 'nav.blog', href: '/blog' },
+      {
+        num: '02',
+        title: 'Undercurrent',
+        titleKey: 'blog.undercurrent.title',
+        href: '/blog/undercurrent-webgpu-fluid',
+      },
+      {
+        num: '03',
+        title: 'Glassmorphism',
+        titleKey: 'blog.glass.title',
+        href: '/blog/glassmorphism-webgpu',
+      },
+      {
+        num: '04',
+        title: 'On-demand Rendering',
+        titleKey: 'blog.rendering.title',
+        href: '/blog/on-demand-rendering',
+      },
+    ],
+  },
+  {
+    num: '07',
+    label: 'Contact',
+    labelKey: 'nav.contact',
+    href: '/contact',
+    subs: [
+      {
+        num: '01',
+        title: 'Email',
+        titleKey: 'dropbar.contact.s1.title',
+        href: '/contact#section-contact-01',
+      },
+      {
+        num: '02',
+        title: 'Social',
+        titleKey: 'dropbar.contact.s2.title',
+        href: '/contact#section-contact-02',
+      },
+      {
+        num: '03',
+        title: 'Location',
+        titleKey: 'dropbar.contact.s3.title',
+        href: '/contact#section-contact-03',
+      },
+      {
+        num: '04',
+        title: 'Form',
+        titleKey: 'dropbar.contact.s4.title',
+        href: '/contact#section-contact-04',
+      },
     ],
   },
 ]
@@ -87,7 +248,7 @@ function statColumn(): string {
   return `
     <div class="jlz-menu-col jlz-menu-col--stat">
       <div class="jlz-menu-stat">
-        <span class="jlz-menu-stat__num">05</span>
+        <span class="jlz-menu-stat__num">07</span>
         <span class="jlz-menu-stat__label" data-i18n="menu.stat.sections">SECTIONS</span>
       </div>
     </div>
@@ -102,7 +263,19 @@ function statColumn(): string {
 // UIKit auto-initializes on DOM insertion — UIkit.update(el) in router.ts.
 // See: https://getuikit.com/docs/nav
 function navColumn(): string {
-  const items = NAV_ITEMS.map((item) => `
+  const items = NAV_ITEMS.map((item) => {
+    if (item.direct) {
+      return `
+        <li class="jlz-menu-nav__item jlz-menu-nav__item--direct">
+          <a href="${item.href}" class="jlz-menu-nav__toggle jlz-menu-nav__direct-link" data-magnetic data-page-transition>
+            <span class="jlz-menu-nav__num">${item.num}</span>
+            <span class="jlz-menu-nav__label" data-i18n="${item.labelKey}">${item.label}</span>
+            <span class="jlz-menu-nav__arrow" aria-hidden="true">→</span>
+          </a>
+        </li>
+      `
+    }
+    return `
     <li class="jlz-menu-nav__item uk-parent">
       <a href="#" class="jlz-menu-nav__toggle" data-magnetic>
         <span class="jlz-menu-nav__num">${item.num}</span>
@@ -110,7 +283,9 @@ function navColumn(): string {
         <span class="jlz-menu-nav__arrow uk-nav-parent-icon" aria-hidden="true"></span>
       </a>
       <ul class="jlz-menu-nav__subs uk-nav-sub">
-        ${item.subs.map(sub => `
+        ${item.subs
+          .map(
+            (sub) => `
           <li class="jlz-menu-nav__sub-item">
             <a href="${sub.href}" class="jlz-menu-nav__sub-link" data-magnetic data-nav-href="${sub.href}">
               <span class="jlz-menu-nav__sub-num">${sub.num}</span>
@@ -118,10 +293,13 @@ function navColumn(): string {
               <span class="jlz-menu-nav__sub-arrow" aria-hidden="true">→</span>
             </a>
           </li>
-        `).join('')}
+        `,
+          )
+          .join('')}
       </ul>
     </li>
-  `).join('')
+  `
+  }).join('')
   return `
     <div class="jlz-menu-col jlz-menu-col--nav">
       <span class="jlz-menu-col-title" data-i18n="menu.navigate">NAVIGATE</span>
@@ -215,12 +393,13 @@ export function initMenuNav(): void {
 
       if (path !== window.location.pathname) {
         // Cross-page: close Menu first (restore the current story frame), then
-        // dispatch jlz:navigate — router listens and calls navigateToPage
-        // dispatch jlz:navigate so the router renders the new horizontal track.
+        // dispatch jlz:navigate so the router can run the page transition.
         window.dispatchEvent(new CustomEvent('jlz:close-nav'))
-        window.dispatchEvent(new CustomEvent('jlz:navigate', {
-          detail: { path: path + (hash || '') },
-        }))
+        window.dispatchEvent(
+          new CustomEvent('jlz:navigate', {
+            detail: { path: path + (hash || '') },
+          }),
+        )
       } else {
         // Same-page: scroll to hash + close menu (return to previous section)
         if (hash) {

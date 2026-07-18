@@ -28,13 +28,25 @@ not a permanently dark or permanently light brand mode.
 
 ## Typography and voice
 
-- Use the project's Inter-based UI type system. Technical labels may use the
-  existing system-monospace fallback where the implementation calls for it.
+- Onest Variable is the shared display and interface family. Its self-hosted
+  Latin and Cyrillic subsets cover the two product languages with one set of
+  metrics and a continuous `wght` axis from 100 to 900.
+- Use variable weight to communicate hierarchy or an actual state transition.
+  Keep line-height and tracking stable during the motion, and settle to a
+  readable weight. Reduced-motion mode must skip the interpolation.
+- Technical labels may use the existing system-monospace stack where a true
+  fixed-width rhythm adds meaning; do not imitate monospace with the display
+  family.
 - Prefer short, declarative sentences and concrete verbs.
 - Keep one thought per line or sentence when writing display copy.
 - Avoid hype, filler, superlatives and exclamation marks.
 - Preserve proper project names across languages unless content requires a
   deliberate translation.
+
+The site is the portfolio. Each route should make its subject tangible while
+it explains it: show the capability, name the real problem, reveal the response
+and leave one piece of proof. Use this as a writing rhythm, not as a visible
+numbered checklist or a repeated grid of generic cards.
 
 Useful action words: **Explore**, **Open**, **Start**, **Send**, **Play**.
 

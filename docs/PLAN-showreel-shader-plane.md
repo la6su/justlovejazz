@@ -8,6 +8,22 @@ backlog item in [`NEXT.md`](../NEXT.md); it does not replace it.
 Evolve the Works experience without regressing first paint, the WebGPU/WebGL2
 fallback, keyboard access or the existing project overlay.
 
+## Current implementation slice
+
+Build the editorial DOM foundation before deciding whether the 3D grid should
+replace or complement it. The Works route keeps UIkit Grid/Cover, semantic
+buttons and `FullscreenOverlay`, while gaining oversized typographic layers,
+more deliberate asymmetric media framing and restrained reveal motion. The
+home Baku carousel remains intact during this slice.
+
+Telegram sharing, generated social cards and Contact-system extensions are
+explicitly deferred until their product copy and scope are rewritten.
+
+Works contains released or presentable authored outcomes, including video and
+interactive case studies. Lab experiments remain a separate route and future
+lazy-loaded runtime; the Works taxonomy must not use “Experiments” as a generic
+project category.
+
 ## Already complete
 
 - Video elements use `preload="none"`; `FullscreenOverlay` assigns the source
@@ -50,6 +66,19 @@ native controls/fallback and degrade cleanly to the DOM overlay.
 For every accepted prototype, document its owner in Architecture and remove the
 superseded path. For every rejected prototype, delete it rather than retaining
 dead render paths.
+
+### 5. Coordinate transitions with the wider experience
+
+Treat route, Menu and fullscreen-project transitions as one motion language,
+not three unrelated effects. Prototype a single temporary fullscreen TSL pass
+that renders only while a transition is active and releases its resources when
+settled. It must preserve `FullscreenOverlay` and UIkit as the semantic owners.
+
+Standalone Blog pages must not boot the Three.js runtime for continuity; use a
+lightweight document/CSS handoff with the same timing and visual motif. Lab
+opens an isolated dynamically imported scene behind an explicit loading state.
+Low-tier devices use a simple mask/opacity transition, and reduced-motion skips
+spatial distortion entirely.
 
 ## Exit criteria
 
