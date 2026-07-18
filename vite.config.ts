@@ -214,6 +214,6 @@ export default defineConfig({
     hmr: false,
     // Allow the reverse proxy host so Vite doesn't block requests from
     // project.6la.ru (Caddy forwards to localhost:5173).
-    allowedHosts: ['project.6la.ru'],
+    allowedHosts: true,  // TEMP,
   },
 })

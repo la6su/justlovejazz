@@ -161,6 +161,12 @@ export async function startApp(): Promise<void> {
   document.head.appendChild(style)
   ;(UIkit as { use: (p: object) => void }).use(Icons as object)
 
+  // Register console-themed SVG icons (thin-line, currentColor) to replace
+  // UIKit defaults. Must run AFTER UIkit.use(Icons) so the icon component exists.
+  import('./assets/console-icons').then(({ registerConsoleIcons }) => {
+    registerConsoleIcons()
+  }).catch(() => { /* icons are enhancement, not critical */ })
+
   initRouter()
 
   // ── Works page 3D cards: bind tilt + click on every route change ──

@@ -26,10 +26,10 @@ function writeSoundMuted(muted: boolean): void {
 }
 
 // ── Inline outline icons (UIKit3 has no sun/moon) ──
-// Their stroke language matches the top-bar's thin menu glyph and avoids the
-// heavy filled-symbol look inside the new glass controls.
-const SUN_SVG = `<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" class="jlz-theme-svg jlz-theme-svg--sun" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round"><circle cx="12" cy="12" r="3.7"/><path d="M12 2.5v2.1M12 19.4v2.1M21.5 12h-2.1M4.6 12H2.5M18.72 5.28l-1.49 1.49M6.77 17.23l-1.49 1.49M18.72 18.72l-1.49-1.49M6.77 6.77L5.28 5.28"/></svg>`
-const MOON_SVG = `<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" class="jlz-theme-svg jlz-theme-svg--moon" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round"><path d="M20.2 15.1A8.6 8.6 0 0 1 8.9 3.8 8.6 8.6 0 1 0 20.2 15.1Z"/></svg>`
+// Console-style thin-line icons: reticle sun (light mode) + console moon (dark mode).
+// Stroke width 1.2 matches the cursor reticle and menu glyph for visual unity.
+const SUN_SVG = `<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" class="jlz-theme-svg jlz-theme-svg--sun" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 1.5v3M12 19.5v3M22.5 12h-3M4.5 12h-3M19.07 4.93l-2.12 2.12M7.05 16.95l-2.12 2.12M19.07 19.07l-2.12-2.12M7.05 7.05L4.93 4.93"/></svg>`
+const MOON_SVG = `<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" class="jlz-theme-svg jlz-theme-svg--moon" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>`
 
 export class UIMenu {
   private navEl: HTMLElement
@@ -64,12 +64,7 @@ export class UIMenu {
           <button class="uk-icon-button jlz-sound-toggle uk-visible@s" type="button" id="jlz-sound-toggle"
                   aria-label="Toggle sound" aria-pressed="true" title="Sound: off"
                   uk-tooltip="pos: bottom; delay: 200">
-            <span class="jlz-sound-bars" aria-hidden="true">
-              <span class="jlz-sound-bar"></span>
-              <span class="jlz-sound-bar"></span>
-              <span class="jlz-sound-bar"></span>
-              <span class="jlz-sound-bar"></span>
-            </span>
+            <span uk-icon="icon: muted" aria-hidden="true"></span>
           </button>
           <button class="uk-button uk-button-default jlz-menu-launcher" type="button" id="jlz-menu-launcher"
                   aria-controls="section-menu" aria-expanded="false">
@@ -78,13 +73,16 @@ export class UIMenu {
           </button>
         </div>
       </header>
-      <div class="jlz-contact-launcher">
-        <button class="uk-button uk-button-primary jlz-contact-launcher__button" type="button"
-                id="jlz-contact-launcher" aria-controls="section-lab" aria-expanded="false">
-          <span class="jlz-contact-launcher__orb" aria-hidden="true"></span>
-          <span data-i18n="story.contact">Contact</span>
-          <span class="jlz-contact-launcher__arrow" uk-icon="icon: arrow-up; ratio: 0.8" aria-hidden="true"></span>
-        </button>
+      <div class="jlz-console-bar">
+        <div class="jlz-contact-launcher">
+          <button class="uk-button uk-button-primary jlz-contact-launcher__button" type="button"
+                  id="jlz-contact-launcher" aria-controls="section-lab" aria-expanded="false">
+            <span class="jlz-contact-launcher__orb" aria-hidden="true"></span>
+            <span data-i18n="story.contact">Contact</span>
+            <span class="jlz-contact-launcher__arrow" uk-icon="icon: arrow-up; ratio: 0.8" aria-hidden="true"></span>
+          </button>
+        </div>
+        <!-- Storyline (section dots) is injected here by CinematicNav -->
       </div>
     `
 
@@ -156,10 +154,11 @@ export class UIMenu {
     this._soundBtn.setAttribute('aria-pressed', String(!muted))
     this._soundBtn.title = muted ? 'Sound: off' : 'Sound: on'
     this._soundBtn.classList.toggle('is-muted', muted)
-    this._soundBtn.classList.toggle('is-playing', !muted)
-    this._soundBtn.querySelectorAll<HTMLElement>('.jlz-sound-bar').forEach((bar) => {
-      bar.style.animationPlayState = muted ? 'paused' : 'running'
-    })
+    // Swap icon: muted → sound (speaker with waves)
+    const iconSpan = this._soundBtn.querySelector('[uk-icon]')
+    if (iconSpan) {
+      iconSpan.setAttribute('uk-icon', `icon: ${muted ? 'muted' : 'sound'}`)
+    }
   }
 
   onNavigate(callback: (index: number) => void): void {

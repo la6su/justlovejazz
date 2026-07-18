@@ -42,6 +42,28 @@ export class Cursor {
   private innerY = 0
   private readonly sfx?: { play: (name: 'hover' | 'click' | 'open' | 'close') => void }
 
+  // Cached theme colors — read once from CSS variables, refreshed on theme change.
+  // Avoids 4× getComputedStyle per redraw (was a per-frame allocation hotspot).
+  private _cachedAccent = '#b8ed69'
+  private _cachedAccentGlow = 'rgba(184,237,105,0.22)'
+  private _cachedTeal = '#45d7bc'
+  private _cacheDirty = true
+
+  /** Refresh cached theme colors from CSS variables. Call on theme change. */
+  refreshThemeCache(): void {
+    const styles = getComputedStyle(document.documentElement)
+    this._cachedAccent = styles.getPropertyValue('--jlz-color-accent').trim() || '#b8ed69'
+    this._cachedAccentGlow = styles.getPropertyValue('--jlz-color-accent-glow').trim() || 'rgba(184,237,105,0.22)'
+    this._cachedTeal = styles.getPropertyValue('--jlz-color-signal-teal').trim() || '#45d7bc'
+    this._cacheDirty = false
+  }
+
+  /** Get cached colors, refreshing if dirty. */
+  private _getThemeColors(): { accent: string; accentGlow: string; teal: string } {
+    if (this._cacheDirty) this.refreshThemeCache()
+    return { accent: this._cachedAccent, accentGlow: this._cachedAccentGlow, teal: this._cachedTeal }
+  }
+
   // Phase 2: spring physics for wobble (skaltenegger-style, smoothed)
   // Outer circle lags behind mouse with spring-damper, giving organic wobble
   // Stiffness lowered (0.25→0.18) + damping raised (0.55→0.7) for smoother motion
@@ -289,19 +311,20 @@ export class Cursor {
       return
     }
 
-    // Default: noisy circle with SMOOTHED edges (quadraticCurveTo)
-    ctx.beginPath()
-    // Outer circle stroke/fill: always accent-hover color (NOT red).
-    const strokeR = 107, strokeG = 120, strokeB = 163   // #6b78a3 accent-hover
-    const alpha = 0.6 + this.fillProgress * 0.3
-    ctx.strokeStyle = `rgba(${strokeR}, ${strokeG}, ${strokeB}, ${alpha})`
-    ctx.lineWidth = 2
+    // Console reticle: thin ring + 4 crosshair ticks at N/E/S/W.
+    // Colors read from CSS variables so the cursor follows the active theme
+    // (dark console green / light inverse) without hardcoded RGB values.
+    const { accent, accentGlow, teal: signalTeal } = this._getThemeColors()
+
+    const alpha = 0.55 + this.fillProgress * 0.35
+    ctx.strokeStyle = accent
+    ctx.globalAlpha = alpha
+    ctx.lineWidth = 1.5
     ctx.lineCap = 'round'
     ctx.lineJoin = 'round'
 
     // Noisy distortion only when expanded enough
     const isNoisy = this.isStuck && this.currentRadius > this.baseRadius + 5
-    // Phase 6: more segments (8→16) + quadraticCurveTo for smoothed edges
     const smoothSegments = 16
     const points: Array<{ x: number; y: number }> = []
     for (let i = 0; i < smoothSegments; i++) {
@@ -320,8 +343,9 @@ export class Cursor {
       })
     }
 
-    // Draw smoothed curve through points using quadraticCurveTo (midpoint method)
+    // Smoothed ring (quadraticCurveTo midpoint method)
     if (points.length > 0) {
+      ctx.beginPath()
       ctx.moveTo((points[0]!.x + points[points.length - 1]!.x) / 2, (points[0]!.y + points[points.length - 1]!.y) / 2)
       for (let i = 0; i < points.length; i++) {
         const curr = points[i]!
@@ -333,23 +357,44 @@ export class Cursor {
       ctx.closePath()
     }
 
-    // Fill: accent color (same as stroke, NOT red)
+    // Fill: subtle accent glow on hover
     if (this.fillProgress > 0.01) {
-      ctx.fillStyle = `rgba(${strokeR}, ${strokeG}, ${strokeB}, ${this.fillProgress * 0.4})`
+      ctx.fillStyle = accentGlow
+      ctx.globalAlpha = this.fillProgress * 0.6
       ctx.fill()
+      ctx.globalAlpha = alpha
     }
     ctx.stroke()
+
+    // Console crosshair ticks: 4 short lines at N/E/S/W outside the ring
+    const tickLen = 5
+    const tickGap = 3
+    ctx.strokeStyle = signalTeal
+    ctx.globalAlpha = 0.7
+    ctx.lineWidth = 1.5
+    ctx.beginPath()
+    ctx.moveTo(cx, cy - radius - tickGap)
+    ctx.lineTo(cx, cy - radius - tickGap - tickLen)
+    ctx.moveTo(cx + radius + tickGap, cy)
+    ctx.lineTo(cx + radius + tickGap + tickLen, cy)
+    ctx.moveTo(cx, cy + radius + tickGap)
+    ctx.lineTo(cx, cy + radius + tickGap + tickLen)
+    ctx.moveTo(cx - radius - tickGap, cy)
+    ctx.lineTo(cx - radius - tickGap - tickLen, cy)
+    ctx.stroke()
+
+    ctx.globalAlpha = 1
   }
 
-  /** Phase 2: Play triangle icon — for showreel/video elements. */
+  /** Console play icon — accent green circle + triangle. */
   private drawPlayIcon(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number): void {
-    // Filled circle + triangle
+    const { accent, accentGlow: glow } = this._getThemeColors()
     ctx.beginPath()
     ctx.arc(cx, cy, r, 0, Math.PI * 2)
-    ctx.fillStyle = 'rgba(196, 255, 0, 0.15)'  // accent-lime
+    ctx.fillStyle = glow
     ctx.fill()
-    ctx.strokeStyle = 'rgba(196, 255, 0, 0.9)'
-    ctx.lineWidth = 2
+    ctx.strokeStyle = accent
+    ctx.lineWidth = 1.5
     ctx.stroke()
     // Triangle (play icon)
     const size = r * 0.5
@@ -358,21 +403,22 @@ export class Cursor {
     ctx.lineTo(cx - size * 0.5, cy + size)
     ctx.lineTo(cx + size * 0.8, cy)
     ctx.closePath()
-    ctx.fillStyle = 'rgba(196, 255, 0, 0.95)'
+    ctx.fillStyle = accent
     ctx.fill()
   }
 
-  /** Phase 2: Drag arrows icon — for carousel/slider elements. */
+  /** Console drag icon — signal teal circle + left-right arrows. */
   private drawDragIcon(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number): void {
+    const { teal } = this._getThemeColors()
     ctx.beginPath()
     ctx.arc(cx, cy, r, 0, Math.PI * 2)
-    ctx.strokeStyle = 'rgba(107, 120, 163, 0.6)'
-    ctx.lineWidth = 2
+    ctx.strokeStyle = teal
+    ctx.globalAlpha = 0.6
+    ctx.lineWidth = 1.5
     ctx.stroke()
-    // Left-right arrows (smoothed with round caps)
+    ctx.globalAlpha = 0.9
     const arrowSize = r * 0.4
-    ctx.strokeStyle = 'rgba(107, 120, 163, 0.9)'
-    ctx.lineWidth = 2.5
+    ctx.lineWidth = 2
     ctx.lineCap = 'round'
     ctx.lineJoin = 'round'
     // Left arrow
@@ -393,28 +439,32 @@ export class Cursor {
     ctx.moveTo(cx + arrowSize * 2, cy)
     ctx.lineTo(cx + arrowSize * 1.5, cy + arrowSize * 0.4)
     ctx.stroke()
+    ctx.globalAlpha = 1
   }
 
-  /** Phase 2: View/eye icon — for project cards. */
+  /** Console view icon — signal teal circle + eye shape. */
   private drawViewIcon(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number): void {
+    const { teal } = this._getThemeColors()
     ctx.beginPath()
     ctx.arc(cx, cy, r, 0, Math.PI * 2)
-    ctx.strokeStyle = 'rgba(107, 120, 163, 0.6)'
-    ctx.lineWidth = 2
+    ctx.strokeStyle = teal
+    ctx.globalAlpha = 0.6
+    ctx.lineWidth = 1.5
     ctx.stroke()
+    ctx.globalAlpha = 0.9
     // Eye shape
     const eyeW = r * 0.9
     const eyeH = r * 0.5
-    ctx.strokeStyle = 'rgba(107, 120, 163, 0.9)'
-    ctx.lineWidth = 2
+    ctx.lineWidth = 1.5
     ctx.beginPath()
     ctx.ellipse(cx, cy, eyeW, eyeH, 0, 0, Math.PI * 2)
     ctx.stroke()
     // Pupil
     ctx.beginPath()
     ctx.arc(cx, cy, r * 0.2, 0, Math.PI * 2)
-    ctx.fillStyle = 'rgba(107, 120, 163, 0.9)'
+    ctx.fillStyle = teal
     ctx.fill()
+    ctx.globalAlpha = 1
   }
 
   destroy() {

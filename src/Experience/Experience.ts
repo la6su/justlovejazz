@@ -57,14 +57,9 @@ export class Experience {
   private _wobblePulseHandler: (() => void) | null = null
   private _gotoSectionByHashHandler: ((e: Event) => void) | null = null
   private _showreelPlayHandler: (() => void) | null = null
-  private _showreelClickHandler: ((e: PointerEvent) => void) | null = null
-  private _showreelMoveHandler: ((e: PointerEvent) => void) | null = null
   private _worksPlaneTapHandler: ((e: PointerEvent) => void) | null = null
   private _worksPageSectionHandler: ((e: Event) => void) | null = null
   private _projectNavigateHandler: ((e: Event) => void) | null = null
-  private _showreelRaycaster: THREE.Raycaster | null = null
-  private _showreelNdc: THREE.Vector2 | null = null
-  private _showreelHovered = false
   private devPanel: DevPanel | null = null
   public world!: World
   private bus!: StateBus
@@ -385,8 +380,14 @@ export class Experience {
       this._storyNav?.goToSection(idx)
     })
 
-    // The compact storyline stays visible while the scene and DOM track move.
-    document.body.appendChild(this._storyNav.el)
+    // The compact storyline lives inside the console bar (bottom strip).
+    // If the console bar exists, append there; otherwise fall back to body.
+    const consoleBar = document.querySelector('.jlz-console-bar')
+    if (consoleBar) {
+      consoleBar.appendChild(this._storyNav.el)
+    } else {
+      document.body.appendChild(this._storyNav.el)
+    }
 
     // DevPanel — created AFTER nav so it can read current section
     if (import.meta.env.DEV) {
@@ -601,8 +602,6 @@ export class Experience {
     // ── Showreel button (3D TSL shader plane on intro section) ──
     // Click on the ShowreelButton3D mesh → dispatches jlz:showreel-play
     // → opens FullscreenOverlay with the showreel video.
-    this._showreelRaycaster = new THREE.Raycaster()
-    this._showreelNdc = new THREE.Vector2()
 
     this._showreelPlayHandler = () => {
       if (!this.overlay) return
@@ -618,52 +617,6 @@ export class Experience {
       })
     }
     window.addEventListener('jlz:showreel-play', this._showreelPlayHandler)
-
-    // Raycast on pointermove (hover) + click (select) for the showreel button.
-    // Only active on home page, intro section (idx 1).
-    this._showreelMoveHandler = (e: PointerEvent) => {
-      const btn = this._getShowreelButton()
-      if (!btn || !this._showreelRaycaster || !this._showreelNdc) return
-      // Only raycast on home + intro section
-      if (document.body.dataset.page !== 'home') return
-      if (this.world?.currentSectionIndex !== 1) return
-      // Skip when overlay is open (UIKit native uk-open check)
-      if (this.overlay?.isOpen) return
-
-      this._showreelNdc.x = (e.clientX / window.innerWidth) * 2 - 1
-      this._showreelNdc.y = -(e.clientY / window.innerHeight) * 2 + 1
-      this._showreelRaycaster.setFromCamera(this._showreelNdc, this.camera.instance)
-      const intersects = this._showreelRaycaster.intersectObject(btn, false)
-      const hovered = intersects.length > 0
-      if (hovered !== this._showreelHovered) {
-        this._showreelHovered = hovered
-        btn.setHover(hovered)
-        this._needsRender = true
-      }
-    }
-    window.addEventListener('pointermove', this._showreelMoveHandler, { passive: true })
-
-    this._showreelClickHandler = (e: PointerEvent) => {
-      const btn = this._getShowreelButton()
-      if (!btn || !this._showreelRaycaster || !this._showreelNdc) return
-      if (document.body.dataset.page !== 'home') return
-      if (this.world?.currentSectionIndex !== 1) return
-      if (this.overlay?.isOpen) return
-
-      this._showreelNdc.x = (e.clientX / window.innerWidth) * 2 - 1
-      this._showreelNdc.y = -(e.clientY / window.innerHeight) * 2 + 1
-      this._showreelRaycaster.setFromCamera(this._showreelNdc, this.camera.instance)
-      const intersects = this._showreelRaycaster.intersectObject(btn, false)
-      if (intersects.length > 0) {
-        btn.triggerClick()
-        // Dispatch showreel-play after a brief delay (let click pulse play)
-        setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('jlz:showreel-play'))
-        }, 200)
-        this._needsRender = true
-      }
-    }
-    window.addEventListener('click', this._showreelClickHandler)
   }
 
   update(time: number) {
@@ -739,9 +692,6 @@ export class Experience {
     const openerActive = baku?.openerPhase !== 'done' && baku?.openerPhase !== 'idle'
     const burstActive = this.world?.particleBurst?.isActive ?? false
     const camShaking = this.camera.isShaking
-    // Showreel button animation (hover lerp + click pulse)
-    const showreelBtn = this._getShowreelButton()
-    const showreelActive = showreelBtn?.isAnimating ?? false
     // Cube face rotation animation — keep rendering while the cube is rotating
     // to its target face (triggered by rotateToFace on section change).
     const cubeRotating =
@@ -773,7 +723,7 @@ export class Experience {
       burstActive ||
       camShaking ||
       cubeRotating ||
-      showreelActive ||
+      
       camPulsing ||
       particlesActive ||
       ambientSceneActive
@@ -815,7 +765,7 @@ export class Experience {
     const { cameraTarget, worldState } = this.world.updateTransform(ns)
     this.world.update(dt, this._needsRender)
     // Update showreel button shader (TSL uniforms + hover/click animation)
-    showreelBtn?.update(dt)
+    
 
     // Drive worldDNA section blend — from→to colors + phaseProgress (scroll t).
     if (this.world?.baku) {
@@ -964,7 +914,7 @@ export class Experience {
         !camShaking &&
         !particlesActive &&
         !cubeRotating &&
-        !showreelActive &&
+        
         !drawTrailActive &&
         !camPulsing &&
         !ambientSceneActive
@@ -1065,14 +1015,6 @@ export class Experience {
       window.removeEventListener('jlz:showreel-play', this._showreelPlayHandler)
       this._showreelPlayHandler = null
     }
-    if (this._showreelMoveHandler) {
-      window.removeEventListener('pointermove', this._showreelMoveHandler)
-      this._showreelMoveHandler = null
-    }
-    if (this._showreelClickHandler) {
-      window.removeEventListener('click', this._showreelClickHandler)
-      this._showreelClickHandler = null
-    }
     if (this._worksPlaneTapHandler) {
       window.removeEventListener('pointerup', this._worksPlaneTapHandler)
       this._worksPlaneTapHandler = null
@@ -1167,17 +1109,6 @@ export class Experience {
     )
   }
 
-  /** Get the ShowreelButton3D from the intro scene group (index 1).
-   *  Returns null on non-home pages. */
-  private _getShowreelButton(): import('./World/ShowreelButton3D').ShowreelButton3D | null {
-    if (document.body.dataset.page !== 'home') return null
-    const introGroup = this.world?.sceneGroups?.[1]
-    if (!introGroup) return null
-    return (
-      (introGroup.userData.showreelButton as
-        import('./World/ShowreelButton3D').ShowreelButton3D | undefined) ?? null
-    )
-  }
 
   private onProjectSelect(idx: number, preload: boolean = false, origin?: 'plane'): void {
     if (!this.portfolio || !this.overlay) return
