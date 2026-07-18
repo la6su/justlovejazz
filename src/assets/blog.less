@@ -1,8 +1,7 @@
-// blog.less — CSS for blog.html + blog/*.html (standalone semantic pages)
+// blog.less — CSS for blog.html + blog/*.html (standalone semantic pages).
 //
-// Imports UIkit 3 + QF theme + JLZ tokens + theme fixes.
-// NO app-specific styles (cursor, joystick, dock, project-overlay, etc).
-// Minimal: base document, header, content, footer.
+// Imports UIkit 3 + JLZ tokens only. No app-specific styles (cursor, dock,
+// 3D shell). Minimal: base document, header, journal index, footer.
 
 // Pair with the home entry's opt-in. Blog stays a separate document while
 // supported browsers animate the navigation without JavaScript orchestration.
@@ -11,7 +10,7 @@
 }
 
 @import './_import.less';
-@import './_theme.less';
+
 
 // ── Base ──
 html {
@@ -26,8 +25,6 @@ body {
 
 .jlz-blog-brand,
 .jlz-landing-eyebrow,
-.jlz-blog-content h1,
-.jlz-blog-content h2,
 .uk-card-title {
   font-variation-settings: 'wght' var(--jlz-blog-weight, 650);
   transition: font-variation-settings 360ms var(--jlz-ease-out-quint, ease-out);
@@ -41,8 +38,6 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .jlz-blog-brand,
   .jlz-landing-eyebrow,
-  .jlz-blog-content h1,
-  .jlz-blog-content h2,
   .uk-card-title {
     transition: none;
   }
@@ -93,11 +88,10 @@ body {
 }
 
 // ── Prism code highlighting (prism-tomorrow theme overrides) ──
-// The prism-tomorrow.css ships its own background + padding; we align it with
-// the JLZ card surface so code blocks feel native to the theme.
-.jlz-blog-content pre[class*='language-'],
-.jlz-blog-content pre:not([class]) {
-  background: var(--jlz-color-bg-elevated, #1a1a2e) !important;
+// Align prism code blocks with the JLZ card surface.
+pre[class*='language-'],
+pre:not([class]) {
+  background: var(--jlz-color-bg-elevated) !important;
   border: 1px solid var(--jlz-color-border);
   border-radius: var(--jlz-radius-md);
   padding: 1rem 1.25rem;
@@ -106,19 +100,18 @@ body {
   line-height: 1.5;
   margin: 1.5rem 0;
 }
-.jlz-blog-content code[class*='language-'] {
+code[class*='language-'] {
   font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;
   font-size: 0.875rem;
-  color: inherit; // let prism-tomorrow token colors apply
+  color: inherit;
   background: transparent;
   padding: 0;
 }
-// Inline code (no language class) — keep the accent tint from blog.less
-.jlz-blog-content :not(pre) > code {
+:not(pre) > code {
   font-family: 'SF Mono', 'Cascadia Code', monospace;
   font-size: 0.85em;
   color: var(--jlz-color-accent);
-  background: var(--jlz-color-bg-elevated, rgba(134, 59, 255, 0.08));
+  background: var(--jlz-color-bg-elevated);
   padding: 0.1em 0.35em;
   border-radius: 4px;
 }
@@ -156,42 +149,6 @@ body {
 
 .jlz-blog-header .uk-navbar-nav > li > a:hover {
   color: var(--jlz-color-text);
-}
-
-// ── Content ──
-.jlz-blog-content {
-  max-width: 42rem;
-  margin: 0 auto;
-}
-
-.jlz-blog-content p {
-  font-size: 1.0625rem;
-  line-height: 1.7;
-  color: var(--jlz-color-text-muted);
-}
-
-.jlz-blog-content pre {
-  background: var(--jlz-color-bg-elevated);
-  border: 1px solid var(--jlz-color-border);
-  border-radius: var(--jlz-radius-md);
-  padding: 1rem 1.25rem;
-  overflow-x: auto;
-  font-size: 0.875rem;
-  line-height: 1.5;
-}
-
-.jlz-blog-content code {
-  font-family: 'SF Mono', 'Cascadia Code', monospace;
-  font-size: 0.875em;
-  color: var(--jlz-color-accent);
-}
-
-.jlz-blog-content h2 {
-  margin-top: 2.5rem;
-}
-
-.jlz-blog-content h3 {
-  margin-top: 2rem;
 }
 
 // ── Journal index — editorial entry, not a generic card archive ──
@@ -375,17 +332,6 @@ body {
   }
 }
 
-// ── Eyebrow (console style) ──
-.jlz-blog-eyebrow {
-  font-family: 'SF Mono', 'Cascadia Code', monospace;
-  font-size: 0.65rem;
-  font-weight: 500;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  opacity: 0.5;
-  margin-bottom: 0.5rem;
-}
-
 // ── Footer — minimal ──
 .jlz-blog-footer {
   border-top: 1px solid var(--jlz-color-border);
@@ -403,21 +349,4 @@ body {
   text-decoration: none;
 }
 
-// ── Back link ──
-.jlz-back-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--jlz-color-text-muted);
-  text-decoration: none;
-  transition: color var(--jlz-duration-fast) ease;
-}
 
-.jlz-back-link:hover {
-  color: var(--jlz-color-accent);
-  text-decoration: none;
-}

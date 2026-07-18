@@ -1,34 +1,26 @@
 // src/sections/intro/template.ts — Face 1: Studio (front face +Z, start section)
 // Hero tier — uk-heading-xlarge. Active on load.
 //
-// The showreel play button is a 3D TSL shader plane (ShowreelButton3D) in
-// front of the cube — see src/sections/intro/scene.ts. No DOM button.
-// Experience.ts raycasts on pointermove/click to detect hover + click on
-// the 3D button → dispatches jlz:showreel-play → opens FullscreenOverlay.
-import { sectionShell, storyBottom } from '../_shared/constants'
+// The showreel play button is a DOM uk-button (data-showreel-trigger) in the
+// bottom block. UIManager listens for jlz:showreel-play and opens
+// FullscreenOverlay in video mode. See docs/PLAN-showreel-shader-plane.md.
+import { sectionShell, storyBottom, homeTop, descBlock } from '../_shared/constants'
 
 export function introSection(): string {
-  const top = `
-    <div class="jlz-section-top uk-text-center uk-flex uk-flex-column uk-flex-middle">
-      <span class="jlz-eyebrow" data-eyebrow data-eyebrow-text="01">01</span>
-      <h2 class="studio-title uk-heading-xlarge uk-margin-small-top uk-margin-remove-bottom" data-i18n="home.studio.title">Studio</h2>
-      <p class="uk-text-lead uk-margin-small-top" data-i18n="home.studio.lead">Remote · EU · since 2019.</p>
-    </div>
-  `
+  const top = homeTop('01', 'home.studio.title', 'Studio', 'home.studio.lead', 'Crafted with love.', 'xlarge')
   const bottom = storyBottom(
-    `
-      <div class="jlz-service-desc uk-margin-small-top">
-        <p class="uk-text-meta uk-margin-remove" data-i18n="home.studio.desc1">Interfaces and realtime scenes that make a product legible.</p>
-        <p class="uk-text-meta uk-margin-remove" data-i18n="home.studio.desc2">Strategy, design and WebGPU in one system.</p>
-      </div>
-      <a href="/services" class="jlz-service-explore uk-button uk-button-default uk-button-small uk-margin-top">
-        <span class="jlz-service-explore__dot" aria-hidden="true"></span>
-        <span data-i18n="common.explore">Explore</span>
-      </a>
-  `,
+    `${descBlock([
+      { key: 'home.studio.desc1', text: 'Interfaces and realtime scenes that make a product legible.' },
+      { key: 'home.studio.desc2', text: 'Strategy, design and WebGPU in one system.' },
+    ])}
+    <div class="uk-margin-top">
+      <button type="button" class="uk-button uk-button-default uk-button-small" data-showreel-trigger>
+        <span uk-icon="icon: play; ratio: 0.7" aria-hidden="true"></span>
+        <span data-i18n="home.studio.showreel">Play showreel</span>
+      </button>
+    </div>
+`,
     '01',
   )
-  // No DOM showreel button — the 3D TSL shader plane (ShowreelButton3D)
-  // handles play. Click raycasting is in Experience.ts.
   return sectionShell('intro', top, bottom, 'home', false, '')
 }

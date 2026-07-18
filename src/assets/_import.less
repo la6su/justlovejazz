@@ -229,10 +229,9 @@
   --jlz-color-cursor-hover: #ff3c3c;
   --jlz-header-height: 64px;
 
-  /* Component dimensions — referenced across main.less for structural
-     consistency. Single source of truth for joystick geometry. */
-  --jlz-joystick-size: 110px;
-  --jlz-joystick-size-sm: 90px;
+  /* Bottom controls clearance — contact launcher + storyline rail.
+     Replaces the former joystick-size token; the joystick is gone. */
+  --jlz-bottom-controls: 4.5rem;
 
   /* A single dark field keeps DOM captions legible without soft glass veils. */
   --jlz-scrim-1: rgba(3, 5, 4, 0.42);
@@ -344,8 +343,8 @@ html.uk-light {
 @navbar-container: none;
 
 // ── Offcanvas overrides ──
-@offcanvas-bar-background: @jlz-color-bg-elevated;
-@offcanvas-bar-color: @jlz-color-text;
+//@offcanvas-bar-background: @jlz-color-bg-elevated;
+//@offcanvas-bar-color: @jlz-color-text;
 
 // ── Modal overrides ──
 @modal-background: rgba(0, 0, 0, 0.85);
@@ -355,9 +354,9 @@ html.uk-light {
 @close-hover-color: @jlz-color-accent;
 
 // ── Search overrides ──
-@search-background: @jlz-color-surface;
-@search-hover-background: @jlz-color-surface-hover;
-@search-input-color: @jlz-color-text;
+//@search-background: @jlz-color-surface;
+//@search-hover-background: @jlz-color-surface-hover;
+//@search-input-color: @jlz-color-text;
 
 // ═══════════════════════════════════════════════════════════════════════
 // §3.5 UIKIT HOOK OVERRIDES (must be defined BEFORE component .less imports)
@@ -461,11 +460,8 @@ html.uk-light {
 @import '../../node_modules/uikit/src/less/components/heading.less';
 @import '../../node_modules/uikit/src/less/components/icon.less';
 @import '../../node_modules/uikit/src/less/components/button.less';
-@import '../../node_modules/uikit/src/less/components/progress.less';
-@import '../../node_modules/uikit/src/less/components/badge.less';
-@import '../../node_modules/uikit/src/less/components/label.less';
-@import '../../node_modules/uikit/src/less/components/divider.less';
-@import '../../node_modules/uikit/src/less/components/search.less';
+//@import '../../node_modules/uikit/src/less/components/label.less';
+//@import '../../node_modules/uikit/src/less/components/search.less';
 
 // Layout
 @import '../../node_modules/uikit/src/less/components/section.less';
@@ -475,28 +471,20 @@ html.uk-light {
 // Common
 @import '../../node_modules/uikit/src/less/components/close.less';
 @import '../../node_modules/uikit/src/less/components/spinner.less';
-@import '../../node_modules/uikit/src/less/components/overlay.less';
 @import '../../node_modules/uikit/src/less/components/modal.less';
 
 // JavaScript
 @import '../../node_modules/uikit/src/less/components/slider.less';
-@import '../../node_modules/uikit/src/less/components/sticky.less';
-@import '../../node_modules/uikit/src/less/components/accordion.less';
-@import '../../node_modules/uikit/src/less/components/tab.less';
-@import '../../node_modules/uikit/src/less/components/notification.less';
+//@import '../../node_modules/uikit/src/less/components/tab.less';
 @import '../../node_modules/uikit/src/less/components/tooltip.less';
-@import '../../node_modules/uikit/src/less/components/drop.less';
-@import '../../node_modules/uikit/src/less/components/offcanvas.less';
+//@import '../../node_modules/uikit/src/less/components/drop.less';
+//@import '../../node_modules/uikit/src/less/components/offcanvas.less';
 @import '../../node_modules/uikit/src/less/components/grid.less';
-@import '../../node_modules/uikit/src/less/components/article.less';
 @import '../../node_modules/uikit/src/less/components/table.less';
 @import '../../node_modules/uikit/src/less/components/form.less';
 @import '../../node_modules/uikit/src/less/components/form-range.less';
-@import '../../node_modules/uikit/src/less/components/dotnav.less';
-@import '../../node_modules/uikit/src/less/components/leader.less';
-@import '../../node_modules/uikit/src/less/components/marker.less';
-@import '../../node_modules/uikit/src/less/components/subnav.less';
-@import '../../node_modules/uikit/src/less/components/thumbnav.less';
+//@import '../../node_modules/uikit/src/less/components/leader.less';
+//@import '../../node_modules/uikit/src/less/components/thumbnav.less';
 @import '../../node_modules/uikit/src/less/components/iconnav.less';
 
 // Navs

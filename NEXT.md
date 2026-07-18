@@ -11,10 +11,10 @@ changelog, not here. Move one item to **In progress** before implementation.
       evaluate the bounded `/works` companion in
       [`docs/PLAN-showreel-shader-plane.md`](docs/PLAN-showreel-shader-plane.md).
 
-- [ ] **Studio Console theme evolution** — continue the staged, project-owned
-      migration in [`docs/PLAN-studio-console-theme.md`](docs/PLAN-studio-console-theme.md);
-      adopt one Vibe-informed pattern at a time and remove superseded styling
-      only after visual, accessibility and performance verification.
+- [ ] **Studio Console theme cleanup** — continue the UIkit-first, brutal-minimalism
+      pass: eliminate remaining `.jlz-*` utility classes that duplicate UIkit,
+      keep only 3D-shell hooks and genuinely bespoke components, and verify
+      inverse theme through `uk-light`/`uk-dark` on every route.
 
 - [ ] **Shared transition language** — prototype one temporary TSL fullscreen
       transition for SPA routes, Menu and project overlay; use lightweight

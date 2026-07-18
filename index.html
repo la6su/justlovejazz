@@ -7,70 +7,133 @@
     <link rel="mask-icon" href="/logo.svg" color="#232534" />
     <link rel="manifest" href="/site.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta
-      name="description"
-      content="JUSTLOVEJAZZ — interactive 3D portfolio experience. WebGPU/WebGL cinematic, Three.js TSL, UIkit 3. Requires JavaScript + WebGL2."
-    />
+
     <meta name="theme-color" content="#050507" />
-    <meta name="author" content="JUSTLOVEJAZZ" />
+    <meta name="author" content="La6su" />
     <meta name="color-scheme" content="dark light" />
+    <title>JUSTLOVEJAZZ — Web Design & Interactive 3D Studio</title>
+
     <meta
-      name="robots"
-      content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+            name="description"
+            content="JUSTLOVEJAZZ is a web design and creative development studio creating high-performance websites, interactive 3D experiences and digital products with WebGPU, Three.js and modern frontend technologies."
     />
+
+    <meta
+            name="robots"
+            content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+    />
+
+    <meta name="author" content="JUSTLOVEJAZZ" />
+    <meta name="theme-color" content="#050507" />
+    <meta name="color-scheme" content="dark light" />
+
+    <link rel="canonical" href="https://justlovejazz.dev/" />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="JUSTLOVEJAZZ" />
-    <meta property="og:title" content="JUSTLOVEJAZZ — Interactive 3D Portfolio" />
     <meta
-      property="og:description"
-      content="A studio-grade interactive 3D portfolio. A WebGPU/WebGL cinematic experience built with Three.js."
+            property="og:title"
+            content="JUSTLOVEJAZZ — Web Design & Interactive 3D Studio"
+    />
+    <meta
+            property="og:description"
+            content="High-performance websites, interactive 3D experiences and digital products designed to make ambitious brands impossible to ignore."
     />
     <meta property="og:url" content="https://justlovejazz.dev/" />
-    <meta property="og:image" content="https://justlovejazz.dev/preview.jpg" />
+    <meta
+            property="og:image"
+            content="https://justlovejazz.dev/preview.jpg"
+    />
     <meta property="og:image:type" content="image/jpeg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="JUSTLOVEJAZZ — interactive 3D portfolio preview" />
+    <meta
+            property="og:image:alt"
+            content="JUSTLOVEJAZZ interactive web design studio"
+    />
 
-    <!-- Twitter Card -->
+    <!-- Twitter / X -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@justlovejazz" />
     <meta name="twitter:creator" content="@justlovejazz" />
-    <meta name="twitter:title" content="JUSTLOVEJAZZ — Interactive 3D Portfolio" />
     <meta
-      name="twitter:description"
-      content="A studio-grade interactive 3D portfolio. WebGPU/WebGL cinematic experience built with Three.js."
+            name="twitter:title"
+            content="JUSTLOVEJAZZ — Web Design & Interactive 3D Studio"
     />
-    <meta name="twitter:image" content="https://justlovejazz.dev/preview.jpg" />
-    <meta name="twitter:image:alt" content="JUSTLOVEJAZZ — interactive 3D portfolio preview" />
+    <meta
+            name="twitter:description"
+            content="High-performance websites and interactive 3D experiences built with WebGPU, Three.js and modern frontend technologies."
+    />
+    <meta
+            name="twitter:image"
+            content="https://justlovejazz.dev/preview.jpg"
+    />
+    <meta
+            name="twitter:image:alt"
+            content="JUSTLOVEJAZZ interactive web design studio"
+    />
 
-    <!-- Canonical — app is now the canonical entry (splash merged in) -->
-    <link rel="canonical" href="https://justlovejazz.dev/" />
-
-    <title>JUSTLOVEJAZZ — Web Design Studio | Interactive 3D Portfolio</title>
-
-    <!-- Structured data (JSON-LD) — WebSite + Organization -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@graph": [
           {
             "@type": "WebSite",
-            "name": "JUSTLOVEJAZZ",
+            "@id": "https://justlovejazz.dev/#website",
             "url": "https://justlovejazz.dev/",
-            "description": "Studio-grade interactive 3D portfolio. WebGPU/WebGL cinematic experience built with Three.js.",
-            "publisher": { "@id": "https://justlovejazz.dev/#organization" }
+            "name": "JUSTLOVEJAZZ",
+            "description": "Web design and creative development studio creating high-performance websites and interactive 3D experiences.",
+            "publisher": {
+              "@id": "https://justlovejazz.dev/#organization"
+            },
+            "inLanguage": ["en", "ru"]
           },
           {
-            "@type": "Organization",
+            "@type": "ProfessionalService",
             "@id": "https://justlovejazz.dev/#organization",
             "name": "JUSTLOVEJAZZ",
+            "alternateName": "La6.su",
             "url": "https://justlovejazz.dev/",
-            "logo": "https://justlovejazz.dev/favicon.svg",
-            "description": "Studio-grade web design portfolio. WebGPU, Three.js, TSL shaders, interactive 3D experiences.",
-            "sameAs": ["https://github.com/la6su", "https://x.com/justlovejazz"]
+            "logo": {
+              "@type": "ImageObject",
+              "url": "https://justlovejazz.dev/logo.svg"
+            },
+            "image": "https://justlovejazz.dev/preview.jpg",
+            "description": "A web design and creative development studio specialising in high-performance websites, WebGPU, Three.js, interactive 3D interfaces and digital brand experiences.",
+            "slogan": "Digital experiences designed to be remembered.",
+            "knowsAbout": [
+              "Web Design",
+              "Creative Development",
+              "Frontend Development",
+              "WebGPU",
+              "WebGL",
+              "Three.js",
+              "TypeScript",
+              "Interactive 3D",
+              "Digital Product Design",
+              "Motion Design"
+            ],
+            "sameAs": [
+              "https://github.com/la6su",
+              "https://x.com/justlovejazz"
+            ]
+          },
+          {
+            "@type": "Service",
+            "@id": "https://justlovejazz.dev/#web-design",
+            "name": "Web Design and Creative Development",
+            "provider": {
+              "@id": "https://justlovejazz.dev/#organization"
+            },
+            "description": "Strategy, design and development of high-performance websites, interactive portfolios, product experiences and WebGPU-powered 3D interfaces.",
+            "serviceType": [
+              "Web Design",
+              "Creative Development",
+              "Interactive 3D Development",
+              "Frontend Development"
+            ],
+            "areaServed": "Worldwide"
           }
         ]
       }
@@ -398,17 +461,17 @@
         </defs>
         <text class="jlz-splash-text jlz-splash-text--1">
           <textPath href="#sq-1" textLength="3600">
-            Zarazeni Inclusion · ВКЛЮЧЕНИЕ · Kemasukan Aufnahme · Aisällyttäminen&nbsp;
+            Zarazeni Inclusion · Kemasukan Aufnahme · Aisällyttäminen&nbsp;
           </textPath>
         </text>
         <text class="jlz-splash-text jlz-splash-text--2">
           <textPath href="#sq-2" textLength="2544">
-            JUSTLOVEJAZZ · INTERACTIVE DESIGN STUDIO · WEBGPU · THREE.JS · TSL&nbsp;
+            INTERACTIVE ·  WEBGPU · CRAFTED MOTION · ВКЛЮЧЕНИЕ ·&nbsp;
           </textPath>
         </text>
         <text class="jlz-splash-text jlz-splash-text--3">
           <textPath href="#sq-3" textLength="1704">
-            CRAFTED WITH GLASS · MOTION · LIGHT · EST 2019&nbsp;
+            · LA6SU · DESIGN · LIGHT · WEBGL&nbsp;
           </textPath>
         </text>
         <!-- Progress ring — rect on sq-4 path, stroke-dashoffset = progress -->

@@ -1,5 +1,5 @@
 {
-  "name": "justlovejazz",
+  "name": "la6su",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -22,28 +22,28 @@
   "devDependencies": {
     "@dietrichgebert/ponytail": "^4.8.4",
     "@eslint/js": "^10.0.1",
-    "@playwright/test": "^1.60.0",
-    "@types/node": "^25.7.0",
-    "@types/three": "^0.184.0",
+    "@playwright/test": "^1.61.1",
+    "@types/node": "^25.9.5",
+    "@types/three": "^0.184.1",
     "@types/uikit": "^3.23.0",
-    "esbuild": "^0.28.0",
-    "eslint": "^10.6.0",
+    "esbuild": "^0.28.1",
+    "eslint": "^10.7.0",
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.7.0",
     "jsdom": "^29.1.1",
-    "less": "^4.6.4",
-    "prettier": "^3.9.1",
+    "less": "^4.6.7",
+    "prettier": "^3.9.5",
     "prismjs": "^1.30.0",
     "tweakpane": "^4.0.5",
-    "typescript": "~6.0.2",
-    "typescript-eslint": "^8.62.0",
-    "vite": "^8.0.10",
-    "vitest": "^4.1.9"
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.64.0",
+    "vite": "^8.1.5",
+    "vitest": "^4.1.10"
   },
   "description": "Modern interactive portfolio using **Three.js TSL (Nodes)** with **WebGPU → WebGL fallback**.   Designed with **mobile-first UX** and a **procedural 3D background**.",
   "dependencies": {
     "three": "0.184.0",
-    "uikit": "^3.25.16"
+    "uikit": "^3.25.20"
   },
   "repository": {
     "type": "git",

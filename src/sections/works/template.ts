@@ -6,7 +6,7 @@ export function worksSection(): string {
   // The title remains in the DOM for native navigation labels and assistive
   // technology, but the Works frame itself is deliberately image-only.
   const accessibleTitle = `
-    <h2 id="jlz-works-title" class="jlz-visually-hidden" data-i18n="home.works.title">Works</h2>
+    <h2 id="jlz-works-title" data-i18n="home.works.title" hidden>Works</h2>
   `
   const controls = `
     <div class="jlz-works-slider-controls" role="group" aria-labelledby="jlz-works-title">

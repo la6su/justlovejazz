@@ -52,7 +52,6 @@ export class FullscreenOverlay {
   private controlsEl: HTMLElement
   private _keydownHandler: ((e: KeyboardEvent) => void) | null = null
   private _autoplayTimer: ReturnType<typeof setTimeout> | null = null
-  private _enterRaf: number | null = null
   private _posterRequestId = 0
   private _posterUrl: string | null = null
   private _mediaGeneration = 0
@@ -69,9 +68,11 @@ export class FullscreenOverlay {
 
     this.container.innerHTML = `
       <div class="uk-modal-dialog jlz-fs-dialog">
-        <button class="uk-modal-close-full uk-close-large jlz-fs-close" type="button" uk-close aria-label="Close"></button>
+        <button class="uk-modal-close-full uk-close-large jlz-fs-close" type="button" aria-label="Close">
+          <span uk-icon="icon: close; ratio: 1.25" aria-hidden="true"></span>
+        </button>
         <header class="jlz-fs-meta uk-flex uk-flex-between uk-flex-bottom">
-          <div class="jlz-fs-info">
+          <div>
             <div class="jlz-fs-cat uk-text-uppercase"></div>
             <h2 class="jlz-fs-title uk-margin-remove"></h2>
             <p class="jlz-fs-desc uk-margin-small-top uk-margin-remove-bottom"></p>
@@ -87,7 +88,7 @@ export class FullscreenOverlay {
             <source src="" type="video/mp4" />
           </video>
           <button class="jlz-fs-big-play" type="button" aria-label="Play video">
-            <span class="jlz-fs-big-play__icon" aria-hidden="true"></span>
+            <span class="jlz-fs-big-play__icon" uk-icon="icon: play; ratio: 1.4" aria-hidden="true"></span>
           </button>
         </main>
         <footer class="jlz-fs-controls">
@@ -100,8 +101,12 @@ export class FullscreenOverlay {
           <input class="jlz-fs-seek uk-range" type="range" min="0" max="100" value="0" step="0.1" aria-label="Seek" />
           <span class="jlz-fs-time">0:00 / 0:00</span>
         </footer>
-        <button class="jlz-fs-prev" type="button" aria-label="Previous" uk-slidenav-previous></button>
-        <button class="jlz-fs-next" type="button" aria-label="Next" uk-slidenav-next></button>
+        <button class="jlz-fs-prev" type="button" aria-label="Previous">
+          <span uk-icon="icon: slidenav-previous-large" aria-hidden="true"></span>
+        </button>
+        <button class="jlz-fs-next" type="button" aria-label="Next">
+          <span uk-icon="icon: slidenav-next-large" aria-hidden="true"></span>
+        </button>
       </div>
     `
 
@@ -184,25 +189,13 @@ export class FullscreenOverlay {
     this.prevBtn.addEventListener('click', () => this.navigate(-1))
     this.nextBtn.addEventListener('click', () => this.navigate(1))
 
-    // UIKit3 modal events — uk-open class is the authoritative state.
-    // No custom flag needed: UIKit adds uk-open on show (synchronously via
-    // _toggle) and removes it on hide. isOpen getter checks uk-open directly.
+    // UIKit3 modal events — uk-open is the authoritative state. UIkit adds it
+    // on show and removes it on hide; isOpen reads it directly. No custom
+    // enter/opening flags needed.
     UIkit.util.on(this.container, 'show', () => {
-      this.container.classList.remove('is-entered')
-      this.container.classList.add('is-opening')
       document.addEventListener('keydown', this._keydownHandler!)
-      // UIKit owns modal visibility and focus. Two paint frames only stage the
-      // project-specific reveal so the browser always renders its first frame
-      // before transitioning to the fullscreen state.
-      this._enterRaf = requestAnimationFrame(() => {
-        this._enterRaf = requestAnimationFrame(() => {
-          this._enterRaf = null
-          this.container.classList.add('is-entered')
-        })
-      })
     })
     UIkit.util.on(this.container, 'shown', () => {
-      this.container.classList.remove('is-opening')
       const source = this.video.querySelector('source')
       if (this.container.classList.contains('is-video-mode') && source && source.src) {
         if (isFinite(this.video.duration)) {
@@ -221,11 +214,7 @@ export class FullscreenOverlay {
         clearTimeout(this._autoplayTimer)
         this._autoplayTimer = null
       }
-      if (this._enterRaf !== null) {
-        cancelAnimationFrame(this._enterRaf)
-        this._enterRaf = null
-      }
-      this.container.classList.remove('is-opening', 'is-entered', 'is-playing')
+      this.container.classList.remove('is-playing')
       this.video.pause()
       this.onClose?.()
       // Remove keyboard listener when modal closes — clean lifecycle, no
@@ -301,21 +290,17 @@ export class FullscreenOverlay {
   /** Open overlay with given options. */
   open(opts: OverlayOptions): void {
     this._applyOptions(opts)
-    this.container.classList.toggle('is-plane-origin', opts.origin === 'plane')
     UIkit.modal(this.container).show()
   }
 
   /** Preload content into the overlay WITHOUT showing it.
    *  Used by Experience.ts to preload the first project so card click is
-   *  instant. Calling open() instead was a BUG — it called UIkit.modal().show()
-   *  which added the uk-open class, making the overlay visible prematurely.
-   *  preload() only sets content; the uk-open class is NOT added, so the
-   *  overlay stays hidden (CSS: .jlz-fs-overlay:not(.uk-open) { display:none }). */
+   *  instant. preload() only sets content; the uk-open class is NOT added,
+   *  so the overlay stays hidden (CSS: .jlz-fs-overlay:not(.uk-open){display:none}). */
   preload(opts: OverlayOptions): void {
     // Decode the visual poster, but keep video user-triggered so initial page
     // work never fetches a case film before the visitor opens it.
     this._applyOptions({ ...opts, videoSrc: undefined })
-    this.container.classList.remove('is-plane-origin')
     // Do NOT call UIkit.modal().show() — stay hidden.
   }
 
@@ -432,10 +417,6 @@ export class FullscreenOverlay {
     if (this._autoplayTimer) {
       clearTimeout(this._autoplayTimer)
       this._autoplayTimer = null
-    }
-    if (this._enterRaf !== null) {
-      cancelAnimationFrame(this._enterRaf)
-      this._enterRaf = null
     }
     if (this._keydownHandler) {
       document.removeEventListener('keydown', this._keydownHandler)

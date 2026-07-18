@@ -1,4 +1,4 @@
-# JUSTLOVEJAZZ
+# la6su
 
 Interactive studio portfolio built as a Vite single-page application. The
 experience combines an inline, FCP-friendly splash with a Three.js scene that
@@ -44,7 +44,8 @@ as `/services#section-services-02`.
 The inline splash is visible before the Three.js import. The Enter control only
 activates after `jlz:webgl-ready`; failure shows an error state rather than an
 uninitialised scene. A fixed top bar provides language, theme and sound
-controls, while the joystick and keyboard control sections.
+controls; trackpad, mouse wheel, touch and keyboard arrows drive the vertical
+story track.
 
 ## Documentation
 
