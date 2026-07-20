@@ -40,7 +40,7 @@ export class CinematicNav {
   private _sheetClickHandler: ((event: MouseEvent) => void) | null = null
   private _navButtons: HTMLButtonElement[] = []
 
-  constructor(_scene: unknown, _camera: unknown, sectionCount: number) {
+  constructor(sectionCount: number) {
     this._sectionCount = Math.max(6, sectionCount)
     this.el = this._buildNavigator()
     this._addGlobalListeners()

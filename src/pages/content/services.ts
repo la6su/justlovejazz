@@ -3,7 +3,7 @@
 // Sections 0 (Lab) and 5 (Navigation) are shared across all SPA pages.
 // Main sections (1-4): Creative Direction, Realtime build, Motion, AI.
 
-import { sectionShell, contentTop, contentBottom } from '../../sections/_shared/constants'
+import { sectionShell, contentTop, contentBottom, i18nDesc, serviceExplore } from '../../sections/_shared/constants'
 import { labOverlaySection } from '../../sections/lab-overlay/template'
 import { navOverlaySection } from '../../sections/nav/template'
 
@@ -55,20 +55,14 @@ const SERVICES: readonly Service[] = [
   },
 ] as const
 
-function serviceDesc(key: string, desc: readonly string[]): string {
-  return `<div class="jlz-service-desc uk-margin-small-top">${desc
-    .map(
-      (line, i) =>
-        `<p class="uk-text-meta uk-margin-remove" data-i18n="${key}.desc${i + 1}">${line}</p>`,
-    )
-    .join('')}</div>`
-}
-
-function serviceExplore(href: string, key: string = 'common.explore'): string {
-  return `<a href="${href}" class="jlz-service-explore uk-button uk-button-default uk-button-small uk-margin-top">
-    <span class="jlz-service-explore__dot" aria-hidden="true"></span>
-    <span data-i18n="${key}">Explore</span>
-  </a>`
+function serviceSection(s: Service, isActive: boolean = false): string {
+  return sectionShell(
+    `${s.key.replace('services.', 'services-')}`,
+    contentTop(s.num, s.title, s.lead, 'large', s.key + '.title', s.key + '.lead'),
+    contentBottom(`${i18nDesc(s.key, s.desc)}${serviceExplore(s.href, 'common.explore', 'Explore')}`),
+    'content',
+    isActive,
+  )
 }
 
 export function servicesPage(): string {
@@ -78,31 +72,13 @@ export function servicesPage(): string {
       <!-- 0: CONTACT FINALE (canonical Lab runtime slot) -->
       ${labOverlaySection('content')}
       <!-- 1: Creative Direction (start, active) -->
-      ${sectionShell(
-        'services-01',
-        contentTop(s1!.num, s1!.title, s1!.lead, 'large', s1!.key + '.title', s1!.key + '.lead'),
-        contentBottom(`${serviceDesc(s1!.key, s1!.desc)}${serviceExplore(s1!.href)}`),
-        'content',
-        true,
-      )}
+      ${serviceSection(s1!, true)}
       <!-- 2: Realtime build -->
-      ${sectionShell(
-        'services-02',
-        contentTop(s2!.num, s2!.title, s2!.lead, 'large', s2!.key + '.title', s2!.key + '.lead'),
-        contentBottom(`${serviceDesc(s2!.key, s2!.desc)}${serviceExplore(s2!.href)}`),
-      )}
+      ${serviceSection(s2!)}
       <!-- 3: Motion -->
-      ${sectionShell(
-        'services-03',
-        contentTop(s3!.num, s3!.title, s3!.lead, 'large', s3!.key + '.title', s3!.key + '.lead'),
-        contentBottom(`${serviceDesc(s3!.key, s3!.desc)}${serviceExplore(s3!.href)}`),
-      )}
+      ${serviceSection(s3!)}
       <!-- 4: AI -->
-      ${sectionShell(
-        'services-04',
-        contentTop(s4!.num, s4!.title, s4!.lead, 'large', s4!.key + '.title', s4!.key + '.lead'),
-        contentBottom(`${serviceDesc(s4!.key, s4!.desc)}${serviceExplore(s4!.href)}`),
-      )}
+      ${serviceSection(s4!)}
       <!-- 5: MENU SHEET -->
       ${navOverlaySection('content')}
     </article>

@@ -11,6 +11,7 @@
 // CinematicNav scrolls/swipes across each page's four main frames. Contact and
 // Menu are shared bottom/top sheets reachable from every page.
 
+import type { PageId } from '../sections/_shared/constants'
 import { homePage } from './home'
 import { servicesPage } from './content/services'
 import { worksPage } from './content/works'
@@ -18,22 +19,17 @@ import { manifestoPage } from './content/manifesto'
 import { labPage } from './content/lab'
 import { contactPage } from './content/contact'
 
-export type PageId = 'home' | 'services' | 'works' | 'manifesto' | 'lab' | 'contact'
+export type { PageId }
+
+const PAGES: Record<PageId, () => string> = {
+  home: homePage,
+  services: servicesPage,
+  works: worksPage,
+  manifesto: manifestoPage,
+  lab: labPage,
+  contact: contactPage,
+}
 
 export function renderPage(page: PageId = 'home'): string {
-  switch (page) {
-    case 'services':
-      return servicesPage()
-    case 'works':
-      return worksPage()
-    case 'manifesto':
-      return manifestoPage()
-    case 'lab':
-      return labPage()
-    case 'contact':
-      return contactPage()
-    case 'home':
-    default:
-      return homePage()
-  }
+  return (PAGES[page] ?? homePage)()
 }

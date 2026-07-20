@@ -32,7 +32,7 @@ export interface BakuMaterialState {
 }
 
 export interface WorldState {
-  currentPhase: NarrativePhase
+  currentPhase: string
   phaseProgress: number
   bakuMaterial: BakuMaterialState
   envColor: THREE.Color

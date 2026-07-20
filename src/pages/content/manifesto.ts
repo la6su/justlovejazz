@@ -3,7 +3,7 @@
 // Sections 0 (Lab) and 5 (Navigation) are shared across all SPA pages.
 // Main sections (1-4): Purpose, Clarity, Emotion, Simplicity.
 
-import { sectionShell, contentTop, contentBottom } from '../../sections/_shared/constants'
+import { sectionShell, contentTop, contentBottom, i18nDesc, serviceExplore } from '../../sections/_shared/constants'
 import { labOverlaySection } from '../../sections/lab-overlay/template'
 import { navOverlaySection } from '../../sections/nav/template'
 
@@ -51,18 +51,14 @@ const PRINCIPLES: readonly Principle[] = [
   },
 ] as const
 
-function principleDesc(key: string, desc: readonly string[]): string {
-  if (desc.length === 0) return ''
-  return `<div class="jlz-service-desc uk-margin-small-top">${desc
-    .map((line, i) => `<p class="uk-text-meta uk-margin-remove" data-i18n="${key}.desc${i + 1}">${line}</p>`)
-    .join('')}</div>`
-}
-
-function principleReadMore(href: string): string {
-  return `<a href="${href}" class="jlz-service-explore uk-button uk-button-default uk-button-small uk-margin-top">
-    <span class="jlz-service-explore__dot" aria-hidden="true"></span>
-    <span data-i18n="common.readMore">Read more</span>
-  </a>`
+function principleSection(p: Principle, isActive: boolean = false): string {
+  return sectionShell(
+    `${p.key.replace('manifesto.', 'manifesto-')}`,
+    contentTop(p.num, p.title, p.lead, 'large', p.key + '.title', p.key + '.lead'),
+    contentBottom(`${i18nDesc(p.key, p.desc)}${serviceExplore(p.href, 'common.readMore', 'Read more')}`),
+    'content',
+    isActive,
+  )
 }
 
 export function manifestoPage(): string {
@@ -72,26 +68,13 @@ export function manifestoPage(): string {
       <!-- 0: CONTACT FINALE (canonical Lab runtime slot) -->
       ${labOverlaySection('content')}
       <!-- 1: Purpose (start, active) -->
-      ${sectionShell('manifesto-01',
-        contentTop(p1!.num, p1!.title, p1!.lead, 'large', p1!.key + '.title', p1!.key + '.lead'),
-        contentBottom(`${principleDesc(p1!.key, p1!.desc)}${principleReadMore(p1!.href)}`),
-        'content', true
-      )}
+      ${principleSection(p1!, true)}
       <!-- 2: Clarity -->
-      ${sectionShell('manifesto-02',
-        contentTop(p2!.num, p2!.title, p2!.lead, 'large', p2!.key + '.title', p2!.key + '.lead'),
-        contentBottom(`${principleDesc(p2!.key, p2!.desc)}${principleReadMore(p2!.href)}`)
-      )}
+      ${principleSection(p2!)}
       <!-- 3: Emotion -->
-      ${sectionShell('manifesto-03',
-        contentTop(p3!.num, p3!.title, p3!.lead, 'large', p3!.key + '.title', p3!.key + '.lead'),
-        contentBottom(`${principleDesc(p3!.key, p3!.desc)}${principleReadMore(p3!.href)}`)
-      )}
+      ${principleSection(p3!)}
       <!-- 4: Simplicity -->
-      ${sectionShell('manifesto-04',
-        contentTop(p4!.num, p4!.title, p4!.lead, 'large', p4!.key + '.title', p4!.key + '.lead'),
-        contentBottom(`${principleDesc(p4!.key, p4!.desc)}${principleReadMore(p4!.href)}`)
-      )}
+      ${principleSection(p4!)}
       <!-- 5: MENU SHEET -->
       ${navOverlaySection('content')}
     </article>
