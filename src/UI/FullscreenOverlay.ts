@@ -96,7 +96,7 @@ export class FullscreenOverlay {
             <span uk-icon="icon: play; ratio: 1.2" aria-hidden="true"></span>
           </button>
           <button class="jlz-fs-mute uk-icon-button is-muted" type="button" aria-label="Mute/Unmute" aria-pressed="true">
-            <span class="jlz-fs-volume" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span uk-icon="icon: muted" aria-hidden="true"></span>
           </button>
           <input class="jlz-fs-seek uk-range" type="range" min="0" max="100" value="0" step="0.1" aria-label="Seek" />
           <span class="jlz-fs-time">0:00 / 0:00</span>
@@ -145,11 +145,13 @@ export class FullscreenOverlay {
     this.bigPlay.addEventListener('click', togglePlay)
     this.video.addEventListener('click', togglePlay)
 
-    // Mute toggle
+    // Mute toggle — swap uk-icon between muted/sound
     this.muteBtn.addEventListener('click', () => {
       this.video.muted = !this.video.muted
       this.muteBtn.setAttribute('aria-pressed', String(this.video.muted))
       this.muteBtn.classList.toggle('is-muted', this.video.muted)
+      const muteIcon = this.muteBtn.querySelector('[uk-icon]')
+      if (muteIcon) muteIcon.setAttribute('uk-icon', `icon: ${this.video.muted ? 'muted' : 'sound'}`)
     })
 
     // Video events

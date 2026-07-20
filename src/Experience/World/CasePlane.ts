@@ -22,7 +22,6 @@ import {
   cos,
   atan,
   smoothstep,
-  sqrt,
   texture,
   uniform,
   uv,
@@ -225,17 +224,11 @@ export class CasePlane extends THREE.Mesh {
         .add(arrivalSignal)
         .clamp(0, 1)
 
-      // Pre-invert ACES filmic curve so the global post pass reconstructs
-      // the source linear colour instead of lifting midtones.
-      const inverseA = vec3(float(6.2)).sub(authoredDisplayColor.mul(4.8))
-      const inverseDelta = authoredDisplayColor.sub(0.03)
-      const inverseDiscriminant = inverseDelta
-        .mul(inverseDelta)
-        .add(inverseA.mul(authoredDisplayColor).mul(0.0004))
-      return inverseDelta
-        .add(sqrt(inverseDiscriminant as never) as never)
-        .div(inverseA.mul(2))
-        .clamp(0, 1)
+      // Return authored color directly. Material has toneMapped: false, so
+      // the global ACES post pass does NOT apply to this plane. The texture
+      // is already sRGB-correct; the previous ACES inverse hack caused
+      // color artifacts (shifted hues, blown highlights on saturated colors).
+      return authoredDisplayColor
     })()
 
     material.positionNode = Fn(() => {
