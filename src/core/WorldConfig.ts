@@ -179,7 +179,7 @@ const RAW: RawScene[] = [
     showGallery: false,
     groundColor: 0x101010,
     groundOpacity: 0,
-    sectionTheme: 'dark',
+    sectionTheme: 'light',  // Intro
     sceneTransition: { duration: 0.8, easing: 'ease-out' },
   },
   // ── Section 1: INTRO — dark console field, metal drop ──
@@ -215,7 +215,7 @@ const RAW: RawScene[] = [
     showGallery: false,
     groundColor: 0x101010,
     groundOpacity: 0,
-    sectionTheme: 'dark',
+    sectionTheme: 'dark',  // About
     sceneTransition: { duration: 1.0, easing: 'ease-in-out' },
   },
   {
@@ -253,7 +253,7 @@ const RAW: RawScene[] = [
     showGallery: false,
     groundColor: 0x101010,
     groundOpacity: 0.08,
-    sectionTheme: 'dark',
+    sectionTheme: 'dark',  // Works
     sceneTransition: { duration: 0.6, easing: 'ease-out' },
   },
   // ── Section 3: WORKS — BakuCarousel + cube centered, slightly raised ──
@@ -293,7 +293,7 @@ const RAW: RawScene[] = [
     showGallery: true,
     groundColor: 0x101010,
     groundOpacity: 0.1,
-    sectionTheme: 'dark',
+    sectionTheme: 'light',  // Contact
     sceneObjects: { bakuCarousel: true },
     sceneTransition: { duration: 0.8, easing: 'ease-out' },
   },
@@ -331,7 +331,7 @@ const RAW: RawScene[] = [
     showGallery: false,
     groundColor: 0x121212,
     groundOpacity: 0.4,
-    sectionTheme: 'dark',
+    sectionTheme: 'dark',  // Menu
     sceneObjects: { wireframeText: true },
     sceneTransition: { duration: 0.6, easing: 'ease-out' },
   },

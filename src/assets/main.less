@@ -165,21 +165,9 @@ body:not([data-page='home']) #spa-content {
    also toggles `light-theme` as a synonym for backward compat.
    ------------------------------------------------------------------ */
 
-body.uk-light {
-  color: rgba(5, 5, 7, 0.92);
-}
-
-body.uk-light .studio-title {
-  color: rgba(5, 5, 7, 0.92);
-}
-
-body.uk-light .jlz-nav-link:hover {
-  color: rgba(5, 5, 7, 0.84);
-}
-
-body.uk-light li.uk-active .jlz-nav-link {
-  color: rgba(5, 5, 7, 0.98);
-}
+// Inverse theme: CSS vars in _import.less (html.uk-light) handle all color
+// inversions automatically. No hardcoded body.uk-light color overrides needed —
+// --jlz-color-text, --jlz-color-text-muted, etc. flip via CSS vars.
 
 /* (body.uk-light .jlz-hint__text removed — .jlz-hint DOM element no longer
    exists. Subtitles now populates [data-eyebrow] inside the active section,
@@ -876,16 +864,7 @@ html.jlz-force-cursor .interactive {
 /* 4 direction arrows — discoverability affordance.
    Positioned at N/S/E/W edges of the base. Faint by default, highlight
    (accent color + opacity 1) when drag direction matches. */
-body.uk-light .jlz-joystick__arrow-label {
-  color: rgba(0, 0, 0, 0.5);
-}
-
-body.uk-light .jlz-joystick__arrow {
-  color: rgba(0, 0, 0, 0.3);
-}
-body.uk-light .jlz-joystick__arrow--active {
-  color: var(--jlz-color-accent);
-}
+// Joystick inverse: CSS vars handle color inversion automatically.
 
 @media (max-width: 640px) {
   .jlz-joystick__base {
@@ -933,9 +912,7 @@ body.uk-light .jlz-joystick__arrow--active {
   display: inline-block;
 }
 
-body.uk-light .jlz-eyebrow {
-  opacity: 0.55;
-}
+// Eyebrow: same opacity in both themes (CSS var handles color).
 
 .jlz-section-top {
   flex-shrink: 0;
@@ -1002,10 +979,7 @@ body.uk-light .jlz-eyebrow {
 }
 
 // Console module in light/inverse theme
-body.uk-light .jlz-bottom-module {
-  background: color-mix(in srgb, var(--jlz-color-surface) 70%, transparent);
-  border-color: var(--jlz-color-border);
-}
+// Bottom module inverse: CSS vars handle surface/border inversion.
 
 // Mobile: stack meta above content
 @media (max-width: 639px) {
@@ -1975,14 +1949,7 @@ body[data-page='works'] .jlz-work-card.is-opening .jlz-work-card__inner {
   opacity: 1;
 }
 
-body.uk-light .jlz-showreel-trigger {
-  color: rgba(5, 5, 7, 0.7);
-}
-
-body.uk-light .jlz-showreel-trigger:hover,
-body.uk-light .jlz-showreel-trigger:focus-visible {
-  color: @global-primary-background;
-}
+// Showreel trigger inverse: CSS vars handle color inversion automatically.
 
 @media (max-width: 639px) {
   .jlz-showreel-overlay {
@@ -3184,35 +3151,9 @@ body[data-cinematic-sheet]
 }
 
 // ── Light theme overrides ──
-body.uk-light {
-  .jlz-menu-col-title {
-    color: var(--jlz-color-text-subtle);
-  }
-  .jlz-menu-stat__num {
-    color: var(--jlz-color-text);
-  }
-  .jlz-menu-stat__label {
-    color: var(--jlz-color-text-subtle);
-  }
-  .jlz-menu-nav__toggle {
-    color: var(--jlz-color-text-muted);
-  }
-  .jlz-menu-nav__num {
-    color: var(--jlz-color-text-subtle);
-  }
-  .jlz-menu-nav__label {
-    color: inherit;
-  }
-  .jlz-menu-nav__arrow {
-    color: var(--jlz-color-text-subtle);
-  }
-  .jlz-menu-nav__sub-link {
-    color: var(--jlz-color-text-subtle);
-  }
-  .jlz-menu-nav__sub-num {
-    color: var(--jlz-color-text-subtle);
-  }
-}
+// Menu inverse: CSS vars handle all color inversions automatically.
+// The menu uses var(--jlz-color-text), var(--jlz-color-text-muted), etc.
+// which flip via html.uk-light in _import.less.
 
 // ════════════════════════════════════════════════════════════════════
 // LAB SECTION (section 0, joystick left)
@@ -3326,10 +3267,7 @@ body[data-cinematic-sheet] .jlz-console-bar {
 }
 
 // Console bar adapts to light theme
-body.uk-light .jlz-console-bar {
-  background: color-mix(in srgb, var(--jlz-color-bg) 82%, transparent);
-  border-top-color: var(--jlz-color-border);
-}
+// Console bar inverse: CSS vars handle bg/border inversion.
 
 // ════════════════════════════════════════════════════════════════════
 // MOBILE MENU — full-screen centered overlay
@@ -3403,36 +3341,7 @@ body.uk-light .jlz-console-bar {
 }
 
 // ════════════════════════════════════════════════════════════════════
-// INVERSE CONTRAST FIXES — ensure readability in light theme
+// INVERSE CONTRAST — CSS vars handle all inversions automatically.
+// No body.uk-light overrides needed: --jlz-color-text, --jlz-color-bg,
+// --jlz-color-surface, etc. all flip via html.uk-light in _import.less.
 // ════════════════════════════════════════════════════════════════════
-body.uk-light {
-  // Console bar in light theme — darker text on light translucent surface
-  .jlz-console-bar {
-    background: color-mix(in srgb, var(--jlz-color-bg) 88%, transparent);
-  }
-
-  // Storyline items — ensure contrast on light bg
-  .jlz-storyline__item {
-    background: var(--jlz-color-surface);
-    color: var(--jlz-color-text-subtle);
-  }
-
-  .jlz-storyline__item:hover,
-  .jlz-storyline__item:focus-visible,
-  .jlz-storyline__item.is-active {
-    color: var(--jlz-color-text);
-    background: color-mix(in srgb, var(--jlz-color-accent) 12%, var(--jlz-color-surface));
-  }
-
-  // Menu overlay — ensure dark text on light surfaces
-  .jlz-menu-overlay .jlz-menu-col--stat {
-    background: var(--jlz-color-surface);
-    border-color: var(--jlz-color-border);
-  }
-
-  // Contact footer — ensure contrast
-  [data-contact-footer] {
-    background: var(--jlz-color-bg-elevated);
-    color: var(--jlz-color-text);
-  }
-}
