@@ -26,10 +26,11 @@ function writeSoundMuted(muted: boolean): void {
 }
 
 // ── Inline outline icons (UIKit3 has no sun/moon) ──
-// Console-style thin-line icons: reticle sun (light mode) + console moon (dark mode).
-// Stroke width 1.2 matches the cursor reticle and menu glyph for visual unity.
-const SUN_SVG = `<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" class="jlz-theme-svg jlz-theme-svg--sun" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 1.5v3M12 19.5v3M22.5 12h-3M4.5 12h-3M19.07 4.93l-2.12 2.12M7.05 16.95l-2.12 2.12M19.07 19.07l-2.12-2.12M7.05 7.05L4.93 4.93"/></svg>`
-const MOON_SVG = `<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" class="jlz-theme-svg jlz-theme-svg--moon" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>`
+// Console-style bold icons: reticle sun (light mode) + console moon (dark mode).
+// Stroke width 2 matches all other console icons for visual unity.
+const SUN_SVG = `<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" class="jlz-theme-svg jlz-theme-svg--sun" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M22 12h-3M5 12H2M18.5 5.5l-2 2M7.5 16.5l-2 2M18.5 18.5l-2-2M7.5 7.5l-2-2"/></svg>`
+// Console moon — crescent with pixel-style crater dots
+const MOON_SVG = `<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" class="jlz-theme-svg jlz-theme-svg--moon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14A8 8 0 1 1 10 4a6 6 0 0 0 10 10Z"/><circle fill="currentColor" stroke="none" cx="14" cy="9" r="0.8"/><circle fill="currentColor" stroke="none" cx="16.5" cy="12" r="0.6"/><circle fill="currentColor" stroke="none" cx="13" cy="13" r="0.5"/></svg>`
 
 export class UIMenu {
   private navEl: HTMLElement
