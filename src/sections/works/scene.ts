@@ -4,19 +4,24 @@ import * as THREE from 'three'
 import { JunniParticles } from '../../Experience/World/JunniParticles'
 import { BakuCarousel } from '../../Experience/World/BakuCarousel'
 
-// Shared sprite sheet texture (6 frames, 768×128 — junni pattern.jpg).
-// TODO: replace with a custom JLZ texture.
-const particleTexture = new THREE.TextureLoader().load('/textures/sec3-particles.jpg')
-particleTexture.colorSpace = THREE.SRGBColorSpace
-// R-3 fix: disable mipmaps on sprite sheet — default LinearMipmapLinearFilter
-// averages across frame boundaries at distance → visible color bleeding between
-// adjacent animation frames. LinearFilter (no mipmaps) keeps frames crisp.
-particleTexture.minFilter = THREE.LinearFilter
-particleTexture.generateMipmaps = false
+/** Owned particle texture reference (stored on group for lifecycle). */
+let _section3Texture: THREE.Texture | null = null
 
 export function createSection3(): THREE.Group {
   const g = new THREE.Group()
   g.name = 'works'
+
+  // Shared sprite sheet texture (6 frames, 768×128 — junni pattern.jpg).
+  // Loaded inside createSection3() per RULES.md ownership rule.
+  // R-3 fix: disable mipmaps on sprite sheet — default LinearMipmapLinearFilter
+  // averages across frame boundaries at distance → visible color bleeding between
+  // adjacent animation frames. LinearFilter (no mipmaps) keeps frames crisp.
+  const particleTexture = new THREE.TextureLoader().load('/textures/sec3-particles.jpg')
+  particleTexture.colorSpace = THREE.SRGBColorSpace
+  particleTexture.minFilter = THREE.LinearFilter
+  particleTexture.generateMipmaps = false
+  _section3Texture = particleTexture
+
   // BakuCarousel — the project stream resolves from depth around the baku.
   // Once revealed (morphT > 0.5) the stream can be scrolled/dragged,
   // and clicking a card opens the fullscreen ProjectOverlay.
@@ -45,9 +50,10 @@ export function createSection3(): THREE.Group {
   return g
 }
 
-// A-8 fix: dispose the module-level particleTexture (HMR GPU leak — without
-// this, each hot-reload of this module creates a new texture; old one's GPU
-// resource persists until context loss). Called from World.disposeSceneGroups.
+/** Dispose the works-section particle texture. Called from World.disposeSceneGroups. */
 export function disposeSection3Textures(): void {
-  particleTexture.dispose()
+  if (_section3Texture) {
+    _section3Texture.dispose()
+    _section3Texture = null
+  }
 }

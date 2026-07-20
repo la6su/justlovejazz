@@ -96,28 +96,6 @@ export class EnvSphere extends THREE.Mesh {
   }
 
   /**
-   * Attach to scene — no longer sets scene.background (mesh is visible).
-   * Kept for API compat with World.ts.
-   */
-  attachToScene(_scene: THREE.Scene): void {
-    // No-op — mesh is visible, renders itself. scene.background stays null.
-  }
-
-  /** Set section colors (compat with old API — now ignored, patterns are fixed). */
-  setSectionColors(
-    _mainColor: THREE.Color,
-    _groundColor: THREE.Color,
-    _glowColor: THREE.Color,
-  ): void {
-    // No-op — patterns are fixed per section (junni style)
-  }
-
-  /** Set blend factor (compat with old API — now ignored). */
-  setBlend(_blend: number): void {
-    // No-op — section weights drive the blend now
-  }
-
-  /**
    * Change section — animate uSection weights.
    * Called by World.changeSection(idx).
    * target[idx] = 1, all others = 0. Lerped over ~1s.
@@ -127,11 +105,6 @@ export class EnvSphere extends THREE.Mesh {
     this._targetWeights = new Array(SECTION_PATTERNS.length).fill(0)
     this._targetWeights[idx] = 1
     this._dirty = true
-  }
-
-  /** Keep the API used by sheets; the mono field has no separate sheet effect. */
-  setActiveSection(_idx: number): void {
-    // Intentionally no-op: sheets share the same monochrome environment.
   }
 
   get hasVisibleAmbientMotion(): boolean {

@@ -10,11 +10,11 @@ import { UIManager } from '../UI/UIManager'
 import { input } from './Input'
 import { StateBus } from '../core/StateBus'
 import type { World } from '../core/World'
-import { WorksPortfolio } from './WorksPortfolio'
+import { createWorksPortfolio, type WorksPortfolio } from './WorksPortfolio'
 import { FullscreenOverlay } from '../UI/FullscreenOverlay'
 import { NoiseText } from './NoiseText'
 
-import { SfxSystem } from '../core/SfxSystem'
+import { SfxSystem, getSoundMuted } from '../core/SfxSystem'
 import { CinematicNav } from '../UI/CinematicNav'
 import { UIMenu } from '../UI/UIMenu'
 // worldDNA.ts removed — TSL node system never attached (attachWorldDNA never
@@ -364,9 +364,6 @@ export class Experience {
     // CinematicNav — vertical native story track plus top/bottom sheets.
     this._storyNav = new CinematicNav(this.scene, this.camera.instance, 6)
     this._storyNav.onSectionChange((idx) => {
-      // Sheets do not wait for scroll progress: the background begins its
-      // reveal as soon as Menu or Contact is selected.
-      this.world?.envSphere.setActiveSection(idx)
       this._uiMenu?.setActive(idx)
       this._needsRender = true
     })
@@ -473,12 +470,7 @@ export class Experience {
     // Previously Experience only muted when 'off' was set → first-visit had
     // UIMenu showing "off" but SFX actually playing. Now both agree: muted
     // unless explicitly 'on'.
-    try {
-      const soundPref = localStorage.getItem('jlz:sound')
-      this.sfx.setMuted(soundPref !== 'on')
-    } catch {
-      /* localStorage unavailable */
-    }
+    this.sfx.setMuted(getSoundMuted())
 
     // Runtime sound toggle (from UIMenu or other in-app controls)
     this._soundToggleHandler = (e: Event) => {
@@ -1031,7 +1023,7 @@ export class Experience {
     // AND the renderer instance (was previously only instance.dispose()).
     this.renderer.dispose()
     this.camera.destroy()
-    this.portfolio?.dispose()
+    this.portfolio = null
     this.overlay?.dispose()
     this._uiMenu?.dispose()
     this._uiMenu = null
@@ -1063,15 +1055,12 @@ export class Experience {
     // Re-check after async import — page may have changed during await.
     if (this.portfolio) return // another call won
 
-    this.portfolio = new WorksPortfolio(
+    this.portfolio = createWorksPortfolio(
       PROJECTS,
       (idx) => {
         this.onProjectSelect(idx)
       }, // prev/next → preload project data into overlay
     )
-    // Portfolio group at world origin — frontal camera at [0,1,7] looks at [0,1,0].
-    this.portfolio.group.position.set(0, 1, 0)
-    this.world.add(this.portfolio.group)
 
     // FullscreenOverlay is normally created by UIManager. Project navigation
     // is routed through `jlz:project-navigate` so arrows and keyboard use the
