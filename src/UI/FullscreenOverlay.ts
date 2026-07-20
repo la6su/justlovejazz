@@ -52,6 +52,7 @@ export class FullscreenOverlay {
   private controlsEl: HTMLElement
   private _keydownHandler: ((e: KeyboardEvent) => void) | null = null
   private _autoplayTimer: ReturnType<typeof setTimeout> | null = null
+  private _enterFallback: ReturnType<typeof setTimeout> | null = null
   private _posterRequestId = 0
   private _posterUrl: string | null = null
   private _mediaGeneration = 0
@@ -196,8 +197,25 @@ export class FullscreenOverlay {
     // enter/opening flags needed.
     UIkit.util.on(this.container, 'show', () => {
       document.addEventListener('keydown', this._keydownHandler!)
+      // Fallback: schedule is-entered in case UIkit's 'shown' event is delayed
+      // or never fires (CSS specificity conflicts, transitionend race conditions).
+      // Double-rAF ensures the browser has painted the initial clipped state
+      // before we trigger the clip-path transition.
+      if (this._enterFallback) clearTimeout(this._enterFallback)
+      this._enterFallback = setTimeout(() => {
+        this._enterFallback = null
+        if (!this.container.classList.contains('is-entered')) {
+          this.container.classList.add('is-entered')
+          this._tryAutoplay()
+        }
+      }, 120)
     })
     UIkit.util.on(this.container, 'shown', () => {
+      // Clear the fallback — UIkit confirmed the modal is shown.
+      if (this._enterFallback) {
+        clearTimeout(this._enterFallback)
+        this._enterFallback = null
+      }
       // Trigger the CSS reveal transition (clip-path + scale + opacity).
       // Without this class, .jlz-fs-dialog stays at clip-path:inset(50%)
       // and the overlay is invisible. For plane-origin opens, the 3D plane
@@ -206,18 +224,7 @@ export class FullscreenOverlay {
       requestAnimationFrame(() => {
         this.container.classList.add('is-entered')
       })
-      const source = this.video.querySelector('source')
-      if (this.container.classList.contains('is-video-mode') && source && source.src) {
-        if (isFinite(this.video.duration)) {
-          this.video.currentTime = 0
-        }
-        this._autoplayTimer = setTimeout(() => {
-          this._autoplayTimer = null
-          this.video.play().catch(() => {
-            this.bigPlay.style.opacity = '1'
-          })
-        }, 0)
-      }
+      this._tryAutoplay()
     })
     UIkit.util.on(this.container, 'hide', () => {
       if (this._autoplayTimer) {
@@ -422,12 +429,32 @@ export class FullscreenOverlay {
     return this.container.classList.contains('uk-open')
   }
 
+  /** Attempt video autoplay (muted videos bypass browser autoplay policies). */
+  private _tryAutoplay(): void {
+    const source = this.video.querySelector('source')
+    if (this.container.classList.contains('is-video-mode') && source && source.src) {
+      if (isFinite(this.video.duration)) {
+        this.video.currentTime = 0
+      }
+      this._autoplayTimer = setTimeout(() => {
+        this._autoplayTimer = null
+        this.video.play().catch(() => {
+          this.bigPlay.style.opacity = '1'
+        })
+      }, 0)
+    }
+  }
+
   dispose(): void {
     this._posterRequestId += 1
     this._mediaGeneration += 1
     if (this._autoplayTimer) {
       clearTimeout(this._autoplayTimer)
       this._autoplayTimer = null
+    }
+    if (this._enterFallback) {
+      clearTimeout(this._enterFallback)
+      this._enterFallback = null
     }
     if (this._keydownHandler) {
       document.removeEventListener('keydown', this._keydownHandler)

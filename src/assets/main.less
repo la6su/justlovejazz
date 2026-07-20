@@ -388,7 +388,9 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
 
 // Modal background — dark + blur
 // Fullscreen overlay — always uses CSS vars for automatic light/dark adaptation.
-// No !important needed: CSS vars flip via body.uk-light overrides in _import.less.
+// IMPORTANT: All selectors targeting .jlz-fs-dialog MUST use .jlz-fs-overlay prefix
+// (SPEC:2) to beat UIkit's .uk-modal-full .uk-modal-dialog (SPEC:2).
+// Our CSS loads after UIkit, so equal specificity + later load = we win.
 .jlz-fs-overlay {
   color: var(--jlz-color-text);
   background: var(--jlz-color-bg);
@@ -411,12 +413,18 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
   z-index: 30010 !important;
 }
 
-.jlz-fs-dialog {
+// Dialog base — SPEC:2 (.jlz-fs-overlay .jlz-fs-dialog) matches UIkit's
+// .uk-modal-full .uk-modal-dialog (SPEC:2). Our CSS loads after UIkit
+// so equal specificity → we win. This ensures our initial clip-path,
+// transform, opacity, and transition values are NOT overridden by UIkit.
+.jlz-fs-overlay .jlz-fs-dialog {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
   width: 100%;
   height: 100vh;
   height: 100dvh;
+  margin: 0 !important;
+  max-width: 100% !important;
   overflow: hidden;
   color: var(--jlz-color-text);
   background: var(--jlz-color-bg) !important;
@@ -712,7 +720,7 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .jlz-fs-dialog,
+  .jlz-fs-overlay .jlz-fs-dialog,
   .jlz-fs-meta,
   .jlz-fs-media-stage,
   .jlz-fs-controls {
