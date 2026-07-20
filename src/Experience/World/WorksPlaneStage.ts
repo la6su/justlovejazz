@@ -105,6 +105,7 @@ export class WorksPlaneStage extends THREE.Group {
                 texture.colorSpace = THREE.SRGBColorSpace
                 texture.minFilter = THREE.LinearMipmapLinearFilter
                 texture.magFilter = THREE.LinearFilter
+                texture.anisotropy = 4
                 resolve(texture)
               },
               undefined,

@@ -14,7 +14,7 @@ export function introSection(): string {
       { key: 'home.studio.desc2', text: 'Strategy, design and WebGPU in one system.' },
     ])}
     <div class="uk-margin-top">
-      <button type="button" class="uk-button uk-button-default uk-button-small" data-showreel-trigger>
+      <button type="button" class="uk-button uk-button-default uk-button-small" id="jlz-showreel-trigger" data-cursor="play">
         <span uk-icon="icon: play; ratio: 0.7" aria-hidden="true"></span>
         <span data-i18n="home.studio.showreel">Play showreel</span>
       </button>
