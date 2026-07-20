@@ -37,7 +37,6 @@ const STACKED_LAYOUT: readonly [CaseLayout, CaseLayout] = [
 ]
 const TRANSITION_DURATION = 1.15
 const OVERLAY_TAKEOVER = 0.86
-const CRT_TRIGGER = 0.42
 const CASE_PLANE_HEIGHT = 9 / 16
 
 interface OpeningState {
@@ -45,7 +44,6 @@ interface OpeningState {
   index: number
   time: number
   started: boolean
-  crtTriggered: boolean
   reducedMotion: boolean
   openOverlay: (index: number) => void
   startPosition: THREE.Vector3
@@ -156,7 +154,6 @@ export class WorksPlaneStage extends THREE.Group {
       index,
       time: 0,
       started: false,
-      crtTriggered: false,
       reducedMotion: prefersReducedMotion(),
       openOverlay,
       startPosition: card.position.clone(),
@@ -265,11 +262,6 @@ export class WorksPlaneStage extends THREE.Group {
     opening.card.setParallax(0)
     opening.card.setTransition(THREE.MathUtils.smoothstep(t, 0, 1))
     opening.card.update(dt, true)
-
-    if (!opening.crtTriggered && t >= CRT_TRIGGER) {
-      opening.crtTriggered = true
-      if (!opening.reducedMotion) opening.card.triggerCrtOn()
-    }
 
     // UIkit takes over only after the focus and most of the camera travel have
     // resolved, while the real plane still safely fills the view.

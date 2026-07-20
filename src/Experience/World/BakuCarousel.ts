@@ -46,7 +46,6 @@ const MOMENTUM_THRESHOLD = 0.0007 // below this → snap to nearest card
 const SNAP_STEP = 1
 const FULLSCREEN_DURATION = 1.15
 const FULLSCREEN_TAKEOVER = 0.86
-const CRT_TRIGGER = 0.42
 const CASE_PLANE_HEIGHT = 9 / 16
 
 export class BakuCarousel extends THREE.Group {
@@ -83,7 +82,6 @@ export class BakuCarousel extends THREE.Group {
     index: number
     time: number
     started: boolean
-    crtTriggered: boolean
     reducedMotion: boolean
     startPosition: THREE.Vector3
     startScale: number
@@ -350,7 +348,6 @@ export class BakuCarousel extends THREE.Group {
       index,
       time: 0,
       started: false,
-      crtTriggered: false,
       reducedMotion: prefersReducedMotion(),
       startPosition: card.position.clone(),
       startScale: card.scale.x,
@@ -491,11 +488,6 @@ export class BakuCarousel extends THREE.Group {
         card.setTransition(this.smoothstep(opening.time))
       }
       card.update(dt, this._active)
-    }
-
-    if (opening && !opening.crtTriggered && opening.time >= CRT_TRIGGER) {
-      opening.crtTriggered = true
-      if (!opening.reducedMotion) opening.card.triggerCrtOn()
     }
 
     if (opening && !opening.started && opening.time >= FULLSCREEN_TAKEOVER) {

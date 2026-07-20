@@ -38,7 +38,6 @@ export class CasePlane extends THREE.Mesh {
   private _motionDirection = 1
   private _edgeWarpValue = 0
   private _edgeWarpTarget = 0
-  private _crtValue = 0
   // Per-plane override state (set directly on shared uniforms)
   private _myTransition = 0
   private _myReveal = 0
@@ -107,8 +106,7 @@ export class CasePlane extends THREE.Mesh {
       this._wobbleTarget > 0.002 ||
       this._motionValue > 0.002 ||
       this._motionTarget > 0.002 ||
-      Math.abs(this._edgeWarpValue - this._edgeWarpTarget) > 0.002 ||
-      this._crtValue > 0.002
+      Math.abs(this._edgeWarpValue - this._edgeWarpTarget) > 0.002
     )
   }
 
@@ -131,10 +129,6 @@ export class CasePlane extends THREE.Mesh {
     this._edgeWarpTarget = THREE.MathUtils.clamp(amount, 0, 1)
   }
 
-  triggerCrtOn(): void {
-    this._crtValue = 1
-  }
-
   setTransition(value: number): void {
     this._myTransition = THREE.MathUtils.clamp(value, 0, 1)
     sharedState.value.x = this._myTransition
@@ -151,8 +145,7 @@ export class CasePlane extends THREE.Mesh {
       this._wobbleTarget < 0.002 &&
       this._motionValue < 0.002 &&
       this._motionTarget < 0.002 &&
-      Math.abs(this._edgeWarpValue - this._edgeWarpTarget) < 0.002 &&
-      this._crtValue < 0.002
+      Math.abs(this._edgeWarpValue - this._edgeWarpTarget) < 0.002
     ) {
       return
     }
@@ -163,13 +156,11 @@ export class CasePlane extends THREE.Mesh {
     this._motionTarget *= Math.exp(-dt * 10)
     this._motionValue += (this._motionTarget - this._motionValue) * Math.min(1, dt * 16)
     this._edgeWarpValue += (this._edgeWarpTarget - this._edgeWarpValue) * Math.min(1, dt * 8)
-    this._crtValue *= Math.exp(-dt * 13)
 
     // Write to shared uniforms (last writer wins — only one plane animates at a time)
     sharedState.value.z = this._wobbleValue
     sharedState2.value.x = this._motionValue
     sharedState2.value.y = this._edgeWarpValue
-    sharedState2.value.z = this._crtValue
     sharedState3.value.y = this._motionDirection
   }
 
