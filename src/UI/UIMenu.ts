@@ -6,24 +6,7 @@
 
 import { toggleLang, getLang } from '../core/i18n'
 import { themeManager } from '../core/ThemeManager'
-
-const SOUND_STORAGE_KEY = 'jlz:sound'
-
-function readSoundMuted(): boolean {
-  try {
-    return localStorage.getItem(SOUND_STORAGE_KEY) !== 'on'
-  } catch {
-    return true
-  }
-}
-
-function writeSoundMuted(muted: boolean): void {
-  try {
-    localStorage.setItem(SOUND_STORAGE_KEY, muted ? 'off' : 'on')
-  } catch {
-    /* localStorage unavailable */
-  }
-}
+import { getSoundMuted, setSoundMutedPreference } from '../core/SfxSystem'
 
 // ── Inline outline icons (UIKit3 has no sun/moon) ──
 // Console-style bold icons: reticle sun (light mode) + console moon (dark mode).
@@ -40,7 +23,7 @@ export class UIMenu {
   private _langHandler: (() => void) | null = null
   private _themeChangeHandler: (() => void) | null = null
   private _soundToggleHandler: ((e: Event) => void) | null = null
-  private _soundMuted = readSoundMuted()
+  private _soundMuted = getSoundMuted()
   private _menuBtn: HTMLButtonElement | null = null
   private _contactBtn: HTMLButtonElement | null = null
   private _navigate: ((index: number) => void) | null = null
@@ -129,7 +112,7 @@ export class UIMenu {
       const detail = (e as CustomEvent<{ muted: boolean }>).detail
       if (detail) {
         this._soundMuted = detail.muted
-        writeSoundMuted(this._soundMuted)
+        setSoundMutedPreference(this._soundMuted)
         this._syncSoundButton()
       }
     }

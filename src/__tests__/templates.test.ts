@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { sectionShell, homeTop, contentTop, i18nDesc, serviceExplore, descBlock, storyBottom, contentBottom } from '../sections/_shared/constants'
+import type { PageId } from '../sections/_shared/constants'
 
 describe('sectionShell', () => {
   it('wraps content in a section with correct id', () => {

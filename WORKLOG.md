@@ -1,5 +1,52 @@
 # Worklog
 
+## 2026-07-20 — Audit remediation Phase A + B
+
+### Decision
+
+Seven items from the technical audit (docs/AUDIT.md) addressed in one PR.
+All changes are P1/P2 from the priority backlog — safe wins and
+structural simplification with zero rendering or visual regression risk.
+
+### Changes
+
+- **A-1 EnvSphere no-ops:** Removed `attachToScene`, `setSectionColors`,
+  `setBlend`, `setActiveSection` — all documented no-ops with comments
+  explaining retained "API compat."  Callers in `Experience.ts` (sheet
+  section-change) and `World.ts` (init) removed. Mesh is self-rendering
+  via `renderOrder=-1000`; section weights drive the blend.
+- **A-2 WorksPortfolio:** Replaced class with Three.js `Group` (never
+  rendered, `visible=false`) with a plain interface + `createWorksPortfolio()`
+  factory. Eliminates the `three` import entirely and the `dispose()`
+  that only called `group.clear()`. `Experience.ts` no longer positions
+  or adds the phantom group to the scene. DevPanel still accesses
+  `portfolio.prev()/next()` via the identical method surface.
+- **A-3 IntersectionObserver leak:** `entry-app.ts` `setupTitleObserver()`
+  now stores the observer in `_titleObserver` and disconnects the previous
+  one before creating a new one (HMR re-init guard).
+- **A-4 Sound preference:** Extracted duplicated `localStorage.getItem('jlz:sound')`
+  reads from `entry-app.ts`, `UIMenu.ts`, `Experience.ts` into
+  `getSoundMuted()` in `SfxSystem.ts`. Added matching
+  `setSoundMutedPreference()`. Three consumers updated.
+- **A-5 Timeout guard:** Inline 60s safety-net in `index.html` now checks
+  `content.contains(btn)` before overwriting innerHTML — if `entry-app.ts`
+  already showed its error UI, the retry link is preserved.
+- **A-7 Focus trap:** `FullscreenOverlay` now traps Tab/Shift+Tab inside
+  `.uk-modal-dialog` while the overlay is open. Attached via `focusin`
+  on UIkit's `show` event, removed on `hide` and `dispose()`.
+- **B-4 Texture ownership:** Module-level `particleTexture` in
+  `works/scene.ts` moved inside `createSection3()`. Owned by a
+  module-scoped `_section3Texture` variable, disposed in
+  `disposeSection3Textures()`. Eliminates HMR GPU leak.
+
+### Verification
+
+`type-check` 0 errors, `lint` 0 errors (54 pre-existing warnings),
+`test:unit` 86/86, `build` 2.33s — all green. Bundle sizes within
+existing budgets.
+
+---
+
 ## 2026-07-18 — Parallax plane-to-still Works fullscreen
 
 ### Decision

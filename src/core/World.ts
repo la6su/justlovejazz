@@ -93,9 +93,7 @@ export class World extends THREE.Group {
 
     // ── EnvSphere — Junni-style per-section background (BackSide sphere + CanvasTexture).
     // 6 per-section patterns, mixed by uSection[6] weights. Animated on section change.
-    // attachToScene sets scene.background — this is the SOLE background.
     this.envSphere = new EnvSphere()
-    this.envSphere.attachToScene(scene)
     this.add(this.envSphere) // added for lifecycle (update/dispose)
 
     // One-shot portal-like echo of the inline splash squares. Despite its

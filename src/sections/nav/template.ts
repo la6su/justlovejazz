@@ -431,4 +431,5 @@ export function initMenuToolbar(): void {
   })
 }
 
-
+// wireMenuToolbarGlobals removed — was a no-op after config controls
+// moved to UIMenu.ts. Call site in UIManager.ts deleted.

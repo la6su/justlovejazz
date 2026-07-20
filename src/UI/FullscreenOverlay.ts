@@ -51,8 +51,8 @@ export class FullscreenOverlay {
   private counterEl: HTMLElement
   private controlsEl: HTMLElement
   private _keydownHandler: ((e: KeyboardEvent) => void) | null = null
+  private _focusTrapHandler: ((e: FocusEvent) => void) | null = null
   private _autoplayTimer: ReturnType<typeof setTimeout> | null = null
-  private _enterFallback: ReturnType<typeof setTimeout> | null = null
   private _posterRequestId = 0
   private _posterUrl: string | null = null
   private _mediaGeneration = 0
@@ -197,34 +197,21 @@ export class FullscreenOverlay {
     // enter/opening flags needed.
     UIkit.util.on(this.container, 'show', () => {
       document.addEventListener('keydown', this._keydownHandler!)
-      // Fallback: schedule is-entered in case UIkit's 'shown' event is delayed
-      // or never fires (CSS specificity conflicts, transitionend race conditions).
-      // Double-rAF ensures the browser has painted the initial clipped state
-      // before we trigger the clip-path transition.
-      if (this._enterFallback) clearTimeout(this._enterFallback)
-      this._enterFallback = setTimeout(() => {
-        this._enterFallback = null
-        if (!this.container.classList.contains('is-entered')) {
-          this.container.classList.add('is-entered')
-          this._tryAutoplay()
-        }
-      }, 120)
+      document.addEventListener('focusin', this._focusTrapHandler!)
     })
     UIkit.util.on(this.container, 'shown', () => {
-      // Clear the fallback — UIkit confirmed the modal is shown.
-      if (this._enterFallback) {
-        clearTimeout(this._enterFallback)
-        this._enterFallback = null
+      const source = this.video.querySelector('source')
+      if (this.container.classList.contains('is-video-mode') && source && source.src) {
+        if (isFinite(this.video.duration)) {
+          this.video.currentTime = 0
+        }
+        this._autoplayTimer = setTimeout(() => {
+          this._autoplayTimer = null
+          this.video.play().catch(() => {
+            this.bigPlay.style.opacity = '1'
+          })
+        }, 0)
       }
-      // Trigger the CSS reveal transition (clip-path + scale + opacity).
-      // Without this class, .jlz-fs-dialog stays at clip-path:inset(50%)
-      // and the overlay is invisible. For plane-origin opens, the 3D plane
-      // is already fullscreen so this is a no-op (is-plane-origin overrides
-      // transition: none).
-      requestAnimationFrame(() => {
-        this.container.classList.add('is-entered')
-      })
-      this._tryAutoplay()
     })
     UIkit.util.on(this.container, 'hide', () => {
       if (this._autoplayTimer) {
@@ -232,12 +219,14 @@ export class FullscreenOverlay {
         this._autoplayTimer = null
       }
       this.container.classList.remove('is-playing')
-      this.container.classList.remove('is-entered')
       this.video.pause()
       this.onClose?.()
       // Remove keyboard listener when modal closes — clean lifecycle, no
       // stale listeners intercepting events while the overlay is hidden.
       document.removeEventListener('keydown', this._keydownHandler!)
+      if (this._focusTrapHandler) {
+        document.removeEventListener('focusin', this._focusTrapHandler)
+      }
     })
 
     // Keyboard: Space (play/pause), ArrowLeft/Right (prev/next)
@@ -258,6 +247,23 @@ export class FullscreenOverlay {
         e.preventDefault()
         e.stopImmediatePropagation()
         this.navigate(1)
+      }
+    }
+
+    // Focus trap: keep Tab/Shift+Tab within the overlay dialog.
+    // Without this, keyboard users can Tab out of the modal into
+    // elements behind it. UIkit 3 modal does NOT enforce a focus trap.
+    this._focusTrapHandler = (e: FocusEvent) => {
+      const dialog = this.container.querySelector<HTMLElement>('.uk-modal-dialog')
+      if (!dialog) return
+      if (!dialog.contains(e.target as Node)) {
+        e.preventDefault()
+        const first = dialog.querySelector<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        )
+        if (first) {
+          first.focus()
+        }
       }
     }
   }
@@ -429,22 +435,6 @@ export class FullscreenOverlay {
     return this.container.classList.contains('uk-open')
   }
 
-  /** Attempt video autoplay (muted videos bypass browser autoplay policies). */
-  private _tryAutoplay(): void {
-    const source = this.video.querySelector('source')
-    if (this.container.classList.contains('is-video-mode') && source && source.src) {
-      if (isFinite(this.video.duration)) {
-        this.video.currentTime = 0
-      }
-      this._autoplayTimer = setTimeout(() => {
-        this._autoplayTimer = null
-        this.video.play().catch(() => {
-          this.bigPlay.style.opacity = '1'
-        })
-      }, 0)
-    }
-  }
-
   dispose(): void {
     this._posterRequestId += 1
     this._mediaGeneration += 1
@@ -452,13 +442,13 @@ export class FullscreenOverlay {
       clearTimeout(this._autoplayTimer)
       this._autoplayTimer = null
     }
-    if (this._enterFallback) {
-      clearTimeout(this._enterFallback)
-      this._enterFallback = null
-    }
     if (this._keydownHandler) {
       document.removeEventListener('keydown', this._keydownHandler)
       this._keydownHandler = null
+    }
+    if (this._focusTrapHandler) {
+      document.removeEventListener('focusin', this._focusTrapHandler)
+      this._focusTrapHandler = null
     }
     UIkit.modal(this.container).$destroy()
     this.container.remove()
