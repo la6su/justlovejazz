@@ -605,7 +605,8 @@ export class Experience {
 
     this._showreelPlayHandler = () => {
       if (!this.overlay) return
-      // Open overlay with showreel video (coming-soon.mp4 placeholder).
+      // Showreel uses the same unified video as all project overlays.
+      // No prev/next nav — showreel is a single piece.
       this.overlay.open({
         mode: 'video',
         videoSrc: '/assets/video/coming-soon.mp4',
@@ -1133,10 +1134,10 @@ export class Experience {
       year?: string
     }
     const opts = {
-      mode: 'image' as const,
-      // Works fullscreen is the selected still, not a second carousel. The
-      // same texture is already on the WebGL plane, so UIkit can take over
-      // without an aspect-ratio or content swap.
+      mode: 'video' as const,
+      // Unified: all overlays use the same showreel placeholder video for now.
+      // Project poster is shown as the pre-play image; video autoplays on open.
+      videoSrc: '/assets/video/coming-soon.mp4',
       poster: p.textureUrl,
       title: p.title,
       category: `${p.year ?? ''} · ${p.category ?? ''}`,

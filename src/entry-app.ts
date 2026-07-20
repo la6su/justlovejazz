@@ -1,5 +1,4 @@
 import UIkit from 'uikit'
-import Icons from 'uikit/dist/js/uikit-icons'
 import { initRouter } from './router'
 import { bootstrap as bootstrapApp, type BootstrapOptions } from './main-app'
 import { BlurFade } from './Experience/BlurFade'
@@ -159,10 +158,9 @@ export async function startApp(): Promise<void> {
   const style = document.createElement('style')
   style.textContent = (cssModule as unknown as { default: string }).default || ''
   document.head.appendChild(style)
-  ;(UIkit as { use: (p: object) => void }).use(Icons as object)
-
-  // Register console-themed SVG icons (thin-line, currentColor) to replace
-  // UIKit defaults. Must run AFTER UIkit.use(Icons) so the icon component exists.
+  // Register console-themed SVG icons — replaces UIKit's default icon set
+  // (76KB) with our custom pixel/console-style icons. No uikit-icons import.
+  // UIKit's icon component is built into the core; we just register our SVGs.
   import('./assets/console-icons').then(({ registerConsoleIcons }) => {
     registerConsoleIcons()
   }).catch(() => { /* icons are enhancement, not critical */ })

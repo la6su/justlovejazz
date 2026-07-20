@@ -399,20 +399,20 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
    ------------------------------------------------------------------ */
 
 // Modal background — dark + blur
+// Fullscreen overlay — always uses CSS vars for automatic light/dark adaptation.
+// No !important needed: CSS vars flip via body.uk-light overrides in _import.less.
 .jlz-fs-overlay {
-  color: var(--jlz-color-text) !important;
-  background: var(--jlz-color-bg) !important;
+  color: var(--jlz-color-text);
+  background: var(--jlz-color-bg);
 }
 
-// The overlay is an intentionally fixed dark viewing room. Global inverse
-// mode must not turn UIkit headings and controls dark against this surface.
 .jlz-fs-overlay .jlz-fs-title,
 .jlz-fs-overlay .jlz-fs-close,
 .jlz-fs-overlay .jlz-fs-prev,
 .jlz-fs-overlay .jlz-fs-next,
 .jlz-fs-overlay .jlz-fs-big-play,
 .jlz-fs-overlay .jlz-fs-controls .uk-button {
-  color: var(--jlz-color-text) !important;
+  color: var(--jlz-color-text);
 }
 
 .jlz-fs-overlay:not(.uk-open) {
@@ -656,36 +656,7 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
   white-space: nowrap;
 }
 
-.jlz-fs-volume {
-  display: inline-flex;
-  height: 1rem;
-  align-items: center;
-  gap: 2px;
-}
-
-.jlz-fs-volume i {
-  display: block;
-  width: 2px;
-  border-radius: 1px;
-  background: currentColor;
-  transition: height 0.25s ease;
-}
-
-.jlz-fs-volume i:nth-child(1) {
-  height: 35%;
-}
-
-.jlz-fs-volume i:nth-child(2) {
-  height: 75%;
-}
-
-.jlz-fs-volume i:nth-child(3) {
-  height: 52%;
-}
-
-.jlz-fs-mute.is-muted .jlz-fs-volume i {
-  height: 2px;
-}
+// (fs-volume CSS removed — mute button now uses uk-icon muted/sound)
 
 .jlz-fs-close {
   z-index: 6;
