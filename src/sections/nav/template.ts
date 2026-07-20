@@ -431,16 +431,4 @@ export function initMenuToolbar(): void {
   })
 }
 
-/**
- * Wire global listeners ONCE (not per renderView). Called by main-app.ts
- * after UIManager.init().
- * (Config control listeners removed — UIMenu.ts owns them now. This function
- *  is kept as a no-op for backward compat with UIManager.ts call site.)
- */
-let _wired = false
-export function wireMenuToolbarGlobals(): void {
-  if (_wired) return
-  _wired = true
-  // (theme-change + sound-toggle + lang-change listeners removed —
-  //  UIMenu.ts handles all config control wiring now.)
-}
+

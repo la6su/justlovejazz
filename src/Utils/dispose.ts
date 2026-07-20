@@ -1,9 +1,7 @@
 import type * as THREE from 'three'
 
 /**
- * Dispose all GPU textures attached to a material (map, normalMap, roughnessMap,
- * metalnessMap, emissiveMap, alphaMap, bumpMap, displacementMap) and then the
- * material itself.
+ * Dispose all GPU textures attached to a material and then the material itself.
  *
  * Three.js `material.dispose()` does NOT dispose its textures — they must be
  * disposed explicitly or they leak VRAM. This helper prevents that leak for
@@ -11,23 +9,30 @@ import type * as THREE from 'three'
  */
 export function disposeMaterialDeep(mat: THREE.Material | undefined | null): void {
   if (!mat) return
-  const m = mat as THREE.Material & {
-    map?: THREE.Texture
-    normalMap?: THREE.Texture
-    roughnessMap?: THREE.Texture
-    metalnessMap?: THREE.Texture
-    emissiveMap?: THREE.Texture
-    alphaMap?: THREE.Texture
-    bumpMap?: THREE.Texture
-    displacementMap?: THREE.Texture
+  const m = mat as THREE.Material & Record<string, THREE.Texture | undefined>
+  const textureSlots = [
+    'map',
+    'normalMap',
+    'roughnessMap',
+    'metalnessMap',
+    'emissiveMap',
+    'alphaMap',
+    'bumpMap',
+    'displacementMap',
+    'envMap',
+    'lightMap',
+    'aoMap',
+    'sheenColorMap',
+    'sheenRoughnessMap',
+    'specularColorMap',
+    'specularIntensityMap',
+    'transmissionMap',
+    'thicknessMap',
+    'iridescenceMap',
+    'iridescenceThicknessMap',
+  ] as const
+  for (const slot of textureSlots) {
+    m[slot]?.dispose()
   }
-  m.map?.dispose()
-  m.normalMap?.dispose()
-  m.roughnessMap?.dispose()
-  m.metalnessMap?.dispose()
-  m.emissiveMap?.dispose()
-  m.alphaMap?.dispose()
-  m.bumpMap?.dispose()
-  m.displacementMap?.dispose()
   m.dispose()
 }

@@ -7,8 +7,13 @@
 
 import * as THREE from 'three'
 import { PROJECTS } from '../../Data/Projects'
-import { prefersReducedMotion } from '../../core/motionPolicy'
 import { CasePlane } from './CasePlane'
+import {
+  type TransitionState,
+  beginTransition,
+  updateTransition,
+  resetTransition as resetPlaneTransition,
+} from './PlaneTransition'
 
 const SECTION_PROJECTS = [
   [0, 1],
@@ -35,19 +40,7 @@ const STACKED_LAYOUT: readonly [CaseLayout, CaseLayout] = [
   { x: -0.02, y: 0.64, z: -3.15, scale: 1.82 },
   { x: 0.12, y: -0.78, z: -3.52, scale: 1.46 },
 ]
-const TRANSITION_DURATION = 1.15
-const OVERLAY_TAKEOVER = 0.86
-const CASE_PLANE_HEIGHT = 9 / 16
-
-interface OpeningState {
-  card: CasePlane
-  index: number
-  time: number
-  started: boolean
-  reducedMotion: boolean
-  openOverlay: (index: number) => void
-  startPosition: THREE.Vector3
-  startScale: number
+interface OpeningState extends TransitionState {
   startRotation: THREE.Euler
 }
 
@@ -65,7 +58,6 @@ export class WorksPlaneStage extends THREE.Group {
   private _tmpCameraPosition = new THREE.Vector3()
   private _tmpTargetPosition = new THREE.Vector3()
   private _tmpTargetRotation = new THREE.Euler()
-  private _fullscreenScale = 1
 
   constructor() {
     super()
@@ -149,15 +141,9 @@ export class WorksPlaneStage extends THREE.Group {
     const card = this.cards[index]
     if (!card || !card.visible) return false
 
+    const state = beginTransition(card, index, openOverlay, card.rotation.clone())
     this._opening = {
-      card,
-      index,
-      time: 0,
-      started: false,
-      reducedMotion: prefersReducedMotion(),
-      openOverlay,
-      startPosition: card.position.clone(),
-      startScale: card.scale.x,
+      ...state,
       startRotation: card.rotation.clone(),
     }
     if (!this._opening.reducedMotion) card.pulse(0.42)
@@ -181,7 +167,7 @@ export class WorksPlaneStage extends THREE.Group {
 
   /** Restore the route stage after UIkit closes the fullscreen detail. */
   resetTransition(): void {
-    this._opening?.card.setTransition(0)
+    resetPlaneTransition(this._opening)
     this._opening = null
     this.visible = this._active
   }
@@ -190,19 +176,9 @@ export class WorksPlaneStage extends THREE.Group {
     if (!this._camera || (!this._active && !this._opening)) return
 
     // Keep the stage in camera-local space while remaining a child of World.
-    // That produces actual parallax/depth but keeps its page composition stable
-    // when story camera smoothing, FOV and cursor follow are active.
     this._camera.getWorldPosition(this._tmpCameraPosition)
     this.position.copy(this._tmpCameraPosition)
     this.quaternion.copy(this._camera.quaternion)
-    const camera = this._camera as THREE.PerspectiveCamera
-    if (camera.isPerspectiveCamera) {
-      const fullscreenDistance = 0.92
-      const frameHeight =
-        2 * Math.tan(THREE.MathUtils.degToRad(camera.fov * 0.5)) * fullscreenDistance
-      const frameWidth = frameHeight * camera.aspect
-      this._fullscreenScale = Math.max(frameWidth, frameHeight / CASE_PLANE_HEIGHT) * 1.015
-    }
 
     const activeProjects = SECTION_PROJECTS[this._sectionIndex]!
     const opening = this._opening
@@ -241,34 +217,9 @@ export class WorksPlaneStage extends THREE.Group {
       card.update(dt, this._active)
     })
 
+    // ── Unified plane-to-fullscreen transition ──
     if (!opening) return
-
-    opening.time = opening.reducedMotion ? 1 : Math.min(1, opening.time + dt / TRANSITION_DURATION)
-    const t = opening.time
-    const focus = THREE.MathUtils.smoothstep(t / 0.9, 0, 1)
-    this._tmpTargetPosition.set(0, 0, -0.92)
-    opening.card.position.lerpVectors(opening.startPosition, this._tmpTargetPosition, focus)
-    opening.card.rotation.set(
-      THREE.MathUtils.lerp(opening.startRotation.x, 0, focus),
-      THREE.MathUtils.lerp(opening.startRotation.y, 0, focus),
-      THREE.MathUtils.lerp(opening.startRotation.z, 0, focus),
-    )
-    opening.card.scale.setScalar(
-      THREE.MathUtils.lerp(opening.startScale, this._fullscreenScale, focus),
-    )
-    opening.card.setReveal(1)
-    opening.card.setMotion(0, 1)
-    opening.card.setEdgeWarp(0)
-    opening.card.setParallax(0)
-    opening.card.setTransition(THREE.MathUtils.smoothstep(t, 0, 1))
-    opening.card.update(dt, true)
-
-    // UIkit takes over only after the focus and most of the camera travel have
-    // resolved, while the real plane still safely fills the view.
-    if (!opening.started && t >= OVERLAY_TAKEOVER) {
-      opening.started = true
-      opening.openOverlay(opening.index)
-    }
+    updateTransition(opening, dt, this._camera)
   }
 
   dispose(): void {

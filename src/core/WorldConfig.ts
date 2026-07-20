@@ -3,7 +3,7 @@
 import * as THREE from 'three'
 import { BakuRole } from './types'
 
-// ── Types (unchanged) ──
+// ── Types ──
 export interface CameraTransform {
   position: THREE.Vector3
   target: THREE.Vector3
@@ -61,20 +61,16 @@ export interface SectionLightDef {
 
 /** Per-section 3D scene control. All optional — sections without these
  *  use defaults (objects visible when their scene group is visible,
- *  standard transition).
- *
- *  NOTE: envSpherePattern was removed — EnvSphere follows the active theme
- *  through Experience. The particles flag was removed — particle visibility
- *  is driven by scene-group visibility, no per-section toggle exists. */
+ *  standard transition). */
 export interface SceneControl {
   /** 3D objects visibility per section. false = hidden. */
   objects?: {
-    wireframeText?: boolean // WireframeTypography (section title in 3D)
-    bakuCarousel?: boolean // BakuCarousel (Works gallery)
+    wireframeText?: boolean
+    bakuCarousel?: boolean
   }
   /** Transition timing for camera + baku morph when entering this section. */
   transition?: {
-    duration: number // seconds (0 = instant, 1.0 = slow cinematic)
+    duration: number
     easing: 'linear' | 'ease-out' | 'ease-in-out' | 'cubic-bezier'
   }
 }
@@ -108,475 +104,223 @@ type RawScene = {
   context: string
   domSection: string
   range: [number, number]
-  camPos: [number, number, number]
-  camTarget: [number, number, number]
-  camFov: number
-  camFovOffset: number
-  camFovDuration: number
-  camSmoothing: number
-  bakuRole: BakuRole
-  bakuOpacity: number
-  bakuDisplace: number
-  bakuColor: number
-  bakuEmissive: number
-  postBloom: number
-  postVignette: number
-  postGrain: number
-  postChromatic: number
-  postRefract: number
-  postBorder: number
-  postGradeShadows: [number, number, number]
-  postGradeHighlights: [number, number, number]
-  lightColor: number
-  lightIntensity: number
-  fogColor: number
-  fogDensity: number
-  bgColor: number
-  showGallery: boolean
-  groundColor: number
-  groundOpacity: number
-  /** Per-section theme: 'light' (light bg, dark text) or 'dark' (dark bg, light text).
-   *  The console baseline uses dark throughout; inverse remains an explicit preference. */
-  sectionTheme: 'light' | 'dark'
+  camPos?: [number, number, number]
+  camTarget?: [number, number, number]
+  camFov?: number
+  camFovOffset?: number
+  camFovDuration?: number
+  camSmoothing?: number
+  bakuRole?: BakuRole
+  bakuOpacity?: number
+  bakuDisplace?: number
+  bakuColor?: number
+  bakuEmissive?: number
+  postBloom?: number
+  postVignette?: number
+  postGrain?: number
+  postChromatic?: number
+  postRefract?: number
+  postBorder?: number
+  postGradeShadows?: [number, number, number]
+  postGradeHighlights?: [number, number, number]
+  lightColor?: number
+  lightIntensity?: number
+  fogColor?: number
+  fogDensity?: number
+  bgColor?: number
+  showGallery?: boolean
+  groundColor?: number
+  groundOpacity?: number
+  /** Per-section theme: 'light' (light bg, dark text) or 'dark' (dark bg, light text). */
+  sectionTheme?: 'light' | 'dark'
   /** Per-section 3D scene control (optional — omitted = defaults). */
   sceneObjects?: SceneControl['objects']
   sceneTransition?: SceneControl['transition']
 }
 
+// ── Defaults (shared by ~80% of sections) ──
+const DEFAULTS: Omit<RawScene, 'id' | 'context' | 'domSection' | 'range'> = {
+  camPos: [0, 0, 3.5],
+  camTarget: [0, 0, 0],
+  camFov: 60,
+  camFovOffset: 0.3,
+  camFovDuration: 0.8,
+  camSmoothing: 5,
+  bakuRole: BakuRole.GLASS,
+  bakuOpacity: 0.4,
+  bakuDisplace: 0.06,
+  bakuColor: 0xb8b8b8,
+  bakuEmissive: 0x050505,
+  postBloom: 0,
+  postVignette: 0,
+  postGrain: 0,
+  postChromatic: 0,
+  postRefract: 0,
+  postBorder: 0.0,
+  postGradeShadows: [1.0, 0.98, 0.95],
+  postGradeHighlights: [1.0, 1.0, 1.0],
+  lightColor: 0xffffff,
+  lightIntensity: 1.2,
+  fogColor: 0x000000,
+  fogDensity: 0.005,
+  bgColor: 0x000000,
+  showGallery: false,
+  groundColor: 0x101010,
+  groundOpacity: 0,
+  sectionTheme: 'dark',
+  sceneTransition: { duration: 0.8, easing: 'ease-out' },
+}
+
+function raw(overrides: RawScene): RawScene {
+  return { ...DEFAULTS, ...overrides }
+}
+
 // 6 sections (4 story frames + Contact finale/Lab=0 + Menu=5)
 // Index: 0=lab, 1=intro, 2=about, 3=works, 4=contact, 5=menu
 const RAW: RawScene[] = [
-  // ── Section 0: canonical LAB config, public Contact finale ──
-  {
-    id: 'sec_lab',
-    context: 'LAB — Experiments',
-    domSection: 'lab',
-    range: [0, 1 / 5],
-    camPos: [0, 0, 3.5],
-    camTarget: [0, 0, 0],
-    camFov: 60,
-    camFovOffset: 0.3,
-    camFovDuration: 0.8,
-    camSmoothing: 4,
-    bakuRole: BakuRole.GLASS,
-    bakuOpacity: 0.4,
-    bakuDisplace: 0.08,
-    bakuColor: 0xb8b8b8,
-    bakuEmissive: 0x050505,
-    postBloom: 0,
-    postVignette: 0,
-    postGrain: 0,
-    postChromatic: 0,
-    postRefract: 0,
-    postBorder: 0.0,
-    postGradeShadows: [1.0, 0.98, 0.95],
-    postGradeHighlights: [1.0, 1.0, 1.0],
-    lightColor: 0xffffff,
-    lightIntensity: 1,
-    fogColor: 0x000000,
-    fogDensity: 0.005,
-    bgColor: 0x000000,
-    showGallery: false,
-    groundColor: 0x101010,
-    groundOpacity: 0,
-    sectionTheme: 'light',  // Intro
-    sceneTransition: { duration: 0.8, easing: 'ease-out' },
-  },
-  // ── Section 1: INTRO — dark console field, metal drop ──
-  {
-    id: 'sec_intro',
-    context: 'Studio — Home',
-    domSection: 'intro',
-    range: [1 / 5, 2 / 5],
-    camPos: [0, 0, 3.5],
-    camTarget: [0, 0, 0],
-    camFov: 60,
-    camFovOffset: 0.3,
-    camFovDuration: 0.8,
-    camSmoothing: 4,
-    bakuRole: BakuRole.GLASS,
-    bakuOpacity: 0.4,
-    bakuDisplace: 0.08,
-    bakuColor: 0xb8b8b8,
-    bakuEmissive: 0x050505,
-    postBloom: 0,
-    postVignette: 0,
-    postGrain: 0,
-    postChromatic: 0,
-    postRefract: 0,
-    postBorder: 0.0,
-    postGradeShadows: [1.0, 0.98, 0.95],
-    postGradeHighlights: [1.0, 1.0, 1.0],
-    lightColor: 0xffffff,
-    lightIntensity: 1,
-    fogColor: 0x000000,
-    fogDensity: 0.005,
-    bgColor: 0x000000,
-    showGallery: false,
-    groundColor: 0x101010,
-    groundOpacity: 0,
-    sectionTheme: 'dark',  // About
-    sceneTransition: { duration: 1.0, easing: 'ease-in-out' },
-  },
-  {
-    id: 'sec_about',
-    context: 'TRINITY — About',
-    domSection: 'about',
-    range: [2 / 5, 3 / 5],
-    camPos: [0, 0, 3.5],
-    camTarget: [0, 0, 0],
-    camFov: 60,
-    camFovOffset: 0.4,
-    camFovDuration: 0.9,
-    camSmoothing: 5,
-    bakuRole: BakuRole.GLASS,
-    bakuOpacity: 0.35,
-    bakuDisplace: 0.15,
-    bakuColor: 0xc0c0c0,
-    bakuEmissive: 0x050505,
+  raw({ id: 'sec_lab', context: 'LAB — Experiments', domSection: 'lab', range: [0, 1 / 5], sectionTheme: 'light' }),
+  raw({ id: 'sec_intro', context: 'Studio — Home', domSection: 'intro', range: [1 / 5, 2 / 5], sceneTransition: { duration: 1.0, easing: 'ease-in-out' } }),
+  raw({
+    id: 'sec_about', context: 'TRINITY — About', domSection: 'about', range: [2 / 5, 3 / 5],
+    camFovOffset: 0.4, camFovDuration: 0.9, camSmoothing: 6,
+    bakuOpacity: 0.35, bakuDisplace: 0.15, bakuColor: 0xc0c0c0,
     postBloom: 0.4,
-    postVignette: 0,
-    postGrain: 0,
-    // Screen-space chromatic aberration has no equivalent WebGL fallback and
-    // turns the opaque bubble text into RGB fringes. The transparent cube
-    // shell stays colour-neutral instead.
-    postChromatic: 0,
-    postRefract: 0,
-    postBorder: 0.0,
-    postGradeShadows: [0.9, 0.92, 1.0],
-    postGradeHighlights: [0.85, 0.9, 1.0],
-    lightColor: 0x050505,
-    lightIntensity: 1.2,
-    fogColor: 0x000000,
-    fogDensity: 0.005,
-    bgColor: 0x000000,
-    showGallery: false,
-    groundColor: 0x101010,
+    lightColor: 0x050505, lightIntensity: 1.2,
     groundOpacity: 0.08,
-    sectionTheme: 'dark',  // Works
     sceneTransition: { duration: 0.6, easing: 'ease-out' },
-  },
-  // ── Section 3: WORKS — BakuCarousel + cube centered, slightly raised ──
-  {
-    id: 'sec_works',
-    context: 'WORKS — Gallery',
-    domSection: 'works',
-    range: [3 / 5, 4 / 5],
-    camPos: [0, 0, 3.5],
-    camTarget: [0, 0, 0],
-    camFov: 60,
-    camFovOffset: 0.5,
-    camFovDuration: 1.0,
-    camSmoothing: 6,
-    bakuRole: BakuRole.GLASS,
-    bakuOpacity: 0.4,
-    bakuDisplace: 0.05,
-    bakuColor: 0xc0c0c0,
-    bakuEmissive: 0x050505,
-    // Project stills are authored display colour. Keep the Works presentation
-    // neutral so the WebGPU plane matches the same sRGB image in fullscreen;
-    // bloom and blue grading made highlights look washed out and introduced
-    // apparent edge artefacts during parallax.
-    postBloom: 0,
-    postVignette: 0,
-    postGrain: 0,
-    postChromatic: 0,
-    postRefract: 0,
-    postBorder: 0.0,
-    postGradeShadows: [1.0, 1.0, 1.0],
-    postGradeHighlights: [1.0, 1.0, 1.0],
-    lightColor: 0x050505,
-    lightIntensity: 1.2,
-    fogColor: 0x000000,
-    fogDensity: 0.005,
-    bgColor: 0x000000,
+  }),
+  raw({
+    id: 'sec_works', context: 'WORKS — Gallery', domSection: 'works', range: [3 / 5, 4 / 5],
+    camFovOffset: 0.5, camFovDuration: 1.0, camSmoothing: 6,
+    bakuOpacity: 0.4, bakuDisplace: 0.05, bakuColor: 0xc0c0c0,
     showGallery: true,
-    groundColor: 0x101010,
+    lightColor: 0x050505, lightIntensity: 1.2,
     groundOpacity: 0.1,
-    sectionTheme: 'light',  // Contact
     sceneObjects: { bakuCarousel: true },
     sceneTransition: { duration: 0.8, easing: 'ease-out' },
-  },
-  // ── Section 4: CONTACT — Dark BG, closing ──
-  {
-    id: 'sec_contact',
-    context: 'CONTACT — Footer',
-    domSection: 'contact',
-    range: [4 / 5, 5 / 5],
-    camPos: [0, 0, 3.5],
-    camTarget: [0, 0, 0],
-    camFov: 60,
-    camFovOffset: 0.3,
-    camFovDuration: 0.8,
-    camSmoothing: 5,
-    bakuRole: BakuRole.GLASS,
-    bakuOpacity: 0.4,
-    bakuDisplace: 0.06,
-    bakuColor: 0xb8b8b8,
-    bakuEmissive: 0x050505,
+  }),
+  raw({
+    id: 'sec_contact', context: 'CONTACT — Footer', domSection: 'contact', range: [4 / 5, 5 / 5],
     postBloom: 0.2,
-    postVignette: 0,
-    postGrain: 0,
-    // See sec_about: keep typography sections free of backend-specific RGB split.
-    postChromatic: 0,
-    postRefract: 0,
-    postBorder: 0.0,
-    postGradeShadows: [1.0, 0.96, 0.92],
-    postGradeHighlights: [1.0, 0.98, 0.95],
-    lightColor: 0xffffff,
-    lightIntensity: 1.5,
-    fogColor: 0x000000,
-    fogDensity: 0.005,
-    bgColor: 0x000000,
-    showGallery: false,
-    groundColor: 0x121212,
-    groundOpacity: 0.4,
-    sectionTheme: 'dark',  // Menu
+    lightColor: 0xffffff, lightIntensity: 1.5,
+    groundColor: 0x121212, groundOpacity: 0.4,
     sceneObjects: { wireframeText: true },
     sceneTransition: { duration: 0.6, easing: 'ease-out' },
-  },
-  // ── Section 5: MENU sheet — Dark BG, positive Y tilt ──
-  {
-    id: 'sec_menu',
-    context: 'MENU — Navigation',
-    domSection: 'menu',
-    range: [5 / 5, 6 / 5],
-    camPos: [0, 0, 3.5],
-    camTarget: [0, 0, 0],
-    camFov: 60,
-    camFovOffset: 0.3,
-    camFovDuration: 0.8,
-    camSmoothing: 5,
-    bakuRole: BakuRole.GLASS,
-    bakuOpacity: 0.35,
-    bakuDisplace: 0.06,
-    bakuColor: 0xb8b8b8,
-    bakuEmissive: 0x050505,
+  }),
+  raw({
+    id: 'sec_menu', context: 'MENU — Navigation', domSection: 'menu', range: [5 / 5, 6 / 5],
     postBloom: 0.2,
-    postVignette: 0,
-    postGrain: 0,
-    postChromatic: 0,
-    postRefract: 0,
-    postBorder: 0.0,
-    postGradeShadows: [1.0, 0.96, 0.92],
-    postGradeHighlights: [1.0, 0.98, 0.95],
-    lightColor: 0x050505,
-    lightIntensity: 1.2,
-    fogColor: 0x000000,
-    fogDensity: 0.005,
-    bgColor: 0x000000,
-    showGallery: false,
-    groundColor: 0x101010,
+    lightColor: 0x050505, lightIntensity: 1.2,
     groundOpacity: 0.05,
-    sectionTheme: 'dark',
     sceneTransition: { duration: 0.6, easing: 'ease-out' },
-  },
+  }),
 ]
 
 // ── Helpers ──
 const _toVec = (v: [number, number, number]) => new THREE.Vector3(...v)
 const _toColor = (hex: number) => new THREE.Color(hex)
 
-function toPhaseConfig(raw: RawScene): PhaseConfig {
-  const pos = _toVec(raw.camPos)
-  const tgt = _toVec(raw.camTarget)
+function toPhaseConfig(r: RawScene): PhaseConfig {
   return {
-    id: raw.id,
-    context: raw.context,
-    domSection: raw.domSection ?? raw.id.replace(/^sec_/, ''),
-    range: raw.range,
-    camera: { position: pos, target: tgt, fov: raw.camFov },
-    camFovOffset: raw.camFovOffset,
-    camFovDuration: raw.camFovDuration,
-    camSmoothing: raw.camSmoothing,
+    id: r.id,
+    context: r.context,
+    domSection: r.domSection ?? r.id.replace(/^sec_/, ''),
+    range: r.range,
+    camera: { position: _toVec(r.camPos!), target: _toVec(r.camTarget!), fov: r.camFov! },
+    camFovOffset: r.camFovOffset!,
+    camFovDuration: r.camFovDuration!,
+    camSmoothing: r.camSmoothing!,
     baku: {
       position: new THREE.Vector3(),
       rotation: new THREE.Quaternion(),
       scale: new THREE.Vector3(0.4, 0.4, 0.4),
-      opacity: raw.bakuOpacity,
-      role: raw.bakuRole as unknown as BakuRole,
-      displace: raw.bakuDisplace,
+      opacity: r.bakuOpacity!,
+      role: r.bakuRole!,
+      displace: r.bakuDisplace!,
       material: {
         // GLASS cube: metalness MUST be 0 (glass is a dielectric, not metal).
-        // metalness=0.8 made the cube a dark reflective metal — not glass.
         // roughness=0.05 matches SplashCube.buildCube (mirror-smooth glass).
-        // color/emissive from config still drive per-section tint, but the
-        // cube stays transparent glass on ALL paths (WebGPU + WebGL2).
-        // Before this fix, the cube rendered dark blue-gray metallic on WebGPU
-        // (single-sample transmission × dark metal = very dark) while WebGL2
-        // masked it via multisample brightness — visual parity was impossible.
-        color: _toColor(raw.bakuColor),
-        emissive: _toColor(raw.bakuEmissive),
+        color: _toColor(r.bakuColor!),
+        emissive: _toColor(r.bakuEmissive!),
         roughness: 0.05,
         metalness: 0.0,
       },
     },
     lighting: {
-      ambient: _toColor(raw.lightColor),
-      ambientColor: _toColor(raw.lightColor),
-      intensity: raw.lightIntensity,
+      ambient: _toColor(r.lightColor!),
+      ambientColor: _toColor(r.lightColor!),
+      intensity: r.lightIntensity!,
     },
-    fog: { color: _toColor(raw.fogColor), density: raw.fogDensity },
+    fog: { color: _toColor(r.fogColor!), density: r.fogDensity! },
     post: {
-      bloom: raw.postBloom,
-      vignette: raw.postVignette,
-      grain: raw.postGrain,
-      chromatic: raw.postChromatic,
-      refract: raw.postRefract,
-      border: raw.postBorder,
-      gradeShadows: raw.postGradeShadows,
-      gradeHighlights: raw.postGradeHighlights,
+      bloom: r.postBloom!,
+      vignette: r.postVignette!,
+      grain: r.postGrain!,
+      chromatic: r.postChromatic!,
+      refract: r.postRefract!,
+      border: r.postBorder!,
+      gradeShadows: r.postGradeShadows!,
+      gradeHighlights: r.postGradeHighlights!,
     },
-    ui: { showGallery: raw.showGallery },
-    background: raw.bgColor,
+    ui: { showGallery: r.showGallery! },
+    background: r.bgColor!,
     ground: {
-      color: _toColor(raw.groundColor),
-      opacity: raw.groundOpacity,
+      color: _toColor(r.groundColor!),
+      opacity: r.groundOpacity!,
     },
-    theme: raw.sectionTheme,
+    theme: r.sectionTheme!,
     scene:
-      raw.sceneObjects || raw.sceneTransition
-        ? {
-            objects: raw.sceneObjects,
-            transition: raw.sceneTransition,
-          }
+      r.sceneObjects || r.sceneTransition
+        ? { objects: r.sceneObjects, transition: r.sceneTransition }
         : undefined,
   }
 }
 
 // ── Content page configs — minimal 3D, unique atmosphere per page ──
-// Services = warm amber tones, Posts = cool teal tones.
-// No BakuCarousel, lighter post-processing, same 6-section structure.
-// First (idx 0) and last (idx 5) = light, middle = dark.
 
 type ContentPalette = {
-  lightBg: number
-  darkBg: number
   bakuColor: number
   bakuEmissive: number
   fogColor: number
-  lightColor: number
   groundColor: number
 }
 
-const SERVICES_PALETTE: ContentPalette = {
-  lightBg: 0xf5f0e8,
-  darkBg: 0x0a0805,
-  bakuColor: 0xc0b0a0, // light warm glass (was 0x4a3a2a dark)
-  bakuEmissive: 0x8a7a5a,
-  fogColor: 0x0a0805,
-  lightColor: 0xffffff,
-  groundColor: 0x1a1208,
+const PALETTES: Record<string, ContentPalette> = {
+  services: { bakuColor: 0xc0b0a0, bakuEmissive: 0x8a7a5a, fogColor: 0x0a0805, groundColor: 0x1a1208 },
+  manifesto: { bakuColor: 0xaac4cc, bakuEmissive: 0x6a9aaa, fogColor: 0x051015, groundColor: 0x081a1a },
+  works: { bakuColor: 0xb0b0ce, bakuEmissive: 0x7a7aaa, fogColor: 0x080814, groundColor: 0x101020 },
+  lab: { bakuColor: 0xc0b0a0, bakuEmissive: 0x8a7a5a, fogColor: 0x0a0805, groundColor: 0x1a1408 },
+  contact: { bakuColor: 0xa0c0cc, bakuEmissive: 0x6a8a9a, fogColor: 0x050a0f, groundColor: 0x08141a },
 }
 
-const MANIFESTO_PALETTE: ContentPalette = {
-  lightBg: 0xf0f4f5, // cool desaturated teal-white
-  darkBg: 0x051015, // deep teal-black
-  bakuColor: 0xaac4cc, // light cool glass (was 0x2a4a5a dark)
-  bakuEmissive: 0x6a9aaa,
-  fogColor: 0x051015,
-  lightColor: 0xffffff,
-  groundColor: 0x081a1a,
+function makeContentScenes(pageId: string): PhaseConfig[] {
+  const p = PALETTES[pageId]
+  if (!p) return RAW.map(toPhaseConfig)
+  return Array.from({ length: 6 }, (_, idx) =>
+    toPhaseConfig(
+      raw({
+        id: `content_${pageId}_${idx}`,
+        context: `Content — ${pageId} face ${idx}`,
+        domSection: `content-${idx}`,
+        range: [idx / 5, (idx + 1) / 5] as [number, number],
+        bakuColor: p.bakuColor,
+        bakuEmissive: p.bakuEmissive,
+        postBloom: 0.15,
+        postGradeShadows: [0.9, 0.92, 1.0],
+        postGradeHighlights: [0.85, 0.9, 1.0],
+        fogColor: p.fogColor,
+        groundColor: p.groundColor,
+        groundOpacity: 0.05,
+      }),
+    ),
+  )
 }
 
-const WORKS_PALETTE: ContentPalette = {
-  lightBg: 0xf0f0f4,
-  darkBg: 0x080814,
-  bakuColor: 0xb0b0ce, // light glass (was 0x2a2a4e dark)
-  bakuEmissive: 0x7a7aaa,
-  fogColor: 0x080814,
-  lightColor: 0xffffff,
-  groundColor: 0x101020,
-}
-
-const LAB_PALETTE: ContentPalette = {
-  lightBg: 0xf5f5f0,
-  darkBg: 0x0a0805,
-  bakuColor: 0xc0b0a0, // light warm glass (was 0x3a2a1a dark)
-  bakuEmissive: 0x8a7a5a,
-  fogColor: 0x0a0805,
-  lightColor: 0xffffff,
-  groundColor: 0x1a1408,
-}
-
-const CONTACT_PALETTE: ContentPalette = {
-  lightBg: 0xf0f4f5,
-  darkBg: 0x050a0f,
-  bakuColor: 0xa0c0cc, // light cool glass (was 0x1a3a4a dark)
-  bakuEmissive: 0x6a8a9a,
-  fogColor: 0x050a0f,
-  lightColor: 0xffffff,
-  groundColor: 0x08141a,
-}
-
-// sceneForContentPage REMOVED — it generated per-page sceneObjects that
-// referenced 3D objects on the wrong cube-face indices (e.g. wireframeText on
-// idx 1, but WireframeTypography only exists on idx 2/4). The `if (typo)` /
-// `if (orb)` guards in World.ts made every assignment a no-op. Scene groups are
-// shared across all SPA pages (SectionSceneFactory is hardcoded), so per-page
-// sceneObjects config contradicts the architecture. Objects are now visible
-// whenever their scene group is visible (see World.ts visibility block).
-
-function makeContentScenes(palette: ContentPalette, pageId: string): RawScene[] {
-  const themeFor = (): 'dark' => 'dark'
-  const bgFor = () => palette.darkBg
-  const fogFor = () => palette.fogColor
-
-  return Array.from({ length: 6 }, (_, idx) => ({
-    id: `content_${pageId}_${idx}`,
-    context: `Content — ${pageId} face ${idx}`,
-    domSection: `content-${idx}`,
-    range: [idx / 5, (idx + 1) / 5] as [number, number],
-    camPos: [0, 0, 3.5] as [number, number, number],
-    camTarget: [0, 0, 0] as [number, number, number],
-    camFov: 60,
-    camFovOffset: 0.3,
-    camFovDuration: 0.8,
-    camSmoothing: 5,
-    bakuRole: BakuRole.GLASS,
-    bakuOpacity: 0.35,
-    bakuDisplace: 0.06,
-    bakuColor: palette.bakuColor,
-    bakuEmissive: palette.bakuEmissive,
-    postBloom: 0.15,
-    postVignette: 0,
-    postGrain: 0,
-    postChromatic: 0,
-    postRefract: 0,
-    postBorder: 0.0,
-    postGradeShadows: [0.9, 0.92, 1.0],
-    postGradeHighlights: [0.85, 0.9, 1.0],
-    lightColor: palette.lightColor,
-    lightIntensity: 1.0,
-    fogColor: fogFor(),
-    fogDensity: 0.005,
-    bgColor: bgFor(),
-    showGallery: false,
-    groundColor: palette.groundColor,
-    groundOpacity: 0.05,
-    sectionTheme: themeFor(),
-    sceneTransition: { duration: 0.6, easing: 'ease-out' },
-  }))
-}
-
-// (getAllScenes removed — 0 external callers)
-// (toPhaseConfig kept private — only used internally by getWorldConfigForPage)
+const CONTENT_PAGES = new Set(['services', 'works', 'manifesto', 'lab', 'contact'])
 
 export function getWorldConfigForPage(pageKey: string): readonly PhaseConfig[] {
-  if (pageKey === 'services') {
-    return makeContentScenes(SERVICES_PALETTE, 'services').map(toPhaseConfig)
-  }
-  if (pageKey === 'works') {
-    return makeContentScenes(WORKS_PALETTE, 'works').map(toPhaseConfig)
-  }
-  if (pageKey === 'manifesto') {
-    return makeContentScenes(MANIFESTO_PALETTE, 'manifesto').map(toPhaseConfig)
-  }
-  if (pageKey === 'lab') {
-    return makeContentScenes(LAB_PALETTE, 'lab').map(toPhaseConfig)
-  }
-  if (pageKey === 'contact') {
-    return makeContentScenes(CONTACT_PALETTE, 'contact').map(toPhaseConfig)
+  if (CONTENT_PAGES.has(pageKey)) {
+    return makeContentScenes(pageKey)
   }
   return RAW.map(toPhaseConfig) // home — full scenes
 }

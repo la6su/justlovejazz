@@ -198,6 +198,14 @@ export class FullscreenOverlay {
       document.addEventListener('keydown', this._keydownHandler!)
     })
     UIkit.util.on(this.container, 'shown', () => {
+      // Trigger the CSS reveal transition (clip-path + scale + opacity).
+      // Without this class, .jlz-fs-dialog stays at clip-path:inset(50%)
+      // and the overlay is invisible. For plane-origin opens, the 3D plane
+      // is already fullscreen so this is a no-op (is-plane-origin overrides
+      // transition: none).
+      requestAnimationFrame(() => {
+        this.container.classList.add('is-entered')
+      })
       const source = this.video.querySelector('source')
       if (this.container.classList.contains('is-video-mode') && source && source.src) {
         if (isFinite(this.video.duration)) {
@@ -217,6 +225,7 @@ export class FullscreenOverlay {
         this._autoplayTimer = null
       }
       this.container.classList.remove('is-playing')
+      this.container.classList.remove('is-entered')
       this.video.pause()
       this.onClose?.()
       // Remove keyboard listener when modal closes — clean lifecycle, no

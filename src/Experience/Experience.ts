@@ -10,7 +10,6 @@ import { UIManager } from '../UI/UIManager'
 import { input } from './Input'
 import { StateBus } from '../core/StateBus'
 import type { World } from '../core/World'
-import { WorksPortfolio } from './WorksPortfolio'
 import { FullscreenOverlay } from '../UI/FullscreenOverlay'
 import { NoiseText } from './NoiseText'
 
@@ -64,8 +63,13 @@ export class Experience {
   public world!: World
   private bus!: StateBus
 
-  // Works portfolio (public for DevPanel access)
-  public portfolio: WorksPortfolio | null = null
+  // Works portfolio — inlined from WorksPortfolio.ts (was a separate class).
+  // _portfolioIndex: tracks the active project index.
+  // _portfolioCount: cached project count.
+  // _portfolioProjects: the project data array.
+  private _portfolioIndex = 0
+  private _portfolioCount = 0
+  private _portfolioProjects: import('../core/types').Project[] = []
   private overlay: FullscreenOverlay | null = null
   private _activeProjectIndex = 0
   private _uiMenu: UIMenu | null = null
@@ -362,7 +366,7 @@ export class Experience {
     this.setupEnvironment()
 
     // CinematicNav — vertical native story track plus top/bottom sheets.
-    this._storyNav = new CinematicNav(this.scene, this.camera.instance, 6)
+    this._storyNav = new CinematicNav(6)
     this._storyNav.onSectionChange((idx) => {
       // Sheets do not wait for scroll progress: the background begins its
       // reveal as soon as Menu or Contact is selected.
@@ -419,7 +423,7 @@ export class Experience {
       index: 1,
     })
     // Always build portfolio — single-page, always needs works slider
-    void this.ensurePortfolio()
+    void this._ensurePortfolio()
     this.camera.instance.position.set(0, 5, 10)
     this.camera.instance.lookAt(0, 0, 0)
     this.camera.instance.updateProjectionMatrix()
@@ -495,7 +499,7 @@ export class Experience {
     this._openProjectHandler = (e: Event) => {
       const detail = (e as CustomEvent<{ idx: number }>).detail
       if (!detail || typeof detail.idx !== 'number') return
-      void this.ensurePortfolio().then(() => {
+      void this._ensurePortfolio().then(() => {
         const openOverlay = () => this.onProjectSelect(detail.idx, false, 'plane')
         if (document.body.dataset.page === 'works') {
           const stage = this.world?.worksPlaneStage
@@ -516,10 +520,10 @@ export class Experience {
       const carousel = this.getCarousel()
       if (direction < 0) {
         carousel?.prev()
-        if (!carousel) this.portfolio?.prev()
+        if (!carousel) this._portfolioPrev()
       } else {
         carousel?.next()
-        if (!carousel) this.portfolio?.next()
+        if (!carousel) this._portfolioNext()
       }
       this.onProjectSelect(this._activeProjectIndex + direction)
     }
@@ -575,7 +579,7 @@ export class Experience {
       const target = e.target as HTMLElement | null
       if (target?.closest('.jlz-work-card, #jlz-fs-overlay, .jlz-topbar, [data-cinematic-menu]'))
         return
-      void this.ensurePortfolio().then(() => {
+      void this._ensurePortfolio().then(() => {
         const stage = this.world?.worksPlaneStage
         if (!stage) return
         if (
@@ -1031,7 +1035,6 @@ export class Experience {
     // AND the renderer instance (was previously only instance.dispose()).
     this.renderer.dispose()
     this.camera.destroy()
-    this.portfolio?.dispose()
     this.overlay?.dispose()
     this._uiMenu?.dispose()
     this._uiMenu = null
@@ -1049,8 +1052,26 @@ export class Experience {
     }
   }
 
-  private async ensurePortfolio(): Promise<void> {
-    if (this.portfolio) return
+  /** Navigate portfolio by direction — public for DevPanel. */
+  navigatePortfolio(direction: 1 | -1): void {
+    if (direction < 0) this._portfolioPrev()
+    else this._portfolioNext()
+  }
+
+  private _portfolioNext(): void {
+    const n = this._portfolioCount
+    this._portfolioIndex = ((this._portfolioIndex + 1) % n + n) % n
+    this.onProjectSelect(this._portfolioIndex)
+  }
+
+  private _portfolioPrev(): void {
+    const n = this._portfolioCount
+    this._portfolioIndex = ((this._portfolioIndex - 1) % n + n) % n
+    this.onProjectSelect(this._portfolioIndex)
+  }
+
+  private async _ensurePortfolio(): Promise<void> {
+    if (this._portfolioCount > 0) return
     // Always build portfolio — single-page experience
     // World must exist and be in the scene before adding portfolio to it.
     if (!this.world || !this.scene.children.includes(this.world)) {
@@ -1061,18 +1082,10 @@ export class Experience {
 
     const { PROJECTS } = await import('../Data/Projects')
     // Re-check after async import — page may have changed during await.
-    if (this.portfolio) return // another call won
+    if (this._portfolioCount > 0) return // another call won
 
-    this.portfolio = new WorksPortfolio(
-      PROJECTS,
-      (idx) => {
-        this.onProjectSelect(idx)
-      }, // prev/next → preload project data into overlay
-    )
-    // Portfolio group at world origin — frontal camera at [0,1,7] looks at [0,1,0].
-    this.portfolio.group.position.set(0, 1, 0)
-    this.world.add(this.portfolio.group)
-
+    this._portfolioProjects = PROJECTS
+    this._portfolioCount = PROJECTS.length
     // FullscreenOverlay is normally created by UIManager. Project navigation
     // is routed through `jlz:project-navigate` so arrows and keyboard use the
     // same owner even if the overlay was created before this async portfolio.
@@ -1112,8 +1125,8 @@ export class Experience {
 
 
   private onProjectSelect(idx: number, preload: boolean = false, origin?: 'plane'): void {
-    if (!this.portfolio || !this.overlay) return
-    const projs = this.portfolio.projects
+    if (!this._portfolioProjects.length || !this.overlay) return
+    const projs = this._portfolioProjects
     if (!Array.isArray(projs) || projs.length === 0) return
     const safeIdx = ((idx % projs.length) + projs.length) % projs.length
     this._activeProjectIndex = safeIdx

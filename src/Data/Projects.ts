@@ -95,7 +95,7 @@ export const PROJECTS: Project[] = [
     title: 'Indigo Drift',
     description: 'Deep blue ambient currents. Liquid light dissolving into silence.',
     textureUrl: '/assets/projects/indigo-drift/cover-studio-v2.jpg',
-    detailTextureUrl: '/assets/projects/indigo-drift/cover.webp',
+    detailTextureUrl: '/assets/projects/indigo-drift/detail.webp',
     color: '#3355cc',
     year: '2025',
     category: 'Ambient',

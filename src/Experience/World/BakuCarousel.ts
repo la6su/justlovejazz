@@ -20,8 +20,13 @@ function isMenuOpen(): boolean {
   return document.body.dataset.cinematicSheet === 'menu'
 }
 import { PROJECTS } from '../../Data/Projects'
-import { prefersReducedMotion } from '../../core/motionPolicy'
 import { CasePlane } from './CasePlane'
+import {
+  type TransitionState,
+  beginTransition,
+  updateTransition,
+  resetTransition as resetPlaneTransition,
+} from './PlaneTransition'
 
 // A dozen plane instances preserve the infinite wrap while the framing exposes
 // only the centre case and its two adjacent neighbours. They share four
@@ -44,9 +49,7 @@ const TAP_THRESHOLD = 6 // px — if pointerup within this distance of down, it'
 const MOMENTUM_DECAY = 0.84 // per-frame velocity decay after drag release
 const MOMENTUM_THRESHOLD = 0.0007 // below this → snap to nearest card
 const SNAP_STEP = 1
-const FULLSCREEN_DURATION = 1.15
-const FULLSCREEN_TAKEOVER = 0.86
-const CASE_PLANE_HEIGHT = 9 / 16
+
 
 export class BakuCarousel extends THREE.Group {
   private cards: CasePlane[] = []
@@ -77,26 +80,11 @@ export class BakuCarousel extends THREE.Group {
 
   // Callback — fired when user taps/clicks a carousel card
   private _onCardClick: ((index: number) => void) | null = null
-  private _opening: {
-    card: CasePlane
-    index: number
-    time: number
-    started: boolean
-    reducedMotion: boolean
-    startPosition: THREE.Vector3
-    startScale: number
-    startQuaternion: THREE.Quaternion
-  } | null = null
+  private _opening: TransitionState | null = null
 
   // Reusable temp vectors (avoid per-frame alloc)
   private _tmpStreamPos = new THREE.Vector3()
   private _tmpRingRot = new THREE.Euler()
-  private _tmpCameraPosition = new THREE.Vector3()
-  private _tmpCameraDirection = new THREE.Vector3()
-  private _tmpFullscreenPosition = new THREE.Vector3()
-  private _tmpCameraQuaternion = new THREE.Quaternion()
-  private _tmpGroupWorldQuaternion = new THREE.Quaternion()
-  private _fullscreenScale = 1
 
   constructor() {
     super()
@@ -156,14 +144,9 @@ export class BakuCarousel extends THREE.Group {
               url,
               (tex) => {
                 tex.colorSpace = THREE.SRGBColorSpace
-                // R-1 fix: use mipmaps for minification (was LinearFilter = no
-                // mipmaps → aliasing/shimmering on receding slider planes).
-                // Default LinearMipmapLinearFilter gives smooth minification.
                 tex.minFilter = THREE.LinearMipmapLinearFilter
                 tex.magFilter = THREE.LinearFilter
                 tex.generateMipmaps = true
-                // A modest anisotropy level keeps the moving crop stable on
-                // high-DPI displays without the cost of maxing every texture.
                 tex.anisotropy = 4
                 resolve(tex)
               },
@@ -343,22 +326,18 @@ export class BakuCarousel extends THREE.Group {
    * takes over. This avoids the old click → dark-frame → modal discontinuity. */
   private beginFullscreenTransition(card: CasePlane, index: number): void {
     if (this._opening) return
-    this._opening = {
+    this._opening = beginTransition(
       card,
       index,
-      time: 0,
-      started: false,
-      reducedMotion: prefersReducedMotion(),
-      startPosition: card.position.clone(),
-      startScale: card.scale.x,
-      startQuaternion: card.quaternion.clone(),
-    }
+      (idx) => this._onCardClick?.(idx),
+      card.quaternion,
+    )
     if (!this._opening.reducedMotion) card.pulse(0.42)
   }
 
   /** Called after the UIkit overlay closes, returning the stream to normal. */
   resetTransition(): void {
-    this._opening?.card.setTransition(0)
+    resetPlaneTransition(this._opening)
     this._opening = null
   }
 
@@ -398,29 +377,6 @@ export class BakuCarousel extends THREE.Group {
     )
     const scrollVelocity = THREE.MathUtils.clamp((this.scroll.current - previousScroll) / dt, -8, 8)
     const opening = this._opening
-    if (opening) {
-      opening.time = opening.reducedMotion
-        ? 1
-        : Math.min(1, opening.time + dt / FULLSCREEN_DURATION)
-      if (this._camera) {
-        this._camera.getWorldPosition(this._tmpCameraPosition)
-        this._camera.getWorldDirection(this._tmpCameraDirection)
-        this._tmpFullscreenPosition
-          .copy(this._tmpCameraPosition)
-          .addScaledVector(this._tmpCameraDirection, 0.92)
-        this.updateWorldMatrix(true, false)
-        this.worldToLocal(this._tmpFullscreenPosition)
-        this._camera.getWorldQuaternion(this._tmpCameraQuaternion)
-        this.getWorldQuaternion(this._tmpGroupWorldQuaternion)
-        this._tmpCameraQuaternion.premultiply(this._tmpGroupWorldQuaternion.invert())
-        const camera = this._camera as THREE.PerspectiveCamera
-        if (camera.isPerspectiveCamera) {
-          const frameHeight = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov * 0.5)) * 0.92
-          const frameWidth = frameHeight * camera.aspect
-          this._fullscreenScale = Math.max(frameWidth, frameHeight / CASE_PLANE_HEIGHT) * 1.015
-        }
-      }
-    }
 
     const neighboursOpacity = opening
       ? 1 - this.smoothstep(THREE.MathUtils.clamp(opening.time / 0.56, 0, 1))
@@ -429,9 +385,10 @@ export class BakuCarousel extends THREE.Group {
     for (let i = 0; i < n; i++) {
       const card = this.cards[i]!
 
+      // The opening card is handled separately by the unified transition below.
+      if (opening?.card === card) continue
+
       // ── Infinite media-stream target ──
-      // The nearest physical slot is reused at each edge. The viewer gets a
-      // continuous sequence rather than a carousel with a first and last card.
       const rawSlot = i + this.scroll.current / SNAP_STEP
       const slot = this.wrapSlot(rawSlot, n)
       const distance = Math.abs(slot)
@@ -439,9 +396,7 @@ export class BakuCarousel extends THREE.Group {
       this._tmpRingRot.set(0, 0, 0)
 
       // Contact-sheet reveal: the centre establishes the composition, then the
-      // right and left frames register on deliberately different beats. The
-      // asymmetry avoids the generic "all cards fade at once" entrance while
-      // keeping the final strip perfectly flat.
+      // right and left frames register on deliberately different beats.
       const delay =
         distance < 0.5
           ? 0.02
@@ -455,44 +410,26 @@ export class BakuCarousel extends THREE.Group {
       card.position.y += (1 - localReveal) * (distance < 0.5 ? -0.055 : slot > 0 ? 0.065 : -0.075)
       card.rotation.copy(this._tmpRingRot)
 
-      // A flat editorial strip: every frame keeps one scale and one horizon.
-      // Edge instances are clipped by the viewport like the Codrops gallery.
       const scale = THREE.MathUtils.lerp(distance < 0.5 ? 0.955 : 0.94, 1, localReveal)
       card.scale.setScalar(CARD_SCALE * scale)
       const streamReveal = localReveal * THREE.MathUtils.clamp(3.25 - distance, 0, 1)
-      card.setReveal(opening?.card === card ? 1 : streamReveal * neighboursOpacity)
+      card.setReveal(streamReveal * neighboursOpacity)
       card.setMotion(0, scrollVelocity)
       card.setEdgeWarp(0)
-      // Let the authored still become legible before texture counter-travel
-      // starts. This separates the entrance cue from the interaction cue.
       const parallaxReady = this.smoothstep(
         THREE.MathUtils.clamp((localReveal - 0.72) / 0.28, 0, 1),
       )
       card.setParallax(THREE.MathUtils.clamp(slot * -0.42 * parallaxReady, -1, 1))
       card.setTransition(0)
-      if (opening?.card === card) {
-        const focus = this.smoothstep(THREE.MathUtils.clamp(opening.time / 0.9, 0, 1))
-        if (this._camera) {
-          card.position.lerpVectors(opening.startPosition, this._tmpFullscreenPosition, focus)
-          card.quaternion.slerpQuaternions(
-            opening.startQuaternion,
-            this._tmpCameraQuaternion,
-            focus,
-          )
-        }
-        card.scale.setScalar(THREE.MathUtils.lerp(opening.startScale, this._fullscreenScale, focus))
-        card.setReveal(1)
-        card.setMotion(0, 1)
-        card.setEdgeWarp(0)
-        card.setParallax(0)
-        card.setTransition(this.smoothstep(opening.time))
-      }
       card.update(dt, this._active)
     }
 
-    if (opening && !opening.started && opening.time >= FULLSCREEN_TAKEOVER) {
-      opening.started = true
-      this._onCardClick?.(opening.index)
+    // ── Unified plane-to-fullscreen transition (opening card) ──
+    if (opening && this._camera) {
+      this.updateWorldMatrix(true, false)
+      const groupQuat = new THREE.Quaternion()
+      this.getWorldQuaternion(groupQuat)
+      updateTransition(opening, dt, this._camera, groupQuat)
     }
   }
 

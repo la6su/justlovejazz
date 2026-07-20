@@ -133,10 +133,10 @@ export class DevPanel {
   private buildCarouselFolder(): void {
     const f = this.pane.addFolder({ title: 'BakuCarousel', expanded: false })
     f.addButton({ title: '← Prev card' }).on('click', () => {
-      this.exp.portfolio?.prev()
+      this.exp.navigatePortfolio(-1)
     })
     f.addButton({ title: 'Next card →' }).on('click', () => {
-      this.exp.portfolio?.next()
+      this.exp.navigatePortfolio(1)
     })
     f.addButton({ title: 'Trigger morph' }).on('click', () => {
       const carousel = (
