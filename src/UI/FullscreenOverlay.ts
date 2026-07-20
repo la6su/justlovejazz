@@ -51,6 +51,7 @@ export class FullscreenOverlay {
   private counterEl: HTMLElement
   private controlsEl: HTMLElement
   private _keydownHandler: ((e: KeyboardEvent) => void) | null = null
+  private _focusTrapHandler: ((e: FocusEvent) => void) | null = null
   private _autoplayTimer: ReturnType<typeof setTimeout> | null = null
   private _posterRequestId = 0
   private _posterUrl: string | null = null
@@ -196,6 +197,7 @@ export class FullscreenOverlay {
     // enter/opening flags needed.
     UIkit.util.on(this.container, 'show', () => {
       document.addEventListener('keydown', this._keydownHandler!)
+      document.addEventListener('focusin', this._focusTrapHandler!)
     })
     UIkit.util.on(this.container, 'shown', () => {
       const source = this.video.querySelector('source')
@@ -222,6 +224,9 @@ export class FullscreenOverlay {
       // Remove keyboard listener when modal closes — clean lifecycle, no
       // stale listeners intercepting events while the overlay is hidden.
       document.removeEventListener('keydown', this._keydownHandler!)
+      if (this._focusTrapHandler) {
+        document.removeEventListener('focusin', this._focusTrapHandler)
+      }
     })
 
     // Keyboard: Space (play/pause), ArrowLeft/Right (prev/next)
@@ -242,6 +247,23 @@ export class FullscreenOverlay {
         e.preventDefault()
         e.stopImmediatePropagation()
         this.navigate(1)
+      }
+    }
+
+    // Focus trap: keep Tab/Shift+Tab within the overlay dialog.
+    // Without this, keyboard users can Tab out of the modal into
+    // elements behind it. UIkit 3 modal does NOT enforce a focus trap.
+    this._focusTrapHandler = (e: FocusEvent) => {
+      const dialog = this.container.querySelector<HTMLElement>('.uk-modal-dialog')
+      if (!dialog) return
+      if (!dialog.contains(e.target as Node)) {
+        e.preventDefault()
+        const first = dialog.querySelector<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        )
+        if (first) {
+          first.focus()
+        }
       }
     }
   }
@@ -423,6 +445,10 @@ export class FullscreenOverlay {
     if (this._keydownHandler) {
       document.removeEventListener('keydown', this._keydownHandler)
       this._keydownHandler = null
+    }
+    if (this._focusTrapHandler) {
+      document.removeEventListener('focusin', this._focusTrapHandler)
+      this._focusTrapHandler = null
     }
     UIkit.modal(this.container).$destroy()
     this.container.remove()

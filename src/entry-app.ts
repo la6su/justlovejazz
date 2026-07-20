@@ -5,20 +5,14 @@ import { BlurFade } from './Experience/BlurFade'
 import { NoiseText } from './Experience/NoiseText'
 import { eventBus } from './core/EventBus'
 import { initWorkCards } from './UI/WorkCards'
-
-const SOUND_KEY = 'jlz:sound'
+import { getSoundMuted, setSoundMutedPreference } from './core/SfxSystem'
 // LANG_KEY handled by i18n.ts
 
 // ── Config: sound toggle (splash overlay) ──
 function initSoundToggle(): void {
   const btn = document.getElementById('cfg-sound') as HTMLButtonElement | null
   if (!btn) return
-  let soundOn = false
-  try {
-    if (localStorage.getItem(SOUND_KEY) === 'on') soundOn = true
-  } catch {
-    /* ignore */
-  }
+  let soundOn = !getSoundMuted()
   const update = () => {
     btn.setAttribute('aria-pressed', String(soundOn))
     btn.classList.toggle('is-off', !soundOn)
@@ -27,11 +21,7 @@ function initSoundToggle(): void {
   update()
   btn.addEventListener('click', () => {
     soundOn = !soundOn
-    try {
-      localStorage.setItem(SOUND_KEY, soundOn ? 'on' : 'off')
-    } catch {
-      /* ignore */
-    }
+    setSoundMutedPreference(!soundOn)
     update()
   })
 }
@@ -250,7 +240,12 @@ export async function startApp(): Promise<void> {
  * IntersectionObserver that fires BlurFade when a .studio-title enters the
  * viewport — synchronized with UIkit scrollspy's viewport entry.
  */
+let _titleObserver: IntersectionObserver | null = null
+
 function setupTitleObserver(): void {
+  // Disconnect previous observer if any (HMR re-init guard)
+  _titleObserver?.disconnect()
+
   const titles = document.querySelectorAll<HTMLElement>('.studio-title:not([data-blur-fade="off"])')
   if (titles.length === 0) return
   const observer = new IntersectionObserver(
@@ -266,6 +261,7 @@ function setupTitleObserver(): void {
     { threshold: 0.15 },
   )
   titles.forEach((t) => observer.observe(t))
+  _titleObserver = observer
 }
 
 /**

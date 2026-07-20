@@ -580,7 +580,10 @@
         setTimeout(function () {
           if (!btn.classList.contains('is-ready')) {
             var content = btn.parentElement
-            if (content) {
+            // Guard: entry-app.ts may have already replaced this content
+            // with its own error UI via jlz:webgl-failed. If so, do not
+            // overwrite the retry link with a second error message.
+            if (content && content.contains(btn)) {
               content.innerHTML =
                 '<div style="text-align:center;color:rgba(255,255,255,0.7);font-family:Onest,sans-serif;max-width:320px;"><p style="font-size:0.75rem;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,100,100,0.8);margin:0 0 0.5rem;">3D Failed</p><p style="font-size:0.8rem;line-height:1.4;margin:0 0 1rem;">The 3D experience could not load. Your browser may not support WebGL2, or the app bundle failed to download.</p><a href="/" style="font-size:0.7rem;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;color:#6b78a3;text-decoration:none;border:1px solid rgba(107,120,163,0.3);padding:0.5rem 1rem;border-radius:999px;">Retry</a></div>'
             }

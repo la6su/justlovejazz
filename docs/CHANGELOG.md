@@ -4,6 +4,27 @@ This is a concise release-level record. Implementation decisions belong in
 [`WORKLOG.md`](../WORKLOG.md); completed plans remain available through Git
 history.
 
+## 2026-07-20 — Audit remediation (Phase A + B)
+
+- Removed four no-op methods from `EnvSphere` (`attachToScene`,
+  `setSectionColors`, `setBlend`, `setActiveSection`) and all call
+  sites; the mesh is self-rendering and section weights drive the blend.
+- Simplified `WorksPortfolio` from a Three.js class with a never-rendered
+  `Group` to a plain object + factory function, eliminating the `three`
+  import and the `dispose()` no-op.
+- Fixed IntersectionObserver leak in `entry-app.ts` — the observer is now
+  stored in a module-level variable and disconnected on re-init (HMR).
+- Added a `content.contains(btn)` guard to the inline 60 s timeout in
+  `index.html` so it no longer overwrites the retry link if
+  `entry-app.ts` has already shown its own error UI.
+- Extracted duplicated sound-preference localStorage reads from three
+  modules into `getSoundMuted()` / `setSoundMutedPreference()` in
+  `SfxSystem.ts` — single source of truth.
+- Added a focus trap to `FullscreenOverlay` so Tab/Shift+Tab stays within
+  the modal dialog while it is open (WCAG 2.1.1).
+- Moved the module-level `particleTexture` load in `works/scene.ts` into
+  `createSection3()` for proper GPU-resource ownership (RULES.md compliance).
+
 ## 2026-07-18 — Cinematic vertical navigation
 
 - Reframed the standalone Blog as an editorial featured-story index and made
