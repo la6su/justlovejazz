@@ -362,7 +362,7 @@ export class Experience {
     this.setupEnvironment()
 
     // CinematicNav — vertical native story track plus top/bottom sheets.
-    this._storyNav = new CinematicNav(this.scene, this.camera.instance, 6)
+    this._storyNav = new CinematicNav(6)
     this._storyNav.onSectionChange((idx) => {
       // Sheets do not wait for scroll progress: the background begins its
       // reveal as soon as Menu or Contact is selected.
@@ -1069,10 +1069,6 @@ export class Experience {
         this.onProjectSelect(idx)
       }, // prev/next → preload project data into overlay
     )
-    // Portfolio group at world origin — frontal camera at [0,1,7] looks at [0,1,0].
-    this.portfolio.group.position.set(0, 1, 0)
-    this.world.add(this.portfolio.group)
-
     // FullscreenOverlay is normally created by UIManager. Project navigation
     // is routed through `jlz:project-navigate` so arrows and keyboard use the
     // same owner even if the overlay was created before this async portfolio.

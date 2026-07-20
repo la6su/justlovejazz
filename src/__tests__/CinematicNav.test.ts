@@ -59,7 +59,7 @@ describe('CinematicNav — vertical story and sheets', () => {
 
   it('maps the four public story chapters to native vertical positions', () => {
     const track = document.getElementById('spa-content')!
-    nav = new CinematicNav(null, null, 6)
+    nav = new CinematicNav(6)
 
     nav.goToSection(3)
 
@@ -72,14 +72,14 @@ describe('CinematicNav — vertical story and sheets', () => {
 
   it('reports continuous normalized progress between story chapters', () => {
     const track = document.getElementById('spa-content')!
-    nav = new CinematicNav(null, null, 6)
+    nav = new CinematicNav(6)
     track.scrollTop = MAIN_HEIGHT * 1.5
 
     expect(nav.getOverallProgress()).toBeCloseTo(0.5, 5)
   })
 
   it('opens the desktop/mobile Menu sheet and returns to the previous chapter', () => {
-    nav = new CinematicNav(null, null, 6)
+    nav = new CinematicNav(6)
     const indices: number[] = []
     nav.onSectionChange((index) => indices.push(index))
     nav.goToSection(3)
@@ -97,7 +97,7 @@ describe('CinematicNav — vertical story and sheets', () => {
   })
 
   it('opens the Contact footer in the legacy runtime slot and closes explicitly', () => {
-    nav = new CinematicNav(null, null, 6)
+    nav = new CinematicNav(6)
     nav.goToSection(4)
 
     nav.goToSection(0)
@@ -110,7 +110,7 @@ describe('CinematicNav — vertical story and sheets', () => {
   })
 
   it('resolves legacy hashes to the public Contact finale without exposing Lab', () => {
-    nav = new CinematicNav(null, null, 6)
+    nav = new CinematicNav(6)
 
     nav.goToSectionByHash('#section-lab')
 
@@ -135,7 +135,7 @@ describe('CinematicNav — content page track', () => {
   })
 
   it('preserves the active chapter when a compact Menu sheet is closed', () => {
-    nav = new CinematicNav(null, null, 6)
+    nav = new CinematicNav(6)
     nav.goToSection(2)
     nav.goToSection(5)
 

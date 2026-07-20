@@ -3,7 +3,7 @@
 // Sections 0 (Lab) and 5 (Navigation) are shared across all SPA pages.
 // Main sections (1-4): Shader Lab, Audio Reactive, Generative, GPU Particles.
 
-import { sectionShell, contentTop, contentBottom } from '../../sections/_shared/constants'
+import { sectionShell, contentTop, contentBottom, i18nDesc, serviceExplore } from '../../sections/_shared/constants'
 import { labOverlaySection } from '../../sections/lab-overlay/template'
 import { navOverlaySection } from '../../sections/nav/template'
 
@@ -73,26 +73,21 @@ const EXPERIMENTS: readonly Experiment[] = [
   },
 ] as const
 
-function expDesc(key: string, desc: readonly string[]): string {
-  return `<div class="jlz-service-desc uk-margin-small-top">${desc
-    .map(
-      (line, i) =>
-        `<p class="uk-text-meta uk-margin-remove" data-i18n="${key}.desc${i + 1}">${line}</p>`,
-    )
-    .join('')}</div>`
-}
-
-function experimentFooter(experiment: Experiment): string {
-  return `
+function experimentSection(exp: Experiment, isActive: boolean = false): string {
+  const footer = `
     <div class="jlz-experiment-footer">
-      <span class="jlz-experiment-footer__mode" data-i18n="${experiment.modeKey}">${experiment.mode}</span>
+      <span class="jlz-experiment-footer__mode" data-i18n="${exp.modeKey}">${exp.mode}</span>
       <span class="jlz-experiment-footer__state" data-i18n="lab.sceneState">Isolated scene · in development</span>
-      <a href="${experiment.noteHref}" class="jlz-service-explore uk-button uk-button-default uk-button-small">
-        <span class="jlz-service-explore__dot" aria-hidden="true"></span>
-        <span data-i18n="lab.readNote">Read development note</span>
-      </a>
+      ${serviceExplore(exp.noteHref, 'lab.readNote', 'Read development note')}
     </div>
   `
+  return sectionShell(
+    `${exp.key.replace('lab.', 'lab-')}`,
+    contentTop(exp.num, exp.title, exp.lead, 'large', exp.key + '.title', exp.key + '.lead'),
+    contentBottom(`${i18nDesc(exp.key, exp.desc)}${footer}`),
+    'content',
+    isActive,
+  )
 }
 
 export function labPage(): string {
@@ -102,31 +97,13 @@ export function labPage(): string {
       <!-- 0: CONTACT FINALE (canonical Lab runtime slot) -->
       ${labOverlaySection('content')}
       <!-- 1: Shader Lab (start, active) -->
-      ${sectionShell(
-        'lab-01',
-        contentTop(e1!.num, e1!.title, e1!.lead, 'large', e1!.key + '.title', e1!.key + '.lead'),
-        contentBottom(`${expDesc(e1!.key, e1!.desc)}${experimentFooter(e1!)}`),
-        'content',
-        true,
-      )}
+      ${experimentSection(e1!, true)}
       <!-- 2: Audio Reactive -->
-      ${sectionShell(
-        'lab-02',
-        contentTop(e2!.num, e2!.title, e2!.lead, 'large', e2!.key + '.title', e2!.key + '.lead'),
-        contentBottom(`${expDesc(e2!.key, e2!.desc)}${experimentFooter(e2!)}`),
-      )}
+      ${experimentSection(e2!)}
       <!-- 3: Generative -->
-      ${sectionShell(
-        'lab-03',
-        contentTop(e3!.num, e3!.title, e3!.lead, 'large', e3!.key + '.title', e3!.key + '.lead'),
-        contentBottom(`${expDesc(e3!.key, e3!.desc)}${experimentFooter(e3!)}`),
-      )}
+      ${experimentSection(e3!)}
       <!-- 4: GPU Particles -->
-      ${sectionShell(
-        'lab-04',
-        contentTop(e4!.num, e4!.title, e4!.lead, 'large', e4!.key + '.title', e4!.key + '.lead'),
-        contentBottom(`${expDesc(e4!.key, e4!.desc)}${experimentFooter(e4!)}`),
-      )}
+      ${experimentSection(e4!)}
       <!-- 5: MENU SHEET -->
       ${navOverlaySection('content')}
     </article>

@@ -1,8 +1,8 @@
-// src/core/Section.ts — Junni-style: cameraTransform, bakuTransform, viewingState, switchState()
+// src/core/Section.ts — Per-section state machine + opacity animation
 
 import * as THREE from 'three'
 import { StateBus } from './StateBus'
-import { type PhaseConfig } from './WorldConfig'
+import { type PhaseConfig, type CameraTransform, type BakuTransform } from './WorldConfig'
 import { disposeMaterialDeep } from '../Utils/dispose'
 
 export enum SectionState {
@@ -17,29 +17,9 @@ const STATE_VALUE: Record<SectionState, number> = {
   [SectionState.PASSED]: 2,
 }
 
-// ── Junni: camera transform per section (where camera is when this section is active)
-export interface CameraTransform {
-  position: THREE.Vector3
-  target: THREE.Vector3
-  fov: number
-}
+export type { CameraTransform, BakuTransform }
 
-// ── Junni: baku transform per section (where character is when this section is active)
-export interface BakuTransform {
-  position: THREE.Vector3
-  rotation: THREE.Quaternion
-  scale: THREE.Vector3
-  opacity: number
-  role: number
-  material: {
-    color: THREE.Color
-    emissive: THREE.Color
-    roughness: number
-    metalness: number
-  }
-}
-
-// ── Junni: post processing params per section
+/** Post-processing params used by Section (subset of PostTransform). */
 export interface PostProcessingParams {
   bloom: number
   vignette: number
@@ -47,7 +27,7 @@ export interface PostProcessingParams {
   chromatic: number
 }
 
-// ── Junni: light data per section
+/** Light data used by Section (subset of LightTransform). */
 export interface LightData {
   ambientColor: THREE.Color
   intensity: number
@@ -56,13 +36,13 @@ export interface LightData {
 export class Section extends THREE.Group {
   public phaseConfig: PhaseConfig
 
-  // ── Junni-style transform holders (read from PhaseConfig at construction)
+  // Transform holders read from PhaseConfig at construction
   public cameraTransform: CameraTransform
   public bakuTransform: BakuTransform
   public ppParams: PostProcessingParams
   public lightData: LightData
 
-  // ── Viewing state machinery (Junni: ready/viewing/passed)
+  // Viewing state machinery (ready/viewing/passed)
   private _state: SectionState = SectionState.READY
   private _stateDoneHandler: ((eventName: string, data: unknown) => void) | null = null
   public get state(): SectionState {
@@ -72,7 +52,7 @@ export class Section extends THREE.Group {
   private stateChannel: string
   private opacityChannel: string
 
-  // A-008: cache for setMeshOpacity
+  // Cache for setMeshOpacity — avoid traverse every call
   private _opacityMeshCache: THREE.Mesh[] | null = null
 
   constructor(
@@ -86,7 +66,7 @@ export class Section extends THREE.Group {
     this.opacityChannel = `section:${config.id}:opacity`
     this.visible = false
 
-    // ── Extract transforms from PhaseConfig (Junni pattern)
+    // Extract transforms from PhaseConfig
     this.cameraTransform = {
       position: config.camera.position.clone(),
       target: config.camera.target.clone(),
@@ -98,7 +78,8 @@ export class Section extends THREE.Group {
       rotation: config.baku.rotation.clone(),
       scale: config.baku.scale.clone(),
       opacity: config.baku.opacity,
-      role: config.baku.role as unknown as number,
+      role: config.baku.role,
+      displace: config.baku.displace,
       material: {
         color: config.baku.material.color.clone(),
         emissive: config.baku.material.emissive.clone(),
@@ -122,18 +103,11 @@ export class Section extends THREE.Group {
     const bus = StateBus.getInstance()
     bus.channel(this.stateChannel, STATE_VALUE[SectionState.READY])
     bus.channel(this.opacityChannel, 0)
-    // D-2 fix: listen for animation completion to sync _state. Previously
-    // switchState(reduced=false) animated the channel value but never updated
-    // _state → the READY→VIEWING→PASSED state machine was dead (forceState
-    // was the only path that set _state). Now when the animate() completes,
-    // StateBus emits 'done:${name}' and we resolve _state from the final value.
+    // Listen for animation completion to sync _state. When the animate()
+    // completes, StateBus emits 'done:${name}' and we resolve _state.
     this._stateDoneHandler = (_eventName: string, data: unknown) => {
-      // StateBus listeners receive `(eventName, data)`. For a completed
-      // animation, `data` is the original state-channel name; using the event
-      // name (`done:section:...`) tried to read a channel that does not exist.
       if (data !== this.stateChannel) return
       const val = bus.get(this.stateChannel)
-      // Resolve enum from numeric value (0=READY, 1=VIEWING, 2=PASSED)
       let resolved: SectionState
       if (val < 0.5) resolved = SectionState.READY
       else if (val < 1.5) resolved = SectionState.VIEWING
@@ -148,14 +122,10 @@ export class Section extends THREE.Group {
 
   public switchState(target: SectionState, duration: number = 1.0, reduced: boolean = false): void {
     const bus = StateBus.getInstance()
-    // A-003 fix: read current value BEFORE any write. Previous code
-    // called bus.channel() which overwrote the value, then bus.get()
-    // returned the just-written target, and + delta overshot.
     const current = bus.get(this.stateChannel)
     const targetValue = STATE_VALUE[target]
     if (Math.abs(targetValue - current) < 0.001) return
     const dur = reduced ? 0 : duration
-    // Animate from current → target (no bus.channel() overwrite)
     bus.animate(this.stateChannel, targetValue, dur, 'easeOutQuart')
     if (reduced) {
       bus.set(this.stateChannel, targetValue)
@@ -173,7 +143,6 @@ export class Section extends THREE.Group {
   }
 
   public splash(): void {
-    // ── Junni: splash = export-ready visible state (called on world splash)
     this.visible = true
     this.forceState(SectionState.VIEWING, true)
   }
@@ -208,8 +177,6 @@ export class Section extends THREE.Group {
   }
 
   private setMeshOpacity(value: number): void {
-    // A-008 fix: use _opacityMeshCache instead of traverse every call.
-    // Lazy-init on first call (same pattern as _cachedMeshes in update()).
     if (this._opacityMeshCache === null) {
       this._opacityMeshCache = []
       this.traverse((obj: THREE.Object3D) => {
@@ -226,11 +193,6 @@ export class Section extends THREE.Group {
     }
     for (const mesh of this._opacityMeshCache) {
       const mat = mesh.material as THREE.Material & { opacity: number }
-      // NOTE: do NOT set mat.needsUpdate = true here. Opacity is a uniform,
-      // not a shader-structure change — needsUpdate would force a full shader
-      // recompile every frame during opacity animation (0→1 over 0.6s = 36
-      // recompiles). The material is already transparent (transparent:true
-      // set at creation), so uniform updates are enough.
       mat.opacity = value
     }
   }
@@ -243,16 +205,13 @@ export class Section extends THREE.Group {
   }
 
   public update(_dt: number): void {
-    // No-op — emissive pulse was removed for on-demand rendering.
-    // Section meshes are static; only World.update(dt, needsRender) drives
-    // the visible animations (baku, particles, BakuCarousel).
+    // No-op — section meshes are static. World.update() drives visible animations.
   }
 
   public dispose(): void {
     const bus = StateBus.getInstance()
     bus.cancel(this.stateChannel)
     bus.cancel(this.opacityChannel)
-    // D-2 fix: remove the done listener added in constructor
     if (this._stateDoneHandler) {
       bus.off(`done:${this.stateChannel}`, this._stateDoneHandler)
       this._stateDoneHandler = null

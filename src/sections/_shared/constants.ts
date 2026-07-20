@@ -114,7 +114,16 @@ export function contentBottom(content: string): string {
 }
 
 /** Stacked uk-text-meta description lines below a section title.
- *  Replaces the repeated `<div class=" uk-margin-small-top">…</div>` pattern. */
+ *  Accepts an i18n key prefix and string lines — generates data-i18n keys
+ *  automatically (prefix.desc1, prefix.desc2, ...). */
+export function i18nDesc(key: string, lines: readonly string[]): string {
+  if (lines.length === 0) return ''
+  return `<div class="jlz-service-desc uk-margin-small-top">${lines
+    .map((line, i) => `<p class="uk-text-meta uk-margin-remove" data-i18n="${key}.desc${i + 1}">${line}</p>`)
+    .join('')}</div>`
+}
+
+/** Stacked uk-text-meta description lines below a section title (legacy alias). */
 export function descBlock(lines: { key: string; text: string }[]): string {
   return `<div class="jlz-desc uk-margin-small-top">${lines
     .map((l) => `<p class="uk-text-meta uk-margin-remove" data-i18n="${l.key}">${l.text}</p>`)

@@ -2206,12 +2206,6 @@ body:not([data-page='home'])
   gap: 0.4rem;
 }
 
-.jlz-topbar-controls .uk-icon-button {
-  width: 2.2rem;
-  height: 2.2rem;
-  color: inherit;
-}
-
 .jlz-topbar__brand {
   pointer-events: auto;
   color: inherit;
@@ -2831,22 +2825,7 @@ body[data-cinematic-sheet]
 //  .jlz-help-text-row, .jlz-help-key, .jlz-help-divider CSS removed.)
 
 
-//  Joystick is always visible, hint + controls are part of its stack.)
-
-@media (max-width: 500px) {
-  .jlz-help-hint {
-    font-size: 0.6rem;
-  }
-  .jlz-joystick__arrow-label {
-    font-size: 0.5rem;
-  }
-  .jlz-joystick__arrow-label--left {
-    left: -26px;
-  }
-  .jlz-joystick__arrow-label--right {
-    right: -36px;
-  }
-}
+// Joystick is always visible. (jlz-help-hint / jlz-joystick__arrow-label CSS removed — elements no longer exist.)
 
 
 // ── Sound toggle — now uses uk-icon (muted/sound), no CSS bars needed ──

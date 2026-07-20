@@ -742,7 +742,7 @@ export class RenderPipeline {
 
     if (bloomIntensity > 0.001) {
       // Bright-extract: rtScene → rtBright
-      this._renderQuad(passBright, { uScene: rtScene.texture }, rtBright, renderer)
+      this._renderQuad(passBright, rtBright, renderer)
 
       // Gaussian blur (ping-pong)
       let inputRT = rtBright
@@ -751,11 +751,11 @@ export class RenderPipeline {
       for (let i = 0; i < this._config.bloomPasses; i++) {
         passBlur.uniforms.uInput!.value = inputRT.texture
         passBlur.uniforms.uHorizontal!.value = true
-        this._renderQuad(passBlur, {}, outputRT, renderer)
+        this._renderQuad(passBlur, outputRT, renderer)
 
         passBlur.uniforms.uInput!.value = outputRT.texture
         passBlur.uniforms.uHorizontal!.value = false
-        this._renderQuad(passBlur, {}, inputRT, renderer)
+        this._renderQuad(passBlur, inputRT, renderer)
 
         ;[inputRT, outputRT] = [outputRT, inputRT]
       }
@@ -778,7 +778,7 @@ export class RenderPipeline {
     ;(passComposite.uniforms.uGradeHighlights!.value as THREE.Vector3).copy(this._sectionHighlights)
     // Refraction + grade are set via setSectionGrade() — they persist across frames.
 
-    this._renderQuad(passComposite, {}, null, renderer)
+    this._renderQuad(passComposite, null, renderer)
 
     renderer.autoClear = autoClearBackup
     renderer.toneMapping = toneMappingBackup
@@ -810,7 +810,6 @@ export class RenderPipeline {
 
   private _renderQuad(
     material: THREE.ShaderMaterial,
-    _uniforms: Record<string, THREE.Texture | null>,
     target: THREE.WebGLRenderTarget | null,
     renderer: THREE.WebGLRenderer,
   ): void {

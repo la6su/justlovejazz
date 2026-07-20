@@ -6,7 +6,7 @@ import * as THREE from 'three'
 import { Section, SectionState } from './Section'
 import { StateBus } from './StateBus'
 import { prefersReducedMotion } from './motionPolicy'
-import { type CameraTarget, type WorldState, NarrativePhase, BakuRole } from './types'
+import { type CameraTarget, type WorldState, BakuRole } from './types'
 import { CinematicLights } from '../Experience/World/Lights'
 import { DrawTrail } from '../Experience/World/DrawTrail'
 import { SplashCube } from '../Experience/World/SplashCube'
@@ -705,10 +705,10 @@ export class World extends THREE.Group {
       worldState: {
         // Arrival metadata drives discrete systems (theme, post, cube) while
         // the transform/material values above remain a continuous from→to blend.
-        currentPhase: this.configs[activeIndex]!.id as unknown as NarrativePhase,
+        currentPhase: this.configs[activeIndex]!.id,
         phaseProgress: t,
         bakuMaterial: {
-          role: toBaku.role as unknown as BakuRole,
+          role: toBaku.role,
           color: this._poolBakuColor.lerpColors(fromBaku.material.color, toBaku.material.color, t),
           emissive: this._poolBakuEmissive.lerpColors(
             fromBaku.material.emissive,
@@ -889,7 +889,7 @@ export class World extends THREE.Group {
         rotation: new THREE.Quaternion(),
         scale: new THREE.Vector3(0.4),
         opacity: 1,
-        role: 0 as unknown as BakuRole,
+        role: BakuRole.NORMAL,
         displace: 0.05,
         material: {
           color: new THREE.Color(),
@@ -934,10 +934,10 @@ export class World extends THREE.Group {
         fov: cam.fov,
       },
       worldState: {
-        currentPhase: cfg.id as unknown as NarrativePhase,
+        currentPhase: cfg.id,
         phaseProgress: 0,
         bakuMaterial: {
-          role: baku.role as unknown as BakuRole,
+          role: baku.role,
           color: baku.material.color.clone(),
           emissive: baku.material.emissive.clone(),
           roughness: baku.material.roughness,
