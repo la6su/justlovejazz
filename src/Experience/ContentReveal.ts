@@ -80,7 +80,7 @@ export class ContentReveal {
     })
   }
 
-  private applyTheme(sectionId: string): void {
+  private applyTheme(sectionId: string, snap = false): void {
     const configs = this.getConfigs()
     let cfg = configs.find((c) => c.domSection === sectionId || c.id === sectionId)
     if (!cfg && this.currentSectionIndex >= 0) {
@@ -103,7 +103,7 @@ export class ContentReveal {
 
     window.dispatchEvent(
       new CustomEvent('jlz:theme-applied', {
-        detail: { isLight: shouldUseLight, mode: isInverse ? 'inverse' : 'auto' },
+        detail: { isLight: shouldUseLight, mode: isInverse ? 'inverse' : 'auto', snap },
       }),
     )
   }
@@ -149,7 +149,9 @@ export class ContentReveal {
           'intro'
         this.currentSectionId = sectionId
       }
-      this.applyTheme(sectionId)
+      // snap=true: theme toggle → EnvSphere must change instantly (no lerp)
+      // to match the instant CSS uk-light flip.
+      this.applyTheme(sectionId, true)
     }
     window.addEventListener('jlz:theme-change', this.themeHandler)
     window.addEventListener('jlz:route-change', this.themeHandler)

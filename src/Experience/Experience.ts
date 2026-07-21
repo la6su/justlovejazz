@@ -328,12 +328,19 @@ export class Experience {
     // ── 3D ↔ theme sync: EnvSphere follows per-section theme ──
     // ContentReveal dispatches jlz:theme-applied on section change.
     // isLight=true → pattern 1, isLight=false → pattern 2.
+    // Theme toggle (snap=true) → EnvSphere changes instantly to match the
+    // instant CSS uk-light flip. Section change (snap=false) → lerp for
+    // smooth visual continuity during scroll.
     this._themeAppliedHandler = (e: Event) => {
-      const detail = (e as CustomEvent<{ isLight: boolean }>).detail
+      const detail = (e as CustomEvent<{ isLight: boolean; snap?: boolean }>).detail
       if (!detail) return
       const targetIdx = detail.isLight ? 1 : 2
       if (this.world?.envSphere) {
-        this.world.envSphere.changeSection(targetIdx)
+        if (detail.snap) {
+          this.world.envSphere.snapToSection(targetIdx)
+        } else {
+          this.world.envSphere.changeSection(targetIdx)
+        }
         // Sync ground plane color/opacity to the active theme — otherwise
         // a dark ground is invisible on the light theme (near-white bg).
         this.world.syncGroundTheme(detail.isLight)

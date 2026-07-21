@@ -235,6 +235,8 @@ export class FullscreenOverlay {
       }
       this.container.classList.remove('is-playing')
       this.container.classList.remove('is-entered')
+      this.container.classList.remove('is-fast-open')
+      this.container.classList.remove('is-plane-origin')
       this.video.pause()
       this.onClose?.()
       // Remove keyboard listener when modal closes — clean lifecycle, no
@@ -330,6 +332,12 @@ export class FullscreenOverlay {
   /** Open overlay with given options. */
   open(opts: OverlayOptions): void {
     this._applyOptions(opts)
+    // Non-plane-origin opens (showreel, direct works click) skip the
+    // clip-path/scale reveal — there's no 3D plane expanding, so the 0.86s
+    // animation is visual noise. Use a fast fade instead.
+    const isPlaneOrigin = opts.origin === 'plane'
+    this.container.classList.toggle('is-plane-origin', isPlaneOrigin)
+    this.container.classList.toggle('is-fast-open', !isPlaneOrigin)
     UIkit.modal(this.container).show()
   }
 

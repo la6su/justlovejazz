@@ -98,12 +98,23 @@ export class EnvSphere extends THREE.Mesh {
   /**
    * Change section — animate uSection weights.
    * Called by World.changeSection(idx).
-   * target[idx] = 1, all others = 0. Lerped over ~1s.
+   * target[idx] = 1, all others = 0. Lerped over ~333ms.
    */
   changeSection(idx: number): void {
     if (idx < 0 || idx >= SECTION_PATTERNS.length) return
     this._targetWeights = new Array(SECTION_PATTERNS.length).fill(0)
     this._targetWeights[idx] = 1
+    this._dirty = true
+  }
+
+  /** Snap to a section instantly (no lerp).
+   *  Used for theme toggle where the background must change in sync with
+   *  the instant CSS uk-light flip — a 333ms lerp would look like lag. */
+  snapToSection(idx: number): void {
+    if (idx < 0 || idx >= SECTION_PATTERNS.length) return
+    this._sectionWeights = new Array(SECTION_PATTERNS.length).fill(0)
+    this._sectionWeights[idx] = 1
+    this._targetWeights = this._sectionWeights.slice()
     this._dirty = true
   }
 
