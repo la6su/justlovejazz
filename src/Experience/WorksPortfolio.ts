@@ -39,3 +39,12 @@ export class WorksPortfolio {
     // No GPU resources to clean up
   }
 }
+
+/** Factory function — used by Experience.ensurePortfolio() to construct
+ *  the portfolio with a wired onCardClick callback. */
+export function createWorksPortfolio(
+  projects: Project[],
+  onCardClick: (index: number) => void,
+): WorksPortfolio {
+  return new WorksPortfolio(projects, onCardClick)
+}
