@@ -598,9 +598,10 @@ export class Experience {
     }
     window.addEventListener('jlz:goto-section-by-hash', this._gotoSectionByHashHandler)
 
-    // ── Showreel button (3D TSL shader plane on intro section) ──
-    // Click on the ShowreelButton3D mesh → dispatches jlz:showreel-play
-    // → opens FullscreenOverlay with the showreel video.
+    // ── Showreel playback ──
+    // jlz:showreel-play is dispatched by the DOM Play Showreel control and
+    // opens FullscreenOverlay with the showreel video. The 3D ShowreelButton3D
+    // trigger was removed; the intro scene does not instantiate it.
 
     this._showreelPlayHandler = () => {
       if (!this.overlay) return
@@ -723,7 +724,6 @@ export class Experience {
       burstActive ||
       camShaking ||
       cubeRotating ||
-      
       camPulsing ||
       particlesActive ||
       ambientSceneActive
@@ -765,7 +765,6 @@ export class Experience {
     const { cameraTarget, worldState } = this.world.updateTransform(ns)
     this.world.update(dt, this._needsRender)
     // Update showreel button shader (TSL uniforms + hover/click animation)
-    
 
     // Drive worldDNA section blend — from→to colors + phaseProgress (scroll t).
     if (this.world?.baku) {
@@ -914,7 +913,6 @@ export class Experience {
         !camShaking &&
         !particlesActive &&
         !cubeRotating &&
-        
         !drawTrailActive &&
         !camPulsing &&
         !ambientSceneActive
@@ -1104,7 +1102,6 @@ export class Experience {
       null
     )
   }
-
 
   private onProjectSelect(idx: number, preload: boolean = false, origin?: 'plane'): void {
     if (!this.portfolio || !this.overlay) return

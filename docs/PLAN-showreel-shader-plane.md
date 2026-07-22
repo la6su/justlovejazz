@@ -48,17 +48,18 @@ project category.
   true Three.js planes. A selected plane expands and burns into the shared
   UIkit `FullscreenOverlay`; the overlay receives one copy of the same source
   texture so there is no image or aspect swap during the handoff.
-- `ShowreelButton3D.ts` exists as a TSL implementation, but the intro scene
-  deliberately does not instantiate it because the previous composition was
-  visually cluttered.
+- `ShowreelButton3D.ts` was removed. The intro scene no longer instantiates a
+  3D showreel trigger; the previous composition was visually cluttered and the
+  DOM Play Showreel control is the sole entry point.
 
 ## Remaining decisions and phases
 
 ### 1. Approve the visual direction for the intro showreel trigger
 
-Decide whether the 3D trigger should return, be redesigned, or remain absent.
-If it returns, instantiate `ShowreelButton3D` only after validating its scale,
-placement and contrast against the glass cube on both renderer backends.
+Decide whether a 3D trigger should return, be redesigned, or stay absent. If
+it returns, re-introduce a TSL showreel control only after validating its
+scale, placement and contrast against the glass cube on both renderer
+backends.
 
 ### 2. Evaluate a 3D Works route companion
 

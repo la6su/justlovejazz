@@ -4,6 +4,27 @@ This is a concise release-level record. Implementation decisions belong in
 [`WORKLOG.md`](../WORKLOG.md); completed plans remain available through Git
 history.
 
+## 2026-07-21 — Unified shader transition and per-instance materials
+
+- Gave each `CasePlane` its own `MeshBasicNodeMaterial` and TSL uniform
+  nodes; removed the module-level shared material/texture/state that made
+  every carousel card render the last card's image.
+- Added `PlaneTransition.ts` as the single source of truth for the
+  plane-to-fullscreen handoff, replacing ~90 lines of duplicated inline
+  transition code in `BakuCarousel` and `WorksPlaneStage`.
+- Fixed the fullscreen overlay reveal: `FullscreenOverlay` now adds the
+  `is-entered` class (with a 120 ms fallback timer) so the CSS clip-path
+  transition actually fires for showreel and project opens.
+- Re-prefixed `.jlz-fs-dialog` selectors with `.jlz-fs-overlay` so they
+  match UIkit's modal-full specificity instead of being overridden.
+- Fixed a DevPanel regression that called a non-existent
+  `Experience.navigatePortfolio` method and broke `type-check`.
+- Retired the historical audit reports (`docs/AUDIT.md`,
+  `docs/AUDIT-FULL.md`), the abandoned `REFACTOR-WORKLOG.md`, the stale
+  `docs/PLAN-studio-console-theme.md` and the duplicate lower-case
+  `worklog.md`. Their durable decisions now live in this changelog and
+  `WORKLOG.md`; everything else stays in Git history.
+
 ## 2026-07-20 — Audit remediation (Phase A + B)
 
 - Removed four no-op methods from `EnvSphere` (`attachToScene`,
