@@ -29,7 +29,7 @@ changelog, not here. Move one item to **In progress** before implementation.
 
 - [ ] **Formatting baseline** — restore a clean repository-wide
       `bun run format:check` in a dedicated mechanical PR. The current check
-      reports 32 files, including files outside this feature change.
+      reports 50 files, including files outside this feature change.
 
 - [ ] **UIkit delivery audit** — measure actual CSS/JS component use before
       removing Less imports or rebuilding UIkit. Preserve the documented

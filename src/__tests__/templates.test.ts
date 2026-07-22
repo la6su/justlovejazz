@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { sectionShell, homeTop, contentTop, i18nDesc, serviceExplore, descBlock, storyBottom, contentBottom } from '../sections/_shared/constants'
-import type { PageId } from '../sections/_shared/constants'
+import {
+  sectionShell,
+  homeTop,
+  contentTop,
+  i18nDesc,
+  serviceExplore,
+  descBlock,
+  storyBottom,
+  contentBottom,
+} from '../sections/_shared/constants'
 
 describe('sectionShell', () => {
   it('wraps content in a section with correct id', () => {
@@ -37,7 +45,13 @@ describe('sectionShell', () => {
 
 describe('homeTop', () => {
   it('generates eyebrow, title with i18n, and lead', () => {
-    const html = homeTop('01', 'home.intro.title', 'Studio', 'home.intro.lead', 'Creative development.')
+    const html = homeTop(
+      '01',
+      'home.intro.title',
+      'Studio',
+      'home.intro.lead',
+      'Creative development.',
+    )
     expect(html).toContain('data-eyebrow')
     expect(html).toContain('data-eyebrow-text="01"')
     expect(html).toContain('data-i18n="home.intro.title"')

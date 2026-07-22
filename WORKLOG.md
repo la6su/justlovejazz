@@ -1,25 +1,74 @@
 # Worklog
 
+## 2026-07-21 — Unified shader transition and per-instance materials
+
+### Decision
+
+The home Baku carousel, the `/works` plane stage and the fullscreen overlay
+shared duplicated transition code and a single shared `CasePlane` material,
+so only the last card's texture and uniforms rendered and the overlay never
+revealed. PR #165 consolidated the plane-to-fullscreen handoff into one
+utility and gave each `CasePlane` its own material.
+
+### Changes
+
+- **CasePlane per-instance materials:** Removed all module-level shared
+  state (`sharedTime`, `sharedState*`, `_sharedTexture`, `_sharedMaterial`).
+  Each `CasePlane` now constructs its own `MeshBasicNodeMaterial` with its
+  own TSL uniform nodes and texture binding; only `PlaneGeometry` is still
+  shared. `dispose()` releases the per-instance material.
+- **PlaneTransition utility:** New `src/Experience/World/PlaneTransition.ts`
+  exports `TRANSITION_DURATION`, `TRANSITION_TAKEOVER`, `CASE_PLANE_HEIGHT`
+  and the `beginTransition` / `updateTransition` / `resetTransition`
+  helpers. It is now the single source of truth for the plane-to-fullscreen
+  handoff for both `BakuCarousel` (quaternion interpolation) and
+  `WorksPlaneStage` (euler interpolation), removing ~90 lines of inline
+  transition code and the duplicate camera math.
+- **FullscreenOverlay reveal:** The CSS reveal transition depended on an
+  `is-entered` class that was never added. `FullscreenOverlay` now adds it
+  on `shown` (and a 120 ms fallback timer in `show` covers the case where
+  UIkit's `shown` event loses the race with `transitionend`) and removes it
+  on `hide`. `_tryAutoplay()` is shared by both paths so the showreel video
+  starts reliably.
+- **Overlay CSS specificity:** `.jlz-fs-dialog` selectors were re-prefixed
+  with `.jlz-fs-overlay` so they match UIkit's `.uk-modal-full
+.uk-modal-dialog` specificity (2) instead of being overridden by it.
+  `margin:0` and `max-width:100% !important` fully override UIkit's
+  modal-full layout rules.
+- **DevPanel regression fixed:** The audit-remediation pass rewired the
+  DevPanel carousel buttons to a non-existent `Experience.navigatePortfolio`
+  method, which broke `type-check`. Reverted to `portfolio?.prev()` /
+  `portfolio?.next()` — the surface `WORKLOG.md` already documented.
+
+### Verification
+
+`type-check` 0 errors, `lint` 0 errors (59 pre-existing warnings),
+`test:unit` 106/106, `build` green. Showreel, home works slider and the
+`/works` plane-to-fullscreen handoff all reveal correctly.
+
+---
+
 ## 2026-07-20 — Audit remediation Phase A + B
 
 ### Decision
 
-Seven items from the technical audit (docs/AUDIT.md) addressed in one PR.
-All changes are P1/P2 from the priority backlog — safe wins and
-structural simplification with zero rendering or visual regression risk.
+Seven items from the technical audit addressed in one PR. All changes are
+P1/P2 from the priority backlog — safe wins and structural simplification
+with zero rendering or visual regression risk. The audit report itself was
+retired afterwards; its findings now live only in Git history.
 
 ### Changes
 
 - **A-1 EnvSphere no-ops:** Removed `attachToScene`, `setSectionColors`,
   `setBlend`, `setActiveSection` — all documented no-ops with comments
-  explaining retained "API compat."  Callers in `Experience.ts` (sheet
+  explaining retained "API compat." Callers in `Experience.ts` (sheet
   section-change) and `World.ts` (init) removed. Mesh is self-rendering
   via `renderOrder=-1000`; section weights drive the blend.
 - **A-2 WorksPortfolio:** Replaced class with Three.js `Group` (never
   rendered, `visible=false`) with a plain interface + `createWorksPortfolio()`
   factory. Eliminates the `three` import entirely and the `dispose()`
   that only called `group.clear()`. `Experience.ts` no longer positions
-  or adds the phantom group to the scene. DevPanel still accesses
+  or adds the phantom group to the scene. DevPanel accesses
   `portfolio.prev()/next()` via the identical method surface.
 - **A-3 IntersectionObserver leak:** `entry-app.ts` `setupTitleObserver()`
   now stores the observer in `_titleObserver` and disconnects the previous
