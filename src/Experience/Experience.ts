@@ -568,7 +568,11 @@ export class Experience {
     this._worksPageSectionHandler = (e: Event) => {
       if (document.body.dataset.page !== 'works') return
       const detail = (e as CustomEvent<{ index?: number }>).detail
-      this.world?.setWorksPlaneStageSection(detail?.index ?? 0)
+      // DOM sections: 0=Lab overlay, 1-4=project pairs, 5=Nav overlay.
+      // SECTION_PROJECTS has 4 entries (0-3), so map DOM 1-4 → stage 0-3.
+      const domIndex = detail?.index ?? 0
+      const stageIndex = Math.max(0, domIndex - 1)
+      this.world?.setWorksPlaneStageSection(stageIndex)
       this._needsRender = true
     }
     window.addEventListener('jlz:page-section-change', this._worksPageSectionHandler)
