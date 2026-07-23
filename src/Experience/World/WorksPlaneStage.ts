@@ -186,8 +186,17 @@ export class WorksPlaneStage extends THREE.Group {
       this._reveal.set(card, nextReveal)
 
       if (opening?.card === card) return
-      if (!isVisible && nextReveal < 0.002) {
-        card.setReveal(0)
+
+      // Cards that are not part of the active section fade out IN PLACE —
+      // do not move them toward any layout slot, otherwise old cards slide
+      // into the new secondary position and overlap the incoming card.
+      if (!isVisible) {
+        if (nextReveal < 0.002) {
+          card.setReveal(0)
+        } else {
+          card.setReveal(nextReveal)
+          card.update(dt, false)
+        }
         return
       }
 
@@ -195,8 +204,7 @@ export class WorksPlaneStage extends THREE.Group {
       const layout = isPrimary ? layouts[0] : layouts[1]
 
       // Snap cards to their layout target on first appearance (reveal was 0)
-      // so they never fly out from the camera-local origin. Only smooth
-      // position/scale adjustments afterwards.
+      // so they never fly out from the camera-local origin.
       if (reveal < 0.01 && targetReveal > 0.5) {
         card.position.set(layout.x, layout.y, layout.z)
         card.rotation.set(isSecondary ? -0.018 : 0.006, isSecondary ? -0.07 : 0.025, 0)

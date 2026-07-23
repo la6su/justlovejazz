@@ -157,7 +157,7 @@ const DEFAULTS: Omit<RawScene, 'id' | 'context' | 'domSection' | 'range'> = {
   postChromatic: 0,
   postRefract: 0,
   postBorder: 0.0,
-  postGradeShadows: [1.0, 0.98, 0.95],
+  postGradeShadows: [1.0, 1.0, 1.0],
   postGradeHighlights: [1.0, 1.0, 1.0],
   lightColor: 0xffffff,
   lightIntensity: 1.2,

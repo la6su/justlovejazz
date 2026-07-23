@@ -157,10 +157,10 @@ const COMPOSITE_FSG = `
     );
     color = mix(color, graded, 0.4);
 
-    // ACES-like tone mapping
-    // Epsilon (0.0001) in denominator prevents division by zero for black pixels
-    // (matches WebGPU TSL graph — ensures parity)
-    color = color * (6.2 * color + 0.03) / (color * (4.8 * color + 1.0) + 0.0001);
+    // ACES tone mapping removed — it compressed dynamic range and desaturated
+    // case textures. Materials that need tone mapping use toneMapped:true
+    // (applied per-material during scene→RT). CasePlane sets toneMapped:false
+    // to render textures with faithful original colors.
 
     // Film grain (time-varying, low-res dither)
     if (uGrain > 0.0) {

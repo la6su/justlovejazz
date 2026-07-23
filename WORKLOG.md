@@ -1,5 +1,44 @@
 # Worklog
 
+## 2026-07-23 — Final transition, texture and overlay fixes
+
+### Decision
+
+Four remaining visual issues from user feedback: card overlap during /works
+section change, CasePlane radial mask reading as a directional wipe from the
+right corner, double play button in the fullscreen overlay, and ACES tone
+mapping washing out case texture colors.
+
+### Changes
+
+- **WorksPlaneStage card overlap:** Invisible cards (not in the active
+  section) now fade out in place — they no longer lerp toward the secondary
+  layout slot, which caused old and new cards to overlap in the right corner
+  during section transitions.
+- **CasePlane reveal mask:** Replaced the radial center-out circle mask
+  (`screenUv.sub(vec2(0.5)).length()` + `smoothstep`) with a clean
+  `reveal * fadeOut` opacity. No directional bias — cards fade in/out
+  uniformly instead of wiping from a corner.
+- **Double play button:** Removed the footer `.jlz-fs-play` button. The
+  `.jlz-fs-big-play` overlay (inset:0, centered) is the sole play/pause
+  control. The footer keeps mute + seek + time.
+- **Texture color — ACES removed:** Removed ACES tone mapping from both
+  post-processing paths (WebGL2 composite shader + WebGPU TSL graph). ACES
+  compressed dynamic range and desaturated case textures. CasePlane's
+  `toneMapped:false` is now effective — textures render with faithful
+  original colors. Also neutralised the warm shadow tint
+  (`[1.0, 0.98, 0.95]` → `[1, 1, 1]`) in WorldConfig DEFAULTS that affected
+  the home works carousel.
+
+### Verification
+
+`type-check` 0 errors, `lint` 0 errors (58 warnings), `test:unit` 106/106,
+`build` green. Browser-verified: 1 play button (big-play only), /works
+sections show correct projects without overlap, no directional wipe, texture
+colors vibrant and faithful.
+
+---
+
 ## 2026-07-21 — Unified shader transition and per-instance materials
 
 ### Decision

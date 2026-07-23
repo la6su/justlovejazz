@@ -12,17 +12,7 @@
 
 import * as THREE from 'three'
 import { MeshBasicNodeMaterial } from 'three/webgpu'
-import {
-  Fn,
-  float,
-  positionLocal,
-  sin,
-  smoothstep,
-  uniform,
-  uv,
-  vec2,
-  vec3,
-} from 'three/tsl'
+import { Fn, float, positionLocal, sin, uniform, vec3 } from 'three/tsl'
 
 // Shared geometry — reused by all CasePlane instances (GPU buffer, not uniforms).
 const sharedGeometry = new THREE.PlaneGeometry(1, 9 / 16, 16, 10)
@@ -81,18 +71,14 @@ export class CasePlane extends THREE.Mesh {
       )
     })()
 
-    // Opacity: reveal circle mask + transition fade.
+    // Opacity: clean fade driven by reveal + transition. No radial mask —
+    // a center-out circle read as a directional wipe from whichever corner
+    // the plane happened to occupy. A straight opacity fade is neutral.
     ;(mat as any).opacityNode = Fn(() => {
-      const screenUv = uv()
       const reveal = state.y
       const transition = state.x
-      const dist = screenUv.sub(vec2(float(0.5))).length()
-      const wobbleEdge = sin(screenUv.y.mul(8.0).add(time.mul(2.0))).mul(0.04)
-        .add(sin(screenUv.x.mul(6.0).add(time.mul(1.5))).mul(0.03))
-      const revealRadius = reveal.mul(1.1).add(wobbleEdge)
-      const mask = smoothstep(revealRadius, revealRadius.add(0.05), dist).oneMinus()
       const fadeOut = float(1.0).sub(transition.mul(0.3))
-      return mask.mul(fadeOut)
+      return reveal.mul(fadeOut)
     })()
 
     super(sharedGeometry, mat)

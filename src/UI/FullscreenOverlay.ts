@@ -37,7 +37,6 @@ export class FullscreenOverlay {
   private container: HTMLDivElement
   private video: HTMLVideoElement
   private posterEl: HTMLDivElement
-  private playBtn: HTMLButtonElement
   private muteBtn: HTMLButtonElement
   private seekBar: HTMLInputElement
   private timeEl: HTMLElement
@@ -95,9 +94,6 @@ export class FullscreenOverlay {
           </button>
         </main>
         <footer class="jlz-fs-controls">
-          <button class="jlz-fs-play uk-icon-button" type="button" aria-label="Play/Pause">
-            <span uk-icon="icon: play; ratio: 1.2" aria-hidden="true"></span>
-          </button>
           <button class="jlz-fs-mute uk-icon-button is-muted" type="button" aria-label="Mute/Unmute" aria-pressed="true">
             <span uk-icon="icon: muted" aria-hidden="true"></span>
           </button>
@@ -118,7 +114,6 @@ export class FullscreenOverlay {
     // Wire elements
     this.video = this.container.querySelector('.jlz-fs-video')!
     this.posterEl = this.container.querySelector('.jlz-fs-poster')!
-    this.playBtn = this.container.querySelector('.jlz-fs-play')!
     this.muteBtn = this.container.querySelector('.jlz-fs-mute')!
     this.seekBar = this.container.querySelector('.jlz-fs-seek')!
     this.timeEl = this.container.querySelector('.jlz-fs-time')!
@@ -144,7 +139,6 @@ export class FullscreenOverlay {
         this.video.pause()
       }
     }
-    this.playBtn.addEventListener('click', togglePlay)
     this.bigPlay.addEventListener('click', togglePlay)
     this.video.addEventListener('click', togglePlay)
 
@@ -163,12 +157,10 @@ export class FullscreenOverlay {
       this.container.classList.add('is-playing')
       this.bigPlay.style.opacity = '0'
       this.revealVideoAfterFirstFrame()
-      this.playBtn.querySelector('[uk-icon]')?.setAttribute('uk-icon', 'icon: pause; ratio: 1.2')
     })
     this.video.addEventListener('pause', () => {
       this.container.classList.remove('is-playing')
       this.bigPlay.style.opacity = '1'
-      this.playBtn.querySelector('[uk-icon]')?.setAttribute('uk-icon', 'icon: play; ratio: 1.2')
     })
     this.video.addEventListener('timeupdate', () => {
       // Guard: duration is NaN until metadata loads (and stays NaN if no source)
