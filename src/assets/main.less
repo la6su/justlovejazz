@@ -17,10 +17,6 @@
   box-sizing: border-box;
 }
 
-/* ── Mobile-first root font-size ──
-   .85rem on mobile → 1rem on tablet+ (≥640px).
-   All UIKit sizing flows from this (rem-based). Headings, text, spacing
-   scale proportionally. */
 html {
   font-size: 0.85rem;
 }
@@ -69,8 +65,6 @@ h6,
   letter-spacing: -0.03em;
 }
 
-// Keep structural headings available to assistive technology and the native
-// story navigator when a scene intentionally has no visible DOM copy.
 .jlz-visually-hidden {
   position: absolute !important;
   width: 1px !important;
@@ -136,12 +130,6 @@ body:not([data-page='home']) #spa-content {
   pointer-events: auto;
 }
 
-// Higher-specificity override for home-page sections (data-section).
-// #spa-content section[data-section] has specificity (1,1,1) which beats
-// .section-active (0,1,0) — so pointer-events:none would win and block all
-// clicks in home-page sections (including menu overlay nav items). This
-// rule matches the same specificity + .section-active class to ensure
-// pointer-events: auto takes effect when the section is active.
 #spa-content section[data-section].section-active {
   pointer-events: auto;
 }
@@ -151,32 +139,6 @@ body:not([data-page='home']) #spa-content {
     transform: none !important;
   }
 }
-
-/* ------------------------------------------------------------------
-   UIkit theme-aligned colors — native uk-light system
-   ------------------------------------------------------------------
-   UIKit's `uk-light` class (enabled via @inverse-global-color-mode: light
-   in _import.less) handles ALL UIKit components natively: headings, text,
-   buttons, cards, navbar, etc. ThemeManager toggles `uk-light` on <body>.
-
-   Below: overrides ONLY for custom non-UIkit elements that do not have
-   inverse hooks. Some legacy selectors remain until the formatting cleanup.
-   Selectors use `body.uk-light` (the native UIKit class). ThemeManager
-   also toggles `light-theme` as a synonym for backward compat.
-   ------------------------------------------------------------------ */
-
-// Inverse theme: CSS vars in _import.less (html.uk-light) handle all color
-// inversions automatically. No hardcoded body.uk-light color overrides needed —
-// --jlz-color-text, --jlz-color-text-muted, etc. flip via CSS vars.
-
-/* (body.uk-light .jlz-hint__text removed — .jlz-hint DOM element no longer
-   exists. Subtitles now populates [data-eyebrow] inside the active section,
-   themed via .jlz-eyebrow + body.uk-light .jlz-eyebrow below.) */
-
-/* ------------------------------------------------------------------
-   Header — transparent dropbar navbar (Balou-inspired, minimal)
-   Uses QF's built-in navbar line-mode + glitch hover (no custom nav CSS).
-   ------------------------------------------------------------------ */
 
 .tm-header {
   position: fixed;
@@ -190,10 +152,6 @@ body:not([data-page='home']) #spa-content {
   background: transparent !important;
 }
 
-/* Transparent navbar — override QF compile-time navbar-nav-item-color
-   with theme-aware CSS vars. QF @navbar-nav-item-color is hardcoded at
-   compile time (doesn't flip with body.uk-light). CSS vars DO flip via
-   _import.less html.uk-light overrides. This makes the navbar inverse-ready. */
 .tm-header .uk-navbar-nav > li > a {
   color: var(--jlz-color-text-muted);
 }
@@ -203,29 +161,17 @@ body:not([data-page='home']) #spa-content {
   color: var(--jlz-color-text);
 }
 
-/* Navbar dropdown — positioned under the nav item (UIKit3 uk-navbar-dropdown).
-   Override QF compile-time background with theme-aware CSS var so the
-   dropdown flips correctly in inverse (light) mode. */
 .uk-navbar-dropdown {
   border: 1px solid var(--jlz-color-border);
   background: var(--jlz-color-bg-elevated);
 }
 
-/* ------------------------------------------------------------------
-   Content pages — transparent over 3D canvas (like QF background video)
-   `.jlz-page` is transparent so the 3D canvas shows through. A subtle
-   bottom-anchored scrim + text-shadow on headings/body provides
-   readability over any 3D background (uk-blend-difference can't cross
-   stacking contexts — see docs/UIKIT3.md for theme layering).
-   ------------------------------------------------------------------ */
 
 .jlz-page {
   position: relative;
   min-height: 100dvh;
   height: 100dvh;
   color: var(--jlz-color-text);
-  /* Transparent — 3D canvas shows through. Subtle scrim only at the
-     bottom for text readability where content meets the dock/joystick. */
   background: transparent;
   overflow: hidden;
 }
@@ -236,13 +182,7 @@ body:not([data-page='home']) #spa-content {
   display: none;
   min-height: 100dvh;
   align-items: center;
-  /* Padding handled by uk-section-small + uk-section-large@m utility
-     classes (UIKit3 native, responsive). No custom px padding here.
-     Note: UIKit3 has NO uk-section-medium class — only xsmall/small/
-     large/xlarge + the bare uk-section (medium default). */
   overflow: hidden;
-  // The monochrome EnvSphere is the only stage background. A second CSS
-  // gradient here made inverse transitions look like separate art directions.
   background: transparent;
 }
 
@@ -258,21 +198,6 @@ body:not([data-page='home']) #spa-content {
   margin-right: auto;
 }
 
-/* Content pages: console-theme handles all text contrast via color-mode overrides.
-   No text-shadow needed — contrast comes from color-mode overrides. */
-
-/* (Removed .jlz-event-row + .jlz-gallery-tile — dead CSS, 0 template usages) */
-
-/* ------------------------------------------------------------------
-   App-specific typography + hints
-   ------------------------------------------------------------------ */
-
-/* ── 3-tier section title hierarchy (was: all sections same size) ──
-   Tier 1 (hero/intro):  xlarge  — 800 weight, 10rem, dramatic
-   Tier 2 (primary):     large   — 600 weight, 5.5rem, confident
-   Tier 3 (secondary):   medium  — 400 weight, 4rem, restrained
-   Progression: 800→600→400 (bold→confident→restrained) + 10→5.5→4rem.
-   Creates real visual hierarchy between sections instead of monotony. */
 .studio-title.uk-heading-medium {
   font-size: clamp(2rem, 5vw, 3.75rem);
   font-weight: 400;
@@ -299,10 +224,7 @@ body:not([data-page='home']) #spa-content {
   margin: 0;
 }
 
-/* ── Variable typography system ──
-   Onest owns body + display. The wght axis carries hierarchy and state while
-   letter-spacing/line-height remain stable, so Cyrillic and Latin animate
-   without reflowing between separate font files. */
+
 .studio-title,
 .jlz-menu-stat__num,
 .jlz-menu-nav__label,
@@ -374,18 +296,6 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
   }
 }
 
-/* (Removed .jlz-corner-label + __hint — dead CSS, 0 template usages) */
-
-/* (.jlz-hint, .jlz-hint.is-visible, .jlz-hint__text removed — Subtitles
-   no longer creates a bottom .jlz-hint DOM element. Hints now populate
-   the active section's [data-eyebrow] via NoiseText. See .jlz-eyebrow below.) */
-
-/* ------------------------------------------------------------------
-   Fullscreen overlay (unified: showreel + project info)
-   Replaces old #project-overlay + .jlz-showreel-modal.
-   Uses UIKit3 uk-modal for visibility/animation/Esc/focus-trap.
-   ------------------------------------------------------------------ */
-
 // Modal background — dark + blur
 // Fullscreen overlay — always uses CSS vars for automatic light/dark adaptation.
 // No !important needed: CSS vars flip via body.uk-light overrides in _import.less.
@@ -411,10 +321,7 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
   z-index: 30010 !important;
 }
 
-// Cinematic depth-push reveal: the dialog starts slightly larger and inset,
-// then settles to fullscreen. The composite of scale + soft mask + opacity
-// reads as a seamless dolly-through rather than a mechanical iris. Faster
-// than the old 0.86s iris (0.5s) for a snappier, more refined feel.
+
 .jlz-fs-overlay .jlz-fs-dialog {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
@@ -441,22 +348,10 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
   opacity: 1;
 }
 
-// A real Three.js case plane reaches the viewport first. UIkit remains the
-// modal owner and crossfades the same decoded still above that plane; there is
-// no second carousel or aperture inside fullscreen.
 .jlz-fs-overlay.is-plane-origin {
   background: transparent !important;
 }
 
-// ── Unified cinematic reveal ──
-// Every open (showreel, project, image) uses the same depth-push reveal
-// above. is-plane-origin only adds background transparency for the 3D plane
-// handoff — the entrance animation is identical for all origins.
-
-// Do not let the modal's black backing surface cover a plane-origin handoff
-// while the DOM background image is still decoding. The live Three.js plane
-// remains visible below; the viewing-room surface returns only with a decoded
-// poster, so the seam has no empty frame.
 .jlz-fs-overlay.is-plane-origin:not(.is-poster-ready) .jlz-fs-dialog,
 .jlz-fs-overlay.is-plane-origin:not(.is-poster-ready) .jlz-fs-media-stage {
   background: transparent !important;
@@ -622,17 +517,13 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
   white-space: nowrap;
 }
 
-// (fs-volume CSS removed — mute button now uses uk-icon muted/sound)
 
 .jlz-fs-close {
   z-index: 6;
   color: var(--jlz-color-text);
 }
 
-// ── Unified navigation arrow ──
-// Shared by the home Works slider (.jlz-works-slider-arrow) and the fullscreen
-// overlay prev/next (.jlz-fs-prev/.jlz-fs-next). One circular console button
-// with backdrop blur, consistent sizing and the same slidenav-large icons.
+
 .jlz-nav-arrow {
   display: grid;
   place-items: center;
@@ -673,7 +564,7 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
   outline-offset: 4px;
 }
 
-// Fullscreen overlay prev/next — absolute left/right centred.
+
 .jlz-fs-prev,
 .jlz-fs-next {
   position: absolute;
@@ -761,14 +652,7 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
   cursor: pointer;
 }
 
-/* ── Custom cursor (codrops-style: inner dot + outer noisy circle) ──
-   Inner dot: 6px, follows mouse instantly, JLZ accent color.
-   Outer circle: small canvas (100×100px), follows with lerp(0.2) via
-   transform, noisy distortion on hover.
-   Both: pointer-events: none, z-index: 100000 (same — they don't overlap).
-   NO mix-blend-mode (breaks inside modal/overlay stacking contexts).
-   cursor:none on body only when (hover: hover) AND (pointer: fine) —
-   touch devices keep the system cursor. */
+
 .custom-cursor-inner {
   position: fixed;
   top: 0;
@@ -784,10 +668,8 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
     background-color 0.15s ease,
     width 0.15s ease,
     height 0.15s ease;
-  /* Console: small teal dot — centering via translate(-50%, -50%) in JS */
 }
 
-/* Inner dot becomes accent green on hover (console reticle focus) */
 .custom-cursor-inner.is-hover {
   background-color: var(--jlz-color-accent);
   width: 4px;
@@ -803,12 +685,8 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
   pointer-events: none;
   z-index: 100000;
   will-change: transform;
-  /* Centering done via translate(-50%, -50%) in JS */
 }
 
-/* Hide custom cursor on touch devices (pointer: coarse = no precise pointer).
-   Note: (hover: none) alone is too aggressive — some desktops with touch
-   screens report hover:none but still have a mouse. Use pointer: coarse only. */
 @media (pointer: coarse) {
   .custom-cursor-inner,
   .custom-cursor-canvas {
@@ -816,8 +694,6 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
   }
 }
 
-/* Dev override: force-enable cursor in DevTools responsive mode.
-   Set localStorage.setItem('jlz:force-cursor', '1') in console. */
 html.jlz-force-cursor .custom-cursor-inner,
 html.jlz-force-cursor .custom-cursor-canvas {
   display: block !important;
@@ -829,7 +705,7 @@ html.jlz-force-cursor .interactive {
   cursor: none;
 }
 
-/* Hide system cursor only on precise-pointer devices (desktop) */
+
 @media (hover: hover) and (pointer: fine) {
   body,
   a,
@@ -839,8 +715,7 @@ html.jlz-force-cursor .interactive {
   }
 }
 
-/* Reduced-motion: cursor still follows (JS-driven), but disable canvas
-   redraw noise (instant circle, no distortion animation). */
+
 @media (prefers-reduced-motion: reduce) {
   .custom-cursor-inner,
   .custom-cursor-canvas {
@@ -904,34 +779,21 @@ html.jlz-force-cursor .interactive {
   }
 }
 
-/* ------------------------------------------------------------------
-   TUI-like styling — terminal cursor eyebrows, compact layout
-   Apple Watch-inspired: minimal space, 3D always visible
-   ------------------------------------------------------------------ */
 
 .jlz-eyebrow {
-  /* Monospace — console numbers + noise symbols have equal width,
-     no layout shift during NoiseText typewriter animation. */
   font-family: 'SF Mono', 'Cascadia Code', 'JetBrains Mono', 'Consolas', monospace;
-  /* Console-like section number (01-06) — faded, glitch reveal via NoiseText. */
   font-size: clamp(2rem, 6vw, 3rem);
   font-weight: 200;
   letter-spacing: 0;
   opacity: 0.35;
   line-height: 1;
-  /* Fixed char width (monospace) + min-height prevents any layout shift
-     during the NoiseText typewriter animation (noise symbols = same width
-     as digits, so no width change as chars appear/disappear). */
   min-height: 1em;
   display: inline-block;
 }
 
-// Eyebrow: same opacity in both themes (CSS var handles color).
 
 .jlz-section-top {
   flex-shrink: 0;
-  /* Top bar (jlz-topbar) is fixed at top with ~48px height (8px padding +
-     32px button). Reserve space so section content clears it. */
   padding-top: calc(48px + var(--jlz-space-6));
 }
 
@@ -940,9 +802,7 @@ html.jlz-force-cursor .interactive {
   padding-bottom: calc(4.6rem + env(safe-area-inset-bottom, 0px));
 }
 
-// ── Bottom console module — the signature "console" element of the theme ──
-// A thin, translucent, monospaced meta strip above the story content.
-// Reads like a terminal status line: label | divider | content.
+
 .jlz-bottom-module {
   display: flex;
   align-items: baseline;
@@ -992,8 +852,6 @@ html.jlz-force-cursor .interactive {
   }
 }
 
-// Console module in light/inverse theme
-// Bottom module inverse: CSS vars handle surface/border inversion.
 
 // Mobile: stack meta above content
 @media (max-width: 639px) {
@@ -1013,8 +871,7 @@ html.jlz-force-cursor .interactive {
   }
 }
 
-// ── Console scanline overlay — very faint TUI texture ──
-// Restored from 5e3a288. Excluded for .jlz-menu-overlay (stacking context).
+
 #spa-content section[data-section]:not(.jlz-menu-overlay)::before,
 .jlz-page-section:not(.jlz-menu-overlay)::before {
   content: '';
@@ -1043,39 +900,12 @@ body.uk-light .jlz-page-section:not(.jlz-menu-overlay)::before {
   );
 }
 
-/* ------------------------------------------------------------------
-   Content page variant styles — QF-inspired layout diversity
-   ------------------------------------------------------------------ */
 
-/* (Removed .jlz-case-tile + .jlz-contact-link — dead CSS, 0 template usages) */
-
-/* (Removed .jlz-page .uk-heading-small, .uk-card-body, ul.uk-list overrides —
-   QF theme + UIKit globals handle these via @global-* tokens. No need to
-   duplicate or fight the theme.) */
-
-/* ── Numeral / date column helpers (replace inline styles) ──
-   Used by: services list (01-04), services process steps, posts archive
-   dates, process timeline. Replaces style="min-width: 2.5rem; opacity: 0.5;"
-   etc. — keeps scaling rem-based via tokens, theme-aware via opacity. */
-/* (Removed .jlz-timeline — timeline layout no longer used. Process content
-   now lives in section templates via the unified homeSection/contentSection
-   pattern with .jlz-service-desc fragments.) */
-
-/* Inline contact form — mailto-based, no-JS (progressive enhancement).
-   UIKit styles the input/button; we only ensure it wraps cleanly on narrow
-   cube faces. */
 .jlz-contact-form {
   flex-wrap: wrap;
   gap: var(--jlz-space-2);
 }
 
-/* Subtle text — one step below uk-text-meta's muted tone. Used for secondary
-   copy inside cards (e.g. manifesto principle examples). Theme-aware. */
-/* ── Service page (Apple Watch cube faces) — description + explore ──
-   Each cube face shows one service: TOP (num + title + lead via contentTop),
-   BOTTOM (description fragments + EXPLORE pill link). Mobile-first: concise
-   copy, stacked lines, touch-friendly explore button. Responsive via UIKit3
-   utilities; only the dot + pill shape need custom CSS. */
 .jlz-service-desc {
   display: flex;
   flex-direction: column;
@@ -1111,8 +941,7 @@ body.uk-light .jlz-page-section:not(.jlz-menu-overlay)::before {
   background: var(--jlz-color-accent);
 }
 
-/* Lab is a catalogue of separately loaded scenes, not a second Works grid.
-   The compact runtime label makes that boundary explicit before a scene exists. */
+
 .jlz-experiment-footer {
   display: flex;
   flex-wrap: wrap;
@@ -1151,20 +980,10 @@ body.uk-light .jlz-page-section:not(.jlz-menu-overlay)::before {
   }
 }
 
-/* Flex gap utilities (UIkit uk-flex has no gap control).
-   Used by: intro CTA button row, works drag hint, about stats row. */
+
 .jlz-flex-gap-small {
   gap: var(--jlz-space-2); /* 0.5rem */
 }
-
-/* (Removed .jlz-service-card / .jlz-principle-card — QF uk-card-default
-   + uk-card-hover already provide glassmorphism + hover. No need to
-   duplicate. Use uk-card-default uk-card-hover in templates.) */
-
-/* ------------------------------------------------------------------
-   Joystick + section navigator.
-   Joystick remains bottom-centre; the UIKit dotnav becomes a fixed right rail.
-   ------------------------------------------------------------------ */
 
 .jlz-joystick {
   position: fixed;
@@ -1402,8 +1221,7 @@ body.uk-light .jlz-page-section:not(.jlz-menu-overlay)::before {
   text-align: left;
 }
 
-/* The Works header already communicates section state. Keeping only the
-   native dotnav markers prevents its labels from covering project imagery. */
+
 body[data-page='works'] .jlz-joystick-dotnav__label {
   position: absolute;
   width: 1px;
@@ -1420,8 +1238,6 @@ body[data-page='works'] .jlz-joystick-dotnav__label {
   position: relative;
   z-index: 2;
   grid-row: 2;
-  /* Keep UIkit's negative inline gutter intact: it cancels the first grid
-     child's padding and makes the visible card edges exactly symmetrical. */
   width: auto;
   min-height: 0;
   margin-right: 0;
@@ -1648,9 +1464,7 @@ body[data-page='works'] .jlz-joystick-dotnav__label {
   }
 }
 
-/* Section reveal: clean opacity fade only. The 3D CasePlane owns the visual
-   media reveal; the DOM composition fades its captions in without a spatial
-   transform so cards never look like they fly from a single point. */
+
 .jlz-works-composition > * {
   opacity: 0;
   transition: opacity 0.5s ease;
@@ -1683,7 +1497,7 @@ body[data-page='works'] .jlz-joystick-dotnav__label {
   transition-delay: 0.08s;
 }
 
-/* Click focus: a quiet exposure dip signals the transition into film. */
+
 .jlz-work-card.is-opening .jlz-work-card__inner {
   box-shadow: 0 2.5rem 5rem rgba(0, 0, 0, 0.54);
   transform: rotateX(0) rotateY(0) scale(0.985);
@@ -1697,9 +1511,7 @@ body[data-page='works'] .jlz-joystick-dotnav__label {
   transform: scale(1.06);
 }
 
-// The /works route deliberately has no CSS media cards. Its buttons retain
-// native focus, keyboard activation and caption layout, while the actual
-// cover image is drawn by WorksPlaneStage as a deforming Three.js CasePlane.
+
 body[data-page='works'] .jlz-work-card__inner {
   overflow: visible;
   border-color: transparent;
@@ -1849,10 +1661,6 @@ body[data-page='works'] .jlz-work-card.is-opening .jlz-work-card__inner {
   }
 }
 
-/* ------------------------------------------------------------------
-   Responsive cleanup
-   ------------------------------------------------------------------ */
-
 @media (max-width: 500px) {
   .custom-cursor {
     display: none !important;
@@ -1882,19 +1690,6 @@ body[data-page='works'] .jlz-work-card.is-opening .jlz-work-card__inner {
   }
 }
 
-// ════════════════════════════════════════════════════════════════════
-// SOUND TOGGLE — moved into menu overlay (see NAVBAR section above for
-// .jlz-sound-toggle / .jlz-sound-bars / .jlz-sound-bar styles).
-// The old floating SoundPanel button (position: fixed bottom-right) was
-// removed — sound now lives inside the menu overlay config toolbar.
-// ════════════════════════════════════════════════════════════════════
-
-// ════════════════════════════════════════════════════════════════════
-// SHOWREEL TRIGGER — play button with animated SVG ring (stroke-animation)
-// NO data-magnetic — was too aggressive (cursor snapped to center constantly).
-// Instead: data-cursor="play" changes cursor, SVG ring animates stroke on hover.
-// ════════════════════════════════════════════════════════════════════
-
 .jlz-showreel-trigger {
   position: relative;
   display: flex;
@@ -1916,11 +1711,9 @@ body[data-page='works'] .jlz-work-card.is-opening .jlz-work-card__inner {
   outline: none;
 }
 
-// SVG circle — stroke-dasharray + stroke-dashoffset animation on hover.
-// This is the manual CSS version of uk-svg="stroke-animation: true" —
+
 .jlz-showreel-trigger:hover .jlz-showreel-trigger__circle,
 .jlz-showreel-trigger:focus-visible .jlz-showreel-trigger__circle {
-  // Animate stroke drawing around the circle
   stroke-dashoffset: 176; // fully "undrawn" → animated to 0 on hover
   animation: jlz-showreel-stroke 1.2s ease-in-out infinite;
   stroke-width: 2;
@@ -1948,7 +1741,6 @@ body[data-page='works'] .jlz-work-card.is-opening .jlz-work-card__inner {
   opacity: 1;
 }
 
-// Showreel trigger inverse: CSS vars handle color inversion automatically.
 
 @media (max-width: 639px) {
   .jlz-showreel-overlay {
@@ -1964,7 +1756,7 @@ body[data-page='works'] .jlz-work-card.is-opening .jlz-work-card__inner {
   }
 }
 
-// Reduced motion — no stroke animation, just color change
+
 @media (prefers-reduced-motion: reduce) {
   .jlz-showreel-trigger__circle {
     transition: none;
@@ -1977,7 +1769,7 @@ body[data-page='works'] .jlz-work-card.is-opening .jlz-work-card__inner {
   }
 }
 
-// Language label inside uk-icon-button — uppercase mono-style text.
+
 .jlz-lang-label {
   text-transform: uppercase;
   font-size: 0.72rem;
@@ -1991,13 +1783,6 @@ body[data-page='works'] .jlz-work-card.is-opening .jlz-work-card__inner {
   height: 1rem;
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.18));
 }
-
-/* ═══════════════════════════════════════════════════════════════════
-   CINEMATIC VERTICAL NARRATIVE
-   Project-owned layer over UIkit + Quantum Flares. UIkit continues to own
-   buttons, nav accordion, icon rendering and accessibility state; this layer
-   supplies the spatial composition and Fluid AI-inspired surfaces.
-   ═══════════════════════════════════════════════════════════════════ */
 
 body[data-page='home'] #spa-content,
 body:not([data-page='home']) #spa-content > .jlz-page {
@@ -2040,9 +1825,6 @@ body:not([data-page='home'])
   background: transparent;
 }
 
-// Works is an authored dark media stage in both global theme modes. Its
-// project imagery and editorial type share one local contrast contract, so
-// the generic transparent content-page rule must not erase the composition.
 body:not([data-page='home'])
   .jlz-page
   > .jlz-works-section:not(.jlz-menu-overlay):not([data-contact-footer]) {
@@ -2062,8 +1844,6 @@ body:not([data-page='home'])
   padding: clamp(6.2rem, 10vh, 8rem) clamp(1.25rem, 5vw, 5rem) clamp(6.5rem, 11vh, 8.5rem);
 }
 
-// The 3D canvas remains the dominant visual. Text is treated as editorial
-// captions, with a slim baseline rather than a second glass panel.
 [data-story-state] .jlz-section-top,
 [data-story-state] .jlz-section-bottom {
   will-change: transform, opacity;
@@ -2107,9 +1887,6 @@ body:not([data-page='home'])
   margin-top: 0 !important;
 }
 
-// ── Works: a deliberately empty media field ────────────────────────────
-// The section has no narrative chrome or console. Its only visible content is
-// the 3D case stream, particles and two native, keyboard-accessible controls.
 #section-works > .uk-container {
   pointer-events: none;
 }
@@ -2125,8 +1902,6 @@ body:not([data-page='home'])
   pointer-events: none;
 }
 
-// Home Works slider arrows — share the unified .jlz-nav-arrow appearance.
-// Only positioning (flex layout inside .jlz-works-slider-controls) is specific.
 .jlz-works-slider-arrow {
   pointer-events: auto;
 }
@@ -2137,15 +1912,11 @@ body:not([data-page='home'])
   }
 }
 
-// ── Persistent cinematic header ──
 .jlz-cinematic-shell {
   position: relative;
   z-index: 10020;
 }
 
-// Topbar — slim full-width transparent strip at the top of the screen.
-// Console aesthetic: edge-to-edge, minimal padding, pointer-events: none
-// on container (buttons re-enable). Matches 5e3a288 style.
 .jlz-topbar {
   position: fixed;
   top: 0;
@@ -2231,7 +2002,6 @@ body:not([data-page='home'])
   transform: translateY(-0.125rem) rotate(-22deg);
 }
 
-// ── Compact chapter control, paired with the contact launcher ──
 .jlz-storyline {
   position: fixed;
   right: 0.85rem;
@@ -2337,7 +2107,6 @@ body:not([data-page='home'])
   color: var(--jlz-color-text-inverse) !important;
 }
 
-// ── Menu: full-screen desktop scene, compact top sheet on mobile ──
 #spa-content > .jlz-menu-overlay,
 .jlz-page > .jlz-menu-overlay {
   position: fixed !important;
@@ -2456,7 +2225,6 @@ body[data-cinematic-sheet='menu'] .jlz-menu-overlay .jlz-menu-nav__toggle {
   border-radius: var(--jlz-radius-full);
 }
 
-// ── Contact footer: bottom reveal with a shader-backed finale ──
 #spa-content > [data-contact-footer],
 .jlz-page > [data-contact-footer] {
   position: fixed !important;
@@ -2547,9 +2315,7 @@ body[data-cinematic-sheet] .jlz-contact-launcher {
   transform: translate3d(0, 1.2rem, 0);
 }
 
-// A sheet is a new cinematic frame: keep the WebGPU scene, but dissolve the
-// previous chapter's DOM captions so translucent surfaces do not create a
-// typographic double exposure.
+
 body[data-cinematic-sheet]
   #spa-content
   > section[data-section]:not(.jlz-menu-overlay):not([data-contact-footer])
@@ -2786,17 +2552,6 @@ body[data-cinematic-sheet]
   }
 }
 
-//  Old .jlz-navbar-toggle, .jlz-toggle-icon, .jlz-help-dropdown, .jlz-help-title,
-//  .jlz-help-content, .jlz-help-joystick, .jlz-joystick-svg, .jlz-help-text,
-//  .jlz-help-text-row, .jlz-help-key, .jlz-help-divider CSS removed.)
-
-// Joystick is always visible. (jlz-help-hint / jlz-joystick__arrow-label CSS removed — elements no longer exist.)
-
-// ── Sound toggle — now uses uk-icon (muted/sound), no CSS bars needed ──
-
-// Theme icon (sun/moon) — inline SVGs (UIKit3 has no sun/moon icons).
-// Both SVGs live in the button; .is-inverse class on the button toggles
-// which is visible. Both use currentColor so uk-light/uk-dark auto-flip works.
 .jlz-theme-toggle .jlz-theme-svg {
   display: none;
   color: inherit;
@@ -2812,13 +2567,6 @@ body[data-cinematic-sheet]
   display: block;
 }
 
-// MENU SECTION — vertically centred stat + navigation accordion (section 5).
-
-// Menu section — full section (NOT overlay). Same visibility pattern as all
-// other sections: hidden by default (section[data-section] { display: none }),
-// shown via .section-active { display: flex !important }.
-// No position: absolute, no z-index, no backdrop-filter — it's a regular
-// section that takes over the viewport when active, just like Lab/Intro/etc.
 .jlz-menu-overlay {
   flex-direction: column;
   min-height: 100dvh;
@@ -2828,18 +2576,15 @@ body[data-cinematic-sheet]
 
 .jlz-menu-container {
   position: relative;
-  z-index: 2; // above section decoration
+  z-index: 2;
   display: flex;
   flex-direction: column;
   height: 100dvh;
-  // Centre the compact panel within the usable viewport, clear of the fixed
-  // top bar and joystick.
   justify-content: center;
   padding-top: calc(var(--jlz-header-height, 60px) + var(--jlz-space-4));
   padding-bottom: calc(var(--jlz-joystick-size) * 1.35 + var(--jlz-space-4));
 }
 
-// ── 2-column grid: stat | nav ──
 .jlz-menu-grid {
   display: grid;
   grid-template-columns: 1fr 1.5fr;
@@ -2862,7 +2607,7 @@ body[data-cinematic-sheet]
   min-height: 0;
 }
 
-// ── Column title (NAVIGATE) ──
+
 .jlz-menu-col-title {
   font-family: @global-font-family;
   font-size: 0.68rem;
@@ -2873,7 +2618,7 @@ body[data-cinematic-sheet]
   margin-bottom: var(--jlz-space-2);
 }
 
-// ── Left column: stat ──
+
 .jlz-menu-col--stat {
   align-self: auto;
 }
@@ -2903,7 +2648,6 @@ body[data-cinematic-sheet]
   margin-top: var(--jlz-space-2);
 }
 
-// ── Center column: nav list ──
 .jlz-menu-nav {
   list-style: none;
   margin: 0;
@@ -2917,7 +2661,6 @@ body[data-cinematic-sheet]
   position: relative;
 }
 
-// Nav item toggle button (click to expand/collapse subsections)
 .jlz-menu-nav__toggle {
   display: flex;
   align-items: baseline;
@@ -2988,9 +2731,6 @@ body[data-cinematic-sheet]
   opacity: 1;
 }
 
-// ── Subsections (uk-nav-sub) ──
-// UIKit uk-nav owns show/hide via .uk-open at every viewport. These items
-// stay inline below their parent so Menu remains one minimal accordion.
 .jlz-menu-nav__subs {
   list-style: none;
   margin: 0;
@@ -3059,7 +2799,7 @@ body[data-cinematic-sheet]
   color: @global-primary-background;
 }
 
-// ── Responsive: mobile single column ──
+
 @media (max-width: 639px) {
   .jlz-menu-container {
     // Keep the centred navigation clear of the persistent joystick.
@@ -3085,7 +2825,6 @@ body[data-cinematic-sheet]
     font-size: 1.15rem;
   }
 
-  // Mobile: subsections unfold inline (accordion) — no absolute positioning.
   .jlz-menu-nav__subs {
     padding-left: var(--jlz-space-4);
     padding-top: 0.25rem;
@@ -3093,17 +2832,6 @@ body[data-cinematic-sheet]
   }
 }
 
-// ── Light theme overrides ──
-// Menu inverse: CSS vars handle all color inversions automatically.
-// The menu uses var(--jlz-color-text), var(--jlz-color-text-muted), etc.
-// which flip via html.uk-light in _import.less.
-
-// ════════════════════════════════════════════════════════════════════
-// LAB SECTION (section 0, joystick left)
-// ════════════════════════════════════════════════════════════════════
-
-// The same UIkit Accordion is used on every viewport. The compact list keeps
-// the secret section focused and its height predictable above the joystick.
 [data-lab-overlay] > .uk-container {
   justify-content: center;
   gap: var(--jlz-space-4);
@@ -3150,12 +2878,7 @@ body[data-cinematic-sheet]
     max-height: min(43dvh, 24rem);
   }
 }
-// ════════════════════════════════════════════════════════════════════
-// QUICKNAV — desktop nav links, hidden on mobile
-// ════════════════════════════════════════════════════════════════════
 
-// Keep the header geometry authoritative over the legacy topbar spacing rules
-// above. These late declarations only preserve control sizing.
 .jlz-cinematic-shell .jlz-topbar {
   top: 0.85rem;
   left: 0.85rem;
@@ -3175,13 +2898,6 @@ body[data-cinematic-sheet]
     padding: 0.2rem 0;
   }
 }
-
-// ════════════════════════════════════════════════════════════════════
-// BOTTOM CONSOLE BAR — unified console-themed bottom navigation strip
-// ════════════════════════════════════════════════════════════════════
-// The storyline (section dots) + contact launcher sit on a shared console
-// surface — a thin translucent bar pinned to the bottom of the viewport.
-// This is the signature "console" element of the theme.
 
 .jlz-console-bar {
   position: fixed;
@@ -3209,12 +2925,6 @@ body[data-cinematic-sheet] .jlz-console-bar {
   pointer-events: none;
 }
 
-// Console bar adapts to light theme
-// Console bar inverse: CSS vars handle bg/border inversion.
-
-// ════════════════════════════════════════════════════════════════════
-// MOBILE MENU — full-screen centered overlay
-// ════════════════════════════════════════════════════════════════════
 @media (max-width: 639px) {
   // Menu becomes full-screen, vertically centered
   .jlz-menu-overlay .jlz-menu-container {
@@ -3253,19 +2963,16 @@ body[data-cinematic-sheet] .jlz-console-bar {
     font-size: clamp(1.5rem, 7vw, 2.5rem);
   }
 
-  // Header centered on mobile
   .jlz-menu-overlay .jlz-menu-sheet__header {
     justify-content: center;
     text-align: center;
   }
 
-  // Console bar smaller on mobile
   .jlz-console-bar {
     padding: 0.3rem 0.55rem;
     gap: var(--jlz-space-2);
   }
 
-  // Storyline items smaller on mobile
   .jlz-storyline {
     right: 0.55rem;
     bottom: 0.55rem;
@@ -3282,9 +2989,3 @@ body[data-cinematic-sheet] .jlz-console-bar {
     bottom: 0.55rem;
   }
 }
-
-// ════════════════════════════════════════════════════════════════════
-// INVERSE CONTRAST — CSS vars handle all inversions automatically.
-// No body.uk-light overrides needed: --jlz-color-text, --jlz-color-bg,
-// --jlz-color-surface, etc. all flip via html.uk-light in _import.less.
-// ════════════════════════════════════════════════════════════════════
