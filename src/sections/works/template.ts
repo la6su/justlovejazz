@@ -10,13 +10,13 @@ export function worksSection(): string {
   `
   const controls = `
     <div class="jlz-works-slider-controls" role="group" aria-labelledby="jlz-works-title">
-      <button class="jlz-works-slider-arrow jlz-works-slider-arrow--prev uk-icon-button" type="button"
+      <button class="jlz-nav-arrow jlz-works-slider-arrow jlz-works-slider-arrow--prev" type="button"
               data-baku-carousel-control="prev" aria-label="Previous work" data-cursor="view">
-        <span uk-icon="icon: arrow-left; ratio: 1.55" aria-hidden="true"></span>
+        <span uk-icon="icon: slidenav-previous-large" aria-hidden="true"></span>
       </button>
-      <button class="jlz-works-slider-arrow jlz-works-slider-arrow--next uk-icon-button" type="button"
+      <button class="jlz-nav-arrow jlz-works-slider-arrow jlz-works-slider-arrow--next" type="button"
               data-baku-carousel-control="next" aria-label="Next work" data-cursor="view">
-        <span uk-icon="icon: arrow-right; ratio: 1.55" aria-hidden="true"></span>
+        <span uk-icon="icon: slidenav-next-large" aria-hidden="true"></span>
       </button>
     </div>
   `

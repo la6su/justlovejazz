@@ -42,6 +42,13 @@ export class ContentReveal {
       const matching = document.querySelector<HTMLElement>(`[data-section="${payload.sectionId}"]`)
       if (!matching) return
       this.currentSectionId = payload.sectionId
+      // Derive the 6-section index from the sectionId so EnvSphere can show
+      // the active section's own colour on every scroll step.
+      const configs = this.getConfigs()
+      const idx = configs.findIndex(
+        (c) => c.domSection === payload.sectionId || c.id === payload.sectionId,
+      )
+      this.currentSectionIndex = idx >= 0 ? idx : -1
       this.activateSection(`[data-section="${payload.sectionId}"]`)
     }
     eventBus.on('jlz:section-change', this.sectionHandler)
@@ -90,20 +97,26 @@ export class ContentReveal {
     const isInverse = themeManager.isInverse
     const shouldUseLight = isInverse ? !sectionIsLight : sectionIsLight
 
-    // Consecutive story frames can share the same visual mode. Re-emitting the
-    // event in that case restarts EnvSphere's interpolation, which reads as a
-    // hitch while scrolling even though the DOM palette did not change.
     const themeChanged = this.currentIsLight !== shouldUseLight
     this.currentIsLight = shouldUseLight
 
     document.documentElement.classList.toggle('uk-light', shouldUseLight)
     document.body.classList.toggle('uk-light', shouldUseLight)
 
-    if (!themeChanged) return
-
+    // Always dispatch so EnvSphere can show the active section's own tone —
+    // each section has a distinct colour, so even same-polarity scroll steps
+    // must update the background. `themeChanged` lets consumers skip
+    // theme-only work (ground, particles) when just the section moved.
     window.dispatchEvent(
       new CustomEvent('jlz:theme-applied', {
-        detail: { isLight: shouldUseLight, mode: isInverse ? 'inverse' : 'auto', snap },
+        detail: {
+          isLight: shouldUseLight,
+          sectionIndex: this.currentSectionIndex,
+          sectionId,
+          themeChanged,
+          mode: isInverse ? 'inverse' : 'auto',
+          snap,
+        },
       }),
     )
   }
