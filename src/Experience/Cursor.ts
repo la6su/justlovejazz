@@ -53,7 +53,8 @@ export class Cursor {
   refreshThemeCache(): void {
     const styles = getComputedStyle(document.documentElement)
     this._cachedAccent = styles.getPropertyValue('--jlz-color-accent').trim() || '#b8ed69'
-    this._cachedAccentGlow = styles.getPropertyValue('--jlz-color-accent-glow').trim() || 'rgba(184,237,105,0.22)'
+    this._cachedAccentGlow =
+      styles.getPropertyValue('--jlz-color-accent-glow').trim() || 'rgba(184,237,105,0.22)'
     this._cachedTeal = styles.getPropertyValue('--jlz-color-signal-teal').trim() || '#45d7bc'
     this._cacheDirty = false
   }
@@ -61,7 +62,11 @@ export class Cursor {
   /** Get cached colors, refreshing if dirty. */
   private _getThemeColors(): { accent: string; accentGlow: string; teal: string } {
     if (this._cacheDirty) this.refreshThemeCache()
-    return { accent: this._cachedAccent, accentGlow: this._cachedAccentGlow, teal: this._cachedTeal }
+    return {
+      accent: this._cachedAccent,
+      accentGlow: this._cachedAccentGlow,
+      teal: this._cachedTeal,
+    }
   }
 
   // Phase 2: spring physics for wobble (skaltenegger-style, smoothed)
@@ -130,7 +135,11 @@ export class Cursor {
     this.ctx = this.canvas.getContext('2d')
 
     const forceCursor = (() => {
-      try { return localStorage.getItem('jlz:force-cursor') === '1' } catch { return false }
+      try {
+        return localStorage.getItem('jlz:force-cursor') === '1'
+      } catch {
+        return false
+      }
     })()
     // (Mobile detection removed — CSS @media (pointer: coarse) already hides
     //  the cursor elements via display:none. The old DeviceCapability.isMobile
@@ -153,7 +162,8 @@ export class Cursor {
       // D-14 fix: skip intra-element transitions (mouseout→mouseover between
       // child elements of the same interactive). Checks relatedTarget — if the
       // mouse is moving TO another element within the same interactive, skip.
-      const INTERACTIVE_SEL = '[data-magnetic], a, button, .interactive, [uk-toggle], [uk-slider], [uk-dropdown], [uk-tooltip], [uk-modal], [uk-lightbox]'
+      const INTERACTIVE_SEL =
+        '[data-magnetic], a, button, .interactive, [uk-toggle], [uk-slider], [uk-dropdown], [uk-tooltip], [uk-modal], [uk-lightbox]'
       const related = e.relatedTarget as HTMLElement | null
       if (related && typeof related.closest === 'function' && related.closest(INTERACTIVE_SEL)) {
         // Moving to another interactive (or child of same) — let that mouseover
@@ -164,13 +174,22 @@ export class Cursor {
       // Phase 2: check for custom cursor state (data-cursor attribute)
       const stateEl = target.closest('[data-cursor]') as HTMLElement | null
       this.cursorState = stateEl?.dataset.cursor ?? null
+      // Fullscreen overlay buttons opt out of magnetic snap — the overlay is
+      // a focused viewing surface where a snapping cursor is distracting.
+      if (target.closest('[data-no-magnetic]')) {
+        this.isStuck = false
+        this.fillTarget = 0
+        return
+      }
       const interactive = target.closest(INTERACTIVE_SEL) as HTMLElement | null
       if (interactive) {
         // For large menu items (nav toggle + sub-links), DON'T snap to center —
         // the labels are large (clamp 1.25-1.75rem), snapping to center looks weird.
         // Instead, follow mouse + expand + fill (no stuckX/Y override).
         // Menu overlay = [data-section="menu"] (home) / [data-page-section="page-menu"] (content).
-        const isLargeMenu = interactive.closest('.jlz-menu-nav__toggle, .jlz-menu-nav__sub-link, [data-section="menu"], [data-page-section="page-menu"]')
+        const isLargeMenu = interactive.closest(
+          '.jlz-menu-nav__toggle, .jlz-menu-nav__sub-link, [data-section="menu"], [data-page-section="page-menu"]',
+        )
         if (isLargeMenu) {
           this.stuckX = this.targetX
           this.stuckY = this.targetY
@@ -196,7 +215,8 @@ export class Cursor {
       if (!target || typeof target.closest !== 'function') return
       // D-14 fix: skip if moving to a related element that's also interactive
       // (intra-element transition). Prevents the isStuck flicker.
-      const INTERACTIVE_SEL = '[data-magnetic], a, button, .interactive, [uk-toggle], [uk-slider], [uk-dropdown], [uk-tooltip], [uk-modal], [uk-lightbox]'
+      const INTERACTIVE_SEL =
+        '[data-magnetic], a, button, .interactive, [uk-toggle], [uk-slider], [uk-dropdown], [uk-tooltip], [uk-modal], [uk-lightbox]'
       const related = e.relatedTarget as HTMLElement | null
       if (related && typeof related.closest === 'function' && related.closest(INTERACTIVE_SEL)) {
         return
@@ -267,13 +287,14 @@ export class Cursor {
     this.fillProgress = lerp(this.fillProgress, this.fillTarget, 0.12)
 
     // Draw cursor — ONLY when something changed (avoids redraw when idle)
-    const moved = Math.abs(this.posX - this._lastDrawX) > 0.3
-      || Math.abs(this.posY - this._lastDrawY) > 0.3
-      || Math.abs(this.currentRadius - this._lastDrawR) > 0.3
-      || Math.abs(this.fillProgress - this._lastDrawFill) > 0.01
-      || Math.abs(this.bumpScale - this._lastDrawBump) > 0.01
-      || this.isStuck !== this._lastDrawStuck
-      || this.cursorState !== this._lastDrawState
+    const moved =
+      Math.abs(this.posX - this._lastDrawX) > 0.3 ||
+      Math.abs(this.posY - this._lastDrawY) > 0.3 ||
+      Math.abs(this.currentRadius - this._lastDrawR) > 0.3 ||
+      Math.abs(this.fillProgress - this._lastDrawFill) > 0.01 ||
+      Math.abs(this.bumpScale - this._lastDrawBump) > 0.01 ||
+      this.isStuck !== this._lastDrawStuck ||
+      this.cursorState !== this._lastDrawState
     if (moved) {
       this.drawCircle()
       this._lastDrawX = this.posX
@@ -346,7 +367,10 @@ export class Cursor {
     // Smoothed ring (quadraticCurveTo midpoint method)
     if (points.length > 0) {
       ctx.beginPath()
-      ctx.moveTo((points[0]!.x + points[points.length - 1]!.x) / 2, (points[0]!.y + points[points.length - 1]!.y) / 2)
+      ctx.moveTo(
+        (points[0]!.x + points[points.length - 1]!.x) / 2,
+        (points[0]!.y + points[points.length - 1]!.y) / 2,
+      )
       for (let i = 0; i < points.length; i++) {
         const curr = points[i]!
         const next = points[(i + 1) % points.length]!

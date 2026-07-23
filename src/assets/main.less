@@ -411,6 +411,10 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
   z-index: 30010 !important;
 }
 
+// Cinematic depth-push reveal: the dialog starts slightly larger and inset,
+// then settles to fullscreen. The composite of scale + soft mask + opacity
+// reads as a seamless dolly-through rather than a mechanical iris. Faster
+// than the old 0.86s iris (0.5s) for a snappier, more refined feel.
 .jlz-fs-overlay .jlz-fs-dialog {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
@@ -422,13 +426,13 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
   max-width: 100% !important;
   color: var(--jlz-color-text);
   background: var(--jlz-color-bg) !important;
-  clip-path: inset(50% 50% 50% 50% round 24px);
-  transform: scale(0.94);
+  clip-path: inset(16% 16% 16% 16% round 28px);
+  transform: scale(1.06);
   opacity: 0;
   transition:
-    clip-path 0.86s cubic-bezier(0.65, 0, 0.35, 1),
-    transform 0.86s cubic-bezier(0.65, 0, 0.35, 1),
-    opacity 0.28s ease;
+    clip-path 0.5s var(--jlz-ease-cinematic),
+    transform 0.5s var(--jlz-ease-cinematic),
+    opacity 0.3s ease;
 }
 
 .jlz-fs-overlay.uk-open.is-entered .jlz-fs-dialog {
@@ -444,17 +448,10 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
   background: transparent !important;
 }
 
-// ── Unified mask reveal ──
-// Every open (showreel, project, image) uses the same clip-path iris. The
-// is-entered class triggers the 0.86s reveal; is-plane-origin only adds
-// background transparency for the 3D plane handoff. There is no fast-open
-// bypass — the mask is the single transition language for the overlay.
-
-.jlz-fs-overlay.is-plane-origin .jlz-fs-media-stage {
-  opacity: 1;
-  transform: none;
-  transition: none;
-}
+// ── Unified cinematic reveal ──
+// Every open (showreel, project, image) uses the same depth-push reveal
+// above. is-plane-origin only adds background transparency for the 3D plane
+// handoff — the entrance animation is identical for all origins.
 
 // Do not let the modal's black backing surface cover a plane-origin handoff
 // while the DOM background image is still decoding. The live Three.js plane
@@ -465,32 +462,16 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
   background: transparent !important;
 }
 
-.jlz-fs-overlay.is-plane-origin .jlz-fs-meta {
-  opacity: 0;
-  transform: translateY(-0.35rem);
-  transition:
-    opacity 0.42s ease 0.1s,
-    transform 0.52s var(--jlz-ease-cinematic) 0.1s;
-}
-
-.jlz-fs-overlay.is-plane-origin .jlz-fs-controls {
-  opacity: 0;
-  transform: translateY(0.35rem);
-  transition:
-    opacity 0.42s ease 0.18s,
-    transform 0.52s var(--jlz-ease-cinematic) 0.18s;
-}
-
 .jlz-fs-meta {
   min-height: 6.5rem;
   gap: 2rem;
   padding: 1.25rem clamp(4.5rem, 7vw, 7rem) 1rem;
   border-bottom: 1px solid var(--jlz-color-border);
   opacity: 0;
-  transform: translateY(-0.75rem);
+  transform: translateY(-0.5rem);
   transition:
-    opacity 0.6s ease 0.48s,
-    transform 0.8s var(--jlz-ease-cinematic) 0.48s;
+    opacity 0.4s ease 0.12s,
+    transform 0.5s var(--jlz-ease-cinematic) 0.12s;
 }
 
 .jlz-fs-overlay.is-entered .jlz-fs-meta {
@@ -540,10 +521,10 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
   overflow: hidden;
   background: #000;
   opacity: 0;
-  transform: scale(1.035);
+  transform: scale(1.02);
   transition:
-    opacity 0.85s ease 0.16s,
-    transform 1.45s var(--jlz-ease-cinematic) 0.1s;
+    opacity 0.4s ease 0.06s,
+    transform 0.5s var(--jlz-ease-cinematic) 0.06s;
 }
 
 .jlz-fs-overlay.is-entered .jlz-fs-media-stage {
@@ -588,9 +569,9 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
   width: 4.5rem;
   height: 4.5rem;
   place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.56);
+  border: 1px solid color-mix(in srgb, var(--jlz-color-text) 50%, transparent);
   border-radius: 50%;
-  background: rgba(5, 5, 7, 0.36);
+  background: color-mix(in srgb, var(--jlz-color-bg-elevated) 38%, transparent);
   backdrop-filter: blur(10px);
   transition: transform 0.3s ease;
 }
@@ -618,10 +599,10 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
   border-top: 1px solid var(--jlz-color-border);
   background: var(--jlz-color-bg);
   opacity: 0;
-  transform: translateY(0.75rem);
+  transform: translateY(0.5rem);
   transition:
-    opacity 0.6s ease 0.62s,
-    transform 0.8s var(--jlz-ease-cinematic) 0.62s;
+    opacity 0.4s ease 0.18s,
+    transform 0.5s var(--jlz-ease-cinematic) 0.18s;
 }
 
 .jlz-fs-overlay.is-entered .jlz-fs-controls {
@@ -658,10 +639,10 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
   width: clamp(4rem, 5.6vw, 5.75rem);
   height: clamp(4rem, 5.6vw, 5.75rem);
   padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.34);
+  border: 1px solid color-mix(in srgb, var(--jlz-color-text) 34%, transparent);
   border-radius: 50%;
   color: var(--jlz-color-text);
-  background: rgba(5, 5, 7, 0.58);
+  background: color-mix(in srgb, var(--jlz-color-bg-elevated) 58%, transparent);
   box-shadow: 0 1.4rem 3rem rgba(0, 0, 0, 0.22);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -683,7 +664,7 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
 .jlz-nav-arrow:focus-visible {
   border-color: var(--jlz-color-accent);
   color: var(--jlz-color-accent);
-  background: rgba(5, 5, 7, 0.78);
+  background: color-mix(in srgb, var(--jlz-color-bg-elevated) 80%, transparent);
   transform: scale(1.06);
 }
 
@@ -1544,10 +1525,7 @@ body[data-page='works'] .jlz-joystick-dotnav__label {
 
 .jlz-work-card__image {
   object-fit: cover;
-  filter: saturate(0.72) contrast(1.08);
-  transition:
-    filter 0.6s ease,
-    transform 0.75s var(--jlz-ease-cinematic);
+  transition: transform 0.75s var(--jlz-ease-cinematic);
 }
 
 .jlz-work-card__chromatic {
@@ -1652,7 +1630,6 @@ body[data-page='works'] .jlz-joystick-dotnav__label {
 
 .jlz-work-card:hover .jlz-work-card__image,
 .jlz-work-card:focus-visible .jlz-work-card__image {
-  filter: saturate(0.9) contrast(1.08);
   transform: scale(1.035);
 }
 
@@ -1727,7 +1704,6 @@ body[data-page='works'] .jlz-joystick-dotnav__label {
 }
 
 .jlz-work-card.is-opening .jlz-work-card__image {
-  filter: saturate(0.55) brightness(0.65);
   transform: scale(1.06);
 }
 
