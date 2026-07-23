@@ -66,6 +66,7 @@ export class FullscreenOverlay {
     this.container = document.createElement('div')
     this.container.id = 'jlz-fs-overlay'
     this.container.setAttribute('uk-modal', 'bg-close: true; esc-close: true; stack: false')
+    this.container.setAttribute('data-no-magnetic', '')
     this.container.className = 'jlz-fs-overlay uk-modal uk-modal-full uk-light'
 
     this.container.innerHTML = `
