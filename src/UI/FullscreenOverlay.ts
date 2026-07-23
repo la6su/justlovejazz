@@ -52,7 +52,7 @@ export class FullscreenOverlay {
   private _keydownHandler: ((e: KeyboardEvent) => void) | null = null
   private _focusTrapHandler: ((e: FocusEvent) => void) | null = null
   private _autoplayTimer: ReturnType<typeof setTimeout> | null = null
-  private _enterFallback: ReturnType<typeof setTimeout> | null = null
+  private _enterFallback: number | null = null
   private _posterRequestId = 0
   private _posterUrl: string | null = null
   private _mediaGeneration = 0
@@ -193,21 +193,25 @@ export class FullscreenOverlay {
     UIkit.util.on(this.container, 'show', () => {
       document.addEventListener('keydown', this._keydownHandler!)
       document.addEventListener('focusin', this._focusTrapHandler!)
-      // Fallback: schedule is-entered in case UIkit's 'shown' event is delayed
-      // or never fires (CSS specificity conflicts, transitionend race conditions).
-      if (this._enterFallback) clearTimeout(this._enterFallback)
-      this._enterFallback = setTimeout(() => {
-        this._enterFallback = null
-        if (!this.container.classList.contains('is-entered')) {
-          this.container.classList.add('is-entered')
-          this._tryAutoplay()
-        }
-      }, 120)
+      // Double-rAF fallback: more reliable than fixed timeout.
+      // Fires after 2 frames (~32ms at 60Hz), giving UIkit time to
+      // process transitions without the arbitrariness of a 120ms guess.
+      if (!this._enterFallback) {
+        this._enterFallback = requestAnimationFrame(() => {
+          this._enterFallback = requestAnimationFrame(() => {
+            this._enterFallback = null
+            if (!this.container.classList.contains('is-entered')) {
+              this.container.classList.add('is-entered')
+              this._tryAutoplay()
+            }
+          })
+        })
+      }
     })
     UIkit.util.on(this.container, 'shown', () => {
       // Clear the fallback — UIkit confirmed the modal is shown.
       if (this._enterFallback) {
-        clearTimeout(this._enterFallback)
+        cancelAnimationFrame(this._enterFallback)
         this._enterFallback = null
       }
       // Trigger the CSS reveal transition (clip-path + scale + opacity).
@@ -220,7 +224,7 @@ export class FullscreenOverlay {
     })
     UIkit.util.on(this.container, 'hide', () => {
       if (this._enterFallback) {
-        clearTimeout(this._enterFallback)
+        cancelAnimationFrame(this._enterFallback)
         this._enterFallback = null
       }
       if (this._autoplayTimer) {
@@ -343,7 +347,7 @@ export class FullscreenOverlay {
   }
 
   /** Try to autoplay the video if the overlay is in video mode.
-   *  Shared by the 'shown' handler and the 120ms fallback timer. */
+   *  Shared by the 'shown' handler and the double-rAF fallback. */
   private _tryAutoplay(): void {
     const source = this.video.querySelector('source')
     if (this.container.classList.contains('is-video-mode') && source && source.src) {
@@ -474,7 +478,7 @@ export class FullscreenOverlay {
       this._autoplayTimer = null
     }
     if (this._enterFallback) {
-      clearTimeout(this._enterFallback)
+      cancelAnimationFrame(this._enterFallback)
       this._enterFallback = null
     }
     if (this._keydownHandler) {

@@ -4,6 +4,17 @@ import { resolve } from 'node:path'
 import { copyFileSync, mkdirSync, readdirSync } from 'fs'
 import { homePage } from './src/pages/home'
 
+// ═══════════════════════════════════════════════════════════════════════
+// TREE-SHAKING (automatic — no extra config needed)
+// ═══════════════════════════════════════════════════════════════════════
+// CSS: UIKit 3 components are imported individually from LESS source
+//   in src/assets/_import.less — only used components emit CSS rules.
+//   Unused components (label, search, tab, drop, offcanvas, etc.) are
+//   commented out and produce zero CSS output.
+// JS:  Vite/Rolldown tree-shakes unused ESM exports automatically.
+//   UIKit 3 is an ESM package — only imported JS modules are bundled.
+// ═══════════════════════════════════════════════════════════════════════
+
 export default defineConfig({
   base: '/',
   publicDir: 'public',

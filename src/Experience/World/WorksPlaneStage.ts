@@ -15,6 +15,7 @@ import {
   updateTransition,
   resetTransition as resetPlaneTransition,
 } from './PlaneTransition'
+import type { RenderSurface } from '../Renderer'
 
 const SECTION_PROJECTS = [
   [0, 1],
@@ -97,6 +98,55 @@ export class WorksPlaneStage extends THREE.Group {
       this._reveal.set(plane, 0)
       this.add(plane)
     })
+  }
+
+  /**
+   * Off-thread shader pre-warm (inspired by the Ridgeline article).
+   * Iterates over all card scenes and triggers async shader compilation
+   * so that the first visible reveal transition does not freeze the main
+   * thread. Includes a 2-second timeout so it never hangs.
+   */
+  prewarmShaders(renderer: RenderSurface): Promise<void> {
+    if (this.cards.length === 0) return Promise.resolve()
+
+    const camera = this._camera ?? new THREE.PerspectiveCamera()
+
+    // WebGL2 context-level compileAsync extension (off-thread GPU compile).
+    const gl = (renderer as THREE.WebGLRenderer).getContext?.() as
+      | WebGL2RenderingContext
+      | undefined
+    if (gl?.compileAsync) {
+      const promises = this.cards.map((card) => {
+        const group = new THREE.Group()
+        group.add(card)
+        return new Promise<void>((resolve) => {
+          const timeout = setTimeout(resolve, 2000)
+          gl.compileAsync!(group, camera, renderer as THREE.WebGLRenderer).then(
+            () => { clearTimeout(timeout); resolve() },
+            () => { clearTimeout(timeout); resolve() },
+          )
+        })
+      })
+      return Promise.all(promises).then(() => {})
+    }
+
+    // Fallback: renderer.compileAsync (Three.js r170+).
+    const rendererWithAsync = renderer as unknown as {
+      compileAsync?(scene: THREE.Object3D, camera: THREE.Camera): Promise<void>
+    }
+    if (rendererWithAsync.compileAsync) {
+      const promises = this.cards.map((card) => {
+        const group = new THREE.Group()
+        group.add(card)
+        return Promise.race([
+          rendererWithAsync.compileAsync!(group, camera),
+          new Promise<void>((resolve) => setTimeout(resolve, 2000)),
+        ])
+      })
+      return Promise.all(promises).then(() => {})
+    }
+
+    return Promise.resolve()
   }
 
   setCamera(camera: THREE.Camera): void {

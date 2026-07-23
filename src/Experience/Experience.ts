@@ -539,6 +539,10 @@ export class Experience {
         void this.world?.ensureWorksPlaneStageInitialized().then(() => {
           this.world?.setWorksPlaneStageSection(0)
           this._needsRender = true
+          // Off-thread shader pre-warm (Ridgeline best practice)
+          if (this.world?.worksPlaneStage) {
+            void this.world.worksPlaneStage.prewarmShaders(this.renderer.instance)
+          }
         })
       }
       this._needsRender = true
