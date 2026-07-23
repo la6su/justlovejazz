@@ -6,10 +6,14 @@
 //
 // PER-SECTION COLOUR + INVERSE:
 //   Each of the 6 sections has a distinct dark tone and a distinct light
-//   tone. The active tone is chosen by the isLight flag that
-//   ContentReveal resolves from the section's theme + the global auto/inverse
-//   preference. This restores the per-section inverse behaviour that was
-//   collapsed to a binary all-black / all-white in the console-theme pass.
+//   tone with its own colour tint. The active tone is chosen by the isLight
+//   flag that ContentReveal resolves from the section's theme + the global
+//   auto/inverse preference.
+//
+//   In auto mode: lab(light) shows its light tone, other(dark) sections
+//   show their dark tones — each with a unique hue shift.
+//   In inverse mode: everything flips — lab shows dark, others show light.
+//   This creates clear per-section contrast on theme toggle.
 
 import * as THREE from 'three'
 
@@ -23,16 +27,23 @@ interface SectionPattern {
   light: number
 }
 
-// Six distinct console tones — subtle enough for the dark cinematic baseline,
-// distinguishable enough that each section reads as its own environment.
-// Inverse mode flips every section to its light counterpart.
+// Six distinct tones — each section has its own colour character.
+// Dark tones carry clear hue shifts (warm amber, neutral, cool blue,
+// violet, teal, warm gray). Light tones complement their dark counterparts.
+// Inverse mode flips every section to its counterpart for clear contrast.
 const SECTION_PATTERNS: readonly SectionPattern[] = [
-  { dark: 0x0a0a12, light: 0xeceef0 }, // 0: lab / contact finale
-  { dark: 0x050507, light: 0xf8f8f5 }, // 1: intro / studio
-  { dark: 0x121218, light: 0xeae8e4 }, // 2: about / trinity
-  { dark: 0x0c0c14, light: 0xf0f0ec }, // 3: works / gallery
-  { dark: 0x0e0e0a, light: 0xf4f4f0 }, // 4: contact / footer
-  { dark: 0x08080c, light: 0xeeece8 }, // 5: menu / navigation
+  // 0: lab — warm amber undertone (experimental space)
+  { dark: 0x1a140a, light: 0xf5efe0 },
+  // 1: intro/studio — true neutral (clean starting point)
+  { dark: 0x0c0c0c, light: 0xf5f5f5 },
+  // 2: about/trinity — cool blue undertone (creative depth)
+  { dark: 0x0a1018, light: 0xe8edf5 },
+  // 3: works/gallery — violet undertone (rich portfolio feel)
+  { dark: 0x120a1a, light: 0xede8f5 },
+  // 4: contact/footer — teal/green undertone (natural, grounded)
+  { dark: 0x081410, light: 0xe0f0ec },
+  // 5: menu/navigation — warm gray (transitional space)
+  { dark: 0x141008, light: 0xf2eee4 },
 ]
 
 export class EnvSphere extends THREE.Mesh {

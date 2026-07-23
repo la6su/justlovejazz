@@ -7,14 +7,8 @@
 
 import * as THREE from 'three'
 import { PROJECTS } from '../../Data/Projects'
-import { CasePlane } from './CasePlane'
+import { CasePlane, CLOTH_PARAMS } from './CasePlane'
 import { loadCaseTexture } from './caseTexture'
-import {
-  type TransitionState,
-  beginTransition,
-  updateTransition,
-  resetTransition as resetPlaneTransition,
-} from './PlaneTransition'
 import type { RenderSurface } from '../Renderer'
 
 const SECTION_PROJECTS = [
@@ -42,9 +36,8 @@ const STACKED_LAYOUT: readonly [CaseLayout, CaseLayout] = [
   { x: -0.02, y: 0.64, z: -3.15, scale: 1.82 },
   { x: 0.12, y: -0.78, z: -3.52, scale: 1.46 },
 ]
-interface OpeningState extends TransitionState {
-  startRotation: THREE.Euler
-}
+// Unified animation: tap → wobble pulse + direct overlay open (same as BakuCarousel).
+// No 3D plane-to-fullscreen transition — the CSS clip-path iris reveal handles it.
 
 export class WorksPlaneStage extends THREE.Group {
   private cards: CasePlane[] = []
@@ -55,7 +48,6 @@ export class WorksPlaneStage extends THREE.Group {
   private _active = false
   private _initialized = false
   private _stackedLayout = window.innerWidth < 960
-  private _opening: OpeningState | null = null
   private _reveal = new Map<CasePlane, number>()
   private _tmpCameraPosition = new THREE.Vector3()
   private _tmpTargetPosition = new THREE.Vector3()
@@ -69,7 +61,6 @@ export class WorksPlaneStage extends THREE.Group {
   }
 
   get isAnimating(): boolean {
-    if (this._opening !== null) return true
     if (!this._active) return false
 
     const activeProjects = SECTION_PROJECTS[this._sectionIndex]!
@@ -165,28 +156,25 @@ export class WorksPlaneStage extends THREE.Group {
   setActive(active: boolean, sectionIndex: number): void {
     this._active = active
     this._sectionIndex = THREE.MathUtils.clamp(sectionIndex, 0, SECTION_PROJECTS.length - 1)
-    this.visible = active || this._opening !== null
+    this.visible = active
   }
 
-  /** Start the real plane-to-fullscreen handoff. Returns false when no matching
-   * current plane exists, allowing the DOM overlay fallback to remain safe. */
+  /** Open project overlay with unified wobble pulse (same as BakuCarousel).
+   *  Returns false when no matching plane exists. */
   openProject(index: number, openOverlay: (index: number) => void): boolean {
-    if (!this._active || this._opening) return false
+    if (!this._active) return false
     const card = this.cards[index]
     if (!card || !card.visible) return false
 
-    const state = beginTransition(card, index, openOverlay, card.rotation.clone())
-    this._opening = {
-      ...state,
-      startRotation: card.rotation.clone(),
-    }
-    if (!this._opening.reducedMotion) card.pulse(0.42)
+    // Unified cloth wobble pulse — identical to BakuCarousel.handleTap()
+    card.pulse(CLOTH_PARAMS.pulseAmount)
+    openOverlay(index)
     return true
   }
 
   /** Pointer interaction for the visual plane itself, outside DOM hit targets. */
   handleTap(clientX: number, clientY: number, openOverlay: (index: number) => void): boolean {
-    if (!this._camera || !this._active || this._opening) return false
+    if (!this._camera || !this._active) return false
     const idx = this.hitTest(clientX, clientY)
     if (idx < 0) return false
     return this.openProject(idx, openOverlay)
@@ -207,15 +195,13 @@ export class WorksPlaneStage extends THREE.Group {
     return hit.userData.projectIndex as number
   }
 
-  /** Restore the route stage after UIkit closes the fullscreen detail. */
+  /** No-op: transition state removed (unified to direct overlay open). */
   resetTransition(): void {
-    resetPlaneTransition(this._opening)
-    this._opening = null
     this.visible = this._active
   }
 
   update(dt: number): void {
-    if (!this._camera || (!this._active && !this._opening)) return
+    if (!this._camera || !this._active) return
 
     // Keep the stage in camera-local space while remaining a child of World.
     this._camera.getWorldPosition(this._tmpCameraPosition)
@@ -223,19 +209,15 @@ export class WorksPlaneStage extends THREE.Group {
     this.quaternion.copy(this._camera.quaternion)
 
     const activeProjects = SECTION_PROJECTS[this._sectionIndex]!
-    const opening = this._opening
-
     this.cards.forEach((card) => {
       const projectIndex = card.userData.projectIndex as number
       const isPrimary = activeProjects[0] === projectIndex
       const isSecondary = activeProjects[1] === projectIndex
       const isVisible = isPrimary || isSecondary
-      const targetReveal = opening && opening.card !== card ? 0 : isVisible ? 1 : 0
+      const targetReveal = isVisible ? 1 : 0
       const reveal = this._reveal.get(card) ?? 0
       const nextReveal = THREE.MathUtils.damp(reveal, targetReveal, 10, dt)
       this._reveal.set(card, nextReveal)
-
-      if (opening?.card === card) return
 
       // Cards that are not part of the active section fade out IN PLACE —
       // do not move them toward any layout slot, otherwise old cards slide
@@ -270,15 +252,11 @@ export class WorksPlaneStage extends THREE.Group {
         card.scale.setScalar(nextScale)
       }
       card.setReveal(nextReveal)
-      card.setMotion(Math.max(0, 0.16 - nextReveal * 0.16), isSecondary ? -1 : 1)
-      card.setParallax(isSecondary ? -0.42 : 0.18)
+      card.setMotion(0, 0)
+      card.setParallax(0)
       card.setTransition(0)
       card.update(dt, this._active)
     })
-
-    // ── Unified plane-to-fullscreen transition ──
-    if (!opening) return
-    updateTransition(opening, dt, this._camera)
   }
 
   dispose(): void {

@@ -20,13 +20,9 @@ function isMenuOpen(): boolean {
   return document.body.dataset.cinematicSheet === 'menu'
 }
 import { PROJECTS } from '../../Data/Projects'
-import { CasePlane } from './CasePlane'
+import { CasePlane, CLOTH_PARAMS } from './CasePlane'
 import { loadCaseTexture } from './caseTexture'
-import {
-  type TransitionState,
-  updateTransition,
-  resetTransition as resetPlaneTransition,
-} from './PlaneTransition'
+// PlaneTransition removed — unified animation uses direct overlay open.
 
 // A dozen plane instances preserve the infinite wrap while the framing exposes
 // only the centre case and its two adjacent neighbours. They share four
@@ -79,7 +75,7 @@ export class BakuCarousel extends THREE.Group {
 
   // Callback — fired when user taps/clicks a carousel card
   private _onCardClick: ((index: number) => void) | null = null
-  private _opening: TransitionState | null = null
+  // No transition state — unified to direct overlay open.
 
   // Reusable temp vectors (avoid per-frame alloc)
   private _tmpStreamPos = new THREE.Vector3()
@@ -114,7 +110,7 @@ export class BakuCarousel extends THREE.Group {
     // Active drag
     const dragging = this.isDown
     const planeMotion = this.cards.some((card) => card.isAnimating)
-    return morphing || scrolling || dragging || planeMotion || this._opening !== null
+    return morphing || scrolling || dragging || planeMotion
   }
 
   /** Set camera reference for raycast-based tap detection. */
@@ -156,7 +152,7 @@ export class BakuCarousel extends THREE.Group {
 
   private addEventListeners(): void {
     this.pointerDownHandler = (e: PointerEvent) => {
-      if (!this._active || this._morphT < 0.5 || this._opening) return
+      if (!this._active || this._morphT < 0.5) return
       if (isMenuOpen() || isUiChromeEvent(e)) return
       // D-15 fix: only intercept on home page (carousel is home-only; on
       // content pages the window listener would block WorkCard clicks if
@@ -170,7 +166,7 @@ export class BakuCarousel extends THREE.Group {
       this.velocity = 0 // reset velocity on new drag
     }
     this.pointerMoveHandler = (e: PointerEvent) => {
-      if (!this.isDown || !this._active || this._opening) return
+      if (!this.isDown || !this._active) return
       const dx = e.clientX - this.dragStartX
       const dy = e.clientY - this.dragStartY
       if (
@@ -219,7 +215,7 @@ export class BakuCarousel extends THREE.Group {
       const control = (event.target as HTMLElement | null)?.closest<HTMLElement>(
         '[data-baku-carousel-control]',
       )
-      if (!control || !this._active || this._opening || document.body.dataset.page !== 'home')
+      if (!control || !this._active || document.body.dataset.page !== 'home')
         return
       event.preventDefault()
       const direction = control.dataset.bakuCarouselControl
@@ -255,6 +251,9 @@ export class BakuCarousel extends THREE.Group {
     if (intersects.length > 0) {
       const hit = intersects[0]!.object as THREE.Mesh
       const idx = hit.userData.cardIndex as number
+      // Unified cloth wobble pulse — same as WorksPlaneStage.openProject()
+      const hitCard = hit as CasePlane
+      hitCard.pulse(CLOTH_PARAMS.pulseAmount)
       // Open the overlay directly with the unified cinematic reveal — no
       // 3D plane-to-fullscreen handoff (it caused a double effect).
       this._onCardClick?.(idx)
@@ -302,10 +301,9 @@ export class BakuCarousel extends THREE.Group {
     return ((((value + count / 2) % count) + count) % count) - count / 2
   }
 
-  /** Called after the UIkit overlay closes, returning the stream to normal. */
+  /** No-op: transition state removed (unified to direct overlay open). */
   resetTransition(): void {
-    resetPlaneTransition(this._opening)
-    this._opening = null
+    // no-op
   }
 
   /** Smoothstep easing: S-curve for organic ease-in/ease-out. */
@@ -335,25 +333,15 @@ export class BakuCarousel extends THREE.Group {
     }
 
     // Scroll lerp (only matters when morphed into the media stream).
-    const previousScroll = this.scroll.current
     this.scroll.current = THREE.MathUtils.damp(
       this.scroll.current,
       this.scroll.target,
       SCROLL_DAMPING,
       dt,
     )
-    const scrollVelocity = THREE.MathUtils.clamp((this.scroll.current - previousScroll) / dt, -8, 8)
-    const opening = this._opening
-
-    const neighboursOpacity = opening
-      ? 1 - this.smoothstep(THREE.MathUtils.clamp(opening.time / 0.56, 0, 1))
-      : 1
     const n = this.cards.length
     for (let i = 0; i < n; i++) {
       const card = this.cards[i]!
-
-      // The opening card is handled separately by the unified transition below.
-      if (opening?.card === card) continue
 
       // ── Infinite media-stream target ──
       const rawSlot = i + this.scroll.current / SNAP_STEP
@@ -380,8 +368,10 @@ export class BakuCarousel extends THREE.Group {
       const scale = THREE.MathUtils.lerp(distance < 0.5 ? 0.955 : 0.94, 1, localReveal)
       card.scale.setScalar(CARD_SCALE * scale)
       const streamReveal = localReveal * THREE.MathUtils.clamp(3.25 - distance, 0, 1)
-      card.setReveal(streamReveal * neighboursOpacity)
-      card.setMotion(0, scrollVelocity)
+      card.setReveal(streamReveal)
+      // No scroll-induced motion bend — keeps textures distortion-free.
+      // The wobble is reserved for explicit pulse events (card tap/open).
+      card.setMotion(0, 0)
       card.setEdgeWarp(0)
       const parallaxReady = this.smoothstep(
         THREE.MathUtils.clamp((localReveal - 0.72) / 0.28, 0, 1),
@@ -389,14 +379,6 @@ export class BakuCarousel extends THREE.Group {
       card.setParallax(THREE.MathUtils.clamp(slot * -0.42 * parallaxReady, -1, 1))
       card.setTransition(0)
       card.update(dt, this._active)
-    }
-
-    // ── Unified plane-to-fullscreen transition (opening card) ──
-    if (opening && this._camera) {
-      this.updateWorldMatrix(true, false)
-      const groupQuat = new THREE.Quaternion()
-      this.getWorldQuaternion(groupQuat)
-      updateTransition(opening, dt, this._camera, groupQuat)
     }
   }
 

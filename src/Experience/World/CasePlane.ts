@@ -9,13 +9,47 @@
 // would make all cards show the last card's texture and uniform values.
 //
 // The shared geometry (PlaneGeometry) is still reused — only materials differ.
+//
+// CLOTH WOBBLE SHADER:
+//   Low-frequency harmonic cloth simulation in the vertex shader.
+//   Two primary sine waves create a natural, physical cloth ripple.
+//   Center is stable (where the eye focuses); edges and corners
+//   deform naturally like a physical card held at center.
+//   The wobble decays exponentially via the JS damping in update().
 
 import * as THREE from 'three'
 import { MeshBasicNodeMaterial } from 'three/webgpu'
-import { Fn, float, positionLocal, sin, uniform, vec3 } from 'three/tsl'
+import { Fn, float, positionLocal, sin, smoothstep, uniform, vec3, abs, max } from 'three/tsl'
 
 // Shared geometry — reused by all CasePlane instances (GPU buffer, not uniforms).
-const sharedGeometry = new THREE.PlaneGeometry(1, 9 / 16, 16, 10)
+// 20×12 segments for smooth cloth deformation without excessive vertex count.
+const sharedGeometry = new THREE.PlaneGeometry(1, 9 / 16, 20, 12)
+
+/**
+ * Unified cloth wobble animation parameters.
+ * Used by both BakuCarousel (home) and WorksPlaneStage (/works)
+ * to ensure identical animation behaviour across all entry points.
+ */
+export const CLOTH_PARAMS = {
+  /** Wobble amplitude multiplier on card open/tap. */
+  pulseAmount: 0.5,
+  /** Wobble amplitude on scroll drag (per card). */
+  scrollDragAmount: 0.25,
+  /** Exponential decay rate for wobble (higher = faster fade). */
+  wobbleDecay: 4.5,
+  /** Smoothing speed for wobble value (higher = snappier). */
+  wobbleSmoothing: 8.0,
+  /** Exponential decay rate for scroll-induced motion. */
+  motionDecay: 10.0,
+  /** Smoothing speed for motion value. */
+  motionSmoothing: 16.0,
+  /** Smoothing speed for edge warp value. */
+  edgeWarpSmoothing: 8.0,
+  /** Scroll motion bend strength (quadratic Z). */
+  motionBend: -0.02,
+  /** Edge warp strength (quadratic Z at card edges). */
+  edgeWarpBend: -0.12,
+} as const
 
 export class CasePlane extends THREE.Mesh {
   private _wobbleValue = 0
@@ -52,22 +86,51 @@ export class CasePlane extends THREE.Mesh {
       map: mapTexture,
     })
 
-    // Vertex: gentle cloth wobble driven by per-instance uniforms.
+    // Vertex: low-frequency cloth wobble driven by per-instance uniforms.
+    //
+    // TWO sine harmonics create a natural, physical cloth ripple:
+    //   H1: spatial 2.5, temporal 1.8 Hz — primary wave, 1-2 visible ripples
+    //   H2: spatial 1.8, temporal 1.2 Hz — slow cross-wave for organic feel
+    //
+    // Edge falloff: center stays stable (eye focus), edges/corners wobble more.
+    // The clothMask controls displacement: Y for visible ripple,
+    // Z gets 25% depth for subtle parallax.
     mat.positionNode = Fn(() => {
       const local = positionLocal
       const wobble = state.z
       const motion = state2.x
       const edgeWarp = state2.y
-      const ripple = sin(local.x.mul(6.0).add(time.mul(2.5)))
+
+      // Edge distance from center (0 at center, 1 at edges/corners)
+      const edgeDist = max(abs(local.x), abs(local.y.mul(1.78))).clamp(0.0, 1.0)
+      // Edges and corners wobble MORE than center — like cloth held at center
+      const edgeFade = (smoothstep as any)(0.0, 0.5, edgeDist)
+      // Corner emphasis: corners get extra displacement
+      const cornerBoost = abs(local.x).mul(abs(local.y)).mul(3.5).max(0.0).min(1.0)
+      const clothMask = edgeFade.add(cornerBoost.mul(0.4)).max(0.0).min(1.2)
+
+      // Harmonic 1: primary wave — 1-2 visible ripples across the card
+      const h1 = sin(local.x.mul(2.5).add(time.mul(1.8)))
+      // Harmonic 2: slow cross-wave for organic, non-mechanical feel
+      const h2 = sin(local.x.mul(1.8).sub(local.y.mul(1.2)).add(time.mul(1.2)))
+
+      // Composite: H1 dominates, H2 adds subtle cross-movement
+      const ripple = h1
+        .add(h2.mul(0.45))
         .mul(wobble)
-        .mul(0.015)
-      const edge = float(1.0).sub(local.x.abs().mul(1.5)).clamp(0.0, 1.0)
-      const travel = local.x.mul(local.x).mul(motion).mul(-0.035)
-      const edgeBend = local.x.mul(local.x).mul(edgeWarp).mul(-0.18)
+        .mul(0.022) // visible amplitude
+        .mul(clothMask)
+
+      // Scroll-induced parallax bend (quadratic Z displacement)
+      const travel = local.x.mul(local.x).mul(motion).mul(float(CLOTH_PARAMS.motionBend))
+      // Edge warp for transition (card edges curl during fullscreen open)
+      const edgeBend = local.x.mul(local.x).mul(edgeWarp).mul(float(CLOTH_PARAMS.edgeWarpBend))
+
+      const rippleZ = ripple.mul(0.25).add(travel).add(edgeBend)
       return vec3(
         local.x,
-        local.y.add(ripple.mul(edge)),
-        local.z.add(ripple.mul(0.3)).add(travel).add(edgeBend),
+        local.y.add(ripple) as any,
+        local.z.add(rippleZ) as any,
       )
     })()
 
@@ -108,7 +171,7 @@ export class CasePlane extends THREE.Mesh {
     this.visible = value > 0.001
   }
 
-  pulse(amount = 1): void {
+  pulse(amount = CLOTH_PARAMS.pulseAmount): void {
     this._wobbleTarget = Math.max(this._wobbleTarget, amount)
   }
 
@@ -144,11 +207,11 @@ export class CasePlane extends THREE.Mesh {
     }
 
     this._timeUni.value += dt
-    this._wobbleTarget *= Math.exp(-dt * 7)
-    this._wobbleValue += (this._wobbleTarget - this._wobbleValue) * Math.min(1, dt * 12)
-    this._motionTarget *= Math.exp(-dt * 10)
-    this._motionValue += (this._motionTarget - this._motionValue) * Math.min(1, dt * 16)
-    this._edgeWarpValue += (this._edgeWarpTarget - this._edgeWarpValue) * Math.min(1, dt * 8)
+    this._wobbleTarget *= Math.exp(-dt * CLOTH_PARAMS.wobbleDecay)
+    this._wobbleValue += (this._wobbleTarget - this._wobbleValue) * Math.min(1, dt * CLOTH_PARAMS.wobbleSmoothing)
+    this._motionTarget *= Math.exp(-dt * CLOTH_PARAMS.motionDecay)
+    this._motionValue += (this._motionTarget - this._motionValue) * Math.min(1, dt * CLOTH_PARAMS.motionSmoothing)
+    this._edgeWarpValue += (this._edgeWarpTarget - this._edgeWarpValue) * Math.min(1, dt * CLOTH_PARAMS.edgeWarpSmoothing)
 
     this._stateUni.value.z = this._wobbleValue
     this._state2Uni.value.x = this._motionValue

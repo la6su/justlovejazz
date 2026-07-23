@@ -348,6 +348,10 @@ const PALETTES: Record<string, ContentPalette> = {
 function makeContentScenes(pageId: string): PhaseConfig[] {
   const p = PALETTES[pageId]
   if (!p) return RAW.map(toPhaseConfig)
+  // Alternate section themes so inverse mode creates contrast between sections.
+  // Even indices = dark, odd indices = light. In auto mode, sections alternate
+  // dark/light. In inverse mode, they flip to light/dark.
+  const themes: Array<'light' | 'dark'> = ['dark', 'light', 'dark', 'light', 'dark', 'light']
   return Array.from({ length: 6 }, (_, idx) =>
     toPhaseConfig(
       raw({
@@ -355,6 +359,7 @@ function makeContentScenes(pageId: string): PhaseConfig[] {
         context: `Content — ${pageId} face ${idx}`,
         domSection: `content-${idx}`,
         range: [idx / 5, (idx + 1) / 5] as [number, number],
+        sectionTheme: themes[idx]!,
         bakuColor: p.bakuColor,
         bakuEmissive: p.bakuEmissive,
         postBloom: 0,

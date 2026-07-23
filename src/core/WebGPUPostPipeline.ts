@@ -266,13 +266,18 @@ export class WebGPUPostPipeline {
     // We do NOT apply pow(0.4545) manually — that's an approximation that
     // differs from the exact sRGB curve (especially in shadows).
     //
-    // renderer.toneMapping must be NoToneMapping during render() to prevent
-    // double ACES (we apply ACES in step 6). RenderPipeline.render() handles
-    // this swap.
+    // IMPORTANT: Set renderer.toneMapping = NoToneMapping before building the
+    // pipeline so renderOutput() does NOT apply ACES. ACES was intentionally
+    // removed from the post-processing graph to preserve faithful texture colors.
+    // The pipeline captures toneMapping at build time, so we restore after.
+    const wgRenderer = this._renderer as any
+    const prevToneMapping = wgRenderer.toneMapping
+    wgRenderer.toneMapping = THREE.NoToneMapping
 
     this._pipeline = new TSLRenderPipeline(this._renderer, color)
+    wgRenderer.toneMapping = prevToneMapping
     // outputColorTransform = true (default) → TSLRenderPipeline applies
-    // renderOutput(color, toneMapping, outputColorSpace) which does:
+    // renderOutput(color, NoToneMapping, SRGBColorSpace) which does:
     //   1. toneMapping (NoToneMapping → no-op)
     //   2. workingToColorSpace(SRGB) → exact sRGBTransferOETF
   }
