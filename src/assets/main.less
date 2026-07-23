@@ -444,38 +444,11 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
   background: transparent !important;
 }
 
-.jlz-fs-overlay.is-image-mode .jlz-fs-dialog {
-  clip-path: none;
-  transform: scale(1);
-  opacity: 0;
-  transition: opacity 0.32s ease;
-}
-
-.jlz-fs-overlay.is-image-mode.is-poster-ready.uk-open.is-entered .jlz-fs-dialog {
-  opacity: 1;
-}
-
-// ── Fast open (non-plane-origin: showreel, works page click) ──
-// No clip-path/scale animation — just a quick 0.2s opacity fade.
-// The 0.86s clip-path reveal is only for 3D plane-to-fullscreen handoffs.
-.jlz-fs-overlay.is-fast-open .jlz-fs-dialog {
-  clip-path: inset(0 round 0);
-  transform: scale(1);
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.jlz-fs-overlay.is-fast-open.is-entered .jlz-fs-dialog {
-  opacity: 1;
-}
-
-.jlz-fs-overlay.is-fast-open .jlz-fs-meta,
-.jlz-fs-overlay.is-fast-open .jlz-fs-media-stage,
-.jlz-fs-overlay.is-fast-open .jlz-fs-controls {
-  opacity: 1;
-  transform: none;
-  transition: none;
-}
+// ── Unified mask reveal ──
+// Every open (showreel, project, image) uses the same clip-path iris. The
+// is-entered class triggers the 0.86s reveal; is-plane-origin only adds
+// background transparency for the 3D plane handoff. There is no fast-open
+// bypass — the mask is the single transition language for the overlay.
 
 .jlz-fs-overlay.is-plane-origin .jlz-fs-media-stage {
   opacity: 1;
@@ -675,26 +648,57 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
   color: var(--jlz-color-text);
 }
 
+// ── Unified navigation arrow ──
+// Shared by the home Works slider (.jlz-works-slider-arrow) and the fullscreen
+// overlay prev/next (.jlz-fs-prev/.jlz-fs-next). One circular console button
+// with backdrop blur, consistent sizing and the same slidenav-large icons.
+.jlz-nav-arrow {
+  display: grid;
+  place-items: center;
+  width: clamp(4rem, 5.6vw, 5.75rem);
+  height: clamp(4rem, 5.6vw, 5.75rem);
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: 50%;
+  color: var(--jlz-color-text);
+  background: rgba(5, 5, 7, 0.58);
+  box-shadow: 0 1.4rem 3rem rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  cursor: pointer;
+  pointer-events: auto;
+  transition:
+    color 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease,
+    transform 260ms var(--jlz-ease-emphasis);
+}
+
+.jlz-nav-arrow svg {
+  width: 1.7rem;
+  height: 1.7rem;
+}
+
+.jlz-nav-arrow:hover,
+.jlz-nav-arrow:focus-visible {
+  border-color: var(--jlz-color-accent);
+  color: var(--jlz-color-accent);
+  background: rgba(5, 5, 7, 0.78);
+  transform: scale(1.06);
+}
+
+.jlz-nav-arrow:focus-visible {
+  outline: 2px solid var(--jlz-color-signal-teal);
+  outline-offset: 4px;
+}
+
+// Fullscreen overlay prev/next — absolute left/right centred.
 .jlz-fs-prev,
 .jlz-fs-next {
   position: absolute;
   top: 50%;
   z-index: 5;
-  width: clamp(4rem, 5.2vw, 5.75rem);
-  height: clamp(4rem, 5.2vw, 5.75rem);
-  padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  border-radius: 50%;
-  color: var(--jlz-color-text);
-  background: rgba(5, 5, 7, 0.66);
-  backdrop-filter: blur(12px);
   transform: translateY(-50%);
-}
-
-.jlz-fs-prev svg,
-.jlz-fs-next svg {
-  width: 1.7rem;
-  height: 1.7rem;
 }
 
 .jlz-fs-prev {
@@ -721,17 +725,19 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
   .jlz-fs-time {
     display: none;
   }
-  .jlz-fs-prev,
-  .jlz-fs-next {
-    top: calc(50% + 0.5rem);
+  .jlz-nav-arrow {
     width: 3.45rem;
     height: 3.45rem;
   }
 
-  .jlz-fs-prev svg,
-  .jlz-fs-next svg {
+  .jlz-nav-arrow svg {
     width: 1.35rem;
     height: 1.35rem;
+  }
+
+  .jlz-fs-prev,
+  .jlz-fs-next {
+    top: calc(50% + 0.5rem);
   }
 }
 
@@ -793,7 +799,10 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
   pointer-events: none;
   z-index: 100000;
   will-change: transform;
-  transition: background-color 0.15s ease, width 0.15s ease, height 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    width 0.15s ease,
+    height 0.15s ease;
   /* Console: small teal dot — centering via translate(-50%, -50%) in JS */
 }
 
@@ -2150,48 +2159,15 @@ body:not([data-page='home'])
   pointer-events: none;
 }
 
-.jlz-works-slider-arrow.uk-icon-button {
-  width: clamp(4rem, 6vw, 5.75rem);
-  height: clamp(4rem, 6vw, 5.75rem);
-  display: grid;
-  place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  border-radius: 50%;
-  color: rgba(255, 255, 255, 0.96);
-  background: rgba(3, 4, 3, 0.46);
-  box-shadow: 0 1.4rem 3rem rgba(0, 0, 0, 0.26);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  cursor: pointer;
+// Home Works slider arrows — share the unified .jlz-nav-arrow appearance.
+// Only positioning (flex layout inside .jlz-works-slider-controls) is specific.
+.jlz-works-slider-arrow {
   pointer-events: auto;
-  transition:
-    color 180ms ease,
-    border-color 180ms ease,
-    background 180ms ease,
-    transform 260ms var(--jlz-ease-emphasis);
-}
-
-.jlz-works-slider-arrow.uk-icon-button:hover,
-.jlz-works-slider-arrow.uk-icon-button:focus-visible {
-  border-color: var(--jlz-color-accent);
-  color: var(--jlz-color-accent);
-  background: rgba(3, 4, 3, 0.78);
-  transform: scale(1.06);
-}
-
-.jlz-works-slider-arrow.uk-icon-button:focus-visible {
-  outline: 2px solid var(--jlz-color-signal-teal);
-  outline-offset: 4px;
 }
 
 @media (max-width: 639px) {
   .jlz-works-slider-controls {
     padding: 0 0.75rem;
-  }
-
-  .jlz-works-slider-arrow.uk-icon-button {
-    width: 3.5rem;
-    height: 3.5rem;
   }
 }
 
@@ -2848,9 +2824,7 @@ body[data-cinematic-sheet]
 //  .jlz-help-content, .jlz-help-joystick, .jlz-joystick-svg, .jlz-help-text,
 //  .jlz-help-text-row, .jlz-help-key, .jlz-help-divider CSS removed.)
 
-
 // Joystick is always visible. (jlz-help-hint / jlz-joystick__arrow-label CSS removed — elements no longer exist.)
-
 
 // ── Sound toggle — now uses uk-icon (muted/sound), no CSS bars needed ──
 

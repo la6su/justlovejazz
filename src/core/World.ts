@@ -182,8 +182,9 @@ export class World extends THREE.Group {
       this.lightsGroup.changeSection(firstCfg)
       // Inline WorldAtmosphere.setFog — fog not yet set on init, so create new.
       this.sceneRef.fog = new THREE.FogExp2(firstCfg.fog.color.clone(), firstCfg.fog.density)
-      // EnvSphere starts on section 1 (intro) — default weights match
-      this.envSphere.changeSection(1)
+      // EnvSphere starts on section 1 (intro) — default weights match.
+      // isLight=false (dark); the first jlz:theme-applied event corrects it.
+      this.envSphere.changeSection(1, false)
     }
 
     // ── Enforce final visibility: only group 1 (intro) visible, all others hidden.

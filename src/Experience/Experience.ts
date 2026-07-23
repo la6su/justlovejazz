@@ -326,32 +326,39 @@ export class Experience {
     this.bus = StateBus.getInstance()
 
     // ── 3D ↔ theme sync: EnvSphere follows per-section theme ──
-    // ContentReveal dispatches jlz:theme-applied on section change.
-    // isLight=true → pattern 1, isLight=false → pattern 2.
-    // Theme toggle (snap=true) → EnvSphere changes instantly to match the
-    // instant CSS uk-light flip. Section change (snap=false) → lerp for
-    // smooth visual continuity during scroll.
+    // ContentReveal dispatches jlz:theme-applied on every section change with
+    // the resolved sectionIndex + isLight. Each section has its own dark/light
+    // tone pair, so EnvSphere always shows the active section's colour.
+    // Theme toggle (snap=true) → instant snap. Section change (snap=false) → lerp.
+    // Theme-specific syncs (ground, baku, particles) only run when the polarity
+    // actually changed, not on every same-polarity scroll step.
     this._themeAppliedHandler = (e: Event) => {
-      const detail = (e as CustomEvent<{ isLight: boolean; snap?: boolean }>).detail
+      const detail = (
+        e as CustomEvent<{
+          isLight: boolean
+          sectionIndex?: number
+          snap?: boolean
+          themeChanged?: boolean
+        }>
+      ).detail
       if (!detail) return
-      const targetIdx = detail.isLight ? 1 : 2
+      const sectionIdx = detail.sectionIndex ?? 1
       if (this.world?.envSphere) {
         if (detail.snap) {
-          this.world.envSphere.snapToSection(targetIdx)
+          this.world.envSphere.snapToSection(sectionIdx, detail.isLight)
         } else {
-          this.world.envSphere.changeSection(targetIdx)
+          this.world.envSphere.changeSection(sectionIdx, detail.isLight)
         }
-        // Sync ground plane color/opacity to the active theme — otherwise
-        // a dark ground is invisible on the light theme (near-white bg).
-        this.world.syncGroundTheme(detail.isLight)
-        this.world.baku.setTheme(detail.isLight)
-        this.world.syncTypographyTheme(detail.isLight)
-        // Sync particle blending: Additive on dark (glow), Normal on light (visible).
-        // Without this, additive-blended particles are invisible on white backgrounds.
-        for (const group of this.world.sceneGroups) {
-          const particles = group.userData.particles as
-            import('../Experience/World/JunniParticles').JunniParticles | undefined
-          if (particles) particles.setBlending(!detail.isLight)
+        // Theme-only syncs — skip when just the section moved (same polarity).
+        if (detail.themeChanged !== false) {
+          this.world.syncGroundTheme(detail.isLight)
+          this.world.baku.setTheme(detail.isLight)
+          this.world.syncTypographyTheme(detail.isLight)
+          for (const group of this.world.sceneGroups) {
+            const particles = group.userData.particles as
+              import('../Experience/World/JunniParticles').JunniParticles | undefined
+            if (particles) particles.setBlending(!detail.isLight)
+          }
         }
         this._needsRender = true
       }

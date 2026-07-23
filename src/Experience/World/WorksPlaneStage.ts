@@ -8,6 +8,7 @@
 import * as THREE from 'three'
 import { PROJECTS } from '../../Data/Projects'
 import { CasePlane } from './CasePlane'
+import { loadCaseTexture } from './caseTexture'
 import {
   type TransitionState,
   beginTransition,
@@ -84,26 +85,8 @@ export class WorksPlaneStage extends THREE.Group {
     if (this._initialized) return
     this._initialized = true
 
-    const loader = new THREE.TextureLoader()
     const textures = await Promise.all(
-      PROJECTS.map(
-        (project) =>
-          new Promise<THREE.Texture>((resolve, reject) => {
-            loader.load(
-              project.textureUrl,
-              (texture) => {
-                texture.colorSpace = THREE.SRGBColorSpace
-                texture.generateMipmaps = true
-                texture.minFilter = THREE.LinearMipmapLinearFilter
-                texture.magFilter = THREE.LinearFilter
-                texture.anisotropy = 4
-                resolve(texture)
-              },
-              undefined,
-              reject,
-            )
-          }),
-      ),
+      PROJECTS.map((project) => loadCaseTexture(project.textureUrl)),
     )
 
     textures.forEach((texture, index) => {

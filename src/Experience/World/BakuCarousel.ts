@@ -21,6 +21,7 @@ function isMenuOpen(): boolean {
 }
 import { PROJECTS } from '../../Data/Projects'
 import { CasePlane } from './CasePlane'
+import { loadCaseTexture } from './caseTexture'
 import {
   type TransitionState,
   beginTransition,
@@ -49,7 +50,6 @@ const TAP_THRESHOLD = 6 // px — if pointerup within this distance of down, it'
 const MOMENTUM_DECAY = 0.84 // per-frame velocity decay after drag release
 const MOMENTUM_THRESHOLD = 0.0007 // below this → snap to nearest card
 const SNAP_STEP = 1
-
 
 export class BakuCarousel extends THREE.Group {
   private cards: CasePlane[] = []
@@ -132,30 +132,10 @@ export class BakuCarousel extends THREE.Group {
     if (this.initialized) return
     this.initialized = true
 
-    const loader = new THREE.TextureLoader()
     // Load only the UNIQUE project textures once (4, not 6) — cards reference
     // them by index, avoiding duplicate GPU textures + HTTP requests.
     const uniqueUrls = [...new Set(CARD_TEXTURE_URLS)]
-    const uniqueTextures = await Promise.all(
-      uniqueUrls.map(
-        (url) =>
-          new Promise<THREE.Texture>((resolve, reject) => {
-            loader.load(
-              url,
-              (tex) => {
-                tex.colorSpace = THREE.SRGBColorSpace
-                tex.minFilter = THREE.LinearMipmapLinearFilter
-                tex.magFilter = THREE.LinearFilter
-                tex.generateMipmaps = true
-                tex.anisotropy = 4
-                resolve(tex)
-              },
-              undefined,
-              reject,
-            )
-          }),
-      ),
-    )
+    const uniqueTextures = await Promise.all(uniqueUrls.map((url) => loadCaseTexture(url)))
     const urlToTexture = new Map(uniqueUrls.map((url, i) => [url, uniqueTextures[i]!]))
 
     CARD_TEXTURE_URLS.forEach((url, i) => {
@@ -326,12 +306,7 @@ export class BakuCarousel extends THREE.Group {
    * takes over. This avoids the old click → dark-frame → modal discontinuity. */
   private beginFullscreenTransition(card: CasePlane, index: number): void {
     if (this._opening) return
-    this._opening = beginTransition(
-      card,
-      index,
-      (idx) => this._onCardClick?.(idx),
-      card.quaternion,
-    )
+    this._opening = beginTransition(card, index, (idx) => this._onCardClick?.(idx), card.quaternion)
     if (!this._opening.reducedMotion) card.pulse(0.42)
   }
 

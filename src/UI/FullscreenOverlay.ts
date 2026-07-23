@@ -103,10 +103,10 @@ export class FullscreenOverlay {
           <input class="jlz-fs-seek uk-range" type="range" min="0" max="100" value="0" step="0.1" aria-label="Seek" />
           <span class="jlz-fs-time">0:00 / 0:00</span>
         </footer>
-        <button class="jlz-fs-prev" type="button" aria-label="Previous">
+        <button class="jlz-nav-arrow jlz-fs-prev" type="button" aria-label="Previous">
           <span uk-icon="icon: slidenav-previous-large" aria-hidden="true"></span>
         </button>
-        <button class="jlz-fs-next" type="button" aria-label="Next">
+        <button class="jlz-nav-arrow jlz-fs-next" type="button" aria-label="Next">
           <span uk-icon="icon: slidenav-next-large" aria-hidden="true"></span>
         </button>
       </div>
@@ -153,7 +153,8 @@ export class FullscreenOverlay {
       this.muteBtn.setAttribute('aria-pressed', String(this.video.muted))
       this.muteBtn.classList.toggle('is-muted', this.video.muted)
       const muteIcon = this.muteBtn.querySelector('[uk-icon]')
-      if (muteIcon) muteIcon.setAttribute('uk-icon', `icon: ${this.video.muted ? 'muted' : 'sound'}`)
+      if (muteIcon)
+        muteIcon.setAttribute('uk-icon', `icon: ${this.video.muted ? 'muted' : 'sound'}`)
     })
 
     // Video events
@@ -235,7 +236,6 @@ export class FullscreenOverlay {
       }
       this.container.classList.remove('is-playing')
       this.container.classList.remove('is-entered')
-      this.container.classList.remove('is-fast-open')
       this.container.classList.remove('is-plane-origin')
       this.video.pause()
       this.onClose?.()
@@ -332,12 +332,9 @@ export class FullscreenOverlay {
   /** Open overlay with given options. */
   open(opts: OverlayOptions): void {
     this._applyOptions(opts)
-    // Non-plane-origin opens (showreel, direct works click) skip the
-    // clip-path/scale reveal — there's no 3D plane expanding, so the 0.86s
-    // animation is visual noise. Use a fast fade instead.
-    const isPlaneOrigin = opts.origin === 'plane'
-    this.container.classList.toggle('is-plane-origin', isPlaneOrigin)
-    this.container.classList.toggle('is-fast-open', !isPlaneOrigin)
+    // All opens use the same unified clip-path iris reveal. is-plane-origin
+    // only controls background transparency for the 3D plane handoff.
+    this.container.classList.toggle('is-plane-origin', opts.origin === 'plane')
     UIkit.modal(this.container).show()
   }
 
