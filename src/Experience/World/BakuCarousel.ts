@@ -24,7 +24,6 @@ import { CasePlane } from './CasePlane'
 import { loadCaseTexture } from './caseTexture'
 import {
   type TransitionState,
-  beginTransition,
   updateTransition,
   resetTransition as resetPlaneTransition,
 } from './PlaneTransition'
@@ -237,7 +236,6 @@ export class BakuCarousel extends THREE.Group {
     if (!this._camera) {
       // No camera — fall back to front card
       this._onCardClick?.(this.getFrontCardIndex())
-      // Phase 5: wobble pulse on tap
       window.dispatchEvent(new CustomEvent('jlz:wobble-pulse'))
       return
     }
@@ -257,7 +255,9 @@ export class BakuCarousel extends THREE.Group {
     if (intersects.length > 0) {
       const hit = intersects[0]!.object as THREE.Mesh
       const idx = hit.userData.cardIndex as number
-      this.beginFullscreenTransition(hit as CasePlane, idx)
+      // Open the overlay directly with the unified cinematic reveal — no
+      // 3D plane-to-fullscreen handoff (it caused a double effect).
+      this._onCardClick?.(idx)
     }
     // No hit → tap was on cube or empty space → ignore (no overlay open)
   }
@@ -300,14 +300,6 @@ export class BakuCarousel extends THREE.Group {
   /** Wrap an unbounded position into the physical instances around the camera. */
   private wrapSlot(value: number, count: number): number {
     return ((((value + count / 2) % count) + count) % count) - count / 2
-  }
-
-  /** Let a physically deforming plane reach fullscreen before the DOM modal
-   * takes over. This avoids the old click → dark-frame → modal discontinuity. */
-  private beginFullscreenTransition(card: CasePlane, index: number): void {
-    if (this._opening) return
-    this._opening = beginTransition(card, index, (idx) => this._onCardClick?.(idx), card.quaternion)
-    if (!this._opening.reducedMotion) card.pulse(0.42)
   }
 
   /** Called after the UIkit overlay closes, returning the stream to normal. */
