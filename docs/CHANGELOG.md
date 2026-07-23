@@ -4,6 +4,18 @@ This is a concise release-level record. Implementation decisions belong in
 [`WORKLOG.md`](../WORKLOG.md); completed plans remain available through Git
 history.
 
+## 2026-07-23 — Final transition, texture and overlay fixes
+
+- Fixed card overlap during /works section change — invisible cards now
+  fade out in place instead of sliding into the new secondary slot.
+- Replaced the CasePlane radial reveal mask with a clean opacity fade —
+  no directional wipe from a corner.
+- Removed the duplicate footer play button — the big-play overlay is the
+  sole play/pause control in the fullscreen overlay.
+- Removed ACES tone mapping from both post-processing paths (WebGL2 +
+  WebGPU) so case textures render with faithful original colors.
+- Neutralised the warm shadow tint in WorldConfig DEFAULTS.
+
 ## 2026-07-21 — Unified shader transition and per-instance materials
 
 - Gave each `CasePlane` its own `MeshBasicNodeMaterial` and TSL uniform

@@ -5,7 +5,23 @@
 
 import { WebGPURenderer, RenderPipeline as TSLRenderPipeline } from 'three/webgpu'
 import { tslBloom, tslPass } from '../types/tsl-helpers'
-import { uniform, uv, dot, vec2, vec3, mix, smoothstep, step, time, sin, cos, float, div, fract, floor, max } from 'three/tsl'
+import {
+  uniform,
+  uv,
+  dot,
+  vec2,
+  vec3,
+  mix,
+  smoothstep,
+  step,
+  time,
+  sin,
+  cos,
+  float,
+  fract,
+  floor,
+  max,
+} from 'three/tsl'
 import * as THREE from 'three'
 import type { Scene, Camera } from 'three'
 
@@ -140,12 +156,7 @@ export class WebGPUPostPipeline {
 
     // ── 4. Bloom composite ──
     // WebGL2: color = scene + bloom * uBloomIntensity
-    const bloomNode = tslBloom(
-      scene,
-      this._bloomStrength,
-      this._bloomRadius,
-      this._bloomThreshold,
-    )
+    const bloomNode = tslBloom(scene, this._bloomStrength, this._bloomRadius, this._bloomThreshold)
     let color = scene.add(bloomNode)
 
     // ── 5. Color grading ──
@@ -160,22 +171,19 @@ export class WebGPUPostPipeline {
     )
     color = mix(color, graded, 0.4)
 
-    // ── 6. ACES tone mapping ──
-    // WebGL2: color = color * (6.2 * color + 0.03) / (color * (4.8 * color + 1.0));
-    // NOTE: WebGL2 GLSL handles 0/0 = NaN gracefully (GPU clamps to 0), but
-    // WebGPU TSL may produce different results for black pixels (division by
-    // zero). Add epsilon (0.0001) to denominator to avoid NaN on both paths.
-    // This also ensures ACES lifts shadows correctly (0.01 → 0.088 instead of 0).
-    const a = color.mul(6.2).add(0.03)
-    const b = color.mul(color.mul(4.8).add(1.0)).add(0.0001)
-    color = div(color.mul(a), b)
+    // ── 6. ACES tone mapping removed ──
+    // ACES compressed dynamic range and desaturated case textures. Materials
+    // that need tone mapping use toneMapped:true (applied per-material during
+    // scene→RT). CasePlane sets toneMapped:false for faithful texture colors.
 
     // ── 7. Film grain ──
     // Portable integer-based hash (NOT sin-based — sin() gives different
     // precision in GLSL vs WGSL, causing grain mismatch between WebGL2 and WebGPU).
     // hash(p) = fract((p3.x + p3.y) * p3.z) where p3 = fract(vec3(p.xyx)*0.1031) + dot(...)
     // This is bit-identical across backends → grain looks the same on WebGPU and WebGL2.
-    const noiseCoord = uv().mul(1024.0).add(vec2(time.mul(10.0)))
+    const noiseCoord = uv()
+      .mul(1024.0)
+      .add(vec2(time.mul(10.0)))
     const nFloor = floor(noiseCoord)
     const nFract = fract(noiseCoord)
     const nSmooth = nFract.mul(nFract).mul(float(3.0).sub(nFract.mul(2.0)))
@@ -190,7 +198,11 @@ export class WebGPUPostPipeline {
     const nB = _hash(nFloor.add(vec2(1.0, 0.0)))
     const nC = _hash(nFloor.add(vec2(0.0, 1.0)))
     const nD = _hash(nFloor.add(vec2(1.0, 1.0)))
-    const grainNoise = mix(mix(nA, nB, (nSmooth.x as any)), mix(nC, nD, (nSmooth.x as any)), (nSmooth.y as any))
+    const grainNoise = mix(
+      mix(nA, nB, nSmooth.x as any),
+      mix(nC, nD, nSmooth.x as any),
+      nSmooth.y as any,
+    )
     // grain = (noise - 0.5) * 2.0 * strength → adds ±strength per pixel
     const grain = grainNoise.sub(0.5).mul(2.0).mul(this._grainStrength)
     color = color.add(vec3(grain))
@@ -228,11 +240,14 @@ export class WebGPUPostPipeline {
     // edge.x is a SplitNode typed as Node by TS; cast to Node<"float"> for .mul().
     const barrelUV = uv().mul(2.0).sub(1.0)
     const barrelOffset = barrelUV.yx.mul(0.25)
-    const barrelDistorted = barrelUV.add(barrelUV.mul(barrelOffset).mul(barrelOffset)).mul(0.5).add(0.5)
+    const barrelDistorted = barrelUV
+      .add(barrelUV.mul(barrelOffset).mul(barrelOffset))
+      .mul(0.5)
+      .add(0.5)
     const innerEdge = smoothstep(0.0, 0.02, barrelDistorted as any) as any
     const outerEdge = smoothstep(0.98, 1.0, barrelDistorted as any).oneMinus() as any
-    const edge = innerEdge.mul(outerEdge)  // Node<"vec2">
-    const edgeScalar: any = (edge.x as any).mul(edge.y as any)  // scalar (Node<"float">)
+    const edge = innerEdge.mul(outerEdge) // Node<"vec2">
+    const edgeScalar: any = (edge.x as any).mul(edge.y as any) // scalar (Node<"float">)
     // MIRROR WebGL2: color *= edge.x * edge.y (full, no mix attenuate)
     // R-10 fix: use step(0.001, borderStrength) — was step(0.0, x) which
     // returns 1 when x>=0 (always true for non-negative) → border applied even

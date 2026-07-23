@@ -31,14 +31,15 @@ project category.
 - Works cards provide a CSS wobble and synchronise a cube wobble pulse before
   opening the project overlay.
 - The former circular Baku carousel is now a non-autoplay flat infinite media
-  strip. Its large `CasePlane` cards are TSL NodeMaterials with buffered UV
-  counter-travel, asymmetric contact-sheet arrival and explicit resource
-  disposal. Home deliberately frames large cases with clipped neighbours;
-  arrows are the only visible DOM interaction in that section.
-- Plane-origin fullscreen handoff settles the selected plane's texture
-  parallax, aligns that real plane with the camera and runs one bounded TSL
-  multi-origin photographic film burn while it fills the viewport. UIkit then
-  crossfades the same decoded still above it. Works does not inherit, load or
+  strip. Its large `CasePlane` cards are TSL NodeMaterials with a clean
+  opacity-fade reveal (no radial mask) and explicit resource disposal. Home
+  deliberately frames large cases with clipped neighbours; arrows are the
+  only visible DOM interaction in that section.
+- All fullscreen opens (showreel, home slider, /works cards) use one unified
+  DOM cinematic depth-push reveal — the 3D plane-to-fullscreen handoff was
+  removed to avoid a double effect. `CasePlane` textures render with faithful
+  original colors: `toneMapped:false` + ACES removed from the composite
+  shader. Works does not inherit, load or
   autoplay the studio reel;
   that asset belongs exclusively to Play Showreel. `/works` mirrors UIkit's
   compact vertical grid in `WorksPlaneStage`, including its safe-area and

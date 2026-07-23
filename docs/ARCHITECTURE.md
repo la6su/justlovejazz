@@ -137,13 +137,11 @@ media stream.
 At UIkit's `@m` breakpoint the stage mirrors the semantic grid's vertical pair
 instead of retaining desktop coordinates. The home stream counter-travels each
 texture inside its real plane while drag moves the planes themselves. On open,
-both paths fade neighbouring planes, settle that texture parallax and align the
-selected plane with the camera until it covers the viewport. A bounded TSL
-film burn grows several low-frequency emulsion holes with an amber exposure
-wash, dark char band and white-hot edge during this travel, then releases all
-transition work. The Works section keeps its post grade neutral and the plane
-pre-compensates the shared filmic curve so the authored sRGB still matches its
-DOM fullscreen copy. The UIkit fullscreen
+all three entry points (showreel, home slider, /works cards) use one unified
+DOM cinematic depth-push reveal — there is no 3D plane-to-fullscreen handoff,
+which was removed to avoid a double effect. `CasePlane` textures render with
+faithful original colors: `toneMapped:false` on the material and no ACES tone
+mapping in the composite shader. The UIkit fullscreen
 detail then crossfades the same decoded still above it, with no second carousel,
 cinema aperture, video fallback or source/aspect swap. UIkit remains the owner
 of visibility, focus, Escape and arrow-key navigation. The only fullscreen
