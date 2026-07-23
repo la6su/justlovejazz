@@ -137,6 +137,14 @@ export class WorksPlaneStage extends THREE.Group {
   /** Pointer interaction for the visual plane itself, outside DOM hit targets. */
   handleTap(clientX: number, clientY: number, openOverlay: (index: number) => void): boolean {
     if (!this._camera || !this._active || this._opening) return false
+    const idx = this.hitTest(clientX, clientY)
+    if (idx < 0) return false
+    return this.openProject(idx, openOverlay)
+  }
+
+  /** Raycast against visible planes. Returns the project index or -1 on miss. */
+  hitTest(clientX: number, clientY: number): number {
+    if (!this._camera || !this._active) return -1
     this._ndc.x = (clientX / window.innerWidth) * 2 - 1
     this._ndc.y = -(clientY / window.innerHeight) * 2 + 1
     this._raycaster.setFromCamera(this._ndc, this._camera)
@@ -145,8 +153,8 @@ export class WorksPlaneStage extends THREE.Group {
       false,
     )
     const hit = hits[0]?.object as CasePlane | undefined
-    if (!hit) return false
-    return this.openProject(hit.userData.projectIndex as number, openOverlay)
+    if (!hit) return -1
+    return hit.userData.projectIndex as number
   }
 
   /** Restore the route stage after UIkit closes the fullscreen detail. */
@@ -185,15 +193,24 @@ export class WorksPlaneStage extends THREE.Group {
 
       const layouts = this._stackedLayout ? STACKED_LAYOUT : WIDE_LAYOUT
       const layout = isPrimary ? layouts[0] : layouts[1]
-      this._tmpTargetPosition.set(layout.x, layout.y, layout.z)
-      this._tmpTargetRotation.set(isSecondary ? -0.018 : 0.006, isSecondary ? -0.07 : 0.025, 0)
-      card.position.lerp(this._tmpTargetPosition, 1 - Math.exp(-dt * 9))
-      card.rotation.x += (this._tmpTargetRotation.x - card.rotation.x) * (1 - Math.exp(-dt * 9))
-      card.rotation.y += (this._tmpTargetRotation.y - card.rotation.y) * (1 - Math.exp(-dt * 9))
-      card.rotation.z += (this._tmpTargetRotation.z - card.rotation.z) * (1 - Math.exp(-dt * 9))
-      const targetScale = layout.scale
-      const nextScale = THREE.MathUtils.damp(card.scale.x, targetScale, 10, dt)
-      card.scale.setScalar(nextScale)
+
+      // Snap cards to their layout target on first appearance (reveal was 0)
+      // so they never fly out from the camera-local origin. Only smooth
+      // position/scale adjustments afterwards.
+      if (reveal < 0.01 && targetReveal > 0.5) {
+        card.position.set(layout.x, layout.y, layout.z)
+        card.rotation.set(isSecondary ? -0.018 : 0.006, isSecondary ? -0.07 : 0.025, 0)
+        card.scale.setScalar(layout.scale)
+      } else {
+        this._tmpTargetPosition.set(layout.x, layout.y, layout.z)
+        this._tmpTargetRotation.set(isSecondary ? -0.018 : 0.006, isSecondary ? -0.07 : 0.025, 0)
+        card.position.lerp(this._tmpTargetPosition, 1 - Math.exp(-dt * 9))
+        card.rotation.x += (this._tmpTargetRotation.x - card.rotation.x) * (1 - Math.exp(-dt * 9))
+        card.rotation.y += (this._tmpTargetRotation.y - card.rotation.y) * (1 - Math.exp(-dt * 9))
+        card.rotation.z += (this._tmpTargetRotation.z - card.rotation.z) * (1 - Math.exp(-dt * 9))
+        const nextScale = THREE.MathUtils.damp(card.scale.x, layout.scale, 10, dt)
+        card.scale.setScalar(nextScale)
+      }
       card.setReveal(nextReveal)
       card.setMotion(Math.max(0, 0.16 - nextReveal * 0.16), isSecondary ? -1 : 1)
       card.setParallax(isSecondary ? -0.42 : 0.18)

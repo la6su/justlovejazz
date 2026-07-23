@@ -1648,28 +1648,23 @@ body[data-page='works'] .jlz-joystick-dotnav__label {
   }
 }
 
-/* Section reveal is paced, but avoids blur and exaggerated 3D motion. */
+/* Section reveal: clean opacity fade only. The 3D CasePlane owns the visual
+   media reveal; the DOM composition fades its captions in without a spatial
+   transform so cards never look like they fly from a single point. */
 .jlz-works-composition > * {
   opacity: 0;
-  transform: translateY(2.5rem) scale(0.965);
-  transition:
-    opacity 0.8s var(--jlz-ease-cinematic),
-    transform 0.95s var(--jlz-ease-cinematic);
+  transition: opacity 0.5s ease;
 }
 
 .jlz-works-statement__title,
 .jlz-works-statement__lead {
   opacity: 0;
-  transform: translate3d(0, 1.5rem, 0);
-  transition:
-    opacity 0.9s ease,
-    transform 1.1s var(--jlz-ease-cinematic);
+  transition: opacity 0.6s ease;
 }
 
 .jlz-works-section.section-active .jlz-works-statement__title,
 .jlz-works-section.section-active .jlz-works-statement__lead {
   opacity: 1;
-  transform: none;
 }
 
 .jlz-works-section.section-active .jlz-works-statement__title {
@@ -1677,20 +1672,15 @@ body[data-page='works'] .jlz-joystick-dotnav__label {
 }
 
 .jlz-works-section.section-active .jlz-works-statement__lead {
-  transition-delay: 0.16s;
+  transition-delay: 0.1s;
 }
 
 .jlz-works-section.section-active .jlz-works-composition > * {
   opacity: 1;
-  transform: none;
-}
-
-.jlz-works-section.section-active .jlz-works-composition > :first-child {
-  transition-delay: 0.14s;
 }
 
 .jlz-works-section.section-active .jlz-works-composition > :last-child {
-  transition-delay: 0.28s;
+  transition-delay: 0.08s;
 }
 
 /* Click focus: a quiet exposure dip signals the transition into film. */

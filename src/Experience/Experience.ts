@@ -497,19 +497,12 @@ export class Experience {
 
     // ── Works page card click → open fullscreen overlay ──
     // Dispatched by WorkCards.ts when a .jlz-work-card is clicked (works page).
-    // onProjectSelect calls overlay.open() with project info + poster.
+    // All opens (showreel, slider, /works) use the same unified DOM cinematic
+    // reveal — no 3D plane-to-fullscreen handoff, which caused a double effect.
     this._openProjectHandler = (e: Event) => {
       const detail = (e as CustomEvent<{ idx: number }>).detail
       if (!detail || typeof detail.idx !== 'number') return
       void this.ensurePortfolio().then(() => {
-        const openOverlay = () => this.onProjectSelect(detail.idx, false, 'plane')
-        if (document.body.dataset.page === 'works') {
-          const stage = this.world?.worksPlaneStage
-          if (stage?.openProject(detail.idx, openOverlay)) {
-            this._needsRender = true
-            return
-          }
-        }
         this.onProjectSelect(detail.idx)
       })
     }
@@ -585,14 +578,13 @@ export class Experience {
       const target = e.target as HTMLElement | null
       if (target?.closest('.jlz-work-card, #jlz-fs-overlay, .jlz-topbar, [data-cinematic-menu]'))
         return
+      // Raycast against the 3D planes to find which project was tapped, then
+      // open the overlay with the unified cinematic reveal (no 3D handoff).
       void this.ensurePortfolio().then(() => {
         const stage = this.world?.worksPlaneStage
         if (!stage) return
-        if (
-          stage.handleTap(e.clientX, e.clientY, (idx) => this.onProjectSelect(idx, false, 'plane'))
-        ) {
-          this._needsRender = true
-        }
+        const idx = stage.hitTest(e.clientX, e.clientY)
+        if (idx >= 0) this.onProjectSelect(idx)
       })
     }
     window.addEventListener('pointerup', this._worksPlaneTapHandler)
@@ -892,7 +884,7 @@ export class Experience {
       // sets content without showing, so the overlay stays hidden.
       // Prepare the same authored texture that the first 3D plane uses. The
       // overlay can then decode it before the first plane-to-modal handoff.
-      this.onProjectSelect(0, true, 'plane')
+      this.onProjectSelect(0, true)
     }
     // Ground plane (floor) — visible ONLY on the bottom visible section.
     // Section index 4 = cube face -Y (bottom) on all pages. On every other
@@ -1088,15 +1080,13 @@ export class Experience {
     }
 
     // Wire BakuCarousel card click → open fullscreen overlay.
-    // This is the SOLE entry point for opening the fullscreen overlay —
-    // the old Show button and cube-tap paths were removed to avoid duplication.
-    // The carousel is a child of sceneGroups[4] (works section).
+    // All opens use the unified DOM cinematic reveal (no 3D plane handoff).
     const carousel = this.getCarousel()
     if (carousel && !carousel.userData.clickWired) {
       carousel.userData.clickWired = true
       carousel.setCamera(this.camera.instance)
       carousel.onCardClick((idx) => {
-        this.onProjectSelect(idx, false, 'plane')
+        this.onProjectSelect(idx)
       })
     }
   }
@@ -1114,7 +1104,7 @@ export class Experience {
     )
   }
 
-  private onProjectSelect(idx: number, preload: boolean = false, origin?: 'plane'): void {
+  private onProjectSelect(idx: number, preload: boolean = false): void {
     if (!this.portfolio || !this.overlay) return
     const projs = this.portfolio.projects
     if (!Array.isArray(projs) || projs.length === 0) return
@@ -1124,8 +1114,8 @@ export class Experience {
     if (!project) return
 
     // Open/preload fullscreen overlay with project info + poster.
-    // preload=true: set content WITHOUT showing (for initial load).
-    // preload=false: show the overlay (user clicked a card).
+    // All opens (showreel, slider, /works) use the same unified cinematic
+    // reveal — no origin='plane' 3D handoff.
     const p = project as {
       title?: string
       category?: string
@@ -1138,8 +1128,6 @@ export class Experience {
     }
     const opts = {
       mode: 'video' as const,
-      // Unified: all overlays use the same showreel placeholder video for now.
-      // Project poster is shown as the pre-play image; video autoplays on open.
       videoSrc: '/assets/video/coming-soon.mp4',
       poster: p.textureUrl,
       title: p.title,
@@ -1153,7 +1141,7 @@ export class Experience {
     if (preload) {
       this.overlay.preload(opts)
     } else {
-      this.overlay.open({ ...opts, origin })
+      this.overlay.open(opts)
     }
   }
 
