@@ -1,5 +1,58 @@
 # Worklog
 
+## 2026-07-25 — Works BackText: curved plane + pixel font + synced wipe
+
+### Decision
+
+Three fixes: (1) no visible vertical wipe — synchronize with card reveal;
+(2) switch to pixel font with Cyrillic; (3) make the screen curved and
+full-width like the junni reference.
+
+### Changes
+
+- **Curved plane (cylinder geometry):** Replaced flat PlaneGeometry with a
+  CylinderGeometry segment (radius=30, height=7, arc=0.55 rad, 64 radial
+  segments). The curve wraps horizontally across the full viewport, matching
+  the junni reference's immersive "back wall" effect. Rotated Y by π/2 so
+  the cylinder axis is vertical.
+
+- **Pixel font with Cyrillic (Pixelify Sans):** Downloaded
+  `public/fonts/PixelifySans-400.ttf` + `PixelifySans-700.ttf` (49KB each)
+  from Google Fonts. Created `public/fonts/pixelify.css` with @font-face
+  declarations. Added `<link>` in index.html. WorksTextScreen loads the font
+  via `document.fonts.load()` API before rendering — falls back to monospace
+  if the font fails to load. Full Cyrillic support verified (А-Я, а-я).
+
+- **Vertical wipe synchronized with card reveal:** The textScreen visibility
+  is now driven dynamically in `WorksPlaneStage.update()` based on the
+  average card reveal:
+  - When cards start appearing (reveal > 0), the text wipe expands from center
+  - When cards start disappearing (section change), the text wipe contracts
+  - Formula: `setReveal(clamp(avgReveal * 1.2 - 0.1, 0, 1))` — slight delay
+    so text appears just after cards start arriving
+  - Removed the static `setReveal(1.0)` from `setActive()` — now only
+    `setReveal(0)` on deactivation; the update loop handles the rest
+
+- **Slower wipe damping:** Changed lambda from 3 to 2.5 for a more cinematic
+  wipe that stays roughly in sync with the card reveal (lambda=10).
+
+- **Full-width scaling:** The curved screen scales dynamically in `resize()`
+  based on viewport aspect ratio — width clamped [10, 24] units, height
+  proportional. The cylinder's large radius (30) + wide arc (0.55 rad) gives
+  a base width of ~16 units that fills the FOV.
+
+- **Canvas size:** 2048×512 (was 1024×512) — wider for pixel font legibility
+  with horizontal tiling.
+
+- **Alpha discard threshold:** Lowered from 0.15 to 0.1 for the pixel font's
+  harder edges.
+
+### Verification
+
+`type-check` 0 errors, `lint` 0 errors (60 pre-existing warnings),
+`test:unit` 105/105, `test` (Playwright e2e) 12/12, `build` green.
+JS heap: 15 MB stable. No console errors.
+
 ## 2026-07-25 — Works BackText (junni pattern) + 3D card scaling
 
 ### Decision
