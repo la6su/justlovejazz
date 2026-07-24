@@ -75,7 +75,7 @@ function worksSection(
           <span class="jlz-works-index__progress">${number} / 04</span>
         </header>
 
-        <div class="jlz-works-grid jlz-works-composition jlz-works-composition--${layout} uk-grid uk-grid-small uk-height-1-1 uk-flex-middle" uk-grid>
+        <div class="jlz-works-grid jlz-works-composition jlz-works-composition--${layout} uk-grid uk-grid-small uk-height-1-1 uk-flex uk-flex-middle uk-child-width-1-1 uk-child-width-auto@m" uk-grid>
           <div class="${cardWidth(layout, 0)}">${workCard(projectA, 'primary')}</div>
           <div class="${cardWidth(layout, 1)}">${workCard(projectB, 'secondary')}</div>
         </div>

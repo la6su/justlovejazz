@@ -1,19 +1,18 @@
-// WorksTextScreen — 3D curved transparent screen with text texture.
+// WorksTextScreen — 3D back-text behind work cards on /works.
 //
-// A gently curved plane (cylinder segment) positioned behind the work cards
-// on /works. It renders the section title + lead as a canvas-generated text
-// texture, creating a holographic depth layer. The material is transparent
-// and responds to the active theme (inverse flips text color for contrast).
+// Inspired by junni.co.jp BackText: a flat plane with a canvas-generated text
+// texture that scrolls horizontally (UV offset) and reveals via a vertical
+// wipe from center outward. Uses alpha-discard for crisp text edges (no
+// soft blending) and tiling for a wide cinematic backdrop.
 //
 // The text is pulled from i18n so EN/RU switching updates the 3D screen.
 
 import * as THREE from 'three'
 import { MeshBasicNodeMaterial } from 'three/webgpu'
-import { Fn, float, uniform, vec4, texture as tslTexture, mix, uv } from 'three/tsl'
+import { Fn, float, uniform, vec4, vec2, texture as tslTexture, mix, uv, step, abs, fract } from 'three/tsl'
 import { t } from '../../core/i18n'
 
-// i18n keys for the 4 works sections. The canvas texture is regenerated
-// when the active section changes OR when the language is toggled.
+// i18n keys for the 4 works sections.
 const SECTION_KEYS = [
   { titleKey: 'works.section1.title', leadKey: 'works.section1.lead' },
   { titleKey: 'works.section2.title', leadKey: 'works.section2.lead' },
@@ -21,11 +20,9 @@ const SECTION_KEYS = [
   { titleKey: 'works.section4.title', leadKey: 'works.section4.lead' },
 ] as const
 
-// Curved screen geometry: a wide cylinder segment that wraps slightly around
-// the camera. thetaStart/thetaLength create a horizontal arc.
-const SCREEN_WIDTH = 12
-const SCREEN_HEIGHT = 5
-const SCREEN_CURVATURE = 0.12 // radians — subtle bend
+// Plane dimensions — wide to fill the viewport behind cards.
+const SCREEN_WIDTH = 16
+const SCREEN_HEIGHT = 6
 
 export class WorksTextScreen extends THREE.Mesh {
   private _texture: THREE.CanvasTexture
@@ -33,41 +30,31 @@ export class WorksTextScreen extends THREE.Mesh {
   private _ctx: CanvasRenderingContext2D
   private _sectionIndex = 0
   private _isLight = false
-  private _reveal = 0
-  private _targetReveal = 0
+  private _visibility = 0
+  private _targetVisibility = 0
   private _time = 0
-  private readonly _uniformReveal: { value: number }
+  private readonly _uniformVisibility: { value: number }
   private readonly _uniformTime: { value: number }
   private readonly _uniformIsLight: { value: number }
 
   constructor() {
-    const geometry = new THREE.CylinderGeometry(
-      SCREEN_WIDTH / SCREEN_CURVATURE, // radius — large so the arc is gentle
-      SCREEN_WIDTH / SCREEN_CURVATURE,
-      SCREEN_HEIGHT, // height
-      48, // radial segments (smooth arc)
-      1, // height segments
-      true, // openEnded
-      -Math.PI / 2 - SCREEN_CURVATURE / 2, // thetaStart — centered on +Z
-      SCREEN_CURVATURE, // thetaLength — subtle arc
-    )
-    // Rotate so the curve wraps horizontally (cylinder axis = Y by default)
-    geometry.rotateY(Math.PI / 2)
+    // Flat plane — junni BackText uses a simple PlaneGeometry, not a cylinder.
+    const geometry = new THREE.PlaneGeometry(SCREEN_WIDTH, SCREEN_HEIGHT, 1, 1)
 
-    // 1024×384 canvas — half the previous 2048×768 size, saves ~4.7 MB of
-    // canvas + GPU texture memory while remaining crisp at typical DPRs.
+    // 1024×512 canvas — wide for horizontal tiling, saves memory vs 2048×768.
     const canvas = document.createElement('canvas')
     canvas.width = 1024
-    canvas.height = 384
+    canvas.height = 512
     const ctx = canvas.getContext('2d')!
     const texture = new THREE.CanvasTexture(canvas)
     texture.colorSpace = THREE.SRGBColorSpace
     texture.minFilter = THREE.LinearFilter
     texture.magFilter = THREE.LinearFilter
     texture.generateMipmaps = false
+    texture.wrapS = THREE.RepeatWrapping // tile horizontally for UV scroll
     texture.needsUpdate = true
 
-    const uReveal = uniform(0)
+    const uVisibility = uniform(0)
     const uTime = uniform(0)
     const uIsLight = uniform(0)
     const tex = texture
@@ -80,21 +67,39 @@ export class WorksTextScreen extends THREE.Mesh {
       toneMapped: false,
     })
 
-    // TSL: sample the canvas texture and modulate opacity by reveal + time pulse.
+    // TSL port of junni BackText shaders:
+    //   VS: vUv.x += time * 0.02  (horizontal scroll)
+    //   FS: col.w *= step(abs(vUv.y - 0.5), uVisibility * 0.5); if (col.w < 0.5) discard;
+    //
+    // The vertical wipe reveals text from center outward as uVisibility goes 0→1.
+    // Alpha discard gives crisp text edges (no soft blending).
     mat.colorNode = Fn(() => {
+      // Scroll UVs horizontally — text drifts slowly like a cinematic backdrop.
       const uvCoord = uv()
-      const sample = tslTexture(tex, uvCoord)
-      // Reveal drives overall opacity; isLight flips the text color via
-      // mix() between the canvas's native dark text and a light version.
+      const scrolledU = fract(uvCoord.x.add(uTime.mul(0.02)))
+      const sample = tslTexture(tex, vec2(scrolledU, uvCoord.y))
+
+      // Vertical wipe: reveal from center (v=0.5) outward.
+      // step(edge, x) returns 0 if x < edge, 1 if x >= edge.
+      // When uVisibility=0: step(0.5, 0) = 0 → alpha=0 everywhere (invisible)
+      // When uVisibility=1: step(0.5, 0.5) = 1 at center, 0 at edges → band expands
+      const distFromCenter = abs(uvCoord.y.sub(float(0.5)))
+      const wipeMask = step(distFromCenter, uVisibility.mul(0.5))
+
+      // Inverse theme: flip text color via mix()
       const lightFactor = uIsLight
       const r = mix(sample.x, float(1.0).sub(sample.x), lightFactor)
       const g = mix(sample.y, float(1.0).sub(sample.y), lightFactor)
       const b = mix(sample.z, float(1.0).sub(sample.z), lightFactor)
-      // Alpha from the text luminance + reveal + subtle time pulse.
+
+      // Alpha: text luminance × wipe mask. Discard below 0.5 for crisp edges.
       const luminance = sample.x.mul(0.299).add(sample.y.mul(0.587)).add(sample.z.mul(0.114))
-      const pulse = float(0.85).add(uTime.mul(0.5).sin().mul(0.15))
-      const alpha = luminance.mul(uReveal).mul(pulse)
-      return vec4(r, g, b, alpha)
+      const alpha = luminance.mul(wipeMask)
+
+      // Alpha discard — junni uses `if (col.w < 0.5) discard` for hard edges.
+      // In TSL we use a step to zero-out sub-threshold pixels.
+      const discardMask = step(float(0.15), alpha)
+      return vec4(r, g, b, alpha.mul(discardMask))
     })()
 
     super(geometry, mat)
@@ -105,14 +110,15 @@ export class WorksTextScreen extends THREE.Mesh {
     this._texture = texture
     this._canvas = canvas
     this._ctx = ctx
-    this._uniformReveal = uReveal
+    this._uniformVisibility = uVisibility
     this._uniformTime = uTime
     this._uniformIsLight = uIsLight
 
     this.renderText(0)
   }
 
-  /** Render the section text to the canvas texture using i18n translations. */
+  /** Render the section text to the canvas texture using i18n translations.
+   *  The text is drawn as a horizontal band — repeating textures tile seamlessly. */
   private renderText(sectionIndex: number): void {
     const ctx = this._ctx
     const w = this._canvas.width
@@ -121,21 +127,21 @@ export class WorksTextScreen extends THREE.Mesh {
     const title = t(keys.titleKey)
     const lead = t(keys.leadKey)
 
-    // Clear to transparent (white text on transparent bg; the TSL shader
-    // flips to dark text when isLight via mix()).
+    // Clear to transparent — white text on transparent bg.
     ctx.clearRect(0, 0, w, h)
 
-    // Title — large, bold, centered
+    // Title — oversized, bold, uppercase. Positioned in the vertical center
+    // so the wipe reveal expands symmetrically.
     ctx.fillStyle = '#ffffff'
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.font = `900 ${Math.floor(h * 0.30)}px Onest, system-ui, sans-serif`
-    ctx.fillText(title.toUpperCase(), w / 2, h * 0.36)
+    ctx.font = `900 ${Math.floor(h * 0.34)}px Onest, system-ui, sans-serif`
+    ctx.fillText(title.toUpperCase(), w / 2, h * 0.42)
 
-    // Lead — smaller, lighter, below the title
-    ctx.font = `300 ${Math.floor(h * 0.12)}px Onest, system-ui, sans-serif`
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.55)'
-    ctx.fillText(lead, w / 2, h * 0.68)
+    // Lead — smaller, lighter, below the title.
+    ctx.font = `300 ${Math.floor(h * 0.13)}px Onest, system-ui, sans-serif`
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)'
+    ctx.fillText(lead, w / 2, h * 0.72)
 
     this._texture.needsUpdate = true
   }
@@ -160,21 +166,23 @@ export class WorksTextScreen extends THREE.Mesh {
     this._uniformIsLight.value = isLight ? 1 : 0
   }
 
-  /** Show/hide the screen with a smooth reveal. */
+  /** Show/hide the screen with a vertical wipe. 0=hidden, 1=fully revealed. */
   setReveal(value: number): void {
-    this._targetReveal = THREE.MathUtils.clamp(value, 0, 1)
+    this._targetVisibility = THREE.MathUtils.clamp(value, 0, 1)
   }
 
   get isAnimating(): boolean {
-    return Math.abs(this._targetReveal - this._reveal) > 0.001
+    return Math.abs(this._targetVisibility - this._visibility) > 0.001
   }
 
   update(dt: number): void {
     this._time += dt
     this._uniformTime.value = this._time
-    this._reveal = THREE.MathUtils.damp(this._reveal, this._targetReveal, 6, dt)
-    this._uniformReveal.value = this._reveal
-    this.visible = this._reveal > 0.001
+    // Smooth damping toward target — junni uses easeOutCubic over 2s;
+    // THREE.MathUtils.damp with lambda=3 gives a similar feel.
+    this._visibility = THREE.MathUtils.damp(this._visibility, this._targetVisibility, 3, dt)
+    this._uniformVisibility.value = this._visibility
+    this.visible = this._visibility > 0.001
   }
 
   dispose(): void {
