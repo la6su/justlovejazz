@@ -102,9 +102,17 @@ export class WorksPlaneStage extends THREE.Group {
 
     const camera = this._camera ?? new THREE.PerspectiveCamera()
 
-    // WebGL2 context-level compileAsync extension (off-thread GPU compile).
+    // WebGL2 context-level compileAsync (KHR_parallel_shader_compile extension).
+    // Cast to a minimal interface — the standard WebGL2 types don't expose it,
+    // but Chrome/Firefox ship it behind the extension.
     const gl = (renderer as THREE.WebGLRenderer).getContext?.() as
-      | WebGL2RenderingContext
+      | (WebGL2RenderingContext & {
+          compileAsync?(
+            program: THREE.Object3D,
+            camera: THREE.Camera,
+            renderer: THREE.WebGLRenderer,
+          ): Promise<void>
+        })
       | undefined
     if (gl?.compileAsync) {
       const promises = this.cards.map((card) => {
@@ -195,11 +203,6 @@ export class WorksPlaneStage extends THREE.Group {
     return hit.userData.projectIndex as number
   }
 
-  /** No-op: transition state removed (unified to direct overlay open). */
-  resetTransition(): void {
-    this.visible = this._active
-  }
-
   update(dt: number): void {
     if (!this._camera || !this._active) return
 
@@ -253,7 +256,6 @@ export class WorksPlaneStage extends THREE.Group {
       }
       card.setReveal(nextReveal)
       card.setMotion(0, 0)
-      card.setParallax(0)
       card.setTransition(0)
       card.update(dt, this._active)
     })

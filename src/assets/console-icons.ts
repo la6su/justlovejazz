@@ -18,12 +18,6 @@ const CONSOLE_ICONS: Icons = {
   'arrow-up':
     `<svg width="20" height="20" viewBox="0 0 20 20"><line ${STROKE} x1="10" y1="16" x2="10" y2="5"/><polyline ${STROKE} points="14 9 10 5 6 9"/></svg>`,
 
-  'arrow-left':
-    `<svg width="20" height="20" viewBox="0 0 20 20"><line ${STROKE} x1="16" y1="10" x2="5" y2="10"/><polyline ${STROKE} points="9 6 5 10 9 14"/></svg>`,
-
-  'arrow-right':
-    `<svg width="20" height="20" viewBox="0 0 20 20"><line ${STROKE} x1="4" y1="10" x2="15" y2="10"/><polyline ${STROKE} points="11 6 15 10 11 14"/></svg>`,
-
   'arrow-up-right':
     `<svg width="20" height="20" viewBox="0 0 20 20"><line ${STROKE} x1="5" y1="15" x2="15" y2="5"/><polyline ${STROKE} points="8 5 15 5 15 12"/></svg>`,
 
@@ -31,21 +25,12 @@ const CONSOLE_ICONS: Icons = {
   'play':
     `<svg width="20" height="20" viewBox="0 0 20 20"><polygon fill="currentColor" stroke="none" points="7 4 15 10 7 16"/></svg>`,
 
-  'pause':
-    `<svg width="20" height="20" viewBox="0 0 20 20"><rect fill="currentColor" stroke="none" x="5" y="4" width="3.5" height="12" rx="1"/><rect fill="currentColor" stroke="none" x="11.5" y="4" width="3.5" height="12" rx="1"/></svg>`,
-
   // ── Close / X ──
   'close':
     `<svg width="20" height="20" viewBox="0 0 20 20"><path ${STROKE} d="M15 15 L5 5"/><path ${STROKE} d="M15 5 L5 15"/></svg>`,
 
   // ── Slidenav (fullscreen prev/next — different from slider arrows) ──
   // These are chevrons-only (no line), wider, for fullscreen navigation
-  'slidenav-previous':
-    `<svg width="14" height="24" viewBox="0 0 14 24"><polyline ${STROKE} points="12 2 2 12 12 22"/></svg>`,
-
-  'slidenav-next':
-    `<svg width="14" height="24" viewBox="0 0 14 24"><polyline ${STROKE} points="2 2 12 12 2 22"/></svg>`,
-
   'slidenav-previous-large':
     `<svg width="25" height="40" viewBox="0 0 25 40"><polyline ${STROKE} points="20 2 3 20 20 38"/></svg>`,
 

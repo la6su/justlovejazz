@@ -3,7 +3,7 @@
 // Sections 0 (Lab) and 5 (Navigation) are shared across all SPA pages.
 // Main sections (1-4): Shader Lab, Audio Reactive, Generative, GPU Particles.
 
-import { sectionShell, contentTop, contentBottom, i18nDesc, serviceExplore } from '../../sections/_shared/constants'
+import { sectionShell, contentTop, storyBottom, i18nDesc, serviceExplore } from '../../sections/_shared/constants'
 import { labOverlaySection } from '../../sections/lab-overlay/template'
 import { navOverlaySection } from '../../sections/nav/template'
 
@@ -84,7 +84,7 @@ function experimentSection(exp: Experiment, isActive: boolean = false): string {
   return sectionShell(
     `${exp.key.replace('lab.', 'lab-')}`,
     contentTop(exp.num, exp.title, exp.lead, 'large', exp.key + '.title', exp.key + '.lead'),
-    contentBottom(`${i18nDesc(exp.key, exp.desc)}${footer}`),
+    storyBottom(`${i18nDesc(exp.key, exp.desc)}${footer}`),
     'content',
     isActive,
   )

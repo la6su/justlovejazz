@@ -27,7 +27,6 @@ export interface BakuTransform {
 }
 
 export interface LightTransform {
-  ambient: THREE.Color
   ambientColor: THREE.Color
   intensity: number
 }
@@ -171,28 +170,27 @@ const DEFAULTS: Omit<RawScene, 'id' | 'context' | 'domSection' | 'range'> = {
   sceneTransition: { duration: 0.8, easing: 'ease-out' },
 }
 
-function raw(overrides: RawScene): RawScene {
-  return { ...DEFAULTS, ...overrides }
-}
-
 // 6 sections (4 story frames + Contact finale/Lab=0 + Menu=5)
 // Index: 0=lab, 1=intro, 2=about, 3=works, 4=contact, 5=menu
 const RAW: RawScene[] = [
-  raw({
+  {
+    ...DEFAULTS,
     id: 'sec_lab',
     context: 'LAB — Experiments',
     domSection: 'lab',
     range: [0, 1 / 5],
     sectionTheme: 'light',
-  }),
-  raw({
+  },
+  {
+    ...DEFAULTS,
     id: 'sec_intro',
     context: 'Studio — Home',
     domSection: 'intro',
     range: [1 / 5, 2 / 5],
     sceneTransition: { duration: 1.0, easing: 'ease-in-out' },
-  }),
-  raw({
+  },
+  {
+    ...DEFAULTS,
     id: 'sec_about',
     context: 'TRINITY — About',
     domSection: 'about',
@@ -208,8 +206,9 @@ const RAW: RawScene[] = [
     lightIntensity: 1.2,
     groundOpacity: 0.08,
     sceneTransition: { duration: 0.6, easing: 'ease-out' },
-  }),
-  raw({
+  },
+  {
+    ...DEFAULTS,
     id: 'sec_works',
     context: 'WORKS — Gallery',
     domSection: 'works',
@@ -226,8 +225,9 @@ const RAW: RawScene[] = [
     groundOpacity: 0.1,
     sceneObjects: { bakuCarousel: true },
     sceneTransition: { duration: 0.8, easing: 'ease-out' },
-  }),
-  raw({
+  },
+  {
+    ...DEFAULTS,
     id: 'sec_contact',
     context: 'CONTACT — Footer',
     domSection: 'contact',
@@ -239,8 +239,9 @@ const RAW: RawScene[] = [
     groundOpacity: 0.4,
     sceneObjects: { wireframeText: true },
     sceneTransition: { duration: 0.6, easing: 'ease-out' },
-  }),
-  raw({
+  },
+  {
+    ...DEFAULTS,
     id: 'sec_menu',
     context: 'MENU — Navigation',
     domSection: 'menu',
@@ -250,7 +251,7 @@ const RAW: RawScene[] = [
     lightIntensity: 1.2,
     groundOpacity: 0.05,
     sceneTransition: { duration: 0.6, easing: 'ease-out' },
-  }),
+  },
 ]
 
 // ── Helpers ──
@@ -284,7 +285,6 @@ function toPhaseConfig(r: RawScene): PhaseConfig {
       },
     },
     lighting: {
-      ambient: _toColor(r.lightColor!),
       ambientColor: _toColor(r.lightColor!),
       intensity: r.lightIntensity!,
     },
@@ -354,7 +354,8 @@ function makeContentScenes(pageId: string): PhaseConfig[] {
   const themes: Array<'light' | 'dark'> = ['dark', 'light', 'dark', 'light', 'dark', 'light']
   return Array.from({ length: 6 }, (_, idx) =>
     toPhaseConfig(
-      raw({
+      {
+        ...DEFAULTS,
         id: `content_${pageId}_${idx}`,
         context: `Content — ${pageId} face ${idx}`,
         domSection: `content-${idx}`,
@@ -368,7 +369,7 @@ function makeContentScenes(pageId: string): PhaseConfig[] {
         fogColor: p.fogColor,
         groundColor: p.groundColor,
         groundOpacity: 0.05,
-      }),
+      },
     ),
   )
 }

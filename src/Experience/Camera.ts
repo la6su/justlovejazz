@@ -103,6 +103,11 @@ export class Camera {
     return this.shakePower > 0 && this.shakeDuration > 0
   }
 
+  /** True while the FOV pulse transition is animating (needs rendering). */
+  get isPulsing(): boolean {
+    return this.fovTransitionT < 1
+  }
+
   /** Set FOV offset for cinematic zoom-in on section arrival */
   setFovOffset(value: number, duration = 1) {
     this.fovStartOffset = this.fovOffset

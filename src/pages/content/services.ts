@@ -3,7 +3,7 @@
 // Sections 0 (Lab) and 5 (Navigation) are shared across all SPA pages.
 // Main sections (1-4): Creative Direction, Realtime build, Motion, AI.
 
-import { sectionShell, contentTop, contentBottom, i18nDesc, serviceExplore } from '../../sections/_shared/constants'
+import { sectionShell, contentTop, storyBottom, i18nDesc, serviceExplore } from '../../sections/_shared/constants'
 import { labOverlaySection } from '../../sections/lab-overlay/template'
 import { navOverlaySection } from '../../sections/nav/template'
 
@@ -59,7 +59,7 @@ function serviceSection(s: Service, isActive: boolean = false): string {
   return sectionShell(
     `${s.key.replace('services.', 'services-')}`,
     contentTop(s.num, s.title, s.lead, 'large', s.key + '.title', s.key + '.lead'),
-    contentBottom(`${i18nDesc(s.key, s.desc)}${serviceExplore(s.href, 'common.explore', 'Explore')}`),
+    storyBottom(`${i18nDesc(s.key, s.desc)}${serviceExplore(s.href, 'common.explore', 'Explore')}`),
     'content',
     isActive,
   )

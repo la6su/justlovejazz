@@ -88,7 +88,6 @@ export class JunniParticles extends THREE.InstancedMesh {
   // Per-instance uniforms. Stored as unknown — TSL node types in three 0.184
   // .d.ts are incomplete; we access .value through UniformVal cast.
   private readonly _uTime: unknown
-  private readonly _uVisibility: unknown
 
   constructor(opts: JunniParticlesOptions = {}) {
     const count = opts.count ?? 300
@@ -282,22 +281,12 @@ export class JunniParticles extends THREE.InstancedMesh {
     this._baseCount = count
     this._range = range
     this._uTime = uTime
-    this._uVisibility = uVisibility
   }
 
   /** Advance the particle animation. Call each frame while rendering. */
   update(dt: number): void {
     this._time += dt
     ;(this._uTime as UniformVal).value = this._time
-  }
-
-  /** Smooth visibility fade (0..1). Use for section enter/leave transitions. */
-  setVisibility(v: number): void {
-    ;(this._uVisibility as UniformVal).value = Math.max(0, Math.min(1, v))
-  }
-
-  get visibility(): number {
-    return (this._uVisibility as UniformVal).value as number
   }
 
   /** Switch blending mode for theme parity.
@@ -356,10 +345,6 @@ export class JunniParticles extends THREE.InstancedMesh {
 
   get baseCount(): number {
     return this._baseCount
-  }
-
-  get currentCount(): number {
-    return this.count
   }
 
   dispose(): void {

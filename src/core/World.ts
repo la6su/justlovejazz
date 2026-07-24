@@ -350,7 +350,6 @@ export class World extends THREE.Group {
    */
   public hasVisibleAmbientMotion(): boolean {
     if (this.isReducedMotion) return false
-    if (this.envSphere.hasVisibleAmbientMotion) return true
     if (this.baku.isAmbientlyAnimated) return true
     return this.sceneGroups.some((group) => {
       if (!group.visible) return false
@@ -372,7 +371,6 @@ export class World extends THREE.Group {
   public update(deltaTime: number, needsRender: boolean = true): void {
     // EnvSphere manages the visible background.
     this.envSphere.update(deltaTime)
-    this.sections.forEach((s) => s.update(deltaTime))
 
     // The splash handoff owns its short render window, independent of ambient
     // scene animation. Experience keeps `_needsRender` raised while active.
@@ -394,7 +392,7 @@ export class World extends THREE.Group {
     }
 
     if (!this.isReducedMotion) {
-      this.baku.update(deltaTime, this._renderer)
+      this.baku.update(deltaTime)
       const isStandaloneWorks = document.body.dataset.page === 'works'
       const isWorksStoryFrame = this._currentSectionIndex === 3
       if (this.drawTrail && this._camera && (isStandaloneWorks || isWorksStoryFrame)) {
@@ -818,12 +816,6 @@ export class World extends THREE.Group {
 
   private _camera: THREE.Camera | undefined
   private worksPlaneStageSection = 0
-  private _renderer: THREE.WebGLRenderer | undefined
-
-  /** Set renderer reference for CubeCamera updates. */
-  public setRenderer(renderer: THREE.WebGLRenderer): void {
-    this._renderer = renderer
-  }
 
   /** Apply easing function to t (0..1) based on scene.transition.easing config.
    *  'ease-in-out' (default) = smoothstep (S-curve, comfort plateaus)
@@ -897,7 +889,7 @@ export class World extends THREE.Group {
           metalness: 0.8,
         },
       },
-      lighting: { ambient: new THREE.Color(), ambientColor: new THREE.Color(), intensity: 1 },
+      lighting: { ambientColor: new THREE.Color(), intensity: 1 },
       fog: { color: new THREE.Color(), density: 0.03 },
       // This fallback must preserve cross-backend visual parity too.
       post: {

@@ -3,7 +3,7 @@
 // Sections 0 (Lab) and 5 (Navigation) are shared across all SPA pages.
 // Main sections (1-4): Purpose, Clarity, Emotion, Simplicity.
 
-import { sectionShell, contentTop, contentBottom, i18nDesc, serviceExplore } from '../../sections/_shared/constants'
+import { sectionShell, contentTop, storyBottom, i18nDesc, serviceExplore } from '../../sections/_shared/constants'
 import { labOverlaySection } from '../../sections/lab-overlay/template'
 import { navOverlaySection } from '../../sections/nav/template'
 
@@ -55,7 +55,7 @@ function principleSection(p: Principle, isActive: boolean = false): string {
   return sectionShell(
     `${p.key.replace('manifesto.', 'manifesto-')}`,
     contentTop(p.num, p.title, p.lead, 'large', p.key + '.title', p.key + '.lead'),
-    contentBottom(`${i18nDesc(p.key, p.desc)}${serviceExplore(p.href, 'common.readMore', 'Read more')}`),
+    storyBottom(`${i18nDesc(p.key, p.desc)}${serviceExplore(p.href, 'common.readMore', 'Read more')}`),
     'content',
     isActive,
   )

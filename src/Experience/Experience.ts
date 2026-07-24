@@ -31,14 +31,10 @@ import { eventBus } from '../core/EventBus'
  * define its own FOV pop amplitude and camera smoothing (ROADMAP M2).
  */
 const SECTION_TRANSITION = {
-  fovOffset: 0.3,
-  fovDuration: 0.8,
   cameraSmoothing: 5,
 } as const
 
 export class Experience {
-  static instance: Experience
-
   scene: THREE.Scene = new THREE.Scene()
   sizes!: Sizes
   time!: Time
@@ -56,7 +52,6 @@ export class Experience {
   // Menu and Contact finale are opened from the persistent cinematic shell.
   private _wobblePulseHandler: (() => void) | null = null
   private _gotoSectionByHashHandler: ((e: Event) => void) | null = null
-  private _showreelPlayHandler: (() => void) | null = null
   private _worksPlaneTapHandler: ((e: PointerEvent) => void) | null = null
   private _worksPageSectionHandler: ((e: Event) => void) | null = null
   private _projectNavigateHandler: ((e: Event) => void) | null = null
@@ -110,8 +105,6 @@ export class Experience {
   constructor(private _ui: UIManager) {
     this.sizes = new Sizes()
     this.time = new Time()
-    Experience.instance = this
-    window.experience = this
     this.camera = new Camera(this.sizes)
     this.renderer = new Renderer(this.sizes)
 
@@ -551,11 +544,8 @@ export class Experience {
 
     // Phase 5: Wobble pulse on card click (work cards + carousel)
     this._wobblePulseHandler = () => {
-      const cube = this.world?.baku as unknown as { triggerWobblePulse?: () => void } | undefined
-      cube?.triggerWobblePulse?.()
+      this.world?.baku?.triggerWobblePulse()
       // Keep rendering while the pulse animates (sin-envelope in SplashCube.update).
-      // Without this, _needsRender stays false after the first frame and the
-      // pulse never animates — update() isn't called, _wobblePulseT stays at 0.
       this._needsRender = true
     }
     window.addEventListener('jlz:wobble-pulse', this._wobblePulseHandler)
@@ -604,27 +594,6 @@ export class Experience {
       }
     }
     window.addEventListener('jlz:goto-section-by-hash', this._gotoSectionByHashHandler)
-
-    // ── Showreel playback ──
-    // jlz:showreel-play is dispatched by the DOM Play Showreel control and
-    // opens FullscreenOverlay with the showreel video. The 3D ShowreelButton3D
-    // trigger was removed; the intro scene does not instantiate it.
-
-    this._showreelPlayHandler = () => {
-      if (!this.overlay) return
-      // Showreel uses the same unified video as all project overlays.
-      // No prev/next nav — showreel is a single piece.
-      this.overlay.open({
-        mode: 'video',
-        videoSrc: '/assets/video/coming-soon.mp4',
-        poster: '/assets/video/coming-soon-cover.jpg',
-        title: 'Showreel',
-        category: '2026 · Reel',
-        hasPrev: false,
-        hasNext: false,
-      })
-    }
-    window.addEventListener('jlz:showreel-play', this._showreelPlayHandler)
   }
 
   update(time: number) {
@@ -696,15 +665,13 @@ export class Experience {
     const carouselActive = this._bakuCarouselActive
     const worksPlaneActive = this.world?.worksPlaneStage?.isAnimating ?? false
     const drawTrailActive = this.world?.drawTrail?.isAnimating ?? false
-    const baku = this.world?.baku as unknown as { openerPhase?: string } | undefined
-    const openerActive = baku?.openerPhase !== 'done' && baku?.openerPhase !== 'idle'
+    const baku = this.world?.baku
+    const openerActive = baku?.isOpenerActive ?? false
     const burstActive = this.world?.particleBurst?.isActive ?? false
     const camShaking = this.camera.isShaking
     // Cube face rotation animation — keep rendering while the cube is rotating
     // to its target face (triggered by rotateToFace on section change).
-    const cubeRotating =
-      (this.world?.baku as unknown as { _faceLerp?: number } | undefined)?._faceLerp !==
-        undefined && (this.world?.baku as unknown as { _faceLerp: number })._faceLerp < 1
+    const cubeRotating = this.world?.baku?.isRotating ?? false
     // ── Visible JunniParticles need continuous frames ──
     // Particles only exist on certain sections (Works on home — intro removed
     // them for white-on-white). Their animation is GPU-side via uTime; if
@@ -717,9 +684,7 @@ export class Experience {
 
     // ── Zoom pulse active ──
     // Camera.pulse() sets a two-phase FOV transition — keep rendering while it animates.
-    const camPulsing =
-      (this.camera as unknown as { fovTransitionT?: number }).fovTransitionT !== undefined &&
-      (this.camera as unknown as { fovTransitionT: number }).fovTransitionT < 1
+    const camPulsing = this.camera.isPulsing
 
     if (
       navActive ||
@@ -802,7 +767,6 @@ export class Experience {
     const idx = this.world.currentSectionIndex
     // Give World the camera ref for DrawTrail (once, after init).
     this.world.setCamera(this.camera.instance)
-    this.world.setRenderer(this.renderer.instance as THREE.WebGLRenderer)
 
     // Dispatch section-change on EVERY section index change (not just context).
     // This triggers NoiseText title animation for the new section + cube face rotation.
@@ -839,8 +803,7 @@ export class Experience {
       // Also triggers cube opener (scale pulse 1.0→1.3→1.0) for combined effect.
       if (!isInitialSectionSync) {
         this.camera.pulse(0.05, 0.8)
-        const cube = this.world?.baku as unknown as { triggerOpener?: () => void } | undefined
-        cube?.triggerOpener?.()
+        this.world?.baku?.triggerOpener()
       }
       this._needsRender = true
     }
@@ -953,8 +916,7 @@ export class Experience {
 
   /** Start the authored cube reaction and its one-shot portal-frame echo. */
   public triggerSplashOpener(): void {
-    const cube = this.world?.baku as unknown as { triggerOpener?: () => void } | undefined
-    cube?.triggerOpener?.()
+    this.world?.baku?.triggerOpener()
     if (this._reducedMotion) return
     this.world?.particleBurst?.trigger(0, 0, 0)
     if (this.world?.particleBurst?.isActive) this._needsRender = true
@@ -964,9 +926,6 @@ export class Experience {
     // Stop the animation loop FIRST — setAnimationLoop(null) cancels the
     // internal callback. Without this, the loop keeps firing after dispose().
     ;(this.renderer.instance as any).setAnimationLoop(null)
-    // Clear global references — prevents stale singleton on hot-reload
-    Experience.instance = undefined as any
-    delete (window as any).experience
     // Cancel pending rAF for mouse trail (prevents fire after destroy)
     this._mouseTrailRafPending = false
     if (this._onVisibilityChange) {
@@ -1015,10 +974,6 @@ export class Experience {
     if (this._gotoSectionByHashHandler) {
       window.removeEventListener('jlz:goto-section-by-hash', this._gotoSectionByHashHandler)
       this._gotoSectionByHashHandler = null
-    }
-    if (this._showreelPlayHandler) {
-      window.removeEventListener('jlz:showreel-play', this._showreelPlayHandler)
-      this._showreelPlayHandler = null
     }
     if (this._worksPlaneTapHandler) {
       window.removeEventListener('pointerup', this._worksPlaneTapHandler)
@@ -1077,11 +1032,6 @@ export class Experience {
     // is routed through `jlz:project-navigate` so arrows and keyboard use the
     // same owner even if the overlay was created before this async portfolio.
     this.overlay ??= this._ui.overlay ?? new FullscreenOverlay()
-    this.overlay.onClose = () => {
-      this.world?.worksPlaneStage?.resetTransition()
-      this.getCarousel()?.resetTransition()
-      this._needsRender = true
-    }
 
     // Wire BakuCarousel card click → open fullscreen overlay.
     // All opens use the unified DOM cinematic reveal (no 3D plane handoff).

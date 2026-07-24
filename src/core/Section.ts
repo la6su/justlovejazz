@@ -19,14 +19,6 @@ const STATE_VALUE: Record<SectionState, number> = {
 
 export type { CameraTransform, BakuTransform }
 
-/** Post-processing params used by Section (subset of PostTransform). */
-export interface PostProcessingParams {
-  bloom: number
-  vignette: number
-  grain: number
-  chromatic: number
-}
-
 /** Light data used by Section (subset of LightTransform). */
 export interface LightData {
   ambientColor: THREE.Color
@@ -39,7 +31,6 @@ export class Section extends THREE.Group {
   // Transform holders read from PhaseConfig at construction
   public cameraTransform: CameraTransform
   public bakuTransform: BakuTransform
-  public ppParams: PostProcessingParams
   public lightData: LightData
 
   // Viewing state machinery (ready/viewing/passed)
@@ -88,13 +79,6 @@ export class Section extends THREE.Group {
       },
     }
 
-    this.ppParams = {
-      bloom: config.post.bloom,
-      vignette: config.post.vignette,
-      grain: config.post.grain,
-      chromatic: config.post.chromatic,
-    }
-
     this.lightData = {
       ambientColor: config.lighting.ambientColor.clone(),
       intensity: config.lighting.intensity,
@@ -140,11 +124,6 @@ export class Section extends THREE.Group {
 
   public fadeOut(duration: number = 0.8): void {
     StateBus.getInstance().animate(this.opacityChannel, 0, duration, 'easeInOutQuart')
-  }
-
-  public splash(): void {
-    this.visible = true
-    this.forceState(SectionState.VIEWING, true)
   }
 
   private applyState(reduced: boolean = false): void {
@@ -202,10 +181,6 @@ export class Section extends THREE.Group {
     bus.set(this.stateChannel, STATE_VALUE[state])
     this._state = state
     this.applyState(reduced)
-  }
-
-  public update(_dt: number): void {
-    // No-op — section meshes are static. World.update() drives visible animations.
   }
 
   public dispose(): void {

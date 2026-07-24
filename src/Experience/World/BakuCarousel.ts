@@ -301,11 +301,6 @@ export class BakuCarousel extends THREE.Group {
     return ((((value + count / 2) % count) + count) % count) - count / 2
   }
 
-  /** No-op: transition state removed (unified to direct overlay open). */
-  resetTransition(): void {
-    // no-op
-  }
-
   /** Smoothstep easing: S-curve for organic ease-in/ease-out. */
   private smoothstep(t: number): number {
     const c = THREE.MathUtils.clamp(t, 0, 1)
@@ -373,10 +368,6 @@ export class BakuCarousel extends THREE.Group {
       // The wobble is reserved for explicit pulse events (card tap/open).
       card.setMotion(0, 0)
       card.setEdgeWarp(0)
-      const parallaxReady = this.smoothstep(
-        THREE.MathUtils.clamp((localReveal - 0.72) / 0.28, 0, 1),
-      )
-      card.setParallax(THREE.MathUtils.clamp(slot * -0.42 * parallaxReady, -1, 1))
       card.setTransition(0)
       card.update(dt, this._active)
     }

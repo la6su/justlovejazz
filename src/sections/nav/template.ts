@@ -422,13 +422,10 @@ export function initMenuNav(): void {
  */
 export function initMenuToolbar(): void {
   initMenuNav()
-  document.querySelectorAll<HTMLElement>('[data-close-cinematic-sheet]').forEach((button) => {
-    if (button.dataset.jlzBound === '1') return
-    button.dataset.jlzBound = '1'
-    button.addEventListener('click', () => {
-      window.dispatchEvent(new CustomEvent('jlz:close-nav'))
-    })
-  })
+  // Note: [data-close-cinematic-sheet] clicks are already handled by
+  // CinematicNav's capture-phase document listener (_sheetClickHandler).
+  // The previous duplicate binding here dispatched jlz:close-nav which
+  // CinematicNav also listened to — both fired on the same click (Bug F).
 }
 
 // wireMenuToolbarGlobals removed — was a no-op after config controls
