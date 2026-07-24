@@ -41,21 +41,35 @@ tests first, then correct the stale document or implementation deliberately.
 
 ## UI, theme and content
 
-1. Use UIkit 3 for behaviour it already owns (modal, nav/accordion, focus
+1. **UIKit 3 native-first.** Use UIKit utility classes (`uk-flex-*`,
+   `uk-grid`, `uk-width-*`, `uk-margin-*`, `uk-text-*`, `uk-position-*`,
+   `uk-transition-*`, `uk-hidden`/`uk-visible`) in markup INSTEAD of custom
+   `.jlz-*` CSS rules. Do not re-implement in `.jlz-*` what UIKit provides
+   out of the box. See [UIKIT3.md](UIKIT3.md) for the solution priority
+   order and the full imported component list.
+2. **UIKit variable overrides over custom CSS.** Typography, colors,
+   spacing, and component-specific styling belong in `_import.less` §3
+   (`@global-*`, `@button-*`, `@nav-*`, `@navbar-*`) or
+   `console-theme/_import.less`, NOT in `.jlz-*` rules. Use `.hook-*()`
+   mixins for component-level visual customization.
+3. **Genuinely bespoke CSS only.** Custom `.jlz-*` rules are allowed only
+   for: 3D shell (`.jlz-topbar`, `.jlz-console-bar`, `.jlz-storyline`),
+   cinematic sheets (`.jlz-menu-overlay`, `[data-contact-footer]`),
+   fullscreen overlay (`.jlz-fs-*`), work-card 3D planes
+   (`.jlz-work-card*` with `perspective`/`rotateX/Y`), and the cursor
+   canvas. Everything else should use UIKit. See
+   [PLAN-css-unification.md](PLAN-css-unification.md) for the staged
+   minimization plan.
+4. Use UIkit 3 for behaviour it already owns (modal, nav/accordion, focus
    and state classes, grid, button, icon, tooltip, slider); do not add
-   competing hand-rolled state. See [UIKIT3.md](UIKIT3.md) for the solution
-   priority order and imported component list.
-2. Keep UIkit as the component and accessibility baseline. Put every new
-   shared visual decision in `console-theme/_import.less` (theme variables)
-   or `_import.less` (design tokens + UIKit overrides). Do not duplicate
-   component behavior without a concrete missing capability.
-3. The runtime default is the shared dark Studio Console mode; inverse remains
-   an explicit accessibility preference and must stay synchronized through
-   `ContentReveal` and the 3D layer.
-4. All user-visible copy must be translatable unless it is deliberately a
-   proper name. Router-driven translation and metadata updates remain the only
-   normal update path.
-5. Maintain keyboard access and reduced-motion behaviour when changing UI.
+   competing hand-rolled state.
+5. The runtime default is the shared dark Studio Console mode; inverse
+   remains an explicit accessibility preference and must stay synchronized
+   through `ContentReveal` and the 3D layer.
+6. All user-visible copy must be translatable unless it is deliberately a
+   proper name. Router-driven translation and metadata updates remain the
+   only normal update path.
+7. Maintain keyboard access and reduced-motion behaviour when changing UI.
    `FullscreenOverlay` must enforce a focus trap and restore focus on close.
 
 ## Lifecycle and resource safety

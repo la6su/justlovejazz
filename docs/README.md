@@ -10,7 +10,8 @@ documents: update the owner named below.
 | [DEVELOPMENT.md](DEVELOPMENT.md)                               | Local setup, verification, CI and the optional Codex sandbox appendix | Tooling, test scripts or CI change              |
 | [UIKIT3.md](UIKIT3.md)                                         | UIkit 3 and Less conventions, asset structure, solution priority     | UI infrastructure or theme assembly changes     |
 | [BRAND.md](BRAND.md)                                           | Brand voice and visual intent                                         | Product/design direction changes                |
-| [PLAN-showreel-shader-plane.md](PLAN-showreel-shader-plane.md) | The sole active detailed product plan                                 | Its remaining scope changes                     |
+| [PLAN-showreel-shader-plane.md](PLAN-showreel-shader-plane.md) | Active product plan — Works 3D and showreel                           | Its remaining scope changes                     |
+| [PLAN-css-unification.md](PLAN-css-unification.md)             | Active refactor plan — UIKit 3 native-first CSS minimization          | Its remaining scope changes                     |
 | [CHANGELOG.md](CHANGELOG.md)                                   | Concise release-level history                                         | A user-visible or operational release is merged |
 
 Repository-root documents have separate roles:

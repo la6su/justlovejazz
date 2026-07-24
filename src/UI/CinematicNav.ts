@@ -54,7 +54,7 @@ export class CinematicNav {
     nav.setAttribute('aria-label', 'Narrative sections')
 
     const items = document.createElement('div')
-    items.className = 'jlz-storyline__items'
+    items.className = 'jlz-storyline__items uk-flex uk-flex-middle'
     for (let index = FIRST_MAIN; index <= LAST_MAIN; index++) {
       const button = document.createElement('button')
       button.type = 'button'

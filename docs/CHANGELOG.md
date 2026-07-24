@@ -4,6 +4,17 @@ This is a concise release-level record. Implementation decisions belong in
 [`WORKLOG.md`](../WORKLOG.md); completed plans remain available through Git
 history.
 
+## 2026-07-25 — Full CSS unification — UIKit 3 native-first (PR #175)
+
+- Created `docs/PLAN-css-unification.md` — 5-stage minimization plan.
+- Updated `docs/RULES.md` — added UIKit native-first rules.
+- Stage 1: deleted dead CSS + migrated heading typography to UIKit variables.
+- Stage 2: consolidated topbar/storyline/menu-nav flex duplicates.
+- Stage 5: migrated blog navbar typography to `@navbar-nav-item-*` variables.
+- Stage 4: consolidated contact-footer/menu-stat flex duplicates.
+- main.less: 2487 → 2398 (−89 LOC). blog.less: 352 → 338 (−14 LOC).
+  Total: −103 LOC (−3.6%). main JS chunk: 155.23 → 153.75 KB.
+
 ## 2026-07-24 — CSS minimization + /works texture fix (PR #173)
 
 - Fixed invisible textures on /works: `prewarmShaders()` called
