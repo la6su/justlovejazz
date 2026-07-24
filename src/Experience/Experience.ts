@@ -72,6 +72,7 @@ export class Experience {
   private _onVisibilityChange: (() => void) | null = null
   private _onMouseMoveForTrail: (() => void) | null = null
   private _mouseTrailRafPending = false
+  private _mouseTrailRafId: number | null = null
   public sfx: SfxSystem = new SfxSystem()
   private _storyNav: CinematicNav | null = null
   private _needsRender = true // start true to render the first frame
@@ -460,7 +461,8 @@ export class Experience {
       const isStandaloneWorks = document.body.dataset.page === 'works'
       if (!isWorksStoryFrame && !isStandaloneWorks) return
       this._mouseTrailRafPending = true
-      requestAnimationFrame(() => {
+      this._mouseTrailRafId = requestAnimationFrame(() => {
+        this._mouseTrailRafId = null
         this._mouseTrailRafPending = false
         this._needsRender = true
       })
@@ -526,10 +528,11 @@ export class Experience {
       if (this.overlay?.isOpen) {
         this.overlay.close()
       }
-      if (document.body.dataset.page === 'home') {
+      const newPage = document.body.dataset.page
+      if (newPage === 'home') {
         void this.world?.ensureCarouselInitialized()
       }
-      if (document.body.dataset.page === 'works') {
+      if (newPage === 'works') {
         void this.world?.ensureWorksPlaneStageInitialized().then(() => {
           this.world?.setWorksPlaneStageSection(0)
           this._needsRender = true
@@ -538,6 +541,13 @@ export class Experience {
             void this.world.worksPlaneStage.prewarmShaders(this.renderer.instance)
           }
         })
+      }
+      // Dispose WorksPlaneStage when leaving /works to free ~40-50 MB of GPU
+      // textures + canvas + TSL materials. The stage is lazily re-created on
+      // next /works visit. Without this, every first /works visit permanently
+      // retains 8 CasePlane textures + WorksTextScreen canvas in GPU memory.
+      if (newPage !== 'works') {
+        this.world?.disposeWorksPlaneStage()
       }
       this._needsRender = true
     }
@@ -929,6 +939,10 @@ export class Experience {
     ;(this.renderer.instance as any).setAnimationLoop(null)
     // Cancel pending rAF for mouse trail (prevents fire after destroy)
     this._mouseTrailRafPending = false
+    if (this._mouseTrailRafId !== null) {
+      cancelAnimationFrame(this._mouseTrailRafId)
+      this._mouseTrailRafId = null
+    }
     if (this._onVisibilityChange) {
       document.removeEventListener('visibilitychange', this._onVisibilityChange)
       this._onVisibilityChange = null

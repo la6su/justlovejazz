@@ -293,6 +293,18 @@ export class World extends THREE.Group {
     return this._worksPlaneStagePromise
   }
 
+  /** Dispose WorksPlaneStage + WorksTextScreen when leaving /works.
+   *  Frees ~40-50 MB of GPU textures + canvas + TSL materials.
+   *  The stage is lazily re-created on next /works visit via
+   *  ensureWorksPlaneStageInitialized(). */
+  public disposeWorksPlaneStage(): void {
+    if (!this.worksPlaneStage) return
+    this.worksPlaneStage.dispose()
+    this.remove(this.worksPlaneStage)
+    this.worksPlaneStage = null
+    this._worksPlaneStagePromise = null
+  }
+
   /** Sync the 3D Works composition with CinematicNav's active DOM chapter. */
   public setWorksPlaneStageSection(index: number): void {
     this.worksPlaneStageSection = index

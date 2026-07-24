@@ -4,6 +4,20 @@ This is a concise release-level record. Implementation decisions belong in
 [`WORKLOG.md`](../WORKLOG.md); completed plans remain available through Git
 history.
 
+## 2026-07-25 — Deep CSS refactoring + memory leak fixes (PR #176)
+
+- **Memory: route-exit disposal for WorksPlaneStage** — added
+  `disposeWorksPlaneStage()` to World, called when leaving /works. Frees
+  ~40-50 MB of GPU textures + canvas + TSL materials.
+- **Memory: refcounted texture cache** — `caseTexture.ts` now caches
+  textures by URL with refcounting. Saves ~12 MB duplicate GPU textures.
+- **Memory: mouse-trail rAF cancel** — stored rAF id, cancel in `destroy()`.
+- **CSS: scanline tombstone removed (28 LOC)** — dead `::before` rules.
+- **CSS: h1..h6 heading selector removed (22 LOC)** — migrated to UIKit variable.
+- **CSS: [data-lab-overlay] dead rule removed (7 LOC)**.
+- **CSS: 6 × redundant `font-family` removed (6 LOC)**.
+- main.less: 2399 → 2308 (−91 LOC). JS heap stable at 13-14 MB.
+
 ## 2026-07-24 — Inverse theme fix + CSS minimization + 3D works text screen (PR #174)
 
 - Fixed inverse theme bug: clicking brand from /works (inverse) to home now

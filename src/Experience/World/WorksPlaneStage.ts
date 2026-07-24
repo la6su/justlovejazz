@@ -8,7 +8,7 @@
 import * as THREE from 'three'
 import { PROJECTS } from '../../Data/Projects'
 import { CasePlane, CLOTH_PARAMS } from './CasePlane'
-import { loadCaseTexture } from './caseTexture'
+import { loadCaseTexture, releaseCaseTexture } from './caseTexture'
 import { WorksTextScreen } from './WorksTextScreen'
 import type { RenderSurface } from '../Renderer'
 
@@ -87,6 +87,7 @@ export class WorksPlaneStage extends THREE.Group {
     textures.forEach((texture, index) => {
       const plane = new CasePlane(texture)
       plane.userData.projectIndex = index
+      plane.userData.texUrl = PROJECTS[index]!.textureUrl
       plane.setReveal(0)
       this.cards.push(plane)
       this._reveal.set(plane, 0)
@@ -251,13 +252,9 @@ export class WorksPlaneStage extends THREE.Group {
   }
 
   dispose(): void {
-    const textures = new Set<THREE.Texture>()
     this.cards.forEach((card) => {
-      const texture = card.texture
-      if (texture && !textures.has(texture)) {
-        textures.add(texture)
-        texture.dispose()
-      }
+      const url = card.userData.texUrl as string | undefined
+      if (url) releaseCaseTexture(url)
       card.dispose()
     })
     this.cards = []
