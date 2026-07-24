@@ -140,32 +140,6 @@ body:not([data-page='home']) #spa-content {
   }
 }
 
-.tm-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 10001;
-}
-
-.tm-header .uk-navbar-container {
-  background: transparent !important;
-}
-
-.tm-header .uk-navbar-nav > li > a {
-  color: var(--jlz-color-text-muted);
-}
-
-.tm-header .uk-navbar-nav > li > a:hover,
-.tm-header .uk-navbar-nav > li.uk-active > a {
-  color: var(--jlz-color-text);
-}
-
-.uk-navbar-dropdown {
-  border: 1px solid var(--jlz-color-border);
-  background: var(--jlz-color-bg-elevated);
-}
-
 
 .jlz-page {
   position: relative;
@@ -800,75 +774,6 @@ html.jlz-force-cursor .interactive {
 .jlz-section-bottom {
   flex-shrink: 0;
   padding-bottom: calc(4.6rem + env(safe-area-inset-bottom, 0px));
-}
-
-
-.jlz-bottom-module {
-  display: flex;
-  align-items: baseline;
-  gap: var(--jlz-space-3);
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--jlz-color-border);
-  border-radius: var(--jlz-radius-md);
-  background: color-mix(in srgb, var(--jlz-color-surface) 70%, transparent);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  font-family: var(--jlz-font-mono);
-  font-size: 0.7rem;
-  letter-spacing: var(--jlz-tracking-wide);
-  text-transform: uppercase;
-  color: var(--jlz-color-text-muted);
-  line-height: 1.4;
-  transition: border-color var(--jlz-duration-fast) ease;
-}
-
-.jlz-bottom-module__meta {
-  display: flex;
-  align-items: center;
-  gap: var(--jlz-space-2);
-  flex-shrink: 0;
-  color: var(--jlz-color-accent);
-  font-weight: var(--jlz-weight-medium);
-  white-space: nowrap;
-
-  // Divider dash between label and content
-  > span:last-child {
-    color: var(--jlz-color-text-subtle);
-  }
-}
-
-.jlz-bottom-module__content {
-  color: var(--jlz-color-text-muted);
-  font-family: var(--jlz-font-body);
-  font-size: 0.78rem;
-  letter-spacing: 0;
-  text-transform: none;
-  line-height: 1.5;
-  flex: 1;
-  min-width: 0;
-
-  p {
-    margin: 0;
-  }
-}
-
-
-// Mobile: stack meta above content
-@media (max-width: 639px) {
-  .jlz-bottom-module {
-    flex-direction: column;
-    gap: var(--jlz-space-1);
-    padding: 0.4rem 0.6rem;
-    font-size: 0.62rem;
-  }
-
-  .jlz-bottom-module__meta {
-    font-size: 0.6rem;
-  }
-
-  .jlz-bottom-module__content {
-    font-size: 0.72rem;
-  }
 }
 
 
@@ -1690,85 +1595,6 @@ body[data-page='works'] .jlz-work-card.is-opening .jlz-work-card__inner {
   }
 }
 
-.jlz-showreel-trigger {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: rgba(245, 245, 247, 0.7);
-  transition: color 0.3s ease;
-  -webkit-tap-highlight-color: transparent;
-  padding: 0;
-}
-
-.jlz-showreel-trigger:hover,
-.jlz-showreel-trigger:focus-visible {
-  color: @global-primary-background;
-  outline: none;
-}
-
-
-.jlz-showreel-trigger:hover .jlz-showreel-trigger__circle,
-.jlz-showreel-trigger:focus-visible .jlz-showreel-trigger__circle {
-  stroke-dashoffset: 176; // fully "undrawn" → animated to 0 on hover
-  animation: jlz-showreel-stroke 1.2s ease-in-out infinite;
-  stroke-width: 2;
-}
-
-@keyframes jlz-showreel-stroke {
-  0% {
-    stroke-dashoffset: 176;
-  }
-  50% {
-    stroke-dashoffset: 0;
-  }
-  100% {
-    stroke-dashoffset: -176;
-  }
-}
-
-.jlz-showreel-trigger:hover .jlz-showreel-trigger__icon,
-.jlz-showreel-trigger:focus-visible .jlz-showreel-trigger__icon {
-  transform: translate(-50%, -50%) scale(1.15);
-}
-
-.jlz-showreel-trigger:hover .jlz-showreel-trigger__label,
-.jlz-showreel-trigger:focus-visible .jlz-showreel-trigger__label {
-  opacity: 1;
-}
-
-
-@media (max-width: 639px) {
-  .jlz-showreel-overlay {
-    // Mobile: keep centered, smaller offset to avoid cube overlap
-    transform: translate(-50%, -30%);
-  }
-  .jlz-showreel-trigger__ring {
-    width: 52px;
-    height: 52px;
-  }
-  .jlz-showreel-trigger__label {
-    font-size: 0.6rem;
-  }
-}
-
-
-@media (prefers-reduced-motion: reduce) {
-  .jlz-showreel-trigger__circle {
-    transition: none;
-  }
-  .jlz-showreel-trigger:hover .jlz-showreel-trigger__circle,
-  .jlz-showreel-trigger:focus-visible .jlz-showreel-trigger__circle {
-    animation: none;
-    stroke-dashoffset: 0;
-    stroke-width: 2;
-  }
-}
-
 
 .jlz-lang-label {
   text-transform: uppercase;
@@ -1778,7 +1604,7 @@ body[data-page='works'] .jlz-work-card.is-opening .jlz-work-card__inner {
   line-height: 1;
 }
 
-.jlz-theme-toggle .jlz-theme-svg {
+.jlz-theme-toggle [uk-icon] {
   width: 1rem;
   height: 1rem;
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.18));
@@ -2552,19 +2378,19 @@ body[data-cinematic-sheet]
   }
 }
 
-.jlz-theme-toggle .jlz-theme-svg {
+.jlz-theme-toggle [uk-icon] {
   display: none;
   color: inherit;
 }
 
-// auto mode (default) → show sun
-.jlz-theme-toggle:not(.is-inverse) .jlz-theme-svg--sun {
-  display: block;
+// auto mode (default) → show sun (theme-auto)
+.jlz-theme-toggle:not(.is-inverse) [uk-icon="icon: theme-auto"] {
+  display: inline-block;
 }
 
-// inverse mode → show moon
-.jlz-theme-toggle.is-inverse .jlz-theme-svg--moon {
-  display: block;
+// inverse mode → show moon (theme-inverse)
+.jlz-theme-toggle.is-inverse [uk-icon="icon: theme-inverse"] {
+  display: inline-block;
 }
 
 .jlz-menu-overlay {
@@ -2837,46 +2663,6 @@ body[data-cinematic-sheet]
   gap: var(--jlz-space-4);
   padding-top: calc(var(--jlz-header-height, 60px) + var(--jlz-space-4));
   padding-bottom: calc(var(--jlz-joystick-size) * 1.35 + var(--jlz-space-4));
-}
-
-.jlz-lab-accordion__title:hover,
-.jlz-lab-accordion__title:focus-visible {
-  color: @global-primary-background;
-  outline: none;
-}
-
-.jlz-lab-accordion__meta {
-  max-width: 7rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.jlz-lab-accordion__preview:focus-visible {
-  outline: 2px solid @global-primary-background;
-  outline-offset: -3px;
-}
-
-@media (max-width: 640px) {
-  .jlz-lab-overlay-top {
-    gap: 0;
-  }
-
-  .jlz-lab-overlay-top .studio-title {
-    margin-bottom: var(--jlz-space-2);
-  }
-
-  .jlz-lab-overlay-top .uk-text-lead {
-    font-size: 0.95rem;
-  }
-
-  .jlz-lab-overlay-bottom {
-    width: min(100%, 34rem);
-  }
-
-  .jlz-lab-accordion {
-    max-height: min(43dvh, 24rem);
-  }
 }
 
 .jlz-cinematic-shell .jlz-topbar {

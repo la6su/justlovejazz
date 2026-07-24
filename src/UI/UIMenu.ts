@@ -8,12 +8,9 @@ import { toggleLang, getLang } from '../core/i18n'
 import { themeManager } from '../core/ThemeManager'
 import { getSoundMuted, setSoundMutedPreference } from '../core/SfxSystem'
 
-// ── Inline outline icons (UIKit3 has no sun/moon) ──
-// Console-style bold icons: reticle sun (light mode) + console moon (dark mode).
-// Stroke width 2 matches all other console icons for visual unity.
-const SUN_SVG = `<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" class="jlz-theme-svg jlz-theme-svg--sun" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M22 12h-3M5 12H2M18.5 5.5l-2 2M7.5 16.5l-2 2M18.5 18.5l-2-2M7.5 7.5l-2-2"/></svg>`
-// Console moon — crescent with pixel-style crater dots
-const MOON_SVG = `<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" class="jlz-theme-svg jlz-theme-svg--moon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14A8 8 0 1 1 10 4a6 6 0 0 0 10 10Z"/><circle fill="currentColor" stroke="none" cx="14" cy="9" r="0.8"/><circle fill="currentColor" stroke="none" cx="16.5" cy="12" r="0.6"/><circle fill="currentColor" stroke="none" cx="13" cy="13" r="0.5"/></svg>`
+// Theme icons are registered in console-icons.ts as 'theme-auto' (sun) and
+// 'theme-inverse' (moon). The toggle shows/hides them via CSS based on the
+// active theme state.
 
 export class UIMenu {
   private navEl: HTMLElement
@@ -43,7 +40,8 @@ export class UIMenu {
           <button class="uk-icon-button jlz-theme-toggle uk-visible@s" type="button" id="jlz-theme-toggle"
                   aria-label="Toggle inverse theme" aria-pressed="false" title="Theme: auto"
                   uk-tooltip="pos: bottom; delay: 200">
-            ${SUN_SVG}${MOON_SVG}
+            <span uk-icon="icon: theme-auto" aria-hidden="true"></span>
+            <span uk-icon="icon: theme-inverse" aria-hidden="true"></span>
           </button>
           <button class="uk-icon-button jlz-sound-toggle uk-visible@s" type="button" id="jlz-sound-toggle"
                   aria-label="Toggle sound" aria-pressed="true" title="Sound: off"

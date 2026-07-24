@@ -1,5 +1,70 @@
 # Worklog
 
+## 2026-07-24 — PI agent preparation and docs audit
+
+### Decision
+
+Prepare the project for ongoing PI Agent (AI coding agent) work and audit all
+documentation for stale references after the PR #171 audit cleanup.
+
+### Changes
+
+- **docs/UIKIT3.md** — rewrote entirely. Removed dead references to
+  `master-quantum-flares/`, `studio-console/`, `_quantum-flares-overrides.less`,
+  `_theme-fixes.less`, `master-vibe/` (none of these exist). Documented the
+  actual `console-theme/_import.less` architecture, the `_import.less` token +
+  UIKit override assembly, and the full imported UIKit component list. Added a
+  solution priority order (UIkit markup → Less var → scoped `.jlz-*` rule).
+- **docs/ARCHITECTURE.md** — fixed bootstrap chain (removed `main-app.ts`,
+  which was inlined into `entry-app.ts:boot()` in PR #171). Updated key
+  modules table (Bootstrap now lists only `entry-shell.ts` + `entry-app.ts`;
+  added `UIManager.ts` and `StateBus.ts`). Documented the event contract:
+  typed `EventBus` events vs local `jlz:*` DOM contracts. Noted
+  `FullscreenOverlay` focus trap.
+- **docs/RULES.md** — removed QF/studio-console references. Updated UI rule
+  to point to `console-theme/_import.less` and `_import.less`. Added
+  reduced-motion rule (authored animations must snap to settled state
+  synchronously). Clarified typed vs local event rule. Added focus-trap
+  requirement for `FullscreenOverlay`.
+- **README.md** — fixed bootstrap chain (`main-app.ts` removed).
+- **docs/DEVELOPMENT.md** — fixed CI claim (unit tests ARE in CI, not just
+  local). Listed the exact CI gate steps.
+- **docs/CHANGELOG.md** — added 2026-07-24 entry for PR #171 + #172.
+- **docs/PLAN-showreel-shader-plane.md** — removed `PlaneTransition.ts`
+  references (deleted in PR #171). Updated "already complete" section.
+- **NEXT.md** — removed completed "Works 3D/showreel evolution" and
+  "Telegram design-system extension" items. Added "EventBus migration
+  completion" task (10 remaining local `jlz:*` events).
+- **AGENTS.md** — rewrote as the single source of truth for all AI coding
+  agents. Added quick-reference table, reading order, hard constraints
+  (including UIkit-first and reduced-motion rules), session workflow,
+  verification gate, Conventional Commits convention, and documentation
+  policy. Noted that `CLAUDE.md` and `.github/copilot-instructions.md`
+  reference this file.
+- **docs/README.md** — updated ownership map (UIKIT3.md owns renamed,
+  CONTRIBUTING.md added to root docs).
+- **CLAUDE.md** — created. References AGENTS.md, adds Claude Code-specific
+  notes (rg, Edit/MultiEdit tools, Vite SPA not Next.js, TSL NodeMaterials).
+- **.github/copilot-instructions.md** — created. References AGENTS.md, adds
+  Copilot-specific notes (Bun, Vite SPA, TSL, UIkit 3, TypeScript strict,
+  Conventional Commits).
+- **.cursor/rules/project.mdc** — created. References AGENTS.md, adds stack
+  summary, hard constraints, verification gate, commit style.
+- **CONTRIBUTING.md** — created. Human contributor guide: quick start,
+  workflow, code style, PR checklist, issue reporting, license.
+- **.github/CODEOWNERS** — created. Default owner + area-specific owners
+  (3D, UI, CI).
+- **.github/ISSUE_TEMPLATE/bug_report.md** — created.
+- **.github/ISSUE_TEMPLATE/feature_request.md** — created.
+- **.github/PULL_REQUEST_TEMPLATE.md** — created. Conventional Commits
+  checklist + verification gate.
+
+### Verification
+
+`type-check` 0 errors, `lint` 0 errors (61 pre-existing warnings), `test:unit`
+105/105, `build` green. All documentation references verified against the
+actual filesystem (no more dead QF/studio-console links).
+
 ## 2026-07-23 — Final transition, texture and overlay fixes
 
 ### Decision

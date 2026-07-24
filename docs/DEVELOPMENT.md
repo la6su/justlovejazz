@@ -104,9 +104,18 @@ post-processing authority.
 
 ## CI
 
-The GitHub Actions workflow currently runs type-checking, linting, production
-build, Playwright Chromium tests and Lighthouse. Run unit tests locally as part
-of the required gate until they are explicitly added to CI.
+The GitHub Actions workflow (`.github/workflows/lighthouse.yml`) runs on every
+push and pull request to `main`:
+
+- `bun run type-check`
+- `bun run lint`
+- `bun run test:unit`
+- `bun run build`
+- `bun run test` (Playwright Chromium E2E)
+- Lighthouse CI (against the preview build)
+
+All checks must pass before merge. The workflow cancels in-progress runs on the
+same ref when a new commit is pushed.
 
 ## Codex sandbox appendix
 
