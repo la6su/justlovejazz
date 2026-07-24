@@ -1,5 +1,82 @@
 # Worklog
 
+## 2026-07-24 — Inverse theme fix + CSS minimization + 3D works text screen
+
+### Decision
+
+Three tasks: (1) fix inverse theme bug when clicking brand from /works;
+(2) minimize main.less further using UIKit3 utilities; (3) add 3D curved
+transparent text screen behind works cards; (4) audit inverse theme across
+all pages and fullscreen overlay.
+
+### Changes
+
+- **Task 1 — Inverse theme fix (ContentReveal):** The bug was that
+  ContentReveal missed the initial `jlz:route-change` (fired by router.ts
+  before Experience.init creates ContentReveal), so `uk-light` from
+  index.html's default stayed on `<body>` until the first section nav.
+  Fix: added `applyInitialTheme()` in the constructor that finds the active
+  section and applies its theme immediately. Also: resolve `sectionIndex`
+  from the config (not from the stale `currentSectionIndex` that was reset
+  to -1 on route-change), and always send `themeChanged: true` so the 3D
+  layer (ground, baku, particles, text screen) re-syncs on every
+  applyTheme call.
+
+- **Task 2 — CSS minimization (−87 LOC):** main.less 2486→2399 lines.
+  Removed UIKit-duplicating rules:
+  - `* { box-sizing }` (UIKit base already emits it)
+  - `body { margin; background; color }` (UIKit base + _import.less §3)
+  - `.jlz-visually-hidden` (dead — zero refs)
+  - `.jlz-experiment-footer__mode { color }` (inherited body color)
+  - `.jlz-experiment-footer__state { color }` → `uk-text-muted` in markup
+  - `.jlz-section-bottom .jlz-service-desc { margin-top:0 !important }`
+    (removed `uk-margin-small-top` from `i18nDesc()` helper instead)
+  - `.jlz-service-desc .uk-text-meta { color }` (UIKit `.uk-text-meta` already sets it)
+  - `.jlz-service-explore { font-weight; border-radius }` (hook-button provides them)
+  - `.jlz-sheet-close { color:inherit }` (UIKit `.uk-close` already sets color)
+  - `.jlz-contact-footer__intro { align-items !important; text-align !important }`
+    (fixed markup: `uk-flex-middle uk-text-center` → `uk-flex-top uk-text-left`)
+  - `.jlz-contact-footer__actions .jlz-sheet-close { margin-left:auto }` →
+    `uk-margin-auto-left` in markup
+  - `.jlz-menu-nav` (UIKit `.uk-nav` already resets list-style/margin/padding)
+  - `.jlz-menu-stat` → `uk-flex uk-flex-column` in markup
+  - `.jlz-menu-col--stat { align-self:auto }` (auto is default)
+  - `.jlz-menu-nav__item { position:relative }` (no abs descendants)
+  - `.jlz-menu-nav__toggle` reset props (no-ops on `<a href>`)
+  - `.jlz-menu-nav__subs` reset props (UIKit `.uk-nav-sub` provides them)
+  - `.jlz-topbar-controls { display:flex; align-items }` (markup has `uk-flex uk-flex-middle`)
+  - `.jlz-contact-launcher__button` + `:hover` (hook-button-primary provides bg/color/shadow)
+  - `.jlz-menu-launcher { background; border-radius }` (hook-button-default provides them)
+
+- **Task 3 — 3D curved text screen (WorksTextScreen.ts):** New 3D element
+  on /works — a gently curved transparent plane behind the work cards that
+  renders the section title + lead as a canvas-generated text texture.
+  - CylinderGeometry segment (12 units wide, 5 tall, 0.12 rad curvature)
+  - MeshBasicNodeMaterial with TSL: samples canvas texture, flips text
+    color via `mix()` based on `isLight` uniform, modulates alpha by
+    reveal + subtle time pulse
+  - Positioned at z=-5.5 (behind cards at z≈-3), renderOrder=1
+  - `setSection(index)` regenerates the canvas texture with the section copy
+  - `setTheme(isLight)` flips text color for inverse contrast
+  - Integrated into WorksPlaneStage: created in `init()`, updated in
+    `update()`, disposed in `dispose()`, section synced in `setActive()`,
+    theme synced via `setTheme()`
+  - Experience.ts calls `worksPlaneStage.setTheme()` on `jlz:theme-applied`
+
+- **Task 4 — Inverse theme audit:** Verified all pages (home, /works,
+  /services, /manifesto, /lab, /contact) in both auto and inverse modes.
+  uk-light toggles correctly per-section. FullscreenOverlay has hardcoded
+  `uk-light` (always dark bg + light text) — correct. No contrast issues
+  found. Theme toggle works on all pages. Brand-click from /works (inverse)
+  to home now correctly applies the intro section's inverse theme.
+
+### Verification
+
+`type-check` 0 errors, `lint` 0 errors (60 pre-existing warnings),
+`test:unit` 105/105, `test` (Playwright e2e) 12/12, `build` green.
+Browser-verified: all 6 pages in auto + inverse, fullscreen overlay,
+theme toggle, brand-click navigation.
+
 ## 2026-07-24 — CSS minimization + /works texture fix
 
 ### Decision
