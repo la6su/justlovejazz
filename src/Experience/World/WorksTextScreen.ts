@@ -1,11 +1,13 @@
-// WorksTextScreen — 3D curved back-text behind work cards on /works.
+// WorksTextScreen — 3D back-text behind work cards on /works.
 //
-// A gently curved cylinder segment that wraps across the full viewport width.
-// Renders pixel-style text (Pixelify Sans) with Cyrillic support as a canvas
-// texture. The text scrolls horizontally (UV offset) and reveals via a
-// vertical wipe from center outward — synchronized with the card reveal.
+// Follows the junni.co.jp BackText pattern: a flat plane positioned behind
+// the work cards, rendering pixel-style text (Pixelify Sans with Cyrillic)
+// as a canvas texture. The text scrolls horizontally (UV offset) and reveals
+// via a vertical wipe from center outward.
 //
-// Alpha discard gives crisp pixel-perfect edges (no soft blending).
+// Key insight from junni: the BackText mesh is NOT a separate curved cylinder.
+// It's a simple flat plane that's part of the scene geometry. The "curve" effect
+// comes from the camera perspective, not from bending the plane.
 
 import * as THREE from 'three'
 import { MeshBasicNodeMaterial } from 'three/webgpu'
@@ -20,11 +22,10 @@ const SECTION_KEYS = [
   { titleKey: 'works.section4.title', leadKey: 'works.section4.lead' },
 ] as const
 
-// Curved screen: a wide cylinder segment that wraps around the camera.
-// The curvature creates the immersive "back wall" effect from the junni reference.
-const SCREEN_RADIUS = 12 // radius — small enough to stay in the FOV at z=-8
-const SCREEN_HEIGHT = 7 // height of the cylinder
-const SCREEN_ARC = 1.2 // radians — wide arc (~69°) to fill the FOV
+// Flat plane dimensions — wide to fill the viewport behind cards.
+// Junni uses a flat mesh that's part of the scene; we do the same.
+const SCREEN_WIDTH = 20
+const SCREEN_HEIGHT = 8
 
 export class WorksTextScreen extends THREE.Mesh {
   private _texture: THREE.CanvasTexture
@@ -41,22 +42,9 @@ export class WorksTextScreen extends THREE.Mesh {
   private readonly _uniformIsLight: { value: number }
 
   constructor() {
-    // Curved plane — cylinder segment wrapping horizontally.
-    // We DON'T rotate the geometry. Instead we position the mesh so the
-    // concave side faces the camera. The cylinder's default orientation
-    // has its axis along Y; thetaStart=-ARC/2 + thetaLength=ARC centers
-    // the arc on +X. We rotate the MESH (not geometry) by -π/2 around Y
-    // so the arc faces -Z (toward the camera which looks down -Z).
-    const geometry = new THREE.CylinderGeometry(
-      SCREEN_RADIUS,
-      SCREEN_RADIUS,
-      SCREEN_HEIGHT,
-      64, // radial segments — smooth arc
-      1, // height segments
-      true, // openEnded — only the arc, no caps
-      -SCREEN_ARC / 2, // thetaStart — centered on +X before mesh rotation
-      SCREEN_ARC, // thetaLength — wide arc
-    )
+    // Flat plane — junni BackText uses a simple PlaneGeometry.
+    // The plane is subdivided to allow potential vertex displacement if needed.
+    const geometry = new THREE.PlaneGeometry(SCREEN_WIDTH, SCREEN_HEIGHT, 8, 4)
 
     // 2048×512 canvas — wide for horizontal tiling + pixel font legibility.
     const canvas = document.createElement('canvas')
@@ -79,21 +67,21 @@ export class WorksTextScreen extends THREE.Mesh {
     const mat = new MeshBasicNodeMaterial({
       transparent: true,
       depthWrite: false,
-      side: THREE.DoubleSide, // DoubleSide — render both inside and outside of the cylinder
+      side: THREE.DoubleSide,
       fog: false,
       toneMapped: false,
     })
 
-    // TSL port of junni BackText shaders with curved geometry.
+    // TSL port of junni BackText shaders:
+    //   VS: vUv.x += time * 0.02  (horizontal scroll)
+    //   FS: col.w *= step(abs(vUv.y - 0.5), uVisibility * 0.5); discard if < 0.5
     mat.colorNode = Fn(() => {
       const uvCoord = uv()
-      // Scroll UVs horizontally — text drifts slowly like a cinematic backdrop.
+      // Scroll UVs horizontally — text drifts slowly.
       const scrolledU = fract(uvCoord.x.add(uTime.mul(0.015)))
       const sample = tslTexture(tex, vec2(scrolledU, uvCoord.y))
 
       // Vertical wipe: reveal from center (v=0.5) outward.
-      // uVisibility=0 → wipeMask=0 everywhere (invisible)
-      // uVisibility=1 → wipeMask=1 everywhere (fully visible)
       const distFromCenter = abs(uvCoord.y.sub(float(0.5)))
       const wipeMask = step(distFromCenter, uVisibility.mul(0.5))
 
@@ -103,7 +91,7 @@ export class WorksTextScreen extends THREE.Mesh {
       const g = mix(sample.y, float(1.0).sub(sample.y), lightFactor)
       const b = mix(sample.z, float(1.0).sub(sample.z), lightFactor)
 
-      // Alpha: text luminance × wipe mask. Boost and clamp to [0, 1] for visibility.
+      // Alpha: text luminance × wipe mask. Boost and clamp for visibility.
       const luminance = sample.x.mul(0.299).add(sample.y.mul(0.587)).add(sample.z.mul(0.114))
       const boostedAlpha = luminance.mul(float(3.0)).min(float(1.0))
       const alpha = boostedAlpha.mul(wipeMask)
@@ -118,18 +106,10 @@ export class WorksTextScreen extends THREE.Mesh {
     this.frustumCulled = false
     this.renderOrder = 1 // behind work cards (renderOrder 2)
 
-    // Position: the cylinder center is at origin, the arc faces +X by default.
-    // Rotate the MESH by -π/2 around Y so the arc faces -Z (toward camera).
-    // Position so the concave surface is at z≈-8 (behind cards at z≈-3).
-    // Cylinder surface = center + radius in the direction of the arc.
-    // After rotation, the arc points to -Z, so surface is at z = position.z - radius.
-    // We want surface at z=-8, so position.z = -8 + radius = -8 + 12 = 4.
-    // But that puts the center IN FRONT of the camera. Instead, place center
-    // behind cards and let the arc curve toward the camera.
-    // position.z = -(8) puts center at z=-8, surface at z=-8-12=-20 (too far).
-    // Better: position.z = 0, surface at z=-12 (behind cards). Good.
-    this.rotation.y = -Math.PI / 2
-    this.position.set(0, 0, 0) // center at origin; surface curves to z=-12
+    // Position: flat plane behind the cards. Cards are at z≈-3, screen at z=-7.
+    // No rotation needed — PlaneGeometry faces +Z by default, which faces
+    // the camera (camera looks down -Z, so +Z faces toward it).
+    this.position.set(0, 0, -7)
 
     this._texture = texture
     this._canvas = canvas
@@ -179,14 +159,14 @@ export class WorksTextScreen extends THREE.Mesh {
 
     const fontFamily = this._fontLoaded ? "'Pixelify Sans', monospace" : "monospace"
 
-    // Title — oversized, pixel font, centered. Pure white for max luminance.
+    // Title — oversized, pixel font, centered.
     ctx.fillStyle = '#ffffff'
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     ctx.font = `700 ${Math.floor(h * 0.32)}px ${fontFamily}`
     ctx.fillText(title.toUpperCase(), w / 2, h * 0.40)
 
-    // Lead — smaller, still white but slightly transparent for hierarchy.
+    // Lead — smaller, lighter, below the title.
     ctx.font = `400 ${Math.floor(h * 0.14)}px ${fontFamily}`
     ctx.fillStyle = 'rgba(255, 255, 255, 0.7)'
     ctx.fillText(lead, w / 2, h * 0.70)
