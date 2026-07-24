@@ -3,14 +3,14 @@
 // Sections 0 (Lab) and 5 (Navigation) are shared across all SPA pages.
 // Main sections (1-4): Email, Social, Location, Form.
 
-import { sectionShell, contentTop, contentBottom } from '../../sections/_shared/constants'
+import { sectionShell, contentTop, storyBottom } from '../../sections/_shared/constants'
 import { labOverlaySection } from '../../sections/lab-overlay/template'
 import { navOverlaySection } from '../../sections/nav/template'
 
 // Section 1: Email — big mailto link
 const emailSection = sectionShell('contact-01',
   contentTop('01', 'Email', 'Direct line.', 'large', 'contact.email.title', 'contact.email.lead'),
-  contentBottom(`
+  storyBottom(`
     <a href="mailto:hello@justlovejazz.com" class="jlz-service-explore uk-button uk-button-default uk-button-small uk-margin-top">
       <span class="jlz-service-explore__dot" aria-hidden="true"></span>
       hello@justlovejazz.com
@@ -22,7 +22,7 @@ const emailSection = sectionShell('contact-01',
 // Section 2: Social — Telegram + GitHub
 const socialSection = sectionShell('contact-02',
   contentTop('02', 'Social', 'Find us elsewhere.', 'large', 'contact.social.title', 'contact.social.lead'),
-  contentBottom(`
+  storyBottom(`
     <div class="uk-flex uk-flex-center uk-flex-wrap uk-margin-top jlz-flex-gap-small">
       <a href="https://t.me/justlovejazz" target="_blank" rel="noopener" class="jlz-service-explore uk-button uk-button-default uk-button-small">
         <span class="jlz-service-explore__dot" aria-hidden="true"></span>
@@ -39,7 +39,7 @@ const socialSection = sectionShell('contact-02',
 // Section 3: Location — remote / EU
 const locationSection = sectionShell('contact-03',
   contentTop('03', 'Location', 'Where we work.', 'large', 'contact.location.title', 'contact.location.lead'),
-  contentBottom(`
+  storyBottom(`
     <div class="jlz-service-desc uk-margin-small-top">
       <p class="uk-text-meta uk-margin-remove" data-i18n="contact.location.desc1">Remote · EU · since 2019</p>
       <p class="uk-text-meta uk-margin-remove" data-i18n="contact.location.desc2">Open for new projects.</p>
@@ -50,7 +50,7 @@ const locationSection = sectionShell('contact-03',
 // Section 4: Form — inline mailto form
 const formSection = sectionShell('contact-04',
   contentTop('04', 'Form', 'Tell us about your project.', 'large', 'contact.form.title', 'contact.form.lead'),
-  contentBottom(`
+  storyBottom(`
     <form class="jlz-contact-form uk-flex uk-flex-center uk-flex-middle uk-margin-bottom" action="mailto:hello@justlovejazz.com" method="post" enctype="text/plain">
       <div class="uk-inline uk-width-1-1 uk-width-medium@s">
         <span class="uk-form-icon" uk-icon="icon: mail" aria-hidden="true"></span>

@@ -29,8 +29,8 @@ export interface OverlayOptions {
   // Navigation (optional)
   hasPrev?: boolean
   hasNext?: boolean
-  /** The source plane already expanded in the WebGL scene. */
-  origin?: 'plane'
+  /** Called when the overlay closes (per-open, not a persistent handler). */
+  onClose?: () => void
 }
 
 export class FullscreenOverlay {
@@ -51,6 +51,7 @@ export class FullscreenOverlay {
   private controlsEl: HTMLElement
   private _keydownHandler: ((e: KeyboardEvent) => void) | null = null
   private _focusTrapHandler: ((e: FocusEvent) => void) | null = null
+  private _lastShiftTab = false
   private _autoplayTimer: ReturnType<typeof setTimeout> | null = null
   private _enterFallback: number | null = null
   private _posterRequestId = 0
@@ -59,7 +60,10 @@ export class FullscreenOverlay {
 
   public onPrev: (() => void) | null = null
   public onNext: (() => void) | null = null
+  /** @deprecated Use OverlayOptions.onClose (per-open) instead. */
   public onClose: (() => void) | null = null
+  private _perOpenOnClose: (() => void) | null = null
+  private _restoreFocus: HTMLElement | null = null
 
   constructor() {
     this.container = document.createElement('div')
@@ -191,6 +195,11 @@ export class FullscreenOverlay {
     // on show and removes it on hide; isOpen reads it directly. No custom
     // enter/opening flags needed.
     UIkit.util.on(this.container, 'show', () => {
+      // Store the element that had focus before the overlay opened so we can
+      // restore it on close (B-2 a11y fix).
+      if (document.activeElement instanceof HTMLElement) {
+        this._restoreFocus = document.activeElement
+      }
       document.addEventListener('keydown', this._keydownHandler!)
       document.addEventListener('focusin', this._focusTrapHandler!)
       // Double-rAF fallback: more reliable than fixed timeout.
@@ -215,11 +224,16 @@ export class FullscreenOverlay {
         this._enterFallback = null
       }
       // Trigger the CSS reveal transition (clip-path + scale + opacity).
-      // Without this class, .jlz-fs-dialog stays at clip-path:inset(50%)
-      // and the overlay is invisible.
       requestAnimationFrame(() => {
         this.container.classList.add('is-entered')
       })
+      // Move focus into the modal so keyboard users are not stranded on the
+      // trigger button behind the overlay (B-2 a11y fix). Focus the close
+      // button by default; in video mode the big-play is a better landing.
+      const target = this.container.classList.contains('is-video-mode')
+        ? this.bigPlay
+        : this.container.querySelector<HTMLElement>('.jlz-fs-close')
+      target?.focus({ preventScroll: true })
       this._tryAutoplay()
     })
     UIkit.util.on(this.container, 'hide', () => {
@@ -233,9 +247,14 @@ export class FullscreenOverlay {
       }
       this.container.classList.remove('is-playing')
       this.container.classList.remove('is-entered')
-      this.container.classList.remove('is-plane-origin')
       this.video.pause()
+      // Call the per-open callback first, then the deprecated persistent one.
+      this._perOpenOnClose?.()
       this.onClose?.()
+      this._perOpenOnClose = null
+      // Restore focus to the trigger that opened the overlay (B-2 a11y fix).
+      this._restoreFocus?.focus({ preventScroll: true })
+      this._restoreFocus = null
       // Remove keyboard listener when modal closes — clean lifecycle, no
       // stale listeners intercepting events while the overlay is hidden.
       document.removeEventListener('keydown', this._keydownHandler!)
@@ -249,6 +268,8 @@ export class FullscreenOverlay {
     // stopImmediatePropagation prevents CinematicNav's window keydown from
     // also firing, so project arrows do not move the story behind the modal.
     this._keydownHandler = (e: KeyboardEvent) => {
+      // Track Shift+Tab so the focus trap can wrap in the correct direction.
+      if (e.key === 'Tab') this._lastShiftTab = e.shiftKey
       if (e.key === ' ') {
         if (!this.container.classList.contains('is-video-mode')) return
         e.preventDefault()
@@ -271,15 +292,17 @@ export class FullscreenOverlay {
     this._focusTrapHandler = (e: FocusEvent) => {
       const dialog = this.container.querySelector<HTMLElement>('.uk-modal-dialog')
       if (!dialog) return
-      if (!dialog.contains(e.target as Node)) {
-        e.preventDefault()
-        const first = dialog.querySelector<HTMLElement>(
-          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
-        )
-        if (first) {
-          first.focus()
-        }
-      }
+      if (dialog.contains(e.target as Node)) return
+      // Focus escaped the dialog — route it back.
+      e.preventDefault()
+      const focusables = dialog.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      )
+      if (focusables.length === 0) return
+      // If Shift+Tab on the first element → wrap to the last; otherwise → first.
+      const first = focusables[0]!
+      const last = focusables[focusables.length - 1]!
+      ;(this._lastShiftTab ? last : first).focus({ preventScroll: true })
     }
   }
 
@@ -329,12 +352,8 @@ export class FullscreenOverlay {
   /** Open overlay with given options. */
   open(opts: OverlayOptions): void {
     this._applyOptions(opts)
-    // All opens use the same unified clip-path iris reveal. is-plane-origin
-    // only controls background transparency for the 3D plane handoff.
-    this.container.classList.toggle('is-plane-origin', opts.origin === 'plane')
     UIkit.modal(this.container).show()
   }
-
   /** Preload content into the overlay WITHOUT showing it.
    *  Used by Experience.ts to preload the first project so card click is
    *  instant. preload() only sets content; the uk-open class is NOT added,
@@ -366,6 +385,8 @@ export class FullscreenOverlay {
   /** Apply overlay options to the DOM (shared by open + preload). */
   private _applyOptions(opts: OverlayOptions): void {
     this._mediaGeneration += 1
+    // Store the per-open close callback (called in the 'hide' handler).
+    this._perOpenOnClose = opts.onClose ?? null
     const mode = opts.mode ?? (opts.videoSrc ? 'video' : 'image')
     const videoMode = mode === 'video'
     this.container.classList.toggle('is-image-mode', !videoMode)

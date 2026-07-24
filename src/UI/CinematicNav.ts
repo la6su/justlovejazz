@@ -133,6 +133,14 @@ export class CinematicNav {
 
   private _bindTrack(): void {
     this._removeTrackListeners()
+    // Clear stale state from the previous page — _restoreFocus points to a
+    // detached node after innerHTML replacement, and a pending _inactiveTimer
+    // can falsely signal "user stopped interacting" on the new page (B-4).
+    this._restoreFocus = null
+    if (this._inactiveTimer) {
+      clearTimeout(this._inactiveTimer)
+      this._inactiveTimer = null
+    }
 
     const pageMode = document.body.dataset.page !== 'home'
     this._track = pageMode

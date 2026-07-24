@@ -7,7 +7,6 @@ import {
   serviceExplore,
   descBlock,
   storyBottom,
-  contentBottom,
 } from '../sections/_shared/constants'
 
 describe('sectionShell', () => {
@@ -116,17 +115,11 @@ describe('descBlock', () => {
   })
 })
 
-describe('storyBottom / contentBottom', () => {
+describe('storyBottom', () => {
   it('wraps content in cinematic shell', () => {
     const html = storyBottom('<p>content</p>', '—')
     expect(html).toContain('jlz-section-bottom')
     expect(html).toContain('<p>content</p>')
     expect(html).toContain('aria-hidden="true">—<')
-  })
-
-  it('contentBottom delegates to storyBottom', () => {
-    const a = contentBottom('x')
-    const b = storyBottom('x')
-    expect(a).toBe(b)
   })
 })

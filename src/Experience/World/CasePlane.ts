@@ -188,12 +188,6 @@ export class CasePlane extends THREE.Mesh {
     this._stateUni.value.x = this._myTransition
   }
 
-  setParallax(value: number): void {
-    // Parallax is stored locally — the TSL shader doesn't use it in the
-    // simplified version. Kept for API compatibility.
-    void value
-  }
-
   update(dt: number, active: boolean): void {
     if (
       !active &&

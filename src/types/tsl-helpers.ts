@@ -34,6 +34,3 @@ export function tslBloom(
 ): unknown {
   return (_bloom as any)(color, strength, radius, threshold)
 }
-
-// Silence unused import (pass imported but used via tslPass wrapper)
-void _pass

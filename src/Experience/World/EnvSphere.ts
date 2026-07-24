@@ -104,10 +104,6 @@ export class EnvSphere extends THREE.Mesh {
     this._dirty = true
   }
 
-  get hasVisibleAmbientMotion(): boolean {
-    return false
-  }
-
   update(dt: number): void {
     const lerpSpeed = 3.0
     for (let i = 0; i < SECTION_PATTERNS.length; i++) {

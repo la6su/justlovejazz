@@ -1,11 +1,11 @@
 import UIkit from 'uikit'
 import { initRouter } from './router'
-import { bootstrap as bootstrapApp, type BootstrapOptions } from './main-app'
 import { BlurFade } from './Experience/BlurFade'
 import { NoiseText } from './Experience/NoiseText'
 import { eventBus } from './core/EventBus'
 import { initWorkCards } from './UI/WorkCards'
 import { getSoundMuted, setSoundMutedPreference } from './core/SfxSystem'
+import { prefersReducedMotion } from './core/motionPolicy'
 // LANG_KEY handled by i18n.ts
 
 // ── Config: sound toggle (splash overlay) ──
@@ -102,14 +102,55 @@ function updateLoaderProgress(pct: number): void {
   ring.style.strokeDashoffset = String(offset)
 }
 
+let _bootstrapped = false
+
 async function boot(): Promise<void> {
-  const opts: BootstrapOptions = {
-    progress: (pct) => {
-      updateLoaderProgress(Math.min(100, pct))
-    },
+  if (_bootstrapped) return
+  const progress = (pct: number) => updateLoaderProgress(Math.min(100, pct))
+
+  // D-5 fix: set _bootstrapped AFTER the try block. Previously it was set
+  // BEFORE → a failed Experience.init() left _bootstrapped=true, preventing
+  // retry (user had to reload the page). Now if init throws, the catch block
+  // fires jlz:webgl-failed and _bootstrapped stays false → user can retry.
+  try {
+    const { ErrorTracker } = await import('./core/ErrorTracker')
+    ErrorTracker.init()
+    // syncReducedMotionDataset() is already called in entry-shell.ts;
+    // it is idempotent so we skip the second call here.
+
+    const bootStart = performance.now()
+    progress(15)
+
+    const { UIManager } = await import('./UI/UIManager')
+    const ui = new UIManager()
+    ui.init()
+    progress(40)
+
+    const { Experience } = await import('./Experience/Experience')
+    progress(55)
+
+    const experience = new Experience(ui)
+    await experience.init()
+    progress(95)
+    // Small delay at 95% so user sees 'Ready' status before 100% + curtain split
+    await new Promise((resolve) => setTimeout(resolve, 150))
+    progress(100)
+
+    // ── Fire jlz:webgl-ready → fades out #jlz-app-loader + animates titles ──
+    const INTRO_MS = 600
+    const elapsed = performance.now() - bootStart
+    const readyAt = Math.max(0, INTRO_MS - elapsed)
+
+    setTimeout(() => {
+      eventBus.emit('jlz:webgl-ready')
+    }, prefersReducedMotion() ? 0 : readyAt)
+    _bootstrapped = true
+  } catch (e) {
+    console.error('[entry-app] bootstrap failed:', e)
+    eventBus.emit('jlz:webgl-failed')
+    // D-5: _bootstrapped stays false → allows retry without page reload
   }
 
-  await bootstrapApp(opts)
   scheduleUiKitRefresh()
 }
 

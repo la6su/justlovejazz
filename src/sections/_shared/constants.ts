@@ -108,11 +108,6 @@ export function storyBottom(content: string, marker: string = '—'): string {
   `
 }
 
-/** BOTTOM block for content sections — wraps cards/grid/list content. */
-export function contentBottom(content: string): string {
-  return storyBottom(content)
-}
-
 /** Stacked uk-text-meta description lines below a section title.
  *  Accepts an i18n key prefix and string lines — generates data-i18n keys
  *  automatically (prefix.desc1, prefix.desc2, ...). */

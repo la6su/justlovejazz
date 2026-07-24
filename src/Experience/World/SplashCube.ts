@@ -17,10 +17,9 @@
 // transparent body so PMREM and the section lights remain stable on both paths.
 
 import * as THREE from 'three'
-import { organicValue } from '../../Utils/Noise'
 import { BakuRole, type BakuMaterialState } from '../../core/types'
+import { prefersReducedMotion } from '../../core/motionPolicy'
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js'
-// (PlayButton3D import removed — dead render path deleted)
 
 interface BakuMaterialParams {
   color: THREE.Color
@@ -31,9 +30,6 @@ interface BakuMaterialParams {
 }
 
 // (setTransmissionEnabled removed — dead export, zero callers.)
-
-/** Rotation per section transition (radians). ~30° = π/6. */
-const ROT_PER_TRANSITION = Math.PI / 6
 
 /**
  * The glass shell is CPU-deformed. Updating it every display frame makes the
@@ -87,12 +83,7 @@ export class SplashCube extends THREE.Mesh {
   // reading as an added wireframe or a flat blue block.
   private _themeTint = new THREE.Color(0x5e5667)
 
-  // Transition state
-  private _transitionT = 0
-  private _transitionDir = 0
   private _idleRotY = 0
-  private _prevTransitionT = 0
-  private _prevTransitionDir = 0
 
   // ── Cube face rotation ──
   // 6 sections = 6 cube faces. Each section maps to a target Y rotation
@@ -120,6 +111,16 @@ export class SplashCube extends THREE.Mesh {
   /** True only while an authored cube reaction still needs animation frames. */
   get isAmbientlyAnimated(): boolean {
     return this.visible && (this.jellyEnergy > 0.001 || this.jellyTarget > 0.001)
+  }
+
+  /** True while the opener scale-pulse is animating (opening or closing). */
+  get isOpenerActive(): boolean {
+    return this.openerPhase !== 'done' && this.openerPhase !== 'idle'
+  }
+
+  /** True while the cube is rotating to a new face (section change). */
+  get isRotating(): boolean {
+    return this._faceLerp < 1
   }
 
   // Scratch
@@ -228,6 +229,15 @@ export class SplashCube extends THREE.Mesh {
   // (setProgress removed — dead no-op, zero callers.)
 
   triggerOpener(): void {
+    // Under reduced-motion the opener never animates (baku.update() is skipped
+    // by World), so snap immediately to 'done' — otherwise openerPhase stays
+    // 'opening' forever and forces continuous rendering (B-1).
+    if (prefersReducedMotion()) {
+      this.openerPhase = 'done'
+      this.openerProgress = 0
+      this.openerTarget = 0
+      return
+    }
     this.openerPhase = 'opening'
     this.openerTarget = 1
     this.requestJellyPulse()
@@ -263,11 +273,6 @@ export class SplashCube extends THREE.Mesh {
       metalness: params.metalness ?? this.targetParams.metalness,
       role: (params.role ?? this.targetParams.role) as BakuRole,
     }
-  }
-
-  setTransition(t: number, dir: number): void {
-    this._transitionT = t
-    this._transitionDir = dir
   }
 
   /** Rotate cube to show the face for the given section index.
@@ -321,7 +326,7 @@ export class SplashCube extends THREE.Mesh {
   // ════════════════════════════════════════════════════════════════════
   // UPDATE — called every frame when rendering
   // ════════════════════════════════════════════════════════════════════
-  update(dt: number, _renderer?: THREE.WebGLRenderer): void {
+  update(dt: number): void {
     this.time += dt
 
     // A driven envelope gives the silicone wobble a quick response and a long,
@@ -341,23 +346,7 @@ export class SplashCube extends THREE.Mesh {
     }
     this.jellyWasActive = jellyActive
 
-    // (CubeCamera refresh REMOVED — glass uses scene.environment PMREM which
-    //  is static, zero per-frame cost. This was the #1 GPU consumer: 6-face
-    //  cubemap render every 3rd frame = ~30% of frame budget.)
-
-    // ── Transition motion (same as before) ──
-    const committed =
-      this._prevTransitionDir !== 0 && this._transitionDir === 0 && this._prevTransitionT > 0.5
-    if (committed) {
-      this._idleRotY += this._prevTransitionDir * ROT_PER_TRANSITION
-    }
-
     // ── Face rotation animation (absolute lerp from start to target) ──
-    // D-16 fix: was using incremental `delta * ease * dt * 4.5` which
-    // undershoots the target (cumulative sum < delta) then snaps at the end.
-    // Now uses absolute positioning: idleRotY = start + delta * ease — smooth,
-    // exact arrival, no snap. The shortest angular path was already normalized
-    // in rotateToFace() and stored in _startFaceDelta.
     if (this._faceLerp < 1) {
       this._faceLerp = Math.min(1, this._faceLerp + dt * 1.8) // ~0.55s at 60fps
       const ease = this._faceLerp * this._faceLerp * (3 - 2 * this._faceLerp)
@@ -366,26 +355,7 @@ export class SplashCube extends THREE.Mesh {
         this._idleRotY = this._targetFaceRotY
       }
     }
-
-    const tEase = this._transitionT * this._transitionT * (3 - 2 * this._transitionT)
-    const sinT = Math.sin(tEase * Math.PI)
-    const dir = this._transitionDir || this._prevTransitionDir
-
-    // Rotation Y (persistent) — _idleRotY now driven by face lerp + transition
-    this.rotation.y = this._idleRotY + dir * tEase * ROT_PER_TRANSITION
-    // Tilt X (transient)
-    this.rotation.x = sinT * 0.12 * dir
-    // Dutch roll Z (transient)
-    this.rotation.z = sinT * 0.06 * dir
-    // Drift XY + lift (transient)
-    this.position.x = organicValue(this.time, 10, 0.15, 0.08) * sinT * dir
-    this.position.y = organicValue(this.time, 20, 0.18, 0.08) * sinT * dir
-    this.position.y += sinT * 0.15
-    // Scale pulse (transient)
-    this.scale.setScalar(1 + sinT * 0.05)
-
-    this._prevTransitionT = this._transitionT
-    this._prevTransitionDir = this._transitionDir
+    this.rotation.y = this._idleRotY
 
     // ── Opener (scale pulse, not face separation) ──
     if (this.openerPhase !== 'done' || this.openerProgress > 0.01) {

@@ -36,7 +36,7 @@ export class UIMenu {
         <a class="jlz-topbar__brand" href="/" aria-label="JUSTLOVEJAZZ — Studio">JUSTLOVEJAZZ</a>
         <div class="jlz-topbar-controls uk-flex uk-flex-middle">
           <button class="uk-icon-button jlz-lang-toggle" type="button" id="jlz-lang-toggle"
-                  aria-label="Switch language" title="Language"
+                  aria-label="Switch language" aria-pressed="false" title="Language"
                   uk-tooltip="pos: bottom; delay: 200">
             <span class="jlz-lang-label">EN</span>
           </button>
@@ -161,6 +161,9 @@ export class UIMenu {
     const lang = getLang()
     const label = this._langBtn?.querySelector('.jlz-lang-label')
     if (label) label.textContent = lang
+    // aria-pressed: true when RU (the alternate language) is active.
+    this._langBtn?.setAttribute('aria-pressed', String(lang === 'RU'))
+    this._langBtn?.setAttribute('aria-label', `Switch language, current: ${lang}`)
   }
 
   dispose(): void {
