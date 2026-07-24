@@ -4,16 +4,23 @@ This is a concise release-level record. Implementation decisions belong in
 [`WORKLOG.md`](../WORKLOG.md); completed plans remain available through Git
 history.
 
-## 2026-07-25 — Full CSS unification — UIKit 3 native-first (PR #175)
+## 2026-07-24 — Inverse theme fix + CSS minimization + 3D works text screen (PR #174)
 
-- Created `docs/PLAN-css-unification.md` — 5-stage minimization plan.
-- Updated `docs/RULES.md` — added UIKit native-first rules.
-- Stage 1: deleted dead CSS + migrated heading typography to UIKit variables.
-- Stage 2: consolidated topbar/storyline/menu-nav flex duplicates.
-- Stage 5: migrated blog navbar typography to `@navbar-nav-item-*` variables.
-- Stage 4: consolidated contact-footer/menu-stat flex duplicates.
-- main.less: 2487 → 2398 (−89 LOC). blog.less: 352 → 338 (−14 LOC).
-  Total: −103 LOC (−3.6%). main JS chunk: 155.23 → 153.75 KB.
+- Fixed inverse theme bug: clicking brand from /works (inverse) to home now
+  correctly applies the intro section's inverse theme. Root cause:
+  ContentReveal missed the initial `jlz:route-change` (fired before
+  Experience.init). Added `applyInitialTheme()` in constructor + always
+  send `themeChanged: true` so 3D layer re-syncs.
+- Minimized main.less: 2486 → 2399 lines (−87 LOC). Removed ~20
+  UIKit-duplicating rules (box-sizing, body reset, nav resets, button hook
+  duplicates, dead `.jlz-visually-hidden`, `!important` overrides replaced
+  with markup utility classes).
+- Added 3D curved text screen on /works: `WorksTextScreen.ts` renders the
+  section title as a holographic transparent layer behind the work cards.
+  CylinderGeometry segment + TSL material with canvas-texture sampling,
+  reveal-driven alpha, time pulse, and inverse-theme color flip.
+- Inverse theme audit: verified all 6 pages + fullscreen overlay in both
+  auto and inverse modes. No contrast issues.
 
 ## 2026-07-24 — CSS minimization + /works texture fix (PR #173)
 

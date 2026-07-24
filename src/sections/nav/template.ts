@@ -247,7 +247,7 @@ const NAV_ITEMS: NavItem[] = [
 function statColumn(): string {
   return `
     <div class="jlz-menu-col">
-      <div class="jlz-menu-stat">
+      <div class="jlz-menu-stat uk-flex uk-flex-column">
         <span class="jlz-menu-stat__num">07</span>
         <span class="jlz-menu-stat__label" data-i18n="menu.stat.sections">SECTIONS</span>
       </div>

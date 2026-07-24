@@ -1,76 +1,81 @@
 # Worklog
 
-## 2026-07-25 — Full CSS unification — UIKit 3 native-first
+## 2026-07-24 — Inverse theme fix + CSS minimization + 3D works text screen
 
 ### Decision
 
-Comprehensive staged refactoring of all Less files in `src/assets/` to
-minimize the CSS bundle by replacing custom `.jlz-*` rules with native
-UIKit 3 utilities, components, and Less variable overrides. Created
-`docs/PLAN-css-unification.md` as the detailed plan. Updated `docs/RULES.md`
-with explicit UIKit-native-first rules. Updated `docs/README.md` ownership
-map.
+Three tasks: (1) fix inverse theme bug when clicking brand from /works;
+(2) minimize main.less further using UIKit3 utilities; (3) add 3D curved
+transparent text screen behind works cards; (4) audit inverse theme across
+all pages and fullscreen overlay.
 
 ### Changes
 
-**Documentation:**
-- Created `docs/PLAN-css-unification.md` — 5-stage minimization plan with
-  exact file:line references, LOC estimates, and risk assessment
-- Updated `docs/RULES.md` — added 3 explicit UI rules: UIKit native-first,
-  UIKit variable overrides over custom CSS, genuinely bespoke CSS only
-- Updated `docs/README.md` — added PLAN-css-unification.md to ownership map
+- **Task 1 — Inverse theme fix (ContentReveal):** The bug was that
+  ContentReveal missed the initial `jlz:route-change` (fired by router.ts
+  before Experience.init creates ContentReveal), so `uk-light` from
+  index.html's default stayed on `<body>` until the first section nav.
+  Fix: added `applyInitialTheme()` in the constructor that finds the active
+  section and applies its theme immediately. Also: resolve `sectionIndex`
+  from the config (not from the stale `currentSectionIndex` that was reset
+  to -1 on route-change), and always send `themeChanged: true` so the 3D
+  layer (ground, baku, particles, text screen) re-syncs on every
+  applyTheme call.
 
-**Stage 1 — Dead CSS + base resets + heading variable migration (−67 LOC):**
-- Deleted `* { box-sizing }` (UIKit base provides)
-- Deleted `body { margin; background; color }` (UIKit base + @global-* provide)
-- Deleted `html, body { font-family !important }` (@global-font-family provides)
-- Deleted `h1..h6, .uk-h*, .uk-heading-*` selector (22 LOC) — migrated to
-  `@base-heading-text-transform` + `@base-heading-letter-spacing` in
-  `console-theme/_import.less`
-- Deleted `.jlz-visually-hidden` (dead — zero markup refs)
-- Deleted `.jlz-fs-overlay .jlz-fs-* { color }` (children inherit)
-- Deleted `.jlz-fs-close { color }` (@close-color provides)
-- Deleted `.jlz-sheet-close { color: inherit }` (UIKit .uk-close provides)
-- Deleted blog.less `.uk-card-title` rules (dead — zero .uk-card markup)
+- **Task 2 — CSS minimization (−87 LOC):** main.less 2486→2399 lines.
+  Removed UIKit-duplicating rules:
+  - `* { box-sizing }` (UIKit base already emits it)
+  - `body { margin; background; color }` (UIKit base + _import.less §3)
+  - `.jlz-visually-hidden` (dead — zero refs)
+  - `.jlz-experiment-footer__mode { color }` (inherited body color)
+  - `.jlz-experiment-footer__state { color }` → `uk-text-muted` in markup
+  - `.jlz-section-bottom .jlz-service-desc { margin-top:0 !important }`
+    (removed `uk-margin-small-top` from `i18nDesc()` helper instead)
+  - `.jlz-service-desc .uk-text-meta { color }` (UIKit `.uk-text-meta` already sets it)
+  - `.jlz-service-explore { font-weight; border-radius }` (hook-button provides them)
+  - `.jlz-sheet-close { color:inherit }` (UIKit `.uk-close` already sets color)
+  - `.jlz-contact-footer__intro { align-items !important; text-align !important }`
+    (fixed markup: `uk-flex-middle uk-text-center` → `uk-flex-top uk-text-left`)
+  - `.jlz-contact-footer__actions .jlz-sheet-close { margin-left:auto }` →
+    `uk-margin-auto-left` in markup
+  - `.jlz-menu-nav` (UIKit `.uk-nav` already resets list-style/margin/padding)
+  - `.jlz-menu-stat` → `uk-flex uk-flex-column` in markup
+  - `.jlz-menu-col--stat { align-self:auto }` (auto is default)
+  - `.jlz-menu-nav__item { position:relative }` (no abs descendants)
+  - `.jlz-menu-nav__toggle` reset props (no-ops on `<a href>`)
+  - `.jlz-menu-nav__subs` reset props (UIKit `.uk-nav-sub` provides them)
+  - `.jlz-topbar-controls { display:flex; align-items }` (markup has `uk-flex uk-flex-middle`)
+  - `.jlz-contact-launcher__button` + `:hover` (hook-button-primary provides bg/color/shadow)
+  - `.jlz-menu-launcher { background; border-radius }` (hook-button-default provides them)
 
-**Stage 2 — Topbar/storyline/works-index/menu-nav consolidation (−18 LOC):**
-- `.jlz-topbar` — deleted display/align-items/justify-content (markup has uk-flex utilities)
-- `.jlz-topbar-controls` — deleted display/align-items (markup has uk-flex uk-flex-middle)
-- `.jlz-menu-nav` — deleted entire rule (UIKit .uk-nav provides list-reset)
-- `.jlz-menu-nav__subs` — deleted list-style/margin/padding (UIKit .uk-nav-sub provides)
-- `.jlz-storyline__items` — deleted display/align-items; added uk-flex uk-flex-middle to CinematicNav.ts markup
+- **Task 3 — 3D curved text screen (WorksTextScreen.ts):** New 3D element
+  on /works — a gently curved transparent plane behind the work cards that
+  renders the section title + lead as a canvas-generated text texture.
+  - CylinderGeometry segment (12 units wide, 5 tall, 0.12 rad curvature)
+  - MeshBasicNodeMaterial with TSL: samples canvas texture, flips text
+    color via `mix()` based on `isLight` uniform, modulates alpha by
+    reveal + subtle time pulse
+  - Positioned at z=-5.5 (behind cards at z≈-3), renderOrder=1
+  - `setSection(index)` regenerates the canvas texture with the section copy
+  - `setTheme(isLight)` flips text color for inverse contrast
+  - Integrated into WorksPlaneStage: created in `init()`, updated in
+    `update()`, disposed in `dispose()`, section synced in `setActive()`,
+    theme synced via `setTheme()`
+  - Experience.ts calls `worksPlaneStage.setTheme()` on `jlz:theme-applied`
 
-**Stage 5 — blog.less polish + navbar variable migration (−5 LOC):**
-- Deleted `body { background; color }` (UIKit base provides)
-- Deleted `.jlz-blog-header .uk-navbar-container { background: transparent !important }` (@navbar-background provides)
-- Deleted `.jlz-blog-header .uk-navbar-nav > li > a { font-size; font-weight; letter-spacing; text-transform }` — migrated to `@navbar-nav-item-*` variables in `_import.less`
-
-**Stage 3 — Works cards (skipped):**
-- Audited `.jlz-works-composition > *` and `.jlz-work-card__*` — all genuinely
-  bespoke (3D plane-origin handoff, perspective/rotateX/Y). No safe deletions.
-
-**Stage 4 — Menu sheet + contact footer cleanup (−13 LOC):**
-- `.jlz-contact-footer__actions` — deleted display/align-items; added uk-flex uk-flex-middle uk-width-1-1 to lab-overlay/template.ts markup
-- `.jlz-menu-stat` — deleted display/flex-direction (markup already has uk-flex uk-flex-column from prior PR)
-- `.jlz-menu-col--stat { align-self: auto }` — deleted (auto is default); removed class from nav/template.ts markup
-
-### Bundle impact
-
-| File | Before | After | Delta |
-|------|--------|-------|-------|
-| main.less | 2487 | 2398 | −89 LOC (−3.6%) |
-| blog.less | 352 | 338 | −14 LOC (−4.0%) |
-| **Total** | **2839** | **2736** | **−103 LOC (−3.6%)** |
-| main JS chunk | 155.23 KB | 153.75 KB | −1.48 KB |
-| blog CSS | 166.15 KB | 165.86 KB | −0.29 KB |
+- **Task 4 — Inverse theme audit:** Verified all pages (home, /works,
+  /services, /manifesto, /lab, /contact) in both auto and inverse modes.
+  uk-light toggles correctly per-section. FullscreenOverlay has hardcoded
+  `uk-light` (always dark bg + light text) — correct. No contrast issues
+  found. Theme toggle works on all pages. Brand-click from /works (inverse)
+  to home now correctly applies the intro section's inverse theme.
 
 ### Verification
 
 `type-check` 0 errors, `lint` 0 errors (60 pre-existing warnings),
 `test:unit` 105/105, `test` (Playwright e2e) 12/12, `build` green.
-Browser-verified: home, /works, /services, /manifesto, /lab, /contact, /blog
-— all load without errors. No console errors (only expected WebGPU fallback
-warning).
+Browser-verified: all 6 pages in auto + inverse, fullscreen overlay,
+theme toggle, brand-click navigation.
 
 ## 2026-07-24 — CSS minimization + /works texture fix
 

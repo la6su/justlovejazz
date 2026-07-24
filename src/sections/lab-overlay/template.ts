@@ -9,7 +9,7 @@ import { sectionShell } from '../_shared/constants'
 
 function contactFooterContent(): { top: string; bottom: string } {
   const top = `
-    <div class="jlz-section-top jlz-contact-footer__intro uk-flex uk-flex-column uk-flex-middle uk-text-center">
+    <div class="jlz-section-top jlz-contact-footer__intro uk-flex uk-flex-column uk-flex-top uk-text-left">
       <span class="jlz-contact-footer__kicker" data-i18n="contactFooter.kicker">Final frame · open channel</span>
       <h2 class="studio-title uk-heading-large uk-margin-small-top uk-margin-remove-bottom" data-blur-fade="off"
           data-i18n="contactFooter.title">Let’s make something worth remembering.</h2>
@@ -30,7 +30,7 @@ function contactFooterContent(): { top: string; bottom: string } {
         <span class="jlz-telegram-cta__arrow" aria-hidden="true">↗</span>
       </a>
       <a class="jlz-contact-footer__email" href="mailto:hello@justlovejazz.com">hello@justlovejazz.com</a>
-      <button class="uk-close-large jlz-sheet-close" type="button" uk-close
+      <button class="uk-close-large uk-margin-auto-left" type="button" uk-close
               data-close-cinematic-sheet aria-label="Close contact footer"></button>
     </div>
   `
