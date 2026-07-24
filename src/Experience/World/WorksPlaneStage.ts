@@ -45,7 +45,7 @@ const STACKED_LAYOUT: readonly [CaseLayout, CaseLayout] = [
 
 export class WorksPlaneStage extends THREE.Group {
   private cards: CasePlane[] = []
-  private textScreen: WorksTextScreen | null = null
+  public textScreen: WorksTextScreen | null = null
   private _camera: THREE.Camera | null = null
   private _raycaster = new THREE.Raycaster()
   private _ndc = new THREE.Vector2()
@@ -98,10 +98,10 @@ export class WorksPlaneStage extends THREE.Group {
       this.add(plane)
     })
 
-    // Back-text screen behind the work cards — flat plane with scrolling
+    // Back-text screen behind the work cards — curved cylinder with scrolling
     // text texture and vertical wipe reveal (junni BackText pattern).
+    // The WorksTextScreen constructor sets its own rotation + position.
     this.textScreen = new WorksTextScreen()
-    this.textScreen.position.set(0, 0, -6) // behind the cards (cards at z≈-3)
     this.textScreen.setReveal(0)
     this.add(this.textScreen)
   }
@@ -146,15 +146,12 @@ export class WorksPlaneStage extends THREE.Group {
     const height = window.innerHeight
     const aspect = width / height
     // 16:9 = 1.78 → scale 1.0. Wider screens get larger cards, narrower get smaller.
-    // Clamp to [0.7, 1.4] so cards don't get absurdly large/tiny.
     this._aspectScale = THREE.MathUtils.clamp(aspect / 1.78, 0.7, 1.4)
-    // Scale the curved text screen to fill the viewport width.
-    // The cylinder radius (30) + arc (0.55 rad) gives a base width of ~16 units.
-    // Scale X to fill wider/narrower screens; keep Y proportional.
+    // The text screen geometry is fixed (radius=20, arc=0.8 rad → ~16 units wide).
+    // Scale it slightly to fill wider/narrower screens.
     if (this.textScreen) {
-      const screenW = THREE.MathUtils.clamp(aspect * 4.5, 10, 24)
-      this.textScreen.scale.x = screenW / 16
-      this.textScreen.scale.y = THREE.MathUtils.clamp(screenW / 16 * 0.85, 0.7, 1.5)
+      const screenScale = THREE.MathUtils.clamp(aspect / 1.78, 0.8, 1.3)
+      this.textScreen.scale.set(screenScale, screenScale, screenScale)
     }
   }
 

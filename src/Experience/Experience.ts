@@ -691,14 +691,18 @@ export class Experience {
       !this._reducedMotion && (this.world?.hasVisibleAmbientMotion() ?? false)
 
     // ── Zoom pulse active ──
-    // Camera.pulse() sets a two-phase FOV transition — keep rendering while it animates.
     const camPulsing = this.camera.isPulsing
+
+    // On /works, keep rendering so the back-text UV scroll + wipe stay animated
+    // even when cards have settled (on-demand rendering would freeze the scroll).
+    const worksScrollActive = document.body.dataset.page === 'works' && !this._reducedMotion
 
     if (
       navActive ||
       introActive ||
       carouselActive ||
       worksPlaneActive ||
+      worksScrollActive ||
       drawTrailActive ||
       openerActive ||
       burstActive ||
@@ -886,6 +890,7 @@ export class Experience {
         !introActive &&
         !carouselActive &&
         !worksPlaneActive &&
+        !worksScrollActive &&
         !openerActive &&
         !burstActive &&
         !camShaking &&

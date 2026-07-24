@@ -393,7 +393,15 @@ export class World extends THREE.Group {
     // skip baku rotation, cursor light, draw trail, particle drift, and
     // BakuCarousel updates — the last rendered frame stays on screen.
     // Exception: Experience forces needsRender while hasVisibleParticles().
-    if (!needsRender) return
+    if (!needsRender) {
+      // Still update the works stage + text screen on /works so the UV scroll,
+      // wipe reveal, and card reveal continue even when the main scene is idle.
+      if (this.worksPlaneStage && document.body.dataset.page === 'works') {
+        this.worksPlaneStage.setActive(true, this.worksPlaneStageSection)
+        this.worksPlaneStage.update(deltaTime)
+      }
+      return
+    }
 
     if (this.worksPlaneStage) {
       this.worksPlaneStage.setActive(

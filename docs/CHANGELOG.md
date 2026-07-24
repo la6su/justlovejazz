@@ -4,6 +4,16 @@ This is a concise release-level record. Implementation decisions belong in
 [`WORKLOG.md`](../WORKLOG.md); completed plans remain available through Git
 history.
 
+## 2026-07-25 — Fix back-text visibility: orientation + DoubleSide + continuous render (PR #180)
+
+- Fixed cylinder orientation: `DoubleSide` so concave surface renders toward
+  camera. Reduced radius 20→12, increased arc 0.8→1.2 rad for full-width.
+- Alpha boost: luminance × 3.0 clamped to [0,1] for visible pixel text.
+- Continuous rendering on /works: `worksScrollActive` flag keeps UV scroll
+  + wipe animating even when cards have settled (on-demand rendering fix).
+- World.update() bypass: works stage updates even when `!needsRender`.
+- VLM-verified: "SELECTED WORKS" visible in pixel font behind cards.
+
 ## 2026-07-25 — Works BackText: curved plane + pixel font + synced wipe (PR #179)
 
 - **Curved plane:** Replaced flat PlaneGeometry with CylinderGeometry
