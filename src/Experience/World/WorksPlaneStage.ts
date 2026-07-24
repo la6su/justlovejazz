@@ -148,12 +148,13 @@ export class WorksPlaneStage extends THREE.Group {
     // 16:9 = 1.78 → scale 1.0. Wider screens get larger cards, narrower get smaller.
     // Clamp to [0.7, 1.4] so cards don't get absurdly large/tiny.
     this._aspectScale = THREE.MathUtils.clamp(aspect / 1.78, 0.7, 1.4)
-    // Scale the text screen to match the viewport width.
+    // Scale the curved text screen to fill the viewport width.
+    // The cylinder radius (30) + arc (0.55 rad) gives a base width of ~16 units.
+    // Scale X to fill wider/narrower screens; keep Y proportional.
     if (this.textScreen) {
-      const screenAspect = width / height
-      const screenW = THREE.MathUtils.clamp(screenAspect * 4, 10, 24)
+      const screenW = THREE.MathUtils.clamp(aspect * 4.5, 10, 24)
       this.textScreen.scale.x = screenW / 16
-      this.textScreen.scale.y = THREE.MathUtils.clamp(screenW / 16 * 0.8, 0.6, 1.4)
+      this.textScreen.scale.y = THREE.MathUtils.clamp(screenW / 16 * 0.85, 0.7, 1.5)
     }
   }
 
@@ -161,12 +162,12 @@ export class WorksPlaneStage extends THREE.Group {
     this._active = active
     this._sectionIndex = THREE.MathUtils.clamp(sectionIndex, 0, SECTION_PROJECTS.length - 1)
     this.visible = active
-    // Sync the back-text screen to the active section + visibility state.
-    // Full reveal (1.0) — the vertical wipe expands from center to edges,
-    // matching the junni BackText pattern.
+    // Sync the back-text section. The reveal (visibility) is driven
+    // dynamically in update() based on the average card reveal, so the
+    // vertical wipe stays synchronized with card arrival/departure.
     if (this.textScreen) {
       this.textScreen.setSection(this._sectionIndex)
-      this.textScreen.setReveal(active ? 1.0 : 0)
+      if (!active) this.textScreen.setReveal(0)
     }
   }
 
@@ -279,6 +280,20 @@ export class WorksPlaneStage extends THREE.Group {
       card.setTransition(0)
       card.update(dt, this._active)
     })
+
+    // Sync the back-text visibility with the average card reveal.
+    // The vertical wipe expands from center as cards appear, creating a
+    // synchronized "back wall lights up" effect.
+    const visibleCards = this.cards.filter((c) => {
+      const idx = c.userData.projectIndex as number
+      return activeProjects[0] === idx || activeProjects[1] === idx
+    })
+    if (visibleCards.length > 0 && this.textScreen) {
+      const avgReveal = visibleCards.reduce((sum, c) => sum + (this._reveal.get(c) ?? 0), 0) / visibleCards.length
+      // Map card reveal [0..1] to text visibility [0..1] with a slight delay
+      // so the text appears just after cards start arriving.
+      this.textScreen.setReveal(THREE.MathUtils.clamp(avgReveal * 1.2 - 0.1, 0, 1))
+    }
 
     // Update the back-text screen — keeps its visibility + time uniform in sync.
     this.textScreen?.update(dt)

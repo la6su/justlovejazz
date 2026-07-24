@@ -4,6 +4,19 @@ This is a concise release-level record. Implementation decisions belong in
 [`WORKLOG.md`](../WORKLOG.md); completed plans remain available through Git
 history.
 
+## 2026-07-25 — Works BackText: curved plane + pixel font + synced wipe (PR #179)
+
+- **Curved plane:** Replaced flat PlaneGeometry with CylinderGeometry
+  (radius=30, arc=0.55 rad) — wraps across full viewport like junni reference.
+- **Pixel font with Cyrillic:** Pixelify Sans (self-hosted, 49KB per weight)
+  — full А-Я + а-я support. Loaded via FontFace API with monospace fallback.
+- **Vertical wipe synced with card reveal:** textScreen visibility driven
+  dynamically from average card reveal — wipe expands as cards arrive,
+  contracts as they depart.
+- **Full-width scaling:** curved screen scales dynamically in resize()
+  based on viewport aspect ratio.
+- JS heap: 15 MB stable.
+
 ## 2026-07-25 — Works BackText (junni pattern) + 3D card scaling (PR #178)
 
 - **WorksTextScreen rewritten to junni BackText pattern:** flat plane (was
