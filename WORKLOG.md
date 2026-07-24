@@ -1,5 +1,50 @@
 # Worklog
 
+## 2026-07-25 — Fix back-text visibility: orientation + DoubleSide + continuous render
+
+### Decision
+
+The curved back-text was not visible because: (1) cylinder geometry after
+`rotateY(-π/2)` faced away from the camera (FrontSide rendered the outside,
+but the camera sees the concave inside); (2) on-demand rendering stopped
+updating the text screen when cards settled; (3) the text alpha was too low.
+
+### Changes
+
+- **Cylinder orientation fixed:** The cylinder arc (thetaStart=-ARC/2,
+  thetaLength=ARC) centers on +X by default. After `rotation.y = -π/2`,
+  the arc faces -Z (toward camera). Changed `side` from `FrontSide` to
+  `DoubleSide` so both the concave and convex surfaces render.
+
+- **Reduced radius, increased arc:** SCREEN_RADIUS 20→12 (stays in FOV),
+  SCREEN_ARC 0.8→1.2 rad (~69°, fills the viewport width).
+
+- **Position simplified:** Mesh at origin (0,0,0); the cylinder surface
+  curves to z=-12 (behind cards at z≈-3). No offset needed.
+
+- **Alpha boost:** Luminance multiplied by 3.0 and clamped via `.min(1.0)`
+  for full opacity on white text pixels. Discard threshold 0.05→0.15.
+
+- **Continuous rendering on /works:** Added `worksScrollActive` flag in
+  Experience.ts — keeps `_needsRender=true` while on /works so the UV
+  scroll animation continues even when cards have settled. Without this,
+  on-demand rendering froze the text scroll after card reveal completed.
+
+- **World.update() bypass:** When `!needsRender` but on /works, still call
+  `worksPlaneStage.setActive(true, section)` + `worksPlaneStage.update(dt)`
+  so the text screen visibility + scroll update. Previously, the
+  `if (!needsRender) return` gate blocked all works stage updates.
+
+- **Made `textScreen` public** on WorksPlaneStage so World can access it
+  directly if needed (currently accessed via stage.update()).
+
+### Verification
+
+`type-check` 0 errors, `lint` 0 errors (60 pre-existing warnings),
+`test:unit` 105/105, `test` (Playwright e2e) 12/12, `build` green.
+VLM-verified: "SELECTED WORKS" visible behind cards in pixel font on
+section 1. Text updates on section changes. No console errors.
+
 ## 2026-07-25 — Works BackText: curved plane + pixel font + synced wipe
 
 ### Decision
