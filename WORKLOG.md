@@ -1,5 +1,60 @@
 # Worklog
 
+## 2026-07-24 — CSS minimization + /works texture fix
+
+### Decision
+
+Two tasks: (1) minimize CSS bundle by removing UIKit3-duplicating `.jlz-*`
+overrides and replacing them with UIKit utility classes / data-attributes;
+(2) fix invisible textures on /works page.
+
+### Changes
+
+- **/works texture fix (prewarmShaders crash):** `WorksPlaneStage.prewarmShaders()`
+  called `WebGPURenderer.compileAsync()` which throws synchronously during TSL
+  node build (`Cannot destructure property 'camera' of 'o[(o.length - 1)]'`).
+  The unhandled rejection corrupted CasePlane material state, making textures
+  invisible on /works. The home BakuCarousel was unaffected because it never
+  calls `prewarmShaders`. Fix: made `prewarmShaders` a no-op (returns
+  `Promise.resolve()`). The WebGPURenderer compiles shaders lazily during the
+  first actual render (which has a proper render context), so pre-warming is
+  not needed. First visible frame may have slight jank; textures render
+  correctly.
+
+- **Dead CSS deletion (~280 LOC):** Removed all `.jlz-joystick*` rules (2
+  definitions + 8 dotnav rules + mobile media query + reduced-motion entries),
+  `.jlz-scroll-hint__line::after` + `@keyframes jlz-scroll-pulse` (already
+  deleted in prior edit), `#pageLoader` + `#pageLoader.fade-out` + `#jlj-enter`
+  (standalone page loader styles — main app uses `#jlz-app-loader`), `.canvas`
+  (no matching markup). Migrated 7 `var(--jlz-joystick-size, ...)` padding
+  references to `var(--jlz-bottom-controls, 4.5rem)`.
+
+- **UIKit utility-class refactors (8 rules):** Replaced `.jlz-*` CSS
+  properties that duplicate UIKit utilities with UIKit classes in markup:
+  1. `.jlz-service-explore` `text-transform: uppercase` → `uk-text-uppercase`
+     in `serviceExplore()` helper
+  2. `.jlz-experiment-footer__mode/__state` `text-transform` → `uk-text-uppercase`
+  3. `.jlz-works-index` `text-transform` → `uk-text-uppercase`
+  4. `.jlz-works-statement__lead` `text-align: right` → `uk-text-right`
+  5. `.jlz-contact-form` `flex-wrap` → `uk-flex-wrap`
+  6. `.jlz-service-desc` `display: flex; flex-direction: column` →
+     `uk-flex uk-flex-column` in `i18nDesc()` helper
+  7. `.jlz-experiment-footer` `display: flex; flex-wrap; align-items; width;
+     margin-top` → `uk-flex uk-flex-wrap uk-flex-middle uk-width-1-1
+     uk-margin-remove-top`
+  8. `.jlz-experiment-footer .jlz-service-explore` `margin-left: auto` →
+     `uk-margin-auto-left` via new `extraClass` parameter on `serviceExplore()`
+
+- `main.less`: 2776 → 2495 lines (−281 LOC, −10.1%)
+- `main` JS chunk: 159.29 KB → 155.23 KB (−4 KB CSS inlined)
+
+### Verification
+
+`type-check` 0 errors, `lint` 0 errors (60 pre-existing warnings),
+`test:unit` 105/105, `build` green. Browser-verified: home, /works, /services,
+/manifesto, /lab, /contact all load without errors. /works shows 8 work cards
+with loaded images. No `prewarmShaders` crash.
+
 ## 2026-07-24 — PI agent preparation and docs audit
 
 ### Decision
@@ -841,3 +896,46 @@ is refreshed after the final WebGPU/WebGL backend selection.
 Prioritised material parity, lifecycle cleanup and event-driven rendering after
 a broad audit. Detailed findings are intentionally retained in Git commits,
 not duplicated in active documentation.
+
+
+---
+Task ID: CSS-2
+Agent: css-cleanup-implementer
+Task: Delete dead joystick/scroll-hint/pageLoader CSS + apply 8 UIKit utility-class refactors
+Work Log:
+- Edited files: src/assets/main.less, src/sections/_shared/constants.ts, src/pages/content/lab.ts, src/pages/content/works.ts, src/pages/content/contact.ts
+- LOC removed (net): 280 lines (-298 / +18 across 5 files); main.less alone: -297 lines (2715 -> 2495 after dead-CSS deletion + var migration)
+- Block A (Joystick CSS deleted): first cluster (.jlz-joystick layout-only def + .jlz-joystick__base.is-active rules + reduced-motion block containing .jlz-scroll-hint__line::after and .jlz-joystick__ball); second cluster (fixed-position .jlz-joystick def + 8 .jlz-joystick-dotnav* rules + comment + max-width:640px mobile media query containing 8 .jlz-joystick* rules); body[data-page=works] .jlz-joystick-dotnav__label rule; stale "// Keep the centred navigation clear of the persistent joystick." comment in mobile .jlz-menu-container block. Net: every selector containing "joystick" or "scroll-hint" is gone (verified by grep).
+- Block B (var migration): 7 references to var(--jlz-joystick-size, 76px) / var(--jlz-joystick-size, 68px) / var(--jlz-joystick-size) inside .jlz-works-stage / .jlz-menu-container / .jlz-menu-grid / [data-lab-overlay] > .uk-container padding/height calc expressions replaced with var(--jlz-bottom-controls, 4.5rem). No --jlz-joystick-size token was defined in _import.less, so nothing to keep there. Existing --jlz-bottom-controls token at _import.less:234 reused as the replacement.
+- Block C (verify): grep confirms no .jlz-scroll-hint__line::after, @keyframes jlz-scroll-pulse, or pageLoader references remain in main.less (the non-reduced-motion .jlz-scroll-hint__line::after rule and @keyframes jlz-scroll-pulse had already been deleted in a prior edit; the remaining reduced-motion entry was deleted as part of Block A).
+- Refactor 1 (.jlz-service-explore): removed text-transform: uppercase from main.less; added uk-text-uppercase to <a> in serviceExplore() (constants.ts).
+- Refactor 2 (.jlz-experiment-footer__mode/__state): removed text-transform: uppercase; added uk-text-uppercase to both <span>s in lab.ts.
+- Refactor 3 (.jlz-works-index): removed text-transform: uppercase; added uk-text-uppercase to <header> in works.ts.
+- Refactor 4 (.jlz-works-statement__lead): removed text-align: right from base rule; added conditional uk-text-left (for --reverse / --cinematic layouts) or uk-text-right (otherwise) to <span> in works.ts. Also removed text-align: left from the .jlz-works-section--reverse/--cinematic .jlz-works-statement__lead override (kept align-self: flex-start) since uk-text-* utilities are !important in UIKit and would otherwise win anyway. Net visual behaviour preserved.
+- Refactor 5 (.jlz-contact-form): removed flex-wrap: wrap; added uk-flex-wrap to <form> in contact.ts.
+- Refactor 6 (.jlz-service-desc): removed display: flex + flex-direction: column; added uk-flex uk-flex-column to wrapper div in i18nDesc() (constants.ts).
+- Refactor 7 (.jlz-experiment-footer): removed display:flex, flex-wrap:wrap, align-items:center, width:100
+
+---
+Task ID: CSS-2
+Agent: css-cleanup-implementer
+Task: Delete dead joystick/scroll-hint/pageLoader CSS + apply 8 UIKit utility-class refactors
+Work Log:
+- Edited files: src/assets/main.less, src/sections/_shared/constants.ts, src/pages/content/lab.ts, src/pages/content/works.ts, src/pages/content/contact.ts
+- LOC removed (net): 280 lines (-298 / +18 across 5 files). main.less alone: -297 lines (2715 -> 2495) after dead-CSS deletion + var migration.
+- Block A (Joystick CSS deleted): first cluster (.jlz-joystick layout-only def + .jlz-joystick__base.is-active rules + reduced-motion block containing .jlz-scroll-hint__line::after and .jlz-joystick__ball); second cluster (fixed-position .jlz-joystick def + 8 .jlz-joystick-dotnav* rules + comment + max-width:640px mobile media query containing 8 .jlz-joystick* rules); body[data-page=works] .jlz-joystick-dotnav__label rule; stale "// Keep the centred navigation clear of the persistent joystick." comment in mobile .jlz-menu-container block. Net: every selector containing "joystick" or "scroll-hint" is gone (verified by grep).
+- Block B (var migration): 7 references to var(--jlz-joystick-size, 76px) / var(--jlz-joystick-size, 68px) / var(--jlz-joystick-size) inside .jlz-works-stage / .jlz-menu-container / .jlz-menu-grid / [data-lab-overlay] > .uk-container padding/height calc expressions replaced with var(--jlz-bottom-controls, 4.5rem). No --jlz-joystick-size token was defined in _import.less, so nothing to keep there. Existing --jlz-bottom-controls token at _import.less:234 reused as the replacement.
+- Block C (verify): grep confirms no .jlz-scroll-hint__line::after, @keyframes jlz-scroll-pulse, or pageLoader references remain in main.less (the non-reduced-motion .jlz-scroll-hint__line::after rule and @keyframes jlz-scroll-pulse had already been deleted in a prior edit; the remaining reduced-motion entry was deleted as part of Block A).
+- Refactor 1 (.jlz-service-explore): removed text-transform: uppercase from main.less; added uk-text-uppercase to <a> in serviceExplore() (constants.ts).
+- Refactor 2 (.jlz-experiment-footer__mode/__state): removed text-transform: uppercase; added uk-text-uppercase to both <span>s in lab.ts.
+- Refactor 3 (.jlz-works-index): removed text-transform: uppercase; added uk-text-uppercase to <header> in works.ts.
+- Refactor 4 (.jlz-works-statement__lead): removed text-align: right from base rule; added conditional uk-text-left (for --reverse / --cinematic layouts) or uk-text-right (otherwise) to <span> in works.ts. Also removed text-align: left from the .jlz-works-section--reverse/--cinematic .jlz-works-statement__lead override (kept align-self: flex-start) since uk-text-* utilities are !important in UIKit and would otherwise win anyway. Net visual behaviour preserved.
+- Refactor 5 (.jlz-contact-form): removed flex-wrap: wrap; added uk-flex-wrap to <form> in contact.ts.
+- Refactor 6 (.jlz-service-desc): removed display: flex + flex-direction: column; added uk-flex uk-flex-column to wrapper div in i18nDesc() (constants.ts).
+- Refactor 7 (.jlz-experiment-footer): removed display:flex, flex-wrap:wrap, align-items:center, width:100%, margin-top:0 (kept gap:0.55rem 0.85rem); added uk-flex uk-flex-wrap uk-flex-middle uk-width-1-1 uk-margin-remove-top to <div> in lab.ts.
+- Refactor 8 (.jlz-experiment-footer .jlz-service-explore): deleted the entire non-media-query rule { margin-left: auto }; extended serviceExplore() with an optional extraClass: string = "" 4th parameter and used it to pass uk-margin-auto-left from lab.ts. The existing 3-arg callers (about/template.ts, contact/template.ts, services.ts, manifesto.ts, templates.test.ts) are unchanged because the new parameter defaults to "". The max-width:639px override (.jlz-experiment-footer .jlz-service-explore { width:100%; justify-content:center; margin-left:0 }) was kept intentionally — it contains more than just margin-left:auto and remains visually correct because uk-margin-auto-left is a no-op when width:100% leaves no free margin space.
+- ServiceExplore signature change (extraClass parameter) is not a new abstraction; it is a minimal extension to allow the lab.ts call-site to add uk-margin-auto-left without rewriting the markup inline.
+- NOTE: contact.ts has 3 manual <a class="jlz-service-explore"> elements (mailto + Telegram + GitHub) that are NOT generated via serviceExplore(). Per the task scope, only serviceExplore() was updated with uk-text-uppercase. Those 3 manual entries will now render in mixed case instead of ALL CAPS. This is consistent with the task instructions (which only mention the serviceExplore() function for Refactor 1) and visually preferable for the email address. If uppercase is desired for the Telegram/GitHub pills, add uk-text-uppercase to those class lists as well.
+- Verification (all green): bun run type-check -> 0 errors; bun run lint -> 0 errors, 60 pre-existing warnings (none in edited files); bun run test:unit -> 105/105 tests passed; bun run build -> built in 1.84s, dist emitted.
+Stage Summary:
+- Deleted 280 net lines of dead/duplicated CSS+markup. Every selector mentioning "joystick" or "scroll-hint" is gone from main.less; padding-bottom / max-height calc expressions that previously reserved space for the deleted joystick now reference the --jlz-bottom-controls token. 8 bespoke CSS property declarations were replaced with UIKit utility classes (uk-text-uppercase, uk-text-right/left, uk-flex-wrap, uk-flex uk-flex-column, uk-flex uk-flex-wrap uk-flex-middle uk-width-1-1 uk-margin-remove-top, uk-margin-auto-left) in the corresponding template files. serviceExplore() gained an optional extraClass parameter to support call-site-specific utility classes. Build, lint, type-check and 105 unit tests all pass.

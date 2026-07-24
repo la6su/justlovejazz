@@ -51,7 +51,7 @@ const locationSection = sectionShell('contact-03',
 const formSection = sectionShell('contact-04',
   contentTop('04', 'Form', 'Tell us about your project.', 'large', 'contact.form.title', 'contact.form.lead'),
   storyBottom(`
-    <form class="jlz-contact-form uk-flex uk-flex-center uk-flex-middle uk-margin-bottom" action="mailto:hello@justlovejazz.com" method="post" enctype="text/plain">
+    <form class="jlz-contact-form uk-flex uk-flex-wrap uk-flex-center uk-flex-middle uk-margin-bottom" action="mailto:hello@justlovejazz.com" method="post" enctype="text/plain">
       <div class="uk-inline uk-width-1-1 uk-width-medium@s">
         <span class="uk-form-icon" uk-icon="icon: mail" aria-hidden="true"></span>
         <input class="uk-input" type="text" name="subject" placeholder="What's the project?" data-i18n-placeholder="contact.form.placeholder" aria-label="Project subject" />
