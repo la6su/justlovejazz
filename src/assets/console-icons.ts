@@ -54,6 +54,15 @@ const CONSOLE_ICONS: Icons = {
 
   'sound':
     `<svg width="20" height="20" viewBox="0 0 20 20"><path ${STROKE} d="M2 7 L2 13 L6 13 L11 17 L11 3 L6 7 Z"/><path ${STROKE} d="M14 7 Q16 10 14 13"/><path ${STROKE} d="M16.5 5 Q19.5 10 16.5 15"/></svg>`,
+
+  // ── Theme (auto = sun, inverse = moon) ──
+  // Reticle sun (light/auto mode) + console moon (dark/inverse mode).
+  // Stroke width 2 matches all other console icons for visual unity.
+  'theme-auto':
+    `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M22 12h-3M5 12H2M18.5 5.5l-2 2M7.5 16.5l-2 2M18.5 18.5l-2-2M7.5 7.5l-2-2"/></svg>`,
+
+  'theme-inverse':
+    `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14A8 8 0 1 1 10 4a6 6 0 0 0 10 10Z"/><circle fill="currentColor" stroke="none" cx="14" cy="9" r="0.8"/><circle fill="currentColor" stroke="none" cx="16.5" cy="12" r="0.6"/><circle fill="currentColor" stroke="none" cx="13" cy="13" r="0.5"/></svg>`,
 }
 
 /** Register all console-themed icons with UIKit. Call after UIkit.use(Icons). */

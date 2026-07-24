@@ -41,12 +41,14 @@ tests first, then correct the stale document or implementation deliberately.
 
 ## UI, theme and content
 
-1. Use UIkit for behaviour it already owns (modal, nav/accordion, focus and
-   state classes); do not add competing hand-rolled state.
-2. Keep UIkit as the component and accessibility baseline. Put every new shared
-   visual decision in `studio-console/`; Quantum Flares remains only a temporary
-   compatibility layer during migration. Do not duplicate component behavior
-   without a concrete missing capability.
+1. Use UIkit 3 for behaviour it already owns (modal, nav/accordion, focus
+   and state classes, grid, button, icon, tooltip, slider); do not add
+   competing hand-rolled state. See [UIKIT3.md](UIKIT3.md) for the solution
+   priority order and imported component list.
+2. Keep UIkit as the component and accessibility baseline. Put every new
+   shared visual decision in `console-theme/_import.less` (theme variables)
+   or `_import.less` (design tokens + UIKit overrides). Do not duplicate
+   component behavior without a concrete missing capability.
 3. The runtime default is the shared dark Studio Console mode; inverse remains
    an explicit accessibility preference and must stay synchronized through
    `ContentReveal` and the 3D layer.
@@ -54,6 +56,7 @@ tests first, then correct the stale document or implementation deliberately.
    proper name. Router-driven translation and metadata updates remain the only
    normal update path.
 5. Maintain keyboard access and reduced-motion behaviour when changing UI.
+   `FullscreenOverlay` must enforce a focus trap and restore focus on close.
 
 ## Lifecycle and resource safety
 
@@ -63,9 +66,16 @@ tests first, then correct the stale document or implementation deliberately.
    when their owner is destroyed.
 3. Route replacement must release page-specific listeners and timers before
    replacing the DOM.
-4. Never use a raw `window.dispatchEvent` to duplicate a typed `EventBus`
-   emission. Use `eventBus.emit()` for typed lifecycle events; it bridges to
-   `window` for existing consumers.
+4. Typed lifecycle events (`jlz:webgl-ready`, `jlz:webgl-failed`,
+   `jlz:section-change`, `jlz:route-change`) must use `eventBus.emit()`; it
+   bridges to `window` for existing consumers. Other `jlz:*` events are local
+   DOM contracts — use raw `window.dispatchEvent` but do not duplicate a
+   typed `EventBus` emission. See [ARCHITECTURE.md](ARCHITECTURE.md) for the
+   full event list.
+5. Under `prefers-reduced-motion`, any authored animation (cube opener,
+   particle burst, camera pulse) must snap to its settled state synchronously
+   rather than animating — otherwise `_needsRender` never settles and the
+   scene renders continuously, which is the opposite of reduced-motion intent.
 
 ## Repository hygiene
 

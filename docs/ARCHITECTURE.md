@@ -10,14 +10,18 @@ not act as a generic brochure around a separate gallery.
 
 ```text
 index.html
-  → entry-shell.ts
-  → entry-app.ts
-  → router.ts + main-app.ts
-  → Experience.ts
-     → Renderer / World / UI / input / lifecycle
+  → entry-shell.ts          (inline splash sync, reduced-motion dataset)
+  → entry-app.ts            (router, i18n, sound/lang toggles, boot())
+    → boot()                (lazy import: ErrorTracker, UIManager, Experience)
+      → Experience.init()   (Renderer / World / UI / input / lifecycle)
 
-blog.html + blog/*.html → standalone semantic pages
+blog.html + blog/*.html → standalone semantic pages (no 3D runtime)
 ```
+
+`entry-app.ts` owns the full bootstrap: it lazy-imports ErrorTracker,
+UIManager and Experience, reports progress to the splash ring, and fires
+`jlz:webgl-ready` (or `jlz:webgl-failed` on error). There is no separate
+`main-app.ts` — it was inlined to remove a single-caller indirection.
 
 The inline splash is part of `index.html`, so it can paint before the lazy
 Three.js import. It emits/receives the bootstrap events; the user can enter
@@ -187,26 +191,36 @@ transition timing. Copy stays short, concrete and useful in both languages.
 
 ## Lifecycle and events
 
-`EventBus.ts` owns typed events (`jlz:webgl-ready`, `jlz:webgl-failed`,
-`jlz:section-change`, `jlz:route-change`) and bridges them to `window` for
-existing DOM listeners. Other DOM interaction events are intentionally local
-contracts; inspect their producer and consumer before changing their payload.
+`EventBus.ts` owns typed lifecycle events and bridges them to `window` for
+existing DOM listeners:
+
+- `jlz:webgl-ready` / `jlz:webgl-failed` (bootstrap)
+- `jlz:section-change` (story frame arrival)
+- `jlz:route-change` (SPA navigation)
+
+Other `jlz:*` events are **local DOM contracts** — they use raw
+`window.dispatchEvent(new CustomEvent(...))` and are not (yet) migrated to the
+typed bus: `jlz:theme-change`, `jlz:lang-change`, `jlz:sound-toggle`,
+`jlz:theme-applied`, `jlz:close-nav`, `jlz:open-project`, `jlz:wobble-pulse`,
+`jlz:goto-section-by-hash`, `jlz:page-section-change`, `jlz:project-navigate`.
+Inspect their producer and consumer before changing their payload.
 
 Every owner of a listener, timer, render target, texture or DOM node is
 responsible for disposing it. `Experience.destroy()` tears down the top-level
 runtime; router replacement disposes page-specific WorkCards before replacing
-the DOM.
+the DOM. `FullscreenOverlay` enforces a focus trap (Tab/Shift+Tab wraps within
+the dialog) and restores focus to the trigger on close.
 
 ## Key modules
 
 | Area            | Primary modules                                                        |
 | --------------- | ---------------------------------------------------------------------- |
-| Bootstrap       | `entry-shell.ts`, `entry-app.ts`, `main-app.ts`                        |
+| Bootstrap       | `entry-shell.ts`, `entry-app.ts`                                       |
 | Routing/content | `router.ts`, `pages/`, `sections/*/template.ts`                        |
 | Runtime         | `Experience.ts`, `Renderer.ts`, `World.ts`, `WorldConfig.ts`           |
 | Scene elements  | `Experience/World/*`, `SectionSceneFactory.ts`                         |
-| UI              | `CinematicNav.ts`, `UIMenu.ts`, `FullscreenOverlay.ts`, `WorkCards.ts` |
-| Core services   | `ThemeManager.ts`, `i18n.ts`, `pageMeta.ts`, `EventBus.ts`             |
+| UI              | `CinematicNav.ts`, `UIMenu.ts`, `UIManager.ts`, `FullscreenOverlay.ts`, `WorkCards.ts` |
+| Core services   | `ThemeManager.ts`, `i18n.ts`, `pageMeta.ts`, `EventBus.ts`, `StateBus.ts` |
 
 For code-level invariants see [RULES.md](RULES.md); for running and testing
 the project see [DEVELOPMENT.md](DEVELOPMENT.md).

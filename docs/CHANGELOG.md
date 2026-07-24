@@ -4,6 +4,46 @@ This is a concise release-level record. Implementation decisions belong in
 [`WORKLOG.md`](../WORKLOG.md); completed plans remain available through Git
 history.
 
+## 2026-07-24 — Audit cleanup and PI agent preparation (PR #171 + #172)
+
+- Deleted `PlaneTransition.ts` entirely (zero callers) + no-op
+  `resetTransition()` methods on BakuCarousel and WorksPlaneStage.
+- Deleted dead SplashCube transition path (`setTransition`, `_transitionT/Dir`,
+  40-line zero-computation block in `update()`).
+- Deleted `Experience._showreelPlayHandler` (listened for
+  `jlz:showreel-play` which was never dispatched).
+- Deleted `World.setRenderer`/`_renderer` + per-frame call (SplashCube
+  ignored the renderer param).
+- Deleted `main-app.ts` — inlined `bootstrap()` into `entry-app.ts:boot()`.
+- Removed 15+ dead APIs across 10 files (NarrativePhase enum, Section
+  ppParams/splash/update, WorldConfig.ambient, CasePlane.setParallax,
+  JunniParticles dead getters, EnvSphere.hasVisibleAmbientMotion,
+  Experience.instance static, Input.instance static, RenderPipeline
+  setGlobalBorder + dead getters, WebGPUPostPipeline.resize).
+- Deleted `tests/smoke-bg.mjs`, 5 dead console-icons, `contentBottom` alias,
+  inlined `WorldConfig.raw()` helper.
+- **Fixed B-1 (critical):** reduced-motion + opener never settled → continuous
+  rendering. `triggerOpener()` now snaps `openerPhase='done'` under
+  reduced-motion.
+- **Fixed B-2 (critical a11y):** FullscreenOverlay focus trap — focus now
+  moves into modal on open, Shift+Tab wraps to last focusable, focus restored
+  to trigger on close.
+- Fixed B-3: per-open `OverlayOptions.onClose` replaces mutable
+  `overlay.onClose` field.
+- Fixed B-4: `CinematicNav._bindTrack` clears stale `_restoreFocus` +
+  `_inactiveTimer` on route change.
+- Fixed pre-existing `WorksPlaneStage.compileAsync` type errors.
+- Added `aria-pressed` on UIMenu language toggle.
+- Deleted duplicate close-button binding in `initMenuToolbar` (Bug F).
+- Removed duplicate 60s timeout in `index.html` (B-11).
+- Added public getters `SplashCube.isOpenerActive`, `SplashCube.isRotating`,
+  `Camera.isPulsing` — removed 7 `as unknown as` casts in Experience.ts.
+- Rewrote `docs/UIKIT3.md` — removed dead Quantum Flares vendor-layer
+  references, documented actual `console-theme/` architecture.
+- Updated all docs to reflect `main-app.ts` removal and PR #171 changes.
+- Created PI agent files: `CLAUDE.md`, `.github/copilot-instructions.md`,
+  `.cursor/rules/`, `CONTRIBUTING.md`, `CODEOWNERS`, issue/PR templates.
+
 ## 2026-07-23 — Final transition, texture and overlay fixes
 
 - Fixed card overlap during /works section change — invisible cards now

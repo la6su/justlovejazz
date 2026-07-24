@@ -39,7 +39,7 @@ as `/services#section-services-02`.
 
 ## Runtime at a glance
 
-`index.html → entry-shell.ts → entry-app.ts → main-app.ts → Experience.ts`
+`index.html → entry-shell.ts → entry-app.ts → Experience.ts`
 
 The inline splash is visible before the Three.js import. The Enter control only
 activates after `jlz:webgl-ready`; failure shows an error state rather than an

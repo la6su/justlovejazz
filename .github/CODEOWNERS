@@ -1,0 +1,28 @@
+# Code owners
+# Reviewers for PRs touching specific areas of the codebase.
+# See https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default — all files not matched below
+*           @la6su
+
+# Architecture and hard constraints
+/AGENTS.md          @la6su
+/docs/ARCHITECTURE.md @la6su
+/docs/RULES.md      @la6su
+
+# 3D rendering and Three.js TSL
+/src/Experience/    @la6su
+/src/core/RenderPipeline.ts @la6su
+/src/core/World.ts  @la6su
+/src/core/WorldConfig.ts @la6su
+
+# UI and UIkit 3
+/src/UI/            @la6su
+/src/assets/        @la6su
+/docs/UIKIT3.md     @la6su
+
+# CI and tooling
+/.github/           @la6su
+/vite.config.ts     @la6su
+/eslint.config.js   @la6su
+/tsconfig.json      @la6su

@@ -37,21 +37,23 @@ project category.
   only visible DOM interaction in that section.
 - All fullscreen opens (showreel, home slider, /works cards) use one unified
   DOM cinematic depth-push reveal — the 3D plane-to-fullscreen handoff was
-  removed to avoid a double effect. `CasePlane` textures render with faithful
-  original colors: `toneMapped:false` + ACES removed from the composite
-  shader. Works does not inherit, load or
-  autoplay the studio reel;
+  removed to avoid a double effect. `PlaneTransition.ts` (the former handoff
+  module) was deleted entirely as dead code. `CasePlane` textures render with
+  faithful original colors: `toneMapped:false` + ACES removed from the
+  composite shader. Works does not inherit, load or autoplay the studio reel;
   that asset belongs exclusively to Play Showreel. `/works` mirrors UIkit's
   compact vertical grid in `WorksPlaneStage`, including its safe-area and
   caption treatment; fullscreen navigation uses large controls.
 - `/works` now uses a lazy `WorksPlaneStage`: DOM buttons remain accessible
   captions and keyboard controls, while all visible case media is rendered by
-  true Three.js planes. A selected plane expands and burns into the shared
-  UIkit `FullscreenOverlay`; the overlay receives one copy of the same source
+  true Three.js planes. A selected plane opens the shared UIkit
+  `FullscreenOverlay`; the overlay receives one copy of the same source
   texture so there is no image or aspect swap during the handoff.
 - `ShowreelButton3D.ts` was removed. The intro scene no longer instantiates a
   3D showreel trigger; the previous composition was visually cluttered and the
   DOM Play Showreel control is the sole entry point.
+- `FullscreenOverlay` enforces a focus trap (Tab/Shift+Tab wraps within the
+  dialog) and restores focus to the trigger on close (WCAG 2.1.1).
 
 ## Remaining decisions and phases
 

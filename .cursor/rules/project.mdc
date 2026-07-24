@@ -1,0 +1,60 @@
+---
+description: JUSTLOVEJAZZ project rules — read before any edit
+globs:
+  - "src/**/*"
+  - "docs/**/*"
+  - "*.md"
+  - "*.ts"
+  - "*.less"
+alwaysApply: true
+---
+
+# JUSTLOVEJAZZ — Cursor rules
+
+Read [AGENTS.md](../../../AGENTS.md) for the full agent operating procedure.
+This file is a quick reference; it does not duplicate AGENTS.md.
+
+## Stack
+
+- **Runtime:** Bun + Vite 8 + TypeScript 6 (strict, `noUncheckedIndexedAccess`)
+- **3D:** Three.js 0.184 with TSL NodeMaterials, WebGPU → WebGL2 fallback
+- **UI:** UIkit 3 (component/layout/a11y baseline), Less
+- **Test:** Vitest (unit), Playwright (E2E), Lighthouse CI
+
+## Hard constraints
+
+- TSL NodeMaterials only — no raw `ShaderMaterial`.
+- `renderer.setAnimationLoop` — no app-owned `requestAnimationFrame` loop.
+- Inline splash in `index.html`; Enter disabled until `jlz:webgl-ready`.
+- EnvSphere is the background owner; ground plane is contact-section only.
+- Six-section model: Lab, Intro, About, Works, Contact, Menu (fixed order).
+- WebGPU/WebGL fallback based on the renderer actually created.
+- Dispose all listeners, timers, GPU resources in `dispose()`/`destroy()`.
+- Reduced-motion: authored animations must snap to settled state synchronously.
+- UIkit 3 first — see [docs/UIKIT3.md](../../../docs/UIKIT3.md) solution
+  priority order before writing custom CSS.
+- Typed events (`jlz:webgl-ready/failed`, `jlz:section-change`,
+  `jlz:route-change`) use `eventBus.emit()`. Other `jlz:*` are local DOM
+  contracts via `window.dispatchEvent`.
+
+## Verification gate
+
+```bash
+bun run type-check && bun run lint && bun run test:unit && bun run build
+```
+
+CI runs the same gate plus Playwright E2E + Lighthouse on every push/PR to
+`main`.
+
+## Commit style
+
+Conventional Commits: `feat:`, `fix:`, `refactor:`, `docs:`, `test:`,
+`chore:`, `perf:`. Scope optional: `feat(works):`, `fix(overlay):`.
+
+## Before editing
+
+1. `git status --short` — preserve unrelated work.
+2. Read the relevant doc from [docs/README.md](../../../docs/README.md)
+   ownership map.
+3. Use `rg` for search.
+4. After edits, run the verification gate.
