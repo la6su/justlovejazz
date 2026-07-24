@@ -155,13 +155,6 @@ body:not([data-page='home']) #spa-content {
   pointer-events: auto;
 }
 
-.jlz-page .uk-container-expand {
-  width: 100%;
-  max-width: 1440px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
 .studio-title.uk-heading-medium {
   font-size: clamp(2rem, 5vw, 3.75rem);
   font-weight: 400;
@@ -665,13 +658,14 @@ html.jlz-force-cursor .interactive {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent 0,
-    transparent 3px,
-    rgba(255, 255, 255, 0.025) 3px,
-    rgba(255, 255, 255, 0.025) 4px
-  );
+  //background: repeating-linear-gradient(
+  //  0deg,
+  //  transparent 0,
+  //  transparent 3px,
+  //  rgba(255, 255, 255, 0.025) 3px,
+  //  rgba(255, 255, 255, 0.025) 4px
+  //);
+  display: none;
   z-index: 1;
 }
 
@@ -1379,15 +1373,18 @@ body:not([data-page='home'])
 }
 
 body[data-page='home']
-  #spa-content
-  > section[data-section]:not(.jlz-menu-overlay):not([data-contact-footer])
-  > .uk-container,
+#spa-content
+> section[data-section]:not(.jlz-menu-overlay):not([data-contact-footer])
+> .uk-container:not(.jlz-works-stage),
+
 body:not([data-page='home'])
-  .jlz-page
-  > .jlz-page-section:not(.jlz-menu-overlay):not([data-contact-footer])
-  > .uk-container {
+.jlz-page
+> .jlz-page-section:not(.jlz-menu-overlay):not([data-contact-footer])
+> .uk-container:not(.jlz-works-stage) {
   width: min(100%, 96rem);
-  padding: clamp(6.2rem, 10vh, 8rem) clamp(1.25rem, 5vw, 5rem) clamp(6.5rem, 11vh, 8.5rem);
+  padding: clamp(6.2rem, 10vh, 8rem)
+  clamp(1.25rem, 5vw, 5rem)
+  clamp(6.5rem, 11vh, 8.5rem);
 }
 
 [data-story-state] .jlz-section-top,
@@ -1475,11 +1472,6 @@ body:not([data-page='home'])
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: linear-gradient(
-    to bottom,
-    color-mix(in srgb, var(--jlz-color-bg) 72%, transparent),
-    transparent
-  );
 }
 
 .jlz-topbar-controls {
