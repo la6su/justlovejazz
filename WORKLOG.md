@@ -1,5 +1,43 @@
 # Worklog
 
+## 2026-07-25 — Revert to flat plane (junni approach) — text now visible
+
+### Decision
+
+The cylinder approach from PR #179-#180 made the text invisible. VLM analysis
+of the junni reference screenshot confirmed: junni uses a **flat plane**, not
+a cylinder. The "curve" effect comes from camera perspective, not geometry.
+Reverted to flat PlaneGeometry with correct orientation and position.
+
+### Changes
+
+- **Reverted to flat PlaneGeometry:** Replaced CylinderGeometry with
+  PlaneGeometry (20×8 units, 8×4 segments). No rotation needed —
+  PlaneGeometry faces +Z by default, which faces the camera.
+  Position: (0, 0, -7) — behind cards at z≈-3.
+
+- **Simplified resize:** `textScreen.scale.set(screenScale, screenScale, 1)`
+  — uniform X/Y scale based on aspect ratio, Z=1 (flat plane has no depth).
+
+- **Kept all shader logic from PR #180:** UV scroll, vertical wipe, alpha
+  boost (×3.0 clamped), alpha discard, DoubleSide, Pixelify Sans font,
+  continuous rendering on /works, World.update() bypass.
+
+### Why the cylinder failed
+
+CylinderGeometry after `rotateY(-π/2)` has its concave side facing the camera.
+Even with DoubleSide, the UV mapping on the inside of a cylinder is mirrored,
+which can cause the text to appear backwards or not render correctly in
+WebGL2's TSL pipeline. The flat plane has no such issue — UVs are
+straightforward (0,0) bottom-left to (1,1) top-right.
+
+### Verification
+
+`type-check` 0 errors, `lint` 0 errors (60 pre-existing warnings),
+`test:unit` 105/105, `test` (Playwright e2e) 12/12, `build` green.
+VLM-verified: "SELECTED WORKS" visible in pixel font on section 1.
+Text changes on each section (verified sections 2-4). No console errors.
+
 ## 2026-07-25 — Fix back-text visibility: orientation + DoubleSide + continuous render
 
 ### Decision

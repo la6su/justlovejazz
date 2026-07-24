@@ -147,11 +147,10 @@ export class WorksPlaneStage extends THREE.Group {
     const aspect = width / height
     // 16:9 = 1.78 → scale 1.0. Wider screens get larger cards, narrower get smaller.
     this._aspectScale = THREE.MathUtils.clamp(aspect / 1.78, 0.7, 1.4)
-    // The text screen geometry is fixed (radius=20, arc=0.8 rad → ~16 units wide).
-    // Scale it slightly to fill wider/narrower screens.
+    // Scale the flat text screen to fill the viewport width.
     if (this.textScreen) {
       const screenScale = THREE.MathUtils.clamp(aspect / 1.78, 0.8, 1.3)
-      this.textScreen.scale.set(screenScale, screenScale, screenScale)
+      this.textScreen.scale.set(screenScale, screenScale, 1)
     }
   }
 
