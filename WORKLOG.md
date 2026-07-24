@@ -1,5 +1,91 @@
 # Worklog
 
+## 2026-07-25 — Works 3D template rework + memory churn fix
+
+### Decision
+
+Three tasks: (1) finish moving jlz-works-statement from HTML to the 3D curved
+text screen (WorksTextScreen), each section showing its own description; (2)
+fix jlz-works-grid to use uk-container-expand and work with the 3D layer;
+(3) fix the ~100MB memory increase caused by route-exit disposal churning
+TSL shader compilation.
+
+### Changes
+
+- **Memory fix: reverted route-exit disposal.** PR #176 added
+  `disposeWorksPlaneStage()` called on every route change away from /works.
+  This caused TSL shader recompilation churn: each /works visit created 8
+  new CasePlane TSL materials + WorksTextScreen material, and the GPU
+  driver doesn't immediately free disposed shader programs. After 2-3
+  /works visits, this accumulated ~100MB of unreleased GPU shader memory.
+  Fix: keep WorksPlaneStage alive (like BakuCarousel on home) — just hide
+  it via `setActive(false)` when not on /works. The stage is created once
+  and reused. Textures are still refcounted via the cache.
+
+- **WorksTextScreen: i18n integration + smaller canvas.**
+  - Replaced hardcoded SECTION_COPY with i18n keys (`works.section{N}.title`
+    / `.lead`) — the 3D text screen now shows translated text and updates
+    on language toggle via `refreshLanguage()`.
+  - Reduced canvas from 2048×768 to 1024×384 — saves ~4.7 MB of canvas +
+    GPU texture memory while remaining crisp at typical DPRs.
+  - Added `refreshLanguage()` method — called by Experience.ts on
+    `jlz:lang-change` so the 3D holographic title updates instantly.
+
+- **Works template rework (works.ts):**
+  - Removed the HTML `.jlz-works-statement` div entirely — the section
+    title + lead are now rendered ONLY by the 3D WorksTextScreen behind the
+    work cards. No more duplicate DOM layer.
+  - Changed `.jlz-works-grid` to use `uk-container-expand` (was already
+    on `.jlz-works-stage`) + added `uk-flex-middle` to vertically center
+    cards with the 3D layer.
+  - Removed `SECTION_COPY` constant — no longer needed in the template
+    since the 3D screen owns the copy.
+
+- **WorksPlaneStage: increased textScreen reveal.**
+  - Changed `setReveal(active ? 0.35 : 0)` to `setReveal(active ? 0.55 : 0)`
+    — the holographic text is now visible enough to read behind the cards.
+  - Added `refreshLanguage()` method that delegates to WorksTextScreen.
+
+- **CSS: removed all .jlz-works-statement rules (~55 LOC).**
+  - Removed `.jlz-works-statement`, `__title`, `__lead` base rules (34 LOC)
+  - Removed `--reverse` / `--cinematic` variant rules (9 LOC)
+  - Removed story-state opacity rules (12 LOC)
+  - Removed mobile media query rules (8 LOC)
+  - Removed reduced-motion rules (2 LOC)
+  - Removed `.jlz-works-statement__title` from shared variable-font selector
+
+- **Experience.ts: added _langChangeHandler.** Listens for
+  `jlz:lang-change` and calls `worksPlaneStage.refreshLanguage()` so the
+  3D text screen updates on EN/RU toggle. Properly removed in `destroy()`.
+
+- **e2e test: updated** to not expect `.jlz-works-statement` in DOM
+  (moved to 3D).
+
+### Memory answer
+
+The ~100MB increase (150MB → 250MB) was caused by PR #176's route-exit
+disposal: `disposeWorksPlaneStage()` was called every time the user left
+/works, and `ensureWorksPlaneStageInitialized()` recreated the entire stage
+(8 CasePlane TSL materials + WorksTextScreen canvas + geometry) on re-entry.
+GPU shader programs from disposed TSL materials are not immediately freed
+by the WebGL driver — they accumulate over 2-3 /works visits. Reverting to
+"keep alive, hide when inactive" (the original pattern before PR #176)
+eliminates the churn. JS heap is now stable at 11-17 MB across all routes.
+
+### Bundle impact
+
+| File | Before | After | Delta |
+|------|--------|-------|-------|
+| main.less | 2308 | 2227 | −81 LOC (−3.5%) |
+| main JS chunk | 151.27 KB | 149.68 KB | −1.59 KB |
+
+### Verification
+
+`type-check` 0 errors, `lint` 0 errors (60 pre-existing warnings),
+`test:unit` 105/105, `test` (Playwright e2e) 12/12, `build` green.
+JS heap: 11-17 MB stable across home → /works → /services → /works → /home.
+No console errors.
+
 ## 2026-07-25 — Deep CSS refactoring + memory leak fixes
 
 ### Decision

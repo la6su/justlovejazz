@@ -4,18 +4,21 @@
 // on /works. It renders the section title + lead as a canvas-generated text
 // texture, creating a holographic depth layer. The material is transparent
 // and responds to the active theme (inverse flips text color for contrast).
+//
+// The text is pulled from i18n so EN/RU switching updates the 3D screen.
 
 import * as THREE from 'three'
 import { MeshBasicNodeMaterial } from 'three/webgpu'
 import { Fn, float, uniform, vec4, texture as tslTexture, mix, uv } from 'three/tsl'
+import { t } from '../../core/i18n'
 
-// Section copy mirrors src/pages/content/works.ts SECTION_COPY.
-// The canvas texture is regenerated when the active section changes.
-const SECTION_COPY = [
-  { title: 'Selected works', lead: 'Projects that define our way.' },
-  { title: 'Case studies', lead: 'Process, craft, result.' },
-  { title: 'Interactive systems', lead: 'Technology shaped into experience.' },
-  { title: 'Recent', lead: 'Latest from the studio.' },
+// i18n keys for the 4 works sections. The canvas texture is regenerated
+// when the active section changes OR when the language is toggled.
+const SECTION_KEYS = [
+  { titleKey: 'works.section1.title', leadKey: 'works.section1.lead' },
+  { titleKey: 'works.section2.title', leadKey: 'works.section2.lead' },
+  { titleKey: 'works.section3.title', leadKey: 'works.section3.lead' },
+  { titleKey: 'works.section4.title', leadKey: 'works.section4.lead' },
 ] as const
 
 // Curved screen geometry: a wide cylinder segment that wraps slightly around
@@ -51,9 +54,11 @@ export class WorksTextScreen extends THREE.Mesh {
     // Rotate so the curve wraps horizontally (cylinder axis = Y by default)
     geometry.rotateY(Math.PI / 2)
 
+    // 1024×384 canvas — half the previous 2048×768 size, saves ~4.7 MB of
+    // canvas + GPU texture memory while remaining crisp at typical DPRs.
     const canvas = document.createElement('canvas')
-    canvas.width = 2048
-    canvas.height = 768
+    canvas.width = 1024
+    canvas.height = 384
     const ctx = canvas.getContext('2d')!
     const texture = new THREE.CanvasTexture(canvas)
     texture.colorSpace = THREE.SRGBColorSpace
@@ -104,41 +109,48 @@ export class WorksTextScreen extends THREE.Mesh {
     this._uniformTime = uTime
     this._uniformIsLight = uIsLight
 
-    this.renderText(0, false)
+    this.renderText(0)
   }
 
-  /** Render the section text to the canvas texture. */
-  private renderText(sectionIndex: number, _isLight: boolean): void {
+  /** Render the section text to the canvas texture using i18n translations. */
+  private renderText(sectionIndex: number): void {
     const ctx = this._ctx
     const w = this._canvas.width
     const h = this._canvas.height
-    const copy = SECTION_COPY[sectionIndex] ?? SECTION_COPY[0]!
+    const keys = SECTION_KEYS[sectionIndex] ?? SECTION_KEYS[0]!
+    const title = t(keys.titleKey)
+    const lead = t(keys.leadKey)
 
-    // Clear to transparent (dark text on transparent bg by default;
-    // the TSL shader flips to light text when isLight via mix()).
+    // Clear to transparent (white text on transparent bg; the TSL shader
+    // flips to dark text when isLight via mix()).
     ctx.clearRect(0, 0, w, h)
 
     // Title — large, bold, centered
-    ctx.fillStyle = '#ffffff' // white = high luminance → high alpha in shader
+    ctx.fillStyle = '#ffffff'
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.font = `900 ${Math.floor(h * 0.32)}px Onest, system-ui, sans-serif`
-    ctx.fillText(copy.title.toUpperCase(), w / 2, h * 0.38)
+    ctx.font = `900 ${Math.floor(h * 0.30)}px Onest, system-ui, sans-serif`
+    ctx.fillText(title.toUpperCase(), w / 2, h * 0.36)
 
     // Lead — smaller, lighter, below the title
-    ctx.font = `300 ${Math.floor(h * 0.13)}px Onest, system-ui, sans-serif`
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)'
-    ctx.fillText(copy.lead, w / 2, h * 0.68)
+    ctx.font = `300 ${Math.floor(h * 0.12)}px Onest, system-ui, sans-serif`
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.55)'
+    ctx.fillText(lead, w / 2, h * 0.68)
 
     this._texture.needsUpdate = true
   }
 
   /** Set the active section (0-3) — regenerates the text texture. */
   setSection(sectionIndex: number): void {
-    const clamped = THREE.MathUtils.clamp(sectionIndex, 0, SECTION_COPY.length - 1)
+    const clamped = THREE.MathUtils.clamp(sectionIndex, 0, SECTION_KEYS.length - 1)
     if (clamped === this._sectionIndex) return
     this._sectionIndex = clamped
-    this.renderText(clamped, this._isLight)
+    this.renderText(clamped)
+  }
+
+  /** Re-render with current i18n language. Call after language toggle. */
+  refreshLanguage(): void {
+    this.renderText(this._sectionIndex)
   }
 
   /** Set theme polarity — flips text color for contrast. */
@@ -146,7 +158,6 @@ export class WorksTextScreen extends THREE.Mesh {
     if (isLight === this._isLight) return
     this._isLight = isLight
     this._uniformIsLight.value = isLight ? 1 : 0
-    this.renderText(this._sectionIndex, isLight)
   }
 
   /** Show/hide the screen with a smooth reveal. */

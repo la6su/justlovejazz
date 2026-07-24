@@ -1,29 +1,16 @@
 // Works is intentionally composed outside the shared content-page shell.
 // The page keeps the six-section navigation contract, while each project pair
 // gets an editorial composition sized by UIkit's responsive grid.
+//
+// The section title + lead are rendered as a 3D curved text screen
+// (WorksTextScreen) behind the work cards — NOT as HTML. The DOM only
+// carries the index header + semantic card buttons.
 
 import { PROJECTS } from '../../Data/Projects'
 import { labOverlaySection } from '../../sections/lab-overlay/template'
 import { navOverlaySection } from '../../sections/nav/template'
 
 type WorksLayout = 'feature' | 'equal' | 'reverse' | 'cinematic'
-
-const SECTION_COPY = [
-  [
-    'Selected works',
-    'works.section1.title',
-    'Projects that define our way.',
-    'works.section1.lead',
-  ],
-  ['Case studies', 'works.section2.title', 'Process, craft, result.', 'works.section2.lead'],
-  [
-    'Interactive systems',
-    'works.section3.title',
-    'Technology shaped into experience.',
-    'works.section3.lead',
-  ],
-  ['Recent', 'works.section4.title', 'Latest from the studio.', 'works.section4.lead'],
-] as const
 
 function cardWidth(layout: WorksLayout, position: 0 | 1): string {
   const widths: Record<WorksLayout, [string, string]> = {
@@ -74,7 +61,6 @@ function worksSection(
   active = false,
 ): string {
   const number = String(sectionIndex).padStart(2, '0')
-  const [title, titleKey, lead, leadKey] = SECTION_COPY[sectionIndex - 1]!
 
   return `
     <section class="jlz-page-section jlz-works-section jlz-works-section--${layout}${active ? ' section-active' : ''}"
@@ -84,17 +70,12 @@ function worksSection(
         <header class="jlz-works-index uk-flex uk-flex-middle uk-flex-between uk-text-uppercase">
           <div class="uk-flex uk-flex-middle">
             <span class="jlz-works-index__number">${number}</span>
-            <h2 class="jlz-works-index__title uk-margin-remove" data-i18n="${titleKey}">${title}</h2>
+            <h2 class="jlz-works-index__title uk-margin-remove" data-i18n="works.section${sectionIndex}.title">Section ${number}</h2>
           </div>
           <span class="jlz-works-index__progress">${number} / 04</span>
         </header>
 
-        <div class="jlz-works-statement" aria-hidden="true">
-          <span class="jlz-works-statement__title" data-i18n="${titleKey}">${title}</span>
-          <span class="jlz-works-statement__lead ${layout === 'reverse' || layout === 'cinematic' ? 'uk-text-left' : 'uk-text-right'}" data-i18n="${leadKey}">${lead}</span>
-        </div>
-
-        <div class="jlz-works-grid jlz-works-composition jlz-works-composition--${layout} uk-grid uk-grid-small uk-height-1-1" uk-grid>
+        <div class="jlz-works-grid jlz-works-composition jlz-works-composition--${layout} uk-grid uk-grid-small uk-height-1-1 uk-flex-middle" uk-grid>
           <div class="${cardWidth(layout, 0)}">${workCard(projectA, 'primary')}</div>
           <div class="${cardWidth(layout, 1)}">${workCard(projectB, 'secondary')}</div>
         </div>

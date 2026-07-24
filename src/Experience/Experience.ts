@@ -46,6 +46,7 @@ export class Experience {
     ((payload: import('../core/EventBus').AppEvents['jlz:section-change']) => void) | null = null
   private _themeAppliedHandler: ((e: Event) => void) | null = null
   private _soundToggleHandler: ((e: Event) => void) | null = null
+  private _langChangeHandler: (() => void) | null = null
   private _splashEnteredHandler: (() => void) | null = null
   private _openProjectHandler: ((e: Event) => void) | null = null
   private _routeChangeCloseOverlayHandler: (() => void) | null = null
@@ -491,6 +492,13 @@ export class Experience {
     }
     window.addEventListener('jlz:sound-toggle', this._soundToggleHandler)
 
+    // Re-render the 3D works text screen when the language changes so the
+    // curved holographic title updates to EN/RU instantly.
+    this._langChangeHandler = () => {
+      this.world?.worksPlaneStage?.refreshLanguage()
+    }
+    window.addEventListener('jlz:lang-change', this._langChangeHandler)
+
     // ── Works page card click → open fullscreen overlay ──
     // Dispatched by WorkCards.ts when a .jlz-work-card is clicked (works page).
     // All opens (showreel, slider, /works) use the same unified DOM cinematic
@@ -536,18 +544,7 @@ export class Experience {
         void this.world?.ensureWorksPlaneStageInitialized().then(() => {
           this.world?.setWorksPlaneStageSection(0)
           this._needsRender = true
-          // Off-thread shader pre-warm (Ridgeline best practice)
-          if (this.world?.worksPlaneStage) {
-            void this.world.worksPlaneStage.prewarmShaders(this.renderer.instance)
-          }
         })
-      }
-      // Dispose WorksPlaneStage when leaving /works to free ~40-50 MB of GPU
-      // textures + canvas + TSL materials. The stage is lazily re-created on
-      // next /works visit. Without this, every first /works visit permanently
-      // retains 8 CasePlane textures + WorksTextScreen canvas in GPU memory.
-      if (newPage !== 'works') {
-        this.world?.disposeWorksPlaneStage()
       }
       this._needsRender = true
     }
@@ -964,6 +961,10 @@ export class Experience {
     if (this._soundToggleHandler) {
       window.removeEventListener('jlz:sound-toggle', this._soundToggleHandler)
       this._soundToggleHandler = null
+    }
+    if (this._langChangeHandler) {
+      window.removeEventListener('jlz:lang-change', this._langChangeHandler)
+      this._langChangeHandler = null
     }
     if (this._splashEnteredHandler) {
       window.removeEventListener('jlz:splash-entered', this._splashEnteredHandler)

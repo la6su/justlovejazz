@@ -143,15 +143,22 @@ export class WorksPlaneStage extends THREE.Group {
     this._sectionIndex = THREE.MathUtils.clamp(sectionIndex, 0, SECTION_PROJECTS.length - 1)
     this.visible = active
     // Sync the text screen to the active section + reveal state.
+    // Reveal at 0.55 gives a visible holographic text layer behind the cards
+    // without overwhelming the case imagery.
     if (this.textScreen) {
       this.textScreen.setSection(this._sectionIndex)
-      this.textScreen.setReveal(active ? 0.35 : 0) // subtle presence, not full opacity
+      this.textScreen.setReveal(active ? 0.55 : 0)
     }
   }
 
   /** Set theme polarity — flips text screen color for contrast. */
   setTheme(isLight: boolean): void {
     this.textScreen?.setTheme(isLight)
+  }
+
+  /** Re-render the text screen with the current i18n language. */
+  refreshLanguage(): void {
+    this.textScreen?.refreshLanguage()
   }
 
   /** Open project overlay with unified wobble pulse (same as BakuCarousel).

@@ -143,16 +143,12 @@ test.describe('JustLoveJazz — accessibility & DOM UI', () => {
     await page.goto('/works')
 
     await expect(page.locator('.jlz-works-section')).toHaveCount(4)
-    await expect(page.locator('.jlz-works-statement')).toHaveCount(4)
+    // .jlz-works-statement moved to 3D (WorksTextScreen) — no longer in DOM
     await expect(page.locator('.jlz-work-card')).toHaveCount(8)
 
     const firstCard = page.locator('.jlz-work-card').first()
     await expect(firstCard).toHaveAttribute('data-project-id', /.+/)
     await expect(firstCard).toHaveAttribute('aria-label', /Open project:/)
-    await expect(page.locator('.jlz-works-statement').first()).toHaveAttribute(
-      'aria-hidden',
-      'true',
-    )
   })
 
   test('top-bar controls and menu section links render with aria-labels', async ({ page }) => {
