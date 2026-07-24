@@ -21,7 +21,7 @@ function isMenuOpen(): boolean {
 }
 import { PROJECTS } from '../../Data/Projects'
 import { CasePlane, CLOTH_PARAMS } from './CasePlane'
-import { loadCaseTexture } from './caseTexture'
+import { loadCaseTexture, releaseCaseTexture } from './caseTexture'
 // PlaneTransition removed — unified animation uses direct overlay open.
 
 // A dozen plane instances preserve the infinite wrap while the framing exposes
@@ -138,6 +138,7 @@ export class BakuCarousel extends THREE.Group {
       const plane = new CasePlane(tex)
       plane.scale.setScalar(CARD_SCALE)
       plane.userData.texIdx = i
+      plane.userData.texUrl = url
       // cardIndex = which PROJECT (0..3) — used by onCardClick → onProjectSelect
       plane.userData.cardIndex = i % PROJECTS.length
       // keepVisible = true so SectionSceneFactory.hideGeometry() doesn't
@@ -382,14 +383,14 @@ export class BakuCarousel extends THREE.Group {
     }
     if (this.controlClickHandler) window.removeEventListener('click', this.controlClickHandler)
     if (this.snapTimer) clearTimeout(this.snapTimer)
-    // Textures are SHARED across cards (4 unique for 6 faces), so dispose each
-    // one only once while CasePlane releases its own geometry/material.
-    const disposedTextures = new Set<THREE.Texture>()
+    // Release refcounted textures via the cache. Each unique URL is released
+    // once; the cache disposes the GPU texture when the last consumer drops.
+    const releasedUrls = new Set<string>()
     for (const card of this.cards) {
-      const texture = card.texture
-      if (texture && !disposedTextures.has(texture)) {
-        texture.dispose()
-        disposedTextures.add(texture)
+      const url = card.userData.texUrl as string | undefined
+      if (url && !releasedUrls.has(url)) {
+        releaseCaseTexture(url)
+        releasedUrls.add(url)
       }
       card.dispose()
     }

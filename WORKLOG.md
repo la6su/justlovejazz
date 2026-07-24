@@ -1,5 +1,78 @@
 # Worklog
 
+## 2026-07-25 — Deep CSS refactoring + memory leak fixes
+
+### Decision
+
+Two tasks: (1) aggressively reduce main.less (still 2399 lines after PR #175);
+(2) find and fix memory leaks causing 411MB browser memory (was ~150MB).
+
+### Memory leak fixes
+
+- **A-1: Route-exit disposal for WorksPlaneStage (World.ts):** Added
+  `disposeWorksPlaneStage()` method that disposes the stage + WorksTextScreen
+  + all 8 CasePlane textures + TSL materials. Called from Experience.ts
+  route-change handler when leaving /works. Frees ~40-50 MB of GPU memory
+  that was permanently retained after first /works visit. The stage is
+  lazily re-created on next /works visit via `ensureWorksPlaneStageInitialized()`.
+
+- **A-3: Refcounted texture cache (caseTexture.ts):** Added `textureCache`
+  Map with `loadCaseTexture()` / `releaseCaseTexture()` / `disposeAllCaseTextures()`.
+  BakuCarousel and WorksPlaneStage now share the same texture objects instead
+  of each loading their own copy of the same 4 project URLs. Saves ~12 MB
+  of duplicate GPU textures. BakuCarousel.dispose() and
+  WorksPlaneStage.dispose() now call `releaseCaseTexture()` instead of
+  `texture.dispose()` directly — the cache disposes the GPU texture when
+  the last consumer releases it.
+
+- **B-4: Mouse-trail rAF cancel (Experience.ts):** Stored the rAF id in
+  `_mouseTrailRafId` and cancel it in `destroy()`. Previously the rAF
+  callback captured the Experience object for one frame after destroy.
+
+### CSS refactoring (main.less 2399 → 2308, −91 LOC)
+
+- **Scanline tombstone (28 LOC):** Removed `#spa-content section::before`
+  and `.jlz-page-section::before` rules with `display: none` + commented-out
+  gradient background + light-theme variant. Dead CSS — scanlines were
+  disabled.
+- **h1..h6 heading selector (22 LOC):** Removed the 22-line selector that
+  set `font-family: inherit; text-transform: uppercase; letter-spacing: -0.03em`.
+  Already migrated to `@base-heading-text-transform` + `@base-heading-letter-spacing`
+  UIKit variables in `console-theme/_import.less` (PR #175).
+- **[data-lab-overlay] dead rule (7 LOC):** Removed `[data-lab-overlay] > .uk-container`
+  selector — zero matching markup in any template.
+- **Redundant font-family declarations (6 LOC):** Removed 6 × `font-family: @global-font-family`
+  — this is the inherited default; the declaration is a no-op.
+- **.jlz-menu-col--stat transition-delay (3 LOC):** Removed dead transition-delay
+  rule for a class that was removed from markup (but kept the visual styling
+  rules — `jlz-menu-col--stat` class restored in nav/template.ts for the
+  border/background/min-height styling).
+
+### Bundle impact
+
+| File | Before | After | Delta |
+|------|--------|-------|-------|
+| main.less | 2399 | 2308 | −91 LOC (−3.8%) |
+| main JS chunk | 153.75 KB | 151.27 KB | −2.48 KB |
+
+### Memory verification
+
+JS heap measured across all pages + route changes + overlay open/close:
+- Home: 11 MB
+- /works: 13 MB (was ~50+ MB retained before fix)
+- /services: 13 MB
+- /manifesto: 14 MB
+- /lab: 13 MB
+- /contact: 13 MB
+- Back to /home: 14 MB (no leak)
+- Overlay open/close: 13 MB (no leak)
+
+### Verification
+
+`type-check` 0 errors, `lint` 0 errors (60 pre-existing warnings),
+`test:unit` 105/105, `test` (Playwright e2e) 12/12, `build` green.
+Browser-verified: all 6 pages + fullscreen overlay + route changes.
+
 ## 2026-07-24 — Inverse theme fix + CSS minimization + 3D works text screen
 
 ### Decision
