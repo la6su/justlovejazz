@@ -4,6 +4,21 @@ This is a concise release-level record. Implementation decisions belong in
 [`WORKLOG.md`](../WORKLOG.md); completed plans remain available through Git
 history.
 
+## 2026-07-24 — CSS minimization + /works texture fix (PR #173)
+
+- Fixed invisible textures on /works: `prewarmShaders()` called
+  `WebGPURenderer.compileAsync()` which crashed TSL node build and corrupted
+  CasePlane material state. Made `prewarmShaders` a no-op — WebGPURenderer
+  compiles shaders lazily during the first render.
+- Deleted ~280 lines of dead CSS: `.jlz-joystick*` (16 rules + media queries
+  + reduced-motion entries), `.jlz-scroll-hint*`, `#pageLoader`, `#jlj-enter`,
+  `.canvas`. Migrated 7 `var(--jlz-joystick-size)` references to
+  `var(--jlz-bottom-controls)`.
+- Replaced 8 `.jlz-*` CSS rules that duplicated UIKit utilities with native
+  UIKit classes (`uk-text-uppercase`, `uk-flex-*`, `uk-width-1-1`,
+  `uk-margin-auto-left`, `uk-text-right`, `uk-flex-wrap`, `uk-flex-column`).
+- `main.less`: 2776 → 2495 lines (−10.1%). `main` chunk: 159 → 155 KB.
+
 ## 2026-07-24 — Audit cleanup and PI agent preparation (PR #171 + #172)
 
 - Deleted `PlaneTransition.ts` entirely (zero callers) + no-op

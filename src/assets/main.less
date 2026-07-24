@@ -87,16 +87,6 @@ canvas {
   pointer-events: none;
 }
 
-.canvas {
-  width: 100vw;
-  height: 100dvh;
-  min-height: max(0px, 100dvh);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: -10;
-}
-
 #spa-content {
   position: relative;
   z-index: 2;
@@ -241,33 +231,6 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
 .jlz-menu-nav__item.uk-open .jlz-menu-nav__label {
   --jlz-vf-weight: 820;
   letter-spacing: -0.035em;
-}
-
-.jlz-scroll-hint__line::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 28%;
-  background: currentColor;
-  animation: jlz-scroll-pulse 2.6s var(--jlz-ease-cinematic) infinite;
-}
-
-@keyframes jlz-scroll-pulse {
-  0% {
-    transform: translateY(-110%);
-    opacity: 0;
-  }
-
-  20% {
-    opacity: 1;
-  }
-
-  100% {
-    transform: translateY(420%);
-    opacity: 0;
-  }
 }
 
 // Modal background — dark + blur
@@ -600,32 +563,8 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
 }
 
 /* ------------------------------------------------------------------
-   Custom cursor + loader
+   Custom cursor
    ------------------------------------------------------------------ */
-
-#pageLoader {
-  position: fixed;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  z-index: var(--jlz-z-overlay);
-  visibility: visible;
-  background: var(--jlz-color-bg);
-  color: var(--jlz-color-text);
-  transition: opacity var(--jlz-duration-slow) var(--jlz-ease-state);
-}
-
-#pageLoader.fade-out {
-  opacity: 0;
-  pointer-events: none;
-}
-
-#jlj-enter {
-  cursor: pointer;
-}
-
 
 .custom-cursor-inner {
   position: fixed;
@@ -697,63 +636,6 @@ html.jlz-force-cursor .interactive {
   }
 }
 
-/* ------------------------------------------------------------------
-   Joystick
-   ------------------------------------------------------------------ */
-
-.jlz-joystick {
-  /* Position/bottom/left/transform/z-index set in the dock section below
-     (joystick sits ON the tools row). Here only layout + interaction props. */
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  user-select: none;
-  -webkit-user-select: none;
-  touch-action: none;
-}
-
-.jlz-joystick__base.is-active {
-  cursor: grabbing;
-  border-color: rgba(255, 255, 255, 0.4);
-  background: rgba(255, 255, 255, 0.12);
-  transform: scale(1.08);
-}
-
-.jlz-joystick__base.is-active .jlz-joystick__ball {
-  transition: none;
-}
-
-/* 4 direction arrows — discoverability affordance.
-   Positioned at N/S/E/W edges of the base. Faint by default, highlight
-   (accent color + opacity 1) when drag direction matches. */
-// Joystick inverse: CSS vars handle color inversion automatically.
-
-@media (max-width: 640px) {
-  .jlz-joystick__base {
-    width: var(--jlz-joystick-size-sm);
-    height: var(--jlz-joystick-size-sm);
-  }
-
-  .jlz-joystick__ball {
-    width: 36px;
-    height: 36px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .jlz-scroll-hint__line::after {
-    animation: none;
-    opacity: 0.45;
-    transform: translateY(50%);
-  }
-
-  .jlz-joystick__ball {
-    transition: none;
-  }
-}
-
-
 .jlz-eyebrow {
   font-family: 'SF Mono', 'Cascadia Code', 'JetBrains Mono', 'Consolas', monospace;
   font-size: clamp(2rem, 6vw, 3rem);
@@ -807,13 +689,10 @@ body.uk-light .jlz-page-section:not(.jlz-menu-overlay)::before {
 
 
 .jlz-contact-form {
-  flex-wrap: wrap;
   gap: var(--jlz-space-2);
 }
 
 .jlz-service-desc {
-  display: flex;
-  flex-direction: column;
   gap: 0.2rem;
   max-width: 34rem;
   margin: 0;
@@ -835,7 +714,6 @@ body.uk-light .jlz-page-section:not(.jlz-menu-overlay)::before {
   font-size: 0.7rem;
   font-weight: 600;
   letter-spacing: 0.15em;
-  text-transform: uppercase;
 }
 
 .jlz-service-explore__dot {
@@ -848,12 +726,7 @@ body.uk-light .jlz-page-section:not(.jlz-menu-overlay)::before {
 
 
 .jlz-experiment-footer {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
   gap: 0.55rem 0.85rem;
-  width: 100%;
-  margin-top: 0;
 }
 
 .jlz-experiment-footer__mode,
@@ -862,7 +735,6 @@ body.uk-light .jlz-page-section:not(.jlz-menu-overlay)::before {
   font-size: 0.62rem;
   letter-spacing: 0.1em;
   line-height: 1.35;
-  text-transform: uppercase;
 }
 
 .jlz-experiment-footer__mode {
@@ -871,10 +743,6 @@ body.uk-light .jlz-page-section:not(.jlz-menu-overlay)::before {
 
 .jlz-experiment-footer__state {
   color: var(--jlz-color-text-muted);
-}
-
-.jlz-experiment-footer .jlz-service-explore {
-  margin-left: auto;
 }
 
 @media (max-width: 639px) {
@@ -888,139 +756,6 @@ body.uk-light .jlz-page-section:not(.jlz-menu-overlay)::before {
 
 .jlz-flex-gap-small {
   gap: var(--jlz-space-2); /* 0.5rem */
-}
-
-.jlz-joystick {
-  position: fixed;
-  bottom: calc(var(--jlz-space-6) + env(safe-area-inset-bottom, 0px));
-  /* Do not use transform for centering: transforms create a containing block
-     that would trap the fixed right-side dotnav inside the joystick. */
-  left: calc(50% - (var(--jlz-joystick-size) / 2));
-  width: var(--jlz-joystick-size);
-  z-index: 100;
-  /* The section navigator is independently fixed at the right edge. */
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--jlz-space-3);
-}
-
-/* (joystick__base transition + scale defined above in joystick section) */
-
-/* Right-side section navigator.
-   Keep UIkit's uk-dotnav / uk-dotnav-vertical markup and active state. These
-   scoped rules only supply the bespoke menu-rail layout not covered by UIkit. */
-.jlz-joystick-dotnav > li {
-  padding: 0;
-}
-
-.jlz-joystick-dotnav > li > a {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 3rem;
-  align-items: center;
-  width: 100%;
-  min-height: 2.5rem;
-  height: auto;
-  border-radius: 0;
-  background: transparent !important;
-  color: var(--jlz-color-text-subtle);
-  text-decoration: none;
-  text-indent: 0;
-  overflow: visible;
-  white-space: normal;
-  transition:
-    color var(--jlz-duration-fast) ease,
-    opacity var(--jlz-duration-fast) ease;
-}
-
-.jlz-joystick-dotnav__marker::after {
-  position: absolute;
-  top: 50%;
-  right: 0;
-  width: 3px;
-  height: 3px;
-  border-radius: var(--jlz-radius-full);
-  background: currentColor;
-  content: '';
-  transform: translateY(-50%);
-}
-
-.jlz-joystick-dotnav > li > a:hover,
-.jlz-joystick-dotnav > li > a:focus-visible,
-.jlz-joystick-dotnav > li.uk-active > a {
-  color: var(--jlz-color-text);
-}
-
-.jlz-joystick-dotnav > li > a:hover .jlz-joystick-dotnav__marker,
-.jlz-joystick-dotnav > li > a:focus-visible .jlz-joystick-dotnav__marker {
-  background: var(--jlz-color-text-muted);
-}
-
-.jlz-joystick-dotnav > li.uk-active > a .jlz-joystick-dotnav__marker {
-  width: 3rem;
-  height: 2px;
-  background: var(--jlz-color-accent);
-}
-
-.jlz-joystick-dotnav > li > a:focus-visible {
-  outline: 1px solid var(--jlz-color-accent);
-  outline-offset: 3px;
-}
-
-/* (Bottom padding now handled by .jlz-section-bottom — joystick clearance) */
-
-@media (max-width: 640px) {
-  .jlz-joystick {
-    bottom: calc(var(--jlz-space-4) + env(safe-area-inset-bottom, 0px));
-    left: calc(50% - (var(--jlz-joystick-size-sm) / 2));
-    width: var(--jlz-joystick-size-sm);
-    gap: var(--jlz-space-2);
-  }
-
-  .jlz-joystick__base {
-    width: var(--jlz-joystick-size-sm);
-    height: var(--jlz-joystick-size-sm);
-  }
-
-  .jlz-joystick__ball {
-    width: 36px;
-    height: 36px;
-  }
-
-  /* Mobile retains tap targets and state markers, but not text labels. */
-  .jlz-joystick-dotnav {
-    right: calc(var(--jlz-space-2) + env(safe-area-inset-right, 0px));
-    width: auto;
-    gap: 0.25rem;
-  }
-
-  .jlz-joystick-dotnav > li > a {
-    display: flex;
-    justify-content: flex-end;
-    min-width: 2.75rem;
-    min-height: 2.75rem;
-  }
-
-  .jlz-joystick-dotnav__label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-  }
-
-  .jlz-joystick-dotnav__marker {
-    width: 1.5rem;
-    margin-left: 0;
-  }
-
-  .jlz-joystick-dotnav > li.uk-active > a .jlz-joystick-dotnav__marker {
-    width: 2rem;
-  }
 }
 
 /* ------------------------------------------------------------------
@@ -1044,7 +779,7 @@ body.uk-light .jlz-page-section:not(.jlz-menu-overlay)::before {
   grid-template-rows: auto minmax(0, 1fr);
   gap: clamp(0.85rem, 2vh, 1.5rem);
   padding: clamp(4.6rem, 7vh, 6rem) clamp(1rem, 4vw, 4.5rem)
-    max(calc(var(--jlz-joystick-size, 76px) + 1.5rem), 6vh);
+    max(calc(var(--jlz-bottom-controls, 4.5rem) + 1.5rem), 6vh);
 }
 
 .jlz-works-index {
@@ -1056,7 +791,6 @@ body.uk-light .jlz-page-section:not(.jlz-menu-overlay)::before {
   color: rgba(255, 255, 255, 0.5);
   font-size: 0.65rem;
   letter-spacing: 0.18em;
-  text-transform: uppercase;
 }
 
 .jlz-works-index__number {
@@ -1111,7 +845,6 @@ body.uk-light .jlz-page-section:not(.jlz-menu-overlay)::before {
   font-size: clamp(0.7rem, 1vw, 0.95rem);
   letter-spacing: 0.04em;
   line-height: 1.35;
-  text-align: right;
 }
 
 .jlz-works-section--reverse .jlz-works-statement,
@@ -1123,21 +856,8 @@ body.uk-light .jlz-page-section:not(.jlz-menu-overlay)::before {
 .jlz-works-section--reverse .jlz-works-statement__lead,
 .jlz-works-section--cinematic .jlz-works-statement__lead {
   align-self: flex-start;
-  text-align: left;
 }
 
-
-body[data-page='works'] .jlz-joystick-dotnav__label {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
 
 .jlz-works-composition {
   position: relative;
@@ -1448,7 +1168,7 @@ body[data-page='works'] .jlz-work-card.is-opening .jlz-work-card__inner {
 @media (max-width: 959px) {
   .jlz-works-stage {
     gap: 0.75rem;
-    padding: 4.4rem 0.85rem max(calc(var(--jlz-joystick-size, 68px) + 1rem), 5vh);
+    padding: 4.4rem 0.85rem max(calc(var(--jlz-bottom-controls, 4.5rem) + 1rem), 5vh);
   }
 
   .jlz-works-composition {
@@ -1482,7 +1202,7 @@ body[data-page='works'] .jlz-work-card.is-opening .jlz-work-card__inner {
     gap: 0.55rem;
     padding-top: max(calc(env(safe-area-inset-top) + 4.1rem), 4.6rem);
     padding-right: 0.7rem;
-    padding-bottom: max(calc(var(--jlz-joystick-size, 68px) + 1.35rem), 6.4rem);
+    padding-bottom: max(calc(var(--jlz-bottom-controls, 4.5rem) + 1.35rem), 6.4rem);
     padding-left: 0.7rem;
   }
 
@@ -2408,7 +2128,7 @@ body[data-cinematic-sheet]
   height: 100dvh;
   justify-content: center;
   padding-top: calc(var(--jlz-header-height, 60px) + var(--jlz-space-4));
-  padding-bottom: calc(var(--jlz-joystick-size) * 1.35 + var(--jlz-space-4));
+  padding-bottom: calc(var(--jlz-bottom-controls, 4.5rem) * 1.35 + var(--jlz-space-4));
 }
 
 .jlz-menu-grid {
@@ -2418,7 +2138,7 @@ body[data-cinematic-sheet]
   align-items: center;
   width: min(100%, 64rem);
   max-height: calc(
-    100dvh - var(--jlz-header-height, 60px) - (var(--jlz-joystick-size) * 1.35) - var(--jlz-space-8)
+    100dvh - var(--jlz-header-height, 60px) - (var(--jlz-bottom-controls, 4.5rem) * 1.35) - var(--jlz-space-8)
   );
   margin: 0 auto;
   overflow-y: auto;
@@ -2628,9 +2348,8 @@ body[data-cinematic-sheet]
 
 @media (max-width: 639px) {
   .jlz-menu-container {
-    // Keep the centred navigation clear of the persistent joystick.
     padding-top: calc(var(--jlz-header-height, 60px) + var(--jlz-space-3));
-    padding-bottom: calc(var(--jlz-joystick-size) * 1.35 + var(--jlz-space-4));
+    padding-bottom: calc(var(--jlz-bottom-controls, 4.5rem) * 1.35 + var(--jlz-space-4));
   }
 
   .jlz-menu-grid {
@@ -2662,7 +2381,7 @@ body[data-cinematic-sheet]
   justify-content: center;
   gap: var(--jlz-space-4);
   padding-top: calc(var(--jlz-header-height, 60px) + var(--jlz-space-4));
-  padding-bottom: calc(var(--jlz-joystick-size) * 1.35 + var(--jlz-space-4));
+  padding-bottom: calc(var(--jlz-bottom-controls, 4.5rem) * 1.35 + var(--jlz-space-4));
 }
 
 .jlz-cinematic-shell .jlz-topbar {

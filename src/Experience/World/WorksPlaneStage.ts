@@ -92,59 +92,24 @@ export class WorksPlaneStage extends THREE.Group {
   }
 
   /**
-   * Off-thread shader pre-warm (inspired by the Ridgeline article).
-   * Iterates over all card scenes and triggers async shader compilation
-   * so that the first visible reveal transition does not freeze the main
-   * thread. Includes a 2-second timeout so it never hangs.
+   * Shader pre-warm (inspired by the Ridgeline article).
+   *
+   * Currently a no-op: WebGPURenderer.compileAsync throws synchronously
+   * during TSL node build because it needs a render-context camera stack
+   * that isn't set up outside of a render call. Even with try/catch, the
+   * partial node build can corrupt the CasePlane material state, making
+   * textures invisible on /works.
+   *
+   * The WebGPURenderer compiles shaders lazily during the first actual
+   * render (which has a proper render context), so pre-warming is not
+   * needed. The first visible frame may have a slight jank while the TSL
+   * nodes build, but the scene renders correctly.
+   *
+   * Re-enable only after upgrading to a Three.js version that fixes
+   * compileAsync on the WebGPU backend, or after switching to a
+   * WebGL2-only renderer that supports KHR_parallel_shader_compile.
    */
-  prewarmShaders(renderer: RenderSurface): Promise<void> {
-    if (this.cards.length === 0) return Promise.resolve()
-
-    const camera = this._camera ?? new THREE.PerspectiveCamera()
-
-    // WebGL2 context-level compileAsync (KHR_parallel_shader_compile extension).
-    // Cast to a minimal interface — the standard WebGL2 types don't expose it,
-    // but Chrome/Firefox ship it behind the extension.
-    const gl = (renderer as THREE.WebGLRenderer).getContext?.() as
-      | (WebGL2RenderingContext & {
-          compileAsync?(
-            program: THREE.Object3D,
-            camera: THREE.Camera,
-            renderer: THREE.WebGLRenderer,
-          ): Promise<void>
-        })
-      | undefined
-    if (gl?.compileAsync) {
-      const promises = this.cards.map((card) => {
-        const group = new THREE.Group()
-        group.add(card)
-        return new Promise<void>((resolve) => {
-          const timeout = setTimeout(resolve, 2000)
-          gl.compileAsync!(group, camera, renderer as THREE.WebGLRenderer).then(
-            () => { clearTimeout(timeout); resolve() },
-            () => { clearTimeout(timeout); resolve() },
-          )
-        })
-      })
-      return Promise.all(promises).then(() => {})
-    }
-
-    // Fallback: renderer.compileAsync (Three.js r170+).
-    const rendererWithAsync = renderer as unknown as {
-      compileAsync?(scene: THREE.Object3D, camera: THREE.Camera): Promise<void>
-    }
-    if (rendererWithAsync.compileAsync) {
-      const promises = this.cards.map((card) => {
-        const group = new THREE.Group()
-        group.add(card)
-        return Promise.race([
-          rendererWithAsync.compileAsync!(group, camera),
-          new Promise<void>((resolve) => setTimeout(resolve, 2000)),
-        ])
-      })
-      return Promise.all(promises).then(() => {})
-    }
-
+  prewarmShaders(_renderer: RenderSurface): Promise<void> {
     return Promise.resolve()
   }
 

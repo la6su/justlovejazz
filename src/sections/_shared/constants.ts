@@ -113,7 +113,7 @@ export function storyBottom(content: string, marker: string = '—'): string {
  *  automatically (prefix.desc1, prefix.desc2, ...). */
 export function i18nDesc(key: string, lines: readonly string[]): string {
   if (lines.length === 0) return ''
-  return `<div class="jlz-service-desc uk-margin-small-top">${lines
+  return `<div class="jlz-service-desc uk-flex uk-flex-column uk-margin-small-top">${lines
     .map((line, i) => `<p class="uk-text-meta uk-margin-remove" data-i18n="${key}.desc${i + 1}">${line}</p>`)
     .join('')}</div>`
 }
@@ -131,8 +131,9 @@ export function serviceExplore(
   href: string,
   labelKey: string,
   labelFallback: string,
+  extraClass: string = '',
 ): string {
-  return `<a href="${href}" class="jlz-service-explore uk-button uk-button-default uk-button-small uk-margin-top">
+  return `<a href="${href}" class="jlz-service-explore uk-button uk-button-default uk-button-small uk-text-uppercase uk-margin-top${extraClass ? ' ' + extraClass : ''}">
     <span class="jlz-service-explore__dot" aria-hidden="true"></span>
     <span data-i18n="${labelKey}">${labelFallback}</span>
   </a>`

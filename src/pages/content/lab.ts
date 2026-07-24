@@ -75,10 +75,10 @@ const EXPERIMENTS: readonly Experiment[] = [
 
 function experimentSection(exp: Experiment, isActive: boolean = false): string {
   const footer = `
-    <div class="jlz-experiment-footer">
-      <span class="jlz-experiment-footer__mode" data-i18n="${exp.modeKey}">${exp.mode}</span>
-      <span class="jlz-experiment-footer__state" data-i18n="lab.sceneState">Isolated scene · in development</span>
-      ${serviceExplore(exp.noteHref, 'lab.readNote', 'Read development note')}
+    <div class="jlz-experiment-footer uk-flex uk-flex-wrap uk-flex-middle uk-width-1-1 uk-margin-remove-top">
+      <span class="jlz-experiment-footer__mode uk-text-uppercase" data-i18n="${exp.modeKey}">${exp.mode}</span>
+      <span class="jlz-experiment-footer__state uk-text-uppercase" data-i18n="lab.sceneState">Isolated scene · in development</span>
+      ${serviceExplore(exp.noteHref, 'lab.readNote', 'Read development note', 'uk-margin-auto-left')}
     </div>
   `
   return sectionShell(

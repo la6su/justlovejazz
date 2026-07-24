@@ -81,7 +81,7 @@ function worksSection(
              id="section-works-${number}" data-page-section="works-${number}"
              >
       <div class="jlz-works-stage uk-container uk-container-expand">
-        <header class="jlz-works-index uk-flex uk-flex-middle uk-flex-between">
+        <header class="jlz-works-index uk-flex uk-flex-middle uk-flex-between uk-text-uppercase">
           <div class="uk-flex uk-flex-middle">
             <span class="jlz-works-index__number">${number}</span>
             <h2 class="jlz-works-index__title uk-margin-remove" data-i18n="${titleKey}">${title}</h2>
@@ -91,7 +91,7 @@ function worksSection(
 
         <div class="jlz-works-statement" aria-hidden="true">
           <span class="jlz-works-statement__title" data-i18n="${titleKey}">${title}</span>
-          <span class="jlz-works-statement__lead" data-i18n="${leadKey}">${lead}</span>
+          <span class="jlz-works-statement__lead ${layout === 'reverse' || layout === 'cinematic' ? 'uk-text-left' : 'uk-text-right'}" data-i18n="${leadKey}">${lead}</span>
         </div>
 
         <div class="jlz-works-grid jlz-works-composition jlz-works-composition--${layout} uk-grid uk-grid-small uk-height-1-1" uk-grid>
