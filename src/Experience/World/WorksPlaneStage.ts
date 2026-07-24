@@ -9,6 +9,7 @@ import * as THREE from 'three'
 import { PROJECTS } from '../../Data/Projects'
 import { CasePlane, CLOTH_PARAMS } from './CasePlane'
 import { loadCaseTexture } from './caseTexture'
+import { WorksTextScreen } from './WorksTextScreen'
 import type { RenderSurface } from '../Renderer'
 
 const SECTION_PROJECTS = [
@@ -41,6 +42,7 @@ const STACKED_LAYOUT: readonly [CaseLayout, CaseLayout] = [
 
 export class WorksPlaneStage extends THREE.Group {
   private cards: CasePlane[] = []
+  private textScreen: WorksTextScreen | null = null
   private _camera: THREE.Camera | null = null
   private _raycaster = new THREE.Raycaster()
   private _ndc = new THREE.Vector2()
@@ -64,13 +66,14 @@ export class WorksPlaneStage extends THREE.Group {
     if (!this._active) return false
 
     const activeProjects = SECTION_PROJECTS[this._sectionIndex]!
-    return this.cards.some((card) => {
+    const cardsAnimating = this.cards.some((card) => {
       const projectIndex = card.userData.projectIndex as number
       const shouldBeVisible =
         activeProjects[0] === projectIndex || activeProjects[1] === projectIndex
       if (!shouldBeVisible) return false
       return card.isAnimating || (this._reveal.get(card) ?? 0) < 0.995
     })
+    return cardsAnimating || (this.textScreen?.isAnimating ?? false)
   }
 
   async init(): Promise<void> {
@@ -89,6 +92,14 @@ export class WorksPlaneStage extends THREE.Group {
       this._reveal.set(plane, 0)
       this.add(plane)
     })
+
+    // Curved text screen behind the work cards — renders the section title
+    // as a holographic depth layer. Created here so it shares the stage's
+    // camera-local space.
+    this.textScreen = new WorksTextScreen()
+    this.textScreen.position.set(0, 0, -5.5) // behind the cards (cards at z≈-3)
+    this.textScreen.setReveal(0)
+    this.add(this.textScreen)
   }
 
   /**
@@ -130,6 +141,16 @@ export class WorksPlaneStage extends THREE.Group {
     this._active = active
     this._sectionIndex = THREE.MathUtils.clamp(sectionIndex, 0, SECTION_PROJECTS.length - 1)
     this.visible = active
+    // Sync the text screen to the active section + reveal state.
+    if (this.textScreen) {
+      this.textScreen.setSection(this._sectionIndex)
+      this.textScreen.setReveal(active ? 0.35 : 0) // subtle presence, not full opacity
+    }
+  }
+
+  /** Set theme polarity — flips text screen color for contrast. */
+  setTheme(isLight: boolean): void {
+    this.textScreen?.setTheme(isLight)
   }
 
   /** Open project overlay with unified wobble pulse (same as BakuCarousel).
@@ -224,6 +245,9 @@ export class WorksPlaneStage extends THREE.Group {
       card.setTransition(0)
       card.update(dt, this._active)
     })
+
+    // Update the curved text screen — keeps its reveal + time uniform in sync.
+    this.textScreen?.update(dt)
   }
 
   dispose(): void {
@@ -238,6 +262,8 @@ export class WorksPlaneStage extends THREE.Group {
     })
     this.cards = []
     this._reveal.clear()
+    this.textScreen?.dispose()
+    this.textScreen = null
     this.clear()
   }
 }

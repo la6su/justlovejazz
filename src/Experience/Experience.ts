@@ -347,6 +347,7 @@ export class Experience {
           this.world.syncGroundTheme(detail.isLight)
           this.world.baku.setTheme(detail.isLight)
           this.world.syncTypographyTheme(detail.isLight)
+          this.world.worksPlaneStage?.setTheme(detail.isLight)
           for (const group of this.world.sceneGroups) {
             const particles = group.userData.particles as
               import('../Experience/World/JunniParticles').JunniParticles | undefined

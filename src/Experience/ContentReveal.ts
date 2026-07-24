@@ -19,12 +19,30 @@ export class ContentReveal {
   private themeHandler: ((e: Event) => void) | null = null
   private currentSectionId: string | null = null
   private currentSectionIndex: number = -1
-  private currentIsLight: boolean | null = null
   private cachedConfigs: readonly PhaseConfig[] | null = null
 
   constructor() {
     this.setupSectionSync()
     this.setupThemeSync()
+    // Apply theme for the already-active section on init. router.ts runs
+    // renderView (→ jlz:route-change) BEFORE Experience.init() creates this
+    // ContentReveal, so the route-change listener above misses the initial
+    // render. Without this, uk-light from index.html's default stays on
+    // <body> until the first section nav → wrong theme on boot (especially
+    // visible when inverse mode is persisted in localStorage).
+    this.applyInitialTheme()
+  }
+
+  private applyInitialTheme(): void {
+    const active = document.querySelector<HTMLElement>(
+      '[data-section].section-active, [data-page-section].section-active',
+    )
+    const sectionId =
+      active?.getAttribute('data-section') ??
+      active?.getAttribute('data-page-section') ??
+      'intro'
+    this.currentSectionId = sectionId
+    this.applyTheme(sectionId)
   }
 
   private getConfigs(): readonly PhaseConfig[] {
@@ -93,12 +111,16 @@ export class ContentReveal {
     if (!cfg && this.currentSectionIndex >= 0) {
       cfg = configs[this.currentSectionIndex]
     }
+    // Resolve the section index from the config so EnvSphere/3D sync gets
+    // the correct per-section colour even on route-change (where
+    // currentSectionIndex was just reset to -1).
+    if (cfg) {
+      const idx = configs.indexOf(cfg)
+      if (idx >= 0) this.currentSectionIndex = idx
+    }
     const sectionIsLight = cfg?.theme === 'light' || !cfg
     const isInverse = themeManager.isInverse
     const shouldUseLight = isInverse ? !sectionIsLight : sectionIsLight
-
-    const themeChanged = this.currentIsLight !== shouldUseLight
-    this.currentIsLight = shouldUseLight
 
     document.documentElement.classList.toggle('uk-light', shouldUseLight)
     document.body.classList.toggle('uk-light', shouldUseLight)
@@ -107,13 +129,16 @@ export class ContentReveal {
     // each section has a distinct colour, so even same-polarity scroll steps
     // must update the background. `themeChanged` lets consumers skip
     // theme-only work (ground, particles) when just the section moved.
+    // We always send themeChanged=true so the 3D layer (ground, baku,
+    // particles) re-syncs on every applyTheme call — the cost is negligible
+    // and it prevents desync on route-change where currentIsLight matches.
     window.dispatchEvent(
       new CustomEvent('jlz:theme-applied', {
         detail: {
           isLight: shouldUseLight,
           sectionIndex: this.currentSectionIndex,
           sectionId,
-          themeChanged,
+          themeChanged: true,
           mode: isInverse ? 'inverse' : 'auto',
           snap,
         },
