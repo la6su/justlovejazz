@@ -26,7 +26,6 @@ html {
 html,
 body {
   overflow: hidden;
-  font-family: var(--jlz-font-body), serif !important;
 }
 
 body {
@@ -212,15 +211,6 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
 .jlz-fs-overlay {
   color: var(--jlz-color-text);
   background: var(--jlz-color-bg);
-}
-
-.jlz-fs-overlay .jlz-fs-title,
-.jlz-fs-overlay .jlz-fs-close,
-.jlz-fs-overlay .jlz-fs-prev,
-.jlz-fs-overlay .jlz-fs-next,
-.jlz-fs-overlay .jlz-fs-big-play,
-.jlz-fs-overlay .jlz-fs-controls .uk-button {
-  color: var(--jlz-color-text);
 }
 
 .jlz-fs-overlay:not(.uk-open) {
@@ -430,7 +420,6 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
 
 .jlz-fs-close {
   z-index: 6;
-  color: var(--jlz-color-text);
 }
 
 
@@ -1434,9 +1423,6 @@ body:not([data-page='home'])
   padding: 0.5rem 1rem;
   padding-top: max(0.5rem, env(safe-area-inset-top, 0px));
   pointer-events: none;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
 }
 
 .jlz-topbar-controls {
@@ -1525,8 +1511,6 @@ body:not([data-page='home'])
 }
 
 .jlz-storyline__items {
-  display: flex;
-  align-items: center;
   gap: 0.15rem;
 }
 
@@ -1769,9 +1753,6 @@ body[data-cinematic-sheet='footer'] .jlz-page > [data-contact-footer] {
 }
 
 .jlz-contact-footer__actions {
-  width: 100%;
-  display: flex;
-  align-items: center;
   gap: 1rem;
 }
 

@@ -18,7 +18,7 @@ function contactFooterContent(): { top: string; bottom: string } {
   `
 
   const bottom = `
-    <div class="jlz-section-bottom jlz-contact-footer__actions">
+    <div class="jlz-section-bottom jlz-contact-footer__actions uk-flex uk-flex-middle uk-width-1-1">
       <a class="uk-button uk-button-primary jlz-telegram-cta" href="https://t.me/justlovejazz"
          target="_blank" rel="noopener" data-magnetic data-cursor="view">
         <span class="jlz-telegram-cta__halo" aria-hidden="true"></span>

@@ -1016,3 +1016,99 @@ Work Log:
 - Verification (all green): bun run type-check -> 0 errors; bun run lint -> 0 errors, 60 pre-existing warnings (none in edited files); bun run test:unit -> 105/105 tests passed; bun run build -> built in 1.84s, dist emitted.
 Stage Summary:
 - Deleted 280 net lines of dead/duplicated CSS+markup. Every selector mentioning "joystick" or "scroll-hint" is gone from main.less; padding-bottom / max-height calc expressions that previously reserved space for the deleted joystick now reference the --jlz-bottom-controls token. 8 bespoke CSS property declarations were replaced with UIKit utility classes (uk-text-uppercase, uk-text-right/left, uk-flex-wrap, uk-flex uk-flex-column, uk-flex uk-flex-wrap uk-flex-middle uk-width-1-1 uk-margin-remove-top, uk-margin-auto-left) in the corresponding template files. serviceExplore() gained an optional extraClass parameter to support call-site-specific utility classes. Build, lint, type-check and 105 unit tests all pass.
+
+---
+Task ID: DEEP-1
+Agent: deep-assets-auditor
+Task: Deep audit of all Less files for UIKit unification plan
+
+Work Log:
+- Read /home/z/audit/justlovejazz/WORKLOG.md (941 LOC) for prior context
+- Read all 5 Less files in full:
+  - src/assets/_import.less (511 LOC) — tokens + UIKit overrides + hook mixins + component imports
+  - src/assets/_theme.less (6 LOC) — bridge to console-theme/_import.less
+  - src/assets/console-theme/_import.less (77 LOC) — global-primary-* + status colors + box-shadows + heading font-sizes + color-mode overrides
+  - src/assets/main.less (2486 LOC) — app layer (shell, cursor, fs-overlay, works cards, menu sheet, contact footer, console bar)
+  - src/assets/blog.less (352 LOC) — standalone blog index/article CSS
+- Read all template/UI TS sources that emit .jlz-* markup:
+  - src/sections/_shared/constants.ts (sectionShell, homeTop, contentTop, storyBottom, i18nDesc, descBlock, serviceExplore)
+  - src/sections/{intro,about,works,contact,lab-overlay,nav}/template.ts
+  - src/pages/home.ts + src/pages/content/{services,works,lab,contact,manifesto}.ts
+  - src/UI/{FullscreenOverlay,UIMenu,CinematicNav,WorkCards,UIManager}.ts
+- Read markup: index.html (loader CSS only), blog.html + blog/*.html (4 articles)
+- Read tests: src/__tests__/{templates,pages,CinematicNav}.test.ts (assert jlz-page, jlz-page-section, jlz-service-desc, jlz-service-explore, jlz-desc, jlz-section-bottom, jlz-work-card)
+- Patterns verified via rg:
+  - 130 distinct .jlz-* classes defined across main.less + blog.less
+  - 182 distinct jlz-* tokens in markup (some are CSS vars like --jlz-color-accent, some are loader classes styled inline in index.html)
+  - Cross-diff: 1 truly dead CSS class (.jlz-visually-hidden, main.less:67-77), 1 dead blog.less selector group (.uk-card-title, lines 26-44 — never used in any blog HTML)
+  - 3 dynamically-constructed modifier classes verified live via template literals: jlz-works-composition--${layout}, jlz-works-section--${layout}, jlz-work-card--${prominence}
+  - Verified UIKit base.less provides universal `box-sizing: border-box` (line 275) + `body { margin: 0 }` (line 116) — main.less duplicates these at lines 16-18 and 37
+  - Verified UIKit base.less heading rules (line 335-352) apply @base-heading-font-family + @base-heading-text-transform + .hook-base-heading() — main.less:44-65 duplicates these
+  - Verified UIKit .uk-button is `display: inline-block` (button.less line 119), not inline-flex — so JLZ `display: inline-flex; align-items; gap` overrides on .jlz-service-explore/.jlz-menu-launcher/.jlz-contact-launcher__button are bespoke, not duplicate
+
+Stage Summary:
+
+Executive summary — total LOC reducible: 235-290 LOC (~9-12% of 3432 LOC across the 5 files).
+
+Stage 1 — Dead CSS + base resets (zero-risk, ~50-65 LOC, main.less only)
+- Delete .jlz-visually-hidden (main.less:67-77, 11 LOC — no markup use)
+- Delete `* { box-sizing: border-box }` (main.less:16-18, 3 LOC — UIKit base.less:275 provides it)
+- Delete `body { margin: 0 }` (main.less:37 — UIKit base.less:116 provides it)
+- Trim body{background,color,-webkit-font-smoothing,-moz-osx-font-smoothing} to just the font-smoothing pair (UIKit base sets background via @global-background, color via @global-color)
+- Delete `font-family: var(--jlz-font-body), serif !important` from html,body (main.less:33) — UIKit base sets html{font-family: @global-font-family}, already mapped to @jlz-font-display in _import.less:279
+- Convert h1..h6 + .uk-h* + .uk-heading-* selector (main.less:44-65, 22 LOC) into 2 UIKit variable overrides in console-theme/_import.less: @base-heading-text-transform: uppercase; @base-heading-letter-spacing: -0.03em (delete font-family: inherit — already inherited via @global-font-family)
+- Delete .jlz-sheet-close { color: inherit } (main.less:1719-1721, 3 LOC) — @close-color: @jlz-color-text in _import.less:353 already covers it
+- Trim .jlz-fs-close (main.less:450-453) to just `z-index: 6` — color: var(--jlz-color-text) is already @close-color
+- Trim .jlz-fs-overlay .jlz-fs-title/.jlz-fs-close/.jlz-fs-prev/.jlz-fs-next/.jlz-fs-big-play/.jlz-fs-controls .uk-button color: var(--jlz-color-text) rule (main.less:236-243, 8 LOC) — these inherit from .jlz-fs-overlay color: var(--jlz-color-text) already set on line 232; child `color: inherit` is automatic
+- Delete blog.less .uk-card-title rules (blog.less:26-44, ~17 LOC) — no .uk-card markup exists in any blog HTML
+- Tests: templates.test.ts must keep asserting jlz-page/jlz-page-section/jlz-section-bottom/jlz-service-desc/jlz-service-explore/jlz-desc/jlz-work-card (these classes are NOT being renamed)
+
+Stage 2 — Topbar/launcher/console-bar UIKit utility consolidation (low-risk markup swap, ~40-55 LOC)
+- main.less: .jlz-topbar (1462-1474) — markup already has uk-flex uk-flex-middle uk-flex-between; delete redundant `display: flex; align-items: center; justify-content: space-between` from CSS, keep position/padding/pointer-events
+- main.less: .jlz-topbar-controls (1476-1481) — markup already has uk-flex uk-flex-middle; delete display/align-items, keep pointer-events: auto + gap
+- main.less: .jlz-menu-launcher (1509-1519) — markup already has uk-button uk-button-default; delete duplicated display/align-items/gap (move to .hook-button-default() in _import.less if all default buttons should be flex), keep min-height/padding overrides + bespoke border-color/background
+- main.less: .jlz-contact-launcher__button (1621-1632) — markup has uk-button uk-button-primary; delete duplicated display/align-items, keep min-height/gap/padding. Move border-color override to .hook-button-primary() (already partial)
+- main.less: .jlz-storyline__items (1565-1569) — markup has no uk-flex class; add `uk-flex uk-flex-middle` to markup (CinematicNav.ts:57) and delete `display: flex; align-items: center` from CSS
+- main.less: .jlz-menu-sheet__header (1711-1717) — markup has uk-flex uk-flex-middle uk-flex-between; CSS only sets margin-bottom + color/font/letter-spacing/text-transform — keep (these are bespoke typography)
+- main.less: .jlz-experiment-footer (already markup-complete) — verify no CSS duplication
+- main.less: .jlz-contact-form (684-686) — markup has uk-flex uk-flex-wrap uk-flex-center uk-flex-middle; CSS only sets `gap: var(--jlz-space-2)`. Keep (UIKit has no flex-gap utility for arbitrary gap)
+- main.less: .jlz-service-desc (688-692) — markup has uk-flex uk-flex-column; CSS sets `gap; max-width; margin: 0`. Keep bespoke gap + max-width
+- main.less: .jlz-flex-gap-small (750-752) — used once in contact.ts:26; only sets `gap: 0.5rem`. Either keep (3 LOC) or replace markup with uk-grid-small (would need restructuring). Recommend keep.
+
+Stage 3 — Works cards + 3D plane handoff (low-risk cleanup, ~30-45 LOC)
+Most of .jlz-works-* and .jlz-work-card__* is bespoke 3D composition. Targeted cleanups:
+- main.less: .jlz-works-composition > * (866-869) and > * > * (871-873) — delete `display: flex` line (markup uses uk-grid uk-grid-small which provides display: flex on the grid container; the > * selector forces display:flex on children which conflicts with uk-grid item layout). Verify visually.
+- main.less: .jlz-work-card (880-893) — bespoke (perspective, cursor, tap-highlight). Keep.
+- main.less: .jlz-work-card__overlay (1010-1020) — markup has uk-position-bottom; delete `display: flex; align-items: flex-end; justify-content: space-between` from CSS (or keep — they may differ from uk-position-bottom defaults). Verify with screenshot diff.
+- main.less: .jlz-works-slider-controls (1436-1445) — markup is bare; add uk-flex uk-flex-middle uk-flex-between to markup OR keep bespoke. Recommend keep (position: absolute inset:0 with internal padding is bespoke).
+- main.less: .jlz-works-index (778-787) — markup already has uk-flex uk-flex-middle uk-flex-between uk-text-uppercase; CSS still sets display/align/justify (redundant). Delete the duplicated flex props.
+- Keep all body[data-page='works'] .jlz-work-card__* overrides — these are required for the 3D plane-origin handoff.
+
+Stage 4 — Menu sheet + contact footer + cinematic shell (low-to-moderate risk, ~50-70 LOC)
+- main.less: .jlz-menu-overlay (1647-1667) and body[data-cinematic-sheet='menu'] rules — bespoke (visibility/transform/opacity transitions). Keep.
+- main.less: .jlz-menu-grid (2125-2138) — bespoke grid layout. Keep.
+- main.less: .jlz-menu-nav (2188-2194) — markup has uk-nav uk-nav-default; CSS sets `list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column`. UIKit .uk-nav already provides all of these. Delete the rule entirely (8 LOC).
+- main.less: .jlz-menu-nav__subs (2271-2277) — markup has uk-nav-sub; CSS sets list-style/margin/padding/flex-direction/gap. UIKit .uk-nav-sub provides list-style/margin/padding/flex-direction. Delete the duplicates, keep only `gap: 0.125rem`.
+- main.less: .jlz-menu-nav__item (2196-2199) — bespoke `border-bottom + position: relative`. Keep.
+- main.less: .jlz-menu-nav__toggle (2201-2217) — bespoke toggle styles. Keep.
+- main.less: .jlz-menu-stat (2163-2167) — flex column; could become uk-flex uk-flex-column in markup (template.ts:250). Optional.
+- main.less: .jlz-contact-footer__actions (1827-1832) — markup is bare; could add uk-flex uk-flex-middle to template.ts:21. Optional.
+- main.less: .jlz-storyline__item (1571-1585) — bespoke button styling (compact nav dot). Keep.
+
+Stage 5 — blog.less polish (zero-to-low risk, ~20-30 LOC)
+- blog.less:26-44 — delete dead .uk-card-title selector group (no .uk-card in any blog HTML). Keep .jlz-blog-brand + .jlz-landing-eyebrow font-variation-settings transition (lines 26-31 minus .uk-card-title selector).
+- blog.less:47-67 — .skip-link is bespoke WCAG pattern (UIKit has no equivalent). Keep.
+- blog.less:70-88 — .jlz-reading-progress is bespoke (fixed scaleX progress bar). Keep.
+- blog.less:92-117 — prism code block overrides are bespoke (Prism theme integration). Keep.
+- blog.less:119-152 — .jlz-blog-header + .jlz-blog-brand + .jlz-blog-header .uk-navbar-nav rules: markup has uk-navbar-transparent + uk-navbar-nav; CSS adds bespoke font-weight/letter-spacing. Some duplication with UIKit navbar variables. Could move font-size: 0.72rem + font-weight: 500 + letter-spacing: 0.1em + text-transform: uppercase to @navbar-nav-item-* variables in _import.less (already partially done: @navbar-nav-item-font-size: 0.875rem at line 341 — override to 0.72rem). Risk: affects all navbars app-wide; only the blog has a navbar, so safe.
+- blog.less:155-333 — .jlz-journal-* editorial layout. Bespoke. Keep.
+- blog.less:336-350 — .jlz-blog-footer is bespoke minimal footer. Keep.
+
+Risk Assessment:
+- Zero-risk (delete without verification): .jlz-visually-hidden, *{box-sizing}, body{margin:0}, .jlz-sheet-close{color:inherit}, blog.less .uk-card-title rules, .jlz-menu-nav{list-style/margin/padding/display/flex-direction}
+- Zero-risk (delete with screenshot diff): h1..h6 selector → @base-heading-* variable migration, .jlz-fs-overlay color: var(--jlz-color-text) child rule
+- Low-risk (markup swap, screenshot diff per page): .jlz-storyline__items, .jlz-works-index — add uk-flex utilities to markup, delete duplicated flex props from CSS
+- Low-to-moderate risk (variable migration, screenshot diff): .jlz-blog-header .uk-navbar-nav > li > a → @navbar-nav-item-font-size override; .jlz-menu-launcher/.jlz-contact-launcher__button → .hook-button-default/-primary() additions
+- Moderate-risk (markup restructure): .jlz-works-composition > * deletion (may affect uk-grid child layout), .jlz-work-card__overlay flex deletion (may affect uk-position-bottom defaults)
+
+Verification gate per stage: `bun run type-check && bun run lint && bun run test:unit && bun run build` + manual screenshot diff on home, /works, /services, /manifesto, /lab, /contact, /blog.
