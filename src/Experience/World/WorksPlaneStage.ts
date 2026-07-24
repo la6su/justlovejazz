@@ -26,16 +26,19 @@ interface CaseLayout {
   scale: number
 }
 
+// Layouts are designed for a 16:9 viewport. The `scale` factor is multiplied
+// by an aspect-ratio correction at runtime so cards fill the screen width
+// on both wide (21:9) and narrow (4:3) viewports without distortion.
 const WIDE_LAYOUT: readonly [CaseLayout, CaseLayout] = [
-  { x: -0.74, y: -0.02, z: -3.05, scale: 2.18 },
-  { x: 1.42, y: -0.42, z: -3.62, scale: 1.38 },
+  { x: -0.85, y: -0.02, z: -3.05, scale: 2.4 },
+  { x: 1.65, y: -0.42, z: -3.62, scale: 1.5 },
 ]
 // UIkit's `@m` grid breakpoint is where the semantic card controls stack.
 // Mirror that exact editorial order in the 3D layer instead of squeezing the
 // desktop two-column coordinates into a narrow viewport.
 const STACKED_LAYOUT: readonly [CaseLayout, CaseLayout] = [
-  { x: -0.02, y: 0.64, z: -3.15, scale: 1.82 },
-  { x: 0.12, y: -0.78, z: -3.52, scale: 1.46 },
+  { x: -0.02, y: 0.7, z: -3.15, scale: 2.0 },
+  { x: 0.12, y: -0.85, z: -3.52, scale: 1.6 },
 ]
 // Unified animation: tap → wobble pulse + direct overlay open (same as BakuCarousel).
 // No 3D plane-to-fullscreen transition — the CSS clip-path iris reveal handles it.
@@ -50,6 +53,7 @@ export class WorksPlaneStage extends THREE.Group {
   private _active = false
   private _initialized = false
   private _stackedLayout = window.innerWidth < 960
+  private _aspectScale = 1.0 // multiplier for card scale based on viewport aspect
   private _reveal = new Map<CasePlane, number>()
   private _tmpCameraPosition = new THREE.Vector3()
   private _tmpTargetPosition = new THREE.Vector3()
@@ -94,11 +98,10 @@ export class WorksPlaneStage extends THREE.Group {
       this.add(plane)
     })
 
-    // Curved text screen behind the work cards — renders the section title
-    // as a holographic depth layer. Created here so it shares the stage's
-    // camera-local space.
+    // Back-text screen behind the work cards — flat plane with scrolling
+    // text texture and vertical wipe reveal (junni BackText pattern).
     this.textScreen = new WorksTextScreen()
-    this.textScreen.position.set(0, 0, -5.5) // behind the cards (cards at z≈-3)
+    this.textScreen.position.set(0, 0, -6) // behind the cards (cards at z≈-3)
     this.textScreen.setReveal(0)
     this.add(this.textScreen)
   }
@@ -133,21 +136,37 @@ export class WorksPlaneStage extends THREE.Group {
    * The semantic UIkit grid becomes a two-row composition below `@m`; keep
    * the actual media planes in that same layout so captions, hit targets and
    * visual media continue to describe one object on mobile and tablet.
+   *
+   * Also computes an aspect-ratio scale factor so 3D cards fill the viewport
+   * width on both wide (21:9 ultrawide) and narrow (4:3) screens without
+   * distortion. The factor is centered on 16:9 (scale=1.0).
    */
   resize(width: number): void {
     this._stackedLayout = width < 960
+    const height = window.innerHeight
+    const aspect = width / height
+    // 16:9 = 1.78 → scale 1.0. Wider screens get larger cards, narrower get smaller.
+    // Clamp to [0.7, 1.4] so cards don't get absurdly large/tiny.
+    this._aspectScale = THREE.MathUtils.clamp(aspect / 1.78, 0.7, 1.4)
+    // Scale the text screen to match the viewport width.
+    if (this.textScreen) {
+      const screenAspect = width / height
+      const screenW = THREE.MathUtils.clamp(screenAspect * 4, 10, 24)
+      this.textScreen.scale.x = screenW / 16
+      this.textScreen.scale.y = THREE.MathUtils.clamp(screenW / 16 * 0.8, 0.6, 1.4)
+    }
   }
 
   setActive(active: boolean, sectionIndex: number): void {
     this._active = active
     this._sectionIndex = THREE.MathUtils.clamp(sectionIndex, 0, SECTION_PROJECTS.length - 1)
     this.visible = active
-    // Sync the text screen to the active section + reveal state.
-    // Reveal at 0.55 gives a visible holographic text layer behind the cards
-    // without overwhelming the case imagery.
+    // Sync the back-text screen to the active section + visibility state.
+    // Full reveal (1.0) — the vertical wipe expands from center to edges,
+    // matching the junni BackText pattern.
     if (this.textScreen) {
       this.textScreen.setSection(this._sectionIndex)
-      this.textScreen.setReveal(active ? 0.55 : 0)
+      this.textScreen.setReveal(active ? 1.0 : 0)
     }
   }
 
@@ -231,21 +250,28 @@ export class WorksPlaneStage extends THREE.Group {
 
       const layouts = this._stackedLayout ? STACKED_LAYOUT : WIDE_LAYOUT
       const layout = isPrimary ? layouts[0] : layouts[1]
+      // Apply aspect-ratio scale so cards fill the viewport width on any screen.
+      const scaledLayout: CaseLayout = {
+        x: layout.x * this._aspectScale,
+        y: layout.y,
+        z: layout.z,
+        scale: layout.scale * this._aspectScale,
+      }
 
       // Snap cards to their layout target on first appearance (reveal was 0)
       // so they never fly out from the camera-local origin.
       if (reveal < 0.01 && targetReveal > 0.5) {
-        card.position.set(layout.x, layout.y, layout.z)
+        card.position.set(scaledLayout.x, scaledLayout.y, scaledLayout.z)
         card.rotation.set(isSecondary ? -0.018 : 0.006, isSecondary ? -0.07 : 0.025, 0)
-        card.scale.setScalar(layout.scale)
+        card.scale.setScalar(scaledLayout.scale)
       } else {
-        this._tmpTargetPosition.set(layout.x, layout.y, layout.z)
+        this._tmpTargetPosition.set(scaledLayout.x, scaledLayout.y, scaledLayout.z)
         this._tmpTargetRotation.set(isSecondary ? -0.018 : 0.006, isSecondary ? -0.07 : 0.025, 0)
         card.position.lerp(this._tmpTargetPosition, 1 - Math.exp(-dt * 9))
         card.rotation.x += (this._tmpTargetRotation.x - card.rotation.x) * (1 - Math.exp(-dt * 9))
         card.rotation.y += (this._tmpTargetRotation.y - card.rotation.y) * (1 - Math.exp(-dt * 9))
         card.rotation.z += (this._tmpTargetRotation.z - card.rotation.z) * (1 - Math.exp(-dt * 9))
-        const nextScale = THREE.MathUtils.damp(card.scale.x, layout.scale, 10, dt)
+        const nextScale = THREE.MathUtils.damp(card.scale.x, scaledLayout.scale, 10, dt)
         card.scale.setScalar(nextScale)
       }
       card.setReveal(nextReveal)
@@ -254,7 +280,7 @@ export class WorksPlaneStage extends THREE.Group {
       card.update(dt, this._active)
     })
 
-    // Update the curved text screen — keeps its reveal + time uniform in sync.
+    // Update the back-text screen — keeps its visibility + time uniform in sync.
     this.textScreen?.update(dt)
   }
 

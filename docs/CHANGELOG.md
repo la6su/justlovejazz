@@ -4,6 +4,18 @@ This is a concise release-level record. Implementation decisions belong in
 [`WORKLOG.md`](../WORKLOG.md); completed plans remain available through Git
 history.
 
+## 2026-07-25 — Works BackText (junni pattern) + 3D card scaling (PR #178)
+
+- **WorksTextScreen rewritten to junni BackText pattern:** flat plane (was
+  cylinder), UV horizontal scroll, vertical wipe reveal from center outward,
+  alpha discard for crisp text edges, RepeatWrapping for tiling.
+- **3D card scaling improved:** aspect-ratio-based `_aspectScale` multiplier
+  (16:9=1.0, clamped [0.7, 1.4]) — cards fill viewport width on ultrawide
+  and narrow screens. Text screen scales dynamically in `resize()`.
+- **Grid:** added `uk-flex uk-child-width-1-1 uk-child-width-auto@m` for
+  better responsive expansion.
+- JS heap: 13-14 MB stable across all routes + section changes.
+
 ## 2026-07-25 — Works 3D template rework + memory churn fix (PR #177)
 
 - **Memory fix: reverted route-exit disposal.** PR #176's

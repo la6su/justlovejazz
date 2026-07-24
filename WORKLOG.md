@@ -1,5 +1,58 @@
 # Worklog
 
+## 2026-07-25 — Works BackText (junni pattern) + 3D card scaling
+
+### Decision
+
+Rework WorksTextScreen to match the junni.co.jp BackText pattern (flat plane,
+UV-scroll, vertical wipe reveal, alpha discard). Improve 3D case plane
+scaling to fill the viewport width on any aspect ratio.
+
+### Changes
+
+- **WorksTextScreen rewritten to junni BackText pattern:**
+  - Replaced CylinderGeometry with flat PlaneGeometry (16×6 units) — junni
+    uses a simple plane, not a curved cylinder
+  - Added UV horizontal scroll (`vUv.x += time * 0.02`) — text drifts slowly
+    like a cinematic backdrop, matching junni's backText.vs
+  - Added vertical wipe reveal via `step(abs(vUv.y - 0.5), uVisibility * 0.5)`
+    — text appears from center outward as visibility goes 0→1, matching
+    junni's backText.fs
+  - Added alpha discard (`step(0.15, alpha)`) — crisp text edges, no soft
+    blending, matching junni's `if (col.w < 0.5) discard`
+  - Added `RepeatWrapping` on texture.wrapS for seamless horizontal tiling
+  - Replaced `_uniformReveal` with `_uniformVisibility` (matching junni naming)
+  - Changed damping lambda from 6 to 3 for a slower, more cinematic reveal
+    (junni uses easeOutCubic over 2s)
+  - Canvas 1024×512 (was 1024×384) — wider for horizontal tiling
+  - Full reveal (1.0) instead of 0.55 — the vertical wipe handles the
+    reveal gradient, not constant opacity
+
+- **WorksPlaneStage improved scaling:**
+  - Added `_aspectScale` field — multiplier based on viewport aspect ratio
+    (16:9 = 1.0, wider = larger, narrower = smaller, clamped [0.7, 1.4])
+  - All card X positions and scales now multiplied by `_aspectScale` so
+    cards fill the viewport width on ultrawide (21:9) and narrow (4:3)
+    screens without distortion
+  - Text screen scales dynamically in `resize()` — width clamped to [10, 24]
+    units, height follows proportionally
+  - Increased WIDE_LAYOUT card sizes (primary 2.18→2.4, secondary 1.38→1.5)
+    and X positions for better fill
+  - Increased STACKED_LAYOUT card sizes (primary 1.82→2.0, secondary 1.46→1.6)
+    and Y positions for better mobile fill
+  - Text screen position z=-5.5 → z=-6 (slightly further back for the wider plane)
+
+- **Works template grid improvement:**
+  - Added `uk-flex uk-child-width-1-1 uk-child-width-auto@m` to the grid
+    for better responsive expansion — full-width on mobile, auto on desktop
+
+### Verification
+
+`type-check` 0 errors, `lint` 0 errors (60 pre-existing warnings),
+`test:unit` 105/105, `test` (Playwright e2e) 12/12, `build` green.
+JS heap: 13-14 MB stable across home → /works (4 sections) → /services → /works.
+No console errors.
+
 ## 2026-07-25 — Works 3D template rework + memory churn fix
 
 ### Decision
