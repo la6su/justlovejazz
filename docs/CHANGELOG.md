@@ -4,6 +4,25 @@ This is a concise release-level record. Implementation decisions belong in
 [`WORKLOG.md`](../WORKLOG.md); completed plans remain available through Git
 history.
 
+## 2026-07-25 — Works 3D template rework + memory churn fix (PR #177)
+
+- **Memory fix: reverted route-exit disposal.** PR #176's
+  `disposeWorksPlaneStage()` on route exit caused TSL shader recompilation
+  churn — each /works visit recreated 8 CasePlane TSL materials +
+  WorksTextScreen, and the GPU driver doesn't immediately free disposed
+  shader programs. After 2-3 /works visits, this accumulated ~100MB.
+  Fix: keep WorksPlaneStage alive (like BakuCarousel) — just hide it.
+- **WorksTextScreen: i18n integration + smaller canvas.** Replaced
+  hardcoded copy with i18n keys — the 3D text screen now shows translated
+  text and updates on language toggle. Canvas reduced 2048×768 → 1024×384
+  (saves ~4.7 MB).
+- **Works template: removed HTML .jlz-works-statement.** The section
+  title + lead are now rendered ONLY by the 3D WorksTextScreen behind the
+  work cards. No more duplicate DOM layer. Grid uses `uk-flex-middle` to
+  center cards with the 3D layer.
+- **CSS: removed all .jlz-works-statement rules (~55 LOC).**
+- main.less: 2308 → 2227 (−81 LOC). JS heap stable at 11-17 MB.
+
 ## 2026-07-25 — Deep CSS refactoring + memory leak fixes (PR #176)
 
 - **Memory: route-exit disposal for WorksPlaneStage** — added
