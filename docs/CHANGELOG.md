@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Synchronized `/works` semantic captions with the real Three.js case planes:
+  both layers now use the same normalized desktop/mobile positions and 16:9
+  bounds, preserving visible gutters without stretching focusable controls.
 - Reworked `/works` around one visual media owner. Semantic DOM case buttons
   now provide captions and keyboard targets only; the eight hidden duplicate
   `<img>` elements and their unused custom card styles were removed. This
@@ -10,8 +13,8 @@
   type. It uses Junni's 1 s delayed, 2 s ease-out centre vertical wipe on
   route arrival and on section changes, independently from card fades.
 - Made Works plane composition camera-frustum-relative. Desktop spreads the
-  pair across the viewport; portrait keeps an editorial full-screen cadence by
-  cropping media horizontally instead of shrinking it to thumbnails.
+  pair across the viewport; portrait uses width-led cards with an outer gutter
+  and matching DOM captions instead of full-width controls.
 - Dispose the inactive Works stage on route exit so its eight case textures,
   canvas and per-plane materials can be released. GPU-driver reclamation still
   needs runtime profiling after repeated route visits.

@@ -104,15 +104,15 @@ Before writing custom CSS or JavaScript, follow this order:
 
 ## Current component model
 
-| Concern                             | Owner                                 | Convention                                                                             |
-| ----------------------------------- | ------------------------------------- | -------------------------------------------------------------------------------------- |
-| Dynamic component refresh           | `router.ts`                           | Call `UIkit.update()` after route content renders                                      |
-| Menu expandable items               | `sections/nav/template.ts`            | `uk-nav` / `uk-parent` state is authoritative                                          |
-| Fullscreen project/showreel overlay | `FullscreenOverlay.ts`                | UIKit `uk-modal` owns visibility + focus; explicit still/video media modes             |
-| Fixed configuration controls        | `UIMenu.ts`                           | `.jlz-topbar` with UIKit `uk-icon-button` for language, theme, sound                   |
-| Section navigation                  | `CinematicNav.ts`                     | Native scroll track + custom progress composition                                      |
-| Works case planes                   | `WorkCards.ts` + `WorksPlaneStage.ts` | DOM controls/captions + real Three.js media planes; no duplicate hidden `<img>` media  |
-| Icons                               | `console-icons.ts`                    | Custom SVGs registered via `UIkit.icon.add`; UIKit `uk-icon="icon: name"` renders them |
+| Concern                             | Owner                                        | Convention                                                                                 |
+| ----------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Dynamic component refresh           | `router.ts`                                  | Call `UIkit.update()` after route content renders                                          |
+| Menu expandable items               | `sections/nav/template.ts`                   | `uk-nav` / `uk-parent` state is authoritative                                              |
+| Fullscreen project/showreel overlay | `FullscreenOverlay.ts`                       | UIKit `uk-modal` owns visibility + focus; explicit still/video media modes                 |
+| Fixed configuration controls        | `UIMenu.ts`                                  | `.jlz-topbar` with UIKit `uk-icon-button` for language, theme, sound                       |
+| Section navigation                  | `CinematicNav.ts`                            | Native scroll track + custom progress composition                                          |
+| Works case planes                   | `src/UI/WorkCards.ts` + `WorksPlaneStage.ts` | DOM controls/captions mirror normalized 3D plane bounds; no duplicate hidden `<img>` media |
+| Icons                               | `console-icons.ts`                           | Custom SVGs registered via `UIkit.icon.add`; UIKit `uk-icon="icon: name"` renders them     |
 
 The menu is a full-viewport two-column composition on desktop and a compact
 top sheet on mobile, not a modal or a dropbar. Its sub-links are SPA-aware;

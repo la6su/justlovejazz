@@ -219,7 +219,7 @@ export class SplashCube extends THREE.Mesh {
 
     // (PlayButton3D removed — was fully dead render path: created, immediately
     //  hidden, never shown, update() ran every frame on invisible mesh.
-    //  PLAN-showreel-shader-plane Phase 4 proposed it but Phase 6 never executed.)
+    //  The old prototype is intentionally not retained as an active path.)
   }
 
   // ════════════════════════════════════════════════════════════════════

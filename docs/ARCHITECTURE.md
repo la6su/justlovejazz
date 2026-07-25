@@ -142,10 +142,14 @@ arrival and section change. It rasterises only the section title onto a small
 pixel grid before nearest-neighbour upscaling, so the intended pixel treatment
 remains crisp at high DPR. The stage derives plane positions and scales from
 the active perspective-camera frustum: wide viewports use a two-plane spread,
-while portrait viewports keep width-led cards with a visible gutter rather than
-shrinking both cases into thumbnail-sized media. The stage and its refcounted case textures are disposed
-when leaving `/works`; that release is intentional and must be profiled after
-Three.js upgrades because GPU drivers can defer freeing shader programs.
+while portrait viewports keep width-led cards with a visible gutter and the
+same 16:9 ratio as the DOM captions. `WorksPlaneStage` owns the normalized
+`WIDE_LAYOUT` and `STACKED_LAYOUT` values; the semantic DOM caption layer
+mirrors those values in scoped Less, preserving one visible card and one
+focusable button per case. The stage and its refcounted case textures are
+disposed when leaving `/works`; that release is intentional and must be
+profiled after Three.js upgrades because GPU drivers can defer freeing shader
+programs.
 The canvas title uses the self-hosted Pixelify Sans face (Latin and Cyrillic)
 only for this visual layer; the rest of the product remains on Onest.
 `DrawTrail` is a transient Studio Console cursor signal on the standalone
