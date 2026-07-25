@@ -142,10 +142,12 @@ arrival and section change. It rasterises only the section title onto a small
 pixel grid before nearest-neighbour upscaling, so the intended pixel treatment
 remains crisp at high DPR. The stage derives plane positions and scales from
 the active perspective-camera frustum: wide viewports use a two-plane spread,
-while portrait viewports crop horizontally rather than shrink both cases into
-thumbnail-sized media. The stage and its refcounted case textures are disposed
+while portrait viewports keep width-led cards with a visible gutter rather than
+shrinking both cases into thumbnail-sized media. The stage and its refcounted case textures are disposed
 when leaving `/works`; that release is intentional and must be profiled after
 Three.js upgrades because GPU drivers can defer freeing shader programs.
+The canvas title uses the self-hosted Pixelify Sans face (Latin and Cyrillic)
+only for this visual layer; the rest of the product remains on Onest.
 `DrawTrail` is a transient Studio Console cursor signal on the standalone
 `/works` route only; it decays after pointer movement and stays out of the home
 media stream.

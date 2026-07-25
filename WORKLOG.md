@@ -1,5 +1,31 @@
 # Worklog
 
+## 2026-07-25 — Works gutters and intentional Pixelify BackText
+
+### Decision
+
+Keep a pixel font only where it creates a clear Works identity. Restore the
+already verified Pixelify Sans assets with Cyrillic support, but render them at
+2× source resolution so the texture reads as designed pixel type rather than a
+nearest-filter artifact. Reduce the frustum-relative plane widths to expose
+a stable outer margin and a visible gutter between cases.
+
+### Changes
+
+- Works desktop layout now targets smaller normalized plane widths (`0.52` and
+  `0.32`) with separated centers. Stacked layouts are width-led and use the
+  same gutter logic on portrait screens.
+- `WorksTextScreen` loads Pixelify Sans only as the BackText face, redraws after
+  `document.fonts.load()` resolves, and rasterises at 1024×256 before scaling
+  to the existing 2048×512 texture.
+- Restored the two 49 KB Pixelify Sans TTF files and their project-owned CSS
+  declaration; shared UI remains Onest.
+
+### Verification
+
+Re-run the desktop and 390×844 Works visual checks plus the full typecheck,
+build and E2E gate before publishing this follow-up.
+
 ## 2026-07-25 — Works wipe, frustum layout and duplicate-media removal
 
 ### Decision

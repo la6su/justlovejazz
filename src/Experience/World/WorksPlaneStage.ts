@@ -30,15 +30,15 @@ interface CaseLayout {
 // a 21:9 desktop and a portrait phone without treating a 16:9 mockup as a
 // universal coordinate system.
 const WIDE_LAYOUT: readonly [CaseLayout, CaseLayout] = [
-  { x: -0.18, y: 0.03, z: -3.05, scale: 0.62 },
-  { x: 0.28, y: -0.16, z: -3.62, scale: 0.38 },
+  { x: -0.16, y: 0.03, z: -3.05, scale: 0.52 },
+  { x: 0.27, y: -0.16, z: -3.62, scale: 0.32 },
 ]
 // UIkit's `@m` grid breakpoint is where the semantic card controls stack.
 // Mirror that exact editorial order in the 3D layer instead of squeezing the
 // desktop two-column coordinates into a narrow viewport.
 const STACKED_LAYOUT: readonly [CaseLayout, CaseLayout] = [
-  { x: -0.03, y: 0.24, z: -3.15, scale: 0.48 },
-  { x: 0.04, y: -0.27, z: -3.52, scale: 0.42 },
+  { x: -0.03, y: 0.25, z: -3.15, scale: 0.68 },
+  { x: 0.04, y: -0.25, z: -3.52, scale: 0.6 },
 ]
 // Unified animation: tap → wobble pulse + direct overlay open (same as BakuCarousel).
 // No 3D plane-to-fullscreen transition — the CSS clip-path iris reveal handles it.
@@ -275,14 +275,14 @@ export class WorksPlaneStage extends THREE.Group {
     const viewHeight = 2 * Math.tan(THREE.MathUtils.degToRad(this._camera.fov) / 2) * distance
     const viewWidth = viewHeight * this._viewportAspect
     const widthScale = viewWidth * layout.scale
-    // Portrait cards crop horizontally to retain a full-screen editorial rhythm
-    // instead of shrinking into two tiny 16:9 thumbnails.
+    // Portrait cards stay width-led with a deliberate gutter; the semantic
+    // UIkit grid uses the same stacked rhythm below the medium breakpoint.
     const heightScale = (viewHeight * layout.scale) / (9 / 16)
     return {
       x: viewWidth * layout.x,
       y: viewHeight * layout.y,
       z: layout.z,
-      scale: this._stackedLayout ? Math.max(widthScale, heightScale) : widthScale,
+      scale: this._stackedLayout ? Math.min(widthScale, heightScale) : widthScale,
     }
   }
 

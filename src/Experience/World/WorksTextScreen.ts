@@ -51,6 +51,7 @@ export class WorksTextScreen extends THREE.Mesh {
   private _revealDelay = 0
   private _revealElapsed = 0
   private _revealRequested = false
+  private _disposed = false
   private _time = 0
   private readonly _uniformVisibility: { value: number }
   private readonly _uniformTime: { value: number }
@@ -61,9 +62,9 @@ export class WorksTextScreen extends THREE.Mesh {
     // The plane is subdivided to allow potential vertex displacement if needed.
     const geometry = new THREE.PlaneGeometry(SCREEN_WIDTH, SCREEN_HEIGHT, 8, 4)
 
-    // Draw at a compact source resolution, then scale into a 2048×512 texture
-    // without interpolation. This preserves intentionally blocky type while
-    // avoiding a blurry texture on high-DPR displays.
+    // Draw at 2× source resolution, then scale into a 2048×512 texture without
+    // interpolation. Pixelify Sans supplies the deliberate pixel treatment;
+    // the 2× raster keeps it legible instead of turning into oversized blocks.
     const canvas = document.createElement('canvas')
     canvas.width = 2048
     canvas.height = 512
@@ -126,7 +127,10 @@ export class WorksTextScreen extends THREE.Mesh {
     // Position: flat plane behind the cards. Cards are at z≈-3, screen at z=-7.
     // No rotation needed — PlaneGeometry faces +Z by default, which faces
     // the camera (camera looks down -Z, so +Z faces toward it).
-    this.position.set(0, 0, -7)
+    // Keep the title visibly behind the upper edge of the cards. A centred
+    // plane is completely occluded by the 16:9 media on portrait screens,
+    // which makes the wipe animation impossible to read.
+    this.position.set(0, 0.85, -7)
 
     this._texture = texture
     this._canvas = canvas
@@ -136,6 +140,9 @@ export class WorksTextScreen extends THREE.Mesh {
     this._uniformIsLight = uIsLight
 
     this.renderText(0)
+    void document.fonts.load("700 72px 'Pixelify Sans'").then(() => {
+      if (!this._disposed) this.renderText(this._sectionIndex)
+    })
   }
 
   /** Render the section title to a pixel grid, then upscale it without blur. */
@@ -147,19 +154,19 @@ export class WorksTextScreen extends THREE.Mesh {
 
     ctx.clearRect(0, 0, w, h)
     const source = document.createElement('canvas')
-    source.width = 512
-    source.height = 128
+    source.width = 1024
+    source.height = 256
     const sourceCtx = source.getContext('2d')!
     sourceCtx.fillStyle = '#ffffff'
     sourceCtx.textAlign = 'center'
     sourceCtx.textBaseline = 'middle'
 
-    const fontFamily = "'Onest', system-ui, sans-serif"
-    let fontSize = 62
-    sourceCtx.font = `800 ${fontSize}px ${fontFamily}`
+    const fontFamily = "'Pixelify Sans', 'Onest', system-ui, sans-serif"
+    let fontSize = 72
+    sourceCtx.font = `700 ${fontSize}px ${fontFamily}`
     while (fontSize > 20 && sourceCtx.measureText(title).width > source.width * 0.9) {
       fontSize -= 2
-      sourceCtx.font = `800 ${fontSize}px ${fontFamily}`
+      sourceCtx.font = `700 ${fontSize}px ${fontFamily}`
     }
     for (const x of [-source.width / 2, source.width / 2, source.width * 1.5]) {
       sourceCtx.fillText(title, x, source.height / 2)
@@ -220,6 +227,7 @@ export class WorksTextScreen extends THREE.Mesh {
   }
 
   dispose(): void {
+    this._disposed = true
     this._texture.dispose()
     this.geometry.dispose()
     ;(this.material as THREE.Material).dispose()
