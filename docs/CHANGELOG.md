@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+- Reworked `/works` around one visual media owner. Semantic DOM case buttons
+  now provide captions and keyboard targets only; the eight hidden duplicate
+  `<img>` elements and their unused custom card styles were removed. This
+  reduces both the CSS surface and decoded-image memory pressure.
+- Works back text now renders the title only as crisp pixel-rasterised canvas
+  type. It uses Junni's 1 s delayed, 2 s ease-out centre vertical wipe on
+  route arrival and on section changes, independently from card fades.
+- Made Works plane composition camera-frustum-relative. Desktop spreads the
+  pair across the viewport; portrait keeps an editorial full-screen cadence by
+  cropping media horizontally instead of shrinking it to thumbnails.
+- Dispose the inactive Works stage on route exit so its eight case textures,
+  canvas and per-plane materials can be released. GPU-driver reclamation still
+  needs runtime profiling after repeated route visits.
+- Reduced `main.less` from 2205 to 2025 source lines by deleting custom media
+  card overrides that no longer had a rendering owner.
+- Disabled non-essential UIkit Nav height animation and reconcile its existing
+  ARIA state after a click, preventing mobile submenus from remaining hidden
+  when the menu sheet was hidden during component initialisation.
+
 - Reduced the emitted shared UIkit stylesheet by removing nine components and
   three utilities with no repository markup usage. Standalone blog CSS falls
   from 165.86 kB to 108.27 kB (21.53 kB to 16.77 kB gzip).

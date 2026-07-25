@@ -52,5 +52,8 @@ describe('renderPage', () => {
   it('works page has project cards', () => {
     const html = renderPage('works')
     expect(html).toContain('jlz-work-card')
+    expect(html).toContain('data-works-layout="equal"')
+    expect(html).not.toContain('jlz-work-card__image')
+    expect(html).not.toContain('<img')
   })
 })

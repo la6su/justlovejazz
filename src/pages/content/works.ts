@@ -2,8 +2,8 @@
 // The page keeps the six-section navigation contract, while each project pair
 // gets an editorial composition sized by UIkit's responsive grid.
 //
-// The section title + lead are rendered as a 3D curved text screen
-// (WorksTextScreen) behind the work cards — NOT as HTML. The DOM only
+// The section title is rendered as a 3D pixel-text screen (WorksTextScreen)
+// behind the work cards — NOT as HTML. The DOM only
 // carries the index header + semantic card buttons.
 
 import { PROJECTS } from '../../Data/Projects'
@@ -22,31 +22,22 @@ function cardWidth(layout: WorksLayout, position: 0 | 1): string {
   return widths[layout][position]
 }
 
-function workCard(idx: number, prominence: 'primary' | 'secondary'): string {
+function workCard(idx: number): string {
   const project = PROJECTS[idx]!
   const number = String(idx + 1).padStart(2, '0')
   const meta = [project.year, project.category].filter(Boolean).join(' · ')
   const disciplines = project.tags?.slice(0, 2).join(' · ') ?? project.category ?? ''
 
   return `
-    <div class="${prominence === 'primary' ? 'jlz-work-slot--primary' : 'jlz-work-slot--secondary'}">
-      <button class="jlz-work-card jlz-case-plane jlz-work-card--${prominence} uk-inline uk-transition-toggle" type="button"
+    <div>
+      <button class="jlz-work-card jlz-case-plane" type="button"
               data-project-idx="${idx}" data-project-id="${project.id}" data-cursor="view" data-magnetic
               aria-label="Open project: ${project.title}">
-        <span class="jlz-work-card__inner">
-          <span class="jlz-work-card__media uk-cover-container">
-            <img class="jlz-work-card__image uk-transition-scale-up uk-transition-opaque"
-                 src="${project.textureUrl}" alt="" loading="${idx < 2 ? 'eager' : 'lazy'}" uk-cover>
-            <span class="jlz-work-card__chromatic" aria-hidden="true"></span>
-          </span>
-          <span class="jlz-work-card__number">${number}</span>
-          <span class="jlz-work-card__discipline">${disciplines}</span>
-          <span class="jlz-work-card__overlay uk-position-bottom">
-            <span class="jlz-work-card__copy">
-              <strong class="jlz-work-card__title">${project.title}</strong>
-              <span class="jlz-work-card__meta">${meta}</span>
-            </span>
-            <span class="jlz-work-card__arrow" aria-hidden="true" uk-icon="icon: arrow-up-right; ratio: 1.1"></span>
+        <span class="jlz-work-card__caption">
+          <span class="jlz-work-card__eyebrow">${number} · ${disciplines}</span>
+          <span class="jlz-work-card__copy">
+            <strong class="jlz-work-card__title">${project.title}</strong>
+            <span class="jlz-work-card__meta">${meta}</span>
           </span>
         </span>
       </button>
@@ -75,9 +66,9 @@ function worksSection(
           <span class="jlz-works-index__progress">${number} / 04</span>
         </header>
 
-        <div class="jlz-works-grid jlz-works-composition jlz-works-composition--${layout} uk-grid uk-grid-small uk-height-1-1 uk-flex uk-flex-middle uk-child-width-1-1 uk-child-width-auto@m" uk-grid>
-          <div class="${cardWidth(layout, 0)}">${workCard(projectA, 'primary')}</div>
-          <div class="${cardWidth(layout, 1)}">${workCard(projectB, 'secondary')}</div>
+        <div class="jlz-works-grid jlz-works-composition uk-grid uk-grid-small uk-height-1-1 uk-flex uk-flex-middle uk-child-width-1-1 uk-child-width-auto@m" data-works-layout="${layout}" uk-grid>
+          <div class="${cardWidth(layout, 0)}">${workCard(projectA)}</div>
+          <div class="${cardWidth(layout, 1)}">${workCard(projectB)}</div>
         </div>
       </div>
     </section>`

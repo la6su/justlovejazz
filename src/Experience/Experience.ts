@@ -545,6 +545,10 @@ export class Experience {
           this.world?.setWorksPlaneStageSection(0)
           this._needsRender = true
         })
+      } else {
+        // Works owns eight decoded 1440×810 textures. Keeping an inactive
+        // stage alive makes that GPU allocation look like a navigation leak.
+        this.world?.disposeWorksPlaneStage()
       }
       this._needsRender = true
     }

@@ -279,7 +279,7 @@ export class World extends THREE.Group {
     this._worksPlaneStagePromise = stage.init().then(
       () => {
         stage.setActive(document.body.dataset.page === 'works', 0)
-        stage.resize(window.innerWidth)
+        stage.resize(window.innerWidth, window.innerHeight)
         if (this._camera) stage.setCamera(this._camera)
       },
       (error) => {
@@ -756,7 +756,7 @@ export class World extends THREE.Group {
     this.sceneGroups.forEach((g) => {
       g.scale.setScalar(scale)
     })
-    this.worksPlaneStage?.resize(width)
+    this.worksPlaneStage?.resize(width, height)
     // Ground plane: always covers viewport (large geometry, no change needed).
     // Baku: position stays at origin, no resize needed.
     // Atmosphere: fog density stays per-section.

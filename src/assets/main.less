@@ -698,8 +698,8 @@ html.jlz-force-cursor .interactive {
   font-variant-numeric: tabular-nums;
 }
 
-// .jlz-works-statement removed — the section title + lead are now rendered
-// as a 3D curved text screen (WorksTextScreen.ts) behind the work cards,
+// .jlz-works-statement removed — the section title is rendered as a 3D pixel
+// text screen (WorksTextScreen.ts) behind the work cards,
 // not as HTML. This removes ~45 LOC of CSS and the duplicate DOM layer.
 
 .jlz-works-composition {
@@ -722,22 +722,22 @@ html.jlz-force-cursor .interactive {
   width: 100%;
 }
 
-.jlz-works-composition--equal > :last-child {
+[data-works-layout='equal'] > :last-child {
   height: 88%;
   align-self: end;
 }
 
 .jlz-work-card {
-  display: block;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
   width: 100%;
   height: 100%;
   padding: 0;
-  overflow: visible;
   border: 0;
   color: var(--jlz-color-text);
   background: none;
   cursor: pointer;
-  perspective: 1100px;
   text-align: left;
   -webkit-tap-highlight-color: transparent;
 }
@@ -747,126 +747,27 @@ html.jlz-force-cursor .interactive {
   outline-offset: 4px;
 }
 
-.jlz-work-card__inner {
-  position: relative;
-  display: block;
+.jlz-work-card__caption {
   width: 100%;
-  height: 100%;
-  min-height: 12rem;
-  overflow: hidden;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--jlz-space-3);
+  padding: clamp(0.75rem, 1.5vw, 1.1rem);
   border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: var(--jlz-radius-sm);
-  background: var(--jlz-color-bg);
-  box-shadow: 0 1.2rem 3.5rem rgba(0, 0, 0, 0.32);
-  transform: translateZ(0) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
-  transform-style: preserve-3d;
-  transition:
-    transform 0.35s ease,
-    box-shadow 0.5s ease;
-  will-change: transform;
-}
-
-.jlz-work-card__inner::before,
-.jlz-work-card__inner::after {
-  content: '';
-  position: absolute;
-  z-index: 4;
-  top: 0;
-  height: 2px;
+  background: rgba(3, 4, 3, 0.62);
+  backdrop-filter: blur(8px);
   pointer-events: none;
 }
 
-.jlz-work-card__inner::before {
-  left: 0;
-  width: 2.5rem;
-  background: var(--jlz-color-accent);
-}
-
-.jlz-work-card__inner::after {
-  left: 2.5rem;
-  width: 1.5rem;
-  background: var(--jlz-color-signal-teal);
-}
-
-.jlz-work-card:hover .jlz-work-card__inner {
-  box-shadow:
-    0 1.8rem 4rem rgba(0, 0, 0, 0.46),
-    0 0 0 1px var(--jlz-color-signal-teal);
-}
-
-.jlz-work-card__media,
-.jlz-work-card__image {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-
-.jlz-work-card__media {
-  display: block;
-  overflow: hidden;
-}
-
-.jlz-work-card__image {
-  object-fit: cover;
-  transition: transform 0.75s var(--jlz-ease-cinematic);
-}
-
-.jlz-work-card__chromatic {
-  position: absolute;
-  inset: -12%;
-  background: rgba(69, 215, 188, 0.12);
-  opacity: 0;
-  transform: translate3d(0, 0, 0) scale(0.96);
-  transition:
-    opacity 0.7s ease,
-    transform 1.1s var(--jlz-ease-cinematic);
-}
-
-.jlz-work-card:hover .jlz-work-card__chromatic,
-.jlz-work-card:focus-visible .jlz-work-card__chromatic {
-  opacity: 0.24;
-  transform: scale(1);
-}
-
-.jlz-work-card__number {
-  position: absolute;
-  top: clamp(0.85rem, 1.5vw, 1.35rem);
-  left: clamp(0.85rem, 1.5vw, 1.35rem);
-  z-index: 2;
-  color: rgba(255, 255, 255, 0.72);
-  font-size: 0.65rem;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.18em;
-}
-
-.jlz-work-card__discipline {
-  position: absolute;
-  top: clamp(0.85rem, 1.5vw, 1.35rem);
-  right: clamp(0.85rem, 1.5vw, 1.35rem);
-  z-index: 2;
-  max-width: 54%;
-  overflow: hidden;
+.jlz-work-card__eyebrow {
+  align-self: start;
   color: rgba(255, 255, 255, 0.68);
   font-size: 0.56rem;
+  font-variant-numeric: tabular-nums;
   font-weight: 600;
   letter-spacing: 0.13em;
-  text-align: right;
-  text-overflow: ellipsis;
   text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.jlz-work-card__overlay {
-  z-index: 2;
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: clamp(1rem, 2vw, 1.75rem);
-  border-top: 1px solid rgba(255, 255, 255, 0.13);
-  background: rgba(3, 4, 3, 0.78);
-  pointer-events: none;
 }
 
 .jlz-work-card__copy {
@@ -902,36 +803,6 @@ html.jlz-force-cursor .interactive {
   text-transform: uppercase;
 }
 
-.jlz-work-card__arrow {
-  flex: 0 0 auto;
-  color: rgba(255, 255, 255, 0.72);
-  transition: transform 0.35s ease;
-}
-
-.jlz-work-card:hover .jlz-work-card__arrow {
-  transform: translate(0.25rem, -0.25rem);
-}
-
-.jlz-work-card:hover .jlz-work-card__image,
-.jlz-work-card:focus-visible .jlz-work-card__image {
-  transform: scale(1.035);
-}
-
-@keyframes jlz-case-plane-wobble {
-  0%,
-  100% {
-    transform: translateZ(0) rotateX(0) rotateY(0) scale(1);
-  }
-
-  38% {
-    transform: translate3d(0, -0.5rem, 0.7rem) rotateX(-1.6deg) rotateY(1.2deg) scale(1.012);
-  }
-
-  68% {
-    transform: translate3d(0, 0.12rem, 0.25rem) rotateX(0.8deg) rotateY(-0.6deg) scale(0.998);
-  }
-}
-
 .jlz-works-composition > * {
   opacity: 0;
   transition: opacity 0.5s ease;
@@ -943,47 +814,6 @@ html.jlz-force-cursor .interactive {
 
 .jlz-works-section.section-active .jlz-works-composition > :last-child {
   transition-delay: 0.08s;
-}
-
-.jlz-work-card.is-opening .jlz-work-card__inner {
-  box-shadow: 0 2.5rem 5rem rgba(0, 0, 0, 0.54);
-  transform: rotateX(0) rotateY(0) scale(0.985);
-}
-
-.jlz-work-card.is-wobbling .jlz-work-card__inner {
-  animation: jlz-case-plane-wobble 0.56s var(--jlz-ease-emphasis) both;
-}
-
-.jlz-work-card.is-opening .jlz-work-card__image {
-  transform: scale(1.06);
-}
-
-body[data-page='works'] .jlz-work-card__inner {
-  overflow: visible;
-  border-color: transparent;
-  background: transparent;
-  box-shadow: none;
-  transform: none;
-}
-
-body[data-page='works'] .jlz-work-card__inner::before,
-body[data-page='works'] .jlz-work-card__inner::after,
-body[data-page='works'] .jlz-work-card__media,
-body[data-page='works'] .jlz-work-card__chromatic {
-  display: none;
-}
-
-body[data-page='works'] .jlz-work-card__overlay {
-  padding: 0.8rem 0.9rem;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(3, 4, 3, 0.62);
-  backdrop-filter: blur(8px);
-}
-
-body[data-page='works'] .jlz-work-card:hover .jlz-work-card__inner,
-body[data-page='works'] .jlz-work-card.is-opening .jlz-work-card__inner {
-  box-shadow: none;
-  transform: none;
 }
 
 @media (max-width: 959px) {
@@ -999,10 +829,6 @@ body[data-page='works'] .jlz-work-card.is-opening .jlz-work-card__inner {
   .jlz-works-composition > * {
     height: calc(50% - 5px) !important;
     align-self: auto !important;
-  }
-
-  .jlz-work-card__inner {
-    min-height: 0;
   }
 }
 
@@ -1046,12 +872,7 @@ body[data-page='works'] .jlz-work-card.is-opening .jlz-work-card__inner {
     margin-top: 0.8rem;
   }
 
-  body[data-page='works'] .jlz-work-card__number,
-  body[data-page='works'] .jlz-work-card__discipline {
-    display: none;
-  }
-
-  body[data-page='works'] .jlz-work-card__overlay {
+  .jlz-work-card__caption {
     min-height: 3.6rem;
     padding: 0.62rem 0.72rem;
     border-color: rgba(255, 255, 255, 0.22);
@@ -1072,8 +893,7 @@ body[data-page='works'] .jlz-work-card.is-opening .jlz-work-card__inner {
 
 @media (prefers-reduced-motion: reduce) {
   .jlz-works-composition > *,
-  .jlz-work-card__inner,
-  .jlz-work-card__chromatic {
+  .jlz-work-card__caption {
     opacity: 1;
     transform: none !important;
     transition: none;
