@@ -151,6 +151,12 @@ test.describe('JustLoveJazz — accessibility & DOM UI', () => {
     await expect(firstCard).toHaveAttribute('aria-label', /Open project:/)
   })
 
+  test('direct content-section link keeps its route', async ({ page }) => {
+    await page.goto('/works#section-works-03')
+    await expect(page.locator('main#spa-content')).toBeAttached({ timeout: 20000 })
+    await expect(page).toHaveURL(/\/works#section-works-03$/)
+  })
+
   test('top-bar controls and menu section links render with aria-labels', async ({ page }) => {
     await page.goto('/')
 

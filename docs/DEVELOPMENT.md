@@ -7,6 +7,14 @@ bun install
 bunx playwright install chromium
 ```
 
+## Pi Agent
+
+The repository-root `AGENTS.md` is Pi's project instruction file as well as
+the source for other coding agents. Start Pi from the repository root, then
+use `/reload` whenever `AGENTS.md` changes. Keep task-specific plans in
+`docs/PLAN-*.md`; do not add a parallel `.pi/SYSTEM.md`, because it would
+replace Pi's default system prompt and duplicate repository policy.
+
 The Playwright command is a one-time download for the browser binary used by
 the repository's E2E project. Re-run it after a Playwright upgrade when the
 runner asks for a new browser revision.

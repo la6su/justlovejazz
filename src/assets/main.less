@@ -86,7 +86,6 @@ body:not([data-page='home']) #spa-content {
   }
 }
 
-
 .jlz-page {
   position: relative;
   min-height: 100dvh;
@@ -136,7 +135,6 @@ body:not([data-page='home']) #spa-content {
   line-height: 0.85;
   margin: 0;
 }
-
 
 .studio-title,
 .jlz-menu-stat__num,
@@ -196,7 +194,6 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
 .jlz-fs-overlay.uk-open {
   z-index: 30010 !important;
 }
-
 
 .jlz-fs-overlay .jlz-fs-dialog {
   display: grid;
@@ -393,11 +390,9 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
   white-space: nowrap;
 }
 
-
 .jlz-fs-close {
   z-index: 6;
 }
-
 
 .jlz-nav-arrow {
   display: grid;
@@ -438,7 +433,6 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
   outline: 2px solid var(--jlz-color-signal-teal);
   outline-offset: 4px;
 }
-
 
 .jlz-fs-prev,
 .jlz-fs-next {
@@ -556,7 +550,6 @@ html.jlz-force-cursor .interactive {
   cursor: none;
 }
 
-
 @media (hover: hover) and (pointer: fine) {
   body,
   a,
@@ -565,7 +558,6 @@ html.jlz-force-cursor .interactive {
     cursor: none;
   }
 }
-
 
 @media (prefers-reduced-motion: reduce) {
   .custom-cursor-inner,
@@ -585,7 +577,6 @@ html.jlz-force-cursor .interactive {
   display: inline-block;
 }
 
-
 .jlz-section-top {
   flex-shrink: 0;
   padding-top: calc(48px + var(--jlz-space-6));
@@ -595,7 +586,6 @@ html.jlz-force-cursor .interactive {
   flex-shrink: 0;
   padding-bottom: calc(4.6rem + env(safe-area-inset-bottom, 0px));
 }
-
 
 .jlz-contact-form {
   gap: var(--jlz-space-2);
@@ -630,7 +620,6 @@ html.jlz-force-cursor .interactive {
   background: var(--jlz-color-accent);
 }
 
-
 .jlz-experiment-footer {
   gap: 0.55rem 0.85rem;
 }
@@ -650,7 +639,6 @@ html.jlz-force-cursor .interactive {
     margin-left: 0;
   }
 }
-
 
 .jlz-flex-gap-small {
   gap: var(--jlz-space-2); /* 0.5rem */
@@ -713,7 +701,6 @@ html.jlz-force-cursor .interactive {
 // .jlz-works-statement removed — the section title + lead are now rendered
 // as a 3D curved text screen (WorksTextScreen.ts) behind the work cards,
 // not as HTML. This removes ~45 LOC of CSS and the duplicate DOM layer.
-
 
 .jlz-works-composition {
   position: relative;
@@ -945,7 +932,6 @@ html.jlz-force-cursor .interactive {
   }
 }
 
-
 .jlz-works-composition > * {
   opacity: 0;
   transition: opacity 0.5s ease;
@@ -959,7 +945,6 @@ html.jlz-force-cursor .interactive {
   transition-delay: 0.08s;
 }
 
-
 .jlz-work-card.is-opening .jlz-work-card__inner {
   box-shadow: 0 2.5rem 5rem rgba(0, 0, 0, 0.54);
   transform: rotateX(0) rotateY(0) scale(0.985);
@@ -972,7 +957,6 @@ html.jlz-force-cursor .interactive {
 .jlz-work-card.is-opening .jlz-work-card__image {
   transform: scale(1.06);
 }
-
 
 body[data-page='works'] .jlz-work-card__inner {
   overflow: visible;
@@ -1133,7 +1117,6 @@ body[data-page='works'] .jlz-work-card.is-opening .jlz-work-card__inner {
   }
 }
 
-
 .jlz-lang-label {
   text-transform: uppercase;
   font-size: 0.72rem;
@@ -1197,18 +1180,15 @@ body:not([data-page='home'])
 }
 
 body[data-page='home']
-#spa-content
-> section[data-section]:not(.jlz-menu-overlay):not([data-contact-footer])
-> .uk-container:not(.jlz-works-stage),
-
+  #spa-content
+  > section[data-section]:not(.jlz-menu-overlay):not([data-contact-footer])
+  > .uk-container:not(.jlz-works-stage),
 body:not([data-page='home'])
-.jlz-page
-> .jlz-page-section:not(.jlz-menu-overlay):not([data-contact-footer])
-> .uk-container:not(.jlz-works-stage) {
+  .jlz-page
+  > .jlz-page-section:not(.jlz-menu-overlay):not([data-contact-footer])
+  > .uk-container:not(.jlz-works-stage) {
   width: min(100%, 96rem);
-  padding: clamp(6.2rem, 10vh, 8rem)
-  clamp(1.25rem, 5vw, 5rem)
-  clamp(6.5rem, 11vh, 8.5rem);
+  padding: clamp(6.2rem, 10vh, 8rem) clamp(1.25rem, 5vw, 5rem) clamp(6.5rem, 11vh, 8.5rem);
 }
 
 [data-story-state] .jlz-section-top,
@@ -1633,7 +1613,6 @@ body[data-cinematic-sheet] .jlz-contact-launcher {
   transform: translate3d(0, 1.2rem, 0);
 }
 
-
 body[data-cinematic-sheet]
   #spa-content
   > section[data-section]:not(.jlz-menu-overlay):not([data-contact-footer])
@@ -1876,12 +1855,12 @@ body[data-cinematic-sheet]
 }
 
 // auto mode (default) → show sun (theme-auto)
-.jlz-theme-toggle:not(.is-inverse) [uk-icon="icon: theme-auto"] {
+.jlz-theme-toggle:not(.is-inverse) [uk-icon='icon: theme-auto'] {
   display: inline-block;
 }
 
 // inverse mode → show moon (theme-inverse)
-.jlz-theme-toggle.is-inverse [uk-icon="icon: theme-inverse"] {
+.jlz-theme-toggle.is-inverse [uk-icon='icon: theme-inverse'] {
   display: inline-block;
 }
 
@@ -1910,7 +1889,8 @@ body[data-cinematic-sheet]
   align-items: center;
   width: min(100%, 64rem);
   max-height: calc(
-    100dvh - var(--jlz-header-height, 60px) - (var(--jlz-bottom-controls, 4.5rem) * 1.35) - var(--jlz-space-8)
+    100dvh - var(--jlz-header-height, 60px) - (var(--jlz-bottom-controls, 4.5rem) * 1.35) -
+      var(--jlz-space-8)
   );
   margin: 0 auto;
   overflow-y: auto;
@@ -1925,7 +1905,6 @@ body[data-cinematic-sheet]
   min-height: 0;
 }
 
-
 .jlz-menu-col-title {
   font-size: 0.68rem;
   font-weight: 700;
@@ -1934,7 +1913,6 @@ body[data-cinematic-sheet]
   color: var(--jlz-color-text-subtle);
   margin-bottom: var(--jlz-space-2);
 }
-
 
 .jlz-menu-stat__num {
   font-size: clamp(4rem, 12vw, 9rem);
@@ -2083,7 +2061,6 @@ body[data-cinematic-sheet]
   transform: translateX(0);
   color: @global-primary-background;
 }
-
 
 @media (max-width: 639px) {
   .jlz-menu-container {

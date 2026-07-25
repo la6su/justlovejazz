@@ -38,9 +38,7 @@ export class ContentReveal {
       '[data-section].section-active, [data-page-section].section-active',
     )
     const sectionId =
-      active?.getAttribute('data-section') ??
-      active?.getAttribute('data-page-section') ??
-      'intro'
+      active?.getAttribute('data-section') ?? active?.getAttribute('data-page-section') ?? 'intro'
     this.currentSectionId = sectionId
     this.applyTheme(sectionId)
   }

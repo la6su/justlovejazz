@@ -12,7 +12,9 @@ describe('pageMeta — applyMetaTags', () => {
   beforeEach(() => {
     // Clean <head> so each test starts fresh (meta tags from previous runs
     // would otherwise leak across tests).
-    document.head.querySelectorAll('meta[name], meta[property], link[rel="canonical"]').forEach((el) => el.remove())
+    document.head
+      .querySelectorAll('meta[name], meta[property], link[rel="canonical"]')
+      .forEach((el) => el.remove())
     document.title = ''
     document.documentElement.lang = ''
     localStorage.clear()
@@ -29,11 +31,31 @@ describe('pageMeta — applyMetaTags', () => {
   describe('per-page tags (EN)', () => {
     const cases: Array<{ page: PageId; path: string; titleKey: string; descKey: string }> = [
       { page: 'home', path: '/', titleKey: 'meta.home.title', descKey: 'meta.home.description' },
-      { page: 'services', path: '/services', titleKey: 'meta.services.title', descKey: 'meta.services.description' },
-      { page: 'works', path: '/works', titleKey: 'meta.works.title', descKey: 'meta.works.description' },
-      { page: 'manifesto', path: '/manifesto', titleKey: 'meta.manifesto.title', descKey: 'meta.manifesto.description' },
+      {
+        page: 'services',
+        path: '/services',
+        titleKey: 'meta.services.title',
+        descKey: 'meta.services.description',
+      },
+      {
+        page: 'works',
+        path: '/works',
+        titleKey: 'meta.works.title',
+        descKey: 'meta.works.description',
+      },
+      {
+        page: 'manifesto',
+        path: '/manifesto',
+        titleKey: 'meta.manifesto.title',
+        descKey: 'meta.manifesto.description',
+      },
       { page: 'lab', path: '/lab', titleKey: 'meta.lab.title', descKey: 'meta.lab.description' },
-      { page: 'contact', path: '/contact', titleKey: 'meta.contact.title', descKey: 'meta.contact.description' },
+      {
+        page: 'contact',
+        path: '/contact',
+        titleKey: 'meta.contact.title',
+        descKey: 'meta.contact.description',
+      },
     ]
 
     for (const { page, path } of cases) {
@@ -130,10 +152,14 @@ describe('pageMeta — applyMetaTags', () => {
 
     it('description changes when switching EN → RU', () => {
       applyMetaTags('services')
-      const enDesc = document.head.querySelector<HTMLMetaElement>('meta[name="description"]')!.content
+      const enDesc = document.head.querySelector<HTMLMetaElement>(
+        'meta[name="description"]',
+      )!.content
       toggleLang()
       applyMetaTags('services')
-      const ruDesc = document.head.querySelector<HTMLMetaElement>('meta[name="description"]')!.content
+      const ruDesc = document.head.querySelector<HTMLMetaElement>(
+        'meta[name="description"]',
+      )!.content
       expect(enDesc).not.toBe(ruDesc)
     })
   })

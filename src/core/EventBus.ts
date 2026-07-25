@@ -55,7 +55,9 @@ class EventBus {
     // Bridge to window for raw listeners. Guard for SSR/jsdom without window.
     if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
       const payload = args[0]
-      window.dispatchEvent(new CustomEvent(event, payload === undefined ? undefined : { detail: payload }))
+      window.dispatchEvent(
+        new CustomEvent(event, payload === undefined ? undefined : { detail: payload }),
+      )
     }
   }
 

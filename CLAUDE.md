@@ -27,9 +27,9 @@ gate, git/publishing, and documentation policy. Start there before any task.
 
 ## Common tasks
 
-| Task | Start here |
-|------|------------|
-| Fix a bug | Reproduce → [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) → source → fix → verify |
-| Add a feature | [NEXT.md](NEXT.md) → [docs/RULES.md](docs/RULES.md) → implement → verify |
-| Update docs | [docs/README.md](docs/README.md) ownership map → update only the owner |
-| UI change | [docs/UIKIT3.md](docs/UIKIT3.md) → use UIKit component first → verify both themes |
+| Task          | Start here                                                                        |
+| ------------- | --------------------------------------------------------------------------------- |
+| Fix a bug     | Reproduce → [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) → source → fix → verify  |
+| Add a feature | [NEXT.md](NEXT.md) → [docs/RULES.md](docs/RULES.md) → implement → verify          |
+| Update docs   | [docs/README.md](docs/README.md) ownership map → update only the owner            |
+| UI change     | [docs/UIKIT3.md](docs/UIKIT3.md) → use UIKit component first → verify both themes |

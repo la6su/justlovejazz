@@ -40,12 +40,12 @@ const SECTION_PRESETS: Record<string, SectionLightPreset> = {
     keyIntensity: 0.8,
     keyPos: [4, 6, 4],
     fillColor: 0xd0d8e8,
-    fillIntensity: 0.3,  // soft fill from opposite side — prevents flat look
+    fillIntensity: 0.3, // soft fill from opposite side — prevents flat look
     rimColor: 0xb0c0d8,
-    rimIntensity: 0.6,   // rim light defines cube edges (Fresnel-like edge brightness)
+    rimIntensity: 0.6, // rim light defines cube edges (Fresnel-like edge brightness)
     hemiSky: 0xffffff,
     hemiGround: 0xe8e8e8,
-    hemiIntensity: 0.2,   // subtle ambient — lifts shadows without washing out
+    hemiIntensity: 0.2, // subtle ambient — lifts shadows without washing out
     volumetricColor: 0xffffff,
     volumetricIntensity: 0.0,
   },

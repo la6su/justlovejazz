@@ -8,7 +8,8 @@ documents: update the owner named below.
 | [ARCHITECTURE.md](ARCHITECTURE.md)                             | Runtime topology, routes, UI composition, renderer and event flow     | A module boundary or user-visible flow changes  |
 | [RULES.md](RULES.md)                                           | Non-negotiable engineering invariants                                 | A regression establishes a new guardrail        |
 | [DEVELOPMENT.md](DEVELOPMENT.md)                               | Local setup, verification, CI and the optional Codex sandbox appendix | Tooling, test scripts or CI change              |
-| [UIKIT3.md](UIKIT3.md)                                         | UIkit 3 and Less conventions, asset structure, solution priority     | UI infrastructure or theme assembly changes     |
+| [UIKIT3.md](UIKIT3.md)                                         | UIkit 3 and Less conventions, asset structure, solution priority      | UI infrastructure or theme assembly changes     |
+| [AUDIT-2026-07-25.md](AUDIT-2026-07-25.md)                     | Evidence-based technical audit and simplification backlog             | Refactoring and technical-debt planning         |
 | [BRAND.md](BRAND.md)                                           | Brand voice and visual intent                                         | Product/design direction changes                |
 | [PLAN-showreel-shader-plane.md](PLAN-showreel-shader-plane.md) | Active product plan — Works 3D and showreel                           | Its remaining scope changes                     |
 | [PLAN-css-unification.md](PLAN-css-unification.md)             | Active refactor plan — UIKit 3 native-first CSS minimization          | Its remaining scope changes                     |
@@ -16,13 +17,13 @@ documents: update the owner named below.
 
 Repository-root documents have separate roles:
 
-| Document                    | Owns                                                  |
-| --------------------------- | ----------------------------------------------------- |
-| [README.md](../README.md)   | Public overview and quick start                       |
-| [AGENTS.md](../AGENTS.md)   | Agent operating procedure (single source for all AI agents) |
-| [NEXT.md](../NEXT.md)       | Open, prioritised work only                           |
-| [WORKLOG.md](../WORKLOG.md) | Short, newest-first decision journal                  |
-| [CONTRIBUTING.md](../CONTRIBUTING.md) | Human contributor guide (references AGENTS.md) |
+| Document                              | Owns                                                        |
+| ------------------------------------- | ----------------------------------------------------------- |
+| [README.md](../README.md)             | Public overview and quick start                             |
+| [AGENTS.md](../AGENTS.md)             | Agent operating procedure (single source for all AI agents) |
+| [NEXT.md](../NEXT.md)                 | Open, prioritised work only                                 |
+| [WORKLOG.md](../WORKLOG.md)           | Short, newest-first decision journal                        |
+| [CONTRIBUTING.md](../CONTRIBUTING.md) | Human contributor guide (references AGENTS.md)              |
 
 ## Source of truth
 

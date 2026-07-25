@@ -3,7 +3,13 @@
 // Sections 0 (Lab) and 5 (Navigation) are shared across all SPA pages.
 // Main sections (1-4): Creative Direction, Realtime build, Motion, AI.
 
-import { sectionShell, contentTop, storyBottom, i18nDesc, serviceExplore } from '../../sections/_shared/constants'
+import {
+  sectionShell,
+  contentTop,
+  storyBottom,
+  i18nDesc,
+  serviceExplore,
+} from '../../sections/_shared/constants'
 import { labOverlaySection } from '../../sections/lab-overlay/template'
 import { navOverlaySection } from '../../sections/nav/template'
 

@@ -1102,8 +1102,10 @@ export class Experience {
       year?: string
     }
     const opts = {
-      mode: 'video' as const,
-      videoSrc: '/assets/video/coming-soon.mp4',
+      // Case studies are still-image overlays. The only video source belongs
+      // to UIManager's explicit showreel action; keeping this image-only
+      // avoids every project silently loading the placeholder showreel.
+      mode: 'image' as const,
       poster: p.textureUrl,
       title: p.title,
       category: `${p.year ?? ''} · ${p.category ?? ''}`,

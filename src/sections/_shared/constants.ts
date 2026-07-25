@@ -114,7 +114,10 @@ export function storyBottom(content: string, marker: string = '—'): string {
 export function i18nDesc(key: string, lines: readonly string[]): string {
   if (lines.length === 0) return ''
   return `<div class="jlz-service-desc uk-flex uk-flex-column">${lines
-    .map((line, i) => `<p class="uk-text-meta uk-margin-remove" data-i18n="${key}.desc${i + 1}">${line}</p>`)
+    .map(
+      (line, i) =>
+        `<p class="uk-text-meta uk-margin-remove" data-i18n="${key}.desc${i + 1}">${line}</p>`,
+    )
     .join('')}</div>`
 }
 

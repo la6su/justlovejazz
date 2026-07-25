@@ -35,15 +35,15 @@ owner of console theme variables.
 
 ### What lives where
 
-| Layer | Owner | Change it for |
-|-------|-------|---------------|
-| Design tokens (`@jlz-*` Less vars, `--jlz-*` CSS custom properties) | `_import.less` §1–§2 | A color, spacing, radius, z-index or motion token changes |
-| UIKit variable overrides (`@global-*`, `@button-*`, etc.) | `_import.less` §3 | A UIKit component's default appearance changes |
-| UIKit component imports | `_import.less` §4 | Adding or removing a UIKit component from the build |
-| Console theme (font weights, status colors, shadows, heading sizes, color-mode) | `console-theme/_import.less` | A console-level visual decision |
-| 3D shell, cinematic story/sheets, route-specific layout | `main.less` | No UIKit component covers the interaction or layout |
-| Standalone blog layout | `blog.less` | Semantic blog-only presentation |
-| Custom SVG icons | `console-icons.ts` | A new icon not in UIKit's default set |
+| Layer                                                                           | Owner                        | Change it for                                             |
+| ------------------------------------------------------------------------------- | ---------------------------- | --------------------------------------------------------- |
+| Design tokens (`@jlz-*` Less vars, `--jlz-*` CSS custom properties)             | `_import.less` §1–§2         | A color, spacing, radius, z-index or motion token changes |
+| UIKit variable overrides (`@global-*`, `@button-*`, etc.)                       | `_import.less` §3            | A UIKit component's default appearance changes            |
+| UIKit component imports                                                         | `_import.less` §4            | Adding or removing a UIKit component from the build       |
+| Console theme (font weights, status colors, shadows, heading sizes, color-mode) | `console-theme/_import.less` | A console-level visual decision                           |
+| 3D shell, cinematic story/sheets, route-specific layout                         | `main.less`                  | No UIKit component covers the interaction or layout       |
+| Standalone blog layout                                                          | `blog.less`                  | Semantic blog-only presentation                           |
+| Custom SVG icons                                                                | `console-icons.ts`           | A new icon not in UIKit's default set                     |
 
 ## Less assembly order
 
@@ -72,10 +72,14 @@ Active imports from `_import.less` §4 (commented-out lines are intentionally
 excluded to reduce bundle size):
 
 ```
-base, link, heading, icon, button, section, container, card, close,
-spinner, modal, slider, tooltip, grid, table, form, form-range,
-iconnav, nav, navbar, slidenav
+base, link, heading, icon, button, section, container, close, modal, tooltip,
+grid, form, form-range, nav, navbar
 ```
+
+The shared utility imports are limited to animation, width, height, text,
+cover, utility, flex, margin, padding, position, transition, visibility and
+inverse. Add a component or utility only after its markup/attribute has a
+repository use and record the measured CSS impact in the relevant change.
 
 If a task needs a commented-out component (e.g. `accordion`, `drop`,
 `offcanvas`, `tab`), uncomment its import line and verify the bundle size
@@ -100,15 +104,15 @@ Before writing custom CSS or JavaScript, follow this order:
 
 ## Current component model
 
-| Concern | Owner | Convention |
-|---------|-------|------------|
-| Dynamic component refresh | `router.ts` | Call `UIkit.update()` after route content renders |
-| Menu expandable items | `sections/nav/template.ts` | `uk-nav` / `uk-parent` state is authoritative |
-| Fullscreen project/showreel overlay | `FullscreenOverlay.ts` | UIKit `uk-modal` owns visibility + focus; explicit still/video media modes |
-| Fixed configuration controls | `UIMenu.ts` | `.jlz-topbar` with UIKit `uk-icon-button` for language, theme, sound |
-| Section navigation | `CinematicNav.ts` | Native scroll track + custom progress composition |
-| Works case planes | `WorkCards.ts` + `WorksPlaneStage.ts` | DOM controls/captions + real Three.js media planes |
-| Icons | `console-icons.ts` | Custom SVGs registered via `UIkit.icon.add`; UIKit `uk-icon="icon: name"` renders them |
+| Concern                             | Owner                                 | Convention                                                                             |
+| ----------------------------------- | ------------------------------------- | -------------------------------------------------------------------------------------- |
+| Dynamic component refresh           | `router.ts`                           | Call `UIkit.update()` after route content renders                                      |
+| Menu expandable items               | `sections/nav/template.ts`            | `uk-nav` / `uk-parent` state is authoritative                                          |
+| Fullscreen project/showreel overlay | `FullscreenOverlay.ts`                | UIKit `uk-modal` owns visibility + focus; explicit still/video media modes             |
+| Fixed configuration controls        | `UIMenu.ts`                           | `.jlz-topbar` with UIKit `uk-icon-button` for language, theme, sound                   |
+| Section navigation                  | `CinematicNav.ts`                     | Native scroll track + custom progress composition                                      |
+| Works case planes                   | `WorkCards.ts` + `WorksPlaneStage.ts` | DOM controls/captions + real Three.js media planes                                     |
+| Icons                               | `console-icons.ts`                    | Custom SVGs registered via `UIkit.icon.add`; UIKit `uk-icon="icon: name"` renders them |
 
 The menu is a full-viewport two-column composition on desktop and a compact
 top sheet on mobile, not a modal or a dropbar. Its sub-links are SPA-aware;

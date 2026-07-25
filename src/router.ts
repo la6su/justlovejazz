@@ -132,14 +132,16 @@ export function initRouter(): void {
     if (currentPage) applyMetaTags(currentPage)
   })
 
-  // Handle initial anchor in URL (e.g. #section-about)
+  // Handle an initial section anchor without rewriting a content route to
+  // `/#…`. CinematicNav owns the scroll-track state, so native scrollIntoView
+  // here would also desynchronise the DOM and 3D section state.
   if (location.hash.startsWith('#section-')) {
     const anchor = location.hash
-    history.replaceState(null, '', anchor)
-    setTimeout(() => {
-      const target = document.getElementById(anchor.replace('#', ''))
-      target?.scrollIntoView({ behavior: 'smooth' })
-    }, 100)
+    requestAnimationFrame(() => {
+      window.dispatchEvent(
+        new CustomEvent('jlz:goto-section-by-hash', { detail: { hash: anchor } }),
+      )
+    })
   }
 
   // Click handler for anchor links
@@ -180,8 +182,10 @@ export function initRouter(): void {
   window.addEventListener('popstate', () => {
     renderView()
     if (location.hash.startsWith('#section-')) {
-      const tgt = document.getElementById(location.hash.replace('#', ''))
-      if (tgt) tgt.scrollIntoView({ behavior: 'smooth' })
+      const hash = location.hash
+      requestAnimationFrame(() => {
+        window.dispatchEvent(new CustomEvent('jlz:goto-section-by-hash', { detail: { hash } }))
+      })
     }
   })
 }

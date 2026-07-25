@@ -24,7 +24,10 @@ export const CASE_ANISOTROPY = 16
  * This prevents the ~12 MB GPU waste that happened when BakuCarousel and
  * WorksPlaneStage each loaded their own copy of the same 4 project textures.
  */
-const textureCache = new Map<string, { texture: THREE.Texture; refCount: number; loading: Promise<THREE.Texture> }>()
+const textureCache = new Map<
+  string,
+  { texture: THREE.Texture; refCount: number; loading: Promise<THREE.Texture> }
+>()
 
 /** Load a case texture with the shared colour-space + filter + anisotropy profile.
  *  Returns a cached texture if one already exists for the URL (refcounted). */

@@ -6,9 +6,10 @@ changelog, not here. Move one item to **In progress** before implementation.
 ## High priority
 
 - [ ] **Studio Console theme cleanup** — continue the UIkit-first pass:
-      eliminate remaining `.jlz-*` utility classes that duplicate UIkit,
-      keep only 3D-shell hooks and genuinely bespoke components, and verify
-      inverse theme through `uk-light`/`uk-dark` on every route.
+      replace only remaining `.jlz-*` utility classes that duplicate UIkit,
+      keep 3D-shell hooks and genuinely bespoke components, and verify inverse
+      theme through `uk-light`/`uk-dark` on every route. See
+      `docs/AUDIT-2026-07-25.md` before removing more imports or overrides.
 
 - [ ] **Shared transition language** — prototype one temporary TSL fullscreen
       transition for SPA routes, Menu and project overlay; use lightweight
@@ -28,9 +29,6 @@ changelog, not here. Move one item to **In progress** before implementation.
       consumers use `eventBus.on()`.
 
 ## Medium priority
-
-- [ ] **Formatting baseline** — restore a clean repository-wide
-      `bun run format:check` in a dedicated mechanical PR.
 
 - [ ] **UIkit delivery audit** — measure actual CSS/JS component use before
       removing Less imports or rebuilding UIkit. Preserve the documented

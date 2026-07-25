@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+- Reduced the emitted shared UIkit stylesheet by removing nine components and
+  three utilities with no repository markup usage. Standalone blog CSS falls
+  from 165.86 kB to 108.27 kB (21.53 kB to 16.77 kB gzip).
+- Replaced the isolated Pixelify Works texture font with the shared Onest
+  display face and removed 99.7 kB of unused public font assets.
+- Fixed direct section links so they preserve the route and use
+  `CinematicNav`’s authoritative scroll state.
+- Project case studies now open as full-screen still-image overlays; video is
+  reserved for the explicit Showreel action.
+
 This is a concise release-level record. Implementation decisions belong in
 [`WORKLOG.md`](../WORKLOG.md); completed plans remain available through Git
 history.
@@ -20,7 +32,7 @@ history.
   camera. Reduced radius 20→12, increased arc 0.8→1.2 rad for full-width.
 - Alpha boost: luminance × 3.0 clamped to [0,1] for visible pixel text.
 - Continuous rendering on /works: `worksScrollActive` flag keeps UV scroll
-  + wipe animating even when cards have settled (on-demand rendering fix).
+  - wipe animating even when cards have settled (on-demand rendering fix).
 - World.update() bypass: works stage updates even when `!needsRender`.
 - VLM-verified: "SELECTED WORKS" visible in pixel font behind cards.
 
@@ -107,9 +119,9 @@ history.
   CasePlane material state. Made `prewarmShaders` a no-op — WebGPURenderer
   compiles shaders lazily during the first render.
 - Deleted ~280 lines of dead CSS: `.jlz-joystick*` (16 rules + media queries
-  + reduced-motion entries), `.jlz-scroll-hint*`, `#pageLoader`, `#jlj-enter`,
-  `.canvas`. Migrated 7 `var(--jlz-joystick-size)` references to
-  `var(--jlz-bottom-controls)`.
+  - reduced-motion entries), `.jlz-scroll-hint*`, `#pageLoader`, `#jlj-enter`,
+    `.canvas`. Migrated 7 `var(--jlz-joystick-size)` references to
+    `var(--jlz-bottom-controls)`.
 - Replaced 8 `.jlz-*` CSS rules that duplicated UIKit utilities with native
   UIKit classes (`uk-text-uppercase`, `uk-flex-*`, `uk-width-1-1`,
   `uk-margin-auto-left`, `uk-text-right`, `uk-flex-wrap`, `uk-flex-column`).

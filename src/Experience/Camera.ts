@@ -199,9 +199,10 @@ export class Camera {
     // ── 5. FOV — dynamic offset (pop zoom) ──
     if (this.fovTransitionT < 1) {
       this.fovTransitionT = Math.min(1, this.fovTransitionT + dt / this.fovDuration)
-      const easeT = this.fovTransitionT < 0.5
-        ? 8 * this.fovTransitionT ** 4
-        : 1 - 8 * (this.fovTransitionT - 1) ** 4
+      const easeT =
+        this.fovTransitionT < 0.5
+          ? 8 * this.fovTransitionT ** 4
+          : 1 - 8 * (this.fovTransitionT - 1) ** 4
       this.fovOffset = this.fovStartOffset + (this.targetFovOffset - this.fovStartOffset) * easeT
     }
 
