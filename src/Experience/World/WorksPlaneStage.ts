@@ -26,19 +26,19 @@ interface CaseLayout {
   scale: number
 }
 
-// Layouts are designed for a 16:9 viewport. The `scale` factor is multiplied
-// by an aspect-ratio correction at runtime so cards fill the screen width
-// on both wide (21:9) and narrow (4:3) viewports without distortion.
+// Layouts use fractions of the camera frustum. This lets the composition fill
+// a 21:9 desktop and a portrait phone without treating a 16:9 mockup as a
+// universal coordinate system.
 const WIDE_LAYOUT: readonly [CaseLayout, CaseLayout] = [
-  { x: -0.85, y: -0.02, z: -3.05, scale: 2.4 },
-  { x: 1.65, y: -0.42, z: -3.62, scale: 1.5 },
+  { x: -0.18, y: 0.03, z: -3.05, scale: 0.62 },
+  { x: 0.28, y: -0.16, z: -3.62, scale: 0.38 },
 ]
 // UIkit's `@m` grid breakpoint is where the semantic card controls stack.
 // Mirror that exact editorial order in the 3D layer instead of squeezing the
 // desktop two-column coordinates into a narrow viewport.
 const STACKED_LAYOUT: readonly [CaseLayout, CaseLayout] = [
-  { x: -0.02, y: 0.7, z: -3.15, scale: 2.0 },
-  { x: 0.12, y: -0.85, z: -3.52, scale: 1.6 },
+  { x: -0.03, y: 0.24, z: -3.15, scale: 0.48 },
+  { x: 0.04, y: -0.27, z: -3.52, scale: 0.42 },
 ]
 // Unified animation: tap → wobble pulse + direct overlay open (same as BakuCarousel).
 // No 3D plane-to-fullscreen transition — the CSS clip-path iris reveal handles it.
@@ -53,7 +53,7 @@ export class WorksPlaneStage extends THREE.Group {
   private _active = false
   private _initialized = false
   private _stackedLayout = window.innerWidth < 960
-  private _aspectScale = 1.0 // multiplier for card scale based on viewport aspect
+  private _viewportAspect = window.innerWidth / window.innerHeight
   private _reveal = new Map<CasePlane, number>()
   private _tmpCameraPosition = new THREE.Vector3()
   private _tmpTargetPosition = new THREE.Vector3()
@@ -98,11 +98,9 @@ export class WorksPlaneStage extends THREE.Group {
       this.add(plane)
     })
 
-    // Back-text screen behind the work cards — curved cylinder with scrolling
-    // text texture and vertical wipe reveal (junni BackText pattern).
-    // The WorksTextScreen constructor sets its own rotation + position.
+    // Back-text screen behind the work cards. It owns its delayed vertical wipe.
     this.textScreen = new WorksTextScreen()
-    this.textScreen.setReveal(0)
+    this.textScreen.setVisible(false)
     this.add(this.textScreen)
   }
 
@@ -136,34 +134,29 @@ export class WorksPlaneStage extends THREE.Group {
    * The semantic UIkit grid becomes a two-row composition below `@m`; keep
    * the actual media planes in that same layout so captions, hit targets and
    * visual media continue to describe one object on mobile and tablet.
-   *
-   * Also computes an aspect-ratio scale factor so 3D cards fill the viewport
-   * width on both wide (21:9 ultrawide) and narrow (4:3) screens without
-   * distortion. The factor is centered on 16:9 (scale=1.0).
    */
-  resize(width: number): void {
+  resize(width: number, height: number): void {
     this._stackedLayout = width < 960
-    const height = window.innerHeight
     const aspect = width / height
-    // 16:9 = 1.78 → scale 1.0. Wider screens get larger cards, narrower get smaller.
-    this._aspectScale = THREE.MathUtils.clamp(aspect / 1.78, 0.7, 1.4)
+    this._viewportAspect = aspect
     // Scale the flat text screen to fill the viewport width.
     if (this.textScreen) {
-      const screenScale = THREE.MathUtils.clamp(aspect / 1.78, 0.8, 1.3)
-      this.textScreen.scale.set(screenScale, screenScale, 1)
+      const screenScale = THREE.MathUtils.clamp(aspect / 1.78, 0.8, 1.35)
+      this.textScreen.scale.setScalar(screenScale)
     }
   }
 
   setActive(active: boolean, sectionIndex: number): void {
+    const wasActive = this._active
+    const nextSection = THREE.MathUtils.clamp(sectionIndex, 0, SECTION_PROJECTS.length - 1)
+    const sectionChanged = nextSection !== this._sectionIndex
     this._active = active
-    this._sectionIndex = THREE.MathUtils.clamp(sectionIndex, 0, SECTION_PROJECTS.length - 1)
+    this._sectionIndex = nextSection
     this.visible = active
-    // Sync the back-text section. The reveal (visibility) is driven
-    // dynamically in update() based on the average card reveal, so the
-    // vertical wipe stays synchronized with card arrival/departure.
     if (this.textScreen) {
       this.textScreen.setSection(this._sectionIndex)
-      if (!active) this.textScreen.setReveal(0)
+      if (!active) this.textScreen.setVisible(false)
+      else if (!wasActive || sectionChanged) this.textScreen.setVisible(true)
     }
   }
 
@@ -247,13 +240,7 @@ export class WorksPlaneStage extends THREE.Group {
 
       const layouts = this._stackedLayout ? STACKED_LAYOUT : WIDE_LAYOUT
       const layout = isPrimary ? layouts[0] : layouts[1]
-      // Apply aspect-ratio scale so cards fill the viewport width on any screen.
-      const scaledLayout: CaseLayout = {
-        x: layout.x * this._aspectScale,
-        y: layout.y,
-        z: layout.z,
-        scale: layout.scale * this._aspectScale,
-      }
+      const scaledLayout = this.layoutInView(layout)
 
       // Snap cards to their layout target on first appearance (reveal was 0)
       // so they never fly out from the camera-local origin.
@@ -277,23 +264,26 @@ export class WorksPlaneStage extends THREE.Group {
       card.update(dt, this._active)
     })
 
-    // Sync the back-text visibility with the average card reveal.
-    // The vertical wipe expands from center as cards appear, creating a
-    // synchronized "back wall lights up" effect.
-    const visibleCards = this.cards.filter((c) => {
-      const idx = c.userData.projectIndex as number
-      return activeProjects[0] === idx || activeProjects[1] === idx
-    })
-    if (visibleCards.length > 0 && this.textScreen) {
-      const avgReveal =
-        visibleCards.reduce((sum, c) => sum + (this._reveal.get(c) ?? 0), 0) / visibleCards.length
-      // Map card reveal [0..1] to text visibility [0..1] with a slight delay
-      // so the text appears just after cards start arriving.
-      this.textScreen.setReveal(THREE.MathUtils.clamp(avgReveal * 1.2 - 0.1, 0, 1))
-    }
-
-    // Update the back-text screen — keeps its visibility + time uniform in sync.
+    // The text has its own delayed wipe: it is intentionally independent of card opacity.
     this.textScreen?.update(dt)
+  }
+
+  private layoutInView(layout: CaseLayout): CaseLayout {
+    if (!(this._camera instanceof THREE.PerspectiveCamera)) return layout
+
+    const distance = Math.abs(layout.z)
+    const viewHeight = 2 * Math.tan(THREE.MathUtils.degToRad(this._camera.fov) / 2) * distance
+    const viewWidth = viewHeight * this._viewportAspect
+    const widthScale = viewWidth * layout.scale
+    // Portrait cards crop horizontally to retain a full-screen editorial rhythm
+    // instead of shrinking into two tiny 16:9 thumbnails.
+    const heightScale = (viewHeight * layout.scale) / (9 / 16)
+    return {
+      x: viewWidth * layout.x,
+      y: viewHeight * layout.y,
+      z: layout.z,
+      scale: this._stackedLayout ? Math.max(widthScale, heightScale) : widthScale,
+    }
   }
 
   dispose(): void {

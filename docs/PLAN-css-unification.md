@@ -18,7 +18,7 @@ See [docs/UIKIT3.md](UIKIT3.md) for the solution priority order.
 | `_import.less`               | 511      | Design tokens + UIKit variable overrides + hooks + component imports       |
 | `_theme.less`                | 6        | Bridge to `console-theme/_import.less`                                     |
 | `console-theme/_import.less` | 77       | Console theme variables (font weights, status colors, shadows, color-mode) |
-| `main.less`                  | 2486     | App layer CSS (3D shell, cinematic, overlay, work cards, sections)         |
+| `main.less`                  | 2025     | App layer CSS (3D shell, cinematic, overlay, work-card controls, sections) |
 | `blog.less`                  | 352      | Standalone blog pages (no 3D runtime)                                      |
 | **Total**                    | **3432** |                                                                            |
 
@@ -83,20 +83,26 @@ present in markup.
 
 **LOC reduction:** ~15–20. **Risk:** low.
 
-### Stage 3 — Works cards + 3D plane handoff pruning
+### Stage 3 — Works cards + 3D plane handoff pruning — complete
 
 **Goal:** Prune duplicate flex declarations on works-composition children
 without breaking the 3D plane-origin handoff.
 
 **Files:** `main.less`, `works.ts`
 
-**Changes (verify with screenshot diff before committing):**
+**Completed changes:**
 
-- `.jlz-works-composition > *` — audit if `display: flex` is needed (uk-grid children)
-- `.jlz-work-card__overlay` — keep bespoke flex (UIKit `uk-position-bottom` doesn't provide it)
-- `body[data-page='works'] .jlz-work-card__*` overrides — KEEP (required for plane-origin)
+- Removed the hidden `<img>`, cover, chromatic, pseudo-element, CSS-wobble and
+  `body[data-page='works']` override family. The 3D stage is the only visual
+  media owner, so those declarations had no visible job.
+- Retained only a native button, caption, focus ring and UIKit grid utilities.
+- Replaced the one layout modifier class with `data-works-layout="equal"`;
+  layout data now describes the page state rather than creating a one-off CSS
+  class family.
 
-**LOC reduction:** ~5–15. **Risk:** low–moderate (screenshot diff mandatory).
+**Result:** 306 deleted / 139 added lines across the implementation slice;
+`main.less` alone fell 2205 → 2025 lines. Desktop and 390×844 visual checks
+passed. **Risk:** low–moderate; retain screenshot checks for later visual work.
 
 ### Stage 4 — Menu sheet + contact footer cleanup
 

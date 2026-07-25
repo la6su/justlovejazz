@@ -135,6 +135,17 @@ texture parallax stays at rest until each plane is legible. Its only DOM
 controls are the accessible previous/next buttons. `/works` lazily
 initializes `WorksPlaneStage`: it renders the visible case imagery as genuine
 Three.js planes while semantic DOM buttons retain keyboard/focus behaviour.
+The DOM deliberately contains captions and hit targets only; it must not keep a
+second hidden `<img>` copy of every case texture. `WorksTextScreen` is a flat
+canvas-textured plane with a 1 s delay and a 2 s centre-out vertical wipe on
+arrival and section change. It rasterises only the section title onto a small
+pixel grid before nearest-neighbour upscaling, so the intended pixel treatment
+remains crisp at high DPR. The stage derives plane positions and scales from
+the active perspective-camera frustum: wide viewports use a two-plane spread,
+while portrait viewports crop horizontally rather than shrink both cases into
+thumbnail-sized media. The stage and its refcounted case textures are disposed
+when leaving `/works`; that release is intentional and must be profiled after
+Three.js upgrades because GPU drivers can defer freeing shader programs.
 `DrawTrail` is a transient Studio Console cursor signal on the standalone
 `/works` route only; it decays after pointer movement and stays out of the home
 media stream.

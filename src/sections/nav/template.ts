@@ -303,7 +303,7 @@ function navColumn(): string {
   return `
     <div class="jlz-menu-col jlz-menu-col--nav">
       <span class="jlz-menu-col-title" data-i18n="menu.navigate">NAVIGATE</span>
-      <ul class="jlz-menu-nav uk-nav uk-nav-default" uk-nav>${items}</ul>
+      <ul class="jlz-menu-nav uk-nav uk-nav-default" uk-nav="animation: false">${items}</ul>
     </div>
   `
 }
@@ -368,6 +368,23 @@ export function navOverlaySection(mode: 'home' | 'content' = 'content'): string 
 export function initMenuNav(): void {
   const nav = document.querySelector('.jlz-menu-nav')
   if (!nav) return
+
+  // UIkit owns `aria-expanded` and `hidden`. When the sheet itself was hidden
+  // during its initial update, UIkit can retain `hidden` after it has already
+  // announced the parent as expanded. Reconcile only that native state on the
+  // next frame; no app-level accordion state is introduced.
+  const toggles = nav.querySelectorAll<HTMLAnchorElement>('.jlz-menu-nav__toggle')
+  toggles.forEach((toggle) => {
+    if (toggle.dataset.jlzVisibilityBound === '1') return
+    toggle.dataset.jlzVisibilityBound = '1'
+    toggle.addEventListener('click', () => {
+      requestAnimationFrame(() => {
+        const content = toggle.nextElementSibling
+        if (!(content instanceof HTMLElement) || toggle.ariaExpanded !== 'true') return
+        content.hidden = false
+      })
+    })
+  })
 
   // Subsection links — intercept for SPA navigation.
   // Click → dispatch jlz:navigate (router listens → navigateToPage).

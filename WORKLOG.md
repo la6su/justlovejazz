@@ -1,5 +1,40 @@
 # Worklog
 
+## 2026-07-25 — Works wipe, frustum layout and duplicate-media removal
+
+### Decision
+
+Treat `WorksPlaneStage` as the sole visual owner of case imagery. The HTML
+layer remains because native buttons provide focus, keyboard and screen-reader
+semantics, but it no longer renders a hidden second image grid. Keep the
+reference's direct BackText timing rather than coupling text visibility to
+unrelated card-opacity easing.
+
+### Changes
+
+- `WorksTextScreen` now rasterises only the translated title at a compact
+  source resolution, upscales it with nearest-neighbour filtering and repeats
+  it horizontally for the UV scroll. Its vertical wipe waits 1 second, then
+  completes over 2 seconds with ease-out cubic; reduced motion settles it
+  synchronously.
+- `WorksPlaneStage` derives case dimensions and positions from the active
+  perspective-camera frustum. Portrait scale intentionally favours height,
+  accepting horizontal crop to preserve a full-screen composition.
+- Removed eight DOM `<img>` elements and 179 lines of stale card-media CSS.
+  `main.less` is 2025 lines (was 2205).
+- Route exit disposes `WorksPlaneStage`, releasing its eight decoded textures
+  and TSL materials. This is a measured memory-pressure remedy; check Chrome
+  GPU memory after several route cycles because drivers can defer reclamation.
+- UIkit Nav expansion now disables its non-essential height animation. A
+  one-frame reconciliation uses UIkit's existing `aria-expanded` state to
+  prevent a hidden menu sheet from leaving an expanded mobile sublist hidden.
+
+### Verification
+
+Type-check, lint (60 pre-existing warnings and no errors), 105 unit tests and
+production build pass. Visual inspection passed at desktop and 390×844; the
+second Works section was also checked after a native scroll.
+
 ## 2026-07-25 — Audit-led UIkit delivery reduction and Works cleanup
 
 ### Decision

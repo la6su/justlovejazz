@@ -1,7 +1,7 @@
 // WorksTextScreen — 3D back-text behind work cards on /works.
 //
 // Follows the junni.co.jp BackText pattern: a flat plane positioned behind
-// the work cards, rendering the shared Onest display face as a canvas texture.
+// the work cards, rendering a deliberately pixel-rasterised title as a canvas texture.
 // The text scrolls horizontally (UV offset) and reveals
 // via a vertical wipe from center outward.
 //
@@ -27,17 +27,19 @@ import {
 import { t } from '../../core/i18n'
 
 // i18n keys for the 4 works sections.
-const SECTION_KEYS = [
-  { titleKey: 'works.section1.title', leadKey: 'works.section1.lead' },
-  { titleKey: 'works.section2.title', leadKey: 'works.section2.lead' },
-  { titleKey: 'works.section3.title', leadKey: 'works.section3.lead' },
-  { titleKey: 'works.section4.title', leadKey: 'works.section4.lead' },
+const SECTION_TITLE_KEYS = [
+  'works.section1.title',
+  'works.section2.title',
+  'works.section3.title',
+  'works.section4.title',
 ] as const
 
 // Flat plane dimensions — wide to fill the viewport behind cards.
 // Junni uses a flat mesh that's part of the scene; we do the same.
 const SCREEN_WIDTH = 20
 const SCREEN_HEIGHT = 8
+const REVEAL_DELAY_SECONDS = 1
+const REVEAL_DURATION_SECONDS = 2
 
 export class WorksTextScreen extends THREE.Mesh {
   private _texture: THREE.CanvasTexture
@@ -46,7 +48,9 @@ export class WorksTextScreen extends THREE.Mesh {
   private _sectionIndex = 0
   private _isLight = false
   private _visibility = 0
-  private _targetVisibility = 0
+  private _revealDelay = 0
+  private _revealElapsed = 0
+  private _revealRequested = false
   private _time = 0
   private readonly _uniformVisibility: { value: number }
   private readonly _uniformTime: { value: number }
@@ -57,15 +61,17 @@ export class WorksTextScreen extends THREE.Mesh {
     // The plane is subdivided to allow potential vertex displacement if needed.
     const geometry = new THREE.PlaneGeometry(SCREEN_WIDTH, SCREEN_HEIGHT, 8, 4)
 
-    // 2048×512 canvas — wide for horizontal tiling + display type legibility.
+    // Draw at a compact source resolution, then scale into a 2048×512 texture
+    // without interpolation. This preserves intentionally blocky type while
+    // avoiding a blurry texture on high-DPR displays.
     const canvas = document.createElement('canvas')
     canvas.width = 2048
     canvas.height = 512
     const ctx = canvas.getContext('2d')!
     const texture = new THREE.CanvasTexture(canvas)
     texture.colorSpace = THREE.SRGBColorSpace
-    texture.minFilter = THREE.LinearFilter
-    texture.magFilter = THREE.LinearFilter
+    texture.minFilter = THREE.NearestFilter
+    texture.magFilter = THREE.NearestFilter
     texture.generateMipmaps = false
     texture.wrapS = THREE.RepeatWrapping // tile horizontally for UV scroll
     texture.needsUpdate = true
@@ -132,36 +138,41 @@ export class WorksTextScreen extends THREE.Mesh {
     this.renderText(0)
   }
 
-  /** Render the section text to the canvas texture using i18n translations. */
+  /** Render the section title to a pixel grid, then upscale it without blur. */
   private renderText(sectionIndex: number): void {
     const ctx = this._ctx
     const w = this._canvas.width
     const h = this._canvas.height
-    const keys = SECTION_KEYS[sectionIndex] ?? SECTION_KEYS[0]!
-    const title = t(keys.titleKey)
-    const lead = t(keys.leadKey)
+    const title = t(SECTION_TITLE_KEYS[sectionIndex] ?? SECTION_TITLE_KEYS[0]!).toUpperCase()
 
     ctx.clearRect(0, 0, w, h)
+    const source = document.createElement('canvas')
+    source.width = 512
+    source.height = 128
+    const sourceCtx = source.getContext('2d')!
+    sourceCtx.fillStyle = '#ffffff'
+    sourceCtx.textAlign = 'center'
+    sourceCtx.textBaseline = 'middle'
 
     const fontFamily = "'Onest', system-ui, sans-serif"
+    let fontSize = 62
+    sourceCtx.font = `800 ${fontSize}px ${fontFamily}`
+    while (fontSize > 20 && sourceCtx.measureText(title).width > source.width * 0.9) {
+      fontSize -= 2
+      sourceCtx.font = `800 ${fontSize}px ${fontFamily}`
+    }
+    for (const x of [-source.width / 2, source.width / 2, source.width * 1.5]) {
+      sourceCtx.fillText(title, x, source.height / 2)
+    }
 
-    // Title — oversized shared display face, centered.
-    ctx.fillStyle = '#ffffff'
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    ctx.font = `700 ${Math.floor(h * 0.32)}px ${fontFamily}`
-    ctx.fillText(title.toUpperCase(), w / 2, h * 0.4)
-
-    // Lead — smaller, lighter, below the title.
-    ctx.font = `400 ${Math.floor(h * 0.14)}px ${fontFamily}`
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)'
-    ctx.fillText(lead, w / 2, h * 0.7)
+    ctx.imageSmoothingEnabled = false
+    ctx.drawImage(source, 0, 0, w, h)
 
     this._texture.needsUpdate = true
   }
 
   setSection(sectionIndex: number): void {
-    const clamped = THREE.MathUtils.clamp(sectionIndex, 0, SECTION_KEYS.length - 1)
+    const clamped = THREE.MathUtils.clamp(sectionIndex, 0, SECTION_TITLE_KEYS.length - 1)
     if (clamped === this._sectionIndex) return
     this._sectionIndex = clamped
     this.renderText(clamped)
@@ -177,20 +188,35 @@ export class WorksTextScreen extends THREE.Mesh {
     this._uniformIsLight.value = isLight ? 1 : 0
   }
 
-  setReveal(value: number): void {
-    this._targetVisibility = THREE.MathUtils.clamp(value, 0, 1)
+  /** Start Junni's delayed centre-out vertical wipe, or hide immediately. */
+  setVisible(visible: boolean): void {
+    this._revealRequested = visible
+    this._revealDelay = visible ? REVEAL_DELAY_SECONDS : 0
+    this._revealElapsed = 0
+    this._visibility = 0
+    this._uniformVisibility.value = 0
+    this.visible = visible
   }
 
   get isAnimating(): boolean {
-    return Math.abs(this._targetVisibility - this._visibility) > 0.001
+    return this._revealRequested && this._visibility < 0.999
   }
 
   update(dt: number): void {
     this._time += dt
     this._uniformTime.value = this._time
-    this._visibility = THREE.MathUtils.damp(this._visibility, this._targetVisibility, 2.5, dt)
+    if (!this._revealRequested) return
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      this._visibility = 1
+    } else if (this._revealDelay > 0) {
+      this._revealDelay = Math.max(0, this._revealDelay - dt)
+    } else {
+      this._revealElapsed = Math.min(REVEAL_DURATION_SECONDS, this._revealElapsed + dt)
+      const progress = this._revealElapsed / REVEAL_DURATION_SECONDS
+      this._visibility = 1 - (1 - progress) ** 3
+    }
     this._uniformVisibility.value = this._visibility
-    this.visible = this._visibility > 0.001
   }
 
   dispose(): void {
