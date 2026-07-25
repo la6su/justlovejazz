@@ -63,7 +63,7 @@ export class WorksTextScreen extends THREE.Mesh {
     const geometry = new THREE.PlaneGeometry(SCREEN_WIDTH, SCREEN_HEIGHT, 8, 4)
 
     // Draw at 2× source resolution, then scale into a 2048×512 texture without
-    // interpolation. Pixelify Sans supplies the deliberate pixel treatment;
+    // interpolation. Press Start 2P supplies the deliberate pixel treatment;
     // the 2× raster keeps it legible instead of turning into oversized blocks.
     const canvas = document.createElement('canvas')
     canvas.width = 2048
@@ -140,7 +140,7 @@ export class WorksTextScreen extends THREE.Mesh {
     this._uniformIsLight = uIsLight
 
     this.renderText(0)
-    void document.fonts.load("700 72px 'Pixelify Sans'").then(() => {
+    void document.fonts.load("400 72px 'Press Start 2P'").then(() => {
       if (!this._disposed) this.renderText(this._sectionIndex)
     })
   }
@@ -161,7 +161,7 @@ export class WorksTextScreen extends THREE.Mesh {
     sourceCtx.textAlign = 'center'
     sourceCtx.textBaseline = 'middle'
 
-    const fontFamily = "'Pixelify Sans', 'Onest', system-ui, sans-serif"
+    const fontFamily = "'Press Start 2P', 'Onest', system-ui, sans-serif"
     let fontSize = 72
     sourceCtx.font = `700 ${fontSize}px ${fontFamily}`
     while (fontSize > 20 && sourceCtx.measureText(title).width > source.width * 0.9) {

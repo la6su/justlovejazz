@@ -246,7 +246,7 @@ const NAV_ITEMS: NavItem[] = [
 // ── Left column: stat / studio identity ──
 function statColumn(): string {
   return `
-    <div class="jlz-menu-col jlz-menu-col--stat">
+    <div class="jlz-menu-col jlz-menu-col--stat uk-flex uk-flex-column">
       <div class="jlz-menu-stat uk-flex uk-flex-column">
         <span class="jlz-menu-stat__num">07</span>
         <span class="jlz-menu-stat__label" data-i18n="menu.stat.sections">SECTIONS</span>
@@ -301,7 +301,7 @@ function navColumn(): string {
   `
   }).join('')
   return `
-    <div class="jlz-menu-col jlz-menu-col--nav">
+    <div class="jlz-menu-col jlz-menu-col--nav uk-flex uk-flex-column">
       <span class="jlz-menu-col-title" data-i18n="menu.navigate">NAVIGATE</span>
       <ul class="jlz-menu-nav uk-nav uk-nav-default" uk-nav="animation: false">${items}</ul>
     </div>
@@ -332,7 +332,7 @@ export function navOverlaySection(mode: 'home' | 'content' = 'content'): string 
   const pageClass = mode === 'content' ? 'jlz-page-section' : ''
   return `
     <section class="jlz-menu-overlay ${pageClass} uk-section uk-section-xsmall" id="section-menu" ${sectionAttr} data-cinematic-menu>
-      <div class="uk-container uk-container-expand jlz-menu-container">
+      <div class="uk-container uk-container-expand jlz-menu-container uk-flex uk-flex-column uk-flex-center">
         <div class="jlz-menu-sheet__header uk-flex uk-flex-middle uk-flex-between">
           <span class="jlz-menu-sheet__eyebrow" data-i18n="menu.navigate">Navigate</span>
           <button class="uk-close-large jlz-sheet-close" type="button" uk-close

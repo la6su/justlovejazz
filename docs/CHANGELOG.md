@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Replaced the Works BackText font with self-hosted Press Start 2P (Cyrillic
+  included) and moved existing menu/button flex layout to UIKit utilities,
+  reducing `main.less` to 2048 lines without adding a parallel component layer.
 - Synchronized `/works` semantic captions with the real Three.js case planes:
   both layers now use the same normalized desktop/mobile positions and 16:9
   bounds, preserving visible gutters without stretching focusable controls.
@@ -27,10 +30,10 @@
 - Reduced the emitted shared UIkit stylesheet by removing nine components and
   three utilities with no repository markup usage. Standalone blog CSS falls
   from 165.86 kB to 108.27 kB (21.53 kB to 16.77 kB gzip).
-- Works BackText now uses the restored self-hosted Pixelify Sans face with
-  Cyrillic coverage as an intentional visual signature. It renders at 2×
-  source resolution before nearest-neighbour upscale, so the pixel character
-  stays legible instead of becoming oversized blocks.
+- Works BackText now uses self-hosted Press Start 2P with Cyrillic coverage as
+  the intentional pixel signature. It renders at 2× source resolution before
+  nearest-neighbour upscale, so the character stays legible instead of
+  becoming oversized blocks.
 - Fixed direct section links so they preserve the route and use
   `CinematicNav`’s authoritative scroll state.
 - Project case studies now open as full-screen still-image overlays; video is
