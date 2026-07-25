@@ -3,17 +3,15 @@
 This directory is organised by ownership. Do not copy the same facts between
 documents: update the owner named below.
 
-| Document                                                       | Owns                                                                  | Update when                                     |
-| -------------------------------------------------------------- | --------------------------------------------------------------------- | ----------------------------------------------- |
-| [ARCHITECTURE.md](ARCHITECTURE.md)                             | Runtime topology, routes, UI composition, renderer and event flow     | A module boundary or user-visible flow changes  |
-| [RULES.md](RULES.md)                                           | Non-negotiable engineering invariants                                 | A regression establishes a new guardrail        |
-| [DEVELOPMENT.md](DEVELOPMENT.md)                               | Local setup, verification, CI and the optional Codex sandbox appendix | Tooling, test scripts or CI change              |
-| [UIKIT3.md](UIKIT3.md)                                         | UIkit 3 and Less conventions, asset structure, solution priority      | UI infrastructure or theme assembly changes     |
-| [AUDIT-2026-07-25.md](AUDIT-2026-07-25.md)                     | Evidence-based technical audit and simplification backlog             | Refactoring and technical-debt planning         |
-| [BRAND.md](BRAND.md)                                           | Brand voice and visual intent                                         | Product/design direction changes                |
-| [PLAN-showreel-shader-plane.md](PLAN-showreel-shader-plane.md) | Active product plan — Works 3D and showreel                           | Its remaining scope changes                     |
-| [PLAN-css-unification.md](PLAN-css-unification.md)             | Active refactor plan — UIKit 3 native-first CSS minimization          | Its remaining scope changes                     |
-| [CHANGELOG.md](CHANGELOG.md)                                   | Concise release-level history                                         | A user-visible or operational release is merged |
+| Document                                           | Owns                                                                  | Update when                                     |
+| -------------------------------------------------- | --------------------------------------------------------------------- | ----------------------------------------------- |
+| [ARCHITECTURE.md](ARCHITECTURE.md)                 | Runtime topology, routes, UI composition, renderer and event flow     | A module boundary or user-visible flow changes  |
+| [RULES.md](RULES.md)                               | Non-negotiable engineering invariants                                 | A regression establishes a new guardrail        |
+| [DEVELOPMENT.md](DEVELOPMENT.md)                   | Local setup, verification, CI and the optional Codex sandbox appendix | Tooling, test scripts or CI change              |
+| [UIKIT3.md](UIKIT3.md)                             | UIkit 3 and Less conventions, asset structure, solution priority      | UI infrastructure or theme assembly changes     |
+| [BRAND.md](BRAND.md)                               | Brand voice and visual intent                                         | Product/design direction changes                |
+| [PLAN-css-unification.md](PLAN-css-unification.md) | Active refactor plan — UIKit 3 native-first CSS minimization          | Its remaining scope changes                     |
+| [CHANGELOG.md](CHANGELOG.md)                       | Concise release-level history                                         | A user-visible or operational release is merged |
 
 Repository-root documents have separate roles:
 
@@ -33,7 +31,7 @@ When documentation conflicts with implementation, trust the following order:
 2. `RULES.md` for intended invariants.
 3. `ARCHITECTURE.md` for the supported system model.
 4. `NEXT.md` for future work.
-5. `WORKLOG.md` and `CHANGELOG.md` for history only.
+5. `WORKLOG.md` and `CHANGELOG.md` for current decisions and release history.
 
 `public/basis/README.md` is vendored third-party licensing material and
 `references/next.junni.co.jp/README.md` is a read-only reference snapshot.

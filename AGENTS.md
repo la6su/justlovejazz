@@ -14,18 +14,17 @@ create a second `.pi` instruction layer that can drift from this source.
 
 ## Quick reference
 
-| What                        | Where                                                                    |
-| --------------------------- | ------------------------------------------------------------------------ |
-| Open tasks                  | [NEXT.md](NEXT.md)                                                       |
-| Architecture                | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)                             |
-| Hard rules                  | [docs/RULES.md](docs/RULES.md)                                           |
-| Dev workflow + verification | [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)                               |
-| UIkit 3 + Less conventions  | [docs/UIKIT3.md](docs/UIKIT3.md)                                         |
-| Brand voice + visual intent | [docs/BRAND.md](docs/BRAND.md)                                           |
-| Doc ownership map           | [docs/README.md](docs/README.md)                                         |
-| Decision journal            | [WORKLOG.md](WORKLOG.md)                                                 |
-| Release history             | [docs/CHANGELOG.md](docs/CHANGELOG.md)                                   |
-| Active detailed plan        | [docs/PLAN-showreel-shader-plane.md](docs/PLAN-showreel-shader-plane.md) |
+| What                        | Where                                        |
+| --------------------------- | -------------------------------------------- |
+| Open tasks                  | [NEXT.md](NEXT.md)                           |
+| Architecture                | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
+| Hard rules                  | [docs/RULES.md](docs/RULES.md)               |
+| Dev workflow + verification | [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)   |
+| UIkit 3 + Less conventions  | [docs/UIKIT3.md](docs/UIKIT3.md)             |
+| Brand voice + visual intent | [docs/BRAND.md](docs/BRAND.md)               |
+| Doc ownership map           | [docs/README.md](docs/README.md)             |
+| Decision journal            | [WORKLOG.md](WORKLOG.md)                     |
+| Release history             | [docs/CHANGELOG.md](docs/CHANGELOG.md)       |
 
 ## Reading order
 
@@ -40,7 +39,7 @@ them. Read only the documents relevant to the change, in this order:
 5. **[docs/UIKIT3.md](docs/UIKIT3.md)** or **[docs/BRAND.md](docs/BRAND.md)** —
    only for the corresponding UI or content change.
 6. **[WORKLOG.md](WORKLOG.md)** and **[docs/CHANGELOG.md](docs/CHANGELOG.md)**
-   — historical context when needed.
+   — current decisions and release history when needed.
 
 [docs/README.md](docs/README.md) defines the ownership of every maintained
 document. Do not update a document merely because another document mentions

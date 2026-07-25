@@ -281,8 +281,14 @@ test.describe('JustLoveJazz — accessibility & DOM UI', () => {
       expect(firstCardBox).not.toBeNull()
       expect(secondCardBox).not.toBeNull()
       expect(stageBox!.height).toBeCloseTo(844, 0)
-      expect(firstCardBox!.width).toBeGreaterThan(330)
-      expect(secondCardBox!.width).toBeGreaterThan(330)
+      // The DOM captions intentionally mirror the narrower frustum planes,
+      // leaving the same outer gutter as the 3D media on portrait screens.
+      expect(firstCardBox!.width).toBeGreaterThan(250)
+      expect(firstCardBox!.width).toBeLessThan(280)
+      expect(secondCardBox!.width).toBeGreaterThan(220)
+      expect(secondCardBox!.width).toBeLessThan(250)
+      expect(firstCardBox!.x).toBeGreaterThan(40)
+      expect(secondCardBox!.x).toBeGreaterThan(80)
       expect(secondCardBox!.y).toBeGreaterThan(firstCardBox!.y)
     } finally {
       await context.close()

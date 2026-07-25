@@ -703,23 +703,46 @@ html.jlz-force-cursor .interactive {
 // not as HTML. This removes ~45 LOC of CSS and the duplicate DOM layer.
 
 .jlz-works-composition {
-  position: relative;
+  position: absolute;
+  inset: 0;
   z-index: 2;
-  grid-row: 2;
+  grid-row: auto;
   width: auto;
   min-height: 0;
-  margin-right: 0;
-  margin-bottom: 0;
-  align-items: stretch;
+  height: auto;
+  margin: 0;
+  display: block;
 }
 
 .jlz-works-composition > * {
-  display: flex;
+  position: absolute;
+  z-index: 2;
+  display: block;
+  width: 52%;
+  height: auto;
   min-width: 0;
+  padding: 0;
+  transform: translateY(-50%);
+}
+
+// Keep the semantic caption controls on the same frustum contract as
+// WorksPlaneStage: x/y are the plane centre, width is its normalized scale,
+// and the native 16:9 ratio derives the matching height at every aspect.
+.jlz-works-composition > :first-child {
+  top: 47%;
+  left: 8%;
+}
+
+.jlz-works-composition > :last-child {
+  top: 66%;
+  left: 61%;
+  width: 32%;
 }
 
 .jlz-works-composition > * > * {
   width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
 }
 
 [data-works-layout='equal'] > :last-child {
@@ -732,7 +755,8 @@ html.jlz-force-cursor .interactive {
   display: flex;
   align-items: flex-end;
   width: 100%;
-  height: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
   padding: 0;
   border: 0;
   color: var(--jlz-color-text);
@@ -748,6 +772,10 @@ html.jlz-force-cursor .interactive {
 }
 
 .jlz-work-card__caption {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
   width: 100%;
   display: flex;
   align-items: end;
@@ -823,12 +851,22 @@ html.jlz-force-cursor .interactive {
   }
 
   .jlz-works-composition {
-    align-content: stretch;
+    align-content: initial;
   }
 
   .jlz-works-composition > * {
-    height: calc(50% - 5px) !important;
-    align-self: auto !important;
+    width: 68%;
+  }
+
+  .jlz-works-composition > :first-child {
+    top: 25%;
+    left: 13%;
+  }
+
+  .jlz-works-composition > :last-child {
+    top: 75%;
+    left: 24%;
+    width: 60%;
   }
 }
 
@@ -864,12 +902,12 @@ html.jlz-force-cursor .interactive {
   }
 
   .jlz-works-composition > * {
-    height: calc(50% - 0.4rem);
+    height: auto;
     margin-top: 0;
   }
 
   .jlz-works-composition > * + * {
-    margin-top: 0.8rem;
+    margin-top: 0;
   }
 
   .jlz-work-card__caption {

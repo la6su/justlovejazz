@@ -8,8 +8,9 @@ changelog, not here. Move one item to **In progress** before implementation.
 - [ ] **Studio Console theme cleanup** — continue the UIkit-first pass:
       replace only remaining `.jlz-*` utility classes that duplicate UIkit,
       keep 3D-shell hooks and genuinely bespoke components, and verify inverse
-      theme through `uk-light`/`uk-dark` on every route. See
-      `docs/AUDIT-2026-07-25.md` before removing more imports or overrides.
+      theme through `uk-light`/`uk-dark` on every route. Use `docs/UIKIT3.md`
+      as the implementation standard and measure compiled CSS after each
+      bounded change.
 
 - [ ] **Shared transition language** — prototype one temporary TSL fullscreen
       transition for SPA routes, Menu and project overlay; use lightweight

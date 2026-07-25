@@ -3,7 +3,7 @@
 //
 // The showreel play button is a DOM uk-button (data-showreel-trigger) in the
 // bottom block. UIManager listens for jlz:showreel-play and opens
-// FullscreenOverlay in video mode. See docs/PLAN-showreel-shader-plane.md.
+// FullscreenOverlay in video mode; the overlay remains the single media owner.
 import { sectionShell, storyBottom, homeTop, descBlock } from '../_shared/constants'
 
 export function introSection(): string {
