@@ -28,12 +28,17 @@ Visual checks passed at 1280×720 and 390×844. The caption bounds now match the
 visible 3D plane bounds; focusable buttons and fullscreen overlay ownership are
 unchanged.
 
-## 2026-07-25 — Works gutters and intentional Pixelify BackText
+## 2026-07-25 — Works typography and UIKit-native layout pass
 
-Keep Pixelify Sans only for the Works BackText signature. It is self-hosted
+Keep Press Start 2P only for the Works BackText signature. It is self-hosted
 with Cyrillic coverage, rendered at 2× source resolution, and redrawn after
 font loading. Shared UI typography remains Onest. Plane scales expose outer
 gutters and a visible gap between cases on wide and portrait screens.
+
+The previous Pixelify Sans assets were removed. Menu launcher, Contact launcher,
+menu columns, menu container and nav sublists now use UIKit flex utilities for
+their existing layout behavior; only project-specific spacing and visual states
+remain in `main.less`.
 
 ## 2026-07-25 — Documentation policy
 

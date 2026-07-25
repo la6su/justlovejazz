@@ -150,7 +150,7 @@ focusable button per case. The stage and its refcounted case textures are
 disposed when leaving `/works`; that release is intentional and must be
 profiled after Three.js upgrades because GPU drivers can defer freeing shader
 programs.
-The canvas title uses the self-hosted Pixelify Sans face (Latin and Cyrillic)
+The canvas title uses the self-hosted Press Start 2P face (Latin and Cyrillic)
 only for this visual layer; the rest of the product remains on Onest.
 `DrawTrail` is a transient Studio Console cursor signal on the standalone
 `/works` route only; it decays after pointer movement and stays out of the home

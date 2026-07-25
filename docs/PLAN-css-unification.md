@@ -18,7 +18,7 @@ See [docs/UIKIT3.md](UIKIT3.md) for the solution priority order.
 | `_import.less`               | 511      | Design tokens + UIKit variable overrides + hooks + component imports       |
 | `_theme.less`                | 6        | Bridge to `console-theme/_import.less`                                     |
 | `console-theme/_import.less` | 77       | Console theme variables (font weights, status colors, shadows, color-mode) |
-| `main.less`                  | 2063     | App layer CSS (3D shell, cinematic, overlay, work-card controls, sections) |
+| `main.less`                  | 2048     | App layer CSS (3D shell, cinematic, overlay, work-card controls, sections) |
 | `blog.less`                  | 352      | Standalone blog pages (no 3D runtime)                                      |
 | **Total**                    | **3432** |                                                                            |
 
@@ -102,7 +102,8 @@ without breaking the 3D plane-origin handoff.
 
 **Result:** 306 deleted / 139 added lines across the implementation slice;
 `main.less` fell 2205 → 2025 lines before the later frustum-synchronised
-caption layer added 38 scoped lines. Desktop and 390×844 visual checks confirm
+caption layer and UIKit utility pass. It is currently 2048 lines. Desktop and
+390×844 visual checks confirm
 that DOM captions match the 3D plane bounds. **Risk:** low–moderate; retain
 screenshot checks for later visual work.
 
