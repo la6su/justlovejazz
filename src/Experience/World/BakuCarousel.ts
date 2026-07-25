@@ -216,8 +216,7 @@ export class BakuCarousel extends THREE.Group {
       const control = (event.target as HTMLElement | null)?.closest<HTMLElement>(
         '[data-baku-carousel-control]',
       )
-      if (!control || !this._active || document.body.dataset.page !== 'home')
-        return
+      if (!control || !this._active || document.body.dataset.page !== 'home') return
       event.preventDefault()
       const direction = control.dataset.bakuCarouselControl
       if (direction === 'prev') this.prev()

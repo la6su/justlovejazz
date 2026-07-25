@@ -17,12 +17,24 @@ interface PageMetaConfig {
 }
 
 const PAGE_META: Record<PageId, PageMetaConfig> = {
-  home:      { path: '/',           titleKey: 'meta.home.title',      descKey: 'meta.home.description' },
-  services:  { path: '/services',   titleKey: 'meta.services.title',  descKey: 'meta.services.description' },
-  works:     { path: '/works',      titleKey: 'meta.works.title',     descKey: 'meta.works.description' },
-  manifesto: { path: '/manifesto',  titleKey: 'meta.manifesto.title', descKey: 'meta.manifesto.description' },
-  lab:       { path: '/lab',        titleKey: 'meta.lab.title',       descKey: 'meta.lab.description' },
-  contact:   { path: '/contact',    titleKey: 'meta.contact.title',   descKey: 'meta.contact.description' },
+  home: { path: '/', titleKey: 'meta.home.title', descKey: 'meta.home.description' },
+  services: {
+    path: '/services',
+    titleKey: 'meta.services.title',
+    descKey: 'meta.services.description',
+  },
+  works: { path: '/works', titleKey: 'meta.works.title', descKey: 'meta.works.description' },
+  manifesto: {
+    path: '/manifesto',
+    titleKey: 'meta.manifesto.title',
+    descKey: 'meta.manifesto.description',
+  },
+  lab: { path: '/lab', titleKey: 'meta.lab.title', descKey: 'meta.lab.description' },
+  contact: {
+    path: '/contact',
+    titleKey: 'meta.contact.title',
+    descKey: 'meta.contact.description',
+  },
 }
 
 const SITE_NAME = 'JUSTLOVEJAZZ'

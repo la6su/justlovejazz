@@ -8,7 +8,8 @@ import { labOverlaySection } from '../../sections/lab-overlay/template'
 import { navOverlaySection } from '../../sections/nav/template'
 
 // Section 1: Email — big mailto link
-const emailSection = sectionShell('contact-01',
+const emailSection = sectionShell(
+  'contact-01',
   contentTop('01', 'Email', 'Direct line.', 'large', 'contact.email.title', 'contact.email.lead'),
   storyBottom(`
     <a href="mailto:hello@justlovejazz.com" class="jlz-service-explore uk-button uk-button-default uk-button-small uk-margin-top">
@@ -16,12 +17,21 @@ const emailSection = sectionShell('contact-01',
       hello@justlovejazz.com
     </a>
   `),
-  'content', true
+  'content',
+  true,
 )
 
 // Section 2: Social — Telegram + GitHub
-const socialSection = sectionShell('contact-02',
-  contentTop('02', 'Social', 'Find us elsewhere.', 'large', 'contact.social.title', 'contact.social.lead'),
+const socialSection = sectionShell(
+  'contact-02',
+  contentTop(
+    '02',
+    'Social',
+    'Find us elsewhere.',
+    'large',
+    'contact.social.title',
+    'contact.social.lead',
+  ),
   storyBottom(`
     <div class="uk-flex uk-flex-center uk-flex-wrap uk-margin-top jlz-flex-gap-small">
       <a href="https://t.me/justlovejazz" target="_blank" rel="noopener" class="jlz-service-explore uk-button uk-button-default uk-button-small">
@@ -33,23 +43,39 @@ const socialSection = sectionShell('contact-02',
         <span data-i18n="common.github">GitHub</span>
       </a>
     </div>
-  `)
+  `),
 )
 
 // Section 3: Location — remote / EU
-const locationSection = sectionShell('contact-03',
-  contentTop('03', 'Location', 'Where we work.', 'large', 'contact.location.title', 'contact.location.lead'),
+const locationSection = sectionShell(
+  'contact-03',
+  contentTop(
+    '03',
+    'Location',
+    'Where we work.',
+    'large',
+    'contact.location.title',
+    'contact.location.lead',
+  ),
   storyBottom(`
     <div class="jlz-service-desc uk-margin-small-top">
       <p class="uk-text-meta uk-margin-remove" data-i18n="contact.location.desc1">Remote · EU · since 2019</p>
       <p class="uk-text-meta uk-margin-remove" data-i18n="contact.location.desc2">Open for new projects.</p>
     </div>
-  `)
+  `),
 )
 
 // Section 4: Form — inline mailto form
-const formSection = sectionShell('contact-04',
-  contentTop('04', 'Form', 'Tell us about your project.', 'large', 'contact.form.title', 'contact.form.lead'),
+const formSection = sectionShell(
+  'contact-04',
+  contentTop(
+    '04',
+    'Form',
+    'Tell us about your project.',
+    'large',
+    'contact.form.title',
+    'contact.form.lead',
+  ),
   storyBottom(`
     <form class="jlz-contact-form uk-flex uk-flex-wrap uk-flex-center uk-flex-middle uk-margin-bottom" action="mailto:hello@justlovejazz.com" method="post" enctype="text/plain">
       <div class="uk-inline uk-width-1-1 uk-width-medium@s">
@@ -61,7 +87,7 @@ const formSection = sectionShell('contact-04',
         <span class="uk-margin-small-left" data-i18n="common.send">Send</span>
       </button>
     </form>
-  `)
+  `),
 )
 
 export function contactPage(): string {

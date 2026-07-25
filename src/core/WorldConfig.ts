@@ -353,24 +353,22 @@ function makeContentScenes(pageId: string): PhaseConfig[] {
   // dark/light. In inverse mode, they flip to light/dark.
   const themes: Array<'light' | 'dark'> = ['dark', 'light', 'dark', 'light', 'dark', 'light']
   return Array.from({ length: 6 }, (_, idx) =>
-    toPhaseConfig(
-      {
-        ...DEFAULTS,
-        id: `content_${pageId}_${idx}`,
-        context: `Content — ${pageId} face ${idx}`,
-        domSection: `content-${idx}`,
-        range: [idx / 5, (idx + 1) / 5] as [number, number],
-        sectionTheme: themes[idx]!,
-        bakuColor: p.bakuColor,
-        bakuEmissive: p.bakuEmissive,
-        postBloom: 0,
-        postGradeShadows: [1.0, 1.0, 1.0],
-        postGradeHighlights: [1.0, 1.0, 1.0],
-        fogColor: p.fogColor,
-        groundColor: p.groundColor,
-        groundOpacity: 0.05,
-      },
-    ),
+    toPhaseConfig({
+      ...DEFAULTS,
+      id: `content_${pageId}_${idx}`,
+      context: `Content — ${pageId} face ${idx}`,
+      domSection: `content-${idx}`,
+      range: [idx / 5, (idx + 1) / 5] as [number, number],
+      sectionTheme: themes[idx]!,
+      bakuColor: p.bakuColor,
+      bakuEmissive: p.bakuEmissive,
+      postBloom: 0,
+      postGradeShadows: [1.0, 1.0, 1.0],
+      postGradeHighlights: [1.0, 1.0, 1.0],
+      fogColor: p.fogColor,
+      groundColor: p.groundColor,
+      groundOpacity: 0.05,
+    }),
   )
 }
 

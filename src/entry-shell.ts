@@ -7,11 +7,14 @@
 // CSS hooks + E2E tests rely on documentElement.dataset.reducedMotion.
 ;((): void => {
   try {
-    const reduce = typeof window !== 'undefined' && window.matchMedia
-      ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
-      : false
+    const reduce =
+      typeof window !== 'undefined' && window.matchMedia
+        ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        : false
     document.documentElement.dataset.reducedMotion = reduce ? '1' : '0'
-  } catch { /* matchMedia unavailable — dataset stays unset, app still boots */ }
+  } catch {
+    /* matchMedia unavailable — dataset stays unset, app still boots */
+  }
 })()
 
 const startApp = () =>

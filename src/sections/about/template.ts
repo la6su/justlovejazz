@@ -7,5 +7,16 @@ export function aboutSection(): string {
     `${i18nDesc('home.about', ['A brief becomes an interface people can move through.', 'Direction · product design · realtime build.'])}${serviceExplore('/services', 'common.explore', 'Explore')}`,
     '02',
   )
-  return sectionShell('about', homeTop('02', 'home.about.title', 'Services', 'home.about.lead', 'From strategy to implementation.'), bottom, 'home')
+  return sectionShell(
+    'about',
+    homeTop(
+      '02',
+      'home.about.title',
+      'Services',
+      'home.about.lead',
+      'From strategy to implementation.',
+    ),
+    bottom,
+    'home',
+  )
 }

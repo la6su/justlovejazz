@@ -19,13 +19,13 @@ export class WorksPortfolio {
 
   next(): void {
     const n = this.projects.length
-    this.currentIdx = ((this.currentIdx + 1) % n + n) % n
+    this.currentIdx = (((this.currentIdx + 1) % n) + n) % n
     this.onCardClick(this.currentIdx)
   }
 
   prev(): void {
     const n = this.projects.length
-    this.currentIdx = ((this.currentIdx - 1) % n + n) % n
+    this.currentIdx = (((this.currentIdx - 1) % n) + n) % n
     this.onCardClick(this.currentIdx)
   }
 

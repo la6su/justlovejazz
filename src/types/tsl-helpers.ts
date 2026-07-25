@@ -14,7 +14,10 @@ import type { Scene, Camera } from 'three'
  * Typed pass() wrapper. Creates a scene pass node for post-processing.
  * three 0.184 TS types for pass() are incomplete — cast isolated here.
  */
-export function tslPass(scene: Scene, camera: Camera): {
+export function tslPass(
+  scene: Scene,
+  camera: Camera,
+): {
   getTextureNode: () => unknown
   scene: Scene
   camera: Camera

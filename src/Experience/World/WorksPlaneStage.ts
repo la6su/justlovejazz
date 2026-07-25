@@ -285,7 +285,8 @@ export class WorksPlaneStage extends THREE.Group {
       return activeProjects[0] === idx || activeProjects[1] === idx
     })
     if (visibleCards.length > 0 && this.textScreen) {
-      const avgReveal = visibleCards.reduce((sum, c) => sum + (this._reveal.get(c) ?? 0), 0) / visibleCards.length
+      const avgReveal =
+        visibleCards.reduce((sum, c) => sum + (this._reveal.get(c) ?? 0), 0) / visibleCards.length
       // Map card reveal [0..1] to text visibility [0..1] with a slight delay
       // so the text appears just after cards start arriving.
       this.textScreen.setReveal(THREE.MathUtils.clamp(avgReveal * 1.2 - 0.1, 0, 1))

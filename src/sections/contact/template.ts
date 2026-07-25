@@ -7,5 +7,16 @@ export function contactSection(): string {
     `${i18nDesc('home.manifesto', ['Clarity before spectacle.', 'Every effect must explain a state.', 'Every page must earn attention.'])}${serviceExplore('/manifesto', 'common.explore', 'Explore')}`,
     '04',
   )
-  return sectionShell('contact', homeTop('04', 'home.manifesto.title', 'Manifesto', 'home.manifesto.lead', 'This is what guides us.'), bottom, 'home')
+  return sectionShell(
+    'contact',
+    homeTop(
+      '04',
+      'home.manifesto.title',
+      'Manifesto',
+      'home.manifesto.lead',
+      'This is what guides us.',
+    ),
+    bottom,
+    'home',
+  )
 }

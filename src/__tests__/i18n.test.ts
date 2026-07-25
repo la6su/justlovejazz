@@ -1,12 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import {
-  initI18n,
-  getLang,
-  toggleLang,
-  t,
-  applyTranslations,
-  type Lang,
-} from '../core/i18n'
+import { initI18n, getLang, toggleLang, t, applyTranslations, type Lang } from '../core/i18n'
 
 // i18n module holds mutable `currentLang` state at module scope. Tests must
 // reset it between cases — toggleLang persists to localStorage, so we clear
@@ -174,7 +167,9 @@ describe('i18n', () => {
       // jsdom allows localStorage; simulate unavailability by stubbing.
       const orig = Object.getOwnPropertyDescriptor(window, 'localStorage')
       Object.defineProperty(window, 'localStorage', {
-        get: () => { throw new Error('SecurityError') },
+        get: () => {
+          throw new Error('SecurityError')
+        },
         configurable: true,
       })
       expect(() => initI18n()).not.toThrow()
@@ -193,16 +188,39 @@ describe('i18n', () => {
       // Instead, compare key counts by switching languages and checking
       // that every EN key resolves to a non-key value in RU.
       const probeKeys = [
-        'splash.enter', 'splash.loading', 'splash.ready',
-        'nav.studio', 'nav.services', 'nav.works', 'nav.manifesto', 'nav.lab', 'nav.contact', 'nav.blog',
-        'common.explore', 'common.readMore', 'common.send', 'common.email',
-        'home.studio.title', 'home.about.title', 'home.works.title', 'home.manifesto.title',
-        'meta.home.title', 'meta.home.description',
-        'meta.services.title', 'meta.works.title', 'meta.manifesto.title', 'meta.lab.title', 'meta.contact.title',
-        'dropbar.home.s1.title', 'dropbar.services.s1.title', 'dropbar.manifesto.s1.title',
-        'dropbar.lab.s1.title', 'dropbar.contact.s1.title',
+        'splash.enter',
+        'splash.loading',
+        'splash.ready',
+        'nav.studio',
+        'nav.services',
+        'nav.works',
+        'nav.manifesto',
+        'nav.lab',
+        'nav.contact',
+        'nav.blog',
+        'common.explore',
+        'common.readMore',
+        'common.send',
+        'common.email',
+        'home.studio.title',
+        'home.about.title',
+        'home.works.title',
+        'home.manifesto.title',
+        'meta.home.title',
+        'meta.home.description',
+        'meta.services.title',
+        'meta.works.title',
+        'meta.manifesto.title',
+        'meta.lab.title',
+        'meta.contact.title',
+        'dropbar.home.s1.title',
+        'dropbar.services.s1.title',
+        'dropbar.manifesto.s1.title',
+        'dropbar.lab.s1.title',
+        'dropbar.contact.s1.title',
         'dropbar.works.s1.subtitle', // works has no title (proper nouns) — only subtitle
-        'dropbar.home.featured.title', 'dropbar.services.featured.title',
+        'dropbar.home.featured.title',
+        'dropbar.services.featured.title',
       ]
 
       // For each key: EN value should not equal the key (key exists in EN),

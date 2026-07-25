@@ -1,5 +1,31 @@
 # Worklog
 
+## 2026-07-25 — Audit-led UIkit delivery reduction and Works cleanup
+
+### Decision
+
+Keep UIkit as the component/accessibility owner and remove imports only after
+repository-wide evidence shows no markup or attribute use. Keep the existing
+full-screen `uk-modal-full` shell for Works; project cases use image mode,
+while video remains exclusive to the explicit Showreel control.
+
+### Changes
+
+- Removed unused UIkit Less components/utilities from the shared theme entry.
+  Blog CSS changed from 165.86 kB to 108.27 kB (21.53 kB to 16.77 kB gzip);
+  inline application CSS in the lazy entry changed from 149.68 kB to 117.89 kB.
+- Replaced the isolated Pixelify canvas font with Onest and deleted the three
+  unreferenced Pixelify public assets (99.7 kB).
+- Direct `#section-*` links now retain their pathname and delegate movement to
+  `CinematicNav`, preventing route/scene desynchronisation.
+- Added `docs/AUDIT-2026-07-25.md` as the evidence-based refactoring plan.
+
+### Verification
+
+`format:check`, lint (60 pre-existing warnings, zero errors), type-check,
+build and 105 unit tests pass. Playwright needs a sandbox with a bindable local
+preview port.
+
 ## 2026-07-25 — Revert to flat plane (junni approach) — text now visible
 
 ### Decision
@@ -243,7 +269,7 @@ TSL shader compilation.
   - Removed reduced-motion rules (2 LOC)
   - Removed `.jlz-works-statement__title` from shared variable-font selector
 
-- **Experience.ts: added _langChangeHandler.** Listens for
+- **Experience.ts: added \_langChangeHandler.** Listens for
   `jlz:lang-change` and calls `worksPlaneStage.refreshLanguage()` so the
   3D text screen updates on EN/RU toggle. Properly removed in `destroy()`.
 
@@ -263,10 +289,10 @@ eliminates the churn. JS heap is now stable at 11-17 MB across all routes.
 
 ### Bundle impact
 
-| File | Before | After | Delta |
-|------|--------|-------|-------|
-| main.less | 2308 | 2227 | −81 LOC (−3.5%) |
-| main JS chunk | 151.27 KB | 149.68 KB | −1.59 KB |
+| File          | Before    | After     | Delta           |
+| ------------- | --------- | --------- | --------------- |
+| main.less     | 2308      | 2227      | −81 LOC (−3.5%) |
+| main JS chunk | 151.27 KB | 149.68 KB | −1.59 KB        |
 
 ### Verification
 
@@ -286,10 +312,10 @@ Two tasks: (1) aggressively reduce main.less (still 2399 lines after PR #175);
 
 - **A-1: Route-exit disposal for WorksPlaneStage (World.ts):** Added
   `disposeWorksPlaneStage()` method that disposes the stage + WorksTextScreen
-  + all 8 CasePlane textures + TSL materials. Called from Experience.ts
-  route-change handler when leaving /works. Frees ~40-50 MB of GPU memory
-  that was permanently retained after first /works visit. The stage is
-  lazily re-created on next /works visit via `ensureWorksPlaneStageInitialized()`.
+  - all 8 CasePlane textures + TSL materials. Called from Experience.ts
+    route-change handler when leaving /works. Frees ~40-50 MB of GPU memory
+    that was permanently retained after first /works visit. The stage is
+    lazily re-created on next /works visit via `ensureWorksPlaneStageInitialized()`.
 
 - **A-3: Refcounted texture cache (caseTexture.ts):** Added `textureCache`
   Map with `loadCaseTexture()` / `releaseCaseTexture()` / `disposeAllCaseTextures()`.
@@ -325,14 +351,15 @@ Two tasks: (1) aggressively reduce main.less (still 2399 lines after PR #175);
 
 ### Bundle impact
 
-| File | Before | After | Delta |
-|------|--------|-------|-------|
-| main.less | 2399 | 2308 | −91 LOC (−3.8%) |
-| main JS chunk | 153.75 KB | 151.27 KB | −2.48 KB |
+| File          | Before    | After     | Delta           |
+| ------------- | --------- | --------- | --------------- |
+| main.less     | 2399      | 2308      | −91 LOC (−3.8%) |
+| main JS chunk | 153.75 KB | 151.27 KB | −2.48 KB        |
 
 ### Memory verification
 
 JS heap measured across all pages + route changes + overlay open/close:
+
 - Home: 11 MB
 - /works: 13 MB (was ~50+ MB retained before fix)
 - /services: 13 MB
@@ -465,8 +492,8 @@ overrides and replacing them with UIKit utility classes / data-attributes;
   6. `.jlz-service-desc` `display: flex; flex-direction: column` →
      `uk-flex uk-flex-column` in `i18nDesc()` helper
   7. `.jlz-experiment-footer` `display: flex; flex-wrap; align-items; width;
-     margin-top` → `uk-flex uk-flex-wrap uk-flex-middle uk-width-1-1
-     uk-margin-remove-top`
+margin-top` → `uk-flex uk-flex-wrap uk-flex-middle uk-width-1-1
+uk-margin-remove-top`
   8. `.jlz-experiment-footer .jlz-service-explore` `margin-left: auto` →
      `uk-margin-auto-left` via new `extraClass` parameter on `serviceExplore()`
 
@@ -1322,12 +1349,13 @@ Prioritised material parity, lifecycle cleanup and event-driven rendering after
 a broad audit. Detailed findings are intentionally retained in Git commits,
 not duplicated in active documentation.
 
-
 ---
+
 Task ID: CSS-2
 Agent: css-cleanup-implementer
 Task: Delete dead joystick/scroll-hint/pageLoader CSS + apply 8 UIKit utility-class refactors
 Work Log:
+
 - Edited files: src/assets/main.less, src/sections/_shared/constants.ts, src/pages/content/lab.ts, src/pages/content/works.ts, src/pages/content/contact.ts
 - LOC removed (net): 280 lines (-298 / +18 across 5 files); main.less alone: -297 lines (2715 -> 2495 after dead-CSS deletion + var migration)
 - Block A (Joystick CSS deleted): first cluster (.jlz-joystick layout-only def + .jlz-joystick__base.is-active rules + reduced-motion block containing .jlz-scroll-hint__line::after and .jlz-joystick__ball); second cluster (fixed-position .jlz-joystick def + 8 .jlz-joystick-dotnav* rules + comment + max-width:640px mobile media query containing 8 .jlz-joystick* rules); body[data-page=works] .jlz-joystick-dotnav__label rule; stale "// Keep the centred navigation clear of the persistent joystick." comment in mobile .jlz-menu-container block. Net: every selector containing "joystick" or "scroll-hint" is gone (verified by grep).
@@ -1342,10 +1370,12 @@ Work Log:
 - Refactor 7 (.jlz-experiment-footer): removed display:flex, flex-wrap:wrap, align-items:center, width:100
 
 ---
+
 Task ID: CSS-2
 Agent: css-cleanup-implementer
 Task: Delete dead joystick/scroll-hint/pageLoader CSS + apply 8 UIKit utility-class refactors
 Work Log:
+
 - Edited files: src/assets/main.less, src/sections/_shared/constants.ts, src/pages/content/lab.ts, src/pages/content/works.ts, src/pages/content/contact.ts
 - LOC removed (net): 280 lines (-298 / +18 across 5 files). main.less alone: -297 lines (2715 -> 2495) after dead-CSS deletion + var migration.
 - Block A (Joystick CSS deleted): first cluster (.jlz-joystick layout-only def + .jlz-joystick__base.is-active rules + reduced-motion block containing .jlz-scroll-hint__line::after and .jlz-joystick__ball); second cluster (fixed-position .jlz-joystick def + 8 .jlz-joystick-dotnav* rules + comment + max-width:640px mobile media query containing 8 .jlz-joystick* rules); body[data-page=works] .jlz-joystick-dotnav__label rule; stale "// Keep the centred navigation clear of the persistent joystick." comment in mobile .jlz-menu-container block. Net: every selector containing "joystick" or "scroll-hint" is gone (verified by grep).
@@ -1362,15 +1392,17 @@ Work Log:
 - ServiceExplore signature change (extraClass parameter) is not a new abstraction; it is a minimal extension to allow the lab.ts call-site to add uk-margin-auto-left without rewriting the markup inline.
 - NOTE: contact.ts has 3 manual <a class="jlz-service-explore"> elements (mailto + Telegram + GitHub) that are NOT generated via serviceExplore(). Per the task scope, only serviceExplore() was updated with uk-text-uppercase. Those 3 manual entries will now render in mixed case instead of ALL CAPS. This is consistent with the task instructions (which only mention the serviceExplore() function for Refactor 1) and visually preferable for the email address. If uppercase is desired for the Telegram/GitHub pills, add uk-text-uppercase to those class lists as well.
 - Verification (all green): bun run type-check -> 0 errors; bun run lint -> 0 errors, 60 pre-existing warnings (none in edited files); bun run test:unit -> 105/105 tests passed; bun run build -> built in 1.84s, dist emitted.
-Stage Summary:
+  Stage Summary:
 - Deleted 280 net lines of dead/duplicated CSS+markup. Every selector mentioning "joystick" or "scroll-hint" is gone from main.less; padding-bottom / max-height calc expressions that previously reserved space for the deleted joystick now reference the --jlz-bottom-controls token. 8 bespoke CSS property declarations were replaced with UIKit utility classes (uk-text-uppercase, uk-text-right/left, uk-flex-wrap, uk-flex uk-flex-column, uk-flex uk-flex-wrap uk-flex-middle uk-width-1-1 uk-margin-remove-top, uk-margin-auto-left) in the corresponding template files. serviceExplore() gained an optional extraClass parameter to support call-site-specific utility classes. Build, lint, type-check and 105 unit tests all pass.
 
 ---
+
 Task ID: DEEP-1
 Agent: deep-assets-auditor
 Task: Deep audit of all Less files for UIKit unification plan
 
 Work Log:
+
 - Read /home/z/audit/justlovejazz/WORKLOG.md (941 LOC) for prior context
 - Read all 5 Less files in full:
   - src/assets/_import.less (511 LOC) — tokens + UIKit overrides + hook mixins + component imports
@@ -1384,7 +1416,7 @@ Work Log:
   - src/pages/home.ts + src/pages/content/{services,works,lab,contact,manifesto}.ts
   - src/UI/{FullscreenOverlay,UIMenu,CinematicNav,WorkCards,UIManager}.ts
 - Read markup: index.html (loader CSS only), blog.html + blog/*.html (4 articles)
-- Read tests: src/__tests__/{templates,pages,CinematicNav}.test.ts (assert jlz-page, jlz-page-section, jlz-service-desc, jlz-service-explore, jlz-desc, jlz-section-bottom, jlz-work-card)
+- Read tests: src/**tests**/{templates,pages,CinematicNav}.test.ts (assert jlz-page, jlz-page-section, jlz-service-desc, jlz-service-explore, jlz-desc, jlz-section-bottom, jlz-work-card)
 - Patterns verified via rg:
   - 130 distinct .jlz-* classes defined across main.less + blog.less
   - 182 distinct jlz-* tokens in markup (some are CSS vars like --jlz-color-accent, some are loader classes styled inline in index.html)
@@ -1399,6 +1431,7 @@ Stage Summary:
 Executive summary — total LOC reducible: 235-290 LOC (~9-12% of 3432 LOC across the 5 files).
 
 Stage 1 — Dead CSS + base resets (zero-risk, ~50-65 LOC, main.less only)
+
 - Delete .jlz-visually-hidden (main.less:67-77, 11 LOC — no markup use)
 - Delete `* { box-sizing: border-box }` (main.less:16-18, 3 LOC — UIKit base.less:275 provides it)
 - Delete `body { margin: 0 }` (main.less:37 — UIKit base.less:116 provides it)
@@ -1412,6 +1445,7 @@ Stage 1 — Dead CSS + base resets (zero-risk, ~50-65 LOC, main.less only)
 - Tests: templates.test.ts must keep asserting jlz-page/jlz-page-section/jlz-section-bottom/jlz-service-desc/jlz-service-explore/jlz-desc/jlz-work-card (these classes are NOT being renamed)
 
 Stage 2 — Topbar/launcher/console-bar UIKit utility consolidation (low-risk markup swap, ~40-55 LOC)
+
 - main.less: .jlz-topbar (1462-1474) — markup already has uk-flex uk-flex-middle uk-flex-between; delete redundant `display: flex; align-items: center; justify-content: space-between` from CSS, keep position/padding/pointer-events
 - main.less: .jlz-topbar-controls (1476-1481) — markup already has uk-flex uk-flex-middle; delete display/align-items, keep pointer-events: auto + gap
 - main.less: .jlz-menu-launcher (1509-1519) — markup already has uk-button uk-button-default; delete duplicated display/align-items/gap (move to .hook-button-default() in _import.less if all default buttons should be flex), keep min-height/padding overrides + bespoke border-color/background
@@ -1425,6 +1459,7 @@ Stage 2 — Topbar/launcher/console-bar UIKit utility consolidation (low-risk ma
 
 Stage 3 — Works cards + 3D plane handoff (low-risk cleanup, ~30-45 LOC)
 Most of .jlz-works-* and .jlz-work-card__* is bespoke 3D composition. Targeted cleanups:
+
 - main.less: .jlz-works-composition > * (866-869) and > * > * (871-873) — delete `display: flex` line (markup uses uk-grid uk-grid-small which provides display: flex on the grid container; the > * selector forces display:flex on children which conflicts with uk-grid item layout). Verify visually.
 - main.less: .jlz-work-card (880-893) — bespoke (perspective, cursor, tap-highlight). Keep.
 - main.less: .jlz-work-card__overlay (1010-1020) — markup has uk-position-bottom; delete `display: flex; align-items: flex-end; justify-content: space-between` from CSS (or keep — they may differ from uk-position-bottom defaults). Verify with screenshot diff.
@@ -1433,6 +1468,7 @@ Most of .jlz-works-* and .jlz-work-card__* is bespoke 3D composition. Targeted c
 - Keep all body[data-page='works'] .jlz-work-card__* overrides — these are required for the 3D plane-origin handoff.
 
 Stage 4 — Menu sheet + contact footer + cinematic shell (low-to-moderate risk, ~50-70 LOC)
+
 - main.less: .jlz-menu-overlay (1647-1667) and body[data-cinematic-sheet='menu'] rules — bespoke (visibility/transform/opacity transitions). Keep.
 - main.less: .jlz-menu-grid (2125-2138) — bespoke grid layout. Keep.
 - main.less: .jlz-menu-nav (2188-2194) — markup has uk-nav uk-nav-default; CSS sets `list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column`. UIKit .uk-nav already provides all of these. Delete the rule entirely (8 LOC).
@@ -1444,6 +1480,7 @@ Stage 4 — Menu sheet + contact footer + cinematic shell (low-to-moderate risk,
 - main.less: .jlz-storyline__item (1571-1585) — bespoke button styling (compact nav dot). Keep.
 
 Stage 5 — blog.less polish (zero-to-low risk, ~20-30 LOC)
+
 - blog.less:26-44 — delete dead .uk-card-title selector group (no .uk-card in any blog HTML). Keep .jlz-blog-brand + .jlz-landing-eyebrow font-variation-settings transition (lines 26-31 minus .uk-card-title selector).
 - blog.less:47-67 — .skip-link is bespoke WCAG pattern (UIKit has no equivalent). Keep.
 - blog.less:70-88 — .jlz-reading-progress is bespoke (fixed scaleX progress bar). Keep.
@@ -1453,6 +1490,7 @@ Stage 5 — blog.less polish (zero-to-low risk, ~20-30 LOC)
 - blog.less:336-350 — .jlz-blog-footer is bespoke minimal footer. Keep.
 
 Risk Assessment:
+
 - Zero-risk (delete without verification): .jlz-visually-hidden, *{box-sizing}, body{margin:0}, .jlz-sheet-close{color:inherit}, blog.less .uk-card-title rules, .jlz-menu-nav{list-style/margin/padding/display/flex-direction}
 - Zero-risk (delete with screenshot diff): h1..h6 selector → @base-heading-* variable migration, .jlz-fs-overlay color: var(--jlz-color-text) child rule
 - Low-risk (markup swap, screenshot diff per page): .jlz-storyline__items, .jlz-works-index — add uk-flex utilities to markup, delete duplicated flex props from CSS

@@ -42,13 +42,23 @@ export class SfxSystem {
     // happens to call play(). ctx.resume() is async but scheduling still works
     // (the sound plays once the context resumes, ~1 frame later).
     if (this.ctx.state === 'suspended') {
-      void this.ctx.resume().catch(() => { /* ignore — will retry next play() */ })
+      void this.ctx.resume().catch(() => {
+        /* ignore — will retry next play() */
+      })
     }
     switch (name) {
-      case 'hover': this.tick(880, 0.04, 0.08); break
-      case 'click': this.tap(180, 0.08, 0.18); break
-      case 'open': this.sweep(220, 660, 0.18, 0.12); break
-      case 'close': this.sweep(660, 220, 0.18, 0.12); break
+      case 'hover':
+        this.tick(880, 0.04, 0.08)
+        break
+      case 'click':
+        this.tap(180, 0.08, 0.18)
+        break
+      case 'open':
+        this.sweep(220, 660, 0.18, 0.12)
+        break
+      case 'close':
+        this.sweep(660, 220, 0.18, 0.12)
+        break
     }
   }
 
@@ -56,7 +66,9 @@ export class SfxSystem {
   private init(): void {
     if (this._started) return
     try {
-      const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+      const Ctx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
       this.ctx = new Ctx()
       this.master = this.ctx.createGain()
       this.master.gain.value = this._muted ? 0 : 0.15

@@ -127,11 +127,7 @@ export class CasePlane extends THREE.Mesh {
       const edgeBend = local.x.mul(local.x).mul(edgeWarp).mul(float(CLOTH_PARAMS.edgeWarpBend))
 
       const rippleZ = ripple.mul(0.25).add(travel).add(edgeBend)
-      return vec3(
-        local.x,
-        local.y.add(ripple) as any,
-        local.z.add(rippleZ) as any,
-      )
+      return vec3(local.x, local.y.add(ripple) as any, local.z.add(rippleZ) as any)
     })()
 
     // Opacity: clean fade driven by reveal + transition. No radial mask —
@@ -202,10 +198,14 @@ export class CasePlane extends THREE.Mesh {
 
     this._timeUni.value += dt
     this._wobbleTarget *= Math.exp(-dt * CLOTH_PARAMS.wobbleDecay)
-    this._wobbleValue += (this._wobbleTarget - this._wobbleValue) * Math.min(1, dt * CLOTH_PARAMS.wobbleSmoothing)
+    this._wobbleValue +=
+      (this._wobbleTarget - this._wobbleValue) * Math.min(1, dt * CLOTH_PARAMS.wobbleSmoothing)
     this._motionTarget *= Math.exp(-dt * CLOTH_PARAMS.motionDecay)
-    this._motionValue += (this._motionTarget - this._motionValue) * Math.min(1, dt * CLOTH_PARAMS.motionSmoothing)
-    this._edgeWarpValue += (this._edgeWarpTarget - this._edgeWarpValue) * Math.min(1, dt * CLOTH_PARAMS.edgeWarpSmoothing)
+    this._motionValue +=
+      (this._motionTarget - this._motionValue) * Math.min(1, dt * CLOTH_PARAMS.motionSmoothing)
+    this._edgeWarpValue +=
+      (this._edgeWarpTarget - this._edgeWarpValue) *
+      Math.min(1, dt * CLOTH_PARAMS.edgeWarpSmoothing)
 
     this._stateUni.value.z = this._wobbleValue
     this._state2Uni.value.x = this._motionValue

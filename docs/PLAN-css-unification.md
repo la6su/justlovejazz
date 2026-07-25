@@ -13,14 +13,14 @@ See [docs/UIKIT3.md](UIKIT3.md) for the solution priority order.
 
 ## Current state
 
-| File | Lines | Role |
-|------|-------|------|
-| `_import.less` | 511 | Design tokens + UIKit variable overrides + hooks + component imports |
-| `_theme.less` | 6 | Bridge to `console-theme/_import.less` |
-| `console-theme/_import.less` | 77 | Console theme variables (font weights, status colors, shadows, color-mode) |
-| `main.less` | 2486 | App layer CSS (3D shell, cinematic, overlay, work cards, sections) |
-| `blog.less` | 352 | Standalone blog pages (no 3D runtime) |
-| **Total** | **3432** | |
+| File                         | Lines    | Role                                                                       |
+| ---------------------------- | -------- | -------------------------------------------------------------------------- |
+| `_import.less`               | 511      | Design tokens + UIKit variable overrides + hooks + component imports       |
+| `_theme.less`                | 6        | Bridge to `console-theme/_import.less`                                     |
+| `console-theme/_import.less` | 77       | Console theme variables (font weights, status colors, shadows, color-mode) |
+| `main.less`                  | 2486     | App layer CSS (3D shell, cinematic, overlay, work cards, sections)         |
+| `blog.less`                  | 352      | Standalone blog pages (no 3D runtime)                                      |
+| **Total**                    | **3432** |                                                                            |
 
 ## Target
 
@@ -38,6 +38,7 @@ provides. Migrate global heading typography into UIKit variable overrides.
 **Files:** `main.less`, `console-theme/_import.less`, `blog.less`
 
 **Deletions in `main.less`:**
+
 - `* { box-sizing: border-box }` — UIKit base.less provides this
 - `body { margin: 0; background; color }` — UIKit base + `@global-*` provide these
 - `html, body { font-family: ... !important }` — `@global-font-family` provides it
@@ -48,12 +49,14 @@ provides. Migrate global heading typography into UIKit variable overrides.
 - `.jlz-sheet-close { color: inherit }` — UIKit `.uk-close` already sets color
 
 **Additions in `console-theme/_import.less`:**
+
 ```less
 @base-heading-text-transform: uppercase;
 @base-heading-letter-spacing: -0.03em;
 ```
 
 **Deletions in `blog.less`:**
+
 - `.uk-card-title` from shared selectors (dead — zero `.uk-card` markup in blog)
 
 **LOC reduction:** ~50–65. **Risk:** zero.
@@ -66,6 +69,7 @@ present in markup.
 **Files:** `main.less`, `CinematicNav.ts`
 
 **Deletions in `main.less`:**
+
 - `.jlz-topbar` — delete `display/align-items/justify-content` (markup has `uk-flex uk-flex-middle uk-flex-between`)
 - `.jlz-topbar-controls` — delete `display/align-items` (markup has `uk-flex uk-flex-middle`)
 - `.jlz-works-index` — delete `display/align-items/justify-content/text-transform` (markup has utilities)
@@ -74,6 +78,7 @@ present in markup.
 - `.jlz-storyline__items` — delete `display/align-items` (after markup change)
 
 **Markup change in `CinematicNav.ts`:**
+
 - `.jlz-storyline__items` div: add `uk-flex uk-flex-middle`
 
 **LOC reduction:** ~15–20. **Risk:** low.
@@ -86,6 +91,7 @@ without breaking the 3D plane-origin handoff.
 **Files:** `main.less`, `works.ts`
 
 **Changes (verify with screenshot diff before committing):**
+
 - `.jlz-works-composition > *` — audit if `display: flex` is needed (uk-grid children)
 - `.jlz-work-card__overlay` — keep bespoke flex (UIKit `uk-position-bottom` doesn't provide it)
 - `body[data-page='works'] .jlz-work-card__*` overrides — KEEP (required for plane-origin)
@@ -100,6 +106,7 @@ coverage; audit `.jlz-telegram-cta` family.
 **Files:** `main.less`, `nav/template.ts`, `lab-overlay/template.ts`
 
 **Changes:**
+
 - `.jlz-contact-footer__actions` — optionally add `uk-flex uk-flex-middle` to markup; delete `display/align-items` from CSS
 - `.jlz-menu-stat` — optionally add `uk-flex uk-flex-column` to markup; delete `display/flex-direction` from CSS
 - `.jlz-menu-nav__toggle` — keep bespoke (UIKit `.uk-nav > li > a` doesn't provide baseline-aligned flex)
@@ -115,11 +122,13 @@ variable overrides.
 **Files:** `blog.less`, `_import.less`
 
 **Deletions in `blog.less`:**
+
 - `body { background; color }` — UIKit base provides
 - `.jlz-blog-header .uk-navbar-container { background: transparent !important }` — `@navbar-background` provides
 - `.jlz-blog-header .uk-navbar-nav > li > a { font-size; font-weight; letter-spacing; text-transform }` — migrate to vars
 
 **Additions in `_import.less`:**
+
 ```less
 @navbar-nav-item-font-size: 0.72rem;
 @navbar-nav-item-font-weight: 500;

@@ -141,9 +141,12 @@ async function boot(): Promise<void> {
     const elapsed = performance.now() - bootStart
     const readyAt = Math.max(0, INTRO_MS - elapsed)
 
-    setTimeout(() => {
-      eventBus.emit('jlz:webgl-ready')
-    }, prefersReducedMotion() ? 0 : readyAt)
+    setTimeout(
+      () => {
+        eventBus.emit('jlz:webgl-ready')
+      },
+      prefersReducedMotion() ? 0 : readyAt,
+    )
     _bootstrapped = true
   } catch (e) {
     console.error('[entry-app] bootstrap failed:', e)
@@ -192,9 +195,13 @@ export async function startApp(): Promise<void> {
   // Register console-themed SVG icons — replaces UIKit's default icon set
   // (76KB) with our custom pixel/console-style icons. No uikit-icons import.
   // UIKit's icon component is built into the core; we just register our SVGs.
-  import('./assets/console-icons').then(({ registerConsoleIcons }) => {
-    registerConsoleIcons()
-  }).catch(() => { /* icons are enhancement, not critical */ })
+  import('./assets/console-icons')
+    .then(({ registerConsoleIcons }) => {
+      registerConsoleIcons()
+    })
+    .catch(() => {
+      /* icons are enhancement, not critical */
+    })
 
   initRouter()
 

@@ -8,20 +8,24 @@ This file is the **single source of truth for all AI coding agents**. Other
 agent-specific files (`CLAUDE.md`, `.github/copilot-instructions.md`,
 `.cursor/rules/`) reference this file to avoid duplication.
 
+Pi Coding Agent loads `AGENTS.md` from the repository root automatically.
+Run Pi from this directory and use `/reload` after changing this file; do not
+create a second `.pi` instruction layer that can drift from this source.
+
 ## Quick reference
 
-| What | Where |
-|------|-------|
-| Open tasks | [NEXT.md](NEXT.md) |
-| Architecture | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
-| Hard rules | [docs/RULES.md](docs/RULES.md) |
-| Dev workflow + verification | [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) |
-| UIkit 3 + Less conventions | [docs/UIKIT3.md](docs/UIKIT3.md) |
-| Brand voice + visual intent | [docs/BRAND.md](docs/BRAND.md) |
-| Doc ownership map | [docs/README.md](docs/README.md) |
-| Decision journal | [WORKLOG.md](WORKLOG.md) |
-| Release history | [docs/CHANGELOG.md](docs/CHANGELOG.md) |
-| Active detailed plan | [docs/PLAN-showreel-shader-plane.md](docs/PLAN-showreel-shader-plane.md) |
+| What                        | Where                                                                    |
+| --------------------------- | ------------------------------------------------------------------------ |
+| Open tasks                  | [NEXT.md](NEXT.md)                                                       |
+| Architecture                | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)                             |
+| Hard rules                  | [docs/RULES.md](docs/RULES.md)                                           |
+| Dev workflow + verification | [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)                               |
+| UIkit 3 + Less conventions  | [docs/UIKIT3.md](docs/UIKIT3.md)                                         |
+| Brand voice + visual intent | [docs/BRAND.md](docs/BRAND.md)                                           |
+| Doc ownership map           | [docs/README.md](docs/README.md)                                         |
+| Decision journal            | [WORKLOG.md](WORKLOG.md)                                                 |
+| Release history             | [docs/CHANGELOG.md](docs/CHANGELOG.md)                                   |
+| Active detailed plan        | [docs/PLAN-showreel-shader-plane.md](docs/PLAN-showreel-shader-plane.md) |
 
 ## Reading order
 

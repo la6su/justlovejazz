@@ -4,7 +4,12 @@ import { renderPage } from '../pages'
 describe('renderPage', () => {
   it('returns HTML for every valid PageId', () => {
     const pages: Array<Parameters<typeof renderPage>[0]> = [
-      'home', 'services', 'works', 'manifesto', 'lab', 'contact',
+      'home',
+      'services',
+      'works',
+      'manifesto',
+      'lab',
+      'contact',
     ]
     for (const page of pages) {
       const html = renderPage(page)
