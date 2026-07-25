@@ -24,8 +24,10 @@
 - Reduced the emitted shared UIkit stylesheet by removing nine components and
   three utilities with no repository markup usage. Standalone blog CSS falls
   from 165.86 kB to 108.27 kB (21.53 kB to 16.77 kB gzip).
-- Replaced the isolated Pixelify Works texture font with the shared Onest
-  display face and removed 99.7 kB of unused public font assets.
+- Works BackText now uses the restored self-hosted Pixelify Sans face with
+  Cyrillic coverage as an intentional visual signature. It renders at 2×
+  source resolution before nearest-neighbour upscale, so the pixel character
+  stays legible instead of becoming oversized blocks.
 - Fixed direct section links so they preserve the route and use
   `CinematicNav`’s authoritative scroll state.
 - Project case studies now open as full-screen still-image overlays; video is
