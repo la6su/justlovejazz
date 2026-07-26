@@ -30,7 +30,6 @@ export function introSection(): string {
       </button>
     </div>
 `,
-    '01',
   )
   return sectionShell('intro', top, bottom, 'home', false, '')
 }

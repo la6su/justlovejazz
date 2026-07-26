@@ -5,7 +5,6 @@ import { sectionShell, homeTop, i18nDesc, serviceExplore, storyBottom } from '..
 export function contactSection(): string {
   const bottom = storyBottom(
     `${i18nDesc('home.manifesto', ['Clarity before spectacle.', 'Every effect must explain a state.', 'Every page must earn attention.'])}${serviceExplore('/manifesto', 'common.explore', 'Explore')}`,
-    '04',
   )
   return sectionShell(
     'contact',

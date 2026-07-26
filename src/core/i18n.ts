@@ -60,7 +60,6 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     // Cinematic shell + contact finale
     'story.system': 'Cinematic web system · 2026',
     'story.hint': 'Scroll · swipe',
-    'story.bottomLabel': 'Field note',
     'story.contact': 'Contact',
     'contactFooter.kicker': 'Final frame · open channel',
     'contactFooter.title': 'Let’s make something worth remembering.',
@@ -344,7 +343,6 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     // Cinematic shell + contact finale
     'story.system': 'Кинематографическая web-система · 2026',
     'story.hint': 'Листайте · свайпайте',
-    'story.bottomLabel': 'Рабочая заметка',
     'story.contact': 'Связаться',
     'contactFooter.kicker': 'Финальный кадр · открытый канал',
     'contactFooter.title': 'Давайте создадим то, что хочется запомнить.',
@@ -352,7 +350,7 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'contactFooter.telegram': 'TG',
 
     // Lab section (RU)
-    'labOverlay.title': 'Лаб',
+    'labOverlay.title': 'Lab',
     'labOverlay.lead': 'Эксперименты · работы · R&D.',
     'labOverlay.openWorks': 'Открыть работы',
 

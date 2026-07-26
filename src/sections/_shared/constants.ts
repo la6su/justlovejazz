@@ -16,7 +16,7 @@
 //   5     | Menu     | tilt ±π/4    | dark (top sheet)
 //   * Section 0 keeps the canonical Lab id but publicly renders Contact.
 
-export type SectionId = 'lab' | 'intro' | 'about' | 'works' | 'contact' | 'menu'
+// export type SectionId = 'lab' | 'intro' | 'about' | 'works' | 'contact' | 'menu'
 
 export type PageId = 'home' | 'services' | 'works' | 'manifesto' | 'lab' | 'contact'
 
@@ -92,13 +92,12 @@ export function contentTop(
 }
 
 /** Shared console module for the lower story beat. */
-export function storyBottom(content: string, marker: string = '—'): string {
+export function storyBottom(content: string): string {
   return `
     <div class="jlz-section-bottom">
       <div class="jlz-cinematic-shell">
         <div>
-          <span data-i18n="story.bottomLabel">Field note</span>
-          <span aria-hidden="true">${marker}</span>
+          <span aria-hidden="true">></span>
         </div>
         <div>
           ${content}

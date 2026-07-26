@@ -5,7 +5,6 @@ import { sectionShell, homeTop, i18nDesc, serviceExplore, storyBottom } from '..
 export function aboutSection(): string {
   const bottom = storyBottom(
     `${i18nDesc('home.about', ['A brief becomes an interface people can move through.', 'Direction · product design · realtime build.'])}${serviceExplore('/services', 'common.explore', 'Explore')}`,
-    '02',
   )
   return sectionShell(
     'about',
