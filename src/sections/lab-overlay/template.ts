@@ -9,7 +9,9 @@ import { sectionShell } from '../_shared/constants'
 
 function contactFooterContent(): { top: string; bottom: string } {
   const top = `
-    <div class="jlz-section-top jlz-contact-footer__intro uk-flex uk-flex-column uk-flex-top uk-text-left">
+      <button class="uk-close-large uk-margin-auto-left" type="button" uk-close
+              data-close-cinematic-sheet aria-label="Close contact footer"></button>
+    <div class="jlz-contact-footer__intro uk-flex uk-flex-column uk-flex-top uk-text-left">
       <span class="jlz-contact-footer__kicker" data-i18n="contactFooter.kicker">Final frame · open channel</span>
       <h2 class="studio-title uk-heading-large uk-margin-small-top uk-margin-remove-bottom" data-blur-fade="off"
           data-i18n="contactFooter.title">Let’s make something worth remembering.</h2>
@@ -18,20 +20,19 @@ function contactFooterContent(): { top: string; bottom: string } {
   `
 
   const bottom = `
-    <div class="jlz-section-bottom jlz-contact-footer__actions uk-flex uk-flex-middle uk-width-1-1">
+    <div class="jlz-contact-footer__actions uk-flex uk-flex-middle uk-width-1-1">
       <a class="uk-button uk-button-primary jlz-telegram-cta" href="https://t.me/justlovejazz"
          target="_blank" rel="noopener" data-magnetic data-cursor="view">
         <span class="jlz-telegram-cta__halo" aria-hidden="true"></span>
         <span class="jlz-telegram-cta__icon" uk-icon="icon: commenting; ratio: 1.15" aria-hidden="true"></span>
         <span class="jlz-telegram-cta__copy">
-          <span class="jlz-telegram-cta__label" data-i18n="contactFooter.telegram">Open Telegram</span>
+          <span class="jlz-telegram-cta__label" data-i18n="contactFooter.telegram">TG</span>
           <span class="jlz-telegram-cta__handle">@justlovejazz</span>
         </span>
-        <span class="jlz-telegram-cta__arrow" aria-hidden="true">↗</span>
+        
       </a>
-      <a class="jlz-contact-footer__email" href="mailto:hello@justlovejazz.com">hello@justlovejazz.com</a>
-      <button class="uk-close-large uk-margin-auto-left" type="button" uk-close
-              data-close-cinematic-sheet aria-label="Close contact footer"></button>
+      <a class="jlz-contact-footer__email" href="mailto:hello@justlovejazz.com">hello@justlovejazz.com<span class="jlz-mail-cta__arrow" aria-hidden="true"> ↗</span></a>
+
     </div>
   `
 

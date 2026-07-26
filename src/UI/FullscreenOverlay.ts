@@ -80,7 +80,7 @@ export class FullscreenOverlay {
         <header class="jlz-fs-meta uk-flex uk-flex-between uk-flex-bottom">
           <div>
             <div class="jlz-fs-cat uk-text-uppercase"></div>
-            <h2 class="jlz-fs-title uk-margin-remove"></h2>
+            <h2 class="jlz-fs-title uk-heading-small uk-margin-remove"></h2>
             <p class="jlz-fs-desc uk-margin-small-top uk-margin-remove-bottom"></p>
           </div>
           <div class="jlz-fs-meta-end uk-text-right">

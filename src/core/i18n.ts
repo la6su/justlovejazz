@@ -55,7 +55,7 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
 
     // Menu section (section 5, two-column navigation template)
     'menu.navigate': 'Navigate',
-    'menu.stat.sections': 'Sections',
+    'menu.stat.sections': 'LEMONROOM',
 
     // Cinematic shell + contact finale
     'story.system': 'Cinematic web system · 2026',
@@ -65,7 +65,7 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'contactFooter.kicker': 'Final frame · open channel',
     'contactFooter.title': 'Let’s make something worth remembering.',
     'contactFooter.lead': 'Tell us where the story should go next.',
-    'contactFooter.telegram': 'Open Telegram',
+    'contactFooter.telegram': 'TG',
 
     // Legacy Lab overlay keys retained for route/content compatibility.
     'labOverlay.title': 'Lab',
@@ -339,7 +339,7 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
 
     // Menu overlay (RU)
     'menu.navigate': 'Навигация',
-    'menu.stat.sections': 'Разделы',
+    'menu.stat.sections': 'LEMONROOM',
 
     // Cinematic shell + contact finale
     'story.system': 'Кинематографическая web-система · 2026',
@@ -349,7 +349,7 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     'contactFooter.kicker': 'Финальный кадр · открытый канал',
     'contactFooter.title': 'Давайте создадим то, что хочется запомнить.',
     'contactFooter.lead': 'Расскажите, куда должна продолжиться эта история.',
-    'contactFooter.telegram': 'Открыть Telegram',
+    'contactFooter.telegram': 'TG',
 
     // Lab section (RU)
     'labOverlay.title': 'Лаб',

@@ -58,7 +58,7 @@ export class CinematicNav {
     for (let index = FIRST_MAIN; index <= LAST_MAIN; index++) {
       const button = document.createElement('button')
       button.type = 'button'
-      button.className = 'jlz-storyline__item'
+      button.className = 'uk-button jlz-storyline__item'
       button.dataset.storyIndex = String(index)
       button.setAttribute('aria-label', `Go to section ${index}`)
 
