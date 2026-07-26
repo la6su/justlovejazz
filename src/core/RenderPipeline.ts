@@ -229,7 +229,7 @@ const GAUSSIAN_WEIGHTS: number[] = (() => {
   const sigma = 2.0
   // Unnormalized kernel values at distances 0, 1, 2
   const w0 = Math.exp(0) // d=0
-  const w1 = Math.exp((-0.5 * 1) / (sigma * sigma)) // d=1
+  const w1 = Math.exp((-0.5) / (sigma * sigma)) // d=1
   const w2 = Math.exp((-0.5 * 4) / (sigma * sigma)) // d=2
   // Full kernel sum: center once + each side twice
   const sum = w0 + 2 * w1 + 2 * w2
@@ -373,7 +373,10 @@ export class RenderPipeline {
       // Re-apply section grade (stored in _sectionRefract/Shadows/Highlights)
       // so it survives updateParams calls from PostProcessingManager.
       this._passComposite.uniforms.uRefract!.value = this._sectionRefract
-      this._passComposite.uniforms.uBorder!.value = Math.max(this._sectionBorder, this._globalBorder)
+      this._passComposite.uniforms.uBorder!.value = Math.max(
+        this._sectionBorder,
+        this._globalBorder,
+      )
       ;(this._passComposite.uniforms.uGradeShadows!.value as THREE.Vector3).copy(
         this._sectionShadows,
       )
