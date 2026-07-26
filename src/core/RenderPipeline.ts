@@ -274,6 +274,9 @@ export class RenderPipeline {
   // Section grade values (stored so setSectionGrade works before WebGL composite is built)
   private _sectionRefract = 0.05
   private _sectionBorder = 0.0
+  // The CRT frame is a shared visual treatment, not a per-section effect.
+  // Keep a small global value so section presets cannot accidentally hide it.
+  private _globalBorder = 0.4
   private _sectionShadows = new THREE.Vector3(1, 1, 1)
   private _sectionHighlights = new THREE.Vector3(1, 1, 1)
 
@@ -370,7 +373,7 @@ export class RenderPipeline {
       // Re-apply section grade (stored in _sectionRefract/Shadows/Highlights)
       // so it survives updateParams calls from PostProcessingManager.
       this._passComposite.uniforms.uRefract!.value = this._sectionRefract
-      this._passComposite.uniforms.uBorder!.value = this._sectionBorder
+      this._passComposite.uniforms.uBorder!.value = Math.max(this._sectionBorder, this._globalBorder)
       ;(this._passComposite.uniforms.uGradeShadows!.value as THREE.Vector3).copy(
         this._sectionShadows,
       )
@@ -394,6 +397,21 @@ export class RenderPipeline {
     this._isWebGPU = isWebGPU
   }
 
+  /** Set the shared screen-edge CRT frame (0 = off, 1 = full black). */
+  public setGlobalBorder(intensity: number): void {
+    this._globalBorder = THREE.MathUtils.clamp(intensity, 0, 1)
+    if (this._passComposite) {
+      this._passComposite.uniforms.uBorder!.value = Math.max(
+        this._sectionBorder,
+        this._globalBorder,
+      )
+    }
+    if (this._webgpuPipeline) {
+      this._webgpuParamsCache.border = Math.max(this._sectionBorder, this._globalBorder)
+      this._webgpuPipeline.updateParams(this._webgpuParamsCache)
+    }
+  }
+
   /** Lazily set up WebGL post-processing passes if not already done. */
   public setupWebGLIfNeeded(): void {
     if (!this._passComposite && !this._isWebGPU) {
@@ -414,7 +432,7 @@ export class RenderPipeline {
     this._sectionHighlights.copy(highlightTint)
     if (this._passComposite) {
       this._passComposite.uniforms.uRefract!.value = refract
-      this._passComposite.uniforms.uBorder!.value = border
+      this._passComposite.uniforms.uBorder!.value = Math.max(border, this._globalBorder)
       ;(this._passComposite.uniforms.uGradeShadows!.value as THREE.Vector3).copy(shadowTint)
       ;(this._passComposite.uniforms.uGradeHighlights!.value as THREE.Vector3).copy(highlightTint)
     }
@@ -447,7 +465,7 @@ export class RenderPipeline {
       p.grain = this._params.grain
       p.chromatic = this._params.chromatic
       p.refract = this._sectionRefract
-      p.border = this._sectionBorder
+      p.border = Math.max(this._sectionBorder, this._globalBorder)
       p.gradeShadows[0] = this._sectionShadows.x
       p.gradeShadows[1] = this._sectionShadows.y
       p.gradeShadows[2] = this._sectionShadows.z
@@ -484,7 +502,7 @@ export class RenderPipeline {
       !this._config.bloomEnabled &&
       !this._config.vignetteEnabled &&
       !this._config.grainEnabled &&
-      this._sectionBorder <= 0
+      Math.max(this._sectionBorder, this._globalBorder) <= 0
     ) {
       this._renderer.render(scene, camera)
       return
@@ -740,7 +758,7 @@ export class RenderPipeline {
     passComposite.uniforms.uChromatic!.value = this._params.chromatic ?? 0
     passComposite.uniforms.uTime!.value = performance.now() * 0.001
     passComposite.uniforms.uRefract!.value = this._sectionRefract
-    passComposite.uniforms.uBorder!.value = this._sectionBorder
+    passComposite.uniforms.uBorder!.value = Math.max(this._sectionBorder, this._globalBorder)
     ;(passComposite.uniforms.uGradeShadows!.value as THREE.Vector3).copy(this._sectionShadows)
     ;(passComposite.uniforms.uGradeHighlights!.value as THREE.Vector3).copy(this._sectionHighlights)
     // Refraction + grade are set via setSectionGrade() — they persist across frames.
