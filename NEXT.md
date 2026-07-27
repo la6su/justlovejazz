@@ -3,14 +3,6 @@
 This is the current execution plan. Work from top to bottom unless new evidence
 changes the order. Each item describes an outcome rather than an implementation.
 
-## 0 — Stabilize the baseline
-
-- [ ] **Align live contracts with their sources** — remove stale references to
-      `main-app.ts`, `AssetManager.ts`, deleted UIkit documentation and the old
-      showreel event; describe the real alternating section-theme behavior and
-      reconcile the EventBus migration inventory with actual producers and
-      consumers.
-
 ## 1 — Protect the current experience
 
 - [ ] **Mobile accessibility pass** — bring story navigation and configuration
@@ -44,6 +36,8 @@ changes the order. Each item describes an outcome rather than an implementation.
 - [ ] **Define the Lab experiment boundary** — finish the gamepad route slice,
       define a small experiment manifest and load each accepted experiment
       behind its own scene boundary so the shared startup bundle stays stable.
+      Fold the remaining stale bootstrap/UIkit comments in the pending
+      `Experience.ts` change into that slice.
 
 ## 3 — Refine after evidence
 

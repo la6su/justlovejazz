@@ -2,7 +2,7 @@
 // Hero tier — uk-heading-xlarge. Active on load.
 //
 // The showreel play button is a DOM uk-button (data-showreel-trigger) in the
-// bottom block. UIManager listens for jlz:showreel-play and opens
+// bottom block. UIManager owns its delegated click behavior and opens
 // FullscreenOverlay in video mode; the overlay remains the single media owner.
 import { sectionShell, storyBottom, homeTop, descBlock } from '../_shared/constants'
 

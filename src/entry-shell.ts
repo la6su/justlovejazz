@@ -2,7 +2,7 @@
 // Errors are surfaced to console + ErrorTracker (not silently swallowed).
 
 // Sync reduced-motion dataset SYNCHRONOUSLY at shell load — before any
-// dynamic import. main-app.ts re-syncs later (idempotent), but if the lazy
+// dynamic import. entry-app.ts re-syncs later (idempotent), but if the lazy
 // bootstrap crashes or times out in headless, the dataset is still correct.
 // CSS hooks + E2E tests rely on documentElement.dataset.reducedMotion.
 ;((): void => {

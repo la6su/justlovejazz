@@ -9,7 +9,7 @@ import { test, expect, type Page } from '@playwright/test'
  *     -> /src/entry-shell.ts           (tiny shell, double-rAF + requestIdleCallback)
  *        -> /src/entry-app.ts          (lazy-loads main.less + UIkit, runs initRouter)
  *           -> /src/router.ts          (creates <main id="spa-content"> and renders homePage)
- *              -> /src/main-app.ts     (WebGL/WebGPU Experience bootstrap)
+ *              -> Experience bootstrap (WebGL/WebGPU runtime)
  *
  * Headless Chromium cannot always initialize WebGPU, and the WebGL2 fallback
  * path may also fail in pure-software rendering environments. Therefore these
@@ -56,9 +56,9 @@ const KNOWN_HARMLESS_PATTERNS: RegExp[] = [
   /NO_GPU_ADAPTER/i,
   /WebGL2 is not supported/i,
   /Neither WebGPU nor WebGL2/i,
-  // main-app.ts logs this prefix when Experience.init() throws — expected
+  // entry-app.ts logs this prefix when Experience.init() throws — expected
   // in headless CI where WebGPU/WebGL2 may be unavailable.
-  /\[main-app\] bootstrap failed/i,
+  /\[entry-app\] bootstrap failed/i,
   /\[Renderer\] Failed to install WebGLNodesHandler/i,
   /\[Experience\] DevPanel init failed/i,
 ]

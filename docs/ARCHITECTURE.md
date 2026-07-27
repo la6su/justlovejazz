@@ -74,12 +74,14 @@ animation interval.
 - `jlz:section-change`
 - `jlz:route-change`
 
-Some feature-local `jlz:*` DOM events remain during the migration tracked in
-`NEXT.md`; their producers and consumers define their payloads.
+Other feature-local `jlz:*` DOM events are intentionally local contracts;
+their producer and consumer own the payload together. The bridge in
+`EventBus.ts` exposes the four typed events to legacy DOM listeners.
 
-`ThemeManager` persists `auto` or `inverse`. Auto is the shared dark console
-mode; inverse is the explicit alternate polarity. `i18n.ts` owns localized
-strings and persistence, while `router.ts` applies copy and metadata.
+`ThemeManager` persists `auto` or `inverse`. In auto, each route's section
+configuration chooses its light or dark polarity; inverse flips that result.
+`i18n.ts` owns localized strings and persistence, while `router.ts` applies
+copy and metadata.
 
 ## Editorial model
 

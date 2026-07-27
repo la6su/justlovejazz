@@ -23,7 +23,7 @@ export type PageId = 'home' | 'services' | 'works' | 'manifesto' | 'lab' | 'cont
 // ── Layout helpers ──
 // Every section follows: TOP (eyebrow + title) / 3D CENTER (transparent) /
 // BOTTOM (UI panel). These helpers generate the wrapper structure using UIkit
-// utilities. No .jlz-* utility classes; see docs/UIKIT3.md.
+// utilities. Bespoke classes stay limited to the authored composition.
 
 /** Unified section wrapper — ONE function for ALL pages (home + content).
  *  TOP/CENTER/BOTTOM layout via uk-flex uk-flex-between uk-height-1-1. */
