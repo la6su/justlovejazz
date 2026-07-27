@@ -4,7 +4,6 @@
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
-WORKLOG="WORKLOG.md"
 NEXT="NEXT.md"
 BRANCH=$(git branch --show-current)
 
@@ -13,11 +12,8 @@ case "${1:-help}" in
     echo "══ SESSION START ══"
     echo "Branch: $BRANCH"
     echo ""
-    echo "── Latest worklog context ──"
-    sed -n '1,70p' "$WORKLOG"
-    echo ""
-    echo "── Open backlog ──"
-    cat "$NEXT"
+    echo "── Open outcomes ──"
+    rg '^- \[ \] \*\*' "$NEXT" || true
     echo ""
     echo "── Working tree ──"
     git status --short
@@ -36,18 +32,8 @@ case "${1:-help}" in
     cat <<'EOF'
 ── SESSION END ──
 
-Update WORKLOG.md manually with a short newest-first entry:
-
-## YYYY-MM-DD — concise decision
-
-### Decision
-- What changed and why.
-
-### Verification
-- Checks run and any environment limitation.
-
-Then update NEXT.md only if an open backlog item changed state. Review the
-scoped diff, commit on the feature branch, push it and open a pull request.
+Review the scoped diff and the checks relevant to the change. Use the release
+skill when preparing a commit or pull request.
 EOF
     ;;
 
@@ -66,10 +52,10 @@ scripts/session.sh — orientation helpers
 
 Commands:
   start   Show the latest context, open backlog and branch divergence.
-  end     Print the worklog/commit reminder; does not edit or push anything.
+  end     Print a concise review reminder; does not edit or push anything.
   push    Push the current non-default branch after git diff --check.
 
-Publishing remains PR-first. See AGENTS.md and docs/DEVELOPMENT.md.
+Publishing remains PR-first. See AGENTS.md or the release skill.
 EOF
     ;;
 esac

@@ -17,15 +17,15 @@ technical rather than loud.
 
 The interface uses dark technical planes, a shared CRT frame and restrained
 acid-green/teal signals instead of scanlines or decorative shader fields. A
-small, local blur is allowed only where a console module needs separation from
-an active 3D scene; it must not turn the overall interface back into frosted
-cards. References inform composition and motion principles, not copied product
-chrome. Prefer one memorable 3D gesture over several standard UI cards, while
-keeping text and primary actions semantic in the DOM.
+small, local blur can separate a console module from an active 3D scene while
+the overall interface stays away from frosted-card styling. References inform
+composition and motion principles rather than copied product chrome. Prefer one
+memorable 3D gesture over several standard UI cards, while keeping text and
+primary actions semantic in the DOM.
 
 Runtime colour, typography and spacing values belong to
-`src/assets/_import.less` and `src/assets/main.less`. Do not copy hexadecimal
-tokens or font stacks here: those source files are the implementation truth.
+`src/assets/_import.less` and `src/assets/main.less`; those source files remain
+the implementation truth for tokens and font stacks.
 The app's normal visual theme is dark across every section. Inverse remains an
 explicit accessibility preference, not a section-by-section art direction.
 
@@ -36,10 +36,10 @@ explicit accessibility preference, not a section-by-section art direction.
   metrics and a continuous `wght` axis from 100 to 900.
 - Use variable weight to communicate hierarchy or an actual state transition.
   Keep line-height and tracking stable during the motion, and settle to a
-  readable weight. Reduced-motion mode must skip the interpolation.
+  readable weight. Reduced-motion mode settles without interpolation.
 - Technical labels may use the existing system-monospace stack where a true
-  fixed-width rhythm adds meaning; do not imitate monospace with the display
-  family.
+  fixed-width rhythm adds meaning. Reserve the display family for its natural
+  proportional voice.
 - Prefer short, declarative sentences and concrete verbs.
 - Keep one thought per line or sentence when writing display copy.
 - Avoid hype, filler, superlatives and exclamation marks.
