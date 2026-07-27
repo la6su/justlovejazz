@@ -18,6 +18,7 @@ import { disposeSection3Textures } from '../sections/works/scene'
 // updateInstancedParticles removed — was a no-op. Particles are static.
 import { disposeMaterialDeep } from '../Utils/dispose'
 import { WorksPlaneStage } from '../Experience/World/WorksPlaneStage'
+import { getLabExperiment, type LabExperimentObject } from '../Experience/Lab/manifest'
 
 export interface WorldTransformResult {
   cameraTarget: CameraTarget
@@ -37,7 +38,7 @@ export class World extends THREE.Group {
   /** Lazy `/works` media owner. The DOM keeps semantics; this group owns pixels. */
   public worksPlaneStage: WorksPlaneStage | null = null
   /** Loaded only for `/lab`; replaces the shared cube on the experiment route. */
-  public labGamepad: import('../Experience/World/LabGamepad').LabGamepad | null = null
+  public labGamepad: LabExperimentObject | null = null
 
   private configs: readonly PhaseConfig[] = []
   private _configMap: Map<string, PhaseConfig> | null = null
@@ -853,10 +854,13 @@ export class World extends THREE.Group {
   private async ensureLabGamepad(): Promise<void> {
     if (this.labGamepad) return
     if (this._labGamepadPromise) return this._labGamepadPromise
-    this._labGamepadPromise = import('../Experience/World/LabGamepad')
-      .then(({ LabGamepad }) => {
+    const experiment = getLabExperiment('lab')
+    if (!experiment) return
+    this._labGamepadPromise = experiment
+      .load()
+      .then((object) => {
         if (this.labGamepad) return
-        this.labGamepad = new LabGamepad()
+        this.labGamepad = object
         this.labGamepad.visible = document.body.dataset.page === 'lab'
         this.add(this.labGamepad)
       })

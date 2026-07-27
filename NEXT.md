@@ -22,12 +22,6 @@ changes the order. Each item describes an outcome rather than an implementation.
       visitor's reply address and project context without depending on a
       subject-only `mailto:` form.
 
-- [ ] **Define the Lab experiment boundary** — finish the gamepad route slice,
-      define a small experiment manifest and load each accepted experiment
-      behind its own scene boundary so the shared startup bundle stays stable.
-      Fold the remaining stale bootstrap/UIkit comments in the pending
-      `Experience.ts` change into that slice.
-
 ## 3 — Refine after evidence
 
 - [ ] **UIkit and CSS consolidation** — measure active component, utility and
