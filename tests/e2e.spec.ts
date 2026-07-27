@@ -226,6 +226,10 @@ test.describe('JustLoveJazz — accessibility & DOM UI', () => {
       await page.goto('/')
       await expect(page.locator('main#spa-content')).toBeAttached({ timeout: 20000 })
 
+      // Splash preferences remain usable before the 3D runtime is ready.
+      await expect(page.locator('#cfg-sound')).toHaveCSS('height', '44px')
+      await expect(page.locator('#cfg-lang')).toHaveCSS('min-width', '44px')
+
       const track = page.locator('#spa-content')
       await expect(track).toHaveCSS('scroll-snap-type', /y mandatory/)
       await expect(page.locator('[data-section="intro"]')).toHaveCSS('width', '390px')
@@ -254,6 +258,30 @@ test.describe('JustLoveJazz — accessibility & DOM UI', () => {
       await menuToggle.dispatchEvent('click')
       await expect(menuToggle).toHaveAttribute('aria-expanded', 'true')
       await expect(page.locator('#section-menu .jlz-menu-nav__subs').first()).toBeVisible()
+    } finally {
+      await context.close()
+    }
+  })
+
+  test('mobile runtime controls use 44px touch targets when available', async ({ browser }) => {
+    test.setTimeout(60000)
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 } })
+    const page = await context.newPage()
+
+    try {
+      await page.goto('/')
+      const languageToggle = page.locator('#jlz-lang-toggle')
+      const attached = await languageToggle
+        .waitFor({ state: 'attached', timeout: 25000 })
+        .then(() => true)
+        .catch(() => false)
+
+      test.skip(!attached, 'Persistent controls require a successful GPU/WebGL runtime')
+
+      await expect(languageToggle).toHaveCSS('width', '44px')
+      await expect(languageToggle).toHaveCSS('height', '44px')
+      await expect(page.locator('.jlz-storyline__item').first()).toHaveCSS('width', '44px')
+      await expect(page.locator('.jlz-storyline__item').first()).toHaveCSS('min-height', '44px')
     } finally {
       await context.close()
     }

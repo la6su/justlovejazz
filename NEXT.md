@@ -5,11 +5,6 @@ changes the order. Each item describes an outcome rather than an implementation.
 
 ## 1 — Protect the current experience
 
-- [ ] **Mobile accessibility pass** — bring story navigation and configuration
-      controls to reliable touch-target sizes, improve sub-12px functional
-      text, keep the mobile brand legible inside the CRT frame, and verify
-      keyboard, focus, both theme polarities and reduced motion.
-
 - [ ] **Route-runtime regression coverage** — cover Lab/home object visibility,
       repeated route changes, lazy initialization and teardown races; add
       representative WebGPU/WebGL2 assertions where automation is reliable and

@@ -1489,20 +1489,27 @@ body[data-cinematic-sheet]
 
 @media (max-width: 639px) {
   .jlz-topbar {
-    padding: max(0.4rem, env(safe-area-inset-top, 0px)) 0.6rem 0.4rem;
+    padding: max(0.4rem, env(safe-area-inset-top, 0px)) 1rem 0.4rem;
   }
 
   .jlz-topbar-controls {
     gap: 0.2rem;
   }
 
+  .jlz-topbar__brand {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-size: 12px;
+  }
+
   .jlz-topbar-controls .uk-icon-button {
-    width: 2rem;
-    height: 2rem;
+    width: 44px;
+    height: 44px;
   }
 
   .jlz-menu-launcher {
-    min-height: 2.35rem;
+    min-height: 44px;
     padding: 0 0.8rem;
   }
 
@@ -1557,9 +1564,13 @@ body[data-cinematic-sheet]
   }
 
   .jlz-storyline__item {
-    width: 1.65rem;
-    min-width: 1.65rem;
-    min-height: 1.65rem;
+    width: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .jlz-storyline__number {
+    font-size: 12px;
   }
 
   .jlz-contact-launcher {
@@ -1674,7 +1685,7 @@ body[data-cinematic-sheet]
 
 @media (max-width: 500px) {
   .jlz-lang-label {
-    font-size: 0.65rem;
+    font-size: 12px;
   }
 }
 
@@ -2004,9 +2015,9 @@ body[data-cinematic-sheet] .jlz-console-bar {
   }
 
   .jlz-storyline__item {
-    width: 1.6rem;
-    min-width: 1.6rem;
-    min-height: 1.6rem;
+    width: 44px;
+    min-width: 44px;
+    min-height: 44px;
   }
 
   .jlz-contact-launcher {
