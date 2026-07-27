@@ -135,7 +135,7 @@ export function serviceExplore(
   labelFallback: string,
   extraClass: string = '',
 ): string {
-  return `<a href="${href}" class="jlz-service-explore uk-button uk-button-default uk-button-small uk-text-uppercase uk-margin-top${extraClass ? ' ' + extraClass : ''}">
+  return `<a href="${href}" class="jlz-service-explore uk-button uk-button-default uk-button-small uk-text-uppercase uk-margin-top uk-flex uk-flex-inline uk-flex-middle${extraClass ? ' ' + extraClass : ''}">
     <span class="jlz-service-explore__dot" aria-hidden="true"></span>
     <span data-i18n="${labelKey}">${labelFallback}</span>
   </a>`

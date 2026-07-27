@@ -24,10 +24,6 @@ changes the order. Each item describes an outcome rather than an implementation.
 
 ## 3 — Refine after evidence
 
-- [ ] **UIkit and CSS consolidation** — measure active component, utility and
-      selector use; remove proven duplication while retaining the authored 3D
-      shell, cinematic composition and accessibility behavior.
-
 - [ ] **Cross-backend performance budget** — profile representative routes on
       WebGPU and WebGL2 at desktop/mobile DPRs, protect the ≤350 KB gzip Three.js
       budget, inspect the 15.6 MB media path and record real idle-frame evidence

@@ -93,11 +93,11 @@ export class FullscreenOverlay {
           <video class="jlz-fs-video" preload="auto" playsinline muted loop>
             <source src="" type="video/mp4" />
           </video>
-          <button class="jlz-fs-big-play" type="button" aria-label="Play video">
+          <button class="jlz-fs-big-play uk-flex uk-flex-middle uk-flex-center" type="button" aria-label="Play video">
             <span class="jlz-fs-big-play__icon" uk-icon="icon: play; ratio: 1.4" aria-hidden="true"></span>
           </button>
         </main>
-        <footer class="jlz-fs-controls">
+        <footer class="jlz-fs-controls uk-flex uk-flex-middle">
           <button class="jlz-fs-mute uk-icon-button is-muted" type="button" aria-label="Mute/Unmute" aria-pressed="true">
             <span uk-icon="icon: muted" aria-hidden="true"></span>
           </button>
