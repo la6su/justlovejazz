@@ -1031,10 +1031,13 @@ body:not([data-page='home'])
   background: transparent;
 }
 
-body[data-page='home'] #spa-content
+body[data-page='home']
+  #spa-content
   > section[data-section]:not(.jlz-menu-overlay):not([data-contact-footer])
   > .uk-container:not(.jlz-works-stage),
-body:not([data-page='home']) #spa-content > .jlz-page
+body:not([data-page='home'])
+  #spa-content
+  > .jlz-page
   > .jlz-page-section:not(.jlz-menu-overlay):not([data-contact-footer])
   > .uk-container:not(.jlz-works-stage) {
   width: min(100%, 96rem);
@@ -1448,10 +1451,13 @@ body[data-cinematic-sheet] .jlz-contact-launcher {
   transform: translate3d(0, 1.2rem, 0);
 }
 
-body[data-cinematic-sheet] #spa-content
+body[data-cinematic-sheet]
+  #spa-content
   > section[data-section]:not(.jlz-menu-overlay):not([data-contact-footer])
   > .uk-container,
-body[data-cinematic-sheet] #spa-content > .jlz-page
+body[data-cinematic-sheet]
+  #spa-content
+  > .jlz-page
   > .jlz-page-section:not(.jlz-menu-overlay):not([data-contact-footer])
   > .uk-container {
   opacity: 0;
@@ -1500,10 +1506,13 @@ body[data-cinematic-sheet] #spa-content > .jlz-page
     padding: 0 0.8rem;
   }
 
-  body[data-page='home'] #spa-content
+  body[data-page='home']
+    #spa-content
     > section[data-section]:not(.jlz-menu-overlay):not([data-contact-footer])
     > .uk-container,
-  body:not([data-page='home']) #spa-content > .jlz-page
+  body:not([data-page='home'])
+    #spa-content
+    > .jlz-page
     > .jlz-page-section:not(.jlz-menu-overlay):not([data-contact-footer])
     > .uk-container {
     padding: 5.4rem 1.15rem 9rem;

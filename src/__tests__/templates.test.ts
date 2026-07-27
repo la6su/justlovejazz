@@ -120,6 +120,6 @@ describe('storyBottom', () => {
     const html = storyBottom('<p>content</p>')
     expect(html).toContain('jlz-section-bottom')
     expect(html).toContain('<p>content</p>')
-    expect(html).toContain('aria-hidden="true">—<')
+    expect(html).toContain('aria-hidden="true">><')
   })
 })

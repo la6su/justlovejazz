@@ -5,11 +5,6 @@ changes the order. Each item describes an outcome rather than an implementation.
 
 ## 0 — Stabilize the baseline
 
-- [ ] **Restore a green, single-toolchain gate** — keep Bun as the dependency
-      owner, resolve the competing root `package-lock.json` and Node type
-      update, align the `storyBottom` test with the intended UI, format the
-      seven reported files, and finish with the complete local gate passing.
-
 - [ ] **Align live contracts with their sources** — remove stale references to
       `main-app.ts`, `AssetManager.ts`, deleted UIkit documentation and the old
       showreel event; describe the real alternating section-theme behavior and
