@@ -4,6 +4,15 @@ This file contains only current operational decisions. Detailed historical
 context remains available in Git history and release-level changes in
 `docs/CHANGELOG.md`.
 
+## 2026-07-27 — Lab route gamepad
+
+`/lab` uses a centered, lazy-loaded 3D gamepad instead of the shared BakuCube.
+The gamepad reuses the scene environment, has no private renderer, PMREM target
+or per-frame animation, and owns/disposes only its local geometry and
+materials. Route changes explicitly toggle the Lab object and cube, so the
+home scene is unchanged and the experiment route does not retain its visual
+after exit.
+
 ## 2026-07-25 — Synchronise `/works` UI captions with 3D planes
 
 ### Decision
@@ -43,6 +52,6 @@ remain in `main.less`.
 ## 2026-07-25 — Documentation policy
 
 Completed audits and plans are removed from the active documentation tree once
-their decisions are implemented. `AGENTS.md`, `NEXT.md`, `docs/ARCHITECTURE.md`,
-`docs/RULES.md`, `docs/UIKIT3.md` and `docs/DEVELOPMENT.md` are the operational
-sources for future agents; this file records only the latest decisions.
+their decisions are implemented. `AGENTS.md` routes future agents to the
+small set of current sources; this file remains historical context rather than
+a required session log.
