@@ -287,7 +287,7 @@ function navColumn(): string {
           .map(
             (sub) => `
           <li class="jlz-menu-nav__sub-item">
-            <a href="${sub.href}" class="jlz-menu-nav__sub-link" data-magnetic data-nav-href="${sub.href}">
+            <a href="${sub.href}" class="jlz-menu-nav__sub-link uk-flex uk-flex-middle" data-magnetic data-nav-href="${sub.href}">
               <span class="jlz-menu-nav__sub-num">${sub.num}</span>
               <span class="jlz-menu-nav__sub-title" data-i18n="${sub.titleKey}">${sub.title}</span>
               <span class="jlz-menu-nav__sub-arrow" aria-hidden="true">→</span>

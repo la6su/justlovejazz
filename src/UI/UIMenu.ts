@@ -30,7 +30,7 @@ export class UIMenu {
     this.navEl.className = 'jlz-cinematic-shell'
     this.navEl.innerHTML = `
       <header class="jlz-topbar uk-flex uk-flex-middle uk-flex-between">
-        <a class="jlz-topbar__brand" href="/" aria-label="JUSTLOVEJAZZ — Studio">JUSTLOVEJAZZ</a>
+        <a class="jlz-topbar__brand uk-flex uk-flex-inline uk-flex-middle" href="/" aria-label="JUSTLOVEJAZZ — Studio">JUSTLOVEJAZZ</a>
         <div class="jlz-topbar-controls uk-flex uk-flex-middle">
           <button class="uk-icon-button jlz-lang-toggle" type="button" id="jlz-lang-toggle"
                   aria-label="Switch language" aria-pressed="false" title="Language"

@@ -94,7 +94,7 @@ export class FullscreenOverlay {
             <source src="" type="video/mp4" />
           </video>
           <button class="jlz-fs-big-play uk-flex uk-flex-middle uk-flex-center" type="button" aria-label="Play video">
-            <span class="jlz-fs-big-play__icon" uk-icon="icon: play; ratio: 1.4" aria-hidden="true"></span>
+            <span class="jlz-fs-big-play__icon uk-flex uk-flex-middle uk-flex-center" uk-icon="icon: play; ratio: 1.4" aria-hidden="true"></span>
           </button>
         </main>
         <footer class="jlz-fs-controls uk-flex uk-flex-middle">
@@ -104,10 +104,10 @@ export class FullscreenOverlay {
           <input class="jlz-fs-seek uk-range" type="range" min="0" max="100" value="0" step="0.1" aria-label="Seek" />
           <span class="jlz-fs-time">0:00 / 0:00</span>
         </footer>
-        <button class="jlz-nav-arrow jlz-fs-prev" type="button" aria-label="Previous">
+        <button class="jlz-nav-arrow jlz-fs-prev uk-flex uk-flex-middle uk-flex-center" type="button" aria-label="Previous">
           <span uk-icon="icon: slidenav-previous-large" aria-hidden="true"></span>
         </button>
-        <button class="jlz-nav-arrow jlz-fs-next" type="button" aria-label="Next">
+        <button class="jlz-nav-arrow jlz-fs-next uk-flex uk-flex-middle uk-flex-center" type="button" aria-label="Next">
           <span uk-icon="icon: slidenav-next-large" aria-hidden="true"></span>
         </button>
       </div>
