@@ -50,5 +50,5 @@ story track.
 ## Documentation
 
 Use [docs/README.md](docs/README.md) for the ownership map. The primary
-technical reference is [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md); hard
-engineering constraints live in [docs/RULES.md](docs/RULES.md).
+technical reference is [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and local
+verification lives in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).

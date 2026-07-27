@@ -14,19 +14,14 @@ assignees: ''
 
 <!-- What problem does this solve? What is the current pain point? -->
 
-## Proposed solution
+## Reference
 
-<!-- Describe the solution. Keep it concrete and scoped. -->
+<!-- Screenshot, link, document, recording, or comparable live behavior. -->
 
-## Alternatives considered
+## Desired outcome
 
-<!-- List any alternatives and why they were rejected. -->
+<!-- What should become possible or noticeably better? -->
 
-## Acceptance criteria
+## Constraints
 
-- [ ] Criterion 1
-- [ ] Criterion 2
-
-## Out of scope
-
-<!-- What is explicitly NOT part of this feature? -->
+<!-- Product, technical, accessibility, performance, or timing context. -->
