@@ -9,7 +9,7 @@ import { test, expect, type Page } from '@playwright/test'
  *     -> /src/entry-shell.ts           (tiny shell, double-rAF + requestIdleCallback)
  *        -> /src/entry-app.ts          (lazy-loads main.less + UIkit, runs initRouter)
  *           -> /src/router.ts          (creates <main id="spa-content"> and renders homePage)
- *              -> /src/main-app.ts     (WebGL/WebGPU Experience bootstrap)
+ *              -> Experience bootstrap (WebGL/WebGPU runtime)
  *
  * Headless Chromium cannot always initialize WebGPU, and the WebGL2 fallback
  * path may also fail in pure-software rendering environments. Therefore these
@@ -28,6 +28,8 @@ const SECTION_IDS = [
   'section-contact',
   'section-menu',
 ] as const
+
+const SPA_ROUTES = ['/', '/services', '/works', '/manifesto', '/lab', '/contact'] as const
 
 /**
  * Console / pageerror strings we tolerate in headless Chromium. WebGPU adapter
@@ -56,9 +58,9 @@ const KNOWN_HARMLESS_PATTERNS: RegExp[] = [
   /NO_GPU_ADAPTER/i,
   /WebGL2 is not supported/i,
   /Neither WebGPU nor WebGL2/i,
-  // main-app.ts logs this prefix when Experience.init() throws — expected
+  // entry-app.ts logs this prefix when Experience.init() throws — expected
   // in headless CI where WebGPU/WebGL2 may be unavailable.
-  /\[main-app\] bootstrap failed/i,
+  /\[entry-app\] bootstrap failed/i,
   /\[Renderer\] Failed to install WebGLNodesHandler/i,
   /\[Experience\] DevPanel init failed/i,
 ]
@@ -75,6 +77,18 @@ function attachErrorCapture(page: Page, errors: string[]): void {
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`))
 }
 
+async function waitForRouter(page: Page): Promise<void> {
+  // index.html is prerendered, so mounted DOM alone is not proof that the
+  // lazy shell has called initRouter(). startApp() injects main.less directly
+  // before that synchronous call; waiting for its distinctive rule avoids
+  // dispatching a navigation request into the startup gap.
+  await page.waitForFunction(() =>
+    [...document.head.querySelectorAll('style')].some((style) =>
+      style.textContent?.includes('.jlz-storyline'),
+    ),
+  )
+}
+
 test.describe('JustLoveJazz — page boot smoke', () => {
   test('splash HTML does not preload the 3D dependency graph', async ({ request }) => {
     const response = await request.get('/')
@@ -83,6 +97,14 @@ test.describe('JustLoveJazz — page boot smoke', () => {
     expect(html).not.toMatch(/modulepreload[^>]+(?:vendor-three|vendor-ui|chunk-core-world)/)
     expect(html).toContain('Zarazeni Inclusion')
     expect(html).toContain('ВКЛЮЧЕНИЕ')
+  })
+
+  test('every published SPA route resolves to the application shell', async ({ request }) => {
+    for (const route of SPA_ROUTES) {
+      const response = await request.get(route)
+      expect(response.ok(), `${route} should resolve on the production preview`).toBe(true)
+      expect(await response.text(), `${route} should serve the SPA shell`).toContain('id="app"')
+    }
   })
 
   test('variable typography is self-hosted with Cyrillic coverage', async ({ request }) => {
@@ -157,6 +179,37 @@ test.describe('JustLoveJazz — accessibility & DOM UI', () => {
     await expect(page).toHaveURL(/\/works#section-works-03$/)
   })
 
+  test('repeated in-app routes retain their target section and do not duplicate Works cards', async ({
+    page,
+  }) => {
+    await page.goto('/')
+    await expect(page.locator('main#spa-content')).toBeAttached({ timeout: 20000 })
+    await expect(page.locator('#section-intro')).toBeAttached()
+    await waitForRouter(page)
+
+    const navigate = (path: string) =>
+      page.evaluate((nextPath) => {
+        window.dispatchEvent(new CustomEvent('jlz:navigate', { detail: { path: nextPath } }))
+      }, path)
+
+    await navigate('/lab#section-lab-02')
+    await expect(page).toHaveURL(/\/lab#section-lab-02$/)
+    await expect(page.locator('#section-lab-02')).toBeAttached()
+
+    await navigate('/works#section-works-03')
+    await expect(page).toHaveURL(/\/works#section-works-03$/)
+    await expect(page.locator('#section-works-03')).toBeAttached()
+    await expect(page.locator('.jlz-work-card')).toHaveCount(8)
+
+    await navigate('/lab#section-lab-04')
+    await expect(page).toHaveURL(/\/lab#section-lab-04$/)
+    await expect(page.locator('#section-lab-04')).toBeAttached()
+
+    await navigate('/')
+    await expect(page).toHaveURL(/\/$/)
+    await expect(page.locator('#section-intro')).toHaveClass(/section-active/)
+  })
+
   test('top-bar controls and menu section links render with aria-labels', async ({ page }) => {
     await page.goto('/')
 
@@ -225,6 +278,11 @@ test.describe('JustLoveJazz — accessibility & DOM UI', () => {
     try {
       await page.goto('/')
       await expect(page.locator('main#spa-content')).toBeAttached({ timeout: 20000 })
+      await waitForRouter(page)
+
+      // Splash preferences remain usable before the 3D runtime is ready.
+      await expect(page.locator('#cfg-sound')).toHaveCSS('height', '44px')
+      await expect(page.locator('#cfg-lang')).toHaveCSS('min-width', '44px')
 
       const track = page.locator('#spa-content')
       await expect(track).toHaveCSS('scroll-snap-type', /y mandatory/)
@@ -254,6 +312,30 @@ test.describe('JustLoveJazz — accessibility & DOM UI', () => {
       await menuToggle.dispatchEvent('click')
       await expect(menuToggle).toHaveAttribute('aria-expanded', 'true')
       await expect(page.locator('#section-menu .jlz-menu-nav__subs').first()).toBeVisible()
+    } finally {
+      await context.close()
+    }
+  })
+
+  test('mobile runtime controls use 44px touch targets when available', async ({ browser }) => {
+    test.setTimeout(60000)
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 } })
+    const page = await context.newPage()
+
+    try {
+      await page.goto('/')
+      const languageToggle = page.locator('#jlz-lang-toggle')
+      const attached = await languageToggle
+        .waitFor({ state: 'attached', timeout: 25000 })
+        .then(() => true)
+        .catch(() => false)
+
+      test.skip(!attached, 'Persistent controls require a successful GPU/WebGL runtime')
+
+      await expect(languageToggle).toHaveCSS('width', '44px')
+      await expect(languageToggle).toHaveCSS('height', '44px')
+      await expect(page.locator('.jlz-storyline__item').first()).toHaveCSS('width', '44px')
+      await expect(page.locator('.jlz-storyline__item').first()).toHaveCSS('min-height', '44px')
     } finally {
       await context.close()
     }

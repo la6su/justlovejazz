@@ -86,7 +86,7 @@ function showLoadError(): void {
 
 // ── Seamless splash loader ──
 // index.html has #jlz-app-loader with SVG squares + split curtains + progress.
-// three.js loads LAZY (dynamic import in main-app.ts) — does NOT block FCP.
+// Three.js loads lazily from this bootstrap — it does not block FCP.
 // We update progress as Experience.init() boots, then trigger curtain
 // split (fade-out class) when jlz:webgl-ready fires. Config buttons
 // (sound + language) are inside the loader — they fade out with the splash.

@@ -229,7 +229,7 @@ const GAUSSIAN_WEIGHTS: number[] = (() => {
   const sigma = 2.0
   // Unnormalized kernel values at distances 0, 1, 2
   const w0 = Math.exp(0) // d=0
-  const w1 = Math.exp((-0.5) / (sigma * sigma)) // d=1
+  const w1 = Math.exp(-0.5 / (sigma * sigma)) // d=1
   const w2 = Math.exp((-0.5 * 4) / (sigma * sigma)) // d=2
   // Full kernel sum: center once + each side twice
   const sum = w0 + 2 * w1 + 2 * w2

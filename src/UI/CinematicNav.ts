@@ -63,7 +63,7 @@ export class CinematicNav {
       button.setAttribute('aria-label', `Go to section ${index}`)
 
       const number = document.createElement('span')
-      number.className = 'jlz-storyline__number'
+      number.className = 'jlz-storyline__number uk-text-meta uk-text-uppercase'
       number.textContent = String(index).padStart(2, '0')
       const label = document.createElement('span')
       label.className = 'jlz-storyline__label'
@@ -76,7 +76,7 @@ export class CinematicNav {
     }
 
     const hint = document.createElement('span')
-    hint.className = 'jlz-storyline__hint'
+    hint.className = 'jlz-storyline__hint uk-text-meta uk-text-uppercase'
     hint.dataset.i18n = 'story.hint'
     hint.textContent = 'Scroll · swipe'
 

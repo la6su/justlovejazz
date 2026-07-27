@@ -3,36 +3,12 @@
 This is the current execution plan. Work from top to bottom unless new evidence
 changes the order. Each item describes an outcome rather than an implementation.
 
-## 0 — Stabilize the baseline
-
-- [ ] **Restore a green, single-toolchain gate** — keep Bun as the dependency
-      owner, resolve the competing root `package-lock.json` and Node type
-      update, align the `storyBottom` test with the intended UI, format the
-      seven reported files, and finish with the complete local gate passing.
-
-- [ ] **Align live contracts with their sources** — remove stale references to
-      `main-app.ts`, `AssetManager.ts`, deleted UIkit documentation and the old
-      showreel event; describe the real alternating section-theme behavior and
-      reconcile the EventBus migration inventory with actual producers and
-      consumers.
-
 ## 1 — Protect the current experience
 
-- [ ] **Mobile accessibility pass** — bring story navigation and configuration
-      controls to reliable touch-target sizes, improve sub-12px functional
-      text, keep the mobile brand legible inside the CRT frame, and verify
-      keyboard, focus, both theme polarities and reduced motion.
-
-- [ ] **Route-runtime regression coverage** — cover Lab/home object visibility,
-      repeated route changes, lazy initialization and teardown races; add
-      representative WebGPU/WebGL2 assertions where automation is reliable and
-      retain real-hardware parity checks for canvas output.
-
-- [ ] **Make CI and direct-route deployment deterministic** — run formatting in
-      CI, replace the undeclared `npx wait-on` fetch with a pinned Bun-owned
-      mechanism, remove recurring UIkit form-asset build warnings, verify
-      production rewrites for every sitemap route, and make Lighthouse results
-      actionable rather than warning-only.
+- [ ] **Configure production SPA rewrites** — once the hosting target is
+      identified, route the six SPA paths to `index.html` while retaining the
+      standalone `/blog` pages and static assets; verify every sitemap route
+      against the deployed origin.
 
 ## 2 — Strengthen the product
 
@@ -46,15 +22,7 @@ changes the order. Each item describes an outcome rather than an implementation.
       visitor's reply address and project context without depending on a
       subject-only `mailto:` form.
 
-- [ ] **Define the Lab experiment boundary** — finish the gamepad route slice,
-      define a small experiment manifest and load each accepted experiment
-      behind its own scene boundary so the shared startup bundle stays stable.
-
 ## 3 — Refine after evidence
-
-- [ ] **UIkit and CSS consolidation** — measure active component, utility and
-      selector use; remove proven duplication while retaining the authored 3D
-      shell, cinematic composition and accessibility behavior.
 
 - [ ] **Cross-backend performance budget** — profile representative routes on
       WebGPU and WebGL2 at desktop/mobile DPRs, protect the ≤350 KB gzip Three.js

@@ -79,7 +79,7 @@ export class FullscreenOverlay {
         </button>
         <header class="jlz-fs-meta uk-flex uk-flex-between uk-flex-bottom">
           <div>
-            <div class="jlz-fs-cat uk-text-uppercase"></div>
+            <div class="jlz-fs-cat uk-text-meta uk-text-uppercase"></div>
             <h2 class="jlz-fs-title uk-heading-small uk-margin-remove"></h2>
             <p class="jlz-fs-desc uk-margin-small-top uk-margin-remove-bottom"></p>
           </div>
@@ -93,21 +93,21 @@ export class FullscreenOverlay {
           <video class="jlz-fs-video" preload="auto" playsinline muted loop>
             <source src="" type="video/mp4" />
           </video>
-          <button class="jlz-fs-big-play" type="button" aria-label="Play video">
-            <span class="jlz-fs-big-play__icon" uk-icon="icon: play; ratio: 1.4" aria-hidden="true"></span>
+          <button class="jlz-fs-big-play uk-flex uk-flex-middle uk-flex-center" type="button" aria-label="Play video">
+            <span class="jlz-fs-big-play__icon uk-flex uk-flex-middle uk-flex-center" uk-icon="icon: play; ratio: 1.4" aria-hidden="true"></span>
           </button>
         </main>
-        <footer class="jlz-fs-controls">
+        <footer class="jlz-fs-controls uk-flex uk-flex-middle">
           <button class="jlz-fs-mute uk-icon-button is-muted" type="button" aria-label="Mute/Unmute" aria-pressed="true">
             <span uk-icon="icon: muted" aria-hidden="true"></span>
           </button>
           <input class="jlz-fs-seek uk-range" type="range" min="0" max="100" value="0" step="0.1" aria-label="Seek" />
-          <span class="jlz-fs-time">0:00 / 0:00</span>
+          <span class="jlz-fs-time uk-text-meta">0:00 / 0:00</span>
         </footer>
-        <button class="jlz-nav-arrow jlz-fs-prev" type="button" aria-label="Previous">
+        <button class="jlz-nav-arrow jlz-fs-prev uk-flex uk-flex-middle uk-flex-center" type="button" aria-label="Previous">
           <span uk-icon="icon: slidenav-previous-large" aria-hidden="true"></span>
         </button>
-        <button class="jlz-nav-arrow jlz-fs-next" type="button" aria-label="Next">
+        <button class="jlz-nav-arrow jlz-fs-next uk-flex uk-flex-middle uk-flex-center" type="button" aria-label="Next">
           <span uk-icon="icon: slidenav-next-large" aria-hidden="true"></span>
         </button>
       </div>
@@ -423,7 +423,7 @@ export class FullscreenOverlay {
     this.counterEl.textContent = opts.counter ?? ''
     this.tagsEl.innerHTML = (opts.tags ?? [])
       .filter(Boolean)
-      .map((t) => `<span class="jlz-fs-tag">${t}</span>`)
+      .map((t) => `<span class="jlz-fs-tag uk-text-meta uk-text-uppercase">${t}</span>`)
       .join('')
 
     // Nav buttons visibility

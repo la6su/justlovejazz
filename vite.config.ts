@@ -57,21 +57,6 @@ export default defineConfig({
         // (`CodeSplittingGroup`, `CodeSplittingOptions`) for the full
         // option reference.
         //
-        // KTX2 LAZY CHUNK HANDLING
-        // `three/addons/loaders/KTX2Loader.js` is dynamically imported by
-        // `AssetManager.getKtx2Loader()` (src/core/AssetManager.ts:32). It
-        // must NOT be merged into the static `vendor-three` chunk —
-        // otherwise its ~57 KB basis-transcoder glue gets modulepreloaded
-        // together with the rest of three.js (regression observed in the
-        // first iteration of this migration: a single 1246 KB `vendor-three`
-        // chunk that combined static three.js + KTX2 and was preloaded).
-        //
-        // We exclude KTX2Loader from the `vendor-three` and `vendor-misc`
-        // `test` functions. Because no group captures it, rolldown falls
-        // back to *automatic chunking* — and since KTX2Loader is a
-        // dynamic-import target, rolldown emits it as its own chunk that is
-        // only fetched at runtime via `import()`. That chunk is therefore
-        // NOT emitted as `<link rel="modulepreload">` in dist/index.html.
         // ───────────────────────────────────────────────────────────────────
         codeSplitting: {
           // `includeDependenciesRecursively` defaults to true — captured
@@ -91,11 +76,8 @@ export default defineConfig({
             },
             {
               name: 'vendor-three',
-              // Match every three / three-stdlib module EXCEPT the
-              // dynamically-imported KTX2Loader — that one must stay in its
-              // own lazy chunk (see header comment).
+              // Match every Three.js and three-stdlib module.
               test(id) {
-                if (/[\\/]node_modules[\\/]three[\/].*loaders[\\/]KTX2Loader/.test(id)) return false
                 return /[\\/]node_modules[\\/](three|three-stdlib)[\\/]/.test(id)
               },
               priority: 30,
@@ -107,10 +89,7 @@ export default defineConfig({
             },
             {
               name: 'vendor-misc',
-              // Same KTX2Loader exclusion — don't let the misc vendor group
-              // eagerly pull the lazy transcoder into its merged chunk.
               test(id) {
-                if (/[\\/]node_modules[\\/]three[\/].*loaders[\\/]KTX2Loader/.test(id)) return false
                 return /[\\/]node_modules[\\/]/.test(id)
               },
               priority: 10,
@@ -214,6 +193,7 @@ export default defineConfig({
     preprocessorOptions: {
       less: {
         javascriptEnabled: true,
+        rewriteUrls: 'all',
       },
     },
   },

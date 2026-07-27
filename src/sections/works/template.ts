@@ -9,12 +9,12 @@ export function worksSection(): string {
     <h2 id="jlz-works-title" data-i18n="home.works.title" hidden>Works</h2>
   `
   const controls = `
-    <div class="jlz-works-slider-controls" role="group" aria-labelledby="jlz-works-title">
-      <button class="jlz-nav-arrow jlz-works-slider-arrow jlz-works-slider-arrow--prev" type="button"
+    <div class="jlz-works-slider-controls uk-flex uk-flex-middle uk-flex-between" role="group" aria-labelledby="jlz-works-title">
+      <button class="jlz-nav-arrow jlz-works-slider-arrow jlz-works-slider-arrow--prev uk-flex uk-flex-middle uk-flex-center" type="button"
               data-baku-carousel-control="prev" aria-label="Previous work" data-cursor="view">
         <span uk-icon="icon: slidenav-previous-large" aria-hidden="true"></span>
       </button>
-      <button class="jlz-nav-arrow jlz-works-slider-arrow jlz-works-slider-arrow--next" type="button"
+      <button class="jlz-nav-arrow jlz-works-slider-arrow jlz-works-slider-arrow--next uk-flex uk-flex-middle uk-flex-center" type="button"
               data-baku-carousel-control="next" aria-label="Next work" data-cursor="view">
         <span uk-icon="icon: slidenav-next-large" aria-hidden="true"></span>
       </button>
