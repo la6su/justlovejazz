@@ -537,6 +537,7 @@ export class Experience {
         this.overlay.close()
       }
       const newPage = document.body.dataset.page
+      this.world?.syncRouteVisuals()
       if (newPage === 'home') {
         void this.world?.ensureCarouselInitialized()
       }

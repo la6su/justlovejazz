@@ -88,7 +88,7 @@ function experimentSection(exp: Experiment, isActive: boolean = false): string {
     </div>
   `
   return sectionShell(
-    `${exp.key.replace('lab.', 'lab-')}`,
+    `lab-${exp.num}`,
     contentTop(exp.num, exp.title, exp.lead, 'large', exp.key + '.title', exp.key + '.lead'),
     storyBottom(`${i18nDesc(exp.key, exp.desc)}${footer}`),
     'content',

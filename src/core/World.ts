@@ -36,6 +36,8 @@ export class World extends THREE.Group {
   public sceneGroups: THREE.Group[] = []
   /** Lazy `/works` media owner. The DOM keeps semantics; this group owns pixels. */
   public worksPlaneStage: WorksPlaneStage | null = null
+  /** Loaded only for `/lab`; replaces the shared cube on the experiment route. */
+  public labGamepad: import('../Experience/World/LabGamepad').LabGamepad | null = null
 
   private configs: readonly PhaseConfig[] = []
   private _configMap: Map<string, PhaseConfig> | null = null
@@ -67,6 +69,7 @@ export class World extends THREE.Group {
   private _targetGroundOpacity = 0
   private _carouselInitPromise: Promise<void> | null = null
   private _worksPlaneStagePromise: Promise<void> | null = null
+  private _labGamepadPromise: Promise<void> | null = null
 
   constructor(scene: THREE.Scene) {
     super()
@@ -134,6 +137,7 @@ export class World extends THREE.Group {
     this.configs = getWorldConfigForPage(pageKey)
     this.disposeSections()
     this.disposeSceneGroups()
+    this.syncRouteVisuals()
 
     const bus = StateBus.getInstance()
 
@@ -412,7 +416,7 @@ export class World extends THREE.Group {
     }
 
     if (!this.isReducedMotion) {
-      this.baku.update(deltaTime)
+      if (this.baku.visible) this.baku.update(deltaTime)
       const isStandaloneWorks = document.body.dataset.page === 'works'
       const isWorksStoryFrame = this._currentSectionIndex === 3
       if (this.drawTrail && this._camera && (isStandaloneWorks || isWorksStoryFrame)) {
@@ -434,8 +438,9 @@ export class World extends THREE.Group {
         // Works becomes a pure media field once the cube-face handoff settles:
         // only the planes and the existing particle field remain visible.
         this.baku.visible =
-          document.body.dataset.page !== 'home' ||
-          !(carousel.isActive && carousel.morphProgress > 0.82)
+          document.body.dataset.page !== 'lab' &&
+          (document.body.dataset.page !== 'home' ||
+            !(carousel.isActive && carousel.morphProgress > 0.82))
       }
       if (!group.visible) continue
       // Update the lower Contact typography only after its own reveal begins.
@@ -824,6 +829,9 @@ export class World extends THREE.Group {
     if (this.worksPlaneStage) this.remove(this.worksPlaneStage)
     this.worksPlaneStage = null
     this._worksPlaneStagePromise = null
+    this.labGamepad?.dispose()
+    this.labGamepad = null
+    this._labGamepadPromise = null
     // Inline WorldAtmosphere.dispose — null out fog only (BG.ts owns background).
     this.sceneRef.fog = null
   }
@@ -832,6 +840,30 @@ export class World extends THREE.Group {
   public setCamera(cam: THREE.Camera): void {
     this._camera = cam
     this.worksPlaneStage?.setCamera(cam)
+  }
+
+  /** Keep route-specific hero objects isolated from the shared home cube. */
+  public syncRouteVisuals(): void {
+    const isLab = document.body.dataset.page === 'lab'
+    this.baku.visible = !isLab
+    if (isLab) void this.ensureLabGamepad()
+    if (this.labGamepad) this.labGamepad.visible = isLab
+  }
+
+  private async ensureLabGamepad(): Promise<void> {
+    if (this.labGamepad) return
+    if (this._labGamepadPromise) return this._labGamepadPromise
+    this._labGamepadPromise = import('../Experience/World/LabGamepad')
+      .then(({ LabGamepad }) => {
+        if (this.labGamepad) return
+        this.labGamepad = new LabGamepad()
+        this.labGamepad.visible = document.body.dataset.page === 'lab'
+        this.add(this.labGamepad)
+      })
+      .finally(() => {
+        this._labGamepadPromise = null
+      })
+    return this._labGamepadPromise
   }
 
   private _camera: THREE.Camera | undefined

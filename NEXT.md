@@ -5,11 +5,6 @@ changes the order. Each item describes an outcome rather than an implementation.
 
 ## 1 — Protect the current experience
 
-- [ ] **Route-runtime regression coverage** — cover Lab/home object visibility,
-      repeated route changes, lazy initialization and teardown races; add
-      representative WebGPU/WebGL2 assertions where automation is reliable and
-      retain real-hardware parity checks for canvas output.
-
 - [ ] **Make CI and direct-route deployment deterministic** — run formatting in
       CI, replace the undeclared `npx wait-on` fetch with a pinned Bun-owned
       mechanism, remove recurring UIkit form-asset build warnings, verify

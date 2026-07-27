@@ -75,6 +75,18 @@ function attachErrorCapture(page: Page, errors: string[]): void {
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`))
 }
 
+async function waitForRouter(page: Page): Promise<void> {
+  // index.html is prerendered, so mounted DOM alone is not proof that the
+  // lazy shell has called initRouter(). startApp() injects main.less directly
+  // before that synchronous call; waiting for its distinctive rule avoids
+  // dispatching a navigation request into the startup gap.
+  await page.waitForFunction(() =>
+    [...document.head.querySelectorAll('style')].some((style) =>
+      style.textContent?.includes('.jlz-storyline'),
+    ),
+  )
+}
+
 test.describe('JustLoveJazz — page boot smoke', () => {
   test('splash HTML does not preload the 3D dependency graph', async ({ request }) => {
     const response = await request.get('/')
@@ -157,6 +169,37 @@ test.describe('JustLoveJazz — accessibility & DOM UI', () => {
     await expect(page).toHaveURL(/\/works#section-works-03$/)
   })
 
+  test('repeated in-app routes retain their target section and do not duplicate Works cards', async ({
+    page,
+  }) => {
+    await page.goto('/')
+    await expect(page.locator('main#spa-content')).toBeAttached({ timeout: 20000 })
+    await expect(page.locator('#section-intro')).toBeAttached()
+    await waitForRouter(page)
+
+    const navigate = (path: string) =>
+      page.evaluate((nextPath) => {
+        window.dispatchEvent(new CustomEvent('jlz:navigate', { detail: { path: nextPath } }))
+      }, path)
+
+    await navigate('/lab#section-lab-02')
+    await expect(page).toHaveURL(/\/lab#section-lab-02$/)
+    await expect(page.locator('#section-lab-02')).toBeAttached()
+
+    await navigate('/works#section-works-03')
+    await expect(page).toHaveURL(/\/works#section-works-03$/)
+    await expect(page.locator('#section-works-03')).toBeAttached()
+    await expect(page.locator('.jlz-work-card')).toHaveCount(8)
+
+    await navigate('/lab#section-lab-04')
+    await expect(page).toHaveURL(/\/lab#section-lab-04$/)
+    await expect(page.locator('#section-lab-04')).toBeAttached()
+
+    await navigate('/')
+    await expect(page).toHaveURL(/\/$/)
+    await expect(page.locator('#section-intro')).toHaveClass(/section-active/)
+  })
+
   test('top-bar controls and menu section links render with aria-labels', async ({ page }) => {
     await page.goto('/')
 
@@ -225,6 +268,7 @@ test.describe('JustLoveJazz — accessibility & DOM UI', () => {
     try {
       await page.goto('/')
       await expect(page.locator('main#spa-content')).toBeAttached({ timeout: 20000 })
+      await waitForRouter(page)
 
       // Splash preferences remain usable before the 3D runtime is ready.
       await expect(page.locator('#cfg-sound')).toHaveCSS('height', '44px')
