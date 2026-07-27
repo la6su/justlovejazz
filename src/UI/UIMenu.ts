@@ -27,15 +27,15 @@ export class UIMenu {
 
   constructor() {
     this.navEl = document.createElement('div')
-    this.navEl.className = 'jlz-cinematic-shell'
+    this.navEl.className = 'jlz-cinematic-shell uk-position-relative'
     this.navEl.innerHTML = `
       <header class="jlz-topbar uk-flex uk-flex-middle uk-flex-between">
-        <a class="jlz-topbar__brand uk-flex uk-flex-inline uk-flex-middle" href="/" aria-label="JUSTLOVEJAZZ — Studio">JUSTLOVEJAZZ</a>
+        <a class="jlz-topbar__brand uk-flex uk-flex-inline uk-flex-middle uk-text-uppercase uk-text-decoration-none" href="/" aria-label="JUSTLOVEJAZZ — Studio">JUSTLOVEJAZZ</a>
         <div class="jlz-topbar-controls uk-flex uk-flex-middle">
           <button class="uk-icon-button jlz-lang-toggle" type="button" id="jlz-lang-toggle"
                   aria-label="Switch language" aria-pressed="false" title="Language"
                   uk-tooltip="pos: bottom; delay: 200">
-            <span class="jlz-lang-label">EN</span>
+            <span class="jlz-lang-label uk-text-uppercase uk-text-bold">EN</span>
           </button>
           <button class="uk-icon-button jlz-theme-toggle uk-visible@s" type="button" id="jlz-theme-toggle"
                   aria-label="Toggle inverse theme" aria-pressed="false" title="Theme: auto"
@@ -59,7 +59,7 @@ export class UIMenu {
         <div class="jlz-contact-launcher">
           <button class="uk-button uk-button-primary uk-flex uk-flex-middle jlz-contact-launcher__button" type="button"
                   id="jlz-contact-launcher" aria-controls="section-lab" aria-expanded="false">
-            <span class="jlz-contact-launcher__orb" aria-hidden="true"></span>
+            <span class="jlz-contact-launcher__orb uk-display-inline-block" aria-hidden="true"></span>
             <span data-i18n="story.contact">Contact</span>
             <span class="jlz-contact-launcher__arrow" uk-icon="icon: arrow-up; ratio: 0.8" aria-hidden="true"></span>
           </button>

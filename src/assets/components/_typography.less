@@ -1,0 +1,64 @@
+/* UIkit defines type scale; these rules add the JLZ display-face behavior. */
+
+.studio-title.uk-heading-medium {
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  line-height: 0.95;
+}
+
+.studio-title.uk-heading-large {
+  max-inline-size: min(100%, 14ch);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 0.9;
+}
+
+.studio-title.uk-heading-xlarge {
+  max-inline-size: min(100%, 12ch);
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 0.85;
+}
+
+.studio-title,
+.jlz-menu-stat__num,
+.jlz-menu-nav__label,
+.jlz-work-card__title {
+  font-family: var(--jlz-font-display), serif;
+  font-optical-sizing: auto;
+  font-variation-settings: 'wght' var(--jlz-vf-weight, 650);
+  transition:
+    font-variation-settings var(--jlz-duration-normal) var(--jlz-ease-state),
+    letter-spacing var(--jlz-duration-normal) var(--jlz-ease-state);
+}
+
+.studio-title {
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+[data-story-state] .studio-title {
+  --jlz-vf-weight: 460;
+}
+
+[data-story-state='active'] .studio-title {
+  --jlz-vf-weight: 780;
+}
+
+.jlz-menu-stat__num {
+  --jlz-vf-weight: 260;
+}
+
+body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
+  --jlz-vf-weight: 760;
+}
+
+.jlz-menu-nav__label {
+  --jlz-vf-weight: 570;
+}
+
+.jlz-menu-nav__toggle:hover .jlz-menu-nav__label,
+.jlz-menu-nav__item.uk-open .jlz-menu-nav__label {
+  --jlz-vf-weight: 820;
+  letter-spacing: -0.035em;
+}

@@ -81,19 +81,19 @@ export class FullscreenOverlay {
           <div>
             <div class="jlz-fs-cat uk-text-meta uk-text-uppercase"></div>
             <h2 class="jlz-fs-title uk-heading-small uk-margin-remove"></h2>
-            <p class="jlz-fs-desc uk-margin-small-top uk-margin-remove-bottom"></p>
+            <p class="jlz-fs-desc uk-visible@s uk-text-truncate uk-margin-small-top uk-margin-remove-bottom"></p>
           </div>
-          <div class="jlz-fs-meta-end uk-text-right">
+          <div class="jlz-fs-meta-end uk-visible@s uk-text-right">
             <div class="jlz-fs-counter uk-text-meta"></div>
             <div class="jlz-fs-tags uk-flex uk-flex-wrap uk-flex-right uk-margin-small-top"></div>
           </div>
         </header>
-        <main class="jlz-fs-media-stage">
-          <div class="jlz-fs-poster" aria-hidden="true"></div>
-          <video class="jlz-fs-video" preload="auto" playsinline muted loop>
+        <main class="jlz-fs-media-stage uk-position-relative">
+          <div class="jlz-fs-poster uk-position-cover" aria-hidden="true"></div>
+          <video class="jlz-fs-video uk-position-cover" preload="auto" playsinline muted loop>
             <source src="" type="video/mp4" />
           </video>
-          <button class="jlz-fs-big-play uk-flex uk-flex-middle uk-flex-center" type="button" aria-label="Play video">
+          <button class="jlz-fs-big-play uk-position-cover uk-flex uk-flex-middle uk-flex-center" type="button" aria-label="Play video">
             <span class="jlz-fs-big-play__icon uk-flex uk-flex-middle uk-flex-center" uk-icon="icon: play; ratio: 1.4" aria-hidden="true"></span>
           </button>
         </main>
@@ -101,8 +101,8 @@ export class FullscreenOverlay {
           <button class="jlz-fs-mute uk-icon-button is-muted" type="button" aria-label="Mute/Unmute" aria-pressed="true">
             <span uk-icon="icon: muted" aria-hidden="true"></span>
           </button>
-          <input class="jlz-fs-seek uk-range" type="range" min="0" max="100" value="0" step="0.1" aria-label="Seek" />
-          <span class="jlz-fs-time uk-text-meta">0:00 / 0:00</span>
+          <input class="jlz-fs-seek uk-flex-1 uk-range" type="range" min="0" max="100" value="0" step="0.1" aria-label="Seek" />
+          <span class="jlz-fs-time uk-visible@s uk-text-meta">0:00 / 0:00</span>
         </footer>
         <button class="jlz-nav-arrow jlz-fs-prev uk-flex uk-flex-middle uk-flex-center" type="button" aria-label="Previous">
           <span uk-icon="icon: slidenav-previous-large" aria-hidden="true"></span>

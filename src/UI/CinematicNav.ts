@@ -66,7 +66,7 @@ export class CinematicNav {
       number.className = 'jlz-storyline__number uk-text-meta uk-text-uppercase'
       number.textContent = String(index).padStart(2, '0')
       const label = document.createElement('span')
-      label.className = 'jlz-storyline__label'
+      label.className = 'jlz-storyline__label uk-hidden'
       label.dataset.storyLabel = ''
       label.textContent = `Section ${index}`
       button.append(number, label)
@@ -76,7 +76,7 @@ export class CinematicNav {
     }
 
     const hint = document.createElement('span')
-    hint.className = 'jlz-storyline__hint uk-text-meta uk-text-uppercase'
+    hint.className = 'jlz-storyline__hint uk-hidden uk-text-meta uk-text-uppercase'
     hint.dataset.i18n = 'story.hint'
     hint.textContent = 'Scroll · swipe'
 

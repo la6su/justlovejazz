@@ -249,7 +249,7 @@ function statColumn(): string {
     <div class="jlz-menu-col jlz-menu-col--stat uk-flex uk-flex-column uk-width-1-1 uk-width-2-5@m">
       <div class="jlz-menu-stat uk-flex uk-flex-column">
         <span class="jlz-menu-stat__num"><svg enable-background="new 0 0 30 30" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><path d="m24.5 28.5h-19c-2.2 0-4-1.8-4-4v-19c0-2.2 1.8-4 4-4h19c2.2 0 4 1.8 4 4v19c0 2.2-1.8 4-4 4z" fill="#232534" stroke="#fff" stroke-miterlimit="10" stroke-width=".6317"/><g enable-background="new"><path d="m21.1 6.6-2.4.3v5.1l2.4 1.3 2.4-.3v-5.1z" fill="#fff72c"/><path d="m21.4 13.6-2.4.4v4.1l-8.1 1.1.1-6.6 8-1.1v-2.6l-2.4-1.3-10.5 1.5v13.3l2.5 1.4 15.2-2.2v-6.6z" fill="#fff"/></g></svg></span>
-        <h3 class="jlz-menu-stat__label uk-h3" data-i18n="menu.stat.sections">LEMONROOM</h3>
+        <h3 class="jlz-menu-stat__label uk-h3 uk-text-uppercase uk-text-center" data-i18n="menu.stat.sections">LEMONROOM</h3>
       </div>
     </div>
   `
@@ -267,7 +267,7 @@ function navColumn(): string {
     if (item.direct) {
       return `
         <li class="jlz-menu-nav__item jlz-menu-nav__item--direct">
-          <a href="${item.href}" class="jlz-menu-nav__toggle jlz-menu-nav__direct-link" data-magnetic data-page-transition>
+          <a href="${item.href}" class="jlz-menu-nav__toggle jlz-menu-nav__direct-link uk-flex uk-width-1-1" data-magnetic data-page-transition>
             <span class="jlz-menu-nav__num">${item.num}</span>
             <span class="jlz-menu-nav__label" data-i18n="${item.labelKey}">${item.label}</span>
             <span class="jlz-menu-nav__arrow" aria-hidden="true">→</span>
@@ -277,7 +277,7 @@ function navColumn(): string {
     }
     return `
     <li class="jlz-menu-nav__item uk-parent">
-      <a href="#" class="jlz-menu-nav__toggle" data-magnetic>
+      <a href="#" class="jlz-menu-nav__toggle uk-flex uk-width-1-1" data-magnetic>
         <span class="jlz-menu-nav__num">${item.num}</span>
         <span class="jlz-menu-nav__label" data-i18n="${item.labelKey}">${item.label}</span>
         <span class="jlz-menu-nav__arrow uk-nav-parent-icon" aria-hidden="true"></span>
@@ -289,7 +289,7 @@ function navColumn(): string {
           <li class="jlz-menu-nav__sub-item">
             <a href="${sub.href}" class="jlz-menu-nav__sub-link uk-flex uk-flex-middle" data-magnetic data-nav-href="${sub.href}">
               <span class="jlz-menu-nav__sub-num">${sub.num}</span>
-              <span class="jlz-menu-nav__sub-title" data-i18n="${sub.titleKey}">${sub.title}</span>
+              <span class="jlz-menu-nav__sub-title uk-flex-1" data-i18n="${sub.titleKey}">${sub.title}</span>
               <span class="jlz-menu-nav__sub-arrow" aria-hidden="true">→</span>
             </a>
           </li>
@@ -330,7 +330,7 @@ export function navOverlaySection(mode: 'home' | 'content' = 'content'): string 
   // { display: none }, so the class is not needed there.
   const pageClass = mode === 'content' ? 'jlz-page-section' : ''
   return `
-    <section class="jlz-menu-overlay ${pageClass} uk-section uk-section-xsmall" id="section-menu" ${sectionAttr} data-cinematic-menu>
+    <section class="jlz-menu-overlay ${pageClass} uk-section uk-section-xsmall uk-flex uk-flex-column" id="section-menu" ${sectionAttr} data-cinematic-menu>
       <div class="uk-container uk-container-expand jlz-menu-container uk-flex uk-flex-column uk-flex-center">
         <div class="jlz-menu-sheet__header uk-flex uk-flex-middle uk-flex-between">
           <span class="jlz-menu-sheet__eyebrow uk-text-meta uk-text-uppercase" data-i18n="menu.navigate">Navigate</span>

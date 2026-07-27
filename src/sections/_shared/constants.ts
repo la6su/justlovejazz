@@ -42,7 +42,7 @@ export function sectionShell(
 
   return `
     <section class="${pageClass} ${activeClass} uk-section uk-section-small uk-section-large@m" id="section-${id}" ${sectionAttr} ${extraAttrs}>
-      <div class=" uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-height-1-1">
+      <div class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-between uk-height-1-1">
         ${topHtml}
         ${bottomHtml}
       </div>
@@ -63,7 +63,7 @@ export function homeTop(
 ): string {
   return `
     <div class="jlz-section-top uk-text-center uk-flex uk-flex-column uk-flex-middle">
-      <span class="jlz-eyebrow" data-eyebrow data-eyebrow-text="${eyebrow}">${eyebrow}</span>
+      <span class="jlz-eyebrow uk-display-inline-block" data-eyebrow data-eyebrow-text="${eyebrow}">${eyebrow}</span>
       <h2 class="studio-title uk-heading-${tier} uk-margin-small-top uk-margin-remove-bottom" data-i18n="${titleKey}">${titleFallback}</h2>
       <p class="uk-text-lead uk-margin-small-top" data-i18n="${leadKey}">${leadFallback}</p>
     </div>
@@ -84,7 +84,7 @@ export function contentTop(
   const leadAttr = leadKey ? ` data-i18n="${leadKey}"` : ''
   return `
     <div class="jlz-section-top uk-text-center uk-flex uk-flex-column uk-flex-middle">
-      <span class="jlz-eyebrow" data-eyebrow data-eyebrow-text="${eyebrow}">${eyebrow}</span>
+      <span class="jlz-eyebrow uk-display-inline-block" data-eyebrow data-eyebrow-text="${eyebrow}">${eyebrow}</span>
       <h2 class="studio-title uk-heading-${headingTier} uk-margin-small-top uk-margin-remove-bottom"${titleAttr}>${title}</h2>
       ${lead ? `<p class="uk-text-lead uk-margin-small-top"${leadAttr}>${lead}</p>` : ''}
     </div>
@@ -135,8 +135,8 @@ export function serviceExplore(
   labelFallback: string,
   extraClass: string = '',
 ): string {
-  return `<a href="${href}" class="jlz-service-explore uk-button uk-button-default uk-button-small uk-text-uppercase uk-margin-top uk-flex uk-flex-inline uk-flex-middle${extraClass ? ' ' + extraClass : ''}">
-    <span class="jlz-service-explore__dot" aria-hidden="true"></span>
+  return `<a href="${href}" class="jlz-service-explore uk-button uk-button-default uk-button-small uk-text-uppercase uk-margin-top uk-flex uk-flex-none uk-flex-inline uk-flex-middle${extraClass ? ' ' + extraClass : ''}">
+    <span class="jlz-service-explore__dot uk-display-inline-block" aria-hidden="true"></span>
     <span data-i18n="${labelKey}">${labelFallback}</span>
   </a>`
 }

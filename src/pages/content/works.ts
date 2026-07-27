@@ -30,14 +30,14 @@ function workCard(idx: number): string {
 
   return `
     <div>
-      <button class="jlz-work-card jlz-case-plane" type="button"
+      <button class="jlz-work-card jlz-case-plane uk-position-relative uk-flex uk-flex-bottom" type="button"
               data-project-idx="${idx}" data-project-id="${project.id}" data-cursor="view" data-magnetic
               aria-label="Open project: ${project.title}">
-        <span class="jlz-work-card__caption">
-          <span class="jlz-work-card__eyebrow">${number} · ${disciplines}</span>
-          <span class="jlz-work-card__copy">
-            <strong class="jlz-work-card__title">${project.title}</strong>
-            <span class="jlz-work-card__meta">${meta}</span>
+        <span class="jlz-work-card__caption uk-position-bottom uk-width-1-1 uk-flex uk-flex-bottom uk-flex-between">
+          <span class="jlz-work-card__eyebrow uk-text-uppercase">${number} · ${disciplines}</span>
+          <span class="jlz-work-card__copy uk-flex uk-flex-column">
+            <strong class="jlz-work-card__title uk-text-truncate">${project.title}</strong>
+            <span class="jlz-work-card__meta uk-text-uppercase">${meta}</span>
           </span>
         </span>
       </button>
@@ -57,7 +57,7 @@ function worksSection(
     <section class="jlz-page-section jlz-works-section jlz-works-section--${layout}${active ? ' section-active' : ''}"
              id="section-works-${number}" data-page-section="works-${number}"
              >
-      <div class="jlz-works-stage uk-container uk-container-expand">
+      <div class="jlz-works-stage uk-container uk-container-expand uk-position-relative">
         <header class="jlz-works-index uk-flex uk-flex-middle uk-flex-between uk-text-uppercase">
           <div class="uk-flex uk-flex-middle">
             <span class="jlz-works-index__number">${number}</span>

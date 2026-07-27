@@ -12,7 +12,7 @@ function contactFooterContent(): { top: string; bottom: string } {
       <button class="uk-close-large uk-margin-auto-left" type="button" uk-close
               data-close-cinematic-sheet aria-label="Close contact footer"></button>
     <div class="jlz-contact-footer__intro uk-flex uk-flex-column uk-flex-top uk-text-left">
-      <span class="jlz-contact-footer__kicker" data-i18n="contactFooter.kicker">Final frame · open channel</span>
+      <span class="jlz-contact-footer__kicker uk-text-uppercase" data-i18n="contactFooter.kicker">Final frame · open channel</span>
       <h2 class="studio-title uk-heading-large uk-margin-small-top uk-margin-remove-bottom" data-blur-fade="off"
           data-i18n="contactFooter.title">Let’s make something worth remembering.</h2>
       <p class="uk-text-lead uk-margin-small-top" data-i18n="contactFooter.lead">Tell us where the story should go next.</p>

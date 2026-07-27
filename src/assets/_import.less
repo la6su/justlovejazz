@@ -300,7 +300,10 @@ html.uk-light {
 // Z-index
 @global-z-index: @jlz-z-overlay;
 
-// Spacings & gutters (rem-based via @jlz-space-* tokens)
+// Spacing scale — UIkit globals are the semantic source for application
+// layout: use @global-*-margin/gutter in Less and uk-margin/uk-padding
+// utilities in templates. The @jlz-space-* values below remain only for
+// micro-steps that UIkit does not define.
 @global-margin: @jlz-space-5;
 @global-small-margin: @jlz-space-3;
 @global-medium-margin: @jlz-space-8;

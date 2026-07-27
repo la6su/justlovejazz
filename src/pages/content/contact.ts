@@ -12,8 +12,8 @@ const emailSection = sectionShell(
   'contact-01',
   contentTop('01', 'Email', 'Direct line.', 'large', 'contact.email.title', 'contact.email.lead'),
   storyBottom(`
-    <a href="mailto:hello@justlovejazz.com" class="jlz-service-explore uk-button uk-button-default uk-button-small uk-margin-top uk-flex uk-flex-inline uk-flex-middle">
-      <span class="jlz-service-explore__dot" aria-hidden="true"></span>
+    <a href="mailto:hello@justlovejazz.com" class="jlz-service-explore uk-button uk-button-default uk-button-small uk-margin-top uk-flex uk-flex-none uk-flex-inline uk-flex-middle">
+      <span class="jlz-service-explore__dot uk-display-inline-block" aria-hidden="true"></span>
       hello@justlovejazz.com
     </a>
   `),
@@ -33,15 +33,15 @@ const socialSection = sectionShell(
     'contact.social.lead',
   ),
   storyBottom(`
-    <div class="uk-flex uk-flex-center uk-flex-wrap uk-margin-top jlz-flex-gap-small">
-      <a href="https://t.me/justlovejazz" target="_blank" rel="noopener" class="jlz-service-explore uk-button uk-button-default uk-button-small uk-flex uk-flex-inline uk-flex-middle">
-        <span class="jlz-service-explore__dot" aria-hidden="true"></span>
+    <div class="uk-grid uk-grid-small uk-flex-center uk-margin-top" uk-grid>
+      <div><a href="https://t.me/justlovejazz" target="_blank" rel="noopener" class="jlz-service-explore uk-button uk-button-default uk-button-small uk-flex uk-flex-none uk-flex-inline uk-flex-middle">
+        <span class="jlz-service-explore__dot uk-display-inline-block" aria-hidden="true"></span>
         <span data-i18n="common.telegram">Telegram</span>
-      </a>
-      <a href="https://github.com/la6su" target="_blank" rel="noopener" class="jlz-service-explore uk-button uk-button-default uk-button-small uk-flex uk-flex-inline uk-flex-middle">
-        <span class="jlz-service-explore__dot" aria-hidden="true"></span>
+      </a></div>
+      <div><a href="https://github.com/la6su" target="_blank" rel="noopener" class="jlz-service-explore uk-button uk-button-default uk-button-small uk-flex uk-flex-none uk-flex-inline uk-flex-middle">
+        <span class="jlz-service-explore__dot uk-display-inline-block" aria-hidden="true"></span>
         <span data-i18n="common.github">GitHub</span>
-      </a>
+      </a></div>
     </div>
   `),
 )

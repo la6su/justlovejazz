@@ -1,0 +1,73 @@
+/* Shared story-section primitives; structure and baseline spacing come from UIkit. */
+
+.jlz-eyebrow {
+  min-height: 1em;
+  font-family: 'SF Mono', 'Cascadia Code', 'JetBrains Mono', 'Consolas', monospace;
+  font-size: clamp(2rem, 6vw, 3rem);
+  font-weight: 200;
+  letter-spacing: 0;
+  line-height: 1;
+  opacity: 0.35;
+}
+
+.jlz-section-top,
+.jlz-section-bottom {
+  flex-shrink: 0;
+}
+
+.jlz-section-top {
+  padding-top: calc(48px + @global-small-gutter);
+}
+
+.jlz-section-bottom {
+  padding-bottom: calc(4.6rem + env(safe-area-inset-bottom, 0px));
+}
+
+.jlz-contact-form {
+  gap: var(--jlz-space-2);
+}
+
+.jlz-service-desc {
+  max-width: 34rem;
+  gap: 0.2rem;
+  margin: 0;
+}
+
+.jlz-service-desc .uk-text-meta {
+  font-size: 0.78rem;
+  letter-spacing: 0.015em;
+  line-height: 1.45;
+}
+
+.jlz-service-explore {
+  gap: 0.5rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+}
+
+.jlz-service-explore__dot {
+  width: 0.35rem;
+  height: 0.35rem;
+  border-radius: var(--jlz-radius-full);
+  background: var(--jlz-color-accent);
+}
+
+.jlz-experiment-footer {
+  gap: 0.55rem 0.85rem;
+}
+
+.jlz-experiment-footer__mode,
+.jlz-experiment-footer__state {
+  font-family: var(--jlz-font-mono), serif;
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  line-height: 1.35;
+}
+
+@media (max-width: 639px) {
+  .jlz-experiment-footer .jlz-service-explore {
+    width: 100%;
+    justify-content: center;
+    margin-left: 0;
+  }
+}
