@@ -333,7 +333,7 @@ export function navOverlaySection(mode: 'home' | 'content' = 'content'): string 
     <section class="jlz-menu-overlay ${pageClass} uk-section uk-section-xsmall" id="section-menu" ${sectionAttr} data-cinematic-menu>
       <div class="uk-container uk-container-expand jlz-menu-container uk-flex uk-flex-column uk-flex-center">
         <div class="jlz-menu-sheet__header uk-flex uk-flex-middle uk-flex-between">
-          <span class="jlz-menu-sheet__eyebrow" data-i18n="menu.navigate">Navigate</span>
+          <span class="jlz-menu-sheet__eyebrow uk-text-meta uk-text-uppercase" data-i18n="menu.navigate">Navigate</span>
         </div>
         <!-- Main 2-column grid: stat | nav accordion -->
         <div class="jlz-menu-grid uk-grid uk-grid-medium" uk-grid>
