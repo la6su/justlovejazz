@@ -1458,11 +1458,6 @@ body[data-cinematic-sheet]
   .jlz-contact-launcher__button {
     min-height: 2.9rem;
   }
-
-  .jlz-menu-overlay .jlz-menu-grid {
-    grid-template-columns: minmax(12rem, 0.7fr) minmax(20rem, 1.3fr);
-    gap: 2rem;
-  }
 }
 
 @media (max-width: 639px) {
@@ -1580,7 +1575,6 @@ body[data-cinematic-sheet]
   }
 
   .jlz-menu-overlay .jlz-menu-grid {
-    display: block;
     overflow: visible;
   }
 
@@ -1698,10 +1692,6 @@ body[data-cinematic-sheet]
 }
 
 .jlz-menu-grid {
-  display: grid;
-  grid-template-columns: 1fr 1.5fr;
-  gap: var(--jlz-space-8);
-  align-items: center;
   width: min(100%, 64rem);
   max-height: calc(
     100dvh - var(--jlz-header-height, 60px) - (var(--jlz-bottom-controls, 4.5rem) * 1.35) -
@@ -1881,8 +1871,6 @@ body[data-cinematic-sheet]
   }
 
   .jlz-menu-grid {
-    grid-template-columns: 1fr;
-    gap: var(--jlz-space-4);
     width: 100%;
   }
 
@@ -1951,11 +1939,7 @@ body[data-cinematic-sheet] .jlz-console-bar {
   }
 
   .jlz-menu-overlay .jlz-menu-grid {
-    grid-template-columns: 1fr;
-    align-items: center;
-    gap: 1.5rem;
     justify-content: center;
-    justify-items: center;
   }
 
   // Hide stat column on mobile — nav is the focus
