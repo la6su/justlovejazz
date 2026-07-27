@@ -5,11 +5,10 @@ changes the order. Each item describes an outcome rather than an implementation.
 
 ## 1 — Protect the current experience
 
-- [ ] **Make CI and direct-route deployment deterministic** — run formatting in
-      CI, replace the undeclared `npx wait-on` fetch with a pinned Bun-owned
-      mechanism, remove recurring UIkit form-asset build warnings, verify
-      production rewrites for every sitemap route, and make Lighthouse results
-      actionable rather than warning-only.
+- [ ] **Configure production SPA rewrites** — once the hosting target is
+      identified, route the six SPA paths to `index.html` while retaining the
+      standalone `/blog` pages and static assets; verify every sitemap route
+      against the deployed origin.
 
 ## 2 — Strengthen the product
 

@@ -30,6 +30,9 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Check formatting
+        run: bun run format:check
+
       - name: Type-check
         run: bun run type-check
       - name: Lint
@@ -51,15 +54,17 @@ jobs:
         run: |
           bun run preview --port 4173 --host 127.0.0.1 &
           echo PID=$! > /tmp/preview.pid
-          npx wait-on -t 60000 tcp:4173
+          bun run wait:preview
 
       - name: Lighthouse CI
-        if: always()
-        uses: treosh/lighthouse-ci-action@v10
+        uses: treosh/lighthouse-ci-action@v12
         with:
-          upload: false
+          configPath: ./.lighthouserc.json
+          uploadArtifacts: true
           urls: |
             http://127.0.0.1:4173/
+            http://127.0.0.1:4173/works
+            http://127.0.0.1:4173/blog
 
       - name: Stop preview server
         if: always()

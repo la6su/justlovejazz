@@ -29,6 +29,8 @@ const SECTION_IDS = [
   'section-menu',
 ] as const
 
+const SPA_ROUTES = ['/', '/services', '/works', '/manifesto', '/lab', '/contact'] as const
+
 /**
  * Console / pageerror strings we tolerate in headless Chromium. WebGPU adapter
  * negotiation, SwiftShader fallback warnings, and PWA manifest fetch failures
@@ -95,6 +97,14 @@ test.describe('JustLoveJazz — page boot smoke', () => {
     expect(html).not.toMatch(/modulepreload[^>]+(?:vendor-three|vendor-ui|chunk-core-world)/)
     expect(html).toContain('Zarazeni Inclusion')
     expect(html).toContain('ВКЛЮЧЕНИЕ')
+  })
+
+  test('every published SPA route resolves to the application shell', async ({ request }) => {
+    for (const route of SPA_ROUTES) {
+      const response = await request.get(route)
+      expect(response.ok(), `${route} should resolve on the production preview`).toBe(true)
+      expect(await response.text(), `${route} should serve the SPA shell`).toContain('id="app"')
+    }
   })
 
   test('variable typography is self-hosted with Cyrillic coverage', async ({ request }) => {
