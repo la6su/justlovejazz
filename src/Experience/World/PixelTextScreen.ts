@@ -152,7 +152,7 @@ export class PixelTextScreen extends THREE.Mesh {
     sourceCtx.textAlign = 'center'
     sourceCtx.textBaseline = 'middle'
 
-    const fontFamily = "'Press Start 2P', 'Onest', system-ui, sans-serif"
+    const fontFamily = "'Press Start 2P', 'Commissioner', system-ui, sans-serif"
     let fontSize = 72
     sourceCtx.font = `700 ${fontSize}px ${fontFamily}`
     while (fontSize > 20 && sourceCtx.measureText(title).width > source.width * 0.9) {

@@ -110,15 +110,18 @@ test.describe('JustLoveJazz — page boot smoke', () => {
   test('variable typography is self-hosted with Cyrillic coverage', async ({ request }) => {
     const html = await (await request.get('/')).text()
     const blogHtml = await (await request.get('/blog')).text()
-    const fontCss = await (await request.get('/fonts/onest.css')).text()
+    const fontCss = await (await request.get('/fonts/commissioner.css')).text()
+    const fontResponse = await request.get('/fonts/commissioner-variable.ttf')
 
-    expect(html).toContain('/fonts/onest-latin-variable.woff2')
+    expect(html).toContain('/fonts/commissioner-variable.ttf')
     expect(html).not.toContain('/fonts/inter.css')
-    expect(blogHtml).toContain('/fonts/onest-latin-variable.woff2')
+    expect(blogHtml).toContain('/fonts/commissioner-variable.ttf')
     expect(blogHtml).not.toContain('/fonts/inter.css')
+    expect(fontResponse.ok()).toBe(true)
     expect(fontCss).toContain('font-weight: 100 900')
-    expect(fontCss).toContain('/fonts/onest-cyrillic-variable.woff2')
-    expect(fontCss).toMatch(/U\+0400-045F/i)
+    expect(fontCss).toContain("font-family: 'Commissioner'")
+    expect(fontCss).toContain('/fonts/commissioner-variable.ttf')
+    expect(fontCss).toContain('font-style: oblique -12deg 0deg')
   })
 
   test('splash container + populated <main> render within timeout', async ({ page }) => {
@@ -268,6 +271,18 @@ test.describe('JustLoveJazz — accessibility & DOM UI', () => {
     const label = await soundToggle.getAttribute('aria-label')
     expect(label).toBeTruthy()
     expect(label!.toLowerCase()).toContain('sound')
+
+    const themeToggle = page.locator('#jlz-theme-toggle')
+    await expect(themeToggle).toHaveCount(1)
+    await expect(themeToggle).toHaveAttribute('aria-pressed', 'false')
+    await page.locator('#jlz-splash-enter').click()
+    await expect(page.locator('#jlz-app-loader')).toBeHidden()
+    await themeToggle.click()
+    await expect(themeToggle).toHaveAttribute('aria-pressed', 'true')
+    await expect(themeToggle).toHaveAttribute('title', 'Theme: inverse')
+    await themeToggle.click()
+    await expect(themeToggle).toHaveAttribute('aria-pressed', 'false')
+    await expect(themeToggle).toHaveAttribute('title', 'Theme: auto')
 
     // The navigation template exposes section links plus a direct Blog route.
     const links = page.locator('.jlz-menu-nav__sub-link')

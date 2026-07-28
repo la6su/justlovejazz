@@ -1,0 +1,609 @@
+/*
+ * Shared JLZ cinematic language.
+ *
+ * UIkit owns component state, focus and ARIA. This layer connects the shell
+ * and Menu through the real brand mark, an electric signal and an aperture
+ * transition without turning every surface into a framed console.
+ */
+
+.jlz-cinematic-shell {
+  --jlz-shell-edge: color-mix(in srgb, var(--jlz-color-text) 15%, transparent);
+  color: var(--jlz-color-text);
+}
+
+.jlz-topbar {
+  align-items: stretch;
+}
+
+.jlz-topbar__brand {
+  min-height: 2.75rem;
+  gap: 0.7rem;
+  padding: 0 0.15rem;
+  color: var(--jlz-color-text);
+  isolation: isolate;
+}
+
+.jlz-brand-mark {
+  display: block;
+  width: 1.65rem;
+  height: 1.65rem;
+  object-fit: contain;
+  transition: transform var(--jlz-duration-slow) var(--jlz-ease-emphasis);
+}
+
+.jlz-topbar__brand:hover .jlz-brand-mark,
+.jlz-topbar__brand:focus-visible .jlz-brand-mark {
+  transform: rotate(-5deg) scale(1.06);
+}
+
+.jlz-topbar__wordmark {
+  font-size: 0.66rem;
+  font-weight: 760;
+  line-height: 1;
+}
+
+.jlz-topbar__mode {
+  position: relative;
+  padding-left: 0.8rem;
+  color: var(--jlz-color-text-subtle);
+  font-family: var(--jlz-font-mono);
+  font-size: 0.55rem;
+  font-weight: 500;
+}
+
+.jlz-topbar__mode::before {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 0.28rem;
+  height: 0.28rem;
+  background: var(--jlz-color-accent);
+  content: '';
+  transform: translateY(-50%);
+}
+
+.jlz-topbar-controls {
+  padding: 0.18rem;
+  background: color-mix(in srgb, var(--jlz-color-bg) 76%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.jlz-topbar-controls .uk-icon-button,
+.jlz-menu-launcher {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.jlz-topbar-controls .uk-icon-button:hover,
+.jlz-topbar-controls .uk-icon-button:focus-visible {
+  background: color-mix(in srgb, var(--jlz-color-text) 7%, transparent);
+  box-shadow: none;
+}
+
+.jlz-menu-launcher {
+  position: relative;
+  min-width: 6.6rem;
+  justify-content: flex-end;
+  overflow: hidden;
+}
+
+.jlz-menu-launcher::before {
+  position: absolute;
+  right: 0.55rem;
+  width: 0.3rem;
+  height: 0.3rem;
+  background: var(--jlz-color-accent);
+  content: '';
+  opacity: 0;
+  transform: scale(0);
+  transition:
+    opacity var(--jlz-duration-normal) ease,
+    transform var(--jlz-duration-slow) var(--jlz-ease-emphasis);
+}
+
+.jlz-menu-launcher:hover::before,
+.jlz-menu-launcher:focus-visible::before,
+.is-menu-open .jlz-menu-launcher::before {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.jlz-menu-launcher:hover,
+.jlz-menu-launcher:focus-visible,
+.is-menu-open .jlz-menu-launcher {
+  color: var(--jlz-color-text);
+  background: color-mix(in srgb, var(--jlz-color-text) 7%, transparent);
+  box-shadow: none;
+}
+
+.jlz-menu-launcher:focus-visible {
+  outline: 2px solid var(--jlz-color-accent);
+  outline-offset: 2px;
+}
+
+.jlz-menu-launcher__glyph {
+  gap: 0.3rem;
+}
+
+.jlz-menu-launcher__glyph i:first-child {
+  transform: scaleX(0.66);
+  transform-origin: right;
+}
+
+.is-menu-open .jlz-menu-launcher__glyph i:first-child {
+  transform: translateY(0.15rem) rotate(35deg) scaleX(1);
+}
+
+.is-menu-open .jlz-menu-launcher__glyph i:last-child {
+  transform: translateY(-0.15rem) rotate(-35deg);
+}
+
+.jlz-console-bar {
+  min-height: 4.5rem;
+  padding: 0.75rem 0.85rem;
+}
+
+.jlz-console-bar__signal {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 1rem;
+  width: 0.32rem;
+  height: 0.32rem;
+}
+
+.jlz-console-bar__signal::after {
+  position: absolute;
+  inset: 0;
+  background: var(--jlz-color-accent);
+  box-shadow: 0 0 1rem var(--jlz-color-accent-glow);
+  content: '';
+  animation: jlz-shell-signal 4.8s var(--jlz-ease-emphasis) infinite;
+}
+
+@keyframes jlz-shell-signal {
+  0%,
+  70%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.6);
+  }
+
+  78% {
+    opacity: 1;
+    transform: scale(1.35);
+  }
+}
+
+.jlz-contact-launcher__button {
+  position: relative;
+  min-height: 3rem;
+  border: 0;
+  color: var(--jlz-color-text);
+  background: color-mix(in srgb, var(--jlz-color-bg) 82%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.jlz-contact-launcher__orb {
+  background: var(--jlz-color-accent);
+  box-shadow: 0 0 0.8rem var(--jlz-color-accent-glow);
+}
+
+.jlz-storyline {
+  padding: 0.25rem;
+  border: 0;
+  background: transparent;
+}
+
+.jlz-storyline__items {
+  gap: 0.18rem;
+}
+
+.jlz-storyline__item {
+  position: relative;
+  width: 2rem;
+  min-width: 2rem;
+  min-height: 2rem;
+  border: 0;
+  border-radius: 0;
+  color: var(--jlz-color-text-subtle);
+  background: transparent;
+}
+
+.jlz-storyline__item::after {
+  position: absolute;
+  bottom: 0.2rem;
+  left: 50%;
+  width: 0.25rem;
+  height: 0.25rem;
+  background: currentColor;
+  content: '';
+  transform: translateX(-50%) scale(0.45);
+  transition:
+    transform var(--jlz-duration-slow) var(--jlz-ease-emphasis),
+    background var(--jlz-duration-fast) ease;
+}
+
+.jlz-storyline__item:hover,
+.jlz-storyline__item:focus-visible,
+.jlz-storyline__item.is-active {
+  border: 0;
+  color: var(--jlz-color-text);
+  background: color-mix(in srgb, var(--jlz-color-text) 7%, transparent);
+}
+
+.jlz-storyline__item:hover::after,
+.jlz-storyline__item:focus-visible::after,
+.jlz-storyline__item.is-active::after {
+  background: var(--jlz-color-accent);
+  transform: translateX(-50%) scale(1);
+}
+
+// Menu opens from a one-dimensional signal into a complete spatial field.
+#spa-content > .jlz-menu-overlay,
+.jlz-page > .jlz-menu-overlay {
+  background:
+    radial-gradient(circle at 18% 68%, var(--jlz-color-accent-glow), transparent 34%),
+    color-mix(in srgb, var(--jlz-color-bg) 94%, transparent);
+  clip-path: inset(49.85% 0 49.85% 0);
+  transform: scale(1.015);
+  transform-origin: center;
+  transition:
+    clip-path 900ms var(--jlz-ease-cinematic),
+    transform 900ms var(--jlz-ease-cinematic),
+    opacity 180ms ease,
+    visibility 0s linear 900ms;
+}
+
+body[data-cinematic-sheet='menu'] #spa-content > .jlz-menu-overlay,
+body[data-cinematic-sheet='menu'] .jlz-page > .jlz-menu-overlay {
+  clip-path: inset(0);
+  transform: scale(1);
+  transition-delay: 0s;
+}
+
+.jlz-menu-field {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  pointer-events: none;
+}
+
+.jlz-menu-field::before {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      circle at 28% 62%,
+      transparent 0 13rem,
+      var(--jlz-color-border) 13.05rem,
+      transparent 13.15rem
+    ),
+    linear-gradient(
+      115deg,
+      transparent 0 37%,
+      color-mix(in srgb, var(--jlz-color-signal-cool) 8%, transparent) 52%,
+      transparent 68%
+    );
+  content: '';
+  opacity: 0;
+  transform: scale(0.92);
+  transition:
+    opacity 700ms ease 180ms,
+    transform 1200ms var(--jlz-ease-entrance) 80ms;
+}
+
+body[data-cinematic-sheet='menu'] .jlz-menu-field::before {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.jlz-menu-field__horizon {
+  display: none;
+}
+
+.jlz-menu-field__pulse {
+  position: absolute;
+  top: 50%;
+  left: 28%;
+  width: 0.45rem;
+  height: 0.45rem;
+  background: var(--jlz-color-accent);
+  box-shadow: 0 0 2rem var(--jlz-color-accent-glow);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0);
+  transition:
+    opacity 240ms ease 620ms,
+    transform 600ms var(--jlz-ease-emphasis) 600ms;
+}
+
+body[data-cinematic-sheet='menu'] .jlz-menu-field__pulse {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.jlz-menu-overlay .jlz-menu-container {
+  z-index: 2;
+  box-sizing: border-box;
+  justify-content: center;
+  padding-top: 5.8rem;
+  padding-bottom: 3.5rem;
+}
+
+.jlz-menu-sheet__header {
+  align-self: stretch;
+  box-sizing: border-box;
+  width: auto;
+  max-width: 100%;
+  margin-bottom: clamp(1rem, 3vh, 2.5rem) !important;
+  font-family: var(--jlz-font-mono);
+  letter-spacing: 0.08em;
+}
+
+.jlz-menu-sheet__index {
+  padding-right: 1.5rem;
+}
+
+.jlz-menu-overlay .jlz-menu-grid {
+  width: 100%;
+  grid-template-columns: minmax(20rem, 0.9fr) minmax(30rem, 1.35fr);
+  gap: clamp(3rem, 8vw, 9rem);
+  align-items: center;
+}
+
+.jlz-menu-overlay .jlz-menu-col--stat {
+  min-height: 0;
+  justify-content: center;
+  padding: 0;
+}
+
+.jlz-menu-preview {
+  position: relative;
+  display: grid;
+  width: min(100%, 30rem);
+  min-height: min(52vh, 30rem);
+  align-content: center;
+  isolation: isolate;
+  opacity: 0;
+  transform: translateY(1.5rem);
+  transition:
+    opacity 500ms ease 260ms,
+    transform 1100ms var(--jlz-ease-entrance) 180ms;
+}
+
+body[data-cinematic-sheet='menu'] .jlz-menu-preview {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.jlz-menu-preview::before {
+  position: absolute;
+  z-index: -1;
+  top: 50%;
+  left: 38%;
+  width: min(34vw, 25rem);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--jlz-color-accent-glow), transparent 67%);
+  content: '';
+  transform: translate(-50%, -50%);
+  animation: jlz-preview-breathe 7s var(--jlz-ease-cinematic) infinite alternate;
+}
+
+.jlz-menu-preview__number {
+  color: var(--jlz-color-accent);
+  font-family: var(--jlz-font-mono);
+  font-size: clamp(0.7rem, 1vw, 0.9rem);
+  letter-spacing: 0.08em;
+}
+
+.jlz-menu-preview__label {
+  max-width: 7ch;
+  color: var(--jlz-color-text);
+  font-size: clamp(4.5rem, 9vw, 9rem);
+  font-variation-settings:
+    'wght' 680,
+    'FLAR' 62,
+    'VOLM' 68,
+    'slnt' -4;
+  letter-spacing: -0.075em;
+  line-height: 0.78;
+  text-wrap: balance;
+  transition: font-variation-settings 500ms var(--jlz-ease-emphasis);
+}
+
+.jlz-menu-preview__cursor {
+  width: 0.62rem;
+  height: 0.62rem;
+  margin-top: 1.5rem;
+  background: var(--jlz-color-accent);
+  box-shadow: 0 0 1.2rem var(--jlz-color-accent-glow);
+}
+
+.jlz-menu-preview__echo {
+  position: absolute;
+  right: 12%;
+  bottom: 8%;
+  color: var(--jlz-color-text-subtle);
+  font-family: var(--jlz-font-mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.16em;
+  writing-mode: vertical-rl;
+}
+
+@keyframes jlz-preview-breathe {
+  to {
+    opacity: 0.52;
+    transform: translate(-50%, -50%) scale(1.12);
+  }
+}
+
+.jlz-menu-overlay .jlz-menu-nav__item {
+  border: 0;
+}
+
+.jlz-menu-overlay .jlz-menu-nav__toggle {
+  position: relative;
+  min-height: clamp(3.5rem, 6.4vh, 4.75rem);
+  padding: 0.25rem 0;
+  overflow: hidden;
+  color: var(--jlz-color-text-muted);
+}
+
+.jlz-menu-overlay .jlz-menu-nav__toggle::before {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 0.38rem;
+  height: 0.38rem;
+  background: var(--jlz-color-accent);
+  content: '';
+  opacity: 0;
+  transform: scale(0);
+  transition:
+    opacity var(--jlz-duration-fast) ease,
+    transform var(--jlz-duration-slow) var(--jlz-ease-emphasis);
+}
+
+.jlz-menu-overlay .jlz-menu-nav__toggle:hover,
+.jlz-menu-overlay .jlz-menu-nav__toggle:focus-visible,
+.jlz-menu-overlay .jlz-menu-nav__item.uk-open > .jlz-menu-nav__toggle {
+  padding-left: 1.3rem;
+  color: var(--jlz-color-text);
+}
+
+.jlz-menu-overlay .jlz-menu-nav__toggle:hover::before,
+.jlz-menu-overlay .jlz-menu-nav__toggle:focus-visible::before,
+.jlz-menu-overlay .jlz-menu-nav__item.uk-open > .jlz-menu-nav__toggle::before {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.jlz-menu-overlay .jlz-menu-nav__label {
+  font-size: clamp(1.65rem, 3.25vw, 3.5rem);
+  line-height: 0.92;
+}
+
+.jlz-menu-nav__arrow {
+  font-family: var(--jlz-font-mono);
+}
+
+body[data-cinematic-sheet='menu'] .jlz-menu-nav__item:nth-child(1) .jlz-menu-nav__toggle {
+  transition-delay: 180ms;
+}
+
+body[data-cinematic-sheet='menu'] .jlz-menu-nav__item:nth-child(2) .jlz-menu-nav__toggle {
+  transition-delay: 215ms;
+}
+
+body[data-cinematic-sheet='menu'] .jlz-menu-nav__item:nth-child(3) .jlz-menu-nav__toggle {
+  transition-delay: 250ms;
+}
+
+body[data-cinematic-sheet='menu'] .jlz-menu-nav__item:nth-child(4) .jlz-menu-nav__toggle {
+  transition-delay: 285ms;
+}
+
+body[data-cinematic-sheet='menu'] .jlz-menu-nav__item:nth-child(5) .jlz-menu-nav__toggle {
+  transition-delay: 320ms;
+}
+
+body[data-cinematic-sheet='menu'] .jlz-menu-nav__item:nth-child(6) .jlz-menu-nav__toggle {
+  transition-delay: 355ms;
+}
+
+body[data-cinematic-sheet='menu'] .jlz-menu-nav__item:nth-child(7) .jlz-menu-nav__toggle {
+  transition-delay: 390ms;
+}
+
+@media (max-width: 900px) {
+  .jlz-topbar__mode {
+    display: none;
+  }
+
+  .jlz-menu-overlay .jlz-menu-grid {
+    grid-template-columns: minmax(15rem, 0.7fr) minmax(24rem, 1.3fr);
+    gap: 3rem;
+  }
+}
+
+@media (max-width: 639px) {
+  .jlz-topbar__brand {
+    min-height: 44px;
+    gap: 0.5rem;
+  }
+
+  .jlz-brand-mark {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  .jlz-topbar__wordmark {
+    font-size: 0.58rem;
+  }
+
+  .jlz-menu-launcher {
+    min-width: auto;
+  }
+
+  .jlz-menu-launcher__label {
+    display: none;
+  }
+
+  .jlz-storyline__item {
+    width: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .jlz-menu-overlay .jlz-menu-container {
+    justify-content: center;
+    padding: 4.8rem 1.1rem 2rem;
+  }
+
+  .jlz-menu-overlay .jlz-menu-grid {
+    display: block;
+  }
+
+  .jlz-menu-overlay .jlz-menu-nav {
+    max-width: none;
+  }
+
+  .jlz-menu-overlay .jlz-menu-nav__toggle {
+    min-height: clamp(3.35rem, 8vh, 4.2rem);
+    justify-content: flex-start;
+  }
+
+  .jlz-menu-overlay .jlz-menu-nav__label {
+    font-size: clamp(1.55rem, 8vw, 2.35rem);
+  }
+
+  // UIkit remains the state owner. On a sheet initialized while hidden, make
+  // its authoritative expanded state immediately measurable on narrow screens.
+  .jlz-menu-nav__toggle[aria-expanded='true'] + .jlz-menu-nav__subs {
+    display: block;
+    height: auto !important;
+    visibility: visible;
+  }
+
+  .jlz-menu-field__pulse {
+    left: 12%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jlz-console-bar__signal::after,
+  .jlz-menu-preview::before {
+    animation: none;
+  }
+
+  .jlz-menu-preview,
+  .jlz-menu-field::before,
+  .jlz-menu-field__pulse {
+    opacity: 1;
+    transform: none;
+  }
+}

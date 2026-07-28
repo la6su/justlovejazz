@@ -1,0 +1,210 @@
+/*
+ * Paper / ink language, distilled from the supplied multi-device PSD system.
+ *
+ * It uses the reference's warm stock, decisive black geometry and circular
+ * functional marks without importing its mail-product patterns into the
+ * portfolio.
+ */
+
+.jlz-cinematic-shell {
+  --jlz-paper-cut: 2.25rem;
+}
+
+body::before {
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  background:
+    linear-gradient(
+      135deg,
+      transparent 0 48%,
+      color-mix(in srgb, var(--jlz-color-text) 2%, transparent) 48.1% 52%,
+      transparent 52.1%
+    ),
+    radial-gradient(
+      circle at 12% 10%,
+      color-mix(in srgb, var(--jlz-color-signal-cool) 12%, transparent),
+      transparent 25%
+    );
+  content: '';
+  pointer-events: none;
+}
+
+.jlz-topbar {
+  padding-inline: clamp(0.6rem, 1.8vw, 1.5rem);
+}
+
+.jlz-topbar__brand {
+  mix-blend-mode: normal;
+}
+
+.jlz-topbar-controls {
+  gap: 0.12rem;
+  padding: 0;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.jlz-topbar-controls .uk-icon-button {
+  min-width: 2.9rem;
+  background: color-mix(in srgb, var(--jlz-color-bg-elevated) 86%, transparent);
+}
+
+.jlz-menu-launcher {
+  min-width: 7rem;
+  padding-inline: 1.15rem;
+  color: #f5e6d2;
+  background: #11100f;
+  clip-path: polygon(0 0, calc(100% - 1rem) 0, 100% 1rem, 100% 100%, 0 100%);
+}
+
+.jlz-menu-launcher:hover,
+.jlz-menu-launcher:focus-visible,
+.is-menu-open .jlz-menu-launcher {
+  color: #11100f;
+  background: var(--jlz-color-accent);
+}
+
+.jlz-menu-launcher::before {
+  background: currentColor;
+}
+
+.jlz-contact-launcher__button {
+  color: #f5e6d2;
+  background: #11100f;
+  clip-path: polygon(0 0.7rem, 0.7rem 0, 100% 0, 100% 100%, 0 100%);
+}
+
+.jlz-contact-launcher__button:hover,
+.jlz-contact-launcher__button:focus-visible {
+  color: #11100f;
+  background: var(--jlz-color-accent);
+}
+
+.jlz-storyline__item {
+  border-radius: 50%;
+}
+
+.jlz-storyline__item::after {
+  border-radius: 50%;
+}
+
+#spa-content > .jlz-menu-overlay,
+.jlz-page > .jlz-menu-overlay {
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--jlz-color-bg) 96%, transparent) 0 50%,
+      color-mix(in srgb, var(--jlz-color-text) 3%, transparent) 50.1% 52%,
+      color-mix(in srgb, var(--jlz-color-bg) 96%, transparent) 52.1%
+    ),
+    radial-gradient(circle at 16% 70%, var(--jlz-color-accent-glow), transparent 32%),
+    var(--jlz-color-bg);
+}
+
+.jlz-menu-overlay::after {
+  position: absolute;
+  z-index: 1;
+  right: 0;
+  bottom: 0;
+  width: min(18vw, 16rem);
+  aspect-ratio: 1;
+  background: var(--jlz-color-text);
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
+  content: '';
+  opacity: 0.96;
+  pointer-events: none;
+}
+
+.jlz-menu-overlay .jlz-menu-container {
+  z-index: 2;
+}
+
+.jlz-menu-sheet__header {
+  padding-inline: 0.1rem;
+}
+
+.jlz-menu-preview::before {
+  border: 1px solid color-mix(in srgb, var(--jlz-color-text) 16%, transparent);
+  background: radial-gradient(circle, var(--jlz-color-accent-glow), transparent 64%);
+}
+
+.jlz-menu-preview__cursor,
+.jlz-console-card::before {
+  border-radius: 50%;
+}
+
+.jlz-menu-preview__echo {
+  color: var(--jlz-color-signal-cool);
+}
+
+.jlz-menu-overlay .jlz-menu-nav__toggle::before {
+  border-radius: 50%;
+}
+
+.jlz-console-card {
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--jlz-color-signal-cool) 8%, transparent),
+      transparent 32%
+    ),
+    color-mix(in srgb, var(--jlz-color-bg-elevated) 94%, transparent);
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--jlz-paper-cut)) 0,
+    100% var(--jlz-paper-cut),
+    100% 100%,
+    0 100%
+  );
+}
+
+.jlz-contact-social__channel {
+  clip-path: polygon(0 0, calc(100% - 1rem) 0, 100% 1rem, 100% 100%, 0 100%);
+}
+
+.jlz-work-card__caption {
+  background: #12100f;
+}
+
+html.uk-light .jlz-work-card__caption {
+  color: #f5e6d2;
+  background: #15110e;
+}
+
+html.uk-light .jlz-topbar-controls .uk-icon-button {
+  color: #15110e;
+  background: rgba(248, 237, 223, 0.88);
+}
+
+html.uk-light .jlz-menu-overlay::after {
+  background: #15110e;
+}
+
+@media (max-width: 639px) {
+  .jlz-topbar {
+    padding-inline: 0.45rem;
+  }
+
+  .jlz-topbar-controls .uk-icon-button {
+    min-width: 44px;
+  }
+
+  .jlz-menu-overlay::after {
+    width: 7rem;
+  }
+
+  .jlz-contact-launcher__button {
+    clip-path: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jlz-menu-launcher,
+  .jlz-contact-launcher__button,
+  .jlz-console-card,
+  .jlz-contact-social__channel {
+    clip-path: none;
+  }
+}

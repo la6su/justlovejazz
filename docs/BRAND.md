@@ -1,8 +1,8 @@
 # Brand direction
 
-JUSTLOVEJAZZ presents technology as a dark cinematic console: precise type,
-framed imagery, controlled light and deliberate negative space. The tone is
-technical rather than loud.
+JUSTLOVEJAZZ presents technology as a dark cinematic world: expressive
+variable type, controlled light and deliberate negative space. The tone is
+precise rather than sterile.
 
 ## Visual intent
 
@@ -15,13 +15,17 @@ technical rather than loud.
 - Keep motion purposeful: navigation feedback, state change, material response
   and focus. Honour reduced-motion settings.
 
-The interface uses dark technical planes, a shared CRT frame and restrained
-acid-green/teal signals instead of scanlines or decorative shader fields. A
-small, local blur can separate a console module from an active 3D scene while
-the overall interface stays away from frosted-card styling. The Contact route
-is the deliberate exception: one macOS-like console window may use a soft
-blur, light rim and restrained window chrome to hold actions over the animated
-pixel title. It is one route-level module, never a repeated card treatment.
+The interface derives its palette from the original mark and the selected
+paper/ink reference system: warm paper fields, near-black structural planes,
+warm-white text and electric yellow as a concentrated interaction signal. A
+muted mineral tone may support depth, but does not compete with the yellow.
+
+Treat a diagonal cut as a structural event: a major action, a route handoff or
+the edge of one authored surface. Treat a circle as a current-state marker.
+Neither motif is a repeated ornament. Frames and rules appear only where they
+clarify a functional boundary; hierarchy otherwise comes from scale, space,
+depth and motion. A small, local blur can separate a module from an active 3D
+scene while the overall interface stays away from frosted-card styling.
 References inform composition and motion principles rather than copied product
 chrome. Prefer one memorable 3D gesture over several standard UI cards, while
 keeping text and primary actions semantic in the DOM.
@@ -36,10 +40,10 @@ polarities; its accompanying 3D pixel title follows the same effective theme.
 
 ## Typography and voice
 
-- Onest Variable is the shared display and interface family. Its self-hosted
-  Latin and Cyrillic subsets cover the two product languages with one set of
-  metrics and a continuous `wght` axis from 100 to 900.
-- Use variable weight to communicate hierarchy or an actual state transition.
+- Commissioner Variable is the shared display and interface family. Its
+  self-hosted Latin/Cyrillic build covers both product languages with `wght`,
+  `FLAR`, `VOLM` and `slnt` axes.
+- Use variable axes to communicate hierarchy or an actual state transition.
   Keep line-height and tracking stable during the motion, and settle to a
   readable weight. Reduced-motion mode settles without interpolation.
 - Technical labels may use the existing system-monospace stack where a true

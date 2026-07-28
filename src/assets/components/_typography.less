@@ -42,7 +42,11 @@
 .jlz-work-card__title {
   font-family: var(--jlz-font-display), serif;
   font-optical-sizing: auto;
-  font-variation-settings: 'wght' var(--jlz-vf-weight, 650);
+  font-variation-settings:
+    'wght' var(--jlz-vf-weight, 650),
+    'FLAR' var(--jlz-vf-flair, 18),
+    'VOLM' var(--jlz-vf-volume, 35),
+    'slnt' var(--jlz-vf-slant, 0);
   transition: font-variation-settings var(--jlz-duration-normal) var(--jlz-ease-state);
 }
 
@@ -57,6 +61,8 @@
 
 [data-story-state='active'] .studio-title {
   --jlz-vf-weight: 780;
+  --jlz-vf-flair: 42;
+  --jlz-vf-volume: 52;
 }
 
 .jlz-menu-stat__num {
@@ -74,4 +80,6 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
 .jlz-menu-nav__toggle:hover .jlz-menu-nav__label,
 .jlz-menu-nav__item.uk-open .jlz-menu-nav__label {
   --jlz-vf-weight: 820;
+  --jlz-vf-flair: 74;
+  --jlz-vf-volume: 58;
 }
