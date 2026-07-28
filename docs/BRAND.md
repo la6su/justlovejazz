@@ -18,16 +18,21 @@ technical rather than loud.
 The interface uses dark technical planes, a shared CRT frame and restrained
 acid-green/teal signals instead of scanlines or decorative shader fields. A
 small, local blur can separate a console module from an active 3D scene while
-the overall interface stays away from frosted-card styling. References inform
-composition and motion principles rather than copied product chrome. Prefer one
-memorable 3D gesture over several standard UI cards, while keeping text and
-primary actions semantic in the DOM.
+the overall interface stays away from frosted-card styling. The Contact route
+is the deliberate exception: one macOS-like console window may use a soft
+blur, light rim and restrained window chrome to hold actions over the animated
+pixel title. It is one route-level module, never a repeated card treatment.
+References inform composition and motion principles rather than copied product
+chrome. Prefer one memorable 3D gesture over several standard UI cards, while
+keeping text and primary actions semantic in the DOM.
 
 Runtime colour, typography and spacing values belong to
 `src/assets/_import.less` and `src/assets/main.less`; those source files remain
 the implementation truth for tokens and font stacks.
 The app's normal visual theme is dark across every section. Inverse remains an
 explicit accessibility preference, not a section-by-section art direction.
+Console glass must derive its contrast from shared runtime tokens in both
+polarities; its accompanying 3D pixel title follows the same effective theme.
 
 ## Typography and voice
 

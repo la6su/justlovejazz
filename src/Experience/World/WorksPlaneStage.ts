@@ -9,7 +9,6 @@ import * as THREE from 'three'
 import { PROJECTS } from '../../Data/Projects'
 import { CasePlane, CLOTH_PARAMS } from './CasePlane'
 import { loadCaseTexture, releaseCaseTexture } from './caseTexture'
-import { WorksTextScreen } from './WorksTextScreen'
 import type { RenderSurface } from '../Renderer'
 
 const SECTION_PROJECTS = [
@@ -45,7 +44,6 @@ const STACKED_LAYOUT: readonly [CaseLayout, CaseLayout] = [
 
 export class WorksPlaneStage extends THREE.Group {
   private cards: CasePlane[] = []
-  public textScreen: WorksTextScreen | null = null
   private _camera: THREE.Camera | null = null
   private _raycaster = new THREE.Raycaster()
   private _ndc = new THREE.Vector2()
@@ -77,7 +75,7 @@ export class WorksPlaneStage extends THREE.Group {
       if (!shouldBeVisible) return false
       return card.isAnimating || (this._reveal.get(card) ?? 0) < 0.995
     })
-    return cardsAnimating || (this.textScreen?.isAnimating ?? false)
+    return cardsAnimating
   }
 
   async init(): Promise<void> {
@@ -97,11 +95,6 @@ export class WorksPlaneStage extends THREE.Group {
       this._reveal.set(plane, 0)
       this.add(plane)
     })
-
-    // Back-text screen behind the work cards. It owns its delayed vertical wipe.
-    this.textScreen = new WorksTextScreen()
-    this.textScreen.setVisible(false)
-    this.add(this.textScreen)
   }
 
   /**
@@ -139,35 +132,13 @@ export class WorksPlaneStage extends THREE.Group {
     this._stackedLayout = width < 960
     const aspect = width / height
     this._viewportAspect = aspect
-    // Scale the flat text screen to fill the viewport width.
-    if (this.textScreen) {
-      const screenScale = THREE.MathUtils.clamp(aspect / 1.78, 0.8, 1.35)
-      this.textScreen.scale.setScalar(screenScale)
-    }
   }
 
   setActive(active: boolean, sectionIndex: number): void {
-    const wasActive = this._active
     const nextSection = THREE.MathUtils.clamp(sectionIndex, 0, SECTION_PROJECTS.length - 1)
-    const sectionChanged = nextSection !== this._sectionIndex
     this._active = active
     this._sectionIndex = nextSection
     this.visible = active
-    if (this.textScreen) {
-      this.textScreen.setSection(this._sectionIndex)
-      if (!active) this.textScreen.setVisible(false)
-      else if (!wasActive || sectionChanged) this.textScreen.setVisible(true)
-    }
-  }
-
-  /** Set theme polarity — flips text screen color for contrast. */
-  setTheme(isLight: boolean): void {
-    this.textScreen?.setTheme(isLight)
-  }
-
-  /** Re-render the text screen with the current i18n language. */
-  refreshLanguage(): void {
-    this.textScreen?.refreshLanguage()
   }
 
   /** Open project overlay with unified wobble pulse (same as BakuCarousel).
@@ -265,7 +236,6 @@ export class WorksPlaneStage extends THREE.Group {
     })
 
     // The text has its own delayed wipe: it is intentionally independent of card opacity.
-    this.textScreen?.update(dt)
   }
 
   private layoutInView(layout: CaseLayout): CaseLayout {
@@ -294,8 +264,6 @@ export class WorksPlaneStage extends THREE.Group {
     })
     this.cards = []
     this._reveal.clear()
-    this.textScreen?.dispose()
-    this.textScreen = null
     this.clear()
   }
 }

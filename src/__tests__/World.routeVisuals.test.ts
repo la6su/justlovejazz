@@ -54,6 +54,18 @@ describe('World route visuals', () => {
     expect(world.labGamepad?.visible).toBe(false)
   })
 
+  it('keeps the cube out of the standalone Works media route', () => {
+    document.body.dataset.page = 'works'
+    world.syncRouteVisuals()
+
+    expect(world.baku.visible).toBe(false)
+
+    document.body.dataset.page = 'contact'
+    world.syncRouteVisuals()
+
+    expect(world.baku.visible).toBe(true)
+  })
+
   it('disposes the lazy Lab object during shared-world teardown', async () => {
     const dispose = vi.spyOn(LabGamepad.prototype, 'dispose')
     document.body.dataset.page = 'lab'

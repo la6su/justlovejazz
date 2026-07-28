@@ -344,12 +344,15 @@ export class Experience {
         } else {
           this.world.envSphere.changeSection(sectionIdx, detail.isLight)
         }
+        // Contact's pixel title can be created after this route event. World
+        // caches the effective polarity so lazy creation cannot default to
+        // white text against a light route background.
+        this.world.syncContactTextTheme(detail.isLight)
         // Theme-only syncs — skip when just the section moved (same polarity).
         if (detail.themeChanged !== false) {
           this.world.syncGroundTheme(detail.isLight)
           this.world.baku.setTheme(detail.isLight)
           this.world.syncTypographyTheme(detail.isLight)
-          this.world.worksPlaneStage?.setTheme(detail.isLight)
           for (const group of this.world.sceneGroups) {
             const particles = group.userData.particles as
               import('../Experience/World/JunniParticles').JunniParticles | undefined
@@ -492,10 +495,9 @@ export class Experience {
     }
     window.addEventListener('jlz:sound-toggle', this._soundToggleHandler)
 
-    // Re-render the 3D works text screen when the language changes so the
-    // curved holographic title updates to EN/RU instantly.
+    // Keep the route-owned pixel title in sync with the active language.
     this._langChangeHandler = () => {
-      this.world?.worksPlaneStage?.refreshLanguage()
+      this.world?.contactTextStage?.refreshLanguage()
     }
     window.addEventListener('jlz:lang-change', this._langChangeHandler)
 
@@ -551,6 +553,14 @@ export class Experience {
         // stage alive makes that GPU allocation look like a navigation leak.
         this.world?.disposeWorksPlaneStage()
       }
+      if (newPage === 'contact') {
+        void this.world?.ensureContactTextStageInitialized().then(() => {
+          this.world?.setContactTextStageSection(0)
+          this._needsRender = true
+        })
+      } else {
+        this.world?.disposeContactTextStage()
+      }
       this._needsRender = true
     }
     window.addEventListener('jlz:route-change', this._routeChangeCloseOverlayHandler)
@@ -563,16 +573,19 @@ export class Experience {
     }
     window.addEventListener('jlz:wobble-pulse', this._wobblePulseHandler)
 
-    // `/works` keeps DOM buttons for accessibility, while its visible media is
-    // raycast from the actual Three.js planes. Story navigation remains native.
+    // Route-owned 3D layers follow the shared content-page navigation contract.
     this._worksPageSectionHandler = (e: Event) => {
-      if (document.body.dataset.page !== 'works') return
       const detail = (e as CustomEvent<{ index?: number }>).detail
-      // DOM sections: 0=Lab overlay, 1-4=project pairs, 5=Nav overlay.
-      // SECTION_PROJECTS has 4 entries (0-3), so map DOM 1-4 → stage 0-3.
       const domIndex = detail?.index ?? 0
       const stageIndex = Math.max(0, domIndex - 1)
-      this.world?.setWorksPlaneStageSection(stageIndex)
+      if (document.body.dataset.page === 'works') {
+        // DOM sections: 0=Lab overlay, 1-4=project pairs, 5=Nav overlay.
+        this.world?.setWorksPlaneStageSection(stageIndex)
+      } else if (document.body.dataset.page === 'contact') {
+        this.world?.setContactTextStageSection(stageIndex)
+      } else {
+        return
+      }
       this._needsRender = true
     }
     window.addEventListener('jlz:page-section-change', this._worksPageSectionHandler)
@@ -677,6 +690,7 @@ export class Experience {
     this._bakuCarouselActive = carousel?.isAnimating ?? false
     const carouselActive = this._bakuCarouselActive
     const worksPlaneActive = this.world?.worksPlaneStage?.isAnimating ?? false
+    const contactTextActive = this.world?.contactTextStage?.isAnimating ?? false
     const drawTrailActive = this.world?.drawTrail?.isAnimating ?? false
     const baku = this.world?.baku
     const openerActive = baku?.isOpenerActive ?? false
@@ -707,6 +721,7 @@ export class Experience {
       introActive ||
       carouselActive ||
       worksPlaneActive ||
+      contactTextActive ||
       worksScrollActive ||
       drawTrailActive ||
       openerActive ||
@@ -732,6 +747,7 @@ export class Experience {
       !introActive &&
       !carouselActive &&
       !worksPlaneActive &&
+      !contactTextActive &&
       !openerActive &&
       !burstActive &&
       !camShaking &&
@@ -895,6 +911,7 @@ export class Experience {
         !introActive &&
         !carouselActive &&
         !worksPlaneActive &&
+        !contactTextActive &&
         !worksScrollActive &&
         !openerActive &&
         !burstActive &&

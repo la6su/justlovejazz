@@ -55,6 +55,7 @@ their route before moving to the target frame.
 | World composition    | `World.ts`, `WorldConfig.ts`, `SectionSceneFactory` |
 | Navigation and UI    | `CinematicNav.ts`, `UIMenu.ts`, `UIManager.ts`      |
 | Project presentation | `WorksPlaneStage.ts`, `FullscreenOverlay.ts`        |
+| Contact presentation | `ContactTextStage.ts`, `PixelTextScreen.ts`         |
 | Preferences/events   | `ThemeManager.ts`, `i18n.ts`, `EventBus.ts`         |
 
 Renderer configuration is finalized from the backend actually created after
@@ -65,6 +66,13 @@ Scene resources follow their owning route or runtime object. Route replacement
 releases page-specific DOM behavior; `Experience.destroy()` closes the shared
 runtime. Reduced-motion branches reach the same settled state without an
 animation interval.
+
+`/works` owns only its lazy case-plane stage; the shared Baku cube stays hidden
+there so it cannot compete with the case media. `/contact` lazily owns one
+camera-local `ContactTextStage`: `PixelTextScreen` supplies the animated,
+localised route title while the DOM supplies the readable console module and
+actions. `Experience` forwards route section, language and effective-theme
+changes to this stage; it is disposed on route exit.
 
 ## Events and preferences
 
@@ -80,8 +88,10 @@ their producer and consumer own the payload together. The bridge in
 
 `ThemeManager` persists `auto` or `inverse`. In auto, each route's section
 configuration chooses its light or dark polarity; inverse flips that result.
-`i18n.ts` owns localized strings and persistence, while `router.ts` applies
-copy and metadata.
+Route-owned 3D text receives this effective polarity through
+`jlz:theme-applied`, while DOM console surfaces use the shared runtime tokens
+so the two layers retain contrast together. `i18n.ts` owns localized strings
+and persistence, while `router.ts` applies copy and metadata.
 
 ## Editorial model
 

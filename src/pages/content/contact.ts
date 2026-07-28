@@ -1,109 +1,94 @@
-// src/pages/content/contact.ts — Contact page (4 sections + 2 overlays)
-//
-// Sections 0 (Lab) and 5 (Navigation) are shared across all SPA pages.
-// Main sections (1-4): Email, Social, Location, Form.
+// Contact is a route-specific transmission board. The pixel title stays in
+// the 3D layer; this semantic DOM layer carries the useful next action.
 
-import { sectionShell, contentTop, storyBottom } from '../../sections/_shared/constants'
 import { labOverlaySection } from '../../sections/lab-overlay/template'
 import { navOverlaySection } from '../../sections/nav/template'
 
-// Section 1: Email — big mailto link
-const emailSection = sectionShell(
+function contactSection(
+  id: string,
+  index: string,
+  titleKey: string,
+  title: string,
+  body: string,
+  active = false,
+): string {
+  return `
+    <section class="jlz-page-section jlz-contact-section${active ? ' section-active' : ''} uk-section uk-section-small uk-section-large@m" id="section-${id}" data-page-section="${id}">
+      <div class="uk-container uk-container-expand uk-padding uk-flex uk-flex-column uk-flex-center uk-height-1-1">
+        <h2 class="uk-hidden" data-i18n="${titleKey}">${title}</h2>
+        <div class="jlz-contact-panel uk-width-1-1 uk-width-2-3@m uk-width-1-2@l">
+          <div class="jlz-contact-panel__chrome" aria-hidden="true">
+            <span></span><span></span><span></span>
+            <span class="jlz-contact-panel__index uk-text-meta uk-text-uppercase">${index} / 04</span>
+          </div>
+          ${body}
+        </div>
+      </div>
+    </section>
+  `
+}
+
+const emailSection = contactSection(
   'contact-01',
-  contentTop('01', 'Email', 'Direct line.', 'large', 'contact.email.title', 'contact.email.lead'),
-  storyBottom(`
-    <a href="mailto:hello@justlovejazz.com" class="jlz-service-explore uk-button uk-button-default uk-button-small uk-margin-top uk-flex uk-flex-none uk-flex-inline uk-flex-middle">
-      <span class="jlz-service-explore__dot uk-display-inline-block" aria-hidden="true"></span>
-      hello@justlovejazz.com
-    </a>
-  `),
-  'content',
+  '01',
+  'contact.email.title',
+  'Email',
+  `
+    <p class="jlz-contact-panel__copy" data-i18n="contact.email.copy">For a new product, a sharper interface or a realtime scene — write the first clear sentence.</p>
+    <a href="mailto:hello@justlovejazz.com" class="jlz-contact-panel__address uk-link-reset">hello@justlovejazz.com</a>
+    <p class="jlz-contact-panel__meta uk-text-meta" data-i18n="contact.email.meta">A reply channel, not a ticket queue.</p>
+  `,
   true,
 )
 
-// Section 2: Social — Telegram + GitHub
-const socialSection = sectionShell(
+const socialSection = contactSection(
   'contact-02',
-  contentTop(
-    '02',
-    'Social',
-    'Find us elsewhere.',
-    'large',
-    'contact.social.title',
-    'contact.social.lead',
-  ),
-  storyBottom(`
-    <div class="uk-grid uk-grid-small uk-flex-center uk-margin-top" uk-grid>
-      <div><a href="https://t.me/justlovejazz" target="_blank" rel="noopener" class="jlz-service-explore uk-button uk-button-default uk-button-small uk-flex uk-flex-none uk-flex-inline uk-flex-middle">
-        <span class="jlz-service-explore__dot uk-display-inline-block" aria-hidden="true"></span>
-        <span data-i18n="common.telegram">Telegram</span>
-      </a></div>
-      <div><a href="https://github.com/la6su" target="_blank" rel="noopener" class="jlz-service-explore uk-button uk-button-default uk-button-small uk-flex uk-flex-none uk-flex-inline uk-flex-middle">
-        <span class="jlz-service-explore__dot uk-display-inline-block" aria-hidden="true"></span>
-        <span data-i18n="common.github">GitHub</span>
-      </a></div>
+  '02',
+  'contact.social.title',
+  'Social',
+  `
+    <p class="jlz-contact-panel__copy" data-i18n="contact.social.copy">Follow the work in public, or send a short note where a conversation can start quickly.</p>
+    <div class="uk-flex uk-flex-wrap uk-flex-middle uk-margin-medium-top jlz-contact-panel__actions">
+      <a href="https://t.me/justlovejazz" target="_blank" rel="noopener" class="uk-button uk-button-default uk-button-small">Telegram</a>
+      <a href="https://github.com/la6su" target="_blank" rel="noopener" class="uk-button uk-button-text uk-button-small">GitHub <span uk-icon="icon: arrow-right" aria-hidden="true"></span></a>
     </div>
-  `),
+  `,
 )
 
-// Section 3: Location — remote / EU
-const locationSection = sectionShell(
+const locationSection = contactSection(
   'contact-03',
-  contentTop(
-    '03',
-    'Location',
-    'Where we work.',
-    'large',
-    'contact.location.title',
-    'contact.location.lead',
-  ),
-  storyBottom(`
-    <div class="jlz-service-desc uk-margin-small-top">
-      <p class="uk-text-meta uk-margin-remove" data-i18n="contact.location.desc1">Remote · EU · since 2019</p>
-      <p class="uk-text-meta uk-margin-remove" data-i18n="contact.location.desc2">Open for new projects.</p>
-    </div>
-  `),
+  '03',
+  'contact.location.title',
+  'Location',
+  `
+    <p class="jlz-contact-panel__copy" data-i18n="contact.location.copy">Remote by default. We work across time zones with teams that care about the last ten percent.</p>
+    <dl class="jlz-contact-panel__facts uk-description-list uk-margin-medium-top">
+      <div><dt data-i18n="contact.location.fact1.label">Base</dt><dd data-i18n="contact.location.fact1.value">Remote · EU</dd></div>
+      <div><dt data-i18n="contact.location.fact2.label">Practice</dt><dd data-i18n="contact.location.fact2.value">Strategy, interface, realtime</dd></div>
+    </dl>
+  `,
 )
 
-// Section 4: Form — inline mailto form
-const formSection = sectionShell(
+const briefSection = contactSection(
   'contact-04',
-  contentTop(
-    '04',
-    'Form',
-    'Tell us about your project.',
-    'large',
-    'contact.form.title',
-    'contact.form.lead',
-  ),
-  storyBottom(`
-    <form class="jlz-contact-form uk-flex uk-flex-wrap uk-flex-center uk-flex-middle uk-margin-bottom" action="mailto:hello@justlovejazz.com" method="post" enctype="text/plain">
-      <div class="uk-inline uk-width-1-1 uk-width-medium@s">
-        <span class="uk-form-icon" uk-icon="icon: mail" aria-hidden="true"></span>
-        <input class="uk-input" type="text" name="subject" placeholder="What's the project?" data-i18n-placeholder="contact.form.placeholder" aria-label="Project subject" />
-      </div>
-      <button class="uk-button uk-button-primary uk-margin-small-left" type="submit">
-        <span uk-icon="icon: push" aria-hidden="true"></span>
-        <span class="uk-margin-small-left" data-i18n="common.send">Send</span>
-      </button>
-    </form>
-  `),
+  '04',
+  'contact.form.title',
+  'Brief',
+  `
+    <p class="jlz-contact-panel__copy" data-i18n="contact.form.copy">A useful first message names the context, the decision ahead and the person we should reply to.</p>
+    <a href="mailto:hello@justlovejazz.com?subject=Project%20brief" class="uk-button uk-button-primary uk-margin-medium-top" data-i18n="contact.form.action">Start an email</a>
+    <p class="jlz-contact-panel__meta uk-text-meta" data-i18n="contact.form.meta">We will return with the right next question.</p>
+  `,
 )
 
 export function contactPage(): string {
   return `
-    <article class="jlz-page" data-page-view="contact">
-      <!-- 0: CONTACT FINALE (canonical Lab runtime slot) -->
+    <article class="jlz-page jlz-contact-page" data-page-view="contact">
       ${labOverlaySection('content')}
-      <!-- 1: Email (start, active) -->
       ${emailSection}
-      <!-- 2: Social -->
       ${socialSection}
-      <!-- 3: Location -->
       ${locationSection}
-      <!-- 4: Form -->
-      ${formSection}
-      <!-- 5: MENU SHEET -->
+      ${briefSection}
       ${navOverlaySection('content')}
     </article>
   `

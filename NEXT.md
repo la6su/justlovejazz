@@ -27,8 +27,9 @@ changes the order. Each item describes an outcome rather than an implementation.
 - [ ] **Finish the UIkit-first style split** — keep UIkit as the baseline for
       layout, spacing and typography while extracting the remaining independent
       style owners (fullscreen overlay, Works and cinematic navigation) from
-      `main.less`; preserve the bespoke 3D compositions and validate both
-      polarities, narrow layouts and reduced motion after each slice.
+      `main.less`; keep the completed Contact console as a route-local owner,
+      preserve bespoke 3D compositions and validate both polarities, narrow
+      layouts and reduced motion after each slice.
 
 - [ ] **Cross-backend performance budget** — profile representative routes on
       WebGPU and WebGL2 at desktop/mobile DPRs, protect the ≤350 KB gzip Three.js

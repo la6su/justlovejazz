@@ -264,14 +264,29 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     // Contact page
     'contact.email.title': 'Email',
     'contact.email.lead': 'Direct line.',
+    'contact.email.copy':
+      'For a new product, a sharper interface or a realtime scene — write the first clear sentence.',
+    'contact.email.meta': 'A reply channel, not a ticket queue.',
     'contact.social.title': 'Social',
     'contact.social.lead': 'Find us elsewhere.',
+    'contact.social.copy':
+      'Follow the work in public, or send a short note where a conversation can start quickly.',
     'contact.location.title': 'Location',
     'contact.location.lead': 'Where we work.',
+    'contact.location.copy':
+      'Remote by default. We work across time zones with teams that care about the last ten percent.',
+    'contact.location.fact1.label': 'Base',
+    'contact.location.fact1.value': 'Remote · EU',
+    'contact.location.fact2.label': 'Practice',
+    'contact.location.fact2.value': 'Strategy, interface, realtime',
     'contact.location.desc1': 'Remote · EU · since 2019',
     'contact.location.desc2': 'Open for new projects.',
     'contact.form.title': 'Form',
     'contact.form.lead': 'Tell us about your project.',
+    'contact.form.copy':
+      'A useful first message names the context, the decision ahead and the person we should reply to.',
+    'contact.form.action': 'Start an email',
+    'contact.form.meta': 'We will return with the right next question.',
     'contact.form.placeholder': "What's the project?",
 
     // Secret-section hints
@@ -548,14 +563,29 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     // Contact page
     'contact.email.title': 'Почта',
     'contact.email.lead': 'Прямая линия.',
+    'contact.email.copy':
+      'Новый продукт, точный интерфейс или realtime-сцена — начните с одной ясной фразы.',
+    'contact.email.meta': 'Канал для ответа, а не очередь тикетов.',
     'contact.social.title': 'Соцсети',
     'contact.social.lead': 'Найдите нас в других местах.',
+    'contact.social.copy':
+      'Следите за работой публично или отправьте короткое сообщение там, где разговор начинается быстрее.',
     'contact.location.title': 'Локация',
     'contact.location.lead': 'Где мы работаем.',
+    'contact.location.copy':
+      'Работаем удалённо и синхронизируемся с командами, для которых важны последние десять процентов.',
+    'contact.location.fact1.label': 'База',
+    'contact.location.fact1.value': 'Удалённо · ЕС',
+    'contact.location.fact2.label': 'Практика',
+    'contact.location.fact2.value': 'Стратегия, интерфейс, realtime',
     'contact.location.desc1': 'Удалённо · ЕС · с 2019',
     'contact.location.desc2': 'Открыты для новых проектов.',
     'contact.form.title': 'Форма',
     'contact.form.lead': 'Расскажите о своём проекте.',
+    'contact.form.copy':
+      'В первом сообщении достаточно контекста, ближайшего решения и контакта для ответа.',
+    'contact.form.action': 'Начать письмо',
+    'contact.form.meta': 'Вернёмся с правильным следующим вопросом.',
     'contact.form.placeholder': 'Какой проект?',
 
     // Secret-section hints

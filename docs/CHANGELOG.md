@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Moved the pixel-rasterised route title from `/works` to the lazy `/contact`
+  scene. The standalone Works route now presents case planes without the Baku
+  cube or a competing text layer; Contact owns the title's reveal, language and
+  theme synchronisation. Its effective polarity is cached across lazy route
+  creation, and its marquee keeps rendering after the one-shot wipe settles
+  (except with reduced motion).
+- Rebuilt `/contact` as a route-specific transmission board: semantic actions
+  sit in one local macOS-style console module with restrained blur and window
+  chrome, while the animated 3D title carries the visible heading.
 - Replaced the Works BackText font with self-hosted Press Start 2P (Cyrillic
   included) and moved existing menu/button flex layout to UIKit utilities,
   reducing `main.less` to 2048 lines without adding a parallel component layer.

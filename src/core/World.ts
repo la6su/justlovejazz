@@ -18,6 +18,7 @@ import { disposeSection3Textures } from '../sections/works/scene'
 // updateInstancedParticles removed — was a no-op. Particles are static.
 import { disposeMaterialDeep } from '../Utils/dispose'
 import { WorksPlaneStage } from '../Experience/World/WorksPlaneStage'
+import { ContactTextStage } from '../Experience/World/ContactTextStage'
 import { getLabExperiment, type LabExperimentObject } from '../Experience/Lab/manifest'
 
 export interface WorldTransformResult {
@@ -37,6 +38,8 @@ export class World extends THREE.Group {
   public sceneGroups: THREE.Group[] = []
   /** Lazy `/works` media owner. The DOM keeps semantics; this group owns pixels. */
   public worksPlaneStage: WorksPlaneStage | null = null
+  /** Lightweight pixel-title layer, loaded only for the Contact route. */
+  public contactTextStage: ContactTextStage | null = null
   /** Loaded only for `/lab`; replaces the shared cube on the experiment route. */
   public labGamepad: LabExperimentObject | null = null
 
@@ -70,6 +73,8 @@ export class World extends THREE.Group {
   private _targetGroundOpacity = 0
   private _carouselInitPromise: Promise<void> | null = null
   private _worksPlaneStagePromise: Promise<void> | null = null
+  private _contactTextStagePromise: Promise<void> | null = null
+  private _contactTextIsLight = false
   private _labGamepadPromise: Promise<void> | null = null
 
   constructor(scene: THREE.Scene) {
@@ -207,6 +212,7 @@ export class World extends THREE.Group {
     // otherwise its first section visit performs image work inside navigation.
     if (pageKey === 'home') await this.ensureCarouselInitialized()
     if (pageKey === 'works') void this.ensureWorksPlaneStageInitialized()
+    if (pageKey === 'contact') void this.ensureContactTextStageInitialized()
 
     if (import.meta.env.DEV) {
       console.debug(
@@ -298,8 +304,8 @@ export class World extends THREE.Group {
     return this._worksPlaneStagePromise
   }
 
-  /** Dispose WorksPlaneStage + WorksTextScreen when leaving /works.
-   *  Frees ~40-50 MB of GPU textures + canvas + TSL materials.
+  /** Dispose WorksPlaneStage when leaving /works.
+   *  Frees ~40-50 MB of GPU textures + TSL materials.
    *  The stage is lazily re-created on next /works visit via
    *  ensureWorksPlaneStageInitialized(). */
   public disposeWorksPlaneStage(): void {
@@ -314,6 +320,40 @@ export class World extends THREE.Group {
   public setWorksPlaneStageSection(index: number): void {
     this.worksPlaneStageSection = index
     this.worksPlaneStage?.setActive(document.body.dataset.page === 'works', index)
+  }
+
+  /** Lazily create the Contact route's pixel-title layer. */
+  public ensureContactTextStageInitialized(): Promise<void> {
+    if (this._contactTextStagePromise) return this._contactTextStagePromise
+    const stage = new ContactTextStage()
+    this.contactTextStage = stage
+    this.add(stage)
+    this._contactTextStagePromise = Promise.resolve().then(() => {
+      stage.setActive(document.body.dataset.page === 'contact', 0)
+      stage.setTheme(this._contactTextIsLight)
+      stage.resize(window.innerWidth, window.innerHeight)
+      if (this._camera) stage.setCamera(this._camera)
+    })
+    return this._contactTextStagePromise
+  }
+
+  public disposeContactTextStage(): void {
+    if (!this.contactTextStage) return
+    this.contactTextStage.dispose()
+    this.remove(this.contactTextStage)
+    this.contactTextStage = null
+    this._contactTextStagePromise = null
+  }
+
+  /** Sync the Contact pixel-title layer with CinematicNav's active chapter. */
+  public setContactTextStageSection(index: number): void {
+    this.contactTextStage?.setActive(document.body.dataset.page === 'contact', index)
+  }
+
+  /** Cache the effective polarity so a lazy Contact stage cannot miss it. */
+  public syncContactTextTheme(isLight: boolean): void {
+    this._contactTextIsLight = isLight
+    this.contactTextStage?.setTheme(isLight)
   }
 
   /** Sync ground plane color/opacity to the active theme.
@@ -399,11 +439,14 @@ export class World extends THREE.Group {
     // BakuCarousel updates — the last rendered frame stays on screen.
     // Exception: Experience forces needsRender while hasVisibleParticles().
     if (!needsRender) {
-      // Still update the works stage + text screen on /works so the UV scroll,
-      // wipe reveal, and card reveal continue even when the main scene is idle.
+      // Route-owned stages keep their authored reveals moving even when the
+      // shared scene has otherwise settled.
       if (this.worksPlaneStage && document.body.dataset.page === 'works') {
         this.worksPlaneStage.setActive(true, this.worksPlaneStageSection)
         this.worksPlaneStage.update(deltaTime)
+      }
+      if (this.contactTextStage && document.body.dataset.page === 'contact') {
+        this.contactTextStage.update(deltaTime)
       }
       return
     }
@@ -414,6 +457,9 @@ export class World extends THREE.Group {
         this.worksPlaneStageSection,
       )
       this.worksPlaneStage.update(deltaTime)
+    }
+    if (this.contactTextStage) {
+      this.contactTextStage.update(deltaTime)
     }
 
     if (!this.isReducedMotion) {
@@ -440,6 +486,7 @@ export class World extends THREE.Group {
         // only the planes and the existing particle field remain visible.
         this.baku.visible =
           document.body.dataset.page !== 'lab' &&
+          document.body.dataset.page !== 'works' &&
           (document.body.dataset.page !== 'home' ||
             !(carousel.isActive && carousel.morphProgress > 0.82))
       }
@@ -592,6 +639,12 @@ export class World extends THREE.Group {
       if (isFrom && isTo) fade = 1
 
       const shouldShow = isFrom || isTo
+      const carousel = g.userData.carousel as
+        import('../Experience/World/BakuCarousel').BakuCarousel | undefined
+      const cfg = this.configs[i]
+      const showCarousel =
+        document.body.dataset.page === 'home' && cfg?.scene?.objects?.bakuCarousel === true
+
       if (shouldShow) {
         g.visible = fade > 0.001
         // A-006: Use cached mesh list instead of traverse every frame.
@@ -625,14 +678,11 @@ export class World extends THREE.Group {
           m.opacity = (m.userData.baseOpacity ?? 1) * fade
         }
 
-        // BakuCarousel visibility — ONLY on home page (3D cube morph feature).
-        // Content pages don't use the carousel (no cube morphing).
-        const carousel = g.userData.carousel as
-          import('../Experience/World/BakuCarousel').BakuCarousel | undefined
+        // BakuCarousel visibility — only on the home Works phase. Its state is
+        // also reset below when this group is outside the active transition;
+        // otherwise a content-route visit can leave an already-open carousel
+        // suspended and make a later /#section-works return non-deterministic.
         if (carousel) {
-          const isHome = document.body.dataset.page === 'home'
-          const cfg = this.configs[i]
-          const showCarousel = isHome && cfg?.scene?.objects?.bakuCarousel === true
           carousel.visible = showCarousel && fade > 0.01
           carousel.setActive(showCarousel && fade > 0.5)
         }
@@ -654,6 +704,11 @@ export class World extends THREE.Group {
         }
       } else {
         g.visible = false
+        // Keep route transitions authoritative even while the owning group is
+        // hidden. This ensures the next arrival in Works starts from a known
+        // inactive slider state rather than a stale home-frame state.
+        carousel?.setActive(false)
+        if (carousel) carousel.visible = false
       }
     })
 
@@ -763,6 +818,7 @@ export class World extends THREE.Group {
       g.scale.setScalar(scale)
     })
     this.worksPlaneStage?.resize(width, height)
+    this.contactTextStage?.resize(width, height)
     // Ground plane: always covers viewport (large geometry, no change needed).
     // Baku: position stays at origin, no resize needed.
     // Atmosphere: fog density stays per-section.
@@ -830,6 +886,10 @@ export class World extends THREE.Group {
     if (this.worksPlaneStage) this.remove(this.worksPlaneStage)
     this.worksPlaneStage = null
     this._worksPlaneStagePromise = null
+    this.contactTextStage?.dispose()
+    if (this.contactTextStage) this.remove(this.contactTextStage)
+    this.contactTextStage = null
+    this._contactTextStagePromise = null
     this.labGamepad?.dispose()
     this.labGamepad = null
     this._labGamepadPromise = null
@@ -841,12 +901,14 @@ export class World extends THREE.Group {
   public setCamera(cam: THREE.Camera): void {
     this._camera = cam
     this.worksPlaneStage?.setCamera(cam)
+    this.contactTextStage?.setCamera(cam)
   }
 
   /** Keep route-specific hero objects isolated from the shared home cube. */
   public syncRouteVisuals(): void {
-    const isLab = document.body.dataset.page === 'lab'
-    this.baku.visible = !isLab
+    const page = document.body.dataset.page
+    const isLab = page === 'lab'
+    this.baku.visible = !isLab && page !== 'works'
     if (isLab) void this.ensureLabGamepad()
     if (this.labGamepad) this.labGamepad.visible = isLab
   }

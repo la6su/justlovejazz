@@ -1,7 +1,7 @@
-// WorksTextScreen — 3D back-text behind work cards on /works.
+// PixelTextScreen — reusable 3D pixel-rasterised route title.
 //
-// Follows the junni.co.jp BackText pattern: a flat plane positioned behind
-// the work cards, rendering a deliberately pixel-rasterised title as a canvas texture.
+// Follows the junni.co.jp BackText pattern: a flat plane in the route scene,
+// rendering a deliberately pixel-rasterised title as a canvas texture.
 // The text scrolls horizontally (UV offset) and reveals
 // via a vertical wipe from center outward.
 //
@@ -26,22 +26,15 @@ import {
 } from 'three/tsl'
 import { t } from '../../core/i18n'
 
-// i18n keys for the 4 works sections.
-const SECTION_TITLE_KEYS = [
-  'works.section1.title',
-  'works.section2.title',
-  'works.section3.title',
-  'works.section4.title',
-] as const
-
 // Flat plane dimensions — wide to fill the viewport behind cards.
 // Junni uses a flat mesh that's part of the scene; we do the same.
 const SCREEN_WIDTH = 20
 const SCREEN_HEIGHT = 8
-const REVEAL_DELAY_SECONDS = 1
+const REVEAL_DELAY_SECONDS = 0.3
 const REVEAL_DURATION_SECONDS = 2
 
-export class WorksTextScreen extends THREE.Mesh {
+export class PixelTextScreen extends THREE.Mesh {
+  private readonly _titleKeys: readonly string[]
   private _texture: THREE.CanvasTexture
   private _canvas: HTMLCanvasElement
   private _ctx: CanvasRenderingContext2D
@@ -57,7 +50,7 @@ export class WorksTextScreen extends THREE.Mesh {
   private readonly _uniformTime: { value: number }
   private readonly _uniformIsLight: { value: number }
 
-  constructor() {
+  constructor(titleKeys: readonly string[]) {
     // Flat plane — junni BackText uses a simple PlaneGeometry.
     // The plane is subdivided to allow potential vertex displacement if needed.
     const geometry = new THREE.PlaneGeometry(SCREEN_WIDTH, SCREEN_HEIGHT, 8, 4)
@@ -120,16 +113,13 @@ export class WorksTextScreen extends THREE.Mesh {
     })()
 
     super(geometry, mat)
-    this.name = 'works-text-screen'
+    this.name = 'pixel-text-screen'
     this.frustumCulled = false
     this.renderOrder = 1 // behind work cards (renderOrder 2)
 
-    // Position: flat plane behind the cards. Cards are at z≈-3, screen at z=-7.
+    // Position: the route stage can adjust this camera-local plane as needed.
     // No rotation needed — PlaneGeometry faces +Z by default, which faces
     // the camera (camera looks down -Z, so +Z faces toward it).
-    // Keep the title visibly behind the upper edge of the cards. A centred
-    // plane is completely occluded by the 16:9 media on portrait screens,
-    // which makes the wipe animation impossible to read.
     this.position.set(0, 0.85, -7)
 
     this._texture = texture
@@ -138,6 +128,7 @@ export class WorksTextScreen extends THREE.Mesh {
     this._uniformVisibility = uVisibility
     this._uniformTime = uTime
     this._uniformIsLight = uIsLight
+    this._titleKeys = titleKeys
 
     this.renderText(0)
     void document.fonts.load("400 72px 'Press Start 2P'").then(() => {
@@ -150,7 +141,7 @@ export class WorksTextScreen extends THREE.Mesh {
     const ctx = this._ctx
     const w = this._canvas.width
     const h = this._canvas.height
-    const title = t(SECTION_TITLE_KEYS[sectionIndex] ?? SECTION_TITLE_KEYS[0]!).toUpperCase()
+    const title = t(this._titleKeys[sectionIndex] ?? this._titleKeys[0] ?? '').toUpperCase()
 
     ctx.clearRect(0, 0, w, h)
     const source = document.createElement('canvas')
@@ -179,7 +170,7 @@ export class WorksTextScreen extends THREE.Mesh {
   }
 
   setSection(sectionIndex: number): void {
-    const clamped = THREE.MathUtils.clamp(sectionIndex, 0, SECTION_TITLE_KEYS.length - 1)
+    const clamped = THREE.MathUtils.clamp(sectionIndex, 0, this._titleKeys.length - 1)
     if (clamped === this._sectionIndex) return
     this._sectionIndex = clamped
     this.renderText(clamped)
@@ -209,12 +200,20 @@ export class WorksTextScreen extends THREE.Mesh {
     return this._revealRequested && this._visibility < 0.999
   }
 
+  /** The UV marquee needs rendered frames after its one-shot wipe settles. */
+  get hasContinuousMotion(): boolean {
+    return this._revealRequested && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  }
+
   update(dt: number): void {
-    this._time += dt
-    this._uniformTime.value = this._time
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (!reducedMotion) {
+      this._time += dt
+      this._uniformTime.value = this._time
+    }
     if (!this._revealRequested) return
 
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    if (reducedMotion) {
       this._visibility = 1
     } else if (this._revealDelay > 0) {
       this._revealDelay = Math.max(0, this._revealDelay - dt)

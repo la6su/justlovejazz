@@ -2,9 +2,8 @@
 // The page keeps the six-section navigation contract, while each project pair
 // gets an editorial composition sized by UIkit's responsive grid.
 //
-// The section title is rendered as a 3D pixel-text screen (WorksTextScreen)
-// behind the work cards — NOT as HTML. The DOM only
-// carries the index header + semantic card buttons.
+// The DOM carries the index header and semantic card buttons; the route's
+// visible media is owned by WorksPlaneStage.
 
 import { PROJECTS } from '../../Data/Projects'
 import { labOverlaySection } from '../../sections/lab-overlay/template'
