@@ -142,6 +142,30 @@ test.describe('JustLoveJazz — page boot smoke', () => {
     await expect(skip).toHaveAttribute('href', '#section-intro')
   })
 
+  test('in-app route changes are announced without exposing the decorative canvas', async ({
+    page,
+  }) => {
+    await page.goto('/')
+    await waitForRouter(page)
+
+    const announcer = page.locator('#jlz-route-announcer')
+    await expect(announcer).toHaveAttribute('aria-live', 'polite')
+    await expect(announcer).toHaveAttribute('aria-atomic', 'true')
+
+    await page.evaluate(() => {
+      window.dispatchEvent(new CustomEvent('jlz:navigate', { detail: { path: '/services' } }))
+    })
+
+    await expect(page).toHaveURL(/\/services$/)
+    await expect(page).toHaveTitle('Services — JUSTLOVEJAZZ')
+    await expect(announcer).toHaveText('Services — JUSTLOVEJAZZ')
+
+    const canvas = page.locator('canvas.canvas')
+    if ((await canvas.count()) > 0) {
+      await expect(canvas).toHaveAttribute('aria-hidden', 'true')
+    }
+  })
+
   test('all 6 sections render with correct IDs and data-section', async ({ page }) => {
     // Sections are prerendered into index.html by vite build (prerender-index
     // plugin) — they're in the DOM at domcontentloaded. BUT Experience.init()
@@ -208,6 +232,21 @@ test.describe('JustLoveJazz — accessibility & DOM UI', () => {
     await navigate('/')
     await expect(page).toHaveURL(/\/$/)
     await expect(page.locator('#section-intro')).toHaveClass(/section-active/)
+  })
+
+  test('browser history uses the same route handoff as in-app navigation', async ({ page }) => {
+    await page.goto('/')
+    await waitForRouter(page)
+
+    await page.evaluate(() => {
+      window.dispatchEvent(new CustomEvent('jlz:navigate', { detail: { path: '/works' } }))
+    })
+    await expect(page).toHaveURL(/\/works$/)
+
+    await page.goBack()
+    await expect(page).toHaveURL(/\/$/)
+    await expect(page.locator('#section-intro')).toHaveClass(/section-active/)
+    await expect(page.locator('.jlz-route-transition')).toHaveAttribute('data-state', 'idle')
   })
 
   test('top-bar controls and menu section links render with aria-labels', async ({ page }) => {
@@ -410,6 +449,13 @@ test.describe('JustLoveJazz — runtime health', () => {
       // Sanity check: motionPolicy should have synced the dataset.
       const flag = await page.evaluate(() => document.documentElement.dataset.reducedMotion)
       expect(flag).toBe('1')
+
+      await waitForRouter(page)
+      await page.evaluate(() => {
+        window.dispatchEvent(new CustomEvent('jlz:navigate', { detail: { path: '/works' } }))
+      })
+      await expect(page).toHaveURL(/\/works$/)
+      await expect(page.locator('.jlz-route-transition')).toHaveCount(0)
     } finally {
       await ctx.close()
     }

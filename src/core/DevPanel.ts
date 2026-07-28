@@ -64,6 +64,8 @@ export class DevPanel {
   private stats = {
     fps: 0,
     frameMs: 0,
+    frameP50: 0,
+    frameP95: 0,
     drawCalls: 0,
     triangles: 0,
     heap: 0,
@@ -111,6 +113,8 @@ export class DevPanel {
     const f = this.pane.addFolder({ title: 'Stats', expanded: true })
     f.addBinding(this.stats, 'fps', { readonly: true, label: 'fps' })
     f.addBinding(this.stats, 'frameMs', { readonly: true, label: 'frame ms' })
+    f.addBinding(this.stats, 'frameP50', { readonly: true, label: 'p50 ms' })
+    f.addBinding(this.stats, 'frameP95', { readonly: true, label: 'p95 ms' })
     f.addBinding(this.stats, 'lowFps', { readonly: true, label: 'low fps ⚠' })
     f.addBinding(this.stats, 'backend', { readonly: true, label: 'backend' })
     f.addBinding(this.stats, 'lang', { readonly: true, label: 'lang' })
@@ -233,6 +237,11 @@ export class DevPanel {
       }
       this.stats.fps = this._fps
       this.stats.frameMs = this._frameMs
+      if (this._frameSamples.length > 0) {
+        const sorted = [...this._frameSamples].sort((a, b) => a - b)
+        this.stats.frameP50 = this.percentile(sorted, 0.5)
+        this.stats.frameP95 = this.percentile(sorted, 0.95)
+      }
 
       this.pane.refresh()
     }, 500)
@@ -243,6 +252,13 @@ export class DevPanel {
   private _fpsLastTime: number | null = null
   private _lastRenderedAt = 0
   private _fpsFrames = 0
+  private _frameSamples: number[] = []
+  private static readonly FRAME_SAMPLE_LIMIT = 240
+
+  private percentile(sorted: readonly number[], quantile: number): number {
+    const index = Math.min(sorted.length - 1, Math.ceil(sorted.length * quantile) - 1)
+    return Math.round((sorted[index] ?? 0) * 10) / 10
+  }
 
   /** Record one real scene render. Idle on-demand frames intentionally read 0. */
   recordRenderFrame(now = performance.now()): void {
@@ -253,9 +269,12 @@ export class DevPanel {
       this._frameMs = 0
       this._fpsLastTime = now
       this._fpsFrames = 0
+      this._frameSamples = []
       return
     }
 
+    this._frameSamples.push(gap)
+    if (this._frameSamples.length > DevPanel.FRAME_SAMPLE_LIMIT) this._frameSamples.shift()
     this._fpsFrames += 1
     const delta = now - this._fpsLastTime
     if (delta < 500) return

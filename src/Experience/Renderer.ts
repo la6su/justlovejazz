@@ -67,6 +67,10 @@ export class Renderer {
 
   private setupCanvas(canvas: HTMLCanvasElement): void {
     canvas.className = 'canvas'
+    // The semantic route content describes the experience; the scene is its
+    // decorative visual layer and should not become an unnamed accessibility
+    // tree node.
+    canvas.setAttribute('aria-hidden', 'true')
     Object.assign(canvas.style, {
       position: 'fixed',
       top: '0',

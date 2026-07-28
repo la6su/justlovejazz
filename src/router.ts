@@ -46,6 +46,7 @@ const container: HTMLElement | null = (() => {
 function renderView(page: PageId = getPageFromLocation()): void {
   const el = container
   if (!el) return
+  const previousPage = currentPage
   document.body.dataset.page = page
   document.documentElement.dataset.page = page
   // ContentReveal re-applies the active page section's auto/inverse theme
@@ -73,6 +74,15 @@ function renderView(page: PageId = getPageFromLocation()): void {
   // gets translated and <title>/description update per route.
   applyTranslations()
   applyMetaTags(page)
+  if (previousPage !== null && previousPage !== page) {
+    const announcer = document.getElementById('jlz-route-announcer')
+    if (announcer) {
+      announcer.textContent = ''
+      requestAnimationFrame(() => {
+        announcer.textContent = document.title
+      })
+    }
+  }
   // Initialize SPA-aware menu subsection links in the freshly rendered DOM.
   initMenuToolbar()
   // Initialize UIkit components on dynamically inserted content
@@ -191,12 +201,14 @@ export function initRouter(): void {
   document.addEventListener('click', handler, true)
 
   window.addEventListener('popstate', () => {
-    renderView()
-    if (location.hash.startsWith('#section-')) {
-      const hash = location.hash
-      requestAnimationFrame(() => {
-        window.dispatchEvent(new CustomEvent('jlz:goto-section-by-hash', { detail: { hash } }))
+    const hash = location.hash
+    void routeTransition
+      .run(() => renderView())
+      .then(() => {
+        if (!hash.startsWith('#section-')) return
+        requestAnimationFrame(() => {
+          window.dispatchEvent(new CustomEvent('jlz:goto-section-by-hash', { detail: { hash } }))
+        })
       })
-    }
   })
 }
