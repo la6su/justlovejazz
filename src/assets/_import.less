@@ -25,34 +25,36 @@
 // ═══════════════════════════════════════════════════════════════════════
 
 // ── Color ──
-@jlz-color-bg: #070908;
-@jlz-color-bg-elevated: #232534;
-@jlz-color-surface: #101612;
-@jlz-color-surface-hover: #151d18;
-@jlz-color-border: rgba(220, 245, 224, 0.14);
-@jlz-color-border-strong: rgba(220, 245, 224, 0.32);
+@jlz-color-bg: #0c0b0a;
+@jlz-color-bg-elevated: #181513;
+@jlz-color-surface: #12100f;
+@jlz-color-surface-hover: #211d19;
+@jlz-color-border: rgba(245, 230, 210, 0.13);
+@jlz-color-border-strong: rgba(245, 230, 210, 0.28);
 
-@jlz-color-text: #f2f6ef;
-@jlz-color-text-muted: rgba(226, 238, 228, 0.68);
-@jlz-color-text-subtle: rgba(226, 238, 228, 0.42);
-@jlz-color-text-inverse: #070908;
+@jlz-color-text: #f5e6d2;
+@jlz-color-text-muted: rgba(245, 230, 210, 0.68);
+@jlz-color-text-subtle: rgba(245, 230, 210, 0.4);
+@jlz-color-text-inverse: #09090b;
 
-@jlz-color-accent: #b8ed69;
-@jlz-color-accent-hover: #d4ff90;
-@jlz-color-accent-glow: rgba(185, 255, 98, 0.42);
-// Secondary signal is reserved for direction, focus and realtime state.
-// It originates in the Vibe dark-green variation, but remains a JLZ token.
-@jlz-color-signal-teal: #45d7bc;
-@jlz-color-signal-teal-muted: rgba(69, 215, 188, 0.28);
+@jlz-color-accent: #fff72c;
+@jlz-color-accent-hover: #fffca0;
+@jlz-color-accent-glow: rgba(255, 247, 44, 0.32);
+// A muted warm mineral counterbalances the logo's electric yellow.
+@jlz-color-signal-cool: #c7ad94;
+@jlz-color-signal-cool-muted: rgba(199, 173, 148, 0.22);
+@jlz-color-signal-teal: @jlz-color-signal-cool;
+@jlz-color-signal-teal-muted: @jlz-color-signal-cool-muted;
+@jlz-color-signal-ember: #ff7568;
 
 // ── Typography ──
 @jlz-font-display:
-  'Onest',
+  'Commissioner',
   -apple-system,
   BlinkMacSystemFont,
   sans-serif;
 @jlz-font-body:
-  'Onest',
+  'Commissioner',
   -apple-system,
   BlinkMacSystemFont,
   'Segoe UI',
@@ -97,11 +99,11 @@
 
 // ── Console interface surfaces ──
 // Shared technical planes replace the former translucent fluid islands.
-@jlz-color-fluid-surface: #0d120f;
-@jlz-color-fluid-surface-strong: #141b16;
-@jlz-color-fluid-border: rgba(220, 245, 224, 0.2);
-@jlz-color-fluid-highlight: rgba(220, 245, 224, 0.1);
-@jlz-color-fluid-warm: #b8ed69;
+@jlz-color-fluid-surface: #0d0e13;
+@jlz-color-fluid-surface-strong: #171821;
+@jlz-color-fluid-border: rgba(157, 161, 210, 0.2);
+@jlz-color-fluid-highlight: rgba(255, 247, 44, 0.1);
+@jlz-color-fluid-warm: #fff72c;
 @jlz-color-telegram: #2aabee;
 
 // ── Z-index ──
@@ -152,6 +154,9 @@
   --jlz-color-accent-glow: @jlz-color-accent-glow;
   --jlz-color-signal-teal: @jlz-color-signal-teal;
   --jlz-color-signal-teal-muted: @jlz-color-signal-teal-muted;
+  --jlz-color-signal-cool: @jlz-color-signal-cool;
+  --jlz-color-signal-cool-muted: @jlz-color-signal-cool-muted;
+  --jlz-color-signal-ember: @jlz-color-signal-ember;
 
   --jlz-font-display: @jlz-font-display;
   --jlz-font-body: @jlz-font-body;
@@ -243,19 +248,25 @@
 }
 
 html.uk-light {
-  --jlz-color-text: #050507;
-  --jlz-color-text-muted: rgba(5, 5, 7, 0.72);
-  --jlz-color-text-subtle: rgba(5, 5, 7, 0.5);
+  --jlz-color-text: #15110e;
+  --jlz-color-text-muted: rgba(21, 17, 14, 0.72);
+  --jlz-color-text-subtle: rgba(21, 17, 14, 0.5);
   /* Light theme backgrounds — flip from dark to light for inverse mode.
      Needed for dropdown/overlay components that use CSS vars. */
-  --jlz-color-bg: #fafafa;
-  --jlz-color-bg-elevated: #ffffff;
-  --jlz-color-fluid-surface: rgba(255, 255, 255, 0.58);
-  --jlz-color-fluid-surface-strong: rgba(255, 255, 255, 0.82);
-  --jlz-color-fluid-border: rgba(5, 5, 7, 0.12);
-  --jlz-color-fluid-highlight: rgba(255, 255, 255, 0.85);
-  --jlz-color-signal-teal: #45d7bc;
-  --jlz-color-signal-teal-muted: rgba(69, 215, 188, 0.28);
+  --jlz-color-bg: #efe0cc;
+  --jlz-color-bg-elevated: #f8eddf;
+  --jlz-color-fluid-surface: rgba(248, 237, 223, 0.7);
+  --jlz-color-fluid-surface-strong: rgba(255, 248, 240, 0.9);
+  --jlz-color-fluid-border: rgba(21, 17, 14, 0.14);
+  --jlz-color-fluid-highlight: rgba(255, 250, 242, 0.9);
+  --jlz-color-accent: #4b4000;
+  --jlz-color-accent-hover: #282200;
+  --jlz-color-accent-glow: rgba(255, 247, 44, 0.35);
+  --jlz-color-signal-cool: #8e735e;
+  --jlz-color-signal-cool-muted: rgba(142, 115, 94, 0.2);
+  --jlz-color-signal-teal: var(--jlz-color-signal-cool);
+  --jlz-color-signal-teal-muted: var(--jlz-color-signal-cool-muted);
+  --jlz-color-signal-ember: #a83222;
   /* Light scrim — soft white veil aids dark-text readability over 3D
      (mirrors the dark scrim in dark mode). */
   --jlz-scrim-1: rgba(255, 255, 255, 0.12);

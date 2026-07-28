@@ -243,13 +243,15 @@ const NAV_ITEMS: NavItem[] = [
 //  controls moved to UIMenu.ts fixed top bar. Menu section is
 //  navigation-only now.)
 
-// ── Left column: stat / studio identity ──
+// ── Left column: responsive destination preview ──
 function statColumn(): string {
   return `
     <div class="jlz-menu-col jlz-menu-col--stat uk-flex uk-flex-column uk-width-1-1 uk-width-2-5@m uk-visible@m">
-      <div class="jlz-menu-stat uk-flex uk-flex-column">
-        <span class="jlz-menu-stat__num"><svg viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><path d="m24.5 28.5h-19c-2.2 0-4-1.8-4-4v-19c0-2.2 1.8-4 4-4h19c2.2 0 4 1.8 4 4v19c0 2.2-1.8 4-4 4z" fill="#232534" stroke="#fff" stroke-miterlimit="10" stroke-width=".6317"/><g><path d="m21.1 6.6-2.4.3v5.1l2.4 1.3 2.4-.3v-5.1z" fill="#fff72c"/><path d="m21.4 13.6-2.4.4v4.1l-8.1 1.1.1-6.6 8-1.1v-2.6l-2.4-1.3-10.5 1.5v13.3l2.5 1.4 15.2-2.2v-6.6z" fill="#fff"/></g></svg></span>
-        <h3 class="jlz-menu-stat__label uk-h3 uk-text-uppercase uk-text-center" data-i18n="menu.stat.sections">LEMONROOM</h3>
+      <div class="jlz-menu-preview" aria-hidden="true">
+        <span class="jlz-menu-preview__number">01</span>
+        <span class="jlz-menu-preview__label">Studio</span>
+        <span class="jlz-menu-preview__cursor"></span>
+        <span class="jlz-menu-preview__echo">ENTER THE WORLD</span>
       </div>
     </div>
   `
@@ -331,9 +333,14 @@ export function navOverlaySection(mode: 'home' | 'content' = 'content'): string 
   const pageClass = mode === 'content' ? 'jlz-page-section' : ''
   return `
     <section class="jlz-menu-overlay ${pageClass} uk-section uk-section-xsmall uk-flex uk-flex-column" id="section-menu" ${sectionAttr} data-cinematic-menu>
+      <div class="jlz-menu-field" aria-hidden="true">
+        <span class="jlz-menu-field__horizon"></span>
+        <span class="jlz-menu-field__pulse"></span>
+      </div>
       <div class="uk-container uk-container-expand jlz-menu-container uk-flex uk-flex-column uk-flex-center">
-        <div class="jlz-menu-sheet__header uk-margin-bottom">
+        <div class="jlz-menu-sheet__header uk-flex uk-flex-between uk-margin-bottom">
           <span class="jlz-menu-sheet__eyebrow uk-text-meta uk-text-uppercase" data-i18n="menu.navigate">Menu</span>
+          <span class="jlz-menu-sheet__index uk-text-meta uk-text-uppercase" aria-hidden="true">Index / 07</span>
         </div>
         <!-- Main 2-column grid: stat | nav accordion -->
         <div class="jlz-menu-grid uk-grid uk-grid-medium uk-flex uk-flex-middle" uk-grid>
@@ -376,11 +383,27 @@ export function initMenuNav(): void {
     toggle.dataset.jlzVisibilityBound = '1'
     toggle.addEventListener('click', () => {
       requestAnimationFrame(() => {
-        const content = toggle.nextElementSibling
-        if (!(content instanceof HTMLElement) || toggle.ariaExpanded !== 'true') return
-        content.hidden = false
+        // UIkit may reconcile an initially hidden sheet on the first frame.
+        // Read its authoritative aria state on the following frame, after that
+        // update has settled, then mirror only the native `hidden` attribute.
+        requestAnimationFrame(() => {
+          const content = toggle.nextElementSibling
+          if (!(content instanceof HTMLElement) || toggle.ariaExpanded !== 'true') return
+          content.hidden = false
+        })
       })
     })
+
+    const syncPreview = () => {
+      const previewNumber = document.querySelector<HTMLElement>('.jlz-menu-preview__number')
+      const previewLabel = document.querySelector<HTMLElement>('.jlz-menu-preview__label')
+      const number = toggle.querySelector<HTMLElement>('.jlz-menu-nav__num')?.textContent
+      const label = toggle.querySelector<HTMLElement>('.jlz-menu-nav__label')?.textContent
+      if (previewNumber && number) previewNumber.textContent = number
+      if (previewLabel && label) previewLabel.textContent = label
+    }
+    toggle.addEventListener('pointerenter', syncPreview)
+    toggle.addEventListener('focus', syncPreview)
   })
 
   // Subsection links — intercept for SPA navigation.

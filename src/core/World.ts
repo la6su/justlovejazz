@@ -2,7 +2,7 @@
 
 import * as THREE from 'three'
 // BG.ts removed — was dead computation (bg.color never read by anyone).
-// EnvSphere is the sole visible background, driven by the active section theme.
+// EnvSphere is the sole visible ambient environment, driven by the active section theme.
 import { Section, SectionState } from './Section'
 import { StateBus } from './StateBus'
 import { prefersReducedMotion } from './motionPolicy'
@@ -106,8 +106,8 @@ export class World extends THREE.Group {
     this.baku.visible = true
     this.add(this.baku)
 
-    // ── EnvSphere — Junni-style per-section background (BackSide sphere + CanvasTexture).
-    // 6 per-section patterns, mixed by uSection[6] weights. Animated on section change.
+    // ── EnvSphere — six-state rounded pavilion background.
+    // Its legacy owner name keeps the theme/event boundary stable.
     this.envSphere = new EnvSphere()
     this.add(this.envSphere) // added for lifecycle (update/dispose)
 
@@ -117,7 +117,7 @@ export class World extends THREE.Group {
     this.add(this.particleBurst)
 
     // ── BG (color provider — still used for lerp logic, but NOT set as
-    // (BG removed — EnvSphere is the sole visible background.)
+    // (BG removed — EnvSphere is the sole ambient environment.)
 
     // ── Ground plane (visual anchor, аналог Junni Ground)
     // Built-in MeshStandardMaterial (NOT NodeMaterial) — reduces uniform group

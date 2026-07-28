@@ -30,7 +30,11 @@ export class UIMenu {
     this.navEl.className = 'jlz-cinematic-shell uk-position-relative'
     this.navEl.innerHTML = `
       <header class="jlz-topbar uk-flex uk-flex-middle uk-flex-between">
-        <a class="jlz-topbar__brand uk-flex uk-flex-inline uk-flex-middle uk-text-uppercase uk-text-decoration-none" href="/" aria-label="JUSTLOVEJAZZ — Studio">JUSTLOVEJAZZ</a>
+        <a class="jlz-topbar__brand uk-flex uk-flex-inline uk-flex-middle uk-text-uppercase uk-text-decoration-none" href="/" aria-label="JUSTLOVEJAZZ — Studio">
+          <img class="jlz-brand-mark" src="/logo.svg" width="30" height="30" alt="" aria-hidden="true">
+          <span class="jlz-topbar__wordmark">JUSTLOVEJAZZ</span>
+          <span class="jlz-topbar__mode" aria-hidden="true">WORLD / 01</span>
+        </a>
         <div class="jlz-topbar-controls uk-flex uk-flex-middle">
           <button class="uk-icon-button jlz-lang-toggle" type="button" id="jlz-lang-toggle"
                   aria-label="Switch language" aria-pressed="false" title="Language"
@@ -56,6 +60,7 @@ export class UIMenu {
         </div>
       </header>
       <div class="jlz-console-bar">
+        <span class="jlz-console-bar__signal" aria-hidden="true"></span>
         <div class="jlz-contact-launcher">
           <button class="uk-button uk-button-primary uk-flex uk-flex-middle jlz-contact-launcher__button" type="button"
                   id="jlz-contact-launcher" aria-controls="section-lab" aria-expanded="false">
@@ -153,6 +158,8 @@ export class UIMenu {
     if (this._contactBtn) this._contactBtn.tabIndex = index === 0 || index === 5 ? -1 : 0
     this.navEl.classList.toggle('is-menu-open', index === 5)
     this.navEl.classList.toggle('is-contact-open', index === 0)
+    const mode = this.navEl.querySelector<HTMLElement>('.jlz-topbar__mode')
+    if (mode) mode.textContent = `WORLD / ${String(index + 1).padStart(2, '0')}`
   }
 
   private updateLangLabel(): void {

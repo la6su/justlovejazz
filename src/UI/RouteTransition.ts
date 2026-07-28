@@ -11,24 +11,37 @@ const REVEAL_MS = 420
 export class RouteTransition {
   private overlay: HTMLElement | null = null
   private active = false
+  private sequence = 0
 
   async run(render: () => void): Promise<void> {
+    const sequence = ++this.sequence
     if (prefersReducedMotion()) {
       render()
+      if (this.overlay) this.overlay.dataset.state = 'idle'
+      this.active = false
       return
     }
 
     const overlay = this.getOverlay()
     if (this.active) {
+      // A newer route request supersedes the covered document before the
+      // earlier transition can render its now-stale destination.
       render()
+      overlay.dataset.state = 'revealing'
+      await this.wait(REVEAL_MS)
+      if (sequence !== this.sequence) return
+      overlay.dataset.state = 'idle'
+      this.active = false
       return
     }
     this.active = true
     overlay.dataset.state = 'covering'
     await this.wait(COVER_MS)
+    if (sequence !== this.sequence) return
     render()
     overlay.dataset.state = 'revealing'
     await this.wait(REVEAL_MS)
+    if (sequence !== this.sequence) return
     overlay.dataset.state = 'idle'
     this.active = false
   }

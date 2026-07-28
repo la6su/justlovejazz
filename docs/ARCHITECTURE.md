@@ -60,7 +60,8 @@ their route before moving to the target frame.
 
 Renderer configuration is finalized from the backend actually created after
 fallback. `Experience._needsRender` carries demand-driven rendering alongside
-bounded animation reasons. `EnvSphere` owns the visible background.
+bounded animation reasons. `EnvSphere` owns the visible ambient pavilion while
+the separate ground plane remains the contact-state owner.
 
 Scene resources follow their owning route or runtime object. Route replacement
 releases page-specific DOM behavior; `Experience.destroy()` closes the shared

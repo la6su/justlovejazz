@@ -1,4 +1,4 @@
-// WireframeTypography.ts — floating 3D bubble lettering with backend parity.
+// WireframeTypography.ts — floating 3D signal lettering with backend parity.
 //
 // Every glyph is its own mesh, so the word can breathe as a small flock rather
 // than as one rigid slab. Motion is CPU-side transforms only: this avoids a
@@ -33,6 +33,9 @@ export class WireframeTypography extends THREE.Group {
     clearcoatRoughness: 0.18,
     envMapIntensity: 1.1,
     fog: false,
+    transparent: true,
+    opacity: 0.13,
+    depthWrite: false,
   })
 
   constructor(text: string = 'ABOUT', size: number = 0.6) {
@@ -79,9 +82,9 @@ export class WireframeTypography extends THREE.Group {
 
   /** Keep the opaque bubble letters legible on either UI theme. */
   setTheme(isLight: boolean): void {
-    this.material.color.setHex(isLight ? 0x1d1725 : 0xf4efff)
-    this.material.emissive.setHex(isLight ? 0x020103 : 0x08050c)
-    this.material.emissiveIntensity = isLight ? 0.025 : 0.05
+    this.material.color.setHex(isLight ? 0x233329 : 0xdfffe9)
+    this.material.emissive.setHex(isLight ? 0x020403 : 0x06100b)
+    this.material.emissiveIntensity = isLight ? 0.015 : 0.035
   }
 
   /** Reveal only after the lower contact frame has settled into view. */

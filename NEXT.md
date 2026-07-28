@@ -7,6 +7,16 @@ implementation.
 
 ## 1 — Autonomous queue
 
+- [ ] **Extend the cinematic brand language across every route** — the shared
+      shell and Menu now establish the original brand mark, paper/ink material
+      contrast, electric-yellow signal, responsive typographic preview and
+      aperture reveal; the spherical ambient shell is now a rounded paper/ink
+      pavilion with the six-state palette and ground contracts intact. Tune the
+      same motion hierarchy across Intro, Services, Works, Manifesto, Lab and
+      Contact after the next visual review; add TSL response only where it
+      communicates a state, and preserve auto/inverse plus reduced-motion
+      parity.
+
 - [ ] **Complete the cross-backend runtime baseline** — static splash and
       shared Three.js budgets are now enforced, Contact loaders are route-owned
       and the 16.35 MB placeholder video is recorded; the first 1280×720
@@ -19,8 +29,9 @@ implementation.
       are covered now. Finish real-device polarity checks before extending the
       route curtain to Menu or project transitions.
 
-- [ ] **Finish the UIkit-first style ownership split** — extract the remaining
-      independent fullscreen overlay, Works and cinematic navigation owners
+- [ ] **Finish the UIkit-first style ownership split** — consolidate the legacy
+      cinematic shell/Menu declarations behind their new component owner, then
+      extract the remaining independent fullscreen overlay and Works owners
       from `main.less` without changing composition, accessibility or theme
       behavior.
 

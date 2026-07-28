@@ -114,15 +114,15 @@
       }
     </script>
 
-    <!-- Preload the initial Latin subset; Cyrillic loads on demand by unicode-range. -->
+    <!-- Brand variable family with Latin + Cyrillic in one local file. -->
     <link
       rel="preload"
-      href="/fonts/onest-latin-variable.woff2"
+      href="/fonts/commissioner-variable.ttf"
       as="font"
-      type="font/woff2"
+      type="font/ttf"
       crossorigin
     />
-    <link rel="stylesheet" href="/fonts/onest.css" />
+    <link rel="stylesheet" href="/fonts/commissioner.css" />
     <link rel="stylesheet" href="/fonts/press-start.css" />
 
     <!-- Inline CSS — minimal, just bg to prevent white flash before app CSS loads -->
@@ -139,7 +139,7 @@
       }
       body {
         font-family:
-          'Onest',
+          'Commissioner',
           -apple-system,
           BlinkMacSystemFont,
           sans-serif;
@@ -207,7 +207,7 @@
       /* Text follows the concentric-square paths; only its copy changes. */
       .jlz-splash-text {
         text-transform: uppercase;
-        font-family: 'Onest', sans-serif;
+        font-family: 'Commissioner', sans-serif;
         font-weight: 700;
         opacity: 0;
         animation: jlz-splash-fade 0.8s ease forwards;
@@ -363,7 +363,7 @@
         border: none;
         background: transparent;
         color: rgba(255, 255, 255, 0.25);
-        font-family: 'Onest', sans-serif;
+        font-family: 'Commissioner', sans-serif;
         font-size: 0.75rem;
         font-weight: 600;
         text-transform: uppercase;

@@ -47,10 +47,10 @@ export class ContactTextStage extends THREE.Group {
     this._sectionIndex = nextSection
     this.visible = active
     this._screen.setSection(nextSection)
-    // Email is the Contact route's single pixel-title gesture. Social, Agros
-    // and the final CTA each have their own foreground composition, so a
-    // marquee would only compete with the useful content.
-    const showTitle = active && nextSection === 0
+    // The former pixel marquee duplicated the useful DOM heading and dominated
+    // the transmission panel. Keep the stage dormant while the quieter 3D
+    // greeting carries depth behind all Contact chapters.
+    const showTitle = false
     if (!showTitle) this._screen.setVisible(false)
     else if (!wasActive || changed) this._screen.setVisible(true)
   }

@@ -364,6 +364,16 @@ export class Experience {
     }
     window.addEventListener('jlz:theme-applied', this._themeAppliedHandler)
 
+    // ContentReveal can resolve the initial polarity before Experience has
+    // registered the listener above. Replay that settled DOM state so the
+    // ambient pavilion, glass and contact ground never boot one polarity
+    // behind the semantic interface.
+    const initialIsLight = document.body.classList.contains('uk-light')
+    this.world?.envSphere.snapToSection(this.world.currentSectionIndex, initialIsLight)
+    this.world?.syncGroundTheme(initialIsLight)
+    this.world?.baku.setTheme(initialIsLight)
+    this.world?.syncTypographyTheme(initialIsLight)
+
     // ── Glassmorphism: studio environment map for realistic glass reflections ──
     // RoomEnvironment is a procedural studio scene (walls + lights) rendered
     // ONCE to a PMREM (pre-filtered mipmap radiance environment) texture.
