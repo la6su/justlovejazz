@@ -218,7 +218,15 @@ export class World extends THREE.Group {
     // otherwise its first section visit performs image work inside navigation.
     if (pageKey === 'home') await this.ensureCarouselInitialized()
     if (pageKey === 'works') void this.ensureWorksPlaneStageInitialized()
-    if (pageKey === 'contact') void this.ensureContactTextStageInitialized()
+    if (pageKey === 'contact') {
+      void this.ensureContactTextStageInitialized()
+      // Start Draco decode and a transparent material warm-up while Contact's
+      // first frame (or the splash) is on screen. Agros then has no first-use
+      // model decode or shader-compile hitch when its chapter is selected.
+      void this.ensureContactCyprusStageInitialized().then(() => {
+        this.contactCyprusStage?.prewarm()
+      })
+    }
 
     if (import.meta.env.DEV) {
       console.debug(
@@ -380,6 +388,7 @@ export class World extends THREE.Group {
         stage.resize(window.innerWidth, window.innerHeight)
         if (this._camera) stage.setCamera(this._camera)
         stage.setActive(document.body.dataset.page === 'contact' && this._contactCyprusActive)
+        stage.prewarm()
       })
       .catch((error: unknown) => {
         const stage = this.contactCyprusStage
@@ -532,7 +541,7 @@ export class World extends THREE.Group {
         this.contactTextStage.update(deltaTime)
       }
       if (this.contactCyprusStage && document.body.dataset.page === 'contact') {
-        this.contactCyprusStage.update()
+        this.contactCyprusStage.update(deltaTime)
       }
       return
     }
@@ -548,7 +557,7 @@ export class World extends THREE.Group {
       this.contactTextStage.update(deltaTime)
     }
     if (this.contactCyprusStage) {
-      this.contactCyprusStage.update()
+      this.contactCyprusStage.update(deltaTime)
     }
 
     if (!this.isReducedMotion) {

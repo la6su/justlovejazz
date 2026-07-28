@@ -10,11 +10,9 @@
 //   2. PMREM environment bound once after scene setup
 //   3. Opener — scale pulse (1.0 → 1.3 → 1.0)
 //
-// Glass shader: one lit, alpha-transparent physical shell on WebGPU and WebGL2.
-// Physical transmission samples an incompatible scene-color target in the
-// current WebGPU post path, which makes the cube dark and milky. We retain the
-// physical reflection/clearcoat/iridescence response, but use alpha for the
-// transparent body so PMREM and the section lights remain stable on both paths.
+// Glass shader: a physical transmission volume on WebGPU and WebGL2. The
+// Contact pixel-title mesh is rendered behind it, so the cube can refract and
+// softly magnify that real scene content instead of merely fading over it.
 
 import * as THREE from 'three'
 import { BakuRole, type BakuMaterialState } from '../../core/types'
@@ -186,7 +184,7 @@ export class SplashCube extends THREE.Mesh {
     this.cubeBasePositions = new Float32Array(this.cubePositions.array)
     this.cubeNormals = new Float32Array(geo.getAttribute('normal').array)
 
-    // ── One lit, transparent jelly shell ──
+    // ── One lit, refractive jelly shell ──
     // A recessed second mesh created a visible echo when the shell wobbled.
     // One continuous physical surface keeps silhouette, highlights and motion
     // inseparable — like silicone glass rather than several nested objects.
@@ -194,12 +192,20 @@ export class SplashCube extends THREE.Mesh {
       color: new THREE.Color(0.94, 0.91, 1.0),
       emissive: new THREE.Color(0x000000),
       emissiveIntensity: 0.02,
-      transparent: true,
-      opacity: 0.72,
+      // Transmission is the essential distinction from alpha transparency:
+      // it samples geometry rendered behind the cube. A higher IOR and real
+      // volume thickness make the rounded silhouette read as a soft lens;
+      // restrained roughness turns the result into frosted glass, not a mirror.
+      transmission: 0.9,
+      thickness: 2.6,
+      ior: 1.34,
+      roughness: 0.14,
+      dispersion: 0.035,
+      attenuationColor: new THREE.Color(0xd9cfe8),
+      attenuationDistance: 1.8,
       side: THREE.FrontSide,
       depthWrite: false,
-      metalness: 0.12,
-      roughness: 0.055,
+      metalness: 0,
       envMapIntensity: 2.05,
       clearcoat: 0.85,
       clearcoatRoughness: 0.07,
@@ -384,9 +390,8 @@ export class SplashCube extends THREE.Mesh {
     this.cubeMaterial.color.copy(this._blendFromColor).lerp(this._blendToColor, this._blendT)
     // A controlled neutral tint keeps glass visible on white without a
     // debug-looking outline. The visible shape is a real PBR surface: PMREM,
-    // clearcoat and iridescence create the moving chromatic highlights.
+    // transmission, clearcoat and iridescence create the moving highlights.
     this.cubeMaterial.color.lerp(this._themeTint, this._isLightTheme ? 0.9 : 0.3)
-    this.cubeMaterial.opacity = this._isLightTheme ? 0.72 : 0.34
 
     // Edge colors are STATIC — set once in buildCube, NOT animated per frame.
     // Per-frame edge animation was allocating new Color objects + updating
@@ -400,13 +405,13 @@ export class SplashCube extends THREE.Mesh {
   }
 
   private applyRoleAndParams(): void {
-    const { color, emissive, roughness, metalness } = this.targetParams
+    const { color, emissive, roughness } = this.targetParams
     this.cubeMaterial.color.copy(color)
     this.cubeMaterial.emissive.copy(emissive)
-    this.cubeMaterial.roughness = Math.min(roughness, 0.055)
-    // The small reflective floor makes PMREM highlights legible. It is not a
-    // metal look: dielectric glass remains the dominant response.
-    this.cubeMaterial.metalness = Math.max(metalness, 0.12)
+    // Preserve an authored material response without losing the frosted lens
+    // effect. Glass is a dielectric: it stays non-metallic in every phase.
+    this.cubeMaterial.roughness = Math.max(roughness, 0.14)
+    this.cubeMaterial.metalness = 0
   }
 
   /** Add energy to the damped material reaction without a timer cut-off. */

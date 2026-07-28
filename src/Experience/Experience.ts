@@ -378,6 +378,14 @@ export class Experience {
     this._storyNav = new CinematicNav(6)
     this._storyNav.onSectionChange((idx) => {
       this._uiMenu?.setActive(idx)
+      // Initial hashes are replayed only after the ready splash event. Keep
+      // the Works owner explicit at that boundary so a hash-driven arrival
+      // cannot depend on an earlier render frame to wake its carousel.
+      if (idx === 3 && document.body.dataset.page === 'home') {
+        void this.world?.ensureCarouselInitialized().then(() => {
+          if (this._storyNav?.getSectionIndex() === 3) this._needsRender = true
+        })
+      }
       this._needsRender = true
     })
     this._storyNav.onActiveChange((active) => {
@@ -700,6 +708,7 @@ export class Experience {
     const carouselActive = this._bakuCarouselActive
     const worksPlaneActive = this.world?.worksPlaneStage?.isAnimating ?? false
     const contactTextActive = this.world?.contactTextStage?.isAnimating ?? false
+    const contactCyprusActive = this.world?.contactCyprusStage?.isAnimating ?? false
     const drawTrailActive = this.world?.drawTrail?.isAnimating ?? false
     const baku = this.world?.baku
     const openerActive = baku?.isOpenerActive ?? false
@@ -731,6 +740,7 @@ export class Experience {
       carouselActive ||
       worksPlaneActive ||
       contactTextActive ||
+      contactCyprusActive ||
       worksScrollActive ||
       drawTrailActive ||
       openerActive ||
@@ -757,6 +767,7 @@ export class Experience {
       !carouselActive &&
       !worksPlaneActive &&
       !contactTextActive &&
+      !contactCyprusActive &&
       !openerActive &&
       !burstActive &&
       !camShaking &&
@@ -921,6 +932,7 @@ export class Experience {
         !carouselActive &&
         !worksPlaneActive &&
         !contactTextActive &&
+        !contactCyprusActive &&
         !worksScrollActive &&
         !openerActive &&
         !burstActive &&

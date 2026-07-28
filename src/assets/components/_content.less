@@ -5,7 +5,6 @@
   font-family: 'SF Mono', 'Cascadia Code', 'JetBrains Mono', 'Consolas', monospace;
   font-size: clamp(2rem, 6vw, 3rem);
   font-weight: 200;
-  letter-spacing: 0;
   line-height: 1;
   opacity: 0.35;
 }
@@ -27,7 +26,7 @@
   align-items: flex-end;
 }
 
-.jlz-contact-panel {
+.jlz-console-card {
   position: relative;
   padding: clamp(1.35rem, 3vw, 2.4rem);
   border: 1px solid color-mix(in srgb, var(--jlz-color-text) 26%, transparent);
@@ -42,7 +41,7 @@
   -webkit-backdrop-filter: blur(10px) saturate(1.15);
 }
 
-.jlz-contact-panel__chrome {
+.jlz-console-card__chrome {
   display: flex;
   align-items: center;
   gap: 0.38rem;
@@ -50,7 +49,7 @@
   margin-bottom: clamp(2.5rem, 8vh, 6rem);
 }
 
-.jlz-contact-panel__chrome > span:not(.jlz-contact-panel__index) {
+.jlz-console-card__chrome > span:not(.jlz-console-card__index) {
   width: 0.56rem;
   height: 0.56rem;
   border: 1px solid color-mix(in srgb, #000 22%, transparent);
@@ -58,36 +57,32 @@
   background: color-mix(in srgb, var(--jlz-color-text-subtle) 65%, transparent);
 }
 
-.jlz-contact-panel__chrome > span:nth-child(1) {
+.jlz-console-card__chrome > span:nth-child(1) {
   background: #ff5f57;
 }
 
-.jlz-contact-panel__chrome > span:nth-child(2) {
+.jlz-console-card__chrome > span:nth-child(2) {
   background: #febc2e;
 }
 
-.jlz-contact-panel__chrome > span:nth-child(3) {
+.jlz-console-card__chrome > span:nth-child(3) {
   background: #28c840;
 }
 
-.jlz-contact-panel__index,
+.jlz-console-card__index,
 .jlz-contact-panel__meta,
 .jlz-contact-social__index {
   font-family: var(--jlz-font-mono), monospace;
   font-size: 0.66rem;
-  letter-spacing: 0.13em;
 }
 
-.jlz-contact-panel__index {
+.jlz-console-card__index {
   margin-left: auto;
   color: var(--jlz-color-accent);
 }
 
-.jlz-contact-panel__copy {
+.jlz-contact-panel__title {
   max-width: 32rem;
-  margin: 0;
-  font-size: clamp(1.1rem, 2vw, 1.45rem);
-  line-height: 1.35;
 }
 
 .jlz-contact-panel__address {
@@ -95,7 +90,6 @@
   margin-top: 1.5rem;
   font-size: clamp(1.45rem, 3.5vw, 3.4rem);
   font-weight: 500;
-  letter-spacing: -0.045em;
   line-height: 1;
 }
 
@@ -107,6 +101,165 @@
 .jlz-contact-panel__meta {
   margin: 1rem 0 0;
   color: var(--jlz-color-text-subtle);
+}
+
+.jlz-service-console {
+  width: min(100%, 42rem);
+}
+
+.jlz-service-console .jlz-console-card__chrome {
+  margin-bottom: var(--jlz-space-5);
+}
+
+.jlz-service-console__statement,
+.jlz-service-runtime__caption {
+  max-width: 29rem;
+  font-size: clamp(1.15rem, 2.3vw, 1.7rem);
+  line-height: 1.25;
+}
+
+.jlz-service-console__note {
+  margin: var(--jlz-space-4) 0 0;
+  color: var(--jlz-color-text-subtle);
+}
+
+.jlz-service-runtime,
+.jlz-service-motion {
+  width: min(100%, 38rem);
+}
+
+.jlz-service-runtime__field {
+  position: relative;
+  width: min(100%, 20rem);
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--jlz-color-text) 28%, transparent);
+  border-radius: var(--jlz-radius-lg);
+  background:
+    radial-gradient(
+      circle at 14% 70%,
+      color-mix(in srgb, var(--jlz-color-accent) 18%, transparent),
+      transparent 26%
+    ),
+    color-mix(in srgb, var(--jlz-color-bg-elevated) 50%, transparent);
+}
+
+.jlz-service-runtime__field svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.jlz-service-runtime__trace,
+.jlz-service-runtime__signal {
+  fill: none;
+  stroke-linecap: round;
+  stroke-width: 1.5;
+}
+
+.jlz-service-runtime__trace {
+  stroke: color-mix(in srgb, var(--jlz-color-text) 26%, transparent);
+}
+
+.jlz-service-runtime__signal {
+  stroke: var(--jlz-color-accent);
+  stroke-dasharray: 18 120;
+  animation: jlz-runtime-signal 2.6s linear infinite;
+}
+
+@keyframes jlz-runtime-signal {
+  to {
+    stroke-dashoffset: -138;
+  }
+}
+
+.jlz-service-runtime__node {
+  position: absolute;
+  width: 0.48rem;
+  height: 0.48rem;
+  border-radius: var(--jlz-radius-full);
+  background: var(--jlz-color-accent);
+  box-shadow: 0 0 0.8rem color-mix(in srgb, var(--jlz-color-accent) 68%, transparent);
+}
+
+.jlz-service-runtime__node--start {
+  top: 68%;
+  left: 2.5%;
+}
+
+.jlz-service-runtime__node--middle {
+  top: 24%;
+  left: 31%;
+}
+
+.jlz-service-runtime__node--end {
+  top: 27%;
+  right: 1.5%;
+}
+
+.jlz-service-runtime__caption {
+  max-width: 26rem;
+  margin-top: var(--jlz-space-3);
+  color: var(--jlz-color-text-muted);
+  line-height: 1.4;
+}
+
+.jlz-service-motion__words {
+  position: relative;
+  display: grid;
+  width: min(100%, 28rem);
+  color: var(--jlz-color-text);
+  font-size: clamp(3.15rem, 16vw, 5.75rem);
+  font-weight: 250;
+  line-height: 0.8;
+}
+
+.jlz-service-motion__words::before {
+  position: absolute;
+  top: 52%;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--jlz-color-text) 15%, transparent),
+    color-mix(in srgb, var(--jlz-color-accent) 72%, transparent),
+    transparent
+  );
+  content: '';
+}
+
+.jlz-service-motion__words span {
+  position: relative;
+  z-index: 1;
+}
+
+.jlz-service-motion__words span:nth-child(1) {
+  color: color-mix(in srgb, var(--jlz-color-text) 52%, transparent);
+}
+
+.jlz-service-motion__words span:nth-child(2) {
+  padding-left: 12%;
+  color: var(--jlz-color-accent);
+}
+
+.jlz-service-motion__words span:nth-child(3) {
+  padding-left: 28%;
+  text-shadow: 0 0 1.5rem color-mix(in srgb, var(--jlz-color-text) 15%, transparent);
+}
+
+@media (min-width: 640px) {
+  .jlz-service-runtime__field {
+    width: min(100%, 25rem);
+  }
+
+  .jlz-service-motion__words span:nth-child(2) {
+    padding-left: 20%;
+  }
+
+  .jlz-service-motion__words span:nth-child(3) {
+    padding-left: 43%;
+  }
 }
 
 .jlz-contact-social {
@@ -124,13 +277,9 @@
   color: var(--jlz-color-accent);
 }
 
-.jlz-contact-social__copy {
-  max-width: 26ch;
+.jlz-contact-social__title {
+  max-width: 12ch;
   margin: var(--jlz-space-5) 0 0;
-  font-size: clamp(1.75rem, 3.8vw, 4.2rem);
-  font-weight: 450;
-  letter-spacing: -0.055em;
-  line-height: 0.98;
 }
 
 .jlz-contact-social__channels {
@@ -181,7 +330,6 @@
 .jlz-contact-social__channel-copy strong {
   font-size: 1.08rem;
   font-weight: 600;
-  letter-spacing: -0.02em;
 }
 
 .jlz-contact-social__channel-copy small {
@@ -201,10 +349,8 @@
   border-bottom: 1px solid color-mix(in srgb, var(--jlz-color-text) 30%, transparent);
 }
 
-.jlz-contact-location strong {
-  font-size: clamp(1.3rem, 3vw, 2.5rem);
-  font-weight: 500;
-  letter-spacing: -0.04em;
+.jlz-contact-location__title {
+  max-width: 12ch;
 }
 
 .jlz-contact-location > span:last-child {
@@ -219,14 +365,12 @@
 
 .jlz-service-desc .uk-text-meta {
   font-size: 0.78rem;
-  letter-spacing: 0.015em;
   line-height: 1.45;
 }
 
 .jlz-service-explore {
   gap: 0.5rem;
   font-size: 0.7rem;
-  letter-spacing: 0.15em;
 }
 
 .jlz-service-explore__dot {
@@ -244,7 +388,6 @@
 .jlz-experiment-footer__state {
   font-family: var(--jlz-font-mono), serif;
   font-size: 0.62rem;
-  letter-spacing: 0.1em;
   line-height: 1.35;
 }
 
@@ -253,8 +396,12 @@
     align-items: stretch;
   }
 
-  .jlz-contact-panel {
+  .jlz-console-card {
     padding: 1.25rem;
+  }
+
+  .jlz-service-console .jlz-console-card__chrome {
+    margin-bottom: var(--jlz-space-4);
   }
 
   .jlz-contact-social {
@@ -281,5 +428,22 @@
     width: 100%;
     justify-content: center;
     margin-left: 0;
+  }
+}
+
+// UIkit Scrollspy owns simple DOM entrances. The section controller owns frame
+// changes, while BlurFade/NoiseText and the Cyprus stage keep specialised owners.
+@media (prefers-reduced-motion: reduce) {
+  .jlz-service-runtime__signal {
+    animation: none;
+  }
+
+  .jlz-contact-page [uk-scrollspy],
+  .jlz-contact-page [uk-scrollspy] > *,
+  .jlz-services-page [uk-scrollspy],
+  .jlz-services-page [uk-scrollspy] > * {
+    opacity: 1 !important;
+    animation: none !important;
+    transform: none !important;
   }
 }

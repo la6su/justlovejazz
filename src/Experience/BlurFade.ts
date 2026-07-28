@@ -109,7 +109,7 @@ export class BlurFade {
       this.timeoutId = null
     }
     // Set spans to their final resting state IN PLACE (do NOT removeAttribute
-    // style — that drops display:inline-block → inline, causing a letter-spacing
+    // style — that drops display:inline-block → inline, breaking per-character
     // shift). Keep display:inline-block so the box model matches the during-anim
     // state exactly. Set transform='none' and filter='none' (NOT translateY(0)/
     // blur(0px)) — 'none' removes the compositing layer + filter pipeline, which
