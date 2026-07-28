@@ -81,11 +81,9 @@
   transform: none;
 }
 
-
 .jlz-fs-cat,
 .jlz-fs-counter {
   font-size: 0.68rem;
-  letter-spacing: 0.18em;
   font-variant-numeric: tabular-nums;
 }
 
@@ -102,7 +100,6 @@
 
 .jlz-fs-tag {
   font-size: 0.62rem;
-  letter-spacing: 0.08em;
 }
 
 .jlz-fs-media-stage {
@@ -248,7 +245,6 @@
   margin: 0 auto;
   color: rgba(255, 255, 255, 0.5);
   font-size: 0.65rem;
-  letter-spacing: 0.18em;
 }
 
 .jlz-works-index__number {
@@ -262,7 +258,6 @@
   color: rgba(255, 255, 255, 0.76);
   font-size: inherit;
   font-weight: 600;
-  letter-spacing: inherit;
   text-transform: inherit;
 }
 
@@ -349,7 +344,6 @@
   font-size: 0.56rem;
   font-variant-numeric: tabular-nums;
   font-weight: 600;
-  letter-spacing: 0.13em;
 }
 
 .jlz-work-card__copy {
@@ -362,21 +356,18 @@
   color: @jlz-color-text;
   font-size: clamp(1.15rem, 2.1vw, 2rem);
   font-weight: 800;
-  letter-spacing: -0.03em;
   line-height: 1;
 }
 
 .jlz-work-card:hover .jlz-work-card__title,
 .jlz-work-card:focus-visible .jlz-work-card__title {
   --jlz-vf-weight: 820;
-  letter-spacing: -0.045em;
 }
 
 .jlz-work-card__meta {
   color: rgba(255, 255, 255, 0.66);
   font-size: 0.64rem;
   font-weight: 600;
-  letter-spacing: 0.13em;
 }
 
 .jlz-works-composition > * {
@@ -428,7 +419,6 @@
   .jlz-works-index {
     padding: 0 0.3rem;
     font-size: 0.58rem;
-    letter-spacing: 0.14em;
   }
 
   .jlz-works-index__number {
@@ -471,7 +461,6 @@
 
   .jlz-work-card__meta {
     font-size: 0.55rem;
-    letter-spacing: 0.11em;
   }
 }
 
@@ -510,7 +499,6 @@
 
 .jlz-lang-label {
   font-size: 0.72rem;
-  letter-spacing: 0.05em;
   line-height: 1;
 }
 
@@ -650,7 +638,6 @@ body:not([data-page='home'])
   color: inherit;
   font-size: 0.72rem;
   font-weight: 800;
-  letter-spacing: 0.13em;
 }
 
 .jlz-contact-launcher__orb {
@@ -746,7 +733,6 @@ body:not([data-page='home'])
 .jlz-storyline__number,
 .jlz-storyline__hint {
   font-size: 0.62rem;
-  letter-spacing: 0.08em;
 }
 
 .jlz-contact-launcher {
@@ -785,7 +771,12 @@ body:not([data-page='home'])
   pointer-events: none !important;
   opacity: 0;
   color: var(--jlz-color-text);
-  background: var(--jlz-color-bg-elevated);
+  // The menu is a scene layer, not a separate document. Keep the 3D world
+  // perceptible behind a contrast veil; this surface is the future seam for
+  // a shader treatment without changing the section or navigation owner.
+  background: color-mix(in srgb, var(--jlz-color-bg-elevated) 72%, transparent);
+  backdrop-filter: blur(12px) saturate(1.08);
+  -webkit-backdrop-filter: blur(12px) saturate(1.08);
   transform: translate3d(0, -104%, 0) scale(0.985);
   .jlz-cinematic-sheet();
 }
@@ -827,7 +818,6 @@ body[data-cinematic-sheet='menu'] .jlz-menu-overlay .jlz-menu-nav__toggle {
 .jlz-menu-sheet__header {
   color: var(--jlz-color-text-subtle);
   font-size: 0.68rem;
-  letter-spacing: 0.2em;
   text-transform: uppercase;
 }
 
@@ -862,7 +852,6 @@ body[data-cinematic-sheet='menu'] .jlz-menu-overlay .jlz-menu-nav__toggle {
 .jlz-menu-overlay .jlz-menu-nav__label {
   font-size: clamp(1.7rem, 4vw, 4.5rem);
   line-height: 0.94;
-  letter-spacing: -0.045em;
 }
 
 .jlz-menu-overlay .jlz-menu-nav__sub-link {
@@ -920,7 +909,6 @@ body[data-cinematic-sheet='footer'] .jlz-page > [data-contact-footer] {
 .jlz-contact-footer__kicker {
   font-size: 0.67rem;
   font-weight: 700;
-  letter-spacing: 0.18em;
   color: var(--jlz-color-text-subtle);
 }
 
@@ -931,7 +919,6 @@ body[data-cinematic-sheet='footer'] .jlz-page > [data-contact-footer] {
 .jlz-contact-footer__email {
   color: inherit;
   font-size: 0.74rem;
-  letter-spacing: 0.05em;
 }
 
 body[data-cinematic-sheet] .jlz-storyline,
@@ -1075,7 +1062,7 @@ body[data-cinematic-sheet]
     border: 1px solid var(--jlz-color-fluid-border);
     border-top: 0;
     border-radius: 0;
-    background: var(--jlz-color-bg-elevated);
+    background: color-mix(in srgb, var(--jlz-color-bg-elevated) 84%, transparent);
   }
 
   .jlz-menu-overlay .jlz-menu-container {
@@ -1199,13 +1186,11 @@ body[data-cinematic-sheet]
   font-size: clamp(4rem, 12vw, 9rem);
   font-weight: 900;
   line-height: 0.85;
-  letter-spacing: -0.04em;
 }
 
 .jlz-menu-stat__label {
   font-size: 0.75rem;
   font-weight: 700;
-  letter-spacing: 0.2em;
   color: var(--jlz-color-text-subtle);
   margin-top: var(--jlz-space-2);
 }
@@ -1235,7 +1220,6 @@ body[data-cinematic-sheet]
 .jlz-menu-nav__num {
   font-size: 0.68rem;
   font-weight: 600;
-  letter-spacing: 0.15em;
   color: var(--jlz-color-text-subtle);
   flex-shrink: 0;
   min-width: 2rem;
@@ -1249,7 +1233,6 @@ body[data-cinematic-sheet]
 .jlz-menu-nav__label {
   font-size: clamp(1.25rem, 2.5vw, 1.75rem);
   font-weight: 800;
-  letter-spacing: -0.01em;
   text-transform: none;
   flex: 1;
 }
@@ -1305,7 +1288,6 @@ body[data-cinematic-sheet]
 .jlz-menu-nav__sub-num {
   font-size: 0.6rem;
   font-weight: 600;
-  letter-spacing: 0.12em;
   color: var(--jlz-color-text-subtle);
   opacity: 0.6;
   flex-shrink: 0;

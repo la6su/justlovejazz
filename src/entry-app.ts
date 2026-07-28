@@ -75,9 +75,9 @@ function showLoadError(): void {
     if (parent) {
       parent.innerHTML = `
         <div style="text-align:center; color: rgba(255,255,255,0.7); font-family:Onest,sans-serif; max-width: 320px;">
-          <p style="font-size:0.75rem; font-weight:700; letter-spacing:0.2em; text-transform:uppercase; color:rgba(255,100,100,0.8); margin:0 0 0.5rem;">3D Failed</p>
+          <p style="font-size:0.75rem; font-weight:700; text-transform:uppercase; color:rgba(255,100,100,0.8); margin:0 0 0.5rem;">3D Failed</p>
           <p style="font-size:0.8rem; line-height:1.4; margin:0 0 1rem;">The 3D experience couldn't load. Your browser may not support WebGL2, or the GPU is unavailable.</p>
-          <a href="/" style="font-size:0.7rem; font-weight:600; letter-spacing:0.15em; text-transform:uppercase; color:#6b78a3; text-decoration:none; border:1px solid rgba(107,120,163,0.3); padding:0.5rem 1rem; border-radius:999px;">Retry</a>
+          <a href="/" style="font-size:0.7rem; font-weight:600; text-transform:uppercase; color:#6b78a3; text-decoration:none; border:1px solid rgba(107,120,163,0.3); padding:0.5rem 1rem; border-radius:999px;">Retry</a>
         </div>
       `
     }
@@ -226,13 +226,14 @@ export async function startApp(): Promise<void> {
   })
 
   // jlz:splash-entered fires when user clicks Enter — splash starts fading.
-  // Trigger title animations once the curtain starts revealing the scene.
+  // Let the active title answer the opening curtain, rather than animating
+  // every title in the document behind the splash.
   window.addEventListener('jlz:splash-entered', () => {
-    // Small delay — let curtains start splitting so DOM is partially visible
+    // Let the curtain begin to split, then reveal the title inside that gap.
     setTimeout(() => {
-      animateBlurFadeTitles()
+      revealActiveSplashTitle()
       setupTitleObserver()
-    }, 300) // 300ms into 800ms curtain split — titles animate as scene reveals
+    }, 90)
   })
 
   // Fallback: if jlz:webgl-ready doesn't fire within 60s (Experience.init
@@ -289,6 +290,7 @@ export async function startApp(): Promise<void> {
  * viewport — synchronized with UIkit scrollspy's viewport entry.
  */
 let _titleObserver: IntersectionObserver | null = null
+const splashRevealedTitles = new WeakSet<HTMLElement>()
 
 function setupTitleObserver(): void {
   // Disconnect previous observer if any (HMR re-init guard)
@@ -301,6 +303,10 @@ function setupTitleObserver(): void {
       for (const entry of entries) {
         if (entry.isIntersecting) {
           const el = entry.target as HTMLElement
+          // The splash owns the first reveal of the visible title. Skipping
+          // this one observer entry prevents its slower default reveal from
+          // restarting over the splash-specific animation.
+          if (splashRevealedTitles.delete(el)) continue
           const text = el.textContent?.trim() || ''
           if (text) BlurFade.for(el).show(1.2)
         }
@@ -312,23 +318,14 @@ function setupTitleObserver(): void {
   _titleObserver = observer
 }
 
-/**
- * BlurFade animation on studio titles — animates ALL .studio-title elements.
- */
-let blurFadeAnimating = false
+/** Fast first reveal that is synchronized with the splash curtain opening. */
+function revealActiveSplashTitle(): void {
+  const title = document.querySelector<HTMLElement>(
+    '.section-active .studio-title:not([data-blur-fade="off"]), [data-section="intro"] .studio-title:not([data-blur-fade="off"])',
+  )
+  if (!title) return
 
-function animateBlurFadeTitles(): void {
-  if (blurFadeAnimating) return
-  blurFadeAnimating = true
-  setTimeout(() => {
-    blurFadeAnimating = false
-  }, 2200)
-
-  for (const el of document.querySelectorAll<HTMLElement>(
-    '.studio-title:not([data-blur-fade="off"])',
-  )) {
-    const text = el.textContent?.trim() || ''
-    if (!text) continue
-    BlurFade.for(el).show(1.2)
-  }
+  splashRevealedTitles.add(title)
+  const text = title.textContent?.trim() || ''
+  if (text && !prefersReducedMotion()) BlurFade.for(title).show(0.55, text)
 }

@@ -5,10 +5,12 @@ import { applyMetaTags } from './core/pageMeta'
 import { disposeWorkCards } from './UI/WorkCards'
 import { initMenuToolbar } from './sections/nav/template'
 import { eventBus } from './core/EventBus'
+import { RouteTransition } from './UI/RouteTransition'
 // ContentReveal owns the per-section auto/inverse theme application.
 
 let initialized = false
 let currentPage: PageId | null = null
+const routeTransition = new RouteTransition()
 
 const ROUTES: Record<string, PageId> = {
   '/': 'home',
@@ -83,7 +85,7 @@ function renderView(page: PageId = getPageFromLocation()): void {
   }
 }
 
-function navigateToPage(path: string): void {
+async function navigateToPage(path: string): Promise<void> {
   // Parse hash (e.g. "/manifesto#section-manifesto-02" → path="/manifesto", hash="#section-manifesto-02")
   // The hash targets a section element inside a [data-page-section] (content pages)
   // or a [data-section] (home). After renderView, we dispatch jlz:goto-section-by-hash
@@ -94,7 +96,9 @@ function navigateToPage(path: string): void {
   const page = ROUTES[purePath]
   if (!page) return
   history.pushState(null, '', path) // keep hash in URL for shareable links
-  renderView(page)
+  const render = () => renderView(page)
+  if (currentPage !== page) await routeTransition.run(render)
+  else render()
   window.scrollTo({ top: 0, behavior: 'auto' })
   // If hash targets a section, dispatch an event for CinematicNav to activate it.
   // Delayed via requestAnimationFrame so the freshly-rendered DOM is settled.
@@ -132,16 +136,23 @@ export function initRouter(): void {
     if (currentPage) applyMetaTags(currentPage)
   })
 
-  // Handle an initial section anchor without rewriting a content route to
-  // `/#…`. CinematicNav owns the scroll-track state, so native scrollIntoView
-  // here would also desynchronise the DOM and 3D section state.
+  // Handle an initial section anchor only after the 3D navigation owner is
+  // ready. A requestAnimationFrame here races Experience.init(): on slower
+  // devices the event is lost before CinematicNav subscribes, leaving the
+  // world's Works carousel with stale first-frame state. CinematicNav owns
+  // the scroll-track state, so native scrollIntoView would also desynchronise
+  // the DOM and 3D section state.
   if (location.hash.startsWith('#section-')) {
     const anchor = location.hash
-    requestAnimationFrame(() => {
-      window.dispatchEvent(
-        new CustomEvent('jlz:goto-section-by-hash', { detail: { hash: anchor } }),
-      )
-    })
+    window.addEventListener(
+      'jlz:webgl-ready',
+      () => {
+        window.dispatchEvent(
+          new CustomEvent('jlz:goto-section-by-hash', { detail: { hash: anchor } }),
+        )
+      },
+      { once: true },
+    )
   }
 
   // Click handler for anchor links

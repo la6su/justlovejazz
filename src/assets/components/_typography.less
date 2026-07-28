@@ -1,24 +1,38 @@
 /* UIkit defines type scale; these rules add the JLZ display-face behavior. */
-.uk-light h1, .uk-light .uk-h1, .uk-light h2, .uk-light .uk-h2, .uk-light h3, .uk-light .uk-h3, .uk-light h4, .uk-light .uk-h4, .uk-light h5, .uk-light .uk-h5, .uk-light h6, .uk-light .uk-h6, .uk-light .uk-heading-small, .uk-light .uk-heading-medium, .uk-light .uk-heading-large, .uk-light .uk-heading-xlarge, .uk-light .uk-heading-2xlarge, .uk-light .uk-heading-3xlarge {
-  color: var(--jlz-color-text);;
+.uk-light h1,
+.uk-light .uk-h1,
+.uk-light h2,
+.uk-light .uk-h2,
+.uk-light h3,
+.uk-light .uk-h3,
+.uk-light h4,
+.uk-light .uk-h4,
+.uk-light h5,
+.uk-light .uk-h5,
+.uk-light h6,
+.uk-light .uk-h6,
+.uk-light .uk-heading-small,
+.uk-light .uk-heading-medium,
+.uk-light .uk-heading-large,
+.uk-light .uk-heading-xlarge,
+.uk-light .uk-heading-2xlarge,
+.uk-light .uk-heading-3xlarge {
+  color: var(--jlz-color-text);
 }
 .studio-title.uk-heading-medium {
   font-weight: 400;
-  letter-spacing: -0.03em;
   line-height: 0.95;
 }
 
 .studio-title.uk-heading-large {
   max-inline-size: min(100%, 14ch);
   font-weight: 600;
-  letter-spacing: -0.035em;
   line-height: 0.9;
 }
 
 .studio-title.uk-heading-xlarge {
   max-inline-size: min(100%, 12ch);
   font-weight: 800;
-  letter-spacing: -0.045em;
   line-height: 0.85;
 }
 
@@ -29,9 +43,7 @@
   font-family: var(--jlz-font-display), serif;
   font-optical-sizing: auto;
   font-variation-settings: 'wght' var(--jlz-vf-weight, 650);
-  transition:
-    font-variation-settings var(--jlz-duration-normal) var(--jlz-ease-state),
-    letter-spacing var(--jlz-duration-normal) var(--jlz-ease-state);
+  transition: font-variation-settings var(--jlz-duration-normal) var(--jlz-ease-state);
 }
 
 .studio-title {
@@ -62,5 +74,4 @@ body[data-cinematic-sheet='menu'] .jlz-menu-stat__num {
 .jlz-menu-nav__toggle:hover .jlz-menu-nav__label,
 .jlz-menu-nav__item.uk-open .jlz-menu-nav__label {
   --jlz-vf-weight: 820;
-  letter-spacing: -0.035em;
 }

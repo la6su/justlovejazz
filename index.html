@@ -190,7 +190,7 @@
         will-change: transform, opacity;
         transition:
           transform 0.8s cubic-bezier(0.65, 0, 0.35, 1),
-          opacity 0.5s ease 0.2s;
+          opacity 0.4s ease 0.32s;
       }
       @media (orientation: landscape) {
         .jlz-splash-svg {
@@ -235,7 +235,29 @@
           opacity: 1;
         }
       }
-      /* OUT — scale down + fade. No animation conflict. */
+      /* OUT — replay the three text layers in reverse before the mark fades.
+         Opacity only: SVG textPath remains paint-stable on lower-end GPUs. */
+      #jlz-app-loader.fade-out .jlz-splash-text {
+        animation: jlz-splash-text-out 0.34s ease-in forwards;
+      }
+      #jlz-app-loader.fade-out .jlz-splash-text--3 {
+        animation-delay: 0s;
+      }
+      #jlz-app-loader.fade-out .jlz-splash-text--2 {
+        animation-delay: 0.08s;
+      }
+      #jlz-app-loader.fade-out .jlz-splash-text--1 {
+        animation-delay: 0.16s;
+      }
+      @keyframes jlz-splash-text-out {
+        from {
+          opacity: 1;
+        }
+        to {
+          opacity: 0;
+        }
+      }
+      /* OUT — the wider mark follows after its text starts clearing. */
       #jlz-app-loader.fade-out .jlz-splash-svg {
         transform: translate(-50%, -50%) scale(0.7);
         opacity: 0;
@@ -244,6 +266,10 @@
         .jlz-splash-text {
           animation: none;
           opacity: 1;
+        }
+        #jlz-app-loader.fade-out .jlz-splash-text {
+          animation: none;
+          opacity: 0;
         }
         #jlz-app-loader.fade-out .jlz-splash-svg {
           transition: none;
@@ -340,7 +366,6 @@
         font-family: 'Onest', sans-serif;
         font-size: 0.75rem;
         font-weight: 600;
-        letter-spacing: 0.3em;
         text-transform: uppercase;
         cursor: not-allowed;
         pointer-events: none;
@@ -381,7 +406,6 @@
         color: rgba(255, 255, 255, 0.6);
         font-size: 0.75rem;
         font-weight: 600;
-        letter-spacing: 0.1em;
         cursor: pointer;
         display: flex;
         align-items: center;

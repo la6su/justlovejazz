@@ -66,11 +66,9 @@
 @jlz-weight-semibold: 600;
 @jlz-weight-bold: 700;
 
-@jlz-tracking-tight: -0.02em;
-@jlz-tracking-normal: 0;
-@jlz-tracking-wide: 0.05em;
-@jlz-tracking-wider: 0.15em;
-@jlz-tracking-widest: 0.3em;
+// Typography has one tracking value across the application. Individual
+// compositions use weight, scale and line-height for hierarchy instead.
+@jlz-letter-spacing: 0;
 
 // ── Spacing (4px base, rem-based — scales with html font-size) ──
 @jlz-space-0: 0;
@@ -165,11 +163,7 @@
   --jlz-weight-semibold: @jlz-weight-semibold;
   --jlz-weight-bold: @jlz-weight-bold;
 
-  --jlz-tracking-tight: @jlz-tracking-tight;
-  --jlz-tracking-normal: @jlz-tracking-normal;
-  --jlz-tracking-wide: @jlz-tracking-wide;
-  --jlz-tracking-wider: @jlz-tracking-wider;
-  --jlz-tracking-widest: @jlz-tracking-widest;
+  --jlz-letter-spacing: @jlz-letter-spacing;
 
   --jlz-space-0: @jlz-space-0;
   --jlz-space-1: @jlz-space-1;
@@ -344,7 +338,7 @@ html.uk-light {
 @navbar-nav-item-font-size: 0.72rem;
 @navbar-nav-item-font-weight: 500;
 @navbar-nav-item-text-transform: uppercase;
-@navbar-nav-item-letter-spacing: 0.1em;
+@navbar-nav-item-letter-spacing: @jlz-letter-spacing;
 @navbar-nav-item-font-family: @global-font-family;
 @navbar-container: none;
 
@@ -376,7 +370,6 @@ html.uk-light {
 .hook-button() {
   border-radius: @jlz-radius-md;
   font-weight: @jlz-weight-semibold;
-  letter-spacing: 0.035em;
   transition:
     transform @jlz-duration-fast @jlz-ease-state,
     border-color @jlz-duration-fast ease,

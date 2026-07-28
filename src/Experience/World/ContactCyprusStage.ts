@@ -4,6 +4,11 @@ import * as THREE from 'three'
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { disposeMaterialDeep } from '../../Utils/dispose'
+import { prefersReducedMotion } from '../../core/motionPolicy'
+
+const FADE_DURATION_SECONDS = 0.52
+const SCALE_IN_FROM = 0.96
+const SCALE_OUT_TO = 1.025
 
 /**
  * The Cyprus asset is a route-owned visual, loaded only when Contact opens.
@@ -13,7 +18,16 @@ import { disposeMaterialDeep } from '../../Utils/dispose'
 export class ContactCyprusStage extends THREE.Group {
   private _camera: THREE.Camera | null = null
   private _model: THREE.Group | null = null
-  private _active = false
+  private _materials: THREE.MeshPhysicalMaterial[] = []
+  private _modelBaseScale = 1
+  private _opacity = 0
+  private _targetOpacity = 0
+  private _fadeFrom = 0
+  private _scale = 1
+  private _targetScale = 1
+  private _scaleFrom = 1
+  private _fadeElapsed = FADE_DURATION_SECONDS
+  private _prewarmFramePending = false
   private _cameraPosition = new THREE.Vector3()
 
   constructor() {
@@ -41,8 +55,9 @@ export class ContactCyprusStage extends THREE.Group {
     const largestAxis = Math.max(size.x, size.y, size.z, 0.001)
 
     // Normalize arbitrary authoring units, then compose it as a broad backdrop.
-    model.scale.setScalar(7.6 / largestAxis)
-    model.position.copy(center).multiplyScalar(-7.6 / largestAxis)
+    this._modelBaseScale = 7.6 / largestAxis
+    model.scale.setScalar(this._modelBaseScale)
+    model.position.copy(center).multiplyScalar(-this._modelBaseScale)
     model.position.add(new THREE.Vector3(0, 0.42, -10))
     // The source terrain is authored flat on the X/Z plane. Turn its relief
     // toward the viewer before adding the small authored perspective tilt.
@@ -60,7 +75,7 @@ export class ContactCyprusStage extends THREE.Group {
       // a perfectly clear lens. WebGL2 receives the equivalent physical path.
       const sourceMaterials = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
       sourceMaterials.forEach((material) => disposeMaterialDeep(material))
-      mesh.material = new THREE.MeshPhysicalMaterial({
+      const material = new THREE.MeshPhysicalMaterial({
         color: 0xc4e9c8,
         transmission: 0.82,
         thickness: 13.5,
@@ -78,11 +93,16 @@ export class ContactCyprusStage extends THREE.Group {
         attenuationDistance: 1.4,
         side: THREE.DoubleSide,
         depthWrite: false,
+        transparent: true,
+        opacity: 0,
       })
+      mesh.material = material
+      this._materials.push(material)
     })
 
     this._model = model
     this.add(model)
+    this.setPresentation(this._opacity, this._scale)
   }
 
   setCamera(camera: THREE.Camera): void {
@@ -90,8 +110,39 @@ export class ContactCyprusStage extends THREE.Group {
   }
 
   setActive(active: boolean): void {
-    this._active = active
-    this.visible = active && this._model !== null
+    const target = active ? 1 : 0
+    if (target === this._targetOpacity && !this.isAnimating) return
+
+    this._targetOpacity = target
+    // Every return to Agros starts from a clean transparent state. Without
+    // this reset, a quick back-and-forth reverses a partly completed fade and
+    // makes the next entrance look like an instantaneous toggle.
+    this._fadeFrom = active ? 0 : this._opacity
+    this._scaleFrom = active ? SCALE_IN_FROM : this._scale
+    this._targetScale = active ? 1 : SCALE_OUT_TO
+    this._fadeElapsed = 0
+    if (active) this._prewarmFramePending = false
+    this.setPresentation(this._fadeFrom, this._scaleFrom)
+    if (active && this._model) this.visible = true
+    if (prefersReducedMotion()) {
+      this._fadeElapsed = FADE_DURATION_SECONDS
+      this.setPresentation(this._targetOpacity, this._targetScale)
+    }
+  }
+
+  /** True while the map is fading between Contact frames. */
+  get isAnimating(): boolean {
+    return (
+      this._model !== null &&
+      (this._fadeElapsed < FADE_DURATION_SECONDS || this._prewarmFramePending)
+    )
+  }
+
+  /** Render one fully transparent frame after loading to compile the physical material before Agros. */
+  prewarm(): void {
+    if (!this._model || this._targetOpacity > 0) return
+    this._prewarmFramePending = true
+    this.visible = true
   }
 
   resize(width: number, height: number): void {
@@ -99,11 +150,39 @@ export class ContactCyprusStage extends THREE.Group {
     this.scale.setScalar(scale)
   }
 
-  update(): void {
-    if (!this._active || !this._camera) return
+  update(dt: number): void {
+    if (!this._model) return
+
+    if (prefersReducedMotion()) {
+      this._fadeElapsed = FADE_DURATION_SECONDS
+      this.setPresentation(this._targetOpacity, this._targetScale)
+    } else if (this.isAnimating) {
+      this._fadeElapsed = Math.min(FADE_DURATION_SECONDS, this._fadeElapsed + dt)
+      const progress = this._fadeElapsed / FADE_DURATION_SECONDS
+      const eased = progress * progress * (3 - 2 * progress)
+      this.setPresentation(
+        THREE.MathUtils.lerp(this._fadeFrom, this._targetOpacity, eased),
+        THREE.MathUtils.lerp(this._scaleFrom, this._targetScale, eased),
+      )
+    }
+
+    if (!this.visible || !this._camera) return
     this._camera.getWorldPosition(this._cameraPosition)
     this.position.copy(this._cameraPosition)
     this.quaternion.copy(this._camera.quaternion)
+
+    if (this._prewarmFramePending) {
+      this._prewarmFramePending = false
+      this.visible = false
+    }
+  }
+
+  private setPresentation(opacity: number, scale: number): void {
+    this._opacity = THREE.MathUtils.clamp(opacity, 0, 1)
+    this._scale = scale
+    for (const material of this._materials) material.opacity = this._opacity
+    this._model?.scale.setScalar(this._modelBaseScale * this._scale)
+    this.visible = this._opacity > 0.001 || this._targetOpacity > 0.001
   }
 
   dispose(): void {
@@ -115,6 +194,7 @@ export class ContactCyprusStage extends THREE.Group {
       materials.forEach((material) => disposeMaterialDeep(material))
     })
     this._model = null
+    this._materials = []
     this.removeFromParent()
   }
 }
