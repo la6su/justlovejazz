@@ -75,6 +75,16 @@ export default defineConfig({
               priority: 40,
             },
             {
+              // Contact owns its GLTF/DRACO path and loads it only on that
+              // route. Keep the loader implementations out of the shared
+              // Three.js delivery without pulling their core dependencies
+              // into the route chunk.
+              name: 'vendor-three-contact-loaders',
+              test: /[\\/]three[\\/]examples[\\/]jsm[\\/]loaders[\\/](?:GLTFLoader|DRACOLoader)\.js$/,
+              includeDependenciesRecursively: false,
+              priority: 35,
+            },
+            {
               name: 'vendor-three',
               // Match every Three.js and three-stdlib module.
               test(id) {

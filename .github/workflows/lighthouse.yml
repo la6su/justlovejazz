@@ -44,6 +44,9 @@ jobs:
       - name: Build
         run: bun run build
 
+      - name: Check build budgets
+        run: bun run budget:build
+
       - name: Install Playwright browsers
         run: bunx playwright install --with-deps chromium
 

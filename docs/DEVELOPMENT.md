@@ -22,6 +22,7 @@ bun run format:check
 bun run lint
 bun run type-check
 bun run build
+bun run budget:build
 bun run test:unit
 bun run test
 ```
@@ -48,3 +49,8 @@ These budgets protect startup and interaction:
 Changes to entry points, imports or render startup include a production-build
 inspection. Persistent visual layers share the existing loop, avoid per-frame
 allocation and release their resources with their owner.
+
+`bun run budget:build` checks the built splash and lazy Three.js delivery
+budgets and reports the current media footprint. Hardware-dependent runtime
+measurements and their required context live in
+[PERFORMANCE_BASELINE.md](PERFORMANCE_BASELINE.md).
