@@ -19,6 +19,8 @@ in a dirty tree and keep each change to one coherent outcome.
   listeners, timers, DOM and GPU resources.
 - `index.html` owns the early splash. Entry becomes available when the shared
   bootstrap reports `jlz:webgl-ready`; failure remains an explicit state.
+- Visual QA passes the splash through its Enter control before capturing a
+  route screenshot. Capture the splash itself only when it is the subject.
 - The world retains the canonical six-slot model described in
   [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). `EnvSphere` owns the ambient
   background, while the ground plane belongs to the contact state.

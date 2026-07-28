@@ -554,12 +554,19 @@ export class Experience {
         this.world?.disposeWorksPlaneStage()
       }
       if (newPage === 'contact') {
-        void this.world?.ensureContactTextStageInitialized().then(() => {
+        this.world?.setContactCyprusStageSection(0)
+        this.world?.setContactSceneSection(0)
+        void Promise.all([
+          this.world?.ensureContactTextStageInitialized(),
+          this.world?.ensureContactCyprusStageInitialized(),
+        ]).then(() => {
           this.world?.setContactTextStageSection(0)
           this._needsRender = true
         })
       } else {
         this.world?.disposeContactTextStage()
+        this.world?.disposeContactCyprusStage()
+        this.world?.setContactSceneSection(0)
       }
       this._needsRender = true
     }
@@ -583,6 +590,8 @@ export class Experience {
         this.world?.setWorksPlaneStageSection(stageIndex)
       } else if (document.body.dataset.page === 'contact') {
         this.world?.setContactTextStageSection(stageIndex)
+        this.world?.setContactCyprusStageSection(stageIndex)
+        this.world?.setContactSceneSection(stageIndex)
       } else {
         return
       }

@@ -37,6 +37,10 @@ const CONSOLE_ICONS: Icons = {
 
   commenting: `<svg width="20" height="20" viewBox="0 0 20 20"><path ${STROKE} d="M2 2 L18 2 L18 13 L11 13 L7 17 L7 13 L2 13 Z"/><circle fill="currentColor" stroke="none" cx="6.5" cy="7.5" r="1"/><circle fill="currentColor" stroke="none" cx="10" cy="7.5" r="1"/><circle fill="currentColor" stroke="none" cx="13.5" cy="7.5" r="1"/></svg>`,
 
+  telegram: `<svg width="24" height="24" viewBox="0 0 24 24"><path ${STROKE} d="m21 3-6.7 18-4.4-7.1L3 10.2 21 3Z"/><path ${STROKE} d="m9.9 13.9 4-3.8"/></svg>`,
+
+  github: `<svg width="24" height="24" viewBox="0 0 24 24"><circle ${STROKE} cx="6" cy="6" r="2.5"/><circle ${STROKE} cx="18" cy="18" r="2.5"/><circle ${STROKE} cx="18" cy="6" r="2.5"/><path ${STROKE} d="M8.5 6h7M6 8.5V18h9.5"/></svg>`,
+
   // ── Actions ──
   push: `<svg width="20" height="20" viewBox="0 0 20 20"><line ${STROKE} x1="10" y1="12" x2="10" y2="2"/><polyline ${STROKE} points="6 6 10 2 14 6"/><path ${STROKE} d="M4 8 L4 18 L16 18 L16 8"/></svg>`,
 

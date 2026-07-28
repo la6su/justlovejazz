@@ -33,13 +33,13 @@
   border: 1px solid color-mix(in srgb, var(--jlz-color-text) 26%, transparent);
   border-radius: var(--jlz-radius-xl);
   background:
-    linear-gradient(135deg, color-mix(in srgb, #fff 12%, transparent), transparent 35%),
+    linear-gradient(135deg, color-mix(in srgb, #fff 12%, transparent), transparent 25%),
     color-mix(in srgb, var(--jlz-color-bg-elevated) 48%, transparent);
   box-shadow:
     inset 0 1px color-mix(in srgb, #fff 16%, transparent),
     0 1.5rem 4rem color-mix(in srgb, #000 34%, transparent);
-  backdrop-filter: blur(20px) saturate(1.15);
-  -webkit-backdrop-filter: blur(20px) saturate(1.15);
+  backdrop-filter: blur(10px) saturate(1.15);
+  -webkit-backdrop-filter: blur(10px) saturate(1.15);
 }
 
 .jlz-contact-panel__chrome {
@@ -72,7 +72,7 @@
 
 .jlz-contact-panel__index,
 .jlz-contact-panel__meta,
-.jlz-contact-panel__facts dt {
+.jlz-contact-social__index {
   font-family: var(--jlz-font-mono), monospace;
   font-size: 0.66rem;
   letter-spacing: 0.13em;
@@ -109,23 +109,106 @@
   color: var(--jlz-color-text-subtle);
 }
 
-.jlz-contact-panel__actions {
-  gap: var(--jlz-space-2);
+.jlz-contact-social {
+  align-self: flex-start;
+  max-width: 62rem;
+  padding-left: clamp(1.35rem, 5vw, 5rem);
 }
 
-.jlz-contact-panel__facts {
+.jlz-contact-social__heading {
+  gap: var(--jlz-space-4);
+}
+
+.jlz-contact-social__index {
+  display: block;
+  color: var(--jlz-color-accent);
+}
+
+.jlz-contact-social__copy {
+  max-width: 26ch;
+  margin: var(--jlz-space-5) 0 0;
+  font-size: clamp(1.75rem, 3.8vw, 4.2rem);
+  font-weight: 450;
+  letter-spacing: -0.055em;
+  line-height: 0.98;
+}
+
+.jlz-contact-social__channels {
+  margin-top: var(--jlz-space-7);
+}
+
+.jlz-contact-social__channel {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--jlz-space-2);
-  margin-bottom: 0;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  min-height: 8rem;
+  gap: var(--jlz-space-3);
+  padding: var(--jlz-space-4);
+  border: 1px solid color-mix(in srgb, var(--jlz-color-text) 28%, transparent);
+  border-radius: var(--jlz-radius-lg);
+  background: color-mix(in srgb, var(--jlz-color-bg-elevated) 52%, transparent);
+  box-shadow: inset 0 1px color-mix(in srgb, #fff 14%, transparent);
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease;
 }
 
-.jlz-contact-panel__facts dt {
-  color: var(--jlz-color-text-subtle);
+.jlz-contact-social__channel:hover,
+.jlz-contact-social__channel:focus-visible {
+  color: var(--jlz-color-text);
+  border-color: var(--jlz-color-accent);
+  background: color-mix(in srgb, var(--jlz-color-accent) 13%, var(--jlz-color-bg-elevated));
+  transform: translateY(-0.25rem);
 }
 
-.jlz-contact-panel__facts dd {
-  margin: 0.35rem 0 0;
+.jlz-contact-social__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: var(--jlz-radius-full);
+  background: color-mix(in srgb, var(--jlz-color-accent) 17%, transparent);
+  color: var(--jlz-color-accent);
+}
+
+.jlz-contact-social__channel-copy {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.jlz-contact-social__channel-copy strong {
+  font-size: 1.08rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.jlz-contact-social__channel-copy small {
+  color: var(--jlz-color-text-muted);
+  font-size: 0.78rem;
+  line-height: 1.3;
+}
+
+.jlz-contact-location {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--jlz-space-4);
+  margin: 0;
+  padding: var(--jlz-space-4) 0;
+  border-top: 1px solid color-mix(in srgb, var(--jlz-color-text) 30%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--jlz-color-text) 30%, transparent);
+}
+
+.jlz-contact-location strong {
+  font-size: clamp(1.3rem, 3vw, 2.5rem);
+  font-weight: 500;
+  letter-spacing: -0.04em;
+}
+
+.jlz-contact-location > span:last-child {
+  color: var(--jlz-color-text-muted);
 }
 
 .jlz-service-desc {
@@ -174,8 +257,24 @@
     padding: 1.25rem;
   }
 
-  .jlz-contact-panel__facts {
-    grid-template-columns: 1fr;
+  .jlz-contact-social {
+    padding-left: 0;
+  }
+
+  .jlz-contact-social__heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--jlz-space-2);
+  }
+
+  .jlz-contact-social__channel {
+    min-height: 6.75rem;
+  }
+
+  .jlz-contact-location {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--jlz-space-2);
   }
 
   .jlz-experiment-footer .jlz-service-explore {

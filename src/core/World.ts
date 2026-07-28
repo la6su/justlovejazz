@@ -19,6 +19,7 @@ import { disposeSection3Textures } from '../sections/works/scene'
 import { disposeMaterialDeep } from '../Utils/dispose'
 import { WorksPlaneStage } from '../Experience/World/WorksPlaneStage'
 import { ContactTextStage } from '../Experience/World/ContactTextStage'
+import type { ContactCyprusStage } from '../Experience/World/ContactCyprusStage'
 import { getLabExperiment, type LabExperimentObject } from '../Experience/Lab/manifest'
 
 export interface WorldTransformResult {
@@ -40,6 +41,8 @@ export class World extends THREE.Group {
   public worksPlaneStage: WorksPlaneStage | null = null
   /** Lightweight pixel-title layer, loaded only for the Contact route. */
   public contactTextStage: ContactTextStage | null = null
+  /** A lazy 3D Agros backdrop, visible only on Contact's location frame. */
+  public contactCyprusStage: ContactCyprusStage | null = null
   /** Loaded only for `/lab`; replaces the shared cube on the experiment route. */
   public labGamepad: LabExperimentObject | null = null
 
@@ -74,6 +77,9 @@ export class World extends THREE.Group {
   private _carouselInitPromise: Promise<void> | null = null
   private _worksPlaneStagePromise: Promise<void> | null = null
   private _contactTextStagePromise: Promise<void> | null = null
+  private _contactCyprusStagePromise: Promise<void> | null = null
+  private _contactCyprusStageRequest = 0
+  private _contactCyprusActive = false
   private _contactTextIsLight = false
   private _labGamepadPromise: Promise<void> | null = null
 
@@ -356,6 +362,83 @@ export class World extends THREE.Group {
     this.contactTextStage?.setTheme(isLight)
   }
 
+  /** Lazily load the Contact location asset instead of keeping it in the home scene. */
+  public ensureContactCyprusStageInitialized(): Promise<void> {
+    if (this._contactCyprusStagePromise) return this._contactCyprusStagePromise
+    const request = ++this._contactCyprusStageRequest
+    this._contactCyprusStagePromise = import('../Experience/World/ContactCyprusStage')
+      .then(({ ContactCyprusStage }) => {
+        if (request !== this._contactCyprusStageRequest) return
+        const stage = new ContactCyprusStage()
+        this.contactCyprusStage = stage
+        this.add(stage)
+        return stage.load()
+      })
+      .then(() => {
+        const stage = this.contactCyprusStage
+        if (!stage || request !== this._contactCyprusStageRequest) return
+        stage.resize(window.innerWidth, window.innerHeight)
+        if (this._camera) stage.setCamera(this._camera)
+        stage.setActive(document.body.dataset.page === 'contact' && this._contactCyprusActive)
+      })
+      .catch((error: unknown) => {
+        const stage = this.contactCyprusStage
+        if (stage && request === this._contactCyprusStageRequest) {
+          stage.dispose()
+          this.remove(stage)
+          this.contactCyprusStage = null
+          this._contactCyprusStagePromise = null
+        }
+        throw error
+      })
+    return this._contactCyprusStagePromise
+  }
+
+  public disposeContactCyprusStage(): void {
+    this._contactCyprusStageRequest++
+    this.contactCyprusStage?.dispose()
+    if (this.contactCyprusStage) this.remove(this.contactCyprusStage)
+    this.contactCyprusStage = null
+    this._contactCyprusStagePromise = null
+    this._contactCyprusActive = false
+  }
+
+  /** Frame 03 replaces the shared cube with the Cyprus asset. */
+  public setContactCyprusStageSection(index: number): void {
+    this._contactCyprusActive = document.body.dataset.page === 'contact' && index === 2
+    this.contactCyprusStage?.setActive(this._contactCyprusActive)
+    if (this._contactCyprusActive && !this.contactCyprusStage) {
+      void this.ensureContactCyprusStageInitialized().then(() => {
+        if (!this._contactCyprusActive) return
+        this.contactCyprusStage?.setActive(true)
+        this.syncRouteVisuals()
+      })
+    }
+    this.syncRouteVisuals()
+  }
+
+  /**
+   * Contact's foreground chapters own their visual hierarchy. Agros is a
+   * quiet map frame, while the final CTA does not need the legacy HELLO flock.
+   */
+  public setContactSceneSection(index: number): void {
+    const isContact = document.body.dataset.page === 'contact'
+    const isAgros = isContact && index === 2
+    const isFinal = isContact && index === 3
+
+    for (const group of this.sceneGroups) {
+      const particles = group.userData.particles as THREE.Object3D | undefined
+      if (particles) particles.visible = !isAgros
+
+      const typography = group.userData.typography as
+        import('../Experience/World/WireframeTypography').WireframeTypography | undefined
+      if (typography) {
+        typography.visible = !isFinal
+        if (isFinal) typography.setActive(false)
+      }
+    }
+  }
+
   /** Sync ground plane color/opacity to the active theme.
    *  Called by Experience on jlz:theme-applied (same trigger EnvSphere uses).
    *  Without this, a dark ground is invisible on the light theme (near-white
@@ -448,6 +531,9 @@ export class World extends THREE.Group {
       if (this.contactTextStage && document.body.dataset.page === 'contact') {
         this.contactTextStage.update(deltaTime)
       }
+      if (this.contactCyprusStage && document.body.dataset.page === 'contact') {
+        this.contactCyprusStage.update()
+      }
       return
     }
 
@@ -460,6 +546,9 @@ export class World extends THREE.Group {
     }
     if (this.contactTextStage) {
       this.contactTextStage.update(deltaTime)
+    }
+    if (this.contactCyprusStage) {
+      this.contactCyprusStage.update()
     }
 
     if (!this.isReducedMotion) {
@@ -487,6 +576,7 @@ export class World extends THREE.Group {
         this.baku.visible =
           document.body.dataset.page !== 'lab' &&
           document.body.dataset.page !== 'works' &&
+          !(document.body.dataset.page === 'contact' && this._contactCyprusActive) &&
           (document.body.dataset.page !== 'home' ||
             !(carousel.isActive && carousel.morphProgress > 0.82))
       }
@@ -890,6 +980,10 @@ export class World extends THREE.Group {
     if (this.contactTextStage) this.remove(this.contactTextStage)
     this.contactTextStage = null
     this._contactTextStagePromise = null
+    this.contactCyprusStage?.dispose()
+    if (this.contactCyprusStage) this.remove(this.contactCyprusStage)
+    this.contactCyprusStage = null
+    this._contactCyprusStagePromise = null
     this.labGamepad?.dispose()
     this.labGamepad = null
     this._labGamepadPromise = null
@@ -902,13 +996,15 @@ export class World extends THREE.Group {
     this._camera = cam
     this.worksPlaneStage?.setCamera(cam)
     this.contactTextStage?.setCamera(cam)
+    this.contactCyprusStage?.setCamera(cam)
   }
 
   /** Keep route-specific hero objects isolated from the shared home cube. */
   public syncRouteVisuals(): void {
     const page = document.body.dataset.page
     const isLab = page === 'lab'
-    this.baku.visible = !isLab && page !== 'works'
+    this.baku.visible =
+      !isLab && page !== 'works' && !(page === 'contact' && this._contactCyprusActive)
     if (isLab) void this.ensureLabGamepad()
     if (this.labGamepad) this.labGamepad.visible = isLab
   }

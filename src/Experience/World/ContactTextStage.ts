@@ -4,7 +4,7 @@ import * as THREE from 'three'
 import { PixelTextScreen } from './PixelTextScreen'
 
 const CONTACT_TITLE_KEYS = [
-  'contact.email.title',
+  'contact.email.marquee',
   'contact.social.title',
   'contact.location.title',
   'contact.form.title',
@@ -47,7 +47,11 @@ export class ContactTextStage extends THREE.Group {
     this._sectionIndex = nextSection
     this.visible = active
     this._screen.setSection(nextSection)
-    if (!active) this._screen.setVisible(false)
+    // Email is the Contact route's single pixel-title gesture. Social, Agros
+    // and the final CTA each have their own foreground composition, so a
+    // marquee would only compete with the useful content.
+    const showTitle = active && nextSection === 0
+    if (!showTitle) this._screen.setVisible(false)
     else if (!wasActive || changed) this._screen.setVisible(true)
   }
 
