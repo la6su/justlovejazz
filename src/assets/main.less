@@ -771,7 +771,12 @@ body:not([data-page='home'])
   pointer-events: none !important;
   opacity: 0;
   color: var(--jlz-color-text);
-  background: var(--jlz-color-bg-elevated);
+  // The menu is a scene layer, not a separate document. Keep the 3D world
+  // perceptible behind a contrast veil; this surface is the future seam for
+  // a shader treatment without changing the section or navigation owner.
+  background: color-mix(in srgb, var(--jlz-color-bg-elevated) 72%, transparent);
+  backdrop-filter: blur(12px) saturate(1.08);
+  -webkit-backdrop-filter: blur(12px) saturate(1.08);
   transform: translate3d(0, -104%, 0) scale(0.985);
   .jlz-cinematic-sheet();
 }
@@ -1057,7 +1062,7 @@ body[data-cinematic-sheet]
     border: 1px solid var(--jlz-color-fluid-border);
     border-top: 0;
     border-radius: 0;
-    background: var(--jlz-color-bg-elevated);
+    background: color-mix(in srgb, var(--jlz-color-bg-elevated) 84%, transparent);
   }
 
   .jlz-menu-overlay .jlz-menu-container {

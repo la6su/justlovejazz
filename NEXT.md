@@ -36,10 +36,10 @@ changes the order. Each item describes an outcome rather than an implementation.
       budget, inspect the 15.6 MB media path and record real idle-frame evidence
       before tuning materials or delivery.
 
-- [ ] **Shared transition language** — prototype one route/Menu/project
-      transition after the baseline, accessibility and performance evidence are
-      stable; include low-tier, blog and reduced-motion handoffs in the same
-      acceptance criteria.
+- [ ] **Shared transition language** — the `dev` branch now prototypes a
+      lightweight route-curtain for SPA page changes. Validate popstate,
+      low-tier/WebGL, both polarities and reduced-motion handoffs before
+      extending the language to Menu or project transitions.
 
 ## Plan maintenance
 
