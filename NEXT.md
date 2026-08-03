@@ -37,6 +37,16 @@ implementation.
 
 ## 2 — Input queue
 
+- [ ] **Decide the fate of the vendored `references/` tree** — the unused
+      reference site is outside the runtime graph, but removing it from the
+      working tree will not shrink Git history; choose an external archive or
+      a separately approved history rewrite after the licensing review.
+
+- [ ] **Decide the UIkit JS strategy after visual/accessibility review** — the
+      production build measures `vendor-ui` at 75.8 KB gzip, while UIkit still
+      owns modal, nav, scrollspy and accessibility behavior; replace it only
+      with an equivalent measured owner boundary.
+
 - [ ] **Configure production SPA rewrites** — after the hosting target is
       identified, route the six SPA paths to `index.html` while retaining the
       standalone `/blog` pages and static assets; verify every sitemap route
