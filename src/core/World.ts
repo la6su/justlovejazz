@@ -76,7 +76,9 @@ export class World extends THREE.Group {
   private _targetGroundOpacity = 0
   private _carouselInitPromise: Promise<void> | null = null
   private _worksPlaneStagePromise: Promise<void> | null = null
+  private _worksPlaneStageRequest = 0
   private _contactTextStagePromise: Promise<void> | null = null
+  private _contactTextStageRequest = 0
   private _contactCyprusStagePromise: Promise<void> | null = null
   private _contactCyprusStageRequest = 0
   private _contactCyprusActive = false
@@ -298,16 +300,30 @@ export class World extends THREE.Group {
   /** Lazily create rich `/works` media only on that route, never on first paint. */
   public ensureWorksPlaneStageInitialized(): Promise<void> {
     if (this._worksPlaneStagePromise) return this._worksPlaneStagePromise
+    const request = ++this._worksPlaneStageRequest
     const stage = new WorksPlaneStage()
     this.worksPlaneStage = stage
     this.add(stage)
     this._worksPlaneStagePromise = stage.init().then(
       () => {
+        if (request !== this._worksPlaneStageRequest || this.worksPlaneStage !== stage) {
+          // The route can dispose a stage while its texture decode is still
+          // pending. Dispose again after init so resources created after the
+          // first dispose are released as well.
+          stage.dispose()
+          if (stage.parent === this) this.remove(stage)
+          return
+        }
         stage.setActive(document.body.dataset.page === 'works', 0)
         stage.resize(window.innerWidth, window.innerHeight)
         if (this._camera) stage.setCamera(this._camera)
       },
       (error) => {
+        if (request !== this._worksPlaneStageRequest || this.worksPlaneStage !== stage) {
+          stage.dispose()
+          if (stage.parent === this) this.remove(stage)
+          return
+        }
         stage.dispose()
         this.remove(stage)
         this.worksPlaneStage = null
@@ -323,6 +339,7 @@ export class World extends THREE.Group {
    *  The stage is lazily re-created on next /works visit via
    *  ensureWorksPlaneStageInitialized(). */
   public disposeWorksPlaneStage(): void {
+    this._worksPlaneStageRequest++
     if (!this.worksPlaneStage) return
     this.worksPlaneStage.dispose()
     this.remove(this.worksPlaneStage)
@@ -339,10 +356,16 @@ export class World extends THREE.Group {
   /** Lazily create the Contact route's pixel-title layer. */
   public ensureContactTextStageInitialized(): Promise<void> {
     if (this._contactTextStagePromise) return this._contactTextStagePromise
+    const request = ++this._contactTextStageRequest
     const stage = new ContactTextStage()
     this.contactTextStage = stage
     this.add(stage)
     this._contactTextStagePromise = Promise.resolve().then(() => {
+      if (request !== this._contactTextStageRequest || this.contactTextStage !== stage) {
+        stage.dispose()
+        if (stage.parent === this) this.remove(stage)
+        return
+      }
       stage.setActive(document.body.dataset.page === 'contact', 0)
       stage.setTheme(this._contactTextIsLight)
       stage.resize(window.innerWidth, window.innerHeight)
@@ -352,6 +375,7 @@ export class World extends THREE.Group {
   }
 
   public disposeContactTextStage(): void {
+    this._contactTextStageRequest++
     if (!this.contactTextStage) return
     this.contactTextStage.dispose()
     this.remove(this.contactTextStage)
@@ -982,10 +1006,12 @@ export class World extends THREE.Group {
     this.drawTrail?.dispose()
     if (this.drawTrail) this.sceneRef.remove(this.drawTrail.object)
     this.worksPlaneStage?.dispose()
+    this._worksPlaneStageRequest++
     if (this.worksPlaneStage) this.remove(this.worksPlaneStage)
     this.worksPlaneStage = null
     this._worksPlaneStagePromise = null
     this.contactTextStage?.dispose()
+    this._contactTextStageRequest++
     if (this.contactTextStage) this.remove(this.contactTextStage)
     this.contactTextStage = null
     this._contactTextStagePromise = null

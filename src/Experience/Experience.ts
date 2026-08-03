@@ -68,7 +68,6 @@ export class Experience {
   private currentSectionContext: string | null = null
   private _portfolioInitialized = false
   private _prevSectionIndex = -1
-  // (_introEmitted removed — bus.emit('intro:done') had zero subscribers.)
   private _onSizesResize: () => void = () => {}
   private _onVisibilityChange: (() => void) | null = null
   private _onMouseMoveForTrail: (() => void) | null = null
@@ -264,21 +263,6 @@ export class Experience {
     }
   }
 
-  private setupIntro(): void {
-    // The inline splash already owns the entrance. Start the 3D scene settled
-    // so its first frames are used to warm the renderer, not to run a second
-    // hidden appearance animation behind the curtain.
-    this.bus.channel('intro:opacity', 0).channel('intro:stage', 1)
-
-    // intro:done handler removed (2026-07-11 audit). The previous handler was
-    // empty — ContentReveal synchronises the active section theme through
-    // jlz:theme-applied, and main-app.ts owns the splash lifecycle.
-    // The bus.emit('intro:done') in _updateInner is kept as a public
-    // extension point (fire-once event, cheap to emit with no subscribers).
-    // Do NOT re-add splash DOM logic here — see main-app.ts for the splash
-    // lifecycle (previously a handler force-hid the splash ~2.5s early).
-  }
-
   async init() {
     // NOTE: SmoothScroll/Lenis remains unnecessary: CinematicNav uses the
     // browser's vertical scrolling and snap behavior. ProjectOverlay locks
@@ -451,7 +435,6 @@ export class Experience {
     this.camera.instance.position.set(0, 5, 10)
     this.camera.instance.lookAt(0, 0, 0)
     this.camera.instance.updateProjectionMatrix()
-    this.setupIntro()
     // Use renderer.setAnimationLoop() instead of requestAnimationFrame.
     // WebGPURenderer on the WebGPU backend REQUIRES this for correct frame
     // pacing — rAF does not synchronize with the WebGPU swap chain, causing
@@ -692,10 +675,6 @@ export class Experience {
     // Cursor always updates (DOM, cheap — not GPU rendering)
     this.cursor.update()
 
-    // Intro sequence: 'intro:done' emit removed (zero subscribers, YAGNI).
-    // stage is still needed for the on-demand rendering check below.
-    const stage = this.bus.get('intro:stage')
-
     // Navigation: read the native vertical story track.
     this._storyNav?.update()
 
@@ -707,7 +686,6 @@ export class Experience {
     // on a section, no transition, no carousel), the last rendered frame
     // stays on screen and GPU is idle.
     const navActive = this._storyNav?.isActive() ?? false
-    const introActive = this.bus.isAnimating('intro:stage') || stage < 1
     // Compute carousel active state NOW (not from previous frame) — the
     // carousel may have started morphing this frame via setActive() in
     // world.updateTransform(). If we use stale _bakuCarouselActive from
@@ -746,7 +724,6 @@ export class Experience {
 
     if (
       navActive ||
-      introActive ||
       carouselActive ||
       worksPlaneActive ||
       contactTextActive ||
@@ -773,7 +750,6 @@ export class Experience {
     // (setAnimationLoop already paused, but guard is cheap).
     if (
       !navActive &&
-      !introActive &&
       !carouselActive &&
       !worksPlaneActive &&
       !contactTextActive &&
@@ -938,7 +914,6 @@ export class Experience {
       // and rely on the next tick's re-raise (which worked, but was fragile).
       if (
         !navActive &&
-        !introActive &&
         !carouselActive &&
         !worksPlaneActive &&
         !contactTextActive &&
