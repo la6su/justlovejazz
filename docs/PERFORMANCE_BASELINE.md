@@ -211,6 +211,11 @@ After the `tres-spike` dev optimizer excluded the Three ESM entry points, the
 rerun emitted no new duplicate-Three warning. This confirms one runtime graph
 for the probe; it is not a resource-plateau measurement yet.
 
+The existing time-driven `ParticleBurst` instanced owner also completed on both
+backends through the representative scope, with no runtime or shader error.
+This proves its one-time uniform/update compilation only; sustained animation
+and active-burst timings remain pending the loop-driver gate.
+
 ### Phase 0 physical mobile WebGPU observation — 2026-08-15
 
 The same local development build was opened over an ADB USB reverse tunnel on

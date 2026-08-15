@@ -57,8 +57,8 @@ do not start a phase whose entry gate has not passed.
       its resource scope has idempotent teardown and refuses WebGPU-only post
       on the fallback backend. Physical Chrome now proves that the fog/material
       TSL-post path reaches `WebGPUBackend`. The existing environment owner now
-      passes on both backends without duplicate Three runtimes; next add a
-      bounded time/instancing owner.
+      passes on both backends without duplicate Three runtimes. The existing
+      time-driven instanced owner also passes; next add the Works texture plane.
 
 - [ ] **Phase 3: extract framework-neutral contracts** — introduce the one
       route manifest, canonical world-slot tuple, bootstrap state machine,

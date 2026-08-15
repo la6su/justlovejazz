@@ -493,6 +493,16 @@ shared native `three.core.js` graph. The same physical rerun produced no new
 duplicate-Three warning. This mode is dev-only; the production entry and bundle
 budget remain unchanged.
 
+#### Phase 2 instancing/time owner slice — 2026-08-15
+
+The same scope mounts the existing `ParticleBurst`, which is an
+`InstancedMesh` driven by project-owned TSL time uniforms. It is triggered and
+advanced once before the representative render so the time-uniform path is part
+of shader compilation, without adding a second animation loop. Its geometry and
+node material are released by the scope's idempotent teardown. Physical Chrome
+completed both the automatic `WebGPUBackend -> tsl-post` path and forced
+`WebGLBackend -> direct` fallback with no runtime or shader error.
+
 ### Phase 3 — framework-neutral contracts
 
 Scope:

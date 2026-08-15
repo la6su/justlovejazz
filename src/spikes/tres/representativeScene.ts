@@ -1,9 +1,11 @@
 import { Mesh, TorusKnotGeometry, type Scene } from 'three'
 import { MeshBasicNodeMaterial } from 'three/webgpu'
+import { ParticleBurst } from '../../Experience/World/ParticleBurst'
 import { EnvSphere } from '../../Experience/World/EnvSphere'
 
 export interface RepresentativeSceneResources {
   environment: EnvSphere
+  burst: ParticleBurst
   mesh: Mesh<TorusKnotGeometry, MeshBasicNodeMaterial>
   attach(scene: Scene): void
   dispose(): void
@@ -20,6 +22,9 @@ export function canUseTSLPost(backend: string | null): boolean {
 export function createRepresentativeScene(): RepresentativeSceneResources {
   const environment = new EnvSphere()
   environment.snapToSection(1, false)
+  const burst = new ParticleBurst()
+  burst.trigger(0, 0, 0)
+  burst.update(0.2)
   const geometry = new TorusKnotGeometry(0.9, 0.28, 128, 24)
   const material = new MeshBasicNodeMaterial({ color: '#72f1b8', fog: true })
   const mesh = new Mesh(geometry, material)
@@ -28,9 +33,11 @@ export function createRepresentativeScene(): RepresentativeSceneResources {
 
   return {
     environment,
+    burst,
     mesh,
     attach(scene) {
       scene.add(environment)
+      scene.add(burst)
       scene.add(mesh)
     },
     dispose() {
@@ -38,6 +45,8 @@ export function createRepresentativeScene(): RepresentativeSceneResources {
       disposed = true
       environment.removeFromParent()
       environment.dispose()
+      burst.removeFromParent()
+      burst.dispose()
       mesh.removeFromParent()
       geometry.dispose()
       material.dispose()

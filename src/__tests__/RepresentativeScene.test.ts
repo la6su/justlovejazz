@@ -15,17 +15,21 @@ describe('representative Tres scene scope', () => {
     const geometryDispose = vi.spyOn(resources.mesh.geometry, 'dispose')
     const materialDispose = vi.spyOn(resources.mesh.material, 'dispose')
     const environmentDispose = vi.spyOn(resources.environment, 'dispose')
+    const burstDispose = vi.spyOn(resources.burst, 'dispose')
 
     resources.attach(scene)
     expect(scene.children).toContain(resources.environment)
+    expect(scene.children).toContain(resources.burst)
     expect(scene.children).toContain(resources.mesh)
 
     resources.dispose()
     resources.dispose()
 
     expect(scene.children).not.toContain(resources.environment)
+    expect(scene.children).not.toContain(resources.burst)
     expect(scene.children).not.toContain(resources.mesh)
     expect(environmentDispose).toHaveBeenCalledOnce()
+    expect(burstDispose).toHaveBeenCalledOnce()
     expect(geometryDispose).toHaveBeenCalledOnce()
     expect(materialDispose).toHaveBeenCalledOnce()
   })
