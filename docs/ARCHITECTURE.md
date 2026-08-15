@@ -18,6 +18,13 @@ index.html
 blog.html + blog/*.html → standalone pages
 ```
 
+The development-only UIkit Page Builder is a separate application under
+`admin/`. Its save API is installed only while Vite serves the project and the
+admin HTML is not a production input. The production-safe schema, renderer and
+generated source documents live under `src/builder/`; validated theme and
+component manifests re-enter the normal Less assembly. See
+[PAGE_BUILDER.md](PAGE_BUILDER.md) for the full boundary.
+
 The inline splash paints before the lazy application graph. `entry-app.ts`
 coordinates bootstrap progress and emits the ready or failed lifecycle event.
 

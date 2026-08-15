@@ -7,6 +7,7 @@ Keep each fact with the source that owns it:
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Stable boundaries and runtime contracts      |
 | [DEVELOPMENT.md](DEVELOPMENT.md)   | Setup, verification and performance budgets  |
 | [BRAND.md](BRAND.md)               | Visual and editorial direction               |
+| [PAGE_BUILDER.md](PAGE_BUILDER.md) | Dev-only UIkit builder and compile boundary  |
 | [CHANGELOG.md](CHANGELOG.md)       | Released user-visible or operational changes |
 | [../NEXT.md](../NEXT.md)           | Open outcomes                                |
 | [../AGENTS.md](../AGENTS.md)       | Minimal agent entry point                    |

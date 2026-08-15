@@ -47,6 +47,14 @@
 @jlz-color-signal-teal-muted: @jlz-color-signal-cool-muted;
 @jlz-color-signal-ember: #ff7568;
 
+// Inverse (light paper) polarity. The Style Builder can author this palette
+// independently from the default dark console.
+@jlz-inverse-bg: #efe0cc;
+@jlz-inverse-surface: #f8eddf;
+@jlz-inverse-text: #15110e;
+@jlz-inverse-text-muted: #5e554d;
+@jlz-inverse-accent: #4b4000;
+
 // ── Typography ──
 @jlz-font-display:
   'Commissioner',
@@ -96,6 +104,11 @@
 @jlz-radius-xl: 0.25rem;
 @jlz-radius-fluid: 0.25rem;
 @jlz-radius-full: 0.125rem;
+@jlz-button-radius: @jlz-radius-md;
+@jlz-card-radius: @jlz-radius-lg;
+@jlz-card-shadow: 0 20px 56px rgba(0, 0, 0, 0.42);
+@jlz-form-border: @jlz-color-border;
+@jlz-navbar-surface: @jlz-color-bg;
 
 // ── Console interface surfaces ──
 // Shared technical planes replace the former translucent fluid islands.
@@ -191,6 +204,9 @@
   --jlz-radius-xl: @jlz-radius-xl;
   --jlz-radius-fluid: @jlz-radius-fluid;
   --jlz-radius-full: @jlz-radius-full;
+  --jlz-button-radius: @jlz-button-radius;
+  --jlz-card-radius: @jlz-card-radius;
+  --jlz-card-shadow: @jlz-card-shadow;
 
   --jlz-color-fluid-surface: @jlz-color-fluid-surface;
   --jlz-color-fluid-surface-strong: @jlz-color-fluid-surface-strong;
@@ -248,18 +264,18 @@
 }
 
 html.uk-light {
-  --jlz-color-text: #15110e;
-  --jlz-color-text-muted: rgba(21, 17, 14, 0.72);
+  --jlz-color-text: @jlz-inverse-text;
+  --jlz-color-text-muted: @jlz-inverse-text-muted;
   --jlz-color-text-subtle: rgba(21, 17, 14, 0.5);
   /* Light theme backgrounds — flip from dark to light for inverse mode.
      Needed for dropdown/overlay components that use CSS vars. */
-  --jlz-color-bg: #efe0cc;
-  --jlz-color-bg-elevated: #f8eddf;
+  --jlz-color-bg: @jlz-inverse-bg;
+  --jlz-color-bg-elevated: @jlz-inverse-surface;
   --jlz-color-fluid-surface: rgba(248, 237, 223, 0.7);
   --jlz-color-fluid-surface-strong: rgba(255, 248, 240, 0.9);
   --jlz-color-fluid-border: rgba(21, 17, 14, 0.14);
   --jlz-color-fluid-highlight: rgba(255, 250, 242, 0.9);
-  --jlz-color-accent: #4b4000;
+  --jlz-color-accent: @jlz-inverse-accent;
   --jlz-color-accent-hover: #282200;
   --jlz-color-accent-glow: rgba(255, 247, 44, 0.35);
   --jlz-color-signal-cool: #8e735e;
@@ -323,6 +339,8 @@ html.uk-light {
 @global-control-height: 2.75rem;
 @global-control-small-height: 2.1875rem;
 @global-control-large-height: 4rem;
+@button-font-weight: @jlz-weight-semibold;
+@button-text-transform: none;
 
 // Inverse mode — generates `.uk-light` class (inverse colors = dark text
 // in our dark-theme context, for use on light backgrounds). This lets us
@@ -379,8 +397,9 @@ html.uk-light {
 
 // ── Buttons: compact glass controls, still owned by UIKit semantics. ──
 .hook-button() {
-  border-radius: @jlz-radius-md;
-  font-weight: @jlz-weight-semibold;
+  border-radius: @jlz-button-radius;
+  font-weight: @button-font-weight;
+  text-transform: @button-text-transform;
   transition:
     transform @jlz-duration-fast @jlz-ease-state,
     border-color @jlz-duration-fast ease,
@@ -436,6 +455,16 @@ html.uk-light {
     box-shadow @jlz-duration-fast ease;
 }
 
+.hook-card() {
+  border-radius: @jlz-card-radius;
+  box-shadow: @jlz-card-shadow;
+}
+
+.hook-form() {
+  border: 1px solid @jlz-form-border;
+  border-radius: @jlz-radius-md;
+}
+
 .hook-icon-button-hover() {
   border-color: @global-primary-background;
   background: @jlz-color-surface-hover;
@@ -450,9 +479,9 @@ html.uk-light {
   transform: scale(0.96);
 }
 
-// ── Navbar container: transparent by default (app-layer CSS adds glass) ──
+// ── Navbar container: Style-owned surface (app-layer CSS may still add glass) ──
 .hook-navbar-container() {
-  background: transparent;
+  background: @jlz-navbar-surface;
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -507,3 +536,13 @@ html.uk-light {
 // @import '../../node_modules/uikit/src/less/components/svg.less'; // Enable with a real `uk-svg` consumer.
 @import '../../node_modules/uikit/src/less/components/visibility.less';
 @import '../../node_modules/uikit/src/less/components/inverse.less';
+
+// Optional components used by saved Page Builder documents. The admin
+// compiler regenerates this file, so unused optional component CSS is absent
+// from production rather than hidden at runtime.
+@import './builder/components.generated.less';
+
+// The dev Style Builder writes validated Less variables last. Less resolves
+// variables lazily, so these values feed token CSS, hooks and UIkit component
+// rules above while remaining the final declaration for component variables.
+@import './builder/theme.generated.less';

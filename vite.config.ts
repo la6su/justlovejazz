@@ -3,6 +3,7 @@ import { resolve } from 'node:path'
 
 import { copyFileSync, mkdirSync, readdirSync } from 'fs'
 import { homePage } from './src/pages/home'
+import { jlzAdminPlugin } from './admin/vite-plugin'
 
 // ═══════════════════════════════════════════════════════════════════════
 // TREE-SHAKING (automatic — no extra config needed)
@@ -134,6 +135,9 @@ export default defineConfig({
     minify: 'esbuild',
   },
   plugins: [
+    // /admin/ is a separate development application. The plugin owns its
+    // fixed-path save/compile API and apply:'serve' keeps it out of builds.
+    jlzAdminPlugin(),
     {
       // Strip @vite/client from HTML + intercept the HTTP request.
       // Through the Caddy/XTransformPort gateway, /@vite/client resolves to

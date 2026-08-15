@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>JUSTLOVEJAZZ Builder</title>
+  </head>
+  <body>
+    <div class="jlz-admin" id="jlz-admin">
+      <header class="jlz-admin-toolbar">
+        <a class="jlz-admin-brand" href="/" aria-label="Open the public site">
+          <span aria-hidden="true">JLZ</span>
+          <strong>Page Builder</strong>
+        </a>
+        <label class="jlz-admin-title">
+          <span class="uk-hidden">Page title</span>
+          <input id="document-title" class="uk-input" maxlength="120" />
+        </label>
+        <div class="jlz-admin-history" aria-label="History controls">
+          <button id="undo" class="uk-button uk-button-default uk-button-small" type="button">
+            Undo
+          </button>
+          <button id="redo" class="uk-button uk-button-default uk-button-small" type="button">
+            Redo
+          </button>
+        </div>
+        <div class="jlz-admin-viewports" role="group" aria-label="Preview width">
+          <button class="is-active" data-viewport="desktop" type="button">Desktop</button>
+          <button data-viewport="tablet" type="button">Tablet</button>
+          <button data-viewport="mobile" type="button">Mobile</button>
+        </div>
+        <output id="save-status" class="jlz-admin-status" aria-live="polite">Loading…</output>
+        <button id="save" class="uk-button uk-button-primary" type="button">
+          Save &amp; compile
+        </button>
+      </header>
+
+      <aside class="jlz-admin-sidebar jlz-admin-sidebar-left" aria-label="Builder navigation">
+        <nav class="jlz-admin-tabs" aria-label="Editor mode">
+          <button class="is-active" data-mode="builder" type="button">Builder</button>
+          <button data-mode="style" type="button">Style</button>
+        </nav>
+        <div id="builder-panel">
+          <div class="jlz-admin-panel-heading">
+            <div>
+              <span class="jlz-admin-kicker">Elements</span>
+              <h1>Add content</h1>
+            </div>
+          </div>
+          <div id="element-catalog" class="jlz-admin-catalog"></div>
+          <div class="jlz-admin-outline-heading">
+            <span class="jlz-admin-kicker">Document</span>
+            <strong>Outline</strong>
+          </div>
+          <ol id="document-outline" class="jlz-admin-outline"></ol>
+        </div>
+        <div id="style-panel" hidden>
+          <div class="jlz-admin-panel-heading">
+            <div>
+              <span class="jlz-admin-kicker">UIkit Styler</span>
+              <h1>Custom theme</h1>
+            </div>
+          </div>
+          <p class="jlz-admin-help">
+            Edit whitelisted UIkit/Less decisions and compile them into the JUSTLOVEJAZZ theme.
+          </p>
+          <label class="jlz-admin-preview-all">
+            <input id="preview-all-components" class="uk-checkbox" type="checkbox" checked />
+            <span>Preview all UI components</span>
+          </label>
+          <nav
+            id="style-navigation"
+            class="jlz-admin-style-navigation"
+            aria-label="Style groups"
+          ></nav>
+        </div>
+      </aside>
+
+      <main class="jlz-admin-stage" aria-label="Page preview">
+        <div class="jlz-admin-stage-meta">
+          <span id="preview-label">Live preview · desktop</span>
+          <div class="jlz-admin-preview-meta-actions">
+            <div
+              id="style-tone-controls"
+              class="jlz-admin-tone-controls"
+              role="group"
+              aria-label="Style polarity"
+              hidden
+            >
+              <button class="is-active" data-style-tone="default" type="button">Default</button>
+              <button data-style-tone="inverse" type="button">Inverse</button>
+            </div>
+            <span>UIkit 3 / custom theme</span>
+          </div>
+        </div>
+        <div id="preview-frame" class="jlz-admin-preview-frame" data-viewport="desktop">
+          <div id="builder-preview" class="jlz-builder-preview"></div>
+        </div>
+      </main>
+
+      <aside class="jlz-admin-sidebar jlz-admin-sidebar-right" aria-label="Element inspector">
+        <div class="jlz-admin-panel-heading">
+          <div>
+            <span class="jlz-admin-kicker">Inspector</span>
+            <h2 id="inspector-title">No selection</h2>
+          </div>
+          <div class="jlz-admin-node-actions" id="node-actions" hidden>
+            <button id="move-up" type="button" aria-label="Move element up">↑</button>
+            <button id="move-down" type="button" aria-label="Move element down">↓</button>
+            <button id="duplicate" type="button" aria-label="Duplicate element">⧉</button>
+            <button id="remove" type="button" aria-label="Delete element">×</button>
+          </div>
+        </div>
+        <div id="inspector-fields" class="jlz-admin-inspector-fields">
+          <p class="jlz-admin-help">Select an element in the outline or preview to edit it.</p>
+        </div>
+      </aside>
+    </div>
+    <noscript>This builder requires JavaScript.</noscript>
+    <script type="module" src="/admin/main.ts"></script>
+  </body>
+</html>
