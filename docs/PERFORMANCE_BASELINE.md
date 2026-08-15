@@ -221,6 +221,13 @@ also completed through both representative backends without runtime or shader
 errors. It is an async asset-feasibility observation, not a concurrent-cache or
 resource-plateau result.
 
+The same scoped route then loaded the production `ContactCyprusStage` asset
+through its existing GLTF/DRACO owner. Automatic `WebGPUBackend -> tsl-post`
+and forced `WebGLBackend -> direct-webgl-fallback` both completed without
+runtime or shader errors. This records real-model asset compatibility only;
+resize/DPR, reduced-motion, active-burst timing and lifecycle-plateau evidence
+remain outstanding.
+
 ### Phase 0 physical mobile WebGPU observation — 2026-08-15
 
 The same local development build was opened over an ADB USB reverse tunnel on

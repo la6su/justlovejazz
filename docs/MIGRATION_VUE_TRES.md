@@ -515,6 +515,27 @@ post path and forced WebGL fallback with no runtime or shader error. This is a
 single texture-owner feasibility result; concurrent consumers and route-level
 resource soak remain later gates.
 
+#### Phase 2 Contact GLTF/DRACO owner slice — 2026-08-15
+
+The representative scope now reuses `ContactCyprusStage`, the existing owner
+of `/assets/gltf/cyprus_3d.glb` and its local `/assets/draco/` decoder path.
+The active Tres camera is supplied through its established camera port before
+the asynchronous load starts; the scope then activates and advances the stage
+once before its first representative render. No second GLTF loader, decoder
+configuration or material replacement path was introduced.
+
+If the scope has already been disposed by the time loading resolves, it calls
+`stage.dispose()` and declines attachment. Normal teardown likewise delegates
+model geometry/material cleanup to the stage owner. This is an explicit
+late-result ownership contract; a repeated mount/unmount resource plateau is
+still required before Phase 2 is accepted.
+
+Physical Chrome completed the real model on both paths: automatic
+`WebGPUBackend -> tsl-post` and forced `WebGLBackend -> direct-webgl-fallback`.
+Neither session emitted a runtime or shader error; the only console output was
+the existing Vue development feature-flags warning. This establishes asset
+feasibility, not resize/DPR, reduced-motion, timing or soak acceptance.
+
 ### Phase 3 — framework-neutral contracts
 
 Scope:

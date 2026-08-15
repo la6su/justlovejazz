@@ -61,6 +61,8 @@ async function onReady(context: TresContext): Promise<void> {
   try {
     status.value = 'loading-works-texture'
     if (!(await sceneResources.loadWorksPlane())) return
+    status.value = 'loading-contact-model'
+    if (!(await sceneResources.loadContactModel(camera))) return
     if (canUseTSLPost(readiness.backend)) {
       postPipeline = WebGPUPostPipeline.create(actualRenderer, context.scene.value, camera)
       postPipeline.updateParams({

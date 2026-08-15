@@ -1,9 +1,10 @@
-import { Mesh, TorusKnotGeometry, type Scene } from 'three'
+import { Mesh, TorusKnotGeometry, type Camera, type Scene } from 'three'
 import { MeshBasicNodeMaterial } from 'three/webgpu'
 import { ParticleBurst } from '../../Experience/World/ParticleBurst'
 import { EnvSphere } from '../../Experience/World/EnvSphere'
 import { CasePlane } from '../../Experience/World/CasePlane'
 import { loadCaseTexture, releaseCaseTexture } from '../../Experience/World/caseTexture'
+import { ContactCyprusStage } from '../../Experience/World/ContactCyprusStage'
 
 const REPRESENTATIVE_CASE_TEXTURE = '/assets/projects/ebb-vibes/cover-studio-v2.jpg'
 
@@ -13,6 +14,7 @@ export interface RepresentativeSceneResources {
   mesh: Mesh<TorusKnotGeometry, MeshBasicNodeMaterial>
   attach(scene: Scene): void
   loadWorksPlane(): Promise<boolean>
+  loadContactModel(camera: Camera): Promise<boolean>
   dispose(): void
 }
 
@@ -39,6 +41,8 @@ export function createRepresentativeScene(): RepresentativeSceneResources {
   let casePlane: CasePlane | null = null
   let textureAcquired = false
   let caseLoad: Promise<boolean> | null = null
+  let contactStage: ContactCyprusStage | null = null
+  let contactLoad: Promise<boolean> | null = null
 
   const releaseTexture = () => {
     if (!textureAcquired) return
@@ -76,12 +80,32 @@ export function createRepresentativeScene(): RepresentativeSceneResources {
       })
       return caseLoad
     },
+    loadContactModel(camera) {
+      if (contactLoad) return contactLoad
+      const stage = new ContactCyprusStage()
+      stage.setCamera(camera)
+      contactLoad = stage.load().then(() => {
+        if (disposed || !attachedScene) {
+          stage.dispose()
+          return false
+        }
+
+        stage.setActive(true)
+        stage.update(0.52)
+        attachedScene.add(stage)
+        contactStage = stage
+        return true
+      })
+      return contactLoad
+    },
     dispose() {
       if (disposed) return
       disposed = true
       casePlane?.dispose()
       casePlane = null
       releaseTexture()
+      contactStage?.dispose()
+      contactStage = null
       environment.removeFromParent()
       environment.dispose()
       burst.removeFromParent()

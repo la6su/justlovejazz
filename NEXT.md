@@ -58,9 +58,12 @@ do not start a phase whose entry gate has not passed.
       on the fallback backend. Physical Chrome now proves that the fog/material
       TSL-post path reaches `WebGPUBackend`. The existing environment owner now
       passes on both backends without duplicate Three runtimes. The existing
-      time-driven instanced owner also passes. The Works texture plane now
-      passes through the shared cache; next add GLTF/DRACO with late-result
-      cleanup evidence.
+      time-driven instanced owner also passes. The Works texture plane passes
+      through the shared cache, and the real `ContactCyprusStage` GLTF/DRACO
+      owner now completes on both backends. Its scoped late-result branch
+      disposes a detached stage rather than attaching it. Next prove resize,
+      DPR and reduced-motion behavior before the repeated loop and resource
+      plateau gates.
 
 - [ ] **Phase 3: extract framework-neutral contracts** — introduce the one
       route manifest, canonical world-slot tuple, bootstrap state machine,
