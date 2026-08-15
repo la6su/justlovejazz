@@ -349,6 +349,24 @@ backend/software-adapter inspection, and application-ready notification. Tres
 ready. The probe is intentionally framework-neutral and is not mounted by the
 production entry.
 
+The development-only page at `/__spikes/tres-manual` also exercises the real
+Tres canvas on hardware. With `render-mode="manual"`, it reached
+`manual-ready`, retained one canvas and emitted two render events during mount:
+the framework initialization render and the explicit `advance()` requested by
+the probe. It produced no Tres element-registration, HMR or runtime integration
+errors after applying the official Tres template compiler options. A Vue
+compile-feature warning remains in Vite's development dependency prebundle;
+it is tooling noise rather than a renderer failure and no deprecated Vite
+prebundle override is retained to suppress it.
+
+Consequently, manual mode is the selected target integration but is not defined
+as "no initialization render". Tres owns canvas mounting and its initialization
+frame; the project scheduler owns every subsequent demand and calls the one
+Tres `advance()` boundary. Production owners must not call
+`renderer.setAnimationLoop` or introduce another `requestAnimationFrame` loop.
+Application readiness remains a later latch that awaits renderer initialization,
+actual-backend inspection, TSL graph readiness and the first successful frame.
+
 ### Phase 2 — representative renderer feasibility gate
 
 This is not a rotating-box demo. The spike includes fog, representative TSL

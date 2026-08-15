@@ -17,11 +17,13 @@ do not start a phase whose entry gate has not passed.
       physical Android high-DPR device. The two-canvas composition is recorded
       as an intentional legacy boundary to remove in Phase 2/6.
 
-- [ ] **Phase 1: select and scaffold the compatible toolchain** — verify current
-      official releases and compatibility for Vue, Vue Router, TresJS and
-      Three.js; pin the tested matrix; add SFC, type, test and bundle reporting
-      without changing the production runtime. Reject dependencies that do not
-      replace owned code or provide measured product/runtime value.
+- [x] **Finish Phase 1: select and scaffold the compatible toolchain** — the
+      exact Vue, Vue Router, TresJS and Three.js matrix is pinned; SFC, type,
+      test and bundle gates run without changing the production entry graph.
+      The hardware development probe selects Tres manual mode plus one project
+      scheduler boundary and records the initialization render separately from
+      subsequent `advance()` calls. Async renderer initialization, actual
+      backend inspection and application readiness remain distinct contracts.
 
 - [ ] **Calibrate OMP on ten bounded tasks** — delegate only low-risk S0/S1
       work during Phases 0–1, score first-pass accuracy, retries, latency,

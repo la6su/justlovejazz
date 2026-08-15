@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
+import { templateCompilerOptions } from '@tresjs/core'
 import { resolve } from 'node:path'
 
 import { copyFileSync, mkdirSync, readdirSync } from 'fs'
@@ -19,6 +20,11 @@ import { jlzAdminPlugin } from './admin/vite-plugin'
 
 export default defineConfig({
   base: '/',
+  define: {
+    __VUE_OPTIONS_API__: 'false',
+    __VUE_PROD_DEVTOOLS__: 'false',
+    __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: 'false',
+  },
   publicDir: 'public',
   build: {
     target: 'es2023',
@@ -136,10 +142,23 @@ export default defineConfig({
     minify: 'esbuild',
   },
   plugins: [
-    vue(),
+    vue(templateCompilerOptions),
     // /admin/ is a separate development application. The plugin owns its
     // fixed-path save/compile API and apply:'serve' keeps it out of builds.
     jlzAdminPlugin(),
+    {
+      name: 'tres-manual-probe',
+      apply: 'serve',
+      configureServer(server) {
+        server.middlewares.use((req, res, next) => {
+          if (req.url !== '/__spikes/tres-manual') return next()
+          res.setHeader('Content-Type', 'text/html; charset=utf-8')
+          res.end(
+            '<!doctype html><html><head><link rel="icon" href="/favicon.svg"></head><body><div id="app"></div><script type="module" src="/src/spikes/tres/manualProbeEntry.ts"></script></body></html>',
+          )
+        })
+      },
+    },
     {
       // Strip @vite/client from HTML + intercept the HTTP request.
       // Through the Caddy/XTransformPort gateway, /@vite/client resolves to
@@ -160,7 +179,9 @@ export default defineConfig({
             res.end(
               [
                 '// Vite client stub — prevents reload loop through proxy',
-                'export function createHotContext() { return { accept() {}, dispose() {}, prune() {} } }',
+                'export function createHotContext() {',
+                '  return { accept() {}, dispose() {}, prune() {}, on() {}, off() {}, send() {}, invalidate() {}, decline() {} }',
+                '}',
                 'export function updateStyle() {}',
                 'export function removeStyle() {}',
                 'export function defineDevServer() {}',
