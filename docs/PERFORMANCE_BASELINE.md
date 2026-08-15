@@ -1,8 +1,13 @@
 # Performance baseline
 
-This baseline separates reproducible delivery budgets from hardware-dependent
-runtime measurements. Run `bun run build && bun run budget:build` after entry
-graph, Three.js or media changes.
+This document freezes the pre-migration evidence and records comparable
+measurements for every Vue/TresJS milestone. It separates reproducible delivery
+budgets from hardware-dependent runtime measurements. Run
+`bun run build && bun run budget:build` after entry graph, dependency, Three.js
+or media changes.
+
+Do not overwrite pre-migration values. Add dated results with the commit,
+device and backend so improvements and regressions remain attributable.
 
 ## Static delivery
 
@@ -24,6 +29,23 @@ to its import graph still require production-build inspection. Media remains
 informational until approved replacements define a delivery budget; the gate
 reports its total and largest file without normalising the current placeholder
 as an acceptable limit.
+
+### Migration delivery comparison
+
+Keep framework and renderer costs separate. Populate a row only from a clean
+production build.
+
+| Milestone                    | Splash gzip | Vue gzip | TresJS gzip | Shared Three gzip | Initial route gzip | Notes                |
+| ---------------------------- | ----------: | -------: | ----------: | ----------------: | -----------------: | -------------------- |
+| Pre-migration (`2026-07-28`) |     2.68 kB |      n/a |         n/a |         337.34 kB |  record in Phase 0 | classic fallback     |
+| Phase 1 toolchain            |     pending |  pending |     pending |           pending |            pending | inert scaffold       |
+| Phase 5 Vue shell            |     pending |  pending |         n/a |           pending |            pending | native scene         |
+| Phase 7 Tres root            |     pending |  pending |     pending |           pending |            pending | legacy world adapter |
+| Phase 10 cutover             |     pending |  pending |     pending |           pending |            pending | no legacy paths      |
+
+The splash budget remains 5 KB gzip. The existing Three.js budget is not
+silently expanded to absorb Vue or TresJS. A dependency must replace owned code
+or provide measured value, and its chunk must remain attributable.
 
 ## Runtime matrix
 
@@ -67,3 +89,55 @@ direct-entry QA for `/works` and `/contact` also passed on desktop and at a
 check on the desktop host (DPR 1), not mobile-hardware evidence. Complete the
 matrix with real mobile DPR measurements before treating runtime performance as
 fully baselined.
+
+## Migration runtime and memory comparison
+
+Record `/`, `/works` and `/contact` on automatic WebGPU and the forced fallback
+for each renderer milestone. Before Phase 6 acceptance the forced fallback is
+the current classic WebGL2 renderer; afterwards it is
+`WebGPURenderer({ forceWebGL: true })` and is labelled `WebGLBackend`.
+
+| Milestone        | Backend | Route/state           |     p50 |     p95 | Settled draws | Resource soak | Device/context                |
+| ---------------- | ------- | --------------------- | ------: | ------: | ------------: | ------------- | ----------------------------- |
+| Phase 0 freeze   | pending | representative matrix | pending | pending |       pending | pending       | record commit/browser/GPU/DPR |
+| Phase 2 spike    | pending | representative scene  | pending | pending |    0 required | 20 mounts     | record                        |
+| Phase 6 renderer | pending | full route matrix     | pending | pending |    0 required | 20 routes     | record                        |
+| Phase 10 cutover | pending | full route matrix     | pending | pending |    0 required | 20 routes     | record                        |
+
+Resource soak tracks canvas/context count, listeners, timers, decoded assets,
+textures, geometries, programs/pipelines, retained route scopes, JS heap and GPU
+memory where a stable counter exists. Run five declared warm-up cycles so lazy
+pipelines and bounded caches can reach their documented caps, then measure
+twenty steady-state cycles. No counter may trend upward after warm-up, and root
+destroy must return root-owned resources to baseline after an explicit
+GC/driver-settle observation window. Exact heap values can be noisy; record raw
+runs and fail repeatable trends rather than one sample.
+
+### Benchmark and visual protocol
+
+- Record commit, production build hash, browser version, device/GPU, backend,
+  adapter class, viewport, DPR, power state and motion preference.
+- Warm shaders and route caches with one unmeasured route cycle, then collect
+  at least three equal active-burst windows per route/backend. Report every run,
+  the median and worst p95; the worst p95 must meet the target.
+- Measure settled idle separately as loop ticks, draw calls and active reasons;
+  frame-time budgets do not describe a state with zero draws.
+- Capture visual parity at identical state and compare with the repository
+  screenshot tool. Outside approved masks for temporal grain, cursor and video,
+  at most 0.5% of pixels may exceed a 0.1 perceptual threshold. Store the diff
+  and masks with the evidence; an intentional visual change requires product
+  approval rather than a wider migration tolerance.
+- Repeat resource tests after cache warm-up and again after root destroy;
+  declare every bounded cache cap in the evidence.
+
+## Performance design rules
+
+- One canvas, renderer and renderer-loop driver for the shared experience.
+- Zero scene draw calls and zero scheduler activities after settled idle.
+- No per-frame object allocation in persistent tasks.
+- Route assets load lazily and use explicit ephemeral, bounded-cache or
+  shared-refcounted policies.
+- Shader/pipeline warm-up is measured rather than hidden in first interaction.
+- Dependency upgrades include build-size and both-backend frame comparisons.
+- Budgets change only through a separately reviewed architecture decision with
+  product and hardware evidence.

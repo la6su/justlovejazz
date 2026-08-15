@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Established the staged Vue 3, Vue Router and TresJS migration architecture,
+  including a representative WebGPU/WebGLBackend gate, persistent scene root,
+  demand-render scheduler, explicit GPU resource ownership and rollback points.
+- Added architecture decisions and a Queen/OMP Worker protocol for bounded
+  local-model delegation without sharing integration authority or secrets.
+- Defined migration budgets for framework delivery, idle rendering, route
+  resource soaks, dependency admission and removal of superseded production
+  paths.
+
 - Moved the pixel-rasterised route title from `/works` to the lazy `/contact`
   scene. The standalone Works route now presents case planes without the Baku
   cube or a competing text layer; Contact owns the title's reveal, language and
@@ -48,9 +57,9 @@
 - Project case studies now open as full-screen still-image overlays; video is
   reserved for the explicit Showreel action.
 
-This is a concise release-level record. Implementation decisions belong in
-[`WORKLOG.md`](../WORKLOG.md); completed plans remain available through Git
-history.
+This is a concise release-level record. Architecture decisions belong in
+[`adr/`](adr/), active outcomes in [`NEXT.md`](../NEXT.md), and completed plans
+remain available through Git history.
 
 ## 2026-07-25 — Revert to flat plane (junni approach) — text now visible (PR #181)
 

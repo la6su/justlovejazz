@@ -1,5 +1,9 @@
 # UIkit Page Builder
 
+This document describes the current implementation and its planned Vue
+ownership. The versioned schema, validation and compiler remain framework-free;
+only the development editor and public rendering adapters migrate.
+
 The Page Builder is a project-owned development tool inspired by the workflow
 of visual theme builders. It does not embed or redistribute the supplied
 YOOtheme runtime. UIkit semantics and the existing JUSTLOVEJAZZ Less theme
@@ -26,6 +30,13 @@ src/assets/builder/
   theme.generated.less         validated theme-token overrides
   components.generated.less    optional UIkit imports used by saved documents
 ```
+
+The target boundary replaces `admin/main.ts` with a separate dev-only Vue
+application entry and adds a Vue renderer for the same
+`src/builder/schema.ts` document. It does not create a second schema, catalogue,
+validator or compiler. Public routes and the editor preview must render through
+the same typed element registry so a component is implemented once and tested
+in both contexts.
 
 `vite.config.ts` installs the save API with `apply: 'serve'`. The production
 input list does not contain `admin/index.html`, so inspector code, editing
@@ -80,4 +91,31 @@ covers the first high-value UIkit groups. Full UIkit component coverage,
 publishing as a public route, managing multiple route documents, drag-and-drop
 nesting, media selection and dynamic data sources are separate outcomes. Public
 route integration must use `renderBuilderDocument()` and the existing router
-metadata/i18n contracts; it must not import `admin/`.
+metadata/i18n contracts; it must not import `admin/`. This is the interim rule
+before Phases 5 and 9. After the Vue route registry passes parity, public
+rendering consumes that registry; the legacy HTML adapter remains only for
+proven static output until its cleanup gate.
+
+## Vue migration sequence
+
+1. Freeze schema v2 fixtures and compiler output before changing the editor.
+2. Extract framework-neutral commands for add, move, duplicate, delete,
+   undo/redo and validation; keep the existing document contract unchanged.
+3. Build the Vue admin shell as a separate dev-only entry and reuse those
+   commands.
+4. Add one typed Vue element registry used by editor preview and public route
+   rendering. Keep HTML rendering only for static output until parity is
+   proven.
+5. Move multi-route publishing and SSG only after Vue Router owns the public
+   route manifest.
+6. Delete the old editor/render adapter when fixture, visual and production
+   bundle gates pass.
+
+The builder remains excluded from the initial public graph. Vue Devtools,
+inspector state, drag-and-drop libraries and editor-only UIkit components must
+not enter production chunks. A new dependency is accepted only when native
+browser/Vue primitives cannot meet the requirement and its isolated bundle
+cost is measured.
+
+See [`MIGRATION_VUE_TRES.md`](MIGRATION_VUE_TRES.md) for phase gates and
+[`ARCHITECTURE.md`](ARCHITECTURE.md) for target dependency direction.

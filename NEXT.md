@@ -1,91 +1,113 @@
 # Next work
 
-This is the evidence-driven execution plan. Work from top to bottom inside the
-autonomous queue. Outcomes in the input queue become active only when their
-named dependency is available. Each item describes a result, not a preferred
-implementation.
+This is the evidence-driven execution queue. The accepted program is the full
+Vue 3, Vue Router and TresJS migration described in
+[docs/MIGRATION_VUE_TRES.md](docs/MIGRATION_VUE_TRES.md). Work top to bottom;
+do not start a phase whose entry gate has not passed.
 
-## 1 — Autonomous queue
+## 1 — Active migration queue
 
-- [ ] **Complete the UIkit Style PageBuilder catalogue** — the separate
-      development Style workspace now owns versioned Global, Theme, Inverse,
-      Base, Button, Card, Section, Form and Navbar decisions, complete/focused
-      component previews and validated Less generation. Extend the same typed
-      schema and showcase contract across the remaining UIkit components,
-      introduce named style presets and import/export only after the initial
-      groups pass sustained project use.
+- [ ] **Finish Phase 0: freeze the pre-migration baseline** — the architecture
+      plan and ADR foundation now exist. Capture a clean production manifest,
+      route screenshots after Enter, WebGPU and forced-WebGL diagnostics,
+      accessibility contracts and the full current release gate. Record only
+      evidence that can be repeated during later phases.
 
-- [ ] **Publish custom UIkit Page Builder pages through the frontend** — the
-      separate dev-only `/admin/` application now owns the v2 document editor,
-      schema-driven inspector, responsive preview, history, atomic persistence,
-      custom-theme generation and optional UIkit Less manifest without entering
-      `dist`. Add multi-page route documents and metadata, connect the safe
-      renderer to a deliberate public route owner, then add drag-and-drop,
-      media and dynamic sources without importing the admin graph into the SPA.
+- [ ] **Phase 1: select and scaffold the compatible toolchain** — verify current
+      official releases and compatibility for Vue, Vue Router, TresJS and
+      Three.js; pin the tested matrix; add SFC, type, test and bundle reporting
+      without changing the production runtime. Reject dependencies that do not
+      replace owned code or provide measured product/runtime value.
 
-- [ ] **Extend the cinematic brand language across every route** — the shared
-      shell and Menu now establish the original brand mark, paper/ink material
-      contrast, electric-yellow signal, responsive typographic preview and
-      aperture reveal; the spherical ambient shell is now a rounded paper/ink
-      pavilion with the six-state palette and ground contracts intact. Tune the
-      same motion hierarchy across Intro, Services, Works, Manifesto, Lab and
-      Contact after the next visual review; add TSL response only where it
-      communicates a state, and preserve auto/inverse plus reduced-motion
-      parity.
+- [ ] **Phase 2: pass the representative unified-renderer gate** — exercise
+      `WebGPURenderer` with WebGPUBackend and forced WebGLBackend against fog,
+      representative materials, the full TSL post graph, environment, Works,
+      GLTF/DRACO, reduced motion, lazy teardown and software-adapter policy.
+      Keep the classic fallback until parity, idle, performance and resource
+      soak gates pass.
 
-- [ ] **Complete the cross-backend runtime baseline** — static splash and
-      shared Three.js budgets are now enforced, Contact loaders are route-owned
-      and the 16.35 MB placeholder video is recorded; the first 1280×720
-      WebGPU/WebGL2 story and direct Works/Contact runs pass the desktop p95
-      target. Capture real mobile-device DPR evidence before tuning the runtime.
+- [ ] **Phase 3: extract framework-neutral contracts** — introduce the one
+      route manifest, canonical world-slot tuple, bootstrap state machine,
+      typed application/scene ports, render scheduler and resource scopes
+      behind reversible legacy adapters. Remove duplicated facts as each new
+      source gains tests and consumers.
 
-- [ ] **Validate the shared transition language** — exercise direct entry,
-      in-app navigation and popstate on WebGPU/WebGL, both polarities, narrow
-      layouts and reduced motion; browser history and reduced-motion contracts
-      are covered now. Finish real-device polarity checks before extending the
-      route curtain to Menu or project transitions.
+- [ ] **Phase 4: migrate the development Page Builder to Vue** — use the
+      isolated admin application as the first state-heavy Vue surface while
+      keeping schema, validation, escaping and Less compilation pure. Preserve
+      atomic save and keep the admin graph out of production.
 
-- [ ] **Finish the UIkit-first style ownership split** — consolidate the legacy
-      cinematic shell/Menu declarations behind their new component owner, then
-      extract the remaining independent fullscreen overlay and Works owners
-      from `main.less` without changing composition, accessibility or theme
-      behavior.
+- [ ] **Phase 5: migrate the public DOM shell and routing** — adopt AppShell,
+      Vue Router, semantic route SFCs, UIkit lifecycle adapters, i18n/meta and
+      prerendering one vertical slice at a time while the current Three runtime
+      remains persistent behind a typed port.
 
-## 2 — Input queue
+- [ ] **Phases 6–10: cut over renderer, Tres scene owners and static content** —
+      only after their gates pass, ship the unified renderer, persistent
+      TresCanvas, one-by-one scene-owner migration, builder/blog SSG
+      consolidation and final legacy removal. The migration is not done while
+      duplicate routers, loops, renderer paths, owner adapters or undocumented
+      dependencies remain.
 
-- [ ] **Decide the fate of the vendored `references/` tree** — the unused
-      reference site is outside the runtime graph, but removing it from the
-      working tree will not shrink Git history; choose an external archive or
-      a separately approved history rewrite after the licensing review.
+## 2 — Deferred product queue
 
-- [ ] **Decide the UIkit JS strategy after visual/accessibility review** — the
-      production build measures `vendor-ui` at 75.8 KB gzip, while UIkit still
-      owns modal, nav, scrollspy and accessibility behavior; replace it only
-      with an equivalent measured owner boundary.
+These outcomes remain valid but must not deepen a legacy boundary scheduled
+for replacement. Pull one forward only when its migration dependency is clear.
 
-- [ ] **Configure production SPA rewrites** — after the hosting target is
-      identified, route the six SPA paths to `index.html` while retaining the
-      standalone `/blog` pages and static assets; verify every sitemap route
-      against the deployed origin.
+- [ ] **Publish custom Page Builder pages through the frontend** — continue in
+      Phase 9 after the Vue builder, route manifest and trusted component
+      registry exist. Multi-page metadata, drag-and-drop, media and dynamic
+      sources remain separate bounded outcomes.
 
-- [ ] **Turn Works into evidence** — after project facts and media are approved,
-      align case imagery, detail overlays, blog articles and metadata around the
-      same problem, response, role and proof.
+- [ ] **Extend the cinematic brand language across every route** — tune motion
+      and TSL response through the new component/scene owners, preserving both
+      effective theme polarities and reduced-motion parity.
 
-- [ ] **Replace placeholder media and contact flow** — after the showreel and
-      delivery endpoint are chosen, ship delivery-conscious media and capture a
-      visitor's reply address and project context without relying on a
-      subject-only `mailto:` form.
+- [ ] **Complete the cross-backend runtime baseline** — finish real-mobile DPR
+      evidence and preserve the current desktop reference as the pre-migration
+      comparison rather than tuning two architectures simultaneously.
 
-## 3 — Evidence policy
+- [ ] **Validate the shared transition language** — complete direct entry,
+      navigation, popstate, backend, theme, narrow-layout and reduced-motion QA
+      as each Vue route slice replaces its legacy owner.
 
-Do not schedule a framework migration, central store, renderer abstraction or
-large `World`/pipeline split from code size alone. Add a refactor outcome only
-when a failing contract, measured budget or active product change identifies a
-smaller owner boundary.
+- [ ] **Finish the UIkit-first style ownership split** — carry the component
+      boundaries into SFC and adapter ownership without duplicating layout or
+      accessibility behavior.
+
+- [ ] **Decide the fate of the vendored `references/` tree** — choose an
+      external archive or separately approved history rewrite after licensing
+      review.
+
+- [ ] **Decide the final UIkit JS footprint** — measure retained Vue adapters
+      against the current 75.8 KB gzip vendor chunk; replace behavior only with
+      an equivalent accessible owner.
+
+- [ ] **Configure production SPA/SSG hosting** — decide the hosting target and
+      verify every route, blog document, asset and canonical URL against it.
+
+- [ ] **Turn Works into evidence** — align approved facts and media around the
+      same problem, response, role and proof after the Works scene owner moves.
+
+- [ ] **Replace placeholder media and contact delivery** — ship measured media
+      and a real contact endpoint after the target route/resource boundaries
+      exist.
+
+## 3 — Engineering policy
+
+- Do not duplicate route, slot, metadata, preference or render-reason facts.
+- Do not add a dependency without an owner, measured value, bundle impact and
+  removal/replacement analysis.
+- Prefer current stable library releases only after checking official release
+  notes and the tested compatibility matrix; pin the accepted result.
+- Preserve the working production path until its replacement passes, then
+  remove the legacy path promptly rather than maintaining two architectures.
+- A renderer or route phase cannot pass with memory/resource growth, duplicate
+  animation loops, continuous idle draws or weakened startup/performance
+  budgets.
 
 ## Plan maintenance
 
 After completing an item, update this file in the same change: remove the
-completed outcome, incorporate discovered follow-up work, and reorder the
-remaining items when evidence changes their priority.
+completed outcome, update the migration traceability/removal ledgers, capture
+discovered work and reorder the remainder when evidence changes priority.
