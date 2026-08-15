@@ -48,11 +48,11 @@ do not start a phase whose entry gate has not passed.
       soak gates pass. The first factory slice now passes on the desktop RTX
       4060 Ti and forced WebGLBackend with one Tres canvas, one async init owner
       and no duplicate Three runtime. Adapter class remains explicitly unknown
-      because Three r185 does not expose it. The first hardware A/B makes a
-      bounded `setAnimationLoop` driver the leading candidate: it retained zero
-      idle ticks versus Tres manual's 60/s. Repeat at least three equal windows
-      per backend with representative TSL, fog and post before selecting it for
-      production or proceeding to assets/soak. The new dev-only representative
+      because Three r185 does not expose it. The bounded `setAnimationLoop`
+      driver is selected for the future scheduler integration: three equal
+      physical-Android windows per backend ran the representative TSL, fog,
+      asset and post graph at 0 idle ticks and a worst p95 of 16.80 ms. The
+      new dev-only representative
       probe renders fog plus `MeshBasicNodeMaterial` through `WebGLBackend`;
       its resource scope has idempotent teardown and refuses WebGPU-only post
       on the fallback backend. Physical Chrome now proves that the fog/material
@@ -63,8 +63,8 @@ do not start a phase whose entry gate has not passed.
       owner now completes on both backends. Its scoped late-result branch
       disposes a detached stage rather than attaching it. Physical Android now
       proves the representative initial DPR cap and both backend paths;
-      resize-event behavior, repeated loop measurements and an owner-visible
-      resource plateau remain open gates.
+      desktop pacing, resize-event behavior and an owner-visible resource
+      plateau remain open gates.
 
 - [ ] **Phase 3: extract framework-neutral contracts** — introduce the one
       route manifest, canonical world-slot tuple, bootstrap state machine,

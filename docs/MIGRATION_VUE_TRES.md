@@ -76,11 +76,10 @@ navigation never recreates the canvas, renderer, shared scene or shared world.
 4. `EnvSphere` owns the ambient background. The contact state owns the ground.
 5. The renderer backend, DPR and feature tier are derived after async renderer
    initialization, not from `navigator.gpu` alone.
-6. One renderer-loop driver exists. The final implementation is selected only
-   after the representative Phase 2 gate. The leading candidate is a bounded
-   `renderer.setAnimationLoop` driver, which would run only while dirty or
-   active and stop at settled idle/hidden tab. Tres's internal loop is stopped
-   when that driver owns rendering. No scene subsystem starts its own loop.
+6. One renderer-loop driver exists. The selected target is a bounded
+   `renderer.setAnimationLoop` driver, which runs only while dirty or active
+   and stops at settled idle/hidden tab. Tres's internal loop is stopped when
+   that driver owns rendering. No scene subsystem starts its own loop.
 7. Settled idle performs no draw calls. Reduced motion reaches the same final
    state synchronously and releases every activity token.
 8. Vue owns DOM structure. UIkit owns only the behavior of wrapped UIkit
@@ -363,13 +362,12 @@ compile-feature warning remains in Vite's development dependency prebundle;
 it is tooling noise rather than a renderer failure and no deprecated Vite
 prebundle override is retained to suppress it.
 
-The first hardware A/B makes manual mode unlikely as the final driver. Its
+The first hardware A/B made manual mode unlikely as the final driver. Its
 current bootstrap `advance()` remains versioned behavior, and its internal rAF
 loop retained about 60 ticks per second after render invocations settled. The
-bounded `setAnimationLoop` adapter matched the one observed WebGPU pacing window
-and stopped at zero idle ticks, but remains a candidate until repeated,
-representative TSL/post results establish a median and worst p95. Scene owners
-must not introduce their own `requestAnimationFrame` loops.
+bounded `setAnimationLoop` adapter stopped at zero idle ticks. Physical
+representative evidence below selects it for the future scheduler integration;
+scene owners must not introduce their own `requestAnimationFrame` loops.
 Application readiness remains a later latch that awaits renderer initialization,
 actual-backend inspection, TSL graph readiness and the first successful frame.
 
@@ -441,6 +439,24 @@ invocations with no runtime/page error. This one-window result makes the bounded
 renderer loop a candidate because of idle behavior; it does not select it. The
 representative TSL/post graph must repeat at least three equal windows per
 backend and record median plus worst p95 before production cutover.
+
+#### Phase 2 representative loop-driver selection — 2026-08-15
+
+The loop probe was upgraded from a cube to the same fogged representative scope:
+TSL material/post on WebGPU, the direct fallback on WebGLBackend, `EnvSphere`,
+`ParticleBurst`, the shared Works texture and `ContactCyprusStage` GLTF/DRACO.
+It replaces Tres's manual render function so manual advancement and the bounded
+renderer loop can address the same resource graph without a second canvas or
+loader path.
+
+On the foreground physical Android `22101320G`, three valid 90-invocation
+windows were recorded for automatic `WebGPUBackend` and three for forced
+`WebGLBackend`. Every window had 90 burst ticks, zero idle ticks, p50 16.70 ms
+and p95 16.80 ms. Thus the median and worst p95 are both 16.80 ms for each
+backend, below the 33.3 ms mobile target. This selects the bounded
+`setAnimationLoop` port for the later scheduler integration. It does not
+establish desktop pacing, hidden-tab resume, dynamic resize, production-route
+performance or the resource-plateau gate.
 
 #### Phase 2 representative fog/material fallback slice — 2026-08-15
 
