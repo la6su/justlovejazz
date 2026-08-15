@@ -77,6 +77,7 @@ Neither mode changes the Worker authority, grants more tools or persists a
 session. The local bridge records the selected mode and content-free dimensions
 in telemetry; it never stores reasoning text. No global vLLM default may be
 changed until the fixed A/B evaluation accepts a task class.
+
 - force the dedicated key through the root-owned `omp-worker-gateway`; the key
   cannot open a shell, forward ports or execute arbitrary commands;
 - register the project STDIO bridge in `.codex/config.toml` and expose only

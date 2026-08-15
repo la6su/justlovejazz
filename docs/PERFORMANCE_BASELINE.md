@@ -47,6 +47,14 @@ The splash budget remains 5 KB gzip. The existing Three.js budget is not
 silently expanded to absorb Vue or TresJS. A dependency must replace owned code
 or provide measured value, and its chunk must remain attributable.
 
+### Phase 0 delivery recheck — 2026-08-15
+
+Commit `6a72b30` passed `bun run build && bun run budget:build`. The production
+manifest retained the frozen delivery values: splash startup **2.68 kB gzip**,
+shared Three.js **337.34 kB gzip** (12.66 kB headroom) and public media
+**19,686.37 kB**. The built Three chunk was
+`vendor-three-DRu4w4s9.js`; this hash is an evidence marker, not a new budget.
+
 ## Runtime matrix
 
 Frame-time evidence must come from real hardware rather than headless CI.
@@ -97,12 +105,12 @@ for each renderer milestone. Before Phase 6 acceptance the forced fallback is
 the current classic WebGL2 renderer; afterwards it is
 `WebGPURenderer({ forceWebGL: true })` and is labelled `WebGLBackend`.
 
-| Milestone        | Backend | Route/state           |     p50 |     p95 | Settled draws | Resource soak | Device/context                |
-| ---------------- | ------- | --------------------- | ------: | ------: | ------------: | ------------- | ----------------------------- |
-| Phase 0 freeze   | pending | representative matrix | pending | pending |       pending | pending       | record commit/browser/GPU/DPR |
-| Phase 2 spike    | pending | representative scene  | pending | pending |    0 required | 20 mounts     | record                        |
-| Phase 6 renderer | pending | full route matrix     | pending | pending |    0 required | 20 routes     | record                        |
-| Phase 10 cutover | pending | full route matrix     | pending | pending |    0 required | 20 routes     | record                        |
+| Milestone        | Backend | Route/state               |     p50 |     p95 | Settled draws | Resource soak | Device/context                                                         |
+| ---------------- | ------- | ------------------------- | ------: | ------: | ------------: | ------------- | ---------------------------------------------------------------------- |
+| Phase 0 freeze   | blocked | automatic and forced home |     n/a |     n/a |           n/a | pending       | `6a72b30`, 1280×720/DPR 1 in-app browser; forced visual parity failure |
+| Phase 2 spike    | pending | representative scene      | pending | pending |    0 required | 20 mounts     | record                                                                 |
+| Phase 6 renderer | pending | full route matrix         | pending | pending |    0 required | 20 routes     | record                                                                 |
+| Phase 10 cutover | pending | full route matrix         | pending | pending |    0 required | 20 routes     | record                                                                 |
 
 Resource soak tracks canvas/context count, listeners, timers, decoded assets,
 textures, geometries, programs/pipelines, retained route scopes, JS heap and GPU
@@ -112,6 +120,19 @@ twenty steady-state cycles. No counter may trend upward after warm-up, and root
 destroy must return root-owned resources to baseline after an explicit
 GC/driver-settle observation window. Exact heap values can be noisy; record raw
 runs and fail repeatable trends rather than one sample.
+
+### Phase 0 renderer observation — 2026-08-15
+
+At commit `6a72b30`, the 1280×720 DPR 1 in-app-browser run did not expose a
+hardware WebGPU adapter. Automatic startup initialized `WebGPURenderer` with
+`WebGLBackend`, then deliberately recreated the classic `WebGLRenderer`; after
+Enter, the home route showed one canvas and its DOM/scene composition.
+
+Forced `?renderer=webgl` logged the expected classic WebGL2 path and also kept
+one canvas, but after Enter the splash disappeared into a black viewport. The
+DOM still held the active intro section and no console error was emitted. This
+is a reproducible visual-parity failure, so Phase 0 is not frozen and no
+WebGPU-hardware or resource-soak claim is made from this environment.
 
 ### Benchmark and visual protocol
 

@@ -72,18 +72,18 @@ tokens; larger work is split or handled by the Queen.
 
 ## Scorecard
 
-|   # | Task                     | Tier | First pass | Retry | Queen result       | Note                                                                             |
-| --: | ------------------------ | ---- | ---------- | ----: | ------------------ | -------------------------------------------------------------------------------- |
-|   1 | `memory-minimum-review`  | S0   | fail       |     1 | usable after retry | first output imitated a disabled file tool; simplified five-line contract passed |
-|   2 | `routing-classification` | S0   | pass       |     0 | accepted           | exact three-line routing contract; 1.1 s gateway duration                        |
-|   3 | `thinking-mode-smoke`   | S0   | pass       |     0 | modes operational | `fast` and `analyze` preserved no-write contract; analyze took ~15 s vs ~4 s fast |
-|   4 | `route-policy-pair`     | S0   | mixed      |     1 | fast retry only   | fast drifted into unavailable file reading (2.8 s); analyze was correct (13.5 s) |
-|   5 | `worker-clone-freshness`| S1   | fail       |     0 | infrastructure fixed | Worker was on `main`; rematerialized exact `d641b8d` task base              |
-|   6 | `policy-docs-pair`      | S1   | fail       |     0 | rejected           | after sync, neither mode produced reliable evidence from the three named docs    |
-|   7 | `single-heading-pair`   | S1   | mixed      |     0 | no S1 admission    | fast read the correct heading; analyze said tool unavailable, then hallucinated a heading |
-|   8 | `read-fixture-fast`     | S1   | pass       |     0 | narrow S1 eligible | three exact independent passes on `7dc6c98`                                      |
-|   9 | `read-fixture-analyze`  | S1   | fail       |     0 | analyze disabled   | exact contract failed after transport normalization; factual/tool reliability insufficient |
-|  10 | `graphify-gate-fast`    | S1   | pass       |     0 | accepted           | exact one-document factual extraction; no broader source search granted          |
+|   # | Task                     | Tier | First pass | Retry | Queen result         | Note                                                                                       |
+| --: | ------------------------ | ---- | ---------- | ----: | -------------------- | ------------------------------------------------------------------------------------------ |
+|   1 | `memory-minimum-review`  | S0   | fail       |     1 | usable after retry   | first output imitated a disabled file tool; simplified five-line contract passed           |
+|   2 | `routing-classification` | S0   | pass       |     0 | accepted             | exact three-line routing contract; 1.1 s gateway duration                                  |
+|   3 | `thinking-mode-smoke`    | S0   | pass       |     0 | modes operational    | `fast` and `analyze` preserved no-write contract; analyze took ~15 s vs ~4 s fast          |
+|   4 | `route-policy-pair`      | S0   | mixed      |     1 | fast retry only      | fast drifted into unavailable file reading (2.8 s); analyze was correct (13.5 s)           |
+|   5 | `worker-clone-freshness` | S1   | fail       |     0 | infrastructure fixed | Worker was on `main`; rematerialized exact `d641b8d` task base                             |
+|   6 | `policy-docs-pair`       | S1   | fail       |     0 | rejected             | after sync, neither mode produced reliable evidence from the three named docs              |
+|   7 | `single-heading-pair`    | S1   | mixed      |     0 | no S1 admission      | fast read the correct heading; analyze said tool unavailable, then hallucinated a heading  |
+|   8 | `read-fixture-fast`      | S1   | pass       |     0 | narrow S1 eligible   | three exact independent passes on `7dc6c98`                                                |
+|   9 | `read-fixture-analyze`   | S1   | fail       |     0 | analyze disabled     | exact contract failed after transport normalization; factual/tool reliability insufficient |
+|  10 | `graphify-gate-fast`     | S1   | pass       |     0 | accepted             | exact one-document factual extraction; no broader source search granted                    |
 
 For every task record first-pass acceptance, retries, elapsed time, packet and
 output size, protocol compliance, files read, useful findings, false claims and
