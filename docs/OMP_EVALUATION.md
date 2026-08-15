@@ -41,16 +41,15 @@ separable.
 `analyze` is **not admitted** to any task class. A paired S0 routing task was
 correct in `analyze` but its `fast` control needed one simplified retry. More
 importantly, the first S1 run exposed a stale Worker clone; after materializing
-the exact base commit, `analyze` still reported a read tool unavailable and
-later returned an incorrect first heading for an existing file. The filesystem
-check confirmed the clone and file were correct. `fast` read that same heading
-correctly, but a broader document-extraction packet was not factual enough to
-admit S1 work either.
+the exact base commit, `analyze` reported a read tool unavailable and later
+returned an incorrect first heading for an existing file. The filesystem check
+confirmed the clone and file were correct. It also failed the exact fixture
+contract after output normalization.
 
-Keep `fast` limited to tool-less S0 classification with an explicit contract.
-Do not add memory, plugins, wider tools or task delegation. Repair and prove
-deterministic repository-read accuracy on fixed fixtures before continuing the
-ten-task calibration.
+`fast` passed the deterministic fixture three independent times on commit
+`7dc6c98`, so it may proceed to one-document, factual S1 packets with an exact
+output contract. It is not yet admitted for broader S1 inventory or any
+architecture work. Do not add memory, plugins, wider tools or task delegation.
 
 The prerequisite is [`ops/omp/check-read-fixture.sh`](../ops/omp/check-read-fixture.sh)
 against `ops/omp/read-fixture.md`: `fast` needs three exact consecutive passes
@@ -82,9 +81,9 @@ tokens; larger work is split or handled by the Queen.
 |   5 | `worker-clone-freshness`| S1   | fail       |     0 | infrastructure fixed | Worker was on `main`; rematerialized exact `d641b8d` task base              |
 |   6 | `policy-docs-pair`      | S1   | fail       |     0 | rejected           | after sync, neither mode produced reliable evidence from the three named docs    |
 |   7 | `single-heading-pair`   | S1   | mixed      |     0 | no S1 admission    | fast read the correct heading; analyze said tool unavailable, then hallucinated a heading |
-|   8 | pending                  |      |            |       |                    |                                                                                  |
-|   9 | pending                  |      |            |       |                    |                                                                                  |
-|  10 | pending                  |      |            |       |                    |                                                                                  |
+|   8 | `read-fixture-fast`     | S1   | pass       |     0 | narrow S1 eligible | three exact independent passes on `7dc6c98`                                      |
+|   9 | `read-fixture-analyze`  | S1   | fail       |     0 | analyze disabled   | exact contract failed after transport normalization; factual/tool reliability insufficient |
+|  10 | `graphify-gate-fast`    | S1   | pass       |     0 | accepted           | exact one-document factual extraction; no broader source search granted          |
 
 For every task record first-pass acceptance, retries, elapsed time, packet and
 output size, protocol compliance, files read, useful findings, false claims and

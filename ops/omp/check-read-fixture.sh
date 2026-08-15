@@ -23,8 +23,15 @@ response="$(ssh -T \
   -o User=codex-agent \
   hermes "consult-read-only-${mode}" <<<"$prompt")"
 
+# Match the MCP bridge: remove OMP's progress prelude and boundary whitespace,
+# while keeping the four contractual content lines exact.
 response="${response#Working...$'\n'}"
-response="${response%$'\n'}"
+while [[ "$response" == $'\n'* ]]; do
+  response="${response#$'\n'}"
+done
+while [[ "$response" == *$'\n' ]]; do
+  response="${response%$'\n'}"
+done
 
 if [[ "$response" != "$expected" ]]; then
   printf 'OMP %s read fixture failed. Received:\n%s\n' "$mode" "$response" >&2

@@ -25,12 +25,12 @@ do not start a phase whose entry gate has not passed.
       Graphify only if the recorded retrieval gate fails; do not add memory or
       indexing dependencies speculatively.
 
-- [ ] **Calibrate `fast` versus `analyze` on the remaining bounded tasks** —
-      first restore reliable S1 read accuracy, then keep Worker authority
-      unchanged while collecting the fixed ten-task evidence set. Admit
-      `analyze` only for task classes that meet the documented accuracy and
-      latency gate; do not add memory, plugins or broader tools before that
-      result exists.
+- [ ] **Continue fast-only OMP calibration on bounded S1 reads** — `fast` has
+      passed the deterministic read fixture three times; collect the remaining
+      evidence one narrow factual packet at a time. Keep `analyze` disabled
+      until it passes its own fixture gate. Do not add memory, plugins or
+      broader tools before a task class meets the documented accuracy and
+      latency gate.
 
 - [ ] **Phase 2: pass the representative unified-renderer gate** — exercise
       `WebGPURenderer` with WebGPUBackend and forced WebGLBackend against fog,
