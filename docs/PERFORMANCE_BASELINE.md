@@ -234,6 +234,14 @@ with `reduced` state under automatic WebGPU and forced WebGLBackend without a
 runtime or shader error. That is a preference-propagation result, not a real
 DPR/resize or performance measurement.
 
+A lifecycle smoke soak then ran five warm-up mounts and twenty mount/unmount
+cycles of the complete representative scope in headed Chrome. Every recorded
+steady-state sample (cycles 10, 15, 20 and 25) completed through
+`WebGPUBackend -> tsl-post` without a runtime or shader error. The attached
+browser did not expose usable JS heap or GPU resource counters, so this is not
+a resource-plateau or no-leak result; it only confirms the real teardown path
+survives repeated navigation.
+
 ### Phase 0 physical mobile WebGPU observation — 2026-08-15
 
 The same local development build was opened over an ADB USB reverse tunnel on

@@ -552,6 +552,18 @@ not a real-device DPR/resize acceptance: the external-browser viewport override
 did not alter that attached Chrome viewport. Physical mobile resize/DPR evidence
 therefore remains an explicit open gate.
 
+#### Phase 2 representative lifecycle smoke soak — 2026-08-15
+
+Headed Chrome completed five warm-up mounts followed by twenty consecutive
+mount/unmount cycles of the complete representative scope, including the real
+Works texture and Contact GLTF/DRACO owners. Samples after cycles 10, 15, 20
+and 25 each reached `complete` on `WebGPUBackend -> tsl-post`; no runtime or
+shader error occurred. This exercises the idempotent scope teardown through
+actual navigation, but it is deliberately only a smoke soak: the attached
+external-browser surface did not expose usable JS heap or GPU-resource counters.
+Do not turn this result into a no-leak claim; a later owner-visible resource
+plateau remains required for Phase 2 acceptance.
+
 ### Phase 3 — framework-neutral contracts
 
 Scope:
