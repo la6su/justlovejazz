@@ -13,10 +13,10 @@ do not start a phase whose entry gate has not passed.
       accessibility contracts and the full current release gate. Record only
       evidence that can be repeated during later phases. Forced WebGL home
       parity passed once Enter was awaited in its `is-ready` state; the remaining
-      remaining gap is the full resource-inventory soak. Hardware WebGPU now
-      passes on both the local RTX 4060 Ti and a physical Android high-DPR
-      device; the two-canvas composition is recorded as an intentional legacy
-      boundary to remove in Phase 2/6.
+      owner-visible resource soak now passes on a physical Android high-DPR
+      device. The remaining lifecycle evidence is explicit root teardown plus
+      listener/timer inventory; the two-canvas composition is recorded as an
+      intentional legacy boundary to remove in Phase 2/6.
 
 - [ ] **Phase 1: select and scaffold the compatible toolchain** — verify current
       official releases and compatibility for Vue, Vue Router, TresJS and

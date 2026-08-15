@@ -105,12 +105,12 @@ for each renderer milestone. Before Phase 6 acceptance the forced fallback is
 the current classic WebGL2 renderer; afterwards it is
 `WebGPURenderer({ forceWebGL: true })` and is labelled `WebGLBackend`.
 
-| Milestone        | Backend | Route/state               |     p50 |     p95 | Settled draws | Resource soak | Device/context                                                                                    |
-| ---------------- | ------- | ------------------------- | ------: | ------: | ------------: | ------------- | ------------------------------------------------------------------------------------------------- |
-| Phase 0 freeze   | partial | automatic and forced home |     n/a |     n/a |           n/a | pending       | `5781484`, desktop RTX 4060 Ti and Android DPR 2.75 WebGPU confirmed; full inventory soak pending |
-| Phase 2 spike    | pending | representative scene      | pending | pending |    0 required | 20 mounts     | record                                                                                            |
-| Phase 6 renderer | pending | full route matrix         | pending | pending |    0 required | 20 routes     | record                                                                                            |
-| Phase 10 cutover | pending | full route matrix         | pending | pending |    0 required | 20 routes     | record                                                                                            |
+| Milestone        | Backend | Route/state               |     p50 |     p95 | Settled draws | Resource soak      | Device/context                                                                                                  |
+| ---------------- | ------- | ------------------------- | ------: | ------: | ------------: | ------------------ | --------------------------------------------------------------------------------------------------------------- |
+| Phase 0 freeze   | partial | automatic and forced home |     n/a |     n/a |           n/a | owner-visible pass | `20c4d63`, desktop RTX 4060 Ti and Android DPR 2.75 WebGPU confirmed; teardown listener/timer inventory pending |
+| Phase 2 spike    | pending | representative scene      | pending | pending |    0 required | 20 mounts          | record                                                                                                          |
+| Phase 6 renderer | pending | full route matrix         | pending | pending |    0 required | 20 routes          | record                                                                                                          |
+| Phase 10 cutover | pending | full route matrix         | pending | pending |    0 required | 20 routes          | record                                                                                                          |
 
 Resource soak tracks canvas/context count, listeners, timers, decoded assets,
 textures, geometries, programs/pipelines, retained route scopes, JS heap and GPU
@@ -181,6 +181,31 @@ visually intact at the physical mobile DPR.
 
 This closes the real-mobile DPR/device availability gap. It does not establish
 mobile p50/p95 frame-time budgets or the full resource-inventory soak.
+
+### Phase 0 physical mobile owner-visible resource soak — 2026-08-15
+
+At commit `20c4d63`, the physical Android device completed five warm-up
+storyline transitions followed by twenty steady-state transitions across
+Studio, Services, Works and Manifesto. The development-only
+`window.__jlzRuntimeSnapshot()` was read after warm-up and after each five
+steady-state transitions. The four steady-state samples were identical:
+
+| Resource                     | Warm-up and all steady-state samples |
+| ---------------------------- | ------------------------------------ |
+| Canvases                     | 2                                    |
+| Scene geometries             | 18                                   |
+| Scene materials              | 25                                   |
+| Scene textures               | 9                                    |
+| Renderer geometries          | 18                                   |
+| Renderer textures            | 28                                   |
+| Post render targets / passes | 0 / 0 (one WebGPU TSL pipeline)      |
+
+No console or page error occurred. Renderer geometries rose from 12 at first
+entry to 18 during warm-up, then plateaued; this is recorded as lazy pipeline
+initialization rather than a steady-state leak. The browser exposes no portable
+driver-level WebGPU memory value, and the current snapshot does not yet count
+window/document listeners or active timers. Those explicit root-teardown
+lifecycle counters remain the final Phase 0 evidence gap.
 
 ### Benchmark and visual protocol
 
