@@ -12,6 +12,12 @@ The headless launch uses OMP's `write` approval mode so the allowlisted read
 tools can run unattended. It is safe only because the forced gateway supplies
 the tool allowlist and omits every write-capable tool.
 
+`check-read-fixture.sh` is the deterministic S1-read gate. It asks the Worker
+to read only `read-fixture.md` and accepts an exact four-line response. Run it
+three times in `fast` before resuming calibration; run `analyze` only as a
+separate candidate gate. The Worker clone must first be materialized at the
+commit containing the fixture.
+
 `fast` uses Qwen thinking `off`; `analyze` uses `medium` via OMP's explicit
 thinking flag and Qwen chat-template compatibility. The vLLM server default
 remains off; this is deliberately a per-invocation choice. The local MCP bridge

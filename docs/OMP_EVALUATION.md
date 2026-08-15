@@ -52,6 +52,11 @@ Do not add memory, plugins, wider tools or task delegation. Repair and prove
 deterministic repository-read accuracy on fixed fixtures before continuing the
 ten-task calibration.
 
+The prerequisite is [`ops/omp/check-read-fixture.sh`](../ops/omp/check-read-fixture.sh)
+against `ops/omp/read-fixture.md`: `fast` needs three exact consecutive passes
+on the same materialized commit. `analyze` is a separate candidate and needs
+the same three exact passes before it can re-enter a paired task evaluation.
+
 ## Task tiers
 
 | Tier | Intended work                                          | Context target | Retry policy                       |
