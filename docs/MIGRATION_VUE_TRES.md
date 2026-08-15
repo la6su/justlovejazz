@@ -352,17 +352,21 @@ production entry.
 The development-only page at `/__spikes/tres-manual` also exercises the real
 Tres canvas on hardware. With `render-mode="manual"`, it reached
 `manual-ready`, retained one canvas and emitted two render events during mount:
-the framework initialization render and the explicit `advance()` requested by
-the probe. It produced no Tres element-registration, HMR or runtime integration
+the explicit `advance()` requested by the probe and Tres 5.8.3's built-in
+100 ms bootstrap `advance()`. Installed Tres source also proves that its renderer
+manager awaits `renderer.init()` before it emits `ready`; the application must
+inspect the backend after that event instead of initializing the renderer twice.
+The probe produced no Tres element-registration, HMR or runtime integration
 errors after applying the official Tres template compiler options. A Vue
 compile-feature warning remains in Vite's development dependency prebundle;
 it is tooling noise rather than a renderer failure and no deprecated Vite
 prebundle override is retained to suppress it.
 
-Consequently, manual mode is the selected target integration but is not defined
-as "no initialization render". Tres owns canvas mounting and its initialization
-frame; the project scheduler owns every subsequent demand and calls the one
-Tres `advance()` boundary. Production owners must not call
+Consequently, manual mode is the selected target integration but its current
+bootstrap `advance()` is an explicit versioned behavior, not a second loop.
+Tres owns canvas mounting and that bootstrap request; after readiness, the
+project scheduler owns every subsequent demand and calls the one Tres
+`advance()` boundary. Production owners must not call
 `renderer.setAnimationLoop` or introduce another `requestAnimationFrame` loop.
 Application readiness remains a later latch that awaits renderer initialization,
 actual-backend inspection, TSL graph readiness and the first successful frame.
@@ -394,6 +398,35 @@ adapter, and repeat this phase. Later renderer/Tres cutover phases remain
 blocked; the Vue DOM migration may continue independently.
 
 Rollback: the spike stays outside the production route graph until accepted.
+
+#### Phase 2 factory slice — 2026-08-15
+
+The first development-only slice now uses the same `WebGPURenderer` class for
+both policies: automatic WebGPU with Three's WebGL2 fallback, and explicit
+`forceWebGL` for QA. The factory remains synchronous; installed TresJS 5.8.3
+owns and awaits the one async `init()` call, then the application inspects the
+actual backend before advancing the manual renderer. The obsolete local
+`three/webgpu` ambient declaration was removed because it shadowed the current
+official Three declarations and omitted `canvas`, `forceWebGL`, `backend` and
+async initialization.
+
+The official Tres custom-renderer integration was exercised at
+`/__spikes/tres-unified` in the isolated `tres-spike` Vite mode:
+
+- headed Chrome 151 on the RTX 4060 Ti: `WebGPUBackend`, usable adapter/device,
+  non-fallback, one canvas and no runtime/page error;
+- forced query `?backend=webgl`: `WebGLBackend`, one canvas, two observed manual
+  bootstrap/advance renders and no runtime/page error;
+- headless automatic policy: unavailable/unstable headless device correctly
+  selected `WebGLBackend`; this is fallback evidence, not hardware-WebGPU proof.
+
+Three's general WebGPU guide recommends mapping both `three` and
+`three/webgpu` to the WebGPU build. That mapping cannot be applied directly to
+TresJS 5.8.3 because its runtime still imports classic `WebGLRenderer`, which
+the WebGPU build does not export. The tested official Tres path works without
+the mapping and emitted no duplicate-Three warning, so no project-owned hybrid
+module or alias is introduced. This compatibility boundary must be rechecked
+on every Tres/Three upgrade.
 
 ### Phase 3 — framework-neutral contracts
 

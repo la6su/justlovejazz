@@ -4,11 +4,7 @@ import type { TresRenderer, TresRendererSetupContext } from '@tresjs/core'
 export type TresRendererFactory = (context: TresRendererSetupContext) => TresRenderer
 
 export interface BackendInspectableRenderer {
-  init?: () => void | Promise<void>
-  backend?: {
-    constructor?: { name?: string }
-    adapter?: { isFallbackAdapter?: boolean }
-  }
+  init?: () => unknown | Promise<unknown>
 }
 
 export interface RendererReadiness {
@@ -18,15 +14,29 @@ export interface RendererReadiness {
 }
 
 /**
- * The Phase 2 renderer adapter must await this boundary after Tres has mounted
- * the canvas. Tres `ready` alone is not application renderer readiness.
+ * Initialize a renderer only when it is owned outside Tres. Tres 5.8.3 already
+ * awaits this method internally before emitting its ready event.
  */
-export async function awaitRendererReadiness(
-  renderer: BackendInspectableRenderer,
-): Promise<RendererReadiness> {
+export async function initializeRenderer(renderer: BackendInspectableRenderer): Promise<void> {
   await renderer.init?.()
-  const backend = renderer.backend?.constructor?.name ?? null
-  const isFallbackAdapter = renderer.backend?.adapter?.isFallbackAdapter ?? false
+}
+
+/** Inspect the backend after its single owner has completed initialization. */
+export function inspectRendererBackend(renderer: unknown): RendererReadiness {
+  const backendValue =
+    renderer && typeof renderer === 'object' && 'backend' in renderer ? renderer.backend : undefined
+  const backend =
+    backendValue && typeof backendValue === 'object'
+      ? (backendValue.constructor?.name ?? null)
+      : null
+  const adapter =
+    backendValue && typeof backendValue === 'object' && 'adapter' in backendValue
+      ? backendValue.adapter
+      : undefined
+  const isFallbackAdapter =
+    adapter && typeof adapter === 'object' && 'isFallbackAdapter' in adapter
+      ? adapter.isFallbackAdapter === true
+      : false
   return {
     backend,
     isFallbackAdapter,

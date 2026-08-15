@@ -43,7 +43,10 @@ do not start a phase whose entry gate has not passed.
       representative materials, the full TSL post graph, environment, Works,
       GLTF/DRACO, reduced motion, lazy teardown and software-adapter policy.
       Keep the classic fallback until parity, idle, performance and resource
-      soak gates pass.
+      soak gates pass. The first factory slice now passes on the desktop RTX
+      4060 Ti and forced WebGLBackend with one Tres canvas, one async init owner
+      and no duplicate Three runtime; next add the representative TSL material,
+      fog and post graph before expanding to assets and lifecycle soak.
 
 - [ ] **Phase 3: extract framework-neutral contracts** — introduce the one
       route manifest, canonical world-slot tuple, bootstrap state machine,

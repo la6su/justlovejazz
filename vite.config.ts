@@ -18,8 +18,16 @@ import { jlzAdminPlugin } from './admin/vite-plugin'
 //   UIKit 3 is an ESM package — only imported JS modules are bundled.
 // ═══════════════════════════════════════════════════════════════════════
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   base: '/',
+  optimizeDeps:
+    mode === 'tres-spike'
+      ? {
+          // Do not scan the legacy production entry: it intentionally imports
+          // WebGL-only compatibility modules that are outside this spike.
+          entries: ['src/spikes/tres/unifiedProbeEntry.ts'],
+        }
+      : undefined,
   define: {
     __VUE_OPTIONS_API__: 'false',
     __VUE_PROD_DEVTOOLS__: 'false',
@@ -147,14 +155,19 @@ export default defineConfig({
     // fixed-path save/compile API and apply:'serve' keeps it out of builds.
     jlzAdminPlugin(),
     {
-      name: 'tres-manual-probe',
+      name: 'tres-spike-pages',
       apply: 'serve',
       configureServer(server) {
         server.middlewares.use((req, res, next) => {
-          if (req.url !== '/__spikes/tres-manual') return next()
+          const entries: Record<string, string> = {
+            '/__spikes/tres-manual': '/src/spikes/tres/manualProbeEntry.ts',
+            '/__spikes/tres-unified': '/src/spikes/tres/unifiedProbeEntry.ts',
+          }
+          const entry = req.url ? entries[req.url.split('?')[0] ?? ''] : undefined
+          if (!entry) return next()
           res.setHeader('Content-Type', 'text/html; charset=utf-8')
           res.end(
-            '<!doctype html><html><head><link rel="icon" href="/favicon.svg"></head><body><div id="app"></div><script type="module" src="/src/spikes/tres/manualProbeEntry.ts"></script></body></html>',
+            `<!doctype html><html><head><link rel="icon" href="/favicon.svg"></head><body><div id="app"></div><script type="module" src="${entry}"></script></body></html>`,
           )
         })
       },
@@ -244,4 +257,4 @@ export default defineConfig({
     // project.6la.ru (Caddy forwards to localhost:5173).
     allowedHosts: true, // TEMP,
   },
-})
+}))

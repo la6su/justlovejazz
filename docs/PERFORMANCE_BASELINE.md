@@ -164,6 +164,18 @@ This closes the hardware-WebGPU availability gap. It does not substitute for a
 real-mobile DPR/device run, route frame-time measurements, or the full
 resource-inventory soak described above.
 
+### Phase 2 Tres unified-renderer factory observation — 2026-08-15
+
+The development-only Tres factory spike ran in headed Chrome 151 on the same
+Ubuntu Sway RTX 4060 Ti workstation. Automatic policy created
+`WebGPURenderer -> WebGPUBackend`, obtained a usable adapter and device, retained
+one canvas and emitted no runtime or page error. The same factory with
+`forceWebGL` created `WebGPURenderer -> WebGLBackend`, also with one canvas and
+no runtime or page error. This proves construction, single Tres-owned async
+initialization, backend inspection and manual-frame handoff only; it does not
+yet admit the representative TSL/post graph or establish Phase 2 performance
+and resource budgets.
+
 ### Phase 0 physical mobile WebGPU observation — 2026-08-15
 
 The same local development build was opened over an ADB USB reverse tunnel on

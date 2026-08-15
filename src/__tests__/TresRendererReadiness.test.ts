@@ -1,8 +1,8 @@
-import { describe, expect, it } from 'vitest'
-import { awaitRendererReadiness } from '../spikes/tres/rendererReadiness'
+import { describe, expect, it, vi } from 'vitest'
+import { initializeRenderer, inspectRendererBackend } from '../spikes/tres/rendererReadiness'
 
 describe('Tres renderer readiness contract', () => {
-  it('awaits renderer initialization before accepting a hardware WebGPU backend', async () => {
+  it('awaits renderer initialization at the owning boundary', async () => {
     let initialized = false
     const renderer = {
       async init() {
@@ -12,19 +12,24 @@ describe('Tres renderer readiness contract', () => {
       backend: { constructor: { name: 'WebGPUBackend' }, adapter: { isFallbackAdapter: false } },
     }
 
-    await expect(awaitRendererReadiness(renderer)).resolves.toEqual({
+    await initializeRenderer(renderer)
+    expect(initialized).toBe(true)
+    expect(inspectRendererBackend(renderer)).toEqual({
       backend: 'WebGPUBackend',
       isFallbackAdapter: false,
       isHardwareWebGPU: true,
     })
-    expect(initialized).toBe(true)
   })
 
-  it('does not accept a software adapter as hardware WebGPU', async () => {
-    await expect(
-      awaitRendererReadiness({
+  it('inspects a Tres-initialized renderer without initializing it twice', () => {
+    const init = vi.fn()
+
+    expect(
+      inspectRendererBackend({
+        init,
         backend: { constructor: { name: 'WebGPUBackend' }, adapter: { isFallbackAdapter: true } },
       }),
-    ).resolves.toMatchObject({ isHardwareWebGPU: false })
+    ).toMatchObject({ isHardwareWebGPU: false })
+    expect(init).not.toHaveBeenCalled()
   })
 })

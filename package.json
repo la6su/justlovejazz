@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host",
+    "dev:tres-spike": "vite --host --mode tres-spike",
     "type-check": "tsc --noEmit",
     "type-check:vue": "vue-tsc --noEmit -p tsconfig.json",
     "build": "tsc && vite build",
