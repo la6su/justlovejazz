@@ -13,6 +13,7 @@
 import { Pane } from 'tweakpane'
 import type { Experience } from '../Experience/Experience'
 import { getLang } from './i18n'
+import type { RuntimeResourceSnapshot } from './RuntimeResourceSnapshot'
 
 const STORAGE_KEY = 'jlz:devpanel'
 
@@ -74,6 +75,12 @@ export class DevPanel {
     rendering: false,
     lang: '?',
     lowFps: false,
+    sceneGeometries: 0,
+    sceneMaterials: 0,
+    sceneTextures: 0,
+    postTargets: 0,
+    postPasses: 0,
+    canvasCount: 0,
   }
 
   // Controls
@@ -123,6 +130,12 @@ export class DevPanel {
     f.addBinding(this.stats, 'heap', { readonly: true, label: 'heap MB' })
     f.addBinding(this.stats, 'section', { readonly: true, label: 'section' })
     f.addBinding(this.stats, 'rendering', { readonly: true, label: 'rendering' })
+    f.addBinding(this.stats, 'canvasCount', { readonly: true, label: 'canvases' })
+    f.addBinding(this.stats, 'sceneGeometries', { readonly: true, label: 'scene geometries' })
+    f.addBinding(this.stats, 'sceneMaterials', { readonly: true, label: 'scene materials' })
+    f.addBinding(this.stats, 'sceneTextures', { readonly: true, label: 'scene textures' })
+    f.addBinding(this.stats, 'postTargets', { readonly: true, label: 'post targets' })
+    f.addBinding(this.stats, 'postPasses', { readonly: true, label: 'post passes' })
   }
 
   // ── Navigation folder REMOVED (2026-07-11) — the section slider + prev/next
@@ -224,6 +237,13 @@ export class DevPanel {
       this.stats.rendering = exp?._needsRender ?? false
       this.stats.lowFps = this.exp.lowFps
       this.stats.lang = getLang()
+      const resources = this.getResourceSnapshot()
+      this.stats.canvasCount = resources.canvasCount
+      this.stats.sceneGeometries = resources.scene.geometries
+      this.stats.sceneMaterials = resources.scene.materials
+      this.stats.sceneTextures = resources.scene.textures
+      this.stats.postTargets = resources.post.renderTargets
+      this.stats.postPasses = resources.post.passes
 
       // Force render if toggle is on
       if (this.controls.forceRender && exp) {
@@ -283,6 +303,11 @@ export class DevPanel {
     this._frameMs = Math.round((delta / this._fpsFrames) * 10) / 10
     this._fpsFrames = 0
     this._fpsLastTime = now
+  }
+
+  /** Development-only stable inventory for DevTools and soak automation. */
+  public getResourceSnapshot(): RuntimeResourceSnapshot {
+    return this.exp.renderer.getResourceSnapshot(this.exp.scene)
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────

@@ -568,6 +568,16 @@ export class RenderPipeline {
     // resources are reclaimed when the renderer is disposed.
   }
 
+  /** Counts the post resources this owner can enumerate for development soaks. */
+  public getResourceInfo(): { renderTargets: number; passes: number; webgpuPipeline: boolean } {
+    return {
+      renderTargets: [this._rtScene, this._rtBloomA, this._rtBloomB, this._rtBright].filter(Boolean)
+        .length,
+      passes: [this._passBright, this._passBlur, this._passComposite].filter(Boolean).length,
+      webgpuPipeline: this._webgpuPipeline !== null,
+    }
+  }
+
   // ─── Private: State ────────────────────────────────────────
 
   private _width = 0

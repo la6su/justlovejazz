@@ -406,6 +406,8 @@ export class Experience {
       try {
         const { DevPanel: DevPanelCtor } = await import('../core/DevPanel')
         this.devPanel = new DevPanelCtor(this)
+        ;(window as unknown as { __jlzRuntimeSnapshot?: () => unknown }).__jlzRuntimeSnapshot =
+          () => this.devPanel?.getResourceSnapshot() ?? null
         console.log('[Experience] DevPanel ready — press ` or ~ or Ctrl+D to toggle')
       } catch (e) {
         console.warn('[Experience] DevPanel init failed:', e)
@@ -1035,6 +1037,7 @@ export class Experience {
     this.world.dispose()
     this.bus.cancelAll()
     this.devPanel?.dispose()
+    delete (window as unknown as { __jlzRuntimeSnapshot?: () => unknown }).__jlzRuntimeSnapshot
     // Renderer.dispose() cleans up the resize listener AND the pipeline
     // AND the renderer instance (was previously only instance.dispose()).
     this.renderer.dispose()

@@ -96,6 +96,14 @@ A noisy memory metric is recorded with its environment and trend rather than
 converted into a false exact threshold. Repeatable monotonic growth is a
 release blocker.
 
+In development builds, `window.__jlzRuntimeSnapshot()` returns the same
+owner-visible inventory shown in the DevPanel: canvas count, scene geometries,
+materials and textures, renderer counters when exposed, and post-pipeline
+targets/passes. It intentionally does not invent driver-level WebGPU memory
+metrics. For each soak, record one snapshot after five warm-up cycles and after
+each twenty-cycle steady-state block; compare like-for-like backend, viewport
+and DPR runs.
+
 ## Performance budgets
 
 These budgets protect startup and interaction throughout migration:

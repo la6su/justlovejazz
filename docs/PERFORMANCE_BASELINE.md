@@ -105,12 +105,12 @@ for each renderer milestone. Before Phase 6 acceptance the forced fallback is
 the current classic WebGL2 renderer; afterwards it is
 `WebGPURenderer({ forceWebGL: true })` and is labelled `WebGLBackend`.
 
-| Milestone        | Backend | Route/state               |     p50 |     p95 | Settled draws | Resource soak | Device/context                                                                                     |
-| ---------------- | ------- | ------------------------- | ------: | ------: | ------------: | ------------- | -------------------------------------------------------------------------------------------------- |
-| Phase 0 freeze   | partial | automatic and forced home |     n/a |     n/a |           n/a | pending       | `7f9db89`, Chrome 151 / RTX 4060 Ti at 1440×900 DPR 1; real-mobile and full inventory soak pending |
-| Phase 2 spike    | pending | representative scene      | pending | pending |    0 required | 20 mounts     | record                                                                                             |
-| Phase 6 renderer | pending | full route matrix         | pending | pending |    0 required | 20 routes     | record                                                                                             |
-| Phase 10 cutover | pending | full route matrix         | pending | pending |    0 required | 20 routes     | record                                                                                             |
+| Milestone        | Backend | Route/state               |     p50 |     p95 | Settled draws | Resource soak | Device/context                                                                                    |
+| ---------------- | ------- | ------------------------- | ------: | ------: | ------------: | ------------- | ------------------------------------------------------------------------------------------------- |
+| Phase 0 freeze   | partial | automatic and forced home |     n/a |     n/a |           n/a | pending       | `5781484`, desktop RTX 4060 Ti and Android DPR 2.75 WebGPU confirmed; full inventory soak pending |
+| Phase 2 spike    | pending | representative scene      | pending | pending |    0 required | 20 mounts     | record                                                                                            |
+| Phase 6 renderer | pending | full route matrix         | pending | pending |    0 required | 20 routes     | record                                                                                            |
+| Phase 10 cutover | pending | full route matrix         | pending | pending |    0 required | 20 routes     | record                                                                                            |
 
 Resource soak tracks canvas/context count, listeners, timers, decoded assets,
 textures, geometries, programs/pipelines, retained route scopes, JS heap and GPU
@@ -120,6 +120,13 @@ twenty steady-state cycles. No counter may trend upward after warm-up, and root
 destroy must return root-owned resources to baseline after an explicit
 GC/driver-settle observation window. Exact heap values can be noisy; record raw
 runs and fail repeatable trends rather than one sample.
+
+Development builds expose `window.__jlzRuntimeSnapshot()` so soak automation
+can collect the same owner-visible values as the DevPanel: canvas count, scene
+geometries/materials/textures, renderer counters where Three.js exposes them,
+and post-pipeline targets/passes. Browser APIs do not expose a portable
+driver-level WebGPU memory counter, so that value remains explicitly unavailable
+rather than being guessed.
 
 ### Phase 0 renderer observation — 2026-08-15
 

@@ -13,6 +13,11 @@ import { DeviceCapability } from '../core/DeviceCapability'
 import { type WorldState } from '../core/types'
 import { PostProcessingManager } from '../core/PostProcessingManager'
 import { RenderPipeline, type RenderPipelineConfig, type PostParams } from '../core/RenderPipeline'
+import {
+  captureRuntimeResourceSnapshot,
+  type RendererResourceInfo,
+  type RuntimeResourceSnapshot,
+} from '../core/RuntimeResourceSnapshot'
 
 export type RenderSurface = WebGPURenderer | THREE.WebGLRenderer
 
@@ -283,6 +288,15 @@ export class Renderer {
     this.instance.setPixelRatio(Math.min(this.sizes.dpr, this.capabilities.maxDpr))
     this.instance.setSize(w, h)
     this.pipeline?.resize(w, h)
+  }
+
+  public getResourceSnapshot(scene: THREE.Scene): RuntimeResourceSnapshot {
+    const post = this.pipeline?.getResourceInfo()
+    return captureRuntimeResourceSnapshot(scene, this.instance as unknown as RendererResourceInfo, {
+      renderTargets: post?.renderTargets ?? 0,
+      passes: post?.passes ?? 0,
+      webgpuPipeline: post?.webgpuPipeline ?? false,
+    })
   }
 
   /** Dispose: clean up GPU resources + window listener */
