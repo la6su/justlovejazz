@@ -131,6 +131,11 @@ async function boot(): Promise<void> {
 
     const experience = new Experience(ui)
     await experience.init()
+    if (import.meta.env.DEV) {
+      ;(window as unknown as { __jlzRuntimeDestroy?: () => void }).__jlzRuntimeDestroy = () => {
+        experience.destroy()
+      }
+    }
     progress(95)
     // Small delay at 95% so user sees 'Ready' status before 100% + curtain split
     await new Promise((resolve) => setTimeout(resolve, 150))

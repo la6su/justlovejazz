@@ -7,16 +7,15 @@ do not start a phase whose entry gate has not passed.
 
 ## 1 — Active migration queue
 
-- [ ] **Finish Phase 0: freeze the pre-migration baseline** — the architecture
+- [x] **Finish Phase 0: freeze the pre-migration baseline** — the architecture
       plan and ADR foundation now exist. Capture a clean production manifest,
       route screenshots after Enter, WebGPU and forced-WebGL diagnostics,
       accessibility contracts and the full current release gate. Record only
       evidence that can be repeated during later phases. Forced WebGL home
       parity passed once Enter was awaited in its `is-ready` state; the remaining
-      owner-visible resource soak now passes on a physical Android high-DPR
-      device. The remaining lifecycle evidence is explicit root teardown plus
-      listener/timer inventory; the two-canvas composition is recorded as an
-      intentional legacy boundary to remove in Phase 2/6.
+      owner-visible resource soak and explicit root teardown now pass on a
+      physical Android high-DPR device. The two-canvas composition is recorded
+      as an intentional legacy boundary to remove in Phase 2/6.
 
 - [ ] **Phase 1: select and scaffold the compatible toolchain** — verify current
       official releases and compatibility for Vue, Vue Router, TresJS and

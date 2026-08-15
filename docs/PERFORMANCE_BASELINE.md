@@ -205,7 +205,25 @@ entry to 18 during warm-up, then plateaued; this is recorded as lazy pipeline
 initialization rather than a steady-state leak. The browser exposes no portable
 driver-level WebGPU memory value, and the current snapshot does not yet count
 window/document listeners or active timers. Those explicit root-teardown
-lifecycle counters remain the final Phase 0 evidence gap.
+lifecycle counters were the final Phase 0 evidence gap and are resolved by the
+root-teardown observation below.
+
+### Phase 0 physical mobile root teardown — 2026-08-15
+
+On the same device, the development-only `window.__jlzRuntimeDestroy()` hook
+called the real `Experience.destroy()` implementation after the runtime was
+ready. Chrome DevTools recorded two canvases before teardown and zero after it.
+The development snapshot and teardown hooks were both removed. Direct listener
+inspection recorded `window` listeners falling from 55 to 22 and `document`
+listeners from 7 to 2; the retained values are the page/browser baseline, while
+the removed listeners are owned by the runtime and its UI adapters.
+
+The owner implementation cancels its animation loop and pending rAF, clears
+known resize/pulse/debounce/dev-panel timers, releases pipeline/renderer/world
+resources, and removes their handlers before this measurement. Browser DevTools
+does not expose a portable aggregate timer counter; the teardown contract is
+therefore evidenced by those explicit owner cleanup paths plus the verified DOM
+and listener deltas, rather than a fabricated timer number.
 
 ### Benchmark and visual protocol
 

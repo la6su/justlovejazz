@@ -1038,6 +1038,7 @@ export class Experience {
     this.bus.cancelAll()
     this.devPanel?.dispose()
     delete (window as unknown as { __jlzRuntimeSnapshot?: () => unknown }).__jlzRuntimeSnapshot
+    delete (window as unknown as { __jlzRuntimeDestroy?: () => void }).__jlzRuntimeDestroy
     // Renderer.dispose() cleans up the resize listener AND the pipeline
     // AND the renderer instance (was previously only instance.dispose()).
     this.renderer.dispose()
