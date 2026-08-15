@@ -1,7 +1,15 @@
 <script setup lang="ts">
 import { markRaw, onBeforeUnmount, ref, shallowRef } from 'vue'
 import { TresCanvas, type TresContext } from '@tresjs/core'
-import { Vector3, WebGPURenderer } from 'three/webgpu'
+import { Color, FogExp2, PerspectiveCamera, Vector3 } from 'three'
+import { WebGPURenderer } from 'three/webgpu'
+import { WebGPUPostPipeline } from '../../core/WebGPUPostPipeline'
+import { inspectRendererBackend } from './rendererReadiness'
+import {
+  canUseTSLPost,
+  createRepresentativeScene,
+  type RepresentativeSceneResources,
+} from './representativeScene'
 import { createUnifiedRendererFactory, readBackendPreference } from './unifiedRendererFactory'
 
 type Driver = 'manual' | 'renderer-loop'
@@ -31,6 +39,8 @@ const rendererFactory = createUnifiedRendererFactory({
 
 let context: TresContext | null = null
 let loopSubscription: { off: () => void } | null = null
+let sceneResources: RepresentativeSceneResources | null = null
+let postPipeline: WebGPUPostPipeline | null = null
 let warmupTimer: ReturnType<typeof setTimeout> | null = null
 let idleTimer: ReturnType<typeof setTimeout> | null = null
 let measuring = false
@@ -48,6 +58,24 @@ function percentile(values: number[], fraction: number): number | null {
 
 function stopRendererLoop(): void {
   renderer.value?.setAnimationLoop(null)
+}
+
+function renderRepresentativeFrame(): void {
+  const activeContext = context
+  const activeCamera = activeContext?.camera.activeCamera.value
+  if (!activeContext || !activeCamera || !renderer.value) return
+  if (postPipeline) {
+    postPipeline.render()
+    return
+  }
+  renderer.value.render(activeContext.scene.value, activeCamera)
+}
+
+function disposeScene(): void {
+  postPipeline?.dispose()
+  postPipeline = null
+  sceneResources?.dispose()
+  sceneResources = null
 }
 
 function finishBurst(): void {
@@ -96,16 +124,56 @@ function startBurst(): void {
   renderer.value.setAnimationLoop((time) => {
     if (!measuring || !context || !renderer.value) return
     ticks += 1
-    const camera = context.camera.activeCamera.value
-    if (!camera) return
-    renderer.value.render(context.scene.value, camera)
+    renderRepresentativeFrame()
     recordFrame(time)
   })
 }
 
-function onReady(readyContext: TresContext): void {
+async function onReady(readyContext: TresContext): Promise<void> {
   context = readyContext
-  backendName.value = renderer.value?.backend.constructor.name ?? 'unknown'
+  const actualRenderer = renderer.value
+  const camera = readyContext.camera.activeCamera.value
+  if (!actualRenderer || !(camera instanceof PerspectiveCamera)) {
+    status.value = 'error:renderer-or-camera-unavailable'
+    return
+  }
+  const readiness = inspectRendererBackend(actualRenderer)
+  backendName.value = readiness.backend ?? 'unknown'
+  readyContext.scene.value.background = new Color('#080510')
+  readyContext.scene.value.fog = new FogExp2('#080510', 0.18)
+  camera.position.set(0, 0, 4)
+  camera.lookAt(0, 0, 0)
+  sceneResources = createRepresentativeScene()
+  sceneResources.attach(readyContext.scene.value)
+  try {
+    status.value = 'loading-assets'
+    if (!(await sceneResources.loadWorksPlane())) return
+    if (!(await sceneResources.loadContactModel(camera))) return
+    sceneResources.resize(readyContext.sizes.width.value, readyContext.sizes.height.value)
+    if (canUseTSLPost(readiness.backend)) {
+      postPipeline = WebGPUPostPipeline.create(actualRenderer, readyContext.scene.value, camera)
+      postPipeline.updateParams({
+        bloom: 0.18,
+        bloomRadius: 0.2,
+        bloomThreshold: 0.6,
+        vignette: 0.35,
+        grain: 0,
+        chromatic: 0,
+        border: 0,
+        refract: 0,
+        gradeShadows: [1, 1, 1],
+        gradeHighlights: [1, 1, 1],
+      })
+    }
+    readyContext.renderer.replaceRenderFunction((notifyFrameRendered) => {
+      renderRepresentativeFrame()
+      notifyFrameRendered()
+    })
+  } catch (error) {
+    status.value = error instanceof Error ? `error:${error.message}` : 'error:unknown'
+    disposeScene()
+    return
+  }
   loopSubscription = readyContext.renderer.loop.onLoop(() => {
     if (driver === 'manual' && (measuring || samplingIdle)) ticks += 1
   })
@@ -126,6 +194,7 @@ onBeforeUnmount(() => {
   if (idleTimer) clearTimeout(idleTimer)
   loopSubscription?.off()
   stopRendererLoop()
+  disposeScene()
 })
 </script>
 
@@ -142,6 +211,7 @@ onBeforeUnmount(() => {
     <section style="width: min(800px, 100vw); height: min(450px, 60vh); overflow: hidden">
       <TresCanvas
         render-mode="manual"
+        :dpr="[1, 2]"
         :renderer="rendererFactory"
         @ready="onReady"
         @render="onRender"
