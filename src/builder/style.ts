@@ -1,0 +1,425 @@
+export type BuilderThemeKey = keyof BuilderTheme
+export type StyleGroupId =
+  'global' | 'theme' | 'inverse' | 'base' | 'button' | 'card' | 'section' | 'form' | 'navbar'
+
+export interface BuilderTheme {
+  accent: string
+  accentHover: string
+  background: string
+  backgroundElevated: string
+  surface: string
+  surfaceHover: string
+  text: string
+  textMuted: string
+  border: string
+  signalCool: string
+  signalEmber: string
+  radius: string
+  fontSize: string
+  lineHeight: string
+  headingWeight: string
+  headingTransform: string
+  spacing: string
+  inverseBackground: string
+  inverseSurface: string
+  inverseText: string
+  inverseTextMuted: string
+  inverseAccent: string
+  buttonHeight: string
+  buttonRadius: string
+  buttonWeight: string
+  buttonTransform: string
+  cardRadius: string
+  cardPadding: string
+  cardShadow: string
+  sectionMuted: string
+  sectionPrimary: string
+  sectionSecondary: string
+  controlHeight: string
+  formSurface: string
+  formBorder: string
+  navbarHeight: string
+  navbarSurface: string
+}
+
+export interface StyleFieldDefinition {
+  key: BuilderThemeKey
+  label: string
+  description: string
+  type: 'color' | 'select'
+  options?: ReadonlyArray<{ label: string; value: string }>
+}
+
+export interface StyleGroupDefinition {
+  id: StyleGroupId
+  label: string
+  category: 'general' | 'component'
+  description: string
+  fields: readonly StyleFieldDefinition[]
+}
+
+const options = (...values: string[]) => values.map((value) => ({ label: value, value }))
+
+export const DEFAULT_BUILDER_THEME: BuilderTheme = {
+  accent: '#fff72c',
+  accentHover: '#fffca0',
+  background: '#0c0b0a',
+  backgroundElevated: '#181513',
+  surface: '#12100f',
+  surfaceHover: '#211d19',
+  text: '#f5e6d2',
+  textMuted: '#b8aa99',
+  border: '#3b352f',
+  signalCool: '#c7ad94',
+  signalEmber: '#ff7568',
+  radius: '0px',
+  fontSize: '16px',
+  lineHeight: '1.5',
+  headingWeight: '800',
+  headingTransform: 'uppercase',
+  spacing: '20px',
+  inverseBackground: '#efe0cc',
+  inverseSurface: '#f8eddf',
+  inverseText: '#15110e',
+  inverseTextMuted: '#5e554d',
+  inverseAccent: '#4b4000',
+  buttonHeight: '44px',
+  buttonRadius: '0px',
+  buttonWeight: '600',
+  buttonTransform: 'none',
+  cardRadius: '0px',
+  cardPadding: '32px',
+  cardShadow: 'deep',
+  sectionMuted: '#12100f',
+  sectionPrimary: '#fff72c',
+  sectionSecondary: '#181513',
+  controlHeight: '44px',
+  formSurface: '#12100f',
+  formBorder: '#3b352f',
+  navbarHeight: '64px',
+  navbarSurface: '#0c0b0a',
+}
+
+export const STYLE_GROUPS: readonly StyleGroupDefinition[] = [
+  {
+    id: 'global',
+    label: 'Global',
+    category: 'general',
+    description: 'Core color, surface and spacing tokens shared by every UIkit component.',
+    fields: [
+      {
+        key: 'accent',
+        label: 'Primary',
+        description: 'Primary action and focus color.',
+        type: 'color',
+      },
+      {
+        key: 'accentHover',
+        label: 'Primary hover',
+        description: 'Hover and active accent color.',
+        type: 'color',
+      },
+      { key: 'background', label: 'Background', description: 'Page background.', type: 'color' },
+      {
+        key: 'backgroundElevated',
+        label: 'Elevated background',
+        description: 'Raised panels and secondary surfaces.',
+        type: 'color',
+      },
+      {
+        key: 'surface',
+        label: 'Surface',
+        description: 'Default component surface.',
+        type: 'color',
+      },
+      {
+        key: 'surfaceHover',
+        label: 'Surface hover',
+        description: 'Interactive surface hover state.',
+        type: 'color',
+      },
+      { key: 'text', label: 'Text', description: 'Default readable text.', type: 'color' },
+      { key: 'textMuted', label: 'Muted text', description: 'Secondary copy.', type: 'color' },
+      {
+        key: 'border',
+        label: 'Border',
+        description: 'Default rule and control border.',
+        type: 'color',
+      },
+      {
+        key: 'spacing',
+        label: 'Base spacing',
+        description: 'Global margin and compact gutter rhythm.',
+        type: 'select',
+        options: options('16px', '20px', '24px', '28px', '32px'),
+      },
+    ],
+  },
+  {
+    id: 'theme',
+    label: 'Theme',
+    category: 'general',
+    description: 'JUSTLOVEJAZZ-specific signals and shared corner language.',
+    fields: [
+      {
+        key: 'signalCool',
+        label: 'Cool signal',
+        description: 'Secondary brand signal.',
+        type: 'color',
+      },
+      {
+        key: 'signalEmber',
+        label: 'Ember signal',
+        description: 'Warning and emphasis signal.',
+        type: 'color',
+      },
+      {
+        key: 'radius',
+        label: 'Global radius',
+        description: 'Fallback corner radius for project surfaces.',
+        type: 'select',
+        options: options('0px', '2px', '4px', '8px', '12px', '16px'),
+      },
+    ],
+  },
+  {
+    id: 'inverse',
+    label: 'Inverse',
+    category: 'general',
+    description: 'The light paper polarity used by html.uk-light and inverse sections.',
+    fields: [
+      {
+        key: 'inverseBackground',
+        label: 'Background',
+        description: 'Inverse page background.',
+        type: 'color',
+      },
+      {
+        key: 'inverseSurface',
+        label: 'Surface',
+        description: 'Inverse raised surface.',
+        type: 'color',
+      },
+      { key: 'inverseText', label: 'Text', description: 'Inverse readable text.', type: 'color' },
+      {
+        key: 'inverseTextMuted',
+        label: 'Muted text',
+        description: 'Inverse secondary copy.',
+        type: 'color',
+      },
+      {
+        key: 'inverseAccent',
+        label: 'Accent',
+        description: 'Accessible accent on light paper.',
+        type: 'color',
+      },
+    ],
+  },
+  {
+    id: 'base',
+    label: 'Base',
+    category: 'component',
+    description: 'Body and heading typography.',
+    fields: [
+      {
+        key: 'fontSize',
+        label: 'Font size',
+        description: 'Global UIkit base font size.',
+        type: 'select',
+        options: options('14px', '15px', '16px', '17px', '18px'),
+      },
+      {
+        key: 'lineHeight',
+        label: 'Line height',
+        description: 'Body text line height.',
+        type: 'select',
+        options: options('1.35', '1.4', '1.5', '1.6', '1.7'),
+      },
+      {
+        key: 'headingWeight',
+        label: 'Heading weight',
+        description: 'Primary heading weight.',
+        type: 'select',
+        options: options('500', '600', '700', '800'),
+      },
+      {
+        key: 'headingTransform',
+        label: 'Heading transform',
+        description: 'Heading capitalization policy.',
+        type: 'select',
+        options: [
+          { label: 'None', value: 'none' },
+          { label: 'Uppercase', value: 'uppercase' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'button',
+    label: 'Button',
+    category: 'component',
+    description: 'Default, primary, secondary and text actions.',
+    fields: [
+      {
+        key: 'buttonHeight',
+        label: 'Height',
+        description: 'Default control height.',
+        type: 'select',
+        options: options('36px', '40px', '44px', '48px', '52px'),
+      },
+      {
+        key: 'buttonRadius',
+        label: 'Radius',
+        description: 'Button corner radius.',
+        type: 'select',
+        options: options('0px', '2px', '4px', '8px', '12px', '16px'),
+      },
+      {
+        key: 'buttonWeight',
+        label: 'Weight',
+        description: 'Button label font weight.',
+        type: 'select',
+        options: options('400', '500', '600', '700'),
+      },
+      {
+        key: 'buttonTransform',
+        label: 'Transform',
+        description: 'Button label capitalization.',
+        type: 'select',
+        options: [
+          { label: 'None', value: 'none' },
+          { label: 'Uppercase', value: 'uppercase' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'card',
+    label: 'Card',
+    category: 'component',
+    description: 'Card surfaces, padding and elevation.',
+    fields: [
+      {
+        key: 'cardRadius',
+        label: 'Radius',
+        description: 'Card corner radius.',
+        type: 'select',
+        options: options('0px', '2px', '4px', '8px', '12px', '16px'),
+      },
+      {
+        key: 'cardPadding',
+        label: 'Padding',
+        description: 'Default card body padding.',
+        type: 'select',
+        options: options('16px', '20px', '24px', '32px', '40px', '48px'),
+      },
+      {
+        key: 'cardShadow',
+        label: 'Shadow',
+        description: 'Card elevation preset.',
+        type: 'select',
+        options: [
+          { label: 'None', value: 'none' },
+          { label: 'Soft', value: 'soft' },
+          { label: 'Deep', value: 'deep' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'section',
+    label: 'Section',
+    category: 'component',
+    description: 'Muted, primary and secondary section surfaces.',
+    fields: [
+      {
+        key: 'sectionMuted',
+        label: 'Muted',
+        description: 'Muted section background.',
+        type: 'color',
+      },
+      {
+        key: 'sectionPrimary',
+        label: 'Primary',
+        description: 'Primary section background.',
+        type: 'color',
+      },
+      {
+        key: 'sectionSecondary',
+        label: 'Secondary',
+        description: 'Secondary section background.',
+        type: 'color',
+      },
+    ],
+  },
+  {
+    id: 'form',
+    label: 'Form',
+    category: 'component',
+    description: 'Input height, surface and border.',
+    fields: [
+      {
+        key: 'controlHeight',
+        label: 'Control height',
+        description: 'Input and select height.',
+        type: 'select',
+        options: options('36px', '40px', '44px', '48px', '52px'),
+      },
+      { key: 'formSurface', label: 'Surface', description: 'Input background.', type: 'color' },
+      { key: 'formBorder', label: 'Border', description: 'Input border.', type: 'color' },
+    ],
+  },
+  {
+    id: 'navbar',
+    label: 'Navbar',
+    category: 'component',
+    description: 'Navigation bar height and surface.',
+    fields: [
+      {
+        key: 'navbarHeight',
+        label: 'Height',
+        description: 'Navigation item height.',
+        type: 'select',
+        options: options('52px', '56px', '64px', '72px', '80px'),
+      },
+      { key: 'navbarSurface', label: 'Surface', description: 'Navbar background.', type: 'color' },
+    ],
+  },
+]
+
+export const STYLE_GROUP_BY_ID = Object.fromEntries(
+  STYLE_GROUPS.map((group) => [group.id, group]),
+) as Record<StyleGroupId, StyleGroupDefinition>
+
+const COLOR_KEYS = new Set<BuilderThemeKey>(
+  STYLE_GROUPS.flatMap((group) =>
+    group.fields.filter((field) => field.type === 'color').map((field) => field.key),
+  ),
+)
+const HEX_COLOR = /^#[0-9a-f]{6}$/i
+
+export function validateBuilderTheme(value: unknown, errors: string[]): value is BuilderTheme {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    errors.push('theme must be an object')
+    return false
+  }
+
+  const theme = value as Record<string, unknown>
+  for (const group of STYLE_GROUPS) {
+    for (const field of group.fields) {
+      const candidate = theme[field.key]
+      if (typeof candidate !== 'string') {
+        errors.push(`theme.${field.key} must be a string`)
+        continue
+      }
+      if (COLOR_KEYS.has(field.key) && !HEX_COLOR.test(candidate)) {
+        errors.push(`theme.${field.key} must be a six-digit hex color`)
+      }
+      if (field.type === 'select' && !field.options?.some((option) => option.value === candidate)) {
+        errors.push(`theme.${field.key} has an unsupported value`)
+      }
+    }
+  }
+
+  return errors.length === 0
+}

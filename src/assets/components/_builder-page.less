@@ -1,0 +1,39 @@
+// Saved Page Builder documents use UIkit for component behavior and this
+// narrow layer for theme-token surfaces that UIkit cannot express at runtime.
+.jlz-builder-section.uk-section-default {
+  color: var(--jlz-color-text);
+  background: var(--jlz-color-bg);
+}
+
+.jlz-builder-card.uk-card-default {
+  color: var(--jlz-color-text);
+  background: var(--jlz-color-surface);
+}
+
+.jlz-builder-card.uk-card-secondary {
+  color: var(--jlz-color-text);
+  background: var(--jlz-color-bg-elevated);
+}
+
+.jlz-builder-card.uk-card-primary {
+  color: var(--jlz-color-text-inverse);
+  background: var(--jlz-color-accent);
+}
+
+.jlz-builder-card:is(.uk-card-secondary, .uk-card-primary) :is(h1, h2, h3, h4, h5, h6, p) {
+  color: inherit;
+}
+
+.jlz-builder-card,
+.jlz-builder-section .uk-button {
+  border-radius: var(--jlz-radius-md);
+}
+
+.jlz-builder-card {
+  border-radius: var(--jlz-card-radius);
+  box-shadow: var(--jlz-card-shadow);
+}
+
+.jlz-builder-section .uk-button {
+  border-radius: var(--jlz-button-radius);
+}

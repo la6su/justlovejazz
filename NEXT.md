@@ -7,6 +7,22 @@ implementation.
 
 ## 1 — Autonomous queue
 
+- [ ] **Complete the UIkit Style PageBuilder catalogue** — the separate
+      development Style workspace now owns versioned Global, Theme, Inverse,
+      Base, Button, Card, Section, Form and Navbar decisions, complete/focused
+      component previews and validated Less generation. Extend the same typed
+      schema and showcase contract across the remaining UIkit components,
+      introduce named style presets and import/export only after the initial
+      groups pass sustained project use.
+
+- [ ] **Publish custom UIkit Page Builder pages through the frontend** — the
+      separate dev-only `/admin/` application now owns the v2 document editor,
+      schema-driven inspector, responsive preview, history, atomic persistence,
+      custom-theme generation and optional UIkit Less manifest without entering
+      `dist`. Add multi-page route documents and metadata, connect the safe
+      renderer to a deliberate public route owner, then add drag-and-drop,
+      media and dynamic sources without importing the admin graph into the SPA.
+
 - [ ] **Extend the cinematic brand language across every route** — the shared
       shell and Menu now establish the original brand mark, paper/ink material
       contrast, electric-yellow signal, responsive typographic preview and
