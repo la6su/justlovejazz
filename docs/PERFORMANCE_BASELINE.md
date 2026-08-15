@@ -228,6 +228,12 @@ runtime or shader errors. This records real-model asset compatibility only;
 resize/DPR, reduced-motion, active-burst timing and lifecycle-plateau evidence
 remain outstanding.
 
+Temporary Chrome media emulation then confirmed the established reduced-motion
+policy reaches the representative scope on both backends. The probe completed
+with `reduced` state under automatic WebGPU and forced WebGLBackend without a
+runtime or shader error. That is a preference-propagation result, not a real
+DPR/resize or performance measurement.
+
 ### Phase 0 physical mobile WebGPU observation — 2026-08-15
 
 The same local development build was opened over an ADB USB reverse tunnel on

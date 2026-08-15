@@ -15,6 +15,7 @@ export interface RepresentativeSceneResources {
   attach(scene: Scene): void
   loadWorksPlane(): Promise<boolean>
   loadContactModel(camera: Camera): Promise<boolean>
+  resize(width: number, height: number): void
   dispose(): void
 }
 
@@ -97,6 +98,9 @@ export function createRepresentativeScene(): RepresentativeSceneResources {
         return true
       })
       return contactLoad
+    },
+    resize(width, height) {
+      contactStage?.resize(width, height)
     },
     dispose() {
       if (disposed) return

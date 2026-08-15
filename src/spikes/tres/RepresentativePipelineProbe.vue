@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { markRaw, onBeforeUnmount, ref, shallowRef } from 'vue'
+import { markRaw, onBeforeUnmount, ref, shallowRef, watch, type WatchStopHandle } from 'vue'
 import { TresCanvas, type TresContext } from '@tresjs/core'
 import { Color, FogExp2, PerspectiveCamera, Vector3 } from 'three'
 import { WebGPURenderer } from 'three/webgpu'
 import { WebGPUPostPipeline } from '../../core/WebGPUPostPipeline'
+import { prefersReducedMotion } from '../../core/motionPolicy'
 import { inspectRendererBackend } from './rendererReadiness'
 import {
   canUseTSLPost,
@@ -15,6 +16,8 @@ import { createUnifiedRendererFactory, readBackendPreference } from './unifiedRe
 const status = ref('booting')
 const backendName = ref('pending')
 const renderPath = ref('pending')
+const motionMode = ref(prefersReducedMotion() ? 'reduced' : 'normal')
+const renderPixelRatio = ref('pending')
 const renderer = shallowRef<WebGPURenderer>()
 const cameraPosition = markRaw(new Vector3(0, 0, 4))
 const backendPreference = readBackendPreference(window.location.search)
@@ -27,8 +30,11 @@ const rendererFactory = createUnifiedRendererFactory({
 
 let sceneResources: RepresentativeSceneResources | null = null
 let postPipeline: WebGPUPostPipeline | null = null
+let stopSizeWatch: WatchStopHandle | null = null
 
 function disposeScene(): void {
+  stopSizeWatch?.()
+  stopSizeWatch = null
   postPipeline?.dispose()
   postPipeline = null
   sceneResources?.dispose()
@@ -54,6 +60,7 @@ async function onReady(context: TresContext): Promise<void> {
   context.scene.value.fog = new FogExp2('#080510', 0.18)
   camera.position.set(0, 0, 4)
   camera.lookAt(0, 0, 0)
+  renderPixelRatio.value = actualRenderer.getPixelRatio().toFixed(2)
 
   sceneResources = createRepresentativeScene()
   sceneResources.attach(context.scene.value)
@@ -63,6 +70,7 @@ async function onReady(context: TresContext): Promise<void> {
     if (!(await sceneResources.loadWorksPlane())) return
     status.value = 'loading-contact-model'
     if (!(await sceneResources.loadContactModel(camera))) return
+    sceneResources.resize(context.sizes.width.value, context.sizes.height.value)
     if (canUseTSLPost(readiness.backend)) {
       postPipeline = WebGPUPostPipeline.create(actualRenderer, context.scene.value, camera)
       postPipeline.updateParams({
@@ -86,6 +94,16 @@ async function onReady(context: TresContext): Promise<void> {
       actualRenderer.render(context.scene.value, camera)
       renderPath.value = 'direct-webgl-fallback'
     }
+    stopSizeWatch = watch([context.sizes.width, context.sizes.height], ([width, height]) => {
+      sceneResources?.resize(width, height)
+      renderPixelRatio.value = actualRenderer.getPixelRatio().toFixed(2)
+      if (postPipeline) {
+        postPipeline.resize()
+        postPipeline.render()
+      } else {
+        actualRenderer.render(context.scene.value, camera)
+      }
+    })
     status.value = 'complete'
   } catch (error) {
     status.value = error instanceof Error ? `error:${error.message}` : 'error:unknown'
@@ -104,9 +122,12 @@ onBeforeUnmount(disposeScene)
     <p data-status>{{ status }}</p>
     <p data-backend>{{ backendName }}</p>
     <p data-render-path>{{ renderPath }}</p>
+    <p data-motion-mode>{{ motionMode }}</p>
+    <p data-render-pixel-ratio>{{ renderPixelRatio }}</p>
     <section style="width: min(800px, 100vw); height: min(450px, 60vh); overflow: hidden">
       <TresCanvas
         render-mode="manual"
+        :dpr="[1, 2]"
         :renderer="rendererFactory"
         @ready="onReady"
         @error="onError"

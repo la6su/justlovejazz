@@ -33,4 +33,12 @@ describe('representative Tres scene scope', () => {
     expect(geometryDispose).toHaveBeenCalledOnce()
     expect(materialDispose).toHaveBeenCalledOnce()
   })
+
+  it('accepts resize before or after asynchronous stage attachment', () => {
+    const resources = createRepresentativeScene()
+
+    expect(() => resources.resize(390, 844)).not.toThrow()
+    resources.dispose()
+    expect(() => resources.resize(1440, 900)).not.toThrow()
+  })
 })

@@ -536,6 +536,22 @@ Neither session emitted a runtime or shader error; the only console output was
 the existing Vue development feature-flags warning. This establishes asset
 feasibility, not resize/DPR, reduced-motion, timing or soak acceptance.
 
+#### Phase 2 reduced-motion slice — 2026-08-15
+
+The probe reads the established `motionPolicy` rather than creating a
+component-local media-query owner. Its capped Tres DPR range is `[1, 2]`; size
+changes are forwarded only to `ContactCyprusStage.resize`, then render the
+already-owned graph once. The Vue watcher is stopped by the scope teardown.
+
+In headed Chrome, a temporary `prefers-reduced-motion: reduce` emulation made
+both automatic `WebGPUBackend -> tsl-post` and forced
+`WebGLBackend -> direct-webgl-fallback` complete with the probe reporting
+`reduced` and no runtime or shader error. The emulation was cleared after each
+test. This proves the preference reaches the existing scene owner, but it is
+not a real-device DPR/resize acceptance: the external-browser viewport override
+did not alter that attached Chrome viewport. Physical mobile resize/DPR evidence
+therefore remains an explicit open gate.
+
 ### Phase 3 — framework-neutral contracts
 
 Scope:
