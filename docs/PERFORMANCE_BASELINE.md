@@ -105,12 +105,12 @@ for each renderer milestone. Before Phase 6 acceptance the forced fallback is
 the current classic WebGL2 renderer; afterwards it is
 `WebGPURenderer({ forceWebGL: true })` and is labelled `WebGLBackend`.
 
-| Milestone        | Backend | Route/state               |     p50 |     p95 | Settled draws | Resource soak | Device/context                                                                |
-| ---------------- | ------- | ------------------------- | ------: | ------: | ------------: | ------------- | ----------------------------------------------------------------------------- |
-| Phase 0 freeze   | partial | automatic and forced home |     n/a |     n/a |           n/a | pending       | `151eb36`, 1280×720/DPR 1 in-app browser; hardware WebGPU/mobile/soak pending |
-| Phase 2 spike    | pending | representative scene      | pending | pending |    0 required | 20 mounts     | record                                                                        |
-| Phase 6 renderer | pending | full route matrix         | pending | pending |    0 required | 20 routes     | record                                                                        |
-| Phase 10 cutover | pending | full route matrix         | pending | pending |    0 required | 20 routes     | record                                                                        |
+| Milestone        | Backend | Route/state               |     p50 |     p95 | Settled draws | Resource soak | Device/context                                                                                     |
+| ---------------- | ------- | ------------------------- | ------: | ------: | ------------: | ------------- | -------------------------------------------------------------------------------------------------- |
+| Phase 0 freeze   | partial | automatic and forced home |     n/a |     n/a |           n/a | pending       | `7f9db89`, Chrome 151 / RTX 4060 Ti at 1440×900 DPR 1; real-mobile and full inventory soak pending |
+| Phase 2 spike    | pending | representative scene      | pending | pending |    0 required | 20 mounts     | record                                                                                             |
+| Phase 6 renderer | pending | full route matrix         | pending | pending |    0 required | 20 routes     | record                                                                                             |
+| Phase 10 cutover | pending | full route matrix         | pending | pending |    0 required | 20 routes     | record                                                                                             |
 
 Resource soak tracks canvas/context count, listeners, timers, decoded assets,
 textures, geometries, programs/pipelines, retained route scopes, JS heap and GPU
@@ -135,6 +135,45 @@ invalid: its Enter click occurred before that readiness guard and was correctly
 ignored by the inline handler. This evidence does not validate a hardware
 WebGPU path, real-mobile DPR, frame timing or resource soak; those remain Phase
 0 requirements.
+
+### Phase 0 hardware WebGPU observation — 2026-08-15
+
+At commit `7f9db89`, Google Chrome `151.0.7922.108` in the Ubuntu Sway desktop
+session exposed a non-fallback WebGPU adapter on the local NVIDIA RTX 4060 Ti
+16 GB. The 1440×900 DPR 1 local-development home run waited for the splash
+Enter control to reach `is-ready`, entered successfully, and reported no
+console or page errors. Renderer diagnostics confirmed
+`WebGPURenderer -> WebGPUBackend`, `isRealWebGPU=true`, and the premium TSL
+world path.
+
+The successful home view contained two canvases. This is a known current
+architecture boundary, not a WebGPU fallback: the persistent primary renderer
+uses `WebGPUBackend`, while a secondary legacy `WebGLRenderer` creates the
+procedural environment map for glass reflections. Phase 2 must replace or
+isolate that auxiliary renderer behind the unified TSL contract; Phase 6 may
+remove it only after visual, performance and resource-soak parity pass.
+
+This closes the hardware-WebGPU availability gap. It does not substitute for a
+real-mobile DPR/device run, route frame-time measurements, or the full
+resource-inventory soak described above.
+
+### Phase 0 physical mobile WebGPU observation — 2026-08-15
+
+The same local development build was opened over an ADB USB reverse tunnel on
+a physical Android 14 device (`22101320G`) in Chrome `151.0.7922.137`. The
+device reported a 392×766 CSS-pixel viewport at DPR 2.75 (1080×2400 physical
+display, 440 dpi). In the secure localhost context, `navigator.gpu` returned a
+non-fallback adapter with mobile texture compression and `shader-f16` support.
+
+After the splash Enter control reached `is-ready`, the application completed
+its home entry with no console or page error. Its diagnostics confirmed
+`WebGPURenderer -> WebGPUBackend`, `isRealWebGPU=true`, the premium TSL path,
+and the same known two-canvas boundary: a primary WebGPU renderer plus the
+secondary legacy WebGL environment-map renderer. The captured composition is
+visually intact at the physical mobile DPR.
+
+This closes the real-mobile DPR/device availability gap. It does not establish
+mobile p50/p95 frame-time budgets or the full resource-inventory soak.
 
 ### Benchmark and visual protocol
 
