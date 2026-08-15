@@ -26,10 +26,11 @@ do not start a phase whose entry gate has not passed.
       indexing dependencies speculatively.
 
 - [ ] **Calibrate `fast` versus `analyze` on the remaining bounded tasks** —
-      keep Worker authority unchanged while collecting the fixed ten-task
-      evidence set. Admit `analyze` only for task classes that meet the
-      documented accuracy and latency gate; do not add memory, plugins or
-      broader tools before that result exists.
+      first restore reliable S1 read accuracy, then keep Worker authority
+      unchanged while collecting the fixed ten-task evidence set. Admit
+      `analyze` only for task classes that meet the documented accuracy and
+      latency gate; do not add memory, plugins or broader tools before that
+      result exists.
 
 - [ ] **Phase 2: pass the representative unified-renderer gate** — exercise
       `WebGPURenderer` with WebGPUBackend and forced WebGLBackend against fog,

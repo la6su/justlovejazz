@@ -8,10 +8,14 @@ The gateway has exactly four accepted operations: `no-tools` or `read-only`,
 each with `fast` or `analyze` thinking. No operation grants shell, write,
 browser, task delegation, extension, skill or session permissions.
 
-`fast` resolves to Qwen thinking `off`. `analyze` resolves to `medium` through
-OMP's Qwen chat-template compatibility. The vLLM server default remains off;
-this is deliberately a per-invocation choice. The local MCP bridge is the only
-caller that may select one of these operations.
+The headless launch uses OMP's `write` approval mode so the allowlisted read
+tools can run unattended. It is safe only because the forced gateway supplies
+the tool allowlist and omits every write-capable tool.
+
+`fast` uses Qwen thinking `off`; `analyze` uses `medium` via OMP's explicit
+thinking flag and Qwen chat-template compatibility. The vLLM server default
+remains off; this is deliberately a per-invocation choice. The local MCP bridge
+is the only caller that may select one of these operations.
 
 The gateway reads `VLLM_QWEN_API_KEY` only from the root-managed,
 `codex-agent`-readable `/etc/omp-worker/vllm-qwen.env` and passes it to OMP

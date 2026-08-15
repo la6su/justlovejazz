@@ -36,6 +36,22 @@ time within 2× `fast`; otherwise retain `fast` as the default. Keep Ponytail
 and all third-party OMP extensions outside this experiment so causes remain
 separable.
 
+### Interim verdict — 2026-08-15
+
+`analyze` is **not admitted** to any task class. A paired S0 routing task was
+correct in `analyze` but its `fast` control needed one simplified retry. More
+importantly, the first S1 run exposed a stale Worker clone; after materializing
+the exact base commit, `analyze` still reported a read tool unavailable and
+later returned an incorrect first heading for an existing file. The filesystem
+check confirmed the clone and file were correct. `fast` read that same heading
+correctly, but a broader document-extraction packet was not factual enough to
+admit S1 work either.
+
+Keep `fast` limited to tool-less S0 classification with an explicit contract.
+Do not add memory, plugins, wider tools or task delegation. Repair and prove
+deterministic repository-read accuracy on fixed fixtures before continuing the
+ten-task calibration.
+
 ## Task tiers
 
 | Tier | Intended work                                          | Context target | Retry policy                       |
@@ -57,10 +73,10 @@ tokens; larger work is split or handled by the Queen.
 |   1 | `memory-minimum-review`  | S0   | fail       |     1 | usable after retry | first output imitated a disabled file tool; simplified five-line contract passed |
 |   2 | `routing-classification` | S0   | pass       |     0 | accepted           | exact three-line routing contract; 1.1 s gateway duration                        |
 |   3 | `thinking-mode-smoke`   | S0   | pass       |     0 | modes operational | `fast` and `analyze` preserved no-write contract; analyze took ~15 s vs ~4 s fast |
-|   4 | pending                  |      |            |       |                    |                                                                                  |
-|   5 | pending                  |      |            |       |                    |                                                                                  |
-|   6 | pending                  |      |            |       |                    |                                                                                  |
-|   7 | pending                  |      |            |       |                    |                                                                                  |
+|   4 | `route-policy-pair`     | S0   | mixed      |     1 | fast retry only   | fast drifted into unavailable file reading (2.8 s); analyze was correct (13.5 s) |
+|   5 | `worker-clone-freshness`| S1   | fail       |     0 | infrastructure fixed | Worker was on `main`; rematerialized exact `d641b8d` task base              |
+|   6 | `policy-docs-pair`      | S1   | fail       |     0 | rejected           | after sync, neither mode produced reliable evidence from the three named docs    |
+|   7 | `single-heading-pair`   | S1   | mixed      |     0 | no S1 admission    | fast read the correct heading; analyze said tool unavailable, then hallucinated a heading |
 |   8 | pending                  |      |            |       |                    |                                                                                  |
 |   9 | pending                  |      |            |       |                    |                                                                                  |
 |  10 | pending                  |      |            |       |                    |                                                                                  |

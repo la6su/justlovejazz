@@ -5,19 +5,19 @@ set -euo pipefail
 case "${SSH_ORIGINAL_COMMAND:-}" in
   consult-no-tools-fast)
     tool_mode=(--no-tools)
-    model_selector='qwen-local/Qwen3.8-27B-NVFP4:off'
+    thinking_level='off'
     ;;
   consult-no-tools-analyze)
     tool_mode=(--no-tools)
-    model_selector='qwen-local/Qwen3.8-27B-NVFP4:medium'
+    thinking_level='medium'
     ;;
   consult-read-only-fast)
     tool_mode=(--tools=read,grep,glob,lsp)
-    model_selector='qwen-local/Qwen3.8-27B-NVFP4:off'
+    thinking_level='off'
     ;;
   consult-read-only-analyze)
     tool_mode=(--tools=read,grep,glob,lsp)
-    model_selector='qwen-local/Qwen3.8-27B-NVFP4:medium'
+    thinking_level='medium'
     ;;
   *)
     printf 'unsupported worker operation\n' >&2
@@ -58,9 +58,10 @@ exec /usr/bin/env \
   --no-rules \
   --no-title \
   --no-pty \
-  --approval-mode always-ask \
+  --approval-mode write \
   --max-time=5m \
-  --model="$model_selector" \
+  --model='qwen-local/Qwen3.8-27B-NVFP4' \
+  --thinking="$thinking_level" \
   --system-prompt="$system_prompt" \
   --cwd=/home/codex-agent/workspace/justlovejazz \
   "${tool_mode[@]}" \

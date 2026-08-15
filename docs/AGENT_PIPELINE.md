@@ -61,14 +61,17 @@ Ed25519 key. The root account is not part of the worker workflow.
 - use the dedicated unprivileged `codex-agent` account and Ed25519 key;
 - keep it outside sudo and privileged container groups;
 - use its isolated clone and OMP profile, never root OMP state;
+- before a repository-read task, materialize that clone at the task packet's
+  exact base commit and record the verified hash; a stale clone invalidates the
+  result rather than becoming an input to reasoning;
 
 ### Thinking modes
 
-The gateway exposes only two explicit modes. `fast` is the default and sends
-`enable_thinking: false` through OMP's Qwen chat-template compatibility. Use it
+The gateway exposes only two explicit modes. `fast` is the default and uses
+OMP's explicit `--thinking=off` with Qwen chat-template compatibility. Use it
 for all S0 work and routine S1 inventory. `analyze` uses the same isolated
-worker, timeout and tool allowlist but requests bounded `medium` thinking. It
-is allowed only for a Queen-nominated, ambiguous S1 diagnosis or comparison.
+worker, timeout and tool allowlist but requests bounded `--thinking=medium`.
+It is allowed only for a Queen-nominated, ambiguous S1 diagnosis or comparison.
 
 Neither mode changes the Worker authority, grants more tools or persists a
 session. The local bridge records the selected mode and content-free dimensions
@@ -109,12 +112,13 @@ OMP headless defaults must not be treated as a security boundary. OS account,
 filesystem scope, SSH forced command and tool allowlist are the boundary.
 
 The validated consultation launch disables sessions, extensions, skills,
-project rules, PTY and title generation, sets `always-ask` explicitly and
-supplies the Queen/Worker system contract. The model endpoint configuration
-contains no credential. Read tools are enabled only for a task packet that
-needs repository inspection. Both a tool-less response and a one-file
-read-only inspection have passed end-to-end; an arbitrary SSH command is
-rejected by the forced gateway.
+project rules, PTY and title generation, sets `write` approval explicitly and
+supplies the Queen/Worker system contract. This lets a headless Worker execute
+only the already allowlisted read tools; write-capable tools are absent from the
+gateway entirely. The model endpoint configuration contains no credential.
+Read tools are enabled only for a task packet that needs repository inspection.
+Both a tool-less response and a one-file read-only inspection have passed
+end-to-end; an arbitrary SSH command is rejected by the forced gateway.
 
 `allowed_read_paths` in a task packet is currently an instruction and review
 contract, not a gateway-enforced filesystem allowlist. The read-only gateway
