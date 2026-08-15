@@ -216,6 +216,11 @@ backends through the representative scope, with no runtime or shader error.
 This proves its one-time uniform/update compilation only; sustained animation
 and active-burst timings remain pending the loop-driver gate.
 
+The shared-cache Works texture owner (`CasePlane` plus a real project cover)
+also completed through both representative backends without runtime or shader
+errors. It is an async asset-feasibility observation, not a concurrent-cache or
+resource-plateau result.
+
 ### Phase 0 physical mobile WebGPU observation — 2026-08-15
 
 The same local development build was opened over an ADB USB reverse tunnel on

@@ -58,7 +58,9 @@ do not start a phase whose entry gate has not passed.
       on the fallback backend. Physical Chrome now proves that the fog/material
       TSL-post path reaches `WebGPUBackend`. The existing environment owner now
       passes on both backends without duplicate Three runtimes. The existing
-      time-driven instanced owner also passes; next add the Works texture plane.
+      time-driven instanced owner also passes. The Works texture plane now
+      passes through the shared cache; next add GLTF/DRACO with late-result
+      cleanup evidence.
 
 - [ ] **Phase 3: extract framework-neutral contracts** — introduce the one
       route manifest, canonical world-slot tuple, bootstrap state machine,

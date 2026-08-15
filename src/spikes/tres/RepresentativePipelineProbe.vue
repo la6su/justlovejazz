@@ -35,7 +35,7 @@ function disposeScene(): void {
   sceneResources = null
 }
 
-function onReady(context: TresContext): void {
+async function onReady(context: TresContext): Promise<void> {
   const actualRenderer = renderer.value
   if (!actualRenderer) {
     status.value = 'error:renderer-unavailable'
@@ -59,6 +59,8 @@ function onReady(context: TresContext): void {
   sceneResources.attach(context.scene.value)
 
   try {
+    status.value = 'loading-works-texture'
+    if (!(await sceneResources.loadWorksPlane())) return
     if (canUseTSLPost(readiness.backend)) {
       postPipeline = WebGPUPostPipeline.create(actualRenderer, context.scene.value, camera)
       postPipeline.updateParams({

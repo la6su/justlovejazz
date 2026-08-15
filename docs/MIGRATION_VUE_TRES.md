@@ -503,6 +503,18 @@ node material are released by the scope's idempotent teardown. Physical Chrome
 completed both the automatic `WebGPUBackend -> tsl-post` path and forced
 `WebGLBackend -> direct` fallback with no runtime or shader error.
 
+#### Phase 2 Works texture owner slice — 2026-08-15
+
+The representative scope now loads the existing Ebb Vibes cover through the
+shared ref-counted `caseTexture` cache and attaches the existing `CasePlane`.
+It exercises the plane's map binding, TSL cloth uniforms, reveal and wobble
+before rendering. The scope releases its material and its texture reference on
+teardown; a late texture completion releases immediately instead of adding a
+plane to a disposed scene. Physical Chrome completed the automatic WebGPU TSL
+post path and forced WebGL fallback with no runtime or shader error. This is a
+single texture-owner feasibility result; concurrent consumers and route-level
+resource soak remain later gates.
+
 ### Phase 3 — framework-neutral contracts
 
 Scope:
