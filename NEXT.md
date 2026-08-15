@@ -61,9 +61,10 @@ do not start a phase whose entry gate has not passed.
       time-driven instanced owner also passes. The Works texture plane passes
       through the shared cache, and the real `ContactCyprusStage` GLTF/DRACO
       owner now completes on both backends. Its scoped late-result branch
-      disposes a detached stage rather than attaching it. Next prove resize,
-      DPR and reduced-motion behavior before the repeated loop and resource
-      plateau gates.
+      disposes a detached stage rather than attaching it. Physical Android now
+      proves the representative initial DPR cap and both backend paths;
+      resize-event behavior, repeated loop measurements and an owner-visible
+      resource plateau remain open gates.
 
 - [ ] **Phase 3: extract framework-neutral contracts** — introduce the one
       route manifest, canonical world-slot tuple, bootstrap state machine,

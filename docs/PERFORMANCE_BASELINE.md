@@ -234,6 +234,14 @@ with `reduced` state under automatic WebGPU and forced WebGLBackend without a
 runtime or shader error. That is a preference-propagation result, not a real
 DPR/resize or performance measurement.
 
+The physical Android 14 device `22101320G` then rendered the complete
+representative GLTF/DRACO scope over a temporary USB reverse tunnel. Its
+1080×2400 display at density 440 reached the configured renderer DPR cap of
+2.00. The visible probe completed automatic `WebGPUBackend -> tsl-post` and
+forced `WebGLBackend -> direct-webgl-fallback`. This is mobile compatibility
+evidence only: it contains no active-burst timings, dynamic resize event or
+resource-count plateau.
+
 A lifecycle smoke soak then ran five warm-up mounts and twenty mount/unmount
 cycles of the complete representative scope in headed Chrome. Every recorded
 steady-state sample (cycles 10, 15, 20 and 25) completed through

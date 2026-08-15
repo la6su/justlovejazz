@@ -552,6 +552,20 @@ not a real-device DPR/resize acceptance: the external-browser viewport override
 did not alter that attached Chrome viewport. Physical mobile resize/DPR evidence
 therefore remains an explicit open gate.
 
+#### Phase 2 physical mobile DPR/fallback slice — 2026-08-15
+
+The same complete representative route was opened through a temporary USB ADB
+reverse tunnel on the physical Android device `22101320G` (1080×2400 physical
+pixels, density 440). The probe reported a renderer pixel ratio of `2.00`, the
+configured Tres cap, and visually completed the real GLTF/DRACO scene under
+both policies: automatic `WebGPUBackend -> tsl-post` and forced
+`WebGLBackend -> direct-webgl-fallback`. The temporary device port mapping was
+removed after the test.
+
+This admits initial high-DPR mobile rendering and fallback feasibility. It does
+not prove a dynamic resize event, mobile frame-time budget, console cleanliness
+or resource plateau; those gates remain separate.
+
 #### Phase 2 representative lifecycle smoke soak — 2026-08-15
 
 Headed Chrome completed five warm-up mounts followed by twenty consecutive
