@@ -178,6 +178,14 @@ initialization, backend inspection and manual-frame handoff only; it does not
 yet admit the representative TSL/post graph or establish Phase 2 performance
 and resource budgets.
 
+The follow-up fixed 800×450 loop-driver A/B sampled 90 draws and one second of
+idle per driver. Tres manual mode retained 60 idle ticks per second on both
+backends. A bounded `setAnimationLoop` driver retained zero idle ticks, with
+WebGPU p50/p95 16.7/16.8 ms and forced WebGLBackend 16.7/18.5 ms; manual measured
+16.7/17.0 ms and 16.7/17.1 ms respectively. No run emitted a runtime/page error.
+The bounded driver is selected, subject to repetition with the representative
+TSL/post graph.
+
 ### Phase 0 physical mobile WebGPU observation — 2026-08-15
 
 The same local development build was opened over an ADB USB reverse tunnel on

@@ -76,9 +76,10 @@ navigation never recreates the canvas, renderer, shared scene or shared world.
 4. `EnvSphere` owns the ambient background. The contact state owns the ground.
 5. The renderer backend, DPR and feature tier are derived after async renderer
    initialization, not from `navigator.gpu` alone.
-6. One renderer-loop driver exists. Phase 2 selects a Tres manual `advance()`
-   driver or bounded `renderer.setAnimationLoop` driver by hardware pacing and
-   idle-cost evidence. No scene subsystem starts its own loop.
+6. One renderer-loop driver exists. The bounded `renderer.setAnimationLoop`
+   driver runs only while dirty or active and stops at settled idle/hidden tab.
+   Tres's internal loop is stopped when that driver owns rendering. No scene
+   subsystem starts its own loop.
 7. Settled idle performs no draw calls. Reduced motion reaches the same final
    state synchronously and releases every activity token.
 8. Vue owns DOM structure. UIkit owns only the behavior of wrapped UIkit
@@ -195,12 +196,11 @@ requests a frame only while dirty or active. Hidden tabs pause advancement;
 resume causes one invalidation. Diagnostics expose active reasons, p50/p95
 active-burst frame time, loop ticks, draw count and settled idle state.
 
-After Phase 7, the scheduler targets exactly one renderer-loop port. Phase 2
-selects either Tres manual `advance()` or a bounded `setAnimationLoop` adapter
-using hardware p50/p95 pacing, active-burst smoothness, idle ticks/draws and
-hidden-tab behavior. Before that cutover, the current Experience loop remains
-the one driver. Phase 7 replaces the driver atomically rather than running both
-during compatibility.
+After Phase 7, the scheduler targets exactly one bounded `setAnimationLoop`
+port. It starts for dirty/active work, stops after the settled frame and remains
+stopped while hidden. Before that cutover, the current Experience loop remains
+the one driver. Phase 7 stops Tres's internal loop and replaces the Experience
+driver atomically rather than running two drivers during compatibility.
 
 ### Scene and resource scopes
 
@@ -361,11 +361,12 @@ compile-feature warning remains in Vite's development dependency prebundle;
 it is tooling noise rather than a renderer failure and no deprecated Vite
 prebundle override is retained to suppress it.
 
-Consequently, manual mode remains a loop-driver candidate and its current
-bootstrap `advance()` is an explicit versioned behavior, not proof of idle tick
-cost or frame pacing. It must be compared with the current bounded
-`setAnimationLoop` approach on hardware before Phase 2 selects one driver.
-Scene owners must not introduce their own `requestAnimationFrame` loops.
+The hardware A/B subsequently rejected manual mode as the final driver. Its
+current bootstrap `advance()` remains versioned behavior, and its internal rAF
+loop retained about 60 ticks per second after draws settled. The selected
+bounded `setAnimationLoop` adapter matched active pacing, stopped at zero idle
+ticks and remains subject to the full representative TSL/post recheck. Scene
+owners must not introduce their own `requestAnimationFrame` loops.
 Application readiness remains a later latch that awaits renderer initialization,
 actual-backend inspection, TSL graph readiness and the first successful frame.
 
@@ -426,6 +427,16 @@ the WebGPU build does not export. The tested official Tres path works without
 the mapping and emitted no duplicate-Three warning, so no project-owned hybrid
 module or alias is introduced. This compatibility boundary must be rechecked
 on every Tres/Three upgrade.
+
+The fixed 800×450 hardware loop-driver A/B sampled 90 draws followed by one
+second of settled idle on each backend. On `WebGPUBackend`, manual mode measured
+p50/p95 **16.7/17.0 ms** with **60 idle ticks**, while the bounded renderer loop
+measured **16.7/16.8 ms** with **0 idle ticks**. On forced `WebGLBackend`, manual
+measured **16.7/17.1 ms** with **60 idle ticks**, and the bounded renderer loop
+measured **16.7/18.5 ms** with **0 idle ticks**. All four runs completed 90 draws
+with no runtime/page error. The idle result and equal WebGPU pacing select the
+bounded renderer loop; the representative TSL/post graph must repeat the gate
+before production cutover.
 
 ### Phase 3 — framework-neutral contracts
 

@@ -48,8 +48,10 @@ do not start a phase whose entry gate has not passed.
       soak gates pass. The first factory slice now passes on the desktop RTX
       4060 Ti and forced WebGLBackend with one Tres canvas, one async init owner
       and no duplicate Three runtime. Adapter class remains explicitly unknown
-      because Three r185 does not expose it. Next run the loop-driver A/B and add
-      the representative TSL material, fog and post graph before assets/soak.
+      because Three r185 does not expose it. Hardware A/B selects a bounded
+      `setAnimationLoop` driver: comparable active pacing and zero idle ticks
+      versus Tres manual's 60/s. Next repeat that gate with representative TSL,
+      fog and post before assets/soak.
 
 - [ ] **Phase 3: extract framework-neutral contracts** — introduce the one
       route manifest, canonical world-slot tuple, bootstrap state machine,
