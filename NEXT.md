@@ -20,10 +20,12 @@ do not start a phase whose entry gate has not passed.
 - [x] **Finish Phase 1: select and scaffold the compatible toolchain** — the
       exact Vue, Vue Router, TresJS and Three.js matrix is pinned; SFC, type,
       test and bundle gates run without changing the production entry graph.
-      The hardware development probe selects Tres manual mode plus one project
-      scheduler boundary and records the initialization render separately from
-      subsequent `advance()` calls. Async renderer initialization, actual
-      backend inspection and application readiness remain distinct contracts.
+      The hardware development probe establishes Tres manual mode as one loop
+      candidate and records its built-in bootstrap `advance()` separately from
+      project frame requests. Phase 2 must select manual advancement or a
+      `setAnimationLoop` driver by hardware pacing/idle A/B. Async renderer
+      initialization, backend inspection and application readiness remain
+      distinct contracts.
 
 - [ ] **Calibrate OMP on ten bounded tasks** — delegate only low-risk S0/S1
       work during Phases 0–1, score first-pass accuracy, retries, latency,
@@ -45,8 +47,9 @@ do not start a phase whose entry gate has not passed.
       Keep the classic fallback until parity, idle, performance and resource
       soak gates pass. The first factory slice now passes on the desktop RTX
       4060 Ti and forced WebGLBackend with one Tres canvas, one async init owner
-      and no duplicate Three runtime; next add the representative TSL material,
-      fog and post graph before expanding to assets and lifecycle soak.
+      and no duplicate Three runtime. Adapter class remains explicitly unknown
+      because Three r185 does not expose it. Next run the loop-driver A/B and add
+      the representative TSL material, fog and post graph before assets/soak.
 
 - [ ] **Phase 3: extract framework-neutral contracts** — introduce the one
       route manifest, canonical world-slot tuple, bootstrap state machine,

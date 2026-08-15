@@ -9,8 +9,8 @@ export interface BackendInspectableRenderer {
 
 export interface RendererReadiness {
   backend: string | null
-  isFallbackAdapter: boolean
-  isHardwareWebGPU: boolean
+  isFallbackAdapter: boolean | null
+  isHardwareWebGPU: boolean | null
 }
 
 /**
@@ -33,13 +33,16 @@ export function inspectRendererBackend(renderer: unknown): RendererReadiness {
     backendValue && typeof backendValue === 'object' && 'adapter' in backendValue
       ? backendValue.adapter
       : undefined
-  const isFallbackAdapter =
+  const isFallbackAdapter: boolean | null =
     adapter && typeof adapter === 'object' && 'isFallbackAdapter' in adapter
-      ? adapter.isFallbackAdapter === true
-      : false
+      ? typeof adapter.isFallbackAdapter === 'boolean'
+        ? adapter.isFallbackAdapter
+        : null
+      : null
   return {
     backend,
     isFallbackAdapter,
-    isHardwareWebGPU: backend === 'WebGPUBackend' && !isFallbackAdapter,
+    isHardwareWebGPU:
+      backend === 'WebGPUBackend' && isFallbackAdapter !== null ? !isFallbackAdapter : null,
   }
 }

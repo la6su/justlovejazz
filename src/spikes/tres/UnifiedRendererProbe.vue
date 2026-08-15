@@ -7,7 +7,7 @@ import { createUnifiedRendererFactory, readBackendPreference } from './unifiedRe
 
 const status = ref('booting')
 const backendName = ref('pending')
-const isFallbackAdapter = ref(false)
+const isFallbackAdapter = ref<boolean | null>(null)
 const renders = ref(0)
 const renderer = shallowRef<WebGPURenderer>()
 const cameraPosition = markRaw(new Vector3(0, 0, 3))
@@ -42,7 +42,7 @@ function onError(error: unknown): void {
     <p data-status>{{ status }}</p>
     <p data-preference>{{ backendPreference }}</p>
     <p data-backend>{{ backendName }}</p>
-    <p data-fallback-adapter>{{ isFallbackAdapter }}</p>
+    <p data-fallback-adapter>{{ isFallbackAdapter ?? 'unknown' }}</p>
     <p data-renders>{{ renders }}</p>
     <TresCanvas
       render-mode="manual"

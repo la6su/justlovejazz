@@ -32,4 +32,14 @@ describe('Tres renderer readiness contract', () => {
     ).toMatchObject({ isHardwareWebGPU: false })
     expect(init).not.toHaveBeenCalled()
   })
+
+  it('keeps adapter class unknown when Three does not expose the adapter', () => {
+    expect(inspectRendererBackend({ backend: { constructor: { name: 'WebGPUBackend' } } })).toEqual(
+      {
+        backend: 'WebGPUBackend',
+        isFallbackAdapter: null,
+        isHardwareWebGPU: null,
+      },
+    )
+  })
 })

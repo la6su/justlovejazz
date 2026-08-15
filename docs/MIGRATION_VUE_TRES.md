@@ -76,10 +76,9 @@ navigation never recreates the canvas, renderer, shared scene or shared world.
 4. `EnvSphere` owns the ambient background. The contact state owns the ground.
 5. The renderer backend, DPR and feature tier are derived after async renderer
    initialization, not from `navigator.gpu` alone.
-6. One renderer-loop driver exists. After the Tres cutover, no project owner
-   calls `renderer.setAnimationLoop`; the scheduler requests manual Tres frames
-   through one `advance()` adapter. No scene subsystem starts its own
-   `requestAnimationFrame` loop.
+6. One renderer-loop driver exists. Phase 2 selects a Tres manual `advance()`
+   driver or bounded `renderer.setAnimationLoop` driver by hardware pacing and
+   idle-cost evidence. No scene subsystem starts its own loop.
 7. Settled idle performs no draw calls. Reduced motion reaches the same final
    state synchronously and releases every activity token.
 8. Vue owns DOM structure. UIkit owns only the behavior of wrapped UIkit
@@ -196,12 +195,12 @@ requests a frame only while dirty or active. Hidden tabs pause advancement;
 resume causes one invalidation. Diagnostics expose active reasons, p50/p95
 active-burst frame time, loop ticks, draw count and settled idle state.
 
-After Phase 7, the scheduler does not own `renderer.setAnimationLoop`.
-TresCanvas runs in the manual mode proven by the representative spike and is
-the only renderer-loop integration; the scheduler calls its single `advance()`
-port when work is dirty or active. Before that cutover, the current Experience
-loop remains the one driver. Phase 7 replaces the driver atomically rather than
-running both during compatibility.
+After Phase 7, the scheduler targets exactly one renderer-loop port. Phase 2
+selects either Tres manual `advance()` or a bounded `setAnimationLoop` adapter
+using hardware p50/p95 pacing, active-burst smoothness, idle ticks/draws and
+hidden-tab behavior. Before that cutover, the current Experience loop remains
+the one driver. Phase 7 replaces the driver atomically rather than running both
+during compatibility.
 
 ### Scene and resource scopes
 
@@ -362,12 +361,11 @@ compile-feature warning remains in Vite's development dependency prebundle;
 it is tooling noise rather than a renderer failure and no deprecated Vite
 prebundle override is retained to suppress it.
 
-Consequently, manual mode is the selected target integration but its current
-bootstrap `advance()` is an explicit versioned behavior, not a second loop.
-Tres owns canvas mounting and that bootstrap request; after readiness, the
-project scheduler owns every subsequent demand and calls the one Tres
-`advance()` boundary. Production owners must not call
-`renderer.setAnimationLoop` or introduce another `requestAnimationFrame` loop.
+Consequently, manual mode remains a loop-driver candidate and its current
+bootstrap `advance()` is an explicit versioned behavior, not proof of idle tick
+cost or frame pacing. It must be compared with the current bounded
+`setAnimationLoop` approach on hardware before Phase 2 selects one driver.
+Scene owners must not introduce their own `requestAnimationFrame` loops.
 Application readiness remains a later latch that awaits renderer initialization,
 actual-backend inspection, TSL graph readiness and the first successful frame.
 
@@ -414,7 +412,8 @@ The official Tres custom-renderer integration was exercised at
 `/__spikes/tres-unified` in the isolated `tres-spike` Vite mode:
 
 - headed Chrome 151 on the RTX 4060 Ti: `WebGPUBackend`, usable adapter/device,
-  non-fallback, one canvas and no runtime/page error;
+  one canvas and no runtime/page error; adapter class remains unknown because
+  Three r185 does not expose its internally requested adapter;
 - forced query `?backend=webgl`: `WebGLBackend`, one canvas, two observed manual
   bootstrap/advance renders and no runtime/page error;
 - headless automatic policy: unavailable/unstable headless device correctly
@@ -530,7 +529,7 @@ Scope:
 - make `SceneHost` a persistent Tres root;
 - give a custom renderer factory, camera and scene exactly one owner;
 - activate the proven async renderer initialization/readiness handshake and
-  replace the Experience loop with the single Tres manual-mode adapter;
+  replace the Experience loop with the single driver selected in Phase 2;
 - attach the existing World through an explicit primitive adapter;
 - split `Experience` into bootstrap, scene coordination and former UI features.
 

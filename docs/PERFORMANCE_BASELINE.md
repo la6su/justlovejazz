@@ -169,7 +169,9 @@ resource-inventory soak described above.
 The development-only Tres factory spike ran in headed Chrome 151 on the same
 Ubuntu Sway RTX 4060 Ti workstation. Automatic policy created
 `WebGPURenderer -> WebGPUBackend`, obtained a usable adapter and device, retained
-one canvas and emitted no runtime or page error. The same factory with
+one canvas and emitted no runtime or page error. Three r185 does not expose the
+adapter requested inside its backend, so renderer inspection records its
+hardware/software class as unknown instead of inferring non-fallback. The same factory with
 `forceWebGL` created `WebGPURenderer -> WebGLBackend`, also with one canvas and
 no runtime or page error. This proves construction, single Tres-owned async
 initialization, backend inspection and manual-frame handoff only; it does not

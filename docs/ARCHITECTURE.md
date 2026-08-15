@@ -140,7 +140,8 @@ Vue does not add a competing focus trap to a UIkit-owned modal.
 - one renderer factory owns creation, initialization, backend inspection,
   software-adapter fallback and device-loss recovery;
 - one framework-neutral render scheduler owns invalidation and bounded activity
-  tokens, while the Tres manual-mode adapter is the sole renderer-loop driver;
+  tokens; one renderer-loop driver is selected by the Phase 2 hardware pacing
+  and idle-cost gate, then hidden behind the scheduler port;
 - one TSL post graph covers WebGPUBackend and WebGLBackend;
 - `WorldRoot` owns the stable six-slot containers;
 - route scene scopes own abort/generation state and their GPU resources;
@@ -221,17 +222,17 @@ backend suites.
 The scheduler uses typed invalidation and activity reasons rather than a set of
 shared booleans. An owner acquires an activity token for a bounded animation
 and releases it on completion or disposal. Frame tasks update only while their
-owner is active. A frame is requested through the Tres manual-mode `advance()`
-adapter only while dirty or active. The scheduler never calls
-`renderer.setAnimationLoop` after Tres owns the canvas.
+owner is active. The scheduler targets one driver port, implemented either by
+Tres manual `advance()` or by a bounded `renderer.setAnimationLoop` adapter. No
+scene owner starts its own `requestAnimationFrame` loop.
 
-Phase 1 and the representative spike verify the exact Tres loop contract; the
-target is manual mode with one `advance()` adapter. The current Experience loop
-remains authoritative before the Tres cutover and is removed in the same slice
-that activates that adapter. Vue reactivity may request invalidation but never
-wraps or replaces the frame callback. Runtime assertions and diagnostics report
-canvas count, loop-driver count, active reasons, draw count and p50/p95 frame
-time.
+Phase 2 compares both drivers on hardware for p50/p95 pacing, active-burst
+smoothness, idle ticks/draws and hidden-tab behavior. The current Experience
+loop remains authoritative before the Tres cutover and is removed in the same
+slice that activates the winning driver. Vue reactivity may request
+invalidation but never wraps or replaces the frame callback. Runtime assertions
+and diagnostics report canvas count, loop-driver count, active reasons, ticks,
+draws and p50/p95 frame time.
 
 ## Resource lifecycle
 
