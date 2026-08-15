@@ -19,6 +19,7 @@ describe('representative Tres scene scope', () => {
     expect(scene.children).toContain(resources.mesh)
 
     resources.dispose()
+    resources.dispose()
 
     expect(scene.children).not.toContain(resources.mesh)
     expect(geometryDispose).toHaveBeenCalledOnce()

@@ -54,9 +54,9 @@ do not start a phase whose entry gate has not passed.
       per backend with representative TSL, fog and post before selecting it for
       production or proceeding to assets/soak. The new dev-only representative
       probe renders fog plus `MeshBasicNodeMaterial` through `WebGLBackend`;
-      its resource scope has deterministic teardown and refuses WebGPU-only
-      post on the fallback backend. Next establish its TSL post path on the
-      physical WebGPU browser.
+      its resource scope has idempotent teardown and refuses WebGPU-only post
+      on the fallback backend. Next establish its TSL post path on the physical
+      WebGPU browser.
 
 - [ ] **Phase 3: extract framework-neutral contracts** — introduce the one
       route manifest, canonical world-slot tuple, bootstrap state machine,

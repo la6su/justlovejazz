@@ -20,6 +20,7 @@ export function createRepresentativeScene(): RepresentativeSceneResources {
   const material = new MeshBasicNodeMaterial({ color: '#72f1b8', fog: true })
   const mesh = new Mesh(geometry, material)
   mesh.rotation.set(0.3, 0.5, 0)
+  let disposed = false
 
   return {
     mesh,
@@ -27,6 +28,8 @@ export function createRepresentativeScene(): RepresentativeSceneResources {
       scene.add(mesh)
     },
     dispose() {
+      if (disposed) return
+      disposed = true
       mesh.removeFromParent()
       geometry.dispose()
       material.dispose()
