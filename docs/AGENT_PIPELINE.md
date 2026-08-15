@@ -61,6 +61,19 @@ Ed25519 key. The root account is not part of the worker workflow.
 - use the dedicated unprivileged `codex-agent` account and Ed25519 key;
 - keep it outside sudo and privileged container groups;
 - use its isolated clone and OMP profile, never root OMP state;
+
+### Thinking modes
+
+The gateway exposes only two explicit modes. `fast` is the default and sends
+`enable_thinking: false` through OMP's Qwen chat-template compatibility. Use it
+for all S0 work and routine S1 inventory. `analyze` uses the same isolated
+worker, timeout and tool allowlist but requests bounded `medium` thinking. It
+is allowed only for a Queen-nominated, ambiguous S1 diagnosis or comparison.
+
+Neither mode changes the Worker authority, grants more tools or persists a
+session. The local bridge records the selected mode and content-free dimensions
+in telemetry; it never stores reasoning text. No global vLLM default may be
+changed until the fixed A/B evaluation accepts a task class.
 - force the dedicated key through the root-owned `omp-worker-gateway`; the key
   cannot open a shell, forward ports or execute arbitrary commands;
 - register the project STDIO bridge in `.codex/config.toml` and expose only

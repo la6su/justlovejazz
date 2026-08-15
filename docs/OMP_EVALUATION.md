@@ -21,6 +21,21 @@ cache block is 1,584 tokens, so this micro-task was smaller than one reusable
 block. Do not pad short packets for cache eligibility; evaluate cache savings
 only on naturally larger S1 tasks.
 
+## Thinking-mode evaluation
+
+`fast` is the fixed non-thinking control. `analyze` requests per-task Qwen
+thinking without changing the server default, tool boundary or fresh-session
+contract. Evaluate them on the same accepted task packets before admitting
+`analyze` for a task class. Record contract success, factual/owner accuracy,
+retries, forbidden pseudo-tool syntax, elapsed time, final-output size and
+Queen review time. Do not capture or retain reasoning text.
+
+Admit `analyze` only when it improves task success by at least 10 percentage
+points or removes two repeatable complex failures while keeping p95 end-to-end
+time within 2× `fast`; otherwise retain `fast` as the default. Keep Ponytail
+and all third-party OMP extensions outside this experiment so causes remain
+separable.
+
 ## Task tiers
 
 | Tier | Intended work                                          | Context target | Retry policy                       |
@@ -41,7 +56,7 @@ tokens; larger work is split or handled by the Queen.
 | --: | ------------------------ | ---- | ---------- | ----: | ------------------ | -------------------------------------------------------------------------------- |
 |   1 | `memory-minimum-review`  | S0   | fail       |     1 | usable after retry | first output imitated a disabled file tool; simplified five-line contract passed |
 |   2 | `routing-classification` | S0   | pass       |     0 | accepted           | exact three-line routing contract; 1.1 s gateway duration                        |
-|   3 | pending                  |      |            |       |                    |                                                                                  |
+|   3 | `thinking-mode-smoke`   | S0   | pass       |     0 | modes operational | `fast` and `analyze` preserved no-write contract; analyze took ~15 s vs ~4 s fast |
 |   4 | pending                  |      |            |       |                    |                                                                                  |
 |   5 | pending                  |      |            |       |                    |                                                                                  |
 |   6 | pending                  |      |            |       |                    |                                                                                  |

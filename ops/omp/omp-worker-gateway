@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+case "${SSH_ORIGINAL_COMMAND:-}" in
+  consult-no-tools-fast)
+    tool_mode=(--no-tools)
+    model_selector='qwen-local/Qwen3.8-27B-NVFP4:off'
+    ;;
+  consult-no-tools-analyze)
+    tool_mode=(--no-tools)
+    model_selector='qwen-local/Qwen3.8-27B-NVFP4:medium'
+    ;;
+  consult-read-only-fast)
+    tool_mode=(--tools=read,grep,glob,lsp)
+    model_selector='qwen-local/Qwen3.8-27B-NVFP4:off'
+    ;;
+  consult-read-only-analyze)
+    tool_mode=(--tools=read,grep,glob,lsp)
+    model_selector='qwen-local/Qwen3.8-27B-NVFP4:medium'
+    ;;
+  *)
+    printf 'unsupported worker operation\n' >&2
+    exit 64
+    ;;
+esac
+
+prompt="$(head -c 48001)"
+if (( ${#prompt} == 0 || ${#prompt} > 48000 )); then
+  printf 'worker prompt must contain 1-48000 characters\n' >&2
+  exit 65
+fi
+
+system_prompt='You are OMP Worker for JUSTLOVEJAZZ. Codex is the Queen and sole architecture and integration authority. Follow the supplied task packet exactly. Do not expand scope, delegate, edit, write, execute shell commands, or imitate tool calls. Return the requested evidence contract and clearly state uncertainty.'
+
+if [[ ! -r /etc/omp-worker/vllm-qwen.env ]]; then
+  printf 'worker API-key file is unavailable\n' >&2
+  exit 66
+fi
+set -a
+source /etc/omp-worker/vllm-qwen.env
+set +a
+vllm_api_key="${VLLM_API_KEY:-}"
+if [[ -z "$vllm_api_key" ]]; then
+  printf 'worker API key is empty\n' >&2
+  exit 67
+fi
+
+exec /usr/bin/env \
+  HOME=/home/codex-agent \
+  PATH=/home/codex-agent/.bun/bin:/usr/local/bin:/usr/bin:/bin \
+  VLLM_QWEN_API_KEY="$vllm_api_key" \
+  /home/codex-agent/.bun/bin/omp \
+  -p \
+  --no-session \
+  --no-extensions \
+  --no-skills \
+  --no-rules \
+  --no-title \
+  --no-pty \
+  --approval-mode always-ask \
+  --max-time=5m \
+  --model="$model_selector" \
+  --system-prompt="$system_prompt" \
+  --cwd=/home/codex-agent/workspace/justlovejazz \
+  "${tool_mode[@]}" \
+  "$prompt"

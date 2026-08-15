@@ -1,0 +1,16 @@
+[Unit]
+Description=Qwen3.8 27B NVFP4 vLLM server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/vllm/qwen38.env
+ExecStart=/opt/vllm/start-qwen38-nvfp4-mtp.sh
+Restart=on-failure
+RestartSec=5
+TimeoutStartSec=10min
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target

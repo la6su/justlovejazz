@@ -8,7 +8,7 @@ import { fileURLToPath, URL } from 'node:url'
 
 const SERVER = {
   name: 'justlovejazz-omp-worker',
-  version: '1.0.0',
+  version: '1.1.0',
 }
 
 const MAX_PROMPT_CHARS = 48_000
@@ -99,6 +99,13 @@ async function handleLine(line) {
                 default: false,
                 description: 'Enable only read, grep, glob and lsp tools.',
               },
+              thinking_mode: {
+                type: 'string',
+                enum: ['fast', 'analyze'],
+                default: 'fast',
+                description:
+                  'fast keeps Qwen non-thinking for bounded S0/S1 tasks; analyze enables bounded reasoning for a nominated complex S1 task.',
+              },
               timeout_seconds: {
                 type: 'integer',
                 minimum: 30,
@@ -145,6 +152,11 @@ function consult(args) {
   const startedAt = Date.now()
   const taskId = String(args.task_id ?? '')
   const prompt = String(args.prompt ?? '')
+  const requestedThinkingMode = args.thinking_mode ?? 'fast'
+  if (requestedThinkingMode !== 'fast' && requestedThinkingMode !== 'analyze') {
+    throw new Error('thinking_mode must be fast or analyze')
+  }
+  const thinkingMode = requestedThinkingMode
   const timeoutSeconds = Math.min(
     MAX_TIMEOUT_SECONDS,
     Math.max(30, Number(args.timeout_seconds) || DEFAULT_TIMEOUT_SECONDS),
@@ -168,7 +180,7 @@ function consult(args) {
     'Required ending: No files changed.',
   ].join('\n')
 
-  const remoteCommand = args.repository_read ? 'consult-read-only' : 'consult-no-tools'
+  const remoteCommand = `${args.repository_read ? 'consult-read-only' : 'consult-no-tools'}-${thinkingMode}`
 
   return new Promise((resolve, reject) => {
     const child = spawn('ssh', [...sshArgs, remoteCommand], {
@@ -187,7 +199,7 @@ function consult(args) {
       void recordMetric({
         timestamp: new Date().toISOString(),
         task_id: taskId,
-        mode: args.repository_read ? 'repository-read' : 'tool-less',
+        mode: `${args.repository_read ? 'repository-read' : 'tool-less'}-${thinkingMode}`,
         prompt_chars: prompt.length,
         packet_chars: taskPacket.length,
         output_chars: output.length,
