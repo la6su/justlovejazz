@@ -205,6 +205,12 @@ active-burst timings or a resource soak. The active Chrome flags were not
 captured, so reproduce this result with the same browser configuration before
 using it as a cross-machine comparison.
 
+The representative environment owner was then mounted through the same scoped
+probe. Both automatic WebGPU and forced WebGLBackend completed successfully.
+After the `tres-spike` dev optimizer excluded the Three ESM entry points, the
+rerun emitted no new duplicate-Three warning. This confirms one runtime graph
+for the probe; it is not a resource-plateau measurement yet.
+
 ### Phase 0 physical mobile WebGPU observation — 2026-08-15
 
 The same local development build was opened over an ADB USB reverse tunnel on

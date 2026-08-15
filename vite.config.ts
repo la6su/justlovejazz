@@ -26,6 +26,17 @@ export default defineConfig(({ mode }) => ({
           // Do not scan the legacy production entry: it intentionally imports
           // WebGL-only compatibility modules that are outside this spike.
           entries: ['src/spikes/tres/unifiedProbeEntry.ts'],
+          // Three's root, WebGPU and addon entry points share `three.core.js`
+          // in the native ESM graph. Pre-bundling them independently gives the
+          // addon a second root bundle and triggers Three's duplicate-instance
+          // warning. Keep this dev-only spike on the package's shared ESM graph.
+          exclude: [
+            'three',
+            'three/webgpu',
+            'three/tsl',
+            'three/addons/geometries/RoundedBoxGeometry.js',
+            'three/addons/tsl/display/BloomNode.js',
+          ],
         }
       : undefined,
   define: {

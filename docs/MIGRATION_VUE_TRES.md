@@ -477,6 +477,22 @@ The Chrome command-line and `chrome://flags` state were not captured, so this
 evidence applies to the user's current Chrome configuration and is not a claim
 that WebGPU is enabled under every default Linux GPU configuration.
 
+#### Phase 2 environment owner slice — 2026-08-15
+
+The representative scope now mounts the existing `EnvSphere` rather than
+recreating its rounded-pavilion geometry or section palette. Its teardown is
+part of the same idempotent resource scope as the node-material mesh. Both the
+automatic `WebGPUBackend -> tsl-post` path and forced `WebGLBackend -> direct`
+fallback completed in physical Chrome without runtime/shader errors.
+
+This uncovered a development-only bundling defect: Vite's dependency optimizer
+pre-bundled `three`, `three/webgpu` and `RoundedBoxGeometry` independently, and
+the addon then triggered Three's duplicate-instance warning. The `tres-spike`
+mode now excludes these ESM entry points from optimization, preserving their
+shared native `three.core.js` graph. The same physical rerun produced no new
+duplicate-Three warning. This mode is dev-only; the production entry and bundle
+budget remain unchanged.
+
 ### Phase 3 — framework-neutral contracts
 
 Scope:
