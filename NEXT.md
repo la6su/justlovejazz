@@ -19,6 +19,12 @@ do not start a phase whose entry gate has not passed.
       without changing the production runtime. Reject dependencies that do not
       replace owned code or provide measured product/runtime value.
 
+- [ ] **Calibrate OMP on ten bounded tasks** — delegate only low-risk S0/S1
+      work during Phases 0–1, score first-pass accuracy, retries, latency,
+      context size and Queen review cost in `docs/OMP_EVALUATION.md`. Pilot
+      Graphify only if the recorded retrieval gate fails; do not add memory or
+      indexing dependencies speculatively.
+
 - [ ] **Phase 2: pass the representative unified-renderer gate** — exercise
       `WebGPURenderer` with WebGPUBackend and forced WebGLBackend against fog,
       representative materials, the full TSL post graph, environment, Works,

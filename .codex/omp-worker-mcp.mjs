@@ -2,7 +2,9 @@
 /* global clearTimeout, process, setTimeout */
 
 import { spawn } from 'node:child_process'
+import { appendFile, mkdir } from 'node:fs/promises'
 import { homedir } from 'node:os'
+import { fileURLToPath, URL } from 'node:url'
 
 const SERVER = {
   name: 'justlovejazz-omp-worker',
@@ -13,6 +15,9 @@ const MAX_PROMPT_CHARS = 48_000
 const MAX_OUTPUT_CHARS = 64_000
 const DEFAULT_TIMEOUT_SECONDS = 300
 const MAX_TIMEOUT_SECONDS = 300
+const PROJECT_ROOT = fileURLToPath(new URL('..', import.meta.url))
+const METRICS_DIR = `${PROJECT_ROOT}/.agent-runtime`
+const METRICS_FILE = `${METRICS_DIR}/omp-metrics.jsonl`
 
 const sshArgs = [
   '-F',
@@ -137,6 +142,7 @@ async function handleLine(line) {
 }
 
 function consult(args) {
+  const startedAt = Date.now()
   const taskId = String(args.task_id ?? '')
   const prompt = String(args.prompt ?? '')
   const timeoutSeconds = Math.min(
@@ -171,6 +177,26 @@ function consult(args) {
     let stdout = ''
     let stderr = ''
     let exceeded = false
+    let metricRecorded = false
+
+    const recordOnce = (status, output = '') => {
+      if (metricRecorded) return
+      metricRecorded = true
+      const contractOk = output.endsWith('No files changed.')
+      const toolSyntax = /(?:^|\n)\s*(?:\[Tool:|(?:Folder|File|Tool)\[)/u.test(output)
+      void recordMetric({
+        timestamp: new Date().toISOString(),
+        task_id: taskId,
+        mode: args.repository_read ? 'repository-read' : 'tool-less',
+        prompt_chars: prompt.length,
+        packet_chars: taskPacket.length,
+        output_chars: output.length,
+        duration_ms: Date.now() - startedAt,
+        status,
+        contract_ok: contractOk,
+        tool_syntax: toolSyntax,
+      }).catch(writeInternalError)
+    }
 
     const append = (current, chunk) => {
       const next = current + chunk
@@ -193,21 +219,31 @@ function consult(args) {
     const timer = setTimeout(() => child.kill('SIGTERM'), (timeoutSeconds + 10) * 1000)
     child.on('error', (error) => {
       clearTimeout(timer)
+      recordOnce('transport-error')
       reject(error)
     })
     child.on('close', (code) => {
       clearTimeout(timer)
+      const output = stdout.replace(/^Working\.\.\.\s*/u, '').trim()
       if (exceeded) {
+        recordOnce('output-limit', output)
         reject(new Error(`OMP output exceeded ${MAX_OUTPUT_CHARS} characters`))
         return
       }
       if (code !== 0) {
+        recordOnce('worker-error', output)
         reject(new Error(`OMP Worker exited with ${code}: ${stderr.trim() || 'no diagnostic'}`))
         return
       }
-      resolve(stdout.replace(/^Working\.\.\.\s*/u, '').trim())
+      recordOnce('completed', output)
+      resolve(output)
     })
   })
+}
+
+async function recordMetric(metric) {
+  await mkdir(METRICS_DIR, { recursive: true, mode: 0o700 })
+  await appendFile(METRICS_FILE, `${JSON.stringify(metric)}\n`, { encoding: 'utf8', mode: 0o600 })
 }
 
 function respond(id, result) {

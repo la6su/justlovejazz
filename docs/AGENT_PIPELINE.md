@@ -160,15 +160,17 @@ receiving a full repository dump.
 The observed OMP model window is approximately 131K tokens. Quality and room
 for tool results matter more than filling it.
 
-- Target 35–50% of the window for the full worker turn.
-- Use a soft ceiling of 55% (about 72K tokens); stop and hand off before
-  automatic compaction.
-- Reserve the remainder for reasoning, command output, test failures and the
-  final patch/report.
+- Target 2–8K tokens for S0 tasks, 8–16K for read-only S1 tasks and 8–24K for
+  later mechanical S2 tasks.
+- Use a Worker hard ceiling of 32K tokens, about 25% of the available window.
+  Split or return the task to the Queen before automatic compaction.
+- Keep at least 75% free for tool results, correction, tests and the final
+  answer; unused context is not waste.
 - Give one task no more than one owner boundary and normally three to eight
   primary files.
-- Start a fresh `--no-session` worker for unrelated tasks. Reuse a session only
-  for a direct correction within the same owner slice.
+- Start a fresh `--no-session` worker for every task. One direct correction is
+  a new, simpler packet with the same stable system prefix; a second miss ends
+  delegation.
 - If the task approaches the ceiling, the Worker returns a handoff containing
   facts learned, files inspected, current hypothesis, unfinished checks and the
   exact next action. The Queen creates a fresh packet.
@@ -179,13 +181,17 @@ for tool results matter more than filling it.
 
 Recommended context allocation:
 
-|   Portion | Purpose                                |
-| --------: | -------------------------------------- |
-|      5–8% | role, invariant capsule, task contract |
-|    10–20% | targeted source discovery              |
-|    15–25% | implementation or analysis             |
-|     5–10% | focused checks and correction          |
-| remainder | safety margin and final report         |
+|      Portion | Purpose                                          |
+| -----------: | ------------------------------------------------ |
+|         1–3K | stable role, invariant capsule and task contract |
+|         2–8K | targeted source discovery                        |
+|        2–12K | implementation or analysis                       |
+|         1–4K | focused checks and concise output                |
+| at least 75% | unused safety and correction capacity            |
+
+vLLM prefix caching is enabled. Preserve the fixed gateway system prompt and
+packet field order so fresh tasks can reuse the common prefix without sharing
+conversation state. Do not pad a packet merely to chase cache hits.
 
 ## Execution protocol
 
@@ -256,8 +262,13 @@ The Queen evaluates Worker tasks by:
 - absence of new dependency or bundle cost without evidence;
 - explicit lifecycle and memory ownership;
 - focused verification and honest uncertainty;
-- context efficiency: useful evidence per token and completion before the soft
-  context ceiling.
+- context efficiency: useful evidence per token and completion before the 32K
+  Worker ceiling.
+
+The first ten delegated tasks follow the measurable calibration in
+[OMP_EVALUATION.md](OMP_EVALUATION.md). Graph or vector memory is not admitted
+until that evidence demonstrates a retrieval problem rather than a prompting,
+scope or model-capability problem.
 
 Fast output that increases architecture duplication, hides memory ownership or
 requires a second cleanup task is rejected.

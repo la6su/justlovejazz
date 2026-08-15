@@ -156,6 +156,7 @@ references/**/.gitattributes
 
 # LLM agent local
 .claude/
+.agent-runtime/
 
 # Test output
 test-results/
