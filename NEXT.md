@@ -11,9 +11,9 @@ do not start a phase whose entry gate has not passed.
       plan and ADR foundation now exist. Capture a clean production manifest,
       route screenshots after Enter, WebGPU and forced-WebGL diagnostics,
       accessibility contracts and the full current release gate. Record only
-      evidence that can be repeated during later phases. The current forced
-      WebGL home path fades to a black viewport after Enter at `6a72b30`; fix
-      or explicitly diagnose that legacy parity failure before freezing Phase 0.
+      evidence that can be repeated during later phases. Forced WebGL home
+      parity passed once Enter was awaited in its `is-ready` state; the remaining
+      gaps are hardware WebGPU, real-mobile DPR and resource-soak evidence.
 
 - [ ] **Phase 1: select and scaffold the compatible toolchain** — verify current
       official releases and compatibility for Vue, Vue Router, TresJS and

@@ -105,12 +105,12 @@ for each renderer milestone. Before Phase 6 acceptance the forced fallback is
 the current classic WebGL2 renderer; afterwards it is
 `WebGPURenderer({ forceWebGL: true })` and is labelled `WebGLBackend`.
 
-| Milestone        | Backend | Route/state               |     p50 |     p95 | Settled draws | Resource soak | Device/context                                                         |
-| ---------------- | ------- | ------------------------- | ------: | ------: | ------------: | ------------- | ---------------------------------------------------------------------- |
-| Phase 0 freeze   | blocked | automatic and forced home |     n/a |     n/a |           n/a | pending       | `6a72b30`, 1280×720/DPR 1 in-app browser; forced visual parity failure |
-| Phase 2 spike    | pending | representative scene      | pending | pending |    0 required | 20 mounts     | record                                                                 |
-| Phase 6 renderer | pending | full route matrix         | pending | pending |    0 required | 20 routes     | record                                                                 |
-| Phase 10 cutover | pending | full route matrix         | pending | pending |    0 required | 20 routes     | record                                                                 |
+| Milestone        | Backend | Route/state               |     p50 |     p95 | Settled draws | Resource soak | Device/context                                                                |
+| ---------------- | ------- | ------------------------- | ------: | ------: | ------------: | ------------- | ----------------------------------------------------------------------------- |
+| Phase 0 freeze   | partial | automatic and forced home |     n/a |     n/a |           n/a | pending       | `151eb36`, 1280×720/DPR 1 in-app browser; hardware WebGPU/mobile/soak pending |
+| Phase 2 spike    | pending | representative scene      | pending | pending |    0 required | 20 mounts     | record                                                                        |
+| Phase 6 renderer | pending | full route matrix         | pending | pending |    0 required | 20 routes     | record                                                                        |
+| Phase 10 cutover | pending | full route matrix         | pending | pending |    0 required | 20 routes     | record                                                                        |
 
 Resource soak tracks canvas/context count, listeners, timers, decoded assets,
 textures, geometries, programs/pipelines, retained route scopes, JS heap and GPU
@@ -128,11 +128,13 @@ hardware WebGPU adapter. Automatic startup initialized `WebGPURenderer` with
 `WebGLBackend`, then deliberately recreated the classic `WebGLRenderer`; after
 Enter, the home route showed one canvas and its DOM/scene composition.
 
-Forced `?renderer=webgl` logged the expected classic WebGL2 path and also kept
-one canvas, but after Enter the splash disappeared into a black viewport. The
-DOM still held the active intro section and no console error was emitted. This
-is a reproducible visual-parity failure, so Phase 0 is not frozen and no
-WebGPU-hardware or resource-soak claim is made from this environment.
+Forced `?renderer=webgl` logged the expected classic WebGL2 path, removed the
+splash after the Enter button reached `is-ready`, and showed the matching home
+composition with one canvas and no console error. An earlier black capture was
+invalid: its Enter click occurred before that readiness guard and was correctly
+ignored by the inline handler. This evidence does not validate a hardware
+WebGPU path, real-mobile DPR, frame timing or resource soak; those remain Phase
+0 requirements.
 
 ### Benchmark and visual protocol
 
