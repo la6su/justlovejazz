@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
 import { resolve } from 'node:path'
 
 import { copyFileSync, mkdirSync, readdirSync } from 'fs'
@@ -135,6 +136,7 @@ export default defineConfig({
     minify: 'esbuild',
   },
   plugins: [
+    vue(),
     // /admin/ is a separate development application. The plugin owns its
     // fixed-path save/compile API and apply:'serve' keeps it out of builds.
     jlzAdminPlugin(),

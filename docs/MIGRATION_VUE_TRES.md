@@ -306,7 +306,8 @@ must finish with one route manifest, one renderer factory, one render scheduler,
 one asset ownership policy and one implementation of each scene owner.
 
 Registry and official-documentation discovery on 2026-08-15 produced this
-Phase 1 candidate matrix. It is a spike input, not installation approval:
+Phase 1 matrix. It was installed and verified by the isolated spike; no package
+is imported by the production entry graph yet:
 
 | Package                     | Stable candidate | Admission note                                   |
 | --------------------------- | ---------------: | ------------------------------------------------ |
@@ -329,6 +330,15 @@ software-adapter handling and forced-WebGL QA remain project-owned contracts.
 The first spike runs on the current Bun `1.3.14`, Node `24.16.0`, TypeScript
 `6.0.3` and Vite `8.1.5`; Phase 1 records the final peer ranges and exact
 lockfile resolution before production code imports the stack.
+
+The spike adds `@vitejs/plugin-vue`, `vue-tsc`, `@vue/test-utils` and one
+inert SFC/router/Tres probe under `src/spikes/vue/`. Its unit test proves SFC
+transform, Vue reactivity, Router memory history and Tres module resolution;
+`bun run type-check:vue` is the SFC type gate. The production build does not
+import the probe, Vue, Router or Tres. After the Three `0.185.1` upgrade, the
+lazy Three chunk measured **349.28 kB gzip** against the **350 kB** cap. This
+0.72 kB headroom is a Phase 1 constraint: no additional Three/Tres helper may
+enter production without replacing code or restoring budget headroom.
 
 ### Phase 2 — representative renderer feasibility gate
 

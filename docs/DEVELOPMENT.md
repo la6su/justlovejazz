@@ -49,6 +49,9 @@ Each migration phase selects the relevant checks from
 [MIGRATION_VUE_TRES.md](MIGRATION_VUE_TRES.md). The minimum renderer-affecting
 matrix is:
 
+Run `bun run type-check:vue` whenever a Vue SFC changes. It complements the
+existing TypeScript check; it does not replace the release gate.
+
 | Area       | Required evidence                                                    |
 | ---------- | -------------------------------------------------------------------- |
 | Backend    | automatic WebGPU and forced WebGLBackend; software-adapter policy    |
