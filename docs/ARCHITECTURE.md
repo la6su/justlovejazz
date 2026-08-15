@@ -53,10 +53,9 @@ graph.
 - `EnvSphere` owns the ambient background. The contact state owns the ground.
 - Actual initialized backend determines renderer capability, DPR and post
   quality.
-- One renderer-loop driver exists. After the Tres cutover, TresCanvas manual
-  mode is the only code allowed to integrate with the renderer loop;
-  `RenderScheduler` owns demand policy and requests frames through `advance()`.
-  Settled idle performs no draw work and hidden tabs pause.
+- One renderer-loop driver exists. `RenderScheduler` owns demand policy and
+  requests bounded work from the integration admitted by the Phase 2 gate;
+  settled idle performs no draw work and hidden tabs pause.
 - Reduced-motion branches synchronously reach the authored final state and
   release render activity.
 - Route resources, listeners, timers, async work and GPU allocations have one
@@ -228,15 +227,16 @@ active and calls `setAnimationLoop(null)` after the settled frame and while the
 document is hidden. Tres's internal loop is stopped when this driver takes
 ownership. No scene owner starts its own `requestAnimationFrame` loop.
 
-The Phase 2 hardware A/B selected this driver over Tres manual mode: active
-p50/p95 pacing was comparable on both backends, while Tres 5.8.3 retained about
-60 idle rAF ticks per second and the bounded driver retained zero. The full
-representative TSL/post graph must repeat the gate. The current Experience loop
-remains authoritative before the Tres cutover and is removed in the same slice
-that activates the new adapter. Vue reactivity may request invalidation but
-never wraps or replaces the frame callback. Runtime assertions and diagnostics
-report canvas count, loop-driver count, active reasons, ticks, draws and p50/p95
-frame time.
+The first Phase 2 hardware A/B makes this driver the leading candidate over
+Tres manual mode: Tres 5.8.3 retained about 60 idle rAF ticks per second while
+the bounded driver retained zero. This is a one-window observation, not a
+selection: at least three equal active-burst windows per backend, including the
+representative TSL/post graph, must establish median and worst p95 before the
+integration is selected. The current Experience loop remains authoritative
+before the Tres cutover and is removed in the same slice that activates the new
+adapter. Vue reactivity may request invalidation but never wraps or replaces the
+frame callback. Runtime assertions and diagnostics report canvas count,
+loop-driver count, active reasons, ticks, draws and p50/p95 frame time.
 
 ## Resource lifecycle
 

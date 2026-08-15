@@ -163,6 +163,7 @@ export default defineConfig(({ mode }) => ({
             '/__spikes/tres-manual': '/src/spikes/tres/manualProbeEntry.ts',
             '/__spikes/tres-unified': '/src/spikes/tres/unifiedProbeEntry.ts',
             '/__spikes/tres-loop': '/src/spikes/tres/loopProbeEntry.ts',
+            '/__spikes/tres-representative': '/src/spikes/tres/representativeProbeEntry.ts',
           }
           const entry = req.url ? entries[req.url.split('?')[0] ?? ''] : undefined
           if (!entry) return next()

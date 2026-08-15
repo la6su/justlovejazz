@@ -178,13 +178,23 @@ initialization, backend inspection and manual-frame handoff only; it does not
 yet admit the representative TSL/post graph or establish Phase 2 performance
 and resource budgets.
 
-The follow-up fixed 800×450 loop-driver A/B sampled 90 draws and one second of
+The follow-up fixed 800×450 loop-driver A/B sampled 90 render invocations and one second of
 idle per driver. Tres manual mode retained 60 idle ticks per second on both
 backends. A bounded `setAnimationLoop` driver retained zero idle ticks, with
 WebGPU p50/p95 16.7/16.8 ms and forced WebGLBackend 16.7/18.5 ms; manual measured
 16.7/17.0 ms and 16.7/17.1 ms respectively. No run emitted a runtime/page error.
-The bounded driver is selected, subject to repetition with the representative
-TSL/post graph.
+This is one observation, so the bounded driver is a candidate rather than a
+selection. Repeat at least three equal windows per backend with the
+representative TSL/post graph and record median plus worst p95 before admission.
+
+### Phase 2 representative fallback observation — 2026-08-15
+
+The development-only representative Tres route rendered its fogged
+`MeshBasicNodeMaterial` scene through `WebGPURenderer -> WebGLBackend` in the
+local in-app browser. The visible scene completed without a runtime error. This
+is not a performance result and does not prove the WebGPU-only TSL post path;
+that branch needs the physical hardware browser before it can enter the active
+burst benchmark.
 
 ### Phase 0 physical mobile WebGPU observation — 2026-08-15
 
