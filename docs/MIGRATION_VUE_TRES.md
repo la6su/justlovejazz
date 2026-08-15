@@ -340,6 +340,15 @@ lazy Three chunk measured **349.28 kB gzip** against the **350 kB** cap. This
 0.72 kB headroom is a Phase 1 constraint: no additional Three/Tres helper may
 enter production without replacing code or restoring budget headroom.
 
+Installed TresJS declarations confirm that `renderMode: 'manual'` renders only
+when `advance()` is called, while the `renderer` option is a synchronous factory
+returning a renderer instance. The Phase 1 adapter probe therefore separates
+four states: synchronous renderer creation, awaited `renderer.init()`, actual
+backend/software-adapter inspection, and application-ready notification. Tres
+`ready` must never be treated as proof that the WebGPU device and TSL graph are
+ready. The probe is intentionally framework-neutral and is not mounted by the
+production entry.
+
 ### Phase 2 — representative renderer feasibility gate
 
 This is not a rotating-box demo. The spike includes fog, representative TSL
