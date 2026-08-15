@@ -1,10 +1,15 @@
 <script setup lang="ts">
 import { markRaw, onBeforeUnmount, ref, shallowRef } from 'vue'
 import { TresCanvas, type TresContext } from '@tresjs/core'
-import { Color, FogExp2, Mesh, PerspectiveCamera, TorusKnotGeometry, Vector3 } from 'three'
-import { MeshBasicNodeMaterial, WebGPURenderer } from 'three/webgpu'
+import { Color, FogExp2, PerspectiveCamera, Vector3 } from 'three'
+import { WebGPURenderer } from 'three/webgpu'
 import { WebGPUPostPipeline } from '../../core/WebGPUPostPipeline'
 import { inspectRendererBackend } from './rendererReadiness'
+import {
+  canUseTSLPost,
+  createRepresentativeScene,
+  type RepresentativeSceneResources,
+} from './representativeScene'
 import { createUnifiedRendererFactory, readBackendPreference } from './unifiedRendererFactory'
 
 const status = ref('booting')
@@ -20,20 +25,14 @@ const rendererFactory = createUnifiedRendererFactory({
   },
 })
 
-let sceneMesh: Mesh | null = null
-let sceneGeometry: TorusKnotGeometry | null = null
-let sceneMaterial: MeshBasicNodeMaterial | null = null
+let sceneResources: RepresentativeSceneResources | null = null
 let postPipeline: WebGPUPostPipeline | null = null
 
 function disposeScene(): void {
   postPipeline?.dispose()
   postPipeline = null
-  sceneMesh?.removeFromParent()
-  sceneGeometry?.dispose()
-  sceneMaterial?.dispose()
-  sceneMesh = null
-  sceneGeometry = null
-  sceneMaterial = null
+  sceneResources?.dispose()
+  sceneResources = null
 }
 
 function onReady(context: TresContext): void {
@@ -56,14 +55,11 @@ function onReady(context: TresContext): void {
   camera.position.set(0, 0, 4)
   camera.lookAt(0, 0, 0)
 
-  sceneGeometry = new TorusKnotGeometry(0.9, 0.28, 128, 24)
-  sceneMaterial = new MeshBasicNodeMaterial({ color: '#72f1b8', fog: true })
-  sceneMesh = new Mesh(sceneGeometry, sceneMaterial)
-  sceneMesh.rotation.set(0.3, 0.5, 0)
-  context.scene.value.add(sceneMesh)
+  sceneResources = createRepresentativeScene()
+  sceneResources.attach(context.scene.value)
 
   try {
-    if (readiness.backend === 'WebGPUBackend') {
+    if (canUseTSLPost(readiness.backend)) {
       postPipeline = WebGPUPostPipeline.create(actualRenderer, context.scene.value, camera)
       postPipeline.updateParams({
         bloom: 0.18,

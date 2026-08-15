@@ -451,6 +451,12 @@ browser selected `WebGLBackend`; the direct fallback render completed visually
 with no runtime error. This narrows the prior fog concern: it is not reproduced
 by this minimal node-material scene. It is fallback evidence only.
 
+The scene resources are isolated behind a small scope with a unit-tested
+teardown contract. A pure backend guard admits the WebGPU-only post pipeline
+only for an actual `WebGPUBackend`; a fallback backend cannot silently enter
+that path. This is lifecycle/fallback-contract evidence, not a substitute for
+the physical WebGPU compilation gate.
+
 In the automatic `WebGPUBackend` branch the same probe invokes the existing TSL
 post pipeline after renderer readiness. Three r185 documents `RenderPipeline`
 as WebGPU-only, so forced `WebGLBackend` deliberately uses direct rendering
