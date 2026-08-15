@@ -196,6 +196,15 @@ is not a performance result and does not prove the WebGPU-only TSL post path;
 that branch needs the physical hardware browser before it can enter the active
 burst benchmark.
 
+The same route was then exercised in physical Google Chrome 151 on the Ubuntu
+Sway RTX 4060 Ti session. Automatic policy completed as `WebGPUBackend` with
+the TSL post path; forced `?backend=webgl` completed as `WebGLBackend` with the
+intentional direct fallback. Neither produced a runtime or shader error. This
+is a renderer-feasibility observation only: it does not yet contain comparable
+active-burst timings or a resource soak. The active Chrome flags were not
+captured, so reproduce this result with the same browser configuration before
+using it as a cross-machine comparison.
+
 ### Phase 0 physical mobile WebGPU observation — 2026-08-15
 
 The same local development build was opened over an ADB USB reverse tunnel on

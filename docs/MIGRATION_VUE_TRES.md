@@ -466,6 +466,17 @@ about multiple Three instances appeared only in the in-app fallback browser;
 the previously tested headed RTX factory did not emit it, so this remains a
 separate reproducibility check rather than evidence of a production duplicate.
 
+The physical Chrome extension session subsequently admitted this reduced gate
+on the RTX 4060 Ti: automatic policy produced `WebGPUBackend` with `tsl-post`,
+and `?backend=webgl` produced `WebGLBackend` with the deliberate direct fallback.
+Both reported `complete`; neither emitted a runtime or shader error. The only
+console output was the known development Vue feature-flags warning. This admits
+fog plus the minimal node material/post contract, but not the remaining
+environment, assets, DPR, motion, loop-benchmark or resource-soak requirements.
+The Chrome command-line and `chrome://flags` state were not captured, so this
+evidence applies to the user's current Chrome configuration and is not a claim
+that WebGPU is enabled under every default Linux GPU configuration.
+
 ### Phase 3 — framework-neutral contracts
 
 Scope:
