@@ -56,8 +56,6 @@ in a dirty tree and keep each change to one coherent outcome.
   gates, rollback points and removal ledger.
 - [docs/adr/README.md](docs/adr/README.md) — accepted and proposed architecture
   decisions.
-- [docs/AGENT_PIPELINE.md](docs/AGENT_PIPELINE.md) — Codex Queen and OMP/Qwen
-  Worker roles, context budgets and integration protocol.
 - [skills/justlovejazz-ui/SKILL.md](skills/justlovejazz-ui/SKILL.md) — load for
   UI, Less, theme, accessibility or visual QA work.
 - [skills/justlovejazz-release/SKILL.md](skills/justlovejazz-release/SKILL.md) —

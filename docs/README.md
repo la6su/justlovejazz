@@ -11,11 +11,8 @@ Keep each fact with the source that owns it:
 | [PERFORMANCE_BASELINE.md](PERFORMANCE_BASELINE.md) | Comparable delivery/runtime evidence         |
 | [BRAND.md](BRAND.md)                               | Visual and editorial direction               |
 | [PAGE_BUILDER.md](PAGE_BUILDER.md)                 | Dev-only UIkit builder and compile boundary  |
-| [AGENT_PIPELINE.md](AGENT_PIPELINE.md)             | Codex Queen and OMP Worker protocol          |
-| [OMP_EVALUATION.md](OMP_EVALUATION.md)             | Ten-task Worker and memory calibration       |
 | [CHANGELOG.md](CHANGELOG.md)                       | Released user-visible or operational changes |
 | [../NEXT.md](../NEXT.md)                           | Open outcomes                                |
-| [../AGENTS.md](../AGENTS.md)                       | Minimal agent entry point                    |
 | [../skills](../skills)                             | Procedures loaded for matching tasks         |
 
 Current source, configuration and tests lead when documentation drifts.

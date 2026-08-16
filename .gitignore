@@ -158,6 +158,9 @@ references/**/.gitattributes
 .claude/
 .agent-runtime/
 
+# Private operator documentation and homelab configuration. Never publish.
+.homelab/
+
 # Test output
 test-results/
 playwright-report/

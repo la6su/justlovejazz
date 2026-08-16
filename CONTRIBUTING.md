@@ -38,8 +38,6 @@ gate, then remove the legacy owner in a separate reviewable change.
 
 Parallel agents use separate worktrees and branches. They return focused
 commits for review and never edit the integration working tree concurrently.
-Codex/OMP collaboration follows the
-[Queen/Worker pipeline](docs/AGENT_PIPELINE.md).
 
 A migration change documents and verifies the relevant parts of this matrix:
 

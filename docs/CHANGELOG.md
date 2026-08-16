@@ -5,8 +5,8 @@
 - Established the staged Vue 3, Vue Router and TresJS migration architecture,
   including a representative WebGPU/WebGLBackend gate, persistent scene root,
   demand-render scheduler, explicit GPU resource ownership and rollback points.
-- Added architecture decisions and a Queen/OMP Worker protocol for bounded
-  local-model delegation without sharing integration authority or secrets.
+- Added architecture decisions and an internal collaboration protocol for
+  bounded delegated work without sharing integration authority or secrets.
 - Defined migration budgets for framework delivery, idle rendering, route
   resource soaks, dependency admission and removal of superseded production
   paths.

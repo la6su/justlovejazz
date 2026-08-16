@@ -831,21 +831,11 @@ existing limit.
 | splash startup regresses                     | isolated shell entry and modulepreload inspection                                         |
 | the long-running branch becomes unreviewable | small conventional commits, phase checkpoints and removal ledger                          |
 
-## Agent and branch workflow
+## Branch workflow
 
-`tres-vue-dev` is the integration branch. Codex, Pi/OMP and other agents do not
-edit the same working tree concurrently. A remote agent receives a dedicated
-worktree and branch, returns a focused commit and has no merge authority.
-
-The durable read-only integration is a local MCP STDIO bridge exposing the
-bounded `omp_consult` tool. It starts OMP in an isolated profile under an
-unprivileged container account through a forced SSH gateway. Filesystem rights
-and the gateway are the security boundary; write tools and agent subtask tools
-remain disabled until a later, explicitly approved stage.
-
-[AGENT_PIPELINE.md](AGENT_PIPELINE.md) defines the Queen/Worker roles, OMP
-transport, task-packet schema, Qwen context-window budget, worktree protocol and
-output contracts. It is mandatory for remote-worker tasks.
+`tres-vue-dev` is the integration branch. Contributors use dedicated worktrees
+and branches, return focused commits for review, and do not edit the integration
+working tree concurrently. No contributor has merge authority by default.
 
 ## Migration ledgers
 

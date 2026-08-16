@@ -27,19 +27,6 @@ do not start a phase whose entry gate has not passed.
       initialization, backend inspection and application readiness remain
       distinct contracts.
 
-- [ ] **Calibrate OMP on ten bounded tasks** — delegate only low-risk S0/S1
-      work during Phases 0–1, score first-pass accuracy, retries, latency,
-      context size and Queen review cost in `docs/OMP_EVALUATION.md`. Pilot
-      Graphify only if the recorded retrieval gate fails; do not add memory or
-      indexing dependencies speculatively.
-
-- [ ] **Continue fast-only OMP calibration on bounded S1 reads** — `fast` has
-      passed the deterministic read fixture three times; collect the remaining
-      evidence one narrow factual packet at a time. Keep `analyze` disabled
-      until it passes its own fixture gate. Do not add memory, plugins or
-      broader tools before a task class meets the documented accuracy and
-      latency gate.
-
 - [ ] **Phase 2: pass the representative unified-renderer gate** — exercise
       `WebGPURenderer` with WebGPUBackend and forced WebGLBackend against fog,
       representative materials, the full TSL post graph, environment, Works,
