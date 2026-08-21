@@ -1874,6 +1874,62 @@ after their cleanup commit.
 Rollback: a build-time flag selects the old DOM router only through the
 candidate gate. After cleanup, revert the Phase 5 switch and cleanup commits.
 
+#### Phase 5 AppShell + Vue Router candidate slice — 2026-08-21
+
+The first Phase 5 step: the public app can now mount Vue after the inline
+splash shell and let Vue Router own navigation, selected by the
+`VITE_JLZ_VUE_ROUTER=1` candidate flag. The legacy DOM router in
+`src/router.ts` stays the production default until the candidate gate passes
+and the cleanup commit flips the default.
+
+- `src/app/routes.ts` derives the `RouteRecordRaw[]` from the Phase 3 route
+  manifest (no re-declared mapping): one record per manifest entry plus a
+  catch-all that renders `home` under an unknown stale URL. `pageForPath`
+  is the lenient initial-load resolution; in-app navigation stays strict —
+  the candidate's anchor click capture handler and `jlz:navigate` listener
+  strict-resolve against the manifest before pushing, so an unknown link is
+  a no-op exactly as with the legacy router.
+- `src/app/AppShell.vue` is the root SFC mounted on `#app` (the splash stays
+  outside the Vue mount). It is intentionally thin: the static chrome
+  (skip link, route announcer, splash loader) stays in `index.html` and
+  moves in as the route and navigation SFC slices land.
+- `src/app/PageView.vue` is the documented temporary primitive adapter for
+  the route records: it hosts the string-template page contract
+  (`src/pages`) in `#spa-content` and ports the legacy `renderView`
+  side-effect sequence verbatim — the `dataset.page` write on body/html,
+  WorkCards disposal before the DOM swap, home intro activation, i18n +
+  per-page meta on every render, the route announcer on page change, the
+  menu toolbar init, UIkit hydration and the `jlz:route-change`
+  notification. Its removal phase is the per-route SFC migration + the
+  Phase 5 cleanup commit.
+- `src/app/index.ts` is the navigation owner: `createWebHistory` handles
+  `popstate`, the section-hash dispatch ports the legacy contract (initial
+  load defers `jlz:goto-section-by-hash` until `jlz:webgl-ready`; in-app
+  hash navigations dispatch on the next frame), and the `jlz:lang-change`
+  re-apply stays. The entry branch (`src/entry-app.ts`) inlines the flag
+  check and pulls the candidate graph only through a dynamic `import('./app')`,
+  so the default production build carries no Vue Router code at all.
+- `src/__tests__/vueAppRouter.test.ts` (5 tests) locks the record/manifest
+  bijection, the lenient fallback, and an `AppShell` + `PageView` mount over
+  a real memory-history router (home render + `jlz:route-change` + meta,
+  unknown direct entry, in-app push re-render).
+
+Verification: scoped prettier, `vue-tsc` clean, 271/271 unit suite
+(266 + 5 new), `git diff --check` clean, default production build with the
+candidate and admin graphs both absent from `dist` (verified by marker
+grep), flag-on build carrying the candidate chunk, serial e2e 18/18 on the
+default build, and a live candidate smoke through the Caddy proxy
+(`VITE_JLZ_VUE_ROUTER=1` dev server): direct entry `/` and `/works`,
+in-app `jlz:navigate` to `/manifesto`, `history.back()` popstate to
+`/works`, unknown route as a strict no-op, in-app `#section-*` hash
+dispatching `jlz:goto-section-by-hash`, EN/RU re-apply, the route announcer
+live region, per-page `<title>` and `dataset.page`, and a stable scene
+canvas across every navigation (the native renderer is never recreated).
+Zero console errors on the candidate path.
+
+Rollback: delete `src/app/`, the `entry-app.ts` branch, the `env.d.ts`
+extension and the test file; the legacy router is the untouched default.
+
 ### Phase 6 — unified production renderer
 
 Entry: Phase 2 is accepted.

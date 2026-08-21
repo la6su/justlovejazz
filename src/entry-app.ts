@@ -209,7 +209,20 @@ export async function startApp(): Promise<void> {
       /* icons are enhancement, not critical */
     })
 
-  initRouter()
+  // Phase 5: the Vue Router candidate owns navigation when the build-time
+  // flag is on; the legacy DOM router stays the default until the candidate
+  // gate passes. Both paths render the same page contracts — the scene
+  // runtime boots exactly once regardless of the route.
+  // Phase 5 candidate gate: `VITE_JLZ_VUE_ROUTER=1` selects the Vue Router
+  // mount over the legacy DOM router. The check is inlined (not imported
+  // from `./app`) so the candidate graph — Vue Router + the app SFCs — is
+  // only pulled in through the dynamic import below and stays out of the
+  // main bundle when the flag is off.
+  if (import.meta.env.VITE_JLZ_VUE_ROUTER === '1') {
+    void import('./app').then((m) => m.mountVueApp())
+  } else {
+    initRouter()
+  }
 
   // ── Works page 3D cards: bind tilt + click on every route change ──
   // initWorkCards() is idempotent (skips already-bound cards).

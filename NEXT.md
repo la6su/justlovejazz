@@ -181,7 +181,7 @@ do not start a phase whose entry gate has not passed.
       invocation is now pinned in `package.json` (`test:serial`) and
       documented in `docs/DEVELOPMENT.md`.
 
-- [ ] **Phase 4: migrate the development Page Builder to Vue** — use the
+- [x] **Phase 4: migrate the development Page Builder to Vue** — use the
       isolated admin application as the first state-heavy Vue surface while
       keeping schema, validation, escaping and Less compilation pure. Preserve
       atomic save and keep the admin graph out of production. The typed
@@ -250,7 +250,26 @@ do not start a phase whose entry gate has not passed.
 - [ ] **Phase 5: migrate the public DOM shell and routing** — adopt AppShell,
       Vue Router, semantic route SFCs, UIkit lifecycle adapters, i18n/meta and
       prerendering one vertical slice at a time while the current Three runtime
-      remains persistent behind a typed port.
+      remains persistent behind a typed port. First slice landed: `src/app/`
+      now mounts `AppShell` on `#app` after the inline splash and lets Vue
+      Router own navigation behind the `VITE_JLZ_VUE_ROUTER=1` candidate
+      flag — `routes.ts` derives records from the Phase 3 route manifest
+      (strict in-app, lenient direct entry), `PageView.vue` is the documented
+      temporary primitive adapter hosting the string-template pages and
+      porting the legacy `renderView` side effects, and `index.ts` owns the
+      nav surface (popstate via `createWebHistory`, the `#section-` hash
+      dispatch, `jlz:lang-change` re-apply). The entry branch inlines the
+      flag and pulls the candidate only through a dynamic import, so the
+      default production build carries no Vue Router code (verified: default
+      build has the candidate + admin graphs both absent from `dist`; a
+      flag-on build carries the candidate). 5 unit tests lock the
+      manifest→record bijection and an `AppShell`+`PageView` memory-history
+      mount (271/271). Live candidate smoke (direct entry, in-app, hash,
+      popstate, EN/RU, strict unknown no-op, stable scene canvas, zero
+      console errors) passes. Open: the per-route semantic SFC migration,
+      the UIkit lifecycle adapters, flipping the candidate to the production
+      default through the full candidate gate, and the cleanup commit that
+      removes the legacy `src/router.ts` path.
 
 - [ ] **Phases 6–10: cut over renderer, Tres scene owners and static content** —
       only after their gates pass, ship the unified renderer, persistent
