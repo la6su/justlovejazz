@@ -18,20 +18,20 @@
           <input id="document-title" class="uk-input" maxlength="120" />
         </label>
         <div class="jlz-admin-history" aria-label="History controls">
-          <button id="undo" class="uk-button uk-button-default uk-button-small" type="button">
+          <button id="undo" class="uk-button uk-button-default uk-button-small" type="button" title="Undo (Ctrl+Z)">
             Undo
           </button>
-          <button id="redo" class="uk-button uk-button-default uk-button-small" type="button">
+          <button id="redo" class="uk-button uk-button-default uk-button-small" type="button" title="Redo (Ctrl+Shift+Z)">
             Redo
           </button>
         </div>
         <div class="jlz-admin-viewports" role="group" aria-label="Preview width">
-          <button class="is-active" data-viewport="desktop" type="button">Desktop</button>
-          <button data-viewport="tablet" type="button">Tablet</button>
-          <button data-viewport="mobile" type="button">Mobile</button>
+          <button class="is-active" data-viewport="desktop" type="button" title="Preview width: full">Desktop</button>
+          <button data-viewport="tablet" type="button" title="Preview width: 820px">Tablet</button>
+          <button data-viewport="mobile" type="button" title="Preview width: 390px">Mobile</button>
         </div>
         <output id="save-status" class="jlz-admin-status" aria-live="polite">Loading…</output>
-        <button id="save" class="uk-button uk-button-primary" type="button">
+        <button id="save" class="uk-button uk-button-primary" type="button" title="Save & compile (Ctrl+S)">
           Save &amp; compile
         </button>
       </header>
@@ -61,6 +61,14 @@
               <span class="jlz-admin-kicker">UIkit Styler</span>
               <h1>Custom theme</h1>
             </div>
+            <button
+              id="theme-reset"
+              class="uk-button uk-button-text uk-button-small"
+              type="button"
+              title="Reset all theme values to the JUSTLOVEJAZZ defaults (undo-able)"
+            >
+              Reset
+            </button>
           </div>
           <p class="jlz-admin-help">
             Edit whitelisted UIkit/Less decisions and compile them into the JUSTLOVEJAZZ theme.
@@ -109,7 +117,7 @@
             <button id="move-up" type="button" title="Move element up" aria-label="Move element up">↑</button>
             <button id="move-down" type="button" title="Move element down" aria-label="Move element down">↓</button>
             <button id="duplicate" type="button" title="Duplicate element" aria-label="Duplicate element">⧉</button>
-            <button id="remove" type="button" title="Remove element" aria-label="Remove element">×</button>
+            <button id="remove" type="button" title="Remove element (Del)" aria-label="Remove element">×</button>
           </div>
         </div>
         <div id="inspector-fields" class="jlz-admin-inspector-fields">

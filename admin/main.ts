@@ -9,6 +9,7 @@ import {
 import { DEFAULT_BUILDER_DOCUMENT } from '../src/builder/default-document'
 import { renderBuilderDocument } from '../src/builder/render'
 import {
+  DEFAULT_BUILDER_THEME,
   STYLE_GROUPS,
   STYLE_GROUP_BY_ID,
   type BuilderThemeKey,
@@ -16,6 +17,7 @@ import {
   type StyleGroupId,
 } from '../src/builder/style'
 import { renderStyleShowcase } from '../src/builder/style-showcase'
+import { themeToCssVars } from '../src/builder/themeVariables'
 import {
   validateBuilderDocument,
   type BuilderDocument,
@@ -70,6 +72,9 @@ let mode: EditorMode = 'builder'
 let selectedStyleGroup: StyleGroupId = 'global'
 let showAllStyleComponents = true
 let inverseStylePreview = false
+// True while a save request is in flight; the button is locked and the
+// "Saving…" label shows until the response settles.
+let saving = false
 
 function makeId(type: BuilderElementType): string {
   const suffix = crypto.randomUUID?.().slice(0, 8) ?? Date.now().toString(36)
@@ -90,7 +95,7 @@ function updateDirtyStatus(announce = true): void {
   if (!saveStatus.classList.contains('is-error')) {
     saveStatus.dataset.state = dirty ? 'dirty' : 'ready'
   }
-  saveButton.disabled = !dirty
+  saveButton.disabled = saving || !dirty
   undoButton.disabled = !store.canUndo
   redoButton.disabled = !store.canRedo
 }
@@ -151,7 +156,12 @@ function renderOutline(): void {
       // reports the depth as a unitless custom property.
       button.style.setProperty('--depth', String(depth))
       button.classList.toggle('is-selected', node.id === store.selectedId)
+      button.title = BUILDER_CATALOG[node.type].description
 
+      const icon = document.createElement('span')
+      icon.className = 'jlz-admin-outline-icon'
+      icon.setAttribute('aria-hidden', 'true')
+      icon.textContent = BUILDER_CATALOG[node.type].icon
       const type = document.createElement('span')
       type.className = 'jlz-admin-outline-type'
       type.textContent = node.type
@@ -160,9 +170,11 @@ function renderOutline(): void {
         node.props.content?.slice(0, 32) ||
         node.props.label?.slice(0, 32) ||
         BUILDER_CATALOG[node.type].label
-      button.append(type, name)
+      button.append(icon, type, name)
       item.append(button)
       outlineElement.append(item)
+      // Keep the current selection visible without fighting the reader.
+      if (node.id === store.selectedId) item.scrollIntoView({ block: 'nearest' })
       appendNodes(node.children, depth + 1)
     }
   }
@@ -171,50 +183,12 @@ function renderOutline(): void {
 }
 
 function applyPreviewTheme(theme: BuilderTheme): void {
-  previewElement.style.setProperty('--builder-accent', theme.accent)
-  previewElement.style.setProperty('--builder-accent-hover', theme.accentHover)
-  previewElement.style.setProperty('--builder-background', theme.background)
-  previewElement.style.setProperty('--builder-background-elevated', theme.backgroundElevated)
-  previewElement.style.setProperty('--builder-surface', theme.surface)
-  previewElement.style.setProperty('--builder-surface-hover', theme.surfaceHover)
-  previewElement.style.setProperty('--builder-text', theme.text)
-  previewElement.style.setProperty('--builder-text-muted', theme.textMuted)
-  previewElement.style.setProperty('--builder-border', theme.border)
-  previewElement.style.setProperty('--builder-signal-cool', theme.signalCool)
-  previewElement.style.setProperty('--builder-signal-ember', theme.signalEmber)
-  previewElement.style.setProperty('--builder-radius', theme.radius)
-  previewElement.style.setProperty('--builder-font-size', theme.fontSize)
-  previewElement.style.setProperty('--builder-line-height', theme.lineHeight)
-  previewElement.style.setProperty('--builder-heading-weight', theme.headingWeight)
-  previewElement.style.setProperty('--builder-heading-transform', theme.headingTransform)
-  previewElement.style.setProperty('--builder-spacing', theme.spacing)
-  previewElement.style.setProperty('--builder-inverse-background', theme.inverseBackground)
-  previewElement.style.setProperty('--builder-inverse-surface', theme.inverseSurface)
-  previewElement.style.setProperty('--builder-inverse-text', theme.inverseText)
-  previewElement.style.setProperty('--builder-inverse-text-muted', theme.inverseTextMuted)
-  previewElement.style.setProperty('--builder-inverse-accent', theme.inverseAccent)
-  previewElement.style.setProperty('--builder-button-height', theme.buttonHeight)
-  previewElement.style.setProperty('--builder-button-radius', theme.buttonRadius)
-  previewElement.style.setProperty('--builder-button-weight', theme.buttonWeight)
-  previewElement.style.setProperty('--builder-button-transform', theme.buttonTransform)
-  previewElement.style.setProperty('--builder-card-radius', theme.cardRadius)
-  previewElement.style.setProperty('--builder-card-padding', theme.cardPadding)
-  previewElement.style.setProperty(
-    '--builder-card-shadow',
-    theme.cardShadow === 'none'
-      ? 'none'
-      : theme.cardShadow === 'soft'
-        ? '0 8px 24px rgba(0, 0, 0, 0.22)'
-        : '0 20px 56px rgba(0, 0, 0, 0.42)',
-  )
-  previewElement.style.setProperty('--builder-section-muted', theme.sectionMuted)
-  previewElement.style.setProperty('--builder-section-primary', theme.sectionPrimary)
-  previewElement.style.setProperty('--builder-section-secondary', theme.sectionSecondary)
-  previewElement.style.setProperty('--builder-control-height', theme.controlHeight)
-  previewElement.style.setProperty('--builder-form-surface', theme.formSurface)
-  previewElement.style.setProperty('--builder-form-border', theme.formBorder)
-  previewElement.style.setProperty('--builder-navbar-height', theme.navbarHeight)
-  previewElement.style.setProperty('--builder-navbar-surface', theme.navbarSurface)
+  // The complete `--builder-*` variable map is owned by the pure
+  // themeVariables contract (single source, locked by tests); the editor
+  // only assigns the result onto the preview element.
+  for (const [name, value] of Object.entries(themeToCssVars(theme))) {
+    previewElement.style.setProperty(name, value)
+  }
   previewElement.classList.toggle('is-inverse-preview', mode === 'style' && inverseStylePreview)
 }
 
@@ -382,6 +356,16 @@ function selectNode(id: string | null): void {
   renderOutline()
   renderPreview()
   renderInspector()
+  if (id) scrollPreviewNodeIntoView(id)
+}
+
+// Bring the just-selected element into view inside the preview frame;
+// reduced-motion readers get an instant jump instead of a smooth scroll.
+function scrollPreviewNodeIntoView(id: string): void {
+  if (mode !== 'builder') return
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  const element = previewElement.querySelector<HTMLElement>(`[data-builder-id="${CSS.escape(id)}"]`)
+  element?.scrollIntoView({ block: 'nearest', behavior: reduced ? 'auto' : 'smooth' })
 }
 
 function addElement(type: BuilderElementType): void {
@@ -445,8 +429,18 @@ function removeSelected(): void {
   })
 }
 
+// Undo-able: the reset is a plain document commit, so history keeps it.
+function resetTheme(): void {
+  commit((draft) => {
+    draft.theme = structuredClone(DEFAULT_BUILDER_THEME)
+  })
+}
+
 async function saveDocument(): Promise<void> {
+  if (saving) return
+  saving = true
   saveButton.disabled = true
+  saveButton.textContent = 'Saving…'
   setStatus('Compiling theme…')
   try {
     const response = await fetch('/__jlz-admin/save', {
@@ -468,6 +462,8 @@ async function saveDocument(): Promise<void> {
   } catch (error) {
     setStatus(error instanceof Error ? error.message : 'Save failed', true)
   } finally {
+    saving = false
+    saveButton.textContent = 'Save & compile'
     updateDirtyStatus(false)
   }
 }
@@ -604,11 +600,53 @@ requiredElement<HTMLButtonElement>('move-up').addEventListener('click', () => mo
 requiredElement<HTMLButtonElement>('move-down').addEventListener('click', () => moveSelected(1))
 requiredElement<HTMLButtonElement>('duplicate').addEventListener('click', duplicateSelected)
 requiredElement<HTMLButtonElement>('remove').addEventListener('click', removeSelected)
+requiredElement<HTMLButtonElement>('theme-reset').addEventListener('click', resetTheme)
 saveButton.addEventListener('click', () => void saveDocument())
 
 window.addEventListener('beforeunload', (event) => {
   if (!store.isDirty()) return
   event.preventDefault()
+})
+
+// Editor keyboard shortcuts. They stay out of the way while the caret is in a
+// form control, so text fields keep their native behavior (incl. native
+// undo/redo); Ctrl+S is the only shortcut that also fires there.
+const isFormControl = (target: EventTarget | null): boolean => {
+  const element = target as HTMLElement | null
+  if (!element) return false
+  const tag = element.tagName
+  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || element.isContentEditable
+}
+
+document.addEventListener('keydown', (event) => {
+  const key = event.key.toLowerCase()
+  const mod = event.ctrlKey || event.metaKey
+  if (mod) {
+    if (key === 's') {
+      event.preventDefault()
+      void saveDocument()
+      return
+    }
+    if (key === 'z' && !event.shiftKey) {
+      if (!isFormControl(event.target)) {
+        event.preventDefault()
+        if (store.canUndo) restoreHistory(store.historyIndex - 1)
+      }
+      return
+    }
+    if (key === 'z' || key === 'y') {
+      if (!isFormControl(event.target)) {
+        event.preventDefault()
+        if (store.canRedo) restoreHistory(store.historyIndex + 1)
+      }
+    }
+    return
+  }
+  if (event.key === 'Delete' || event.key === 'Backspace') {
+    if (isFormControl(event.target) || mode !== 'builder' || !store.selectedId) return
+    event.preventDefault()
+    removeSelected()
+  }
 })
 
 renderCatalog()

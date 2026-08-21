@@ -188,9 +188,15 @@ do not start a phase whose entry gate has not passed.
       `admin/main.ts` now only renders and dispatches it (1:1 swap, 14 new
       unit tests); a dev-only editor style polish (accent Save + disabled
       states, status state dot, outline indent guides + single-line names,
-      hover/focus affordances, thin scrollbars) landed the same day. The SFC
-      migration of the catalogue, outline, inspector, preview and Style
-      workspace and the lifecycle-safe preview remain open.
+      hover/focus affordances, thin scrollbars) landed the same day; and an
+      editor usability slice followed 2026-08-21 — `Ctrl+S`/`Ctrl+Z`/
+      `Ctrl+Shift+Z`/`Ctrl+Y`/Delete shortcuts, a locked “Saving…” state,
+      outline glyphs + tooltips with the selected row kept in view,
+      scroll-into-view for the selected preview node, an undo-able theme
+      Reset in the Style workspace, and the `builder/themeVariables.ts`
+      contract replacing the duplicated preview variable literals (6 new
+      unit tests). The SFC migration of the catalogue, outline, inspector,
+      preview and Style workspace and the lifecycle-safe preview remain open.
 
 - [ ] **Phase 5: migrate the public DOM shell and routing** — adopt AppShell,
       Vue Router, semantic route SFCs, UIkit lifecycle adapters, i18n/meta and

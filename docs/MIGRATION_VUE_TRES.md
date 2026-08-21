@@ -1461,6 +1461,49 @@ outline guides at every depth, Style mode) with zero console errors.
 
 Rollback: revert the three changed files.
 
+#### Phase 4 admin editor usability slice — 2026-08-21
+
+A dev-only ergonomics pass over the admin editor (no schema, save or store
+contract changes; `page.json` untouched). The editor gains the shortcuts and
+states a builder page needs, and the duplicated preview-theme literals leave
+`admin/main.ts` for a new pure contract:
+
+- `src/builder/themeVariables.ts` (new): the single framework-neutral source
+  for the 37 `--builder-*` preview variables — a pure `themeToCssVars`
+  mapping from the typed `BuilderTheme` plus the locked card-shadow presets
+  (`cardShadowValue`); 6 unit tests pin the variable set and every mapping.
+  `applyPreviewTheme` now assigns the mapped result, deleting ~40 lines of
+  literals from the editor (no duplicated facts).
+- `admin/main.ts`:
+  - Keyboard shortcuts — `Ctrl/Cmd+S` save (any focus, prevents the browser
+    dialog), `Ctrl/Cmd+Z` / `Ctrl/Cmd+Shift+Z` / `Ctrl/Cmd+Y` undo/redo,
+    `Delete`/`Backspace` removes the selected node; all no-ops while the
+    caret is in a form control so native text editing keeps its own
+    shortcuts.
+  - Save flow — the button locks and shows “Saving…” while the request is in
+    flight (no double save), then restores its label and the dirty-driven
+    state.
+  - Outline — each row shows the catalog element glyph and the element
+    description as a tooltip; the selected row scrolls into view.
+  - Preview — selecting a node scrolls it into view inside the preview frame
+    (`prefers-reduced-motion` gets an instant jump).
+  - Style workspace — an undo-able “Reset” action commits
+    `DEFAULT_BUILDER_THEME` back to the document (a plain `commit`, so
+    history and the dirty state track it like any other edit).
+- `admin/index.html`: shortcut hints in the Undo/Redo/Save/Remove and
+  viewport tooltips; the `#theme-reset` button in the style panel heading.
+- `admin/admin.less`: outline glyph styling (incl. the selected state) and
+  the Reset text button; both new transitions join the reduced-motion block.
+
+Verification: scoped prettier, `vue-tsc` clean, 240/240 unit suite (29
+files, +6 for the theme contract), production build unchanged in size with
+the admin graph still absent from `dist`, `git diff --check` clean, serial
+e2e 18/18, runtime smoke on the live admin editor (add → dirty dot, `Ctrl+Z`
+undo, `Ctrl+Shift+Z` redo, Delete removes the selected row, Style mode +
+theme Reset round-trip) with zero console errors and `page.json` untouched.
+
+Rollback: revert the five changed files and delete the two new ones.
+
 ### Phase 5 — Vue public shell and router
 
 Scope:
@@ -1681,28 +1724,28 @@ The following ledgers are updated in this document during implementation.
 
 ### Traceability
 
-| Contract                 | Current owner                                                                                                                                                                                        | Target owner                                                                 | Migration phase |
-| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | --------------- |
-| splash readiness/failure | `index.html`, `entry-app.ts` + `bootstrapStates.ts` pure contract (inert until consumed)                                                                                                             | inline shell + bootstrap state machine                                       | 3, 5            |
-| routes/hash/meta         | `routeManifest.ts`, `router.ts`, `pageMeta.ts`                                                                                                                                                       | route manifest + Vue Router                                                  | 3, 5            |
-| scene route-page reads   | `routePage.ts` port (all scene consumers migrated: `World.ts`, `BakuCarousel.ts`, `CinematicNav.ts`, `ContentReveal.ts`, `Experience.ts`)                                                            | typed route port owned by the app providers                                  | 3, 5            |
-| six world slots          | `worldSlots.ts` tuple + strict `worldSlotIndex` (consumed by `WorldConfig.ts`, `SplashCube.ts`, `CinematicNav.ts` slot-index constants)                                                              | domain tuple + `WorldRoot`                                                   | 3, 7, 8         |
-| render demand            | `renderDemand.ts` pure decision contract (consumed: `Experience.update()` 1:1 swap — OR/breath/settle; `Experience._needsRender` stays the flag)                                                     | `RenderScheduler`                                                            | 3, 7            |
-| motion preference        | `motionPolicy.ts` typed port (11 consumers); `entry-shell.ts` dataset hook for E2E/CSS (dead `syncReducedMotionDataset` removed 2026-08-21)                                                          | typed preference state owned by the app providers                            | 3, 5            |
-| brand/runtime tokens     | `brandTokens.ts` manifest (mirrors `_import.less` §1, unit-locked; Less stays source of truth)                                                                                                       | typed manifest + generated adapters                                          | 3, 5            |
-| motion preference        | `motionPolicy.ts` typed port (11 consumers; dead `syncReducedMotionDataset` writer removed); `entry-shell.ts` dataset hook for E2E/CSS                                                               | typed preference state owned by the app providers                            | 3, 5            |
-| backend fallback         | `Renderer.ts`                                                                                                                                                                                        | `RendererFactory`                                                            | 2, 6            |
-| post-processing          | dual `RenderPipeline` paths                                                                                                                                                                          | TSL graph (`WebGPUBackend`) + forced-WebGL fallback per the Phase 6 decision | 2, 6            |
-| route GPU resources      | `World` lazy stages + `routeResourceScopes.ts` pure policy contract (inert until consumed)                                                                                                           | route resource scopes                                                        | 3, 8            |
-| effective theme          | `sectionTheme.ts` pure decision + typed `ThemeAppliedPort` (consumed: `ContentReveal`/`Experience` 1:1 swap); base polarity = WorldConfig phase, mode = ThemeManager                                 | typed theme state owned by the app providers                                 | 3, 5            |
-| locale                   | `i18n.ts` typed port (`getLang`/`t` pull reads, `toggleLang` single writer, `jlz:lang-change` push)                                                                                                  | typed locale state owned by the app providers                                | 3, 5            |
-| story progress→section   | `storyProgress.ts` pure midpoint rule (consumed: `World.updateTransform` 1:1 swap, timing unchanged)                                                                                                 | story progress contract owned by the app providers                           | 3, 5            |
-| effective theme port     | `sectionTheme.ts` pure auto/inverse decision + typed `ThemeAppliedPort` (consumed: `ContentReveal` emitter, `Experience` handler; 1:1 swap)                                                          | typed theme state owned by the app providers                                 | 3, 5            |
-| locale port              | `i18n.ts` typed port (`getLang`/`t` pull reads, single writer `toggleLang`, `jlz:lang-change` push; unit-locked incl. EN/RU parity)                                                                  | typed locale state owned by the app providers                                | 3, 5            |
-| story-state mapping      | `storyState.ts` pure contract (main→slot rescale, rounding rule, side edges; consumed 1:1 by `CinematicNav`; the DOM/scene desync invariant unit-locked)                                             | one `StoryController` publishing the typed `StoryState`                      | 3, 5, 7         |
-| semantic UI              | string templates + UI classes                                                                                                                                                                        | Vue route/features + UIkit adapters                                          | 4, 5            |
-| builder                  | pure core (`schema`/`catalog`/`compiler`/`render`) + `builder/store.ts` typed document/selection/history/baseline container (consumed 1:1 by `admin/main.ts`, which now only renders and dispatches) | Vue builder app (SFCs) over the same store                                   | 4               |
-| static content           | standalone pages                                                                                                                                                                                     | shared SSG pipeline                                                          | 9               |
+| Contract                 | Current owner                                                                                                                                                                                                                     | Target owner                                                                 | Migration phase |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | --------------- |
+| splash readiness/failure | `index.html`, `entry-app.ts` + `bootstrapStates.ts` pure contract (inert until consumed)                                                                                                                                          | inline shell + bootstrap state machine                                       | 3, 5            |
+| routes/hash/meta         | `routeManifest.ts`, `router.ts`, `pageMeta.ts`                                                                                                                                                                                    | route manifest + Vue Router                                                  | 3, 5            |
+| scene route-page reads   | `routePage.ts` port (all scene consumers migrated: `World.ts`, `BakuCarousel.ts`, `CinematicNav.ts`, `ContentReveal.ts`, `Experience.ts`)                                                                                         | typed route port owned by the app providers                                  | 3, 5            |
+| six world slots          | `worldSlots.ts` tuple + strict `worldSlotIndex` (consumed by `WorldConfig.ts`, `SplashCube.ts`, `CinematicNav.ts` slot-index constants)                                                                                           | domain tuple + `WorldRoot`                                                   | 3, 7, 8         |
+| render demand            | `renderDemand.ts` pure decision contract (consumed: `Experience.update()` 1:1 swap — OR/breath/settle; `Experience._needsRender` stays the flag)                                                                                  | `RenderScheduler`                                                            | 3, 7            |
+| motion preference        | `motionPolicy.ts` typed port (11 consumers); `entry-shell.ts` dataset hook for E2E/CSS (dead `syncReducedMotionDataset` removed 2026-08-21)                                                                                       | typed preference state owned by the app providers                            | 3, 5            |
+| brand/runtime tokens     | `brandTokens.ts` manifest (mirrors `_import.less` §1, unit-locked; Less stays source of truth)                                                                                                                                    | typed manifest + generated adapters                                          | 3, 5            |
+| motion preference        | `motionPolicy.ts` typed port (11 consumers; dead `syncReducedMotionDataset` writer removed); `entry-shell.ts` dataset hook for E2E/CSS                                                                                            | typed preference state owned by the app providers                            | 3, 5            |
+| backend fallback         | `Renderer.ts`                                                                                                                                                                                                                     | `RendererFactory`                                                            | 2, 6            |
+| post-processing          | dual `RenderPipeline` paths                                                                                                                                                                                                       | TSL graph (`WebGPUBackend`) + forced-WebGL fallback per the Phase 6 decision | 2, 6            |
+| route GPU resources      | `World` lazy stages + `routeResourceScopes.ts` pure policy contract (inert until consumed)                                                                                                                                        | route resource scopes                                                        | 3, 8            |
+| effective theme          | `sectionTheme.ts` pure decision + typed `ThemeAppliedPort` (consumed: `ContentReveal`/`Experience` 1:1 swap); base polarity = WorldConfig phase, mode = ThemeManager                                                              | typed theme state owned by the app providers                                 | 3, 5            |
+| locale                   | `i18n.ts` typed port (`getLang`/`t` pull reads, `toggleLang` single writer, `jlz:lang-change` push)                                                                                                                               | typed locale state owned by the app providers                                | 3, 5            |
+| story progress→section   | `storyProgress.ts` pure midpoint rule (consumed: `World.updateTransform` 1:1 swap, timing unchanged)                                                                                                                              | story progress contract owned by the app providers                           | 3, 5            |
+| effective theme port     | `sectionTheme.ts` pure auto/inverse decision + typed `ThemeAppliedPort` (consumed: `ContentReveal` emitter, `Experience` handler; 1:1 swap)                                                                                       | typed theme state owned by the app providers                                 | 3, 5            |
+| locale port              | `i18n.ts` typed port (`getLang`/`t` pull reads, single writer `toggleLang`, `jlz:lang-change` push; unit-locked incl. EN/RU parity)                                                                                               | typed locale state owned by the app providers                                | 3, 5            |
+| story-state mapping      | `storyState.ts` pure contract (main→slot rescale, rounding rule, side edges; consumed 1:1 by `CinematicNav`; the DOM/scene desync invariant unit-locked)                                                                          | one `StoryController` publishing the typed `StoryState`                      | 3, 5, 7         |
+| semantic UI              | string templates + UI classes                                                                                                                                                                                                     | Vue route/features + UIkit adapters                                          | 4, 5            |
+| builder                  | pure core (`schema`/`catalog`/`compiler`/`render`) + `builder/store.ts` typed document/selection/history/baseline container + `builder/themeVariables.ts` preview variable contract (`admin/main.ts` only renders and dispatches) | Vue builder app (SFCs) over the same store                                   | 4               |
+| static content           | standalone pages                                                                                                                                                                                                                  | shared SSG pipeline                                                          | 9               |
 
 ### Removal ledger
 

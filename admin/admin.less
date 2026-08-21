@@ -396,6 +396,39 @@ textarea {
   text-transform: uppercase;
 }
 
+// Element glyph in the outline row — the same mark the catalog uses, scaled
+// down so the row stays one line.
+.jlz-admin-outline-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  color: @jlz-color-accent;
+  background: #0c0e0c;
+  font-family: @jlz-font-mono;
+  font-size: 0.66rem;
+}
+
+.jlz-admin-outline button.is-selected .jlz-admin-outline-icon {
+  color: #101110;
+  background: rgba(16, 17, 16, 0.14);
+}
+
+// The "Reset" action sits in the style panel heading row.
+.jlz-admin-panel-heading .uk-button-text {
+  margin-top: 4px;
+  color: #7e857d;
+  font-size: 0.72rem;
+  transition: color 120ms ease;
+}
+
+.jlz-admin-panel-heading .uk-button-text:hover,
+.jlz-admin-panel-heading .uk-button-text:focus-visible {
+  color: @jlz-color-accent;
+}
+
 .jlz-admin-stage {
   grid-area: stage;
   display: grid;
@@ -992,7 +1025,8 @@ textarea {
   .jlz-admin-preview-frame,
   .jlz-admin-catalog button,
   .jlz-admin-node-actions button,
-  .jlz-admin-toolbar .uk-button-primary {
+  .jlz-admin-toolbar .uk-button-primary,
+  .jlz-admin-panel-heading .uk-button-text {
     transition: none;
   }
 }
