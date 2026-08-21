@@ -13,6 +13,7 @@ import { SplashCube } from '../Experience/World/SplashCube'
 import { EnvSphere } from '../Experience/World/EnvSphere'
 import { ParticleBurst } from '../Experience/World/ParticleBurst'
 import { getWorldConfigForPage, type PhaseConfig } from './WorldConfig'
+import { getCurrentPage } from './routePage'
 import { SectionSceneFactory } from './SectionSceneFactory'
 import { disposeSection3Textures } from '../sections/works/scene'
 // updateInstancedParticles removed — was a no-op. Particles are static.
@@ -147,7 +148,7 @@ export class World extends THREE.Group {
   }
 
   public async init(): Promise<void> {
-    const pageKey = (document.body?.getAttribute('data-page') || 'home').split('-')[0] ?? 'home'
+    const pageKey = getCurrentPage()
     this.configs = getWorldConfigForPage(pageKey)
     this.disposeSections()
     this.disposeSceneGroups()
@@ -270,7 +271,7 @@ export class World extends THREE.Group {
       compileAsync?: (scene: THREE.Scene, camera: THREE.Camera) => Promise<unknown>
       compile?: (scene: THREE.Scene, camera: THREE.Camera) => void
     }
-    if (document.body.dataset.page !== 'home') return
+    if (getCurrentPage() !== 'home') return
     await this.ensureCarouselInitialized()
 
     const group = this.sceneGroups[3]
@@ -314,7 +315,7 @@ export class World extends THREE.Group {
           if (stage.parent === this) this.remove(stage)
           return
         }
-        stage.setActive(document.body.dataset.page === 'works', 0)
+        stage.setActive(getCurrentPage() === 'works', 0)
         stage.resize(window.innerWidth, window.innerHeight)
         if (this._camera) stage.setCamera(this._camera)
       },
@@ -350,7 +351,7 @@ export class World extends THREE.Group {
   /** Sync the 3D Works composition with CinematicNav's active DOM chapter. */
   public setWorksPlaneStageSection(index: number): void {
     this.worksPlaneStageSection = index
-    this.worksPlaneStage?.setActive(document.body.dataset.page === 'works', index)
+    this.worksPlaneStage?.setActive(getCurrentPage() === 'works', index)
   }
 
   /** Lazily create the Contact route's pixel-title layer. */
@@ -366,7 +367,7 @@ export class World extends THREE.Group {
         if (stage.parent === this) this.remove(stage)
         return
       }
-      stage.setActive(document.body.dataset.page === 'contact', 0)
+      stage.setActive(getCurrentPage() === 'contact', 0)
       stage.setTheme(this._contactTextIsLight)
       stage.resize(window.innerWidth, window.innerHeight)
       if (this._camera) stage.setCamera(this._camera)
@@ -385,7 +386,7 @@ export class World extends THREE.Group {
 
   /** Sync the Contact pixel-title layer with CinematicNav's active chapter. */
   public setContactTextStageSection(index: number): void {
-    this.contactTextStage?.setActive(document.body.dataset.page === 'contact', index)
+    this.contactTextStage?.setActive(getCurrentPage() === 'contact', index)
   }
 
   /** Cache the effective polarity so a lazy Contact stage cannot miss it. */
@@ -411,7 +412,7 @@ export class World extends THREE.Group {
         if (!stage || request !== this._contactCyprusStageRequest) return
         stage.resize(window.innerWidth, window.innerHeight)
         if (this._camera) stage.setCamera(this._camera)
-        stage.setActive(document.body.dataset.page === 'contact' && this._contactCyprusActive)
+        stage.setActive(getCurrentPage() === 'contact' && this._contactCyprusActive)
         stage.prewarm()
       })
       .catch((error: unknown) => {
@@ -438,7 +439,7 @@ export class World extends THREE.Group {
 
   /** Frame 03 replaces the shared cube with the Cyprus asset. */
   public setContactCyprusStageSection(index: number): void {
-    this._contactCyprusActive = document.body.dataset.page === 'contact' && index === 2
+    this._contactCyprusActive = getCurrentPage() === 'contact' && index === 2
     this.contactCyprusStage?.setActive(this._contactCyprusActive)
     if (this._contactCyprusActive && !this.contactCyprusStage) {
       void this.ensureContactCyprusStageInitialized().then(() => {
@@ -455,7 +456,7 @@ export class World extends THREE.Group {
    * quiet map frame, while the final CTA does not need the legacy HELLO flock.
    */
   public setContactSceneSection(index: number): void {
-    const isContact = document.body.dataset.page === 'contact'
+    const isContact = getCurrentPage() === 'contact'
     const isAgros = isContact && index === 2
     const isFinal = isContact && index === 3
 
@@ -557,24 +558,21 @@ export class World extends THREE.Group {
     if (!needsRender) {
       // Route-owned stages keep their authored reveals moving even when the
       // shared scene has otherwise settled.
-      if (this.worksPlaneStage && document.body.dataset.page === 'works') {
+      if (this.worksPlaneStage && getCurrentPage() === 'works') {
         this.worksPlaneStage.setActive(true, this.worksPlaneStageSection)
         this.worksPlaneStage.update(deltaTime)
       }
-      if (this.contactTextStage && document.body.dataset.page === 'contact') {
+      if (this.contactTextStage && getCurrentPage() === 'contact') {
         this.contactTextStage.update(deltaTime)
       }
-      if (this.contactCyprusStage && document.body.dataset.page === 'contact') {
+      if (this.contactCyprusStage && getCurrentPage() === 'contact') {
         this.contactCyprusStage.update(deltaTime)
       }
       return
     }
 
     if (this.worksPlaneStage) {
-      this.worksPlaneStage.setActive(
-        document.body.dataset.page === 'works',
-        this.worksPlaneStageSection,
-      )
+      this.worksPlaneStage.setActive(getCurrentPage() === 'works', this.worksPlaneStageSection)
       this.worksPlaneStage.update(deltaTime)
     }
     if (this.contactTextStage) {
@@ -586,7 +584,7 @@ export class World extends THREE.Group {
 
     if (!this.isReducedMotion) {
       if (this.baku.visible) this.baku.update(deltaTime)
-      const isStandaloneWorks = document.body.dataset.page === 'works'
+      const isStandaloneWorks = getCurrentPage() === 'works'
       const isWorksStoryFrame = this._currentSectionIndex === 3
       if (this.drawTrail && this._camera && (isStandaloneWorks || isWorksStoryFrame)) {
         this.drawTrail.update(deltaTime, this._camera)
@@ -607,11 +605,10 @@ export class World extends THREE.Group {
         // Works becomes a pure media field once the cube-face handoff settles:
         // only the planes and the existing particle field remain visible.
         this.baku.visible =
-          document.body.dataset.page !== 'lab' &&
-          document.body.dataset.page !== 'works' &&
-          !(document.body.dataset.page === 'contact' && this._contactCyprusActive) &&
-          (document.body.dataset.page !== 'home' ||
-            !(carousel.isActive && carousel.morphProgress > 0.82))
+          getCurrentPage() !== 'lab' &&
+          getCurrentPage() !== 'works' &&
+          !(getCurrentPage() === 'contact' && this._contactCyprusActive) &&
+          (getCurrentPage() !== 'home' || !(carousel.isActive && carousel.morphProgress > 0.82))
       }
       if (!group.visible) continue
       // Update the lower Contact typography only after its own reveal begins.
@@ -738,7 +735,7 @@ export class World extends THREE.Group {
     if (this.drawTrail) {
       const carousel = this.sceneGroups[3]?.userData.carousel as
         import('../Experience/World/BakuCarousel').BakuCarousel | undefined
-      const isStandaloneWorks = document.body.dataset.page === 'works'
+      const isStandaloneWorks = getCurrentPage() === 'works'
       this.drawTrail.object.visible =
         isStandaloneWorks || (activeIndex === 3 && !carousel?.isActive)
     }
@@ -765,8 +762,7 @@ export class World extends THREE.Group {
       const carousel = g.userData.carousel as
         import('../Experience/World/BakuCarousel').BakuCarousel | undefined
       const cfg = this.configs[i]
-      const showCarousel =
-        document.body.dataset.page === 'home' && cfg?.scene?.objects?.bakuCarousel === true
+      const showCarousel = getCurrentPage() === 'home' && cfg?.scene?.objects?.bakuCarousel === true
 
       if (shouldShow) {
         g.visible = fade > 0.001
@@ -1036,7 +1032,7 @@ export class World extends THREE.Group {
 
   /** Keep route-specific hero objects isolated from the shared home cube. */
   public syncRouteVisuals(): void {
-    const page = document.body.dataset.page
+    const page = getCurrentPage()
     const isLab = page === 'lab'
     this.baku.visible =
       !isLab && page !== 'works' && !(page === 'contact' && this._contactCyprusActive)
@@ -1054,7 +1050,7 @@ export class World extends THREE.Group {
       .then((object) => {
         if (this.labGamepad) return
         this.labGamepad = object
-        this.labGamepad.visible = document.body.dataset.page === 'lab'
+        this.labGamepad.visible = getCurrentPage() === 'lab'
         this.add(this.labGamepad)
       })
       .finally(() => {

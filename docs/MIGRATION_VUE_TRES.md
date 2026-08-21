@@ -926,6 +926,48 @@ separate phase namespace and were intentionally not touched here. Rollback:
 revert the two consumers to their inline literals; the tuple is inert until
 consumed.
 
+#### Phase 3 route-page port + World consumer migration — 2026-08-21
+
+The first removal of direct DOM route reads from scene code. The contract is
+the **typed route-page port** and the first scene consumer moved onto it is
+the scene root owner.
+
+- `src/core/routePage.ts` is the single place that reads the route page from
+  the DOM (`getCurrentPage`, `isCurrentPage`). It is the Phase 3 legacy
+  adapter: the router still writes `document.body.dataset.page` (CSS scoping
+  and legacy consumers depend on it until Phase 5); when Vue Router provides
+  the page as typed state, this module switches its source and scene
+  consumers stay unchanged. Reads are pull-based, so every consumer reads the
+  page at exactly the moment it did when it read the dataset — the migration
+  changes the source of the fact, not any timing.
+- The port validates against the manifest's page set (`MANIFEST_PAGES`),
+  because the dataset carries a _PageId_ (`'services'`), not a route _path_
+  (`'/services'`); the strict path resolvers in `routeManifest.ts` operate on
+  a different namespace. A missing attribute or a non-manifest value
+  resolves to `home`, the same default the router resolves unknown input to.
+- `src/core/World.ts` (the scene root owner) now reads the page through the
+  port at all 22 former sites (init page key, `syncRouteVisuals`, stage
+  activation, works/contact guards, Lab gamepad visibility). No other
+  consumer has migrated yet: `Experience.ts`, `CinematicNav.ts`,
+  `ContentReveal.ts` and `BakuCarousel.ts` are separate bounded slices, one
+  owner per change.
+- `src/__tests__/routePage.test.ts` locks the port semantics (plain page,
+  qualified-value normalization, missing attribute, non-manifest value,
+  `isCurrentPage`); the existing `World.routeVisuals.test.ts` keeps locking
+  the consumer behaviour through the same dataset it now reaches via the
+  port. Unit suite 149/149; `vue-tsc` clean.
+- Runtime smoke on the live dev proxy (Chrome 151, remote desktop host):
+  home, `/works` (full load **and** in-app SPA navigation from home through
+  the menu link), `/lab` and `/contact` all boot with the scene live and
+  zero console errors. Production build is size-stable (net gzip delta
+  ≈ +0.07 kB).
+
+Scope limits: `World.ts` is the only migrated consumer; the remaining scene
+readers still touch `document.body.dataset` and are tracked as per-owner
+slices. The dataset itself stays (router writer + CSS scoping) until Phase 5.
+Rollback: revert `World.ts` to its dataset reads; the port is inert until
+consumed.
+
 ### Phase 4 — Vue Page Builder
 
 Scope:
@@ -1163,32 +1205,34 @@ The following ledgers are updated in this document during implementation.
 
 ### Traceability
 
-| Contract                 | Current owner                                                         | Target owner                                                                 | Migration phase |
-| ------------------------ | --------------------------------------------------------------------- | ---------------------------------------------------------------------------- | --------------- |
-| splash readiness/failure | `index.html`, `entry-app.ts`                                          | inline shell + bootstrap state machine                                       | 5               |
-| routes/hash/meta         | `routeManifest.ts`, `router.ts`, `pageMeta.ts`                        | route manifest + Vue Router                                                  | 3, 5            |
-| six world slots          | `worldSlots.ts` tuple (consumed by `WorldConfig.ts`, `SplashCube.ts`) | domain tuple + `WorldRoot`                                                   | 3, 7, 8         |
-| render demand            | `Experience._needsRender`                                             | `RenderScheduler`                                                            | 3, 7            |
-| brand/runtime tokens     | Less files + scene literals                                           | typed manifest + generated adapters                                          | 3, 5            |
-| backend fallback         | `Renderer.ts`                                                         | `RendererFactory`                                                            | 2, 6            |
-| post-processing          | dual `RenderPipeline` paths                                           | TSL graph (`WebGPUBackend`) + forced-WebGL fallback per the Phase 6 decision | 2, 6            |
-| route GPU resources      | `World` lazy stages                                                   | route resource scopes                                                        | 3, 8            |
-| semantic UI              | string templates + UI classes                                         | Vue route/features + UIkit adapters                                          | 4, 5            |
-| builder                  | `admin/main.ts`                                                       | Vue builder app                                                              | 4               |
-| static content           | standalone pages                                                      | shared SSG pipeline                                                          | 9               |
+| Contract                 | Current owner                                                                                                                 | Target owner                                                                 | Migration phase |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | --------------- |
+| splash readiness/failure | `index.html`, `entry-app.ts`                                                                                                  | inline shell + bootstrap state machine                                       | 5               |
+| routes/hash/meta         | `routeManifest.ts`, `router.ts`, `pageMeta.ts`                                                                                | route manifest + Vue Router                                                  | 3, 5            |
+| scene route-page reads   | `routePage.ts` port (consumer: `World.ts`; `Experience.ts`, `CinematicNav.ts`, `ContentReveal.ts`, `BakuCarousel.ts` pending) | typed route port owned by the app providers                                  | 3, 5            |
+| six world slots          | `worldSlots.ts` tuple (consumed by `WorldConfig.ts`, `SplashCube.ts`)                                                         | domain tuple + `WorldRoot`                                                   | 3, 7, 8         |
+| render demand            | `Experience._needsRender`                                                                                                     | `RenderScheduler`                                                            | 3, 7            |
+| brand/runtime tokens     | Less files + scene literals                                                                                                   | typed manifest + generated adapters                                          | 3, 5            |
+| backend fallback         | `Renderer.ts`                                                                                                                 | `RendererFactory`                                                            | 2, 6            |
+| post-processing          | dual `RenderPipeline` paths                                                                                                   | TSL graph (`WebGPUBackend`) + forced-WebGL fallback per the Phase 6 decision | 2, 6            |
+| route GPU resources      | `World` lazy stages                                                                                                           | route resource scopes                                                        | 3, 8            |
+| semantic UI              | string templates + UI classes                                                                                                 | Vue route/features + UIkit adapters                                          | 4, 5            |
+| builder                  | `admin/main.ts`                                                                                                               | Vue builder app                                                              | 4               |
+| static content           | standalone pages                                                                                                              | shared SSG pipeline                                                          | 9               |
 
 ### Removal ledger
 
-| Legacy element                       | Remove after                   | Status  |
-| ------------------------------------ | ------------------------------ | ------- |
-| manual router and route `innerHTML`  | Phase 5 cleanup after parity   | pending |
-| string page/section templates        | Phase 5 matching-slice cleanup | pending |
-| classic `WebGLRenderer` fallback     | Phase 6 phase-exit cleanup     | pending |
-| GLSL `ShaderMaterial` post chain     | Phase 6 phase-exit cleanup     | pending |
-| raw `jlz:*` window bridge            | all consumers use typed ports  | pending |
-| monolithic `Experience` coordination | Phase 8 owner migrations       | pending |
-| legacy World adapters                | Phase 8 completion             | pending |
-| migration flags and shims            | Phase 10                       | pending |
+| Legacy element                           | Remove after                                                                                                                          | Status      |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
+| manual router and route `innerHTML`      | Phase 5 cleanup after parity                                                                                                          | pending     |
+| scene `document.body.dataset.page` reads | Phase 3 per-owner port migration (`World.ts` done; `Experience.ts`, `CinematicNav.ts`, `ContentReveal.ts`, `BakuCarousel.ts` pending) | in progress |
+| string page/section templates            | Phase 5 matching-slice cleanup                                                                                                        | pending     |
+| classic `WebGLRenderer` fallback         | Phase 6 phase-exit cleanup                                                                                                            | pending     |
+| GLSL `ShaderMaterial` post chain         | Phase 6 phase-exit cleanup                                                                                                            | pending     |
+| raw `jlz:*` window bridge                | all consumers use typed ports                                                                                                         | pending     |
+| monolithic `Experience` coordination     | Phase 8 owner migrations                                                                                                              | pending     |
+| legacy World adapters                    | Phase 8 completion                                                                                                                    | pending     |
+| migration flags and shims                | Phase 10                                                                                                                              | pending     |
 
 ## Definition of done
 
