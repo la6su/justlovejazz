@@ -14,7 +14,7 @@
 // `PageView`). `popstate` is handled by `createWebHistory` itself; the
 // native `Experience` is never touched by navigation.
 
-import { createSSRApp } from 'vue'
+import { createApp } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 
 import { applyTranslations } from '../core/i18n'
@@ -71,14 +71,19 @@ export async function mountVueApp(): Promise<void> {
     })
   })
 
-  // createSSRApp: when the build-time prerender (vite `prerender-index`)
-  // left the home route shell in `#app`, mount hydrates it instead of
-  // replacing it; with an empty `#app` the behavior is identical to a
-  // fresh mount.
-  const app = createSSRApp(AppShell)
+  const app = createApp(AppShell)
+  // Resolve the initial navigation BEFORE the mount so RouterView renders
+  // the landing component on its first pass.
   app.use(router)
-  app.mount(root)
   await router.isReady()
+  // A fresh client render (createApp) replaces `#app`'s content on mount:
+  // the build-time prerender (vite `prerender-index`) keeps the home route
+  // shell available before JS boots (SEO, the no-scene contract, the
+  // domcontentloaded e2e assertions), and the SFC re-renders the identical
+  // DOM (locked by the parity suite) — a deliberate replace, not a
+  // hydration: the prerendered HTML is not a clean hydration target for
+  // Vue's condensed client render.
+  app.mount(root)
 
   // ── In-app navigation (strict, like the legacy `navigateToPage`) ───────
   const navigateToPath = async (path: string): Promise<void> => {

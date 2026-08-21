@@ -145,3 +145,52 @@ describe('AppShell + route SFCs', () => {
     expect(applyMetaTags).toHaveBeenLastCalledWith('works' as PageId)
   })
 })
+
+describe('mountVueApp prerender adoption', () => {
+  // `mountVueApp` uses `createWebHistory`, so the direct-entry location is
+  // seeded through `history.replaceState` before the fresh import.
+  it('replaces the prerendered home shell on a non-home entry', async () => {
+    const marker = document.createElement('div')
+    marker.id = 'prerender-marker'
+    const appEl = document.createElement('div')
+    appEl.id = 'app'
+    appEl.appendChild(marker)
+    document.body.appendChild(appEl)
+    window.history.replaceState(null, '', '/works')
+    vi.resetModules()
+    const { mountVueApp } = await import('../app')
+    await mountVueApp()
+    await flushPromises()
+    // The prerendered home DOM belongs to a different page — a fresh client
+    // render replaces it (no hydration attempt, no mismatch).
+    expect(document.getElementById('prerender-marker')).toBeNull()
+    expect(document.getElementById('section-works-01')).toBeTruthy()
+    expect(document.body.dataset.page).toBe('works')
+  })
+
+  it('keeps the prerendered home available pre-mount, then renders the home SFC', async () => {
+    const appEl = document.createElement('div')
+    appEl.id = 'app'
+    document.body.appendChild(appEl)
+    const marker = document.createElement('div')
+    marker.id = 'prerender-marker'
+    appEl.appendChild(marker)
+    // The prerendered shell is available before the Vue mount (SEO, the
+    // no-scene contract, the domcontentloaded e2e assertions).
+    expect(document.getElementById('prerender-marker')).toBeTruthy()
+    window.history.replaceState(null, '', '/')
+    vi.resetModules()
+    const { mountVueApp } = await import('../app')
+    await mountVueApp()
+    await flushPromises()
+    // The mount replaces the prerendered shell with the home SFC render
+    // (a deliberate replace, not a hydration — see the mount comment).
+    expect(document.getElementById('prerender-marker')).toBeNull()
+    expect(
+      document
+        .querySelector('main#spa-content [data-section="intro"]')
+        ?.classList.contains('section-active'),
+    ).toBe(true)
+    expect(document.body.dataset.page).toBe('home')
+  })
+})

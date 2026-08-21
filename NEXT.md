@@ -275,14 +275,18 @@ do not start a phase whose entry gate has not passed.
       suite), `useJlzPage.ts` is the per-page lifecycle composable (ported
       `renderView` side effects + scoped UIkit adapter replacing the
       document-wide update; i18n/meta run as the route provider), the mount
-      is `createSSRApp` so the build-time `prerender-index` output in `#app`
-      is adopted, and `entry-app.ts` gains the `?no-scene=1` DOM-only
-      bootstrap (the no-scene evidence path for the candidate gate). 277/277
+      resolves the initial navigation and renders a fresh client app (the
+      prerendered `#app` shell is replaced, not hydrated — it stays
+      available pre-JS), and `entry-app.ts` gains the `?no-scene=1` DOM-only
+      bootstrap (the no-scene evidence path for the candidate gate). 279/279
       unit suite, serial e2e 20/20 (incl. the new no-scene and direct-entry
-      tests), default build still free of the candidate graph. Open: flipping
-      the candidate to the production default through the full candidate
-      gate, and the cleanup commit that removes the legacy `src/router.ts`
-      path, the string templates and `PageView.vue`.
+      tests), default build still free of the candidate graph. The live candidate
+      gate passes through the Caddy proxy (direct entry, in-app, hash,
+      popstate, announcer, EN/RU, theme polarity, keyboard, `?no-scene=1`
+      DOM-only boot, stable canvas pair — zero console errors). Open:
+      flipping the candidate to the production default through the full
+      candidate gate, and the cleanup commit that removes the legacy
+      `src/router.ts` path, the string templates and `PageView.vue`.
 
 - [ ] **Phases 6–10: cut over renderer, Tres scene owners and static content** —
       only after their gates pass, ship the unified renderer, persistent

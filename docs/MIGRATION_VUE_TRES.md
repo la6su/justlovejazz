@@ -1957,9 +1957,13 @@ semantic route SFCs instead of the `PageView` string-template adapter.
   document-wide update — the Phase 5 "UIkit lifecycle adapters" scope item.
   i18n/meta are applied by the SFC lifecycle (route provider), not by an
   imperative post-navigation hook.
-- `src/app/index.ts` mounts through `createSSRApp` so the build-time
-  `prerender-index` output in `#app` is adopted rather than destroyed;
-  `AppShell` renders the route SFC under it.
+- `src/app/index.ts` resolves the initial navigation before the mount and
+  renders a fresh client app: the build-time `prerender-index` output in
+  `#app` keeps the home route shell available before JS boots (SEO, the
+  no-scene contract, the domcontentloaded e2e assertions) and is replaced by
+  the SFC render on mount — a deliberate replace, not a hydration: the
+  prerendered HTML is not a clean hydration target for Vue's condensed
+  client render (whitespace text nodes, class-attribute drift).
 - `src/entry-app.ts` gains the `?no-scene=1` no-scene bootstrap: it boots the
   UI layer and fires `jlz:webgl-ready` on a DOM-only world without pulling
   the Three/Experience graph — the evidence path for the candidate gate item
@@ -1972,13 +1976,20 @@ semantic route SFCs instead of the `PageView` string-template adapter.
   no-scene boot + in-app navigation test and the direct content-route entry
   test (prerendered home sections must be gone once the router lands).
 
-Verification: scoped prettier, `vue-tsc` clean, 277/277 unit suite
-(271 + 6 parity), `git diff --check` clean, default production build with
-`jlz-admin` and `pathMatch` both absent from `dist` (marker grep) and the
-prerendered home shell intact in `index.html`, flag-on build carrying the
-candidate chunk only, serial e2e (incl. the two new tests) on the default
-build, and the live candidate gate through the Caddy proxy
-(`VITE_JLZ_VUE_ROUTER=1` dev server).
+Verification: scoped prettier, `vue-tsc` clean, 279/279 unit suite
+(271 + 6 parity + 2 prerender-adoption), `git diff --check` clean, default
+production build with `jlz-admin` and `pathMatch` both absent from `dist`
+(marker grep) and the prerendered home shell intact in `index.html`, flag-on
+build carrying the candidate chunk only, serial e2e (incl. the two new
+tests) on the default build, and the live candidate gate through the Caddy
+proxy (`VITE_JLZ_VUE_ROUTER=1` dev server): direct entry `/` and `/works`,
+in-app `jlz:navigate`, menu sub-link click (SPA, no reload), `#section-*`
+hash dispatching the active section, `history.back()` popstate, the route
+announcer on page change, EN/RU re-apply, the inverse-theme toggle,
+keyboard Tab/Enter through the menu sheet, the `?no-scene=1` DOM-only boot
+with in-app navigation and zero canvases, and a stable marked canvas pair
+across every navigation (the native renderer is never recreated). Zero
+console errors on the candidate path.
 
 Rollback: the candidate flag off keeps the legacy router + string templates
 as the untouched default; the SFCs and the composable are additive.
