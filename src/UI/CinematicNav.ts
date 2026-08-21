@@ -6,6 +6,7 @@
 // without occupying a story frame.
 
 import { prefersReducedMotion } from '../core/motionPolicy'
+import { getCurrentPage } from '../core/routePage'
 
 const CONTACT_FOOTER_INDEX = 0
 const FIRST_MAIN = 1
@@ -142,7 +143,7 @@ export class CinematicNav {
       this._inactiveTimer = null
     }
 
-    const pageMode = document.body.dataset.page !== 'home'
+    const pageMode = getCurrentPage() !== 'home'
     this._track = pageMode
       ? document.querySelector<HTMLElement>('#spa-content .jlz-page')
       : document.getElementById('spa-content')
@@ -238,7 +239,7 @@ export class CinematicNav {
     this._lastNotified = index
     this._onSectionChange?.(index)
 
-    if (document.body.dataset.page !== 'home') {
+    if (getCurrentPage() !== 'home') {
       window.dispatchEvent(
         new CustomEvent('jlz:page-section-change', {
           detail: { index, count: this._sectionCount },

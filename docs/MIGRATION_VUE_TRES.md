@@ -980,6 +980,26 @@ content pages. 1:1 pull reads, so the guard timing is unchanged. Unit suite
 home shows both carousel controls live and zero console errors. Rollback:
 revert the two reads.
 
+#### Phase 3 CinematicNav + ContentReveal consumer migrations — 2026-08-21
+
+The remaining small route-page readers moved onto the port in one bounded
+slice (both are small UI/theme owners, both verified by the same runtime
+smoke):
+
+- `src/UI/CinematicNav.ts` checks `getCurrentPage() !== 'home'` at its two
+  former sites (the page-mode guard in the track setup and the
+  non-home early return) — the `data-section` / `data-page-section` anchor
+  reads are a separate fact and stay.
+- `src/Experience/ContentReveal.ts` resolves its page key through
+  `getCurrentPage()` when it builds the cached world configs (the old
+  `?? 'home'` missing-attribute default is the port's own fallback, so the
+  behaviour is unchanged for every reachable value).
+
+1:1 pull reads, guard timing unchanged. Unit suite 149/149, `vue-tsc`
+clean, production build size-stable; runtime smoke on home (the active
+surface of both owners) boots with the cinematic track live, the intro
+section active and zero console errors. Rollback: revert the three reads.
+
 ### Phase 4 — Vue Page Builder
 
 Scope:
@@ -1221,7 +1241,7 @@ The following ledgers are updated in this document during implementation.
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- | --------------- |
 | splash readiness/failure | `index.html`, `entry-app.ts`                                                                                                   | inline shell + bootstrap state machine                                       | 5               |
 | routes/hash/meta         | `routeManifest.ts`, `router.ts`, `pageMeta.ts`                                                                                 | route manifest + Vue Router                                                  | 3, 5            |
-| scene route-page reads   | `routePage.ts` port (consumers: `World.ts`, `BakuCarousel.ts`; `Experience.ts`, `CinematicNav.ts`, `ContentReveal.ts` pending) | typed route port owned by the app providers                                  | 3, 5            |
+| scene route-page reads   | `routePage.ts` port (consumers: `World.ts`, `BakuCarousel.ts`, `CinematicNav.ts`, `ContentReveal.ts`; `Experience.ts` pending) | typed route port owned by the app providers                                  | 3, 5            |
 | six world slots          | `worldSlots.ts` tuple (consumed by `WorldConfig.ts`, `SplashCube.ts`)                                                          | domain tuple + `WorldRoot`                                                   | 3, 7, 8         |
 | render demand            | `Experience._needsRender`                                                                                                      | `RenderScheduler`                                                            | 3, 7            |
 | brand/runtime tokens     | Less files + scene literals                                                                                                    | typed manifest + generated adapters                                          | 3, 5            |
@@ -1237,7 +1257,7 @@ The following ledgers are updated in this document during implementation.
 | Legacy element                           | Remove after                                                                                                                          | Status      |
 | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
 | manual router and route `innerHTML`      | Phase 5 cleanup after parity                                                                                                          | pending     |
-| scene `document.body.dataset.page` reads | Phase 3 per-owner port migration (`World.ts`, `BakuCarousel.ts` done; `Experience.ts`, `CinematicNav.ts`, `ContentReveal.ts` pending) | in progress |
+| scene `document.body.dataset.page` reads | Phase 3 per-owner port migration (`World.ts`, `BakuCarousel.ts`, `CinematicNav.ts`, `ContentReveal.ts` done; `Experience.ts` pending) | in progress |
 | string page/section templates            | Phase 5 matching-slice cleanup                                                                                                        | pending     |
 | classic `WebGLRenderer` fallback         | Phase 6 phase-exit cleanup                                                                                                            | pending     |
 | GLSL `ShaderMaterial` post chain         | Phase 6 phase-exit cleanup                                                                                                            | pending     |

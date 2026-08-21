@@ -9,6 +9,7 @@
 //   EnvSphere syncs via jlz:theme-applied event.
 
 import { eventBus, type AppEvents } from '../core/EventBus'
+import { getCurrentPage } from '../core/routePage'
 import { themeManager } from '../core/ThemeManager'
 import { getWorldConfigForPage, type PhaseConfig } from '../core/WorldConfig'
 import UIkit from 'uikit'
@@ -45,7 +46,7 @@ export class ContentReveal {
 
   private getConfigs(): readonly PhaseConfig[] {
     if (!this.cachedConfigs) {
-      const pageKey = document.body.dataset.page ?? 'home'
+      const pageKey = getCurrentPage()
       this.cachedConfigs = getWorldConfigForPage(pageKey)
     }
     return this.cachedConfigs
