@@ -14,8 +14,8 @@ import {
 } from '../src/builder/catalog'
 import { DEFAULT_BUILDER_DOCUMENT } from '../src/builder/default-document'
 import { renderBuilderDocument } from '../src/builder/render'
+import * as editorCommands from '../src/builder/commands'
 import {
-  DEFAULT_BUILDER_THEME,
   STYLE_GROUPS,
   STYLE_GROUP_BY_ID,
   type BuilderThemeKey,
@@ -26,7 +26,6 @@ import { renderStyleShowcase } from '../src/builder/style-showcase'
 import { themeToCssVars } from '../src/builder/themeVariables'
 import {
   validateBuilderDocument,
-  type BuilderDocument,
   type BuilderElementType,
   type BuilderNode,
   type BuilderTheme,
@@ -84,11 +83,6 @@ let inverseStylePreview = false
 // "Saving…" label shows until the response settles.
 let saving = false
 
-function makeId(type: BuilderElementType): string {
-  const suffix = crypto.randomUUID?.().slice(0, 8) ?? Date.now().toString(36)
-  return `${type}-${suffix.toLowerCase()}`
-}
-
 function setStatus(message: string, error = false): void {
   saveStatus.textContent = message
   saveStatus.dataset.state = error ? 'error' : 'note'
@@ -106,15 +100,6 @@ function updateDirtyStatus(announce = true): void {
   saveButton.disabled = saving || !dirty
   undoButton.disabled = !store.canUndo
   redoButton.disabled = !store.canRedo
-}
-
-function commit(change: (draft: BuilderDocument) => void): void {
-  const result = store.commit(change)
-  if (!result.ok) {
-    setStatus(result.error ?? 'Invalid document change', true)
-    return
-  }
-  renderEditor()
 }
 
 function recordCurrentSnapshot(rerender = true): void {
@@ -448,72 +433,35 @@ function scrollPreviewNodeIntoView(id: string): void {
   element?.scrollIntoView({ block: 'nearest', behavior: reduced ? 'auto' : 'smooth' })
 }
 
-function addElement(type: BuilderElementType): void {
-  const node = BUILDER_CATALOG[type].create(makeId(type))
-  commit((draft) => {
-    if (type === 'section') {
-      draft.nodes.push(node)
-      store.selectedId = node.id
-      return
-    }
+// Structural edits dispatch the pure commands (src/builder/commands.ts);
+// the editor only owns the status and re-render contract around them.
+function runCommand(result: { ok: boolean; error?: string }): void {
+  if (!result.ok) {
+    setStatus(result.error ?? 'Invalid document change', true)
+    return
+  }
+  renderEditor()
+}
 
-    const selected = store.selectedId
-      ? BuilderStore.findLocationInDocument(draft, store.selectedId)
-      : null
-    if (selected && BUILDER_CATALOG[selected.node.type].container) {
-      selected.node.children.push(node)
-    } else if (selected?.parent) {
-      selected.parent.children.push(node)
-    } else {
-      draft.nodes.at(-1)?.children.push(node)
-    }
-    store.selectedId = node.id
-  })
+function addElement(type: BuilderElementType): void {
+  runCommand(editorCommands.addElement(store, type))
 }
 
 function moveSelected(offset: -1 | 1): void {
-  if (!store.selectedId) return
-  commit((draft) => {
-    const location = BuilderStore.findLocationInDocument(draft, store.selectedId as string)
-    if (!location) return
-    const target = location.index + offset
-    if (target < 0 || target >= location.siblings.length) return
-    const [node] = location.siblings.splice(location.index, 1)
-    if (node) location.siblings.splice(target, 0, node)
-  })
+  runCommand(editorCommands.moveSelected(store, offset))
 }
 
 function duplicateSelected(): void {
-  if (!store.selectedId) return
-  commit((draft) => {
-    const location = BuilderStore.findLocationInDocument(draft, store.selectedId as string)
-    if (!location) return
-    const cloneNode = (node: BuilderNode): BuilderNode => ({
-      ...structuredClone(node),
-      id: makeId(node.type),
-      children: node.children.map(cloneNode),
-    })
-    const duplicate = cloneNode(location.node)
-    location.siblings.splice(location.index + 1, 0, duplicate)
-    store.selectedId = duplicate.id
-  })
+  runCommand(editorCommands.duplicateSelected(store))
 }
 
 function removeSelected(): void {
-  if (!store.selectedId) return
-  commit((draft) => {
-    const location = BuilderStore.findLocationInDocument(draft, store.selectedId as string)
-    if (!location || (location.parent === null && location.siblings.length === 1)) return
-    location.siblings.splice(location.index, 1)
-    store.selectedId = location.parent?.id ?? location.siblings[location.index - 1]?.id ?? null
-  })
+  runCommand(editorCommands.removeSelected(store))
 }
 
 // Undo-able: the reset is a plain document commit, so history keeps it.
 function resetTheme(): void {
-  commit((draft) => {
-    draft.theme = structuredClone(DEFAULT_BUILDER_THEME)
-  })
+  runCommand(editorCommands.resetTheme(store))
 }
 
 async function saveDocument(): Promise<void> {

@@ -1757,6 +1757,39 @@ zero console errors.
 
 Rollback: revert the change set.
 
+#### Phase 4 structural editor commands slice — 2026-08-21
+
+The first step of the SFC migration: the editor's structural edits move out
+of the DOM entry into a pure, framework-neutral module so the SFC panels can
+dispatch them (and tests can lock them) without a document object.
+
+- `src/builder/commands.ts` owns the five structural actions — `addElement`,
+  `moveSelected`, `duplicateSelected`, `removeSelected`, `resetTheme` — as
+  pure functions of a `BuilderStore`. Each returns the store's atomic
+  `CommitResult`, so a rejected edit is reported exactly as before. `makeId`
+  (the type-prefixed stable node id) moves with them. The legacy semantics
+  are preserved verbatim, including the store contract details the smoke
+  tests rely on: a boundary move or a blocked remove still records the
+  attempted commit, and a removed node selects its parent before any
+  sibling.
+- `admin/main.ts` is a 1:1 consumer swap: the inline command closures and
+  `makeId` are gone, and the five thin wrappers dispatch the commands and
+  keep the editor's status/re-render contract (`runCommand`).
+- `src/__tests__/builderCommands.test.ts` (13 tests) locks placement
+  (root section, selected container, selected node's parent, last-root
+  fallback), selection (the new/duplicated node, the parent after removal,
+  the last-root guard), move boundaries, the deep-clone fresh-id rule and
+  the undo-able theme reset against a minimal valid document.
+
+Verification: scoped prettier, `vue-tsc` clean, 257/257 unit suite
+(244 + 13 new), `git diff --check` clean, production build clean with the
+admin graph absent from `dist`, serial e2e 18/18, and a live-admin smoke
+(add a Heading → "Unsaved changes" with Save enabled → Ctrl+Z → "Ready")
+with zero console errors.
+
+Rollback: restore the inline closures and `makeId` in `admin/main.ts` and
+delete the module and its tests.
+
 ### Phase 5 — Vue public shell and router
 
 Scope:

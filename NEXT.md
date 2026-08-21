@@ -234,7 +234,10 @@ do not start a phase whose entry gate has not passed.
       variants (card, section, button) now carry the secondary accent's
       1px line — outlined card, hairline section, ghost button that fills
       on hover — in both the preview and the shipped `_builder-page.less`
-      layer.
+      layer. The structural editor commands (add / move / duplicate / remove
+      / theme reset + `makeId`) moved out of `admin/main.ts` into the pure
+      framework-neutral `builder/commands.ts` (13 unit tests) so the SFC
+      panels can dispatch them without a DOM.
       The SFC migration of the
       catalogue, outline, inspector, preview and Style workspace and the
       lifecycle-safe preview remain open.
