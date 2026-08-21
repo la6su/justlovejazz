@@ -1020,6 +1020,37 @@ and the router writer, which stays until Phase 5 replaces it with typed Vue
 Router state — at which point the port's source switches and no consumer
 changes. Rollback: revert the nine reads.
 
+#### Phase 3 bootstrap state machine slice — 2026-08-21
+
+The explicit bootstrap state machine from the architecture target is now a
+pure, framework-neutral contract, ready for the Phase 5 shell migration to
+consume:
+
+- `src/core/bootstrapStates.ts` declares the documented states
+  (`shell-painted → app-loading → renderer-initializing →
+scene-prewarming → ready → entered`, plus `failed`), the complete
+  transition table, and pure helpers (`canTransition`, `tryTransition`,
+  `isInitializing`). The machine is total: an illegal transition returns
+  `null` instead of throwing, so a caller can report the policy event
+  without an exception.
+- Per the architecture contract, every initialization state (and `ready` /
+  `entered` for device loss) may fall to `failed`, and a retry restarts the
+  sequence from `app-loading` — the shell is already painted, and the
+  retry-disposes-incomplete-renderer rule is application policy layered on
+  top of the machine, not part of it. The bounded-rebuild policy (one retry
+  per failure) likewise stays out of the machine.
+- The current implicit bootstrap in `entry-app.ts` (the `is-ready` class,
+  the `jlz:webgl-ready` / `jlz:webgl-failed` events, the `_bootstrapped`
+  flag and the 60-second fallback) is unchanged — it is the legacy
+  implementation this machine will replace when the splash leaves the
+  non-Vue shell in Phase 5. Unit suite 158/158 (9 new tests), `vue-tsc`
+  clean. No runtime consumer change in this slice.
+
+Scope limits: the machine is inert until consumed. The `entry-app.ts`
+bootstrap and its events migrate behind it in the Phase 5 shell slice, and
+the retry/disposal policy is a later consumer concern. Rollback: delete the
+contract file and its tests.
+
 ### Phase 4 — Vue Page Builder
 
 Scope:
@@ -1259,7 +1290,7 @@ The following ledgers are updated in this document during implementation.
 
 | Contract                 | Current owner                                                                                                                             | Target owner                                                                 | Migration phase |
 | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | --------------- |
-| splash readiness/failure | `index.html`, `entry-app.ts`                                                                                                              | inline shell + bootstrap state machine                                       | 5               |
+| splash readiness/failure | `index.html`, `entry-app.ts` + `bootstrapStates.ts` pure contract (inert until consumed)                                                  | inline shell + bootstrap state machine                                       | 3, 5            |
 | routes/hash/meta         | `routeManifest.ts`, `router.ts`, `pageMeta.ts`                                                                                            | route manifest + Vue Router                                                  | 3, 5            |
 | scene route-page reads   | `routePage.ts` port (all scene consumers migrated: `World.ts`, `BakuCarousel.ts`, `CinematicNav.ts`, `ContentReveal.ts`, `Experience.ts`) | typed route port owned by the app providers                                  | 3, 5            |
 | six world slots          | `worldSlots.ts` tuple (consumed by `WorldConfig.ts`, `SplashCube.ts`)                                                                     | domain tuple + `WorldRoot`                                                   | 3, 7, 8         |

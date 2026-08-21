@@ -105,9 +105,11 @@ do not start a phase whose entry gate has not passed.
       `ContentReveal.ts`, `Experience.ts` — 149/149 unit suite, runtime smoke
       on home + /works + /lab + /contact incl. SPA navigation with zero
       console errors; no scene-side `document.body.dataset.page` reads
-      remain, the dataset write stays until Phase 5); the open contracts are
-      the bootstrap state machine, typed ports, scheduler, resource scopes
-      and brand tokens.
+      remain, the dataset write stays until Phase 5). The bootstrap state
+      machine is now a pure contract (`src/core/bootstrapStates.ts`, 158/158
+      unit suite, inert until the Phase 5 shell consumes it); the open
+      contracts are typed ports, the render scheduler, resource scopes and
+      brand tokens.
 
 - [ ] **Phase 4: migrate the development Page Builder to Vue** — use the
       isolated admin application as the first state-heavy Vue surface while
