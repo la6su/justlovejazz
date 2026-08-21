@@ -1998,15 +1998,13 @@ as the untouched default; the SFCs and the composable are additive.
 
 The full candidate gate passed (live through the Caddy proxy + the
 automated suites above), so the switch landed: `src/entry-app.ts` mounts
-the Vue app by default and selects the legacy DOM router only through the
+the Vue app by default and selected the legacy DOM router through the
 build-time rollback flag `VITE_JLZ_LEGACY_ROUTER=1` (replacing the
-`VITE_JLZ_VUE_ROUTER=1` candidate flag, which is deleted). The default
-production build now carries the Vue Router graph as the dynamic `app`
-chunk; `jlz-admin` remains absent from `dist`. The e2e suite now runs its
-20 tests against the Vue router path (default build). The legacy router,
-the string page/section templates and `PageView.vue` stay in the tree
-behind the rollback flag until the Phase 5 cleanup commit removes them
-(removal ledger: still pending).
+`VITE_JLZ_VUE_ROUTER=1` candidate flag). The default production build
+carries the Vue Router graph as the dynamic `app` chunk; `jlz-admin`
+remains absent from `dist`. The e2e suite runs its 20 tests against the
+Vue router path (default build). The rollback flag and the legacy path
+were removed in the Phase 5 cleanup commit (below).
 
 Flip contracts preserved while the legacy path stayed in the tree:
 
@@ -2029,8 +2027,44 @@ smoke (status Ready, Control+z rollback after `document.body.focus()`,
 no Save), and a live default-path smoke through the Caddy proxy (the dev
 server restarted without the old candidate flag).
 
-Rollback: `VITE_JLZ_LEGACY_ROUTER=1` build/serve restores the legacy DOM
-router; the cleanup commit reverts the flag and deletes the legacy path.
+Rollback: while the legacy path stayed in the tree, a
+`VITE_JLZ_LEGACY_ROUTER=1` build/serve restored the legacy DOM router.
+The Phase 5 cleanup commit (below) removed the flag and the legacy path.
+
+#### Phase 5 cleanup — legacy router, string templates and flag removed — 2026-08-22
+
+With the flip stable, the legacy path was removed:
+
+- `src/router.ts` (the legacy DOM router) deleted; `src/entry-app.ts`
+  mounts the Vue app unconditionally via a dynamic `import('./app')` — the
+  only edge into the Vue graph, so the router + route SFCs stay in a
+  separate lazy `app` chunk and the initial entry chunk shrank to ~6.5 kB;
+- `src/pages/*` (the string page/section templates) and `src/app/PageView.vue`
+  (the string-template adapter) deleted;
+- the `VITE_JLZ_LEGACY_ROUTER` build flag and its `ImportMetaEnv`
+  declaration removed (`src/env.d.ts`);
+- `RouteTransition.run()` (used only by the legacy router) removed — the
+  phased `cover()`/`reveal()` API wired to the router guards is the sole
+  transition owner;
+- the build-time home prerender (`vite.config.ts` `prerender-index`) now
+  sources the home SFC instead of the string templates: a new prebuild
+  step (`scripts/prerender-home.mjs`, run by the `build` script before
+  `vite build`) SSRs `HomeView.vue` to `prerender/home.html` through a
+  throwaway Vite middleware server + `renderToString`, and the plugin
+  inlines that file into `index.html`. The prerendered shell is still
+  replaced — not hydrated — by the Vue client on mount, so the SFC is the
+  single source of truth for the pre-JS home content;
+- the SFC↔template parity suite (`src/__tests__/appSfcParity.test.ts`) and
+  the string-template suite (`src/__tests__/pages.test.ts`) deleted — the
+  templates they compared against are gone, and the SFCs are now validated
+  by the e2e + unit suites and the live gate.
+
+Verification: `vue-tsc` clean, 268/268 unit (11 tests removed with the
+parity + template suites), `git diff --check` clean, `bun run build` with
+the prerender prebuild (dist `index.html` carries the 6 prerendered home
+sections), inverted dist grep (`jlz-admin` absent, `pathMatch` present in
+the `app` chunk), serial e2e 20/20 on the default (Vue) build, and a live
+default-path smoke through the Caddy proxy.
 
 ### Phase 6 — unified production renderer
 
@@ -2252,9 +2286,9 @@ The following ledgers are updated in this document during implementation.
 
 | Legacy element                           | Remove after                                                                                                                             | Status  |
 | ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| manual router and route `innerHTML`      | Phase 5 cleanup after parity                                                                                                             | pending |
+| manual router and route `innerHTML`      | Phase 5 cleanup after parity — `src/router.ts` deleted 2026-08-22                                                                        | done    |
 | scene `document.body.dataset.page` reads | Phase 3 per-owner port migration — all scene consumers migrated 2026-08-21; the dataset write stays (router + CSS scoping) until Phase 5 | done    |
-| string page/section templates            | Phase 5 matching-slice cleanup                                                                                                           | pending |
+| string page/section templates            | Phase 5 cleanup — `src/pages/*` + `PageView.vue` deleted 2026-08-22; prerender now sources the home SFC                                  | done    |
 | classic `WebGLRenderer` fallback         | Phase 6 phase-exit cleanup                                                                                                               | pending |
 | GLSL `ShaderMaterial` post chain         | Phase 6 phase-exit cleanup                                                                                                               | pending |
 | raw `jlz:*` window bridge                | all consumers use typed ports                                                                                                            | pending |

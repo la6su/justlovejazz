@@ -3,8 +3,7 @@ import vue from '@vitejs/plugin-vue'
 import { templateCompilerOptions } from '@tresjs/core'
 import { resolve } from 'node:path'
 
-import { copyFileSync, mkdirSync, readdirSync } from 'fs'
-import { homePage } from './src/pages/home'
+import { copyFileSync, mkdirSync, readFileSync, readdirSync } from 'fs'
 import { jlzAdminPlugin } from './admin/vite-plugin'
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -223,18 +222,17 @@ export default defineConfig(({ mode }) => ({
     },
     {
       // Prerender the 6 home sections into index.html at build time so the
-      // 3D app boots with DOM content already present (router.ts skips
-      // re-injection when #spa-content already has children → the prerendered
-      // HTML is hydrated by UIkit.init, not replaced).
+      // 3D app boots with DOM content already present (SEO, the no-scene
+      // contract, domcontentloaded e2e assertions). The source is the home
+      // SFC SSR'd by `scripts/prerender-home.mjs` (single source of truth) —
+      // the prerendered shell is REPLACED, not hydrated, by the Vue client on
+      // mount.
       name: 'prerender-index',
       transformIndexHtml(html, ctx) {
         // Only inject into index.html (not blog).
         if (!ctx.path.endsWith('index.html')) return html
-        const sections = homePage()
-        return html.replace(
-          '<div id="app"></div>',
-          `<div id="app"><main id="spa-content" role="main">${sections}</main></div>`,
-        )
+        const prerender = readFileSync(resolve(__dirname, 'prerender', 'home.html'), 'utf8')
+        return html.replace('<div id="app"></div>', `<div id="app">${prerender}</div>`)
       },
     },
     {

@@ -247,7 +247,7 @@ do not start a phase whose entry gate has not passed.
       Vue mount point; 9 unit tests cover the composable and an SFC jsdom
       mount.
 
-- [ ] **Phase 5: migrate the public DOM shell and routing** — adopt AppShell,
+- [x] **Phase 5: migrate the public DOM shell and routing** — adopt AppShell,
       Vue Router, semantic route SFCs, UIkit lifecycle adapters, i18n/meta and
       prerendering one vertical slice at a time while the current Three runtime
       remains persistent behind a typed port. First slice landed: `src/app/`
@@ -280,14 +280,17 @@ do not start a phase whose entry gate has not passed.
       available pre-JS), and `entry-app.ts` gains the `?no-scene=1` DOM-only
       bootstrap (the no-scene evidence path for the candidate gate). The
       candidate gate passed and Vue Router is now the production default:
-      `src/entry-app.ts` mounts the Vue app unless the build-time rollback
-      flag `VITE_JLZ_LEGACY_ROUTER=1` selects the legacy DOM router
-      (the `VITE_JLZ_VUE_ROUTER=1` candidate flag is deleted). 279/279 unit
-      suite, serial e2e 20/20 now running against the default (Vue) build,
-      live default-path smoke through Caddy. Open: the Phase 5 cleanup
-      commit that removes the legacy `src/router.ts` path, the rollback
-      flag, the string templates and `PageView.vue`, and moves the
-      prerender to the SFC source.
+      `src/entry-app.ts` mounts the Vue app via a dynamic `import('./app')`
+      (the only edge into the Vue graph). The Phase 5 cleanup landed: the
+      legacy `src/router.ts`, the string page/section templates
+      (`src/pages/*`), `PageView.vue`, the `VITE_JLZ_LEGACY_ROUTER` rollback
+      flag and `RouteTransition.run()` are removed; the build-time home
+      prerender now SSRs the home SFC (`scripts/prerender-home.mjs` prebuild →
+      `prerender/home.html` → `prerender-index` plugin) so the SFC is the
+      single source of truth; the SFC↔template parity + template unit suites
+      are removed. 268/268 unit suite, serial e2e 20/20 on the default (Vue)
+      build, inverted dist grep (`jlz-admin` absent, `pathMatch` present),
+      live default-path smoke through Caddy. Phase 5 is complete.
 
 - [ ] **Phases 6–10: cut over renderer, Tres scene owners and static content** —
       only after their gates pass, ship the unified renderer, persistent

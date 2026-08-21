@@ -10,41 +10,7 @@ const REVEAL_MS = 420
  */
 export class RouteTransition {
   private overlay: HTMLElement | null = null
-  private active = false
   private sequence = 0
-
-  async run(render: () => void): Promise<void> {
-    const sequence = ++this.sequence
-    if (prefersReducedMotion()) {
-      render()
-      if (this.overlay) this.overlay.dataset.state = 'idle'
-      this.active = false
-      return
-    }
-
-    const overlay = this.getOverlay()
-    if (this.active) {
-      // A newer route request supersedes the covered document before the
-      // earlier transition can render its now-stale destination.
-      render()
-      overlay.dataset.state = 'revealing'
-      await this.wait(REVEAL_MS)
-      if (sequence !== this.sequence) return
-      overlay.dataset.state = 'idle'
-      this.active = false
-      return
-    }
-    this.active = true
-    overlay.dataset.state = 'covering'
-    await this.wait(COVER_MS)
-    if (sequence !== this.sequence) return
-    render()
-    overlay.dataset.state = 'revealing'
-    await this.wait(REVEAL_MS)
-    if (sequence !== this.sequence) return
-    overlay.dataset.state = 'idle'
-    this.active = false
-  }
 
   private getOverlay(): HTMLElement {
     if (this.overlay?.isConnected) return this.overlay
@@ -63,13 +29,12 @@ export class RouteTransition {
   }
 
   /**
-   * Phased API for the Vue Router path (src/app): `cover()` awaits the
+   * Phased API wired to the Vue Router guards (src/app): `cover()` awaits the
    * cover phase before the router guard resolves (the RouterView re-render
    * lands under the covered document), and `reveal()` starts the reveal
-   * after the guard settles. Same timing and reduced-motion contract as
-   * `run()`: under reduced motion both phases are synchronous no-ops and
-   * the overlay element is never created. A newer cover supersedes a
-   * pending reveal (sequence check).
+   * after the guard settles. Under reduced motion both phases are synchronous
+   * no-ops and the overlay element is never created. A newer cover supersedes
+   * a pending reveal (sequence check).
    */
   async cover(): Promise<void> {
     const sequence = ++this.sequence

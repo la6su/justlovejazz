@@ -4,9 +4,7 @@
 // The manifest (`src/core/routeManifest.ts`) remains the single source of
 // truth for public paths: the records below are derived from it, never
 // re-declared. The component per record is the semantic route SFC
-// (`src/app/views/*`); `PageView` is retained only as the documented
-// temporary primitive adapter (Phase 5 cleanup target) and is no longer a
-// route target. `pageForPath` is the lenient location resolution the
+// (`src/app/views/*`). `pageForPath` is the lenient location resolution the
 // initial-load contract needs (unknown direct entry → home, URL untouched);
 // in-app navigation stays strict — the click handler and `jlz:navigate`
 // resolve against the manifest before pushing, so an unknown link is a

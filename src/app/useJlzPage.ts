@@ -15,9 +15,10 @@
 //   document-wide update), with the idle-callback re-pass.
 //
 // The scene runtime is never touched: navigation re-renders the DOM only and
-// keeps the 3D world in sync through `jlz:route-change`. Removal: Phase 5
-// cleanup keeps this file (the legacy `renderView` side effects live here);
-// only the string-template adapter (`PageView.vue`) is deleted.
+// keeps the 3D world in sync through `jlz:route-change`. This file is the
+// permanent per-page lifecycle owner (the legacy `renderView` side effects
+// live here); the string-template adapter (`PageView.vue`) and the legacy
+// router were removed in the Phase 5 cleanup.
 
 import { onMounted } from 'vue'
 import UIkit from 'uikit'

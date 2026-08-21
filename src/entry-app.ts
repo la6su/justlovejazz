@@ -1,5 +1,4 @@
 import UIkit from 'uikit'
-import { initRouter } from './router'
 import { BlurFade } from './Experience/BlurFade'
 import { NoiseText } from './Experience/NoiseText'
 import { eventBus } from './core/EventBus'
@@ -231,18 +230,12 @@ export async function startApp(): Promise<void> {
       /* icons are enhancement, not critical */
     })
 
-  // Phase 5 flip: Vue Router (src/app) owns navigation by default. The
-  // legacy DOM router in `src/router.ts` remains reachable only through the
-  // build-time rollback flag `VITE_JLZ_LEGACY_ROUTER=1` and is deleted by
-  // the Phase 5 cleanup commit. The check is inlined (not imported from
-  // `./app`) so the dynamic import below is the only edge into the Vue
-  // graph. Both paths render the same page contracts — the scene runtime
-  // boots exactly once regardless of the route.
-  if (import.meta.env.VITE_JLZ_LEGACY_ROUTER === '1') {
-    initRouter()
-  } else {
-    void import('./app').then((m) => m.mountVueApp())
-  }
+  // Phase 5 (cleanup): Vue Router (src/app) owns navigation. The dynamic
+  // import below is the only edge into the Vue graph, so the router + route
+  // SFCs stay in a separate lazy `app` chunk and the initial entry bundle
+  // remains lean. The scene runtime boots exactly once regardless of the
+  // route.
+  void import('./app').then((m) => m.mountVueApp())
 
   // ── Works page 3D cards: bind tilt + click on every route change ──
   // initWorkCards() is idempotent (skips already-bound cards).
