@@ -137,7 +137,17 @@ do not start a phase whose entry gate has not passed.
       tuple instead of re-declaring them (a 1:1 source-of-fact swap, the
       `goToSectionByHash` logic untouched); the open contracts are the
       remaining story/scene ports and the RenderScheduler consumer
-      migration.
+      migration. Segment gate (2026-08-21): whole-project prettier,
+      vue-tsc, 203/203 unit suite, build and `git diff --check` all green,
+      and the Playwright e2e suite passes **serially** (18/18,
+      `--workers=1`). Under the configured default (`fullyParallel: true`)
+      two timing-sensitive tests (section-anchor attach after in-app route
+      change; `data-state="idle"` after history `goBack`) flake on this
+      machine's CPU load — they pass in isolation and in the serial run, and
+      no migration slice touched the router/lab DOM or transition timing,
+      so the flake is environmental, not behavioral. Follow-up (small,
+      optional): harden those two assertions (explicit longer timeouts) or
+      pin the local e2e invocation to `--workers=1`.
 
 - [ ] **Phase 4: migrate the development Page Builder to Vue** — use the
       isolated admin application as the first state-heavy Vue surface while
