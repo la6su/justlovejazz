@@ -1790,6 +1790,63 @@ with zero console errors.
 Rollback: restore the inline closures and `makeId` in `admin/main.ts` and
 delete the module and its tests.
 
+#### Phase 4 SFC editor slice — 2026-08-21
+
+The remaining Phase 4 work: the admin editor (catalogue, outline, inspector,
+preview and the Style workspace) is now a Vue SFC, and `admin/main.ts` is a
+thin mount point. The builder core stays pure — the rendered page and the
+style showcase are still the string contracts of `render.ts` /
+`style-showcase.ts`; the SFC hosts them via `v-html` and keeps the editor
+affordances as DOM effects.
+
+- `src/admin/useAdminEditor.ts` is the framework-facing editor core as a
+  composable: it owns the single `BuilderStore` instance, the mode /
+  viewport / style-group / tone state, the status and dirty contract, the
+  save/load endpoints, the structural command dispatch and the editor
+  shortcuts. Because the store is a plain (non-reactive) class, the
+  composable keeps a revision counter that every action bumps; the panel
+  computeds read it, so the templates repaint exactly when the legacy
+  `renderEditor()` ran. DOM effects are injected (`updateIcons`,
+  `setProperty`, `toggleClass`, `scrollIntoView`) so the composable is
+  unit-testable in jsdom and a future lifecycle-safe preview can reuse one
+  implementation.
+- `src/admin/AdminApp.vue` is a 1:1 template port of the old `index.html`
+  shell — the same ids and classes, so `admin/admin.less` is untouched.
+  Static chrome (toolbar, catalog, tabs, tone and viewport groups) is
+  template markup; the document outline, the preview (`v-html` of the pure
+  renderer) and both inspector variants (element fields and the Style
+  group's colors/values) are reactive over the store. The field set
+  remounts on selection / history changes so inputs always start from the
+  store's values, matching the legacy uncontrolled-render contract.
+- The preview keeps its lifecycle-safe effects in one owner:
+  `applyPreviewState` re-applies the `--builder-*` theme variables and the
+  `is-selected` class after every action (a `v-html` swap wipes child
+  classes, and a theme-only change does not alter the preview string at
+  all), and the composable's `onMounted` / `onUnmounted` register and remove
+  the document-level keydown and beforeunload listeners — no orphan
+  listeners or timers across unmount.
+- `admin/main.ts` is the mount point: it injects the admin stylesheet,
+  registers the console and style-nav icon sets, and mounts `AdminApp` on
+  `#jlz-admin`. `admin/index.html` now carries only the mount node.
+- `src/__tests__/adminEditor.test.ts` (9 tests) covers the composable
+  (load / fallback, add through command dispatch, Ctrl+Z undo, theme sync
+  with the hex peer, selection) and an `AdminApp.vue` jsdom mount (catalogue
+  and outline render, catalogue click adds a node, Style mode renders the
+  16-group workspace).
+
+Verification: scoped prettier, `vue-tsc` clean, 266/266 unit suite
+(257 + 9 new), `git diff --check` clean, production build (592 ms) with the
+admin graph absent from `dist`, serial e2e 18/18, and a live-admin smoke:
+add a Divider → "Unsaved changes" with the node selected in outline, preview
+and inspector → Ctrl+Z → "Ready"; Style mode accent edit (hex + swatch in
+sync, `--builder-accent` applied) → Ctrl+Z → variables restored; preview
+click selects the heading and reveals the node actions; viewport switch
+updates the frame; zero console errors.
+
+Rollback: the previous imperative entry is one commit back; restoring
+`admin/main.ts`, `admin/index.html` and deleting `src/admin/` reverts the
+slice. The commands slice (previous section) is unaffected.
+
 ### Phase 5 — Vue public shell and router
 
 Scope:

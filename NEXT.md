@@ -238,9 +238,14 @@ do not start a phase whose entry gate has not passed.
       / theme reset + `makeId`) moved out of `admin/main.ts` into the pure
       framework-neutral `builder/commands.ts` (13 unit tests) so the SFC
       panels can dispatch them without a DOM.
-      The SFC migration of the
-      catalogue, outline, inspector, preview and Style workspace and the
-      lifecycle-safe preview remain open.
+      The SFC migration is complete: `src/admin/AdminApp.vue` renders the
+      catalogue, outline, both inspectors and the preview (v-html of the
+      pure renderers) over the `useAdminEditor` composable, which owns the
+      single `BuilderStore` and the lifecycle-safe preview effects (theme
+      variables + selection class re-applied per action, document-level
+      listeners bound to the component lifecycle). `admin/main.ts` is the
+      Vue mount point; 9 unit tests cover the composable and an SFC jsdom
+      mount.
 
 - [ ] **Phase 5: migrate the public DOM shell and routing** — adopt AppShell,
       Vue Router, semantic route SFCs, UIkit lifecycle adapters, i18n/meta and
