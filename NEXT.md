@@ -130,7 +130,12 @@ do not start a phase whose entry gate has not passed.
       (`src/core/storyProgress.ts`, 200/200 unit suite; the midpoint
       arrival rule — direction-independent, exact `.5` boundary unit-
       locked — is **already consumed** by `World.updateTransform` as a 1:1
-      source-of-fact swap with unchanged timing); the open contracts are the
+      source-of-fact swap with unchanged timing). The story slot index is
+      now single-sourced: `worldSlots.ts` gained a strict
+      `worldSlotIndex`/`isWorldSlotId` lookup (203/203 unit suite) and
+      `CinematicNav` derives its `0/1/4/5` slot-index constants from the
+      tuple instead of re-declaring them (a 1:1 source-of-fact swap, the
+      `goToSectionByHash` logic untouched); the open contracts are the
       remaining story/scene ports and the RenderScheduler consumer
       migration.
 

@@ -5,6 +5,8 @@ import {
   WORLD_SLOT_COUNT,
   worldSlotAt,
   worldSlotById,
+  worldSlotIndex,
+  isWorldSlotId,
   type WorldSlotId,
 } from '../core/worldSlots'
 import { getWorldConfigForPage } from '../core/WorldConfig'
@@ -58,6 +60,41 @@ describe('world slot contract', () => {
       expect(worldSlotById(id as WorldSlotId).id).toBe(id)
       expect(worldSlotAt(worldSlotById(id as WorldSlotId).index).id).toBe(id)
     }
+  })
+
+  it('strict index lookup: every canonical id maps to its stable index', () => {
+    expect(worldSlotIndex('lab')).toBe(0)
+    expect(worldSlotIndex('intro')).toBe(1)
+    expect(worldSlotIndex('about')).toBe(2)
+    expect(worldSlotIndex('works')).toBe(3)
+    expect(worldSlotIndex('contact')).toBe(4)
+    expect(worldSlotIndex('menu')).toBe(5)
+    for (const slot of WORLD_SLOTS) {
+      expect(worldSlotIndex(slot.id)).toBe(slot.index)
+    }
+  })
+
+  it('strict index lookup: unknown ids are undefined, never a default', () => {
+    // The namespace lesson: a section id is not a PageId, not a route path,
+    // and the page-section `page-` variants are not canonical slot ids.
+    expect(worldSlotIndex('home')).toBeUndefined()
+    expect(worldSlotIndex('/works')).toBeUndefined()
+    expect(worldSlotIndex('page-lab')).toBeUndefined()
+    expect(worldSlotIndex('content-0')).toBeUndefined()
+    expect(worldSlotIndex('')).toBeUndefined()
+  })
+
+  it('the CinematicNav-derived constants keep the former 0/1/4/5 values', () => {
+    // Regression baseline: the navigation constants that CinematicNav now
+    // derives from this tuple must equal the former inline literals, so the
+    // slot-index single-source change is behavior-identical.
+    expect(worldSlotIndex('lab')).toBe(0) // CONTACT_FOOTER_INDEX
+    expect(worldSlotIndex('intro')).toBe(1) // FIRST_MAIN
+    expect(worldSlotIndex('contact')).toBe(4) // LAST_MAIN
+    expect(worldSlotIndex('menu')).toBe(5) // MENU_INDEX
+    expect(isWorldSlotId('lab')).toBe(true)
+    expect(isWorldSlotId('menu')).toBe(true)
+    expect(isWorldSlotId('page-lab')).toBe(false)
   })
 })
 

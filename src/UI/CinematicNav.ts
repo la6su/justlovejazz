@@ -7,11 +7,17 @@
 
 import { prefersReducedMotion } from '../core/motionPolicy'
 import { getCurrentPage } from '../core/routePage'
+import { worldSlotIndex } from '../core/worldSlots'
 
-const CONTACT_FOOTER_INDEX = 0
-const FIRST_MAIN = 1
-const LAST_MAIN = 4
-const MENU_INDEX = 5
+// Story slot indices are derived from the canonical six-slot model
+// (worldSlots) instead of re-declared here — the slot model is the single
+// source of truth for the index assignment. Slot 0 is the lab/Contact-finale
+// slot, the four main story frames are slots 1..4, and the menu sheet is
+// slot 5. These are canonical IDs, so the lookups are always defined.
+const CONTACT_FOOTER_INDEX = worldSlotIndex('lab')!
+const FIRST_MAIN = worldSlotIndex('intro')!
+const LAST_MAIN = worldSlotIndex('contact')!
+const MENU_INDEX = worldSlotIndex('menu')!
 const MAIN_COUNT = LAST_MAIN - FIRST_MAIN + 1
 const INTERACTION_SETTLE_MS = 220
 

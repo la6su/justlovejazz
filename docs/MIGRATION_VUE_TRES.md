@@ -1216,6 +1216,40 @@ easing (`_applyEasing`, double-ease for bg/fog) and the lights/fog/env
 systems fired on index change stay with the consumer. Rollback: restore the
 two inline expressions in `updateTransform` and delete the contract.
 
+#### Phase 3 story slot index single-source slice — 2026-08-21
+
+A self-review of the story navigation surfaced a duplicated-facts point:
+`CinematicNav` re-declared the canonical story slot indices as inline
+constants (`CONTACT_FOOTER_INDEX = 0`, `FIRST_MAIN = 1`, `LAST_MAIN = 4`,
+`MENU_INDEX = 5`) — the same index assignment the canonical six-slot model
+already owns in `worldSlots.ts`. Two owners of one fact is the exact class of
+bug the slot contract was created to prevent, so this slice makes the slot
+tuple the single source:
+
+- `src/core/worldSlots.ts` gains a strict `worldSlotIndex(id) → number |
+undefined` lookup (and `isWorldSlotId`). It accepts `string` so DOM
+  dataset values can be passed without a cast, and returns `undefined` for
+  any id the slot model does not own — the `page-` page-section variants,
+  PageIds and route paths are deliberately not slot ids (the namespace
+  lesson).
+- `CinematicNav` now derives its four index constants from
+  `worldSlotIndex` (`lab`/`intro`/`contact`/`menu`) instead of hard-coding
+  `0/1/4/5`. The `goToSectionByHash` logic is untouched — a 1:1
+  source-of-fact swap with unchanged module-init timing, so the slot-index
+  assignment is behavior-identical.
+- Unit-locked: the strict mapping round-trips every canonical id to its
+  stable index, unknown ids are `undefined` (never a default), and the four
+  derived constants equal the former inline literals `0/1/4/5` (the
+  regression baseline). `CinematicNav`'s 6 existing tests stay green; 203
+  unit tests pass; `vue-tsc` clean; build +~50 B (the new strict helper);
+  runtime smoke boots home with zero console errors.
+
+Scope limits: this removes the index duplication in the navigation
+constants only; `goToSectionByHash` still resolves the DOM anchor and the
+main-section position from the live track (a DOM concern, not a slot fact).
+Rollback: restore the four inline constants in `CinematicNav` and delete the
+two helpers.
+
 ### Phase 4 — Vue Page Builder
 
 Scope:
@@ -1458,7 +1492,7 @@ The following ledgers are updated in this document during implementation.
 | splash readiness/failure | `index.html`, `entry-app.ts` + `bootstrapStates.ts` pure contract (inert until consumed)                                                    | inline shell + bootstrap state machine                                       | 3, 5            |
 | routes/hash/meta         | `routeManifest.ts`, `router.ts`, `pageMeta.ts`                                                                                              | route manifest + Vue Router                                                  | 3, 5            |
 | scene route-page reads   | `routePage.ts` port (all scene consumers migrated: `World.ts`, `BakuCarousel.ts`, `CinematicNav.ts`, `ContentReveal.ts`, `Experience.ts`)   | typed route port owned by the app providers                                  | 3, 5            |
-| six world slots          | `worldSlots.ts` tuple (consumed by `WorldConfig.ts`, `SplashCube.ts`)                                                                       | domain tuple + `WorldRoot`                                                   | 3, 7, 8         |
+| six world slots          | `worldSlots.ts` tuple + strict `worldSlotIndex` (consumed by `WorldConfig.ts`, `SplashCube.ts`, `CinematicNav.ts` slot-index constants)     | domain tuple + `WorldRoot`                                                   | 3, 7, 8         |
 | render demand            | `Experience._needsRender` + `renderDemand.ts` pure decision contract (inert until consumed)                                                 | `RenderScheduler`                                                            | 3, 7            |
 | motion preference        | `motionPolicy.ts` typed port (11 consumers); `entry-shell.ts` dataset hook for E2E/CSS (dead `syncReducedMotionDataset` removed 2026-08-21) | typed preference state owned by the app providers                            | 3, 5            |
 | brand/runtime tokens     | `brandTokens.ts` manifest (mirrors `_import.less` §1, unit-locked; Less stays source of truth)                                              | typed manifest + generated adapters                                          | 3, 5            |

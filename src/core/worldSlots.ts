@@ -114,3 +114,20 @@ export function worldSlotAt(index: number): WorldSlotDef {
 export function worldSlotById(id: WorldSlotId): WorldSlotDef {
   return SLOT_BY_ID.get(id)!
 }
+
+/**
+ * Strict story slot index for a canonical slot ID: `undefined` for an ID the
+ * slot model does not own (never a default). Accepts `string` so DOM dataset
+ * values (`data-section` / `data-page-section` base IDs) can be passed
+ * without a cast. This is the single place that turns a section identity into
+ * its stable slot index, so consumers (e.g. `CinematicNav` navigation) derive
+ * their index constants from the tuple instead of re-declaring `0/1/4/5`.
+ */
+export function worldSlotIndex(id: string): number | undefined {
+  return SLOT_BY_ID.get(id as WorldSlotId)?.index
+}
+
+/** True when `id` is a canonical slot ID. */
+export function isWorldSlotId(id: string): id is WorldSlotId {
+  return SLOT_BY_ID.has(id as WorldSlotId)
+}
