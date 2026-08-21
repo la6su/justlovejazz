@@ -120,9 +120,14 @@ do not start a phase whose entry gate has not passed.
       typed motion-preference port is now formalized
       (`src/core/motionPolicy.ts`, 178/178 unit suite; 11 consumers read
       through it, the dead `syncReducedMotionDataset` writer removed, the
-      `entry-shell.ts` E2E/CSS dataset hook stays until Phase 5); the open
-      contracts are the story/scene ports, the RenderScheduler consumer
-      migration and route resource scopes.
+      `entry-shell.ts` E2E/CSS dataset hook stays until Phase 5). The
+      route resource scopes policy is now a pure contract
+      (`src/core/routeResourceScopes.ts`, 191/191 unit suite; the
+      persistent carousel vs route-scoped works/contact stages acquire/
+      dispose policy is line-verified against the `Experience.ts`
+      route-change handler and unit-locked; inert until the Phase 8
+      rewiring); the open contracts are the story/scene ports and the
+      RenderScheduler consumer migration.
 
 - [ ] **Phase 4: migrate the development Page Builder to Vue** — use the
       isolated admin application as the first state-heavy Vue surface while

@@ -1147,6 +1147,42 @@ preferences (locale, quality) surface, they join this port rather than new
 ad-hoc readers. The dataset hook removal is a Phase 5 shell item. Rollback:
 restore the function and its tests.
 
+#### Phase 3 route resource scopes slice — 2026-08-21
+
+The route-scoped GPU resource policy (which lazy stage lives on which page,
+and when it is disposed) is extracted from the inline
+`Experience.ts` route-change handler + `World.forPage` into a pure
+contract:
+
+- `src/core/routeResourceScopes.ts` declares the scope inventory
+  (`carousel`, `worksPlaneStage`, `contactTextStage`,
+  `contactCyprusStage`) with owner page, kind and the editorial note (the
+  /works stage owns eight decoded 1440×810 textures — disposing it is what
+  keeps a navigation from looking like a GPU leak), plus
+  `routeScopeTransition(to)`: a total acquire/dispose decision over every
+  `PageId`, and strict lookups (no `home` fallback).
+- Two scope classes, deliberately different and unit-locked: the home
+  carousel is **persistent** (lazily initialized once; its four project
+  textures are shared with the Works plane media, so it is never disposed
+  during the session), while the works/contact stages are **route-scoped**
+  (acquired on entry, disposed on every other page). Disposal is
+  unconditional in the policy — the consumer's no-op guards make disposing a
+  never-created stage safe, exactly like the legacy handler's else branches.
+- The policy was cross-checked line-by-line against the live
+  `_routeChangeCloseOverlayHandler` in `Experience.ts` (home/works/contact
+  arms + the unconditional else-branch disposes) and the initial-load
+  pre-warming in `World.forPage`; 13 unit tests (191/191) lock it. Section
+  resets (`setWorksPlaneStageSection(0)` & co.) are scene-state concerns and
+  stay with the consumer, out of this contract.
+- The contract is pure and **inert**: no runtime behavior changes in this
+  slice; the Phase 8 rewiring moves the handler and `World.forPage` onto
+  `routeScopeTransition`. `vue-tsc` clean, size-stable build.
+
+Scope limits: no consumer rewiring; the initial-hash-replay wake
+(`ensureCarouselInitialized` at the splash boundary) and the self-healing
+lazy init inside `setContactCyprusStageSection` are consumer concerns, not
+scope policy. Rollback: delete the contract file and its tests.
+
 ### Phase 4 — Vue Page Builder
 
 Scope:
@@ -1396,7 +1432,7 @@ The following ledgers are updated in this document during implementation.
 | motion preference        | `motionPolicy.ts` typed port (11 consumers; dead `syncReducedMotionDataset` writer removed); `entry-shell.ts` dataset hook for E2E/CSS      | typed preference state owned by the app providers                            | 3, 5            |
 | backend fallback         | `Renderer.ts`                                                                                                                               | `RendererFactory`                                                            | 2, 6            |
 | post-processing          | dual `RenderPipeline` paths                                                                                                                 | TSL graph (`WebGPUBackend`) + forced-WebGL fallback per the Phase 6 decision | 2, 6            |
-| route GPU resources      | `World` lazy stages                                                                                                                         | route resource scopes                                                        | 3, 8            |
+| route GPU resources      | `World` lazy stages + `routeResourceScopes.ts` pure policy contract (inert until consumed)                                                  | route resource scopes                                                        | 3, 8            |
 | semantic UI              | string templates + UI classes                                                                                                               | Vue route/features + UIkit adapters                                          | 4, 5            |
 | builder                  | `admin/main.ts`                                                                                                                             | Vue builder app                                                              | 4               |
 | static content           | standalone pages                                                                                                                            | shared SSG pipeline                                                          | 9               |
