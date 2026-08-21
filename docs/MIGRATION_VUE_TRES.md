@@ -1289,6 +1289,45 @@ base polarity remains a WorldConfig fact until the Phase 7 `WorldRoot` owns
 it. Rollback: restore the inline ternary + untyped detail in
 `ContentReveal`/`Experience` and delete the contract.
 
+#### Phase 3 story-state contract slice — 2026-08-21
+
+The story has one continuous input (the native track scroll) and two
+observers on different clocks: the DOM navigation reacts to scroll _events_
+(discrete main-section chapter, side sheets) and the 3D world reads progress
+_per frame_ (midpoint arrival over the six slots). Merging the observers
+would change arrival timing, so this slice keeps both where they are and
+single-sources the _mapping between the scales_, which used to be inlined in
+`CinematicNav`:
+
+- `src/core/storyState.ts` is the pure story-state contract:
+  `storyProgressFromScroll` (the main→slot rescale, `(1 + p) / 5`),
+  `clampStoryPosition` + `mainSectionFromPosition` (the main-section
+  rounding rule with the same `.5`-rounds-up convention as the scene's
+  midpoint rule), `storyProgressWithSide` / `storySectionIndex` (the
+  footer→0 / menu→last-slot edges), and the readonly `StoryState` shape both
+  observers converge on.
+- `CinematicNav` consumes the functions at the exact points where it inlined
+  the rescale, clamp and rounding before — a 1:1 source-of-fact swap with
+  unchanged timing (the scroll event still drives the DOM chapter, the frame
+  still drives the scene; the per-section CSS variables still receive the
+  same clamped continuous position). Its `SideState` set is now an alias of
+  the contract's `StorySide`.
+- The contract unit-locks the **route/story/scene desync invariant**: at
+  every main stop point — and throughout every main span — the DOM main
+  index and the scene slot index are the _same number_ (mains 1..4 are slots
+  1..4). This is the mapping half of the "route/story/scene desynchronise"
+  risk row; the route-manifest and typed-port halves are already in place.
+- 12 new unit tests (220/220), `vue-tsc` clean, size-stable build, runtime
+  smoke: section scroll presents one consistent section to DOM and scene
+  with zero console errors.
+
+Scope limits: a full runtime `StoryController` (a single publisher the DOM
+_and_ the scene both subscribe to) would move the DOM chapter from
+event-driven to publisher-driven and change arrival timing; it lands with
+the Phase 5/7 scene-host rewiring on top of this contract, which owns the
+mapping and the typed state it publishes. Rollback: restore the inline
+rescale/clamp/rounding in `CinematicNav` and delete the contract.
+
 ### Phase 4 — Vue Page Builder
 
 Scope:
@@ -1544,6 +1583,7 @@ The following ledgers are updated in this document during implementation.
 | story progress→section   | `storyProgress.ts` pure midpoint rule (consumed: `World.updateTransform` 1:1 swap, timing unchanged)                                                                 | story progress contract owned by the app providers                           | 3, 5            |
 | effective theme port     | `sectionTheme.ts` pure auto/inverse decision + typed `ThemeAppliedPort` (consumed: `ContentReveal` emitter, `Experience` handler; 1:1 swap)                          | typed theme state owned by the app providers                                 | 3, 5            |
 | locale port              | `i18n.ts` typed port (`getLang`/`t` pull reads, single writer `toggleLang`, `jlz:lang-change` push; unit-locked incl. EN/RU parity)                                  | typed locale state owned by the app providers                                | 3, 5            |
+| story-state mapping      | `storyState.ts` pure contract (main→slot rescale, rounding rule, side edges; consumed 1:1 by `CinematicNav`; the DOM/scene desync invariant unit-locked)             | one `StoryController` publishing the typed `StoryState`                      | 3, 5, 7         |
 | semantic UI              | string templates + UI classes                                                                                                                                        | Vue route/features + UIkit adapters                                          | 4, 5            |
 | builder                  | `admin/main.ts`                                                                                                                                                      | Vue builder app                                                              | 4               |
 | static content           | standalone pages                                                                                                                                                     | shared SSG pipeline                                                          | 9               |

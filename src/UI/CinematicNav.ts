@@ -8,6 +8,12 @@
 import { prefersReducedMotion } from '../core/motionPolicy'
 import { getCurrentPage } from '../core/routePage'
 import { worldSlotIndex } from '../core/worldSlots'
+import {
+  clampStoryPosition,
+  mainSectionFromPosition,
+  storyProgressFromScroll,
+  type StorySide,
+} from '../core/storyState'
 
 // Story slot indices are derived from the canonical six-slot model
 // (worldSlots) instead of re-declared here — the slot model is the single
@@ -21,7 +27,9 @@ const MENU_INDEX = worldSlotIndex('menu')!
 const MAIN_COUNT = LAST_MAIN - FIRST_MAIN + 1
 const INTERACTION_SETTLE_MS = 220
 
-type SideState = 'center' | 'footer' | 'menu'
+// The side positions are the story-state contract's StorySide (single
+// source of the 'center' | 'footer' | 'menu' set).
+type SideState = StorySide
 
 export class CinematicNav {
   public el: HTMLElement
@@ -193,11 +201,10 @@ export class CinematicNav {
   private _syncFromScroll(): void {
     if (!this._track || this._mainSections.length === 0) return
     const height = Math.max(1, this._track.clientHeight || window.innerHeight)
-    const position = Math.max(
-      0,
-      Math.min(this._mainSections.length - 1, this._track.scrollTop / height),
-    )
-    const nextMain = FIRST_MAIN + Math.round(position)
+    // The clamp + main-section rounding rule are the pure storyState
+    // contract; the clamped position also feeds the per-section CSS vars.
+    const position = clampStoryPosition(this._track.scrollTop / height, this._mainSections.length)
+    const nextMain = mainSectionFromPosition(position, FIRST_MAIN, this._mainSections.length)
 
     this._side = 'center'
     this._applySideState()
@@ -310,10 +317,17 @@ export class CinematicNav {
   getOverallProgress(): number {
     if (this._side === 'footer') return 0
     if (this._side === 'menu') return 1
-    if (!this._track) return FIRST_MAIN / (this._sectionCount - 1)
-    const height = Math.max(1, this._track.clientHeight || window.innerHeight)
-    const storyPosition = Math.max(0, Math.min(MAIN_COUNT - 1, this._track.scrollTop / height))
-    return (FIRST_MAIN + storyPosition) / (this._sectionCount - 1)
+    if (!this._track)
+      return storyProgressFromScroll(0, 1, MAIN_COUNT, FIRST_MAIN, this._sectionCount)
+    // The main→slot progress rescale is the pure storyState contract.
+    const height = this._track.clientHeight || window.innerHeight
+    return storyProgressFromScroll(
+      this._track.scrollTop,
+      height,
+      MAIN_COUNT,
+      FIRST_MAIN,
+      this._sectionCount,
+    )
   }
 
   goToSection(index: number): void {

@@ -141,9 +141,16 @@ do not start a phase whose entry gate has not passed.
       typed `ThemeAppliedPort` shape (consumed 1:1 by `ContentReveal`
       emitter and `Experience` handler, timing unchanged) and `i18n.ts` is
       formalized as the typed locale port (pull reads, single writer,
-      push event, EN/RU parity-locked). The open contracts are the runtime
-      StoryController and the RenderScheduler consumer migration. Segment
-      gate (2026-08-21): whole-project prettier,
+      push event, EN/RU parity-locked). The story-state mapping is now a pure
+      contract (`src/core/storyState.ts`, 220/220 unit suite; the main→slot
+      progress rescale, the main-section rounding rule and the footer/menu
+      side edges are consumed 1:1 by `CinematicNav` with unchanged
+      event/frame timing, and the route/story/scene desync invariant — DOM
+      main index == scene slot index at every stop point — is unit-locked;
+      the full runtime StoryController publisher lands with the Phase 5/7
+      scene-host rewiring on top of this contract). The open contracts are
+      the runtime StoryController publisher and the RenderScheduler consumer
+      migration. Segment gate (2026-08-21): whole-project prettier,
       vue-tsc, 203/203 unit suite, build and `git diff --check` all green,
       and the Playwright e2e suite passes **serially** (18/18,
       `--workers=1`). Under the configured default (`fullyParallel: true`)
