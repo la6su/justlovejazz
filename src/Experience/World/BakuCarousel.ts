@@ -22,6 +22,7 @@ function isMenuOpen(): boolean {
 import { PROJECTS } from '../../Data/Projects'
 import { CasePlane, CLOTH_PARAMS } from './CasePlane'
 import { loadCaseTexture, releaseCaseTexture } from './caseTexture'
+import { getCurrentPage } from '../../core/routePage'
 // PlaneTransition removed — unified animation uses direct overlay open.
 
 // A dozen plane instances preserve the infinite wrap while the framing exposes
@@ -158,7 +159,7 @@ export class BakuCarousel extends THREE.Group {
       // D-15 fix: only intercept on home page (carousel is home-only; on
       // content pages the window listener would block WorkCard clicks if
       // the carousel's _active flag were stuck true from a prior home visit).
-      if (document.body.dataset.page !== 'home') return
+      if (getCurrentPage() !== 'home') return
       this.isDown = true
       this.dragStartX = e.clientX
       this.dragStartY = e.clientY
@@ -216,7 +217,7 @@ export class BakuCarousel extends THREE.Group {
       const control = (event.target as HTMLElement | null)?.closest<HTMLElement>(
         '[data-baku-carousel-control]',
       )
-      if (!control || !this._active || document.body.dataset.page !== 'home') return
+      if (!control || !this._active || getCurrentPage() !== 'home') return
       event.preventDefault()
       const direction = control.dataset.bakuCarouselControl
       if (direction === 'prev') this.prev()
