@@ -1,9 +1,14 @@
 import UIkit from 'uikit'
 import adminCss from './admin.less?inline'
 
+// The builder preview must render the exact console icon set the product
+// composes with `uk-icon` — register the same SVG overrides before the
+// preview is painted so the icon element is WYSIWYG of the built page.
+import { registerConsoleIcons } from '../src/assets/console-icons'
+
 import {
   BUILDER_CATALOG,
-  BUILDER_ELEMENT_TYPES,
+  BUILDER_CATALOG_GROUPS,
   type BuilderElementDefinition,
 } from '../src/builder/catalog'
 import { DEFAULT_BUILDER_DOCUMENT } from '../src/builder/default-document'
@@ -34,6 +39,7 @@ const adminStyle = document.createElement('style')
 adminStyle.dataset.jlzAdmin = 'true'
 adminStyle.textContent = adminCss
 document.head.append(adminStyle)
+registerConsoleIcons()
 
 const requiredElement = <T extends HTMLElement>(id: string): T => {
   const element = document.getElementById(id)
@@ -126,20 +132,26 @@ function restoreHistory(nextIndex: number): void {
 
 function renderCatalog(): void {
   catalogElement.replaceChildren()
-  for (const type of BUILDER_ELEMENT_TYPES) {
-    const definition = BUILDER_CATALOG[type]
-    const button = document.createElement('button')
-    button.type = 'button'
-    button.dataset.addElement = type
-    button.title = definition.description
-    const icon = document.createElement('span')
-    icon.className = 'jlz-admin-element-icon'
-    icon.setAttribute('aria-hidden', 'true')
-    icon.textContent = definition.icon
-    const label = document.createElement('span')
-    label.textContent = definition.label
-    button.append(icon, label)
-    catalogElement.append(button)
+  for (const group of BUILDER_CATALOG_GROUPS) {
+    const header = document.createElement('span')
+    header.className = 'jlz-admin-catalog-group'
+    header.textContent = group.label
+    catalogElement.append(header)
+    for (const type of group.types) {
+      const definition = BUILDER_CATALOG[type]
+      const button = document.createElement('button')
+      button.type = 'button'
+      button.dataset.addElement = type
+      button.title = definition.description
+      const icon = document.createElement('span')
+      icon.className = 'jlz-admin-element-icon'
+      icon.setAttribute('aria-hidden', 'true')
+      icon.textContent = definition.icon
+      const label = document.createElement('span')
+      label.textContent = definition.label
+      button.append(icon, label)
+      catalogElement.append(button)
+    }
   }
 }
 
@@ -211,10 +223,15 @@ function createField(
   node: BuilderNode,
   key: string,
 ): HTMLLabelElement | null {
-  const field = definition.fields.find((candidate) => candidate.key === key)
+  const field = definition.fieldGroups
+    .flatMap((group) => [...group.fields])
+    .find((candidate) => candidate.key === key)
   if (!field) return null
   const label = document.createElement('label')
   label.className = 'jlz-admin-field'
+  // Compact fields sit on a Figma-style two-column row; long-form content
+  // (textarea) stacks below its label.
+  label.classList.toggle('jlz-admin-field--stacked', field.type === 'textarea')
   const title = document.createElement('span')
   title.textContent = field.label
   let control: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
@@ -267,9 +284,23 @@ function renderInspector(): void {
 
   const definition = BUILDER_CATALOG[location.node.type]
   inspectorTitle.textContent = definition.label
-  for (const field of definition.fields) {
-    const label = createField(definition, location.node, field.key)
-    if (label) inspectorFields.append(label)
+  // Figma-style header: the element name plus its stable id for traceability.
+  const idBadge = document.createElement('code')
+  idBadge.className = 'jlz-admin-inspector-id'
+  idBadge.textContent = location.node.id
+  inspectorTitle.append(idBadge)
+  for (const group of definition.fieldGroups) {
+    const section = document.createElement('section')
+    section.className = 'jlz-admin-inspector-group'
+    const header = document.createElement('header')
+    header.className = 'jlz-admin-inspector-group-label'
+    header.textContent = group.label
+    section.append(header)
+    for (const field of group.fields) {
+      const label = createField(definition, location.node, field.key)
+      if (label) section.append(label)
+    }
+    inspectorFields.append(section)
   }
 }
 
@@ -320,7 +351,13 @@ function renderStyleInspector(): void {
   description.className = 'jlz-admin-inspector-description'
   description.textContent = group.description
   inspectorFields.append(description)
-  group.fields.forEach((field) => inspectorFields.append(createStyleField(field)))
+
+  // The same grouped panel language as the element inspector, so both
+  // modes read as one unified property surface.
+  const section = document.createElement('section')
+  section.className = 'jlz-admin-inspector-group'
+  group.fields.forEach((field) => section.append(createStyleField(field)))
+  inspectorFields.append(section)
 }
 
 function renderStyleNavigation(): void {

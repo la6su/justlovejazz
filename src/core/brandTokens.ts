@@ -102,16 +102,16 @@ const SPACING: Record<string, Token> = {
 // ── Radius + derived surfaces ──
 const RADIUS: Record<string, Token> = {
   'radius-none': '0',
-  'radius-sm': '0.25rem',
-  'radius-md': '0.375rem',
-  'radius-lg': '0.5rem',
-  'radius-xl': '0.75rem',
-  'radius-fluid': '0.5rem',
+  'radius-sm': '0',
+  'radius-md': '0',
+  'radius-lg': '0',
+  'radius-xl': '0',
+  'radius-fluid': '0',
   'radius-full': '0.125rem',
   // Derived aliases (see BRAND_TOKEN_ALIASES).
-  'button-radius': '0.375rem',
-  'card-radius': '0.5rem',
-  'card-shadow': '0 20px 56px rgba(0, 0, 0, 0.42)',
+  'button-radius': '0',
+  'card-radius': '0',
+  'card-shadow': 'none',
   'form-border': 'rgba(238, 241, 245, 0.14)',
   'navbar-surface': '#08090b',
 }

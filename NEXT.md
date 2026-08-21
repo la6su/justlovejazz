@@ -198,8 +198,23 @@ do not start a phase whose entry gate has not passed.
       scroll-into-view for the selected preview node, an undo-able theme
       Reset in the Style workspace, and the `builder/themeVariables.ts`
       contract replacing the duplicated preview variable literals (6 new
-      unit tests). The SFC migration of the catalogue, outline, inspector,
-      preview and Style workspace and the lifecycle-safe preview remain open.
+      unit tests). A console-minimal unified style system slice landed
+      2026-08-21: one flat square system (radius tokens → 0, no card
+      shadow, no glow) shared by product and preview through the same
+      token pipeline, the admin shell now loads the product's Commissioner
+      display font (the preview previously fell back to system fonts), the
+      preview grid lays out by container queries mirroring the compiled
+      `@m` pivot, the `S 01` counter/divider hack is removed, the heading
+      catalogue owns the `2xlarge` tier and the stored hero sits at the
+      step-5 display ceiling. A builder-catalogue and Figma-style-inspector
+      slice landed the same day: the catalogue now covers every component
+      the product composes (added `link`, `icon`, `list`, `divider`) and is
+      grouped Layout / Typography / Elements; the inspector is a grouped
+      property panel (Content / Typography / Layout / Style) with the
+      selected node's id badge, and the preview registers the console icon
+      set so `uk-icon` is WYSIWYG of the product. The SFC migration of the
+      catalogue, outline, inspector, preview and Style workspace and the
+      lifecycle-safe preview remain open.
 
 - [ ] **Phase 5: migrate the public DOM shell and routing** — adopt AppShell,
       Vue Router, semantic route SFCs, UIkit lifecycle adapters, i18n/meta and

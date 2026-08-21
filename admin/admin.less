@@ -281,6 +281,21 @@ textarea {
   padding: 0 20px 24px;
 }
 
+// Figma-style catalog groups: mono kickers over each element family.
+.jlz-admin-catalog-group {
+  grid-column: 1 / -1;
+  margin-top: 14px;
+  color: var(--jlz-color-text-subtle);
+  font-family: var(--jlz-font-mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.jlz-admin-catalog-group:first-child {
+  margin-top: 0;
+}
+
 .jlz-admin-catalog button {
   display: grid;
   grid-template-columns: 28px 1fr;
@@ -404,7 +419,7 @@ textarea {
   flex: none;
   width: 18px;
   height: 18px;
-  border-radius: 3px;
+  border-radius: 0;
   color: var(--jlz-color-accent);
   background: var(--jlz-color-bg);
   font-family: var(--jlz-font-mono);
@@ -554,79 +569,33 @@ textarea {
   text-transform: var(--builder-heading-transform);
 }
 
-// ── Brand language (ADR 0007 / Neon Stage) in the preview: the same
-// signatures the product renders — quiet mono index labels, soft text
-// glow on display type, accent glow on interactive states, 1px dividers.
-// Scoped to the preview root so builder and style-showcase modes share one
-// concept with the site. ──
+// ── Console minimal language in the preview: one system with the site —
+// flat surfaces, square corners, 1px lines, φ scale, quiet mono meta,
+// accent as color (no glow). Scoped to the preview root so builder and
+// style-showcase modes share the concept. ──
 
-#builder-preview :is(h1, h2, h3) {
-  text-shadow: 0 0 1.5rem color-mix(in srgb, var(--builder-text) 14%, transparent);
-}
-
-// The product's meta language: mono, tracked, quiet (index labels).
+// The product's meta language: mono, tracked, quiet.
 #builder-preview :is(.uk-text-meta, .uk-text-small) {
   font-family: var(--jlz-font-mono);
-  font-weight: 500;
+  font-weight: 400;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  opacity: 0.7;
-}
-
-// Section index label + 1px divider between sections, product-style.
-#builder-preview .jlz-builder-preview {
-  counter-reset: jlz-section-index;
-}
-
-#builder-preview .jlz-builder-section {
-  counter-increment: jlz-section-index;
-  border-top: 1px solid color-mix(in srgb, var(--builder-border) 65%, transparent);
-}
-
-#builder-preview .jlz-builder-section > .uk-container > :first-child::before {
-  content: 'S ' counter(jlz-section-index, decimal-leading-zero);
-  display: block;
-  margin-bottom: 1.25rem;
-  font-family: var(--jlz-font-mono);
-  font-size: @preview-band-meta;
-  font-weight: 500;
-  letter-spacing: 0.2em;
-  opacity: 0.55;
-}
-
-#builder-preview .jlz-builder-section:first-of-type {
-  border-top: 0;
-}
-
-// Interactive states carry the accent glow, as on the product.
-#builder-preview .uk-button-primary {
-  box-shadow: 0 0 1rem var(--jlz-color-accent-glow);
-  transition: box-shadow 180ms ease;
-}
-
-#builder-preview .uk-button-primary:hover:not(:disabled),
-#builder-preview .uk-button-primary:focus-visible {
-  box-shadow: 0 0 1.5rem var(--jlz-color-accent-glow);
+  opacity: 0.6;
 }
 
 #builder-preview a {
   text-decoration-thickness: 1px;
   text-underline-offset: 0.25em;
-  transition: text-shadow 180ms ease;
 }
 
-#builder-preview a:hover {
-  text-shadow: 0 0 0.9rem var(--jlz-color-accent-glow);
-}
-
+// Cards: flat surface, 1px line, accent border on hover — no shadow.
 #builder-preview .jlz-builder-card {
   border: 1px solid var(--builder-border);
-  transition: box-shadow 180ms ease, border-color 180ms ease;
+  transition: border-color 180ms ease;
 }
 
 #builder-preview .jlz-builder-card:hover {
-  border-color: color-mix(in srgb, var(--builder-active-accent) 45%, var(--builder-border));
-  box-shadow: 0 0 1.2rem color-mix(in srgb, var(--builder-active-accent) 16%, transparent);
+  border-color: var(--builder-active-accent);
 }
 
 // Body tier and section rhythm scale with the frame too (mobile-first:
@@ -745,24 +714,44 @@ textarea {
   padding: 0 20px 32px;
 }
 
+// Figma-style property rows: compact fields sit on a label/control row,
+// long-form content stacks below its label. Group headers are mono kickers.
 .jlz-admin-field {
   display: grid;
-  gap: 7px;
-  margin-bottom: 18px;
+  grid-template-columns: 92px 1fr;
+  gap: 10px;
+  align-items: center;
+  margin: 0;
+  padding: 7px 0;
+}
+
+.jlz-admin-field--stacked {
+  grid-template-columns: 1fr;
+  align-items: start;
 }
 
 .jlz-admin-field > span {
   color: var(--jlz-color-text-muted);
   font-size: 0.72rem;
-  font-weight: 600;
+  font-weight: 400;
+}
+
+.jlz-admin-field small {
+  grid-column: 1 / -1;
+  margin: 2px 0 6px;
+  color: var(--jlz-color-text-subtle);
+  font-size: 0.7rem;
+  line-height: 1.5;
 }
 
 .jlz-admin-field .uk-input,
 .jlz-admin-field .uk-select,
 .jlz-admin-field .uk-textarea {
+  min-height: 32px;
   border-color: var(--jlz-color-border);
   color: var(--jlz-color-text);
   background: var(--jlz-color-bg);
+  font-size: 0.8rem;
 }
 
 .jlz-admin-field .uk-textarea {
@@ -772,19 +761,47 @@ textarea {
 
 .jlz-admin-field-color {
   grid-template-columns: 1fr 48px;
-  align-items: center;
 }
 
-.jlz-admin-field-color > span {
+.jlz-admin-field-color > span,
+.jlz-admin-field-color small {
   grid-column: 1 / -1;
 }
 
 .jlz-admin-field-color input[type='color'] {
   width: 48px;
-  height: 40px;
-  padding: 3px;
+  height: 32px;
+  padding: 2px;
   border: 1px solid var(--jlz-color-border);
   background: var(--jlz-color-bg);
+}
+
+.jlz-admin-inspector-group {
+  margin-bottom: 12px;
+}
+
+.jlz-admin-inspector-group-label {
+  padding: 16px 0 8px;
+  color: var(--jlz-color-text-subtle);
+  font-family: var(--jlz-font-mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+// Figma-style header badge: the selected element's stable id.
+.jlz-admin-inspector-id {
+  margin-left: 10px;
+  padding: 2px 6px;
+  border: 1px solid var(--jlz-color-border);
+  color: var(--jlz-color-text-subtle);
+  background: var(--jlz-color-bg);
+  font-family: var(--jlz-font-mono);
+  font-size: 0.64rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  vertical-align: middle;
 }
 
 .jlz-admin-help {
@@ -898,16 +915,6 @@ textarea {
   color: var(--jlz-color-text-muted);
   font-size: 0.78rem;
   line-height: 1.55;
-}
-
-.jlz-admin-field small {
-  color: var(--jlz-color-text-subtle);
-  font-size: 0.68rem;
-  line-height: 1.45;
-}
-
-.jlz-admin-field-color small {
-  grid-column: 1 / -1;
 }
 
 .jlz-style-showcase {
@@ -1179,7 +1186,7 @@ textarea {
 .jlz-admin-sidebar::-webkit-scrollbar-thumb,
 .jlz-admin-preview-frame::-webkit-scrollbar-thumb {
   border: 3px solid var(--jlz-color-bg);
-  border-radius: 8px;
+  border-radius: 0;
   background: var(--jlz-color-border);
 }
 
@@ -1208,14 +1215,50 @@ textarea {
   .jlz-admin-toolbar .uk-button-primary,
   .jlz-admin-panel-heading .uk-button-text,
   #builder-preview .uk-button-primary,
-  #builder-preview a,
   #builder-preview .jlz-builder-card {
     transition: none;
   }
 }
 
-@container (max-width: 760px) {
-  .jlz-builder-preview .jlz-builder-grid > * {
-    width: 100%;
+// The preview grid is laid out by the frame's container width (WYSIWYG of
+// the simulated viewport), not the window width: UIkit child-width classes
+// are window media queries and would misreport the simulated width. The
+// 960px pivot mirrors the compiled page's `uk-child-width-1-N@m` (@m =
+// min-width: 960px) so every mode matches the built output.
+#builder-preview .jlz-builder-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--builder-spacing);
+}
+
+#builder-preview .jlz-builder-grid > * {
+  float: none;
+  width: auto;
+  margin: 0;
+}
+
+#builder-preview .jlz-builder-grid.uk-grid-small {
+  gap: calc(var(--builder-spacing) * 0.75);
+}
+
+#builder-preview .jlz-builder-grid.uk-grid-large {
+  gap: calc(var(--builder-spacing) * 1.5);
+}
+
+#builder-preview .jlz-builder-grid.uk-grid-collapse {
+  gap: 0;
+}
+
+@container (min-width: 960px) {
+  #builder-preview .jlz-builder-grid[data-columns='2'] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #builder-preview .jlz-builder-grid[data-columns='3'] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  #builder-preview .jlz-builder-grid[data-columns='4'] {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }

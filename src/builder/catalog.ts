@@ -9,6 +9,11 @@ export interface BuilderField {
   options?: ReadonlyArray<{ label: string; value: string }>
 }
 
+export interface BuilderFieldGroup {
+  label: string
+  fields: readonly BuilderField[]
+}
+
 export interface BuilderElementDefinition {
   type: BuilderElementType
   label: string
@@ -16,8 +21,13 @@ export interface BuilderElementDefinition {
   container: boolean
   icon: string
   uikitComponents: readonly string[]
-  fields: readonly BuilderField[]
+  fieldGroups: readonly BuilderFieldGroup[]
   create(id: string): BuilderNode
+}
+
+export interface BuilderCatalogGroup {
+  label: string
+  types: readonly BuilderElementType[]
 }
 
 const makeNode = (
@@ -25,6 +35,28 @@ const makeNode = (
   type: BuilderElementType,
   props: Record<string, string>,
 ): BuilderNode => ({ id, type, props, children: [] })
+
+// The icon choices mirror the exact console icon set registered with UIkit
+// in `src/assets/console-icons.ts` (the set the product composes with
+// `uk-icon`). New icons enter through a console-icons change first, then
+// this whitelist.
+export const BUILDER_ICON_NAMES = [
+  'arrow-up',
+  'arrow-up-right',
+  'close',
+  'commenting',
+  'github',
+  'mail',
+  'muted',
+  'play',
+  'push',
+  'slidenav-next-large',
+  'slidenav-previous-large',
+  'sound',
+  'telegram',
+  'theme-auto',
+  'theme-inverse',
+] as const
 
 export const BUILDER_CATALOG: Record<BuilderElementType, BuilderElementDefinition> = {
   section: {
@@ -34,38 +66,48 @@ export const BUILDER_CATALOG: Record<BuilderElementType, BuilderElementDefinitio
     container: true,
     icon: '§',
     uikitComponents: ['section', 'container'],
-    fields: [
+    fieldGroups: [
       {
-        key: 'style',
+        label: 'Layout',
+        fields: [
+          {
+            key: 'size',
+            label: 'Vertical spacing',
+            type: 'select',
+            options: [
+              { label: 'Small', value: 'small' },
+              { label: 'Default', value: 'default' },
+              { label: 'Large', value: 'large' },
+              { label: 'X-Large', value: 'xlarge' },
+            ],
+          },
+          {
+            key: 'container',
+            label: 'Container',
+            type: 'select',
+            options: [
+              { label: 'Default', value: 'default' },
+              { label: 'Small', value: 'small' },
+              { label: 'Large', value: 'large' },
+              { label: 'Expand', value: 'expand' },
+            ],
+          },
+        ],
+      },
+      {
         label: 'Style',
-        type: 'select',
-        options: [
-          { label: 'Default', value: 'default' },
-          { label: 'Muted', value: 'muted' },
-          { label: 'Primary', value: 'primary' },
-          { label: 'Secondary', value: 'secondary' },
-        ],
-      },
-      {
-        key: 'size',
-        label: 'Vertical spacing',
-        type: 'select',
-        options: [
-          { label: 'Small', value: 'small' },
-          { label: 'Default', value: 'default' },
-          { label: 'Large', value: 'large' },
-          { label: 'X-Large', value: 'xlarge' },
-        ],
-      },
-      {
-        key: 'container',
-        label: 'Container',
-        type: 'select',
-        options: [
-          { label: 'Default', value: 'default' },
-          { label: 'Small', value: 'small' },
-          { label: 'Large', value: 'large' },
-          { label: 'Expand', value: 'expand' },
+        fields: [
+          {
+            key: 'style',
+            label: 'Background',
+            type: 'select',
+            options: [
+              { label: 'Default', value: 'default' },
+              { label: 'Muted', value: 'muted' },
+              { label: 'Primary', value: 'primary' },
+              { label: 'Secondary', value: 'secondary' },
+            ],
+          },
         ],
       },
     ],
@@ -79,57 +121,137 @@ export const BUILDER_CATALOG: Record<BuilderElementType, BuilderElementDefinitio
     container: true,
     icon: '⊞',
     uikitComponents: ['grid', 'width'],
-    fields: [
+    fieldGroups: [
       {
-        key: 'columns',
-        label: 'Columns',
-        type: 'select',
-        options: [
-          { label: '1', value: '1' },
-          { label: '2', value: '2' },
-          { label: '3', value: '3' },
-          { label: '4', value: '4' },
-        ],
-      },
-      {
-        key: 'gap',
-        label: 'Gap',
-        type: 'select',
-        options: [
-          { label: 'Small', value: 'small' },
-          { label: 'Default', value: 'default' },
-          { label: 'Large', value: 'large' },
-          { label: 'Collapse', value: 'collapse' },
+        label: 'Layout',
+        fields: [
+          {
+            key: 'columns',
+            label: 'Columns',
+            type: 'select',
+            options: [
+              { label: '1', value: '1' },
+              { label: '2', value: '2' },
+              { label: '3', value: '3' },
+              { label: '4', value: '4' },
+            ],
+          },
+          {
+            key: 'gap',
+            label: 'Gap',
+            type: 'select',
+            options: [
+              { label: 'Small', value: 'small' },
+              { label: 'Default', value: 'default' },
+              { label: 'Large', value: 'large' },
+              { label: 'Collapse', value: 'collapse' },
+            ],
+          },
         ],
       },
     ],
     create: (id) => makeNode(id, 'grid', { columns: '2', gap: 'default' }),
   },
+  card: {
+    type: 'card',
+    label: 'Card',
+    description: 'UIkit card that can contain headings, text and actions.',
+    container: true,
+    icon: '▣',
+    uikitComponents: ['card'],
+    fieldGroups: [
+      {
+        label: 'Layout',
+        fields: [
+          {
+            key: 'size',
+            label: 'Padding',
+            type: 'select',
+            options: [
+              { label: 'Small', value: 'small' },
+              { label: 'Default', value: 'default' },
+              { label: 'Large', value: 'large' },
+            ],
+          },
+        ],
+      },
+      {
+        label: 'Style',
+        fields: [
+          {
+            key: 'style',
+            label: 'Background',
+            type: 'select',
+            options: [
+              { label: 'Default', value: 'default' },
+              { label: 'Primary', value: 'primary' },
+              { label: 'Secondary', value: 'secondary' },
+            ],
+          },
+        ],
+      },
+    ],
+    create: (id) => makeNode(id, 'card', { style: 'default', size: 'default' }),
+  },
+  divider: {
+    type: 'divider',
+    label: 'Divider',
+    description: '1px hairline break, the console-minimal section separator.',
+    container: false,
+    icon: '—',
+    uikitComponents: ['divider'],
+    fieldGroups: [
+      {
+        label: 'Style',
+        fields: [
+          {
+            key: 'style',
+            label: 'Scale',
+            type: 'select',
+            options: [
+              { label: 'Default', value: 'default' },
+              { label: 'Small', value: 'small' },
+            ],
+          },
+        ],
+      },
+    ],
+    create: (id) => makeNode(id, 'divider', { style: 'default' }),
+  },
   heading: {
     type: 'heading',
     label: 'Heading',
-    description: 'Semantic heading with UIkit display sizing.',
+    description: 'Semantic heading with UIkit display sizing on the φ scale.',
     container: false,
     icon: 'H',
     uikitComponents: ['heading'],
-    fields: [
-      { key: 'content', label: 'Text', type: 'text' },
+    fieldGroups: [
+      { label: 'Content', fields: [{ key: 'content', label: 'Text', type: 'text' }] },
       {
-        key: 'level',
-        label: 'HTML level',
-        type: 'select',
-        options: ['h1', 'h2', 'h3', 'h4'].map((value) => ({ label: value.toUpperCase(), value })),
-      },
-      {
-        key: 'size',
-        label: 'Visual size',
-        type: 'select',
-        options: [
-          { label: 'Default', value: 'default' },
-          { label: 'Small', value: 'small' },
-          { label: 'Medium', value: 'medium' },
-          { label: 'Large', value: 'large' },
-          { label: 'X-Large', value: 'xlarge' },
+        label: 'Typography',
+        fields: [
+          {
+            key: 'level',
+            label: 'HTML level',
+            type: 'select',
+            options: ['h1', 'h2', 'h3', 'h4'].map((value) => ({
+              label: value.toUpperCase(),
+              value,
+            })),
+          },
+          {
+            key: 'size',
+            label: 'Visual size',
+            type: 'select',
+            options: [
+              { label: 'Default', value: 'default' },
+              { label: 'Small', value: 'small' },
+              { label: 'Medium', value: 'medium' },
+              { label: 'Large', value: 'large' },
+              { label: 'X-Large', value: 'xlarge' },
+              { label: '2X-Large', value: '2xlarge' },
+            ],
+          },
         ],
       },
     ],
@@ -143,23 +265,60 @@ export const BUILDER_CATALOG: Record<BuilderElementType, BuilderElementDefinitio
     container: false,
     icon: '¶',
     uikitComponents: ['text'],
-    fields: [
-      { key: 'content', label: 'Text', type: 'textarea' },
+    fieldGroups: [
+      { label: 'Content', fields: [{ key: 'content', label: 'Text', type: 'textarea' }] },
       {
-        key: 'style',
         label: 'Style',
-        type: 'select',
-        options: [
-          { label: 'Default', value: 'default' },
-          { label: 'Lead', value: 'lead' },
-          { label: 'Meta', value: 'meta' },
-          { label: 'Muted', value: 'muted' },
+        fields: [
+          {
+            key: 'style',
+            label: 'Role',
+            type: 'select',
+            options: [
+              { label: 'Default', value: 'default' },
+              { label: 'Lead', value: 'lead' },
+              { label: 'Meta', value: 'meta' },
+              { label: 'Muted', value: 'muted' },
+            ],
+          },
         ],
       },
     ],
     create: (id) =>
       makeNode(id, 'text', {
         content: 'Write clear, useful copy for this section.',
+        style: 'default',
+      }),
+  },
+  list: {
+    type: 'list',
+    label: 'List',
+    description: 'UIkit list; one item per line in the content field.',
+    container: false,
+    icon: '≡',
+    uikitComponents: ['list'],
+    fieldGroups: [
+      { label: 'Content', fields: [{ key: 'items', label: 'Items', type: 'textarea' }] },
+      {
+        label: 'Style',
+        fields: [
+          {
+            key: 'style',
+            label: 'Marker',
+            type: 'select',
+            options: [
+              { label: 'Default', value: 'default' },
+              { label: 'Hyphen', value: 'hyphen' },
+              { label: 'Divider', value: 'divider' },
+              { label: 'Ordered', value: 'ordered' },
+            ],
+          },
+        ],
+      },
+    ],
+    create: (id) =>
+      makeNode(id, 'list', {
+        items: 'First point\nSecond point\nThird point',
         style: 'default',
       }),
   },
@@ -170,54 +329,102 @@ export const BUILDER_CATALOG: Record<BuilderElementType, BuilderElementDefinitio
     container: false,
     icon: '→',
     uikitComponents: ['button'],
-    fields: [
-      { key: 'label', label: 'Label', type: 'text' },
-      { key: 'href', label: 'Link', type: 'url' },
+    fieldGroups: [
+      { label: 'Content', fields: [{ key: 'label', label: 'Label', type: 'text' }] },
+      { label: 'Link', fields: [{ key: 'href', label: 'URL', type: 'url' }] },
       {
-        key: 'style',
         label: 'Style',
-        type: 'select',
-        options: [
-          { label: 'Default', value: 'default' },
-          { label: 'Primary', value: 'primary' },
-          { label: 'Secondary', value: 'secondary' },
-          { label: 'Text', value: 'text' },
+        fields: [
+          {
+            key: 'style',
+            label: 'Variant',
+            type: 'select',
+            options: [
+              { label: 'Default', value: 'default' },
+              { label: 'Primary', value: 'primary' },
+              { label: 'Secondary', value: 'secondary' },
+              { label: 'Text', value: 'text' },
+            ],
+          },
         ],
       },
     ],
     create: (id) => makeNode(id, 'button', { label: 'Learn more', href: '#', style: 'primary' }),
   },
-  card: {
-    type: 'card',
-    label: 'Card',
-    description: 'UIkit card that can contain headings, text and actions.',
-    container: true,
-    icon: '▣',
-    uikitComponents: ['card'],
-    fields: [
+  link: {
+    type: 'link',
+    label: 'Link',
+    description: 'Inline text link on the product link styles.',
+    container: false,
+    icon: '⌁',
+    uikitComponents: ['link'],
+    fieldGroups: [
+      { label: 'Content', fields: [{ key: 'label', label: 'Text', type: 'text' }] },
+      { label: 'Link', fields: [{ key: 'href', label: 'URL', type: 'url' }] },
       {
-        key: 'style',
         label: 'Style',
-        type: 'select',
-        options: [
-          { label: 'Default', value: 'default' },
-          { label: 'Primary', value: 'primary' },
-          { label: 'Secondary', value: 'secondary' },
-        ],
-      },
-      {
-        key: 'size',
-        label: 'Padding',
-        type: 'select',
-        options: [
-          { label: 'Small', value: 'small' },
-          { label: 'Default', value: 'default' },
-          { label: 'Large', value: 'large' },
+        fields: [
+          {
+            key: 'style',
+            label: 'Variant',
+            type: 'select',
+            options: [
+              { label: 'Default', value: 'default' },
+              { label: 'Muted', value: 'muted' },
+              { label: 'Reset', value: 'reset' },
+            ],
+          },
         ],
       },
     ],
-    create: (id) => makeNode(id, 'card', { style: 'default', size: 'default' }),
+    create: (id) => makeNode(id, 'link', { label: 'Read more', href: '#', style: 'default' }),
+  },
+  icon: {
+    type: 'icon',
+    label: 'Icon',
+    description: 'UIkit icon from the product icon set.',
+    container: false,
+    icon: '◈',
+    uikitComponents: ['icon'],
+    fieldGroups: [
+      {
+        label: 'Content',
+        fields: [
+          {
+            key: 'name',
+            label: 'Icon',
+            type: 'select',
+            options: BUILDER_ICON_NAMES.map((value) => ({ label: value, value })),
+          },
+        ],
+      },
+      {
+        label: 'Layout',
+        fields: [
+          {
+            key: 'ratio',
+            label: 'Scale',
+            type: 'select',
+            options: [
+              { label: 'Small', value: '0.7' },
+              { label: 'Default', value: '1' },
+              { label: 'Large', value: '1.2' },
+              { label: 'X-Large', value: '1.4' },
+            ],
+          },
+        ],
+      },
+    ],
+    create: (id) => makeNode(id, 'icon', { name: 'arrow-up-right', ratio: '1' }),
   },
 }
+
+// Left-panel catalog order, Figma-style: layout scaffolding first, then
+// typography, then inline elements. Every element type appears exactly once.
+export const BUILDER_CATALOG_GROUPS: readonly BuilderCatalogGroup[] = [
+  { label: 'Layout', types: ['section', 'grid', 'card', 'divider'] },
+  { label: 'Typography', types: ['heading', 'text', 'list'] },
+  { label: 'Elements', types: ['button', 'link', 'icon'] },
+]
 
 export const BUILDER_ELEMENT_TYPES = Object.keys(BUILDER_CATALOG) as BuilderElementType[]

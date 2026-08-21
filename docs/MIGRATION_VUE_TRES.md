@@ -1614,6 +1614,88 @@ hierarchy (zero console errors, document restored after the smoke edits).
 
 Rollback: revert the change set.
 
+#### Phase 4 console-minimal unified style system slice — 2026-08-21
+
+Owner direction: one unified, refined, future-proof style system shared by
+the product and the admin preview — console minimalism (flat surfaces,
+square corners, 1px lines, φ scale, mono details, accent as color without
+glow). The preview also had to stop diverging from the front.
+
+- `src/assets/_import.less` + `src/core/brandTokens.ts`: every radius token
+  now resolves to `0` (square corners; `radius-full` stays 0.125rem for dot
+  indicators only) and `card-shadow` is `none` — the interface is flat, the
+  φ type scale and 1px lines carry the language. Both sides share the same
+  token pipeline, so the admin preview and the product surface inherit it.
+- `admin/index.html`: the admin shell now preloads the same Commissioner
+  variable font as the product. The preview previously fell back to a system
+  font, which was the root cause of the preview "not matching the front".
+- `admin/admin.less`: the preview's accent-glow treatment and the `S 01`
+  section-counter/divider hack (which broke the reported layout) are
+  removed; cards are flat with 1px borders and an accent border on hover.
+  The preview grid is now laid out by container queries against the preview
+  frame (960px pivot mirroring the compiled page's `uk-child-width-1-N@m`)
+  instead of window media queries, so every simulated viewport is WYSIWYG of
+  the built output; gaps follow the builder spacing token.
+- `src/builder/catalog.ts` / `src/builder/render.ts`: the heading catalogue
+  gains the `2xlarge` tier (the UIkit display tier the scale already owned)
+  and grids render `data-columns` for the container layout.
+- `src/builder/style.ts` / `src/builder/generated/page.json` / regenerated
+  `src/assets/builder/theme.generated.less`: the builder theme defaults are
+  square and flat (`radius`/`buttonRadius`/`cardRadius` 0px, `cardShadow`
+  none); the stored document's hero moves to `2xlarge` (step-5 ceiling =
+  96px display). Heading weight/transform stay 800/uppercase — measured from
+  the live product display face.
+
+Verification: both Less entries compile; live smoke — preview hero renders
+96 px / 800 / uppercase in Commissioner at the 1029 px desktop frame (2
+grid columns), 96 px single column at the 820 px tablet frame (mirroring the
+`@m` pivot), 59.2 px single column at the 390 px mobile frame; product
+tokens resolve to square corners and `none` shadows with zero console
+errors; scoped prettier, `vue-tsc`, 240/240 unit suite (29 files),
+production build with the admin graph absent from `dist`, `git diff --check`
+and serial e2e all green.
+
+Rollback: revert the change set.
+
+#### Phase 4 builder catalog and Figma-style inspector slice — 2026-08-21
+
+Owner direction: the left catalog must expose every component the product
+actually composes, and the right inspector must be reworked into a
+Figma-style grouped property panel; everything stays unified on one
+UIkit 3 theme.
+
+- `src/builder/schema.ts`: the element type union gains `link`, `icon`,
+  `list`, `divider` (all container-free, validated through the same
+  whitelist/depth/id rules).
+- `src/builder/catalog.ts`: the catalogue is now grouped
+  (`BUILDER_CATALOG_GROUPS`: Layout / Typography / Elements) and every
+  definition owns `fieldGroups` instead of a flat field list — the same
+  data drives the inspector sections. The icon element whitelists the exact
+  console icon set registered in `src/assets/console-icons.ts` (15 names)
+  and exposes a `ratio` scale (0.7 / 1 / 1.2 / 1.4).
+- `src/builder/render.ts`: the four new types render to product markup —
+  `uk-list` (hyphen / divider / ordered), 1px `uk-divider` hairline,
+  `uk-link-muted`/`uk-link-reset` text links, and `uk-icon` spans with a
+  sanitized ratio. Untrusted props fall back to safe defaults.
+- `admin/main.ts`: the left panel renders the grouped catalogue (mono
+  group kickers); the inspector renders Figma-style rows — a 92px label
+  column with compact controls, stacked textareas, mono group headers
+  (Content / Typography / Layout / Style / Link), and the selected node's
+  stable id as a header badge. The Style workspace reuses the same grouped
+  panel language. The preview registers the console icon set
+  (`registerConsoleIcons`) so `uk-icon` is WYSIWYG of the product.
+- `admin/admin.less`: grouped catalog/inspector styles in the
+  console-minimal language (square corners, 1px lines, no glow).
+
+Verification: scoped prettier, `vue-tsc`, unit suite green (new builder
+tests cover the grouped catalogue, the safe fallbacks for all four new
+types, and the optional list/divider component pipeline), live smoke —
+every new type added through the UI renders in the preview at all three
+viewport modes (icon 20 → 28 px at ratio 1.4, ordered list, hairline
+divider, muted link), zero console errors, document restored via Ctrl+Z.
+
+Rollback: revert the change set.
+
 ### Phase 5 — Vue public shell and router
 
 Scope:

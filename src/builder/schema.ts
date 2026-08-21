@@ -2,7 +2,8 @@ import { validateBuilderTheme, type BuilderTheme } from './style'
 
 export const BUILDER_DOCUMENT_VERSION = 2 as const
 
-export type BuilderElementType = 'section' | 'grid' | 'heading' | 'text' | 'button' | 'card'
+export type BuilderElementType =
+  'section' | 'grid' | 'heading' | 'text' | 'button' | 'card' | 'link' | 'icon' | 'list' | 'divider'
 
 export interface BuilderNode {
   id: string
@@ -34,6 +35,10 @@ const ELEMENT_TYPES = new Set<BuilderElementType>([
   'text',
   'button',
   'card',
+  'link',
+  'icon',
+  'list',
+  'divider',
 ])
 
 const CONTAINER_TYPES = new Set<BuilderElementType>(['section', 'grid', 'card'])

@@ -1,3 +1,4 @@
+import { BUILDER_ICON_NAMES } from './catalog'
 import type { BuilderDocument, BuilderNode } from './schema'
 
 export interface BuilderRenderOptions {
@@ -62,13 +63,13 @@ function renderNode(node: BuilderNode, options: BuilderRenderOptions): string {
       const items = node.children
         .map((child) => `<div>${renderNode(child, options)}</div>`)
         .join('')
-      return `<div class="uk-grid uk-child-width-1-${columns}@m${gapClass} jlz-builder-grid" uk-grid${attrs}>${items}</div>`
+      return `<div class="uk-grid uk-child-width-1-${columns}@m${gapClass} jlz-builder-grid" data-columns="${columns}" uk-grid${attrs}>${items}</div>`
     }
     case 'heading': {
       const level = safeChoice(node.props.level, ['h1', 'h2', 'h3', 'h4'], 'h2')
       const size = safeChoice(
         node.props.size,
-        ['default', 'small', 'medium', 'large', 'xlarge'],
+        ['default', 'small', 'medium', 'large', 'xlarge', '2xlarge'],
         'default',
       )
       const sizeClass = size === 'default' ? '' : ` class="uk-heading-${size}"`
@@ -92,6 +93,45 @@ function renderNode(node: BuilderNode, options: BuilderRenderOptions): string {
       const size = safeChoice(node.props.size, ['small', 'default', 'large'], 'default')
       const sizeClass = size === 'default' ? '' : ` uk-card-${size}`
       return `<article class="uk-card uk-card-${style} uk-card-body${sizeClass} jlz-builder-card"${attrs}>${children}</article>`
+    }
+    case 'divider': {
+      const style = safeChoice(node.props.style, ['default', 'small'], 'default')
+      const styleClass = style === 'default' ? '' : ` uk-divider-small`
+      return `<hr class="uk-divider${styleClass}"${attrs} />`
+    }
+    case 'list': {
+      const style = safeChoice(
+        node.props.style,
+        ['default', 'hyphen', 'divider', 'ordered'],
+        'default',
+      )
+      const items = (node.props.items ?? '')
+        .split('\n')
+        .map((item) => item.trim())
+        .filter((item) => item.length > 0)
+        .map((item) => `<li>${escapeHtml(item)}</li>`)
+        .join('')
+      const tag = style === 'ordered' ? 'ol' : 'ul'
+      const styleClass =
+        style === 'default' || style === 'ordered'
+          ? ''
+          : ` uk-list-${style === 'ordered' ? '' : style}`
+      const orderedClass = style === 'ordered' ? ' uk-list-ordered' : ''
+      return `<${tag} class="uk-list${styleClass}${orderedClass}"${attrs}>${items}</${tag}>`
+    }
+    case 'link': {
+      const style = safeChoice(node.props.style, ['default', 'muted', 'reset'], 'default')
+      const styleClass =
+        style === 'muted' ? ' uk-link-muted' : style === 'reset' ? ' uk-link-reset' : ''
+      return `<a class="jlz-builder-link${styleClass}" href="${safeHref(node.props.href)}"${attrs}>${escapeHtml(node.props.label ?? '')}</a>`
+    }
+    case 'icon': {
+      const name = safeChoice(node.props.name, BUILDER_ICON_NAMES, 'arrow-up-right')
+      const ratio = /^\d+(?:\.\d+)?$/.test(node.props.ratio ?? '')
+        ? (node.props.ratio as string)
+        : '1'
+      const ratioAttr = ratio === '1' ? '' : `; ratio: ${ratio}`
+      return `<span class="jlz-builder-icon" uk-icon="icon: ${name}${ratioAttr}" aria-hidden="true"${attrs}></span>`
     }
   }
 }

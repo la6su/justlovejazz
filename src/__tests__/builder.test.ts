@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { BUILDER_CATALOG, BUILDER_CATALOG_GROUPS, BUILDER_ICON_NAMES } from '../builder/catalog'
 import {
   generateBuilderComponentLess,
   generateBuilderThemeLess,
@@ -65,6 +66,71 @@ describe('Page Builder document', () => {
     expect(less).toContain('@button-line-height: 44px;')
     expect(less).toContain('@card-body-padding-horizontal: 32px;')
     expect(less).not.toContain('undefined')
+  })
+
+  it('exposes every element family the project composes, grouped once', () => {
+    const grouped = BUILDER_CATALOG_GROUPS.flatMap((group) => [...group.types])
+    expect(new Set(grouped).size).toBe(grouped.length)
+    expect(grouped.sort()).toEqual(Object.keys(BUILDER_CATALOG).sort())
+    expect(grouped).toEqual(expect.arrayContaining(['heading', 'link', 'icon', 'list', 'divider']))
+    for (const definition of Object.values(BUILDER_CATALOG)) {
+      expect(definition.fieldGroups.length, definition.type).toBeGreaterThan(0)
+    }
+    expect(BUILDER_ICON_NAMES).toContain('telegram')
+  })
+
+  it('renders the new content types with safe fallbacks', () => {
+    const document = structuredClone(DEFAULT_BUILDER_DOCUMENT)
+    const section = document.nodes[0]
+    if (!section) throw new Error('default builder fixture changed')
+    section.children.push(
+      {
+        id: 'icon-x1',
+        type: 'icon',
+        props: { name: 'javascript:alert(1)', ratio: 'abc' },
+        children: [],
+      },
+      {
+        id: 'list-x1',
+        type: 'list',
+        props: { items: '<b>bold</b>\n\nplain', style: 'ordered' },
+        children: [],
+      },
+      {
+        id: 'divider-x1',
+        type: 'divider',
+        props: { style: 'evil' },
+        children: [],
+      },
+      {
+        id: 'link-x1',
+        type: 'link',
+        props: { label: 'Read <more>', href: 'javascript:alert(1)', style: 'muted' },
+        children: [],
+      },
+    )
+
+    const html = renderBuilderDocument(document)
+    expect(html).toContain('uk-icon="icon: arrow-up-right"')
+    expect(html).toContain('<ol class="uk-list uk-list-ordered">')
+    expect(html).toContain('<li>&lt;b&gt;bold&lt;/b&gt;</li>')
+    expect(html).not.toContain('<b>bold</b>')
+    expect(html).toContain('<hr class="uk-divider"')
+    expect(html).toContain('class="jlz-builder-link uk-link-muted"')
+    expect(html).toContain('href="#"')
+    expect(html).not.toContain('javascript:')
+  })
+
+  it('routes list and divider through the optional component pipeline', () => {
+    const document = structuredClone(DEFAULT_BUILDER_DOCUMENT)
+    document.nodes[0]?.children.push(
+      { id: 'list-x2', type: 'list', props: { items: 'a', style: 'default' }, children: [] },
+      { id: 'divider-x2', type: 'divider', props: { style: 'small' }, children: [] },
+    )
+    expect(getBuilderUIKitComponents(document)).toEqual(expect.arrayContaining(['list', 'divider']))
+    const less = generateBuilderComponentLess(document)
+    expect(less).toContain('/list.less')
+    expect(less).toContain('/divider.less')
   })
 
   it('renders a complete or focused style showcase', () => {
