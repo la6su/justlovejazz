@@ -23,6 +23,7 @@ import {
   type BuilderNode,
   type BuilderTheme,
 } from '../src/builder/schema'
+import { BuilderStore } from '../src/builder/store'
 
 type EditorMode = 'builder' | 'style'
 type Viewport = 'desktop' | 'tablet' | 'mobile'
@@ -31,13 +32,6 @@ const adminStyle = document.createElement('style')
 adminStyle.dataset.jlzAdmin = 'true'
 adminStyle.textContent = adminCss
 document.head.append(adminStyle)
-
-interface NodeLocation {
-  node: BuilderNode
-  siblings: BuilderNode[]
-  parent: BuilderNode | null
-  index: number
-}
 
 const requiredElement = <T extends HTMLElement>(id: string): T => {
   const element = document.getElementById(id)
@@ -64,32 +58,18 @@ const saveStatus = requiredElement<HTMLOutputElement>('save-status')
 const undoButton = requiredElement<HTMLButtonElement>('undo')
 const redoButton = requiredElement<HTMLButtonElement>('redo')
 
-let builderDocument = structuredClone(DEFAULT_BUILDER_DOCUMENT)
-let selectedId: string | null = null
+// The builder state (document, selection, history, saved baseline) is the
+// typed BuilderStore — a single framework-neutral source of truth. The
+// editor below only renders it and dispatches actions; the atomic
+// commit/snapshot/restore logic lives in the store.
+const store = new BuilderStore(DEFAULT_BUILDER_DOCUMENT)
+
+// Editor-only UI state (not part of the builder document): the active mode,
+// the selected style group and the style-preview toggles.
 let mode: EditorMode = 'builder'
 let selectedStyleGroup: StyleGroupId = 'global'
 let showAllStyleComponents = true
 let inverseStylePreview = false
-let history: BuilderDocument[] = [structuredClone(builderDocument)]
-let historyIndex = 0
-let savedSnapshot = JSON.stringify(builderDocument)
-
-const cloneDocument = (document: BuilderDocument): BuilderDocument => structuredClone(document)
-
-function findNode(
-  id: string,
-  nodes = builderDocument.nodes,
-  parent: BuilderNode | null = null,
-): NodeLocation | null {
-  for (let index = 0; index < nodes.length; index += 1) {
-    const node = nodes[index]
-    if (!node) continue
-    if (node.id === id) return { node, siblings: nodes, parent, index }
-    const nested = findNode(id, node.children, node)
-    if (nested) return nested
-  }
-  return null
-}
 
 function makeId(type: BuilderElementType): string {
   const suffix = crypto.randomUUID?.().slice(0, 8) ?? Date.now().toString(36)
@@ -102,51 +82,35 @@ function setStatus(message: string, error = false): void {
 }
 
 function updateDirtyStatus(announce = true): void {
-  const dirty = JSON.stringify(builderDocument) !== savedSnapshot
+  const dirty = store.isDirty()
   if (announce && dirty) setStatus('Unsaved changes')
   else if (announce && saveStatus.textContent === 'Unsaved changes') setStatus('Ready')
   saveButton.disabled = !dirty
-  undoButton.disabled = historyIndex === 0
-  redoButton.disabled = historyIndex === history.length - 1
+  undoButton.disabled = !store.canUndo
+  redoButton.disabled = !store.canRedo
 }
 
 function commit(change: (draft: BuilderDocument) => void): void {
-  const draft = cloneDocument(builderDocument)
-  change(draft)
-  const validation = validateBuilderDocument(draft)
-  if (!validation.ok) {
-    setStatus(validation.errors[0] ?? 'Invalid document change', true)
+  const result = store.commit(change)
+  if (!result.ok) {
+    setStatus(result.error ?? 'Invalid document change', true)
     return
   }
-  builderDocument = draft
-  history = history.slice(0, historyIndex + 1)
-  history.push(cloneDocument(builderDocument))
-  if (history.length > 50) history.shift()
-  historyIndex = history.length - 1
   renderEditor()
 }
 
 function recordCurrentSnapshot(rerender = true): void {
-  const validation = validateBuilderDocument(builderDocument)
-  if (!validation.ok) {
-    setStatus(validation.errors[0] ?? 'Invalid document change', true)
+  const result = store.recordSnapshot()
+  if (!result.ok) {
+    setStatus(result.error ?? 'Invalid document change', true)
     return
   }
-  if (JSON.stringify(history[historyIndex]) === JSON.stringify(builderDocument)) return
-  history = history.slice(0, historyIndex + 1)
-  history.push(cloneDocument(builderDocument))
-  if (history.length > 50) history.shift()
-  historyIndex = history.length - 1
   if (rerender) renderEditor()
   else updateDirtyStatus()
 }
 
 function restoreHistory(nextIndex: number): void {
-  const snapshot = history[nextIndex]
-  if (!snapshot) return
-  historyIndex = nextIndex
-  builderDocument = cloneDocument(snapshot)
-  if (selectedId && !findNode(selectedId)) selectedId = null
+  store.restore(nextIndex)
   renderEditor()
 }
 
@@ -179,7 +143,7 @@ function renderOutline(): void {
       button.type = 'button'
       button.dataset.selectNode = node.id
       button.style.paddingLeft = `${10 + depth * 16}px`
-      button.classList.toggle('is-selected', node.id === selectedId)
+      button.classList.toggle('is-selected', node.id === store.selectedId)
 
       const type = document.createElement('span')
       type.className = 'jlz-admin-outline-type'
@@ -196,7 +160,7 @@ function renderOutline(): void {
     }
   }
 
-  appendNodes(builderDocument.nodes, 0)
+  appendNodes(store.document.nodes, 0)
 }
 
 function applyPreviewTheme(theme: BuilderTheme): void {
@@ -250,12 +214,12 @@ function applyPreviewTheme(theme: BuilderTheme): void {
 function renderPreview(): void {
   previewElement.innerHTML =
     mode === 'builder'
-      ? renderBuilderDocument(builderDocument, { editable: true })
+      ? renderBuilderDocument(store.document, { editable: true })
       : renderStyleShowcase(selectedStyleGroup, showAllStyleComponents)
-  applyPreviewTheme(builderDocument.theme)
-  if (mode === 'builder' && selectedId) {
+  applyPreviewTheme(store.document.theme)
+  if (mode === 'builder' && store.selectedId) {
     previewElement
-      .querySelector<HTMLElement>(`[data-builder-id="${CSS.escape(selectedId)}"]`)
+      .querySelector<HTMLElement>(`[data-builder-id="${CSS.escape(store.selectedId)}"]`)
       ?.classList.add('is-selected')
   }
   ;(UIkit as unknown as { update(element: Element): void }).update(previewElement)
@@ -307,7 +271,7 @@ function renderInspector(): void {
     return
   }
 
-  const location = selectedId ? findNode(selectedId) : null
+  const location = store.selectedId ? store.findNode(store.selectedId) : null
   inspectorFields.replaceChildren()
   nodeActions.hidden = !location
 
@@ -341,11 +305,11 @@ function createStyleField(definition: StyleFieldDefinition): HTMLLabelElement {
     text.type = 'text'
     text.className = 'uk-input'
     text.pattern = '#[0-9a-fA-F]{6}'
-    text.value = builderDocument.theme[definition.key]
+    text.value = store.document.theme[definition.key]
     text.dataset.themeProp = definition.key
     const color = document.createElement('input')
     color.type = 'color'
-    color.value = builderDocument.theme[definition.key]
+    color.value = store.document.theme[definition.key]
     color.dataset.themeProp = definition.key
     label.append(title, description, text, color)
     return label
@@ -359,7 +323,7 @@ function createStyleField(definition: StyleFieldDefinition): HTMLLabelElement {
     option.textContent = value.label
     select.append(option)
   }
-  select.value = builderDocument.theme[definition.key]
+  select.value = store.document.theme[definition.key]
   select.dataset.themeProp = definition.key
   label.append(title, description, select)
   return label
@@ -397,7 +361,7 @@ function renderStyleNavigation(): void {
 }
 
 function renderEditor(): void {
-  titleInput.value = builderDocument.title
+  titleInput.value = store.document.title
   renderOutline()
   renderPreview()
   renderInspector()
@@ -407,7 +371,7 @@ function renderEditor(): void {
 }
 
 function selectNode(id: string | null): void {
-  selectedId = id
+  store.selectedId = id
   renderOutline()
   renderPreview()
   renderInspector()
@@ -418,11 +382,13 @@ function addElement(type: BuilderElementType): void {
   commit((draft) => {
     if (type === 'section') {
       draft.nodes.push(node)
-      selectedId = node.id
+      store.selectedId = node.id
       return
     }
 
-    const selected = selectedId ? findLocationInDocument(draft, selectedId) : null
+    const selected = store.selectedId
+      ? BuilderStore.findLocationInDocument(draft, store.selectedId)
+      : null
     if (selected && BUILDER_CATALOG[selected.node.type].container) {
       selected.node.children.push(node)
     } else if (selected?.parent) {
@@ -430,30 +396,14 @@ function addElement(type: BuilderElementType): void {
     } else {
       draft.nodes.at(-1)?.children.push(node)
     }
-    selectedId = node.id
+    store.selectedId = node.id
   })
 }
 
-function findLocationInDocument(
-  document: BuilderDocument,
-  id: string,
-  nodes = document.nodes,
-  parent: BuilderNode | null = null,
-): NodeLocation | null {
-  for (let index = 0; index < nodes.length; index += 1) {
-    const node = nodes[index]
-    if (!node) continue
-    if (node.id === id) return { node, siblings: nodes, parent, index }
-    const nested = findLocationInDocument(document, id, node.children, node)
-    if (nested) return nested
-  }
-  return null
-}
-
 function moveSelected(offset: -1 | 1): void {
-  if (!selectedId) return
+  if (!store.selectedId) return
   commit((draft) => {
-    const location = findLocationInDocument(draft, selectedId as string)
+    const location = BuilderStore.findLocationInDocument(draft, store.selectedId as string)
     if (!location) return
     const target = location.index + offset
     if (target < 0 || target >= location.siblings.length) return
@@ -463,9 +413,9 @@ function moveSelected(offset: -1 | 1): void {
 }
 
 function duplicateSelected(): void {
-  if (!selectedId) return
+  if (!store.selectedId) return
   commit((draft) => {
-    const location = findLocationInDocument(draft, selectedId as string)
+    const location = BuilderStore.findLocationInDocument(draft, store.selectedId as string)
     if (!location) return
     const cloneNode = (node: BuilderNode): BuilderNode => ({
       ...structuredClone(node),
@@ -474,17 +424,17 @@ function duplicateSelected(): void {
     })
     const duplicate = cloneNode(location.node)
     location.siblings.splice(location.index + 1, 0, duplicate)
-    selectedId = duplicate.id
+    store.selectedId = duplicate.id
   })
 }
 
 function removeSelected(): void {
-  if (!selectedId) return
+  if (!store.selectedId) return
   commit((draft) => {
-    const location = findLocationInDocument(draft, selectedId as string)
+    const location = BuilderStore.findLocationInDocument(draft, store.selectedId as string)
     if (!location || (location.parent === null && location.siblings.length === 1)) return
     location.siblings.splice(location.index, 1)
-    selectedId = location.parent?.id ?? location.siblings[location.index - 1]?.id ?? null
+    store.selectedId = location.parent?.id ?? location.siblings[location.index - 1]?.id ?? null
   })
 }
 
@@ -495,7 +445,7 @@ async function saveDocument(): Promise<void> {
     const response = await fetch('/__jlz-admin/save', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(builderDocument),
+      body: JSON.stringify(store.document),
     })
     const result = (await response.json()) as {
       ok: boolean
@@ -504,7 +454,7 @@ async function saveDocument(): Promise<void> {
       components?: string[]
     }
     if (!response.ok || !result.ok) throw new Error(result.error ?? 'Save failed')
-    savedSnapshot = JSON.stringify(builderDocument)
+    store.markSaved()
     setStatus(
       `Saved · ${result.cssBytes?.toLocaleString() ?? 0} CSS bytes · ${result.components?.length ?? 0} components`,
     )
@@ -523,16 +473,10 @@ async function loadDocument(): Promise<void> {
     const validation = validateBuilderDocument(candidate)
     if (!validation.ok || !validation.document)
       throw new Error(validation.errors[0] ?? 'Saved document is invalid')
-    builderDocument = cloneDocument(validation.document)
-    savedSnapshot = JSON.stringify(builderDocument)
-    history = [cloneDocument(builderDocument)]
-    historyIndex = 0
+    store.load(validation.document)
     setStatus('Ready')
   } catch (error) {
-    builderDocument = cloneDocument(DEFAULT_BUILDER_DOCUMENT)
-    savedSnapshot = JSON.stringify(builderDocument)
-    history = [cloneDocument(builderDocument)]
-    historyIndex = 0
+    store.load(DEFAULT_BUILDER_DOCUMENT)
     setStatus(error instanceof Error ? `${error.message}; using defaults` : 'Using defaults', true)
   }
   renderEditor()
@@ -567,19 +511,19 @@ inspectorFields.addEventListener('input', (event) => {
   const control = event.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
   const themeKey = control.dataset.themeProp as BuilderThemeKey | undefined
   if (themeKey) {
-    builderDocument.theme[themeKey] = control.value
+    store.document.theme[themeKey] = control.value
     inspectorFields
       .querySelectorAll<HTMLInputElement | HTMLSelectElement>(`[data-theme-prop="${themeKey}"]`)
       .forEach((peer) => {
         if (peer !== control && (control.type === 'color' || /^#[0-9a-f]{6}$/i.test(control.value)))
           peer.value = control.value
       })
-    applyPreviewTheme(builderDocument.theme)
+    applyPreviewTheme(store.document.theme)
     recordCurrentSnapshot(false)
     return
   }
-  if (!selectedId || !control.dataset.nodeProp) return
-  const location = findNode(selectedId)
+  if (!store.selectedId || !control.dataset.nodeProp) return
+  const location = store.findNode(store.selectedId)
   if (!location) return
   location.node.props[control.dataset.nodeProp] = control.value
   renderOutline()
@@ -588,7 +532,7 @@ inspectorFields.addEventListener('input', (event) => {
 })
 
 titleInput.addEventListener('input', () => {
-  builderDocument.title = titleInput.value.trim() || 'Untitled page'
+  store.document.title = titleInput.value.trim() || 'Untitled page'
   recordCurrentSnapshot(false)
 })
 
@@ -620,7 +564,7 @@ document.querySelectorAll<HTMLButtonElement>('[data-style-tone]').forEach((butto
     document
       .querySelectorAll<HTMLButtonElement>('[data-style-tone]')
       .forEach((candidate) => candidate.classList.toggle('is-active', candidate === button))
-    applyPreviewTheme(builderDocument.theme)
+    applyPreviewTheme(store.document.theme)
   })
 })
 
@@ -647,8 +591,8 @@ document.querySelectorAll<HTMLButtonElement>('[data-viewport]').forEach((button)
   })
 })
 
-undoButton.addEventListener('click', () => restoreHistory(historyIndex - 1))
-redoButton.addEventListener('click', () => restoreHistory(historyIndex + 1))
+undoButton.addEventListener('click', () => restoreHistory(store.historyIndex - 1))
+redoButton.addEventListener('click', () => restoreHistory(store.historyIndex + 1))
 requiredElement<HTMLButtonElement>('move-up').addEventListener('click', () => moveSelected(-1))
 requiredElement<HTMLButtonElement>('move-down').addEventListener('click', () => moveSelected(1))
 requiredElement<HTMLButtonElement>('duplicate').addEventListener('click', duplicateSelected)
@@ -656,7 +600,7 @@ requiredElement<HTMLButtonElement>('remove').addEventListener('click', removeSel
 saveButton.addEventListener('click', () => void saveDocument())
 
 window.addEventListener('beforeunload', (event) => {
-  if (JSON.stringify(builderDocument) === savedSnapshot) return
+  if (!store.isDirty()) return
   event.preventDefault()
 })
 

@@ -181,7 +181,13 @@ do not start a phase whose entry gate has not passed.
 - [ ] **Phase 4: migrate the development Page Builder to Vue** — use the
       isolated admin application as the first state-heavy Vue surface while
       keeping schema, validation, escaping and Less compilation pure. Preserve
-      atomic save and keep the admin graph out of production.
+      atomic save and keep the admin graph out of production. The typed
+      framework-neutral `builder/store.ts` (document, selection, undo/redo
+      history and the saved baseline, with the atomic validation-gated
+      `commit`/`recordSnapshot`/`restore` paths) landed 2026-08-21 and
+      `admin/main.ts` now only renders and dispatches it (1:1 swap, 14 new
+      unit tests); the SFC migration of the catalogue, outline, inspector,
+      preview and Style workspace and the lifecycle-safe preview remain open.
 
 - [ ] **Phase 5: migrate the public DOM shell and routing** — adopt AppShell,
       Vue Router, semantic route SFCs, UIkit lifecycle adapters, i18n/meta and
