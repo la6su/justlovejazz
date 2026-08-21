@@ -2075,12 +2075,20 @@ Scope:
 - move production to one `WebGPURenderer` and one TSL post graph on
   `WebGPUBackend`;
 - calculate capabilities after initialization;
-- **Open decision, fixed before phase-exit:** on Three r185 the TSL
-  `RenderPipeline` is WebGPU-only, so the exit rule "no `ShaderMaterial` post
-  pass remains" is unreachable on the forced `WebGLBackend` QA path today.
-  Either version-gate a Three release that admits TSL post on `WebGLBackend`,
-  or retain the bounded GLSL fallback as the explicit forced-WebGL post owner
-  until that support is confirmed;
+- **Fixed decision (2026-08-22):** on Three r185 the TSL `RenderPipeline` is
+  WebGPU-only, and the `WebGLBackend` `NodeBuilder` cannot compile the GLSL
+  fallback's raw `ShaderMaterial` passes (`fromMaterial` returns `null` for
+  `ShaderMaterial` — no node class exists for raw GLSL). Version-gating a
+  Three release that admits TSL post on `WebGLBackend` is not possible today,
+  so the project retains the bounded GLSL fallback as the explicit
+  forced-WebGLBackend post owner: it runs only on the dev-forced
+  `?renderer=webgl` QA path (which constructs the classic `WebGLRenderer` and
+  is stripped from production builds). Production constructs `WebGPURenderer`
+  only; on `WebGLBackend` (auto-fallback) it renders the scene directly
+  without post — the same direct-render contract Phase 2 accepted for the
+  forced `WebGLBackend` path. The GLSL fallback's deletion is tracked against
+  a future Three release that admits TSL post on `WebGLBackend` (Phase 10
+  scope, rechecked at each Three bump);
 - replace the secondary PMREM/WebGL context with a renderer-native or prebaked
   environment path;
 - add bounded device-loss recovery;

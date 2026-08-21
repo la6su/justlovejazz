@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { PMREMGenerator as WebGPUPMREMGenerator, WebGPURenderer } from 'three/webgpu'
 import { Sizes } from './Sizes'
 import { Time } from './Time'
 import { Camera } from './Camera'
@@ -138,48 +139,31 @@ export class Experience {
     await this.world.prewarmHomeMedia(this.renderer.instance, this.camera.instance)
   }
 
-  /** Create a studio environment map (RoomEnvironment → PMREM) for glass
-   *  reflections. Called once after world init. Sets scene.environment so
-   *  all PBR materials (MeshPhysicalNodeMaterial, MeshStandardMaterial) get
+  /** Create a studio environment map (procedural equirect → PMREM) for glass
+   *  reflections. Called once after world init (and after `renderer.init()`,
+   *  which the TSL generator requires). Sets scene.environment so all PBR
+   *  materials (MeshPhysicalNodeMaterial, MeshStandardMaterial) get
    *  image-based lighting reflections. Zero per-frame cost.
    *
-   *  PARITY: PMREMGenerator needs renderer.state.buffers.depth (WebGLRenderer-
-   *  only API). On the WebGLRenderer path we use the main renderer directly.
-   *  On the WebGPURenderer path (real WebGPU OR WebGLBackend fallback), we
-   *  create a SECONDARY offscreen WebGLRenderer solely for PMREM generation.
-   *  The resulting PMREM texture is a plain DataTexture — renderer-agnostic —
-   *  so it works as scene.environment on WebGPURenderer too. This gives both
-   *  paths identical image-based lighting → visual parity. */
+   *  GENERATORS — one per renderer class, no secondary contexts:
+   *  - `WebGPURenderer` → the renderer-native TSL `PMREMGenerator` from
+   *    `three/webgpu`. It sets `isPMREMTexture` on the result natively, so
+   *    the common `PMREMNode` passes the texture through instead of
+   *    double-PMREMing it (double processing used to render the glass cube
+   *    darker on WebGPU with a concentrated bright-spot artifact).
+   *  - classic `WebGLRenderer` (dev-forced `?renderer=webgl` QA path — the
+   *    forced-WebGLBackend post owner) → the classic `THREE.PMREMGenerator`
+   *    on the main renderer itself. The classic generator detects PMREM via
+   *    `mapping` only, so the `isPMREMTexture` flag is set explicitly.
+   *  The former secondary offscreen WebGL context (created solely for PMREM
+   *  generation on the WebGPU path) was removed in the Phase 6
+   *  unified-renderer slice. */
   private setupEnvironment(): void {
-    const isWebGLRenderer = !(this.renderer.instance as unknown as { isWebGPURenderer?: boolean })
-      .isWebGPURenderer
-
     // Procedural environment map (day34 pattern) — bright sky gradient + 3 sun
     // spots for visible glass reflections. RoomEnvironment was too dim (soft
     // architectural studio light) → glass looked dark. This procedural env
     // gives strong directional highlights like day34 reference.
     try {
-      let pmremRenderer: THREE.WebGLRenderer
-      let isSecondary = false
-
-      if (isWebGLRenderer) {
-        pmremRenderer = this.renderer.instance as unknown as THREE.WebGLRenderer
-      } else {
-        // WebGPURenderer — create an offscreen WebGLRenderer just for PMREM.
-        const offscreenCanvas = document.createElement('canvas')
-        offscreenCanvas.width = 16
-        offscreenCanvas.height = 16
-        pmremRenderer = new THREE.WebGLRenderer({
-          canvas: offscreenCanvas,
-          antialias: false,
-          alpha: false,
-          powerPreference: 'high-performance',
-        })
-        pmremRenderer.setSize(16, 16)
-        isSecondary = true
-      }
-
-      const pmrem = new THREE.PMREMGenerator(pmremRenderer)
       // Procedural grayscale texture (sky-to-ground tonal contrast + soft spots).
       // 512×256 is sufficient for the deliberately soft PMREM reflections and
       // quarters the synchronous startup work of the previous 1024×512 source.
@@ -224,19 +208,36 @@ export class Experience {
       envTex.mapping = THREE.EquirectangularReflectionMapping
       envTex.colorSpace = THREE.SRGBColorSpace
 
-      const envRT = pmrem.fromEquirectangular(envTex)
-      // PARITY FIX: Mark the PMREM texture so WebGPU's common PMREMNode passes
-      // it through instead of re-processing. The classic PMREMGenerator (from
-      // 'three') sets mapping=CubeUVReflectionMapping but does NOT set
-      // isPMREMTexture — while the common PMREMNode (used by WebGPU
-      // NodeMaterials like MeshPhysicalNodeMaterial) checks this flag to decide
-      // pass-through vs re-generation. Without it, WebGPU double-PMREMs the
-      // already-PMREM'd texture → degraded (blurrier/darker) IBL → glass cube
-      // renders DARKER on WebGPU with a concentrated bright-spot artifact.
-      // WebGL2's classic renderer detects PMREM via mapping (not this flag),
-      // so setting it is a no-op there. This is the root cause of the
-      // WebGPU/WebGL2 brightness + white-spot discrepancy.
-      ;(envRT.texture as unknown as { isPMREMTexture?: boolean }).isPMREMTexture = true
+      // One PMREM generator per renderer class (see the method doc): the
+      // renderer-native TSL generator on WebGPURenderer, the classic
+      // generator on the classic renderer. No secondary WebGL context.
+      const isWebGPURenderer = !!(
+        this.renderer.instance as unknown as { isWebGPURenderer?: boolean }
+      ).isWebGPURenderer
+
+      let envRT: THREE.RenderTarget
+      if (isWebGPURenderer) {
+        // Renderer-native TSL PMREM — runs on the live renderer after init
+        // and sets isPMREMTexture on the result natively (PMREMNode
+        // pass-through, no double processing).
+        const pmrem = new WebGPUPMREMGenerator(this.renderer.instance as WebGPURenderer)
+        envRT = pmrem.fromEquirectangular(envTex)
+        pmrem.dispose()
+      } else {
+        const pmrem = new THREE.PMREMGenerator(
+          this.renderer.instance as unknown as THREE.WebGLRenderer,
+        )
+        envRT = pmrem.fromEquirectangular(envTex)
+        // PARITY FIX: the classic PMREMGenerator sets
+        // mapping=CubeUVReflectionMapping but NOT the isPMREMTexture flag the
+        // common PMREMNode (WebGPU NodeMaterials) checks to decide
+        // pass-through vs re-generation. Without it a WebGPU consumer
+        // double-PMREMs the texture → the glass cube renders darker with a
+        // concentrated bright-spot artifact. The classic renderer detects
+        // PMREM via mapping, so the flag is a no-op there.
+        ;(envRT.texture as unknown as { isPMREMTexture?: boolean }).isPMREMTexture = true
+        pmrem.dispose()
+      }
       this.scene.environment = envRT.texture
       // Set environmentIntensity explicitly (day34 pattern). Without this,
       // WebGPU MeshPhysicalNodeMaterial and WebGL2 MeshPhysicalMaterial can
@@ -249,25 +250,13 @@ export class Experience {
       // reliably through the TSL post-pipeline (PassNode RT caching drift).
       // Explicit mat.envMap guarantees the glass sees the environment on BOTH
       // paths → parity. Shared texture, no extra VRAM.
-      // Bind the PMREM texture directly to the glass cube material's envMap.
       this.world?.baku?.bindEnvironment(envRT.texture)
-      pmrem.dispose()
       envTex.dispose()
-      // Dispose the secondary renderer + its canvas (no longer needed).
-      // forceContextLoss() releases the WebGL context immediately (browsers
-      // limit ~16 concurrent WebGL contexts — must free this one).
-      if (isSecondary) {
-        pmremRenderer.dispose()
-        pmremRenderer.forceContextLoss()
-        const canvas = pmremRenderer.domElement
-        canvas.width = 0
-        canvas.height = 0
-        canvas.remove()
-      }
       if (import.meta.env.DEV) {
         console.info(
-          '[Experience] Procedural env map (gradient + sun spots) set — glass reflections active' +
-            (isSecondary ? ' (via secondary WebGLRenderer)' : ''),
+          `[Experience] Procedural env map (gradient + sun spots) set — glass reflections active (PMREM via ${
+            isWebGPURenderer ? 'renderer-native TSL generator' : 'classic generator'
+          })`,
         )
       }
     } catch (e) {
