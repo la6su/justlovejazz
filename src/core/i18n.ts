@@ -1,4 +1,14 @@
-// src/core/i18n.ts — Internationalization (EN/RU).
+// src/core/i18n.ts — Internationalization (EN/RU). The typed locale port.
+//
+// This module is the single locale read point for scene and UI code:
+//   - `getLang(): Lang` and `t(key): string` are pull-based reads, so the
+//     current language is decided at each use site (the Phase 5 swap to
+//     typed Vue state only changes this module's source);
+//   - `toggleLang()` is the sole writer; it persists to localStorage and
+//     publishes the `jlz:lang-change` push event for the consumers that must
+//     re-render (scene textures, noise text, meta tags).
+// It is already unit-locked (`src/__tests__/i18n.test.ts`), including the
+// EN/RU dictionary parity guard.
 //
 // Translation system: t(key) returns the translated string for the current
 // language. data-i18n attributes on elements auto-translate on load, on

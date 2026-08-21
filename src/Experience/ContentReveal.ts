@@ -10,8 +10,9 @@
 
 import { eventBus, type AppEvents } from '../core/EventBus'
 import { getCurrentPage } from '../core/routePage'
-import { themeManager } from '../core/ThemeManager'
+import { themeManager, type ThemeMode } from '../core/ThemeManager'
 import { getWorldConfigForPage, type PhaseConfig } from '../core/WorldConfig'
+import { resolveEffectiveTheme, type ThemeAppliedPort } from '../core/sectionTheme'
 import UIkit from 'uikit'
 
 export class ContentReveal {
@@ -119,7 +120,11 @@ export class ContentReveal {
     }
     const sectionIsLight = cfg?.theme === 'light' || !cfg
     const isInverse = themeManager.isInverse
-    const shouldUseLight = isInverse ? !sectionIsLight : sectionIsLight
+    // Effective-theme port: the auto/inverse decision is the pure
+    // sectionTheme contract (single source of the rule), and the event
+    // detail below is built as the typed ThemeAppliedPort the scene reads.
+    const mode: ThemeMode = isInverse ? 'inverse' : 'auto'
+    const shouldUseLight = resolveEffectiveTheme(sectionIsLight, mode)
 
     document.documentElement.classList.toggle('uk-light', shouldUseLight)
     document.body.classList.toggle('uk-light', shouldUseLight)
@@ -131,18 +136,15 @@ export class ContentReveal {
     // We always send themeChanged=true so the 3D layer (ground, baku,
     // particles) re-syncs on every applyTheme call — the cost is negligible
     // and it prevents desync on route-change where currentIsLight matches.
-    window.dispatchEvent(
-      new CustomEvent('jlz:theme-applied', {
-        detail: {
-          isLight: shouldUseLight,
-          sectionIndex: this.currentSectionIndex,
-          sectionId,
-          themeChanged: true,
-          mode: isInverse ? 'inverse' : 'auto',
-          snap,
-        },
-      }),
-    )
+    const detail: ThemeAppliedPort = {
+      isLight: shouldUseLight,
+      sectionIndex: this.currentSectionIndex,
+      sectionId,
+      themeChanged: true,
+      mode,
+      snap,
+    }
+    window.dispatchEvent(new CustomEvent('jlz:theme-applied', { detail }))
   }
 
   private setupThemeSync() {

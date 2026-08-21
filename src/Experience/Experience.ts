@@ -21,6 +21,7 @@ import { UIMenu } from '../UI/UIMenu'
 // worldDNA.ts removed — TSL node system never attached (attachWorldDNA never
 // called). updateWorldDNAAudio set uniforms nobody read. All dead.
 import { prefersReducedMotion } from '../core/motionPolicy'
+import type { ThemeAppliedPort } from '../core/sectionTheme'
 // ContentReveal owns per-section auto/inverse themes and sends this runtime
 // jlz:theme-applied events for 3D synchronisation.
 import { eventBus } from '../core/EventBus'
@@ -313,16 +314,11 @@ export class Experience {
     // Theme-specific syncs (ground, baku, particles) only run when the polarity
     // actually changed, not on every same-polarity scroll step.
     this._themeAppliedHandler = (e: Event) => {
-      const detail = (
-        e as CustomEvent<{
-          isLight: boolean
-          sectionIndex?: number
-          snap?: boolean
-          themeChanged?: boolean
-        }>
-      ).detail
+      // The scene input port: the typed ThemeAppliedPort detail that
+      // ContentReveal dispatches on every section change / theme toggle.
+      const detail = (e as CustomEvent<ThemeAppliedPort>).detail
       if (!detail) return
-      const sectionIdx = detail.sectionIndex ?? 1
+      const sectionIdx = detail.sectionIndex
       if (this.world?.envSphere) {
         if (detail.snap) {
           this.world.envSphere.snapToSection(sectionIdx, detail.isLight)

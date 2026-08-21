@@ -135,9 +135,15 @@ do not start a phase whose entry gate has not passed.
       `worldSlotIndex`/`isWorldSlotId` lookup (203/203 unit suite) and
       `CinematicNav` derives its `0/1/4/5` slot-index constants from the
       tuple instead of re-declaring them (a 1:1 source-of-fact swap, the
-      `goToSectionByHash` logic untouched); the open contracts are the
-      remaining story/scene ports and the RenderScheduler consumer
-      migration. Segment gate (2026-08-21): whole-project prettier,
+      `goToSectionByHash` logic untouched). The typed scene input ports for
+      effective theme and locale are now in place (208/208 unit suite):
+      `src/core/sectionTheme.ts` owns the pure auto/inverse decision + the
+      typed `ThemeAppliedPort` shape (consumed 1:1 by `ContentReveal`
+      emitter and `Experience` handler, timing unchanged) and `i18n.ts` is
+      formalized as the typed locale port (pull reads, single writer,
+      push event, EN/RU parity-locked). The open contracts are the runtime
+      StoryController and the RenderScheduler consumer migration. Segment
+      gate (2026-08-21): whole-project prettier,
       vue-tsc, 203/203 unit suite, build and `git diff --check` all green,
       and the Playwright e2e suite passes **serially** (18/18,
       `--workers=1`). Under the configured default (`fullyParallel: true`)
