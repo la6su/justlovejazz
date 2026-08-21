@@ -186,8 +186,11 @@ do not start a phase whose entry gate has not passed.
       history and the saved baseline, with the atomic validation-gated
       `commit`/`recordSnapshot`/`restore` paths) landed 2026-08-21 and
       `admin/main.ts` now only renders and dispatches it (1:1 swap, 14 new
-      unit tests); the SFC migration of the catalogue, outline, inspector,
-      preview and Style workspace and the lifecycle-safe preview remain open.
+      unit tests); a dev-only editor style polish (accent Save + disabled
+      states, status state dot, outline indent guides + single-line names,
+      hover/focus affordances, thin scrollbars) landed the same day. The SFC
+      migration of the catalogue, outline, inspector, preview and Style
+      workspace and the lifecycle-safe preview remain open.
 
 - [ ] **Phase 5: migrate the public DOM shell and routing** — adopt AppShell,
       Vue Router, semantic route SFCs, UIkit lifecycle adapters, i18n/meta and

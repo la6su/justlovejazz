@@ -1431,6 +1431,36 @@ Style workspace) and the lifecycle-safe preview are later Phase 4 slices.
 Rollback: restore the inline lets and functions in `admin/main.ts` and delete
 the store and its tests.
 
+#### Phase 4 admin editor style polish slice — 2026-08-21
+
+A dev-only visual and interaction pass over the admin editor (no schema,
+save, store or state changes; `page.json` untouched):
+
+- `admin/admin.less`: the Save button is now the accent primary with an
+  explicit `:disabled` state (Undo/Redo got the same); the status output
+  gains a state dot (green ready, yellow unsaved, red error, neutral note);
+  the document outline renders per-level indentation guides and keeps one
+  line per node (name ellipsized); hover/press feedback on the element
+  catalog and node actions; one shared `:focus-visible` outline for the
+  custom controls (the catalog keeps its border-color focus affordance); a
+  hairline under the inspector header; thin dark scrollbars for the panels
+  and the preview frame; and the `prefers-reduced-motion` block now covers
+  every new transition.
+- `admin/main.ts` (three small edits): `renderOutline` reports the node depth
+  as a `--depth` custom property instead of an inline `paddingLeft` (the CSS
+  owns the indentation), `setStatus` writes the `data-state` dot state, and
+  `updateDirtyStatus` derives the dirty/ready dot without overwriting an
+  error state.
+- `admin/index.html`: visible `title` tooltips on the node action buttons.
+
+Verification: scoped prettier, `vue-tsc` clean, 234/234 unit suite,
+`git diff --check` clean, production build byte-identical (the admin graph
+never enters `dist`), serial e2e 18/18, runtime smoke on the live admin
+editor (ready/dirty/error dot states, accent Save enabled only when dirty,
+outline guides at every depth, Style mode) with zero console errors.
+
+Rollback: revert the three changed files.
+
 ### Phase 5 — Vue public shell and router
 
 Scope:

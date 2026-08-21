@@ -78,6 +78,7 @@ function makeId(type: BuilderElementType): string {
 
 function setStatus(message: string, error = false): void {
   saveStatus.textContent = message
+  saveStatus.dataset.state = error ? 'error' : 'note'
   saveStatus.classList.toggle('is-error', error)
 }
 
@@ -85,6 +86,10 @@ function updateDirtyStatus(announce = true): void {
   const dirty = store.isDirty()
   if (announce && dirty) setStatus('Unsaved changes')
   else if (announce && saveStatus.textContent === 'Unsaved changes') setStatus('Ready')
+  // The dirty/ready dot must not overwrite an error state.
+  if (!saveStatus.classList.contains('is-error')) {
+    saveStatus.dataset.state = dirty ? 'dirty' : 'ready'
+  }
   saveButton.disabled = !dirty
   undoButton.disabled = !store.canUndo
   redoButton.disabled = !store.canRedo
@@ -142,7 +147,9 @@ function renderOutline(): void {
       const button = document.createElement('button')
       button.type = 'button'
       button.dataset.selectNode = node.id
-      button.style.paddingLeft = `${10 + depth * 16}px`
+      // The CSS owns the indentation (padding + guide line); the editor only
+      // reports the depth as a unitless custom property.
+      button.style.setProperty('--depth', String(depth))
       button.classList.toggle('is-selected', node.id === store.selectedId)
 
       const type = document.createElement('span')

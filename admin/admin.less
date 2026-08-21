@@ -74,6 +74,7 @@ textarea {
 
 .jlz-admin-title .uk-input {
   height: 36px;
+  padding-inline: 10px;
   border-color: transparent;
   background: transparent;
   color: #f7f8f6;
@@ -99,6 +100,33 @@ textarea {
   border-color: #333733;
 }
 
+.jlz-admin-history .uk-button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+// Save is the one primary action in the toolbar — the brand accent, not the
+// product theme's dark primary.
+.jlz-admin-toolbar .uk-button-primary {
+  border-color: @jlz-color-accent;
+  color: #090a09;
+  background: @jlz-color-accent;
+  font-weight: 700;
+  transition:
+    background 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.jlz-admin-toolbar .uk-button-primary:hover:not(:disabled) {
+  background: #e8e01c;
+  box-shadow: 0 0 0 3px rgba(255, 247, 44, 0.16);
+}
+
+.jlz-admin-toolbar .uk-button-primary:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
 .jlz-admin-viewports {
   padding: 3px;
   border: 1px solid #30342f;
@@ -114,6 +142,13 @@ textarea {
   cursor: pointer;
 }
 
+// One keyboard affordance for every custom control; the element catalog keeps
+// its own border-color focus style (declared later, same specificity).
+.jlz-admin :is(button, a):focus-visible {
+  outline: 2px solid rgba(255, 247, 44, 0.6);
+  outline-offset: 2px;
+}
+
 .jlz-admin-viewports button {
   padding: 7px 9px;
   font-size: 0.69rem;
@@ -126,12 +161,44 @@ textarea {
 }
 
 .jlz-admin-status {
+  position: relative;
   overflow: hidden;
+  padding-left: 14px;
   color: #8f968e;
   font-size: 0.72rem;
   text-align: right;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+// One status dot carries the document state at a glance: grey = neutral,
+// green = saved/ready, yellow = unsaved changes, red = error.
+.jlz-admin-status::before {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #565c55;
+  content: '';
+  transform: translateY(-50%);
+}
+
+.jlz-admin-status[data-state='ready']::before {
+  background: #46d68b;
+}
+
+.jlz-admin-status[data-state='dirty']::before {
+  background: @jlz-color-accent;
+}
+
+.jlz-admin-status[data-state='note']::before {
+  background: #9aa198;
+}
+
+.jlz-admin-status[data-state='error']::before {
+  background: #ff7568;
 }
 
 .jlz-admin-status.is-error {
@@ -200,6 +267,13 @@ textarea {
   text-transform: uppercase;
 }
 
+// The inspector header is the only right-panel heading — a hairline keeps the
+// action row (title + node actions) separate from the field list below.
+.jlz-admin-sidebar-right .jlz-admin-panel-heading {
+  padding-top: 20px;
+  border-bottom: 1px solid #2d312d;
+}
+
 .jlz-admin-catalog {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -221,10 +295,23 @@ textarea {
   cursor: pointer;
 }
 
+.jlz-admin-catalog button {
+  transition:
+    border-color 140ms ease,
+    background 140ms ease,
+    transform 140ms ease;
+}
+
 .jlz-admin-catalog button:hover,
 .jlz-admin-catalog button:focus-visible {
   border-color: @jlz-color-accent;
+  background: #1f231f;
   outline: none;
+  transform: translateY(-1px);
+}
+
+.jlz-admin-catalog button:active {
+  transform: translateY(0);
 }
 
 .jlz-admin-element-icon {
@@ -256,22 +343,45 @@ textarea {
 }
 
 .jlz-admin-outline button {
+  position: relative;
   display: flex;
   gap: 8px;
   align-items: center;
   width: 100%;
   min-height: 34px;
-  padding: 6px 10px;
+  padding: 6px 10px 6px calc(10px + var(--depth, 0) * 16px);
   border: 0;
   color: #abb0aa;
   background: transparent;
   font-size: 0.78rem;
   text-align: left;
   cursor: pointer;
+  transition: background 120ms ease;
+}
+
+// Indentation guide: a hairline at the parent's content edge, one per level.
+// --depth comes from the editor (0 at the root); clamp() hides it at depth 0.
+.jlz-admin-outline button::before {
+  position: absolute;
+  top: 5px;
+  bottom: 5px;
+  left: calc(14px + (var(--depth, 0) - 1) * 16px);
+  width: 1px;
+  background: #262b26;
+  content: '';
+  opacity: clamp(0, var(--depth, 0), 1);
 }
 
 .jlz-admin-outline button:hover {
   background: #1a1d1a;
+}
+
+// One line per node — the full name lives in the preview and the inspector.
+.jlz-admin-outline button > span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .jlz-admin-outline button.is-selected {
@@ -401,9 +511,19 @@ textarea {
   background: #191c19;
 }
 
+.jlz-admin-node-actions button {
+  transition:
+    border-color 120ms ease,
+    color 120ms ease,
+    background 120ms ease,
+    transform 120ms ease;
+}
+
 .jlz-admin-node-actions button:hover {
   border-color: @jlz-color-accent;
   color: @jlz-color-accent;
+  background: #1f231f;
+  transform: translateY(-1px);
 }
 
 .jlz-admin-inspector-fields,
@@ -829,6 +949,31 @@ textarea {
   color: var(--builder-accent);
 }
 
+// Thin, editor-dark scrollbars (Firefox + WebKit).
+.jlz-admin-sidebar,
+.jlz-admin-preview-frame {
+  scrollbar-width: thin;
+  scrollbar-color: #2e332e #0c0e0c;
+}
+
+.jlz-admin-sidebar::-webkit-scrollbar,
+.jlz-admin-preview-frame::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.jlz-admin-sidebar::-webkit-scrollbar-thumb,
+.jlz-admin-preview-frame::-webkit-scrollbar-thumb {
+  border: 3px solid #0c0e0c;
+  border-radius: 8px;
+  background: #343934;
+}
+
+.jlz-admin-sidebar::-webkit-scrollbar-track,
+.jlz-admin-preview-frame::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 @media (max-width: 1200px) {
   .jlz-admin {
     grid-template-columns: 260px minmax(420px, 1fr) 288px;
@@ -844,7 +989,10 @@ textarea {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .jlz-admin-preview-frame {
+  .jlz-admin-preview-frame,
+  .jlz-admin-catalog button,
+  .jlz-admin-node-actions button,
+  .jlz-admin-toolbar .uk-button-primary {
     transition: none;
   }
 }
