@@ -49,9 +49,16 @@ do not start a phase whose entry gate has not passed.
       through the shared cache, and the real `ContactCyprusStage` GLTF/DRACO
       owner now completes on both backends. Its scoped late-result branch
       disposes a detached stage rather than attaching it. Physical Android now
-      proves the representative initial DPR cap and both backend paths;
-      desktop pacing, resize-event behavior and an owner-visible resource
-      plateau remain open gates.
+      proves the representative initial DPR cap and both backend paths. The
+      mandatory SplashCube representative gate passed on 2026-08-21 over the
+      secure HTTPS development proxy: `WebGPUBackend -> tsl-post` and forced
+      `WebGLBackend -> direct-webgl-fallback` both completed with one
+      renderer/canvas, no shader or material error, bounded settle and clean
+      unmount/disposal, with reduced motion confirmed on both paths; dated
+      qualitative screenshots confirmed the representative scene is visibly
+      rendered on both backends (qualitative presence only, not pixel-level
+      parity). Pixel-level visual parity, desktop pacing, resize-event
+      behavior and an owner-visible resource plateau remain open gates.
 
 - [ ] **Phase 3: extract framework-neutral contracts** — introduce the one
       route manifest, canonical world-slot tuple, bootstrap state machine,

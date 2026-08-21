@@ -387,8 +387,11 @@ the forced `WebGLBackend` path renders the identical scene directly),
 reduced-motion propagation, lazy mount/unmount and software-adapter handling.
 
 The real `SplashCube` owner was added to the representative scope on
-2026-08-16 and is a mandatory open Phase 2 gate: its two-backend hardware
-verification (compilation, visual parity, disposal) has not yet been run.
+2026-08-16. Its two-backend verification (material, geometry and
+jelly-deformation compilation, one renderer/canvas, settled idle, disposal,
+reduced-motion behaviour and qualitative visual presence on both backend
+paths) ran on 2026-08-21; pixel-level visual parity remains the separate open
+gate recorded below and is not claimed by that run.
 
 Acceptance:
 
@@ -607,27 +610,54 @@ external-browser surface did not expose usable JS heap or GPU-resource counters.
 Do not turn this result into a no-leak claim; a later owner-visible resource
 plateau remains required for Phase 2 acceptance.
 
+#### Phase 2 SplashCube representative verification — 2026-08-21
+
+The mandatory SplashCube gate was verified through the existing development-only
+representative route, including the secure HTTPS proxy access path
+(`https://project.6la.ru/__spikes/tres-representative`), without production
+code, visual-protocol or dependency changes:
+
+- automatic policy: `WebGPURenderer -> WebGPUBackend` with the `tsl-post`
+  render path, `complete`, one renderer and one canvas, no runtime, shader or
+  material error, and no continuing render demand after settle;
+- forced `?backend=webgl`: `WebGPURenderer -> WebGLBackend` with the
+  deliberate `direct-webgl-fallback` render path, `complete`, one renderer and
+  one canvas, no runtime, shader or material error, and the same settle and
+  dispose behaviour;
+- reduced motion was checked on both backend paths and completed without
+  continuing render demand;
+- unmount and disposal ran without residual activity; the scope teardown
+  releases the production `SplashCube` exactly once;
+- a dated qualitative visual inspection (two browser screenshots captured
+  through the same HTTPS proxy on 2026-08-21, one per backend path) confirmed
+  the representative scene is visibly rendered on both backends: the mint TSL
+  torus knot, the `EnvSphere` pavilion edges and the remaining production
+  owners are present, with no empty canvas and no broken composition. These
+  captures are qualitative evidence only, not a pixel-level comparison and
+  not a reference baseline.
+
+This admits the SplashCube representative runtime compatibility: PBR material
+and jelly-geometry compilation on both backends, one renderer/canvas, bounded
+settle, clean disposal and qualitative visual presence on both backend paths.
+It is not a pixel-level visual-parity claim: the referenced screenshot/diff
+tooling still does not exist, so pixel-level visual parity for the SplashCube
+scope remains part of the open visual-parity gate below.
+
 #### Phase 2 open gates
 
 The slices above admit only their stated scopes. These gates remain open and
 must all pass with hardware evidence before Phase 2 is accepted:
 
-- **SplashCube representative verification (mandatory).** The real production
-  `SplashCube` is owned by the representative scope as of 2026-08-16. It is a
-  synchronous imperative owner: no async loads, no timers, and `triggerOpener`
-  respects reduced motion. Outstanding: physical `WebGPUBackend -> tsl-post`
-  and forced `WebGLBackend -> direct-webgl-fallback` runs with material,
-  geometry and jelly-deformation compilation, visual parity and disposal
-  evidence.
 - Desktop pacing and hidden-tab resume for the selected bounded
   `setAnimationLoop` driver.
 - Dynamic resize/DPR event behaviour on real mobile hardware.
 - Owner-visible resource plateau after declared cache warm-up, and root
   destroy returning root-owned resources to baseline (the recorded soak is
   smoke-only and made no no-leak claim).
-- Visual parity for the complete representative scope under the baseline
-  protocol. The metric, masks and evidence storage rule are already defined in
-  `PERFORMANCE_BASELINE.md`; what is missing is tooling (the referenced
+- Pixel-level visual parity for the complete representative scope under the
+  baseline protocol, including the SplashCube runtime scope admitted on
+  2026-08-21. The metric, masks and evidence storage rule are already defined
+  in `PERFORMANCE_BASELINE.md`; what is missing is tooling (the referenced
   repository screenshot/diff tool does not exist yet), a fixed reference-frame
   naming convention, and the comparison itself.
 - Related open delivery item: the initial route gzip is recorded OPEN in

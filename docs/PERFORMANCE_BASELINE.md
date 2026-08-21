@@ -256,6 +256,41 @@ browser did not expose usable JS heap or GPU resource counters, so this is not
 a resource-plateau or no-leak result; it only confirms the real teardown path
 survives repeated navigation.
 
+### Phase 2 SplashCube representative observation — 2026-08-21
+
+The mandatory SplashCube representative gate was verified through the existing
+development-only route, including the secure HTTPS proxy access path
+(`https://project.6la.ru/__spikes/tres-representative`). Production code, the
+visual protocol and the dependency set are unchanged by this observation.
+
+- Automatic policy completed as `WebGPURenderer -> WebGPUBackend` with the
+  `tsl-post` render path: one renderer, one canvas, no runtime, shader or
+  material error, and no continuing render demand after settle.
+- Forced `?backend=webgl` completed as `WebGPURenderer -> WebGLBackend` with
+  the deliberate `direct-webgl-fallback` render path: one renderer, one
+  canvas, no runtime, shader or material error, and the same settle and
+  dispose behaviour.
+- Reduced motion completed on both backend paths without continuing render
+  demand.
+- Unmount and scope disposal ran without residual activity; the scope releases
+  the production `SplashCube` exactly once.
+- A dated qualitative visual inspection (two browser screenshots captured
+  through the same HTTPS proxy on 2026-08-21, one per backend path) confirms
+  the representative scene is visibly rendered on both backends: the mint TSL
+  torus knot, the `EnvSphere` pavilion edges and the remaining production
+  owners are present on neither an empty canvas nor a broken composition. The
+  forced-WebGL frame reads flatter because it deliberately skips the TSL post
+  graph. These captures are dated qualitative evidence only; they are not a
+  pixel-level comparison, not a reference baseline and not a pixel-diff input.
+
+This is runtime-compatibility evidence for the SplashCube owner on both
+backends (PBR material and jelly-geometry compilation, one renderer/canvas,
+bounded settle and clean disposal), supplemented by qualitative visual
+presence on both backends. It contains no pixel-level visual comparison: the
+referenced screenshot/diff tooling still does not exist, so pixel-level visual
+parity remains open under the Benchmark and visual protocol. No frame-time,
+resource-plateau or real-mobile measurement was made in this observation.
+
 ### Phase 0 physical mobile WebGPU observation — 2026-08-15
 
 The same local development build was opened over an ADB USB reverse tunnel on
