@@ -278,15 +278,16 @@ do not start a phase whose entry gate has not passed.
       resolves the initial navigation and renders a fresh client app (the
       prerendered `#app` shell is replaced, not hydrated — it stays
       available pre-JS), and `entry-app.ts` gains the `?no-scene=1` DOM-only
-      bootstrap (the no-scene evidence path for the candidate gate). 279/279
-      unit suite, serial e2e 20/20 (incl. the new no-scene and direct-entry
-      tests), default build still free of the candidate graph. The live candidate
-      gate passes through the Caddy proxy (direct entry, in-app, hash,
-      popstate, announcer, EN/RU, theme polarity, keyboard, `?no-scene=1`
-      DOM-only boot, stable canvas pair — zero console errors). Open:
-      flipping the candidate to the production default through the full
-      candidate gate, and the cleanup commit that removes the legacy
-      `src/router.ts` path, the string templates and `PageView.vue`.
+      bootstrap (the no-scene evidence path for the candidate gate). The
+      candidate gate passed and Vue Router is now the production default:
+      `src/entry-app.ts` mounts the Vue app unless the build-time rollback
+      flag `VITE_JLZ_LEGACY_ROUTER=1` selects the legacy DOM router
+      (the `VITE_JLZ_VUE_ROUTER=1` candidate flag is deleted). 279/279 unit
+      suite, serial e2e 20/20 now running against the default (Vue) build,
+      live default-path smoke through Caddy. Open: the Phase 5 cleanup
+      commit that removes the legacy `src/router.ts` path, the rollback
+      flag, the string templates and `PageView.vue`, and moves the
+      prerender to the SFC source.
 
 - [ ] **Phases 6–10: cut over renderer, Tres scene owners and static content** —
       only after their gates pass, ship the unified renderer, persistent

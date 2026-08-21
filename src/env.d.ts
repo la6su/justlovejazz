@@ -1,9 +1,11 @@
 /// <reference types="vite/client" />
 
-// Phase 5 candidate flag (Vite `VITE_` env, default off): selects the Vue
-// Router mount over the legacy DOM router.
+// Phase 5 rollback flag (Vite `VITE_` env, default off): selecting `1`
+// restores the legacy DOM router in `src/router.ts` over the Vue Router
+// default. The flag and the legacy router are deleted by the Phase 5
+// cleanup commit.
 interface ImportMetaEnv {
-  readonly VITE_JLZ_VUE_ROUTER?: string
+  readonly VITE_JLZ_LEGACY_ROUTER?: string
 }
 
 declare module '*.vue' {

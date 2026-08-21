@@ -1994,6 +1994,44 @@ console errors on the candidate path.
 Rollback: the candidate flag off keeps the legacy router + string templates
 as the untouched default; the SFCs and the composable are additive.
 
+#### Phase 5 flip — Vue Router becomes the production default — 2026-08-22
+
+The full candidate gate passed (live through the Caddy proxy + the
+automated suites above), so the switch landed: `src/entry-app.ts` mounts
+the Vue app by default and selects the legacy DOM router only through the
+build-time rollback flag `VITE_JLZ_LEGACY_ROUTER=1` (replacing the
+`VITE_JLZ_VUE_ROUTER=1` candidate flag, which is deleted). The default
+production build now carries the Vue Router graph as the dynamic `app`
+chunk; `jlz-admin` remains absent from `dist`. The e2e suite now runs its
+20 tests against the Vue router path (default build). The legacy router,
+the string page/section templates and `PageView.vue` stay in the tree
+behind the rollback flag until the Phase 5 cleanup commit removes them
+(removal ledger: still pending).
+
+Flip contracts preserved while the legacy path stayed in the tree:
+
+- the route-transition overlay (`.jlz-route-transition`) is now ported
+  onto the router via `RouteTransition.cover()/reveal()` phases wired to
+  `router.beforeEach`/`afterEach`; the initial navigation skips the cover
+  (the legacy first render never ran a transition — nothing to cover);
+- in-app navigation awaits the router's ready promise before pushing, so
+  a `jlz:navigate` in the startup gap still lands as a history `push`
+  (a push committed against the start entry would otherwise degrade to a
+  replace and lose the first back slot);
+- the e2e `waitForRouter` helper now waits for the navigation owner's
+  first-page proof (`data-page` on `<html>`, set on both paths in the
+  same task as the listener registration) instead of `main.less` alone.
+
+Verification: `vue-tsc` clean, 279/279 unit, default build with
+`jlz-admin` absent and the `app` chunk present, rollback-flag build
+carrying both graphs, serial e2e 20/20 on the default (Vue) build, admin
+smoke (status Ready, Control+z rollback after `document.body.focus()`,
+no Save), and a live default-path smoke through the Caddy proxy (the dev
+server restarted without the old candidate flag).
+
+Rollback: `VITE_JLZ_LEGACY_ROUTER=1` build/serve restores the legacy DOM
+router; the cleanup commit reverts the flag and deletes the legacy path.
+
 ### Phase 6 — unified production renderer
 
 Entry: Phase 2 is accepted.

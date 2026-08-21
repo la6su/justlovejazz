@@ -62,6 +62,41 @@ export class RouteTransition {
     return overlay
   }
 
+  /**
+   * Phased API for the Vue Router path (src/app): `cover()` awaits the
+   * cover phase before the router guard resolves (the RouterView re-render
+   * lands under the covered document), and `reveal()` starts the reveal
+   * after the guard settles. Same timing and reduced-motion contract as
+   * `run()`: under reduced motion both phases are synchronous no-ops and
+   * the overlay element is never created. A newer cover supersedes a
+   * pending reveal (sequence check).
+   */
+  async cover(): Promise<void> {
+    const sequence = ++this.sequence
+    if (prefersReducedMotion()) {
+      if (this.overlay) this.overlay.dataset.state = 'idle'
+      return
+    }
+    const overlay = this.getOverlay()
+    overlay.dataset.state = 'covering'
+    await this.wait(COVER_MS)
+    if (sequence !== this.sequence) return
+  }
+
+  reveal(): void {
+    const sequence = this.sequence
+    if (prefersReducedMotion()) {
+      if (this.overlay) this.overlay.dataset.state = 'idle'
+      return
+    }
+    const overlay = this.getOverlay()
+    overlay.dataset.state = 'revealing'
+    void this.wait(REVEAL_MS).then(() => {
+      if (sequence !== this.sequence) return
+      if (overlay.isConnected) overlay.dataset.state = 'idle'
+    })
+  }
+
   private wait(duration: number): Promise<void> {
     return new Promise((resolve) => window.setTimeout(resolve, duration))
   }

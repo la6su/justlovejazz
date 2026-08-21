@@ -78,14 +78,18 @@ function attachErrorCapture(page: Page, errors: string[]): void {
 }
 
 async function waitForRouter(page: Page): Promise<void> {
-  // index.html is prerendered, so mounted DOM alone is not proof that the
-  // lazy shell has called initRouter(). startApp() injects main.less directly
-  // before that synchronous call; waiting for its distinctive rule avoids
-  // dispatching a navigation request into the startup gap.
-  await page.waitForFunction(() =>
-    [...document.head.querySelectorAll('style')].some((style) =>
-      style.textContent?.includes('.jlz-storyline'),
-    ),
+  // Proof the navigation owner committed the first page: `data-page` on
+  // <html> is set by legacy `initRouter()`'s first `renderView()` (same
+  // synchronous task as the main.less injection) and by the Vue path's
+  // `useJlzPage` onMounted (strictly after the `jlz:navigate` listener
+  // registration). Waiting only for main.less would dispatch a navigation
+  // request into the Vue startup gap where no listener exists yet — a
+  // CustomEvent is not queued, so the request is simply lost.
+  await page.waitForFunction(
+    () =>
+      [...document.head.querySelectorAll('style')].some((style) =>
+        style.textContent?.includes('.jlz-storyline'),
+      ) && Boolean(document.documentElement.dataset.page),
   )
 }
 
@@ -124,6 +128,11 @@ test.describe('JustLoveJazz — page boot smoke', () => {
 
     // jlz:webgl-ready fired (synthetic) — Enter becomes available.
     await expect(page.locator('#jlz-splash-enter')).toHaveClass(/is-ready/)
+
+    // The no-scene path still mounts the navigation owner (startApp's router
+    // branch runs before the no-scene early return inside boot()); wait for
+    // it so the request below cannot land in the startup gap.
+    await waitForRouter(page)
 
     // Semantic navigation without the scene: in-app push lands on /works.
     await page.evaluate(() => {

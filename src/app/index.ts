@@ -1,9 +1,9 @@
 // src/app/index.ts — Phase 5: the Vue Router mount and navigation owner.
 //
-// Candidate path: `VITE_JLZ_VUE_ROUTER=1` selects this entry over the
-// legacy DOM router in `src/router.ts`. Until the candidate gate passes and the Phase 5 cleanup
-// commit lands, the production default stays the legacy router and the
-// entry branch stays inactive.
+// Production default since the Phase 5 flip: `src/entry-app.ts` mounts this
+// app unless the build-time rollback flag `VITE_JLZ_LEGACY_ROUTER=1`
+// selects the legacy DOM router in `src/router.ts` (deletion target of the
+// Phase 5 cleanup commit).
 //
 // The navigation surface is a 1:1 port of the legacy router's contracts:
 // strict in-app navigation (unknown link = no-op), lenient direct entry
@@ -20,6 +20,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { applyTranslations } from '../core/i18n'
 import { applyMetaTags } from '../core/pageMeta'
 import { isRoutePath, resolveRoute } from '../core/routeManifest'
+import { RouteTransition } from '../UI/RouteTransition'
 import AppShell from './AppShell.vue'
 import { jlzRouteRecords, pageForPath } from './routes'
 
@@ -36,6 +37,28 @@ export async function mountVueApp(): Promise<void> {
   const router = createRouter({
     history: createWebHistory(),
     routes: jlzRouteRecords(),
+  })
+
+  // ── Route transition (legacy `routeTransition.run(render)` contract) ───
+  // The cover phase completes inside the navigation guard, so the RouterView
+  // re-render lands under the covered document; the reveal starts once the
+  // route has settled. Under reduced motion both phases are synchronous
+  // no-ops and the overlay element is never created (RouteTransition).
+  const routeTransition = new RouteTransition()
+  // The initial navigation skips the cover: the legacy `initRouter`
+  // rendered the first page without the transition (no prior document to
+  // cover), and a synchronous first commit leaves no startup gap in which
+  // an early `jlz:navigate` could race the router.
+  let coverNavigation = true
+  router.beforeEach(async () => {
+    if (coverNavigation) {
+      coverNavigation = false
+      return
+    }
+    await routeTransition.cover()
+  })
+  router.afterEach(() => {
+    routeTransition.reveal()
   })
 
   // ── Section-hash dispatch (legacy router contract) ─────────────────────
@@ -73,23 +96,25 @@ export async function mountVueApp(): Promise<void> {
 
   const app = createApp(AppShell)
   // Resolve the initial navigation BEFORE the mount so RouterView renders
-  // the landing component on its first pass.
+  // the landing component on its first pass. `router.install` starts the
+  // initial navigation; the ready promise also gates in-app navigation
+  // (below) against the startup gap.
   app.use(router)
-  await router.isReady()
-  // A fresh client render (createApp) replaces `#app`'s content on mount:
-  // the build-time prerender (vite `prerender-index`) keeps the home route
-  // shell available before JS boots (SEO, the no-scene contract, the
-  // domcontentloaded e2e assertions), and the SFC re-renders the identical
-  // DOM (locked by the parity suite) — a deliberate replace, not a
-  // hydration: the prerendered HTML is not a clean hydration target for
-  // Vue's condensed client render.
-  app.mount(root)
+  const routerReady = router.isReady()
 
   // ── In-app navigation (strict, like the legacy `navigateToPage`) ───────
+  // The listeners register BEFORE the initial navigation settles: the
+  // legacy initRouter wired them synchronously at startup, and an early
+  // `jlz:navigate` (or anchor click) in the startup gap must not be lost.
   const navigateToPath = async (path: string): Promise<void> => {
     const hashIdx = path.indexOf('#')
     const purePath = hashIdx >= 0 ? path.slice(0, hashIdx) : path
     if (!resolveRoute(purePath)) return
+    // A push before the initial navigation settles is committed against
+    // the start history entry (replace) and loses the session's first
+    // back slot — the legacy contract never had this window because its
+    // first render and listener wiring landed in one synchronous call.
+    await routerReady
     await router.push(path)
     window.scrollTo({ top: 0, behavior: 'auto' })
   }
@@ -133,4 +158,14 @@ export async function mountVueApp(): Promise<void> {
     }
   }
   document.addEventListener('click', onClick, true)
+
+  await routerReady
+  // A fresh client render (createApp) replaces `#app`'s content on mount:
+  // the build-time prerender (vite `prerender-index`) keeps the home route
+  // shell available before JS boots (SEO, the no-scene contract, the
+  // domcontentloaded e2e assertions), and the SFC re-renders the identical
+  // DOM (locked by the parity suite) — a deliberate replace, not a
+  // hydration: the prerendered HTML is not a clean hydration target for
+  // Vue's condensed client render.
+  app.mount(root)
 }
