@@ -322,12 +322,30 @@ do not start a phase whose entry gate has not passed.
       that admits TSL post on `WebGLBackend`, Phase 10). Rollback is a revert
       of the Phase 6 commits. Phase 6 is complete.
 
-- [ ] **Phases 7–10: cut over Tres scene owners and static content** —
-      only after their gates pass, ship the persistent
-      TresCanvas, one-by-one scene-owner migration, builder/blog SSG
-      consolidation and final legacy removal. The migration is not done while
-      duplicate routers, loops, renderer paths, owner adapters or undocumented
-      dependencies remain.
+- [ ] **Phase 7: persistent TresCanvas and legacy world adapter** — make
+      `SceneHost` a persistent Tres root, give the custom renderer factory,
+      camera and scene exactly one owner, cut the Experience loop over to the
+      single driver selected in Phase 2 (the bounded `setAnimationLoop` port,
+      ADR 0004), attach the existing World through an explicit primitive
+      adapter, publish readiness only after renderer initialization +
+      actual-backend inspection + Tres context mount + the initial World's
+      first successful render, and split `Experience` into bootstrap, scene
+      coordination and former UI features. Slice 1 landed: the
+      `RenderScheduler` single loop-driver core
+      (`src/core/RenderScheduler.ts`) — the single caller of
+      `renderer.setAnimationLoop`, start on typed invalidation / resume, stop
+      after the settled frame, hidden-tab pause with exactly one resume
+      invalidation, synchronous settle for reduced motion; 13 unit tests, no
+      behavior change yet. Open: the Experience loop cutover to the scheduler
+      (slice 2), the persistent `SceneHost` Tres root + readiness handshake
+      (slice 3, rollback = the native-world host), and the Experience split
+      (slice 4).
+
+- [ ] **Phases 8–10: cut over Tres scene owners and static content** —
+      only after their gates pass, ship the one-by-one scene-owner migration,
+      builder/blog SSG consolidation and final legacy removal. The migration
+      is not done while duplicate routers, loops, renderer paths, owner
+      adapters or undocumented dependencies remain.
 
 ## 2 — Deferred product queue
 

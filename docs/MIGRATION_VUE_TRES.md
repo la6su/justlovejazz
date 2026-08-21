@@ -2179,6 +2179,33 @@ Acceptance:
 Rollback: switch `SceneHost` to the native-world host; no scene owner is deleted
 in this phase.
 
+Status (2026-08-22):
+
+- Slice 1 (done): the `RenderScheduler` single loop-driver core landed
+  (`src/core/RenderScheduler.ts`). It is the framework-neutral owner of the
+  bounded `setAnimationLoop` port selected by the Phase 2 gate (ADR 0004,
+  superseding clarification): it installs the renderer loop for a bounded
+  activity window and clears it after the settled frame, starts on a typed
+  invalidation or on tab resume (exactly one), pauses advancement while the
+  tab is hidden, and settles synchronously for reduced motion. The `LoopDriver`
+  port is the only edge to a real `renderer.setAnimationLoop`, so the policy is
+  unit-tested (13 tests) without a renderer, canvas or rAF. No runtime
+  behavior changes yet — the current Experience loop remains the one driver
+  until the cutover slice.
+- Slice 2 (open): cut the Experience loop over to the `RenderScheduler` as the
+  single `setAnimationLoop` caller — wake sources and activity tokens drive
+  start/stop, the loop stops when settled (zero settled draws), the ambient
+  breath becomes an invalidation, and hidden-tab pause/resume is owned by the
+  scheduler.
+- Slice 3 (open): make `SceneHost` the persistent Tres root — a `TresCanvas`
+  with the custom renderer factory, camera and scene, each given exactly one
+  owner; attach the existing World through an explicit primitive adapter;
+  publish readiness only after renderer initialization, actual-backend
+  inspection, Tres context mount and the initial World's first successful
+  render. Rollback keeps the native-world host.
+- Slice 4 (open): split `Experience` into bootstrap, scene coordination and
+  former UI features.
+
 ### Phase 8 — migrate scene owners
 
 Migrate one bounded owner per reversible slice:
