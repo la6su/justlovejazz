@@ -85,6 +85,7 @@ export class Experience {
   private _prevSectionIndex = -1
   private _onSizesResize: () => void = () => {}
   private _onVisibilityChange: (() => void) | null = null
+  private _onRendererRecovered: (() => void) | null = null
   private _onMouseMoveForTrail: (() => void) | null = null
   private _mouseTrailRafPending = false
   private _mouseTrailRafId: number | null = null
@@ -164,6 +165,12 @@ export class Experience {
     // architectural studio light) → glass looked dark. This procedural env
     // gives strong directional highlights like day34 reference.
     try {
+      // Re-entrant: on device-loss recovery the previous PMREM texture died
+      // with the lost device — release the stale binding before regenerating.
+      if (this.scene.environment) {
+        this.scene.environment.dispose()
+        this.scene.environment = null
+      }
       // Procedural grayscale texture (sky-to-ground tonal contrast + soft spots).
       // 512×256 is sufficient for the deliberately soft PMREM reflections and
       // quarters the synchronous startup work of the previous 1024×512 source.
@@ -441,19 +448,26 @@ export class Experience {
     // WebGPURenderer on the WebGPU backend REQUIRES this for correct frame
     // pacing — rAF does not synchronize with the WebGPU swap chain, causing
     // severe frame stutter (observed 3 FPS on Chrome/WebGPU). On WebGL2 it
-    // falls back to rAF internally, so behavior is identical.
-    ;(this.renderer.instance as any).setAnimationLoop((t: number) => this.update(t))
+    // falls back to rAF internally, so behavior is identical. The Renderer
+    // owns the callback so a device-loss recovery can re-attach it.
+    this.renderer.setAnimationLoop((t: number) => this.update(t))
 
     // Pause the render loop when the tab is hidden — setAnimationLoop runs
     // full-rate otherwise, burning CPU/GPU in the background.
     this._onVisibilityChange = () => {
-      const r = this.renderer.instance as {
-        setAnimationLoop: (cb: ((t: number) => void) | null) => void
-      }
-      if (document.hidden) r.setAnimationLoop(null)
-      else r.setAnimationLoop((t: number) => this.update(t))
+      if (document.hidden) this.renderer.setAnimationLoop(null)
+      else this.renderer.setAnimationLoop((t: number) => this.update(t))
     }
     document.addEventListener('visibilitychange', this._onVisibilityChange)
+
+    // Bounded WebGPU device-loss recovery: the Renderer re-creates the
+    // renderer on the same canvas and rebuilds the post pipeline. The PMREM
+    // environment texture dies with the lost device, so regenerate + re-bind
+    // it on the replacement renderer.
+    this._onRendererRecovered = () => {
+      this.setupEnvironment()
+    }
+    eventBus.on('jlz:renderer-recovered', this._onRendererRecovered)
 
     // ── DrawTrail: trigger render on mousemove (Works section only) ──
     // DrawTrail.update() runs inside world.update(needsRender) — if
@@ -951,7 +965,7 @@ export class Experience {
   destroy() {
     // Stop the animation loop FIRST — setAnimationLoop(null) cancels the
     // internal callback. Without this, the loop keeps firing after dispose().
-    ;(this.renderer.instance as any).setAnimationLoop(null)
+    this.renderer.setAnimationLoop(null)
     // Cancel pending rAF for mouse trail (prevents fire after destroy)
     this._mouseTrailRafPending = false
     if (this._mouseTrailRafId !== null) {
@@ -971,6 +985,10 @@ export class Experience {
     if (this._sectionChangeHandler) {
       eventBus.off('jlz:section-change', this._sectionChangeHandler)
       this._sectionChangeHandler = null
+    }
+    if (this._onRendererRecovered) {
+      eventBus.off('jlz:renderer-recovered', this._onRendererRecovered)
+      this._onRendererRecovered = null
     }
     if (this._themeAppliedHandler) {
       window.removeEventListener('jlz:theme-applied', this._themeAppliedHandler)

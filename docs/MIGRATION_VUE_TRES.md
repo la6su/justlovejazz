@@ -2096,6 +2096,29 @@ Scope:
   migration flag to the target, then delete the classic path in a separate
   cleanup commit within this phase.
 
+Status (2026-08-22):
+
+- Slice 1 (done, `3c594bd`): the fixed decision is recorded above; PMREM uses
+  the renderer-native TSL generator on `WebGPURenderer` and the classic
+  generator only on the dev-forced `?renderer=webgl` path. The secondary
+  offscreen WebGL PMREM context is removed.
+- Slice 2 (done): the unified renderer runs behind the candidate flag
+  `VITE_JLZ_UNIFIED_RENDERER=1` (`src/core/rendererBackend.ts` holds the pure
+  policy: `planUnifiedBackend` + bounded `deviceLostAction`). With the flag
+  set, `Renderer.init()` constructs `WebGPURenderer` only, inspects the actual
+  backend after async init, re-creates the instance with `forceWebGL: true` on
+  a software (SwiftShader) adapter (same class — never a classic
+  `WebGLRenderer`), and calculates `DeviceCapability` mode from the actual
+  backend. Bounded device-loss recovery (budget 1) disposes the pipeline +
+  renderer, re-creates on the same canvas, rebuilds the pipeline, re-attaches
+  the animation loop via the `Renderer.setAnimationLoop` owner boundary, and
+  re-runs `setupEnvironment()` through the `jlz:renderer-recovered` event
+  (the PMREM texture dies with the lost device). Flag off = today's behavior;
+  the flag literal is stripped from default builds (dead-code eliminated).
+- Slice 3 (open): candidate gate — every public route on a flag-ON build
+  (automatic WebGPU + forced WebGLBackend), then the flag flip and the
+  phase-exit cleanup commit.
+
 Candidate gate:
 
 - every public route passes automatic WebGPU and forced WebGLBackend QA;

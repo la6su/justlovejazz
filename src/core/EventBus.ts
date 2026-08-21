@@ -16,6 +16,12 @@ export interface AppEvents {
   }
   /** Fired by router.ts on page navigation — triggers UIMenu page active + slider labels. */
   'jlz:route-change': { page?: string }
+  /**
+   * Fired by Renderer after a bounded WebGPU device-loss recovery re-created
+   * the renderer. The PMREM environment texture dies with the lost device, so
+   * Experience re-runs setupEnvironment() to bind a fresh one.
+   */
+  'jlz:renderer-recovered': void
 }
 
 type Handler<K extends keyof AppEvents> = (payload: AppEvents[K]) => void

@@ -10,6 +10,7 @@ import { WebGPURenderer } from 'three/webgpu'
 import { WebGLNodesHandler } from 'three/addons/tsl/WebGLNodesHandler.js'
 import { Sizes } from './Sizes'
 import { DeviceCapability } from '../core/DeviceCapability'
+import { eventBus } from '../core/EventBus'
 import { type WorldState } from '../core/types'
 import { PostProcessingManager } from '../core/PostProcessingManager'
 import { RenderPipeline, type RenderPipelineConfig, type PostParams } from '../core/RenderPipeline'
@@ -18,6 +19,7 @@ import {
   type RendererResourceInfo,
   type RuntimeResourceSnapshot,
 } from '../core/RuntimeResourceSnapshot'
+import { deviceLostAction, planUnifiedBackend, type BackendFacts } from '../core/rendererBackend'
 
 export type RenderSurface = WebGPURenderer | THREE.WebGLRenderer
 
@@ -34,6 +36,16 @@ export class Renderer {
   pipeline: RenderPipeline | null = null
   // Pipeline config is built after backend initialization, when fallback is known.
   private _pipelineConfig!: RenderPipelineConfig
+
+  // Phase 6 device-loss recovery state (bounded — see rendererBackend.ts).
+  private _deviceLostAttempts = 0
+  private _recovering = false
+  // forceWebGL the current instance was created with (dev `?renderer=webgl`
+  // on the unified path) — device-loss recovery must match it.
+  private _forceWebGL = false
+  // Animation-loop owner boundary: Experience registers its frame callback
+  // here so device-loss recovery can re-attach it to the replacement renderer.
+  private _loopCallback: ((time: number) => void) | null = null
 
   constructor(sizes: Sizes) {
     this.sizes = sizes
@@ -105,10 +117,44 @@ export class Renderer {
     const forceWebGL =
       import.meta.env.DEV && new URLSearchParams(window.location.search).get('renderer') === 'webgl'
 
-    // Create renderer based on DeviceCapability mode (sync detection via
-    // 'gpu' in navigator). WebGPURenderer.init() will configure the backend —
-    // if WebGPU is not available, it falls back to WebGLBackend internally.
-    if (!forceWebGL && this.capabilities.mode === 'webgpu') {
+    // Phase 6 unified production renderer (candidate flag
+    // VITE_JLZ_UNIFIED_RENDERER=1): WebGPURenderer is the ONLY renderer class.
+    // The actual backend is inspected AFTER async init; a software (SwiftShader)
+    // WebGPU adapter is re-created with forceWebGL so hardware WebGL2 is used —
+    // still the same class, never a classic WebGLRenderer. Capabilities are
+    // calculated after initialization, from the actual backend.
+    const unified = import.meta.env.VITE_JLZ_UNIFIED_RENDERER === '1'
+
+    if (unified) {
+      this._forceWebGL = forceWebGL
+      this.instance = await this.createWebGPUInstance(forceWebGL)
+      const facts = this.readBackendFacts(forceWebGL)
+      let plan = planUnifiedBackend(facts)
+      if (import.meta.env.DEV) {
+        console.info(
+          `[Renderer.init] unified WebGPURenderer backend: ${facts.backendName ?? '?'} ` +
+            `(isFallbackAdapter=${facts.isFallbackAdapter}) → plan recreate=${plan.recreate} mode=${plan.mode}`,
+        )
+      }
+      if (plan.recreate) {
+        // Software WebGPU (SwiftShader ~2 FPS) → hardware WebGL2 via
+        // forceWebGL, same WebGPURenderer class. The first canvas is not in
+        // the DOM yet (setupCanvas runs later), so just dispose + re-create.
+        if (import.meta.env.DEV) {
+          console.info(
+            '[Renderer.init] unified: software WebGPU adapter — re-creating with forceWebGL',
+          )
+        }
+        ;(this.instance as WebGPURenderer).dispose?.()
+        this._forceWebGL = true
+        this.instance = await this.createWebGPUInstance(true)
+        plan = planUnifiedBackend(this.readBackendFacts(true))
+      }
+      this.capabilities.setFinalRendererMode(plan.mode)
+      if (import.meta.env.DEV && plan.mode === 'webgpu') {
+        console.info('[Renderer.init] unified premium WebGPU path active')
+      }
+    } else if (!forceWebGL && this.capabilities.mode === 'webgpu') {
       this.instance = new WebGPURenderer({ antialias: true, alpha: false })
       const wg = this.instance as any
       wg.toneMapping = THREE.ACESFilmicToneMapping
@@ -209,20 +255,157 @@ export class Renderer {
 
     // Transmission is disabled on ALL paths (see SplashCube.ts comment).
     // setTransmissionEnabled() is now a no-op, kept for API compat.
-    // WebGPU device-loss logging (DEV only).
-    const isRealWebGPU =
-      (this.instance as any).isWebGPURenderer &&
-      (this.instance as any).backend?.constructor?.name === 'WebGPUBackend'
-    if (isRealWebGPU && import.meta.env.DEV) {
-      const wg = this.instance as any
-      if (wg.onDeviceLost) {
-        const origHandler = wg.onDeviceLost.bind(wg)
-        wg.onDeviceLost = (info: any) => {
-          console.error('[Renderer] WebGPU device lost!', info)
-          origHandler(info)
-        }
-      }
+    //
+    // Bounded WebGPU device-loss recovery: a lost device (driver/GPU reset,
+    // system memory pressure) re-creates the renderer on the same canvas and
+    // rebuilds the post pipeline, up to MAX_DEVICE_LOST_RECOVERIES attempts.
+    // Attached on WebGPURenderer instances only (a classic WebGLRenderer has
+    // no WebGPU device to lose; its context-loss path is out of Phase 6 scope).
+    if (this.instance instanceof WebGPURenderer) {
+      this.attachDeviceLossRecovery(this.instance)
     }
+  }
+
+  /**
+   * Animation-loop owner boundary: Experience registers its frame callback
+   * here (not directly on `this.instance`) so a device-loss recovery can
+   * re-attach it to the replacement renderer. A `null` callback (tab hidden)
+   * stays null across recovery.
+   */
+  public setAnimationLoop(callback: ((time: number) => void) | null): void {
+    this._loopCallback = callback
+    ;(
+      this.instance as {
+        setAnimationLoop?: (cb: ((time: number) => void) | null) => void
+      }
+    ).setAnimationLoop?.(callback)
+  }
+
+  /** Create + async-init a WebGPURenderer with the shared tone/color settings. */
+  private async createWebGPUInstance(forceWebGL: boolean): Promise<WebGPURenderer> {
+    const wg = new WebGPURenderer({ antialias: true, alpha: false, forceWebGL })
+    const w = wg as any
+    w.toneMapping = THREE.ACESFilmicToneMapping
+    w.toneMappingExposure = 1.0
+    w.outputColorSpace = THREE.SRGBColorSpace
+    await w.init?.()
+    return wg
+  }
+
+  /** Read the actual backend + software-adapter facts after init. */
+  private readBackendFacts(forceWebGL: boolean): BackendFacts {
+    const wg = this.instance as any
+    const backendName: string | null = wg?.isWebGPURenderer
+      ? (wg.backend?.constructor?.name ?? null)
+      : null
+    const adapter = wg?.backend?.adapter?.info ?? wg?.backend?.gpu?._adapter
+    return {
+      backendName,
+      isFallbackAdapter: adapter?.isFallbackAdapter ?? false,
+      forceWebGL,
+    }
+  }
+
+  /**
+   * Hook bounded device-loss recovery onto a WebGPURenderer. Three invokes
+   * `onDeviceLost` when the underlying device is lost; we run the bounded
+   * recovery and then defer to Three's own handler for its internal
+   * bookkeeping.
+   */
+  private attachDeviceLossRecovery(renderer: WebGPURenderer): void {
+    const wg = renderer as any
+    if (typeof wg.onDeviceLost !== 'function') return
+    const orig = wg.onDeviceLost.bind(wg)
+    wg.onDeviceLost = (info: unknown) => {
+      if (import.meta.env.DEV) {
+        console.error('[Renderer] WebGPU device lost', info)
+      }
+      const action = deviceLostAction(this._deviceLostAttempts)
+      if (action === 'exhausted') {
+        // Budget spent: surface an explicit failure state and stop.
+        console.error('[Renderer] device-loss recovery budget exhausted — surfacing failure state')
+        this.showUnsupportedMessage()
+        orig(info)
+        return
+      }
+      void this.recoverFromDeviceLost().finally(() => orig(info))
+    }
+  }
+
+  /**
+   * Re-create the renderer on the same canvas after a device loss, rebuild the
+   * post pipeline, and re-attach the animation loop. Bounded by
+   * MAX_DEVICE_LOST_RECOVERIES (see deviceLostAction).
+   */
+  private async recoverFromDeviceLost(): Promise<void> {
+    if (this._recovering) return
+    this._recovering = true
+    try {
+      this._deviceLostAttempts += 1
+      const canvas = this.instance.domElement
+      this.pipeline?.dispose()
+      this.pipeline = null
+      ;(this.instance as WebGPURenderer).dispose?.()
+
+      this.instance = await this.createWebGPUInstanceOnCanvas(canvas, this._forceWebGL)
+      let plan = planUnifiedBackend(this.readBackendFacts(this._forceWebGL))
+      if (plan.recreate) {
+        // The replacement landed on a software adapter again — force WebGL2.
+        this._forceWebGL = true
+        ;(this.instance as WebGPURenderer).dispose?.()
+        // Re-create on the SAME canvas element (still in the DOM — do not
+        // remove it, unlike the init-time path where setupCanvas has not run).
+        this.instance = await this.createWebGPUInstanceOnCanvas(canvas, true)
+        plan = planUnifiedBackend(this.readBackendFacts(true))
+      }
+      this.capabilities.setFinalRendererMode(plan.mode)
+
+      this.instance.setPixelRatio(Math.min(this.sizes.dpr, this.capabilities.maxDpr))
+      this.instance.setSize(this.sizes.width, this.sizes.height)
+      this.postManager.refreshQualityTier()
+      this._pipelineConfig = this.buildPipelineConfig()
+      this.pipeline = RenderPipeline.create(
+        this.instance,
+        this.sizes.width,
+        this.sizes.height,
+        this._pipelineConfig,
+      )
+      if (!(this.instance instanceof WebGPURenderer)) {
+        this.pipeline.setWebGPU(false)
+        this.pipeline.setupWebGLIfNeeded()
+      }
+      if (this.instance instanceof WebGPURenderer) {
+        this.attachDeviceLossRecovery(this.instance)
+      }
+      // Re-attach the animation loop (or the hidden-tab null) on the new instance.
+      if (this._loopCallback) {
+        this.instance.setAnimationLoop(this._loopCallback)
+      }
+      // The old PMREM environment died with the lost device — ask Experience
+      // to regenerate it (and re-bind it to the glass cube).
+      eventBus.emit('jlz:renderer-recovered')
+      if (import.meta.env.DEV) {
+        console.info('[Renderer] device-loss recovery complete — renderer re-created')
+      }
+    } catch (e) {
+      console.error('[Renderer] device-loss recovery failed:', e)
+    } finally {
+      this._recovering = false
+    }
+  }
+
+  /** Create + async-init a WebGPURenderer reusing an existing canvas element. */
+  private async createWebGPUInstanceOnCanvas(
+    canvas: HTMLCanvasElement,
+    forceWebGL: boolean,
+  ): Promise<WebGPURenderer> {
+    const wg = new WebGPURenderer({ canvas, antialias: true, alpha: false, forceWebGL })
+    const w = wg as any
+    w.toneMapping = THREE.ACESFilmicToneMapping
+    w.toneMappingExposure = 1.0
+    w.outputColorSpace = THREE.SRGBColorSpace
+    await w.init?.()
+    return wg
   }
 
   /** Create WebGLRenderer with NodeMaterial support. */
@@ -245,6 +428,9 @@ export class Renderer {
   }
 
   update(scene: THREE.Scene, camera: THREE.Camera, dt: number, _worldState?: WorldState): void {
+    // During a device-loss recovery the pipeline is torn down and rebuilt;
+    // skip the frame so we never render through a disposed renderer.
+    if (this._recovering) return
     // ── Fog ──
     // Fog is managed by World.ts (per-section fog color + density from
     // WorldConfig). World.init() creates scene.fog, World.updateTransform()
@@ -302,6 +488,7 @@ export class Renderer {
   /** Dispose: clean up GPU resources + window listener */
   public dispose(): void {
     window.removeEventListener('resize', this._onResize)
+    this._loopCallback = null
     this.pipeline?.dispose()
     this.instance.dispose()
     // A-3 fix: remove the canvas DOM element (was appended to document.body
