@@ -1083,6 +1083,39 @@ behind these functions in the Phase 7 scheduler slice, and that migration is
 where any (intended) behavior change would be reviewed. Rollback: delete the
 contract file and its tests.
 
+#### Phase 3 brand token manifest slice — 2026-08-21
+
+The canonical design tokens (the `@jlz-*` block in
+`src/assets/_import.less` §1) are mirrored as a typed, framework-neutral
+manifest, parallel to the route-manifest and world-slot contracts:
+
+- `src/core/brandTokens.ts` declares all 84 tokens (`BRAND_TOKENS`,
+  `BRAND_TOKEN_NAMES`) grouped by the Less sections (color, typography,
+  spacing, radius, console surfaces, z-index, motion, layout), plus a strict
+  `brandToken`/`isBrandToken` lookup and the six alias relations
+  (`BRAND_TOKEN_ALIASES`).
+- Direction of truth is **not** flipped: the Less file remains the single
+  source of truth. A unit test parses §1 of `_import.less` and compares it
+  against the manifest **key-for-key and value-for-value** (alias references
+  resolved one level), so any future token added or changed in Less fails the
+  suite until the manifest is re-synced. Six tokens in §1 are Less variable
+  references (e.g. `@jlz-color-signal-teal: @jlz-color-signal-cool;`); the
+  manifest stores the resolved value and records the alias relation so the
+  editorial fact stays explicit instead of silently duplicated.
+- The builder's generated override layer
+  (`src/assets/builder/theme.generated.less`) is a dev-only build artifact
+  with authored values and is intentionally outside the manifest; scene
+  literal dedup against these tokens is the later Phase 5 "generated
+  adapters" consumer.
+- The manifest is pure and **inert**: no runtime or Less behavior changes in
+  this slice; the production build is byte-size stable (tree-shaken). 8 new
+  unit tests (183/183), `vue-tsc` clean.
+
+Scope limits: the manifest is a mirror, not yet a source — the Phase 5
+generated adapters (typed manifest → CSS custom properties) are where the
+Less file would start being generated from it. Rollback: delete the contract
+file and its tests.
+
 ### Phase 4 — Vue Page Builder
 
 Scope:
@@ -1327,7 +1360,7 @@ The following ledgers are updated in this document during implementation.
 | scene route-page reads   | `routePage.ts` port (all scene consumers migrated: `World.ts`, `BakuCarousel.ts`, `CinematicNav.ts`, `ContentReveal.ts`, `Experience.ts`) | typed route port owned by the app providers                                  | 3, 5            |
 | six world slots          | `worldSlots.ts` tuple (consumed by `WorldConfig.ts`, `SplashCube.ts`)                                                                     | domain tuple + `WorldRoot`                                                   | 3, 7, 8         |
 | render demand            | `Experience._needsRender` + `renderDemand.ts` pure decision contract (inert until consumed)                                               | `RenderScheduler`                                                            | 3, 7            |
-| brand/runtime tokens     | Less files + scene literals                                                                                                               | typed manifest + generated adapters                                          | 3, 5            |
+| brand/runtime tokens     | `brandTokens.ts` manifest (mirrors `_import.less` §1, unit-locked; Less stays source of truth)                                            | typed manifest + generated adapters                                          | 3, 5            |
 | backend fallback         | `Renderer.ts`                                                                                                                             | `RendererFactory`                                                            | 2, 6            |
 | post-processing          | dual `RenderPipeline` paths                                                                                                               | TSL graph (`WebGPUBackend`) + forced-WebGL fallback per the Phase 6 decision | 2, 6            |
 | route GPU resources      | `World` lazy stages                                                                                                                       | route resource scopes                                                        | 3, 8            |

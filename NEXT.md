@@ -113,8 +113,12 @@ do not start a phase whose entry gate has not passed.
       raise/settle set and the narrower 10-flag ambient-breath idle set are
       line-verified against the three live `Experience.update()` sites and
       unit-locked; inert until the Phase 7 `RenderScheduler` rewires the
-      loop); the open contracts are typed ports, the RenderScheduler consumer
-      migration, resource scopes and brand tokens.
+      loop). The brand/runtime token manifest is now a pure contract
+      (`src/core/brandTokens.ts`, 183/183 unit suite; mirrors the 84
+      `_import.less` §1 tokens key-for-key, unit-locked by a Less parity
+      test; inert until the Phase 5 generated adapters consume it); the open
+      contracts are typed ports, the RenderScheduler consumer migration and
+      route resource scopes.
 
 - [ ] **Phase 4: migrate the development Page Builder to Vue** — use the
       isolated admin application as the first state-heavy Vue surface while
