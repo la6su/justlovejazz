@@ -626,8 +626,37 @@ textarea {
   transition: border-color 180ms ease;
 }
 
+// The secondary card takes the secondary accent's 1px line (the cool
+// mineral counterweight to the primary accent). Declared before the hover
+// rule so the hover emphasis still wins the border-color race.
+#builder-preview .jlz-builder-card.uk-card-secondary {
+  border-color: var(--builder-active-accent-secondary);
+}
+
 #builder-preview .jlz-builder-card:hover {
   border-color: var(--builder-active-accent);
+}
+
+// Secondary section and ghost button complete the variant language:
+// hairline section, outlined button that fills on hover. The product
+// mirror lives in _builder-page.less.
+#builder-preview .jlz-builder-section.uk-section-secondary {
+  border-block: 1px solid var(--builder-active-accent-secondary);
+}
+
+#builder-preview .uk-button-secondary {
+  border: 1px solid var(--builder-active-accent-secondary);
+  color: var(--builder-active-accent-secondary);
+  background: transparent;
+  transition:
+    background 140ms ease,
+    color 140ms ease;
+}
+
+#builder-preview .uk-button-secondary:hover,
+#builder-preview .uk-button-secondary:focus-visible {
+  color: var(--jlz-color-text-inverse);
+  background: var(--builder-active-accent-secondary);
 }
 
 // Body tier and section rhythm scale with the frame too (mobile-first:
@@ -1064,6 +1093,7 @@ textarea {
   --builder-active-text: var(--builder-text);
   --builder-active-text-muted: var(--builder-text-muted);
   --builder-active-accent: var(--builder-accent);
+  --builder-active-accent-secondary: var(--builder-accent-secondary);
 }
 
 .jlz-builder-preview.is-inverse-preview {
@@ -1073,6 +1103,7 @@ textarea {
   --builder-active-text: var(--builder-inverse-text);
   --builder-active-text-muted: var(--builder-inverse-text-muted);
   --builder-active-accent: var(--builder-inverse-accent);
+  --builder-active-accent-secondary: var(--builder-inverse-accent);
 }
 
 .jlz-style-sample {
@@ -1238,11 +1269,6 @@ textarea {
   background: var(--builder-active-accent);
 }
 
-.jlz-style-button-row .uk-button-secondary {
-  color: var(--builder-active-text);
-  background: var(--builder-active-elevated);
-}
-
 .jlz-style-card-grid article {
   padding: var(--builder-card-padding);
   border-radius: var(--builder-card-radius);
@@ -1260,11 +1286,16 @@ textarea {
 }
 
 .jlz-style-card-grid .uk-card-secondary {
+  border: 1px solid var(--builder-active-accent-secondary);
   color: var(--builder-active-text);
   background: var(--builder-active-elevated);
 }
 
-.jlz-style-card-grid :is(h1, h2, h3, p) {
+// UIKit's color-mode extends `.uk-card-secondary > :not([class*="uk-card-media"])`
+// with the console theme's dark text at specificity (0,2,0), which would
+// paint the secondary card's text dark on its dark surface. Re-declare the
+// inherit at (0,2,1) so the card's own (themed) color wins for every tier.
+.jlz-style-card-grid .uk-card-secondary :is(h1, h2, h3, h4, h5, h6, p) {
   color: inherit;
 }
 
@@ -1292,6 +1323,7 @@ textarea {
 }
 
 .jlz-style-section-stack .uk-section-secondary {
+  border-block: 1px solid var(--builder-active-accent-secondary);
   background: var(--builder-section-secondary);
 }
 

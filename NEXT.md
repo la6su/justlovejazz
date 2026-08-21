@@ -230,7 +230,11 @@ do not start a phase whose entry gate has not passed.
       polish pass showed the full six-level heading scale in the Heading
       sample (the Base sample keeps body copy only) and reworked the
       builder sidebar: the catalog is one quiet column of glyph rows and
-      the outline drops the duplicated mono type badge.
+      the outline drops the duplicated mono type badge. The secondary
+      variants (card, section, button) now carry the secondary accent's
+      1px line — outlined card, hairline section, ghost button that fills
+      on hover — in both the preview and the shipped `_builder-page.less`
+      layer.
       The SFC migration of the
       catalogue, outline, inspector, preview and Style workspace and the
       lifecycle-safe preview remain open.
