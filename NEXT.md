@@ -314,12 +314,12 @@ do not start a phase whose entry gate has not passed.
       `setupEnvironment()` through the `jlz:renderer-recovered` event because
       the PMREM texture dies with the lost device). `src/core/rendererBackend.ts`
       holds the pure policy (`planUnifiedBackend` + bounded `deviceLostAction`)
-      locked by 8 unit tests (276/276). Flag off = today's behavior; the flag
-      literal is stripped from default builds. Open: the candidate gate (every
-      public route on a flag-ON build — automatic WebGPU + forced
-      WebGLBackend), the flag flip, and the phase-exit cleanup commit that
-      deletes the classic production path and labels the retained GLSL
-      fallback the forced-WebGL owner.
+      locked by 8 unit tests (276/276). Candidate gate passed (all six public
+      routes on the flag-ON build, both representative backends, 0 errors) and
+      the flag flipped: the unified renderer is now the production default
+      (`VITE_JLZ_UNIFIED_RENDERER=0` is the temporary rollback). Open: the
+      phase-exit cleanup commit that deletes the flag + classic production
+      path and labels the retained GLSL fallback the dev-forced-WebGL owner.
 
 - [ ] **Phases 6–10: cut over renderer, Tres scene owners and static content** —
       only after their gates pass, ship the unified renderer, persistent

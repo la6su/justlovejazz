@@ -2113,11 +2113,22 @@ Status (2026-08-22):
   renderer, re-creates on the same canvas, rebuilds the pipeline, re-attaches
   the animation loop via the `Renderer.setAnimationLoop` owner boundary, and
   re-runs `setupEnvironment()` through the `jlz:renderer-recovered` event
-  (the PMREM texture dies with the lost device). Flag off = today's behavior;
-  the flag literal is stripped from default builds (dead-code eliminated).
-- Slice 3 (open): candidate gate — every public route on a flag-ON build
-  (automatic WebGPU + forced WebGLBackend), then the flag flip and the
-  phase-exit cleanup commit.
+  (the PMREM texture dies with the lost device). The pure policy
+  (`planUnifiedBackend` + bounded `deviceLostAction`) is unit-tested.
+- Slice 3 (done): candidate gate passed — all six public routes
+  (`/`, `/services`, `/works`, `/manifesto`, `/lab`, `/contact`) on the
+  flag-ON build over both representative backends: real `WebGPUBackend`
+  (premium TSL path) and forced `WebGLBackend` (direct-render parity path).
+  12/12 boots, 0 console errors, scene rendered on every route.
+- Slice 4 (done): the flag flipped — the unified renderer is the production
+  default (`VITE_JLZ_UNIFIED_RENDERER=0` is the temporary rollback to the
+  classic auto-switch path). The serial e2e suite now runs the unified
+  path end-to-end (headless browsers without a WebGPU API take the
+  `WebGPURenderer` → automatic `WebGLBackend` contract).
+- Slice 5 (open): phase-exit cleanup — delete the flag and the classic
+  auto-switch path, keep the classic `WebGLRenderer` + GLSL fallback only
+  as the dev-forced `?renderer=webgl` post owner per the fixed decision, and
+  update the removal ledger.
 
 Candidate gate:
 

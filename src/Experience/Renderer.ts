@@ -117,13 +117,16 @@ export class Renderer {
     const forceWebGL =
       import.meta.env.DEV && new URLSearchParams(window.location.search).get('renderer') === 'webgl'
 
-    // Phase 6 unified production renderer (candidate flag
-    // VITE_JLZ_UNIFIED_RENDERER=1): WebGPURenderer is the ONLY renderer class.
-    // The actual backend is inspected AFTER async init; a software (SwiftShader)
-    // WebGPU adapter is re-created with forceWebGL so hardware WebGL2 is used —
-    // still the same class, never a classic WebGLRenderer. Capabilities are
-    // calculated after initialization, from the actual backend.
-    const unified = import.meta.env.VITE_JLZ_UNIFIED_RENDERER === '1'
+    // Phase 6 production default (candidate gate passed 2026-08-22): the
+    // unified production renderer — `WebGPURenderer` is the only renderer
+    // class production constructs. The actual backend is inspected AFTER
+    // async init; a software (SwiftShader) WebGPU adapter is re-created with
+    // forceWebGL (same class, never a classic `WebGLRenderer`) and
+    // capabilities are calculated from the actual backend, not the initial
+    // `navigator.gpu` feature detection.
+    // `VITE_JLZ_UNIFIED_RENDERER=0` is the temporary rollback to the classic
+    // auto-switch path until the Phase 6 phase-exit cleanup removes it.
+    const unified = import.meta.env.VITE_JLZ_UNIFIED_RENDERER !== '0'
 
     if (unified) {
       this._forceWebGL = forceWebGL
