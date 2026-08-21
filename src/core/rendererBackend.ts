@@ -1,11 +1,16 @@
 // src/core/rendererBackend.ts — Phase 6 unified-renderer decisions.
 //
-// The Phase 6 candidate moves production to ONE renderer class
-// (`WebGPURenderer` from `three/webgpu`). What actually renders differs per
-// device: real `WebGPUBackend`, Three's automatic `WebGLBackend` fallback,
-// or a forced `forceWebGL` QA selection. These pure helpers make the
-// backend-policy decisions explicit and unit-testable; `Renderer.init()`
-// is the only caller that touches the live renderer.
+// Production constructs ONE renderer class (`WebGPURenderer` from
+// `three/webgpu`). What actually renders differs per device: real
+// `WebGPUBackend`, Three's automatic `WebGLBackend` fallback (renders the
+// scene directly, no TSL post — the Phase 2 accepted contract), or a forced
+// `forceWebGL` re-creation after a software adapter is detected. These pure
+// helpers make the backend-policy decisions explicit and unit-testable;
+// `Renderer.init()` is the only caller that touches the live renderer.
+//
+// The dev-forced `?renderer=webgl` parity QA path is NOT part of this policy:
+// it constructs the classic `WebGLRenderer` directly (the retained
+// forced-WebGLBackend GLSL post owner — see the Phase 6 fixed decision).
 
 export type FinalMode = 'webgpu' | 'webgl'
 
@@ -14,8 +19,6 @@ export interface BackendFacts {
   backendName: string | null
   /** True when the WebGPU adapter is a software fallback (SwiftShader). */
   isFallbackAdapter: boolean
-  /** True when the dev `?renderer=webgl` parity switch forced WebGL2. */
-  forceWebGL: boolean
 }
 
 export type UnifiedPlan = { recreate: false; mode: FinalMode } | { recreate: true; mode: FinalMode }
@@ -23,8 +26,6 @@ export type UnifiedPlan = { recreate: false; mode: FinalMode } | { recreate: tru
 /**
  * Decide what to do after `WebGPURenderer.init()` on the unified path.
  *
- * - forced `?renderer=webgl` QA → keep the instance (it is already on
- *   `WebGLBackend`), capability mode `webgl`;
  * - real `WebGPUBackend` on a real adapter → keep the instance, mode
  *   `webgpu` (premium TSL post path active);
  * - `WebGPUBackend` on a software (SwiftShader) adapter → recreate with
@@ -35,7 +36,6 @@ export type UnifiedPlan = { recreate: false; mode: FinalMode } | { recreate: tru
  *   accepted contract for the forced `WebGLBackend` path).
  */
 export function planUnifiedBackend(facts: BackendFacts): UnifiedPlan {
-  if (facts.forceWebGL) return { recreate: false, mode: 'webgl' }
   if (facts.backendName === 'WebGPUBackend') {
     if (facts.isFallbackAdapter) return { recreate: true, mode: 'webgl' }
     return { recreate: false, mode: 'webgpu' }

@@ -292,7 +292,7 @@ do not start a phase whose entry gate has not passed.
       build, inverted dist grep (`jlz-admin` absent, `pathMatch` present),
       live default-path smoke through Caddy. Phase 5 is complete.
 
-- [ ] **Phase 6: unified production renderer** — move production to one
+- [x] **Phase 6: unified production renderer** — move production to one
       `WebGPURenderer` + one TSL post graph on `WebGPUBackend`, calculate
       capabilities after init, add bounded device-loss recovery, and delete the
       classic `WebGLRenderer` path in a phase-exit cleanup commit. Slice 1
@@ -302,27 +302,28 @@ do not start a phase whose entry gate has not passed.
       compile raw `ShaderMaterial` passes), and PMREM now uses the
       renderer-native TSL generator on `WebGPURenderer` with the secondary
       offscreen WebGL context removed (classic generator only on the dev-forced
-      `?renderer=webgl` path). Slice 2 landed: the unified renderer runs behind
-      the candidate flag `VITE_JLZ_UNIFIED_RENDERER=1` — `Renderer.init()`
-      constructs `WebGPURenderer` only, inspects the actual backend after async
-      init, re-creates with `forceWebGL: true` on a software (SwiftShader)
-      adapter (same class, never a classic renderer), calculates
-      `DeviceCapability` mode from the actual backend, and adds bounded
-      device-loss recovery (budget 1: dispose pipeline + renderer, re-create on
-      the same canvas, rebuild the pipeline, re-attach the animation loop via
-      the `Renderer.setAnimationLoop` owner boundary, and re-run
-      `setupEnvironment()` through the `jlz:renderer-recovered` event because
-      the PMREM texture dies with the lost device). `src/core/rendererBackend.ts`
-      holds the pure policy (`planUnifiedBackend` + bounded `deviceLostAction`)
-      locked by 8 unit tests (276/276). Candidate gate passed (all six public
-      routes on the flag-ON build, both representative backends, 0 errors) and
-      the flag flipped: the unified renderer is now the production default
-      (`VITE_JLZ_UNIFIED_RENDERER=0` is the temporary rollback). Open: the
-      phase-exit cleanup commit that deletes the flag + classic production
-      path and labels the retained GLSL fallback the dev-forced-WebGL owner.
+      `?renderer=webgl` path). Slice 2 landed: the unified renderer candidate —
+      `Renderer.init()` constructs `WebGPURenderer` only, inspects the actual
+      backend after async init, re-creates with `forceWebGL: true` on a
+      software (SwiftShader) adapter (same class, never a classic renderer),
+      calculates `DeviceCapability` mode from the actual backend, and adds
+      bounded device-loss recovery (budget 1: dispose pipeline + renderer,
+      re-create on the same canvas, rebuild the pipeline, re-attach the
+      animation loop via the `Renderer.setAnimationLoop` owner boundary, and
+      re-run `setupEnvironment()` through the `jlz:renderer-recovered` event
+      because the PMREM texture dies with the lost device). `src/core/rendererBackend.ts`
+      holds the pure policy (`planUnifiedBackend` + bounded `deviceLostAction`).
+      Candidate gate passed (all six public routes on the flag-ON build, both
+      representative backends, 0 errors), the flag was flipped to the
+      production default, and the phase-exit cleanup deleted the flag + the
+      classic production auto-switch path — the classic `WebGLRenderer` + GLSL
+      `ShaderMaterial` chain is retained solely as the labelled dev-forced
+      `?renderer=webgl` post owner (deletion tracked to a future Three release
+      that admits TSL post on `WebGLBackend`, Phase 10). Rollback is a revert
+      of the Phase 6 commits. Phase 6 is complete.
 
-- [ ] **Phases 6–10: cut over renderer, Tres scene owners and static content** —
-      only after their gates pass, ship the unified renderer, persistent
+- [ ] **Phases 7–10: cut over Tres scene owners and static content** —
+      only after their gates pass, ship the persistent
       TresCanvas, one-by-one scene-owner migration, builder/blog SSG
       consolidation and final legacy removal. The migration is not done while
       duplicate routers, loops, renderer paths, owner adapters or undocumented

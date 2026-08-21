@@ -111,27 +111,34 @@ export class Renderer {
   }
 
   async init(): Promise<void> {
-    // Development-only parity switch: `?renderer=webgl` bypasses WebGPU so
-    // the fallback can be inspected on hardware that supports both backends.
-    // Vite removes this branch from production builds.
+    // Development-only parity switch: `?renderer=webgl` forces the classic
+    // `WebGLRenderer` + the bounded GLSL `ShaderMaterial` post chain — the
+    // retained forced-WebGLBackend post owner (Phase 6 fixed decision,
+    // 2026-08-22: the TSL `RenderPipeline` is WebGPU-only on Three r185, so
+    // the `WebGLBackend` of a `WebGPURenderer` cannot run TSL post). Vite
+    // removes this branch from production builds.
     const forceWebGL =
       import.meta.env.DEV && new URLSearchParams(window.location.search).get('renderer') === 'webgl'
 
-    // Phase 6 production default (candidate gate passed 2026-08-22): the
-    // unified production renderer — `WebGPURenderer` is the only renderer
-    // class production constructs. The actual backend is inspected AFTER
-    // async init; a software (SwiftShader) WebGPU adapter is re-created with
-    // forceWebGL (same class, never a classic `WebGLRenderer`) and
-    // capabilities are calculated from the actual backend, not the initial
-    // `navigator.gpu` feature detection.
-    // `VITE_JLZ_UNIFIED_RENDERER=0` is the temporary rollback to the classic
-    // auto-switch path until the Phase 6 phase-exit cleanup removes it.
-    const unified = import.meta.env.VITE_JLZ_UNIFIED_RENDERER !== '0'
-
-    if (unified) {
-      this._forceWebGL = forceWebGL
-      this.instance = await this.createWebGPUInstance(forceWebGL)
-      const facts = this.readBackendFacts(forceWebGL)
+    if (forceWebGL) {
+      if (import.meta.env.DEV) {
+        console.info(
+          '[Renderer.init] Using classic WebGLRenderer (forced for GLSL post parity QA — the retained forced-WebGLBackend post owner)',
+        )
+      }
+      this.instance = this.createWebGLRenderer()
+      this.capabilities.setFinalRendererMode('webgl')
+    } else {
+      // Phase 6 production default: the unified production renderer —
+      // `WebGPURenderer` is the only renderer class production constructs.
+      // The actual backend is inspected AFTER async init; a software
+      // (SwiftShader) WebGPU adapter is re-created with forceWebGL (same
+      // class, never a classic `WebGLRenderer`) and capabilities are
+      // calculated from the actual backend, not the initial `navigator.gpu`
+      // feature detection.
+      this._forceWebGL = false
+      this.instance = await this.createWebGPUInstance(false)
+      const facts = this.readBackendFacts()
       let plan = planUnifiedBackend(facts)
       if (import.meta.env.DEV) {
         console.info(
@@ -151,74 +158,12 @@ export class Renderer {
         ;(this.instance as WebGPURenderer).dispose?.()
         this._forceWebGL = true
         this.instance = await this.createWebGPUInstance(true)
-        plan = planUnifiedBackend(this.readBackendFacts(true))
+        plan = planUnifiedBackend(this.readBackendFacts())
       }
       this.capabilities.setFinalRendererMode(plan.mode)
       if (import.meta.env.DEV && plan.mode === 'webgpu') {
         console.info('[Renderer.init] unified premium WebGPU path active')
       }
-    } else if (!forceWebGL && this.capabilities.mode === 'webgpu') {
-      this.instance = new WebGPURenderer({ antialias: true, alpha: false })
-      const wg = this.instance as any
-      wg.toneMapping = THREE.ACESFilmicToneMapping
-      wg.toneMappingExposure = 1.0
-      wg.outputColorSpace = THREE.SRGBColorSpace
-      await wg.init?.()
-
-      // Check if WebGPURenderer actually got WebGPUBackend (not WebGLBackend fallback)
-      const backendName = wg.backend?.constructor?.name
-      if (import.meta.env.DEV) {
-        console.info('[Renderer.init] WebGPURenderer backend:', backendName)
-      }
-
-      // Check if the WebGPU adapter is a fallback (SwiftShader = software rendering).
-      // Software WebGPU gives ~2 FPS — hardware WebGL2 is much faster.
-      const adapter = wg.backend?.adapter?.info ?? wg.backend?.gpu?._adapter
-      const isFallback = adapter?.isFallbackAdapter ?? false
-      if (import.meta.env.DEV) {
-        console.info(
-          '[Renderer.init] WebGPU adapter isFallback:',
-          isFallback,
-          '| architecture:',
-          adapter?.architecture ?? '?',
-        )
-      }
-
-      if (backendName !== 'WebGPUBackend' || isFallback) {
-        // Either WebGLBackend fallback OR WebGPUBackend with SwiftShader (software).
-        // Both cases → use hardware-accelerated WebGLRenderer instead.
-        const reason =
-          backendName !== 'WebGPUBackend'
-            ? `backend is ${backendName}`
-            : 'adapter is SwiftShader (software rendering — would give ~2 FPS)'
-        if (import.meta.env.DEV) {
-          console.info('[Renderer.init] Switching to WebGLRenderer:', reason)
-        }
-        this.instance.domElement.remove()
-        wg.dispose?.()
-        this.instance = this.createWebGLRenderer()
-        this.capabilities.setFinalRendererMode('webgl')
-      } else {
-        // Real WebGPU on real hardware — enable premium visual path
-        // (TSL node overrides on SplashCube, real glass transmission).
-        // See IMPROVEMENT_PLAN A1/A2.
-        this.capabilities.setFinalRendererMode('webgpu')
-        if (import.meta.env.DEV) {
-          console.info(
-            '[Renderer.init] Premium WebGPU path active — TSL worldDNA nodes + real transmission enabled',
-          )
-        }
-      }
-    } else {
-      if (import.meta.env.DEV) {
-        console.info(
-          forceWebGL
-            ? '[Renderer.init] Using WebGLRenderer (forced for parity QA)'
-            : '[Renderer.init] Using WebGLRenderer (no WebGPU API)',
-        )
-      }
-      this.instance = this.createWebGLRenderer()
-      this.capabilities.setFinalRendererMode('webgl')
     }
 
     // Size + canvas
@@ -296,7 +241,7 @@ export class Renderer {
   }
 
   /** Read the actual backend + software-adapter facts after init. */
-  private readBackendFacts(forceWebGL: boolean): BackendFacts {
+  private readBackendFacts(): BackendFacts {
     const wg = this.instance as any
     const backendName: string | null = wg?.isWebGPURenderer
       ? (wg.backend?.constructor?.name ?? null)
@@ -305,7 +250,6 @@ export class Renderer {
     return {
       backendName,
       isFallbackAdapter: adapter?.isFallbackAdapter ?? false,
-      forceWebGL,
     }
   }
 
@@ -351,7 +295,7 @@ export class Renderer {
       ;(this.instance as WebGPURenderer).dispose?.()
 
       this.instance = await this.createWebGPUInstanceOnCanvas(canvas, this._forceWebGL)
-      let plan = planUnifiedBackend(this.readBackendFacts(this._forceWebGL))
+      let plan = planUnifiedBackend(this.readBackendFacts())
       if (plan.recreate) {
         // The replacement landed on a software adapter again — force WebGL2.
         this._forceWebGL = true
@@ -359,7 +303,7 @@ export class Renderer {
         // Re-create on the SAME canvas element (still in the DOM — do not
         // remove it, unlike the init-time path where setupCanvas has not run).
         this.instance = await this.createWebGPUInstanceOnCanvas(canvas, true)
-        plan = planUnifiedBackend(this.readBackendFacts(true))
+        plan = planUnifiedBackend(this.readBackendFacts())
       }
       this.capabilities.setFinalRendererMode(plan.mode)
 

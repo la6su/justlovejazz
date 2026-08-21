@@ -23,9 +23,9 @@ The target system has:
   not, including an explicit `forceWebGL` QA path;
 - TSL NodeMaterials and one TSL post-processing graph on `WebGPUBackend`;
   on Three r185 `RenderPipeline` is WebGPU-only, so the forced `WebGLBackend`
-  QA path renders the identical node-material scene directly until the open
-  Phase 6 decision (version-gated TSL post or retained bounded GLSL fallback)
-  selects the target post owner;
+  QA path renders the identical node-material scene directly; the Phase 6
+  fixed decision (2026-08-22) retains the bounded GLSL fallback as the
+  explicit forced-WebGLBackend post owner (dev `?renderer=webgl` only);
 - one demand-driven render scheduler and one renderer-loop driver;
 - semantic, prerendered route content above an `aria-hidden` canvas;
 - bounded route resource scopes with deterministic cancellation and disposal;
@@ -2125,10 +2125,19 @@ Status (2026-08-22):
   classic auto-switch path). The serial e2e suite now runs the unified
   path end-to-end (headless browsers without a WebGPU API take the
   `WebGPURenderer` → automatic `WebGLBackend` contract).
-- Slice 5 (open): phase-exit cleanup — delete the flag and the classic
-  auto-switch path, keep the classic `WebGLRenderer` + GLSL fallback only
-  as the dev-forced `?renderer=webgl` post owner per the fixed decision, and
-  update the removal ledger.
+- Slice 5 (done): phase-exit cleanup — the `VITE_JLZ_UNIFIED_RENDERER` flag
+  and the classic auto-switch path (WebGPURenderer → classic `WebGLRenderer`
+  on fallback/SwiftShader) are deleted; production constructs `WebGPURenderer`
+  only, and the classic `WebGLRenderer` + GLSL `ShaderMaterial` post chain is
+  retained solely as the dev-forced `?renderer=webgl` post owner per the
+  fixed decision (labelled in `RenderPipeline.render()`). Rollback after this
+  point is a revert of the Phase 6 commits, not a runtime flag.
+- Phase 6 complete (2026-08-22). Phase-exit acceptance: no production
+  construction of the classic `WebGLRenderer` remains (consumer search:
+  `createWebGLRenderer` is called only from the dev-forced branch); the post
+  owner matches the fixed decision (the retained bounded GLSL fallback is
+  the only non-TSL post path, labelled the forced-WebGLBackend owner); the
+  focused suite passes after cleanup.
 
 Candidate gate:
 
@@ -2326,17 +2335,17 @@ The following ledgers are updated in this document during implementation.
 
 ### Removal ledger
 
-| Legacy element                           | Remove after                                                                                                                             | Status  |
-| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| manual router and route `innerHTML`      | Phase 5 cleanup after parity — `src/router.ts` deleted 2026-08-22                                                                        | done    |
-| scene `document.body.dataset.page` reads | Phase 3 per-owner port migration — all scene consumers migrated 2026-08-21; the dataset write stays (router + CSS scoping) until Phase 5 | done    |
-| string page/section templates            | Phase 5 cleanup — `src/pages/*` + `PageView.vue` deleted 2026-08-22; prerender now sources the home SFC                                  | done    |
-| classic `WebGLRenderer` fallback         | Phase 6 phase-exit cleanup                                                                                                               | pending |
-| GLSL `ShaderMaterial` post chain         | Phase 6 phase-exit cleanup                                                                                                               | pending |
-| raw `jlz:*` window bridge                | all consumers use typed ports                                                                                                            | pending |
-| monolithic `Experience` coordination     | Phase 8 owner migrations                                                                                                                 | pending |
-| legacy World adapters                    | Phase 8 completion                                                                                                                       | pending |
-| migration flags and shims                | Phase 10                                                                                                                                 | pending |
+| Legacy element                           | Remove after                                                                                                                                    | Status  |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| manual router and route `innerHTML`      | Phase 5 cleanup after parity — `src/router.ts` deleted 2026-08-22                                                                               | done    |
+| scene `document.body.dataset.page` reads | Phase 3 per-owner port migration — all scene consumers migrated 2026-08-21; the dataset write stays (router + CSS scoping) until Phase 5        | done    |
+| string page/section templates            | Phase 5 cleanup — `src/pages/*` + `PageView.vue` deleted 2026-08-22; prerender now sources the home SFC                                         | done    |
+| classic `WebGLRenderer` fallback         | Phase 6 phase-exit cleanup — production path removed 2026-08-22; retained only as the dev-forced `?renderer=webgl` QA post owner                | done    |
+| GLSL `ShaderMaterial` post chain         | Phase 6 phase-exit cleanup — retained 2026-08-22 as the labelled forced-WebGLBackend owner per the fixed decision; deletion tracked to Phase 10 | done    |
+| raw `jlz:*` window bridge                | all consumers use typed ports                                                                                                                   | pending |
+| monolithic `Experience` coordination     | Phase 8 owner migrations                                                                                                                        | pending |
+| legacy World adapters                    | Phase 8 completion                                                                                                                              | pending |
+| migration flags and shims                | Phase 10                                                                                                                                        | pending |
 
 ## Definition of done
 

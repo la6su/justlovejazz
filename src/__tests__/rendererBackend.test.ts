@@ -11,7 +11,6 @@ describe('planUnifiedBackend (Phase 6 unified renderer policy)', () => {
     const plan = planUnifiedBackend({
       backendName: 'WebGPUBackend',
       isFallbackAdapter: false,
-      forceWebGL: false,
     })
     expect(plan).toEqual({ recreate: false, mode: 'webgpu' })
   })
@@ -20,7 +19,6 @@ describe('planUnifiedBackend (Phase 6 unified renderer policy)', () => {
     const plan = planUnifiedBackend({
       backendName: 'WebGPUBackend',
       isFallbackAdapter: true,
-      forceWebGL: false,
     })
     expect(plan).toEqual({ recreate: true, mode: 'webgl' })
   })
@@ -29,16 +27,6 @@ describe('planUnifiedBackend (Phase 6 unified renderer policy)', () => {
     const plan = planUnifiedBackend({
       backendName: 'WebGLBackend',
       isFallbackAdapter: false,
-      forceWebGL: false,
-    })
-    expect(plan).toEqual({ recreate: false, mode: 'webgl' })
-  })
-
-  it('respects a dev-forced ?renderer=webgl regardless of the backend', () => {
-    const plan = planUnifiedBackend({
-      backendName: 'WebGPUBackend',
-      isFallbackAdapter: false,
-      forceWebGL: true,
     })
     expect(plan).toEqual({ recreate: false, mode: 'webgl' })
   })
@@ -47,7 +35,6 @@ describe('planUnifiedBackend (Phase 6 unified renderer policy)', () => {
     const plan = planUnifiedBackend({
       backendName: null,
       isFallbackAdapter: false,
-      forceWebGL: false,
     })
     expect(plan).toEqual({ recreate: false, mode: 'webgl' })
   })

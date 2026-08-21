@@ -500,7 +500,10 @@ export class RenderPipeline {
       return
     }
 
-    // Native WebGL2 path (WebGLRenderer, not WebGPURenderer).
+    // Native WebGL2 path (classic WebGLRenderer, not WebGPURenderer) — the
+    // retained forced-WebGLBackend post owner (Phase 6 fixed decision). Only
+    // reachable through the dev-forced `?renderer=webgl` parity QA; Vite
+    // strips that branch from production builds.
     if (
       !this._config.bloomEnabled &&
       !this._config.vignetteEnabled &&
