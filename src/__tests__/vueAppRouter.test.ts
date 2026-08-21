@@ -1,11 +1,12 @@
 // src/__tests__/vueAppRouter.test.ts — Phase 5 Vue Router candidate slice.
 //
 // Two layers: the pure route records (bijection with the Phase 3 route
-// manifest) and the `AppShell` / `PageView` mount (a real memory-history
-// router over jsdom: the home page renders, `jlz:route-change` is emitted,
-// and an in-app push re-renders the target page with its meta applied).
-// The imperative side effects are mocked — the adapter's DOM contract is
-// covered by the live candidate gate, not by unit tests.
+// manifest, one semantic route SFC per record) and the `AppShell` mount
+// (a real memory-history router over jsdom: the home SFC renders into
+// `#spa-content`, `jlz:route-change` is emitted, and an in-app push
+// re-renders the target page with its meta applied). The imperative side
+// effects are mocked — the SFCs' DOM contract is covered by the
+// SFC/string-template parity suite and the live candidate gate.
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
@@ -36,6 +37,7 @@ vi.mock('../core/motionPolicy', () => ({
 
 import AppShell from '../app/AppShell.vue'
 import { pageForPath, jlzRouteRecords } from '../app/routes'
+import HomeView from '../app/views/HomeView.vue'
 import { ROUTE_MANIFEST, resolvePage } from '../core/routeManifest'
 import { eventBus } from '../core/EventBus'
 import { applyTranslations } from '../core/i18n'
@@ -64,11 +66,14 @@ describe('jlzRouteRecords', () => {
     for (const entry of ROUTE_MANIFEST) {
       const record = records.find((r) => r.path === entry.path)
       expect(record?.name).toBe(entry.page)
-      expect(record?.meta).toEqual({ page: entry.page })
+      // The semantic route SFC is the route target (PageView is no longer
+      // a route component).
+      expect(typeof record?.component).toBe('object')
     }
+    expect(records[0]?.component).toBe(HomeView)
     const fallback = records[records.length - 1]
     expect(fallback?.path).toBe('/:pathMatch(.*)*')
-    expect(fallback?.meta).toEqual({ page: 'home' })
+    expect(fallback?.component).toBe(HomeView)
   })
 
   it('pageForPath is the lenient manifest resolution (unknown → home)', () => {
@@ -80,7 +85,7 @@ describe('jlzRouteRecords', () => {
   })
 })
 
-describe('AppShell + PageView', () => {
+describe('AppShell + route SFCs', () => {
   const mountShell = async (start = '/'): Promise<void> => {
     setupAnnouncer()
     const router = createRouter({

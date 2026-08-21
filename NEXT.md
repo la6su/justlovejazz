@@ -269,7 +269,20 @@ do not start a phase whose entry gate has not passed.
       console errors) passes. Open: the per-route semantic SFC migration,
       the UIkit lifecycle adapters, flipping the candidate to the production
       default through the full candidate gate, and the cleanup commit that
-      removes the legacy `src/router.ts` path.
+      removes the legacy `src/router.ts` path. Second slice landed: the six
+      route records now point at semantic route SFCs (`src/app/views/*` — 1:1
+      ports of the string templates, locked by a parsed-`<section>` parity
+      suite), `useJlzPage.ts` is the per-page lifecycle composable (ported
+      `renderView` side effects + scoped UIkit adapter replacing the
+      document-wide update; i18n/meta run as the route provider), the mount
+      is `createSSRApp` so the build-time `prerender-index` output in `#app`
+      is adopted, and `entry-app.ts` gains the `?no-scene=1` DOM-only
+      bootstrap (the no-scene evidence path for the candidate gate). 277/277
+      unit suite, serial e2e 20/20 (incl. the new no-scene and direct-entry
+      tests), default build still free of the candidate graph. Open: flipping
+      the candidate to the production default through the full candidate
+      gate, and the cleanup commit that removes the legacy `src/router.ts`
+      path, the string templates and `PageView.vue`.
 
 - [ ] **Phases 6–10: cut over renderer, Tres scene owners and static content** —
       only after their gates pass, ship the unified renderer, persistent

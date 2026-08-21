@@ -108,6 +108,28 @@ async function boot(): Promise<void> {
   if (_bootstrapped) return
   const progress = (pct: number) => updateLoaderProgress(Math.min(100, pct))
 
+  // ?no-scene=1 — Phase 5 prerender contract: boot the route shell and the
+  // semantic route content WITHOUT the scene runtime (the Three/Experience
+  // dynamic imports below never run, no canvas is created). The loader ring
+  // completes and `jlz:webgl-ready` fires synchronously so the Enter flow
+  // and every scene-ready consumer proceed on a DOM-only world. This is the
+  // evidence path for the Phase 5 candidate gate: routes + navigation work
+  // with zero renderer, and a route can never (re)create one.
+  if (new URLSearchParams(window.location.search).has('no-scene')) {
+    try {
+      progress(100)
+      const { UIManager } = await import('./UI/UIManager')
+      new UIManager().init()
+      eventBus.emit('jlz:webgl-ready')
+      _bootstrapped = true
+    } catch (e) {
+      console.error('[entry-app] no-scene bootstrap failed:', e)
+      eventBus.emit('jlz:webgl-failed')
+    }
+    scheduleUiKitRefresh()
+    return
+  }
+
   // D-5 fix: set _bootstrapped AFTER the try block. Previously it was set
   // BEFORE → a failed Experience.init() left _bootstrapped=true, preventing
   // retry (user had to reload the page). Now if init throws, the catch block

@@ -14,7 +14,7 @@
 // `PageView`). `popstate` is handled by `createWebHistory` itself; the
 // native `Experience` is never touched by navigation.
 
-import { createApp } from 'vue'
+import { createSSRApp } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 
 import { applyTranslations } from '../core/i18n'
@@ -71,7 +71,11 @@ export async function mountVueApp(): Promise<void> {
     })
   })
 
-  const app = createApp(AppShell)
+  // createSSRApp: when the build-time prerender (vite `prerender-index`)
+  // left the home route shell in `#app`, mount hydrates it instead of
+  // replacing it; with an empty `#app` the behavior is identical to a
+  // fresh mount.
+  const app = createSSRApp(AppShell)
   app.use(router)
   app.mount(root)
   await router.isReady()

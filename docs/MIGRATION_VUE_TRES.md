@@ -1930,6 +1930,59 @@ Zero console errors on the candidate path.
 Rollback: delete `src/app/`, the `entry-app.ts` branch, the `env.d.ts`
 extension and the test file; the legacy router is the untouched default.
 
+#### Phase 5 semantic-route SFC slice (home + 5 content pages) — 2026-08-22
+
+Bounded slice per the phase scope: the six public route records now point at
+semantic route SFCs instead of the `PageView` string-template adapter.
+
+- `src/app/views/*` are 1:1 ports of the legacy string templates
+  (`src/pages/*`): `HomeView` (six cube-face sections incl. the `data-section`
+  3D contract), `ServicesView`, `WorksView` (four authored compositions over
+  `PROJECTS`), `ManifestoView`, `LabView`, `ContactView`. `NavMenu.vue` and
+  `ContactFooter.vue` are the shared overlays (`mode: 'home' | 'content'`
+  prop) ported from `src/sections/nav/template.ts` and
+  `src/sections/lab-overlay/template.ts`; `navItems.ts` is the typed
+  `NAV_ITEMS` port.
+- `src/app/routes.ts` records now carry the SFC components directly
+  (`meta.page` moved into the composable layer); `pageForPath` and the
+  strict/lenient split are unchanged. `PageView.vue` is retained only as the
+  documented temporary primitive adapter — no route target — pending the
+  cleanup commit.
+- `src/app/useJlzPage.ts` is the per-page lifecycle composable: the ported
+  `renderView` side-effect sequence (dataset write, WorkCards disposal before
+  the DOM swap, home intro activation, `applyTranslations` + `applyMetaTags`
+  on every render, announcer only on a real page change, menu toolbar init,
+  scoped `UIkit.update` + idle re-pass, `jlz:route-change`) now runs on
+  `onMounted`/`onBeforeUnmount` with a scoped UIkit adapter instead of the
+  document-wide update — the Phase 5 "UIkit lifecycle adapters" scope item.
+  i18n/meta are applied by the SFC lifecycle (route provider), not by an
+  imperative post-navigation hook.
+- `src/app/index.ts` mounts through `createSSRApp` so the build-time
+  `prerender-index` output in `#app` is adopted rather than destroyed;
+  `AppShell` renders the route SFC under it.
+- `src/entry-app.ts` gains the `?no-scene=1` no-scene bootstrap: it boots the
+  UI layer and fires `jlz:webgl-ready` on a DOM-only world without pulling
+  the Three/Experience graph — the evidence path for the candidate gate item
+  "prerendered semantic route content remains available without scene
+  startup".
+- `src/__tests__/appSfcParity.test.ts` (6 tests) locks SFC ↔ string-template
+  DOM parity per route (parsed-`<section>` fingerprint: structure +
+  non-class attributes + text). `src/__tests__/vueAppRouter.test.ts` now
+  asserts the SFC component per record. `tests/e2e.spec.ts` adds the
+  no-scene boot + in-app navigation test and the direct content-route entry
+  test (prerendered home sections must be gone once the router lands).
+
+Verification: scoped prettier, `vue-tsc` clean, 277/277 unit suite
+(271 + 6 parity), `git diff --check` clean, default production build with
+`jlz-admin` and `pathMatch` both absent from `dist` (marker grep) and the
+prerendered home shell intact in `index.html`, flag-on build carrying the
+candidate chunk only, serial e2e (incl. the two new tests) on the default
+build, and the live candidate gate through the Caddy proxy
+(`VITE_JLZ_VUE_ROUTER=1` dev server).
+
+Rollback: the candidate flag off keeps the legacy router + string templates
+as the untouched default; the SFCs and the composable are additive.
+
 ### Phase 6 — unified production renderer
 
 Entry: Phase 2 is accepted.

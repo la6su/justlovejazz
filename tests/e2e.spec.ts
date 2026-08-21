@@ -107,6 +107,46 @@ test.describe('JustLoveJazz — page boot smoke', () => {
     }
   })
 
+  test('no-scene mode boots the route shell and semantic content without a renderer', async ({
+    page,
+  }) => {
+    // Phase 5 prerender contract: ?no-scene=1 boots the route shell and the
+    // semantic route content WITHOUT the scene runtime — no canvas is ever
+    // created, and navigation still works on a DOM-only world.
+    await page.goto('/?no-scene=1')
+
+    const main = page.locator('main#spa-content')
+    await expect(main).toBeAttached({ timeout: 20000 })
+    for (const id of SECTION_IDS) {
+      await expect(page.locator(`#${id}`)).toBeAttached({ timeout: 20000 })
+    }
+    await expect(page.locator('canvas')).toHaveCount(0)
+
+    // jlz:webgl-ready fired (synthetic) — Enter becomes available.
+    await expect(page.locator('#jlz-splash-enter')).toHaveClass(/is-ready/)
+
+    // Semantic navigation without the scene: in-app push lands on /works.
+    await page.evaluate(() => {
+      window.dispatchEvent(new CustomEvent('jlz:navigate', { detail: { path: '/works' } }))
+    })
+    await expect(page).toHaveURL(/\/works$/)
+    await expect(page.locator('#section-works-01')).toBeAttached({ timeout: 20000 })
+    await expect(page.locator('canvas')).toHaveCount(0)
+  })
+
+  test('direct content-route entry renders the target page, not the prerendered home', async ({
+    page,
+  }) => {
+    // index.html is prerendered with the home sections; a direct deep link to
+    // a content route must land on that route's page (the lenient fallback is
+    // home-only for UNKNOWN paths, never for a manifest route).
+    await page.goto('/works', { waitUntil: 'domcontentloaded' })
+    await expect(page.locator('#section-works-01')).toBeAttached({ timeout: 60000 })
+    await expect(page.locator('#section-works-04')).toBeAttached({ timeout: 20000 })
+    // The prerendered home sections are gone once the router lands on /works.
+    await expect(page.locator('#section-intro')).toHaveCount(0, { timeout: 60000 })
+  })
+
   test('variable typography is self-hosted with Cyrillic coverage', async ({ request }) => {
     const html = await (await request.get('/')).text()
     const blogHtml = await (await request.get('/blog')).text()

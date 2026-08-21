@@ -3,7 +3,10 @@
 //
 // The manifest (`src/core/routeManifest.ts`) remains the single source of
 // truth for public paths: the records below are derived from it, never
-// re-declared. `pageForPath` is the lenient location resolution the
+// re-declared. The component per record is the semantic route SFC
+// (`src/app/views/*`); `PageView` is retained only as the documented
+// temporary primitive adapter (Phase 5 cleanup target) and is no longer a
+// route target. `pageForPath` is the lenient location resolution the
 // initial-load contract needs (unknown direct entry → home, URL untouched);
 // in-app navigation stays strict — the click handler and `jlz:navigate`
 // resolve against the manifest before pushing, so an unknown link is a
@@ -13,9 +16,23 @@ import type { RouteRecordRaw } from 'vue-router'
 
 import { ROUTE_MANIFEST, resolvePage } from '../core/routeManifest'
 import type { PageId } from '../sections/_shared/constants'
-import PageView from './PageView.vue'
+import ContactView from './views/ContactView.vue'
+import HomeView from './views/HomeView.vue'
+import LabView from './views/LabView.vue'
+import ManifestoView from './views/ManifestoView.vue'
+import ServicesView from './views/ServicesView.vue'
+import WorksView from './views/WorksView.vue'
 
 export type { PageId }
+
+const PAGE_VIEWS: Record<PageId, typeof HomeView> = {
+  home: HomeView,
+  services: ServicesView,
+  works: WorksView,
+  manifesto: ManifestoView,
+  lab: LabView,
+  contact: ContactView,
+}
 
 /** Lenient page resolution for a router location (initial-load contract). */
 export function pageForPath(path: string): PageId {
@@ -32,14 +49,12 @@ export function jlzRouteRecords(): RouteRecordRaw[] {
   const records: RouteRecordRaw[] = ROUTE_MANIFEST.map((entry) => ({
     path: entry.path,
     name: entry.page,
-    meta: { page: entry.page },
-    component: PageView,
+    component: PAGE_VIEWS[entry.page],
   }))
   records.push({
     path: '/:pathMatch(.*)*',
     name: 'fallback',
-    meta: { page: pageForPath('') },
-    component: PageView,
+    component: PAGE_VIEWS[pageForPath('')],
   })
   return records
 }
