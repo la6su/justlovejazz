@@ -124,7 +124,13 @@ export class SplashCube extends THREE.Mesh {
   // Scratch
 
   constructor() {
-    super(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial({ visible: false }))
+    // Root geometry keeps an empty `position` attribute so the @tresjs/core devtools
+    // performance sampler (calculateMemoryUsage → geometry.attributes.position.count)
+    // does not throw on this attribute-less root mesh. The root is never drawn: its
+    // material is `visible: false` and all visible content lives in child meshes.
+    const rootGeometry = new THREE.BufferGeometry()
+    rootGeometry.setAttribute('position', new THREE.Float32BufferAttribute([], 3))
+    super(rootGeometry, new THREE.MeshBasicMaterial({ visible: false }))
     this.name = 'baku-cube'
     this.visible = true
     // (buildContentScene() REMOVED — CubeCamera + content scene deleted.

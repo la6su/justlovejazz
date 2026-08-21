@@ -5,12 +5,14 @@ import { EnvSphere } from '../../Experience/World/EnvSphere'
 import { CasePlane } from '../../Experience/World/CasePlane'
 import { loadCaseTexture, releaseCaseTexture } from '../../Experience/World/caseTexture'
 import { ContactCyprusStage } from '../../Experience/World/ContactCyprusStage'
+import { SplashCube } from '../../Experience/World/SplashCube'
 
 const REPRESENTATIVE_CASE_TEXTURE = '/assets/projects/ebb-vibes/cover-studio-v2.jpg'
 
 export interface RepresentativeSceneResources {
   environment: EnvSphere
   burst: ParticleBurst
+  splashCube: SplashCube
   mesh: Mesh<TorusKnotGeometry, MeshBasicNodeMaterial>
   attach(scene: Scene): void
   loadWorksPlane(): Promise<boolean>
@@ -24,8 +26,13 @@ export function canUseTSLPost(backend: string | null): boolean {
 }
 
 /**
- * Own the smallest fog-compatible TSL scene as an explicit resource scope.
- * The caller owns scene-wide state such as fog, background and camera.
+ * Own the representative scene as an explicit resource scope: the minimal
+ * fog-compatible TSL mesh plus the real production owners, including the
+ * production SplashCube. The caller owns scene-wide state such as fog,
+ * background and camera. SplashCube is a synchronous imperative owner (no
+ * async loads, no timers), so the scope's disposed flag fully bounds its
+ * lifetime; late async results exist only for the Works texture and the
+ * Contact stage, and both decline attachment after disposal.
  */
 export function createRepresentativeScene(): RepresentativeSceneResources {
   const environment = new EnvSphere()
@@ -33,6 +40,10 @@ export function createRepresentativeScene(): RepresentativeSceneResources {
   const burst = new ParticleBurst()
   burst.trigger(0, 0, 0)
   burst.update(0.2)
+  const splashCube = new SplashCube()
+  splashCube.snapToFace(1)
+  splashCube.triggerOpener()
+  splashCube.update(0.25)
   const geometry = new TorusKnotGeometry(0.9, 0.28, 128, 24)
   const material = new MeshBasicNodeMaterial({ color: '#72f1b8', fog: true })
   const mesh = new Mesh(geometry, material)
@@ -54,11 +65,13 @@ export function createRepresentativeScene(): RepresentativeSceneResources {
   return {
     environment,
     burst,
+    splashCube,
     mesh,
     attach(scene) {
       attachedScene = scene
       scene.add(environment)
       scene.add(burst)
+      scene.add(splashCube)
       scene.add(mesh)
     },
     loadWorksPlane() {
@@ -114,6 +127,8 @@ export function createRepresentativeScene(): RepresentativeSceneResources {
       environment.dispose()
       burst.removeFromParent()
       burst.dispose()
+      splashCube.removeFromParent()
+      splashCube.dispose()
       mesh.removeFromParent()
       geometry.dispose()
       material.dispose()

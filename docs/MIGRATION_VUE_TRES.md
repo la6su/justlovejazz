@@ -21,7 +21,11 @@ The target system has:
 - one persistent TresJS scene root and one Three.js `WebGPURenderer`;
 - `WebGPUBackend` when hardware WebGPU is usable and `WebGLBackend` when it is
   not, including an explicit `forceWebGL` QA path;
-- TSL NodeMaterials and one TSL post-processing graph on both backends;
+- TSL NodeMaterials and one TSL post-processing graph on `WebGPUBackend`;
+  on Three r185 `RenderPipeline` is WebGPU-only, so the forced `WebGLBackend`
+  QA path renders the identical node-material scene directly until the open
+  Phase 6 decision (version-gated TSL post or retained bounded GLSL fallback)
+  selects the target post owner;
 - one demand-driven render scheduler and one renderer-loop driver;
 - semantic, prerendered route content above an `aria-hidden` canvas;
 - bounded route resource scopes with deterministic cancellation and disposal;
@@ -373,11 +377,18 @@ actual-backend inspection, TSL graph readiness and the first successful frame.
 
 ### Phase 2 — representative renderer feasibility gate
 
-This is not a rotating-box demo. The spike includes fog, representative TSL
-materials, CanvasTexture, instancing, time uniforms, the environment and
-SplashCube path, a Works texture plane, GLTF/DRACO, the complete TSL post
-graph, resize/DPR, reduced motion, lazy mount/unmount and software-adapter
-handling.
+This is not a rotating-box demo. The spike covers fog, a representative TSL
+material, instancing and time uniforms, the existing `EnvSphere` environment
+owner, the real production `SplashCube`, a real project cover texture through
+the shared ref-counted cache with the existing `CasePlane`,
+`ContactCyprusStage` GLTF/DRACO, the TSL post graph (admitted on
+`WebGPUBackend` only; Three r185 documents `RenderPipeline` as WebGPU-only, so
+the forced `WebGLBackend` path renders the identical scene directly),
+reduced-motion propagation, lazy mount/unmount and software-adapter handling.
+
+The real `SplashCube` owner was added to the representative scope on
+2026-08-16 and is a mandatory open Phase 2 gate: its two-backend hardware
+verification (compilation, visual parity, disposal) has not yet been run.
 
 Acceptance:
 
@@ -385,8 +396,10 @@ Acceptance:
   renderer;
 - the chosen Tres lifecycle proves renderer initialization, actual-backend
   inspection, TSL pipeline readiness and a successful first render in order;
-- fog and every representative material compile without console errors;
-- the agreed visual-difference threshold passes;
+- fog and every representative material compile without console errors,
+  including the production `SplashCube`;
+- the agreed visual-difference threshold defined in `PERFORMANCE_BASELINE.md`
+  ("Benchmark and visual protocol") passes for the representative scope;
 - settled idle returns to zero draws;
 - desktop and real-mobile p95 active-burst measurements stay within budget;
 - after declared cache warm-up, repeated mount/unmount reaches a stable
@@ -594,6 +607,32 @@ external-browser surface did not expose usable JS heap or GPU-resource counters.
 Do not turn this result into a no-leak claim; a later owner-visible resource
 plateau remains required for Phase 2 acceptance.
 
+#### Phase 2 open gates
+
+The slices above admit only their stated scopes. These gates remain open and
+must all pass with hardware evidence before Phase 2 is accepted:
+
+- **SplashCube representative verification (mandatory).** The real production
+  `SplashCube` is owned by the representative scope as of 2026-08-16. It is a
+  synchronous imperative owner: no async loads, no timers, and `triggerOpener`
+  respects reduced motion. Outstanding: physical `WebGPUBackend -> tsl-post`
+  and forced `WebGLBackend -> direct-webgl-fallback` runs with material,
+  geometry and jelly-deformation compilation, visual parity and disposal
+  evidence.
+- Desktop pacing and hidden-tab resume for the selected bounded
+  `setAnimationLoop` driver.
+- Dynamic resize/DPR event behaviour on real mobile hardware.
+- Owner-visible resource plateau after declared cache warm-up, and root
+  destroy returning root-owned resources to baseline (the recorded soak is
+  smoke-only and made no no-leak claim).
+- Visual parity for the complete representative scope under the baseline
+  protocol. The metric, masks and evidence storage rule are already defined in
+  `PERFORMANCE_BASELINE.md`; what is missing is tooling (the referenced
+  repository screenshot/diff tool does not exist yet), a fixed reference-frame
+  naming convention, and the comparison itself.
+- Related open delivery item: the initial route gzip is recorded OPEN in
+  `PERFORMANCE_BASELINE.md` and requires a clean production build.
+
 ### Phase 3 — framework-neutral contracts
 
 Scope:
@@ -665,8 +704,15 @@ Entry: Phase 2 is accepted.
 
 Scope:
 
-- move production to one `WebGPURenderer` and one TSL post graph;
+- move production to one `WebGPURenderer` and one TSL post graph on
+  `WebGPUBackend`;
 - calculate capabilities after initialization;
+- **Open decision, fixed before phase-exit:** on Three r185 the TSL
+  `RenderPipeline` is WebGPU-only, so the exit rule "no `ShaderMaterial` post
+  pass remains" is unreachable on the forced `WebGLBackend` QA path today.
+  Either version-gate a Three release that admits TSL post on `WebGLBackend`,
+  or retain the bounded GLSL fallback as the explicit forced-WebGL post owner
+  until that support is confirmed;
 - replace the secondary PMREM/WebGL context with a renderer-native or prebaked
   environment path;
 - add bounded device-loss recovery;
@@ -682,7 +728,9 @@ Candidate gate:
 Phase-exit acceptance:
 
 - no production import or construction of classic `WebGLRenderer` remains;
-- no `ShaderMaterial` post pass remains;
+- the post owner matches the fixed decision: either no `ShaderMaterial` post
+  pass remains, or the retained bounded GLSL fallback is the only non-TSL post
+  path and is labelled the forced-WebGLBackend owner;
 - consumer search and the full focused suite pass after cleanup.
 
 Rollback: retain the old renderer only through the candidate gate. After
@@ -851,7 +899,7 @@ The following ledgers are updated in this document during implementation.
 | render demand            | `Experience._needsRender`     | `RenderScheduler`                      | 3, 7            |
 | brand/runtime tokens     | Less files + scene literals   | typed manifest + generated adapters    | 3, 5            |
 | backend fallback         | `Renderer.ts`                 | `RendererFactory`                      | 2, 6            |
-| post-processing          | dual `RenderPipeline` paths   | unified TSL graph                      | 2, 6            |
+| post-processing          | dual `RenderPipeline` paths   | TSL graph (`WebGPUBackend`) + forced-WebGL fallback per the Phase 6 decision | 2, 6 |
 | route GPU resources      | `World` lazy stages           | route resource scopes                  | 3, 8            |
 | semantic UI              | string templates + UI classes | Vue route/features + UIkit adapters    | 4, 5            |
 | builder                  | `admin/main.ts`               | Vue builder app                        | 4               |

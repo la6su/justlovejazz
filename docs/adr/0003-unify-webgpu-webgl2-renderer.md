@@ -20,6 +20,20 @@ A software WebGPU candidate is disposed and recreated with forced WebGL. The
 fallback is classified independently because WebGL may also be software or
 unknown; neither path is labelled premium without evidence.
 
+## Clarification recorded with Phase 2 evidence
+
+Three r185 documents `RenderPipeline` as WebGPU-only, and the Phase 2 slice
+evidence (2026-08-15) confirmed that the probe admits the TSL post graph only
+for an actual `WebGPUBackend`. The forced `WebGLBackend` QA path therefore
+renders the identical node-material scene through direct rendering as a
+bounded fallback; it does not run a TSL post graph. In the decision above,
+"one TSL material/post graph" is the target for `WebGPUBackend` (and for a
+future Three release if one admits TSL post on `WebGLBackend`), not a current
+capability on the forced-WebGL path. The Phase 6 open decision (version-gated
+TSL post versus a retained bounded GLSL fallback) must be fixed before
+production cutover. Status remains Proposed and blocked by the representative
+renderer gate, which now also includes the real `SplashCube` owner.
+
 ## Acceptance before status becomes Accepted
 
 The representative scene must pass WebGPU and forced WebGL rendering, fog,

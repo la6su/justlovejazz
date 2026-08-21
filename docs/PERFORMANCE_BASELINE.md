@@ -37,11 +37,17 @@ production build.
 
 | Milestone                    | Splash gzip | Vue gzip | TresJS gzip | Shared Three gzip | Initial route gzip | Notes                |
 | ---------------------------- | ----------: | -------: | ----------: | ----------------: | -----------------: | -------------------- |
-| Pre-migration (`2026-07-28`) |     2.68 kB |      n/a |         n/a |         337.34 kB |  record in Phase 0 | classic fallback     |
+| Pre-migration (`2026-07-28`) |     2.68 kB |      n/a |         n/a |         337.34 kB |  OPEN              | classic fallback     |
 | Phase 1 toolchain            |     pending |  pending |     pending |           pending |            pending | inert scaffold       |
 | Phase 5 Vue shell            |     pending |  pending |         n/a |           pending |            pending | native scene         |
 | Phase 7 Tres root            |     pending |  pending |     pending |           pending |            pending | legacy world adapter |
 | Phase 10 cutover             |     pending |  pending |     pending |           pending |            pending | no legacy paths      |
+
+The initial route gzip is recorded **OPEN**, not estimated: it requires a
+clean production build of the current dependency set, which was not available
+when this note was written. Populate it from the first clean build together
+with its commit and build hash; do not infer it from the frozen pre-migration
+rows.
 
 The splash budget remains 5 KB gzip. The existing Three.js budget is not
 silently expanded to absorb Vue or TresJS. A dependency must replace owned code
@@ -327,6 +333,26 @@ and listener deltas, rather than a fabricated timer number.
   approval rather than a wider migration tolerance.
 - Repeat resource tests after cache warm-up and again after root destroy;
   declare every bounded cache cap in the evidence.
+
+### Visual evidence status
+
+The protocol above is the source of truth for visual gates: the metric (at
+most 0.5% of pixels above a 0.1 perceptual threshold outside approved masks)
+and the evidence storage rule are fixed here and are not re-decided per phase.
+Current factual state:
+
+- the referenced repository screenshot/diff tooling does not exist yet (no
+  `scripts/` entry and no CI workflow), so visual-parity gates cannot be
+  executed until it lands;
+- the reference-frame naming convention is not yet fixed as a machine-readable
+  scheme; the benchmark record fields (commit, build hash, browser, device,
+  backend, adapter class, viewport, DPR, power state and motion preference)
+  are the starting point;
+- no Phase 2 representative-scope visual comparison has been recorded, so the
+  Phase 2 visual gate remains open.
+
+These are tooling gaps against an existing protocol, not an undefined
+threshold.
 
 ## Performance design rules
 
