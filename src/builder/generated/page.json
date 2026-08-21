@@ -73,7 +73,7 @@
                   "props": {
                     "content": "Build the scene. Keep the soul.",
                     "level": "h1",
-                    "size": "small"
+                    "size": "xlarge"
                   },
                   "children": []
                 },
@@ -112,7 +112,7 @@
                   "props": {
                     "content": "Runtime boundary",
                     "level": "h2",
-                    "size": "small"
+                    "size": "large"
                   },
                   "children": []
                 },

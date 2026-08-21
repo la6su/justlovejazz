@@ -1582,6 +1582,38 @@ tablet with the correct frame widths (fluid / 820px / 390px).
 
 Rollback: revert the change set.
 
+#### Phase 4 admin preview typography and brand language slice — 2026-08-21
+
+The builder preview rendered headings with UA defaults (identical in every
+viewport mode, smaller than body copy — the saved document used
+`size: "small"` on display headings), and carried no brand language, so the
+editor looked utilitarian next to the product.
+
+- `admin/admin.less`: the preview now typesets with the same φ chain (ADR 0007) expressed in `cqi` units against the preview frame
+  (`container-type: inline-size`), so heading bands, body tier, meta, form
+  controls and section rhythm scale with the desktop / tablet / mobile
+  frame instead of the editor window. The builder's explicit `uk-heading-*`
+  size class wins over the HTML level default, mirroring the product.
+- Brand signatures (Neon Stage, ADR 0007) now render in the preview: soft
+  text glow on display headings, mono tracked uppercase meta, `S 01`
+  section index labels with 1px dividers, accent glow on the primary
+  button hover/focus and on links, 1px card borders with accent hover.
+  Reduced-motion suppresses the new transitions.
+- `src/builder/style-showcase.ts`: the Base / typography sample now shows
+  all five implemented size tiers (2xlarge … small) so the scale is visible
+  in the Style panel.
+- `src/builder/generated/page.json`: the hero headings use the display
+  tiers (`h1 xlarge`, `h2 large`) so the stored document matches the
+  product's hierarchy.
+
+Verification: scoped prettier, `vue-tsc`, 240/240 unit suite (29 files),
+production build with the admin graph absent from `dist`, `git diff --check`
+clean, serial e2e 18/18, live smoke: preview measures 59.2 / 42.7 px for the
+hero xlarge heading at the 859 / 388 px frames with the correct band
+hierarchy (zero console errors, document restored after the smoke edits).
+
+Rollback: revert the change set.
+
 ### Phase 5 — Vue public shell and router
 
 Scope:
