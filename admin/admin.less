@@ -41,7 +41,6 @@ textarea {
   gap: 12px;
   align-items: center;
   padding: 0 16px;
-  border-bottom: 1px solid var(--jlz-color-border);
   background: var(--jlz-color-bg-elevated);
   z-index: 4;
 }
@@ -74,14 +73,15 @@ textarea {
 .jlz-admin-title .uk-input {
   height: 36px;
   padding-inline: 10px;
-  border-color: transparent;
+  border: 0;
+  border-bottom: 1px solid transparent;
   background: transparent;
   color: var(--jlz-color-text);
   font-weight: 600;
 }
 
 .jlz-admin-title .uk-input:focus {
-  border-color: var(--jlz-color-border-strong);
+  border-bottom-color: var(--jlz-color-border-strong);
   background: var(--jlz-color-surface-hover);
 }
 
@@ -261,11 +261,11 @@ textarea {
   text-transform: uppercase;
 }
 
-// The inspector header is the only right-panel heading — a hairline keeps the
-// action row (title + node actions) separate from the field list below.
+// The inspector header is the only right-panel heading — the field list's
+// own group rhythm keeps the title row apart from the properties.
 .jlz-admin-sidebar-right .jlz-admin-panel-heading {
   padding-top: 20px;
-  border-bottom: 1px solid var(--jlz-color-border);
+  padding-bottom: 4px;
 }
 
 .jlz-admin-catalog {
@@ -278,7 +278,7 @@ textarea {
 // Figma-style catalog groups: mono kickers over each element family.
 .jlz-admin-catalog-group {
   grid-column: 1 / -1;
-  margin-top: 14px;
+  margin-top: 18px;
   color: var(--jlz-color-text-subtle);
   font-family: var(--jlz-font-mono);
   font-size: 0.64rem;
@@ -356,7 +356,7 @@ textarea {
 
 .jlz-admin-outline {
   margin: 0;
-  padding: 0 12px 28px;
+  padding: 0 12px 24px;
   list-style: none;
 }
 
@@ -473,7 +473,6 @@ textarea {
   height: 100%;
   margin: auto;
   overflow: auto;
-  border: 1px solid var(--jlz-color-border-strong);
   background: var(--jlz-color-bg);
 }
 
@@ -983,11 +982,11 @@ textarea {
 
 .jlz-admin-style-navigation {
   display: grid;
-  padding: 0 12px 32px;
+  padding: 0 12px 24px;
 }
 
 .jlz-admin-style-category {
-  padding: 18px 8px 8px;
+  padding: 18px 8px 0;
   color: var(--jlz-color-text-subtle);
   font-family: var(--jlz-font-mono);
   font-size: 0.62rem;
@@ -1000,7 +999,7 @@ textarea {
   grid-template-columns: 18px 1fr auto;
   gap: 10px;
   align-items: center;
-  min-height: 40px;
+  min-height: 38px;
   padding: 8px 10px;
   border: 0;
   color: var(--jlz-color-text-muted);
@@ -1106,16 +1105,12 @@ textarea {
   --builder-active-accent-secondary: var(--builder-inverse-accent);
 }
 
+// Samples are separated by spacing alone — the active outline is the only
+// mark a sample gets.
 .jlz-style-sample {
   min-width: 0;
   padding-bottom: calc(var(--builder-spacing) * 2);
-  border-bottom: 1px solid var(--builder-border);
   scroll-margin-top: 24px;
-}
-
-.jlz-style-sample:last-child {
-  padding-bottom: 0;
-  border-bottom: 0;
 }
 
 // The selected group's sample is the only active mark: a quiet accent

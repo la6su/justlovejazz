@@ -1739,9 +1739,21 @@ absent from `dist`, live smoke — sixteen rail groups with glyphs and
 counts, all sixteen component samples stay visible while the selected
 group is outlined and scrolled into view, the Heading sample shows the
 full six-level display scale, divider/heading edits update the
-preview live and are undo-able via Ctrl+Z to the saved baseline, computed
-chrome borders read 0px while structural hairlines stay 1px, zero console
-errors.
+preview live and are undo-able via Ctrl+Z to the saved baseline, the
+secondary card/section/button read as the secondary accent's 1px line
+(outlined card, hairline section, ghost button filling on hover, inverse
+tone remapped) in both the preview and the shipped `_builder-page.less`
+layer, inspector rows stay one compact line with descriptions in
+hover tooltips and color rows ending in a round borderless-border dot
+(pinned to one column; the hex track shrinks to 0 so long labels cannot
+push the dot past the panel), form controls keep only their bottom
+underline, and the catalog and outline rows share the Style rail's
+official UIKit glyph set — 18px hydrated SVGs on the same icon family.
+Computed chrome borders read 0px (toolbar, right-panel heading, preview
+frame, showcase sample dividers, tooltips) while buttons, preview cards
+and the round swatch keep theirs; the rails share one trailing-padding
+and 38px row-height rhythm,
+zero console errors.
 
 Rollback: revert the change set.
 
