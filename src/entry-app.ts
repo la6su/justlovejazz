@@ -115,8 +115,9 @@ async function boot(): Promise<void> {
   try {
     const { ErrorTracker } = await import('./core/ErrorTracker')
     ErrorTracker.init()
-    // syncReducedMotionDataset() is already called in entry-shell.ts;
-    // it is idempotent so we skip the second call here.
+    // entry-shell.ts set the reduced-motion dataset synchronously at shell
+    // load (legacy E2E/CSS hook); the preference itself is read on demand
+    // through motionPolicy.prefersReducedMotion().
 
     const bootStart = performance.now()
     progress(15)

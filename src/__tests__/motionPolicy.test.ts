@@ -1,10 +1,12 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { prefersReducedMotion, syncReducedMotionDataset } from '../core/motionPolicy'
+import { describe, it, expect, vi } from 'vitest'
+import { prefersReducedMotion } from '../core/motionPolicy'
 
-// motionPolicy is small but critical: it gates Lenis smoothing, gallery
-// transitions, and CSS hooks (documentElement.dataset.reducedMotion). The
-// two functions must be resilient to missing matchMedia + correctly reflect
-// the user's OS preference.
+// motionPolicy is the typed motion preference port (Phase 3): small but
+// critical — it gates Lenis smoothing, gallery transitions, camera shake and
+// reduced-motion settle paths. It must be resilient to a missing matchMedia
+// and correctly reflect the user's OS preference. (The legacy
+// `documentElement.dataset.reducedMotion` hook is written by entry-shell.ts
+// and verified by the E2E suite, not here.)
 
 describe('motionPolicy', () => {
   describe('prefersReducedMotion', () => {
@@ -38,55 +40,6 @@ describe('motionPolicy', () => {
       // === 'undefined' first. The previous test covers matchMedia missing.
       // Here we just confirm the function does not throw on edge cases.
       expect(() => prefersReducedMotion()).not.toThrow()
-    })
-  })
-
-  describe('syncReducedMotionDataset', () => {
-    beforeEach(() => {
-      // Clean dataset between tests
-      delete document.documentElement.dataset.reducedMotion
-    })
-
-    afterEach(() => {
-      vi.restoreAllMocks()
-      vi.unstubAllGlobals()
-    })
-
-    it('sets documentElement.dataset.reducedMotion', () => {
-      syncReducedMotionDataset()
-      const val = document.documentElement.dataset.reducedMotion
-      expect(val).toBeDefined()
-      expect(['0', '1']).toContain(val)
-    })
-
-    it('sets "1" when prefers-reduced-motion: reduce is active', () => {
-      vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: true }))
-      syncReducedMotionDataset()
-      expect(document.documentElement.dataset.reducedMotion).toBe('1')
-    })
-
-    it('sets "0" when prefers-reduced-motion is not active', () => {
-      vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }))
-      syncReducedMotionDataset()
-      expect(document.documentElement.dataset.reducedMotion).toBe('0')
-    })
-
-    it('sets "0" when matchMedia is unavailable (falls back to no-reduce)', () => {
-      const orig = window.matchMedia
-      // @ts-expect-error — intentionally delete matchMedia
-      delete window.matchMedia
-      syncReducedMotionDataset()
-      expect(document.documentElement.dataset.reducedMotion).toBe('0')
-      window.matchMedia = orig
-    })
-
-    it('is idempotent — calling twice produces the same value', () => {
-      vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }))
-      syncReducedMotionDataset()
-      const first = document.documentElement.dataset.reducedMotion
-      syncReducedMotionDataset()
-      const second = document.documentElement.dataset.reducedMotion
-      expect(first).toBe(second)
     })
   })
 })

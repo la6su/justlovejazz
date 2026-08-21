@@ -1116,6 +1116,37 @@ generated adapters (typed manifest → CSS custom properties) are where the
 Less file would start being generated from it. Rollback: delete the contract
 file and its tests.
 
+#### Phase 3 typed preference port slice — 2026-08-21
+
+The reduced-motion preference already had the right shape — a small
+pull-based module every consumer calls — so this slice formalizes
+`src/core/motionPolicy.ts` as the **typed motion preference port** and
+removes the one dead writer around it:
+
+- `prefersReducedMotion(): boolean` is the single read point; all 11
+  scene/UI consumers (World, Experience, Camera, Lights, SplashCube,
+  ContactCyprusStage, CinematicNav, RouteTransition, entry-app) read
+  through it, none infer the preference from DOM datasets. Reads stay
+  pull-based, so the OS preference is current at every decision point and
+  the Phase 5 swap to typed Vue state only changes this module's source —
+  consumers stay unchanged.
+- `syncReducedMotionDataset()` was removed: production code never called it
+  (only the unit tests did), and the comment in `entry-app.ts` claiming it
+  ran from `entry-shell.ts` was stale — `entry-shell.ts` inlines its own
+  synchronous write at shell load. That dataset write stays: it is the
+  legacy `documentElement.dataset.reducedMotion` hook that the E2E suite
+  reads (`tests/e2e.spec.ts`), the same "writer stays until Phase 5"
+  category as the `data-page` dataset.
+- 5 dead-writer unit tests removed; `vue-tsc` clean; 178/178 unit suite;
+  production build byte-size stable (the dead code was already
+  tree-shaken); runtime smoke on home boots with the hook written
+  (`data-reduced-motion="0"`) and zero console errors.
+
+Scope limits: the preference port covers reduced motion; if further
+preferences (locale, quality) surface, they join this port rather than new
+ad-hoc readers. The dataset hook removal is a Phase 5 shell item. Rollback:
+restore the function and its tests.
+
 ### Phase 4 — Vue Page Builder
 
 Scope:
@@ -1353,20 +1384,22 @@ The following ledgers are updated in this document during implementation.
 
 ### Traceability
 
-| Contract                 | Current owner                                                                                                                             | Target owner                                                                 | Migration phase |
-| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | --------------- |
-| splash readiness/failure | `index.html`, `entry-app.ts` + `bootstrapStates.ts` pure contract (inert until consumed)                                                  | inline shell + bootstrap state machine                                       | 3, 5            |
-| routes/hash/meta         | `routeManifest.ts`, `router.ts`, `pageMeta.ts`                                                                                            | route manifest + Vue Router                                                  | 3, 5            |
-| scene route-page reads   | `routePage.ts` port (all scene consumers migrated: `World.ts`, `BakuCarousel.ts`, `CinematicNav.ts`, `ContentReveal.ts`, `Experience.ts`) | typed route port owned by the app providers                                  | 3, 5            |
-| six world slots          | `worldSlots.ts` tuple (consumed by `WorldConfig.ts`, `SplashCube.ts`)                                                                     | domain tuple + `WorldRoot`                                                   | 3, 7, 8         |
-| render demand            | `Experience._needsRender` + `renderDemand.ts` pure decision contract (inert until consumed)                                               | `RenderScheduler`                                                            | 3, 7            |
-| brand/runtime tokens     | `brandTokens.ts` manifest (mirrors `_import.less` §1, unit-locked; Less stays source of truth)                                            | typed manifest + generated adapters                                          | 3, 5            |
-| backend fallback         | `Renderer.ts`                                                                                                                             | `RendererFactory`                                                            | 2, 6            |
-| post-processing          | dual `RenderPipeline` paths                                                                                                               | TSL graph (`WebGPUBackend`) + forced-WebGL fallback per the Phase 6 decision | 2, 6            |
-| route GPU resources      | `World` lazy stages                                                                                                                       | route resource scopes                                                        | 3, 8            |
-| semantic UI              | string templates + UI classes                                                                                                             | Vue route/features + UIkit adapters                                          | 4, 5            |
-| builder                  | `admin/main.ts`                                                                                                                           | Vue builder app                                                              | 4               |
-| static content           | standalone pages                                                                                                                          | shared SSG pipeline                                                          | 9               |
+| Contract                 | Current owner                                                                                                                               | Target owner                                                                 | Migration phase |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | --------------- |
+| splash readiness/failure | `index.html`, `entry-app.ts` + `bootstrapStates.ts` pure contract (inert until consumed)                                                    | inline shell + bootstrap state machine                                       | 3, 5            |
+| routes/hash/meta         | `routeManifest.ts`, `router.ts`, `pageMeta.ts`                                                                                              | route manifest + Vue Router                                                  | 3, 5            |
+| scene route-page reads   | `routePage.ts` port (all scene consumers migrated: `World.ts`, `BakuCarousel.ts`, `CinematicNav.ts`, `ContentReveal.ts`, `Experience.ts`)   | typed route port owned by the app providers                                  | 3, 5            |
+| six world slots          | `worldSlots.ts` tuple (consumed by `WorldConfig.ts`, `SplashCube.ts`)                                                                       | domain tuple + `WorldRoot`                                                   | 3, 7, 8         |
+| render demand            | `Experience._needsRender` + `renderDemand.ts` pure decision contract (inert until consumed)                                                 | `RenderScheduler`                                                            | 3, 7            |
+| motion preference        | `motionPolicy.ts` typed port (11 consumers); `entry-shell.ts` dataset hook for E2E/CSS (dead `syncReducedMotionDataset` removed 2026-08-21) | typed preference state owned by the app providers                            | 3, 5            |
+| brand/runtime tokens     | `brandTokens.ts` manifest (mirrors `_import.less` §1, unit-locked; Less stays source of truth)                                              | typed manifest + generated adapters                                          | 3, 5            |
+| motion preference        | `motionPolicy.ts` typed port (11 consumers; dead `syncReducedMotionDataset` writer removed); `entry-shell.ts` dataset hook for E2E/CSS      | typed preference state owned by the app providers                            | 3, 5            |
+| backend fallback         | `Renderer.ts`                                                                                                                               | `RendererFactory`                                                            | 2, 6            |
+| post-processing          | dual `RenderPipeline` paths                                                                                                                 | TSL graph (`WebGPUBackend`) + forced-WebGL fallback per the Phase 6 decision | 2, 6            |
+| route GPU resources      | `World` lazy stages                                                                                                                         | route resource scopes                                                        | 3, 8            |
+| semantic UI              | string templates + UI classes                                                                                                               | Vue route/features + UIkit adapters                                          | 4, 5            |
+| builder                  | `admin/main.ts`                                                                                                                             | Vue builder app                                                              | 4               |
+| static content           | standalone pages                                                                                                                            | shared SSG pipeline                                                          | 9               |
 
 ### Removal ledger
 

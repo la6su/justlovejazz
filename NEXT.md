@@ -116,9 +116,13 @@ do not start a phase whose entry gate has not passed.
       loop). The brand/runtime token manifest is now a pure contract
       (`src/core/brandTokens.ts`, 183/183 unit suite; mirrors the 84
       `_import.less` §1 tokens key-for-key, unit-locked by a Less parity
-      test; inert until the Phase 5 generated adapters consume it); the open
-      contracts are typed ports, the RenderScheduler consumer migration and
-      route resource scopes.
+      test; inert until the Phase 5 generated adapters consume it). The
+      typed motion-preference port is now formalized
+      (`src/core/motionPolicy.ts`, 178/178 unit suite; 11 consumers read
+      through it, the dead `syncReducedMotionDataset` writer removed, the
+      `entry-shell.ts` E2E/CSS dataset hook stays until Phase 5); the open
+      contracts are the story/scene ports, the RenderScheduler consumer
+      migration and route resource scopes.
 
 - [ ] **Phase 4: migrate the development Page Builder to Vue** — use the
       isolated admin application as the first state-heavy Vue surface while
