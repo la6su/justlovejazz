@@ -737,15 +737,16 @@ textarea {
   padding: 0 20px 32px;
 }
 
-// Figma-style property rows: compact fields sit on a label/control row,
-// long-form content stacks below its label. Group headers are mono kickers.
+// Figma-style property rows: one compact row per field — label, control and
+// (for colors) the swatch. The description folds into a hover tooltip on
+// the label; long-form content stacks below its label.
 .jlz-admin-field {
   display: grid;
   grid-template-columns: 92px 1fr;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
   margin: 0;
-  padding: 7px 0;
+  padding: 4px 0;
 }
 
 .jlz-admin-field--stacked {
@@ -753,58 +754,168 @@ textarea {
   align-items: start;
 }
 
+// The label carries the field description as a flat hover tooltip: mono
+// copy, one structural hairline, no glow, no radius.
 .jlz-admin-field > span {
+  position: relative;
   color: var(--jlz-color-text-muted);
-  font-size: 0.72rem;
-  font-weight: 400;
-}
-
-.jlz-admin-field small {
-  grid-column: 1 / -1;
-  margin: 2px 0 6px;
-  color: var(--jlz-color-text-subtle);
   font-size: 0.7rem;
-  line-height: 1.5;
+  font-weight: 400;
+  white-space: nowrap;
 }
 
+.jlz-admin-field > span[data-description] {
+  cursor: help;
+}
+
+.jlz-admin-field > span[data-description]::after {
+  content: attr(data-description);
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  z-index: 40;
+  width: max-content;
+  max-width: 220px;
+  padding: 6px 8px;
+  color: var(--jlz-color-text-muted);
+  background: var(--jlz-color-surface-hover);
+  font-family: var(--jlz-font-mono);
+  font-size: 0.64rem;
+  font-weight: 400;
+  line-height: 1.5;
+  text-transform: none;
+  letter-spacing: 0;
+  white-space: normal;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 120ms ease;
+  pointer-events: none;
+}
+
+.jlz-admin-field > span[data-description]:hover::after {
+  opacity: 1;
+  visibility: visible;
+}
+
+// Visually-hidden copy keeps the wrapped control's accessible name (the
+// label text) identical to the pre-tooltip layout.
+.jlz-admin-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+// Form controls carry one underline (the bottom edge) — the other sides
+// stay borderless so the row reads as a flat line, not a box.
 .jlz-admin-field .uk-input,
 .jlz-admin-field .uk-select,
 .jlz-admin-field .uk-textarea {
-  min-height: 32px;
-  border-color: var(--jlz-color-border);
+  border: 0;
+  border-bottom: 1px solid var(--jlz-color-border);
   color: var(--jlz-color-text);
   background: var(--jlz-color-bg);
-  font-size: 0.8rem;
+  font-size: 0.75rem;
+}
+
+.jlz-admin-field .uk-input:focus,
+.jlz-admin-field .uk-select:focus,
+.jlz-admin-field .uk-textarea:focus {
+  border-bottom-color: var(--jlz-color-accent);
+}
+
+// UIKit fixes `.uk-input`/`.uk-select` at 44px; the compact admin row pins
+// them at 28px (min-height alone cannot win against the explicit height).
+.jlz-admin-field .uk-input,
+.jlz-admin-field .uk-select {
+  height: 28px;
+}
+
+// The UIKit select selector carries two :not() pseudo-classes ((0,3,0)),
+// outscoring the row rule above; the repeated class ties it and wins by
+// source order (admin styles ship after the UIKit theme).
+.jlz-admin-field.jlz-admin-field .uk-select {
+  height: 28px;
 }
 
 .jlz-admin-field .uk-textarea {
-  min-height: 120px;
+  height: auto;
+  min-height: 110px;
   resize: vertical;
 }
 
+// Color rows read label / hex / dot. The hex channel is borderless until
+// focus (a hairline is the only focus mark) and the swatch is the native
+// picker itself, rendered as a flat round dot — the user's explicit ask —
+// so the row itself carries no borders. The text input's intrinsic
+// min-content width would push the dot past the panel on long labels, so
+// both shrinkable tracks (and their items) may reach 0; the dot stays pinned.
 .jlz-admin-field-color {
-  grid-template-columns: 1fr 48px;
+  grid-template-columns: minmax(0, max-content) minmax(0, 1fr) 20px;
 }
 
 .jlz-admin-field-color > span,
-.jlz-admin-field-color small {
-  grid-column: 1 / -1;
+.jlz-admin-field-color .jlz-admin-hex {
+  min-width: 0;
 }
 
-.jlz-admin-field-color input[type='color'] {
-  width: 48px;
-  height: 32px;
-  padding: 2px;
+.jlz-admin-hex {
+  min-height: 0;
+  padding: 3px 4px;
+  color: var(--jlz-color-text-subtle);
+  background: transparent;
   border: 0;
-  background: var(--jlz-color-surface);
+  text-align: right;
+  font-family: var(--jlz-font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.02em;
 }
 
+.jlz-admin-hex:focus {
+  outline: 1px solid var(--jlz-color-accent);
+  color: var(--jlz-color-text);
+}
+
+// The native swatch paints a square that Chromium ignores border-radius on;
+// clipping the input itself (appearance none + overflow hidden + 50% radius)
+// is what actually rounds it.
+.jlz-admin-swatch {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--jlz-color-border);
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  appearance: none;
+  overflow: hidden;
+}
+
+.jlz-admin-swatch:hover {
+  border-color: var(--jlz-color-border-strong);
+}
+
+.jlz-admin-swatch::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.jlz-admin-swatch::-webkit-color-swatch,
+.jlz-admin-swatch::-moz-color-swatch {
+  border: 0;
+}
+
+// Group spacing rides the same 18px rhythm as the left rails (row padding
+// plus the kicker's top padding).
 .jlz-admin-inspector-group {
-  margin-bottom: 12px;
+  margin-bottom: 0;
 }
 
 .jlz-admin-inspector-group-label {
-  padding: 16px 0 8px;
+  padding: 14px 0 6px;
   color: var(--jlz-color-text-subtle);
   font-family: var(--jlz-font-mono);
   font-size: 0.64rem;

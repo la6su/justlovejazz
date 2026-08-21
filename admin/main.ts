@@ -308,21 +308,32 @@ function createStyleField(definition: StyleFieldDefinition): HTMLLabelElement {
   label.className = `jlz-admin-field${definition.type === 'color' ? ' jlz-admin-field-color' : ''}`
   const title = document.createElement('span')
   title.textContent = definition.label
+  // The description folds into a hover tooltip on the label so each property
+  // stays one compact row; the visually-hidden copy keeps the input's
+  // accessible name (the label text) unchanged.
+  if (definition.description) title.dataset.description = definition.description
   const description = document.createElement('small')
+  description.className = 'jlz-admin-sr-only'
   description.textContent = definition.description
 
   if (definition.type === 'color') {
-    const text = document.createElement('input')
-    text.type = 'text'
-    text.className = 'uk-input'
-    text.pattern = '#[0-9a-fA-F]{6}'
-    text.value = store.document.theme[definition.key]
-    text.dataset.themeProp = definition.key
-    const color = document.createElement('input')
-    color.type = 'color'
-    color.value = store.document.theme[definition.key]
-    color.dataset.themeProp = definition.key
-    label.append(title, description, text, color)
+    // Row reads label / hex / dot: the hex field is borderless until focus
+    // and the swatch is the native picker itself (a flat round dot), so the
+    // row carries no structural borders of its own.
+    const hex = document.createElement('input')
+    hex.type = 'text'
+    hex.className = 'jlz-admin-hex'
+    hex.pattern = '#[0-9a-fA-F]{6}'
+    hex.spellcheck = false
+    hex.autocomplete = 'off'
+    hex.value = store.document.theme[definition.key]
+    hex.dataset.themeProp = definition.key
+    const swatch = document.createElement('input')
+    swatch.type = 'color'
+    swatch.className = 'jlz-admin-swatch'
+    swatch.value = store.document.theme[definition.key]
+    swatch.dataset.themeProp = definition.key
+    label.append(title, hex, swatch, description)
     return label
   }
 
@@ -336,7 +347,7 @@ function createStyleField(definition: StyleFieldDefinition): HTMLLabelElement {
   }
   select.value = store.document.theme[definition.key]
   select.dataset.themeProp = definition.key
-  label.append(title, description, select)
+  label.append(title, select, description)
   return label
 }
 
