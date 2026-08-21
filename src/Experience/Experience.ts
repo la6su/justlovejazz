@@ -22,6 +22,7 @@ import { UIMenu } from '../UI/UIMenu'
 // called). updateWorldDNAAudio set uniforms nobody read. All dead.
 import { prefersReducedMotion } from '../core/motionPolicy'
 import type { ThemeAppliedPort } from '../core/sectionTheme'
+import { WORLD_SLOT_COUNT, worldSlotIndex } from '../core/worldSlots'
 import {
   ambientBreathStep,
   anyActivity,
@@ -43,6 +44,9 @@ import { eventBus } from '../core/EventBus'
 const SECTION_TRANSITION = {
   cameraSmoothing: 5,
 } as const
+
+/** The Works story frame — the six-slot contract, not a literal. */
+const WORKS_SLOT_INDEX = worldSlotIndex('works')!
 
 export class Experience {
   scene: THREE.Scene = new THREE.Scene()
@@ -374,15 +378,17 @@ export class Experience {
     this.setupEnvironment()
 
     // CinematicNav — vertical native story track plus top/bottom sheets.
-    this._storyNav = new CinematicNav(6)
+    // The section count and the Works arrival index are the worldSlots
+    // contract (single source of the six-slot model), not literals.
+    this._storyNav = new CinematicNav(WORLD_SLOT_COUNT)
     this._storyNav.onSectionChange((idx) => {
       this._uiMenu?.setActive(idx)
       // Initial hashes are replayed only after the ready splash event. Keep
       // the Works owner explicit at that boundary so a hash-driven arrival
       // cannot depend on an earlier render frame to wake its carousel.
-      if (idx === 3 && getCurrentPage() === 'home') {
+      if (idx === WORKS_SLOT_INDEX && getCurrentPage() === 'home') {
         void this.world?.ensureCarouselInitialized().then(() => {
-          if (this._storyNav?.getSectionIndex() === 3) this._needsRender = true
+          if (this._storyNav?.getSectionIndex() === WORKS_SLOT_INDEX) this._needsRender = true
         })
       }
       this._needsRender = true
@@ -469,7 +475,7 @@ export class Experience {
     this._mouseTrailRafPending = false
     this._onMouseMoveForTrail = () => {
       if (this._mouseTrailRafPending) return
-      const isWorksStoryFrame = this.world?.currentSectionIndex === 3
+      const isWorksStoryFrame = this.world?.currentSectionIndex === WORKS_SLOT_INDEX
       const isStandaloneWorks = getCurrentPage() === 'works'
       if (!isWorksStoryFrame && !isStandaloneWorks) return
       this._mouseTrailRafPending = true
@@ -784,7 +790,8 @@ export class Experience {
       const fromCfg = this.world.getConfig(
         this.world.sections[this.world.currentSectionIndex]?.phaseConfig?.id ?? 'sec_intro',
       )
-      const toIdx = Math.min(this.world.currentSectionIndex + 1, 5) // 6 sections, max idx 5
+      // Blend toward the next slot (clamped to the last of the six).
+      const toIdx = Math.min(this.world.currentSectionIndex + 1, WORLD_SLOT_COUNT - 1)
       const toCfg = this.world.getConfig(this.world.sections[toIdx]?.phaseConfig?.id ?? 'sec_intro')
       if (fromCfg && toCfg) {
         this.world.baku.updateWorldBlend(
@@ -871,8 +878,7 @@ export class Experience {
         this.world.baku.updateMaterial(worldState.bakuMaterial)
       }
       // A-015: Per-section cursor follow (works=0.22, others=0.15)
-      // Works is index 3 in 6-section layout (was index 4 in 8-section)
-      const cursorFollow = idx === 3 ? 0.22 : 0.15
+      const cursorFollow = idx === WORKS_SLOT_INDEX ? 0.22 : 0.15
       this.camera.setCursorFollow(cursorFollow)
     }
 
@@ -880,9 +886,9 @@ export class Experience {
     // (BakuCarousel). The carousel is a child of sceneGroups[3] (Works idx 3
     // in 6-section layout) and manages its own visibility via morph.
     const showGallery = cfg?.ui?.showGallery ?? false
-    // Note: _bakuCarouselActive is now computed BEFORE _needsRender check
-    // (see line ~395) — was a race condition where stale value caused
-    // carousel.update() to never run, morph stalled at ~0.35.
+    // Note: _bakuCarouselActive is now computed BEFORE the _needsRender check
+    // (above, in the activity snapshot) — was a race condition where stale
+    // value caused carousel.update() to never run, morph stalled at ~0.35.
     // Sync ProjectOverlay (DOM UI layer) — fullscreen opens on card click.
     if (this.overlay && showGallery && !this._portfolioInitialized) {
       this._portfolioInitialized = true

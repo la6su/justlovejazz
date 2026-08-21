@@ -37,7 +37,11 @@ component tests through named Bun scripts and then add them to this gate.
 
 The Playwright command builds and serves the application. CI configuration in
 `.github/workflows/lighthouse.yml` remains the source for hosted checks and
-Lighthouse behavior.
+Lighthouse behavior. Run the migration release e2e gate serially
+(`bun run test:serial`) — two timing-sensitive tests (section-anchor attach
+after an in-app route change; `data-state="idle"` after history `goBack`)
+flake under the parallel default on loaded dev machines, while passing in
+isolation and in the serial run.
 
 For interface work, load
 [the project UI skill](../skills/justlovejazz-ui/SKILL.md) for the

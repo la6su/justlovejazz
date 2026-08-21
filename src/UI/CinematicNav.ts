@@ -7,7 +7,7 @@
 
 import { prefersReducedMotion } from '../core/motionPolicy'
 import { getCurrentPage } from '../core/routePage'
-import { worldSlotIndex } from '../core/worldSlots'
+import { worldSlotIndex, WORLD_SLOT_COUNT } from '../core/worldSlots'
 import {
   clampStoryPosition,
   mainSectionFromPosition,
@@ -56,7 +56,8 @@ export class CinematicNav {
   private _navButtons: HTMLButtonElement[] = []
 
   constructor(sectionCount: number) {
-    this._sectionCount = Math.max(6, sectionCount)
+    // The six-slot model is the worldSlots contract, not a literal.
+    this._sectionCount = Math.max(WORLD_SLOT_COUNT, sectionCount)
     this.el = this._buildNavigator()
     this._addGlobalListeners()
     this._bindTrack()

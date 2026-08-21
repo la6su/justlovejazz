@@ -2,11 +2,12 @@
 // Section sync: toggles .section-active + applies per-section theme.
 //
 // PER-SECTION THEME (KISS):
-//   Each section has sectionTheme: 'light' | 'dark' in WorldConfig.
+//   Each section's PhaseConfig has theme: 'light' | 'dark' in WorldConfig.
 //   On section change, toggle uk-light on <html> + <body>:
 //     auto:    light → uk-light, dark → no uk-light
 //     inverse: FLIPPED — light → no uk-light, dark → uk-light
-//   EnvSphere syncs via jlz:theme-applied event.
+//   The effective decision + the jlz:theme-applied detail shape are the
+//   typed sectionTheme contract; EnvSphere syncs via that event.
 
 import { eventBus, type AppEvents } from '../core/EventBus'
 import { getCurrentPage } from '../core/routePage'

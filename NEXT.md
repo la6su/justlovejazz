@@ -159,19 +159,24 @@ do not start a phase whose entry gate has not passed.
       the loop owner stays `Experience` until the Phase 7 `RenderScheduler`
       takes over the loop itself. The Phase 3 contract set is complete —
       remaining work (the runtime StoryController publisher, the
-      `RenderScheduler` loop owner) lands in Phases 4/5/7. Segment gate
+      `RenderScheduler` loop owner) lands in Phases 5/7. A 2026-08-21
+      conformance sweep removed the last duplicated six-slot facts from the
+      scene code (`Experience` `CinematicNav(6)` / `idx === 3` / `+ 1, 5`
+      literals and `CinematicNav` `Math.max(6, …)` now read the `worldSlots`
+      contract) and pinned the local e2e gate serially via `bun run
+ test:serial`. Segment gate
       (2026-08-21, re-verified per slice through this one): whole-project
       prettier, vue-tsc, 220/220 unit suite, build and `git diff --check`
       all green,
       and the Playwright e2e suite passes **serially** (18/18,
-      `--workers=1`). Under the configured default (`fullyParallel: true`)
+      `bun run test:serial`). Under the configured default (`fullyParallel: true`)
       two timing-sensitive tests (section-anchor attach after in-app route
       change; `data-state="idle"` after history `goBack`) flake on this
       machine's CPU load — they pass in isolation and in the serial run, and
       no migration slice touched the router/lab DOM or transition timing,
-      so the flake is environmental, not behavioral. Follow-up (small,
-      optional): harden those two assertions (explicit longer timeouts) or
-      pin the local e2e invocation to `--workers=1`.
+      so the flake is environmental, not behavioral. The local serial
+      invocation is now pinned in `package.json` (`test:serial`) and
+      documented in `docs/DEVELOPMENT.md`.
 
 - [ ] **Phase 4: migrate the development Page Builder to Vue** — use the
       isolated admin application as the first state-heavy Vue surface while

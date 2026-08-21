@@ -85,8 +85,9 @@ The canonical slots are:
 
 The public Contact finale intentionally occupies the runtime `lab` slot.
 `/lab` is a separate route whose experiments load through isolated scopes.
-`WorldConfig.ts` and `SplashCube.FACE_ROTATIONS` remain the current sources;
-Phase 3 moves their shared facts into a framework-neutral readonly tuple.
+`src/core/worldSlots.ts` is now the single framework-neutral readonly source
+of the six-slot model; `WorldConfig.ts` and `SplashCube` consume it instead
+of re-declaring the slot ids, face rotations and story ranges.
 
 `CinematicNav` currently owns four story frames plus Contact and Menu sheets.
 The target `StoryController` accepts router/hash/input commands and publishes
@@ -113,9 +114,12 @@ compatibility nodes handler. This is factual current behavior, not the target
 fallback described below.
 
 `Experience._needsRender` combines demand rendering with bounded animation
-reasons. Route replacement releases DOM behavior; `Experience.destroy()`
-closes the shared runtime. `/works` and `/contact` own lazy scene stages that
-dispose or cache according to their current measured policy.
+reasons; the per-frame raise/settle decision reads the typed
+`RenderActivity` flags through the `src/core/renderDemand.ts` contract (the
+14-flag OR and the narrower ambient-breath idle set are unit-locked). Route
+replacement releases DOM behavior; `Experience.destroy()` closes the shared
+runtime. `/works` and `/contact` own lazy scene stages that dispose or cache
+according to their current measured policy.
 
 ## Target ownership
 
