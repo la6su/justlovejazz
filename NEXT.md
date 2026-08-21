@@ -100,13 +100,14 @@ do not start a phase whose entry gate has not passed.
       `WorldConfig.ts` / `SplashCube.ts` now consume it instead of
       re-declaring the literals. Direct DOM route reads from scene code are
       being removed through the typed route-page port
-      (`src/core/routePage.ts`, legacy adapter; `World.ts` — the scene root
-      owner — plus `BakuCarousel.ts`, `CinematicNav.ts` and
-      `ContentReveal.ts` migrated on 2026-08-21, 149/149 unit suite, runtime
-      smoke on home + /works + /lab + /contact with zero console errors);
-      the remaining consumer (`Experience.ts`) is the final per-owner slice,
-      and the open contracts are the bootstrap state machine, typed ports,
-      scheduler, resource scopes and brand tokens.
+      (`src/core/routePage.ts`, legacy adapter; every scene consumer migrated on
+      2026-08-21 — `World.ts`, `BakuCarousel.ts`, `CinematicNav.ts`,
+      `ContentReveal.ts`, `Experience.ts` — 149/149 unit suite, runtime smoke
+      on home + /works + /lab + /contact incl. SPA navigation with zero
+      console errors; no scene-side `document.body.dataset.page` reads
+      remain, the dataset write stays until Phase 5); the open contracts are
+      the bootstrap state machine, typed ports, scheduler, resource scopes
+      and brand tokens.
 
 - [ ] **Phase 4: migrate the development Page Builder to Vue** — use the
       isolated admin application as the first state-heavy Vue surface while

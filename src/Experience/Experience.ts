@@ -9,6 +9,7 @@ import { Cursor } from './Cursor'
 import { UIManager } from '../UI/UIManager'
 import { input } from './Input'
 import { StateBus } from '../core/StateBus'
+import { getCurrentPage } from '../core/routePage'
 import type { World } from '../core/World'
 import { createWorksPortfolio, type WorksPortfolio } from './WorksPortfolio'
 import { FullscreenOverlay } from '../UI/FullscreenOverlay'
@@ -375,7 +376,7 @@ export class Experience {
       // Initial hashes are replayed only after the ready splash event. Keep
       // the Works owner explicit at that boundary so a hash-driven arrival
       // cannot depend on an earlier render frame to wake its carousel.
-      if (idx === 3 && document.body.dataset.page === 'home') {
+      if (idx === 3 && getCurrentPage() === 'home') {
         void this.world?.ensureCarouselInitialized().then(() => {
           if (this._storyNav?.getSectionIndex() === 3) this._needsRender = true
         })
@@ -465,7 +466,7 @@ export class Experience {
     this._onMouseMoveForTrail = () => {
       if (this._mouseTrailRafPending) return
       const isWorksStoryFrame = this.world?.currentSectionIndex === 3
-      const isStandaloneWorks = document.body.dataset.page === 'works'
+      const isStandaloneWorks = getCurrentPage() === 'works'
       if (!isWorksStoryFrame && !isStandaloneWorks) return
       this._mouseTrailRafPending = true
       this._mouseTrailRafId = requestAnimationFrame(() => {
@@ -541,7 +542,7 @@ export class Experience {
       if (this.overlay?.isOpen) {
         this.overlay.close()
       }
-      const newPage = document.body.dataset.page
+      const newPage = getCurrentPage()
       this.world?.syncRouteVisuals()
       if (newPage === 'home') {
         void this.world?.ensureCarouselInitialized()
@@ -588,10 +589,10 @@ export class Experience {
       const detail = (e as CustomEvent<{ index?: number }>).detail
       const domIndex = detail?.index ?? 0
       const stageIndex = Math.max(0, domIndex - 1)
-      if (document.body.dataset.page === 'works') {
+      if (getCurrentPage() === 'works') {
         // DOM sections: 0=Lab overlay, 1-4=project pairs, 5=Nav overlay.
         this.world?.setWorksPlaneStageSection(stageIndex)
-      } else if (document.body.dataset.page === 'contact') {
+      } else if (getCurrentPage() === 'contact') {
         this.world?.setContactTextStageSection(stageIndex)
         this.world?.setContactCyprusStageSection(stageIndex)
         this.world?.setContactSceneSection(stageIndex)
@@ -603,7 +604,7 @@ export class Experience {
     window.addEventListener('jlz:page-section-change', this._worksPageSectionHandler)
 
     this._worksPlaneTapHandler = (e: PointerEvent) => {
-      if (document.body.dataset.page !== 'works' || this.overlay?.isOpen) return
+      if (getCurrentPage() !== 'works' || this.overlay?.isOpen) return
       // The Enter pointerup is dispatched while the splash curtains are still
       // present. It must not be reinterpreted as a click on the first 3D plane.
       if (document.getElementById('jlz-app-loader')) return
@@ -722,7 +723,7 @@ export class Experience {
 
     // On /works, keep rendering so the back-text UV scroll + wipe stay animated
     // even when cards have settled (on-demand rendering would freeze the scroll).
-    const worksScrollActive = document.body.dataset.page === 'works' && !this._reducedMotion
+    const worksScrollActive = getCurrentPage() === 'works' && !this._reducedMotion
 
     if (
       navActive ||
@@ -821,7 +822,7 @@ export class Experience {
       // guards against this, but we also skip the dispatch here to avoid
       // spurious events + cube face rotation that doesn't make sense on
       // content pages (cube rotation is home-only visual feedback).
-      const isHomePage = document.body.dataset.page === 'home'
+      const isHomePage = getCurrentPage() === 'home'
       if (isHomePage && !isInitialSectionSync) {
         eventBus.emit('jlz:section-change', {
           sectionId,
@@ -1102,7 +1103,7 @@ export class Experience {
    *  Returns null on non-home pages — carousel is home-only. */
   private getCarousel(): import('./World/BakuCarousel').BakuCarousel | null {
     // BakuCarousel only exists on home page — content pages don't init it
-    if (document.body.dataset.page !== 'home') return null
+    if (getCurrentPage() !== 'home') return null
     const worksGroup = this.world?.sceneGroups?.[3]
     if (!worksGroup) return null
     return (
