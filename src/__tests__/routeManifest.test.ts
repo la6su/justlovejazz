@@ -1,0 +1,53 @@
+import { describe, it, expect } from 'vitest'
+import {
+  ROUTE_MANIFEST,
+  MANIFEST_PAGES,
+  resolveRoute,
+  resolvePage,
+  isRoutePath,
+} from '../core/routeManifest'
+import type { PageId } from '../sections/_shared/constants'
+
+/** The current application surface: every public path and the page it owns. */
+const EXPECTED: Array<{ path: string; page: PageId }> = [
+  { path: '/', page: 'home' },
+  { path: '/services', page: 'services' },
+  { path: '/works', page: 'works' },
+  { path: '/manifesto', page: 'manifesto' },
+  { path: '/lab', page: 'lab' },
+  { path: '/contact', page: 'contact' },
+]
+
+describe('route manifest', () => {
+  it('maps every public path to its page', () => {
+    for (const { path, page } of EXPECTED) {
+      expect(resolveRoute(path)).toBe(page)
+      expect(resolvePage(path)).toBe(page)
+      expect(isRoutePath(path)).toBe(true)
+    }
+  })
+
+  it('declares exactly the expected routes and nothing else', () => {
+    expect(ROUTE_MANIFEST.map((entry) => entry.path)).toEqual(EXPECTED.map((entry) => entry.path))
+    expect(ROUTE_MANIFEST).toHaveLength(6)
+  })
+
+  it('covers every PageId exactly once (bijection)', () => {
+    const pages = MANIFEST_PAGES
+    expect(pages).toHaveLength(new Set(pages).size)
+    expect(new Set(pages)).toEqual(
+      new Set<PageId>(['home', 'services', 'works', 'manifesto', 'lab', 'contact']),
+    )
+  })
+
+  it('strict lookup rejects unknown paths', () => {
+    expect(resolveRoute('/does-not-exist')).toBeUndefined()
+    expect(resolveRoute('/works/case-1')).toBeUndefined()
+    expect(isRoutePath('/works/case-1')).toBe(false)
+  })
+
+  it('lenient resolution falls back to home for unknown paths', () => {
+    expect(resolvePage('/does-not-exist')).toBe('home')
+    expect(resolvePage('')).toBe('home')
+  })
+})

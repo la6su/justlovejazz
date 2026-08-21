@@ -1,4 +1,5 @@
 import { renderPage, type PageId } from './pages'
+import { isRoutePath, resolvePage, resolveRoute } from './core/routeManifest'
 import UIkit from 'uikit'
 import { applyTranslations } from './core/i18n'
 import { applyMetaTags } from './core/pageMeta'
@@ -12,18 +13,12 @@ let initialized = false
 let currentPage: PageId | null = null
 const routeTransition = new RouteTransition()
 
-const ROUTES: Record<string, PageId> = {
-  '/': 'home',
-  '/services': 'services',
-  '/works': 'works',
-  '/manifesto': 'manifesto',
-  '/lab': 'lab',
-  '/contact': 'contact',
-}
+// The route → page mapping lives in the single route manifest (Phase 3
+// contract). The legacy router resolves against it instead of re-declaring
+// the map, so there is exactly one source of truth for public paths.
 
 function getPageFromLocation(): PageId {
-  const path = window.location.pathname
-  return ROUTES[path] ?? 'home'
+  return resolvePage(window.location.pathname)
 }
 
 const container: HTMLElement | null = (() => {
@@ -103,7 +98,7 @@ async function navigateToPage(path: string): Promise<void> {
   const hashIdx = path.indexOf('#')
   const purePath = hashIdx >= 0 ? path.slice(0, hashIdx) : path
   const hash = hashIdx >= 0 ? path.slice(hashIdx) : ''
-  const page = ROUTES[purePath]
+  const page = resolveRoute(purePath)
   if (!page) return
   history.pushState(null, '', path) // keep hash in URL for shareable links
   const render = () => renderView(page)
@@ -192,7 +187,7 @@ export function initRouter(): void {
     }
 
     const url = new URL(href, window.location.origin)
-    if (url.origin === window.location.origin && ROUTES[url.pathname]) {
+    if (url.origin === window.location.origin && isRoutePath(url.pathname)) {
       e.preventDefault()
       // Preserve a section hash for absolute links such as /#section-works.
       navigateToPage(url.pathname + url.hash)

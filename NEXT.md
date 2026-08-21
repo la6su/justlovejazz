@@ -88,7 +88,14 @@ do not start a phase whose entry gate has not passed.
       route manifest, canonical world-slot tuple, bootstrap state machine,
       typed application/scene ports, render scheduler and resource scopes
       behind reversible legacy adapters. Remove duplicated facts as each new
-      source gains tests and consumers.
+      source gains tests and consumers. The route manifest contract landed on
+      2026-08-21: `src/core/routeManifest.ts` is the single pure path →
+      `PageId` source of truth (strict/lenient resolvers, 5 unit tests, 133/133
+      suite, byte-identical production chunks) and the legacy `router.ts` now
+      resolves through it instead of re-declaring the map; scene code still
+      reads route facts from DOM datasets, so the remaining contracts
+      (world-slot tuple, bootstrap state machine, typed ports, scheduler,
+      resource scopes, brand tokens) and the DOM-read removal are open.
 
 - [ ] **Phase 4: migrate the development Page Builder to Vue** — use the
       isolated admin application as the first state-heavy Vue surface while

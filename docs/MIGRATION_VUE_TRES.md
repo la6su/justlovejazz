@@ -856,6 +856,35 @@ Acceptance:
 
 Rollback: select the legacy adapter implementation.
 
+#### Phase 3 route manifest slice — 2026-08-21
+
+The first framework-neutral contract of Phase 3 is the **route manifest**: a
+single pure source of truth for the application's public paths.
+
+- `src/core/routeManifest.ts` now owns the path → `PageId` mapping
+  (`ROUTE_MANIFEST`), its strict (`resolveRoute`, `isRoutePath`) and lenient
+  (`resolvePage`, `home` fallback) resolvers, and `MANIFEST_PAGES`. It is
+  pure — no DOM, `window` or globals — so it unit-tests without a browser.
+- The legacy router (`src/router.ts`) no longer re-declares the mapping. It
+  resolves against the manifest: initial load uses the lenient resolver, and
+  in-app navigation (history push, anchor clicks) uses the strict resolver so
+  an unknown link stays a no-op rather than silently landing on `home`. This
+  makes `router.ts` the legacy adapter the manifest resolves through, the
+  target shape Phase 5's Vue Router will reuse.
+- `src/__tests__/routeManifest.test.ts` locks the contract: every public path
+  maps to its page, the manifest covers every `PageId` exactly once
+  (bijection), unknown paths fail the strict lookup, and the lenient resolver
+  falls back to `home`. The full unit suite is 133/133 and the production
+  build emits byte-identical chunks to the pre-change build (the manifest
+  inlines with no bundle impact).
+
+Scope limits: this is a contract extraction only. Production behaviour is
+unchanged, no consumer has migrated yet, and the scene code still reads route
+facts from DOM datasets — that removal is a later Phase 3 slice behind these
+adapters. The world-slot tuple, bootstrap state machine, typed ports,
+scheduler and brand-token manifest remain open. Rollback: revert `router.ts`
+to its local `ROUTES` map; the manifest is inert until consumed.
+
 ### Phase 4 — Vue Page Builder
 
 Scope:
@@ -1093,19 +1122,19 @@ The following ledgers are updated in this document during implementation.
 
 ### Traceability
 
-| Contract                 | Current owner                 | Target owner                                                                 | Migration phase |
-| ------------------------ | ----------------------------- | ---------------------------------------------------------------------------- | --------------- |
-| splash readiness/failure | `index.html`, `entry-app.ts`  | inline shell + bootstrap state machine                                       | 5               |
-| routes/hash/meta         | `router.ts`, `pageMeta.ts`    | route manifest + Vue Router                                                  | 3, 5            |
-| six world slots          | `WorldConfig.ts`, `World.ts`  | domain tuple + `WorldRoot`                                                   | 3, 7, 8         |
-| render demand            | `Experience._needsRender`     | `RenderScheduler`                                                            | 3, 7            |
-| brand/runtime tokens     | Less files + scene literals   | typed manifest + generated adapters                                          | 3, 5            |
-| backend fallback         | `Renderer.ts`                 | `RendererFactory`                                                            | 2, 6            |
-| post-processing          | dual `RenderPipeline` paths   | TSL graph (`WebGPUBackend`) + forced-WebGL fallback per the Phase 6 decision | 2, 6            |
-| route GPU resources      | `World` lazy stages           | route resource scopes                                                        | 3, 8            |
-| semantic UI              | string templates + UI classes | Vue route/features + UIkit adapters                                          | 4, 5            |
-| builder                  | `admin/main.ts`               | Vue builder app                                                              | 4               |
-| static content           | standalone pages              | shared SSG pipeline                                                          | 9               |
+| Contract                 | Current owner                                  | Target owner                                                                 | Migration phase |
+| ------------------------ | ---------------------------------------------- | ---------------------------------------------------------------------------- | --------------- |
+| splash readiness/failure | `index.html`, `entry-app.ts`                   | inline shell + bootstrap state machine                                       | 5               |
+| routes/hash/meta         | `routeManifest.ts`, `router.ts`, `pageMeta.ts` | route manifest + Vue Router                                                  | 3, 5            |
+| six world slots          | `WorldConfig.ts`, `World.ts`                   | domain tuple + `WorldRoot`                                                   | 3, 7, 8         |
+| render demand            | `Experience._needsRender`                      | `RenderScheduler`                                                            | 3, 7            |
+| brand/runtime tokens     | Less files + scene literals                    | typed manifest + generated adapters                                          | 3, 5            |
+| backend fallback         | `Renderer.ts`                                  | `RendererFactory`                                                            | 2, 6            |
+| post-processing          | dual `RenderPipeline` paths                    | TSL graph (`WebGPUBackend`) + forced-WebGL fallback per the Phase 6 decision | 2, 6            |
+| route GPU resources      | `World` lazy stages                            | route resource scopes                                                        | 3, 8            |
+| semantic UI              | string templates + UI classes                  | Vue route/features + UIkit adapters                                          | 4, 5            |
+| builder                  | `admin/main.ts`                                | Vue builder app                                                              | 4               |
+| static content           | standalone pages                               | shared SSG pipeline                                                          | 9               |
 
 ### Removal ledger
 
