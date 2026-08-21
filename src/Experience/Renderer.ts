@@ -1,13 +1,6 @@
 // src/Experience/Renderer.ts
 import * as THREE from 'three'
 import { WebGPURenderer } from 'three/webgpu'
-// Compatibility node builder: lets the WebGL fallback renderer
-// compile TSL NodeMaterials (MeshBasicNodeMaterial, etc.) used by
-// SectionSceneFactory. Without this, WebGLRenderer's _nodesHandler stays
-// null, so NodeMaterials are compiled with undefined vertexShader/
-// fragmentShader → resolveIncludes(undefined) crash on first frame.
-// (three r0.184 does not auto-register this.)
-import { WebGLNodesHandler } from 'three/addons/tsl/WebGLNodesHandler.js'
 import { Sizes } from './Sizes'
 import { DeviceCapability } from '../core/DeviceCapability'
 import { eventBus } from '../core/EventBus'
@@ -19,9 +12,31 @@ import {
   type RendererResourceInfo,
   type RuntimeResourceSnapshot,
 } from '../core/RuntimeResourceSnapshot'
-import { deviceLostAction, planUnifiedBackend, type BackendFacts } from '../core/rendererBackend'
+import { deviceLostAction, planUnifiedBackend, type FinalMode } from '../core/rendererBackend'
+import {
+  createClassicWebGLRenderer,
+  createUnifiedWebGPUInstance,
+  initUnifiedWebGPUInstance,
+  inspectUnifiedBackend,
+} from '../core/unifiedRenderer'
 
 export type RenderSurface = WebGPURenderer | THREE.WebGLRenderer
+
+/**
+ * Phase 7 adoption input: the SceneHost custom renderer factory already
+ * created + init'd the instance and inspected the actual backend. The
+ * Renderer wrapper adopts it (pipeline / capability / device-loss owner)
+ * instead of constructing one. `mode` is the final backend mode after the
+ * software-adapter policy decision.
+ */
+export interface AdoptedRenderer {
+  instance: RenderSurface
+  /** Persistent Vue-owned canvas — never removed by `dispose()`. */
+  canvas: HTMLCanvasElement
+  mode: FinalMode
+  /** Sync the live instance after a device-loss recovery swap. */
+  onInstanceReplaced?: (instance: RenderSurface) => void
+}
 
 export class Renderer {
   instance!: RenderSurface
@@ -43,6 +58,11 @@ export class Renderer {
   // forceWebGL the current instance was created with (dev `?renderer=webgl`
   // on the unified path) — device-loss recovery must match it.
   private _forceWebGL = false
+  // Phase 7: adoption bookkeeping. The SceneHost canvas is Vue-owned DOM —
+  // `dispose()` must not remove it. The replacement hook syncs the Tres
+  // context after a device-loss recovery re-creation.
+  private _ownsCanvas = true
+  private _onInstanceReplaced: ((instance: RenderSurface) => void) | null = null
   // Animation-loop owner boundary: Experience registers its frame callback
   // here so device-loss recovery can re-attach it to the replacement renderer.
   private _loopCallback: ((time: number) => void) | null = null
@@ -110,66 +130,94 @@ export class Renderer {
     document.body.appendChild(overlay)
   }
 
-  async init(): Promise<void> {
-    // Development-only parity switch: `?renderer=webgl` forces the classic
-    // `WebGLRenderer` + the bounded GLSL `ShaderMaterial` post chain — the
-    // retained forced-WebGLBackend post owner (Phase 6 fixed decision,
-    // 2026-08-22: the TSL `RenderPipeline` is WebGPU-only on Three r185, so
-    // the `WebGLBackend` of a `WebGPURenderer` cannot run TSL post). Vite
-    // removes this branch from production builds.
-    const forceWebGL =
-      import.meta.env.DEV && new URLSearchParams(window.location.search).get('renderer') === 'webgl'
-
-    if (forceWebGL) {
-      if (import.meta.env.DEV) {
-        console.info(
-          '[Renderer.init] Using classic WebGLRenderer (forced for GLSL post parity QA — the retained forced-WebGLBackend post owner)',
-        )
-      }
-      this.instance = this.createWebGLRenderer()
-      this.capabilities.setFinalRendererMode('webgl')
+  async init(adopted?: AdoptedRenderer): Promise<void> {
+    if (adopted) {
+      // ── Phase 7 adoption path ──────────────────────────────────────────
+      // The SceneHost custom renderer factory owns construction + the single
+      // async init + the actual-backend inspection (software-adapter
+      // re-creation already applied). This wrapper adopts the instance:
+      // capabilities, sizing and the post pipeline are configured exactly as
+      // on the legacy path. The canvas is Vue-owned (`.jlz-scene-host` CSS)
+      // so it is never re-styled or removed here.
+      this.instance = adopted.instance
+      this._ownsCanvas = false
+      this._onInstanceReplaced = adopted.onInstanceReplaced ?? null
+      // Device-loss recovery must re-create on the SAME final backend mode
+      // (a software adapter or automatic WebGLBackend → forceWebGL).
+      this._forceWebGL = adopted.mode === 'webgl'
+      this.capabilities.setFinalRendererMode(adopted.mode)
     } else {
-      // Phase 6 production default: the unified production renderer —
-      // `WebGPURenderer` is the only renderer class production constructs.
-      // The actual backend is inspected AFTER async init; a software
-      // (SwiftShader) WebGPU adapter is re-created with forceWebGL (same
-      // class, never a classic `WebGLRenderer`) and capabilities are
-      // calculated from the actual backend, not the initial `navigator.gpu`
-      // feature detection.
-      this._forceWebGL = false
-      this.instance = await this.createWebGPUInstance(false)
-      const facts = this.readBackendFacts()
-      let plan = planUnifiedBackend(facts)
-      if (import.meta.env.DEV) {
-        console.info(
-          `[Renderer.init] unified WebGPURenderer backend: ${facts.backendName ?? '?'} ` +
-            `(isFallbackAdapter=${facts.isFallbackAdapter}) → plan recreate=${plan.recreate} mode=${plan.mode}`,
-        )
-      }
-      if (plan.recreate) {
-        // Software WebGPU (SwiftShader ~2 FPS) → hardware WebGL2 via
-        // forceWebGL, same WebGPURenderer class. The first canvas is not in
-        // the DOM yet (setupCanvas runs later), so just dispose + re-create.
+      // ── Native-world host path (Phase 7 rollback / `?renderer=webgl`) ─
+      // Development-only parity switch: `?renderer=webgl` forces the classic
+      // `WebGLRenderer` + the bounded GLSL `ShaderMaterial` post chain — the
+      // retained forced-WebGLBackend post owner (Phase 6 fixed decision,
+      // 2026-08-22: the TSL `RenderPipeline` is WebGPU-only on Three r185, so
+      // the `WebGLBackend` of a `WebGPURenderer` cannot run TSL post). Vite
+      // removes this branch from production builds.
+      const forceWebGL =
+        import.meta.env.DEV &&
+        new URLSearchParams(window.location.search).get('renderer') === 'webgl'
+
+      if (forceWebGL) {
         if (import.meta.env.DEV) {
           console.info(
-            '[Renderer.init] unified: software WebGPU adapter — re-creating with forceWebGL',
+            '[Renderer.init] Using classic WebGLRenderer (forced for GLSL post parity QA — the retained forced-WebGLBackend post owner)',
           )
         }
-        ;(this.instance as WebGPURenderer).dispose?.()
-        this._forceWebGL = true
-        this.instance = await this.createWebGPUInstance(true)
-        plan = planUnifiedBackend(this.readBackendFacts())
+        this.instance = createClassicWebGLRenderer(document.createElement('canvas'))
+        this.capabilities.setFinalRendererMode('webgl')
+      } else {
+        // Phase 6 production default: the unified production renderer —
+        // `WebGPURenderer` is the only renderer class production constructs.
+        // The actual backend is inspected AFTER async init; a software
+        // (SwiftShader) WebGPU adapter is re-created with forceWebGL (same
+        // class, never a classic `WebGLRenderer`) and capabilities are
+        // calculated from the actual backend, not the initial `navigator.gpu`
+        // feature detection.
+        this._forceWebGL = false
+        const canvas = document.createElement('canvas')
+        this.instance = await createUnifiedWebGPUInstanceAndInit(canvas, false)
+        let plan = planUnifiedBackend(inspectUnifiedBackend(this.instance))
+        if (import.meta.env.DEV) {
+          console.info(
+            `[Renderer.init] unified WebGPURenderer backend: ${
+              inspectUnifiedBackend(this.instance).backendName ?? '?'
+            } (isFallbackAdapter=${inspectUnifiedBackend(this.instance).isFallbackAdapter}) → plan recreate=${plan.recreate} mode=${plan.mode}`,
+          )
+        }
+        if (plan.recreate) {
+          // Software WebGPU (SwiftShader ~2 FPS) → hardware WebGL2 via
+          // forceWebGL, same WebGPURenderer class. The first canvas is not in
+          // the DOM yet (setupCanvas runs later), so just dispose + re-create.
+          if (import.meta.env.DEV) {
+            console.info(
+              '[Renderer.init] unified: software WebGPU adapter — re-creating with forceWebGL',
+            )
+          }
+          ;(this.instance as WebGPURenderer).dispose?.()
+          this._forceWebGL = true
+          this.instance = await createUnifiedWebGPUInstanceAndInit(canvas, true)
+          plan = planUnifiedBackend(inspectUnifiedBackend(this.instance))
+        }
+        this.capabilities.setFinalRendererMode(plan.mode)
+        if (import.meta.env.DEV && plan.mode === 'webgpu') {
+          console.info('[Renderer.init] unified premium WebGPU path active')
+        }
       }
-      this.capabilities.setFinalRendererMode(plan.mode)
-      if (import.meta.env.DEV && plan.mode === 'webgpu') {
-        console.info('[Renderer.init] unified premium WebGPU path active')
-      }
+
+      // Size + canvas (the legacy path owns the canvas DOM element).
+      this.instance.setPixelRatio(Math.min(this.sizes.dpr, this.capabilities.maxDpr))
+      this.instance.setSize(this.sizes.width, this.sizes.height)
+      this.setupCanvas(this.instance.domElement)
     }
 
-    // Size + canvas
-    this.instance.setPixelRatio(Math.min(this.sizes.dpr, this.capabilities.maxDpr))
-    this.instance.setSize(this.sizes.width, this.sizes.height)
-    this.setupCanvas(this.instance.domElement)
+    // Adoption path: Tres already sizes the canvas; clamp the DPR cap to the
+    // device capability (identical to the legacy sizing contract).
+    if (adopted) {
+      this.instance.setPixelRatio(Math.min(this.sizes.dpr, this.capabilities.maxDpr))
+      this.instance.setSize(this.sizes.width, this.sizes.height)
+    }
+
     // Capability tier and post settings must reflect the backend selected
     // above, not merely the initial navigator.gpu feature detection.
     this.postManager.refreshQualityTier()
@@ -229,30 +277,6 @@ export class Renderer {
     ).setAnimationLoop?.(callback)
   }
 
-  /** Create + async-init a WebGPURenderer with the shared tone/color settings. */
-  private async createWebGPUInstance(forceWebGL: boolean): Promise<WebGPURenderer> {
-    const wg = new WebGPURenderer({ antialias: true, alpha: false, forceWebGL })
-    const w = wg as any
-    w.toneMapping = THREE.ACESFilmicToneMapping
-    w.toneMappingExposure = 1.0
-    w.outputColorSpace = THREE.SRGBColorSpace
-    await w.init?.()
-    return wg
-  }
-
-  /** Read the actual backend + software-adapter facts after init. */
-  private readBackendFacts(): BackendFacts {
-    const wg = this.instance as any
-    const backendName: string | null = wg?.isWebGPURenderer
-      ? (wg.backend?.constructor?.name ?? null)
-      : null
-    const adapter = wg?.backend?.adapter?.info ?? wg?.backend?.gpu?._adapter
-    return {
-      backendName,
-      isFallbackAdapter: adapter?.isFallbackAdapter ?? false,
-    }
-  }
-
   /**
    * Hook bounded device-loss recovery onto a WebGPURenderer. Three invokes
    * `onDeviceLost` when the underlying device is lost; we run the bounded
@@ -294,16 +318,16 @@ export class Renderer {
       this.pipeline = null
       ;(this.instance as WebGPURenderer).dispose?.()
 
-      this.instance = await this.createWebGPUInstanceOnCanvas(canvas, this._forceWebGL)
-      let plan = planUnifiedBackend(this.readBackendFacts())
+      this.instance = await createUnifiedWebGPUInstanceAndInit(canvas, this._forceWebGL)
+      let plan = planUnifiedBackend(inspectUnifiedBackend(this.instance))
       if (plan.recreate) {
         // The replacement landed on a software adapter again — force WebGL2.
         this._forceWebGL = true
         ;(this.instance as WebGPURenderer).dispose?.()
         // Re-create on the SAME canvas element (still in the DOM — do not
         // remove it, unlike the init-time path where setupCanvas has not run).
-        this.instance = await this.createWebGPUInstanceOnCanvas(canvas, true)
-        plan = planUnifiedBackend(this.readBackendFacts())
+        this.instance = await createUnifiedWebGPUInstanceAndInit(canvas, true)
+        plan = planUnifiedBackend(inspectUnifiedBackend(this.instance))
       }
       this.capabilities.setFinalRendererMode(plan.mode)
 
@@ -328,6 +352,9 @@ export class Renderer {
       if (this._loopCallback) {
         this.instance.setAnimationLoop(this._loopCallback)
       }
+      // Phase 7: sync the persistent Tres context to the replacement so the
+      // SceneHost bridge keeps describing the live renderer.
+      this._onInstanceReplaced?.(this.instance)
       // The old PMREM environment died with the lost device — ask Experience
       // to regenerate it (and re-bind it to the glass cube).
       eventBus.emit('jlz:renderer-recovered')
@@ -341,39 +368,7 @@ export class Renderer {
     }
   }
 
-  /** Create + async-init a WebGPURenderer reusing an existing canvas element. */
-  private async createWebGPUInstanceOnCanvas(
-    canvas: HTMLCanvasElement,
-    forceWebGL: boolean,
-  ): Promise<WebGPURenderer> {
-    const wg = new WebGPURenderer({ canvas, antialias: true, alpha: false, forceWebGL })
-    const w = wg as any
-    w.toneMapping = THREE.ACESFilmicToneMapping
-    w.toneMappingExposure = 1.0
-    w.outputColorSpace = THREE.SRGBColorSpace
-    await w.init?.()
-    return wg
-  }
-
-  /** Create WebGLRenderer with NodeMaterial support. */
-  private createWebGLRenderer(): THREE.WebGLRenderer {
-    const gl = new THREE.WebGLRenderer({
-      antialias: true,
-      powerPreference: 'high-performance',
-      stencil: false,
-      depth: true,
-    })
-    gl.outputColorSpace = THREE.SRGBColorSpace
-    gl.toneMapping = THREE.ACESFilmicToneMapping
-    gl.toneMappingExposure = 1.0
-    try {
-      ;(gl as any).setNodesHandler(new WebGLNodesHandler())
-    } catch (e) {
-      console.error('[Renderer] WebGLNodesHandler failed:', e)
-    }
-    return gl
-  }
-
+  /** Render scene → post → screen. */
   update(scene: THREE.Scene, camera: THREE.Camera, dt: number, _worldState?: WorldState): void {
     // During a device-loss recovery the pipeline is torn down and rebuilt;
     // skip the frame so we never render through a disposed renderer.
@@ -436,10 +431,24 @@ export class Renderer {
   public dispose(): void {
     window.removeEventListener('resize', this._onResize)
     this._loopCallback = null
+    this._onInstanceReplaced = null
     this.pipeline?.dispose()
     this.instance.dispose()
-    // A-3 fix: remove the canvas DOM element (was appended to document.body
-    // in setupCanvas but never removed → old canvases accumulated on HMR).
-    this.instance.domElement?.remove()
+    // A-3 fix: remove the canvas DOM element owned by this class (legacy
+    // path). The Phase 7 adopted canvas is Vue-owned (SceneHost unmount) and
+    // must survive Renderer.dispose().
+    if (this._ownsCanvas) {
+      this.instance.domElement?.remove()
+    }
   }
+}
+
+/** Create + async-init the unified WebGPURenderer (single init owner). */
+async function createUnifiedWebGPUInstanceAndInit(
+  canvas: HTMLCanvasElement,
+  forceWebGL: boolean,
+): Promise<WebGPURenderer> {
+  const renderer = createUnifiedWebGPUInstance(canvas, forceWebGL)
+  await initUnifiedWebGPUInstance(renderer)
+  return renderer
 }

@@ -539,6 +539,22 @@
   }
 }
 
+// Phase 7: the persistent Tres scene host — the single canvas, below the
+// semantic route DOM (#spa-content z-index 2) exactly like the legacy
+// fixed-position canvas (z-index 1). Tres sizes the canvas to the wrapper.
+.jlz-scene-host {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.jlz-scene-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 .jlz-lang-label {
   font-size: 0.72rem;
   line-height: 1;

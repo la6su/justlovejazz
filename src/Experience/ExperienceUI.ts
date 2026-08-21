@@ -1,0 +1,417 @@
+// src/Experience/ExperienceUI.ts — Phase 7 slice 4: the former UI features.
+//
+// `Experience` split: bootstrap (init + readiness), scene coordination
+// (per-frame world/camera/post) and the FORMER UI FEATURES — the cinematic
+// navigation shell, the menu, the fullscreen overlay, the Works portfolio
+// and the UI-facing window event handlers. This class owns those features
+// (creation, wiring, disposal) and reaches the scene through the narrow
+// `ExperienceUIHost` port: no DOM scene knowledge, no renderer access.
+//
+// Disposal contract: `destroy()` removes every window listener this class
+// added and disposes the features it created — Experience.destroy() runs it
+// so the root teardown returns every owned resource to baseline.
+
+import { CinematicNav } from '../UI/CinematicNav'
+import { UIMenu } from '../UI/UIMenu'
+import { FullscreenOverlay } from '../UI/FullscreenOverlay'
+import type { UIManager } from '../UI/UIManager'
+import type { World } from '../core/World'
+import { getCurrentPage } from '../core/routePage'
+import { getSoundMuted } from '../core/SfxSystem'
+import type { SfxSystem } from '../core/SfxSystem'
+import { createWorksPortfolio, type WorksPortfolio } from './WorksPortfolio'
+import { WORLD_SLOT_COUNT, worldSlotIndex } from '../core/worldSlots'
+import type { Camera } from './Camera'
+import type { FrameReason } from '../core/RenderScheduler'
+
+/** The single Works story frame — the six-slot contract, not a literal. */
+const WORKS_SLOT_INDEX = worldSlotIndex('works')!
+
+/**
+ * The narrow port ExperienceUI reaches the scene through. Every accessor is
+ * a getter (not a stored reference) so the World/scene can only be read
+ * AFTER Experience.init() has built them.
+ */
+export interface ExperienceUIHost {
+  world: () => World
+  camera: () => Camera
+  ui: () => UIManager
+  sfx: () => SfxSystem
+  /** Raise render demand + wake the single loop driver (typed reason). */
+  raise: (reason?: FrameReason) => void
+  reducedMotion: () => boolean
+}
+
+export class ExperienceUI {
+  /** Vertical native story track plus top/bottom sheets. */
+  storyNav: CinematicNav | null = null
+  /** The compact console menu. */
+  uiMenu: UIMenu | null = null
+  /** Works portfolio (public for DevPanel access). */
+  portfolio: WorksPortfolio | null = null
+  /** The fullscreen overlay (UIManager may own one; adopt or create). */
+  overlay: FullscreenOverlay | null = null
+  portfolioInitialized = false
+  private activeProjectIndex = 0
+
+  private _openProjectHandler: ((e: Event) => void) | null = null
+  private _projectNavigateHandler: ((e: Event) => void) | null = null
+  private _routeChangeCloseOverlayHandler: (() => void) | null = null
+  private _wobblePulseHandler: (() => void) | null = null
+  private _worksPageSectionHandler: ((e: Event) => void) | null = null
+  private _worksPlaneTapHandler: ((e: PointerEvent) => void) | null = null
+  private _gotoSectionByHashHandler: ((e: Event) => void) | null = null
+  private _soundToggleHandler: ((e: Event) => void) | null = null
+  private _langChangeHandler: (() => void) | null = null
+
+  constructor(private host: ExperienceUIHost) {}
+
+  /** Create + wire the UI features. Called from Experience.init(). */
+  init(): void {
+    // CinematicNav — vertical native story track plus top/bottom sheets.
+    // The section count is the worldSlots contract (single source of the
+    // six-slot model), not a literal.
+    this.storyNav = new CinematicNav(WORLD_SLOT_COUNT)
+    // Phase 7: native scroll is a typed loop wake source.
+    this.storyNav.onActivity = () => this.host.raise('nav')
+    this.storyNav.onSectionChange((idx) => {
+      this.uiMenu?.setActive(idx)
+      // Initial hashes are replayed only after the ready splash event. Keep
+      // the Works owner explicit at that boundary so a hash-driven arrival
+      // cannot depend on an earlier render frame to wake its carousel.
+      if (idx === WORKS_SLOT_INDEX && getCurrentPage() === 'home') {
+        void this.host
+          .world()
+          .ensureCarouselInitialized()
+          .then(() => {
+            if (this.storyNav?.getSectionIndex() === WORKS_SLOT_INDEX) this.host.raise('nav')
+          })
+      }
+      this.host.raise('nav')
+    })
+    this.storyNav.onActiveChange((active) => {
+      if (active) this.host.raise('nav')
+    })
+
+    // UIMenu
+    this.uiMenu = new UIMenu()
+    this.uiMenu.onNavigate((idx) => {
+      this.storyNav?.goToSection(idx)
+    })
+
+    // The compact storyline lives inside the console bar (bottom strip).
+    // If the console bar exists, append there; otherwise fall back to body.
+    const consoleBar = document.querySelector('.jlz-console-bar')
+    if (consoleBar) {
+      consoleBar.appendChild(this.storyNav.el)
+    } else {
+      document.body.appendChild(this.storyNav.el)
+    }
+
+    // Sound config from splash page (localStorage 'jlz:sound' = 'on'|'off').
+    // D-7 fix: default to MUTED (matches UIMenu's readSoundMuted default:
+    // `localStorage.getItem('jlz:sound') !== 'on'` → true/muted when no key).
+    this.host.sfx().setMuted(getSoundMuted())
+
+    // Runtime sound toggle (from UIMenu or other in-app controls)
+    this._soundToggleHandler = (e: Event) => {
+      const detail = (e as CustomEvent<{ muted: boolean }>).detail
+      if (detail) {
+        this.host.sfx().setMuted(detail.muted)
+      }
+    }
+    window.addEventListener('jlz:sound-toggle', this._soundToggleHandler)
+
+    // Keep the route-owned pixel title in sync with the active language.
+    this._langChangeHandler = () => {
+      this.host.world().contactTextStage?.refreshLanguage()
+    }
+    window.addEventListener('jlz:lang-change', this._langChangeHandler)
+
+    // ── Works page card click → open fullscreen overlay ──
+    // Dispatched by WorkCards.ts when a .jlz-work-card is clicked (works page).
+    // All opens (showreel, slider, /works) use the same unified DOM cinematic
+    // reveal — no 3D plane-to-fullscreen handoff, which caused a double effect.
+    this._openProjectHandler = (e: Event) => {
+      const detail = (e as CustomEvent<{ idx: number }>).detail
+      if (!detail || typeof detail.idx !== 'number') return
+      void this.ensurePortfolio().then(() => {
+        this.onProjectSelect(detail.idx)
+      })
+    }
+    window.addEventListener('jlz:open-project', this._openProjectHandler)
+
+    this._projectNavigateHandler = (e: Event) => {
+      if (!this.overlay?.isOpen) return
+      const direction = (e as CustomEvent<{ direction?: number }>).detail?.direction
+      if (direction !== -1 && direction !== 1) return
+      const carousel = this.getCarousel()
+      if (direction < 0) {
+        carousel?.prev()
+        if (!carousel) this.portfolio?.prev()
+      } else {
+        carousel?.next()
+        if (!carousel) this.portfolio?.next()
+      }
+      this.onProjectSelect(this.activeProjectIndex + direction)
+    }
+    window.addEventListener('jlz:project-navigate', this._projectNavigateHandler)
+
+    // ── Close overlay on route change ──
+    // When SPA navigates (Menu subnav click, browser back, etc.),
+    // close any open FullscreenOverlay. isOpen checks UIKit's native uk-open
+    // class — no custom flag to get out of sync.
+    this._routeChangeCloseOverlayHandler = () => {
+      if (this.overlay?.isOpen) {
+        this.overlay.close()
+      }
+      const newPage = getCurrentPage()
+      const world = this.host.world()
+      world.syncRouteVisuals()
+      if (newPage === 'home') {
+        void world.ensureCarouselInitialized()
+      }
+      if (newPage === 'works') {
+        void world.ensureWorksPlaneStageInitialized().then(() => {
+          world.setWorksPlaneStageSection(0)
+          this.host.raise('nav')
+        })
+      } else {
+        // Works owns eight decoded 1440×810 textures. Keeping an inactive
+        // stage alive makes that GPU allocation look like a navigation leak.
+        world.disposeWorksPlaneStage()
+      }
+      if (newPage === 'contact') {
+        world.setContactCyprusStageSection(0)
+        world.setContactSceneSection(0)
+        void Promise.all([
+          world.ensureContactTextStageInitialized(),
+          world.ensureContactCyprusStageInitialized(),
+        ]).then(() => {
+          world.setContactTextStageSection(0)
+          this.host.raise('nav')
+        })
+      } else {
+        world.disposeContactTextStage()
+        world.disposeContactCyprusStage()
+        world.setContactSceneSection(0)
+      }
+      this.host.raise('nav')
+    }
+    window.addEventListener('jlz:route-change', this._routeChangeCloseOverlayHandler)
+
+    // Phase 5: Wobble pulse on card click (work cards + carousel)
+    this._wobblePulseHandler = () => {
+      this.host.world().baku?.triggerWobblePulse()
+      // Keep rendering while the pulse animates (sin-envelope in SplashCube.update).
+      this.host.raise('dirty')
+    }
+    window.addEventListener('jlz:wobble-pulse', this._wobblePulseHandler)
+
+    // Route-owned 3D layers follow the shared content-page navigation contract.
+    this._worksPageSectionHandler = (e: Event) => {
+      const detail = (e as CustomEvent<{ index?: number }>).detail
+      const domIndex = detail?.index ?? 0
+      const stageIndex = Math.max(0, domIndex - 1)
+      const page = getCurrentPage()
+      const world = this.host.world()
+      if (page === 'works') {
+        // DOM sections: 0=Lab overlay, 1-4=project pairs, 5=Nav overlay.
+        world.setWorksPlaneStageSection(stageIndex)
+      } else if (page === 'contact') {
+        world.setContactTextStageSection(stageIndex)
+        world.setContactCyprusStageSection(stageIndex)
+        world.setContactSceneSection(stageIndex)
+      } else {
+        return
+      }
+      this.host.raise('nav')
+    }
+    window.addEventListener('jlz:page-section-change', this._worksPageSectionHandler)
+
+    this._worksPlaneTapHandler = (e: PointerEvent) => {
+      if (getCurrentPage() !== 'works' || this.overlay?.isOpen) return
+      // The Enter pointerup is dispatched while the splash curtains are still
+      // present. It must not be reinterpreted as a click on the first 3D plane.
+      if (document.getElementById('jlz-app-loader')) return
+      const target = e.target as HTMLElement | null
+      if (target?.closest('.jlz-work-card, #jlz-fs-overlay, .jlz-topbar, [data-cinematic-menu]'))
+        return
+      // Raycast against the 3D planes to find which project was tapped, then
+      // open the overlay with the unified cinematic reveal (no 3D handoff).
+      void this.ensurePortfolio().then(() => {
+        const stage = this.host.world().worksPlaneStage
+        if (!stage) return
+        const idx = stage.hitTest(e.clientX, e.clientY)
+        if (idx >= 0) this.onProjectSelect(idx)
+      })
+    }
+    window.addEventListener('pointerup', this._worksPlaneTapHandler)
+
+    // ── Hash navigation from menu overlay (e.g. /manifesto#section-manifesto-02) ──
+    // Dispatched by the router after renderView. CinematicNav finds
+    // the target section by hash ID and activates it. Without this, menu
+    // subsection clicks always land on section 1 (hash silently dropped).
+    this._gotoSectionByHashHandler = (e: Event) => {
+      const detail = (e as CustomEvent<{ hash: string }>).detail
+      if (detail?.hash) {
+        this.storyNav?.goToSectionByHash(detail.hash)
+      }
+    }
+    window.addEventListener('jlz:goto-section-by-hash', this._gotoSectionByHashHandler)
+  }
+
+  /** Start the authored cube reaction and its one-shot portal-frame echo. */
+  triggerSplashOpener(): void {
+    const world = this.host.world()
+    world.baku?.triggerOpener()
+    if (this.host.reducedMotion()) return
+    world.particleBurst?.trigger(0, 0, 0)
+    if (world.particleBurst?.isActive) this.host.raise('dirty')
+  }
+
+  async ensurePortfolio(): Promise<void> {
+    if (this.portfolio) return
+    // Always build portfolio — single-page experience
+    // World must exist and be attached to the scene before adding portfolio
+    // to it.
+    const world = this.host.world()
+    if (!world || !world.parent) {
+      // Wait one frame for the World attach to finish, then retry.
+      await new Promise((r) => requestAnimationFrame(() => r(null)))
+      if (!this.portfolio && !(world && world.parent)) return
+    }
+
+    const { PROJECTS } = await import('../Data/Projects')
+    // Re-check after async import — page may have changed during await.
+    if (this.portfolio) return // another call won
+
+    this.portfolio = createWorksPortfolio(PROJECTS, (idx) => {
+      this.onProjectSelect(idx)
+    })
+
+    // FullscreenOverlay is normally created by UIManager. Project navigation
+    // is routed through `jlz:project-navigate` so arrows and keyboard use the
+    // same owner even if the overlay was created before this async portfolio.
+    this.overlay ??= this.host.ui().overlay ?? new FullscreenOverlay()
+
+    // Wire BakuCarousel card click → open fullscreen overlay.
+    // All opens use the unified DOM cinematic reveal (no 3D plane handoff).
+    const carousel = this.getCarousel()
+    if (carousel && !carousel.userData.clickWired) {
+      carousel.userData.clickWired = true
+      carousel.setCamera(this.host.camera().instance)
+      carousel.onCardClick((idx) => {
+        this.onProjectSelect(idx)
+      })
+    }
+  }
+
+  /** Get the BakuCarousel from the works scene group (index 3 in 6-section layout).
+   *  Returns null on non-home pages — carousel is home-only. */
+  private getCarousel(): import('./World/BakuCarousel').BakuCarousel | null {
+    // BakuCarousel only exists on home page — content pages don't init it
+    if (getCurrentPage() !== 'home') return null
+    const worksGroup = this.host.world()?.sceneGroups?.[3]
+    if (!worksGroup) return null
+    return (
+      (worksGroup.userData.carousel as import('./World/BakuCarousel').BakuCarousel | undefined) ??
+      null
+    )
+  }
+
+  /** Frame access: the carousel may have started morphing this frame. */
+  getFrameCarousel(): import('./World/BakuCarousel').BakuCarousel | null {
+    return this.getCarousel()
+  }
+
+  onProjectSelect(idx: number, preload: boolean = false): void {
+    if (!this.portfolio || !this.overlay) return
+    const projs = this.portfolio.projects
+    if (!Array.isArray(projs) || projs.length === 0) return
+    const safeIdx = ((idx % projs.length) + projs.length) % projs.length
+    this.activeProjectIndex = safeIdx
+    const project = projs[safeIdx]
+    if (!project) return
+
+    // Open/preload fullscreen overlay with project info + poster.
+    // All opens (showreel, slider, /works) use the unified DOM cinematic
+    // reveal — no origin='plane' 3D handoff.
+    const p = project as {
+      title?: string
+      category?: string
+      description?: string
+      tags?: string[]
+      textureUrl?: string
+      detailTextureUrl?: string
+      videoSrc?: string
+      year?: string
+    }
+    const opts = {
+      // Case studies are still-image overlays. The only video source belongs
+      // to UIManager's explicit showreel action; keeping this image-only
+      // avoids every project silently loading the placeholder showreel.
+      mode: 'image' as const,
+      poster: p.textureUrl,
+      title: p.title,
+      category: `${p.year ?? ''} · ${p.category ?? ''}`,
+      description: p.description,
+      tags: p.tags,
+      counter: `${safeIdx + 1} / ${projs.length}`,
+      hasPrev: true,
+      hasNext: true,
+    }
+    if (preload) {
+      this.overlay.preload(opts)
+    } else {
+      this.overlay.open(opts)
+    }
+  }
+
+  /** Remove every UI-feature listener + dispose the created features. */
+  destroy(): void {
+    if (this._soundToggleHandler) {
+      window.removeEventListener('jlz:sound-toggle', this._soundToggleHandler)
+      this._soundToggleHandler = null
+    }
+    if (this._langChangeHandler) {
+      window.removeEventListener('jlz:lang-change', this._langChangeHandler)
+      this._langChangeHandler = null
+    }
+    if (this._openProjectHandler) {
+      window.removeEventListener('jlz:open-project', this._openProjectHandler)
+      this._openProjectHandler = null
+    }
+    if (this._projectNavigateHandler) {
+      window.removeEventListener('jlz:project-navigate', this._projectNavigateHandler)
+      this._projectNavigateHandler = null
+    }
+    if (this._routeChangeCloseOverlayHandler) {
+      window.removeEventListener('jlz:route-change', this._routeChangeCloseOverlayHandler)
+      this._routeChangeCloseOverlayHandler = null
+    }
+    if (this._wobblePulseHandler) {
+      window.removeEventListener('jlz:wobble-pulse', this._wobblePulseHandler)
+      this._wobblePulseHandler = null
+    }
+    if (this._worksPageSectionHandler) {
+      window.removeEventListener('jlz:page-section-change', this._worksPageSectionHandler)
+      this._worksPageSectionHandler = null
+    }
+    if (this._worksPlaneTapHandler) {
+      window.removeEventListener('pointerup', this._worksPlaneTapHandler)
+      this._worksPlaneTapHandler = null
+    }
+    if (this._gotoSectionByHashHandler) {
+      window.removeEventListener('jlz:goto-section-by-hash', this._gotoSectionByHashHandler)
+      this._gotoSectionByHashHandler = null
+    }
+    this.portfolio = null
+    this.overlay?.dispose()
+    this.overlay = null
+    this.uiMenu?.dispose()
+    this.uiMenu = null
+    this.storyNav?.dispose()
+    this.storyNav = null
+  }
+}

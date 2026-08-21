@@ -148,15 +148,45 @@ async function boot(): Promise<void> {
     ui.init()
     progress(40)
 
+    // ── Phase 7: the persistent SceneHost (Vue) is the readiness handshake ──
+    // AppShell mounts SceneHost (startApp above); it owns the one canvas, the
+    // custom renderer factory and the camera. `sceneHost.ready` settles only
+    // AFTER renderer init + actual-backend inspection + the software-adapter
+    // policy decision + the Tres context mount. Experience adopts those
+    // instances and awaits the initial World's first successful render
+    // (Experience.init → firstRender), so `jlz:webgl-ready` below can only
+    // fire after that — the renderer factory return alone never satisfies
+    // readiness. The `?no-scene` DOM-only rollback above returns earlier and
+    // never reaches this handshake.
+    const { sceneHost, attachWorld } = await import('./app/sceneHost')
+    const host = await sceneHost.ready
     const { Experience } = await import('./Experience/Experience')
     progress(55)
 
-    const experience = new Experience(ui)
+    const experience = new Experience(ui, {
+      scene: host.scene,
+      camera: host.camera,
+      renderer: host.renderer,
+      canvas: host.canvas,
+      mode: host.mode,
+      attachWorld,
+      replaceRenderer: (renderer) => sceneHost.replaceRenderer(renderer),
+    })
     await experience.init()
     if (import.meta.env.DEV) {
       ;(window as unknown as { __jlzRuntimeDestroy?: () => void }).__jlzRuntimeDestroy = () => {
         experience.destroy()
       }
+    }
+    // Phase 6 evidence (fixed 2026-08-22): the forced-WebGLBackend gate and
+    // the forced-`?renderer=webgl` parity QA are separate gates — the
+    // unified `WebGPURenderer` on `WebGLBackend` keeps the legacy direct-WebGL
+    // path (no TSL post) by design; TSL post runs only on `WebGPUBackend`
+    // (`WebGPUPostPipeline`). No TSL-post-on-WebGLBackend claim is made.
+    if (import.meta.env.DEV) {
+      console.info(
+        `[entry-app] Phase 7 host ready: mode=${host.mode} backend=${host.backend.backendName ?? '?'} isFallbackAdapter=${host.backend.isFallbackAdapter}`,
+      )
     }
     progress(95)
     // Small delay at 95% so user sees 'Ready' status before 100% + curtain split

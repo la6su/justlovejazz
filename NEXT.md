@@ -345,9 +345,36 @@ do not start a phase whose entry gate has not passed.
       `Cursor` now exposes the spring-convergence predicate), the per-frame
       `dt` breath accumulator is replaced by a wall-clock timer firing the
       typed `breath` invalidation, and hidden-tab pause / exactly-one resume
-      are owned by the scheduler's `autoVisibility`. Open: the persistent
-      `SceneHost` Tres root + readiness handshake (slice 3, rollback = the
-      native-world host), and the Experience split (slice 4).
+      are owned by the scheduler's `autoVisibility`. Slice 3 landed:
+      `src/app/SceneHost.vue` is the persistent Tres root (mounted once by
+      `AppShell`, sibling of `RouterView` — navigation never remounts the
+      scene root) owning the one canvas, the one `PerspectiveCamera` and the
+      custom renderer factory (unified `WebGPURenderer` via
+      `src/core/unifiedRenderer.ts`, software-adapter `forceWebGL`
+      re-creation through `planUnifiedBackend`, `render-mode="manual"` so the
+      `RenderScheduler` stays the single loop driver); the module-scoped
+      one-shot bridge (`src/app/sceneHost.ts`, unit-locked) resolves only
+      after renderer init + actual-backend inspection + the Tres context
+      mount, `entry-app.ts` awaits it before constructing `Experience`, and
+      the World enters Tres through the explicit
+      `<primitive :object :dispose="null">` adapter. `Renderer.init(adopted)`
+      / `Camera(sizes, instance)` adopt the host instances (hostless
+      construction keeps self-hosting — no scene owner deleted; `?no-scene`
+      stays the DOM-only rollback). Slice 4 landed: the former UI features
+      (CinematicNav, UIMenu, FullscreenOverlay, Works portfolio, UI-facing
+      window handlers) moved to `src/Experience/ExperienceUI.ts` behind the
+      narrow `ExperienceUIHost` port, `Experience` adopts the Tres scene
+      instead of creating its own, and readiness is gated on the initial
+      World's first successful render (`jlz:webgl-ready` only after
+      `Experience.init` → `firstRender`; a throwing frame never resolves it).
+      Device-loss recovery syncs the persistent Tres context through
+      `sceneHost.replaceRenderer`. Static gates: `type-check`,
+      `type-check:vue`, 294/294 unit suite (incl. the new
+      `sceneHostBridge.test.ts`) and the production build all pass. Open: the
+      live acceptance gates (serial e2e one-canvas / no-remount, backend
+      parity, idle and disposal matching Phase 6) on hardware, and the
+      separately reviewed Three-delivery budget ADR (chunk now 381 kB gzip
+      vs the 350 kB cap; ledger baseline 349.29 kB).
 
 - [ ] **Phases 8–10: cut over Tres scene owners and static content** —
       only after their gates pass, ship the one-by-one scene-owner migration,

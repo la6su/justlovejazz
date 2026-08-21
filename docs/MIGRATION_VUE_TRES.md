@@ -2209,14 +2209,58 @@ Status (2026-08-22):
   invalidation — required because a settled loop no longer runs frames to
   advance the accumulator. Hidden-tab pause and the exactly-one resume
   invalidation are owned by the scheduler's `autoVisibility`.
-- Slice 3 (open): make `SceneHost` the persistent Tres root — a `TresCanvas`
-  with the custom renderer factory, camera and scene, each given exactly one
-  owner; attach the existing World through an explicit primitive adapter;
-  publish readiness only after renderer initialization, actual-backend
-  inspection, Tres context mount and the initial World's first successful
-  render. Rollback keeps the native-world host.
-- Slice 4 (open): split `Experience` into bootstrap, scene coordination and
-  former UI features.
+- Slice 3 (done): `SceneHost` is the persistent Tres root.
+  `src/app/SceneHost.vue` (mounted once by `AppShell`, sibling of
+  `RouterView` — route navigation never remounts the scene root) owns, each
+  with exactly one owner: the canvas (TresCanvas-rendered `canvas.canvas`,
+  fixed full-viewport `.jlz-scene-host`, z-index 1 under `#spa-content`),
+  the camera (one `PerspectiveCamera(75, w/h, 0.1, 1000)`, registered on
+  Tres, aspect kept in sync by Tres), and the renderer (the custom renderer
+  factory — synchronous construction of the unified `WebGPURenderer` via
+  `src/core/unifiedRenderer.ts`, dev `?renderer=webgl` keeps the classic
+  `WebGLRenderer` + `WebGLNodesHandler` GLSL post owner). `render-mode="manual"`
+  stops Tres's internal loop — the `RenderScheduler` (ADR 0004) remains the
+  single `setAnimationLoop` caller. `onReady` inspects the actual backend
+  (`inspectUnifiedBackend` → `planUnifiedBackend`); a software (SwiftShader)
+  WebGPU adapter is re-created with `forceWebGL: true` on the same canvas and
+  the Tres context's plain-value `renderer.instance` is swapped. The bridge
+  (`src/app/sceneHost.ts`, module-scoped one-shot `ready` promise,
+  unit-locked: settle-once, `attachWorld` primitive slot,
+  `replaceRenderer`) resolves only after renderer init + backend inspection +
+  the policy decision + the Tres context mount. `entry-app.ts` awaits the
+  bridge before constructing `Experience`; the World enters Tres through the
+  explicit `<primitive :object :dispose="null">` adapter (`Experience`
+  attaches it and stays the single disposal owner). The `?no-scene`
+  DOM-only rollback returns earlier in the entry bootstrap (no canvas, no
+  Experience) and `Renderer.init(undefined)` / `Camera` still self-host when
+  constructed without a host — no scene owner was deleted.
+- Slice 4 (done): `Experience` is split into bootstrap + scene coordination
+  (Experience keeps init, the readiness handshake, per-frame world/camera/post
+  coordination and disposal) and the former UI features, now owned by
+  `src/Experience/ExperienceUI.ts` (CinematicNav, UIMenu, FullscreenOverlay,
+  Works portfolio and every UI-facing window handler) reached through the
+  narrow getter-based `ExperienceUIHost` port. `Experience` no longer
+  constructs its own scene (it adopts `context.scene.value` from the
+  SceneHost bridge) and the `Camera` wrapper adopts the SceneHost camera
+  (self-creation only on the hostless rollback path). Readiness:
+  `jlz:webgl-ready` (entry-app) can only fire after `Experience.init()`
+  resolves, which awaits the initial World's FIRST SUCCESSFUL RENDER — the
+  scheduler `first-frame` invalidation guarantees the frame and the render
+  gate resolves `firstRender` exactly once (a frame that throws in
+  `renderer.update()` never resolves it, so the factory return alone never
+  satisfies readiness; a 20 s race keeps the splash from hanging).
+  Device-loss recovery re-creates the renderer on the same canvas and syncs
+  the persistent Tres context through `sceneHost.replaceRenderer`
+  (`onInstanceReplaced`), preserving the Phase 6 bounded budget and
+  PMREM regeneration. Disposal: `Experience.destroy()` tears the features
+  through `ExperienceUI.destroy()`, detaches the primitive slot
+  (`attachWorld(null)`) and keeps its legacy canvas removal host-only — the
+  Vue-owned canvas survives `Renderer.dispose()`. Gates: `type-check`,
+  `type-check:vue`, `test:unit` (294 tests incl. the new
+  `sceneHostBridge.test.ts`) and `build` pass. Follow-up: the shared Three delivery chunk now measures 381 kB gzip
+  (ledger baseline 349.29 kB vs the 350 kB cap; delta includes the
+  `@tresjs/core` app-chunk adoption) — to be settled by the separately
+  reviewed budget ADR, not in this phase.
 
 ### Phase 8 — migrate scene owners
 

@@ -29,6 +29,14 @@ vi.mock('../sections/nav/template', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../sections/nav/template')>()
   return { ...actual, initMenuToolbar: vi.fn() }
 })
+// Phase 7: AppShell now mounts the persistent SceneHost (a real TresCanvas).
+// This suite is routing-scoped — the Tres canvas must not boot in jsdom (no
+// WebGL; @pmndrs/pointer-events crashes on the event-manager setup). Stub the
+// persistent root to nothing; the SceneHost handshake is covered by its own
+// unit tests and the live e2e gate.
+vi.mock('../app/SceneHost.vue', () => ({
+  default: { name: 'SceneHost', render: () => null },
+}))
 // Reduced-motion: the route transition renders synchronously, so the tests
 // stay deterministic without waiting out the overlay animation.
 vi.mock('../core/motionPolicy', () => ({

@@ -3,22 +3,20 @@ import { PMREMGenerator as WebGPUPMREMGenerator, WebGPURenderer } from 'three/we
 import { Sizes } from './Sizes'
 import { Time } from './Time'
 import { Camera } from './Camera'
-import { Renderer } from './Renderer'
+import { Renderer, type RenderSurface } from './Renderer'
 import type { DevPanel } from '../core/DevPanel'
 import { ContentReveal } from './ContentReveal'
 import { Cursor } from './Cursor'
-import { UIManager } from '../UI/UIManager'
+import type { UIManager } from '../UI/UIManager'
 import { input } from './Input'
 import { StateBus } from '../core/StateBus'
 import { getCurrentPage } from '../core/routePage'
 import type { World } from '../core/World'
-import { createWorksPortfolio, type WorksPortfolio } from './WorksPortfolio'
-import { FullscreenOverlay } from '../UI/FullscreenOverlay'
 import { NoiseText } from './NoiseText'
 
-import { SfxSystem, getSoundMuted } from '../core/SfxSystem'
-import { CinematicNav } from '../UI/CinematicNav'
-import { UIMenu } from '../UI/UIMenu'
+import { SfxSystem } from '../core/SfxSystem'
+import { ExperienceUI } from './ExperienceUI'
+import type { FinalMode } from '../core/rendererBackend'
 // worldDNA.ts removed — TSL node system never attached (attachWorldDNA never
 // called). updateWorldDNAAudio set uniforms nobody read. All dead.
 import { prefersReducedMotion } from '../core/motionPolicy'
@@ -50,8 +48,27 @@ const SECTION_TRANSITION = {
 /** The Works story frame — the six-slot contract, not a literal. */
 const WORKS_SLOT_INDEX = worldSlotIndex('works')!
 
+/**
+ * Phase 7: the persistent SceneHost readiness state handed to Experience by
+ * `entry-app.ts`. The scene, camera and renderer instances are the ONES
+ * owned by the SceneHost (Tres root); Experience adopts them. `attachWorld`
+ * mounts the existing World through the explicit TresJS primitive adapter;
+ * `replaceRenderer` syncs the Tres context after a device-loss recovery.
+ * Without a host (native-world host rollback) Experience creates its own
+ * scene and `Renderer.init()` constructs its own renderer.
+ */
+export interface ExperienceHost {
+  scene: THREE.Scene
+  camera: THREE.PerspectiveCamera
+  renderer: RenderSurface
+  canvas: HTMLCanvasElement
+  mode: FinalMode
+  attachWorld(world: THREE.Object3D | null): void
+  replaceRenderer(renderer: RenderSurface): void
+}
+
 export class Experience {
-  scene: THREE.Scene = new THREE.Scene()
+  scene!: THREE.Scene
   sizes!: Sizes
   time!: Time
   camera!: Camera
@@ -61,28 +78,25 @@ export class Experience {
   private _sectionChangeHandler:
     ((payload: import('../core/EventBus').AppEvents['jlz:section-change']) => void) | null = null
   private _themeAppliedHandler: ((e: Event) => void) | null = null
-  private _soundToggleHandler: ((e: Event) => void) | null = null
-  private _langChangeHandler: (() => void) | null = null
   private _splashEnteredHandler: (() => void) | null = null
-  private _openProjectHandler: ((e: Event) => void) | null = null
-  private _routeChangeCloseOverlayHandler: (() => void) | null = null
-  // Menu and Contact finale are opened from the persistent cinematic shell.
-  private _wobblePulseHandler: (() => void) | null = null
-  private _gotoSectionByHashHandler: ((e: Event) => void) | null = null
-  private _worksPlaneTapHandler: ((e: PointerEvent) => void) | null = null
-  private _worksPageSectionHandler: ((e: Event) => void) | null = null
-  private _projectNavigateHandler: ((e: Event) => void) | null = null
   private devPanel: DevPanel | null = null
   public world!: World
   private bus!: StateBus
 
-  // Works portfolio (public for DevPanel access)
-  public portfolio: WorksPortfolio | null = null
-  private overlay: FullscreenOverlay | null = null
-  private _activeProjectIndex = 0
-  private _uiMenu: UIMenu | null = null
+  // Phase 7 slice 4: the former UI features (cinematic nav, menu, overlay,
+  // Works portfolio, UI-facing window handlers) live in ExperienceUI.
+  private features!: ExperienceUI
+  private _host: ExperienceHost | null = null
+
+  /** Works portfolio (public for DevPanel access — owned by ExperienceUI). */
+  public get portfolio() {
+    return this.features?.portfolio ?? null
+  }
+  /** The fullscreen overlay (owned by ExperienceUI). */
+  public get overlay() {
+    return this.features?.overlay ?? null
+  }
   private currentSectionContext: string | null = null
-  private _portfolioInitialized = false
   private _prevSectionIndex = -1
   private _onSizesResize: () => void = () => {}
   private _onRendererRecovered: (() => void) | null = null
@@ -90,7 +104,10 @@ export class Experience {
   private _mouseTrailRafPending = false
   private _mouseTrailRafId: number | null = null
   public sfx: SfxSystem = new SfxSystem()
-  private _storyNav: CinematicNav | null = null
+  /** Cinematic story track (owned by ExperienceUI, Phase 7 slice 4). */
+  private get _storyNav() {
+    return this.features?.storyNav ?? null
+  }
   private _needsRender = true // start true to render the first frame
   private _bakuCarouselActive = false // BakuCarousel is morphed/scrolling
   // A4: ambient breathing — one refresh frame every ~2.5 s while the scene
@@ -122,6 +139,21 @@ export class Experience {
   public get lowFps(): boolean {
     return this._lowFps
   }
+
+  // Phase 7 readiness contract: `jlz:webgl-ready` may only fire after the
+  // initial World's FIRST SUCCESSFUL RENDER — the scheduler 'first-frame'
+  // invalidation guarantees a frame; the frame resolves this exactly once.
+  private _firstRenderResolve: (() => void) | null = null
+  private _firstRenderPromise: Promise<void> | null = null
+  /** Resolved on the first successful rendered frame. */
+  public get firstRender(): Promise<void> {
+    if (!this._firstRenderPromise) {
+      this._firstRenderPromise = new Promise<void>((resolve) => {
+        this._firstRenderResolve = resolve
+      })
+    }
+    return this._firstRenderPromise
+  }
   // Auto-reduce: when _lowFps flips true, halve all JunniParticles counts.
   // One-way (never restore) — restoring causes a GPU spike that re-triggers
   // low FPS. User can manually restore via DevPanel (future) or page reload.
@@ -130,11 +162,30 @@ export class Experience {
 
   // SECTION_LABELS removed — the cinematic navigator derives labels from the
   // rendered, translated section headings.
-  constructor(private _ui: UIManager) {
+  constructor(
+    private _ui: UIManager,
+    host?: ExperienceHost,
+  ) {
     this.sizes = new Sizes()
     this.time = new Time()
-    this.camera = new Camera(this.sizes)
+    // Phase 7: the SceneHost is the single camera + scene owner (the native
+    // world host — the Phase 7 rollback — passes no host and Experience
+    // creates its own scene; the camera wrapper then creates its own too).
+    this._host = host ?? null
+    this.scene = host?.scene ?? new THREE.Scene()
+    this.camera = new Camera(this.sizes, host?.camera)
     this.renderer = new Renderer(this.sizes)
+
+    // Phase 7 slice 4: the former UI features reach the scene through a
+    // narrow getter-based port (the World only exists after init).
+    this.features = new ExperienceUI({
+      world: () => this.world,
+      camera: () => this.camera,
+      ui: () => this._ui,
+      sfx: () => this.sfx,
+      raise: (reason) => this._raiseRenderDemand(reason),
+      reducedMotion: () => this._reducedMotion,
+    })
 
     // Phase 7 (ADR 0004): construct the single loop driver. The Renderer is
     // the setAnimationLoop owner boundary (device-loss recovery re-attaches
@@ -158,7 +209,15 @@ export class Experience {
     const { World } = await import('../core/World')
     this.world = new World(this.scene)
     await this.world.init()
-    this.scene.add(this.world)
+    // Phase 7: with the persistent SceneHost the World enters the Tres scene
+    // through the explicit primitive adapter (`:dispose="null"` — Experience
+    // stays the single disposal owner); without it (rollback) the World is
+    // added to the scene directly as before.
+    if (this._host) {
+      this._host.attachWorld(this.world)
+    } else {
+      this.scene.add(this.world)
+    }
     await this.world.prewarmHomeMedia(this.renderer.instance, this.camera.instance)
   }
 
@@ -324,7 +383,7 @@ export class Experience {
     // After splash is dismissed (Enter click), re-trigger NoiseText on the
     // active section so user sees the eyebrow animation as 3D scene reveals.
     this._splashEnteredHandler = () => {
-      this.triggerSplashOpener()
+      this.features.triggerSplashOpener()
       const activeSection =
         (document.querySelector('.section-active [data-eyebrow]') as HTMLElement | null) ??
         (document.querySelector('[data-section="intro"] [data-eyebrow]') as HTMLElement | null)
@@ -335,7 +394,20 @@ export class Experience {
       }
     }
     window.addEventListener('jlz:splash-entered', this._splashEnteredHandler)
-    await this.renderer.init()
+    // Phase 7: with the persistent SceneHost the renderer instance is ADOPTED
+    // (the SceneHost factory owns construction + backend inspection); the
+    // native world host (rollback) keeps constructing it here as before.
+    const host = this._host
+    await this.renderer.init(
+      host
+        ? {
+            instance: host.renderer,
+            canvas: host.canvas,
+            mode: host.mode,
+            onInstanceReplaced: (instance) => host.replaceRenderer(instance),
+          }
+        : undefined,
+    )
     await this.buildWorld()
     this.bus = StateBus.getInstance()
 
@@ -398,42 +470,10 @@ export class Experience {
     // WebGPURenderer it may fail (duck-typed), so we fall back gracefully.
     this.setupEnvironment()
 
-    // CinematicNav — vertical native story track plus top/bottom sheets.
-    // The section count and the Works arrival index are the worldSlots
-    // contract (single source of the six-slot model), not literals.
-    this._storyNav = new CinematicNav(WORLD_SLOT_COUNT)
-    // Phase 7: native scroll is a typed loop wake source.
-    this._storyNav.onActivity = () => this._raiseRenderDemand('nav')
-    this._storyNav.onSectionChange((idx) => {
-      this._uiMenu?.setActive(idx)
-      // Initial hashes are replayed only after the ready splash event. Keep
-      // the Works owner explicit at that boundary so a hash-driven arrival
-      // cannot depend on an earlier render frame to wake its carousel.
-      if (idx === WORKS_SLOT_INDEX && getCurrentPage() === 'home') {
-        void this.world?.ensureCarouselInitialized().then(() => {
-          if (this._storyNav?.getSectionIndex() === WORKS_SLOT_INDEX) this._raiseRenderDemand('nav')
-        })
-      }
-      this._raiseRenderDemand('nav')
-    })
-    this._storyNav.onActiveChange((active) => {
-      if (active) this._raiseRenderDemand('nav')
-    })
-
-    // UIMenu
-    this._uiMenu = new UIMenu()
-    this._uiMenu.onNavigate((idx) => {
-      this._storyNav?.goToSection(idx)
-    })
-
-    // The compact storyline lives inside the console bar (bottom strip).
-    // If the console bar exists, append there; otherwise fall back to body.
-    const consoleBar = document.querySelector('.jlz-console-bar')
-    if (consoleBar) {
-      consoleBar.appendChild(this._storyNav.el)
-    } else {
-      document.body.appendChild(this._storyNav.el)
-    }
+    // Phase 7 slice 4: the former UI features (CinematicNav, UIMenu,
+    // overlay, Works portfolio, UI-facing window handlers) are created and
+    // wired by ExperienceUI at this legacy timing (after world + env).
+    this.features.init()
 
     // DevPanel — created AFTER nav so it can read current section
     if (import.meta.env.DEV) {
@@ -479,7 +519,7 @@ export class Experience {
       index: 1,
     })
     // Always build portfolio — single-page, always needs works slider
-    void this.ensurePortfolio()
+    void this.features.ensurePortfolio()
     this.camera.instance.position.set(0, 5, 10)
     this.camera.instance.lookAt(0, 0, 0)
     this.camera.instance.updateProjectionMatrix()
@@ -529,158 +569,22 @@ export class Experience {
     //  assigned, getBass/getMid/getTreble had zero callers, update() ran
     //  every frame computing zeros. SfxSystem is alive via Cursor.ts.)
 
-    // Sound config from splash page (localStorage 'jlz:sound' = 'on'|'off').
-    // Splash writes this before navigation; app reads on boot.
-    // D-7 fix: default to MUTED (matches UIMenu's readSoundMuted default:
-    // `localStorage.getItem('jlz:sound') !== 'on'` → true/muted when no key).
-    // Previously Experience only muted when 'off' was set → first-visit had
-    // UIMenu showing "off" but SFX actually playing. Now both agree: muted
-    // unless explicitly 'on'.
-    this.sfx.setMuted(getSoundMuted())
+    // Phase 7 slice 4: the former UI features (sound default + toggle,
+    // language sync, open-project / project-navigate / route-change /
+    // wobble-pulse / page-section / works-plane-tap / goto-section-by-hash
+    // handlers, CinematicNav + UIMenu) are wired by ExperienceUI at this
+    // legacy init timing — see ExperienceUI.init().
 
-    // Runtime sound toggle (from UIMenu or other in-app controls)
-    this._soundToggleHandler = (e: Event) => {
-      const detail = (e as CustomEvent<{ muted: boolean }>).detail
-      if (detail) {
-        this.sfx.setMuted(detail.muted)
-      }
-    }
-    window.addEventListener('jlz:sound-toggle', this._soundToggleHandler)
-
-    // Keep the route-owned pixel title in sync with the active language.
-    this._langChangeHandler = () => {
-      this.world?.contactTextStage?.refreshLanguage()
-    }
-    window.addEventListener('jlz:lang-change', this._langChangeHandler)
-
-    // ── Works page card click → open fullscreen overlay ──
-    // Dispatched by WorkCards.ts when a .jlz-work-card is clicked (works page).
-    // All opens (showreel, slider, /works) use the same unified DOM cinematic
-    // reveal — no 3D plane-to-fullscreen handoff, which caused a double effect.
-    this._openProjectHandler = (e: Event) => {
-      const detail = (e as CustomEvent<{ idx: number }>).detail
-      if (!detail || typeof detail.idx !== 'number') return
-      void this.ensurePortfolio().then(() => {
-        this.onProjectSelect(detail.idx)
-      })
-    }
-    window.addEventListener('jlz:open-project', this._openProjectHandler)
-
-    this._projectNavigateHandler = (e: Event) => {
-      if (!this.overlay?.isOpen) return
-      const direction = (e as CustomEvent<{ direction?: number }>).detail?.direction
-      if (direction !== -1 && direction !== 1) return
-      const carousel = this.getCarousel()
-      if (direction < 0) {
-        carousel?.prev()
-        if (!carousel) this.portfolio?.prev()
-      } else {
-        carousel?.next()
-        if (!carousel) this.portfolio?.next()
-      }
-      this.onProjectSelect(this._activeProjectIndex + direction)
-    }
-    window.addEventListener('jlz:project-navigate', this._projectNavigateHandler)
-
-    // ── Close overlay on route change ──
-    // When SPA navigates (Menu subnav click, browser back, etc.),
-    // close any open FullscreenOverlay. isOpen checks UIKit's native uk-open
-    // class — no custom flag to get out of sync.
-    this._routeChangeCloseOverlayHandler = () => {
-      if (this.overlay?.isOpen) {
-        this.overlay.close()
-      }
-      const newPage = getCurrentPage()
-      this.world?.syncRouteVisuals()
-      if (newPage === 'home') {
-        void this.world?.ensureCarouselInitialized()
-      }
-      if (newPage === 'works') {
-        void this.world?.ensureWorksPlaneStageInitialized().then(() => {
-          this.world?.setWorksPlaneStageSection(0)
-          this._raiseRenderDemand('nav')
-        })
-      } else {
-        // Works owns eight decoded 1440×810 textures. Keeping an inactive
-        // stage alive makes that GPU allocation look like a navigation leak.
-        this.world?.disposeWorksPlaneStage()
-      }
-      if (newPage === 'contact') {
-        this.world?.setContactCyprusStageSection(0)
-        this.world?.setContactSceneSection(0)
-        void Promise.all([
-          this.world?.ensureContactTextStageInitialized(),
-          this.world?.ensureContactCyprusStageInitialized(),
-        ]).then(() => {
-          this.world?.setContactTextStageSection(0)
-          this._raiseRenderDemand('nav')
-        })
-      } else {
-        this.world?.disposeContactTextStage()
-        this.world?.disposeContactCyprusStage()
-        this.world?.setContactSceneSection(0)
-      }
-      this._raiseRenderDemand('nav')
-    }
-    window.addEventListener('jlz:route-change', this._routeChangeCloseOverlayHandler)
-
-    // Phase 5: Wobble pulse on card click (work cards + carousel)
-    this._wobblePulseHandler = () => {
-      this.world?.baku?.triggerWobblePulse()
-      // Keep rendering while the pulse animates (sin-envelope in SplashCube.update).
-      this._raiseRenderDemand('dirty')
-    }
-    window.addEventListener('jlz:wobble-pulse', this._wobblePulseHandler)
-
-    // Route-owned 3D layers follow the shared content-page navigation contract.
-    this._worksPageSectionHandler = (e: Event) => {
-      const detail = (e as CustomEvent<{ index?: number }>).detail
-      const domIndex = detail?.index ?? 0
-      const stageIndex = Math.max(0, domIndex - 1)
-      if (getCurrentPage() === 'works') {
-        // DOM sections: 0=Lab overlay, 1-4=project pairs, 5=Nav overlay.
-        this.world?.setWorksPlaneStageSection(stageIndex)
-      } else if (getCurrentPage() === 'contact') {
-        this.world?.setContactTextStageSection(stageIndex)
-        this.world?.setContactCyprusStageSection(stageIndex)
-        this.world?.setContactSceneSection(stageIndex)
-      } else {
-        return
-      }
-      this._raiseRenderDemand('nav')
-    }
-    window.addEventListener('jlz:page-section-change', this._worksPageSectionHandler)
-
-    this._worksPlaneTapHandler = (e: PointerEvent) => {
-      if (getCurrentPage() !== 'works' || this.overlay?.isOpen) return
-      // The Enter pointerup is dispatched while the splash curtains are still
-      // present. It must not be reinterpreted as a click on the first 3D plane.
-      if (document.getElementById('jlz-app-loader')) return
-      const target = e.target as HTMLElement | null
-      if (target?.closest('.jlz-work-card, #jlz-fs-overlay, .jlz-topbar, [data-cinematic-menu]'))
-        return
-      // Raycast against the 3D planes to find which project was tapped, then
-      // open the overlay with the unified cinematic reveal (no 3D handoff).
-      void this.ensurePortfolio().then(() => {
-        const stage = this.world?.worksPlaneStage
-        if (!stage) return
-        const idx = stage.hitTest(e.clientX, e.clientY)
-        if (idx >= 0) this.onProjectSelect(idx)
-      })
-    }
-    window.addEventListener('pointerup', this._worksPlaneTapHandler)
-
-    // ── Hash navigation from menu overlay (e.g. /manifesto#section-manifesto-02) ──
-    // Dispatched by router.navigateToPage after renderView. CinematicNav finds
-    // the target section by hash ID and activates it. Without this, menu
-    // subsection clicks always land on section 1 (hash silently dropped).
-    this._gotoSectionByHashHandler = (e: Event) => {
-      const detail = (e as CustomEvent<{ hash: string }>).detail
-      if (detail?.hash) {
-        this._storyNav?.goToSectionByHash(detail.hash)
-      }
-    }
-    window.addEventListener('jlz:goto-section-by-hash', this._gotoSectionByHashHandler)
+    // Phase 7 readiness contract: await the initial World's FIRST SUCCESSFUL
+    // RENDER. The 'first-frame' invalidation above guarantees a frame (a
+    // hidden tab resumes with exactly one invalidation); the bounded timeout
+    // keeps the splash from hanging on a path that never renders. The factory
+    // return alone never satisfies readiness — entry-app only publishes
+    // `jlz:webgl-ready` after this init resolves.
+    await Promise.race([
+      this.firstRender,
+      new Promise<void>((resolve) => setTimeout(resolve, 20000)),
+    ])
   }
 
   /**
@@ -803,7 +707,7 @@ export class Experience {
     // world.updateTransform(). If we use stale _bakuCarouselActive from
     // last frame, _needsRender stays false and carousel.update() never
     // runs → morph stalls at ~0.35. See BakuCarousel.ts §update.
-    const carousel = this.getCarousel()
+    const carousel = this.features.getFrameCarousel()
     this._bakuCarouselActive = carousel?.isAnimating ?? false
     const carouselActive = this._bakuCarouselActive
     const worksPlaneActive = this.world?.worksPlaneStage?.isAnimating ?? false
@@ -982,15 +886,15 @@ export class Experience {
     // (above, in the activity snapshot) — was a race condition where stale
     // value caused carousel.update() to never run, morph stalled at ~0.35.
     // Sync ProjectOverlay (DOM UI layer) — fullscreen opens on card click.
-    if (this.overlay && showGallery && !this._portfolioInitialized) {
-      this._portfolioInitialized = true
+    if (this.overlay && showGallery && !this.features.portfolioInitialized) {
+      this.features.portfolioInitialized = true
       // Preload the first project into the overlay (hidden until card click).
       // Uses preload() NOT open() — open() calls UIkit.modal().show() which
       // adds the uk-open class (making the overlay visible). preload() only
       // sets content without showing, so the overlay stays hidden.
       // Prepare the same authored texture that the first 3D plane uses. The
       // overlay can then decode it before the first plane-to-modal handoff.
-      this.onProjectSelect(0, true)
+      this.features.onProjectSelect(0, true)
     }
     // Ground plane (floor) — visible ONLY on the bottom visible section.
     // Section index 4 = cube face -Y (bottom) on all pages. On every other
@@ -1012,6 +916,15 @@ export class Experience {
       // (AudioSystem.update() removed — AudioSystem deleted, was dead code)
       this.renderer.update(this.scene, this.camera.instance, dt, worldState)
       this.devPanel?.recordRenderFrame()
+      // Phase 7 readiness: the initial World's FIRST SUCCESSFUL RENDER — a
+      // frame that threw in renderer.update() never resolves the gate
+      // (update() catches and keeps booting), so `jlz:webgl-ready` can only
+      // fire after a real draw. Resolves exactly once.
+      if (this._firstRenderResolve) {
+        const resolve = this._firstRenderResolve
+        this._firstRenderResolve = null
+        resolve()
+      }
       // Clear the demand flag only when nothing is still active — the same
       // 14-flag settle set, now the contract's demandSettles (unit-locked
       // against the legacy inline AND-NOT).
@@ -1042,14 +955,7 @@ export class Experience {
 
   // (setSplashProgress removed — dead method, zero callers. Was calling
   //  SplashCube.setProgress which was also a no-op.)
-
-  /** Start the authored cube reaction and its one-shot portal-frame echo. */
-  public triggerSplashOpener(): void {
-    this.world?.baku?.triggerOpener()
-    if (this._reducedMotion) return
-    this.world?.particleBurst?.trigger(0, 0, 0)
-    if (this.world?.particleBurst?.isActive) this._raiseRenderDemand('dirty')
-  }
+  // (triggerSplashOpener removed — Phase 7 slice 4: owned by ExperienceUI.)
 
   destroy() {
     // Stop the loop driver FIRST — RenderScheduler.destroy() clears the
@@ -1081,47 +987,16 @@ export class Experience {
       window.removeEventListener('jlz:theme-applied', this._themeAppliedHandler)
       this._themeAppliedHandler = null
     }
-    if (this._soundToggleHandler) {
-      window.removeEventListener('jlz:sound-toggle', this._soundToggleHandler)
-      this._soundToggleHandler = null
-    }
-    if (this._langChangeHandler) {
-      window.removeEventListener('jlz:lang-change', this._langChangeHandler)
-      this._langChangeHandler = null
-    }
     if (this._splashEnteredHandler) {
       window.removeEventListener('jlz:splash-entered', this._splashEnteredHandler)
       this._splashEnteredHandler = null
     }
-    if (this._openProjectHandler) {
-      window.removeEventListener('jlz:open-project', this._openProjectHandler)
-      this._openProjectHandler = null
-    }
-    if (this._projectNavigateHandler) {
-      window.removeEventListener('jlz:project-navigate', this._projectNavigateHandler)
-      this._projectNavigateHandler = null
-    }
-    if (this._routeChangeCloseOverlayHandler) {
-      window.removeEventListener('jlz:route-change', this._routeChangeCloseOverlayHandler)
-      this._routeChangeCloseOverlayHandler = null
-    }
-    if (this._wobblePulseHandler) {
-      window.removeEventListener('jlz:wobble-pulse', this._wobblePulseHandler)
-      this._wobblePulseHandler = null
-    }
-    // (_gotoNavHandler removal — was already commented out above)
-    if (this._gotoSectionByHashHandler) {
-      window.removeEventListener('jlz:goto-section-by-hash', this._gotoSectionByHashHandler)
-      this._gotoSectionByHashHandler = null
-    }
-    if (this._worksPlaneTapHandler) {
-      window.removeEventListener('pointerup', this._worksPlaneTapHandler)
-      this._worksPlaneTapHandler = null
-    }
-    if (this._worksPageSectionHandler) {
-      window.removeEventListener('jlz:page-section-change', this._worksPageSectionHandler)
-      this._worksPageSectionHandler = null
-    }
+    // Phase 7 slice 4: the former UI features (their window listeners, the
+    // menu, the overlay and the story nav) tear down through ExperienceUI.
+    this.features.destroy()
+    // Detach the World from the persistent Tres primitive slot so a
+    // re-init re-attaches a fresh instance (Experience owns disposal).
+    this._host?.attachWorld(null)
     this.world.dispose()
     this.bus.cancelAll()
     this.devPanel?.dispose()
@@ -1131,15 +1006,10 @@ export class Experience {
     // AND the renderer instance (was previously only instance.dispose()).
     this.renderer.dispose()
     this.camera.destroy()
-    this.portfolio = null
-    this.overlay?.dispose()
-    this._uiMenu?.dispose()
-    this._uiMenu = null
     // Sizes + Input own window listeners — clean them up to avoid leaks
     // on hot-reload (Vite HMR) and on explicit teardown.
     this.sizes.destroy()
     input.destroy()
-    this._storyNav?.dispose()
     this.sfx.dispose()
     // scene.environment PMREM texture — not previously disposed (leak on
     // HMR teardown). Dispose the texture + clear the reference.
@@ -1149,100 +1019,7 @@ export class Experience {
     }
   }
 
-  private async ensurePortfolio(): Promise<void> {
-    if (this.portfolio) return
-    // Always build portfolio — single-page experience
-    // World must exist and be in the scene before adding portfolio to it.
-    if (!this.world || !this.scene.children.includes(this.world)) {
-      // Wait one frame for rebuildWorld to finish, then retry.
-      await new Promise((r) => requestAnimationFrame(() => r(null)))
-      if (!this.world || !this.scene.children.includes(this.world)) return
-    }
-
-    const { PROJECTS } = await import('../Data/Projects')
-    // Re-check after async import — page may have changed during await.
-    if (this.portfolio) return // another call won
-
-    this.portfolio = createWorksPortfolio(
-      PROJECTS,
-      (idx) => {
-        this.onProjectSelect(idx)
-      }, // prev/next → preload project data into overlay
-    )
-    // FullscreenOverlay is normally created by UIManager. Project navigation
-    // is routed through `jlz:project-navigate` so arrows and keyboard use the
-    // same owner even if the overlay was created before this async portfolio.
-    this.overlay ??= this._ui.overlay ?? new FullscreenOverlay()
-
-    // Wire BakuCarousel card click → open fullscreen overlay.
-    // All opens use the unified DOM cinematic reveal (no 3D plane handoff).
-    const carousel = this.getCarousel()
-    if (carousel && !carousel.userData.clickWired) {
-      carousel.userData.clickWired = true
-      carousel.setCamera(this.camera.instance)
-      carousel.onCardClick((idx) => {
-        this.onProjectSelect(idx)
-      })
-    }
-  }
-
-  /** Get the BakuCarousel from the works scene group (index 3 in 6-section layout).
-   *  Returns null on non-home pages — carousel is home-only. */
-  private getCarousel(): import('./World/BakuCarousel').BakuCarousel | null {
-    // BakuCarousel only exists on home page — content pages don't init it
-    if (getCurrentPage() !== 'home') return null
-    const worksGroup = this.world?.sceneGroups?.[3]
-    if (!worksGroup) return null
-    return (
-      (worksGroup.userData.carousel as import('./World/BakuCarousel').BakuCarousel | undefined) ??
-      null
-    )
-  }
-
-  private onProjectSelect(idx: number, preload: boolean = false): void {
-    if (!this.portfolio || !this.overlay) return
-    const projs = this.portfolio.projects
-    if (!Array.isArray(projs) || projs.length === 0) return
-    const safeIdx = ((idx % projs.length) + projs.length) % projs.length
-    this._activeProjectIndex = safeIdx
-    const project = projs[safeIdx]
-    if (!project) return
-
-    // Open/preload fullscreen overlay with project info + poster.
-    // All opens (showreel, slider, /works) use the same unified cinematic
-    // reveal — no origin='plane' 3D handoff.
-    const p = project as {
-      title?: string
-      category?: string
-      description?: string
-      tags?: string[]
-      textureUrl?: string
-      detailTextureUrl?: string
-      videoSrc?: string
-      year?: string
-    }
-    const opts = {
-      // Case studies are still-image overlays. The only video source belongs
-      // to UIManager's explicit showreel action; keeping this image-only
-      // avoids every project silently loading the placeholder showreel.
-      mode: 'image' as const,
-      poster: p.textureUrl,
-      title: p.title,
-      category: `${p.year ?? ''} · ${p.category ?? ''}`,
-      description: p.description,
-      tags: p.tags,
-      counter: `${safeIdx + 1} / ${projs.length}`,
-      hasPrev: true,
-      hasNext: true,
-    }
-    if (preload) {
-      this.overlay.preload(opts)
-    } else {
-      this.overlay.open(opts)
-    }
-  }
-
-  // Note: the old activateCard() (tap on baku cube → open overlay) was
-  // removed. The BakuCarousel card click is now the SOLE entry point for
-  // opening the fullscreen ProjectOverlay, avoiding duplicate click paths.
+  // (ensurePortfolio / getCarousel / onProjectSelect removed — Phase 7
+  //  slice 4: owned by ExperienceUI. The BakuCarousel card click is the SOLE
+  //  entry point for the fullscreen ProjectOverlay, as before.)
 }
