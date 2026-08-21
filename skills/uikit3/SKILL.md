@@ -24,8 +24,11 @@ description: UIKit 3 framework contracts and the JUSTLOVEJAZZ page-builder refer
   needs is emitted into `src/assets/builder/components.generated.less` by
   the compiler — never hand-edit generated files.
 - Console icon set: `src/assets/console-icons.ts` registers 15 original
-  SVGs through `UIkit icon.add`. Both the product entry and the admin
-  preview call `registerConsoleIcons()`; without it `uk-icon` renders
+  SVGs through `UIkit icon.add`. The `uikit` default export bundles only the
+  internal glyphs (spinner, totop, marker) — the official set ships as the
+  separate UMD plugin `uikit/dist/js/uikit-icons.js`, which `admin/style-icons.ts`
+  applies for the Style rail. Both the product entry and the admin preview
+  call `registerConsoleIcons()`; without it `uk-icon` renders
   nothing (the Icon component throws "Icon not found." and the promise
   swallows it — a silent blank span).
 - Display type: Commissioner variable font, UPPERCASE, weight 800
@@ -72,7 +75,19 @@ Rules of the pattern:
   `admin/index.html` / `admin/main.ts`).
 - Theme changes flow `page.json` → `validateBuilderDocument` →
   `generateBuilderThemeLess` / `generateBuilderComponentLess`; the
-  defaults in `style.ts` and the stored document must agree.
+  defaults in `style.ts` and the stored document must agree. `themeToCssVars`
+  is the single preview-variable map (47 entries, including
+  `--builder-accent-secondary`); the brand carries a secondary accent
+  (`jlz-color-accent-secondary`, aliased to the cool signal) so actions
+  and emphasis have a cool mineral counterweight to the primary accent.
+  The Style workspace edits these tokens: the left rail lists every group
+  with a UIkit glyph and its field count (16 groups — one per element
+  family the catalogue composes), and the right panel splits the
+  selected group's properties into Colors / Values sections with the
+  group's id badge — the same grouped panel language as the element
+  inspector. The style preview always shows the complete component set;
+  selecting a group marks its sample active (1px accent outline) and
+  scrolls it into view instead of hiding the rest.
 - The admin shell is desktop-only (owner ruling); only the preview's
   viewport modes (desktop / tablet / mobile) may simulate narrow layouts.
 - SFC migration target: the Vue admin preserves `BuilderStore` semantics

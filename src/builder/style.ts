@@ -1,10 +1,26 @@
 export type BuilderThemeKey = keyof BuilderTheme
 export type StyleGroupId =
-  'global' | 'theme' | 'inverse' | 'base' | 'button' | 'card' | 'section' | 'form' | 'navbar'
+  | 'global'
+  | 'theme'
+  | 'inverse'
+  | 'base'
+  | 'heading'
+  | 'text'
+  | 'grid'
+  | 'button'
+  | 'card'
+  | 'section'
+  | 'link'
+  | 'icon'
+  | 'list'
+  | 'divider'
+  | 'form'
+  | 'navbar'
 
 export interface BuilderTheme {
   accent: string
   accentHover: string
+  accentSecondary: string
   background: string
   backgroundElevated: string
   surface: string
@@ -19,7 +35,16 @@ export interface BuilderTheme {
   lineHeight: string
   headingWeight: string
   headingTransform: string
+  headingLineHeight: string
+  textLineHeight: string
   spacing: string
+  gridGutter: string
+  linkColor: string
+  linkMutedColor: string
+  iconColor: string
+  listGap: string
+  dividerColor: string
+  dividerSpacing: string
   inverseBackground: string
   inverseSurface: string
   inverseText: string
@@ -55,6 +80,7 @@ export interface StyleGroupDefinition {
   label: string
   category: 'general' | 'component'
   description: string
+  icon: string
   fields: readonly StyleFieldDefinition[]
 }
 
@@ -65,6 +91,7 @@ const options = (...values: string[]) => values.map((value) => ({ label: value, 
 export const DEFAULT_BUILDER_THEME: BuilderTheme = {
   accent: '#ffd60a',
   accentHover: '#ffe85c',
+  accentSecondary: '#5eb0ff',
   background: '#08090b',
   backgroundElevated: '#0d1015',
   surface: '#0f131a',
@@ -79,7 +106,16 @@ export const DEFAULT_BUILDER_THEME: BuilderTheme = {
   lineHeight: '1.5',
   headingWeight: '800',
   headingTransform: 'uppercase',
+  headingLineHeight: '1.15',
+  textLineHeight: '1.6',
   spacing: '20px',
+  gridGutter: '20px',
+  linkColor: '#ffd60a',
+  linkMutedColor: '#b7c0c9',
+  iconColor: '#eef1f5',
+  listGap: '8px',
+  dividerColor: '#262e3a',
+  dividerSpacing: '32px',
   inverseBackground: '#e9eef5',
   inverseSurface: '#f5f8fc',
   inverseText: '#0b0e13',
@@ -107,6 +143,7 @@ export const STYLE_GROUPS: readonly StyleGroupDefinition[] = [
     id: 'global',
     label: 'Global',
     category: 'general',
+    icon: 'paint-bucket',
     description: 'Core color, surface and spacing tokens shared by every UIkit component.',
     fields: [
       {
@@ -119,6 +156,12 @@ export const STYLE_GROUPS: readonly StyleGroupDefinition[] = [
         key: 'accentHover',
         label: 'Primary hover',
         description: 'Hover and active accent color.',
+        type: 'color',
+      },
+      {
+        key: 'accentSecondary',
+        label: 'Secondary accent',
+        description: 'Secondary action and emphasis accent (cool mineral counterweight).',
         type: 'color',
       },
       { key: 'background', label: 'Background', description: 'Page background.', type: 'color' },
@@ -161,6 +204,7 @@ export const STYLE_GROUPS: readonly StyleGroupDefinition[] = [
     id: 'theme',
     label: 'Theme',
     category: 'general',
+    icon: 'signal',
     description: 'JUSTLOVEJAZZ-specific signals and shared corner language.',
     fields: [
       {
@@ -188,6 +232,7 @@ export const STYLE_GROUPS: readonly StyleGroupDefinition[] = [
     id: 'inverse',
     label: 'Inverse',
     category: 'general',
+    icon: 'eye',
     description: 'The light paper polarity used by html.uk-light and inverse sections.',
     fields: [
       {
@@ -221,7 +266,8 @@ export const STYLE_GROUPS: readonly StyleGroupDefinition[] = [
     id: 'base',
     label: 'Base',
     category: 'component',
-    description: 'Body and heading typography.',
+    icon: 'italic',
+    description: 'Body typography: the global UIkit base font size and line height.',
     fields: [
       {
         key: 'fontSize',
@@ -237,16 +283,25 @@ export const STYLE_GROUPS: readonly StyleGroupDefinition[] = [
         type: 'select',
         options: options('1.35', '1.4', '1.5', '1.6', '1.7'),
       },
+    ],
+  },
+  {
+    id: 'heading',
+    label: 'Heading',
+    category: 'component',
+    icon: 'bold',
+    description: 'Display and heading typography across all levels.',
+    fields: [
       {
         key: 'headingWeight',
-        label: 'Heading weight',
+        label: 'Weight',
         description: 'Primary heading weight.',
         type: 'select',
         options: options('500', '600', '700', '800'),
       },
       {
         key: 'headingTransform',
-        label: 'Heading transform',
+        label: 'Transform',
         description: 'Heading capitalization policy.',
         type: 'select',
         options: [
@@ -254,12 +309,52 @@ export const STYLE_GROUPS: readonly StyleGroupDefinition[] = [
           { label: 'Uppercase', value: 'uppercase' },
         ],
       },
+      {
+        key: 'headingLineHeight',
+        label: 'Line height',
+        description: 'Heading line height.',
+        type: 'select',
+        options: options('1.1', '1.15', '1.2', '1.3', '1.4'),
+      },
+    ],
+  },
+  {
+    id: 'text',
+    label: 'Text',
+    category: 'component',
+    icon: 'file-text',
+    description: 'Body copy and lead paragraphs.',
+    fields: [
+      {
+        key: 'textLineHeight',
+        label: 'Line height',
+        description: 'Body copy line height.',
+        type: 'select',
+        options: options('1.5', '1.6', '1.7', '1.8'),
+      },
+    ],
+  },
+  {
+    id: 'grid',
+    label: 'Grid',
+    category: 'component',
+    icon: 'grid',
+    description: 'Column gutter rhythm for grid layouts.',
+    fields: [
+      {
+        key: 'gridGutter',
+        label: 'Gutter',
+        description: 'Default grid gutter (small uses 75%).',
+        type: 'select',
+        options: options('16px', '20px', '24px', '28px', '32px'),
+      },
     ],
   },
   {
     id: 'button',
     label: 'Button',
     category: 'component',
+    icon: 'crosshairs',
     description: 'Default, primary, secondary and text actions.',
     fields: [
       {
@@ -299,6 +394,7 @@ export const STYLE_GROUPS: readonly StyleGroupDefinition[] = [
     id: 'card',
     label: 'Card',
     category: 'component',
+    icon: 'table',
     description: 'Card surfaces, padding and elevation.',
     fields: [
       {
@@ -332,6 +428,7 @@ export const STYLE_GROUPS: readonly StyleGroupDefinition[] = [
     id: 'section',
     label: 'Section',
     category: 'component',
+    icon: 'thumbnails',
     description: 'Muted, primary and secondary section surfaces.',
     fields: [
       {
@@ -355,9 +452,84 @@ export const STYLE_GROUPS: readonly StyleGroupDefinition[] = [
     ],
   },
   {
+    id: 'link',
+    label: 'Link',
+    category: 'component',
+    icon: 'link',
+    description: 'Inline and muted text links.',
+    fields: [
+      {
+        key: 'linkColor',
+        label: 'Link color',
+        description: 'Inline link color.',
+        type: 'color',
+      },
+      {
+        key: 'linkMutedColor',
+        label: 'Muted link',
+        description: 'Muted text-link color.',
+        type: 'color',
+      },
+    ],
+  },
+  {
+    id: 'icon',
+    label: 'Icon',
+    category: 'component',
+    icon: 'tag',
+    description: 'Icon color in the content flow.',
+    fields: [
+      {
+        key: 'iconColor',
+        label: 'Color',
+        description: 'Default icon color.',
+        type: 'color',
+      },
+    ],
+  },
+  {
+    id: 'list',
+    label: 'List',
+    category: 'component',
+    icon: 'list',
+    description: 'List item rhythm.',
+    fields: [
+      {
+        key: 'listGap',
+        label: 'Item gap',
+        description: 'Space between list items.',
+        type: 'select',
+        options: options('4px', '8px', '12px', '16px', '20px'),
+      },
+    ],
+  },
+  {
+    id: 'divider',
+    label: 'Divider',
+    category: 'component',
+    icon: 'minus',
+    description: 'Hairline divider color and rhythm.',
+    fields: [
+      {
+        key: 'dividerColor',
+        label: 'Color',
+        description: 'Divider line color.',
+        type: 'color',
+      },
+      {
+        key: 'dividerSpacing',
+        label: 'Spacing',
+        description: 'Vertical rhythm around dividers.',
+        type: 'select',
+        options: options('16px', '24px', '32px', '48px', '64px'),
+      },
+    ],
+  },
+  {
     id: 'form',
     label: 'Form',
     category: 'component',
+    icon: 'check',
     description: 'Input height, surface and border.',
     fields: [
       {
@@ -375,6 +547,7 @@ export const STYLE_GROUPS: readonly StyleGroupDefinition[] = [
     id: 'navbar',
     label: 'Navbar',
     category: 'component',
+    icon: 'menu',
     description: 'Navigation bar height and surface.',
     fields: [
       {

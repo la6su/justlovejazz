@@ -5,6 +5,7 @@ import adminCss from './admin.less?inline'
 // composes with `uk-icon` — register the same SVG overrides before the
 // preview is painted so the icon element is WYSIWYG of the built page.
 import { registerConsoleIcons } from '../src/assets/console-icons'
+import { registerStyleNavIcons } from './style-icons'
 
 import {
   BUILDER_CATALOG,
@@ -40,6 +41,9 @@ adminStyle.dataset.jlzAdmin = 'true'
 adminStyle.textContent = adminCss
 document.head.append(adminStyle)
 registerConsoleIcons()
+// The Style rail references official UIKit set names the shell does not
+// bundle by default — register the official set before the nav is painted.
+registerStyleNavIcons()
 
 const requiredElement = <T extends HTMLElement>(id: string): T => {
   const element = document.getElementById(id)
@@ -58,7 +62,6 @@ const nodeActions = requiredElement<HTMLDivElement>('node-actions')
 const builderPanel = requiredElement<HTMLDivElement>('builder-panel')
 const stylePanel = requiredElement<HTMLDivElement>('style-panel')
 const styleNavigation = requiredElement<HTMLElement>('style-navigation')
-const previewAllComponents = requiredElement<HTMLInputElement>('preview-all-components')
 const styleToneControls = requiredElement<HTMLDivElement>('style-tone-controls')
 const titleInput = requiredElement<HTMLInputElement>('document-title')
 const saveButton = requiredElement<HTMLButtonElement>('save')
@@ -72,11 +75,10 @@ const redoButton = requiredElement<HTMLButtonElement>('redo')
 // commit/snapshot/restore logic lives in the store.
 const store = new BuilderStore(DEFAULT_BUILDER_DOCUMENT)
 
-// Editor-only UI state (not part of the builder document): the active mode,
-// the selected style group and the style-preview toggles.
+// Editor-only UI state (not part of the builder document): the active mode
+// and the selected style group.
 let mode: EditorMode = 'builder'
 let selectedStyleGroup: StyleGroupId = 'global'
-let showAllStyleComponents = true
 let inverseStylePreview = false
 // True while a save request is in flight; the button is locked and the
 // "Saving…" label shows until the response settles.
@@ -208,7 +210,7 @@ function renderPreview(): void {
   previewElement.innerHTML =
     mode === 'builder'
       ? renderBuilderDocument(store.document, { editable: true })
-      : renderStyleShowcase(selectedStyleGroup, showAllStyleComponents)
+      : renderStyleShowcase(selectedStyleGroup)
   applyPreviewTheme(store.document.theme)
   if (mode === 'builder' && store.selectedId) {
     previewElement
@@ -344,6 +346,11 @@ function createStyleField(definition: StyleFieldDefinition): HTMLLabelElement {
 function renderStyleInspector(): void {
   const group = STYLE_GROUP_BY_ID[selectedStyleGroup]
   inspectorTitle.textContent = group.label
+  // Figma-style header: the group name plus its stable id for traceability.
+  const idBadge = document.createElement('code')
+  idBadge.className = 'jlz-admin-inspector-id'
+  idBadge.textContent = group.id
+  inspectorTitle.append(idBadge)
   nodeActions.hidden = true
   inspectorFields.replaceChildren()
 
@@ -352,12 +359,23 @@ function renderStyleInspector(): void {
   description.textContent = group.description
   inspectorFields.append(description)
 
-  // The same grouped panel language as the element inspector, so both
-  // modes read as one unified property surface.
-  const section = document.createElement('section')
-  section.className = 'jlz-admin-inspector-group'
-  group.fields.forEach((field) => section.append(createStyleField(field)))
-  inspectorFields.append(section)
+  // The same grouped panel language as the element inspector: properties are
+  // split by concern (Colors / Values) like Figma's fill and position rows.
+  for (const { label, type } of [
+    { label: 'Colors', type: 'color' },
+    { label: 'Values', type: 'select' },
+  ] as const) {
+    const fields = group.fields.filter((field) => field.type === type)
+    if (!fields.length) continue
+    const section = document.createElement('section')
+    section.className = 'jlz-admin-inspector-group'
+    const header = document.createElement('header')
+    header.className = 'jlz-admin-inspector-group-label'
+    header.textContent = label
+    section.append(header)
+    fields.forEach((field) => section.append(createStyleField(field)))
+    inspectorFields.append(section)
+  }
 }
 
 function renderStyleNavigation(): void {
@@ -372,10 +390,21 @@ function renderStyleNavigation(): void {
       button.type = 'button'
       button.dataset.styleGroup = group.id
       button.classList.toggle('is-selected', selectedStyleGroup === group.id)
-      button.textContent = group.label
+      const icon = document.createElement('span')
+      icon.setAttribute('uk-icon', `icon: ${group.icon}; ratio: 1.1`)
+      icon.setAttribute('aria-hidden', 'true')
+      const label = document.createElement('span')
+      label.className = 'jlz-admin-style-label'
+      label.textContent = group.label
+      const count = document.createElement('span')
+      count.className = 'jlz-admin-style-count'
+      count.textContent = String(group.fields.length)
+      button.append(icon, label, count)
       styleNavigation.append(button)
     }
   }
+  // Dynamic uk-icon attributes need a UIkit pass to hydrate into SVG.
+  ;(UIkit as unknown as { update(element: Element): void }).update(styleNavigation)
 }
 
 function renderEditor(): void {
@@ -586,16 +615,11 @@ styleNavigation.addEventListener('click', (event) => {
   renderStyleNavigation()
   renderInspector()
   renderPreview()
-  if (showAllStyleComponents) {
-    previewElement
-      .querySelector<HTMLElement>(`[data-style-sample="${selectedStyleGroup}"]`)
-      ?.scrollIntoView({ block: 'start', behavior: 'smooth' })
-  }
-})
-
-previewAllComponents.addEventListener('change', () => {
-  showAllStyleComponents = previewAllComponents.checked
-  renderPreview()
+  // The full component set always stays visible; the selected group's
+  // sample is marked active and scrolled into view.
+  previewElement
+    .querySelector<HTMLElement>(`[data-style-sample="${selectedStyleGroup}"]`)
+    ?.scrollIntoView({ block: 'start', behavior: 'smooth' })
 })
 
 document.querySelectorAll<HTMLButtonElement>('[data-style-tone]').forEach((button) => {

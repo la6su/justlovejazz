@@ -5,6 +5,7 @@ import { DEFAULT_BUILDER_THEME, type BuilderTheme } from '../builder/style'
 const ALL_VARS = [
   '--builder-accent',
   '--builder-accent-hover',
+  '--builder-accent-secondary',
   '--builder-background',
   '--builder-background-elevated',
   '--builder-surface',
@@ -19,7 +20,16 @@ const ALL_VARS = [
   '--builder-line-height',
   '--builder-heading-weight',
   '--builder-heading-transform',
+  '--builder-heading-line-height',
+  '--builder-text-line-height',
   '--builder-spacing',
+  '--builder-grid-gutter',
+  '--builder-link-color',
+  '--builder-link-muted-color',
+  '--builder-icon-color',
+  '--builder-list-gap',
+  '--builder-divider-color',
+  '--builder-divider-spacing',
   '--builder-inverse-background',
   '--builder-inverse-surface',
   '--builder-inverse-text',
@@ -43,10 +53,10 @@ const ALL_VARS = [
 ]
 
 describe('themeToCssVars', () => {
-  it('emits exactly the 37 preview variables (no more, no less)', () => {
+  it('emits exactly the 47 preview variables (no more, no less)', () => {
     const vars = themeToCssVars(DEFAULT_BUILDER_THEME)
     expect(Object.keys(vars).sort()).toEqual([...ALL_VARS].sort())
-    expect(Object.keys(vars)).toHaveLength(37)
+    expect(Object.keys(vars)).toHaveLength(47)
   })
 
   it('maps each theme fact to its legacy variable name', () => {
@@ -54,6 +64,7 @@ describe('themeToCssVars', () => {
       ...DEFAULT_BUILDER_THEME,
       accent: '#111213',
       accentHover: '#222324',
+      accentSecondary: '#343536',
       background: '#333435',
       backgroundElevated: '#444546',
       surface: '#555657',
@@ -68,7 +79,16 @@ describe('themeToCssVars', () => {
       lineHeight: '1.5',
       headingWeight: '700',
       headingTransform: 'uppercase',
+      headingLineHeight: '1.25',
+      textLineHeight: '1.7',
       spacing: '24px',
+      gridGutter: '28px',
+      linkColor: '#404142',
+      linkMutedColor: '#505152',
+      iconColor: '#606162',
+      listGap: '12px',
+      dividerColor: '#707172',
+      dividerSpacing: '40px',
       inverseBackground: '#1a1b1c',
       inverseSurface: '#2a2b2c',
       inverseText: '#fafafa',
@@ -92,6 +112,7 @@ describe('themeToCssVars', () => {
     const vars = themeToCssVars(theme)
     expect(vars['--builder-accent']).toBe('#111213')
     expect(vars['--builder-accent-hover']).toBe('#222324')
+    expect(vars['--builder-accent-secondary']).toBe('#343536')
     expect(vars['--builder-background']).toBe('#333435')
     expect(vars['--builder-background-elevated']).toBe('#444546')
     expect(vars['--builder-surface']).toBe('#555657')
@@ -106,7 +127,16 @@ describe('themeToCssVars', () => {
     expect(vars['--builder-line-height']).toBe('1.5')
     expect(vars['--builder-heading-weight']).toBe('700')
     expect(vars['--builder-heading-transform']).toBe('uppercase')
+    expect(vars['--builder-heading-line-height']).toBe('1.25')
+    expect(vars['--builder-text-line-height']).toBe('1.7')
     expect(vars['--builder-spacing']).toBe('24px')
+    expect(vars['--builder-grid-gutter']).toBe('28px')
+    expect(vars['--builder-link-color']).toBe('#404142')
+    expect(vars['--builder-link-muted-color']).toBe('#505152')
+    expect(vars['--builder-icon-color']).toBe('#606162')
+    expect(vars['--builder-list-gap']).toBe('12px')
+    expect(vars['--builder-divider-color']).toBe('#707172')
+    expect(vars['--builder-divider-spacing']).toBe('40px')
     expect(vars['--builder-inverse-background']).toBe('#1a1b1c')
     expect(vars['--builder-inverse-surface']).toBe('#2a2b2c')
     expect(vars['--builder-inverse-text']).toBe('#fafafa')

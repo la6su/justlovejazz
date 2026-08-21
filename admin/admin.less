@@ -43,7 +43,6 @@ textarea {
   padding: 0 16px;
   border-bottom: 1px solid var(--jlz-color-border);
   background: var(--jlz-color-bg-elevated);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28);
   z-index: 4;
 }
 
@@ -112,14 +111,11 @@ textarea {
   color: var(--jlz-color-text-inverse);
   background: var(--jlz-color-accent);
   font-weight: 700;
-  transition:
-    background 140ms ease,
-    box-shadow 140ms ease;
+  transition: background 140ms ease;
 }
 
 .jlz-admin-toolbar .uk-button-primary:hover:not(:disabled) {
   background: var(--jlz-color-accent-hover);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--jlz-color-accent) 16%, transparent);
 }
 
 .jlz-admin-toolbar .uk-button-primary:disabled {
@@ -129,7 +125,7 @@ textarea {
 
 .jlz-admin-viewports {
   padding: 3px;
-  border: 1px solid var(--jlz-color-border);
+  border: 0;
   background: var(--jlz-color-bg);
 }
 
@@ -213,12 +209,10 @@ textarea {
 
 .jlz-admin-sidebar-left {
   grid-area: left;
-  border-right: 1px solid var(--jlz-color-border);
 }
 
 .jlz-admin-sidebar-right {
   grid-area: right;
-  border-left: 1px solid var(--jlz-color-border);
 }
 
 .jlz-admin-tabs {
@@ -303,7 +297,7 @@ textarea {
   align-items: center;
   min-height: 48px;
   padding: 8px;
-  border: 1px solid var(--jlz-color-border);
+  border: 0;
   color: var(--jlz-color-text);
   background: var(--jlz-color-surface);
   text-align: left;
@@ -312,14 +306,12 @@ textarea {
 
 .jlz-admin-catalog button {
   transition:
-    border-color 140ms ease,
     background 140ms ease,
     transform 140ms ease;
 }
 
 .jlz-admin-catalog button:hover,
 .jlz-admin-catalog button:focus-visible {
-  border-color: var(--jlz-color-accent);
   background: var(--jlz-color-surface-hover);
   outline: none;
   transform: translateY(-1px);
@@ -344,7 +336,6 @@ textarea {
   justify-content: space-between;
   align-items: baseline;
   padding: 16px 20px 10px;
-  border-top: 1px solid var(--jlz-color-border);
 }
 
 .jlz-admin-outline {
@@ -475,7 +466,6 @@ textarea {
   overflow: auto;
   border: 1px solid var(--jlz-color-border-strong);
   background: var(--jlz-color-bg);
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.52);
 }
 
 .jlz-admin-preview-frame[data-viewport='tablet'] {
@@ -569,6 +559,39 @@ textarea {
   text-transform: var(--builder-heading-transform);
 }
 
+// Heading line height is one themed decision across all tiers.
+.jlz-builder-preview :is(h1, h2, h3, h4, h5, h6) {
+  line-height: var(--builder-heading-line-height);
+}
+
+// Inline links, icons, lists and dividers take their rhythm and color from
+// the themed tokens (WYSIWYG of the compiled page).
+.jlz-builder-preview .jlz-builder-link {
+  color: var(--builder-link-color);
+}
+
+.jlz-builder-preview .jlz-builder-link.uk-link-muted {
+  color: var(--builder-link-muted-color);
+}
+
+.jlz-builder-preview :is(.jlz-builder-icon, .uk-icon) {
+  color: var(--builder-icon-color);
+}
+
+.jlz-builder-preview .uk-list > li + li {
+  margin-top: var(--builder-list-gap);
+}
+
+.jlz-builder-preview hr {
+  margin-block: var(--builder-divider-spacing);
+  border-top: 1px solid var(--builder-divider-color);
+}
+
+.jlz-builder-preview hr.uk-divider-small {
+  max-width: 100px;
+  margin-inline: auto;
+}
+
 // ── Console minimal language in the preview: one system with the site —
 // flat surfaces, square corners, 1px lines, φ scale, quiet mono meta,
 // accent as color (no glow). Scoped to the preview root so builder and
@@ -609,7 +632,7 @@ textarea {
 
 .jlz-builder-preview :is(p, .uk-text-lead, .uk-text-meta, .uk-text-small) {
   font-size: @preview-band-body;
-  line-height: 1.55;
+  line-height: var(--builder-text-line-height);
 }
 
 .jlz-builder-preview .uk-text-lead {
@@ -689,21 +712,19 @@ textarea {
   place-items: center;
   width: 30px;
   height: 30px;
-  border: 1px solid var(--jlz-color-border);
+  border: 0;
   color: var(--jlz-color-text-muted);
   background: var(--jlz-color-surface);
 }
 
 .jlz-admin-node-actions button {
   transition:
-    border-color 120ms ease,
     color 120ms ease,
     background 120ms ease,
     transform 120ms ease;
 }
 
 .jlz-admin-node-actions button:hover {
-  border-color: var(--jlz-color-accent);
   color: var(--jlz-color-accent);
   background: var(--jlz-color-surface-hover);
   transform: translateY(-1px);
@@ -772,8 +793,8 @@ textarea {
   width: 48px;
   height: 32px;
   padding: 2px;
-  border: 1px solid var(--jlz-color-border);
-  background: var(--jlz-color-bg);
+  border: 0;
+  background: var(--jlz-color-surface);
 }
 
 .jlz-admin-inspector-group {
@@ -793,9 +814,8 @@ textarea {
 .jlz-admin-inspector-id {
   margin-left: 10px;
   padding: 2px 6px;
-  border: 1px solid var(--jlz-color-border);
   color: var(--jlz-color-text-subtle);
-  background: var(--jlz-color-bg);
+  background: var(--jlz-color-surface);
   font-family: var(--jlz-font-mono);
   font-size: 0.64rem;
   font-weight: 400;
@@ -810,23 +830,6 @@ textarea {
   color: var(--jlz-color-text-muted);
   font-size: 0.78rem;
   line-height: 1.55;
-}
-
-.jlz-admin-preview-all {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  margin: 0 20px 18px;
-  padding: 12px;
-  border: 1px solid var(--jlz-color-border);
-  color: var(--jlz-color-text-muted);
-  background: var(--jlz-color-bg);
-  font-size: 0.76rem;
-  cursor: pointer;
-}
-
-.jlz-admin-preview-all .uk-checkbox:checked {
-  background-color: var(--jlz-color-accent);
 }
 
 .jlz-admin-style-navigation {
@@ -844,9 +847,12 @@ textarea {
 }
 
 .jlz-admin-style-navigation button {
-  position: relative;
-  min-height: 38px;
-  padding: 8px 12px 8px 20px;
+  display: grid;
+  grid-template-columns: 18px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  min-height: 40px;
+  padding: 8px 10px;
   border: 0;
   color: var(--jlz-color-text-muted);
   background: transparent;
@@ -855,16 +861,14 @@ textarea {
   cursor: pointer;
 }
 
-.jlz-admin-style-navigation button::before {
-  position: absolute;
-  top: 50%;
-  left: 8px;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--jlz-color-text-subtle);
-  content: '';
-  transform: translateY(-50%);
+.jlz-admin-style-navigation button .uk-icon {
+  color: var(--jlz-color-text-subtle);
+}
+
+.jlz-admin-style-count {
+  color: var(--jlz-color-text-subtle);
+  font-family: var(--jlz-font-mono);
+  font-size: 0.62rem;
 }
 
 .jlz-admin-style-navigation button:hover {
@@ -872,13 +876,18 @@ textarea {
   background: var(--jlz-color-surface);
 }
 
+.jlz-admin-style-navigation button:hover .uk-icon {
+  color: var(--jlz-color-text);
+}
+
 .jlz-admin-style-navigation button.is-selected {
   color: var(--jlz-color-text-inverse);
   background: var(--jlz-color-accent);
 }
 
-.jlz-admin-style-navigation button.is-selected::before {
-  background: var(--jlz-color-text-inverse);
+.jlz-admin-style-navigation button.is-selected .uk-icon,
+.jlz-admin-style-navigation button.is-selected .jlz-admin-style-count {
+  color: var(--jlz-color-text-inverse);
 }
 
 .jlz-admin-preview-meta-actions,
@@ -890,8 +899,8 @@ textarea {
 
 .jlz-admin-tone-controls {
   padding: 2px;
-  border: 1px solid var(--jlz-color-border);
-  background: var(--jlz-color-bg);
+  border: 0;
+  background: var(--jlz-color-surface);
 }
 
 .jlz-admin-tone-controls button {
@@ -958,6 +967,13 @@ textarea {
   border-bottom: 0;
 }
 
+// The selected group's sample is the only active mark: a quiet accent
+// outline that reads at a glance without glow.
+.jlz-style-sample.is-active {
+  outline: 1px solid var(--builder-active-accent);
+  outline-offset: 8px;
+}
+
 .jlz-style-sample h1,
 .jlz-style-sample h2,
 .jlz-style-sample h3 {
@@ -1012,6 +1028,10 @@ textarea {
   background: var(--builder-accent);
 }
 
+.jlz-style-swatches .is-secondary-accent {
+  background: var(--builder-accent-secondary);
+}
+
 .jlz-style-swatches .is-background {
   background: var(--builder-background);
 }
@@ -1025,10 +1045,24 @@ textarea {
 }
 
 .jlz-style-signal-row,
-.jlz-style-button-row {
+.jlz-style-button-row,
+.jlz-style-icon-row,
+.jlz-style-link-row {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
+}
+
+.jlz-style-list-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--builder-grid-gutter);
+}
+
+.jlz-style-grid-demo {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: calc(var(--builder-grid-gutter) * 0.75);
 }
 
 .jlz-style-signal-row span {
@@ -1228,7 +1262,7 @@ textarea {
 #builder-preview .jlz-builder-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: var(--builder-spacing);
+  gap: var(--builder-grid-gutter);
 }
 
 #builder-preview .jlz-builder-grid > * {
@@ -1238,11 +1272,11 @@ textarea {
 }
 
 #builder-preview .jlz-builder-grid.uk-grid-small {
-  gap: calc(var(--builder-spacing) * 0.75);
+  gap: calc(var(--builder-grid-gutter) * 0.75);
 }
 
 #builder-preview .jlz-builder-grid.uk-grid-large {
-  gap: calc(var(--builder-spacing) * 1.5);
+  gap: calc(var(--builder-grid-gutter) * 1.5);
 }
 
 #builder-preview .jlz-builder-grid.uk-grid-collapse {

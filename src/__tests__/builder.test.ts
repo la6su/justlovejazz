@@ -9,6 +9,7 @@ import {
 import { DEFAULT_BUILDER_DOCUMENT } from '../builder/default-document'
 import { renderBuilderDocument } from '../builder/render'
 import { validateBuilderDocument } from '../builder/schema'
+import { STYLE_GROUPS } from '../builder/style'
 import { renderStyleShowcase } from '../builder/style-showcase'
 
 describe('Page Builder document', () => {
@@ -63,6 +64,11 @@ describe('Page Builder document', () => {
   it('compiles global, inverse and component decisions into whitelisted Less', () => {
     const less = generateBuilderThemeLess(DEFAULT_BUILDER_DOCUMENT)
     expect(less).toContain('@jlz-inverse-bg: #e9eef5;')
+    expect(less).toContain('@jlz-color-accent-secondary: #5eb0ff;')
+    expect(less).toContain('@link-muted-color: #b7c0c9;')
+    expect(less).toContain('@list-margin-top: 8px;')
+    expect(less).toContain('@base-hr-border: #262e3a;')
+    expect(less).toContain('@base-hr-margin-vertical: 32px;')
     expect(less).toContain('@button-line-height: 44px;')
     expect(less).toContain('@card-body-padding-horizontal: 32px;')
     expect(less).not.toContain('undefined')
@@ -77,6 +83,17 @@ describe('Page Builder document', () => {
       expect(definition.fieldGroups.length, definition.type).toBeGreaterThan(0)
     }
     expect(BUILDER_ICON_NAMES).toContain('telegram')
+  })
+
+  it('the Style workspace covers every element family the catalogue composes', () => {
+    const groupIds = new Set(STYLE_GROUPS.map((group) => group.id))
+    for (const type of Object.keys(BUILDER_CATALOG)) {
+      expect(groupIds.has(type as never), `missing style group for ${type}`).toBe(true)
+    }
+    for (const group of STYLE_GROUPS) {
+      expect(group.icon, group.id).toBeTruthy()
+      expect(group.fields.length, group.id).toBeGreaterThan(0)
+    }
   })
 
   it('renders the new content types with safe fallbacks', () => {
@@ -133,13 +150,13 @@ describe('Page Builder document', () => {
     expect(less).toContain('/divider.less')
   })
 
-  it('renders a complete or focused style showcase', () => {
-    const complete = renderStyleShowcase('button', true)
-    const focused = renderStyleShowcase('button', false)
+  it('keeps the complete style showcase visible and marks the selected group', () => {
+    const showcase = renderStyleShowcase('button')
 
-    expect(complete).toContain('data-style-sample="global"')
-    expect(complete).toContain('data-style-sample="navbar"')
-    expect(focused).toContain('data-style-sample="button"')
-    expect(focused).not.toContain('data-style-sample="card"')
+    expect(showcase).toContain('data-style-sample="global"')
+    expect(showcase).toContain('data-style-sample="card"')
+    expect(showcase).toContain('data-style-sample="navbar"')
+    expect(showcase).toContain('class="jlz-style-sample is-active" data-style-sample="button"')
+    expect(showcase).not.toContain('class="jlz-style-sample is-active" data-style-sample="card"')
   })
 })

@@ -40,6 +40,10 @@
 
 @jlz-color-accent: #ffd60a;
 @jlz-color-accent-hover: #ffe85c;
+// Secondary action/emphasis accent — the cool mineral counterweight to the
+// electric yellow (alias of the cool signal; the builder can author it
+// independently through the generated override layer).
+@jlz-color-accent-secondary: @jlz-color-signal-cool;
 @jlz-color-accent-glow: rgba(255, 214, 10, 0.35);
 // A cool mineral counterbalances the electric yellow.
 @jlz-color-signal-cool: #5eb0ff;
@@ -186,6 +190,7 @@
   --jlz-color-text-inverse: @jlz-color-text-inverse;
   --jlz-color-accent: @jlz-color-accent;
   --jlz-color-accent-hover: @jlz-color-accent-hover;
+  --jlz-color-accent-secondary: @jlz-color-accent-secondary;
   --jlz-color-accent-glow: @jlz-color-accent-glow;
   --jlz-color-signal-teal: @jlz-color-signal-teal;
   --jlz-color-signal-teal-muted: @jlz-color-signal-teal-muted;
@@ -310,6 +315,7 @@ html.uk-light {
   --jlz-color-fluid-highlight: rgba(255, 255, 255, 0.9);
   --jlz-color-accent: @jlz-inverse-accent;
   --jlz-color-accent-hover: #5c4600;
+  --jlz-color-accent-secondary: var(--jlz-color-signal-cool);
   --jlz-color-accent-glow: rgba(122, 92, 0, 0.3);
   --jlz-color-signal-cool: #2c6fb5;
   --jlz-color-signal-cool-muted: rgba(44, 111, 181, 0.2);

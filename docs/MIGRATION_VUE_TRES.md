@@ -1696,6 +1696,54 @@ divider, muted link), zero console errors, document restored via Ctrl+Z.
 
 Rollback: revert the change set.
 
+#### Phase 4 secondary accent and Style workspace rework slice — 2026-08-21
+
+Owner direction: rework the Style workspace (both sidebars) and add the
+missing secondary accent color; keep chasing interface minimalism (remove
+borders where they do no structural work).
+
+- `src/assets/_import.less` + `src/core/brandTokens.ts`: a new
+  `jlz-color-accent-secondary` token joins §1/§2 and the typed manifest
+  (aliased to `signal-cool`); the inverse polarity follows the lightened
+  cool signal.
+- `src/builder/style.ts`: the theme gains `accentSecondary` (default
+  `#5eb0ff`), the Global group owns the new Secondary accent color field,
+  and every style group declares a UIkit glyph (`icon`) for the rail. The
+  group set grows to 16 so it covers every element family the catalogue
+  composes: Heading, Text, Grid, Link, Icon, List and Divider join Base,
+  Button, Card, Section, Form and Navbar (a unit test pins the catalogue →
+  style-group coverage).
+- `src/builder/themeVariables.ts` + `src/builder/compiler.ts`: the preview
+  contract grows to 47 variables (`--builder-accent-secondary` plus
+  heading/text line heights, grid gutter, link/icon colors, list gap and
+  divider color/spacing) and the generated theme Less emits the authored
+  secondary accent, link colors, list rhythm and `hr` tokens.
+- `admin/main.ts` + `admin/style-icons.ts`: the Style rail renders a glyph
+  and field count per group; the right panel groups properties by concern
+  (Colors / Values) with the group's id badge. The shell registers the
+  official `uikit-icons` set (a separate UMD plugin) so rail glyphs resolve
+  — the product build never imports the admin shell. The style preview
+  always renders the complete component set (the former "Preview all UI
+  components" toggle is gone); selecting a group marks its sample active
+  and scrolls it into view instead of hiding the rest.
+- `admin/admin.less`: decorative chrome borders and glows removed (viewport
+  switcher, sidebars, node-action buttons, id badge, tone controls, save
+  halo, preview frame shadow); structural hairlines remain.
+- `src/builder/style-showcase.ts`: the Global swatch row shows the
+  secondary accent.
+
+Verification: scoped prettier, `vue-tsc`, unit suite green (47-variable
+contract, alias registry 95 tokens / 10 aliases, generated-theme assert,
+catalogue → style-group coverage), production build with the admin graph
+absent from `dist`, live smoke — sixteen rail groups with glyphs and
+counts, all sixteen component samples stay visible while the selected
+group is outlined and scrolled into view, divider/heading edits update the
+preview live and are undo-able via Ctrl+Z to the saved baseline, computed
+chrome borders read 0px while structural hairlines stay 1px, zero console
+errors.
+
+Rollback: revert the change set.
+
 ### Phase 5 — Vue public shell and router
 
 Scope:

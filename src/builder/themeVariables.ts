@@ -27,11 +27,12 @@ export function cardShadowValue(cardShadow: string): string {
   return CARD_SHADOW_PRESETS.deep
 }
 
-/** The complete `--builder-*` variable map for a theme (37 entries). */
+/** The complete `--builder-*` variable map for a theme (47 entries). */
 export function themeToCssVars(theme: BuilderTheme): Record<string, string> {
   return {
     '--builder-accent': theme.accent,
     '--builder-accent-hover': theme.accentHover,
+    '--builder-accent-secondary': theme.accentSecondary,
     '--builder-background': theme.background,
     '--builder-background-elevated': theme.backgroundElevated,
     '--builder-surface': theme.surface,
@@ -46,7 +47,16 @@ export function themeToCssVars(theme: BuilderTheme): Record<string, string> {
     '--builder-line-height': theme.lineHeight,
     '--builder-heading-weight': theme.headingWeight,
     '--builder-heading-transform': theme.headingTransform,
+    '--builder-heading-line-height': theme.headingLineHeight,
+    '--builder-text-line-height': theme.textLineHeight,
     '--builder-spacing': theme.spacing,
+    '--builder-grid-gutter': theme.gridGutter,
+    '--builder-link-color': theme.linkColor,
+    '--builder-link-muted-color': theme.linkMutedColor,
+    '--builder-icon-color': theme.iconColor,
+    '--builder-list-gap': theme.listGap,
+    '--builder-divider-color': theme.dividerColor,
+    '--builder-divider-spacing': theme.dividerSpacing,
     '--builder-inverse-background': theme.inverseBackground,
     '--builder-inverse-surface': theme.inverseSurface,
     '--builder-inverse-text': theme.inverseText,

@@ -212,7 +212,22 @@ do not start a phase whose entry gate has not passed.
       grouped Layout / Typography / Elements; the inspector is a grouped
       property panel (Content / Typography / Layout / Style) with the
       selected node's id badge, and the preview registers the console icon
-      set so `uk-icon` is WYSIWYG of the product. The SFC migration of the
+      set so `uk-icon` is WYSIWYG of the product. A secondary-accent token
+      and Style-workspace rework slice landed the same day: the brand now
+      carries `accent-secondary` (the cool mineral counterweight, authored
+      independently by the builder and aliased to `signal-cool` in the
+      canonical token set), and the Style workspace uses the same grouped
+      panel language on both rails — the left rail shows a UIkit glyph and
+      the field count per group, and the right panel splits the selected
+      group's properties into Colors / Values sections with the group's
+      id badge, with decorative chrome borders removed in favor of the
+      console-minimal language. The Style workspace now covers every
+      element family the catalogue composes — Heading, Text, Grid, Link,
+      Icon, List and Divider groups joined the theme (47 preview
+      variables) — and its preview always renders the complete component
+      set: the "Preview all UI components" toggle is gone, and selecting
+      a group marks its sample active and scrolls it into view.
+      The SFC migration of the
       catalogue, outline, inspector, preview and Style workspace and the
       lifecycle-safe preview remain open.
 

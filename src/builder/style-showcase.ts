@@ -6,6 +6,7 @@ const showcaseSections: Record<StyleGroupId, string> = {
       <span class="jlz-style-eyebrow">Global / color system</span>
       <div class="jlz-style-swatches" aria-label="Theme colors">
         <div class="is-accent"><span>Primary</span></div>
+        <div class="is-secondary-accent"><span>Secondary</span></div>
         <div class="is-background"><span>Background</span></div>
         <div class="is-surface"><span>Surface</span></div>
         <div class="is-elevated"><span>Elevated</span></div>
@@ -64,6 +65,67 @@ const showcaseSections: Record<StyleGroupId, string> = {
         <article class="uk-card uk-card-secondary uk-card-body"><h3>Secondary</h3><p>Elevated dark surface.</p></article>
       </div>
     </section>`,
+  heading: `
+    <section class="jlz-style-sample" data-style-sample="heading">
+      <span class="jlz-style-eyebrow">Heading / display type</span>
+      <h1 class="uk-heading-large">Headings carry the brand voice</h1>
+      <h3 class="uk-heading-small">Weight, transform and line height are one themed decision.</h3>
+      <p>The display tier stays UPPERCASE and heavy; the step scale keeps every level distinct.</p>
+    </section>`,
+  text: `
+    <section class="jlz-style-sample" data-style-sample="text">
+      <span class="jlz-style-eyebrow">Text / body copy</span>
+      <p class="uk-text-lead">Lead copy establishes the principal idea without competing with the title.</p>
+      <p>Body copy carries the useful detail. Line height stays themed so paragraphs breathe at every viewport.</p>
+      <p class="uk-text-meta">Metadata · 15 August 2026 · JUSTLOVEJAZZ</p>
+    </section>`,
+  grid: `
+    <section class="jlz-style-sample" data-style-sample="grid">
+      <span class="jlz-style-eyebrow">Grid / column rhythm</span>
+      <div class="uk-grid uk-grid-small jlz-style-grid-demo">
+        <article class="uk-card uk-card-default uk-card-body"><h4>Column</h4><p>The gutter is a themed token.</p></article>
+        <article class="uk-card uk-card-default uk-card-body"><h4>Column</h4><p>Small grids tighten by 25%.</p></article>
+      </div>
+    </section>`,
+  link: `
+    <section class="jlz-style-sample" data-style-sample="link">
+      <span class="jlz-style-eyebrow">Link / inline actions</span>
+      <p class="jlz-style-link-row">
+        <a class="jlz-builder-link" href="#style-preview">Inline link</a>
+        <a class="jlz-builder-link uk-link-muted" href="#style-preview">Muted link</a>
+      </p>
+    </section>`,
+  icon: `
+    <section class="jlz-style-sample" data-style-sample="icon">
+      <span class="jlz-style-eyebrow">Icon / content glyphs</span>
+      <p class="jlz-style-icon-row">
+        <span uk-icon="icon: arrow-up-right; ratio: 1.2"></span>
+        <span uk-icon="icon: play; ratio: 1.2"></span>
+        <span uk-icon="icon: telegram; ratio: 1.2"></span>
+        <span uk-icon="icon: mail; ratio: 1.2"></span>
+      </p>
+    </section>`,
+  list: `
+    <section class="jlz-style-sample" data-style-sample="list">
+      <span class="jlz-style-eyebrow">List / item rhythm</span>
+      <div class="jlz-style-list-row">
+        <ul class="uk-list uk-list-hyphen">
+          <li>Hyphen list</li>
+          <li>Item gap is themed</li>
+        </ul>
+        <ol class="uk-list">
+          <li>Ordered steps</li>
+          <li>Keep the sequence visible</li>
+        </ol>
+      </div>
+    </section>`,
+  divider: `
+    <section class="jlz-style-sample" data-style-sample="divider">
+      <span class="jlz-style-eyebrow">Divider / hairlines</span>
+      <p>One-pixel hairlines separate content blocks without adding weight.</p>
+      <hr class="uk-divider" />
+      <hr class="uk-divider uk-divider-small" />
+    </section>`,
   section: `
     <section class="jlz-style-sample" data-style-sample="section">
       <span class="jlz-style-eyebrow">Section / backgrounds</span>
@@ -95,9 +157,19 @@ const showcaseSections: Record<StyleGroupId, string> = {
     </section>`,
 }
 
-export function renderStyleShowcase(selected: StyleGroupId, showAll: boolean): string {
-  const sections = showAll
-    ? (Object.keys(showcaseSections) as StyleGroupId[]).map((id) => showcaseSections[id]).join('')
-    : showcaseSections[selected]
-  return `<div id="style-preview" class="jlz-style-showcase">${sections}</div>`
+/**
+ * The style-preview canvas always shows the complete component set (the
+ * "preview all" reference); the selected group is marked `is-active` and
+ * scrolled into view, so every themed component stays visible at once.
+ */
+export function renderStyleShowcase(selected: StyleGroupId): string {
+  const sections = (Object.keys(showcaseSections) as StyleGroupId[]).map((id) =>
+    id === selected
+      ? showcaseSections[id].replace(
+          'class="jlz-style-sample"',
+          'class="jlz-style-sample is-active"',
+        )
+      : showcaseSections[id],
+  )
+  return `<div id="style-preview" class="jlz-style-showcase">${sections.join('')}</div>`
 }

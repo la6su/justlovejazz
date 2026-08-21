@@ -46,6 +46,8 @@ const COLOR: Record<string, Token> = {
   'color-text-inverse': '#0a0c10',
   'color-accent': '#ffd60a',
   'color-accent-hover': '#ffe85c',
+  // Secondary action accent (see BRAND_TOKEN_ALIASES).
+  'color-accent-secondary': '#5eb0ff',
   'color-accent-glow': 'rgba(255, 214, 10, 0.35)',
   'color-signal-cool': '#5eb0ff',
   'color-signal-cool-muted': 'rgba(94, 176, 255, 0.22)',
@@ -178,6 +180,7 @@ export const BRAND_TOKEN_PREFIX = 'jlz'
  * relation so it is a documented fact, not a silent duplicate.
  */
 export const BRAND_TOKEN_ALIASES: Readonly<Record<string, string>> = {
+  'color-accent-secondary': 'color-signal-cool',
   'color-signal-teal': 'color-signal-cool',
   'color-signal-teal-muted': 'color-signal-cool-muted',
   'color-status-warning': 'color-accent',
