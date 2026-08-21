@@ -57,8 +57,32 @@ do not start a phase whose entry gate has not passed.
       unmount/disposal, with reduced motion confirmed on both paths; dated
       qualitative screenshots confirmed the representative scene is visibly
       rendered on both backends (qualitative presence only, not pixel-level
-      parity). Pixel-level visual parity, desktop pacing, resize-event
-      behavior and an owner-visible resource plateau remain open gates.
+      parity). Desktop pacing and hidden-tab resume for the bounded
+      `setAnimationLoop` driver passed on 2026-08-21 on the remote desktop
+      host (Chrome 151 on Linux, NVIDIA Lovelace, 60 Hz, DPR 1): three 90-
+      invocation windows per backend with zero idle ticks and vsync-locked
+      p95 16.80 ms, plus a real hidden-tab freeze/resume on both backend
+      paths (0.10 ms over the frozen 16.7 ms target is a 60 Hz vsync
+      quantization artifact, not pacing degradation). The Vue/Tres resource
+      plateau and root-destroy-to-baseline gate passed on 2026-08-21 on the
+      same host: five identical steady-state snapshots per backend after a
+      declared warm-up (zero growth) and root teardown returning every
+      root-owned counter to baseline with no surviving render demand. The
+      initial route gzip was populated from the first clean production build
+      (commit `6f02896`, 2026-08-21): 544.51 kB total (528.81 kB shared, 15.70
+      kB route-owned Contact loader), with the shared Three.js headroom down
+      to 0.71 kB. Pixel-level visual parity passed on 2026-08-21 on the same
+      host: the `scripts/visual-parity.ts` tool captured both backend paths at
+      an identical deterministic state (30 owner-update cycles, `?parity=1`
+      direct-render mode) and the diff is 0.297% of pixels above the 0.1
+      perceptual threshold (budget 0.5%), artifacts stored under
+      `docs/evidence/visual-parity/`. The desktop dynamic resize/DPR event
+      path was observed on 2026-08-21 on the same host (real OS window
+      resizes via CDP: every CSS size change fired the size watcher and
+      re-rendered once, resources flat, zero console errors; emulated-DPR
+      without CSS change correctly fired no events). Dynamic resize/DPR
+      events on real mobile hardware remain the only open Phase 2 gate,
+      owner-deferred on 2026-08-21 pending the physical Android device.
 
 - [ ] **Phase 3: extract framework-neutral contracts** — introduce the one
       route manifest, canonical world-slot tuple, bootstrap state machine,

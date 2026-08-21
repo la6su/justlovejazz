@@ -390,8 +390,10 @@ The real `SplashCube` owner was added to the representative scope on
 2026-08-16. Its two-backend verification (material, geometry and
 jelly-deformation compilation, one renderer/canvas, settled idle, disposal,
 reduced-motion behaviour and qualitative visual presence on both backend
-paths) ran on 2026-08-21; pixel-level visual parity remains the separate open
-gate recorded below and is not claimed by that run.
+paths) ran on 2026-08-21; the screenshot/diff tooling landed later the same
+day and the pixel-level visual parity it defines was closed by the visual
+parity slice of 2026-08-21 (the SplashCube scope is included in that
+comparison; the runtime run itself only claimed qualitative presence).
 
 Acceptance:
 
@@ -639,29 +641,199 @@ code, visual-protocol or dependency changes:
 This admits the SplashCube representative runtime compatibility: PBR material
 and jelly-geometry compilation on both backends, one renderer/canvas, bounded
 settle, clean disposal and qualitative visual presence on both backend paths.
-It is not a pixel-level visual-parity claim: the referenced screenshot/diff
-tooling still does not exist, so pixel-level visual parity for the SplashCube
-scope remains part of the open visual-parity gate below.
+It is not a pixel-level visual-parity claim by that run: the screenshot/diff
+tooling landed later the same day (see the visual-parity slice below), and the
+SplashCube scope is covered by the pixel-level comparison recorded there.
+
+#### Phase 2 desktop pacing + hidden-tab resume slice — 2026-08-21
+
+The selected bounded `setAnimationLoop` driver was paced against the
+representative scope through `/__spikes/tres-loop?driver=renderer-loop` on the
+remote desktop host (Chrome 151.0.7922.137 on Linux x86_64, 1267×1297 CSS
+viewport, DPR 1, NVIDIA Lovelace non-fallback WebGPU adapter, 60 Hz display),
+over the secure HTTPS proxy, without production code, visual-protocol or
+dependency changes:
+
+- three valid 90-invocation windows per backend, each a fresh mount: automatic
+  `WebGPUBackend -> tsl-post` and forced `WebGLBackend ->
+direct-webgl-fallback`. All six windows completed with 90 burst ticks, zero
+  idle ticks, p50 16.70 ms and p95 16.80 ms; the median and worst p95 are both
+  16.80 ms for each backend;
+- hidden-tab pause/resume ran once per backend as a real visibility change
+  (opening a second tab genuinely hides the spike page). The WebGPU burst froze
+  at frame 4 and the WebGL burst at frame 11: after two seconds hidden,
+  `visibilityState: hidden` with zero additional frames. Re-activating the tab
+  let both bursts complete at exactly 90 draws, 90 ticks and zero idle ticks,
+  with median/p95 unchanged;
+- zero idle ticks after settle confirms the driver clears
+  `renderer.setAnimationLoop` when the window settles, and the one-driver
+  invariant holds (the manual-mode TresCanvas internal loop stays stopped);
+- every run reported zero console errors (only the known dev-only Vue
+  feature-flags warning).
+
+The 60 Hz display's single refresh quantum is 16.67 ms; the measured
+median/p95 deltas (16.70/16.80 ms) are single-quantum frames. The worst p95
+(16.80 ms) sits 0.10 ms above the frozen 16.7 ms desktop target recorded in
+`PERFORMANCE_BASELINE.md`: that target was calibrated on the higher-refresh
+reference host of 2026-07-28 and lies below the measured vsync floor of this
+60 Hz host, so no median or p95 frame exceeds one refresh quantum. The frozen
+target text is unchanged; the 60 Hz host delta is recorded as a budget-review
+note in `PERFORMANCE_BASELINE.md`.
+
+This closes the desktop pacing and hidden-tab resume gate for the selected
+bounded driver: vsync-locked pacing with zero idle ticks and correct
+pause/resume on both backend paths. It does not establish production-route
+frame-time budgets, real-mobile resize/DPR behaviour or the resource-plateau
+gate.
+
+#### Phase 2 initial-route delivery observation — 2026-08-21
+
+The open initial-route gzip item was populated from the first clean production
+build of the current dependency set (commit `6f02896`, `bun run build`,
+2026-08-21), without code or dependency changes:
+
+- the budget gate passed: splash startup 2.68 kB / 5.00 kB and shared Three.js
+  349.29 kB / 350.00 kB;
+- the initial route delivers **544.51 kB** of JavaScript gzip (the full import
+  closure of built JS from the entry — 543.74 kB across 16 chunks — plus the
+  0.77 kB inline splash script), of which 15.70 kB is the route-owned Contact
+  GLTF/DRACO loader and the shared portion is 528.81 kB; the runtime-fetched
+  DRACO wasm companions (174.42 kB) load only with the Contact route's model;
+- the shared Three.js headroom against its 350 kB cap has narrowed to 0.71 kB,
+  so further shared-chunk growth requires a separately reviewed budget
+  decision.
+
+The measurement method, build identifiers and the headroom warning are
+recorded in the `PERFORMANCE_BASELINE.md` slice of the same date.
+
+#### Phase 2 Vue/Tres resource plateau + root teardown slice — 2026-08-21
+
+The owner-visible resource plateau and root-destroy-to-baseline gate was
+measured on the Vue/Tres representative scope (full scope including the
+production SplashCube, Works case texture and Contact stage) through a
+development-only resource-soak probe at
+`https://project.6la.ru/__spikes/tres-resource` on the remote desktop host
+(Chrome 151.0.7922.137, Linux x86_64, DPR 1, NVIDIA Lovelace, 60 Hz), without
+production code or dependency changes:
+
+- per backend (`WebGPUBackend -> tsl-post` and forced
+  `WebGLBackend -> direct-webgl-fallback`) the runner recorded one post-load
+  snapshot, one unmeasured warm-up cycle and five measured steady-state
+  cycles; every steady-state sample was identical on every owner-visible
+  counter (one canvas, 17 scene objects, 12 geometries, 12 materials, 1
+  texture, 12 renderer geometries, 16/3 renderer textures, one/zero TSL post
+  pipeline) — the scope plateaus after the declared warm-up with zero growth;
+- `info.render.frameCalls` grew by exactly one frame per cycle on the WebGPU
+  path and two per cycle on the WebGL path: bounded render demand;
+- root teardown (Vue app unmount running the real dispose path and releasing
+  the probe-owned renderer) returned every root-owned counter to baseline on
+  both backends: canvases 1→0, scene and renderer counters to 0, post
+  pipeline to 0, and `frameCalls` unchanged across a 500 ms post-teardown
+  read (no surviving render demand); the development hooks were removed with
+  the probe;
+- every run reported zero console errors (only the known dev-only Vue
+  feature-flags warnings).
+
+The declared bounded caches are one Works case texture, one Contact stage
+model, one node material and one TSL post pipeline (WebGPU path). The
+development probe and its `__spikes/tres-resource` route are dev-only; the
+single-canvas invariant holds. The full observation, counters and the
+`renderer.info.programs` null fact are recorded in the
+`PERFORMANCE_BASELINE.md` slice of the same date.
+
+#### Phase 2 visual parity slice — 2026-08-21
+
+The pixel-level visual-parity gate for the complete representative scope was
+executed on the remote desktop host (Chrome 151.0.7922.137 on Linux x86_64,
+1267×1297 CSS viewport, DPR 1, NVIDIA Lovelace non-fallback adapter, 60 Hz,
+motion normal) against commit `6f02896` without production code or dependency
+changes:
+
+- the referenced repository screenshot/diff tooling now exists as
+  `scripts/visual-parity.ts` (raw-CDP capture of the probe canvas plus a
+  per-pixel L2 sRGB delta with the protocol threshold 0.1 and the protocol
+  budget of at most 0.5% of unmasked pixels);
+- the reference-frame naming convention is fixed and machine-readable
+  (`<commit7>-<scope>-<backend>-<cycles>c-<utc:YYYYMMDDTHHMMZ>.png`, diff and
+  report siblings), and all frames, the diff image, the mask overlay and the
+  JSON report are stored under `docs/evidence/visual-parity/` together with a
+  per-frame metadata sidecar;
+- both backend paths were captured at an identical deterministic state
+  (fresh mount, `ready`, then exactly 30 owner-driven `update(1/60)` cycles —
+  the probe scene has no internal timers or wall-clock reads, so equal cycle
+  counts are equal scene state): automatic `WebGPUBackend` and forced
+  `WebGLBackend`, both rendered directly through the identical scene graph in
+  development-only `?parity=1` mode because the WebGPU-only TSL post graph is
+  an intentional backend-conditional enhancement already covered by the
+  qualitative two-backend evidence of 2026-08-21 (post parameters are render
+  state and would differ by design);
+- the measured comparison: 800×450 canvas surface, no approved masks,
+  1070 of 360000 pixels (0.297%) above the 0.1 perceptual threshold — within
+  the 0.5% budget; mean delta 0.00093, maximum delta 0.967; the difference
+  map shows the excess confined to anti-aliased silhouettes of the torus knot
+  and a small area of the Contact GLTF model, which is backend rasterisation
+  difference, not a composition difference.
+
+This closes the pixel-level visual-parity gate for the complete representative
+scope, including the SplashCube runtime scope admitted on 2026-08-21, under
+the frozen metric and storage rule of `PERFORMANCE_BASELINE.md`. The full
+observation, artifact inventory and the parity-mode scoping note are recorded
+in the `PERFORMANCE_BASELINE.md` slice of the same date. The comparison is a
+same-state two-backend parity measurement; it makes no legacy-parity claim
+(the legacy reference frames predate this tooling and are not part of this
+gate) and no reduced-motion visual claim.
+
+#### Phase 2 desktop dynamic resize/DPR event observation — 2026-08-21
+
+The dynamic resize event path of the Vue/Tres representative scope was
+observed on the remote desktop host (Chrome 151.0.7922.137 on Linux x86_64,
+NVIDIA Lovelace non-fallback adapter, 60 Hz, motion normal, dev tree of
+commit `6f02896`) at `https://project.6la.ru/__spikes/tres-resource` (automatic
+`WebGPUBackend -> tsl-post`), without production code or dependency changes:
+
+- real OS window resizes were driven through CDP `Browser.setWindowBounds`
+  (the original window bounds were recorded and restored exactly): CSS
+  viewport 1172×1297 → 620×670 → 1004×750 → restored 1172×1297;
+- each actual CSS size change fired the probe's size watcher (development
+  counter 0 → 2 → 4; two events per resize, one per changed-dimension phase),
+  and every event ran the existing path: `ContactCyprusStage.resize` plus
+  `postPipeline.resize()` plus exactly one re-render through the active path;
+- the canvas CSS and backing size followed the clamped section
+  (`min(800px, 100vw)` × `min(450px, 60vh)`): 800×450 → 620×402 → 800×450 →
+  800×450, DPR 1 throughout;
+- restoring the window after the grow produced no extra events (the section
+  CSS size was already 800×450): the path is demand-driven and renders
+  nothing it was not asked to;
+- every owner-visible resource counter (1 canvas, 17 scene objects, 12
+  geometries, 12 materials, 1 texture, 12 renderer geometries, 16 renderer
+  textures, 1 post pipeline) was identical before, after each resize and after
+  the restore; zero console errors across the run; `data-status` stayed
+  `ready` throughout;
+- a page-level DPR emulation (`Emulation.setDeviceMetricsOverride` with
+  `deviceScaleFactor: 2`) changed `window.devicePixelRatio` to 2 but produced
+  no CSS size change, so no watcher event fired and the canvas backing size
+  stayed 800×450: Tres sizing follows CSS layout, and the capped
+  `dpr: [1, 2]` prop is applied at setup/resize rather than from a mid-session
+  emulation change. This is emulation-limited evidence, not a real-display
+  DPR finding; mount-time physical DPR (renderer pixel ratio 2.00) was
+  already admitted by the 2026-08-15 physical mobile slice.
+
+This admits the desktop half of the resize-event gate: a dynamic resize event
+reaches the scene owner and re-renders the already-owned graph once per event
+with no resource growth and no console errors. It makes no real-mobile claim;
+the remaining gate delta is physical mobile resize/DPR events, which the
+owner deferred on 2026-08-21 pending the device. The full observation is
+recorded in the `PERFORMANCE_BASELINE.md` slice of the same date.
 
 #### Phase 2 open gates
 
 The slices above admit only their stated scopes. These gates remain open and
 must all pass with hardware evidence before Phase 2 is accepted:
 
-- Desktop pacing and hidden-tab resume for the selected bounded
-  `setAnimationLoop` driver.
-- Dynamic resize/DPR event behaviour on real mobile hardware.
-- Owner-visible resource plateau after declared cache warm-up, and root
-  destroy returning root-owned resources to baseline (the recorded soak is
-  smoke-only and made no no-leak claim).
-- Pixel-level visual parity for the complete representative scope under the
-  baseline protocol, including the SplashCube runtime scope admitted on
-  2026-08-21. The metric, masks and evidence storage rule are already defined
-  in `PERFORMANCE_BASELINE.md`; what is missing is tooling (the referenced
-  repository screenshot/diff tool does not exist yet), a fixed reference-frame
-  naming convention, and the comparison itself.
-- Related open delivery item: the initial route gzip is recorded OPEN in
-  `PERFORMANCE_BASELINE.md` and requires a clean production build.
+- Dynamic resize/DPR event behaviour on real mobile hardware. The desktop
+  resize-event observation of 2026-08-21 admits the desktop half and narrows
+  the gate to the mobile-only delta; the owner deferred the remaining run on
+  2026-08-21 pending the physical Android device.
 
 ### Phase 3 — framework-neutral contracts
 
@@ -921,19 +1093,19 @@ The following ledgers are updated in this document during implementation.
 
 ### Traceability
 
-| Contract                 | Current owner                 | Target owner                           | Migration phase |
-| ------------------------ | ----------------------------- | -------------------------------------- | --------------- |
-| splash readiness/failure | `index.html`, `entry-app.ts`  | inline shell + bootstrap state machine | 5               |
-| routes/hash/meta         | `router.ts`, `pageMeta.ts`    | route manifest + Vue Router            | 3, 5            |
-| six world slots          | `WorldConfig.ts`, `World.ts`  | domain tuple + `WorldRoot`             | 3, 7, 8         |
-| render demand            | `Experience._needsRender`     | `RenderScheduler`                      | 3, 7            |
-| brand/runtime tokens     | Less files + scene literals   | typed manifest + generated adapters    | 3, 5            |
-| backend fallback         | `Renderer.ts`                 | `RendererFactory`                      | 2, 6            |
-| post-processing          | dual `RenderPipeline` paths   | TSL graph (`WebGPUBackend`) + forced-WebGL fallback per the Phase 6 decision | 2, 6 |
-| route GPU resources      | `World` lazy stages           | route resource scopes                  | 3, 8            |
-| semantic UI              | string templates + UI classes | Vue route/features + UIkit adapters    | 4, 5            |
-| builder                  | `admin/main.ts`               | Vue builder app                        | 4               |
-| static content           | standalone pages              | shared SSG pipeline                    | 9               |
+| Contract                 | Current owner                 | Target owner                                                                 | Migration phase |
+| ------------------------ | ----------------------------- | ---------------------------------------------------------------------------- | --------------- |
+| splash readiness/failure | `index.html`, `entry-app.ts`  | inline shell + bootstrap state machine                                       | 5               |
+| routes/hash/meta         | `router.ts`, `pageMeta.ts`    | route manifest + Vue Router                                                  | 3, 5            |
+| six world slots          | `WorldConfig.ts`, `World.ts`  | domain tuple + `WorldRoot`                                                   | 3, 7, 8         |
+| render demand            | `Experience._needsRender`     | `RenderScheduler`                                                            | 3, 7            |
+| brand/runtime tokens     | Less files + scene literals   | typed manifest + generated adapters                                          | 3, 5            |
+| backend fallback         | `Renderer.ts`                 | `RendererFactory`                                                            | 2, 6            |
+| post-processing          | dual `RenderPipeline` paths   | TSL graph (`WebGPUBackend`) + forced-WebGL fallback per the Phase 6 decision | 2, 6            |
+| route GPU resources      | `World` lazy stages           | route resource scopes                                                        | 3, 8            |
+| semantic UI              | string templates + UI classes | Vue route/features + UIkit adapters                                          | 4, 5            |
+| builder                  | `admin/main.ts`               | Vue builder app                                                              | 4               |
+| static content           | standalone pages              | shared SSG pipeline                                                          | 9               |
 
 ### Removal ledger
 
