@@ -4,7 +4,9 @@
 // layer UIkit scrollspy animations over those same top/bottom blocks.
 
 // ── Cube face → section mapping ──
-// 6 sections = 6 cube faces. SplashCube.FACE_ROTATIONS in SplashCube.ts must match.
+// 6 sections = 6 cube faces. The canonical slot facts (ids, story ranges,
+// DOM anchors and cube face rotations) are owned by src/core/worldSlots.ts;
+// keep this table in sync with that single source of truth.
 //
 //   Index | Section  | Cube face    | Theme
 //   ------|----------|--------------|-------

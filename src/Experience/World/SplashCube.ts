@@ -17,6 +17,7 @@
 import * as THREE from 'three'
 import { BakuRole, type BakuMaterialState } from '../../core/types'
 import { prefersReducedMotion } from '../../core/motionPolicy'
+import { WORLD_SLOTS } from '../../core/worldSlots'
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js'
 
 interface BakuMaterialParams {
@@ -91,14 +92,11 @@ export class SplashCube extends THREE.Mesh {
   // NOTE: sections 4+5 use ±π/4 tilt (NOT actual top/bottom face rotation).
   // The cube shows two side faces at an angle for these sections.
   // This is a known simplification — true top/bottom face would need X rotation.
-  private static readonly FACE_ROTATIONS: number[] = [
-    0, // 0: canonical Lab / public Contact finale — front face
-    -Math.PI / 2, // 1: Intro — right face (+X toward camera)
-    Math.PI, // 2: About — back face (-Z toward camera)
-    Math.PI / 2, // 3: Works — left face (-X toward camera)
-    -Math.PI / 4, // 4: Contact — slight tilt (two side faces visible)
-    Math.PI / 4, // 5: Menu — slight tilt (two side faces visible)
-  ]
+  // The per-slot rotations are owned by the canonical world-slot contract
+  // (src/core/worldSlots.ts); this array only re-exposes them by index.
+  private static readonly FACE_ROTATIONS: readonly number[] = WORLD_SLOTS.map(
+    (slot) => slot.faceRotation,
+  )
   private _targetFaceRotY = 0
   private _faceLerp = 0 // 0→1, animated on section change
   // D-16 fix: store start rotation + delta at rotateToFace time for

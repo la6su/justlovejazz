@@ -881,9 +881,50 @@ single pure source of truth for the application's public paths.
 Scope limits: this is a contract extraction only. Production behaviour is
 unchanged, no consumer has migrated yet, and the scene code still reads route
 facts from DOM datasets — that removal is a later Phase 3 slice behind these
-adapters. The world-slot tuple, bootstrap state machine, typed ports,
-scheduler and brand-token manifest remain open. Rollback: revert `router.ts`
-to its local `ROUTES` map; the manifest is inert until consumed.
+adapters. The world-slot tuple landed later the same day (slice below); the
+bootstrap state machine, typed ports, scheduler and brand-token manifest
+remain open. Rollback: revert `router.ts` to its local `ROUTES` map; the
+manifest is inert until consumed.
+
+#### Phase 3 world-slot tuple slice — 2026-08-21
+
+The second Phase 3 contract is the **canonical world-slot tuple**: the
+framework-neutral readonly source of the six-slot model described in
+`docs/ARCHITECTURE.md` ("Routes and world slots").
+
+- `src/core/worldSlots.ts` owns the slot facts in stable index order: slot
+  IDs (`lab`, `intro`, `about`, `works`, `contact`, `menu`), product roles,
+  contiguous-fifths story ranges, DOM section anchors and SplashCube face
+  rotations, plus clamped `worldSlotAt` / `worldSlotById` lookups and
+  `WORLD_SLOT_IDS` / `WORLD_SLOT_COUNT`. It is pure — no DOM, Three or
+  globals.
+- `src/core/WorldConfig.ts` now derives the home scenes' `domSection` and
+  `range` from the tuple (the home array keeps only per-section authored
+  overrides), and `makeContentScenes` reuses the tuple's frame count and
+  story geometry (`content-${idx}` DOM anchors stay the content-page
+  namespace). The stale slot table in `src/sections/_shared/constants.ts`
+  now points at the tuple instead of re-declaring the match rule.
+- `SplashCube.FACE_ROTATIONS` is derived from the tuple as `readonly
+number[]` — the authored values are unchanged (locked by the regression
+  baseline in the tests).
+- `src/__tests__/worldSlots.test.ts` locks the contract (bijection over the
+  six IDs, fifths tiling 0…6/5, legacy-literal face rotations, clamped
+  lookups) and both consumers (home world config, SplashCube, content-page
+  scenes). Unit suite 143/143; `vue-tsc` clean.
+- Runtime smoke on the live dev proxy (Chrome 151, remote desktop host):
+  home and `/works` both boot with the route DOM rendered (6 sections), the
+  1267×1297 scene canvas live, zero console errors; the 120×120 splash
+  preview canvas is the documented intentional legacy boundary. Production
+  build: net gzip delta ≈ +0.46 kB in `chunk-core` (the contract and
+  lookups) and ≈ −0.22 kB where duplicated literals were removed
+  (`chunk-core-world`, `entry-app`).
+
+Scope limits: scene code still reads route facts from `document.body.dataset`
+— that removal is a later Phase 3 slice behind typed ports. The `sec_*` phase
+config IDs consumed by `Lights.ts` and `PostProcessingManager.ts` are a
+separate phase namespace and were intentionally not touched here. Rollback:
+revert the two consumers to their inline literals; the tuple is inert until
+consumed.
 
 ### Phase 4 — Vue Page Builder
 
@@ -1122,19 +1163,19 @@ The following ledgers are updated in this document during implementation.
 
 ### Traceability
 
-| Contract                 | Current owner                                  | Target owner                                                                 | Migration phase |
-| ------------------------ | ---------------------------------------------- | ---------------------------------------------------------------------------- | --------------- |
-| splash readiness/failure | `index.html`, `entry-app.ts`                   | inline shell + bootstrap state machine                                       | 5               |
-| routes/hash/meta         | `routeManifest.ts`, `router.ts`, `pageMeta.ts` | route manifest + Vue Router                                                  | 3, 5            |
-| six world slots          | `WorldConfig.ts`, `World.ts`                   | domain tuple + `WorldRoot`                                                   | 3, 7, 8         |
-| render demand            | `Experience._needsRender`                      | `RenderScheduler`                                                            | 3, 7            |
-| brand/runtime tokens     | Less files + scene literals                    | typed manifest + generated adapters                                          | 3, 5            |
-| backend fallback         | `Renderer.ts`                                  | `RendererFactory`                                                            | 2, 6            |
-| post-processing          | dual `RenderPipeline` paths                    | TSL graph (`WebGPUBackend`) + forced-WebGL fallback per the Phase 6 decision | 2, 6            |
-| route GPU resources      | `World` lazy stages                            | route resource scopes                                                        | 3, 8            |
-| semantic UI              | string templates + UI classes                  | Vue route/features + UIkit adapters                                          | 4, 5            |
-| builder                  | `admin/main.ts`                                | Vue builder app                                                              | 4               |
-| static content           | standalone pages                               | shared SSG pipeline                                                          | 9               |
+| Contract                 | Current owner                                                         | Target owner                                                                 | Migration phase |
+| ------------------------ | --------------------------------------------------------------------- | ---------------------------------------------------------------------------- | --------------- |
+| splash readiness/failure | `index.html`, `entry-app.ts`                                          | inline shell + bootstrap state machine                                       | 5               |
+| routes/hash/meta         | `routeManifest.ts`, `router.ts`, `pageMeta.ts`                        | route manifest + Vue Router                                                  | 3, 5            |
+| six world slots          | `worldSlots.ts` tuple (consumed by `WorldConfig.ts`, `SplashCube.ts`) | domain tuple + `WorldRoot`                                                   | 3, 7, 8         |
+| render demand            | `Experience._needsRender`                                             | `RenderScheduler`                                                            | 3, 7            |
+| brand/runtime tokens     | Less files + scene literals                                           | typed manifest + generated adapters                                          | 3, 5            |
+| backend fallback         | `Renderer.ts`                                                         | `RendererFactory`                                                            | 2, 6            |
+| post-processing          | dual `RenderPipeline` paths                                           | TSL graph (`WebGPUBackend`) + forced-WebGL fallback per the Phase 6 decision | 2, 6            |
+| route GPU resources      | `World` lazy stages                                                   | route resource scopes                                                        | 3, 8            |
+| semantic UI              | string templates + UI classes                                         | Vue route/features + UIkit adapters                                          | 4, 5            |
+| builder                  | `admin/main.ts`                                                       | Vue builder app                                                              | 4               |
+| static content           | standalone pages                                                      | shared SSG pipeline                                                          | 9               |
 
 ### Removal ledger
 
