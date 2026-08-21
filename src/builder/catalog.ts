@@ -64,7 +64,7 @@ export const BUILDER_CATALOG: Record<BuilderElementType, BuilderElementDefinitio
     label: 'Section',
     description: 'Full-width page region with a UIkit container.',
     container: true,
-    icon: '§',
+    icon: 'thumbnails',
     uikitComponents: ['section', 'container'],
     fieldGroups: [
       {
@@ -119,7 +119,7 @@ export const BUILDER_CATALOG: Record<BuilderElementType, BuilderElementDefinitio
     label: 'Grid',
     description: 'Responsive UIkit grid for child elements.',
     container: true,
-    icon: '⊞',
+    icon: 'grid',
     uikitComponents: ['grid', 'width'],
     fieldGroups: [
       {
@@ -157,7 +157,7 @@ export const BUILDER_CATALOG: Record<BuilderElementType, BuilderElementDefinitio
     label: 'Card',
     description: 'UIkit card that can contain headings, text and actions.',
     container: true,
-    icon: '▣',
+    icon: 'table',
     uikitComponents: ['card'],
     fieldGroups: [
       {
@@ -198,7 +198,7 @@ export const BUILDER_CATALOG: Record<BuilderElementType, BuilderElementDefinitio
     label: 'Divider',
     description: '1px hairline break, the console-minimal section separator.',
     container: false,
-    icon: '—',
+    icon: 'minus',
     uikitComponents: ['divider'],
     fieldGroups: [
       {
@@ -223,7 +223,7 @@ export const BUILDER_CATALOG: Record<BuilderElementType, BuilderElementDefinitio
     label: 'Heading',
     description: 'Semantic heading with UIkit display sizing on the φ scale.',
     container: false,
-    icon: 'H',
+    icon: 'bold',
     uikitComponents: ['heading'],
     fieldGroups: [
       { label: 'Content', fields: [{ key: 'content', label: 'Text', type: 'text' }] },
@@ -263,7 +263,7 @@ export const BUILDER_CATALOG: Record<BuilderElementType, BuilderElementDefinitio
     label: 'Text',
     description: 'Plain semantic copy. HTML is intentionally not accepted.',
     container: false,
-    icon: '¶',
+    icon: 'file-text',
     uikitComponents: ['text'],
     fieldGroups: [
       { label: 'Content', fields: [{ key: 'content', label: 'Text', type: 'textarea' }] },
@@ -295,7 +295,7 @@ export const BUILDER_CATALOG: Record<BuilderElementType, BuilderElementDefinitio
     label: 'List',
     description: 'UIkit list; one item per line in the content field.',
     container: false,
-    icon: '≡',
+    icon: 'list',
     uikitComponents: ['list'],
     fieldGroups: [
       { label: 'Content', fields: [{ key: 'items', label: 'Items', type: 'textarea' }] },
@@ -327,7 +327,7 @@ export const BUILDER_CATALOG: Record<BuilderElementType, BuilderElementDefinitio
     label: 'Button',
     description: 'Accessible UIkit action link.',
     container: false,
-    icon: '→',
+    icon: 'crosshairs',
     uikitComponents: ['button'],
     fieldGroups: [
       { label: 'Content', fields: [{ key: 'label', label: 'Label', type: 'text' }] },
@@ -356,7 +356,7 @@ export const BUILDER_CATALOG: Record<BuilderElementType, BuilderElementDefinitio
     label: 'Link',
     description: 'Inline text link on the product link styles.',
     container: false,
-    icon: '⌁',
+    icon: 'link',
     uikitComponents: ['link'],
     fieldGroups: [
       { label: 'Content', fields: [{ key: 'label', label: 'Text', type: 'text' }] },
@@ -384,7 +384,7 @@ export const BUILDER_CATALOG: Record<BuilderElementType, BuilderElementDefinitio
     label: 'Icon',
     description: 'UIkit icon from the product icon set.',
     container: false,
-    icon: '◈',
+    icon: 'tag',
     uikitComponents: ['icon'],
     fieldGroups: [
       {

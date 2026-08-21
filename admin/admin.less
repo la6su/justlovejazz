@@ -321,15 +321,23 @@ textarea {
   color: var(--jlz-color-accent);
 }
 
+// Catalog/outline marks are official UIKit glyphs (the same set the Style
+// rail uses); the 18px box centers the hydrated SVG.
 .jlz-admin-element-icon {
   display: grid;
   place-items: center;
+  flex: none;
   width: 18px;
   height: 18px;
   color: var(--jlz-color-text-subtle);
-  font-family: var(--jlz-font-mono);
-  font-size: 0.85rem;
+  font-size: 0;
   transition: color 120ms ease;
+}
+
+.jlz-admin-element-icon svg,
+.jlz-admin-outline-icon svg {
+  width: 18px;
+  height: 18px;
 }
 
 .jlz-admin-outline-heading {
@@ -412,8 +420,7 @@ textarea {
   width: 18px;
   height: 18px;
   color: var(--jlz-color-text-subtle);
-  font-family: var(--jlz-font-mono);
-  font-size: 0.85rem;
+  font-size: 0;
 }
 
 .jlz-admin-outline button:hover .jlz-admin-outline-icon {

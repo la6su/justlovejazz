@@ -145,16 +145,20 @@ function renderCatalog(): void {
       button.type = 'button'
       button.dataset.addElement = type
       button.title = definition.description
+      // The same official UIKit marks the Style rail uses, so one family
+      // carries one glyph across both panels.
       const icon = document.createElement('span')
       icon.className = 'jlz-admin-element-icon'
+      icon.setAttribute('uk-icon', `icon: ${definition.icon}; ratio: 1.1`)
       icon.setAttribute('aria-hidden', 'true')
-      icon.textContent = definition.icon
       const label = document.createElement('span')
       label.textContent = definition.label
       button.append(icon, label)
       catalogElement.append(button)
     }
   }
+  // Dynamic uk-icon attributes need a UIkit pass to hydrate into SVG.
+  ;(UIkit as unknown as { update(element: Element): void }).update(catalogElement)
 }
 
 function renderOutline(): void {
@@ -174,8 +178,8 @@ function renderOutline(): void {
 
       const icon = document.createElement('span')
       icon.className = 'jlz-admin-outline-icon'
+      icon.setAttribute('uk-icon', `icon: ${BUILDER_CATALOG[node.type].icon}; ratio: 1.1`)
       icon.setAttribute('aria-hidden', 'true')
-      icon.textContent = BUILDER_CATALOG[node.type].icon
       const name = document.createElement('span')
       name.textContent =
         node.props.content?.slice(0, 32) ||
@@ -191,6 +195,8 @@ function renderOutline(): void {
   }
 
   appendNodes(store.document.nodes, 0)
+  // Dynamic uk-icon attributes need a UIkit pass to hydrate into SVG.
+  ;(UIkit as unknown as { update(element: Element): void }).update(outlineElement)
 }
 
 function applyPreviewTheme(theme: BuilderTheme): void {
