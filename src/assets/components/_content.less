@@ -3,7 +3,7 @@
 .jlz-eyebrow {
   min-height: 1em;
   font-family: 'SF Mono', 'Cascadia Code', 'JetBrains Mono', 'Consolas', monospace;
-  font-size: clamp(2rem, 6vw, 3rem);
+  font-size: clamp(@jlz-type-step-3, 6vw, @jlz-type-step-4); // φ steps 3–4
   font-weight: 200;
   line-height: 1;
   opacity: 0.35;
@@ -102,7 +102,7 @@
 .jlz-contact-panel__address {
   display: inline-block;
   margin-top: 1.5rem;
-  font-size: clamp(1.45rem, 3.5vw, 3.4rem);
+  font-size: clamp(@jlz-type-step-2, 3.5vw, @jlz-type-step-4); // φ steps 2–4
   font-weight: 500;
   line-height: 1;
   text-decoration: none;
@@ -134,7 +134,7 @@
 .jlz-service-console__statement,
 .jlz-service-runtime__caption {
   max-width: 29rem;
-  font-size: clamp(1.15rem, 2.3vw, 1.7rem);
+  font-size: clamp(@jlz-type-step-1, 2.3vw, @jlz-type-step-2); // φ steps 1–2
   line-height: 1.25;
 }
 
@@ -229,7 +229,7 @@
   display: grid;
   width: min(100%, 28rem);
   color: var(--jlz-color-text);
-  font-size: clamp(3.15rem, 16vw, 5.75rem);
+  font-size: clamp(@jlz-type-step-4, 16vw, @jlz-type-step-5); // φ steps 4–5
   font-weight: 250;
   line-height: 0.8;
 }

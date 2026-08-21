@@ -121,7 +121,8 @@ do not start a phase whose entry gate has not passed.
       `_import.less` §1 tokens key-for-key — the ADR 0007 Neon Stage identity
       with the three semantic status tokens, 9 documented aliases — unit-locked
       by a Less parity test; inert until the Phase 5 generated adapters
-      consume it). The
+      consume it; the seven `type-step` tokens own the golden-ratio chain
+      every rendered display clamp() snaps to). The
       typed motion-preference port is now formalized
       (`src/core/motionPolicy.ts`, 178/178 unit suite; 11 consumers read
       through it, the dead `syncReducedMotionDataset` writer removed, the

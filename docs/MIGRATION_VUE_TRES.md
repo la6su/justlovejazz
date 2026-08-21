@@ -1548,6 +1548,40 @@ product page and the admin editor with zero console errors and
 
 Rollback: revert the change set (ADR 0007 is superseded, not rewritten).
 
+#### Phase 4 golden-ratio scale rendering + admin preview modes slice — 2026-08-21
+
+Follow-up to ADR 0007: the φ chain existed only in the console-theme UIkit
+globals, while every rendered display composition bypassed it with ad-hoc
+`clamp()` endpoints, and the admin preview viewport modes (desktop / tablet /
+mobile) were broken — the `width` transition on the preview frame fought the
+`auto` grid track and never settled, so the frame stayed full-width in every
+mode.
+
+- `src/assets/_import.less` §1/§2: seven new `@jlz-type-step-*` tokens own
+  the φ chain (0.875 / 1.414 / 2.288 / 3.702 / 6 / 9.708 / 15.707rem; each
+  step ≈ previous × 1.618), rem-based on the mobile-first html base
+  (0.85rem → 1rem ≥ 640px). `brandTokens.ts` mirrors them (87 → 94 tokens);
+  the parity test pins the new count.
+- `src/assets/console-theme/_import.less`: the UIkit heading sizes now
+  reference the step tokens instead of re-declaring the chain literals.
+- Product display `clamp()`s (`_content.less`, `main.less`,
+  `_cinematic-language.less`, `blog.less`) snap their endpoints onto the
+  step tokens; body-tier text and micro mono labels stay off the display
+  chain.
+- `admin/admin.less`: the `width` transition on
+  `.jlz-admin-preview-frame` (and its dead reduced-motion line) is removed —
+  the viewport switch now applies instantly (desktop 861px / tablet 820px /
+  mobile 390px verified in the live editor). The editor shell stays
+  desktop-only by owner decision; only the preview frame is responsive.
+
+Verification: scoped prettier, `vue-tsc`, 240/240 unit suite (29 files),
+production build with the admin graph absent from `dist`, `git diff --check`
+clean, serial e2e 18/18, live smoke: product page renders φ clamp endpoints
+(zero console errors) and the admin preview switches desktop → tablet → mobile →
+tablet with the correct frame widths (fluid / 820px / 390px).
+
+Rollback: revert the change set.
+
 ### Phase 5 — Vue public shell and router
 
 Scope:

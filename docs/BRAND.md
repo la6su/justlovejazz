@@ -22,9 +22,14 @@ inverse polarity is a cool paper field, kept as an explicit accessibility
 preference rather than a section art direction. Semantic status colors
 (success, warning, danger) belong to the token chain: warning and danger
 alias the brand signals, and success is the only green in the system.
-The type scale is a golden-ratio (φ = 1.618) modular chain, mobile-first:
-html font-size is 0.85rem on mobile and 1rem on desktop, so every rem-based
-size settles smaller on small screens before scaling up.
+The type scale is a golden-ratio (φ = 1.618) modular chain owned by the
+`type-step` tokens (0.875 / 1.414 / 2.288 / 3.702 / 6 / 9.708 / 15.707rem),
+mobile-first: html font-size is 0.85rem on mobile and 1rem on desktop, so
+every rem-based size settles smaller on small screens before scaling up.
+Rendered display compositions use `clamp(step, fluid middle, step)` between
+two chain steps; body-tier text stays off the display chain. The admin
+editor is a desktop tool, but its live preview switches desktop / tablet /
+mobile widths correctly.
 
 Treat a diagonal cut as a structural event: a major action, a route handoff or
 the edge of one authored surface. Treat a circle as a current-state marker.

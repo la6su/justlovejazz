@@ -398,7 +398,7 @@
 .jlz-work-card__title {
   --jlz-vf-weight: 620;
   color: @jlz-color-text;
-  font-size: clamp(1.15rem, 2.1vw, 2rem);
+  font-size: clamp(@jlz-type-step-2, 2.1vw, @jlz-type-step-3); // φ steps 2–3
   font-weight: 800;
   line-height: 1;
 }
@@ -498,7 +498,7 @@
   }
 
   .jlz-work-card__title {
-    font-size: clamp(1rem, 5.2vw, 1.25rem);
+    font-size: clamp(@jlz-type-step-1, 5.2vw, @jlz-type-step-2); // φ steps 1–2
   }
 
   .jlz-work-card__meta {
@@ -881,7 +881,7 @@ body[data-cinematic-sheet='menu'] .jlz-menu-overlay .jlz-menu-nav__toggle {
 }
 
 .jlz-menu-overlay .jlz-menu-stat__num {
-  font-size: clamp(6rem, 16vw, 14rem);
+  font-size: clamp(@jlz-type-step-5, 16vw, @jlz-type-step-7); // φ steps 5–7
   color: inherit;
 }
 
@@ -892,7 +892,7 @@ body[data-cinematic-sheet='menu'] .jlz-menu-overlay .jlz-menu-nav__toggle {
 }
 
 .jlz-menu-overlay .jlz-menu-nav__label {
-  font-size: clamp(1.7rem, 4vw, 4.5rem);
+  font-size: clamp(@jlz-type-step-2, 4vw, @jlz-type-step-4); // φ steps 2–4
   line-height: 0.94;
 }
 
@@ -1133,7 +1133,7 @@ body[data-cinematic-sheet]
 
   .jlz-contact-footer__intro .studio-title {
     max-width: 11ch;
-    font-size: clamp(2.5rem, 13vw, 4.5rem);
+    font-size: clamp(@jlz-type-step-3, 13vw, @jlz-type-step-4); // φ steps 3–4
   }
 
   .jlz-contact-footer__intro .uk-text-lead {
@@ -1225,7 +1225,7 @@ body[data-cinematic-sheet]
 }
 
 .jlz-menu-stat__num {
-  font-size: clamp(4rem, 12vw, 9rem);
+  font-size: clamp(@jlz-type-step-4, 12vw, @jlz-type-step-6); // φ steps 4–6
   font-weight: 900;
   line-height: 0.85;
 }
@@ -1273,7 +1273,7 @@ body[data-cinematic-sheet]
 }
 
 .jlz-menu-nav__label {
-  font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+  font-size: clamp(@jlz-type-step-2, 2.5vw, @jlz-type-step-3); // φ steps 2–3
   font-weight: 800;
   text-transform: none;
   flex: 1;
@@ -1430,7 +1430,7 @@ body[data-cinematic-sheet] .jlz-console-bar {
   }
 
   .jlz-menu-overlay .jlz-menu-nav__label {
-    font-size: clamp(1.5rem, 7vw, 2.5rem);
+    font-size: clamp(@jlz-type-step-2, 7vw, @jlz-type-step-3); // φ steps 2–3
   }
 
   .jlz-menu-overlay .jlz-menu-sheet__header {

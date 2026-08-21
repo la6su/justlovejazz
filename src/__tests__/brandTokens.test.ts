@@ -68,8 +68,8 @@ function parseLessTokens(): Map<string, string> {
 }
 
 describe('brand token manifest', () => {
-  it('holds exactly the 87 canonical §1 tokens', () => {
-    expect(BRAND_TOKEN_NAMES).toHaveLength(87)
+  it('holds exactly the 94 canonical §1 tokens', () => {
+    expect(BRAND_TOKEN_NAMES).toHaveLength(94)
     expect(new Set(BRAND_TOKEN_NAMES).size).toBe(BRAND_TOKEN_NAMES.length)
   })
 
@@ -127,7 +127,7 @@ describe('brand token manifest', () => {
 
   it('the manifest mirrors §1 of _import.less key-for-key', () => {
     const less = parseLessTokens()
-    expect(less.size).toBe(87)
+    expect(less.size).toBe(94)
     expect([...less.keys()].sort()).toEqual([...BRAND_TOKEN_NAMES].sort())
   })
 

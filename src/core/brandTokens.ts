@@ -151,6 +151,17 @@ const MOTION: Record<string, Token> = {
   'ease-cinematic': 'cubic-bezier(0.65, 0, 0.35, 1)',
 }
 
+// ── Type scale: golden-ratio (φ = 1.618) modular chain ──
+const TYPE: Record<string, Token> = {
+  'type-step-1': '0.875rem',
+  'type-step-2': '1.414rem',
+  'type-step-3': '2.288rem',
+  'type-step-4': '3.702rem',
+  'type-step-5': '6rem',
+  'type-step-6': '9.708rem',
+  'type-step-7': '15.707rem',
+}
+
 // ── Layout ──
 const LAYOUT: Record<string, Token> = {
   'page-max-width': '90rem',
@@ -189,6 +200,7 @@ export const BRAND_TOKENS: Readonly<Record<string, Token>> = {
   ...Object.fromEntries(Object.entries(SURFACE).map(([k, v]) => [`${BRAND_TOKEN_PREFIX}-${k}`, v])),
   ...Object.fromEntries(Object.entries(Z).map(([k, v]) => [`${BRAND_TOKEN_PREFIX}-${k}`, v])),
   ...Object.fromEntries(Object.entries(MOTION).map(([k, v]) => [`${BRAND_TOKEN_PREFIX}-${k}`, v])),
+  ...Object.fromEntries(Object.entries(TYPE).map(([k, v]) => [`${BRAND_TOKEN_PREFIX}-${k}`, v])),
   ...Object.fromEntries(Object.entries(LAYOUT).map(([k, v]) => [`${BRAND_TOKEN_PREFIX}-${k}`, v])),
 }
 

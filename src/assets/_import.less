@@ -88,6 +88,18 @@
 // compositions use weight, scale and line-height for hierarchy instead.
 @jlz-letter-spacing: 0;
 
+// ── Type scale: golden-ratio (φ = 1.618) modular chain ──
+// Each step ≈ the previous × φ. Rem-based on the mobile-first html base
+// (0.85rem mobile → 1rem ≥640px), so the whole chain scales down on phones.
+// Display compositions use clamp(step, fluid middle, step).
+@jlz-type-step-1: 0.875rem;
+@jlz-type-step-2: 1.414rem;
+@jlz-type-step-3: 2.288rem;
+@jlz-type-step-4: 3.702rem;
+@jlz-type-step-5: 6rem;
+@jlz-type-step-6: 9.708rem;
+@jlz-type-step-7: 15.707rem;
+
 // ── Spacing (4px base, rem-based — scales with html font-size) ──
 @jlz-space-0: 0;
 @jlz-space-1: 0.25rem;
@@ -209,6 +221,14 @@
   --jlz-space-20: @jlz-space-20;
   --jlz-space-24: @jlz-space-24;
   --jlz-space-32: @jlz-space-32;
+
+  --jlz-type-step-1: @jlz-type-step-1;
+  --jlz-type-step-2: @jlz-type-step-2;
+  --jlz-type-step-3: @jlz-type-step-3;
+  --jlz-type-step-4: @jlz-type-step-4;
+  --jlz-type-step-5: @jlz-type-step-5;
+  --jlz-type-step-6: @jlz-type-step-6;
+  --jlz-type-step-7: @jlz-type-step-7;
 
   --jlz-radius-sm: @jlz-radius-sm;
   --jlz-radius-md: @jlz-radius-md;
