@@ -1183,6 +1183,39 @@ Scope limits: no consumer rewiring; the initial-hash-replay wake
 lazy init inside `setContactCyprusStageSection` are consumer concerns, not
 scope policy. Rollback: delete the contract file and its tests.
 
+#### Phase 3 story progress contract slice — 2026-08-21
+
+The story's progress→section mapping — the rule that keeps the 3D world and
+the DOM navigation arriving at the same section in the same neutral point —
+is extracted from `World.updateTransform` into a pure contract:
+
+- `src/core/storyProgress.ts` provides two pure functions:
+  `clampStoryProgress` (non-finite → 0, clamp to [0, 1]) and
+  `sectionIndexAt(progress, sectionCount)` — the **midpoint arrival rule**
+  `round(progress × (sectionCount − 1))`.
+- This rule is a real, load-bearing fix, not an obvious identity: deriving
+  the index from the _from_ range made down-scroll arrivals land at the end
+  of a frame while up-scroll arrivals landed immediately after leaving the
+  section — a visible, direction-dependent second beat. The midpoint rule is
+  a pure function of progress, so a given progress always yields the same
+  index regardless of scroll direction. That invariant (plus the exact `.5`
+  boundary, where JS rounds up into the next section — the same neutral point
+  CinematicNav uses to flip its DOM chapter) is now unit-locked instead of
+  living only in a comment.
+- Unlike the previous contracts, this one is **consumed immediately**:
+  `World.updateTransform` imports `clampStoryProgress` and `sectionIndexAt`
+  and reads them at the exact points where it inlined the clamp + round
+  before. The read timing is unchanged — this is a 1:1 source-of-fact swap,
+  not a deferred rewiring. `World.routeVisuals` integration tests (5/5) and
+  the 9 new `storyProgress` unit tests (200/200) lock it.
+- `vue-tsc` clean; production build byte-size stable; runtime smoke boots on
+  home with zero console errors.
+
+Scope limits: the mapping is the progress→index rule only; the per-section
+easing (`_applyEasing`, double-ease for bg/fog) and the lights/fog/env
+systems fired on index change stay with the consumer. Rollback: restore the
+two inline expressions in `updateTransform` and delete the contract.
+
 ### Phase 4 — Vue Page Builder
 
 Scope:
@@ -1433,6 +1466,7 @@ The following ledgers are updated in this document during implementation.
 | backend fallback         | `Renderer.ts`                                                                                                                               | `RendererFactory`                                                            | 2, 6            |
 | post-processing          | dual `RenderPipeline` paths                                                                                                                 | TSL graph (`WebGPUBackend`) + forced-WebGL fallback per the Phase 6 decision | 2, 6            |
 | route GPU resources      | `World` lazy stages + `routeResourceScopes.ts` pure policy contract (inert until consumed)                                                  | route resource scopes                                                        | 3, 8            |
+| story progress→section   | `storyProgress.ts` pure midpoint rule (consumed: `World.updateTransform` 1:1 swap, timing unchanged)                                        | story progress contract owned by the app providers                           | 3, 5            |
 | semantic UI              | string templates + UI classes                                                                                                               | Vue route/features + UIkit adapters                                          | 4, 5            |
 | builder                  | `admin/main.ts`                                                                                                                             | Vue builder app                                                              | 4               |
 | static content           | standalone pages                                                                                                                            | shared SSG pipeline                                                          | 9               |

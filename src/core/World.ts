@@ -14,6 +14,7 @@ import { EnvSphere } from '../Experience/World/EnvSphere'
 import { ParticleBurst } from '../Experience/World/ParticleBurst'
 import { getWorldConfigForPage, type PhaseConfig } from './WorldConfig'
 import { getCurrentPage } from './routePage'
+import { clampStoryProgress, sectionIndexAt } from './storyProgress'
 import { SectionSceneFactory } from './SectionSceneFactory'
 import { disposeSection3Textures } from '../sections/works/scene'
 // updateInstancedParticles removed — was a no-op. Particles are static.
@@ -652,8 +653,8 @@ export class World extends THREE.Group {
   // Uses PhaseConfig.range[] for weighted scroll buckets
   // Applies S-curve easing to t so transitions have "comfort zones"
   public updateTransform(scrollValue: number): WorldTransformResult {
-    if (!Number.isFinite(scrollValue)) scrollValue = 0
-    scrollValue = THREE.MathUtils.clamp(scrollValue, 0, 1)
+    // Story progress contract: non-finite settles to 0, clamp to [0, 1].
+    scrollValue = clampStoryProgress(scrollValue)
     if (this.sections.length === 0) return this.defaultResult()
 
     // ── Find from/to indices from range config
@@ -707,7 +708,9 @@ export class World extends THREE.Group {
     // Using `fromIndex` here made down-scroll arrivals happen at the *end* of
     // a frame while up-scroll arrivals happened immediately after leaving it,
     // creating a visible direction-dependent second beat.
-    const activeIndex = Math.round(scrollValue * (this.sections.length - 1))
+    // The midpoint rule itself is the pure storyProgress contract (unit-
+    // locked, including the .5 boundary and direction independence).
+    const activeIndex = sectionIndexAt(scrollValue, this.sections.length)
     if (activeIndex !== this._currentSectionIndex) {
       this._currentSectionIndex = activeIndex
       // Junni changeSection() pattern: lights + fog + env sphere driven by section data

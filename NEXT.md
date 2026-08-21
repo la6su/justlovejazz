@@ -126,8 +126,13 @@ do not start a phase whose entry gate has not passed.
       persistent carousel vs route-scoped works/contact stages acquire/
       dispose policy is line-verified against the `Experience.ts`
       route-change handler and unit-locked; inert until the Phase 8
-      rewiring); the open contracts are the story/scene ports and the
-      RenderScheduler consumer migration.
+      rewiring). The story progress→section mapping is now a pure contract
+      (`src/core/storyProgress.ts`, 200/200 unit suite; the midpoint
+      arrival rule — direction-independent, exact `.5` boundary unit-
+      locked — is **already consumed** by `World.updateTransform` as a 1:1
+      source-of-fact swap with unchanged timing); the open contracts are the
+      remaining story/scene ports and the RenderScheduler consumer
+      migration.
 
 - [ ] **Phase 4: migrate the development Page Builder to Vue** — use the
       isolated admin application as the first state-heavy Vue surface while
