@@ -369,7 +369,7 @@
   gap: @global-small-margin;
   padding: clamp(0.75rem, 1.5vw, 1.1rem);
   border: 0;
-  color: #f4f7ed;
+  color: var(--jlz-color-text);
   background: rgba(5, 7, 6, 0.88);
   pointer-events: none;
   transition:
@@ -493,7 +493,7 @@
   .jlz-work-card__caption {
     min-height: 3.6rem;
     padding: 0.62rem 0.72rem;
-    border-color: rgba(244, 247, 237, 0.22);
+    border-color: color-mix(in srgb, var(--jlz-color-text) 22%, transparent);
     background: rgba(5, 7, 6, 0.94);
   }
 

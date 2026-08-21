@@ -1504,6 +1504,50 @@ theme Reset round-trip) with zero console errors and `page.json` untouched.
 
 Rollback: revert the five changed files and delete the two new ones.
 
+#### Phase 4 brand system unification slice (Neon Stage) — 2026-08-21
+
+Owner-approved product decision (ADR 0007): one brand identity, one token
+chain. The Neon Stage identity replaces the paper/ink palette across the
+product, the blog, the scene fallbacks and the admin editor, and every
+parallel color source is deleted so the brand is described once:
+
+- `src/assets/_import.less` §1/§2: the Neon Stage palette (cool near-black
+  surfaces, cool ivory text, electric-yellow accent with glow, cool + ember
+  signals, cool-paper inverse), three semantic status tokens
+  (`color-status-success` plus `warning`/`danger` aliases to the brand
+  signals) and the 6–10px radius language. `color-fluid-warm` becomes an
+  alias of the accent; `color-cursor-hover` aliases the ember signal.
+- `src/assets/console-theme/_import.less`: status colors now reference the
+  brand status tokens; the heading scale becomes the golden-ratio
+  (φ = 1.618) modular chain 0.875 / 1.414 / 2.288 / 3.702 / 6rem, riding the
+  existing mobile-first `html` base (0.85rem mobile → 1rem ≥640px).
+- `src/core/brandTokens.ts` + `brandTokens.test.ts`: the typed mirror moves
+  to Neon Stage with the 87-token count, the three status tokens and the
+  extended alias record (9 documented aliases incl. `color-fluid-warm`);
+  the locked literals pin the new core facts.
+- Builder layer: `DEFAULT_BUILDER_THEME` and the committed
+  `src/builder/generated/page.json` are re-themed to Neon Stage (8px control
+  radii), and `theme.generated.less` / `components.generated.less` are
+  regenerated through `compiler.ts` (never hand-edited).
+- Parallel color sources removed: `main.less` caption chips,
+  `_paper-ink-language.less` (launchers, captions, inverse overrides),
+  `blog.less` accent fallback and the `Cursor.ts` cached fallbacks now read
+  the token chain; the `entry-app.ts` 3D-failed state keeps its inline
+  fallback but paints from the same tokens.
+- `admin/admin.less`: all ~60 ad-hoc hex values replaced with `--jlz-*`
+  runtime variables (status dots onto the new status tokens, accent states
+  onto the brand accent/glow), and the dead `var(--builder-*, fallback)`
+  literals simplified — the preview always applies `--builder-*` through
+  `themeToCssVars`, so the fallbacks were unreachable.
+
+Verification: scoped prettier, `vue-tsc` clean, 240/240 unit suite (29
+files), production build clean with the admin graph absent from `dist`,
+`git diff --check` clean, serial e2e 18/18, runtime smoke on the live
+product page and the admin editor with zero console errors and
+`page.json` byte-identical to the committed artifact.
+
+Rollback: revert the change set (ADR 0007 is superseded, not rewritten).
+
 ### Phase 5 — Vue public shell and router
 
 Scope:
@@ -1732,7 +1776,7 @@ The following ledgers are updated in this document during implementation.
 | six world slots          | `worldSlots.ts` tuple + strict `worldSlotIndex` (consumed by `WorldConfig.ts`, `SplashCube.ts`, `CinematicNav.ts` slot-index constants)                                                                                           | domain tuple + `WorldRoot`                                                   | 3, 7, 8         |
 | render demand            | `renderDemand.ts` pure decision contract (consumed: `Experience.update()` 1:1 swap — OR/breath/settle; `Experience._needsRender` stays the flag)                                                                                  | `RenderScheduler`                                                            | 3, 7            |
 | motion preference        | `motionPolicy.ts` typed port (11 consumers); `entry-shell.ts` dataset hook for E2E/CSS (dead `syncReducedMotionDataset` removed 2026-08-21)                                                                                       | typed preference state owned by the app providers                            | 3, 5            |
-| brand/runtime tokens     | `brandTokens.ts` manifest (mirrors `_import.less` §1, unit-locked; Less stays source of truth)                                                                                                                                    | typed manifest + generated adapters                                          | 3, 5            |
+| brand/runtime tokens     | `brandTokens.ts` manifest (87 tokens, mirrors `_import.less` §1 key-for-key, unit-locked; Less stays source of truth; ADR 0007 Neon Stage identity — status tokens + φ type scale; every parallel color source removed)           | typed manifest + generated adapters                                          | 3, 5            |
 | motion preference        | `motionPolicy.ts` typed port (11 consumers; dead `syncReducedMotionDataset` writer removed); `entry-shell.ts` dataset hook for E2E/CSS                                                                                            | typed preference state owned by the app providers                            | 3, 5            |
 | backend fallback         | `Renderer.ts`                                                                                                                                                                                                                     | `RendererFactory`                                                            | 2, 6            |
 | post-processing          | dual `RenderPipeline` paths                                                                                                                                                                                                       | TSL graph (`WebGPUBackend`) + forced-WebGL fallback per the Phase 6 decision | 2, 6            |

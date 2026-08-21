@@ -41,10 +41,10 @@
 @base-heading-text-transform: uppercase;
 @base-heading-letter-spacing: @jlz-letter-spacing;
 
-// ── Status colors ──
-@global-success-background: #5ecd89;
-@global-warning-background: #fff138;
-@global-danger-background: #ff464c;
+// ── Status colors — owned by the brand status tokens (ADR 0007) ──
+@global-success-background: @jlz-color-status-success;
+@global-warning-background: @jlz-color-status-warning;
+@global-danger-background: @jlz-color-status-danger;
 
 // ── Box-shadows (cinematic depth) ──
 @global-small-box-shadow: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.5);
@@ -53,14 +53,18 @@
 @global-xlarge-box-shadow: 0 1.75rem 3rem rgba(0, 0, 0, 0.5);
 
 // ── Heading font-sizes (rem-based, mobile-first) ──
-@global-2xlarge-font-size: 2.5rem;
-@global-xlarge-font-size: 1.875rem;
-@global-large-font-size: 1.375rem;
-@global-medium-font-size: 1.125rem;
+// Golden-ratio (φ = 1.618) modular chain from the small base; html font-size
+// is 0.85rem on mobile and 1rem on desktop, so the whole chain scales down
+// mobile-first. Display sizes beyond h1 stay with the clamp() compositions
+// in _content.less.
+@global-2xlarge-font-size: 6rem;
+@global-xlarge-font-size: 3.702rem;
+@global-large-font-size: 2.288rem;
+@global-medium-font-size: 1.414rem;
 @global-small-font-size: 0.875rem;
 @base-blockquote-font-size: @global-large-font-size;
 @base-blockquote-footer-font-size: @global-small-font-size;
-@heading-small-font-size: 2.2rem;
+@heading-small-font-size: @global-large-font-size;
 
 // ── Color-mode overrides (dark surfaces → light text) ──
 // UIKit3 color-mode: dark = "dark background → light text".

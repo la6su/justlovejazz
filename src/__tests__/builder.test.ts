@@ -61,7 +61,7 @@ describe('Page Builder document', () => {
 
   it('compiles global, inverse and component decisions into whitelisted Less', () => {
     const less = generateBuilderThemeLess(DEFAULT_BUILDER_DOCUMENT)
-    expect(less).toContain('@jlz-inverse-bg: #efe0cc;')
+    expect(less).toContain('@jlz-inverse-bg: #e9eef5;')
     expect(less).toContain('@button-line-height: 44px;')
     expect(less).toContain('@card-body-padding-horizontal: 32px;')
     expect(less).not.toContain('undefined')

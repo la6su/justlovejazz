@@ -15,10 +15,16 @@ precise rather than sterile.
 - Keep motion purposeful: navigation feedback, state change, material response
   and focus. Honour reduced-motion settings.
 
-The interface derives its palette from the original mark and the selected
-paper/ink reference system: warm paper fields, near-black structural planes,
-warm-white text and electric yellow as a concentrated interaction signal. A
-muted mineral tone may support depth, but does not compete with the yellow.
+The interface derives its palette from the accepted **Neon Stage** identity
+(ADR 0007): a cool near-black stage, cool ivory text, one concentrated
+electric-yellow accent, a cool second signal and an ember error signal. The
+inverse polarity is a cool paper field, kept as an explicit accessibility
+preference rather than a section art direction. Semantic status colors
+(success, warning, danger) belong to the token chain: warning and danger
+alias the brand signals, and success is the only green in the system.
+The type scale is a golden-ratio (φ = 1.618) modular chain, mobile-first:
+html font-size is 0.85rem on mobile and 1rem on desktop, so every rem-based
+size settles smaller on small screens before scaling up.
 
 Treat a diagonal cut as a structural event: a major action, a route handoff or
 the edge of one authored surface. Treat a circle as a current-state marker.

@@ -44,18 +44,18 @@ export class Cursor {
 
   // Cached theme colors — read once from CSS variables, refreshed on theme change.
   // Avoids 4× getComputedStyle per redraw (was a per-frame allocation hotspot).
-  private _cachedAccent = '#b8ed69'
-  private _cachedAccentGlow = 'rgba(184,237,105,0.22)'
-  private _cachedTeal = '#45d7bc'
+  private _cachedAccent = '#ffd60a'
+  private _cachedAccentGlow = 'rgba(255, 214, 10, 0.35)'
+  private _cachedTeal = '#5eb0ff'
   private _cacheDirty = true
 
   /** Refresh cached theme colors from CSS variables. Call on theme change. */
   refreshThemeCache(): void {
     const styles = getComputedStyle(document.documentElement)
-    this._cachedAccent = styles.getPropertyValue('--jlz-color-accent').trim() || '#b8ed69'
+    this._cachedAccent = styles.getPropertyValue('--jlz-color-accent').trim() || '#ffd60a'
     this._cachedAccentGlow =
-      styles.getPropertyValue('--jlz-color-accent-glow').trim() || 'rgba(184,237,105,0.22)'
-    this._cachedTeal = styles.getPropertyValue('--jlz-color-signal-teal').trim() || '#45d7bc'
+      styles.getPropertyValue('--jlz-color-accent-glow').trim() || 'rgba(255, 214, 10, 0.35)'
+    this._cachedTeal = styles.getPropertyValue('--jlz-color-signal-teal').trim() || '#5eb0ff'
     this._cacheDirty = false
   }
 

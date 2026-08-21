@@ -13,6 +13,7 @@ execution order.
 | [0004](0004-preserve-demand-rendering.md)      | Accepted with gates | Preserve one demand-driven render scheduler          |
 | [0005](0005-integrate-uikit-with-vue.md)       | Accepted            | Keep UIkit behind Vue lifecycle adapters             |
 | [0006](0006-use-incremental-migration.md)      | Accepted            | Migrate through reversible vertical slices           |
+| [0007](0007-unify-brand-token-system.md)       | Accepted            | One Neon Stage identity and one brand token chain    |
 
 `Proposed` decisions cannot remove a working production path. Change an ADR's
 status with a superseding decision; do not rewrite its original context after

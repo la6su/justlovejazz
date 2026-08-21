@@ -3,7 +3,7 @@
 :root {
   color-scheme: dark;
   font-family: @jlz-font-body;
-  background: #080908;
+  background: var(--jlz-color-bg);
 }
 
 * {
@@ -13,8 +13,8 @@
 body {
   margin: 0;
   overflow: hidden;
-  color: #e9ece8;
-  background: #080908;
+  color: var(--jlz-color-text);
+  background: var(--jlz-color-bg);
 }
 
 button,
@@ -41,8 +41,8 @@ textarea {
   gap: 12px;
   align-items: center;
   padding: 0 16px;
-  border-bottom: 1px solid #30342f;
-  background: #101210;
+  border-bottom: 1px solid var(--jlz-color-border);
+  background: var(--jlz-color-bg-elevated);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28);
   z-index: 4;
 }
@@ -60,9 +60,9 @@ textarea {
   place-items: center;
   width: 34px;
   height: 34px;
-  color: #090a09;
-  background: @jlz-color-accent;
-  font-family: @jlz-font-mono;
+  color: var(--jlz-color-text-inverse);
+  background: var(--jlz-color-accent);
+  font-family: var(--jlz-font-mono);
   font-size: 0.72rem;
   font-weight: 800;
 }
@@ -77,13 +77,13 @@ textarea {
   padding-inline: 10px;
   border-color: transparent;
   background: transparent;
-  color: #f7f8f6;
+  color: var(--jlz-color-text);
   font-weight: 600;
 }
 
 .jlz-admin-title .uk-input:focus {
-  border-color: #4b504a;
-  background: #171a17;
+  border-color: var(--jlz-color-border-strong);
+  background: var(--jlz-color-surface-hover);
 }
 
 .jlz-admin-history,
@@ -95,9 +95,9 @@ textarea {
 .jlz-admin-history .uk-button {
   min-width: 0;
   padding-inline: 10px;
-  color: #c9cdc8;
-  background: #181b18;
-  border-color: #333733;
+  color: var(--jlz-color-text-muted);
+  background: var(--jlz-color-surface);
+  border-color: var(--jlz-color-border);
 }
 
 .jlz-admin-history .uk-button:disabled {
@@ -108,9 +108,9 @@ textarea {
 // Save is the one primary action in the toolbar — the brand accent, not the
 // product theme's dark primary.
 .jlz-admin-toolbar .uk-button-primary {
-  border-color: @jlz-color-accent;
-  color: #090a09;
-  background: @jlz-color-accent;
+  border-color: var(--jlz-color-accent);
+  color: var(--jlz-color-text-inverse);
+  background: var(--jlz-color-accent);
   font-weight: 700;
   transition:
     background 140ms ease,
@@ -118,8 +118,8 @@ textarea {
 }
 
 .jlz-admin-toolbar .uk-button-primary:hover:not(:disabled) {
-  background: #e8e01c;
-  box-shadow: 0 0 0 3px rgba(255, 247, 44, 0.16);
+  background: var(--jlz-color-accent-hover);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--jlz-color-accent) 16%, transparent);
 }
 
 .jlz-admin-toolbar .uk-button-primary:disabled {
@@ -129,15 +129,15 @@ textarea {
 
 .jlz-admin-viewports {
   padding: 3px;
-  border: 1px solid #30342f;
-  background: #0b0d0b;
+  border: 1px solid var(--jlz-color-border);
+  background: var(--jlz-color-bg);
 }
 
 .jlz-admin-viewports button,
 .jlz-admin-tabs button,
 .jlz-admin-node-actions button {
   border: 0;
-  color: #9da39c;
+  color: var(--jlz-color-text-subtle);
   background: transparent;
   cursor: pointer;
 }
@@ -145,7 +145,7 @@ textarea {
 // One keyboard affordance for every custom control; the element catalog keeps
 // its own border-color focus style (declared later, same specificity).
 .jlz-admin :is(button, a):focus-visible {
-  outline: 2px solid rgba(255, 247, 44, 0.6);
+  outline: 2px solid color-mix(in srgb, var(--jlz-color-accent) 60%, transparent);
   outline-offset: 2px;
 }
 
@@ -156,15 +156,15 @@ textarea {
 }
 
 .jlz-admin-viewports button.is-active {
-  color: #090a09;
-  background: @jlz-color-accent;
+  color: var(--jlz-color-text-inverse);
+  background: var(--jlz-color-accent);
 }
 
 .jlz-admin-status {
   position: relative;
   overflow: hidden;
   padding-left: 14px;
-  color: #8f968e;
+  color: var(--jlz-color-text-subtle);
   font-size: 0.72rem;
   text-align: right;
   text-overflow: ellipsis;
@@ -180,45 +180,45 @@ textarea {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #565c55;
+  background: var(--jlz-color-text-subtle);
   content: '';
   transform: translateY(-50%);
 }
 
 .jlz-admin-status[data-state='ready']::before {
-  background: #46d68b;
+  background: var(--jlz-color-status-success);
 }
 
 .jlz-admin-status[data-state='dirty']::before {
-  background: @jlz-color-accent;
+  background: var(--jlz-color-accent);
 }
 
 .jlz-admin-status[data-state='note']::before {
-  background: #9aa198;
+  background: var(--jlz-color-signal-cool);
 }
 
 .jlz-admin-status[data-state='error']::before {
-  background: #ff7568;
+  background: var(--jlz-color-status-danger);
 }
 
 .jlz-admin-status.is-error {
-  color: #ff7568;
+  color: var(--jlz-color-status-danger);
 }
 
 .jlz-admin-sidebar {
   overflow: auto;
   min-height: 0;
-  background: #121412;
+  background: var(--jlz-color-surface);
 }
 
 .jlz-admin-sidebar-left {
   grid-area: left;
-  border-right: 1px solid #30342f;
+  border-right: 1px solid var(--jlz-color-border);
 }
 
 .jlz-admin-sidebar-right {
   grid-area: right;
-  border-left: 1px solid #30342f;
+  border-left: 1px solid var(--jlz-color-border);
 }
 
 .jlz-admin-tabs {
@@ -227,7 +227,7 @@ textarea {
   z-index: 2;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  background: #0c0e0c;
+  background: var(--jlz-color-bg);
 }
 
 .jlz-admin-tabs button {
@@ -240,8 +240,8 @@ textarea {
 }
 
 .jlz-admin-tabs button.is-active {
-  border-color: @jlz-color-accent;
-  color: #f8faf7;
+  border-color: var(--jlz-color-accent);
+  color: var(--jlz-color-text);
 }
 
 .jlz-admin-panel-heading {
@@ -254,14 +254,14 @@ textarea {
 .jlz-admin-panel-heading h1,
 .jlz-admin-panel-heading h2 {
   margin: 4px 0 0;
-  color: #f5f7f4;
+  color: var(--jlz-color-text);
   font-size: 1rem;
   text-transform: none;
 }
 
 .jlz-admin-kicker {
-  color: #7e857d;
-  font-family: @jlz-font-mono;
+  color: var(--jlz-color-text-subtle);
+  font-family: var(--jlz-font-mono);
   font-size: 0.64rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -271,7 +271,7 @@ textarea {
 // action row (title + node actions) separate from the field list below.
 .jlz-admin-sidebar-right .jlz-admin-panel-heading {
   padding-top: 20px;
-  border-bottom: 1px solid #2d312d;
+  border-bottom: 1px solid var(--jlz-color-border);
 }
 
 .jlz-admin-catalog {
@@ -288,9 +288,9 @@ textarea {
   align-items: center;
   min-height: 48px;
   padding: 8px;
-  border: 1px solid #343834;
-  color: #d7dbd6;
-  background: #191c19;
+  border: 1px solid var(--jlz-color-border);
+  color: var(--jlz-color-text);
+  background: var(--jlz-color-surface);
   text-align: left;
   cursor: pointer;
 }
@@ -304,8 +304,8 @@ textarea {
 
 .jlz-admin-catalog button:hover,
 .jlz-admin-catalog button:focus-visible {
-  border-color: @jlz-color-accent;
-  background: #1f231f;
+  border-color: var(--jlz-color-accent);
+  background: var(--jlz-color-surface-hover);
   outline: none;
   transform: translateY(-1px);
 }
@@ -319,9 +319,9 @@ textarea {
   place-items: center;
   width: 28px;
   height: 28px;
-  color: @jlz-color-accent;
-  background: #0c0e0c;
-  font-family: @jlz-font-mono;
+  color: var(--jlz-color-accent);
+  background: var(--jlz-color-bg);
+  font-family: var(--jlz-font-mono);
 }
 
 .jlz-admin-outline-heading {
@@ -329,7 +329,7 @@ textarea {
   justify-content: space-between;
   align-items: baseline;
   padding: 16px 20px 10px;
-  border-top: 1px solid #2d312d;
+  border-top: 1px solid var(--jlz-color-border);
 }
 
 .jlz-admin-outline {
@@ -351,7 +351,7 @@ textarea {
   min-height: 34px;
   padding: 6px 10px 6px calc(10px + var(--depth, 0) * 16px);
   border: 0;
-  color: #abb0aa;
+  color: var(--jlz-color-text-muted);
   background: transparent;
   font-size: 0.78rem;
   text-align: left;
@@ -367,13 +367,13 @@ textarea {
   bottom: 5px;
   left: calc(14px + (var(--depth, 0) - 1) * 16px);
   width: 1px;
-  background: #262b26;
+  background: var(--jlz-color-border);
   content: '';
   opacity: clamp(0, var(--depth, 0), 1);
 }
 
 .jlz-admin-outline button:hover {
-  background: #1a1d1a;
+  background: var(--jlz-color-surface-hover);
 }
 
 // One line per node — the full name lives in the preview and the inspector.
@@ -385,12 +385,12 @@ textarea {
 }
 
 .jlz-admin-outline button.is-selected {
-  color: #101110;
-  background: @jlz-color-accent;
+  color: var(--jlz-color-text-inverse);
+  background: var(--jlz-color-accent);
 }
 
 .jlz-admin-outline-type {
-  font-family: @jlz-font-mono;
+  font-family: var(--jlz-font-mono);
   font-size: 0.62rem;
   opacity: 0.72;
   text-transform: uppercase;
@@ -405,28 +405,28 @@ textarea {
   width: 18px;
   height: 18px;
   border-radius: 3px;
-  color: @jlz-color-accent;
-  background: #0c0e0c;
-  font-family: @jlz-font-mono;
+  color: var(--jlz-color-accent);
+  background: var(--jlz-color-bg);
+  font-family: var(--jlz-font-mono);
   font-size: 0.66rem;
 }
 
 .jlz-admin-outline button.is-selected .jlz-admin-outline-icon {
-  color: #101110;
-  background: rgba(16, 17, 16, 0.14);
+  color: var(--jlz-color-text-inverse);
+  background: color-mix(in srgb, var(--jlz-color-text-inverse) 14%, transparent);
 }
 
 // The "Reset" action sits in the style panel heading row.
 .jlz-admin-panel-heading .uk-button-text {
   margin-top: 4px;
-  color: #7e857d;
+  color: var(--jlz-color-text-subtle);
   font-size: 0.72rem;
   transition: color 120ms ease;
 }
 
 .jlz-admin-panel-heading .uk-button-text:hover,
 .jlz-admin-panel-heading .uk-button-text:focus-visible {
-  color: @jlz-color-accent;
+  color: var(--jlz-color-accent);
 }
 
 .jlz-admin-stage {
@@ -438,7 +438,7 @@ textarea {
   padding: 0 24px 24px;
   background:
     linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px), #080908;
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px), var(--jlz-color-bg);
   background-size: 24px 24px;
 }
 
@@ -446,8 +446,8 @@ textarea {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  color: #717770;
-  font-family: @jlz-font-mono;
+  color: var(--jlz-color-text-subtle);
+  font-family: var(--jlz-font-mono);
   font-size: 0.64rem;
   text-transform: uppercase;
 }
@@ -458,8 +458,8 @@ textarea {
   height: 100%;
   margin: auto;
   overflow: auto;
-  border: 1px solid #3b403a;
-  background: #0c0b0a;
+  border: 1px solid var(--jlz-color-border-strong);
+  background: var(--jlz-color-bg);
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.52);
   transition: width 180ms ease;
 }
@@ -474,28 +474,28 @@ textarea {
 
 .jlz-builder-preview {
   min-height: 100%;
-  color: var(--builder-text, #f5e6d2);
-  background: var(--builder-background, #0c0b0a);
+  color: var(--builder-text);
+  background: var(--builder-background);
 }
 
 .jlz-builder-preview .jlz-builder-section.uk-section-default {
-  color: var(--builder-text, #f5e6d2);
-  background: var(--builder-background, #0c0b0a);
+  color: var(--builder-text);
+  background: var(--builder-background);
 }
 
 .jlz-builder-preview .jlz-builder-card.uk-card-default {
-  color: var(--builder-text, #f5e6d2);
-  background: var(--builder-surface, #12100f);
+  color: var(--builder-text);
+  background: var(--builder-surface);
 }
 
 .jlz-builder-preview .jlz-builder-card.uk-card-secondary {
-  color: var(--builder-text, #f5e6d2);
-  background: color-mix(in srgb, var(--builder-surface, #12100f) 72%, #40362d);
+  color: var(--builder-text);
+  background: var(--builder-background-elevated);
 }
 
 .jlz-builder-preview .jlz-builder-card.uk-card-primary {
-  color: #09090b;
-  background: var(--builder-accent, #fff72c);
+  color: var(--jlz-color-text-inverse);
+  background: var(--builder-accent);
 }
 
 .jlz-builder-preview .jlz-builder-card.uk-card-secondary :is(h1, h2, h3, h4, p),
@@ -504,13 +504,13 @@ textarea {
 }
 
 .jlz-builder-preview .uk-button-primary {
-  color: #09090b;
-  background: var(--builder-accent, #fff72c);
+  color: var(--jlz-color-text-inverse);
+  background: var(--builder-accent);
 }
 
 .jlz-builder-preview .jlz-builder-card,
 .jlz-builder-preview .uk-button {
-  border-radius: var(--builder-radius, 0);
+  border-radius: var(--builder-radius);
 }
 
 .jlz-builder-preview [data-builder-id] {
@@ -521,11 +521,11 @@ textarea {
 }
 
 .jlz-builder-preview [data-builder-id]:hover {
-  outline-color: rgba(255, 247, 44, 0.45);
+  outline-color: color-mix(in srgb, var(--jlz-color-accent) 45%, transparent);
 }
 
 .jlz-builder-preview [data-builder-id].is-selected {
-  outline: 2px solid var(--builder-accent, #fff72c);
+  outline: 2px solid var(--builder-accent);
   outline-offset: 4px;
 }
 
@@ -539,9 +539,9 @@ textarea {
   place-items: center;
   width: 30px;
   height: 30px;
-  border: 1px solid #343834;
-  color: #b9beb8;
-  background: #191c19;
+  border: 1px solid var(--jlz-color-border);
+  color: var(--jlz-color-text-muted);
+  background: var(--jlz-color-surface);
 }
 
 .jlz-admin-node-actions button {
@@ -553,9 +553,9 @@ textarea {
 }
 
 .jlz-admin-node-actions button:hover {
-  border-color: @jlz-color-accent;
-  color: @jlz-color-accent;
-  background: #1f231f;
+  border-color: var(--jlz-color-accent);
+  color: var(--jlz-color-accent);
+  background: var(--jlz-color-surface-hover);
   transform: translateY(-1px);
 }
 
@@ -571,7 +571,7 @@ textarea {
 }
 
 .jlz-admin-field > span {
-  color: #aeb3ad;
+  color: var(--jlz-color-text-muted);
   font-size: 0.72rem;
   font-weight: 600;
 }
@@ -579,9 +579,9 @@ textarea {
 .jlz-admin-field .uk-input,
 .jlz-admin-field .uk-select,
 .jlz-admin-field .uk-textarea {
-  border-color: #353a35;
-  color: #f0f2ef;
-  background: #0c0e0c;
+  border-color: var(--jlz-color-border);
+  color: var(--jlz-color-text);
+  background: var(--jlz-color-bg);
 }
 
 .jlz-admin-field .uk-textarea {
@@ -602,14 +602,14 @@ textarea {
   width: 48px;
   height: 40px;
   padding: 3px;
-  border: 1px solid #353a35;
-  background: #0c0e0c;
+  border: 1px solid var(--jlz-color-border);
+  background: var(--jlz-color-bg);
 }
 
 .jlz-admin-help {
   margin: 0;
   padding: 0 20px 22px;
-  color: #858b84;
+  color: var(--jlz-color-text-muted);
   font-size: 0.78rem;
   line-height: 1.55;
 }
@@ -620,15 +620,15 @@ textarea {
   align-items: center;
   margin: 0 20px 18px;
   padding: 12px;
-  border: 1px solid #30342f;
-  color: #c3c8c2;
-  background: #0c0e0c;
+  border: 1px solid var(--jlz-color-border);
+  color: var(--jlz-color-text-muted);
+  background: var(--jlz-color-bg);
   font-size: 0.76rem;
   cursor: pointer;
 }
 
 .jlz-admin-preview-all .uk-checkbox:checked {
-  background-color: @jlz-color-accent;
+  background-color: var(--jlz-color-accent);
 }
 
 .jlz-admin-style-navigation {
@@ -638,8 +638,8 @@ textarea {
 
 .jlz-admin-style-category {
   padding: 18px 8px 8px;
-  color: #777e77;
-  font-family: @jlz-font-mono;
+  color: var(--jlz-color-text-subtle);
+  font-family: var(--jlz-font-mono);
   font-size: 0.62rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -650,7 +650,7 @@ textarea {
   min-height: 38px;
   padding: 8px 12px 8px 20px;
   border: 0;
-  color: #aeb4ad;
+  color: var(--jlz-color-text-muted);
   background: transparent;
   font-size: 0.8rem;
   text-align: left;
@@ -664,23 +664,23 @@ textarea {
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: #505650;
+  background: var(--jlz-color-text-subtle);
   content: '';
   transform: translateY(-50%);
 }
 
 .jlz-admin-style-navigation button:hover {
-  color: #f1f3f0;
-  background: #191c19;
+  color: var(--jlz-color-text);
+  background: var(--jlz-color-surface);
 }
 
 .jlz-admin-style-navigation button.is-selected {
-  color: #0a0b0a;
-  background: @jlz-color-accent;
+  color: var(--jlz-color-text-inverse);
+  background: var(--jlz-color-accent);
 }
 
 .jlz-admin-style-navigation button.is-selected::before {
-  background: #0a0b0a;
+  background: var(--jlz-color-text-inverse);
 }
 
 .jlz-admin-preview-meta-actions,
@@ -692,35 +692,35 @@ textarea {
 
 .jlz-admin-tone-controls {
   padding: 2px;
-  border: 1px solid #30342f;
-  background: #0c0e0c;
+  border: 1px solid var(--jlz-color-border);
+  background: var(--jlz-color-bg);
 }
 
 .jlz-admin-tone-controls button {
   padding: 4px 8px;
   border: 0;
-  color: #777e77;
+  color: var(--jlz-color-text-subtle);
   background: transparent;
-  font-family: @jlz-font-mono;
+  font-family: var(--jlz-font-mono);
   font-size: 0.6rem;
   text-transform: uppercase;
   cursor: pointer;
 }
 
 .jlz-admin-tone-controls button.is-active {
-  color: #090a09;
-  background: @jlz-color-accent;
+  color: var(--jlz-color-text-inverse);
+  background: var(--jlz-color-accent);
 }
 
 .jlz-admin-inspector-description {
   margin: 0 0 24px;
-  color: #858b84;
+  color: var(--jlz-color-text-muted);
   font-size: 0.78rem;
   line-height: 1.55;
 }
 
 .jlz-admin-field small {
-  color: #737a73;
+  color: var(--jlz-color-text-subtle);
   font-size: 0.68rem;
   line-height: 1.45;
 }
@@ -731,37 +731,37 @@ textarea {
 
 .jlz-style-showcase {
   display: grid;
-  gap: calc(var(--builder-spacing, 20px) * 2);
+  gap: calc(var(--builder-spacing) * 2);
   min-height: 100%;
   padding: clamp(28px, 5cqw, 72px);
-  color: var(--builder-active-text, var(--builder-text, #f5e6d2));
-  background: var(--builder-active-background, var(--builder-background, #0c0b0a));
-  font-size: var(--builder-font-size, 16px);
-  line-height: var(--builder-line-height, 1.5);
+  color: var(--builder-active-text);
+  background: var(--builder-active-background);
+  font-size: var(--builder-font-size);
+  line-height: var(--builder-line-height);
 }
 
 .jlz-builder-preview {
-  --builder-active-background: var(--builder-background, #0c0b0a);
-  --builder-active-surface: var(--builder-surface, #12100f);
-  --builder-active-elevated: var(--builder-background-elevated, #181513);
-  --builder-active-text: var(--builder-text, #f5e6d2);
-  --builder-active-text-muted: var(--builder-text-muted, #b8aa99);
-  --builder-active-accent: var(--builder-accent, #fff72c);
+  --builder-active-background: var(--builder-background);
+  --builder-active-surface: var(--builder-surface);
+  --builder-active-elevated: var(--builder-background-elevated);
+  --builder-active-text: var(--builder-text);
+  --builder-active-text-muted: var(--builder-text-muted);
+  --builder-active-accent: var(--builder-accent);
 }
 
 .jlz-builder-preview.is-inverse-preview {
-  --builder-active-background: var(--builder-inverse-background, #efe0cc);
-  --builder-active-surface: var(--builder-inverse-surface, #f8eddf);
-  --builder-active-elevated: var(--builder-inverse-surface, #f8eddf);
-  --builder-active-text: var(--builder-inverse-text, #15110e);
-  --builder-active-text-muted: var(--builder-inverse-text-muted, #5e554d);
-  --builder-active-accent: var(--builder-inverse-accent, #4b4000);
+  --builder-active-background: var(--builder-inverse-background);
+  --builder-active-surface: var(--builder-inverse-surface);
+  --builder-active-elevated: var(--builder-inverse-surface);
+  --builder-active-text: var(--builder-inverse-text);
+  --builder-active-text-muted: var(--builder-inverse-text-muted);
+  --builder-active-accent: var(--builder-inverse-accent);
 }
 
 .jlz-style-sample {
   min-width: 0;
-  padding-bottom: calc(var(--builder-spacing, 20px) * 2);
-  border-bottom: 1px solid var(--builder-border, #3b352f);
+  padding-bottom: calc(var(--builder-spacing) * 2);
+  border-bottom: 1px solid var(--builder-border);
   scroll-margin-top: 24px;
 }
 
@@ -774,8 +774,8 @@ textarea {
 .jlz-style-sample h2,
 .jlz-style-sample h3 {
   color: inherit;
-  font-weight: var(--builder-heading-weight, 800);
-  text-transform: var(--builder-heading-transform, uppercase);
+  font-weight: var(--builder-heading-weight);
+  text-transform: var(--builder-heading-transform);
 }
 
 .jlz-style-sample p,
@@ -791,7 +791,7 @@ textarea {
   display: block;
   margin-bottom: 14px;
   color: var(--builder-active-text-muted);
-  font-family: @jlz-font-mono;
+  font-family: var(--jlz-font-mono);
   font-size: 0.68rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -801,7 +801,7 @@ textarea {
 .jlz-style-card-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--builder-spacing, 20px);
+  gap: var(--builder-spacing);
 }
 
 .jlz-style-swatches > div {
@@ -809,14 +809,14 @@ textarea {
   align-items: end;
   min-height: 112px;
   padding: 12px;
-  border: 1px solid var(--builder-border, #3b352f);
+  border: 1px solid var(--builder-border);
 }
 
 .jlz-style-swatches span {
   padding: 4px 7px;
-  color: #f5e6d2;
+  color: var(--jlz-color-text);
   background: rgba(0, 0, 0, 0.58);
-  font-family: @jlz-font-mono;
+  font-family: var(--jlz-font-mono);
   font-size: 0.65rem;
 }
 
@@ -845,7 +845,7 @@ textarea {
 
 .jlz-style-signal-row span {
   padding: 10px 14px;
-  color: #09090b;
+  color: var(--jlz-color-text-inverse);
   font-size: 0.75rem;
   font-weight: 700;
 }
@@ -892,7 +892,7 @@ textarea {
 }
 
 .jlz-style-button-row .uk-button-primary {
-  color: #09090b;
+  color: var(--jlz-color-text-inverse);
   background: var(--builder-active-accent);
 }
 
@@ -913,7 +913,7 @@ textarea {
 }
 
 .jlz-style-card-grid .uk-card-primary {
-  color: #09090b;
+  color: var(--jlz-color-text-inverse);
   background: var(--builder-active-accent);
 }
 
@@ -945,7 +945,7 @@ textarea {
 }
 
 .jlz-style-section-stack .uk-section-primary {
-  color: #09090b;
+  color: var(--jlz-color-text-inverse);
   background: var(--builder-section-primary);
 }
 
@@ -986,7 +986,7 @@ textarea {
 .jlz-admin-sidebar,
 .jlz-admin-preview-frame {
   scrollbar-width: thin;
-  scrollbar-color: #2e332e #0c0e0c;
+  scrollbar-color: var(--jlz-color-border) var(--jlz-color-bg);
 }
 
 .jlz-admin-sidebar::-webkit-scrollbar,
@@ -997,9 +997,9 @@ textarea {
 
 .jlz-admin-sidebar::-webkit-scrollbar-thumb,
 .jlz-admin-preview-frame::-webkit-scrollbar-thumb {
-  border: 3px solid #0c0e0c;
+  border: 3px solid var(--jlz-color-bg);
   border-radius: 8px;
-  background: #343934;
+  background: var(--jlz-color-border);
 }
 
 .jlz-admin-sidebar::-webkit-scrollbar-track,

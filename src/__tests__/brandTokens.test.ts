@@ -68,8 +68,8 @@ function parseLessTokens(): Map<string, string> {
 }
 
 describe('brand token manifest', () => {
-  it('holds exactly the 84 canonical §1 tokens', () => {
-    expect(BRAND_TOKEN_NAMES).toHaveLength(84)
+  it('holds exactly the 87 canonical §1 tokens', () => {
+    expect(BRAND_TOKEN_NAMES).toHaveLength(87)
     expect(new Set(BRAND_TOKEN_NAMES).size).toBe(BRAND_TOKEN_NAMES.length)
   })
 
@@ -79,11 +79,12 @@ describe('brand token manifest', () => {
     }
   })
 
-  it('locks the legacy literals for the core brand facts', () => {
-    expect(brandToken('jlz-color-bg')).toBe('#0c0b0a')
-    expect(brandToken('jlz-color-text')).toBe('#f5e6d2')
-    expect(brandToken('jlz-color-accent')).toBe('#fff72c')
-    expect(brandToken('jlz-color-accent-glow')).toBe('rgba(255, 247, 44, 0.32)')
+  it('locks the Neon Stage literals for the core brand facts', () => {
+    expect(brandToken('jlz-color-bg')).toBe('#08090b')
+    expect(brandToken('jlz-color-text')).toBe('#eef1f5')
+    expect(brandToken('jlz-color-accent')).toBe('#ffd60a')
+    expect(brandToken('jlz-color-accent-glow')).toBe('rgba(255, 214, 10, 0.35)')
+    expect(brandToken('jlz-color-status-success')).toBe('#45d68c')
     expect(brandToken('jlz-ease-entrance')).toBe('cubic-bezier(0.16, 1, 0.3, 1)')
     expect(brandToken('jlz-space-8')).toBe('2rem')
     expect(brandToken('jlz-z-modal')).toBe('2000')
@@ -94,6 +95,9 @@ describe('brand token manifest', () => {
     const expectedAliases = [
       'color-signal-teal',
       'color-signal-teal-muted',
+      'color-status-warning',
+      'color-status-danger',
+      'color-fluid-warm',
       'button-radius',
       'card-radius',
       'form-border',
@@ -123,7 +127,7 @@ describe('brand token manifest', () => {
 
   it('the manifest mirrors §1 of _import.less key-for-key', () => {
     const less = parseLessTokens()
-    expect(less.size).toBe(84)
+    expect(less.size).toBe(87)
     expect([...less.keys()].sort()).toEqual([...BRAND_TOKEN_NAMES].sort())
   })
 

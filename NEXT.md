@@ -117,9 +117,11 @@ do not start a phase whose entry gate has not passed.
       the settle AND-NOT read the contract at the same points with
       unchanged timing; the loop owner stays `Experience` until the Phase 7
       `RenderScheduler` takes over the loop itself). The brand/runtime token manifest is now a pure contract
-      (`src/core/brandTokens.ts`, 183/183 unit suite; mirrors the 84
-      `_import.less` §1 tokens key-for-key, unit-locked by a Less parity
-      test; inert until the Phase 5 generated adapters consume it). The
+      (`src/core/brandTokens.ts`; mirrors the 87
+      `_import.less` §1 tokens key-for-key — the ADR 0007 Neon Stage identity
+      with the three semantic status tokens, 9 documented aliases — unit-locked
+      by a Less parity test; inert until the Phase 5 generated adapters
+      consume it). The
       typed motion-preference port is now formalized
       (`src/core/motionPolicy.ts`, 178/178 unit suite; 11 consumers read
       through it, the dead `syncReducedMotionDataset` writer removed, the

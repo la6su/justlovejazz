@@ -24,36 +24,44 @@
 // §1. DESIGN TOKENS (@jlz-* Less variables)
 // ═══════════════════════════════════════════════════════════════════════
 
-// ── Color ──
-@jlz-color-bg: #0c0b0a;
-@jlz-color-bg-elevated: #181513;
-@jlz-color-surface: #12100f;
-@jlz-color-surface-hover: #211d19;
-@jlz-color-border: rgba(245, 230, 210, 0.13);
-@jlz-color-border-strong: rgba(245, 230, 210, 0.28);
+// ── Color (Neon Stage identity — cool near-black ink, cool ivory, one
+// electric accent; see ADR 0007 and docs/BRAND.md) ──
+@jlz-color-bg: #08090b;
+@jlz-color-bg-elevated: #0d1015;
+@jlz-color-surface: #0f131a;
+@jlz-color-surface-hover: #1a2130;
+@jlz-color-border: rgba(238, 241, 245, 0.14);
+@jlz-color-border-strong: rgba(238, 241, 245, 0.3);
 
-@jlz-color-text: #f5e6d2;
-@jlz-color-text-muted: rgba(245, 230, 210, 0.68);
-@jlz-color-text-subtle: rgba(245, 230, 210, 0.4);
-@jlz-color-text-inverse: #09090b;
+@jlz-color-text: #eef1f5;
+@jlz-color-text-muted: rgba(238, 241, 245, 0.66);
+@jlz-color-text-subtle: rgba(238, 241, 245, 0.4);
+@jlz-color-text-inverse: #0a0c10;
 
-@jlz-color-accent: #fff72c;
-@jlz-color-accent-hover: #fffca0;
-@jlz-color-accent-glow: rgba(255, 247, 44, 0.32);
-// A muted warm mineral counterbalances the logo's electric yellow.
-@jlz-color-signal-cool: #c7ad94;
-@jlz-color-signal-cool-muted: rgba(199, 173, 148, 0.22);
+@jlz-color-accent: #ffd60a;
+@jlz-color-accent-hover: #ffe85c;
+@jlz-color-accent-glow: rgba(255, 214, 10, 0.35);
+// A cool mineral counterbalances the electric yellow.
+@jlz-color-signal-cool: #5eb0ff;
+@jlz-color-signal-cool-muted: rgba(94, 176, 255, 0.22);
 @jlz-color-signal-teal: @jlz-color-signal-cool;
 @jlz-color-signal-teal-muted: @jlz-color-signal-cool-muted;
-@jlz-color-signal-ember: #ff7568;
+@jlz-color-signal-ember: #ff6b5e;
 
-// Inverse (light paper) polarity. The Style Builder can author this palette
+// Semantic status — the only success/warning/danger source for console and
+// admin UI. Warning and danger alias the brand signals; success is the single
+// green in the system.
+@jlz-color-status-success: #45d68c;
+@jlz-color-status-warning: @jlz-color-accent;
+@jlz-color-status-danger: @jlz-color-signal-ember;
+
+// Inverse (cool paper) polarity. The Style Builder can author this palette
 // independently from the default dark console.
-@jlz-inverse-bg: #efe0cc;
-@jlz-inverse-surface: #f8eddf;
-@jlz-inverse-text: #15110e;
-@jlz-inverse-text-muted: #5e554d;
-@jlz-inverse-accent: #4b4000;
+@jlz-inverse-bg: #e9eef5;
+@jlz-inverse-surface: #f5f8fc;
+@jlz-inverse-text: #0b0e13;
+@jlz-inverse-text-muted: #46505c;
+@jlz-inverse-accent: #7a5c00;
 
 // ── Typography ──
 @jlz-font-display:
@@ -96,13 +104,14 @@
 @jlz-space-24: 6rem;
 @jlz-space-32: 8rem;
 
-// ── Radius ──
+// ── Radius (Neon Stage: 6–10px control language; `full` stays small — dot
+// usages in _content.less / main.less) ──
 @jlz-radius-none: 0;
-@jlz-radius-sm: 0.125rem;
-@jlz-radius-md: 0;
-@jlz-radius-lg: 0.125rem;
-@jlz-radius-xl: 0.25rem;
-@jlz-radius-fluid: 0.25rem;
+@jlz-radius-sm: 0.25rem;
+@jlz-radius-md: 0.375rem;
+@jlz-radius-lg: 0.5rem;
+@jlz-radius-xl: 0.75rem;
+@jlz-radius-fluid: 0.5rem;
 @jlz-radius-full: 0.125rem;
 @jlz-button-radius: @jlz-radius-md;
 @jlz-card-radius: @jlz-radius-lg;
@@ -112,11 +121,11 @@
 
 // ── Console interface surfaces ──
 // Shared technical planes replace the former translucent fluid islands.
-@jlz-color-fluid-surface: #0d0e13;
-@jlz-color-fluid-surface-strong: #171821;
-@jlz-color-fluid-border: rgba(157, 161, 210, 0.2);
-@jlz-color-fluid-highlight: rgba(255, 247, 44, 0.1);
-@jlz-color-fluid-warm: #fff72c;
+@jlz-color-fluid-surface: #0b0e14;
+@jlz-color-fluid-surface-strong: #141a24;
+@jlz-color-fluid-border: rgba(120, 140, 180, 0.22);
+@jlz-color-fluid-highlight: rgba(255, 214, 10, 0.1);
+@jlz-color-fluid-warm: @jlz-color-accent;
 @jlz-color-telegram: #2aabee;
 
 // ── Z-index ──
@@ -170,6 +179,9 @@
   --jlz-color-signal-cool: @jlz-color-signal-cool;
   --jlz-color-signal-cool-muted: @jlz-color-signal-cool-muted;
   --jlz-color-signal-ember: @jlz-color-signal-ember;
+  --jlz-color-status-success: @jlz-color-status-success;
+  --jlz-color-status-warning: @jlz-color-status-warning;
+  --jlz-color-status-danger: @jlz-color-status-danger;
 
   --jlz-font-display: @jlz-font-display;
   --jlz-font-body: @jlz-font-body;
@@ -241,7 +253,7 @@
   --jlz-page-max-width: @jlz-page-max-width;
   --jlz-page-gutter: clamp(1rem, 5vw, 5rem);
   --jlz-section-min-height: 100dvh;
-  --jlz-color-cursor-hover: #ff3c3c;
+  --jlz-color-cursor-hover: @jlz-color-signal-ember;
   --jlz-header-height: 64px;
 
   /* Bottom controls clearance — contact launcher + storyline rail.
@@ -266,23 +278,23 @@
 html.uk-light {
   --jlz-color-text: @jlz-inverse-text;
   --jlz-color-text-muted: @jlz-inverse-text-muted;
-  --jlz-color-text-subtle: rgba(21, 17, 14, 0.5);
+  --jlz-color-text-subtle: rgba(11, 14, 19, 0.5);
   /* Light theme backgrounds — flip from dark to light for inverse mode.
      Needed for dropdown/overlay components that use CSS vars. */
   --jlz-color-bg: @jlz-inverse-bg;
   --jlz-color-bg-elevated: @jlz-inverse-surface;
-  --jlz-color-fluid-surface: rgba(248, 237, 223, 0.7);
-  --jlz-color-fluid-surface-strong: rgba(255, 248, 240, 0.9);
-  --jlz-color-fluid-border: rgba(21, 17, 14, 0.14);
-  --jlz-color-fluid-highlight: rgba(255, 250, 242, 0.9);
+  --jlz-color-fluid-surface: rgba(245, 248, 252, 0.7);
+  --jlz-color-fluid-surface-strong: rgba(255, 255, 255, 0.9);
+  --jlz-color-fluid-border: rgba(11, 14, 19, 0.14);
+  --jlz-color-fluid-highlight: rgba(255, 255, 255, 0.9);
   --jlz-color-accent: @jlz-inverse-accent;
-  --jlz-color-accent-hover: #282200;
-  --jlz-color-accent-glow: rgba(255, 247, 44, 0.35);
-  --jlz-color-signal-cool: #8e735e;
-  --jlz-color-signal-cool-muted: rgba(142, 115, 94, 0.2);
+  --jlz-color-accent-hover: #5c4600;
+  --jlz-color-accent-glow: rgba(122, 92, 0, 0.3);
+  --jlz-color-signal-cool: #2c6fb5;
+  --jlz-color-signal-cool-muted: rgba(44, 111, 181, 0.2);
   --jlz-color-signal-teal: var(--jlz-color-signal-cool);
   --jlz-color-signal-teal-muted: var(--jlz-color-signal-cool-muted);
-  --jlz-color-signal-ember: #a83222;
+  --jlz-color-signal-ember: #c03a2e;
   /* Light scrim — soft white veil aids dark-text readability over 3D
      (mirrors the dark scrim in dark mode). */
   --jlz-scrim-1: rgba(255, 255, 255, 0.12);

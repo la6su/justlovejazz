@@ -32,33 +32,39 @@
 
 type Token = string
 
-// ── Color (dark console polarity) ──
+// ── Color (dark console polarity — Neon Stage identity, ADR 0007) ──
 const COLOR: Record<string, Token> = {
-  'color-bg': '#0c0b0a',
-  'color-bg-elevated': '#181513',
-  'color-surface': '#12100f',
-  'color-surface-hover': '#211d19',
-  'color-border': 'rgba(245, 230, 210, 0.13)',
-  'color-border-strong': 'rgba(245, 230, 210, 0.28)',
-  'color-text': '#f5e6d2',
-  'color-text-muted': 'rgba(245, 230, 210, 0.68)',
-  'color-text-subtle': 'rgba(245, 230, 210, 0.4)',
-  'color-text-inverse': '#09090b',
-  'color-accent': '#fff72c',
-  'color-accent-hover': '#fffca0',
-  'color-accent-glow': 'rgba(255, 247, 44, 0.32)',
-  'color-signal-cool': '#c7ad94',
-  'color-signal-cool-muted': 'rgba(199, 173, 148, 0.22)',
+  'color-bg': '#08090b',
+  'color-bg-elevated': '#0d1015',
+  'color-surface': '#0f131a',
+  'color-surface-hover': '#1a2130',
+  'color-border': 'rgba(238, 241, 245, 0.14)',
+  'color-border-strong': 'rgba(238, 241, 245, 0.3)',
+  'color-text': '#eef1f5',
+  'color-text-muted': 'rgba(238, 241, 245, 0.66)',
+  'color-text-subtle': 'rgba(238, 241, 245, 0.4)',
+  'color-text-inverse': '#0a0c10',
+  'color-accent': '#ffd60a',
+  'color-accent-hover': '#ffe85c',
+  'color-accent-glow': 'rgba(255, 214, 10, 0.35)',
+  'color-signal-cool': '#5eb0ff',
+  'color-signal-cool-muted': 'rgba(94, 176, 255, 0.22)',
   // Alias of signal-cool (see BRAND_TOKEN_ALIASES).
-  'color-signal-teal': '#c7ad94',
-  'color-signal-teal-muted': 'rgba(199, 173, 148, 0.22)',
-  'color-signal-ember': '#ff7568',
-  // Inverse (light paper) polarity — authored independently by the builder.
-  'inverse-bg': '#efe0cc',
-  'inverse-surface': '#f8eddf',
-  'inverse-text': '#15110e',
-  'inverse-text-muted': '#5e554d',
-  'inverse-accent': '#4b4000',
+  'color-signal-teal': '#5eb0ff',
+  'color-signal-teal-muted': 'rgba(94, 176, 255, 0.22)',
+  'color-signal-ember': '#ff6b5e',
+  // Semantic status — the only success/warning/danger source.
+  'color-status-success': '#45d68c',
+  // Alias of color-accent (see BRAND_TOKEN_ALIASES).
+  'color-status-warning': '#ffd60a',
+  // Alias of signal-ember (see BRAND_TOKEN_ALIASES).
+  'color-status-danger': '#ff6b5e',
+  // Inverse (cool paper) polarity — authored independently by the builder.
+  'inverse-bg': '#e9eef5',
+  'inverse-surface': '#f5f8fc',
+  'inverse-text': '#0b0e13',
+  'inverse-text-muted': '#46505c',
+  'inverse-accent': '#7a5c00',
 }
 
 // ── Typography ──
@@ -96,27 +102,27 @@ const SPACING: Record<string, Token> = {
 // ── Radius + derived surfaces ──
 const RADIUS: Record<string, Token> = {
   'radius-none': '0',
-  'radius-sm': '0.125rem',
-  'radius-md': '0',
-  'radius-lg': '0.125rem',
-  'radius-xl': '0.25rem',
-  'radius-fluid': '0.25rem',
+  'radius-sm': '0.25rem',
+  'radius-md': '0.375rem',
+  'radius-lg': '0.5rem',
+  'radius-xl': '0.75rem',
+  'radius-fluid': '0.5rem',
   'radius-full': '0.125rem',
   // Derived aliases (see BRAND_TOKEN_ALIASES).
-  'button-radius': '0',
-  'card-radius': '0.125rem',
+  'button-radius': '0.375rem',
+  'card-radius': '0.5rem',
   'card-shadow': '0 20px 56px rgba(0, 0, 0, 0.42)',
-  'form-border': 'rgba(245, 230, 210, 0.13)',
-  'navbar-surface': '#0c0b0a',
+  'form-border': 'rgba(238, 241, 245, 0.14)',
+  'navbar-surface': '#08090b',
 }
 
 // ── Console interface surfaces ──
 const SURFACE: Record<string, Token> = {
-  'color-fluid-surface': '#0d0e13',
-  'color-fluid-surface-strong': '#171821',
-  'color-fluid-border': 'rgba(157, 161, 210, 0.2)',
-  'color-fluid-highlight': 'rgba(255, 247, 44, 0.1)',
-  'color-fluid-warm': '#fff72c',
+  'color-fluid-surface': '#0b0e14',
+  'color-fluid-surface-strong': '#141a24',
+  'color-fluid-border': 'rgba(120, 140, 180, 0.22)',
+  'color-fluid-highlight': 'rgba(255, 214, 10, 0.1)',
+  'color-fluid-warm': '#ffd60a',
   'color-telegram': '#2aabee',
 }
 
@@ -163,6 +169,9 @@ export const BRAND_TOKEN_PREFIX = 'jlz'
 export const BRAND_TOKEN_ALIASES: Readonly<Record<string, string>> = {
   'color-signal-teal': 'color-signal-cool',
   'color-signal-teal-muted': 'color-signal-cool-muted',
+  'color-status-warning': 'color-accent',
+  'color-status-danger': 'color-signal-ember',
+  'color-fluid-warm': 'color-accent',
   'button-radius': 'radius-md',
   'card-radius': 'radius-lg',
   'form-border': 'color-border',
