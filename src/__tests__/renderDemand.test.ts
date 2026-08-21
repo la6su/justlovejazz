@@ -1,0 +1,144 @@
+import { describe, it, expect } from 'vitest'
+import {
+  NO_ACTIVITY,
+  anyActivity,
+  idleForAmbientBreath,
+  shouldRender,
+  demandSettles,
+  ambientBreathStep,
+  type RenderActivity,
+} from '../core/renderDemand'
+
+// Helper: an activity with exactly the named flags set.
+function withOnly(flags: (keyof RenderActivity)[]): RenderActivity {
+  return { ...NO_ACTIVITY, ...Object.fromEntries(flags.map((f) => [f, true])) }
+}
+
+const ALL_FLAGS: (keyof RenderActivity)[] = [
+  'nav',
+  'carousel',
+  'worksPlane',
+  'contactText',
+  'contactCyprus',
+  'worksScroll',
+  'drawTrail',
+  'opener',
+  'burst',
+  'camShaking',
+  'cubeRotating',
+  'camPulsing',
+  'particles',
+  'ambientScene',
+]
+
+// The 10 flags the ambient-breath idle check actually reads. The other four
+// (worksScroll, drawTrail, cubeRotating, camPulsing) are deliberately excluded.
+const BREATH_RELEVANT: (keyof RenderActivity)[] = [
+  'nav',
+  'carousel',
+  'worksPlane',
+  'contactText',
+  'contactCyprus',
+  'opener',
+  'burst',
+  'camShaking',
+  'particles',
+  'ambientScene',
+]
+
+const BREATH_EXCLUDED: (keyof RenderActivity)[] = [
+  'worksScroll',
+  'drawTrail',
+  'cubeRotating',
+  'camPulsing',
+]
+
+describe('anyActivity (the 14-flag OR)', () => {
+  it('is false for no activity', () => {
+    expect(anyActivity(NO_ACTIVITY)).toBe(false)
+  })
+
+  it('every one of the 14 flags independently raises activity', () => {
+    for (const f of ALL_FLAGS) {
+      expect(anyActivity(withOnly([f])), `flag ${f}`).toBe(true)
+    }
+  })
+
+  it('is true when any combination of flags is set', () => {
+    expect(anyActivity(withOnly(['nav', 'burst', 'camPulsing']))).toBe(true)
+  })
+})
+
+describe('idleForAmbientBreath (the narrower 10-flag idle check)', () => {
+  it('is true when reduced motion is off and the 10 breath flags are clear', () => {
+    expect(idleForAmbientBreath(NO_ACTIVITY, false)).toBe(true)
+  })
+
+  it('is false when reduced motion is on, even with everything clear', () => {
+    expect(idleForAmbientBreath(NO_ACTIVITY, true)).toBe(false)
+  })
+
+  it('every one of the 10 breath-relevant flags blocks the breath', () => {
+    for (const f of BREATH_RELEVANT) {
+      expect(idleForAmbientBreath(withOnly([f]), false), `flag ${f}`).toBe(false)
+    }
+  })
+
+  it('the 4 excluded flags do NOT block the breath (real behavior, not a simplification)', () => {
+    for (const f of BREATH_EXCLUDED) {
+      expect(idleForAmbientBreath(withOnly([f]), false), `flag ${f}`).toBe(true)
+    }
+  })
+
+  it('a breath-relevant flag still blocks the breath even when an excluded flag is also set', () => {
+    expect(idleForAmbientBreath(withOnly(['nav', 'worksScroll']), false)).toBe(false)
+  })
+})
+
+describe('shouldRender / demandSettles', () => {
+  it('shouldRender is true when demand is already set, even with no activity', () => {
+    expect(shouldRender(true, NO_ACTIVITY)).toBe(true)
+  })
+
+  it('shouldRender is true when any activity is present, even if demand was clear', () => {
+    expect(shouldRender(false, withOnly(['camShaking']))).toBe(true)
+  })
+
+  it('shouldRender is false only when demand is clear and nothing is active', () => {
+    expect(shouldRender(false, NO_ACTIVITY)).toBe(false)
+  })
+
+  it('demandSettles is the negation of anyActivity', () => {
+    expect(demandSettles(NO_ACTIVITY)).toBe(true)
+    expect(demandSettles(withOnly(['cubeRotating']))).toBe(false)
+    for (const f of ALL_FLAGS) {
+      expect(demandSettles(withOnly([f])), `flag ${f}`).toBe(false)
+    }
+  })
+})
+
+describe('ambientBreathStep (the ~interval accumulator)', () => {
+  const INTERVAL = 2500
+
+  it('does nothing (and does not fire) when not idle', () => {
+    expect(ambientBreathStep(2000, 100, INTERVAL, false)).toEqual({ fired: false, nextTimer: 0 })
+  })
+
+  it('resets the accumulator when not idle, even near the threshold', () => {
+    expect(ambientBreathStep(2499, 1, INTERVAL, false)).toEqual({ fired: false, nextTimer: 0 })
+  })
+
+  it('accumulates dt while idle without crossing the threshold', () => {
+    expect(ambientBreathStep(0, 100, INTERVAL, true)).toEqual({ fired: false, nextTimer: 100 })
+    expect(ambientBreathStep(100, 100, INTERVAL, true)).toEqual({ fired: false, nextTimer: 200 })
+  })
+
+  it('fires and resets when the accumulator reaches the interval', () => {
+    expect(ambientBreathStep(2500, 0, INTERVAL, true)).toEqual({ fired: true, nextTimer: 0 })
+    expect(ambientBreathStep(2400, 150, INTERVAL, true)).toEqual({ fired: true, nextTimer: 0 })
+  })
+
+  it('does not fire just below the threshold and keeps the running total', () => {
+    expect(ambientBreathStep(2400, 99, INTERVAL, true)).toEqual({ fired: false, nextTimer: 2499 })
+  })
+})

@@ -1051,6 +1051,38 @@ bootstrap and its events migrate behind it in the Phase 5 shell slice, and
 the retry/disposal policy is a later consumer concern. Rollback: delete the
 contract file and its tests.
 
+#### Phase 3 render-demand decision slice — 2026-08-21
+
+The demand-driven render decision (docs/ARCHITECTURE.md: the loop runs but
+draws only while the scene is changing, and settles to idle) is extracted
+from the inline `Experience.update()` logic into a pure contract:
+
+- `src/core/renderDemand.ts` models the per-frame decision as side-effect-free
+  functions: `anyActivity` (the 14-flag OR used to raise demand and to decide
+  whether demand may settle), `idleForAmbientBreath` (the narrower idle check
+  for the ~2.5 s ambient-breath timer), `shouldRender`, `demandSettles`, and
+  `ambientBreathStep` (the breath accumulator's pure timer math).
+- Two deliberately different flag sets are preserved and unit-locked, because
+  they are real behavior, not a simplification: `anyActivity` is the
+  **14-flag** set used for both the demand-raise and the post-frame settle,
+  while `idleForAmbientBreath` is a **10-flag** AND-NOT plus the reduced-motion
+  gate that intentionally **excludes** `worksScroll`, `drawTrail`,
+  `cubeRotating` and `camPulsing` — those four keep the loop alive on their own
+  and must not also trigger the breath. The extracted flag sets were
+  cross-checked line-by-line against the three live sites in
+  `Experience.update()` (demand-raise, ambient-breath idle, post-frame settle)
+  and match exactly.
+- The contract is pure and **inert**: `Experience.ts` is unchanged and remains
+  the legacy implementation until the loop is rewired to these functions (the
+  Phase 7 `RenderScheduler` target owner). 17 new unit tests (175/175),
+  `vue-tsc` clean. No runtime consumer change in this slice.
+
+Scope limits: no timing change is possible in this slice because nothing
+consumes the contract yet. The `Experience.update()` inline decision migrates
+behind these functions in the Phase 7 scheduler slice, and that migration is
+where any (intended) behavior change would be reviewed. Rollback: delete the
+contract file and its tests.
+
 ### Phase 4 — Vue Page Builder
 
 Scope:
@@ -1294,7 +1326,7 @@ The following ledgers are updated in this document during implementation.
 | routes/hash/meta         | `routeManifest.ts`, `router.ts`, `pageMeta.ts`                                                                                            | route manifest + Vue Router                                                  | 3, 5            |
 | scene route-page reads   | `routePage.ts` port (all scene consumers migrated: `World.ts`, `BakuCarousel.ts`, `CinematicNav.ts`, `ContentReveal.ts`, `Experience.ts`) | typed route port owned by the app providers                                  | 3, 5            |
 | six world slots          | `worldSlots.ts` tuple (consumed by `WorldConfig.ts`, `SplashCube.ts`)                                                                     | domain tuple + `WorldRoot`                                                   | 3, 7, 8         |
-| render demand            | `Experience._needsRender`                                                                                                                 | `RenderScheduler`                                                            | 3, 7            |
+| render demand            | `Experience._needsRender` + `renderDemand.ts` pure decision contract (inert until consumed)                                               | `RenderScheduler`                                                            | 3, 7            |
 | brand/runtime tokens     | Less files + scene literals                                                                                                               | typed manifest + generated adapters                                          | 3, 5            |
 | backend fallback         | `Renderer.ts`                                                                                                                             | `RendererFactory`                                                            | 2, 6            |
 | post-processing          | dual `RenderPipeline` paths                                                                                                               | TSL graph (`WebGPUBackend`) + forced-WebGL fallback per the Phase 6 decision | 2, 6            |

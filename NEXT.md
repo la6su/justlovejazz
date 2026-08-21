@@ -107,9 +107,14 @@ do not start a phase whose entry gate has not passed.
       console errors; no scene-side `document.body.dataset.page` reads
       remain, the dataset write stays until Phase 5). The bootstrap state
       machine is now a pure contract (`src/core/bootstrapStates.ts`, 158/158
-      unit suite, inert until the Phase 5 shell consumes it); the open
-      contracts are typed ports, the render scheduler, resource scopes and
-      brand tokens.
+      unit suite, inert until the Phase 5 shell consumes it). The
+      render-demand decision is now a pure contract
+      (`src/core/renderDemand.ts`, 175/175 unit suite; the 14-flag
+      raise/settle set and the narrower 10-flag ambient-breath idle set are
+      line-verified against the three live `Experience.update()` sites and
+      unit-locked; inert until the Phase 7 `RenderScheduler` rewires the
+      loop); the open contracts are typed ports, the RenderScheduler consumer
+      migration, resource scopes and brand tokens.
 
 - [ ] **Phase 4: migrate the development Page Builder to Vue** — use the
       isolated admin application as the first state-heavy Vue surface while
