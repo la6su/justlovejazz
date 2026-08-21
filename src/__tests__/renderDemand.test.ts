@@ -5,7 +5,6 @@ import {
   idleForAmbientBreath,
   shouldRender,
   demandSettles,
-  ambientBreathStep,
   type RenderActivity,
 } from '../core/renderDemand'
 
@@ -114,31 +113,5 @@ describe('shouldRender / demandSettles', () => {
     for (const f of ALL_FLAGS) {
       expect(demandSettles(withOnly([f])), `flag ${f}`).toBe(false)
     }
-  })
-})
-
-describe('ambientBreathStep (the ~interval accumulator)', () => {
-  const INTERVAL = 2500
-
-  it('does nothing (and does not fire) when not idle', () => {
-    expect(ambientBreathStep(2000, 100, INTERVAL, false)).toEqual({ fired: false, nextTimer: 0 })
-  })
-
-  it('resets the accumulator when not idle, even near the threshold', () => {
-    expect(ambientBreathStep(2499, 1, INTERVAL, false)).toEqual({ fired: false, nextTimer: 0 })
-  })
-
-  it('accumulates dt while idle without crossing the threshold', () => {
-    expect(ambientBreathStep(0, 100, INTERVAL, true)).toEqual({ fired: false, nextTimer: 100 })
-    expect(ambientBreathStep(100, 100, INTERVAL, true)).toEqual({ fired: false, nextTimer: 200 })
-  })
-
-  it('fires and resets when the accumulator reaches the interval', () => {
-    expect(ambientBreathStep(2500, 0, INTERVAL, true)).toEqual({ fired: true, nextTimer: 0 })
-    expect(ambientBreathStep(2400, 150, INTERVAL, true)).toEqual({ fired: true, nextTimer: 0 })
-  })
-
-  it('does not fire just below the threshold and keeps the running total', () => {
-    expect(ambientBreathStep(2400, 99, INTERVAL, true)).toEqual({ fired: false, nextTimer: 2499 })
   })
 })

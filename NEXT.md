@@ -335,11 +335,19 @@ do not start a phase whose entry gate has not passed.
       (`src/core/RenderScheduler.ts`) — the single caller of
       `renderer.setAnimationLoop`, start on typed invalidation / resume, stop
       after the settled frame, hidden-tab pause with exactly one resume
-      invalidation, synchronous settle for reduced motion; 13 unit tests, no
-      behavior change yet. Open: the Experience loop cutover to the scheduler
-      (slice 2), the persistent `SceneHost` Tres root + readiness handshake
-      (slice 3, rollback = the native-world host), and the Experience split
-      (slice 4).
+      invalidation, synchronous settle for reduced motion; 13 unit tests.
+      Slice 2 landed: the Experience loop is now driven by the scheduler as
+      the single `setAnimationLoop` caller — the direct `setAnimationLoop`
+      call and the ad-hoc `_onVisibilityChange` re-attach are deleted, wake
+      sources are typed invalidations (`first-frame`/`nav`/`cursor`/`resize`/
+      `recovery`/`breath`), the loop stops after the settled frame (settle =
+      `!needsRender && demandSettles(last activity) && cursor.isSettled`,
+      `Cursor` now exposes the spring-convergence predicate), the per-frame
+      `dt` breath accumulator is replaced by a wall-clock timer firing the
+      typed `breath` invalidation, and hidden-tab pause / exactly-one resume
+      are owned by the scheduler's `autoVisibility`. Open: the persistent
+      `SceneHost` Tres root + readiness handshake (slice 3, rollback = the
+      native-world host), and the Experience split (slice 4).
 
 - [ ] **Phases 8–10: cut over Tres scene owners and static content** —
       only after their gates pass, ship the one-by-one scene-owner migration,

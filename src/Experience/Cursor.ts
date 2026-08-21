@@ -118,6 +118,34 @@ export class Cursor {
   private fillProgress = 0
   private fillTarget = 0
 
+  /**
+   * Loop-wake port (Phase 7). The single renderer-loop driver runs frames
+   * only while the scene or the cursor is unsettled; the cursor's own
+   * pointer/hover/click handlers report activity through this callback so a
+   * pointer move can wake a settled loop. Wired by the Experience bootstrap.
+   */
+  onActivity: (() => void) | null = null
+
+  /**
+   * True when the spring + radius/bump/fill lerps have converged on their
+   * goals (nothing needs another frame for the cursor). Read by the Phase 7
+   * scheduler's settle decision after each frame.
+   */
+  get isSettled(): boolean {
+    const goalX = this.isStuck ? this.stuckX : this.targetX
+    const goalY = this.isStuck ? this.stuckY : this.targetY
+    const targetR = this.isStuck ? this.targetRadius : this.baseRadius
+    return (
+      Math.abs(this.velX) < 0.01 &&
+      Math.abs(this.velY) < 0.01 &&
+      Math.abs(this.posX - goalX) < 0.5 &&
+      Math.abs(this.posY - goalY) < 0.5 &&
+      Math.abs(this.currentRadius - targetR) < 0.05 &&
+      Math.abs(this.bumpScale - this.bumpTarget) < 0.005 &&
+      Math.abs(this.fillProgress - this.fillTarget) < 0.005
+    )
+  }
+
   private readonly mousemoveHandler: (e: MouseEvent) => void
   private readonly mouseoverHandler: (e: MouseEvent) => void
   private readonly mouseoutHandler: (e: MouseEvent) => void
@@ -155,8 +183,10 @@ export class Cursor {
     this.mousemoveHandler = (e: MouseEvent) => {
       this.targetX = e.clientX
       this.targetY = e.clientY
+      this.onActivity?.()
     }
     this.mouseoverHandler = (e: MouseEvent) => {
+      this.onActivity?.()
       const target = e.target as HTMLElement
       if (!target || typeof target.closest !== 'function') return
       // D-14 fix: skip intra-element transitions (mouseout→mouseover between
@@ -211,6 +241,7 @@ export class Cursor {
       }
     }
     this.mouseoutHandler = (e: MouseEvent) => {
+      this.onActivity?.()
       const target = e.target as HTMLElement
       if (!target || typeof target.closest !== 'function') return
       // D-14 fix: skip if moving to a related element that's also interactive

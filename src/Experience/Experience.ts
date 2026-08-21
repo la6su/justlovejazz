@@ -25,13 +25,14 @@ import { prefersReducedMotion } from '../core/motionPolicy'
 import type { ThemeAppliedPort } from '../core/sectionTheme'
 import { WORLD_SLOT_COUNT, worldSlotIndex } from '../core/worldSlots'
 import {
-  ambientBreathStep,
+  NO_ACTIVITY,
   anyActivity,
   demandSettles,
   idleForAmbientBreath,
   shouldRender,
   type RenderActivity,
 } from '../core/renderDemand'
+import { RenderScheduler, type FrameReason } from '../core/RenderScheduler'
 // ContentReveal owns per-section auto/inverse themes and sends this runtime
 // jlz:theme-applied events for 3D synchronisation.
 import { eventBus } from '../core/EventBus'
@@ -84,7 +85,6 @@ export class Experience {
   private _portfolioInitialized = false
   private _prevSectionIndex = -1
   private _onSizesResize: () => void = () => {}
-  private _onVisibilityChange: (() => void) | null = null
   private _onRendererRecovered: (() => void) | null = null
   private _onMouseMoveForTrail: (() => void) | null = null
   private _mouseTrailRafPending = false
@@ -93,10 +93,21 @@ export class Experience {
   private _storyNav: CinematicNav | null = null
   private _needsRender = true // start true to render the first frame
   private _bakuCarouselActive = false // BakuCarousel is morphed/scrolling
-  // A4: ambient breathing — periodic 1-frame refresh in idle (no continuous loop)
-  private _ambientBreathTimer = 0
+  // A4: ambient breathing — one refresh frame every ~2.5 s while the scene
+  // stays idle. Phase 7: the loop stops when settled, so the per-frame dt
+  // accumulator can no longer advance; the breath is a wall-clock timer that
+  // raises demand + fires a typed 'breath' invalidation on the scheduler.
+  private _breathTimer: ReturnType<typeof setTimeout> | null = null
   private static readonly AMBIENT_BREATH_INTERVAL = 2.5 // seconds between idle refresh frames
   private _reducedMotion = false // cached prefers-reduced-motion (updated in init)
+  // Phase 7 (ADR 0004): the single animation-loop driver. Experience is the
+  // only setAnimationLoop caller (through the Renderer owner boundary); the
+  // scheduler starts the loop on invalidation and stops it after the settled
+  // frame (zero settled draws). Hidden-tab pause/resume is owned here too.
+  private _scheduler!: RenderScheduler
+  // Last per-frame activity snapshot — read by the settle decision AFTER the
+  // frame, so a same-frame raise (section change, breath fire, …) is honored.
+  private _lastActivity: RenderActivity = { ...NO_ACTIVITY }
   // Render-budget FPS tracker — rolling window of frame times. If FPS < 30
   // sustained over LOW_FPS_WINDOW consecutive frames, _lowFps flips true.
   // Read by DevPanel (low fps ⚠ indicator). Future: auto-reduce particle count.
@@ -125,9 +136,20 @@ export class Experience {
     this.camera = new Camera(this.sizes)
     this.renderer = new Renderer(this.sizes)
 
+    // Phase 7 (ADR 0004): construct the single loop driver. The Renderer is
+    // the setAnimationLoop owner boundary (device-loss recovery re-attaches
+    // the stored callback); the scheduler decides WHEN the callback is
+    // installed. `autoVisibility` (default, DOM present) pauses the loop
+    // while the tab is hidden and resumes it with exactly one invalidation.
+    this._scheduler = new RenderScheduler(
+      { setLoop: (cb) => this.renderer.setAnimationLoop(cb) },
+      { onFrame: (time) => this.update(time), isSettled: () => this._isLoopSettled() },
+    )
+
     // Wire resize → world (A-001/A-004: World.resize was empty + never called)
     this._onSizesResize = () => {
       this.world?.resize(this.sizes.width, this.sizes.height)
+      this._raiseRenderDemand('resize')
     }
     this.sizes.onResize(this._onSizesResize)
   }
@@ -280,6 +302,9 @@ export class Experience {
     this._reducedMotion = prefersReducedMotion()
     this.contentReveal = new ContentReveal()
     this.cursor = new Cursor(this.sfx)
+    // Phase 7: the cursor's own pointer/hover handlers are loop wake sources
+    // (its spring keeps moving after the scene has settled).
+    this.cursor.onActivity = () => this._raiseRenderDemand('cursor')
     // Glitch eyebrow — on section change, animate the active section's
     // [data-eyebrow] number with NoiseText random-symbol scramble.
     // Uses data-eyebrow-text attribute as STABLE source (never affected by
@@ -348,7 +373,7 @@ export class Experience {
             if (particles) particles.setBlending(!detail.isLight)
           }
         }
-        this._needsRender = true
+        this._raiseRenderDemand('dirty')
       }
     }
     window.addEventListener('jlz:theme-applied', this._themeAppliedHandler)
@@ -377,6 +402,8 @@ export class Experience {
     // The section count and the Works arrival index are the worldSlots
     // contract (single source of the six-slot model), not literals.
     this._storyNav = new CinematicNav(WORLD_SLOT_COUNT)
+    // Phase 7: native scroll is a typed loop wake source.
+    this._storyNav.onActivity = () => this._raiseRenderDemand('nav')
     this._storyNav.onSectionChange((idx) => {
       this._uiMenu?.setActive(idx)
       // Initial hashes are replayed only after the ready splash event. Keep
@@ -384,13 +411,13 @@ export class Experience {
       // cannot depend on an earlier render frame to wake its carousel.
       if (idx === WORKS_SLOT_INDEX && getCurrentPage() === 'home') {
         void this.world?.ensureCarouselInitialized().then(() => {
-          if (this._storyNav?.getSectionIndex() === WORKS_SLOT_INDEX) this._needsRender = true
+          if (this._storyNav?.getSectionIndex() === WORKS_SLOT_INDEX) this._raiseRenderDemand('nav')
         })
       }
-      this._needsRender = true
+      this._raiseRenderDemand('nav')
     })
     this._storyNav.onActiveChange((active) => {
-      if (active) this._needsRender = true
+      if (active) this._raiseRenderDemand('nav')
     })
 
     // UIMenu
@@ -413,8 +440,20 @@ export class Experience {
       try {
         const { DevPanel: DevPanelCtor } = await import('../core/DevPanel')
         this.devPanel = new DevPanelCtor(this)
-        ;(window as unknown as { __jlzRuntimeSnapshot?: () => unknown }).__jlzRuntimeSnapshot =
-          () => this.devPanel?.getResourceSnapshot() ?? null
+        // Dev-only runtime probe: resource snapshot PLUS the single loop
+        // driver's diagnostics (Phase 7 acceptance: the loop must be
+        // inactive after the settled frame — zero settled draws).
+        ;(
+          window as unknown as {
+            __jlzRuntimeSnapshot?: () => { resources: unknown; loop: unknown } | null
+          }
+        ).__jlzRuntimeSnapshot = () => {
+          if (!this.devPanel) return null
+          return {
+            resources: this.devPanel.getResourceSnapshot(),
+            loop: this._scheduler.diagnostics,
+          }
+        }
         console.log('[Experience] DevPanel ready — press ` or ~ or Ctrl+D to toggle')
       } catch (e) {
         console.warn('[Experience] DevPanel init failed:', e)
@@ -444,21 +483,13 @@ export class Experience {
     this.camera.instance.position.set(0, 5, 10)
     this.camera.instance.lookAt(0, 0, 0)
     this.camera.instance.updateProjectionMatrix()
-    // Use renderer.setAnimationLoop() instead of requestAnimationFrame.
-    // WebGPURenderer on the WebGPU backend REQUIRES this for correct frame
-    // pacing — rAF does not synchronize with the WebGPU swap chain, causing
-    // severe frame stutter (observed 3 FPS on Chrome/WebGPU). On WebGL2 it
-    // falls back to rAF internally, so behavior is identical. The Renderer
-    // owns the callback so a device-loss recovery can re-attach it.
-    this.renderer.setAnimationLoop((t: number) => this.update(t))
-
-    // Pause the render loop when the tab is hidden — setAnimationLoop runs
-    // full-rate otherwise, burning CPU/GPU in the background.
-    this._onVisibilityChange = () => {
-      if (document.hidden) this.renderer.setAnimationLoop(null)
-      else this.renderer.setAnimationLoop((t: number) => this.update(t))
-    }
-    document.addEventListener('visibilitychange', this._onVisibilityChange)
+    // Phase 7 (ADR 0004): the loop is demand-driven — the scheduler (built in
+    // the constructor) is the single setAnimationLoop caller. It installs the
+    // frame callback on the first 'first-frame' invalidation and stops it
+    // after the settled frame (zero settled draws). WebGPURenderer on the
+    // WebGPU backend still paces through setAnimationLoop (swap-chain sync) —
+    // the driver, not the start/stop policy, is unchanged from Phase 6.
+    this._scheduler.invalidate('first-frame')
 
     // Bounded WebGPU device-loss recovery: the Renderer re-creates the
     // renderer on the same canvas and rebuilds the post pipeline. The PMREM
@@ -466,6 +497,10 @@ export class Experience {
     // it on the replacement renderer.
     this._onRendererRecovered = () => {
       this.setupEnvironment()
+      // The loop may have been settled/stopped when the device was lost; a
+      // typed recovery invalidation re-arms the single driver on the
+      // replacement renderer.
+      this._raiseRenderDemand('recovery')
     }
     eventBus.on('jlz:renderer-recovered', this._onRendererRecovered)
 
@@ -485,7 +520,7 @@ export class Experience {
       this._mouseTrailRafId = requestAnimationFrame(() => {
         this._mouseTrailRafId = null
         this._mouseTrailRafPending = false
-        this._needsRender = true
+        this._raiseRenderDemand('cursor')
       })
     }
     window.addEventListener('mousemove', this._onMouseMoveForTrail, { passive: true })
@@ -563,7 +598,7 @@ export class Experience {
       if (newPage === 'works') {
         void this.world?.ensureWorksPlaneStageInitialized().then(() => {
           this.world?.setWorksPlaneStageSection(0)
-          this._needsRender = true
+          this._raiseRenderDemand('nav')
         })
       } else {
         // Works owns eight decoded 1440×810 textures. Keeping an inactive
@@ -578,14 +613,14 @@ export class Experience {
           this.world?.ensureContactCyprusStageInitialized(),
         ]).then(() => {
           this.world?.setContactTextStageSection(0)
-          this._needsRender = true
+          this._raiseRenderDemand('nav')
         })
       } else {
         this.world?.disposeContactTextStage()
         this.world?.disposeContactCyprusStage()
         this.world?.setContactSceneSection(0)
       }
-      this._needsRender = true
+      this._raiseRenderDemand('nav')
     }
     window.addEventListener('jlz:route-change', this._routeChangeCloseOverlayHandler)
 
@@ -593,7 +628,7 @@ export class Experience {
     this._wobblePulseHandler = () => {
       this.world?.baku?.triggerWobblePulse()
       // Keep rendering while the pulse animates (sin-envelope in SplashCube.update).
-      this._needsRender = true
+      this._raiseRenderDemand('dirty')
     }
     window.addEventListener('jlz:wobble-pulse', this._wobblePulseHandler)
 
@@ -612,7 +647,7 @@ export class Experience {
       } else {
         return
       }
-      this._needsRender = true
+      this._raiseRenderDemand('nav')
     }
     window.addEventListener('jlz:page-section-change', this._worksPageSectionHandler)
 
@@ -646,6 +681,67 @@ export class Experience {
       }
     }
     window.addEventListener('jlz:goto-section-by-hash', this._gotoSectionByHashHandler)
+  }
+
+  /**
+   * Raise render demand from OUTSIDE the frame (event handlers, async
+   * callbacks) and wake the single loop driver if the loop has settled.
+   * In-frame raises may keep writing `_needsRender` directly — the loop is
+   * already running by definition.
+   */
+  private _raiseRenderDemand(reason: FrameReason = 'dirty'): void {
+    this._needsRender = true
+    this._scheduler.invalidate(reason)
+  }
+
+  /**
+   * Post-frame settle decision for the single loop driver (ADR 0004): the
+   * loop may stop after this frame only when the draw gate would have been
+   * a no-op (demand clear AND nothing active — the demandSettles 14-flag
+   * set) AND the cursor spring has converged (it needs frames even when the
+   * scene is settled). Equivalent to "the next frame would draw nothing".
+   */
+  private _isLoopSettled(): boolean {
+    return (
+      !this._needsRender && demandSettles(this._lastActivity) && this.cursor?.isSettled !== false
+    )
+  }
+
+  // ── A4 ambient breath (wall-clock, Phase 7) ──
+  /**
+   * Arm the ~2.5 s breath timer while the scene is idle, or drop it while
+   * active / hidden / reduced-motion. Called on every frame with the
+   * frame's activity snapshot. The armed timer survives loop stop (that is
+   * the point: the loop is stopped when settled) and fires through the
+   * scheduler's typed 'breath' invalidation.
+   */
+  private _scheduleBreath(activity: RenderActivity): void {
+    const idle = !document.hidden && idleForAmbientBreath(activity, this._reducedMotion)
+    if (!idle || this._breathTimer !== null) {
+      if (!idle) this._cancelBreath()
+      return
+    }
+    this._breathTimer = setTimeout(
+      () => this._onBreathFire(),
+      Experience.AMBIENT_BREATH_INTERVAL * 1000,
+    )
+  }
+
+  private _cancelBreath(): void {
+    if (this._breathTimer !== null) {
+      clearTimeout(this._breathTimer)
+      this._breathTimer = null
+    }
+  }
+
+  private _onBreathFire(): void {
+    this._breathTimer = null
+    // Keep the ambient rhythm going while the scene stays idle.
+    this._scheduleBreath(this._lastActivity)
+    // Activity may have resumed since the last frame — then no breath frame.
+    if (document.hidden || !idleForAmbientBreath(this._lastActivity, this._reducedMotion)) return
+    this._needsRender = true
+    this._scheduler.invalidate('breath')
   }
 
   update(time: number) {
@@ -761,26 +857,19 @@ export class Experience {
     if (anyActivity(activity)) {
       this._needsRender = true
     }
+    // Post-frame settle decision reads this snapshot (set BEFORE the section
+    // change / context switch below may raise demand in the same frame).
+    this._lastActivity = activity
 
     // ── A4: Ambient breathing (IMPROVEMENT_PLAN) ──
-    // When fully idle (no particles/nav/carousel/…), schedule a single render
-    // frame every ~2.5 s so the scene doesn't look frozen. Particle sections
-    // already run continuous frames above — skip breath timer there.
-    //
-    // Respects: prefers-reduced-motion (frozen entirely), document.hidden
-    // (setAnimationLoop already paused, but guard is cheap).
-    // The breath idle check (the narrower 10-flag set + reduced-motion gate)
-    // and the accumulator step are the pure renderDemand contract.
-    const breath = ambientBreathStep(
-      this._ambientBreathTimer,
-      dt,
-      Experience.AMBIENT_BREATH_INTERVAL,
-      idleForAmbientBreath(activity, this._reducedMotion),
-    )
-    this._ambientBreathTimer = breath.nextTimer
-    if (breath.fired) {
-      this._needsRender = true
-    }
+    // When fully idle (no particles/nav/carousel/…), one refresh frame every
+    // ~2.5 s so the scene doesn't look frozen. Phase 7: the loop stops when
+    // settled, so a per-frame dt accumulator can never advance — the breath
+    // is a wall-clock timer (see _scheduleBreath) that raises demand and
+    // fires a typed 'breath' invalidation on the scheduler. Respects
+    // prefers-reduced-motion (frozen entirely) and a hidden tab (the loop is
+    // paused; the timer is dropped and re-armed on the resume frame).
+    this._scheduleBreath(activity)
 
     // Always update navigation + world state (cheap), but only render when needed
     const ns = this._storyNav?.getOverallProgress() ?? 0
@@ -959,22 +1048,20 @@ export class Experience {
     this.world?.baku?.triggerOpener()
     if (this._reducedMotion) return
     this.world?.particleBurst?.trigger(0, 0, 0)
-    if (this.world?.particleBurst?.isActive) this._needsRender = true
+    if (this.world?.particleBurst?.isActive) this._raiseRenderDemand('dirty')
   }
 
   destroy() {
-    // Stop the animation loop FIRST — setAnimationLoop(null) cancels the
-    // internal callback. Without this, the loop keeps firing after dispose().
-    this.renderer.setAnimationLoop(null)
+    // Stop the loop driver FIRST — RenderScheduler.destroy() clears the
+    // setAnimationLoop callback, the visibility listener and any pending
+    // invalidation, so no frame fires after dispose().
+    this._scheduler.destroy()
+    this._cancelBreath()
     // Cancel pending rAF for mouse trail (prevents fire after destroy)
     this._mouseTrailRafPending = false
     if (this._mouseTrailRafId !== null) {
       cancelAnimationFrame(this._mouseTrailRafId)
       this._mouseTrailRafId = null
-    }
-    if (this._onVisibilityChange) {
-      document.removeEventListener('visibilitychange', this._onVisibilityChange)
-      this._onVisibilityChange = null
     }
     if (this._onMouseMoveForTrail) {
       window.removeEventListener('mousemove', this._onMouseMoveForTrail)

@@ -15,9 +15,11 @@
 //     settle after a rendered frame.
 //   - `idleForAmbientBreath` is a narrower 10-flag AND-NOT plus the
 //     reduced-motion gate. It decides when the ~2.5 s ambient-breath timer
-//     runs. It intentionally EXCLUDES `worksScroll`, `drawTrail`,
+//     may run. It intentionally EXCLUDES `worksScroll`, `drawTrail`,
 //     `cubeRotating` and `camPulsing`: those keep the loop alive on their own
-//     and must not also trigger the breath.
+//     and must not also trigger the breath. Phase 7 moves the timer itself to
+//     a wall-clock `setTimeout` owned by the Experience bootstrap; this file
+//     only answers "is the scene idle enough to breathe now".
 //
 // Pure by design: no DOM, timers, renderer or globals. `Experience.update()`
 // now consumes these functions at the exact points where the OR, the breath
@@ -137,31 +139,4 @@ export function shouldRender(needsRender: boolean, a: RenderActivity): boolean {
  */
 export function demandSettles(a: RenderActivity): boolean {
   return !anyActivity(a)
-}
-
-export interface AmbientBreathStep {
-  /** True when this step schedules a breath frame. */
-  fired: boolean
-  /** The accumulator after this step (reset to 0 on fire or when not idle). */
-  nextTimer: number
-}
-
-/**
- * Advance the ambient-breath accumulator by one frame.
- *
- * - When `idle` is false the accumulator resets (the scene is active, so the
- *   breath does not accumulate; the first idle period waits a full interval).
- * - When `idle` is true the accumulator grows by `dt`; once it reaches
- *   `interval` a breath frame is scheduled and the accumulator resets.
- */
-export function ambientBreathStep(
-  timer: number,
-  dt: number,
-  interval: number,
-  idle: boolean,
-): AmbientBreathStep {
-  if (!idle) return { fired: false, nextTimer: 0 }
-  const next = timer + dt
-  if (next >= interval) return { fired: true, nextTimer: 0 }
-  return { fired: false, nextTimer: next }
 }

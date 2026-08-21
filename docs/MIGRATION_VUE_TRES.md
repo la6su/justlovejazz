@@ -2189,14 +2189,26 @@ Status (2026-08-22):
   invalidation or on tab resume (exactly one), pauses advancement while the
   tab is hidden, and settles synchronously for reduced motion. The `LoopDriver`
   port is the only edge to a real `renderer.setAnimationLoop`, so the policy is
-  unit-tested (13 tests) without a renderer, canvas or rAF. No runtime
-  behavior changes yet — the current Experience loop remains the one driver
-  until the cutover slice.
-- Slice 2 (open): cut the Experience loop over to the `RenderScheduler` as the
-  single `setAnimationLoop` caller — wake sources and activity tokens drive
-  start/stop, the loop stops when settled (zero settled draws), the ambient
-  breath becomes an invalidation, and hidden-tab pause/resume is owned by the
-  scheduler.
+  unit-tested (13 tests) without a renderer, canvas or rAF. At this slice the
+  core was inert; the Experience loop that remains the one driver until the
+  cutover slice is replaced by it in Slice 2.
+- Slice 2 (done): the Experience loop is cut over to the `RenderScheduler` as
+  the single `setAnimationLoop` caller. The direct `renderer.setAnimationLoop`
+  call and the ad-hoc `_onVisibilityChange` re-attach are deleted; the
+  scheduler (built in the `Experience` constructor against the `Renderer`
+  owner boundary) is the only loop policy owner. Wake sources are now typed
+  invalidations (`first-frame` on boot, `nav` from scroll/section/route,
+  `cursor` from pointer/hover, `resize`, `recovery` on device loss, `breath`
+  for the ambient refresh). The loop stops after the settled frame (zero
+  settled draws): the settle decision is `!_needsRender && demandSettles
+(last activity) && cursor.isSettled`, and the `Cursor` exposes the
+  spring-convergence predicate so a pointer that keeps wobbling cannot be
+  frozen by the scene settling. The per-frame `dt` ambient-breath accumulator
+  (the now-deleted `renderDemand.ambientBreathStep`) is replaced by a
+  wall-clock timer that raises demand and fires the typed `breath`
+  invalidation — required because a settled loop no longer runs frames to
+  advance the accumulator. Hidden-tab pause and the exactly-one resume
+  invalidation are owned by the scheduler's `autoVisibility`.
 - Slice 3 (open): make `SceneHost` the persistent Tres root — a `TresCanvas`
   with the custom renderer factory, camera and scene, each given exactly one
   owner; attach the existing World through an explicit primitive adapter;
