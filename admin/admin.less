@@ -270,9 +270,9 @@ textarea {
 
 .jlz-admin-catalog {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  padding: 0 20px 24px;
+  grid-template-columns: 1fr;
+  gap: 4px;
+  padding: 0 12px 24px;
 }
 
 // Figma-style catalog groups: mono kickers over each element family.
@@ -292,50 +292,58 @@ textarea {
 
 .jlz-admin-catalog button {
   display: grid;
-  grid-template-columns: 28px 1fr;
-  gap: 8px;
+  grid-template-columns: 18px 1fr;
+  gap: 10px;
   align-items: center;
-  min-height: 48px;
-  padding: 8px;
+  min-height: 38px;
+  padding: 8px 10px;
   border: 0;
   color: var(--jlz-color-text);
-  background: var(--jlz-color-surface);
+  background: transparent;
   text-align: left;
   cursor: pointer;
 }
 
 .jlz-admin-catalog button {
   transition:
-    background 140ms ease,
-    transform 140ms ease;
+    background 120ms ease,
+    color 120ms ease;
 }
 
 .jlz-admin-catalog button:hover,
 .jlz-admin-catalog button:focus-visible {
   background: var(--jlz-color-surface-hover);
   outline: none;
-  transform: translateY(-1px);
 }
 
-.jlz-admin-catalog button:active {
-  transform: translateY(0);
+.jlz-admin-catalog button:hover .jlz-admin-element-icon,
+.jlz-admin-catalog button:focus-visible .jlz-admin-element-icon {
+  color: var(--jlz-color-accent);
 }
 
 .jlz-admin-element-icon {
   display: grid;
   place-items: center;
-  width: 28px;
-  height: 28px;
-  color: var(--jlz-color-accent);
-  background: var(--jlz-color-bg);
+  width: 18px;
+  height: 18px;
+  color: var(--jlz-color-text-subtle);
   font-family: var(--jlz-font-mono);
+  font-size: 0.85rem;
+  transition: color 120ms ease;
 }
 
 .jlz-admin-outline-heading {
   display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  padding: 16px 20px 10px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 18px 20px 10px;
+}
+
+.jlz-admin-outline-heading strong {
+  color: var(--jlz-color-text);
+  font-size: 1rem;
+  text-transform: none;
 }
 
 .jlz-admin-outline {
@@ -395,31 +403,25 @@ textarea {
   background: var(--jlz-color-accent);
 }
 
-.jlz-admin-outline-type {
-  font-family: var(--jlz-font-mono);
-  font-size: 0.62rem;
-  opacity: 0.72;
-  text-transform: uppercase;
-}
-
-// Element glyph in the outline row — the same mark the catalog uses, scaled
-// down so the row stays one line.
+// Element glyph in the outline row — the same mark the catalog uses, one
+// quiet glyph so the row stays one line.
 .jlz-admin-outline-icon {
   display: grid;
   place-items: center;
   flex: none;
   width: 18px;
   height: 18px;
-  border-radius: 0;
-  color: var(--jlz-color-accent);
-  background: var(--jlz-color-bg);
+  color: var(--jlz-color-text-subtle);
   font-family: var(--jlz-font-mono);
-  font-size: 0.66rem;
+  font-size: 0.85rem;
+}
+
+.jlz-admin-outline button:hover .jlz-admin-outline-icon {
+  color: var(--jlz-color-text);
 }
 
 .jlz-admin-outline button.is-selected .jlz-admin-outline-icon {
   color: var(--jlz-color-text-inverse);
-  background: color-mix(in srgb, var(--jlz-color-text-inverse) 14%, transparent);
 }
 
 // The "Reset" action sits in the style panel heading row.

@@ -226,7 +226,11 @@ do not start a phase whose entry gate has not passed.
       Icon, List and Divider groups joined the theme (47 preview
       variables) — and its preview always renders the complete component
       set: the "Preview all UI components" toggle is gone, and selecting
-      a group marks its sample active and scrolls it into view.
+      a group marks its sample active and scrolls it into view. A follow-up
+      polish pass showed the full six-level heading scale in the Heading
+      sample (the Base sample keeps body copy only) and reworked the
+      builder sidebar: the catalog is one quiet column of glyph rows and
+      the outline drops the duplicated mono type badge.
       The SFC migration of the
       catalogue, outline, inspector, preview and Style workspace and the
       lifecycle-safe preview remain open.

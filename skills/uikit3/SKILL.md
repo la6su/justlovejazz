@@ -87,7 +87,9 @@ Rules of the pattern:
   group's id badge — the same grouped panel language as the element
   inspector. The style preview always shows the complete component set;
   selecting a group marks its sample active (1px accent outline) and
-  scrolls it into view instead of hiding the rest.
+  scrolls it into view instead of hiding the rest. The Heading sample
+  renders the full six-level scale (2xlarge through level six); the
+  Base sample is body copy only.
 - The admin shell is desktop-only (owner ruling); only the preview's
   viewport modes (desktop / tablet / mobile) may simulate narrow layouts.
 - SFC migration target: the Vue admin preserves `BuilderStore` semantics

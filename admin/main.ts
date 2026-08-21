@@ -176,15 +176,12 @@ function renderOutline(): void {
       icon.className = 'jlz-admin-outline-icon'
       icon.setAttribute('aria-hidden', 'true')
       icon.textContent = BUILDER_CATALOG[node.type].icon
-      const type = document.createElement('span')
-      type.className = 'jlz-admin-outline-type'
-      type.textContent = node.type
       const name = document.createElement('span')
       name.textContent =
         node.props.content?.slice(0, 32) ||
         node.props.label?.slice(0, 32) ||
         BUILDER_CATALOG[node.type].label
-      button.append(icon, type, name)
+      button.append(icon, name)
       item.append(button)
       outlineElement.append(item)
       // Keep the current selection visible without fighting the reader.

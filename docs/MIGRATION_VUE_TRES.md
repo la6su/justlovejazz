@@ -1737,7 +1737,8 @@ contract, alias registry 95 tokens / 10 aliases, generated-theme assert,
 catalogue → style-group coverage), production build with the admin graph
 absent from `dist`, live smoke — sixteen rail groups with glyphs and
 counts, all sixteen component samples stay visible while the selected
-group is outlined and scrolled into view, divider/heading edits update the
+group is outlined and scrolled into view, the Heading sample shows the
+full six-level display scale, divider/heading edits update the
 preview live and are undo-able via Ctrl+Z to the saved baseline, computed
 chrome borders read 0px while structural hairlines stay 1px, zero console
 errors.

@@ -33,12 +33,7 @@ const showcaseSections: Record<StyleGroupId, string> = {
     </section>`,
   base: `
     <section class="jlz-style-sample" data-style-sample="base">
-      <span class="jlz-style-eyebrow">Base / typography scale</span>
-      <h1 class="uk-heading-2xlarge">Display 2xlarge</h1>
-      <h2 class="uk-heading-xlarge">Heading xlarge</h2>
-      <h3 class="uk-heading-large">Heading large</h3>
-      <h4 class="uk-heading-medium">Heading medium</h4>
-      <h5 class="uk-heading-small">Heading small</h5>
+      <span class="jlz-style-eyebrow">Base / body typography</span>
       <p class="uk-text-lead">Lead copy establishes the principal idea without competing with the title.</p>
       <p>Body copy carries the useful detail. <a href="#style-preview">Links</a>, <strong>strong text</strong>, <em>emphasis</em> and <code>inline code</code> remain distinct.</p>
       <p class="uk-text-meta">Metadata · 15 August 2026 · JUSTLOVEJAZZ</p>
@@ -67,10 +62,13 @@ const showcaseSections: Record<StyleGroupId, string> = {
     </section>`,
   heading: `
     <section class="jlz-style-sample" data-style-sample="heading">
-      <span class="jlz-style-eyebrow">Heading / display type</span>
-      <h1 class="uk-heading-large">Headings carry the brand voice</h1>
-      <h3 class="uk-heading-small">Weight, transform and line height are one themed decision.</h3>
-      <p>The display tier stays UPPERCASE and heavy; the step scale keeps every level distinct.</p>
+      <span class="jlz-style-eyebrow">Heading / full scale</span>
+      <h1 class="uk-heading-2xlarge">Display 2xlarge</h1>
+      <h2 class="uk-heading-xlarge">Display xlarge</h2>
+      <h3 class="uk-heading-large">Display large</h3>
+      <h4 class="uk-heading-medium">Display medium</h4>
+      <h5 class="uk-heading-small">Display small</h5>
+      <h6>Base level six</h6>
     </section>`,
   text: `
     <section class="jlz-style-sample" data-style-sample="text">
