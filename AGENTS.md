@@ -58,6 +58,9 @@ in a dirty tree and keep each change to one coherent outcome.
   decisions.
 - [skills/justlovejazz-ui/SKILL.md](skills/justlovejazz-ui/SKILL.md) — load for
   UI, Less, theme, accessibility or visual QA work.
+- [skills/uikit3/SKILL.md](skills/uikit3/SKILL.md) — load for UIKit 3
+  component/Less contracts, the page-builder reference (catalogue,
+  inspector, preview, generated theme) or yotheme.pro editor-pattern work.
 - [skills/justlovejazz-release/SKILL.md](skills/justlovejazz-release/SKILL.md) —
   load when preparing a commit, push or pull request.
 
