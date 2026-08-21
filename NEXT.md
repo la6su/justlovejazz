@@ -112,8 +112,11 @@ do not start a phase whose entry gate has not passed.
       (`src/core/renderDemand.ts`, 175/175 unit suite; the 14-flag
       raise/settle set and the narrower 10-flag ambient-breath idle set are
       line-verified against the three live `Experience.update()` sites and
-      unit-locked; inert until the Phase 7 `RenderScheduler` rewires the
-      loop). The brand/runtime token manifest is now a pure contract
+      unit-locked; **now consumed** by `Experience.update()` as a 1:1
+      source-of-fact swap — the OR raise, the breath idle check + step and
+      the settle AND-NOT read the contract at the same points with
+      unchanged timing; the loop owner stays `Experience` until the Phase 7
+      `RenderScheduler` takes over the loop itself). The brand/runtime token manifest is now a pure contract
       (`src/core/brandTokens.ts`, 183/183 unit suite; mirrors the 84
       `_import.less` §1 tokens key-for-key, unit-locked by a Less parity
       test; inert until the Phase 5 generated adapters consume it). The
@@ -148,10 +151,18 @@ do not start a phase whose entry gate has not passed.
       event/frame timing, and the route/story/scene desync invariant — DOM
       main index == scene slot index at every stop point — is unit-locked;
       the full runtime StoryController publisher lands with the Phase 5/7
-      scene-host rewiring on top of this contract). The open contracts are
-      the runtime StoryController publisher and the RenderScheduler consumer
-      migration. Segment gate (2026-08-21): whole-project prettier,
-      vue-tsc, 203/203 unit suite, build and `git diff --check` all green,
+      scene-host rewiring on top of this contract). The render-demand decision is
+      now consumed by the loop (the Phase 7 RenderScheduler consumer
+      migration, 220/220 unit suite): `Experience.update()` reads the
+      14-flag OR raise, the breath idle check + step and the 14-flag settle
+      from `renderDemand.ts` at the same points with unchanged timing, and
+      the loop owner stays `Experience` until the Phase 7 `RenderScheduler`
+      takes over the loop itself. The Phase 3 contract set is complete —
+      remaining work (the runtime StoryController publisher, the
+      `RenderScheduler` loop owner) lands in Phases 4/5/7. Segment gate
+      (2026-08-21, re-verified per slice through this one): whole-project
+      prettier, vue-tsc, 220/220 unit suite, build and `git diff --check`
+      all green,
       and the Playwright e2e suite passes **serially** (18/18,
       `--workers=1`). Under the configured default (`fullyParallel: true`)
       two timing-sensitive tests (section-anchor attach after in-app route

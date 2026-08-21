@@ -1328,6 +1328,43 @@ the Phase 5/7 scene-host rewiring on top of this contract, which owns the
 mapping and the typed state it publishes. Rollback: restore the inline
 rescale/clamp/rounding in `CinematicNav` and delete the contract.
 
+#### Phase 3 render-demand consumer slice (Phase 7 RenderScheduler wiring)
+
+— 2026-08-21
+
+The per-frame render-demand decision that used to be inlined in
+`Experience.update()` is now consumed from the pure `renderDemand.ts`
+contract (unit-locked since the contract slice). This is the Phase 7
+RenderScheduler consumer migration, done in place because the loop already
+lives in `Experience` — only the _decision_ moves, not its timing:
+
+- The 14 per-frame activity flags are collected once into a typed
+  `RenderActivity` snapshot at the exact point the flags were read before.
+- The demand raise is now `anyActivity(activity)` (the 14-flag OR), the
+  render gate is `shouldRender(this._needsRender, activity)` — 1:1 with the
+  legacy `if (this._needsRender)` because the OR already raised the flag for
+  any active source — and the post-frame settle is `demandSettles(activity)`
+  (the 14-flag AND-NOT).
+- The ambient-breath timer is now `idleForAmbientBreath(activity,
+reducedMotion)` (the narrower 10-flag AND-NOT plus the reduced-motion
+  gate; `worksScroll`, `drawTrail`, `cubeRotating` and `camPulsing` stay
+  deliberately excluded) advanced by the pure `ambientBreathStep`
+  accumulator — same ~2.5 s interval, same "first idle period waits a full
+  interval" reset behavior.
+
+220/220 unit suite (the flag sets and their legacy-equivalence baselines
+were already unit-locked against the inline logic), `vue-tsc` clean, build
++~0.6 kB raw / +0.24 kB gzip in `chunk-core` (the `renderDemand` module
+stops being tree-shaken as an import-free inert file), e2e 18/18 serial,
+runtime smoke: section scroll keeps rendering live, the scene settles when
+idle, zero console errors.
+
+Scope limits: the loop owner stays `Experience` (one canvas/renderer/loop
+owner, ADR 0003) — the Phase 7 `RenderScheduler` target owner takes over the
+loop itself when the scene host is rewired in Phase 5/7; this slice only
+hands it its decision. Rollback: restore the three inline blocks in
+`Experience.update()` (the contract file can stay — it is unit-locked).
+
 ### Phase 4 — Vue Page Builder
 
 Scope:
@@ -1571,7 +1608,7 @@ The following ledgers are updated in this document during implementation.
 | routes/hash/meta         | `routeManifest.ts`, `router.ts`, `pageMeta.ts`                                                                                                                       | route manifest + Vue Router                                                  | 3, 5            |
 | scene route-page reads   | `routePage.ts` port (all scene consumers migrated: `World.ts`, `BakuCarousel.ts`, `CinematicNav.ts`, `ContentReveal.ts`, `Experience.ts`)                            | typed route port owned by the app providers                                  | 3, 5            |
 | six world slots          | `worldSlots.ts` tuple + strict `worldSlotIndex` (consumed by `WorldConfig.ts`, `SplashCube.ts`, `CinematicNav.ts` slot-index constants)                              | domain tuple + `WorldRoot`                                                   | 3, 7, 8         |
-| render demand            | `Experience._needsRender` + `renderDemand.ts` pure decision contract (inert until consumed)                                                                          | `RenderScheduler`                                                            | 3, 7            |
+| render demand            | `renderDemand.ts` pure decision contract (consumed: `Experience.update()` 1:1 swap — OR/breath/settle; `Experience._needsRender` stays the flag)                     | `RenderScheduler`                                                            | 3, 7            |
 | motion preference        | `motionPolicy.ts` typed port (11 consumers); `entry-shell.ts` dataset hook for E2E/CSS (dead `syncReducedMotionDataset` removed 2026-08-21)                          | typed preference state owned by the app providers                            | 3, 5            |
 | brand/runtime tokens     | `brandTokens.ts` manifest (mirrors `_import.less` §1, unit-locked; Less stays source of truth)                                                                       | typed manifest + generated adapters                                          | 3, 5            |
 | motion preference        | `motionPolicy.ts` typed port (11 consumers; dead `syncReducedMotionDataset` writer removed); `entry-shell.ts` dataset hook for E2E/CSS                               | typed preference state owned by the app providers                            | 3, 5            |

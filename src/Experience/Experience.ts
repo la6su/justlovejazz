@@ -22,6 +22,14 @@ import { UIMenu } from '../UI/UIMenu'
 // called). updateWorldDNAAudio set uniforms nobody read. All dead.
 import { prefersReducedMotion } from '../core/motionPolicy'
 import type { ThemeAppliedPort } from '../core/sectionTheme'
+import {
+  ambientBreathStep,
+  anyActivity,
+  demandSettles,
+  idleForAmbientBreath,
+  shouldRender,
+  type RenderActivity,
+} from '../core/renderDemand'
 // ContentReveal owns per-section auto/inverse themes and sends this runtime
 // jlz:theme-applied events for 3D synchronisation.
 import { eventBus } from '../core/EventBus'
@@ -721,22 +729,27 @@ export class Experience {
     // even when cards have settled (on-demand rendering would freeze the scroll).
     const worksScrollActive = getCurrentPage() === 'works' && !this._reducedMotion
 
-    if (
-      navActive ||
-      carouselActive ||
-      worksPlaneActive ||
-      contactTextActive ||
-      contactCyprusActive ||
-      worksScrollActive ||
-      drawTrailActive ||
-      openerActive ||
-      burstActive ||
-      camShaking ||
-      cubeRotating ||
-      camPulsing ||
-      particlesActive ||
-      ambientSceneActive
-    ) {
+    // The per-frame activity snapshot — the demand decision below is the
+    // pure renderDemand contract (single source of the 14-flag OR /
+    // 10-flag breath-idle sets, unit-locked against the legacy logic).
+    const activity: RenderActivity = {
+      nav: navActive,
+      carousel: carouselActive,
+      worksPlane: worksPlaneActive,
+      contactText: contactTextActive,
+      contactCyprus: contactCyprusActive,
+      worksScroll: worksScrollActive,
+      drawTrail: drawTrailActive,
+      opener: openerActive,
+      burst: burstActive,
+      camShaking,
+      cubeRotating,
+      camPulsing,
+      particles: particlesActive,
+      ambientScene: ambientSceneActive,
+    }
+
+    if (anyActivity(activity)) {
       this._needsRender = true
     }
 
@@ -747,27 +760,17 @@ export class Experience {
     //
     // Respects: prefers-reduced-motion (frozen entirely), document.hidden
     // (setAnimationLoop already paused, but guard is cheap).
-    if (
-      !navActive &&
-      !carouselActive &&
-      !worksPlaneActive &&
-      !contactTextActive &&
-      !contactCyprusActive &&
-      !openerActive &&
-      !burstActive &&
-      !camShaking &&
-      !particlesActive &&
-      !ambientSceneActive &&
-      !this._reducedMotion
-    ) {
-      this._ambientBreathTimer += dt
-      if (this._ambientBreathTimer >= Experience.AMBIENT_BREATH_INTERVAL) {
-        this._ambientBreathTimer = 0
-        this._needsRender = true
-      }
-    } else {
-      // Reset timer when active — first idle period waits full interval.
-      this._ambientBreathTimer = 0
+    // The breath idle check (the narrower 10-flag set + reduced-motion gate)
+    // and the accumulator step are the pure renderDemand contract.
+    const breath = ambientBreathStep(
+      this._ambientBreathTimer,
+      dt,
+      Experience.AMBIENT_BREATH_INTERVAL,
+      idleForAmbientBreath(activity, this._reducedMotion),
+    )
+    this._ambientBreathTimer = breath.nextTimer
+    if (breath.fired) {
+      this._needsRender = true
     }
 
     // Always update navigation + world state (cheap), but only render when needed
@@ -899,8 +902,11 @@ export class Experience {
       this.world.groundPlane.visible = this.world.currentSectionIndex === 4
     }
 
-    // Per-section camera smoothing — only when rendering
-    if (this._needsRender) {
+    // Per-section camera smoothing — only when rendering. The gate is the
+    // contract's shouldRender (demand set OR anything active); it is 1:1
+    // with the legacy `if (this._needsRender)` because the anyActivity OR
+    // above already raised the flag for any active source.
+    if (shouldRender(this._needsRender, activity)) {
       const smoothing = cfg?.camSmoothing ?? SECTION_TRANSITION.cameraSmoothing
       this.camera.updateSmooth(cameraTarget, dt, smoothing)
       this.world.lightsGroup.update(dt)
@@ -908,25 +914,10 @@ export class Experience {
       // (AudioSystem.update() removed — AudioSystem deleted, was dead code)
       this.renderer.update(this.scene, this.camera.instance, dt, worldState)
       this.devPanel?.recordRenderFrame()
-      // Clear flag if nothing is actively changing. Include particles/cube/
-      // showreel/cam pulse so we don't drop a mid-animation frame
-      // and rely on the next tick's re-raise (which worked, but was fragile).
-      if (
-        !navActive &&
-        !carouselActive &&
-        !worksPlaneActive &&
-        !contactTextActive &&
-        !contactCyprusActive &&
-        !worksScrollActive &&
-        !openerActive &&
-        !burstActive &&
-        !camShaking &&
-        !particlesActive &&
-        !cubeRotating &&
-        !drawTrailActive &&
-        !camPulsing &&
-        !ambientSceneActive
-      ) {
+      // Clear the demand flag only when nothing is still active — the same
+      // 14-flag settle set, now the contract's demandSettles (unit-locked
+      // against the legacy inline AND-NOT).
+      if (demandSettles(activity)) {
         this._needsRender = false
       }
     }

@@ -2,11 +2,10 @@
 //
 // The renderer is demand-driven (docs/ARCHITECTURE.md): the animation loop
 // runs continuously but draws a frame only while the scene is changing, and
-// settles to idle when nothing is active. That per-frame decision currently
-// lives inline in `Experience.update()`. This contract extracts it as pure,
-// side-effect-free functions so the scheduler can be unit-tested without a
-// renderer, and later consumed by the `Experience` loop (or the Phase 7
-// `RenderScheduler` target owner) without changing any timing.
+// settles to idle when nothing is active. That per-frame decision lives in
+// `Experience.update()`; this contract owns the decision as pure,
+// side-effect-free functions so the scheduler is unit-tested without a
+// renderer, and the loop consumes it without changing any timing.
 //
 // Two DELIBERATELY DIFFERENT flag sets are preserved — this is real behavior,
 // not a simplification, and must not be "fixed" when the consumer migrates:
@@ -20,10 +19,12 @@
 //     `cubeRotating` and `camPulsing`: those keep the loop alive on their own
 //     and must not also trigger the breath.
 //
-// Pure by design: no DOM, timers, renderer or globals. The current inline
-// logic in `Experience.ts` stays the legacy implementation until the loop is
-// rewired to call these functions (Phase 7 RenderScheduler). Inert until
-// consumed; unit-testable without a browser.
+// Pure by design: no DOM, timers, renderer or globals. `Experience.update()`
+// now consumes these functions at the exact points where the OR, the breath
+// idle check and the settle AND-NOT used to be inlined — a 1:1
+// source-of-fact swap with unchanged timing (the same flags are read at the
+// same moment; the loop only renders when `shouldRender` says so). Unit-
+// testable without a browser.
 
 /**
  * The per-frame activity flags. Each mirrors a "something is moving" source in
