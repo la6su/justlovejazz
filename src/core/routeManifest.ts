@@ -30,7 +30,9 @@ export const MANIFEST_PAGES: readonly PageId[] = Object.freeze(
   ROUTE_MANIFEST.map((entry) => entry.page),
 )
 
-const PAGE_BY_PATH = new Map<string, PageId>(ROUTE_MANIFEST.map((entry) => [entry.path, entry.page]))
+const PAGE_BY_PATH = new Map<string, PageId>(
+  ROUTE_MANIFEST.map((entry) => [entry.path, entry.page]),
+)
 
 /**
  * Strict lookup: `undefined` for a path the manifest does not own. Navigation
