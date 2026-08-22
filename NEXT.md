@@ -463,6 +463,30 @@ do not start a phase whose entry gate has not passed.
       read now uses its own field; ExperienceUI's `hitTest` reads via it).
       World's lazy-stage fields (`_worksPlaneStagePromise` /
       `_worksPlaneStageRequest`) + lifecycle methods + disposal are deleted.
+      Phase 8 slice 8 landed (2026-08-22): the Contact pixel-title layer
+      (ContactTextStage) + the lazy 3D Agros backdrop (ContactCyprusStage)
+      left `World` — Experience now owns both lazy stages (created on the
+      first /contact visit, disposed when leaving, so the decoded pixel
+      texture + Draco model never look like a navigation leak): they enter the
+      Tres-owned scene directly, are injected through
+      `World.attachContactTextStage` / `World.attachContactCyprusStage`, and
+      the init boundaries `World.init()` used to run at (text stage + Draco
+      decode + transparent material warm-up) run in `buildWorld` at the same
+      point. The moved lifecycle (`ensureContactTextStageInitialized` /
+      `disposeContactTextStage` / `setContactTextStageSection` /
+      `syncContactTextTheme` / `ensureContactCyprusStageInitialized` /
+      `disposeContactCyprusStage` / `setContactCyprusStageSection`) is reached
+      by the UI through six new `ExperienceUIHost` ports; the
+      `_contactTextIsLight` polarity cache + `_contactCyprusActive` flag moved
+      to Experience (the World cube-visibility gate now reads
+      `contactCyprusStage.isActive` off the attached stage — a new getter on
+      the class). `World.contactTextStage` / `World.contactCyprusStage` are
+      documented temporary getters (World frame path: the per-frame `update`
+      forwards in both branches; ExperienceUI's `refreshLanguage` reads via
+      them); World's lazy-stage fields + lifecycle methods + disposal are
+      deleted (`setContactSceneSection` stays — it only touches the scene
+      groups). The text-stage double-dispose race test lives in the new
+      `src/__tests__/Experience.contactStages.test.ts`.
       Phase 8 slice 2 landed (2026-08-22): the six stable section groups
       left `World` — Experience creates the new `SectionGroups` owner
       (`src/Experience/Scene/SectionGroups.ts`: factory creation,

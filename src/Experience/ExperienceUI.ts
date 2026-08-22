@@ -45,6 +45,13 @@ export interface ExperienceUIHost {
   /** Phase 8 slice 7: the Experience-owned lazy /works stage lifecycle. */
   ensureWorksPlaneStageInitialized: () => Promise<void>
   disposeWorksPlaneStage: () => void
+  /** Phase 8 slice 8: the Experience-owned lazy Contact stage lifecycle. */
+  ensureContactTextStageInitialized: () => Promise<void>
+  ensureContactCyprusStageInitialized: () => Promise<void>
+  disposeContactTextStage: () => void
+  disposeContactCyprusStage: () => void
+  setContactTextStageSection: (index: number) => void
+  setContactCyprusStageSection: (index: number) => void
 }
 
 export class ExperienceUI {
@@ -184,18 +191,18 @@ export class ExperienceUI {
         this.host.disposeWorksPlaneStage()
       }
       if (newPage === 'contact') {
-        world.setContactCyprusStageSection(0)
+        this.host.setContactCyprusStageSection(0)
         world.setContactSceneSection(0)
         void Promise.all([
-          world.ensureContactTextStageInitialized(),
-          world.ensureContactCyprusStageInitialized(),
+          this.host.ensureContactTextStageInitialized(),
+          this.host.ensureContactCyprusStageInitialized(),
         ]).then(() => {
-          world.setContactTextStageSection(0)
+          this.host.setContactTextStageSection(0)
           this.host.raise('nav')
         })
       } else {
-        world.disposeContactTextStage()
-        world.disposeContactCyprusStage()
+        this.host.disposeContactTextStage()
+        this.host.disposeContactCyprusStage()
         world.setContactSceneSection(0)
       }
       this.host.raise('nav')
@@ -221,8 +228,8 @@ export class ExperienceUI {
         // DOM sections: 0=Lab overlay, 1-4=project pairs, 5=Nav overlay.
         world.setWorksPlaneStageSection(stageIndex)
       } else if (page === 'contact') {
-        world.setContactTextStageSection(stageIndex)
-        world.setContactCyprusStageSection(stageIndex)
+        this.host.setContactTextStageSection(stageIndex)
+        this.host.setContactCyprusStageSection(stageIndex)
         world.setContactSceneSection(stageIndex)
       } else {
         return

@@ -2470,6 +2470,44 @@ removed.
   runtime parity — identical settled frame counts (65 / 31 / 64) and identical
   scene graph resources (18 / 25 / 9), clean disposal on all three runs.
 
+- Slice 8 (done, 2026-08-22): the Contact pixel-title layer (ContactTextStage)
+  - the lazy 3D Agros backdrop (ContactCyprusStage) left `World`. Experience
+    now owns both lazy stages — created on the first /contact visit and disposed
+    when leaving, so the decoded pixel texture + Draco model never look like a
+    navigation leak: they enter the Tres-owned scene directly under Experience,
+    are injected through `World.attachContactTextStage` /
+    `World.attachContactCyprusStage` (documented temporary adapters; the World
+    frame path forwards the per-frame `update` through the getters in both the
+    settled and render branches), and the init boundaries `World.init()` used to
+    run at (the text stage + the Draco decode + transparent material warm-up)
+    now run in `buildWorld` at the same point. The lazy lifecycle
+    (`ensureContactTextStageInitialized` / `disposeContactTextStage` /
+    `setContactTextStageSection` / `syncContactTextTheme` /
+    `ensureContactCyprusStageInitialized` / `disposeContactCyprusStage` /
+    `setContactCyprusStageSection`) moved to Experience and is reached by the UI
+    through six new `ExperienceUIHost` ports; the `_contactTextIsLight` polarity
+    cache + `_contactCyprusActive` flag moved with the stages, and the World
+    cube-visibility gate now reads `contactCyprusStage.isActive` off the attached
+    stage (a new getter on the class) instead of a separate World flag.
+    `World.contactTextStage` / `World.contactCyprusStage` are now temporary
+    getters whose consumers are the World frame path + Experience's `isAnimating`
+    render-demand read (now on Experience's own fields) + ExperienceUI's
+    `refreshLanguage` read; World's lazy-stage fields, lifecycle methods and
+    disposal are deleted (`setContactSceneSection` stays on World — it only
+    touches the stable scene groups). The text-stage double-dispose race test
+    lives in the new `src/__tests__/Experience.contactStages.test.ts`. Gates:
+    `type-check`, `type-check:vue`, `test:unit` (297), `build`, serial e2e
+    (21/21) and the live gate (evidence
+    `docs/evidence/phase7-live-gate/2026-08-22T01-01-37-771Z-report.json`)
+    pass. Performance comparison: bundle net +0.99 kB raw / −0.21 kB gzip
+    (`chunk-core-world` −7.33 kB raw / −2.11 kB gzip, `chunk-experience`
+    +8.32 kB raw / +1.90 kB gzip — both stages re-homed with their owner; the
+    `vendor-three-contact-loaders` chunk is unchanged at 50.76 kB raw / 15.70 kB
+    gzip, and the Three delivery chunk is unchanged at 381.17 kB gzip — the open
+    budget ADR); runtime parity — identical settled frame counts (65 / 29 / 64)
+    and identical scene graph resources (18 / 25 / 9), clean disposal on all
+    three runs.
+
 Acceptance: legacy `World`, `SectionSceneFactory` and the scene-coordination
 part of `Experience` have no production callers.
 
@@ -2607,17 +2645,17 @@ The following ledgers are updated in this document during implementation.
 
 ### Removal ledger
 
-| Legacy element                           | Remove after                                                                                                                                                                                                                                                              | Status  |
-| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| manual router and route `innerHTML`      | Phase 5 cleanup after parity — `src/router.ts` deleted 2026-08-22                                                                                                                                                                                                         | done    |
-| scene `document.body.dataset.page` reads | Phase 3 per-owner port migration — all scene consumers migrated 2026-08-21; the dataset write stays (router + CSS scoping) until Phase 5                                                                                                                                  | done    |
-| string page/section templates            | Phase 5 cleanup — `src/pages/*` + `PageView.vue` deleted 2026-08-22; prerender now sources the home SFC                                                                                                                                                                   | done    |
-| classic `WebGLRenderer` fallback         | Phase 6 phase-exit cleanup — production path removed 2026-08-22; retained only as the dev-forced `?renderer=webgl` QA post owner                                                                                                                                          | done    |
-| GLSL `ShaderMaterial` post chain         | Phase 6 phase-exit cleanup — retained 2026-08-22 as the labelled forced-WebGLBackend owner per the fixed decision; deletion tracked to Phase 10                                                                                                                           | done    |
-| raw `jlz:*` window bridge                | all consumers use typed ports                                                                                                                                                                                                                                             | pending |
-| monolithic `Experience` coordination     | Phase 8 owner migrations                                                                                                                                                                                                                                                  | pending |
-| legacy World adapters                    | Phase 8 completion — slice 1 (lights + ground) + slice 2 (stable section groups) + slice 3 (EnvSphere) + slice 4 (SplashCube) + slice 5 (ParticleBurst + DrawTrail) + slice 6 (BakuCarousel reference + init) + slice 7 (WorksPlaneStage) deleted from `World` 2026-08-22 | pending |
-| migration flags and shims                | Phase 10                                                                                                                                                                                                                                                                  | pending |
+| Legacy element                           | Remove after                                                                                                                                                                                                                                                                                         | Status  |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| manual router and route `innerHTML`      | Phase 5 cleanup after parity — `src/router.ts` deleted 2026-08-22                                                                                                                                                                                                                                    | done    |
+| scene `document.body.dataset.page` reads | Phase 3 per-owner port migration — all scene consumers migrated 2026-08-21; the dataset write stays (router + CSS scoping) until Phase 5                                                                                                                                                             | done    |
+| string page/section templates            | Phase 5 cleanup — `src/pages/*` + `PageView.vue` deleted 2026-08-22; prerender now sources the home SFC                                                                                                                                                                                              | done    |
+| classic `WebGLRenderer` fallback         | Phase 6 phase-exit cleanup — production path removed 2026-08-22; retained only as the dev-forced `?renderer=webgl` QA post owner                                                                                                                                                                     | done    |
+| GLSL `ShaderMaterial` post chain         | Phase 6 phase-exit cleanup — retained 2026-08-22 as the labelled forced-WebGLBackend owner per the fixed decision; deletion tracked to Phase 10                                                                                                                                                      | done    |
+| raw `jlz:*` window bridge                | all consumers use typed ports                                                                                                                                                                                                                                                                        | pending |
+| monolithic `Experience` coordination     | Phase 8 owner migrations                                                                                                                                                                                                                                                                             | pending |
+| legacy World adapters                    | Phase 8 completion — slice 1 (lights + ground) + slice 2 (stable section groups) + slice 3 (EnvSphere) + slice 4 (SplashCube) + slice 5 (ParticleBurst + DrawTrail) + slice 6 (BakuCarousel reference + init) + slice 7 (WorksPlaneStage) + slice 8 (Contact stages) deleted from `World` 2026-08-22 | pending |
+| migration flags and shims                | Phase 10                                                                                                                                                                                                                                                                                             | pending |
 
 ## Definition of done
 

@@ -28,6 +28,7 @@ export class ContactCyprusStage extends THREE.Group {
   private _scaleFrom = 1
   private _fadeElapsed = FADE_DURATION_SECONDS
   private _prewarmFramePending = false
+  private _active = false
   private _cameraPosition = new THREE.Vector3()
 
   constructor() {
@@ -110,6 +111,7 @@ export class ContactCyprusStage extends THREE.Group {
   }
 
   setActive(active: boolean): void {
+    this._active = active
     const target = active ? 1 : 0
     if (target === this._targetOpacity && !this.isAnimating) return
 
@@ -136,6 +138,15 @@ export class ContactCyprusStage extends THREE.Group {
       this._model !== null &&
       (this._fadeElapsed < FADE_DURATION_SECONDS || this._prewarmFramePending)
     )
+  }
+
+  /**
+   * The target (not fade-progress) active state — set immediately by
+   * `setActive`. Phase 8 slice 8: the World's cube-visibility gate reads this
+   * off the attached stage instead of a separate World flag.
+   */
+  get isActive(): boolean {
+    return this._active
   }
 
   /** Render one fully transparent frame after loading to compile the physical material before Agros. */

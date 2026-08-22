@@ -8,7 +8,9 @@
 // — Experience owns them; slice 6: the BakuCarousel reference + init moved
 // out — Experience owns them, the carousel stays a child of the Works group;
 // slice 7: the /works case-plane stage (WorksPlaneStage) moved out —
-// Experience owns the lazy stage + lifecycle)
+// Experience owns the lazy stage + lifecycle; slice 8: the Contact pixel-title
+// layer (ContactTextStage) + lazy 3D Agros backdrop (ContactCyprusStage)
+// moved out — Experience owns both lazy stages + lifecycle)
 
 import * as THREE from 'three'
 // BG.ts removed — was dead computation (bg.color never read by anyone).
@@ -32,7 +34,7 @@ import { clampStoryProgress, sectionIndexAt } from './storyProgress'
 // disposeMaterialDeep removed — Phase 8 slice 2: the scene-group disposal
 // (its only World consumer) moved to the SectionGroups owner.
 import type { WorksPlaneStage } from '../Experience/World/WorksPlaneStage'
-import { ContactTextStage } from '../Experience/World/ContactTextStage'
+import type { ContactTextStage } from '../Experience/World/ContactTextStage'
 import type { ContactCyprusStage } from '../Experience/World/ContactCyprusStage'
 import { getLabExperiment, type LabExperimentObject } from '../Experience/Lab/manifest'
 
@@ -123,10 +125,24 @@ export class World extends THREE.Group {
   public get worksPlaneStage(): WorksPlaneStage | null {
     return this._worksPlaneStageOwner
   }
-  /** Lightweight pixel-title layer, loaded only for the Contact route. */
-  public contactTextStage: ContactTextStage | null = null
-  /** A lazy 3D Agros backdrop, visible only on Contact's location frame. */
-  public contactCyprusStage: ContactCyprusStage | null = null
+  // Phase 8 slice 8: the Contact pixel-title layer (ContactTextStage) + the lazy
+  // 3D Agros backdrop (ContactCyprusStage) are no longer World members —
+  // Experience creates them lazily (first /contact visit), disposes them when
+  // leaving /contact and injects them through `attachContactTextStage` /
+  // `attachContactCyprusStage` (temporary adapters: the World frame path
+  // forwards the per-frame `update`, and the cube-visibility gate reads
+  // `contactCyprusStage.isActive` — removed with the World scene-coordination
+  // part, Phase 8 completion). The getters keep the legacy read surface during
+  // the transition (World frame path + Experience's `isAnimating` render-demand
+  // read + ExperienceUI's `refreshLanguage` read).
+  private _contactTextStageOwner: ContactTextStage | null = null
+  public get contactTextStage(): ContactTextStage | null {
+    return this._contactTextStageOwner
+  }
+  private _contactCyprusStageOwner: ContactCyprusStage | null = null
+  public get contactCyprusStage(): ContactCyprusStage | null {
+    return this._contactCyprusStageOwner
+  }
   /** Loaded only for `/lab`; replaces the shared cube on the experiment route. */
   public labGamepad: LabExperimentObject | null = null
 
@@ -149,12 +165,6 @@ export class World extends THREE.Group {
   private _poolBakuColor = new THREE.Color()
   private _poolBakuEmissive = new THREE.Color()
   private _poolEnvColor = new THREE.Color()
-  private _contactTextStagePromise: Promise<void> | null = null
-  private _contactTextStageRequest = 0
-  private _contactCyprusStagePromise: Promise<void> | null = null
-  private _contactCyprusStageRequest = 0
-  private _contactCyprusActive = false
-  private _contactTextIsLight = false
   private _labGamepadPromise: Promise<void> | null = null
 
   constructor(scene: THREE.Scene) {
@@ -252,16 +262,9 @@ export class World extends THREE.Group {
     // carousel reference and awaits it at the same boundary (buildWorld).
     // Phase 8 slice 7: the /works stage init moved to Experience (it owns the
     // lazy stage; the route can still enter on /works before init resolves).
-    if (pageKey === 'contact') {
-      void this.ensureContactTextStageInitialized()
-      // Start Draco decode and a transparent material warm-up while Contact's
-      // first frame (or the splash) is on screen. Agros then has no first-use
-      // model decode or shader-compile hitch when its chapter is selected.
-      void this.ensureContactCyprusStageInitialized().then(() => {
-        this.contactCyprusStage?.prewarm()
-      })
-    }
-
+    // Phase 8 slice 8: the Contact text + Cyprus stage inits moved to
+    // Experience (it owns both lazy stages; the route can enter /contact
+    // before their init resolves).
     if (import.meta.env.DEV) {
       console.debug(
         '[World] init — scene group visibility:',
@@ -420,101 +423,32 @@ export class World extends THREE.Group {
     this.worksPlaneStage?.setActive(getCurrentPage() === 'works', index)
   }
 
-  /** Lazily create the Contact route's pixel-title layer. */
-  public ensureContactTextStageInitialized(): Promise<void> {
-    if (this._contactTextStagePromise) return this._contactTextStagePromise
-    const request = ++this._contactTextStageRequest
-    const stage = new ContactTextStage()
-    this.contactTextStage = stage
-    this.add(stage)
-    this._contactTextStagePromise = Promise.resolve().then(() => {
-      if (request !== this._contactTextStageRequest || this.contactTextStage !== stage) {
-        stage.dispose()
-        if (stage.parent === this) this.remove(stage)
-        return
-      }
-      stage.setActive(getCurrentPage() === 'contact', 0)
-      stage.setTheme(this._contactTextIsLight)
-      stage.resize(window.innerWidth, window.innerHeight)
-      if (this._camera) stage.setCamera(this._camera)
-    })
-    return this._contactTextStagePromise
+  /**
+   * Phase 8 slice 8 (temporary primitive adapter): inject the Experience-owned
+   * Contact pixel-title stage (ContactTextStage). Experience creates it lazily
+   * (first /contact visit), disposes it when leaving /contact and passes
+   * `null` at both boundaries. The World frame path forwards the per-frame
+   * `update` through the `contactTextStage` getter. Consumer: the World frame
+   * path (documented above). Removal: with the World scene-coordination part,
+   * when `World` leaves production — Phase 8 completion.
+   */
+  public attachContactTextStage(owner: ContactTextStage | null): void {
+    this._contactTextStageOwner = owner
   }
 
-  public disposeContactTextStage(): void {
-    this._contactTextStageRequest++
-    if (!this.contactTextStage) return
-    this.contactTextStage.dispose()
-    this.remove(this.contactTextStage)
-    this.contactTextStage = null
-    this._contactTextStagePromise = null
-  }
-
-  /** Sync the Contact pixel-title layer with CinematicNav's active chapter. */
-  public setContactTextStageSection(index: number): void {
-    this.contactTextStage?.setActive(getCurrentPage() === 'contact', index)
-  }
-
-  /** Cache the effective polarity so a lazy Contact stage cannot miss it. */
-  public syncContactTextTheme(isLight: boolean): void {
-    this._contactTextIsLight = isLight
-    this.contactTextStage?.setTheme(isLight)
-  }
-
-  /** Lazily load the Contact location asset instead of keeping it in the home scene. */
-  public ensureContactCyprusStageInitialized(): Promise<void> {
-    if (this._contactCyprusStagePromise) return this._contactCyprusStagePromise
-    const request = ++this._contactCyprusStageRequest
-    this._contactCyprusStagePromise = import('../Experience/World/ContactCyprusStage')
-      .then(({ ContactCyprusStage }) => {
-        if (request !== this._contactCyprusStageRequest) return
-        const stage = new ContactCyprusStage()
-        this.contactCyprusStage = stage
-        this.add(stage)
-        return stage.load()
-      })
-      .then(() => {
-        const stage = this.contactCyprusStage
-        if (!stage || request !== this._contactCyprusStageRequest) return
-        stage.resize(window.innerWidth, window.innerHeight)
-        if (this._camera) stage.setCamera(this._camera)
-        stage.setActive(getCurrentPage() === 'contact' && this._contactCyprusActive)
-        stage.prewarm()
-      })
-      .catch((error: unknown) => {
-        const stage = this.contactCyprusStage
-        if (stage && request === this._contactCyprusStageRequest) {
-          stage.dispose()
-          this.remove(stage)
-          this.contactCyprusStage = null
-          this._contactCyprusStagePromise = null
-        }
-        throw error
-      })
-    return this._contactCyprusStagePromise
-  }
-
-  public disposeContactCyprusStage(): void {
-    this._contactCyprusStageRequest++
-    this.contactCyprusStage?.dispose()
-    if (this.contactCyprusStage) this.remove(this.contactCyprusStage)
-    this.contactCyprusStage = null
-    this._contactCyprusStagePromise = null
-    this._contactCyprusActive = false
-  }
-
-  /** Frame 03 replaces the shared cube with the Cyprus asset. */
-  public setContactCyprusStageSection(index: number): void {
-    this._contactCyprusActive = getCurrentPage() === 'contact' && index === 2
-    this.contactCyprusStage?.setActive(this._contactCyprusActive)
-    if (this._contactCyprusActive && !this.contactCyprusStage) {
-      void this.ensureContactCyprusStageInitialized().then(() => {
-        if (!this._contactCyprusActive) return
-        this.contactCyprusStage?.setActive(true)
-        this.syncRouteVisuals()
-      })
-    }
-    this.syncRouteVisuals()
+  /**
+   * Phase 8 slice 8 (temporary primitive adapter): inject the Experience-owned
+   * Contact Agros backdrop (ContactCyprusStage). Experience creates it lazily
+   * (first /contact visit, Draco model), disposes it when leaving /contact and
+   * passes `null` at both boundaries. The World frame path forwards the
+   * per-frame `update` through the `contactCyprusStage` getter, and the
+   * cube-visibility gate reads `contactCyprusStage.isActive` off it (replacing
+   * the former `_contactCyprusActive` World flag). Consumer: the World frame
+   * path. Removal: with the World scene-coordination part, when `World` leaves
+   * production — Phase 8 completion.
+   */
+  public attachContactCyprusStage(owner: ContactCyprusStage | null): void {
+    this._contactCyprusStageOwner = owner
   }
 
   /**
@@ -650,7 +584,7 @@ export class World extends THREE.Group {
       this.baku.visible =
         getCurrentPage() !== 'lab' &&
         getCurrentPage() !== 'works' &&
-        !(getCurrentPage() === 'contact' && this._contactCyprusActive) &&
+        !(getCurrentPage() === 'contact' && (this.contactCyprusStage?.isActive ?? false)) &&
         (getCurrentPage() !== 'home' || !(carousel.isActive && carousel.morphProgress > 0.82))
     }
     for (const group of this.sceneGroups) {
@@ -975,7 +909,8 @@ export class World extends THREE.Group {
     })
     // Phase 8 slice 7: the /works stage resize is forwarded directly by
     // Experience (it owns the stage); World no longer forwards it.
-    this.contactTextStage?.resize(width, height)
+    // Phase 8 slice 8: the Contact text stage resize is forwarded directly by
+    // Experience (it owns the stage); World no longer forwards it.
     // Ground plane: always covers viewport (large geometry, no change needed).
     // Baku: position stays at origin, no resize needed.
     // Atmosphere: fog density stays per-section.
@@ -1007,15 +942,8 @@ export class World extends THREE.Group {
     // the GroundPlane + CinematicLights scene owners).
     // Phase 8 slice 7: the /works case-plane stage is disposed by Experience
     // (it owns the lazy WorksPlaneStage scene owner).
-    this.contactTextStage?.dispose()
-    this._contactTextStageRequest++
-    if (this.contactTextStage) this.remove(this.contactTextStage)
-    this.contactTextStage = null
-    this._contactTextStagePromise = null
-    this.contactCyprusStage?.dispose()
-    if (this.contactCyprusStage) this.remove(this.contactCyprusStage)
-    this.contactCyprusStage = null
-    this._contactCyprusStagePromise = null
+    // Phase 8 slice 8: the Contact text + Cyprus stages are disposed by
+    // Experience (it owns both lazy stage scene owners).
     this.labGamepad?.dispose()
     this.labGamepad = null
     this._labGamepadPromise = null
@@ -1023,13 +951,13 @@ export class World extends THREE.Group {
     this.sceneRef.fog = null
   }
 
-  /** Set camera reference for DrawTrail + Contact stages (unproject to world).
+  /** Set camera reference for DrawTrail (unproject to world).
    *  Phase 8 slice 7: the /works stage camera is forwarded directly by
-   *  Experience (it owns the stage). */
+   *  Experience (it owns the stage).
+   *  Phase 8 slice 8: the Contact text + Cyprus stage cameras are forwarded
+   *  directly by Experience (it owns both stages). */
   public setCamera(cam: THREE.Camera): void {
     this._camera = cam
-    this.contactTextStage?.setCamera(cam)
-    this.contactCyprusStage?.setCamera(cam)
   }
 
   /** Keep route-specific hero objects isolated from the shared home cube. */
@@ -1038,7 +966,9 @@ export class World extends THREE.Group {
     const isLab = page === 'lab'
     if (this.baku)
       this.baku.visible =
-        !isLab && page !== 'works' && !(page === 'contact' && this._contactCyprusActive)
+        !isLab &&
+        page !== 'works' &&
+        !(page === 'contact' && (this.contactCyprusStage?.isActive ?? false))
     if (isLab) void this.ensureLabGamepad()
     if (this.labGamepad) this.labGamepad.visible = isLab
   }
