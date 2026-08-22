@@ -391,10 +391,14 @@ do not start a phase whose entry gate has not passed.
       Three-delivery budget ADR (chunk 381 kB gzip vs the 350 kB cap) remains
       open.
 
-- [ ] **Phases 8–10: cut over Tres scene owners and static content** —
-      only after their gates pass, ship the one-by-one scene-owner migration,
-      builder/blog SSG consolidation and final legacy removal. The migration
-      is not done while duplicate routers, loops, renderer paths, owner
+- [ ] **Phases 9–10: cut over static content and remove the last legacy** —
+      only after their gates pass, ship the builder/blog SSG consolidation
+      and final legacy removal. Phase 8 (the one-by-one scene-owner
+      migration, slices 1–10) completed 2026-08-22: the legacy `World` +
+      `SectionSceneFactory` are deleted, the coordination engine runs in
+      `SceneCoordinator` (owned by Experience), and no production callers of
+      the scene-coordination part of `Experience` remain. The migration is
+      not done while duplicate routers, loops, renderer paths, owner
       adapters or undocumented dependencies remain. Phase 8 slice 1 landed
       (2026-08-22): lights + ground left `World` — Experience creates the
       `CinematicLights` + the new `GroundPlane` scene owners
@@ -493,7 +497,7 @@ do not start a phase whose entry gate has not passed.
       per route leave; disposed only on final destroy): it enters the
       Tres-owned scene directly, is injected through
       `World.attachLabGamepad`, and the lazy-creation trigger `World.
-  syncRouteVisuals()` used to run (on route entry + section change) now
+syncRouteVisuals()` used to run (on route entry + section change) now
       runs in `buildWorld` (entry route) + the UI route-change handler
       (navigation). `World.labGamepad` is a documented temporary getter — the
       only remaining World touch is the visibility gate in
@@ -531,6 +535,27 @@ do not start a phase whose entry gate has not passed.
       `SceneCoordinator.routeVisuals.test.ts` (cube gating + Lab
       manifest), the works/contact/lab lifecycle tests (coordinator owner
       getters), and the `attachWorld` bridge test deleted with the slot.
+      Phase 9 slice 1 landed (2026-08-22): route metadata and the sitemap
+      consume the manifest — `routeManifest.ts` gains `pathForPage(page)`
+      (the manifest's closed-set inverse of `resolveRoute`), the new pure
+      table `src/core/pageMetaData.ts` (i18n copy keys + sitemap
+      changefreq/priority per page) replaces the hand-maintained path table
+      in `pageMeta.ts` (the runtime now builds canonical/og:url from
+      `pathForPage`), and the new canonical blog index
+      `src/core/blogPages.ts` (slugs + lastmod + priority, newest first)
+      feeds both the pure sitemap builder (`src/core/sitemap.ts` +
+      `src/core/sitemapEntries.ts`) and the Vite build input map
+      (`vite.config.ts` — blog article entries are now derived, not
+      hand-listed). `public/sitemap.xml` is now a generated artifact:
+      `bun scripts/generate-sitemap.ts` runs as a prebuild step (wired into
+      the `build` script) and writes the file from the manifest-driven
+      sources only — the first generation was byte-identical to the
+      hand-maintained file (zero drift). A closed-set invariant (every
+      page-metadata entry must resolve to a manifest-owned path) fails the
+      build instead of emitting a broken sitemap. Gates: `type-check`,
+      `type-check:vue`, `test:unit` (311 — +15 new sitemap/manifest-drift
+      tests), `build`; the generated sitemap + all five blog pages + the
+      absence of admin strings in `dist` are verified on the built output.
       Phase 8 slice 2 landed (2026-08-22): the six stable section groups
       left `World` — Experience creates the new `SectionGroups` owner
       (`src/Experience/Scene/SectionGroups.ts`: factory creation,

@@ -34,6 +34,19 @@ const PAGE_BY_PATH = new Map<string, PageId>(
   ROUTE_MANIFEST.map((entry) => [entry.path, entry.page]),
 )
 
+const PATH_BY_PAGE = new Map<PageId, string>(
+  ROUTE_MANIFEST.map((entry) => [entry.page, entry.path]),
+)
+
+/**
+ * The manifest-owned path for a page. `PageId` is a closed set that exactly
+ * mirrors the manifest, so the lookup is total; the assertion documents that
+ * invariant instead of re-declaring paths at the call site.
+ */
+export function pathForPage(page: PageId): string {
+  return PATH_BY_PAGE.get(page)!
+}
+
 /**
  * Strict lookup: `undefined` for a path the manifest does not own. Navigation
  * (history push) should only target known paths — unknown paths must be a no-op

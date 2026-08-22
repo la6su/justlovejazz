@@ -5,6 +5,7 @@ import {
   resolveRoute,
   resolvePage,
   isRoutePath,
+  pathForPage,
 } from '../core/routeManifest'
 import type { PageId } from '../sections/_shared/constants'
 
@@ -49,5 +50,12 @@ describe('route manifest', () => {
   it('lenient resolution falls back to home for unknown paths', () => {
     expect(resolvePage('/does-not-exist')).toBe('home')
     expect(resolvePage('')).toBe('home')
+  })
+
+  it('pathForPage is the exact inverse of resolveRoute for every page', () => {
+    for (const { path, page } of EXPECTED) {
+      expect(pathForPage(page)).toBe(path)
+      expect(resolveRoute(pathForPage(page))).toBe(page)
+    }
   })
 })

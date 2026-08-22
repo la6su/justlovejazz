@@ -5,6 +5,7 @@ import { resolve } from 'node:path'
 
 import { copyFileSync, mkdirSync, readFileSync, readdirSync } from 'fs'
 import { jlzAdminPlugin } from './admin/vite-plugin'
+import { BLOG_ARTICLES } from './src/core/blogPages'
 
 // ═══════════════════════════════════════════════════════════════════════
 // TREE-SHAKING (automatic — no extra config needed)
@@ -54,14 +55,18 @@ export default defineConfig(({ mode }) => ({
       // index.html is the seamless 3D experience with inline splash overlay.
       // three.js loads LAZY (dynamic import) — does NOT block FCP.
       // blog.html + blog/*.html are standalone semantic pages (SEO).
+      // Blog article entries are derived from the canonical index
+      // (`src/core/blogPages.ts`) — the same source the sitemap generator
+      // consumes (Phase 9: adding an article is a blogPages entry).
       input: {
         index: resolve(__dirname, 'index.html'),
         blog: resolve(__dirname, 'blog.html'),
-        // Blog articles — each is a standalone semantic HTML page
-        'blog/undercurrent-webgpu-fluid': resolve(__dirname, 'blog/undercurrent-webgpu-fluid.html'),
-        'blog/glassmorphism-webgpu': resolve(__dirname, 'blog/glassmorphism-webgpu.html'),
-        'blog/on-demand-rendering': resolve(__dirname, 'blog/on-demand-rendering.html'),
-        'blog/tsl-changes-everything': resolve(__dirname, 'blog/tsl-changes-everything.html'),
+        ...Object.fromEntries(
+          BLOG_ARTICLES.map((article) => [
+            `blog/${article.slug}`,
+            resolve(__dirname, `blog/${article.slug}.html`),
+          ]),
+        ),
       },
       output: {
         // ───────────────────────────────────────────────────────────────────

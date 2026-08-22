@@ -2594,7 +2594,8 @@ Rollback: revert the individual owner slice and remount its primitive adapter.
 Scope:
 
 - render approved builder documents through a trusted Vue registry;
-- make route metadata and sitemap consume the manifest;
+- make route metadata and sitemap consume the manifest (done by slice 1,
+  2026-08-22 — see the slice entry below);
 - move blog pages into the shared SSG content pipeline without loading 3D;
 - remove the final one-page builder publishing restriction.
 
@@ -2607,6 +2608,40 @@ Acceptance:
 
 Rollback: keep existing standalone blog and generated document paths until the
 SSG output is proven equivalent.
+
+#### Phase 9 metadata + sitemap manifest slice — 2026-08-22
+
+Scope item 2 (route metadata and sitemap consume the manifest) closed. The
+route manifest stays the single source of truth for public paths:
+`routeManifest.ts` gains `pathForPage(page)`, the closed-set inverse of
+`resolveRoute` (`PageId` mirrors the manifest exactly, so the lookup is
+total). The new pure table `src/core/pageMetaData.ts` (i18n copy keys +
+sitemap `changefreq`/`priority` per page) replaces the hand-maintained
+path table inside `pageMeta.ts`: the runtime applier now builds canonical
+and `og:url` from `pathForPage(page)`, so a route rename is a manifest
+change only and the runtime, sitemap and tests cannot desync. The new
+canonical blog index `src/core/blogPages.ts` (slugs + content `lastmod` +
+priority, newest first) is the single source for the blog's static
+paths: it feeds both the sitemap and the Vite build input map
+(`vite.config.ts` — the four blog article entries are now derived from the
+index instead of hand-listed; adding an article is a `blogPages` entry).
+The sitemap itself becomes a generated artifact: `src/core/sitemap.ts`
+(pure XML builder) + `src/core/sitemapEntries.ts` (section assembly from
+the manifest + metadata table + blog index) are consumed by
+`scripts/generate-sitemap.ts`, a prebuild step wired into the `build`
+script, which writes `public/sitemap.xml` (the same committed-artifact
+pattern as the builder's `page.json`). The first generation was
+byte-identical to the hand-maintained file — zero drift. A closed-set
+invariant runs before any write: every page-metadata entry must resolve
+to a manifest-owned path, so a missing route fails the build instead of
+emitting a broken sitemap. Gates: `type-check`, `type-check:vue`,
+`test:unit` (311 — +15 tests: `pathForPage` inverse, sitemap builder
+formatting/escaping/order, the 11-url section assembly from the
+manifest-driven sources, blog-index invariants, and a runtime
+manifest-drift guard in `pageMeta.test.ts`), `build`; the built output
+carries the generated `dist/sitemap.xml`, all five blog pages from the
+derived input map, and no admin strings (`__jlz-admin` absent from
+`dist`).
 
 ### Phase 10 — legacy removal and hardening
 
@@ -2729,6 +2764,7 @@ The following ledgers are updated in this document during implementation.
 | classic `WebGLRenderer` fallback         | Phase 6 phase-exit cleanup — production path removed 2026-08-22; retained only as the dev-forced `?renderer=webgl` QA post owner                                                                                                                                                                                                                                                                                             | done    |
 | GLSL `ShaderMaterial` post chain         | Phase 6 phase-exit cleanup — retained 2026-08-22 as the labelled forced-WebGLBackend owner per the fixed decision; deletion tracked to Phase 10                                                                                                                                                                                                                                                                              | done    |
 | raw `jlz:*` window bridge                | all consumers use typed ports                                                                                                                                                                                                                                                                                                                                                                                                | pending |
+| hand-maintained `public/sitemap.xml`     | Phase 9 slice 1 — generated from the manifest + metadata table + blog index by `scripts/generate-sitemap.ts` (prebuild step) 2026-08-22; the Vite blog input map now derives from the same blog index                                                                                                                                                                                                                        | done    |
 | monolithic `Experience` coordination     | Phase 8 owner migrations — the scene-coordination engine left `Experience` into `SceneCoordinator` 2026-08-22 (slice 10)                                                                                                                                                                                                                                                                                                     | done    |
 | legacy World adapters                    | Phase 8 completion — slice 1 (lights + ground) + slice 2 (stable section groups) + slice 3 (EnvSphere) + slice 4 (SplashCube) + slice 5 (ParticleBurst + DrawTrail) + slice 6 (BakuCarousel reference + init) + slice 7 (WorksPlaneStage) + slice 8 (Contact stages) + slice 9 (Lab object) + slice 10 (scene-coordination engine + `attachWorld` primitive slot) — `World.ts` + `SectionSceneFactory.ts` deleted 2026-08-22 | done    |
 | migration flags and shims                | Phase 10                                                                                                                                                                                                                                                                                                                                                                                                                     | pending |
