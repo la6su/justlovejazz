@@ -2,7 +2,8 @@
 // (Phase 8 slice 1: lights + ground moved out — Experience owns the
 // CinematicLights + GroundPlane scene owners; slice 2: the six stable
 // section groups moved out — Experience owns the SectionGroups owner;
-// slice 3: the EnvSphere ambient pavilion moved out — Experience owns it)
+// slice 3: the EnvSphere ambient pavilion moved out — Experience owns it;
+// slice 4: the SplashCube glass cube moved out — Experience owns it)
 
 import * as THREE from 'three'
 // BG.ts removed — was dead computation (bg.color never read by anyone).
@@ -15,7 +16,7 @@ import { type CameraTarget, type WorldState, BakuRole } from './types'
 import type { GroundPlane } from '../Experience/Scene/GroundPlane'
 import type { SectionGroups } from '../Experience/Scene/SectionGroups'
 import { DrawTrail } from '../Experience/World/DrawTrail'
-import { SplashCube } from '../Experience/World/SplashCube'
+import type { SplashCube } from '../Experience/World/SplashCube'
 import type { EnvSphere } from '../Experience/World/EnvSphere'
 import { ParticleBurst } from '../Experience/World/ParticleBurst'
 import { getWorldConfigForPage, type PhaseConfig } from './WorldConfig'
@@ -36,8 +37,18 @@ export interface WorldTransformResult {
 
 export class World extends THREE.Group {
   public sections: Section[] = []
-  public baku!: SplashCube
   public drawTrail?: DrawTrail
+  // Phase 8 slice 4: the glass cube (SplashCube) is no longer a World member —
+  // Experience creates it in the Tres-owned scene and injects the owner through
+  // `attachBaku` (temporary adapter: the World frame path reads/writes its
+  // visibility gate, forwards the per-frame `update` and reads the
+  // ambient-motion signal — removed with the World scene-coordination part,
+  // Phase 8 completion). The getter keeps the legacy read surface during the
+  // transition (World internals + ExperienceUI).
+  private _bakuOwner: SplashCube | undefined = undefined
+  public get baku(): SplashCube | undefined {
+    return this._bakuOwner
+  }
   // Phase 8 slice 3: the ambient pavilion (EnvSphere) is no longer a World
   // member — Experience creates it in the Tres-owned scene and injects the
   // owner through `attachEnvSphere` (temporary adapter: the World frame path
@@ -114,13 +125,9 @@ export class World extends THREE.Group {
     this.drawTrail.object.visible = false // hidden until works section
 
     // ── Baku = SplashCube (Apple Fifth Avenue style glass cube).
-    // The cube IS the baku — stays on all sections, rotates, changes
-    // materials per section role. During splash: rotates + edges brighten.
-    // At 100%: opener (faces pulse outward + back).
-    this.baku = new SplashCube()
-    this.baku.name = 'baku'
-    this.baku.visible = true
-    this.add(this.baku)
+    // Phase 8 slice 4: created by the Experience-owned scene owner (it enters
+    // the Tres-owned scene directly; the World no longer constructs or
+    // disposes it).
 
     // ── EnvSphere — six-state rounded pavilion background.
     // Phase 8 slice 3: created by the Experience-owned scene owner (it enters
@@ -254,6 +261,19 @@ export class World extends THREE.Group {
    */
   public attachEnvSphere(owner: EnvSphere): void {
     this._envSphereOwner = owner
+  }
+
+  /**
+   * Phase 8 slice 4 (temporary primitive adapter): inject the Experience-owned
+   * glass cube (SplashCube) owner. Must be called before `init()` — the World
+   * frame path (the visibility gates in `syncRouteVisuals` + `update`, the
+   * per-frame `update` forward and the `hasVisibleAmbientMotion` signal) reads
+   * it through the `baku` getter. Consumer: the World frame path + ExperienceUI
+   * (documented above). Removal: with the World scene-coordination part, when
+   * `World` leaves production — Phase 8 completion.
+   */
+  public attachBaku(owner: SplashCube): void {
+    this._bakuOwner = owner
   }
 
   /** Initialize the home-only carousel once, including after a deep-link visit. */
@@ -513,7 +533,7 @@ export class World extends THREE.Group {
    */
   public hasVisibleAmbientMotion(): boolean {
     if (this.isReducedMotion) return false
-    if (this.baku.isAmbientlyAnimated) return true
+    if (this.baku?.isAmbientlyAnimated) return true
     return this.sceneGroups.some((group) => {
       if (!group.visible) return false
       const typo = group.userData.typography as
@@ -573,7 +593,8 @@ export class World extends THREE.Group {
     }
 
     if (!this.isReducedMotion) {
-      if (this.baku.visible) this.baku.update(deltaTime)
+      const baku = this.baku
+      if (baku?.visible) baku.update(deltaTime)
       const isStandaloneWorks = getCurrentPage() === 'works'
       const isWorksStoryFrame = this._currentSectionIndex === 3
       if (this.drawTrail && this._camera && (isStandaloneWorks || isWorksStoryFrame)) {
@@ -594,11 +615,12 @@ export class World extends THREE.Group {
       if (carousel) {
         // Works becomes a pure media field once the cube-face handoff settles:
         // only the planes and the existing particle field remain visible.
-        this.baku.visible =
-          getCurrentPage() !== 'lab' &&
-          getCurrentPage() !== 'works' &&
-          !(getCurrentPage() === 'contact' && this._contactCyprusActive) &&
-          (getCurrentPage() !== 'home' || !(carousel.isActive && carousel.morphProgress > 0.82))
+        if (this.baku)
+          this.baku.visible =
+            getCurrentPage() !== 'lab' &&
+            getCurrentPage() !== 'works' &&
+            !(getCurrentPage() === 'contact' && this._contactCyprusActive) &&
+            (getCurrentPage() !== 'home' || !(carousel.isActive && carousel.morphProgress > 0.82))
       }
       if (!group.visible) continue
       // Update the lower Contact typography only after its own reveal begins.
@@ -941,8 +963,8 @@ export class World extends THREE.Group {
   public dispose(): void {
     this.disposeSections()
     // (scene groups: disposed by the Experience-owned SectionGroups owner)
-    // Dispose baku (SplashCube) GPU resources — 6 face geos+mats + 6 edge geos+mats.
-    this.baku?.dispose()
+    // Phase 8 slice 4: the glass cube (SplashCube) GPU resources are disposed
+    // by Experience (it owns the SplashCube scene owner).
     // Phase 8 slice 3: EnvSphere disposal moved to Experience (it owns the
     // EnvSphere scene owner).
     this.particleBurst?.dispose()
@@ -983,8 +1005,9 @@ export class World extends THREE.Group {
   public syncRouteVisuals(): void {
     const page = getCurrentPage()
     const isLab = page === 'lab'
-    this.baku.visible =
-      !isLab && page !== 'works' && !(page === 'contact' && this._contactCyprusActive)
+    if (this.baku)
+      this.baku.visible =
+        !isLab && page !== 'works' && !(page === 'contact' && this._contactCyprusActive)
     if (isLab) void this.ensureLabGamepad()
     if (this.labGamepad) this.labGamepad.visible = isLab
   }

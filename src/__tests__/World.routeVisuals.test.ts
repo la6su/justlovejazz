@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { World } from '../core/World'
+import { SplashCube } from '../Experience/World/SplashCube'
 import { LabGamepad } from '../Experience/World/LabGamepad'
 import { WorksPlaneStage } from '../Experience/World/WorksPlaneStage'
 import { getLabExperiment, labExperiments } from '../Experience/Lab/manifest'
@@ -13,6 +14,7 @@ const canvasContext = {
 
 describe('World route visuals', () => {
   let world: World
+  let cube: SplashCube
   let getContext: ReturnType<typeof vi.spyOn>
 
   beforeEach(() => {
@@ -21,10 +23,18 @@ describe('World route visuals', () => {
       .spyOn(HTMLCanvasElement.prototype, 'getContext')
       .mockReturnValue(canvasContext as unknown as CanvasRenderingContext2D)
     world = new World(new THREE.Scene())
+    // Phase 8 slice 4: the glass cube is an Experience-owned scene owner —
+    // the test injects it through the attachBaku adapter before driving the
+    // World's route-visual gating.
+    cube = new SplashCube()
+    cube.name = 'baku'
+    cube.visible = true
+    world.attachBaku(cube)
   })
 
   afterEach(() => {
     world.dispose()
+    cube.dispose()
     getContext.mockRestore()
     delete document.body.dataset.page
   })
@@ -42,7 +52,9 @@ describe('World route visuals', () => {
 
     await vi.dynamicImportSettled()
 
-    expect(world.baku.visible).toBe(false)
+    // The World gates the injected owner's visibility (cube === world.baku).
+    expect(world.baku).toBe(cube)
+    expect(cube.visible).toBe(false)
     expect(world.labGamepad).toBeInstanceOf(LabGamepad)
     expect(world.labGamepad?.visible).toBe(true)
     expect(world.labGamepad?.position.toArray()).toEqual([0, 0, 0])
@@ -51,7 +63,7 @@ describe('World route visuals', () => {
     document.body.dataset.page = 'home'
     world.syncRouteVisuals()
 
-    expect(world.baku.visible).toBe(true)
+    expect(cube.visible).toBe(true)
     expect(world.labGamepad?.visible).toBe(false)
   })
 
@@ -59,12 +71,12 @@ describe('World route visuals', () => {
     document.body.dataset.page = 'works'
     world.syncRouteVisuals()
 
-    expect(world.baku.visible).toBe(false)
+    expect(cube.visible).toBe(false)
 
     document.body.dataset.page = 'contact'
     world.syncRouteVisuals()
 
-    expect(world.baku.visible).toBe(true)
+    expect(cube.visible).toBe(true)
   })
 
   it('releases a Works stage that finishes after the route was disposed', async () => {

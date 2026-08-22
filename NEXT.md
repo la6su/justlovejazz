@@ -414,6 +414,15 @@ do not start a phase whose entry gate has not passed.
       forwarding and disposal now run through the Experience owner, and the
       `World.envSphere` member, constructor creation and `dispose()` step are
       deleted.
+      Phase 8 slice 4 landed (2026-08-22): the SplashCube glass cube left
+      `World` — Experience creates the `SplashCube` owner directly in the
+      Tres-owned scene and injects it via `World.attachBaku` (temporary
+      adapter: the World frame path gates its visibility, forwards the
+      per-frame `update` and reads the ambient-motion signal); `World.baku` is
+      now a documented temporary getter (legacy read surface for World
+      internals + ExperienceUI), the constructor creation and `dispose()` step
+      are deleted, and the `World.routeVisuals` test injects the cube owner
+      before driving the gating.
       Phase 8 slice 2 landed (2026-08-22): the six stable section groups
       left `World` — Experience creates the new `SectionGroups` owner
       (`src/Experience/Scene/SectionGroups.ts`: factory creation,

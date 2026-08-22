@@ -2375,6 +2375,24 @@ removed.
   counts (65 / 35 / 64) and identical scene graph resources (18 / 25 / 9),
   clean disposal on all three runs.
 
+- Slice 4 (done, 2026-08-22): the SplashCube glass cube left `World`.
+  Experience creates the `SplashCube` owner directly in the Tres-owned scene
+  and injects it through `World.attachBaku` (a documented temporary adapter
+  whose consumers are the World frame path — the visibility gates in
+  `syncRouteVisuals` + `update`, the per-frame `update` forward and the
+  `hasVisibleAmbientMotion` signal — plus ExperienceUI's `world.baku` calls).
+  `World.baku` is now a temporary getter, and the constructor creation and
+  `dispose()` step are deleted. The `World.routeVisuals` unit test now
+  constructs a cube and injects it via `attachBaku` before driving the
+  gating. Gates: `type-check`, `type-check:vue`, `test:unit` (294), `build`,
+  serial e2e (21/21) and the live gate (evidence
+  `docs/evidence/phase7-live-gate/2026-08-22T00-37-22-104Z-report.json`)
+  pass. Performance comparison: bundle net +0.07 kB raw / +0.09 kB gzip
+  (the cube re-homed from `chunk-core-world` into `chunk-experience`; the
+  Three delivery chunk is unchanged at 381.17 kB gzip — the open budget ADR);
+  runtime parity — identical settled frame counts (65 / 31 / 64) and identical
+  scene graph resources (18 / 25 / 9), clean disposal on all three runs.
+
 Acceptance: legacy `World`, `SectionSceneFactory` and the scene-coordination
 part of `Experience` have no production callers.
 
@@ -2512,17 +2530,17 @@ The following ledgers are updated in this document during implementation.
 
 ### Removal ledger
 
-| Legacy element                           | Remove after                                                                                                                                    | Status  |
-| ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| manual router and route `innerHTML`      | Phase 5 cleanup after parity — `src/router.ts` deleted 2026-08-22                                                                               | done    |
-| scene `document.body.dataset.page` reads | Phase 3 per-owner port migration — all scene consumers migrated 2026-08-21; the dataset write stays (router + CSS scoping) until Phase 5        | done    |
-| string page/section templates            | Phase 5 cleanup — `src/pages/*` + `PageView.vue` deleted 2026-08-22; prerender now sources the home SFC                                         | done    |
-| classic `WebGLRenderer` fallback         | Phase 6 phase-exit cleanup — production path removed 2026-08-22; retained only as the dev-forced `?renderer=webgl` QA post owner                | done    |
-| GLSL `ShaderMaterial` post chain         | Phase 6 phase-exit cleanup — retained 2026-08-22 as the labelled forced-WebGLBackend owner per the fixed decision; deletion tracked to Phase 10 | done    |
-| raw `jlz:*` window bridge                | all consumers use typed ports                                                                                                                   | pending |
-| monolithic `Experience` coordination     | Phase 8 owner migrations                                                                                                                        | pending |
-| legacy World adapters                    | Phase 8 completion — slice 1 (lights + ground) + slice 2 (stable section groups) + slice 3 (EnvSphere) deleted from `World` 2026-08-22          | pending |
-| migration flags and shims                | Phase 10                                                                                                                                        | pending |
+| Legacy element                           | Remove after                                                                                                                                                  | Status  |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| manual router and route `innerHTML`      | Phase 5 cleanup after parity — `src/router.ts` deleted 2026-08-22                                                                                             | done    |
+| scene `document.body.dataset.page` reads | Phase 3 per-owner port migration — all scene consumers migrated 2026-08-21; the dataset write stays (router + CSS scoping) until Phase 5                      | done    |
+| string page/section templates            | Phase 5 cleanup — `src/pages/*` + `PageView.vue` deleted 2026-08-22; prerender now sources the home SFC                                                       | done    |
+| classic `WebGLRenderer` fallback         | Phase 6 phase-exit cleanup — production path removed 2026-08-22; retained only as the dev-forced `?renderer=webgl` QA post owner                              | done    |
+| GLSL `ShaderMaterial` post chain         | Phase 6 phase-exit cleanup — retained 2026-08-22 as the labelled forced-WebGLBackend owner per the fixed decision; deletion tracked to Phase 10               | done    |
+| raw `jlz:*` window bridge                | all consumers use typed ports                                                                                                                                 | pending |
+| monolithic `Experience` coordination     | Phase 8 owner migrations                                                                                                                                      | pending |
+| legacy World adapters                    | Phase 8 completion — slice 1 (lights + ground) + slice 2 (stable section groups) + slice 3 (EnvSphere) + slice 4 (SplashCube) deleted from `World` 2026-08-22 | pending |
+| migration flags and shims                | Phase 10                                                                                                                                                      | pending |
 
 ## Definition of done
 

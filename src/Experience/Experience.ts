@@ -42,6 +42,7 @@ import { CinematicLights } from './World/Lights'
 import { GroundPlane } from './Scene/GroundPlane'
 import { SectionGroups } from './Scene/SectionGroups'
 import { EnvSphere } from './World/EnvSphere'
+import { SplashCube } from './World/SplashCube'
 // DissolveOverlay removed — cover transition in ProjectDetail replaces it.
 
 /**
@@ -99,6 +100,9 @@ export class Experience {
   // Phase 8 slice 3: the ambient pavilion owner (Experience is the single
   // disposal owner; World's frame path forwards its per-frame update).
   private envSphere!: EnvSphere
+  // Phase 8 slice 4: the glass cube owner (World's frame path reads/writes
+  // it through the attachBaku adapter + baku getter).
+  private baku!: SplashCube
   private bus!: StateBus
 
   // Phase 7 slice 4: the former UI features (cinematic nav, menu, overlay,
@@ -238,6 +242,16 @@ export class Experience {
     this.envSphere = new EnvSphere()
     this.scene.add(this.envSphere)
     this.world.attachEnvSphere(this.envSphere)
+    // Phase 8 slice 4: the glass cube (SplashCube) enters the Tres-owned
+    // scene under its own owner; the World frame path gates its visibility,
+    // forwards its per-frame update and reads the ambient-motion signal
+    // through the attachBaku adapter + baku getter. init() needs it (its
+    // syncRouteVisuals sets the visibility), so attach before init.
+    this.baku = new SplashCube()
+    this.baku.name = 'baku'
+    this.baku.visible = true
+    this.scene.add(this.baku)
+    this.world.attachBaku(this.baku)
     await this.world.init()
     // Phase 7: with the persistent SceneHost the World enters the Tres scene
     // through the explicit primitive adapter (`:dispose="null"` — Experience
@@ -388,7 +402,7 @@ export class Experience {
       // reliably through the TSL post-pipeline (PassNode RT caching drift).
       // Explicit mat.envMap guarantees the glass sees the environment on BOTH
       // paths → parity. Shared texture, no extra VRAM.
-      this.world?.baku?.bindEnvironment(envRT.texture)
+      this.baku?.bindEnvironment(envRT.texture)
       envTex.dispose()
       if (import.meta.env.DEV) {
         console.info(
@@ -491,7 +505,7 @@ export class Experience {
         // Theme-only syncs — skip when just the section moved (same polarity).
         if (detail.themeChanged !== false) {
           this.ground.syncTheme(detail.isLight)
-          this.world.baku.setTheme(detail.isLight)
+          this.baku.setTheme(detail.isLight)
           this.world.syncTypographyTheme(detail.isLight)
           for (const group of this.world.sceneGroups) {
             const particles = group.userData.particles as
@@ -511,7 +525,7 @@ export class Experience {
     const initialIsLight = document.body.classList.contains('uk-light')
     this.envSphere.snapToSection(this.world.currentSectionIndex, initialIsLight)
     this.ground?.syncTheme(initialIsLight)
-    this.world?.baku.setTheme(initialIsLight)
+    this.baku?.setTheme(initialIsLight)
     this.world?.syncTypographyTheme(initialIsLight)
 
     // ── Glassmorphism: studio environment map for realistic glass reflections ──
@@ -784,13 +798,13 @@ export class Experience {
     const contactTextActive = this.world?.contactTextStage?.isAnimating ?? false
     const contactCyprusActive = this.world?.contactCyprusStage?.isAnimating ?? false
     const drawTrailActive = this.world?.drawTrail?.isAnimating ?? false
-    const baku = this.world?.baku
+    const baku = this.baku
     const openerActive = baku?.isOpenerActive ?? false
     const burstActive = this.world?.particleBurst?.isActive ?? false
     const camShaking = this.camera.isShaking
     // Cube face rotation animation — keep rendering while the cube is rotating
     // to its target face (triggered by rotateToFace on section change).
-    const cubeRotating = this.world?.baku?.isRotating ?? false
+    const cubeRotating = this.baku?.isRotating ?? false
     // ── Visible JunniParticles need continuous frames ──
     // Particles only exist on certain sections (Works on home — intro removed
     // them for white-on-white). Their animation is GPU-side via uTime; if
@@ -852,7 +866,7 @@ export class Experience {
     // Update showreel button shader (TSL uniforms + hover/click animation)
 
     // Drive worldDNA section blend — from→to colors + phaseProgress (scroll t).
-    if (this.world?.baku) {
+    if (this.baku) {
       const fromCfg = this.world.getConfig(
         this.world.sections[this.world.currentSectionIndex]?.phaseConfig?.id ?? 'sec_intro',
       )
@@ -860,7 +874,7 @@ export class Experience {
       const toIdx = Math.min(this.world.currentSectionIndex + 1, WORLD_SLOT_COUNT - 1)
       const toCfg = this.world.getConfig(this.world.sections[toIdx]?.phaseConfig?.id ?? 'sec_intro')
       if (fromCfg && toCfg) {
-        this.world.baku.updateWorldBlend(
+        this.baku.updateWorldBlend(
           fromCfg.baku.material.color,
           toCfg.baku.material.color,
           fromCfg.baku.material.emissive,
@@ -913,9 +927,9 @@ export class Experience {
       // ── Rotate cube to show the face for this section ──
       // 6 sections = 6 cube faces. Each section change animates the cube
       // to its target Y rotation so the corresponding face points to camera.
-      if (this.world?.baku) {
-        if (isInitialSectionSync) this.world.baku.snapToFace(idx)
-        else this.world.baku.rotateToFace(idx)
+      if (this.baku) {
+        if (isInitialSectionSync) this.baku.snapToFace(idx)
+        else this.baku.rotateToFace(idx)
         this._needsRender = true
       }
 
@@ -924,7 +938,7 @@ export class Experience {
       // Also triggers cube opener (scale pulse 1.0→1.3→1.0) for combined effect.
       if (!isInitialSectionSync) {
         this.camera.pulse(0.05, 0.8)
-        this.world?.baku?.triggerOpener()
+        this.baku?.triggerOpener()
       }
       this._needsRender = true
     }
@@ -947,8 +961,8 @@ export class Experience {
       if (!prefersReducedMotion()) this.camera.shake(0.02, 0.6)
       this.currentSectionContext = cfg.context
       // A-009: Apply Baku material from worldState (was computed but never applied)
-      if (this.world?.baku) {
-        this.world.baku.updateMaterial(worldState.bakuMaterial)
+      if (this.baku) {
+        this.baku.updateMaterial(worldState.bakuMaterial)
       }
       // A-015: Per-section cursor follow (works=0.22, others=0.15)
       const cursorFollow = idx === WORKS_SLOT_INDEX ? 0.22 : 0.15
@@ -1080,6 +1094,8 @@ export class Experience {
     this.ground?.dispose()
     // Phase 8 slice 3: the ambient pavilion owner.
     this.envSphere?.dispose()
+    // Phase 8 slice 4: the glass cube owner (6 face geos+mats + 6 edge geos+mats).
+    this.baku?.dispose()
     // Phase 8 slice 2: the stable section groups owner (BakuCarousel-first
     // disposal ordering + Works particle texture live in the owner).
     this.sectionGroups?.dispose()
