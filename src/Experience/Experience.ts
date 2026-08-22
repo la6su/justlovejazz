@@ -35,9 +35,12 @@ import { RenderScheduler, type FrameReason } from '../core/RenderScheduler'
 // jlz:theme-applied events for 3D synchronisation.
 import { eventBus } from '../core/EventBus'
 // Phase 8 slice 1: lights + ground are no longer World members — Experience
-// creates these scene owners and owns their disposal.
+// creates these scene owners and owns their disposal. Slice 2: the six
+// stable section groups are owned by the SectionGroups owner (attached to
+// the World before init).
 import { CinematicLights } from './World/Lights'
 import { GroundPlane } from './Scene/GroundPlane'
+import { SectionGroups } from './Scene/SectionGroups'
 // DissolveOverlay removed — cover transition in ProjectDetail replaces it.
 
 /**
@@ -89,6 +92,9 @@ export class Experience {
   // entering the Tres-owned scene; Experience is the single disposal owner).
   private lights!: CinematicLights
   private ground!: GroundPlane
+  // Phase 8 slice 2: the six stable section groups owner (attached to the
+  // World before init — World's frame path reads them via the getter).
+  private sectionGroups!: SectionGroups
   private bus!: StateBus
 
   // Phase 7 slice 4: the former UI features (cinematic nav, menu, overlay,
@@ -216,6 +222,12 @@ export class Experience {
   private async buildWorld(): Promise<void> {
     const { World } = await import('../core/World')
     this.world = new World(this.scene)
+    // Phase 8 slice 2: the six stable section groups enter the Tres-owned
+    // scene directly under their own owner (fresh per World instance). The
+    // World reads them through the sceneGroups getter; init() needs them
+    // (carousel prewarm + final visibility), so attach before init.
+    this.sectionGroups = new SectionGroups(this.scene)
+    this.world.attachSectionGroups(this.sectionGroups)
     await this.world.init()
     // Phase 7: with the persistent SceneHost the World enters the Tres scene
     // through the explicit primitive adapter (`:dispose="null"` — Experience
@@ -1048,6 +1060,9 @@ export class Experience {
     // single disposal owner — the legacy World no longer disposes them).
     this.lights?.dispose()
     this.ground?.dispose()
+    // Phase 8 slice 2: the stable section groups owner (BakuCarousel-first
+    // disposal ordering + Works particle texture live in the owner).
+    this.sectionGroups?.dispose()
     this.world.dispose()
     this.bus.cancelAll()
     this.devPanel?.dispose()

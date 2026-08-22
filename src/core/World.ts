@@ -1,6 +1,7 @@
 // src/core/World.ts — Junni-style composition: Section[], Baku, Atmosphere
 // (Phase 8 slice 1: lights + ground moved out — Experience owns the
-// CinematicLights + GroundPlane scene owners)
+// CinematicLights + GroundPlane scene owners; slice 2: the six stable
+// section groups moved out — Experience owns the SectionGroups owner)
 
 import * as THREE from 'three'
 // BG.ts removed — was dead computation (bg.color never read by anyone).
@@ -10,6 +11,7 @@ import { StateBus } from './StateBus'
 import { prefersReducedMotion } from './motionPolicy'
 import { type CameraTarget, type WorldState, BakuRole } from './types'
 import type { GroundPlane } from '../Experience/Scene/GroundPlane'
+import type { SectionGroups } from '../Experience/Scene/SectionGroups'
 import { DrawTrail } from '../Experience/World/DrawTrail'
 import { SplashCube } from '../Experience/World/SplashCube'
 import { EnvSphere } from '../Experience/World/EnvSphere'
@@ -17,10 +19,9 @@ import { ParticleBurst } from '../Experience/World/ParticleBurst'
 import { getWorldConfigForPage, type PhaseConfig } from './WorldConfig'
 import { getCurrentPage } from './routePage'
 import { clampStoryProgress, sectionIndexAt } from './storyProgress'
-import { SectionSceneFactory } from './SectionSceneFactory'
-import { disposeSection3Textures } from '../sections/works/scene'
 // updateInstancedParticles removed — was a no-op. Particles are static.
-import { disposeMaterialDeep } from '../Utils/dispose'
+// disposeMaterialDeep removed — Phase 8 slice 2: the scene-group disposal
+// (its only World consumer) moved to the SectionGroups owner.
 import { WorksPlaneStage } from '../Experience/World/WorksPlaneStage'
 import { ContactTextStage } from '../Experience/World/ContactTextStage'
 import type { ContactCyprusStage } from '../Experience/World/ContactCyprusStage'
@@ -43,7 +44,15 @@ export class World extends THREE.Group {
   // injects the ground through `attachGround` (temporary adapter, removed with
   // the World scene-coordination part — Phase 8 completion).
   private _groundOwner: GroundPlane | null = null
-  public sceneGroups: THREE.Group[] = []
+  // Phase 8 slice 2: the six stable section groups are created and disposed
+  // by the Experience-owned SectionGroups owner (attached via
+  // attachSectionGroups); the getter keeps the legacy read surface during
+  // the transition (temporary adapter — removed with the scene-coordination
+  // part at Phase 8 completion).
+  private _sectionGroupsOwner: SectionGroups | null = null
+  public get sceneGroups(): THREE.Group[] {
+    return this._sectionGroupsOwner?.groups ?? []
+  }
   /** Lazy `/works` media owner. The DOM keeps semantics; this group owns pixels. */
   public worksPlaneStage: WorksPlaneStage | null = null
   /** Lightweight pixel-title layer, loaded only for the Contact route. */
@@ -128,7 +137,9 @@ export class World extends THREE.Group {
     const pageKey = getCurrentPage()
     this.configs = getWorldConfigForPage(pageKey)
     this.disposeSections()
-    this.disposeSceneGroups()
+    // Phase 8 slice 2: the six stable section groups are created by the
+    // Experience-owned SectionGroups owner and attached (attachSectionGroups)
+    // before init — no creation/disposal here.
     this.syncRouteVisuals()
 
     const bus = StateBus.getInstance()
@@ -151,17 +162,8 @@ export class World extends THREE.Group {
       this.sections.push(section)
     })
 
-    /* ── Create 3D scene groups — direct index→factory mapping ── */
-    for (let i = 0; i < this.configs.length; i++) {
-      const group = SectionSceneFactory.byIndex(i)
-      // Hide non-particle geometry until bespoke visuals are ready (T-070..T-074).
-      // Particles remain for atmospheric depth. Remove this call section by section
-      // as real visuals are added.
-      SectionSceneFactory.hideGeometry(group)
-      this.add(group)
-      this.sceneGroups.push(group)
-      group.visible = i === 1 // Intro = index 1
-    }
+    // Phase 8 slice 2: the 3D scene groups (direct index→factory mapping) are
+    // created by the SectionGroups owner attached before init.
 
     // Phase 8 slice 1: ground init (intro config) + first-section light targets
     // moved to Experience (it owns the GroundPlane + CinematicLights owners).
@@ -219,6 +221,22 @@ export class World extends THREE.Group {
    */
   public attachGround(ground: GroundPlane): void {
     this._groundOwner = ground
+  }
+
+  /**
+   * Phase 8 slice 2 (temporary primitive adapter): inject the Experience-owned
+   * stable section groups owner. Must be called before `init()` — the
+   * `sceneGroups` getter feeds `init()` (carousel prewarm + final visibility)
+   * and the frame path (the `updateTransform` group fade/visibility step,
+   * the `update()` per-group updates, `setContactSceneSection`,
+   * `hasVisibleParticles` / `hasVisibleAmbientMotion`,
+   * `ensureCarouselInitialized`) plus the Experience / ExperienceUI reads.
+   * Consumer: the World frame path + Experience (documented above).
+   * Removal: with the World scene-coordination part, when `World` leaves
+   * production — Phase 8 completion.
+   */
+  public attachSectionGroups(owner: SectionGroups): void {
+    this._sectionGroupsOwner = owner
   }
 
   /** Initialize the home-only carousel once, including after a deep-link visit. */
@@ -898,44 +916,13 @@ export class World extends THREE.Group {
     this.sections = []
   }
 
-  private disposeSceneGroups(): void {
-    // Dispose the module-level Works particle texture. The section factory
-    // already imports this module to create section 3, so a dynamic import here
-    // only produced an ineffective split and a build warning.
-    disposeSection3Textures()
-    this.sceneGroups.forEach((group) => {
-      // If the group hosts a BakuCarousel (userData.carousel), call its
-      // dispose() FIRST — it removes 6 window listeners + clears snapTimer
-      // + disposes card materials/textures/geometry. The traverse below
-      // SKIPS the gallery's descendants (already disposed) to avoid a
-      // fragile double-dispose on the same materials/geometries.
-      const gallery = group.userData.carousel as
-        ({ dispose?: () => void } & THREE.Object3D) | undefined
-      // Collect gallery + all its descendants so the traverse can skip them.
-      const galleryDescendants = new Set<THREE.Object3D>()
-      if (gallery) {
-        galleryDescendants.add(gallery)
-        gallery.traverse((o) => galleryDescendants.add(o))
-      }
-      gallery?.dispose?.()
-      group.traverse((obj) => {
-        if (galleryDescendants.has(obj)) return // already disposed by gallery.dispose()
-        if (obj instanceof THREE.Mesh) {
-          obj.geometry?.dispose()
-          if (Array.isArray(obj.material)) obj.material.forEach((m) => disposeMaterialDeep(m))
-          else disposeMaterialDeep(obj.material)
-        }
-      })
-      this.remove(group)
-    })
-    this.sceneGroups = []
-  }
+  // Phase 8 slice 2: the stable section groups (incl. the BakuCarousel dispose
+  // ordering + the Works particle texture) are owned + disposed by the
+  // Experience-owned SectionGroups owner — World no longer disposes them.
 
   public dispose(): void {
     this.disposeSections()
-    // Dispose scene groups — including BakuCarousel (calls its dispose() which
-    // removes 6 window listeners + clears snapTimer + disposes GPU resources).
-    this.disposeSceneGroups()
+    // (scene groups: disposed by the Experience-owned SectionGroups owner)
     // Dispose baku (SplashCube) GPU resources — 6 face geos+mats + 6 edge geos+mats.
     this.baku?.dispose()
     // Dispose env sphere GPU resources

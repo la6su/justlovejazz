@@ -50,7 +50,7 @@ export function createSection3(): THREE.Group {
   return g
 }
 
-/** Dispose the works-section particle texture. Called from World.disposeSceneGroups. */
+/** Dispose the works-section particle texture. Called from the SectionGroups owner's dispose. */
 export function disposeSection3Textures(): void {
   if (_section3Texture) {
     _section3Texture.dispose()

@@ -2331,6 +2331,30 @@ removed.
   (18 geometries / 25 materials / 9 textures) and clean disposal on all
   three runs.
 
+- Slice 2 (done, 2026-08-22): the six stable section groups left `World`.
+  Experience creates the `SectionGroups` owner
+  (`src/Experience/Scene/SectionGroups.ts` — 1:1 factory creation +
+  geometry-hiding, intro-visible final state, the BakuCarousel-first
+  disposal ordering and the Works particle texture disposal) and attaches it
+  to the World before `init()` (the owner feeds `init()`'s carousel prewarm
+  and final-visibility guard, the `updateTransform` group fade/visibility
+  step, the `update()` per-group updates and the particle/typography
+  signals). `World.sceneGroups` is now a documented temporary getter (the
+  legacy read surface for the World frame path, Experience and ExperienceUI)
+  and `World`'s group creation, `disposeSceneGroups` and the now-unused
+  `SectionSceneFactory` / `disposeSection3Textures` / `disposeMaterialDeep`
+  imports are deleted; the World group itself is an identity transform, so
+  the groups entering the Tres scene directly are visually neutral. Gates:
+  `type-check`, `type-check:vue`, `test:unit` (294), `build`, serial e2e
+  (21/21) and the live gate (evidence
+  `docs/evidence/phase7-live-gate/2026-08-22T00-28-48-405Z-report.json`)
+  pass. Performance comparison: bundle net +0.5 kB raw / +0.69 kB gzip
+  (the group code re-homed from `chunk-core-world` into
+  `chunk-experience`; the Three delivery chunk is unchanged at 381.17 kB
+  gzip — the open budget ADR); runtime parity — identical settled frame
+  counts (65 / 36 / 64) and identical scene graph resources (18 / 25 / 9),
+  clean disposal on all three runs.
+
 Acceptance: legacy `World`, `SectionSceneFactory` and the scene-coordination
 part of `Experience` have no production callers.
 
@@ -2477,7 +2501,7 @@ The following ledgers are updated in this document during implementation.
 | GLSL `ShaderMaterial` post chain         | Phase 6 phase-exit cleanup — retained 2026-08-22 as the labelled forced-WebGLBackend owner per the fixed decision; deletion tracked to Phase 10 | done    |
 | raw `jlz:*` window bridge                | all consumers use typed ports                                                                                                                   | pending |
 | monolithic `Experience` coordination     | Phase 8 owner migrations                                                                                                                        | pending |
-| legacy World adapters                    | Phase 8 completion — slice 1 (lights + ground) deleted from `World` 2026-08-22                                                                  | pending |
+| legacy World adapters                    | Phase 8 completion — slice 1 (lights + ground) + slice 2 (stable section groups) deleted from `World` 2026-08-22                                | pending |
 | migration flags and shims                | Phase 10                                                                                                                                        | pending |
 
 ## Definition of done

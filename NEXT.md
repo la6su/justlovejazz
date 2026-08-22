@@ -406,6 +406,15 @@ do not start a phase whose entry gate has not passed.
       remains: `World.attachGround` forwards the ground lerp from
       `updateTransform` (it needs World's eased `t`) until the World
       scene-coordination part leaves production (Phase 8 completion).
+      Phase 8 slice 2 landed (2026-08-22): the six stable section groups
+      left `World` — Experience creates the new `SectionGroups` owner
+      (`src/Experience/Scene/SectionGroups.ts`: factory creation,
+      geometry-hiding, the BakuCarousel-first disposal ordering and the
+      Works particle texture) attached to the World before `init()`;
+      `World.sceneGroups` is now a documented temporary getter (legacy read
+      surface for the World frame path, Experience and ExperienceUI) and the
+      `World` group-creation/disposal code plus the now-unused
+      `SectionSceneFactory`/`disposeMaterialDeep` imports are deleted.
 
 ## 2 — Deferred product queue
 
