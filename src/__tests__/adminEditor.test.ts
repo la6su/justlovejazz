@@ -167,6 +167,11 @@ describe('AdminApp.vue', () => {
     const outlineButtons = wrapper.findAll('#document-outline [data-select-node]')
     expect(outlineButtons.length).toBeGreaterThanOrEqual(8)
     expect(wrapper.find('#builder-preview').exists()).toBe(true)
+    // Phase 9: the builder preview renders the default document through the
+    // trusted Vue element registry — real DOM nodes with the editor
+    // delegation attributes (editable mode), not a v-html string.
+    expect(wrapper.find('#builder-preview [data-builder-id="hero-section"]').exists()).toBe(true)
+    expect(wrapper.find('#builder-preview .jlz-builder-section').exists()).toBe(true)
     document.body.innerHTML = ''
   })
 

@@ -33,7 +33,6 @@ import UIkit from 'uikit'
 import * as editorCommands from '../builder/commands'
 import { BUILDER_CATALOG, BUILDER_CATALOG_GROUPS } from '../builder/catalog'
 import { DEFAULT_BUILDER_DOCUMENT } from '../builder/default-document'
-import { renderBuilderDocument } from '../builder/render'
 import { STYLE_GROUPS, type BuilderThemeKey, type StyleGroupId } from '../builder/style'
 import { renderStyleShowcase } from '../builder/style-showcase'
 import { themeToCssVars } from '../builder/themeVariables'
@@ -423,11 +422,12 @@ export function useAdminEditor(
   }
 
   // ── Reactive panels (bound by the SFC) ────────────────────────────────────
+  // The builder document renders through the trusted Vue element registry
+  // (BuilderPage in AdminApp.vue) — only the style showcase is still a
+  // pure-HTML string here (the framework-neutral core).
   const previewHtml = computed((): string => {
     void rev.value
-    return mode.value === 'builder'
-      ? renderBuilderDocument(store.document, { editable: true })
-      : renderStyleShowcase(selectedStyleGroup.value)
+    return renderStyleShowcase(selectedStyleGroup.value)
   })
 
   const catalogGroups = BUILDER_CATALOG_GROUPS

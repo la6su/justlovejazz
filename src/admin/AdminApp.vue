@@ -3,15 +3,18 @@
 //
 // The template is a 1:1 port of `admin/index.html` (same ids and classes, so
 // `admin/admin.less` keeps working untouched); the behavior is the
-// `useAdminEditor` composable over the typed `BuilderStore`. The rendered
-// page / style showcase stays a pure-HTML string (the builder core is pure);
-// the SFC hosts it via `v-html` and keeps the editor affordances (selection
-// class, theme variables, UIkit hydration) as DOM effects.
+// `useAdminEditor` composable over the typed `BuilderStore`. The builder
+// document renders through the trusted Vue element registry
+// (`BuilderPage`, Phase 9); the style showcase stays a pure-HTML string
+// (the builder core is pure) and the SFC hosts it via `v-html`. The editor
+// affordances (selection class, theme variables, UIkit hydration) are DOM
+// effects on the shared `#builder-preview` container in both modes.
 import UIkit from 'uikit'
 import { onMounted, onUpdated, ref } from 'vue'
 
 import { BUILDER_CATALOG, BUILDER_CATALOG_GROUPS } from '../builder/catalog'
 import { STYLE_GROUPS } from '../builder/style'
+import { BuilderPage } from '../builder/vue/BuilderPage'
 import { useAdminEditor } from './useAdminEditor'
 
 const previewEl = ref<HTMLElement | null>(null)
@@ -355,10 +358,15 @@ const onPreviewKeydown = (event: KeyboardEvent): void => {
           ref="previewEl"
           id="builder-preview"
           class="jlz-builder-preview"
-          v-html="previewHtml"
           @click="onPreviewClick"
           @keydown="onPreviewKeydown"
-        ></div>
+        >
+          <!-- Builder mode: the trusted Vue element registry (Phase 9) —
+               real DOM nodes with the delegation attributes. -->
+          <BuilderPage v-if="mode === 'builder'" :document="store.document" editable />
+          <!-- Style mode: the generated showcase (pure-HTML string). -->
+          <div v-else v-html="previewHtml"></div>
+        </div>
       </div>
     </main>
 

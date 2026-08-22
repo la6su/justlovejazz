@@ -2643,6 +2643,47 @@ carries the generated `dist/sitemap.xml`, all five blog pages from the
 derived input map, and no admin strings (`__jlz-admin` absent from
 `dist`).
 
+#### Phase 9 trusted Vue element registry slice — 2026-08-22
+
+Scope item 1's registry half closed. `src/builder/vue/elements.ts` is the
+trusted Vue element registry: one typed component per builder element type
+(section / grid / heading / text / button / card / divider / list / link /
+icon), each rendering the exact same markup the framework-neutral string
+renderer (`src/builder/render.ts`) emits — the same prop allowlists
+(`safeChoice` is now exported from the core for the shared decision), the
+same href policy (the new `sanitizeHref` returns the raw validated value;
+`safeHref` keeps the escaped wrapper for the string renderer, and the
+registry passes the raw value to Vue's attribute binding, which escapes it
+itself — no double escaping), the same escaping (Vue's interpolation
+replaces `escapeHtml`) and, in editable mode, the same `data-builder-id` /
+`data-builder-type` / `tabindex` delegation attributes. `BuilderPage`
+(`src/builder/vue/BuilderPage.ts`) renders a full `BuilderDocument` through
+the registry and is the public surface for builder documents. The admin
+editor preview now renders the builder document through the registry (real
+DOM nodes) instead of the `v-html` string: `AdminApp.vue` hosts both modes
+in the shared `#builder-preview` container (builder mode → `BuilderPage`
+`editable`; style mode → the pure-HTML showcase), so the click/keydown
+delegation, selection, scroll-to-node and theme effects are unchanged; the
+composable's `previewHtml` computed now only produces the showcase and the
+`renderBuilderDocument` import leaves the admin graph. The parity test
+(`src/__tests__/builderVueRegistry.test.ts`) locks the contract: the SSR
+output of `BuilderPage` and `renderBuilderDocument` parse to identical
+trees (tags, attributes, text) for a representative document covering all
+ten element types, the allowlist clamps, `javascript:` href rejection and
+copy escaping — in both read-only and editable mode — and
+`adminEditor.test.ts` asserts the SFC preview renders the document through
+the registry with its delegation attributes. One SSR nuance found by the
+test and fixed in the registry: an empty `class` prop still emits
+`class=""` in Vue SSR output, so the heading/text components include the
+`class` attribute only when the size/style class is present (matching the
+string renderer). The string renderer is retained per the boundary: it
+serves the static/SSG output (interim rule), and the registry is what the
+public routes render (slice 5). Gates: `type-check`, `type-check:vue`,
+`test:unit` (317 — +6 parity tests + the SFC registry-render assertion),
+`build` (the registry + admin strings remain absent from `dist` — the
+registry is imported by the dev-only admin entry only, for now), serial
+e2e (21/21).
+
 ### Phase 10 — legacy removal and hardening
 
 Audit the phase-specific deletion ledger rather than postponing earlier

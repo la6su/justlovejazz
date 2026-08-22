@@ -13,20 +13,39 @@ const escapeHtml = (value: string): string =>
       character,
   )
 
-const safeChoice = (value: string | undefined, choices: readonly string[], fallback: string) =>
-  value && choices.includes(value) ? value : fallback
+/**
+ * Clamp a prop to an allowlist. Framework-neutral core helper — shared with
+ * the Vue element registry (`./vue/elements.ts`) so both renderers make
+ * identical prop decisions.
+ */
+export const safeChoice = (
+  value: string | undefined,
+  choices: readonly string[],
+  fallback: string,
+) => (value && choices.includes(value) ? value : fallback)
 
-const safeHref = (value: string | undefined): string => {
+/**
+ * Validate an authored href (internal paths, anchors, mailto, HTTPS only)
+ * and return the raw value. Framework-neutral core helper — the single
+ * href policy shared by both renderers.
+ */
+export const sanitizeHref = (value: string | undefined): string => {
   const href = value?.trim() ?? '#'
-  if (href.startsWith('/') || href.startsWith('#') || href.startsWith('mailto:'))
-    return escapeHtml(href)
+  if (href.startsWith('/') || href.startsWith('#') || href.startsWith('mailto:')) return href
   try {
     const url = new URL(href)
-    return url.protocol === 'https:' ? escapeHtml(url.toString()) : '#'
+    return url.protocol === 'https:' ? url.toString() : '#'
   } catch {
     return '#'
   }
 }
+
+/**
+ * The string renderer's href attribute value: `sanitizeHref` + HTML
+ * escaping (the Vue element registry passes the raw `sanitizeHref` value to
+ * Vue's attribute binding, which escapes it itself).
+ */
+export const safeHref = (value: string | undefined): string => escapeHtml(sanitizeHref(value))
 
 function editorAttributes(node: BuilderNode, options: BuilderRenderOptions): string {
   return options.editable

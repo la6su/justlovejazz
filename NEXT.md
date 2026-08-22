@@ -556,6 +556,29 @@ syncRouteVisuals()` used to run (on route entry + section change) now
       `type-check:vue`, `test:unit` (311 — +15 new sitemap/manifest-drift
       tests), `build`; the generated sitemap + all five blog pages + the
       absence of admin strings in `dist` are verified on the built output.
+      Phase 9 slice 2 landed (2026-08-22): the trusted Vue element registry
+      landed — `src/builder/vue/elements.ts` is one typed component per
+      builder element type (ten: section/grid/heading/text/button/card/
+      divider/list/link/icon), rendering the exact same markup the
+      framework-neutral string renderer emits (shared `safeChoice` + the new
+      `sanitizeHref` href policy; Vue's interpolation/attribute escaping
+      replaces the hand-rolled `escapeHtml`). `BuilderPage`
+      (`src/builder/vue/BuilderPage.ts`) renders a full document through it
+      and is the public surface for builder documents. The admin editor
+      preview now renders the builder document through the registry (real
+      DOM nodes with the `data-builder-id`/`data-builder-type`/`tabindex`
+      delegation attributes in editable mode) instead of a `v-html` string —
+      the style showcase stays a pure-HTML string; the delegation, selection
+      and theme effects on `#builder-preview` are unchanged. The parity test
+      (`src/__tests__/builderVueRegistry.test.ts`) locks the contract: SSR
+      output of `BuilderPage` and `renderBuilderDocument` parse to identical
+      trees for a document covering all ten types, the allowlist clamps,
+      unsafe-href rejection and copy escaping, in both modes. The string
+      renderer stays (static/SSG output + the interim rule); the registry is
+      what public routes render (slice 5). Gates: `type-check`,
+      `type-check:vue`, `test:unit` (317 — +6 parity tests + the SFC
+      registry-render assertion in `adminEditor.test.ts`), `build` (admin
+      strings + registry still absent from `dist`), serial e2e (21/21).
       Phase 8 slice 2 landed (2026-08-22): the six stable section groups
       left `World` — Experience creates the new `SectionGroups` owner
       (`src/Experience/Scene/SectionGroups.ts`: factory creation,
