@@ -619,7 +619,7 @@ async function main(): Promise<void> {
   mkdirSync(join(dir, ''), { recursive: true })
   const stamp = report.utc.replace(/[:.]/g, '-')
   const outPath = join(dir, `${stamp}-report.json`)
-  writeFileSync(outPath, JSON.stringify(report, null, 2))
+  writeFileSync(outPath, JSON.stringify(report, null, 2) + '\n')
   const summary = {
     tool: report.tool,
     utc: report.utc,

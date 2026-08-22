@@ -38,7 +38,7 @@
 // same published set).
 import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
-import { dirname, resolve } from 'node:path'
+import { dirname, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { createServer } from 'vite'
@@ -109,17 +109,16 @@ try {
 
     // ── Render + write each approved document ─────────────────────────────
     mkdirSync(outDir, { recursive: true })
+    const writtenLess = []
     for (const document of published) {
       const bodyHtml = await renderToString(
         createSSRApp(h(BuilderPage, { document, editable: false })),
       )
       const html = renderBuilderPageDocument(document, bodyHtml)
       writeFileSync(resolve(outDir, `${document.slug}.html`), html, 'utf8')
-      writeFileSync(
-        resolve(lessDir, `${document.slug}.less`),
-        renderBuilderPageLess(document),
-        'utf8',
-      )
+      const lessPath = resolve(lessDir, `${document.slug}.less`)
+      writeFileSync(lessPath, renderBuilderPageLess(document), 'utf8')
+      writtenLess.push(lessPath)
       console.log(
         `[publish-builder-pages] wrote p/${document.slug}.html (${html.length} chars) — /p/${document.slug}`,
       )
@@ -127,8 +126,16 @@ try {
 
     // The generated documents are committed build output (the Vite build
     // inputs), so run them through the repo formatter to keep the tree
-    // format-clean without a manual pass.
-    execFileSync('bunx', ['prettier', '--write', 'p'], { cwd: root, stdio: 'inherit' })
+    // format-clean without a manual pass. The per-page .less artifacts are
+    // pipeline-owned too (regenerated on every build) and must be formatted
+    // here as well — otherwise every build rewrites them unformatted and
+    // `format:check` fails until a manual pass. The admin's shared
+    // theme/components generated artifacts are intentionally not touched.
+    execFileSync(
+      'bunx',
+      ['prettier', '--write', 'p', ...writtenLess.map((file) => relative(root, file))],
+      { cwd: root, stdio: 'inherit' },
+    )
   }
 } finally {
   await server.close()

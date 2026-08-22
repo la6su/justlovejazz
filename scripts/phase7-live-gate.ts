@@ -289,7 +289,7 @@ async function main(): Promise<void> {
   mkdirSync(dirname(join(dir, 'report.json')), { recursive: true })
   const stamp = report.utc.replace(/[:.]/g, '-')
   const outPath = join(dir, `${stamp}-report.json`)
-  writeFileSync(outPath, JSON.stringify(report, null, 2))
+  writeFileSync(outPath, JSON.stringify(report, null, 2) + '\n')
   console.log(JSON.stringify(report, null, 2))
   console.log(`\nreport: ${outPath}`)
   console.log(allPassed ? 'PHASE 7 LIVE GATE: PASS' : 'PHASE 7 LIVE GATE: FAIL')
