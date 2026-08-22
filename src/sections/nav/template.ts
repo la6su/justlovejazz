@@ -12,6 +12,8 @@
 //   - `jlz:close-nav` → return to the previous main section.
 //   - Subsection click → navigate to target section (menu auto-closes).
 
+import { eventBus } from '../../core/EventBus'
+
 // (themeManager + getLang imports removed — UIMenu.ts owns all config controls now.)
 
 // ── Navigation items with subsections ──
@@ -431,19 +433,15 @@ export function initMenuNav(): void {
       if (path !== window.location.pathname) {
         // Cross-page: close Menu first (restore the current story frame), then
         // dispatch jlz:navigate so the router can run the page transition.
-        window.dispatchEvent(new CustomEvent('jlz:close-nav'))
-        window.dispatchEvent(
-          new CustomEvent('jlz:navigate', {
-            detail: { path: path + (hash || '') },
-          }),
-        )
+        eventBus.emit('jlz:close-nav')
+        eventBus.emit('jlz:navigate', { path: path + (hash || '') })
       } else {
         // Same-page: scroll to hash + close menu (return to previous section)
         if (hash) {
           const target = document.querySelector(hash)
           target?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' })
         }
-        window.dispatchEvent(new CustomEvent('jlz:close-nav'))
+        eventBus.emit('jlz:close-nav')
       }
     })
   })

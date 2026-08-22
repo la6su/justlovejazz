@@ -93,6 +93,24 @@ async function waitForRouter(page: Page): Promise<void> {
   )
 }
 
+/**
+ * Trigger an in-app strict navigation through the app's typed event bus.
+ * The Phase 10 raw `window` bridge was removed, so the app only receives
+ * `jlz:navigate` via the typed port; the app exposes the dev/test seam
+ * `window.__jlzEmit` (entry-app.ts) to call that port from the test.
+ */
+function navigateInApp(page: Page, path: string): Promise<void> {
+  return page.evaluate((nextPath) => {
+    const emit = (
+      window as unknown as {
+        __jlzEmit?: (event: string, detail?: unknown) => void
+      }
+    ).__jlzEmit
+    if (!emit) throw new Error('window.__jlzEmit test seam is not available')
+    emit('jlz:navigate', { path: nextPath })
+  }, path)
+}
+
 test.describe('JustLoveJazz — page boot smoke', () => {
   test('splash HTML does not preload the 3D dependency graph', async ({ request }) => {
     const response = await request.get('/')
@@ -157,9 +175,7 @@ test.describe('JustLoveJazz — page boot smoke', () => {
     await waitForRouter(page)
 
     // Semantic navigation without the scene: in-app push lands on /works.
-    await page.evaluate(() => {
-      window.dispatchEvent(new CustomEvent('jlz:navigate', { detail: { path: '/works' } }))
-    })
+    await navigateInApp(page, '/works')
     await expect(page).toHaveURL(/\/works$/)
     await expect(page.locator('#section-works-01')).toBeAttached({ timeout: 20000 })
     await expect(page.locator('canvas')).toHaveCount(0)
@@ -226,9 +242,7 @@ test.describe('JustLoveJazz — page boot smoke', () => {
     await expect(announcer).toHaveAttribute('aria-live', 'polite')
     await expect(announcer).toHaveAttribute('aria-atomic', 'true')
 
-    await page.evaluate(() => {
-      window.dispatchEvent(new CustomEvent('jlz:navigate', { detail: { path: '/services' } }))
-    })
+    await navigateInApp(page, '/services')
 
     await expect(page).toHaveURL(/\/services$/)
     await expect(page).toHaveTitle('Services — JUSTLOVEJAZZ')
@@ -285,10 +299,7 @@ test.describe('JustLoveJazz — accessibility & DOM UI', () => {
     await expect(page.locator('#section-intro')).toBeAttached()
     await waitForRouter(page)
 
-    const navigate = (path: string) =>
-      page.evaluate((nextPath) => {
-        window.dispatchEvent(new CustomEvent('jlz:navigate', { detail: { path: nextPath } }))
-      }, path)
+    const navigate = (path: string) => navigateInApp(page, path)
 
     await navigate('/lab#section-lab-02')
     await expect(page).toHaveURL(/\/lab#section-lab-02$/)
@@ -312,9 +323,7 @@ test.describe('JustLoveJazz — accessibility & DOM UI', () => {
     await page.goto('/')
     await waitForRouter(page)
 
-    await page.evaluate(() => {
-      window.dispatchEvent(new CustomEvent('jlz:navigate', { detail: { path: '/works' } }))
-    })
+    await navigateInApp(page, '/works')
     await expect(page).toHaveURL(/\/works$/)
 
     await page.goBack()
@@ -548,9 +557,7 @@ test.describe('JustLoveJazz — Phase 7 persistent scene host', () => {
     expect(await markedAfterBoot(), 'canvas was not reachable to mark').toBe(true)
 
     // In-app navigation to a content route.
-    await page.evaluate(() => {
-      window.dispatchEvent(new CustomEvent('jlz:navigate', { detail: { path: '/works' } }))
-    })
+    await navigateInApp(page, '/works')
     await expect(page).toHaveURL(/\/works$/)
     await expect(page.locator('#section-works-01')).toBeAttached()
 
@@ -560,9 +567,7 @@ test.describe('JustLoveJazz — Phase 7 persistent scene host', () => {
     expect(await markedAfterBoot(), 'scene root remounted on /works navigation').toBe(true)
 
     // And again on the way back home.
-    await page.evaluate(() => {
-      window.dispatchEvent(new CustomEvent('jlz:navigate', { detail: { path: '/' } }))
-    })
+    await navigateInApp(page, '/')
     await expect(page).toHaveURL(/\/$/)
     await expect(page.locator('canvas.canvas')).toHaveCount(1)
     expect(await markedAfterBoot(), 'scene root remounted on the way back home').toBe(true)
@@ -606,9 +611,7 @@ test.describe('JustLoveJazz — runtime health', () => {
       expect(flag).toBe('1')
 
       await waitForRouter(page)
-      await page.evaluate(() => {
-        window.dispatchEvent(new CustomEvent('jlz:navigate', { detail: { path: '/works' } }))
-      })
+      await navigateInApp(page, '/works')
       await expect(page).toHaveURL(/\/works$/)
       await expect(page.locator('.jlz-route-transition')).toHaveCount(0)
     } finally {

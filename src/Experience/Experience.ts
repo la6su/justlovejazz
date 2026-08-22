@@ -20,7 +20,6 @@ import type { FinalMode } from '../core/rendererBackend'
 // worldDNA.ts removed — TSL node system never attached (attachWorldDNA never
 // called). updateWorldDNAAudio set uniforms nobody read. All dead.
 import { prefersReducedMotion } from '../core/motionPolicy'
-import type { ThemeAppliedPort } from '../core/sectionTheme'
 import { WORLD_SLOT_COUNT, worldSlotIndex } from '../core/worldSlots'
 import {
   NO_ACTIVITY,
@@ -93,8 +92,8 @@ export class Experience {
   private cursor!: Cursor
   private _sectionChangeHandler:
     ((payload: import('../core/EventBus').AppEvents['jlz:section-change']) => void) | null = null
-  private _themeAppliedHandler: ((e: Event) => void) | null = null
-  private _splashEnteredHandler: (() => void) | null = null
+  private _themeAppliedUnsub: (() => void) | null = null
+  private _splashEnteredUnsub: (() => void) | null = null
   private devPanel: DevPanel | null = null
   // Phase 8 slice 10: the scene-coordination engine (six-section state machine,
   // scroll transform, per-frame coordination) left the legacy `World` into the
@@ -761,7 +760,7 @@ export class Experience {
 
     // After splash is dismissed (Enter click), re-trigger NoiseText on the
     // active section so user sees the eyebrow animation as 3D scene reveals.
-    this._splashEnteredHandler = () => {
+    this._splashEnteredUnsub = eventBus.on('jlz:splash-entered', () => {
       this.features.triggerSplashOpener()
       const activeSection =
         (document.querySelector('.section-active [data-eyebrow]') as HTMLElement | null) ??
@@ -771,8 +770,7 @@ export class Experience {
           activeSection.getAttribute('data-eyebrow-text') ?? activeSection.textContent ?? ''
         if (text) NoiseText.for(activeSection).show(0.8, text)
       }
-    }
-    window.addEventListener('jlz:splash-entered', this._splashEnteredHandler)
+    })
     // Phase 7: with the persistent SceneHost the renderer instance is ADOPTED
     // (the SceneHost factory owns construction + backend inspection); the
     // native world host (rollback) keeps constructing it here as before.
@@ -797,11 +795,9 @@ export class Experience {
     // Theme toggle (snap=true) → instant snap. Section change (snap=false) → lerp.
     // Theme-specific syncs (ground, baku, particles) only run when the polarity
     // actually changed, not on every same-polarity scroll step.
-    this._themeAppliedHandler = (e: Event) => {
+    this._themeAppliedUnsub = eventBus.on('jlz:theme-applied', (detail) => {
       // The scene input port: the typed ThemeAppliedPort detail that
       // ContentReveal dispatches on every section change / theme toggle.
-      const detail = (e as CustomEvent<ThemeAppliedPort>).detail
-      if (!detail) return
       const sectionIdx = detail.sectionIndex
       // Phase 8 slice 3: the EnvSphere is the Experience-owned scene owner —
       // the world gate below still guards the world-bound syncs.
@@ -830,8 +826,7 @@ export class Experience {
         }
         this._raiseRenderDemand('dirty')
       }
-    }
-    window.addEventListener('jlz:theme-applied', this._themeAppliedHandler)
+    })
 
     // ContentReveal can resolve the initial polarity before Experience has
     // registered the listener above. Replay that settled DOM state so the
@@ -1400,13 +1395,13 @@ export class Experience {
       eventBus.off('jlz:renderer-recovered', this._onRendererRecovered)
       this._onRendererRecovered = null
     }
-    if (this._themeAppliedHandler) {
-      window.removeEventListener('jlz:theme-applied', this._themeAppliedHandler)
-      this._themeAppliedHandler = null
+    if (this._themeAppliedUnsub) {
+      this._themeAppliedUnsub()
+      this._themeAppliedUnsub = null
     }
-    if (this._splashEnteredHandler) {
-      window.removeEventListener('jlz:splash-entered', this._splashEnteredHandler)
-      this._splashEnteredHandler = null
+    if (this._splashEnteredUnsub) {
+      this._splashEnteredUnsub()
+      this._splashEnteredUnsub = null
     }
     // Phase 7 slice 4: the former UI features (their window listeners, the
     // menu, the overlay and the story nav) tear down through ExperienceUI.

@@ -13,6 +13,7 @@
 
 import UIkit from 'uikit'
 import { BlurFade } from '../Experience/BlurFade'
+import { eventBus } from '../core/EventBus'
 
 export interface OverlayOptions {
   mode?: 'video' | 'image'
@@ -319,11 +320,7 @@ export class FullscreenOverlay {
   private navigate(direction: -1 | 1): void {
     if (direction < 0) this.onPrev?.()
     else this.onNext?.()
-    window.dispatchEvent(
-      new CustomEvent('jlz:project-navigate', {
-        detail: { direction },
-      }),
-    )
+    eventBus.emit('jlz:project-navigate', { direction })
   }
 
   /**

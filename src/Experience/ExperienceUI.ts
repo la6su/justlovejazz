@@ -21,6 +21,7 @@ import { getSoundMuted } from '../core/SfxSystem'
 import type { SfxSystem } from '../core/SfxSystem'
 import { createWorksPortfolio, type WorksPortfolio } from './WorksPortfolio'
 import { WORLD_SLOT_COUNT, worldSlotIndex } from '../core/worldSlots'
+import { eventBus } from '../core/EventBus'
 import type { Camera } from './Camera'
 import type { FrameReason } from '../core/RenderScheduler'
 
@@ -68,15 +69,15 @@ export class ExperienceUI {
   portfolioInitialized = false
   private activeProjectIndex = 0
 
-  private _openProjectHandler: ((e: Event) => void) | null = null
-  private _projectNavigateHandler: ((e: Event) => void) | null = null
-  private _routeChangeCloseOverlayHandler: (() => void) | null = null
-  private _wobblePulseHandler: (() => void) | null = null
-  private _worksPageSectionHandler: ((e: Event) => void) | null = null
+  private _openProjectUnsub: (() => void) | null = null
+  private _projectNavigateUnsub: (() => void) | null = null
+  private _routeChangeCloseOverlayUnsub: (() => void) | null = null
+  private _wobblePulseUnsub: (() => void) | null = null
+  private _worksPageSectionUnsub: (() => void) | null = null
   private _worksPlaneTapHandler: ((e: PointerEvent) => void) | null = null
-  private _gotoSectionByHashHandler: ((e: Event) => void) | null = null
-  private _soundToggleHandler: ((e: Event) => void) | null = null
-  private _langChangeHandler: (() => void) | null = null
+  private _gotoSectionByHashUnsub: (() => void) | null = null
+  private _soundToggleUnsub: (() => void) | null = null
+  private _langChangeUnsub: (() => void) | null = null
 
   constructor(private host: ExperienceUIHost) {}
 
@@ -125,37 +126,28 @@ export class ExperienceUI {
     this.host.sfx().setMuted(getSoundMuted())
 
     // Runtime sound toggle (from UIMenu or other in-app controls)
-    this._soundToggleHandler = (e: Event) => {
-      const detail = (e as CustomEvent<{ muted: boolean }>).detail
-      if (detail) {
-        this.host.sfx().setMuted(detail.muted)
-      }
-    }
-    window.addEventListener('jlz:sound-toggle', this._soundToggleHandler)
+    this._soundToggleUnsub = eventBus.on('jlz:sound-toggle', ({ muted }) => {
+      this.host.sfx().setMuted(muted)
+    })
 
     // Keep the route-owned pixel title in sync with the active language.
-    this._langChangeHandler = () => {
+    this._langChangeUnsub = eventBus.on('jlz:lang-change', () => {
       this.host.coordinator().contactTextStage?.refreshLanguage()
-    }
-    window.addEventListener('jlz:lang-change', this._langChangeHandler)
+    })
 
     // ── Works page card click → open fullscreen overlay ──
     // Dispatched by WorkCards.ts when a .jlz-work-card is clicked (works page).
     // All opens (showreel, slider, /works) use the same unified DOM cinematic
     // reveal — no 3D plane-to-fullscreen handoff, which caused a double effect.
-    this._openProjectHandler = (e: Event) => {
-      const detail = (e as CustomEvent<{ idx: number }>).detail
-      if (!detail || typeof detail.idx !== 'number') return
+    this._openProjectUnsub = eventBus.on('jlz:open-project', ({ idx }) => {
+      if (typeof idx !== 'number') return
       void this.ensurePortfolio().then(() => {
-        this.onProjectSelect(detail.idx)
+        this.onProjectSelect(idx)
       })
-    }
-    window.addEventListener('jlz:open-project', this._openProjectHandler)
+    })
 
-    this._projectNavigateHandler = (e: Event) => {
+    this._projectNavigateUnsub = eventBus.on('jlz:project-navigate', ({ direction }) => {
       if (!this.overlay?.isOpen) return
-      const direction = (e as CustomEvent<{ direction?: number }>).detail?.direction
-      if (direction !== -1 && direction !== 1) return
       const carousel = this.getCarousel()
       if (direction < 0) {
         carousel?.prev()
@@ -165,14 +157,13 @@ export class ExperienceUI {
         if (!carousel) this.portfolio?.next()
       }
       this.onProjectSelect(this.activeProjectIndex + direction)
-    }
-    window.addEventListener('jlz:project-navigate', this._projectNavigateHandler)
+    })
 
     // ── Close overlay on route change ──
     // When SPA navigates (Menu subnav click, browser back, etc.),
     // close any open FullscreenOverlay. isOpen checks UIKit's native uk-open
     // class — no custom flag to get out of sync.
-    this._routeChangeCloseOverlayHandler = () => {
+    this._routeChangeCloseOverlayUnsub = eventBus.on('jlz:route-change', () => {
       if (this.overlay?.isOpen) {
         this.overlay.close()
       }
@@ -212,21 +203,18 @@ export class ExperienceUI {
       // the World's `syncRouteVisuals` already hides it off-route).
       if (newPage === 'lab') void this.host.ensureLabGamepad()
       this.host.raise('nav')
-    }
-    window.addEventListener('jlz:route-change', this._routeChangeCloseOverlayHandler)
+    })
 
     // Phase 5: Wobble pulse on card click (work cards + carousel)
-    this._wobblePulseHandler = () => {
+    this._wobblePulseUnsub = eventBus.on('jlz:wobble-pulse', () => {
       this.host.coordinator().baku?.triggerWobblePulse()
       // Keep rendering while the pulse animates (sin-envelope in SplashCube.update).
       this.host.raise('dirty')
-    }
-    window.addEventListener('jlz:wobble-pulse', this._wobblePulseHandler)
+    })
 
     // Route-owned 3D layers follow the shared content-page navigation contract.
-    this._worksPageSectionHandler = (e: Event) => {
-      const detail = (e as CustomEvent<{ index?: number }>).detail
-      const domIndex = detail?.index ?? 0
+    this._worksPageSectionUnsub = eventBus.on('jlz:page-section-change', ({ index }) => {
+      const domIndex = index ?? 0
       const stageIndex = Math.max(0, domIndex - 1)
       const page = getCurrentPage()
       const coordinator = this.host.coordinator()
@@ -241,8 +229,7 @@ export class ExperienceUI {
         return
       }
       this.host.raise('nav')
-    }
-    window.addEventListener('jlz:page-section-change', this._worksPageSectionHandler)
+    })
 
     this._worksPlaneTapHandler = (e: PointerEvent) => {
       if (getCurrentPage() !== 'works' || this.overlay?.isOpen) return
@@ -267,13 +254,11 @@ export class ExperienceUI {
     // Dispatched by the router after renderView. CinematicNav finds
     // the target section by hash ID and activates it. Without this, menu
     // subsection clicks always land on section 1 (hash silently dropped).
-    this._gotoSectionByHashHandler = (e: Event) => {
-      const detail = (e as CustomEvent<{ hash: string }>).detail
-      if (detail?.hash) {
-        this.storyNav?.goToSectionByHash(detail.hash)
+    this._gotoSectionByHashUnsub = eventBus.on('jlz:goto-section-by-hash', ({ hash }) => {
+      if (hash) {
+        this.storyNav?.goToSectionByHash(hash)
       }
-    }
-    window.addEventListener('jlz:goto-section-by-hash', this._gotoSectionByHashHandler)
+    })
   }
 
   /** Start the authored cube reaction and its one-shot portal-frame echo. */
@@ -384,41 +369,20 @@ export class ExperienceUI {
 
   /** Remove every UI-feature listener + dispose the created features. */
   destroy(): void {
-    if (this._soundToggleHandler) {
-      window.removeEventListener('jlz:sound-toggle', this._soundToggleHandler)
-      this._soundToggleHandler = null
-    }
-    if (this._langChangeHandler) {
-      window.removeEventListener('jlz:lang-change', this._langChangeHandler)
-      this._langChangeHandler = null
-    }
-    if (this._openProjectHandler) {
-      window.removeEventListener('jlz:open-project', this._openProjectHandler)
-      this._openProjectHandler = null
-    }
-    if (this._projectNavigateHandler) {
-      window.removeEventListener('jlz:project-navigate', this._projectNavigateHandler)
-      this._projectNavigateHandler = null
-    }
-    if (this._routeChangeCloseOverlayHandler) {
-      window.removeEventListener('jlz:route-change', this._routeChangeCloseOverlayHandler)
-      this._routeChangeCloseOverlayHandler = null
-    }
-    if (this._wobblePulseHandler) {
-      window.removeEventListener('jlz:wobble-pulse', this._wobblePulseHandler)
-      this._wobblePulseHandler = null
-    }
-    if (this._worksPageSectionHandler) {
-      window.removeEventListener('jlz:page-section-change', this._worksPageSectionHandler)
-      this._worksPageSectionHandler = null
-    }
+    this._soundToggleUnsub?.()
+    this._langChangeUnsub?.()
+    this._openProjectUnsub?.()
+    this._projectNavigateUnsub?.()
+    this._routeChangeCloseOverlayUnsub?.()
+    this._wobblePulseUnsub?.()
+    this._worksPageSectionUnsub?.()
+    this._gotoSectionByHashUnsub?.()
+    this._soundToggleUnsub = this._langChangeUnsub = this._openProjectUnsub = null
+    this._projectNavigateUnsub = this._routeChangeCloseOverlayUnsub = null
+    this._wobblePulseUnsub = this._worksPageSectionUnsub = this._gotoSectionByHashUnsub = null
     if (this._worksPlaneTapHandler) {
       window.removeEventListener('pointerup', this._worksPlaneTapHandler)
       this._worksPlaneTapHandler = null
-    }
-    if (this._gotoSectionByHashHandler) {
-      window.removeEventListener('jlz:goto-section-by-hash', this._gotoSectionByHashHandler)
-      this._gotoSectionByHashHandler = null
     }
     this.portfolio = null
     this.overlay?.dispose()

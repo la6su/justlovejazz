@@ -28,6 +28,28 @@ function initSoundToggle(): void {
 // ── Config: language toggle EN/RU ──
 import { initI18n, toggleLang, getLang } from './core/i18n'
 
+// ── window.__jlzEmit — typed `jlz:*` port facade for non-module producers ──
+// The Phase 10 raw window `jlz:*` bridge was removed — the app only receives
+// those ports through the typed `eventBus`. Two non-module sites still need to
+// emit a port without importing the TS graph:
+//   • the index.html splash Enter script (classic, kept outside the initial
+//     Vue/Tres/Three/UIkit dependency graph) emits `jlz:splash-entered`;
+//   • the e2e suite (production preview) and the Phase 10 soak (dev) trigger
+//     `jlz:navigate` etc. from outside the app.
+// Both call this facade instead of `window.dispatchEvent`. It is a thin alias
+// over the public, typed `eventBus.emit` and adds no new capability surface
+// (the equivalent raw dispatch existed in production pre-migration).
+// Installed at module scope — the moment entry-app.ts loads, which is before
+// the Vue router mounts (sets `data-page`) and before the splash Enter button
+// is ever enabled (`jlz:webgl-ready`) — so it is always present for the splash
+// and for navigation tests regardless of whether `experience.init()` succeeds.
+;(window as unknown as { __jlzEmit?: (event: string, detail?: unknown) => void }).__jlzEmit = (
+  event,
+  detail,
+) => {
+  ;(eventBus.emit as (name: string, detail?: unknown) => void).call(eventBus, event, detail)
+}
+
 function initLangToggle(): void {
   const btn = document.getElementById('cfg-lang') as HTMLButtonElement | null
   if (!btn) return
@@ -269,7 +291,7 @@ export async function startApp(): Promise<void> {
 
   // ── Works page 3D cards: bind tilt + click on every route change ──
   // initWorkCards() is idempotent (skips already-bound cards).
-  window.addEventListener('jlz:route-change', () => {
+  eventBus.on('jlz:route-change', () => {
     initWorkCards()
   })
   initWorkCards()
@@ -290,7 +312,7 @@ export async function startApp(): Promise<void> {
   // jlz:splash-entered fires when user clicks Enter — splash starts fading.
   // Let the active title answer the opening curtain, rather than animating
   // every title in the document behind the splash.
-  window.addEventListener('jlz:splash-entered', () => {
+  eventBus.on('jlz:splash-entered', () => {
     // Let the curtain begin to split, then reveal the title inside that gap.
     setTimeout(() => {
       revealActiveSplashTitle()
@@ -324,11 +346,9 @@ export async function startApp(): Promise<void> {
   })
 
   // ── Animate titles on page section change (content: data-page-section) ──
-  window.addEventListener('jlz:page-section-change', ((e: Event) => {
-    const detail = (e as CustomEvent<{ index: number }>).detail
-    if (!detail) return
+  eventBus.on('jlz:page-section-change', ({ index }) => {
     const sections = document.querySelectorAll<HTMLElement>('[data-page-section]')
-    const el = sections[detail.index]
+    const el = sections[index]
     if (!el) return
     // BlurFade on title
     const title = el.querySelector<HTMLElement>('.studio-title')
@@ -342,7 +362,7 @@ export async function startApp(): Promise<void> {
       const text = eyebrow.getAttribute('data-eyebrow-text') ?? eyebrow.textContent ?? ''
       if (text) NoiseText.for(eyebrow).show(0.6, text)
     }
-  }) as EventListener)
+  })
 
   void boot()
 }

@@ -10,6 +10,8 @@
 //
 // init() is idempotent — safe to call on every route change.
 
+import { eventBus } from '../core/EventBus'
+
 interface CardState {
   el: HTMLElement
   click: () => void
@@ -18,7 +20,7 @@ interface CardState {
 }
 
 let cards: CardState[] = []
-let sectionChangeHandler: ((e: Event) => void) | null = null
+let sectionChangeUnsub: (() => void) | null = null
 
 /** Attach listeners to one card. */
 function bindCard(cardEl: HTMLElement): void {
@@ -36,7 +38,7 @@ function bindCard(cardEl: HTMLElement): void {
       if (state._clickDebounce) return
       state._clickDebounce = true
       cardEl.classList.add('is-opening')
-      window.dispatchEvent(new CustomEvent('jlz:open-project', { detail: { idx } }))
+      eventBus.emit('jlz:open-project', { idx })
       state.releaseTimer = window.setTimeout(() => {
         state.releaseTimer = undefined
         state._clickDebounce = false
@@ -75,9 +77,8 @@ export function initWorkCards(): void {
 
   grids().forEach(applyRoving)
 
-  if (!sectionChangeHandler) {
-    sectionChangeHandler = onPageSectionChange
-    window.addEventListener('jlz:page-section-change', sectionChangeHandler)
+  if (!sectionChangeUnsub) {
+    sectionChangeUnsub = eventBus.on('jlz:page-section-change', () => onPageSectionChange())
   }
 }
 
@@ -90,8 +91,8 @@ export function disposeWorkCards(): void {
     c.el.removeAttribute('tabindex')
   }
   cards = []
-  if (sectionChangeHandler) {
-    window.removeEventListener('jlz:page-section-change', sectionChangeHandler)
-    sectionChangeHandler = null
+  if (sectionChangeUnsub) {
+    sectionChangeUnsub()
+    sectionChangeUnsub = null
   }
 }

@@ -29,6 +29,8 @@
 // English text is always the default in templates (no-JS fallback).
 // applyTranslations() only replaces textContent when a translation exists.
 
+import { eventBus } from './EventBus'
+
 export type Lang = 'EN' | 'RU'
 
 const STORAGE_KEY = 'jlz:lang'
@@ -662,7 +664,7 @@ export function toggleLang(): Lang {
     /* ignore */
   }
   applyTranslations()
-  window.dispatchEvent(new CustomEvent('jlz:lang-change', { detail: { lang: currentLang } }))
+  eventBus.emit('jlz:lang-change', { lang: currentLang })
   return currentLang
 }
 

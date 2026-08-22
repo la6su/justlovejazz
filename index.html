@@ -578,7 +578,15 @@
     <script type="module" src="/src/entry-shell.ts"></script>
 
     <!-- Inline Enter click handler (single source of truth).
-         entry-app.ts does NOT wire its own click — only shows Enter button. -->
+         entry-app.ts does NOT wire its own click — only shows Enter button.
+         Kept a CLASSIC (non-module) script so the splash stays outside the
+         initial Vue/Tres/Three/UIkit dependency graph (AGENTS.md): a module
+         import here would make the build inject 3D chunk preloads. The
+         splash reaches the typed eventBus through the window.__jlzEmit facade
+         (installed by entry-app.ts; the raw window jlz:* bridge was removed in
+         Phase 10). The Enter button is disabled until jlz:webgl-ready, which
+         only fires after entry-app.ts has loaded — so __jlzEmit is always
+         present by the time this handler can run. -->
     <script>
       ;(function () {
         var btn = document.getElementById('jlz-splash-enter')
@@ -594,9 +602,10 @@
           if (loader.classList.contains('fade-out')) return
           loader.classList.add('fade-out')
 
-          // Dispatch splash-entered event — triggers BlurFade + NoiseText
-          // animations after the splash starts fading (user sees them as 3D reveals).
-          window.dispatchEvent(new CustomEvent('jlz:splash-entered'))
+          // Dispatch splash-entered on the typed eventBus (via the window
+          // facade) — triggers BlurFade + NoiseText animations after the
+          // splash starts fading (user sees them as 3D reveals).
+          if (window.__jlzEmit) window.__jlzEmit('jlz:splash-entered')
 
           // Remove loader after curtains fully split
           setTimeout(function () {

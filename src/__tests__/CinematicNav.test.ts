@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { CinematicNav } from '../UI/CinematicNav'
+import { eventBus } from '../core/EventBus'
 
 const MAIN_HEIGHT = 1000
 
@@ -89,7 +90,7 @@ describe('CinematicNav — vertical story and sheets', () => {
     expect(document.body.dataset.cinematicSheet).toBe('menu')
     expect(document.querySelector<HTMLElement>('[data-section="works"]')?.inert).toBe(true)
 
-    window.dispatchEvent(new CustomEvent('jlz:close-nav'))
+    eventBus.emit('jlz:close-nav')
     expect(nav.getSectionIndex()).toBe(3)
     expect(document.body.dataset.cinematicSheet).toBeUndefined()
     expect(document.querySelector<HTMLElement>('[data-section="works"]')?.inert).toBe(false)
@@ -104,7 +105,7 @@ describe('CinematicNav — vertical story and sheets', () => {
     expect(nav.getSectionIndex()).toBe(0)
     expect(document.body.dataset.cinematicSheet).toBe('footer')
 
-    window.dispatchEvent(new CustomEvent('jlz:close-nav'))
+    eventBus.emit('jlz:close-nav')
     expect(nav.getSectionIndex()).toBe(4)
     expect(document.body.dataset.cinematicSheet).toBeUndefined()
   })
@@ -139,7 +140,7 @@ describe('CinematicNav — content page track', () => {
     nav.goToSection(2)
     nav.goToSection(5)
 
-    window.dispatchEvent(new CustomEvent('jlz:close-nav'))
+    eventBus.emit('jlz:close-nav')
 
     expect(nav.getSectionIndex()).toBe(2)
     expect(document.body.dataset.cinematicSheet).toBeUndefined()

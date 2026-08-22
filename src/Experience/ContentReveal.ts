@@ -18,8 +18,9 @@ import UIkit from 'uikit'
 
 export class ContentReveal {
   private sectionHandler: ((payload: AppEvents['jlz:section-change']) => void) | null = null
-  private pageSectionHandler: ((e: Event) => void) | null = null
-  private themeHandler: ((e: Event) => void) | null = null
+  private pageSectionUnsub: (() => void) | null = null
+  private themeChangeUnsub: (() => void) | null = null
+  private routeChangeUnsub: (() => void) | null = null
   private currentSectionId: string | null = null
   private currentSectionIndex: number = -1
   private cachedConfigs: readonly PhaseConfig[] | null = null
@@ -73,19 +74,16 @@ export class ContentReveal {
     eventBus.on('jlz:section-change', this.sectionHandler)
 
     // Content pages: jlz:page-section-change (data-page-section)
-    this.pageSectionHandler = (e: Event) => {
-      const detail = (e as CustomEvent<{ index: number }>).detail
-      if (!detail) return
+    this.pageSectionUnsub = eventBus.on('jlz:page-section-change', ({ index }) => {
       const sections = document.querySelectorAll<HTMLElement>('[data-page-section]')
-      const el = sections[detail.index]
+      const el = sections[index]
       if (el) {
         const id = el.getAttribute('data-page-section') ?? ''
         this.currentSectionId = id
-        this.currentSectionIndex = detail.index
+        this.currentSectionIndex = index
         this.activateSection(`[data-page-section="${id}"]`)
       }
-    }
-    window.addEventListener('jlz:page-section-change', this.pageSectionHandler)
+    })
   }
 
   private activateSection(selector: string): void {
@@ -145,39 +143,35 @@ export class ContentReveal {
       mode,
       snap,
     }
-    window.dispatchEvent(new CustomEvent('jlz:theme-applied', { detail }))
+    eventBus.emit('jlz:theme-applied', detail)
   }
 
   private setupThemeSync() {
-    // Single handler for both theme-change + route-change
-    this.themeHandler = (e: Event) => {
-      const type = e.type
-      if (type === 'jlz:route-change') {
-        // Invalidate cache on page switch
-        this.cachedConfigs = null
-        this.currentSectionId = null
-        this.currentSectionIndex = -1
-        // H13 fix: re-apply theme for the active section on the NEW page.
-        // Without this, uk-light from the last active section on the PREVIOUS
-        // page persists on <body> until the first section nav on the new page
-        // → wrong-theme flash + EnvSphere desync. Find the active section in
-        // the freshly-rendered DOM and apply its theme immediately.
-        const active = document.querySelector<HTMLElement>(
-          '[data-section].section-active, [data-page-section].section-active',
-        )
-        const sectionId =
-          active?.getAttribute('data-section') ??
-          active?.getAttribute('data-page-section') ??
-          'intro'
-        this.currentSectionId = sectionId
-        this.applyTheme(sectionId)
-        return
-      }
-      // jlz:theme-change — re-apply current section theme.
-      // Fallback chain if currentSectionId was cleared (e.g. by a prior
-      // route-change): 1) active DOM section (.section-active), 2) 'intro'.
-      // Without this, toggling theme right after page load (before any
-      // section navigation) would no-op — currentSectionId was null.
+    // route-change: invalidate cache on page switch + re-apply the active
+    // section's theme on the NEW page. (H13 fix: without this, uk-light from
+    // the last active section on the PREVIOUS page persists on <body> until
+    // the first section nav on the new page → wrong-theme flash + EnvSphere
+    // desync. Find the active section in the freshly-rendered DOM and apply
+    // its theme immediately.)
+    this.routeChangeUnsub = eventBus.on('jlz:route-change', () => {
+      this.cachedConfigs = null
+      this.currentSectionId = null
+      this.currentSectionIndex = -1
+      const active = document.querySelector<HTMLElement>(
+        '[data-section].section-active, [data-page-section].section-active',
+      )
+      const sectionId =
+        active?.getAttribute('data-section') ?? active?.getAttribute('data-page-section') ?? 'intro'
+      this.currentSectionId = sectionId
+      this.applyTheme(sectionId)
+    })
+
+    // theme-change: re-apply the current section theme. Fallback chain if
+    // currentSectionId was cleared (e.g. by a prior route-change):
+    // 1) active DOM section (.section-active), 2) 'intro'. Without this,
+    // toggling theme right after page load (before any section navigation)
+    // would no-op — currentSectionId was null.
+    this.themeChangeUnsub = eventBus.on('jlz:theme-change', () => {
       let sectionId = this.currentSectionId
       if (!sectionId) {
         const active = document.querySelector<HTMLElement>(
@@ -192,18 +186,14 @@ export class ContentReveal {
       // snap=true: theme toggle → EnvSphere must change instantly (no lerp)
       // to match the instant CSS uk-light flip.
       this.applyTheme(sectionId, true)
-    }
-    window.addEventListener('jlz:theme-change', this.themeHandler)
-    window.addEventListener('jlz:route-change', this.themeHandler)
+    })
   }
 
   destroy() {
     if (this.sectionHandler) eventBus.off('jlz:section-change', this.sectionHandler)
-    if (this.pageSectionHandler)
-      window.removeEventListener('jlz:page-section-change', this.pageSectionHandler)
-    if (this.themeHandler) {
-      window.removeEventListener('jlz:theme-change', this.themeHandler)
-      window.removeEventListener('jlz:route-change', this.themeHandler)
-    }
+    this.pageSectionUnsub?.()
+    this.themeChangeUnsub?.()
+    this.routeChangeUnsub?.()
+    this.pageSectionUnsub = this.themeChangeUnsub = this.routeChangeUnsub = null
   }
 }

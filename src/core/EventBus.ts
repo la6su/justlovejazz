@@ -1,6 +1,14 @@
 // Typed event bus — replaces untyped window.dispatchEvent(CustomEvent) calls.
 // Compile-time safety on event payloads; no DOM dependency; `on()` returns
 // an unsubscribe function for cleaner lifecycle management.
+//
+// Phase 10: every `jlz:*` consumer is on this bus. The former window
+// dispatchEvent bridge in emit() is removed — `AppEvents` is the single
+// port surface (the splash in index.html and the e2e dev seam are the only
+// non-module dispatch sites, both through this bus).
+
+import type { ThemeAppliedPort } from './sectionTheme'
+import type { ThemeMode } from './ThemeManager'
 
 export interface AppEvents {
   /** Fired by entry-app.ts when the shared runtime is ready. */
@@ -14,7 +22,7 @@ export interface AppEvents {
     configId?: string
     index: number
   }
-  /** Fired by router.ts on page navigation — triggers UIMenu page active + slider labels. */
+  /** Fired by useJlzPage on page navigation — triggers UIMenu page active + slider labels. */
   'jlz:route-change': { page?: string }
   /**
    * Fired by Renderer after a bounded WebGPU device-loss recovery re-created
@@ -22,6 +30,30 @@ export interface AppEvents {
    * Experience re-runs setupEnvironment() to bind a fresh one.
    */
   'jlz:renderer-recovered': void
+  /** Fired by the nav template / UI controls when the cinematic menu panel must close. */
+  'jlz:close-nav': void
+  /** Fired by the router after a `#section-*` hash settles — the 3D nav owner activates that section. */
+  'jlz:goto-section-by-hash': { hash: string }
+  /** Fired by core/i18n after the active language is switched + persisted. */
+  'jlz:lang-change': { lang: string }
+  /** Fired by the nav template on a menu sub-link click — a strict in-app navigation request (hash folded into path). */
+  'jlz:navigate': { path: string }
+  /** Fired by WorkCards on a works-page card click. */
+  'jlz:open-project': { idx: number }
+  /** Fired by CinematicNav when a non-home page's active section changes. */
+  'jlz:page-section-change': { index: number; count: number }
+  /** Fired by FullscreenOverlay on prev/next project navigation. */
+  'jlz:project-navigate': { direction: -1 | 1 }
+  /** Fired by the UIMenu sound button. */
+  'jlz:sound-toggle': { muted: boolean }
+  /** Fired by the index.html splash Enter control. */
+  'jlz:splash-entered': void
+  /** Fired by ContentReveal after the per-section theme has been applied. */
+  'jlz:theme-applied': ThemeAppliedPort
+  /** Fired by core/ThemeManager when the theme mode changes. */
+  'jlz:theme-change': { mode: ThemeMode }
+  /** Fired by BakuCarousel on a card wobble tap. */
+  'jlz:wobble-pulse': void
 }
 
 type Handler<K extends keyof AppEvents> = (payload: AppEvents[K]) => void
@@ -45,11 +77,9 @@ class EventBus {
   }
 
   /** Emit an event to all subscribers.
-   *  Also bridges to window.dispatchEvent so legacy/raw window.addEventListener
-   *  consumers (UIMenu, ContentReveal, entry-app) receive typed events without
-   *  each call site needing to dispatch raw. This fixes the contract gap where
-   *  jlz:section-change was emitted via eventBus.emit() but UIMenu listened on
-   *  window — otherwise typed and DOM consumers could silently diverge. */
+   *  Phase 10: the window dispatchEvent bridge is removed — every consumer
+   *  subscribes through this bus (the raw `jlz:*` window listeners were
+   *  migrated to typed ports in the Phase 10 slice). */
   emit<K extends keyof AppEvents>(
     event: K,
     ...args: AppEvents[K] extends void ? [] : [AppEvents[K]]
@@ -57,13 +87,6 @@ class EventBus {
     const set = this.listeners.get(event)
     if (set) {
       for (const cb of set) cb(args[0])
-    }
-    // Bridge to window for raw listeners. Guard for SSR/jsdom without window.
-    if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
-      const payload = args[0]
-      window.dispatchEvent(
-        new CustomEvent(event, payload === undefined ? undefined : { detail: payload }),
-      )
     }
   }
 

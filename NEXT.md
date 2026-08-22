@@ -700,6 +700,42 @@ syncRouteVisuals()` used to run (on route entry + section change) now
       annotate the Phase 10 deletion; migration flags note the flag
       removal, the raw-bridge shim stays pending). Gates: `type-check`,
       `type-check:vue`, `test:unit` (371), `build`, serial e2e (22/22).
+      Phase 10 slice 3 landed (2026-08-22): the raw `jlz:*` window bridge is
+      out — every `jlz:*` port flows through the typed `eventBus`. Removed:
+      the `window.dispatchEvent` bridge inside `EventBus.emit()` (the bus is
+      now the single port surface). All 17 ports are typed in `AppEvents`
+      (exact payload shapes; `void` ports take no payload via a variadic
+      `emit` signature). Migrated to `eventBus.on/emit` (unsub-closure
+      fields; teardown calls them): `entry-app.ts` (route-change,
+      splash-entered, page-section-change), `app/index.ts` (webgl-ready,
+      navigate, lang-change), `nav/template.ts` (close-nav, navigate),
+      `ThemeManager` (theme-change), `i18n` (lang-change), `UIMenu`
+      (sound-toggle, lang-change, theme-change), `FullscreenOverlay`
+      (project-navigate), `WorkCards` (section-change, open-project),
+      `CinematicNav` (route-change, lang-change, close-nav,
+      page-section-change), `ContentReveal` (section-change,
+      page-section-change, route-change, theme-change; emits theme-applied),
+      `ExperienceUI` (sound-toggle, lang-change, open-project,
+      project-navigate, route-change, wobble-pulse, page-section-change,
+      goto-section-by-hash), `Experience` (splash-entered, theme-applied),
+      `BakuCarousel` (emits wobble-pulse). Non-module producers reach the
+      bus through the new `window.__jlzEmit` facade (installed at
+      `entry-app.ts` module scope — before the router mounts and before the
+      splash Enter is ever enabled, so it is always present): the `index.html`
+      splash Enter script (kept a classic non-module script so it stays
+      outside the initial 3D dependency graph — a module import there would
+      re-introduce the 3D chunk preloads) emits `jlz:splash-entered`; the
+      e2e suite drives `jlz:navigate` through a `navigateInApp` helper.
+      Tests: `EventBus` gains a no-bridge assertion (`emit` never reaches
+      `window.dispatchEvent`); `i18n` + `ThemeManager` assert on
+      `eventBus.emit` instead of a `dispatchEvent` stub; `CinematicNav`
+      emits `jlz:close-nav` on the bus. Ledger rows flipped to done (raw
+      `jlz:*` window bridge + migration flags and shims — no migration
+      adapter, feature flag or shim remains). Gates: `type-check`,
+      `type-check:vue`, `test:unit` (372 — +1 no-bridge test), `build`
+      (splash HTML preloads only `chunk-runtime`), serial e2e (22/22).
+      Slice 4 (hardening, separate commit) remains: the route-cycle soak
+      evidence + the full release gate + the Phase 10 completion entry.
       Phase 8 slice 2 landed (2026-08-22): the six stable section groups
       left `World` — Experience creates the new `SectionGroups` owner
       (`src/Experience/Scene/SectionGroups.ts`: factory creation,

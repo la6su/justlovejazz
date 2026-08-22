@@ -23,6 +23,7 @@ import { PROJECTS } from '../../Data/Projects'
 import { CasePlane, CLOTH_PARAMS } from './CasePlane'
 import { loadCaseTexture, releaseCaseTexture } from './caseTexture'
 import { getCurrentPage } from '../../core/routePage'
+import { eventBus } from '../../core/EventBus'
 // PlaneTransition removed — unified animation uses direct overlay open.
 
 // A dozen plane instances preserve the infinite wrap while the framing exposes
@@ -233,7 +234,7 @@ export class BakuCarousel extends THREE.Group {
     if (!this._camera) {
       // No camera — fall back to front card
       this._onCardClick?.(this.getFrontCardIndex())
-      window.dispatchEvent(new CustomEvent('jlz:wobble-pulse'))
+      eventBus.emit('jlz:wobble-pulse')
       return
     }
     // Convert screen coords to NDC

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { eventBus } from '../core/EventBus'
 
 describe('EventBus', () => {
@@ -61,5 +61,18 @@ describe('EventBus', () => {
     eventBus.emit('jlz:webgl-ready')
     eventBus.emit('jlz:route-change', { page: 'home' })
     expect(count).toBe(0)
+  })
+
+  it('does not bridge to window.dispatchEvent (raw window path removed)', () => {
+    const dispatchSpy = vi.spyOn(window, 'dispatchEvent')
+    let count = 0
+    const unsub = eventBus.on('jlz:route-change', () => {
+      count++
+    })
+    eventBus.emit('jlz:route-change', { page: 'home' })
+    expect(count).toBe(1)
+    expect(dispatchSpy).not.toHaveBeenCalled()
+    unsub()
+    dispatchSpy.mockRestore()
   })
 })

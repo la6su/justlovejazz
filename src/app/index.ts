@@ -17,6 +17,7 @@
 import { createApp } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 
+import { eventBus } from '../core/EventBus'
 import { applyTranslations } from '../core/i18n'
 import { applyMetaTags } from '../core/pageMeta'
 import { isRoutePath, resolveRoute } from '../core/routeManifest'
@@ -76,21 +77,17 @@ export async function mountVueApp(): Promise<void> {
     firstNavigation = false
     if (!to.hash.startsWith('#section-')) return
     if (isInitial) {
-      window.addEventListener(
-        'jlz:webgl-ready',
-        () => {
-          window.dispatchEvent(
-            new CustomEvent('jlz:goto-section-by-hash', { detail: { hash: to.hash } }),
-          )
-        },
-        { once: true },
-      )
+      // once semantics: the bus `on()` has no `once` flag, so unsubscribe
+      // from inside the handler after the first fire (the handler runs after
+      // `on()` returns, so the `const` is assigned by then).
+      const unsub = eventBus.on('jlz:webgl-ready', () => {
+        unsub()
+        eventBus.emit('jlz:goto-section-by-hash', { hash: to.hash })
+      })
       return
     }
     requestAnimationFrame(() => {
-      window.dispatchEvent(
-        new CustomEvent('jlz:goto-section-by-hash', { detail: { hash: to.hash } }),
-      )
+      eventBus.emit('jlz:goto-section-by-hash', { hash: to.hash })
     })
   })
 
@@ -120,13 +117,14 @@ export async function mountVueApp(): Promise<void> {
   }
 
   // jlz:navigate — navigation REQUEST from menu subsection clicks (strict).
-  window.addEventListener('jlz:navigate', ((event: Event) => {
-    const detail = (event as CustomEvent<{ path: string }>).detail
-    if (detail?.path) void navigateToPath(detail.path)
-  }) as EventListener)
+  // Registered once at mount (app-lifetime listener, never removed — matches
+  // the legacy window listener that lived until page unload).
+  eventBus.on('jlz:navigate', ({ path }) => {
+    if (path) void navigateToPath(path)
+  })
 
   // jlz:lang-change — re-apply translations + per-page meta to the live DOM.
-  window.addEventListener('jlz:lang-change', () => {
+  eventBus.on('jlz:lang-change', () => {
     applyTranslations()
     applyMetaTags(pageForPath(router.currentRoute.value.path))
   })

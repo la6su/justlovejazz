@@ -14,6 +14,7 @@ import {
   storyProgressFromScroll,
   type StorySide,
 } from '../core/storyState'
+import { eventBus } from '../core/EventBus'
 
 // Story slot indices are derived from the canonical six-slot model
 // (worldSlots) instead of re-declared here — the slot model is the single
@@ -47,9 +48,9 @@ export class CinematicNav {
   private _scrollFrame: number | null = null
   private _focusFrame: number | null = null
   private _restoreFocus: HTMLElement | null = null
-  private _routeChangeHandler: (() => void) | null = null
-  private _langChangeHandler: (() => void) | null = null
-  private _closePanelHandler: (() => void) | null = null
+  private _routeChangeUnsub: (() => void) | null = null
+  private _langChangeUnsub: (() => void) | null = null
+  private _closePanelUnsub: (() => void) | null = null
   private _keydownHandler: ((event: KeyboardEvent) => void) | null = null
   private _scrollHandler: (() => void) | null = null
   private _sheetClickHandler: ((event: MouseEvent) => void) | null = null
@@ -108,14 +109,11 @@ export class CinematicNav {
   }
 
   private _addGlobalListeners(): void {
-    this._routeChangeHandler = () => this._bindTrack()
-    window.addEventListener('jlz:route-change', this._routeChangeHandler)
+    this._routeChangeUnsub = eventBus.on('jlz:route-change', () => this._bindTrack())
 
-    this._langChangeHandler = () => this._refreshLabels()
-    window.addEventListener('jlz:lang-change', this._langChangeHandler)
+    this._langChangeUnsub = eventBus.on('jlz:lang-change', () => this._refreshLabels())
 
-    this._closePanelHandler = () => this._closeSide()
-    window.addEventListener('jlz:close-nav', this._closePanelHandler)
+    this._closePanelUnsub = eventBus.on('jlz:close-nav', () => this._closeSide())
 
     this._keydownHandler = (event: KeyboardEvent) => {
       if (document.querySelector('.uk-modal.uk-open')) return
@@ -264,11 +262,7 @@ export class CinematicNav {
     this._onSectionChange?.(index)
 
     if (getCurrentPage() !== 'home') {
-      window.dispatchEvent(
-        new CustomEvent('jlz:page-section-change', {
-          detail: { index, count: this._sectionCount },
-        }),
-      )
+      eventBus.emit('jlz:page-section-change', { index, count: this._sectionCount })
     }
   }
 
@@ -434,12 +428,10 @@ export class CinematicNav {
 
   dispose(): void {
     this._removeTrackListeners()
-    if (this._routeChangeHandler)
-      window.removeEventListener('jlz:route-change', this._routeChangeHandler)
-    if (this._langChangeHandler)
-      window.removeEventListener('jlz:lang-change', this._langChangeHandler)
-    if (this._closePanelHandler)
-      window.removeEventListener('jlz:close-nav', this._closePanelHandler)
+    this._routeChangeUnsub?.()
+    this._langChangeUnsub?.()
+    this._closePanelUnsub?.()
+    this._routeChangeUnsub = this._langChangeUnsub = this._closePanelUnsub = null
     if (this._keydownHandler) window.removeEventListener('keydown', this._keydownHandler)
     if (this._sheetClickHandler)
       document.removeEventListener('click', this._sheetClickHandler, true)

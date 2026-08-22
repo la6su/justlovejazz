@@ -7,6 +7,7 @@
 import { toggleLang, getLang } from '../core/i18n'
 import { themeManager } from '../core/ThemeManager'
 import { getSoundMuted, setSoundMutedPreference } from '../core/SfxSystem'
+import { eventBus } from '../core/EventBus'
 
 // Theme icons are registered in console-icons.ts as 'theme-auto' (sun) and
 // 'theme-inverse' (moon). The toggle shows/hides them via CSS based on the
@@ -17,9 +18,9 @@ export class UIMenu {
   private _langBtn: HTMLButtonElement | null = null
   private _themeBtn: HTMLButtonElement | null = null
   private _soundBtn: HTMLButtonElement | null = null
-  private _langHandler: (() => void) | null = null
-  private _themeChangeHandler: (() => void) | null = null
-  private _soundToggleHandler: ((e: Event) => void) | null = null
+  private _langUnsub: (() => void) | null = null
+  private _themeChangeUnsub: (() => void) | null = null
+  private _soundToggleUnsub: (() => void) | null = null
   private _soundMuted = getSoundMuted()
   private _menuBtn: HTMLButtonElement | null = null
   private _contactBtn: HTMLButtonElement | null = null
@@ -92,34 +93,25 @@ export class UIMenu {
     // AND dispatched the event → the event listener re-did the same work
     // (double localStorage write, double button sync on every click).
     this._soundBtn?.addEventListener('click', () => {
-      window.dispatchEvent(
-        new CustomEvent('jlz:sound-toggle', {
-          detail: { muted: !this._soundMuted },
-        }),
-      )
+      eventBus.emit('jlz:sound-toggle', { muted: !this._soundMuted })
     })
     this._menuBtn?.addEventListener('click', () => this._navigate?.(5))
     this._contactBtn?.addEventListener('click', () => this._navigate?.(0))
 
-    // Wire global listeners
-    this._langHandler = () => this.updateLangLabel()
-    window.addEventListener('jlz:lang-change', this._langHandler)
+    // Wire global listeners (typed eventBus ports — the raw window bridge was
+    // removed in Phase 10).
+    this._langUnsub = eventBus.on('jlz:lang-change', () => this.updateLangLabel())
 
-    this._themeChangeHandler = () => this._syncThemeButton()
-    window.addEventListener('jlz:theme-change', this._themeChangeHandler)
+    this._themeChangeUnsub = eventBus.on('jlz:theme-change', () => this._syncThemeButton())
 
     // D-6 fix: single handler for jlz:sound-toggle — does ALL the work
     // (state + localStorage + button sync). Both the click handler above
     // and external triggers (if any) route through this one path.
-    this._soundToggleHandler = (e: Event) => {
-      const detail = (e as CustomEvent<{ muted: boolean }>).detail
-      if (detail) {
-        this._soundMuted = detail.muted
-        setSoundMutedPreference(this._soundMuted)
-        this._syncSoundButton()
-      }
-    }
-    window.addEventListener('jlz:sound-toggle', this._soundToggleHandler)
+    this._soundToggleUnsub = eventBus.on('jlz:sound-toggle', ({ muted }) => {
+      this._soundMuted = muted
+      setSoundMutedPreference(this._soundMuted)
+      this._syncSoundButton()
+    })
 
     // Initialize button states
     this.updateLangLabel()
@@ -172,11 +164,10 @@ export class UIMenu {
   }
 
   dispose(): void {
-    if (this._langHandler) window.removeEventListener('jlz:lang-change', this._langHandler)
-    if (this._themeChangeHandler)
-      window.removeEventListener('jlz:theme-change', this._themeChangeHandler)
-    if (this._soundToggleHandler)
-      window.removeEventListener('jlz:sound-toggle', this._soundToggleHandler)
+    this._langUnsub?.()
+    this._themeChangeUnsub?.()
+    this._soundToggleUnsub?.()
+    this._langUnsub = this._themeChangeUnsub = this._soundToggleUnsub = null
     this.navEl.remove()
   }
 }
