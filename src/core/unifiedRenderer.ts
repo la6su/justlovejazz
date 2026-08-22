@@ -11,8 +11,8 @@
 import * as THREE from 'three'
 import { WebGPURenderer } from 'three/webgpu'
 // Compatibility node builder: lets the WebGL fallback renderer
-// compile TSL NodeMaterials (MeshBasicNodeMaterial, etc.) used by
-// SectionSceneFactory. (three r0.184 does not auto-register this.)
+// compile TSL NodeMaterials (MeshBasicNodeMaterial, etc.) used by the
+// section scene modules. (three r0.184 does not auto-register this.)
 import { WebGLNodesHandler } from 'three/addons/tsl/WebGLNodesHandler.js'
 
 /** The concrete renderer classes this project constructs (Phase 6 fixed). */

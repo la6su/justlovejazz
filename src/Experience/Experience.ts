@@ -11,11 +11,11 @@ import type { UIManager } from '../UI/UIManager'
 import { input } from './Input'
 import { StateBus } from '../core/StateBus'
 import { getCurrentPage } from '../core/routePage'
-import type { World } from '../core/World'
 import { NoiseText } from './NoiseText'
 
 import { SfxSystem } from '../core/SfxSystem'
 import { ExperienceUI } from './ExperienceUI'
+import { SceneCoordinator } from './SceneCoordinator'
 import type { FinalMode } from '../core/rendererBackend'
 // worldDNA.ts removed — TSL node system never attached (attachWorldDNA never
 // called). updateWorldDNAAudio set uniforms nobody read. All dead.
@@ -67,8 +67,9 @@ const WORKS_SLOT_INDEX = worldSlotIndex('works')!
 /**
  * Phase 7: the persistent SceneHost readiness state handed to Experience by
  * `entry-app.ts`. The scene, camera and renderer instances are the ONES
- * owned by the SceneHost (Tres root); Experience adopts them. `attachWorld`
- * mounts the existing World through the explicit TresJS primitive adapter;
+ * owned by the SceneHost (Tres root); Experience adopts them. Phase 8
+ * slice 10 removed the `attachWorld` primitive slot — the SceneCoordinator
+ * adds its section groups + scene owners to the Tres scene directly.
  * `replaceRenderer` syncs the Tres context after a device-loss recovery.
  * Without a host (native-world host rollback) Experience creates its own
  * scene and `Renderer.init()` constructs its own renderer.
@@ -79,7 +80,6 @@ export interface ExperienceHost {
   renderer: RenderSurface
   canvas: HTMLCanvasElement
   mode: FinalMode
-  attachWorld(world: THREE.Object3D | null): void
   replaceRenderer(renderer: RenderSurface): void
 }
 
@@ -96,7 +96,12 @@ export class Experience {
   private _themeAppliedHandler: ((e: Event) => void) | null = null
   private _splashEnteredHandler: (() => void) | null = null
   private devPanel: DevPanel | null = null
-  public world!: World
+  // Phase 8 slice 10: the scene-coordination engine (six-section state machine,
+  // scroll transform, per-frame coordination) left the legacy `World` into the
+  // SceneCoordinator owner. Experience creates it (buildWorld) and is the
+  // single disposal owner; it injects the scene owners as getters over its own
+  // fields. The legacy `World` class + `SectionSceneFactory` leave production.
+  public coordinator!: SceneCoordinator
   // Phase 8 slice 1: the lights + ground scene owners (created in buildWorld,
   // entering the Tres-owned scene; Experience is the single disposal owner).
   private lights!: CinematicLights
@@ -249,9 +254,9 @@ export class Experience {
     this.renderer = new Renderer(this.sizes)
 
     // Phase 7 slice 4: the former UI features reach the scene through a
-    // narrow getter-based port (the World only exists after init).
+    // narrow getter-based port (the scene + owners only exist after init).
     this.features = new ExperienceUI({
-      world: () => this.world,
+      coordinator: () => this.coordinator,
       camera: () => this.camera,
       ui: () => this._ui,
       sfx: () => this.sfx,
@@ -289,7 +294,7 @@ export class Experience {
 
     // Wire resize → world (A-001/A-004: World.resize was empty + never called)
     this._onSizesResize = () => {
-      this.world?.resize(this.sizes.width, this.sizes.height)
+      this.coordinator?.resize(this.sizes.width, this.sizes.height)
       // Phase 8 slice 7: the /works stage resize moved out of World.resize —
       // forwarded directly (the stage is lazy; null until /works is reached).
       this.worksPlaneStage?.resize(this.sizes.width, this.sizes.height)
@@ -303,55 +308,63 @@ export class Experience {
   }
 
   private async buildWorld(): Promise<void> {
-    const { World } = await import('../core/World')
-    this.world = new World(this.scene)
+    // Phase 8 slice 10: the scene-coordination engine (previously the
+    // `World` class) is the SceneCoordinator. It receives the scene owners as
+    // getters over Experience's own fields — the lazy route owners change
+    // identity per route, so only a getter stays current. All the
+    // temporary `attach*` adapters the World carried for its slices leave
+    // production with this owner.
+    this.coordinator = new SceneCoordinator(this.scene, {
+      ground: () => this.ground,
+      sectionGroups: () => this.sectionGroups,
+      envSphere: () => this.envSphere,
+      baku: () => this.baku,
+      particleBurst: () => this.particleBurst,
+      drawTrail: () => this.drawTrail,
+      carousel: () => this.carousel,
+      worksPlaneStage: () => this.worksPlaneStage,
+      contactTextStage: () => this.contactTextStage,
+      contactCyprusStage: () => this.contactCyprusStage,
+      labGamepad: () => this.labGamepad,
+    })
     // Phase 8 slice 2: the six stable section groups enter the Tres-owned
-    // scene directly under their own owner (fresh per World instance). The
-    // World reads them through the sceneGroups getter; init() needs them
-    // (carousel prewarm + final visibility), so attach before init.
+    // scene directly under their own owner (fresh per coordinator instance).
+    // The coordinator reads them through its sceneGroups getter; init() needs
+    // them (carousel prewarm + final visibility), so build before init.
     this.sectionGroups = new SectionGroups(this.scene)
-    this.world.attachSectionGroups(this.sectionGroups)
     // Phase 8 slice 6: the project stream (BakuCarousel) is created by the
     // works section factory as a child of the Works group — it enters the
     // scene graph with the group, but its reference + init + per-frame drive
-    // belong to Experience. The World frame path reads it through the
-    // carousel getter (attach before init, like the other adapters).
+    // belong to Experience. The coordinator frame path reads it through the
+    // carousel owner getter.
     const worksGroup = this.sectionGroups.at(3)
     this.carousel = (worksGroup?.userData.carousel as BakuCarousel | undefined) ?? null
-    if (this.carousel) this.world.attachBakuCarousel(this.carousel)
     // Phase 8 slice 3: the ambient pavilion (EnvSphere) enters the
-    // Tres-owned scene under its own owner; the World frame path forwards
-    // its per-frame colour-lerp update through the attachEnvSphere adapter.
+    // Tres-owned scene under its own owner; the coordinator frame path
+    // forwards its per-frame colour-lerp update.
     this.envSphere = new EnvSphere()
     this.scene.add(this.envSphere)
-    this.world.attachEnvSphere(this.envSphere)
     // Phase 8 slice 4: the glass cube (SplashCube) enters the Tres-owned
-    // scene under its own owner; the World frame path gates its visibility,
-    // forwards its per-frame update and reads the ambient-motion signal
-    // through the attachBaku adapter + baku getter. init() needs it (its
-    // syncRouteVisuals sets the visibility), so attach before init.
+    // scene under its own owner; the coordinator frame path gates its
+    // visibility, forwards its per-frame update and reads the ambient-motion
+    // signal. init() needs it (its syncRouteVisuals sets the visibility).
     this.baku = new SplashCube()
     this.baku.name = 'baku'
     this.baku.visible = true
     this.scene.add(this.baku)
-    this.world.attachBaku(this.baku)
     // Phase 8 slice 5: the intro light frames (ParticleBurst) enter the
-    // Tres-owned scene under their own owner; the World frame path forwards
-    // their per-frame update and gates their prewarm visibility through the
-    // attachParticleBurst adapter + particleBurst getter.
+    // Tres-owned scene under their own owner; the coordinator frame path
+    // forwards their per-frame update and gates their prewarm visibility.
     this.particleBurst = new ParticleBurst()
     this.scene.add(this.particleBurst)
-    this.world.attachParticleBurst(this.particleBurst)
     // Phase 8 slice 5: the cursor trail (DrawTrail) enters the Tres-owned
     // scene under its own owner (its object is hidden until the Works route);
-    // the World frame path forwards its per-frame update and gates its
-    // route visibility through the attachDrawTrail adapter + drawTrail
-    // getter.
+    // the coordinator frame path forwards its per-frame update and gates its
+    // route visibility.
     this.drawTrail = new DrawTrail()
     this.scene.add(this.drawTrail.object)
     this.drawTrail.object.visible = false
-    this.world.attachDrawTrail(this.drawTrail)
-    await this.world.init()
+    await this.coordinator.init()
     // Phase 8 slice 6: the home-carousel init await moved out of
     // World.init() to this same boundary. The home stream must finish texture
     // decode before Enter becomes ready (otherwise its first section visit
@@ -380,16 +393,10 @@ export class Experience {
     // triggers it on navigation). It is a static object — never disposed per
     // route leave, only on final destroy.
     if (getCurrentPage() === 'lab') void this.ensureLabGamepad()
-    // Phase 7: with the persistent SceneHost the World enters the Tres scene
-    // through the explicit primitive adapter (`:dispose="null"` — Experience
-    // stays the single disposal owner); without it (rollback) the World is
-    // added to the scene directly as before.
-    if (this._host) {
-      this._host.attachWorld(this.world)
-    } else {
-      this.scene.add(this.world)
-    }
-    await this.world.prewarmHomeMedia(this.renderer.instance, this.camera.instance)
+    // Phase 8 slice 10: the World's TresJS primitive slot goes away with the
+    // legacy World — the coordinator's sections enter the Tres scene
+    // directly (init() adds them), so no host primitive adapter remains.
+    await this.coordinator.prewarmHomeMedia(this.renderer.instance, this.camera.instance)
     // Phase 8 slice 1: the lights + ground scene owners. They enter the
     // Tres-owned scene directly (the World no longer constructs or disposes
     // them), and the intro-section steps World.init() used to run for them
@@ -397,7 +404,9 @@ export class Experience {
     // before the first rendered frame, so the boot frame is unchanged.
     this.lights = new CinematicLights(this.scene)
     this.ground = new GroundPlane(this.scene)
-    const firstCfg = this.world.getConfig(this.world.sections[1]?.phaseConfig?.id ?? 'sec_intro')
+    const firstCfg = this.coordinator.getConfig(
+      this.coordinator.sections[1]?.phaseConfig?.id ?? 'sec_intro',
+    )
     if (firstCfg) {
       this.lights.changeSection(firstCfg)
       this.ground.applyInitialConfig(firstCfg.ground)
@@ -406,10 +415,6 @@ export class Experience {
       // event corrects it.
       this.envSphere.changeSection(1, false)
     }
-    // Temporary adapter: the ground lerp inside World.updateTransform needs
-    // World's eased `t` — forwarded to the owner until the World
-    // scene-coordination part leaves production (Phase 8 completion).
-    this.world.attachGround(this.ground)
   }
 
   /** Initialize the home-only carousel once, including after a deep-link
@@ -448,7 +453,6 @@ export class Experience {
     const stage = new WorksPlaneStage()
     this.worksPlaneStage = stage
     this.scene.add(stage)
-    this.world.attachWorksPlaneStage(stage)
     this._worksPlaneStagePromise = stage.init().then(
       () => {
         if (request !== this._worksPlaneStageRequest || this.worksPlaneStage !== stage) {
@@ -473,7 +477,6 @@ export class Experience {
         stage.removeFromParent()
         this.worksPlaneStage = null
         this._worksPlaneStagePromise = null
-        this.world.attachWorksPlaneStage(null)
         if (import.meta.env.DEV) console.error('[Experience] WorksPlaneStage init failed:', error)
       },
     )
@@ -491,7 +494,6 @@ export class Experience {
     this.worksPlaneStage.removeFromParent()
     this.worksPlaneStage = null
     this._worksPlaneStagePromise = null
-    this.world.attachWorksPlaneStage(null)
   }
 
   /** Lazily create the Contact route's pixel-title layer. Phase 8 slice 8:
@@ -504,13 +506,11 @@ export class Experience {
     const stage = new ContactTextStage()
     this.contactTextStage = stage
     this.scene.add(stage)
-    this.world.attachContactTextStage(stage)
     this._contactTextStagePromise = Promise.resolve().then(() => {
       if (request !== this._contactTextStageRequest || this.contactTextStage !== stage) {
         // The route can dispose a stage while its init is still pending.
         stage.dispose()
         stage.removeFromParent()
-        this.world.attachContactTextStage(null)
         return
       }
       stage.setActive(getCurrentPage() === 'contact', 0)
@@ -528,7 +528,6 @@ export class Experience {
     this.contactTextStage.removeFromParent()
     this.contactTextStage = null
     this._contactTextStagePromise = null
-    this.world.attachContactTextStage(null)
   }
 
   /** Sync the Contact pixel-title layer with CinematicNav's active chapter. */
@@ -555,7 +554,6 @@ export class Experience {
         const stage = new ContactCyprusStage()
         this.contactCyprusStage = stage
         this.scene.add(stage)
-        this.world.attachContactCyprusStage(stage)
         return stage.load()
       })
       .then(() => {
@@ -573,7 +571,6 @@ export class Experience {
           stage.removeFromParent()
           this.contactCyprusStage = null
           this._contactCyprusStagePromise = null
-          this.world.attachContactCyprusStage(null)
         }
         throw error
       })
@@ -587,7 +584,6 @@ export class Experience {
     this.contactCyprusStage = null
     this._contactCyprusStagePromise = null
     this._contactCyprusActive = false
-    this.world.attachContactCyprusStage(null)
   }
 
   /** Frame 03 replaces the shared cube with the Cyprus asset. */
@@ -598,10 +594,10 @@ export class Experience {
       void this.ensureContactCyprusStageInitialized().then(() => {
         if (!this._contactCyprusActive) return
         this.contactCyprusStage?.setActive(true)
-        this.world.syncRouteVisuals()
+        this.coordinator.syncRouteVisuals()
       })
     }
-    this.world.syncRouteVisuals()
+    this.coordinator.syncRouteVisuals()
   }
 
   /** Lazily create the Lab experiment object on its first /lab visit.
@@ -622,7 +618,6 @@ export class Experience {
         this.labGamepad = object
         this.labGamepad.visible = getCurrentPage() === 'lab'
         this.scene.add(this.labGamepad)
-        this.world.attachLabGamepad(this.labGamepad)
       })
       .finally(() => {
         this._labGamepadPromise = null
@@ -842,7 +837,7 @@ export class Experience {
           this.envSphere.changeSection(sectionIdx, detail.isLight)
         }
       }
-      if (this.world) {
+      if (this.coordinator) {
         // Contact's pixel title can be created after this route event.
         // Experience caches the effective polarity so lazy creation cannot
         // default to white text against a light route background.
@@ -851,8 +846,8 @@ export class Experience {
         if (detail.themeChanged !== false) {
           this.ground.syncTheme(detail.isLight)
           this.baku.setTheme(detail.isLight)
-          this.world.syncTypographyTheme(detail.isLight)
-          for (const group of this.world.sceneGroups) {
+          this.coordinator.syncTypographyTheme(detail.isLight)
+          for (const group of this.coordinator.sceneGroups) {
             const particles = group.userData.particles as
               import('../Experience/World/JunniParticles').JunniParticles | undefined
             if (particles) particles.setBlending(!detail.isLight)
@@ -868,10 +863,10 @@ export class Experience {
     // ambient pavilion, glass and contact ground never boot one polarity
     // behind the semantic interface.
     const initialIsLight = document.body.classList.contains('uk-light')
-    this.envSphere.snapToSection(this.world.currentSectionIndex, initialIsLight)
+    this.envSphere.snapToSection(this.coordinator.currentSectionIndex, initialIsLight)
     this.ground?.syncTheme(initialIsLight)
     this.baku?.setTheme(initialIsLight)
-    this.world?.syncTypographyTheme(initialIsLight)
+    this.coordinator?.syncTypographyTheme(initialIsLight)
 
     // ── Glassmorphism: studio environment map for realistic glass reflections ──
     // RoomEnvironment is a procedural studio scene (walls + lights) rendered
@@ -982,7 +977,7 @@ export class Experience {
     this._mouseTrailRafPending = false
     this._onMouseMoveForTrail = () => {
       if (this._mouseTrailRafPending) return
-      const isWorksStoryFrame = this.world?.currentSectionIndex === WORKS_SLOT_INDEX
+      const isWorksStoryFrame = this.coordinator?.currentSectionIndex === WORKS_SLOT_INDEX
       const isStandaloneWorks = getCurrentPage() === 'works'
       if (!isWorksStoryFrame && !isStandaloneWorks) return
       this._mouseTrailRafPending = true
@@ -1156,9 +1151,10 @@ export class Experience {
     // on-demand freezes the loop, drift only advances on ambient-breath
     // frames (~2.5s) and looks stuck. Keep rendering while a particle field
     // is on a visible group (respects prefers-reduced-motion).
-    const particlesActive = !this._reducedMotion && (this.world?.hasVisibleParticles() ?? false)
+    const particlesActive =
+      !this._reducedMotion && (this.coordinator?.hasVisibleParticles() ?? false)
     const ambientSceneActive =
-      !this._reducedMotion && (this.world?.hasVisibleAmbientMotion() ?? false)
+      !this._reducedMotion && (this.coordinator?.hasVisibleAmbientMotion() ?? false)
 
     // ── Zoom pulse active ──
     const camPulsing = this.camera.isPulsing
@@ -1206,18 +1202,21 @@ export class Experience {
 
     // Always update navigation + world state (cheap), but only render when needed
     const ns = this._storyNav?.getOverallProgress() ?? 0
-    const { cameraTarget, worldState } = this.world.updateTransform(ns)
-    this.world.update(dt, this._needsRender)
+    const { cameraTarget, worldState } = this.coordinator.updateTransform(ns)
+    this.coordinator.update(dt, this._needsRender)
     // Update showreel button shader (TSL uniforms + hover/click animation)
 
     // Drive worldDNA section blend — from→to colors + phaseProgress (scroll t).
     if (this.baku) {
-      const fromCfg = this.world.getConfig(
-        this.world.sections[this.world.currentSectionIndex]?.phaseConfig?.id ?? 'sec_intro',
+      const fromCfg = this.coordinator.getConfig(
+        this.coordinator.sections[this.coordinator.currentSectionIndex]?.phaseConfig?.id ??
+          'sec_intro',
       )
       // Blend toward the next slot (clamped to the last of the six).
-      const toIdx = Math.min(this.world.currentSectionIndex + 1, WORLD_SLOT_COUNT - 1)
-      const toCfg = this.world.getConfig(this.world.sections[toIdx]?.phaseConfig?.id ?? 'sec_intro')
+      const toIdx = Math.min(this.coordinator.currentSectionIndex + 1, WORLD_SLOT_COUNT - 1)
+      const toCfg = this.coordinator.getConfig(
+        this.coordinator.sections[toIdx]?.phaseConfig?.id ?? 'sec_intro',
+      )
       if (fromCfg && toCfg) {
         this.baku.updateWorldBlend(
           fromCfg.baku.material.color,
@@ -1237,9 +1236,9 @@ export class Experience {
     // ContentReveal applies the active section's auto/inverse theme and the
     // jlz:theme-applied listener above keeps the 3D layer in sync.
     // See docs/UIKIT3.md (State and accessibility).
-    const idx = this.world.currentSectionIndex
+    const idx = this.coordinator.currentSectionIndex
     // Give World the camera ref for DrawTrail (once, after init).
-    this.world.setCamera(this.camera.instance)
+    this.coordinator.setCamera(this.camera.instance)
     // Phase 8 slice 7: the /works stage camera moved out of World.setCamera —
     // forwarded directly (the stage is lazy; null until /works is reached).
     this.worksPlaneStage?.setCamera(this.camera.instance)
@@ -1253,7 +1252,7 @@ export class Experience {
     if (idx !== this._prevSectionIndex) {
       const isInitialSectionSync = this._prevSectionIndex === -1
       this._prevSectionIndex = idx
-      const cfgForSection = this.world.getConfig(worldState.currentPhase)
+      const cfgForSection = this.coordinator.getConfig(worldState.currentPhase)
       // Phase 8 slice 1: section-arrival light targets (was the
       // World.updateTransform internal call — same frame, same config).
       // Initial sync excluded: buildWorld's intro step already set the target
@@ -1296,7 +1295,7 @@ export class Experience {
     }
 
     // Context switch (post-processing preset)
-    const cfg = this.world.getConfig(worldState.currentPhase)
+    const cfg = this.coordinator.getConfig(worldState.currentPhase)
     if (cfg && cfg.context !== this.currentSectionContext) {
       // Fog is now managed by World.updateTransform() on section index change —
       // no need to set it here. PostProcessing + FOV still triggered on context change.
@@ -1343,8 +1342,8 @@ export class Experience {
     // Section index 4 = cube face -Y (bottom) on all pages. On every other
     // section the floor is hidden so the 3D scene floats in void. This gives
     // the bottom section a "grounded" feel while upper sections feel airborne.
-    if (this.world) {
-      this.ground.setSectionVisible(this.world.currentSectionIndex === 4)
+    if (this.coordinator) {
+      this.ground.setSectionVisible(this.coordinator.currentSectionIndex === 4)
     }
 
     // Per-section camera smoothing — only when rendering. The gate is the
@@ -1380,9 +1379,9 @@ export class Experience {
     // One-way: once reduced, never auto-restore (GPU spike would re-trigger).
     // Iterates all scene groups, finds JunniParticles via userData.particles,
     // halves their count. DevPanel shows the reduction (low fps ⚠ indicator).
-    if (this._lowFps && !this._particleReductionApplied && this.world) {
+    if (this._lowFps && !this._particleReductionApplied && this.coordinator) {
       this._particleReductionApplied = true
-      for (const group of this.world.sceneGroups) {
+      for (const group of this.coordinator.sceneGroups) {
         const particles = group.userData.particles as
           import('../Experience/World/JunniParticles').JunniParticles | undefined
         if (particles && !particles.isReduced) {
@@ -1437,9 +1436,6 @@ export class Experience {
     // Phase 7 slice 4: the former UI features (their window listeners, the
     // menu, the overlay and the story nav) tear down through ExperienceUI.
     this.features.destroy()
-    // Detach the World from the persistent Tres primitive slot so a
-    // re-init re-attaches a fresh instance (Experience owns disposal).
-    this._host?.attachWorld(null)
     // Phase 8 slice 1: the lights + ground scene owners (Experience is their
     // single disposal owner — the legacy World no longer disposes them).
     this.lights?.dispose()
@@ -1480,7 +1476,7 @@ export class Experience {
     // Phase 8 slice 2: the stable section groups owner (BakuCarousel-first
     // disposal ordering + Works particle texture live in the owner).
     this.sectionGroups?.dispose()
-    this.world.dispose()
+    this.coordinator.dispose()
     this.bus.cancelAll()
     this.devPanel?.dispose()
     delete (window as unknown as { __jlzRuntimeSnapshot?: () => unknown }).__jlzRuntimeSnapshot

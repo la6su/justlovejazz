@@ -1,15 +1,17 @@
 import * as THREE from 'three'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Experience } from '../Experience/Experience'
-import { World } from '../core/World'
+import { SceneCoordinator, type SceneCoordinatorOwners } from '../Experience/SceneCoordinator'
 import { ContactTextStage } from '../Experience/World/ContactTextStage'
 
 // Phase 8 slice 8: the Contact pixel-title layer lifecycle (lazy creation +
-// disposal) moved from World to Experience. The methods are self-contained
-// (they only touch the stage reference, the request guard, the scene + World
-// adapter and the camera), so the test drives them on an Experience instance
-// created without its heavy constructor (renderer capability detection, UI
-// construction) and asserts through the public World getter.
+// disposal) moved from World to Experience. Phase 8 slice 10: the `World`
+// class leaves production — the stage is read through the SceneCoordinator's
+// `contactTextStage` owner getter (Experience owns the field). The methods are
+// self-contained (they only touch the stage reference, the request guard, the
+// scene + camera), so the test drives them on an Experience instance created
+// without its heavy constructor (renderer capability detection, UI
+// construction).
 
 // The ContactTextStage ctor builds a PixelTextScreen, which renders the
 // section title through the 2D canvas API — the mock covers every call it
@@ -30,14 +32,14 @@ const canvasContext = {
 
 describe('Experience contact text stage lifecycle', () => {
   let exp: Experience
-  let world: World
+  let coordinator: SceneCoordinator
   let getContext: ReturnType<typeof vi.spyOn>
 
   /** Minimal state the lifecycle methods touch (constructor bypassed). */
-  function makeExperience(scene: THREE.Scene, worldRef: World): Experience {
-    return Object.assign(Object.create(Experience.prototype), {
+  function makeExperience(scene: THREE.Scene): Experience {
+    const exp = Object.assign(Object.create(Experience.prototype), {
       scene,
-      world: worldRef,
+      contactTextStage: null,
       camera: { instance: new THREE.PerspectiveCamera() },
       _contactTextStagePromise: null,
       _contactTextStageRequest: 0,
@@ -46,6 +48,27 @@ describe('Experience contact text stage lifecycle', () => {
       _contactCyprusActive: false,
       _contactTextIsLight: false,
     } as unknown as Partial<Experience>) as Experience
+    // The coordinator reads the stage through an owner getter over Experience's
+    // own field (the lazy stage changes identity per route). Production wires
+    // this from within the constructor (the `this` closure); the test reads the
+    // same live field through a cast bag.
+    const bag = exp as unknown as { contactTextStage?: ContactTextStage | null }
+    const owners: SceneCoordinatorOwners = {
+      ground: () => null,
+      sectionGroups: () => null,
+      envSphere: () => null,
+      baku: () => null,
+      particleBurst: () => null,
+      drawTrail: () => null,
+      carousel: () => null,
+      worksPlaneStage: () => null,
+      contactTextStage: () => bag.contactTextStage ?? null,
+      contactCyprusStage: () => null,
+      labGamepad: () => null,
+    }
+    coordinator = new SceneCoordinator(scene, owners)
+    exp.coordinator = coordinator
+    return exp
   }
 
   beforeEach(() => {
@@ -58,12 +81,10 @@ describe('Experience contact text stage lifecycle', () => {
       value: { load: () => Promise.resolve() },
       configurable: true,
     })
-    world = new World(new THREE.Scene())
-    exp = makeExperience(new THREE.Scene(), world)
+    exp = makeExperience(new THREE.Scene())
   })
 
   afterEach(() => {
-    world.dispose()
     getContext.mockRestore()
     delete (document as { fonts?: unknown }).fonts
     delete document.body.dataset.page
@@ -74,33 +95,33 @@ describe('Experience contact text stage lifecycle', () => {
 
     try {
       const pending = exp.ensureContactTextStageInitialized()
-      expect(world.contactTextStage).toBeInstanceOf(ContactTextStage)
+      expect(coordinator.contactTextStage).toBeInstanceOf(ContactTextStage)
 
       exp.disposeContactTextStage()
       await pending
 
-      // The first dispose detaches the World adapter immediately; the second
+      // The first dispose clears the field immediately; the second
       // catches resources created by the in-flight init before it settled.
-      expect(world.contactTextStage).toBeNull()
+      expect(coordinator.contactTextStage).toBeNull()
       expect(disposeSpy).toHaveBeenCalledTimes(2)
     } finally {
       disposeSpy.mockRestore()
     }
   })
 
-  it('forwards the active /contact stage into the World frame path via the adapter', async () => {
+  it('forwards the active /contact stage into the coordinator frame path via the owner getter', async () => {
     const disposeSpy = vi.spyOn(ContactTextStage.prototype, 'dispose')
 
     try {
       const pending = exp.ensureContactTextStageInitialized()
       await pending
-      const stage = world.contactTextStage
+      const stage = coordinator.contactTextStage
       expect(stage).toBeInstanceOf(ContactTextStage)
 
-      // Leaving /contact disposes the owner and detaches the adapter.
+      // Leaving /contact disposes the owner and clears the field.
       document.body.dataset.page = 'home'
       exp.disposeContactTextStage()
-      expect(world.contactTextStage).toBeNull()
+      expect(coordinator.contactTextStage).toBeNull()
       expect(disposeSpy).toHaveBeenCalledTimes(1)
       expect(stage?.parent).toBeNull()
     } finally {

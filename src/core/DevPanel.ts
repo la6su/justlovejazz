@@ -177,9 +177,9 @@ export class DevPanel {
       // Restore the contact-only ground visibility invariant.
       const exp = this.exp as unknown as {
         ground?: { object?: { visible: boolean } }
-        world?: { currentSectionIndex?: number }
+        coordinator?: { currentSectionIndex?: number }
       }
-      if (exp.ground?.object) exp.ground.object.visible = exp.world?.currentSectionIndex === 4
+      if (exp.ground?.object) exp.ground.object.visible = exp.coordinator?.currentSectionIndex === 4
       this.controls.groundVisible = exp.ground?.object?.visible ?? false
       this.pane.refresh()
     })

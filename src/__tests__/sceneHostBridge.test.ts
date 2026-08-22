@@ -70,17 +70,6 @@ describe('sceneHost bridge (Phase 7 persistent Tres root)', () => {
     await expect(bridge.ready).rejects.toBe(error)
   })
 
-  it('attachWorld drives the persistent primitive slot (null → no mount)', async () => {
-    const { mod } = await freshBridge()
-    const world = new THREE.Object3D()
-    expect(mod.worldObject.value).toBeNull()
-    mod.attachWorld(world)
-    expect(mod.worldObject.value).toBe(world)
-    // Experience.destroy() detaches the slot so a re-init re-attaches fresh.
-    mod.attachWorld(null)
-    expect(mod.worldObject.value).toBeNull()
-  })
-
   it('replaceRenderer swaps the live instance on the Tres context', async () => {
     const { bridge } = await freshBridge()
     const oldRenderer = { name: 'old' } as unknown as SceneHostReady['renderer']

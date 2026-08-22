@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { World } from '../core/World'
+import { SceneCoordinator, type SceneCoordinatorOwners } from '../Experience/SceneCoordinator'
 import { SplashCube } from '../Experience/World/SplashCube'
 import { getLabExperiment, labExperiments } from '../Experience/Lab/manifest'
 
@@ -10,28 +10,39 @@ const canvasContext = {
   fillRect: vi.fn(),
 }
 
-describe('World route visuals', () => {
-  let world: World
+describe('SceneCoordinator route visuals (Phase 8 slice 10: the gate left `World`)', () => {
+  let coordinator: SceneCoordinator
   let cube: SplashCube
   let getContext: ReturnType<typeof vi.spyOn>
+
+  function makeOwners(baku: SplashCube): SceneCoordinatorOwners {
+    return {
+      ground: () => null,
+      sectionGroups: () => null,
+      envSphere: () => null,
+      baku: () => baku,
+      particleBurst: () => null,
+      drawTrail: () => null,
+      carousel: () => null,
+      worksPlaneStage: () => null,
+      contactTextStage: () => null,
+      contactCyprusStage: () => null,
+      labGamepad: () => null,
+    }
+  }
 
   beforeEach(() => {
     document.body.dataset.page = 'home'
     getContext = vi
       .spyOn(HTMLCanvasElement.prototype, 'getContext')
       .mockReturnValue(canvasContext as unknown as CanvasRenderingContext2D)
-    world = new World(new THREE.Scene())
-    // Phase 8 slice 4: the glass cube is an Experience-owned scene owner —
-    // the test injects it through the attachBaku adapter before driving the
-    // World's route-visual gating.
     cube = new SplashCube()
     cube.name = 'baku'
     cube.visible = true
-    world.attachBaku(cube)
+    coordinator = new SceneCoordinator(new THREE.Scene(), makeOwners(cube))
   })
 
   afterEach(() => {
-    world.dispose()
     cube.dispose()
     getContext.mockRestore()
     delete document.body.dataset.page
@@ -44,28 +55,23 @@ describe('World route visuals', () => {
   })
 
   it('hides the shared cube on the Lab route', () => {
-    // Phase 8 slice 9: the Lab object's lazy load moved to Experience (see
-    // Experience.labStage.test.ts); the World keeps only the cube-visibility
-    // gate for the Lab route.
     document.body.dataset.page = 'lab'
-    world.syncRouteVisuals()
-    expect(world.baku).toBe(cube)
+    coordinator.syncRouteVisuals()
+    expect(coordinator.baku).toBe(cube)
     expect(cube.visible).toBe(false)
 
     document.body.dataset.page = 'home'
-    world.syncRouteVisuals()
+    coordinator.syncRouteVisuals()
     expect(cube.visible).toBe(true)
   })
 
   it('keeps the cube out of the standalone Works media route', () => {
     document.body.dataset.page = 'works'
-    world.syncRouteVisuals()
-
+    coordinator.syncRouteVisuals()
     expect(cube.visible).toBe(false)
 
     document.body.dataset.page = 'contact'
-    world.syncRouteVisuals()
-
+    coordinator.syncRouteVisuals()
     expect(cube.visible).toBe(true)
   })
 })

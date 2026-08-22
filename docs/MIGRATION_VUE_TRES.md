@@ -2536,8 +2536,56 @@ removed.
   and identical scene graph resources (18 / 25 / 9), clean disposal on all
   three runs.
 
+- Slice 10 (done, 2026-08-22): the legacy `World` scene-coordination engine
+  leaves production. The six-section state machine, the scroll transform
+  (`updateTransform` with the cached ranges + per-section easing), the
+  per-frame coordination body (`update`), `init` / `resize` / `dispose` and
+  the route-visual gating moved 1:1 into the new `SceneCoordinator` owner
+  (`src/Experience/SceneCoordinator.ts`), owned by Experience and created in
+  `buildWorld` (same boundary as the former `World` construction). The
+  coordinator is a plain class (not a `THREE.Group`): the sections enter the
+  Tres-owned scene directly in `init()`, and the scene owners are injected
+  through a `SceneCoordinatorOwners` getter interface — the lazy route owners
+  (Works / Contact stages, Lab object) change identity per route, so only a
+  getter stays current. Every `attach*` temporary adapter from slices 1–9
+  (and their documented getter read surface) is deleted with the owner;
+  the overlay/scene interaction wiring (tap hitTest readiness, route-change
+  and section-change handlers, splash opener) now reaches the scene through
+  the coordinator getter on the `ExperienceUI` port (`coordinator()` instead
+  of `world()`), and the portfolio readiness check reads the coordinator's
+  section list instead of the legacy `world.parent`. The `worldObject`
+  primitive slot (`<primitive :object :dispose="null">`) is removed from
+  `SceneHost.vue` + `sceneHost.ts` + the `ExperienceHost` interface — the
+  sections + scene owners enter the scene directly, so no TresJS primitive
+  adapter remains (the AGENTS.md temporary-adapter condition is satisfied).
+  `SectionSceneFactory` (index→creator + geometry hiding) is inlined into the
+  `SectionGroups` owner (its only production consumer) and both legacy files
+  (`src/core/World.ts`, `src/core/SectionSceneFactory.ts`) are deleted — the
+  Phase 8 acceptance check (no production callers of `World`,
+  `SectionSceneFactory` or the scene-coordination part of `Experience`)
+  passes: the only remaining references are test files (migrated) and
+  historical doc text. The last legacy post binding is resolved as absent in
+  the World direction: the post chain (`postManager.applyPreset` +
+  `pipeline.setSectionGrade`) is driven exclusively by the Experience frame
+  path on context change, and the World's per-phase `post` config read
+  (`getConfig(currentPhase).post`) left production with the World's
+  deletion — nothing World-side remained to remove. Gates: `type-check`,
+  `type-check:vue`, `test:unit` (297 — the `attachWorld` bridge test is
+  deleted with the primitive slot), `build`, serial e2e (21/21) and the live
+  gate (evidence
+  `docs/evidence/phase7-live-gate/2026-08-22T01-52-15-411Z-report.json`)
+  pass. Performance comparison: bundle net −1.35 kB raw / −0.53 kB gzip
+  (`chunk-core-world` −13.42 kB raw / −4.20 kB gzip, `chunk-experience`
+  +12.13 kB raw / +3.69 kB gzip — the coordination engine re-homed with its
+  owner; the Three delivery chunk is unchanged at 381.17 kB gzip — the open
+  budget ADR); runtime parity — identical settled frame counts (65 / 37 / 64)
+  and identical scene graph resources (18 / 25 / 9), clean disposal on all
+  three runs.
+
 Acceptance: legacy `World`, `SectionSceneFactory` and the scene-coordination
-part of `Experience` have no production callers.
+part of `Experience` have no production callers. **Met by slice 10** —
+`src/core/World.ts` + `src/core/SectionSceneFactory.ts` are deleted and zero
+production importers remain (verified by import scan).
 
 Rollback: revert the individual owner slice and remount its primitive adapter.
 
@@ -2673,17 +2721,17 @@ The following ledgers are updated in this document during implementation.
 
 ### Removal ledger
 
-| Legacy element                           | Remove after                                                                                                                                                                                                                                                                                                                | Status  |
-| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| manual router and route `innerHTML`      | Phase 5 cleanup after parity — `src/router.ts` deleted 2026-08-22                                                                                                                                                                                                                                                           | done    |
-| scene `document.body.dataset.page` reads | Phase 3 per-owner port migration — all scene consumers migrated 2026-08-21; the dataset write stays (router + CSS scoping) until Phase 5                                                                                                                                                                                    | done    |
-| string page/section templates            | Phase 5 cleanup — `src/pages/*` + `PageView.vue` deleted 2026-08-22; prerender now sources the home SFC                                                                                                                                                                                                                     | done    |
-| classic `WebGLRenderer` fallback         | Phase 6 phase-exit cleanup — production path removed 2026-08-22; retained only as the dev-forced `?renderer=webgl` QA post owner                                                                                                                                                                                            | done    |
-| GLSL `ShaderMaterial` post chain         | Phase 6 phase-exit cleanup — retained 2026-08-22 as the labelled forced-WebGLBackend owner per the fixed decision; deletion tracked to Phase 10                                                                                                                                                                             | done    |
-| raw `jlz:*` window bridge                | all consumers use typed ports                                                                                                                                                                                                                                                                                               | pending |
-| monolithic `Experience` coordination     | Phase 8 owner migrations                                                                                                                                                                                                                                                                                                    | pending |
-| legacy World adapters                    | Phase 8 completion — slice 1 (lights + ground) + slice 2 (stable section groups) + slice 3 (EnvSphere) + slice 4 (SplashCube) + slice 5 (ParticleBurst + DrawTrail) + slice 6 (BakuCarousel reference + init) + slice 7 (WorksPlaneStage) + slice 8 (Contact stages) + slice 9 (Lab object) deleted from `World` 2026-08-22 | pending |
-| migration flags and shims                | Phase 10                                                                                                                                                                                                                                                                                                                    | pending |
+| Legacy element                           | Remove after                                                                                                                                                                                                                                                                                                                                                                                                                 | Status  |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| manual router and route `innerHTML`      | Phase 5 cleanup after parity — `src/router.ts` deleted 2026-08-22                                                                                                                                                                                                                                                                                                                                                            | done    |
+| scene `document.body.dataset.page` reads | Phase 3 per-owner port migration — all scene consumers migrated 2026-08-21; the dataset write stays (router + CSS scoping) until Phase 5                                                                                                                                                                                                                                                                                     | done    |
+| string page/section templates            | Phase 5 cleanup — `src/pages/*` + `PageView.vue` deleted 2026-08-22; prerender now sources the home SFC                                                                                                                                                                                                                                                                                                                      | done    |
+| classic `WebGLRenderer` fallback         | Phase 6 phase-exit cleanup — production path removed 2026-08-22; retained only as the dev-forced `?renderer=webgl` QA post owner                                                                                                                                                                                                                                                                                             | done    |
+| GLSL `ShaderMaterial` post chain         | Phase 6 phase-exit cleanup — retained 2026-08-22 as the labelled forced-WebGLBackend owner per the fixed decision; deletion tracked to Phase 10                                                                                                                                                                                                                                                                              | done    |
+| raw `jlz:*` window bridge                | all consumers use typed ports                                                                                                                                                                                                                                                                                                                                                                                                | pending |
+| monolithic `Experience` coordination     | Phase 8 owner migrations — the scene-coordination engine left `Experience` into `SceneCoordinator` 2026-08-22 (slice 10)                                                                                                                                                                                                                                                                                                     | done    |
+| legacy World adapters                    | Phase 8 completion — slice 1 (lights + ground) + slice 2 (stable section groups) + slice 3 (EnvSphere) + slice 4 (SplashCube) + slice 5 (ParticleBurst + DrawTrail) + slice 6 (BakuCarousel reference + init) + slice 7 (WorksPlaneStage) + slice 8 (Contact stages) + slice 9 (Lab object) + slice 10 (scene-coordination engine + `attachWorld` primitive slot) — `World.ts` + `SectionSceneFactory.ts` deleted 2026-08-22 | done    |
+| migration flags and shims                | Phase 10                                                                                                                                                                                                                                                                                                                                                                                                                     | pending |
 
 ## Definition of done
 

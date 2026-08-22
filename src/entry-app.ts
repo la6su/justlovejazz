@@ -158,7 +158,7 @@ async function boot(): Promise<void> {
     // fire after that — the renderer factory return alone never satisfies
     // readiness. The `?no-scene` DOM-only rollback above returns earlier and
     // never reaches this handshake.
-    const { sceneHost, attachWorld } = await import('./app/sceneHost')
+    const { sceneHost } = await import('./app/sceneHost')
     const host = await sceneHost.ready
     const { Experience } = await import('./Experience/Experience')
     progress(55)
@@ -169,7 +169,6 @@ async function boot(): Promise<void> {
       renderer: host.renderer,
       canvas: host.canvas,
       mode: host.mode,
-      attachWorld,
       replaceRenderer: (renderer) => sceneHost.replaceRenderer(renderer),
     })
     await experience.init()

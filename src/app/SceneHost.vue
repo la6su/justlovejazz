@@ -35,7 +35,7 @@ import {
   inspectUnifiedBackend,
   type UnifiedRenderSurface,
 } from '../core/unifiedRenderer'
-import { sceneHost, worldObject } from './sceneHost'
+import { sceneHost } from './sceneHost'
 
 const noScene = new URLSearchParams(window.location.search).has('no-scene')
 
@@ -113,8 +113,6 @@ function onError(error: Error): void {
       :style="{ pointerEvents: 'none' }"
       @ready="onReady"
       @error="onError"
-    >
-      <primitive v-if="worldObject" :object="worldObject" :dispose="null" />
-    </TresCanvas>
+    />
   </div>
 </template>

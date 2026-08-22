@@ -23,23 +23,62 @@
 // reference + init live on Experience.
 
 import * as THREE from 'three'
-import { SectionSceneFactory } from '../../core/SectionSceneFactory'
+// Phase 8 slice 10: the `SectionSceneFactory` (index→creator + geometry
+// hiding) is inlined here — the SectionGroups owner is its only production
+// consumer, so the standalone factory file leaves production.
+import { createSection0 } from '../../sections/lab/scene'
+import { createSection1 } from '../../sections/intro/scene'
+import { createSection2 } from '../../sections/about/scene'
+import { createSection3 } from '../../sections/works/scene'
+import { createSection4 } from '../../sections/contact/scene'
+import { createSection5 } from '../../sections/menu/scene'
 import { disposeSection3Textures } from '../../sections/works/scene'
 import { disposeMaterialDeep } from '../../Utils/dispose'
 
 /** Canonical six-slot layout (one group per world slot / cube face). */
 export const SECTION_GROUP_COUNT = 6
 
+// Index → creator function. 6 sections (1:1 cube faces).
+const SECTION_CREATORS: ReadonlyArray<() => THREE.Group> = [
+  createSection0, // 0: canonical Lab scene behind the public Contact finale
+  createSection1, // 1: Intro (front face)
+  createSection2, // 2: About (right face)
+  createSection3, // 3: Works (back face — BakuCarousel)
+  createSection4, // 4: Contact (bottom face)
+  createSection5, // 5: Menu sheet — positive Y tilt
+]
+
+/** Create the section group for a canonical slot (falls back to slot 0). */
+function createSectionGroupByIndex(i: number): THREE.Group {
+  const fn = SECTION_CREATORS[i] ?? SECTION_CREATORS[0]
+  return (fn ?? SECTION_CREATORS[0]!)()
+}
+
+/**
+ * Hide non-particle geometry until bespoke visuals are ready (T-070..T-074).
+ * Particles (THREE.Points / InstancedMesh) + `userData.keepVisible` objects
+ * remain for atmospheric depth.
+ */
+function hideSectionGeometry(group: THREE.Group): void {
+  group.traverse((obj) => {
+    if (obj === group) return
+    if (obj instanceof THREE.Points) return
+    if (obj instanceof THREE.InstancedMesh) return
+    if (obj.userData?.keepVisible) return
+    obj.visible = false
+  })
+}
+
 export class SectionGroups {
   readonly groups: THREE.Group[] = []
 
   constructor(scene: THREE.Scene, count: number = SECTION_GROUP_COUNT) {
     for (let i = 0; i < count; i++) {
-      const group = SectionSceneFactory.byIndex(i)
+      const group = createSectionGroupByIndex(i)
       // Hide non-particle geometry until bespoke visuals are ready (T-070..T-074).
       // Particles remain for atmospheric depth. Remove this call section by section
       // as real visuals are added.
-      SectionSceneFactory.hideGeometry(group)
+      hideSectionGeometry(group)
       scene.add(group)
       this.groups.push(group)
       group.visible = i === 1 // Intro = index 1

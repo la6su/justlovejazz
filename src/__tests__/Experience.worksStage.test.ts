@@ -1,15 +1,17 @@
 import * as THREE from 'three'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Experience } from '../Experience/Experience'
-import { World } from '../core/World'
+import { SceneCoordinator, type SceneCoordinatorOwners } from '../Experience/SceneCoordinator'
 import { WorksPlaneStage } from '../Experience/World/WorksPlaneStage'
 
 // Phase 8 slice 7: the /works case-plane stage lifecycle (lazy creation +
-// disposal) moved from World to Experience. These methods are self-contained
-// (they only touch the stage reference, the request guard, the scene + World
-// adapter and the camera), so the test drives them on an Experience instance
-// created without its heavy constructor (renderer capability detection, UI
-// construction) and asserts through the public World getter.
+// disposal) moved from World to Experience. Phase 8 slice 10: the `World`
+// class leaves production — the stage is read through the SceneCoordinator's
+// `worksPlaneStage` owner getter (Experience owns the field, the coordinator
+// reads it). These methods are self-contained (they only touch the stage
+// reference, the request guard, the scene + camera), so the test drives them
+// on an Experience instance created without its heavy constructor (renderer
+// capability detection, UI construction).
 
 const canvasContext = {
   fillStyle: '',
@@ -19,18 +21,39 @@ const canvasContext = {
 
 describe('Experience works stage lifecycle', () => {
   let exp: Experience
-  let world: World
+  let coordinator: SceneCoordinator
   let getContext: ReturnType<typeof vi.spyOn>
 
   /** Minimal state the two lifecycle methods touch (constructor bypassed). */
-  function makeExperience(scene: THREE.Scene, worldRef: World): Experience {
-    return Object.assign(Object.create(Experience.prototype), {
+  function makeExperience(scene: THREE.Scene): Experience {
+    const exp = Object.assign(Object.create(Experience.prototype), {
       scene,
-      world: worldRef,
+      worksPlaneStage: null,
       camera: { instance: new THREE.PerspectiveCamera() },
       _worksPlaneStagePromise: null,
       _worksPlaneStageRequest: 0,
     } as unknown as Partial<Experience>) as Experience
+    // The coordinator reads the stage through an owner getter over Experience's
+    // own field (the lazy stage changes identity per route — a stored reference
+    // would go stale). Production wires this from within the constructor (the
+    // `this` closure); the test reads the same live field through a cast bag.
+    const bag = exp as unknown as { worksPlaneStage?: WorksPlaneStage | null }
+    const owners: SceneCoordinatorOwners = {
+      ground: () => null,
+      sectionGroups: () => null,
+      envSphere: () => null,
+      baku: () => null,
+      particleBurst: () => null,
+      drawTrail: () => null,
+      carousel: () => null,
+      worksPlaneStage: () => bag.worksPlaneStage ?? null,
+      contactTextStage: () => null,
+      contactCyprusStage: () => null,
+      labGamepad: () => null,
+    }
+    coordinator = new SceneCoordinator(scene, owners)
+    exp.coordinator = coordinator
+    return exp
   }
 
   beforeEach(() => {
@@ -38,12 +61,10 @@ describe('Experience works stage lifecycle', () => {
     getContext = vi
       .spyOn(HTMLCanvasElement.prototype, 'getContext')
       .mockReturnValue(canvasContext as unknown as CanvasRenderingContext2D)
-    world = new World(new THREE.Scene())
-    exp = makeExperience(new THREE.Scene(), world)
+    exp = makeExperience(new THREE.Scene())
   })
 
   afterEach(() => {
-    world.dispose()
     getContext.mockRestore()
     delete document.body.dataset.page
   })
@@ -58,15 +79,15 @@ describe('Experience works stage lifecycle', () => {
 
     try {
       const pending = exp.ensureWorksPlaneStageInitialized()
-      expect(world.worksPlaneStage).toBeInstanceOf(WorksPlaneStage)
+      expect(coordinator.worksPlaneStage).toBeInstanceOf(WorksPlaneStage)
 
       exp.disposeWorksPlaneStage()
       resolveInit()
       await pending
 
-      // The first dispose detaches the World adapter immediately; the second
+      // The first dispose detaches the field immediately; the second
       // catches textures/cards created by the in-flight init before it settled.
-      expect(world.worksPlaneStage).toBeNull()
+      expect(coordinator.worksPlaneStage).toBeNull()
       expect(disposeSpy).toHaveBeenCalledTimes(2)
     } finally {
       initSpy.mockRestore()
@@ -74,20 +95,20 @@ describe('Experience works stage lifecycle', () => {
     }
   })
 
-  it('forwards the active /works stage into the World frame path via the adapter', async () => {
+  it('forwards the active /works stage into the coordinator frame path via the owner getter', async () => {
     const initSpy = vi.spyOn(WorksPlaneStage.prototype, 'init').mockResolvedValue()
     const disposeSpy = vi.spyOn(WorksPlaneStage.prototype, 'dispose')
 
     try {
       const pending = exp.ensureWorksPlaneStageInitialized()
       await pending
-      const stage = world.worksPlaneStage
+      const stage = coordinator.worksPlaneStage
       expect(stage).toBeInstanceOf(WorksPlaneStage)
 
-      // Leaving /works disposes the owner and detaches the adapter.
+      // Leaving /works disposes the owner and clears the field.
       document.body.dataset.page = 'home'
       exp.disposeWorksPlaneStage()
-      expect(world.worksPlaneStage).toBeNull()
+      expect(coordinator.worksPlaneStage).toBeNull()
       expect(disposeSpy).toHaveBeenCalledTimes(1)
       expect(stage?.parent).toBeNull()
     } finally {

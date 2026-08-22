@@ -493,7 +493,7 @@ do not start a phase whose entry gate has not passed.
       per route leave; disposed only on final destroy): it enters the
       Tres-owned scene directly, is injected through
       `World.attachLabGamepad`, and the lazy-creation trigger `World.
-    syncRouteVisuals()` used to run (on route entry + section change) now
+  syncRouteVisuals()` used to run (on route entry + section change) now
       runs in `buildWorld` (entry route) + the UI route-change handler
       (navigation). `World.labGamepad` is a documented temporary getter — the
       only remaining World touch is the visibility gate in
@@ -502,6 +502,35 @@ do not start a phase whose entry gate has not passed.
       deleted. The lazy-load test moved to the new
       `src/__tests__/Experience.labStage.test.ts` (the manifest + cube-gating
       tests stay in `World.routeVisuals.test.ts`).
+      Phase 8 slice 10 landed (2026-08-22): the legacy `World`
+      scene-coordination engine leaves production — the six-section state
+      machine, the scroll transform (`updateTransform`), the per-frame
+      coordination body (`update`), `init`/`resize`/`dispose` and the
+      route-visual gating move 1:1 into the new `SceneCoordinator` owner
+      (`src/Experience/SceneCoordinator.ts`), created by Experience in
+      `buildWorld`. The coordinator is a plain class (not a `THREE.Group`):
+      the sections enter the Tres scene directly in `init()`, and the scene
+      owners are injected as getters over Experience's own fields (the lazy
+      route owners change identity per route). Every `attach*` temporary
+      adapter from slices 1–9 is deleted with the owner; the
+      overlay/scene-interaction wiring (tap hitTest readiness, route-change + section-change handlers, splash opener) now reaches the scene
+      through the coordinator getter on the `ExperienceUI` port
+      (`coordinator()` instead of `world()`). The `worldObject` primitive
+      slot (`<primitive :object :dispose="null">`) is removed from
+      `SceneHost.vue` + `sceneHost.ts` + the `ExperienceHost` interface.
+      `SectionSceneFactory` is inlined into the `SectionGroups` owner (its
+      only production consumer). Both legacy files — `src/core/World.ts`
+      and `src/core/SectionSceneFactory.ts` — are deleted; the Phase 8
+      acceptance check (no production callers of `World`,
+      `SectionSceneFactory` or the scene-coordination part of `Experience`)
+      passes. The last legacy post binding is resolved as absent in the
+      World direction: the post chain
+      (`postManager.applyPreset` + `pipeline.setSectionGrade`) is driven
+      exclusively by the Experience frame path on context change. Phase 8
+      is complete (all 10 slices). The migrated tests:
+      `SceneCoordinator.routeVisuals.test.ts` (cube gating + Lab
+      manifest), the works/contact/lab lifecycle tests (coordinator owner
+      getters), and the `attachWorld` bridge test deleted with the slot.
       Phase 8 slice 2 landed (2026-08-22): the six stable section groups
       left `World` — Experience creates the new `SectionGroups` owner
       (`src/Experience/Scene/SectionGroups.ts`: factory creation,

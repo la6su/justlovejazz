@@ -1,163 +1,58 @@
-// src/core/World.ts — Junni-style composition: Section[], Baku, Atmosphere
-// (Phase 8 slice 1: lights + ground moved out — Experience owns the
-// CinematicLights + GroundPlane scene owners; slice 2: the six stable
-// section groups moved out — Experience owns the SectionGroups owner;
-// slice 3: the EnvSphere ambient pavilion moved out — Experience owns it;
-// slice 4: the SplashCube glass cube moved out — Experience owns it;
-// slice 5: the ParticleBurst intro frames + DrawTrail cursor signal moved out
-// — Experience owns them; slice 6: the BakuCarousel reference + init moved
-// out — Experience owns them, the carousel stays a child of the Works group;
-// slice 7: the /works case-plane stage (WorksPlaneStage) moved out —
-// Experience owns the lazy stage + lifecycle; slice 8: the Contact pixel-title
-// layer (ContactTextStage) + lazy 3D Agros backdrop (ContactCyprusStage)
-// moved out — Experience owns both lazy stages + lifecycle; slice 9: the Lab
-// experiment object (LabGamepad) moved out — Experience owns the lazy object
-// + lifecycle)
+// src/Experience/SceneCoordinator.ts — Phase 8 slice 10: the scene-coordination
+// engine left the legacy `World` (six-section state machine, scroll transform
+// and the per-frame coordination body). Experience owns the coordinator and is
+// the single disposal owner; it injects the scene owners as getters over its own
+// fields (the lazy route owners change identity per route, so a direct reference
+// would go stale). With this slice the legacy `World` class and
+// `SectionSceneFactory` leave production (Phase 8 completion) — no production
+// caller remains.
 
 import * as THREE from 'three'
-// BG.ts removed — was dead computation (bg.color never read by anyone).
-// EnvSphere (the sole visible ambient environment) moved to the
-// Experience-owned scene owner in Phase 8 slice 3.
-import { Section, SectionState } from './Section'
-import { StateBus } from './StateBus'
-import { prefersReducedMotion } from './motionPolicy'
-import { type CameraTarget, type WorldState, BakuRole } from './types'
-import type { GroundPlane } from '../Experience/Scene/GroundPlane'
-import type { SectionGroups } from '../Experience/Scene/SectionGroups'
-import type { DrawTrail } from '../Experience/World/DrawTrail'
-import type { SplashCube } from '../Experience/World/SplashCube'
-import type { EnvSphere } from '../Experience/World/EnvSphere'
-import type { ParticleBurst } from '../Experience/World/ParticleBurst'
-import type { BakuCarousel } from '../Experience/World/BakuCarousel'
-import { getWorldConfigForPage, type PhaseConfig } from './WorldConfig'
-import { getCurrentPage } from './routePage'
-import { clampStoryProgress, sectionIndexAt } from './storyProgress'
-// updateInstancedParticles removed — was a no-op. Particles are static.
-// disposeMaterialDeep removed — Phase 8 slice 2: the scene-group disposal
-// (its only World consumer) moved to the SectionGroups owner.
-import type { WorksPlaneStage } from '../Experience/World/WorksPlaneStage'
-import type { ContactTextStage } from '../Experience/World/ContactTextStage'
-import type { ContactCyprusStage } from '../Experience/World/ContactCyprusStage'
-import type { LabExperimentObject } from '../Experience/Lab/manifest'
+import { Section, SectionState } from '../core/Section'
+import { StateBus } from '../core/StateBus'
+import { prefersReducedMotion } from '../core/motionPolicy'
+import { type CameraTarget, type WorldState, BakuRole } from '../core/types'
+import { getWorldConfigForPage, type PhaseConfig } from '../core/WorldConfig'
+import { getCurrentPage } from '../core/routePage'
+import { clampStoryProgress, sectionIndexAt } from '../core/storyProgress'
+import type { GroundPlane } from './Scene/GroundPlane'
+import type { SectionGroups } from './Scene/SectionGroups'
+import type { DrawTrail } from './World/DrawTrail'
+import type { SplashCube } from './World/SplashCube'
+import type { EnvSphere } from './World/EnvSphere'
+import type { ParticleBurst } from './World/ParticleBurst'
+import type { BakuCarousel } from './World/BakuCarousel'
+import type { WorksPlaneStage } from './World/WorksPlaneStage'
+import type { ContactTextStage } from './World/ContactTextStage'
+import type { ContactCyprusStage } from './World/ContactCyprusStage'
+import type { LabExperimentObject } from './Lab/manifest'
 
 export interface WorldTransformResult {
   cameraTarget: CameraTarget
   worldState: WorldState
 }
 
-export class World extends THREE.Group {
-  public sections: Section[] = []
-  // Phase 8 slice 5: the cursor trail (DrawTrail) is no longer a World member —
-  // Experience creates it in the Tres-owned scene and injects the owner through
-  // `attachDrawTrail` (temporary adapter: the World frame path forwards the
-  // per-frame `update`, gates its route visibility and disposes it — removed
-  // with the World scene-coordination part, Phase 8 completion). The getter
-  // keeps the legacy read surface during the transition.
-  private _drawTrailOwner: DrawTrail | undefined = undefined
-  public get drawTrail(): DrawTrail | undefined {
-    return this._drawTrailOwner
-  }
-  // Phase 8 slice 4: the glass cube (SplashCube) is no longer a World member —
-  // Experience creates it in the Tres-owned scene and injects the owner through
-  // `attachBaku` (temporary adapter: the World frame path reads/writes its
-  // visibility gate, forwards the per-frame `update` and reads the
-  // ambient-motion signal — removed with the World scene-coordination part,
-  // Phase 8 completion). The getter keeps the legacy read surface during the
-  // transition (World internals + ExperienceUI).
-  private _bakuOwner: SplashCube | undefined = undefined
-  public get baku(): SplashCube | undefined {
-    return this._bakuOwner
-  }
-  // Phase 8 slice 3: the ambient pavilion (EnvSphere) is no longer a World
-  // member — Experience creates it in the Tres-owned scene and injects the
-  // owner through `attachEnvSphere` (temporary adapter: the World frame path
-  // forwards the per-frame colour-lerp `update` — removed with the World
-  // scene-coordination part, Phase 8 completion).
-  private _envSphereOwner: EnvSphere | null = null
-  // Phase 8 slice 5: the intro light frames (ParticleBurst) are no longer a
-  // World member — Experience creates it in the Tres-owned scene and injects
-  // the owner through `attachParticleBurst` (temporary adapter: the World
-  // frame path forwards the per-frame `update`, gates its prewarm visibility
-  // and disposes it — removed with the World scene-coordination part, Phase 8
-  // completion). The getter keeps the legacy read surface during the
-  // transition (World internals + ExperienceUI).
-  private _particleBurstOwner: ParticleBurst | undefined = undefined
-  public get particleBurst(): ParticleBurst | undefined {
-    return this._particleBurstOwner
-  }
-  // Phase 8 slice 6: the project stream (BakuCarousel) stays a child of the
-  // Works group (created by the works section factory — its dispose ordering
-  // lives in the SectionGroups owner), but its reference + init + per-frame
-  // drive no longer belong to World — Experience holds the owner and injects
-  // it through `attachBakuCarousel` (temporary adapter: the World frame path
-  // drives the per-frame `update`, gates its fade visibility in
-  // updateTransform and reads the baku visibility interplay + the trail
-  // visibility gate — removed with the World scene-coordination part, Phase 8
-  // completion). The getter keeps the legacy read surface during the
-  // transition (World internals + ExperienceUI).
-  private _bakuCarouselOwner: BakuCarousel | undefined = undefined
-  public get carousel(): BakuCarousel | undefined {
-    return this._bakuCarouselOwner
-  }
-  // BG removed — was dead computation. EnvSphere is the sole background.
-  // Phase 8 slice 1: `lightsGroup` + `groundPlane` are no longer World members —
-  // Experience creates the CinematicLights + GroundPlane scene owners and
-  // injects the ground through `attachGround` (temporary adapter, removed with
-  // the World scene-coordination part — Phase 8 completion).
-  private _groundOwner: GroundPlane | null = null
-  // Phase 8 slice 2: the six stable section groups are created and disposed
-  // by the Experience-owned SectionGroups owner (attached via
-  // attachSectionGroups); the getter keeps the legacy read surface during
-  // the transition (temporary adapter — removed with the scene-coordination
-  // part at Phase 8 completion).
-  private _sectionGroupsOwner: SectionGroups | null = null
-  public get sceneGroups(): THREE.Group[] {
-    return this._sectionGroupsOwner?.groups ?? []
-  }
-  // Phase 8 slice 7: the /works case-plane stage (WorksPlaneStage) is no longer
-  // a World member — Experience creates it lazily (first /works visit),
-  // disposes it when leaving /works and injects it through
-  // `attachWorksPlaneStage` (temporary adapter: the World frame path forwards
-  // `setActive` — with World's cached `worksPlaneStageSection` index — and the
-  // per-frame `update` — removed with the World scene-coordination part,
-  // Phase 8 completion). The getter keeps the legacy read surface during the
-  // transition (World frame path + Experience's `isAnimating` read +
-  // ExperienceUI's `hitTest` read).
-  private _worksPlaneStageOwner: WorksPlaneStage | null = null
-  public get worksPlaneStage(): WorksPlaneStage | null {
-    return this._worksPlaneStageOwner
-  }
-  // Phase 8 slice 8: the Contact pixel-title layer (ContactTextStage) + the lazy
-  // 3D Agros backdrop (ContactCyprusStage) are no longer World members —
-  // Experience creates them lazily (first /contact visit), disposes them when
-  // leaving /contact and injects them through `attachContactTextStage` /
-  // `attachContactCyprusStage` (temporary adapters: the World frame path
-  // forwards the per-frame `update`, and the cube-visibility gate reads
-  // `contactCyprusStage.isActive` — removed with the World scene-coordination
-  // part, Phase 8 completion). The getters keep the legacy read surface during
-  // the transition (World frame path + Experience's `isAnimating` render-demand
-  // read + ExperienceUI's `refreshLanguage` read).
-  private _contactTextStageOwner: ContactTextStage | null = null
-  public get contactTextStage(): ContactTextStage | null {
-    return this._contactTextStageOwner
-  }
-  private _contactCyprusStageOwner: ContactCyprusStage | null = null
-  public get contactCyprusStage(): ContactCyprusStage | null {
-    return this._contactCyprusStageOwner
-  }
-  // Phase 8 slice 9: the Lab experiment object (created once on the first
-  // /lab visit, then only toggled visible — no per-frame update, resize or
-  // camera) is no longer a World member — Experience owns the lazy lifecycle
-  // (created on first /lab visit, disposed only on final destroy) and injects
-  // it through `attachLabGamepad` (temporary adapter: World's `syncRouteVisuals`
-  // reads the visibility gate off the getter — removed with the World
-  // scene-coordination part, Phase 8 completion). The getter keeps the legacy
-  // read surface during the transition (World's `syncRouteVisuals`).
-  private _labGamepadOwner: LabExperimentObject | null = null
-  public get labGamepad(): LabExperimentObject | null {
-    return this._labGamepadOwner
-  }
+/**
+ * The scene owners the coordinator drives. Experience injects getters over its
+ * own fields — the lazy route owners (Works / Contact stages, Lab object) change
+ * identity per route, so only a getter stays current.
+ */
+export interface SceneCoordinatorOwners {
+  ground: () => GroundPlane | null
+  sectionGroups: () => SectionGroups | null
+  envSphere: () => EnvSphere | null
+  baku: () => SplashCube | null
+  particleBurst: () => ParticleBurst | null
+  drawTrail: () => DrawTrail | null
+  carousel: () => BakuCarousel | null
+  worksPlaneStage: () => WorksPlaneStage | null
+  contactTextStage: () => ContactTextStage | null
+  contactCyprusStage: () => ContactCyprusStage | null
+  labGamepad: () => LabExperimentObject | null
+}
 
+export class SceneCoordinator {
+  public sections: Section[] = []
   private configs: readonly PhaseConfig[] = []
   private _configMap: Map<string, PhaseConfig> | null = null
   // PERF-1 fix: cache ranges (configs.map(c => c.range) was called every frame
@@ -165,10 +60,47 @@ export class World extends THREE.Group {
   // after init(), so cache once.
   private _rangesCache: [number, number][] | null = null
   private sceneRef: THREE.Scene
+  private owners: SceneCoordinatorOwners
 
   private _currentSectionIndex: number = 1 // Intro = index 1 (canonical Lab/Contact finale = 0)
   public get currentSectionIndex(): number {
     return this._currentSectionIndex
+  }
+
+  /** The stable section groups (empty before the SectionGroups owner is built).
+   *  Public read accessor: Experience's theme handler + low-fps particle
+   *  reduction iterate the groups directly. */
+  public get sceneGroups(): THREE.Group[] {
+    return this.owners.sectionGroups()?.groups ?? []
+  }
+
+  // ── Public owner read surface (replaces the legacy `World` adapter getters) ──
+  // Experience creates + disposes every owner; ExperienceUI + the Experience
+  // frame path read them through these getters (narrow read surface, no stored
+  // reference — always live after Experience.init() has built the owners).
+  public get baku(): SplashCube | null {
+    return this.owners.baku()
+  }
+  public get particleBurst(): ParticleBurst | null {
+    return this.owners.particleBurst()
+  }
+  public get carousel(): BakuCarousel | null {
+    return this.owners.carousel()
+  }
+  public get drawTrail(): DrawTrail | null {
+    return this.owners.drawTrail()
+  }
+  public get worksPlaneStage(): WorksPlaneStage | null {
+    return this.owners.worksPlaneStage()
+  }
+  public get contactTextStage(): ContactTextStage | null {
+    return this.owners.contactTextStage()
+  }
+  public get contactCyprusStage(): ContactCyprusStage | null {
+    return this.owners.contactCyprusStage()
+  }
+  public get labGamepad(): LabExperimentObject | null {
+    return this.owners.labGamepad()
   }
 
   // ── GC-free object pool for per-frame transforms (avoids allocs/frame)
@@ -178,58 +110,25 @@ export class World extends THREE.Group {
   private _poolBakuEmissive = new THREE.Color()
   private _poolEnvColor = new THREE.Color()
 
-  constructor(scene: THREE.Scene) {
-    super()
-    this.name = 'world'
-
+  constructor(scene: THREE.Scene, owners: SceneCoordinatorOwners) {
     this.sceneRef = scene
-
-    // Phase 8 slice 1: lights are no longer created here — Experience creates
-    // the CinematicLights scene owner (it enters the same Tres-owned scene).
-
-    // ── DrawTrail — a route-only cursor signal, never over the home stream.
-    // Phase 8 slice 5: created by the Experience-owned scene owner (it enters
-    // the Tres-owned scene directly; the World no longer constructs or
-    // disposes it).
-
-    // ── Baku = SplashCube (Apple Fifth Avenue style glass cube).
-    // Phase 8 slice 4: created by the Experience-owned scene owner (it enters
-    // the Tres-owned scene directly; the World no longer constructs or
-    // disposes it).
-
-    // ── EnvSphere — six-state rounded pavilion background.
-    // Phase 8 slice 3: created by the Experience-owned scene owner (it enters
-    // the Tres-owned scene directly; the World no longer constructs or
-    // disposes it).
-
-    // One-shot portal-like echo of the inline splash squares. Despite its
-    // legacy name this is a single instanced draw call, not a particle field.
-    // Phase 8 slice 5: created by the Experience-owned scene owner (it enters
-    // the Tres-owned scene directly; the World no longer constructs or
-    // disposes it).
-
-    // ── BG (color provider — still used for lerp logic, but NOT set as
-    // (BG removed — EnvSphere is the sole ambient environment.)
-
-    // ── Ground plane (visual anchor, аналог Junni Ground)
-    // Phase 8 slice 1: moved to the GroundPlane scene owner (Experience
-    // creates it; the floor mesh no longer belongs to this group).
+    this.owners = owners
   }
 
   public async init(): Promise<void> {
     const pageKey = getCurrentPage()
     this.configs = getWorldConfigForPage(pageKey)
     this.disposeSections()
-    // Phase 8 slice 2: the six stable section groups are created by the
-    // Experience-owned SectionGroups owner and attached (attachSectionGroups)
-    // before init — no creation/disposal here.
+    // Phase 8 slice 10: the route-specific visibility gate runs first (matches
+    // the legacy World ordering) — it toggles the shared cube + Lab object and
+    // is independent of the sections added below.
     this.syncRouteVisuals()
 
     const bus = StateBus.getInstance()
 
     this.configs.forEach((config, index) => {
       const section = new Section(config, index)
-      this.add(section)
+      this.sceneRef.add(section)
 
       if (index === 1) {
         // Intro = index 1 (canonical Lab/Contact finale = 0)
@@ -245,18 +144,15 @@ export class World extends THREE.Group {
       this.sections.push(section)
     })
 
-    // Phase 8 slice 2: the 3D scene groups (direct index→factory mapping) are
-    // created by the SectionGroups owner attached before init.
-
     // Phase 8 slice 1: ground init (intro config) + first-section light targets
-    // moved to Experience (it owns the GroundPlane + CinematicLights owners).
+    // live in Experience (it owns the GroundPlane + CinematicLights owners).
 
     // ── Apply first section's fog + env sphere colors immediately
     const firstCfg = this.configs[1] // Intro = index 1 (canonical Lab/Contact finale = 0)
     if (firstCfg) {
       // Inline WorldAtmosphere.setFog — fog not yet set on init, so create new.
       this.sceneRef.fog = new THREE.FogExp2(firstCfg.fog.color.clone(), firstCfg.fog.density)
-      // Phase 8 slice 3: the EnvSphere intro step (section 1, dark) moved to
+      // Phase 8 slice 3: the EnvSphere intro step (section 1, dark) lives in
       // Experience (it owns the EnvSphere scene owner).
     }
 
@@ -269,111 +165,19 @@ export class World extends THREE.Group {
     })
 
     // Phase 8 slice 6: the home-carousel init (the stream must finish texture
-    // decode before Enter becomes ready) moved to Experience — it owns the
+    // decode before Enter becomes ready) lives in Experience — it owns the
     // carousel reference and awaits it at the same boundary (buildWorld).
-    // Phase 8 slice 7: the /works stage init moved to Experience (it owns the
+    // Phase 8 slice 7: the /works stage init lives in Experience (it owns the
     // lazy stage; the route can still enter on /works before init resolves).
-    // Phase 8 slice 8: the Contact text + Cyprus stage inits moved to
+    // Phase 8 slice 8: the Contact text + Cyprus stage inits live in
     // Experience (it owns both lazy stages; the route can enter /contact
     // before their init resolves).
     if (import.meta.env.DEV) {
       console.debug(
-        '[World] init — scene group visibility:',
+        '[SceneCoordinator] init — scene group visibility:',
         this.sceneGroups.map((g, i) => `g[${i}]=${g.visible}`),
       )
     }
-  }
-
-  /**
-   * Phase 8 slice 1 (temporary primitive adapter): inject the Experience-owned
-   * ground owner. `updateTransform` forwards the ground lerp to it — the lerp
-   * needs World's per-section eased `t`, which Experience does not compute.
-   * Consumer: the `World.updateTransform` ground step (driven by the
-   * Experience frame path). Removal: with the World scene-coordination part,
-   * when `World` leaves production — Phase 8 completion.
-   */
-  public attachGround(ground: GroundPlane): void {
-    this._groundOwner = ground
-  }
-
-  /**
-   * Phase 8 slice 2 (temporary primitive adapter): inject the Experience-owned
-   * stable section groups owner. Must be called before `init()` — the
-   * `sceneGroups` getter feeds `init()` (final visibility) and the frame path
-   * (the `updateTransform` group fade/visibility step,
-   * the `update()` per-group updates, `setContactSceneSection`,
-   * `hasVisibleParticles` / `hasVisibleAmbientMotion`) plus the Experience /
-   * ExperienceUI reads.
-   * Consumer: the World frame path + Experience (documented above).
-   * Removal: with the World scene-coordination part, when `World` leaves
-   * production — Phase 8 completion.
-   */
-  public attachSectionGroups(owner: SectionGroups): void {
-    this._sectionGroupsOwner = owner
-  }
-
-  /**
-   * Phase 8 slice 3 (temporary primitive adapter): inject the Experience-owned
-   * ambient pavilion (EnvSphere) owner. The World frame path forwards the
-   * per-frame colour-lerp `update` to it. Consumer: `World.update` (documented
-   * above). Removal: with the World scene-coordination part, when `World`
-   * leaves production — Phase 8 completion.
-   */
-  public attachEnvSphere(owner: EnvSphere): void {
-    this._envSphereOwner = owner
-  }
-
-  /**
-   * Phase 8 slice 4 (temporary primitive adapter): inject the Experience-owned
-   * glass cube (SplashCube) owner. Must be called before `init()` — the World
-   * frame path (the visibility gates in `syncRouteVisuals` + `update`, the
-   * per-frame `update` forward and the `hasVisibleAmbientMotion` signal) reads
-   * it through the `baku` getter. Consumer: the World frame path + ExperienceUI
-   * (documented above). Removal: with the World scene-coordination part, when
-   * `World` leaves production — Phase 8 completion.
-   */
-  public attachBaku(owner: SplashCube): void {
-    this._bakuOwner = owner
-  }
-
-  /**
-   * Phase 8 slice 5 (temporary primitive adapter): inject the Experience-owned
-   * cursor trail (DrawTrail) owner. The World frame path (the per-frame
-   * `update` forward + the route-visibility gate in `updateTransform`) reads it
-   * through the `drawTrail` getter. Consumer: the World frame path (documented
-   * above). Removal: with the World scene-coordination part, when `World`
-   * leaves production — Phase 8 completion.
-   */
-  public attachDrawTrail(owner: DrawTrail): void {
-    this._drawTrailOwner = owner
-  }
-
-  /**
-   * Phase 8 slice 5 (temporary primitive adapter): inject the Experience-owned
-   * intro light frames (ParticleBurst) owner. The World frame path (the
-   * per-frame `update` forward + the prewarm visibility gate) reads it through
-   * the `particleBurst` getter. Consumer: the World frame path + ExperienceUI
-   * (documented above). Removal: with the World scene-coordination part, when
-   * `World` leaves production — Phase 8 completion.
-   */
-  public attachParticleBurst(owner: ParticleBurst): void {
-    this._particleBurstOwner = owner
-  }
-
-  /**
-   * Phase 8 slice 6 (temporary primitive adapter): inject the Experience-owned
-   * BakuCarousel reference. The carousel is created by the works section
-   * factory as a child of the Works group; only its reference + init +
-   * per-frame drive move out of World. Must be called before `init()` — the
-   * frame path reads it through the `carousel` getter (the per-frame `update`
-   * forward + baku visibility interplay in `update`, the fade visibility gate
-   * in `updateTransform` and the trail visibility gate). Consumer: the World
-   * frame path + Experience / ExperienceUI reads (documented above). Removal:
-   * with the World scene-coordination part, when `World` leaves production —
-   * Phase 8 completion.
-   */
-  public attachBakuCarousel(owner: BakuCarousel): void {
-    this._bakuCarouselOwner = owner
   }
 
   /**
@@ -386,12 +190,12 @@ export class World extends THREE.Group {
       compile?: (scene: THREE.Scene, camera: THREE.Camera) => void
     }
     if (getCurrentPage() !== 'home') return
-    // Phase 8 slice 6: the carousel init await moved to Experience (it owns
-    // the reference); buildWorld awaits it before calling this method.
+    // Phase 8 slice 6: the carousel init await lives in Experience (it owns the
+    // reference); buildWorld awaits it before calling this method.
 
     const group = this.sceneGroups[3]
     if (!group) return
-    const burst = this.particleBurst
+    const burst = this.owners.particleBurst()
     const wasVisible = group.visible
     const wasPortalVisible = burst?.visible ?? false
     group.visible = true
@@ -414,71 +218,15 @@ export class World extends THREE.Group {
     }
   }
 
-  /**
-   * Phase 8 slice 7 (temporary primitive adapter): inject the Experience-owned
-   * /works case-plane stage (WorksPlaneStage). Experience creates it lazily
-   * (first /works visit), disposes it when leaving /works and passes `null`
-   * at both boundaries. The World frame path forwards `setActive` (with
-   * World's cached `worksPlaneStageSection` index) + the per-frame `update`
-   * through the `worksPlaneStage` getter. Consumer: the World frame path
-   * (documented above). Removal: with the World scene-coordination part, when
-   * `World` leaves production — Phase 8 completion.
-   */
-  public attachWorksPlaneStage(owner: WorksPlaneStage | null): void {
-    this._worksPlaneStageOwner = owner
-  }
-
   /** Sync the 3D Works composition with CinematicNav's active DOM chapter. */
   public setWorksPlaneStageSection(index: number): void {
     this.worksPlaneStageSection = index
-    this.worksPlaneStage?.setActive(getCurrentPage() === 'works', index)
+    this.owners.worksPlaneStage()?.setActive(getCurrentPage() === 'works', index)
   }
 
   /**
-   * Phase 8 slice 8 (temporary primitive adapter): inject the Experience-owned
-   * Contact pixel-title stage (ContactTextStage). Experience creates it lazily
-   * (first /contact visit), disposes it when leaving /contact and passes
-   * `null` at both boundaries. The World frame path forwards the per-frame
-   * `update` through the `contactTextStage` getter. Consumer: the World frame
-   * path (documented above). Removal: with the World scene-coordination part,
-   * when `World` leaves production — Phase 8 completion.
-   */
-  public attachContactTextStage(owner: ContactTextStage | null): void {
-    this._contactTextStageOwner = owner
-  }
-
-  /**
-   * Phase 8 slice 8 (temporary primitive adapter): inject the Experience-owned
-   * Contact Agros backdrop (ContactCyprusStage). Experience creates it lazily
-   * (first /contact visit, Draco model), disposes it when leaving /contact and
-   * passes `null` at both boundaries. The World frame path forwards the
-   * per-frame `update` through the `contactCyprusStage` getter, and the
-   * cube-visibility gate reads `contactCyprusStage.isActive` off it (replacing
-   * the former `_contactCyprusActive` World flag). Consumer: the World frame
-   * path. Removal: with the World scene-coordination part, when `World` leaves
-   * production — Phase 8 completion.
-   */
-  public attachContactCyprusStage(owner: ContactCyprusStage | null): void {
-    this._contactCyprusStageOwner = owner
-  }
-
-  /**
-   * Phase 8 slice 9 (temporary primitive adapter): inject the Experience-owned
-   * Lab experiment object. Experience creates it lazily (first /lab visit),
-   * disposes it only on final destroy and passes `null` at that boundary. The
-   * Lab object is a static scene object (no per-frame update, resize or
-   * camera) — World's `syncRouteVisuals` reads the visibility gate off the
-   * `labGamepad` getter. Consumer: World's `syncRouteVisuals`. Removal: with
-   * the World scene-coordination part, when `World` leaves production — Phase
-   * 8 completion.
-   */
-  public attachLabGamepad(owner: LabExperimentObject | null): void {
-    this._labGamepadOwner = owner
-  }
-
-  /**
-   * Contact's foreground chapters own their visual hierarchy. Agros is a
-   * quiet map frame, while the final CTA does not need the legacy HELLO flock.
+   * Contact's foreground chapters own their visual hierarchy. Agros is a quiet
+   * map frame, while the final CTA does not need the legacy HELLO flock.
    */
   public setContactSceneSection(index: number): void {
     const isContact = getCurrentPage() === 'contact'
@@ -490,7 +238,7 @@ export class World extends THREE.Group {
       if (particles) particles.visible = !isAgros
 
       const typography = group.userData.typography as
-        import('../Experience/World/WireframeTypography').WireframeTypography | undefined
+        import('./World/WireframeTypography').WireframeTypography | undefined
       if (typography) {
         typography.visible = !isFinal
         if (isFinal) typography.setActive(false)
@@ -521,11 +269,11 @@ export class World extends THREE.Group {
    */
   public hasVisibleAmbientMotion(): boolean {
     if (this.isReducedMotion) return false
-    if (this.baku?.isAmbientlyAnimated) return true
+    if (this.owners.baku()?.isAmbientlyAnimated) return true
     return this.sceneGroups.some((group) => {
       if (!group.visible) return false
       const typo = group.userData.typography as
-        import('../Experience/World/WireframeTypography').WireframeTypography | undefined
+        import('./World/WireframeTypography').WireframeTypography | undefined
       return Boolean(typo?.visible && (typo.isAnimating || !this.isReducedMotion))
     })
   }
@@ -534,7 +282,7 @@ export class World extends THREE.Group {
   public syncTypographyTheme(isLight: boolean): void {
     for (const group of this.sceneGroups) {
       const typo = group.userData.typography as
-        import('../Experience/World/WireframeTypography').WireframeTypography | undefined
+        import('./World/WireframeTypography').WireframeTypography | undefined
       typo?.setTheme(isLight)
     }
   }
@@ -542,11 +290,11 @@ export class World extends THREE.Group {
   public update(deltaTime: number, needsRender: boolean = true): void {
     // EnvSphere manages the visible background.
     // Phase 8 slice 3: forwarded to the Experience-owned EnvSphere owner.
-    this._envSphereOwner?.update(deltaTime)
+    this.owners.envSphere()?.update(deltaTime)
 
     // The splash handoff owns its short render window, independent of ambient
     // scene animation. Experience keeps `_needsRender` raised while active.
-    const burst = this.particleBurst
+    const burst = this.owners.particleBurst()
     if (burst?.isActive) burst.update(deltaTime)
 
     // ── On-demand: decorative 3D animations only run when rendering ──
@@ -557,70 +305,76 @@ export class World extends THREE.Group {
     if (!needsRender) {
       // Route-owned stages keep their authored reveals moving even when the
       // shared scene has otherwise settled.
-      if (this.worksPlaneStage && getCurrentPage() === 'works') {
-        this.worksPlaneStage.setActive(true, this.worksPlaneStageSection)
-        this.worksPlaneStage.update(deltaTime)
+      const worksStage = this.owners.worksPlaneStage()
+      if (worksStage && getCurrentPage() === 'works') {
+        worksStage.setActive(true, this.worksPlaneStageSection)
+        worksStage.update(deltaTime)
       }
-      if (this.contactTextStage && getCurrentPage() === 'contact') {
-        this.contactTextStage.update(deltaTime)
+      const contactText = this.owners.contactTextStage()
+      if (contactText && getCurrentPage() === 'contact') {
+        contactText.update(deltaTime)
       }
-      if (this.contactCyprusStage && getCurrentPage() === 'contact') {
-        this.contactCyprusStage.update(deltaTime)
+      const contactCyprus = this.owners.contactCyprusStage()
+      if (contactCyprus && getCurrentPage() === 'contact') {
+        contactCyprus.update(deltaTime)
       }
       return
     }
 
-    if (this.worksPlaneStage) {
-      this.worksPlaneStage.setActive(getCurrentPage() === 'works', this.worksPlaneStageSection)
-      this.worksPlaneStage.update(deltaTime)
+    const worksStage = this.owners.worksPlaneStage()
+    if (worksStage) {
+      worksStage.setActive(getCurrentPage() === 'works', this.worksPlaneStageSection)
+      worksStage.update(deltaTime)
     }
-    if (this.contactTextStage) {
-      this.contactTextStage.update(deltaTime)
-    }
-    if (this.contactCyprusStage) {
-      this.contactCyprusStage.update(deltaTime)
-    }
+    this.owners.contactTextStage()?.update(deltaTime)
+    this.owners.contactCyprusStage()?.update(deltaTime)
 
     if (!this.isReducedMotion) {
-      const baku = this.baku
+      const baku = this.owners.baku()
       if (baku?.visible) baku.update(deltaTime)
       const isStandaloneWorks = getCurrentPage() === 'works'
       const isWorksStoryFrame = this._currentSectionIndex === 3
-      const trail = this.drawTrail
+      const trail = this.owners.drawTrail()
       if (trail && this._camera && (isStandaloneWorks || isWorksStoryFrame)) {
         trail.update(deltaTime, this._camera)
       }
     }
 
-    // ── BakuCarousel (Phase 8 slice 6: Experience-owned reference, injected via
-    // attachBakuCarousel — it stays a child of the Works group) + per-section
-    // modules (morph, particles, orbs, …) ──
+    // ── BakuCarousel (a child of the Works group — its reference + per-frame
+    // drive live on Experience) + per-section modules (morph, particles, orbs,
+    // …) ──
     // JunniParticles: GPU drift via uTime — only present on Works currently
     // (see sections/works/scene.ts + intro/scene.ts header comment).
-    const carousel = this.carousel
+    const carousel = this.owners.carousel()
     const carouselGroup = this.sceneGroups[3]
     // Let a departing slider settle its morph even after the section group
     // falls below the visual fade threshold. Otherwise on-demand rendering
     // can freeze the planes half-folded and keep a persistent render reason.
     if (carousel && (carouselGroup?.visible || carousel.isAnimating)) carousel.update(deltaTime)
-    if (carousel && this.baku) {
-      // Works becomes a pure media field once the cube-face handoff settles:
-      // only the planes and the existing particle field remain visible.
-      this.baku.visible =
-        getCurrentPage() !== 'lab' &&
-        getCurrentPage() !== 'works' &&
-        !(getCurrentPage() === 'contact' && (this.contactCyprusStage?.isActive ?? false)) &&
-        (getCurrentPage() !== 'home' || !(carousel.isActive && carousel.morphProgress > 0.82))
+    if (carousel) {
+      const baku = this.owners.baku()
+      if (baku) {
+        // Works becomes a pure media field once the cube-face handoff settles:
+        // only the planes and the existing particle field remain visible.
+        baku.visible =
+          getCurrentPage() !== 'lab' &&
+          getCurrentPage() !== 'works' &&
+          !(
+            getCurrentPage() === 'contact' &&
+            (this.owners.contactCyprusStage()?.isActive ?? false)
+          ) &&
+          (getCurrentPage() !== 'home' || !(carousel.isActive && carousel.morphProgress > 0.82))
+      }
     }
     for (const group of this.sceneGroups) {
       if (!group.visible) continue
       // Update the lower Contact typography only after its own reveal begins.
       const typo = group.userData.typography as
-        import('../Experience/World/WireframeTypography').WireframeTypography | undefined
+        import('./World/WireframeTypography').WireframeTypography | undefined
       if (typo) typo.update(deltaTime)
       // Update JunniParticles — GPU-side drift (Works section).
       const particles = group.userData.particles as
-        import('../Experience/World/JunniParticles').JunniParticles | undefined
+        import('./World/JunniParticles').JunniParticles | undefined
       if (particles) particles.update(deltaTime)
     }
   }
@@ -739,9 +493,9 @@ export class World extends THREE.Group {
     // remains outside the large media stream, where it would cut across the
     // case artwork instead of supporting it. Route replacement can retain the
     // same section index, so this must run outside the arrival-only branch.
-    const trail = this.drawTrail
+    const trail = this.owners.drawTrail()
     if (trail) {
-      const carousel = this.carousel
+      const carousel = this.owners.carousel()
       const isStandaloneWorks = getCurrentPage() === 'works'
       trail.object.visible = isStandaloneWorks || (activeIndex === 3 && !carousel?.isActive)
     }
@@ -752,10 +506,10 @@ export class World extends THREE.Group {
     // EnvSphere follows the active theme via jlz:theme-applied.
 
     // ── Scene group visibility with opacity fade (junni switchVisibility pattern)
-    // From group fades out as t→1, to group fades in. Both visible during transition.
-    // NON-DESTRUCTIVE: cache baseOpacity in userData, apply fade multiplicatively.
-    // Keep factory opacity values as the base and apply the transition fade
-    // multiplicatively.
+    // From group fades out as t→1, to group fades in. Both visible during
+    // transition. NON-DESTRUCTIVE: cache baseOpacity in userData, apply fade
+    // multiplicatively. Keep factory opacity values as the base and apply the
+    // transition fade multiplicatively.
     this.sceneGroups.forEach((g, i) => {
       const isFrom = i === fromIndex
       const isTo = i === toIndex
@@ -765,15 +519,14 @@ export class World extends THREE.Group {
       if (isFrom && isTo) fade = 1
 
       const shouldShow = isFrom || isTo
-      // Phase 8 slice 6: the carousel is only on the Works group (index 3) —
-      // read it from the Experience-owned reference instead of group userData.
-      const carousel = i === 3 ? this.carousel : undefined
+      // The carousel is only on the Works group (index 3) — read it from the
+      // Experience-owned reference.
+      const carousel = i === 3 ? this.owners.carousel() : undefined
       const cfg = this.configs[i]
       const showCarousel = getCurrentPage() === 'home' && cfg?.scene?.objects?.bakuCarousel === true
 
       if (shouldShow) {
         g.visible = fade > 0.001
-        // A-006: Use cached mesh list instead of traverse every frame.
         // A-006: Use cached mesh list instead of traverse every frame.
         // Cache stored in group.userData._meshCache (lazy-init).
         let meshCache = g.userData._meshCache as THREE.Mesh[] | undefined
@@ -816,11 +569,10 @@ export class World extends THREE.Group {
         // ── Per-section 3D object visibility (SceneControl) ──
         // Toggle section-specific 3D content based on config.
         // objects undefined = defaults (visible if present in scene group).
-        const cfg = this.configs[i]
         const sceneObjects = cfg?.scene?.objects
         if (sceneObjects) {
           const typo = g.userData.typography as
-            import('../Experience/World/WireframeTypography').WireframeTypography | undefined
+            import('./World/WireframeTypography').WireframeTypography | undefined
           if (typo) {
             const visible = sceneObjects.wireframeText !== false && fade > 0.01
             typo.visible = visible
@@ -870,10 +622,10 @@ export class World extends THREE.Group {
     // Use the config from section's phaseConfig for ground/post/lighting
 
     // ── Ground plane update (junni pattern: lerp color + opacity per section)
-    // Phase 8 slice 1: the GroundPlane owner owns the theme-override/lerp state
-    // (syncTheme flips it to a contrasting tone per theme); World forwards its
-    // eased `t` — temporary adapter, removed with the scene-coordination part.
-    this._groundOwner?.applyTransform(fromCfg.ground, toCfg.ground, t)
+    // The GroundPlane owner owns the theme-override/lerp state (syncTheme flips
+    // it to a contrasting tone per theme); the coordinator forwards its eased
+    // `t` (the lerp needs the per-section eased t from here).
+    this.owners.ground()?.applyTransform(fromCfg.ground, toCfg.ground, t)
 
     // Crossfade opacity (bgT holds each section's opacity longer)
     bus.set(`section:${fromCfg.id}:opacity`, 1 - bgT)
@@ -933,9 +685,9 @@ export class World extends THREE.Group {
       g.scale.setScalar(scale)
     })
     // Phase 8 slice 7: the /works stage resize is forwarded directly by
-    // Experience (it owns the stage); World no longer forwards it.
+    // Experience (it owns the stage).
     // Phase 8 slice 8: the Contact text stage resize is forwarded directly by
-    // Experience (it owns the stage); World no longer forwards it.
+    // Experience (it owns the stage).
     // Ground plane: always covers viewport (large geometry, no change needed).
     // Baku: position stays at origin, no resize needed.
     // Atmosphere: fog density stays per-section.
@@ -944,35 +696,21 @@ export class World extends THREE.Group {
   private disposeSections(): void {
     this.sections.forEach((s) => {
       s.dispose()
-      this.remove(s)
+      this.sceneRef.remove(s)
     })
     this.sections = []
   }
 
   // Phase 8 slice 2: the stable section groups (incl. the BakuCarousel dispose
   // ordering + the Works particle texture) are owned + disposed by the
-  // Experience-owned SectionGroups owner — World no longer disposes them.
+  // Experience-owned SectionGroups owner.
+  // Phase 8 slices 3–9: every scene owner's GPU resources are disposed by
+  // Experience (it owns the owners).
 
   public dispose(): void {
     this.disposeSections()
-    // (scene groups: disposed by the Experience-owned SectionGroups owner)
-    // Phase 8 slice 4: the glass cube (SplashCube) GPU resources are disposed
-    // by Experience (it owns the SplashCube scene owner).
-    // Phase 8 slice 3: EnvSphere disposal moved to Experience (it owns the
-    // EnvSphere scene owner).
-    // Phase 8 slice 5: the intro light frames (ParticleBurst) + cursor trail
-    // (DrawTrail, incl. removing its scene object) are disposed by Experience
-    // (it owns both scene owners).
-    // Phase 8 slice 1: ground + lights disposal moved to Experience (it owns
-    // the GroundPlane + CinematicLights scene owners).
-    // Phase 8 slice 7: the /works case-plane stage is disposed by Experience
-    // (it owns the lazy WorksPlaneStage scene owner).
-    // Phase 8 slice 8: the Contact text + Cyprus stages are disposed by
-    // Experience (it owns both lazy stage scene owners).
-    // Phase 8 slice 9: the Lab experiment object is disposed by Experience
-    // (it owns the lazy Lab object; it is created once on the first /lab visit
-    // and disposed only on final destroy — never per route leave).
-    // Inline WorldAtmosphere.dispose — null out fog only (BG.ts owns background).
+    // Inline WorldAtmosphere.dispose — null out fog only (EnvSphere owns
+    // background).
     this.sceneRef.fog = null
   }
 
@@ -986,18 +724,19 @@ export class World extends THREE.Group {
   }
 
   /** Keep route-specific hero objects isolated from the shared home cube.
-   *  Phase 8 slice 9: the Lab object's lazy creation moved to Experience
-   *  (it owns the lifecycle); the visibility gate stays here, read off the
-   *  `labGamepad` getter. */
+   *  Phase 8 slice 9: the Lab object's lazy creation lives in Experience
+   *  (it owns the lifecycle); the visibility gate reads the owner reference. */
   public syncRouteVisuals(): void {
     const page = getCurrentPage()
     const isLab = page === 'lab'
-    if (this.baku)
-      this.baku.visible =
+    const baku = this.owners.baku()
+    if (baku)
+      baku.visible =
         !isLab &&
         page !== 'works' &&
-        !(page === 'contact' && (this.contactCyprusStage?.isActive ?? false))
-    if (this.labGamepad) this.labGamepad.visible = isLab
+        !(page === 'contact' && (this.owners.contactCyprusStage()?.isActive ?? false))
+    const labGamepad = this.owners.labGamepad()
+    if (labGamepad) labGamepad.visible = isLab
   }
 
   private _camera: THREE.Camera | undefined

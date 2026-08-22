@@ -7,15 +7,13 @@
 // awaits the bridge before constructing `Experience`, and `Experience`
 // adopts the scene, camera and renderer instances (the readiness handshake:
 // `jlz:webgl-ready` can only fire after this resolves AND the initial
-// World's first successful render — the factory return alone never satisfies
+// scene's first successful render — the factory return alone never satisfies
 // readiness).
 //
-// The World enters Tres through the `worldObject` primitive slot (the
-// explicit legacy-world adapter): Experience attaches it via
-// `attachWorld` and it is never auto-disposed by TresJS (`:dispose="null"` —
-// `Experience.destroy()` stays the single disposal owner).
+// Phase 8 slice 10 removed the legacy `worldObject` primitive slot: the
+// SceneCoordinator adds its sections + scene owners to the Tres-owned scene
+// directly, so no explicit `<primitive>` adapter remains.
 
-import { shallowRef } from 'vue'
 import type * as THREE from 'three'
 import type { TresContext } from '@tresjs/core'
 import type { BackendFacts, FinalMode } from '../core/rendererBackend'
@@ -37,17 +35,6 @@ export interface SceneHostReady {
   mode: FinalMode
   /** Actual backend facts after init (backend parity evidence). */
   backend: BackendFacts
-}
-
-/**
- * The persistent World primitive slot. A `null` object renders nothing
- * (the primitive vnode only mounts once `attachWorld` has run).
- */
-export const worldObject = shallowRef<THREE.Object3D | null>(null)
-
-/** Attach the existing World through the explicit primitive adapter. */
-export function attachWorld(world: THREE.Object3D | null): void {
-  worldObject.value = world
 }
 
 interface SceneHostState {
@@ -105,7 +92,6 @@ export function __resetSceneHostForTests(): void {
   state.context = null
   state.resolve = undefined
   state.reject = undefined
-  worldObject.value = null
   // A new one-shot promise with fresh settle hooks.
   ;(
     sceneHost as {

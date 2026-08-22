@@ -15,7 +15,7 @@ import { CinematicNav } from '../UI/CinematicNav'
 import { UIMenu } from '../UI/UIMenu'
 import { FullscreenOverlay } from '../UI/FullscreenOverlay'
 import type { UIManager } from '../UI/UIManager'
-import type { World } from '../core/World'
+import type { SceneCoordinator } from './SceneCoordinator'
 import { getCurrentPage } from '../core/routePage'
 import { getSoundMuted } from '../core/SfxSystem'
 import type { SfxSystem } from '../core/SfxSystem'
@@ -29,11 +29,11 @@ const WORKS_SLOT_INDEX = worldSlotIndex('works')!
 
 /**
  * The narrow port ExperienceUI reaches the scene through. Every accessor is
- * a getter (not a stored reference) so the World/scene can only be read
- * AFTER Experience.init() has built them.
+ * a getter (not a stored reference) so the scene + its owners can only be
+ * read AFTER Experience.init() has built them.
  */
 export interface ExperienceUIHost {
-  world: () => World
+  coordinator: () => SceneCoordinator
   camera: () => Camera
   ui: () => UIManager
   sfx: () => SfxSystem
@@ -135,7 +135,7 @@ export class ExperienceUI {
 
     // Keep the route-owned pixel title in sync with the active language.
     this._langChangeHandler = () => {
-      this.host.world().contactTextStage?.refreshLanguage()
+      this.host.coordinator().contactTextStage?.refreshLanguage()
     }
     window.addEventListener('jlz:lang-change', this._langChangeHandler)
 
@@ -177,14 +177,14 @@ export class ExperienceUI {
         this.overlay.close()
       }
       const newPage = getCurrentPage()
-      const world = this.host.world()
-      world.syncRouteVisuals()
+      const coordinator = this.host.coordinator()
+      coordinator.syncRouteVisuals()
       if (newPage === 'home') {
         void this.host.ensureCarouselInitialized()
       }
       if (newPage === 'works') {
         void this.host.ensureWorksPlaneStageInitialized().then(() => {
-          this.host.world().setWorksPlaneStageSection(0)
+          this.host.coordinator().setWorksPlaneStageSection(0)
           this.host.raise('nav')
         })
       } else {
@@ -194,7 +194,7 @@ export class ExperienceUI {
       }
       if (newPage === 'contact') {
         this.host.setContactCyprusStageSection(0)
-        world.setContactSceneSection(0)
+        coordinator.setContactSceneSection(0)
         void Promise.all([
           this.host.ensureContactTextStageInitialized(),
           this.host.ensureContactCyprusStageInitialized(),
@@ -205,7 +205,7 @@ export class ExperienceUI {
       } else {
         this.host.disposeContactTextStage()
         this.host.disposeContactCyprusStage()
-        world.setContactSceneSection(0)
+        coordinator.setContactSceneSection(0)
       }
       // Phase 8 slice 9: the Lab object's lazy creation moved to Experience
       // (created once on the first /lab visit; never disposed per route leave —
@@ -217,7 +217,7 @@ export class ExperienceUI {
 
     // Phase 5: Wobble pulse on card click (work cards + carousel)
     this._wobblePulseHandler = () => {
-      this.host.world().baku?.triggerWobblePulse()
+      this.host.coordinator().baku?.triggerWobblePulse()
       // Keep rendering while the pulse animates (sin-envelope in SplashCube.update).
       this.host.raise('dirty')
     }
@@ -229,14 +229,14 @@ export class ExperienceUI {
       const domIndex = detail?.index ?? 0
       const stageIndex = Math.max(0, domIndex - 1)
       const page = getCurrentPage()
-      const world = this.host.world()
+      const coordinator = this.host.coordinator()
       if (page === 'works') {
         // DOM sections: 0=Lab overlay, 1-4=project pairs, 5=Nav overlay.
-        world.setWorksPlaneStageSection(stageIndex)
+        coordinator.setWorksPlaneStageSection(stageIndex)
       } else if (page === 'contact') {
         this.host.setContactTextStageSection(stageIndex)
         this.host.setContactCyprusStageSection(stageIndex)
-        world.setContactSceneSection(stageIndex)
+        coordinator.setContactSceneSection(stageIndex)
       } else {
         return
       }
@@ -255,7 +255,7 @@ export class ExperienceUI {
       // Raycast against the 3D planes to find which project was tapped, then
       // open the overlay with the unified cinematic reveal (no 3D handoff).
       void this.ensurePortfolio().then(() => {
-        const stage = this.host.world().worksPlaneStage
+        const stage = this.host.coordinator().worksPlaneStage
         if (!stage) return
         const idx = stage.hitTest(e.clientX, e.clientY)
         if (idx >= 0) this.onProjectSelect(idx)
@@ -278,23 +278,24 @@ export class ExperienceUI {
 
   /** Start the authored cube reaction and its one-shot portal-frame echo. */
   triggerSplashOpener(): void {
-    const world = this.host.world()
-    world.baku?.triggerOpener()
+    const coordinator = this.host.coordinator()
+    coordinator.baku?.triggerOpener()
     if (this.host.reducedMotion()) return
-    world.particleBurst?.trigger(0, 0, 0)
-    if (world.particleBurst?.isActive) this.host.raise('dirty')
+    coordinator.particleBurst?.trigger(0, 0, 0)
+    if (coordinator.particleBurst?.isActive) this.host.raise('dirty')
   }
 
   async ensurePortfolio(): Promise<void> {
     if (this.portfolio) return
     // Always build portfolio — single-page experience
-    // World must exist and be attached to the scene before adding portfolio
-    // to it.
-    const world = this.host.world()
-    if (!world || !world.parent) {
-      // Wait one frame for the World attach to finish, then retry.
+    // The scene must be initialised (sections attached to the Tres scene)
+    // before the portfolio raycast can run against the 3D planes.
+    const coordinator = this.host.coordinator()
+    const ready = () => coordinator.sections.length > 0
+    if (!ready()) {
+      // Wait one frame for the scene init to finish, then retry.
       await new Promise((r) => requestAnimationFrame(() => r(null)))
-      if (!this.portfolio && !(world && world.parent)) return
+      if (!this.portfolio && !ready()) return
     }
 
     const { PROJECTS } = await import('../Data/Projects')
@@ -330,7 +331,7 @@ export class ExperienceUI {
     if (getCurrentPage() !== 'home') return null
     // Phase 8 slice 6: the reference lives on Experience (injected through
     // World.attachBakuCarousel); read it through the documented getter.
-    return this.host.world()?.carousel ?? null
+    return this.host.coordinator()?.carousel ?? null
   }
 
   /** Frame access: the carousel may have started morphing this frame. */
