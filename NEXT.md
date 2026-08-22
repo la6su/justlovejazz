@@ -679,6 +679,27 @@ syncRouteVisuals()` used to run (on route entry + section change) now
       ledger +1 done row (tres spike instrumentation). Gates:
       `type-check`, `type-check:vue`, `test:unit` (371 — 10 probe tests
       removed with their probes), `build`, serial e2e (22/22).
+      Phase 10 slice 2 landed (2026-08-22): the dev-forced classic
+      `?renderer=webgl` QA owner is out — the `WebGPURenderer` is now the
+      only renderer class the app constructs. Removed: the
+      `createClassicWebGLRenderer` factory from `core/unifiedRenderer.ts`
+      (the `WebGLNodesHandler` import with it), the `?renderer=webgl`
+      branch in `SceneHost.vue`'s renderer factory and in
+      `Renderer.init()`, the GLSL `ShaderMaterial` post chain
+      (bright-extract/Gaussian/composite shaders, quad geometry) and the
+      `_setupWebGL`/`_renderWebGL`/`_setupRTSize`/`_renderQuad`
+      `RenderPipeline` path (the rewrite keeps the `WebGPUPostPipeline` TSL
+      branch on `WebGPUBackend` and a direct render on `WebGLBackend`),
+      the classic `THREE.PMREMGenerator` branch in `Experience` (the
+      renderer-native TSL generator is the single PMREM owner), and the
+      forced-classic run of `scripts/phase7-live-gate.ts`. Retained: the
+      automatic software-adapter policy (SwiftShader WebGPU adapter →
+      `forceWebGL: true` on the same `WebGPURenderer` → `WebGLBackend`) —
+      the classic WebGL fallback per AGENTS.md. No unified-backend-parity
+      claim is made. Ledger rows updated (classic fallback + GLSL chain
+      annotate the Phase 10 deletion; migration flags note the flag
+      removal, the raw-bridge shim stays pending). Gates: `type-check`,
+      `type-check:vue`, `test:unit` (371), `build`, serial e2e (22/22).
       Phase 8 slice 2 landed (2026-08-22): the six stable section groups
       left `World` — Experience creates the new `SectionGroups` owner
       (`src/Experience/Scene/SectionGroups.ts`: factory creation,

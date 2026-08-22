@@ -21,12 +21,12 @@
  *      element survives `Renderer.dispose()` (the renderer, not the DOM,
  *      is disposed).
  *
- * Backends exercised (two backend owners, per the Phase 6 fixed decision):
+ * Backends exercised (the unified `WebGPURenderer` is the only class the app
+ * constructs — the dev-forced classic `?renderer=webgl` QA owner was removed
+ * in Phase 10; the automatic software-adapter policy is retained):
  *   - `/`                      — the unified `WebGPURenderer`; on a host
  *     without a real GPU the software-adapter policy (planUnifiedBackend)
  *     re-creates it on `WebGLBackend` on the SAME canvas;
- *   - `/?renderer=webgl`       — the dev-forced classic `WebGLRenderer` +
- *     GLSL post owner (the retained forced-WebGLBackend QA path);
  *   - `/` + reduced motion     — the synchronous-settle reduced-motion path.
  *
  * Usage:
@@ -231,12 +231,10 @@ async function run(
     result.destroy.canvasSurvives = (await page.locator('canvas.canvas').count()) >= 1
 
     result.fatalErrors = errors.filter(isFatalError)
-    // Settled idle (zero draws) is a hard gate for the production backend
-    // (unified WebGPURenderer) and the reduced-motion path. The dev-forced
-    // classic `?renderer=webgl` QA owner is retained only for forced-WebGL
-    // post parity and is removed in Phase 10; on a GPU-less software host its
-    // bounded loop may stay armed, so its loop state is recorded as evidence
-    // without gating the phase.
+    // Settled idle (zero draws) is a hard gate for the unified WebGPURenderer
+    // (auto backend) and the reduced-motion path. (The dev-forced classic
+    // `?renderer=webgl` QA owner — the only run exempted from the settled-idle
+    // gate on a GPU-less software host — was removed in Phase 10.)
     const settledOk =
       !result.settledIdleRequired || (result.loop !== null && result.loop.loopActive === false)
     result.passed =
@@ -267,9 +265,6 @@ async function main(): Promise<void> {
   const runs: RunResult[] = []
   runs.push(
     await run(browser, { label: 'unified (auto backend)', path: '/', settledIdleRequired: true }),
-  )
-  runs.push(
-    await run(browser, { label: 'dev-forced classic (?renderer=webgl)', path: '/?renderer=webgl' }),
   )
   runs.push(
     await run(browser, {

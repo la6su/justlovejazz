@@ -177,11 +177,12 @@ async function boot(): Promise<void> {
         experience.destroy()
       }
     }
-    // Phase 6 evidence (fixed 2026-08-22): the forced-WebGLBackend gate and
-    // the forced-`?renderer=webgl` parity QA are separate gates — the
-    // unified `WebGPURenderer` on `WebGLBackend` keeps the legacy direct-WebGL
-    // path (no TSL post) by design; TSL post runs only on `WebGPUBackend`
-    // (`WebGPUPostPipeline`). No TSL-post-on-WebGLBackend claim is made.
+    // Phase 6 evidence (fixed 2026-08-22): the unified `WebGPURenderer` on
+    // `WebGLBackend` keeps the direct-WebGL path (no TSL post) by design; TSL
+    // post runs only on `WebGPUBackend` (`WebGPUPostPipeline`). No
+    // TSL-post-on-WebGLBackend claim is made. (The dev-forced classic
+    // `?renderer=webgl` parity QA owner that compared the two paths was
+    // removed in Phase 10; the automatic software-adapter fallback remains.)
     if (import.meta.env.DEV) {
       console.info(
         `[entry-app] Phase 7 host ready: mode=${host.mode} backend=${host.backend.backendName ?? '?'} isFallbackAdapter=${host.backend.isFallbackAdapter}`,

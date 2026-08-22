@@ -29,7 +29,6 @@ import type { TresContext, TresRendererSetupContext } from '@tresjs/core'
 import { PerspectiveCamera } from 'three'
 import { planUnifiedBackend } from '../core/rendererBackend'
 import {
-  createClassicWebGLRenderer,
   createUnifiedWebGPUInstance,
   initUnifiedWebGPUInstance,
   inspectUnifiedBackend,
@@ -45,16 +44,12 @@ const camera = markRaw(new PerspectiveCamera(75, window.innerWidth / window.inne
 
 // Single renderer-construction owner (Phase 7): the custom renderer factory.
 // Construction is synchronous (Tres awaits the instance's `init()` itself);
-// the backend is inspected AFTER init in `onReady`.
+// the backend is inspected AFTER init in `onReady`. The unified
+// `WebGPURenderer` is the only class constructed (Phase 6 production default;
+// the dev-forced classic `?renderer=webgl` QA owner was removed in Phase 10).
 const rendererFactory = (ctx: TresRendererSetupContext): UnifiedRenderSurface => {
   const canvas = toValue(ctx.canvas) ?? document.createElement('canvas')
-  // Development-only parity switch: the retained forced-WebGLBackend GLSL
-  // post owner (Phase 6 fixed decision). Vite removes it from production.
-  const forceClassic =
-    import.meta.env.DEV && new URLSearchParams(window.location.search).get('renderer') === 'webgl'
-  return forceClassic
-    ? createClassicWebGLRenderer(canvas)
-    : createUnifiedWebGPUInstance(canvas, false)
+  return createUnifiedWebGPUInstance(canvas, false)
 }
 
 const tresRef = ref<{ $el: Element } | null>(null)

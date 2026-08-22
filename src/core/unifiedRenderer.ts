@@ -1,22 +1,18 @@
 // src/core/unifiedRenderer.ts — Phase 6/7 unified renderer construction.
 //
 // One owner of "how a renderer instance is built": the unified
-// `WebGPURenderer` (the only class production constructs) and the dev-forced
-// classic `WebGLRenderer` (the retained forced-WebGLBackend GLSL post owner,
-// `?renderer=webgl`). Phase 7 moved the construction call site into the
-// persistent SceneHost's custom renderer factory (the single factory owner);
-// `Renderer` (the pipeline/lifecycle wrapper) adopts the created instance
-// instead of building it.
+// `WebGPURenderer` (the only class the app constructs — the dev-forced
+// classic `WebGLRenderer` QA owner was removed in Phase 10). Phase 7 moved
+// the construction call site into the persistent SceneHost's custom
+// renderer factory (the single factory owner); `Renderer` (the
+// pipeline/lifecycle wrapper) adopts the created instance instead of
+// building it.
 
 import * as THREE from 'three'
 import { WebGPURenderer } from 'three/webgpu'
-// Compatibility node builder: lets the WebGL fallback renderer
-// compile TSL NodeMaterials (MeshBasicNodeMaterial, etc.) used by the
-// section scene modules. (three r0.184 does not auto-register this.)
-import { WebGLNodesHandler } from 'three/addons/tsl/WebGLNodesHandler.js'
 
-/** The concrete renderer classes this project constructs (Phase 6 fixed). */
-export type UnifiedRenderSurface = WebGPURenderer | THREE.WebGLRenderer
+/** The concrete renderer class this project constructs (Phase 6 fixed). */
+export type UnifiedRenderSurface = WebGPURenderer
 
 /** Shared tone/color settings — identical for every construction path. */
 function applySharedSettings(renderer: {
@@ -47,28 +43,6 @@ export function createUnifiedWebGPUInstance(
 /** The single async init call — awaited exactly once per instance. */
 export async function initUnifiedWebGPUInstance(renderer: WebGPURenderer): Promise<void> {
   await (renderer as unknown as { init?: () => Promise<unknown> }).init?.()
-}
-
-/** Create the classic `WebGLRenderer` with NodeMaterial support (dev path). */
-export function createClassicWebGLRenderer(canvas: HTMLCanvasElement): THREE.WebGLRenderer {
-  const gl = new THREE.WebGLRenderer({
-    canvas,
-    antialias: true,
-    powerPreference: 'high-performance',
-    stencil: false,
-    depth: true,
-  })
-  gl.outputColorSpace = THREE.SRGBColorSpace
-  gl.toneMapping = THREE.ACESFilmicToneMapping
-  gl.toneMappingExposure = 1.0
-  try {
-    ;(gl as unknown as { setNodesHandler: (h: unknown) => void }).setNodesHandler(
-      new WebGLNodesHandler(),
-    )
-  } catch (e) {
-    console.error('[Renderer] WebGLNodesHandler failed:', e)
-  }
-  return gl
 }
 
 /** Inspect the actual backend + software-adapter facts after init. */

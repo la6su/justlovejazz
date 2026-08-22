@@ -8,9 +8,9 @@
 // helpers make the backend-policy decisions explicit and unit-testable;
 // `Renderer.init()` is the only caller that touches the live renderer.
 //
-// The dev-forced `?renderer=webgl` parity QA path is NOT part of this policy:
-// it constructs the classic `WebGLRenderer` directly (the retained
-// forced-WebGLBackend GLSL post owner — see the Phase 6 fixed decision).
+// The dev-forced `?renderer=webgl` parity QA path was NOT part of this
+// policy: it constructed the classic `WebGLRenderer` directly (the retained
+// forced-WebGLBackend GLSL post owner). It was removed in Phase 10.
 
 export type FinalMode = 'webgpu' | 'webgl'
 

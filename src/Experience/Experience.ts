@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { PMREMGenerator as WebGPUPMREMGenerator, WebGPURenderer } from 'three/webgpu'
+import { PMREMGenerator as WebGPUPMREMGenerator } from 'three/webgpu'
 import { Sizes } from './Sizes'
 import { Time } from './Time'
 import { Camera } from './Camera'
@@ -631,19 +631,17 @@ export class Experience {
    *  materials (MeshPhysicalNodeMaterial, MeshStandardMaterial) get
    *  image-based lighting reflections. Zero per-frame cost.
    *
-   *  GENERATORS — one per renderer class, no secondary contexts:
-   *  - `WebGPURenderer` → the renderer-native TSL `PMREMGenerator` from
-   *    `three/webgpu`. It sets `isPMREMTexture` on the result natively, so
-   *    the common `PMREMNode` passes the texture through instead of
-   *    double-PMREMing it (double processing used to render the glass cube
-   *    darker on WebGPU with a concentrated bright-spot artifact).
-   *  - classic `WebGLRenderer` (dev-forced `?renderer=webgl` QA path — the
-   *    forced-WebGLBackend post owner) → the classic `THREE.PMREMGenerator`
-   *    on the main renderer itself. The classic generator detects PMREM via
-   *    `mapping` only, so the `isPMREMTexture` flag is set explicitly.
-   *  The former secondary offscreen WebGL context (created solely for PMREM
-   *  generation on the WebGPU path) was removed in the Phase 6
-   *  unified-renderer slice. */
+   *  GENERATOR — one owner, no secondary contexts: the renderer-native TSL
+   *  `PMREMGenerator` from `three/webgpu` on the unified `WebGPURenderer`
+   *  (the only renderer class the app constructs). It sets
+   *  `isPMREMTexture` on the result natively, so the common `PMREMNode`
+   *  passes the texture through instead of double-PMREMing it (double
+   *  processing used to render the glass cube darker on WebGPU with a
+   *  concentrated bright-spot artifact). The former classic-generator
+   *  branch (dev-forced `?renderer=webgl` QA path) was removed in Phase 10,
+   *  together with that path itself. The former secondary offscreen WebGL
+   *  context (created solely for PMREM generation on the WebGPU path) was
+   *  removed in the Phase 6 unified-renderer slice. */
   private setupEnvironment(): void {
     // Procedural environment map (day34 pattern) — bright sky gradient + 3 sun
     // spots for visible glass reflections. RoomEnvironment was too dim (soft
@@ -700,36 +698,15 @@ export class Experience {
       envTex.mapping = THREE.EquirectangularReflectionMapping
       envTex.colorSpace = THREE.SRGBColorSpace
 
-      // One PMREM generator per renderer class (see the method doc): the
-      // renderer-native TSL generator on WebGPURenderer, the classic
-      // generator on the classic renderer. No secondary WebGL context.
-      const isWebGPURenderer = !!(
-        this.renderer.instance as unknown as { isWebGPURenderer?: boolean }
-      ).isWebGPURenderer
-
-      let envRT: THREE.RenderTarget
-      if (isWebGPURenderer) {
-        // Renderer-native TSL PMREM — runs on the live renderer after init
-        // and sets isPMREMTexture on the result natively (PMREMNode
-        // pass-through, no double processing).
-        const pmrem = new WebGPUPMREMGenerator(this.renderer.instance as WebGPURenderer)
-        envRT = pmrem.fromEquirectangular(envTex)
-        pmrem.dispose()
-      } else {
-        const pmrem = new THREE.PMREMGenerator(
-          this.renderer.instance as unknown as THREE.WebGLRenderer,
-        )
-        envRT = pmrem.fromEquirectangular(envTex)
-        // PARITY FIX: the classic PMREMGenerator sets
-        // mapping=CubeUVReflectionMapping but NOT the isPMREMTexture flag the
-        // common PMREMNode (WebGPU NodeMaterials) checks to decide
-        // pass-through vs re-generation. Without it a WebGPU consumer
-        // double-PMREMs the texture → the glass cube renders darker with a
-        // concentrated bright-spot artifact. The classic renderer detects
-        // PMREM via mapping, so the flag is a no-op there.
-        ;(envRT.texture as unknown as { isPMREMTexture?: boolean }).isPMREMTexture = true
-        pmrem.dispose()
-      }
+      // Renderer-native TSL PMREM — runs on the live renderer after init and
+      // sets isPMREMTexture on the result natively (PMREMNode pass-through,
+      // no double processing). The unified WebGPURenderer is the only
+      // instance class (Phase 6 production default; the classic
+      // WebGLRenderer path was removed in Phase 10), so this is the single
+      // generator.
+      const pmrem = new WebGPUPMREMGenerator(this.renderer.instance)
+      const envRT = pmrem.fromEquirectangular(envTex)
+      pmrem.dispose()
       this.scene.environment = envRT.texture
       // Set environmentIntensity explicitly (day34 pattern). Without this,
       // WebGPU MeshPhysicalNodeMaterial and WebGL2 MeshPhysicalMaterial can
@@ -746,9 +723,7 @@ export class Experience {
       envTex.dispose()
       if (import.meta.env.DEV) {
         console.info(
-          `[Experience] Procedural env map (gradient + sun spots) set — glass reflections active (PMREM via ${
-            isWebGPURenderer ? 'renderer-native TSL generator' : 'classic generator'
-          })`,
+          '[Experience] Procedural env map (gradient + sun spots) set — glass reflections active (PMREM via renderer-native TSL generator)',
         )
       }
     } catch (e) {

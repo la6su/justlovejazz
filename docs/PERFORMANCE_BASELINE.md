@@ -99,7 +99,7 @@ Frame-time evidence must come from real hardware rather than headless CI.
 Record p50/p95 frame time and idle render activity for `/`, `/works` and
 `/contact` using:
 
-- WebGPU and forced `?renderer=webgl`;
+- WebGPU (`WebGPURenderer`) and the `WebGLBackend` software-adapter fallback;
 - desktop and narrow mobile DPR;
 - normal and reduced motion.
 

@@ -11,11 +11,12 @@ bun run dev
 Vite prints the local address. Playwright installs its managed Chromium once
 and requests a new revision after relevant upgrades.
 
-The current runtime uses `?renderer=webgl` to inspect its classic WebGL2
-fallback. After the unified renderer phase is accepted, the same query must
-select `WebGPURenderer({ forceWebGL: true })`; documentation and diagnostics
-must distinguish `WebGPUBackend`, `WebGLBackend` and the legacy classic path
-during transition.
+The runtime constructs one renderer class — `WebGPURenderer` — and the
+software-adapter policy (`planUnifiedBackend`) re-creates it with
+`forceWebGL: true` (the same class, `WebGLBackend`) when only a software WebGPU
+adapter is available. Diagnostics distinguish `WebGPUBackend` and
+`WebGLBackend`. (The dev-forced classic `?renderer=webgl` QA flag was removed
+in Phase 10; the automatic software-adapter fallback is retained.)
 
 ## Current checks
 
@@ -80,8 +81,8 @@ The gate fails on material compilation warnings, renderer errors, loss of fog
 or post parity, a second animation loop/context, continuous idle draws,
 monotonic GPU/resource growth or a performance-budget regression. The
 dev-forced classic `?renderer=webgl` QA owner (with its labelled GLSL post
-chain) remains per the Phase 6 backend decision until unified backend parity
-is accepted.
+chain) was removed in Phase 10; the automatic software-adapter policy
+(`WebGPURenderer` on `WebGLBackend`) remains the retained fallback.
 
 ### Component and accessibility gate
 
