@@ -2,7 +2,6 @@ import * as THREE from 'three'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { World } from '../core/World'
 import { SplashCube } from '../Experience/World/SplashCube'
-import { LabGamepad } from '../Experience/World/LabGamepad'
 import { getLabExperiment, labExperiments } from '../Experience/Lab/manifest'
 
 const canvasContext = {
@@ -44,26 +43,18 @@ describe('World route visuals', () => {
     expect(getLabExperiment('home')).toBeUndefined()
   })
 
-  it('loads one Lab object lazily and restores the shared cube on home', async () => {
+  it('hides the shared cube on the Lab route', () => {
+    // Phase 8 slice 9: the Lab object's lazy load moved to Experience (see
+    // Experience.labStage.test.ts); the World keeps only the cube-visibility
+    // gate for the Lab route.
     document.body.dataset.page = 'lab'
     world.syncRouteVisuals()
-    world.syncRouteVisuals()
-
-    await vi.dynamicImportSettled()
-
-    // The World gates the injected owner's visibility (cube === world.baku).
     expect(world.baku).toBe(cube)
     expect(cube.visible).toBe(false)
-    expect(world.labGamepad).toBeInstanceOf(LabGamepad)
-    expect(world.labGamepad?.visible).toBe(true)
-    expect(world.labGamepad?.position.toArray()).toEqual([0, 0, 0])
-    expect(world.children.filter((child) => child.name === 'lab-gamepad')).toHaveLength(1)
 
     document.body.dataset.page = 'home'
     world.syncRouteVisuals()
-
     expect(cube.visible).toBe(true)
-    expect(world.labGamepad?.visible).toBe(false)
   })
 
   it('keeps the cube out of the standalone Works media route', () => {
@@ -76,18 +67,5 @@ describe('World route visuals', () => {
     world.syncRouteVisuals()
 
     expect(cube.visible).toBe(true)
-  })
-
-  it('disposes the lazy Lab object during shared-world teardown', async () => {
-    const dispose = vi.spyOn(LabGamepad.prototype, 'dispose')
-    document.body.dataset.page = 'lab'
-    world.syncRouteVisuals()
-    await vi.dynamicImportSettled()
-
-    world.dispose()
-
-    expect(dispose).toHaveBeenCalledTimes(1)
-    expect(world.labGamepad).toBeNull()
-    dispose.mockRestore()
   })
 })

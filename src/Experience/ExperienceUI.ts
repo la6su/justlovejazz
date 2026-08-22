@@ -52,6 +52,8 @@ export interface ExperienceUIHost {
   disposeContactCyprusStage: () => void
   setContactTextStageSection: (index: number) => void
   setContactCyprusStageSection: (index: number) => void
+  /** Phase 8 slice 9: the Experience-owned lazy Lab object lifecycle. */
+  ensureLabGamepad: () => Promise<void>
 }
 
 export class ExperienceUI {
@@ -205,6 +207,10 @@ export class ExperienceUI {
         this.host.disposeContactCyprusStage()
         world.setContactSceneSection(0)
       }
+      // Phase 8 slice 9: the Lab object's lazy creation moved to Experience
+      // (created once on the first /lab visit; never disposed per route leave —
+      // the World's `syncRouteVisuals` already hides it off-route).
+      if (newPage === 'lab') void this.host.ensureLabGamepad()
       this.host.raise('nav')
     }
     window.addEventListener('jlz:route-change', this._routeChangeCloseOverlayHandler)

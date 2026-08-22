@@ -49,6 +49,7 @@ import type { BakuCarousel } from './World/BakuCarousel'
 import { WorksPlaneStage } from './World/WorksPlaneStage'
 import { ContactTextStage } from './World/ContactTextStage'
 import type { ContactCyprusStage } from './World/ContactCyprusStage'
+import { getLabExperiment, type LabExperimentObject } from './Lab/manifest'
 // DissolveOverlay removed — cover transition in ProjectDetail replaces it.
 
 /**
@@ -146,6 +147,12 @@ export class Experience {
   // cached so a lazy Contact stage cannot miss it.
   private _contactCyprusActive = false
   private _contactTextIsLight = false
+  // Phase 8 slice 9: the Lab experiment object (a static scene object created
+  // once on the first /lab visit, then only toggled visible — never disposed
+  // per route leave; disposed only on final destroy). World's `syncRouteVisuals`
+  // reads the visibility gate off the `labGamepad` getter.
+  private labGamepad: LabExperimentObject | null = null
+  private _labGamepadPromise: Promise<void> | null = null
   private bus!: StateBus
 
   // Phase 7 slice 4: the former UI features (cinematic nav, menu, overlay,
@@ -265,6 +272,9 @@ export class Experience {
       disposeContactCyprusStage: () => this.disposeContactCyprusStage(),
       setContactTextStageSection: (index: number) => this.setContactTextStageSection(index),
       setContactCyprusStageSection: (index: number) => this.setContactCyprusStageSection(index),
+      // Phase 8 slice 9: the lazy Lab object lifecycle moved to Experience;
+      // the UI reaches it through the port.
+      ensureLabGamepad: () => this.ensureLabGamepad(),
     })
 
     // Phase 7 (ADR 0004): construct the single loop driver. The Renderer is
@@ -364,6 +374,12 @@ export class Experience {
         this.contactCyprusStage?.prewarm()
       })
     }
+    // Phase 8 slice 9: the Lab object's lazy creation moved out of
+    // World.syncRouteVisuals() to this same boundary (created once on the first
+    // /lab visit; the entry route triggers it here, the UI route handler
+    // triggers it on navigation). It is a static object — never disposed per
+    // route leave, only on final destroy.
+    if (getCurrentPage() === 'lab') void this.ensureLabGamepad()
     // Phase 7: with the persistent SceneHost the World enters the Tres scene
     // through the explicit primitive adapter (`:dispose="null"` — Experience
     // stays the single disposal owner); without it (rollback) the World is
@@ -586,6 +602,32 @@ export class Experience {
       })
     }
     this.world.syncRouteVisuals()
+  }
+
+  /** Lazily create the Lab experiment object on its first /lab visit.
+   *  Phase 8 slice 9: moved from World — Experience owns the lazy object
+   *  (created once on the first /lab visit, then only toggled visible; the
+   *  World's `syncRouteVisuals` reads the visibility gate off the `labGamepad`
+   *  getter). The object is a static scene object — it is never disposed per
+   *  route leave, only on final destroy. */
+  public ensureLabGamepad(): Promise<void> {
+    if (this.labGamepad) return Promise.resolve()
+    if (this._labGamepadPromise) return this._labGamepadPromise
+    const experiment = getLabExperiment('lab')
+    if (!experiment) return Promise.resolve()
+    this._labGamepadPromise = experiment
+      .load()
+      .then((object) => {
+        if (this.labGamepad) return
+        this.labGamepad = object
+        this.labGamepad.visible = getCurrentPage() === 'lab'
+        this.scene.add(this.labGamepad)
+        this.world.attachLabGamepad(this.labGamepad)
+      })
+      .finally(() => {
+        this._labGamepadPromise = null
+      })
+    return this._labGamepadPromise
   }
 
   /** Create a studio environment map (procedural equirect → PMREM) for glass
@@ -1429,6 +1471,12 @@ export class Experience {
     this.contactCyprusStage?.dispose()
     this.contactCyprusStage = null
     this._contactCyprusActive = false
+    // Phase 8 slice 9: the Lab experiment object (created once on the first
+    // /lab visit; a direct child of the Tres-owned scene, never disposed per
+    // route leave).
+    this.labGamepad?.removeFromParent()
+    this.labGamepad?.dispose()
+    this.labGamepad = null
     // Phase 8 slice 2: the stable section groups owner (BakuCarousel-first
     // disposal ordering + Works particle texture live in the owner).
     this.sectionGroups?.dispose()

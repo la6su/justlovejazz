@@ -1,0 +1,138 @@
+{
+  "tool": "phase7-live-gate",
+  "base": "http://127.0.0.1:5174",
+  "host": "linux x64",
+  "utc": "2026-08-22T01:06:29.799Z",
+  "allPassed": true,
+  "runs": [
+    {
+      "label": "unified (auto backend)",
+      "url": "http://127.0.0.1:5174/",
+      "reducedMotion": false,
+      "settledIdleRequired": true,
+      "dataEngine": "three.js r185 webgpu",
+      "backendLog": "[entry-app] Phase 7 host ready: mode=webgl backend=WebGLBackend isFallbackAdapter=false",
+      "ready": true,
+      "canvasCount": 1,
+      "canvasAriaHidden": true,
+      "loop": {
+        "loopActive": false,
+        "hidden": false,
+        "frames": 65,
+        "settledFrames": 4,
+        "lastInvalidation": "breath"
+      },
+      "resources": {
+        "canvasCount": 2,
+        "scene": {
+          "geometries": 18,
+          "materials": 25,
+          "textures": 9
+        },
+        "renderer": {
+          "geometries": 10,
+          "textures": 14,
+          "programs": null
+        },
+        "post": {
+          "renderTargets": 0,
+          "passes": 0,
+          "webgpuPipeline": false
+        }
+      },
+      "destroy": {
+        "fatalErrors": [],
+        "canvasSurvives": true
+      },
+      "fatalErrors": [],
+      "passed": true,
+      "notes": []
+    },
+    {
+      "label": "dev-forced classic (?renderer=webgl)",
+      "url": "http://127.0.0.1:5174/?renderer=webgl",
+      "reducedMotion": false,
+      "settledIdleRequired": false,
+      "dataEngine": "three.js r185",
+      "backendLog": "[entry-app] Phase 7 host ready: mode=webgl backend=? isFallbackAdapter=false",
+      "ready": true,
+      "canvasCount": 1,
+      "canvasAriaHidden": true,
+      "loop": {
+        "loopActive": true,
+        "hidden": false,
+        "frames": 29,
+        "settledFrames": 1,
+        "lastInvalidation": "cursor"
+      },
+      "resources": {
+        "canvasCount": 2,
+        "scene": {
+          "geometries": 18,
+          "materials": 25,
+          "textures": 9
+        },
+        "renderer": {
+          "geometries": 10,
+          "textures": 5,
+          "programs": 8
+        },
+        "post": {
+          "renderTargets": 4,
+          "passes": 3,
+          "webgpuPipeline": false
+        }
+      },
+      "destroy": {
+        "fatalErrors": [],
+        "canvasSurvives": true
+      },
+      "fatalErrors": [],
+      "passed": true,
+      "notes": []
+    },
+    {
+      "label": "unified + reduced motion",
+      "url": "http://127.0.0.1:5174/",
+      "reducedMotion": true,
+      "settledIdleRequired": true,
+      "dataEngine": "three.js r185 webgpu",
+      "backendLog": "[entry-app] Phase 7 host ready: mode=webgl backend=WebGLBackend isFallbackAdapter=false",
+      "ready": true,
+      "canvasCount": 1,
+      "canvasAriaHidden": true,
+      "loop": {
+        "loopActive": false,
+        "hidden": false,
+        "frames": 64,
+        "settledFrames": 3,
+        "lastInvalidation": "cursor"
+      },
+      "resources": {
+        "canvasCount": 2,
+        "scene": {
+          "geometries": 18,
+          "materials": 25,
+          "textures": 9
+        },
+        "renderer": {
+          "geometries": 11,
+          "textures": 14,
+          "programs": null
+        },
+        "post": {
+          "renderTargets": 0,
+          "passes": 0,
+          "webgpuPipeline": false
+        }
+      },
+      "destroy": {
+        "fatalErrors": [],
+        "canvasSurvives": true
+      },
+      "fatalErrors": [],
+      "passed": true,
+      "notes": []
+    }
+  ]
+}

@@ -487,6 +487,21 @@ do not start a phase whose entry gate has not passed.
       deleted (`setContactSceneSection` stays — it only touches the scene
       groups). The text-stage double-dispose race test lives in the new
       `src/__tests__/Experience.contactStages.test.ts`.
+      Phase 8 slice 9 landed (2026-08-22): the Lab experiment object
+      (LabGamepad) left `World` — Experience now owns the lazy object (created
+      once on the first /lab visit, then only toggled visible — never disposed
+      per route leave; disposed only on final destroy): it enters the
+      Tres-owned scene directly, is injected through
+      `World.attachLabGamepad`, and the lazy-creation trigger `World.
+    syncRouteVisuals()` used to run (on route entry + section change) now
+      runs in `buildWorld` (entry route) + the UI route-change handler
+      (navigation). `World.labGamepad` is a documented temporary getter — the
+      only remaining World touch is the visibility gate in
+      `syncRouteVisuals` (read off the getter, frame-path); World's lazy
+      object field + `_labGamepadPromise` + `ensureLabGamepad` + disposal are
+      deleted. The lazy-load test moved to the new
+      `src/__tests__/Experience.labStage.test.ts` (the manifest + cube-gating
+      tests stay in `World.routeVisuals.test.ts`).
       Phase 8 slice 2 landed (2026-08-22): the six stable section groups
       left `World` — Experience creates the new `SectionGroups` owner
       (`src/Experience/Scene/SectionGroups.ts`: factory creation,

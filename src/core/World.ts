@@ -10,7 +10,9 @@
 // slice 7: the /works case-plane stage (WorksPlaneStage) moved out —
 // Experience owns the lazy stage + lifecycle; slice 8: the Contact pixel-title
 // layer (ContactTextStage) + lazy 3D Agros backdrop (ContactCyprusStage)
-// moved out — Experience owns both lazy stages + lifecycle)
+// moved out — Experience owns both lazy stages + lifecycle; slice 9: the Lab
+// experiment object (LabGamepad) moved out — Experience owns the lazy object
+// + lifecycle)
 
 import * as THREE from 'three'
 // BG.ts removed — was dead computation (bg.color never read by anyone).
@@ -36,7 +38,7 @@ import { clampStoryProgress, sectionIndexAt } from './storyProgress'
 import type { WorksPlaneStage } from '../Experience/World/WorksPlaneStage'
 import type { ContactTextStage } from '../Experience/World/ContactTextStage'
 import type { ContactCyprusStage } from '../Experience/World/ContactCyprusStage'
-import { getLabExperiment, type LabExperimentObject } from '../Experience/Lab/manifest'
+import type { LabExperimentObject } from '../Experience/Lab/manifest'
 
 export interface WorldTransformResult {
   cameraTarget: CameraTarget
@@ -143,8 +145,18 @@ export class World extends THREE.Group {
   public get contactCyprusStage(): ContactCyprusStage | null {
     return this._contactCyprusStageOwner
   }
-  /** Loaded only for `/lab`; replaces the shared cube on the experiment route. */
-  public labGamepad: LabExperimentObject | null = null
+  // Phase 8 slice 9: the Lab experiment object (created once on the first
+  // /lab visit, then only toggled visible — no per-frame update, resize or
+  // camera) is no longer a World member — Experience owns the lazy lifecycle
+  // (created on first /lab visit, disposed only on final destroy) and injects
+  // it through `attachLabGamepad` (temporary adapter: World's `syncRouteVisuals`
+  // reads the visibility gate off the getter — removed with the World
+  // scene-coordination part, Phase 8 completion). The getter keeps the legacy
+  // read surface during the transition (World's `syncRouteVisuals`).
+  private _labGamepadOwner: LabExperimentObject | null = null
+  public get labGamepad(): LabExperimentObject | null {
+    return this._labGamepadOwner
+  }
 
   private configs: readonly PhaseConfig[] = []
   private _configMap: Map<string, PhaseConfig> | null = null
@@ -165,7 +177,6 @@ export class World extends THREE.Group {
   private _poolBakuColor = new THREE.Color()
   private _poolBakuEmissive = new THREE.Color()
   private _poolEnvColor = new THREE.Color()
-  private _labGamepadPromise: Promise<void> | null = null
 
   constructor(scene: THREE.Scene) {
     super()
@@ -449,6 +460,20 @@ export class World extends THREE.Group {
    */
   public attachContactCyprusStage(owner: ContactCyprusStage | null): void {
     this._contactCyprusStageOwner = owner
+  }
+
+  /**
+   * Phase 8 slice 9 (temporary primitive adapter): inject the Experience-owned
+   * Lab experiment object. Experience creates it lazily (first /lab visit),
+   * disposes it only on final destroy and passes `null` at that boundary. The
+   * Lab object is a static scene object (no per-frame update, resize or
+   * camera) — World's `syncRouteVisuals` reads the visibility gate off the
+   * `labGamepad` getter. Consumer: World's `syncRouteVisuals`. Removal: with
+   * the World scene-coordination part, when `World` leaves production — Phase
+   * 8 completion.
+   */
+  public attachLabGamepad(owner: LabExperimentObject | null): void {
+    this._labGamepadOwner = owner
   }
 
   /**
@@ -944,9 +969,9 @@ export class World extends THREE.Group {
     // (it owns the lazy WorksPlaneStage scene owner).
     // Phase 8 slice 8: the Contact text + Cyprus stages are disposed by
     // Experience (it owns both lazy stage scene owners).
-    this.labGamepad?.dispose()
-    this.labGamepad = null
-    this._labGamepadPromise = null
+    // Phase 8 slice 9: the Lab experiment object is disposed by Experience
+    // (it owns the lazy Lab object; it is created once on the first /lab visit
+    // and disposed only on final destroy — never per route leave).
     // Inline WorldAtmosphere.dispose — null out fog only (BG.ts owns background).
     this.sceneRef.fog = null
   }
@@ -960,7 +985,10 @@ export class World extends THREE.Group {
     this._camera = cam
   }
 
-  /** Keep route-specific hero objects isolated from the shared home cube. */
+  /** Keep route-specific hero objects isolated from the shared home cube.
+   *  Phase 8 slice 9: the Lab object's lazy creation moved to Experience
+   *  (it owns the lifecycle); the visibility gate stays here, read off the
+   *  `labGamepad` getter. */
   public syncRouteVisuals(): void {
     const page = getCurrentPage()
     const isLab = page === 'lab'
@@ -969,27 +997,7 @@ export class World extends THREE.Group {
         !isLab &&
         page !== 'works' &&
         !(page === 'contact' && (this.contactCyprusStage?.isActive ?? false))
-    if (isLab) void this.ensureLabGamepad()
     if (this.labGamepad) this.labGamepad.visible = isLab
-  }
-
-  private async ensureLabGamepad(): Promise<void> {
-    if (this.labGamepad) return
-    if (this._labGamepadPromise) return this._labGamepadPromise
-    const experiment = getLabExperiment('lab')
-    if (!experiment) return
-    this._labGamepadPromise = experiment
-      .load()
-      .then((object) => {
-        if (this.labGamepad) return
-        this.labGamepad = object
-        this.labGamepad.visible = getCurrentPage() === 'lab'
-        this.add(this.labGamepad)
-      })
-      .finally(() => {
-        this._labGamepadPromise = null
-      })
-    return this._labGamepadPromise
   }
 
   private _camera: THREE.Camera | undefined
