@@ -2355,6 +2355,26 @@ removed.
   counts (65 / 36 / 64) and identical scene graph resources (18 / 25 / 9),
   clean disposal on all three runs.
 
+- Slice 3 (done, 2026-08-22): the EnvSphere ambient pavilion left `World`.
+  Experience creates the `EnvSphere` owner directly in the Tres-owned scene
+  and injects it through `World.attachEnvSphere` (a temporary adapter whose
+  only consumer is `World.update`, which forwards the per-frame colour-lerp
+  `update`; removed with the World scene-coordination part). The intro config
+  step (section 1, dark) moved from `World.init()` into `Experience
+.buildWorld()`'s first-config block, the theme sync (the `jlz:theme-applied`
+  handler's `snapToSection` / `changeSection` + the initial-polarity replay)
+  now targets the Experience-owned owner, and disposal moved to
+  `Experience.destroy()`. `World`'s `envSphere` member, constructor creation
+  and `dispose()` step are deleted. Gates: `type-check`, `type-check:vue`,
+  `test:unit` (294), `build`, serial e2e (21/21) and the live gate (evidence
+  `docs/evidence/phase7-live-gate/2026-08-22T00-33-25-907Z-report.json`)
+  pass. Performance comparison: bundle net +0.12 kB raw / +0.04 kB gzip
+  (the EnvSphere forward re-homed from `chunk-core-world` into
+  `chunk-experience`; the Three delivery chunk is unchanged at 381.17 kB
+  gzip — the open budget ADR); runtime parity — identical settled frame
+  counts (65 / 35 / 64) and identical scene graph resources (18 / 25 / 9),
+  clean disposal on all three runs.
+
 Acceptance: legacy `World`, `SectionSceneFactory` and the scene-coordination
 part of `Experience` have no production callers.
 
@@ -2501,7 +2521,7 @@ The following ledgers are updated in this document during implementation.
 | GLSL `ShaderMaterial` post chain         | Phase 6 phase-exit cleanup — retained 2026-08-22 as the labelled forced-WebGLBackend owner per the fixed decision; deletion tracked to Phase 10 | done    |
 | raw `jlz:*` window bridge                | all consumers use typed ports                                                                                                                   | pending |
 | monolithic `Experience` coordination     | Phase 8 owner migrations                                                                                                                        | pending |
-| legacy World adapters                    | Phase 8 completion — slice 1 (lights + ground) + slice 2 (stable section groups) deleted from `World` 2026-08-22                                | pending |
+| legacy World adapters                    | Phase 8 completion — slice 1 (lights + ground) + slice 2 (stable section groups) + slice 3 (EnvSphere) deleted from `World` 2026-08-22          | pending |
 | migration flags and shims                | Phase 10                                                                                                                                        | pending |
 
 ## Definition of done

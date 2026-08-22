@@ -41,6 +41,7 @@ import { eventBus } from '../core/EventBus'
 import { CinematicLights } from './World/Lights'
 import { GroundPlane } from './Scene/GroundPlane'
 import { SectionGroups } from './Scene/SectionGroups'
+import { EnvSphere } from './World/EnvSphere'
 // DissolveOverlay removed — cover transition in ProjectDetail replaces it.
 
 /**
@@ -95,6 +96,9 @@ export class Experience {
   // Phase 8 slice 2: the six stable section groups owner (attached to the
   // World before init — World's frame path reads them via the getter).
   private sectionGroups!: SectionGroups
+  // Phase 8 slice 3: the ambient pavilion owner (Experience is the single
+  // disposal owner; World's frame path forwards its per-frame update).
+  private envSphere!: EnvSphere
   private bus!: StateBus
 
   // Phase 7 slice 4: the former UI features (cinematic nav, menu, overlay,
@@ -228,6 +232,12 @@ export class Experience {
     // (carousel prewarm + final visibility), so attach before init.
     this.sectionGroups = new SectionGroups(this.scene)
     this.world.attachSectionGroups(this.sectionGroups)
+    // Phase 8 slice 3: the ambient pavilion (EnvSphere) enters the
+    // Tres-owned scene under its own owner; the World frame path forwards
+    // its per-frame colour-lerp update through the attachEnvSphere adapter.
+    this.envSphere = new EnvSphere()
+    this.scene.add(this.envSphere)
+    this.world.attachEnvSphere(this.envSphere)
     await this.world.init()
     // Phase 7: with the persistent SceneHost the World enters the Tres scene
     // through the explicit primitive adapter (`:dispose="null"` — Experience
@@ -250,6 +260,10 @@ export class Experience {
     if (firstCfg) {
       this.lights.changeSection(firstCfg)
       this.ground.applyInitialConfig(firstCfg.ground)
+      // Phase 8 slice 3: EnvSphere starts on section 1 (intro) — default
+      // weights match. isLight=false (dark); the first jlz:theme-applied
+      // event corrects it.
+      this.envSphere.changeSection(1, false)
     }
     // Temporary adapter: the ground lerp inside World.updateTransform needs
     // World's eased `t` — forwarded to the owner until the World
@@ -460,12 +474,16 @@ export class Experience {
       const detail = (e as CustomEvent<ThemeAppliedPort>).detail
       if (!detail) return
       const sectionIdx = detail.sectionIndex
-      if (this.world?.envSphere) {
+      // Phase 8 slice 3: the EnvSphere is the Experience-owned scene owner —
+      // the world gate below still guards the world-bound syncs.
+      if (this.envSphere) {
         if (detail.snap) {
-          this.world.envSphere.snapToSection(sectionIdx, detail.isLight)
+          this.envSphere.snapToSection(sectionIdx, detail.isLight)
         } else {
-          this.world.envSphere.changeSection(sectionIdx, detail.isLight)
+          this.envSphere.changeSection(sectionIdx, detail.isLight)
         }
+      }
+      if (this.world) {
         // Contact's pixel title can be created after this route event. World
         // caches the effective polarity so lazy creation cannot default to
         // white text against a light route background.
@@ -491,7 +509,7 @@ export class Experience {
     // ambient pavilion, glass and contact ground never boot one polarity
     // behind the semantic interface.
     const initialIsLight = document.body.classList.contains('uk-light')
-    this.world?.envSphere.snapToSection(this.world.currentSectionIndex, initialIsLight)
+    this.envSphere.snapToSection(this.world.currentSectionIndex, initialIsLight)
     this.ground?.syncTheme(initialIsLight)
     this.world?.baku.setTheme(initialIsLight)
     this.world?.syncTypographyTheme(initialIsLight)
@@ -1060,6 +1078,8 @@ export class Experience {
     // single disposal owner — the legacy World no longer disposes them).
     this.lights?.dispose()
     this.ground?.dispose()
+    // Phase 8 slice 3: the ambient pavilion owner.
+    this.envSphere?.dispose()
     // Phase 8 slice 2: the stable section groups owner (BakuCarousel-first
     // disposal ordering + Works particle texture live in the owner).
     this.sectionGroups?.dispose()

@@ -1,11 +1,13 @@
 // src/core/World.ts — Junni-style composition: Section[], Baku, Atmosphere
 // (Phase 8 slice 1: lights + ground moved out — Experience owns the
 // CinematicLights + GroundPlane scene owners; slice 2: the six stable
-// section groups moved out — Experience owns the SectionGroups owner)
+// section groups moved out — Experience owns the SectionGroups owner;
+// slice 3: the EnvSphere ambient pavilion moved out — Experience owns it)
 
 import * as THREE from 'three'
 // BG.ts removed — was dead computation (bg.color never read by anyone).
-// EnvSphere is the sole visible ambient environment, driven by the active section theme.
+// EnvSphere (the sole visible ambient environment) moved to the
+// Experience-owned scene owner in Phase 8 slice 3.
 import { Section, SectionState } from './Section'
 import { StateBus } from './StateBus'
 import { prefersReducedMotion } from './motionPolicy'
@@ -14,7 +16,7 @@ import type { GroundPlane } from '../Experience/Scene/GroundPlane'
 import type { SectionGroups } from '../Experience/Scene/SectionGroups'
 import { DrawTrail } from '../Experience/World/DrawTrail'
 import { SplashCube } from '../Experience/World/SplashCube'
-import { EnvSphere } from '../Experience/World/EnvSphere'
+import type { EnvSphere } from '../Experience/World/EnvSphere'
 import { ParticleBurst } from '../Experience/World/ParticleBurst'
 import { getWorldConfigForPage, type PhaseConfig } from './WorldConfig'
 import { getCurrentPage } from './routePage'
@@ -36,7 +38,12 @@ export class World extends THREE.Group {
   public sections: Section[] = []
   public baku!: SplashCube
   public drawTrail?: DrawTrail
-  public envSphere!: EnvSphere
+  // Phase 8 slice 3: the ambient pavilion (EnvSphere) is no longer a World
+  // member — Experience creates it in the Tres-owned scene and injects the
+  // owner through `attachEnvSphere` (temporary adapter: the World frame path
+  // forwards the per-frame colour-lerp `update` — removed with the World
+  // scene-coordination part, Phase 8 completion).
+  private _envSphereOwner: EnvSphere | null = null
   public particleBurst!: ParticleBurst
   // BG removed — was dead computation. EnvSphere is the sole background.
   // Phase 8 slice 1: `lightsGroup` + `groundPlane` are no longer World members —
@@ -116,9 +123,9 @@ export class World extends THREE.Group {
     this.add(this.baku)
 
     // ── EnvSphere — six-state rounded pavilion background.
-    // Its legacy owner name keeps the theme/event boundary stable.
-    this.envSphere = new EnvSphere()
-    this.add(this.envSphere) // added for lifecycle (update/dispose)
+    // Phase 8 slice 3: created by the Experience-owned scene owner (it enters
+    // the Tres-owned scene directly; the World no longer constructs or
+    // disposes it).
 
     // One-shot portal-like echo of the inline splash squares. Despite its
     // legacy name this is a single instanced draw call, not a particle field.
@@ -173,9 +180,8 @@ export class World extends THREE.Group {
     if (firstCfg) {
       // Inline WorldAtmosphere.setFog — fog not yet set on init, so create new.
       this.sceneRef.fog = new THREE.FogExp2(firstCfg.fog.color.clone(), firstCfg.fog.density)
-      // EnvSphere starts on section 1 (intro) — default weights match.
-      // isLight=false (dark); the first jlz:theme-applied event corrects it.
-      this.envSphere.changeSection(1, false)
+      // Phase 8 slice 3: the EnvSphere intro step (section 1, dark) moved to
+      // Experience (it owns the EnvSphere scene owner).
     }
 
     // ── Enforce final visibility: only group 1 (intro) visible, all others hidden.
@@ -237,6 +243,17 @@ export class World extends THREE.Group {
    */
   public attachSectionGroups(owner: SectionGroups): void {
     this._sectionGroupsOwner = owner
+  }
+
+  /**
+   * Phase 8 slice 3 (temporary primitive adapter): inject the Experience-owned
+   * ambient pavilion (EnvSphere) owner. The World frame path forwards the
+   * per-frame colour-lerp `update` to it. Consumer: `World.update` (documented
+   * above). Removal: with the World scene-coordination part, when `World`
+   * leaves production — Phase 8 completion.
+   */
+  public attachEnvSphere(owner: EnvSphere): void {
+    this._envSphereOwner = owner
   }
 
   /** Initialize the home-only carousel once, including after a deep-link visit. */
@@ -516,7 +533,8 @@ export class World extends THREE.Group {
 
   public update(deltaTime: number, needsRender: boolean = true): void {
     // EnvSphere manages the visible background.
-    this.envSphere.update(deltaTime)
+    // Phase 8 slice 3: forwarded to the Experience-owned EnvSphere owner.
+    this._envSphereOwner?.update(deltaTime)
 
     // The splash handoff owns its short render window, independent of ambient
     // scene animation. Experience keeps `_needsRender` raised while active.
@@ -925,8 +943,8 @@ export class World extends THREE.Group {
     // (scene groups: disposed by the Experience-owned SectionGroups owner)
     // Dispose baku (SplashCube) GPU resources — 6 face geos+mats + 6 edge geos+mats.
     this.baku?.dispose()
-    // Dispose env sphere GPU resources
-    this.envSphere?.dispose()
+    // Phase 8 slice 3: EnvSphere disposal moved to Experience (it owns the
+    // EnvSphere scene owner).
     this.particleBurst?.dispose()
     // Phase 8 slice 1: ground + lights disposal moved to Experience (it owns
     // the GroundPlane + CinematicLights scene owners).

@@ -406,6 +406,14 @@ do not start a phase whose entry gate has not passed.
       remains: `World.attachGround` forwards the ground lerp from
       `updateTransform` (it needs World's eased `t`) until the World
       scene-coordination part leaves production (Phase 8 completion).
+      Phase 8 slice 3 landed (2026-08-22): the EnvSphere ambient pavilion
+      left `World` — Experience creates the `EnvSphere` owner directly in the
+      Tres-owned scene and injects it via `World.attachEnvSphere` (temporary
+      adapter: the World frame path forwards the per-frame colour-lerp
+      `update`); the intro config step (section 1, dark), the per-frame update
+      forwarding and disposal now run through the Experience owner, and the
+      `World.envSphere` member, constructor creation and `dispose()` step are
+      deleted.
       Phase 8 slice 2 landed (2026-08-22): the six stable section groups
       left `World` — Experience creates the new `SectionGroups` owner
       (`src/Experience/Scene/SectionGroups.ts`: factory creation,
