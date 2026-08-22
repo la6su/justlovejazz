@@ -69,15 +69,19 @@ existing TypeScript check; it does not replace the release gate.
 
 ### Renderer gate
 
-The representative renderer spike must exercise the actual project feature
-set rather than a demo cube: fog, representative TSL materials, CanvasTexture,
-instancing, environment/SplashCube, Works texture plane, GLTF/DRACO, complete
-TSL post graph, DPR/resize, reduced motion and lazy teardown.
+The live renderer gate (`bun scripts/phase7-live-gate.ts` against the dev
+server) exercises the production World — the representative feature set:
+fog, TSL materials, CanvasTexture, instancing, environment/SplashCube, Works
+texture plane, GLTF/DRACO, the complete TSL post graph, DPR/resize, reduced
+motion and lazy teardown — and asserts the readiness handshake, settled idle
+(zero draws) and the disposal contract (the Phase 7 evidence).
 
 The gate fails on material compilation warnings, renderer errors, loss of fog
 or post parity, a second animation loop/context, continuous idle draws,
-monotonic GPU/resource growth or a performance-budget regression. The classic
-fallback remains until the gate passes.
+monotonic GPU/resource growth or a performance-budget regression. The
+dev-forced classic `?renderer=webgl` QA owner (with its labelled GLSL post
+chain) remains per the Phase 6 backend decision until unified backend parity
+is accepted.
 
 ### Component and accessibility gate
 

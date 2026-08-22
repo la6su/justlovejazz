@@ -35,27 +35,8 @@ const publishedBuilderSlugs = (() => {
   return publishedPages(validation.documents).map((document) => document.slug)
 })()
 
-export default defineConfig(({ mode }) => ({
+export default defineConfig(() => ({
   base: '/',
-  optimizeDeps:
-    mode === 'tres-spike'
-      ? {
-          // Do not scan the legacy production entry: it intentionally imports
-          // WebGL-only compatibility modules that are outside this spike.
-          entries: ['src/spikes/tres/unifiedProbeEntry.ts'],
-          // Three's root, WebGPU and addon entry points share `three.core.js`
-          // in the native ESM graph. Pre-bundling them independently gives the
-          // addon a second root bundle and triggers Three's duplicate-instance
-          // warning. Keep this dev-only spike on the package's shared ESM graph.
-          exclude: [
-            'three',
-            'three/webgpu',
-            'three/tsl',
-            'three/addons/geometries/RoundedBoxGeometry.js',
-            'three/addons/tsl/display/BloomNode.js',
-          ],
-        }
-      : undefined,
   define: {
     __VUE_OPTIONS_API__: 'false',
     __VUE_PROD_DEVTOOLS__: 'false',
@@ -196,27 +177,6 @@ export default defineConfig(({ mode }) => ({
     // /admin/ is a separate development application. The plugin owns its
     // fixed-path save/compile API and apply:'serve' keeps it out of builds.
     jlzAdminPlugin(),
-    {
-      name: 'tres-spike-pages',
-      apply: 'serve',
-      configureServer(server) {
-        server.middlewares.use((req, res, next) => {
-          const entries: Record<string, string> = {
-            '/__spikes/tres-manual': '/src/spikes/tres/manualProbeEntry.ts',
-            '/__spikes/tres-unified': '/src/spikes/tres/unifiedProbeEntry.ts',
-            '/__spikes/tres-loop': '/src/spikes/tres/loopProbeEntry.ts',
-            '/__spikes/tres-representative': '/src/spikes/tres/representativeProbeEntry.ts',
-            '/__spikes/tres-resource': '/src/spikes/tres/resourceProbeEntry.ts',
-          }
-          const entry = req.url ? entries[req.url.split('?')[0] ?? ''] : undefined
-          if (!entry) return next()
-          res.setHeader('Content-Type', 'text/html; charset=utf-8')
-          res.end(
-            `<!doctype html><html><head><link rel="icon" href="/favicon.svg"></head><body><div id="app"></div><script type="module" src="${entry}"></script></body></html>`,
-          )
-        })
-      },
-    },
     {
       // Strip @vite/client from HTML + intercept the HTTP request.
       // Through the Caddy/XTransformPort gateway, /@vite/client resolves to

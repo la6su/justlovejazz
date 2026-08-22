@@ -24,14 +24,14 @@
  * `<cycles>` is the number of deterministic `__jlzTresCycle()` owner-update
  * steps after the probe reports `ready` (the probe scene has no internal
  * timers or wall-clock reads; N cycles from a fresh mount is an identical
- * scene state).
+ * scene state). The example below uses a deterministic eval step; replace
+ * `--settle` with the matching settle time for production pages.
  *
  * Commands (run with bun, against the CDP endpoint of the running Chrome):
  *
  *   bun scripts/visual-parity.ts capture \
- *     --url "https://project.6la.ru/__spikes/tres-resource?parity=1" \
+ *     --url "https://project.6la.ru/?no-scene=1" \
  *     --out docs/evidence/visual-parity/<frame>.png \
- *     --eval 'async () => { for (let i = 0; i < 30; i++) window.__jlzTresCycle(); return null }' \
  *     --settle 700 --commit 6f02896 \
  *     --meta "device=Linux x86_64, NVIDIA Lovelace (non-fallback), 60 Hz" \
  *     --meta "viewport=1267x1297 CSS, DPR 1, Chrome 151.0.7922.137"

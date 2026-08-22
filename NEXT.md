@@ -590,7 +590,7 @@ syncRouteVisuals()` used to run (on route entry + section change) now
       (`SAFE_BUILDER_SLUG` / `isSafeBuilderSlug`). The dev plugin
       (`admin/vite-plugin.ts`) now serves `GET /__jlz-admin/documents`,
       `GET /__jlz-admin/document?slug=` (no slug → first), `POST
-  /__jlz-admin/save` (the `{ slug, document }` envelope upserts by slug;
+/__jlz-admin/save` (the `{ slug, document }` envelope upserts by slug;
       a bare document body still works) and `POST /__jlz-admin/delete`
       (keeps >= 1 document); the legacy `page.json` is transparently wrapped
       into a collection on first read and retired on the next save — the
@@ -662,6 +662,23 @@ syncRouteVisuals()` used to run (on route entry + section change) now
       +23 publish-core tests incl. body parity against the registry and the
       string renderer), `build` (dist layout `p/<slug>.html`, hashed
       per-page CSS, no `vendor-three`/app-bundle refs), serial e2e (22/22).
+      Phase 10 slice 1 landed (2026-08-22): the completed spike
+      instrumentation is out. `src/spikes/` (the Phase 2/7 verification
+      probes — unified/representative/loop/resource/manual entries,
+      `rendererReadiness` / `unifiedRendererFactory` /
+      `representativeScene`), the four probe-only test files
+      (`PhaseOneProbe`, `RepresentativeScene`, `UnifiedRendererFactory`,
+      `TresRendererReadiness`), the `dev:tres-spike` script and the Vite
+      `tres-spike-pages` plugin + `optimizeDeps` block are deleted — a
+      consumer search proved zero production consumers (only the tests and
+      the dev routes referenced them; `SplashCube` / readiness coverage
+      survives in `worldSlots` + `SceneCoordinator.routeVisuals` and the
+      production contracts). The `DEVELOPMENT.md` renderer gate now names
+      the Phase 7 live gate as the current tool, and the `visual-parity`
+      usage example no longer points at the removed probe route. Deletion
+      ledger +1 done row (tres spike instrumentation). Gates:
+      `type-check`, `type-check:vue`, `test:unit` (371 — 10 probe tests
+      removed with their probes), `build`, serial e2e (22/22).
       Phase 8 slice 2 landed (2026-08-22): the six stable section groups
       left `World` — Experience creates the new `SectionGroups` owner
       (`src/Experience/Scene/SectionGroups.ts`: factory creation,
