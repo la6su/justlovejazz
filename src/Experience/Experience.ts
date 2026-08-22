@@ -34,6 +34,10 @@ import { RenderScheduler, type FrameReason } from '../core/RenderScheduler'
 // ContentReveal owns per-section auto/inverse themes and sends this runtime
 // jlz:theme-applied events for 3D synchronisation.
 import { eventBus } from '../core/EventBus'
+// Phase 8 slice 1: lights + ground are no longer World members — Experience
+// creates these scene owners and owns their disposal.
+import { CinematicLights } from './World/Lights'
+import { GroundPlane } from './Scene/GroundPlane'
 // DissolveOverlay removed — cover transition in ProjectDetail replaces it.
 
 /**
@@ -81,6 +85,10 @@ export class Experience {
   private _splashEnteredHandler: (() => void) | null = null
   private devPanel: DevPanel | null = null
   public world!: World
+  // Phase 8 slice 1: the lights + ground scene owners (created in buildWorld,
+  // entering the Tres-owned scene; Experience is the single disposal owner).
+  private lights!: CinematicLights
+  private ground!: GroundPlane
   private bus!: StateBus
 
   // Phase 7 slice 4: the former UI features (cinematic nav, menu, overlay,
@@ -219,6 +227,22 @@ export class Experience {
       this.scene.add(this.world)
     }
     await this.world.prewarmHomeMedia(this.renderer.instance, this.camera.instance)
+    // Phase 8 slice 1: the lights + ground scene owners. They enter the
+    // Tres-owned scene directly (the World no longer constructs or disposes
+    // them), and the intro-section steps World.init() used to run for them
+    // (first-section light targets + ground color/opacity) run here — still
+    // before the first rendered frame, so the boot frame is unchanged.
+    this.lights = new CinematicLights(this.scene)
+    this.ground = new GroundPlane(this.scene)
+    const firstCfg = this.world.getConfig(this.world.sections[1]?.phaseConfig?.id ?? 'sec_intro')
+    if (firstCfg) {
+      this.lights.changeSection(firstCfg)
+      this.ground.applyInitialConfig(firstCfg.ground)
+    }
+    // Temporary adapter: the ground lerp inside World.updateTransform needs
+    // World's eased `t` — forwarded to the owner until the World
+    // scene-coordination part leaves production (Phase 8 completion).
+    this.world.attachGround(this.ground)
   }
 
   /** Create a studio environment map (procedural equirect → PMREM) for glass
@@ -436,7 +460,7 @@ export class Experience {
         this.world.syncContactTextTheme(detail.isLight)
         // Theme-only syncs — skip when just the section moved (same polarity).
         if (detail.themeChanged !== false) {
-          this.world.syncGroundTheme(detail.isLight)
+          this.ground.syncTheme(detail.isLight)
           this.world.baku.setTheme(detail.isLight)
           this.world.syncTypographyTheme(detail.isLight)
           for (const group of this.world.sceneGroups) {
@@ -456,7 +480,7 @@ export class Experience {
     // behind the semantic interface.
     const initialIsLight = document.body.classList.contains('uk-light')
     this.world?.envSphere.snapToSection(this.world.currentSectionIndex, initialIsLight)
-    this.world?.syncGroundTheme(initialIsLight)
+    this.ground?.syncTheme(initialIsLight)
     this.world?.baku.setTheme(initialIsLight)
     this.world?.syncTypographyTheme(initialIsLight)
 
@@ -834,6 +858,13 @@ export class Experience {
       const isInitialSectionSync = this._prevSectionIndex === -1
       this._prevSectionIndex = idx
       const cfgForSection = this.world.getConfig(worldState.currentPhase)
+      // Phase 8 slice 1: section-arrival light targets (was the
+      // World.updateTransform internal call — same frame, same config).
+      // Initial sync excluded: buildWorld's intro step already set the target
+      // (exactly what the legacy World.init did).
+      if (!isInitialSectionSync && cfgForSection) {
+        this.lights.changeSection(cfgForSection)
+      }
       const sectionId = cfgForSection?.domSection ?? `section-${idx}`
       // On content pages the sectionId is 'content-N' — it doesn't correspond
       // to any [data-section] DOM element. ContentReveal's sectionHandler
@@ -917,7 +948,7 @@ export class Experience {
     // section the floor is hidden so the 3D scene floats in void. This gives
     // the bottom section a "grounded" feel while upper sections feel airborne.
     if (this.world) {
-      this.world.groundPlane.visible = this.world.currentSectionIndex === 4
+      this.ground.setSectionVisible(this.world.currentSectionIndex === 4)
     }
 
     // Per-section camera smoothing — only when rendering. The gate is the
@@ -927,7 +958,7 @@ export class Experience {
     if (shouldRender(this._needsRender, activity)) {
       const smoothing = cfg?.camSmoothing ?? SECTION_TRANSITION.cameraSmoothing
       this.camera.updateSmooth(cameraTarget, dt, smoothing)
-      this.world.lightsGroup.update(dt)
+      this.lights.update(dt)
       this.camera.update(dt)
       // (AudioSystem.update() removed — AudioSystem deleted, was dead code)
       this.renderer.update(this.scene, this.camera.instance, dt, worldState)
@@ -1013,6 +1044,10 @@ export class Experience {
     // Detach the World from the persistent Tres primitive slot so a
     // re-init re-attaches a fresh instance (Experience owns disposal).
     this._host?.attachWorld(null)
+    // Phase 8 slice 1: the lights + ground scene owners (Experience is their
+    // single disposal owner — the legacy World no longer disposes them).
+    this.lights?.dispose()
+    this.ground?.dispose()
     this.world.dispose()
     this.bus.cancelAll()
     this.devPanel?.dispose()

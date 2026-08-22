@@ -1,4 +1,6 @@
-// src/core/World.ts — Junni-style composition: Section[], Baku, Lights, Atmosphere, Ground
+// src/core/World.ts — Junni-style composition: Section[], Baku, Atmosphere
+// (Phase 8 slice 1: lights + ground moved out — Experience owns the
+// CinematicLights + GroundPlane scene owners)
 
 import * as THREE from 'three'
 // BG.ts removed — was dead computation (bg.color never read by anyone).
@@ -7,7 +9,7 @@ import { Section, SectionState } from './Section'
 import { StateBus } from './StateBus'
 import { prefersReducedMotion } from './motionPolicy'
 import { type CameraTarget, type WorldState, BakuRole } from './types'
-import { CinematicLights } from '../Experience/World/Lights'
+import type { GroundPlane } from '../Experience/Scene/GroundPlane'
 import { DrawTrail } from '../Experience/World/DrawTrail'
 import { SplashCube } from '../Experience/World/SplashCube'
 import { EnvSphere } from '../Experience/World/EnvSphere'
@@ -32,12 +34,15 @@ export interface WorldTransformResult {
 export class World extends THREE.Group {
   public sections: Section[] = []
   public baku!: SplashCube
-  public lightsGroup!: CinematicLights
   public drawTrail?: DrawTrail
   public envSphere!: EnvSphere
   public particleBurst!: ParticleBurst
   // BG removed — was dead computation. EnvSphere is the sole background.
-  public groundPlane!: THREE.Mesh
+  // Phase 8 slice 1: `lightsGroup` + `groundPlane` are no longer World members —
+  // Experience creates the CinematicLights + GroundPlane scene owners and
+  // injects the ground through `attachGround` (temporary adapter, removed with
+  // the World scene-coordination part — Phase 8 completion).
+  private _groundOwner: GroundPlane | null = null
   public sceneGroups: THREE.Group[] = []
   /** Lazy `/works` media owner. The DOM keeps semantics; this group owns pixels. */
   public worksPlaneStage: WorksPlaneStage | null = null
@@ -67,15 +72,6 @@ export class World extends THREE.Group {
   private _poolBakuColor = new THREE.Color()
   private _poolBakuEmissive = new THREE.Color()
   private _poolEnvColor = new THREE.Color()
-  private _poolGroundColor = new THREE.Color()
-  // Theme-aware ground adjustment. updateTransform() lerps ground color/opacity
-  // from WorldConfig on every section change — this multiplier overrides the
-  // result so the ground stays visible on both light + dark themes.
-  // syncGroundTheme(isLight) sets it; updateTransform applies it.
-  private _groundThemeColor: THREE.Color = new THREE.Color(0x1a1a2e)
-  private _groundThemeOpacity = 0.4
-  private _groundThemeActive = false
-  private _targetGroundOpacity = 0
   private _carouselInitPromise: Promise<void> | null = null
   private _worksPlaneStagePromise: Promise<void> | null = null
   private _worksPlaneStageRequest = 0
@@ -93,8 +89,8 @@ export class World extends THREE.Group {
 
     this.sceneRef = scene
 
-    // ── Lights (= World.lights, аналог Junni Lights)
-    this.lightsGroup = new CinematicLights(scene)
+    // Phase 8 slice 1: lights are no longer created here — Experience creates
+    // the CinematicLights scene owner (it enters the same Tres-owned scene).
 
     // ── DrawTrail — a route-only cursor signal, never over the home stream.
     this.drawTrail = new DrawTrail()
@@ -124,28 +120,8 @@ export class World extends THREE.Group {
     // (BG removed — EnvSphere is the sole ambient environment.)
 
     // ── Ground plane (visual anchor, аналог Junni Ground)
-    // Built-in MeshStandardMaterial (NOT NodeMaterial) — reduces uniform group
-    // count on WebGL2. FrontSide (default) — only top face visible from camera.
-    // frustumCulled = true (default) — ground is large but centered, stays in frustum.
-    this.groundPlane = new THREE.Mesh(
-      new THREE.PlaneGeometry(200, 200),
-      new THREE.MeshStandardMaterial({
-        color: 0x000000,
-        transparent: true,
-        // R-14 fix: depthWrite=false on transparent ground (was default true
-        // → writes depth across huge area, would occlude future transparent
-        // objects below y=-1). Standard practice for transparent surfaces.
-        depthWrite: false,
-        opacity: 0.3,
-        roughness: 1,
-        metalness: 0,
-        side: THREE.FrontSide, // default — only render top face
-      }),
-    )
-    this.groundPlane.rotation.x = -Math.PI / 2
-    this.groundPlane.position.y = -1
-    this.groundPlane.name = 'ground'
-    this.add(this.groundPlane)
+    // Phase 8 slice 1: moved to the GroundPlane scene owner (Experience
+    // creates it; the floor mesh no longer belongs to this group).
   }
 
   public async init(): Promise<void> {
@@ -187,19 +163,12 @@ export class World extends THREE.Group {
       group.visible = i === 1 // Intro = index 1
     }
 
-    // ── Initialize ground from first section config
-    const groundMat = this.groundPlane.material as THREE.MeshStandardMaterial
-    const firstGround = this.configs[1]?.ground // Intro = index 1
-    if (firstGround) {
-      groundMat.color.set(firstGround.color)
-      groundMat.opacity = firstGround.opacity
-      this._targetGroundOpacity = firstGround.opacity
-    }
+    // Phase 8 slice 1: ground init (intro config) + first-section light targets
+    // moved to Experience (it owns the GroundPlane + CinematicLights owners).
 
-    // ── Apply first section's lights + fog + env sphere colors immediately
+    // ── Apply first section's fog + env sphere colors immediately
     const firstCfg = this.configs[1] // Intro = index 1 (canonical Lab/Contact finale = 0)
     if (firstCfg) {
-      this.lightsGroup.changeSection(firstCfg)
       // Inline WorldAtmosphere.setFog — fog not yet set on init, so create new.
       this.sceneRef.fog = new THREE.FogExp2(firstCfg.fog.color.clone(), firstCfg.fog.density)
       // EnvSphere starts on section 1 (intro) — default weights match.
@@ -238,6 +207,18 @@ export class World extends THREE.Group {
         this.sceneGroups.map((g, i) => `g[${i}]=${g.visible}`),
       )
     }
+  }
+
+  /**
+   * Phase 8 slice 1 (temporary primitive adapter): inject the Experience-owned
+   * ground owner. `updateTransform` forwards the ground lerp to it — the lerp
+   * needs World's per-section eased `t`, which Experience does not compute.
+   * Consumer: the `World.updateTransform` ground step (driven by the
+   * Experience frame path). Removal: with the World scene-coordination part,
+   * when `World` leaves production — Phase 8 completion.
+   */
+  public attachGround(ground: GroundPlane): void {
+    this._groundOwner = ground
   }
 
   /** Initialize the home-only carousel once, including after a deep-link visit. */
@@ -474,34 +455,6 @@ export class World extends THREE.Group {
     }
   }
 
-  /** Sync ground plane color/opacity to the active theme.
-   *  Called by Experience on jlz:theme-applied (same trigger EnvSphere uses).
-   *  Without this, a dark ground is invisible on the light theme (near-white
-   *  EnvSphere) but visible on inverse (dark). We flip the
-   *  ground to a contrasting tone per theme so it's always perceivable.
-   *  The ground remains visible only on section 4; visibility is gated in
-   *  Experience.ts and this method adjusts appearance only.
-   *
-   *  NOTE: sets _groundThemeActive=true so updateTransform() knows to override
-   *  the WorldConfig lerp (which would otherwise reset opacity to 0.25). */
-  public syncGroundTheme(isLight: boolean): void {
-    if (isLight) {
-      // Light theme: dark ground on near-white bg = visible contrast.
-      this._groundThemeColor.set(0x161616)
-      this._groundThemeOpacity = 0.4
-    } else {
-      // Dark theme: lighter ground on dark bg = visible contrast.
-      this._groundThemeColor.set(0x2a2a2a)
-      this._groundThemeOpacity = 0.3
-    }
-    this._groundThemeActive = true
-    // Apply immediately (in case updateTransform doesn't run soon)
-    const groundMat = this.groundPlane.material as THREE.MeshStandardMaterial
-    groundMat.color.copy(this._groundThemeColor)
-    groundMat.opacity = this._groundThemeOpacity
-    this._targetGroundOpacity = this._groundThemeOpacity
-  }
-
   /**
    * True when any visible scene group hosts JunniParticles.
    * Experience uses this to keep on-demand rendering alive so GPU drift
@@ -716,7 +669,9 @@ export class World extends THREE.Group {
       // Junni changeSection() pattern: lights + fog + env sphere driven by section data
       const activeCfg = this.configs[activeIndex]
       if (activeCfg) {
-        this.lightsGroup.changeSection(activeCfg)
+        // Phase 8 slice 1: section-arrival light targets moved to Experience
+        // (same frame, same config — only the lerp start moves a few lines
+        // later in the frame path).
         // Inline WorldAtmosphere.setFog — fog exists from init(), reuse instance.
         const existingFog = this.sceneRef.fog
         if (existingFog instanceof THREE.FogExp2) {
@@ -866,21 +821,10 @@ export class World extends THREE.Group {
     // Use the config from section's phaseConfig for ground/post/lighting
 
     // ── Ground plane update (junni pattern: lerp color + opacity per section)
-    // BUT: if syncGroundTheme() has been called (theme-applied), override the
-    // WorldConfig lerp — otherwise section navigation resets the theme-aware
-    // color/opacity back to the faint config values (ground invisible on light).
-    const groundMat = this.groundPlane.material as THREE.MeshStandardMaterial
-    if (this._groundThemeActive) {
-      groundMat.color.copy(this._groundThemeColor)
-      this._targetGroundOpacity = this._groundThemeOpacity
-      groundMat.opacity = this._groundThemeOpacity
-    } else {
-      const fromGround = fromCfg.ground
-      const toGround = toCfg.ground
-      groundMat.color.copy(this._poolGroundColor.lerpColors(fromGround.color, toGround.color, t))
-      this._targetGroundOpacity = THREE.MathUtils.lerp(fromGround.opacity, toGround.opacity, t)
-      groundMat.opacity = this._targetGroundOpacity
-    }
+    // Phase 8 slice 1: the GroundPlane owner owns the theme-override/lerp state
+    // (syncTheme flips it to a contrasting tone per theme); World forwards its
+    // eased `t` — temporary adapter, removed with the scene-coordination part.
+    this._groundOwner?.applyTransform(fromCfg.ground, toCfg.ground, t)
 
     // Crossfade opacity (bgT holds each section's opacity longer)
     bus.set(`section:${fromCfg.id}:opacity`, 1 - bgT)
@@ -997,11 +941,8 @@ export class World extends THREE.Group {
     // Dispose env sphere GPU resources
     this.envSphere?.dispose()
     this.particleBurst?.dispose()
-    this.groundPlane.geometry.dispose()
-    const groundMat = this.groundPlane.material
-    if (Array.isArray(groundMat)) groundMat.forEach((m) => m.dispose())
-    else groundMat.dispose()
-    this.lightsGroup.dispose()
+    // Phase 8 slice 1: ground + lights disposal moved to Experience (it owns
+    // the GroundPlane + CinematicLights scene owners).
     this.drawTrail?.dispose()
     if (this.drawTrail) this.sceneRef.remove(this.drawTrail.object)
     this.worksPlaneStage?.dispose()

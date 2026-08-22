@@ -395,7 +395,17 @@ do not start a phase whose entry gate has not passed.
       only after their gates pass, ship the one-by-one scene-owner migration,
       builder/blog SSG consolidation and final legacy removal. The migration
       is not done while duplicate routers, loops, renderer paths, owner
-      adapters or undocumented dependencies remain.
+      adapters or undocumented dependencies remain. Phase 8 slice 1 landed
+      (2026-08-22): lights + ground left `World` — Experience creates the
+      `CinematicLights` + the new `GroundPlane` scene owners
+      (`src/Experience/Scene/GroundPlane.ts`, 1:1 geometry/material/theme/
+      lerp state), owns their disposal, and drives the per-frame ground gate
+      (section 4 only) and the section-arrival light targets; the legacy
+      `World.lightsGroup`/`groundPlane` members, `syncGroundTheme` and the
+      ground state fields are deleted. One documented temporary adapter
+      remains: `World.attachGround` forwards the ground lerp from
+      `updateTransform` (it needs World's eased `t`) until the World
+      scene-coordination part leaves production (Phase 8 completion).
 
 ## 2 — Deferred product queue
 

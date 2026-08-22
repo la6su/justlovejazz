@@ -2304,6 +2304,33 @@ Each slice requires two-backend visual parity, reduced-motion settling,
 resource disposal and a performance comparison before its legacy owner is
 removed.
 
+- Slice 1 (done, 2026-08-22): lights and ground left `World`. Experience
+  creates the `CinematicLights` scene owner and the new `GroundPlane` owner
+  (`src/Experience/Scene/GroundPlane.ts` — 1:1 geometry/material/transform,
+  the theme-override + config-lerp state with the GC-free lerp pool, the
+  section-4 visibility gate and single-owner disposal), adds both to the
+  Tres-owned scene and owns their disposal in `Experience.destroy()`. The
+  legacy `World.lightsGroup`/`groundPlane` members, `World.syncGroundTheme`,
+  the ground theme/state fields and the inline ground lerp block are
+  deleted; the section-arrival light targets run in the Experience frame
+  path (same frame, same config) and the intro-section light/ground steps run
+  in `buildWorld` before the first rendered frame. One documented temporary
+  adapter remains: `World.attachGround` forwards the ground lerp from
+  `World.updateTransform` (the lerp needs World's per-section eased `t`); it
+  is removed with the World scene-coordination part (Phase 8 completion).
+  Gates: `type-check`, `type-check:vue`, `test:unit` (294), `build`, serial
+  e2e (21/21) and the live gate (evidence
+  `docs/evidence/phase7-live-gate/2026-08-22T00-22-47-256Z-report.json`)
+  pass; the dev-forced classic `?renderer=webgl` run keeps its recorded
+  GPU-less bounded-loop caveat (not a gate input). Performance comparison:
+  bundle net +0.23 kB raw / +0.17 kB gzip (`chunk-core-world` −5.31 kB raw /
+  −1.33 kB gzip, `chunk-experience` +5.54 kB raw / +1.50 kB gzip; the Three
+  delivery chunk is unchanged at 381.16 kB gzip — the open budget ADR);
+  runtime parity against the pre-slice baseline — identical settled frame
+  counts in the gate window (65 / 35 / 64), identical scene graph resources
+  (18 geometries / 25 materials / 9 textures) and clean disposal on all
+  three runs.
+
 Acceptance: legacy `World`, `SectionSceneFactory` and the scene-coordination
 part of `Experience` have no production callers.
 
@@ -2450,7 +2477,7 @@ The following ledgers are updated in this document during implementation.
 | GLSL `ShaderMaterial` post chain         | Phase 6 phase-exit cleanup — retained 2026-08-22 as the labelled forced-WebGLBackend owner per the fixed decision; deletion tracked to Phase 10 | done    |
 | raw `jlz:*` window bridge                | all consumers use typed ports                                                                                                                   | pending |
 | monolithic `Experience` coordination     | Phase 8 owner migrations                                                                                                                        | pending |
-| legacy World adapters                    | Phase 8 completion                                                                                                                              | pending |
+| legacy World adapters                    | Phase 8 completion — slice 1 (lights + ground) deleted from `World` 2026-08-22                                                                  | pending |
 | migration flags and shims                | Phase 10                                                                                                                                        | pending |
 
 ## Definition of done
