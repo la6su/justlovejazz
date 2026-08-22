@@ -734,8 +734,37 @@ syncRouteVisuals()` used to run (on route entry + section change) now
       adapter, feature flag or shim remains). Gates: `type-check`,
       `type-check:vue`, `test:unit` (372 — +1 no-bridge test), `build`
       (splash HTML preloads only `chunk-runtime`), serial e2e (22/22).
-      Slice 4 (hardening, separate commit) remains: the route-cycle soak
-      evidence + the full release gate + the Phase 10 completion entry.
+      Slice 4 (hardening, separate commit) landed (2026-08-22): the
+      Phase 10 route-cycle soak evidence + release-gate hardening.
+      `scripts/phase10-route-cycle-soak.ts` (the Phase 10 acceptance tool,
+      driven through the `window.__jlzEmit` seam) ran five warm-up +
+      twenty steady-state cycles over the six SPA routes against the dev
+      server: canvas held at exactly 1 (`canvas.canvas`) every cycle and
+      after root destroy, scene/renderer counters flat across the steady
+      block (first-pass caps, no monotonic trend), the settle gate is the
+      app's own settle contract — settle-able routes end the settle window
+      with `loopActive === false` and zero active demand flags, the
+      by-design continuous `/works` route (`worksScroll`) holds a stable
+      per-visit frame rate (per-visit delta trend gate), and root destroy
+      adds no canvases / no fatal errors / heap at or below the steady
+      peak. The stale invalid pre-run report was deleted; the machine
+      report is committed under
+      `docs/evidence/phase10-route-cycle-soak/`. The soak surfaced one real
+      defect, fixed in the same slice:
+      `ContactCyprusStage.update()` left its one-frame prewarm flag
+      (`_prewarmFramePending`) permanently set when the lazy stage
+      initialized on a non-Agros section (the prewarm frame is skipped
+      while the stage is hidden and the skip path never cleared the flag),
+      holding a persistent `contactCyprus` render reason that kept the
+      loop alive on `/contact` forever; the skip path now clears the
+      flag. `DEVELOPMENT.md` resource gate now names the soak tool +
+      the route-aware settle contract + the noisy-metric policy; the
+      documentation audit (root + `docs/`: ARCHITECTURE, AGENTS,
+      DEVELOPMENT, MIGRATION) carries no current-runtime claims about
+      removed implementations. Gates: `type-check`, `type-check:vue`,
+      `test:unit`, `build`, serial e2e, the 25-cycle soak (PASS). Phase 10
+      is complete — the removal ledger is fully done and no migration
+      adapter, feature flag or shim remains.
       Phase 8 slice 2 landed (2026-08-22): the six stable section groups
       left `World` — Experience creates the new `SectionGroups` owner
       (`src/Experience/Scene/SectionGroups.ts`: factory creation,

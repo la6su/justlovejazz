@@ -177,7 +177,19 @@ export class ContactCyprusStage extends THREE.Group {
       )
     }
 
-    if (!this.visible || !this._camera) return
+    if (!this.visible || !this._camera) {
+      // Hidden: the pending prewarm frame can never render, so it is
+      // unreachable — clear the flag. Without this, `isAnimating()` stays
+      // true forever after a lazy init that lands on a non-Agros section
+      // (prewarm() makes the stage visible for one frame; the first
+      // `setPresentation` hides it again before this block runs), holding a
+      // persistent render reason that keeps the single loop driver alive on
+      // /contact. The Agros entry does not depend on the prewarm frame:
+      // `setActive(true)` clears the flag and runs its own fade-in, whose
+      // first draw compiles the material.
+      this._prewarmFramePending = false
+      return
+    }
     this._camera.getWorldPosition(this._cameraPosition)
     this.position.copy(this._cameraPosition)
     this.quaternion.copy(this._camera.quaternion)

@@ -1,12 +1,13 @@
 # AGENTS — project context
 
-JUSTLOVEJAZZ is currently a Vite + TypeScript 3D portfolio built with Three.js
-TSL, a WebGPU/classic-WebGL2 runtime, UIkit 3 and Bun. The accepted target is
-Vue 3 + Vue Router + TresJS with one `WebGPURenderer` targeting WebGPU or
-WebGL2. The transition is controlled by
-[docs/MIGRATION_VUE_TRES.md](docs/MIGRATION_VUE_TRES.md) and its ADRs; planned
-components must not be described as shipped. Product copy is Russian/English;
-code, commits and technical documentation are English.
+JUSTLOVEJAZZ is a Vite + TypeScript 3D portfolio built with Vue 3, Vue Router
+and TresJS over one Three.js `WebGPURenderer` (TSL NodeMaterials, UIkit 3,
+Bun). The renderer runs `WebGPUBackend` when hardware WebGPU is usable and
+`WebGLBackend` through the automatic software-adapter policy; the classic
+`WebGLRenderer` path was removed in Phase 10 (2026-08-22). The phased
+transition that shipped this topology and its ADRs are recorded in
+[docs/MIGRATION_VUE_TRES.md](docs/MIGRATION_VUE_TRES.md). Product copy is
+Russian/English; code, commits and technical documentation are English.
 
 ## Working principle
 
@@ -34,13 +35,16 @@ in a dirty tree and keep each change to one coherent outcome.
   styles express the 3D shell and project-specific compositions.
 - The router owns translations and page metadata. Semantic DOM remains the
   interaction and accessibility layer over the shared scene.
-- During migration there is exactly one canvas, renderer and animation-loop
-  owner. Vue owns semantic DOM, TresJS owns target scene composition and GPU
-  resources retain one explicit disposal owner. Temporary primitive adapters
-  are allowed only when their consumers and removal phase are documented.
-- The target renderer is not accepted until the representative WebGPU and
-  forced-WebGLBackend gate passes. Until then, preserve the working classic
-  WebGL fallback and do not claim unified backend parity.
+- There is exactly one canvas, renderer and animation-loop owner. Vue owns
+  semantic DOM, TresJS owns scene composition and GPU resources retain one
+  explicit disposal owner.
+- `WebGPURenderer` is the only constructed renderer class: `WebGPUBackend`
+  when hardware WebGPU is usable, otherwise the same class is re-created with
+  `forceWebGL: true` on `WebGLBackend` (the automatic software-adapter
+  policy). Never claim unified backend parity between the two backends.
+- All `jlz:*` application events flow through the typed `eventBus`
+  (`AppEvents` map); non-module producers (the inline splash script, e2e and
+  soak scripts) use the `window.__jlzEmit` facade.
 - The splash stays outside the Vue mount and initial Vue/Tres/Three/UIkit
   dependency graph. Scene code receives typed route and preference state; it
   does not infer application state from DOM datasets in the target design.

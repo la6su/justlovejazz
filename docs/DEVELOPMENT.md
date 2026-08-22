@@ -95,26 +95,41 @@ is the subject.
 ### Resource and memory gate
 
 Development diagnostics must expose active render reasons, draw state and
-renderer resource counts. Automated/browser soak performs at least twenty
-representative route cycles and checks for monotonic growth in:
+renderer resource counts. The automated soak tool
+(`scripts/phase10-route-cycle-soak.ts`, Phase 10 acceptance) performs five
+warm-up route cycles and at least twenty steady-state route cycles over the
+six SPA routes and checks for monotonic growth in:
 
-- canvas and graphics contexts;
-- window/document listeners and active timers;
+- canvas and graphics contexts (exactly one `canvas.canvas` DOM element);
+- window/document listeners and active timers (proxied by the DOM node count);
 - textures, geometries and renderer programs/pipelines;
-- retained route stages and decoded assets;
+- retained route stages and decoded assets (scene traversal counts);
 - JS heap and GPU memory where the browser exposes stable measurements.
 
+The settle gate is route-aware: settle-able routes must end the settle window
+with the single loop driver stopped (`loopActive === false`, zero settled
+draws); the by-design continuous routes (the `/works` back-text UV scroll,
+visible ambient motion and visible particle fields — the state-based
+`renderDemand.ts` flags) keep the loop alive, and the soak gates their frame
+delta between consecutive visits of the same route instead (a growing per-visit
+frame rate is accumulating animation work).
+
 A noisy memory metric is recorded with its environment and trend rather than
-converted into a false exact threshold. Repeatable monotonic growth is a
-release blocker.
+converted into a false exact threshold (e.g. headless Chromium's flat
+`performance.memory` reading is noted, not silently dropped). Repeatable
+monotonic growth is a release blocker.
 
 In development builds, `window.__jlzRuntimeSnapshot()` returns the same
 owner-visible inventory shown in the DevPanel: canvas count, scene geometries,
-materials and textures, renderer counters when exposed, and post-pipeline
-targets/passes. It intentionally does not invent driver-level WebGPU memory
-metrics. For each soak, record one snapshot after five warm-up cycles and after
-each twenty-cycle steady-state block; compare like-for-like backend, viewport
-and DPR runs.
+materials and textures, renderer counters when exposed, post-pipeline
+targets/passes, the single loop driver's diagnostics (`loopActive`, `frames`)
+and the exact demand state behind the settle decision (`needsRender`,
+cursor-settled, the 14-flag `renderDemand.ts` activity snapshot). It
+intentionally does not invent driver-level WebGPU memory metrics. The soak
+tool records one snapshot after each route cycle (warm-up + steady) plus a
+root-destroy snapshot, writes a machine-readable report to
+`docs/evidence/phase10-route-cycle-soak/`, and compares like-for-like
+backend, viewport and DPR runs.
 
 ## Performance budgets
 

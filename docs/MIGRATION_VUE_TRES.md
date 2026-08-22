@@ -20,12 +20,15 @@ The target system has:
   owner;
 - one persistent TresJS scene root and one Three.js `WebGPURenderer`;
 - `WebGPUBackend` when hardware WebGPU is usable and `WebGLBackend` when it is
-  not, including an explicit `forceWebGL` QA path;
+  not, through the automatic software-adapter policy (a software WebGPU
+  adapter is re-created on `WebGLBackend` with `forceWebGL: true` on the same
+  `WebGPURenderer` class); the dev-forced `?renderer=webgl` QA path was
+  removed in Phase 10 slice 2;
 - TSL NodeMaterials and one TSL post-processing graph on `WebGPUBackend`;
-  on Three r185 `RenderPipeline` is WebGPU-only, so the forced `WebGLBackend`
-  QA path renders the identical node-material scene directly; the Phase 6
-  fixed decision (2026-08-22) retains the bounded GLSL fallback as the
-  explicit forced-WebGLBackend post owner (dev `?renderer=webgl` only);
+  on Three r185 `RenderPipeline` is WebGPU-only, so `WebGLBackend` renders
+  the identical node-material scene directly (the bounded GLSL fallback that
+  Phase 6 retained as the forced-WebGLBackend post owner was removed in
+  Phase 10 slice 2 2026-08-22);
 - one demand-driven render scheduler and one renderer-loop driver;
 - semantic, prerendered route content above an `aria-hidden` canvas;
 - bounded route resource scopes with deterministic cancellation and disposal;
@@ -41,14 +44,23 @@ the transition.
 ## Current and target topology
 
 ```text
-Current
-index.html splash
-  -> entry-shell.ts
+Current (shipped — the legacy paths are removed; Phase 10, 2026-08-22)
+index.html inline splash (classic script, outside the initial graph)
+  -> entry-shell.ts (tiny shell)
   -> entry-app.ts
-     -> manual router + string templates + UIkit.update
-     -> Experience -> Renderer + World + UI classes
-        -> WebGPURenderer/WebGPUBackend
-        -> classic WebGLRenderer fallback
+     -> lazy Vue application
+        -> AppShell.vue
+           -> Vue Router -> lazy semantic route components
+           -> UIkit + typed eventBus ports (no raw window jlz:* bridge)
+           -> persistent SceneHost.vue
+              -> TresCanvas
+                 -> renderer factory -> one WebGPURenderer
+                    (WebGPUBackend, or WebGLBackend via the automatic
+                    software-adapter policy)
+                 -> RenderScheduler -> one renderer-loop driver
+                 -> RenderPipeline: TSL post graph (WebGPUPostPipeline) on
+                    WebGPUBackend; direct render on WebGLBackend
+              -> Experience -> Renderer + World + UI classes (route scopes)
 
 Target
 index.html inline splash
@@ -62,7 +74,7 @@ index.html inline splash
               -> RendererFactory -> one WebGPURenderer
               -> Tres manual loop adapter -> one renderer-loop driver
               -> RenderScheduler -> invalidate/activity -> advance()
-              -> UnifiedTSLPipeline
+              -> RenderPipeline (+ WebGPUPostPipeline on WebGPUBackend)
               -> WorldRoot -> six slots + lazy route scopes
 ```
 
@@ -2846,13 +2858,80 @@ Acceptance:
 Rollback: the last accepted phase tag is the release fallback; hardening and
 removal are separate commits so they can be reverted independently.
 
+#### Phase 10 completion — 2026-08-22
+
+Phase 10 lands in four slices (one coherent slice per commit; hardening is
+separate from the removal commits):
+
+- **Slice 1 — spike instrumentation removal**: `src/spikes/` and the four
+  probe-only test files deleted (consumer search: zero production consumers);
+  `dev:tres-spike` script + the Vite spike plugin/`optimizeDeps` block out;
+  `DEVELOPMENT.md` renderer gate names the Phase 7 live gate as the current
+  tool.
+- **Slice 2 — classic owner removal**: the dev-forced `?renderer=webgl` QA
+  path is gone — the `WebGPURenderer` is the only constructed renderer class
+  (`createClassicWebGLRenderer` + `WebGLNodesHandler` factory, the
+  `?renderer=webgl` branches in `SceneHost.vue`/`Renderer.init()`, the GLSL
+  `ShaderMaterial` post chain + `_setupWebGL`/`_renderWebGL`/`_setupRTSize`/
+  `_renderQuad` `RenderPipeline` paths, the classic `THREE.PMREMGenerator`
+  branch in `Experience`, the forced-classic live-gate run). Retained: the
+  automatic software-adapter policy (SwiftShader WebGPU adapter →
+  `forceWebGL: true` on the same class → `WebGLBackend`) — never claimed as
+  unified backend parity.
+- **Slice 3 — raw `jlz:*` window bridge → typed eventBus ports**: the
+  `window.dispatchEvent` bridge inside `EventBus.emit()` deleted; all 17
+  ports typed in `AppEvents`; every consumer subscribes/emits through the bus
+  with unsub-closure teardown; the non-module splash (`index.html`, kept a
+  classic script so it stays outside the initial 3D dependency graph) and the
+  e2e/soak scripts reach the bus through the `window.__jlzEmit` facade
+  (installed at `entry-app.ts` module scope, before the router mounts and
+  before Enter is enabled).
+- **Slice 4 — soak evidence + release-gate hardening** (this entry): the
+  Phase 10 route-cycle soak tool
+  (`scripts/phase10-route-cycle-soak.ts`) runs five warm-up + twenty
+  steady-state route cycles over the six SPA routes against the dev server
+  and the acceptance gates pass (report:
+  `docs/evidence/phase10-route-cycle-soak/`).
+
+Acceptance evidence (slice 4, this host: Linux x64, headless Chromium,
+software `WebGLBackend` through the automatic software-adapter policy,
+1280×800 viewport):
+
+- full release gate: `format:check`, `lint`, `type-check`, `type-check:vue`,
+  `build` (splash HTML preloads only `chunk-runtime`; shared Three.js
+  delivery is the separately approved budget item), `test:unit` (372/372),
+  serial e2e (22/22);
+- the 25-cycle soak: canvas held at exactly 1 (the one `canvas.canvas`
+  SceneHost element) across every cycle and after root destroy; scene
+  geometries/materials/textures and renderer counters flat across the steady
+  block (within the first-pass caps, no monotonic trend); the settle gate is
+  the app's own settle contract — settle-able routes end the settle window
+  with the single loop driver stopped (`loopActive === false`, zero active
+  demand flags), and the by-design continuous `/works` route (the
+  `worksScroll` UV scroll keeps the loop alive) holds a stable per-visit
+  frame rate (no growing per-visit frame rate = no accumulating animation
+  work); root destroy leaves the canvas, adds no canvases, raises no fatal
+  errors and the heap stays at or below its steady-state peak;
+- no migration adapter, feature flag or removal-ledger item remains — the
+  removal ledger above is fully `done`, and the documentation audit (root +
+  `docs/`) carries no current-runtime claims about removed implementations.
+
+One defect surfaced and fixed by the soak in the same slice:
+`ContactCyprusStage.update()` left its one-frame prewarm flag
+(`_prewarmFramePending`) permanently set when the lazy stage initialized on a
+non-Agros section (the prewarm frame is skipped while the stage is hidden,
+and the skip path never cleared the flag), which held a persistent
+`contactCyprus` render reason that kept the loop alive on `/contact` forever.
+The skip path now clears the flag; the stage settles like every other
+settle-able route.
+
 ## Verification matrix
 
 Every affected vertical slice selects relevant rows from this matrix:
 
 | Dimension     | Required cases                                                              |
 | ------------- | --------------------------------------------------------------------------- |
-| Renderer      | automatic WebGPU, forced WebGLBackend, software-adapter policy              |
+| Renderer      | automatic WebGPU, software-adapter policy (`forceWebGL` `WebGLBackend`)     |
 | Route         | direct entry, in-app, hash, popstate, retry after failure                   |
 | Viewport      | desktop, narrow layout, real mobile DPR                                     |
 | Input         | mouse, wheel/trackpad, touch, keyboard, focus navigation                    |

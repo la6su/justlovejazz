@@ -1,45 +1,38 @@
 # Architecture
 
-This document records current and target system boundaries that are easy to
-miss when reading one module. Source, configuration and tests describe current
+This document records system boundaries that are easy to miss when reading one module. Source, configuration and tests describe current
 implementation details. The
 [migration plan](MIGRATION_VUE_TRES.md) controls sequencing and
 [ADRs](adr/README.md) record decisions.
 
-## Migration state
+## System overview
 
-The current production application is vanilla TypeScript plus Three.js and
-UIkit. The accepted target is Vue 3, Vue Router, TresJS and a unified Three.js
-`WebGPURenderer`. Target components in this document are planned until the
-corresponding migration phase is accepted. The working current path remains
-authoritative during transition.
+The production application is Vue 3, Vue Router and TresJS over a single
+Three.js `WebGPURenderer` (the only renderer class the app constructs). The
+[migration plan](MIGRATION_VUE_TRES.md) records the phased transition that
+shipped this topology and the [ADRs](adr/README.md) record the decisions.
 
 ```text
-Current
-index.html
-  -> entry-shell.ts
+index.html inline splash (classic script, outside the initial graph)
+  -> entry-shell.ts (tiny shell)
   -> entry-app.ts
-     -> Experience
-        -> Renderer + World + UI
-
-Target
-index.html inline splash
-  -> lazy Vue AppShell
-     -> Vue Router + semantic route components
-     -> UIkit lifecycle adapters
-     -> persistent SceneHost/TresCanvas
-        -> RendererFactory + RenderScheduler + UnifiedTSLPipeline
-        -> WorldRoot + stable slots + lazy route scopes
+     -> Vue AppShell
+        -> Vue Router + lazy semantic route components
+        -> UIkit + typed eventBus ports
+        -> persistent SceneHost/TresCanvas
+           -> renderer factory (one WebGPURenderer)
+           -> RenderScheduler + RenderPipeline
+              (+ WebGPUPostPipeline TSL graph on WebGPUBackend)
+           -> World + stable six slots + lazy route scopes
 ```
 
-Standalone blog pages currently share the brand without loading the 3D
-runtime. The target SSG pipeline preserves that capability: adopting Vue does
-not require hydrating TresJS or Three.js on content-only documents.
+Standalone blog and published builder pages share the brand without loading
+the 3D runtime: the SSG pipeline preserves that capability — content-only
+documents never hydrate TresJS or Three.js.
 
 The development-only Page Builder remains a separate application under
 `admin/`. Its production-safe schema, validation, renderer and compiler remain
-under `src/builder/`; neither current nor target public builds import the editor
-graph.
+under `src/builder/`; the public builds do not import the editor graph.
 
 ## Stable product invariants
 
@@ -54,7 +47,7 @@ graph.
 - Actual initialized backend determines renderer capability, DPR and post
   quality.
 - One renderer-loop driver exists. `RenderScheduler` owns demand policy and
-  requests bounded work from the integration admitted by the Phase 2 gate;
+  requests bounded work from the one bounded renderer loop adapter;
   settled idle performs no draw work and hidden tabs pause.
 - Reduced-motion branches synchronously reach the authored final state and
   release render activity.
@@ -67,14 +60,14 @@ graph.
 
 ## Routes and world slots
 
-The current `router.ts` owns SPA rendering, translations, metadata and hash
-restoration. The target typed route manifest becomes the single input for Vue
-Router records, lazy components, metadata/i18n keys, menu links, SSG paths,
-sitemap, route-scene loaders and initial hash/story commands.
+The typed route manifest (`src/core/routeManifest.ts`, exposed to the app by
+`src/app/routes.ts`) is the single input for Vue Router records, lazy
+components, metadata/i18n keys, menu links, SSG paths, sitemap,
+route-scene loaders and initial hash/story commands.
 
 The canonical slots are:
 
-| Index | ID        | Product role     | Current owner                   | Target owner        |
+| Index | ID        | Product role     | Route owner                     | Scene owner         |
 | ----: | --------- | ---------------- | ------------------------------- | ------------------- |
 |     0 | `lab`     | Contact finale   | `sections/lab*`                 | stable slot 0 scope |
 |     1 | `intro`   | Story frame 1    | `sections/intro`                | stable slot 1 scope |
@@ -89,29 +82,32 @@ The public Contact finale intentionally occupies the runtime `lab` slot.
 of the six-slot model; `WorldConfig.ts` and `SplashCube` consume it instead
 of re-declaring the slot ids, face rotations and story ranges.
 
-`CinematicNav` currently owns four story frames plus Contact and Menu sheets.
-The target `StoryController` accepts router/hash/input commands and publishes
-one readonly story state to DOM and scene. Vue Router never scrolls the story
-DOM independently of that controller.
+`CinematicNav` owns four story frames plus the Contact and Menu sheets. It
+accepts router/hash/input commands and publishes one readonly story state to
+DOM and scene. Vue Router never scrolls the story DOM independently of that
+controller.
 
 ## Current ownership
 
-| Concern              | Current owner                                       |
-| -------------------- | --------------------------------------------------- |
-| Bootstrap            | `entry-shell.ts`, `entry-app.ts`                    |
-| Routes and content   | `router.ts`, `pages/`, `sections/*/template.ts`     |
-| Renderer and loop    | `Renderer.ts`, `RenderPipeline.ts`, `Experience.ts` |
-| World composition    | `World.ts`, `WorldConfig.ts`, `SectionSceneFactory` |
-| Navigation and UI    | `CinematicNav.ts`, `UIMenu.ts`, `UIManager.ts`      |
-| Project presentation | `WorksPlaneStage.ts`, `FullscreenOverlay.ts`        |
-| Contact presentation | `ContactTextStage.ts`, `PixelTextScreen.ts`         |
-| Preferences/events   | `ThemeManager.ts`, `i18n.ts`, `EventBus.ts`         |
+| Concern              | Owner                                                          |
+| -------------------- | -------------------------------------------------------------- |
+| Bootstrap            | `entry-shell.ts`, `entry-app.ts`                               |
+| Routes and content   | `app/routes.ts`, `routeManifest.ts`, `sections/*/template.ts`  |
+| Renderer and loop    | `Renderer.ts`, `RenderPipeline.ts`, `Experience.ts`            |
+| World composition    | `SceneCoordinator.ts`, `WorldConfig.ts`, `SectionSceneFactory` |
+| Navigation and UI    | `CinematicNav.ts`, `UIMenu.ts`, `UIManager.ts`                 |
+| Project presentation | `WorksPlaneStage.ts`, `FullscreenOverlay.ts`                   |
+| Contact presentation | `ContactTextStage.ts`, `PixelTextScreen.ts`                    |
+| Preferences/events   | `ThemeManager.ts`, `i18n.ts`, `EventBus.ts`                    |
 
-The current renderer initializes `WebGPURenderer` but replaces a
-`WebGLBackend` or software WebGPU candidate with classic `WebGLRenderer`.
-WebGPU uses the TSL post path; classic WebGL2 uses `ShaderMaterial` passes and a
-compatibility nodes handler. This is factual current behavior, not the target
-fallback described below.
+The current renderer is always `WebGPURenderer` (the only renderer class the
+app constructs). When the resolved WebGPU adapter is software (or WebGPU is
+unavailable), the automatic software-adapter policy re-creates the same class
+with `forceWebGL: true`, landing on `WebGLBackend`. `WebGPUBackend` runs the
+TSL post graph (`RenderPipeline` + `WebGPUPostPipeline`); `WebGLBackend`
+renders the node-material scene directly (the classic `WebGLRenderer`, nodes
+compatibility handler and GLSL `ShaderMaterial` passes were removed in
+Phase 10 slice 2 2026-08-22).
 
 `Experience._needsRender` combines demand rendering with bounded animation
 reasons; the per-frame raise/settle decision reads the typed
@@ -121,35 +117,41 @@ replacement releases DOM behavior; `Experience.destroy()` closes the shared
 runtime. `/works` and `/contact` own lazy scene stages that dispose or cache
 according to their current measured policy.
 
-## Target ownership
+## Ownership
 
-### Application and domain
+### Application and content
 
-- `app/` owns Vue bootstrap, AppShell, providers and Vue Router.
-- `domain/` owns serializable route, slot, project and preference contracts and
-  imports no Vue, TresJS, Three.js or browser globals.
-- `features/` owns public DOM feature components and controllers.
-- `ui/uikit/` contains lifecycle-safe adapters for retained UIkit behavior.
+- `app/` owns the Vue bootstrap, `AppShell`, the persistent `SceneHost.vue`,
+  Vue Router records (`routes.ts`) and the lazy semantic route views;
+  `entry-shell.ts` / `entry-app.ts` own the pre-Vue shell and the post-splash
+  application bootstrap.
+- `core/` owns the framework-neutral contracts (route manifest, world slots,
+  typed event ports, i18n, theme, motion policy) and imports no Vue or TresJS.
+- `sections/` owns the per-route content templates consumed by the route views;
+  `UI/` owns the DOM feature controllers (cinematic navigation, menu, works
+  plane, fullscreen overlay).
 - `builder/` retains framework-neutral schema, validation, escaping and
-  compilation; `admin/` becomes a Vue editor application.
+  compilation; `admin/` is the development-only Vue editor application.
 
-Vue owns DOM structure. UIkit adapters initialize after mount and destroy
-before unmount. UIkit does not imperatively replace Vue-owned subtrees, and
-Vue does not add a competing focus trap to a UIkit-owned modal.
+Vue owns the DOM structure. UIkit components are mounted through typed
+wrappers that initialize after mount and dispose before unmount; neither Vue
+nor UIkit owns a competing focus trap.
 
 ### Scene and renderer
 
-- one persistent `SceneHost` owns the only Tres root for the public runtime;
+- one persistent `SceneHost.vue` owns the only Tres root for the public
+  runtime;
 - one renderer factory owns creation, initialization, backend inspection,
-  software-adapter fallback and device-loss recovery;
-- one framework-neutral render scheduler owns invalidation and bounded activity
-  tokens; its one bounded `setAnimationLoop` driver is active only while dirty
-  or active and stops at settled idle;
-- one TSL post graph covers WebGPUBackend and WebGLBackend;
-- `WorldRoot` owns the stable six-slot containers;
+  the automatic software-adapter policy and device-loss recovery;
+- one framework-neutral render scheduler owns invalidation and bounded
+  activity tokens; its one bounded `setAnimationLoop` driver is active only
+  while dirty or active and stops at settled idle;
+- `RenderPipeline` runs the TSL post graph on `WebGPUBackend`; on
+  `WebGLBackend` the node-material scene renders directly (the classic
+  renderer and GLSL post chain were removed in Phase 10 slice 2);
+- the world owns the stable six-slot containers;
 - route scene scopes own abort/generation state and their GPU resources;
-- temporary `scene/legacy/` adapters mount existing owners as primitives and
-  name their removal phase.
+- no `scene/legacy/` adapters remain (removed in Phase 10 slice 1).
 
 Scene code does not query `document.body.dataset`, translations or router
 state. Typed readonly ports carry route, locale, effective theme, reduced
@@ -159,22 +161,23 @@ runtime failures; it does not mutate route DOM.
 ### Dependency direction
 
 ```text
-domain
-  <- app/providers <- features/UI
-  <- scene ports   <- scene/Tres/Three
+core contracts (route manifest, world slots, typed event ports)
+  <- app/ (Vue bootstrap + route views + providers)
+  <- UI/ (DOM controllers)
+  <- Experience/ (scene, renderer, world)
 
 builder domain
-  <- admin Vue editor
-  <- trusted public component registry
+  <- admin/ (Vue editor)
 ```
 
-Application UI and scene are siblings above the framework-neutral domain.
-Neither imports the other's implementation. One manifest or contract replaces
-each duplicated fact before the old copies are removed.
+Application UI and scene are sibling layers above the framework-neutral core
+contracts; they communicate through the typed eventBus ports, and the only
+cross-imports are type-level and shared-effect seams. One manifest or
+contract replaces each duplicated fact before the old copies are removed.
 
 ## Bootstrap and failure handling
 
-The target bootstrap is an explicit state machine:
+The bootstrap is an explicit state machine:
 
 ```text
 shell-painted
@@ -194,14 +197,14 @@ bounded rebuild; a repeated failure returns to the explicit failure state.
 
 ## Renderer design
 
-The target factory creates `WebGPURenderer`, awaits initialization, inspects
-the actual backend and freezes a `RuntimeCapabilities` value. A synchronous
-Tres renderer factory callback is not itself readiness evidence. The Phase 2
-spike must prove either a pre-initialized renderer handoff or an explicit async
-Tres lifecycle handshake before the target integration is selected. The
-forced QA path uses `forceWebGL: true`. A software WebGPU adapter is not treated
-as a successful premium path: its candidate is disposed and a forced
-WebGLBackend renderer is created.
+The factory creates `WebGPURenderer`, awaits initialization, inspects the
+actual backend and freezes a `RuntimeCapabilities` value. A synchronous
+Tres renderer factory callback is not itself readiness evidence: `ready`
+publishes only after the adopted renderer's first successful render. The
+automatic software-adapter policy uses `forceWebGL: true`: a software
+WebGPU adapter (or unavailable WebGPU) disposes the software candidate and
+re-creates the same `WebGPURenderer` class on `WebGLBackend` — never a
+separate classic renderer class.
 
 Capabilities record backend (`webgpu` or `webgl2`) separately from adapter
 classification (`hardware`, `software` or `unknown`). Forced WebGL is evaluated
@@ -209,11 +212,12 @@ again; it is not assumed to be hardware. If both attempts are software or miss
 the measured minimum tier, bootstrap enters an explicit degraded or failed
 state instead of promising a premium path.
 
-The unified TSL graph owns scene render, refraction, chromatic response, bloom,
-grading, grain, vignette, border, fog and output color transform on both
-backends. The classic renderer, nodes compatibility handler, GLSL post passes
-and second PMREM WebGL context are removal targets, but remain until the
-representative renderer gate proves their replacements.
+The TSL graph owns scene render, refraction, chromatic response, bloom,
+grading, grain, vignette, border, fog and output color transform on
+`WebGPUBackend` (the `RenderPipeline` + `WebGPUPostPipeline` path). On
+`WebGLBackend` the same node-material scene renders directly: the classic
+renderer, nodes compatibility handler, GLSL post passes and second PMREM
+WebGL context were removed in Phase 10 slice 2 2026-08-22.
 
 Unstable backend inspection and Three.js compatibility casts are confined to
 one adapter. Library versions are pinned as an officially supported and tested
@@ -231,15 +235,13 @@ active and calls `setAnimationLoop(null)` after the settled frame and while the
 document is hidden. Tres's internal loop is stopped when this driver takes
 ownership. No scene owner starts its own `requestAnimationFrame` loop.
 
-The first Phase 2 hardware A/B makes this driver the leading candidate over
-Tres manual mode: Tres 5.8.3 retained about 60 idle rAF ticks per second while
-the bounded driver retained zero. This is a one-window observation, not a
-selection: at least three equal active-burst windows per backend, including the
-representative TSL/post graph, must establish median and worst p95 before the
-integration is selected. The current Experience loop remains authoritative
-before the Tres cutover and is removed in the same slice that activates the new
-adapter. Vue reactivity may request invalidation but never wraps or replaces the
-frame callback. Runtime assertions and diagnostics report canvas count,
+The loop-driver selection is settled: the Phase 2 hardware A/B made the
+bounded driver the leader over Tres manual mode (one-window observation:
+Tres 5.8.3 retained about 60 idle rAF ticks per second while the bounded
+driver retained zero), and the release gates confirm settled idle — zero
+draw calls and zero active scheduler reasons — on both backends. Vue
+reactivity may request invalidation but never wraps or replaces the frame
+callback. Runtime assertions and diagnostics report canvas count,
 loop-driver count, active reasons, ticks, draws and p50/p95 frame time.
 
 ## Resource lifecycle
@@ -268,22 +270,25 @@ closes the corresponding scope even if an async decode is still in progress.
 
 ## Events and preferences
 
-The current typed `EventBus.ts` owns `jlz:webgl-ready`, `jlz:webgl-failed`,
-`jlz:section-change` and `jlz:route-change` and bridges selected events to
-window listeners. During migration it is the compatibility seam.
+The typed `EventBus.ts` is the single port surface for every `jlz:*`
+application event: all seventeen ports are declared in `AppEvents` with exact
+payload types, `on()` returns an unsubscribe closure, and `emit()` reaches no
+window listeners (the raw window bridge was removed in Phase 10 slice 3
+2026-08-22). Non-module producers — the inline splash script and out-of-app
+scripts — reach the bus through the `window.__jlzEmit` facade. Locale, theme
+mode/effective polarity, sound, reduced motion and readiness additionally flow
+through their typed core ports (`i18n`, `ThemeManager`, `SfxSystem`,
+`motionPolicy`).
 
-The target uses typed providers and ports for locale, theme mode/effective
-polarity, sound, reduced motion, readiness, story and overlay state. The raw
-window bridge is removed only after it has no consumers. A central store is not
-required for the public app; the Page Builder may use one for transactional
-editor state.
+A central store is not required for the public app; the Page Builder may use
+one for transactional editor state.
 
 ## Performance and dependency policy
 
 - New dependencies require an explicit owner, current official compatibility
   evidence, a comparison with local code and a measured bundle/runtime cost.
 - Prefer platform, Vue, TresJS and Three.js capabilities before adding helpers.
-- Do not retain duplicate libraries or compatibility packages after cutover.
+- Do not retain duplicate libraries or compatibility packages after a migration lands.
 - Separate Vue, TresJS, Three.js and UIkit chunks/budgets so regression sources
   remain visible.
 - Demand-driven idle, startup graph, frame time and memory/resource soak are
