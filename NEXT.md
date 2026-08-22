@@ -445,6 +445,24 @@ do not start a phase whose entry gate has not passed.
       visibility interplay in `update`, the fade visibility gate + the trail
       visibility gate in `updateTransform`; ExperienceUI reads via it); the
       World `_carouselInitPromise` + `ensureCarouselInitialized` are deleted.
+      Phase 8 slice 7 landed (2026-08-22): the /works case-plane stage
+      (WorksPlaneStage) left `World` — Experience now owns the lazy stage
+      (created on the first /works visit, disposed when leaving, so the ~8
+      decoded 1440×810 textures never look like a navigation leak): it creates
+      the stage as a direct child of the Tres-owned scene, injects it through
+      `World.attachWorksPlaneStage`, and runs the init boundary that
+      `World.init()` used to (the route can dispose the stage while its texture
+      decode is still pending — the double-dispose race is covered by the
+      migrated `Experience.worksStage` test). The moved lifecycle methods
+      (`ensureWorksPlaneStageInitialized` / `disposeWorksPlaneStage`) are reached
+      by the UI through two new `ExperienceUIHost` ports; the resize + camera
+      forwards moved out of `World.resize` / `World.setCamera` into Experience
+      directly. `World.worksPlaneStage` is a documented temporary getter (World
+      frame path: `setActive` — with World's cached `worksPlaneStageSection`
+      index — + the per-frame `update`; Experience's `isAnimating` render-demand
+      read now uses its own field; ExperienceUI's `hitTest` reads via it).
+      World's lazy-stage fields (`_worksPlaneStagePromise` /
+      `_worksPlaneStageRequest`) + lifecycle methods + disposal are deleted.
       Phase 8 slice 2 landed (2026-08-22): the six stable section groups
       left `World` — Experience creates the new `SectionGroups` owner
       (`src/Experience/Scene/SectionGroups.ts`: factory creation,

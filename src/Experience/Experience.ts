@@ -46,6 +46,7 @@ import { SplashCube } from './World/SplashCube'
 import { ParticleBurst } from './World/ParticleBurst'
 import { DrawTrail } from './World/DrawTrail'
 import type { BakuCarousel } from './World/BakuCarousel'
+import { WorksPlaneStage } from './World/WorksPlaneStage'
 // DissolveOverlay removed — cover transition in ProjectDetail replaces it.
 
 /**
@@ -118,6 +119,13 @@ export class Experience {
   // attachBakuCarousel adapter + carousel getter.
   private carousel: BakuCarousel | null = null
   private _carouselInitPromise: Promise<void> | null = null
+  // Phase 8 slice 7: the /works case-plane owner (lazy — created on the first
+  // /works visit, disposed when leaving, so the ~8 decoded 1440×810 textures
+  // never look like a navigation leak). The World frame path reads it through
+  // the attachWorksPlaneStage adapter + worksPlaneStage getter.
+  private worksPlaneStage: WorksPlaneStage | null = null
+  private _worksPlaneStagePromise: Promise<void> | null = null
+  private _worksPlaneStageRequest = 0
   private bus!: StateBus
 
   // Phase 7 slice 4: the former UI features (cinematic nav, menu, overlay,
@@ -225,6 +233,10 @@ export class Experience {
       // Phase 8 slice 6: the carousel init moved to Experience (World no
       // longer owns scene object init); the UI reaches it through the port.
       ensureCarouselInitialized: () => this.ensureCarouselInitialized(),
+      // Phase 8 slice 7: the lazy /works stage lifecycle moved to Experience;
+      // the UI reaches it through the port.
+      ensureWorksPlaneStageInitialized: () => this.ensureWorksPlaneStageInitialized(),
+      disposeWorksPlaneStage: () => this.disposeWorksPlaneStage(),
     })
 
     // Phase 7 (ADR 0004): construct the single loop driver. The Renderer is
@@ -240,6 +252,9 @@ export class Experience {
     // Wire resize → world (A-001/A-004: World.resize was empty + never called)
     this._onSizesResize = () => {
       this.world?.resize(this.sizes.width, this.sizes.height)
+      // Phase 8 slice 7: the /works stage resize moved out of World.resize —
+      // forwarded directly (the stage is lazy; null until /works is reached).
+      this.worksPlaneStage?.resize(this.sizes.width, this.sizes.height)
       this._raiseRenderDemand('resize')
     }
     this.sizes.onResize(this._onSizesResize)
@@ -301,6 +316,10 @@ export class Experience {
     // performs image work inside navigation); content deep-links defer setup
     // — ExperienceUI calls the idempotent method on every route change.
     if (getCurrentPage() === 'home') await this.ensureCarouselInitialized()
+    // Phase 8 slice 7: the /works stage init moved out of World.init() to this
+    // same boundary (lazy — created only when /works is the entry route; the
+    // route can dispose it while its texture decode is still pending).
+    if (getCurrentPage() === 'works') void this.ensureWorksPlaneStageInitialized()
     // Phase 7: with the persistent SceneHost the World enters the Tres scene
     // through the explicit primitive adapter (`:dispose="null"` — Experience
     // stays the single disposal owner); without it (rollback) the World is
@@ -357,6 +376,62 @@ export class Experience {
       },
     )
     return this._carouselInitPromise
+  }
+
+  /** Lazily create rich `/works` media only on that route, never on first
+   *  paint. Phase 8 slice 7: moved from World — Experience owns the lazy
+   *  stage (the World frame path reads it through the documented
+   *  `attachWorksPlaneStage` adapter + `worksPlaneStage` getter). */
+  public ensureWorksPlaneStageInitialized(): Promise<void> {
+    if (this._worksPlaneStagePromise) return this._worksPlaneStagePromise
+    const request = ++this._worksPlaneStageRequest
+    const stage = new WorksPlaneStage()
+    this.worksPlaneStage = stage
+    this.scene.add(stage)
+    this.world.attachWorksPlaneStage(stage)
+    this._worksPlaneStagePromise = stage.init().then(
+      () => {
+        if (request !== this._worksPlaneStageRequest || this.worksPlaneStage !== stage) {
+          // The route can dispose a stage while its texture decode is still
+          // pending. Dispose again after init so resources created after the
+          // first dispose are released as well.
+          stage.dispose()
+          stage.removeFromParent()
+          return
+        }
+        stage.setActive(getCurrentPage() === 'works', 0)
+        stage.resize(window.innerWidth, window.innerHeight)
+        stage.setCamera(this.camera.instance)
+      },
+      (error) => {
+        if (request !== this._worksPlaneStageRequest || this.worksPlaneStage !== stage) {
+          stage.dispose()
+          stage.removeFromParent()
+          return
+        }
+        stage.dispose()
+        stage.removeFromParent()
+        this.worksPlaneStage = null
+        this._worksPlaneStagePromise = null
+        this.world.attachWorksPlaneStage(null)
+        if (import.meta.env.DEV) console.error('[Experience] WorksPlaneStage init failed:', error)
+      },
+    )
+    return this._worksPlaneStagePromise
+  }
+
+  /** Dispose the /works case-plane stage when leaving /works.
+   *  Frees ~40-50 MB of GPU textures + TSL materials.
+   *  The stage is lazily re-created on the next /works visit via
+   *  ensureWorksPlaneStageInitialized(). Phase 8 slice 7: moved from World. */
+  public disposeWorksPlaneStage(): void {
+    this._worksPlaneStageRequest++
+    if (!this.worksPlaneStage) return
+    this.worksPlaneStage.dispose()
+    this.worksPlaneStage.removeFromParent()
+    this.worksPlaneStage = null
+    this._worksPlaneStagePromise = null
+    this.world.attachWorksPlaneStage(null)
   }
 
   /** Create a studio environment map (procedural equirect → PMREM) for glass
@@ -868,7 +943,7 @@ export class Experience {
     const carousel = this.features.getFrameCarousel()
     this._bakuCarouselActive = carousel?.isAnimating ?? false
     const carouselActive = this._bakuCarouselActive
-    const worksPlaneActive = this.world?.worksPlaneStage?.isAnimating ?? false
+    const worksPlaneActive = this.worksPlaneStage?.isAnimating ?? false
     const contactTextActive = this.world?.contactTextStage?.isAnimating ?? false
     const contactCyprusActive = this.world?.contactCyprusStage?.isAnimating ?? false
     const drawTrailActive = this.drawTrail?.isAnimating ?? false
@@ -969,6 +1044,9 @@ export class Experience {
     const idx = this.world.currentSectionIndex
     // Give World the camera ref for DrawTrail (once, after init).
     this.world.setCamera(this.camera.instance)
+    // Phase 8 slice 7: the /works stage camera moved out of World.setCamera —
+    // forwarded directly (the stage is lazy; null until /works is reached).
+    this.worksPlaneStage?.setCamera(this.camera.instance)
 
     // Dispatch section-change on EVERY section index change (not just context).
     // This triggers NoiseText title animation for the new section + cube face rotation.
@@ -1178,6 +1256,11 @@ export class Experience {
     this.particleBurst?.dispose()
     this.drawTrail?.object.removeFromParent()
     this.drawTrail?.dispose()
+    // Phase 8 slice 7: the /works case-plane stage owner (lazy — only alive
+    // when /works was reached; a direct child of the Tres-owned scene).
+    this.worksPlaneStage?.removeFromParent()
+    this.worksPlaneStage?.dispose()
+    this.worksPlaneStage = null
     // Phase 8 slice 2: the stable section groups owner (BakuCarousel-first
     // disposal ordering + Works particle texture live in the owner).
     this.sectionGroups?.dispose()

@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { World } from '../core/World'
 import { SplashCube } from '../Experience/World/SplashCube'
 import { LabGamepad } from '../Experience/World/LabGamepad'
-import { WorksPlaneStage } from '../Experience/World/WorksPlaneStage'
 import { getLabExperiment, labExperiments } from '../Experience/Lab/manifest'
 
 const canvasContext = {
@@ -77,33 +76,6 @@ describe('World route visuals', () => {
     world.syncRouteVisuals()
 
     expect(cube.visible).toBe(true)
-  })
-
-  it('releases a Works stage that finishes after the route was disposed', async () => {
-    let resolveInit!: () => void
-    const initPromise = new Promise<void>((resolve) => {
-      resolveInit = resolve
-    })
-    const initSpy = vi.spyOn(WorksPlaneStage.prototype, 'init').mockReturnValue(initPromise)
-    const disposeSpy = vi.spyOn(WorksPlaneStage.prototype, 'dispose')
-
-    try {
-      document.body.dataset.page = 'works'
-      const pending = world.ensureWorksPlaneStageInitialized()
-      expect(world.worksPlaneStage).toBeInstanceOf(WorksPlaneStage)
-
-      world.disposeWorksPlaneStage()
-      resolveInit()
-      await pending
-
-      expect(world.worksPlaneStage).toBeNull()
-      // The first call releases the route immediately; the second catches
-      // textures/cards created by the in-flight init before it settled.
-      expect(disposeSpy).toHaveBeenCalledTimes(2)
-    } finally {
-      initSpy.mockRestore()
-      disposeSpy.mockRestore()
-    }
   })
 
   it('disposes the lazy Lab object during shared-world teardown', async () => {

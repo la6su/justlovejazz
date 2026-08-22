@@ -42,6 +42,9 @@ export interface ExperienceUIHost {
   reducedMotion: () => boolean
   /** Phase 8 slice 6: the Experience-owned BakuCarousel init (idempotent). */
   ensureCarouselInitialized: () => Promise<void>
+  /** Phase 8 slice 7: the Experience-owned lazy /works stage lifecycle. */
+  ensureWorksPlaneStageInitialized: () => Promise<void>
+  disposeWorksPlaneStage: () => void
 }
 
 export class ExperienceUI {
@@ -171,14 +174,14 @@ export class ExperienceUI {
         void this.host.ensureCarouselInitialized()
       }
       if (newPage === 'works') {
-        void world.ensureWorksPlaneStageInitialized().then(() => {
-          world.setWorksPlaneStageSection(0)
+        void this.host.ensureWorksPlaneStageInitialized().then(() => {
+          this.host.world().setWorksPlaneStageSection(0)
           this.host.raise('nav')
         })
       } else {
         // Works owns eight decoded 1440×810 textures. Keeping an inactive
         // stage alive makes that GPU allocation look like a navigation leak.
-        world.disposeWorksPlaneStage()
+        this.host.disposeWorksPlaneStage()
       }
       if (newPage === 'contact') {
         world.setContactCyprusStageSection(0)

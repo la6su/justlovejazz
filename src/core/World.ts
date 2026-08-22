@@ -6,7 +6,9 @@
 // slice 4: the SplashCube glass cube moved out — Experience owns it;
 // slice 5: the ParticleBurst intro frames + DrawTrail cursor signal moved out
 // — Experience owns them; slice 6: the BakuCarousel reference + init moved
-// out — Experience owns them, the carousel stays a child of the Works group)
+// out — Experience owns them, the carousel stays a child of the Works group;
+// slice 7: the /works case-plane stage (WorksPlaneStage) moved out —
+// Experience owns the lazy stage + lifecycle)
 
 import * as THREE from 'three'
 // BG.ts removed — was dead computation (bg.color never read by anyone).
@@ -29,7 +31,7 @@ import { clampStoryProgress, sectionIndexAt } from './storyProgress'
 // updateInstancedParticles removed — was a no-op. Particles are static.
 // disposeMaterialDeep removed — Phase 8 slice 2: the scene-group disposal
 // (its only World consumer) moved to the SectionGroups owner.
-import { WorksPlaneStage } from '../Experience/World/WorksPlaneStage'
+import type { WorksPlaneStage } from '../Experience/World/WorksPlaneStage'
 import { ContactTextStage } from '../Experience/World/ContactTextStage'
 import type { ContactCyprusStage } from '../Experience/World/ContactCyprusStage'
 import { getLabExperiment, type LabExperimentObject } from '../Experience/Lab/manifest'
@@ -108,8 +110,19 @@ export class World extends THREE.Group {
   public get sceneGroups(): THREE.Group[] {
     return this._sectionGroupsOwner?.groups ?? []
   }
-  /** Lazy `/works` media owner. The DOM keeps semantics; this group owns pixels. */
-  public worksPlaneStage: WorksPlaneStage | null = null
+  // Phase 8 slice 7: the /works case-plane stage (WorksPlaneStage) is no longer
+  // a World member — Experience creates it lazily (first /works visit),
+  // disposes it when leaving /works and injects it through
+  // `attachWorksPlaneStage` (temporary adapter: the World frame path forwards
+  // `setActive` — with World's cached `worksPlaneStageSection` index — and the
+  // per-frame `update` — removed with the World scene-coordination part,
+  // Phase 8 completion). The getter keeps the legacy read surface during the
+  // transition (World frame path + Experience's `isAnimating` read +
+  // ExperienceUI's `hitTest` read).
+  private _worksPlaneStageOwner: WorksPlaneStage | null = null
+  public get worksPlaneStage(): WorksPlaneStage | null {
+    return this._worksPlaneStageOwner
+  }
   /** Lightweight pixel-title layer, loaded only for the Contact route. */
   public contactTextStage: ContactTextStage | null = null
   /** A lazy 3D Agros backdrop, visible only on Contact's location frame. */
@@ -136,8 +149,6 @@ export class World extends THREE.Group {
   private _poolBakuColor = new THREE.Color()
   private _poolBakuEmissive = new THREE.Color()
   private _poolEnvColor = new THREE.Color()
-  private _worksPlaneStagePromise: Promise<void> | null = null
-  private _worksPlaneStageRequest = 0
   private _contactTextStagePromise: Promise<void> | null = null
   private _contactTextStageRequest = 0
   private _contactCyprusStagePromise: Promise<void> | null = null
@@ -239,7 +250,8 @@ export class World extends THREE.Group {
     // Phase 8 slice 6: the home-carousel init (the stream must finish texture
     // decode before Enter becomes ready) moved to Experience — it owns the
     // carousel reference and awaits it at the same boundary (buildWorld).
-    if (pageKey === 'works') void this.ensureWorksPlaneStageInitialized()
+    // Phase 8 slice 7: the /works stage init moved to Experience (it owns the
+    // lazy stage; the route can still enter on /works before init resolves).
     if (pageKey === 'contact') {
       void this.ensureContactTextStageInitialized()
       // Start Draco decode and a transparent material warm-up while Contact's
@@ -388,54 +400,18 @@ export class World extends THREE.Group {
     }
   }
 
-  /** Lazily create rich `/works` media only on that route, never on first paint. */
-  public ensureWorksPlaneStageInitialized(): Promise<void> {
-    if (this._worksPlaneStagePromise) return this._worksPlaneStagePromise
-    const request = ++this._worksPlaneStageRequest
-    const stage = new WorksPlaneStage()
-    this.worksPlaneStage = stage
-    this.add(stage)
-    this._worksPlaneStagePromise = stage.init().then(
-      () => {
-        if (request !== this._worksPlaneStageRequest || this.worksPlaneStage !== stage) {
-          // The route can dispose a stage while its texture decode is still
-          // pending. Dispose again after init so resources created after the
-          // first dispose are released as well.
-          stage.dispose()
-          if (stage.parent === this) this.remove(stage)
-          return
-        }
-        stage.setActive(getCurrentPage() === 'works', 0)
-        stage.resize(window.innerWidth, window.innerHeight)
-        if (this._camera) stage.setCamera(this._camera)
-      },
-      (error) => {
-        if (request !== this._worksPlaneStageRequest || this.worksPlaneStage !== stage) {
-          stage.dispose()
-          if (stage.parent === this) this.remove(stage)
-          return
-        }
-        stage.dispose()
-        this.remove(stage)
-        this.worksPlaneStage = null
-        this._worksPlaneStagePromise = null
-        if (import.meta.env.DEV) console.error('[World] WorksPlaneStage init failed:', error)
-      },
-    )
-    return this._worksPlaneStagePromise
-  }
-
-  /** Dispose WorksPlaneStage when leaving /works.
-   *  Frees ~40-50 MB of GPU textures + TSL materials.
-   *  The stage is lazily re-created on next /works visit via
-   *  ensureWorksPlaneStageInitialized(). */
-  public disposeWorksPlaneStage(): void {
-    this._worksPlaneStageRequest++
-    if (!this.worksPlaneStage) return
-    this.worksPlaneStage.dispose()
-    this.remove(this.worksPlaneStage)
-    this.worksPlaneStage = null
-    this._worksPlaneStagePromise = null
+  /**
+   * Phase 8 slice 7 (temporary primitive adapter): inject the Experience-owned
+   * /works case-plane stage (WorksPlaneStage). Experience creates it lazily
+   * (first /works visit), disposes it when leaving /works and passes `null`
+   * at both boundaries. The World frame path forwards `setActive` (with
+   * World's cached `worksPlaneStageSection` index) + the per-frame `update`
+   * through the `worksPlaneStage` getter. Consumer: the World frame path
+   * (documented above). Removal: with the World scene-coordination part, when
+   * `World` leaves production — Phase 8 completion.
+   */
+  public attachWorksPlaneStage(owner: WorksPlaneStage | null): void {
+    this._worksPlaneStageOwner = owner
   }
 
   /** Sync the 3D Works composition with CinematicNav's active DOM chapter. */
@@ -997,7 +973,8 @@ export class World extends THREE.Group {
     this.sceneGroups.forEach((g) => {
       g.scale.setScalar(scale)
     })
-    this.worksPlaneStage?.resize(width, height)
+    // Phase 8 slice 7: the /works stage resize is forwarded directly by
+    // Experience (it owns the stage); World no longer forwards it.
     this.contactTextStage?.resize(width, height)
     // Ground plane: always covers viewport (large geometry, no change needed).
     // Baku: position stays at origin, no resize needed.
@@ -1028,11 +1005,8 @@ export class World extends THREE.Group {
     // (it owns both scene owners).
     // Phase 8 slice 1: ground + lights disposal moved to Experience (it owns
     // the GroundPlane + CinematicLights scene owners).
-    this.worksPlaneStage?.dispose()
-    this._worksPlaneStageRequest++
-    if (this.worksPlaneStage) this.remove(this.worksPlaneStage)
-    this.worksPlaneStage = null
-    this._worksPlaneStagePromise = null
+    // Phase 8 slice 7: the /works case-plane stage is disposed by Experience
+    // (it owns the lazy WorksPlaneStage scene owner).
     this.contactTextStage?.dispose()
     this._contactTextStageRequest++
     if (this.contactTextStage) this.remove(this.contactTextStage)
@@ -1049,10 +1023,11 @@ export class World extends THREE.Group {
     this.sceneRef.fog = null
   }
 
-  /** Set camera reference for DrawTrail (unproject cursor to world). */
+  /** Set camera reference for DrawTrail + Contact stages (unproject to world).
+   *  Phase 8 slice 7: the /works stage camera is forwarded directly by
+   *  Experience (it owns the stage). */
   public setCamera(cam: THREE.Camera): void {
     this._camera = cam
-    this.worksPlaneStage?.setCamera(cam)
     this.contactTextStage?.setCamera(cam)
     this.contactCyprusStage?.setCamera(cam)
   }
