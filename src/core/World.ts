@@ -3,7 +3,9 @@
 // CinematicLights + GroundPlane scene owners; slice 2: the six stable
 // section groups moved out — Experience owns the SectionGroups owner;
 // slice 3: the EnvSphere ambient pavilion moved out — Experience owns it;
-// slice 4: the SplashCube glass cube moved out — Experience owns it)
+// slice 4: the SplashCube glass cube moved out — Experience owns it;
+// slice 5: the ParticleBurst intro frames + DrawTrail cursor signal moved out
+// — Experience owns them)
 
 import * as THREE from 'three'
 // BG.ts removed — was dead computation (bg.color never read by anyone).
@@ -15,10 +17,10 @@ import { prefersReducedMotion } from './motionPolicy'
 import { type CameraTarget, type WorldState, BakuRole } from './types'
 import type { GroundPlane } from '../Experience/Scene/GroundPlane'
 import type { SectionGroups } from '../Experience/Scene/SectionGroups'
-import { DrawTrail } from '../Experience/World/DrawTrail'
+import type { DrawTrail } from '../Experience/World/DrawTrail'
 import type { SplashCube } from '../Experience/World/SplashCube'
 import type { EnvSphere } from '../Experience/World/EnvSphere'
-import { ParticleBurst } from '../Experience/World/ParticleBurst'
+import type { ParticleBurst } from '../Experience/World/ParticleBurst'
 import { getWorldConfigForPage, type PhaseConfig } from './WorldConfig'
 import { getCurrentPage } from './routePage'
 import { clampStoryProgress, sectionIndexAt } from './storyProgress'
@@ -37,7 +39,16 @@ export interface WorldTransformResult {
 
 export class World extends THREE.Group {
   public sections: Section[] = []
-  public drawTrail?: DrawTrail
+  // Phase 8 slice 5: the cursor trail (DrawTrail) is no longer a World member —
+  // Experience creates it in the Tres-owned scene and injects the owner through
+  // `attachDrawTrail` (temporary adapter: the World frame path forwards the
+  // per-frame `update`, gates its route visibility and disposes it — removed
+  // with the World scene-coordination part, Phase 8 completion). The getter
+  // keeps the legacy read surface during the transition.
+  private _drawTrailOwner: DrawTrail | undefined = undefined
+  public get drawTrail(): DrawTrail | undefined {
+    return this._drawTrailOwner
+  }
   // Phase 8 slice 4: the glass cube (SplashCube) is no longer a World member —
   // Experience creates it in the Tres-owned scene and injects the owner through
   // `attachBaku` (temporary adapter: the World frame path reads/writes its
@@ -55,7 +66,17 @@ export class World extends THREE.Group {
   // forwards the per-frame colour-lerp `update` — removed with the World
   // scene-coordination part, Phase 8 completion).
   private _envSphereOwner: EnvSphere | null = null
-  public particleBurst!: ParticleBurst
+  // Phase 8 slice 5: the intro light frames (ParticleBurst) are no longer a
+  // World member — Experience creates it in the Tres-owned scene and injects
+  // the owner through `attachParticleBurst` (temporary adapter: the World
+  // frame path forwards the per-frame `update`, gates its prewarm visibility
+  // and disposes it — removed with the World scene-coordination part, Phase 8
+  // completion). The getter keeps the legacy read surface during the
+  // transition (World internals + ExperienceUI).
+  private _particleBurstOwner: ParticleBurst | undefined = undefined
+  public get particleBurst(): ParticleBurst | undefined {
+    return this._particleBurstOwner
+  }
   // BG removed — was dead computation. EnvSphere is the sole background.
   // Phase 8 slice 1: `lightsGroup` + `groundPlane` are no longer World members —
   // Experience creates the CinematicLights + GroundPlane scene owners and
@@ -120,9 +141,9 @@ export class World extends THREE.Group {
     // the CinematicLights scene owner (it enters the same Tres-owned scene).
 
     // ── DrawTrail — a route-only cursor signal, never over the home stream.
-    this.drawTrail = new DrawTrail()
-    scene.add(this.drawTrail.object)
-    this.drawTrail.object.visible = false // hidden until works section
+    // Phase 8 slice 5: created by the Experience-owned scene owner (it enters
+    // the Tres-owned scene directly; the World no longer constructs or
+    // disposes it).
 
     // ── Baku = SplashCube (Apple Fifth Avenue style glass cube).
     // Phase 8 slice 4: created by the Experience-owned scene owner (it enters
@@ -136,8 +157,9 @@ export class World extends THREE.Group {
 
     // One-shot portal-like echo of the inline splash squares. Despite its
     // legacy name this is a single instanced draw call, not a particle field.
-    this.particleBurst = new ParticleBurst()
-    this.add(this.particleBurst)
+    // Phase 8 slice 5: created by the Experience-owned scene owner (it enters
+    // the Tres-owned scene directly; the World no longer constructs or
+    // disposes it).
 
     // ── BG (color provider — still used for lerp logic, but NOT set as
     // (BG removed — EnvSphere is the sole ambient environment.)
@@ -276,6 +298,30 @@ export class World extends THREE.Group {
     this._bakuOwner = owner
   }
 
+  /**
+   * Phase 8 slice 5 (temporary primitive adapter): inject the Experience-owned
+   * cursor trail (DrawTrail) owner. The World frame path (the per-frame
+   * `update` forward + the route-visibility gate in `updateTransform`) reads it
+   * through the `drawTrail` getter. Consumer: the World frame path (documented
+   * above). Removal: with the World scene-coordination part, when `World`
+   * leaves production — Phase 8 completion.
+   */
+  public attachDrawTrail(owner: DrawTrail): void {
+    this._drawTrailOwner = owner
+  }
+
+  /**
+   * Phase 8 slice 5 (temporary primitive adapter): inject the Experience-owned
+   * intro light frames (ParticleBurst) owner. The World frame path (the
+   * per-frame `update` forward + the prewarm visibility gate) reads it through
+   * the `particleBurst` getter. Consumer: the World frame path + ExperienceUI
+   * (documented above). Removal: with the World scene-coordination part, when
+   * `World` leaves production — Phase 8 completion.
+   */
+  public attachParticleBurst(owner: ParticleBurst): void {
+    this._particleBurstOwner = owner
+  }
+
   /** Initialize the home-only carousel once, including after a deep-link visit. */
   public ensureCarouselInitialized(): Promise<void> {
     if (this._carouselInitPromise) return this._carouselInitPromise
@@ -313,10 +359,11 @@ export class World extends THREE.Group {
 
     const group = this.sceneGroups[3]
     if (!group) return
+    const burst = this.particleBurst
     const wasVisible = group.visible
-    const wasPortalVisible = this.particleBurst.visible
+    const wasPortalVisible = burst?.visible ?? false
     group.visible = true
-    this.particleBurst.visible = true
+    if (burst) burst.visible = true
     try {
       // Prewarm is an optimisation. Some backends (WebGLRenderer fallback
       // before first render) don't have a render stack yet → compile throws.
@@ -331,7 +378,7 @@ export class World extends THREE.Group {
       // will compile shaders on demand (slightly slower first frame only).
     } finally {
       group.visible = wasVisible
-      this.particleBurst.visible = wasPortalVisible
+      if (burst) burst.visible = wasPortalVisible
     }
   }
 
@@ -558,7 +605,8 @@ export class World extends THREE.Group {
 
     // The splash handoff owns its short render window, independent of ambient
     // scene animation. Experience keeps `_needsRender` raised while active.
-    if (this.particleBurst.isActive) this.particleBurst.update(deltaTime)
+    const burst = this.particleBurst
+    if (burst?.isActive) burst.update(deltaTime)
 
     // ── On-demand: decorative 3D animations only run when rendering ──
     // When idle (settled on a section, no transition, no cursor movement),
@@ -597,8 +645,9 @@ export class World extends THREE.Group {
       if (baku?.visible) baku.update(deltaTime)
       const isStandaloneWorks = getCurrentPage() === 'works'
       const isWorksStoryFrame = this._currentSectionIndex === 3
-      if (this.drawTrail && this._camera && (isStandaloneWorks || isWorksStoryFrame)) {
-        this.drawTrail.update(deltaTime, this._camera)
+      const trail = this.drawTrail
+      if (trail && this._camera && (isStandaloneWorks || isWorksStoryFrame)) {
+        trail.update(deltaTime, this._camera)
       }
     }
 
@@ -748,12 +797,12 @@ export class World extends THREE.Group {
     // remains outside the large media stream, where it would cut across the
     // case artwork instead of supporting it. Route replacement can retain the
     // same section index, so this must run outside the arrival-only branch.
-    if (this.drawTrail) {
+    const trail = this.drawTrail
+    if (trail) {
       const carousel = this.sceneGroups[3]?.userData.carousel as
         import('../Experience/World/BakuCarousel').BakuCarousel | undefined
       const isStandaloneWorks = getCurrentPage() === 'works'
-      this.drawTrail.object.visible =
-        isStandaloneWorks || (activeIndex === 3 && !carousel?.isActive)
+      trail.object.visible = isStandaloneWorks || (activeIndex === 3 && !carousel?.isActive)
     }
 
     // ── BG sphere section switch (junni pattern: lerp BG color continuously)
@@ -967,11 +1016,11 @@ export class World extends THREE.Group {
     // by Experience (it owns the SplashCube scene owner).
     // Phase 8 slice 3: EnvSphere disposal moved to Experience (it owns the
     // EnvSphere scene owner).
-    this.particleBurst?.dispose()
+    // Phase 8 slice 5: the intro light frames (ParticleBurst) + cursor trail
+    // (DrawTrail, incl. removing its scene object) are disposed by Experience
+    // (it owns both scene owners).
     // Phase 8 slice 1: ground + lights disposal moved to Experience (it owns
     // the GroundPlane + CinematicLights scene owners).
-    this.drawTrail?.dispose()
-    if (this.drawTrail) this.sceneRef.remove(this.drawTrail.object)
     this.worksPlaneStage?.dispose()
     this._worksPlaneStageRequest++
     if (this.worksPlaneStage) this.remove(this.worksPlaneStage)

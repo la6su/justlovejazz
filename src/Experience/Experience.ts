@@ -43,6 +43,8 @@ import { GroundPlane } from './Scene/GroundPlane'
 import { SectionGroups } from './Scene/SectionGroups'
 import { EnvSphere } from './World/EnvSphere'
 import { SplashCube } from './World/SplashCube'
+import { ParticleBurst } from './World/ParticleBurst'
+import { DrawTrail } from './World/DrawTrail'
 // DissolveOverlay removed — cover transition in ProjectDetail replaces it.
 
 /**
@@ -103,6 +105,11 @@ export class Experience {
   // Phase 8 slice 4: the glass cube owner (World's frame path reads/writes
   // it through the attachBaku adapter + baku getter).
   private baku!: SplashCube
+  // Phase 8 slice 5: the intro light frames + cursor trail owners (World's
+  // frame path reads/writes them through the attachParticleBurst /
+  // attachDrawTrail adapters + getters).
+  private particleBurst!: ParticleBurst
+  private drawTrail!: DrawTrail
   private bus!: StateBus
 
   // Phase 7 slice 4: the former UI features (cinematic nav, menu, overlay,
@@ -252,6 +259,22 @@ export class Experience {
     this.baku.visible = true
     this.scene.add(this.baku)
     this.world.attachBaku(this.baku)
+    // Phase 8 slice 5: the intro light frames (ParticleBurst) enter the
+    // Tres-owned scene under their own owner; the World frame path forwards
+    // their per-frame update and gates their prewarm visibility through the
+    // attachParticleBurst adapter + particleBurst getter.
+    this.particleBurst = new ParticleBurst()
+    this.scene.add(this.particleBurst)
+    this.world.attachParticleBurst(this.particleBurst)
+    // Phase 8 slice 5: the cursor trail (DrawTrail) enters the Tres-owned
+    // scene under its own owner (its object is hidden until the Works route);
+    // the World frame path forwards its per-frame update and gates its
+    // route visibility through the attachDrawTrail adapter + drawTrail
+    // getter.
+    this.drawTrail = new DrawTrail()
+    this.scene.add(this.drawTrail.object)
+    this.drawTrail.object.visible = false
+    this.world.attachDrawTrail(this.drawTrail)
     await this.world.init()
     // Phase 7: with the persistent SceneHost the World enters the Tres scene
     // through the explicit primitive adapter (`:dispose="null"` — Experience
@@ -797,10 +820,10 @@ export class Experience {
     const worksPlaneActive = this.world?.worksPlaneStage?.isAnimating ?? false
     const contactTextActive = this.world?.contactTextStage?.isAnimating ?? false
     const contactCyprusActive = this.world?.contactCyprusStage?.isAnimating ?? false
-    const drawTrailActive = this.world?.drawTrail?.isAnimating ?? false
+    const drawTrailActive = this.drawTrail?.isAnimating ?? false
     const baku = this.baku
     const openerActive = baku?.isOpenerActive ?? false
-    const burstActive = this.world?.particleBurst?.isActive ?? false
+    const burstActive = this.particleBurst?.isActive ?? false
     const camShaking = this.camera.isShaking
     // Cube face rotation animation — keep rendering while the cube is rotating
     // to its target face (triggered by rotateToFace on section change).
@@ -1096,6 +1119,14 @@ export class Experience {
     this.envSphere?.dispose()
     // Phase 8 slice 4: the glass cube owner (6 face geos+mats + 6 edge geos+mats).
     this.baku?.dispose()
+    // Phase 8 slice 5: the intro light frames + cursor trail owners. Both are
+    // direct children of the Tres-owned scene (not of World), so detaching
+    // World does not cascade their removal — remove them from the scene
+    // explicitly, mirroring the legacy World disposal.
+    this.particleBurst?.removeFromParent()
+    this.particleBurst?.dispose()
+    this.drawTrail?.object.removeFromParent()
+    this.drawTrail?.dispose()
     // Phase 8 slice 2: the stable section groups owner (BakuCarousel-first
     // disposal ordering + Works particle texture live in the owner).
     this.sectionGroups?.dispose()

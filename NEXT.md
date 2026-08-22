@@ -423,6 +423,15 @@ do not start a phase whose entry gate has not passed.
       internals + ExperienceUI), the constructor creation and `dispose()` step
       are deleted, and the `World.routeVisuals` test injects the cube owner
       before driving the gating.
+      Phase 8 slice 5 landed (2026-08-22): the ParticleBurst intro light
+      frames + DrawTrail cursor signal left `World` — Experience creates both
+      owners directly in the Tres-owned scene and injects them via
+      `World.attachParticleBurst` / `World.attachDrawTrail` (temporary
+      adapters: the World frame path forwards the per-frame `update`, gates
+      the prewarm/route visibility and disposes them); `World.particleBurst` + `World.drawTrail` are now documented temporary getters (legacy read
+      surface for World internals + ExperienceUI), the constructor creation
+      and `dispose()` steps are deleted, and disposal (incl. removing the
+      trail object from the scene) runs in `Experience.destroy()`.
       Phase 8 slice 2 landed (2026-08-22): the six stable section groups
       left `World` — Experience creates the new `SectionGroups` owner
       (`src/Experience/Scene/SectionGroups.ts`: factory creation,
