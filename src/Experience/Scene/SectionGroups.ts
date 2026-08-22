@@ -11,12 +11,16 @@
 // Consumer (temporary, Phase 8): `World.attachSectionGroups` injects the
 // owner; World's frame path (the `updateTransform` group fade/visibility
 // step, the `update()` per-group updates, `setContactSceneSection`,
-// `hasVisibleParticles` / `hasVisibleAmbientMotion` and
-// `ensureCarouselInitialized`) and the Experience / ExperienceUI reads
-// (`theme` particle blending, low-FPS particle reduction, the Works group
-// reference) all read the groups through the `world.sceneGroups` getter.
-// Removed with the World scene-coordination part when `World` leaves
-// production (Phase 8 completion).
+// `hasVisibleParticles` / `hasVisibleAmbientMotion`) and the Experience /
+// ExperienceUI reads (`theme` particle blending, low-FPS particle reduction,
+// the Works group reference) all read the groups through the
+// `world.sceneGroups` getter. Removed with the World scene-coordination
+// part when `World` leaves production (Phase 8 completion).
+//
+// Phase 8 slice 6: the BakuCarousel (created by the works section factory as
+// a child of the Works group) keeps its scene-graph position here — its
+// disposal (BakuCarousel-first ordering) stays in this owner, while its
+// reference + init live on Experience.
 
 import * as THREE from 'three'
 import { SectionSceneFactory } from '../../core/SectionSceneFactory'

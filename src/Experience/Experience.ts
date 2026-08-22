@@ -45,6 +45,7 @@ import { EnvSphere } from './World/EnvSphere'
 import { SplashCube } from './World/SplashCube'
 import { ParticleBurst } from './World/ParticleBurst'
 import { DrawTrail } from './World/DrawTrail'
+import type { BakuCarousel } from './World/BakuCarousel'
 // DissolveOverlay removed — cover transition in ProjectDetail replaces it.
 
 /**
@@ -110,6 +111,13 @@ export class Experience {
   // attachDrawTrail adapters + getters).
   private particleBurst!: ParticleBurst
   private drawTrail!: DrawTrail
+  // Phase 8 slice 6: the project stream owner. The carousel is created by the
+  // works section factory as a child of the Works group (its disposal lives in
+  // the SectionGroups owner's BakuCarousel-first ordering); Experience owns
+  // the reference + init, and the World frame path drives it through the
+  // attachBakuCarousel adapter + carousel getter.
+  private carousel: BakuCarousel | null = null
+  private _carouselInitPromise: Promise<void> | null = null
   private bus!: StateBus
 
   // Phase 7 slice 4: the former UI features (cinematic nav, menu, overlay,
@@ -214,6 +222,9 @@ export class Experience {
       sfx: () => this.sfx,
       raise: (reason) => this._raiseRenderDemand(reason),
       reducedMotion: () => this._reducedMotion,
+      // Phase 8 slice 6: the carousel init moved to Experience (World no
+      // longer owns scene object init); the UI reaches it through the port.
+      ensureCarouselInitialized: () => this.ensureCarouselInitialized(),
     })
 
     // Phase 7 (ADR 0004): construct the single loop driver. The Renderer is
@@ -243,6 +254,14 @@ export class Experience {
     // (carousel prewarm + final visibility), so attach before init.
     this.sectionGroups = new SectionGroups(this.scene)
     this.world.attachSectionGroups(this.sectionGroups)
+    // Phase 8 slice 6: the project stream (BakuCarousel) is created by the
+    // works section factory as a child of the Works group — it enters the
+    // scene graph with the group, but its reference + init + per-frame drive
+    // belong to Experience. The World frame path reads it through the
+    // carousel getter (attach before init, like the other adapters).
+    const worksGroup = this.sectionGroups.at(3)
+    this.carousel = (worksGroup?.userData.carousel as BakuCarousel | undefined) ?? null
+    if (this.carousel) this.world.attachBakuCarousel(this.carousel)
     // Phase 8 slice 3: the ambient pavilion (EnvSphere) enters the
     // Tres-owned scene under its own owner; the World frame path forwards
     // its per-frame colour-lerp update through the attachEnvSphere adapter.
@@ -276,6 +295,12 @@ export class Experience {
     this.drawTrail.object.visible = false
     this.world.attachDrawTrail(this.drawTrail)
     await this.world.init()
+    // Phase 8 slice 6: the home-carousel init await moved out of
+    // World.init() to this same boundary. The home stream must finish texture
+    // decode before Enter becomes ready (otherwise its first section visit
+    // performs image work inside navigation); content deep-links defer setup
+    // — ExperienceUI calls the idempotent method on every route change.
+    if (getCurrentPage() === 'home') await this.ensureCarouselInitialized()
     // Phase 7: with the persistent SceneHost the World enters the Tres scene
     // through the explicit primitive adapter (`:dispose="null"` — Experience
     // stays the single disposal owner); without it (rollback) the World is
@@ -306,6 +331,32 @@ export class Experience {
     // World's eased `t` — forwarded to the owner until the World
     // scene-coordination part leaves production (Phase 8 completion).
     this.world.attachGround(this.ground)
+  }
+
+  /** Initialize the home-only carousel once, including after a deep-link
+   *  visit. Phase 8 slice 6: moved from World — Experience owns the
+   *  carousel reference (see `buildWorld`); World no longer owns scene
+   *  object init. */
+  public ensureCarouselInitialized(): Promise<void> {
+    if (this._carouselInitPromise) return this._carouselInitPromise
+    const carousel = this.carousel
+    if (!carousel) return Promise.resolve()
+
+    this._carouselInitPromise = carousel.init().then(
+      () => {
+        if (import.meta.env.DEV)
+          console.info('[Experience] BakuCarousel initialized (works section)')
+      },
+      (err) => {
+        if (import.meta.env.DEV) {
+          console.error(
+            '[Experience] BakuCarousel init FAILED — textures may not load, event listeners NOT attached:',
+            err,
+          )
+        }
+      },
+    )
+    return this._carouselInitPromise
   }
 
   /** Create a studio environment map (procedural equirect → PMREM) for glass

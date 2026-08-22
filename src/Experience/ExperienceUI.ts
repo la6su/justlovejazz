@@ -40,6 +40,8 @@ export interface ExperienceUIHost {
   /** Raise render demand + wake the single loop driver (typed reason). */
   raise: (reason?: FrameReason) => void
   reducedMotion: () => boolean
+  /** Phase 8 slice 6: the Experience-owned BakuCarousel init (idempotent). */
+  ensureCarouselInitialized: () => Promise<void>
 }
 
 export class ExperienceUI {
@@ -80,12 +82,9 @@ export class ExperienceUI {
       // the Works owner explicit at that boundary so a hash-driven arrival
       // cannot depend on an earlier render frame to wake its carousel.
       if (idx === WORKS_SLOT_INDEX && getCurrentPage() === 'home') {
-        void this.host
-          .world()
-          .ensureCarouselInitialized()
-          .then(() => {
-            if (this.storyNav?.getSectionIndex() === WORKS_SLOT_INDEX) this.host.raise('nav')
-          })
+        void this.host.ensureCarouselInitialized().then(() => {
+          if (this.storyNav?.getSectionIndex() === WORKS_SLOT_INDEX) this.host.raise('nav')
+        })
       }
       this.host.raise('nav')
     })
@@ -169,7 +168,7 @@ export class ExperienceUI {
       const world = this.host.world()
       world.syncRouteVisuals()
       if (newPage === 'home') {
-        void world.ensureCarouselInitialized()
+        void this.host.ensureCarouselInitialized()
       }
       if (newPage === 'works') {
         void world.ensureWorksPlaneStageInitialized().then(() => {
@@ -307,17 +306,15 @@ export class ExperienceUI {
     }
   }
 
-  /** Get the BakuCarousel from the works scene group (index 3 in 6-section layout).
-   *  Returns null on non-home pages — carousel is home-only. */
+  /** Get the BakuCarousel from the Experience-owned reference (index 3 in the
+   *  6-section layout; the carousel is a child of the Works group).
+   *  Returns null on non-home pages — the carousel is home-only. */
   private getCarousel(): import('./World/BakuCarousel').BakuCarousel | null {
     // BakuCarousel only exists on home page — content pages don't init it
     if (getCurrentPage() !== 'home') return null
-    const worksGroup = this.host.world()?.sceneGroups?.[3]
-    if (!worksGroup) return null
-    return (
-      (worksGroup.userData.carousel as import('./World/BakuCarousel').BakuCarousel | undefined) ??
-      null
-    )
+    // Phase 8 slice 6: the reference lives on Experience (injected through
+    // World.attachBakuCarousel); read it through the documented getter.
+    return this.host.world()?.carousel ?? null
   }
 
   /** Frame access: the carousel may have started morphing this frame. */

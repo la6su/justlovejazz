@@ -432,6 +432,19 @@ do not start a phase whose entry gate has not passed.
       surface for World internals + ExperienceUI), the constructor creation
       and `dispose()` steps are deleted, and disposal (incl. removing the
       trail object from the scene) runs in `Experience.destroy()`.
+      Phase 8 slice 6 landed (2026-08-22): the BakuCarousel reference + init
+      left `World` — the carousel stays a child of the Works group (created by
+      the works section factory; its BakuCarousel-first disposal ordering stays
+      in the `SectionGroups` owner), but Experience now holds the reference
+      (`buildWorld` reads it from the Works group's `userData`, injects it via
+      `World.attachBakuCarousel`, and awaits the home-carousel texture decode at
+      the same boundary `World.init()` used to) and owns the idempotent
+      `ensureCarouselInitialized` (moved verbatim; the UI reaches it through a
+      new `ExperienceUIHost` port). `World.carousel` is a documented temporary
+      getter (World frame path: the per-frame `update` forward + baku
+      visibility interplay in `update`, the fade visibility gate + the trail
+      visibility gate in `updateTransform`; ExperienceUI reads via it); the
+      World `_carouselInitPromise` + `ensureCarouselInitialized` are deleted.
       Phase 8 slice 2 landed (2026-08-22): the six stable section groups
       left `World` — Experience creates the new `SectionGroups` owner
       (`src/Experience/Scene/SectionGroups.ts`: factory creation,

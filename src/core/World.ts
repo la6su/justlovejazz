@@ -5,7 +5,8 @@
 // slice 3: the EnvSphere ambient pavilion moved out — Experience owns it;
 // slice 4: the SplashCube glass cube moved out — Experience owns it;
 // slice 5: the ParticleBurst intro frames + DrawTrail cursor signal moved out
-// — Experience owns them)
+// — Experience owns them; slice 6: the BakuCarousel reference + init moved
+// out — Experience owns them, the carousel stays a child of the Works group)
 
 import * as THREE from 'three'
 // BG.ts removed — was dead computation (bg.color never read by anyone).
@@ -21,6 +22,7 @@ import type { DrawTrail } from '../Experience/World/DrawTrail'
 import type { SplashCube } from '../Experience/World/SplashCube'
 import type { EnvSphere } from '../Experience/World/EnvSphere'
 import type { ParticleBurst } from '../Experience/World/ParticleBurst'
+import type { BakuCarousel } from '../Experience/World/BakuCarousel'
 import { getWorldConfigForPage, type PhaseConfig } from './WorldConfig'
 import { getCurrentPage } from './routePage'
 import { clampStoryProgress, sectionIndexAt } from './storyProgress'
@@ -77,6 +79,20 @@ export class World extends THREE.Group {
   public get particleBurst(): ParticleBurst | undefined {
     return this._particleBurstOwner
   }
+  // Phase 8 slice 6: the project stream (BakuCarousel) stays a child of the
+  // Works group (created by the works section factory — its dispose ordering
+  // lives in the SectionGroups owner), but its reference + init + per-frame
+  // drive no longer belong to World — Experience holds the owner and injects
+  // it through `attachBakuCarousel` (temporary adapter: the World frame path
+  // drives the per-frame `update`, gates its fade visibility in
+  // updateTransform and reads the baku visibility interplay + the trail
+  // visibility gate — removed with the World scene-coordination part, Phase 8
+  // completion). The getter keeps the legacy read surface during the
+  // transition (World internals + ExperienceUI).
+  private _bakuCarouselOwner: BakuCarousel | undefined = undefined
+  public get carousel(): BakuCarousel | undefined {
+    return this._bakuCarouselOwner
+  }
   // BG removed — was dead computation. EnvSphere is the sole background.
   // Phase 8 slice 1: `lightsGroup` + `groundPlane` are no longer World members —
   // Experience creates the CinematicLights + GroundPlane scene owners and
@@ -120,7 +136,6 @@ export class World extends THREE.Group {
   private _poolBakuColor = new THREE.Color()
   private _poolBakuEmissive = new THREE.Color()
   private _poolEnvColor = new THREE.Color()
-  private _carouselInitPromise: Promise<void> | null = null
   private _worksPlaneStagePromise: Promise<void> | null = null
   private _worksPlaneStageRequest = 0
   private _contactTextStagePromise: Promise<void> | null = null
@@ -221,12 +236,9 @@ export class World extends THREE.Group {
       g.visible = i === 1 // Intro = index 1
     })
 
-    // Content deep-links create the shared world before the user reaches home.
-    // Defer carousel setup in that case; Experience calls the idempotent method
-    // on every route change and initializes it when home is actually selected.
-    // The home stream must finish texture decode before Enter becomes ready;
-    // otherwise its first section visit performs image work inside navigation.
-    if (pageKey === 'home') await this.ensureCarouselInitialized()
+    // Phase 8 slice 6: the home-carousel init (the stream must finish texture
+    // decode before Enter becomes ready) moved to Experience — it owns the
+    // carousel reference and awaits it at the same boundary (buildWorld).
     if (pageKey === 'works') void this.ensureWorksPlaneStageInitialized()
     if (pageKey === 'contact') {
       void this.ensureContactTextStageInitialized()
@@ -261,11 +273,11 @@ export class World extends THREE.Group {
   /**
    * Phase 8 slice 2 (temporary primitive adapter): inject the Experience-owned
    * stable section groups owner. Must be called before `init()` — the
-   * `sceneGroups` getter feeds `init()` (carousel prewarm + final visibility)
-   * and the frame path (the `updateTransform` group fade/visibility step,
+   * `sceneGroups` getter feeds `init()` (final visibility) and the frame path
+   * (the `updateTransform` group fade/visibility step,
    * the `update()` per-group updates, `setContactSceneSection`,
-   * `hasVisibleParticles` / `hasVisibleAmbientMotion`,
-   * `ensureCarouselInitialized`) plus the Experience / ExperienceUI reads.
+   * `hasVisibleParticles` / `hasVisibleAmbientMotion`) plus the Experience /
+   * ExperienceUI reads.
    * Consumer: the World frame path + Experience (documented above).
    * Removal: with the World scene-coordination part, when `World` leaves
    * production — Phase 8 completion.
@@ -322,27 +334,20 @@ export class World extends THREE.Group {
     this._particleBurstOwner = owner
   }
 
-  /** Initialize the home-only carousel once, including after a deep-link visit. */
-  public ensureCarouselInitialized(): Promise<void> {
-    if (this._carouselInitPromise) return this._carouselInitPromise
-    const carousel = this.sceneGroups[3]?.userData.carousel as
-      import('../Experience/World/BakuCarousel').BakuCarousel | undefined
-    if (!carousel) return Promise.resolve()
-
-    this._carouselInitPromise = carousel.init().then(
-      () => {
-        if (import.meta.env.DEV) console.info('[World] BakuCarousel initialized (works section)')
-      },
-      (err) => {
-        if (import.meta.env.DEV) {
-          console.error(
-            '[World] BakuCarousel init FAILED — textures may not load, event listeners NOT attached:',
-            err,
-          )
-        }
-      },
-    )
-    return this._carouselInitPromise
+  /**
+   * Phase 8 slice 6 (temporary primitive adapter): inject the Experience-owned
+   * BakuCarousel reference. The carousel is created by the works section
+   * factory as a child of the Works group; only its reference + init +
+   * per-frame drive move out of World. Must be called before `init()` — the
+   * frame path reads it through the `carousel` getter (the per-frame `update`
+   * forward + baku visibility interplay in `update`, the fade visibility gate
+   * in `updateTransform` and the trail visibility gate). Consumer: the World
+   * frame path + Experience / ExperienceUI reads (documented above). Removal:
+   * with the World scene-coordination part, when `World` leaves production —
+   * Phase 8 completion.
+   */
+  public attachBakuCarousel(owner: BakuCarousel): void {
+    this._bakuCarouselOwner = owner
   }
 
   /**
@@ -355,7 +360,8 @@ export class World extends THREE.Group {
       compile?: (scene: THREE.Scene, camera: THREE.Camera) => void
     }
     if (getCurrentPage() !== 'home') return
-    await this.ensureCarouselInitialized()
+    // Phase 8 slice 6: the carousel init await moved to Experience (it owns
+    // the reference); buildWorld awaits it before calling this method.
 
     const group = this.sceneGroups[3]
     if (!group) return
@@ -651,26 +657,27 @@ export class World extends THREE.Group {
       }
     }
 
-    // ── BakuCarousel + per-section modules (morph, particles, orbs, …) ──
+    // ── BakuCarousel (Phase 8 slice 6: Experience-owned reference, injected via
+    // attachBakuCarousel — it stays a child of the Works group) + per-section
+    // modules (morph, particles, orbs, …) ──
     // JunniParticles: GPU drift via uTime — only present on Works currently
     // (see sections/works/scene.ts + intro/scene.ts header comment).
+    const carousel = this.carousel
+    const carouselGroup = this.sceneGroups[3]
+    // Let a departing slider settle its morph even after the section group
+    // falls below the visual fade threshold. Otherwise on-demand rendering
+    // can freeze the planes half-folded and keep a persistent render reason.
+    if (carousel && (carouselGroup?.visible || carousel.isAnimating)) carousel.update(deltaTime)
+    if (carousel && this.baku) {
+      // Works becomes a pure media field once the cube-face handoff settles:
+      // only the planes and the existing particle field remain visible.
+      this.baku.visible =
+        getCurrentPage() !== 'lab' &&
+        getCurrentPage() !== 'works' &&
+        !(getCurrentPage() === 'contact' && this._contactCyprusActive) &&
+        (getCurrentPage() !== 'home' || !(carousel.isActive && carousel.morphProgress > 0.82))
+    }
     for (const group of this.sceneGroups) {
-      const carousel = group.userData.carousel as
-        import('../Experience/World/BakuCarousel').BakuCarousel | undefined
-      // Let a departing slider settle its morph even after the section group
-      // falls below the visual fade threshold. Otherwise on-demand rendering
-      // can freeze the planes half-folded and keep a persistent render reason.
-      if (carousel && (group.visible || carousel.isAnimating)) carousel.update(deltaTime)
-      if (carousel) {
-        // Works becomes a pure media field once the cube-face handoff settles:
-        // only the planes and the existing particle field remain visible.
-        if (this.baku)
-          this.baku.visible =
-            getCurrentPage() !== 'lab' &&
-            getCurrentPage() !== 'works' &&
-            !(getCurrentPage() === 'contact' && this._contactCyprusActive) &&
-            (getCurrentPage() !== 'home' || !(carousel.isActive && carousel.morphProgress > 0.82))
-      }
       if (!group.visible) continue
       // Update the lower Contact typography only after its own reveal begins.
       const typo = group.userData.typography as
@@ -799,8 +806,7 @@ export class World extends THREE.Group {
     // same section index, so this must run outside the arrival-only branch.
     const trail = this.drawTrail
     if (trail) {
-      const carousel = this.sceneGroups[3]?.userData.carousel as
-        import('../Experience/World/BakuCarousel').BakuCarousel | undefined
+      const carousel = this.carousel
       const isStandaloneWorks = getCurrentPage() === 'works'
       trail.object.visible = isStandaloneWorks || (activeIndex === 3 && !carousel?.isActive)
     }
@@ -824,8 +830,9 @@ export class World extends THREE.Group {
       if (isFrom && isTo) fade = 1
 
       const shouldShow = isFrom || isTo
-      const carousel = g.userData.carousel as
-        import('../Experience/World/BakuCarousel').BakuCarousel | undefined
+      // Phase 8 slice 6: the carousel is only on the Works group (index 3) —
+      // read it from the Experience-owned reference instead of group userData.
+      const carousel = i === 3 ? this.carousel : undefined
       const cfg = this.configs[i]
       const showCarousel = getCurrentPage() === 'home' && cfg?.scene?.objects?.bakuCarousel === true
 
