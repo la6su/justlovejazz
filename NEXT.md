@@ -322,7 +322,7 @@ do not start a phase whose entry gate has not passed.
       that admits TSL post on `WebGLBackend`, Phase 10). Rollback is a revert
       of the Phase 6 commits. Phase 6 is complete.
 
-- [ ] **Phase 7: persistent TresCanvas and legacy world adapter** — make
+- [x] **Phase 7: persistent TresCanvas and legacy world adapter** — make
       `SceneHost` a persistent Tres root, give the custom renderer factory,
       camera and scene exactly one owner, cut the Experience loop over to the
       single driver selected in Phase 2 (the bounded `setAnimationLoop` port,
@@ -369,12 +369,27 @@ do not start a phase whose entry gate has not passed.
       `Experience.init` → `firstRender`; a throwing frame never resolves it).
       Device-loss recovery syncs the persistent Tres context through
       `sceneHost.replaceRenderer`. Static gates: `type-check`,
-      `type-check:vue`, 294/294 unit suite (incl. the new
-      `sceneHostBridge.test.ts`) and the production build all pass. Open: the
-      live acceptance gates (serial e2e one-canvas / no-remount, backend
-      parity, idle and disposal matching Phase 6) on hardware, and the
-      separately reviewed Three-delivery budget ADR (chunk now 381 kB gzip
-      vs the 350 kB cap; ledger baseline 349.29 kB).
+      `type-check:vue`, the unit suite and the production build all pass.
+      Acceptance closed (2026-08-22): the serial e2e suite (21/21) adds the
+      persistent-scene-host contract — exactly one `canvas.canvas` with
+      `aria-hidden`, splash→Enter through the readiness handshake, and route
+      navigation that never remounts the scene root (the same canvas element
+      survives `/` → `/works` → `/`). The live gate
+      (`bun scripts/phase7-live-gate.ts` against the dev server; evidence in
+      `docs/evidence/phase7-live-gate/`) passes on both backends: the
+      production unified `WebGPURenderer` settles to a stopped loop
+      (`loopActive:false`, zero settled draws — the 2.5 s ambient breath
+      re-wakes and re-settles it) and the reduced-motion path settles
+      synchronously; disposal is clean and the Vue-owned canvas survives
+      `Experience.destroy()`. Rollback stays alive: `?no-scene` (DOM-only)
+      and hostless self-host in `Renderer`/`Camera` are both e2e-covered and
+      no scene owner was deleted. Caveat recorded for Phase 10: on a GPU-less
+      software host the dev-forced classic `?renderer=webgl` QA owner (removed
+      in Phase 10) keeps its bounded loop armed because software-rAF
+      throttling degenerates the glass-cube jelly spring's `dt`; it is a
+      dev-only path, not a Phase 7 gate input. The separately reviewed
+      Three-delivery budget ADR (chunk 381 kB gzip vs the 350 kB cap) remains
+      open.
 
 - [ ] **Phases 8–10: cut over Tres scene owners and static content** —
       only after their gates pass, ship the one-by-one scene-owner migration,

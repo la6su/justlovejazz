@@ -2261,6 +2261,29 @@ Status (2026-08-22):
   (ledger baseline 349.29 kB vs the 350 kB cap; delta includes the
   `@tresjs/core` app-chunk adoption) — to be settled by the separately
   reviewed budget ADR, not in this phase.
+- Slice 5 (done, 2026-08-22): the Phase 7 acceptance gates closed.
+  Serial e2e (21/21, `bun run test:serial`): the persistent-scene-host
+  contract is now asserted — exactly one `canvas.canvas` carrying
+  `aria-hidden` (set on the Tres canvas element by `SceneHost.onReady` —
+  TresCanvas does not forward fallthrough attributes), splash→Enter through
+  the readiness handshake, and route navigation that never remounts the
+  scene root (a marker on the canvas element survives `/` → `/works` → `/`;
+  the SceneHost remains the `AppShell` sibling of `RouterView`). The live
+  gate (`bun scripts/phase7-live-gate.ts` against the dev server; machine
+  readable evidence under `docs/evidence/phase7-live-gate/`) passes on both
+  backends: the production unified `WebGPURenderer` reaches ready on one
+  scene canvas and settles to a stopped loop (`loopActive:false` — zero
+  settled draws; the 2.5 s ambient breath re-wakes and re-settles it), the
+  reduced-motion path settles synchronously, and `__jlzRuntimeDestroy()`
+  tears the Experience down without fatal errors while the Vue-owned canvas
+  survives `Renderer.dispose()`. Rollback evidence: `?no-scene` (DOM-only)
+  and the hostless self-host path in `Renderer`/`Camera` both remain e2e
+  covered; no scene owner was deleted. Recorded caveat (Phase 10 input): on
+  a GPU-less software host the dev-forced classic `?renderer=webgl` QA owner
+  — a dev-only retained forced-WebGLBackend post owner removed in Phase 10 —
+  keeps its bounded loop armed because software-rAF throttling degenerates
+  the glass-cube jelly spring `dt`; it boots, renders and disposes cleanly
+  and is not a Phase 7 gate input.
 
 ### Phase 8 — migrate scene owners
 

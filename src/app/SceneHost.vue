@@ -64,6 +64,11 @@ async function onReady(context: TresContext): Promise<void> {
   if (noScene || resolved) return
   const canvas =
     (tresRef.value?.$el as HTMLCanvasElement | undefined) ?? document.createElement('canvas')
+  // The scene is the decorative visual layer over the semantic route content:
+  // hidden from the accessibility tree (AGENTS.md: canvas hidden). The
+  // wrapper carries the same attribute; the e2e contract asserts it on the
+  // canvas element (TresCanvas does not forward fallthrough attributes).
+  canvas.setAttribute('aria-hidden', 'true')
   let renderer = context.renderer.instance as UnifiedRenderSurface
   let backend = inspectUnifiedBackend(renderer)
   let plan = planUnifiedBackend(backend)

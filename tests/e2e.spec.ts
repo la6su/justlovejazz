@@ -481,6 +481,75 @@ test.describe('JustLoveJazz — accessibility & DOM UI', () => {
   })
 })
 
+test.describe('JustLoveJazz — Phase 7 persistent scene host', () => {
+  test('splash→Enter over exactly one canvas; navigation never remounts the scene root', async ({
+    page,
+  }) => {
+    // The software backend may take longer than the default budget to reach
+    // the first successful render (readiness gate).
+    test.setTimeout(120000)
+    const errors: string[] = []
+    attachErrorCapture(page, errors)
+
+    await page.goto('/')
+
+    // Readiness: Enter becomes available only after renderer init + backend
+    // inspection + Tres context mount + the initial World's first render.
+    const enter = page.locator('#jlz-splash-enter')
+    await expect(enter).toHaveClass(/is-ready/)
+
+    // Exactly one canvas (the persistent Tres root, selector canvas.canvas),
+    // hidden from the accessibility tree.
+    const canvas = page.locator('canvas.canvas')
+    await expect(canvas).toHaveCount(1)
+    await expect(canvas).toHaveAttribute('aria-hidden', 'true')
+
+    // Splash → Enter.
+    await enter.click()
+    await expect(page.locator('#jlz-app-loader')).toBeHidden()
+
+    // Mark the canvas element: a remount would lose the marker.
+    await page.evaluate(() => {
+      const el = document.querySelector('canvas.canvas') as
+        (HTMLCanvasElement & { __jlzPhase7Mark?: string }) | null
+      if (el) el.__jlzPhase7Mark = 'phase7'
+    })
+    const markedAfterBoot = () =>
+      page.evaluate(() =>
+        Boolean(
+          (
+            document.querySelector('canvas.canvas') as
+              (HTMLCanvasElement & { __jlzPhase7Mark?: string }) | null
+          )?.__jlzPhase7Mark,
+        ),
+      )
+    expect(await markedAfterBoot(), 'canvas was not reachable to mark').toBe(true)
+
+    // In-app navigation to a content route.
+    await page.evaluate(() => {
+      window.dispatchEvent(new CustomEvent('jlz:navigate', { detail: { path: '/works' } }))
+    })
+    await expect(page).toHaveURL(/\/works$/)
+    await expect(page.locator('#section-works-01')).toBeAttached()
+
+    // The persistent SceneHost (sibling of RouterView) survives navigation:
+    // still exactly one canvas and the SAME element (marker intact).
+    await expect(page.locator('canvas.canvas')).toHaveCount(1)
+    expect(await markedAfterBoot(), 'scene root remounted on /works navigation').toBe(true)
+
+    // And again on the way back home.
+    await page.evaluate(() => {
+      window.dispatchEvent(new CustomEvent('jlz:navigate', { detail: { path: '/' } }))
+    })
+    await expect(page).toHaveURL(/\/$/)
+    await expect(page.locator('canvas.canvas')).toHaveCount(1)
+    expect(await markedAfterBoot(), 'scene root remounted on the way back home').toBe(true)
+
+    const fatal = errors.filter(isFatalError)
+    expect(fatal, `Fatal errors:\n${fatal.join('\n')}`).toEqual([])
+  })
+})
+
 test.describe('JustLoveJazz — runtime health', () => {
   test('no fatal JS errors on home load', async ({ page }) => {
     const errors: string[] = []

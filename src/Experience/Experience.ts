@@ -485,13 +485,29 @@ export class Experience {
         // inactive after the settled frame — zero settled draws).
         ;(
           window as unknown as {
-            __jlzRuntimeSnapshot?: () => { resources: unknown; loop: unknown } | null
+            __jlzRuntimeSnapshot?: () => {
+              resources: unknown
+              loop: unknown
+              demand: {
+                needsRender: boolean
+                cursorSettled: boolean | null
+                activity: Record<string, boolean>
+              }
+            } | null
           }
         ).__jlzRuntimeSnapshot = () => {
           if (!this.devPanel) return null
           return {
             resources: this.devPanel.getResourceSnapshot(),
             loop: this._scheduler.diagnostics,
+            // Settled-idle evidence (Phase 7+ gates): the exact demand state
+            // behind the settle decision — which flag (if any) keeps the
+            // single loop driver from stopping after the settled frame.
+            demand: {
+              needsRender: this._needsRender,
+              cursorSettled: this.cursor?.isSettled ?? null,
+              activity: { ...this._lastActivity },
+            },
           }
         }
         console.log('[Experience] DevPanel ready — press ` or ~ or Ctrl+D to toggle')
