@@ -5,6 +5,8 @@
       "version": 2,
       "slug": "studio-page",
       "title": "Studio page",
+      "description": "A Page Builder document — the first approved document published to a static route.",
+      "published": true,
       "theme": {
         "accent": "#ffd60a",
         "accentHover": "#ffe85c",

@@ -80,6 +80,8 @@ const makeElements = (): AdminEditorElements => {
   const saveStatus = ref<HTMLElement | null>(document.createElement('output'))
   const titleInput = ref<HTMLElement | null>(document.createElement('input'))
   const slugInput = ref<HTMLElement | null>(document.createElement('input'))
+  const descriptionInput = ref<HTMLElement | null>(document.createElement('input'))
+  const publishedCheckbox = ref<HTMLElement | null>(document.createElement('input'))
   const documentSelect = ref<HTMLSelectElement | null>(document.createElement('select'))
   const saveButton = ref<HTMLButtonElement | null>(document.createElement('button'))
   const undoButton = ref<HTMLButtonElement | null>(document.createElement('button'))
@@ -93,6 +95,8 @@ const makeElements = (): AdminEditorElements => {
     saveStatus,
     titleInput,
     slugInput,
+    descriptionInput,
+    publishedCheckbox,
     documentSelect,
     saveButton,
     undoButton,

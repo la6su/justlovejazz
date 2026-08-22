@@ -23,6 +23,8 @@ const inspectorTitleEl = ref<HTMLElement | null>(null)
 const saveStatusEl = ref<HTMLElement | null>(null)
 const titleInputEl = ref<HTMLElement | null>(null)
 const slugInputEl = ref<HTMLElement | null>(null)
+const descriptionInputEl = ref<HTMLElement | null>(null)
+const publishedCheckboxEl = ref<HTMLElement | null>(null)
 const documentSelectEl = ref<HTMLElement | null>(null)
 const saveButtonEl = ref<HTMLButtonElement | null>(null)
 const undoButtonEl = ref<HTMLButtonElement | null>(null)
@@ -64,6 +66,9 @@ const {
   onTitleFocusout,
   onSlugInput,
   onSlugFocusout,
+  onPublishedToggle,
+  onDescriptionInput,
+  onDescriptionFocusout,
   onDocumentSelectChange,
   onNewDocument,
   onDeleteDocument,
@@ -75,6 +80,8 @@ const {
   saveStatus: saveStatusEl,
   titleInput: titleInputEl,
   slugInput: slugInputEl,
+  descriptionInput: descriptionInputEl,
+  publishedCheckbox: publishedCheckboxEl,
   documentSelect: documentSelectEl,
   saveButton: saveButtonEl,
   undoButton: undoButtonEl,
@@ -182,6 +189,32 @@ const onPreviewKeydown = (event: KeyboardEvent): void => {
         >
           Delete
         </button>
+        <label
+          class="jlz-admin-published"
+          title="Approve the document for the static /p/&lt;slug&gt; route"
+        >
+          <input
+            id="document-published"
+            ref="publishedCheckboxEl"
+            type="checkbox"
+            :checked="store.document.published === true"
+            @change="onPublishedToggle"
+          />
+          Publish
+        </label>
+        <label class="jlz-admin-description">
+          <span class="uk-hidden">SEO description</span>
+          <input
+            id="document-description"
+            ref="descriptionInputEl"
+            class="uk-input"
+            maxlength="300"
+            placeholder="SEO description"
+            :value="store.document.description ?? ''"
+            @input="onDescriptionInput"
+            @focusout="onDescriptionFocusout"
+          />
+        </label>
       </div>
       <div class="jlz-admin-history" aria-label="History controls">
         <button

@@ -3,8 +3,9 @@ import vue from '@vitejs/plugin-vue'
 import { templateCompilerOptions } from '@tresjs/core'
 import { resolve } from 'node:path'
 
-import { copyFileSync, mkdirSync, readFileSync, readdirSync } from 'fs'
+import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync } from 'fs'
 import { jlzAdminPlugin } from './admin/vite-plugin'
+import { publishedPages, validateBuilderDocuments } from './src/builder/documents'
 import { BLOG_ARTICLES } from './src/core/blogPages'
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -17,6 +18,22 @@ import { BLOG_ARTICLES } from './src/core/blogPages'
 // JS:  Vite/Rolldown tree-shakes unused ESM exports automatically.
 //   UIKit 3 is an ESM package — only imported JS modules are bundled.
 // ═══════════════════════════════════════════════════════════════════════
+
+// Approved (`published: true`) Page Builder documents → static `/p/<slug>`
+// routes (Phase 9, slice 5). The closed set is the admin-owned collection
+// (`src/builder/generated/documents.json`); the publish pipeline
+// (`scripts/publish-builder-pages.mjs`) renders these into the Vite build
+// inputs below and the sitemap generator consumes the same set.
+const publishedBuilderSlugs = (() => {
+  const collectionPath = resolve(__dirname, 'src/builder/generated/documents.json')
+  if (!existsSync(collectionPath)) return [] as string[]
+  const validation = validateBuilderDocuments(
+    JSON.parse(readFileSync(collectionPath, 'utf8')) as unknown,
+  )
+  if (!validation.ok || !validation.documents)
+    throw new Error(`documents.json is invalid: ${validation.errors.join('; ')}`)
+  return publishedPages(validation.documents).map((document) => document.slug)
+})()
 
 export default defineConfig(({ mode }) => ({
   base: '/',
@@ -70,6 +87,12 @@ export default defineConfig(({ mode }) => ({
             `blog/${article.slug}`,
             resolve(__dirname, `blog/${article.slug}.html`),
           ]),
+        ),
+        // Published builder documents (SSG output of
+        // scripts/publish-builder-pages.mjs — standalone static pages, no
+        // application bundle, the per-page Less rewritten by Vite).
+        ...Object.fromEntries(
+          publishedBuilderSlugs.map((slug) => [`p/${slug}`, resolve(__dirname, `p/${slug}.html`)]),
         ),
       },
       output: {

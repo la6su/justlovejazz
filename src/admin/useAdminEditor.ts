@@ -74,6 +74,10 @@ export interface AdminEditorElements {
   titleInput: Ref<HTMLElement | null>
   /** `#document-slug` — the toolbar slug input. */
   slugInput: Ref<HTMLElement | null>
+  /** `#document-description` — the toolbar SEO description input. */
+  descriptionInput: Ref<HTMLElement | null>
+  /** `#document-published` — the toolbar publish (approved) checkbox. */
+  publishedCheckbox: Ref<HTMLElement | null>
   /** `#document-list` — the toolbar document select. */
   documentSelect: Ref<HTMLElement | null>
   /** `#save` — the save button. */
@@ -385,6 +389,30 @@ export function useAdminEditor(
     recordCurrentSnapshot()
   }
 
+  // Publish gate + SEO description (Phase 9, slice 5): the document metadata
+  // that selects a document for the static `/p/<slug>` routes. An empty
+  // description clears the field (the pipeline falls back to the title).
+  const onPublishedToggle = (): void => {
+    const input = elements.publishedCheckbox.value as HTMLInputElement | null
+    if (!input) return
+    store.document.published = input.checked
+    recordCurrentSnapshot(false)
+  }
+
+  const onDescriptionInput = (): void => {
+    const input = elements.descriptionInput.value as HTMLInputElement | null
+    if (!input) return
+    const value = input.value.trim()
+    if (value) store.document.description = value
+    else delete store.document.description
+    recordCurrentSnapshot(false)
+  }
+
+  const onDescriptionFocusout = (): void => {
+    onDescriptionInput()
+    recordCurrentSnapshot()
+  }
+
   const onDocumentSelectChange = (): void => {
     const select = elements.documentSelect.value as HTMLSelectElement | null
     if (!select) return
@@ -689,6 +717,9 @@ export function useAdminEditor(
     onTitleFocusout,
     onSlugInput,
     onSlugFocusout,
+    onPublishedToggle,
+    onDescriptionInput,
+    onDescriptionFocusout,
     onDocumentSelectChange,
     onNewDocument,
     onDeleteDocument,

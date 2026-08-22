@@ -7,11 +7,18 @@
 // one assembly. Section ordering + comments mirror the hand-maintained
 // sitemap the generator replaces.
 
+import { builderPagePath } from '../builder/publish'
 import { BLOG_ARTICLES, BLOG_INDEX, blogArticlePath } from './blogPages'
 import { PAGE_META_DATA } from './pageMetaData'
 import { ROUTE_MANIFEST } from './routeManifest'
 import type { SitemapEntry } from './sitemap'
 import type { PageId } from '../sections/_shared/constants'
+
+/** Fixed sitemap policy for approved builder pages. */
+export const BUILDER_PAGE_SITEMAP = {
+  changefreq: 'weekly' as const,
+  priority: 0.5,
+}
 
 export interface SitemapSection {
   /** The `<!-- ... -->` comment above the section's entries. */
@@ -59,6 +66,27 @@ export function buildBlogSitemapSections(): SitemapSection[] {
         lastmod: article.lastmod,
         changefreq: 'monthly',
         priority: article.priority,
+      })),
+    },
+  ]
+}
+
+/**
+ * The builder section: the approved (`published: true`) documents rendered
+ * to the static `/p/<slug>` routes (Phase 9, slice 5). The slugs come from
+ * the admin-owned collection — the build-time generator reads
+ * `documents.json` and passes `publishedPages(...)` here. Empty when nothing
+ * is published (no section, no entries).
+ */
+export function buildBuilderSitemapSections(slugs: readonly string[]): SitemapSection[] {
+  if (slugs.length === 0) return []
+  return [
+    {
+      comment: 'Builder pages (approved documents — static, no app bundle)',
+      entries: slugs.map((slug): SitemapEntry => ({
+        path: builderPagePath(slug),
+        changefreq: BUILDER_PAGE_SITEMAP.changefreq,
+        priority: BUILDER_PAGE_SITEMAP.priority,
       })),
     },
   ]

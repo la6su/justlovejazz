@@ -18,6 +18,18 @@ export interface BuilderDocument {
   version: typeof BUILDER_DOCUMENT_VERSION
   slug: string
   title: string
+  /**
+   * SEO description for the published static route (1–300 characters).
+   * Absent on documents created before Phase 9 slice 5 — the publish
+   * pipeline falls back to the page title.
+   */
+  description?: string
+  /**
+   * The "approved" marker (Phase 9 slice 5): only published documents are
+   * rendered into the static `/p/<slug>` routes by the publish pipeline.
+   * Absent means unpublished.
+   */
+  published?: boolean
   theme: BuilderTheme
   nodes: BuilderNode[]
 }
@@ -113,6 +125,15 @@ export function validateBuilderDocument(value: unknown): BuilderValidationResult
     errors.push('title must contain between 1 and 120 characters')
   if (typeof value.slug !== 'string' || !SAFE_BUILDER_SLUG.test(value.slug))
     errors.push('slug must contain lowercase letters, digits and single hyphens')
+  if (
+    value.description !== undefined &&
+    (typeof value.description !== 'string' ||
+      value.description.length < 1 ||
+      value.description.length > 300)
+  )
+    errors.push('description must contain between 1 and 300 characters')
+  if (value.published !== undefined && typeof value.published !== 'boolean')
+    errors.push('published must be a boolean')
 
   validateBuilderTheme(value.theme, errors)
 

@@ -12,14 +12,18 @@
 // production origin). The output is byte-stable for unchanged inputs, so a
 // hand-edited or stale sitemap is corrected on the next build.
 
-import { writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { publishedPages, validateBuilderDocuments } from '../src/builder/documents'
 import { PAGE_META_DATA } from '../src/core/pageMetaData'
 import { pathForPage, ROUTE_MANIFEST } from '../src/core/routeManifest'
 import { buildSitemapXml } from '../src/core/sitemap'
-import { buildDefaultSitemapSections } from '../src/core/sitemapEntries'
+import {
+  buildBuilderSitemapSections,
+  buildDefaultSitemapSections,
+} from '../src/core/sitemapEntries'
 
 const DEFAULT_ORIGIN = 'https://justlovejazz.dev'
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -35,10 +39,27 @@ for (const page of Object.keys(PAGE_META_DATA) as Array<keyof typeof PAGE_META_D
 }
 
 const origin = process.env.JLZ_SITE_ORIGIN?.replace(/\/+$/, '') ?? DEFAULT_ORIGIN
-const xml = buildSitemapXml(origin, buildDefaultSitemapSections())
+
+// The approved builder documents (Phase 9, slice 5) join the sitemap from
+// the same admin-owned collection the publish pipeline renders — the
+// pipeline runs earlier in the `build` script, so the committed set matches
+// the committed `/p/<slug>` outputs.
+const collectionPath = resolve(root, 'src/builder/generated/documents.json')
+const builderSlugs = (() => {
+  if (!existsSync(collectionPath)) return [] as string[]
+  const validation = validateBuilderDocuments(
+    JSON.parse(readFileSync(collectionPath, 'utf8')) as unknown,
+  )
+  if (!validation.ok || !validation.documents)
+    throw new Error(`documents.json is invalid: ${validation.errors.join('; ')}`)
+  return publishedPages(validation.documents).map((document) => document.slug)
+})()
+
+const sections = [...buildDefaultSitemapSections(), ...buildBuilderSitemapSections(builderSlugs)]
+const xml = buildSitemapXml(origin, sections)
 const out = resolve(root, 'public', 'sitemap.xml')
 writeFileSync(out, xml, 'utf8')
-const entryCount = buildDefaultSitemapSections().reduce((sum, s) => sum + s.entries.length, 0)
+const entryCount = sections.reduce((sum, s) => sum + s.entries.length, 0)
 console.log(
   `[generate-sitemap] wrote ${out} (${xml.length} bytes, ${entryCount} urls, origin ${origin})`,
 )

@@ -63,4 +63,10 @@
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
+  <!-- Builder pages (approved documents — static, no app bundle) -->
+  <url>
+    <loc>https://justlovejazz.dev/p/studio-page</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
 </urlset>

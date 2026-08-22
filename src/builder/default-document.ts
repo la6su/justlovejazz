@@ -5,6 +5,9 @@ export const DEFAULT_BUILDER_DOCUMENT: BuilderDocument = {
   version: 2,
   slug: 'studio-page',
   title: 'Studio page',
+  // Absent/unset means unpublished — a fresh document never reaches the
+  // public `/p/<slug>` routes until the editor approves it (slice 5).
+  published: false,
   theme: { ...DEFAULT_BUILDER_THEME },
   nodes: [
     {

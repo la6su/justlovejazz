@@ -101,6 +101,18 @@ export function removeBuilderDocument(
 }
 
 /**
+ * The "approved" subset of a collection (Phase 9, slice 5): the documents
+ * with `published: true`, in stable slug order. The publish pipeline renders
+ * exactly this set into the static `/p/<slug>` routes and the sitemap
+ * generator consumes the same list — one source of truth for what is public.
+ */
+export function publishedPages(collection: BuilderDocuments): BuilderDocument[] {
+  return collection.documents
+    .filter((document) => document.published === true)
+    .sort((a, b) => a.slug.localeCompare(b.slug))
+}
+
+/**
  * Wrap a legacy single-document `page.json` value in a v1 collection.
  * Returns null when the value is not a valid v2 document (the caller keeps
  * its own error path).

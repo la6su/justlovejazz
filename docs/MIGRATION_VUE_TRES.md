@@ -2593,12 +2593,15 @@ Rollback: revert the individual owner slice and remount its primitive adapter.
 
 Scope:
 
-- render approved builder documents through a trusted Vue registry;
+- render approved builder documents through a trusted Vue registry
+  (registry landed by slice 2, 2026-08-22; publishing the approved
+  documents closed by slice 5, 2026-08-22 — see the slice entries below);
 - make route metadata and sitemap consume the manifest (done by slice 1,
   2026-08-22 — see the slice entry below);
 - move blog pages into the shared SSG content pipeline without loading 3D
   (done by slice 4, 2026-08-22 — see the slice entry below);
-- remove the final one-page builder publishing restriction.
+- remove the final one-page builder publishing restriction (done by
+  slice 3, 2026-08-22 — see the slice entry below).
 
 Acceptance:
 
@@ -2762,6 +2765,64 @@ Prism vendor scripts). Gates: `type-check`, `type-check:vue`, `test:unit`
 (358 — +20 meta/content/SSG-pipeline tests incl. the no-3D SFC import-graph
 assertions), `build` (dist layout `blog.html` + `blog/<slug>.html`,
 vendor-only scripts), serial e2e (21/21).
+
+#### Phase 9 approved-document publish slice — 2026-08-22
+
+Scope item 1's publish half closed: approved builder documents now ship as
+static public routes. The schema gains the publish-gate fields — `published`
+(the "approved" marker; `true` only, boolean, absent = unpublished) and
+`description` (1–300 characters; absent → the page falls back to the
+title) — both optional, so pre-slice-5 documents stay valid.
+`publishedPages` (`src/builder/documents.ts`) selects the `published: true`
+subset in stable slug order: one closed set the pipeline renders and the
+sitemap consumes. The new pure core `src/builder/publish.ts` assembles each
+published document. `renderBuilderPageDocument` builds the standalone HTML:
+the canonical head (title/description/canonical/OG/Twitter — attribute
+escaped, origin overridable, trailing-slash normalized), the per-page
+stylesheet link, and the registry-rendered body with the Vue SSR
+fragment/v-if markers stripped (`stripSsrComments`) — zero application
+scripts, so the page is a static semantic document like the blog.
+`renderBuilderPageLess` builds the per-page Less chain (written to
+`src/assets/builder/<slug>.less`): the `_import.less` app token/UIkit base
+first, the document's own theme overrides last (Less same-scope
+last-definition-wins — every `@jlz-*` reference, including the `:root`
+custom properties, resolves to this document's values, the same mechanism
+the admin preview uses), then the document's own UIkit component set
+(delta beyond the app baseline; relative imports resolve from
+`src/assets/builder/`). The new prebuild step
+`scripts/publish-builder-pages.mjs` (wired into the `build` script between
+the blog prerender and the sitemap) validates the collection, SSR-renders
+every approved document through the trusted Vue registry (`BuilderPage` —
+the same registry the admin preview uses; `renderBuilderDocument` is NOT
+used here, it stays only for proven static output of existing artifacts),
+writes the Vite build inputs (`p/<slug>.html` at the root) + the per-page
+Less, and removes stale artifacts of unpublished/removed documents
+(`p/*.html` + `src/assets/builder/<slug>.less`; the admin's shared
+`theme.generated.less`/`components.generated.less` stay untouched).
+`vite.config.ts` derives the `p/<slug>` build inputs from
+`documents.json` (validated at config time — an invalid collection fails
+every Vite invocation, not just the build), and the sitemap generator joins
+the builder section (`buildBuilderSitemapSections` in
+`src/core/sitemapEntries.ts`, `/p/<slug>` @ weekly/0.5) from the same
+collection — `public/sitemap.xml` is now 12 urls (11 + the first approval).
+The admin toolbar gains the Publish checkbox + the SEO description input
+(saved with the document through the existing `{ slug, document }`
+envelope; a fresh document starts unpublished). Per the page-builder
+boundary (`docs/PAGE_BUILDER.md`): the Vue registry serves the editor and
+the public rendering, HTML string rendering remains only for proven static
+output, and no `admin/` import enters the public graph (the pipeline
+imports the registry + the pure publish core, both of which the dev-only
+admin entry already owns). First approval committed: `studio-page` →
+`/p/studio-page` — the registry-rendered body, the per-page Less rewritten
+by Vite to a hashed CSS asset, no app bundle, no editor delegation
+attributes. Gates: `type-check`, `type-check:vue`, `test:unit` (381 — +23
+publish-core tests: the publish-gate schema fields, the `publishedPages`
+closed set, the standalone-document assembly incl. hostile-metadata
+escaping + zero-scripts/no-admin assertions, the per-page Less ordering,
+body parity of the published `<main>` against the registry AND the string
+renderer, and the sitemap builder section), `build` (dist layout
+`p/<slug>.html` + hashed per-page CSS, no `vendor-three`/app-bundle refs),
+serial e2e (22/22 — + the `/p/studio-page` static-page contract).
 
 ### Phase 10 — legacy removal and hardening
 

@@ -590,7 +590,7 @@ syncRouteVisuals()` used to run (on route entry + section change) now
       (`SAFE_BUILDER_SLUG` / `isSafeBuilderSlug`). The dev plugin
       (`admin/vite-plugin.ts`) now serves `GET /__jlz-admin/documents`,
       `GET /__jlz-admin/document?slug=` (no slug → first), `POST
-    /__jlz-admin/save` (the `{ slug, document }` envelope upserts by slug;
+  /__jlz-admin/save` (the `{ slug, document }` envelope upserts by slug;
       a bare document body still works) and `POST /__jlz-admin/delete`
       (keeps >= 1 document); the legacy `page.json` is transparently wrapped
       into a collection on first read and retired on the next save — the
@@ -630,6 +630,38 @@ syncRouteVisuals()` used to run (on route entry + section change) now
       meta/content/SSG-pipeline tests incl. the no-3D SFC import-graph
       assertions), `build` (dist layout `blog.html` + `blog/<slug>.html`,
       vendor-only scripts), serial e2e (21/21).
+      Phase 9 slice 5 landed (2026-08-22): approved builder documents are
+      published. The schema gains the publish-gate fields (`published` —
+      the "approved" marker, `description` — 1–300 SEO characters, both
+      optional so pre-slice-5 documents stay valid), and `publishedPages`
+      (`src/builder/documents.ts`) selects the `published: true` subset in
+      stable slug order — one closed set the pipeline renders and the
+      sitemap consumes. The new pure core `src/builder/publish.ts` assembles
+      each published document: `renderBuilderPageDocument` (standalone HTML
+      — canonical head: title/description/canonical/OG/Twitter, escaped
+      metadata, the per-page Less link, zero application scripts; SSR
+      fragment/v-if markers stripped via `stripSsrComments`) and
+      `renderBuilderPageLess` (per-page chain: the `_import.less` app base
+      first, the document's own theme last — Less last-definition-wins —
+      then the document's own UIkit component set). The new prebuild step
+      `scripts/publish-builder-pages.mjs` SSR-renders every approved
+      document through the trusted Vue registry (`BuilderPage` — the same
+      registry the admin preview uses; `renderBuilderDocument` is NOT used,
+      it stays only for proven static output), writes the Vite build inputs
+      (`p/<slug>.html` at the root) + `src/assets/builder/<slug>.less`, and
+      removes stale artifacts of unpublished/removed documents.
+      `vite.config.ts` derives the `p/<slug>` build inputs from
+      `documents.json`; the sitemap generator joins the builder section
+      (`buildBuilderSitemapSections`, `/p/<slug>` @ weekly/0.5) from the
+      same collection — `public/sitemap.xml` is now 12 urls. The admin
+      toolbar gained the Publish checkbox + SEO description input (saved
+      with the document through the existing envelope). First approval
+      committed: `studio-page` → `/p/studio-page` (registry-rendered body,
+      per-page Less rewritten by Vite, no app bundle, no editor delegation
+      attributes). Gates: `type-check`, `type-check:vue`, `test:unit` (381 —
+      +23 publish-core tests incl. body parity against the registry and the
+      string renderer), `build` (dist layout `p/<slug>.html`, hashed
+      per-page CSS, no `vendor-three`/app-bundle refs), serial e2e (22/22).
       Phase 8 slice 2 landed (2026-08-22): the six stable section groups
       left `World` — Experience creates the new `SectionGroups` owner
       (`src/Experience/Scene/SectionGroups.ts`: factory creation,
@@ -645,10 +677,11 @@ syncRouteVisuals()` used to run (on route entry + section change) now
 These outcomes remain valid but must not deepen a legacy boundary scheduled
 for replacement. Pull one forward only when its migration dependency is clear.
 
-- [ ] **Publish custom Page Builder pages through the frontend** — continue in
-      Phase 9 after the Vue builder, route manifest and trusted component
-      registry exist. Multi-page metadata, drag-and-drop, media and dynamic
-      sources remain separate bounded outcomes.
+- [ ] **Extend published builder pages with richer content** — the publish
+      path itself is in (Phase 9 slice 5: approved documents → static
+      `/p/<slug>` routes, sitemap, per-page theme). Remaining builder
+      content capabilities as separate bounded outcomes: media elements,
+      dynamic sources and drag-and-drop reordering.
 
 - [ ] **Extend the cinematic brand language across every route** — tune motion
       and TSL response through the new component/scene owners, preserving both

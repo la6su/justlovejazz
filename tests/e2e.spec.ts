@@ -111,6 +111,28 @@ test.describe('JustLoveJazz — page boot smoke', () => {
     }
   })
 
+  test('approved builder documents ship as static /p pages without the app bundle', async ({
+    request,
+  }) => {
+    // Phase 9, slice 5: `published: true` builder documents are rendered by
+    // the publish pipeline (scripts/publish-builder-pages.mjs) through the
+    // trusted Vue registry into standalone static routes — the registry body,
+    // the per-page Less rewritten by Vite, zero application scripts, no
+    // editor surface.
+    const response = await request.get('/p/studio-page')
+    expect(response.ok()).toBe(true)
+    const html = await response.text()
+
+    expect(html).toContain('<main id="main" class="jlz-builder-page" role="main">')
+    expect(html).toContain('<title>Studio page | JUSTLOVEJAZZ</title>')
+    expect(html).toContain('<link rel="canonical" href="https://justlovejazz.dev/p/studio-page" />')
+    expect(html).toMatch(/\/assets\/studio-page-[A-Za-z0-9_-]+\.css/)
+    expect(html).not.toContain('<script')
+    expect(html).not.toMatch(/vendor-three|assets\/(app|main)\b/)
+    expect(html).not.toContain('__jlz-admin')
+    expect(html).not.toContain('data-builder-id')
+  })
+
   test('no-scene mode boots the route shell and semantic content without a renderer', async ({
     page,
   }) => {
