@@ -2596,7 +2596,8 @@ Scope:
 - render approved builder documents through a trusted Vue registry;
 - make route metadata and sitemap consume the manifest (done by slice 1,
   2026-08-22 — see the slice entry below);
-- move blog pages into the shared SSG content pipeline without loading 3D;
+- move blog pages into the shared SSG content pipeline without loading 3D
+  (done by slice 4, 2026-08-22 — see the slice entry below);
 - remove the final one-page builder publishing restriction.
 
 Acceptance:
@@ -2709,18 +2710,58 @@ legacy `page.json` is wrapped transparently on first read and retired by
 the next save — the committed artifact in this change is the migrated
 `src/builder/generated/documents.json` (one document, `studio-page`), and
 `page.json` is deleted (deletion ledger: retired by the collection artifact
-+ the plugin migration path). The admin toolbar gains the collection UI:
-a slug input (safe-slug validated on focus-out with a revert), the document
-select and the New / Delete actions — switching documents or creating a new
-one while the current document is dirty is blocked with a status note
-instead of discarding edits; the compiled theme artifacts
-(`theme.generated.less` / `components.generated.less`) still follow the
-document just saved (a published per-document compile belongs to slice 5).
-The public graph is untouched: nothing outside the dev-only admin entry
-reads the collection yet (slice 5 publishes from it). Gates: `type-check`,
-`type-check:vue`, `test:unit` (336 — +19 collection-model tests + 4
-composable/SFC collection tests), `build` (admin + builder strings absent
-from `dist`), serial e2e (21/21).
+
+- the plugin migration path). The admin toolbar gains the collection UI:
+  a slug input (safe-slug validated on focus-out with a revert), the document
+  select and the New / Delete actions — switching documents or creating a new
+  one while the current document is dirty is blocked with a status note
+  instead of discarding edits; the compiled theme artifacts
+  (`theme.generated.less` / `components.generated.less`) still follow the
+  document just saved (a published per-document compile belongs to slice 5).
+  The public graph is untouched: nothing outside the dev-only admin entry
+  reads the collection yet (slice 5 publishes from it). Gates: `type-check`,
+  `type-check:vue`, `test:unit` (336 — +19 collection-model tests + 4
+  composable/SFC collection tests), `build` (admin + builder strings absent
+  from `dist`), serial e2e (21/21).
+
+#### Phase 9 shared SSG content pipeline slice — 2026-08-22
+
+Scope item 3 (move blog pages into the shared SSG content pipeline without
+loading 3D) closed. The five hand-maintained standalone documents
+(`blog.html` + `blog/<slug>.html`) become generated output of the same
+pipeline that drives the home prerender, and the Vue SFC is the source of
+truth for each page. New build input: `scripts/prerender-blog.mjs` (a
+prebuild step wired into the `build` script) spins up a throwaway Vite
+middleware server with only the Vue SFC compiler (no Tres/Three in the
+graph), SSR-renders `BlogPage.vue` per page, and hands the body to
+`renderBlogDocument`. `BlogPage.vue` (`src/app/views/blog/`) wraps the
+first-party editorial body — now a `content/blog/<key>.html` source loaded
+through the `?raw` registry `src/core/blogContent.ts` (one entry per static
+blog page; the closed set matches `BLOG_ARTICLES`) — in the shared
+`BlogLayout.vue` shell (reading-progress bar, skip link, the navbar variant
+and the footer social row are the only index/article differences).
+`src/core/blogMeta.ts` is the new pure head source: the closed-set metadata
+table `BLOG_PAGE_META` (title/description/robots/OG/Twitter/JSON-LD for the
+index + every published article, the same slugs the sitemap consumes;
+`assertBlogMetaClosedSet` fails the build on drift) plus `renderBlogDocument`
+(assembles the standalone document: generated `<head>`, the prerendered body,
+and the per-variant script tags — Prism + the year script for articles, only
+`/js/blog.js` for the index) and `stripSsrComments` (removes the Vue SSR
+fragment/v-if markers so the emitted markup is clean static HTML). The
+generated files overwrite the Vite build inputs at the root
+(`blog.html` + `blog/<slug>.html`), deterministic (fixed meta table, fixed
+content sources, prettier-normalized in the pipeline), so Vite only rewrites
+the stylesheet URL and ships the body as static HTML with no application
+bundle. Body parity: all five bodies are DOM-identical to the hand-maintained
+originals; the head is now generated (the only semantic delta is `&` →
+`&amp;` in the `<title>`/OG/Twitter titles). The no-3D guarantee is locked
+by unit tests (the SFC import graph is minimal — `BlogLayout` imports
+nothing, `BlogPage` only the local layout — and the generated documents carry
+no application chunk; `dist` blog pages reference only `/js/blog.js` + the
+Prism vendor scripts). Gates: `type-check`, `type-check:vue`, `test:unit`
+(358 — +20 meta/content/SSG-pipeline tests incl. the no-3D SFC import-graph
+assertions), `build` (dist layout `blog.html` + `blog/<slug>.html`,
+vendor-only scripts), serial e2e (21/21).
 
 ### Phase 10 — legacy removal and hardening
 
@@ -2844,6 +2885,7 @@ The following ledgers are updated in this document during implementation.
 | GLSL `ShaderMaterial` post chain         | Phase 6 phase-exit cleanup — retained 2026-08-22 as the labelled forced-WebGLBackend owner per the fixed decision; deletion tracked to Phase 10                                                                                                                                                                                                                                                                              | done    |
 | raw `jlz:*` window bridge                | all consumers use typed ports                                                                                                                                                                                                                                                                                                                                                                                                | pending |
 | hand-maintained `public/sitemap.xml`     | Phase 9 slice 1 — generated from the manifest + metadata table + blog index by `scripts/generate-sitemap.ts` (prebuild step) 2026-08-22; the Vite blog input map now derives from the same blog index                                                                                                                                                                                                                        | done    |
+| hand-maintained standalone blog HTML     | Phase 9 slice 4 — `blog.html` + `blog/<slug>.html` are now SSG output of `scripts/prerender-blog.mjs` (prebuild step; SFC shell + `content/blog/*.html` sources + `src/core/blogMeta.ts` head) 2026-08-22                                                                                                                                                                                                                    | done    |
 | monolithic `Experience` coordination     | Phase 8 owner migrations — the scene-coordination engine left `Experience` into `SceneCoordinator` 2026-08-22 (slice 10)                                                                                                                                                                                                                                                                                                     | done    |
 | legacy World adapters                    | Phase 8 completion — slice 1 (lights + ground) + slice 2 (stable section groups) + slice 3 (EnvSphere) + slice 4 (SplashCube) + slice 5 (ParticleBurst + DrawTrail) + slice 6 (BakuCarousel reference + init) + slice 7 (WorksPlaneStage) + slice 8 (Contact stages) + slice 9 (Lab object) + slice 10 (scene-coordination engine + `attachWorld` primitive slot) — `World.ts` + `SectionSceneFactory.ts` deleted 2026-08-22 | done    |
 | migration flags and shims                | Phase 10                                                                                                                                                                                                                                                                                                                                                                                                                     | pending |

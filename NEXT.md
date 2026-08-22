@@ -590,7 +590,7 @@ syncRouteVisuals()` used to run (on route entry + section change) now
       (`SAFE_BUILDER_SLUG` / `isSafeBuilderSlug`). The dev plugin
       (`admin/vite-plugin.ts`) now serves `GET /__jlz-admin/documents`,
       `GET /__jlz-admin/document?slug=` (no slug → first), `POST
-      /__jlz-admin/save` (the `{ slug, document }` envelope upserts by slug;
+    /__jlz-admin/save` (the `{ slug, document }` envelope upserts by slug;
       a bare document body still works) and `POST /__jlz-admin/delete`
       (keeps >= 1 document); the legacy `page.json` is transparently wrapped
       into a collection on first read and retired on the next save — the
@@ -603,6 +603,33 @@ syncRouteVisuals()` used to run (on route entry + section change) now
       collection yet (slice 5 publishes from it). Gates: `type-check`,
       `type-check:vue`, `test:unit` (336 — +19 collection-model tests + 4
       composable/SFC collection tests), `build`, serial e2e (21/21).
+      Phase 9 slice 4 landed (2026-08-22): the blog moved onto the shared
+      SSG content pipeline. The five hand-maintained standalone documents
+      (`blog.html` + `blog/*.html`) are now generated output: the new
+      prebuild step `scripts/prerender-blog.mjs` renders `BlogPage.vue`
+      (SFC shell `src/app/views/blog/` + the `content/blog/*.html`
+      editorial sources via the `?raw` registry in
+      `src/core/blogContent.ts`) through a throwaway Vite middleware
+      server (Vue SFC compiler only — no Tres/Three in the graph), and
+      `renderBlogDocument` (`src/core/blogMeta.ts`) wraps the body into
+      the standalone document — the closed-set head metadata table
+      `BLOG_PAGE_META` (title/description/robots/OG/Twitter/JSON-LD for
+      the index + every published article, the same slugs the sitemap
+      consumes; `assertBlogMetaClosedSet` fails the build on drift) plus
+      the per-variant script tags (Prism + the year script for articles,
+      only `/js/blog.js` for the index). The generated files overwrite
+      the Vite build inputs at the root (deterministic: fixed meta
+      table, fixed content sources, prettier-normalized in the pipeline),
+      so Vite only rewrites the stylesheet URL — the documents ship as
+      static HTML with no application bundle. `stripSsrComments` removes
+      Vue SSR fragment/v-if markers, so the emitted markup is clean
+      static HTML. Body parity: all five bodies are DOM-identical to the
+      hand-maintained originals; the head is now generated (only
+      semantic delta: `&` → `&amp;` in the `<title>`/OG/Twitter titles).
+      Gates: `type-check`, `type-check:vue`, `test:unit` (358 — +20
+      meta/content/SSG-pipeline tests incl. the no-3D SFC import-graph
+      assertions), `build` (dist layout `blog.html` + `blog/<slug>.html`,
+      vendor-only scripts), serial e2e (21/21).
       Phase 8 slice 2 landed (2026-08-22): the six stable section groups
       left `World` — Experience creates the new `SectionGroups` owner
       (`src/Experience/Scene/SectionGroups.ts`: factory creation,

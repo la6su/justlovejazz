@@ -23,6 +23,7 @@
     <link rel="manifest" href="/site.webmanifest" />
     <link rel="canonical" href="https://justlovejazz.dev/blog/on-demand-rendering" />
 
+    <!-- Open Graph -->
     <meta property="og:type" content="article" />
     <meta property="og:site_name" content="JUSTLOVEJAZZ" />
     <meta property="og:locale" content="en_US" />
@@ -45,6 +46,7 @@
     <meta property="article:tag" content="WebGPU" />
     <meta property="article:tag" content="Three.js" />
 
+    <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@justlovejazz" />
     <meta name="twitter:creator" content="@justlovejazz" />
@@ -84,7 +86,10 @@
         "publisher": {
           "@type": "Organization",
           "name": "JUSTLOVEJAZZ",
-          "logo": { "@type": "ImageObject", "url": "https://justlovejazz.dev/favicon.svg" }
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://justlovejazz.dev/favicon.svg"
+          }
         },
         "mainEntityOfPage": {
           "@type": "WebPage",
@@ -100,7 +105,6 @@
       <div class="jlz-reading-progress__bar"></div>
     </div>
     <a href="#main" class="skip-link">Skip to main content</a>
-
     <header class="jlz-blog-header" role="banner">
       <nav
         class="uk-container uk-container-expand uk-navbar uk-navbar-transparent"
@@ -118,7 +122,6 @@
         </div>
       </nav>
     </header>
-
     <main id="main" class="uk-section uk-section-large" role="main">
       <article class="uk-container uk-container-small">
         <p class="jlz-landing-eyebrow">&gt; PROCESS NOTE · 10 MAY 2026</p>
@@ -238,8 +241,9 @@
         </p>
         <p>
           The CubeCamera reflection (for the glass cube) also needs the flag — if the cube is
-          visible but <code>_needsRender</code> is false, the reflection is stale. We accept this:
-          the reflection updates on the next interaction, which is usually within a second.
+          visible but
+          <code>_needsRender</code> is false, the reflection is stale. We accept this: the
+          reflection updates on the next interaction, which is usually within a second.
         </p>
 
         <hr class="uk-margin-large" />
@@ -252,7 +256,6 @@
         </nav>
       </article>
     </main>
-
     <footer class="jlz-blog-footer" role="contentinfo">
       <div class="uk-container uk-container-expand uk-text-center">
         <ul class="uk-iconnav uk-flex-center" aria-label="Social links">
@@ -281,7 +284,6 @@
         </p>
       </div>
     </footer>
-
     <script>
       document.getElementById('year').textContent = String(new Date().getFullYear())
     </script>

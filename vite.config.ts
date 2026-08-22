@@ -54,10 +54,14 @@ export default defineConfig(({ mode }) => ({
       // Multi-page entry: index (/) → blog (/blog).
       // index.html is the seamless 3D experience with inline splash overlay.
       // three.js loads LAZY (dynamic import) — does NOT block FCP.
-      // blog.html + blog/*.html are standalone semantic pages (SEO).
-      // Blog article entries are derived from the canonical index
-      // (`src/core/blogPages.ts`) — the same source the sitemap generator
-      // consumes (Phase 9: adding an article is a blogPages entry).
+      // Blog documents are SSG outputs: `scripts/prerender-blog.mjs` renders
+      // `BlogPage.vue` (SFC shell + `content/blog/*.html` editorial sources)
+      // and writes them to the Vite build inputs — `blog.html` (the index →
+      // `/blog`) and `blog/<slug>.html` (the articles → `/blog/<slug>`) — the
+      // same closed set the sitemap consumes (`src/core/blogPages.ts`). The
+      // generated head is the single source for SEO/Open Graph/JSON-LD
+      // (`src/core/blogMeta.ts`). Vite rewrites the stylesheet URL and ships
+      // the body as static HTML (no application bundle, no 3D).
       input: {
         index: resolve(__dirname, 'index.html'),
         blog: resolve(__dirname, 'blog.html'),
