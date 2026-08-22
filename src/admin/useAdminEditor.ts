@@ -42,6 +42,12 @@ import {
   type BuilderElementType,
   type BuilderNode,
 } from '../builder/schema'
+import {
+  createBuilderDocument,
+  isSafeBuilderSlug,
+  nextAvailableBuilderSlug,
+  validateBuilderDocuments,
+} from '../builder/documents'
 import { BuilderStore } from '../builder/store'
 
 export type EditorMode = 'builder' | 'style'
@@ -66,6 +72,10 @@ export interface AdminEditorElements {
   saveStatus: Ref<HTMLElement | null>
   /** `#document-title` — the toolbar title input. */
   titleInput: Ref<HTMLElement | null>
+  /** `#document-slug` — the toolbar slug input. */
+  slugInput: Ref<HTMLElement | null>
+  /** `#document-list` — the toolbar document select. */
+  documentSelect: Ref<HTMLElement | null>
   /** `#save` — the save button. */
   saveButton: Ref<HTMLButtonElement | null>
   /** `#undo` — the undo button. */
@@ -118,6 +128,10 @@ export function useAdminEditor(
   const statusError = ref(false)
   const outlineScrollTarget = ref<string | null>(null)
   const outlineHost = ref<HTMLElement | null>(null)
+  // The document collection (Phase 9, slice 3): the saved documents and the
+  // slug the loaded document came from (the slug-focusout revert target).
+  const documents = ref<Array<{ slug: string; title: string }>>([])
+  const loadedSlug = ref(DEFAULT_BUILDER_DOCUMENT.slug)
 
   // The complete `--builder-*` variable map is owned by the pure
   // themeVariables contract (single source, locked by tests); the editor only
@@ -270,16 +284,22 @@ export function useAdminEditor(
       const response = await fetch('/__jlz-admin/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(store.document),
+        // The collection envelope (Phase 9, slice 3): the document is
+        // upserted by its slug, so several documents can be saved.
+        body: JSON.stringify({ slug: store.document.slug, document: store.document }),
       })
       const result = (await response.json()) as {
         ok: boolean
         error?: string
+        slug?: string
         cssBytes?: number
         components?: string[]
       }
       if (!response.ok || !result.ok) throw new Error(result.error ?? 'Save failed')
       store.markSaved()
+      loadedSlug.value = store.document.slug
+      await loadDocuments()
+      syncDocumentSelect()
       setStatus(
         `Saved · ${result.cssBytes?.toLocaleString() ?? 0} CSS bytes · ${result.components?.length ?? 0} components`,
       )
@@ -292,15 +312,39 @@ export function useAdminEditor(
     }
   }
 
-  const loadDocument = async (): Promise<void> => {
+  const loadDocuments = async (): Promise<void> => {
     try {
-      const response = await fetch('/__jlz-admin/document')
+      const response = await fetch('/__jlz-admin/documents')
+      if (!response.ok) throw new Error('Unavailable')
+      const value = (await response.json()) as unknown
+      const validation = validateBuilderDocuments(value)
+      if (!validation.ok || !validation.documents)
+        throw new Error(validation.errors[0] ?? 'Invalid collection')
+      documents.value = validation.documents.documents.map((document) => ({
+        slug: document.slug,
+        title: document.title,
+      }))
+    } catch {
+      documents.value = []
+    }
+  }
+
+  const loadDocument = async (slug?: string): Promise<void> => {
+    try {
+      const target = slug ?? loadedSlug.value
+      const response = await fetch(
+        target
+          ? `/__jlz-admin/document?slug=${encodeURIComponent(target)}`
+          : '/__jlz-admin/document',
+      )
       if (!response.ok) throw new Error('Saved document is unavailable')
       const candidate: unknown = await response.json()
       const validation = validateBuilderDocument(candidate)
       if (!validation.ok || !validation.document)
         throw new Error(validation.errors[0] ?? 'Saved document is invalid')
       store.load(validation.document)
+      loadedSlug.value = validation.document.slug
+      syncDocumentSelect()
       setStatus('Ready')
     } catch (error) {
       store.load(DEFAULT_BUILDER_DOCUMENT)
@@ -310,6 +354,90 @@ export function useAdminEditor(
       )
     }
     refreshPanels()
+  }
+
+  // ── Document collection (Phase 9, slice 3) ──────────────────────────────
+  const onSlugInput = (): void => {
+    const input = elements.slugInput.value as HTMLInputElement | null
+    if (!input) return
+    const value = input.value.trim().toLowerCase()
+    if (value) {
+      store.document.slug = value
+      recordCurrentSnapshot(false)
+    }
+  }
+
+  const onSlugFocusout = (): void => {
+    const input = elements.slugInput.value as HTMLInputElement | null
+    if (!input) return
+    const value = input.value.trim().toLowerCase()
+    if (!isSafeBuilderSlug(value)) {
+      store.document.slug = loadedSlug.value
+      input.value = loadedSlug.value
+      setStatus('Slug must be lowercase letters, digits and single hyphens', true)
+      recordCurrentSnapshot()
+      return
+    }
+    loadedSlug.value = value
+    input.value = value
+    store.document.slug = value
+    syncDocumentSelect()
+    recordCurrentSnapshot()
+  }
+
+  const onDocumentSelectChange = (): void => {
+    const select = elements.documentSelect.value as HTMLSelectElement | null
+    if (!select) return
+    const slug = select.value
+    if (slug === store.document.slug) return
+    if (store.isDirty()) {
+      select.value = store.document.slug
+      setStatus('Save the document before switching', true)
+      return
+    }
+    void loadDocument(slug)
+  }
+
+  const onNewDocument = (): void => {
+    if (store.isDirty()) {
+      setStatus('Save the document before creating a new one', true)
+      return
+    }
+    const slug = nextAvailableBuilderSlug([
+      ...documents.value.map((document) => document.slug),
+      store.document.slug,
+    ])
+    store.load(createBuilderDocument(slug))
+    loadedSlug.value = slug
+    syncDocumentSelect()
+    refreshPanels()
+    setStatus(`New document "${slug}" — save to keep it`)
+  }
+
+  const onDeleteDocument = async (): Promise<void> => {
+    if (documents.value.length < 2) {
+      setStatus('At least one document must remain', true)
+      return
+    }
+    if (store.isDirty()) {
+      setStatus('Save the document before deleting', true)
+      return
+    }
+    const slug = store.document.slug
+    try {
+      const response = await fetch('/__jlz-admin/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug }),
+      })
+      const result = (await response.json()) as { ok: boolean; error?: string }
+      if (!response.ok || !result.ok) throw new Error(result.error ?? 'Delete failed')
+      await loadDocuments()
+      await loadDocument(documents.value[0]?.slug)
+      setStatus(`Deleted "${slug}"`)
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Delete failed', true)
+    }
   }
 
   // ── Editor shortcuts ──────────────────────────────────────────────────────
@@ -464,6 +592,24 @@ export function useAdminEditor(
     return inspectorDefinition.value?.label ?? 'No selection'
   })
 
+  // The document select options: every saved document, plus the current
+  // document when it is not (yet) in the collection (an unsaved new document
+  // or a freshly created one).
+  const documentOptions = computed((): Array<{ slug: string; title: string }> => {
+    void rev.value
+    const options = [...documents.value]
+    if (!options.some((option) => option.slug === store.document.slug))
+      options.push({ slug: store.document.slug, title: store.document.title })
+    return options
+  })
+
+  const syncDocumentSelect = (): void => {
+    const select = elements.documentSelect.value as HTMLSelectElement | null
+    if (!select) return
+    if (documentOptions.value.some((option) => option.slug === store.document.slug))
+      select.value = store.document.slug
+  }
+
   // Re-apply the preview state and re-hydrate the dynamic `uk-icon`
   // attributes whenever a panel repaints (a `v-html` swap wipes the child
   // selection class even though the element variables survive it).
@@ -492,7 +638,10 @@ export function useAdminEditor(
   // (bare composable tests drive the handlers directly).
   if (getCurrentInstance()) {
     onMounted(() => {
-      void loadDocument()
+      void (async () => {
+        await loadDocuments()
+        await loadDocument(documents.value[0]?.slug)
+      })()
       document.addEventListener('keydown', onDocumentKeydown)
       window.addEventListener('beforeunload', onBeforeUnload)
     })
@@ -518,6 +667,8 @@ export function useAdminEditor(
     inspectorDefinition,
     styleGroup,
     inspectorTitleText,
+    documents,
+    documentOptions,
     addElement,
     moveSelected,
     duplicateSelected,
@@ -526,6 +677,7 @@ export function useAdminEditor(
     selectNode,
     saveDocument,
     loadDocument,
+    loadDocuments,
     restoreHistory,
     setMode,
     setViewport,
@@ -535,6 +687,11 @@ export function useAdminEditor(
     onFieldFocusout,
     onTitleInput,
     onTitleFocusout,
+    onSlugInput,
+    onSlugFocusout,
+    onDocumentSelectChange,
+    onNewDocument,
+    onDeleteDocument,
     onDocumentKeydown,
     onBeforeUnload,
     outlineHost,

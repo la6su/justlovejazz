@@ -2684,6 +2684,44 @@ public routes render (slice 5). Gates: `type-check`, `type-check:vue`,
 registry is imported by the dev-only admin entry only, for now), serial
 e2e (21/21).
 
+#### Phase 9 multi-document builder storage slice — 2026-08-22
+
+The final one-page builder publishing restriction is removed at the storage
+layer. The single fixed artifact `src/builder/generated/page.json` (one
+document, one `slug`, one GET endpoint, one fixed write path) becomes a
+document collection: `src/builder/documents.ts` is the new pure model — a
+v1 `BuilderDocuments` wrapper, `validateBuilderDocuments` (each member
+against the v2 document schema + unique safe slugs across the collection),
+`upsertBuilderDocument` (replace by slug, insert otherwise,
+order-preserving), `removeBuilderDocument`, `findBuilderDocument`,
+`migrateLegacyPageDocument` (legacy `page.json` → v1 collection),
+`nextAvailableBuilderSlug` (`page`, `page-2`, …) and `createBuilderDocument`
+(a fresh clone of the default layout with a new slug/title). The slug policy
+itself is exported from the schema (`SAFE_BUILDER_SLUG`; `isSafeBuilderSlug`
+lives in the collection module). The dev plugin (`admin/vite-plugin.ts`) is
+now collection-aware: `GET /__jlz-admin/documents` (the whole collection),
+`GET /__jlz-admin/document?slug=` (one document; no slug → the first),
+`POST /__jlz-admin/save` with the `{ slug, document }` envelope (upsert by
+slug + theme compile + atomic write with the existing rollback; a bare
+document body is still accepted for compatibility) and `POST
+/__jlz-admin/delete` (removes by slug, keeps at least one document). The
+legacy `page.json` is wrapped transparently on first read and retired by
+the next save — the committed artifact in this change is the migrated
+`src/builder/generated/documents.json` (one document, `studio-page`), and
+`page.json` is deleted (deletion ledger: retired by the collection artifact
++ the plugin migration path). The admin toolbar gains the collection UI:
+a slug input (safe-slug validated on focus-out with a revert), the document
+select and the New / Delete actions — switching documents or creating a new
+one while the current document is dirty is blocked with a status note
+instead of discarding edits; the compiled theme artifacts
+(`theme.generated.less` / `components.generated.less`) still follow the
+document just saved (a published per-document compile belongs to slice 5).
+The public graph is untouched: nothing outside the dev-only admin entry
+reads the collection yet (slice 5 publishes from it). Gates: `type-check`,
+`type-check:vue`, `test:unit` (336 — +19 collection-model tests + 4
+composable/SFC collection tests), `build` (admin + builder strings absent
+from `dist`), serial e2e (21/21).
+
 ### Phase 10 — legacy removal and hardening
 
 Audit the phase-specific deletion ledger rather than postponing earlier

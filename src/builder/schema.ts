@@ -43,7 +43,7 @@ const ELEMENT_TYPES = new Set<BuilderElementType>([
 
 const CONTAINER_TYPES = new Set<BuilderElementType>(['section', 'grid', 'card'])
 const SAFE_ID = /^[a-z0-9][a-z0-9-]{0,63}$/
-const SAFE_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+export const SAFE_BUILDER_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -111,7 +111,7 @@ export function validateBuilderDocument(value: unknown): BuilderValidationResult
     errors.push(`document version must be ${BUILDER_DOCUMENT_VERSION}`)
   if (typeof value.title !== 'string' || value.title.length < 1 || value.title.length > 120)
     errors.push('title must contain between 1 and 120 characters')
-  if (typeof value.slug !== 'string' || !SAFE_SLUG.test(value.slug))
+  if (typeof value.slug !== 'string' || !SAFE_BUILDER_SLUG.test(value.slug))
     errors.push('slug must contain lowercase letters, digits and single hyphens')
 
   validateBuilderTheme(value.theme, errors)

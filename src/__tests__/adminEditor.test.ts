@@ -16,6 +16,7 @@ vi.mock('uikit', () => ({
 import AdminApp from '../admin/AdminApp.vue'
 import { DEFAULT_BUILDER_DOCUMENT } from '../builder/default-document'
 import { useAdminEditor, type AdminEditorElements } from '../admin/useAdminEditor'
+import type { BuilderDocument } from '../builder/schema'
 
 // jsdom has no scrollIntoView / matchMedia; the composable's DOM effects hit
 // them, so stub the prototypes for the mount tests.
@@ -29,16 +30,34 @@ window.matchMedia = vi.fn().mockReturnValue({
   removeEventListener: vi.fn(),
 } as unknown as MediaQueryList)
 
+const secondDocument = (): BuilderDocument => {
+  const document = JSON.parse(JSON.stringify(DEFAULT_BUILDER_DOCUMENT)) as BuilderDocument
+  document.slug = 'about'
+  document.title = 'About'
+  return document
+}
+
 const jsonDocument = JSON.stringify(DEFAULT_BUILDER_DOCUMENT)
 const mockFetch = (): void => {
   vi.stubGlobal(
     'fetch',
     vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input)
-      if (url === '/__jlz-admin/document') {
+      const path = url.split('?')[0]!
+      if (path === '/__jlz-admin/documents') {
         return {
           ok: true,
-          json: async () => JSON.parse(jsonDocument),
+          json: async () => ({
+            version: 1,
+            documents: [DEFAULT_BUILDER_DOCUMENT, secondDocument()],
+          }),
+        } as Response
+      }
+      if (path === '/__jlz-admin/document') {
+        const slug = new URL(url, 'http://localhost').searchParams.get('slug')
+        return {
+          ok: true,
+          json: async () => (slug === 'about' ? secondDocument() : JSON.parse(jsonDocument)),
         } as Response
       }
       return {
@@ -60,6 +79,8 @@ const makeElements = (): AdminEditorElements => {
   const inspectorTitle = ref<HTMLElement | null>(document.createElement('h2'))
   const saveStatus = ref<HTMLElement | null>(document.createElement('output'))
   const titleInput = ref<HTMLElement | null>(document.createElement('input'))
+  const slugInput = ref<HTMLElement | null>(document.createElement('input'))
+  const documentSelect = ref<HTMLSelectElement | null>(document.createElement('select'))
   const saveButton = ref<HTMLButtonElement | null>(document.createElement('button'))
   const undoButton = ref<HTMLButtonElement | null>(document.createElement('button'))
   const redoButton = ref<HTMLButtonElement | null>(document.createElement('button'))
@@ -71,6 +92,8 @@ const makeElements = (): AdminEditorElements => {
     inspectorTitle,
     saveStatus,
     titleInput,
+    slugInput,
+    documentSelect,
     saveButton,
     undoButton,
     redoButton,
@@ -148,6 +171,68 @@ describe('useAdminEditor', () => {
     expect(editor.store.selectedId).toBe('hero-section')
     expect(editor.inspectorLocation.value?.node.id).toBe('hero-section')
   })
+
+  it('loads the document collection and switches to another document', async () => {
+    mockFetch()
+    const editor = useAdminEditor(makeElements())
+    await editor.loadDocuments()
+    expect(editor.documents.value.map((document) => document.slug)).toEqual([
+      'studio-page',
+      'about',
+    ])
+    await editor.loadDocument('about')
+    expect(editor.store.document.slug).toBe('about')
+    expect(editor.store.document.title).toBe('About')
+    expect(editor.statusMessage.value).toBe('Ready')
+  })
+
+  it('saves through the collection envelope (slug + document)', async () => {
+    const bodies: unknown[] = []
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input)
+        const path = url.split('?')[0]!
+        if (path === '/__jlz-admin/documents')
+          return { ok: true, json: async () => ({ version: 1, documents: [] }) } as Response
+        if (path === '/__jlz-admin/document')
+          return { ok: true, json: async () => DEFAULT_BUILDER_DOCUMENT } as Response
+        if (path === '/__jlz-admin/save') {
+          bodies.push(JSON.parse(String(init?.body)))
+          return {
+            ok: true,
+            json: async () => ({
+              ok: true,
+              slug: 'studio-page',
+              cssBytes: 123,
+              components: ['grid'],
+            }),
+          } as Response
+        }
+        return { ok: true, json: async () => ({ ok: true }) } as Response
+      }),
+    )
+    const editor = useAdminEditor(makeElements())
+    await editor.loadDocument()
+    await editor.saveDocument()
+    const body = bodies[0]! as { slug?: string; document?: { slug?: string } }
+    expect(body.slug).toBe('studio-page')
+    expect(body.document?.slug).toBe('studio-page')
+    expect(editor.statusMessage.value).toContain('Saved')
+  })
+
+  it('creates a new document from the next available slug', async () => {
+    mockFetch()
+    const editor = useAdminEditor(makeElements())
+    await editor.loadDocuments()
+    await editor.loadDocument()
+    editor.onNewDocument()
+    expect(editor.store.document.slug).toBe('page')
+    expect(editor.store.document.title).toBe('Untitled page')
+    expect(editor.statusMessage.value).toContain('page')
+    // the current (unsaved) document appears in the select options
+    expect(editor.documentOptions.value.map((option) => option.slug)).toContain('page')
+  })
 })
 
 describe('AdminApp.vue', () => {
@@ -172,6 +257,18 @@ describe('AdminApp.vue', () => {
     // delegation attributes (editable mode), not a v-html string.
     expect(wrapper.find('#builder-preview [data-builder-id="hero-section"]').exists()).toBe(true)
     expect(wrapper.find('#builder-preview .jlz-builder-section').exists()).toBe(true)
+    document.body.innerHTML = ''
+  })
+
+  it('renders the document collection controls in the toolbar', async () => {
+    const wrapper = await mountApp()
+    // Phase 9, slice 3: the one-page restriction is gone — the toolbar hosts
+    // the slug input, the document select and the New / Delete actions.
+    expect(wrapper.find('#document-slug').exists()).toBe(true)
+    expect(wrapper.find('#document-list').exists()).toBe(true)
+    expect(wrapper.findAll('#document-list option').length).toBeGreaterThanOrEqual(1)
+    expect(wrapper.find('#new-document').exists()).toBe(true)
+    expect(wrapper.find('#delete-document').exists()).toBe(true)
     document.body.innerHTML = ''
   })
 

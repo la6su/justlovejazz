@@ -22,6 +22,8 @@ const inspectorFieldsEl = ref<HTMLElement | null>(null)
 const inspectorTitleEl = ref<HTMLElement | null>(null)
 const saveStatusEl = ref<HTMLElement | null>(null)
 const titleInputEl = ref<HTMLElement | null>(null)
+const slugInputEl = ref<HTMLElement | null>(null)
+const documentSelectEl = ref<HTMLElement | null>(null)
 const saveButtonEl = ref<HTMLButtonElement | null>(null)
 const undoButtonEl = ref<HTMLButtonElement | null>(null)
 const redoButtonEl = ref<HTMLButtonElement | null>(null)
@@ -43,6 +45,7 @@ const {
   inspectorDefinition,
   styleGroup,
   inspectorTitleText,
+  documentOptions,
   addElement,
   moveSelected,
   duplicateSelected,
@@ -59,6 +62,11 @@ const {
   onFieldFocusout,
   onTitleInput,
   onTitleFocusout,
+  onSlugInput,
+  onSlugFocusout,
+  onDocumentSelectChange,
+  onNewDocument,
+  onDeleteDocument,
   outlineHost,
 } = useAdminEditor({
   preview: previewEl,
@@ -66,6 +74,8 @@ const {
   inspectorTitle: inspectorTitleEl,
   saveStatus: saveStatusEl,
   titleInput: titleInputEl,
+  slugInput: slugInputEl,
+  documentSelect: documentSelectEl,
   saveButton: saveButtonEl,
   undoButton: undoButtonEl,
   redoButton: redoButtonEl,
@@ -130,6 +140,49 @@ const onPreviewKeydown = (event: KeyboardEvent): void => {
           @focusout="onTitleFocusout"
         />
       </label>
+      <label class="jlz-admin-slug">
+        <span class="uk-hidden">Page slug</span>
+        <input
+          id="document-slug"
+          ref="slugInputEl"
+          class="uk-input"
+          maxlength="64"
+          :value="store.document.slug"
+          @input="onSlugInput"
+          @focusout="onSlugFocusout"
+        />
+      </label>
+      <div class="jlz-admin-documents" aria-label="Document collection">
+        <select
+          id="document-list"
+          ref="documentSelectEl"
+          class="uk-select uk-form-small"
+          aria-label="Builder documents"
+          @change="onDocumentSelectChange"
+        >
+          <option v-for="document in documentOptions" :key="document.slug" :value="document.slug">
+            {{ document.slug }}
+          </option>
+        </select>
+        <button
+          id="new-document"
+          class="uk-button uk-button-default uk-button-small"
+          type="button"
+          title="Create a new document"
+          @click="onNewDocument"
+        >
+          New
+        </button>
+        <button
+          id="delete-document"
+          class="uk-button uk-button-default uk-button-small"
+          type="button"
+          title="Delete the current document"
+          @click="onDeleteDocument"
+        >
+          Delete
+        </button>
+      </div>
       <div class="jlz-admin-history" aria-label="History controls">
         <button
           id="undo"

@@ -579,6 +579,30 @@ syncRouteVisuals()` used to run (on route entry + section change) now
       `type-check:vue`, `test:unit` (317 — +6 parity tests + the SFC
       registry-render assertion in `adminEditor.test.ts`), `build` (admin
       strings + registry still absent from `dist`), serial e2e (21/21).
+      Phase 9 slice 3 landed (2026-08-22): the one-page builder publishing
+      restriction is out. Storage moved from one fixed `page.json` to a
+      document collection: `src/builder/documents.ts` is the new pure model
+      (v1 `BuilderDocuments`, `validateBuilderDocuments` — per-document v2
+      validation + unique safe slugs, `upsertBuilderDocument`,
+      `removeBuilderDocument`, `findBuilderDocument`,
+      `migrateLegacyPageDocument`, `nextAvailableBuilderSlug`,
+      `createBuilderDocument`), the slug policy is exported from the schema
+      (`SAFE_BUILDER_SLUG` / `isSafeBuilderSlug`). The dev plugin
+      (`admin/vite-plugin.ts`) now serves `GET /__jlz-admin/documents`,
+      `GET /__jlz-admin/document?slug=` (no slug → first), `POST
+      /__jlz-admin/save` (the `{ slug, document }` envelope upserts by slug;
+      a bare document body still works) and `POST /__jlz-admin/delete`
+      (keeps >= 1 document); the legacy `page.json` is transparently wrapped
+      into a collection on first read and retired on the next save — the
+      committed artifact is now `src/builder/generated/documents.json`
+      (migrated from `page.json` in this change). The admin toolbar gained
+      the slug input, the document select and the New / Delete actions
+      (switching or creating while dirty is blocked with a status note; the
+      compiled theme artifacts still follow the document just saved). The
+      public side is untouched: nothing in the public graph reads the
+      collection yet (slice 5 publishes from it). Gates: `type-check`,
+      `type-check:vue`, `test:unit` (336 — +19 collection-model tests + 4
+      composable/SFC collection tests), `build`, serial e2e (21/21).
       Phase 8 slice 2 landed (2026-08-22): the six stable section groups
       left `World` — Experience creates the new `SectionGroups` owner
       (`src/Experience/Scene/SectionGroups.ts`: factory creation,

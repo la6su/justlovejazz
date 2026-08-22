@@ -167,6 +167,11 @@ references/**/.gitattributes
 # Test output
 test-results/
 playwright-report/
+# Browser-tool session artifacts (never committed)
+.playwright-mcp/
+# External reference checkouts (never committed)
+references/portfolio/
+references/yootheme/
 
 # Lighthouse CI reports (artifacts — regenerate with scripts/lhci.sh)
 .lighthouseci/
