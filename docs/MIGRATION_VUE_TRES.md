@@ -3100,6 +3100,19 @@ render-demand and Works scroll decisions use that pull-based port; the
 `routePage` adapter is now confined to the application boundary, ready to be
 replaced by Vue Router-owned state in one follow-up.
 
+#### DRACO decoder asset consolidation — 2026-08-24
+
+`ContactCyprusStage` now passes Three's exported `DRACO_GLTF_CONFIG` to
+`DRACOLoader`, so the glTF-specific WASM decoder pair emitted from the loader
+module owns the runtime assets. The duplicated public copies under
+`public/assets/draco/` were removed; no startup or non-Contact request should
+reference that path. This preserves the existing GLTF/DRACO runtime contract
+on the route and removes duplicate delivery from the public asset tree.
+
+This is an asset-ownership and delivery slice, not a claim that the shared
+`vendor-three` gzip budget is fixed. The current budget gate remains separate
+and red until a generated import-closure profile identifies a real reduction.
+
 ### Removal ledger
 
 | Legacy element                           | Remove after                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Status |

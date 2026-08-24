@@ -102,6 +102,11 @@ do not start a phase whose entry gate has not passed.
       `Experience` itself now consumes the page getter for all route-sensitive
       lifecycle, render-demand and visibility decisions; `entry-app.ts` is the
       sole current adapter boundary.
+      The Contact route now uses Three's `DRACO_GLTF_CONFIG` decoder pair
+      directly; the duplicate public `/assets/draco/` copies were removed,
+      while the hashed loader assets remain route-owned and lazy. This reduces
+      duplicate delivery but does not close the separate `vendor-three` budget
+      overage.
 
 - [ ] **Phase 3: extract framework-neutral contracts** — introduce the one
       route manifest, canonical world-slot tuple, bootstrap state machine,

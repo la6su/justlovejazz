@@ -1,7 +1,7 @@
 // ContactCyprusStage — camera-local 3D location marker for Contact / Agros.
 
 import * as THREE from 'three'
-import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
+import { DRACOLoader, DRACO_GLTF_CONFIG } from 'three/addons/loaders/DRACOLoader.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { disposeMaterialDeep } from '../../Utils/dispose'
 import { prefersReducedMotion } from '../../core/motionPolicy'
@@ -38,10 +38,11 @@ export class ContactCyprusStage extends THREE.Group {
   }
 
   async load(): Promise<void> {
-    // The model is Draco-compressed. Keep the decoder local and route-owned:
-    // neither its worker nor the terrain bytes belong on the startup path.
+    // The model is Draco-compressed. Use Three's glTF-specific WASM pair;
+    // Vite emits these assets from the loader module and no public decoder
+    // copy is needed on the route or startup path.
     const dracoLoader = new DRACOLoader()
-    dracoLoader.setDecoderPath('/assets/draco/')
+    dracoLoader.setDecoderPath(DRACO_GLTF_CONFIG)
     const loader = new GLTFLoader().setDRACOLoader(dracoLoader)
     let gltf: Awaited<ReturnType<GLTFLoader['loadAsync']>>
     try {
