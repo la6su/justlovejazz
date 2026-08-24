@@ -149,15 +149,18 @@ do not start a phase whose entry gate has not passed.
       side edges are consumed 1:1 by `CinematicNav` with unchanged
       event/frame timing, and the route/story/scene desync invariant — DOM
       main index == scene slot index at every stop point — is unit-locked;
-      the full runtime StoryController publisher lands with the Phase 5/7
-      scene-host rewiring on top of this contract). The render-demand decision is
+      a framework-neutral `StoryPublisher` compatibility bridge now publishes
+      deduplicated snapshots from `ExperienceUI`/`CinematicNav` without changing
+      the native scroll source, pull path or scene timing; the full runtime
+      StoryController publisher still lands with the Phase 5/7 scene-host
+      rewiring on top of this contract). The render-demand decision is
       now consumed by the loop (the Phase 7 RenderScheduler consumer
       migration, 220/220 unit suite): `Experience.update()` reads the
       14-flag OR raise, the breath idle check + step and the 14-flag settle
       from `renderDemand.ts` at the same points with unchanged timing, and
       the loop owner stays `Experience` until the Phase 7 `RenderScheduler`
       takes over the loop itself. The Phase 3 contract set is complete —
-      remaining work (the runtime StoryController publisher, the
+      remaining work (the full runtime StoryController publisher, the
       `RenderScheduler` loop owner) lands in Phases 5/7. A 2026-08-21
       conformance sweep removed the last duplicated six-slot facts from the
       scene code (`Experience` `CinematicNav(6)` / `idx === 3` / `+ 1, 5`

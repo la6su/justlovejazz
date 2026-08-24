@@ -3015,6 +3015,20 @@ The following ledgers are updated in this document during implementation.
 | builder                  | pure core (`schema`/`catalog`/`compiler`/`render`) + `builder/store.ts` typed document/selection/history/baseline container + `builder/themeVariables.ts` preview variable contract (`admin/main.ts` only renders and dispatches) | Vue builder app (SFCs) over the same store                                   | 4               |
 | static content           | standalone pages                                                                                                                                                                                                                  | shared SSG pipeline                                                          | 9               |
 
+#### Phase 5/7 StoryPublisher compatibility bridge — 2026-08-24
+
+`src/core/storyPublisher.ts` is a framework-neutral, deduplicating publisher
+for the readonly `StoryState` contract. `ExperienceUI` creates and disposes it
+alongside `CinematicNav`; the existing native scroll callbacks publish snapshots
+without replacing the scroll owner, `Experience.update()` pull path, scene
+calculation, render loop, or timing. Vue, TresJS, Three.js and DOM imports are
+intentionally absent from the publisher. The full publisher-driven
+StoryController migration remains a later Phase 5/7 gate.
+
+Acceptance evidence: `storyPublisher.test.ts` covers initial emission,
+deduplication, center/footer/menu transitions, subscription order,
+unsubscribe and disposal; existing CinematicNav tests remain unchanged.
+
 ### Removal ledger
 
 | Legacy element                           | Remove after                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Status |
