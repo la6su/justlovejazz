@@ -55,6 +55,7 @@ export class BakuCarousel extends THREE.Group {
   private _morphTarget = 0
   private _active = false
   private initialized = false
+  private _disposed = false
   private _camera: THREE.Camera | null = null
   private _raycaster: THREE.Raycaster = new THREE.Raycaster()
   private _ndc: THREE.Vector2 = new THREE.Vector2()
@@ -126,13 +127,19 @@ export class BakuCarousel extends THREE.Group {
   }
 
   async init(): Promise<void> {
-    if (this.initialized) return
+    if (this.initialized || this._disposed) return
     this.initialized = true
 
     // Load only the UNIQUE project textures once (4, not 6) — cards reference
     // them by index, avoiding duplicate GPU textures + HTTP requests.
     const uniqueUrls = [...new Set(CARD_TEXTURE_URLS)]
     const uniqueTextures = await Promise.all(uniqueUrls.map((url) => loadCaseTexture(url)))
+    if (this._disposed) {
+      // The owner may have been torn down while textures were decoding. The
+      // cards do not exist yet, so release the cache references explicitly.
+      uniqueUrls.forEach((url) => releaseCaseTexture(url))
+      return
+    }
     const urlToTexture = new Map(uniqueUrls.map((url, i) => [url, uniqueTextures[i]!]))
 
     CARD_TEXTURE_URLS.forEach((url, i) => {
@@ -376,6 +383,8 @@ export class BakuCarousel extends THREE.Group {
   }
 
   dispose(): void {
+    if (this._disposed) return
+    this._disposed = true
     if (this.pointerDownHandler) window.removeEventListener('pointerdown', this.pointerDownHandler)
     if (this.pointerMoveHandler) window.removeEventListener('pointermove', this.pointerMoveHandler)
     if (this.pointerUpHandler) {

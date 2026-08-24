@@ -3063,6 +3063,14 @@ cleanup is generation-aware, so a stale result cannot clear a newer request.
 Focused lifecycle coverage proves late-result disposal and no scene attachment;
 normal lazy creation and route visibility behavior remain unchanged.
 
+#### BakuCarousel late texture-init invalidation — 2026-08-24
+
+`BakuCarousel` now marks its owner disposed before clearing cards and listeners.
+If its shared case textures finish decoding after teardown, the init path
+releases each cache reference and exits before creating `CasePlane` instances
+or adding global pointer/click listeners. Disposal is idempotent, and the
+focused lifecycle test locks the no-attachment and balanced-release behavior.
+
 ### Removal ledger
 
 | Legacy element                           | Remove after                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Status |

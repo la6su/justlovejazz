@@ -90,6 +90,9 @@ do not start a phase whose entry gate has not passed.
       root teardown and disposes late results instead of attaching them to a
       destroyed scene; this closes a concrete lifecycle race without changing
       the physical-device evidence requirement.
+      The home `BakuCarousel` now rejects late texture-init results after
+      disposal and releases their cache references; this prevents cards and
+      global input listeners from being attached after root teardown.
 
 - [ ] **Phase 3: extract framework-neutral contracts** — introduce the one
       route manifest, canonical world-slot tuple, bootstrap state machine,
