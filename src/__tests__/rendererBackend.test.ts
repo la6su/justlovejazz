@@ -5,6 +5,7 @@ import {
   MAX_DEVICE_LOST_RECOVERIES,
   planUnifiedBackend,
 } from '../core/rendererBackend'
+import { inspectUnifiedBackend } from '../core/unifiedRenderer'
 
 describe('planUnifiedBackend (Phase 6 unified renderer policy)', () => {
   it('keeps a real WebGPUBackend as webgpu mode', () => {
@@ -61,6 +62,44 @@ describe('planUnifiedBackend (Phase 6 unified renderer policy)', () => {
       isFallbackAdapter: null,
     })
     expect(plan).toEqual({ recreate: false, mode: 'webgl' })
+  })
+})
+
+describe('inspectUnifiedBackend (production backend facts)', () => {
+  it('preserves unknown adapter classification as null', () => {
+    const facts = inspectUnifiedBackend({
+      isWebGPURenderer: true,
+      backend: { constructor: { name: 'WebGPUBackend' } },
+    })
+
+    expect(facts).toEqual({ backendName: 'WebGPUBackend', isFallbackAdapter: null })
+    expect(planUnifiedBackend(facts)).toEqual({ recreate: false, mode: 'webgpu' })
+  })
+
+  it('preserves a confirmed software adapter for WebGL recreation', () => {
+    const facts = inspectUnifiedBackend({
+      isWebGPURenderer: true,
+      backend: {
+        constructor: { name: 'WebGPUBackend' },
+        adapter: { info: { isFallbackAdapter: true } },
+      },
+    })
+
+    expect(facts).toEqual({ backendName: 'WebGPUBackend', isFallbackAdapter: true })
+    expect(planUnifiedBackend(facts)).toEqual({ recreate: true, mode: 'webgl' })
+  })
+
+  it('preserves a confirmed hardware adapter for WebGPU', () => {
+    const facts = inspectUnifiedBackend({
+      isWebGPURenderer: true,
+      backend: {
+        constructor: { name: 'WebGPUBackend' },
+        gpu: { _adapter: { isFallbackAdapter: false } },
+      },
+    })
+
+    expect(facts).toEqual({ backendName: 'WebGPUBackend', isFallbackAdapter: false })
+    expect(planUnifiedBackend(facts)).toEqual({ recreate: false, mode: 'webgpu' })
   })
 })
 

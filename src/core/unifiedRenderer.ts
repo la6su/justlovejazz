@@ -48,7 +48,7 @@ export async function initUnifiedWebGPUInstance(renderer: WebGPURenderer): Promi
 /** Inspect the actual backend + software-adapter facts after init. */
 export function inspectUnifiedBackend(renderer: unknown): {
   backendName: string | null
-  isFallbackAdapter: boolean
+  isFallbackAdapter: boolean | null
 } {
   const wg = renderer as {
     isWebGPURenderer?: boolean
@@ -64,6 +64,6 @@ export function inspectUnifiedBackend(renderer: unknown): {
   const adapter = wg?.backend?.adapter?.info ?? wg?.backend?.gpu?._adapter
   return {
     backendName,
-    isFallbackAdapter: adapter?.isFallbackAdapter ?? false,
+    isFallbackAdapter: adapter?.isFallbackAdapter ?? null,
   }
 }
