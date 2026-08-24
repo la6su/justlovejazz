@@ -18,7 +18,7 @@ import { UIMenu } from '../UI/UIMenu'
 import { FullscreenOverlay } from '../UI/FullscreenOverlay'
 import type { UIManager } from '../UI/UIManager'
 import type { SceneCoordinator } from './SceneCoordinator'
-import { getCurrentPage } from '../core/routePage'
+import type { PageId } from '../sections/_shared/constants'
 import { getSoundMuted } from '../core/SfxSystem'
 import type { SfxSystem } from '../core/SfxSystem'
 import { createWorksPortfolio, type WorksPortfolio } from './WorksPortfolio'
@@ -38,6 +38,7 @@ const MENU_SLOT_INDEX = worldSlotIndex('menu')!
  * read AFTER Experience.init() has built them.
  */
 export interface ExperienceUIHost {
+  page: () => PageId
   coordinator: () => SceneCoordinator
   camera: () => Camera
   ui: () => UIManager
@@ -109,7 +110,7 @@ export class ExperienceUI {
       // Initial hashes are replayed only after the ready splash event. Keep
       // the Works owner explicit at that boundary so a hash-driven arrival
       // cannot depend on an earlier render frame to wake its carousel.
-      if (idx === WORKS_SLOT_INDEX && getCurrentPage() === 'home') {
+      if (idx === WORKS_SLOT_INDEX && this.host.page() === 'home') {
         void this.host.ensureCarouselInitialized().then(() => {
           if (this.storyNav?.getSectionIndex() === WORKS_SLOT_INDEX) this.host.raise('nav')
         })
@@ -182,7 +183,7 @@ export class ExperienceUI {
       if (this.overlay?.isOpen) {
         this.overlay.close()
       }
-      const newPage = getCurrentPage()
+      const newPage = this.host.page()
       const coordinator = this.host.coordinator()
       coordinator.syncRouteVisuals()
       if (newPage === 'home') {
@@ -233,7 +234,7 @@ export class ExperienceUI {
     this._worksPageSectionUnsub = eventBus.on('jlz:page-section-change', ({ index }) => {
       const domIndex = index ?? 0
       const stageIndex = Math.max(0, domIndex - 1)
-      const page = getCurrentPage()
+      const page = this.host.page()
       const coordinator = this.host.coordinator()
       if (page === 'works') {
         // DOM sections: 0=Lab overlay, 1-4=project pairs, 5=Nav overlay.
@@ -249,7 +250,7 @@ export class ExperienceUI {
     })
 
     this._worksPlaneTapHandler = (e: PointerEvent) => {
-      if (getCurrentPage() !== 'works' || this.overlay?.isOpen) return
+      if (this.host.page() !== 'works' || this.overlay?.isOpen) return
       // The Enter pointerup is dispatched while the splash curtains are still
       // present. It must not be reinterpreted as a click on the first 3D plane.
       if (document.getElementById('jlz-app-loader')) return
@@ -344,7 +345,7 @@ export class ExperienceUI {
    *  Returns null on non-home pages — the carousel is home-only. */
   private getCarousel(): import('./World/BakuCarousel').BakuCarousel | null {
     // BakuCarousel only exists on home page — content pages don't init it
-    if (getCurrentPage() !== 'home') return null
+    if (this.host.page() !== 'home') return null
     // Phase 8 slice 6: the reference lives on Experience (injected through
     // World.attachBakuCarousel); read it through the documented getter.
     return this.host.coordinator()?.carousel ?? null

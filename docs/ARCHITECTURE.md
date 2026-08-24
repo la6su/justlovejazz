@@ -160,6 +160,8 @@ runtime failures; it does not mutate route DOM.
 `SceneCoordinator` receives the current `PageId` through an injected getter;
 the application boundary may still adapt the legacy route source, but the
 coordinator itself has no DOM route dependency.
+`ExperienceUI` consumes that same page port for navigation and lazy-owner
+gates, so UI feature logic also remains independent of the route DOM source.
 
 ### Dependency direction
 

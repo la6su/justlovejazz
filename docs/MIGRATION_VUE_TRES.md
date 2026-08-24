@@ -3082,6 +3082,15 @@ different value, proving the scene owner no longer depends on the DOM source.
 Replacing the temporary getter adapter with Vue Router-owned state remains a
 separate route-state migration step.
 
+#### ExperienceUI typed page port — 2026-08-24
+
+`ExperienceUI` now consumes the same readonly `PageId` getter through its
+`ExperienceUIHost` port. Carousel, overlay, route-lifecycle and content-page
+section gates retain their pull-based timing, but the feature owner no longer
+imports the DOM-backed `getCurrentPage()` adapter. Experience remains the
+temporary application-boundary adapter; the next route-state step can replace
+that single source with Vue Router-owned state without changing UI behavior.
+
 ### Removal ledger
 
 | Legacy element                           | Remove after                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Status |

@@ -96,6 +96,9 @@ do not start a phase whose entry gate has not passed.
       `SceneCoordinator` now receives a typed `PageId` getter instead of
       importing the DOM-backed route adapter; replacing that adapter at the
       Vue Router boundary remains a later route-state slice.
+      `ExperienceUI` now consumes the same typed page port for route-owned
+      lifecycle and interaction gates; the remaining DOM adapter is confined
+      to Experience's application boundary and the remaining scene owners.
 
 - [ ] **Phase 3: extract framework-neutral contracts** — introduce the one
       route manifest, canonical world-slot tuple, bootstrap state machine,

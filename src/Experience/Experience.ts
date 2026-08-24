@@ -260,6 +260,7 @@ export class Experience {
     // Phase 7 slice 4: the former UI features reach the scene through a
     // narrow getter-based port (the scene + owners only exist after init).
     this.features = new ExperienceUI({
+      page: () => getCurrentPage(),
       coordinator: () => this.coordinator,
       camera: () => this.camera,
       ui: () => this._ui,
