@@ -1159,7 +1159,7 @@ preferences (locale, quality) surface, they join this port rather than new
 ad-hoc readers. The dataset hook removal is a Phase 5 shell item. Rollback:
 restore the function and its tests.
 
-#### Phase 3 route resource scopes slice — 2026-08-21
+#### Phase 3 route resource scopes slice — 2026-08-21 (retired 2026-08-24)
 
 The route-scoped GPU resource policy (which lazy stage lives on which page,
 and when it is disposed) is extracted from the inline
@@ -3003,7 +3003,7 @@ The following ledgers are updated in this document during implementation.
 | motion preference        | `motionPolicy.ts` typed port (11 consumers; dead `syncReducedMotionDataset` writer removed); `entry-shell.ts` dataset hook for E2E/CSS                                                                                            | typed preference state owned by the app providers                            | 3, 5            |
 | backend fallback         | `Renderer.ts`                                                                                                                                                                                                                     | `RendererFactory`                                                            | 2, 6            |
 | post-processing          | dual `RenderPipeline` paths                                                                                                                                                                                                       | TSL graph (`WebGPUBackend`) + forced-WebGL fallback per the Phase 6 decision | 2, 6            |
-| route GPU resources      | `World` lazy stages + `routeResourceScopes.ts` pure policy contract (inert until consumed)                                                                                                                                        | route resource scopes                                                        | 3, 8            |
+| route GPU resources      | Experience + SceneCoordinator own lazy stage lifecycle; inert routeResourceScopes.ts residue retired after Phase 8 consumer proof                                                                                                 | route resource scopes                                                        | 8               |
 | effective theme          | `sectionTheme.ts` pure decision + typed `ThemeAppliedPort` (consumed: `ContentReveal`/`Experience` 1:1 swap); base polarity = WorldConfig phase, mode = ThemeManager                                                              | typed theme state owned by the app providers                                 | 3, 5            |
 | locale                   | `i18n.ts` typed port (`getLang`/`t` pull reads, `toggleLang` single writer, `jlz:lang-change` push)                                                                                                                               | typed locale state owned by the app providers                                | 3, 5            |
 | story progress→section   | `storyProgress.ts` pure midpoint rule (consumed: `World.updateTransform` 1:1 swap, timing unchanged)                                                                                                                              | story progress contract owned by the app providers                           | 3, 5            |

@@ -127,16 +127,12 @@ do not start a phase whose entry gate has not passed.
       (`src/core/motionPolicy.ts`, 178/178 unit suite; 11 consumers read
       through it, the dead `syncReducedMotionDataset` writer removed, the
       `entry-shell.ts` E2E/CSS dataset hook stays until Phase 5). The
-      route resource scopes policy is now a pure contract
-      (`src/core/routeResourceScopes.ts`, 191/191 unit suite; the
-      persistent carousel vs route-scoped works/contact stages acquire/
-      dispose policy is line-verified against the `Experience.ts`
-      route-change handler and unit-locked; inert until the Phase 8
-      rewiring). The story progress→section mapping is now a pure contract
-      (`src/core/storyProgress.ts`, 200/200 unit suite; the midpoint
-      arrival rule — direction-independent, exact `.5` boundary unit-
-      locked — is **already consumed** by `World.updateTransform` as a 1:1
-      source-of-fact swap with unchanged timing). The story slot index is
+      the former route resource scopes contract was retired on 2026-08-24
+      after a zero-runtime-import proof; live ownership remains in
+      Experience/SceneCoordinator. The story progress→section mapping is now a pure contract
+      (src/core/storyProgress.ts, 200/200 unit suite; the midpoint
+      arrival rule — direction-independent, exact .5 boundary unit-
+      locked — is already consumed by World.updateTransform as a 1:1 source-of-fact swap with unchanged timing). The story slot index is
       now single-sourced: `worldSlots.ts` gained a strict
       `worldSlotIndex`/`isWorldSlotId` lookup (203/203 unit suite) and
       `CinematicNav` derives its `0/1/4/5` slot-index constants from the
