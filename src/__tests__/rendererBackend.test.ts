@@ -38,6 +38,30 @@ describe('planUnifiedBackend (Phase 6 unified renderer policy)', () => {
     })
     expect(plan).toEqual({ recreate: false, mode: 'webgl' })
   })
+
+  it('keeps WebGPUBackend + null (unknown adapter) as webgpu (no re-create)', () => {
+    const plan = planUnifiedBackend({
+      backendName: 'WebGPUBackend',
+      isFallbackAdapter: null,
+    })
+    expect(plan).toEqual({ recreate: false, mode: 'webgpu' })
+  })
+
+  it('handles WebGLBackend + null (unknown adapter) as webgl (no re-create)', () => {
+    const plan = planUnifiedBackend({
+      backendName: 'WebGLBackend',
+      isFallbackAdapter: null,
+    })
+    expect(plan).toEqual({ recreate: false, mode: 'webgl' })
+  })
+
+  it('handles unknown backend name + null (unknown adapter) as webgl (no re-create)', () => {
+    const plan = planUnifiedBackend({
+      backendName: 'UnknownRenderer',
+      isFallbackAdapter: null,
+    })
+    expect(plan).toEqual({ recreate: false, mode: 'webgl' })
+  })
 })
 
 describe('deviceLostAction (bounded device-loss recovery)', () => {
