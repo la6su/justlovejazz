@@ -1032,10 +1032,11 @@ and the router writer, which stays until Phase 5 replaces it with typed Vue
 Router state — at which point the port's source switches and no consumer
 changes. Rollback: revert the nine reads.
 
-#### Phase 3 bootstrap state machine slice — 2026-08-21
+#### Phase 3 bootstrap state machine slice — 2026-08-21; runtime consumer — 2026-08-24
 
 The explicit bootstrap state machine from the architecture target is now a
-pure, framework-neutral contract, ready for the Phase 5 shell migration to
+pure, framework-neutral contract. The entry bootstrap now consumes it while
+preserving the existing splash and renderer timing, ready for the Phase 5 shell migration to
 consume:
 
 - `src/core/bootstrapStates.ts` declares the documented states
@@ -1058,8 +1059,8 @@ scene-prewarming → ready → entered`, plus `failed`), the complete
   non-Vue shell in Phase 5. Unit suite 158/158 (9 new tests), `vue-tsc`
   clean. No runtime consumer change in this slice.
 
-Scope limits: the machine is inert until consumed. The `entry-app.ts`
-bootstrap and its events migrate behind it in the Phase 5 shell slice, and
+The `entry-app.ts` bootstrap and its events now migrate behind the contract;
+the public shell timing and renderer ownership remain unchanged, and
 the retry/disposal policy is a later consumer concern. Rollback: delete the
 contract file and its tests.
 

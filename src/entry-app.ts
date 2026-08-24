@@ -6,6 +6,11 @@ import { initWorkCards } from './UI/WorkCards'
 import { getSoundMuted, setSoundMutedPreference } from './core/SfxSystem'
 import { prefersReducedMotion } from './core/motionPolicy'
 // LANG_KEY handled by i18n.ts
+import {
+  INITIAL_BOOTSTRAP_STATE,
+  tryTransition,
+  type BootstrapState,
+} from './core/bootstrapStates'
 
 // ── Config: sound toggle (splash overlay) ──
 function initSoundToggle(): void {
@@ -123,10 +128,22 @@ function updateLoaderProgress(pct: number): void {
   ring.style.strokeDashoffset = String(offset)
 }
 
-let _bootstrapped = false
+let _bootstrapState: BootstrapState = INITIAL_BOOTSTRAP_STATE
+
+function transitionBootstrap(next: BootstrapState): boolean {
+  const result = tryTransition(_bootstrapState, next)
+  if (!result) {
+    console.warn(`[entry-app] invalid bootstrap transition: ${_bootstrapState} -> ${next}`)
+    return false
+  }
+  _bootstrapState = result
+  return true
+}
 
 async function boot(): Promise<void> {
-  if (_bootstrapped) return
+  if (_bootstrapState === 'ready' || _bootstrapState === 'entered') return
+  if (_bootstrapState === 'failed') transitionBootstrap('app-loading')
+  else if (_bootstrapState === 'shell-painted') transitionBootstrap('app-loading')
   const progress = (pct: number) => updateLoaderProgress(Math.min(100, pct))
 
   // ?no-scene=1 — Phase 5 prerender contract: boot the route shell and the
@@ -138,26 +155,28 @@ async function boot(): Promise<void> {
   // with zero renderer, and a route can never (re)create one.
   if (new URLSearchParams(window.location.search).has('no-scene')) {
     try {
+      transitionBootstrap('renderer-initializing')
       progress(100)
       const { UIManager } = await import('./UI/UIManager')
       new UIManager().init()
+      transitionBootstrap('scene-prewarming')
+      transitionBootstrap('ready')
       eventBus.emit('jlz:webgl-ready')
-      _bootstrapped = true
     } catch (e) {
       console.error('[entry-app] no-scene bootstrap failed:', e)
+      transitionBootstrap('failed')
       eventBus.emit('jlz:webgl-failed')
     }
     scheduleUiKitRefresh()
     return
   }
 
-  // D-5 fix: set _bootstrapped AFTER the try block. Previously it was set
-  // BEFORE → a failed Experience.init() left _bootstrapped=true, preventing
-  // retry (user had to reload the page). Now if init throws, the catch block
-  // fires jlz:webgl-failed and _bootstrapped stays false → user can retry.
+  // A failed initialization enters the explicit failed state; a later retry
+  // transitions back to app-loading without requiring a page reload.
   try {
     const { ErrorTracker } = await import('./core/ErrorTracker')
     ErrorTracker.init()
+    transitionBootstrap('renderer-initializing')
     // entry-shell.ts set the reduced-motion dataset synchronously at shell
     // load (legacy E2E/CSS hook); the preference itself is read on demand
     // through motionPolicy.prefersReducedMotion().
@@ -182,6 +201,7 @@ async function boot(): Promise<void> {
     // never reaches this handshake.
     const { sceneHost } = await import('./app/sceneHost')
     const host = await sceneHost.ready
+    transitionBootstrap('scene-prewarming')
     const { Experience } = await import('./Experience/Experience')
     progress(55)
 
@@ -220,17 +240,18 @@ async function boot(): Promise<void> {
     const elapsed = performance.now() - bootStart
     const readyAt = Math.max(0, INTRO_MS - elapsed)
 
+    transitionBootstrap('ready')
     setTimeout(
       () => {
         eventBus.emit('jlz:webgl-ready')
       },
       prefersReducedMotion() ? 0 : readyAt,
     )
-    _bootstrapped = true
   } catch (e) {
     console.error('[entry-app] bootstrap failed:', e)
+    transitionBootstrap('failed')
     eventBus.emit('jlz:webgl-failed')
-    // D-5: _bootstrapped stays false → allows retry without page reload
+    // The failed state allows retry without a page reload.
   }
 
   scheduleUiKitRefresh()
@@ -306,6 +327,7 @@ export async function startApp(): Promise<void> {
   // jlz:webgl-failed fires if Experience.init() throws — show an error message
   // instead of the Enter button, so the user knows the 3D failed (not just slow).
   eventBus.on('jlz:webgl-failed', () => {
+    if (_bootstrapState !== 'failed') transitionBootstrap('failed')
     showLoadError()
   })
 
@@ -313,6 +335,7 @@ export async function startApp(): Promise<void> {
   // Let the active title answer the opening curtain, rather than animating
   // every title in the document behind the splash.
   eventBus.on('jlz:splash-entered', () => {
+    transitionBootstrap('entered')
     // Let the curtain begin to split, then reveal the title inside that gap.
     setTimeout(() => {
       revealActiveSplashTitle()

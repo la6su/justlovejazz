@@ -106,8 +106,8 @@ do not start a phase whose entry gate has not passed.
       on home + /works + /lab + /contact incl. SPA navigation with zero
       console errors; no scene-side `document.body.dataset.page` reads
       remain, the dataset write stays until Phase 5). The bootstrap state
-      machine is now a pure contract (`src/core/bootstrapStates.ts`, 158/158
-      unit suite, inert until the Phase 5 shell consumes it). The
+      machine is now consumed by the entry bootstrap (`src/core/bootstrapStates.ts`);
+      its transition contract remains framework-neutral and covered by the unit suite. The
       render-demand decision is now a pure contract
       (`src/core/renderDemand.ts`, 175/175 unit suite; the 14-flag
       raise/settle set and the narrower 10-flag ambient-breath idle set are
