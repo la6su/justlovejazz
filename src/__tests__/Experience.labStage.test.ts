@@ -27,6 +27,7 @@ describe('Experience lab object lifecycle', () => {
     const exp = Object.assign(Object.create(Experience.prototype), {
       scene,
       labGamepad: null,
+      page: () => (document.body.dataset.page ?? 'home') as PageId,
       _labGamepadPromise: null,
       _labGamepadRequest: 0,
     } as unknown as Partial<Experience>) as Experience

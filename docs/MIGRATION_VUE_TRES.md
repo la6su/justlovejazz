@@ -3091,6 +3091,15 @@ imports the DOM-backed `getCurrentPage()` adapter. Experience remains the
 temporary application-boundary adapter; the next route-state step can replace
 that single source with Vue Router-owned state without changing UI behavior.
 
+#### Experience typed page port — 2026-08-24
+
+The final application owner, `Experience`, now receives a typed `PageId`
+getter from `entry-app.ts`. Its lazy-stage lifecycle, route visibility,
+render-demand and Works scroll decisions use that pull-based port; the
+`ExperienceHost` renderer contract remains route-agnostic. The DOM-backed
+`routePage` adapter is now confined to the application boundary, ready to be
+replaced by Vue Router-owned state in one follow-up.
+
 ### Removal ledger
 
 | Legacy element                           | Remove after                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Status |

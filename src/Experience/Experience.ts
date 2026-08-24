@@ -10,7 +10,7 @@ import { Cursor } from './Cursor'
 import type { UIManager } from '../UI/UIManager'
 import { input } from './Input'
 import { StateBus } from '../core/StateBus'
-import { getCurrentPage } from '../core/routePage'
+import type { PageId } from '../sections/_shared/constants'
 import { NoiseText } from './NoiseText'
 
 import { SfxSystem } from '../core/SfxSystem'
@@ -246,6 +246,7 @@ export class Experience {
   constructor(
     private _ui: UIManager,
     host?: ExperienceHost,
+    private page: () => PageId = () => 'home',
   ) {
     this.sizes = new Sizes()
     this.time = new Time()
@@ -260,7 +261,7 @@ export class Experience {
     // Phase 7 slice 4: the former UI features reach the scene through a
     // narrow getter-based port (the scene + owners only exist after init).
     this.features = new ExperienceUI({
-      page: () => getCurrentPage(),
+      page: () => this.currentPage(),
       coordinator: () => this.coordinator,
       camera: () => this.camera,
       ui: () => this._ui,
@@ -344,7 +345,7 @@ export class Experience {
         contactCyprusStage: () => this.contactCyprusStage,
         labGamepad: () => this.labGamepad,
       },
-      () => getCurrentPage(),
+      () => this.currentPage(),
     )
     // Phase 8 slice 2: the six stable section groups enter the Tres-owned
     // scene directly under their own owner (fresh per coordinator instance).
@@ -389,18 +390,18 @@ export class Experience {
     // decode before Enter becomes ready (otherwise its first section visit
     // performs image work inside navigation); content deep-links defer setup
     // — ExperienceUI calls the idempotent method on every route change.
-    if (getCurrentPage() === 'home') await this.ensureCarouselInitialized()
+    if (this.currentPage() === 'home') await this.ensureCarouselInitialized()
     // Phase 8 slice 7: the /works stage init moved out of World.init() to this
     // same boundary (lazy — created only when /works is the entry route; the
     // route can dispose it while its texture decode is still pending).
-    if (getCurrentPage() === 'works') void this.ensureWorksPlaneStageInitialized()
+    if (this.currentPage() === 'works') void this.ensureWorksPlaneStageInitialized()
     // Phase 8 slice 8: the Contact text + Cyprus stage inits moved out of
     // World.init() to this same boundary (lazy — created only when /contact
     // is the entry route; the route can dispose them while their inits are
     // still pending). The Draco decode + transparent material warm-up start
     // while Contact's first frame (or the splash) is on screen, so Agros has
     // no first-use model decode or shader-compile hitch.
-    if (getCurrentPage() === 'contact') {
+    if (this.currentPage() === 'contact') {
       void this.ensureContactTextStageInitialized()
       void this.ensureContactTypographyStageInitialized()
       void this.ensureContactCyprusStageInitialized().then(() => {
@@ -412,7 +413,7 @@ export class Experience {
     // /lab visit; the entry route triggers it here, the UI route handler
     // triggers it on navigation). It is a static object — never disposed per
     // route leave, only on final destroy.
-    if (getCurrentPage() === 'lab') void this.ensureLabGamepad()
+    if (this.currentPage() === 'lab') void this.ensureLabGamepad()
     // Phase 8 slice 10: the World's TresJS primitive slot goes away with the
     // legacy World — the coordinator's sections enter the Tres scene
     // directly (init() adds them), so no host primitive adapter remains.
@@ -435,6 +436,10 @@ export class Experience {
       // event corrects it.
       this.envSphere.changeSection(1, false)
     }
+  }
+
+  private currentPage(): PageId {
+    return this.page?.() ?? 'home'
   }
 
   /** Initialize the home-only carousel once, including after a deep-link
@@ -483,7 +488,7 @@ export class Experience {
           stage.removeFromParent()
           return
         }
-        stage.setActive(getCurrentPage() === 'works', 0)
+        stage.setActive(this.currentPage() === 'works', 0)
         stage.resize(window.innerWidth, window.innerHeight)
         stage.setCamera(this.camera.instance)
       },
@@ -533,7 +538,7 @@ export class Experience {
         stage.removeFromParent()
         return
       }
-      stage.setActive(getCurrentPage() === 'contact', 0)
+      stage.setActive(this.currentPage() === 'contact', 0)
       stage.setTheme(this._contactTextIsLight)
       stage.resize(window.innerWidth, window.innerHeight)
       stage.setCamera(this.camera.instance)
@@ -561,7 +566,7 @@ export class Experience {
         const stage = new ContactTypographyStage()
         this.contactTypographyStage = stage
         this.scene.add(stage)
-        stage.setActive(getCurrentPage() === 'contact')
+        stage.setActive(this.currentPage() === 'contact')
         stage.setTheme(this._contactTextIsLight)
       },
     )
@@ -578,7 +583,7 @@ export class Experience {
 
   /** Sync the Contact pixel-title layer with CinematicNav's active chapter. */
   public setContactTextStageSection(index: number): void {
-    this.contactTextStage?.setActive(getCurrentPage() === 'contact', index)
+    this.contactTextStage?.setActive(this.currentPage() === 'contact', index)
   }
 
   /** Cache the effective polarity so a lazy Contact stage cannot miss it. */
@@ -608,7 +613,7 @@ export class Experience {
         if (!stage || request !== this._contactCyprusStageRequest) return
         stage.resize(window.innerWidth, window.innerHeight)
         stage.setCamera(this.camera.instance)
-        stage.setActive(getCurrentPage() === 'contact' && this._contactCyprusActive)
+        stage.setActive(this.currentPage() === 'contact' && this._contactCyprusActive)
         stage.prewarm()
       })
       .catch((error: unknown) => {
@@ -635,7 +640,7 @@ export class Experience {
 
   /** Frame 03 replaces the shared cube with the Cyprus asset. */
   public setContactCyprusStageSection(index: number): void {
-    this._contactCyprusActive = getCurrentPage() === 'contact' && index === 2
+    this._contactCyprusActive = this.currentPage() === 'contact' && index === 2
     this.contactCyprusStage?.setActive(this._contactCyprusActive)
     if (this._contactCyprusActive && !this.contactCyprusStage) {
       void this.ensureContactCyprusStageInitialized().then(() => {
@@ -667,7 +672,7 @@ export class Experience {
           return
         }
         this.labGamepad = object
-        this.labGamepad.visible = getCurrentPage() === 'lab'
+        this.labGamepad.visible = this.currentPage() === 'lab'
         this.scene.add(this.labGamepad)
       })
       .finally(() => {
@@ -1007,7 +1012,7 @@ export class Experience {
     this._onMouseMoveForTrail = () => {
       if (this._mouseTrailRafPending) return
       const isWorksStoryFrame = this.coordinator?.currentSectionIndex === WORKS_SLOT_INDEX
-      const isStandaloneWorks = getCurrentPage() === 'works'
+      const isStandaloneWorks = this.currentPage() === 'works'
       if (!isWorksStoryFrame && !isStandaloneWorks) return
       this._mouseTrailRafPending = true
       this._mouseTrailRafId = requestAnimationFrame(() => {
@@ -1190,7 +1195,7 @@ export class Experience {
 
     // On /works, keep rendering so the back-text UV scroll + wipe stay animated
     // even when cards have settled (on-demand rendering would freeze the scroll).
-    const worksScrollActive = getCurrentPage() === 'works' && !this._reducedMotion
+    const worksScrollActive = this.currentPage() === 'works' && !this._reducedMotion
 
     // The per-frame activity snapshot — the demand decision below is the
     // pure renderDemand contract (single source of the 14-flag OR /
@@ -1295,7 +1300,7 @@ export class Experience {
       // guards against this, but we also skip the dispatch here to avoid
       // spurious events + cube face rotation that doesn't make sense on
       // content pages (cube rotation is home-only visual feedback).
-      const isHomePage = getCurrentPage() === 'home'
+      const isHomePage = this.currentPage() === 'home'
       if (isHomePage && !isInitialSectionSync) {
         eventBus.emit('jlz:section-change', {
           sectionId,

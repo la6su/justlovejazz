@@ -99,6 +99,9 @@ do not start a phase whose entry gate has not passed.
       `ExperienceUI` now consumes the same typed page port for route-owned
       lifecycle and interaction gates; the remaining DOM adapter is confined
       to Experience's application boundary and the remaining scene owners.
+      `Experience` itself now consumes the page getter for all route-sensitive
+      lifecycle, render-demand and visibility decisions; `entry-app.ts` is the
+      sole current adapter boundary.
 
 - [ ] **Phase 3: extract framework-neutral contracts** — introduce the one
       route manifest, canonical world-slot tuple, bootstrap state machine,

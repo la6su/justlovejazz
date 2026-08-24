@@ -5,12 +5,9 @@ import { eventBus } from './core/EventBus'
 import { initWorkCards } from './UI/WorkCards'
 import { getSoundMuted, setSoundMutedPreference } from './core/SfxSystem'
 import { prefersReducedMotion } from './core/motionPolicy'
+import { getCurrentPage } from './core/routePage'
 // LANG_KEY handled by i18n.ts
-import {
-  INITIAL_BOOTSTRAP_STATE,
-  tryTransition,
-  type BootstrapState,
-} from './core/bootstrapStates'
+import { INITIAL_BOOTSTRAP_STATE, tryTransition, type BootstrapState } from './core/bootstrapStates'
 
 // ── Config: sound toggle (splash overlay) ──
 function initSoundToggle(): void {
@@ -205,14 +202,18 @@ async function boot(): Promise<void> {
     const { Experience } = await import('./Experience/Experience')
     progress(55)
 
-    const experience = new Experience(ui, {
-      scene: host.scene,
-      camera: host.camera,
-      renderer: host.renderer,
-      canvas: host.canvas,
-      mode: host.mode,
-      replaceRenderer: (renderer) => sceneHost.replaceRenderer(renderer),
-    })
+    const experience = new Experience(
+      ui,
+      {
+        scene: host.scene,
+        camera: host.camera,
+        renderer: host.renderer,
+        canvas: host.canvas,
+        mode: host.mode,
+        replaceRenderer: (renderer) => sceneHost.replaceRenderer(renderer),
+      },
+      getCurrentPage,
+    )
     await experience.init()
     if (import.meta.env.DEV) {
       ;(window as unknown as { __jlzRuntimeDestroy?: () => void }).__jlzRuntimeDestroy = () => {

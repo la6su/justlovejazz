@@ -162,6 +162,9 @@ the application boundary may still adapt the legacy route source, but the
 coordinator itself has no DOM route dependency.
 `ExperienceUI` consumes that same page port for navigation and lazy-owner
 gates, so UI feature logic also remains independent of the route DOM source.
+`Experience` receives the page getter from `entry-app.ts` and uses it for
+route-sensitive owner/lifecycle decisions; renderer host options do not carry
+route state.
 
 ### Dependency direction
 
