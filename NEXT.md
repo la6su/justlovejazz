@@ -86,6 +86,10 @@ do not start a phase whose entry gate has not passed.
       lazy `ContactCyprusStage` now receives the same resize-owner propagation
       as the other route stages; this hardens the path but does not close the
       physical rotation/address-bar evidence gate.
+      The lazy Lab experiment owner now invalidates pending async loads during
+      root teardown and disposes late results instead of attaching them to a
+      destroyed scene; this closes a concrete lifecycle race without changing
+      the physical-device evidence requirement.
 
 - [ ] **Phase 3: extract framework-neutral contracts** — introduce the one
       route manifest, canonical world-slot tuple, bootstrap state machine,

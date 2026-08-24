@@ -3053,6 +3053,16 @@ resize event. Focused tests cover one propagation call and the uninitialized
 no-op path. This is contract hardening only; real Android rotation,
 address-bar and dynamic-DPR evidence remains an open physical-device gate.
 
+#### Lab owner late-load invalidation — 2026-08-24
+
+`Experience` now gives the lazy Lab experiment load a generation token. Root
+teardown invalidates the token before disposing the current owner; if a GLTF
+or other async experiment result resolves afterward, the detached object is
+disposed immediately and never enters the destroyed Tres scene. Promise
+cleanup is generation-aware, so a stale result cannot clear a newer request.
+Focused lifecycle coverage proves late-result disposal and no scene attachment;
+normal lazy creation and route visibility behavior remain unchanged.
+
 ### Removal ledger
 
 | Legacy element                           | Remove after                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Status |

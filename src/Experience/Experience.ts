@@ -161,6 +161,7 @@ export class Experience {
   // reads the visibility gate off the `labGamepad` getter.
   private labGamepad: LabExperimentObject | null = null
   private _labGamepadPromise: Promise<void> | null = null
+  private _labGamepadRequest = 0
   private bus!: StateBus
 
   // Phase 7 slice 4: the former UI features (cinematic nav, menu, overlay,
@@ -652,18 +653,29 @@ export class Experience {
     if (this._labGamepadPromise) return this._labGamepadPromise
     const experiment = getLabExperiment('lab')
     if (!experiment) return Promise.resolve()
+    const request = ++this._labGamepadRequest
     this._labGamepadPromise = experiment
       .load()
       .then((object) => {
-        if (this.labGamepad) return
+        if (request !== this._labGamepadRequest || this.labGamepad) {
+          object.dispose()
+          return
+        }
         this.labGamepad = object
         this.labGamepad.visible = getCurrentPage() === 'lab'
         this.scene.add(this.labGamepad)
       })
       .finally(() => {
-        this._labGamepadPromise = null
+        if (request === this._labGamepadRequest) {
+          this._labGamepadPromise = null
+        }
       })
     return this._labGamepadPromise
+  }
+
+  private invalidateLabGamepadLoad(): void {
+    this._labGamepadRequest++
+    this._labGamepadPromise = null
   }
 
   /** Create a studio environment map (procedural equirect → PMREM) for glass
@@ -1486,6 +1498,7 @@ export class Experience {
     // Phase 8 slice 9: the Lab experiment object (created once on the first
     // /lab visit; a direct child of the Tres-owned scene, never disposed per
     // route leave).
+    this.invalidateLabGamepadLoad()
     this.labGamepad?.removeFromParent()
     this.labGamepad?.dispose()
     this.labGamepad = null

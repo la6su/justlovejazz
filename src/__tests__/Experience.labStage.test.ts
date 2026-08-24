@@ -27,6 +27,7 @@ describe('Experience lab object lifecycle', () => {
       scene,
       labGamepad: null,
       _labGamepadPromise: null,
+      _labGamepadRequest: 0,
     } as unknown as Partial<Experience>) as Experience
     const bag = exp as unknown as { labGamepad?: LabExperimentObject | null }
     const owners: SceneCoordinatorOwners = {
@@ -99,5 +100,30 @@ describe('Experience lab object lifecycle', () => {
 
     expect(coordinator.labGamepad).toBeNull()
     expect(exp.scene.children).toHaveLength(0)
+  })
+
+  it('disposes a late load result after the owner is invalidated', async () => {
+    let resolveLoad!: (object: LabExperimentObject) => void
+    const pendingLoad = new Promise<LabExperimentObject>((resolve) => {
+      resolveLoad = resolve
+    })
+    vi.spyOn(manifest, 'getLabExperiment').mockReturnValue({
+      id: 'gamepad',
+      page: 'lab',
+      load: () => pendingLoad,
+    } as never)
+
+    const object = Object.assign(new THREE.Group(), {
+      dispose: vi.fn(),
+    }) as unknown as LabExperimentObject
+    const loadPromise = exp.ensureLabGamepad()
+
+    ;(exp as unknown as { invalidateLabGamepadLoad: () => void }).invalidateLabGamepadLoad()
+    resolveLoad(object)
+    await loadPromise
+
+    expect(object.dispose).toHaveBeenCalledTimes(1)
+    expect(coordinator.labGamepad).toBeNull()
+    expect(exp.scene.children).not.toContain(object)
   })
 })
