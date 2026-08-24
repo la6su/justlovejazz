@@ -1,8 +1,10 @@
 // src/Experience/Sizes.ts
+import { clampDevicePixelRatio } from '../core/viewportPolicy'
+
 export class Sizes {
   width: number = window.innerWidth
   height: number = window.innerHeight
-  dpr: number = Math.min(window.devicePixelRatio, 2)
+  dpr: number = clampDevicePixelRatio(window.devicePixelRatio)
 
   get isMobile(): boolean {
     return this.width < 768
@@ -26,7 +28,7 @@ export class Sizes {
   resize() {
     this.width = window.innerWidth
     this.height = window.innerHeight
-    this.dpr = Math.min(window.devicePixelRatio, 2)
+    this.dpr = clampDevicePixelRatio(window.devicePixelRatio)
     // Notify Experience → World.resize()
     this._resizeCb?.()
   }

@@ -299,17 +299,24 @@ export class Experience {
 
     // Wire resize → world (A-001/A-004: World.resize was empty + never called)
     this._onSizesResize = () => {
-      this.coordinator?.resize(this.sizes.width, this.sizes.height)
-      // Phase 8 slice 7: the /works stage resize moved out of World.resize —
-      // forwarded directly (the stage is lazy; null until /works is reached).
-      this.worksPlaneStage?.resize(this.sizes.width, this.sizes.height)
-      // Phase 8 slice 8: the Contact text stage resize moved out of
-      // World.resize — forwarded directly (lazy; null until /contact is
-      // reached).
-      this.contactTextStage?.resize(this.sizes.width, this.sizes.height)
+      this.resizeSceneOwners()
       this._raiseRenderDemand('resize')
     }
     this.sizes.onResize(this._onSizesResize)
+  }
+
+  private resizeSceneOwners(): void {
+    this.coordinator?.resize(this.sizes.width, this.sizes.height)
+    // Phase 8 slice 7: the /works stage resize moved out of World.resize —
+    // forwarded directly (the stage is lazy; null until /works is reached).
+    this.worksPlaneStage?.resize(this.sizes.width, this.sizes.height)
+    // Phase 8 slice 8: the Contact text stage resize moved out of
+    // World.resize — forwarded directly (lazy; null until /contact is
+    // reached).
+    this.contactTextStage?.resize(this.sizes.width, this.sizes.height)
+    // The lazy Cyprus stage owns a viewport-dependent map scale and must
+    // follow later orientation/address-bar viewport changes too.
+    this.contactCyprusStage?.resize(this.sizes.width, this.sizes.height)
   }
 
   private async buildWorld(): Promise<void> {

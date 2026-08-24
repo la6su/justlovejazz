@@ -3044,6 +3044,15 @@ by ADR 0008 because the current Vite vendor grouping still includes the
 required WebGPU/TSL runtime. Focused lifecycle coverage lives in
 `Experience.contactTypography.test.ts`.
 
+#### Phase 2 ContactCyprus resize propagation — 2026-08-24
+
+The existing `Sizes` resize owner now forwards current CSS viewport dimensions
+to the lazy `ContactCyprusStage` alongside the coordinator, Works stage and
+Contact text stage. The stage remains null-safe and is never initialized by a
+resize event. Focused tests cover one propagation call and the uninitialized
+no-op path. This is contract hardening only; real Android rotation,
+address-bar and dynamic-DPR evidence remains an open physical-device gate.
+
 ### Removal ledger
 
 | Legacy element                           | Remove after                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Status |

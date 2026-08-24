@@ -82,7 +82,10 @@ do not start a phase whose entry gate has not passed.
       re-rendered once, resources flat, zero console errors; emulated-DPR
       without CSS change correctly fired no events). Dynamic resize/DPR
       events on real mobile hardware remain the only open Phase 2 gate,
-      owner-deferred on 2026-08-21 pending the physical Android device.
+      owner-deferred on 2026-08-21 pending the physical Android device. The
+      lazy `ContactCyprusStage` now receives the same resize-owner propagation
+      as the other route stages; this hardens the path but does not close the
+      physical rotation/address-bar evidence gate.
 
 - [ ] **Phase 3: extract framework-neutral contracts** — introduce the one
       route manifest, canonical world-slot tuple, bootstrap state machine,
