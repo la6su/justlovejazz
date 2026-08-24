@@ -157,6 +157,9 @@ Scene code does not query `document.body.dataset`, translations or router
 state. Typed readonly ports carry route, locale, effective theme, reduced
 motion and story progress into the scene. Scene code emits typed intents and
 runtime failures; it does not mutate route DOM.
+`SceneCoordinator` receives the current `PageId` through an injected getter;
+the application boundary may still adapt the legacy route source, but the
+coordinator itself has no DOM route dependency.
 
 ### Dependency direction
 

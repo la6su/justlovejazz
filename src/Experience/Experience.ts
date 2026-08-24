@@ -327,20 +327,24 @@ export class Experience {
     // identity per route, so only a getter stays current. All the
     // temporary `attach*` adapters the World carried for its slices leave
     // production with this owner.
-    this.coordinator = new SceneCoordinator(this.scene, {
-      ground: () => this.ground,
-      sectionGroups: () => this.sectionGroups,
-      envSphere: () => this.envSphere,
-      baku: () => this.baku,
-      particleBurst: () => this.particleBurst,
-      drawTrail: () => this.drawTrail,
-      carousel: () => this.carousel,
-      worksPlaneStage: () => this.worksPlaneStage,
-      contactTextStage: () => this.contactTextStage,
-      contactTypographyStage: () => this.contactTypographyStage,
-      contactCyprusStage: () => this.contactCyprusStage,
-      labGamepad: () => this.labGamepad,
-    })
+    this.coordinator = new SceneCoordinator(
+      this.scene,
+      {
+        ground: () => this.ground,
+        sectionGroups: () => this.sectionGroups,
+        envSphere: () => this.envSphere,
+        baku: () => this.baku,
+        particleBurst: () => this.particleBurst,
+        drawTrail: () => this.drawTrail,
+        carousel: () => this.carousel,
+        worksPlaneStage: () => this.worksPlaneStage,
+        contactTextStage: () => this.contactTextStage,
+        contactTypographyStage: () => this.contactTypographyStage,
+        contactCyprusStage: () => this.contactCyprusStage,
+        labGamepad: () => this.labGamepad,
+      },
+      () => getCurrentPage(),
+    )
     // Phase 8 slice 2: the six stable section groups enter the Tres-owned
     // scene directly under their own owner (fresh per coordinator instance).
     // The coordinator reads them through its sceneGroups getter; init() needs

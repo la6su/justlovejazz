@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Experience } from '../Experience/Experience'
 import { SceneCoordinator, type SceneCoordinatorOwners } from '../Experience/SceneCoordinator'
 import { WorksPlaneStage } from '../Experience/World/WorksPlaneStage'
+import type { PageId } from '../sections/_shared/constants'
 
 // Phase 8 slice 7: the /works case-plane stage lifecycle (lazy creation +
 // disposal) moved from World to Experience. Phase 8 slice 10: the `World`
@@ -51,7 +52,11 @@ describe('Experience works stage lifecycle', () => {
       contactCyprusStage: () => null,
       labGamepad: () => null,
     }
-    coordinator = new SceneCoordinator(scene, owners)
+    coordinator = new SceneCoordinator(
+      scene,
+      owners,
+      () => (document.body.dataset.page ?? 'home') as PageId,
+    )
     exp.coordinator = coordinator
     return exp
   }

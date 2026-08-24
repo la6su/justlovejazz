@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { SceneCoordinator, type SceneCoordinatorOwners } from '../Experience/SceneCoordinator'
 import { SplashCube } from '../Experience/World/SplashCube'
 import { getLabExperiment, labExperiments } from '../Experience/Lab/manifest'
+import type { PageId } from '../sections/_shared/constants'
 
 const canvasContext = {
   fillStyle: '',
@@ -14,6 +15,7 @@ describe('SceneCoordinator route visuals (Phase 8 slice 10: the gate left `World
   let coordinator: SceneCoordinator
   let cube: SplashCube
   let getContext: ReturnType<typeof vi.spyOn>
+  let page: PageId
 
   function makeOwners(baku: SplashCube): SceneCoordinatorOwners {
     return {
@@ -32,6 +34,7 @@ describe('SceneCoordinator route visuals (Phase 8 slice 10: the gate left `World
   }
 
   beforeEach(() => {
+    page = 'home'
     document.body.dataset.page = 'home'
     getContext = vi
       .spyOn(HTMLCanvasElement.prototype, 'getContext')
@@ -39,7 +42,7 @@ describe('SceneCoordinator route visuals (Phase 8 slice 10: the gate left `World
     cube = new SplashCube()
     cube.name = 'baku'
     cube.visible = true
-    coordinator = new SceneCoordinator(new THREE.Scene(), makeOwners(cube))
+    coordinator = new SceneCoordinator(new THREE.Scene(), makeOwners(cube), () => page)
   })
 
   afterEach(() => {
@@ -55,22 +58,26 @@ describe('SceneCoordinator route visuals (Phase 8 slice 10: the gate left `World
   })
 
   it('hides the shared cube on the Lab route', () => {
-    document.body.dataset.page = 'lab'
+    page = 'lab'
+    document.body.dataset.page = 'home'
     coordinator.syncRouteVisuals()
     expect(coordinator.baku).toBe(cube)
     expect(cube.visible).toBe(false)
 
-    document.body.dataset.page = 'home'
+    page = 'home'
+    document.body.dataset.page = 'lab'
     coordinator.syncRouteVisuals()
     expect(cube.visible).toBe(true)
   })
 
   it('keeps the cube out of the standalone Works media route', () => {
-    document.body.dataset.page = 'works'
+    page = 'works'
+    document.body.dataset.page = 'home'
     coordinator.syncRouteVisuals()
     expect(cube.visible).toBe(false)
 
-    document.body.dataset.page = 'contact'
+    page = 'contact'
+    document.body.dataset.page = 'works'
     coordinator.syncRouteVisuals()
     expect(cube.visible).toBe(true)
   })

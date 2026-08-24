@@ -3071,6 +3071,17 @@ releases each cache reference and exits before creating `CasePlane` instances
 or adding global pointer/click listeners. Disposal is idempotent, and the
 focused lifecycle test locks the no-attachment and balanced-release behavior.
 
+#### SceneCoordinator typed page getter — 2026-08-24
+
+`SceneCoordinator` no longer imports or calls the DOM-backed `getCurrentPage()`
+adapter. Experience supplies a typed `PageId` getter at the application
+boundary, while all route-sensitive coordinator decisions retain their
+pull-based timing and existing semantics. The route-visual test drives a
+mutable getter while deliberately putting `document.body.dataset.page` at a
+different value, proving the scene owner no longer depends on the DOM source.
+Replacing the temporary getter adapter with Vue Router-owned state remains a
+separate route-state migration step.
+
 ### Removal ledger
 
 | Legacy element                           | Remove after                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Status |

@@ -4,6 +4,7 @@ import { Experience } from '../Experience/Experience'
 import { SceneCoordinator, type SceneCoordinatorOwners } from '../Experience/SceneCoordinator'
 import * as manifest from '../Experience/Lab/manifest'
 import type { LabExperimentObject } from '../Experience/Lab/manifest'
+import type { PageId } from '../sections/_shared/constants'
 
 // Phase 8 slice 9: the Lab experiment object lifecycle (lazy creation on the
 // first /lab visit + final disposal) moved from World to Experience. Phase 8
@@ -43,7 +44,11 @@ describe('Experience lab object lifecycle', () => {
       contactCyprusStage: () => null,
       labGamepad: () => bag.labGamepad ?? null,
     }
-    coordinator = new SceneCoordinator(scene, owners)
+    coordinator = new SceneCoordinator(
+      scene,
+      owners,
+      () => (document.body.dataset.page ?? 'home') as PageId,
+    )
     exp.coordinator = coordinator
     return exp
   }

@@ -93,6 +93,9 @@ do not start a phase whose entry gate has not passed.
       The home `BakuCarousel` now rejects late texture-init results after
       disposal and releases their cache references; this prevents cards and
       global input listeners from being attached after root teardown.
+      `SceneCoordinator` now receives a typed `PageId` getter instead of
+      importing the DOM-backed route adapter; replacing that adapter at the
+      Vue Router boundary remains a later route-state slice.
 
 - [ ] **Phase 3: extract framework-neutral contracts** — introduce the one
       route manifest, canonical world-slot tuple, bootstrap state machine,

@@ -12,8 +12,8 @@ import { Section, SectionState } from '../core/Section'
 import { StateBus } from '../core/StateBus'
 import { prefersReducedMotion } from '../core/motionPolicy'
 import { type CameraTarget, type WorldState, BakuRole } from '../core/types'
+import type { PageId } from '../sections/_shared/constants'
 import { getWorldConfigForPage, type PhaseConfig } from '../core/WorldConfig'
-import { getCurrentPage } from '../core/routePage'
 import { clampStoryProgress, sectionIndexAt } from '../core/storyProgress'
 import type { GroundPlane } from './Scene/GroundPlane'
 import type { SectionGroups } from './Scene/SectionGroups'
@@ -63,6 +63,7 @@ export class SceneCoordinator {
   private _rangesCache: [number, number][] | null = null
   private sceneRef: THREE.Scene
   private owners: SceneCoordinatorOwners
+  private page: () => PageId
 
   private _currentSectionIndex: number = 1 // Intro = index 1 (canonical Lab/Contact finale = 0)
   public get currentSectionIndex(): number {
@@ -116,13 +117,14 @@ export class SceneCoordinator {
   private _poolBakuEmissive = new THREE.Color()
   private _poolEnvColor = new THREE.Color()
 
-  constructor(scene: THREE.Scene, owners: SceneCoordinatorOwners) {
+  constructor(scene: THREE.Scene, owners: SceneCoordinatorOwners, page: () => PageId) {
     this.sceneRef = scene
     this.owners = owners
+    this.page = page
   }
 
   public async init(): Promise<void> {
-    const pageKey = getCurrentPage()
+    const pageKey = this.page()
     this.configs = getWorldConfigForPage(pageKey)
     this.disposeSections()
     // Phase 8 slice 10: the route-specific visibility gate runs first (matches
@@ -195,7 +197,7 @@ export class SceneCoordinator {
       compileAsync?: (scene: THREE.Scene, camera: THREE.Camera) => Promise<unknown>
       compile?: (scene: THREE.Scene, camera: THREE.Camera) => void
     }
-    if (getCurrentPage() !== 'home') return
+    if (this.page() !== 'home') return
     // Phase 8 slice 6: the carousel init await lives in Experience (it owns the
     // reference); buildWorld awaits it before calling this method.
 
@@ -227,7 +229,7 @@ export class SceneCoordinator {
   /** Sync the 3D Works composition with CinematicNav's active DOM chapter. */
   public setWorksPlaneStageSection(index: number): void {
     this.worksPlaneStageSection = index
-    this.owners.worksPlaneStage()?.setActive(getCurrentPage() === 'works', index)
+    this.owners.worksPlaneStage()?.setActive(this.page() === 'works', index)
   }
 
   /**
@@ -235,7 +237,7 @@ export class SceneCoordinator {
    * map frame, while the final CTA does not need the legacy HELLO flock.
    */
   public setContactSceneSection(index: number): void {
-    const isContact = getCurrentPage() === 'contact'
+    const isContact = this.page() === 'contact'
     const isAgros = isContact && index === 2
     const isFinal = isContact && index === 3
 
@@ -298,17 +300,17 @@ export class SceneCoordinator {
       // Route-owned stages keep their authored reveals moving even when the
       // shared scene has otherwise settled.
       const worksStage = this.owners.worksPlaneStage()
-      if (worksStage && getCurrentPage() === 'works') {
+      if (worksStage && this.page() === 'works') {
         worksStage.setActive(true, this.worksPlaneStageSection)
         worksStage.update(deltaTime)
       }
       const contactText = this.owners.contactTextStage()
-      if (contactText && getCurrentPage() === 'contact') {
+      if (contactText && this.page() === 'contact') {
         contactText.update(deltaTime)
       }
       this.contactTypographyStage?.update(deltaTime)
       const contactCyprus = this.owners.contactCyprusStage()
-      if (contactCyprus && getCurrentPage() === 'contact') {
+      if (contactCyprus && this.page() === 'contact') {
         contactCyprus.update(deltaTime)
       }
       return
@@ -316,7 +318,7 @@ export class SceneCoordinator {
 
     const worksStage = this.owners.worksPlaneStage()
     if (worksStage) {
-      worksStage.setActive(getCurrentPage() === 'works', this.worksPlaneStageSection)
+      worksStage.setActive(this.page() === 'works', this.worksPlaneStageSection)
       worksStage.update(deltaTime)
     }
     this.owners.contactTextStage()?.update(deltaTime)
@@ -326,7 +328,7 @@ export class SceneCoordinator {
     if (!this.isReducedMotion) {
       const baku = this.owners.baku()
       if (baku?.visible) baku.update(deltaTime)
-      const isStandaloneWorks = getCurrentPage() === 'works'
+      const isStandaloneWorks = this.page() === 'works'
       const isWorksStoryFrame = this._currentSectionIndex === 3
       const trail = this.owners.drawTrail()
       if (trail && this._camera && (isStandaloneWorks || isWorksStoryFrame)) {
@@ -351,13 +353,10 @@ export class SceneCoordinator {
         // Works becomes a pure media field once the cube-face handoff settles:
         // only the planes and the existing particle field remain visible.
         baku.visible =
-          getCurrentPage() !== 'lab' &&
-          getCurrentPage() !== 'works' &&
-          !(
-            getCurrentPage() === 'contact' &&
-            (this.owners.contactCyprusStage()?.isActive ?? false)
-          ) &&
-          (getCurrentPage() !== 'home' || !(carousel.isActive && carousel.morphProgress > 0.82))
+          this.page() !== 'lab' &&
+          this.page() !== 'works' &&
+          !(this.page() === 'contact' && (this.owners.contactCyprusStage()?.isActive ?? false)) &&
+          (this.page() !== 'home' || !(carousel.isActive && carousel.morphProgress > 0.82))
       }
     }
     for (const group of this.sceneGroups) {
@@ -486,7 +485,7 @@ export class SceneCoordinator {
     const trail = this.owners.drawTrail()
     if (trail) {
       const carousel = this.owners.carousel()
-      const isStandaloneWorks = getCurrentPage() === 'works'
+      const isStandaloneWorks = this.page() === 'works'
       trail.object.visible = isStandaloneWorks || (activeIndex === 3 && !carousel?.isActive)
     }
 
@@ -513,7 +512,7 @@ export class SceneCoordinator {
       // Experience-owned reference.
       const carousel = i === 3 ? this.owners.carousel() : undefined
       const cfg = this.configs[i]
-      const showCarousel = getCurrentPage() === 'home' && cfg?.scene?.objects?.bakuCarousel === true
+      const showCarousel = this.page() === 'home' && cfg?.scene?.objects?.bakuCarousel === true
 
       if (shouldShow) {
         g.visible = fade > 0.001
@@ -711,7 +710,7 @@ export class SceneCoordinator {
    *  Phase 8 slice 9: the Lab object's lazy creation lives in Experience
    *  (it owns the lifecycle); the visibility gate reads the owner reference. */
   public syncRouteVisuals(): void {
-    const page = getCurrentPage()
+    const page = this.page()
     const isLab = page === 'lab'
     const baku = this.owners.baku()
     if (baku)
