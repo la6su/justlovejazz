@@ -387,8 +387,10 @@ do not start a phase whose entry gate has not passed.
       in Phase 10) keeps its bounded loop armed because software-rAF
       throttling degenerates the glass-cube jelly spring's `dt`; it is a
       dev-only path, not a Phase 7 gate input. The separately reviewed
-      Three-delivery budget ADR (chunk 381 kB gzip vs the 350 kB cap) remains
-      open.
+      [ADR 0008](docs/adr/0008-three-delivery-budget.md) keeps the
+      Three-delivery budget evidence-gated: the measured 381 kB gzip variance
+      remains a failing optimization gate and the 350 kB cap is not raised
+      silently.
 
 - [ ] **Phases 9–10: cut over static content and remove the last legacy** —
       only after their gates pass, ship the builder/blog SSG consolidation
