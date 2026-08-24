@@ -3029,6 +3029,21 @@ Acceptance evidence: `storyPublisher.test.ts` covers initial emission,
 deduplication, center/footer/menu transitions, subscription order,
 unsubscribe and disposal; existing CinematicNav tests remain unchanged.
 
+#### Phase 8 lazy Contact/Typography owner — 2026-08-24
+
+The Contact section no longer constructs `WireframeTypography` from the static
+section factory. `Experience` now creates `ContactTypographyStage` only when
+the Contact route is entered, forwards it through `SceneCoordinator`, and
+disposes it on route exit or root teardown. The dynamic import is guarded by a
+request token so a late route result cannot attach a detached stage. Native
+scroll, renderer ownership, render scheduling and scene timing are unchanged.
+
+The build confirms the static contact module no longer imports
+`FontLoader`/`TextGeometry`; the shared Three asset remains measured separately
+by ADR 0008 because the current Vite vendor grouping still includes the
+required WebGPU/TSL runtime. Focused lifecycle coverage lives in
+`Experience.contactTypography.test.ts`.
+
 ### Removal ledger
 
 | Legacy element                           | Remove after                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Status |

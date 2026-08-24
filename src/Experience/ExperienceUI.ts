@@ -52,8 +52,10 @@ export interface ExperienceUIHost {
   disposeWorksPlaneStage: () => void
   /** Phase 8 slice 8: the Experience-owned lazy Contact stage lifecycle. */
   ensureContactTextStageInitialized: () => Promise<void>
+  ensureContactTypographyStageInitialized: () => Promise<void>
   ensureContactCyprusStageInitialized: () => Promise<void>
   disposeContactTextStage: () => void
+  disposeContactTypographyStage: () => void
   disposeContactCyprusStage: () => void
   setContactTextStageSection: (index: number) => void
   setContactCyprusStageSection: (index: number) => void
@@ -201,6 +203,7 @@ export class ExperienceUI {
         coordinator.setContactSceneSection(0)
         void Promise.all([
           this.host.ensureContactTextStageInitialized(),
+          this.host.ensureContactTypographyStageInitialized(),
           this.host.ensureContactCyprusStageInitialized(),
         ]).then(() => {
           this.host.setContactTextStageSection(0)
@@ -208,6 +211,7 @@ export class ExperienceUI {
         })
       } else {
         this.host.disposeContactTextStage()
+        this.host.disposeContactTypographyStage()
         this.host.disposeContactCyprusStage()
         coordinator.setContactSceneSection(0)
       }

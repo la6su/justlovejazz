@@ -24,6 +24,7 @@ import type { ParticleBurst } from './World/ParticleBurst'
 import type { BakuCarousel } from './World/BakuCarousel'
 import type { WorksPlaneStage } from './World/WorksPlaneStage'
 import type { ContactTextStage } from './World/ContactTextStage'
+import type { ContactTypographyStage } from './World/ContactTypographyStage'
 import type { ContactCyprusStage } from './World/ContactCyprusStage'
 import type { LabExperimentObject } from './Lab/manifest'
 
@@ -47,6 +48,7 @@ export interface SceneCoordinatorOwners {
   carousel: () => BakuCarousel | null
   worksPlaneStage: () => WorksPlaneStage | null
   contactTextStage: () => ContactTextStage | null
+  contactTypographyStage?: () => ContactTypographyStage | null
   contactCyprusStage: () => ContactCyprusStage | null
   labGamepad: () => LabExperimentObject | null
 }
@@ -95,6 +97,10 @@ export class SceneCoordinator {
   }
   public get contactTextStage(): ContactTextStage | null {
     return this.owners.contactTextStage()
+  }
+
+  public get contactTypographyStage(): ContactTypographyStage | null {
+    return this.owners.contactTypographyStage?.() ?? null
   }
   public get contactCyprusStage(): ContactCyprusStage | null {
     return this.owners.contactCyprusStage()
@@ -236,14 +242,8 @@ export class SceneCoordinator {
     for (const group of this.sceneGroups) {
       const particles = group.userData.particles as THREE.Object3D | undefined
       if (particles) particles.visible = !isAgros
-
-      const typography = group.userData.typography as
-        import('./World/WireframeTypography').WireframeTypography | undefined
-      if (typography) {
-        typography.visible = !isFinal
-        if (isFinal) typography.setActive(false)
-      }
     }
+    this.contactTypographyStage?.setActive(isContact && !isFinal)
   }
 
   /**
@@ -270,21 +270,13 @@ export class SceneCoordinator {
   public hasVisibleAmbientMotion(): boolean {
     if (this.isReducedMotion) return false
     if (this.owners.baku()?.isAmbientlyAnimated) return true
-    return this.sceneGroups.some((group) => {
-      if (!group.visible) return false
-      const typo = group.userData.typography as
-        import('./World/WireframeTypography').WireframeTypography | undefined
-      return Boolean(typo?.visible && (typo.isAnimating || !this.isReducedMotion))
-    })
+    if (this.contactTypographyStage?.visible && this.contactTypographyStage.isAnimating) return true
+    return false
   }
 
   /** Match the opaque 3D words to the effective section/theme contrast. */
   public syncTypographyTheme(isLight: boolean): void {
-    for (const group of this.sceneGroups) {
-      const typo = group.userData.typography as
-        import('./World/WireframeTypography').WireframeTypography | undefined
-      typo?.setTheme(isLight)
-    }
+    this.contactTypographyStage?.setTheme(isLight)
   }
 
   public update(deltaTime: number, needsRender: boolean = true): void {
@@ -314,6 +306,7 @@ export class SceneCoordinator {
       if (contactText && getCurrentPage() === 'contact') {
         contactText.update(deltaTime)
       }
+      this.contactTypographyStage?.update(deltaTime)
       const contactCyprus = this.owners.contactCyprusStage()
       if (contactCyprus && getCurrentPage() === 'contact') {
         contactCyprus.update(deltaTime)
@@ -327,6 +320,7 @@ export class SceneCoordinator {
       worksStage.update(deltaTime)
     }
     this.owners.contactTextStage()?.update(deltaTime)
+    this.contactTypographyStage?.update(deltaTime)
     this.owners.contactCyprusStage()?.update(deltaTime)
 
     if (!this.isReducedMotion) {
@@ -368,10 +362,6 @@ export class SceneCoordinator {
     }
     for (const group of this.sceneGroups) {
       if (!group.visible) continue
-      // Update the lower Contact typography only after its own reveal begins.
-      const typo = group.userData.typography as
-        import('./World/WireframeTypography').WireframeTypography | undefined
-      if (typo) typo.update(deltaTime)
       // Update JunniParticles — GPU-side drift (Works section).
       const particles = group.userData.particles as
         import('./World/JunniParticles').JunniParticles | undefined
@@ -570,15 +560,9 @@ export class SceneCoordinator {
         // Toggle section-specific 3D content based on config.
         // objects undefined = defaults (visible if present in scene group).
         const sceneObjects = cfg?.scene?.objects
-        if (sceneObjects) {
-          const typo = g.userData.typography as
-            import('./World/WireframeTypography').WireframeTypography | undefined
-          if (typo) {
-            const visible = sceneObjects.wireframeText !== false && fade > 0.01
-            typo.visible = visible
-            typo.userData.reducedMotion = this.isReducedMotion
-            typo.setActive(visible && i === 4 && fade > 0.5)
-          }
+        if (sceneObjects && i === 4) {
+          const visible = sceneObjects.wireframeText !== false && fade > 0.01
+          this.contactTypographyStage?.setActive(visible && fade > 0.5)
         }
       } else {
         g.visible = false

@@ -153,7 +153,10 @@ do not start a phase whose entry gate has not passed.
       deduplicated snapshots from `ExperienceUI`/`CinematicNav` without changing
       the native scroll source, pull path or scene timing; the full runtime
       StoryController publisher still lands with the Phase 5/7 scene-host
-      rewiring on top of this contract). The render-demand decision is
+      rewiring on top of this contract). The Contact greeting is now a lazy
+      Experience-owned `ContactTypographyStage`; the static contact section no
+      longer imports `FontLoader`/`TextGeometry`, with explicit disposal and a
+      focused lifecycle test. The render-demand decision is
       now consumed by the loop (the Phase 7 RenderScheduler consumer
       migration, 220/220 unit suite): `Experience.update()` reads the
       14-flag OR raise, the breath idle check + step and the 14-flag settle

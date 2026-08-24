@@ -47,6 +47,7 @@ import { DrawTrail } from './World/DrawTrail'
 import type { BakuCarousel } from './World/BakuCarousel'
 import { WorksPlaneStage } from './World/WorksPlaneStage'
 import { ContactTextStage } from './World/ContactTextStage'
+import type { ContactTypographyStage } from './World/ContactTypographyStage'
 import type { ContactCyprusStage } from './World/ContactCyprusStage'
 import { getLabExperiment, type LabExperimentObject } from './Lab/manifest'
 // DissolveOverlay removed — cover transition in ProjectDetail replaces it.
@@ -141,9 +142,12 @@ export class Experience {
   // adapters + getters; the cube-visibility gate reads
   // `contactCyprusStage.isActive` off the attached stage.
   private contactTextStage: ContactTextStage | null = null
+  private contactTypographyStage: ContactTypographyStage | null = null
   private contactCyprusStage: ContactCyprusStage | null = null
   private _contactTextStagePromise: Promise<void> | null = null
   private _contactTextStageRequest = 0
+  private _contactTypographyStagePromise: Promise<void> | null = null
+  private _contactTypographyStageRequest = 0
   private _contactCyprusStagePromise: Promise<void> | null = null
   private _contactCyprusStageRequest = 0
   // Phase 8 slice 8 (moved from World): the target Cyprus-active state (the
@@ -271,8 +275,10 @@ export class Experience {
       // Phase 8 slice 8: the lazy Contact stage lifecycle moved to Experience;
       // the UI reaches it through the port.
       ensureContactTextStageInitialized: () => this.ensureContactTextStageInitialized(),
+      ensureContactTypographyStageInitialized: () => this.ensureContactTypographyStageInitialized(),
       ensureContactCyprusStageInitialized: () => this.ensureContactCyprusStageInitialized(),
       disposeContactTextStage: () => this.disposeContactTextStage(),
+      disposeContactTypographyStage: () => this.disposeContactTypographyStage(),
       disposeContactCyprusStage: () => this.disposeContactCyprusStage(),
       setContactTextStageSection: (index: number) => this.setContactTextStageSection(index),
       setContactCyprusStageSection: (index: number) => this.setContactCyprusStageSection(index),
@@ -323,6 +329,7 @@ export class Experience {
       carousel: () => this.carousel,
       worksPlaneStage: () => this.worksPlaneStage,
       contactTextStage: () => this.contactTextStage,
+      contactTypographyStage: () => this.contactTypographyStage,
       contactCyprusStage: () => this.contactCyprusStage,
       labGamepad: () => this.labGamepad,
     })
@@ -382,6 +389,7 @@ export class Experience {
     // no first-use model decode or shader-compile hitch.
     if (getCurrentPage() === 'contact') {
       void this.ensureContactTextStageInitialized()
+      void this.ensureContactTypographyStageInitialized()
       void this.ensureContactCyprusStageInitialized().then(() => {
         this.contactCyprusStage?.prewarm()
       })
@@ -529,6 +537,32 @@ export class Experience {
     this._contactTextStagePromise = null
   }
 
+  /** Lazily create the Contact greeting so FontLoader/TextGeometry stay out
+   * of the shared initial scene graph. */
+  public ensureContactTypographyStageInitialized(): Promise<void> {
+    if (this._contactTypographyStagePromise) return this._contactTypographyStagePromise
+    const request = ++this._contactTypographyStageRequest
+    this._contactTypographyStagePromise = import('./World/ContactTypographyStage').then(
+      ({ ContactTypographyStage }) => {
+        if (request !== this._contactTypographyStageRequest) return
+        const stage = new ContactTypographyStage()
+        this.contactTypographyStage = stage
+        this.scene.add(stage)
+        stage.setActive(getCurrentPage() === 'contact')
+        stage.setTheme(this._contactTextIsLight)
+      },
+    )
+    return this._contactTypographyStagePromise
+  }
+
+  public disposeContactTypographyStage(): void {
+    this._contactTypographyStageRequest++
+    this.contactTypographyStage?.removeFromParent()
+    this.contactTypographyStage?.dispose()
+    this.contactTypographyStage = null
+    this._contactTypographyStagePromise = null
+  }
+
   /** Sync the Contact pixel-title layer with CinematicNav's active chapter. */
   public setContactTextStageSection(index: number): void {
     this.contactTextStage?.setActive(getCurrentPage() === 'contact', index)
@@ -538,6 +572,7 @@ export class Experience {
   public syncContactTextTheme(isLight: boolean): void {
     this._contactTextIsLight = isLight
     this.contactTextStage?.setTheme(isLight)
+    this.contactTypographyStage?.setTheme(isLight)
   }
 
   /** Lazily load the Contact location asset instead of keeping it in the home
@@ -1433,6 +1468,10 @@ export class Experience {
     this.contactTextStage?.removeFromParent()
     this.contactTextStage?.dispose()
     this.contactTextStage = null
+    this._contactTypographyStageRequest++
+    this.contactTypographyStage?.removeFromParent()
+    this.contactTypographyStage?.dispose()
+    this.contactTypographyStage = null
     this.contactCyprusStage?.removeFromParent()
     this.contactCyprusStage?.dispose()
     this.contactCyprusStage = null
