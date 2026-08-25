@@ -162,6 +162,9 @@ according to their current measured policy.
   cards while active; hidden idle cards retain the CasePlane idle guard.
 - CinematicNav resolves `#section-*` targets inside its currently bound route
   track, keeping detached and persistent-shell IDs outside story ownership.
+- `entry-app` owns the delayed splash title handoff; its timer is cancellable
+  and coalesced across Enter/retry/failure transitions before title observation
+  begins.
 - `core/` owns the framework-neutral contracts (route manifest, world slots,
   typed event ports, i18n, theme, motion policy) and imports no Vue or TresJS.
 - `sections/` owns the per-route content templates consumed by the route views;

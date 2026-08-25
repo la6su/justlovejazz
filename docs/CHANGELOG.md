@@ -85,6 +85,9 @@
   in-flight card animation.
   CinematicNav hash resolution now searches the active route track, preventing
   detached duplicate IDs from intercepting story navigation.
+  The delayed splash title reveal now has an explicit cancellable owner;
+  repeated Enter events coalesce and retry/failure paths cannot animate stale
+  route DOM.
 - Scoped bootstrap UIkit refresh to `#spa-content`, removing the remaining
   document-wide traversal from the application shell.
 - Established the staged Vue 3, Vue Router and TresJS migration architecture,

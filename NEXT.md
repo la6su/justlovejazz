@@ -109,6 +109,8 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Scope cinematic hash resolution to the active track** — route hashes
   now resolve inside the current `CinematicNav` track, so detached duplicate
   IDs cannot redirect story navigation.
+- [x] **Own the delayed splash title reveal** — the 90 ms curtain handoff is
+  cancellable and coalesced, so retry/failure cannot animate stale route DOM.
 
 ## Deferred product queue
 

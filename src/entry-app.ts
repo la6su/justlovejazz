@@ -140,6 +140,43 @@ function clearReadyWatchdog(): void {
   }
 }
 
+/** Own the delayed curtain/title handoff so retry/failure cannot reveal stale DOM. */
+export function createSplashRevealTimer(onReveal: () => void): {
+  schedule: (delayMs: number) => void
+  clear: () => void
+} {
+  let timer: ReturnType<typeof setTimeout> | null = null
+  const clear = () => {
+    if (timer !== null) {
+      clearTimeout(timer)
+      timer = null
+    }
+  }
+  return {
+    schedule: (delayMs) => {
+      clear()
+      timer = setTimeout(() => {
+        timer = null
+        onReveal()
+      }, delayMs)
+    },
+    clear,
+  }
+}
+
+const splashRevealTimer = createSplashRevealTimer(() => {
+  revealActiveSplashTitle()
+  setupTitleObserver()
+})
+
+function clearSplashRevealTimer(): void {
+  splashRevealTimer.clear()
+}
+
+function scheduleSplashRevealTimer(delayMs: number): void {
+  splashRevealTimer.schedule(delayMs)
+}
+
 function transitionBootstrap(next: BootstrapState): boolean {
   const result = tryTransition(_bootstrapState, next)
   if (!result) {
@@ -272,6 +309,7 @@ async function boot(): Promise<void> {
 
 export async function startApp(): Promise<void> {
   clearReadyWatchdog()
+  clearSplashRevealTimer()
   // Init splash config toggles FIRST — instant, no dependencies.
   // These work during loading, before three.js finishes.
   initSoundToggle()
@@ -318,6 +356,7 @@ export async function startApp(): Promise<void> {
   // (Enter click) so user sees them as 3D scene reveals, not behind splash.
   eventBus.on('jlz:webgl-ready', () => {
     clearReadyWatchdog()
+    clearSplashRevealTimer()
     showEnterButton()
   })
 
@@ -325,6 +364,7 @@ export async function startApp(): Promise<void> {
   // instead of the Enter button, so the user knows the 3D failed (not just slow).
   eventBus.on('jlz:webgl-failed', () => {
     clearReadyWatchdog()
+    clearSplashRevealTimer()
     if (_bootstrapState !== 'failed') transitionBootstrap('failed')
     showLoadError()
   })
@@ -335,10 +375,7 @@ export async function startApp(): Promise<void> {
   eventBus.on('jlz:splash-entered', () => {
     transitionBootstrap('entered')
     // Let the curtain begin to split, then reveal the title inside that gap.
-    setTimeout(() => {
-      revealActiveSplashTitle()
-      setupTitleObserver()
-    }, 90)
+    scheduleSplashRevealTimer(90)
   })
 
   // Fallback: if jlz:webgl-ready doesn't fire within 60s (Experience.init
