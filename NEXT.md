@@ -588,8 +588,8 @@ syncRouteVisuals()` used to run (on route entry + section change) now
       absence of admin strings in `dist` are verified on the built output.
       Phase 9 slice 2 landed (2026-08-22): the trusted Vue element registry
       landed — `src/builder/vue/elements.ts` is one typed component per
-      builder element type (eleven: section/grid/heading/text/button/card/
-      divider/list/link/icon/image), rendering the exact same markup the
+      builder element type (twelve: section/grid/heading/text/button/card/
+      divider/list/link/icon/image/video), rendering the exact same markup the
       framework-neutral string renderer emits (shared `safeChoice` + the new
       `sanitizeHref` href policy; Vue's interpolation/attribute escaping
       replaces the hand-rolled `escapeHtml`). `BuilderPage`
@@ -602,7 +602,7 @@ syncRouteVisuals()` used to run (on route entry + section change) now
       and theme effects on `#builder-preview` are unchanged. The parity test
       (`src/__tests__/builderVueRegistry.test.ts`) locks the contract: SSR
       output of `BuilderPage` and `renderBuilderDocument` parse to identical
-      trees for a document covering all eleven types, the allowlist clamps,
+      trees for a document covering all twelve types, the allowlist clamps,
       unsafe-href rejection and copy escaping, in both modes. The string
       renderer stays (static/SSG output + the interim rule); the registry is
       what public routes render (slice 5). Gates: `type-check`,
@@ -817,10 +817,11 @@ for replacement. Pull one forward only when its migration dependency is clear.
 - [ ] **Extend published builder pages with richer content** — the publish
       path itself is in (Phase 9 slice 5: approved documents → static
       `/p/<slug>` routes, sitemap, per-page theme). The first media slice is
-      now in (`image` element: local/HTTPS source allowlist, mandatory alt,
-      lazy loading, Vue/string-renderer parity, SSR and publish coverage).
-      Remaining builder content capabilities are separate bounded outcomes:
-      video/media sources, dynamic sources and drag-and-drop reordering.
+      now in (`image` and accessible `video` elements: local/HTTPS source
+      allowlist, mandatory alt/label, conservative lazy/metadata loading,
+      Vue/string-renderer parity, SSR and publish coverage). Remaining builder
+      content capabilities are separate bounded outcomes: dynamic sources and
+      drag-and-drop reordering.
 
 - [ ] **Extend the cinematic brand language across every route** — tune motion
       and TSL response through the new component/scene owners, preserving both
