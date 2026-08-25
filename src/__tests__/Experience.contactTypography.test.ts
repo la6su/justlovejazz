@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { describe, expect, it, vi } from 'vitest'
 import { Experience } from '../Experience/Experience'
+import { ContactCyprusStage } from '../Experience/World/ContactCyprusStage'
 import { ContactTypographyStage } from '../Experience/World/ContactTypographyStage'
 
 describe('Experience contact typography lazy owner', () => {
@@ -26,6 +27,40 @@ describe('Experience contact typography lazy owner', () => {
       expect(stage.parent).toBeNull()
       expect(disposeSpy).toHaveBeenCalledTimes(1)
     } finally {
+      disposeSpy.mockRestore()
+    }
+  })
+})
+
+describe('Experience contact Cyprus lazy owner', () => {
+  it('cleans up a failed load without creating an unhandled rejection', async () => {
+    const scene = new THREE.Scene()
+    const exp = Object.assign(Object.create(Experience.prototype), {
+      scene,
+      contactCyprusStage: null,
+      _contactCyprusStagePromise: null,
+      _contactCyprusStageRequest: 0,
+      _contactCyprusActive: false,
+      currentPage: () => 'contact',
+      camera: { instance: new THREE.PerspectiveCamera() },
+    } as unknown as Partial<Experience>) as Experience
+    const loadSpy = vi
+      .spyOn(ContactCyprusStage.prototype, 'load')
+      .mockRejectedValue(new Error('fixture load failure'))
+    const disposeSpy = vi.spyOn(ContactCyprusStage.prototype, 'dispose')
+
+    try {
+      await expect(exp.ensureContactCyprusStageInitialized()).resolves.toBeUndefined()
+      expect(
+        (exp as unknown as { contactCyprusStage: ContactCyprusStage | null }).contactCyprusStage,
+      ).toBeNull()
+      expect(
+        (exp as unknown as { _contactCyprusStagePromise: Promise<void> | null })
+          ._contactCyprusStagePromise,
+      ).toBeNull()
+      expect(disposeSpy).toHaveBeenCalledTimes(1)
+    } finally {
+      loadSpy.mockRestore()
       disposeSpy.mockRestore()
     }
   })

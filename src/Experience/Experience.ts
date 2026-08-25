@@ -581,7 +581,9 @@ export class Experience {
           this.contactCyprusStage = null
           this._contactCyprusStagePromise = null
         }
-        throw error
+        if (import.meta.env.DEV) {
+          console.error('[Experience] ContactCyprusStage init failed:', error)
+        }
       })
     return this._contactCyprusStagePromise
   }
