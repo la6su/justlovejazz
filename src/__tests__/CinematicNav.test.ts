@@ -147,6 +147,41 @@ describe('CinematicNav — vertical story and sheets', () => {
     expect(bindSpy).not.toHaveBeenCalled()
     bindSpy.mockRestore()
   })
+
+  it('does not reapply side state on settled center scroll frames', async () => {
+    const track = document.getElementById('spa-content')!
+    nav = createNav()
+    const applySideState = vi.spyOn(
+      nav as unknown as { _applySideState: () => void },
+      '_applySideState',
+    )
+    applySideState.mockClear()
+
+    track.dispatchEvent(new Event('scroll'))
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+
+    expect(applySideState).not.toHaveBeenCalled()
+    expect(document.body.dataset.cinematicSheet).toBeUndefined()
+  })
+
+  it('reapplies side state once when scrolling closes a sheet', async () => {
+    const track = document.getElementById('spa-content')!
+    nav = createNav()
+    nav.goToSection(5)
+    const applySideState = vi.spyOn(
+      nav as unknown as { _applySideState: () => void },
+      '_applySideState',
+    )
+    applySideState.mockClear()
+
+    track.scrollTop = MAIN_HEIGHT
+    track.dispatchEvent(new Event('scroll'))
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+
+    expect(applySideState).toHaveBeenCalledTimes(1)
+    expect(document.body.dataset.cinematicSheet).toBeUndefined()
+    expect(document.querySelector<HTMLElement>('[data-section="works"]')?.inert).toBe(false)
+  })
 })
 
 describe('CinematicNav — content page track', () => {

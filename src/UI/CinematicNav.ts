@@ -217,8 +217,9 @@ export class CinematicNav {
     const position = clampStoryPosition(this._track.scrollTop / height, this._mainSections.length)
     const nextMain = mainSectionFromPosition(position, FIRST_MAIN, this._mainSections.length)
 
+    const wasSide = this._side
     this._side = 'center'
-    this._applySideState()
+    if (wasSide !== this._side) this._applySideState()
     this._mainSection = nextMain
     this._updateStoryState(position)
     this._notifySection(nextMain)
