@@ -64,6 +64,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Make UIMenu teardown deterministic** — the persistent shell now uses
   one delegated click owner and removes it explicitly instead of retaining
   five anonymous control listeners until DOM garbage collection.
+- [x] **Scope FullscreenOverlay listeners** — media/control/poster listeners
+  now share one `AbortController` owner and are cancelled atomically during
+  teardown, alongside the existing document keyboard and modal cleanup.
 
 ## Deferred product queue
 

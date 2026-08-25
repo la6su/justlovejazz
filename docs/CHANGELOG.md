@@ -46,6 +46,8 @@
   Three.js vendor asset.
   UIMenu now owns one delegated click listener and removes it explicitly on
   teardown, reducing the persistent shell's listener surface.
+  FullscreenOverlay now scopes its media, control and poster listeners under
+  one abortable owner, so teardown cannot leave detached callbacks behind.
 - Scoped bootstrap UIkit refresh to `#spa-content`, removing the remaining
   document-wide traversal from the application shell.
 - Established the staged Vue 3, Vue Router and TresJS migration architecture,

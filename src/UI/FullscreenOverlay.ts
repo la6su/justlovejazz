@@ -60,6 +60,7 @@ export class FullscreenOverlay {
   private _posterRequestId = 0
   private _posterUrl: string | null = null
   private _mediaGeneration = 0
+  private readonly _listeners = new AbortController()
 
   public onPrev: (() => void) | null = null
   public onNext: (() => void) | null = null
@@ -144,53 +145,79 @@ export class FullscreenOverlay {
         this.video.pause()
       }
     }
-    this.bigPlay.addEventListener('click', togglePlay)
-    this.video.addEventListener('click', togglePlay)
+    this.bigPlay.addEventListener('click', togglePlay, { signal: this._listeners.signal })
+    this.video.addEventListener('click', togglePlay, { signal: this._listeners.signal })
 
     // Mute toggle — swap uk-icon between muted/sound
-    this.muteBtn.addEventListener('click', () => {
-      this.video.muted = !this.video.muted
-      this.muteBtn.setAttribute('aria-pressed', String(this.video.muted))
-      this.muteBtn.classList.toggle('is-muted', this.video.muted)
-      const muteIcon = this.muteBtn.querySelector('[uk-icon]')
-      if (muteIcon)
-        muteIcon.setAttribute('uk-icon', `icon: ${this.video.muted ? 'muted' : 'sound'}`)
-    })
+    this.muteBtn.addEventListener(
+      'click',
+      () => {
+        this.video.muted = !this.video.muted
+        this.muteBtn.setAttribute('aria-pressed', String(this.video.muted))
+        this.muteBtn.classList.toggle('is-muted', this.video.muted)
+        const muteIcon = this.muteBtn.querySelector('[uk-icon]')
+        if (muteIcon)
+          muteIcon.setAttribute('uk-icon', `icon: ${this.video.muted ? 'muted' : 'sound'}`)
+      },
+      { signal: this._listeners.signal },
+    )
 
     // Video events
-    this.video.addEventListener('playing', () => {
-      this.container.classList.add('is-playing')
-      this.bigPlay.style.opacity = '0'
-      this.revealVideoAfterFirstFrame()
+    this.video.addEventListener(
+      'playing',
+      () => {
+        this.container.classList.add('is-playing')
+        this.bigPlay.style.opacity = '0'
+        this.revealVideoAfterFirstFrame()
+      },
+      { signal: this._listeners.signal },
+    )
+    this.video.addEventListener(
+      'pause',
+      () => {
+        this.container.classList.remove('is-playing')
+        this.bigPlay.style.opacity = '1'
+      },
+      { signal: this._listeners.signal },
+    )
+    this.video.addEventListener(
+      'timeupdate',
+      () => {
+        // Guard: duration is NaN until metadata loads (and stays NaN if no source)
+        if (!isFinite(this.video.duration) || this.video.duration === 0) return
+        const pct = (this.video.currentTime / this.video.duration) * 100
+        const pctStr = String(isNaN(pct) ? 0 : pct)
+        this.seekBar.value = pctStr
+        this.seekBar.style.setProperty('--jlz-seek-progress', `${pctStr}%`)
+        this.updateTimeDisplay()
+      },
+      { signal: this._listeners.signal },
+    )
+    this.video.addEventListener('loadedmetadata', () => this.updateTimeDisplay(), {
+      signal: this._listeners.signal,
     })
-    this.video.addEventListener('pause', () => {
-      this.container.classList.remove('is-playing')
-      this.bigPlay.style.opacity = '1'
-    })
-    this.video.addEventListener('timeupdate', () => {
-      // Guard: duration is NaN until metadata loads (and stays NaN if no source)
-      if (!isFinite(this.video.duration) || this.video.duration === 0) return
-      const pct = (this.video.currentTime / this.video.duration) * 100
-      const pctStr = String(isNaN(pct) ? 0 : pct)
-      this.seekBar.value = pctStr
-      this.seekBar.style.setProperty('--jlz-seek-progress', `${pctStr}%`)
-      this.updateTimeDisplay()
-    })
-    this.video.addEventListener('loadedmetadata', () => this.updateTimeDisplay())
 
     // Seek
-    this.seekBar.addEventListener('input', () => {
-      // Guard: don't set currentTime if duration is NaN/Infinity/0
-      // (happens when video has no source or metadata not loaded yet)
-      const duration = this.video.duration
-      if (!isFinite(duration) || duration === 0) return
-      const pct = Number(this.seekBar.value)
-      this.video.currentTime = (pct / 100) * duration
-    })
+    this.seekBar.addEventListener(
+      'input',
+      () => {
+        // Guard: don't set currentTime if duration is NaN/Infinity/0
+        // (happens when video has no source or metadata not loaded yet)
+        const duration = this.video.duration
+        if (!isFinite(duration) || duration === 0) return
+        const pct = Number(this.seekBar.value)
+        this.video.currentTime = (pct / 100) * duration
+      },
+      { signal: this._listeners.signal },
+    )
 
     // Nav buttons
-    this.prevBtn.addEventListener('click', () => this.navigate(-1))
-    this.nextBtn.addEventListener('click', () => this.navigate(1))
+    this.prevBtn.addEventListener('click', () => this.navigate(-1), {
+      signal: this._listeners.signal,
+    })
+    this.nextBtn.addEventListener('click', () => this.navigate(1), {
+      signal: this._listeners.signal,
+    })
 
     // UIKit3 modal events — uk-open is the authoritative state. UIkit adds it
     // on show and removes it on hide; isOpen reads it directly. No custom
@@ -485,7 +512,7 @@ export class FullscreenOverlay {
           .catch(() => undefined)
           .then(reveal)
       },
-      { once: true },
+      { once: true, signal: this._listeners.signal },
     )
     image.src = poster
   }
@@ -502,6 +529,7 @@ export class FullscreenOverlay {
   }
 
   dispose(): void {
+    this._listeners.abort()
     this._posterRequestId += 1
     this._mediaGeneration += 1
     if (this._autoplayTimer) {
