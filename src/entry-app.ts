@@ -1,4 +1,3 @@
-import UIkit from 'uikit'
 import { BlurFade } from './Experience/BlurFade'
 import { NoiseText } from './Experience/NoiseText'
 import { eventBus } from './core/EventBus'
@@ -172,7 +171,6 @@ async function boot(): Promise<void> {
       transitionBootstrap('failed')
       eventBus.emit('jlz:webgl-failed')
     }
-    scheduleUiKitRefresh()
     return
   }
 
@@ -264,25 +262,6 @@ async function boot(): Promise<void> {
     // The failed state allows retry without a page reload.
   }
 
-  scheduleUiKitRefresh()
-}
-
-function scheduleUiKitRefresh(): void {
-  const refresh = () => {
-    const content = document.getElementById('spa-content')
-    if (!content) return
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ;(UIkit as any).update(content)
-  }
-  if ('requestIdleCallback' in window) {
-    ;(
-      window as Window & {
-        requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => void
-      }
-    ).requestIdleCallback(refresh, { timeout: 800 })
-  } else {
-    setTimeout(refresh, 120)
-  }
 }
 
 export async function startApp(): Promise<void> {

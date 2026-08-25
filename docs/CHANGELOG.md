@@ -61,6 +61,9 @@
   FullscreenOverlay now cancels first-frame poster reveal callbacks during
   media replacement, modal hide and disposal instead of relying only on a
   generation guard.
+  Persistent UIMenu now owns its scoped UIkit hydration; the bootstrap no
+  longer schedules a duplicate global idle update over `#spa-content`, and
+  `entry-app` measures 6.99 kB gzip versus 7.30 kB before the change.
 - Scoped bootstrap UIkit refresh to `#spa-content`, removing the remaining
   document-wide traversal from the application shell.
 - Established the staged Vue 3, Vue Router and TresJS migration architecture,

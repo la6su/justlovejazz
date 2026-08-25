@@ -80,6 +80,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Cancel video poster reveal callbacks** — `FullscreenOverlay` now owns
   and cancels its nested first-frame RAF or `requestVideoFrameCallback` during
   media replacement, modal hide and disposal.
+- [x] **Move persistent UIkit hydration to UIMenu** — the shell now hydrates
+  its own icons/tooltips at construction; the bootstrap no longer schedules a
+  duplicate global idle traversal of `#spa-content`, reducing `entry-app` from
+  7.30 kB to 6.99 kB gzip.
 
 ## Deferred product queue
 

@@ -4,6 +4,7 @@
 // preference controls. A separate lower launcher opens the 3D Contact finale.
 // CinematicNav owns story position and the panel section state.
 
+import UIkit from 'uikit'
 import { toggleLang, getLang } from '../core/i18n'
 import { themeManager } from '../core/ThemeManager'
 import { getSoundMuted, setSoundMutedPreference } from '../core/SfxSystem'
@@ -90,6 +91,10 @@ export class UIMenu {
 
     const app = document.getElementById('app') ?? document.body
     app.appendChild(this.navEl)
+    // The persistent shell is outside every route root. Hydrate its icons and
+    // tooltip once at the owner boundary instead of relying on a later global
+    // `UIkit.update(#spa-content)` pass from the bootstrap.
+    ;(UIkit as unknown as { update(element: Element): void }).update(this.navEl)
 
     this._langBtn = this.navEl.querySelector<HTMLButtonElement>('#jlz-lang-toggle')
     this._themeBtn = this.navEl.querySelector<HTMLButtonElement>('#jlz-theme-toggle')

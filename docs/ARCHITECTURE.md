@@ -137,9 +137,12 @@ according to their current measured policy.
 ### Application and content
 
 - `app/` owns the Vue bootstrap, `AppShell`, the persistent `SceneHost.vue`,
-  Vue Router records (`routes.ts`) and the lazy semantic route views;
   `entry-shell.ts` / `entry-app.ts` own the pre-Vue shell and the post-splash
-  application bootstrap.
+  application bootstrap, and Vue Router records (`routes.ts`) own the lazy
+  semantic route views.
+- `UIMenu` owns UIkit hydration for the persistent shell; route roots own their
+  scoped UIkit update through `useJlzPage`, so bootstrap does not traverse the
+  whole content tree a second time.
 - `core/` owns the framework-neutral contracts (route manifest, world slots,
   typed event ports, i18n, theme, motion policy) and imports no Vue or TresJS.
 - `sections/` owns the per-route content templates consumed by the route views;
