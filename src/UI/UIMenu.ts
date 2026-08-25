@@ -25,6 +25,20 @@ export class UIMenu {
   private _menuBtn: HTMLButtonElement | null = null
   private _contactBtn: HTMLButtonElement | null = null
   private _navigate: ((index: number) => void) | null = null
+  private readonly _clickHandler = (event: MouseEvent): void => {
+    const target = event.target as Element | null
+    if (target?.closest('#jlz-lang-toggle')) {
+      toggleLang()
+    } else if (target?.closest('#jlz-theme-toggle')) {
+      themeManager.toggle()
+    } else if (target?.closest('#jlz-sound-toggle')) {
+      eventBus.emit('jlz:sound-toggle', { muted: !this._soundMuted })
+    } else if (target?.closest('#jlz-menu-launcher')) {
+      this._navigate?.(5)
+    } else if (target?.closest('#jlz-contact-launcher')) {
+      this._navigate?.(0)
+    }
+  }
 
   constructor() {
     this.navEl = document.createElement('div')
@@ -83,20 +97,9 @@ export class UIMenu {
     this._menuBtn = this.navEl.querySelector<HTMLButtonElement>('#jlz-menu-launcher')
     this._contactBtn = this.navEl.querySelector<HTMLButtonElement>('#jlz-contact-launcher')
 
-    // Language toggle
-    this._langBtn?.addEventListener('click', () => toggleLang())
-    // Theme toggle
-    this._themeBtn?.addEventListener('click', () => themeManager.toggle())
-    // Sound toggle — D-6 fix: click handler ONLY dispatches the event (single
-    // code path). The _soundToggleHandler does the actual state mutation +
-    // localStorage + button sync. Previously the click handler did the work
-    // AND dispatched the event → the event listener re-did the same work
-    // (double localStorage write, double button sync on every click).
-    this._soundBtn?.addEventListener('click', () => {
-      eventBus.emit('jlz:sound-toggle', { muted: !this._soundMuted })
-    })
-    this._menuBtn?.addEventListener('click', () => this._navigate?.(5))
-    this._contactBtn?.addEventListener('click', () => this._navigate?.(0))
+    // One delegated handler keeps the persistent shell's DOM listener surface
+    // small and gives dispose() one exact owner to remove.
+    this.navEl.addEventListener('click', this._clickHandler)
 
     // Wire global listeners (typed eventBus ports — the raw window bridge was
     // removed in Phase 10).
@@ -164,10 +167,12 @@ export class UIMenu {
   }
 
   dispose(): void {
+    this.navEl.removeEventListener('click', this._clickHandler)
     this._langUnsub?.()
     this._themeChangeUnsub?.()
     this._soundToggleUnsub?.()
     this._langUnsub = this._themeChangeUnsub = this._soundToggleUnsub = null
+    this._navigate = null
     this.navEl.remove()
   }
 }

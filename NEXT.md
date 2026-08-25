@@ -57,6 +57,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
   production graph is 380.35 kB gzip against the 350 kB gate after the
   route-local split; inspect named imports and WebGPU/TSL ownership before
   considering any budget change.
+- [x] **Make UIMenu teardown deterministic** — the persistent shell now uses
+  one delegated click owner and removes it explicitly instead of retaining
+  five anonymous control listeners until DOM garbage collection.
 
 ## Deferred product queue
 
