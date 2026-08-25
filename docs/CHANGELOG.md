@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- In-app hash navigation now cancels its superseded RAF at the router owner;
+  rapid route changes do not leave stale section-dispatch callbacks to wake on
+  the next frame.
+
 - Route-menu lifecycle now owns and cancels pending two-frame visibility
   reconciliation and app-owned listeners before Vue removes the route root;
   detached menu DOM no longer leaves avoidable frame work behind.

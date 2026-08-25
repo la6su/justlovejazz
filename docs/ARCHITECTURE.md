@@ -180,6 +180,9 @@ according to their current measured policy.
 - Direct-entry `#section-*` handoff is generation-owned until readiness; later
   navigation and router errors invalidate the deferred event before it can
   reach `CinematicNav`.
+- In-app hash dispatch owns one cancellable frame through
+  `createSingleFrameOwner`; a later navigation or router error cancels the
+  pending continuation physically and invalidates its callback token.
 - BlurFade treats title content as text at the DOM boundary and creates spans
   without `innerHTML`; translated/editorial markup cannot become live nodes.
 - RouteTransition owns at most one pending reveal timer and clears it when a

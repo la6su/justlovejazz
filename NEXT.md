@@ -130,6 +130,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Dispose route-menu frame owners** — `useJlzPage` now releases the
   menu's app-owned listeners and pending two-frame visibility reconciliation
   before a route root is unmounted; UIkit remains the owner of accordion state.
+- [x] **Cancel stale hash-navigation frames** — route hash dispatch now owns
+  one cancellable RAF and invalidates it on replacement or router error instead
+  of waking an obsolete callback and ignoring it after the fact.
 
 ## Deferred product queue
 

@@ -55,6 +55,34 @@ export function createDeferredInitialHashGate(): {
   }
 }
 
+/** Own one deferred frame and invalidate callbacks that were superseded. */
+export function createSingleFrameOwner(): {
+  schedule: (callback: () => void) => void
+  cancel: () => void
+} {
+  let frame: number | null = null
+  let generation = 0
+  const cancel = (): void => {
+    generation += 1
+    if (frame !== null) {
+      cancelAnimationFrame(frame)
+      frame = null
+    }
+  }
+  return {
+    schedule: (callback) => {
+      cancel()
+      const token = generation
+      frame = requestAnimationFrame(() => {
+        frame = null
+        if (token !== generation) return
+        callback()
+      })
+    },
+    cancel,
+  }
+}
+
 /** Mount the public Vue application on `#app` and take over navigation. */
 export async function mountVueApp(): Promise<void> {
   if (mounted) return
@@ -75,6 +103,7 @@ export async function mountVueApp(): Promise<void> {
   // no-ops and the overlay element is never created (RouteTransition).
   const routeTransition = new RouteTransition()
   const initialHashGate = createDeferredInitialHashGate()
+  const hashNavigationFrame = createSingleFrameOwner()
   // The initial navigation skips the cover: the legacy `initRouter`
   // rendered the first page without the transition (no prior document to
   // cover), and a synchronous first commit leaves no startup gap in which
@@ -91,6 +120,7 @@ export async function mountVueApp(): Promise<void> {
     routeTransition.reveal()
   })
   router.onError(() => {
+    hashNavigationFrame.cancel()
     routeTransition.cancel()
     initialHashGate.invalidate()
   })
@@ -107,6 +137,7 @@ export async function mountVueApp(): Promise<void> {
   let firstNavigation = true
   let hashNavigationGeneration = 0
   router.afterEach((to) => {
+    hashNavigationFrame.cancel()
     const generation = ++hashNavigationGeneration
     const isInitial = firstNavigation
     firstNavigation = false
@@ -116,7 +147,7 @@ export async function mountVueApp(): Promise<void> {
       initialHashGate.defer(to.hash)
       return
     }
-    requestAnimationFrame(() => {
+    hashNavigationFrame.schedule(() => {
       if (generation !== hashNavigationGeneration) return
       eventBus.emit('jlz:goto-section-by-hash', { hash: to.hash })
     })

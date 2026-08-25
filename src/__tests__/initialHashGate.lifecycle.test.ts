@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { eventBus } from '../core/EventBus'
-import { createDeferredInitialHashGate } from '../app'
+import { createDeferredInitialHashGate, createSingleFrameOwner } from '../app'
 
 describe('initial route hash lifecycle', () => {
   afterEach(() => {
@@ -35,5 +35,26 @@ describe('initial route hash lifecycle', () => {
     expect(
       emit.mock.calls.filter(([event]) => event === 'jlz:goto-section-by-hash'),
     ).toHaveLength(1)
+  })
+
+  it('cancels and invalidates a superseded hash-navigation frame', () => {
+    const callbacks: FrameRequestCallback[] = []
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      callbacks.push(callback)
+      return callbacks.length
+    })
+    const cancel = vi.spyOn(window, 'cancelAnimationFrame')
+    const owner = createSingleFrameOwner()
+    const stale = vi.fn()
+    const current = vi.fn()
+
+    owner.schedule(stale)
+    owner.schedule(current)
+    callbacks[0]?.(0)
+    callbacks[1]?.(0)
+
+    expect(cancel).toHaveBeenCalledWith(1)
+    expect(stale).not.toHaveBeenCalled()
+    expect(current).toHaveBeenCalledOnce()
   })
 })
