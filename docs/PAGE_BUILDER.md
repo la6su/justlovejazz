@@ -46,10 +46,13 @@ production compilation as hand-authored theme sources.
 
 ## Current document model
 
-Version 2 supports `section`, `grid`, `card`, `heading`, `text` and `button`.
-Root nodes are sections; container elements own ordered children. Copy is plain
-text, links accept internal paths, anchors, mail links and HTTPS, and rendering
-escapes all authored values.
+Version 2 supports twelve typed elements. Root nodes are sections; container
+elements own ordered children. Copy is plain text, links accept internal paths,
+anchors, mail links and HTTPS, and rendering escapes all authored values.
+The `list` element can optionally resolve the bounded `projects` source from
+the existing project manifest, with an allowlisted field (`title`,
+`description`, `year` or `category`) and a 1–12 item limit. Resolution is
+synchronous, local and deterministic; an absent source keeps authored lines.
 
 The editor provides:
 
@@ -89,7 +92,9 @@ application itself is excluded rather than tree-shaken after bundling.
 The saved v2 document is a single source page and the Style workspace currently
 covers the first high-value UIkit groups. Full UIkit component coverage,
 publishing as a public route, managing multiple route documents, drag-and-drop
-nesting, media selection and dynamic data sources are separate outcomes. Public
+nesting and media selection are separate outcomes. The first dynamic source
+slice is now in: only the trusted project manifest can feed a list, with no
+network or user code. Public
 route integration must use `renderBuilderDocument()` and the existing router
 metadata/i18n contracts; it must not import `admin/`. This is the interim rule
 before Phases 5 and 9. After the Vue route registry passes parity, public

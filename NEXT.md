@@ -824,8 +824,12 @@ for replacement. Pull one forward only when its migration dependency is clear.
       Phase 9 slice 7 landed (2026-08-25): the admin outline now supports
       same-parent drag-and-drop ordering through the typed builder command
       layer. Reordering is undoable, preserves selection and intentionally
-      rejects cross-parent drops; dynamic sources remain the next content
-      capability.
+      rejects cross-parent drops. Phase 9 slice 8 landed (2026-08-25): the
+      list element can resolve the local `projects` manifest through one
+      framework-neutral resolver, with allowlisted fields and a bounded
+      1–12-item limit; authored list lines remain the fallback. Vue and string
+      rendering share the resolver and parity coverage. Remote/network data
+      sources remain intentionally deferred.
 
 - [ ] **Extend the cinematic brand language across every route** — tune motion
       and TSL response through the new component/scene owners, preserving both
