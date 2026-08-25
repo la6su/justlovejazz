@@ -56,6 +56,7 @@ export class FullscreenOverlay {
   private _lastShiftTab = false
   private _autoplayTimer: ReturnType<typeof setTimeout> | null = null
   private _enterFallback: number | null = null
+  private _shownRevealFrame: number | null = null
   private _posterRequestId = 0
   private _posterUrl: string | null = null
   private _mediaGeneration = 0
@@ -224,7 +225,10 @@ export class FullscreenOverlay {
         this._enterFallback = null
       }
       // Trigger the CSS reveal transition (clip-path + scale + opacity).
-      requestAnimationFrame(() => {
+      const generation = this._mediaGeneration
+      this._shownRevealFrame = requestAnimationFrame(() => {
+        this._shownRevealFrame = null
+        if (generation !== this._mediaGeneration || !this.container.isConnected) return
         this.container.classList.add('is-entered')
       })
       // Move focus into the modal so keyboard users are not stranded on the
@@ -241,6 +245,11 @@ export class FullscreenOverlay {
         cancelAnimationFrame(this._enterFallback)
         this._enterFallback = null
       }
+      if (this._shownRevealFrame) {
+        cancelAnimationFrame(this._shownRevealFrame)
+        this._shownRevealFrame = null
+      }
+      this._mediaGeneration += 1
       if (this._autoplayTimer) {
         clearTimeout(this._autoplayTimer)
         this._autoplayTimer = null
@@ -502,6 +511,10 @@ export class FullscreenOverlay {
     if (this._enterFallback) {
       cancelAnimationFrame(this._enterFallback)
       this._enterFallback = null
+    }
+    if (this._shownRevealFrame) {
+      cancelAnimationFrame(this._shownRevealFrame)
+      this._shownRevealFrame = null
     }
     if (this._keydownHandler) {
       document.removeEventListener('keydown', this._keydownHandler)

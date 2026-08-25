@@ -6,6 +6,7 @@ type OverlayInternals = {
   container: HTMLDivElement
   titleEl: HTMLElement
   _applyOptions: (options: OverlayOptions) => void
+  dispose: () => void
 }
 
 describe('FullscreenOverlay close ownership', () => {
@@ -59,6 +60,42 @@ describe('FullscreenOverlay close ownership', () => {
       expect(show).toHaveBeenCalledWith(0.8, 'Animated title')
     } finally {
       blurFadeFor.mockRestore()
+    }
+  })
+
+  it('cancels a pending shown reveal when the overlay is disposed', () => {
+    let frame: FrameRequestCallback | undefined
+    const raf = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      frame = callback
+      return 7
+    })
+    const overlay = new FullscreenOverlay() as unknown as OverlayInternals
+
+    try {
+      overlay.container.dispatchEvent(new Event('shown'))
+      overlay.dispose()
+      frame?.(0)
+      expect(overlay.container.classList.contains('is-entered')).toBe(false)
+    } finally {
+      raf.mockRestore()
+    }
+  })
+
+  it('applies the shown reveal when the overlay remains current', () => {
+    let frame: FrameRequestCallback | undefined
+    const raf = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      frame = callback
+      return 8
+    })
+    const overlay = new FullscreenOverlay() as unknown as OverlayInternals
+
+    try {
+      overlay.container.dispatchEvent(new Event('shown'))
+      frame?.(0)
+      expect(overlay.container.classList.contains('is-entered')).toBe(true)
+    } finally {
+      raf.mockRestore()
+      overlay.dispose()
     }
   })
 })
