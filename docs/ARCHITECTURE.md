@@ -209,6 +209,9 @@ according to their current measured policy.
 - SceneHost owns a generation for its asynchronous fallback swap; unmount
   invalidates that generation and disposes a late candidate before it can
   replace Tres's renderer or resolve the one-shot bridge.
+- SceneHost also retains the resolved renderer as its live construction owner;
+  unmount disposes it, including the path where the initial candidate loses the
+  lifecycle race before fallback resolution.
 - WorksPlaneStage marks itself disposed before releasing route resources; a
   pending texture batch releases its cache references and exits before creating
   cards, preventing stale WebGPU/TSL setup after leaving `/works`.

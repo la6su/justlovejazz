@@ -56,6 +56,7 @@ const tresRef = ref<{ $el: Element } | null>(null)
 let resolved = false
 let disposed = false
 let lifecycleGeneration = 0
+let liveRenderer: UnifiedRenderSurface | null = null
 
 async function onReady(context: TresContext): Promise<void> {
   if (noScene || resolved) return
@@ -93,8 +94,12 @@ async function onReady(context: TresContext): Promise<void> {
     backend = inspectUnifiedBackend(renderer)
     plan = planUnifiedBackend(backend)
   }
-  if (!isCurrent()) return
+  if (!isCurrent()) {
+    renderer.dispose()
+    return
+  }
   resolved = true
+  liveRenderer = renderer
   sceneHost.resolve({
     scene: context.scene.value,
     context,
@@ -115,6 +120,8 @@ function onError(error: Error): void {
 onBeforeUnmount(() => {
   disposed = true
   lifecycleGeneration += 1
+  liveRenderer?.dispose()
+  liveRenderer = null
 })
 </script>
 

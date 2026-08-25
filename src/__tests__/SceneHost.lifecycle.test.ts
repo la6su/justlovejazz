@@ -79,4 +79,13 @@ describe('SceneHost async lifecycle', () => {
     await readyRejection
     wrapper.unmount()
   })
+
+  it('disposes the resolved renderer when the host unmounts', async () => {
+    const wrapper = mount(SceneHost, { attachTo: document.body })
+    await flushPromises()
+
+    wrapper.unmount()
+
+    expect(mocks.candidate.dispose).toHaveBeenCalledOnce()
+  })
 })
