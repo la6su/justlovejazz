@@ -51,60 +51,72 @@ export class ContactCyprusStage extends THREE.Group {
       dracoLoader.dispose()
     }
     const model = gltf.scene
-    const bounds = new THREE.Box3().setFromObject(model)
-    const size = bounds.getSize(new THREE.Vector3())
-    const center = bounds.getCenter(new THREE.Vector3())
-    const largestAxis = Math.max(size.x, size.y, size.z, 0.001)
+    try {
+      const bounds = new THREE.Box3().setFromObject(model)
+      const size = bounds.getSize(new THREE.Vector3())
+      const center = bounds.getCenter(new THREE.Vector3())
+      const largestAxis = Math.max(size.x, size.y, size.z, 0.001)
 
-    // Normalize arbitrary authoring units, then compose it as a broad backdrop.
-    this._modelBaseScale = 7.6 / largestAxis
-    model.scale.setScalar(this._modelBaseScale)
-    model.position.copy(center).multiplyScalar(-this._modelBaseScale)
-    model.position.add(new THREE.Vector3(0, 0.42, -10))
-    // The source terrain is authored flat on the X/Z plane. Turn its relief
-    // toward the viewer before adding the small authored perspective tilt.
-    model.rotation.set(1.05, -0.3, 0.04)
+      // Normalize arbitrary authoring units, then compose it as a broad backdrop.
+      this._modelBaseScale = 7.6 / largestAxis
+      model.scale.setScalar(this._modelBaseScale)
+      model.position.copy(center).multiplyScalar(-this._modelBaseScale)
+      model.position.add(new THREE.Vector3(0, 0.42, -10))
+      // The source terrain is authored flat on the X/Z plane. Turn its relief
+      // toward the viewer before adding the small authored perspective tilt.
+      model.rotation.set(1.05, -0.3, 0.04)
 
-    model.traverse((object) => {
-      const mesh = object as THREE.Mesh
-      if (!mesh.isMesh) return
-      mesh.castShadow = false
-      mesh.receiveShadow = false
-      mesh.frustumCulled = false
-      // MeshPhysicalMaterial uses Three's PhysicalLightingModel on WebGPU.
-      // Transmission, thickness and IOR refract the already-rendered scene;
-      // roughness turns that into restrained frosted distortion rather than
-      // a perfectly clear lens. WebGL2 receives the equivalent physical path.
-      const sourceMaterials = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
-      sourceMaterials.forEach((material) => disposeMaterialDeep(material))
-      const material = new THREE.MeshPhysicalMaterial({
-        color: 0xc4e9c8,
-        transmission: 0.82,
-        thickness: 13.5,
-        ior: 1.32,
-        roughness: 0.2,
-        metalness: 0.04,
-        envMapIntensity: 1.9,
-        clearcoat: 0.82,
-        clearcoatRoughness: 0.12,
-        iridescence: 0.18,
-        iridescenceIOR: 1.3,
-        iridescenceThicknessRange: [120, 300],
-        dispersion: 0.08,
-        attenuationColor: new THREE.Color(0xb9f1c0),
-        attenuationDistance: 1.4,
-        side: THREE.DoubleSide,
-        depthWrite: false,
-        transparent: true,
-        opacity: 0,
+      model.traverse((object) => {
+        const mesh = object as THREE.Mesh
+        if (!mesh.isMesh) return
+        mesh.castShadow = false
+        mesh.receiveShadow = false
+        mesh.frustumCulled = false
+        // MeshPhysicalMaterial uses Three's PhysicalLightingModel on WebGPU.
+        // Transmission, thickness and IOR refract the already-rendered scene;
+        // roughness turns that into restrained frosted distortion rather than
+        // a perfectly clear lens. WebGL2 receives the equivalent physical path.
+        const sourceMaterials = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
+        sourceMaterials.forEach((material) => disposeMaterialDeep(material))
+        const material = new THREE.MeshPhysicalMaterial({
+          color: 0xc4e9c8,
+          transmission: 0.82,
+          thickness: 13.5,
+          ior: 1.32,
+          roughness: 0.2,
+          metalness: 0.04,
+          envMapIntensity: 1.9,
+          clearcoat: 0.82,
+          clearcoatRoughness: 0.12,
+          iridescence: 0.18,
+          iridescenceIOR: 1.3,
+          iridescenceThicknessRange: [120, 300],
+          dispersion: 0.08,
+          attenuationColor: new THREE.Color(0xb9f1c0),
+          attenuationDistance: 1.4,
+          side: THREE.DoubleSide,
+          depthWrite: false,
+          transparent: true,
+          opacity: 0,
+        })
+        mesh.material = material
+        this._materials.push(material)
       })
-      mesh.material = material
-      this._materials.push(material)
-    })
 
-    this._model = model
-    this.add(model)
-    this.setPresentation(this._opacity, this._scale)
+      this._model = model
+      this.add(model)
+      this.setPresentation(this._opacity, this._scale)
+    } catch (error) {
+      model.traverse((object) => {
+        const mesh = object as THREE.Mesh
+        if (!mesh.isMesh) return
+        mesh.geometry.dispose()
+        const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
+        materials.forEach((material) => disposeMaterialDeep(material))
+      })
+      this._materials = []
+      throw error
+    }
   }
 
   setCamera(camera: THREE.Camera): void {
