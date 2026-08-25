@@ -23,7 +23,7 @@
 // Experience then creates its own scene and `Renderer.init()` constructs its
 // own renderer (the retained pre-Phase-7 path).
 
-import { markRaw, ref, toValue } from 'vue'
+import { markRaw, onBeforeUnmount, ref, toValue } from 'vue'
 import { TresCanvas } from '@tresjs/core'
 import type { TresContext, TresRendererSetupContext } from '@tresjs/core'
 import { PerspectiveCamera } from 'three'
@@ -54,9 +54,13 @@ const rendererFactory = (ctx: TresRendererSetupContext): UnifiedRenderSurface =>
 
 const tresRef = ref<{ $el: Element } | null>(null)
 let resolved = false
+let disposed = false
+let lifecycleGeneration = 0
 
 async function onReady(context: TresContext): Promise<void> {
   if (noScene || resolved) return
+  const generation = ++lifecycleGeneration
+  const isCurrent = (): boolean => !disposed && generation === lifecycleGeneration
   const canvas =
     (tresRef.value?.$el as HTMLCanvasElement | undefined) ?? document.createElement('canvas')
   // The scene is the decorative visual layer over the semantic route content:
@@ -72,12 +76,18 @@ async function onReady(context: TresContext): Promise<void> {
     // the SAME class (Phase 6 policy). The canvas is already in the DOM:
     // dispose the dead instance and swap in the replacement.
     renderer.dispose()
-    renderer = createUnifiedWebGPUInstance(canvas, true)
-    await initUnifiedWebGPUInstance(renderer)
+    const candidate = createUnifiedWebGPUInstance(canvas, true)
+    await initUnifiedWebGPUInstance(candidate)
+    if (!isCurrent()) {
+      candidate.dispose()
+      return
+    }
+    renderer = candidate
     context.renderer.instance = renderer
     backend = inspectUnifiedBackend(renderer)
     plan = planUnifiedBackend(backend)
   }
+  if (!isCurrent()) return
   resolved = true
   sceneHost.resolve({
     scene: context.scene.value,
@@ -91,10 +101,15 @@ async function onReady(context: TresContext): Promise<void> {
 }
 
 function onError(error: Error): void {
-  if (resolved) return
+  if (resolved || disposed) return
   resolved = true
   sceneHost.reject(error)
 }
+
+onBeforeUnmount(() => {
+  disposed = true
+  lifecycleGeneration += 1
+})
 </script>
 
 <template>

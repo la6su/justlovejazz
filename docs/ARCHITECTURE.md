@@ -199,6 +199,9 @@ according to their current measured policy.
 - Renderer async initialization publishes a candidate only after its lifecycle
   generation remains current; stale WebGPU candidates are disposed immediately
   and cannot create a pipeline or device-loss recovery owner after teardown.
+- SceneHost owns a generation for its asynchronous fallback swap; unmount
+  invalidates that generation and disposes a late candidate before it can
+  replace Tres's renderer or resolve the one-shot bridge.
 - CinematicNav resolves `#section-*` targets inside its currently bound route
   track, keeping detached and persistent-shell IDs outside story ownership.
 - `entry-app` owns the delayed splash title handoff; its timer is cancellable

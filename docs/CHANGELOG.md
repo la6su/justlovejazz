@@ -14,6 +14,10 @@
   teardown wins the async race, preventing post-dispose pipeline and recovery
   owners from being recreated.
 
+- `SceneHost` now invalidates asynchronous fallback renderer swaps on Vue
+  unmount and disposes a late candidate instead of resolving a removed Tres
+  root.
+
 - `CinematicNav` now retains and removes its generated button handlers during
   teardown, preventing retained navigation DOM from invoking a disposed
   controller.

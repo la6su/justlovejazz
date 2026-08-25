@@ -59,6 +59,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Reject late Renderer init candidates** — unified WebGPU candidates now
   carry a lifecycle generation guard; a teardown during async init disposes the
   late candidate before it can create a pipeline, canvas owner, or recovery hook.
+- [x] **Guard SceneHost fallback teardown** — the persistent Tres root now
+  invalidates pending fallback initialization on unmount and disposes a late
+  candidate instead of resolving a bridge for a removed Vue root.
 - [x] **Remove ineffective Projects dynamic import** — ExperienceUI now uses
   the existing static project-data owner instead of a non-splitting import.
 - [x] **Keep Contact typography addons route-local** — the lazy Contact
