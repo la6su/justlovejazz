@@ -58,7 +58,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
   route-local split. A source-map audit confirms that `three.module.js` is
   retained by TresJS's static `WebGLRenderer` import; an exact `three →
   three/webgpu` alias fails the production build, so do not remove this copy
-  until a tested TresJS compatibility path exists.
+  until a tested TresJS compatibility path exists. The installed stable
+  `@tresjs/core` is 5.8.3; upstream's slim `createTresApp` tree-shaking work
+  remains unreleased in [PR #1345](https://github.com/Tresjs/tres/pull/1345).
 - [x] **Make UIMenu teardown deterministic** — the persistent shell now uses
   one delegated click owner and removes it explicitly instead of retaining
   five anonymous control listeners until DOM garbage collection.
