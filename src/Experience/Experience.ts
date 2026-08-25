@@ -12,6 +12,7 @@ import { input } from './Input'
 import { StateBus } from '../core/StateBus'
 import type { PageId } from '../sections/_shared/constants'
 import { NoiseText } from './NoiseText'
+import { BlurFade } from './BlurFade'
 
 import { SfxSystem } from '../core/SfxSystem'
 import { ExperienceUI } from './ExperienceUI'
@@ -1461,6 +1462,10 @@ export class Experience {
   destroy() {
     this._readinessGate?.cancel()
     this._readinessGate = null
+    // Text effects can outlive a route root while their DOM remains attached;
+    // stop their RAF/timeout owners before tearing down the scene and UI.
+    NoiseText.disposeAll()
+    BlurFade.disposeAll()
     // Stop the loop driver FIRST — RenderScheduler.destroy() clears the
     // setAnimationLoop callback, the visibility listener and any pending
     // invalidation, so no frame fires after dispose().

@@ -11,6 +11,8 @@
 
 export class BlurFade {
   private static instances = new WeakMap<HTMLElement, BlurFade>()
+  /** Active animation owners, kept enumerable for runtime teardown. */
+  private static active = new Set<BlurFade>()
 
   private readonly el: HTMLElement
   private cleanText = ''
@@ -45,6 +47,7 @@ export class BlurFade {
 
     this.dur = dur * 1000
     this.running = true
+    BlurFade.active.add(this)
     this.start = performance.now()
     this.el.setAttribute('data-visible', 'true')
     this.el.setAttribute('aria-label', this.cleanText)
@@ -110,6 +113,7 @@ export class BlurFade {
 
   finalize(): void {
     this.running = false
+    BlurFade.active.delete(this)
     if (this.rafId !== null) {
       cancelAnimationFrame(this.rafId)
       this.rafId = null
@@ -135,6 +139,7 @@ export class BlurFade {
 
   private cancel(): void {
     this.running = false
+    BlurFade.active.delete(this)
     if (this.rafId !== null) {
       cancelAnimationFrame(this.rafId)
       this.rafId = null
@@ -146,5 +151,10 @@ export class BlurFade {
     if (this.cleanText) {
       this.el.textContent = this.cleanText
     }
+  }
+
+  /** Stop every active blur animation owned by the current Experience. */
+  static disposeAll(): void {
+    for (const instance of BlurFade.active) instance.finalize()
   }
 }

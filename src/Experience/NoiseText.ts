@@ -20,6 +20,8 @@ const CHARS = '░▒▓█▄▀▌▐│║╟╠╫╬●○◆◇▪▫•·
 export class NoiseText {
   /** Global registry: one instance per DOM element, prevents overlap. */
   private static instances = new WeakMap<HTMLElement, NoiseText>()
+  /** Active animation owners, kept enumerable for runtime teardown. */
+  private static active = new Set<NoiseText>()
 
   private readonly el: HTMLElement
   private cleanText = ''
@@ -69,6 +71,7 @@ export class NoiseText {
 
     this.dur = dur * 1000
     this.running = true
+    NoiseText.active.add(this)
     this.start = performance.now()
     this.el.setAttribute('data-visible', 'true')
 
@@ -123,6 +126,7 @@ export class NoiseText {
   /** Hard stop with clean text restoration (called on animation end). */
   finalize(): void {
     this.running = false
+    NoiseText.active.delete(this)
     if (this.rafId !== null) {
       cancelAnimationFrame(this.rafId)
       this.rafId = null
@@ -140,6 +144,7 @@ export class NoiseText {
    *  noise being captured as cleanText on rapid re-trigger). */
   private cancel(): void {
     this.running = false
+    NoiseText.active.delete(this)
     if (this.rafId !== null) {
       cancelAnimationFrame(this.rafId)
       this.rafId = null
@@ -153,5 +158,10 @@ export class NoiseText {
     if (this.cleanText) {
       this.el.textContent = this.cleanText
     }
+  }
+
+  /** Stop every active text animation owned by the current Experience. */
+  static disposeAll(): void {
+    for (const instance of NoiseText.active) instance.finalize()
   }
 }

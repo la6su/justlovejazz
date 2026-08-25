@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- `Experience.destroy()` now drains active `NoiseText` and `BlurFade` animation
+  owners, cancelling their RAF and safety timers before scene/UI teardown.
+  Connected route DOM is restored to its authored final state without retaining
+  background animation work.
+
 - Route transition cancellation now clears and settles the owned 260 ms cover
   timer, preventing stale navigation promises and queued work from surviving
   a failed or superseded route.

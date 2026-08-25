@@ -1,10 +1,15 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { NoiseText } from '../Experience/NoiseText'
 
 describe('NoiseText lifecycle', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
     vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    NoiseText.disposeAll()
+    vi.useRealTimers()
   })
 
   it('stops RAF and timeout work when the target leaves the document', () => {
@@ -46,5 +51,27 @@ describe('NoiseText lifecycle', () => {
 
     expect(request).toHaveBeenCalledTimes(2)
     expect(element.textContent).not.toBe('')
+  })
+
+  it('stops connected animation owners during runtime teardown', () => {
+    const callbacks: FrameRequestCallback[] = []
+    const request = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      callbacks.push(callback)
+      return callbacks.length
+    })
+    const cancel = vi.spyOn(window, 'cancelAnimationFrame')
+    const element = document.createElement('span')
+    element.textContent = 'Hello'
+    document.body.append(element)
+
+    NoiseText.for(element).show(1)
+    NoiseText.disposeAll()
+
+    expect(cancel).toHaveBeenCalledWith(1)
+    expect(vi.getTimerCount()).toBe(0)
+    const requestCount = request.mock.calls.length
+    callbacks[0]!(performance.now())
+    expect(request).toHaveBeenCalledTimes(requestCount)
+    expect(element.textContent).toBe('Hello')
   })
 })

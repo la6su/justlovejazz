@@ -58,6 +58,10 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `RouteTransition` owns both cover and reveal timers. Cancellation clears the
   active timer and settles its cover promise, so failed or superseded
   navigation cannot retain a stale 260 ms continuation.
+- `NoiseText` and `BlurFade` register only active animation instances. The
+  `Experience` teardown drains both registries before releasing scene/UI
+  owners, cancelling RAF and safety timers even while their DOM remains
+  connected.
 - UIkit remains the layout/component/accessibility baseline where retained;
   project styles express the 3D shell and authored compositions.
 - Published Builder cards and buttons keep UIkit as the owner of base geometry

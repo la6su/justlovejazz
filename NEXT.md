@@ -151,6 +151,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
   260 ms cover timer, resolves superseded transitions during cancellation and
   releases the timer before a newer navigation or failed route can accumulate
   stale async work.
+- [x] **Stop text animation owners during Experience teardown** — active
+  `NoiseText` and `BlurFade` instances are registry-backed and disposed before
+  the scene/UI owners, so connected route DOM cannot retain RAF or safety
+  timeout work after runtime destruction.
 
 ## Deferred product queue
 

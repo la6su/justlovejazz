@@ -1,10 +1,15 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { BlurFade } from '../Experience/BlurFade'
 
 describe('BlurFade lifecycle', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
     vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    BlurFade.disposeAll()
+    vi.useRealTimers()
   })
 
   it('stops RAF and timeout work when the target leaves the document', () => {
@@ -56,5 +61,27 @@ describe('BlurFade lifecycle', () => {
     expect(element.querySelector('img')).toBeNull()
     expect(element.querySelectorAll('span')).toHaveLength('<img src=x onerror=alert(1)>'.length)
     expect(element.getAttribute('aria-label')).toBe('<img src=x onerror=alert(1)>')
+  })
+
+  it('stops connected animation owners during runtime teardown', () => {
+    const callbacks: FrameRequestCallback[] = []
+    const request = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      callbacks.push(callback)
+      return callbacks.length
+    })
+    const cancel = vi.spyOn(window, 'cancelAnimationFrame')
+    const element = document.createElement('h2')
+    element.textContent = 'Hello'
+    document.body.append(element)
+
+    BlurFade.for(element).show(1)
+    BlurFade.disposeAll()
+
+    expect(cancel).toHaveBeenCalledWith(1)
+    expect(vi.getTimerCount()).toBe(0)
+    const requestCount = request.mock.calls.length
+    callbacks[0]!(performance.now())
+    expect(request).toHaveBeenCalledTimes(requestCount)
+    expect(element.querySelectorAll('span')).toHaveLength(5)
   })
 })
