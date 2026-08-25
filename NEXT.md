@@ -421,7 +421,7 @@ do not start a phase whose entry gate has not passed.
       remains a failing optimization gate and the 350 kB cap is not raised
       silently.
 
-- [ ] **Phases 9–10: cut over static content and remove the last legacy** —
+- [x] **Phases 9–10: cut over static content and remove the last legacy** —
       only after their gates pass, ship the builder/blog SSG consolidation
       and final legacy removal. Phase 8 (the one-by-one scene-owner
       migration, slices 1–10) completed 2026-08-22: the legacy `World` +
