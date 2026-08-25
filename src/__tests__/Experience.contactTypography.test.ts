@@ -5,6 +5,47 @@ import { ContactCyprusStage } from '../Experience/World/ContactCyprusStage'
 import { ContactTypographyStage } from '../Experience/World/ContactTypographyStage'
 
 describe('Experience contact typography lazy owner', () => {
+  it('contains initialization failure and permits a later retry', async () => {
+    const scene = new THREE.Scene()
+    const exp = Object.assign(Object.create(Experience.prototype), {
+      scene,
+      contactTypographyStage: null,
+      _contactTypographyStagePromise: null,
+      _contactTypographyStageRequest: 0,
+      _contactIsLight: false,
+      currentPage: () => 'contact',
+    } as unknown as Partial<Experience>) as Experience
+    const setActiveSpy = vi
+      .spyOn(ContactTypographyStage.prototype, 'setActive')
+      .mockImplementationOnce(() => {
+        throw new Error('fixture init failure')
+      })
+    const disposeSpy = vi.spyOn(ContactTypographyStage.prototype, 'dispose')
+
+    try {
+      await expect(exp.ensureContactTypographyStageInitialized()).resolves.toBeUndefined()
+      expect(
+        (exp as unknown as { contactTypographyStage: ContactTypographyStage | null })
+          .contactTypographyStage,
+      ).toBeNull()
+      expect(
+        (exp as unknown as { _contactTypographyStagePromise: Promise<void> | null })
+          ._contactTypographyStagePromise,
+      ).toBeNull()
+      expect(disposeSpy).toHaveBeenCalledTimes(1)
+
+      await exp.ensureContactTypographyStageInitialized()
+      expect(
+        (exp as unknown as { contactTypographyStage: ContactTypographyStage | null })
+          .contactTypographyStage,
+      ).toBeInstanceOf(ContactTypographyStage)
+      expect(setActiveSpy).toHaveBeenCalledTimes(2)
+    } finally {
+      setActiveSpy.mockRestore()
+      disposeSpy.mockRestore()
+    }
+  })
+
   it('creates the stage on demand and disposes it from the scene', async () => {
     const scene = new THREE.Scene()
     const exp = Object.assign(Object.create(Experience.prototype), {

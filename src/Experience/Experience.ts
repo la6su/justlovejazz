@@ -525,7 +525,17 @@ export class Experience {
         stage.setActive(this.currentPage() === 'contact')
         stage.setTheme(this._contactIsLight)
       },
-    )
+    ).catch((error: unknown) => {
+      if (request === this._contactTypographyStageRequest) {
+        this.contactTypographyStage?.removeFromParent()
+        this.contactTypographyStage?.dispose()
+        this.contactTypographyStage = null
+        this._contactTypographyStagePromise = null
+      }
+      if (import.meta.env.DEV) {
+        console.error('[Experience] ContactTypographyStage init failed:', error)
+      }
+    })
     return this._contactTypographyStagePromise
   }
 
