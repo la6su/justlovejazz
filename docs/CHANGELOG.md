@@ -4,7 +4,8 @@
 
 - Hardened async lifecycle ownership across renderer recovery, route/carousel
   wakes, UIkit hydration, overlay/content/submenu reveals and detached
-  `NoiseText`/`BlurFade` animations; stale hash navigation callbacks are now
+  `NoiseText`/`BlurFade` animations; lazy portfolio initialization is now
+  cancelled on UI teardown, and stale hash navigation callbacks are
   invalidated by the next route transition.
 - Scoped bootstrap UIkit refresh to `#spa-content`, removing the remaining
   document-wide traversal from the application shell.
