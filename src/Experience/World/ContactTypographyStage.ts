@@ -9,6 +9,7 @@ import { prefersReducedMotion } from '../../core/motionPolicy'
 export class ContactTypographyStage extends THREE.Group {
   private readonly typography = new WireframeTypography('HELLO', 0.34)
   private active = false
+  private disposed = false
 
   constructor() {
     super()
@@ -26,6 +27,7 @@ export class ContactTypographyStage extends THREE.Group {
   }
 
   setActive(active: boolean): void {
+    if (this.disposed) return
     this.active = active
     this.visible = active
     this.typography.userData.reducedMotion = prefersReducedMotion()
@@ -33,14 +35,18 @@ export class ContactTypographyStage extends THREE.Group {
   }
 
   setTheme(isLight: boolean): void {
+    if (this.disposed) return
     this.typography.setTheme(isLight)
   }
 
   update(dt: number): void {
-    if (this.active) this.typography.update(dt)
+    if (!this.disposed && this.active) this.typography.update(dt)
   }
 
   dispose(): void {
+    if (this.disposed) return
+    this.disposed = true
+    this.active = false
     this.typography.dispose()
     this.removeFromParent()
   }

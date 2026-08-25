@@ -41,4 +41,21 @@ describe('ContactTypographyStage motion policy', () => {
       vi.restoreAllMocks()
     }
   })
+
+  it('ignores activity after disposal', () => {
+    mockMotionPreference(false)
+    const stage = new ContactTypographyStage()
+
+    stage.dispose()
+
+    expect(() => {
+      stage.setActive(true)
+      stage.setTheme(true)
+      stage.update(1)
+      stage.dispose()
+    }).not.toThrow()
+    expect(stage.isAnimating).toBe(false)
+    expect(stage.visible).toBe(false)
+    vi.restoreAllMocks()
+  })
 })

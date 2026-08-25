@@ -28,6 +28,10 @@
   text owner was deleted; settled Works now returns to the demand-driven idle
   loop instead of rendering continuously.
 
+- `ContactTypographyStage` now rejects post-dispose activation, theme and
+  update calls, making lazy route teardown safe against late callbacks and
+  repeated disposal.
+
 - `useJlzPage` now disposes the module-level `WorkCards` registry during route
   owner teardown as well as before route replacement, releasing delegated grid
   listeners and pending card timers on full unmount.
