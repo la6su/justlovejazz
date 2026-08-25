@@ -37,4 +37,36 @@ describe('isCurrentRouteContinuation', () => {
     expect(selectFromCard).not.toHaveBeenCalled()
     expect(selectFromRaycast).not.toHaveBeenCalled()
   })
+
+  it('blocks a late carousel wake after a route change', async () => {
+    let generation = 4
+    let page: 'home' | 'contact' = 'home'
+    const raise = vi.fn()
+    const capturedGeneration = generation
+    const capturedPage = page
+    const initializer = Promise.resolve().then(() => {
+      if (
+        isCurrentRouteContinuation(capturedGeneration, generation, capturedPage, page)
+      ) {
+        raise('nav')
+      }
+    })
+
+    generation = 5
+    page = 'contact'
+    await initializer
+
+    expect(raise).not.toHaveBeenCalled()
+  })
+
+  it('keeps a carousel wake for the current home route', async () => {
+    const raise = vi.fn()
+    const generation = 4
+    const page = 'home' as const
+    await Promise.resolve().then(() => {
+      if (isCurrentRouteContinuation(generation, generation, page, page)) raise('nav')
+    })
+
+    expect(raise).toHaveBeenCalledOnce()
+  })
 })

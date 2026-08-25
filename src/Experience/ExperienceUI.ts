@@ -110,7 +110,18 @@ export class ExperienceUI {
       // the Works owner explicit at that boundary so a hash-driven arrival
       // cannot depend on an earlier render frame to wake its carousel.
       if (idx === WORKS_SLOT_INDEX && this.host.page() === 'home') {
+        const routeGeneration = this._routeGeneration
+        const page = this.host.page()
         void this.host.ensureCarouselInitialized().then(() => {
+          if (
+            !isCurrentRouteContinuation(
+              routeGeneration,
+              this._routeGeneration,
+              page,
+              this.host.page(),
+            )
+          )
+            return
           if (this.storyNav?.getSectionIndex() === WORKS_SLOT_INDEX) this.host.raise('nav')
         })
       }
