@@ -926,6 +926,20 @@ Acceptance: `vue-tsc`, focused BakuCarousel/route-page tests, production build
 and `git diff --check` pass. Rollback: restore the default DOM adapter in the
 carousel and remove the page getter parameter from the section owner.
 
+#### Phase 5/7 StoryController source bridge — 2026-08-25
+
+`src/core/storyController.ts` is now the runtime owner that translates a
+minimal typed `StorySource` (`getOverallProgress`/`getSectionIndex`) into the
+existing deduplicating `StoryPublisher`. `ExperienceUI` keeps
+`CinematicNav` as the native source and calls `sync()` both on section changes
+and continuous scroll activity, so subscribers receive current progress
+without moving navigation or rendering onto a new clock. The footer/menu side
+mapping is a pure `storySideForSlot` function and is unit-locked.
+
+Acceptance: 7 focused StoryController/StoryPublisher tests and `vue-tsc` pass.
+The full publisher-driven scene-host migration remains a later Phase 5/7
+slice; this bridge deliberately does not alter DOM ownership or frame timing.
+
 #### Phase 3 world-slot tuple slice — 2026-08-21
 
 The second Phase 3 contract is the **canonical world-slot tuple**: the

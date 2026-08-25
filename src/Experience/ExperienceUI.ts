@@ -12,8 +12,7 @@
 // so the root teardown returns every owned resource to baseline.
 
 import { CinematicNav } from '../UI/CinematicNav'
-import { StoryPublisher } from '../core/storyPublisher'
-import type { StorySide } from '../core/storyState'
+import { StoryController, storySideForSlot } from '../core/storyController'
 import { UIMenu } from '../UI/UIMenu'
 import { FullscreenOverlay } from '../UI/FullscreenOverlay'
 import type { UIManager } from '../UI/UIManager'
@@ -67,8 +66,8 @@ export interface ExperienceUIHost {
 export class ExperienceUI {
   /** Vertical native story track plus top/bottom sheets. */
   storyNav: CinematicNav | null = null
-  /** Compatibility publisher; native CinematicNav remains the story owner. */
-  storyPublisher: StoryPublisher | null = null
+  /** Typed story owner; native CinematicNav remains the source/timing owner. */
+  storyController: StoryController | null = null
   /** The compact console menu. */
   uiMenu: UIMenu | null = null
   /** Works portfolio (public for DevPanel access). */
@@ -96,14 +95,15 @@ export class ExperienceUI {
     // The section count is the worldSlots contract (single source of the
     // six-slot model), not a literal.
     this.storyNav = new CinematicNav(WORLD_SLOT_COUNT, this.host.page)
-    this.storyPublisher = new StoryPublisher({
-      side: 'center',
-      progress: this.storyNav.getOverallProgress(),
-      sectionIndex: this.storyNav.getSectionIndex(),
-    })
+    this.storyController = new StoryController(this.storyNav, (sectionIndex) =>
+      storySideForSlot(sectionIndex, CONTACT_SLOT_INDEX, MENU_SLOT_INDEX),
+    )
     this.publishStoryState()
     // Phase 7: native scroll is a typed loop wake source.
-    this.storyNav.onActivity = () => this.host.raise('nav')
+    this.storyNav.onActivity = () => {
+      this.publishStoryState()
+      this.host.raise('nav')
+    }
     this.storyNav.onSectionChange((idx) => {
       this.publishStoryState()
       this.uiMenu?.setActive(idx)
@@ -281,16 +281,9 @@ export class ExperienceUI {
 
   private publishStoryState(): void {
     const nav = this.storyNav
-    const publisher = this.storyPublisher
-    if (!nav || !publisher) return
-    const sectionIndex = nav.getSectionIndex()
-    const side: StorySide =
-      sectionIndex === CONTACT_SLOT_INDEX
-        ? 'footer'
-        : sectionIndex === MENU_SLOT_INDEX
-          ? 'menu'
-          : 'center'
-    publisher.publish({ side, progress: nav.getOverallProgress(), sectionIndex })
+    const controller = this.storyController
+    if (!nav || !controller) return
+    controller.sync()
   }
 
   /** Start the authored cube reaction and its one-shot portal-frame echo. */
@@ -423,7 +416,7 @@ export class ExperienceUI {
     this.uiMenu = null
     this.storyNav?.dispose()
     this.storyNav = null
-    this.storyPublisher?.dispose()
-    this.storyPublisher = null
+    this.storyController?.dispose()
+    this.storyController = null
   }
 }

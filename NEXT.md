@@ -227,6 +227,12 @@ do not start a phase whose entry gate has not passed.
       SectionGroups factory, preserving pull timing while making the scene
       boundary explicit.
 
+      Phase 5/7 StoryController slice landed 2026-08-25: the
+      framework-neutral `src/core/storyController.ts` now owns translation
+      from the typed native navigation source to `StoryPublisher`; continuous
+      scroll activity publishes progress snapshots, while native event/frame
+      timing remains unchanged. Side-slot mapping is pure and unit-locked.
+
 - [x] **Phase 4: migrate the development Page Builder to Vue** — use the
       isolated admin application as the first state-heavy Vue surface while
       keeping schema, validation, escaping and Less compilation pure. Preserve
