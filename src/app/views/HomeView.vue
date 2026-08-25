@@ -17,7 +17,14 @@ useJlzPage('home', () => rootEl.value)
 </script>
 
 <template>
-  <main id="spa-content" ref="rootEl" role="main" class="uk-position-relative" uk-height-viewport>
+  <main
+    id="spa-content"
+    ref="rootEl"
+    role="main"
+    class="uk-position-relative"
+    data-page-view="home"
+    uk-height-viewport
+  >
     <!-- ═══ 6 child sections (4 story frames + 2 sheets) — 1:1 cube states ═══ -->
     <ContactFooter mode="home" />
 

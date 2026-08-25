@@ -566,8 +566,11 @@
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.18));
 }
 
-body[data-page='home'] #spa-content,
-body:not([data-page='home']) #spa-content > .jlz-page {
+// Vue-owned structural route roots: home is marked by its semantic page-view
+// root, while content pages use the direct .jlz-page child. Route state is
+// not a CSS dependency here.
+#spa-content[data-page-view='home'],
+#spa-content > .jlz-page {
   width: 100vw;
   height: 100dvh;
   display: flex;
@@ -582,16 +585,14 @@ body:not([data-page='home']) #spa-content > .jlz-page {
   -webkit-overflow-scrolling: touch;
 }
 
-body[data-page='home'] #spa-content::-webkit-scrollbar,
-body:not([data-page='home']) #spa-content > .jlz-page::-webkit-scrollbar {
+#spa-content[data-page-view='home']::-webkit-scrollbar,
+#spa-content > .jlz-page::-webkit-scrollbar {
   display: none;
 }
 
-body[data-page='home']
-  #spa-content
+#spa-content[data-page-view='home']
   > section[data-section]:not(.jlz-menu-overlay):not([data-contact-footer]),
-body:not([data-page='home'])
-  #spa-content
+#spa-content
   > .jlz-page
   > .jlz-page-section:not(.jlz-menu-overlay):not([data-contact-footer]) {
   position: relative;
@@ -608,20 +609,17 @@ body:not([data-page='home'])
   background: transparent;
 }
 
-body:not([data-page='home'])
-  #spa-content
+#spa-content
   > .jlz-page
   > .jlz-works-section:not(.jlz-menu-overlay):not([data-contact-footer]) {
   color: rgba(255, 255, 255, 0.92);
   background: transparent;
 }
 
-body[data-page='home']
-  #spa-content
+#spa-content[data-page-view='home']
   > section[data-section]:not(.jlz-menu-overlay):not([data-contact-footer])
   > .uk-container:not(.jlz-works-stage),
-body:not([data-page='home'])
-  #spa-content
+#spa-content
   > .jlz-page
   > .jlz-page-section:not(.jlz-menu-overlay):not([data-contact-footer])
   > .uk-container:not(.jlz-works-stage) {
@@ -1041,12 +1039,10 @@ body[data-cinematic-sheet]
     padding: 0 0.8rem;
   }
 
-  body[data-page='home']
-    #spa-content
+  #spa-content[data-page-view='home']
     > section[data-section]:not(.jlz-menu-overlay):not([data-contact-footer])
     > .uk-container,
-  body:not([data-page='home'])
-    #spa-content
+  #spa-content
     > .jlz-page
     > .jlz-page-section:not(.jlz-menu-overlay):not([data-contact-footer])
     > .uk-container {
@@ -1167,8 +1163,8 @@ body[data-cinematic-sheet]
 }
 
 @media (prefers-reduced-motion: reduce) {
-  body[data-page='home'] #spa-content,
-  body:not([data-page='home']) #spa-content > .jlz-page {
+  #spa-content[data-page-view='home'],
+  #spa-content > .jlz-page {
     scroll-behavior: auto;
   }
 
