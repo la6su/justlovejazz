@@ -18,6 +18,7 @@ Measured from the written production assets on 2026-07-28 with gzip level 6:
 | Splash startup scripts  | 2.68 kB gzip   | ≤ 5.00 kB     | yes     |
 | Shared Three.js chunk   | 337.34 kB gzip | ≤ 350.00 kB   | yes     |
 | Contact loader chunk    | 15.44 kB gzip  | route-owned   | no      |
+| Shared UIkit chunk      | 53.66 kB gzip  | ≤ 56.00 kB    | yes     |
 | `public/assets` media   | 19.70 MB total | informational | no      |
 | Placeholder video alone | 16.35 MB       | replace       | no      |
 
@@ -52,6 +53,16 @@ measurement is a record, not a budget; no initial-route budget value is implied.
 The splash budget remains 5 KB gzip. The existing Three.js budget is not
 silently expanded to absorb Vue or TresJS. A dependency must replace owned code
 or provide measured value, and its chunk must remain attributable.
+
+### UIkit icon-footprint slice — 2026-08-25
+
+Commit `4fd628c` removed the full 162-icon `uikit-icons` plugin from the
+production graph. The product now registers the 15 JLZ console icons plus the
+single built-in `twitter` icon; the complete official set remains in the
+dev-only admin entry. A clean build measured `vendor-ui-BiUtmDsC.js` at
+**53.66 kB gzip** (down from **75.80 kB**, approximately 29% lower) and the
+new ≤ 56.00 kB gate passed. The shared Three.js guard remains independently
+evidence-gated per ADR 0008.
 
 ### Phase 0 delivery recheck — 2026-08-15
 
