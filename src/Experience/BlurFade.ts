@@ -70,6 +70,10 @@ export class BlurFade {
 
   private tick = (ts: number): void => {
     if (!this.running) return
+    if (!this.el.isConnected) {
+      this.finalize()
+      return
+    }
     const t = Math.min(1, (ts - this.start) / this.dur)
     if (t >= 1) {
       this.finalize()
