@@ -320,6 +320,10 @@ one for transactional editor state.
 - Do not retain duplicate libraries or compatibility packages after a migration lands.
 - Separate Vue, TresJS, Three.js and UIkit chunks/budgets so regression sources
   remain visible.
+- The Vite graph resolves only bare `three` through
+  `src/three-webgpu-compat.ts`; package subpaths stay on their official
+  exports. This is a TresJS 5.8.3 delivery boundary, not a second renderer or
+  runtime fallback, and is covered by ADR 0009.
 - Demand-driven idle, startup graph, frame time and memory/resource soak are
   release gates rather than post-migration cleanup.
 - Removing code is part of each owner migration; a transition cannot finish

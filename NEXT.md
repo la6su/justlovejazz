@@ -53,14 +53,13 @@ Do not reopen completed migration phases. Current runtime contracts are in
   typography stage now owns `FontLoader` and `TextGeometry` in a separate
   chunk, so other routes do not download those addons; the shared Three.js
   budget excludes only this measured route-local asset.
-- [ ] **Reduce the shared Three.js vendor below budget** — the current
-  production graph is 380.35 kB gzip against the 350 kB gate after the
-  route-local split. A source-map audit confirms that `three.module.js` is
-  retained by TresJS's static `WebGLRenderer` import; an exact `three →
-  three/webgpu` alias fails the production build, so do not remove this copy
-  until a tested TresJS compatibility path exists. The installed stable
-  `@tresjs/core` is 5.8.3; upstream's slim `createTresApp` tree-shaking work
-  remains unreleased in [PR #1345](https://github.com/Tresjs/tres/pull/1345).
+- [x] **Reduce the shared Three.js vendor below budget** — a scoped bare-
+  `three` compatibility entry now re-exports `three/webgpu` and retains only a
+  dead-path `WebGLRenderer` symbol required by TresJS 5.8.3. The production
+  vendor measures 298.43 kB gzip against the 350 kB gate; WebGPU/WebGLBackend
+  runtime and route/lifecycle gates remain green. The exact global alias and
+  any removal of the compatibility symbol remain prohibited until upstream
+  TresJS ships an equivalent slim entry.
 - [x] **Make UIMenu teardown deterministic** — the persistent shell now uses
   one delegated click owner and removes it explicitly instead of retaining
   five anonymous control listeners until DOM garbage collection.

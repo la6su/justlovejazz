@@ -15,6 +15,7 @@ records the completed execution history.
 | [0006](0006-use-incremental-migration.md)      | Accepted            | Migrate through reversible vertical slices           |
 | [0007](0007-unify-brand-token-system.md)       | Accepted            | One Neon Stage identity and one brand token chain    |
 | [0008](0008-three-delivery-budget.md)          | Accepted with gate  | Keep Three.js delivery budget evidence-gated         |
+| [0009](0009-use-webgpu-three-compat-entry.md)  | Accepted with gates | Route bare Three imports through the WebGPU entry     |
 
 `Proposed` decisions cannot remove a working production path. Change an ADR's
 status with a superseding decision; do not rewrite its original context after

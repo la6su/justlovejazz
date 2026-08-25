@@ -38,6 +38,12 @@ const publishedBuilderSlugs = (() => {
 
 export default defineConfig(() => ({
   base: '/',
+  resolve: {
+    // TresJS 5.8 statically imports WebGLRenderer from bare `three`. The
+    // application supplies WebGPURenderer itself, so use the WebGPU entry and
+    // retain only a dead-path WebGLRenderer compatibility symbol.
+    alias: [{ find: /^three$/, replacement: resolve(__dirname, 'src/three-webgpu-compat.ts') }],
+  },
   define: {
     __VUE_OPTIONS_API__: 'false',
     __VUE_PROD_DEVTOOLS__: 'false',

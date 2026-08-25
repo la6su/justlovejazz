@@ -44,9 +44,22 @@ or a separately measured TSL/WebGPU closure reduction. Until such evidence
 exists, releases must continue to surface the failing guard rather than hide
 it.
 
+## Review — 2026-08-25 (supersedes the open variance)
+
+A scoped Vite alias for the bare `three` entry now resolves to the local
+`src/three-webgpu-compat.ts` entry. That entry re-exports `three/webgpu` and
+provides only the unreachable `WebGLRenderer` symbol still imported by
+TresJS 5.8.3's default-renderer path. WebGPU/WebGLBackend remain owned by the
+single `WebGPURenderer` factory; no classic renderer is constructed.
+
+The generated production graph measures `vendor-three` at 298.43 kB gzip.
+Type-check, 61 unit files/439 tests, lint, production build, budget check and
+serial browser E2E all pass. The compatibility entry is retained until
+upstream TresJS exposes an equivalent slim entry; a global `three` alias and
+removing the dead-path symbol are not approved by this ADR.
+
 ## Consequences
 
-`bun run budget:build` remains intentionally red until the variance is removed;
-the release gate cannot silently regress or normalize the overage. Route and
+`bun run budget:build` is green with the measured compatibility entry. Route and
 splash budgets remain enforced, and future optimization work must be measured
 against the same gzip method and current installed dependency matrix.

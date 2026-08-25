@@ -55,6 +55,9 @@
   Secondary route views now load through explicit route-level chunks, keeping
   non-landing semantic pages out of the startup app graph; `app` measured
   3.37 kB gzip versus 10.00 kB before the split.
+  A scoped `three` compatibility entry now routes bare imports through
+  `three/webgpu` while preserving TresJS's unreachable `WebGLRenderer` symbol;
+  shared Three delivery fell to 298.43 kB gzip and the delivery budget passes.
 - Scoped bootstrap UIkit refresh to `#spa-content`, removing the remaining
   document-wide traversal from the application shell.
 - Established the staged Vue 3, Vue Router and TresJS migration architecture,
