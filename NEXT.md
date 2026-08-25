@@ -12,9 +12,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Complete documentation reconciliation** — finish the remaining
   README/architecture wording review, keep evidence append-only and ensure
   agent-operation guidance stays separate from project contracts.
-- [ ] **Harden async route-owner cancellation** — add generation guards to
-  `ExperienceUI` route-change promises so late Works/Contact initializers
-  cannot raise demand or touch a stage after a fast route exit.
+- [x] **Harden async route-owner cancellation** — `ExperienceUI` route-change
+  promises now use a shared generation/page predicate, so late Works/Contact
+  initializers cannot raise demand or touch a stage after a fast route exit.
 - [ ] **Audit scene resource disposal** — verify `SectionGroups.dispose()`
   covers `Points` and `InstancedMesh` resources and add lifecycle evidence.
 - [ ] **Close the shared transition QA matrix** — direct entry, in-app route,

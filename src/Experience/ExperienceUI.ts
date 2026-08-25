@@ -24,6 +24,7 @@ import type { SfxSystem } from '../core/SfxSystem'
 import { createWorksPortfolio, type WorksPortfolio } from './WorksPortfolio'
 import { WORLD_SLOT_COUNT, worldSlotIndex } from '../core/worldSlots'
 import { eventBus } from '../core/EventBus'
+import { isCurrentRouteContinuation } from '../core/routeContinuation'
 import type { Camera } from './Camera'
 import type { FrameReason } from '../core/RenderScheduler'
 
@@ -88,6 +89,7 @@ export class ExperienceUI {
   private _gotoSectionByHashUnsub: (() => void) | null = null
   private _soundToggleUnsub: (() => void) | null = null
   private _langChangeUnsub: (() => void) | null = null
+  private _routeGeneration = 0
 
   constructor(private host: ExperienceUIHost) {}
 
@@ -182,10 +184,13 @@ export class ExperienceUI {
     // close any open FullscreenOverlay. isOpen checks UIKit's native uk-open
     // class — no custom flag to get out of sync.
     this._routeChangeCloseOverlayUnsub = eventBus.on('jlz:route-change', () => {
+      const routeGeneration = ++this._routeGeneration
       if (this.overlay?.isOpen) {
         this.overlay.close()
       }
       const newPage = this.host.page()
+      const continuationIsCurrent = () =>
+        isCurrentRouteContinuation(routeGeneration, this._routeGeneration, newPage, this.host.page())
       const coordinator = this.host.coordinator()
       coordinator.syncRouteVisuals()
       if (newPage === 'home') {
@@ -193,6 +198,7 @@ export class ExperienceUI {
       }
       if (newPage === 'works') {
         void this.host.ensureWorksPlaneStageInitialized().then(() => {
+          if (!continuationIsCurrent()) return
           this.host.coordinator().setWorksPlaneStageSection(0)
           this.host.raise('nav')
         })
@@ -209,6 +215,7 @@ export class ExperienceUI {
           this.host.ensureContactTypographyStageInitialized(),
           this.host.ensureContactCyprusStageInitialized(),
         ]).then(() => {
+          if (!continuationIsCurrent()) return
           this.host.setContactTextStageSection(0)
           this.host.raise('nav')
         })
@@ -400,6 +407,7 @@ export class ExperienceUI {
 
   /** Remove every UI-feature listener + dispose the created features. */
   destroy(): void {
+    this._routeGeneration++
     this._soundToggleUnsub?.()
     this._langChangeUnsub?.()
     this._openProjectUnsub?.()
