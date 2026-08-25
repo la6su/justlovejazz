@@ -32,12 +32,31 @@ import { createSection2 } from '../../sections/about/scene'
 import { createSection3 } from '../../sections/works/scene'
 import { createSection4 } from '../../sections/contact/scene'
 import { createSection5 } from '../../sections/menu/scene'
-import { disposeSection3Textures } from '../../sections/works/scene'
 import { disposeMaterialDeep } from '../../Utils/dispose'
 import type { PageId } from '../../sections/_shared/constants'
 
 /** Canonical six-slot layout (one group per world slot / cube face). */
 export const SECTION_GROUP_COUNT = 6
+
+/** Dispose geometry/material resources below a root, excluding known owners. */
+export function disposeSceneObjectResources(
+  root: THREE.Object3D,
+  skip: ReadonlySet<THREE.Object3D> = new Set(),
+): void {
+  root.traverse((obj) => {
+    if (skip.has(obj)) return
+    if (
+      obj instanceof THREE.Mesh ||
+      obj instanceof THREE.Points ||
+      obj instanceof THREE.Line ||
+      obj instanceof THREE.Sprite
+    ) {
+      obj.geometry?.dispose()
+      if (Array.isArray(obj.material)) obj.material.forEach((m) => disposeMaterialDeep(m))
+      else if (obj.material) disposeMaterialDeep(obj.material)
+    }
+  })
+}
 
 // Index → creator function. 6 sections (1:1 cube faces).
 type SectionCreator = (page: () => PageId) => THREE.Group
@@ -97,11 +116,10 @@ export class SectionGroups {
   }
 
   public dispose(): void {
-    // Dispose the module-level Works particle texture. The section factory
-    // already imports this module to create section 3, so a dynamic import here
-    // only produced an ineffective split and a build warning.
-    disposeSection3Textures()
     this.groups.forEach((group) => {
+      const ownedTextures = group.userData.ownedTextures as THREE.Texture[] | undefined
+      ownedTextures?.forEach((texture) => texture.dispose())
+      if (ownedTextures) delete group.userData.ownedTextures
       // If the group hosts a BakuCarousel (userData.carousel), call its
       // dispose() FIRST — it removes 6 window listeners + clears snapTimer
       // + disposes card materials/textures/geometry. The traverse below
@@ -116,14 +134,7 @@ export class SectionGroups {
         gallery.traverse((o) => galleryDescendants.add(o))
       }
       gallery?.dispose?.()
-      group.traverse((obj) => {
-        if (galleryDescendants.has(obj)) return // already disposed by gallery.dispose()
-        if (obj instanceof THREE.Mesh) {
-          obj.geometry?.dispose()
-          if (Array.isArray(obj.material)) obj.material.forEach((m) => disposeMaterialDeep(m))
-          else disposeMaterialDeep(obj.material)
-        }
-      })
+      disposeSceneObjectResources(group, galleryDescendants)
       group.parent?.remove(group)
     })
     this.groups.length = 0

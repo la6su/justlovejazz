@@ -15,8 +15,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Harden async route-owner cancellation** — `ExperienceUI` route-change
   promises now use a shared generation/page predicate, so late Works/Contact
   initializers cannot raise demand or touch a stage after a fast route exit.
-- [ ] **Audit scene resource disposal** — verify `SectionGroups.dispose()`
-  covers `Points` and `InstancedMesh` resources and add lifecycle evidence.
+- [x] **Audit scene resource disposal** — `SectionGroups.dispose()` now uses
+  owner-local texture slots and generalized Mesh/Points/Line/Sprite disposal;
+  lifecycle coverage includes `Points` and `InstancedMesh` exactly-once tests.
 - [ ] **Close the shared transition QA matrix** — direct entry, in-app route,
   popstate, backend fallback, theme polarity, narrow layout and reduced motion.
 
