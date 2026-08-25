@@ -828,6 +828,9 @@ export class Experience {
   }
 
   async init() {
+    // `input` is a module singleton shared by Camera and DrawTrail. Reattach
+    // its listener when a new Experience follows an explicit teardown/HMR.
+    input.start()
     // NOTE: SmoothScroll/Lenis remains unnecessary: CinematicNav uses the
     // browser's vertical scrolling and snap behavior. ProjectOverlay locks
     // body overflow directly while the fullscreen overlay is open.

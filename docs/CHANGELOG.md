@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- The shared `Input` singleton now reattaches its mouse listener at
+  `Experience.init()`, so explicit teardown/HMR followed by a new Experience
+  does not leave Camera and DrawTrail permanently frozen.
+
 - `ExperienceUI.destroy()` now disposes `WorksPortfolio` before releasing it;
   the portfolio clears project/callback references and makes post-teardown
   navigation a no-op.

@@ -2,9 +2,10 @@
 import * as THREE from 'three'
 
 export class Input {
-  static instance: Input
+  static instance: Input | undefined
 
   mouse: THREE.Vector2 = new THREE.Vector2()
+  private started = false
 
   // Bound handler ref so removeEventListener works in destroy().
   private readonly _onMouseMove = (event: MouseEvent) => {
@@ -16,14 +17,21 @@ export class Input {
     if (Input.instance) return Input.instance
     Input.instance = this
 
+    this.start()
+  }
+
+  /** Reattach the singleton listener after an explicit runtime teardown. */
+  start(): void {
+    if (this.started) return
     window.addEventListener('mousemove', this._onMouseMove, { passive: true })
+    this.started = true
   }
 
   /** Remove window listeners. Call from Experience.destroy(). */
   destroy(): void {
+    if (!this.started) return
     window.removeEventListener('mousemove', this._onMouseMove)
-    // Clear singleton ref so a fresh Input can be constructed after HMR.
-    if (Input.instance === this) Input.instance = undefined as unknown as Input
+    this.started = false
   }
 
   getMouse() {

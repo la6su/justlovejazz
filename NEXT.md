@@ -158,6 +158,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Release the WorksPortfolio owner** — `ExperienceUI.destroy()` now calls
   the portfolio disposer before dropping its reference; disposal clears the
   project/callback references and navigation becomes a safe no-op.
+- [x] **Restore the singleton Input owner** — `Experience.init()` reattaches
+  the shared mouse listener after explicit teardown/HMR through an idempotent
+  `input.start()`, while `destroy()` remains the sole listener release path.
 
 ## Deferred product queue
 

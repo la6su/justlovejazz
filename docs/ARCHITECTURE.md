@@ -66,6 +66,9 @@ under `src/builder/`; the public builds do not import the editor graph.
   `dispose()` before releasing it. The portfolio drops project and callback
   references and guards empty navigation, so a late UI event cannot retain or
   invoke a destroyed owner.
+- The exported `Input` singleton is restartable: `Experience.init()` calls its
+  idempotent `start()` after a previous `destroy()`, restoring the shared mouse
+  listener for Camera and DrawTrail without constructing a second singleton.
 - UIkit remains the layout/component/accessibility baseline where retained;
   project styles express the 3D shell and authored compositions.
 - Published Builder cards and buttons keep UIkit as the owner of base geometry
