@@ -830,6 +830,11 @@ for replacement. Pull one forward only when its migration dependency is clear.
       1–12-item limit; authored list lines remain the fallback. Vue and string
       rendering share the resolver and parity coverage. Remote/network data
       sources remain intentionally deferred.
+      Phase 9 slice 9 landed (2026-08-25): builder copy now has canonical
+      English values plus optional `*Ru` overrides, a typed `EN`/`RU` render
+      locale and shared Vue/string SSR parity. The admin preview follows
+      `jlz:lang-change`; missing Russian overrides fall back to English.
+      Localized static route generation remains a separate publishing outcome.
 
 - [ ] **Extend the cinematic brand language across every route** — tune motion
       and TSL response through the new component/scene owners, preserving both

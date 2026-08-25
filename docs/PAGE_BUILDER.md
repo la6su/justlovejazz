@@ -53,6 +53,12 @@ The `list` element can optionally resolve the bounded `projects` source from
 the existing project manifest, with an allowlisted field (`title`,
 `description`, `year` or `category`) and a 1–12 item limit. Resolution is
 synchronous, local and deterministic; an absent source keeps authored lines.
+Authored copy has one canonical English value plus an optional `*Ru` override
+for headings, text, buttons, links, list items, image alt text and video
+accessible labels. The render contract accepts `EN`/`RU`; RU falls back to the
+English value when an override is absent. The admin preview follows the app's
+typed locale port, while static publication remains English until localized
+route generation is explicitly added.
 
 The editor provides:
 
