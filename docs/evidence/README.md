@@ -38,3 +38,6 @@ never converted into a passing baseline by editing the JSON.
 4. Add a short dated baseline note only when the metric is comparable.
 5. Link the artifact path in the commit or review notes; do not publish
    credentials, private URLs, cookies, API keys or raw user data.
+
+The shared transition matrix is recorded in
+`shared-transition-qa/2026-08-25-transition-matrix.json`.
