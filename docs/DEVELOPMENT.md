@@ -26,15 +26,17 @@ Use focused checks while iterating. The current complete release gate is:
 bun run format:check
 bun run lint
 bun run type-check
+bun run type-check:vue
 bun run build
 bun run budget:build
 bun run test:unit
-bun run test
+bun run test:serial
 ```
 
-Do not document future Vue commands until their scripts exist in
-`package.json`. The toolchain phase will introduce SFC type checking and Vue
-component tests through named Bun scripts and then add them to this gate.
+`type-check:vue` is required whenever Vue SFCs or Vue-facing TypeScript
+contracts change. `test:serial` is the deterministic browser gate; the
+parallel `bun run test` command is useful for exploratory runs but is not the
+release evidence command on this workstation.
 
 The Playwright command builds and serves the application. CI configuration in
 `.github/workflows/lighthouse.yml` remains the source for hosted checks and
@@ -50,8 +52,9 @@ route/theme/input matrix.
 
 ## Migration verification
 
-Each migration phase selects the relevant checks from
-[MIGRATION_VUE_TRES.md](MIGRATION_VUE_TRES.md). The minimum renderer-affecting
+The completed migration record is archived at
+[`archive/MIGRATION_VUE_TRES.md`](archive/MIGRATION_VUE_TRES.md). Current
+renderer-affecting
 matrix is:
 
 Run `bun run type-check:vue` whenever a Vue SFC changes. It complements the

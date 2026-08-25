@@ -83,9 +83,9 @@ of the six-slot model; `WorldConfig.ts` and `SplashCube` consume it instead
 of re-declaring the slot ids, face rotations and story ranges.
 
 `CinematicNav` owns four story frames plus the Contact and Menu sheets. It
-accepts router/hash/input commands and publishes one readonly story state to
-DOM and scene. Vue Router never scrolls the story DOM independently of that
-controller.
+accepts router/hash/input commands and remains the native story source;
+`StoryController` translates its typed snapshots for subscribers. Vue Router
+never scrolls the story DOM independently of that controller.
 
 ## Current ownership
 
@@ -93,8 +93,8 @@ controller.
 | -------------------- | -------------------------------------------------------------- |
 | Bootstrap            | `entry-shell.ts`, `entry-app.ts`                               |
 | Routes and content   | `app/routes.ts`, `routeManifest.ts`, `sections/*/template.ts`  |
-| Renderer and loop    | `Renderer.ts`, `RenderPipeline.ts`, `Experience.ts`            |
-| World composition    | `SceneCoordinator.ts`, `WorldConfig.ts`, `SectionSceneFactory` |
+| Renderer and loop    | `Experience/Renderer.ts`, `RenderPipeline.ts`, `RenderScheduler.ts`, `SceneHost.vue` |
+| World composition    | `SceneCoordinator.ts`, `WorldConfig.ts`, `Experience/Scene/SectionGroups.ts` |
 | Navigation and UI    | `CinematicNav.ts`, `UIMenu.ts`, `UIManager.ts`                 |
 | Project presentation | `WorksPlaneStage.ts`, `FullscreenOverlay.ts`                   |
 | Contact presentation | `ContactTextStage.ts`, `PixelTextScreen.ts`                    |
@@ -109,8 +109,8 @@ renders the node-material scene directly (the classic `WebGLRenderer`, nodes
 compatibility handler and GLSL `ShaderMaterial` passes were removed in
 Phase 10 slice 2 2026-08-22).
 
-`Experience._needsRender` combines demand rendering with bounded animation
-reasons; the per-frame raise/settle decision reads the typed
+`RenderScheduler` combines demand rendering with bounded animation reasons;
+the per-frame raise/settle decision reads the typed
 `RenderActivity` flags through the `src/core/renderDemand.ts` contract (the
 14-flag OR and the narrower ambient-breath idle set are unit-locked). Route
 replacement releases DOM behavior; `Experience.destroy()` closes the shared
