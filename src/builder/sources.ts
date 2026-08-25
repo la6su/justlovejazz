@@ -1,4 +1,5 @@
 import { PROJECTS } from '../Data/Projects'
+import { localizedProp, type BuilderLocale } from './localization'
 
 export const BUILDER_SOURCE_IDS = ['projects'] as const
 export type BuilderSourceId = (typeof BUILDER_SOURCE_IDS)[number]
@@ -27,10 +28,13 @@ export function getBuilderSourceItems(source: string | undefined): readonly Buil
 }
 
 /** Resolve list content without network access or user-authored code. */
-export function resolveBuilderListItems(props: Record<string, string>): string[] {
+export function resolveBuilderListItems(
+  props: Record<string, string>,
+  locale: BuilderLocale = 'EN',
+): string[] {
   const source = props.source
   if (!source) {
-    return (props.items ?? '')
+    return localizedProp(props, 'items', locale)
       .split('\n')
       .map((item) => item.trim())
       .filter((item) => item.length > 0)

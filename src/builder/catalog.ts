@@ -226,7 +226,13 @@ export const BUILDER_CATALOG: Record<BuilderElementType, BuilderElementDefinitio
     icon: 'bold',
     uikitComponents: ['heading'],
     fieldGroups: [
-      { label: 'Content', fields: [{ key: 'content', label: 'Text', type: 'text' }] },
+      {
+        label: 'Content',
+        fields: [
+          { key: 'content', label: 'English text', type: 'text' },
+          { key: 'contentRu', label: 'Russian text', type: 'text' },
+        ],
+      },
       {
         label: 'Typography',
         fields: [
@@ -266,7 +272,13 @@ export const BUILDER_CATALOG: Record<BuilderElementType, BuilderElementDefinitio
     icon: 'file-text',
     uikitComponents: ['text'],
     fieldGroups: [
-      { label: 'Content', fields: [{ key: 'content', label: 'Text', type: 'textarea' }] },
+      {
+        label: 'Content',
+        fields: [
+          { key: 'content', label: 'English text', type: 'textarea' },
+          { key: 'contentRu', label: 'Russian text', type: 'textarea' },
+        ],
+      },
       {
         label: 'Style',
         fields: [
@@ -301,7 +313,8 @@ export const BUILDER_CATALOG: Record<BuilderElementType, BuilderElementDefinitio
       {
         label: 'Content',
         fields: [
-          { key: 'items', label: 'Items', type: 'textarea' },
+          { key: 'items', label: 'English items', type: 'textarea' },
+          { key: 'itemsRu', label: 'Russian items', type: 'textarea' },
           {
             key: 'source',
             label: 'Dynamic source',
@@ -369,7 +382,13 @@ export const BUILDER_CATALOG: Record<BuilderElementType, BuilderElementDefinitio
     icon: 'crosshairs',
     uikitComponents: ['button'],
     fieldGroups: [
-      { label: 'Content', fields: [{ key: 'label', label: 'Label', type: 'text' }] },
+      {
+        label: 'Content',
+        fields: [
+          { key: 'label', label: 'English label', type: 'text' },
+          { key: 'labelRu', label: 'Russian label', type: 'text' },
+        ],
+      },
       { label: 'Link', fields: [{ key: 'href', label: 'URL', type: 'url' }] },
       {
         label: 'Style',
@@ -398,7 +417,13 @@ export const BUILDER_CATALOG: Record<BuilderElementType, BuilderElementDefinitio
     icon: 'link',
     uikitComponents: ['link'],
     fieldGroups: [
-      { label: 'Content', fields: [{ key: 'label', label: 'Text', type: 'text' }] },
+      {
+        label: 'Content',
+        fields: [
+          { key: 'label', label: 'English text', type: 'text' },
+          { key: 'labelRu', label: 'Russian text', type: 'text' },
+        ],
+      },
       { label: 'Link', fields: [{ key: 'href', label: 'URL', type: 'url' }] },
       {
         label: 'Style',
@@ -468,7 +493,8 @@ export const BUILDER_CATALOG: Record<BuilderElementType, BuilderElementDefinitio
         label: 'Media',
         fields: [
           { key: 'src', label: 'Source URL', type: 'url' },
-          { key: 'alt', label: 'Alt text', type: 'text' },
+          { key: 'alt', label: 'English alt text', type: 'text' },
+          { key: 'altRu', label: 'Russian alt text', type: 'text' },
         ],
       },
       {
@@ -506,7 +532,8 @@ export const BUILDER_CATALOG: Record<BuilderElementType, BuilderElementDefinitio
         fields: [
           { key: 'src', label: 'Source URL', type: 'url' },
           { key: 'poster', label: 'Poster URL', type: 'url' },
-          { key: 'ariaLabel', label: 'Accessible label', type: 'text' },
+          { key: 'ariaLabel', label: 'English accessible label', type: 'text' },
+          { key: 'ariaLabelRu', label: 'Russian accessible label', type: 'text' },
         ],
       },
       {

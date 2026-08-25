@@ -43,6 +43,7 @@ const parityDocument = (): BuilderDocument =>
             level: 'h1',
             size: 'xlarge',
             content: 'Heading <&> "quoted" heading-1',
+            contentRu: 'Русский заголовок',
           }),
           el('text-1', 'text', { style: 'lead', content: 'Text <&> "quoted" text-1' }),
           el('invalid-props', 'heading', { level: 'h9', size: 'giant' }),
@@ -104,10 +105,11 @@ const parseTopLevel = (html: string): string[] => {
 const ssrRender = async (
   document: BuilderDocument,
   editable: boolean,
+  locale: 'EN' | 'RU' = 'EN',
 ): Promise<{ html: string; tree: string[] }> => {
   const html = await renderToString(
     createSSRApp({
-      render: () => h(BuilderPage, { document, editable }),
+      render: () => h(BuilderPage, { document, editable, locale }),
     }),
   )
   return { html, tree: parseTopLevel(html) }
@@ -154,6 +156,14 @@ describe('builder Vue registry — parity with the string renderer', () => {
     // the editor attributes are present on the root section in editable mode
     expect(viaVue[0]!).toContain('data-builder-id=root')
     expect(viaVue[0]!).toContain('tabindex=0')
+  })
+
+  it('keeps Russian locale parity between Vue and string renderers', async () => {
+    const document = parityDocument()
+    const viaString = parseTopLevel(renderBuilderDocument(document, { locale: 'RU' }))
+    const viaVue = (await ssrRender(document, false, 'RU')).tree
+    expect(viaVue).toEqual(viaString)
+    expect(viaVue.join('')).toContain('Русский заголовок')
   })
 
   it('escapes authored copy identically in both renderers', async () => {

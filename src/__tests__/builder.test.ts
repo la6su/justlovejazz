@@ -197,6 +197,16 @@ describe('Page Builder document', () => {
     expect(html).not.toContain('<li>Undercurrent</li>')
   })
 
+  it('selects Russian authored copy while keeping English as the fallback', () => {
+    const document = structuredClone(DEFAULT_BUILDER_DOCUMENT)
+    const heading = document.nodes[0]?.children[0]?.children[0]?.children[0]
+    if (!heading) throw new Error('default builder fixture changed')
+    heading.props.content = 'English heading'
+    heading.props.contentRu = 'Русский заголовок'
+    expect(renderBuilderDocument(document)).toContain('English heading')
+    expect(renderBuilderDocument(document, { locale: 'RU' })).toContain('Русский заголовок')
+  })
+
   it('keeps the complete style showcase visible and marks the selected group', () => {
     const showcase = renderStyleShowcase('button')
 

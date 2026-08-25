@@ -13,6 +13,7 @@
 import { h, type Component, type PropType } from 'vue'
 
 import type { BuilderDocument, BuilderNode } from '../schema'
+import type { BuilderLocale } from '../localization'
 import { BuilderElement } from './elements'
 
 /**
@@ -28,13 +29,15 @@ export const BuilderPage: Component = {
      * only — public rendering renders the document read-only).
      */
     editable: { type: Boolean, default: false },
+    locale: { type: String as PropType<BuilderLocale>, default: 'EN' },
   },
-  render(this: { document: BuilderDocument; editable?: boolean }) {
+  render(this: { document: BuilderDocument; editable?: boolean; locale?: BuilderLocale }) {
     return this.document.nodes.map((node: BuilderNode) =>
       h(BuilderElement, {
         key: node.id,
         node,
         editable: this.editable ?? false,
+        locale: this.locale ?? 'EN',
       }),
     )
   },

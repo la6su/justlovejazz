@@ -38,6 +38,7 @@ const {
   selectedStyleGroup,
   inverseStylePreview,
   viewport,
+  locale,
   saving,
   statusMessage,
   statusError,
@@ -467,7 +468,12 @@ const onPreviewKeydown = (event: KeyboardEvent): void => {
         >
           <!-- Builder mode: the trusted Vue element registry (Phase 9) —
                real DOM nodes with the delegation attributes. -->
-          <BuilderPage v-if="mode === 'builder'" :document="store.document" editable />
+          <BuilderPage
+            v-if="mode === 'builder'"
+            :document="store.document"
+            :locale="locale"
+            editable
+          />
           <!-- Style mode: the generated showcase (pure-HTML string). -->
           <div v-else v-html="previewHtml"></div>
         </div>

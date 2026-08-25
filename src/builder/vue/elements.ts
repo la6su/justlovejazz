@@ -21,6 +21,7 @@ import { h, type Component, type PropType } from 'vue'
 import { BUILDER_ICON_NAMES } from '../catalog'
 import { sanitizeHref, sanitizeMediaSrc, safeChoice } from '../render'
 import { resolveBuilderListItems } from '../sources'
+import { localizedProp, type BuilderLocale } from '../localization'
 import type { BuilderElementType, BuilderNode } from '../schema'
 
 /** Props every registry component accepts. */
@@ -28,6 +29,7 @@ export interface BuilderElementProps {
   node: BuilderNode
   /** Emit the editor delegation attributes (admin preview only). */
   editable?: boolean
+  locale?: BuilderLocale
 }
 
 interface ElementComponentOptions {
@@ -35,6 +37,7 @@ interface ElementComponentOptions {
   props: {
     node: { type: PropType<BuilderNode>; required: true }
     editable: { type: BooleanConstructor; default: false }
+    locale?: { type: PropType<BuilderLocale>; default: 'EN' }
   }
   render(props: BuilderElementProps): ReturnType<typeof h>
 }
@@ -52,7 +55,12 @@ const editorAttrs = (props: BuilderElementProps): Record<string, string> =>
 /** Render the node's children through the dispatcher (recursion root). */
 const renderChildren = (props: BuilderElementProps): ReturnType<typeof h>[] =>
   props.node.children.map((child) =>
-    h(BuilderElement, { key: child.id, node: child, editable: props.editable }),
+    h(BuilderElement, {
+      key: child.id,
+      node: child,
+      editable: props.editable,
+      locale: props.locale,
+    }),
   )
 
 const section: ElementComponentOptions = {
@@ -60,6 +68,7 @@ const section: ElementComponentOptions = {
   props: {
     node: { type: Object as PropType<BuilderNode>, required: true },
     editable: { type: Boolean, default: false },
+    locale: { type: String as PropType<BuilderLocale>, default: 'EN' },
   },
   render(props: BuilderElementProps) {
     const style = safeChoice(
@@ -93,6 +102,7 @@ const grid: ElementComponentOptions = {
   props: {
     node: { type: Object as PropType<BuilderNode>, required: true },
     editable: { type: Boolean, default: false },
+    locale: { type: String as PropType<BuilderLocale>, default: 'EN' },
   },
   render(props: BuilderElementProps) {
     const columns = safeChoice(props.node.props.columns, ['1', '2', '3', '4'], '2')
@@ -112,7 +122,12 @@ const grid: ElementComponentOptions = {
       },
       props.node.children.map((child) =>
         h('div', undefined, [
-          h(BuilderElement, { key: child.id, node: child, editable: props.editable }),
+          h(BuilderElement, {
+            key: child.id,
+            node: child,
+            editable: props.editable,
+            locale: props.locale,
+          }),
         ]),
       ),
     )
@@ -124,6 +139,7 @@ const heading: ElementComponentOptions = {
   props: {
     node: { type: Object as PropType<BuilderNode>, required: true },
     editable: { type: Boolean, default: false },
+    locale: { type: String as PropType<BuilderLocale>, default: 'EN' },
   },
   render(props: BuilderElementProps) {
     const level = safeChoice(props.node.props.level, ['h1', 'h2', 'h3', 'h4'], 'h2')
@@ -136,7 +152,7 @@ const heading: ElementComponentOptions = {
     // render.ts, which only emits `class` when the size class is present.
     const attrs: Record<string, string> = { ...editorAttrs(props) }
     if (size !== 'default') attrs.class = `uk-heading-${size}`
-    return h(level, attrs, props.node.props.content ?? '')
+    return h(level, attrs, localizedProp(props.node.props, 'content', props.locale))
   },
 }
 
@@ -145,6 +161,7 @@ const text: ElementComponentOptions = {
   props: {
     node: { type: Object as PropType<BuilderNode>, required: true },
     editable: { type: Boolean, default: false },
+    locale: { type: String as PropType<BuilderLocale>, default: 'EN' },
   },
   render(props: BuilderElementProps) {
     const style = safeChoice(
@@ -155,7 +172,7 @@ const text: ElementComponentOptions = {
     // Class omitted for the default style — matching render.ts.
     const attrs: Record<string, string> = { ...editorAttrs(props) }
     if (style !== 'default') attrs.class = `uk-text-${style}`
-    return h('p', attrs, props.node.props.content ?? '')
+    return h('p', attrs, localizedProp(props.node.props, 'content', props.locale))
   },
 }
 
@@ -164,6 +181,7 @@ const button: ElementComponentOptions = {
   props: {
     node: { type: Object as PropType<BuilderNode>, required: true },
     editable: { type: Boolean, default: false },
+    locale: { type: String as PropType<BuilderLocale>, default: 'EN' },
   },
   render(props: BuilderElementProps) {
     const style = safeChoice(
@@ -179,7 +197,7 @@ const button: ElementComponentOptions = {
         href: sanitizeHref(props.node.props.href),
         ...editorAttrs(props),
       },
-      props.node.props.label ?? '',
+      localizedProp(props.node.props, 'label', props.locale),
     )
   },
 }
@@ -189,6 +207,7 @@ const card: ElementComponentOptions = {
   props: {
     node: { type: Object as PropType<BuilderNode>, required: true },
     editable: { type: Boolean, default: false },
+    locale: { type: String as PropType<BuilderLocale>, default: 'EN' },
   },
   render(props: BuilderElementProps) {
     const style = safeChoice(props.node.props.style, ['default', 'primary', 'secondary'], 'default')
@@ -210,6 +229,7 @@ const divider: ElementComponentOptions = {
   props: {
     node: { type: Object as PropType<BuilderNode>, required: true },
     editable: { type: Boolean, default: false },
+    locale: { type: String as PropType<BuilderLocale>, default: 'EN' },
   },
   render(props: BuilderElementProps) {
     const style = safeChoice(props.node.props.style, ['default', 'small'], 'default')
@@ -223,6 +243,7 @@ const list: ElementComponentOptions = {
   props: {
     node: { type: Object as PropType<BuilderNode>, required: true },
     editable: { type: Boolean, default: false },
+    locale: { type: String as PropType<BuilderLocale>, default: 'EN' },
   },
   render(props: BuilderElementProps) {
     const style = safeChoice(
@@ -230,7 +251,7 @@ const list: ElementComponentOptions = {
       ['default', 'hyphen', 'divider', 'ordered'],
       'default',
     )
-    const items = resolveBuilderListItems(props.node.props)
+    const items = resolveBuilderListItems(props.node.props, props.locale)
     const tag = style === 'ordered' ? 'ol' : 'ul'
     const styleClass =
       style === 'default' || style === 'ordered'
@@ -250,6 +271,7 @@ const link: ElementComponentOptions = {
   props: {
     node: { type: Object as PropType<BuilderNode>, required: true },
     editable: { type: Boolean, default: false },
+    locale: { type: String as PropType<BuilderLocale>, default: 'EN' },
   },
   render(props: BuilderElementProps) {
     const style = safeChoice(props.node.props.style, ['default', 'muted', 'reset'], 'default')
@@ -263,7 +285,7 @@ const link: ElementComponentOptions = {
         href: sanitizeHref(props.node.props.href),
         ...editorAttrs(props),
       },
-      props.node.props.label ?? '',
+      localizedProp(props.node.props, 'label', props.locale),
     )
   },
 }
@@ -273,6 +295,7 @@ const icon: ElementComponentOptions = {
   props: {
     node: { type: Object as PropType<BuilderNode>, required: true },
     editable: { type: Boolean, default: false },
+    locale: { type: String as PropType<BuilderLocale>, default: 'EN' },
   },
   render(props: BuilderElementProps) {
     const name = safeChoice(props.node.props.name, BUILDER_ICON_NAMES, 'arrow-up-right')
@@ -294,13 +317,14 @@ const image: ElementComponentOptions = {
   props: {
     node: { type: Object as PropType<BuilderNode>, required: true },
     editable: { type: Boolean, default: false },
+    locale: { type: String as PropType<BuilderLocale>, default: 'EN' },
   },
   render(props: BuilderElementProps) {
     const loading = safeChoice(props.node.props.loading, ['lazy', 'eager'], 'lazy')
     return h('img', {
       class: 'jlz-builder-image',
       src: sanitizeMediaSrc(props.node.props.src),
-      alt: props.node.props.alt ?? '',
+      alt: localizedProp(props.node.props, 'alt', props.locale),
       loading,
       decoding: 'async',
       ...editorAttrs(props),
@@ -313,6 +337,7 @@ const video: ElementComponentOptions = {
   props: {
     node: { type: Object as PropType<BuilderNode>, required: true },
     editable: { type: Boolean, default: false },
+    locale: { type: String as PropType<BuilderLocale>, default: 'EN' },
   },
   render(props: BuilderElementProps) {
     const preload = safeChoice(props.node.props.preload, ['none', 'metadata'], 'metadata')
@@ -325,7 +350,7 @@ const video: ElementComponentOptions = {
       controls: true,
       preload,
       playsinline: '',
-      'aria-label': props.node.props.ariaLabel ?? '',
+      'aria-label': localizedProp(props.node.props, 'ariaLabel', props.locale),
       ...poster,
       ...editorAttrs(props),
     })
@@ -362,10 +387,15 @@ export const BuilderElement: Component = {
   props: {
     node: { type: Object as PropType<BuilderNode>, required: true },
     editable: { type: Boolean, default: false },
+    locale: { type: String as PropType<BuilderLocale>, default: 'EN' },
   },
-  render(this: { node: BuilderNode; editable?: boolean }) {
+  render(this: { node: BuilderNode; editable?: boolean; locale?: BuilderLocale }) {
     const target = BUILDER_ELEMENT_REGISTRY[this.node.type]
     if (!target) return null
-    return h(target, { node: this.node, editable: this.editable ?? false })
+    return h(target, {
+      node: this.node,
+      editable: this.editable ?? false,
+      locale: this.locale ?? 'EN',
+    })
   },
 }

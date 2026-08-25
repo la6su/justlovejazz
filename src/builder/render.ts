@@ -1,9 +1,11 @@
 import { BUILDER_ICON_NAMES } from './catalog'
 import { resolveBuilderListItems } from './sources'
+import { localizedProp, type BuilderLocale } from './localization'
 import type { BuilderDocument, BuilderNode } from './schema'
 
 export interface BuilderRenderOptions {
   editable?: boolean
+  locale?: BuilderLocale
 }
 
 const escapeHtml = (value: string): string =>
@@ -66,6 +68,7 @@ function editorAttributes(node: BuilderNode, options: BuilderRenderOptions): str
 }
 
 function renderNode(node: BuilderNode, options: BuilderRenderOptions): string {
+  const locale = options.locale ?? 'EN'
   const children = node.children.map((child) => renderNode(child, options)).join('')
   const attrs = editorAttributes(node, options)
 
@@ -104,12 +107,12 @@ function renderNode(node: BuilderNode, options: BuilderRenderOptions): string {
         'default',
       )
       const sizeClass = size === 'default' ? '' : ` class="uk-heading-${size}"`
-      return `<${level}${sizeClass}${attrs}>${escapeHtml(node.props.content ?? '')}</${level}>`
+      return `<${level}${sizeClass}${attrs}>${escapeHtml(localizedProp(node.props, 'content', locale))}</${level}>`
     }
     case 'text': {
       const style = safeChoice(node.props.style, ['default', 'lead', 'meta', 'muted'], 'default')
       const styleClass = style === 'default' ? '' : ` class="uk-text-${style}"`
-      return `<p${styleClass}${attrs}>${escapeHtml(node.props.content ?? '')}</p>`
+      return `<p${styleClass}${attrs}>${escapeHtml(localizedProp(node.props, 'content', locale))}</p>`
     }
     case 'button': {
       const style = safeChoice(
@@ -117,7 +120,7 @@ function renderNode(node: BuilderNode, options: BuilderRenderOptions): string {
         ['default', 'primary', 'secondary', 'text'],
         'default',
       )
-      return `<a class="uk-button uk-button-${style}" href="${safeHref(node.props.href)}"${attrs}>${escapeHtml(node.props.label ?? '')}</a>`
+      return `<a class="uk-button uk-button-${style}" href="${safeHref(node.props.href)}"${attrs}>${escapeHtml(localizedProp(node.props, 'label', locale))}</a>`
     }
     case 'card': {
       const style = safeChoice(node.props.style, ['default', 'primary', 'secondary'], 'default')
@@ -136,7 +139,7 @@ function renderNode(node: BuilderNode, options: BuilderRenderOptions): string {
         ['default', 'hyphen', 'divider', 'ordered'],
         'default',
       )
-      const items = resolveBuilderListItems(node.props)
+      const items = resolveBuilderListItems(node.props, locale)
         .map((item) => `<li>${escapeHtml(item)}</li>`)
         .join('')
       const tag = style === 'ordered' ? 'ol' : 'ul'
@@ -151,7 +154,7 @@ function renderNode(node: BuilderNode, options: BuilderRenderOptions): string {
       const style = safeChoice(node.props.style, ['default', 'muted', 'reset'], 'default')
       const styleClass =
         style === 'muted' ? ' uk-link-muted' : style === 'reset' ? ' uk-link-reset' : ''
-      return `<a class="jlz-builder-link${styleClass}" href="${safeHref(node.props.href)}"${attrs}>${escapeHtml(node.props.label ?? '')}</a>`
+      return `<a class="jlz-builder-link${styleClass}" href="${safeHref(node.props.href)}"${attrs}>${escapeHtml(localizedProp(node.props, 'label', locale))}</a>`
     }
     case 'icon': {
       const name = safeChoice(node.props.name, BUILDER_ICON_NAMES, 'arrow-up-right')
@@ -163,14 +166,14 @@ function renderNode(node: BuilderNode, options: BuilderRenderOptions): string {
     }
     case 'image': {
       const loading = safeChoice(node.props.loading, ['lazy', 'eager'], 'lazy')
-      return `<img class="jlz-builder-image" src="${safeHref(sanitizeMediaSrc(node.props.src))}" alt="${escapeHtml(node.props.alt ?? '')}" loading="${loading}" decoding="async"${attrs} />`
+      return `<img class="jlz-builder-image" src="${safeHref(sanitizeMediaSrc(node.props.src))}" alt="${escapeHtml(localizedProp(node.props, 'alt', locale))}" loading="${loading}" decoding="async"${attrs} />`
     }
     case 'video': {
       const preload = safeChoice(node.props.preload, ['none', 'metadata'], 'metadata')
       const poster = node.props.poster
         ? ` poster="${safeHref(sanitizeMediaSrc(node.props.poster))}"`
         : ''
-      return `<video class="jlz-builder-video" src="${safeHref(sanitizeMediaSrc(node.props.src))}" controls preload="${preload}" playsinline aria-label="${escapeHtml(node.props.ariaLabel ?? '')}"${poster}${attrs}></video>`
+      return `<video class="jlz-builder-video" src="${safeHref(sanitizeMediaSrc(node.props.src))}" controls preload="${preload}" playsinline aria-label="${escapeHtml(localizedProp(node.props, 'ariaLabel', locale))}"${poster}${attrs}></video>`
     }
   }
 }

@@ -30,6 +30,8 @@ import {
 } from 'vue'
 import UIkit from 'uikit'
 
+import { eventBus } from '../core/EventBus'
+import { getLang, type Lang } from '../core/i18n'
 import * as editorCommands from '../builder/commands'
 import { BUILDER_CATALOG, BUILDER_CATALOG_GROUPS } from '../builder/catalog'
 import { DEFAULT_BUILDER_DOCUMENT } from '../builder/default-document'
@@ -127,6 +129,7 @@ export function useAdminEditor(
   const selectedStyleGroup = ref<StyleGroupId>('global')
   const inverseStylePreview = ref(false)
   const viewport = ref<Viewport>('desktop')
+  const locale = ref<Lang>(getLang())
   const saving = ref(false)
   const statusMessage = ref('Loading…')
   const statusError = ref(false)
@@ -699,7 +702,12 @@ export function useAdminEditor(
   // Register the document-level listeners only inside a component instance
   // (bare composable tests drive the handlers directly).
   if (getCurrentInstance()) {
+    let stopLangChange: (() => void) | null = null
     onMounted(() => {
+      stopLangChange = eventBus.on('jlz:lang-change', ({ lang }) => {
+        locale.value = lang as Lang
+        bump()
+      })
       void (async () => {
         await loadDocuments()
         await loadDocument(documents.value[0]?.slug)
@@ -708,6 +716,8 @@ export function useAdminEditor(
       window.addEventListener('beforeunload', onBeforeUnload)
     })
     onUnmounted(() => {
+      stopLangChange?.()
+      stopLangChange = null
       document.removeEventListener('keydown', onDocumentKeydown)
       window.removeEventListener('beforeunload', onBeforeUnload)
     })
@@ -719,6 +729,7 @@ export function useAdminEditor(
     selectedStyleGroup,
     inverseStylePreview,
     viewport,
+    locale,
     saving,
     statusMessage,
     statusError,
