@@ -12,6 +12,8 @@ Keep each fact with the source that owns it:
 | [BRAND.md](BRAND.md)                               | Visual and editorial direction               |
 | [PAGE_BUILDER.md](PAGE_BUILDER.md)                 | Dev-only UIkit builder and compile boundary  |
 | [CHANGELOG.md](CHANGELOG.md)                       | Released user-visible or operational changes |
+| [evidence/](evidence/)                             | Machine-readable gate reports and visual evidence |
+| [agents/](agents/)                                 | Private agent-operation workflow (no credentials) |
 | [../NEXT.md](../NEXT.md)                           | Open outcomes                                |
 | [../skills](../skills)                             | Procedures loaded for matching tasks         |
 
