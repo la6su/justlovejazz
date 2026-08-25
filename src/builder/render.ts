@@ -167,6 +167,13 @@ function renderNode(node: BuilderNode, options: BuilderRenderOptions): string {
       const loading = safeChoice(node.props.loading, ['lazy', 'eager'], 'lazy')
       return `<img class="jlz-builder-image" src="${safeHref(sanitizeMediaSrc(node.props.src))}" alt="${escapeHtml(node.props.alt ?? '')}" loading="${loading}" decoding="async"${attrs} />`
     }
+    case 'video': {
+      const preload = safeChoice(node.props.preload, ['none', 'metadata'], 'metadata')
+      const poster = node.props.poster
+        ? ` poster="${safeHref(sanitizeMediaSrc(node.props.poster))}"`
+        : ''
+      return `<video class="jlz-builder-video" src="${safeHref(sanitizeMediaSrc(node.props.src))}" controls preload="${preload}" playsinline aria-label="${escapeHtml(node.props.ariaLabel ?? '')}"${poster}${attrs}></video>`
+    }
   }
 }
 

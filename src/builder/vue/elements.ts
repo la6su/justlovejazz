@@ -310,6 +310,30 @@ const image: ElementComponentOptions = {
   },
 }
 
+const video: ElementComponentOptions = {
+  name: 'BuilderVideo',
+  props: {
+    node: { type: Object as PropType<BuilderNode>, required: true },
+    editable: { type: Boolean, default: false },
+  },
+  render(props: BuilderElementProps) {
+    const preload = safeChoice(props.node.props.preload, ['none', 'metadata'], 'metadata')
+    const poster = props.node.props.poster
+      ? { poster: sanitizeMediaSrc(props.node.props.poster) }
+      : {}
+    return h('video', {
+      class: 'jlz-builder-video',
+      src: sanitizeMediaSrc(props.node.props.src),
+      controls: true,
+      preload,
+      playsinline: '',
+      'aria-label': props.node.props.ariaLabel ?? '',
+      ...poster,
+      ...editorAttrs(props),
+    })
+  },
+}
+
 /**
  * The registry: one trusted component per builder element type. A type
  * without a registry entry is a registry bug — render it as a no-op comment
@@ -328,6 +352,7 @@ export const BUILDER_ELEMENT_REGISTRY: Record<BuilderElementType, Component> = {
   link,
   icon,
   image,
+  video,
 } as unknown as Record<BuilderElementType, Component>
 
 /**

@@ -108,6 +108,11 @@ const showcaseSections: Record<StyleGroupId, string> = {
       <span class="jlz-style-eyebrow">Image / responsive media</span>
       <img class="jlz-builder-image" src="/assets/projects/velvet-echo/cover.webp" alt="Velvet Echo cover" />
     </section>`,
+  video: `
+    <section class="jlz-style-sample" data-style-sample="video">
+      <span class="jlz-style-eyebrow">Video / controlled media</span>
+      <video class="jlz-builder-video" src="/assets/video/coming-soon.mp4" poster="/assets/video/coming-soon-cover.jpg" controls preload="metadata" playsinline aria-label="Project preview video"></video>
+    </section>`,
   list: `
     <section class="jlz-style-sample" data-style-sample="list">
       <span class="jlz-style-eyebrow">List / item rhythm</span>

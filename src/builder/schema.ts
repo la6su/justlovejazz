@@ -14,6 +14,7 @@ export type BuilderElementType =
   | 'list'
   | 'divider'
   | 'image'
+  | 'video'
 
 export interface BuilderNode {
   id: string
@@ -62,6 +63,7 @@ const ELEMENT_TYPES = new Set<BuilderElementType>([
   'list',
   'divider',
   'image',
+  'video',
 ])
 
 const CONTAINER_TYPES = new Set<BuilderElementType>(['section', 'grid', 'card'])
@@ -113,6 +115,18 @@ function validateNode(
       if (!src || !isSafeMediaSource(src))
         errors.push(`image node ${String(value.id)} needs a safe src`)
       if (!alt) errors.push(`image node ${String(value.id)} needs alt text`)
+    }
+    if (value.type === 'video') {
+      const src = typeof value.props.src === 'string' ? value.props.src.trim() : ''
+      const label = typeof value.props.ariaLabel === 'string' ? value.props.ariaLabel.trim() : ''
+      if (!src || !isSafeMediaSource(src))
+        errors.push(`video node ${String(value.id)} needs a safe src`)
+      if (!label) errors.push(`video node ${String(value.id)} needs an accessible label`)
+      if (
+        typeof value.props.poster === 'string' &&
+        !isSafeMediaSource(value.props.poster)
+      )
+        errors.push(`video node ${String(value.id)} needs a safe poster`)
     }
   }
 

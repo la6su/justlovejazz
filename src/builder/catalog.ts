@@ -454,6 +454,45 @@ export const BUILDER_CATALOG: Record<BuilderElementType, BuilderElementDefinitio
         loading: 'lazy',
       }),
   },
+  video: {
+    type: 'video',
+    label: 'Video',
+    description: 'Accessible video with conservative metadata preloading.',
+    container: false,
+    icon: 'play-circle',
+    uikitComponents: [],
+    fieldGroups: [
+      {
+        label: 'Media',
+        fields: [
+          { key: 'src', label: 'Source URL', type: 'url' },
+          { key: 'poster', label: 'Poster URL', type: 'url' },
+          { key: 'ariaLabel', label: 'Accessible label', type: 'text' },
+        ],
+      },
+      {
+        label: 'Loading',
+        fields: [
+          {
+            key: 'preload',
+            label: 'Preload',
+            type: 'select',
+            options: [
+              { label: 'Metadata', value: 'metadata' },
+              { label: 'None', value: 'none' },
+            ],
+          },
+        ],
+      },
+    ],
+    create: (id) =>
+      makeNode(id, 'video', {
+        src: '/assets/video/coming-soon.mp4',
+        poster: '/assets/video/coming-soon-cover.jpg',
+        ariaLabel: 'Project preview video',
+        preload: 'metadata',
+      }),
+  },
 }
 
 // Left-panel catalog order, Figma-style: layout scaffolding first, then
@@ -461,7 +500,7 @@ export const BUILDER_CATALOG: Record<BuilderElementType, BuilderElementDefinitio
 export const BUILDER_CATALOG_GROUPS: readonly BuilderCatalogGroup[] = [
   { label: 'Layout', types: ['section', 'grid', 'card', 'divider'] },
   { label: 'Typography', types: ['heading', 'text', 'list'] },
-  { label: 'Elements', types: ['button', 'link', 'icon', 'image'] },
+  { label: 'Elements', types: ['button', 'link', 'icon', 'image', 'video'] },
 ]
 
 export const BUILDER_ELEMENT_TYPES = Object.keys(BUILDER_CATALOG) as BuilderElementType[]

@@ -79,7 +79,7 @@ describe('Page Builder document', () => {
     expect(new Set(grouped).size).toBe(grouped.length)
     expect(grouped.sort()).toEqual(Object.keys(BUILDER_CATALOG).sort())
     expect(grouped).toEqual(
-      expect.arrayContaining(['heading', 'link', 'icon', 'list', 'divider', 'image']),
+      expect.arrayContaining(['heading', 'link', 'icon', 'list', 'divider', 'image', 'video']),
     )
     for (const definition of Object.values(BUILDER_CATALOG)) {
       expect(definition.fieldGroups.length, definition.type).toBeGreaterThan(0)
@@ -133,6 +133,17 @@ describe('Page Builder document', () => {
         props: { src: 'javascript:alert(1)', alt: 'A <cover>', loading: 'invalid' },
         children: [],
       },
+      {
+        id: 'video-x1',
+        type: 'video',
+        props: {
+          src: 'javascript:alert(1)',
+          poster: 'javascript:alert(1)',
+          ariaLabel: 'Preview <video>',
+          preload: 'invalid',
+        },
+        children: [],
+      },
     )
 
     const html = renderBuilderDocument(document)
@@ -145,6 +156,9 @@ describe('Page Builder document', () => {
     expect(html).toContain('href="#"')
     expect(html).toContain('class="jlz-builder-image"')
     expect(html).toContain('alt="A &lt;cover&gt;"')
+    expect(html).toContain('class="jlz-builder-video"')
+    expect(html).toContain('aria-label="Preview &lt;video&gt;"')
+    expect(html).toContain('preload="metadata"')
     expect(html).not.toContain('javascript:')
   })
 

@@ -251,7 +251,7 @@ describe('AdminApp.vue', () => {
     const wrapper = await mountApp()
     expect(wrapper.find('#save-status').text()).toBe('Ready')
     // The catalogue renders every element type as one glyph row.
-    expect(wrapper.findAll('#element-catalog [data-add-element]')).toHaveLength(11)
+    expect(wrapper.findAll('#element-catalog [data-add-element]')).toHaveLength(12)
     // The outline renders every node of the default document.
     const outlineButtons = wrapper.findAll('#document-outline [data-select-node]')
     expect(outlineButtons.length).toBeGreaterThanOrEqual(8)

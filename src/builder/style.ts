@@ -15,6 +15,7 @@ export type StyleGroupId =
   | 'list'
   | 'divider'
   | 'image'
+  | 'video'
   | 'form'
   | 'navbar'
 
@@ -537,6 +538,22 @@ export const STYLE_GROUPS: readonly StyleGroupDefinition[] = [
         key: 'radius',
         label: 'Corner radius',
         description: 'Shared content corner radius.',
+        type: 'select',
+        options: options('0px', '4px', '8px', '12px', '16px'),
+      },
+    ],
+  },
+  {
+    id: 'video',
+    label: 'Video',
+    category: 'component',
+    icon: 'play-circle',
+    description: 'Video frame radius and background.',
+    fields: [
+      {
+        key: 'radius',
+        label: 'Corner radius',
+        description: 'Shared media corner radius.',
         type: 'select',
         options: options('0px', '4px', '8px', '12px', '16px'),
       },
