@@ -127,6 +127,10 @@ of re-declaring the slot ids, face rotations and story ranges.
 accepts router/hash/input commands and remains the native story source;
 `StoryController` translates its typed snapshots for subscribers. Vue Router
 never scrolls the story DOM independently of that controller.
+Each generated navigation button has a named handler retained by the
+`CinematicNav` owner; `dispose()` removes those handlers before releasing the
+button collection, so retained or detached button DOM cannot call a disposed
+navigation instance.
 
 ## Current ownership
 

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- `CinematicNav` now retains and removes its generated button handlers during
+  teardown, preventing retained navigation DOM from invoking a disposed
+  controller.
+
 - Bootstrap teardown now tolerates renderer/world failure before all
   `Experience` owners exist; optional UI/coordinator/StateBus cleanup no longer
   masks the original error with a secondary exception.

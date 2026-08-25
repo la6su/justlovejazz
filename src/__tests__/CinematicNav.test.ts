@@ -160,6 +160,17 @@ describe('CinematicNav — vertical story and sheets', () => {
     bindSpy.mockRestore()
   })
 
+  it('removes button listeners on destroy', () => {
+    nav = createNav()
+    const button = nav.el.querySelector<HTMLButtonElement>('[data-story-index="3"]')!
+    const goToSection = vi.spyOn(nav, 'goToSection')
+
+    nav.dispose()
+    button.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+
+    expect(goToSection).not.toHaveBeenCalled()
+  })
+
   it('cancels pending scroll frames when the route track is rebound', () => {
     const raf = vi.spyOn(window, 'requestAnimationFrame').mockReturnValue(42)
     const cancel = vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => undefined)

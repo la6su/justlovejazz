@@ -56,6 +56,7 @@ export class CinematicNav {
   private _scrollHandler: (() => void) | null = null
   private _sheetClickHandler: ((event: MouseEvent) => void) | null = null
   private _navButtons: HTMLButtonElement[] = []
+  private _navButtonHandlers = new Map<HTMLButtonElement, () => void>()
 
   /**
    * Loop-wake port (Phase 7). Native track scrolling is a renderer-loop wake
@@ -96,7 +97,9 @@ export class CinematicNav {
       label.dataset.storyLabel = ''
       label.textContent = `Section ${index}`
       button.append(number, label)
-      button.addEventListener('click', () => this.goToSection(index))
+      const clickHandler = (): void => this.goToSection(index)
+      button.addEventListener('click', clickHandler)
+      this._navButtonHandlers.set(button, clickHandler)
       items.appendChild(button)
       this._navButtons.push(button)
     }
@@ -456,6 +459,11 @@ export class CinematicNav {
     if (this._keydownHandler) window.removeEventListener('keydown', this._keydownHandler)
     if (this._sheetClickHandler)
       document.removeEventListener('click', this._sheetClickHandler, true)
+    this._navButtonHandlers.forEach((handler, button) => {
+      button.removeEventListener('click', handler)
+    })
+    this._navButtonHandlers.clear()
+    this._navButtons = []
     if (this._inactiveTimer) clearTimeout(this._inactiveTimer)
     this._mainSections.forEach((section) => {
       section.inert = false
