@@ -52,6 +52,9 @@
   failure or retry instead of retaining an unnecessary timer after startup.
   WorkCards now delegates activation to one listener per grid while retaining
   per-card debounce state and deterministic disposal.
+  Secondary route views now load through explicit route-level chunks, keeping
+  non-landing semantic pages out of the startup app graph; `app` measured
+  3.37 kB gzip versus 10.00 kB before the split.
 - Scoped bootstrap UIkit refresh to `#spa-content`, removing the remaining
   document-wide traversal from the application shell.
 - Established the staged Vue 3, Vue Router and TresJS migration architecture,

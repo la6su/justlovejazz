@@ -74,9 +74,9 @@ describe('jlzRouteRecords', () => {
     for (const entry of ROUTE_MANIFEST) {
       const record = records.find((r) => r.path === entry.path)
       expect(record?.name).toBe(entry.page)
-      // The semantic route SFC is the route target (PageView is no longer
-      // a route component).
-      expect(typeof record?.component).toBe('object')
+      // The landing SFC is eagerly available; secondary pages are explicit
+      // lazy route components so they do not enter the startup graph.
+      expect(['object', 'function']).toContain(typeof record?.component)
     }
     expect(records[0]?.component).toBe(HomeView)
     const fallback = records[records.length - 1]

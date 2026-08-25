@@ -74,6 +74,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
   debounce and project event contract while each grid owns one listener
   instead of one listener per card; disposal removes the grid owners and
   their release timers together.
+- [x] **Keep secondary route views out of startup** — `HomeView` remains the
+  eager landing target, while the five secondary Vue route views use explicit
+  route-level imports; the measured `app` chunk fell from 10.00 kB to 3.37 kB
+  gzip without changing the persistent Tres scene owner.
 
 ## Deferred product queue
 

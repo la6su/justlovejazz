@@ -97,7 +97,7 @@ existing TypeScript check; it does not replace the release gate.
 | Viewport   | desktop, narrow layout and real mobile DPR                           |
 | Lifecycle  | mount, exit during async load, destroy and twenty route cycles       |
 | Runtime    | no uncaught/GPU/material errors, one canvas/loop, settled zero draws |
-| Delivery   | startup graph and separate Vue/Tres/Three/UIkit chunk reports        |
+| Delivery   | startup graph, route-level Vue chunks and separate Vue/Tres/Three/UIkit reports |
 
 ### Renderer gate
 

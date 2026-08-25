@@ -10,26 +10,25 @@
 // resolve against the manifest before pushing, so an unknown link is a
 // no-op exactly as with the legacy router.
 
-import type { RouteRecordRaw } from 'vue-router'
+import type { RouteRecordRaw, RouteRecordSingleView } from 'vue-router'
 
 import { ROUTE_MANIFEST, resolvePage } from '../core/routeManifest'
 import type { PageId } from '../sections/_shared/constants'
-import ContactView from './views/ContactView.vue'
 import HomeView from './views/HomeView.vue'
-import LabView from './views/LabView.vue'
-import ManifestoView from './views/ManifestoView.vue'
-import ServicesView from './views/ServicesView.vue'
-import WorksView from './views/WorksView.vue'
 
 export type { PageId }
 
-const PAGE_VIEWS: Record<PageId, typeof HomeView> = {
+// Keep the landing view in the initial app graph so the first shell can render
+// without a second route fetch. Secondary pages are explicit route-level
+// chunks: this keeps their semantic DOM and page-only code out of the startup
+// bundle without introducing a variable import context.
+const PAGE_VIEWS: Record<PageId, RouteRecordSingleView['component']> = {
   home: HomeView,
-  services: ServicesView,
-  works: WorksView,
-  manifesto: ManifestoView,
-  lab: LabView,
-  contact: ContactView,
+  services: () => import('./views/ServicesView.vue'),
+  works: () => import('./views/WorksView.vue'),
+  manifesto: () => import('./views/ManifestoView.vue'),
+  lab: () => import('./views/LabView.vue'),
+  contact: () => import('./views/ContactView.vue'),
 }
 
 /** Lenient page resolution for a router location (initial-load contract). */
