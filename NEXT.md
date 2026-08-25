@@ -820,8 +820,12 @@ for replacement. Pull one forward only when its migration dependency is clear.
       now in (`image` and accessible `video` elements: local/HTTPS source
       allowlist, mandatory alt/label, conservative lazy/metadata loading,
       Vue/string-renderer parity, SSR and publish coverage). Remaining builder
-      content capabilities are separate bounded outcomes: dynamic sources and
-      drag-and-drop reordering.
+      content capabilities are separate bounded outcomes: dynamic sources.
+      Phase 9 slice 7 landed (2026-08-25): the admin outline now supports
+      same-parent drag-and-drop ordering through the typed builder command
+      layer. Reordering is undoable, preserves selection and intentionally
+      rejects cross-parent drops; dynamic sources remain the next content
+      capability.
 
 - [ ] **Extend the cinematic brand language across every route** — tune motion
       and TSL response through the new component/scene owners, preserving both
