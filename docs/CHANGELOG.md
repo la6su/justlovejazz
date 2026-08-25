@@ -16,6 +16,8 @@
   Contact Typography initialization now has the same contained-failure and
   retryable owner policy. Environment PMREM staging now releases temporary
   CanvasTexture and generator resources on both success and failure.
+  Contact Cyprus GLTF/material preparation now rolls back partially processed
+  scenes before propagating a load failure.
 - Scoped bootstrap UIkit refresh to `#spa-content`, removing the remaining
   document-wide traversal from the application shell.
 - Established the staged Vue 3, Vue Router and TresJS migration architecture,
