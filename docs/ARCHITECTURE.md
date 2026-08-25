@@ -60,6 +60,9 @@ under `src/builder/`; the public builds do not import the editor graph.
   through `.hook-card()`/`.hook-button()`; builder-specific Less must not
   restate their radius or shadow, so separate `cardRadius`/`buttonRadius`
   tokens remain effective.
+- UIkit hydration is scoped to the owner that just changed: route mounts update
+  the page root, while `ContentReveal` updates only the active section and its
+  UIkit ancestor chain; no section change performs a document-wide traversal.
 - No phase may weaken startup, frame-time, memory or delivery budgets merely
   to accommodate framework overhead.
 

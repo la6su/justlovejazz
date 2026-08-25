@@ -1,4 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import UIkit from 'uikit'
 import { ContentReveal } from '../Experience/ContentReveal'
 import { eventBus } from '../core/EventBus'
 import type { PageId } from '../sections/_shared/constants'
@@ -37,5 +38,25 @@ describe('ContentReveal typed page port', () => {
     eventBus.emit('jlz:route-change', { page: 'works' })
 
     expect(getConfigs()[0]?.id).toBe('content_works_0')
+  })
+
+  it('refreshes only the active section subtree after a section change', async () => {
+    document.body.innerHTML = `
+      <section data-section="intro" class="section-active"></section>
+      <section data-section="about"></section>
+    `
+    const active = document.querySelector<HTMLElement>('[data-section="about"]')!
+    const update = vi.spyOn(UIkit as unknown as { update: (element: Element) => void }, 'update')
+
+    eventBus.emit('jlz:section-change', { sectionId: 'about', index: 1 })
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+
+    expect(update).toHaveBeenCalledTimes(1)
+    expect(update).toHaveBeenCalledWith(active)
+    expect(active.classList.contains('section-active')).toBe(true)
+    expect(document.querySelector('[data-section="intro"]')?.classList.contains('section-active')).toBe(
+      false,
+    )
+    update.mockRestore()
   })
 })

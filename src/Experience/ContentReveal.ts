@@ -99,7 +99,7 @@ export class ContentReveal {
     this.applyTheme(this.currentSectionId ?? '')
     requestAnimationFrame(() => {
       try {
-        ;(UIkit as unknown as { update: () => void }).update()
+        ;(UIkit as unknown as { update(element: Element): void }).update(matching)
       } catch {
         /* not ready */
       }
