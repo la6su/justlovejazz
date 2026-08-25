@@ -55,4 +55,40 @@ describe('RouteTransition failure lifecycle', () => {
 
     expect(vi.getTimerCount()).toBe(0)
   })
+
+  it('replaces a pending cover timer when a newer navigation starts', async () => {
+    vi.useFakeTimers()
+    const transition = new RouteTransition()
+    const first = transition.cover()
+
+    expect(vi.getTimerCount()).toBe(1)
+    const second = transition.cover()
+
+    expect(vi.getTimerCount()).toBe(1)
+    vi.advanceTimersByTime(260)
+    await Promise.all([first, second])
+    expect(vi.getTimerCount()).toBe(0)
+  })
+
+  it('releases the cover timer immediately when navigation is cancelled', async () => {
+    vi.useFakeTimers()
+    const transition = new RouteTransition()
+    const covering = transition.cover()
+
+    transition.cancel()
+
+    expect(vi.getTimerCount()).toBe(0)
+    await covering
+  })
+
+  it('leaves no timer after a successful cover phase', async () => {
+    vi.useFakeTimers()
+    const transition = new RouteTransition()
+    const covering = transition.cover()
+
+    vi.advanceTimersByTime(260)
+    await covering
+
+    expect(vi.getTimerCount()).toBe(0)
+  })
 })

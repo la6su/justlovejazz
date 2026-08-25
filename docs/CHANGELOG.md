@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Route transition cancellation now clears and settles the owned 260 ms cover
+  timer, preventing stale navigation promises and queued work from surviving
+  a failed or superseded route.
+
 - Bootstrap retry cleanup now replaces the injected Less style instead of
   accumulating duplicate `<style>` nodes, and `ErrorTracker` can remove its
   window listeners so HMR/retry does not retain stale module closures.

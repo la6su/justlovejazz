@@ -147,6 +147,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
   has one explicit owner, and `ErrorTracker` keeps removable window handlers;
   retry cleanup replaces/removes both without duplicating CSS or stale error
   closures.
+- [x] **Cancel stale route cover timers** — `RouteTransition` now owns the
+  260 ms cover timer, resolves superseded transitions during cancellation and
+  releases the timer before a newer navigation or failed route can accumulate
+  stale async work.
 
 ## Deferred product queue
 

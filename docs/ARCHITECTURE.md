@@ -55,6 +55,9 @@ under `src/builder/`; the public builds do not import the editor graph.
   loops or safety timers in reduced-motion mode.
 - Route resources, listeners, timers, async work and GPU allocations have one
   owner and one terminal cleanup path.
+- `RouteTransition` owns both cover and reveal timers. Cancellation clears the
+  active timer and settles its cover promise, so failed or superseded
+  navigation cannot retain a stale 260 ms continuation.
 - UIkit remains the layout/component/accessibility baseline where retained;
   project styles express the 3D shell and authored compositions.
 - Published Builder cards and buttons keep UIkit as the owner of base geometry

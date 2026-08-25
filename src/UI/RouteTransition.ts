@@ -11,6 +11,7 @@ const REVEAL_MS = 420
 export class RouteTransition {
   private overlay: HTMLElement | null = null
   private sequence = 0
+  private coverTimer: { id: number; resolve: () => void } | null = null
   private revealTimer: number | null = null
 
   private getOverlay(): HTMLElement {
@@ -39,13 +40,20 @@ export class RouteTransition {
    */
   async cover(): Promise<void> {
     const sequence = ++this.sequence
+    this.cancelCoverTimer()
     if (prefersReducedMotion()) {
       if (this.overlay) this.overlay.dataset.state = 'idle'
       return
     }
     const overlay = this.getOverlay()
     overlay.dataset.state = 'covering'
-    await this.wait(COVER_MS)
+    await new Promise<void>((resolve) => {
+      const id = window.setTimeout(() => {
+        this.coverTimer = null
+        resolve()
+      }, COVER_MS)
+      this.coverTimer = { id, resolve }
+    })
     if (sequence !== this.sequence) return
   }
 
@@ -68,8 +76,18 @@ export class RouteTransition {
   /** Abort a failed navigation and return the transition surface to idle. */
   cancel(): void {
     this.sequence += 1
+    this.cancelCoverTimer()
     this.cancelRevealTimer()
     if (this.overlay) this.overlay.dataset.state = 'idle'
+  }
+
+  private cancelCoverTimer(): void {
+    if (this.coverTimer !== null) {
+      clearTimeout(this.coverTimer.id)
+      const { resolve } = this.coverTimer
+      this.coverTimer = null
+      resolve()
+    }
   }
 
   private cancelRevealTimer(): void {
@@ -79,7 +97,4 @@ export class RouteTransition {
     }
   }
 
-  private wait(duration: number): Promise<void> {
-    return new Promise((resolve) => window.setTimeout(resolve, duration))
-  }
 }
