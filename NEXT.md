@@ -120,6 +120,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Make BlurFade text-only at the DOM boundary** — per-character spans
   are created with `textContent`, preserving editorial markup as text and
   avoiding an HTML parse during every reveal.
+- [x] **Clear stale route reveal timers** — RouteTransition now cancels the
+  pending 420 ms reveal timer on cancellation or replacement instead of merely
+  ignoring its callback after sequence invalidation.
 
 ## Deferred product queue
 

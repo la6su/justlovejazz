@@ -41,4 +41,18 @@ describe('RouteTransition failure lifecycle', () => {
 
     expect(overlay?.dataset.state).toBe('idle')
   })
+
+  it('clears the pending reveal timer instead of leaving stale work queued', async () => {
+    vi.useFakeTimers()
+    const transition = new RouteTransition()
+    const covering = transition.cover()
+    vi.advanceTimersByTime(260)
+    await covering
+    transition.reveal()
+
+    expect(vi.getTimerCount()).toBe(1)
+    transition.cancel()
+
+    expect(vi.getTimerCount()).toBe(0)
+  })
 })

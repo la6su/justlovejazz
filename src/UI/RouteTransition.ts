@@ -11,6 +11,7 @@ const REVEAL_MS = 420
 export class RouteTransition {
   private overlay: HTMLElement | null = null
   private sequence = 0
+  private revealTimer: number | null = null
 
   private getOverlay(): HTMLElement {
     if (this.overlay?.isConnected) return this.overlay
@@ -54,18 +55,28 @@ export class RouteTransition {
       if (this.overlay) this.overlay.dataset.state = 'idle'
       return
     }
+    this.cancelRevealTimer()
     const overlay = this.getOverlay()
     overlay.dataset.state = 'revealing'
-    void this.wait(REVEAL_MS).then(() => {
+    this.revealTimer = window.setTimeout(() => {
+      this.revealTimer = null
       if (sequence !== this.sequence) return
       if (overlay.isConnected) overlay.dataset.state = 'idle'
-    })
+    }, REVEAL_MS)
   }
 
   /** Abort a failed navigation and return the transition surface to idle. */
   cancel(): void {
     this.sequence += 1
+    this.cancelRevealTimer()
     if (this.overlay) this.overlay.dataset.state = 'idle'
+  }
+
+  private cancelRevealTimer(): void {
+    if (this.revealTimer !== null) {
+      clearTimeout(this.revealTimer)
+      this.revealTimer = null
+    }
   }
 
   private wait(duration: number): Promise<void> {

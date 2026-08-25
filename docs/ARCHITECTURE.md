@@ -173,6 +173,8 @@ according to their current measured policy.
   reach `CinematicNav`.
 - BlurFade treats title content as text at the DOM boundary and creates spans
   without `innerHTML`; translated/editorial markup cannot become live nodes.
+- RouteTransition owns at most one pending reveal timer and clears it when a
+  newer transition or router error invalidates the previous handoff.
 - `core/` owns the framework-neutral contracts (route manifest, world slots,
   typed event ports, i18n, theme, motion policy) and imports no Vue or TresJS.
 - `sections/` owns the per-route content templates consumed by the route views;
