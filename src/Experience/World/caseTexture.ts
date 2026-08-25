@@ -41,7 +41,13 @@ const textureCache = new Map<
  *  Returns a cached texture if one already exists for the URL (refcounted). */
 export function loadCaseTexture(url: string): Promise<THREE.Texture> {
   const cached = textureCache.get(url)
-  if (cached) {
+  if (cached?.pendingDrop) {
+    // A global teardown has already claimed this in-flight entry. Do not
+    // attach a new owner to a texture that the old load will dispose on settle;
+    // its promise callback retains the entry and cleans it up independently.
+    textureCache.delete(url)
+  }
+  if (cached && !cached.pendingDrop) {
     cached.refCount++
     return cached.loading
   }
@@ -77,7 +83,7 @@ export function loadCaseTexture(url: string): Promise<THREE.Texture> {
       entry.settled = true
       if (entry.pendingDrop || entry.refCount <= 0) {
         tex.dispose()
-        textureCache.delete(url)
+        if (textureCache.get(url) === entry) textureCache.delete(url)
       } else {
         entry.texture = tex
       }
@@ -85,7 +91,7 @@ export function loadCaseTexture(url: string): Promise<THREE.Texture> {
     () => {
       entry.settled = true
       // On load failure, remove the cache entry so a retry can attempt again.
-      textureCache.delete(url)
+      if (textureCache.get(url) === entry) textureCache.delete(url)
     },
   )
 
