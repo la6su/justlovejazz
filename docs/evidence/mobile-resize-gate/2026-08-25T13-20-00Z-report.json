@@ -1,0 +1,21 @@
+{
+  "tool": "manual-cdp-mobile-resize-gate",
+  "date": "2026-08-25",
+  "device": "Xiaomi 22101320G",
+  "browser": "Chrome Android 151",
+  "route": "http://127.0.0.1:5182/",
+  "source": "tres-vue-dev on pct104",
+  "initial": {"viewport": "392x766", "dpr": 2.75, "backend": "WebGPUBackend"},
+  "resize": [
+    {"viewport": "360x740", "dpr": 2.5, "resizeEvents": 1, "lastInvalidation": "resize"},
+    {"viewport": "392x766", "dpr": 2.75, "resizeEvents": 2, "lastInvalidation": "resize"}
+  ],
+  "resources": {
+    "scene": {"geometries": 13, "materials": 24, "textures": 9},
+    "renderer": {"geometries": 11, "textures": 27},
+    "stableAcrossResize": true
+  },
+  "settled": true,
+  "errors": 0,
+  "notes": "The renderer canvas remained one scene canvas; the second 120x120 canvas is the custom cursor overlay."
+}
