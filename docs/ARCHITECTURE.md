@@ -195,6 +195,10 @@ according to their current measured policy.
   guarded timer. Reset and failure clear the timer before replacing bindings;
   a zero-delay reduced-motion event follows the same owner and cancellation
   contract.
+- Retry-owned bootstrap resources have explicit owners: the injected Less
+  `<style>` is replaced/removed through `createStyleOwner`, and
+  `ErrorTracker.dispose()` removes its window handlers before a retry. Terminal
+  post-SceneHost failures retain diagnostics without creating another owner.
 - BlurFade treats title content as text at the DOM boundary and creates spans
   without `innerHTML`; translated/editorial markup cannot become live nodes.
 - RouteTransition owns at most one pending reveal timer and clears it when a

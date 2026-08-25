@@ -143,6 +143,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Own delayed readiness events** — the post-bootstrap `jlz:webgl-ready`
   timer is cancellable and generation-guarded, including reduced-motion's
   zero-delay path, and is cleared on retry/failure/reset.
+- [x] **Release retry-owned bootstrap resources** — the injected Less style
+  has one explicit owner, and `ErrorTracker` keeps removable window handlers;
+  retry cleanup replaces/removes both without duplicating CSS or stale error
+  closures.
 
 ## Deferred product queue
 

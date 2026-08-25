@@ -135,6 +135,32 @@ let _readyWatchdog: ReturnType<typeof setTimeout> | null = null
 let _bootstrapAbort = new AbortController()
 let _bootstrapUnsubs: Array<() => void> = []
 
+export function createStyleOwner(): {
+  set: (css: string) => void
+  clear: () => void
+} {
+  let style: HTMLStyleElement | null = null
+  const clear = (): void => {
+    style?.remove()
+    style = null
+  }
+  return {
+    set: (css) => {
+      clear()
+      style = document.createElement('style')
+      style.textContent = css
+      document.head.appendChild(style)
+    },
+    clear,
+  }
+}
+
+const bootstrapStyleOwner = createStyleOwner()
+
+function clearBootstrapStyle(): void {
+  bootstrapStyleOwner.clear()
+}
+
 function resetBootstrapBindings(): void {
   _bootstrapUnsubs.forEach((unsubscribe) => unsubscribe())
   _bootstrapUnsubs = []
@@ -143,6 +169,7 @@ function resetBootstrapBindings(): void {
   clearReadyWatchdog()
   clearReadyEventTimer()
   clearSplashRevealTimer()
+  clearBootstrapStyle()
   _titleObserver?.disconnect()
   _titleObserver = null
 }
@@ -409,7 +436,12 @@ async function boot(): Promise<BootResult> {
     clearReadyEventTimer()
     transitionBootstrap('failed')
     eventBus.emit('jlz:webgl-failed')
-    return { retryable: !sceneHostSettled }
+    const retryable = !sceneHostSettled
+    if (retryable) {
+      const { ErrorTracker } = await import('./core/ErrorTracker')
+      ErrorTracker.dispose()
+    }
+    return { retryable }
   }
 }
 
@@ -428,9 +460,7 @@ async function startAppOnce(): Promise<void> {
   // HMR injection.
   const cssModule = await import('./assets/main.less?inline')
   // Manually inject the CSS into the document
-  const style = document.createElement('style')
-  style.textContent = (cssModule as unknown as { default: string }).default || ''
-  document.head.appendChild(style)
+  bootstrapStyleOwner.set((cssModule as unknown as { default: string }).default || '')
   // Register console-themed SVG icons — replaces UIKit's default icon set
   // (76KB) with our custom pixel/console-style icons. No uikit-icons import.
   // UIKit's icon component is built into the core; we just register our SVGs.

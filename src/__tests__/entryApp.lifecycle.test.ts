@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createReadyEventTimer, createSplashRevealTimer, createStartGate } from '../entry-app'
+import {
+  createReadyEventTimer,
+  createSplashRevealTimer,
+  createStartGate,
+  createStyleOwner,
+} from '../entry-app'
 
 describe('entry-app splash reveal lifecycle', () => {
   afterEach(() => {
@@ -56,6 +61,23 @@ describe('entry-app splash reveal lifecycle', () => {
     vi.advanceTimersByTime(1)
 
     expect(ready).toHaveBeenCalledOnce()
+  })
+
+  it('replaces and clears the retry-owned bootstrap style', () => {
+    const owner = createStyleOwner()
+
+    owner.set('.first { color: red; }')
+    const first = document.head.querySelectorAll('style')
+    expect(first).toHaveLength(1)
+    expect(first[0]?.textContent).toContain('color: red')
+
+    owner.set('.second { color: blue; }')
+    const second = document.head.querySelectorAll('style')
+    expect(second).toHaveLength(1)
+    expect(second[0]?.textContent).toContain('color: blue')
+
+    owner.clear()
+    expect(document.head.querySelectorAll('style')).toHaveLength(0)
   })
 
   it('coalesces concurrent starts and permits retry after rejection', async () => {

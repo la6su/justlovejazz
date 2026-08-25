@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Bootstrap retry cleanup now replaces the injected Less style instead of
+  accumulating duplicate `<style>` nodes, and `ErrorTracker` can remove its
+  window listeners so HMR/retry does not retain stale module closures.
+
 - The delayed `jlz:webgl-ready` handoff is now an owned, generation-guarded
   timer and is cancelled on bootstrap reset/failure, including the
   reduced-motion zero-delay path.
