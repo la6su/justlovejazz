@@ -1448,9 +1448,7 @@ export class Experience {
     this.drawTrail?.dispose()
     // Phase 8 slice 7: the /works case-plane stage owner (lazy — only alive
     // when /works was reached; a direct child of the Tres-owned scene).
-    this.worksPlaneStage?.removeFromParent()
-    this.worksPlaneStage?.dispose()
-    this.worksPlaneStage = null
+    this.disposeWorksPlaneStage()
     // Phase 8 slice 8: the Contact typography + Cyprus stage owners (lazy — only
     // alive when /contact was reached; direct children of the Tres-owned
     // scene).
