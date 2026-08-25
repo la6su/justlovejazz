@@ -72,4 +72,42 @@ describe('useJlzPage idle UIkit lifecycle', () => {
     expect(uiKitUpdate).toHaveBeenCalledTimes(2)
     app.unmount()
   })
+
+  it('cancels the deferred route announcement when the route root unmounts', async () => {
+    let animationCallback: FrameRequestCallback | undefined
+    const cancelAnimationFrame = vi.fn()
+    Object.defineProperty(window, 'requestAnimationFrame', {
+      configurable: true,
+      value: (callback: FrameRequestCallback) => {
+        animationCallback = callback
+        return 7
+      },
+    })
+    Object.defineProperty(window, 'cancelAnimationFrame', {
+      configurable: true,
+      value: cancelAnimationFrame,
+    })
+    const announcer = document.createElement('p')
+    announcer.id = 'jlz-route-announcer'
+    document.body.append(announcer)
+    document.title = 'Contact'
+
+    const Root = defineComponent({
+      setup() {
+        const root = ref<HTMLElement | null>(null)
+        useJlzPage('contact', () => root.value)
+        return () => h('main', { ref: root })
+      },
+    })
+    const host = document.createElement('div')
+    const app = createApp(Root)
+    app.mount(host)
+    await nextTick()
+
+    app.unmount()
+    expect(cancelAnimationFrame).toHaveBeenCalledWith(7)
+    animationCallback?.(0)
+    expect(announcer.textContent).toBe('')
+    announcer.remove()
+  })
 })

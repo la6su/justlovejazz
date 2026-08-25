@@ -41,10 +41,15 @@ let mountedOnce = false
 
 export function useJlzPage(page: PageId, rootEl: () => HTMLElement | null): void {
   let idleHandle: number | null = null
+  let announcerRafHandle: number | null = null
   let mounted = false
 
   onBeforeUnmount(() => {
     mounted = false
+    if (announcerRafHandle !== null) {
+      cancelAnimationFrame(announcerRafHandle)
+      announcerRafHandle = null
+    }
     if (idleHandle !== null && 'cancelIdleCallback' in window) {
       cancelIdleCallback(idleHandle)
       idleHandle = null
@@ -66,8 +71,10 @@ export function useJlzPage(page: PageId, rootEl: () => HTMLElement | null): void
       const announcer = document.getElementById('jlz-route-announcer')
       if (announcer) {
         announcer.textContent = ''
-        requestAnimationFrame(() => {
-          announcer.textContent = document.title
+        if (announcerRafHandle !== null) cancelAnimationFrame(announcerRafHandle)
+        announcerRafHandle = requestAnimationFrame(() => {
+          announcerRafHandle = null
+          if (mounted) announcer.textContent = document.title
         })
       }
     }

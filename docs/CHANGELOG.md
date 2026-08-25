@@ -28,6 +28,8 @@
   destroyed instance.
   Camera home-route tuning now reads the typed route-page port instead of the
   body dataset, closing the remaining scene-owner route-state projection.
+  Route-root teardown now cancels the deferred route-announcer RAF, preventing
+  stale title writes after a fast navigation.
 - Scoped bootstrap UIkit refresh to `#spa-content`, removing the remaining
   document-wide traversal from the application shell.
 - Established the staged Vue 3, Vue Router and TresJS migration architecture,

@@ -36,6 +36,8 @@ Do not reopen completed migration phases. Current runtime contracts are in
   allowing a destroyed instance to publish `jlz:webgl-ready`.
 - [x] **Remove the Camera DOM route read** — camera home-route tuning now uses
   the typed `routePage` port instead of `document.body.dataset.page`.
+- [x] **Cancel route-announcer RAF** — `useJlzPage` now invalidates the deferred
+  accessibility announcement when a route root unmounts.
 
 ## Deferred product queue
 
