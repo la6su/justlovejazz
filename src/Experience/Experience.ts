@@ -634,6 +634,11 @@ export class Experience {
         this.labGamepad.visible = this.currentPage() === 'lab'
         this.scene.add(this.labGamepad)
       })
+      .catch((error: unknown) => {
+        if (import.meta.env.DEV) {
+          console.error('[Experience] Lab experiment init failed:', error)
+        }
+      })
       .finally(() => {
         if (request === this._labGamepadRequest) {
           this._labGamepadPromise = null

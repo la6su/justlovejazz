@@ -107,6 +107,29 @@ describe('Experience lab object lifecycle', () => {
     expect(exp.scene.children).toHaveLength(0)
   })
 
+  it('contains a failed load and allows a later retry', async () => {
+    const object = new THREE.Group()
+    let attempts = 0
+    vi.spyOn(manifest, 'getLabExperiment').mockReturnValue({
+      id: 'gamepad',
+      page: 'lab',
+      load: () => {
+        attempts += 1
+        return attempts === 1
+          ? Promise.reject(new Error('fixture load failure'))
+          : Promise.resolve(object as never)
+      },
+    } as never)
+
+    await expect(exp.ensureLabGamepad()).resolves.toBeUndefined()
+    expect(coordinator.labGamepad).toBeNull()
+    expect(exp.scene.children).not.toContain(object)
+
+    await exp.ensureLabGamepad()
+    expect(coordinator.labGamepad).toBe(object)
+    expect(attempts).toBe(2)
+  })
+
   it('disposes a late load result after the owner is invalidated', async () => {
     let resolveLoad!: (object: LabExperimentObject) => void
     const pendingLoad = new Promise<LabExperimentObject>((resolve) => {
