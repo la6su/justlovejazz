@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ExperienceUI, type ExperienceUIHost } from '../Experience/ExperienceUI'
+import { eventBus } from '../core/EventBus'
 
-const createHost = (sections: unknown[]): ExperienceUIHost => {
-  const carousel = null
+const createHost = (sections: unknown[], carousel: unknown = null): ExperienceUIHost => {
   return {
     page: () => 'home',
     coordinator: () => ({ sections, carousel }) as never,
@@ -79,5 +79,29 @@ describe('ExperienceUI portfolio lifecycle', () => {
     sections.push({})
     await experienceUI.ensurePortfolio()
     expect(experienceUI.portfolio).not.toBeNull()
+  })
+
+  it('wakes the render demand after fullscreen project navigation', () => {
+    const prev = vi.fn()
+    const next = vi.fn()
+    const raise = vi.fn()
+    const carousel = { prev, next }
+    const host = {
+      ...createHost([{}], carousel),
+      raise,
+      sfx: () => ({ setMuted: vi.fn() }) as never,
+    }
+    const experienceUI = new ExperienceUI(host)
+    experienceUI.init()
+    experienceUI.overlay = { isOpen: true } as never
+    experienceUI.portfolio = { projects: [{}] } as never
+    const select = vi.spyOn(experienceUI, 'onProjectSelect').mockImplementation(() => undefined)
+
+    eventBus.emit('jlz:project-navigate', { direction: 1 })
+
+    expect(next).toHaveBeenCalledOnce()
+    expect(select).toHaveBeenCalledWith(1)
+    expect(raise).toHaveBeenCalledWith('nav')
+    experienceUI.destroy()
   })
 })

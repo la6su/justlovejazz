@@ -99,6 +99,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Scope menu template bindings to the route root** — menu discovery,
   preview synchronization and same-page hash targets now resolve within
   `#spa-content`, leaving detached menu markup untouched.
+- [x] **Wake demand after fullscreen project navigation** — overlay Prev/Next
+  now raises the shared `nav` demand after changing the carousel target, so a
+  settled renderer advances the 3D selection without waiting for unrelated
+  input.
 
 ## Deferred product queue
 

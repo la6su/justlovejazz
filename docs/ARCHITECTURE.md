@@ -155,6 +155,9 @@ according to their current measured policy.
 - The menu template adapter resolves its nav bindings, preview synchronization
   and same-page hash targets within `#spa-content`; detached menu markup is not
   an application owner.
+- Fullscreen project navigation raises the shared `nav` demand after changing
+  the carousel target; demand-driven rendering must not rely on unrelated input
+  to advance a settled scene.
 - `core/` owns the framework-neutral contracts (route manifest, world slots,
   typed event ports, i18n, theme, motion policy) and imports no Vue or TresJS.
 - `sections/` owns the per-route content templates consumed by the route views;

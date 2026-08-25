@@ -77,6 +77,9 @@
   listeners or roving-tabindex state.
   Menu template bindings now resolve the active nav, preview elements and
   same-page hash targets inside that route root as well.
+  Fullscreen project Prev/Next now raises the shared `nav` demand after
+  changing the carousel target, preventing a settled renderer from waiting for
+  unrelated input before advancing the 3D selection.
 - Scoped bootstrap UIkit refresh to `#spa-content`, removing the remaining
   document-wide traversal from the application shell.
 - Established the staged Vue 3, Vue Router and TresJS migration architecture,

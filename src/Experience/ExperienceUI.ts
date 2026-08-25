@@ -194,6 +194,10 @@ export class ExperienceUI {
         if (!carousel) this.portfolio?.next()
       }
       this.onProjectSelect(this.activeProjectIndex + direction)
+      // Project navigation changes the carousel target while the demand-driven
+      // renderer may already be settled. Wake it explicitly so the target is
+      // advanced and the overlay/scene stay visually synchronized.
+      this.host.raise('nav')
     })
 
     // ── Close overlay on route change ──
