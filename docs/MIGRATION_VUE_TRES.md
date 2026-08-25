@@ -1044,6 +1044,18 @@ authoritative when `document.body.dataset.page` disagrees, and that a route
 change selects the new page configuration. DOM queries remain scoped to
 semantic section anchors and are intentionally unchanged. No route timing,
 
+#### Phase 3 CinematicNav page-port injection — 2026-08-25
+
+`CinematicNav` now receives a typed `PageId` getter from `ExperienceUI`
+instead of importing the DOM-backed route adapter. `_bindTrack()` and
+`_notifySection()` preserve their pull-based timing; only the route source
+changed. DOM section anchors and route/section event semantics remain
+unchanged.
+
+Focused tests prove injected page state wins when the DOM dataset disagrees
+and that `destroy()` unsubscribes the route listener. Rollback: pass the
+legacy adapter at the `ExperienceUI` boundary.
+
 #### Phase 3 bootstrap state machine slice — 2026-08-21; runtime consumer — 2026-08-24
 
 The explicit bootstrap state machine from the architecture target is now a
@@ -3008,7 +3020,7 @@ The following ledgers are updated in this document during implementation.
 | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | --------------- |
 | splash readiness/failure | `index.html`, `entry-app.ts` + `bootstrapStates.ts` pure contract (inert until consumed)                                                                                                                                          | inline shell + bootstrap state machine                                       | 3, 5            |
 | routes/hash/meta         | `routeManifest.ts`, `router.ts`, `pageMeta.ts`                                                                                                                                                                                    | route manifest + Vue Router                                                  | 3, 5            |
-| scene route-page reads   | `routePage.ts` remains the legacy adapter for `BakuCarousel.ts` and `CinematicNav.ts`; `SceneCoordinator`, `ExperienceUI`, `Experience` and `ContentReveal` receive the typed page getter at their owner boundaries               | typed route port owned by the app providers                                  | 3, 5            |
+| scene route-page reads   | `routePage.ts` remains the legacy adapter only for `BakuCarousel.ts`; `CinematicNav.ts`, `SceneCoordinator`, `ExperienceUI`, `Experience` and `ContentReveal` receive the typed page getter at their owner boundaries             | typed route port owned by the app providers                                  | 3, 5            |
 | six world slots          | `worldSlots.ts` tuple + strict `worldSlotIndex` (consumed by `WorldConfig.ts`, `SplashCube.ts`, `CinematicNav.ts` slot-index constants)                                                                                           | domain tuple + `WorldRoot`                                                   | 3, 7, 8         |
 | render demand            | `renderDemand.ts` pure decision contract (consumed: `Experience.update()` 1:1 swap — OR/breath/settle; `Experience._needsRender` stays the flag)                                                                                  | `RenderScheduler`                                                            | 3, 7            |
 | motion preference        | `motionPolicy.ts` typed port (11 consumers); `entry-shell.ts` dataset hook for E2E/CSS (dead `syncReducedMotionDataset` removed 2026-08-21)                                                                                       | typed preference state owned by the app providers                            | 3, 5            |

@@ -1,8 +1,12 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { CinematicNav } from '../UI/CinematicNav'
 import { eventBus } from '../core/EventBus'
+import type { PageId } from '../sections/_shared/constants'
 
 const MAIN_HEIGHT = 1000
+function createNav(): CinematicNav {
+  return new CinematicNav(6, () => (document.body.dataset.page ?? 'home') as PageId)
+}
 
 function createStoryTrack(page: 'home' | 'works' = 'home'): HTMLElement {
   document.body.dataset.page = page
@@ -60,7 +64,7 @@ describe('CinematicNav — vertical story and sheets', () => {
 
   it('maps the four public story chapters to native vertical positions', () => {
     const track = document.getElementById('spa-content')!
-    nav = new CinematicNav(6)
+    nav = createNav()
 
     nav.goToSection(3)
 
@@ -73,14 +77,14 @@ describe('CinematicNav — vertical story and sheets', () => {
 
   it('reports continuous normalized progress between story chapters', () => {
     const track = document.getElementById('spa-content')!
-    nav = new CinematicNav(6)
+    nav = createNav()
     track.scrollTop = MAIN_HEIGHT * 1.5
 
     expect(nav.getOverallProgress()).toBeCloseTo(0.5, 5)
   })
 
   it('opens the desktop/mobile Menu sheet and returns to the previous chapter', () => {
-    nav = new CinematicNav(6)
+    nav = createNav()
     const indices: number[] = []
     nav.onSectionChange((index) => indices.push(index))
     nav.goToSection(3)
@@ -98,7 +102,7 @@ describe('CinematicNav — vertical story and sheets', () => {
   })
 
   it('opens the Contact footer in the legacy runtime slot and closes explicitly', () => {
-    nav = new CinematicNav(6)
+    nav = createNav()
     nav.goToSection(4)
 
     nav.goToSection(0)
@@ -111,12 +115,37 @@ describe('CinematicNav — vertical story and sheets', () => {
   })
 
   it('resolves legacy hashes to the public Contact finale without exposing Lab', () => {
-    nav = new CinematicNav(6)
+    nav = createNav()
 
     nav.goToSectionByHash('#section-lab')
 
     expect(nav.getSectionIndex()).toBe(0)
     expect(document.body.dataset.cinematicSheet).toBe('footer')
+  })
+
+  it('uses the injected page getter when the DOM dataset disagrees', () => {
+    document.body.dataset.page = 'works'
+    nav = new CinematicNav(6, () => 'home')
+
+    nav.goToSection(3)
+
+    expect(document.querySelector('[data-section="works"]')).toBeTruthy()
+    expect(document.querySelector('[data-page-section="page-works"]')).toBeNull()
+  })
+
+  it('unsubscribes its route listener on destroy', () => {
+    const bindSpy = vi.spyOn(
+      CinematicNav.prototype as unknown as { _bindTrack: () => void },
+      '_bindTrack',
+    )
+    nav = createNav()
+    bindSpy.mockClear()
+
+    nav.dispose()
+    eventBus.emit('jlz:route-change', { page: 'works' })
+
+    expect(bindSpy).not.toHaveBeenCalled()
+    bindSpy.mockRestore()
   })
 })
 
@@ -136,7 +165,7 @@ describe('CinematicNav — content page track', () => {
   })
 
   it('preserves the active chapter when a compact Menu sheet is closed', () => {
-    nav = new CinematicNav(6)
+    nav = createNav()
     nav.goToSection(2)
     nav.goToSection(5)
 

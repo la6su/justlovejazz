@@ -6,7 +6,7 @@
 // without occupying a story frame.
 
 import { prefersReducedMotion } from '../core/motionPolicy'
-import { getCurrentPage } from '../core/routePage'
+import type { PageId } from '../sections/_shared/constants'
 import { worldSlotIndex, WORLD_SLOT_COUNT } from '../core/worldSlots'
 import {
   clampStoryPosition,
@@ -36,6 +36,7 @@ export class CinematicNav {
   public el: HTMLElement
 
   private _sectionCount: number
+  private _page: () => PageId
   private _track: HTMLElement | null = null
   private _mainSections: HTMLElement[] = []
   private _mainSection = FIRST_MAIN
@@ -63,7 +64,8 @@ export class CinematicNav {
    */
   onActivity: (() => void) | null = null
 
-  constructor(sectionCount: number) {
+  constructor(sectionCount: number, page: () => PageId) {
+    this._page = page
     // The six-slot model is the worldSlots contract, not a literal.
     this._sectionCount = Math.max(WORLD_SLOT_COUNT, sectionCount)
     this.el = this._buildNavigator()
@@ -163,7 +165,7 @@ export class CinematicNav {
       this._inactiveTimer = null
     }
 
-    const pageMode = getCurrentPage() !== 'home'
+    const pageMode = this._page() !== 'home'
     this._track = pageMode
       ? document.querySelector<HTMLElement>('#spa-content .jlz-page')
       : document.getElementById('spa-content')
@@ -261,7 +263,7 @@ export class CinematicNav {
     this._lastNotified = index
     this._onSectionChange?.(index)
 
-    if (getCurrentPage() !== 'home') {
+    if (this._page() !== 'home') {
       eventBus.emit('jlz:page-section-change', { index, count: this._sectionCount })
     }
   }

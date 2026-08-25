@@ -95,7 +95,7 @@ export class ExperienceUI {
     // CinematicNav — vertical native story track plus top/bottom sheets.
     // The section count is the worldSlots contract (single source of the
     // six-slot model), not a literal.
-    this.storyNav = new CinematicNav(WORLD_SLOT_COUNT)
+    this.storyNav = new CinematicNav(WORLD_SLOT_COUNT, this.host.page)
     this.storyPublisher = new StoryPublisher({
       side: 'center',
       progress: this.storyNav.getOverallProgress(),
