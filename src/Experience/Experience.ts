@@ -607,11 +607,18 @@ export class Experience {
         const stage = new ContactCyprusStage()
         this.contactCyprusStage = stage
         this.scene.add(stage)
-        return stage.load()
+        return stage.load().then(() => stage)
       })
-      .then(() => {
-        const stage = this.contactCyprusStage
-        if (!stage || request !== this._contactCyprusStageRequest) return
+      .then((stage) => {
+        if (!stage) return
+        if (request !== this._contactCyprusStageRequest || this.contactCyprusStage !== stage) {
+          // The route may have been disposed while Draco/GLTF was decoding.
+          // The owner field is already cleared, so dispose the late result
+          // explicitly to release resources created during the load.
+          stage.dispose()
+          stage.removeFromParent()
+          return
+        }
         stage.resize(window.innerWidth, window.innerHeight)
         stage.setCamera(this.camera.instance)
         stage.setActive(this.currentPage() === 'contact' && this._contactCyprusActive)
