@@ -37,6 +37,8 @@ Do not reopen completed migration phases. Current runtime contracts are in
   resize/DPR evidence is recorded under `docs/evidence/`.
 - [ ] **Finish the UIkit-first style ownership split** — keep component,
   layout and accessibility behavior single-owned by Vue/UIkit adapters.
+  - [x] Builder card base radius/shadow now come only from the UIkit card hook;
+    project Less retains only builder-specific surface and variant rules.
 - [ ] **Decide the fate of vendored `references/`** — archive or retain after
   licensing review; do not publish it accidentally.
 - [ ] **Configure production SPA/SSG hosting** — verify every route, blog

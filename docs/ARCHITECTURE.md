@@ -56,6 +56,8 @@ under `src/builder/`; the public builds do not import the editor graph.
   owner and one terminal cleanup path.
 - UIkit remains the layout/component/accessibility baseline where retained;
   project styles express the 3D shell and authored compositions.
+- Published Builder cards keep UIkit as the owner of base card geometry through
+  `.hook-card()`; builder-specific Less must not restate its radius or shadow.
 - No phase may weaken startup, frame-time, memory or delivery budgets merely
   to accommodate framework overhead.
 
