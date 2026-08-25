@@ -6,6 +6,10 @@
   continuation; stale entry-route promises cannot prewarm a newer stage or
   schedule an unnecessary render frame.
 
+- Contact section activation now validates the Cyprus request generation after
+  lazy initialization, preventing a stale route callback from activating a
+  newer stage or raising redundant render demand.
+
 - `useJlzPage` now disposes the module-level `WorkCards` registry during route
   owner teardown as well as before route replacement, releasing delegated grid
   listeners and pending card timers on full unmount.

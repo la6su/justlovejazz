@@ -213,6 +213,9 @@ according to their current measured policy.
   continuation. The entry bootstrap does not attach a second promise callback,
   so a stale Contact request cannot make a later stage visible or add an extra
   warm-up frame.
+- Contact section activation captures the same Cyprus request generation before
+  awaiting lazy initialization; a stale route callback cannot call `setActive`
+  or raise render demand on a newer stage.
 - CinematicNav resolves `#section-*` targets inside its currently bound route
   track, keeping detached and persistent-shell IDs outside story ownership.
 - `entry-app` owns the delayed splash title handoff; its timer is cancellable

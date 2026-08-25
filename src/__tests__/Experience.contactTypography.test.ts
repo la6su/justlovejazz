@@ -100,6 +100,61 @@ describe('Experience contact Cyprus lazy owner', () => {
     }
   })
 
+  it('does not let a stale section callback activate a newer stage', async () => {
+    const scene = new THREE.Scene()
+    const syncRouteVisuals = vi.fn()
+    const exp = Object.assign(Object.create(Experience.prototype), {
+      scene,
+      contactCyprusStage: null,
+      _contactCyprusStagePromise: null,
+      _contactCyprusStageRequest: 0,
+      _contactCyprusActive: false,
+      currentPage: () => 'contact',
+      camera: { instance: new THREE.PerspectiveCamera() },
+      coordinator: { syncRouteVisuals },
+    } as unknown as Partial<Experience>) as Experience
+    let oldResolve!: () => void
+    let newResolve!: () => void
+    let loadCount = 0
+    const loadSpy = vi.spyOn(ContactCyprusStage.prototype, 'load').mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          if (loadCount++ === 0) oldResolve = resolve
+          else newResolve = resolve
+        }),
+    )
+    const setActiveSpy = vi.spyOn(ContactCyprusStage.prototype, 'setActive')
+
+    try {
+      exp.setContactCyprusStageSection(2)
+      await vi.dynamicImportSettled()
+      exp.disposeContactCyprusStage()
+
+      exp.setContactCyprusStageSection(2)
+      await vi.dynamicImportSettled()
+      setActiveSpy.mockClear()
+      syncRouteVisuals.mockClear()
+
+      oldResolve()
+      await Promise.resolve()
+      await Promise.resolve()
+      expect(setActiveSpy).not.toHaveBeenCalled()
+      expect(syncRouteVisuals).not.toHaveBeenCalled()
+
+      newResolve()
+      await (exp as unknown as { _contactCyprusStagePromise: Promise<void> })
+        ._contactCyprusStagePromise
+      await Promise.resolve()
+      await Promise.resolve()
+      expect(setActiveSpy).toHaveBeenCalledTimes(1)
+      expect(syncRouteVisuals).toHaveBeenCalledTimes(1)
+    } finally {
+      exp.disposeContactCyprusStage()
+      loadSpy.mockRestore()
+      setActiveSpy.mockRestore()
+    }
+  })
+
   it('invalidates a pending load when the owner is disposed', async () => {
     const scene = new THREE.Scene()
     const exp = Object.assign(Object.create(Experience.prototype), {

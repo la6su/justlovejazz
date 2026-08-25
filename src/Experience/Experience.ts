@@ -682,9 +682,10 @@ export class Experience {
     this._contactCyprusActive = this.currentPage() === 'contact' && index === 2
     this.contactCyprusStage?.setActive(this._contactCyprusActive)
     if (this._contactCyprusActive && !this.contactCyprusStage) {
-      void this.ensureContactCyprusStageInitialized().then(() => {
-        if (!this._contactCyprusActive) return
-        this.contactCyprusStage?.setActive(true)
+      const initialization = this.ensureContactCyprusStageInitialized()
+      const request = this._contactCyprusStageRequest
+      void initialization.then(() => {
+        if (request !== this._contactCyprusStageRequest || !this._contactCyprusActive) return
         this.coordinator.syncRouteVisuals()
       })
     }
