@@ -55,8 +55,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
   budget excludes only this measured route-local asset.
 - [ ] **Reduce the shared Three.js vendor below budget** — the current
   production graph is 380.35 kB gzip against the 350 kB gate after the
-  route-local split; inspect named imports and WebGPU/TSL ownership before
-  considering any budget change.
+  route-local split. A source-map audit confirms that `three.module.js` is
+  retained by TresJS's static `WebGLRenderer` import; an exact `three →
+  three/webgpu` alias fails the production build, so do not remove this copy
+  until a tested TresJS compatibility path exists.
 - [x] **Make UIMenu teardown deterministic** — the persistent shell now uses
   one delegated click owner and removes it explicitly instead of retaining
   five anonymous control listeners until DOM garbage collection.
