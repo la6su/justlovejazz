@@ -19,7 +19,7 @@
 // live here); the string-template adapter (`PageView.vue`) and the legacy
 // router were removed in the Phase 5 cleanup.
 
-import { onMounted } from 'vue'
+import { onBeforeUnmount, onMounted } from 'vue'
 import UIkit from 'uikit'
 
 import { eventBus } from '../core/EventBus'
@@ -40,6 +40,17 @@ export function uiKitUpdate(el: Element): void {
 let mountedOnce = false
 
 export function useJlzPage(page: PageId, rootEl: () => HTMLElement | null): void {
+  let idleHandle: number | null = null
+  let mounted = false
+
+  onBeforeUnmount(() => {
+    mounted = false
+    if (idleHandle !== null && 'cancelIdleCallback' in window) {
+      cancelIdleCallback(idleHandle)
+      idleHandle = null
+    }
+  })
+
   // The legacy `renderView` post-render sequence, verbatim.
   function postRender(): void {
     const el = rootEl()
@@ -65,7 +76,10 @@ export function useJlzPage(page: PageId, rootEl: () => HTMLElement | null): void
     // Typed EventBus emission bridges to window automatically.
     eventBus.emit('jlz:route-change', { page })
     if ('requestIdleCallback' in window) {
-      requestIdleCallback(() => uiKitUpdate(el), { timeout: 100 })
+      idleHandle = requestIdleCallback(() => {
+        idleHandle = null
+        if (mounted && rootEl() === el) uiKitUpdate(el)
+      }, { timeout: 100 })
     }
   }
 
@@ -75,6 +89,7 @@ export function useJlzPage(page: PageId, rootEl: () => HTMLElement | null): void
     // mount — the prerendered home has no cards, this is a no-op there).
     disposeWorkCards()
     setCurrentPage(page)
+    mounted = true
     postRender()
     mountedOnce = true
   })
