@@ -82,9 +82,14 @@ export class WorksPlaneStage extends THREE.Group {
     if (this._initialized) return
     this._initialized = true
 
-    const textures = await Promise.all(
-      PROJECTS.map((project) => loadCaseTexture(project.textureUrl)),
-    )
+    let textures: THREE.Texture[]
+    try {
+      textures = await Promise.all(PROJECTS.map((project) => loadCaseTexture(project.textureUrl)))
+    } catch (error) {
+      PROJECTS.forEach((project) => releaseCaseTexture(project.textureUrl))
+      this._initialized = false
+      throw error
+    }
 
     textures.forEach((texture, index) => {
       const plane = new CasePlane(texture)

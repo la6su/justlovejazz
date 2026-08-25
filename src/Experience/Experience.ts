@@ -50,6 +50,7 @@ import { ContactTextStage } from './World/ContactTextStage'
 import type { ContactTypographyStage } from './World/ContactTypographyStage'
 import type { ContactCyprusStage } from './World/ContactCyprusStage'
 import { getLabExperiment, type LabExperimentObject } from './Lab/manifest'
+import { disposeAllCaseTextures } from './World/caseTexture'
 // DissolveOverlay removed — cover transition in ProjectDetail replaces it.
 
 /**
@@ -1516,6 +1517,9 @@ export class Experience {
     // disposal ordering + Works particle texture live in the owner).
     this.sectionGroups?.dispose()
     this.coordinator.dispose()
+    // Last-resort sweep for cold-cache failures and in-flight loads that had
+    // no owner card yet. In-flight entries self-dispose when they settle.
+    disposeAllCaseTextures()
     this.bus.cancelAll()
     this.devPanel?.dispose()
     delete (window as unknown as { __jlzRuntimeSnapshot?: () => unknown }).__jlzRuntimeSnapshot

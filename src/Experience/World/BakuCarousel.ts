@@ -133,7 +133,14 @@ export class BakuCarousel extends THREE.Group {
     // Load only the UNIQUE project textures once (4, not 6) — cards reference
     // them by index, avoiding duplicate GPU textures + HTTP requests.
     const uniqueUrls = [...new Set(CARD_TEXTURE_URLS)]
-    const uniqueTextures = await Promise.all(uniqueUrls.map((url) => loadCaseTexture(url)))
+    let uniqueTextures: THREE.Texture[]
+    try {
+      uniqueTextures = await Promise.all(uniqueUrls.map((url) => loadCaseTexture(url)))
+    } catch (error) {
+      uniqueUrls.forEach((url) => releaseCaseTexture(url))
+      this.initialized = false
+      throw error
+    }
     if (this._disposed) {
       // The owner may have been torn down while textures were decoding. The
       // cards do not exist yet, so release the cache references explicitly.
