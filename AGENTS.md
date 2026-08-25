@@ -5,8 +5,8 @@ and TresJS over one Three.js `WebGPURenderer` (TSL NodeMaterials, UIkit 3,
 Bun). The renderer runs `WebGPUBackend` when hardware WebGPU is usable and
 `WebGLBackend` through the automatic software-adapter policy; the classic
 `WebGLRenderer` path was removed in Phase 10 (2026-08-22). The phased
-transition that shipped this topology and its ADRs are recorded in
-[docs/MIGRATION_VUE_TRES.md](docs/MIGRATION_VUE_TRES.md). Product copy is
+transition that shipped this topology and its ADRs are recorded in the
+[completed migration record](docs/archive/MIGRATION_VUE_TRES.md). Product copy is
 Russian/English; code, commits and technical documentation are English.
 
 ## Working principle
@@ -56,8 +56,8 @@ in a dirty tree and keep each change to one coherent outcome.
   non-obvious runtime contracts.
 - [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) — setup, checks and budgets.
 - [docs/BRAND.md](docs/BRAND.md) — visual and editorial direction.
-- [docs/MIGRATION_VUE_TRES.md](docs/MIGRATION_VUE_TRES.md) — phased migration,
-  gates, rollback points and removal ledger.
+- [docs/archive/MIGRATION_VUE_TRES.md](docs/archive/MIGRATION_VUE_TRES.md) —
+  completed migration, gates, rollback points and removal ledger (historical).
 - [docs/adr/README.md](docs/adr/README.md) — accepted and proposed architecture
   decisions.
 - [skills/justlovejazz-ui/SKILL.md](skills/justlovejazz-ui/SKILL.md) — load for

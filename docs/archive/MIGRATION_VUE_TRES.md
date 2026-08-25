@@ -1,4 +1,10 @@
-# Vue and TresJS migration
+# Vue and TresJS migration — completed record
+
+> Historical record. The production migration completed on 2026-08-22
+> (Phase 10). This file is retained for decisions, acceptance evidence and
+> rollback history; it is not an active task queue. Current runtime contracts
+> live in `docs/ARCHITECTURE.md`, verification in `docs/DEVELOPMENT.md`, and
+> open work only in `NEXT.md`.
 
 This document is the executable plan for moving the whole JUSTLOVEJAZZ
 codebase to Vue 3, Vue Router and TresJS while preserving the product and

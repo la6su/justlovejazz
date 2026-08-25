@@ -5,7 +5,7 @@ Keep each fact with the source that owns it:
 | Source                                             | Purpose                                      |
 | -------------------------------------------------- | -------------------------------------------- |
 | [ARCHITECTURE.md](ARCHITECTURE.md)                 | Stable boundaries and runtime contracts      |
-| [MIGRATION_VUE_TRES.md](MIGRATION_VUE_TRES.md)     | Master migration plan and gates              |
+| [archive/MIGRATION_VUE_TRES.md](archive/MIGRATION_VUE_TRES.md) | Completed migration record and acceptance history |
 | [adr/](adr/)                                       | Durable architecture decisions               |
 | [DEVELOPMENT.md](DEVELOPMENT.md)                   | Setup, verification and performance budgets  |
 | [PERFORMANCE_BASELINE.md](PERFORMANCE_BASELINE.md) | Comparable delivery/runtime evidence         |
@@ -14,6 +14,10 @@ Keep each fact with the source that owns it:
 | [CHANGELOG.md](CHANGELOG.md)                       | Released user-visible or operational changes |
 | [../NEXT.md](../NEXT.md)                           | Open outcomes                                |
 | [../skills](../skills)                             | Procedures loaded for matching tasks         |
+
+`docs/` is the project reference layer. Agent-operation procedures live in
+the repository skills and the private homelab runbooks, not in the migration
+record. Historical evidence is preserved under `archive/` and `evidence/`.
 
 Current source, configuration and tests lead when documentation drifts.
 Accepted ADRs explain why durable boundaries exist; `NEXT.md` is the only
