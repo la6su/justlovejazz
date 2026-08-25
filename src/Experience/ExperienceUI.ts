@@ -27,6 +27,7 @@ import { eventBus } from '../core/EventBus'
 import { isCurrentRouteContinuation } from '../core/routeContinuation'
 import type { Camera } from './Camera'
 import type { FrameReason } from '../core/RenderScheduler'
+import { PROJECTS } from '../Data/Projects'
 
 /** The single Works story frame — the six-slot contract, not a literal. */
 const WORKS_SLOT_INDEX = worldSlotIndex('works')!
@@ -374,8 +375,10 @@ export class ExperienceUI {
       if (!this.portfolio && !ready()) return
     }
 
-    const { PROJECTS } = await import('../Data/Projects')
-    // Re-check after async import — page may have changed during await.
+    // Re-check after the readiness wait — page may have changed while the
+    // scene was becoming available. Projects are already part of the static
+    // scene graph through the carousel and Works stage, so a dynamic import
+    // here cannot create a separate chunk.
     if (this._destroyed || generation !== this._routeGeneration || this.portfolio) return
 
     this.portfolio = createWorksPortfolio(PROJECTS, (idx) => {

@@ -47,6 +47,8 @@ Do not reopen completed migration phases. Current runtime contracts are in
   the deferred scene-readiness frame and releases its pending continuation.
 - [x] **Cancel stale CinematicNav frames** — route track rebinding now clears
   pending scroll/focus RAFs before attaching the new route track.
+- [x] **Remove ineffective Projects dynamic import** — ExperienceUI now uses
+  the existing static project-data owner instead of a non-splitting import.
 
 ## Deferred product queue
 
