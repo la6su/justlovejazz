@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createSplashRevealTimer } from '../entry-app'
+import { createSplashRevealTimer, createStartGate } from '../entry-app'
 
 describe('entry-app splash reveal lifecycle', () => {
   afterEach(() => {
@@ -30,5 +30,21 @@ describe('entry-app splash reveal lifecycle', () => {
     vi.advanceTimersByTime(1)
 
     expect(reveal).toHaveBeenCalledOnce()
+  })
+
+  it('coalesces concurrent starts and permits retry after rejection', async () => {
+    const start = vi.fn()
+      .mockRejectedValueOnce(new Error('bootstrap failed'))
+      .mockResolvedValue(undefined)
+    const gate = createStartGate(start)
+
+    const first = gate.run()
+    expect(gate.run()).toBe(first)
+    await expect(first).rejects.toThrow('bootstrap failed')
+
+    const second = gate.run()
+    expect(gate.run()).toBe(second)
+    await second
+    expect(start).toHaveBeenCalledTimes(2)
   })
 })

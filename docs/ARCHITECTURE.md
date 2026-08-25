@@ -165,6 +165,11 @@ according to their current measured policy.
 - `entry-app` owns the delayed splash title handoff; its timer is cancellable
   and coalesced across Enter/retry/failure transitions before title observation
   begins.
+- `entry-app` exposes one start gate: concurrent or repeated `startApp()` calls
+  share the active bootstrap attempt. A rejected attempt resets the gate for a
+  later retry, and `resetBootstrapBindings()` aborts DOM listeners, event-bus
+  subscriptions, watchdogs, splash timers and title observation before the
+  next attempt binds them again.
 - `RouteTransition` is cancelled from the Vue Router error port; failed async
   navigation must invalidate pending reveal work and return the transition
   surface to `idle`.

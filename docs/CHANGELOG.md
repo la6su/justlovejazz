@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Application bootstrap now has a single-flight start gate. Concurrent
+  `startApp()` calls cannot create duplicate Vue/scene owners, and failed
+  attempts reset cleanly for retry after their listeners, timers and observers
+  are released.
+
 - Hardened async lifecycle ownership across renderer recovery, route/carousel
   wakes, UIkit hydration, overlay/content/submenu reveals and detached
   `NoiseText`/`BlurFade` animations; lazy portfolio initialization is now

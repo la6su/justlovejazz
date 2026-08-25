@@ -123,6 +123,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Clear stale route reveal timers** — RouteTransition now cancels the
   pending 420 ms reveal timer on cancellation or replacement instead of merely
   ignoring its callback after sequence invalidation.
+- [x] **Gate repeated application starts** — concurrent `startApp()` calls now
+  share one bootstrap promise; a rejected attempt resets the gate for an
+  explicit retry, while existing listeners, timers and observers are cleared
+  before rebinding.
 
 ## Deferred product queue
 

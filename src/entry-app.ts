@@ -29,7 +29,7 @@ function initSoundToggle(): void {
     soundOn = !soundOn
     setSoundMutedPreference(!soundOn)
     update()
-  })
+  }, { signal: _bootstrapAbort.signal })
 }
 
 // ── Config: language toggle EN/RU ──
@@ -71,7 +71,7 @@ function initLangToggle(): void {
   btn.addEventListener('click', () => {
     toggleLang()
     update()
-  })
+  }, { signal: _bootstrapAbort.signal })
 }
 
 // ── Enter button click is wired by inline script in index.html ──
@@ -132,6 +132,19 @@ function updateLoaderProgress(pct: number): void {
 
 let _bootstrapState: BootstrapState = INITIAL_BOOTSTRAP_STATE
 let _readyWatchdog: ReturnType<typeof setTimeout> | null = null
+let _bootstrapAbort = new AbortController()
+let _bootstrapUnsubs: Array<() => void> = []
+
+function resetBootstrapBindings(): void {
+  _bootstrapUnsubs.forEach((unsubscribe) => unsubscribe())
+  _bootstrapUnsubs = []
+  _bootstrapAbort.abort()
+  _bootstrapAbort = new AbortController()
+  clearReadyWatchdog()
+  clearSplashRevealTimer()
+  _titleObserver?.disconnect()
+  _titleObserver = null
+}
 
 function clearReadyWatchdog(): void {
   if (_readyWatchdog !== null) {
@@ -161,6 +174,33 @@ export function createSplashRevealTimer(onReveal: () => void): {
       }, delayMs)
     },
     clear,
+  }
+}
+
+/**
+ * Coalesce concurrent starts while allowing a rejected attempt to be retried.
+ * Keeping this small and generic makes the bootstrap ownership contract
+ * testable without importing the DOM-heavy entrypoint in a browser harness.
+ */
+export function createStartGate<T>(start: () => Promise<T>): {
+  run: () => Promise<T>
+  reset: () => void
+} {
+  let pending: Promise<T> | null = null
+  return {
+    run: () => {
+      if (pending) return pending
+      pending = Promise.resolve()
+        .then(start)
+        .catch((error) => {
+          pending = null
+          throw error
+        })
+      return pending
+    },
+    reset: () => {
+      pending = null
+    },
   }
 }
 
@@ -307,9 +347,8 @@ async function boot(): Promise<void> {
 
 }
 
-export async function startApp(): Promise<void> {
-  clearReadyWatchdog()
-  clearSplashRevealTimer()
+async function startAppOnce(): Promise<void> {
+  resetBootstrapBindings()
   // Init splash config toggles FIRST — instant, no dependencies.
   // These work during loading, before three.js finishes.
   initSoundToggle()
@@ -346,37 +385,37 @@ export async function startApp(): Promise<void> {
 
   // ── Works page 3D cards: bind tilt + click on every route change ──
   // initWorkCards() is idempotent (skips already-bound cards).
-  eventBus.on('jlz:route-change', () => {
+  _bootstrapUnsubs.push(eventBus.on('jlz:route-change', () => {
     initWorkCards()
-  })
+  }))
   initWorkCards()
 
   // jlz:webgl-ready fires when Experience.init() completes — show Enter button.
   // Animations (BlurFade + NoiseText) are DELAYED until jlz:splash-entered
   // (Enter click) so user sees them as 3D scene reveals, not behind splash.
-  eventBus.on('jlz:webgl-ready', () => {
+  _bootstrapUnsubs.push(eventBus.on('jlz:webgl-ready', () => {
     clearReadyWatchdog()
     clearSplashRevealTimer()
     showEnterButton()
-  })
+  }))
 
   // jlz:webgl-failed fires if Experience.init() throws — show an error message
   // instead of the Enter button, so the user knows the 3D failed (not just slow).
-  eventBus.on('jlz:webgl-failed', () => {
+  _bootstrapUnsubs.push(eventBus.on('jlz:webgl-failed', () => {
     clearReadyWatchdog()
     clearSplashRevealTimer()
     if (_bootstrapState !== 'failed') transitionBootstrap('failed')
     showLoadError()
-  })
+  }))
 
   // jlz:splash-entered fires when user clicks Enter — splash starts fading.
   // Let the active title answer the opening curtain, rather than animating
   // every title in the document behind the splash.
-  eventBus.on('jlz:splash-entered', () => {
+  _bootstrapUnsubs.push(eventBus.on('jlz:splash-entered', () => {
     transitionBootstrap('entered')
     // Let the curtain begin to split, then reveal the title inside that gap.
     scheduleSplashRevealTimer(90)
-  })
+  }))
 
   // Fallback: if jlz:webgl-ready doesn't fire within 60s (Experience.init
   // crashed or hung), show a load error. The Enter button stays DISABLED
@@ -393,7 +432,7 @@ export async function startApp(): Promise<void> {
   }, 60000)
 
   // ── Animate titles on section change (home: data-section) ──
-  eventBus.on('jlz:section-change', (payload) => {
+  _bootstrapUnsubs.push(eventBus.on('jlz:section-change', (payload) => {
     if (!payload?.sectionId) return
     if (prefersReducedMotion()) return
     const section = contentRoot().querySelector(`[data-section="${payload.sectionId}"]`)
@@ -403,10 +442,10 @@ export async function startApp(): Promise<void> {
       const text = title.textContent?.trim() || ''
       if (text) BlurFade.for(title).show(1.5)
     }
-  })
+  }))
 
   // ── Animate titles on page section change (content: data-page-section) ──
-  eventBus.on('jlz:page-section-change', ({ index }) => {
+  _bootstrapUnsubs.push(eventBus.on('jlz:page-section-change', ({ index }) => {
     if (prefersReducedMotion()) return
     const sections = contentRoot().querySelectorAll<HTMLElement>('[data-page-section]')
     const el = sections[index]
@@ -423,9 +462,18 @@ export async function startApp(): Promise<void> {
       const text = eyebrow.getAttribute('data-eyebrow-text') ?? eyebrow.textContent ?? ''
       if (text) NoiseText.for(eyebrow).show(0.6, text)
     }
-  })
+  }))
 
-  void boot()
+  await boot()
+  if (_bootstrapState === 'failed') {
+    throw new Error('Application bootstrap failed')
+  }
+}
+
+const startGate = createStartGate(startAppOnce)
+
+export function startApp(): Promise<void> {
+  return startGate.run()
 }
 
 /**
