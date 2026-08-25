@@ -93,6 +93,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Complete route-content DOM scoping** — bootstrap section/page-section
   signals and title observers now use the same route root; splash controls and
   persistent-shell selectors remain intentionally global.
+- [x] **Scope WorkCards to the route root** — card discovery, delegated grid
+  owners and roving tabindex now stay inside `#spa-content`; detached and
+  persistent-shell grids remain outside the route owner.
 
 ## Deferred product queue
 

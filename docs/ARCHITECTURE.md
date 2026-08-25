@@ -149,6 +149,9 @@ according to their current measured policy.
   document fallback exists only before the Vue route shell is mounted.
 - Bootstrap's route-content observers follow the same boundary; only splash and
   persistent-shell controls intentionally resolve from the document root.
+- `WorkCards` discovers cards and owns delegated grid listeners only within
+  `#spa-content`; detached and persistent-shell grids remain outside that route
+  owner.
 - `core/` owns the framework-neutral contracts (route manifest, world slots,
   typed event ports, i18n, theme, motion policy) and imports no Vue or TresJS.
 - `sections/` owns the per-route content templates consumed by the route views;

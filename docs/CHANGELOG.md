@@ -72,6 +72,9 @@
   Bootstrap section/page-section signals and title observers now use that same
   route root, while splash and persistent-shell controls remain global by
   ownership.
+  WorkCards now discovers cards and delegated grid owners inside that route
+  root, preventing detached or persistent-shell grids from receiving route
+  listeners or roving-tabindex state.
 - Scoped bootstrap UIkit refresh to `#spa-content`, removing the remaining
   document-wide traversal from the application shell.
 - Established the staged Vue 3, Vue Router and TresJS migration architecture,

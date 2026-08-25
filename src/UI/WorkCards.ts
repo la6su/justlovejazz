@@ -23,6 +23,10 @@ const cardStates = new WeakMap<HTMLElement, CardState>()
 const gridListeners = new Map<HTMLElement, (event: MouseEvent) => void>()
 let sectionChangeUnsub: (() => void) | null = null
 
+function contentRoot(): ParentNode {
+  return document.getElementById('spa-content') ?? document
+}
+
 /** Open one card while preserving the same debounce and visual handoff. */
 function openCard(state: CardState): void {
   const idx = Number(state.el.dataset.projectIdx)
@@ -66,7 +70,7 @@ function bindGrid(grid: HTMLElement): void {
 
 /** All card grids on the page, in DOM order (matches section order). */
 function grids(): HTMLElement[] {
-  return Array.from(document.querySelectorAll<HTMLElement>('.jlz-works-grid'))
+  return Array.from(contentRoot().querySelectorAll<HTMLElement>('.jlz-works-grid'))
 }
 
 /** Apply roving tabindex to a single grid: first card = 0, rest = -1. */
@@ -85,7 +89,7 @@ function onPageSectionChange(): void {
 /** Scan the document for .jlz-work-card and bind any unbound ones.
  *  Called on jlz:route-change (works page render). Idempotent. */
 export function initWorkCards(): void {
-  const els = document.querySelectorAll<HTMLElement>('.jlz-work-card')
+  const els = contentRoot().querySelectorAll<HTMLElement>('.jlz-work-card')
   for (const el of els) bindCard(el)
 
   grids().forEach((grid) => {
