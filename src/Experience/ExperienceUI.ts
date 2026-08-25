@@ -15,6 +15,7 @@ import { CinematicNav } from '../UI/CinematicNav'
 import { StoryController, storySideForSlot } from '../core/storyController'
 import { UIMenu } from '../UI/UIMenu'
 import { FullscreenOverlay } from '../UI/FullscreenOverlay'
+import { adoptResource } from '../core/overlayOwnership'
 import type { UIManager } from '../UI/UIManager'
 import type { SceneCoordinator } from './SceneCoordinator'
 import type { PageId } from '../sections/_shared/constants'
@@ -74,6 +75,7 @@ export class ExperienceUI {
   portfolio: WorksPortfolio | null = null
   /** The fullscreen overlay (UIManager may own one; adopt or create). */
   overlay: FullscreenOverlay | null = null
+  private ownsOverlay = false
   portfolioInitialized = false
   private activeProjectIndex = 0
 
@@ -319,7 +321,11 @@ export class ExperienceUI {
     // FullscreenOverlay is normally created by UIManager. Project navigation
     // is routed through `jlz:project-navigate` so arrows and keyboard use the
     // same owner even if the overlay was created before this async portfolio.
-    this.overlay ??= this.host.ui().overlay ?? new FullscreenOverlay()
+    if (!this.overlay) {
+      const adopted = adoptResource(this.host.ui().overlay, () => new FullscreenOverlay())
+      this.overlay = adopted.value
+      this.ownsOverlay = adopted.owned
+    }
 
     // Wire BakuCarousel card click → open fullscreen overlay.
     // All opens use the unified DOM cinematic reveal (no 3D plane handoff).
@@ -410,8 +416,9 @@ export class ExperienceUI {
       this._worksPlaneTapHandler = null
     }
     this.portfolio = null
-    this.overlay?.dispose()
+    if (this.ownsOverlay) this.overlay?.dispose()
     this.overlay = null
+    this.ownsOverlay = false
     this.uiMenu?.dispose()
     this.uiMenu = null
     this.storyNav?.dispose()

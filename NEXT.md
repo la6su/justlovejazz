@@ -227,6 +227,10 @@ do not start a phase whose entry gate has not passed.
       SectionGroups factory, preserving pull timing while making the scene
       boundary explicit.
 
+      Phase 5/7 overlay ownership slice landed 2026-08-25: `ExperienceUI`
+      now tracks whether it adopted the shared `UIManager` overlay or created
+      a local one, so teardown disposes only resources it owns.
+
       Phase 5/7 StoryController slice landed 2026-08-25: the
       framework-neutral `src/core/storyController.ts` now owns translation
       from the typed native navigation source to `StoryPublisher`; continuous

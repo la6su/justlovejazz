@@ -3089,17 +3089,25 @@ The following ledgers are updated in this document during implementation.
 
 #### Phase 5/7 StoryPublisher compatibility bridge — 2026-08-24
 
-`src/core/storyPublisher.ts` is a framework-neutral, deduplicating publisher
-for the readonly `StoryState` contract. `ExperienceUI` creates and disposes it
-alongside `CinematicNav`; the existing native scroll callbacks publish snapshots
-without replacing the scroll owner, `Experience.update()` pull path, scene
-calculation, render loop, or timing. Vue, TresJS, Three.js and DOM imports are
-intentionally absent from the publisher. The full publisher-driven
-StoryController migration remains a later Phase 5/7 gate.
+`src/core/storyPublisher.ts` remains the framework-neutral, deduplicating
+publisher for the readonly `StoryState` contract. The follow-up
+`src/core/storyController.ts` bridge now translates the typed native source and
+publishes continuous progress without replacing the scroll owner,
+`Experience.update()` pull path, scene calculation, render loop, or timing.
+Vue, TresJS, Three.js and DOM imports are intentionally absent from both core
+contracts.
 
 Acceptance evidence: `storyPublisher.test.ts` covers initial emission,
 deduplication, center/footer/menu transitions, subscription order,
 unsubscribe and disposal; existing CinematicNav tests remain unchanged.
+
+#### Phase 5/7 overlay ownership slice — 2026-08-25
+
+`ExperienceUI` now records whether its `FullscreenOverlay` was adopted from
+`UIManager` or created locally. Teardown disposes only locally-created
+instances; `UIManager` remains the owner of its shared overlay. The pure
+`adoptResource` contract and two unit tests lock this ownership rule and avoid
+double-disposal during root teardown.
 
 #### Phase 8 lazy Contact/Typography owner — 2026-08-24
 
