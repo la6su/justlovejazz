@@ -4,8 +4,11 @@ import { BlurFade } from '../Experience/BlurFade'
 
 type OverlayInternals = {
   container: HTMLDivElement
+  video: HTMLVideoElement
   titleEl: HTMLElement
   _applyOptions: (options: OverlayOptions) => void
+  revealVideoAfterFirstFrame: () => void
+  _videoRevealFrame: number | null
   dispose: () => void
 }
 
@@ -96,6 +99,27 @@ describe('FullscreenOverlay close ownership', () => {
     } finally {
       raf.mockRestore()
       overlay.dispose()
+    }
+  })
+
+  it('cancels the video poster fallback frames during disposal', () => {
+    const callbacks: FrameRequestCallback[] = []
+    const raf = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      callbacks.push(callback)
+      return callbacks.length
+    })
+    const cancel = vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => undefined)
+    const overlay = new FullscreenOverlay() as unknown as OverlayInternals
+
+    try {
+      overlay.revealVideoAfterFirstFrame()
+      expect(callbacks).toHaveLength(1)
+      overlay.dispose()
+      expect(overlay._videoRevealFrame).toBeNull()
+      expect(cancel).toHaveBeenCalledWith(1)
+    } finally {
+      raf.mockRestore()
+      cancel.mockRestore()
     }
   })
 })

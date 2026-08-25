@@ -58,6 +58,9 @@
   A scoped `three` compatibility entry now routes bare imports through
   `three/webgpu` while preserving TresJS's unreachable `WebGLRenderer` symbol;
   shared Three delivery fell to 298.43 kB gzip and the delivery budget passes.
+  FullscreenOverlay now cancels first-frame poster reveal callbacks during
+  media replacement, modal hide and disposal instead of relying only on a
+  generation guard.
 - Scoped bootstrap UIkit refresh to `#spa-content`, removing the remaining
   document-wide traversal from the application shell.
 - Established the staged Vue 3, Vue Router and TresJS migration architecture,

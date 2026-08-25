@@ -57,6 +57,8 @@ export class FullscreenOverlay {
   private _autoplayTimer: ReturnType<typeof setTimeout> | null = null
   private _enterFallback: number | null = null
   private _shownRevealFrame: number | null = null
+  private _videoRevealFrame: number | null = null
+  private _videoFrameCallbackId: number | null = null
   private _posterRequestId = 0
   private _posterUrl: string | null = null
   private _mediaGeneration = 0
@@ -277,6 +279,7 @@ export class FullscreenOverlay {
         this._shownRevealFrame = null
       }
       this._mediaGeneration += 1
+      this._cancelVideoReveal()
       if (this._autoplayTimer) {
         clearTimeout(this._autoplayTimer)
         this._autoplayTimer = null
@@ -364,21 +367,45 @@ export class FullscreenOverlay {
    * the handoff never exposes the video element's black backing surface.
    */
   private revealVideoAfterFirstFrame(): void {
+    this._cancelVideoReveal()
     const generation = this._mediaGeneration
     const reveal = () => {
+      this._videoFrameCallbackId = null
       if (generation !== this._mediaGeneration) return
       this.posterEl.style.opacity = '0'
     }
     const videoWithFrameCallback = this.video as HTMLVideoElement & {
-      requestVideoFrameCallback?: (callback: () => void) => number
+      requestVideoFrameCallback?: (callback: VideoFrameRequestCallback) => number
+      cancelVideoFrameCallback?: (handle: number) => void
     }
 
     if (videoWithFrameCallback.requestVideoFrameCallback) {
-      videoWithFrameCallback.requestVideoFrameCallback(reveal)
+      this._videoFrameCallbackId = videoWithFrameCallback.requestVideoFrameCallback(reveal)
       return
     }
 
-    requestAnimationFrame(() => requestAnimationFrame(reveal))
+    this._videoRevealFrame = requestAnimationFrame(() => {
+      this._videoRevealFrame = null
+      if (generation !== this._mediaGeneration) return
+      this._videoRevealFrame = requestAnimationFrame(() => {
+        this._videoRevealFrame = null
+        reveal()
+      })
+    })
+  }
+
+  private _cancelVideoReveal(): void {
+    if (this._videoRevealFrame !== null) {
+      cancelAnimationFrame(this._videoRevealFrame)
+      this._videoRevealFrame = null
+    }
+    if (this._videoFrameCallbackId !== null) {
+      const video = this.video as HTMLVideoElement & {
+        cancelVideoFrameCallback?: (handle: number) => void
+      }
+      video.cancelVideoFrameCallback?.(this._videoFrameCallbackId)
+      this._videoFrameCallbackId = null
+    }
   }
 
   /** Open overlay with given options. */
@@ -416,6 +443,7 @@ export class FullscreenOverlay {
 
   /** Apply overlay options to the DOM (shared by open + preload). */
   private _applyOptions(opts: OverlayOptions): void {
+    this._cancelVideoReveal()
     this._mediaGeneration += 1
     // Store the per-open close callback (called in the 'hide' handler).
     this._perOpenOnClose = opts.onClose ?? null
@@ -532,6 +560,7 @@ export class FullscreenOverlay {
     this._listeners.abort()
     this._posterRequestId += 1
     this._mediaGeneration += 1
+    this._cancelVideoReveal()
     if (this._autoplayTimer) {
       clearTimeout(this._autoplayTimer)
       this._autoplayTimer = null

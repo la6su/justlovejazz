@@ -77,6 +77,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
   eager landing target, while the five secondary Vue route views use explicit
   route-level imports; the measured `app` chunk fell from 10.00 kB to 3.37 kB
   gzip without changing the persistent Tres scene owner.
+- [x] **Cancel video poster reveal callbacks** — `FullscreenOverlay` now owns
+  and cancels its nested first-frame RAF or `requestVideoFrameCallback` during
+  media replacement, modal hide and disposal.
 
 ## Deferred product queue
 
