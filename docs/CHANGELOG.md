@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Route-menu lifecycle now owns and cancels pending two-frame visibility
+  reconciliation and app-owned listeners before Vue removes the route root;
+  detached menu DOM no longer leaves avoidable frame work behind.
+
 - Application bootstrap now has a single-flight start gate. Concurrent
   `startApp()` calls cannot create duplicate Vue/scene owners, and failed
   attempts reset cleanly for retry after their listeners, timers and observers

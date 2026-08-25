@@ -170,6 +170,10 @@ according to their current measured policy.
   later retry, and `resetBootstrapBindings()` aborts DOM listeners, event-bus
   subscriptions, watchdogs, splash timers and title observation before the
   next attempt binds them again.
+- `initMenuToolbar()` returns the disposer for the app-owned menu bindings;
+  `useJlzPage` invokes it before route-root unmount. Pending visibility RAFs are
+  cancelled together with subsection/toggle listeners, while UIkit-owned
+  accordion behavior remains outside this disposer.
 - `RouteTransition` is cancelled from the Vue Router error port; failed async
   navigation must invalidate pending reveal work and return the transition
   surface to `idle`.

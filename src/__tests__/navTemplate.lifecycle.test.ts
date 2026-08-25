@@ -46,15 +46,16 @@ describe('initMenuNav visibility reconciliation', () => {
     })
     const cancel = vi.spyOn(window, 'cancelAnimationFrame')
     const { root, toggle, content } = mountNav()
-    initMenuNav()
+    const dispose = initMenuNav()
 
     toggle.click()
+    dispose()
     root.remove()
     callbacks[0]?.(0)
     callbacks[1]?.(0)
 
     expect(content.hidden).toBe(true)
-    expect(cancel).not.toHaveBeenCalled()
+    expect(cancel).toHaveBeenCalledWith(1)
   })
 
   it('reveals the connected submenu after the second frame', () => {
@@ -71,6 +72,24 @@ describe('initMenuNav visibility reconciliation', () => {
     callbacks[1]?.(0)
 
     expect(content.hidden).toBe(false)
+  })
+
+  it('cancels the second frame when disposal happens after the first frame', () => {
+    const callbacks: FrameRequestCallback[] = []
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      callbacks.push(callback)
+      return callbacks.length
+    })
+    const cancel = vi.spyOn(window, 'cancelAnimationFrame')
+    const { toggle } = mountNav()
+    const dispose = initMenuNav()
+
+    toggle.click()
+    callbacks[0]?.(0)
+    dispose()
+
+    expect(cancel).toHaveBeenCalledWith(2)
+    expect(callbacks).toHaveLength(2)
   })
 
   it('binds only the menu inside the active route root', () => {

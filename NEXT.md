@@ -127,6 +127,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
   share one bootstrap promise; a rejected attempt resets the gate for an
   explicit retry, while existing listeners, timers and observers are cleared
   before rebinding.
+- [x] **Dispose route-menu frame owners** — `useJlzPage` now releases the
+  menu's app-owned listeners and pending two-frame visibility reconciliation
+  before a route root is unmounted; UIkit remains the owner of accordion state.
 
 ## Deferred product queue
 

@@ -43,9 +43,12 @@ export function useJlzPage(page: PageId, rootEl: () => HTMLElement | null): void
   let idleHandle: number | null = null
   let announcerRafHandle: number | null = null
   let mounted = false
+  let disposeMenuToolbar: (() => void) | null = null
 
   onBeforeUnmount(() => {
     mounted = false
+    disposeMenuToolbar?.()
+    disposeMenuToolbar = null
     if (announcerRafHandle !== null) {
       cancelAnimationFrame(announcerRafHandle)
       announcerRafHandle = null
@@ -78,7 +81,8 @@ export function useJlzPage(page: PageId, rootEl: () => HTMLElement | null): void
         })
       }
     }
-    initMenuToolbar()
+    disposeMenuToolbar?.()
+    disposeMenuToolbar = initMenuToolbar()
     uiKitUpdate(el)
     // Typed EventBus emission bridges to window automatically.
     eventBus.emit('jlz:route-change', { page })
