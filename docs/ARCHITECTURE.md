@@ -224,6 +224,8 @@ according to their current measured policy.
 - ContactTypographyStage marks itself disposed before releasing its
   WireframeTypography resources; late route callbacks cannot reactivate or
   update the disposed owner, and repeated teardown is idempotent.
+- WireframeTypography makes disposal terminal: it clears its glyph registry,
+  marks motion inactive and ignores later activation, theme and update calls.
 - Contact section activation captures the same Cyprus request generation before
   awaiting lazy initialization; a stale route callback cannot call `setActive`
   or raise render demand on a newer stage.

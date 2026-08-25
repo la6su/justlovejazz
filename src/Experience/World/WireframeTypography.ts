@@ -22,6 +22,7 @@ export class WireframeTypography extends THREE.Group {
   private revealElapsed = 0
   private revealProgress = 0
   private active = false
+  private disposed = false
   private glyphs: FloatingGlyph[] = []
   private material = new THREE.MeshPhysicalMaterial({
     color: 0xf4efff,
@@ -82,6 +83,7 @@ export class WireframeTypography extends THREE.Group {
 
   /** Keep the opaque bubble letters legible on either UI theme. */
   setTheme(isLight: boolean): void {
+    if (this.disposed) return
     this.material.color.setHex(isLight ? 0x233329 : 0xdfffe9)
     this.material.emissive.setHex(isLight ? 0x020403 : 0x06100b)
     this.material.emissiveIntensity = isLight ? 0.015 : 0.035
@@ -89,6 +91,7 @@ export class WireframeTypography extends THREE.Group {
 
   /** Reveal only after the lower contact frame has settled into view. */
   setActive(active: boolean): void {
+    if (this.disposed) return
     if (this.active === active) return
     this.active = active
     this.revealElapsed = 0
@@ -99,10 +102,11 @@ export class WireframeTypography extends THREE.Group {
   }
 
   get isAnimating(): boolean {
-    return this.active && this.revealProgress < 1
+    return !this.disposed && this.active && this.revealProgress < 1
   }
 
   update(dt: number): void {
+    if (this.disposed) return
     this.time += dt
     if (!this.active) return
 
@@ -136,8 +140,12 @@ export class WireframeTypography extends THREE.Group {
   }
 
   dispose(): void {
+    if (this.disposed) return
+    this.disposed = true
+    this.active = false
     for (const { mesh } of this.glyphs) mesh.geometry.dispose()
     this.material.dispose()
+    this.glyphs = []
     this.clear()
   }
 }

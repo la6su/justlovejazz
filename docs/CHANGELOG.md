@@ -36,6 +36,9 @@
   the construction owner's GPU resource path in addition to late fallback
   cleanup.
 
+- `WireframeTypography` disposal is now terminal and idempotent; late route
+  callbacks cannot reactivate disposed glyph meshes or retain their registry.
+
 - `useJlzPage` now disposes the module-level `WorkCards` registry during route
   owner teardown as well as before route replacement, releasing delegated grid
   listeners and pending card timers on full unmount.

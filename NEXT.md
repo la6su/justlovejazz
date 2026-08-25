@@ -78,6 +78,8 @@ Do not reopen completed migration phases. Current runtime contracts are in
   longer reactivate or update a disposed WireframeTypography owner.
 - [x] **Close SceneHost live renderer ownership** — successful or stale host
   unmount now disposes the renderer that the Vue root constructed.
+- [x] **Make WireframeTypography teardown terminal** — disposed glyph owners
+  no longer retain registry entries or accept post-dispose motion/theme calls.
 - [x] **Dispose route WorkCards on owner teardown** — `useJlzPage` now releases
   the module-level card/grid registry on full unmount as well as before route
   replacement, with lifecycle coverage for both paths.
