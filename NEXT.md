@@ -103,6 +103,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
   now raises the shared `nav` demand after changing the carousel target, so a
   settled renderer advances the 3D selection without waiting for unrelated
   input.
+- [x] **Preserve the carousel card idle guard** — hidden idle cards no longer
+  advance cloth time every frame while the carousel is active; visible or
+  already-animating cards retain their update path.
 
 ## Deferred product queue
 

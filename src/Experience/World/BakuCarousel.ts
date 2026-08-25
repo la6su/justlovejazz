@@ -397,7 +397,11 @@ export class BakuCarousel extends THREE.Group {
       card.setMotion(0, 0)
       card.setEdgeWarp(0)
       card.setTransition(0)
-      card.update(dt, this._active)
+      // Hidden idle cards still receive their reveal/transform uniforms above,
+      // but do not need per-frame cloth time advancement. Keep the CasePlane
+      // idle guard active for those cards while preserving updates for visible
+      // or already-animating cards during morph and teardown.
+      card.update(dt, this._active && (card.visible || card.isAnimating))
     }
   }
 

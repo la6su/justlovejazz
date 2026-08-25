@@ -158,6 +158,8 @@ according to their current measured policy.
 - Fullscreen project navigation raises the shared `nav` demand after changing
   the carousel target; demand-driven rendering must not rely on unrelated input
   to advance a settled scene.
+- BakuCarousel advances CasePlane time only for visible or already-animating
+  cards while active; hidden idle cards retain the CasePlane idle guard.
 - `core/` owns the framework-neutral contracts (route manifest, world slots,
   typed event ports, i18n, theme, motion policy) and imports no Vue or TresJS.
 - `sections/` owns the per-route content templates consumed by the route views;

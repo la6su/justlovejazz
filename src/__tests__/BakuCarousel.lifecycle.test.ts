@@ -36,4 +36,27 @@ describe('BakuCarousel async lifecycle', () => {
     carousel.dispose()
     expect(mocks.releaseCaseTexture).toHaveBeenCalledTimes(resolvers.length)
   })
+
+  it('keeps hidden idle cards on the CasePlane idle guard', () => {
+    const update = vi.fn()
+    const card = {
+      visible: false,
+      isAnimating: false,
+      position: new THREE.Vector3(),
+      rotation: new THREE.Euler(),
+      scale: new THREE.Vector3(1, 1, 1),
+      setReveal: vi.fn(),
+      setMotion: vi.fn(),
+      setEdgeWarp: vi.fn(),
+      setTransition: vi.fn(),
+      update,
+    }
+    const carousel = new BakuCarousel()
+    Object.assign(carousel as unknown as { cards: unknown[] }, { cards: [card] })
+    carousel.setActive(true)
+
+    carousel.update(1 / 60)
+
+    expect(update).toHaveBeenCalledWith(1 / 60, false)
+  })
 })
