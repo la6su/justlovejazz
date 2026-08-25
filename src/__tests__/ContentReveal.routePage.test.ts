@@ -59,4 +59,48 @@ describe('ContentReveal typed page port', () => {
     )
     update.mockRestore()
   })
+
+  it('cancels a pending scoped UIkit update when destroyed', () => {
+    document.body.innerHTML = '<section data-section="intro" class="section-active"></section>'
+    const callbacks: FrameRequestCallback[] = []
+    const cancel = vi.spyOn(window, 'cancelAnimationFrame')
+    const raf = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      callbacks.push(callback)
+      return callbacks.length
+    })
+    const update = vi.spyOn(UIkit as unknown as { update: (element: Element) => void }, 'update')
+
+    eventBus.emit('jlz:section-change', { sectionId: 'intro', index: 1 })
+    reveal.destroy()
+    callbacks[0]?.(0)
+
+    expect(cancel).toHaveBeenCalledWith(1)
+    expect(update).not.toHaveBeenCalled()
+    update.mockRestore()
+    raf.mockRestore()
+    cancel.mockRestore()
+  })
+
+  it('coalesces rapid section changes to the latest connected root', () => {
+    document.body.innerHTML = `
+      <section data-section="intro" class="section-active"></section>
+      <section data-section="about"></section>
+      <section data-section="works"></section>
+    `
+    const callbacks: FrameRequestCallback[] = []
+    const raf = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      callbacks.push(callback)
+      return callbacks.length
+    })
+    const update = vi.spyOn(UIkit as unknown as { update: (element: Element) => void }, 'update')
+
+    eventBus.emit('jlz:section-change', { sectionId: 'about', index: 2 })
+    eventBus.emit('jlz:section-change', { sectionId: 'works', index: 3 })
+    callbacks[1]?.(0)
+
+    expect(update).toHaveBeenCalledTimes(1)
+    expect(update).toHaveBeenCalledWith(document.querySelector('[data-section="works"]'))
+    update.mockRestore()
+    raf.mockRestore()
+  })
 })

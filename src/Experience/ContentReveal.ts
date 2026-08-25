@@ -25,6 +25,8 @@ export class ContentReveal {
   private currentSectionIndex: number = -1
   private cachedConfigs: readonly PhaseConfig[] | null = null
   private page: () => PageId
+  private _uiKitUpdateFrame: number | null = null
+  private _destroyed = false
 
   constructor(page: () => PageId) {
     this.page = page
@@ -97,7 +99,10 @@ export class ContentReveal {
     })
     matching.classList.add('section-active')
     this.applyTheme(this.currentSectionId ?? '')
-    requestAnimationFrame(() => {
+    if (this._uiKitUpdateFrame !== null) cancelAnimationFrame(this._uiKitUpdateFrame)
+    this._uiKitUpdateFrame = requestAnimationFrame(() => {
+      this._uiKitUpdateFrame = null
+      if (this._destroyed || !matching.isConnected) return
       try {
         ;(UIkit as unknown as { update(element: Element): void }).update(matching)
       } catch {
@@ -192,6 +197,11 @@ export class ContentReveal {
   }
 
   destroy() {
+    this._destroyed = true
+    if (this._uiKitUpdateFrame !== null) {
+      cancelAnimationFrame(this._uiKitUpdateFrame)
+      this._uiKitUpdateFrame = null
+    }
     if (this.sectionHandler) eventBus.off('jlz:section-change', this.sectionHandler)
     this.pageSectionUnsub?.()
     this.themeChangeUnsub?.()
