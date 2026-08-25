@@ -143,9 +143,10 @@ acceptance result:
 Both backends passed the desktop p95 target in this reference run. Production
 direct-entry QA for `/works` and `/contact` also passed on desktop and at a
 390×844 narrow viewport without browser errors. That viewport remains a layout
-check on the desktop host (DPR 1), not mobile-hardware evidence. Complete the
-matrix with real mobile DPR measurements before treating runtime performance as
-fully baselined.
+check on the desktop host (DPR 1), not mobile-hardware evidence. The Phase 2
+representative gate is now accepted: the physical Android resize/DPR evidence
+is recorded below, while the full-route mobile frame-time matrix remains a
+later Phase 6/10 delivery measurement.
 
 ## Migration runtime and memory comparison
 
