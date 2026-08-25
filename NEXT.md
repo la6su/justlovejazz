@@ -70,6 +70,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Dispose route WorkCards on owner teardown** — `useJlzPage` now releases
   the module-level card/grid registry on full unmount as well as before route
   replacement, with lifecycle coverage for both paths.
+- [x] **Keep Contact prewarm request-owned** — the lazy Cyprus stage now has one
+  guarded prewarm continuation; stale entry-route promises cannot prewarm a
+  newer Contact stage or add an unnecessary render frame.
 - [x] **Remove ineffective Projects dynamic import** — ExperienceUI now uses
   the existing static project-data owner instead of a non-splitting import.
 - [x] **Keep Contact typography addons route-local** — the lazy Contact

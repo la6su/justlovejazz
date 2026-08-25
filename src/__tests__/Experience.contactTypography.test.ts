@@ -74,6 +74,32 @@ describe('Experience contact typography lazy owner', () => {
 })
 
 describe('Experience contact Cyprus lazy owner', () => {
+  it('prewarms exactly once inside the guarded lazy owner', async () => {
+    const scene = new THREE.Scene()
+    const exp = Object.assign(Object.create(Experience.prototype), {
+      scene,
+      contactCyprusStage: null,
+      _contactCyprusStagePromise: null,
+      _contactCyprusStageRequest: 0,
+      _contactCyprusActive: false,
+      currentPage: () => 'contact',
+      camera: { instance: new THREE.PerspectiveCamera() },
+    } as unknown as Partial<Experience>) as Experience
+    const loadSpy = vi
+      .spyOn(ContactCyprusStage.prototype, 'load')
+      .mockResolvedValue(undefined)
+    const prewarmSpy = vi.spyOn(ContactCyprusStage.prototype, 'prewarm')
+
+    try {
+      await exp.ensureContactCyprusStageInitialized()
+      expect(prewarmSpy).toHaveBeenCalledTimes(1)
+    } finally {
+      exp.disposeContactCyprusStage()
+      loadSpy.mockRestore()
+      prewarmSpy.mockRestore()
+    }
+  })
+
   it('invalidates a pending load when the owner is disposed', async () => {
     const scene = new THREE.Scene()
     const exp = Object.assign(Object.create(Experience.prototype), {

@@ -459,9 +459,10 @@ export class Experience {
     // no first-use model decode or shader-compile hitch.
     if (this.currentPage() === 'contact') {
       void this.ensureContactTypographyStageInitialized()
-      void this.ensureContactCyprusStageInitialized().then(() => {
-        this.contactCyprusStage?.prewarm()
-      })
+      // `ensureContactCyprusStageInitialized()` owns the prewarm after its
+      // request/identity guard. Do not attach a second continuation here: a
+      // stale entry-route promise could otherwise prewarm a newer stage.
+      void this.ensureContactCyprusStageInitialized()
     }
     if (!this.isLifecycleCurrent(token)) return
     // Phase 8 slice 9: the Lab object's lazy creation moved out of

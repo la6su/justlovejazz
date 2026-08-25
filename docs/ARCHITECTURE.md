@@ -209,6 +209,10 @@ according to their current measured policy.
   cards, preventing stale WebGPU/TSL setup after leaving `/works`.
 - WorksPlaneStage also refuses initialization after disposal, preventing a
   stale route owner from restarting texture decoding or cache acquisition.
+- ContactCyprusStage prewarming is published only by its guarded lazy-owner
+  continuation. The entry bootstrap does not attach a second promise callback,
+  so a stale Contact request cannot make a later stage visible or add an extra
+  warm-up frame.
 - CinematicNav resolves `#section-*` targets inside its currently bound route
   track, keeping detached and persistent-shell IDs outside story ownership.
 - `entry-app` owns the delayed splash title handoff; its timer is cancellable

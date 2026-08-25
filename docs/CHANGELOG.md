@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Contact Cyprus lazy initialization now has a single request-owned prewarm
+  continuation; stale entry-route promises cannot prewarm a newer stage or
+  schedule an unnecessary render frame.
+
 - `useJlzPage` now disposes the module-level `WorkCards` registry during route
   owner teardown as well as before route replacement, releasing delegated grid
   listeners and pending card timers on full unmount.
