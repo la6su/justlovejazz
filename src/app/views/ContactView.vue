@@ -14,7 +14,14 @@ useJlzPage('contact', () => rootEl.value)
 </script>
 
 <template>
-  <main id="spa-content" ref="rootEl" role="main" class="uk-position-relative" uk-height-viewport>
+  <main
+    id="spa-content"
+    ref="rootEl"
+    role="main"
+    class="uk-position-relative"
+    data-page-view="content"
+    uk-height-viewport
+  >
     <article class="jlz-page jlz-contact-page" data-page-view="contact">
       <ContactFooter mode="content" />
 

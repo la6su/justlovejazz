@@ -51,7 +51,14 @@ const meta = (idx: number): string =>
 </script>
 
 <template>
-  <main id="spa-content" ref="rootEl" role="main" class="uk-position-relative" uk-height-viewport>
+  <main
+    id="spa-content"
+    ref="rootEl"
+    role="main"
+    class="uk-position-relative"
+    data-page-view="content"
+    uk-height-viewport
+  >
     <article class="jlz-page jlz-works-page" data-page-view="works">
       <ContactFooter mode="content" />
 

@@ -58,7 +58,14 @@ const PRINCIPLES: readonly Principle[] = [
 </script>
 
 <template>
-  <main id="spa-content" ref="rootEl" role="main" class="uk-position-relative" uk-height-viewport>
+  <main
+    id="spa-content"
+    ref="rootEl"
+    role="main"
+    class="uk-position-relative"
+    data-page-view="content"
+    uk-height-viewport
+  >
     <article class="jlz-page" data-page-view="manifesto">
       <!-- 0: CONTACT FINALE (canonical Lab runtime slot) -->
       <ContactFooter mode="content" />

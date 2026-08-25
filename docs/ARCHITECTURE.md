@@ -66,8 +66,9 @@ under `src/builder/`; the public builds do not import the editor graph.
   UIkit ancestor chain; no section change performs a document-wide traversal.
 - Shared navigation controls consume the canonical `jlz-nav-control-shadow`
   brand token; component Less must not reintroduce a hardcoded shadow value.
-- Scroll layout, snapping and reduced-motion scroll behavior are selected from
-  Vue-owned route roots (`data-page-view="home"` or `.jlz-page`); the
+- Scroll layout, snapping, overflow and reduced-motion scroll behavior are
+  selected from Vue-owned route roots (`data-page-view="home|content"` and
+  `.jlz-page`); the
   `data-page` projection is not a layout owner.
 - No phase may weaken startup, frame-time, memory or delivery budgets merely
   to accommodate framework overhead.
