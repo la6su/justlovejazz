@@ -824,9 +824,10 @@ for replacement. Pull one forward only when its migration dependency is clear.
       and TSL response through the new component/scene owners, preserving both
       effective theme polarities and reduced-motion parity.
 
-- [ ] **Complete the cross-backend runtime baseline** — finish real-mobile DPR
-      evidence and preserve the current desktop reference as the pre-migration
-      comparison rather than tuning two architectures simultaneously.
+- [x] **Complete the cross-backend runtime baseline** — physical Android DPR
+      and dynamic resize evidence now passes on 2026-08-25; preserve the
+      current desktop reference as the pre-migration comparison rather than
+      tuning two architectures simultaneously.
 
 - [ ] **Validate the shared transition language** — complete direct entry,
       navigation, popstate, backend, theme, narrow-layout and reduced-motion QA
