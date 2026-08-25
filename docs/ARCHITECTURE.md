@@ -160,6 +160,8 @@ according to their current measured policy.
   to advance a settled scene.
 - BakuCarousel advances CasePlane time only for visible or already-animating
   cards while active; hidden idle cards retain the CasePlane idle guard.
+- CinematicNav resolves `#section-*` targets inside its currently bound route
+  track, keeping detached and persistent-shell IDs outside story ownership.
 - `core/` owns the framework-neutral contracts (route manifest, world slots,
   typed event ports, i18n, theme, motion policy) and imports no Vue or TresJS.
 - `sections/` owns the per-route content templates consumed by the route views;

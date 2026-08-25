@@ -123,6 +123,18 @@ describe('CinematicNav — vertical story and sheets', () => {
     expect(document.body.dataset.cinematicSheet).toBe('footer')
   })
 
+  it('resolves hashes against the active track when a detached duplicate exists', () => {
+    const detached = document.createElement('section')
+    detached.id = 'section-works'
+    document.body.prepend(detached)
+    nav = createNav()
+
+    nav.goToSectionByHash('#section-works')
+
+    expect(nav.getSectionIndex()).toBe(3)
+    detached.remove()
+  })
+
   it('uses the injected page getter when the DOM dataset disagrees', () => {
     document.body.dataset.page = 'works'
     nav = new CinematicNav(6, () => 'home')

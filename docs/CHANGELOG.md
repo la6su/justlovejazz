@@ -83,6 +83,8 @@
   BakuCarousel now preserves CasePlane's idle guard for hidden cards, avoiding
   unnecessary per-frame cloth-uniform advancement while retaining visible and
   in-flight card animation.
+  CinematicNav hash resolution now searches the active route track, preventing
+  detached duplicate IDs from intercepting story navigation.
 - Scoped bootstrap UIkit refresh to `#spa-content`, removing the remaining
   document-wide traversal from the application shell.
 - Established the staged Vue 3, Vue Router and TresJS migration architecture,

@@ -398,7 +398,12 @@ export class CinematicNav {
   }
 
   goToSectionByHash(hash: string): void {
-    const target = document.getElementById(hash.replace('#', ''))
+    const targetId = hash.replace(/^#/, '')
+    const target = this._track
+      ? [...this._track.querySelectorAll<HTMLElement>('[id]')].find(
+          (candidate) => candidate.id === targetId,
+        ) ?? null
+      : null
     if (!target) return
 
     const section = target.closest<HTMLElement>('[data-section], [data-page-section]') ?? target

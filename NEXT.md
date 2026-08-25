@@ -106,6 +106,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Preserve the carousel card idle guard** — hidden idle cards no longer
   advance cloth time every frame while the carousel is active; visible or
   already-animating cards retain their update path.
+- [x] **Scope cinematic hash resolution to the active track** — route hashes
+  now resolve inside the current `CinematicNav` track, so detached duplicate
+  IDs cannot redirect story navigation.
 
 ## Deferred product queue
 
