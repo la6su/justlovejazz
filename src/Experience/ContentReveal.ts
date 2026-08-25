@@ -42,7 +42,7 @@ export class ContentReveal {
   }
 
   private applyInitialTheme(): void {
-    const active = document.querySelector<HTMLElement>(
+    const active = this.contentRoot().querySelector<HTMLElement>(
       '[data-section].section-active, [data-page-section].section-active',
     )
     const sectionId =

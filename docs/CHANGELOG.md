@@ -69,6 +69,9 @@
   deactivated during route transitions.
   Experience's section eyebrow and initial activation lookups now use the same
   route-root boundary, keeping scene/UI synchronization out of persistent DOM.
+  Bootstrap section/page-section signals and title observers now use that same
+  route root, while splash and persistent-shell controls remain global by
+  ownership.
 - Scoped bootstrap UIkit refresh to `#spa-content`, removing the remaining
   document-wide traversal from the application shell.
 - Established the staged Vue 3, Vue Router and TresJS migration architecture,

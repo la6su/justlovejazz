@@ -8,6 +8,12 @@ import { getCurrentPage } from './core/routePage'
 // LANG_KEY handled by i18n.ts
 import { INITIAL_BOOTSTRAP_STATE, tryTransition, type BootstrapState } from './core/bootstrapStates'
 
+function contentRoot(): ParentNode {
+  // Vue owns route content; retain a document fallback only before the route
+  // shell mounts during the bootstrap handoff.
+  return document.getElementById('spa-content') ?? document
+}
+
 // ── Config: sound toggle (splash overlay) ──
 function initSoundToggle(): void {
   const btn = document.getElementById('cfg-sound') as HTMLButtonElement | null
@@ -353,7 +359,7 @@ export async function startApp(): Promise<void> {
   eventBus.on('jlz:section-change', (payload) => {
     if (!payload?.sectionId) return
     if (prefersReducedMotion()) return
-    const section = document.querySelector(`[data-section="${payload.sectionId}"]`)
+    const section = contentRoot().querySelector(`[data-section="${payload.sectionId}"]`)
     if (!section) return
     const title = section.querySelector<HTMLElement>('.studio-title')
     if (title && title.dataset.blurFade !== 'off') {
@@ -365,7 +371,7 @@ export async function startApp(): Promise<void> {
   // ── Animate titles on page section change (content: data-page-section) ──
   eventBus.on('jlz:page-section-change', ({ index }) => {
     if (prefersReducedMotion()) return
-    const sections = document.querySelectorAll<HTMLElement>('[data-page-section]')
+    const sections = contentRoot().querySelectorAll<HTMLElement>('[data-page-section]')
     const el = sections[index]
     if (!el) return
     // BlurFade on title
@@ -397,7 +403,7 @@ function setupTitleObserver(): void {
   _titleObserver?.disconnect()
   if (prefersReducedMotion()) return
 
-  const titles = document.querySelectorAll<HTMLElement>('.studio-title:not([data-blur-fade="off"])')
+  const titles = contentRoot().querySelectorAll<HTMLElement>('.studio-title:not([data-blur-fade="off"])')
   if (titles.length === 0) return
   const observer = new IntersectionObserver(
     (entries) => {
@@ -421,7 +427,7 @@ function setupTitleObserver(): void {
 
 /** Fast first reveal that is synchronized with the splash curtain opening. */
 function revealActiveSplashTitle(): void {
-  const title = document.querySelector<HTMLElement>(
+  const title = contentRoot().querySelector<HTMLElement>(
     '.section-active .studio-title:not([data-blur-fade="off"]), [data-section="intro"] .studio-title:not([data-blur-fade="off"])',
   )
   if (!title) return

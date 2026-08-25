@@ -90,6 +90,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Align Experience DOM lookups with the route root** — section eyebrows
   and initial-section activation now use the same `#spa-content` owner, with a
   bootstrap-only document fallback before Vue mounts.
+- [x] **Complete route-content DOM scoping** — bootstrap section/page-section
+  signals and title observers now use the same route root; splash controls and
+  persistent-shell selectors remain intentionally global.
 
 ## Deferred product queue
 
