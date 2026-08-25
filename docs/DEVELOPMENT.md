@@ -50,6 +50,34 @@ For interface work, load
 [the project UI skill](../skills/justlovejazz-ui/SKILL.md) for the
 route/theme/input matrix.
 
+## Build and generated artifacts
+
+`bun run build` runs the deterministic production chain in this order:
+
+1. `tsc` validates the TypeScript graph;
+2. `scripts/prerender-home.mjs` writes `prerender/home.html`;
+3. `scripts/prerender-blog.mjs` writes the standalone blog HTML;
+4. `scripts/publish-builder-pages.mjs` writes approved `/p` documents;
+5. `scripts/generate-sitemap.ts` writes `public/sitemap.xml`;
+6. Vite emits `dist/`.
+
+Generated files are build outputs, not hand-edited sources. Review their diff
+when a content, route or metadata change is intentional; otherwise discard
+only generated noise before committing. The source of truth is the relevant
+Vue view, `content/blog/`, builder document or route metadata module.
+
+## DOM-only and browser verification seams
+
+`?no-scene=1` boots the semantic route shell without constructing the renderer.
+Use it to verify routes, headings, language, accessibility and prerendered
+content when WebGPU/WebGL is unavailable. It is not evidence for renderer,
+backend, GPU-resource or frame-time claims.
+
+The splash and non-module test producers use the typed `window.__jlzEmit`
+facade for application events. Treat it as a verification seam, not a second
+application event API. Browser evidence must pass the splash Enter control
+before capturing a normal scene route.
+
 ## Migration verification
 
 The completed migration record is archived at
