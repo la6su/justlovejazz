@@ -22,6 +22,8 @@ describe('ContentReveal typed page port', () => {
   afterEach(() => {
     reveal.destroy()
     document.body.replaceChildren()
+    document.documentElement.classList.remove('uk-light')
+    document.body.classList.remove('uk-light')
     delete document.body.dataset.page
   })
 
@@ -90,6 +92,22 @@ describe('ContentReveal typed page port', () => {
     update.mockRestore()
     raf.mockRestore()
     cancel.mockRestore()
+  })
+
+  it('restores the global theme classes owned before construction', () => {
+    reveal.destroy()
+    document.documentElement.classList.add('uk-light')
+    document.body.classList.remove('uk-light')
+    const owned = new ContentReveal(() => page)
+    owned.destroy()
+
+    expect(document.documentElement.classList.contains('uk-light')).toBe(true)
+    expect(document.body.classList.contains('uk-light')).toBe(false)
+
+    document.documentElement.classList.remove('uk-light')
+    owned.destroy()
+
+    expect(document.documentElement.classList.contains('uk-light')).toBe(false)
   })
 
   it('coalesces rapid section changes to the latest connected root', () => {

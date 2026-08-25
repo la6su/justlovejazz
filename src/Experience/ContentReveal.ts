@@ -27,9 +27,13 @@ export class ContentReveal {
   private page: () => PageId
   private _uiKitUpdateFrame: number | null = null
   private _destroyed = false
+  private readonly _initialHtmlLight: boolean
+  private readonly _initialBodyLight: boolean
 
   constructor(page: () => PageId) {
     this.page = page
+    this._initialHtmlLight = document.documentElement.classList.contains('uk-light')
+    this._initialBodyLight = document.body.classList.contains('uk-light')
     this.setupSectionSync()
     this.setupThemeSync()
     // Apply theme for the already-active section on init. router.ts runs
@@ -206,6 +210,7 @@ export class ContentReveal {
   }
 
   destroy() {
+    if (this._destroyed) return
     this._destroyed = true
     if (this._uiKitUpdateFrame !== null) {
       cancelAnimationFrame(this._uiKitUpdateFrame)
@@ -216,5 +221,7 @@ export class ContentReveal {
     this.themeChangeUnsub?.()
     this.routeChangeUnsub?.()
     this.pageSectionUnsub = this.themeChangeUnsub = this.routeChangeUnsub = null
+    document.documentElement.classList.toggle('uk-light', this._initialHtmlLight)
+    document.body.classList.toggle('uk-light', this._initialBodyLight)
   }
 }

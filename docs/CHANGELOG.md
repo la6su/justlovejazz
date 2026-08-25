@@ -6,6 +6,10 @@
   input/timer handler references, and resets interaction/morph state after
   texture and card disposal.
 
+- `ContentReveal.destroy()` now restores the pre-existing `uk-light` state on
+  `html` and `body`, preventing a disposed runtime from leaking its global
+  theme into a retry or HMR instance.
+
 - `CinematicNav` now retains and removes its generated button handlers during
   teardown, preventing retained navigation DOM from invoking a disposed
   controller.

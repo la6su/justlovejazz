@@ -53,6 +53,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Clear BakuCarousel teardown state** — the carousel now releases camera
   and card callbacks, nulls its input/timer owners, and resets drag/morph state
   after removing listeners and refcounted textures.
+- [x] **Restore ContentReveal theme state** — the section owner now snapshots
+  the pre-existing global `uk-light` classes and restores them on idempotent
+  teardown, preventing stale theme state across runtime retries or HMR.
 - [x] **Remove ineffective Projects dynamic import** — ExperienceUI now uses
   the existing static project-data owner instead of a non-splitting import.
 - [x] **Keep Contact typography addons route-local** — the lazy Contact

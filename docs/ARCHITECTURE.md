@@ -193,6 +193,9 @@ according to their current measured policy.
 - BakuCarousel teardown removes its window input owners and releases the
   camera/card callback references before resetting motion state, so a disposed
   carousel cannot retain the Experience UI closure or stale interaction state.
+- ContentReveal owns the global `uk-light` mutations it performs: it snapshots
+  the pre-existing `html` and `body` class state and restores both on teardown,
+  so a retry or HMR cycle cannot inherit a previous runtime's theme.
 - CinematicNav resolves `#section-*` targets inside its currently bound route
   track, keeping detached and persistent-shell IDs outside story ownership.
 - `entry-app` owns the delayed splash title handoff; its timer is cancellable
