@@ -801,7 +801,7 @@ export class Experience {
     // browser's vertical scrolling and snap behavior. ProjectOverlay locks
     // body overflow directly while the fullscreen overlay is open.
     this._reducedMotion = prefersReducedMotion()
-    this.contentReveal = new ContentReveal()
+    this.contentReveal = new ContentReveal(() => this.currentPage())
     this.cursor = new Cursor(this.sfx)
     // Phase 7: the cursor's own pointer/hover handlers are loop wake sources
     // (its spring keeps moving after the scene has settled).

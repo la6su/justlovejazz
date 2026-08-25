@@ -10,7 +10,7 @@
 //   typed sectionTheme contract; EnvSphere syncs via that event.
 
 import { eventBus, type AppEvents } from '../core/EventBus'
-import { getCurrentPage } from '../core/routePage'
+import type { PageId } from '../sections/_shared/constants'
 import { themeManager, type ThemeMode } from '../core/ThemeManager'
 import { getWorldConfigForPage, type PhaseConfig } from '../core/WorldConfig'
 import { resolveEffectiveTheme, type ThemeAppliedPort } from '../core/sectionTheme'
@@ -24,8 +24,10 @@ export class ContentReveal {
   private currentSectionId: string | null = null
   private currentSectionIndex: number = -1
   private cachedConfigs: readonly PhaseConfig[] | null = null
+  private page: () => PageId
 
-  constructor() {
+  constructor(page: () => PageId) {
+    this.page = page
     this.setupSectionSync()
     this.setupThemeSync()
     // Apply theme for the already-active section on init. router.ts runs
@@ -49,7 +51,7 @@ export class ContentReveal {
 
   private getConfigs(): readonly PhaseConfig[] {
     if (!this.cachedConfigs) {
-      const pageKey = getCurrentPage()
+      const pageKey = this.page()
       this.cachedConfigs = getWorldConfigForPage(pageKey)
     }
     return this.cachedConfigs

@@ -165,6 +165,9 @@ gates, so UI feature logic also remains independent of the route DOM source.
 `Experience` receives the page getter from `entry-app.ts` and uses it for
 route-sensitive owner/lifecycle decisions; renderer host options do not carry
 route state.
+`ContentReveal` receives the same getter from `Experience`; it uses the port
+only for selecting cached world configuration. Its DOM queries remain limited
+to semantic section anchors and do not become a second route-state source.
 
 ### Dependency direction
 

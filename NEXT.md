@@ -129,7 +129,7 @@ do not start a phase whose entry gate has not passed.
       `ContentReveal.ts`, `Experience.ts` — 149/149 unit suite, runtime smoke
       on home + /works + /lab + /contact incl. SPA navigation with zero
       console errors; no scene-side `document.body.dataset.page` reads
-      remain, the dataset write stays until Phase 5). The bootstrap state
+      remain, the dataset write stays until Phase 5). The ContentReveal owner now receives the same page getter from Experience; its config cache invalidates on route change, and focused tests prove the getter remains authoritative over the legacy dataset. The bootstrap state
       machine is now consumed by the entry bootstrap (`src/core/bootstrapStates.ts`);
       its transition contract remains framework-neutral and covered by the unit suite. The
       render-demand decision is now a pure contract
