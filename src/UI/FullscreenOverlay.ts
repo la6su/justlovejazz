@@ -14,6 +14,7 @@
 import UIkit from 'uikit'
 import { BlurFade } from '../Experience/BlurFade'
 import { eventBus } from '../core/EventBus'
+import { prefersReducedMotion } from '../core/motionPolicy'
 
 export interface OverlayOptions {
   mode?: 'video' | 'image'
@@ -409,7 +410,12 @@ export class FullscreenOverlay {
 
     // Project info
     if (opts.title) {
-      BlurFade.for(this.titleEl).show(0.8, opts.title)
+      if (prefersReducedMotion()) {
+        this.titleEl.textContent = opts.title
+        this.titleEl.setAttribute('aria-label', opts.title)
+      } else {
+        BlurFade.for(this.titleEl).show(0.8, opts.title)
+      }
     } else {
       this.titleEl.textContent = ''
     }
