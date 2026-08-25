@@ -68,8 +68,8 @@ function parseLessTokens(): Map<string, string> {
 }
 
 describe('brand token manifest', () => {
-  it('holds exactly the 95 canonical §1 tokens', () => {
-    expect(BRAND_TOKEN_NAMES).toHaveLength(95)
+  it('holds exactly the 96 canonical §1 tokens', () => {
+    expect(BRAND_TOKEN_NAMES).toHaveLength(96)
     expect(new Set(BRAND_TOKEN_NAMES).size).toBe(BRAND_TOKEN_NAMES.length)
   })
 
@@ -89,6 +89,16 @@ describe('brand token manifest', () => {
     expect(brandToken('jlz-space-8')).toBe('2rem')
     expect(brandToken('jlz-z-modal')).toBe('2000')
     expect(brandToken('jlz-duration-cinematic')).toBe('800ms')
+    expect(brandToken('jlz-nav-control-shadow')).toBe('0 1.4rem 3rem rgba(0, 0, 0, 0.22)')
+  })
+
+  it('routes shared navigation shadow through the canonical CSS token', () => {
+    const navigationLess = readFileSync(
+      resolve(process.cwd(), 'src/assets/components/_navigation-controls.less'),
+      'utf8',
+    )
+    expect(navigationLess).toContain('box-shadow: var(--jlz-nav-control-shadow);')
+    expect(navigationLess).not.toContain('rgba(0, 0, 0, 0.22)')
   })
 
   it('records every alias and the aliases resolve to the referenced value', () => {
@@ -128,7 +138,7 @@ describe('brand token manifest', () => {
 
   it('the manifest mirrors §1 of _import.less key-for-key', () => {
     const less = parseLessTokens()
-    expect(less.size).toBe(95)
+    expect(less.size).toBe(96)
     expect([...less.keys()].sort()).toEqual([...BRAND_TOKEN_NAMES].sort())
   })
 

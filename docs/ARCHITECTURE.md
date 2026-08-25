@@ -63,6 +63,8 @@ under `src/builder/`; the public builds do not import the editor graph.
 - UIkit hydration is scoped to the owner that just changed: route mounts update
   the page root, while `ContentReveal` updates only the active section and its
   UIkit ancestor chain; no section change performs a document-wide traversal.
+- Shared navigation controls consume the canonical `jlz-nav-control-shadow`
+  brand token; component Less must not reintroduce a hardcoded shadow value.
 - No phase may weaken startup, frame-time, memory or delivery budgets merely
   to accommodate framework overhead.
 

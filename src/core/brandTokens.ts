@@ -114,6 +114,7 @@ const RADIUS: Record<string, Token> = {
   'button-radius': '0',
   'card-radius': '0',
   'card-shadow': 'none',
+  'nav-control-shadow': '0 1.4rem 3rem rgba(0, 0, 0, 0.22)',
   'form-border': 'rgba(238, 241, 245, 0.14)',
   'navbar-surface': '#08090b',
 }
