@@ -173,9 +173,9 @@ state. Typed readonly ports carry route, locale, effective theme, reduced
 motion and story progress into the scene. Scene code emits typed intents and
 runtime failures; it does not mutate route DOM.
 `SceneCoordinator` receives the current `PageId` through an injected getter;
-the application boundary owns the typed in-memory route port, while the DOM
-`data-page` attribute is write-only compatibility output. The coordinator
-itself has no DOM route dependency.
+the application boundary owns the typed in-memory route port, while Vue route
+roots own their semantic `data-page-view` markers. The coordinator itself has
+no DOM route dependency.
 `ExperienceUI` consumes that same page port for navigation and lazy-owner
 gates, so UI feature logic also remains independent of the route DOM source.
 `Experience` receives the page getter from `entry-app.ts` and uses it for

@@ -4,8 +4,6 @@
 // `PageId`. It owns the render contract the legacy `renderView` implemented
 // imperatively, now split across router + i18n/meta providers:
 //
-// - `dataset.page` on body/html (CSS scoping + the write-only `routePage.ts`
-//   compatibility projection);
 // - WorkCards disposal before the next route's DOM is inserted (the leak
 //   contract: detached card listeners would keep the old nodes alive);
 // - home intro activation (the template does not ship `section-active`);
@@ -30,7 +28,7 @@ import { applyMetaTags } from '../core/pageMeta'
 import type { PageId } from '../sections/_shared/constants'
 import { initMenuToolbar } from '../sections/nav/template'
 import { disposeWorkCards } from '../UI/WorkCards'
-import { publishCurrentPage } from '../core/routePage'
+import { setCurrentPage } from '../core/routePage'
 
 export function uiKitUpdate(el: Element): void {
   ;(UIkit as unknown as { update(el: Element): void }).update(el)
@@ -76,7 +74,7 @@ export function useJlzPage(page: PageId, rootEl: () => HTMLElement | null): void
     // page's DOM settles (legacy leak contract, kept even for the first
     // mount — the prerendered home has no cards, this is a no-op there).
     disposeWorkCards()
-    publishCurrentPage(page)
+    setCurrentPage(page)
     postRender()
     mountedOnce = true
   })

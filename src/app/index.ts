@@ -166,4 +166,5 @@ export async function mountVueApp(): Promise<void> {
   // hydration: the prerendered HTML is not a clean hydration target for
   // Vue's condensed client render.
   app.mount(root)
+  ;(window as unknown as { __jlzRouterReady?: boolean }).__jlzRouterReady = true
 }

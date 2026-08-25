@@ -42,7 +42,7 @@ import { initI18n, toggleLang, getLang } from './core/i18n'
 // over the public, typed `eventBus.emit` and adds no new capability surface
 // (the equivalent raw dispatch existed in production pre-migration).
 // Installed at module scope — the moment entry-app.ts loads, which is before
-// the Vue router mounts (sets `data-page`) and before the splash Enter button
+  // the Vue router mounts and before the splash Enter button
 // is ever enabled (`jlz:webgl-ready`) — so it is always present for the splash
 // and for navigation tests regardless of whether `experience.init()` succeeds.
 ;(window as unknown as { __jlzEmit?: (event: string, detail?: unknown) => void }).__jlzEmit = (

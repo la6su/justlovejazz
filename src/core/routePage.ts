@@ -1,21 +1,7 @@
-// src/core/routePage.ts — Phase 3 typed route-page port (legacy adapter).
+// src/core/routePage.ts — typed in-memory route-page port.
 //
-// The single typed route-page port. Scene code must call `getCurrentPage()`;
-// the DOM dataset is only a compatibility projection for CSS/legacy consumers.
-// (docs/ARCHITECTURE.md: "Scene code does not query
-// `document.body.dataset`... Typed readonly ports carry route, locale,
-// effective theme, reduced-motion and story progress into the scene.").
-//
-// The in-memory value is the application state owner. The DOM dataset remains
-// write-only compatibility output; when the remaining CSS hooks move to Vue
-// state, only `publishCurrentPage` needs to change.
-//
-// Read semantics are deliberately pull-based: consumers read the page at the
-// same moment they did when they read the dataset, so the migration changes
-// the source of the fact without changing any timing.
-//
-// The getter is pure of DOM reads and scene imports; the publisher is the only
-// DOM-writing boundary and remains unit-testable under jsdom.
+// Scene/UI consumers read the typed value directly; Vue route roots own their
+// semantic DOM markers and no body/document dataset mirrors route state.
 //
 // Namespace note: the dataset carries a *PageId* (`'services'`), not a route
 // *path* (`'/services'`). The port therefore validates against the manifest's
@@ -30,17 +16,15 @@ const PAGE_IDS: ReadonlySet<string> = new Set<string>(MANIFEST_PAGES)
 
 let currentPage: PageId = 'home'
 
-/** Read typed application route state; never read the DOM projection. */
+/** Read typed application route state; never read the DOM. */
 export function getCurrentPage(): PageId {
   return currentPage
 }
 
-/** Publish the typed route page to the compatibility DOM projection. */
-export function publishCurrentPage(page: PageId): void {
+/** Set the typed route page after its Vue route root has mounted. */
+export function setCurrentPage(page: PageId): void {
   if (!PAGE_IDS.has(page)) return
   currentPage = page
-  document.body?.setAttribute('data-page', page)
-  document.documentElement?.setAttribute('data-page', page)
 }
 
 /** Convenience predicate: `true` when the current page is `page`. */

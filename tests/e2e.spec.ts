@@ -78,18 +78,18 @@ function attachErrorCapture(page: Page, errors: string[]): void {
 }
 
 async function waitForRouter(page: Page): Promise<void> {
-  // Proof the navigation owner committed the first page: `data-page` on
-  // <html> is set by legacy `initRouter()`'s first `renderView()` (same
-  // synchronous task as the main.less injection) and by the Vue path's
-  // `useJlzPage` onMounted (strictly after the `jlz:navigate` listener
-  // registration). Waiting only for main.less would dispatch a navigation
-  // request into the Vue startup gap where no listener exists yet — a
-  // CustomEvent is not queued, so the request is simply lost.
+  // Proof the Vue navigation owner committed the first page: its semantic
+  // `data-page-view` marker is written on the mounted route root. Waiting only
+  // for main.less would dispatch a navigation request into the Vue startup gap
+  // where no listener exists yet — a CustomEvent is not queued, so the request
+  // is simply lost.
   await page.waitForFunction(
     () =>
       [...document.head.querySelectorAll('style')].some((style) =>
         style.textContent?.includes('.jlz-storyline'),
-      ) && Boolean(document.documentElement.dataset.page),
+      ) &&
+        Boolean(document.querySelector('#spa-content')?.getAttribute('data-page-view')) &&
+        (window as unknown as { __jlzRouterReady?: boolean }).__jlzRouterReady === true,
   )
 }
 

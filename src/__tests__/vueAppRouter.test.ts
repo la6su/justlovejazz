@@ -173,7 +173,7 @@ describe('mountVueApp prerender adoption', () => {
     // render replaces it (no hydration attempt, no mismatch).
     expect(document.getElementById('prerender-marker')).toBeNull()
     expect(document.getElementById('section-works-01')).toBeTruthy()
-    expect(document.body.dataset.page).toBe('works')
+    expect(document.getElementById('spa-content')?.dataset.pageView).toBe('content')
   })
 
   it('keeps the prerendered home available pre-mount, then renders the home SFC', async () => {
@@ -199,6 +199,6 @@ describe('mountVueApp prerender adoption', () => {
         .querySelector('main#spa-content [data-section="intro"]')
         ?.classList.contains('section-active'),
     ).toBe(true)
-    expect(document.body.dataset.page).toBe('home')
+    expect(document.getElementById('spa-content')?.dataset.pageView).toBe('home')
   })
 })

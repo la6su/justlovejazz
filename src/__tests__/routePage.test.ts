@@ -1,44 +1,33 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { getCurrentPage, isCurrentPage, publishCurrentPage } from '../core/routePage'
+import { getCurrentPage, isCurrentPage, setCurrentPage } from '../core/routePage'
 
-function setDatasetPage(value: string | null): void {
-  if (value === null) document.body.removeAttribute('data-page')
-  else document.body.setAttribute('data-page', value)
-}
-
-describe('route page port (legacy adapter)', () => {
+describe('typed route page port', () => {
   beforeEach(() => {
-    publishCurrentPage('home')
+    setCurrentPage('home')
   })
 
   afterEach(() => {
-    setDatasetPage(null)
+    document.body.removeAttribute('data-page')
   })
 
   it('reads the typed page published by the router', () => {
     for (const page of ['home', 'services', 'works', 'manifesto', 'lab', 'contact'] as const) {
-      publishCurrentPage(page)
+      setCurrentPage(page)
       expect(getCurrentPage()).toBe(page)
     }
   })
 
-  it('publishes the typed page to both compatibility dataset projections', () => {
-    publishCurrentPage('works')
-    expect(document.body.dataset.page).toBe('works')
-    expect(document.documentElement.dataset.page).toBe('works')
-  })
-
-  it('does not let external dataset mutations change typed route state', () => {
-    publishCurrentPage('works')
-    setDatasetPage('contact')
+  it('keeps route state independent from DOM datasets', () => {
+    setCurrentPage('works')
+    document.body.setAttribute('data-page', 'contact')
     expect(getCurrentPage()).toBe('works')
   })
 
   it('isCurrentPage mirrors the former dataset equality reads', () => {
-    publishCurrentPage('works')
+    setCurrentPage('works')
     expect(isCurrentPage('works')).toBe(true)
     expect(isCurrentPage('contact')).toBe(false)
-    publishCurrentPage('home')
+    setCurrentPage('home')
     expect(isCurrentPage('home')).toBe(true)
     expect(isCurrentPage('lab')).toBe(false)
   })
@@ -46,9 +35,9 @@ describe('route page port (legacy adapter)', () => {
   it('World.syncRouteVisuals hides the shared home cube outside the home page via the port', () => {
     // Behavioural lock: the scene root owner reads the page through the port,
     // so lab/works/contact pages no longer show the home Baku.
-    publishCurrentPage('lab')
+    setCurrentPage('lab')
     expect(getCurrentPage()).not.toBe('home')
-    publishCurrentPage('home')
+    setCurrentPage('home')
     expect(getCurrentPage()).toBe('home')
   })
 })
