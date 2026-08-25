@@ -160,6 +160,15 @@ describe('renderBuilderPageDocument', () => {
       '<link rel="canonical" href="https://justlovejazz.dev/p/approved-page" />',
     )
     expect(html).toContain(
+      '<link rel="alternate" hreflang="en" href="https://justlovejazz.dev/p/approved-page" />',
+    )
+    expect(html).toContain(
+      '<link rel="alternate" hreflang="ru" href="https://justlovejazz.dev/p/approved-page/ru" />',
+    )
+    expect(html).toContain(
+      '<link rel="alternate" hreflang="x-default" href="https://justlovejazz.dev/p/approved-page" />',
+    )
+    expect(html).toContain(
       '<meta property="og:url" content="https://justlovejazz.dev/p/approved-page" />',
     )
     expect(html).toContain('<meta property="og:type" content="website" />')
@@ -177,6 +186,12 @@ describe('renderBuilderPageDocument', () => {
   it('respects the origin override', () => {
     const html = renderBuilderPageDocument(approvedDocument(), '', 'https://example.test/')
     expect(html).toContain('<link rel="canonical" href="https://example.test/p/approved-page" />')
+    expect(html).toContain(
+      '<link rel="alternate" hreflang="ru" href="https://example.test/p/approved-page/ru" />',
+    )
+    expect(html).toContain(
+      '<link rel="alternate" hreflang="x-default" href="https://example.test/p/approved-page" />',
+    )
   })
 
   it('renders a Russian static variant with localized metadata and canonical URL', () => {
@@ -191,6 +206,15 @@ describe('renderBuilderPageDocument', () => {
     expect(html).toContain('<meta property="og:locale" content="ru_RU" />')
     expect(html).toContain(
       '<link rel="canonical" href="https://justlovejazz.dev/p/approved-page/ru" />',
+    )
+    expect(html).toContain(
+      '<link rel="alternate" hreflang="en" href="https://justlovejazz.dev/p/approved-page" />',
+    )
+    expect(html).toContain(
+      '<link rel="alternate" hreflang="ru" href="https://justlovejazz.dev/p/approved-page/ru" />',
+    )
+    expect(html).toContain(
+      '<link rel="alternate" hreflang="x-default" href="https://justlovejazz.dev/p/approved-page" />',
     )
     expect(html).toContain('<section>тело</section>')
   })

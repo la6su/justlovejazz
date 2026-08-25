@@ -57,6 +57,8 @@ export function renderBuilderPageDocument(
   const bareOrigin = origin.replace(/\/+$/, '')
   const path = builderPagePath(document.slug, locale)
   const url = `${bareOrigin}${path}`
+  const englishUrl = `${bareOrigin}${builderPagePath(document.slug, 'EN')}`
+  const russianUrl = `${bareOrigin}${builderPagePath(document.slug, 'RU')}`
   const title = esc(locale === 'RU' ? (document.titleRu ?? document.title) : document.title)
   const description =
     locale === 'RU'
@@ -80,6 +82,9 @@ export function renderBuilderPageDocument(
     '    <link rel="mask-icon" href="/logo.svg" color="#232534" />',
     '    <link rel="manifest" href="/site.webmanifest" />',
     `    <link rel="canonical" href="${esc(url)}" />`,
+    `    <link rel="alternate" hreflang="en" href="${esc(englishUrl)}" />`,
+    `    <link rel="alternate" hreflang="ru" href="${esc(russianUrl)}" />`,
+    `    <link rel="alternate" hreflang="x-default" href="${esc(englishUrl)}" />`,
     '',
     '    <!-- Open Graph -->',
     '    <meta property="og:type" content="website" />',

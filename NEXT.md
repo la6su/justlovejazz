@@ -27,9 +27,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
 
 ## Deferred product queue
 
-- [ ] **Extend published builder pages** — add only bounded local capabilities
-  after the current EN/RU static publishing contract; remote/network sources
-  remain deferred until an explicit security and caching design exists.
+- [x] **Extend published builder pages** — publish an escaped EN/RU `hreflang`
+  matrix with an `x-default` alternate while keeping canonical
+  self-referential; remote/network sources remain deferred until an explicit
+  security and caching design exists.
 - [ ] **Extend the cinematic brand language** — tune motion and TSL response
   across every route while preserving backend and reduced-motion parity.
 - [x] **Cross-backend runtime baseline** — desktop and physical Android

@@ -60,6 +60,10 @@ English value when an override is absent. The admin preview follows the app's
 typed locale port. Approved documents publish both `/p/<slug>` (EN) and
 `/p/<slug>/ru` (RU) standalone routes; the Russian route uses localized
 metadata when supplied and otherwise falls back to English.
+Each published variant emits the same escaped EN/RU `hreflang` matrix and an
+`x-default` alternate; canonical remains self-referential for the current
+locale. The generator owns this head metadata so the static publisher and
+sitemap cannot drift into separate locale rules.
 
 The editor provides:
 
