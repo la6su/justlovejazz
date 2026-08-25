@@ -77,7 +77,13 @@ async function onReady(context: TresContext): Promise<void> {
     // dispose the dead instance and swap in the replacement.
     renderer.dispose()
     const candidate = createUnifiedWebGPUInstance(canvas, true)
-    await initUnifiedWebGPUInstance(candidate)
+    try {
+      await initUnifiedWebGPUInstance(candidate)
+    } catch (error) {
+      candidate.dispose()
+      onError(error instanceof Error ? error : new Error(String(error)))
+      return
+    }
     if (!isCurrent()) {
       candidate.dispose()
       return

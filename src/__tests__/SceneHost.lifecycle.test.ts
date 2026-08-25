@@ -66,4 +66,17 @@ describe('SceneHost async lifecycle', () => {
     expect(mocks.candidate.dispose).toHaveBeenCalledOnce()
     expect(sceneHost.isSettled).toBe(false)
   })
+
+  it('disposes and rejects when fallback initialization fails', async () => {
+    const error = new Error('fallback init failed')
+    mocks.init.mockRejectedValueOnce(error)
+
+    const readyRejection = expect(sceneHost.ready).rejects.toBe(error)
+    const wrapper = mount(SceneHost, { attachTo: document.body })
+    await flushPromises()
+
+    expect(mocks.candidate.dispose).toHaveBeenCalledOnce()
+    await readyRejection
+    wrapper.unmount()
+  })
 })
