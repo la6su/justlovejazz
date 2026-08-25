@@ -4,6 +4,7 @@
 
 import * as THREE from 'three'
 import { WireframeTypography } from './WireframeTypography'
+import { prefersReducedMotion } from '../../core/motionPolicy'
 
 export class ContactTypographyStage extends THREE.Group {
   private readonly typography = new WireframeTypography('HELLO', 0.34)
@@ -27,6 +28,7 @@ export class ContactTypographyStage extends THREE.Group {
   setActive(active: boolean): void {
     this.active = active
     this.visible = active
+    this.typography.userData.reducedMotion = prefersReducedMotion()
     this.typography.setActive(active)
   }
 

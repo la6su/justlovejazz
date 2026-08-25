@@ -106,6 +106,16 @@ export class WireframeTypography extends THREE.Group {
     this.time += dt
     if (!this.active) return
 
+    if (this.userData.reducedMotion === true) {
+      this.revealProgress = 1
+      for (const { mesh, x } of this.glyphs) {
+        mesh.position.set(x, 0, 0)
+        mesh.rotation.set(0, 0, 0)
+        mesh.scale.setScalar(1)
+      }
+      return
+    }
+
     this.revealElapsed += dt
     const revealDelay = this.userData.reducedMotion === true ? 0 : 0.72
     const revealDuration = 0.72
