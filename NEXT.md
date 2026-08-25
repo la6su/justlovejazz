@@ -137,6 +137,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
   `UIManager` owners are disposed exactly once; retry remains available only
   before the one-shot `SceneHost` bridge is imported, while post-bridge errors
   become terminal to protect the single renderer/canvas contract.
+- [x] **Reject post-dispose scheduler frames** — `RenderScheduler` now ignores
+  callbacks captured before `destroy()` or the settled stop, so released scene
+  and GPU owners cannot be touched by a late renderer-loop tick.
 
 ## Deferred product queue
 

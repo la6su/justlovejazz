@@ -187,6 +187,10 @@ according to their current measured policy.
   owners before publishing failure. Retry is allowed only before the one-shot
   `SceneHost` bridge is imported; once that bridge is in play, failure is
   terminal rather than creating a second renderer/canvas owner.
+- `RenderScheduler` checks both its destroyed and active-loop state inside the
+  frame callback itself. Removing the callback from the driver is not the only
+  guard: a callback already captured by a renderer or swap-chain tick must not
+  reach scene owners after teardown or a settled frame.
 - BlurFade treats title content as text at the DOM boundary and creates spans
   without `innerHTML`; translated/editorial markup cannot become live nodes.
 - RouteTransition owns at most one pending reveal timer and clears it when a

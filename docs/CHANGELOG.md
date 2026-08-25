@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- The single renderer-loop scheduler now rejects late callbacks after
+  `destroy()` or settled-stop, closing the post-dispose path to freed scene,
+  DOM and GPU resources.
+
 - Bootstrap failures now clean up attempt-local `Experience` and `UIManager`
   owners, and Vue mount rejection explicitly rejects the one-shot SceneHost
   bridge. Retry is limited to the pre-SceneHost boundary; post-bridge failures

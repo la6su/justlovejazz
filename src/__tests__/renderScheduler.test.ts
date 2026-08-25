@@ -19,6 +19,10 @@ class FakeDriver implements LoopDriver {
     return this._callback !== null
   }
 
+  get callback(): ((time: number) => void) | null {
+    return this._callback
+  }
+
   setLoop(callback: ((time: number) => void) | null): void {
     this._callback = callback
     if (callback === null) this.stops += 1
@@ -225,6 +229,34 @@ describe('RenderScheduler (Phase 7 single loop driver)', () => {
     scheduler.invalidate()
     expect(driver.active).toBe(false)
     expect(driver.starts).toBe(1)
+  })
+
+  it('ignores a callback already captured before destroy', () => {
+    const driver = new FakeDriver()
+    const host = new FakeHost({ settleAfterFrames: Infinity })
+    const scheduler = makeScheduler(driver, host)
+
+    scheduler.invalidate()
+    const captured = driver.callback
+    scheduler.destroy()
+    captured?.(99)
+
+    expect(host.frames).toHaveLength(0)
+    expect(scheduler.diagnostics.frames).toBe(0)
+  })
+
+  it('ignores a callback captured before the loop settled', () => {
+    const driver = new FakeDriver()
+    const host = new FakeHost({ settleAfterFrames: 1 })
+    const scheduler = makeScheduler(driver, host)
+
+    scheduler.invalidate()
+    const captured = driver.callback
+    driver.tick(16)
+    captured?.(32)
+
+    expect(host.frames).toEqual([16])
+    expect(scheduler.diagnostics.settledFrames).toBe(1)
   })
 
   it('passes the driver time through to the host frame', () => {

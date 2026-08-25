@@ -84,6 +84,7 @@ export class RenderScheduler {
     this._host = host
 
     this._frameCallback = (time: number) => {
+      if (this._destroyed || !this._loopActive) return
       this._frames += 1
       this._host.onFrame(time)
       if (this._host.isSettled()) {
