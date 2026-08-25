@@ -198,6 +198,8 @@ according to their current measured policy.
 - BakuCarousel texture initialization tracks each successful cache acquisition;
   a partial load failure releases only those refs, never decrementing a shared
   URL owned by WorksPlaneStage or another carousel.
+- BakuCarousel momentum uses elapsed-time damping calibrated at 60 Hz, so
+  refresh-rate changes do not alter the carousel's post-drag travel duration.
 - ContentReveal owns the global `uk-light` mutations it performs: it snapshots
   the pre-existing `html` and `body` class state and restores both on teardown,
   so a retry or HMR cycle cannot inherit a previous runtime's theme.

@@ -70,6 +70,8 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Avoid shared-texture over-release on carousel load failure** — partial
   `BakuCarousel` texture setup now releases only refs acquired by that attempt,
   preserving cache ownership held by other scene owners.
+- [x] **Make carousel momentum refresh-rate invariant** — drag momentum now
+  applies elapsed-time damping, preserving the same travel profile at 60/90/120Hz.
 - [x] **Dispose route WorkCards on owner teardown** — `useJlzPage` now releases
   the module-level card/grid registry on full unmount as well as before route
   replacement, with lifecycle coverage for both paths.

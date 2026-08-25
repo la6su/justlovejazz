@@ -362,7 +362,9 @@ export class BakuCarousel extends THREE.Group {
     // Phase 4: momentum — apply velocity after drag release
     if (!this.isDown && Math.abs(this.velocity) > MOMENTUM_THRESHOLD) {
       this.scroll.target += this.velocity
-      this.velocity *= MOMENTUM_DECAY
+      // Keep momentum duration stable across refresh rates. The authored
+      // factor is calibrated for 60 Hz, so scale its exponent by elapsed time.
+      this.velocity *= Math.pow(MOMENTUM_DECAY, Math.max(0, dt) * 60)
       if (Math.abs(this.velocity) < MOMENTUM_THRESHOLD) {
         this.velocity = 0
         this.scheduleSnap(120) // snap after momentum settles
