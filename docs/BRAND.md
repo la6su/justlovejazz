@@ -98,7 +98,7 @@ Vue owns semantic DOM, copy, focus and accessibility state. TresJS owns spatial
 composition and GPU presentation. Neither layer may duplicate the other as a
 second readable or interactive surface. A temporary dual implementation is
 allowed only behind an explicit migration flag and is removed at the phase
-gate recorded in [`MIGRATION_VUE_TRES.md`](MIGRATION_VUE_TRES.md).
+gate recorded in the [completed migration archive](archive/MIGRATION_VUE_TRES.md).
 
 Visual acceptance is comparative: capture the current route before its owner
 moves, then capture the migrated route at the same viewport, language, theme,

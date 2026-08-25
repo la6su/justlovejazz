@@ -132,5 +132,6 @@ not enter production chunks. A new dependency is accepted only when native
 browser/Vue primitives cannot meet the requirement and its isolated bundle
 cost is measured.
 
-See [`MIGRATION_VUE_TRES.md`](MIGRATION_VUE_TRES.md) for phase gates and
+See [`archive/MIGRATION_VUE_TRES.md`](archive/MIGRATION_VUE_TRES.md) for
+historical phase gates and
 [`ARCHITECTURE.md`](ARCHITECTURE.md) for target dependency direction.

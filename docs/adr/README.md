@@ -2,8 +2,8 @@
 
 ADRs record durable decisions and their status. They explain why the system is
 changing; [../ARCHITECTURE.md](../ARCHITECTURE.md) describes the resulting
-system and [../MIGRATION_VUE_TRES.md](../MIGRATION_VUE_TRES.md) controls the
-execution order.
+system and [../archive/MIGRATION_VUE_TRES.md](../archive/MIGRATION_VUE_TRES.md)
+records the completed execution history.
 
 | ADR                                            | Status              | Decision                                             |
 | ---------------------------------------------- | ------------------- | ---------------------------------------------------- |

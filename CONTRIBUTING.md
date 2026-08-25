@@ -12,9 +12,9 @@ bun run dev
 Choose an open outcome from [NEXT.md](NEXT.md) or discuss a new one in an
 issue. [AGENTS.md](AGENTS.md) gives the compact project context;
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) explains the non-obvious runtime
-boundaries. Migration work also follows
-[docs/MIGRATION_VUE_TRES.md](docs/MIGRATION_VUE_TRES.md) and the accepted
-[ADRs](docs/adr/README.md).
+boundaries. Migration history is preserved in the completed
+[archive record](docs/archive/MIGRATION_VUE_TRES.md); active work follows
+`NEXT.md` and the accepted [ADRs](docs/adr/README.md).
 
 ## Change
 
