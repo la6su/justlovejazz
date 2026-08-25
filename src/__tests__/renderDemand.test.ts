@@ -67,7 +67,7 @@ describe('anyActivity (the 13-flag OR)', () => {
 })
 
 describe('idleForAmbientBreath (the narrower 9-flag idle check)', () => {
-  it('is true when reduced motion is off and the 10 breath flags are clear', () => {
+  it('is true when reduced motion is off and the 9 breath flags are clear', () => {
     expect(idleForAmbientBreath(NO_ACTIVITY, false)).toBe(true)
   })
 
