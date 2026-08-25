@@ -47,6 +47,9 @@ export function useJlzPage(page: PageId, rootEl: () => HTMLElement | null): void
 
   onBeforeUnmount(() => {
     mounted = false
+    // Full app teardown must release the module-level WorkCards registry too;
+    // route navigation also calls this before the next DOM settles.
+    disposeWorkCards()
     disposeMenuToolbar?.()
     disposeMenuToolbar = null
     if (announcerRafHandle !== null) {

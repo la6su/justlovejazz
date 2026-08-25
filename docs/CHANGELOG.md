@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- `useJlzPage` now disposes the module-level `WorkCards` registry during route
+  owner teardown as well as before route replacement, releasing delegated grid
+  listeners and pending card timers on full unmount.
+
 - `BakuCarousel.dispose()` now releases its camera and card callback, clears
   input/timer handler references, and resets interaction/morph state after
   texture and card disposal.

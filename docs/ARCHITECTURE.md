@@ -181,7 +181,9 @@ according to their current measured policy.
   persistent-shell controls intentionally resolve from the document root.
 - `WorkCards` discovers cards and owns delegated grid listeners only within
   `#spa-content`; detached and persistent-shell grids remain outside that route
-  owner.
+  owner. `useJlzPage` disposes this module-level registry both before the next
+  route settles and when the owning Vue route unmounts, so detached grids do
+  not retain listeners or debounce timers through root teardown.
 - The menu template adapter resolves its nav bindings, preview synchronization
   and same-page hash targets within `#spa-content`; detached menu markup is not
   an application owner.
