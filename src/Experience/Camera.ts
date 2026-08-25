@@ -6,6 +6,7 @@ import { input } from './Input'
 import { Device } from '../core/DeviceCapability'
 import { prefersReducedMotion } from '../core/motionPolicy'
 import type { CameraTarget } from '../core/types'
+import { getCurrentPage } from '../core/routePage'
 
 // Zero-allocation vectors
 const _offsetVec = new THREE.Vector3()
@@ -167,7 +168,7 @@ export class Camera {
 
     // ── 2. Build position ──
     const isMobile = Device.isMobile
-    const isHome = document.body?.dataset?.page === 'home'
+    const isHome = getCurrentPage() === 'home'
     // Respect prefers-reduced-motion: disable cursor follow + organic shake
     // + FOV breath (SPEC.md motion rules).
     const reduced = prefersReducedMotion()

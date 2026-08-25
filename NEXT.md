@@ -34,6 +34,8 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Cancel readiness fallback timers** — first-frame readiness now clears
   its bounded timeout, and Experience teardown cancels the gate without
   allowing a destroyed instance to publish `jlz:webgl-ready`.
+- [x] **Remove the Camera DOM route read** — camera home-route tuning now uses
+  the typed `routePage` port instead of `document.body.dataset.page`.
 
 ## Deferred product queue
 
