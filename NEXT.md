@@ -67,6 +67,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
   creating detached `CasePlane`/TSL resources after a route change.
 - [x] **Prevent disposed Works stage reinitialization** — a disposed stage now
   rejects subsequent init attempts before starting texture loads.
+- [x] **Avoid shared-texture over-release on carousel load failure** — partial
+  `BakuCarousel` texture setup now releases only refs acquired by that attempt,
+  preserving cache ownership held by other scene owners.
 - [x] **Dispose route WorkCards on owner teardown** — `useJlzPage` now releases
   the module-level card/grid registry on full unmount as well as before route
   replacement, with lifecycle coverage for both paths.

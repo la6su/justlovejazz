@@ -37,6 +37,28 @@ describe('BakuCarousel async lifecycle', () => {
     expect(mocks.releaseCaseTexture).toHaveBeenCalledTimes(resolvers.length)
   })
 
+  it('releases only successfully acquired textures when one load fails', async () => {
+    const failure = new Error('texture failed')
+    let callIndex = 0
+    mocks.loadCaseTexture.mockImplementation(() => {
+      const index = callIndex++
+      return index === 1
+        ? Promise.reject<THREE.Texture>(failure)
+        : Promise.resolve(new THREE.Texture())
+    })
+
+    const carousel = new BakuCarousel()
+
+    await expect(carousel.init()).rejects.toBe(failure)
+
+    // BakuCarousel requests eight unique project textures. The rejected
+    // promise has no owned ref; releasing it would decrement another owner.
+    expect(mocks.releaseCaseTexture).toHaveBeenCalledTimes(7)
+    expect(mocks.releaseCaseTexture).not.toHaveBeenCalledWith(
+      '/assets/projects/mono-sunday/cover-studio-v2.jpg',
+    )
+  })
+
   it('keeps hidden idle cards on the CasePlane idle guard', () => {
     const update = vi.fn()
     const card = {
