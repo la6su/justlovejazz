@@ -23,6 +23,9 @@
   transactional card staging and refcount rollback.
   The shared case-texture cache now isolates new consumers from in-flight
   entries already claimed by global teardown.
+  First-frame readiness now owns and clears its bounded fallback timer; final
+  Experience teardown cancels that gate without publishing readiness from a
+  destroyed instance.
 - Scoped bootstrap UIkit refresh to `#spa-content`, removing the remaining
   document-wide traversal from the application shell.
 - Established the staged Vue 3, Vue Router and TresJS migration architecture,

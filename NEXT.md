@@ -31,6 +31,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
   `ContactTextStage`/`PixelTextScreen` path and its render-demand flag; Contact
   presentation remains owned by the semantic Vue view and live typography/
   Cyprus stages.
+- [x] **Cancel readiness fallback timers** — first-frame readiness now clears
+  its bounded timeout, and Experience teardown cancels the gate without
+  allowing a destroyed instance to publish `jlz:webgl-ready`.
 
 ## Deferred product queue
 
@@ -56,7 +59,7 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [ ] **Turn Works into evidence** — align approved facts and media around the
   same problem, response, role and proof.
 - [ ] **Replace placeholder media and contact delivery** — ship measured media
-  and a real contact endpoint after the route/resource boundaries are ready.
+      and a real contact endpoint after the route/resource boundaries are ready.
 
 ## Engineering policy
 

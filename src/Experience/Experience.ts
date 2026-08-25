@@ -83,6 +83,50 @@ export interface ExperienceHost {
   replaceRenderer(renderer: RenderSurface): void
 }
 
+interface ReadinessGate {
+  promise: Promise<void>
+  cancel(): void
+}
+
+/**
+ * Wait for the first successful frame without leaving a fallback timer armed
+ * after the gate has settled. Cancellation deliberately leaves the promise
+ * pending: a destroyed Experience must never let entry-app publish readiness.
+ */
+export function createReadinessGate(firstRender: Promise<void>, timeoutMs: number): ReadinessGate {
+  let settled = false
+  let resolveGate!: () => void
+  let timeout: ReturnType<typeof setTimeout> | null = null
+
+  const clear = () => {
+    if (timeout !== null) {
+      clearTimeout(timeout)
+      timeout = null
+    }
+  }
+  const settle = () => {
+    if (settled) return
+    settled = true
+    clear()
+    resolveGate()
+  }
+
+  const promise = new Promise<void>((resolve) => {
+    resolveGate = resolve
+    timeout = setTimeout(settle, timeoutMs)
+    void firstRender.then(settle, settle)
+  })
+
+  return {
+    promise,
+    cancel: () => {
+      if (settled) return
+      settled = true
+      clear()
+    },
+  }
+}
+
 export class Experience {
   scene!: THREE.Scene
   sizes!: Sizes
@@ -222,6 +266,7 @@ export class Experience {
   // invalidation guarantees a frame; the frame resolves this exactly once.
   private _firstRenderResolve: (() => void) | null = null
   private _firstRenderPromise: Promise<void> | null = null
+  private _readinessGate: ReadinessGate | null = null
   /** Resolved on the first successful rendered frame. */
   public get firstRender(): Promise<void> {
     if (!this._firstRenderPromise) {
@@ -1015,10 +1060,9 @@ export class Experience {
     // keeps the splash from hanging on a path that never renders. The factory
     // return alone never satisfies readiness — entry-app only publishes
     // `jlz:webgl-ready` after this init resolves.
-    await Promise.race([
-      this.firstRender,
-      new Promise<void>((resolve) => setTimeout(resolve, 20000)),
-    ])
+    this._readinessGate = createReadinessGate(this.firstRender, 20000)
+    await this._readinessGate.promise
+    this._readinessGate = null
   }
 
   /**
@@ -1407,6 +1451,8 @@ export class Experience {
   // (triggerSplashOpener removed — Phase 7 slice 4: owned by ExperienceUI.)
 
   destroy() {
+    this._readinessGate?.cancel()
+    this._readinessGate = null
     // Stop the loop driver FIRST — RenderScheduler.destroy() clears the
     // setAnimationLoop callback, the visibility listener and any pending
     // invalidation, so no frame fires after dispose().
