@@ -380,20 +380,31 @@ export function initMenuNav(): void {
   // announced the parent as expanded. Reconcile only that native state on the
   // next frame; no app-level accordion state is introduced.
   const toggles = nav.querySelectorAll<HTMLAnchorElement>('.jlz-menu-nav__toggle')
+  const pendingVisibilityFrames = new WeakMap<HTMLAnchorElement, [number, number?]>()
   toggles.forEach((toggle) => {
     if (toggle.dataset.jlzVisibilityBound === '1') return
     toggle.dataset.jlzVisibilityBound = '1'
     toggle.addEventListener('click', () => {
-      requestAnimationFrame(() => {
+      const pending = pendingVisibilityFrames.get(toggle)
+      if (pending) {
+        cancelAnimationFrame(pending[0])
+        if (pending[1] !== undefined) cancelAnimationFrame(pending[1])
+      }
+      const routeRoot = toggle.closest('#spa-content')
+      const first = requestAnimationFrame(() => {
         // UIkit may reconcile an initially hidden sheet on the first frame.
         // Read its authoritative aria state on the following frame, after that
         // update has settled, then mirror only the native `hidden` attribute.
-        requestAnimationFrame(() => {
+        const second = requestAnimationFrame(() => {
+          pendingVisibilityFrames.delete(toggle)
+          if (!toggle.isConnected || !routeRoot?.contains(toggle)) return
           const content = toggle.nextElementSibling
           if (!(content instanceof HTMLElement) || toggle.ariaExpanded !== 'true') return
           content.hidden = false
         })
+        pendingVisibilityFrames.set(toggle, [first, second])
       })
+      pendingVisibilityFrames.set(toggle, [first])
     })
 
     const syncPreview = () => {
