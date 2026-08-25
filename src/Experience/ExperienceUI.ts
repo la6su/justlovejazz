@@ -161,7 +161,18 @@ export class ExperienceUI {
     // reveal — no 3D plane-to-fullscreen handoff, which caused a double effect.
     this._openProjectUnsub = eventBus.on('jlz:open-project', ({ idx }) => {
       if (typeof idx !== 'number') return
+      const routeGeneration = this._routeGeneration
+      const page = this.host.page()
       void this.ensurePortfolio().then(() => {
+        if (
+          !isCurrentRouteContinuation(
+            routeGeneration,
+            this._routeGeneration,
+            page,
+            this.host.page(),
+          )
+        )
+          return
         this.onProjectSelect(idx)
       })
     })
@@ -190,7 +201,12 @@ export class ExperienceUI {
       }
       const newPage = this.host.page()
       const continuationIsCurrent = () =>
-        isCurrentRouteContinuation(routeGeneration, this._routeGeneration, newPage, this.host.page())
+        isCurrentRouteContinuation(
+          routeGeneration,
+          this._routeGeneration,
+          newPage,
+          this.host.page(),
+        )
       const coordinator = this.host.coordinator()
       coordinator.syncRouteVisuals()
       if (newPage === 'home') {
@@ -268,7 +284,18 @@ export class ExperienceUI {
         return
       // Raycast against the 3D planes to find which project was tapped, then
       // open the overlay with the unified cinematic reveal (no 3D handoff).
+      const routeGeneration = this._routeGeneration
+      const page = this.host.page()
       void this.ensurePortfolio().then(() => {
+        if (
+          !isCurrentRouteContinuation(
+            routeGeneration,
+            this._routeGeneration,
+            page,
+            this.host.page(),
+          )
+        )
+          return
         const stage = this.host.coordinator().worksPlaneStage
         if (!stage) return
         const idx = stage.hitTest(e.clientX, e.clientY)
