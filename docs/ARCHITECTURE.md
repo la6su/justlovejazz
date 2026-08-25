@@ -183,6 +183,10 @@ according to their current measured policy.
 - In-app hash dispatch owns one cancellable frame through
   `createSingleFrameOwner`; a later navigation or router error cancels the
   pending continuation physically and invalidates its callback token.
+- A failed `entry-app` attempt disposes its local `Experience` and `UIManager`
+  owners before publishing failure. Retry is allowed only before the one-shot
+  `SceneHost` bridge is imported; once that bridge is in play, failure is
+  terminal rather than creating a second renderer/canvas owner.
 - BlurFade treats title content as text at the DOM boundary and creates spans
   without `innerHTML`; translated/editorial markup cannot become live nodes.
 - RouteTransition owns at most one pending reveal timer and clears it when a

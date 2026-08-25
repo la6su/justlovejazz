@@ -133,6 +133,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Cancel stale hash-navigation frames** — route hash dispatch now owns
   one cancellable RAF and invalidates it on replacement or router error instead
   of waking an obsolete callback and ignoring it after the fact.
+- [x] **Contain failed bootstrap attempts** — incomplete `Experience` and
+  `UIManager` owners are disposed exactly once; retry remains available only
+  before the one-shot `SceneHost` bridge is imported, while post-bridge errors
+  become terminal to protect the single renderer/canvas contract.
 
 ## Deferred product queue
 

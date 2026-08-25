@@ -227,8 +227,30 @@ function transitionBootstrap(next: BootstrapState): boolean {
   return true
 }
 
-async function boot(): Promise<void> {
-  if (_bootstrapState === 'ready' || _bootstrapState === 'entered') return
+function disposeBootstrapAttempt(
+  experience: import('./Experience/Experience').Experience | null,
+  ui: import('./UI/UIManager').UIManager | null,
+): void {
+  try {
+    experience?.destroy()
+  } catch (error) {
+    console.error('[entry-app] Experience cleanup failed:', error)
+  }
+  try {
+    ui?.dispose()
+  } catch (error) {
+    console.error('[entry-app] UI cleanup failed:', error)
+  }
+}
+
+interface BootResult {
+  retryable: boolean
+}
+
+async function boot(): Promise<BootResult> {
+  if (_bootstrapState === 'ready' || _bootstrapState === 'entered') {
+    return { retryable: false }
+  }
   if (_bootstrapState === 'failed') transitionBootstrap('app-loading')
   else if (_bootstrapState === 'shell-painted') transitionBootstrap('app-loading')
   const progress = (pct: number) => updateLoaderProgress(Math.min(100, pct))
@@ -245,20 +267,30 @@ async function boot(): Promise<void> {
       transitionBootstrap('renderer-initializing')
       progress(100)
       const { UIManager } = await import('./UI/UIManager')
-      new UIManager().init()
+      const ui = new UIManager()
+      try {
+        ui.init()
+      } catch (error) {
+        ui.dispose()
+        throw error
+      }
       transitionBootstrap('scene-prewarming')
       transitionBootstrap('ready')
       eventBus.emit('jlz:webgl-ready')
+      return { retryable: false }
     } catch (e) {
       console.error('[entry-app] no-scene bootstrap failed:', e)
       transitionBootstrap('failed')
       eventBus.emit('jlz:webgl-failed')
+      return { retryable: true }
     }
-    return
   }
 
-  // A failed initialization enters the explicit failed state; a later retry
-  // transitions back to app-loading without requiring a page reload.
+  // A failed initialization may retry only before the one-shot SceneHost has
+  // settled. Once it owns a renderer/canvas, a second attempt is unsafe.
+  let ui: import('./UI/UIManager').UIManager | null = null
+  let experience: import('./Experience/Experience').Experience | null = null
+  let sceneHostSettled = false
   try {
     const { ErrorTracker } = await import('./core/ErrorTracker')
     ErrorTracker.init()
@@ -271,7 +303,7 @@ async function boot(): Promise<void> {
     progress(15)
 
     const { UIManager } = await import('./UI/UIManager')
-    const ui = new UIManager()
+    ui = new UIManager()
     ui.init()
     progress(40)
 
@@ -286,12 +318,13 @@ async function boot(): Promise<void> {
     // readiness. The `?no-scene` DOM-only rollback above returns earlier and
     // never reaches this handshake.
     const { sceneHost } = await import('./app/sceneHost')
+    sceneHostSettled = true
     const host = await sceneHost.ready
     transitionBootstrap('scene-prewarming')
     const { Experience } = await import('./Experience/Experience')
     progress(55)
 
-    const experience = new Experience(
+    const runtime = new Experience(
       ui,
       {
         scene: host.scene,
@@ -303,11 +336,10 @@ async function boot(): Promise<void> {
       },
       getCurrentPage,
     )
-    await experience.init()
+    experience = runtime
+    await runtime.init()
     if (import.meta.env.DEV) {
-      ;(window as unknown as { __jlzRuntimeDestroy?: () => void }).__jlzRuntimeDestroy = () => {
-        experience.destroy()
-      }
+      ;(window as unknown as { __jlzRuntimeDestroy?: () => void }).__jlzRuntimeDestroy = () => runtime.destroy()
     }
     // Phase 6 evidence (fixed 2026-08-22): the unified `WebGPURenderer` on
     // `WebGLBackend` keeps the direct-WebGL path (no TSL post) by design; TSL
@@ -337,14 +369,15 @@ async function boot(): Promise<void> {
       },
       prefersReducedMotion() ? 0 : readyAt,
     )
+    return { retryable: false }
   } catch (e) {
     console.error('[entry-app] bootstrap failed:', e)
+    disposeBootstrapAttempt(experience, ui)
     clearReadyWatchdog()
     transitionBootstrap('failed')
     eventBus.emit('jlz:webgl-failed')
-    // The failed state allows retry without a page reload.
+    return { retryable: !sceneHostSettled }
   }
-
 }
 
 async function startAppOnce(): Promise<void> {
@@ -381,7 +414,17 @@ async function startAppOnce(): Promise<void> {
   // SFCs stay in a separate lazy `app` chunk and the initial entry bundle
   // remains lean. The scene runtime boots exactly once regardless of the
   // route.
-  void import('./app').then((m) => m.mountVueApp())
+  void import('./app')
+    .then((m) => m.mountVueApp())
+    .catch((error) => {
+      console.error('[entry-app] Vue mount failed:', error)
+      eventBus.emit('jlz:webgl-failed')
+      void import('./app/sceneHost')
+        .then(({ sceneHost }) => sceneHost.reject(error))
+        .catch(() => {
+          /* sceneHost rejection is best-effort; the visible failure state remains */
+        })
+    })
 
   // ── Works page 3D cards: bind tilt + click on every route change ──
   // initWorkCards() is idempotent (skips already-bound cards).
@@ -464,8 +507,8 @@ async function startAppOnce(): Promise<void> {
     }
   }))
 
-  await boot()
-  if (_bootstrapState === 'failed') {
+  const result = await boot()
+  if (_bootstrapState === 'failed' && result.retryable) {
     throw new Error('Application bootstrap failed')
   }
 }

@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Bootstrap failures now clean up attempt-local `Experience` and `UIManager`
+  owners, and Vue mount rejection explicitly rejects the one-shot SceneHost
+  bridge. Retry is limited to the pre-SceneHost boundary; post-bridge failures
+  remain terminal so a disposed renderer cannot be recreated over the same
+  canvas.
+
 - In-app hash navigation now cancels its superseded RAF at the router owner;
   rapid route changes do not leave stale section-dispatch callbacks to wake on
   the next frame.
