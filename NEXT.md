@@ -167,6 +167,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Settle open FullscreenOverlay teardown** — disposal now routes an open
   modal through idempotent hide cleanup before UIkit destruction, restoring
   media, focus, keyboard and body-scroll state without duplicate `onClose`.
+- [x] **Make partial Experience teardown safe** — cleanup now tolerates
+  renderer/world failures before `ContentReveal`, `Cursor`, `SceneCoordinator`
+  or `StateBus` exist, preserving release of the owners that did initialize.
 
 ## Deferred product queue
 

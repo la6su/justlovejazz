@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest'
+import * as THREE from 'three'
+import { describe, expect, it, vi } from 'vitest'
 import { Experience } from '../Experience/Experience'
 
 type LifecycleProbe = {
@@ -41,5 +42,39 @@ describe('Experience async lifecycle guard', () => {
     const token = probe.lifecycleToken()
 
     expect(probe.isLifecycleCurrent(token)).toBe(true)
+  })
+
+  it('tears down safely when renderer init failed before world owners existed', () => {
+    const scheduler = { destroy: vi.fn() }
+    const renderer = { dispose: vi.fn() }
+    const camera = { destroy: vi.fn() }
+    const sizes = { destroy: vi.fn() }
+    const sfx = { dispose: vi.fn() }
+    const features = { destroy: vi.fn() }
+    const experience = Object.assign(Object.create(Experience.prototype), {
+      _destroyed: false,
+      _lifecycleGeneration: 0,
+      _scheduler: scheduler,
+      _mouseTrailRafId: null,
+      _onMouseMoveForTrail: null,
+      _readinessGate: null,
+      _worksPlaneStageRequest: 0,
+      _contactTypographyStageRequest: 0,
+      _contactCyprusStageRequest: 0,
+      _labGamepadRequest: 0,
+      features,
+      renderer,
+      camera,
+      sizes,
+      sfx,
+      scene: new THREE.Scene(),
+    }) as Experience
+
+    expect(() => experience.destroy()).not.toThrow()
+    expect(scheduler.destroy).toHaveBeenCalledOnce()
+    expect(renderer.dispose).toHaveBeenCalledOnce()
+    expect(camera.destroy).toHaveBeenCalledOnce()
+    expect(sizes.destroy).toHaveBeenCalledOnce()
+    expect(sfx.dispose).toHaveBeenCalledOnce()
   })
 })

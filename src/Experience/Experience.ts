@@ -1506,8 +1506,8 @@ export class Experience {
       window.removeEventListener('mousemove', this._onMouseMoveForTrail)
       this._onMouseMoveForTrail = null
     }
-    this.contentReveal.destroy()
-    this.cursor.destroy()
+    this.contentReveal?.destroy()
+    this.cursor?.destroy()
     if (this._sectionChangeHandler) {
       eventBus.off('jlz:section-change', this._sectionChangeHandler)
       this._sectionChangeHandler = null
@@ -1561,11 +1561,11 @@ export class Experience {
     // Phase 8 slice 2: the stable section groups owner (BakuCarousel-first
     // disposal ordering + Works particle texture live in the owner).
     this.sectionGroups?.dispose()
-    this.coordinator.dispose()
+    this.coordinator?.dispose()
     // Last-resort sweep for cold-cache failures and in-flight loads that had
     // no owner card yet. In-flight entries self-dispose when they settle.
     disposeAllCaseTextures()
-    this.bus.cancelAll()
+    this.bus?.cancelAll()
     this.devPanel?.dispose()
     delete (window as unknown as { __jlzRuntimeSnapshot?: () => unknown }).__jlzRuntimeSnapshot
     delete (window as unknown as { __jlzRuntimeDestroy?: () => void }).__jlzRuntimeDestroy

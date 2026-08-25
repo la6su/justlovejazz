@@ -77,6 +77,10 @@ under `src/builder/`; the public builds do not import the editor graph.
   idempotent hide owner used by normal close before aborting listeners and
   destroying the component. This restores media, focus, keyboard and body
   scroll state and invokes only the current per-open callback.
+- `Experience.destroy()` is partial-init safe: optional DOM, coordinator and
+  state-bus owners are released only when they exist, while mandatory
+  scheduler/renderer/camera/size/audio owners still release on every failed
+  bootstrap path.
 - UIkit remains the layout/component/accessibility baseline where retained;
   project styles express the 3D shell and authored compositions.
 - Published Builder cards and buttons keep UIkit as the owner of base geometry

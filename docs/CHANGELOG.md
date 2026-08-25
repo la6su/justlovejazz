@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Bootstrap teardown now tolerates renderer/world failure before all
+  `Experience` owners exist; optional UI/coordinator/StateBus cleanup no longer
+  masks the original error with a secondary exception.
+
 - Open `FullscreenOverlay` instances now execute idempotent hide cleanup before
   UIkit destruction, preventing stale body-scroll/focus state and ensuring the
   per-open close callback fires once during runtime teardown.
