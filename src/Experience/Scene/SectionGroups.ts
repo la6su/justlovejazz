@@ -34,12 +34,15 @@ import { createSection4 } from '../../sections/contact/scene'
 import { createSection5 } from '../../sections/menu/scene'
 import { disposeSection3Textures } from '../../sections/works/scene'
 import { disposeMaterialDeep } from '../../Utils/dispose'
+import type { PageId } from '../../sections/_shared/constants'
 
 /** Canonical six-slot layout (one group per world slot / cube face). */
 export const SECTION_GROUP_COUNT = 6
 
 // Index → creator function. 6 sections (1:1 cube faces).
-const SECTION_CREATORS: ReadonlyArray<() => THREE.Group> = [
+type SectionCreator = (page: () => PageId) => THREE.Group
+
+const SECTION_CREATORS: ReadonlyArray<SectionCreator> = [
   createSection0, // 0: canonical Lab scene behind the public Contact finale
   createSection1, // 1: Intro (front face)
   createSection2, // 2: About (right face)
@@ -49,9 +52,9 @@ const SECTION_CREATORS: ReadonlyArray<() => THREE.Group> = [
 ]
 
 /** Create the section group for a canonical slot (falls back to slot 0). */
-function createSectionGroupByIndex(i: number): THREE.Group {
+function createSectionGroupByIndex(i: number, page: () => PageId): THREE.Group {
   const fn = SECTION_CREATORS[i] ?? SECTION_CREATORS[0]
-  return (fn ?? SECTION_CREATORS[0]!)()
+  return (fn ?? SECTION_CREATORS[0]!)(page)
 }
 
 /**
@@ -72,9 +75,13 @@ function hideSectionGeometry(group: THREE.Group): void {
 export class SectionGroups {
   readonly groups: THREE.Group[] = []
 
-  constructor(scene: THREE.Scene, count: number = SECTION_GROUP_COUNT) {
+  constructor(
+    scene: THREE.Scene,
+    count: number = SECTION_GROUP_COUNT,
+    page: () => PageId = () => 'home',
+  ) {
     for (let i = 0; i < count; i++) {
-      const group = createSectionGroupByIndex(i)
+      const group = createSectionGroupByIndex(i, page)
       // Hide non-particle geometry until bespoke visuals are ready (T-070..T-074).
       // Particles remain for atmospheric depth. Remove this call section by section
       // as real visuals are added.

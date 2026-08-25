@@ -912,6 +912,20 @@ of mutating either dataset directly. The projection remains intentionally
 until Phase 5 CSS ownership moves to Vue state; its writer is now centralized,
 unit-tested and replaceable without changing scene consumers.
 
+#### Phase 3 scene route getter injection slice — 2026-08-25
+
+`BakuCarousel` no longer imports `src/core/routePage.ts` or reads the DOM
+directly. Its two home-only input guards receive a typed `page(): PageId`
+getter through `Experience → SectionGroups → sections/works/scene`. The pull
+semantics and event timing are unchanged; the 3D owner now depends on an
+explicit route port rather than a hidden DOM adapter. The route-page adapter
+remains responsible only for the compatibility projection and shell readers
+until Phase 5 moves CSS state into Vue.
+
+Acceptance: `vue-tsc`, focused BakuCarousel/route-page tests, production build
+and `git diff --check` pass. Rollback: restore the default DOM adapter in the
+carousel and remove the page getter parameter from the section owner.
+
 #### Phase 3 world-slot tuple slice — 2026-08-21
 
 The second Phase 3 contract is the **canonical world-slot tuple**: the

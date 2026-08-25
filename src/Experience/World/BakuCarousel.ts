@@ -22,7 +22,7 @@ function isMenuOpen(): boolean {
 import { PROJECTS } from '../../Data/Projects'
 import { CasePlane, CLOTH_PARAMS } from './CasePlane'
 import { loadCaseTexture, releaseCaseTexture } from './caseTexture'
-import { getCurrentPage } from '../../core/routePage'
+import type { PageId } from '../../sections/_shared/constants'
 import { eventBus } from '../../core/EventBus'
 // PlaneTransition removed — unified animation uses direct overlay open.
 
@@ -84,7 +84,7 @@ export class BakuCarousel extends THREE.Group {
   private _tmpStreamPos = new THREE.Vector3()
   private _tmpRingRot = new THREE.Euler()
 
-  constructor() {
+  constructor(private readonly page: () => PageId = () => 'home') {
     super()
     this.name = 'baku-carousel'
   }
@@ -174,7 +174,7 @@ export class BakuCarousel extends THREE.Group {
       // D-15 fix: only intercept on home page (carousel is home-only; on
       // content pages the window listener would block WorkCard clicks if
       // the carousel's _active flag were stuck true from a prior home visit).
-      if (getCurrentPage() !== 'home') return
+      if (this.page() !== 'home') return
       this.isDown = true
       this.dragStartX = e.clientX
       this.dragStartY = e.clientY
@@ -232,7 +232,7 @@ export class BakuCarousel extends THREE.Group {
       const control = (event.target as HTMLElement | null)?.closest<HTMLElement>(
         '[data-baku-carousel-control]',
       )
-      if (!control || !this._active || getCurrentPage() !== 'home') return
+      if (!control || !this._active || this.page() !== 'home') return
       event.preventDefault()
       const direction = control.dataset.bakuCarouselControl
       if (direction === 'prev') this.prev()

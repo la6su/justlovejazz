@@ -221,6 +221,12 @@ do not start a phase whose entry gate has not passed.
       projection on body/html. `useJlzPage` no longer writes datasets directly;
       CSS compatibility remains intact while the projection is still needed.
 
+      Phase 3 scene route getter injection slice landed (2026-08-25):
+      `BakuCarousel` no longer imports `routePage` or reads DOM state. Its
+      home-only guards receive `page(): PageId` from the Experience-owned
+      SectionGroups factory, preserving pull timing while making the scene
+      boundary explicit.
+
 - [x] **Phase 4: migrate the development Page Builder to Vue** — use the
       isolated admin application as the first state-heavy Vue surface while
       keeping schema, validation, escaping and Less compilation pure. Preserve

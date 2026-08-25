@@ -3,11 +3,12 @@
 import * as THREE from 'three'
 import { JunniParticles } from '../../Experience/World/JunniParticles'
 import { BakuCarousel } from '../../Experience/World/BakuCarousel'
+import type { PageId } from '../_shared/constants'
 
 /** Owned particle texture reference (stored on group for lifecycle). */
 let _section3Texture: THREE.Texture | null = null
 
-export function createSection3(): THREE.Group {
+export function createSection3(page: () => PageId = () => 'home'): THREE.Group {
   const g = new THREE.Group()
   g.name = 'works'
 
@@ -25,7 +26,7 @@ export function createSection3(): THREE.Group {
   // BakuCarousel — the project stream resolves from depth around the baku.
   // Once revealed (morphT > 0.5) the stream can be scrolled/dragged,
   // and clicking a card opens the fullscreen ProjectOverlay.
-  const carousel = new BakuCarousel()
+  const carousel = new BakuCarousel(page)
   carousel.userData.keepVisible = true
   g.add(carousel)
   g.userData.carousel = carousel
