@@ -8,9 +8,13 @@ describe('ContentReveal typed page port', () => {
   let reveal: ContentReveal
   let page: PageId
 
+  const setSections = (markup: string): void => {
+    document.body.innerHTML = `<main id="spa-content">${markup}</main>`
+  }
+
   beforeEach(() => {
     page = 'home'
-    document.body.innerHTML = '<section data-section="intro" class="section-active"></section>'
+    setSections('<section data-section="intro" class="section-active"></section>')
     document.body.dataset.page = 'works'
     reveal = new ContentReveal(() => page)
   })
@@ -41,10 +45,14 @@ describe('ContentReveal typed page port', () => {
   })
 
   it('refreshes only the active section subtree after a section change', async () => {
-    document.body.innerHTML = `
+    setSections(`
       <section data-section="intro" class="section-active"></section>
       <section data-section="about"></section>
-    `
+    `)
+    document.body.insertAdjacentHTML(
+      'beforeend',
+      '<section data-section="about" class="section-active" data-outside-root></section>',
+    )
     const active = document.querySelector<HTMLElement>('[data-section="about"]')!
     const update = vi.spyOn(UIkit as unknown as { update: (element: Element) => void }, 'update')
 
@@ -57,11 +65,14 @@ describe('ContentReveal typed page port', () => {
     expect(document.querySelector('[data-section="intro"]')?.classList.contains('section-active')).toBe(
       false,
     )
+    expect(document.querySelector('[data-outside-root]')?.classList.contains('section-active')).toBe(
+      true,
+    )
     update.mockRestore()
   })
 
   it('cancels a pending scoped UIkit update when destroyed', () => {
-    document.body.innerHTML = '<section data-section="intro" class="section-active"></section>'
+    setSections('<section data-section="intro" class="section-active"></section>')
     const callbacks: FrameRequestCallback[] = []
     const cancel = vi.spyOn(window, 'cancelAnimationFrame')
     const raf = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
@@ -82,11 +93,11 @@ describe('ContentReveal typed page port', () => {
   })
 
   it('coalesces rapid section changes to the latest connected root', () => {
-    document.body.innerHTML = `
+    setSections(`
       <section data-section="intro" class="section-active"></section>
       <section data-section="about"></section>
       <section data-section="works"></section>
-    `
+    `)
     const callbacks: FrameRequestCallback[] = []
     const raf = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
       callbacks.push(callback)

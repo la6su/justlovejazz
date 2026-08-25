@@ -59,11 +59,19 @@ export class ContentReveal {
     return this.cachedConfigs
   }
 
+  private contentRoot(): ParentNode {
+    // The active Vue route owns the semantic story root. Keep a document
+    // fallback only for the short pre-mount bootstrap window.
+    return document.getElementById('spa-content') ?? document
+  }
+
   private setupSectionSync() {
     // Home: jlz:section-change (data-section)
     this.sectionHandler = (payload) => {
       if (!payload?.sectionId) return
-      const matching = document.querySelector<HTMLElement>(`[data-section="${payload.sectionId}"]`)
+      const matching = this.contentRoot().querySelector<HTMLElement>(
+        `[data-section="${payload.sectionId}"]`,
+      )
       if (!matching) return
       this.currentSectionId = payload.sectionId
       // Derive the 6-section index from the sectionId so EnvSphere can show
@@ -79,7 +87,7 @@ export class ContentReveal {
 
     // Content pages: jlz:page-section-change (data-page-section)
     this.pageSectionUnsub = eventBus.on('jlz:page-section-change', ({ index }) => {
-      const sections = document.querySelectorAll<HTMLElement>('[data-page-section]')
+      const sections = this.contentRoot().querySelectorAll<HTMLElement>('[data-page-section]')
       const el = sections[index]
       if (el) {
         const id = el.getAttribute('data-page-section') ?? ''
@@ -91,10 +99,11 @@ export class ContentReveal {
   }
 
   private activateSection(selector: string): void {
-    const matching = document.querySelector<HTMLElement>(selector)
+    const root = this.contentRoot()
+    const matching = root.querySelector<HTMLElement>(selector)
     if (!matching) return
 
-    document.querySelectorAll<HTMLElement>('[data-section], [data-page-section]').forEach((el) => {
+    root.querySelectorAll<HTMLElement>('[data-section], [data-page-section]').forEach((el) => {
       el.classList.remove('section-active')
     })
     matching.classList.add('section-active')
@@ -164,7 +173,7 @@ export class ContentReveal {
       this.cachedConfigs = null
       this.currentSectionId = null
       this.currentSectionIndex = -1
-      const active = document.querySelector<HTMLElement>(
+      const active = this.contentRoot().querySelector<HTMLElement>(
         '[data-section].section-active, [data-page-section].section-active',
       )
       const sectionId =
@@ -181,7 +190,7 @@ export class ContentReveal {
     this.themeChangeUnsub = eventBus.on('jlz:theme-change', () => {
       let sectionId = this.currentSectionId
       if (!sectionId) {
-        const active = document.querySelector<HTMLElement>(
+        const active = this.contentRoot().querySelector<HTMLElement>(
           '[data-section].section-active, [data-page-section].section-active',
         )
         sectionId =

@@ -143,6 +143,8 @@ according to their current measured policy.
 - `UIMenu` owns UIkit hydration for the persistent shell; route roots own their
   scoped UIkit update through `useJlzPage`, so bootstrap does not traverse the
   whole content tree a second time.
+- `ContentReveal` resolves and activates sections only within `#spa-content`,
+  keeping route theme/section ownership separate from persistent shell DOM.
 - `core/` owns the framework-neutral contracts (route manifest, world slots,
   typed event ports, i18n, theme, motion policy) and imports no Vue or TresJS.
 - `sections/` owns the per-route content templates consumed by the route views;

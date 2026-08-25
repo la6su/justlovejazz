@@ -64,6 +64,9 @@
   Persistent UIMenu now owns its scoped UIkit hydration; the bootstrap no
   longer schedules a duplicate global idle update over `#spa-content`, and
   `entry-app` measures 6.99 kB gzip versus 7.30 kB before the change.
+  ContentReveal now scopes section activation and UIkit refresh to the active
+  route root, preventing unrelated document sections from being traversed or
+  deactivated during route transitions.
 - Scoped bootstrap UIkit refresh to `#spa-content`, removing the remaining
   document-wide traversal from the application shell.
 - Established the staged Vue 3, Vue Router and TresJS migration architecture,

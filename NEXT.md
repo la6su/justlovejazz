@@ -84,6 +84,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
   its own icons/tooltips at construction; the bootstrap no longer schedules a
   duplicate global idle traversal of `#spa-content`, reducing `entry-app` from
   7.30 kB to 6.99 kB gzip.
+- [x] **Scope ContentReveal to the route root** — section activation, lookup
+  and UIkit refresh now operate inside `#spa-content`, leaving unrelated
+  persistent or detached sections untouched during navigation.
 
 ## Deferred product queue
 
