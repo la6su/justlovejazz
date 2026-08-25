@@ -1454,14 +1454,8 @@ export class Experience {
     // Phase 8 slice 8: the Contact typography + Cyprus stage owners (lazy — only
     // alive when /contact was reached; direct children of the Tres-owned
     // scene).
-    this._contactTypographyStageRequest++
-    this.contactTypographyStage?.removeFromParent()
-    this.contactTypographyStage?.dispose()
-    this.contactTypographyStage = null
-    this.contactCyprusStage?.removeFromParent()
-    this.contactCyprusStage?.dispose()
-    this.contactCyprusStage = null
-    this._contactCyprusActive = false
+    this.disposeContactTypographyStage()
+    this.disposeContactCyprusStage()
     // Phase 8 slice 9: the Lab experiment object (created once on the first
     // /lab visit; a direct child of the Tres-owned scene, never disposed per
     // route leave).
