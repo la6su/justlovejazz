@@ -87,6 +87,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Scope ContentReveal to the route root** — section activation, lookup
   and UIkit refresh now operate inside `#spa-content`, leaving unrelated
   persistent or detached sections untouched during navigation.
+- [x] **Align Experience DOM lookups with the route root** — section eyebrows
+  and initial-section activation now use the same `#spa-content` owner, with a
+  bootstrap-only document fallback before Vue mounts.
 
 ## Deferred product queue
 

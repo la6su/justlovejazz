@@ -145,6 +145,8 @@ according to their current measured policy.
   whole content tree a second time.
 - `ContentReveal` resolves and activates sections only within `#spa-content`,
   keeping route theme/section ownership separate from persistent shell DOM.
+- Experience's DOM-facing section signals use that same root boundary; the
+  document fallback exists only before the Vue route shell is mounted.
 - `core/` owns the framework-neutral contracts (route manifest, world slots,
   typed event ports, i18n, theme, motion policy) and imports no Vue or TresJS.
 - `sections/` owns the per-route content templates consumed by the route views;

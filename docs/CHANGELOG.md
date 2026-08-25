@@ -67,6 +67,8 @@
   ContentReveal now scopes section activation and UIkit refresh to the active
   route root, preventing unrelated document sections from being traversed or
   deactivated during route transitions.
+  Experience's section eyebrow and initial activation lookups now use the same
+  route-root boundary, keeping scene/UI synchronization out of persistent DOM.
 - Scoped bootstrap UIkit refresh to `#spa-content`, removing the remaining
   document-wide traversal from the application shell.
 - Established the staged Vue 3, Vue Router and TresJS migration architecture,

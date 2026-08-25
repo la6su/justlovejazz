@@ -52,6 +52,12 @@ import { getLabExperiment, type LabExperimentObject } from './Lab/manifest'
 import { disposeAllCaseTextures } from './World/caseTexture'
 // DissolveOverlay removed — cover transition in ProjectDetail replaces it.
 
+function contentRoot(): ParentNode {
+  // Vue owns the active route root. Keep the document fallback only for the
+  // short bootstrap window before the route shell mounts.
+  return document.getElementById('spa-content') ?? document
+}
+
 /**
  * Section-arrival transition tuning.
  * TODO(track-b): move per-step values into WorldConfig so each phase can
@@ -837,7 +843,7 @@ export class Experience {
     // from a previous animation, causing permanent glitch residue.
     this._sectionChangeHandler = (payload) => {
       if (!payload?.sectionId) return
-      const section = document.querySelector(`[data-section="${payload.sectionId}"]`)
+      const section = contentRoot().querySelector(`[data-section="${payload.sectionId}"]`)
       const eyebrow = section?.querySelector<HTMLElement>('[data-eyebrow]')
       if (eyebrow) {
         const text = eyebrow.getAttribute('data-eyebrow-text') ?? eyebrow.textContent ?? ''
@@ -851,8 +857,8 @@ export class Experience {
     this._splashEnteredUnsub = eventBus.on('jlz:splash-entered', () => {
       this.features.triggerSplashOpener()
       const activeSection =
-        (document.querySelector('.section-active [data-eyebrow]') as HTMLElement | null) ??
-        (document.querySelector('[data-section="intro"] [data-eyebrow]') as HTMLElement | null)
+        (contentRoot().querySelector('.section-active [data-eyebrow]') as HTMLElement | null) ??
+        (contentRoot().querySelector('[data-section="intro"] [data-eyebrow]') as HTMLElement | null)
       if (activeSection) {
         const text =
           activeSection.getAttribute('data-eyebrow-text') ?? activeSection.textContent ?? ''
@@ -984,7 +990,7 @@ export class Experience {
     // Mark the intro section active on init so its DOM content is visible
     // (ContentReveal toggles .section-active on jlz:section-change, but no
     // event fires for the initial section).
-    const firstSection = document.querySelector('[data-section="intro"]')
+    const firstSection = contentRoot().querySelector('[data-section="intro"]')
     firstSection?.classList.add('section-active')
     // Apply initial section theme (intro = light in auto, dark in inverse)
     // ContentReveal.applySectionTheme is private — dispatch section-change
