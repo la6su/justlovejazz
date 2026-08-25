@@ -1,15 +1,16 @@
 # la6su
 
-Interactive studio portfolio built as a Vite single-page application. The
-current experience combines an inline, FCP-friendly splash with a Three.js
-scene that uses TSL NodeMaterials and selects WebGPU or a classic WebGL2 path
-at runtime.
+Interactive studio portfolio built as a Vite single-page application with
+Vue 3, Vue Router and TresJS. The shipped runtime combines an inline,
+FCP-friendly splash with one persistent TresJS scene, TSL NodeMaterials and a
+single Three.js `WebGPURenderer`.
 
-The project is now migrating to Vue 3, Vue Router and TresJS. The target uses
-one Three.js `WebGPURenderer` with WebGPU and WebGL2 backends, one TSL post
-graph and one demand-driven scheduler. This is a staged target, not the current
-production runtime; follow the
-[migration plan](docs/MIGRATION_VUE_TRES.md) and [ADRs](docs/adr/README.md).
+The renderer uses `WebGPUBackend` when hardware WebGPU is usable and the same
+`WebGPURenderer` class with `WebGLBackend`/`forceWebGL` when it is not. Rendering
+is demand-driven through one `RenderScheduler`; semantic Vue route content
+remains above an `aria-hidden` canvas. The Vue/TresJS migration is complete;
+the archived record is [here](docs/archive/MIGRATION_VUE_TRES.md), while active
+architecture decisions live in [ADRs](docs/adr/README.md).
 
 ## Quick start
 
@@ -44,29 +45,20 @@ Each SPA route uses the same six-face navigation model: four visible main
 sections plus secret Lab and Menu sections. The menu supports deep links such
 as `/services#section-services-02`.
 
-## Current runtime at a glance
+## Runtime at a glance
 
-`index.html → entry-shell.ts → entry-app.ts → Experience.ts`
+`index.html splash → entry shell → lazy Vue app → Vue Router → AppShell.vue → persistent SceneHost.vue → TresCanvas`
 
-The inline splash is visible before the Three.js import. The Enter control only
-activates after `jlz:webgl-ready`; failure shows an error state rather than an
-uninitialised scene. A fixed top bar provides language, theme and sound
-controls; trackpad, mouse wheel, touch and keyboard arrows drive the vertical
-story track.
-
-## Target runtime at a glance
-
-`index.html splash → lazy Vue app → Vue Router → persistent TresCanvas → custom WebGPURenderer → WorldRoot`
-
-The splash remains outside Vue. Semantic route components remain above an
-`aria-hidden` scene. A typed route manifest and state ports replace duplicated
-route/DOM checks, while route resource scopes preserve cancellation and GPU
-disposal. The classic WebGL renderer is removed only after the representative
-WebGLBackend/TSL gate passes.
+`SceneHost` owns the single canvas and renderer surface. `Experience` and its
+scene owners provide the authored world; `RenderScheduler` owns the demand-
+driven loop; typed route, locale, theme, motion and story ports keep semantic
+Vue state separate from GPU resources. Navigation never remounts the scene
+root, and every owner has an explicit teardown path.
 
 ## Documentation
 
 Use [docs/README.md](docs/README.md) for the ownership map. The primary
 technical reference is [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and local
-verification lives in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md). Migration
-execution lives only in [docs/MIGRATION_VUE_TRES.md](docs/MIGRATION_VUE_TRES.md).
+verification lives in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md). Open work is
+tracked only in [NEXT.md](NEXT.md); migration history is preserved in the
+[archive](docs/archive/MIGRATION_VUE_TRES.md).
