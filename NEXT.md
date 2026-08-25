@@ -72,6 +72,8 @@ Do not reopen completed migration phases. Current runtime contracts are in
   preserving cache ownership held by other scene owners.
 - [x] **Make carousel momentum refresh-rate invariant** — drag momentum now
   applies elapsed-time damping, preserving the same travel profile at 60/90/120Hz.
+- [x] **Remove the obsolete Works back-text demand flag** — the deleted pixel
+  text owner no longer keeps `/works` in a continuous GPU loop after cards settle.
 - [x] **Dispose route WorkCards on owner teardown** — `useJlzPage` now releases
   the module-level card/grid registry on full unmount as well as before route
   replacement, with lifecycle coverage for both paths.

@@ -155,7 +155,7 @@ owner-visible inventory shown in the DevPanel: canvas count, scene geometries,
 materials and textures, renderer counters when exposed, post-pipeline
 targets/passes, the single loop driver's diagnostics (`loopActive`, `frames`)
 and the exact demand state behind the settle decision (`needsRender`,
-cursor-settled, the 14-flag `renderDemand.ts` activity snapshot). It
+cursor-settled, the 12-flag `renderDemand.ts` activity snapshot). It
 intentionally does not invent driver-level WebGPU memory metrics. The soak
 tool records one snapshot after each route cycle (warm-up + steady) plus a
 root-destroy snapshot, writes a machine-readable report to

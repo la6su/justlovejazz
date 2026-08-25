@@ -24,6 +24,10 @@
 - `BakuCarousel` momentum damping is now elapsed-time based, keeping post-drag
   travel consistent across 60/90/120 Hz displays.
 
+- Removed the obsolete `/works` back-text render-demand flag after its pixel
+  text owner was deleted; settled Works now returns to the demand-driven idle
+  loop instead of rendering continuously.
+
 - `useJlzPage` now disposes the module-level `WorkCards` registry during route
   owner teardown as well as before route replacement, releasing delegated grid
   listeners and pending card timers on full unmount.

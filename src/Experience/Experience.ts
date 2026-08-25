@@ -1112,7 +1112,7 @@ export class Experience {
   /**
    * Post-frame settle decision for the single loop driver (ADR 0004): the
    * loop may stop after this frame only when the draw gate would have been
-   * a no-op (demand clear AND nothing active — the demandSettles 14-flag
+   * a no-op (demand clear AND nothing active — the demandSettles 12-flag
    * set) AND the cursor spring has converged (it needs frames even when the
    * scene is settled). Equivalent to "the next frame would draw nothing".
    */
@@ -1245,19 +1245,14 @@ export class Experience {
     // ── Zoom pulse active ──
     const camPulsing = this.camera.isPulsing
 
-    // On /works, keep rendering so the back-text UV scroll + wipe stay animated
-    // even when cards have settled (on-demand rendering would freeze the scroll).
-    const worksScrollActive = this.currentPage() === 'works' && !this._reducedMotion
-
     // The per-frame activity snapshot — the demand decision below is the
-    // pure renderDemand contract (single source of the 14-flag OR /
-    // 10-flag breath-idle sets, unit-locked against the legacy logic).
+    // pure renderDemand contract (single source of the 12-flag OR /
+    // 9-flag breath-idle sets, unit-locked against the legacy logic).
     const activity: RenderActivity = {
       nav: navActive,
       carousel: carouselActive,
       worksPlane: worksPlaneActive,
       contactCyprus: contactCyprusActive,
-      worksScroll: worksScrollActive,
       drawTrail: drawTrailActive,
       opener: openerActive,
       burst: burstActive,
@@ -1452,7 +1447,7 @@ export class Experience {
         resolve()
       }
       // Clear the demand flag only when nothing is still active — the same
-      // 14-flag settle set, now the contract's demandSettles (unit-locked
+      // 12-flag settle set, now the contract's demandSettles (unit-locked
       // against the legacy inline AND-NOT).
       if (demandSettles(activity)) {
         this._needsRender = false

@@ -18,7 +18,6 @@ const ALL_FLAGS: (keyof RenderActivity)[] = [
   'carousel',
   'worksPlane',
   'contactCyprus',
-  'worksScroll',
   'drawTrail',
   'opener',
   'burst',
@@ -29,8 +28,8 @@ const ALL_FLAGS: (keyof RenderActivity)[] = [
   'ambientScene',
 ]
 
-// The 9 flags the ambient-breath idle check actually reads. The other four
-// (worksScroll, drawTrail, cubeRotating, camPulsing) are deliberately excluded.
+// The 9 flags the ambient-breath idle check actually reads. The other three
+// (drawTrail, cubeRotating and camPulsing) are deliberately excluded.
 const BREATH_RELEVANT: (keyof RenderActivity)[] = [
   'nav',
   'carousel',
@@ -44,13 +43,12 @@ const BREATH_RELEVANT: (keyof RenderActivity)[] = [
 ]
 
 const BREATH_EXCLUDED: (keyof RenderActivity)[] = [
-  'worksScroll',
   'drawTrail',
   'cubeRotating',
   'camPulsing',
 ]
 
-describe('anyActivity (the 13-flag OR)', () => {
+describe('anyActivity (the 12-flag OR)', () => {
   it('is false for no activity', () => {
     expect(anyActivity(NO_ACTIVITY)).toBe(false)
   })
@@ -81,14 +79,14 @@ describe('idleForAmbientBreath (the narrower 9-flag idle check)', () => {
     }
   })
 
-  it('the 4 excluded flags do NOT block the breath (real behavior, not a simplification)', () => {
+  it('the 3 excluded flags do NOT block the breath (real behavior, not a simplification)', () => {
     for (const f of BREATH_EXCLUDED) {
       expect(idleForAmbientBreath(withOnly([f]), false), `flag ${f}`).toBe(true)
     }
   })
 
   it('a breath-relevant flag still blocks the breath even when an excluded flag is also set', () => {
-    expect(idleForAmbientBreath(withOnly(['nav', 'worksScroll']), false)).toBe(false)
+    expect(idleForAmbientBreath(withOnly(['nav', 'drawTrail']), false)).toBe(false)
   })
 })
 

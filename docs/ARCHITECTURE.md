@@ -157,7 +157,7 @@ Phase 10 slice 2 2026-08-22).
 `RenderScheduler` combines demand rendering with bounded animation reasons;
 the per-frame raise/settle decision reads the typed
 `RenderActivity` flags through the `src/core/renderDemand.ts` contract (the
-14-flag OR and the narrower ambient-breath idle set are unit-locked). Route
+12-flag OR and the narrower ambient-breath idle set are unit-locked). Route
 replacement releases DOM behavior; `Experience.destroy()` closes the shared
 runtime. `/works` and `/contact` own lazy scene stages that dispose or cache
 according to their current measured policy.
