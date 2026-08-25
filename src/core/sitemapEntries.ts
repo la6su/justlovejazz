@@ -83,11 +83,18 @@ export function buildBuilderSitemapSections(slugs: readonly string[]): SitemapSe
   return [
     {
       comment: 'Builder pages (approved documents — static, no app bundle)',
-      entries: slugs.map((slug): SitemapEntry => ({
-        path: builderPagePath(slug),
-        changefreq: BUILDER_PAGE_SITEMAP.changefreq,
-        priority: BUILDER_PAGE_SITEMAP.priority,
-      })),
+      entries: slugs.flatMap((slug): SitemapEntry[] => [
+        {
+          path: builderPagePath(slug, 'EN'),
+          changefreq: BUILDER_PAGE_SITEMAP.changefreq,
+          priority: BUILDER_PAGE_SITEMAP.priority,
+        },
+        {
+          path: builderPagePath(slug, 'RU'),
+          changefreq: BUILDER_PAGE_SITEMAP.changefreq,
+          priority: BUILDER_PAGE_SITEMAP.priority,
+        },
+      ]),
     },
   ]
 }

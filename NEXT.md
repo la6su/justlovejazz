@@ -834,7 +834,9 @@ for replacement. Pull one forward only when its migration dependency is clear.
       English values plus optional `*Ru` overrides, a typed `EN`/`RU` render
       locale and shared Vue/string SSR parity. The admin preview follows
       `jlz:lang-change`; missing Russian overrides fall back to English.
-      Localized static route generation remains a separate publishing outcome.
+      Phase 9 slice 10 landed (2026-08-25): approved documents now publish
+      both `/p/<slug>` and `/p/<slug>/ru` standalone artifacts, with localized
+      `lang`, canonical and Open Graph metadata plus EN/RU sitemap entries.
 
 - [ ] **Extend the cinematic brand language across every route** — tune motion
       and TSL response through the new component/scene owners, preserving both

@@ -57,8 +57,9 @@ Authored copy has one canonical English value plus an optional `*Ru` override
 for headings, text, buttons, links, list items, image alt text and video
 accessible labels. The render contract accepts `EN`/`RU`; RU falls back to the
 English value when an override is absent. The admin preview follows the app's
-typed locale port, while static publication remains English until localized
-route generation is explicitly added.
+typed locale port. Approved documents publish both `/p/<slug>` (EN) and
+`/p/<slug>/ru` (RU) standalone routes; the Russian route uses localized
+metadata when supplied and otherwise falls back to English.
 
 The editor provides:
 

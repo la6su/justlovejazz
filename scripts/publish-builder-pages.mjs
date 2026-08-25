@@ -1,8 +1,8 @@
 // scripts/publish-builder-pages.mjs — build-time publish of approved Page
 // Builder documents (Phase 9, slice 5).
 //
-// An approved (`published: true`) builder document becomes a standalone
-// static route at `/p/<slug>`:
+// An approved (`published: true`) builder document becomes static EN and RU
+// routes at `/p/<slug>` and `/p/<slug>/ru`:
 //
 //   1. the document's nodes are SSR-rendered through the trusted Vue element
 //      registry (`BuilderPage` + `elements.ts` — the same registry the admin
@@ -17,7 +17,7 @@
 //      document itself, not by whatever the admin last saved.
 //
 // The generated artifacts are written over the Vite build inputs —
-// `p/<slug>.html` at the project root — and the per-page Less to
+// `p/<slug>.html` and `p/<slug>/ru/index.html` at the project root — and the per-page Less to
 // `src/assets/builder/<slug>.less`, so Vite rewrites the stylesheet URL and
 // ships the body markup as static output at `/p/<slug>`. Stale artifacts of
 // no-longer-published documents are removed. The pipeline is deterministic:
@@ -81,13 +81,16 @@ try {
     const outDir = resolve(root, 'p')
     const lessDir = resolve(root, 'src', 'assets', 'builder')
     const publishedSlugs = new Set(published.map((document) => document.slug))
+    const expectedRootFiles = new Set([...publishedSlugs].map((slug) => `${slug}.html`))
 
     if (existsSync(outDir)) {
-      for (const file of readdirSync(outDir)) {
-        const slug = file.replace(/\.html$/, '')
-        if (file.endsWith('.html') && !publishedSlugs.has(slug)) {
-          rmSync(resolve(outDir, file))
-          console.log(`[publish-builder-pages] removed stale ${slug}.html`)
+      for (const entry of readdirSync(outDir, { withFileTypes: true })) {
+        if (entry.isFile() && entry.name.endsWith('.html') && !expectedRootFiles.has(entry.name)) {
+          rmSync(resolve(outDir, entry.name))
+          console.log(`[publish-builder-pages] removed stale ${entry.name}`)
+        } else if (entry.isDirectory() && !publishedSlugs.has(entry.name)) {
+          rmSync(resolve(outDir, entry.name), { recursive: true, force: true })
+          console.log(`[publish-builder-pages] removed stale ${entry.name}/`)
         }
       }
     }
@@ -114,13 +117,20 @@ try {
       const bodyHtml = await renderToString(
         createSSRApp(h(BuilderPage, { document, editable: false })),
       )
-      const html = renderBuilderPageDocument(document, bodyHtml)
+      const html = renderBuilderPageDocument(document, bodyHtml, undefined, 'EN')
       writeFileSync(resolve(outDir, `${document.slug}.html`), html, 'utf8')
+      const ruBodyHtml = await renderToString(
+        createSSRApp(h(BuilderPage, { document, editable: false, locale: 'RU' })),
+      )
+      const ruHtml = renderBuilderPageDocument(document, ruBodyHtml, undefined, 'RU')
+      const ruDir = resolve(outDir, document.slug, 'ru')
+      mkdirSync(ruDir, { recursive: true })
+      writeFileSync(resolve(ruDir, 'index.html'), ruHtml, 'utf8')
       const lessPath = resolve(lessDir, `${document.slug}.less`)
       writeFileSync(lessPath, renderBuilderPageLess(document), 'utf8')
       writtenLess.push(lessPath)
       console.log(
-        `[publish-builder-pages] wrote p/${document.slug}.html (${html.length} chars) — /p/${document.slug}`,
+        `[publish-builder-pages] wrote EN/RU ${document.slug} (${html.length}/${ruHtml.length} chars)`,
       )
     }
 

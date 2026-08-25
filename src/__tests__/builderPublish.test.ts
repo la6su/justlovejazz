@@ -145,6 +145,7 @@ describe('builderPagePath', () => {
   it('is the /p prefix with the document slug', () => {
     expect(BUILDER_PAGE_PREFIX).toBe('/p')
     expect(builderPagePath('approved-page')).toBe('/p/approved-page')
+    expect(builderPagePath('approved-page', 'RU')).toBe('/p/approved-page/ru')
   })
 })
 
@@ -176,6 +177,22 @@ describe('renderBuilderPageDocument', () => {
   it('respects the origin override', () => {
     const html = renderBuilderPageDocument(approvedDocument(), '', 'https://example.test/')
     expect(html).toContain('<link rel="canonical" href="https://example.test/p/approved-page" />')
+  })
+
+  it('renders a Russian static variant with localized metadata and canonical URL', () => {
+    const document = {
+      ...approvedDocument(),
+      titleRu: 'Одобренная страница',
+      descriptionRu: 'Русский документ builder.',
+    }
+    const html = renderBuilderPageDocument(document, '<section>тело</section>', undefined, 'RU')
+    expect(html).toContain('<html lang="ru">')
+    expect(html).toContain('<title>Одобренная страница | JUSTLOVEJAZZ</title>')
+    expect(html).toContain('<meta property="og:locale" content="ru_RU" />')
+    expect(html).toContain(
+      '<link rel="canonical" href="https://justlovejazz.dev/p/approved-page/ru" />',
+    )
+    expect(html).toContain('<section>тело</section>')
   })
 
   it('escapes hostile metadata into the head attributes', () => {
@@ -285,14 +302,16 @@ describe('sitemap — the builder section', () => {
     expect(buildBuilderSitemapSections([])).toEqual([])
   })
 
-  it('emits one section with a /p entry per approved slug', () => {
+  it('emits EN and RU entries per approved slug', () => {
     const sections = buildBuilderSitemapSections(['approved-page', 'other-page'])
     expect(sections).toHaveLength(1)
     expect(sections[0]!.comment).toContain('Builder pages')
-    expect(sections[0]!.entries).toHaveLength(2)
+    expect(sections[0]!.entries).toHaveLength(4)
     expect(sections[0]!.entries.map((entry) => entry.path)).toEqual([
       '/p/approved-page',
+      '/p/approved-page/ru',
       '/p/other-page',
+      '/p/other-page/ru',
     ])
     for (const entry of sections[0]!.entries) {
       expect(entry.changefreq).toBe(BUILDER_PAGE_SITEMAP.changefreq)

@@ -20,6 +20,7 @@ import { BLOG_ARTICLES } from './src/core/blogPages'
 // ═══════════════════════════════════════════════════════════════════════
 
 // Approved (`published: true`) Page Builder documents → static `/p/<slug>`
+// and `/p/<slug>/ru`
 // routes (Phase 9, slice 5). The closed set is the admin-owned collection
 // (`src/builder/generated/documents.json`); the publish pipeline
 // (`scripts/publish-builder-pages.mjs`) renders these into the Vite build
@@ -72,9 +73,16 @@ export default defineConfig(() => ({
         // Published builder documents (SSG output of
         // scripts/publish-builder-pages.mjs — standalone static pages, no
         // application bundle, the per-page Less rewritten by Vite).
-        ...Object.fromEntries(
-          publishedBuilderSlugs.map((slug) => [`p/${slug}`, resolve(__dirname, `p/${slug}.html`)]),
-        ),
+        ...Object.fromEntries([
+          ...publishedBuilderSlugs.map((slug) => [
+            `p/${slug}`,
+            resolve(__dirname, `p/${slug}.html`),
+          ]),
+          ...publishedBuilderSlugs.map((slug) => [
+            `p/${slug}/ru`,
+            resolve(__dirname, `p/${slug}/ru/index.html`),
+          ]),
+        ]),
       },
       output: {
         // ───────────────────────────────────────────────────────────────────

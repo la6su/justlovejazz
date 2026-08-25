@@ -19,14 +19,15 @@
 // `../../../node_modules/...` component imports resolve correctly.
 import { generateBuilderComponentLess, generateBuilderThemeLess } from './compiler'
 import type { BuilderDocument } from './schema'
+import type { BuilderLocale } from './localization'
 import { stripSsrComments } from '../core/blogMeta'
 
 /** The public path prefix of published builder pages. */
 export const BUILDER_PAGE_PREFIX = '/p'
 
 /** The static path of one published builder document. */
-export function builderPagePath(slug: string): string {
-  return `${BUILDER_PAGE_PREFIX}/${slug}`
+export function builderPagePath(slug: string, locale: BuilderLocale = 'EN'): string {
+  return locale === 'RU' ? `${BUILDER_PAGE_PREFIX}/${slug}/ru` : `${BUILDER_PAGE_PREFIX}/${slug}`
 }
 
 /** Escape a value for use inside a double-quoted HTML attribute. */
@@ -50,13 +51,19 @@ export function renderBuilderPageDocument(
   document: BuilderDocument,
   body: string,
   origin: string = 'https://justlovejazz.dev',
+  locale: BuilderLocale = 'EN',
 ): string {
   const cleanBody = stripSsrComments(body)
   const bareOrigin = origin.replace(/\/+$/, '')
-  const path = builderPagePath(document.slug)
+  const path = builderPagePath(document.slug, locale)
   const url = `${bareOrigin}${path}`
-  const title = esc(document.title)
-  const description = document.description ?? document.title
+  const title = esc(locale === 'RU' ? (document.titleRu ?? document.title) : document.title)
+  const description =
+    locale === 'RU'
+      ? (document.descriptionRu ?? document.description ?? document.title)
+      : (document.description ?? document.title)
+  const htmlLang = locale === 'RU' ? 'ru' : 'en'
+  const ogLocale = locale === 'RU' ? 'ru_RU' : 'en_US'
 
   const head = [
     '    <meta charset="UTF-8" />',
@@ -77,7 +84,7 @@ export function renderBuilderPageDocument(
     '    <!-- Open Graph -->',
     '    <meta property="og:type" content="website" />',
     '    <meta property="og:site_name" content="JUSTLOVEJAZZ" />',
-    '    <meta property="og:locale" content="en_US" />',
+    `    <meta property="og:locale" content="${ogLocale}" />`,
     `    <meta property="og:title" content="${title}" />`,
     `    <meta property="og:description" content="${esc(description)}" />`,
     `    <meta property="og:url" content="${esc(url)}" />`,
@@ -104,7 +111,7 @@ export function renderBuilderPageDocument(
 
   return [
     '<!doctype html>',
-    '<html lang="en">',
+    `<html lang="${htmlLang}">`,
     '  <head>',
     ...head,
     '  </head>',
