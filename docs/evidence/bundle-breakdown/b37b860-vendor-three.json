@@ -1,0 +1,49 @@
+{
+  "commit": "b37b860",
+  "generatedAt": "2026-08-25T08:01:29.787Z",
+  "chunk": "vendor-three-B7dVe10d.js",
+  "rawBytes": 1406425,
+  "sourceCount": 10,
+  "modules": [
+    {
+      "source": "../../../root/workspace/justlovejazz-tres-vue-dev/node_modules/three/build/three.webgpu.js",
+      "mappedBytes": 646520
+    },
+    {
+      "source": "../../../root/workspace/justlovejazz-tres-vue-dev/node_modules/three/build/three.core.js",
+      "mappedBytes": 386254
+    },
+    {
+      "source": "../../../root/workspace/justlovejazz-tres-vue-dev/node_modules/three/build/three.module.js",
+      "mappedBytes": 344159
+    },
+    {
+      "source": "../../../root/workspace/justlovejazz-tres-vue-dev/node_modules/three/build/three.tsl.js",
+      "mappedBytes": 11501
+    },
+    {
+      "source": "../../../root/workspace/justlovejazz-tres-vue-dev/node_modules/three/examples/jsm/tsl/display/BloomNode.js",
+      "mappedBytes": 5665
+    },
+    {
+      "source": "../../../root/workspace/justlovejazz-tres-vue-dev/node_modules/three/examples/jsm/utils/BufferGeometryUtils.js",
+      "mappedBytes": 2412
+    },
+    {
+      "source": "../../../root/workspace/justlovejazz-tres-vue-dev/node_modules/three/examples/jsm/geometries/RoundedBoxGeometry.js",
+      "mappedBytes": 1675
+    },
+    {
+      "source": "../../../root/workspace/justlovejazz-tres-vue-dev/node_modules/three/examples/jsm/geometries/TextGeometry.js",
+      "mappedBytes": 1517
+    },
+    {
+      "source": "../../../root/workspace/justlovejazz-tres-vue-dev/node_modules/three/examples/jsm/loaders/FontLoader.js",
+      "mappedBytes": 1495
+    },
+    {
+      "source": "../../../root/workspace/justlovejazz-tres-vue-dev/node_modules/three/examples/jsm/utils/SkeletonUtils.js",
+      "mappedBytes": 442
+    }
+  ]
+}
