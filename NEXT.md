@@ -155,6 +155,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
   `NoiseText` and `BlurFade` instances are registry-backed and disposed before
   the scene/UI owners, so connected route DOM cannot retain RAF or safety
   timeout work after runtime destruction.
+- [x] **Release the WorksPortfolio owner** — `ExperienceUI.destroy()` now calls
+  the portfolio disposer before dropping its reference; disposal clears the
+  project/callback references and navigation becomes a safe no-op.
 
 ## Deferred product queue
 

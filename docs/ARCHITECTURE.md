@@ -62,6 +62,10 @@ under `src/builder/`; the public builds do not import the editor graph.
   `Experience` teardown drains both registries before releasing scene/UI
   owners, cancelling RAF and safety timers even while their DOM remains
   connected.
+- `ExperienceUI` owns `WorksPortfolio` for its full lifetime and calls
+  `dispose()` before releasing it. The portfolio drops project and callback
+  references and guards empty navigation, so a late UI event cannot retain or
+  invoke a destroyed owner.
 - UIkit remains the layout/component/accessibility baseline where retained;
   project styles express the 3D shell and authored compositions.
 - Published Builder cards and buttons keep UIkit as the owner of base geometry

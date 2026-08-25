@@ -494,6 +494,7 @@ export class ExperienceUI {
       window.removeEventListener('pointerup', this._worksPlaneTapHandler)
       this._worksPlaneTapHandler = null
     }
+    this.portfolio?.dispose()
     this.portfolio = null
     if (this.ownsOverlay) this.overlay?.dispose()
     this.overlay = null

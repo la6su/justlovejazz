@@ -60,6 +60,19 @@ describe('ExperienceUI portfolio lifecycle', () => {
     expect(experienceUI.overlay).not.toBeNull()
   })
 
+  it('disposes the portfolio owner before releasing it', async () => {
+    const experienceUI = new ExperienceUI(createHost([{}]))
+    await experienceUI.ensurePortfolio()
+    const portfolio = experienceUI.portfolio!
+    const dispose = vi.spyOn(portfolio, 'dispose')
+
+    experienceUI.destroy()
+
+    expect(dispose).toHaveBeenCalledOnce()
+    expect(portfolio.projects).toHaveLength(0)
+    expect(experienceUI.portfolio).toBeNull()
+  })
+
   it('coalesces concurrent portfolio initialization requests', async () => {
     const callbacks: FrameRequestCallback[] = []
     vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
@@ -94,7 +107,7 @@ describe('ExperienceUI portfolio lifecycle', () => {
     const experienceUI = new ExperienceUI(host)
     experienceUI.init()
     experienceUI.overlay = { isOpen: true } as never
-    experienceUI.portfolio = { projects: [{}] } as never
+    experienceUI.portfolio = { projects: [{}], dispose: vi.fn() } as never
     const select = vi.spyOn(experienceUI, 'onProjectSelect').mockImplementation(() => undefined)
 
     eventBus.emit('jlz:project-navigate', { direction: 1 })

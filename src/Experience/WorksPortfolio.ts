@@ -19,24 +19,29 @@ export class WorksPortfolio {
 
   next(): void {
     const n = this.projects.length
+    if (n === 0) return
     this.currentIdx = (((this.currentIdx + 1) % n) + n) % n
     this.onCardClick(this.currentIdx)
   }
 
   prev(): void {
     const n = this.projects.length
+    if (n === 0) return
     this.currentIdx = (((this.currentIdx - 1) % n) + n) % n
     this.onCardClick(this.currentIdx)
   }
 
   goTo(idx: number): void {
     const n = this.projects.length
+    if (n === 0) return
     this.currentIdx = ((Math.round(idx) % n) + n) % n
     this.onCardClick(this.currentIdx)
   }
 
   dispose(): void {
-    // No GPU resources to clean up
+    this.projects = []
+    this.currentIdx = 0
+    this.onCardClick = () => undefined
   }
 }
 

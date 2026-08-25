@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- `ExperienceUI.destroy()` now disposes `WorksPortfolio` before releasing it;
+  the portfolio clears project/callback references and makes post-teardown
+  navigation a no-op.
+
 - `Experience.destroy()` now drains active `NoiseText` and `BlurFade` animation
   owners, cancelling their RAF and safety timers before scene/UI teardown.
   Connected route DOM is restored to its authored final state without retaining
