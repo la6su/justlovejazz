@@ -18,8 +18,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Audit scene resource disposal** — `SectionGroups.dispose()` now uses
   owner-local texture slots and generalized Mesh/Points/Line/Sprite disposal;
   lifecycle coverage includes `Points` and `InstancedMesh` exactly-once tests.
-- [ ] **Close the shared transition QA matrix** — direct entry, in-app route,
-  popstate, backend fallback, theme polarity, narrow layout and reduced motion.
+- [x] **Close the shared transition QA matrix** — direct entry, in-app route,
+  popstate, backend fallback, theme polarity, narrow layout and reduced motion;
+  coverage is recorded in `docs/evidence/shared-transition-qa/`.
 
 ## Deferred product queue
 
