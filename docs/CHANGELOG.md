@@ -9,7 +9,9 @@
   invalidated by the next route transition. Contact's lazy Cyprus load now
   contains failures after cleanup instead of producing unhandled rejections.
   The lazy Lab experiment owner follows the same handled-failure and retry
-  policy.
+  policy. Final Experience teardown now routes Contact Cyprus cleanup through
+  its invalidating owner method, so late Draco results cannot re-enter a
+  disposed scene.
 - Scoped bootstrap UIkit refresh to `#spa-content`, removing the remaining
   document-wide traversal from the application shell.
 - Established the staged Vue 3, Vue Router and TresJS migration architecture,
