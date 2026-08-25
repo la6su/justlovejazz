@@ -72,7 +72,9 @@ export async function mountVueApp(): Promise<void> {
   // the 3D navigation owner is ready. In-app hash navigations dispatch on
   // the next frame, matching the legacy `navigateToPage` contract.
   let firstNavigation = true
+  let hashNavigationGeneration = 0
   router.afterEach((to) => {
+    const generation = ++hashNavigationGeneration
     const isInitial = firstNavigation
     firstNavigation = false
     if (!to.hash.startsWith('#section-')) return
@@ -87,6 +89,7 @@ export async function mountVueApp(): Promise<void> {
       return
     }
     requestAnimationFrame(() => {
+      if (generation !== hashNavigationGeneration) return
       eventBus.emit('jlz:goto-section-by-hash', { hash: to.hash })
     })
   })
