@@ -19,7 +19,7 @@
 import { h, type Component, type PropType } from 'vue'
 
 import { BUILDER_ICON_NAMES } from '../catalog'
-import { sanitizeHref, safeChoice } from '../render'
+import { sanitizeHref, sanitizeMediaSrc, safeChoice } from '../render'
 import type { BuilderElementType, BuilderNode } from '../schema'
 
 /** Props every registry component accepts. */
@@ -291,6 +291,25 @@ const icon: ElementComponentOptions = {
   },
 }
 
+const image: ElementComponentOptions = {
+  name: 'BuilderImage',
+  props: {
+    node: { type: Object as PropType<BuilderNode>, required: true },
+    editable: { type: Boolean, default: false },
+  },
+  render(props: BuilderElementProps) {
+    const loading = safeChoice(props.node.props.loading, ['lazy', 'eager'], 'lazy')
+    return h('img', {
+      class: 'jlz-builder-image',
+      src: sanitizeMediaSrc(props.node.props.src),
+      alt: props.node.props.alt ?? '',
+      loading,
+      decoding: 'async',
+      ...editorAttrs(props),
+    })
+  },
+}
+
 /**
  * The registry: one trusted component per builder element type. A type
  * without a registry entry is a registry bug — render it as a no-op comment
@@ -308,6 +327,7 @@ export const BUILDER_ELEMENT_REGISTRY: Record<BuilderElementType, Component> = {
   list,
   link,
   icon,
+  image,
 } as unknown as Record<BuilderElementType, Component>
 
 /**

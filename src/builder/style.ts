@@ -14,6 +14,7 @@ export type StyleGroupId =
   | 'icon'
   | 'list'
   | 'divider'
+  | 'image'
   | 'form'
   | 'navbar'
 
@@ -522,6 +523,22 @@ export const STYLE_GROUPS: readonly StyleGroupDefinition[] = [
         description: 'Vertical rhythm around dividers.',
         type: 'select',
         options: options('16px', '24px', '32px', '48px', '64px'),
+      },
+    ],
+  },
+  {
+    id: 'image',
+    label: 'Image',
+    category: 'component',
+    icon: 'image',
+    description: 'Image corner radius in the content flow.',
+    fields: [
+      {
+        key: 'radius',
+        label: 'Corner radius',
+        description: 'Shared content corner radius.',
+        type: 'select',
+        options: options('0px', '4px', '8px', '12px', '16px'),
       },
     ],
   },

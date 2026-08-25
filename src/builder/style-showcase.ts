@@ -103,6 +103,11 @@ const showcaseSections: Record<StyleGroupId, string> = {
         <span uk-icon="icon: mail; ratio: 1.2"></span>
       </p>
     </section>`,
+  image: `
+    <section class="jlz-style-sample" data-style-sample="image">
+      <span class="jlz-style-eyebrow">Image / responsive media</span>
+      <img class="jlz-builder-image" src="/assets/projects/velvet-echo/cover.webp" alt="Velvet Echo cover" />
+    </section>`,
   list: `
     <section class="jlz-style-sample" data-style-sample="list">
       <span class="jlz-style-eyebrow">List / item rhythm</span>

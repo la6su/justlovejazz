@@ -417,6 +417,43 @@ export const BUILDER_CATALOG: Record<BuilderElementType, BuilderElementDefinitio
     ],
     create: (id) => makeNode(id, 'icon', { name: 'arrow-up-right', ratio: '1' }),
   },
+  image: {
+    type: 'image',
+    label: 'Image',
+    description: 'Responsive image from a local asset or HTTPS source.',
+    container: false,
+    icon: 'image',
+    uikitComponents: [],
+    fieldGroups: [
+      {
+        label: 'Media',
+        fields: [
+          { key: 'src', label: 'Source URL', type: 'url' },
+          { key: 'alt', label: 'Alt text', type: 'text' },
+        ],
+      },
+      {
+        label: 'Loading',
+        fields: [
+          {
+            key: 'loading',
+            label: 'Strategy',
+            type: 'select',
+            options: [
+              { label: 'Lazy', value: 'lazy' },
+              { label: 'Eager', value: 'eager' },
+            ],
+          },
+        ],
+      },
+    ],
+    create: (id) =>
+      makeNode(id, 'image', {
+        src: '/assets/projects/velvet-echo/cover.webp',
+        alt: 'Velvet Echo project cover',
+        loading: 'lazy',
+      }),
+  },
 }
 
 // Left-panel catalog order, Figma-style: layout scaffolding first, then
@@ -424,7 +461,7 @@ export const BUILDER_CATALOG: Record<BuilderElementType, BuilderElementDefinitio
 export const BUILDER_CATALOG_GROUPS: readonly BuilderCatalogGroup[] = [
   { label: 'Layout', types: ['section', 'grid', 'card', 'divider'] },
   { label: 'Typography', types: ['heading', 'text', 'list'] },
-  { label: 'Elements', types: ['button', 'link', 'icon'] },
+  { label: 'Elements', types: ['button', 'link', 'icon', 'image'] },
 ]
 
 export const BUILDER_ELEMENT_TYPES = Object.keys(BUILDER_CATALOG) as BuilderElementType[]

@@ -47,6 +47,17 @@ export const sanitizeHref = (value: string | undefined): string => {
  */
 export const safeHref = (value: string | undefined): string => escapeHtml(sanitizeHref(value))
 
+/** The image source policy mirrors schema validation for runtime safety. */
+export const sanitizeMediaSrc = (value: string | undefined): string => {
+  const src = value?.trim() ?? ''
+  if (src.startsWith('/') && !src.startsWith('//')) return src
+  try {
+    return new URL(src).protocol === 'https:' ? src : '#'
+  } catch {
+    return '#'
+  }
+}
+
 function editorAttributes(node: BuilderNode, options: BuilderRenderOptions): string {
   return options.editable
     ? ` data-builder-id="${escapeHtml(node.id)}" data-builder-type="${node.type}" tabindex="0"`
@@ -151,6 +162,10 @@ function renderNode(node: BuilderNode, options: BuilderRenderOptions): string {
         : '1'
       const ratioAttr = ratio === '1' ? '' : `; ratio: ${ratio}`
       return `<span class="jlz-builder-icon" uk-icon="icon: ${name}${ratioAttr}" aria-hidden="true"${attrs}></span>`
+    }
+    case 'image': {
+      const loading = safeChoice(node.props.loading, ['lazy', 'eager'], 'lazy')
+      return `<img class="jlz-builder-image" src="${safeHref(sanitizeMediaSrc(node.props.src))}" alt="${escapeHtml(node.props.alt ?? '')}" loading="${loading}" decoding="async"${attrs} />`
     }
   }
 }

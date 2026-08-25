@@ -78,7 +78,9 @@ describe('Page Builder document', () => {
     const grouped = BUILDER_CATALOG_GROUPS.flatMap((group) => [...group.types])
     expect(new Set(grouped).size).toBe(grouped.length)
     expect(grouped.sort()).toEqual(Object.keys(BUILDER_CATALOG).sort())
-    expect(grouped).toEqual(expect.arrayContaining(['heading', 'link', 'icon', 'list', 'divider']))
+    expect(grouped).toEqual(
+      expect.arrayContaining(['heading', 'link', 'icon', 'list', 'divider', 'image']),
+    )
     for (const definition of Object.values(BUILDER_CATALOG)) {
       expect(definition.fieldGroups.length, definition.type).toBeGreaterThan(0)
     }
@@ -125,6 +127,12 @@ describe('Page Builder document', () => {
         props: { label: 'Read <more>', href: 'javascript:alert(1)', style: 'muted' },
         children: [],
       },
+      {
+        id: 'image-x1',
+        type: 'image',
+        props: { src: 'javascript:alert(1)', alt: 'A <cover>', loading: 'invalid' },
+        children: [],
+      },
     )
 
     const html = renderBuilderDocument(document)
@@ -135,6 +143,8 @@ describe('Page Builder document', () => {
     expect(html).toContain('<hr class="uk-divider"')
     expect(html).toContain('class="jlz-builder-link uk-link-muted"')
     expect(html).toContain('href="#"')
+    expect(html).toContain('class="jlz-builder-image"')
+    expect(html).toContain('alt="A &lt;cover&gt;"')
     expect(html).not.toContain('javascript:')
   })
 

@@ -3,7 +3,7 @@
 //
 // Parity contract (docs/PAGE_BUILDER.md — "a component is implemented once
 // and tested in both contexts"): for a representative document covering all
-// ten element types (plus the prop allowlist clamps and escaping), the SSR
+// eleven element types (plus the prop allowlist clamps and escaping), the SSR
 // output of `BuilderPage` and `renderBuilderDocument` parse to identical
 // trees — tags, classes, attributes and text, in editable and
 // read-only mode alike.
@@ -59,6 +59,11 @@ const parityDocument = (): BuilderDocument =>
           el('list-plain', 'list', { style: 'hyphen', items: 'a\nb' }),
           el('link-1', 'link', { style: 'muted', href: '/works', label: 'Link <&> link-1' }),
           el('icon-1', 'icon', { name: 'arrow-up-right', ratio: '0.5' }),
+          el('image-1', 'image', {
+            src: '/assets/projects/velvet-echo/cover.webp',
+            alt: 'Velvet Echo cover',
+            loading: 'eager',
+          }),
         ]),
         el('copy', 'text', { style: 'muted', content: 'Copy <&> "quoted" copy' }),
       ]),
@@ -109,6 +114,7 @@ describe('builder Vue registry — parity with the string renderer', () => {
       'list',
       'link',
       'icon',
+      'image',
     ] as const
     for (const type of types) {
       expect(BUILDER_ELEMENT_REGISTRY[type]).toBeDefined()

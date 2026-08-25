@@ -3,7 +3,17 @@ import { validateBuilderTheme, type BuilderTheme } from './style'
 export const BUILDER_DOCUMENT_VERSION = 2 as const
 
 export type BuilderElementType =
-  'section' | 'grid' | 'heading' | 'text' | 'button' | 'card' | 'link' | 'icon' | 'list' | 'divider'
+  | 'section'
+  | 'grid'
+  | 'heading'
+  | 'text'
+  | 'button'
+  | 'card'
+  | 'link'
+  | 'icon'
+  | 'list'
+  | 'divider'
+  | 'image'
 
 export interface BuilderNode {
   id: string
@@ -51,6 +61,7 @@ const ELEMENT_TYPES = new Set<BuilderElementType>([
   'icon',
   'list',
   'divider',
+  'image',
 ])
 
 const CONTAINER_TYPES = new Set<BuilderElementType>(['section', 'grid', 'card'])
@@ -96,6 +107,13 @@ function validateNode(
       if (typeof prop === 'string' && prop.length > 5000)
         errors.push(`node property ${key} exceeds 5000 characters`)
     }
+    if (value.type === 'image') {
+      const src = typeof value.props.src === 'string' ? value.props.src.trim() : ''
+      const alt = typeof value.props.alt === 'string' ? value.props.alt.trim() : ''
+      if (!src || !isSafeMediaSource(src))
+        errors.push(`image node ${String(value.id)} needs a safe src`)
+      if (!alt) errors.push(`image node ${String(value.id)} needs alt text`)
+    }
   }
 
   if (!Array.isArray(value.children)) {
@@ -113,6 +131,17 @@ function validateNode(
   }
 
   return errors.length === 0
+}
+
+/** Builder media accepts same-origin assets and HTTPS sources only. */
+export function isSafeMediaSource(value: string): boolean {
+  const src = value.trim()
+  if (src.startsWith('/') && !src.startsWith('//')) return true
+  try {
+    return new URL(src).protocol === 'https:'
+  } catch {
+    return false
+  }
 }
 
 export function validateBuilderDocument(value: unknown): BuilderValidationResult {
