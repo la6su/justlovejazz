@@ -91,15 +91,28 @@ export class WorksPlaneStage extends THREE.Group {
       throw error
     }
 
-    textures.forEach((texture, index) => {
-      const plane = new CasePlane(texture)
-      plane.userData.projectIndex = index
-      plane.userData.texUrl = PROJECTS[index]!.textureUrl
-      plane.setReveal(0)
-      this.cards.push(plane)
-      this._reveal.set(plane, 0)
-      this.add(plane)
-    })
+    const stagedCards: CasePlane[] = []
+    try {
+      textures.forEach((texture, index) => {
+        const plane = new CasePlane(texture)
+        plane.userData.projectIndex = index
+        plane.userData.texUrl = PROJECTS[index]!.textureUrl
+        plane.setReveal(0)
+        stagedCards.push(plane)
+        this._reveal.set(plane, 0)
+        this.add(plane)
+      })
+      this.cards = stagedCards
+    } catch (error) {
+      stagedCards.forEach((card) => {
+        card.removeFromParent()
+        card.dispose()
+      })
+      this._reveal.clear()
+      PROJECTS.forEach((project) => releaseCaseTexture(project.textureUrl))
+      this._initialized = false
+      throw error
+    }
   }
 
   /**
