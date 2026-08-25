@@ -128,8 +128,10 @@ cursor-settled, the 14-flag `renderDemand.ts` activity snapshot). It
 intentionally does not invent driver-level WebGPU memory metrics. The soak
 tool records one snapshot after each route cycle (warm-up + steady) plus a
 root-destroy snapshot, writes a machine-readable report to
-`docs/evidence/phase10-route-cycle-soak/`, and compares like-for-like
-backend, viewport and DPR runs.
+`docs/evidence/phase10-route-cycle-soak/`, and records the actual backend
+readiness line, fixed viewport and measured DPR in every report. A run that
+cannot capture the backend or DPR fails instead of producing incomplete
+evidence that could be mistaken for a like-for-like comparison.
 
 ## Performance budgets
 

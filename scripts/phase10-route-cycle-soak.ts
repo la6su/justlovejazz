@@ -187,8 +187,10 @@ async function main(): Promise<void> {
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 } })
   const page = await context.newPage()
   const errors: string[] = []
+  let capturedBackend: string | null = null
   page.on('console', (m) => {
     if (m.type() === 'error') errors.push(m.text())
+    if (m.text().startsWith('[entry-app] Phase 7 host ready:')) capturedBackend = m.text()
   })
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`))
 
@@ -332,6 +334,8 @@ async function main(): Promise<void> {
     utc: string
     steadyCycles: number
     backend: string | null
+    viewport: { width: number; height: number }
+    dpr: number | null
     baseline: CycleSnapshot | null
     warmup: CycleSnapshot[]
     steady: CycleSnapshot[]
@@ -358,7 +362,9 @@ async function main(): Promise<void> {
     host: `${process.platform} ${process.arch}`,
     utc: new Date().toISOString(),
     steadyCycles: STEADY_CYCLES,
-    backend: null,
+    backend: capturedBackend,
+    viewport: { width: 1280, height: 800 },
+    dpr: null,
     baseline: null,
     warmup: [],
     steady: [],
@@ -380,6 +386,7 @@ async function main(): Promise<void> {
 
   try {
     await page.goto(BASE + '/', { waitUntil: 'domcontentloaded' })
+    report.dpr = await page.evaluate(() => window.devicePixelRatio)
     await page.waitForFunction(
       () =>
         Boolean(
@@ -390,9 +397,7 @@ async function main(): Promise<void> {
       null,
       { timeout: READY_TIMEOUT_MS },
     )
-    page.on('console', (m) => {
-      if (m.text().startsWith('[entry-app] Phase 7 host ready:')) report.backend = m.text()
-    })
+    report.backend = capturedBackend
     await page.locator('#jlz-splash-enter').click()
     await page
       .waitForFunction(
@@ -600,6 +605,8 @@ async function main(): Promise<void> {
     const cycleGates = report.warmup.every((s) => s.ok) && report.steady.every((s) => s.ok)
     report.allPassed =
       report.baseline !== null &&
+      report.backend !== null &&
+      report.dpr !== null &&
       report.baseline.ok &&
       cycleGates &&
       capsOk &&
@@ -607,6 +614,10 @@ async function main(): Promise<void> {
       !report.destroy.newCanvases &&
       report.destroy.fatalErrors.length === 0 &&
       report.destroy.heapAtOrBelowPeak
+    if (report.backend === null)
+      report.notes.push('backend: not captured — run cannot be compared like-for-like')
+    if (report.dpr === null)
+      report.notes.push('dpr: not captured — run cannot be compared like-for-like')
     if (!report.allPassed && !report.notes.length) report.notes.push('destroy evidence incomplete')
   } catch (e) {
     report.notes.push(String(e))

@@ -2950,6 +2950,12 @@ and the skip path never cleared the flag), which held a persistent
 The skip path now clears the flag; the stage settles like every other
 settle-able route.
 
+Follow-up hardening (2026-08-25): the soak console listener now attaches
+before navigation, captures the actual `[entry-app] Phase 7 host ready` backend
+line, records the fixed viewport and measured DPR, and fails when backend or
+DPR evidence is missing. This prevents a passing report with
+`backend: null` from being treated as a like-for-like resource comparison.
+
 ## Verification matrix
 
 Every affected vertical slice selects relevant rows from this matrix:

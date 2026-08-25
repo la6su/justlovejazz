@@ -795,6 +795,10 @@ syncRouteVisuals()` used to run (on route entry + section change) now
       `test:unit`, `build`, serial e2e, the 25-cycle soak (PASS). Phase 10
       is complete — the removal ledger is fully done and no migration
       adapter, feature flag or shim remains.
+      Follow-up hardening (2026-08-25): the soak listener now attaches before
+      navigation, records the actual backend readiness line plus viewport/DPR,
+      and fails when backend or DPR evidence is missing; this closes the
+      previously committed `backend: null` evidence defect.
       Phase 8 slice 2 landed (2026-08-22): the six stable section groups
       left `World` — Experience creates the new `SectionGroups` owner
       (`src/Experience/Scene/SectionGroups.ts`: factory creation,
