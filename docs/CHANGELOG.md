@@ -37,6 +37,8 @@
   a later route wake to retry while successful initialization stays idempotent.
   ExperienceUI teardown now cancels the deferred portfolio readiness RAF and
   resolves its owner wait without creating late UI resources.
+  CinematicNav route rebinding now cancels pending scroll and focus RAFs before
+  attaching the next route track, preventing stale callbacks on new DOM.
 - Scoped bootstrap UIkit refresh to `#spa-content`, removing the remaining
   document-wide traversal from the application shell.
 - Established the staged Vue 3, Vue Router and TresJS migration architecture,

@@ -155,6 +155,7 @@ export class CinematicNav {
   }
 
   private _bindTrack(): void {
+    this._cancelPendingFrames()
     this._removeTrackListeners()
     // Clear stale state from the previous page — _restoreFocus points to a
     // detached node after innerHTML replacement, and a pending _inactiveTimer
@@ -207,6 +208,17 @@ export class CinematicNav {
   private _removeTrackListeners(): void {
     if (!this._track) return
     if (this._scrollHandler) this._track.removeEventListener('scroll', this._scrollHandler)
+  }
+
+  private _cancelPendingFrames(): void {
+    if (this._scrollFrame !== null) {
+      cancelAnimationFrame(this._scrollFrame)
+      this._scrollFrame = null
+    }
+    if (this._focusFrame !== null) {
+      cancelAnimationFrame(this._focusFrame)
+      this._focusFrame = null
+    }
   }
 
   private _syncFromScroll(): void {
@@ -431,6 +443,7 @@ export class CinematicNav {
 
   dispose(): void {
     this._removeTrackListeners()
+    this._cancelPendingFrames()
     this._routeChangeUnsub?.()
     this._langChangeUnsub?.()
     this._closePanelUnsub?.()
@@ -439,8 +452,6 @@ export class CinematicNav {
     if (this._sheetClickHandler)
       document.removeEventListener('click', this._sheetClickHandler, true)
     if (this._inactiveTimer) clearTimeout(this._inactiveTimer)
-    if (this._scrollFrame !== null) cancelAnimationFrame(this._scrollFrame)
-    if (this._focusFrame !== null) cancelAnimationFrame(this._focusFrame)
     this._mainSections.forEach((section) => {
       section.inert = false
     })

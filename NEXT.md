@@ -45,6 +45,8 @@ Do not reopen completed migration phases. Current runtime contracts are in
   idempotent.
 - [x] **Cancel portfolio readiness RAF** — ExperienceUI teardown now cancels
   the deferred scene-readiness frame and releases its pending continuation.
+- [x] **Cancel stale CinematicNav frames** — route track rebinding now clears
+  pending scroll/focus RAFs before attaching the new route track.
 
 ## Deferred product queue
 

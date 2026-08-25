@@ -148,6 +148,20 @@ describe('CinematicNav — vertical story and sheets', () => {
     bindSpy.mockRestore()
   })
 
+  it('cancels pending scroll frames when the route track is rebound', () => {
+    const raf = vi.spyOn(window, 'requestAnimationFrame').mockReturnValue(42)
+    const cancel = vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => undefined)
+    nav = createNav()
+    const track = document.getElementById('spa-content')!
+
+    track.dispatchEvent(new Event('scroll'))
+    eventBus.emit('jlz:route-change', { page: 'works' })
+
+    expect(cancel).toHaveBeenCalledWith(42)
+    raf.mockRestore()
+    cancel.mockRestore()
+  })
+
   it('does not reapply side state on settled center scroll frames', async () => {
     const track = document.getElementById('spa-content')!
     nav = createNav()
