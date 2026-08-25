@@ -12,6 +12,7 @@ import {
   duplicateSelected,
   makeId,
   moveSelected,
+  moveNodeBefore,
   removeSelected,
   resetTheme,
 } from '../builder/commands'
@@ -121,6 +122,22 @@ describe('moveSelected', () => {
     const empty = newStore()
     moveSelected(empty, 1)
     expect(empty.historyIndex).toBe(0)
+  })
+})
+
+describe('moveNodeBefore', () => {
+  it('reorders siblings without changing their parent', () => {
+    const store = newStore()
+    expect(moveNodeBefore(store, 'second-text', 'first-text').ok).toBe(true)
+    expect(gridChildren(store)).toEqual(['second-text', 'first-text'])
+    expect(store.selectedId).toBe('second-text')
+  })
+
+  it('rejects cross-parent drops without changing history', () => {
+    const store = newStore()
+    expect(moveNodeBefore(store, 'root-grid', 'first-text').ok).toBe(true)
+    expect(store.historyIndex).toBe(0)
+    expect(gridChildren(store)).toEqual(['first-text', 'second-text'])
   })
 })
 

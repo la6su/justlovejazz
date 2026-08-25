@@ -54,6 +54,12 @@ const {
   removeSelected,
   resetTheme,
   selectNode,
+  draggedNodeId,
+  dropTargetId,
+  onNodeDragStart,
+  onNodeDragOver,
+  onNodeDrop,
+  onNodeDragEnd,
   saveDocument,
   restoreHistory,
   setMode,
@@ -341,7 +347,19 @@ const onPreviewKeydown = (event: KeyboardEvent): void => {
           <strong>Outline</strong>
         </div>
         <ol :ref="setOutlineHost" id="document-outline" class="jlz-admin-outline">
-          <li v-for="entry in outline" :key="entry.node.id">
+          <li
+            v-for="entry in outline"
+            :key="entry.node.id"
+            draggable="true"
+            :class="{
+              'is-dragging': entry.node.id === draggedNodeId,
+              'is-drop-target': entry.node.id === dropTargetId,
+            }"
+            @dragstart="onNodeDragStart(entry.node.id, $event)"
+            @dragover="onNodeDragOver(entry.node.id, $event)"
+            @drop="onNodeDrop(entry.node.id, $event)"
+            @dragend="onNodeDragEnd()"
+          >
             <button
               type="button"
               :data-select-node="entry.node.id"

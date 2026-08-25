@@ -131,6 +131,8 @@ export function useAdminEditor(
   const statusMessage = ref('Loading…')
   const statusError = ref(false)
   const outlineScrollTarget = ref<string | null>(null)
+  const draggedNodeId = ref<string | null>(null)
+  const dropTargetId = ref<string | null>(null)
   const outlineHost = ref<HTMLElement | null>(null)
   // The document collection (Phase 9, slice 3): the saved documents and the
   // slug the loaded document came from (the slug-focusout revert target).
@@ -258,6 +260,35 @@ export function useAdminEditor(
     outlineScrollTarget.value = id
     refreshPanels()
     if (id) void scrollPreviewNodeIntoView(id)
+  }
+
+  const onNodeDragStart = (id: string, event: DragEvent): void => {
+    draggedNodeId.value = id
+    dropTargetId.value = null
+    event.dataTransfer?.setData('text/plain', id)
+    if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move'
+  }
+
+  const onNodeDragOver = (id: string, event: DragEvent): void => {
+    const source = draggedNodeId.value ? store.findNode(draggedNodeId.value) : null
+    const target = store.findNode(id)
+    if (!source || !target || source.siblings !== target.siblings || source.node.id === id) return
+    event.preventDefault()
+    if (event.dataTransfer) event.dataTransfer.dropEffect = 'move'
+    dropTargetId.value = id
+  }
+
+  const onNodeDrop = (id: string, event: DragEvent): void => {
+    event.preventDefault()
+    const source = draggedNodeId.value
+    if (source) runCommand(editorCommands.moveNodeBefore(store, source, id))
+    draggedNodeId.value = null
+    dropTargetId.value = null
+  }
+
+  const onNodeDragEnd = (): void => {
+    draggedNodeId.value = null
+    dropTargetId.value = null
   }
 
   // Bring the just-selected element into view inside the preview frame;
@@ -703,6 +734,12 @@ export function useAdminEditor(
     removeSelected,
     resetTheme,
     selectNode,
+    draggedNodeId,
+    dropTargetId,
+    onNodeDragStart,
+    onNodeDragOver,
+    onNodeDrop,
+    onNodeDragEnd,
     saveDocument,
     loadDocument,
     loadDocuments,

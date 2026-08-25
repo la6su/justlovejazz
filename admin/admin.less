@@ -451,6 +451,20 @@ textarea {
 
 .jlz-admin-outline li {
   margin: 2px 0;
+  border-top: 2px solid transparent;
+  transition: opacity 120ms ease, border-color 120ms ease;
+}
+
+.jlz-admin-outline li[draggable='true'] {
+  cursor: grab;
+}
+
+.jlz-admin-outline li.is-dragging {
+  opacity: 0.45;
+}
+
+.jlz-admin-outline li.is-drop-target {
+  border-top-color: var(--jlz-color-accent);
 }
 
 .jlz-admin-outline button {

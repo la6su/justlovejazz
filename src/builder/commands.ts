@@ -62,6 +62,30 @@ export function moveSelected(store: BuilderStore, offset: -1 | 1): CommitResult 
   })
 }
 
+/** Move one node before another without changing its parent. */
+export function moveNodeBefore(
+  store: BuilderStore,
+  nodeId: string,
+  targetId: string,
+): CommitResult {
+  if (nodeId === targetId) return { ok: true }
+  const sourceLocation = store.findNode(nodeId)
+  const targetLocation = store.findNode(targetId)
+  if (!sourceLocation || !targetLocation || sourceLocation.siblings !== targetLocation.siblings)
+    return { ok: true }
+  return store.commit((draft) => {
+    const source = BuilderStore.findLocationInDocument(draft, nodeId)
+    const target = BuilderStore.findLocationInDocument(draft, targetId)
+    if (!source || !target || source.siblings !== target.siblings) return
+    const [node] = source.siblings.splice(source.index, 1)
+    if (!node) return
+    const targetIndex = source.siblings.indexOf(target.node)
+    if (targetIndex < 0) return
+    source.siblings.splice(targetIndex, 0, node)
+    store.selectedId = node.id
+  })
+}
+
 /** Duplicate the selected node (deep clone with fresh ids) right after it. */
 export function duplicateSelected(store: BuilderStore): CommitResult {
   if (!store.selectedId) return { ok: true }
