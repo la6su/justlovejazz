@@ -57,4 +57,25 @@ describe('ExperienceUI portfolio lifecycle', () => {
     expect(experienceUI.portfolio).not.toBeNull()
     expect(experienceUI.overlay).not.toBeNull()
   })
+
+  it('coalesces concurrent portfolio initialization requests', async () => {
+    const callbacks: FrameRequestCallback[] = []
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      callbacks.push(callback)
+      return callbacks.length
+    })
+    const sections: unknown[] = []
+    const experienceUI = new ExperienceUI(createHost(sections))
+    const first = experienceUI.ensurePortfolio()
+    const second = experienceUI.ensurePortfolio()
+
+    expect(first).toBe(second)
+    callbacks[0]!(0)
+    await first
+
+    expect(experienceUI.portfolio).toBeNull()
+    sections.push({})
+    await experienceUI.ensurePortfolio()
+    expect(experienceUI.portfolio).not.toBeNull()
+  })
 })

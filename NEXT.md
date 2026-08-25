@@ -38,6 +38,8 @@ Do not reopen completed migration phases. Current runtime contracts are in
   the typed `routePage` port instead of `document.body.dataset.page`.
 - [x] **Cancel route-announcer RAF** — `useJlzPage` now invalidates the deferred
   accessibility announcement when a route root unmounts.
+- [x] **Coalesce lazy portfolio initialization** — concurrent UI entry points
+  now share one owner promise; failures are contained and can retry cleanly.
 
 ## Deferred product queue
 

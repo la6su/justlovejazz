@@ -75,6 +75,7 @@ export class ExperienceUI {
   private ownsOverlay = false
   portfolioInitialized = false
   private activeProjectIndex = 0
+  private _portfolioPromise: Promise<void> | null = null
 
   private _openProjectUnsub: (() => void) | null = null
   private _projectNavigateUnsub: (() => void) | null = null
@@ -329,7 +330,27 @@ export class ExperienceUI {
     if (coordinator.particleBurst?.isActive) this.host.raise('dirty')
   }
 
-  async ensurePortfolio(): Promise<void> {
+  ensurePortfolio(): Promise<void> {
+    if (this.portfolio || this._destroyed) return Promise.resolve()
+    if (this._portfolioPromise) return this._portfolioPromise
+    const initialization = this.initializePortfolio().catch((error: unknown) => {
+      this.portfolio?.dispose()
+      this.portfolio = null
+      if (this.ownsOverlay) this.overlay?.dispose()
+      this.overlay = null
+      this.ownsOverlay = false
+      if (import.meta.env.DEV) {
+        console.error('[ExperienceUI] portfolio init failed:', error)
+      }
+    })
+    const tracked = initialization.finally(() => {
+      if (this._portfolioPromise === tracked) this._portfolioPromise = null
+    })
+    this._portfolioPromise = tracked
+    return tracked
+  }
+
+  private async initializePortfolio(): Promise<void> {
     if (this.portfolio || this._destroyed) return
     const generation = this._routeGeneration
     // Always build portfolio — single-page experience

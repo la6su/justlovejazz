@@ -30,6 +30,9 @@
   body dataset, closing the remaining scene-owner route-state projection.
   Route-root teardown now cancels the deferred route-announcer RAF, preventing
   stale title writes after a fast navigation.
+  ExperienceUI portfolio loading now uses a single-flight owner promise and
+  contains import failures so concurrent entry points cannot duplicate UI or
+  leak an unhandled rejection.
 - Scoped bootstrap UIkit refresh to `#spa-content`, removing the remaining
   document-wide traversal from the application shell.
 - Established the staged Vue 3, Vue Router and TresJS migration architecture,
