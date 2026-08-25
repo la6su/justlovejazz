@@ -1,4 +1,5 @@
 import { validateBuilderTheme, type BuilderTheme } from './style'
+import { BUILDER_SOURCE_FIELDS, BUILDER_SOURCE_IDS } from './sources'
 
 export const BUILDER_DOCUMENT_VERSION = 2 as const
 
@@ -122,11 +123,24 @@ function validateNode(
       if (!src || !isSafeMediaSource(src))
         errors.push(`video node ${String(value.id)} needs a safe src`)
       if (!label) errors.push(`video node ${String(value.id)} needs an accessible label`)
-      if (
-        typeof value.props.poster === 'string' &&
-        !isSafeMediaSource(value.props.poster)
-      )
+      if (typeof value.props.poster === 'string' && !isSafeMediaSource(value.props.poster))
         errors.push(`video node ${String(value.id)} needs a safe poster`)
+    }
+    if (value.type === 'list' && value.props.source) {
+      if (!BUILDER_SOURCE_IDS.includes(value.props.source as (typeof BUILDER_SOURCE_IDS)[number]))
+        errors.push(`list node ${String(value.id)} needs a supported source`)
+      if (
+        value.props.sourceField &&
+        !BUILDER_SOURCE_FIELDS.includes(
+          value.props.sourceField as (typeof BUILDER_SOURCE_FIELDS)[number],
+        )
+      )
+        errors.push(`list node ${String(value.id)} needs a supported source field`)
+      if (
+        typeof value.props.sourceLimit === 'string' &&
+        !/^(?:[1-9]|1[0-2])$/.test(value.props.sourceLimit)
+      )
+        errors.push(`list node ${String(value.id)} needs a source limit from 1 to 12`)
     }
   }
 

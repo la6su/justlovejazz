@@ -293,12 +293,48 @@ export const BUILDER_CATALOG: Record<BuilderElementType, BuilderElementDefinitio
   list: {
     type: 'list',
     label: 'List',
-    description: 'UIkit list; one item per line in the content field.',
+    description: 'UIkit list from authored lines or a trusted project source.',
     container: false,
     icon: 'list',
     uikitComponents: ['list'],
     fieldGroups: [
-      { label: 'Content', fields: [{ key: 'items', label: 'Items', type: 'textarea' }] },
+      {
+        label: 'Content',
+        fields: [
+          { key: 'items', label: 'Items', type: 'textarea' },
+          {
+            key: 'source',
+            label: 'Dynamic source',
+            type: 'select',
+            options: [
+              { label: 'Authored items', value: '' },
+              { label: 'Projects', value: 'projects' },
+            ],
+          },
+          {
+            key: 'sourceField',
+            label: 'Source field',
+            type: 'select',
+            options: [
+              { label: 'Title', value: 'title' },
+              { label: 'Description', value: 'description' },
+              { label: 'Year', value: 'year' },
+              { label: 'Category', value: 'category' },
+            ],
+          },
+          {
+            key: 'sourceLimit',
+            label: 'Maximum items',
+            type: 'select',
+            options: [
+              { label: '3', value: '3' },
+              { label: '6', value: '6' },
+              { label: '9', value: '9' },
+              { label: '12', value: '12' },
+            ],
+          },
+        ],
+      },
       {
         label: 'Style',
         fields: [
@@ -320,6 +356,9 @@ export const BUILDER_CATALOG: Record<BuilderElementType, BuilderElementDefinitio
       makeNode(id, 'list', {
         items: 'First point\nSecond point\nThird point',
         style: 'default',
+        source: '',
+        sourceField: 'title',
+        sourceLimit: '6',
       }),
   },
   button: {

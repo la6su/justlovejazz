@@ -1,4 +1,5 @@
 import { BUILDER_ICON_NAMES } from './catalog'
+import { resolveBuilderListItems } from './sources'
 import type { BuilderDocument, BuilderNode } from './schema'
 
 export interface BuilderRenderOptions {
@@ -135,10 +136,7 @@ function renderNode(node: BuilderNode, options: BuilderRenderOptions): string {
         ['default', 'hyphen', 'divider', 'ordered'],
         'default',
       )
-      const items = (node.props.items ?? '')
-        .split('\n')
-        .map((item) => item.trim())
-        .filter((item) => item.length > 0)
+      const items = resolveBuilderListItems(node.props)
         .map((item) => `<li>${escapeHtml(item)}</li>`)
         .join('')
       const tag = style === 'ordered' ? 'ol' : 'ul'

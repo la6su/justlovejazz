@@ -20,6 +20,7 @@ import { h, type Component, type PropType } from 'vue'
 
 import { BUILDER_ICON_NAMES } from '../catalog'
 import { sanitizeHref, sanitizeMediaSrc, safeChoice } from '../render'
+import { resolveBuilderListItems } from '../sources'
 import type { BuilderElementType, BuilderNode } from '../schema'
 
 /** Props every registry component accepts. */
@@ -229,10 +230,7 @@ const list: ElementComponentOptions = {
       ['default', 'hyphen', 'divider', 'ordered'],
       'default',
     )
-    const items = (props.node.props.items ?? '')
-      .split('\n')
-      .map((item) => item.trim())
-      .filter((item) => item.length > 0)
+    const items = resolveBuilderListItems(props.node.props)
     const tag = style === 'ordered' ? 'ol' : 'ul'
     const styleClass =
       style === 'default' || style === 'ordered'

@@ -57,6 +57,12 @@ const parityDocument = (): BuilderDocument =>
           el('divider-1', 'divider', { style: 'small' }),
           el('list-1', 'list', { style: 'ordered', items: 'One\n  Two\n\nThree' }),
           el('list-plain', 'list', { style: 'hyphen', items: 'a\nb' }),
+          el('list-source', 'list', {
+            style: 'default',
+            source: 'projects',
+            sourceField: 'category',
+            sourceLimit: '3',
+          }),
           el('link-1', 'link', { style: 'muted', href: '/works', label: 'Link <&> link-1' }),
           el('icon-1', 'icon', { name: 'arrow-up-right', ratio: '0.5' }),
           el('image-1', 'image', {

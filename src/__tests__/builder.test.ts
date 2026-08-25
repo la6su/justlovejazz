@@ -174,6 +174,29 @@ describe('Page Builder document', () => {
     expect(less).toContain('/divider.less')
   })
 
+  it('resolves a bounded trusted project source for lists', () => {
+    const document = structuredClone(DEFAULT_BUILDER_DOCUMENT)
+    document.nodes[0]?.children.push({
+      id: 'projects-list',
+      type: 'list',
+      props: {
+        items: 'ignored',
+        source: 'projects',
+        sourceField: 'title',
+        sourceLimit: '3',
+        style: 'default',
+      },
+      children: [],
+    })
+    const result = validateBuilderDocument(document)
+    expect(result.ok).toBe(true)
+    const html = renderBuilderDocument(document)
+    expect(html).toContain('<li>Ebb Vibes</li>')
+    expect(html).toContain('<li>Mono Sunday</li>')
+    expect(html).toContain('<li>Until the Night</li>')
+    expect(html).not.toContain('<li>Undercurrent</li>')
+  })
+
   it('keeps the complete style showcase visible and marks the selected group', () => {
     const showcase = renderStyleShowcase('button')
 
