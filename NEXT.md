@@ -140,6 +140,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Reject post-dispose scheduler frames** — `RenderScheduler` now ignores
   callbacks captured before `destroy()` or the settled stop, so released scene
   and GPU owners cannot be touched by a late renderer-loop tick.
+- [x] **Own delayed readiness events** — the post-bootstrap `jlz:webgl-ready`
+  timer is cancellable and generation-guarded, including reduced-motion's
+  zero-delay path, and is cleared on retry/failure/reset.
 
 ## Deferred product queue
 

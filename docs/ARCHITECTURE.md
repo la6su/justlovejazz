@@ -191,6 +191,10 @@ according to their current measured policy.
   frame callback itself. Removing the callback from the driver is not the only
   guard: a callback already captured by a renderer or swap-chain tick must not
   reach scene owners after teardown or a settled frame.
+- `entry-app` owns the delayed `jlz:webgl-ready` event through a generation-
+  guarded timer. Reset and failure clear the timer before replacing bindings;
+  a zero-delay reduced-motion event follows the same owner and cancellation
+  contract.
 - BlurFade treats title content as text at the DOM boundary and creates spans
   without `innerHTML`; translated/editorial markup cannot become live nodes.
 - RouteTransition owns at most one pending reveal timer and clears it when a

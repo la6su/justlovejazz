@@ -141,6 +141,7 @@ function resetBootstrapBindings(): void {
   _bootstrapAbort.abort()
   _bootstrapAbort = new AbortController()
   clearReadyWatchdog()
+  clearReadyEventTimer()
   clearSplashRevealTimer()
   _titleObserver?.disconnect()
   _titleObserver = null
@@ -151,6 +152,42 @@ function clearReadyWatchdog(): void {
     clearTimeout(_readyWatchdog)
     _readyWatchdog = null
   }
+}
+
+/** Own the delayed readiness event so a failed/replaced attempt cannot emit it. */
+export function createReadyEventTimer(onReady: () => void): {
+  schedule: (delayMs: number) => void
+  clear: () => void
+} {
+  let timer: ReturnType<typeof setTimeout> | null = null
+  let generation = 0
+  const clear = (): void => {
+    generation += 1
+    if (timer !== null) {
+      clearTimeout(timer)
+      timer = null
+    }
+  }
+  return {
+    schedule: (delayMs) => {
+      clear()
+      const token = generation
+      timer = setTimeout(() => {
+        timer = null
+        if (token !== generation) return
+        onReady()
+      }, delayMs)
+    },
+    clear,
+  }
+}
+
+const readyEventTimer = createReadyEventTimer(() => {
+  eventBus.emit('jlz:webgl-ready')
+})
+
+function clearReadyEventTimer(): void {
+  readyEventTimer.clear()
 }
 
 /** Own the delayed curtain/title handoff so retry/failure cannot reveal stale DOM. */
@@ -363,17 +400,13 @@ async function boot(): Promise<BootResult> {
     const readyAt = Math.max(0, INTRO_MS - elapsed)
 
     transitionBootstrap('ready')
-    setTimeout(
-      () => {
-        eventBus.emit('jlz:webgl-ready')
-      },
-      prefersReducedMotion() ? 0 : readyAt,
-    )
+    readyEventTimer.schedule(prefersReducedMotion() ? 0 : readyAt)
     return { retryable: false }
   } catch (e) {
     console.error('[entry-app] bootstrap failed:', e)
     disposeBootstrapAttempt(experience, ui)
     clearReadyWatchdog()
+    clearReadyEventTimer()
     transitionBootstrap('failed')
     eventBus.emit('jlz:webgl-failed')
     return { retryable: !sceneHostSettled }

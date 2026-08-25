@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- The delayed `jlz:webgl-ready` handoff is now an owned, generation-guarded
+  timer and is cancelled on bootstrap reset/failure, including the
+  reduced-motion zero-delay path.
+
 - The single renderer-loop scheduler now rejects late callbacks after
   `destroy()` or settled-stop, closing the post-dispose path to freed scene,
   DOM and GPU resources.

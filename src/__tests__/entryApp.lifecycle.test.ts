@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createSplashRevealTimer, createStartGate } from '../entry-app'
+import { createReadyEventTimer, createSplashRevealTimer, createStartGate } from '../entry-app'
 
 describe('entry-app splash reveal lifecycle', () => {
   afterEach(() => {
@@ -30,6 +30,32 @@ describe('entry-app splash reveal lifecycle', () => {
     vi.advanceTimersByTime(1)
 
     expect(reveal).toHaveBeenCalledOnce()
+  })
+
+  it('cancels a pending readiness event, including zero-delay timers', () => {
+    vi.useFakeTimers()
+    const ready = vi.fn()
+    const timer = createReadyEventTimer(ready)
+
+    timer.schedule(0)
+    timer.clear()
+    vi.runAllTimers()
+
+    expect(ready).not.toHaveBeenCalled()
+  })
+
+  it('replaces an earlier readiness event with the latest schedule', () => {
+    vi.useFakeTimers()
+    const ready = vi.fn()
+    const timer = createReadyEventTimer(ready)
+
+    timer.schedule(100)
+    timer.schedule(25)
+    vi.advanceTimersByTime(24)
+    expect(ready).not.toHaveBeenCalled()
+    vi.advanceTimersByTime(1)
+
+    expect(ready).toHaveBeenCalledOnce()
   })
 
   it('coalesces concurrent starts and permits retry after rejection', async () => {
