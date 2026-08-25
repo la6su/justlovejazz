@@ -13,6 +13,8 @@
   its invalidating owner method, so late Draco results cannot re-enter a
   disposed scene. The Works stage now follows the same invalidating owner
   boundary during final Experience teardown.
+  Contact Typography initialization now has the same contained-failure and
+  retryable owner policy.
 - Scoped bootstrap UIkit refresh to `#spa-content`, removing the remaining
   document-wide traversal from the application shell.
 - Established the staged Vue 3, Vue Router and TresJS migration architecture,
