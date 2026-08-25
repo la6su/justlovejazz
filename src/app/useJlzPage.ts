@@ -4,7 +4,8 @@
 // `PageId`. It owns the render contract the legacy `renderView` implemented
 // imperatively, now split across router + i18n/meta providers:
 //
-// - `dataset.page` on body/html (CSS scoping + the `routePage.ts` port read);
+// - `dataset.page` on body/html (CSS scoping + the write-only `routePage.ts`
+//   compatibility projection);
 // - WorkCards disposal before the next route's DOM is inserted (the leak
 //   contract: detached card listeners would keep the old nodes alive);
 // - home intro activation (the template does not ship `section-active`);

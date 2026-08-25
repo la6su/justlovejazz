@@ -8,16 +8,16 @@ function setDatasetPage(value: string | null): void {
 
 describe('route page port (legacy adapter)', () => {
   beforeEach(() => {
-    setDatasetPage('home')
+    publishCurrentPage('home')
   })
 
   afterEach(() => {
     setDatasetPage(null)
   })
 
-  it('reads the plain page written by the router', () => {
+  it('reads the typed page published by the router', () => {
     for (const page of ['home', 'services', 'works', 'manifesto', 'lab', 'contact'] as const) {
-      setDatasetPage(page)
+      publishCurrentPage(page)
       expect(getCurrentPage()).toBe(page)
     }
   })
@@ -28,26 +28,17 @@ describe('route page port (legacy adapter)', () => {
     expect(document.documentElement.dataset.page).toBe('works')
   })
 
-  it('normalizes a qualified value to its first segment (former split defensive)', () => {
-    setDatasetPage('works-legacy')
+  it('does not let external dataset mutations change typed route state', () => {
+    publishCurrentPage('works')
+    setDatasetPage('contact')
     expect(getCurrentPage()).toBe('works')
   })
 
-  it('falls back to home when the attribute is missing', () => {
-    setDatasetPage(null)
-    expect(getCurrentPage()).toBe('home')
-  })
-
-  it('falls back to home for an unknown page (same as the router lenient resolution)', () => {
-    setDatasetPage('does-not-exist')
-    expect(getCurrentPage()).toBe('home')
-  })
-
   it('isCurrentPage mirrors the former dataset equality reads', () => {
-    setDatasetPage('works')
+    publishCurrentPage('works')
     expect(isCurrentPage('works')).toBe(true)
     expect(isCurrentPage('contact')).toBe(false)
-    setDatasetPage(null)
+    publishCurrentPage('home')
     expect(isCurrentPage('home')).toBe(true)
     expect(isCurrentPage('lab')).toBe(false)
   })
@@ -55,9 +46,9 @@ describe('route page port (legacy adapter)', () => {
   it('World.syncRouteVisuals hides the shared home cube outside the home page via the port', () => {
     // Behavioural lock: the scene root owner reads the page through the port,
     // so lab/works/contact pages no longer show the home Baku.
-    setDatasetPage('lab')
+    publishCurrentPage('lab')
     expect(getCurrentPage()).not.toBe('home')
-    setDatasetPage('home')
+    publishCurrentPage('home')
     expect(getCurrentPage()).toBe('home')
   })
 })

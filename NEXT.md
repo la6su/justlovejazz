@@ -21,6 +21,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Close the shared transition QA matrix** — direct entry, in-app route,
   popstate, backend fallback, theme polarity, narrow layout and reduced motion;
   coverage is recorded in `docs/evidence/shared-transition-qa/`.
+- [x] **Remove the final DOM route read** — `routePage` now owns the current
+  `PageId` in memory and only projects it to `data-page`; the scene/UI getter
+  no longer trusts external dataset mutations.
 
 ## Deferred product queue
 

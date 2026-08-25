@@ -45,6 +45,9 @@ in a dirty tree and keep each change to one coherent outcome.
 - All `jlz:*` application events flow through the typed `eventBus`
   (`AppEvents` map); non-module producers (the inline splash script, e2e and
   soak scripts) use the `window.__jlzEmit` facade.
+- Route state is owned by the typed in-memory `routePage` port. Its DOM
+  `data-page` projection is write-only compatibility output for CSS and
+  legacy selectors; scene/UI code must never read it as application state.
 - The splash stays outside the Vue mount and initial Vue/Tres/Three/UIkit
   dependency graph. Scene code receives typed route and preference state; it
   does not infer application state from DOM datasets in the target design.
