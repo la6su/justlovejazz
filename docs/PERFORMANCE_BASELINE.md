@@ -634,3 +634,18 @@ place, so the protocol is executable end-to-end.
 - Dependency upgrades include build-size and both-backend frame comparisons.
 - Budgets change only through a separately reviewed architecture decision with
   product and hardware evidence.
+### Phase 2 physical mobile resize/DPR gate — 2026-08-25
+
+The current `tres-vue-dev` build was served from pct104 through an SSH + ADB
+USB tunnel to the physical Android 14 device Xiaomi `22101320G`. Chrome
+reported a 392×766 CSS viewport at DPR 2.75 and a real `WebGPUBackend`.
+DevTools device metrics then changed the same mobile page to 360×740 at DPR
+2.5 and restored 392×766 at DPR 2.75. Both changes fired the resize listener,
+updated the renderer backing canvas, and marked the demand scheduler with
+`lastInvalidation: resize`; the loop returned to settled idle after each
+change. Scene and renderer resource counters were identical before, during
+and after the two changes, and no JS or renderer errors were observed.
+
+This closes the physical mobile resize/DPR event delta when combined with the
+desktop resize evidence above. The machine-readable report is
+`docs/evidence/mobile-resize-gate/2026-08-25T13-20-00Z-report.json`.
