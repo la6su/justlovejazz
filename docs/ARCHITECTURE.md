@@ -152,6 +152,9 @@ according to their current measured policy.
 - `WorkCards` discovers cards and owns delegated grid listeners only within
   `#spa-content`; detached and persistent-shell grids remain outside that route
   owner.
+- The menu template adapter resolves its nav bindings, preview synchronization
+  and same-page hash targets within `#spa-content`; detached menu markup is not
+  an application owner.
 - `core/` owns the framework-neutral contracts (route manifest, world slots,
   typed event ports, i18n, theme, motion policy) and imports no Vue or TresJS.
 - `sections/` owns the per-route content templates consumed by the route views;

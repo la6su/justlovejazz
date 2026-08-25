@@ -11,7 +11,6 @@ function mountNav(): { root: HTMLElement; toggle: HTMLAnchorElement; content: HT
         <span class="jlz-menu-nav__label">One</span>
       </a>
       <div hidden>Content</div>
-    </nav>
   `
   document.body.appendChild(root)
   return {
@@ -21,9 +20,22 @@ function mountNav(): { root: HTMLElement; toggle: HTMLAnchorElement; content: HT
   }
 }
 
+function createBoundableNav(): HTMLElement {
+  const nav = document.createElement('ul')
+  nav.className = 'jlz-menu-nav'
+  nav.innerHTML = `
+    <li class="uk-parent">
+      <a class="jlz-menu-nav__toggle" href="#">Studio</a>
+      <ul><li><a class="jlz-menu-nav__sub-link" data-nav-href="/manifesto">Manifesto</a></li></ul>
+    </li>
+  `
+  return nav
+}
+
 describe('initMenuNav visibility reconciliation', () => {
   afterEach(() => {
     document.body.replaceChildren()
+    vi.restoreAllMocks()
   })
 
   it('does not mutate a detached route root after delayed frames', () => {
@@ -43,7 +55,6 @@ describe('initMenuNav visibility reconciliation', () => {
 
     expect(content.hidden).toBe(true)
     expect(cancel).not.toHaveBeenCalled()
-    vi.restoreAllMocks()
   })
 
   it('reveals the connected submenu after the second frame', () => {
@@ -60,6 +71,28 @@ describe('initMenuNav visibility reconciliation', () => {
     callbacks[1]?.(0)
 
     expect(content.hidden).toBe(false)
-    vi.restoreAllMocks()
+  })
+
+  it('binds only the menu inside the active route root', () => {
+    const content = document.createElement('main')
+    content.id = 'spa-content'
+    const routeNav = createBoundableNav()
+    content.append(routeNav)
+
+    const detachedNav = createBoundableNav()
+    document.body.append(content, detachedNav)
+
+    initMenuNav()
+
+    expect(routeNav.querySelector('.jlz-menu-nav__toggle')?.getAttribute('data-jlz-visibility-bound')).toBe(
+      '1',
+    )
+    expect(routeNav.querySelector('.jlz-menu-nav__sub-link')?.getAttribute('data-jlz-bound')).toBe('1')
+    expect(
+      detachedNav.querySelector('.jlz-menu-nav__toggle')?.hasAttribute('data-jlz-visibility-bound'),
+    ).toBe(false)
+    expect(detachedNav.querySelector('.jlz-menu-nav__sub-link')?.hasAttribute('data-jlz-bound')).toBe(
+      false,
+    )
   })
 })

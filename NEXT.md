@@ -96,6 +96,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Scope WorkCards to the route root** — card discovery, delegated grid
   owners and roving tabindex now stay inside `#spa-content`; detached and
   persistent-shell grids remain outside the route owner.
+- [x] **Scope menu template bindings to the route root** — menu discovery,
+  preview synchronization and same-page hash targets now resolve within
+  `#spa-content`, leaving detached menu markup untouched.
 
 ## Deferred product queue
 

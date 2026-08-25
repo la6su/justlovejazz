@@ -372,7 +372,8 @@ export function navOverlaySection(mode: 'home' | 'content' = 'content'): string 
  * rest. No custom .is-expanded class, no manual toggle listeners.
  */
 export function initMenuNav(): void {
-  const nav = document.querySelector('.jlz-menu-nav')
+  const contentRoot = document.getElementById('spa-content') ?? document
+  const nav = contentRoot.querySelector('.jlz-menu-nav')
   if (!nav) return
 
   // UIkit owns `aria-expanded` and `hidden`. When the sheet itself was hidden
@@ -408,8 +409,8 @@ export function initMenuNav(): void {
     })
 
     const syncPreview = () => {
-      const previewNumber = document.querySelector<HTMLElement>('.jlz-menu-preview__number')
-      const previewLabel = document.querySelector<HTMLElement>('.jlz-menu-preview__label')
+      const previewNumber = contentRoot.querySelector<HTMLElement>('.jlz-menu-preview__number')
+      const previewLabel = contentRoot.querySelector<HTMLElement>('.jlz-menu-preview__label')
       const number = toggle.querySelector<HTMLElement>('.jlz-menu-nav__num')?.textContent
       const label = toggle.querySelector<HTMLElement>('.jlz-menu-nav__label')?.textContent
       if (previewNumber && number) previewNumber.textContent = number
@@ -449,7 +450,7 @@ export function initMenuNav(): void {
       } else {
         // Same-page: scroll to hash + close menu (return to previous section)
         if (hash) {
-          const target = document.querySelector(hash)
+          const target = contentRoot.querySelector(hash)
           target?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' })
         }
         eventBus.emit('jlz:close-nav')

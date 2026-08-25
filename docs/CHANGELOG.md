@@ -75,6 +75,8 @@
   WorkCards now discovers cards and delegated grid owners inside that route
   root, preventing detached or persistent-shell grids from receiving route
   listeners or roving-tabindex state.
+  Menu template bindings now resolve the active nav, preview elements and
+  same-page hash targets inside that route root as well.
 - Scoped bootstrap UIkit refresh to `#spa-content`, removing the remaining
   document-wide traversal from the application shell.
 - Established the staged Vue 3, Vue Router and TresJS migration architecture,
