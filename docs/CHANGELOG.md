@@ -33,6 +33,8 @@
   ExperienceUI portfolio loading now uses a single-flight owner promise and
   contains import failures so concurrent entry points cannot duplicate UI or
   leak an unhandled rejection.
+  Failed home-carousel initialization now clears its cached promise, allowing
+  a later route wake to retry while successful initialization stays idempotent.
 - Scoped bootstrap UIkit refresh to `#spa-content`, removing the remaining
   document-wide traversal from the application shell.
 - Established the staged Vue 3, Vue Router and TresJS migration architecture,

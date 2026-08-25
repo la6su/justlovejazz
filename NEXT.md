@@ -40,6 +40,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
   accessibility announcement when a route root unmounts.
 - [x] **Coalesce lazy portfolio initialization** — concurrent UI entry points
   now share one owner promise; failures are contained and can retry cleanly.
+- [x] **Retry failed carousel initialization** — a rejected home-carousel
+  load now clears its owner promise while successful initialization remains
+  idempotent.
 
 ## Deferred product queue
 

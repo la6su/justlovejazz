@@ -486,12 +486,13 @@ export class Experience {
     const carousel = this.carousel
     if (!carousel) return Promise.resolve()
 
-    this._carouselInitPromise = carousel.init().then(
+    const initPromise = carousel.init().then(
       () => {
         if (import.meta.env.DEV)
           console.info('[Experience] BakuCarousel initialized (works section)')
       },
       (err) => {
+        if (this._carouselInitPromise === initPromise) this._carouselInitPromise = null
         if (import.meta.env.DEV) {
           console.error(
             '[Experience] BakuCarousel init FAILED — textures may not load, event listeners NOT attached:',
@@ -500,6 +501,7 @@ export class Experience {
         }
       },
     )
+    this._carouselInitPromise = initPromise
     return this._carouselInitPromise
   }
 
