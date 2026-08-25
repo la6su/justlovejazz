@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Open `FullscreenOverlay` instances now execute idempotent hide cleanup before
+  UIkit destruction, preventing stale body-scroll/focus state and ensuring the
+  per-open close callback fires once during runtime teardown.
+
 - `Experience` now invalidates an async lifecycle generation at teardown and
   checks it after renderer/world/prewarm awaits, preventing late scene-owner
   creation or readiness work after a runtime has been destroyed.

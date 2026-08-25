@@ -164,6 +164,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Guard async Experience construction after teardown** — a lifecycle
   generation is checked after renderer/world/prewarm awaits, so a destroyed
   runtime cannot publish readiness or create late `Lights`/`Ground` owners.
+- [x] **Settle open FullscreenOverlay teardown** — disposal now routes an open
+  modal through idempotent hide cleanup before UIkit destruction, restoring
+  media, focus, keyboard and body-scroll state without duplicate `onClose`.
 
 ## Deferred product queue
 

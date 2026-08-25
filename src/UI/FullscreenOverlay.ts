@@ -68,6 +68,11 @@ export class FullscreenOverlay {
   public onNext: (() => void) | null = null
   private _perOpenOnClose: (() => void) | null = null
   private _restoreFocus: HTMLElement | null = null
+  private _hideHandled = false
+
+  private readonly _onModalHide = (): void => {
+    this.handleHide()
+  }
 
   constructor() {
     this.container = document.createElement('div')
@@ -269,39 +274,7 @@ export class FullscreenOverlay {
       target?.focus({ preventScroll: true })
       this._tryAutoplay()
     })
-    UIkit.util.on(this.container, 'hide', () => {
-      if (this._enterFallback) {
-        cancelAnimationFrame(this._enterFallback)
-        this._enterFallback = null
-      }
-      if (this._shownRevealFrame) {
-        cancelAnimationFrame(this._shownRevealFrame)
-        this._shownRevealFrame = null
-      }
-      this._mediaGeneration += 1
-      this._cancelVideoReveal()
-      if (this._autoplayTimer) {
-        clearTimeout(this._autoplayTimer)
-        this._autoplayTimer = null
-      }
-      this.container.classList.remove('is-playing')
-      this.container.classList.remove('is-entered')
-      this.video.pause()
-      // Close ownership is per-open, so a completed cycle cannot leak a
-      // callback into the next media item.
-      this._perOpenOnClose?.()
-      this._perOpenOnClose = null
-      // Restore focus to the trigger that opened the overlay (B-2 a11y fix).
-      this._restoreFocus?.focus({ preventScroll: true })
-      this._restoreFocus = null
-      // Remove keyboard listener when modal closes — clean lifecycle, no
-      // stale listeners intercepting events while the overlay is hidden.
-      document.removeEventListener('keydown', this._keydownHandler!)
-      if (this._focusTrapHandler) {
-        document.removeEventListener('focusin', this._focusTrapHandler)
-      }
-    })
-
+    UIkit.util.on(this.container, 'hide', this._onModalHide)
     // Keyboard: Space (play/pause), ArrowLeft/Right (prev/next)
     // Attached to document on 'show', removed on 'hide' (see above).
     // stopImmediatePropagation prevents CinematicNav's window keydown from
@@ -342,6 +315,41 @@ export class FullscreenOverlay {
       const first = focusables[0]!
       const last = focusables[focusables.length - 1]!
       ;(this._lastShiftTab ? last : first).focus({ preventScroll: true })
+    }
+  }
+
+  private handleHide(): void {
+    if (this._hideHandled) return
+    this._hideHandled = true
+    if (this._enterFallback) {
+      cancelAnimationFrame(this._enterFallback)
+      this._enterFallback = null
+    }
+    if (this._shownRevealFrame) {
+      cancelAnimationFrame(this._shownRevealFrame)
+      this._shownRevealFrame = null
+    }
+    this._mediaGeneration += 1
+    this._cancelVideoReveal()
+    if (this._autoplayTimer) {
+      clearTimeout(this._autoplayTimer)
+      this._autoplayTimer = null
+    }
+    this.container.classList.remove('is-playing')
+    this.container.classList.remove('is-entered')
+    this.video.pause()
+    // Close ownership is per-open, so a completed cycle cannot leak a
+    // callback into the next media item.
+    this._perOpenOnClose?.()
+    this._perOpenOnClose = null
+    // Restore focus to the trigger that opened the overlay (B-2 a11y fix).
+    this._restoreFocus?.focus({ preventScroll: true })
+    this._restoreFocus = null
+    // Remove keyboard listener when modal closes — clean lifecycle, no
+    // stale listeners intercepting events while the overlay is hidden.
+    document.removeEventListener('keydown', this._keydownHandler!)
+    if (this._focusTrapHandler) {
+      document.removeEventListener('focusin', this._focusTrapHandler)
     }
   }
 
@@ -443,6 +451,7 @@ export class FullscreenOverlay {
 
   /** Apply overlay options to the DOM (shared by open + preload). */
   private _applyOptions(opts: OverlayOptions): void {
+    this._hideHandled = false
     this._cancelVideoReveal()
     this._mediaGeneration += 1
     // Store the per-open close callback (called in the 'hide' handler).
@@ -557,6 +566,14 @@ export class FullscreenOverlay {
   }
 
   dispose(): void {
+    if (this.isOpen) {
+      const modal = UIkit.modal(this.container)
+      modal.hide()
+      // UIkit normally emits `hide`, but a teardown can race its transition.
+      // Run the same idempotent cleanup synchronously before destroying the
+      // component so body scroll, focus and the per-open callback are settled.
+      this.handleHide()
+    }
     this._listeners.abort()
     this._posterRequestId += 1
     this._mediaGeneration += 1

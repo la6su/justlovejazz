@@ -122,4 +122,23 @@ describe('FullscreenOverlay close ownership', () => {
       cancel.mockRestore()
     }
   })
+
+  it('settles an open modal before disposal', () => {
+    const onClose = vi.fn()
+    const overlay = new FullscreenOverlay() as unknown as OverlayInternals
+
+    try {
+      overlay._applyOptions({ onClose })
+      overlay.container.dispatchEvent(new Event('show'))
+      overlay.container.classList.add('uk-open')
+
+      overlay.dispose()
+
+      expect(onClose).toHaveBeenCalledOnce()
+      expect(document.body.contains(overlay.container)).toBe(false)
+      expect(document.body.classList.contains('uk-modal-page')).toBe(false)
+    } finally {
+      overlay.dispose()
+    }
+  })
 })

@@ -73,6 +73,10 @@ under `src/builder/`; the public builds do not import the editor graph.
   long async work. `destroy()` invalidates it; every renderer/coordinator/
   prewarm continuation checks the token before publishing state or creating
   final scene owners.
+- `FullscreenOverlay.dispose()` settles an open UIkit modal through the same
+  idempotent hide owner used by normal close before aborting listeners and
+  destroying the component. This restores media, focus, keyboard and body
+  scroll state and invokes only the current per-open callback.
 - UIkit remains the layout/component/accessibility baseline where retained;
   project styles express the 3D shell and authored compositions.
 - Published Builder cards and buttons keep UIkit as the owner of base geometry
