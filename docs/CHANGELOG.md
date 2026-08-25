@@ -6,7 +6,8 @@
   wakes, UIkit hydration, overlay/content/submenu reveals and detached
   `NoiseText`/`BlurFade` animations; lazy portfolio initialization is now
   cancelled on UI teardown, and stale hash navigation callbacks are
-  invalidated by the next route transition.
+  invalidated by the next route transition. Contact's lazy Cyprus load now
+  contains failures after cleanup instead of producing unhandled rejections.
 - Scoped bootstrap UIkit refresh to `#spa-content`, removing the remaining
   document-wide traversal from the application shell.
 - Established the staged Vue 3, Vue Router and TresJS migration architecture,
