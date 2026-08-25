@@ -684,6 +684,8 @@ export class Experience {
     // spots for visible glass reflections. RoomEnvironment was too dim (soft
     // architectural studio light) → glass looked dark. This procedural env
     // gives strong directional highlights like day34 reference.
+    let envTex: THREE.CanvasTexture | null = null
+    let pmrem: WebGPUPMREMGenerator | null = null
     try {
       // Re-entrant: on device-loss recovery the previous PMREM texture died
       // with the lost device — release the stale binding before regenerating.
@@ -731,7 +733,7 @@ export class Experience {
       softSpot2.addColorStop(1.0, 'rgba(185,185,185,0)')
       ctx.fillStyle = softSpot2
       ctx.fillRect(0, 0, envWidth, envHeight)
-      const envTex = new THREE.CanvasTexture(envCanvas)
+      envTex = new THREE.CanvasTexture(envCanvas)
       envTex.mapping = THREE.EquirectangularReflectionMapping
       envTex.colorSpace = THREE.SRGBColorSpace
 
@@ -741,9 +743,8 @@ export class Experience {
       // instance class (Phase 6 production default; the classic
       // WebGLRenderer path was removed in Phase 10), so this is the single
       // generator.
-      const pmrem = new WebGPUPMREMGenerator(this.renderer.instance)
+      pmrem = new WebGPUPMREMGenerator(this.renderer.instance)
       const envRT = pmrem.fromEquirectangular(envTex)
-      pmrem.dispose()
       this.scene.environment = envRT.texture
       // Set environmentIntensity explicitly (day34 pattern). Without this,
       // WebGPU MeshPhysicalNodeMaterial and WebGL2 MeshPhysicalMaterial can
@@ -757,7 +758,6 @@ export class Experience {
       // Explicit mat.envMap guarantees the glass sees the environment on BOTH
       // paths → parity. Shared texture, no extra VRAM.
       this.baku?.bindEnvironment(envRT.texture)
-      envTex.dispose()
       if (import.meta.env.DEV) {
         console.info(
           '[Experience] Procedural env map (gradient + sun spots) set — glass reflections active (PMREM via renderer-native TSL generator)',
@@ -767,6 +767,9 @@ export class Experience {
       if (import.meta.env.DEV) {
         console.warn('[Experience] Procedural env map generation failed:', e)
       }
+    } finally {
+      pmrem?.dispose()
+      envTex?.dispose()
     }
   }
 
