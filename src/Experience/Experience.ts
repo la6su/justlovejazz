@@ -215,6 +215,8 @@ export class Experience {
   // Works portfolio, UI-facing window handlers) live in ExperienceUI.
   private features!: ExperienceUI
   private _host: ExperienceHost | null = null
+  private _destroyed = false
+  private _lifecycleGeneration = 0
 
   /** Works portfolio (public for DevPanel access — owned by ExperienceUI). */
   public get portfolio() {
@@ -366,7 +368,16 @@ export class Experience {
     this.contactCyprusStage?.resize(this.sizes.width, this.sizes.height)
   }
 
-  private async buildWorld(): Promise<void> {
+  private lifecycleToken(): number {
+    return this._lifecycleGeneration
+  }
+
+  private isLifecycleCurrent(token: number): boolean {
+    return !this._destroyed && token === this._lifecycleGeneration
+  }
+
+  private async buildWorld(token: number): Promise<void> {
+    if (!this.isLifecycleCurrent(token)) return
     // Phase 8 slice 10: the scene-coordination engine (previously the
     // `World` class) is the SceneCoordinator. It receives the scene owners as
     // getters over Experience's own fields — the lazy route owners change
@@ -428,12 +439,14 @@ export class Experience {
     this.scene.add(this.drawTrail.object)
     this.drawTrail.object.visible = false
     await this.coordinator.init()
+    if (!this.isLifecycleCurrent(token)) return
     // Phase 8 slice 6: the home-carousel init await moved out of
     // World.init() to this same boundary. The home stream must finish texture
     // decode before Enter becomes ready (otherwise its first section visit
     // performs image work inside navigation); content deep-links defer setup
     // — ExperienceUI calls the idempotent method on every route change.
     if (this.currentPage() === 'home') await this.ensureCarouselInitialized()
+    if (!this.isLifecycleCurrent(token)) return
     // Phase 8 slice 7: the /works stage init moved out of World.init() to this
     // same boundary (lazy — created only when /works is the entry route; the
     // route can dispose it while its texture decode is still pending).
@@ -450,6 +463,7 @@ export class Experience {
         this.contactCyprusStage?.prewarm()
       })
     }
+    if (!this.isLifecycleCurrent(token)) return
     // Phase 8 slice 9: the Lab object's lazy creation moved out of
     // World.syncRouteVisuals() to this same boundary (created once on the first
     // /lab visit; the entry route triggers it here, the UI route handler
@@ -460,6 +474,7 @@ export class Experience {
     // legacy World — the coordinator's sections enter the Tres scene
     // directly (init() adds them), so no host primitive adapter remains.
     await this.coordinator.prewarmHomeMedia(this.renderer.instance, this.camera.instance)
+    if (!this.isLifecycleCurrent(token)) return
     // Phase 8 slice 1: the lights + ground scene owners. They enter the
     // Tres-owned scene directly (the World no longer constructs or disposes
     // them), and the intro-section steps World.init() used to run for them
@@ -828,6 +843,8 @@ export class Experience {
   }
 
   async init() {
+    if (this._destroyed) return
+    const token = this.lifecycleToken()
     // `input` is a module singleton shared by Camera and DrawTrail. Reattach
     // its listener when a new Experience follows an explicit teardown/HMR.
     input.start()
@@ -881,9 +898,11 @@ export class Experience {
             mode: host.mode,
             onInstanceReplaced: (instance) => host.replaceRenderer(instance),
           }
-        : undefined,
+      : undefined,
     )
-    await this.buildWorld()
+    if (!this.isLifecycleCurrent(token)) return
+    await this.buildWorld(token)
+    if (!this.isLifecycleCurrent(token)) return
     this.bus = StateBus.getInstance()
 
     // ── 3D ↔ theme sync: EnvSphere follows per-section theme ──
@@ -1463,6 +1482,9 @@ export class Experience {
   // (triggerSplashOpener removed — Phase 7 slice 4: owned by ExperienceUI.)
 
   destroy() {
+    if (this._destroyed) return
+    this._destroyed = true
+    this._lifecycleGeneration++
     this._readinessGate?.cancel()
     this._readinessGate = null
     // Text effects can outlive a route root while their DOM remains attached;

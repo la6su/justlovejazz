@@ -69,6 +69,10 @@ under `src/builder/`; the public builds do not import the editor graph.
 - The exported `Input` singleton is restartable: `Experience.init()` calls its
   idempotent `start()` after a previous `destroy()`, restoring the shared mouse
   listener for Camera and DrawTrail without constructing a second singleton.
+- `Experience.init()` and `buildWorld()` carry a lifecycle generation across
+  long async work. `destroy()` invalidates it; every renderer/coordinator/
+  prewarm continuation checks the token before publishing state or creating
+  final scene owners.
 - UIkit remains the layout/component/accessibility baseline where retained;
   project styles express the 3D shell and authored compositions.
 - Published Builder cards and buttons keep UIkit as the owner of base geometry

@@ -161,6 +161,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Restore the singleton Input owner** — `Experience.init()` reattaches
   the shared mouse listener after explicit teardown/HMR through an idempotent
   `input.start()`, while `destroy()` remains the sole listener release path.
+- [x] **Guard async Experience construction after teardown** — a lifecycle
+  generation is checked after renderer/world/prewarm awaits, so a destroyed
+  runtime cannot publish readiness or create late `Lights`/`Ground` owners.
 
 ## Deferred product queue
 

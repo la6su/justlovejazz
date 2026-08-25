@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- `Experience` now invalidates an async lifecycle generation at teardown and
+  checks it after renderer/world/prewarm awaits, preventing late scene-owner
+  creation or readiness work after a runtime has been destroyed.
+
 - The shared `Input` singleton now reattaches its mouse listener at
   `Experience.init()`, so explicit teardown/HMR followed by a new Experience
   does not leave Camera and DrawTrail permanently frozen.
