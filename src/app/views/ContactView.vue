@@ -1,8 +1,8 @@
 <script setup lang="ts">
 // src/app/views/ContactView.vue — Phase 5: /contact route SFC. 1:1 port of
 // the legacy string template `contactPage()` (src/pages/content/contact.ts):
-// a route-specific transmission board. The 3D pixel title names the current
-// frame; the DOM holds one useful action at a time.
+// a route-specific transmission board. The DOM typography names the current
+// frame and holds one useful action at a time.
 import { ref } from 'vue'
 
 import { useJlzPage } from '../useJlzPage'

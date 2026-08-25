@@ -104,16 +104,16 @@ never scrolls the story DOM independently of that controller.
 
 ## Current ownership
 
-| Concern              | Owner                                                          |
-| -------------------- | -------------------------------------------------------------- |
-| Bootstrap            | `entry-shell.ts`, `entry-app.ts`                               |
-| Routes and content   | `app/routes.ts`, `routeManifest.ts`, `sections/*/template.ts`  |
+| Concern              | Owner                                                                                |
+| -------------------- | ------------------------------------------------------------------------------------ |
+| Bootstrap            | `entry-shell.ts`, `entry-app.ts`                                                     |
+| Routes and content   | `app/routes.ts`, `routeManifest.ts`, `sections/*/template.ts`                        |
 | Renderer and loop    | `Experience/Renderer.ts`, `RenderPipeline.ts`, `RenderScheduler.ts`, `SceneHost.vue` |
-| World composition    | `SceneCoordinator.ts`, `WorldConfig.ts`, `Experience/Scene/SectionGroups.ts` |
-| Navigation and UI    | `CinematicNav.ts`, `UIMenu.ts`, `UIManager.ts`                 |
-| Project presentation | `WorksPlaneStage.ts`, `FullscreenOverlay.ts`                   |
-| Contact presentation | `ContactTextStage.ts`, `PixelTextScreen.ts`                    |
-| Preferences/events   | `ThemeManager.ts`, `i18n.ts`, `EventBus.ts`                    |
+| World composition    | `SceneCoordinator.ts`, `WorldConfig.ts`, `Experience/Scene/SectionGroups.ts`         |
+| Navigation and UI    | `CinematicNav.ts`, `UIMenu.ts`, `UIManager.ts`                                       |
+| Project presentation | `WorksPlaneStage.ts`, `FullscreenOverlay.ts`                                         |
+| Contact presentation | Vue semantic contact views + `ContactTypographyStage.ts`                             |
+| Preferences/events   | `ThemeManager.ts`, `i18n.ts`, `EventBus.ts`                                          |
 
 The current renderer is always `WebGPURenderer` (the only renderer class the
 app constructs). When the resolved WebGPU adapter is software (or WebGPU is

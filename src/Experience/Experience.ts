@@ -46,7 +46,6 @@ import { ParticleBurst } from './World/ParticleBurst'
 import { DrawTrail } from './World/DrawTrail'
 import type { BakuCarousel } from './World/BakuCarousel'
 import { WorksPlaneStage } from './World/WorksPlaneStage'
-import { ContactTextStage } from './World/ContactTextStage'
 import type { ContactTypographyStage } from './World/ContactTypographyStage'
 import type { ContactCyprusStage } from './World/ContactCyprusStage'
 import { getLabExperiment, type LabExperimentObject } from './Lab/manifest'
@@ -135,18 +134,14 @@ export class Experience {
   private worksPlaneStage: WorksPlaneStage | null = null
   private _worksPlaneStagePromise: Promise<void> | null = null
   private _worksPlaneStageRequest = 0
-  // Phase 8 slice 8: the Contact pixel-title layer (ContactTextStage) + the
-  // lazy 3D Agros backdrop (ContactCyprusStage, Draco model) — both lazy,
+  // Phase 8 slice 8: the lazy 3D Agros backdrop (ContactCyprusStage, Draco model),
   // created on the first /contact visit and disposed when leaving, so the
   // decoded assets never look like a navigation leak. The World frame path
-  // reads them through the attachContactTextStage / attachContactCyprusStage
-  // adapters + getters; the cube-visibility gate reads
+  // reads it through the attachContactCyprusStage adapter + getter; the
+  // cube-visibility gate reads
   // `contactCyprusStage.isActive` off the attached stage.
-  private contactTextStage: ContactTextStage | null = null
   private contactTypographyStage: ContactTypographyStage | null = null
   private contactCyprusStage: ContactCyprusStage | null = null
-  private _contactTextStagePromise: Promise<void> | null = null
-  private _contactTextStageRequest = 0
   private _contactTypographyStagePromise: Promise<void> | null = null
   private _contactTypographyStageRequest = 0
   private _contactCyprusStagePromise: Promise<void> | null = null
@@ -155,7 +150,7 @@ export class Experience {
   // Agros frame replaces the shared cube) + the effective text polarity
   // cached so a lazy Contact stage cannot miss it.
   private _contactCyprusActive = false
-  private _contactTextIsLight = false
+  private _contactIsLight = false
   // Phase 8 slice 9: the Lab experiment object (a static scene object created
   // once on the first /lab visit, then only toggled visible — never disposed
   // per route leave; disposed only on final destroy). World's `syncRouteVisuals`
@@ -278,13 +273,10 @@ export class Experience {
       disposeWorksPlaneStage: () => this.disposeWorksPlaneStage(),
       // Phase 8 slice 8: the lazy Contact stage lifecycle moved to Experience;
       // the UI reaches it through the port.
-      ensureContactTextStageInitialized: () => this.ensureContactTextStageInitialized(),
       ensureContactTypographyStageInitialized: () => this.ensureContactTypographyStageInitialized(),
       ensureContactCyprusStageInitialized: () => this.ensureContactCyprusStageInitialized(),
-      disposeContactTextStage: () => this.disposeContactTextStage(),
       disposeContactTypographyStage: () => this.disposeContactTypographyStage(),
       disposeContactCyprusStage: () => this.disposeContactCyprusStage(),
-      setContactTextStageSection: (index: number) => this.setContactTextStageSection(index),
       setContactCyprusStageSection: (index: number) => this.setContactCyprusStageSection(index),
       // Phase 8 slice 9: the lazy Lab object lifecycle moved to Experience;
       // the UI reaches it through the port.
@@ -314,10 +306,9 @@ export class Experience {
     // Phase 8 slice 7: the /works stage resize moved out of World.resize —
     // forwarded directly (the stage is lazy; null until /works is reached).
     this.worksPlaneStage?.resize(this.sizes.width, this.sizes.height)
-    // Phase 8 slice 8: the Contact text stage resize moved out of
+    // Phase 8 slice 8: the Contact typography resize moved out of
     // World.resize — forwarded directly (lazy; null until /contact is
     // reached).
-    this.contactTextStage?.resize(this.sizes.width, this.sizes.height)
     // The lazy Cyprus stage owns a viewport-dependent map scale and must
     // follow later orientation/address-bar viewport changes too.
     this.contactCyprusStage?.resize(this.sizes.width, this.sizes.height)
@@ -341,7 +332,6 @@ export class Experience {
         drawTrail: () => this.drawTrail,
         carousel: () => this.carousel,
         worksPlaneStage: () => this.worksPlaneStage,
-        contactTextStage: () => this.contactTextStage,
         contactTypographyStage: () => this.contactTypographyStage,
         contactCyprusStage: () => this.contactCyprusStage,
         labGamepad: () => this.labGamepad,
@@ -396,14 +386,13 @@ export class Experience {
     // same boundary (lazy — created only when /works is the entry route; the
     // route can dispose it while its texture decode is still pending).
     if (this.currentPage() === 'works') void this.ensureWorksPlaneStageInitialized()
-    // Phase 8 slice 8: the Contact text + Cyprus stage inits moved out of
+    // Phase 8 slice 8: the Contact typography + Cyprus stage inits moved out of
     // World.init() to this same boundary (lazy — created only when /contact
     // is the entry route; the route can dispose them while their inits are
     // still pending). The Draco decode + transparent material warm-up start
     // while Contact's first frame (or the splash) is on screen, so Agros has
     // no first-use model decode or shader-compile hitch.
     if (this.currentPage() === 'contact') {
-      void this.ensureContactTextStageInitialized()
       void this.ensureContactTypographyStageInitialized()
       void this.ensureContactCyprusStageInitialized().then(() => {
         this.contactCyprusStage?.prewarm()
@@ -522,40 +511,6 @@ export class Experience {
     this._worksPlaneStagePromise = null
   }
 
-  /** Lazily create the Contact route's pixel-title layer. Phase 8 slice 8:
-   *  moved from World — Experience owns the lazy stage (the World frame path
-   *  reads it through the documented `attachContactTextStage` adapter +
-   *  `contactTextStage` getter). */
-  public ensureContactTextStageInitialized(): Promise<void> {
-    if (this._contactTextStagePromise) return this._contactTextStagePromise
-    const request = ++this._contactTextStageRequest
-    const stage = new ContactTextStage()
-    this.contactTextStage = stage
-    this.scene.add(stage)
-    this._contactTextStagePromise = Promise.resolve().then(() => {
-      if (request !== this._contactTextStageRequest || this.contactTextStage !== stage) {
-        // The route can dispose a stage while its init is still pending.
-        stage.dispose()
-        stage.removeFromParent()
-        return
-      }
-      stage.setActive(this.currentPage() === 'contact', 0)
-      stage.setTheme(this._contactTextIsLight)
-      stage.resize(window.innerWidth, window.innerHeight)
-      stage.setCamera(this.camera.instance)
-    })
-    return this._contactTextStagePromise
-  }
-
-  public disposeContactTextStage(): void {
-    this._contactTextStageRequest++
-    if (!this.contactTextStage) return
-    this.contactTextStage.dispose()
-    this.contactTextStage.removeFromParent()
-    this.contactTextStage = null
-    this._contactTextStagePromise = null
-  }
-
   /** Lazily create the Contact greeting so FontLoader/TextGeometry stay out
    * of the shared initial scene graph. */
   public ensureContactTypographyStageInitialized(): Promise<void> {
@@ -568,7 +523,7 @@ export class Experience {
         this.contactTypographyStage = stage
         this.scene.add(stage)
         stage.setActive(this.currentPage() === 'contact')
-        stage.setTheme(this._contactTextIsLight)
+        stage.setTheme(this._contactIsLight)
       },
     )
     return this._contactTypographyStagePromise
@@ -582,15 +537,9 @@ export class Experience {
     this._contactTypographyStagePromise = null
   }
 
-  /** Sync the Contact pixel-title layer with CinematicNav's active chapter. */
-  public setContactTextStageSection(index: number): void {
-    this.contactTextStage?.setActive(this.currentPage() === 'contact', index)
-  }
-
   /** Cache the effective polarity so a lazy Contact stage cannot miss it. */
-  public syncContactTextTheme(isLight: boolean): void {
-    this._contactTextIsLight = isLight
-    this.contactTextStage?.setTheme(isLight)
+  public syncContactTheme(isLight: boolean): void {
+    this._contactIsLight = isLight
     this.contactTypographyStage?.setTheme(isLight)
   }
 
@@ -881,10 +830,9 @@ export class Experience {
         }
       }
       if (this.coordinator) {
-        // Contact's pixel title can be created after this route event.
         // Experience caches the effective polarity so lazy creation cannot
         // default to white text against a light route background.
-        this.syncContactTextTheme(detail.isLight)
+        this.syncContactTheme(detail.isLight)
         // Theme-only syncs — skip when just the section moved (same polarity).
         if (detail.themeChanged !== false) {
           this.ground.syncTheme(detail.isLight)
@@ -1177,7 +1125,6 @@ export class Experience {
     this._bakuCarouselActive = carousel?.isAnimating ?? false
     const carouselActive = this._bakuCarouselActive
     const worksPlaneActive = this.worksPlaneStage?.isAnimating ?? false
-    const contactTextActive = this.contactTextStage?.isAnimating ?? false
     const contactCyprusActive = this.contactCyprusStage?.isAnimating ?? false
     const drawTrailActive = this.drawTrail?.isAnimating ?? false
     const baku = this.baku
@@ -1212,7 +1159,6 @@ export class Experience {
       nav: navActive,
       carousel: carouselActive,
       worksPlane: worksPlaneActive,
-      contactText: contactTextActive,
       contactCyprus: contactCyprusActive,
       worksScroll: worksScrollActive,
       drawTrail: drawTrailActive,
@@ -1286,7 +1232,6 @@ export class Experience {
     this.worksPlaneStage?.setCamera(this.camera.instance)
     // Phase 8 slice 8: the Contact stage cameras moved out of World.setCamera
     // (Experience owns both lazy stages).
-    this.contactTextStage?.setCamera(this.camera.instance)
     this.contactCyprusStage?.setCamera(this.camera.instance)
 
     // Dispatch section-change on EVERY section index change (not just context).
@@ -1499,12 +1444,9 @@ export class Experience {
     this.worksPlaneStage?.removeFromParent()
     this.worksPlaneStage?.dispose()
     this.worksPlaneStage = null
-    // Phase 8 slice 8: the Contact text + Cyprus stage owners (lazy — only
+    // Phase 8 slice 8: the Contact typography + Cyprus stage owners (lazy — only
     // alive when /contact was reached; direct children of the Tres-owned
     // scene).
-    this.contactTextStage?.removeFromParent()
-    this.contactTextStage?.dispose()
-    this.contactTextStage = null
     this._contactTypographyStageRequest++
     this.contactTypographyStage?.removeFromParent()
     this.contactTypographyStage?.dispose()

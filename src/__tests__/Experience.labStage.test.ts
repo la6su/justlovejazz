@@ -41,7 +41,6 @@ describe('Experience lab object lifecycle', () => {
       drawTrail: () => null,
       carousel: () => null,
       worksPlaneStage: () => null,
-      contactTextStage: () => null,
       contactCyprusStage: () => null,
       labGamepad: () => bag.labGamepad ?? null,
     }

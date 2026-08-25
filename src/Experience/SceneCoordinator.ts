@@ -23,7 +23,6 @@ import type { EnvSphere } from './World/EnvSphere'
 import type { ParticleBurst } from './World/ParticleBurst'
 import type { BakuCarousel } from './World/BakuCarousel'
 import type { WorksPlaneStage } from './World/WorksPlaneStage'
-import type { ContactTextStage } from './World/ContactTextStage'
 import type { ContactTypographyStage } from './World/ContactTypographyStage'
 import type { ContactCyprusStage } from './World/ContactCyprusStage'
 import type { LabExperimentObject } from './Lab/manifest'
@@ -47,7 +46,6 @@ export interface SceneCoordinatorOwners {
   drawTrail: () => DrawTrail | null
   carousel: () => BakuCarousel | null
   worksPlaneStage: () => WorksPlaneStage | null
-  contactTextStage: () => ContactTextStage | null
   contactTypographyStage?: () => ContactTypographyStage | null
   contactCyprusStage: () => ContactCyprusStage | null
   labGamepad: () => LabExperimentObject | null
@@ -96,10 +94,6 @@ export class SceneCoordinator {
   public get worksPlaneStage(): WorksPlaneStage | null {
     return this.owners.worksPlaneStage()
   }
-  public get contactTextStage(): ContactTextStage | null {
-    return this.owners.contactTextStage()
-  }
-
   public get contactTypographyStage(): ContactTypographyStage | null {
     return this.owners.contactTypographyStage?.() ?? null
   }
@@ -177,7 +171,7 @@ export class SceneCoordinator {
     // carousel reference and awaits it at the same boundary (buildWorld).
     // Phase 8 slice 7: the /works stage init lives in Experience (it owns the
     // lazy stage; the route can still enter on /works before init resolves).
-    // Phase 8 slice 8: the Contact text + Cyprus stage inits live in
+    // Phase 8 slice 8: the Contact typography + Cyprus stage inits live in
     // Experience (it owns both lazy stages; the route can enter /contact
     // before their init resolves).
     if (import.meta.env.DEV) {
@@ -304,10 +298,6 @@ export class SceneCoordinator {
         worksStage.setActive(true, this.worksPlaneStageSection)
         worksStage.update(deltaTime)
       }
-      const contactText = this.owners.contactTextStage()
-      if (contactText && this.page() === 'contact') {
-        contactText.update(deltaTime)
-      }
       this.contactTypographyStage?.update(deltaTime)
       const contactCyprus = this.owners.contactCyprusStage()
       if (contactCyprus && this.page() === 'contact') {
@@ -321,7 +311,6 @@ export class SceneCoordinator {
       worksStage.setActive(this.page() === 'works', this.worksPlaneStageSection)
       worksStage.update(deltaTime)
     }
-    this.owners.contactTextStage()?.update(deltaTime)
     this.contactTypographyStage?.update(deltaTime)
     this.owners.contactCyprusStage()?.update(deltaTime)
 
@@ -669,7 +658,7 @@ export class SceneCoordinator {
     })
     // Phase 8 slice 7: the /works stage resize is forwarded directly by
     // Experience (it owns the stage).
-    // Phase 8 slice 8: the Contact text stage resize is forwarded directly by
+    // Phase 8 slice 8: the Contact typography resize is forwarded directly by
     // Experience (it owns the stage).
     // Ground plane: always covers viewport (large geometry, no change needed).
     // Baku: position stays at origin, no resize needed.
@@ -700,7 +689,7 @@ export class SceneCoordinator {
   /** Set camera reference for DrawTrail (unproject to world).
    *  Phase 8 slice 7: the /works stage camera is forwarded directly by
    *  Experience (it owns the stage).
-   *  Phase 8 slice 8: the Contact text + Cyprus stage cameras are forwarded
+   *  Phase 8 slice 8: the Contact typography + Cyprus stage cameras are forwarded
    *  directly by Experience (it owns both stages). */
   public setCamera(cam: THREE.Camera): void {
     this._camera = cam

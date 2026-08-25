@@ -9,7 +9,6 @@ describe('Experience resize owner propagation', () => {
       sizes: { width: 360, height: 800 },
       coordinator: { resize: coordinatorResize },
       worksPlaneStage: null,
-      contactTextStage: null,
       contactCyprusStage: { resize: cyprusResize },
     } as unknown as Partial<Experience>) as Experience
 
@@ -25,7 +24,6 @@ describe('Experience resize owner propagation', () => {
       sizes: { width: 1920, height: 1080 },
       coordinator: { resize: vi.fn() },
       worksPlaneStage: null,
-      contactTextStage: null,
       contactCyprusStage: null,
     } as unknown as Partial<Experience>) as Experience
 

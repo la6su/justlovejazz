@@ -11,7 +11,7 @@
 //   3. Opener — scale pulse (1.0 → 1.3 → 1.0)
 //
 // Glass shader: a physical transmission volume on WebGPU and WebGL2. The
-// Contact pixel-title mesh is rendered behind it, so the cube can refract and
+// Contact typography mesh is rendered behind it, so the cube can refract and
 // softly magnify that real scene content instead of merely fading over it.
 
 import * as THREE from 'three'

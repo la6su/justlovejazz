@@ -11,7 +11,7 @@ describe('Experience contact typography lazy owner', () => {
       contactTypographyStage: null,
       _contactTypographyStagePromise: null,
       _contactTypographyStageRequest: 0,
-      _contactTextIsLight: false,
+      _contactIsLight: false,
     } as unknown as Partial<Experience>) as Experience
     const disposeSpy = vi.spyOn(ContactTypographyStage.prototype, 'dispose')
 

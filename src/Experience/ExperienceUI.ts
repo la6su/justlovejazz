@@ -52,14 +52,10 @@ export interface ExperienceUIHost {
   /** Phase 8 slice 7: the Experience-owned lazy /works stage lifecycle. */
   ensureWorksPlaneStageInitialized: () => Promise<void>
   disposeWorksPlaneStage: () => void
-  /** Phase 8 slice 8: the Experience-owned lazy Contact stage lifecycle. */
-  ensureContactTextStageInitialized: () => Promise<void>
   ensureContactTypographyStageInitialized: () => Promise<void>
   ensureContactCyprusStageInitialized: () => Promise<void>
-  disposeContactTextStage: () => void
   disposeContactTypographyStage: () => void
   disposeContactCyprusStage: () => void
-  setContactTextStageSection: (index: number) => void
   setContactCyprusStageSection: (index: number) => void
   /** Phase 8 slice 9: the Experience-owned lazy Lab object lifecycle. */
   ensureLabGamepad: () => Promise<void>
@@ -88,7 +84,6 @@ export class ExperienceUI {
   private _worksPlaneTapHandler: ((e: PointerEvent) => void) | null = null
   private _gotoSectionByHashUnsub: (() => void) | null = null
   private _soundToggleUnsub: (() => void) | null = null
-  private _langChangeUnsub: (() => void) | null = null
   private _routeGeneration = 0
 
   constructor(private host: ExperienceUIHost) {}
@@ -148,11 +143,6 @@ export class ExperienceUI {
     // Runtime sound toggle (from UIMenu or other in-app controls)
     this._soundToggleUnsub = eventBus.on('jlz:sound-toggle', ({ muted }) => {
       this.host.sfx().setMuted(muted)
-    })
-
-    // Keep the route-owned pixel title in sync with the active language.
-    this._langChangeUnsub = eventBus.on('jlz:lang-change', () => {
-      this.host.coordinator().contactTextStage?.refreshLanguage()
     })
 
     // ── Works page card click → open fullscreen overlay ──
@@ -227,16 +217,13 @@ export class ExperienceUI {
         this.host.setContactCyprusStageSection(0)
         coordinator.setContactSceneSection(0)
         void Promise.all([
-          this.host.ensureContactTextStageInitialized(),
           this.host.ensureContactTypographyStageInitialized(),
           this.host.ensureContactCyprusStageInitialized(),
         ]).then(() => {
           if (!continuationIsCurrent()) return
-          this.host.setContactTextStageSection(0)
           this.host.raise('nav')
         })
       } else {
-        this.host.disposeContactTextStage()
         this.host.disposeContactTypographyStage()
         this.host.disposeContactCyprusStage()
         coordinator.setContactSceneSection(0)
@@ -265,7 +252,6 @@ export class ExperienceUI {
         // DOM sections: 0=Lab overlay, 1-4=project pairs, 5=Nav overlay.
         coordinator.setWorksPlaneStageSection(stageIndex)
       } else if (page === 'contact') {
-        this.host.setContactTextStageSection(stageIndex)
         this.host.setContactCyprusStageSection(stageIndex)
         coordinator.setContactSceneSection(stageIndex)
       } else {
@@ -436,14 +422,13 @@ export class ExperienceUI {
   destroy(): void {
     this._routeGeneration++
     this._soundToggleUnsub?.()
-    this._langChangeUnsub?.()
     this._openProjectUnsub?.()
     this._projectNavigateUnsub?.()
     this._routeChangeCloseOverlayUnsub?.()
     this._wobblePulseUnsub?.()
     this._worksPageSectionUnsub?.()
     this._gotoSectionByHashUnsub?.()
-    this._soundToggleUnsub = this._langChangeUnsub = this._openProjectUnsub = null
+    this._soundToggleUnsub = this._openProjectUnsub = null
     this._projectNavigateUnsub = this._routeChangeCloseOverlayUnsub = null
     this._wobblePulseUnsub = this._worksPageSectionUnsub = this._gotoSectionByHashUnsub = null
     if (this._worksPlaneTapHandler) {

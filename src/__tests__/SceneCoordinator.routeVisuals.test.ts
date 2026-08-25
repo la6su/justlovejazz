@@ -27,7 +27,6 @@ describe('SceneCoordinator route visuals (Phase 8 slice 10: the gate left `World
       drawTrail: () => null,
       carousel: () => null,
       worksPlaneStage: () => null,
-      contactTextStage: () => null,
       contactCyprusStage: () => null,
       labGamepad: () => null,
     }

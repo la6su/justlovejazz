@@ -10,10 +10,10 @@
 // Two DELIBERATELY DIFFERENT flag sets are preserved — this is real behavior,
 // not a simplification, and must not be "fixed" when the consumer migrates:
 //
-//   - `anyActivity` is the 14-flag OR. It is used BOTH to raise render demand
+//   - `anyActivity` is the 13-flag OR. It is used BOTH to raise render demand
 //     (any active flag re-arms the frame) and to decide whether demand may
 //     settle after a rendered frame.
-//   - `idleForAmbientBreath` is a narrower 10-flag AND-NOT plus the
+//   - `idleForAmbientBreath` is a narrower 9-flag AND-NOT plus the
 //     reduced-motion gate. It decides when the ~2.5 s ambient-breath timer
 //     may run. It intentionally EXCLUDES `worksScroll`, `drawTrail`,
 //     `cubeRotating` and `camPulsing`: those keep the loop alive on their own
@@ -30,7 +30,7 @@
 
 /**
  * The per-frame activity flags. Each mirrors a "something is moving" source in
- * the scene. The 14 flags form the `anyActivity` set; the ambient-breath idle
+ * the scene. The 13 flags form the `anyActivity` set; the ambient-breath idle
  * check reads a narrower subset (see `idleForAmbientBreath`).
  */
 export interface RenderActivity {
@@ -40,8 +40,6 @@ export interface RenderActivity {
   carousel: boolean
   /** The /works plane stage is animating. */
   worksPlane: boolean
-  /** The /contact text stage is animating. */
-  contactText: boolean
   /** The /contact Cyprus stage is animating. */
   contactCyprus: boolean
   /** /works back-text UV scroll/wipe is continuously active. */
@@ -69,7 +67,6 @@ export const NO_ACTIVITY: RenderActivity = {
   nav: false,
   carousel: false,
   worksPlane: false,
-  contactText: false,
   contactCyprus: false,
   worksScroll: false,
   drawTrail: false,
@@ -83,7 +80,7 @@ export const NO_ACTIVITY: RenderActivity = {
 }
 
 /**
- * The 14-flag OR. Used to RAISE render demand and to decide whether demand may
+ * The 13-flag OR. Used to RAISE render demand and to decide whether demand may
  * SETTLE after a frame. If any flag is set, the scene is still changing.
  */
 export function anyActivity(a: RenderActivity): boolean {
@@ -91,7 +88,6 @@ export function anyActivity(a: RenderActivity): boolean {
     a.nav ||
     a.carousel ||
     a.worksPlane ||
-    a.contactText ||
     a.contactCyprus ||
     a.worksScroll ||
     a.drawTrail ||
@@ -107,7 +103,7 @@ export function anyActivity(a: RenderActivity): boolean {
 
 /**
  * The narrower idle check for the ambient-breath timer: reduced motion is off
- * AND the 10 "breath-relevant" flags are all clear. `worksScroll`,
+ * AND the 9 "breath-relevant" flags are all clear. `worksScroll`,
  * `drawTrail`, `cubeRotating` and `camPulsing` are intentionally excluded —
  * setting only one of them must still count as idle for the breath (they keep
  * the loop alive on their own).
@@ -118,7 +114,6 @@ export function idleForAmbientBreath(a: RenderActivity, reducedMotion: boolean):
     !a.nav &&
     !a.carousel &&
     !a.worksPlane &&
-    !a.contactText &&
     !a.contactCyprus &&
     !a.opener &&
     !a.burst &&
@@ -135,7 +130,7 @@ export function shouldRender(needsRender: boolean, a: RenderActivity): boolean {
 
 /**
  * After a rendered frame, demand may settle (the flag may be cleared) only when
- * nothing is still active. This is the same 14-flag set as `anyActivity`.
+ * nothing is still active. This is the same 13-flag set as `anyActivity`.
  */
 export function demandSettles(a: RenderActivity): boolean {
   return !anyActivity(a)

@@ -48,7 +48,6 @@ describe('Experience works stage lifecycle', () => {
       drawTrail: () => null,
       carousel: () => null,
       worksPlaneStage: () => bag.worksPlaneStage ?? null,
-      contactTextStage: () => null,
       contactCyprusStage: () => null,
       labGamepad: () => null,
     }
