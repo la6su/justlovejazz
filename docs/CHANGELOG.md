@@ -11,7 +11,8 @@
   The lazy Lab experiment owner follows the same handled-failure and retry
   policy. Final Experience teardown now routes Contact Cyprus cleanup through
   its invalidating owner method, so late Draco results cannot re-enter a
-  disposed scene.
+  disposed scene. The Works stage now follows the same invalidating owner
+  boundary during final Experience teardown.
 - Scoped bootstrap UIkit refresh to `#spa-content`, removing the remaining
   document-wide traversal from the application shell.
 - Established the staged Vue 3, Vue Router and TresJS migration architecture,
