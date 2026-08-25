@@ -149,22 +149,34 @@ export class BakuCarousel extends THREE.Group {
     }
     const urlToTexture = new Map(uniqueUrls.map((url, i) => [url, uniqueTextures[i]!]))
 
-    CARD_TEXTURE_URLS.forEach((url, i) => {
-      const tex = urlToTexture.get(url)!
-      const plane = new CasePlane(tex)
-      plane.scale.setScalar(CARD_SCALE)
-      plane.userData.texIdx = i
-      plane.userData.texUrl = url
-      // cardIndex = which PROJECT (0..3) — used by onCardClick → onProjectSelect
-      plane.userData.cardIndex = i % PROJECTS.length
-      // keepVisible = true so the SectionGroups owner's geometry-hiding step
-      // doesn't hide the carousel cards (it hides all non-Points, non-keepVisible meshes)
-      plane.userData.keepVisible = true
-      this.cards.push(plane)
-      this.add(plane)
-    })
+    const stagedCards: CasePlane[] = []
+    try {
+      CARD_TEXTURE_URLS.forEach((url, i) => {
+        const tex = urlToTexture.get(url)!
+        const plane = new CasePlane(tex)
+        plane.scale.setScalar(CARD_SCALE)
+        plane.userData.texIdx = i
+        plane.userData.texUrl = url
+        // cardIndex = which PROJECT (0..3) — used by onCardClick → onProjectSelect
+        plane.userData.cardIndex = i % PROJECTS.length
+        // keepVisible = true so the SectionGroups owner's geometry-hiding step
+        // doesn't hide the carousel cards (it hides all non-Points, non-keepVisible meshes)
+        plane.userData.keepVisible = true
+        stagedCards.push(plane)
+        this.add(plane)
+      })
 
-    this.addEventListeners()
+      this.cards = stagedCards
+      this.addEventListeners()
+    } catch (error) {
+      stagedCards.forEach((card) => {
+        card.removeFromParent()
+        card.dispose()
+      })
+      uniqueUrls.forEach((url) => releaseCaseTexture(url))
+      this.initialized = false
+      throw error
+    }
   }
 
   private addEventListeners(): void {
