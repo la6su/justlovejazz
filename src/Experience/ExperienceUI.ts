@@ -85,6 +85,7 @@ export class ExperienceUI {
   private _gotoSectionByHashUnsub: (() => void) | null = null
   private _soundToggleUnsub: (() => void) | null = null
   private _routeGeneration = 0
+  private _destroyed = false
 
   constructor(private host: ExperienceUIHost) {}
 
@@ -329,7 +330,8 @@ export class ExperienceUI {
   }
 
   async ensurePortfolio(): Promise<void> {
-    if (this.portfolio) return
+    if (this.portfolio || this._destroyed) return
+    const generation = this._routeGeneration
     // Always build portfolio — single-page experience
     // The scene must be initialised (sections attached to the Tres scene)
     // before the portfolio raycast can run against the 3D planes.
@@ -338,12 +340,13 @@ export class ExperienceUI {
     if (!ready()) {
       // Wait one frame for the scene init to finish, then retry.
       await new Promise((r) => requestAnimationFrame(() => r(null)))
+      if (this._destroyed || generation !== this._routeGeneration) return
       if (!this.portfolio && !ready()) return
     }
 
     const { PROJECTS } = await import('../Data/Projects')
     // Re-check after async import — page may have changed during await.
-    if (this.portfolio) return // another call won
+    if (this._destroyed || generation !== this._routeGeneration || this.portfolio) return
 
     this.portfolio = createWorksPortfolio(PROJECTS, (idx) => {
       this.onProjectSelect(idx)
@@ -431,6 +434,8 @@ export class ExperienceUI {
 
   /** Remove every UI-feature listener + dispose the created features. */
   destroy(): void {
+    if (this._destroyed) return
+    this._destroyed = true
     this._routeGeneration++
     this._soundToggleUnsub?.()
     this._openProjectUnsub?.()
