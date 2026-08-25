@@ -60,7 +60,7 @@ function formatKb(bytes: number): string {
 
 const html = readFileSync(join(DIST_DIR, 'index.html'), 'utf8')
 const threeAsset = uniqueAsset(
-  /^vendor-three-(?!contact-loaders-)[\w-]+\.js$/,
+  /^vendor-three-(?!contact-(?:loaders|geometry)-)[\w-]+\.js$/,
   'shared vendor-three',
 )
 const threeGzip = gzipBytes(readFileSync(threeAsset))

@@ -41,6 +41,9 @@
   attaching the next route track, preventing stale callbacks on new DOM.
   ExperienceUI now consumes the existing static Projects dependency; the
   ineffective dynamic import was removed from the build graph.
+  Contact's lazy typography stage now keeps `TextGeometry` in a dedicated
+  route-local chunk, and the build-budget check measures only the shared
+  Three.js vendor asset.
 - Scoped bootstrap UIkit refresh to `#spa-content`, removing the remaining
   document-wide traversal from the application shell.
 - Established the staged Vue 3, Vue Router and TresJS migration architecture,

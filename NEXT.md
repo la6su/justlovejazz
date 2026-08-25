@@ -49,6 +49,14 @@ Do not reopen completed migration phases. Current runtime contracts are in
   pending scroll/focus RAFs before attaching the new route track.
 - [x] **Remove ineffective Projects dynamic import** — ExperienceUI now uses
   the existing static project-data owner instead of a non-splitting import.
+- [x] **Keep Contact typography addons route-local** — the lazy Contact
+  typography stage now owns `FontLoader` and `TextGeometry` in a separate
+  chunk, so other routes do not download those addons; the shared Three.js
+  budget excludes only this measured route-local asset.
+- [ ] **Reduce the shared Three.js vendor below budget** — the current
+  production graph is 380.35 kB gzip against the 350 kB gate after the
+  route-local split; inspect named imports and WebGPU/TSL ownership before
+  considering any budget change.
 
 ## Deferred product queue
 

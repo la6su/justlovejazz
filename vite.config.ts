@@ -132,6 +132,15 @@ export default defineConfig(() => ({
               priority: 35,
             },
             {
+              // Contact typography is a dynamic stage. Keep its font and
+              // geometry addons out of the shared Three.js delivery so
+              // visiting other routes does not pay for them.
+              name: 'vendor-three-contact-geometry',
+              test: /[\\/]three[\\/]examples[\\/]jsm[\\/](?:geometries[\\/]TextGeometry|loaders[\\/]FontLoader)\.js$/,
+              includeDependenciesRecursively: false,
+              priority: 34,
+            },
+            {
               name: 'vendor-three',
               // Match every Three.js and three-stdlib module.
               test(id) {
