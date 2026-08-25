@@ -48,6 +48,8 @@
   teardown, reducing the persistent shell's listener surface.
   FullscreenOverlay now scopes its media, control and poster listeners under
   one abortable owner, so teardown cannot leave detached callbacks behind.
+  The entry bootstrap now cancels its 60-second readiness watchdog on ready,
+  failure or retry instead of retaining an unnecessary timer after startup.
 - Scoped bootstrap UIkit refresh to `#spa-content`, removing the remaining
   document-wide traversal from the application shell.
 - Established the staged Vue 3, Vue Router and TresJS migration architecture,

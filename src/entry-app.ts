@@ -126,6 +126,14 @@ function updateLoaderProgress(pct: number): void {
 }
 
 let _bootstrapState: BootstrapState = INITIAL_BOOTSTRAP_STATE
+let _readyWatchdog: ReturnType<typeof setTimeout> | null = null
+
+function clearReadyWatchdog(): void {
+  if (_readyWatchdog !== null) {
+    clearTimeout(_readyWatchdog)
+    _readyWatchdog = null
+  }
+}
 
 function transitionBootstrap(next: BootstrapState): boolean {
   const result = tryTransition(_bootstrapState, next)
@@ -250,6 +258,7 @@ async function boot(): Promise<void> {
     )
   } catch (e) {
     console.error('[entry-app] bootstrap failed:', e)
+    clearReadyWatchdog()
     transitionBootstrap('failed')
     eventBus.emit('jlz:webgl-failed')
     // The failed state allows retry without a page reload.
@@ -277,6 +286,7 @@ function scheduleUiKitRefresh(): void {
 }
 
 export async function startApp(): Promise<void> {
+  clearReadyWatchdog()
   // Init splash config toggles FIRST — instant, no dependencies.
   // These work during loading, before three.js finishes.
   initSoundToggle()
@@ -322,12 +332,14 @@ export async function startApp(): Promise<void> {
   // Animations (BlurFade + NoiseText) are DELAYED until jlz:splash-entered
   // (Enter click) so user sees them as 3D scene reveals, not behind splash.
   eventBus.on('jlz:webgl-ready', () => {
+    clearReadyWatchdog()
     showEnterButton()
   })
 
   // jlz:webgl-failed fires if Experience.init() throws — show an error message
   // instead of the Enter button, so the user knows the 3D failed (not just slow).
   eventBus.on('jlz:webgl-failed', () => {
+    clearReadyWatchdog()
     if (_bootstrapState !== 'failed') transitionBootstrap('failed')
     showLoadError()
   })
@@ -349,7 +361,8 @@ export async function startApp(): Promise<void> {
   // (greyed, non-clickable) the entire time — it never activates until 3D
   // is truly ready. Under CPU/network throttling, init() can take 10-20s;
   // that's expected and the progress ring keeps the user informed.
-  setTimeout(() => {
+  _readyWatchdog = setTimeout(() => {
+    _readyWatchdog = null
     const enterBtn = document.getElementById('jlz-splash-enter')
     if (enterBtn && !enterBtn.classList.contains('is-ready')) {
       console.error('[entry-app] jlz:webgl-ready did not fire within 60s — showing load error')

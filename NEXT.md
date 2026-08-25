@@ -67,6 +67,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Scope FullscreenOverlay listeners** — media/control/poster listeners
   now share one `AbortController` owner and are cancelled atomically during
   teardown, alongside the existing document keyboard and modal cleanup.
+- [x] **Clear the bootstrap readiness watchdog** — the 60-second failed-boot
+  timer is now owned by `entry-app` and cancelled as soon as readiness or an
+  explicit failure arrives, including before a retry.
 
 ## Deferred product queue
 
