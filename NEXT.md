@@ -9,7 +9,7 @@ Do not reopen completed migration phases. Current runtime contracts are in
 
 ## Active engineering queue
 
-- [ ] **Complete documentation reconciliation** — finish the remaining
+- [x] **Complete documentation reconciliation** — finish the remaining
   README/architecture wording review, keep evidence append-only and ensure
   agent-operation guidance stays separate from project contracts.
 - [ ] **Harden async route-owner cancellation** — add generation guards to
