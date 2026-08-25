@@ -15,6 +15,7 @@ import { onMounted, onUpdated, ref } from 'vue'
 import { BUILDER_CATALOG, BUILDER_CATALOG_GROUPS } from '../builder/catalog'
 import { STYLE_GROUPS } from '../builder/style'
 import { BuilderPage } from '../builder/vue/BuilderPage'
+import { toggleLang } from '../core/i18n'
 import { useAdminEditor } from './useAdminEditor'
 
 const previewEl = ref<HTMLElement | null>(null)
@@ -133,6 +134,10 @@ const onPreviewKeydown = (event: KeyboardEvent): void => {
   event.preventDefault()
   selectNode(element.dataset.builderId)
 }
+
+const toggleBuilderLocale = (): void => {
+  toggleLang()
+}
 </script>
 
 <template>
@@ -245,6 +250,15 @@ const onPreviewKeydown = (event: KeyboardEvent): void => {
           Redo
         </button>
       </div>
+      <button
+        class="jlz-admin-locale"
+        type="button"
+        :aria-label="`Preview language: ${locale}. Switch language`"
+        :title="`Preview language: ${locale}`"
+        @click="toggleBuilderLocale"
+      >
+        {{ locale }}
+      </button>
       <div class="jlz-admin-viewports" role="group" aria-label="Preview width">
         <button
           :class="{ 'is-active': viewport === 'desktop' }"

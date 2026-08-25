@@ -76,6 +76,9 @@ The editor provides:
   form and navbar decisions;
 - atomic Save & Compile with strict validation and Less compilation before a
   successful response.
+- an EN/RU preview toggle wired to the shared application locale port; the
+  active locale is visible in the toolbar and updates the Vue preview without
+  creating a second editor locale store.
 
 ## Save and compilation
 

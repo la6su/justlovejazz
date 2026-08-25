@@ -276,6 +276,19 @@ describe('AdminApp.vue', () => {
     document.body.innerHTML = ''
   })
 
+  it('exposes and toggles the shared preview locale', async () => {
+    const wrapper = mount(AdminApp, { attachTo: document.body })
+    await flushPromises()
+    const localeButton = wrapper.get('.jlz-admin-locale')
+    expect(localeButton.text()).toMatch(/^(EN|RU)$/)
+    const before = localeButton.text()
+    await localeButton.trigger('click')
+    await nextTick()
+    expect(localeButton.text()).not.toBe(before)
+    expect(localeButton.text()).toMatch(/^(EN|RU)$/)
+    wrapper.unmount()
+  })
+
   it('adds a node when a catalogue row is clicked', async () => {
     const wrapper = await mountApp()
     const before = wrapper.findAll('#document-outline [data-select-node]').length

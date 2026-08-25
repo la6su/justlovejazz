@@ -837,6 +837,10 @@ for replacement. Pull one forward only when its migration dependency is clear.
       Phase 9 slice 10 landed (2026-08-25): approved documents now publish
       both `/p/<slug>` and `/p/<slug>/ru` standalone artifacts, with localized
       `lang`, canonical and Open Graph metadata plus EN/RU sitemap entries.
+      Phase 9 slice 11 landed (2026-08-25): the admin toolbar exposes an EN/RU
+      preview toggle backed by the shared `core/i18n` port; the Vue preview
+      updates through the existing `jlz:lang-change` event without a second
+      locale store.
 
 - [ ] **Extend the cinematic brand language across every route** — tune motion
       and TSL response through the new component/scene owners, preserving both
