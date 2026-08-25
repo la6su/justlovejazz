@@ -10,6 +10,9 @@
   lazy initialization, preventing a stale route callback from activating a
   newer stage or raising redundant render demand.
 
+- ContactCyprusStage now rejects a pending Draco/GLTF result after disposal and
+  releases the late model without attaching it or creating detached materials.
+
 - `useJlzPage` now disposes the module-level `WorkCards` registry during route
   owner teardown as well as before route replacement, releasing delegated grid
   listeners and pending card timers on full unmount.

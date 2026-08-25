@@ -216,6 +216,9 @@ according to their current measured policy.
 - Contact section activation captures the same Cyprus request generation before
   awaiting lazy initialization; a stale route callback cannot call `setActive`
   or raise render demand on a newer stage.
+- ContactCyprusStage marks itself disposed before route resources are released;
+  a GLTF result that resolves after disposal is traversed and released without
+  being attached, avoiding detached materials and geometry setup.
 - CinematicNav resolves `#section-*` targets inside its currently bound route
   track, keeping detached and persistent-shell IDs outside story ownership.
 - `entry-app` owns the delayed splash title handoff; its timer is cancellable

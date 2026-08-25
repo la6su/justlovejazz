@@ -76,6 +76,8 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Guard Contact route activation continuations** — section activation now
   captures the Cyprus request generation, so a pending route callback cannot
   activate a newer stage after a fast Contact route replacement.
+- [x] **Cancel stale Contact Cyprus model setup** — a disposed stage now drops
+  a pending Draco/GLTF result before attaching meshes or allocating materials.
 - [x] **Remove ineffective Projects dynamic import** — ExperienceUI now uses
   the existing static project-data owner instead of a non-splitting import.
 - [x] **Keep Contact typography addons route-local** — the lazy Contact

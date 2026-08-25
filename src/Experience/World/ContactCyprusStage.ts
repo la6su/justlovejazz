@@ -29,6 +29,7 @@ export class ContactCyprusStage extends THREE.Group {
   private _fadeElapsed = FADE_DURATION_SECONDS
   private _prewarmFramePending = false
   private _active = false
+  private _disposed = false
   private _cameraPosition = new THREE.Vector3()
 
   constructor() {
@@ -38,6 +39,7 @@ export class ContactCyprusStage extends THREE.Group {
   }
 
   async load(): Promise<void> {
+    if (this._disposed) return
     // The model is Draco-compressed. Use Three's glTF-specific WASM pair;
     // Vite emits these assets from the loader module and no public decoder
     // copy is needed on the route or startup path.
@@ -49,6 +51,10 @@ export class ContactCyprusStage extends THREE.Group {
       gltf = await loader.loadAsync('/assets/gltf/cyprus_3d.glb')
     } finally {
       dracoLoader.dispose()
+    }
+    if (this._disposed) {
+      this.disposeModel(gltf.scene)
+      return
     }
     const model = gltf.scene
     try {
@@ -107,13 +113,7 @@ export class ContactCyprusStage extends THREE.Group {
       this.add(model)
       this.setPresentation(this._opacity, this._scale)
     } catch (error) {
-      model.traverse((object) => {
-        const mesh = object as THREE.Mesh
-        if (!mesh.isMesh) return
-        mesh.geometry.dispose()
-        const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
-        materials.forEach((material) => disposeMaterialDeep(material))
-      })
+      this.disposeModel(model)
       this._materials = []
       throw error
     }
@@ -222,15 +222,21 @@ export class ContactCyprusStage extends THREE.Group {
   }
 
   dispose(): void {
-    this._model?.traverse((object) => {
+    if (this._disposed) return
+    this._disposed = true
+    if (this._model) this.disposeModel(this._model)
+    this._model = null
+    this._materials = []
+    this.removeFromParent()
+  }
+
+  private disposeModel(model: THREE.Object3D): void {
+    model.traverse((object) => {
       const mesh = object as THREE.Mesh
       if (!mesh.isMesh) return
       mesh.geometry.dispose()
       const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
       materials.forEach((material) => disposeMaterialDeep(material))
     })
-    this._model = null
-    this._materials = []
-    this.removeFromParent()
   }
 }
