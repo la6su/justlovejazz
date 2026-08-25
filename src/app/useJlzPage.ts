@@ -29,6 +29,7 @@ import { applyMetaTags } from '../core/pageMeta'
 import type { PageId } from '../sections/_shared/constants'
 import { initMenuToolbar } from '../sections/nav/template'
 import { disposeWorkCards } from '../UI/WorkCards'
+import { publishCurrentPage } from '../core/routePage'
 
 export function uiKitUpdate(el: Element): void {
   ;(UIkit as unknown as { update(el: Element): void }).update(el)
@@ -40,13 +41,6 @@ export function uiKitUpdate(el: Element): void {
 let mountedOnce = false
 
 export function useJlzPage(page: PageId, rootEl: () => HTMLElement | null): void {
-  // The active page is exposed on the document/body dataset for CSS hooks
-  // and the `routePage.ts` typed port.
-  function syncPageDataset(): void {
-    document.body.dataset.page = page
-    document.documentElement.dataset.page = page
-  }
-
   // The legacy `renderView` post-render sequence, verbatim.
   function postRender(): void {
     const el = rootEl()
@@ -81,7 +75,7 @@ export function useJlzPage(page: PageId, rootEl: () => HTMLElement | null): void
     // page's DOM settles (legacy leak contract, kept even for the first
     // mount — the prerendered home has no cards, this is a no-op there).
     disposeWorkCards()
-    syncPageDataset()
+    publishCurrentPage(page)
     postRender()
     mountedOnce = true
   })

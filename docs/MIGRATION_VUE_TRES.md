@@ -902,6 +902,16 @@ bootstrap state machine, typed ports, scheduler and brand-token manifest
 remain open. Rollback: revert `router.ts` to its local `ROUTES` map; the
 manifest is inert until consumed.
 
+#### Phase 3 typed route publisher slice — 2026-08-25
+
+`src/core/routePage.ts` now owns both sides of the route-page compatibility
+port: `getCurrentPage()` remains the single scene read, while
+`publishCurrentPage(page)` is the single writer for the body/html `data-page`
+projection used by legacy CSS. `useJlzPage` calls the typed publisher instead
+of mutating either dataset directly. The projection remains intentionally
+until Phase 5 CSS ownership moves to Vue state; its writer is now centralized,
+unit-tested and replaceable without changing scene consumers.
+
 #### Phase 3 world-slot tuple slice — 2026-08-21
 
 The second Phase 3 contract is the **canonical world-slot tuple**: the

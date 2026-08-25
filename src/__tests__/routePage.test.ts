@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { getCurrentPage, isCurrentPage } from '../core/routePage'
+import { getCurrentPage, isCurrentPage, publishCurrentPage } from '../core/routePage'
 
 function setDatasetPage(value: string | null): void {
   if (value === null) document.body.removeAttribute('data-page')
@@ -20,6 +20,12 @@ describe('route page port (legacy adapter)', () => {
       setDatasetPage(page)
       expect(getCurrentPage()).toBe(page)
     }
+  })
+
+  it('publishes the typed page to both compatibility dataset projections', () => {
+    publishCurrentPage('works')
+    expect(document.body.dataset.page).toBe('works')
+    expect(document.documentElement.dataset.page).toBe('works')
   })
 
   it('normalizes a qualified value to its first segment (former split defensive)', () => {

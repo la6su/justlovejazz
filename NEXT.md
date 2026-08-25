@@ -216,6 +216,11 @@ do not start a phase whose entry gate has not passed.
       invocation is now pinned in `package.json` (`test:serial`) and
       documented in `docs/DEVELOPMENT.md`.
 
+      Phase 3 route publisher slice landed (2026-08-25): `publishCurrentPage`
+      is now the single typed writer for the compatibility `data-page`
+      projection on body/html. `useJlzPage` no longer writes datasets directly;
+      CSS compatibility remains intact while the projection is still needed.
+
 - [x] **Phase 4: migrate the development Page Builder to Vue** — use the
       isolated admin application as the first state-heavy Vue surface while
       keeping schema, validation, escaping and Less compilation pure. Preserve

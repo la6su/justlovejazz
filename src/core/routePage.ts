@@ -6,11 +6,9 @@
 // `document.body.dataset`... Typed readonly ports carry route, locale,
 // effective theme, reduced-motion and story progress into the scene.").
 //
-// Legacy adapter by design: today the router still writes the page into
-// `document.body.dataset.page` (CSS scoping and legacy consumers depend on
-// it until Phase 5). When Phase 5's Vue Router provides the page as typed
-// state, this module's implementation switches to that source and every
-// scene consumer stays unchanged — the port is the seam.
+// The DOM dataset remains a compatibility projection for CSS and legacy
+// consumers, but both reads and writes now pass through this typed port. When
+// the remaining CSS hooks move to Vue state, only this adapter changes.
 //
 // Read semantics are deliberately pull-based: consumers read the page at the
 // same moment they did when they read the dataset, so the migration changes
@@ -44,6 +42,12 @@ export function getCurrentPage(): PageId {
   if (!raw) return 'home'
   const segment = raw.split('-')[0] ?? ''
   return PAGE_IDS.has(segment) ? (segment as PageId) : 'home'
+}
+
+/** Publish the typed route page to the compatibility DOM projection. */
+export function publishCurrentPage(page: PageId): void {
+  document.body?.setAttribute('data-page', page)
+  document.documentElement?.setAttribute('data-page', page)
 }
 
 /** Convenience predicate: `true` when the current page is `page`. */
