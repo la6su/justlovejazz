@@ -27,7 +27,7 @@ do not start a phase whose entry gate has not passed.
       initialization, backend inspection and application readiness remain
       distinct contracts.
 
-- [ ] **Phase 2: pass the representative unified-renderer gate** — exercise
+- [x] **Phase 2: pass the representative unified-renderer gate** — exercise
       `WebGPURenderer` with WebGPUBackend and forced WebGLBackend against fog,
       representative materials, the full TSL post graph, environment, Works,
       GLTF/DRACO, reduced motion, lazy teardown and software-adapter policy.
@@ -107,6 +107,13 @@ do not start a phase whose entry gate has not passed.
       while the hashed loader assets remain route-owned and lazy. This reduces
       duplicate delivery but does not close the separate `vendor-three` budget
       overage.
+
+      Phase 2 acceptance closed (2026-08-25): WebGPUBackend and forced
+      WebGLBackend passed representative TSL/fog/material, environment,
+      Works texture, GLTF/DRACO, reduced-motion, pacing, hidden-tab,
+      resize/DPR, visual-parity, resource-plateau and root-teardown gates.
+      Final physical Android evidence:
+      `docs/evidence/mobile-resize-gate/2026-08-25T13-20-00Z-report.json`.
 
 - [ ] **Phase 3: extract framework-neutral contracts** — introduce the one
       route manifest, canonical world-slot tuple, bootstrap state machine,

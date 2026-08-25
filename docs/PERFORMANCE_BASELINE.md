@@ -157,7 +157,7 @@ the current classic WebGL2 renderer; afterwards it is
 | Milestone        | Backend | Route/state               |     p50 |     p95 | Settled draws | Resource soak      | Device/context                                                                                                         |
 | ---------------- | ------- | ------------------------- | ------: | ------: | ------------: | ------------------ | ---------------------------------------------------------------------------------------------------------------------- |
 | Phase 0 freeze   | partial | automatic and forced home |     n/a |     n/a |           n/a | owner-visible pass | `20c4d63`, desktop RTX 4060 Ti and Android DPR 2.75 WebGPU confirmed; teardown listener/timer inventory pending        |
-| Phase 2 spike    | partial | representative loop graph |   16.70 |   16.80 |             0 | smoke only         | Android `22101320G`, three foreground windows per WebGPUBackend and WebGLBackend; desktop and resource plateau pending |
+| Phase 2 accepted | pass    | representative full graph |   16.70 |   16.80 |             0 | plateau + teardown | Android `22101320G`, desktop RTX 4060 Ti, WebGPUBackend and forced WebGLBackend; resize/DPR evidence 2026-08-25 |
 | Phase 6 renderer | pending | full route matrix         | pending | pending |    0 required | 20 routes          | record                                                                                                                 |
 | Phase 10 cutover | pending | full route matrix         | pending | pending |    0 required | 20 routes          | record                                                                                                                 |
 

@@ -839,14 +839,17 @@ restoration resize events with stable owner resources and a settled loop.
 Evidence: `docs/evidence/mobile-resize-gate/2026-08-25T13-20-00Z-report.json`.
 The full observation is recorded in the `PERFORMANCE_BASELINE.md` slice.
 
-#### Phase 2 open gates
+#### Phase 2 acceptance — closed 2026-08-25
 
-The slices above admit only their stated scopes. These gates remain open and
-must all pass with hardware evidence before Phase 2 is accepted:
+The representative unified-renderer gate is accepted. Automatic
+`WebGPUBackend` and forced `WebGLBackend` passed the representative
+TSL/fog/material, environment, Works texture, GLTF/DRACO, reduced-motion,
+pacing, hidden-tab, resize/DPR, visual-parity, resource-plateau and root-
+teardown checks. The final physical Android resize/DPR evidence is recorded
+in `docs/evidence/mobile-resize-gate/2026-08-25T13-20-00Z-report.json`.
 
-All Phase 2 resize/DPR event behaviour is now covered: desktop evidence from
-2026-08-21 plus the physical Android run on 2026-08-25 recorded in
-`docs/evidence/mobile-resize-gate/`.
+Phase 3 may now consume the selected bounded `setAnimationLoop` driver and
+the unified renderer contract through the existing reversible adapters.
 
 ### Phase 3 — framework-neutral contracts
 
