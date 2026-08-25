@@ -54,6 +54,8 @@ export class Renderer {
   // Phase 6 device-loss recovery state (bounded — see rendererBackend.ts).
   private _deviceLostAttempts = 0
   private _recovering = false
+  private _disposed = false
+  private _lifecycleGeneration = 0
   // forceWebGL the current instance was created with (software-adapter
   // policy: a SwiftShader WebGPU adapter re-creates on the WebGL backend)
   // — device-loss recovery must match it.
@@ -118,6 +120,8 @@ export class Renderer {
   }
 
   async init(adopted?: AdoptedRenderer): Promise<void> {
+    this._disposed = false
+    this._lifecycleGeneration += 1
     if (adopted) {
       // ── Phase 7 adoption path ──────────────────────────────────────────
       // The SceneHost custom renderer factory owns construction + the single
@@ -269,8 +273,10 @@ export class Renderer {
    * MAX_DEVICE_LOST_RECOVERIES (see deviceLostAction).
    */
   private async recoverFromDeviceLost(): Promise<void> {
-    if (this._recovering) return
+    if (this._disposed || this._recovering) return
     this._recovering = true
+    const generation = this._lifecycleGeneration
+    let replacement: WebGPURenderer | null = null
     try {
       this._deviceLostAttempts += 1
       const canvas = this.instance.domElement
@@ -278,17 +284,34 @@ export class Renderer {
       this.pipeline = null
       this.instance.dispose()
 
-      this.instance = await createUnifiedWebGPUInstanceAndInit(canvas, this._forceWebGL)
-      let plan = planUnifiedBackend(inspectUnifiedBackend(this.instance))
+      replacement = await createUnifiedWebGPUInstanceAndInit(canvas, this._forceWebGL)
+      if (this._disposed || generation !== this._lifecycleGeneration) {
+        replacement.dispose()
+        replacement = null
+        return
+      }
+      let plan = planUnifiedBackend(inspectUnifiedBackend(replacement))
       if (plan.recreate) {
         // The replacement landed on a software adapter again — force WebGL2.
         this._forceWebGL = true
-        this.instance.dispose()
+        replacement.dispose()
         // Re-create on the SAME canvas element (still in the DOM — do not
         // remove it, unlike the init-time path where setupCanvas has not run).
-        this.instance = await createUnifiedWebGPUInstanceAndInit(canvas, true)
-        plan = planUnifiedBackend(inspectUnifiedBackend(this.instance))
+        replacement = await createUnifiedWebGPUInstanceAndInit(canvas, true)
+        if (this._disposed || generation !== this._lifecycleGeneration) {
+          replacement.dispose()
+          replacement = null
+          return
+        }
+        plan = planUnifiedBackend(inspectUnifiedBackend(replacement))
       }
+      if (this._disposed || generation !== this._lifecycleGeneration) {
+        replacement.dispose()
+        replacement = null
+        return
+      }
+      this.instance = replacement
+      replacement = null
       this.capabilities.setFinalRendererMode(plan.mode)
 
       this.instance.setPixelRatio(Math.min(this.sizes.dpr, this.capabilities.maxDpr))
@@ -316,6 +339,7 @@ export class Renderer {
         console.info('[Renderer] device-loss recovery complete — renderer re-created')
       }
     } catch (e) {
+      replacement?.dispose()
       console.error('[Renderer] device-loss recovery failed:', e)
     } finally {
       this._recovering = false
@@ -383,6 +407,9 @@ export class Renderer {
 
   /** Dispose: clean up GPU resources + window listener */
   public dispose(): void {
+    if (this._disposed) return
+    this._disposed = true
+    this._lifecycleGeneration += 1
     window.removeEventListener('resize', this._onResize)
     this._loopCallback = null
     this._onInstanceReplaced = null
