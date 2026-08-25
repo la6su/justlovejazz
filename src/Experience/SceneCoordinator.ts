@@ -348,12 +348,14 @@ export class SceneCoordinator {
           (this.page() !== 'home' || !(carousel.isActive && carousel.morphProgress > 0.82))
       }
     }
-    for (const group of this.sceneGroups) {
-      if (!group.visible) continue
-      // Update JunniParticles — GPU-side drift (Works section).
-      const particles = group.userData.particles as
-        import('./World/JunniParticles').JunniParticles | undefined
-      if (particles) particles.update(deltaTime)
+    if (!this.isReducedMotion) {
+      for (const group of this.sceneGroups) {
+        if (!group.visible) continue
+        // Update JunniParticles — GPU-side drift (Works section).
+        const particles = group.userData.particles as
+          import('./World/JunniParticles').JunniParticles | undefined
+        if (particles) particles.update(deltaTime)
+      }
     }
   }
 
