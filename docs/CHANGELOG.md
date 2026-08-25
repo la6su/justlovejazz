@@ -21,6 +21,8 @@
   rolls back partial CasePlane construction and releases shared texture refs
   when material setup fails. The lazy WorksPlaneStage now applies the same
   transactional card staging and refcount rollback.
+  The shared case-texture cache now isolates new consumers from in-flight
+  entries already claimed by global teardown.
 - Scoped bootstrap UIkit refresh to `#spa-content`, removing the remaining
   document-wide traversal from the application shell.
 - Established the staged Vue 3, Vue Router and TresJS migration architecture,
