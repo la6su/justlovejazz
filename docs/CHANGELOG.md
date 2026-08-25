@@ -50,6 +50,8 @@
   one abortable owner, so teardown cannot leave detached callbacks behind.
   The entry bootstrap now cancels its 60-second readiness watchdog on ready,
   failure or retry instead of retaining an unnecessary timer after startup.
+  WorkCards now delegates activation to one listener per grid while retaining
+  per-card debounce state and deterministic disposal.
 - Scoped bootstrap UIkit refresh to `#spa-content`, removing the remaining
   document-wide traversal from the application shell.
 - Established the staged Vue 3, Vue Router and TresJS migration architecture,

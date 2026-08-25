@@ -70,6 +70,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Clear the bootstrap readiness watchdog** — the 60-second failed-boot
   timer is now owned by `entry-app` and cancelled as soon as readiness or an
   explicit failure arrives, including before a retry.
+- [x] **Delegate WorkCards clicks per grid** — card activation keeps its
+  debounce and project event contract while each grid owns one listener
+  instead of one listener per card; disposal removes the grid owners and
+  their release timers together.
 
 ## Deferred product queue
 
