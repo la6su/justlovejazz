@@ -80,12 +80,12 @@ do not start a phase whose entry gate has not passed.
       path was observed on 2026-08-21 on the same host (real OS window
       resizes via CDP: every CSS size change fired the size watcher and
       re-rendered once, resources flat, zero console errors; emulated-DPR
-      without CSS change correctly fired no events). Dynamic resize/DPR
-      events on real mobile hardware remain the only open Phase 2 gate,
-      owner-deferred on 2026-08-21 pending the physical Android device. The
-      lazy `ContactCyprusStage` now receives the same resize-owner propagation
-      as the other route stages; this hardens the path but does not close the
-      physical rotation/address-bar evidence gate.
+      without CSS change correctly fired no events). Physical Android
+      resize/DPR evidence now passes on Xiaomi 22101320G (392x766 CSS,
+      DPR 2.75): 360x740/DPR 2.5 and restoration each fired resize, kept
+      owner resources flat and settled the loop; report committed under
+      `docs/evidence/mobile-resize-gate/`. The lazy `ContactCyprusStage` now
+      receives the same resize-owner propagation as the other route stages.
       The lazy Lab experiment owner now invalidates pending async loads during
       root teardown and disposes late results instead of attaching them to a
       destroyed scene; this closes a concrete lifecycle race without changing

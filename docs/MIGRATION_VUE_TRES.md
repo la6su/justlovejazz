@@ -832,20 +832,21 @@ commit `6f02896`) at `https://project.6la.ru/__spikes/tres-resource` (automatic
 
 This admits the desktop half of the resize-event gate: a dynamic resize event
 reaches the scene owner and re-renders the already-owned graph once per event
-with no resource growth and no console errors. It makes no real-mobile claim;
-the remaining gate delta is physical mobile resize/DPR events, which the
-owner deferred on 2026-08-21 pending the device. The full observation is
-recorded in the `PERFORMANCE_BASELINE.md` slice of the same date.
+with no resource growth and no console errors. The physical mobile delta now
+passes on Xiaomi 22101320G over the USB tunnel: the current `tres-vue-dev`
+build reported 392x766 CSS at DPR 2.75, then accepted 360x740/DPR 2.5 and
+restoration resize events with stable owner resources and a settled loop.
+Evidence: `docs/evidence/mobile-resize-gate/2026-08-25T13-20-00Z-report.json`.
+The full observation is recorded in the `PERFORMANCE_BASELINE.md` slice.
 
 #### Phase 2 open gates
 
 The slices above admit only their stated scopes. These gates remain open and
 must all pass with hardware evidence before Phase 2 is accepted:
 
-- Dynamic resize/DPR event behaviour on real mobile hardware. The desktop
-  resize-event observation of 2026-08-21 admits the desktop half and narrows
-  the gate to the mobile-only delta; the owner deferred the remaining run on
-  2026-08-21 pending the physical Android device.
+All Phase 2 resize/DPR event behaviour is now covered: desktop evidence from
+2026-08-21 plus the physical Android run on 2026-08-25 recorded in
+`docs/evidence/mobile-resize-gate/`.
 
 ### Phase 3 — framework-neutral contracts
 
