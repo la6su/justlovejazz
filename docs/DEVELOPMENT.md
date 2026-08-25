@@ -139,6 +139,7 @@ These budgets protect startup and interaction throughout migration:
 | ----------------------------------------- | -------------------------------------------------------------- |
 | Splash startup JavaScript                 | ≤ 5 KB gzip; excludes Vue, TresJS, Three.js, UIkit and World   |
 | Shared Three.js delivery                  | ≤ 350 KB gzip until a separately approved budget ADR           |
+| Shared UIkit delivery                     | ≤ 56 KB gzip; product graph registers only used extended icons |
 | Idle draw activity                        | zero draw calls and zero active scheduler reasons when settled |
 | Active-burst frame time on tested desktop | p95 ≤ 16.7 ms                                                  |
 | Active-burst frame time on tested mobile  | p95 ≤ 33.3 ms                                                  |

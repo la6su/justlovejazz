@@ -836,9 +836,12 @@ for replacement. Pull one forward only when its migration dependency is clear.
       external archive or separately approved history rewrite after licensing
       review.
 
-- [ ] **Decide the final UIkit JS footprint** — measure retained Vue adapters
-      against the current 75.8 KB gzip vendor chunk; replace behavior only with
-      an equivalent accessible owner.
+- [x] **Decide the final UIkit JS footprint** — production now registers only
+      the 15 JLZ console icons plus the single built-in `twitter` icon; the
+      full official set remains in the dev-only admin entry. The measured
+      `vendor-ui` chunk is 53.65 KB gzip (2026-08-25), guarded at 56 KB. The
+      remaining UIkit core bundle is a single prebuilt dependency and is not
+      safely component-tree-shakeable under the installed packaging.
 
 - [ ] **Configure production SPA/SSG hosting** — decide the hosting target and
       verify every route, blog document, asset and canonical URL against it.

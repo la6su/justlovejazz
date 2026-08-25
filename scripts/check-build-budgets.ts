@@ -5,6 +5,7 @@ import { gzipSync } from 'node:zlib'
 const DIST_DIR = 'dist'
 const ASSETS_DIR = join(DIST_DIR, 'assets')
 const THREE_GZIP_BUDGET = 350_000
+const UIKIT_GZIP_BUDGET = 56_000
 const SPLASH_GZIP_BUDGET = 5_000
 
 function gzipBytes(bytes: Uint8Array | string): number {
@@ -63,6 +64,8 @@ const threeAsset = uniqueAsset(
   'shared vendor-three',
 )
 const threeGzip = gzipBytes(readFileSync(threeAsset))
+const uiAsset = uniqueAsset(/^vendor-ui-[\w-]+\.js$/, 'vendor-ui')
+const uiGzip = gzipBytes(readFileSync(uiAsset))
 const splashGzip =
   startupAssets(html).reduce((total, path) => total + gzipBytes(readFileSync(path)), 0) +
   executableInlineScripts(html).reduce((total, script) => total + gzipBytes(script), 0)
@@ -77,6 +80,7 @@ console.log(
   [
     `Splash startup: ${formatKb(splashGzip)} gzip / ${formatKb(SPLASH_GZIP_BUDGET)}`,
     `Lazy Three.js:  ${formatKb(threeGzip)} gzip / ${formatKb(THREE_GZIP_BUDGET)} (${basename(threeAsset)})`,
+    `UIkit vendor:   ${formatKb(uiGzip)} gzip / ${formatKb(UIKIT_GZIP_BUDGET)} (${basename(uiAsset)})`,
     `Public media:   ${formatKb(mediaBytes)} total; largest ${formatKb(statSync(largestMedia).size)} (${largestMedia})`,
   ].join('\n'),
 )
@@ -89,6 +93,9 @@ if (splashGzip > SPLASH_GZIP_BUDGET) {
 }
 if (threeGzip > THREE_GZIP_BUDGET) {
   failures.push(`Lazy Three.js exceeds its budget by ${formatKb(threeGzip - THREE_GZIP_BUDGET)}.`)
+}
+if (uiGzip > UIKIT_GZIP_BUDGET) {
+  failures.push(`UIkit vendor exceeds its budget by ${formatKb(uiGzip - UIKIT_GZIP_BUDGET)}.`)
 }
 if (failures.length > 0) {
   throw new Error(failures.join('\n'))

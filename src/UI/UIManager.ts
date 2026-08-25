@@ -1,6 +1,6 @@
 import UIkit from 'uikit'
-import Icons from 'uikit/dist/js/uikit-icons'
 import { FullscreenOverlay } from './FullscreenOverlay'
+import { registerProductIcons } from '../assets/product-icons'
 
 export class UIManager {
   public overlay: FullscreenOverlay | null = null
@@ -10,7 +10,7 @@ export class UIManager {
   private _documentClickHandler: ((e: MouseEvent) => void) | null = null
 
   constructor() {
-    UIkit.use(Icons)
+    registerProductIcons()
     if (!window.UIkit) {
       window.UIkit = UIkit
     }
