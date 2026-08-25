@@ -73,6 +73,7 @@ export function moveNodeBefore(
   const targetLocation = store.findNode(targetId)
   if (!sourceLocation || !targetLocation || sourceLocation.siblings !== targetLocation.siblings)
     return { ok: true }
+  if (targetLocation.index === sourceLocation.index + 1) return { ok: true }
   return store.commit((draft) => {
     const source = BuilderStore.findLocationInDocument(draft, nodeId)
     const target = BuilderStore.findLocationInDocument(draft, targetId)

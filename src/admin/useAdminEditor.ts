@@ -272,7 +272,10 @@ export function useAdminEditor(
   const onNodeDragOver = (id: string, event: DragEvent): void => {
     const source = draggedNodeId.value ? store.findNode(draggedNodeId.value) : null
     const target = store.findNode(id)
-    if (!source || !target || source.siblings !== target.siblings || source.node.id === id) return
+    if (!source || !target || source.siblings !== target.siblings || source.node.id === id) {
+      dropTargetId.value = null
+      return
+    }
     event.preventDefault()
     if (event.dataTransfer) event.dataTransfer.dropEffect = 'move'
     dropTargetId.value = id

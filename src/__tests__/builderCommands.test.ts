@@ -139,6 +139,14 @@ describe('moveNodeBefore', () => {
     expect(store.historyIndex).toBe(0)
     expect(gridChildren(store)).toEqual(['first-text', 'second-text'])
   })
+
+  it('skips a drop onto the immediate successor without adding history', () => {
+    const store = newStore()
+    expect(moveNodeBefore(store, 'first-text', 'second-text').ok).toBe(true)
+    expect(store.historyIndex).toBe(0)
+    expect(store.selectedId).toBeNull()
+    expect(gridChildren(store)).toEqual(['first-text', 'second-text'])
+  })
 })
 
 describe('duplicateSelected', () => {
