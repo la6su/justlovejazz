@@ -13,6 +13,10 @@
 - ContactCyprusStage now rejects a pending Draco/GLTF result after disposal and
   releases the late model without attaching it or creating detached materials.
 
+- Idle `SceneCoordinator` updates no longer advance Works/Contact animation
+  clocks without rendering, preventing invisible-time reveal jumps under the
+  demand-driven scheduler.
+
 - `useJlzPage` now disposes the module-level `WorkCards` registry during route
   owner teardown as well as before route replacement, releasing delegated grid
   listeners and pending card timers on full unmount.

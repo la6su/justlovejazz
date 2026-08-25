@@ -219,6 +219,10 @@ according to their current measured policy.
 - ContactCyprusStage marks itself disposed before route resources are released;
   a GLTF result that resolves after disposal is traversed and released without
   being attached, avoiding detached materials and geometry setup.
+- `SceneCoordinator.update(_, false)` is a state-sync-only path for route
+  owners: it never advances Works or Contact animation clocks without a frame,
+  preserving the demand-driven invariant that authored time advances only when
+  the resulting frame can be presented.
 - CinematicNav resolves `#section-*` targets inside its currently bound route
   track, keeping detached and persistent-shell IDs outside story ownership.
 - `entry-app` owns the delayed splash title handoff; its timer is cancellable

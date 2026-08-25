@@ -291,17 +291,12 @@ export class SceneCoordinator {
     // BakuCarousel updates — the last rendered frame stays on screen.
     // Exception: Experience forces needsRender while hasVisibleParticles().
     if (!needsRender) {
-      // Route-owned stages keep their authored reveals moving even when the
-      // shared scene has otherwise settled.
+      // Keep route ownership state synchronized, but do not advance any
+      // animation clock without a frame. Otherwise a reveal can complete in
+      // invisible time and the next demand frame jumps to its end state.
       const worksStage = this.owners.worksPlaneStage()
       if (worksStage && this.page() === 'works') {
         worksStage.setActive(true, this.worksPlaneStageSection)
-        worksStage.update(deltaTime)
-      }
-      this.contactTypographyStage?.update(deltaTime)
-      const contactCyprus = this.owners.contactCyprusStage()
-      if (contactCyprus && this.page() === 'contact') {
-        contactCyprus.update(deltaTime)
       }
       return
     }
