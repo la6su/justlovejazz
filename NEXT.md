@@ -65,6 +65,8 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Cancel stale Works stage GPU setup** — `WorksPlaneStage` now invalidates
   pending texture loads on disposal and releases cache references without
   creating detached `CasePlane`/TSL resources after a route change.
+- [x] **Prevent disposed Works stage reinitialization** — a disposed stage now
+  rejects subsequent init attempts before starting texture loads.
 - [x] **Remove ineffective Projects dynamic import** — ExperienceUI now uses
   the existing static project-data owner instead of a non-splitting import.
 - [x] **Keep Contact typography addons route-local** — the lazy Contact

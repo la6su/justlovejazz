@@ -35,4 +35,15 @@ describe('WorksPlaneStage async lifecycle', () => {
     stage.dispose()
     expect(mocks.releaseCaseTexture).toHaveBeenCalledTimes(resolvers.length)
   })
+
+  it('does not restart texture loading after disposal', async () => {
+    const stage = new WorksPlaneStage()
+    stage.dispose()
+
+    await stage.init()
+
+    expect(mocks.loadCaseTexture).not.toHaveBeenCalled()
+    expect(stage.children).toHaveLength(0)
+    expect(() => stage.dispose()).not.toThrow()
+  })
 })

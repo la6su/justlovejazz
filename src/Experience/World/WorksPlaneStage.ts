@@ -80,7 +80,7 @@ export class WorksPlaneStage extends THREE.Group {
   }
 
   async init(): Promise<void> {
-    if (this._initialized) return
+    if (this._initialized || this._disposed) return
     this._initialized = true
 
     let textures: THREE.Texture[]

@@ -205,6 +205,8 @@ according to their current measured policy.
 - WorksPlaneStage marks itself disposed before releasing route resources; a
   pending texture batch releases its cache references and exits before creating
   cards, preventing stale WebGPU/TSL setup after leaving `/works`.
+- WorksPlaneStage also refuses initialization after disposal, preventing a
+  stale route owner from restarting texture decoding or cache acquisition.
 - CinematicNav resolves `#section-*` targets inside its currently bound route
   track, keeping detached and persistent-shell IDs outside story ownership.
 - `entry-app` owns the delayed splash title handoff; its timer is cancellable

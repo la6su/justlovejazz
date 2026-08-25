@@ -22,6 +22,10 @@
   releasing pending texture references without creating detached GPU/TSL card
   resources during rapid route changes.
 
+- Disposed `WorksPlaneStage` instances now reject re-initialization before
+  starting texture loads, avoiding redundant route-local network and decode
+  work.
+
 - `CinematicNav` now retains and removes its generated button handlers during
   teardown, preventing retained navigation DOM from invoking a disposed
   controller.
