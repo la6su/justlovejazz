@@ -14,7 +14,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
   agent-operation guidance stays separate from project contracts.
 - [x] **Harden async route-owner cancellation** — `ExperienceUI` route-change
   promises now use a shared generation/page predicate, so late Works/Contact
-  initializers cannot raise demand or touch a stage after a fast route exit.
+  initializers cannot raise demand or touch a stage after a fast route exit;
+  renderer recovery, carousel wake, UIkit hydration, overlay reveal, content
+  hydration, submenu reconciliation, detached text animation and hash dispatch
+  now cancel stale continuations at their owning boundary.
 - [x] **Audit scene resource disposal** — `SectionGroups.dispose()` now uses
   owner-local texture slots and generalized Mesh/Points/Line/Sprite disposal;
   lifecycle coverage includes `Points` and `InstancedMesh` exactly-once tests.
@@ -44,6 +47,8 @@ Do not reopen completed migration phases. Current runtime contracts are in
   - [x] Builder card base radius/shadow and button radius now come only from
     UIkit hooks; project Less retains only builder-specific surface and variant
     rules, preserving separate `cardRadius`/`buttonRadius` tokens.
+  - [x] Bootstrap UIkit refresh is scoped to `#spa-content`, preventing a
+    document-wide traversal across the splash and persistent shell.
 - [ ] **Decide the fate of vendored `references/`** — archive or retain after
   licensing review; do not publish it accidentally.
 - [ ] **Configure production SPA/SSG hosting** — verify every route, blog

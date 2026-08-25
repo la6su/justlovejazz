@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Hardened async lifecycle ownership across renderer recovery, route/carousel
+  wakes, UIkit hydration, overlay/content/submenu reveals and detached
+  `NoiseText`/`BlurFade` animations; stale hash navigation callbacks are now
+  invalidated by the next route transition.
+- Scoped bootstrap UIkit refresh to `#spa-content`, removing the remaining
+  document-wide traversal from the application shell.
 - Established the staged Vue 3, Vue Router and TresJS migration architecture,
   including a representative WebGPU/WebGLBackend gate, persistent scene root,
   demand-render scheduler, explicit GPU resource ownership and rollback points.
