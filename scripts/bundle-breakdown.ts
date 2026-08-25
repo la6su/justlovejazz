@@ -9,7 +9,10 @@ import { SourceMapConsumer } from 'source-map'
 const root = resolve(import.meta.dir, '..')
 const tempDir = resolve('/tmp', 'jlz-bundle-breakdown-' + process.pid)
 const assetsDir = join(tempDir, 'assets')
-const commit = execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim()
+const commit = execFileSync('git', ['rev-parse', '--short', 'HEAD'], {
+  cwd: root,
+  encoding: 'utf8',
+}).trim()
 
 rmSync(tempDir, { recursive: true, force: true })
 mkdirSync(tempDir, { recursive: true })
@@ -27,7 +30,9 @@ try {
   const sourceBytes = new Map<string, number>()
   const mapped = await new SourceMapConsumer(sourceMap as any)
   try {
-    const lineLengths = readFileSync(join(assetsDir, jsFile), 'utf8').split('\n').map((line) => line.length)
+    const lineLengths = readFileSync(join(assetsDir, jsFile), 'utf8')
+      .split('\n')
+      .map((line) => line.length)
     const byLine = new Map<number, { column: number; source: string }[]>()
     mapped.eachMapping((item) => {
       if (!item.source) return
@@ -40,7 +45,10 @@ try {
       const lineLength = lineLengths[lineNumber - 1] || 0
       points.forEach((point, index) => {
         const end = points[index + 1] ? points[index + 1].column : lineLength
-        sourceBytes.set(point.source, (sourceBytes.get(point.source) || 0) + Math.max(0, end - point.column))
+        sourceBytes.set(
+          point.source,
+          (sourceBytes.get(point.source) || 0) + Math.max(0, end - point.column),
+        )
       })
     }
   } finally {
