@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   create: vi.fn(),
@@ -30,6 +30,7 @@ vi.mock('../core/RenderPipeline', () => ({
 import { Renderer } from '../Experience/Renderer'
 
 type RendererInternals = {
+  init: () => Promise<void>
   recoverFromDeviceLost: () => Promise<void>
   dispose: () => void
 }
@@ -69,6 +70,28 @@ function makeRenderer(oldInstance: ReturnType<typeof fakeRenderer>, onInstanceRe
 }
 
 describe('Renderer device-loss lifecycle', () => {
+  beforeEach(() => {
+    mocks.create.mockReset()
+    mocks.init.mockReset()
+    mocks.pipelineCreate.mockClear()
+  })
+
+  it('disposes a late init candidate instead of reviving after teardown', async () => {
+    const candidate = fakeRenderer()
+    let resolveInit!: () => void
+    mocks.create.mockReturnValueOnce(candidate)
+    mocks.init.mockImplementationOnce(() => new Promise<void>((resolve) => (resolveInit = resolve)))
+    const renderer = makeRenderer(fakeRenderer(), vi.fn())
+
+    const initPromise = renderer.init()
+    renderer.dispose()
+    resolveInit()
+    await initPromise
+
+    expect(candidate.dispose).toHaveBeenCalledOnce()
+    expect(mocks.pipelineCreate).not.toHaveBeenCalled()
+  })
+
   it('disposes a late replacement instead of reviving after teardown', async () => {
     let resolveCreate!: (renderer: ReturnType<typeof fakeRenderer>) => void
     mocks.create.mockImplementationOnce(

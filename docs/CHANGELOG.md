@@ -10,6 +10,10 @@
   `html` and `body`, preventing a disposed runtime from leaking its global
   theme into a retry or HMR instance.
 
+- `Renderer.init()` now rejects and disposes late unified WebGPU candidates when
+  teardown wins the async race, preventing post-dispose pipeline and recovery
+  owners from being recreated.
+
 - `CinematicNav` now retains and removes its generated button handlers during
   teardown, preventing retained navigation DOM from invoking a disposed
   controller.

@@ -56,6 +56,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Restore ContentReveal theme state** — the section owner now snapshots
   the pre-existing global `uk-light` classes and restores them on idempotent
   teardown, preventing stale theme state across runtime retries or HMR.
+- [x] **Reject late Renderer init candidates** — unified WebGPU candidates now
+  carry a lifecycle generation guard; a teardown during async init disposes the
+  late candidate before it can create a pipeline, canvas owner, or recovery hook.
 - [x] **Remove ineffective Projects dynamic import** — ExperienceUI now uses
   the existing static project-data owner instead of a non-splitting import.
 - [x] **Keep Contact typography addons route-local** — the lazy Contact

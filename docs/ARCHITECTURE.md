@@ -196,6 +196,9 @@ according to their current measured policy.
 - ContentReveal owns the global `uk-light` mutations it performs: it snapshots
   the pre-existing `html` and `body` class state and restores both on teardown,
   so a retry or HMR cycle cannot inherit a previous runtime's theme.
+- Renderer async initialization publishes a candidate only after its lifecycle
+  generation remains current; stale WebGPU candidates are disposed immediately
+  and cannot create a pipeline or device-loss recovery owner after teardown.
 - CinematicNav resolves `#section-*` targets inside its currently bound route
   track, keeping detached and persistent-shell IDs outside story ownership.
 - `entry-app` owns the delayed splash title handoff; its timer is cancellable

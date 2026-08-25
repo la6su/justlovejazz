@@ -122,6 +122,9 @@ export class Renderer {
   async init(adopted?: AdoptedRenderer): Promise<void> {
     this._disposed = false
     this._lifecycleGeneration += 1
+    const generation = this._lifecycleGeneration
+    const isCurrent = (): boolean =>
+      !this._disposed && generation === this._lifecycleGeneration
     if (adopted) {
       // ── Phase 7 adoption path ──────────────────────────────────────────
       // The SceneHost custom renderer factory owns construction + the single
@@ -150,13 +153,18 @@ export class Renderer {
       // feature detection.
       this._forceWebGL = false
       const canvas = document.createElement('canvas')
-      this.instance = await createUnifiedWebGPUInstanceAndInit(canvas, false)
-      let plan = planUnifiedBackend(inspectUnifiedBackend(this.instance))
+      let candidate = createUnifiedWebGPUInstance(canvas, false)
+      await initUnifiedWebGPUInstance(candidate)
+      if (!isCurrent()) {
+        candidate.dispose()
+        return
+      }
+      let plan = planUnifiedBackend(inspectUnifiedBackend(candidate))
       if (import.meta.env.DEV) {
         console.info(
           `[Renderer.init] unified WebGPURenderer backend: ${
-            inspectUnifiedBackend(this.instance).backendName ?? '?'
-          } (isFallbackAdapter=${inspectUnifiedBackend(this.instance).isFallbackAdapter}) → plan recreate=${plan.recreate} mode=${plan.mode}`,
+            inspectUnifiedBackend(candidate).backendName ?? '?'
+          } (isFallbackAdapter=${inspectUnifiedBackend(candidate).isFallbackAdapter}) → plan recreate=${plan.recreate} mode=${plan.mode}`,
         )
       }
       if (plan.recreate) {
@@ -168,11 +176,21 @@ export class Renderer {
             '[Renderer.init] unified: software WebGPU adapter — re-creating with forceWebGL',
           )
         }
-        this.instance.dispose()
+        candidate.dispose()
         this._forceWebGL = true
-        this.instance = await createUnifiedWebGPUInstanceAndInit(canvas, true)
-        plan = planUnifiedBackend(inspectUnifiedBackend(this.instance))
+        candidate = createUnifiedWebGPUInstance(canvas, true)
+        await initUnifiedWebGPUInstance(candidate)
+        if (!isCurrent()) {
+          candidate.dispose()
+          return
+        }
+        plan = planUnifiedBackend(inspectUnifiedBackend(candidate))
       }
+      if (!isCurrent()) {
+        candidate.dispose()
+        return
+      }
+      this.instance = candidate
       this.capabilities.setFinalRendererMode(plan.mode)
       if (import.meta.env.DEV && plan.mode === 'webgpu') {
         console.info('[Renderer.init] unified premium WebGPU path active')
