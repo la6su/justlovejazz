@@ -209,4 +209,17 @@ describe('CinematicNav — content page track', () => {
     expect(nav.getSectionIndex()).toBe(2)
     expect(document.body.dataset.cinematicSheet).toBeUndefined()
   })
+
+  it('deduplicates page-section events without an optional callback', () => {
+    nav = createNav()
+    const indices: number[] = []
+    const unsubscribe = eventBus.on('jlz:page-section-change', ({ index }) => indices.push(index))
+
+    nav.goToSection(2)
+    nav.goToSection(2)
+    nav.goToSection(3)
+
+    expect(indices).toEqual([2, 3])
+    unsubscribe()
+  })
 })

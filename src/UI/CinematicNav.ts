@@ -260,7 +260,7 @@ export class CinematicNav {
   }
 
   private _notifySection(index: number): void {
-    if (index === this._lastNotified && this._onSectionChange) return
+    if (index === this._lastNotified) return
     this._lastNotified = index
     this._onSectionChange?.(index)
 
