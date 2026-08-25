@@ -360,6 +360,7 @@ export async function startApp(): Promise<void> {
   // ── Animate titles on section change (home: data-section) ──
   eventBus.on('jlz:section-change', (payload) => {
     if (!payload?.sectionId) return
+    if (prefersReducedMotion()) return
     const section = document.querySelector(`[data-section="${payload.sectionId}"]`)
     if (!section) return
     const title = section.querySelector<HTMLElement>('.studio-title')
@@ -371,6 +372,7 @@ export async function startApp(): Promise<void> {
 
   // ── Animate titles on page section change (content: data-page-section) ──
   eventBus.on('jlz:page-section-change', ({ index }) => {
+    if (prefersReducedMotion()) return
     const sections = document.querySelectorAll<HTMLElement>('[data-page-section]')
     const el = sections[index]
     if (!el) return
@@ -401,6 +403,7 @@ const splashRevealedTitles = new WeakSet<HTMLElement>()
 function setupTitleObserver(): void {
   // Disconnect previous observer if any (HMR re-init guard)
   _titleObserver?.disconnect()
+  if (prefersReducedMotion()) return
 
   const titles = document.querySelectorAll<HTMLElement>('.studio-title:not([data-blur-fade="off"])')
   if (titles.length === 0) return

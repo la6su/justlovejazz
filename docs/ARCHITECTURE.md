@@ -51,7 +51,8 @@ under `src/builder/`; the public builds do not import the editor graph.
   requests bounded work from the one bounded renderer loop adapter;
   settled idle performs no draw work and hidden tabs pause.
 - Reduced-motion branches synchronously reach the authored final state and
-  release render activity.
+  release render activity; entry title/eyebrow observers do not allocate RAF
+  loops or safety timers in reduced-motion mode.
 - Route resources, listeners, timers, async work and GPU allocations have one
   owner and one terminal cleanup path.
 - UIkit remains the layout/component/accessibility baseline where retained;
