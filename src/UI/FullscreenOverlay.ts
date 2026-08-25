@@ -61,8 +61,6 @@ export class FullscreenOverlay {
 
   public onPrev: (() => void) | null = null
   public onNext: (() => void) | null = null
-  /** @deprecated Use OverlayOptions.onClose (per-open) instead. */
-  public onClose: (() => void) | null = null
   private _perOpenOnClose: (() => void) | null = null
   private _restoreFocus: HTMLElement | null = null
 
@@ -249,9 +247,9 @@ export class FullscreenOverlay {
       this.container.classList.remove('is-playing')
       this.container.classList.remove('is-entered')
       this.video.pause()
-      // Call the per-open callback first, then the deprecated persistent one.
+      // Close ownership is per-open, so a completed cycle cannot leak a
+      // callback into the next media item.
       this._perOpenOnClose?.()
-      this.onClose?.()
       this._perOpenOnClose = null
       // Restore focus to the trigger that opened the overlay (B-2 a11y fix).
       this._restoreFocus?.focus({ preventScroll: true })
