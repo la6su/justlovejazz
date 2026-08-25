@@ -50,6 +50,7 @@ export class WorksPlaneStage extends THREE.Group {
   private _sectionIndex = 0
   private _active = false
   private _initialized = false
+  private _disposed = false
   private _stackedLayout = window.innerWidth < 960
   private _viewportAspect = window.innerWidth / window.innerHeight
   private _reveal = new Map<CasePlane, number>()
@@ -89,6 +90,12 @@ export class WorksPlaneStage extends THREE.Group {
       PROJECTS.forEach((project) => releaseCaseTexture(project.textureUrl))
       this._initialized = false
       throw error
+    }
+
+    if (this._disposed) {
+      PROJECTS.forEach((project) => releaseCaseTexture(project.textureUrl))
+      this._initialized = false
+      return
     }
 
     const stagedCards: CasePlane[] = []
@@ -275,6 +282,8 @@ export class WorksPlaneStage extends THREE.Group {
   }
 
   dispose(): void {
+    if (this._disposed) return
+    this._disposed = true
     this.cards.forEach((card) => {
       const url = card.userData.texUrl as string | undefined
       if (url) releaseCaseTexture(url)

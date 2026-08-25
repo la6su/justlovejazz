@@ -18,6 +18,10 @@
   unmount and disposes a late candidate instead of resolving a removed Tres
   root.
 
+- `WorksPlaneStage` now cancels stale texture-to-card setup after disposal,
+  releasing pending texture references without creating detached GPU/TSL card
+  resources during rapid route changes.
+
 - `CinematicNav` now retains and removes its generated button handlers during
   teardown, preventing retained navigation DOM from invoking a disposed
   controller.

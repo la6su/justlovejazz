@@ -1,0 +1,38 @@
+import * as THREE from 'three'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+const mocks = vi.hoisted(() => ({
+  loadCaseTexture: vi.fn(),
+  releaseCaseTexture: vi.fn(),
+}))
+
+vi.mock('../Experience/World/caseTexture', () => mocks)
+
+import { WorksPlaneStage } from '../Experience/World/WorksPlaneStage'
+
+describe('WorksPlaneStage async lifecycle', () => {
+  beforeEach(() => {
+    mocks.loadCaseTexture.mockReset()
+    mocks.releaseCaseTexture.mockReset()
+  })
+
+  it('releases pending textures without creating cards after dispose', async () => {
+    const resolvers: Array<(texture: THREE.Texture) => void> = []
+    mocks.loadCaseTexture.mockImplementation(
+      () => new Promise<THREE.Texture>((resolve) => resolvers.push(resolve)),
+    )
+
+    const stage = new WorksPlaneStage()
+    const initPromise = stage.init()
+    expect(resolvers.length).toBeGreaterThan(0)
+
+    stage.dispose()
+    resolvers.forEach((resolve) => resolve(new THREE.Texture()))
+    await initPromise
+
+    expect(stage.children).toHaveLength(0)
+    expect(mocks.releaseCaseTexture).toHaveBeenCalledTimes(resolvers.length)
+    stage.dispose()
+    expect(mocks.releaseCaseTexture).toHaveBeenCalledTimes(resolvers.length)
+  })
+})

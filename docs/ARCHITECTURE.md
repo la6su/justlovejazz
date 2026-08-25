@@ -202,6 +202,9 @@ according to their current measured policy.
 - SceneHost owns a generation for its asynchronous fallback swap; unmount
   invalidates that generation and disposes a late candidate before it can
   replace Tres's renderer or resolve the one-shot bridge.
+- WorksPlaneStage marks itself disposed before releasing route resources; a
+  pending texture batch releases its cache references and exits before creating
+  cards, preventing stale WebGPU/TSL setup after leaving `/works`.
 - CinematicNav resolves `#section-*` targets inside its currently bound route
   track, keeping detached and persistent-shell IDs outside story ownership.
 - `entry-app` owns the delayed splash title handoff; its timer is cancellable
