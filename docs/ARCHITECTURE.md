@@ -190,6 +190,9 @@ according to their current measured policy.
   to advance a settled scene.
 - BakuCarousel advances CasePlane time only for visible or already-animating
   cards while active; hidden idle cards retain the CasePlane idle guard.
+- BakuCarousel teardown removes its window input owners and releases the
+  camera/card callback references before resetting motion state, so a disposed
+  carousel cannot retain the Experience UI closure or stale interaction state.
 - CinematicNav resolves `#section-*` targets inside its currently bound route
   track, keeping detached and persistent-shell IDs outside story ownership.
 - `entry-app` owns the delayed splash title handoff; its timer is cancellable

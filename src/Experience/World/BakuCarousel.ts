@@ -416,6 +416,22 @@ export class BakuCarousel extends THREE.Group {
     }
     if (this.controlClickHandler) window.removeEventListener('click', this.controlClickHandler)
     if (this.snapTimer) clearTimeout(this.snapTimer)
+    this.pointerDownHandler = null
+    this.pointerMoveHandler = null
+    this.pointerUpHandler = null
+    this.controlClickHandler = null
+    this.snapTimer = null
+    this._onCardClick = null
+    this._camera = null
+    this.isDown = false
+    this.dragMoved = false
+    this.dragAxis = 'pending'
+    this.velocity = 0
+    this._active = false
+    this._morphTarget = 0
+    this._morphT = 0
+    this.scroll.current = 0
+    this.scroll.target = 0
     // Release refcounted textures via the cache. Each unique URL is released
     // once; the cache disposes the GPU texture when the last consumer drops.
     const releasedUrls = new Set<string>()

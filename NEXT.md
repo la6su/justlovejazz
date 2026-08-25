@@ -50,6 +50,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Release CinematicNav button listeners** — navigation button handlers are
   now owned by the navigation instance and removed explicitly during teardown,
   including when detached button DOM is retained by a test or external caller.
+- [x] **Clear BakuCarousel teardown state** — the carousel now releases camera
+  and card callbacks, nulls its input/timer owners, and resets drag/morph state
+  after removing listeners and refcounted textures.
 - [x] **Remove ineffective Projects dynamic import** — ExperienceUI now uses
   the existing static project-data owner instead of a non-splitting import.
 - [x] **Keep Contact typography addons route-local** — the lazy Contact

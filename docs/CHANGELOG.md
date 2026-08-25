@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- `BakuCarousel.dispose()` now releases its camera and card callback, clears
+  input/timer handler references, and resets interaction/morph state after
+  texture and card disposal.
+
 - `CinematicNav` now retains and removes its generated button handlers during
   teardown, preventing retained navigation DOM from invoking a disposed
   controller.

@@ -59,4 +59,39 @@ describe('BakuCarousel async lifecycle', () => {
 
     expect(update).toHaveBeenCalledWith(1 / 60, false)
   })
+
+  it('clears callback, camera, input owners and motion state on dispose', () => {
+    const carousel = new BakuCarousel()
+    carousel.setCamera(new THREE.PerspectiveCamera())
+    carousel.onCardClick(vi.fn())
+    carousel.setActive(true)
+
+    Object.assign(carousel as unknown as Record<string, unknown>, {
+      pointerDownHandler: vi.fn(),
+      pointerMoveHandler: vi.fn(),
+      pointerUpHandler: vi.fn(),
+      controlClickHandler: vi.fn(),
+      isDown: true,
+      dragMoved: true,
+      velocity: 0.4,
+    })
+
+    carousel.dispose()
+
+    const state = carousel as unknown as Record<string, unknown>
+    expect(state._camera).toBeNull()
+    expect(state._onCardClick).toBeNull()
+    expect(state.pointerDownHandler).toBeNull()
+    expect(state.pointerMoveHandler).toBeNull()
+    expect(state.pointerUpHandler).toBeNull()
+    expect(state.controlClickHandler).toBeNull()
+    expect(state.snapTimer).toBeNull()
+    expect(state.isDown).toBe(false)
+    expect(state.velocity).toBe(0)
+    expect(state._active).toBe(false)
+    expect(state._morphTarget).toBe(0)
+    expect(state._morphT).toBe(0)
+
+    expect(() => carousel.dispose()).not.toThrow()
+  })
 })
