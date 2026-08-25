@@ -19,7 +19,8 @@
   Contact Cyprus GLTF/material preparation now rolls back partially processed
   scenes before propagating a load failure. BakuCarousel card staging now
   rolls back partial CasePlane construction and releases shared texture refs
-  when material setup fails.
+  when material setup fails. The lazy WorksPlaneStage now applies the same
+  transactional card staging and refcount rollback.
 - Scoped bootstrap UIkit refresh to `#spa-content`, removing the remaining
   document-wide traversal from the application shell.
 - Established the staged Vue 3, Vue Router and TresJS migration architecture,
