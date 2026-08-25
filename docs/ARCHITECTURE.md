@@ -171,6 +171,8 @@ according to their current measured policy.
 - Direct-entry `#section-*` handoff is generation-owned until readiness; later
   navigation and router errors invalidate the deferred event before it can
   reach `CinematicNav`.
+- BlurFade treats title content as text at the DOM boundary and creates spans
+  without `innerHTML`; translated/editorial markup cannot become live nodes.
 - `core/` owns the framework-neutral contracts (route manifest, world slots,
   typed event ports, i18n, theme, motion policy) and imports no Vue or TresJS.
 - `sections/` owns the per-route content templates consumed by the route views;

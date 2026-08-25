@@ -46,4 +46,15 @@ describe('BlurFade lifecycle', () => {
     expect(request).toHaveBeenCalledTimes(2)
     expect(element.querySelectorAll('span')).toHaveLength(5)
   })
+
+  it('keeps editorial text as text instead of parsing it as markup', () => {
+    const element = document.createElement('h2')
+    document.body.append(element)
+
+    BlurFade.for(element).show(1, '<img src=x onerror=alert(1)>')
+
+    expect(element.querySelector('img')).toBeNull()
+    expect(element.querySelectorAll('span')).toHaveLength('<img src=x onerror=alert(1)>'.length)
+    expect(element.getAttribute('aria-label')).toBe('<img src=x onerror=alert(1)>')
+  })
 })

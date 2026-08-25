@@ -117,6 +117,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Invalidate stale direct-entry hashes** — deferred initial
   `#section-*` dispatch is now owned by a generation gate and is cancelled on
   later navigation or failed boot before renderer readiness.
+- [x] **Make BlurFade text-only at the DOM boundary** — per-character spans
+  are created with `textContent`, preserving editorial markup as text and
+  avoiding an HTML parse during every reveal.
 
 ## Deferred product queue
 

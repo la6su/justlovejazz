@@ -93,6 +93,8 @@
   Deferred direct-entry section hashes now use a cancellable generation gate,
   so a later route or failed boot cannot dispatch stale navigation after
   `jlz:webgl-ready`.
+  BlurFade now creates its character spans through DOM APIs, keeping translated
+  or editorial markup inert and avoiding an innerHTML parse per animation.
 - Scoped bootstrap UIkit refresh to `#spa-content`, removing the remaining
   document-wide traversal from the application shell.
 - Established the staged Vue 3, Vue Router and TresJS migration architecture,

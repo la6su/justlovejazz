@@ -49,15 +49,21 @@ export class BlurFade {
     this.el.setAttribute('data-visible', 'true')
     this.el.setAttribute('aria-label', this.cleanText)
 
-    // Build spans — each character in its own span for stagger animation
-    this.el.innerHTML = this.cleanText
-      .split('')
-      .map((ch) => {
-        const safeChar = ch === ' ' ? '&nbsp;' : ch
-        const rot = (Math.random() - 0.5) * 30
-        return `<span aria-hidden="true" style="display:inline-block;opacity:0;transform:translateY(20px) rotate(${rot}deg);filter:blur(8px);transition:none;" data-rot="${rot}">${safeChar}</span>`
-      })
-      .join('')
+    // Build spans through DOM APIs. Titles can come from translated/editorial
+    // content, so interpolating them into innerHTML would turn markup into
+    // executable DOM and pay an avoidable HTML parse cost on every reveal.
+    const spans = Array.from(this.cleanText, (ch) => {
+      const span = document.createElement('span')
+      const rot = (Math.random() - 0.5) * 30
+      span.setAttribute('aria-hidden', 'true')
+      span.style.cssText =
+        'display:inline-block;opacity:0;transform:translateY(20px) rotate(' +
+        `${rot}deg);filter:blur(8px);transition:none;`
+      span.dataset.rot = String(rot)
+      span.textContent = ch === ' ' ? '\u00a0' : ch
+      return span
+    })
+    this.el.replaceChildren(...spans)
 
     this.timeoutId = window.setTimeout(() => this.finalize(), this.dur + 200)
     this.rafId = requestAnimationFrame(this.tick)
