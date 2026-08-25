@@ -263,7 +263,7 @@ function scheduleUiKitRefresh(): void {
     const content = document.getElementById('spa-content')
     if (!content) return
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ;(UIkit as any).update()
+    ;(UIkit as any).update(content)
   }
   if ('requestIdleCallback' in window) {
     ;(
