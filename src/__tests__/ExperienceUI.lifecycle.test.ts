@@ -34,12 +34,14 @@ describe('ExperienceUI portfolio lifecycle', () => {
       callbacks.push(callback)
       return callbacks.length
     })
+    const cancelAnimationFrame = vi.spyOn(window, 'cancelAnimationFrame')
     const sections: unknown[] = []
     const host = createHost(sections)
     const experienceUI = new ExperienceUI(host)
     const pending = experienceUI.ensurePortfolio()
 
     experienceUI.destroy()
+    expect(cancelAnimationFrame).toHaveBeenCalledWith(1)
     sections.push({})
     callbacks[0]!(0)
     await pending

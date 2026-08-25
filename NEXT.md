@@ -43,6 +43,8 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Retry failed carousel initialization** — a rejected home-carousel
   load now clears its owner promise while successful initialization remains
   idempotent.
+- [x] **Cancel portfolio readiness RAF** — ExperienceUI teardown now cancels
+  the deferred scene-readiness frame and releases its pending continuation.
 
 ## Deferred product queue
 

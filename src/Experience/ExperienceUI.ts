@@ -76,6 +76,8 @@ export class ExperienceUI {
   portfolioInitialized = false
   private activeProjectIndex = 0
   private _portfolioPromise: Promise<void> | null = null
+  private _portfolioReadyRaf: number | null = null
+  private _portfolioReadyResolve: (() => void) | null = null
 
   private _openProjectUnsub: (() => void) | null = null
   private _projectNavigateUnsub: (() => void) | null = null
@@ -360,7 +362,14 @@ export class ExperienceUI {
     const ready = () => coordinator.sections.length > 0
     if (!ready()) {
       // Wait one frame for the scene init to finish, then retry.
-      await new Promise((r) => requestAnimationFrame(() => r(null)))
+      await new Promise<void>((resolve) => {
+        this._portfolioReadyResolve = resolve
+        this._portfolioReadyRaf = requestAnimationFrame(() => {
+          this._portfolioReadyRaf = null
+          this._portfolioReadyResolve = null
+          resolve()
+        })
+      })
       if (this._destroyed || generation !== this._routeGeneration) return
       if (!this.portfolio && !ready()) return
     }
@@ -458,6 +467,12 @@ export class ExperienceUI {
     if (this._destroyed) return
     this._destroyed = true
     this._routeGeneration++
+    if (this._portfolioReadyRaf !== null) {
+      cancelAnimationFrame(this._portfolioReadyRaf)
+      this._portfolioReadyRaf = null
+    }
+    this._portfolioReadyResolve?.()
+    this._portfolioReadyResolve = null
     this._soundToggleUnsub?.()
     this._openProjectUnsub?.()
     this._projectNavigateUnsub?.()
