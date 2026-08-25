@@ -111,6 +111,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
   IDs cannot redirect story navigation.
 - [x] **Own the delayed splash title reveal** — the 90 ms curtain handoff is
   cancellable and coalesced, so retry/failure cannot animate stale route DOM.
+- [x] **Recover the route transition after navigation errors** — Vue Router
+  errors now cancel the covering surface and invalidate pending reveal work,
+  preventing a failed lazy route from leaving the UI blocked.
 
 ## Deferred product queue
 

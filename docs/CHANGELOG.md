@@ -88,6 +88,8 @@
   The delayed splash title reveal now has an explicit cancellable owner;
   repeated Enter events coalesce and retry/failure paths cannot animate stale
   route DOM.
+  RouteTransition now exposes a cancellation path wired to Vue Router errors,
+  returning a covering overlay to idle when a lazy route rejects.
 - Scoped bootstrap UIkit refresh to `#spa-content`, removing the remaining
   document-wide traversal from the application shell.
 - Established the staged Vue 3, Vue Router and TresJS migration architecture,

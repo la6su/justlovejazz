@@ -165,6 +165,9 @@ according to their current measured policy.
 - `entry-app` owns the delayed splash title handoff; its timer is cancellable
   and coalesced across Enter/retry/failure transitions before title observation
   begins.
+- `RouteTransition` is cancelled from the Vue Router error port; failed async
+  navigation must invalidate pending reveal work and return the transition
+  surface to `idle`.
 - `core/` owns the framework-neutral contracts (route manifest, world slots,
   typed event ports, i18n, theme, motion policy) and imports no Vue or TresJS.
 - `sections/` owns the per-route content templates consumed by the route views;

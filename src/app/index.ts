@@ -61,6 +61,9 @@ export async function mountVueApp(): Promise<void> {
   router.afterEach(() => {
     routeTransition.reveal()
   })
+  router.onError(() => {
+    routeTransition.cancel()
+  })
 
   // ── Section-hash dispatch (legacy router contract) ─────────────────────
   // After navigation settles, a `#section-*` hash must reach the 3D

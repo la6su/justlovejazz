@@ -62,6 +62,12 @@ export class RouteTransition {
     })
   }
 
+  /** Abort a failed navigation and return the transition surface to idle. */
+  cancel(): void {
+    this.sequence += 1
+    if (this.overlay) this.overlay.dataset.state = 'idle'
+  }
+
   private wait(duration: number): Promise<void> {
     return new Promise((resolve) => window.setTimeout(resolve, duration))
   }
