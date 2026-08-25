@@ -168,6 +168,9 @@ according to their current measured policy.
 - `RouteTransition` is cancelled from the Vue Router error port; failed async
   navigation must invalidate pending reveal work and return the transition
   surface to `idle`.
+- Direct-entry `#section-*` handoff is generation-owned until readiness; later
+  navigation and router errors invalidate the deferred event before it can
+  reach `CinematicNav`.
 - `core/` owns the framework-neutral contracts (route manifest, world slots,
   typed event ports, i18n, theme, motion policy) and imports no Vue or TresJS.
 - `sections/` owns the per-route content templates consumed by the route views;

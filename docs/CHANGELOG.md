@@ -90,6 +90,9 @@
   route DOM.
   RouteTransition now exposes a cancellation path wired to Vue Router errors,
   returning a covering overlay to idle when a lazy route rejects.
+  Deferred direct-entry section hashes now use a cancellable generation gate,
+  so a later route or failed boot cannot dispatch stale navigation after
+  `jlz:webgl-ready`.
 - Scoped bootstrap UIkit refresh to `#spa-content`, removing the remaining
   document-wide traversal from the application shell.
 - Established the staged Vue 3, Vue Router and TresJS migration architecture,

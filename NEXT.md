@@ -114,6 +114,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Recover the route transition after navigation errors** — Vue Router
   errors now cancel the covering surface and invalidate pending reveal work,
   preventing a failed lazy route from leaving the UI blocked.
+- [x] **Invalidate stale direct-entry hashes** — deferred initial
+  `#section-*` dispatch is now owned by a generation gate and is cancelled on
+  later navigation or failed boot before renderer readiness.
 
 ## Deferred product queue
 

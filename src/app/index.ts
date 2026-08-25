@@ -27,6 +27,34 @@ import { jlzRouteRecords, pageForPath } from './routes'
 
 let mounted = false
 
+/** Own the direct-entry hash handoff until the renderer is ready. */
+export function createDeferredInitialHashGate(): {
+  defer: (hash: string) => void
+  invalidate: () => void
+} {
+  let generation = 0
+  let unsubscribe: (() => void) | null = null
+  const invalidate = () => {
+    generation += 1
+    unsubscribe?.()
+    unsubscribe = null
+  }
+  return {
+    defer: (hash) => {
+      invalidate()
+      const token = generation
+      const onReady = () => {
+        if (token !== generation) return
+        unsubscribe?.()
+        unsubscribe = null
+        eventBus.emit('jlz:goto-section-by-hash', { hash })
+      }
+      unsubscribe = eventBus.on('jlz:webgl-ready', onReady)
+    },
+    invalidate,
+  }
+}
+
 /** Mount the public Vue application on `#app` and take over navigation. */
 export async function mountVueApp(): Promise<void> {
   if (mounted) return
@@ -46,6 +74,7 @@ export async function mountVueApp(): Promise<void> {
   // route has settled. Under reduced motion both phases are synchronous
   // no-ops and the overlay element is never created (RouteTransition).
   const routeTransition = new RouteTransition()
+  const initialHashGate = createDeferredInitialHashGate()
   // The initial navigation skips the cover: the legacy `initRouter`
   // rendered the first page without the transition (no prior document to
   // cover), and a synchronous first commit leaves no startup gap in which
@@ -63,6 +92,7 @@ export async function mountVueApp(): Promise<void> {
   })
   router.onError(() => {
     routeTransition.cancel()
+    initialHashGate.invalidate()
   })
 
   // ── Section-hash dispatch (legacy router contract) ─────────────────────
@@ -80,15 +110,10 @@ export async function mountVueApp(): Promise<void> {
     const generation = ++hashNavigationGeneration
     const isInitial = firstNavigation
     firstNavigation = false
+    initialHashGate.invalidate()
     if (!to.hash.startsWith('#section-')) return
     if (isInitial) {
-      // once semantics: the bus `on()` has no `once` flag, so unsubscribe
-      // from inside the handler after the first fire (the handler runs after
-      // `on()` returns, so the `const` is assigned by then).
-      const unsub = eventBus.on('jlz:webgl-ready', () => {
-        unsub()
-        eventBus.emit('jlz:goto-section-by-hash', { hash: to.hash })
-      })
+      initialHashGate.defer(to.hash)
       return
     }
     requestAnimationFrame(() => {
