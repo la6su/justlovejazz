@@ -96,6 +96,8 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Protect cache generations during async texture release** — late owners
   pass texture identity when releasing retired in-flight URLs, so a replacement
   WebGPU texture cannot be decremented by an older generation.
+- [x] **Suppress stale renderer recovery failure UI** — a rejected device-loss
+  recreation after renderer teardown no longer mutates the removed DOM owner.
 - [x] **Dispose route WorkCards on owner teardown** — `useJlzPage` now releases
   the module-level card/grid registry on full unmount as well as before route
   replacement, with lifecycle coverage for both paths.

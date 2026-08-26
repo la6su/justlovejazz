@@ -241,6 +241,9 @@ according to their current measured policy.
 - Ref-counted case-texture releases from late async owners include texture
   identity; retired in-flight generations cannot release a replacement URL
   entry created after global teardown.
+- Renderer recovery checks its lifecycle generation in the failure path too;
+  a teardown-raced rejection cannot surface unsupported UI or touch a disposed
+  renderer instance.
 - Contact section activation captures the same Cyprus request generation before
   awaiting lazy initialization; a stale route callback cannot call `setActive`
   or raise render demand on a newer stage.

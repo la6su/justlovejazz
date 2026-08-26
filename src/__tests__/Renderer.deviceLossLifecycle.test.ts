@@ -113,6 +113,23 @@ describe('Renderer device-loss lifecycle', () => {
     expect(replacement.setAnimationLoop).not.toHaveBeenCalled()
   })
 
+  it('does not surface a late recovery failure after teardown', async () => {
+    let rejectCreate!: (error: Error) => void
+    mocks.create.mockImplementationOnce(
+      () => new Promise<ReturnType<typeof fakeRenderer>>((_resolve, reject) => (rejectCreate = reject)),
+    )
+    mocks.init.mockResolvedValue(undefined)
+    const renderer = makeRenderer(fakeRenderer(), vi.fn())
+    const showUnsupported = vi.spyOn(renderer as unknown as { showUnsupportedMessage: () => void }, 'showUnsupportedMessage')
+
+    const recovery = renderer.recoverFromDeviceLost()
+    renderer.dispose()
+    rejectCreate(new Error('late recreation failed'))
+    await recovery
+
+    expect(showUnsupported).not.toHaveBeenCalled()
+  })
+
   it('publishes and reattaches a replacement when recovery is current', async () => {
     const oldInstance = fakeRenderer()
     const replacement = fakeRenderer()

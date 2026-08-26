@@ -360,6 +360,7 @@ export class Renderer {
       }
     } catch (e) {
       replacement?.dispose()
+      if (this._disposed || generation !== this._lifecycleGeneration) return
       this._recoveryFailed = true
       this._loopCallback = null
       ;(
