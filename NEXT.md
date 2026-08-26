@@ -432,6 +432,11 @@ Do not reopen completed migration phases. Current runtime contracts are in
       `Array.from(...).sort()` allocation while preserving the public snapshot
       shape and ring semantics.
 
+- [x] **Bound DevPanel frame-gap diagnostics** — the secondary FPS/p50/p95
+      display now uses a fixed typed-array ring and reusable percentile scratch;
+      idle gaps clear the ring and reset displayed percentiles without `shift()`
+      or spread allocations.
+
 - [ ] **Verify browser device-loss recovery on WebGLBackend** — the e2e probe
       now drives a real `WEBGL_lose_context` event and checks the production
       recovery handoff, one-canvas ownership and fatal-error boundary through

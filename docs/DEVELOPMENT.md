@@ -168,6 +168,9 @@ also exposes a bounded DEV-only CPU timing ring for rendered frames: p50/p95
 and latest durations for scene coordination, camera/lights, renderer and the
 whole frame. The ring is empty until a real draw occurs and does not claim GPU
 time; backend timestamp evidence remains a separate hardware-gated measurement.
+The DevPanel's auxiliary FPS/p50/p95 display follows the same bounded-allocation
+principle: frame gaps are held in a fixed ring and sorted in reusable typed
+array scratch; an idle gap resets the displayed percentiles.
 intentionally does not invent driver-level WebGPU memory metrics. The soak
 tool records one snapshot after each route cycle (warm-up + steady) plus a
 root-destroy snapshot, writes a machine-readable report to

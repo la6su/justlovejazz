@@ -13,6 +13,7 @@
 import { Pane } from 'tweakpane'
 import type { Experience } from '../Experience/Experience'
 import { getLang } from './i18n'
+import { FrameGapStats } from './FrameGapStats'
 import type { RuntimeResourceSnapshot } from './RuntimeResourceSnapshot'
 
 const STORAGE_KEY = 'jlz:devpanel'
@@ -265,10 +266,10 @@ export class DevPanel {
       }
       this.stats.fps = this._fps
       this.stats.frameMs = this._frameMs
-      if (this._frameSamples.length > 0) {
-        const sorted = [...this._frameSamples].sort((a, b) => a - b)
-        this.stats.frameP50 = this.percentile(sorted, 0.5)
-        this.stats.frameP95 = this.percentile(sorted, 0.95)
+      const framePercentiles = this._frameGaps.snapshot()
+      if (framePercentiles) {
+        this.stats.frameP50 = framePercentiles.p50
+        this.stats.frameP95 = framePercentiles.p95
       }
 
       this.pane.refresh()
@@ -280,13 +281,7 @@ export class DevPanel {
   private _fpsLastTime: number | null = null
   private _lastRenderedAt = 0
   private _fpsFrames = 0
-  private _frameSamples: number[] = []
-  private static readonly FRAME_SAMPLE_LIMIT = 240
-
-  private percentile(sorted: readonly number[], quantile: number): number {
-    const index = Math.min(sorted.length - 1, Math.ceil(sorted.length * quantile) - 1)
-    return Math.round((sorted[index] ?? 0) * 10) / 10
-  }
+  private readonly _frameGaps = new FrameGapStats()
 
   /** Record one real scene render. Idle on-demand frames intentionally read 0. */
   recordRenderFrame(now = performance.now()): void {
@@ -297,12 +292,13 @@ export class DevPanel {
       this._frameMs = 0
       this._fpsLastTime = now
       this._fpsFrames = 0
-      this._frameSamples = []
+      this._frameGaps.reset()
+      this.stats.frameP50 = 0
+      this.stats.frameP95 = 0
       return
     }
 
-    this._frameSamples.push(gap)
-    if (this._frameSamples.length > DevPanel.FRAME_SAMPLE_LIMIT) this._frameSamples.shift()
+    this._frameGaps.record(gap)
     this._fpsFrames += 1
     const delta = now - this._fpsLastTime
     if (delta < 500) return
