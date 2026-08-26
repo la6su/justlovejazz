@@ -3473,6 +3473,18 @@ Acceptance: `BlurFade.lifecycle.test.ts` covers span collapse, text restoration
 and metadata cleanup. Rollback: remove the restoration lines and retain the
 existing finalize behavior; renderer ownership is unaffected.
 
+#### NoiseText empty-finalize guard — 2026-08-26
+
+`NoiseText.finalize()` now mirrors `cancel()` and restores `cleanText` only
+when a non-empty reveal has established source state. A hidden, never-shown
+owner therefore preserves its authored text while active animation teardown
+still removes RAF/timer work and leaves clean output.
+
+Acceptance: `NoiseText.lifecycle.test.ts` covers hide-before-show content
+preservation alongside the existing teardown cases. Rollback: remove the
+guard and restore unconditional finalization; no renderer boundary changes are
+required.
+
 ### Removal ledger
 
 | Legacy element                           | Remove after                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Status |

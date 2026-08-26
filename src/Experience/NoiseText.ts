@@ -136,7 +136,7 @@ export class NoiseText {
       this.timeoutId = null
     }
     // Final frame = ALWAYS clean text (no glitch residue)
-    this.el.textContent = this.cleanText
+    if (this.cleanText) this.el.textContent = this.cleanText
   }
 
   /** Lightweight cancel — restores clean text and cancels RAF+timeout.

@@ -81,6 +81,8 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `BlurFade.hide()` restores the authored text node and removes reveal-only
   `aria-label`/data state, preventing hidden route owners from retaining span
   DOM and inline animation styles.
+- `NoiseText.finalize()` restores clean text only after a non-empty reveal has
+  established source state; hiding an unstarted owner preserves authored DOM.
 - `Experience` observes the live reduced-motion media query for the lifetime
   of the runtime. Enabling it cancels ambient breathing and settles the single
   render scheduler; disabling it raises one `motion-preference` invalidation.

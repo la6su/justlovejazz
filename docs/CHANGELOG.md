@@ -16,6 +16,8 @@
   unowned Web Audio context after `Experience` disposal.
 - BlurFade now restores authored text and accessibility state on hide instead
   of retaining per-character animation spans in hidden route content.
+- NoiseText no longer clears authored content when hidden before its first
+  reveal; active finalization behavior is unchanged.
 
 - Renderer device-loss fallback now clears the retired software-adapter
   replacement before forced-WebGL recreation; a failed second initialization

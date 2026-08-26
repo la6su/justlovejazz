@@ -74,4 +74,15 @@ describe('NoiseText lifecycle', () => {
     expect(request).toHaveBeenCalledTimes(requestCount)
     expect(element.textContent).toBe('Hello')
   })
+
+  it('does not erase authored content when hidden before its first show', () => {
+    const element = document.createElement('span')
+    element.textContent = 'Authored'
+    document.body.append(element)
+
+    NoiseText.for(element).hide()
+
+    expect(element.textContent).toBe('Authored')
+    expect(vi.getTimerCount()).toBe(0)
+  })
 })
