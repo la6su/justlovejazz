@@ -46,6 +46,7 @@ export class ParticleBurst extends THREE.InstancedMesh {
   private readonly _dummy = new THREE.Object3D()
   private readonly _segments: TraceSegment[] = []
   private _active = false
+  private _disposed = false
   private _elapsed = 0
   private _origin = new THREE.Vector3()
 
@@ -75,6 +76,7 @@ export class ParticleBurst extends THREE.InstancedMesh {
   }
 
   trigger(originX = 0, originY = 0, originZ = 0): void {
+    if (this._disposed) return
     this._active = true
     this._elapsed = 0
     this._origin.set(originX, originY, originZ)
@@ -84,7 +86,7 @@ export class ParticleBurst extends THREE.InstancedMesh {
   }
 
   update(dt: number): boolean {
-    if (!this._active) return false
+    if (this._disposed || !this._active) return false
 
     this._elapsed += dt
     traceUniforms.uTime.value = this._elapsed
@@ -129,7 +131,13 @@ export class ParticleBurst extends THREE.InstancedMesh {
   }
 
   dispose(): void {
+    if (this._disposed) return
+    this._disposed = true
+    this._active = false
+    this.visible = false
     this.geometry.dispose()
     ;(this.material as THREE.Material).dispose()
+    this._segments.length = 0
+    this.removeFromParent()
   }
 }

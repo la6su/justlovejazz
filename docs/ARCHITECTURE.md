@@ -592,6 +592,9 @@ port. Shared resources are never implicitly disposed by a primitive adapter.
 State-machine channels are owner-scoped too: `Section.dispose()` removes its
 StateBus state/opacity channels after cancelling animations and listeners, so
 the singleton bus cannot retain route state across a runtime teardown.
+The `ParticleBurst` owner follows the same terminal rule: after disposal its
+trigger/update ports are inert and its instanced geometry/material are released
+exactly once.
 
 Migration acceptance includes twenty route cycles without monotonic growth in
 canvas/context, listener, timer, texture, geometry, program or memory counts.

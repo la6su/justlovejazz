@@ -3703,6 +3703,16 @@ Acceptance: `StateBus.test.ts` verifies channel removal and empty-bucket
 unsubscribe behavior. Rollback: revert this bounded lifecycle slice if section
 state transitions regress.
 
+### ParticleBurst terminal teardown — 2026-08-26
+
+`ParticleBurst.dispose()` is now idempotent and terminal. It marks the owner
+disposed, rejects late `trigger()`/`update()` calls, clears segment metadata and
+removes the mesh from its parent after releasing geometry and material.
+
+Acceptance: `ParticleBurst.lifecycle.test.ts` verifies one-time disposal and
+late-call inertness. Rollback: revert this bounded intro-owner slice if the
+splash handoff regresses.
+
 ## Definition of done
 
 The migration is done when the target topology is the only production path;

@@ -429,6 +429,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Release StateBus section channels** — `Section.dispose()` now removes
   its state/opacity channels and `StateBus.off()` drops empty listener buckets,
   preventing singleton-owned route state from surviving teardown.
+- [x] **Make ParticleBurst teardown terminal** — disposed intro light frames
+  now reject late triggers/updates, clear their segment metadata and release
+  geometry/material exactly once.
 - [x] **Release the WorksPortfolio owner** — `ExperienceUI.destroy()` now calls
   the portfolio disposer before dropping its reference; disposal clears the
   project/callback references and navigation becomes a safe no-op.
