@@ -46,4 +46,20 @@ describe('WorksPlaneStage async lifecycle', () => {
     expect(stage.children).toHaveLength(0)
     expect(() => stage.dispose()).not.toThrow()
   })
+
+  it('releases camera and active state on disposal', () => {
+    const stage = new WorksPlaneStage()
+    stage.setCamera(new THREE.PerspectiveCamera())
+    stage.setActive(true, 0)
+
+    stage.dispose()
+
+    const internals = stage as unknown as {
+      _camera: THREE.Camera | null
+      _active: boolean
+    }
+    expect(internals._camera).toBeNull()
+    expect(internals._active).toBe(false)
+    expect(stage.children).toHaveLength(0)
+  })
 })

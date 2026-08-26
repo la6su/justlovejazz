@@ -75,6 +75,9 @@
   drift updates, allowing the quiet Agros section to settle without continuous
   GPU draws or needless CPU work.
 
+- Route-owned Works and Contact stages now release camera references, active
+  state and child graphs during teardown, reducing stale-owner retention.
+
 - `useJlzPage` now disposes the module-level `WorkCards` registry during route
   owner teardown as well as before route replacement, releasing delegated grid
   listeners and pending card timers on full unmount.

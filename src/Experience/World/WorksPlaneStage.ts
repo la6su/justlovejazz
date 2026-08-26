@@ -299,6 +299,8 @@ export class WorksPlaneStage extends THREE.Group {
   dispose(): void {
     if (this._disposed) return
     this._disposed = true
+    this._active = false
+    this._camera = null
     this.cards.forEach((card) => {
       const url = card.userData.texUrl as string | undefined
       if (url) releaseCaseTexture(url)

@@ -224,9 +224,13 @@ export class ContactCyprusStage extends THREE.Group {
   dispose(): void {
     if (this._disposed) return
     this._disposed = true
+    this._active = false
+    this._prewarmFramePending = false
+    this._camera = null
     if (this._model) this.disposeModel(this._model)
     this._model = null
     this._materials = []
+    this.clear()
     this.removeFromParent()
   }
 

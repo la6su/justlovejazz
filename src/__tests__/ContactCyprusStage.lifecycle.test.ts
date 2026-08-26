@@ -56,4 +56,27 @@ describe('ContactCyprusStage async lifecycle', () => {
     stage.dispose()
     expect(stage.children).toHaveLength(0)
   })
+
+  it('releases camera, active state and child graph on disposal', () => {
+    const stage = new ContactCyprusStage()
+    stage.setCamera(new THREE.PerspectiveCamera())
+    stage.setActive(true)
+    const model = new THREE.Group()
+    model.add(new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial()))
+    const internals = stage as unknown as {
+      _model: THREE.Object3D | null
+      _camera: THREE.Camera | null
+      _active: boolean
+    }
+    internals._model = model
+    stage.add(model)
+
+    stage.dispose()
+
+    expect(stage.children).toHaveLength(0)
+    expect(internals._model).toBeNull()
+    expect(internals._camera).toBeNull()
+    expect(internals._active).toBe(false)
+    expect(stage.isActive).toBe(false)
+  })
 })

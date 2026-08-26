@@ -253,6 +253,8 @@ according to their current measured policy.
 - Render demand and particle updates require the particle object to remain
   visible; hidden Contact particle groups cannot keep settled frames alive or
   consume animation updates.
+- Route-owned Works and Contact stages clear camera references, active flags and
+  child graphs during disposal so stale async owners cannot retain scene state.
 - Contact section activation captures the same Cyprus request generation before
   awaiting lazy initialization; a stale route callback cannot call `setActive`
   or raise render demand on a newer stage.

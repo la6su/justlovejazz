@@ -109,6 +109,8 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Ignore hidden particle owners in render demand** — Contact's quiet
   Agros frame no longer keeps the renderer alive or advances a hidden particle
   clock after its particle group is hidden.
+- [x] **Release route-stage references on teardown** — Works and Contact
+  stages clear camera/active state and child graphs when disposed.
 - [x] **Dispose route WorkCards on owner teardown** — `useJlzPage` now releases
   the module-level card/grid registry on full unmount as well as before route
   replacement, with lifecycle coverage for both paths.
