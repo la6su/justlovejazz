@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { DrawTrail } from '../Experience/World/DrawTrail'
 import * as THREE from 'three'
 
@@ -31,6 +31,31 @@ describe('DrawTrail lifecycle', () => {
     expect(internals._cameraRight).toBe(right)
     expect(internals._cameraUp).toBe(up)
     expect(internals._cameraForward).toBe(forward)
+    trail.dispose()
+  })
+
+  it('rebuilds only for pointer or camera-basis changes while uniforms keep ticking', () => {
+    const trail = new DrawTrail()
+    const camera = new THREE.PerspectiveCamera()
+    const internals = trail as unknown as {
+      _rebuildRibbon: (value: THREE.Camera) => void
+      _uniforms: { uTime: { value: number }; uEnergy: { value: number } }
+    }
+    const rebuild = vi.spyOn(internals, '_rebuildRibbon')
+
+    trail.update(1 / 60, camera)
+    rebuild.mockClear()
+    const timeBefore = internals._uniforms.uTime.value
+    trail.update(1 / 60, camera)
+
+    expect(rebuild).not.toHaveBeenCalled()
+    expect(internals._uniforms.uTime.value).toBeGreaterThan(timeBefore)
+
+    camera.rotation.y = 0.1
+    camera.updateMatrixWorld()
+    trail.update(1 / 60, camera)
+    expect(rebuild).toHaveBeenCalledOnce()
+
     trail.dispose()
   })
 

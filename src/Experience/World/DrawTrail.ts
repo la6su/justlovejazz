@@ -79,7 +79,10 @@ export class DrawTrail {
   private _cameraRight = new THREE.Vector3()
   private _cameraUp = new THREE.Vector3()
   private _cameraForward = new THREE.Vector3()
-  private _frameCount = 0
+  private _lastCameraRight = new THREE.Vector3()
+  private _lastCameraUp = new THREE.Vector3()
+  private _lastCameraForward = new THREE.Vector3()
+  private _hasCameraBasis = false
   private _velocity = 0
   private _energy = 0
   private _geometryDirty = true
@@ -99,6 +102,7 @@ export class DrawTrail {
     this._uniforms.uVelocity.value = 0
     this.initialized = false
     this._geometryDirty = false
+    this._hasCameraBasis = false
   }
 
   constructor() {
@@ -174,6 +178,23 @@ export class DrawTrail {
     }
     const mouse = input.getMouse()
 
+    // Ribbon vertices are camera-facing. A static pointer still needs a
+    // rebuild when a moving camera changes that basis, but not on a fixed
+    // cadence while only the energy uniform decays.
+    camera.matrixWorld.extractBasis(this._cameraRight, this._cameraUp, this._cameraForward)
+    const cameraBasisChanged =
+      !this._hasCameraBasis ||
+      !this._cameraRight.equals(this._lastCameraRight) ||
+      !this._cameraUp.equals(this._lastCameraUp) ||
+      !this._cameraForward.equals(this._lastCameraForward)
+    if (cameraBasisChanged) {
+      this._lastCameraRight.copy(this._cameraRight)
+      this._lastCameraUp.copy(this._cameraUp)
+      this._lastCameraForward.copy(this._cameraForward)
+      this._hasCameraBasis = true
+      this._geometryDirty = true
+    }
+
     // Track velocity (NDC units per frame).
     const velNdc = Math.hypot(mouse.x - this._prevNdc.x, mouse.y - this._prevNdc.y)
     this._velocity = this._velocity * 0.78 + velNdc * 0.22
@@ -218,8 +239,7 @@ export class DrawTrail {
 
     // Rebuild immediately after input, then at a restrained cadence while the
     // trace settles.
-    this._frameCount++
-    if (this._geometryDirty || this._frameCount % 2 === 0) {
+    if (this._geometryDirty) {
       this._rebuildRibbon(camera)
       this._geometryDirty = false
     }
@@ -278,6 +298,7 @@ export class DrawTrail {
     this._energy = 0
     this.initialized = false
     this._geometryDirty = false
+    this._hasCameraBasis = false
     this.group.clear()
     this.geometry.dispose()
     ;(this.mesh.material as THREE.Material).dispose()

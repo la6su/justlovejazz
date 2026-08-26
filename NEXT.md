@@ -196,6 +196,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
       computed in owner-local scratch state and uploaded only when it differs;
       role, reduced-motion and disposal boundaries remain unchanged.
 
+- [x] **Rebuild DrawTrail only on geometry changes** — static pointer decay now
+      updates uniforms without rebuilding the ribbon; pointer history and camera
+      basis changes still rebuild the camera-facing geometry.
+
 - [x] **Cache CinematicNav scroll policy** — programmatic section navigation
       reads the owner-local reduced-motion snapshot instead of re-querying the
       media preference on every scroll request.
