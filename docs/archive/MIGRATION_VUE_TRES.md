@@ -3831,6 +3831,17 @@ Acceptance: `EnvSphere.motion.test.ts` covers repeated disposal and all late
 public calls; focused type-check/lint pass. Rollback: revert this bounded
 ambient-owner lifecycle slice if section palette transitions regress.
 
+### CinematicLights terminal teardown — 2026-08-26
+
+`CinematicLights` now rejects late section changes, reduced-motion preference
+updates and frame work after detaching and disposing its five-light owner.
+Disposal is idempotent and clears the detached group without changing the
+section interpolation or reduced-motion behavior while mounted.
+
+Acceptance: `CinematicLights.motion.test.ts` covers repeated disposal and all
+late public calls; focused type-check/lint pass. Rollback: revert this bounded
+light-owner lifecycle slice if section lighting or motion parity regresses.
+
 ## Definition of done
 
 The migration is done when the target topology is the only production path;

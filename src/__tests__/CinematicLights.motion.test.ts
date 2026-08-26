@@ -65,4 +65,19 @@ describe('CinematicLights reduced-motion transitions', () => {
     expect(state.keyLight.intensity).not.toBe(1.8)
     lights.dispose()
   })
+
+  it('ignores late section, preference and frame calls after teardown', () => {
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }))
+    const scene = new THREE.Scene()
+    const lights = new CinematicLights(scene)
+    const config = getWorldConfigForPage('home').find((entry) => entry.id === 'sec_contact')!
+
+    lights.dispose()
+    lights.dispose()
+    lights.changeSection(config)
+    lights.setReducedMotion(true)
+    lights.update(1 / 60)
+
+    expect(scene.getObjectByName('cinematic-lights')).toBeUndefined()
+  })
 })

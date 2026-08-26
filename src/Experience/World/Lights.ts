@@ -97,6 +97,7 @@ const SECTION_PRESETS: Record<string, SectionLightPreset> = {
 const DEFAULT_PRESET = SECTION_PRESETS['sec_about']!
 
 export class CinematicLights {
+  private _disposed = false
   private keyLight: THREE.DirectionalLight
   private fillLight: THREE.DirectionalLight
   private rimLight: THREE.DirectionalLight
@@ -164,6 +165,7 @@ export class CinematicLights {
    * Called by World.changeSection() / updateTransform() on index change.
    */
   public changeSection(config: PhaseConfig): void {
+    if (this._disposed) return
     const preset = SECTION_PRESETS[config.id] ?? DEFAULT_PRESET
     this._applyPresetToTargets(preset)
     if (prefersReducedMotion()) {
@@ -174,6 +176,7 @@ export class CinematicLights {
 
   /** Reconcile a live preference change without waiting for another frame. */
   public setReducedMotion(reduced: boolean): void {
+    if (this._disposed) return
     this._reducedMotionSettled = reduced
     if (reduced) this._snapToTargets()
   }
@@ -183,6 +186,7 @@ export class CinematicLights {
    * Uses framerate-independent exponential decay (~0.5s transition).
    */
   public update(dt: number): void {
+    if (this._disposed) return
     if (prefersReducedMotion()) {
       if (!this._reducedMotionSettled) {
         this._snapToTargets()
@@ -219,10 +223,13 @@ export class CinematicLights {
   }
 
   public dispose(): void {
+    if (this._disposed) return
+    this._disposed = true
     this.group.traverse((obj) => {
       if (obj instanceof THREE.Light) obj.dispose()
     })
     this.group.parent?.remove(this.group)
+    this.group.clear()
   }
 
   // ── Private ──────────────────────────────────────────────────────────────

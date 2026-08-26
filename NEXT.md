@@ -463,6 +463,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Make EnvSphere teardown terminal** — late palette changes, reduced-motion
   updates and frame callbacks become inert after the shared ambient owner has
   released its GPU resources; repeated disposal is safe.
+- [x] **Make CinematicLights teardown terminal** — late section, preference and
+  frame calls become inert after the light owner releases its scene resources;
+  repeated disposal cannot touch detached lights.
 - [x] **Release the WorksPortfolio owner** — `ExperienceUI.destroy()` now calls
       the portfolio disposer before dropping its reference; disposal clears the
       project/callback references and navigation becomes a safe no-op.
