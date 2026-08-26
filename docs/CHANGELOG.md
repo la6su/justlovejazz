@@ -14,6 +14,8 @@
   keeping the visible control aligned with persisted mute state.
 - SFX teardown is now terminal, preventing late UI events from recreating an
   unowned Web Audio context after `Experience` disposal.
+- BlurFade now restores authored text and accessibility state on hide instead
+  of retaining per-character animation spans in hidden route content.
 
 - Renderer device-loss fallback now clears the retired software-adapter
   replacement before forced-WebGL recreation; a failed second initialization

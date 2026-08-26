@@ -84,4 +84,20 @@ describe('BlurFade lifecycle', () => {
     expect(request).toHaveBeenCalledTimes(requestCount)
     expect(element.querySelectorAll('span')).toHaveLength(5)
   })
+
+  it('restores authored text after hiding a revealed title', () => {
+    const element = document.createElement('h2')
+    element.textContent = 'Hello'
+    element.setAttribute('aria-label', 'old label')
+    document.body.append(element)
+
+    const fade = BlurFade.for(element)
+    fade.show(1)
+    fade.hide()
+
+    expect(element.textContent).toBe('Hello')
+    expect(element.children).toHaveLength(0)
+    expect(element.hasAttribute('data-visible')).toBe(false)
+    expect(element.hasAttribute('aria-label')).toBe(false)
+  })
 })

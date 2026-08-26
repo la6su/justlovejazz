@@ -74,6 +74,8 @@ export class BlurFade {
 
   hide(): void {
     this.finalize()
+    if (this.cleanText) this.el.textContent = this.cleanText
+    this.el.removeAttribute('aria-label')
     this.el.removeAttribute('data-visible')
   }
 

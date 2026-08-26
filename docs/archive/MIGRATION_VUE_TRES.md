@@ -3462,6 +3462,17 @@ dispose and no context creation after disposal. Rollback: remove the terminal
 guard and restore the prior reusable-instance behavior; no scene or renderer
 boundary changes are involved.
 
+#### BlurFade hidden-owner DOM restoration — 2026-08-26
+
+`BlurFade.hide()` now restores the authored text node and removes its
+reveal-only `aria-label` and `data-visible` state after settling active spans.
+Hidden route content therefore does not retain one DOM span and inline style
+per character after a cinematic reveal.
+
+Acceptance: `BlurFade.lifecycle.test.ts` covers span collapse, text restoration
+and metadata cleanup. Rollback: remove the restoration lines and retain the
+existing finalize behavior; renderer ownership is unaffected.
+
 ### Removal ledger
 
 | Legacy element                           | Remove after                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Status |

@@ -114,6 +114,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Close SFX after disposal** — `SfxSystem` now has a terminal disposed
   guard so late UI events cannot recreate an orphaned `AudioContext`.
 
+- [x] **Restore BlurFade authored DOM on hide** — hidden titles now collapse
+  per-character spans and accessibility metadata back to their source text.
+
 - [x] **Align WebGLBackend quality state** — direct-render fallback no longer
   advertises or updates the unused TSL post graph; native WebGPU retains the
   crossfade and post parameter path.

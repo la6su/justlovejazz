@@ -78,6 +78,9 @@ under `src/builder/`; the public builds do not import the editor graph.
   one disposal owner.
 - `SfxSystem.dispose()` is terminal for its Web Audio owner; late `play()` calls
   are silent no-ops and cannot allocate a replacement context after teardown.
+- `BlurFade.hide()` restores the authored text node and removes reveal-only
+  `aria-label`/data state, preventing hidden route owners from retaining span
+  DOM and inline animation styles.
 - `Experience` observes the live reduced-motion media query for the lifetime
   of the runtime. Enabling it cancels ambient breathing and settles the single
   render scheduler; disabling it raises one `motion-preference` invalidation.
