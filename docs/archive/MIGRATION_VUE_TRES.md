@@ -3349,6 +3349,19 @@ at the target without requiring another render; normal interpolation remains
 unchanged. Rollback: remove the owner callback and restore the prior
 frame-driven settlement if the visual policy is revised.
 
+#### SplashCube live reduced-motion settlement — 2026-08-26
+
+`SplashCube` now exposes an owner-local motion-policy callback. When reduced
+motion is enabled during a face rotation, opener pulse or jelly displacement,
+the owner synchronously restores the target face, authored unit scale and base
+geometry before `RenderScheduler` stops. Normal-motion reactions are unchanged;
+no interrupted decorative motion is resumed after the preference is disabled.
+
+Acceptance: face, opener and jelly activity all settle without a follow-up
+frame, and normal `rotateToFace()` behavior remains interpolated. Rollback:
+remove the callback and restore the prior frame-driven settlement if the
+motion policy is revised.
+
 ### Removal ledger
 
 | Legacy element                           | Remove after                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Status |

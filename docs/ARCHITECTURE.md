@@ -69,6 +69,8 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `SplashCube.rotateToFace()` snaps synchronously under reduced motion because
   `SceneCoordinator` skips decorative cube animation in that mode; no face
   transition may leave `_faceLerp` active or keep render demand alive.
+- `SplashCube` also settles face, jelly and opener state synchronously when the
+  live reduced-motion preference changes, before scheduler settlement.
 - The lazy Contact typography owner receives the same live preference while
   mounted. Its glyphs settle synchronously on enable and resume bob/sway on
   disable, so route re-entry is not required to reconcile motion state.

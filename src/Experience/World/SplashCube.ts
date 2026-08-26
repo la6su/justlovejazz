@@ -318,6 +318,28 @@ export class SplashCube extends THREE.Mesh {
     this.rotation.set(0, rotation, 0)
   }
 
+  /** Settle all decorative cube reactions when motion policy changes live. */
+  setReducedMotion(reduced: boolean): void {
+    if (!reduced) return
+
+    this._idleRotY = this._targetFaceRotY
+    this._startFaceRotY = this._targetFaceRotY
+    this._startFaceDelta = 0
+    this._faceLerp = 1
+    this.rotation.set(0, this._idleRotY, 0)
+
+    this.jellyTarget = 0
+    this.jellyEnergy = 0
+    this.nextJellyUpdateAt = 0
+    if (this.jellyWasActive) this.resetJellyGeometry()
+    this.jellyWasActive = false
+
+    this.openerPhase = 'done'
+    this.openerTarget = 0
+    this.openerProgress = 0
+    this.cubeMesh.scale.setScalar(1)
+  }
+
   // (setEnvAndCamera removed — dead no-op, body was '// No-op'.
   //  Experience.ts call site removed too.)
 

@@ -374,6 +374,7 @@ export class Experience {
     this._reducedMotion = reduced
     this.envSphere?.setReducedMotion(reduced)
     this.lights?.setReducedMotion(reduced)
+    this.baku?.setReducedMotion(reduced)
     this.contactTypographyStage?.setReducedMotion(reduced)
     if (reduced) {
       this._cancelBreath()

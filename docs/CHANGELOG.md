@@ -34,6 +34,8 @@
   avoiding intermediate lerp work and stale render demand.
 - EnvSphere palette crossfades now settle synchronously when reduced motion is
   enabled while a section transition is already active.
+- SplashCube face, jelly and opener reactions now settle synchronously on a
+  live reduced-motion change.
 
 - `Experience` now observes live `prefers-reduced-motion` changes instead of
   caching the preference only at startup. Enabling reduction cancels ambient

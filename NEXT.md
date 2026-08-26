@@ -81,6 +81,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Settle EnvSphere on live motion-policy changes** — an active ambient
   palette crossfade now snaps to its target before the scheduler is stopped.
 
+- [x] **Settle SplashCube on live motion-policy changes** — face rotation,
+  jelly displacement and opener scale now reset to authored final state before
+  the scheduler is stopped.
+
 - [x] **Align WebGLBackend quality state** — direct-render fallback no longer
   advertises or updates the unused TSL post graph; native WebGPU retains the
   crossfade and post parameter path.
