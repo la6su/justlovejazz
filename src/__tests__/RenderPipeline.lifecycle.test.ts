@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { RenderPipeline } from '../core/RenderPipeline'
 
 class WebGPUBackend {}
+class WebGLBackend {}
 
 describe('RenderPipeline failure lifecycle', () => {
   it('restores renderer tone mapping when the TSL pipeline throws', () => {
@@ -50,6 +51,29 @@ describe('RenderPipeline failure lifecycle', () => {
       'device lost during post render',
     )
     expect(renderer.toneMapping).toBe(THREE.ACESFilmicToneMapping)
+    expect(render).toHaveBeenCalledOnce()
+  })
+
+  it('restores scene fog after a WebGLBackend fallback draw fails', () => {
+    const render = vi.fn(() => {
+      throw new Error('fallback draw failed')
+    })
+    const renderer = {
+      backend: new WebGLBackend(),
+      render,
+    }
+    const scene = new THREE.Scene()
+    scene.fog = new THREE.Fog(0x112233, 1, 10)
+    const fog = scene.fog
+    const pipeline = Object.assign(Object.create(RenderPipeline.prototype), {
+      _renderer: renderer,
+      _webgpuPipeline: null,
+    }) as RenderPipeline
+
+    expect(() => pipeline.render(scene, new THREE.PerspectiveCamera())).toThrow(
+      'fallback draw failed',
+    )
+    expect(scene.fog).toBe(fog)
     expect(render).toHaveBeenCalledOnce()
   })
 })

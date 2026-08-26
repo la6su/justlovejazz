@@ -194,9 +194,16 @@ export class RenderPipeline {
     // WebGLBackend fallback: WebGPURenderer with WebGLBackend cannot compile
     // ShaderMaterial (THREE.NodeBuilder incompatibility) AND NodeMaterials crash
     // with refreshFogUniforms if scene.fog is set. Use direct render only.
-    // Safety: clear fog (NodeMaterial + fog = crash on this path).
+    // Safety: clear fog only for this direct fallback draw. Scene ownership is
+    // shared with the Vue/Tres root, so permanently mutating `scene.fog` here
+    // would make a later backend recovery lose the authored fog state.
+    const fog = scene.fog
     scene.fog = null
-    this._renderer.render(scene, camera)
+    try {
+      this._renderer.render(scene, camera)
+    } finally {
+      scene.fog = fog
+    }
   }
 
   /** No-op: the TSL pipeline sizes from the live renderer (WebGPURenderer

@@ -13,6 +13,10 @@
   authored overrides remain unchanged and `Experience` no longer duplicates the
   transition default.
 
+- Renderer terminal recovery failure now rejects later animation-loop
+  reattachment, and the WebGLBackend fallback restores the shared scene fog
+  after direct draws, including thrown draws.
+
 - Contact section activation now validates the Cyprus request generation after
   lazy initialization, preventing a stale route callback from activating a
   newer stage or raising redundant render demand.

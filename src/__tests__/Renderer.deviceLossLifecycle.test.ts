@@ -33,6 +33,7 @@ type RendererInternals = {
   init: () => Promise<void>
   recoverFromDeviceLost: () => Promise<void>
   dispose: () => void
+  setAnimationLoop: (callback: ((time: number) => void) | null) => void
 }
 
 function fakeRenderer() {
@@ -162,5 +163,18 @@ describe('Renderer device-loss lifecycle', () => {
     }).not.toThrow()
     expect(document.querySelector('.renderer-unsupported')).not.toBeNull()
     document.querySelector('.renderer-unsupported')?.remove()
+  })
+
+  it('does not reattach a loop after terminal recovery failure', () => {
+    const instance = fakeRenderer()
+    const renderer = Object.assign(makeRenderer(instance, vi.fn()), {
+      _recoveryFailed: true,
+    })
+    const callback = vi.fn()
+
+    renderer.setAnimationLoop(callback)
+
+    expect(instance.setAnimationLoop).toHaveBeenCalledWith(null)
+    expect((renderer as unknown as { _loopCallback: unknown })._loopCallback).toBeNull()
   })
 })

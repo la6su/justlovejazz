@@ -50,6 +50,10 @@ under `src/builder/`; the public builds do not import the editor graph.
 - One renderer-loop driver exists. `RenderScheduler` owns demand policy and
   requests bounded work from the one bounded renderer loop adapter;
   settled idle performs no draw work and hidden tabs pause.
+- Terminal renderer recovery failure is a hard loop boundary: later scheduler
+  invalidation cannot reattach a callback to the failed renderer. The
+  WebGLBackend direct-draw fallback temporarily clears scene fog and restores
+  the shared scene state in all exit paths.
 - Reduced-motion branches synchronously reach the authored final state and
   release render activity; entry title/eyebrow observers do not allocate RAF
   loops or safety timers in reduced-motion mode.

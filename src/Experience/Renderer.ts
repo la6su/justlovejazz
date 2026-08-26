@@ -253,12 +253,13 @@ export class Renderer {
    * stays null across recovery.
    */
   public setAnimationLoop(callback: ((time: number) => void) | null): void {
-    this._loopCallback = this._recoveryFailed ? null : callback
+    const effectiveCallback = this._recoveryFailed ? null : callback
+    this._loopCallback = effectiveCallback
     ;(
       this.instance as {
         setAnimationLoop?: (cb: ((time: number) => void) | null) => void
       }
-    ).setAnimationLoop?.(callback)
+    ).setAnimationLoop?.(effectiveCallback)
   }
 
   /**

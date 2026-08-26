@@ -9,6 +9,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
 
 ## Active engineering queue
 
+- [x] **Keep renderer failure terminal** — device-loss recovery failure now
+  rejects later loop reattachment, and WebGLBackend fog clearing is restored
+  after each direct fallback draw.
+
 - [x] **Single-source camera smoothing defaults** — `WorldConfig` owns the
   shared fallback used by `Experience`; authored per-section overrides remain
   in the canonical phase configuration.
