@@ -6,13 +6,17 @@ import type { ContactCyprusStage } from '../Experience/World/ContactCyprusStage'
 import type { ContactTypographyStage } from '../Experience/World/ContactTypographyStage'
 import type { WorksPlaneStage } from '../Experience/World/WorksPlaneStage'
 
-function makeCoordinator(matches: boolean, update: ReturnType<typeof vi.fn>): SceneCoordinator {
+function makeCoordinator(
+  matches: boolean,
+  update: ReturnType<typeof vi.fn>,
+  particleVisible: boolean = true,
+): SceneCoordinator {
   Object.defineProperty(window, 'matchMedia', {
     configurable: true,
     value: vi.fn().mockReturnValue({ matches } as MediaQueryList),
   })
   const group = new THREE.Group()
-  group.userData.particles = { update }
+  group.userData.particles = { update, visible: particleVisible }
   const owners = {
     ground: () => null,
     sectionGroups: () => ({ groups: [group] }) as unknown as SectionGroups,
@@ -78,6 +82,15 @@ describe('SceneCoordinator reduced-motion particle parity', () => {
 
     expect(update).toHaveBeenCalledOnce()
     expect(update).toHaveBeenCalledWith(0.25)
+  })
+
+  it('does not advance hidden particle drift', () => {
+    const update = vi.fn()
+    const coordinator = makeCoordinator(false, update, false)
+
+    coordinator.update(0.25)
+
+    expect(update).not.toHaveBeenCalled()
   })
 
   it('does not advance route-owned animation clocks on an idle frame', () => {

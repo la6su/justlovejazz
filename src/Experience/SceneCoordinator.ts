@@ -350,7 +350,7 @@ export class SceneCoordinator {
         // Update JunniParticles — GPU-side drift (Works section).
         const particles = group.userData.particles as
           import('./World/JunniParticles').JunniParticles | undefined
-        if (particles) particles.update(deltaTime)
+        if (particles && particles.visible !== false) particles.update(deltaTime)
       }
     }
   }

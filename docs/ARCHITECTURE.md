@@ -250,9 +250,9 @@ according to their current measured policy.
   Renderer snapshots them into its existing per-frame pipeline params object.
 - EventBus emits from a subscriber snapshot, so `off()`/`clear()` during a
   handler affects future events without truncating the current dispatch.
-- Render demand treats a particle owner as active only while both its scene
-  group and particle object are visible; hidden Contact particle groups cannot
-  keep settled frames alive.
+- Render demand and particle updates require the particle object to remain
+  visible; hidden Contact particle groups cannot keep settled frames alive or
+  consume animation updates.
 - Contact section activation captures the same Cyprus request generation before
   awaiting lazy initialization; a stale route callback cannot call `setActive`
   or raise render demand on a newer stage.
