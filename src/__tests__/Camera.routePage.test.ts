@@ -3,6 +3,7 @@ import * as THREE from 'three'
 import { Camera } from '../Experience/Camera'
 import { Sizes } from '../Experience/Sizes'
 import { setCurrentPage } from '../core/routePage'
+import { input } from '../Experience/Input'
 
 type CameraInternals = {
   shakeDuration: number
@@ -50,5 +51,28 @@ describe('Camera route ownership', () => {
     expect(internals.shakeDuration).toBeCloseTo(0.5, 2)
     camera.destroy()
     sizes.destroy()
+  })
+
+  it('keeps cursor spring state isolated between camera owners', () => {
+    const sizes = new Sizes()
+    const first = new Camera(sizes, new THREE.PerspectiveCamera())
+    const second = new Camera(sizes, new THREE.PerspectiveCamera())
+    const firstState = first as unknown as { springX: { pos: number } }
+    const secondState = second as unknown as { springX: { pos: number } }
+
+    input.mouse.set(1, 0)
+    first.update(1 / 60)
+    const firstPosition = firstState.springX.pos
+
+    input.mouse.set(-1, 0)
+    second.update(1 / 60)
+
+    expect(firstState.springX.pos).toBe(firstPosition)
+    expect(secondState.springX.pos).not.toBe(firstPosition)
+
+    first.destroy()
+    second.destroy()
+    sizes.destroy()
+    input.mouse.set(0, 0)
   })
 })

@@ -166,6 +166,10 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `Cursor.drawCircle()` reuses one owner-scoped ring-point buffer and color
   view. The active pointer path remains allocation-free while theme refreshes
   mutate only the cached values.
+- Camera spring state and scratch math objects are owner-scoped. Multiple
+  wrapper instances may be constructed during recovery or tests without
+  sharing cursor-follow history or mutable Three.js temporaries; the
+  externally owned `PerspectiveCamera` remains undisposed by the wrapper.
 - Native WebGPU post processing is conditional on the selected quality policy;
   low-tier instances render the scene directly and do not construct a TSL
   `PassNode` graph whose effects are disabled.

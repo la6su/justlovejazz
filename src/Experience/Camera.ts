@@ -8,21 +8,20 @@ import { prefersReducedMotion } from '../core/motionPolicy'
 import type { CameraTarget } from '../core/types'
 import { getCurrentPage } from '../core/routePage'
 
-// Zero-allocation vectors
-const _offsetVec = new THREE.Vector3()
-const _tempQuat = new THREE.Quaternion()
-const _tempEuler = new THREE.Euler()
-
-// Spring-damper state
-const springX = { pos: 0, vel: 0, target: 0 }
-const springY = { pos: 0, vel: 0, target: 0 }
-
 const SP_STIFFNESS = 8
 const SP_DAMPING = 3
 
 export class Camera {
   instance: THREE.PerspectiveCamera
   private _disposed = false
+
+  // Owner-scoped scratch/state. These used to live at module scope, which
+  // coupled concurrent Camera wrappers during HMR, recovery and tests.
+  private readonly _offsetVec = new THREE.Vector3()
+  private readonly _tempQuat = new THREE.Quaternion()
+  private readonly _tempEuler = new THREE.Euler()
+  private readonly springX = { pos: 0, vel: 0, target: 0 }
+  private readonly springY = { pos: 0, vel: 0, target: 0 }
 
   // Smooth state
   private smoothPosition = new THREE.Vector3()
@@ -184,12 +183,12 @@ export class Camera {
     this.shakePower = 0
     this.shakeDuration = 0
     this.shakeTime = 0
-    springX.vel = 0
-    springY.vel = 0
-    springX.pos = 0
-    springY.pos = 0
-    springX.target = 0
-    springY.target = 0
+    this.springX.vel = 0
+    this.springY.vel = 0
+    this.springX.pos = 0
+    this.springY.pos = 0
+    this.springX.target = 0
+    this.springY.target = 0
 
     // A pending pulse is decorative and returns to the persistent section
     // framing target; it must never freeze the transient dip on screen.
@@ -215,17 +214,17 @@ export class Camera {
     // ── 1. Spring-damper cursor follow ──
     const mouse = input.getMouse()
 
-    springX.target = mouse.x
-    springY.target = mouse.y
+    this.springX.target = mouse.x
+    this.springY.target = mouse.y
 
-    springX.vel += (springX.target - springX.pos) * SP_STIFFNESS * dt
-    springY.vel += (springY.target - springY.pos) * SP_STIFFNESS * dt
+    this.springX.vel += (this.springX.target - this.springX.pos) * SP_STIFFNESS * dt
+    this.springY.vel += (this.springY.target - this.springY.pos) * SP_STIFFNESS * dt
 
-    springX.vel *= Math.exp(-SP_DAMPING * dt)
-    springY.vel *= Math.exp(-SP_DAMPING * dt)
+    this.springX.vel *= Math.exp(-SP_DAMPING * dt)
+    this.springY.vel *= Math.exp(-SP_DAMPING * dt)
 
-    springX.pos += springX.vel * dt
-    springY.pos += springY.vel * dt
+    this.springX.pos += this.springX.vel * dt
+    this.springY.pos += this.springY.vel * dt
 
     // ── 2. Build position ──
     const isMobile = Device.isMobile
@@ -236,8 +235,8 @@ export class Camera {
     const pos = this.instance.position
 
     // Cursor follow — spring-damper (disabled on mobile + reduced motion)
-    const cursorX = isMobile || reduced ? 0 : springX.pos
-    const cursorY = isMobile || reduced ? 0 : springY.pos
+    const cursorX = isMobile || reduced ? 0 : this.springX.pos
+    const cursorY = isMobile || reduced ? 0 : this.springY.pos
 
     // A-015: Per-section cursor follow strength (junni cameraRange pattern).
     // Works section (idx=3) gets stronger follow for interactive feel.
@@ -276,9 +275,9 @@ export class Camera {
     }
 
     if (this.fovOffset > 0) {
-      _offsetVec.set(0, 0, -this.fovOffset * 0.05)
-      _offsetVec.applyQuaternion(this.instance.quaternion)
-      pos.add(_offsetVec)
+      this._offsetVec.set(0, 0, -this.fovOffset * 0.05)
+      this._offsetVec.applyQuaternion(this.instance.quaternion)
+      pos.add(this._offsetVec)
     }
 
     // Blend FOV smoothly. Breathing disabled on mobile + reduced motion.
@@ -305,9 +304,9 @@ export class Camera {
       const sx = Math.sin(this.shakeTime * 7) * Math.sin(this.shakeTime * 4) * 0.1 * this.shakePower
       const sy =
         Math.sin(this.shakeTime * 3.3) * Math.sin(this.shakeTime * 5.2) * 0.1 * this.shakePower
-      _tempEuler.set(sx, sy, 0)
-      _tempQuat.setFromEuler(_tempEuler)
-      this.instance.quaternion.multiply(_tempQuat)
+      this._tempEuler.set(sx, sy, 0)
+      this._tempQuat.setFromEuler(this._tempEuler)
+      this.instance.quaternion.multiply(this._tempQuat)
       this.shakeDuration -= dt
       if (this.shakeDuration <= 0) {
         this.shakePower = 0

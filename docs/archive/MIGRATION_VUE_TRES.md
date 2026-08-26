@@ -3735,6 +3735,17 @@ Acceptance: `cursorSettle.test.ts`, Vue type-check and lint pass; the full
 release gate remains required before the milestone merge. Rollback: revert this
 bounded cursor hot-path slice if visual contour parity regresses.
 
+### Camera owner-state isolation — 2026-08-26
+
+Camera spring damping state and reusable Three.js math temporaries now live on
+each `Camera` wrapper rather than at module scope. This keeps recovery/HMR
+instances independent while preserving zero per-frame allocation and leaving
+the externally owned `PerspectiveCamera` lifecycle with SceneHost/Tres.
+
+Acceptance: `Camera.routePage.test.ts` verifies two wrappers do not advance one
+another's spring state; type-check and focused lint pass. Rollback: revert this
+bounded camera ownership slice if framing or shake parity regresses.
+
 ## Definition of done
 
 The migration is done when the target topology is the only production path;

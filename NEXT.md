@@ -439,6 +439,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Pool cursor redraw geometry** — active cursor frames reuse the fixed
   ring-point records and cached theme-color view instead of allocating a point
   array and palette object on every canvas redraw.
+- [x] **Isolate Camera owner state** — spring damping and Three.js scratch
+  objects now belong to each Camera wrapper instead of shared module state;
+  concurrent recovery/HMR instances cannot advance one another's camera.
 - [x] **Release the WorksPortfolio owner** — `ExperienceUI.destroy()` now calls
   the portfolio disposer before dropping its reference; disposal clears the
   project/callback references and navigation becomes a safe no-op.
