@@ -88,4 +88,21 @@ describe('sceneHost bridge (Phase 7 persistent Tres root)', () => {
     bridge.replaceRenderer(newRenderer)
     expect(ready.context.renderer.instance).toBe(newRenderer)
   })
+
+  it('notifies the host-owned renderer slot after recovery', async () => {
+    const { bridge } = await freshBridge()
+    const ready = fakeReady()
+    const replacement = { name: 'replacement' } as unknown as SceneHostReady['renderer']
+    bridge.resolve(ready)
+    const onReplacement = vi.fn()
+    const unbind = bridge.bindRendererOwner(onReplacement)
+
+    bridge.replaceRenderer(replacement)
+
+    expect(onReplacement).toHaveBeenCalledOnce()
+    expect(onReplacement).toHaveBeenCalledWith(replacement)
+    unbind()
+    bridge.replaceRenderer(ready.renderer)
+    expect(onReplacement).toHaveBeenCalledOnce()
+  })
 })

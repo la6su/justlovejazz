@@ -57,6 +57,7 @@ let resolved = false
 let disposed = false
 let lifecycleGeneration = 0
 let liveRenderer: UnifiedRenderSurface | null = null
+let unbindRendererOwner: (() => void) | null = null
 
 async function onReady(context: TresContext): Promise<void> {
   if (noScene || resolved) return
@@ -100,6 +101,9 @@ async function onReady(context: TresContext): Promise<void> {
   }
   resolved = true
   liveRenderer = renderer
+  unbindRendererOwner = sceneHost.bindRendererOwner((replacement) => {
+    liveRenderer = replacement
+  })
   sceneHost.resolve({
     scene: context.scene.value,
     context,
@@ -120,6 +124,8 @@ function onError(error: Error): void {
 onBeforeUnmount(() => {
   disposed = true
   lifecycleGeneration += 1
+  unbindRendererOwner?.()
+  unbindRendererOwner = null
   liveRenderer?.dispose()
   liveRenderer = null
 })

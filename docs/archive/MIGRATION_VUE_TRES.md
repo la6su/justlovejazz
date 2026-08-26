@@ -946,6 +946,17 @@ Acceptance: focused BakuCarousel lifecycle tests, `vue-tsc` and
 `git diff --check` pass. Rollback: restore the body-dataset reader and remove
 the story-side getter parameter from the section owner chain.
 
+#### Phase 7 recovered renderer owner bridge — 2026-08-26
+
+`SceneHost` now binds its live renderer slot to the `sceneHost` bridge. Device
+loss recovery updates both the Tres renderer instance and that slot, so a Vue
+root unmount cannot retain the recovered GPU renderer after the initial one was
+replaced. Bridge and unmount regression tests cover the replacement path.
+
+Acceptance: focused SceneHost bridge/lifecycle tests, type checks, production
+build and serial E2E pass. Rollback: remove the renderer-owner binding and
+restore initial-instance-only host disposal.
+
 #### Phase 5/7 StoryController source bridge — 2026-08-25
 
 `src/core/storyController.ts` is now the runtime owner that translates a

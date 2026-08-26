@@ -36,6 +36,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
   `CinematicNav.getSide()` now supplies the typed Menu/Contact/center state to
   `BakuCarousel`; the UI `cinematicSheet` dataset remains a projection only.
 
+- [x] **Track recovered renderers in the Vue host** — device-loss replacement
+  instances now update the SceneHost-owned renderer slot, so a later Vue
+  unmount disposes the live GPU owner instead of the stale initial instance.
+
 - [x] **Align WebGLBackend quality state** — direct-render fallback no longer
   advertises or updates the unused TSL post graph; native WebGPU retains the
   crossfade and post parameter path.

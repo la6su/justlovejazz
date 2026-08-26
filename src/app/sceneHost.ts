@@ -42,6 +42,7 @@ interface SceneHostState {
   resolve?: (value: SceneHostReady) => void
   reject?: (error: unknown) => void
   context: TresContext | null
+  rendererOwner?: (renderer: UnifiedRenderSurface) => void
 }
 
 const state: SceneHostState = { settled: false, context: null }
@@ -79,6 +80,18 @@ export const sceneHost = {
    */
   replaceRenderer(renderer: UnifiedRenderSurface): void {
     if (state.context) state.context.renderer.instance = renderer
+    state.rendererOwner?.(renderer)
+  },
+  /**
+   * Register the Vue host's live-renderer slot. Renderer recovery happens
+   * behind the Experience owner boundary, so the host must follow the
+   * replacement before a later Vue unmount disposes its resources.
+   */
+  bindRendererOwner(owner: (renderer: UnifiedRenderSurface) => void): () => void {
+    state.rendererOwner = owner
+    return () => {
+      if (state.rendererOwner === owner) state.rendererOwner = undefined
+    }
   },
 }
 
@@ -92,6 +105,7 @@ export function __resetSceneHostForTests(): void {
   state.context = null
   state.resolve = undefined
   state.reject = undefined
+  state.rendererOwner = undefined
   // A new one-shot promise with fresh settle hooks.
   ;(
     sceneHost as {

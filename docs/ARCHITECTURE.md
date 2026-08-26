@@ -382,6 +382,9 @@ The story-side port follows the same boundary: `CinematicNav.getSide()` flows
 through `Experience` and `SectionGroups` into the Works `BakuCarousel`. The
 `cinematicSheet` body dataset remains a UI/CSS projection written by the
 navigation owner; scene input never reads it.
+Renderer recovery also crosses an explicit owner port: `sceneHost.replaceRenderer()`
+updates both the Tres context and the SceneHost live-renderer slot, keeping Vue
+unmount disposal aligned with the renderer currently driven by `Experience`.
 `SceneCoordinator` receives the current `PageId` through an injected getter;
 the application boundary owns the typed in-memory route port, while Vue route
 roots own their semantic `data-page-view` markers. The coordinator itself has

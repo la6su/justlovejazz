@@ -88,4 +88,15 @@ describe('SceneHost async lifecycle', () => {
 
     expect(mocks.candidate.dispose).toHaveBeenCalledOnce()
   })
+
+  it('disposes a recovered renderer when the host unmounts', async () => {
+    const wrapper = mount(SceneHost, { attachTo: document.body })
+    await flushPromises()
+
+    const replacement = { dispose: vi.fn() } as unknown as import('../core/unifiedRenderer').UnifiedRenderSurface
+    sceneHost.replaceRenderer(replacement)
+    wrapper.unmount()
+
+    expect(replacement.dispose).toHaveBeenCalledOnce()
+  })
 })

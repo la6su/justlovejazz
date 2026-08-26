@@ -24,6 +24,10 @@
   ambient background colors cannot remain stranded at an intermediate lerp
   value after the scheduler settles.
 
+- SceneHost now follows device-loss renderer replacements through the typed
+  bridge; Vue teardown disposes the recovered live renderer rather than only
+  the initial instance.
+
 - Contact Cyprus lazy initialization now has a single request-owned prewarm
   continuation; stale entry-route promises cannot prewarm a newer stage or
   schedule an unnecessary render frame.
