@@ -98,6 +98,7 @@ function hideSectionGeometry(group: THREE.Group): void {
 
 export class SectionGroups {
   readonly groups: THREE.Group[] = []
+  private _disposed = false
 
   constructor(
     scene: THREE.Scene,
@@ -118,10 +119,13 @@ export class SectionGroups {
   }
 
   public at(i: number): THREE.Group | undefined {
+    if (this._disposed) return undefined
     return this.groups[i]
   }
 
   public dispose(): void {
+    if (this._disposed) return
+    this._disposed = true
     this.groups.forEach((group) => {
       const ownedTextures = group.userData.ownedTextures as THREE.Texture[] | undefined
       ownedTextures?.forEach((texture) => texture.dispose())

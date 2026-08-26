@@ -3866,6 +3866,18 @@ late public calls; focused type-check/lint pass. Rollback: revert this bounded
 ground-owner lifecycle slice if contact ground theme or transition parity
 regresses.
 
+### SectionGroups terminal teardown — 2026-08-26
+
+`SectionGroups` now makes slot lookup inert after recursive resource disposal
+and ignores repeated teardown. The existing carousel-first ordering and
+gallery-descendant skip set remain unchanged, so nested owners are still
+released exactly once before the generic scene-resource traversal.
+
+Acceptance: `SectionGroups.lifecycle.test.ts` verifies recursive geometry and
+material disposal, repeated teardown and late lookup; focused type-check/lint
+pass. Rollback: revert this bounded section-owner lifecycle slice if route
+group disposal or carousel handoff regresses.
+
 ## Definition of done
 
 The migration is done when the target topology is the only production path;

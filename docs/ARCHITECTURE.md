@@ -175,6 +175,9 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `GroundPlane` has a terminal, idempotent teardown boundary. After its contact
   geometry and material are released, late config, theme, transform and
   visibility calls cannot mutate detached GPU resources.
+- `SectionGroups` has a terminal, idempotent teardown boundary. After its
+  recursive scene-resource disposal completes, late slot lookup returns no
+  owner; carousel-first disposal ordering remains authoritative.
 - `Cursor.drawCircle()` reuses one owner-scoped ring-point buffer and color
   view. The active pointer path remains allocation-free while theme refreshes
   mutate only the cached values.

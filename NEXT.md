@@ -472,6 +472,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Make GroundPlane teardown terminal** — late config, theme, transform and
   visibility calls become inert after contact-ground resources are released;
   repeated disposal is safe.
+- [x] **Make SectionGroups teardown terminal** — late group lookup becomes inert
+  after recursive scene-resource disposal; carousel-first ordering and repeated
+  teardown remain safe.
 - [x] **Release the WorksPortfolio owner** — `ExperienceUI.destroy()` now calls
       the portfolio disposer before dropping its reference; disposal clears the
       project/callback references and navigation becomes a safe no-op.
