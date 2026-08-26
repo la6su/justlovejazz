@@ -89,8 +89,7 @@ export class GroundPlane {
     }
     this._themeActive = true
     // Apply immediately (in case applyTransform doesn't run soon)
-    this.object.material.color.copy(this._themeColor)
-    this.object.material.opacity = this._themeOpacity
+    this.applyMaterialState(this._themeColor, this._themeOpacity)
     this._targetOpacity = this._themeOpacity
   }
 
@@ -100,16 +99,21 @@ export class GroundPlane {
    */
   public applyTransform(from: GroundConfig, to: GroundConfig, t: number): void {
     if (this._disposed) return
-    const mat = this.object.material
     if (this._themeActive) {
-      mat.color.copy(this._themeColor)
       this._targetOpacity = this._themeOpacity
-      mat.opacity = this._themeOpacity
+      this.applyMaterialState(this._themeColor, this._themeOpacity)
     } else {
-      mat.color.copy(this._poolColor.lerpColors(from.color, to.color, t))
+      const color = this._poolColor.lerpColors(from.color, to.color, t)
       this._targetOpacity = THREE.MathUtils.lerp(from.opacity, to.opacity, t)
-      mat.opacity = this._targetOpacity
+      this.applyMaterialState(color, this._targetOpacity)
     }
+  }
+
+  /** Avoid repeating identical material writes during continuous story frames. */
+  private applyMaterialState(color: THREE.Color, opacity: number): void {
+    const mat = this.object.material
+    if (!mat.color.equals(color)) mat.color.copy(color)
+    if (mat.opacity !== opacity) mat.opacity = opacity
   }
 
   /** Per-frame gate: the ground is visible only on section 4 (contact state). */

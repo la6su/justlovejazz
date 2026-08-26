@@ -184,6 +184,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
       frame can be presented; section changes keep the demand window alive
       until the palette reaches its target.
 
+- [x] **Skip unchanged ground material writes** — `GroundPlane` now compares
+      effective color/opacity before touching its material; section interpolation
+      and explicit theme synchronization remain the only dirty boundaries.
+
 - [x] **Cache CinematicNav scroll policy** — programmatic section navigation
       reads the owner-local reduced-motion snapshot instead of re-querying the
       media preference on every scroll request.
