@@ -60,7 +60,8 @@ interface LoopDiagnostics {
 
 interface RuntimeSnapshot {
   resources: {
-    canvasCount: number
+    rendererCanvasCount: number
+    documentCanvasCount: number
     scene: { geometries: number; materials: number; textures: number }
     renderer: {
       geometries: number | null
@@ -280,9 +281,12 @@ async function run(
     // gate on a GPU-less software host — was removed in Phase 10.)
     const settledOk =
       !result.settledIdleRequired || (result.loop !== null && result.loop.loopActive === false)
+    const rendererCanvasOk =
+      result.resources === null || result.resources.rendererCanvasCount === 1
     result.passed =
       result.ready &&
       result.canvasCount === 1 &&
+      rendererCanvasOk &&
       result.canvasAriaHidden &&
       result.timingCaptured &&
       settledOk &&
