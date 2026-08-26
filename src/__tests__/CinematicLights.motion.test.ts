@@ -45,7 +45,7 @@ describe('CinematicLights reduced-motion transitions', () => {
     expect(state.keyLight.intensity).not.toBe(1.8)
 
     media.matches = true
-    lights.update(0.01)
+    lights.setReducedMotion(true)
     expect(state.keyLight.intensity).toBe(1.8)
     expect(state.keyLight.position.toArray()).toEqual([0, 5, 5])
     lights.dispose()

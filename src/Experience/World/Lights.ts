@@ -172,6 +172,12 @@ export class CinematicLights {
     }
   }
 
+  /** Reconcile a live preference change without waiting for another frame. */
+  public setReducedMotion(reduced: boolean): void {
+    this._reducedMotionSettled = reduced
+    if (reduced) this._snapToTargets()
+  }
+
   /**
    * Per-frame smooth update — lerp all light properties toward targets.
    * Uses framerate-independent exponential decay (~0.5s transition).

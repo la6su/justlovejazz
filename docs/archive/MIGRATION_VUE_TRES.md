@@ -3323,10 +3323,11 @@ and red until a generated import-closure profile identifies a real reduction.
 
 `CinematicLights` now follows the scene-wide reduced-motion contract. Section
 changes snap colors, intensities and key-light position to their authored
-targets when motion is reduced; an active interpolation is also settled on the
-first update after a live preference change. Normal motion retains the existing
-exponential interpolation and volumetric orbit. Focused motion tests cover
-immediate section snaps, dynamic preference changes and the normal lerp path.
+targets when motion is reduced; an active interpolation is also settled
+synchronously when the live preference changes. Normal motion retains the
+existing exponential interpolation and volumetric orbit. Focused motion tests
+cover immediate section snaps, dynamic preference changes and the normal lerp
+path.
 
 Acceptance: reduced-motion transitions perform no light lerp/orbit work and do
 not leave intermediate values; normal mode preserves authored interpolation.
