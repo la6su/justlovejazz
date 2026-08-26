@@ -170,7 +170,14 @@ export class RenderPipeline {
   /** Render: scene → post passes → screen */
   public render(scene: THREE.Scene, camera: THREE.Camera): void {
     // Check if we're on REAL WebGPU (not WebGL2 fallback via WebGPURenderer)
-    const isRealWebGPU = this._renderer.backend?.constructor?.name === 'WebGPUBackend'
+    const backend = this._renderer.backend as {
+      isWebGPUBackend?: boolean
+      constructor?: { name?: string }
+    }
+    // Prefer Three's stable backend marker; constructor names are minified in
+    // production. The name fallback preserves compatibility with test doubles.
+    const isRealWebGPU =
+      backend?.isWebGPUBackend === true || backend?.constructor?.name === 'WebGPUBackend'
 
     if (isRealWebGPU && this._postProcessingEnabled !== false) {
       // WebGPU native: TSL RenderPipeline + PassNode + BloomNode + vignette/grain Fn.

@@ -29,6 +29,7 @@ import { TresCanvas } from '@tresjs/core'
 import type { TresContext, TresRendererSetupContext } from '@tresjs/core'
 import { PerspectiveCamera } from 'three'
 import { planUnifiedBackend } from '../core/rendererBackend'
+import { DeviceCapability } from '../core/DeviceCapability'
 import {
   createUnifiedWebGPUInstance,
   initUnifiedWebGPUInstance,
@@ -38,6 +39,12 @@ import {
 import { sceneHost } from './sceneHost'
 
 const noScene = new URLSearchParams(window.location.search).has('no-scene')
+
+// Tres owns the canvas size manager and reapplies its `dpr` option after
+// renderer readiness. Keep that manager on the same initial cap as the
+// Renderer owner; otherwise Tres can overwrite the capped buffer with the
+// raw devicePixelRatio (for example 3× on a mobile browser).
+const initialDprCap = DeviceCapability.getInstance().maxDpr
 
 // Single camera owner (Phase 7). Tres registers it as the active camera and
 // keeps its aspect in sync; the Experience `Camera` wrapper adopts it.
@@ -166,6 +173,7 @@ onBeforeUnmount(() => {
       ref="tresRef"
       class="canvas jlz-scene-canvas"
       render-mode="on-demand"
+      :dpr="[1, initialDprCap]"
       :renderer="rendererFactory"
       :camera="camera"
       :style="{ pointerEvents: 'none' }"

@@ -1,7 +1,16 @@
 // src/types/global.d.ts
 declare global {
+  interface JlzHostProbe {
+    readonly mode: 'webgpu' | 'webgl'
+    readonly backend: string | null
+    readonly isFallbackAdapter: boolean | null
+    recovered: boolean
+  }
+
   interface Window {
     UIkit: any
+    /** Read-only runtime evidence seam; written only by entry-app bootstrap. */
+    __jlzHost?: JlzHostProbe
   }
 }
 

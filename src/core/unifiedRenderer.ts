@@ -71,11 +71,21 @@ export function inspectUnifiedBackend(renderer: unknown): {
     isWebGPURenderer?: boolean
     backend?: {
       constructor?: { name?: string }
+      isWebGPUBackend?: boolean
+      isWebGLBackend?: boolean
       device?: { adapterInfo?: { isFallbackAdapter?: boolean } }
     }
   } | null
+  const backend = wg?.backend
+  // Constructor names are minified in production (e.g. `jf`), while Three's
+  // backend marker is an explicit public contract. Keep the constructor-name
+  // fallback for older test doubles and development diagnostics.
   const backendName: string | null = wg?.isWebGPURenderer
-    ? (wg.backend?.constructor?.name ?? null)
+    ? backend?.isWebGPUBackend === true
+      ? 'WebGPUBackend'
+      : backend?.isWebGLBackend === true
+        ? 'WebGLBackend'
+        : (backend?.constructor?.name ?? null)
     : null
   return {
     backendName,

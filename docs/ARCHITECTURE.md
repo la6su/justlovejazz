@@ -45,6 +45,9 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `EnvSphere` owns the ambient background. The contact state owns the ground.
 - Actual initialized backend determines renderer capability, DPR and post
   quality.
+- `SceneHost` passes the same initial DPR cap to TresJS that the renderer owner
+  uses, so Tres's own size manager cannot overwrite the performance policy with
+  the raw device pixel ratio after readiness.
 - The software-adapter decision reads `WebGPUBackend.device.adapterInfo` after
   initialization. An explicit `isFallbackAdapter: true` reaches the existing
   same-canvas `forceWebGL` recreation policy; absent adapter metadata remains
@@ -52,10 +55,17 @@ under `src/builder/`; the public builds do not import the editor graph.
 - Device-loss recovery retains the replacement renderer under a local owner
   until sizing, post-pipeline creation, loop reattachment and SceneHost bridge
   callbacks complete; a post-swap failure disposes it before terminal failure.
+- WebGLBackend recovery waits for a restored context before same-canvas
+  reinitialization and restores the context once more after Three's explicit
+  old-owner disposal (which invokes `WEBGL_lose_context`).
 - `Experience` subscribes to renderer recovery before its initialization awaits;
   destroyed instances ignore late recovery events. Environment regeneration is
   generate-then-swap, preserving the live PMREM binding if replacement setup
   fails.
+- Bootstrap publishes a small read-only `window.__jlzHost` evidence seam with
+  the actual backend facts and a recovery bit; browser probes consume this
+  typed seam instead of parsing DEV-only console output, and bootstrap cleanup
+  removes it between attempts.
 - TSL post quality is enabled only for a non-low native `WebGPUBackend`.
   `WebGLBackend` is an explicit direct-render parity path and does not update
   unused post uniforms or advertise post processing.

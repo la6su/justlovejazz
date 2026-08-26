@@ -161,6 +161,10 @@ function clearBootstrapStyle(): void {
   bootstrapStyleOwner.clear()
 }
 
+function clearHostProbe(): void {
+  delete window.__jlzHost
+}
+
 function resetBootstrapBindings(): void {
   _bootstrapUnsubs.forEach((unsubscribe) => unsubscribe())
   _bootstrapUnsubs = []
@@ -170,6 +174,7 @@ function resetBootstrapBindings(): void {
   clearReadyEventTimer()
   clearSplashRevealTimer()
   clearBootstrapStyle()
+  clearHostProbe()
   _titleObserver?.disconnect()
   _titleObserver = null
 }
@@ -401,6 +406,18 @@ async function boot(): Promise<BootResult> {
       getCurrentPage,
     )
     experience = runtime
+    const hostProbe: JlzHostProbe = {
+      mode: host.mode,
+      backend: host.backend.backendName,
+      isFallbackAdapter: host.backend.isFallbackAdapter,
+      recovered: false,
+    }
+    window.__jlzHost = hostProbe
+    _bootstrapUnsubs.push(
+      eventBus.on('jlz:renderer-recovered', () => {
+        if (window.__jlzHost === hostProbe) hostProbe.recovered = true
+      }),
+    )
     await runtime.init()
     if (import.meta.env.DEV) {
       ;(window as unknown as { __jlzRuntimeDestroy?: () => void }).__jlzRuntimeDestroy = () => runtime.destroy()
@@ -432,6 +449,7 @@ async function boot(): Promise<BootResult> {
   } catch (e) {
     console.error('[entry-app] bootstrap failed:', e)
     disposeBootstrapAttempt(experience, ui)
+    clearHostProbe()
     clearReadyWatchdog()
     clearReadyEventTimer()
     transitionBootstrap('failed')

@@ -8,6 +8,12 @@ import { jlzAdminPlugin } from './admin/vite-plugin'
 import { publishedPages, validateBuilderDocuments } from './src/builder/documents'
 import { BLOG_ARTICLES } from './src/core/blogPages'
 
+const VUE_FEATURE_FLAGS = {
+  __VUE_OPTIONS_API__: 'false',
+  __VUE_PROD_DEVTOOLS__: 'false',
+  __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: 'false',
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 // TREE-SHAKING (automatic — no extra config needed)
 // ═══════════════════════════════════════════════════════════════════════
@@ -44,11 +50,7 @@ export default defineConfig(() => ({
     // retain only a dead-path WebGLRenderer compatibility symbol.
     alias: [{ find: /^three$/, replacement: resolve(__dirname, 'src/three-webgpu-compat.ts') }],
   },
-  define: {
-    __VUE_OPTIONS_API__: 'false',
-    __VUE_PROD_DEVTOOLS__: 'false',
-    __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: 'false',
-  },
+  define: VUE_FEATURE_FLAGS,
   publicDir: 'public',
   build: {
     target: 'es2023',

@@ -112,6 +112,19 @@ describe('inspectUnifiedBackend (production backend facts)', () => {
     expect(facts).toEqual({ backendName: 'WebGPUBackend', isFallbackAdapter: false })
     expect(planUnifiedBackend(facts)).toEqual({ recreate: false, mode: 'webgpu' })
   })
+
+  it('uses Three backend markers when production minifies constructor names', () => {
+    const facts = inspectUnifiedBackend({
+      isWebGPURenderer: true,
+      backend: {
+        constructor: { name: 'jf' },
+        isWebGPUBackend: true,
+        device: { adapterInfo: { isFallbackAdapter: false } },
+      },
+    })
+
+    expect(facts).toEqual({ backendName: 'WebGPUBackend', isFallbackAdapter: false })
+  })
 })
 
 describe('deviceLostAction (bounded device-loss recovery)', () => {

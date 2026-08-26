@@ -575,29 +575,80 @@ test.describe('JustLoveJazz — Phase 7 persistent scene host', () => {
     const fatal = errors.filter(isFatalError)
     expect(fatal, `Fatal errors:\n${fatal.join('\n')}`).toEqual([])
   })
+
+  test('Tres canvas keeps the renderer DPR cap on high-density viewports', async ({ browser }) => {
+    const context = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      deviceScaleFactor: 3,
+    })
+    const page = await context.newPage()
+    try {
+      await page.goto('/')
+      await expect(page.locator('#jlz-splash-enter')).toHaveClass(/is-ready/, { timeout: 90000 })
+      const metrics = await page.evaluate(() => {
+        const canvas = document.querySelector('canvas.canvas')
+        return {
+          dpr: window.devicePixelRatio,
+          cssWidth: window.innerWidth,
+          bufferWidth: canvas?.width ?? 0,
+        }
+      })
+      expect(metrics.dpr).toBe(3)
+      expect(metrics.bufferWidth).toBeLessThanOrEqual(Math.ceil(metrics.cssWidth * 1.5))
+    } finally {
+      await context.close()
+    }
+  })
 })
 
 test.describe('JustLoveJazz — runtime health', () => {
-  test('DEV probe: WebGLBackend survives a real webglcontextlost handoff', async ({ page }) => {
+  test('WebGLBackend survives a real webglcontextlost handoff', async ({ page }) => {
     test.setTimeout(120000)
     const errors: string[] = []
-    let backendLog = ''
-    let recovered = false
     attachErrorCapture(page, errors)
-    page.on('console', (message) => {
-      if (message.text().startsWith('[entry-app] Phase 7 host ready:')) backendLog = message.text()
-      if (message.text().includes('device-loss recovery complete')) recovered = true
-    })
     await page.goto('/')
     await expect(page.locator('main#spa-content')).toBeAttached({ timeout: 20000 })
     await expect(page.locator('#jlz-splash-enter')).toHaveClass(/is-ready/, { timeout: 90000 })
 
+    await expect
+      .poll(() => page.evaluate(() => window.__jlzHost?.backend ?? null), { timeout: 5000 })
+      .not.toBeNull()
+    const backend = await page.evaluate(() => window.__jlzHost?.backend ?? null)
     test.skip(
-      !backendLog.includes('backend=WebGLBackend'),
-      `WebGLBackend probe skipped: ${backendLog || 'backend was not reported'}`,
+      backend !== 'WebGLBackend',
+      `WebGLBackend probe skipped: ${backend ?? 'backend was not reported'}`,
     )
 
     const probe = await page.evaluate(async () => {
+      // Some headless Chromium builds expose WEBGL_lose_context but do not
+      // restore a usable default framebuffer. Skip those environments before
+      // touching the production canvas; real WebGL browsers still execute the
+      // full recovery handoff below.
+      const preflightCanvas = document.createElement('canvas')
+      const preflightGl = preflightCanvas.getContext('webgl2')
+      const preflightLose = preflightGl?.getExtension('WEBGL_lose_context')
+      if (!preflightGl || !preflightLose) {
+        return { available: false, reason: 'WebGL context restoration preflight is unavailable' }
+      }
+      const preflightRestored = await new Promise<boolean>((resolve) => {
+        let settled = false
+        const finish = (value: boolean) => {
+          if (settled) return
+          settled = true
+          resolve(value)
+        }
+        preflightCanvas.addEventListener('webglcontextlost', (event) => {
+          event.preventDefault()
+          preflightLose.restoreContext()
+        }, { once: true })
+        preflightCanvas.addEventListener('webglcontextrestored', () => finish(true), { once: true })
+        preflightLose.loseContext()
+        window.setTimeout(() => finish(false), 2000)
+      })
+      if (!preflightRestored || preflightGl.getParameter(preflightGl.VIEWPORT) === null) {
+        return { available: false, reason: 'browser cannot restore a usable WebGL framebuffer' }
+      }
+
       const canvas = document.querySelector('canvas.canvas')
       if (!(canvas instanceof HTMLCanvasElement)) {
         return { available: false, reason: 'persistent canvas is unavailable' }
@@ -643,9 +694,9 @@ test.describe('JustLoveJazz — runtime health', () => {
 
     test.skip(!probe.available, `WebGLBackend probe skipped: ${probe.reason}`)
     expect(probe.lost, 'WEBGL_lose_context did not dispatch webglcontextlost').toBe(true)
-    await page.waitForTimeout(3000)
-
-    expect(recovered, 'the production renderer recovery handoff did not complete').toBe(true)
+    await expect
+      .poll(() => page.evaluate(() => window.__jlzHost?.recovered === true), { timeout: 15000 })
+      .toBe(true)
     expect(await page.locator('canvas.canvas').count()).toBe(1)
     const fatal = errors.filter(isFatalError)
     expect(fatal, `Fatal errors:\n${fatal.join('\n')}`).toEqual([])

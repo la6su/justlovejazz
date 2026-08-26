@@ -316,7 +316,7 @@ export class Renderer {
         orig(info)
         return
       }
-      void this.recoverFromDeviceLost().finally(() => orig(info))
+      void this.recoverFromDeviceLost(info as { api?: string }).finally(() => orig(info))
     }
   }
 
@@ -325,7 +325,22 @@ export class Renderer {
    * post pipeline, and re-attach the animation loop. Bounded by
    * MAX_DEVICE_LOST_RECOVERIES (see deviceLostAction).
    */
-  private async recoverFromDeviceLost(): Promise<void> {
+  private async waitForWebGLContextRestore(canvas: HTMLCanvasElement): Promise<void> {
+    await new Promise<void>((resolve) => {
+      let settled = false
+      const finish = () => {
+        if (settled) return
+        settled = true
+        canvas.removeEventListener('webglcontextrestored', finish)
+        clearTimeout(timeout)
+        resolve()
+      }
+      const timeout = window.setTimeout(finish, 5000)
+      canvas.addEventListener('webglcontextrestored', finish, { once: true })
+    })
+  }
+
+  private async recoverFromDeviceLost(info?: { api?: string }): Promise<void> {
     if (this._disposed || this._recovering) return
     this._recovering = true
     const generation = this._lifecycleGeneration
@@ -333,9 +348,36 @@ export class Renderer {
     try {
       this._deviceLostAttempts += 1
       const canvas = this.instance.domElement
+      // WebGLBackend emits device loss from `webglcontextlost`. The browser
+      // must restore that context before a same-canvas renderer can be
+      // initialized again; otherwise the replacement may fail immediately
+      // against the still-lost context. WebGPU loss has no DOM restore event.
+      if (info?.api === 'WebGL') {
+        await this.waitForWebGLContextRestore(canvas)
+        // Chromium may dispatch `webglcontextrestored` before the restored
+        // default framebuffer parameters are queryable again.
+        await new Promise<void>((resolve) => window.setTimeout(resolve, 0))
+      }
+      if (this._disposed || generation !== this._lifecycleGeneration) return
       this.pipeline?.dispose()
       this.pipeline = null
+      // Three's WebGLBackend.dispose() intentionally calls
+      // WEBGL_lose_context. Preserve that explicit lifecycle boundary, but
+      // restore the same canvas context before initializing its replacement;
+      // otherwise the old owner's cleanup leaves the new owner on a lost
+      // context and recovery fails deterministically in Chromium.
+      const restoreContext =
+        info?.api === 'WebGL'
+          ? canvas.getContext('webgl2')?.getExtension('WEBGL_lose_context')
+          : null
       this.instance.dispose()
+      if (restoreContext) {
+        const restoredAfterDispose = this.waitForWebGLContextRestore(canvas)
+        restoreContext.restoreContext()
+        await restoredAfterDispose
+        await new Promise<void>((resolve) => window.setTimeout(resolve, 0))
+      }
+      if (this._disposed || generation !== this._lifecycleGeneration) return
 
       replacement = await createUnifiedWebGPUInstanceAndInit(canvas, this._forceWebGL)
       if (this._disposed || generation !== this._lifecycleGeneration) {

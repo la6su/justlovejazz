@@ -413,10 +413,11 @@ Do not reopen completed migration phases. Current runtime contracts are in
 
 - [ ] **Verify browser device-loss recovery on WebGLBackend** — the e2e probe
       now drives a real `WEBGL_lose_context` event and checks the production
-      recovery handoff, one-canvas ownership and fatal-error boundary. The
-      current headless run skips because it does not report a WebGLBackend;
-      execute this probe on a WebGL-capable browser before accepting recovery
-      as integration-proven.
+      recovery handoff, one-canvas ownership and fatal-error boundary through
+      the production `window.__jlzHost` evidence seam. Headless Chromium now
+      preflights context restoration and skips when its restored framebuffer is
+      unusable; execute the probe on a WebGL-capable browser before accepting
+      recovery as integration-proven.
 
 - [x] **Harden async route-owner cancellation** — `ExperienceUI` route-change
       promises now use a shared generation/page predicate, so late Works/Contact
