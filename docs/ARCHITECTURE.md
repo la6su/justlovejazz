@@ -83,6 +83,9 @@ under `src/builder/`; the public builds do not import the editor graph.
   `RenderPipeline` owner: it disposes the partial graph and uses direct
   rendering thereafter, so the demand scheduler cannot retry the same failure
   indefinitely. A renderer recovery creates a fresh post owner.
+- `WebGPUPostPipeline` retains the TSL scene `PassNode` separately from the
+  `RenderPipeline` because the pass owns its own render target. Rebuild,
+  construction failure and teardown dispose that pass exactly once.
 - Route resources, listeners, timers, async work and GPU allocations have one
   owner and one terminal cleanup path.
 - `RouteTransition` owns both cover and reveal timers. Cancellation clears the

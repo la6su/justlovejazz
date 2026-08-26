@@ -10,6 +10,10 @@
   to a direct-render fallback instead of retrying graph construction on every
   demand frame and preventing the scheduler from settling.
 
+- The WebGPU post owner now retains and disposes the TSL scene `PassNode` on
+  rebuild, graph-construction failure and teardown, releasing its render target
+  instead of leaving a detached GPU allocation behind.
+
 - `Experience` now observes live `prefers-reduced-motion` changes instead of
   caching the preference only at startup. Enabling reduction cancels ambient
   breathing and settles the scheduler; disabling it raises one typed catch-up

@@ -982,6 +982,18 @@ followed by direct draws, with tone mapping restored; full unit, build, budget
 and serial E2E gates pass. Rollback: remove the terminal post-failure state and
 restore the previous unbounded graph retry behavior.
 
+#### Phase 10 TSL scene-pass ownership — 2026-08-26
+
+`PassNode` creates and owns the render target used to capture the scene before
+the native WebGPU post graph. `WebGPUPostPipeline` now retains that node and
+disposes it before rebuilds, when graph construction throws, and during owner
+teardown. This closes the resource path that `RenderPipeline.dispose()` does
+not cover itself.
+
+Acceptance: focused post-owner lifecycle coverage proves exactly-once scene
+pass disposal; type checks, production build, budget and serial E2E gates pass.
+Rollback: restore the prior untracked scene pass ownership.
+
 #### Phase 5/7 StoryController source bridge — 2026-08-25
 
 `src/core/storyController.ts` is now the runtime owner that translates a

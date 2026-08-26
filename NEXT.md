@@ -48,6 +48,11 @@ Do not reopen completed migration phases. Current runtime contracts are in
   disables only the failing post owner and falls back to direct rendering,
   preventing repeated graph construction from keeping demand alive forever.
 
+- [x] **Own TSL scene-pass render targets** — `WebGPUPostPipeline` retains the
+  `PassNode` created for the scene capture and disposes it on rebuild, graph
+  failure and teardown, preventing detached render targets from surviving a
+  route change or renderer recovery.
+
 - [x] **Align WebGLBackend quality state** — direct-render fallback no longer
   advertises or updates the unused TSL post graph; native WebGPU retains the
   crossfade and post parameter path.

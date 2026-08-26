@@ -49,6 +49,7 @@ export class WebGPUPostPipeline {
   private _scene: Scene
   private _camera: Camera
   private _needsBuild = true
+  private _scenePass: ReturnType<typeof tslPass> | null = null
 
   private _bloomStrength = uniform(0)
   private _bloomRadius = uniform(0)
@@ -121,9 +122,13 @@ export class WebGPUPostPipeline {
       }
     }
 
+    this._disposeScenePass()
+
     // Scene pass: render scene to texture. PassNode clears with
     // scene.background automatically (Background.js handles this).
     const scenePass = tslPass(this._scene, this._camera) as any
+    this._scenePass = scenePass
+    try {
     const sceneColor = scenePass.getTextureNode()
 
     // ════════════════════════════════════════════════════════════════════
@@ -282,6 +287,19 @@ export class WebGPUPostPipeline {
     // renderOutput(color, NoToneMapping, SRGBColorSpace) which does:
     //   1. toneMapping (NoToneMapping → no-op)
     //   2. workingToColorSpace(SRGB) → exact sRGBTransferOETF
+    } catch (error) {
+      // PassNode owns a render target independently of the TSL pipeline. It
+      // must be released even when graph construction throws before the
+      // RenderPipeline instance is assigned.
+      this._disposeScenePass()
+      throw error
+    }
+  }
+
+  private _disposeScenePass(): void {
+    const pass = this._scenePass
+    this._scenePass = null
+    pass?.dispose()
   }
 
   resize(): void {
@@ -297,5 +315,6 @@ export class WebGPUPostPipeline {
       }
     }
     this._pipeline = null
+    this._disposeScenePass()
   }
 }
