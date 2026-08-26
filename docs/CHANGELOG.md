@@ -6,6 +6,10 @@
   replacement before forced-WebGL recreation; a failed second initialization
   no longer double-disposes the first replacement.
 
+- A failed native-WebGPU TSL post graph now transitions its `RenderPipeline`
+  to a direct-render fallback instead of retrying graph construction on every
+  demand frame and preventing the scheduler from settling.
+
 - `Experience` now observes live `prefers-reduced-motion` changes instead of
   caching the preference only at startup. Enabling reduction cancels ambient
   breathing and settles the scheduler; disabling it raises one typed catch-up

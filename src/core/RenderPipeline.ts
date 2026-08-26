@@ -61,6 +61,8 @@ export class RenderPipeline {
 
   private _renderer!: WebGPURenderer
   private _webgpuPipeline: WebGPUPostPipeline | null = null
+  /** Terminal for this pipeline instance: avoid retrying a broken TSL graph every frame. */
+  private _webgpuPostFailed = false
 
   // PERF-11: the WebGPU params object + tuple arrays are mutated in place each
   // frame (updateParams copies into the TSL uniform nodes) — no per-frame
@@ -154,35 +156,48 @@ export class RenderPipeline {
 
     if (isRealWebGPU) {
       // WebGPU native: TSL RenderPipeline + PassNode + BloomNode + vignette/grain Fn.
-      if (!this._webgpuPipeline) {
-        this._webgpuPipeline = WebGPUPostPipeline.create(this._renderer, scene, camera)
+      if (!this._webgpuPostFailed) {
+        try {
+          if (!this._webgpuPipeline) {
+            this._webgpuPipeline = WebGPUPostPipeline.create(this._renderer, scene, camera)
+          }
+          this._webgpuPipeline.setScene(scene, camera)
+          // PERF-11 fix: mutate cached params object instead of allocating a new
+          // one + 2 arrays every frame. gradeShadows/Highlights are tuple arrays
+          // reused in place (updateParams copies into uniforms).
+          const p = this._webgpuParamsCache
+          p.bloom = this._params.bloom
+          p.bloomRadius = this._params.bloomRadius
+          p.bloomThreshold = this._params.bloomThreshold
+          p.vignette = this._params.vignette
+          p.grain = this._params.grain
+          p.chromatic = this._params.chromatic
+          p.refract = this._sectionRefract
+          p.border = this._sectionBorder
+          p.gradeShadows[0] = this._sectionShadows.x
+          p.gradeShadows[1] = this._sectionShadows.y
+          p.gradeShadows[2] = this._sectionShadows.z
+          p.gradeHighlights[0] = this._sectionHighlights.x
+          p.gradeHighlights[1] = this._sectionHighlights.y
+          p.gradeHighlights[2] = this._sectionHighlights.z
+          this._webgpuPipeline.updateParams(p)
+          // Disable renderer tone mapping during TSL pipeline render — the TSL
+          // graph applies ACES manually (step 6). outputColorTransform=true
+          // (default) on the pipeline applies renderOutput() which uses
+          // renderer.toneMapping — we set it to NoToneMapping so renderOutput
+          // only applies sRGB encode (exact sRGBTransferOETF), no tone mapping.
+          withNoToneMapping(this._renderer, () => this._webgpuPipeline!.render())
+          return
+        } catch {
+          // A graph build failure is terminal for this pipeline owner. Retry on
+          // every demand frame would keep the scheduler alive forever; direct
+          // WebGPU rendering is the bounded visual fallback for this owner.
+          this._webgpuPostFailed = true
+          this._webgpuPipeline?.dispose()
+          this._webgpuPipeline = null
+        }
       }
-      this._webgpuPipeline.setScene(scene, camera)
-      // PERF-11 fix: mutate cached params object instead of allocating a new
-      // one + 2 arrays every frame. gradeShadows/Highlights are tuple arrays
-      // reused in place (updateParams copies into uniforms).
-      const p = this._webgpuParamsCache
-      p.bloom = this._params.bloom
-      p.bloomRadius = this._params.bloomRadius
-      p.bloomThreshold = this._params.bloomThreshold
-      p.vignette = this._params.vignette
-      p.grain = this._params.grain
-      p.chromatic = this._params.chromatic
-      p.refract = this._sectionRefract
-      p.border = this._sectionBorder
-      p.gradeShadows[0] = this._sectionShadows.x
-      p.gradeShadows[1] = this._sectionShadows.y
-      p.gradeShadows[2] = this._sectionShadows.z
-      p.gradeHighlights[0] = this._sectionHighlights.x
-      p.gradeHighlights[1] = this._sectionHighlights.y
-      p.gradeHighlights[2] = this._sectionHighlights.z
-      this._webgpuPipeline.updateParams(p)
-      // Disable renderer tone mapping during TSL pipeline render — the TSL
-      // graph applies ACES manually (step 6). outputColorTransform=true
-      // (default) on the pipeline applies renderOutput() which uses
-      // renderer.toneMapping — we set it to NoToneMapping so renderOutput
-      // only applies sRGB encode (exact sRGBTransferOETF), no tone mapping.
-      withNoToneMapping(this._renderer, () => this._webgpuPipeline!.render())
+      this._renderer.render(scene, camera)
       return
     }
 
@@ -211,6 +226,7 @@ export class RenderPipeline {
     // WebGPU TSL pipeline cleanup.
     this._webgpuPipeline?.dispose()
     this._webgpuPipeline = null
+    this._webgpuPostFailed = true
 
     // WebGPU: drop native pipeline + uniform node refs. The native
     // RenderPipeline does not expose an explicit dispose in r184 — GPU

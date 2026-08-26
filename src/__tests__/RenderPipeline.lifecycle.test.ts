@@ -6,13 +6,14 @@ class WebGPUBackend {}
 class WebGLBackend {}
 
 describe('RenderPipeline failure lifecycle', () => {
-  it('restores renderer tone mapping when the TSL pipeline throws', () => {
+  it('disables a failing TSL graph and falls back without retrying it', () => {
     const render = vi.fn(() => {
       throw new Error('device lost during post render')
     })
     const renderer = {
       backend: new WebGPUBackend(),
       toneMapping: THREE.ACESFilmicToneMapping,
+      render: vi.fn(),
     }
     const pipeline = Object.assign(Object.create(RenderPipeline.prototype), {
       _renderer: renderer,
@@ -20,6 +21,7 @@ describe('RenderPipeline failure lifecycle', () => {
         setScene: vi.fn(),
         updateParams: vi.fn(),
         render,
+        dispose: vi.fn(),
       },
       _params: {
         bloom: 0.4,
@@ -47,11 +49,16 @@ describe('RenderPipeline failure lifecycle', () => {
       },
     }) as RenderPipeline
 
-    expect(() => pipeline.render(new THREE.Scene(), new THREE.PerspectiveCamera())).toThrow(
-      'device lost during post render',
-    )
+    const scene = new THREE.Scene()
+    const camera = new THREE.PerspectiveCamera()
+    expect(() => pipeline.render(scene, camera)).not.toThrow()
     expect(renderer.toneMapping).toBe(THREE.ACESFilmicToneMapping)
     expect(render).toHaveBeenCalledOnce()
+    expect(renderer.render).toHaveBeenCalledOnce()
+
+    pipeline.render(scene, camera)
+    expect(render).toHaveBeenCalledOnce()
+    expect(renderer.render).toHaveBeenCalledTimes(2)
   })
 
   it('restores scene fog after a WebGLBackend fallback draw fails', () => {

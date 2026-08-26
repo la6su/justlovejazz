@@ -44,6 +44,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
   recreation no longer reaches the catch cleanup with an already-disposed
   software-adapter replacement.
 
+- [x] **Bound TSL graph-build failure** — a native WebGPU post-graph failure
+  disables only the failing post owner and falls back to direct rendering,
+  preventing repeated graph construction from keeping demand alive forever.
+
 - [x] **Align WebGLBackend quality state** — direct-render fallback no longer
   advertises or updates the unused TSL post graph; native WebGPU retains the
   crossfade and post parameter path.

@@ -969,6 +969,19 @@ Acceptance: focused Renderer device-loss lifecycle tests, type checks and
 `git diff --check` pass. Rollback: restore the prior replacement reference
 until the next recovery hardening slice.
 
+#### Phase 10 bounded TSL graph failure fallback — 2026-08-26
+
+Native WebGPU post-graph construction failures now disable the current
+`RenderPipeline` post owner after the first exception, dispose its partial
+graph, and draw directly thereafter. This keeps the scheduler bounded: a
+failed graph cannot retrigger on every demand frame. A later renderer recovery
+creates a fresh pipeline owner and may retry on the new backend instance.
+
+Acceptance: RenderPipeline failure lifecycle coverage proves one post attempt
+followed by direct draws, with tone mapping restored; full unit, build, budget
+and serial E2E gates pass. Rollback: remove the terminal post-failure state and
+restore the previous unbounded graph retry behavior.
+
 #### Phase 5/7 StoryController source bridge — 2026-08-25
 
 `src/core/storyController.ts` is now the runtime owner that translates a

@@ -79,6 +79,10 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `EnvSphere.changeSection()` snaps its palette when reduced motion is active;
   normal motion retains the authored interpolation, while reduced-motion
   teardown cannot leave the background between section colors.
+- A failed native-WebGPU TSL post-graph build is terminal for that
+  `RenderPipeline` owner: it disposes the partial graph and uses direct
+  rendering thereafter, so the demand scheduler cannot retry the same failure
+  indefinitely. A renderer recovery creates a fresh post owner.
 - Route resources, listeners, timers, async work and GPU allocations have one
   owner and one terminal cleanup path.
 - `RouteTransition` owns both cover and reveal timers. Cancellation clears the
