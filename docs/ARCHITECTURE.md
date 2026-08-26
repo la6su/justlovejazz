@@ -149,6 +149,9 @@ under `src/builder/`; the public builds do not import the editor graph.
   the WebGPU post graph with an intermediate authored intensity.
 - `Experience` forwards the exact live preference boolean to the post owner
   before settling the shared scheduler; the integration is regression-tested.
+- `SceneCoordinator.update()` snapshots the injected route page once per
+  synchronous frame; route changes still arrive through the next frame while
+  the active owner branches avoid repeated page reads.
 - `SceneCoordinator.updateTransform()` snapshots the current route page and
   carousel owner once per synchronous pass before applying six-group visibility;
   the getter boundary remains live across route transitions without repeating

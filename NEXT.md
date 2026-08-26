@@ -231,6 +231,11 @@ Do not reopen completed migration phases. Current runtime contracts are in
       now locks the exact boolean handoff from the live preference observer to
       the renderer post owner.
 
+- [x] **Snapshot SceneCoordinator route state per update pass** — the active
+      world update now reads the injected page identity once instead of
+      repeating it across owner branches; navigation remains live on the next
+      synchronous frame.
+
 - [x] **Snapshot SceneCoordinator route owners per transform pass** — the
       six-group visibility loop now reuses one route page and carousel owner
       read, preserving the live getter boundary while removing repeated reads

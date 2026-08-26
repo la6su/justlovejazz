@@ -301,6 +301,10 @@ export class SceneCoordinator {
   }
 
   public update(deltaTime: number, needsRender: boolean = true): void {
+    // Route identity is stable for this synchronous frame. Snapshot it once
+    // so the owner path does not repeat the live page getter at each branch;
+    // the getter remains authoritative on the next frame after navigation.
+    const page = this.page()
     // EnvSphere manages the visible background.
     // Phase 8 slice 3: forwarded to the Experience-owned EnvSphere owner.
     this.owners.envSphere()?.update(deltaTime)
@@ -320,7 +324,7 @@ export class SceneCoordinator {
       // animation clock without a frame. Otherwise a reveal can complete in
       // invisible time and the next demand frame jumps to its end state.
       const worksStage = this.owners.worksPlaneStage()
-      if (worksStage && this.page() === 'works') {
+      if (worksStage && page === 'works') {
         worksStage.setActive(true, this.worksPlaneStageSection)
       }
       return
@@ -328,7 +332,7 @@ export class SceneCoordinator {
 
     const worksStage = this.owners.worksPlaneStage()
     if (worksStage) {
-      worksStage.setActive(this.page() === 'works', this.worksPlaneStageSection)
+      worksStage.setActive(page === 'works', this.worksPlaneStageSection)
       worksStage.update(deltaTime)
     }
     this.contactTypographyStage?.update(deltaTime)
@@ -337,7 +341,7 @@ export class SceneCoordinator {
     if (!this.isReducedMotion) {
       const baku = this.owners.baku()
       if (baku?.visible) baku.update(deltaTime)
-      const isStandaloneWorks = this.page() === 'works'
+      const isStandaloneWorks = page === 'works'
       const isWorksStoryFrame = this._currentSectionIndex === 3
       const trail = this.owners.drawTrail()
       if (trail && this._camera && (isStandaloneWorks || isWorksStoryFrame)) {
@@ -362,10 +366,10 @@ export class SceneCoordinator {
         // Works becomes a pure media field once the cube-face handoff settles:
         // only the planes and the existing particle field remain visible.
         baku.visible =
-          this.page() !== 'lab' &&
-          this.page() !== 'works' &&
-          !(this.page() === 'contact' && (this.owners.contactCyprusStage()?.isActive ?? false)) &&
-          (this.page() !== 'home' || !(carousel.isActive && carousel.morphProgress > 0.82))
+          page !== 'lab' &&
+          page !== 'works' &&
+          !(page === 'contact' && (this.owners.contactCyprusStage()?.isActive ?? false)) &&
+          (page !== 'home' || !(carousel.isActive && carousel.morphProgress > 0.82))
       }
     }
     if (!this.isReducedMotion) {
