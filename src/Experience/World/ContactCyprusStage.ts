@@ -30,6 +30,7 @@ export class ContactCyprusStage extends THREE.Group {
   private _prewarmFramePending = false
   private _active = false
   private _disposed = false
+  private _reducedMotion = prefersReducedMotion()
   private _cameraPosition = new THREE.Vector3()
 
   constructor() {
@@ -141,7 +142,7 @@ export class ContactCyprusStage extends THREE.Group {
     if (active) this._prewarmFramePending = false
     this.setPresentation(this._fadeFrom, this._scaleFrom)
     if (active && this._model) this.visible = true
-    if (prefersReducedMotion()) {
+    if (this._reducedMotion) {
       this._fadeElapsed = FADE_DURATION_SECONDS
       this.setPresentation(this._targetOpacity, this._targetScale)
     }
@@ -149,7 +150,9 @@ export class ContactCyprusStage extends THREE.Group {
 
   /** Settle an active fade/scale transition on a live motion-policy change. */
   setReducedMotion(reduced: boolean): void {
-    if (!reduced || this._disposed) return
+    if (this._disposed) return
+    this._reducedMotion = reduced
+    if (!reduced) return
     this._fadeElapsed = FADE_DURATION_SECONDS
     this._prewarmFramePending = false
     this.setPresentation(this._targetOpacity, this._targetScale)
@@ -191,7 +194,7 @@ export class ContactCyprusStage extends THREE.Group {
   update(dt: number): void {
     if (this._disposed || !this._model) return
 
-    if (prefersReducedMotion()) {
+    if (this._reducedMotion) {
       this._fadeElapsed = FADE_DURATION_SECONDS
       this.setPresentation(this._targetOpacity, this._targetScale)
     } else if (this.isAnimating) {

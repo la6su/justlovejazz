@@ -105,6 +105,8 @@ under `src/builder/`; the public builds do not import the editor graph.
   live reduced-motion preference changes, before scheduler settlement.
 - `ContactCyprusStage` settles its route-local fade and scale synchronously on
   the same live preference change; no hidden route owner retains render demand.
+  Its frame path reads an owner-local motion snapshot instead of querying
+  `matchMedia()` while the lazy model is active.
 - `Camera` settles persistent section FOV framing while cancelling transient
   pulse/shake and cursor displacement on the same live preference change.
 - `WorksPlaneStage` snapshots reduced-motion state once per media-query change;

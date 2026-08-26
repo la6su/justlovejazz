@@ -162,6 +162,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
       the per-frame orbit now read the owner-local policy snapshot; live
       `setReducedMotion()` updates remain the single reconciliation boundary.
 
+- [x] **Cache Contact Cyprus motion policy** — the lazy Agros fade/scale frame
+      path now reads an owner-local snapshot while live preference changes
+      continue to settle the route owner synchronously.
+
 - [x] **Pool SceneCoordinator transform results** — per-frame camera/world
       metadata now reuses one owner-scoped result graph.
 
