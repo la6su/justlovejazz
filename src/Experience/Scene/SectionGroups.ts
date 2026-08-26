@@ -144,7 +144,20 @@ export class SectionGroups {
         gallery.traverse((o) => galleryDescendants.add(o))
       }
       gallery?.dispose?.()
-      disposeSceneObjectResources(group, galleryDescendants)
+      // JunniParticles owns a terminal lifecycle flag and removes itself from
+      // the graph. Dispose it before the generic sweep and skip its subtree so
+      // geometry/material resources are not released twice.
+      const particles = group.userData.particles as THREE.Object3D & {
+        dispose?: () => void
+      }
+      const particleDescendants = new Set<THREE.Object3D>()
+      if (particles instanceof THREE.Object3D) {
+        particleDescendants.add(particles)
+        particles.traverse((object) => particleDescendants.add(object))
+        particles.dispose?.()
+      }
+      const ownedSubtrees = new Set([...galleryDescendants, ...particleDescendants])
+      disposeSceneObjectResources(group, ownedSubtrees)
       group.parent?.remove(group)
     })
     this.groups.length = 0

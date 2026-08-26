@@ -263,6 +263,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
       tracks camera position/quaternion and only reapplies its camera-local
       transform while the pose or authored fade/prewarm state changes.
 
+- [x] **Give SectionGroups particle owners terminal teardown** — `JunniParticles`
+      now disposes itself before the generic subtree sweep, preventing late
+      updates and duplicate geometry/material disposal.
+
 - [x] **Cache CinematicNav scroll policy** — programmatic section navigation
       reads the owner-local reduced-motion snapshot instead of re-querying the
       media preference on every scroll request.
