@@ -1,17 +1,15 @@
 # Architecture
 
 This document records system boundaries that are easy to miss when reading one module. Source, configuration and tests describe current
-implementation details. The
-[completed migration archive](archive/MIGRATION_VUE_TRES.md) records
-sequencing history; [ADRs](adr/README.md) record durable decisions.
+implementation details. The [completed migration archive](archive/MIGRATION_VUE_TRES.md)
+records sequencing history; [ADRs](adr/README.md) record durable decisions.
 
 ## System overview
 
 The production application is Vue 3, Vue Router and TresJS over a single
 Three.js `WebGPURenderer` (the only renderer class the app constructs). The
-The [completed migration archive](archive/MIGRATION_VUE_TRES.md) records the
-phased transition that shipped this topology and the [ADRs](adr/README.md)
-record the decisions.
+completed migration archive records the phased transition that shipped this
+topology and the [ADRs](adr/README.md) record the decisions.
 
 ```text
 index.html inline splash (classic script, outside the initial graph)

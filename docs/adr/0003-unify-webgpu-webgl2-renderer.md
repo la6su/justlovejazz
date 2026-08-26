@@ -1,5 +1,9 @@
 # ADR 0003: Unify WebGPU and WebGL2 under WebGPURenderer
 
+- Superseded by [ADR 0010](0010-close-unified-renderer-decision.md). This file
+  remains an immutable historical proposal and is not the current runtime
+  contract.
+
 - Status: Proposed; blocked by the representative renderer gate
 - Date: 2026-08-15
 

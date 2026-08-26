@@ -42,7 +42,7 @@ production build.
 | Phase 1 toolchain            |     pending |  pending |     pending |           pending |            pending | inert scaffold       |
 | Phase 5 Vue shell            |     pending |  pending |         n/a |           pending |            pending | native scene         |
 | Phase 7 Tres root            |     pending |  pending |     pending |           pending |            pending | legacy world adapter |
-| Phase 10 cutover             |      2.70 kB |      n/a |        n/a |       298.42 kB |             n/a | no legacy paths      |
+| Phase 10 cutover             |     2.70 kB |      n/a |         n/a |         298.42 kB |                n/a | no legacy paths      |
 
 The initial route gzip is populated from the first clean production build of
 the current dependency set (commit `6f02896`, 2026-08-21, build identifiers in
@@ -168,12 +168,12 @@ for each renderer milestone. Before Phase 6 acceptance the forced fallback is
 the current classic WebGL2 renderer; afterwards it is
 `WebGPURenderer({ forceWebGL: true })` and is labelled `WebGLBackend`.
 
-| Milestone        | Backend | Route/state               |     p50 |     p95 | Settled draws | Resource soak      | Device/context                                                                                                         |
-| ---------------- | ------- | ------------------------- | ------: | ------: | ------------: | ------------------ | ---------------------------------------------------------------------------------------------------------------------- |
-| Phase 0 freeze   | partial | automatic and forced home |     n/a |     n/a |           n/a | owner-visible pass | `20c4d63`, desktop RTX 4060 Ti and Android DPR 2.75 WebGPU confirmed; teardown listener/timer inventory pending        |
+| Milestone        | Backend | Route/state               |     p50 |     p95 | Settled draws | Resource soak      | Device/context                                                                                                  |
+| ---------------- | ------- | ------------------------- | ------: | ------: | ------------: | ------------------ | --------------------------------------------------------------------------------------------------------------- |
+| Phase 0 freeze   | partial | automatic and forced home |     n/a |     n/a |           n/a | owner-visible pass | `20c4d63`, desktop RTX 4060 Ti and Android DPR 2.75 WebGPU confirmed; teardown listener/timer inventory pending |
 | Phase 2 accepted | pass    | representative full graph |   16.70 |   16.80 |             0 | plateau + teardown | Android `22101320G`, desktop RTX 4060 Ti, WebGPUBackend and forced WebGLBackend; resize/DPR evidence 2026-08-25 |
-| Phase 6 renderer | pending | full route matrix         | pending | pending |    0 required | 20 routes          | record                                                                                                                 |
-| Phase 10 cutover | pass    | full route matrix         |     n/a |     n/a |    0 required | 20 routes          | `2026-08-25T09-32-03-390Z-report.json`, allPassed=true                                                                |
+| Phase 6 renderer | pending | full route matrix         | pending | pending |    0 required | 20 routes          | record                                                                                                          |
+| Phase 10 cutover | pass    | full route matrix         |     n/a |     n/a |    0 required | 20 routes          | `2026-08-25T09-32-03-390Z-report.json`, allPassed=true                                                          |
 
 Resource soak tracks canvas/context count, listeners, timers, decoded assets,
 textures, geometries, programs/pipelines, retained route scopes, JS heap and GPU
@@ -203,7 +203,13 @@ loop on settle-able routes. `rendererPrograms` is explicitly unavailable from
 this backend and `heapUsed` is flat in headless Chromium; both remain recorded
 as non-gating noisy metrics rather than being treated as invented proof.
 
-### Phase 0 renderer observation — 2026-08-15
+### Historical Phase 0 renderer observation — 2026-08-15 (superseded)
+
+The following Phase 0 entries preserve pre-cutover evidence. They describe the
+then-supported classic `WebGLRenderer` auxiliary path and must not be read as
+the current architecture. Current renderer behavior and acceptance evidence are
+recorded in [ADR 0010](adr/0010-close-unified-renderer-decision.md),
+`docs/ARCHITECTURE.md` and the Phase 10 soak report above.
 
 At commit `6a72b30`, the 1280×720 DPR 1 in-app-browser run did not expose a
 hardware WebGPU adapter. Automatic startup initialized `WebGPURenderer` with
@@ -218,7 +224,7 @@ ignored by the inline handler. This evidence does not validate a hardware
 WebGPU path, real-mobile DPR, frame timing or resource soak; those remain Phase
 0 requirements.
 
-### Phase 0 hardware WebGPU observation — 2026-08-15
+### Historical Phase 0 hardware WebGPU observation — 2026-08-15 (superseded)
 
 At commit `7f9db89`, Google Chrome `151.0.7922.108` in the Ubuntu Sway desktop
 session exposed a non-fallback WebGPU adapter on the local NVIDIA RTX 4060 Ti
@@ -543,7 +549,7 @@ device; mount-time physical DPR (renderer pixel ratio 2.00 on the Android
 device `22101320G`) was already admitted by the 2026-08-15 physical mobile
 slice.
 
-### Phase 0 physical mobile WebGPU observation — 2026-08-15
+### Historical Phase 0 physical mobile WebGPU observation — 2026-08-15 (superseded)
 
 The same local development build was opened over an ADB USB reverse tunnel on
 a physical Android 14 device (`22101320G`) in Chrome `151.0.7922.137`. The
@@ -660,6 +666,7 @@ place, so the protocol is executable end-to-end.
 - Dependency upgrades include build-size and both-backend frame comparisons.
 - Budgets change only through a separately reviewed architecture decision with
   product and hardware evidence.
+
 ### Phase 2 physical mobile resize/DPR gate — 2026-08-25
 
 The current `tres-vue-dev` build was served from pct104 through an SSH + ADB

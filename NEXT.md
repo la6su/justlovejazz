@@ -368,6 +368,16 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Complete documentation reconciliation** — finish the remaining
       README/architecture wording review, keep evidence append-only and ensure
       agent-operation guidance stays separate from project contracts.
+
+- [x] **Reconcile current Vue builder and renderer ADRs** — `PAGE_BUILDER.md`
+      now describes the shipped Vue editor and EN/RU registry, ADR 0003 is
+      explicitly superseded by ADR 0010, and historical classic-renderer
+      measurements are marked as superseded in `PERFORMANCE_BASELINE.md`.
+
+- [ ] **Profile the next runtime owner on real backends** — capture a bounded
+      WebGPU/WebGLBackend frame trace and draw/resource counters before changing
+      an owner whose motion is intentional; headless unit coverage alone is not
+      sufficient evidence for the next performance slice.
 - [x] **Harden async route-owner cancellation** — `ExperienceUI` route-change
       promises now use a shared generation/page predicate, so late Works/Contact
       initializers cannot raise demand or touch a stage after a fast route exit;

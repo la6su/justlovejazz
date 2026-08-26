@@ -1,8 +1,8 @@
 # UIkit Page Builder
 
-This document describes the current implementation and its planned Vue
-ownership. The versioned schema, validation and compiler remain framework-free;
-only the development editor and public rendering adapters migrate.
+This document describes the current implementation and ownership. The
+versioned schema, validation and compiler remain framework-free; the
+development editor and public rendering adapters use the same Vue registry.
 
 The Page Builder is a project-owned development tool inspired by the workflow
 of visual theme builders. It does not embed or redistribute the supplied
@@ -14,7 +14,7 @@ remain the rendering authority.
 ```text
 admin/                         development application; never a build input
   index.html                   separate /admin/ document
-  main.ts + admin.less         editor, preview and inspector
+  main.ts + admin.less         Vue editor, preview and inspector
   vite-plugin.ts               fixed-path save and Less compilation API
 
 src/builder/                   production-safe shared core
@@ -31,12 +31,12 @@ src/assets/builder/
   components.generated.less    optional UIkit imports used by saved documents
 ```
 
-The target boundary replaces `admin/main.ts` with a separate dev-only Vue
-application entry and adds a Vue renderer for the same
-`src/builder/schema.ts` document. It does not create a second schema, catalogue,
-validator or compiler. Public routes and the editor preview must render through
-the same typed element registry so a component is implemented once and tested
-in both contexts.
+`admin/main.ts` is a separate dev-only Vue application entry and
+`src/builder/vue/` renders the same `src/builder/schema.ts` document used by
+the public publisher. The boundary does not create a second schema, catalogue,
+validator or compiler. Public routes and the editor preview render through the
+same typed element registry, so an element is implemented once and tested in
+both contexts.
 
 `vite.config.ts` installs the save API with `apply: 'serve'`. The production
 input list does not contain `admin/index.html`, so inspector code, editing
@@ -117,29 +117,23 @@ validated registry output for approved `/p/<slug>` artifacts. The string
 test/reference adapter; it is not a public route fallback and must not return
 to the runtime graph.
 
-## Vue migration sequence
+## Vue ownership and guardrails
 
-The sequence below records the completed boundary and its remaining guardrails;
-it is historical context, not an open implementation checklist.
+The Vue editor boundary is complete. The following guardrails are the current
+contract, not an open migration checklist:
 
-1. Freeze schema v2 fixtures and compiler output before changing the editor.
-2. Extract framework-neutral commands for add, move, duplicate, delete,
-   undo/redo and validation; keep the existing document contract unchanged.
-3. Build the Vue admin shell as a separate dev-only entry and reuse those
-   commands.
-4. Add one typed Vue element registry used by editor preview and public route
-   rendering. Keep the static publishing wrapper separate from the runtime
-   registry.
-5. Move multi-route publishing and SSG only after Vue Router owns the public
-   route manifest.
-6. Keep only the framework-neutral string adapter needed by tests/reference
-   fixtures; delete any runtime caller or compatibility fallback when found.
-
-The builder remains excluded from the initial public graph. Vue Devtools,
-inspector state, drag-and-drop libraries and editor-only UIkit components must
-not enter production chunks. A new dependency is accepted only when native
-browser/Vue primitives cannot meet the requirement and its isolated bundle
-cost is measured.
+1. Freeze schema v2 fixtures and compiler output when changing the editor.
+2. Keep commands, validation, schema and compilation framework-neutral; Vue
+   consumes them rather than duplicating them.
+3. Keep one typed Vue element registry for editor preview and public route
+   rendering, with the static publishing wrapper separate from runtime state.
+4. Keep EN/RU locale selection in the shared typed locale port. RU values fall
+   back to EN at render time; do not introduce a second editor locale store.
+5. Keep the builder excluded from the initial public graph. Editor-only
+   devtools, inspector state and optional UIkit components must not enter
+   production chunks.
+6. Accept new editor dependencies only when native Vue/browser primitives do
+   not meet the requirement and the isolated bundle cost is measured.
 
 See [`archive/MIGRATION_VUE_TRES.md`](archive/MIGRATION_VUE_TRES.md) for
 historical phase gates and
