@@ -25,4 +25,17 @@ describe('SplashCube reduced-motion transitions', () => {
     expect(cube.isRotating).toBe(true)
     cube.dispose()
   })
+
+  it('does not advance an unowned idle mesh rotation on demand frames', () => {
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }))
+    const cube = new SplashCube()
+    const mesh = cube.children[0]
+
+    cube.update(1)
+
+    expect(mesh?.rotation.x).toBe(0)
+    expect(mesh?.rotation.y).toBe(0)
+    expect(mesh?.rotation.z).toBe(0)
+    cube.dispose()
+  })
 })

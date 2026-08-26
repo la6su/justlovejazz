@@ -387,11 +387,6 @@ export class SplashCube extends THREE.Mesh {
     // Boosted scale pulse for clearer click feedback.
     const openerScale = 1 + this.openerProgress * 0.4
     this.cubeMesh.scale.setScalar(openerScale)
-    this.cubeMesh.rotation.set(
-      Math.sin(this.time * 0.73) * 0.035,
-      Math.sin(this.time * 0.51) * 0.05,
-      Math.sin(this.time * 0.66) * 0.025,
-    )
 
     // (PlayButton3D update removed — dead render path deleted)
     // ── Material color blend ──

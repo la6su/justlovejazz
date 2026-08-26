@@ -24,6 +24,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
   glyph stage now settles or resumes its authored motion when the OS setting
   changes, without requiring route re-entry.
 
+- [x] **Remove orphaned idle cube wobble** — deleted a time-based transform that
+  was updated only on unrelated demand frames and was not owned by any activity
+  signal; authored jelly, face and opener reactions remain unchanged.
+
 - [x] **Align WebGLBackend quality state** — direct-render fallback no longer
   advertises or updates the unused TSL post graph; native WebGPU retains the
   crossfade and post parameter path.

@@ -15,6 +15,11 @@
   glyphs settle immediately when reduction is enabled and resume authored
   motion after it is disabled without a route re-entry.
 
+- Removed an unowned idle sine rotation from `SplashCube`; demand frames no
+  longer advance a decorative transform that was absent from the activity
+  contract and could jump after settled idle. Jelly, face and opener reactions
+  retain their authored motion.
+
 - Contact Cyprus lazy initialization now has a single request-owned prewarm
   continuation; stale entry-route promises cannot prewarm a newer stage or
   schedule an unnecessary render frame.

@@ -72,6 +72,10 @@ under `src/builder/`; the public builds do not import the editor graph.
 - The lazy Contact typography owner receives the same live preference while
   mounted. Its glyphs settle synchronously on enable and resume bob/sway on
   disable, so route re-entry is not required to reconcile motion state.
+- `SplashCube` does not claim continuous ambient activity for its decorative
+  idle transform; settled scenes remain zero-draw. Only jelly, face and opener
+  reactions enter the activity contract, and no unrelated demand frame mutates
+  an unowned time-based rotation.
 - Route resources, listeners, timers, async work and GPU allocations have one
   owner and one terminal cleanup path.
 - `RouteTransition` owns both cover and reveal timers. Cancellation clears the
