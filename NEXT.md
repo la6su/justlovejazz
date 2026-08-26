@@ -223,6 +223,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
       reduced-motion toggle now applies the already-computed material blend
       synchronously instead of waiting for the decorative update path.
 
+- [x] **Settle post crossfades on reduced-motion changes** — the post owner now
+      snaps display parameters to the active preset before the shared scheduler
+      stops, preventing a half-applied bloom/vignette/grain state.
+
 - [x] **Snapshot SceneCoordinator route owners per transform pass** — the
       six-group visibility loop now reuses one route page and carousel owner
       read, preserving the live getter boundary while removing repeated reads

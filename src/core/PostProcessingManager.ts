@@ -128,6 +128,17 @@ export class PostProcessingManager {
     // shape parameters, not intensity — scaling would distort the look).
   }
 
+  /** Settle a live post crossfade before reduced-motion stops the scheduler. */
+  setReducedMotion(reduced: boolean): void {
+    if (!reduced) return
+    this.display.bloom = this.current.bloom
+    this.display.vignette = this.current.vignette
+    this.display.grain = this.current.grain
+    this.display.chromatic = this.current.chromatic
+    this.display.bloomRadius = this.current.bloomRadius
+    this.display.bloomThreshold = this.current.bloomThreshold
+  }
+
   /** Refresh quality scalars after WebGPU initialization selected WebGL. */
   refreshQualityTier(): void {
     this.tier = this.capability.tier
