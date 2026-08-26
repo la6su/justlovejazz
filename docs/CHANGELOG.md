@@ -38,6 +38,8 @@
   live reduced-motion change.
 - ContactCyprusStage fade and scale transitions now settle synchronously on a
   live reduced-motion change.
+- Camera now preserves section FOV framing while cancelling transient pulse,
+  shake and cursor displacement on a live reduced-motion change.
 
 - `Experience` now observes live `prefers-reduced-motion` changes instead of
   caching the preference only at startup. Enabling reduction cancels ambient

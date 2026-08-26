@@ -38,6 +38,7 @@ export class Camera {
 
   // ── FOV pulse ──
   private fovOffset = 0
+  private sectionFovOffset = 0
   private targetFovOffset = 0
   private fovTransitionT = 0
   private fovStartOffset = 0
@@ -118,6 +119,19 @@ export class Camera {
 
   /** Set FOV offset for cinematic zoom-in on section arrival */
   setFovOffset(value: number, duration = 1) {
+    this.sectionFovOffset = value
+    if (prefersReducedMotion()) {
+      if (this._pulseTimer) {
+        clearTimeout(this._pulseTimer)
+        this._pulseTimer = null
+      }
+      this.fovOffset = value
+      this.targetFovOffset = value
+      this.fovStartOffset = value
+      this.fovTransitionT = 1
+      this.fovDuration = duration
+      return
+    }
     this.fovStartOffset = this.fovOffset
     this.targetFovOffset = value
     this.fovDuration = duration
@@ -128,6 +142,7 @@ export class Camera {
    *  Positive amount = zoom in (FOV decreases). ~0.04 = subtle, ~0.08 = noticeable.
    *  Uses a two-phase transition: dips to -amount over half duration, then back to 0. */
   pulse(amount = 0.05, duration = 0.8): void {
+    if (prefersReducedMotion()) return
     // Clear any pending pulse timer (rapid section changes can overlap pulses)
     if (this._pulseTimer) {
       clearTimeout(this._pulseTimer)
@@ -141,11 +156,44 @@ export class Camera {
     // Phase 2: return to 0 after dip completes
     this._pulseTimer = setTimeout(() => {
       this.fovStartOffset = this.fovOffset
-      this.targetFovOffset = 0
+      this.targetFovOffset = this.sectionFovOffset
       this.fovDuration = duration * 0.6
       this.fovTransitionT = 0
       this._pulseTimer = null
     }, duration * 400)
+  }
+
+  /** Settle cinematic camera reactions on a live motion-policy change. */
+  setReducedMotion(reduced: boolean): void {
+    if (!reduced) return
+
+    if (this._pulseTimer) {
+      clearTimeout(this._pulseTimer)
+      this._pulseTimer = null
+    }
+
+    this.shakePower = 0
+    this.shakeDuration = 0
+    this.shakeTime = 0
+    springX.vel = 0
+    springY.vel = 0
+    springX.pos = 0
+    springY.pos = 0
+    springX.target = 0
+    springY.target = 0
+
+    // A pending pulse is decorative and returns to the persistent section
+    // framing target; it must never freeze the transient dip on screen.
+    this.fovOffset = this.sectionFovOffset
+    this.targetFovOffset = this.sectionFovOffset
+    this.fovStartOffset = this.sectionFovOffset
+    this.fovTransitionT = 1
+
+    this.instance.position.copy(this.smoothPosition)
+    this.instance.lookAt(this.smoothTarget)
+    const portraitWeight = Math.max(0, Math.min(1, 1 - this.instance.aspect / 1.5))
+    this.instance.fov = this.smoothFov + this.fovOffset + portraitWeight * 20
+    this.instance.updateProjectionMatrix()
   }
 
   update(deltaT: number) {

@@ -3377,6 +3377,21 @@ normal `setActive()` transitions remain interpolated. Rollback: remove the
 owner callback and restore frame-driven settlement if the motion policy is
 revised.
 
+#### Camera live reduced-motion settlement — 2026-08-26
+
+`Camera` now owns a synchronous reduced-motion boundary for its cinematic
+state. Persistent section FOV framing is retained, while transient pulse and
+action shake timers are cancelled; cursor displacement and residual shake
+orientation are removed by restoring the smooth position/target. New pulses
+and section offsets entered while reduced motion is active settle immediately.
+Focused tests cover section framing, pulse cancellation, shake cleanup and
+preference forwarding from `Experience`.
+
+Acceptance: enabling reduced motion requires no follow-up frame to reach the
+canonical camera state and disabling it does not resume interrupted motion;
+normal route transitions remain authored. Rollback: remove the camera policy
+callback and restore frame-driven settlement if the cinematic policy changes.
+
 ### Removal ledger
 
 | Legacy element                           | Remove after                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Status |

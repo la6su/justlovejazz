@@ -43,6 +43,20 @@ describe('Experience reduced-motion synchronization', () => {
     expect(setReducedMotion).toHaveBeenCalledWith(true)
   })
 
+  it('forwards a live preference change to the shared camera owner', () => {
+    const experience = createExperience(false)
+    const setReducedMotion = vi.fn()
+    const owner = experience as unknown as {
+      _handleReducedMotionChange: (reduced: boolean) => void
+      camera: { setReducedMotion: (reduced: boolean) => void }
+    }
+    owner.camera = { setReducedMotion }
+
+    owner._handleReducedMotionChange(true)
+
+    expect(setReducedMotion).toHaveBeenCalledWith(true)
+  })
+
   it('raises one typed demand when reduction is disabled again', () => {
     const experience = createExperience(true)
     const owner = experience as unknown as {
