@@ -45,6 +45,10 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `EnvSphere` owns the ambient background. The contact state owns the ground.
 - Actual initialized backend determines renderer capability, DPR and post
   quality.
+- The software-adapter decision reads `WebGPUBackend.device.adapterInfo` after
+  initialization. An explicit `isFallbackAdapter: true` reaches the existing
+  same-canvas `forceWebGL` recreation policy; absent adapter metadata remains
+  unknown and is never guessed as hardware.
 - TSL post quality is enabled only for a non-low native `WebGPUBackend`.
   `WebGLBackend` is an explicit direct-render parity path and does not update
   unused post uniforms or advertise post processing.

@@ -40,6 +40,11 @@ Do not reopen completed migration phases. Current runtime contracts are in
       instances now update the SceneHost-owned renderer slot, so a later Vue
       unmount disposes the live GPU owner instead of the stale initial instance.
 
+- [x] **Read the WebGPU fallback fact from the live device** — r185 backend
+      inspection now uses the WebGPU-standard `GPUDevice.adapterInfo` shape,
+      so a confirmed software adapter can reach the existing `forceWebGL`
+      recreation policy instead of remaining permanently unknown.
+
 - [x] **Make fallback recovery disposal exactly-once** — a failed forced-WebGL
       recreation no longer reaches the catch cleanup with an already-disposed
       software-adapter replacement.

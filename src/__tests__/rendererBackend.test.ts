@@ -92,7 +92,7 @@ describe('inspectUnifiedBackend (production backend facts)', () => {
       isWebGPURenderer: true,
       backend: {
         constructor: { name: 'WebGPUBackend' },
-        adapter: { info: { isFallbackAdapter: true } },
+        device: { adapterInfo: { isFallbackAdapter: true } },
       },
     })
 
@@ -105,7 +105,7 @@ describe('inspectUnifiedBackend (production backend facts)', () => {
       isWebGPURenderer: true,
       backend: {
         constructor: { name: 'WebGPUBackend' },
-        gpu: { _adapter: { isFallbackAdapter: false } },
+        device: { adapterInfo: { isFallbackAdapter: false } },
       },
     })
 

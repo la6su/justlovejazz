@@ -71,16 +71,14 @@ export function inspectUnifiedBackend(renderer: unknown): {
     isWebGPURenderer?: boolean
     backend?: {
       constructor?: { name?: string }
-      adapter?: { info?: { isFallbackAdapter?: boolean } }
-      gpu?: { _adapter?: { isFallbackAdapter?: boolean } }
+      device?: { adapterInfo?: { isFallbackAdapter?: boolean } }
     }
   } | null
   const backendName: string | null = wg?.isWebGPURenderer
     ? (wg.backend?.constructor?.name ?? null)
     : null
-  const adapter = wg?.backend?.adapter?.info ?? wg?.backend?.gpu?._adapter
   return {
     backendName,
-    isFallbackAdapter: adapter?.isFallbackAdapter ?? null,
+    isFallbackAdapter: wg?.backend?.device?.adapterInfo?.isFallbackAdapter ?? null,
   }
 }
