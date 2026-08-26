@@ -1006,6 +1006,19 @@ Acceptance: lifecycle coverage proves failed-frame settlement and later retry;
 type checks, production build, budget and serial E2E gates pass. Rollback:
 restore the previous catch-only logging path.
 
+#### Phase 10 terminal exhausted-recovery loop — 2026-08-26
+
+When the bounded device-loss recovery budget is exhausted, the renderer now
+clears its stored animation callback and detaches the current loop before
+surfacing the explicit unsupported/failure state. This matches the existing
+fail-closed path for a failed recreation and prevents draws through a lost
+renderer.
+
+Acceptance: device-loss lifecycle coverage proves terminal state, loop
+detachment and failure presentation; type checks, production build, budget and
+serial E2E gates pass. Rollback: restore the prior exhausted branch without
+terminal loop cleanup.
+
 #### Phase 5/7 StoryController source bridge — 2026-08-25
 
 `src/core/storyController.ts` is now the runtime owner that translates a

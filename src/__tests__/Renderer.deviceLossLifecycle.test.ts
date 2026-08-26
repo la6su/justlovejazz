@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   init: vi.fn(),
   inspect: vi.fn(() => ({ backendName: 'WebGPU', isFallbackAdapter: false })),
   plan: vi.fn(() => ({ recreate: false, mode: 'webgpu' })),
+  deviceLostAction: vi.fn(() => 'recover'),
   pipelineCreate: vi.fn(() => ({
     dispose: vi.fn(),
     resize: vi.fn(),
@@ -22,7 +23,7 @@ vi.mock('../core/unifiedRenderer', () => ({
 }))
 
 vi.mock('../core/rendererBackend', () => ({
-  deviceLostAction: vi.fn(() => 'recover'),
+  deviceLostAction: mocks.deviceLostAction,
   planUnifiedBackend: mocks.plan,
 }))
 
@@ -81,6 +82,8 @@ describe('Renderer device-loss lifecycle', () => {
     mocks.inspect.mockReturnValue({ backendName: 'WebGPU', isFallbackAdapter: false })
     mocks.plan.mockReset()
     mocks.plan.mockReturnValue({ recreate: false, mode: 'webgpu' })
+    mocks.deviceLostAction.mockReset()
+    mocks.deviceLostAction.mockReturnValue('recover')
     mocks.pipelineCreate.mockClear()
   })
 
@@ -202,6 +205,32 @@ describe('Renderer device-loss lifecycle', () => {
 
     expect(instance.setAnimationLoop).toHaveBeenCalledWith(null)
     expect((renderer as unknown as { _loopCallback: unknown })._loopCallback).toBeNull()
+  })
+
+  it('stops the live loop when the device-loss recovery budget is exhausted', () => {
+    mocks.deviceLostAction.mockReturnValueOnce('exhausted')
+    const instance = Object.assign(fakeRenderer(), {
+      onDeviceLost: vi.fn(),
+    })
+    const originalOnDeviceLost = instance.onDeviceLost
+    const renderer = makeRenderer(instance, vi.fn())
+    const showUnsupported = vi.spyOn(
+      renderer as unknown as { showUnsupportedMessage: () => void },
+      'showUnsupportedMessage',
+    )
+    ;(renderer as unknown as { attachDeviceLossRecovery: (value: unknown) => void }).attachDeviceLossRecovery(
+      instance,
+    )
+
+    instance.onDeviceLost({ reason: 'lost' })
+
+    const state = renderer as unknown as { _recoveryFailed: boolean; _loopCallback: unknown }
+    expect(state._recoveryFailed).toBe(true)
+    expect(state._loopCallback).toBeNull()
+    expect(instance.setAnimationLoop).toHaveBeenCalledWith(null)
+    expect(showUnsupported).toHaveBeenCalledOnce()
+    expect(originalOnDeviceLost).toHaveBeenCalledOnce()
+    document.querySelector('.renderer-unsupported')?.remove()
   })
 
   it('skips unused post parameter work on the WebGLBackend direct path', () => {

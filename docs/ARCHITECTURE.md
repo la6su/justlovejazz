@@ -89,6 +89,9 @@ under `src/builder/`; the public builds do not import the editor graph.
 - If the frame owner throws, `Experience` clears the pending demand and marks
   that scheduler window failed, so the loop settles instead of retrying the
   same broken frame indefinitely. A subsequent typed invalidation may retry.
+- Exhausting the bounded device-loss recovery budget is terminal: `Renderer`
+  clears its callback and detaches the live renderer loop before surfacing the
+  explicit failure state.
 - Route resources, listeners, timers, async work and GPU allocations have one
   owner and one terminal cleanup path.
 - `RouteTransition` owns both cover and reveal timers. Cancellation clears the

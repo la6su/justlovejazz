@@ -57,6 +57,11 @@ Do not reopen completed migration phases. Current runtime contracts are in
   owner clears pending demand and makes the current scheduler window settle;
   a later invalidation may still perform one diagnostic or recovery attempt.
 
+- [x] **Fail closed after exhausted device-loss recovery** — once the bounded
+  recreation budget is spent, the retired loop callback is cleared and the
+  current renderer receives `setAnimationLoop(null)` before the failure state
+  is surfaced.
+
 - [x] **Align WebGLBackend quality state** — direct-render fallback no longer
   advertises or updates the unused TSL post graph; native WebGPU retains the
   crossfade and post parameter path.

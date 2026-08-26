@@ -279,6 +279,13 @@ export class Renderer {
       const action = deviceLostAction(this._deviceLostAttempts)
       if (action === 'exhausted') {
         // Budget spent: surface an explicit failure state and stop.
+        this._recoveryFailed = true
+        this._loopCallback = null
+        ;(
+          this.instance as {
+            setAnimationLoop?: (cb: ((time: number) => void) | null) => void
+          }
+        ).setAnimationLoop?.(null)
         console.error('[Renderer] device-loss recovery budget exhausted — surfacing failure state')
         this.showUnsupportedMessage()
         orig(info)
