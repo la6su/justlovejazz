@@ -132,6 +132,9 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `ParticleBurst` enforces reduced-motion at its own GPU owner boundary: live
   enablement cancels an active burst and later triggers are inert until normal
   motion is restored.
+- `BakuCarousel.setReducedMotion(true)` settles morph, scroll and drag state
+  before the coordinator skips decorative updates; a half-finished carousel
+  cannot keep `isAnimating` true or strand the demand-driven loop.
 - `WorksPlaneStage` snapshots reduced-motion state once per media-query change;
   its per-card frame path no longer calls `matchMedia()` for every card. The
   observer is released with the stage, preserving the lazy route owner's

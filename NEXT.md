@@ -207,6 +207,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
       splash GPU burst now rejects new triggers and cancels active work when
       reduced motion is enabled, independent of the calling UI path.
 
+- [x] **Settle BakuCarousel on reduced-motion changes** — live policy changes
+      now finish morph/scroll state, cancel momentum and release drag demand
+      before SceneCoordinator pauses decorative updates.
+
 - [x] **Pool SceneCoordinator transform results** — per-frame camera/world
       metadata now reuses one owner-scoped result graph.
 

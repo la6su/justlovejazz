@@ -136,6 +136,32 @@ describe('BakuCarousel texture lifecycle', () => {
     expect(velocityAt120Hz).toBeCloseTo(velocityAt60Hz, 12)
   })
 
+  it('settles morph, scroll and drag state when reduced motion is enabled', () => {
+    const carousel = new BakuCarousel()
+    const state = carousel as unknown as {
+      _morphT: number
+      _morphTarget: number
+      scroll: { current: number; target: number }
+      velocity: number
+      isDown: boolean
+    }
+    state._morphTarget = 1
+    state._morphT = 0.42
+    state.scroll.target = 0.75
+    state.scroll.current = 0.2
+    state.velocity = 0.4
+    state.isDown = true
+
+    carousel.setReducedMotion(true)
+
+    expect(state._morphT).toBe(1)
+    expect(state.scroll.current).toBe(0.75)
+    expect(state.velocity).toBe(0)
+    expect(state.isDown).toBe(false)
+    expect(carousel.isAnimating).toBe(false)
+    carousel.dispose()
+  })
+
   it('clears callback, camera, input owners and motion state on dispose', () => {
     const carousel = new BakuCarousel()
     carousel.setCamera(new THREE.PerspectiveCamera())

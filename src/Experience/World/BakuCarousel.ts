@@ -107,6 +107,21 @@ export class BakuCarousel extends THREE.Group {
     if (this._disposed) return
     this._reducedMotion = reduced
     this.cards.forEach((card) => card.setReducedMotion(reduced))
+    if (!reduced) return
+
+    if (this.snapTimer) clearTimeout(this.snapTimer)
+    this.snapTimer = null
+    this.isDown = false
+    this.dragMoved = false
+    this.dragAxis = 'pending'
+    this.velocity = 0
+    this._morphT = this._morphTarget
+    this.scroll.current = this.scroll.target
+
+    // SceneCoordinator intentionally skips decorative carousel updates under
+    // reduced motion. Reconcile the settled transforms once so the last
+    // intermediate frame cannot remain visible or keep demand active.
+    this.update(0)
   }
 
   get isActive(): boolean {
