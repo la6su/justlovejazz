@@ -3649,6 +3649,16 @@ Acceptance: `EnvSphere.motion.test.ts` verifies stable array identity across
 transitions. Rollback: revert this bounded environment performance slice if
 palette transitions regress.
 
+### NoiseText frame-buffer reuse — 2026-08-26
+
+`NoiseText` now reuses one owner-scoped character buffer across reveal ticks.
+The visible joined string is still rebuilt per tick because the DOM text must
+change, but the intermediate array no longer churns on every RAF callback.
+
+Acceptance: `NoiseText.lifecycle.test.ts` verifies stable buffer identity across
+repeated ticks. Rollback: revert this bounded text-animation performance slice
+if reveal output regresses.
+
 ## Definition of done
 
 The migration is done when the target topology is the only production path;

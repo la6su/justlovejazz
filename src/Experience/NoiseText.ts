@@ -31,6 +31,8 @@ export class NoiseText {
   private running = false
   private start = 0
   private dur = 1000
+  /** Reused frame buffer; only the joined DOM string is transient. */
+  private readonly chars: string[] = []
 
   private constructor(el: HTMLElement) {
     this.el = el
@@ -107,7 +109,8 @@ export class NoiseText {
 
     // PERF-15 fix: build via array + join (was `text +=` in a loop = O(N²)
     // string allocation). For a 20-char title: ~23 string allocs/frame → 1.
-    const chars: string[] = new Array(fixedLength + noiseLength)
+    const chars = this.chars
+    chars.length = fixedLength + noiseLength
 
     // Fixed (clean) characters — already revealed
     for (let i = 0; i < fixedLength; i++) {

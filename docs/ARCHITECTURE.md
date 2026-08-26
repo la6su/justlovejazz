@@ -630,6 +630,9 @@ one for transactional editor state.
   runtime fallback, and is covered by ADR 0009.
 - Demand-driven idle, startup graph, frame time and memory/resource soak are
   release gates rather than post-migration cleanup.
+- `NoiseText` keeps one owner-scoped character buffer for its bounded reveal;
+  each tick may allocate only the unavoidable joined DOM string, and teardown
+  cancels both RAF and safety timeout through the shared registry.
 - Removing code is part of each owner migration; a transition cannot finish
   with two routers, loops, post pipelines or state sources.
 

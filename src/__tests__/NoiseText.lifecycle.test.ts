@@ -53,6 +53,26 @@ describe('NoiseText lifecycle', () => {
     expect(element.textContent).not.toBe('')
   })
 
+  it('reuses its frame buffer across animation ticks', () => {
+    const callbacks: FrameRequestCallback[] = []
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      callbacks.push(callback)
+      return callbacks.length
+    })
+    const element = document.createElement('span')
+    element.textContent = 'Hello'
+    document.body.append(element)
+
+    const instance = NoiseText.for(element) as unknown as { chars: string[] }
+    NoiseText.for(element).show(1)
+    callbacks[0]!(100)
+    const buffer = instance.chars
+    callbacks[1]!(200)
+
+    expect(instance.chars).toBe(buffer)
+    expect(instance.chars.length).toBeGreaterThan(0)
+  })
+
   it('stops connected animation owners during runtime teardown', () => {
     const callbacks: FrameRequestCallback[] = []
     const request = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
