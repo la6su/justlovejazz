@@ -61,6 +61,19 @@ describe('Page Builder document', () => {
     expect(less).not.toContain('/button.less')
   })
 
+  it('keeps baseline ownership aligned with generated builder deltas', async () => {
+    const { readFile } = await import('node:fs/promises')
+    const { resolve } = await import('node:path')
+    const baseline = await readFile(resolve(process.cwd(), 'src/assets/_import.less'), 'utf8')
+    const generated = await readFile(
+      resolve(process.cwd(), 'src/assets/builder/components.generated.less'),
+      'utf8',
+    )
+
+    expect(baseline).toContain("components/card.less';")
+    expect(generated).not.toContain('/card.less')
+  })
+
   it('compiles global, inverse and component decisions into whitelisted Less', () => {
     const less = generateBuilderThemeLess(DEFAULT_BUILDER_DOCUMENT)
     expect(less).toContain('@jlz-inverse-bg: #e9eef5;')

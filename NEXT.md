@@ -118,7 +118,8 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Clear the cursor-trail object graph on teardown** — DrawTrail removes
   its disposed ribbon from the owner group and resets activity state.
 - [x] **Single-own builder card CSS** — published Less no longer emits a second
-  `card.less` import already owned by the application baseline.
+  `card.less` import already owned by the application baseline; the baseline
+  now contains the real import and generated deltas are parity-tested.
 - [x] **Dispose route WorkCards on owner teardown** — `useJlzPage` now releases
   the module-level card/grid registry on full unmount as well as before route
   replacement, with lifecycle coverage for both paths.
