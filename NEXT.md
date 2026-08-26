@@ -153,6 +153,11 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Remove Works layout frame allocations** — WorksPlaneStage reuses its
       scaled viewport layout scratch object for visible cards.
 
+- [x] **Cache Works reduced-motion policy per stage** — the per-card update
+      path now reads an owner-local preference snapshot instead of querying
+      `matchMedia()` for every card on every frame; the observer is disposed
+      with the lazy route owner.
+
 - [x] **Pool SceneCoordinator transform results** — per-frame camera/world
       metadata now reuses one owner-scoped result graph.
 

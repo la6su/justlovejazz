@@ -5,11 +5,22 @@ const mocks = vi.hoisted(() => ({
   loadCaseTexture: vi.fn(),
   releaseCaseTexture: vi.fn(),
 }))
-const motion = vi.hoisted(() => ({ reduced: false }))
+const motion = vi.hoisted(() => ({
+  reduced: false,
+  listener: null as ((reduced: boolean) => void) | null,
+  unsubscribe: vi.fn(),
+}))
 
 vi.mock('../Experience/World/caseTexture', () => mocks)
 vi.mock('../core/motionPolicy', () => ({
   prefersReducedMotion: () => motion.reduced,
+  observeReducedMotion: (listener: (reduced: boolean) => void) => {
+    motion.listener = listener
+    return () => {
+      motion.listener = null
+      motion.unsubscribe()
+    }
+  },
 }))
 
 import { WorksPlaneStage } from '../Experience/World/WorksPlaneStage'
@@ -19,6 +30,8 @@ describe('WorksPlaneStage async lifecycle', () => {
     mocks.loadCaseTexture.mockReset()
     mocks.releaseCaseTexture.mockReset()
     motion.reduced = false
+    motion.listener = null
+    motion.unsubscribe.mockReset()
   })
 
   it('releases pending textures without creating cards after dispose', async () => {
@@ -85,11 +98,11 @@ describe('WorksPlaneStage async lifecycle', () => {
 
   it('snaps visible card reveals when reduced motion is active', async () => {
     mocks.loadCaseTexture.mockImplementation(async () => new THREE.Texture())
+    motion.reduced = true
     const stage = new WorksPlaneStage()
     await stage.init()
     stage.setCamera(new THREE.PerspectiveCamera())
     stage.setActive(true, 0)
-    motion.reduced = true
 
     stage.update(1 / 60)
 
@@ -97,6 +110,19 @@ describe('WorksPlaneStage async lifecycle', () => {
     expect([...reveal.values()].filter((value) => value > 0)).toHaveLength(2)
     expect(stage.isAnimating).toBe(false)
     stage.dispose()
+  })
+
+  it('updates the frame snapshot from the live policy and unsubscribes on dispose', () => {
+    const stage = new WorksPlaneStage()
+    const internals = stage as unknown as { _reducedMotion: boolean }
+
+    expect(internals._reducedMotion).toBe(false)
+    motion.listener?.(true)
+    expect(internals._reducedMotion).toBe(true)
+
+    stage.dispose()
+    expect(motion.listener).toBeNull()
+    expect(motion.unsubscribe).toHaveBeenCalledTimes(1)
   })
 
   it('reuses the scaled layout scratch object across viewport calculations', () => {

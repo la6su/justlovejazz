@@ -9,7 +9,7 @@ import * as THREE from 'three'
 import { PROJECTS } from '../../Data/Projects'
 import { CasePlane, CLOTH_PARAMS } from './CasePlane'
 import { loadCaseTexture, releaseCaseTexture } from './caseTexture'
-import { prefersReducedMotion } from '../../core/motionPolicy'
+import { observeReducedMotion, prefersReducedMotion } from '../../core/motionPolicy'
 import type { RenderSurface } from '../Renderer'
 
 const SECTION_PROJECTS = [
@@ -52,6 +52,8 @@ export class WorksPlaneStage extends THREE.Group {
   private _active = false
   private _initialized = false
   private _disposed = false
+  private _reducedMotion = prefersReducedMotion()
+  private _reducedMotionUnsub: (() => void) | null = null
   private _stackedLayout = window.innerWidth < 960
   private _viewportAspect = window.innerWidth / window.innerHeight
   private _reveal = new Map<CasePlane, number>()
@@ -67,6 +69,9 @@ export class WorksPlaneStage extends THREE.Group {
     this.name = 'works-plane-stage'
     this.visible = false
     this.renderOrder = 3
+    this._reducedMotionUnsub = observeReducedMotion((reduced) => {
+      if (!this._disposed) this._reducedMotion = reduced
+    })
   }
 
   get isAnimating(): boolean {
@@ -237,7 +242,7 @@ export class WorksPlaneStage extends THREE.Group {
       const isVisible = isPrimary || isSecondary
       const targetReveal = isVisible ? 1 : 0
       const reveal = this._reveal.get(card) ?? 0
-      const nextReveal = prefersReducedMotion()
+      const nextReveal = this._reducedMotion
         ? targetReveal
         : THREE.MathUtils.damp(reveal, targetReveal, 10, dt)
       this._reveal.set(card, nextReveal)
@@ -306,6 +311,8 @@ export class WorksPlaneStage extends THREE.Group {
   dispose(): void {
     if (this._disposed) return
     this._disposed = true
+    this._reducedMotionUnsub?.()
+    this._reducedMotionUnsub = null
     this._active = false
     this._camera = null
     this.cards.forEach((card) => {
