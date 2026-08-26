@@ -76,6 +76,9 @@ under `src/builder/`; the public builds do not import the editor graph.
   idle transform; settled scenes remain zero-draw. Only jelly, face and opener
   reactions enter the activity contract, and no unrelated demand frame mutates
   an unowned time-based rotation.
+- `EnvSphere.changeSection()` snaps its palette when reduced motion is active;
+  normal motion retains the authored interpolation, while reduced-motion
+  teardown cannot leave the background between section colors.
 - Route resources, listeners, timers, async work and GPU allocations have one
   owner and one terminal cleanup path.
 - `RouteTransition` owns both cover and reveal timers. Cancellation clears the

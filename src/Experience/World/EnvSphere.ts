@@ -7,6 +7,7 @@
 
 import * as THREE from 'three'
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js'
+import { prefersReducedMotion } from '../../core/motionPolicy'
 
 interface SectionPattern {
   dark: number
@@ -139,6 +140,10 @@ export class EnvSphere extends THREE.Group {
 
   changeSection(idx: number, isLight: boolean): void {
     if (idx < 0 || idx >= SECTION_PATTERNS.length) return
+    if (prefersReducedMotion()) {
+      this.snapToSection(idx, isLight)
+      return
+    }
     this._targetWeights = new Array(SECTION_PATTERNS.length).fill(0)
     this._targetWeights[idx] = 1
     this._isLight = isLight

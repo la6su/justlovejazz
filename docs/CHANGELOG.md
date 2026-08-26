@@ -20,6 +20,10 @@
   contract and could jump after settled idle. Jelly, face and opener reactions
   retain their authored motion.
 
+- `EnvSphere` now snaps to the target section palette under reduced motion;
+  ambient background colors cannot remain stranded at an intermediate lerp
+  value after the scheduler settles.
+
 - Contact Cyprus lazy initialization now has a single request-owned prewarm
   continuation; stale entry-route promises cannot prewarm a newer stage or
   schedule an unnecessary render frame.

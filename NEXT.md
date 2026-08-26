@@ -28,6 +28,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
   was updated only on unrelated demand frames and was not owned by any activity
   signal; authored jelly, face and opener reactions remain unchanged.
 
+- [x] **Snap EnvSphere under reduced motion** — section palette changes now
+  reach their authored color synchronously instead of stopping mid-lerp when
+  the reduced-motion scheduler settles.
+
 - [x] **Align WebGLBackend quality state** — direct-render fallback no longer
   advertises or updates the unused TSL post graph; native WebGPU retains the
   crossfade and post parameter path.
