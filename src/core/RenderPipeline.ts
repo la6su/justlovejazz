@@ -20,6 +20,7 @@
 import * as THREE from 'three'
 import { WebGPURenderer } from 'three/webgpu'
 import { WebGPUPostPipeline } from './WebGPUPostPipeline'
+import { withNoToneMapping } from './toneMappingGuard'
 
 // ─── Configuration ───────────────────────────────────────────────
 
@@ -181,13 +182,7 @@ export class RenderPipeline {
       // (default) on the pipeline applies renderOutput() which uses
       // renderer.toneMapping — we set it to NoToneMapping so renderOutput
       // only applies sRGB encode (exact sRGBTransferOETF), no tone mapping.
-      const toneMappingBackup = (this._renderer as any).toneMapping
-      ;(this._renderer as any).toneMapping = THREE.NoToneMapping
-      try {
-        this._webgpuPipeline.render()
-      } finally {
-        ;(this._renderer as any).toneMapping = toneMappingBackup
-      }
+      withNoToneMapping(this._renderer, () => this._webgpuPipeline!.render())
       return
     }
 

@@ -21,6 +21,9 @@
   unused TSL post crossfade and parameter writes are skipped, while native
   WebGPU keeps the existing post path.
 
+- WebGPU TSL post-graph construction now restores the renderer tone mapping
+  even when graph creation throws.
+
 - Contact section activation now validates the Cyprus request generation after
   lazy initialization, preventing a stale route callback from activating a
   newer stage or raising redundant render demand.

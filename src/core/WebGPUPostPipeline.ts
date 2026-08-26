@@ -24,6 +24,7 @@ import {
 } from 'three/tsl'
 import * as THREE from 'three'
 import type { Scene, Camera } from 'three'
+import { withNoToneMapping } from './toneMappingGuard'
 
 export interface WebGPUPostParams {
   bloom: number
@@ -114,6 +115,9 @@ export class WebGPUPostPipeline {
         this._pipeline.dispose()
       } catch {
         /* ignore */
+      } finally {
+        // Do not retain a disposed graph while a replacement is being built.
+        this._pipeline = null
       }
     }
 
@@ -270,12 +274,10 @@ export class WebGPUPostPipeline {
     // pipeline so renderOutput() does NOT apply ACES. ACES was intentionally
     // removed from the post-processing graph to preserve faithful texture colors.
     // The pipeline captures toneMapping at build time, so we restore after.
-    const wgRenderer = this._renderer as any
-    const prevToneMapping = wgRenderer.toneMapping
-    wgRenderer.toneMapping = THREE.NoToneMapping
-
-    this._pipeline = new TSLRenderPipeline(this._renderer, color)
-    wgRenderer.toneMapping = prevToneMapping
+    this._pipeline = withNoToneMapping(
+      this._renderer,
+      () => new TSLRenderPipeline(this._renderer, color),
+    )
     // outputColorTransform = true (default) → TSLRenderPipeline applies
     // renderOutput(color, NoToneMapping, SRGBColorSpace) which does:
     //   1. toneMapping (NoToneMapping → no-op)
