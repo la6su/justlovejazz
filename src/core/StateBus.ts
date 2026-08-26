@@ -74,6 +74,12 @@ export class StateBus {
 
   /** Set value of a channel (instant, no animation) */
   set(name: string, value: number): StateBus {
+    // Transform passes may reconcile the same opacity value repeatedly while
+    // the story is settled. Preserve the missing-channel contract while
+    // avoiding a redundant Map write for unchanged numeric state.
+    if (this.#channels.has(name) && Object.is(this.#channels.get(name), value)) {
+      return this
+    }
     this.#channels.set(name, value)
     return this
   }

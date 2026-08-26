@@ -208,6 +208,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
       material opacity only when the computed section fade changes; visibility,
       carousel activation and transition easing remain authoritative.
 
+- [x] **Skip unchanged StateBus channel writes** — numeric transform channels
+      preserve missing-channel and animation semantics while avoiding redundant
+      Map writes during settled opacity reconciliation.
+
 - [x] **Cache CinematicNav scroll policy** — programmatic section navigation
       reads the owner-local reduced-motion snapshot instead of re-querying the
       media preference on every scroll request.
