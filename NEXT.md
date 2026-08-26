@@ -243,6 +243,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Short-circuit settled DrawTrail work** — identical pointer/camera
       demand frames no longer perform basis extraction, unprojection or trail
       uniform writes; pointer and camera changes still wake the owner.
+- [x] **Stop Tres's internal loop at SceneHost ready** — `TresCanvas` now uses
+      on-demand mode without manual delayed `advance()`, and its loop is
+      stopped before the RenderScheduler bridge can yield or unmount.
 
 - [x] **Cache CinematicNav scroll policy** — programmatic section navigation
       reads the owner-local reduced-motion snapshot instead of re-querying the

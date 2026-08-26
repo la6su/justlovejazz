@@ -16,8 +16,9 @@
 // inspection (software-adapter re-creation through the pure
 // `planUnifiedBackend` policy). The existing World enters Tres through the
 // explicit `primitive` adapter (`:dispose="null"` — Experience stays the
-// single disposal owner). RenderMode is `manual`: Tres's internal loop is
-// stopped and the `RenderScheduler` (ADR 0004) is the single loop driver.
+// single disposal owner). RenderMode is `on-demand`: Tres's internal loop is
+// stopped immediately after ready and the `RenderScheduler` (ADR 0004) is the
+// single loop driver. On-demand also avoids manual mode's delayed advance().
 //
 // Rollback: switch AppShell back to the native-world host (no SceneHost);
 // Experience then creates its own scene and `Renderer.init()` constructs its
@@ -63,6 +64,7 @@ let lifecycleGeneration = 0
 let liveRenderer: UnifiedRenderSurface | null = null
 let createdRenderer: UnifiedRenderSurface | null = null
 let unbindRendererOwner: (() => void) | null = null
+let stopTresLoop: (() => void) | null = null
 const disposedRenderers = new WeakSet<object>()
 
 function disposeRendererOnce(renderer: UnifiedRenderSurface | null): void {
@@ -73,13 +75,19 @@ function disposeRendererOnce(renderer: UnifiedRenderSurface | null): void {
 
 async function onReady(context: TresContext): Promise<void> {
   if (noScene || resolved) return
+  // Tres starts its internal RAF when the renderer becomes ready. The
+  // RenderScheduler owns the actual renderer loop, so stop Tres immediately
+  // (before any async backend fallback work can yield) and keep the cleanup
+  // handle for an unmount during that async window.
+  stopTresLoop = () => context.renderer.loop.stop()
+  stopTresLoop()
   const generation = ++lifecycleGeneration
   const isCurrent = (): boolean => !disposed && generation === lifecycleGeneration
   const canvas =
     (tresRef.value?.$el as HTMLCanvasElement | undefined) ?? document.createElement('canvas')
   // The scene is the decorative visual layer over the semantic route content:
   // hidden from the accessibility tree (AGENTS.md: canvas hidden). The
-  // wrapper carries the same attribute; the e2e contract asserts it on the
+// wrapper carries the same attribute; the e2e contract asserts it on the
   // canvas element (TresCanvas does not forward fallthrough attributes).
   canvas.setAttribute('aria-hidden', 'true')
   let renderer = context.renderer.instance as UnifiedRenderSurface
@@ -141,6 +149,8 @@ function onError(error: Error): void {
 onBeforeUnmount(() => {
   disposed = true
   lifecycleGeneration += 1
+  stopTresLoop?.()
+  stopTresLoop = null
   unbindRendererOwner?.()
   unbindRendererOwner = null
   disposeRendererOnce(liveRenderer)
@@ -155,7 +165,7 @@ onBeforeUnmount(() => {
     <TresCanvas
       ref="tresRef"
       class="canvas jlz-scene-canvas"
-      render-mode="manual"
+      render-mode="on-demand"
       :renderer="rendererFactory"
       :camera="camera"
       :style="{ pointerEvents: 'none' }"

@@ -4,6 +4,7 @@ import * as THREE from 'three'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
+  loopStop: vi.fn(),
   candidate: {
     dispose: vi.fn(),
     backend: {},
@@ -20,6 +21,7 @@ vi.mock('@tresjs/core', () => ({
         emit('ready', {
           scene: { value: new THREE.Scene() },
           renderer: {
+            loop: { stop: mocks.loopStop },
             instance: {
               dispose: vi.fn(),
               domElement: document.createElement('canvas'),
@@ -49,6 +51,7 @@ import { __resetSceneHostForTests, sceneHost } from '../app/sceneHost'
 describe('SceneHost async lifecycle', () => {
   beforeEach(() => {
     mocks.candidate.dispose.mockReset()
+    mocks.loopStop.mockReset()
     mocks.init.mockReset()
     __resetSceneHostForTests()
   })
@@ -65,6 +68,15 @@ describe('SceneHost async lifecycle', () => {
 
     expect(mocks.candidate.dispose).toHaveBeenCalledOnce()
     expect(sceneHost.isSettled).toBe(false)
+    expect(mocks.loopStop).toHaveBeenCalled()
+  })
+
+  it('stops Tres internal loop when ready hands ownership to RenderScheduler', async () => {
+    const wrapper = mount(SceneHost, { attachTo: document.body })
+    await flushPromises()
+
+    expect(mocks.loopStop).toHaveBeenCalled()
+    wrapper.unmount()
   })
 
   it('disposes and rejects when fallback initialization fails', async () => {

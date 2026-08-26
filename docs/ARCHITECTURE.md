@@ -748,10 +748,12 @@ document is hidden. Tres's internal loop is stopped when this driver takes
 ownership. No scene owner starts its own `requestAnimationFrame` loop.
 
 The loop-driver selection is settled: the Phase 2 hardware A/B made the
-bounded driver the leader over Tres manual mode (one-window observation:
+bounded driver the leader over Tres's built-in loop (one-window observation:
 Tres 5.8.3 retained about 60 idle rAF ticks per second while the bounded
-driver retained zero), and the release gates confirm settled idle — zero
-draw calls and zero active scheduler reasons — on both backends. Vue
+driver retained zero). `SceneHost` uses Tres `on-demand` mode to avoid the
+manual-mode delayed `advance()` timer, then explicitly stops Tres's loop at
+ready and during unmount. The release gates therefore confirm settled idle —
+zero draw calls and zero active scheduler reasons — on both backends. Vue
 reactivity may request invalidation but never wraps or replaces the frame
 callback. Runtime assertions and diagnostics report canvas count,
 loop-driver count, active reasons, ticks, draws and p50/p95 frame time.
