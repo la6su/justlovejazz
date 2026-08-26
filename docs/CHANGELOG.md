@@ -50,6 +50,9 @@
   callbacks and media replacement, preventing stale video-play callbacks from
   surviving modal teardown or changing the active media mode.
 
+- Camera shake and organic motion now use the actual high-refresh frame delta
+  instead of a 120 Hz minimum, preserving wall-clock pacing on 144/240 Hz.
+
 - `useJlzPage` now disposes the module-level `WorkCards` registry during route
   owner teardown as well as before route replacement, releasing delegated grid
   listeners and pending card timers on full unmount.

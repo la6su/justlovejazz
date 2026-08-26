@@ -149,7 +149,10 @@ export class Camera {
   }
 
   update(deltaT: number) {
-    const dt = Math.min(Math.max(deltaT, 1 / 120), 0.1)
+    // Preserve authored timing on high-refresh displays. A fixed lower bound
+    // would advance shake, organic motion and FOV transitions faster than
+    // wall-clock time at 144/240 Hz; only clamp invalid negatives and stalls.
+    const dt = Math.min(Math.max(deltaT, 0), 0.1)
 
     // ── 1. Spring-damper cursor follow ──
     const mouse = input.getMouse()

@@ -233,6 +233,8 @@ according to their current measured policy.
   malformed overlay events cannot propagate `NaN` into carousel navigation.
 - FullscreenOverlay owns one autoplay timer: scheduling coalesces it, and media
   replacement or disposal clears it before the next video-play continuation.
+- Camera clamps only negative or stall-sized deltas; it does not impose a
+  fixed 120 Hz minimum step, preserving motion timing on high-refresh displays.
 - Contact section activation captures the same Cyprus request generation before
   awaiting lazy initialization; a stale route callback cannot call `setActive`
   or raise render demand on a newer stage.

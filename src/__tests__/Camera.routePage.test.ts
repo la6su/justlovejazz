@@ -4,6 +4,10 @@ import { Camera } from '../Experience/Camera'
 import { Sizes } from '../Experience/Sizes'
 import { setCurrentPage } from '../core/routePage'
 
+type CameraInternals = {
+  shakeDuration: number
+}
+
 describe('Camera route ownership', () => {
   beforeEach(() => {
     setCurrentPage('home')
@@ -31,6 +35,19 @@ describe('Camera route ownership', () => {
     const contactFov = camera.instance.fov
 
     expect(contactFov).not.toBe(homeFov)
+    camera.destroy()
+    sizes.destroy()
+  })
+
+  it('keeps shake timing proportional on high-refresh updates', () => {
+    const sizes = new Sizes()
+    const camera = new Camera(sizes, new THREE.PerspectiveCamera())
+    const internals = camera as unknown as CameraInternals
+
+    camera.shake(1, 1)
+    for (let i = 0; i < 120; i += 1) camera.update(1 / 240)
+
+    expect(internals.shakeDuration).toBeCloseTo(0.5, 2)
     camera.destroy()
     sizes.destroy()
   })
