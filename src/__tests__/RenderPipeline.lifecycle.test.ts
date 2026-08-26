@@ -149,9 +149,11 @@ describe('RenderPipeline failure lifecycle', () => {
     const scene = new THREE.Scene()
     const camera = new THREE.PerspectiveCamera()
     pipeline.render(scene, camera)
-    const cache = (pipeline as unknown as {
-      _webgpuParamsCache: { bloom: number }
-    })._webgpuParamsCache
+    const cache = (
+      pipeline as unknown as {
+        _webgpuParamsCache: { bloom: number }
+      }
+    )._webgpuParamsCache
     pipeline.render(scene, camera)
     expect(updateParams).toHaveBeenCalledOnce()
     cache.bloom = 99
@@ -162,5 +164,26 @@ describe('RenderPipeline failure lifecycle', () => {
     pipeline.render(scene, camera)
     expect(updateParams).toHaveBeenCalledTimes(2)
     expect(cache.bloom).toBe(0.8)
+  })
+
+  it('reports post-owner resources and zeros the WebGLBackend shape', () => {
+    const pipeline = Object.assign(Object.create(RenderPipeline.prototype), {
+      _webgpuPipeline: {
+        getResourceInfo: vi.fn(() => ({ renderTargets: 6, passes: 1 })),
+      },
+    }) as RenderPipeline
+
+    expect(pipeline.getResourceInfo()).toEqual({
+      renderTargets: 6,
+      passes: 1,
+      webgpuPipeline: true,
+    })
+
+    Object.assign(pipeline, { _webgpuPipeline: null })
+    expect(pipeline.getResourceInfo()).toEqual({
+      renderTargets: 0,
+      passes: 0,
+      webgpuPipeline: false,
+    })
   })
 })

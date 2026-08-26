@@ -72,6 +72,11 @@ Do not reopen completed migration phases. Current runtime contracts are in
       failure and teardown, preventing detached render targets from surviving a
       route change or renderer recovery.
 
+- [x] **Make post resource counters owner-backed** — `WebGPUPostPipeline` now
+      enumerates its live scene-pass and Bloom render targets, and
+      `RenderPipeline` forwards those counts to the existing runtime snapshot;
+      resource soak baselines are no longer hard-coded zero on native WebGPU.
+
 - [x] **Stop the loop after an update failure** — an exception in the frame
       owner clears pending demand and makes the current scheduler window settle;
       a later invalidation may still perform one diagnostic or recovery attempt.

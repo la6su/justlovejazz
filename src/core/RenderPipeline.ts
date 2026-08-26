@@ -272,9 +272,10 @@ export class RenderPipeline {
 
   /** Counts the post resources this owner can enumerate for development soaks. */
   public getResourceInfo(): { renderTargets: number; passes: number; webgpuPipeline: boolean } {
+    const post = this._webgpuPipeline?.getResourceInfo()
     return {
-      renderTargets: 0,
-      passes: 0,
+      renderTargets: post?.renderTargets ?? 0,
+      passes: post?.passes ?? 0,
       webgpuPipeline: this._webgpuPipeline !== null,
     }
   }
