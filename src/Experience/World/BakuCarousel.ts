@@ -94,6 +94,7 @@ export class BakuCarousel extends THREE.Group {
 
   /** Activate the slider — start morphing from cube faces to case planes. */
   setActive(active: boolean): void {
+    if (this._disposed) return
     if (active === this._active) return // no-op on repeated calls (fixes A-1)
     this._active = active
     this._morphTarget = active ? 1 : 0
@@ -109,6 +110,7 @@ export class BakuCarousel extends THREE.Group {
 
   /** True when the carousel is actively morphing or scrolling (needs rendering). */
   get isAnimating(): boolean {
+    if (this._disposed) return false
     // Morphing: _morphT not at target
     const morphing = Math.abs(this._morphTarget - this._morphT) > 0.001
     // Scrolling: scroll.current not at target
@@ -121,11 +123,13 @@ export class BakuCarousel extends THREE.Group {
 
   /** Set camera reference for raycast-based tap detection. */
   setCamera(cam: THREE.Camera): void {
+    if (this._disposed) return
     this._camera = cam
   }
 
   /** Set callback for card click (index = which card was tapped). */
   onCardClick(cb: (index: number) => void): void {
+    if (this._disposed) return
     this._onCardClick = cb
   }
 
@@ -328,21 +332,25 @@ export class BakuCarousel extends THREE.Group {
   }
 
   private scheduleSnap(delay = 180): void {
+    if (this._disposed) return
     if (this.snapTimer) clearTimeout(this.snapTimer)
     this.snapTimer = setTimeout(() => this.snap(), delay)
   }
 
   next(): void {
+    if (this._disposed) return
     this.scroll.target -= SNAP_STEP
     this.onActivity?.()
   }
 
   prev(): void {
+    if (this._disposed) return
     this.scroll.target += SNAP_STEP
     this.onActivity?.()
   }
 
   private snap(): void {
+    if (this._disposed) return
     this.scroll.target = Math.round(this.scroll.target / SNAP_STEP) * SNAP_STEP
     this.velocity = 0 // clear velocity after snap
   }
@@ -359,6 +367,7 @@ export class BakuCarousel extends THREE.Group {
   }
 
   update(dt: number): void {
+    if (this._disposed) return
     // Time-based damping keeps reveal timing identical at 60/90/120Hz.
     this._morphT = THREE.MathUtils.damp(this._morphT, this._morphTarget, MORPH_DAMPING, dt)
     if (Math.abs(this._morphTarget - this._morphT) < 0.001) {

@@ -3771,6 +3771,17 @@ type-check and focused lint pass; the full release gate remains required for
 milestone admission. Rollback: revert this bounded intro TSL ownership slice
 if splash timing or visual parity regresses.
 
+### BakuCarousel terminal teardown — 2026-08-26
+
+`BakuCarousel` now rejects late public controls, render updates and snap
+callbacks after its existing listener/timer/card cleanup. The terminal guard
+is idempotent, clears the animation predicate and releases the shared wake
+callback boundary without changing carousel motion while mounted.
+
+Acceptance: `BakuCarousel.lifecycle.test.ts` covers repeated teardown and late
+public calls; focused type-check/lint pass. Rollback: revert this bounded
+carousel lifecycle slice if route transitions or drag settling regress.
+
 ## Definition of done
 
 The migration is done when the target topology is the only production path;

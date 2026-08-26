@@ -448,6 +448,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Isolate ParticleBurst TSL uniforms** — each intro burst owns its time
   and duration uniforms and node closures; concurrent splash owners no longer
   share animation progress.
+- [x] **Make BakuCarousel teardown terminal** — late controls, updates and
+  snap callbacks become inert after disposal; the shared demand loop cannot
+  be woken or mutated by a retired carousel.
 - [x] **Release the WorksPortfolio owner** — `ExperienceUI.destroy()` now calls
       the portfolio disposer before dropping its reference; disposal clears the
       project/callback references and navigation becomes a safe no-op.

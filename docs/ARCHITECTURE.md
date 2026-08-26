@@ -177,6 +177,10 @@ under `src/builder/`; the public builds do not import the editor graph.
   closures per owner. Triggering one intro burst cannot advance another
   burst's shader timeline; terminal geometry/material disposal remains
   unchanged.
+- `BakuCarousel.dispose()` is terminal and idempotent. Public controls,
+  scheduled snapping and late render updates are inert after route teardown;
+  `isAnimating` settles false and no retired carousel can wake the shared
+  demand scheduler.
 - Native WebGPU post processing is conditional on the selected quality policy;
   low-tier instances render the scene directly and do not construct a TSL
   `PassNode` graph whose effects are disabled.

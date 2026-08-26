@@ -167,6 +167,25 @@ describe('BakuCarousel texture lifecycle', () => {
     expect(() => carousel.dispose()).not.toThrow()
   })
 
+  it('ignores late public calls after terminal teardown', () => {
+    const carousel = new BakuCarousel()
+    const state = carousel as unknown as { scroll: { target: number }; _morphTarget: number }
+
+    carousel.dispose()
+    carousel.dispose()
+    carousel.setActive(true)
+    carousel.setCamera(new THREE.PerspectiveCamera())
+    carousel.onCardClick(vi.fn())
+    carousel.next()
+    carousel.prev()
+    carousel.update(1 / 60)
+
+    expect(state.scroll.target).toBe(0)
+    expect(state._morphTarget).toBe(0)
+    expect(carousel.isActive).toBe(false)
+    expect(carousel.isAnimating).toBe(false)
+  })
+
   it('wakes the shared loop when pointer drag changes carousel state', async () => {
     mocks.loadCaseTexture.mockImplementation(async () => new THREE.Texture())
     const carousel = new BakuCarousel()
