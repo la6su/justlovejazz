@@ -109,6 +109,8 @@ under `src/builder/`; the public builds do not import the editor graph.
   `matchMedia()` while the lazy model is active.
 - `Camera` settles persistent section FOV framing while cancelling transient
   pulse/shake and cursor displacement on the same live preference change.
+  Its frame update reads the owner-local policy snapshot rather than querying
+  `matchMedia()` on every render.
 - `WorksPlaneStage` snapshots reduced-motion state once per media-query change;
   its per-card frame path no longer calls `matchMedia()` for every card. The
   observer is released with the stage, preserving the lazy route owner's

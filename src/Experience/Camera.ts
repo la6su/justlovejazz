@@ -14,6 +14,7 @@ const SP_DAMPING = 3
 export class Camera {
   instance: THREE.PerspectiveCamera
   private _disposed = false
+  private _reducedMotion = prefersReducedMotion()
 
   // Owner-scoped scratch/state. These used to live at module scope, which
   // coupled concurrent Camera wrappers during HMR, recovery and tests.
@@ -126,7 +127,7 @@ export class Camera {
   setFovOffset(value: number, duration = 1) {
     if (this._disposed) return
     this.sectionFovOffset = value
-    if (prefersReducedMotion()) {
+    if (this._reducedMotion) {
       if (this._pulseTimer) {
         clearTimeout(this._pulseTimer)
         this._pulseTimer = null
@@ -149,7 +150,7 @@ export class Camera {
    *  Uses a two-phase transition: dips to -amount over half duration, then back to 0. */
   pulse(amount = 0.05, duration = 0.8): void {
     if (this._disposed) return
-    if (prefersReducedMotion()) return
+    if (this._reducedMotion) return
     // Clear any pending pulse timer (rapid section changes can overlap pulses)
     if (this._pulseTimer) {
       clearTimeout(this._pulseTimer)
@@ -173,6 +174,7 @@ export class Camera {
   /** Settle cinematic camera reactions on a live motion-policy change. */
   setReducedMotion(reduced: boolean): void {
     if (this._disposed) return
+    this._reducedMotion = reduced
     if (!reduced) return
 
     if (this._pulseTimer) {
@@ -231,7 +233,7 @@ export class Camera {
     const isHome = getCurrentPage() === 'home'
     // Respect prefers-reduced-motion: disable cursor follow + organic shake
     // + FOV breath (SPEC.md motion rules).
-    const reduced = prefersReducedMotion()
+    const reduced = this._reducedMotion
     const pos = this.instance.position
 
     // Cursor follow — spring-damper (disabled on mobile + reduced motion)

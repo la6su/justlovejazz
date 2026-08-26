@@ -166,6 +166,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
       path now reads an owner-local snapshot while live preference changes
       continue to settle the route owner synchronously.
 
+- [x] **Cache Camera motion policy** — cursor follow, organic shake and FOV
+      update paths now read the owner-local snapshot; `setReducedMotion()`
+      remains the live transition boundary.
+
 - [x] **Pool SceneCoordinator transform results** — per-frame camera/world
       metadata now reuses one owner-scoped result graph.
 
