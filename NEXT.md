@@ -422,8 +422,11 @@ Do not reopen completed migration phases. Current runtime contracts are in
       recovery handoff, one-canvas ownership and fatal-error boundary through
       the production `window.__jlzHost` evidence seam. Headless Chromium now
       preflights context restoration and skips when its restored framebuffer is
-      unusable; execute the probe on a WebGL-capable browser before accepting
-      recovery as integration-proven.
+      unusable. The current unsupported Chrome profile also cannot restore its
+      context; the runtime now fails closed with an explicit recovery reason
+      instead of entering Three's `WebGLState` with a null framebuffer. Execute
+      the probe on a WebGL-capable browser before accepting recovery as
+      integration-proven.
 
 - [x] **Harden async route-owner cancellation** — `ExperienceUI` route-change
       promises now use a shared generation/page predicate, so late Works/Contact
