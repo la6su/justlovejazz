@@ -100,6 +100,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
   clears decorative section shifts on live policy changes while preserving
   semantic section state and navigation behavior.
 
+- [x] **Dispose route-transition ownership** — `RouteTransition` now releases
+  its overlay and timers through an explicit lifecycle boundary; router errors
+  use that boundary instead of retaining stale DOM work.
+
 - [x] **Align WebGLBackend quality state** — direct-render fallback no longer
   advertises or updates the unused TSL post graph; native WebGPU retains the
   crossfade and post parameter path.

@@ -81,6 +81,13 @@ export class RouteTransition {
     if (this.overlay) this.overlay.dataset.state = 'idle'
   }
 
+  /** Release the transition DOM owner and every pending timer. */
+  dispose(): void {
+    this.cancel()
+    if (this.overlay?.isConnected) this.overlay.remove()
+    this.overlay = null
+  }
+
   private cancelCoverTimer(): void {
     if (this.coverTimer !== null) {
       clearTimeout(this.coverTimer.id)

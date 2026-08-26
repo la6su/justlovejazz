@@ -3417,6 +3417,17 @@ Acceptance: `CinematicNav.test.ts` covers live enable/disable behavior and
 preserves normal parallax after restoration. Rollback: remove the nav setter
 and forwarding call; no renderer or Tres ownership changes are required.
 
+#### RouteTransition owner disposal — 2026-08-26
+
+`RouteTransition` now exposes an explicit `dispose()` boundary that cancels
+cover/reveal timers, invalidates pending work and removes its temporary DOM
+overlay. The router error path calls this boundary so failed navigation cannot
+leave a stale transition surface attached to `document.body`.
+
+Acceptance: `routeTransition.lifecycle.test.ts` verifies overlay removal and a
+zero pending-timer count after disposal. Rollback: remove the disposal call and
+restore the prior error cancellation behavior; route semantics remain intact.
+
 ### Removal ledger
 
 | Legacy element                           | Remove after                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Status |

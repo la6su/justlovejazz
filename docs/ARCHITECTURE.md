@@ -68,6 +68,9 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `CinematicNav` treats story parallax as decorative policy state; enabling
   reduced motion clears its CSS shifts synchronously without changing route,
   section or accessibility state.
+- `RouteTransition` owns its temporary overlay and timers; router error
+  handling disposes that owner so failed navigation cannot retain detached DOM
+  or pending callbacks.
 - `Experience` observes the live reduced-motion media query for the lifetime
   of the runtime. Enabling it cancels ambient breathing and settles the single
   render scheduler; disabling it raises one `motion-preference` invalidation.

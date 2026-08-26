@@ -121,7 +121,7 @@ export async function mountVueApp(): Promise<void> {
   })
   router.onError(() => {
     hashNavigationFrame.cancel()
-    routeTransition.cancel()
+    routeTransition.dispose()
     initialHashGate.invalidate()
   })
 

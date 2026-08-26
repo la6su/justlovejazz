@@ -91,4 +91,19 @@ describe('RouteTransition failure lifecycle', () => {
 
     expect(vi.getTimerCount()).toBe(0)
   })
+
+  it('disposes the DOM owner and all pending transition work', async () => {
+    vi.useFakeTimers()
+    const transition = new RouteTransition()
+    const covering = transition.cover()
+    const overlay = document.querySelector('.jlz-route-transition')
+    expect(overlay).not.toBeNull()
+
+    transition.dispose()
+
+    expect(document.querySelector('.jlz-route-transition')).toBeNull()
+    expect(vi.getTimerCount()).toBe(0)
+    await covering
+    transition.dispose()
+  })
 })
