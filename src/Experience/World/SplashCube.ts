@@ -349,6 +349,7 @@ export class SplashCube extends THREE.Mesh {
     this.openerTarget = 0
     this.openerProgress = 0
     this.cubeMesh.scale.setScalar(1)
+    this.applyMaterialBlend()
   }
 
   // (setEnvAndCamera removed — dead no-op, body was '// No-op'.
@@ -425,11 +426,7 @@ export class SplashCube extends THREE.Mesh {
 
     // (PlayButton3D update removed — dead render path deleted)
     // ── Material color blend ──
-    this.cubeMaterial.color.copy(this._blendFromColor).lerp(this._blendToColor, this._blendT)
-    // A controlled neutral tint keeps glass visible on white without a
-    // debug-looking outline. The visible shape is a real PBR surface: PMREM,
-    // transmission, clearcoat and iridescence create the moving highlights.
-    this.cubeMaterial.color.lerp(this._themeTint, this._isLightTheme ? 0.9 : 0.3)
+    this.applyMaterialBlend()
 
     // Edge colors are STATIC — set once in buildCube, NOT animated per frame.
     // Per-frame edge animation was allocating new Color objects + updating
@@ -450,6 +447,15 @@ export class SplashCube extends THREE.Mesh {
     // effect. Glass is a dielectric: it stays non-metallic in every phase.
     this.cubeMaterial.roughness = Math.max(roughness, 0.14)
     this.cubeMaterial.metalness = 0
+  }
+
+  /** Apply the latest world blend without requiring a scheduler frame. */
+  private applyMaterialBlend(): void {
+    this.cubeMaterial.color.copy(this._blendFromColor).lerp(this._blendToColor, this._blendT)
+    // A controlled neutral tint keeps glass visible on white without a
+    // debug-looking outline. The visible shape is a real PBR surface: PMREM,
+    // transmission, clearcoat and iridescence create the moving highlights.
+    this.cubeMaterial.color.lerp(this._themeTint, this._isLightTheme ? 0.9 : 0.3)
   }
 
   /** Add energy to the damped material reaction without a timer cut-off. */

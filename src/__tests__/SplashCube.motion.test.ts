@@ -66,6 +66,25 @@ describe('SplashCube reduced-motion transitions', () => {
     expect(cube.parent).toBeNull()
   })
 
+  it('applies the pending world blend when reduced motion settles the owner', () => {
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }))
+    const cube = new SplashCube()
+    const material = (cube.children[0] as THREE.Mesh).material as THREE.MeshPhysicalMaterial
+    const from = new THREE.Color(0x000000)
+    const to = new THREE.Color(0xffffff)
+    const tint = new THREE.Color(0xd0c5dc)
+
+    cube.setTheme(false)
+    cube.updateWorldBlend(from, to, from, to, 0.5)
+    cube.setReducedMotion(true)
+
+    const expected = from.clone().lerp(to, 0.5).lerp(tint, 0.3)
+    expect(material.color.r).toBeCloseTo(expected.r, 6)
+    expect(material.color.g).toBeCloseTo(expected.g, 6)
+    expect(material.color.b).toBeCloseTo(expected.b, 6)
+    cube.dispose()
+  })
+
   it('does not advance an unowned idle mesh rotation on demand frames', () => {
     vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }))
     const cube = new SplashCube()

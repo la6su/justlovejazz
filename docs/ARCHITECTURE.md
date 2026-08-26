@@ -141,6 +141,9 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `DrawTrail.setReducedMotion(true)` clears ribbon energy and motion uniforms at
   the owner boundary; stopping trail updates cannot strand `isAnimating` or
   demand after a live preference change.
+- `SplashCube.setReducedMotion(true)` applies the pending world/material blend
+  synchronously, because the coordinator intentionally skips decorative cube
+  updates while reduced motion is active.
 - `SceneCoordinator.updateTransform()` snapshots the current route page and
   carousel owner once per synchronous pass before applying six-group visibility;
   the getter boundary remains live across route transitions without repeating
