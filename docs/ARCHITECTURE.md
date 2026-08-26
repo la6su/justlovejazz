@@ -119,6 +119,9 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `Camera.isPulsing` starts settled and becomes active only when an authored FOV
   transition is requested; initial camera construction cannot wake the
   demand-driven renderer by itself.
+- `SplashCube` uses its synchronized motion snapshot for opener and face
+  reactions; live preference propagation remains the only media-query boundary
+  for the persistent cube owner.
 - `WorksPlaneStage` snapshots reduced-motion state once per media-query change;
   its per-card frame path no longer calls `matchMedia()` for every card. The
   observer is released with the stage, preserving the lazy route owner's

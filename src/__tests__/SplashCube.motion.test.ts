@@ -29,6 +29,23 @@ describe('SplashCube reduced-motion transitions', () => {
     expect(cube.parent).toBeNull()
   })
 
+  it('uses the synchronized motion snapshot for later reactions', () => {
+    const media = { matches: false }
+    const matchMedia = vi.fn().mockReturnValue(media)
+    vi.stubGlobal('matchMedia', matchMedia)
+    const cube = new SplashCube()
+
+    cube.setReducedMotion(true)
+    media.matches = false
+    cube.rotateToFace(3)
+    cube.triggerOpener()
+
+    expect(cube.isRotating).toBe(false)
+    expect(cube.isOpenerActive).toBe(false)
+    expect(matchMedia).toHaveBeenCalledTimes(1)
+    cube.dispose()
+  })
+
   it('settles face and opener reactions on a live preference change', () => {
     vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }))
     const cube = new SplashCube()

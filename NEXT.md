@@ -187,6 +187,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
       longer reports an unrequested pulse, avoiding a false initial render
       window before the first authored section transition.
 
+- [x] **Cache SplashCube motion policy** — opener and face reactions reuse the
+      synchronized owner snapshot instead of re-querying media state after
+      live preference propagation.
+
 - [x] **Pool SceneCoordinator transform results** — per-frame camera/world
       metadata now reuses one owner-scoped result graph.
 

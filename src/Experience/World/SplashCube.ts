@@ -78,6 +78,7 @@ export class SplashCube extends THREE.Mesh {
   private _blendToEmissive: THREE.Color = new THREE.Color(0x5a5a8a)
   private _blendT: number = 0
   private _isLightTheme = true
+  private _reducedMotion = prefersReducedMotion()
   // Neutral violet-grey, rather than the previous blue diagnostic colour.
   // It gives the transparent volume enough contrast on a white UI without
   // reading as an added wireframe or a flat blue block.
@@ -244,7 +245,7 @@ export class SplashCube extends THREE.Mesh {
     // Under reduced-motion the opener never animates (baku.update() is skipped
     // by World), so snap immediately to 'done' — otherwise openerPhase stays
     // 'opening' forever and forces continuous rendering (B-1).
-    if (prefersReducedMotion()) {
+    if (this._reducedMotion) {
       this.openerPhase = 'done'
       this.openerProgress = 0
       this.openerTarget = 0
@@ -297,7 +298,7 @@ export class SplashCube extends THREE.Mesh {
    *  on jlz:section-change. */
   rotateToFace(sectionIndex: number): void {
     if (this._disposed) return
-    if (prefersReducedMotion()) {
+    if (this._reducedMotion) {
       this.snapToFace(sectionIndex)
       return
     }
@@ -329,6 +330,7 @@ export class SplashCube extends THREE.Mesh {
   /** Settle all decorative cube reactions when motion policy changes live. */
   setReducedMotion(reduced: boolean): void {
     if (this._disposed) return
+    this._reducedMotion = reduced
     if (!reduced) return
 
     this._idleRotY = this._targetFaceRotY
