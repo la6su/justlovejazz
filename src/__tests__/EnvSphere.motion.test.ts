@@ -50,4 +50,19 @@ describe('EnvSphere reduced-motion transitions', () => {
     sphere.dispose()
     expect(sphere.parent).toBeNull()
   })
+
+  it('reuses section weight arrays across transitions', () => {
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }))
+    const sphere = new EnvSphere()
+    const state = sphere as unknown as { _sectionWeights: number[]; _targetWeights: number[] }
+    const sectionWeights = state._sectionWeights
+    const targetWeights = state._targetWeights
+
+    sphere.changeSection(3, false)
+    sphere.snapToSection(4, false)
+
+    expect(state._sectionWeights).toBe(sectionWeights)
+    expect(state._targetWeights).toBe(targetWeights)
+    sphere.dispose()
+  })
 })

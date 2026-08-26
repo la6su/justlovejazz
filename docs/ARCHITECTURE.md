@@ -155,6 +155,8 @@ under `src/builder/`; the public builds do not import the editor graph.
   scheduler-facing activity flags do not allocate a new object per frame.
 - Renderer reuses one `PostParams` wrapper when forwarding display values to
   the WebGPU pipeline; WebGL direct rendering performs no post work.
+- EnvSphere section palette transitions reuse their weight arrays, keeping
+  route/section changes allocation-free at the owner boundary.
 - Direct scene owners such as `EnvSphere` and `SplashCube` detach themselves
   before disposing geometry/material resources; a destroyed owner cannot
   remain as a child of the Tres-owned scene with invalid GPU state.

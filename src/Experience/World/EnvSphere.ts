@@ -144,7 +144,7 @@ export class EnvSphere extends THREE.Group {
       this.snapToSection(idx, isLight)
       return
     }
-    this._targetWeights = new Array(SECTION_PATTERNS.length).fill(0)
+    this._targetWeights.fill(0)
     this._targetWeights[idx] = 1
     this._isLight = isLight
     this._dirty = true
@@ -152,9 +152,11 @@ export class EnvSphere extends THREE.Group {
 
   snapToSection(idx: number, isLight: boolean): void {
     if (idx < 0 || idx >= SECTION_PATTERNS.length) return
-    this._sectionWeights = new Array(SECTION_PATTERNS.length).fill(0)
+    this._sectionWeights.fill(0)
     this._sectionWeights[idx] = 1
-    this._targetWeights = this._sectionWeights.slice()
+    for (let i = 0; i < this._sectionWeights.length; i++) {
+      this._targetWeights[i] = this._sectionWeights[i]!
+    }
     this._isLight = isLight
     this._applyColor(true)
   }
@@ -162,7 +164,9 @@ export class EnvSphere extends THREE.Group {
   /** Settle an active palette crossfade synchronously on a live policy change. */
   setReducedMotion(reduced: boolean): void {
     if (!reduced) return
-    this._sectionWeights = this._targetWeights.slice()
+    for (let i = 0; i < this._targetWeights.length; i++) {
+      this._sectionWeights[i] = this._targetWeights[i]!
+    }
     this._applyColor(true)
   }
 

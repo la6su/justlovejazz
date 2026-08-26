@@ -3639,6 +3639,16 @@ copies values into its own TSL cache, so no consumer retains the wrapper.
 Acceptance: full unit/E2E and budget gates pass; rollback: revert this bounded
 renderer performance slice if parameter ownership changes.
 
+### EnvSphere transition weight reuse — 2026-08-26
+
+`EnvSphere` now mutates its owner-scoped section/target weight arrays during
+palette changes and reduced-motion snaps. Color targets and interpolation
+semantics remain unchanged.
+
+Acceptance: `EnvSphere.motion.test.ts` verifies stable array identity across
+transitions. Rollback: revert this bounded environment performance slice if
+palette transitions regress.
+
 ## Definition of done
 
 The migration is done when the target topology is the only production path;
