@@ -5,8 +5,12 @@ const mocks = vi.hoisted(() => ({
   loadCaseTexture: vi.fn(),
   releaseCaseTexture: vi.fn(),
 }))
+const motion = vi.hoisted(() => ({ reduced: false }))
 
 vi.mock('../Experience/World/caseTexture', () => mocks)
+vi.mock('../core/motionPolicy', () => ({
+  prefersReducedMotion: () => motion.reduced,
+}))
 
 import { WorksPlaneStage } from '../Experience/World/WorksPlaneStage'
 
@@ -14,6 +18,7 @@ describe('WorksPlaneStage async lifecycle', () => {
   beforeEach(() => {
     mocks.loadCaseTexture.mockReset()
     mocks.releaseCaseTexture.mockReset()
+    motion.reduced = false
   })
 
   it('releases pending textures without creating cards after dispose', async () => {
@@ -76,5 +81,21 @@ describe('WorksPlaneStage async lifecycle', () => {
     for (const call of mocks.releaseCaseTexture.mock.calls) {
       expect(call[1]).toBeInstanceOf(THREE.Texture)
     }
+  })
+
+  it('snaps visible card reveals when reduced motion is active', async () => {
+    mocks.loadCaseTexture.mockImplementation(async () => new THREE.Texture())
+    const stage = new WorksPlaneStage()
+    await stage.init()
+    stage.setCamera(new THREE.PerspectiveCamera())
+    stage.setActive(true, 0)
+    motion.reduced = true
+
+    stage.update(1 / 60)
+
+    const reveal = (stage as unknown as { _reveal: Map<THREE.Object3D, number> })._reveal
+    expect([...reveal.values()].filter((value) => value > 0)).toHaveLength(2)
+    expect(stage.isAnimating).toBe(false)
+    stage.dispose()
   })
 })

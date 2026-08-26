@@ -20,6 +20,7 @@
 import * as THREE from 'three'
 import { MeshBasicNodeMaterial } from 'three/webgpu'
 import { Fn, float, positionLocal, sin, smoothstep, uniform, vec3, abs, max } from 'three/tsl'
+import { prefersReducedMotion } from '../../core/motionPolicy'
 
 // Shared geometry — reused by all CasePlane instances (GPU buffer, not uniforms).
 // 20×12 segments for smooth cloth deformation without excessive vertex count.
@@ -168,6 +169,7 @@ export class CasePlane extends THREE.Mesh {
   }
 
   pulse(amount = CLOTH_PARAMS.pulseAmount): void {
+    if (prefersReducedMotion()) return
     this._wobbleTarget = Math.max(this._wobbleTarget, amount)
   }
 
@@ -193,6 +195,18 @@ export class CasePlane extends THREE.Mesh {
       this._motionTarget < 0.002 &&
       Math.abs(this._edgeWarpValue - this._edgeWarpTarget) < 0.002
     ) {
+      return
+    }
+
+    if (prefersReducedMotion()) {
+      this._wobbleValue = 0
+      this._wobbleTarget = 0
+      this._motionValue = 0
+      this._motionTarget = 0
+      this._edgeWarpValue = this._edgeWarpTarget
+      this._stateUni.value.z = 0
+      this._state2Uni.value.x = 0
+      this._state2Uni.value.y = this._edgeWarpValue
       return
     }
 

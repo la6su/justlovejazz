@@ -62,6 +62,9 @@ under `src/builder/`; the public builds do not import the editor graph.
 - Reduced-motion branches synchronously reach the authored final state and
   release render activity; entry title/eyebrow observers do not allocate RAF
   loops or safety timers in reduced-motion mode.
+- Works card deformation and reveal transitions follow the same contract:
+  transient TSL uniforms settle to rest and visible card opacity reaches its
+  target in one update.
 - `Experience` observes the live reduced-motion media query for the lifetime
   of the runtime. Enabling it cancels ambient breathing and settles the single
   render scheduler; disabling it raises one `motion-preference` invalidation.

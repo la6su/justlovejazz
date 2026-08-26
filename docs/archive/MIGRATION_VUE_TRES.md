@@ -3392,6 +3392,19 @@ canonical camera state and disabling it does not resume interrupted motion;
 normal route transitions remain authored. Rollback: remove the camera policy
 callback and restore frame-driven settlement if the cinematic policy changes.
 
+#### Works card live reduced-motion settlement — 2026-08-26
+
+`CasePlane` now ignores new decorative pulses while reduction is active and
+settles wobble, scroll motion and edge-warp uniforms before returning from an
+update. `WorksPlaneStage` snaps reveal opacity to its authored target instead
+of damping it over additional frames.
+
+Acceptance: `CasePlane.reducedMotion.test.ts` verifies uniform rest state and
+pulse suppression; `WorksPlaneStage.lifecycle.test.ts` verifies visible
+reveals settle and `isAnimating` becomes false in one update. Rollback: revert
+the two owner changes and their focused tests together; renderer and backend
+boundaries remain unchanged.
+
 ### Removal ledger
 
 | Legacy element                           | Remove after                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Status |

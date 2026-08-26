@@ -9,6 +9,7 @@ import * as THREE from 'three'
 import { PROJECTS } from '../../Data/Projects'
 import { CasePlane, CLOTH_PARAMS } from './CasePlane'
 import { loadCaseTexture, releaseCaseTexture } from './caseTexture'
+import { prefersReducedMotion } from '../../core/motionPolicy'
 import type { RenderSurface } from '../Renderer'
 
 const SECTION_PROJECTS = [
@@ -233,7 +234,9 @@ export class WorksPlaneStage extends THREE.Group {
       const isVisible = isPrimary || isSecondary
       const targetReveal = isVisible ? 1 : 0
       const reveal = this._reveal.get(card) ?? 0
-      const nextReveal = THREE.MathUtils.damp(reveal, targetReveal, 10, dt)
+      const nextReveal = prefersReducedMotion()
+        ? targetReveal
+        : THREE.MathUtils.damp(reveal, targetReveal, 10, dt)
       this._reveal.set(card, nextReveal)
 
       // Cards that are not part of the active section fade out IN PLACE —

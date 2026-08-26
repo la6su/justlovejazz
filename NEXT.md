@@ -92,6 +92,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
   preserved, transient pulse/shake is cancelled, and cursor displacement is
   removed before scheduler settlement.
 
+- [x] **Settle Works card motion under reduced motion** — CasePlane wobble,
+  scroll motion and edge warp now settle synchronously, while Works reveals
+  snap to their target without retaining render demand.
+
 - [x] **Align WebGLBackend quality state** — direct-render fallback no longer
   advertises or updates the unused TSL post graph; native WebGPU retains the
   crossfade and post parameter path.
