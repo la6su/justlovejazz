@@ -188,6 +188,9 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `WorksPortfolio` has a terminal, idempotent callback boundary. After project
   metadata and carousel callback release, late navigation is inert and cannot
   mutate the retired index.
+- `Sizes` has a terminal, idempotent window-listener boundary. After teardown,
+  late resize registration and viewport reads cannot mutate retired dimensions
+  or call the former Experience callback.
 - `Cursor.drawCircle()` reuses one owner-scoped ring-point buffer and color
   view. The active pointer path remains allocation-free while theme refreshes
   mutate only the cached values.

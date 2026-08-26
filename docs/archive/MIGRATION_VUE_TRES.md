@@ -3913,6 +3913,16 @@ navigation and callback suppression; focused type-check/lint pass. Rollback:
 revert this bounded portfolio callback slice if Works navigation parity
 regresses.
 
+### Sizes terminal teardown — 2026-08-26
+
+`Sizes` now rejects late resize registration and viewport updates after its
+window listener is removed. Destroy is idempotent, while normal resize/DPR
+clamping behavior remains unchanged before teardown.
+
+Acceptance: `Sizes.lifecycle.test.ts` covers repeated destroy, late resize and
+callback suppression; focused type-check/lint pass. Rollback: revert this
+bounded viewport-listener lifecycle slice if resize propagation regresses.
+
 ## Definition of done
 
 The migration is done when the target topology is the only production path;

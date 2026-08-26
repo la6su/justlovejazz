@@ -484,6 +484,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Make WorksPortfolio teardown terminal** — late navigation calls become
   inert after callback/project release; repeated disposal cannot mutate the
   retired index or notify the carousel.
+- [x] **Make Sizes teardown terminal** — late resize registration and viewport
+  updates become inert after the window listener is released; repeated destroy
+  remains safe.
 - [x] **Release the WorksPortfolio owner** — `ExperienceUI.destroy()` now calls
       the portfolio disposer before dropping its reference; disposal clears the
       project/callback references and navigation becomes a safe no-op.
