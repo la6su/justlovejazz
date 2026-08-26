@@ -59,6 +59,15 @@ export class Renderer {
     bloomRadius: 0,
     bloomThreshold: 0,
   }
+  private _postSource = {
+    bloom: Number.NaN,
+    vignette: Number.NaN,
+    grain: Number.NaN,
+    chromatic: Number.NaN,
+    bloomRadius: Number.NaN,
+    bloomThreshold: Number.NaN,
+  }
+  private _postParamsDirty = true
 
   // Phase 6 device-loss recovery state (bounded — see rendererBackend.ts).
   private _deviceLostAttempts = 0
@@ -245,6 +254,7 @@ export class Renderer {
       this.sizes.height,
       this._pipelineConfig,
     )
+    this._postParamsDirty = true
 
     // Transmission is disabled on ALL paths (see SplashCube.ts comment).
     // setTransmissionEnabled() is now a no-op, kept for API compat.
@@ -363,6 +373,7 @@ export class Renderer {
         this.sizes.height,
         this._pipelineConfig,
       )
+      this._postParamsDirty = true
       this.attachDeviceLossRecovery(this.instance)
       // Re-attach the animation loop (or the hidden-tab null) on the new instance.
       if (this._loopCallback) {
@@ -417,7 +428,16 @@ export class Renderer {
       const params = this.postManager.postParams
 
       // Apply to pipeline (typed, no `any`)
-      if (this.pipeline) {
+      const source = this._postSource
+      const changed =
+        this._postParamsDirty ||
+        !Object.is(source.bloom, params.bloom) ||
+        !Object.is(source.vignette, params.vignette) ||
+        !Object.is(source.grain, params.grain) ||
+        !Object.is(source.chromatic, params.chromatic) ||
+        !Object.is(source.bloomRadius, params.bloomRadius) ||
+        !Object.is(source.bloomThreshold, params.bloomThreshold)
+      if (this.pipeline && changed) {
         const pp = this._postParams
         pp.bloom = this.capabilities.scaleIntensity(params.bloom)
         pp.vignette = this.capabilities.scaleIntensity(params.vignette)
@@ -427,6 +447,13 @@ export class Renderer {
         pp.bloomRadius = params.bloomRadius
         pp.bloomThreshold = params.bloomThreshold
         this.pipeline.updateParams(pp)
+        source.bloom = params.bloom
+        source.vignette = params.vignette
+        source.grain = params.grain
+        source.chromatic = params.chromatic ?? Number.NaN
+        source.bloomRadius = params.bloomRadius ?? Number.NaN
+        source.bloomThreshold = params.bloomThreshold ?? Number.NaN
+        this._postParamsDirty = false
       }
     }
 

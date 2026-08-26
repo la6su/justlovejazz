@@ -228,6 +228,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
       are now performed only in the same dirty handoff, preserving first-render
       priming and scene/camera rebuild invalidation.
 
+- [x] **Cache Renderer post source values** — real-WebGPU `scaleIntensity` and
+      wrapper writes now run only when manager values change or a new pipeline is
+      created; the direct WebGLBackend path stays untouched.
+
 - [x] **Cache CinematicNav scroll policy** — programmatic section navigation
       reads the owner-local reduced-motion snapshot instead of re-querying the
       media preference on every scroll request.

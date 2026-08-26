@@ -263,4 +263,55 @@ describe('Renderer device-loss lifecycle', () => {
     expect(updateParams).not.toHaveBeenCalled()
     expect(render).toHaveBeenCalledOnce()
   })
+
+  it('caches settled real-WebGPU post parameter scaling until values change', () => {
+    const postUpdate = vi.fn()
+    const updateParams = vi.fn()
+    const render = vi.fn()
+    const params = {
+      bloom: 0.4,
+      vignette: 0.5,
+      grain: 0.25,
+      chromatic: 0,
+      bloomRadius: 0.6,
+      bloomThreshold: 0.5,
+    }
+    const renderer = Object.assign(Object.create(Renderer.prototype), {
+      _recovering: false,
+      _recoveryFailed: false,
+      _disposed: false,
+      capabilities: { isRealWebGPU: true, scaleIntensity: vi.fn((value: number) => value) },
+      postManager: { update: postUpdate, postParams: params },
+      pipeline: { updateParams, render },
+      instance: { render },
+      _postParams: {
+        bloom: 0,
+        vignette: 0,
+        grain: 0,
+        chromatic: 0,
+        bloomRadius: 0,
+        bloomThreshold: 0,
+      },
+      _postSource: {
+        bloom: Number.NaN,
+        vignette: Number.NaN,
+        grain: Number.NaN,
+        chromatic: Number.NaN,
+        bloomRadius: Number.NaN,
+        bloomThreshold: Number.NaN,
+      },
+      _postParamsDirty: true,
+    }) as unknown as Renderer
+
+    renderer.update(new THREE.Scene(), new THREE.PerspectiveCamera(), 1 / 60)
+    renderer.update(new THREE.Scene(), new THREE.PerspectiveCamera(), 1 / 60)
+    expect(postUpdate).toHaveBeenCalledTimes(2)
+    expect(updateParams).toHaveBeenCalledOnce()
+    expect((renderer as unknown as { capabilities: { scaleIntensity: ReturnType<typeof vi.fn> } }).capabilities.scaleIntensity).toHaveBeenCalledTimes(4)
+
+    params.bloom = 0.8
+    renderer.update(new THREE.Scene(), new THREE.PerspectiveCamera(), 1 / 60)
+    expect(updateParams).toHaveBeenCalledTimes(2)
+    expect((renderer as unknown as { capabilities: { scaleIntensity: ReturnType<typeof vi.fn> } }).capabilities.scaleIntensity).toHaveBeenCalledTimes(8)
+  })
 })
