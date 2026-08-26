@@ -255,6 +255,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
       with unchanged story progress and route revision return the pooled result
       without repeating group, ground or opacity reconciliation.
 
+- [x] **Isolate WebGPU post-pass teardown failures** — a throwing `PassNode`
+      disposal clears its owner reference and cannot prevent the remaining TSL
+      graph cleanup or a later idempotent dispose.
+
 - [x] **Cache CinematicNav scroll policy** — programmatic section navigation
       reads the owner-local reduced-motion snapshot instead of re-querying the
       media preference on every scroll request.

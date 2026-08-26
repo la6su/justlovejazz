@@ -301,7 +301,14 @@ export class WebGPUPostPipeline {
   private _disposeScenePass(): void {
     const pass = this._scenePass
     this._scenePass = null
-    pass?.dispose()
+    if (!pass) return
+    try {
+      pass.dispose()
+    } catch {
+      // GPU teardown is failure-isolating: a backend-specific pass error must
+      // not retain the pass reference or prevent the rest of the owner from
+      // releasing its graph and renderer resources.
+    }
   }
 
   resize(): void {

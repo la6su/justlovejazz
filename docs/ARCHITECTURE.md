@@ -52,6 +52,9 @@ under `src/builder/`; the public builds do not import the editor graph.
   unused post uniforms or advertise post processing.
 - TSL post-graph construction restores renderer tone mapping in a `finally`
   path, so a failed graph build cannot leak partial color-transform state.
+- `WebGPUPostPipeline` clears its scene-pass owner before disposal and isolates
+  backend teardown exceptions; a failing `PassNode.dispose()` cannot retain a
+  detached render target or abort the rest of post/renderer cleanup.
 - One renderer-loop driver exists. `RenderScheduler` owns demand policy and
   requests bounded work from the one bounded renderer loop adapter;
   settled idle performs no draw work and hidden tabs pause.
