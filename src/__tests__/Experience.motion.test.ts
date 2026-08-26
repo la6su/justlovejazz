@@ -85,6 +85,20 @@ describe('Experience reduced-motion synchronization', () => {
     expect(setReducedMotion).toHaveBeenCalledWith(true)
   })
 
+  it('forwards a live preference change to the post-processing owner', () => {
+    const experience = createExperience(false)
+    const setReducedMotion = vi.fn()
+    const owner = experience as unknown as {
+      _handleReducedMotionChange: (reduced: boolean) => void
+      renderer: { postManager: { setReducedMotion: (reduced: boolean) => void } }
+    }
+    owner.renderer = { postManager: { setReducedMotion } }
+
+    owner._handleReducedMotionChange(true)
+
+    expect(setReducedMotion).toHaveBeenCalledWith(true)
+  })
+
   it('raises one typed demand when reduction is disabled again', () => {
     const experience = createExperience(true)
     const owner = experience as unknown as {

@@ -147,6 +147,8 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `PostProcessingManager.setReducedMotion(true)` snaps its display crossfade to
   the current preset before the scheduler settles; reduced motion cannot leave
   the WebGPU post graph with an intermediate authored intensity.
+- `Experience` forwards the exact live preference boolean to the post owner
+  before settling the shared scheduler; the integration is regression-tested.
 - `SceneCoordinator.updateTransform()` snapshots the current route page and
   carousel owner once per synchronous pass before applying six-group visibility;
   the getter boundary remains live across route transitions without repeating

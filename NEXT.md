@@ -227,6 +227,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
       snaps display parameters to the active preset before the shared scheduler
       stops, preventing a half-applied bloom/vignette/grain state.
 
+- [x] **Cover post-owner motion forwarding** — Experience regression coverage
+      now locks the exact boolean handoff from the live preference observer to
+      the renderer post owner.
+
 - [x] **Snapshot SceneCoordinator route owners per transform pass** — the
       six-group visibility loop now reuses one route page and carousel owner
       read, preserving the live getter boundary while removing repeated reads
