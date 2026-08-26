@@ -83,6 +83,7 @@ export class SplashCube extends THREE.Mesh {
   // It gives the transparent volume enough contrast on a white UI without
   // reading as an added wireframe or a flat blue block.
   private _themeTint = new THREE.Color(0x5e5667)
+  private readonly _blendColor = new THREE.Color()
 
   private _idleRotY = 0
 
@@ -451,11 +452,14 @@ export class SplashCube extends THREE.Mesh {
 
   /** Apply the latest world blend without requiring a scheduler frame. */
   private applyMaterialBlend(): void {
-    this.cubeMaterial.color.copy(this._blendFromColor).lerp(this._blendToColor, this._blendT)
+    this._blendColor.copy(this._blendFromColor).lerp(this._blendToColor, this._blendT)
     // A controlled neutral tint keeps glass visible on white without a
     // debug-looking outline. The visible shape is a real PBR surface: PMREM,
     // transmission, clearcoat and iridescence create the moving highlights.
-    this.cubeMaterial.color.lerp(this._themeTint, this._isLightTheme ? 0.9 : 0.3)
+    this._blendColor.lerp(this._themeTint, this._isLightTheme ? 0.9 : 0.3)
+    if (!this.cubeMaterial.color.equals(this._blendColor)) {
+      this.cubeMaterial.color.copy(this._blendColor)
+    }
   }
 
   /** Add energy to the damped material reaction without a timer cut-off. */

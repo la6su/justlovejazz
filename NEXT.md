@@ -192,6 +192,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
       converged color/intensity/position lerps while preserving its intentional
       volumetric orbit and reduced-motion snap behavior.
 
+- [x] **Skip unchanged SplashCube blend writes** — final theme/world color is
+      computed in owner-local scratch state and uploaded only when it differs;
+      role, reduced-motion and disposal boundaries remain unchanged.
+
 - [x] **Cache CinematicNav scroll policy** — programmatic section navigation
       reads the owner-local reduced-motion snapshot instead of re-querying the
       media preference on every scroll request.

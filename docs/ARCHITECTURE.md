@@ -191,6 +191,9 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `CinematicLights` stops writing converged transition properties after its
   targets settle; the volumetric light orbit remains an explicit normal-motion
   signal, while reduced motion still snaps and disables transition work.
+- `SplashCube` computes its final theme/world blend in a reusable color and
+  skips identical material-color writes; role reconciliation and reduced-motion
+  settlement still apply the current authored state before teardown.
 - `CinematicLights` applies the same reduced-motion boundary to section light
   transitions: colors, intensities and key position snap to their targets and
   skip interpolation/orbit work; normal motion retains authored lerp timing.

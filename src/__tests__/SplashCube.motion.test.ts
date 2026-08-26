@@ -85,6 +85,29 @@ describe('SplashCube reduced-motion transitions', () => {
     cube.dispose()
   })
 
+  it('skips identical blend material writes while applying changed blend state', () => {
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }))
+    const cube = new SplashCube()
+    const material = (cube.children[0] as THREE.Mesh).material as THREE.MeshPhysicalMaterial
+    const copy = vi.spyOn(material.color, 'copy')
+    const from = new THREE.Color(0x000000)
+    const to = new THREE.Color(0xffffff)
+
+    cube.setTheme(false)
+    cube.updateWorldBlend(from, to, from, to, 0.5)
+    cube.update(0)
+    copy.mockClear()
+    cube.update(0)
+    const writesAfterFirstBlend = copy.mock.calls.length
+    cube.update(0)
+    expect(copy).toHaveBeenCalledTimes(writesAfterFirstBlend)
+
+    cube.updateWorldBlend(from, to, from, to, 0.75)
+    cube.update(0)
+    expect(copy.mock.calls.length).toBeGreaterThan(writesAfterFirstBlend)
+    cube.dispose()
+  })
+
   it('does not advance an unowned idle mesh rotation on demand frames', () => {
     vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }))
     const cube = new SplashCube()
