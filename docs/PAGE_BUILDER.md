@@ -108,14 +108,19 @@ covers the first high-value UIkit groups. Full UIkit component coverage,
 publishing as a public route, managing multiple route documents, drag-and-drop
 nesting and media selection are separate outcomes. The first dynamic source
 slice is now in: only the trusted project manifest can feed a list, with no
-network or user code. Public
-route integration must use `renderBuilderDocument()` and the existing router
-metadata/i18n contracts; it must not import `admin/`. This is the interim rule
-before Phases 5 and 9. After the Vue route registry passes parity, public
-rendering consumes that registry; the legacy HTML adapter remains only for
-proven static output until its cleanup gate.
+network or user code. The Vue element registry is now the public runtime
+renderer and remains separate from `admin/`, router metadata and i18n state.
+
+Static publishing is a separate owner: `renderBuilderPageDocument()` wraps the
+validated registry output for approved `/p/<slug>` artifacts. The string
+`renderBuilderDocument()` renderer remains only as a framework-neutral
+test/reference adapter; it is not a public route fallback and must not return
+to the runtime graph.
 
 ## Vue migration sequence
+
+The sequence below records the completed boundary and its remaining guardrails;
+it is historical context, not an open implementation checklist.
 
 1. Freeze schema v2 fixtures and compiler output before changing the editor.
 2. Extract framework-neutral commands for add, move, duplicate, delete,
@@ -123,12 +128,12 @@ proven static output until its cleanup gate.
 3. Build the Vue admin shell as a separate dev-only entry and reuse those
    commands.
 4. Add one typed Vue element registry used by editor preview and public route
-   rendering. Keep HTML rendering only for static output until parity is
-   proven.
+   rendering. Keep the static publishing wrapper separate from the runtime
+   registry.
 5. Move multi-route publishing and SSG only after Vue Router owns the public
    route manifest.
-6. Delete the old editor/render adapter when fixture, visual and production
-   bundle gates pass.
+6. Keep only the framework-neutral string adapter needed by tests/reference
+   fixtures; delete any runtime caller or compatibility fallback when found.
 
 The builder remains excluded from the initial public graph. Vue Devtools,
 inspector state, drag-and-drop libraries and editor-only UIkit components must

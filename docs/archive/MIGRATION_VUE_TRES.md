@@ -3677,6 +3677,13 @@ UIkit vendor. Vue/TresJS cells remain explicitly unattributed because the
 current manifest does not expose independent vendor chunks; no inferred number
 is used as migration evidence.
 
+### Page Builder runtime boundary wording — 2026-08-26
+
+`docs/PAGE_BUILDER.md` now reflects the shipped Phase 9 Vue element registry:
+public runtime rendering is registry-owned, while `renderBuilderPageDocument()`
+is the static publishing wrapper. The framework-neutral string renderer is
+documented as a test/reference adapter only and is not a runtime fallback.
+
 ## Definition of done
 
 The migration is done when the target topology is the only production path;

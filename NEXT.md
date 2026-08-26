@@ -420,6 +420,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
   and budget measurements are recorded in `docs/PERFORMANCE_BASELINE.md`,
   including explicit `n/a` attribution where the manifest has no separate
   Vue/TresJS vendor chunks.
+- [x] **Align Page Builder migration wording** — `docs/PAGE_BUILDER.md` now
+  describes the shipped Vue registry and static publishing boundary instead of
+  treating Phases 5 and 9 as future work or implying a runtime HTML fallback.
 - [x] **Release the WorksPortfolio owner** — `ExperienceUI.destroy()` now calls
   the portfolio disposer before dropping its reference; disposal clears the
   project/callback references and navigation becomes a safe no-op.
