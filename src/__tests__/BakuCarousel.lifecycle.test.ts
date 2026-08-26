@@ -95,6 +95,52 @@ describe('BakuCarousel texture lifecycle', () => {
     expect(update).toHaveBeenCalledWith(1 / 60, false)
   })
 
+  it('reconciles a settled visible layout once and skips repeated card writes', () => {
+    const card = {
+      visible: true,
+      isAnimating: false,
+      userData: {},
+      position: new THREE.Vector3(),
+      rotation: new THREE.Euler(),
+      scale: new THREE.Vector3(1, 1, 1),
+      setReveal: vi.fn(),
+      setMotion: vi.fn(),
+      setEdgeWarp: vi.fn(),
+      setTransition: vi.fn(),
+      update: vi.fn(),
+      dispose: vi.fn(),
+    }
+    const carousel = new BakuCarousel()
+    Object.assign(carousel as unknown as Record<string, unknown>, {
+      cards: [card],
+      _active: true,
+      _morphT: 1,
+      _morphTarget: 1,
+      scroll: { current: 0, target: 0 },
+    })
+
+    carousel.update(1 / 60)
+    const firstPass = {
+      reveal: card.setReveal.mock.calls.length,
+      motion: card.setMotion.mock.calls.length,
+      edgeWarp: card.setEdgeWarp.mock.calls.length,
+      transition: card.setTransition.mock.calls.length,
+      update: card.update.mock.calls.length,
+    }
+    carousel.update(1 / 60)
+
+    expect(card.setReveal).toHaveBeenCalledTimes(firstPass.reveal)
+    expect(card.setMotion).toHaveBeenCalledTimes(firstPass.motion)
+    expect(card.setEdgeWarp).toHaveBeenCalledTimes(firstPass.edgeWarp)
+    expect(card.setTransition).toHaveBeenCalledTimes(firstPass.transition)
+    expect(card.update).toHaveBeenCalledTimes(firstPass.update)
+    expect(carousel.isAnimating).toBe(false)
+    card.isAnimating = true
+    carousel.update(1 / 60)
+    expect(card.update).toHaveBeenCalledTimes(firstPass.update + 1)
+    carousel.dispose()
+  })
+
   it('uses the typed story side for the menu input guard', async () => {
     mocks.loadCaseTexture.mockImplementation(async () => new THREE.Texture())
     let side: StorySide = 'menu'

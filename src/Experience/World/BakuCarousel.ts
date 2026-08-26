@@ -61,6 +61,11 @@ export class BakuCarousel extends THREE.Group {
   private _camera: THREE.Camera | null = null
   private _raycaster: THREE.Raycaster = new THREE.Raycaster()
   private _ndc: THREE.Vector2 = new THREE.Vector2()
+  // A visible settled carousel still receives coordinator demand frames when
+  // another owner (for example JunniParticles) is active. Keep one explicit
+  // reconciliation pass, then avoid rewriting all card transforms/uniforms
+  // until motion or a lifecycle policy change makes the layout dirty again.
+  private _layoutDirty = true
 
   // Input state
   private isDown = false
@@ -117,6 +122,7 @@ export class BakuCarousel extends THREE.Group {
     this.velocity = 0
     this._morphT = this._morphTarget
     this.scroll.current = this.scroll.target
+    this._layoutDirty = true
 
     // SceneCoordinator intentionally skips decorative carousel updates under
     // reduced motion. Reconcile the settled transforms once so the last
@@ -393,6 +399,7 @@ export class BakuCarousel extends THREE.Group {
 
   update(dt: number): void {
     if (this._disposed) return
+    if (!this._layoutDirty && !this.isAnimating) return
     // Time-based damping keeps reveal timing identical at 60/90/120Hz.
     this._morphT = THREE.MathUtils.damp(this._morphT, this._morphTarget, MORPH_DAMPING, dt)
     if (Math.abs(this._morphTarget - this._morphT) < 0.001) {
@@ -468,6 +475,7 @@ export class BakuCarousel extends THREE.Group {
       // or already-animating cards during morph and teardown.
       card.update(dt, this._active && (card.visible || card.isAnimating))
     }
+    this._layoutDirty = false
   }
 
   dispose(): void {

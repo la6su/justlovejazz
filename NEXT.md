@@ -234,6 +234,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Own the unsupported renderer overlay** — failure-state DOM is now
       idempotent and removed with `Renderer.dispose()`, including repeated
       device-loss failures.
+- [x] **Skip settled BakuCarousel rewrites** — preserve one reconciliation pass
+      while avoiding repeated 12-card transform/uniform writes on demand frames
+      caused by other active scene owners.
 
 - [x] **Cache CinematicNav scroll policy** — programmatic section navigation
       reads the owner-local reduced-motion snapshot instead of re-querying the

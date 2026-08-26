@@ -224,6 +224,10 @@ under `src/builder/`; the public builds do not import the editor graph.
 - The renderer failure overlay is an explicit `Renderer`-owned DOM resource:
   repeated unsupported/device-loss failures reuse one element, and terminal
   disposal removes it.
+- `BakuCarousel` keeps a dirty-layout gate: it performs the first/follow-up pass
+  required by motion or reduced-motion reconciliation, then skips settled card
+  transform and uniform writes even when another visible owner keeps demand
+  frames flowing.
 - `CinematicLights` applies the same reduced-motion boundary to section light
   transitions: colors, intensities and key position snap to their targets and
   skip interpolation/orbit work; normal motion retains authored lerp timing.
