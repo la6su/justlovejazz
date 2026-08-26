@@ -57,6 +57,10 @@ export class Cursor {
     teal: this._cachedTeal,
   }
   private _cacheDirty = true
+  // A theme change can leave the cursor's geometry completely settled while
+  // its palette has changed. Consume this one-shot redraw request in the same
+  // gate as motion so a settled loop gets exactly one fresh canvas paint.
+  private _forceRedraw = false
   private readonly _ringPoints = Array.from({ length: SMOOTH_SEGMENTS }, () => ({ x: 0, y: 0 }))
 
   /** Refresh cached theme colors from CSS variables. Call on theme change. */
@@ -71,6 +75,7 @@ export class Cursor {
     this._themeColors.accentGlow = this._cachedAccentGlow
     this._themeColors.teal = this._cachedTeal
     this._cacheDirty = false
+    this._forceRedraw = true
   }
 
   /** Get cached colors, refreshing if dirty. */
@@ -340,7 +345,8 @@ export class Cursor {
       Math.abs(this.fillProgress - this._lastDrawFill) > 0.01 ||
       Math.abs(this.bumpScale - this._lastDrawBump) > 0.01 ||
       this.isStuck !== this._lastDrawStuck ||
-      this.cursorState !== this._lastDrawState
+      this.cursorState !== this._lastDrawState ||
+      this._forceRedraw
     if (moved) {
       this.drawCircle()
       this._lastDrawX = this.posX
@@ -350,6 +356,7 @@ export class Cursor {
       this._lastDrawBump = this.bumpScale
       this._lastDrawStuck = this.isStuck
       this._lastDrawState = this.cursorState
+      this._forceRedraw = false
     }
     this.frameCount++
   }

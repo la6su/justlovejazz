@@ -946,6 +946,10 @@ export class Experience {
     // Theme-specific syncs (ground, baku, particles) only run when the polarity
     // actually changed, not on every same-polarity scroll step.
     this._themeAppliedUnsub = eventBus.on('jlz:theme-applied', (detail) => {
+      // The cursor is a DOM/canvas owner outside the scene graph. Its cached
+      // palette follows the same typed theme-only boundary and requests one
+      // redraw even when its motion state is already settled.
+      if (detail.themeChanged !== false) this.cursor.refreshThemeCache()
       // The scene input port: the typed ThemeAppliedPort detail that
       // ContentReveal dispatches on every section change / theme toggle.
       const sectionIdx = detail.sectionIndex

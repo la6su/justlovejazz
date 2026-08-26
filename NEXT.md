@@ -650,6 +650,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Pool cursor redraw geometry** — active cursor frames reuse the fixed
       ring-point records and cached theme-color view instead of allocating a point
       array and palette object on every canvas redraw.
+- [x] **Invalidate cursor palette at the theme boundary** — the persistent
+      canvas cursor refreshes its CSS color cache only for a real theme change
+      and forces exactly one redraw while settled; subsequent idle frames keep
+      the existing demand and allocation guards.
 - [x] **Isolate Camera owner state** — spring damping and Three.js scratch
       objects now belong to each Camera wrapper instead of shared module state;
       concurrent recovery/HMR instances cannot advance one another's camera.

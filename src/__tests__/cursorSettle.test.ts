@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { Cursor } from '../Experience/Cursor'
 
 // Phase 7 (ADR 0004): the single loop driver stops after the settled frame.
@@ -101,6 +101,19 @@ describe('Cursor.isSettled (Phase 7 loop-settle predicate)', () => {
   it('stays settled across idle frames (no phantom wake)', () => {
     const history = stepCursor(cursor, 120)
     expect(history.every((s) => s)).toBe(true)
+  })
+
+  it('redraws once after a theme cache refresh, then stays idle', () => {
+    const drawCircle = vi.spyOn(cursor as unknown as { drawCircle: () => void }, 'drawCircle')
+    cursor.update()
+    drawCircle.mockClear()
+
+    cursor.refreshThemeCache()
+    cursor.update()
+    expect(drawCircle).toHaveBeenCalledOnce()
+
+    cursor.update()
+    expect(drawCircle).toHaveBeenCalledOnce()
   })
 
   it('becomes terminal and ignores late frames after teardown', () => {
