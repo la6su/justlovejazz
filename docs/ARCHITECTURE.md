@@ -235,6 +235,10 @@ under `src/builder/`; the public builds do not import the editor graph.
   the stage treats the same camera identity as an idempotent binding, so that
   handoff does not re-dirty a settled layout. A real camera replacement still
   invalidates reconciliation.
+- `SceneCoordinator.updateTransform()` caches the pooled result for identical
+  story progress and route-owner revision. Route/section/reduced-motion setters
+  invalidate that cache, so unrelated demand frames do not repeat six-group
+  visibility, ground or opacity reconciliation.
 - `DrawTrail` has a settled fast path keyed by pointer and camera world matrix;
   it skips ray/unprojection and uniform work when the trail is fully faded, but
   remains wakeable by first use, pointer movement, camera movement and motion

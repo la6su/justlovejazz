@@ -251,6 +251,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
       the same camera no longer dirties the settled route layout; a real camera
       replacement still invalidates the card reconciliation pass.
 
+- [x] **Reuse settled SceneCoordinator transforms** — repeated demand frames
+      with unchanged story progress and route revision return the pooled result
+      without repeating group, ground or opacity reconciliation.
+
 - [x] **Cache CinematicNav scroll policy** — programmatic section navigation
       reads the owner-local reduced-motion snapshot instead of re-querying the
       media preference on every scroll request.

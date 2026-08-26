@@ -122,6 +122,28 @@ describe('SceneCoordinator route visuals (Phase 8 slice 10: the gate left `World
     isolated.dispose()
   })
 
+  it('reuses the pooled transform when story progress and route state are unchanged', async () => {
+    const applyTransform = vi.fn()
+    const isolated = new SceneCoordinator(
+      new THREE.Scene(),
+      {
+        ...makeOwners(cube),
+        ground: () => ({ applyTransform }) as never,
+      },
+      () => page,
+    )
+    await isolated.init()
+
+    const first = isolated.updateTransform(0.2)
+    const second = isolated.updateTransform(0.2)
+
+    expect(second).toBe(first)
+    expect(applyTransform).toHaveBeenCalledOnce()
+    isolated.updateTransform(0.3)
+    expect(applyTransform).toHaveBeenCalledTimes(2)
+    isolated.dispose()
+  })
+
   it('skips repeated section opacity writes when fade is unchanged', async () => {
     const groups = Array.from({ length: 6 }, () => new THREE.Group())
     const material = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.6 })

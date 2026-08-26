@@ -55,6 +55,13 @@ export class SceneCoordinator {
   public sections: Section[] = []
   private configs: readonly PhaseConfig[] = []
   private _configMap: Map<string, PhaseConfig> | null = null
+  // A demand frame can be raised by an unrelated owner while story progress
+  // remains unchanged. Reuse the pooled transform and skip route reconciliation
+  // until an owner-side setter or route/config rebuild invalidates this pass.
+  private _transformRevision = 0
+  private _transformCacheRevision = -1
+  private _transformCacheScroll = Number.NaN
+  private _transformCachePage: PageId | null = null
   // PERF-1 fix: cache ranges (configs.map(c => c.range) was called every frame
   // in updateTransform → 360 array allocs/sec at 60fps). Ranges are immutable
   // after init(), so cache once.
@@ -144,6 +151,7 @@ export class SceneCoordinator {
     // not retain the previous route's scene contract.
     this._configMap = null
     this._rangesCache = null
+    this._invalidateTransformCache()
     this.disposeSections()
     // Phase 8 slice 10: the route-specific visibility gate runs first (matches
     // the legacy World ordering) — it toggles the shared cube + Lab object and
@@ -246,8 +254,10 @@ export class SceneCoordinator {
 
   /** Sync the 3D Works composition with CinematicNav's active DOM chapter. */
   public setWorksPlaneStageSection(index: number): void {
+    if (this.worksPlaneStageSection === index) return
     this.worksPlaneStageSection = index
     this.owners.worksPlaneStage()?.setActive(this.page() === 'works', index)
+    this._invalidateTransformCache()
   }
 
   /**
@@ -264,6 +274,7 @@ export class SceneCoordinator {
       if (particles) particles.visible = !isAgros
     }
     this.contactTypographyStage?.setActive(isContact && !isFinal)
+    this._invalidateTransformCache()
   }
 
   /**
@@ -395,6 +406,7 @@ export class SceneCoordinator {
     if (!section) return undefined
 
     this._currentSectionIndex = index
+    this._invalidateTransformCache()
 
     const reduced = this.isReducedMotion
 
@@ -426,6 +438,16 @@ export class SceneCoordinator {
     // owner lookups on every group while preserving the live getter boundary
     // across subsequent route transitions.
     const page = this.page()
+    if (
+      this._transformCacheRevision === this._transformRevision &&
+      this._transformCachePage === page &&
+      Object.is(this._transformCacheScroll, scrollValue)
+    ) {
+      return this._poolResult
+    }
+    this._transformCacheRevision = this._transformRevision
+    this._transformCachePage = page
+    this._transformCacheScroll = scrollValue
     const carouselOwner = this.owners.carousel()
 
     // ── Find from/to indices from range config
@@ -722,6 +744,7 @@ export class SceneCoordinator {
   // Experience (it owns the owners).
 
   public dispose(): void {
+    this._invalidateTransformCache()
     this.disposeSections()
     // Inline WorldAtmosphere.dispose — null out fog only (EnvSphere owns
     // background).
@@ -751,6 +774,7 @@ export class SceneCoordinator {
         !(page === 'contact' && (this.owners.contactCyprusStage()?.isActive ?? false))
     const labGamepad = this.owners.labGamepad()
     if (labGamepad) labGamepad.visible = isLab
+    this._invalidateTransformCache()
   }
 
   private _camera: THREE.Camera | undefined
@@ -886,5 +910,10 @@ export class SceneCoordinator {
   /** Keep frame-path policy synchronized by the Experience owner. */
   public setReducedMotion(reduced: boolean): void {
     this._reducedMotion = reduced
+    this._invalidateTransformCache()
+  }
+
+  private _invalidateTransformCache(): void {
+    this._transformRevision += 1
   }
 }
