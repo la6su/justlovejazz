@@ -129,6 +129,9 @@ under `src/builder/`; the public builds do not import the editor graph.
   reactivating glyphs; route entry cannot bypass the shared preference boundary.
 - `Experience` uses its synchronized motion snapshot when triggering section
   camera shake, so context transitions cannot diverge from live owner policy.
+- `ParticleBurst` enforces reduced-motion at its own GPU owner boundary: live
+  enablement cancels an active burst and later triggers are inert until normal
+  motion is restored.
 - `WorksPlaneStage` snapshots reduced-motion state once per media-query change;
   its per-card frame path no longer calls `matchMedia()` for every card. The
   observer is released with the stage, preserving the lazy route owner's

@@ -1,7 +1,9 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ParticleBurst } from '../Experience/World/ParticleBurst'
 
 describe('ParticleBurst lifecycle', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
   it('becomes terminal after disposal and ignores late triggers', () => {
     const burst = new ParticleBurst()
     burst.trigger(1, 2, 3)
@@ -36,5 +38,22 @@ describe('ParticleBurst lifecycle', () => {
 
     first.dispose()
     second.dispose()
+  })
+
+  it('does not start or retain a burst under reduced motion', () => {
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: true }))
+    const burst = new ParticleBurst()
+
+    burst.trigger()
+    expect(burst.isActive).toBe(false)
+    expect(burst.visible).toBe(false)
+
+    burst.setReducedMotion(false)
+    burst.trigger()
+    expect(burst.isActive).toBe(true)
+    burst.setReducedMotion(true)
+    expect(burst.isActive).toBe(false)
+    expect(burst.visible).toBe(false)
+    burst.dispose()
   })
 })

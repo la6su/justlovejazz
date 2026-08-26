@@ -8,6 +8,7 @@
 import * as THREE from 'three'
 import { MeshBasicNodeMaterial } from 'three/webgpu'
 import { Fn, float, smoothstep, uniform, vec3 } from 'three/tsl'
+import { prefersReducedMotion } from '../../core/motionPolicy'
 
 const FRAME_COUNT = 3
 const SEGMENTS_PER_FRAME = 4
@@ -51,6 +52,7 @@ export class ParticleBurst extends THREE.InstancedMesh {
   private readonly _segments: TraceSegment[] = []
   private _active = false
   private _disposed = false
+  private _reducedMotion = prefersReducedMotion()
   private _elapsed = 0
   private _origin = new THREE.Vector3()
 
@@ -83,13 +85,23 @@ export class ParticleBurst extends THREE.InstancedMesh {
   }
 
   trigger(originX = 0, originY = 0, originZ = 0): void {
-    if (this._disposed) return
+    if (this._disposed || this._reducedMotion) return
     this._active = true
     this._elapsed = 0
     this._origin.set(originX, originY, originZ)
     this.visible = true
     this._uniforms.uTime.value = 0
     this.updateMatrices(0)
+  }
+
+  /** Reconcile live motion policy at the GPU owner boundary. */
+  setReducedMotion(reduced: boolean): void {
+    if (this._disposed) return
+    this._reducedMotion = reduced
+    if (!reduced) return
+    this._active = false
+    this._elapsed = TRACE_DURATION
+    this.visible = false
   }
 
   update(dt: number): boolean {

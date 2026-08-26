@@ -203,6 +203,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
       changes now use the runtime owner policy instead of an out-of-band media
       query during the transition path.
 
+- [x] **Make ParticleBurst reduced-motion safe at the owner boundary** — the
+      splash GPU burst now rejects new triggers and cancels active work when
+      reduced motion is enabled, independent of the calling UI path.
+
 - [x] **Pool SceneCoordinator transform results** — per-frame camera/world
       metadata now reuses one owner-scoped result graph.
 

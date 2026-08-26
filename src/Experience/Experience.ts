@@ -379,6 +379,7 @@ export class Experience {
     this.lights?.setReducedMotion(reduced)
     this.baku?.setReducedMotion(reduced)
     this.carousel?.setReducedMotion(reduced)
+    this.particleBurst?.setReducedMotion(reduced)
     this.camera?.setReducedMotion(reduced)
     this.contactCyprusStage?.setReducedMotion(reduced)
     this.contactTypographyStage?.setReducedMotion(reduced)
