@@ -388,7 +388,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [ ] **Profile the next runtime owner on real backends** — capture a bounded
       WebGPU/WebGLBackend frame trace and draw/resource counters before changing
       an owner whose motion is intentional; headless unit coverage alone is not
-      sufficient evidence for the next performance slice.
+      sufficient evidence for the next performance slice. The phase7 gate now
+      captures the trace on the local WebGLBackend path; a hardware WebGPU run
+      remains required before this item can close.
 - [x] **Harden async route-owner cancellation** — `ExperienceUI` route-change
       promises now use a shared generation/page predicate, so late Works/Contact
       initializers cannot raise demand or touch a stage after a fast route exit;

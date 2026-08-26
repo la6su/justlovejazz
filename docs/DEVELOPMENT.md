@@ -150,6 +150,12 @@ converted into a false exact threshold (e.g. headless Chromium's flat
 `performance.memory` reading is noted, not silently dropped). Repeatable
 monotonic growth is a release blocker.
 
+The same gate sends a short pointer burst through the real invalidation path
+before its final snapshot. The report therefore includes a bounded DEV CPU
+frame trace (scene, camera/lights, renderer and total p50/p95) next to the
+actual backend and resource counters. This trace is evidence for choosing the
+next owner; it is not a GPU timestamp or a substitute for a hardware profile.
+
 In development builds, `window.__jlzRuntimeSnapshot()` returns the same
 owner-visible inventory shown in the DevPanel: canvas count, scene geometries,
 materials and textures, renderer counters when exposed, post-pipeline

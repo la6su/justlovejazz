@@ -20,6 +20,10 @@
  *      the Experience down without fatal errors and the Vue-owned canvas
  *      element survives `Renderer.dispose()` (the renderer, not the DOM,
  *      is disposed).
+ *   4. bounded frame trace — a short real pointer burst is captured through
+ *      the production invalidation path and records the DEV-only CPU timing
+ *      ring alongside backend/resource counters. This is CPU evidence only;
+ *      it does not infer GPU duration.
  *
  * Backends exercised (the unified `WebGPURenderer` is the only class the app
  * constructs — the dev-forced classic `?renderer=webgl` QA owner was removed
@@ -66,6 +70,13 @@ interface RuntimeSnapshot {
     post: { renderTargets: number; passes: number; webgpuPipeline: boolean }
   }
   loop: LoopDiagnostics
+  timing: {
+    samples: number
+    scene: { p50: number; p95: number; latest: number }
+    camera: { p50: number; p95: number; latest: number }
+    renderer: { p50: number; p95: number; latest: number }
+    total: { p50: number; p95: number; latest: number }
+  } | null
 }
 
 interface RunResult {
@@ -81,6 +92,8 @@ interface RunResult {
   canvasAriaHidden: boolean
   loop: LoopDiagnostics | null
   resources: RuntimeSnapshot['resources'] | null
+  timing: RuntimeSnapshot['timing']
+  timingCaptured: boolean
   destroy: { fatalErrors: string[]; canvasSurvives: boolean }
   fatalErrors: string[]
   passed: boolean
@@ -141,6 +154,8 @@ async function run(
     canvasAriaHidden: false,
     loop: null,
     resources: null,
+    timing: null,
+    timingCaptured: false,
     destroy: { fatalErrors: [], canvasSurvives: false },
     fatalErrors: [],
     passed: false,
@@ -206,6 +221,32 @@ async function run(
     // Gate 2 — settled idle: the single loop driver stops after the settled
     // frame. Reduced motion settles synchronously, so skip the settle window.
     if (!opts.reducedMotion) await page.waitForTimeout(SETTLE_MS)
+
+    // Capture a bounded active burst before reading the settled snapshot. The
+    // pointer path is intentionally used instead of synthetic scheduler calls:
+    // it exercises the real input → owner invalidation → renderer loop path
+    // while keeping the trace deterministic and short.
+    for (let index = 0; index < 12; index += 1) {
+      await page.mouse.move(320 + index * 48, 260 + (index % 3) * 36)
+      await page.waitForTimeout(16)
+    }
+    await page.waitForTimeout(250)
+    const burstSnapshot = await page.evaluate(
+      () =>
+        (
+          window as unknown as { __jlzRuntimeSnapshot?: () => RuntimeSnapshot | null }
+        ).__jlzRuntimeSnapshot?.() ?? null,
+    )
+    if (burstSnapshot) {
+      result.timing = burstSnapshot.timing
+      result.timingCaptured = (burstSnapshot.timing?.samples ?? 0) > 0
+    } else {
+      result.notes.push('no __jlzRuntimeSnapshot during active burst (DevPanel missing?)')
+    }
+
+    // The burst intentionally wakes the demand-driven loop. Let that work
+    // settle before applying the idle gate; timing remains in the fixed ring.
+    await page.waitForTimeout(opts.reducedMotion ? 1_000 : SETTLE_MS)
     const snapshot = await page.evaluate(
       () =>
         (
@@ -215,8 +256,10 @@ async function run(
     if (snapshot) {
       result.loop = snapshot.loop
       result.resources = snapshot.resources
+      result.timing ??= snapshot.timing
+      result.timingCaptured ||= (snapshot.timing?.samples ?? 0) > 0
     } else {
-      result.notes.push('no __jlzRuntimeSnapshot (DevPanel missing?)')
+      result.notes.push('no __jlzRuntimeSnapshot after settle (DevPanel missing?)')
     }
 
     // Gate 3 — disposal: destroy the Experience; no fatal errors and the
@@ -241,13 +284,14 @@ async function run(
       result.ready &&
       result.canvasCount === 1 &&
       result.canvasAriaHidden &&
+      result.timingCaptured &&
       settledOk &&
       result.destroy.fatalErrors.length === 0 &&
       result.destroy.canvasSurvives &&
       result.fatalErrors.length === 0
     if (!result.passed) {
       result.notes.push(
-        `loop=${JSON.stringify(result.loop)} fatal=${JSON.stringify(result.fatalErrors)}`,
+        `loop=${JSON.stringify(result.loop)} timing=${JSON.stringify(result.timing)} fatal=${JSON.stringify(result.fatalErrors)}`,
       )
     }
   } catch (e) {
