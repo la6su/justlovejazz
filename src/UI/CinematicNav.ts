@@ -332,7 +332,7 @@ export class CinematicNav {
     if (!this._track) return
     const clamped = Math.max(FIRST_MAIN, Math.min(LAST_MAIN, index))
     const top = (clamped - FIRST_MAIN) * Math.max(1, this._track.clientHeight || window.innerHeight)
-    const behavior: ScrollBehavior = prefersReducedMotion() ? 'auto' : 'smooth'
+    const behavior: ScrollBehavior = this._reducedMotion ? 'auto' : 'smooth'
     if (typeof this._track.scrollTo === 'function') this._track.scrollTo({ top, behavior })
     else this._track.scrollTop = top
   }
