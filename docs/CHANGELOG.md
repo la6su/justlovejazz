@@ -56,6 +56,9 @@
 - BakuCarousel momentum now scales displacement as well as damping by elapsed
   time, keeping fling travel consistent across refresh rates.
 
+- Late case-texture releases now verify the acquired texture identity, avoiding
+  cross-generation refcount corruption during HMR or root teardown races.
+
 - `useJlzPage` now disposes the module-level `WorkCards` registry during route
   owner teardown as well as before route replacement, releasing delegated grid
   listeners and pending card timers on full unmount.

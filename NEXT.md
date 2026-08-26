@@ -93,6 +93,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Keep carousel momentum displacement refresh-rate invariant** — the
   60 Hz-authored fling velocity now scales both decay and travel distance by
   elapsed frame time.
+- [x] **Protect cache generations during async texture release** — late owners
+  pass texture identity when releasing retired in-flight URLs, so a replacement
+  WebGPU texture cannot be decremented by an older generation.
 - [x] **Dispose route WorkCards on owner teardown** — `useJlzPage` now releases
   the module-level card/grid registry on full unmount as well as before route
   replacement, with lifecycle coverage for both paths.

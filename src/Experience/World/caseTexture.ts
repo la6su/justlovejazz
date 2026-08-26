@@ -99,10 +99,12 @@ export function loadCaseTexture(url: string): Promise<THREE.Texture> {
 }
 
 /** Release a refcount on a cached texture. Disposes the GPU texture when
- *  the last consumer releases it. Call from dispose() methods. */
-export function releaseCaseTexture(url: string): void {
+ *  the last consumer releases it. Late async owners should pass the texture
+ *  they acquired so a newer cache generation for the same URL is untouched. */
+export function releaseCaseTexture(url: string, expectedTexture?: THREE.Texture): void {
   const cached = textureCache.get(url)
   if (!cached) return
+  if (expectedTexture && cached.texture !== expectedTexture) return
   cached.refCount--
   if (cached.refCount <= 0) {
     cached.pendingDrop = true

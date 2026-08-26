@@ -143,7 +143,7 @@ export class BakuCarousel extends THREE.Group {
             // A sibling load can reject before this promise settles. Release a
             // late success immediately instead of over-releasing a shared
             // cache entry in the catch path.
-            if (initFailed) releaseCaseTexture(url)
+            if (initFailed) releaseCaseTexture(url, texture)
             else acquiredUrls.add(url)
             return texture
           }),
@@ -158,7 +158,7 @@ export class BakuCarousel extends THREE.Group {
     if (this._disposed) {
       // The owner may have been torn down while textures were decoding. The
       // cards do not exist yet, so release the cache references explicitly.
-      uniqueUrls.forEach((url) => releaseCaseTexture(url))
+      uniqueUrls.forEach((url, index) => releaseCaseTexture(url, uniqueTextures[index]))
       return
     }
     const urlToTexture = new Map(uniqueUrls.map((url, i) => [url, uniqueTextures[i]!]))
@@ -187,7 +187,7 @@ export class BakuCarousel extends THREE.Group {
         card.removeFromParent()
         card.dispose()
       })
-      uniqueUrls.forEach((url) => releaseCaseTexture(url))
+      uniqueUrls.forEach((url, index) => releaseCaseTexture(url, uniqueTextures[index]))
       this.initialized = false
       throw error
     }

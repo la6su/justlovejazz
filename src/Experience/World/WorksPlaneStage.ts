@@ -84,16 +84,29 @@ export class WorksPlaneStage extends THREE.Group {
     this._initialized = true
 
     let textures: THREE.Texture[]
+    let initFailed = false
+    const acquiredTextures = new Map<string, THREE.Texture>()
     try {
-      textures = await Promise.all(PROJECTS.map((project) => loadCaseTexture(project.textureUrl)))
+      textures = await Promise.all(
+        PROJECTS.map((project) =>
+          loadCaseTexture(project.textureUrl).then((texture) => {
+            if (initFailed) releaseCaseTexture(project.textureUrl, texture)
+            else acquiredTextures.set(project.textureUrl, texture)
+            return texture
+          }),
+        ),
+      )
     } catch (error) {
-      PROJECTS.forEach((project) => releaseCaseTexture(project.textureUrl))
+      initFailed = true
+      acquiredTextures.forEach((texture, url) => releaseCaseTexture(url, texture))
       this._initialized = false
       throw error
     }
 
     if (this._disposed) {
-      PROJECTS.forEach((project) => releaseCaseTexture(project.textureUrl))
+      textures.forEach((texture, index) =>
+        releaseCaseTexture(PROJECTS[index]!.textureUrl, texture),
+      )
       this._initialized = false
       return
     }
@@ -116,7 +129,9 @@ export class WorksPlaneStage extends THREE.Group {
         card.dispose()
       })
       this._reveal.clear()
-      PROJECTS.forEach((project) => releaseCaseTexture(project.textureUrl))
+      textures.forEach((texture, index) =>
+        releaseCaseTexture(PROJECTS[index]!.textureUrl, texture),
+      )
       this._initialized = false
       throw error
     }

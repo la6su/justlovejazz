@@ -44,4 +44,25 @@ describe('case texture cache lifecycle', () => {
     releaseCaseTexture('/assets/case.webp')
     expect(secondDispose).toHaveBeenCalledTimes(1)
   })
+
+  it('does not let a retired generation release a replacement texture', async () => {
+    const retiredPromise = loadCaseTexture('/assets/case.webp')
+    disposeAllCaseTextures()
+    const replacementPromise = loadCaseTexture('/assets/case.webp')
+
+    const retiredTexture = new THREE.Texture()
+    const replacementTexture = new THREE.Texture()
+    const retiredDispose = vi.spyOn(retiredTexture, 'dispose')
+    const replacementDispose = vi.spyOn(replacementTexture, 'dispose')
+    loads[0]!(retiredTexture)
+    loads[1]!(replacementTexture)
+
+    await retiredPromise
+    await replacementPromise
+    releaseCaseTexture('/assets/case.webp', retiredTexture)
+    expect(replacementDispose).not.toHaveBeenCalled()
+    releaseCaseTexture('/assets/case.webp', replacementTexture)
+    expect(retiredDispose).toHaveBeenCalledTimes(1)
+    expect(replacementDispose).toHaveBeenCalledTimes(1)
+  })
 })

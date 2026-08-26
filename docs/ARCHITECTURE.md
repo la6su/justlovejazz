@@ -238,6 +238,9 @@ according to their current measured policy.
 - BakuCarousel momentum treats velocity as 60 Hz frame units and scales both
   decay and displacement by elapsed time, so a fling has the same travel at
   different refresh rates.
+- Ref-counted case-texture releases from late async owners include texture
+  identity; retired in-flight generations cannot release a replacement URL
+  entry created after global teardown.
 - Contact section activation captures the same Cyprus request generation before
   awaiting lazy initialization; a stale route callback cannot call `setActive`
   or raise render demand on a newer stage.
