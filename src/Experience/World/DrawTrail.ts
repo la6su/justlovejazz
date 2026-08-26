@@ -70,6 +70,11 @@ export class DrawTrail {
   private initialized = false
   private _ndc = new THREE.Vector3()
   private _prevNdc = new THREE.Vector2()
+  // Reused camera-basis scratch vectors; this owner runs in the render loop and
+  // must not allocate three Vector3 instances on every ribbon rebuild.
+  private _cameraRight = new THREE.Vector3()
+  private _cameraUp = new THREE.Vector3()
+  private _cameraForward = new THREE.Vector3()
   private _frameCount = 0
   private _velocity = 0
   private _energy = 0
@@ -207,8 +212,8 @@ export class DrawTrail {
   private _rebuildRibbon(camera: THREE.Camera): void {
     const headWidth = RIBBON_WIDTH * (0.75 + trailUniforms.uVelocity.value * 0.85)
     const tailWidth = headWidth * 0.045
-    const camRight = new THREE.Vector3()
-    camera.matrixWorld.extractBasis(camRight, new THREE.Vector3(), new THREE.Vector3())
+    camera.matrixWorld.extractBasis(this._cameraRight, this._cameraUp, this._cameraForward)
+    const camRight = this._cameraRight
 
     for (let i = 0; i < TRAIL_LENGTH; i++) {
       const p = this.trailPositions[i]!

@@ -3591,6 +3591,15 @@ Acceptance: `ExperienceUI.lifecycle.test.ts` verifies stage delegation and the
 dirty wake. Rollback: revert this bounded route-owner slice if tap behavior
 regresses.
 
+### DrawTrail scratch reuse — 2026-08-26
+
+`DrawTrail._rebuildRibbon()` now reuses its camera-right/up/forward scratch
+vectors instead of allocating three `Vector3` instances on every render frame.
+
+Acceptance: `DrawTrail.lifecycle.test.ts` verifies scratch identity remains
+stable across repeated updates. Rollback: revert this bounded performance slice
+if ribbon geometry regresses.
+
 ## Definition of done
 
 The migration is done when the target topology is the only production path;

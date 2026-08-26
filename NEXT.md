@@ -147,6 +147,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Unify Works visual taps** — visual plane pointerup now uses
   `WorksPlaneStage.openProject`, preserving the wobble owner and dirty wake.
 
+- [x] **Remove DrawTrail frame allocations** — camera basis scratch vectors are
+  now reused across ribbon rebuilds instead of allocated per render frame.
+
 - [x] **Align WebGLBackend quality state** — direct-render fallback no longer
   advertises or updates the unused TSL post graph; native WebGPU retains the
   crossfade and post parameter path.
