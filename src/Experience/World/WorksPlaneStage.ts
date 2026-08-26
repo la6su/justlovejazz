@@ -70,7 +70,9 @@ export class WorksPlaneStage extends THREE.Group {
     this.visible = false
     this.renderOrder = 3
     this._reducedMotionUnsub = observeReducedMotion((reduced) => {
-      if (!this._disposed) this._reducedMotion = reduced
+      if (this._disposed) return
+      this._reducedMotion = reduced
+      this.cards.forEach((card) => card.setReducedMotion(reduced))
     })
   }
 
@@ -122,6 +124,7 @@ export class WorksPlaneStage extends THREE.Group {
     try {
       textures.forEach((texture, index) => {
         const plane = new CasePlane(texture)
+        plane.setReducedMotion(this._reducedMotion)
         plane.userData.projectIndex = index
         plane.userData.texUrl = PROJECTS[index]!.textureUrl
         plane.setReveal(0)

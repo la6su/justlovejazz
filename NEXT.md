@@ -170,6 +170,11 @@ Do not reopen completed migration phases. Current runtime contracts are in
       update paths now read the owner-local snapshot; `setReducedMotion()`
       remains the live transition boundary.
 
+- [x] **Propagate CasePlane motion policy from owners** — carousel and lazy
+      Works stages forward live preference changes to cards, removing the
+      per-card `matchMedia()` call from the cloth frame path while preserving
+      synchronous reduced-motion settling.
+
 - [x] **Pool SceneCoordinator transform results** — per-frame camera/world
       metadata now reuses one owner-scoped result graph.
 

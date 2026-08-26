@@ -22,6 +22,7 @@ import { loadCaseTexture, releaseCaseTexture } from './caseTexture'
 import type { PageId } from '../../sections/_shared/constants'
 import type { StorySide } from '../../core/storyState'
 import { eventBus } from '../../core/EventBus'
+import { prefersReducedMotion } from '../../core/motionPolicy'
 // PlaneTransition removed — unified animation uses direct overlay open.
 
 // A dozen plane instances preserve the infinite wrap while the framing exposes
@@ -56,6 +57,7 @@ export class BakuCarousel extends THREE.Group {
   private _active = false
   private initialized = false
   private _disposed = false
+  private _reducedMotion = prefersReducedMotion()
   private _camera: THREE.Camera | null = null
   private _raycaster: THREE.Raycaster = new THREE.Raycaster()
   private _ndc: THREE.Vector2 = new THREE.Vector2()
@@ -98,6 +100,13 @@ export class BakuCarousel extends THREE.Group {
     if (active === this._active) return // no-op on repeated calls (fixes A-1)
     this._active = active
     this._morphTarget = active ? 1 : 0
+  }
+
+  /** Forward live motion policy to the card owners without per-frame media queries. */
+  setReducedMotion(reduced: boolean): void {
+    if (this._disposed) return
+    this._reducedMotion = reduced
+    this.cards.forEach((card) => card.setReducedMotion(reduced))
   }
 
   get isActive(): boolean {
@@ -175,6 +184,7 @@ export class BakuCarousel extends THREE.Group {
       CARD_TEXTURE_URLS.forEach((url, i) => {
         const tex = urlToTexture.get(url)!
         const plane = new CasePlane(tex)
+        plane.setReducedMotion(this._reducedMotion)
         plane.scale.setScalar(CARD_SCALE)
         plane.userData.texIdx = i
         plane.userData.texUrl = url

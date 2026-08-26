@@ -377,6 +377,7 @@ export class Experience {
     this.envSphere?.setReducedMotion(reduced)
     this.lights?.setReducedMotion(reduced)
     this.baku?.setReducedMotion(reduced)
+    this.carousel?.setReducedMotion(reduced)
     this.camera?.setReducedMotion(reduced)
     this.contactCyprusStage?.setReducedMotion(reduced)
     this.contactTypographyStage?.setReducedMotion(reduced)

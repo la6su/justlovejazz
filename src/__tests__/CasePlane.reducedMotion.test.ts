@@ -20,6 +20,7 @@ describe('CasePlane reduced-motion policy', () => {
     card.setMotion(0.8, 1)
     card.setEdgeWarp(0.6)
     motion.reduced = true
+    card.setReducedMotion(true)
 
     card.update(1 / 60, true)
 
@@ -44,6 +45,7 @@ describe('CasePlane reduced-motion policy', () => {
   it('does not start a new pulse while reduced motion is active', () => {
     const card = new CasePlane(new THREE.Texture())
     motion.reduced = true
+    card.setReducedMotion(true)
 
     card.pulse(0.5)
 

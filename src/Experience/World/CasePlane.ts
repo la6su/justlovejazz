@@ -63,6 +63,7 @@ export class CasePlane extends THREE.Mesh {
   private _myTransition = 0
   private _myReveal = 0
   private _texture: THREE.Texture
+  private _reducedMotion = prefersReducedMotion()
 
   // Per-instance uniform nodes — each material has its own GPU uniform buffer.
   // Typed as `any` because TSL uniform node types are complex generics that
@@ -173,8 +174,23 @@ export class CasePlane extends THREE.Mesh {
 
   pulse(amount = CLOTH_PARAMS.pulseAmount): void {
     if (this._disposed) return
-    if (prefersReducedMotion()) return
+    if (this._reducedMotion) return
     this._wobbleTarget = Math.max(this._wobbleTarget, amount)
+  }
+
+  /** Reconcile the shared motion policy without querying media state per frame. */
+  setReducedMotion(reduced: boolean): void {
+    if (this._disposed) return
+    this._reducedMotion = reduced
+    if (!reduced) return
+    this._wobbleValue = 0
+    this._wobbleTarget = 0
+    this._motionValue = 0
+    this._motionTarget = 0
+    this._edgeWarpValue = this._edgeWarpTarget
+    this._stateUni.value.z = 0
+    this._state2Uni.value.x = 0
+    this._state2Uni.value.y = this._edgeWarpValue
   }
 
   setMotion(amount: number, _direction: number): void {
@@ -206,15 +222,8 @@ export class CasePlane extends THREE.Mesh {
       return
     }
 
-    if (prefersReducedMotion()) {
-      this._wobbleValue = 0
-      this._wobbleTarget = 0
-      this._motionValue = 0
-      this._motionTarget = 0
-      this._edgeWarpValue = this._edgeWarpTarget
-      this._stateUni.value.z = 0
-      this._state2Uni.value.x = 0
-      this._state2Uni.value.y = this._edgeWarpValue
+    if (this._reducedMotion) {
+      this.setReducedMotion(true)
       return
     }
 

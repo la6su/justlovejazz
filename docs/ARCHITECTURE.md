@@ -115,6 +115,9 @@ under `src/builder/`; the public builds do not import the editor graph.
   its per-card frame path no longer calls `matchMedia()` for every card. The
   observer is released with the stage, preserving the lazy route owner's
   terminal teardown contract.
+- `CasePlane` receives the same policy from its carousel/stage owner and settles
+  its wobble, motion and edge-warp uniforms synchronously when reduced motion
+  is enabled; cards do not query media state inside their frame update.
 - The lazy Contact typography owner receives the same live preference while
   mounted. Its glyphs settle synchronously on enable and resume bob/sway on
   disable, so route re-entry is not required to reconcile motion state.
