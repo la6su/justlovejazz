@@ -87,9 +87,15 @@ export class RenderScheduler {
     this._frameCallback = (time: number) => {
       if (this._destroyed || !this._loopActive) return
       this._frames += 1
-      this._host.onFrame(time)
-      if (this._host.isSettled()) {
-        this._settledFrames += 1
+      try {
+        this._host.onFrame(time)
+        if (this._host.isSettled()) {
+          this._settledFrames += 1
+          this._stop()
+        }
+      } catch {
+        // A frame owner failure must not leave the driver installed forever.
+        // The next explicit invalidation can retry after the owner recovers.
         this._stop()
       }
     }

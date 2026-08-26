@@ -124,6 +124,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Make theme mode writes idempotent** — same-mode requests no longer
   persist or emit redundant theme-change work across DOM and scene owners.
 
+- [x] **Fail closed after scheduler host errors** — a thrown frame owner no
+  longer strands the animation loop active; a later typed invalidation can
+  retry the bounded window.
+
 - [x] **Align WebGLBackend quality state** — direct-render fallback no longer
   advertises or updates the unused TSL post graph; native WebGPU retains the
   crossfade and post parameter path.

@@ -20,6 +20,8 @@
   reveal; active finalization behavior is unchanged.
 - ThemeManager now skips redundant same-mode persistence and theme-change
   events, avoiding unnecessary DOM and scene re-synchronization.
+- RenderScheduler now stops after a host frame exception so a failed owner
+  cannot strand the renderer loop; explicit recovery invalidation can retry.
 
 - Renderer device-loss fallback now clears the retired software-adapter
   replacement before forced-WebGL recreation; a failed second initialization

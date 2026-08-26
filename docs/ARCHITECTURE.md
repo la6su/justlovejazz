@@ -85,6 +85,9 @@ under `src/builder/`; the public builds do not import the editor graph.
   established source state; hiding an unstarted owner preserves authored DOM.
 - `ThemeManager.setMode()` is idempotent; unchanged mode requests do not emit
   theme re-application or trigger scene synchronization work.
+- `RenderScheduler` stops its loop when a host frame throws, restoring the
+  driver invariant that a failed window is not left active; later invalidation
+  remains the explicit retry boundary.
 - `Experience` observes the live reduced-motion media query for the lifetime
   of the runtime. Enabling it cancels ambient breathing and settles the single
   render scheduler; disabling it raises one `motion-preference` invalidation.

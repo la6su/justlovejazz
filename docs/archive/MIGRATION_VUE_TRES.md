@@ -3497,6 +3497,18 @@ existing toggle tests continue to require one event per actual mode change.
 Rollback: remove the early return and restore the previous always-publish
 behavior; no renderer boundary changes are involved.
 
+#### RenderScheduler host-error boundary — 2026-08-26
+
+The single loop driver now catches a host frame failure, clears the active
+loop, and leaves a later typed invalidation as the only retry boundary. This
+prevents an exception from stranding `_loopActive` while the real renderer has
+already stopped advancing.
+
+Acceptance: `renderScheduler.test.ts` covers a throwing host, inactive driver
+after the failure and a successful recovery restart. Rollback: remove the
+catch/stop boundary and restore the previous unbounded callback behavior; the
+renderer ownership model remains unchanged.
+
 ### Removal ledger
 
 | Legacy element                           | Remove after                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Status |

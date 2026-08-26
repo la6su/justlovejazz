@@ -285,6 +285,29 @@ describe('RenderScheduler (Phase 7 single loop driver)', () => {
     driver.tick()
     expect(scheduler.diagnostics.frames).toBe(2)
   })
+
+  it('stops after a host exception and allows a later retry', () => {
+    const driver = new FakeDriver()
+    let attempts = 0
+    const host: SchedulerHost = {
+      onFrame: () => {
+        attempts += 1
+        if (attempts === 1) throw new Error('frame failed')
+      },
+      isSettled: () => attempts > 1,
+    }
+    const scheduler = makeScheduler(driver, host)
+
+    scheduler.invalidate('dirty')
+    driver.tick()
+    expect(driver.active).toBe(false)
+    expect(scheduler.diagnostics.loopActive).toBe(false)
+
+    scheduler.invalidate('recovery')
+    expect(driver.starts).toBe(2)
+    driver.tick()
+    expect(driver.active).toBe(false)
+  })
 })
 
 /** Reasons are a closed, typed union. */
