@@ -3854,6 +3854,18 @@ all late public GPU mutations; focused type-check/lint pass. Rollback: revert
 this bounded particle-owner lifecycle slice if count reduction or TSL motion
 parity regresses.
 
+### GroundPlane terminal teardown — 2026-08-26
+
+`GroundPlane` now rejects late initial-config, theme, transform and visibility
+updates after detaching and disposing its contact geometry/material. Disposal
+is idempotent; the contact-only visibility rule and theme override behavior
+while mounted are unchanged.
+
+Acceptance: `GroundPlane.lifecycle.test.ts` covers repeated disposal and all
+late public calls; focused type-check/lint pass. Rollback: revert this bounded
+ground-owner lifecycle slice if contact ground theme or transition parity
+regresses.
+
 ## Definition of done
 
 The migration is done when the target topology is the only production path;

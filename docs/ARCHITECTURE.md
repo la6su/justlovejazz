@@ -172,6 +172,9 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `JunniParticles` has a terminal, idempotent teardown boundary. After its
   instanced geometry and TSL material are released, late timeline, blending
   and count-reduction calls cannot rebuild or mutate disposed GPU state.
+- `GroundPlane` has a terminal, idempotent teardown boundary. After its contact
+  geometry and material are released, late config, theme, transform and
+  visibility calls cannot mutate detached GPU resources.
 - `Cursor.drawCircle()` reuses one owner-scoped ring-point buffer and color
   view. The active pointer path remains allocation-free while theme refreshes
   mutate only the cached values.

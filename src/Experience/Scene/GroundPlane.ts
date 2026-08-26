@@ -26,6 +26,7 @@ export type GroundConfig = PhaseConfig['ground']
 
 export class GroundPlane {
   readonly object: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshStandardMaterial>
+  private _disposed = false
 
   // Theme-aware ground adjustment (moved 1:1 from World): the per-section
   // config lerp would reset the ground to faint config values on section
@@ -67,6 +68,7 @@ export class GroundPlane {
 
   /** `World.init()` step: initialize the ground from the intro section config. */
   public applyInitialConfig(ground: GroundConfig | undefined): void {
+    if (this._disposed) return
     if (!ground) return
     this.object.material.color.set(ground.color)
     this.object.material.opacity = ground.opacity
@@ -75,6 +77,7 @@ export class GroundPlane {
 
   /** `jlz:theme-applied` step (legacy `World.syncGroundTheme`). */
   public syncTheme(isLight: boolean): void {
+    if (this._disposed) return
     if (isLight) {
       // Light theme: dark ground on near-white bg = visible contrast.
       this._themeColor.set(0x161616)
@@ -96,6 +99,7 @@ export class GroundPlane {
    * color + opacity between the from/to section configs with the eased `t`.
    */
   public applyTransform(from: GroundConfig, to: GroundConfig, t: number): void {
+    if (this._disposed) return
     const mat = this.object.material
     if (this._themeActive) {
       mat.color.copy(this._themeColor)
@@ -110,10 +114,13 @@ export class GroundPlane {
 
   /** Per-frame gate: the ground is visible only on section 4 (contact state). */
   public setSectionVisible(visible: boolean): void {
+    if (this._disposed) return
     this.object.visible = visible
   }
 
   public dispose(): void {
+    if (this._disposed) return
+    this._disposed = true
     this.object.parent?.remove(this.object)
     this.object.geometry.dispose()
     this.object.material.dispose()
