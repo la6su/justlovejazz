@@ -10,6 +10,7 @@ export class ContactTypographyStage extends THREE.Group {
   private readonly typography = new WireframeTypography('HELLO', 0.34)
   private active = false
   private disposed = false
+  private reducedMotion = prefersReducedMotion()
 
   constructor() {
     super()
@@ -30,13 +31,14 @@ export class ContactTypographyStage extends THREE.Group {
     if (this.disposed) return
     this.active = active
     this.visible = active
-    this.typography.userData.reducedMotion = prefersReducedMotion()
+    this.typography.userData.reducedMotion = this.reducedMotion
     this.typography.setActive(active)
   }
 
   /** Forward a live preference change to the already-mounted glyph owner. */
   setReducedMotion(reduced: boolean): void {
     if (this.disposed) return
+    this.reducedMotion = reduced
     this.typography.setReducedMotion(reduced)
   }
 

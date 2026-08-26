@@ -125,6 +125,8 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `EnvSphere` uses the same synchronized motion snapshot for section palette
   changes; `setReducedMotion()` updates that snapshot before settling a live
   crossfade, so later route changes cannot re-query policy out of band.
+- The lazy Contact typography stage uses its propagated motion snapshot when
+  reactivating glyphs; route entry cannot bypass the shared preference boundary.
 - `WorksPlaneStage` snapshots reduced-motion state once per media-query change;
   its per-card frame path no longer calls `matchMedia()` for every card. The
   observer is released with the stage, preserving the lazy route owner's

@@ -64,6 +64,28 @@ describe('ContactTypographyStage motion policy', () => {
     }
   })
 
+  it('uses the synchronized motion snapshot on later activation', () => {
+    const media = { matches: false }
+    const matchMedia = vi.fn().mockReturnValue(media)
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      value: matchMedia,
+    })
+    const stage = new ContactTypographyStage()
+    try {
+      stage.setReducedMotion(true)
+      media.matches = false
+      stage.setActive(true)
+      stage.update(1)
+
+      expect((stage.children[0] as unknown as { isAnimating: boolean }).isAnimating).toBe(false)
+      expect(matchMedia).toHaveBeenCalledTimes(1)
+    } finally {
+      stage.dispose()
+      vi.restoreAllMocks()
+    }
+  })
+
   it('ignores activity after disposal', () => {
     mockMotionPreference(false)
     const stage = new ContactTypographyStage()
