@@ -167,9 +167,14 @@ export class CasePlane extends THREE.Mesh {
 
   setReveal(value: number): void {
     if (this._disposed) return
-    this._myReveal = THREE.MathUtils.clamp(value, 0, 1)
+    const nextReveal = THREE.MathUtils.clamp(value, 0, 1)
+    if (Math.abs(nextReveal - this._myReveal) < 0.0001) {
+      this.visible = nextReveal > 0.001
+      return
+    }
+    this._myReveal = nextReveal
     this._stateUni.value.y = this._myReveal
-    this.visible = value > 0.001
+    this.visible = nextReveal > 0.001
   }
 
   pulse(amount = CLOTH_PARAMS.pulseAmount): void {
@@ -195,7 +200,9 @@ export class CasePlane extends THREE.Mesh {
 
   setMotion(amount: number, _direction: number): void {
     if (this._disposed) return
-    this._motionTarget = THREE.MathUtils.clamp(amount, 0, 1)
+    const nextMotion = THREE.MathUtils.clamp(amount, 0, 1)
+    if (Math.abs(nextMotion - this._motionTarget) < 0.0001) return
+    this._motionTarget = nextMotion
   }
 
   setEdgeWarp(amount: number): void {
@@ -205,7 +212,9 @@ export class CasePlane extends THREE.Mesh {
 
   setTransition(value: number): void {
     if (this._disposed) return
-    this._myTransition = THREE.MathUtils.clamp(value, 0, 1)
+    const nextTransition = THREE.MathUtils.clamp(value, 0, 1)
+    if (Math.abs(nextTransition - this._myTransition) < 0.0001) return
+    this._myTransition = nextTransition
     this._stateUni.value.x = this._myTransition
   }
 

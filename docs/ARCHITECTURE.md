@@ -241,6 +241,10 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `WorksPlaneStage` uses the same settled-layout contract with camera world-pose
   tracking: route cards reconcile once, then remain untouched until camera,
   viewport, section, reduced-motion or card animation state invalidates the pass.
+- During an active Works card pulse, only cards with reveal/layout changes or
+  their own cloth activity advance `CasePlane` time; settled siblings keep
+  their uniforms unchanged. Camera/viewport/layout invalidation still forces a
+  full visible-card reconciliation.
 - `Experience` may hand the shared camera to `WorksPlaneStage` on every frame;
   the stage treats the same camera identity as an idempotent binding, so that
   handoff does not re-dirty a settled layout. A real camera replacement still

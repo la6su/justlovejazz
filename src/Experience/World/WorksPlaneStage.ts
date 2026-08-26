@@ -65,7 +65,12 @@ export class WorksPlaneStage extends THREE.Group {
   // flowing through the shared renderer.
   private _layoutDirty = true
   private _lastCameraPosition = new THREE.Vector3(Number.NaN, Number.NaN, Number.NaN)
-  private _lastCameraQuaternion = new THREE.Quaternion(Number.NaN, Number.NaN, Number.NaN, Number.NaN)
+  private _lastCameraQuaternion = new THREE.Quaternion(
+    Number.NaN,
+    Number.NaN,
+    Number.NaN,
+    Number.NaN,
+  )
   // Reused per-frame layout result; visible cards are laid out every frame and
   // must not allocate a fresh object for each viewport calculation.
   private _tmpScaledLayout: CaseLayout = { x: 0, y: 0, z: 0, scale: 0 }
@@ -89,7 +94,7 @@ export class WorksPlaneStage extends THREE.Group {
     if (!reduced) return
 
     const activeProjects = SECTION_PROJECTS[this._sectionIndex]!
-      this.cards.forEach((card) => {
+    this.cards.forEach((card) => {
       const projectIndex = card.userData.projectIndex as number
       const targetReveal = activeProjects.some((project) => project === projectIndex) ? 1 : 0
       this._reveal.set(card, targetReveal)
@@ -110,10 +115,7 @@ export class WorksPlaneStage extends THREE.Group {
       // Include departing cards and their cloth pulses: hidden cards still
       // need a few passes to settle their reveal/animation state before the
       // stage can take the settled fast path.
-      return (
-        card.isAnimating ||
-        (shouldBeVisible ? reveal < 0.995 : reveal > 0.005)
-      )
+      return card.isAnimating || (shouldBeVisible ? reveal < 0.995 : reveal > 0.005)
     })
     return cardsAnimating
   }
@@ -271,7 +273,8 @@ export class WorksPlaneStage extends THREE.Group {
     const cameraChanged =
       !this._lastCameraPosition.equals(this._tmpCameraPosition) ||
       !this._lastCameraQuaternion.equals(this._camera.quaternion)
-    if (!this._layoutDirty && !cameraChanged && !this.isAnimating) return
+    const layoutDirty = this._layoutDirty || cameraChanged
+    if (!layoutDirty && !this.isAnimating) return
     this.position.copy(this._tmpCameraPosition)
     this.quaternion.copy(this._camera.quaternion)
 
@@ -287,6 +290,7 @@ export class WorksPlaneStage extends THREE.Group {
         ? targetReveal
         : THREE.MathUtils.damp(reveal, targetReveal, 10, dt)
       this._reveal.set(card, nextReveal)
+      const revealChanged = Math.abs(nextReveal - reveal) >= 0.001
 
       // Cards that are not part of the active section fade out IN PLACE —
       // do not move them toward any layout slot, otherwise old cards slide
@@ -328,7 +332,11 @@ export class WorksPlaneStage extends THREE.Group {
       card.setReveal(nextReveal)
       card.setMotion(0, 0)
       card.setTransition(0)
-      card.update(dt, this._active)
+      // A visible card with no own cloth activity does not need its time
+      // uniform advanced while a sibling is pulsing. Layout/reveal changes
+      // remain explicit wake boundaries; card.isAnimating keeps its own
+      // wobble/motion/edge decay progressing until it settles.
+      card.update(dt, layoutDirty || revealChanged || card.isAnimating)
     })
     this._lastCameraPosition.copy(this._tmpCameraPosition)
     this._lastCameraQuaternion.copy(this._camera.quaternion)

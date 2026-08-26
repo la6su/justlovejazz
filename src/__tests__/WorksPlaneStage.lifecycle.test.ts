@@ -122,7 +122,10 @@ describe('WorksPlaneStage async lifecycle', () => {
     stage.setActive(true, 0)
 
     const cards = (stage as unknown as { cards: THREE.Object3D[] }).cards
-    const reveal = vi.spyOn(cards[0] as unknown as { setReveal: (value: number) => void }, 'setReveal')
+    const reveal = vi.spyOn(
+      cards[0] as unknown as { setReveal: (value: number) => void },
+      'setReveal',
+    )
     stage.update(1 / 60)
     reveal.mockClear()
     stage.setActive(true, 0)
@@ -132,6 +135,34 @@ describe('WorksPlaneStage async lifecycle', () => {
     camera.position.x = 1
     stage.update(1 / 60)
     expect(reveal).toHaveBeenCalled()
+    stage.dispose()
+  })
+
+  it('advances only the card with cloth activity while a sibling stays settled', async () => {
+    mocks.loadCaseTexture.mockImplementation(async () => new THREE.Texture())
+    const stage = new WorksPlaneStage()
+    await stage.init()
+    stage.setCamera(new THREE.PerspectiveCamera())
+    stage.setActive(true, 0)
+
+    const cards = (stage as unknown as { cards: Array<{ pulse: () => void }> }).cards
+    for (let index = 0; index < 180 && stage.isAnimating; index += 1) {
+      stage.update(1 / 60)
+    }
+    expect(stage.isAnimating).toBe(false)
+
+    const siblingInternals = cards[1] as unknown as { _timeUni: { value: number } }
+    const siblingTime = siblingInternals._timeUni.value
+    const activeInternals = cards[0] as unknown as { _timeUni: { value: number } }
+    const activeTime = activeInternals._timeUni.value
+    expect((cards[1] as unknown as { isAnimating: boolean }).isAnimating).toBe(false)
+    expect((stage as unknown as { _layoutDirty: boolean })._layoutDirty).toBe(false)
+
+    cards[0]!.pulse()
+    stage.update(1 / 60)
+
+    expect(siblingInternals._timeUni.value).toBe(siblingTime)
+    expect(activeInternals._timeUni.value).toBeGreaterThan(activeTime)
     stage.dispose()
   })
 
@@ -146,7 +177,10 @@ describe('WorksPlaneStage async lifecycle', () => {
     stage.update(1 / 60)
 
     const cards = (stage as unknown as { cards: THREE.Object3D[] }).cards
-    const reveal = vi.spyOn(cards[0] as unknown as { setReveal: (value: number) => void }, 'setReveal')
+    const reveal = vi.spyOn(
+      cards[0] as unknown as { setReveal: (value: number) => void },
+      'setReveal',
+    )
     stage.setCamera(camera)
     stage.update(1 / 60)
 

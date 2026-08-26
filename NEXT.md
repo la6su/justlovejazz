@@ -240,6 +240,12 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Skip settled WorksPlaneStage rewrites** — preserve route/card
       reconciliation while avoiding repeated camera-local layout and uniform
       writes until camera, viewport, section or motion state changes.
+
+- [x] **Scope Works cloth updates to active cards** — idempotent CasePlane
+      reveal/motion/transition setters and per-card activity gating stop a
+      settled sibling from advancing its time uniform during another card's
+      pulse; layout, reveal and camera invalidations remain full reconciliation
+      boundaries.
 - [x] **Short-circuit settled DrawTrail work** — identical pointer/camera
       demand frames no longer perform basis extraction, unprojection or trail
       uniform writes; pointer and camera changes still wake the owner.
@@ -641,50 +647,50 @@ Do not reopen completed migration phases. Current runtime contracts are in
       objects now belong to each Camera wrapper instead of shared module state;
       concurrent recovery/HMR instances cannot advance one another's camera.
 - [x] **Isolate DrawTrail TSL uniforms** — each trail owns its time, velocity
-  and energy uniforms and node closures; independent trail owners no longer
-  overwrite one another's GPU signal state.
+      and energy uniforms and node closures; independent trail owners no longer
+      overwrite one another's GPU signal state.
 - [x] **Isolate ParticleBurst TSL uniforms** — each intro burst owns its time
-  and duration uniforms and node closures; concurrent splash owners no longer
-  share animation progress.
+      and duration uniforms and node closures; concurrent splash owners no longer
+      share animation progress.
 - [x] **Make BakuCarousel teardown terminal** — late controls, updates and
-  snap callbacks become inert after disposal; the shared demand loop cannot
-  be woken or mutated by a retired carousel.
+      snap callbacks become inert after disposal; the shared demand loop cannot
+      be woken or mutated by a retired carousel.
 - [x] **Make WorksPlaneStage teardown terminal** — late route controls,
-  hit-tests, updates and prewarm calls become inert after disposal while the
-  existing async texture cancellation boundary remains intact.
+      hit-tests, updates and prewarm calls become inert after disposal while the
+      existing async texture cancellation boundary remains intact.
 - [x] **Make SplashCube teardown terminal** — late section/theme/material
-  callbacks and frame updates become inert after persistent scene teardown;
-  animation predicates settle false and disposal is idempotent.
+      callbacks and frame updates become inert after persistent scene teardown;
+      animation predicates settle false and disposal is idempotent.
 - [x] **Make ContactCyprusStage teardown terminal** — late camera, route,
-  prewarm, resize and frame calls become inert after Contact teardown while
-  the existing late Draco/GLTF cleanup remains authoritative.
+      prewarm, resize and frame calls become inert after Contact teardown while
+      the existing late Draco/GLTF cleanup remains authoritative.
 - [x] **Make EnvSphere teardown terminal** — late palette changes, reduced-motion
-  updates and frame callbacks become inert after the shared ambient owner has
-  released its GPU resources; repeated disposal is safe.
+      updates and frame callbacks become inert after the shared ambient owner has
+      released its GPU resources; repeated disposal is safe.
 - [x] **Make CinematicLights teardown terminal** — late section, preference and
-  frame calls become inert after the light owner releases its scene resources;
-  repeated disposal cannot touch detached lights.
+      frame calls become inert after the light owner releases its scene resources;
+      repeated disposal cannot touch detached lights.
 - [x] **Make JunniParticles teardown terminal** — late GPU timeline, blending and
-  auto-reduce count calls become inert after particle geometry/material release;
-  repeated disposal is safe.
+      auto-reduce count calls become inert after particle geometry/material release;
+      repeated disposal is safe.
 - [x] **Make GroundPlane teardown terminal** — late config, theme, transform and
-  visibility calls become inert after contact-ground resources are released;
-  repeated disposal is safe.
+      visibility calls become inert after contact-ground resources are released;
+      repeated disposal is safe.
 - [x] **Make SectionGroups teardown terminal** — late group lookup becomes inert
-  after recursive scene-resource disposal; carousel-first ordering and repeated
-  teardown remain safe.
+      after recursive scene-resource disposal; carousel-first ordering and repeated
+      teardown remain safe.
 - [x] **Make CasePlane teardown terminal** — late reveal, pulse, motion, warp and
-  frame calls become inert after per-card material release; shared geometry and
-  texture ownership remain with their existing owners.
+      frame calls become inert after per-card material release; shared geometry and
+      texture ownership remain with their existing owners.
 - [x] **Make Section teardown terminal** — late StateBus transitions become inert
-  after owner channels/listeners are removed; repeated disposal detaches the
-  section without reintroducing channels.
+      after owner channels/listeners are removed; repeated disposal detaches the
+      section without reintroducing channels.
 - [x] **Make WorksPortfolio teardown terminal** — late navigation calls become
-  inert after callback/project release; repeated disposal cannot mutate the
-  retired index or notify the carousel.
+      inert after callback/project release; repeated disposal cannot mutate the
+      retired index or notify the carousel.
 - [x] **Make Sizes teardown terminal** — late resize registration and viewport
-  updates become inert after the window listener is released; repeated destroy
-  remains safe.
+      updates become inert after the window listener is released; repeated destroy
+      remains safe.
 - [x] **Release the WorksPortfolio owner** — `ExperienceUI.destroy()` now calls
       the portfolio disposer before dropping its reference; disposal clears the
       project/callback references and navigation becomes a safe no-op.
