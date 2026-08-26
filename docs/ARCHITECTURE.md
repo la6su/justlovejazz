@@ -197,6 +197,10 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `DrawTrail` rebuilds its ribbon only after pointer-history or camera-basis
   changes; energy/velocity/time uniforms continue to advance during decay, and
   reduced-motion/disposal still clear the owner state.
+- `ContactCyprusStage.setPresentation()` caches the last applied opacity and
+  scale, skipping identical material/transform writes while always recomputing
+  visibility; lazy loading, prewarm, reduced-motion and disposal boundaries are
+  unchanged.
 - `CinematicLights` applies the same reduced-motion boundary to section light
   transitions: colors, intensities and key position snap to their targets and
   skip interpolation/orbit work; normal motion retains authored lerp timing.

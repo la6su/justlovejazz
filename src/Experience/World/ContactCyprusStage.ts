@@ -26,6 +26,8 @@ export class ContactCyprusStage extends THREE.Group {
   private _scale = 1
   private _targetScale = 1
   private _scaleFrom = 1
+  private _appliedOpacity = Number.NaN
+  private _appliedScale = Number.NaN
   private _fadeElapsed = FADE_DURATION_SECONDS
   private _prewarmFramePending = false
   private _active = false
@@ -231,10 +233,19 @@ export class ContactCyprusStage extends THREE.Group {
   }
 
   private setPresentation(opacity: number, scale: number): void {
-    this._opacity = THREE.MathUtils.clamp(opacity, 0, 1)
+    const nextOpacity = THREE.MathUtils.clamp(opacity, 0, 1)
+    const opacityChanged = this._appliedOpacity !== nextOpacity
+    const scaleChanged = this._appliedScale !== scale
+    this._opacity = nextOpacity
     this._scale = scale
-    for (const material of this._materials) material.opacity = this._opacity
-    this._model?.scale.setScalar(this._modelBaseScale * this._scale)
+    if (opacityChanged) {
+      for (const material of this._materials) material.opacity = this._opacity
+      this._appliedOpacity = this._opacity
+    }
+    if (scaleChanged) {
+      this._model?.scale.setScalar(this._modelBaseScale * this._scale)
+      this._appliedScale = this._scale
+    }
     this.visible = this._opacity > 0.001 || this._targetOpacity > 0.001
   }
 

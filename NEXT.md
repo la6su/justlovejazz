@@ -200,6 +200,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
       updates uniforms without rebuilding the ribbon; pointer history and camera
       basis changes still rebuild the camera-facing geometry.
 
+- [x] **Skip unchanged Cyprus presentation writes** — the lazy Contact stage
+      now writes material opacity and model scale only when their effective state
+      changes; visibility and reduced-motion settlement remain synchronous.
+
 - [x] **Cache CinematicNav scroll policy** — programmatic section navigation
       reads the owner-local reduced-motion snapshot instead of re-querying the
       media preference on every scroll request.

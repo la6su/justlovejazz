@@ -36,6 +36,40 @@ import { ContactCyprusStage } from '../Experience/World/ContactCyprusStage'
 describe('ContactCyprusStage async lifecycle', () => {
   afterEach(() => vi.unstubAllGlobals())
 
+  it('skips repeated presentation writes while applying changed fade state', () => {
+    const stage = new ContactCyprusStage()
+    const model = new THREE.Group()
+    const material = new THREE.MeshPhysicalMaterial({ transparent: true })
+    model.add(new THREE.Mesh(new THREE.BufferGeometry(), material))
+    stage.add(model)
+    const internals = stage as unknown as {
+      _model: THREE.Group | null
+      _materials: THREE.MeshPhysicalMaterial[]
+      _opacity: number
+      _scale: number
+      _appliedOpacity: number
+      _appliedScale: number
+      setPresentation: (opacity: number, scale: number) => void
+    }
+    internals._model = model
+    internals._materials = [material]
+    internals._opacity = 0.4
+    internals._scale = 1
+    internals._appliedOpacity = 0.4
+    internals._appliedScale = 1
+    material.opacity = 0.4
+    const setScalar = vi.spyOn(model.scale, 'setScalar')
+
+    internals.setPresentation(0.4, 1)
+    expect(setScalar).not.toHaveBeenCalled()
+    expect(material.opacity).toBe(0.4)
+
+    internals.setPresentation(0.8, 1.2)
+    expect(setScalar).toHaveBeenCalledWith(1.2)
+    expect(material.opacity).toBe(0.8)
+    stage.dispose()
+  })
+
   it('settles an active fade and scale synchronously on reduced motion', () => {
     vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }))
     const stage = new ContactCyprusStage()
