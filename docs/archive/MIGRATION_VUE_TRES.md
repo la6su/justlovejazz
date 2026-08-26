@@ -1040,6 +1040,18 @@ Acceptance: lifecycle coverage proves disabled native-WebGPU post bypasses graph
 creation; type checks, production build, budget and serial E2E gates pass.
 Rollback: restore unconditional native-WebGPU TSL graph construction.
 
+#### Phase 10 Tres renderer teardown boundary — 2026-08-26
+
+Unified renderer construction now wraps each instance with an idempotent
+`dispose()` boundary. The persistent SceneHost also tracks its created/live
+renderer and releases failed initialization and late candidates exactly once,
+so Tres manager cleanup and application ownership can safely overlap.
+
+Acceptance: unified renderer and SceneHost lifecycle coverage proves repeated
+dispose is harmless and late candidates are released; type checks, production
+build, budget and serial E2E gates pass. Rollback: restore direct renderer
+disposal without the shared boundary.
+
 #### Phase 5/7 StoryController source bridge — 2026-08-25
 
 `src/core/storyController.ts` is now the runtime owner that translates a

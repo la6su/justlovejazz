@@ -57,7 +57,15 @@ let resolved = false
 let disposed = false
 let lifecycleGeneration = 0
 let liveRenderer: UnifiedRenderSurface | null = null
+let createdRenderer: UnifiedRenderSurface | null = null
 let unbindRendererOwner: (() => void) | null = null
+const disposedRenderers = new WeakSet<object>()
+
+function disposeRendererOnce(renderer: UnifiedRenderSurface | null): void {
+  if (!renderer || disposedRenderers.has(renderer)) return
+  disposedRenderers.add(renderer)
+  renderer.dispose()
+}
 
 async function onReady(context: TresContext): Promise<void> {
   if (noScene || resolved) return
@@ -71,23 +79,26 @@ async function onReady(context: TresContext): Promise<void> {
   // canvas element (TresCanvas does not forward fallthrough attributes).
   canvas.setAttribute('aria-hidden', 'true')
   let renderer = context.renderer.instance as UnifiedRenderSurface
+  createdRenderer = renderer
   let backend = inspectUnifiedBackend(renderer)
   let plan = planUnifiedBackend(backend)
   if (plan.recreate) {
     // Software WebGPU adapter (SwiftShader ~2 FPS) → hardware WebGL2 through
     // the SAME class (Phase 6 policy). The canvas is already in the DOM:
     // dispose the dead instance and swap in the replacement.
-    renderer.dispose()
+    disposeRendererOnce(renderer)
     const candidate = createUnifiedWebGPUInstance(canvas, true)
+    createdRenderer = candidate
     try {
       await initUnifiedWebGPUInstance(candidate)
     } catch (error) {
-      candidate.dispose()
+      disposeRendererOnce(candidate)
+      if (createdRenderer === candidate) createdRenderer = null
       onError(error instanceof Error ? error : new Error(String(error)))
       return
     }
     if (!isCurrent()) {
-      candidate.dispose()
+      disposeRendererOnce(candidate)
       return
     }
     renderer = candidate
@@ -96,7 +107,7 @@ async function onReady(context: TresContext): Promise<void> {
     plan = planUnifiedBackend(backend)
   }
   if (!isCurrent()) {
-    renderer.dispose()
+    disposeRendererOnce(renderer)
     return
   }
   resolved = true
@@ -118,6 +129,8 @@ async function onReady(context: TresContext): Promise<void> {
 function onError(error: Error): void {
   if (resolved || disposed) return
   resolved = true
+  disposeRendererOnce(createdRenderer)
+  createdRenderer = null
   sceneHost.reject(error)
 }
 
@@ -126,8 +139,10 @@ onBeforeUnmount(() => {
   lifecycleGeneration += 1
   unbindRendererOwner?.()
   unbindRendererOwner = null
-  liveRenderer?.dispose()
+  disposeRendererOnce(liveRenderer)
+  if (createdRenderer !== liveRenderer) disposeRendererOnce(createdRenderer)
   liveRenderer = null
+  createdRenderer = null
 })
 </script>
 

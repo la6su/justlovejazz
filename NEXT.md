@@ -70,6 +70,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
   skips the TSL full-screen graph and uses direct scene rendering, matching
   `supportsPostProcessing()` instead of paying for disabled effects.
 
+- [x] **Make Tres renderer teardown idempotent** — unified renderers and the
+  persistent SceneHost now tolerate Tres manager disposal, application cleanup
+  and late failed-init cleanup without double-disposing the underlying owner.
+
 - [x] **Align WebGLBackend quality state** — direct-render fallback no longer
   advertises or updates the unused TSL post graph; native WebGPU retains the
   crossfade and post parameter path.

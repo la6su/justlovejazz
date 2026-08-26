@@ -28,6 +28,9 @@
 - Low-tier native WebGPU now honors the disabled post-processing policy by
   skipping TSL graph construction and rendering the scene directly.
 
+- Tres renderer teardown is now idempotent across manager unmount, SceneHost
+  cleanup, recovery replacement and failed initialization paths.
+
 - `Experience` now observes live `prefers-reduced-motion` changes instead of
   caching the preference only at startup. Enabling reduction cancels ambient
   breathing and settles the scheduler; disabling it raises one typed catch-up

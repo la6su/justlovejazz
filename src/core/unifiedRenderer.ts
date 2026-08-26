@@ -14,6 +14,23 @@ import { WebGPURenderer } from 'three/webgpu'
 /** The concrete renderer class this project constructs (Phase 6 fixed). */
 export type UnifiedRenderSurface = WebGPURenderer
 
+/**
+ * Make renderer teardown safe across the Tres manager and application owner.
+ * Tres keeps its own disposal callback, while Renderer/SceneHost also dispose
+ * the live owner during recovery and unmount. The underlying Three renderer
+ * is not guaranteed to tolerate those independent calls.
+ */
+export function makeRendererDisposeIdempotent<T extends { dispose: () => void }>(renderer: T): T {
+  const dispose = renderer.dispose.bind(renderer)
+  let disposed = false
+  renderer.dispose = () => {
+    if (disposed) return
+    disposed = true
+    dispose()
+  }
+  return renderer
+}
+
 /** Shared tone/color settings — identical for every construction path. */
 function applySharedSettings(renderer: {
   toneMapping?: number
@@ -37,7 +54,7 @@ export function createUnifiedWebGPUInstance(
 ): WebGPURenderer {
   const renderer = new WebGPURenderer({ canvas, antialias: true, alpha: false, forceWebGL })
   applySharedSettings(renderer)
-  return renderer
+  return makeRendererDisposeIdempotent(renderer)
 }
 
 /** The single async init call — awaited exactly once per instance. */

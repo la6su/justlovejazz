@@ -99,4 +99,5 @@ describe('SceneHost async lifecycle', () => {
 
     expect(replacement.dispose).toHaveBeenCalledOnce()
   })
+
 })
