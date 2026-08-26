@@ -34,7 +34,7 @@ describe('DrawTrail lifecycle', () => {
     trail.dispose()
   })
 
-  it('rebuilds only for pointer or camera-basis changes while uniforms keep ticking', () => {
+  it('rebuilds only for pointer or camera-basis changes while settled frames stay idle', () => {
     const trail = new DrawTrail()
     const camera = new THREE.PerspectiveCamera()
     const internals = trail as unknown as {
@@ -49,13 +49,38 @@ describe('DrawTrail lifecycle', () => {
     trail.update(1 / 60, camera)
 
     expect(rebuild).not.toHaveBeenCalled()
-    expect(internals._uniforms.uTime.value).toBeGreaterThan(timeBefore)
+    expect(internals._uniforms.uTime.value).toBe(timeBefore)
 
     camera.rotation.y = 0.1
     camera.updateMatrixWorld()
     trail.update(1 / 60, camera)
     expect(rebuild).toHaveBeenCalledOnce()
 
+    trail.dispose()
+  })
+
+  it('skips settled basis and unprojection work until the pointer or camera wakes it', () => {
+    const trail = new DrawTrail()
+    const camera = new THREE.PerspectiveCamera()
+    const extractBasis = vi.spyOn(camera.matrixWorld, 'extractBasis')
+    const unproject = vi.spyOn(THREE.Vector3.prototype, 'unproject')
+
+    trail.update(1 / 60, camera)
+    extractBasis.mockClear()
+    unproject.mockClear()
+    trail.update(1 / 60, camera)
+
+    expect(extractBasis).not.toHaveBeenCalled()
+    expect(unproject).not.toHaveBeenCalled()
+
+    camera.position.x = 1
+    camera.updateMatrixWorld()
+    trail.update(1 / 60, camera)
+    expect(extractBasis).toHaveBeenCalled()
+    expect(unproject).toHaveBeenCalled()
+
+    unproject.mockRestore()
+    extractBasis.mockRestore()
     trail.dispose()
   })
 

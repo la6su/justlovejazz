@@ -231,6 +231,10 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `WorksPlaneStage` uses the same settled-layout contract with camera world-pose
   tracking: route cards reconcile once, then remain untouched until camera,
   viewport, section, reduced-motion or card animation state invalidates the pass.
+- `DrawTrail` has a settled fast path keyed by pointer and camera world matrix;
+  it skips ray/unprojection and uniform work when the trail is fully faded, but
+  remains wakeable by first use, pointer movement, camera movement and motion
+  policy changes.
 - `CinematicLights` applies the same reduced-motion boundary to section light
   transitions: colors, intensities and key position snap to their targets and
   skip interpolation/orbit work; normal motion retains authored lerp timing.

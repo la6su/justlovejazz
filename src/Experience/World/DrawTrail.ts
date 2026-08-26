@@ -82,7 +82,9 @@ export class DrawTrail {
   private _lastCameraRight = new THREE.Vector3()
   private _lastCameraUp = new THREE.Vector3()
   private _lastCameraForward = new THREE.Vector3()
+  private _lastCameraWorld = new THREE.Matrix4()
   private _hasCameraBasis = false
+  private _hasCameraWorld = false
   private _velocity = 0
   private _energy = 0
   private _geometryDirty = true
@@ -103,6 +105,7 @@ export class DrawTrail {
     this.initialized = false
     this._geometryDirty = false
     this._hasCameraBasis = false
+    this._hasCameraWorld = false
   }
 
   constructor() {
@@ -177,6 +180,22 @@ export class DrawTrail {
       return
     }
     const mouse = input.getMouse()
+    const pointerChanged = mouse.x !== this._prevNdc.x || mouse.y !== this._prevNdc.y
+    const cameraMatrixChanged =
+      !this._hasCameraWorld || !camera.matrixWorld.equals(this._lastCameraWorld)
+
+    // Once the trail is fully settled, identical pointer and camera state do
+    // not require basis extraction, unprojection, ray construction or uniform
+    // writes. Keep the first frame and all actual wake-up signals live.
+    if (!this.initialized || pointerChanged || cameraMatrixChanged || this.isAnimating) {
+      // Continue through the active path below.
+    } else {
+      if (this._energy > 0) {
+        this._energy = 0
+        this._uniforms.uEnergy.value = 0
+      }
+      return
+    }
 
     // Ribbon vertices are camera-facing. A static pointer still needs a
     // rebuild when a moving camera changes that basis, but not on a fixed
@@ -194,6 +213,8 @@ export class DrawTrail {
       this._hasCameraBasis = true
       this._geometryDirty = true
     }
+    this._lastCameraWorld.copy(camera.matrixWorld)
+    this._hasCameraWorld = true
 
     // Track velocity (NDC units per frame).
     const velNdc = Math.hypot(mouse.x - this._prevNdc.x, mouse.y - this._prevNdc.y)
@@ -290,6 +311,9 @@ export class DrawTrail {
       this._energy = 0
       this._uniforms.uEnergy.value = 0
       this.initialized = false
+      this._hasCameraBasis = false
+      this._hasCameraWorld = false
+      this._geometryDirty = true
     }
   }
 
@@ -299,6 +323,7 @@ export class DrawTrail {
     this.initialized = false
     this._geometryDirty = false
     this._hasCameraBasis = false
+    this._hasCameraWorld = false
     this.group.clear()
     this.geometry.dispose()
     ;(this.mesh.material as THREE.Material).dispose()

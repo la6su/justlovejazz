@@ -240,6 +240,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Skip settled WorksPlaneStage rewrites** — preserve route/card
       reconciliation while avoiding repeated camera-local layout and uniform
       writes until camera, viewport, section or motion state changes.
+- [x] **Short-circuit settled DrawTrail work** — identical pointer/camera
+      demand frames no longer perform basis extraction, unprojection or trail
+      uniform writes; pointer and camera changes still wake the owner.
 
 - [x] **Cache CinematicNav scroll policy** — programmatic section navigation
       reads the owner-local reduced-motion snapshot instead of re-querying the
