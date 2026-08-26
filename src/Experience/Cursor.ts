@@ -31,6 +31,7 @@ const CANVAS_SIZE = 120
 const CANVAS_HALF = CANVAS_SIZE / 2
 
 export class Cursor {
+  private _disposed = false
   private innerEl: HTMLElement
   private canvas: HTMLCanvasElement
   private ctx: CanvasRenderingContext2D | null
@@ -51,6 +52,7 @@ export class Cursor {
 
   /** Refresh cached theme colors from CSS variables. Call on theme change. */
   refreshThemeCache(): void {
+    if (this._disposed) return
     const styles = getComputedStyle(document.documentElement)
     this._cachedAccent = styles.getPropertyValue('--jlz-color-accent').trim() || '#ffd60a'
     this._cachedAccentGlow =
@@ -132,6 +134,7 @@ export class Cursor {
    * scheduler's settle decision after each frame.
    */
   get isSettled(): boolean {
+    if (this._disposed) return true
     const goalX = this.isStuck ? this.stuckX : this.targetX
     const goalY = this.isStuck ? this.stuckY : this.targetY
     const targetR = this.isStuck ? this.targetRadius : this.baseRadius
@@ -274,6 +277,7 @@ export class Cursor {
   }
 
   update() {
+    if (this._disposed) return
     // Inner dot — instant follow, centered.
     // Color: accent-hover (idle) → RED (hover) via CSS .is-hover class.
     // Inner dot stays visible (no opacity fade) — just changes color.
@@ -526,11 +530,15 @@ export class Cursor {
   }
 
   destroy() {
+    if (this._disposed) return
+    this._disposed = true
     window.removeEventListener('mousemove', this.mousemoveHandler)
     document.removeEventListener('mouseover', this.mouseoverHandler)
     document.removeEventListener('mouseout', this.mouseoutHandler)
     document.removeEventListener('click', this.clickHandler)
+    this.onActivity = null
     this.innerEl.remove()
     this.canvas.remove()
+    this.ctx = null
   }
 }

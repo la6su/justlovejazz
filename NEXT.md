@@ -432,6 +432,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Make ParticleBurst teardown terminal** — disposed intro light frames
   now reject late triggers/updates, clear their segment metadata and release
   geometry/material exactly once.
+- [x] **Make camera and cursor teardown terminal** — late scheduler frames and
+  external HMR callbacks now become inert after `Camera.destroy()` or
+  `Cursor.destroy()`; teardown is idempotent and cursor wake callbacks are
+  released.
 - [x] **Release the WorksPortfolio owner** — `ExperienceUI.destroy()` now calls
   the portfolio disposer before dropping its reference; disposal clears the
   project/callback references and navigation becomes a safe no-op.

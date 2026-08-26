@@ -3713,6 +3713,17 @@ Acceptance: `ParticleBurst.lifecycle.test.ts` verifies one-time disposal and
 late-call inertness. Rollback: revert this bounded intro-owner slice if the
 splash handoff regresses.
 
+### Camera and Cursor terminal teardown — 2026-08-26
+
+`Camera.destroy()` and `Cursor.destroy()` now establish terminal lifecycle
+guards and remain safe when called more than once. Late frame/update calls,
+motion triggers and cursor wake callbacks cannot mutate an externally owned
+camera or detached cursor DOM after the Vue/Tres runtime is gone.
+
+Acceptance: `Camera.motion.test.ts` and `cursorSettle.test.ts` cover repeated
+teardown and late calls. Rollback: revert this bounded input/camera lifecycle
+slice if route transition or cursor settling regresses.
+
 ## Definition of done
 
 The migration is done when the target topology is the only production path;

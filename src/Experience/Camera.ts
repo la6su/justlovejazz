@@ -22,6 +22,7 @@ const SP_DAMPING = 3
 
 export class Camera {
   instance: THREE.PerspectiveCamera
+  private _disposed = false
 
   // Smooth state
   private smoothPosition = new THREE.Vector3()
@@ -52,6 +53,7 @@ export class Camera {
 
   /** Set cursor follow strength for current section (A-015) */
   setCursorFollow(strength: number): void {
+    if (this._disposed) return
     this._cursorFollowStrength = strength
   }
 
@@ -80,6 +82,8 @@ export class Camera {
 
   /** Remove the window resize listener. Call from Experience.destroy(). */
   destroy(): void {
+    if (this._disposed) return
+    this._disposed = true
     window.removeEventListener('resize', this._onResize)
     // C12 fix: clear pending pulse timer so it doesn't fire on a destroyed Camera.
     if (this._pulseTimer) {
@@ -90,6 +94,7 @@ export class Camera {
 
   /** Lerp camera base state toward target with exponential smoothing */
   updateSmooth(target: CameraTarget, deltaT: number, smoothing = 5) {
+    if (this._disposed) return
     if (!target) return
     const lerp = 1 - Math.exp(-smoothing * deltaT)
 
@@ -100,6 +105,7 @@ export class Camera {
 
   /** Trigger an action shake (impact on section change) */
   shake(power = 0.1, duration = 0.5) {
+    if (this._disposed) return
     this.shakePower = power
     this.shakeDuration = duration
     // D-27 fix: reset shakeTime so the new shake starts at phase 0 (was
@@ -109,16 +115,17 @@ export class Camera {
 
   /** True while action shake is active (needs rendering). */
   get isShaking(): boolean {
-    return this.shakePower > 0 && this.shakeDuration > 0
+    return !this._disposed && this.shakePower > 0 && this.shakeDuration > 0
   }
 
   /** True while the FOV pulse transition is animating (needs rendering). */
   get isPulsing(): boolean {
-    return this.fovTransitionT < 1
+    return !this._disposed && this.fovTransitionT < 1
   }
 
   /** Set FOV offset for cinematic zoom-in on section arrival */
   setFovOffset(value: number, duration = 1) {
+    if (this._disposed) return
     this.sectionFovOffset = value
     if (prefersReducedMotion()) {
       if (this._pulseTimer) {
@@ -142,6 +149,7 @@ export class Camera {
    *  Positive amount = zoom in (FOV decreases). ~0.04 = subtle, ~0.08 = noticeable.
    *  Uses a two-phase transition: dips to -amount over half duration, then back to 0. */
   pulse(amount = 0.05, duration = 0.8): void {
+    if (this._disposed) return
     if (prefersReducedMotion()) return
     // Clear any pending pulse timer (rapid section changes can overlap pulses)
     if (this._pulseTimer) {
@@ -165,6 +173,7 @@ export class Camera {
 
   /** Settle cinematic camera reactions on a live motion-policy change. */
   setReducedMotion(reduced: boolean): void {
+    if (this._disposed) return
     if (!reduced) return
 
     if (this._pulseTimer) {
@@ -197,6 +206,7 @@ export class Camera {
   }
 
   update(deltaT: number) {
+    if (this._disposed) return
     // Preserve authored timing on high-refresh displays. A fixed lower bound
     // would advance shake, organic motion and FOV transitions faster than
     // wall-clock time at 144/240 Hz; only clamp invalid negatives and stalls.

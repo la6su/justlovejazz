@@ -102,4 +102,19 @@ describe('Cursor.isSettled (Phase 7 loop-settle predicate)', () => {
     const history = stepCursor(cursor, 120)
     expect(history.every((s) => s)).toBe(true)
   })
+
+  it('becomes terminal and ignores late frames after teardown', () => {
+    let wakes = 0
+    cursor.onActivity = () => {
+      wakes++
+    }
+    cursor.destroy()
+    cursor.destroy()
+
+    window.dispatchEvent(new MouseEvent('mousemove', { clientX: 100, clientY: 100 }))
+    cursor.update()
+
+    expect(wakes).toBe(0)
+    expect(cursor.isSettled).toBe(true)
+  })
 })

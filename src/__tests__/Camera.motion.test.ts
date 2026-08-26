@@ -54,4 +54,24 @@ describe('Camera reduced-motion settlement', () => {
     camera.destroy()
     sizes.destroy()
   })
+
+  it('ignores late animation calls after terminal teardown', () => {
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }))
+    const sizes = new Sizes()
+    const instance = new THREE.PerspectiveCamera()
+    const camera = new Camera(sizes, instance)
+    const initialFov = instance.fov
+
+    camera.destroy()
+    camera.destroy()
+    camera.shake(1, 1)
+    camera.pulse(0.2, 0.8)
+    camera.setFovOffset(4)
+    camera.update(1 / 60)
+
+    expect(camera.isShaking).toBe(false)
+    expect(camera.isPulsing).toBe(false)
+    expect(instance.fov).toBe(initialFov)
+    sizes.destroy()
+  })
 })

@@ -158,8 +158,11 @@ under `src/builder/`; the public builds do not import the editor graph.
 - EnvSphere section palette transitions reuse their weight arrays, keeping
   route/section changes allocation-free at the owner boundary.
 - Direct scene owners such as `EnvSphere` and `SplashCube` detach themselves
-  before disposing geometry/material resources; a destroyed owner cannot
+  from the live graph before releasing GPU resources; a destroyed owner cannot
   remain as a child of the Tres-owned scene with invalid GPU state.
+- `Camera` and `Cursor` have terminal, idempotent teardown boundaries. After
+  disposal, late scheduler frames and external callbacks are inert; `Cursor`
+  also releases its activity wake callback and DOM drawing context.
 - Native WebGPU post processing is conditional on the selected quality policy;
   low-tier instances render the scene directly and do not construct a TSL
   `PassNode` graph whose effects are disabled.
