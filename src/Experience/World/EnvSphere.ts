@@ -37,6 +37,7 @@ const PAVILION_THICKNESS = 6
  * boundary stable while the implementation supplies a rounded pavilion.
  */
 export class EnvSphere extends THREE.Group {
+  private _disposed = false
   private _sectionWeights: number[] = [0, 1, 0, 0, 0, 0]
   private _targetWeights: number[] = [0, 1, 0, 0, 0, 0]
   private _isLight = false
@@ -139,6 +140,7 @@ export class EnvSphere extends THREE.Group {
   }
 
   changeSection(idx: number, isLight: boolean): void {
+    if (this._disposed) return
     if (idx < 0 || idx >= SECTION_PATTERNS.length) return
     if (prefersReducedMotion()) {
       this.snapToSection(idx, isLight)
@@ -151,6 +153,7 @@ export class EnvSphere extends THREE.Group {
   }
 
   snapToSection(idx: number, isLight: boolean): void {
+    if (this._disposed) return
     if (idx < 0 || idx >= SECTION_PATTERNS.length) return
     this._sectionWeights.fill(0)
     this._sectionWeights[idx] = 1
@@ -163,6 +166,7 @@ export class EnvSphere extends THREE.Group {
 
   /** Settle an active palette crossfade synchronously on a live policy change. */
   setReducedMotion(reduced: boolean): void {
+    if (this._disposed) return
     if (!reduced) return
     for (let i = 0; i < this._targetWeights.length; i++) {
       this._sectionWeights[i] = this._targetWeights[i]!
@@ -171,6 +175,7 @@ export class EnvSphere extends THREE.Group {
   }
 
   update(dt: number): void {
+    if (this._disposed) return
     for (let i = 0; i < SECTION_PATTERNS.length; i++) {
       const diff = this._targetWeights[i]! - this._sectionWeights[i]!
       if (Math.abs(diff) > 0.001) {
@@ -243,6 +248,8 @@ export class EnvSphere extends THREE.Group {
   }
 
   dispose(): void {
+    if (this._disposed) return
+    this._disposed = true
     this.removeFromParent()
     this._geometries.forEach((geometry) => geometry.dispose())
     this._backMaterial.dispose()

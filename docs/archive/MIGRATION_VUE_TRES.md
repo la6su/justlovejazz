@@ -3820,6 +3820,17 @@ all late public calls and async load completion; focused type-check/lint pass.
 Rollback: revert this bounded Contact-stage lifecycle slice if Agros fade or
 asset handoff regresses.
 
+### EnvSphere terminal teardown — 2026-08-26
+
+`EnvSphere` now rejects late palette changes, reduced-motion settling and
+render updates after its ambient materials/geometries are released. Disposal
+is idempotent, so a repeated runtime teardown cannot double-release the shared
+room resources or leave a retired owner reachable from the scene graph.
+
+Acceptance: `EnvSphere.motion.test.ts` covers repeated disposal and all late
+public calls; focused type-check/lint pass. Rollback: revert this bounded
+ambient-owner lifecycle slice if section palette transitions regress.
+
 ## Definition of done
 
 The migration is done when the target topology is the only production path;

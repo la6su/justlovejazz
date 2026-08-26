@@ -65,4 +65,19 @@ describe('EnvSphere reduced-motion transitions', () => {
     expect(state._targetWeights).toBe(targetWeights)
     sphere.dispose()
   })
+
+  it('ignores late palette and frame calls after terminal teardown', () => {
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }))
+    const sphere = new EnvSphere()
+
+    sphere.dispose()
+    sphere.dispose()
+    sphere.changeSection(3, true)
+    sphere.snapToSection(4, false)
+    sphere.setReducedMotion(true)
+    sphere.update(1 / 60)
+
+    expect(sphere.children).toHaveLength(0)
+    expect(sphere.parent).toBeNull()
+  })
 })
