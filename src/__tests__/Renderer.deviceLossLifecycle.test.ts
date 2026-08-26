@@ -161,6 +161,29 @@ describe('Renderer device-loss lifecycle', () => {
     expect(replacement.setAnimationLoop).toHaveBeenCalledOnce()
   })
 
+  it('disposes an installed replacement when post-swap setup fails', async () => {
+    const oldInstance = fakeRenderer()
+    const replacement = fakeRenderer()
+    replacement.setSize.mockImplementationOnce(() => {
+      throw new Error('replacement sizing failed')
+    })
+    mocks.create.mockResolvedValueOnce(replacement)
+    mocks.init.mockResolvedValue(undefined)
+    const emit = vi.spyOn(eventBus, 'emit')
+    const renderer = makeRenderer(oldInstance, vi.fn())
+
+    await renderer.recoverFromDeviceLost()
+
+    const state = renderer as unknown as { _recoveryFailed: boolean; _loopCallback: unknown }
+    expect(replacement.dispose).toHaveBeenCalledOnce()
+    expect(oldInstance.dispose).toHaveBeenCalledOnce()
+    expect(replacement.setAnimationLoop).toHaveBeenCalledWith(null)
+    expect(state._recoveryFailed).toBe(true)
+    expect(state._loopCallback).toBeNull()
+    expect(emit).toHaveBeenCalledWith('jlz:webgl-failed')
+    document.querySelector('.renderer-unsupported')?.remove()
+  })
+
   it('disposes the first fallback replacement exactly once when forced recreation fails', async () => {
     const oldInstance = fakeRenderer()
     const firstReplacement = fakeRenderer()

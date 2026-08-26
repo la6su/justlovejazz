@@ -365,7 +365,6 @@ export class Renderer {
         return
       }
       this.instance = replacement
-      replacement = null
       this.capabilities.setFinalRendererMode(plan.mode)
 
       this.instance.setPixelRatio(Math.min(this.sizes.dpr, this.capabilities.maxDpr))
@@ -393,6 +392,10 @@ export class Renderer {
       if (import.meta.env.DEV) {
         console.info('[Renderer] device-loss recovery complete — renderer re-created')
       }
+      // Keep the local owner alive until every post-swap setup and bridge
+      // callback has completed. If one of those steps throws, the catch block
+      // must still be able to dispose the replacement it just installed.
+      replacement = null
     } catch (e) {
       replacement?.dispose()
       if (this._disposed || generation !== this._lifecycleGeneration) return

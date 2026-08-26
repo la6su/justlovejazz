@@ -49,6 +49,9 @@ under `src/builder/`; the public builds do not import the editor graph.
   initialization. An explicit `isFallbackAdapter: true` reaches the existing
   same-canvas `forceWebGL` recreation policy; absent adapter metadata remains
   unknown and is never guessed as hardware.
+- Device-loss recovery retains the replacement renderer under a local owner
+  until sizing, post-pipeline creation, loop reattachment and SceneHost bridge
+  callbacks complete; a post-swap failure disposes it before terminal failure.
 - TSL post quality is enabled only for a non-low native `WebGPUBackend`.
   `WebGLBackend` is an explicit direct-render parity path and does not update
   unused post uniforms or advertise post processing.

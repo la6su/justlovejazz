@@ -49,6 +49,11 @@ Do not reopen completed migration phases. Current runtime contracts are in
       recreation no longer reaches the catch cleanup with an already-disposed
       software-adapter replacement.
 
+- [x] **Dispose failed recovery replacements** — device-loss recovery keeps the
+      replacement renderer under local ownership through post-swap setup and
+      bridge callbacks, so any late failure disposes the new GPU owner exactly
+      once before terminal failure.
+
 - [x] **Bound TSL graph-build failure** — a native WebGPU post-graph failure
       disables only the failing post owner and falls back to direct rendering,
       preventing repeated graph construction from keeping demand alive forever.
