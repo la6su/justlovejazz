@@ -76,3 +76,21 @@ ssh -N -L 3080:127.0.0.1:3080 dsh@<pct104-host>
 
 После этого открывается `http://127.0.0.1:3080/`. Headless-задачи и Web UI
 разделены: зависшая браузерная сессия не должна блокировать bounded audit.
+
+## Dev-сервер проекта
+
+Рабочий Vite-сервер на pct104 также принадлежит пользователю `dsh`; root не
+запускает `bun dev` и не создаёт отдельный checkout или кэш. Канонический
+workspace — `/home/dsh/workspace/justlovejazz`, сервер обслуживается в tmux
+сессии `jlz-vite` на порту `5173`:
+
+```bash
+sudo -u dsh -H tmux attach -t jlz-vite
+sudo -u dsh -H tmux new-session -d -s jlz-vite \
+  'cd /home/dsh/workspace/justlovejazz && npm run dev -- --host 0.0.0.0'
+```
+
+Синхронизация исходников выполняется из опубликованного commit SHA; generated
+`prerender/` артефакты должны присутствовать в workspace до запуска Vite.
+Архивный root checkout, если он нужен для восстановления, не является рабочим
+источником и не должен обслуживать `project.6la.ru`.
