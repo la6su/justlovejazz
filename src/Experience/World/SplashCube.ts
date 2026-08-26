@@ -84,6 +84,8 @@ export class SplashCube extends THREE.Mesh {
   // reading as an added wireframe or a flat blue block.
   private _themeTint = new THREE.Color(0x5e5667)
   private readonly _blendColor = new THREE.Color()
+  private _blendDirty = true
+  private _materialDirty = true
 
   private _idleRotY = 0
 
@@ -280,6 +282,7 @@ export class SplashCube extends THREE.Mesh {
     if (this._disposed) return
     this._isLightTheme = isLight
     this._themeTint.setHex(isLight ? 0x5f536b : 0xd0c5dc)
+    this._blendDirty = true
   }
 
   updateMaterial(params: BakuMaterialState): void {
@@ -291,6 +294,7 @@ export class SplashCube extends THREE.Mesh {
       metalness: params.metalness ?? this.targetParams.metalness,
       role: (params.role ?? this.targetParams.role) as BakuRole,
     }
+    this._materialDirty = true
   }
 
   /** Rotate cube to show the face for the given section index.
@@ -371,6 +375,7 @@ export class SplashCube extends THREE.Mesh {
     this._blendFromEmissive.copy(fromEmissive)
     this._blendToEmissive.copy(toEmissive)
     this._blendT = t
+    this._blendDirty = true
   }
 
   // ════════════════════════════════════════════════════════════════════
@@ -378,6 +383,13 @@ export class SplashCube extends THREE.Mesh {
   // ════════════════════════════════════════════════════════════════════
   update(dt: number): void {
     if (this._disposed) return
+    const reactionActive =
+      this.jellyEnergy > 0.0005 ||
+      this.jellyTarget > 0.0005 ||
+      this._faceLerp < 1 ||
+      (this.openerPhase !== 'done' && this.openerPhase !== 'idle') ||
+      this.openerProgress > 0.01
+    if (!reactionActive && !this._blendDirty && !this._materialDirty) return
     this.time += dt
 
     // A driven envelope gives the silicone wobble a quick response and a long,
@@ -434,10 +446,12 @@ export class SplashCube extends THREE.Mesh {
     // GPU buffer every frame — major Safari/iOS perf killer.
 
     // ── Apply role when changed ──
-    if (this.targetParams.role !== this._currentRole) {
+    if (this._materialDirty || this.targetParams.role !== this._currentRole) {
       this._currentRole = this.targetParams.role
       this.applyRoleAndParams()
     }
+    this._materialDirty = false
+    this._blendDirty = false
   }
 
   private applyRoleAndParams(): void {

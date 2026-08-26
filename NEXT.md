@@ -267,6 +267,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
       now disposes itself before the generic subtree sweep, preventing late
       updates and duplicate geometry/material disposal.
 
+- [x] **Skip settled SplashCube owner work** — unrelated demand frames no
+      longer advance cube time or repeat material/transform reconciliation once
+      jelly, face, opener and blend state have settled.
+
 - [x] **Cache CinematicNav scroll policy** — programmatic section navigation
       reads the owner-local reduced-motion snapshot instead of re-querying the
       media preference on every scroll request.

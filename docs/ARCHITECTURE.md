@@ -61,6 +61,9 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `SectionGroups` invokes `JunniParticles.dispose()` before generic recursive
   resource cleanup and excludes that subtree from the sweep, preserving the
   particle owner's terminal flag and exactly-once GPU disposal contract.
+- `SplashCube.update()` exits on unrelated demand frames when authored jelly,
+  face, opener and blend/material state are settled; those explicit dirty and
+  reaction boundaries remain the only paths that advance cube work.
 - One renderer-loop driver exists. `RenderScheduler` owns demand policy and
   requests bounded work from the one bounded renderer loop adapter;
   settled idle performs no draw work and hidden tabs pause.

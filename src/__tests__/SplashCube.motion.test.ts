@@ -122,6 +122,22 @@ describe('SplashCube reduced-motion transitions', () => {
     expect(cube.parent).toBeNull()
   })
 
+  it('skips settled update work when another owner raises demand', () => {
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }))
+    const cube = new SplashCube()
+    const applyBlend = vi.spyOn(cube as unknown as { applyMaterialBlend: () => void }, 'applyMaterialBlend')
+
+    cube.snapToFace(0)
+    cube.update(0)
+    applyBlend.mockClear()
+    const time = (cube as unknown as { time: number }).time
+    cube.update(1)
+
+    expect(applyBlend).not.toHaveBeenCalled()
+    expect((cube as unknown as { time: number }).time).toBe(time)
+    cube.dispose()
+  })
+
   it('ignores late public calls after terminal teardown', () => {
     vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }))
     const cube = new SplashCube()
