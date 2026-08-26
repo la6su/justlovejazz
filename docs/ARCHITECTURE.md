@@ -226,6 +226,9 @@ according to their current measured policy.
   update the disposed owner, and repeated teardown is idempotent.
 - WireframeTypography makes disposal terminal: it clears its glyph registry,
   marks motion inactive and ignores later activation, theme and update calls.
+- Renderer device-loss recovery fails closed: if replacement creation fails,
+  the old loop is cleared, an explicit unsupported state is shown, and update/
+  resize calls cannot touch the disposed renderer.
 - Contact section activation captures the same Cyprus request generation before
   awaiting lazy initialization; a stale route callback cannot call `setActive`
   or raise render demand on a newer stage.

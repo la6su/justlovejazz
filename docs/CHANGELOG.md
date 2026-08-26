@@ -39,6 +39,10 @@
 - `WireframeTypography` disposal is now terminal and idempotent; late route
   callbacks cannot reactivate disposed glyph meshes or retain their registry.
 
+- Renderer recovery now fails closed when replacement creation fails: the old
+  animation loop is cleared, failure is surfaced, and disposed-renderer calls
+  are blocked.
+
 - `useJlzPage` now disposes the module-level `WorkCards` registry during route
   owner teardown as well as before route replacement, releasing delegated grid
   listeners and pending card timers on full unmount.

@@ -54,6 +54,7 @@ export class Renderer {
   // Phase 6 device-loss recovery state (bounded — see rendererBackend.ts).
   private _deviceLostAttempts = 0
   private _recovering = false
+  private _recoveryFailed = false
   private _disposed = false
   private _lifecycleGeneration = 0
   // forceWebGL the current instance was created with (software-adapter
@@ -72,7 +73,7 @@ export class Renderer {
   constructor(sizes: Sizes) {
     this.sizes = sizes
     if (this.capabilities.mode === 'unsupported') {
-      this.showUnsupportedMessage()
+      if (!this._disposed) this.showUnsupportedMessage()
       throw new Error('Neither WebGPU nor WebGL2 is supported by this browser.')
     }
     this._onResize = () => this.resize()
@@ -121,6 +122,7 @@ export class Renderer {
 
   async init(adopted?: AdoptedRenderer): Promise<void> {
     this._disposed = false
+    this._recoveryFailed = false
     this._lifecycleGeneration += 1
     const generation = this._lifecycleGeneration
     const isCurrent = (): boolean =>
@@ -251,7 +253,7 @@ export class Renderer {
    * stays null across recovery.
    */
   public setAnimationLoop(callback: ((time: number) => void) | null): void {
-    this._loopCallback = callback
+    this._loopCallback = this._recoveryFailed ? null : callback
     ;(
       this.instance as {
         setAnimationLoop?: (cb: ((time: number) => void) | null) => void
@@ -358,6 +360,14 @@ export class Renderer {
       }
     } catch (e) {
       replacement?.dispose()
+      this._recoveryFailed = true
+      this._loopCallback = null
+      ;(
+        this.instance as {
+          setAnimationLoop?: (cb: ((time: number) => void) | null) => void
+        }
+      ).setAnimationLoop?.(null)
+      this.showUnsupportedMessage()
       console.error('[Renderer] device-loss recovery failed:', e)
     } finally {
       this._recovering = false
@@ -368,7 +378,7 @@ export class Renderer {
   update(scene: THREE.Scene, camera: THREE.Camera, dt: number, _worldState?: WorldState): void {
     // During a device-loss recovery the pipeline is torn down and rebuilt;
     // skip the frame so we never render through a disposed renderer.
-    if (this._recovering) return
+    if (this._recovering || this._recoveryFailed || this._disposed) return
     // ── Fog ──
     // Fog is managed by World.ts (per-section fog color + density from
     // WorldConfig). World.init() creates scene.fog, World.updateTransform()
@@ -407,6 +417,7 @@ export class Renderer {
 
   /** Resize: propagate viewport changes to canvas, renderer, pipeline, and world. */
   public resize(): void {
+    if (this._recoveryFailed || this._disposed) return
     const w = this.sizes.width
     const h = this.sizes.height
     this.instance.setPixelRatio(Math.min(this.sizes.dpr, this.capabilities.maxDpr))

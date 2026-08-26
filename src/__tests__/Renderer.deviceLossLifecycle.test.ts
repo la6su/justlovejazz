@@ -126,4 +126,24 @@ describe('Renderer device-loss lifecycle', () => {
     expect(onInstanceReplaced).toHaveBeenCalledWith(replacement)
     expect(replacement.setAnimationLoop).toHaveBeenCalledOnce()
   })
+
+  it('stops rendering and surfaces failure when recovery recreation fails', async () => {
+    const oldInstance = fakeRenderer()
+    const error = new Error('recreation failed')
+    mocks.create.mockRejectedValueOnce(error)
+    const renderer = makeRenderer(oldInstance, vi.fn())
+
+    await renderer.recoverFromDeviceLost()
+
+    const state = renderer as unknown as { _recoveryFailed: boolean; _loopCallback: unknown }
+    expect(state._recoveryFailed).toBe(true)
+    expect(state._loopCallback).toBeNull()
+    expect(oldInstance.dispose).toHaveBeenCalledOnce()
+    expect(oldInstance.setAnimationLoop).toHaveBeenCalledWith(null)
+    expect(() => {
+      ;(renderer as unknown as { update: (...args: unknown[]) => void }).update({}, {}, 1 / 60)
+    }).not.toThrow()
+    expect(document.querySelector('.renderer-unsupported')).not.toBeNull()
+    document.querySelector('.renderer-unsupported')?.remove()
+  })
 })
