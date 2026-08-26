@@ -3362,6 +3362,21 @@ frame, and normal `rotateToFace()` behavior remains interpolated. Rollback:
 remove the callback and restore the prior frame-driven settlement if the
 motion policy is revised.
 
+#### ContactCyprusStage live reduced-motion settlement — 2026-08-26
+
+The route-owned Cyprus stage now exposes a synchronous motion-policy boundary.
+Enabling reduced motion during its fade/scale transition applies the target
+opacity and scale immediately, clears the prewarm continuation and hides the
+stage when its target is inactive. `Experience` forwards the preference before
+the scheduler settles, so the lazy Contact owner cannot retain intermediate
+state or a false render-demand reason. Lifecycle coverage locks active and
+inactive target settlement; normal route activation remains unchanged.
+
+Acceptance: active and inactive stage targets settle without a follow-up frame;
+normal `setActive()` transitions remain interpolated. Rollback: remove the
+owner callback and restore frame-driven settlement if the motion policy is
+revised.
+
 ### Removal ledger
 
 | Legacy element                           | Remove after                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Status |

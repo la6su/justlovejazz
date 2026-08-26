@@ -71,6 +71,8 @@ under `src/builder/`; the public builds do not import the editor graph.
   transition may leave `_faceLerp` active or keep render demand alive.
 - `SplashCube` also settles face, jelly and opener state synchronously when the
   live reduced-motion preference changes, before scheduler settlement.
+- `ContactCyprusStage` settles its route-local fade and scale synchronously on
+  the same live preference change; no hidden route owner retains render demand.
 - The lazy Contact typography owner receives the same live preference while
   mounted. Its glyphs settle synchronously on enable and resume bob/sway on
   disable, so route re-entry is not required to reconcile motion state.

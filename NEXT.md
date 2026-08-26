@@ -85,6 +85,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
   jelly displacement and opener scale now reset to authored final state before
   the scheduler is stopped.
 
+- [x] **Settle ContactCyprusStage on live motion-policy changes** — route-owned
+  fade and scale transitions now snap before scheduler settlement.
+
 - [x] **Align WebGLBackend quality state** — direct-render fallback no longer
   advertises or updates the unused TSL post graph; native WebGPU retains the
   crossfade and post parameter path.

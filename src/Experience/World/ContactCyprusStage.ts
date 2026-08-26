@@ -145,6 +145,15 @@ export class ContactCyprusStage extends THREE.Group {
     }
   }
 
+  /** Settle an active fade/scale transition on a live motion-policy change. */
+  setReducedMotion(reduced: boolean): void {
+    if (!reduced || this._disposed) return
+    this._fadeElapsed = FADE_DURATION_SECONDS
+    this._prewarmFramePending = false
+    this.setPresentation(this._targetOpacity, this._targetScale)
+    this.visible = this._targetOpacity > 0 && this._model !== null
+  }
+
   /** True while the map is fading between Contact frames. */
   get isAnimating(): boolean {
     return (

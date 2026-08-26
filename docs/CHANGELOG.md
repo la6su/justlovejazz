@@ -36,6 +36,8 @@
   enabled while a section transition is already active.
 - SplashCube face, jelly and opener reactions now settle synchronously on a
   live reduced-motion change.
+- ContactCyprusStage fade and scale transitions now settle synchronously on a
+  live reduced-motion change.
 
 - `Experience` now observes live `prefers-reduced-motion` changes instead of
   caching the preference only at startup. Enabling reduction cancels ambient

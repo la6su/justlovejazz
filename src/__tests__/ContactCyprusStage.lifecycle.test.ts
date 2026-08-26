@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   loadAsync: vi.fn(),
@@ -34,6 +34,58 @@ vi.mock('three/addons/loaders/GLTFLoader.js', () => ({
 import { ContactCyprusStage } from '../Experience/World/ContactCyprusStage'
 
 describe('ContactCyprusStage async lifecycle', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('settles an active fade and scale synchronously on reduced motion', () => {
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }))
+    const stage = new ContactCyprusStage()
+    const model = new THREE.Group()
+    const material = new THREE.MeshPhysicalMaterial({ transparent: true })
+    model.add(new THREE.Mesh(new THREE.BufferGeometry(), material))
+    stage.add(model)
+    const internals = stage as unknown as {
+      _model: THREE.Group | null
+      _materials: THREE.MeshPhysicalMaterial[]
+    }
+    internals._model = model
+    internals._materials = [material]
+
+    stage.setActive(true)
+    stage.update(0.1)
+    expect(stage.isAnimating).toBe(true)
+    expect(material.opacity).toBeLessThan(1)
+
+    stage.setReducedMotion(true)
+
+    expect(stage.isAnimating).toBe(false)
+    expect(material.opacity).toBe(1)
+    expect(model.scale.x).toBe(1)
+    stage.dispose()
+  })
+
+  it('hides an inactive target synchronously on reduced motion', () => {
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }))
+    const stage = new ContactCyprusStage()
+    const model = new THREE.Group()
+    const material = new THREE.MeshPhysicalMaterial({ transparent: true })
+    model.add(new THREE.Mesh(new THREE.BufferGeometry(), material))
+    stage.add(model)
+    const internals = stage as unknown as {
+      _model: THREE.Group | null
+      _materials: THREE.MeshPhysicalMaterial[]
+    }
+    internals._model = model
+    internals._materials = [material]
+
+    stage.setActive(false)
+    stage.setReducedMotion(true)
+
+    expect(stage.visible).toBe(false)
+    expect(material.opacity).toBe(0)
+    expect(stage.isAnimating).toBe(false)
+    stage.dispose()
+  })
+
   it('does not attach a GLTF result after disposal wins the pending load', async () => {
     mocks.loadAsync.mockReset()
     mocks.dracoDispose.mockReset()
