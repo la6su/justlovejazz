@@ -429,6 +429,7 @@ export class Experience {
     // carousel owner getter.
     const worksGroup = this.sectionGroups.at(3)
     this.carousel = (worksGroup?.userData.carousel as BakuCarousel | undefined) ?? null
+    if (this.carousel) this.carousel.onActivity = () => this._raiseRenderDemand('dirty')
     // Phase 8 slice 3: the ambient pavilion (EnvSphere) enters the
     // Tres-owned scene under its own owner; the coordinator frame path
     // forwards its per-frame colour-lerp update.

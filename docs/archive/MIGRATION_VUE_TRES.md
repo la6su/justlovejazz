@@ -3570,6 +3570,16 @@ Acceptance: `FullscreenOverlay.lifecycle.test.ts` verifies the title owner is
 cancelled during disposal. Rollback: revert this bounded overlay owner slice if
 the close lifecycle regresses.
 
+### BakuCarousel activity wake — 2026-08-26
+
+Pointer/touch drag and explicit carousel controls now report activity through a
+typed callback wired to the Experience scheduler. This keeps the single loop
+owner demand-driven while ensuring scroll target changes receive frames.
+
+Acceptance: `BakuCarousel.lifecycle.test.ts` proves pointer drag and controls
+wake the loop and mutate the target. Rollback: revert this bounded carousel
+owner slice if input scheduling regresses.
+
 ## Definition of done
 
 The migration is done when the target topology is the only production path;

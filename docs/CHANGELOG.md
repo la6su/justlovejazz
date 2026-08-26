@@ -30,6 +30,8 @@
   cursor after idle.
 - FullscreenOverlay teardown now cancels hidden/preloaded title reveals so
   detached overlay DOM is not retained by BlurFade.
+- BakuCarousel pointer and control input now wakes the shared demand scheduler,
+  preserving touch-drag feedback when no mousemove event is available.
 
 - Renderer device-loss fallback now clears the retired software-adapter
   replacement before forced-WebGL recreation; a failed second initialization

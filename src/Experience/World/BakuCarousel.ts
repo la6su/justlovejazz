@@ -47,6 +47,8 @@ const MOMENTUM_THRESHOLD = 0.0007 // below this → snap to nearest card
 const SNAP_STEP = 1
 
 export class BakuCarousel extends THREE.Group {
+  /** Wake the shared demand-driven renderer after pointer-driven state changes. */
+  onActivity: (() => void) | null = null
   private cards: CasePlane[] = []
   private scroll = { current: 0, target: 0 }
   private _morphT = 0 // 0 = cube, 1 = carousel (raw, before easing)
@@ -203,6 +205,7 @@ export class BakuCarousel extends THREE.Group {
       // the carousel's _active flag were stuck true from a prior home visit).
       if (this.page() !== 'home') return
       this.isDown = true
+      this.onActivity?.()
       this.dragStartX = e.clientX
       this.dragStartY = e.clientY
       this.dragMoved = false
@@ -231,6 +234,7 @@ export class BakuCarousel extends THREE.Group {
       const delta = -dx * DRAG_SENSITIVITY
       this.velocity = delta
       this.scroll.target += delta
+      this.onActivity?.()
 
       this.dragStartX = e.clientX
       this.dragStartY = e.clientY
@@ -239,6 +243,7 @@ export class BakuCarousel extends THREE.Group {
     this.pointerUpHandler = (e: PointerEvent) => {
       if (!this.isDown) return
       this.isDown = false
+      this.onActivity?.()
       // If pointer didn't move much → treat as a TAP on a carousel card
       if (!this.dragMoved && this.dragAxis === 'pending') {
         this.handleTap(e.clientX, e.clientY)
@@ -264,6 +269,7 @@ export class BakuCarousel extends THREE.Group {
       const direction = control.dataset.bakuCarouselControl
       if (direction === 'prev') this.prev()
       if (direction === 'next') this.next()
+      if (direction === 'prev' || direction === 'next') this.onActivity?.()
     }
     window.addEventListener('click', this.controlClickHandler)
   }
@@ -328,10 +334,12 @@ export class BakuCarousel extends THREE.Group {
 
   next(): void {
     this.scroll.target -= SNAP_STEP
+    this.onActivity?.()
   }
 
   prev(): void {
     this.scroll.target += SNAP_STEP
+    this.onActivity?.()
   }
 
   private snap(): void {
@@ -445,6 +453,7 @@ export class BakuCarousel extends THREE.Group {
     this.controlClickHandler = null
     this.snapTimer = null
     this._onCardClick = null
+    this.onActivity = null
     this._camera = null
     this.isDown = false
     this.dragMoved = false

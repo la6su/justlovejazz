@@ -166,4 +166,36 @@ describe('BakuCarousel texture lifecycle', () => {
     expect(state._morphT).toBe(0)
     expect(() => carousel.dispose()).not.toThrow()
   })
+
+  it('wakes the shared loop when pointer drag changes carousel state', async () => {
+    mocks.loadCaseTexture.mockImplementation(async () => new THREE.Texture())
+    const carousel = new BakuCarousel()
+    await carousel.init()
+    carousel.setActive(true)
+    Object.assign(carousel as unknown as Record<string, unknown>, { _morphT: 1 })
+    const wake = vi.fn()
+    carousel.onActivity = wake
+
+    document.body.dispatchEvent(
+      new PointerEvent('pointerdown', { bubbles: true, clientX: 100, clientY: 100 }),
+    )
+    document.body.dispatchEvent(
+      new PointerEvent('pointermove', { bubbles: true, clientX: 80, clientY: 100 }),
+    )
+
+    expect(wake).toHaveBeenCalled()
+    expect((carousel as unknown as { scroll: { target: number } }).scroll.target).not.toBe(0)
+    carousel.dispose()
+  })
+
+  it('wakes the shared loop for carousel controls', () => {
+    const carousel = new BakuCarousel()
+    const wake = vi.fn()
+    carousel.onActivity = wake
+    carousel.next()
+
+    expect(wake).toHaveBeenCalledOnce()
+    expect((carousel as unknown as { scroll: { target: number } }).scroll.target).toBe(-1)
+    carousel.dispose()
+  })
 })
