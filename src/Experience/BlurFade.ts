@@ -21,6 +21,8 @@ export class BlurFade {
   private running = false
   private start = 0
   private dur = 1000
+  /** Rotation values are authored once per reveal, not re-parsed per RAF. */
+  private readonly rotations: number[] = []
 
   private constructor(el: HTMLElement) {
     this.el = el
@@ -51,6 +53,7 @@ export class BlurFade {
     this.start = performance.now()
     this.el.setAttribute('data-visible', 'true')
     this.el.setAttribute('aria-label', this.cleanText)
+    this.rotations.length = 0
 
     // Build spans through DOM APIs. Titles can come from translated/editorial
     // content, so interpolating them into innerHTML would turn markup into
@@ -63,6 +66,7 @@ export class BlurFade {
         'display:inline-block;opacity:0;transform:translateY(20px) rotate(' +
         `${rot}deg);filter:blur(8px);transition:none;`
       span.dataset.rot = String(rot)
+      this.rotations.push(rot)
       span.textContent = ch === ' ' ? '\u00a0' : ch
       return span
     })
@@ -103,7 +107,7 @@ export class BlurFade {
       const eased = 1 - Math.pow(1 - charT, 3)
       const opacity = eased
       const translateY = 20 * (1 - eased)
-      const rotate = parseFloat(span.dataset.rot || '0') * (1 - eased)
+      const rotate = (this.rotations[i] ?? 0) * (1 - eased)
       const blur = 8 * (1 - eased)
       span.style.opacity = String(opacity)
       span.style.transform = `translateY(${translateY}px) rotate(${rotate}deg)`

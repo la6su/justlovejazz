@@ -633,6 +633,9 @@ one for transactional editor state.
 - `NoiseText` keeps one owner-scoped character buffer for its bounded reveal;
   each tick may allocate only the unavoidable joined DOM string, and teardown
   cancels both RAF and safety timeout through the shared registry.
+- `BlurFade` caches its authored span rotations for the lifetime of a reveal;
+  frame ticks update styles without reparsing per-span metadata, and the same
+  registry owns cancellation and final DOM restoration.
 - Removing code is part of each owner migration; a transition cannot finish
   with two routers, loops, post pipelines or state sources.
 

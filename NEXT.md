@@ -413,6 +413,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Reuse NoiseText frame buffers** — the bounded typewriter owner now
   reuses its character array across RAF ticks; only the final DOM string is
   rebuilt for each visible frame.
+- [x] **Cache BlurFade rotation metadata** — reveal ticks now reuse the
+  authored per-span rotation values instead of parsing `data-rot` on every
+  frame.
 - [x] **Release the WorksPortfolio owner** — `ExperienceUI.destroy()` now calls
   the portfolio disposer before dropping its reference; disposal clears the
   project/callback references and navigation becomes a safe no-op.

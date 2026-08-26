@@ -85,6 +85,26 @@ describe('BlurFade lifecycle', () => {
     expect(element.querySelectorAll('span')).toHaveLength(5)
   })
 
+  it('caches authored rotations instead of parsing span data every tick', () => {
+    const callbacks: FrameRequestCallback[] = []
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      callbacks.push(callback)
+      return callbacks.length
+    })
+    const element = document.createElement('span')
+    element.textContent = 'Hello'
+    document.body.append(element)
+
+    const instance = BlurFade.for(element) as unknown as { rotations: number[] }
+    BlurFade.for(element).show(1)
+    const rotations = instance.rotations
+    callbacks[0]!(100)
+    callbacks[1]!(200)
+
+    expect(instance.rotations).toBe(rotations)
+    expect(instance.rotations).toHaveLength(5)
+  })
+
   it('restores authored text after hiding a revealed title', () => {
     const element = document.createElement('h2')
     element.textContent = 'Hello'

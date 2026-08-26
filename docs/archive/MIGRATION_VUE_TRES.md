@@ -3659,6 +3659,16 @@ Acceptance: `NoiseText.lifecycle.test.ts` verifies stable buffer identity across
 repeated ticks. Rollback: revert this bounded text-animation performance slice
 if reveal output regresses.
 
+### BlurFade rotation cache — 2026-08-26
+
+`BlurFade` records each span's authored rotation while building a reveal and
+reuses those numbers on every RAF tick. This removes repeated `data-rot`
+parsing without changing the DOM structure, CSS values or teardown behavior.
+
+Acceptance: `BlurFade.lifecycle.test.ts` verifies stable rotation-cache
+identity and span coverage across repeated ticks. Rollback: revert this
+bounded DOM-animation performance slice if title motion regresses.
+
 ## Definition of done
 
 The migration is done when the target topology is the only production path;
