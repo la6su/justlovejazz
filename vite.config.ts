@@ -51,6 +51,13 @@ export default defineConfig(() => ({
     alias: [{ find: /^three$/, replacement: resolve(__dirname, 'src/three-webgpu-compat.ts') }],
   },
   define: VUE_FEATURE_FLAGS,
+  optimizeDeps: {
+    rolldownOptions: {
+      transform: {
+        define: VUE_FEATURE_FLAGS,
+      },
+    },
+  },
   publicDir: 'public',
   build: {
     target: 'es2023',
