@@ -3684,6 +3684,14 @@ public runtime rendering is registry-owned, while `renderBuilderPageDocument()`
 is the static publishing wrapper. The framework-neutral string renderer is
 documented as a test/reference adapter only and is not a runtime fallback.
 
+### Phase 10 route-cycle evidence summary — 2026-08-26
+
+The performance baseline now points to the accepted
+`2026-08-25T09-32-03-390Z-report.json` artifact: five warm-up plus twenty
+steady-state cycles, `allPassed: true`, one canvas, no fatal errors and no
+resource-series growth. Backend-unavailable program counters and flat
+headless heap readings remain explicitly non-gating.
+
 ## Definition of done
 
 The migration is done when the target topology is the only production path;

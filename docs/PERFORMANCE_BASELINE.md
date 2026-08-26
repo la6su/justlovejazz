@@ -173,7 +173,7 @@ the current classic WebGL2 renderer; afterwards it is
 | Phase 0 freeze   | partial | automatic and forced home |     n/a |     n/a |           n/a | owner-visible pass | `20c4d63`, desktop RTX 4060 Ti and Android DPR 2.75 WebGPU confirmed; teardown listener/timer inventory pending        |
 | Phase 2 accepted | pass    | representative full graph |   16.70 |   16.80 |             0 | plateau + teardown | Android `22101320G`, desktop RTX 4060 Ti, WebGPUBackend and forced WebGLBackend; resize/DPR evidence 2026-08-25 |
 | Phase 6 renderer | pending | full route matrix         | pending | pending |    0 required | 20 routes          | record                                                                                                                 |
-| Phase 10 cutover | pending | full route matrix         | pending | pending |    0 required | 20 routes          | record                                                                                                                 |
+| Phase 10 cutover | pass    | full route matrix         |     n/a |     n/a |    0 required | 20 routes          | `2026-08-25T09-32-03-390Z-report.json`, allPassed=true                                                                |
 
 Resource soak tracks canvas/context count, listeners, timers, decoded assets,
 textures, geometries, programs/pipelines, retained route scopes, JS heap and GPU
@@ -190,6 +190,18 @@ geometries/materials/textures, renderer counters where Three.js exposes them,
 and post-pipeline targets/passes. Browser APIs do not expose a portable
 driver-level WebGPU memory counter, so that value remains explicitly unavailable
 rather than being guessed.
+
+### Phase 10 route-cycle acceptance recheck — 2026-08-25
+
+The recorded report
+[`docs/evidence/phase10-route-cycle-soak/2026-08-25T09-32-03-390Z-report.json`](evidence/phase10-route-cycle-soak/2026-08-25T09-32-03-390Z-report.json)
+completed five warm-up and twenty steady-state cycles across the six SPA
+routes with `allPassed: true`. It observed one persistent canvas, zero fatal
+errors, no monotonic increases in the gated scene/renderer/resource series,
+stable `/works` and `/contact` continuous-route frame deltas, and a settled
+loop on settle-able routes. `rendererPrograms` is explicitly unavailable from
+this backend and `heapUsed` is flat in headless Chromium; both remain recorded
+as non-gating noisy metrics rather than being treated as invented proof.
 
 ### Phase 0 renderer observation — 2026-08-15
 
