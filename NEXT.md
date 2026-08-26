@@ -138,6 +138,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Wake cursor click feedback** — click activity now invalidates the
   settled demand-driven loop before animating the cursor bump.
 
+- [x] **Cancel hidden overlay title reveals** — FullscreenOverlay teardown now
+  releases BlurFade even when a preloaded overlay never entered the modal.
+
 - [x] **Align WebGLBackend quality state** — direct-render fallback no longer
   advertises or updates the unused TSL post graph; native WebGPU retains the
   crossfade and post parameter path.

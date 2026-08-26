@@ -138,6 +138,9 @@ under `src/builder/`; the public builds do not import the editor graph.
 - Cursor activity, including click bump animation, wakes the shared
   demand-driven scheduler; no cursor animation may mutate state while the loop
   remains settled.
+- FullscreenOverlay owns its title BlurFade lifecycle and cancels it during
+  teardown even for hidden/preloaded overlays, preventing detached DOM from
+  remaining in the animation registry.
 - Direct scene owners such as `EnvSphere` and `SplashCube` detach themselves
   before disposing geometry/material resources; a destroyed owner cannot
   remain as a child of the Tres-owned scene with invalid GPU state.

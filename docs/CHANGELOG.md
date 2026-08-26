@@ -28,6 +28,8 @@
   bootstrap/UI failure state to follow the actual renderer lifecycle.
 - Cursor click bump now wakes the settled render scheduler, preventing a frozen
   cursor after idle.
+- FullscreenOverlay teardown now cancels hidden/preloaded title reveals so
+  detached overlay DOM is not retained by BlurFade.
 
 - Renderer device-loss fallback now clears the retired software-adapter
   replacement before forced-WebGL recreation; a failed second initialization

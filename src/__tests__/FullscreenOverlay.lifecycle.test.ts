@@ -209,4 +209,20 @@ describe('FullscreenOverlay close ownership', () => {
       load.mockRestore()
     }
   })
+
+  it('cancels a hidden title reveal during disposal', () => {
+    const show = vi.fn()
+    const hide = vi.fn()
+    const blurFadeFor = vi.spyOn(BlurFade, 'for').mockReturnValue({ show, hide } as never)
+    const overlay = new FullscreenOverlay() as unknown as OverlayInternals
+
+    try {
+      overlay._applyOptions({ title: 'Preloaded title' })
+      overlay.dispose()
+      expect(hide).toHaveBeenCalledOnce()
+    } finally {
+      blurFadeFor.mockRestore()
+      overlay.dispose()
+    }
+  })
 })

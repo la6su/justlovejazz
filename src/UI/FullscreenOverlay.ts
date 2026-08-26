@@ -584,6 +584,10 @@ export class FullscreenOverlay {
       this.handleHide()
     }
     this._listeners.abort()
+    // The title reveal is an independent RAF owner. A preloaded/hidden
+    // overlay can be disposed without passing through `hide`; cancel it
+    // synchronously so the static BlurFade registry cannot retain this DOM.
+    BlurFade.for(this.titleEl).hide()
     this._posterRequestId += 1
     this._mediaGeneration += 1
     this._cancelVideoReveal()

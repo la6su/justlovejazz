@@ -3560,6 +3560,16 @@ Acceptance: `cursorSettle.test.ts` proves a settled cursor wakes once on click,
 becomes unsettled, and converges back to settled through the shared scheduler
 owner. Rollback: revert this bounded owner slice if the wake contract regresses.
 
+### Hidden overlay title teardown — 2026-08-26
+
+`FullscreenOverlay.dispose()` now synchronously cancels the title's `BlurFade`
+owner. This covers the preloaded/hidden path that does not receive a UIKit
+`hide` event before the overlay DOM is removed.
+
+Acceptance: `FullscreenOverlay.lifecycle.test.ts` verifies the title owner is
+cancelled during disposal. Rollback: revert this bounded overlay owner slice if
+the close lifecycle regresses.
+
 ## Definition of done
 
 The migration is done when the target topology is the only production path;
