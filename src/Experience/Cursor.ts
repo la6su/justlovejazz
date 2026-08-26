@@ -258,6 +258,9 @@ export class Cursor {
       }
     }
     this.clickHandler = () => {
+      // A settled demand-driven loop has no frame available to animate the
+      // click bump unless the event explicitly wakes the scheduler.
+      this.onActivity?.()
       // Bump: radius scales down to 0.7, then bounces back to 1.0
       this.bumpScale = 0.6
       this.bumpTarget = 1

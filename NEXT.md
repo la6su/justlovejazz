@@ -135,6 +135,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
   recovery now emits the typed bootstrap failure event before surfacing the
   fallback UI.
 
+- [x] **Wake cursor click feedback** — click activity now invalidates the
+  settled demand-driven loop before animating the cursor bump.
+
 - [x] **Align WebGLBackend quality state** — direct-render fallback no longer
   advertises or updates the unused TSL post graph; native WebGPU retains the
   crossfade and post parameter path.

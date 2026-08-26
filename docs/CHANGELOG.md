@@ -26,6 +26,8 @@
   preventing stale page-specific config lookups after route reuse.
 - Renderer terminal device-loss paths now publish `jlz:webgl-failed`, allowing
   bootstrap/UI failure state to follow the actual renderer lifecycle.
+- Cursor click bump now wakes the settled render scheduler, preventing a frozen
+  cursor after idle.
 
 - Renderer device-loss fallback now clears the retired software-adapter
   replacement before forced-WebGL recreation; a failed second initialization

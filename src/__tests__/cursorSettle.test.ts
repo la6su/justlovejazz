@@ -85,6 +85,19 @@ describe('Cursor.isSettled (Phase 7 loop-settle predicate)', () => {
     expect(wakes).toBe(3)
   })
 
+  it('wakes a settled loop for the click bump animation', () => {
+    let wakes = 0
+    cursor.onActivity = () => {
+      wakes++
+    }
+    expect(cursor.isSettled).toBe(true)
+    document.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    expect(wakes).toBe(1)
+    expect(cursor.isSettled).toBe(false)
+    stepCursor(cursor, 200)
+    expect(cursor.isSettled).toBe(true)
+  })
+
   it('stays settled across idle frames (no phantom wake)', () => {
     const history = stepCursor(cursor, 120)
     expect(history.every((s) => s)).toBe(true)

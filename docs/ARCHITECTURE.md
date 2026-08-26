@@ -135,6 +135,9 @@ under `src/builder/`; the public builds do not import the editor graph.
 - Exhausting the bounded device-loss recovery budget is terminal: `Renderer`
   clears its callback and detaches the live renderer loop before surfacing the
   explicit failure state.
+- Cursor activity, including click bump animation, wakes the shared
+  demand-driven scheduler; no cursor animation may mutate state while the loop
+  remains settled.
 - Direct scene owners such as `EnvSphere` and `SplashCube` detach themselves
   before disposing geometry/material resources; a destroyed owner cannot
   remain as a child of the Tres-owned scene with invalid GPU state.

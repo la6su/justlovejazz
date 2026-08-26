@@ -3550,6 +3550,16 @@ failure behavior; renderer recovery budget and backend policy remain unchanged.
 | tres spike instrumentation               | Phase 10 slice 1 — `src/spikes/` (the Phase 2/7 verification probes: unified/representative/loop/resource/manual entries + `rendererReadiness`/`unifiedRendererFactory`/`representativeScene` probes) + the 4 probe-only test files + the `dev:tres-spike` script + the Vite `tres-spike-pages` plugin/`optimizeDeps` block deleted 2026-08-22 after a consumer search proved zero production consumers (tests + the dev routes only); the `DEVELOPMENT.md` renderer gate now names the Phase 7 live gate as the current tool                                                   | done   |
 | migration flags and shims                | Phase 10 — the dev-forced `?renderer=webgl` flag + classic factory removed in slice 2 2026-08-22; the raw `jlz:*` window bridge (tracked on its own row) — the remaining shim — removed in slice 3 2026-08-22. No migration adapter, feature flag or shim remains                                                                                                                                                                                                                                                                                                               | done   |
 
+### Cursor click wake — 2026-08-26
+
+The demand-driven render loop now receives `Cursor.onActivity` from the click
+handler before mutating bump state. This keeps click feedback observable after
+the loop has settled, without introducing a second animation loop.
+
+Acceptance: `cursorSettle.test.ts` proves a settled cursor wakes once on click,
+becomes unsettled, and converges back to settled through the shared scheduler
+owner. Rollback: revert this bounded owner slice if the wake contract regresses.
+
 ## Definition of done
 
 The migration is done when the target topology is the only production path;
