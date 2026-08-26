@@ -41,7 +41,10 @@ export class Camera {
   private fovOffset = 0
   private sectionFovOffset = 0
   private targetFovOffset = 0
-  private fovTransitionT = 0
+  // No pulse is active until pulse() or setFovOffset() starts a transition.
+  // Starting settled prevents the demand scheduler from treating a newly
+  // constructed camera as animated before the first authored transition.
+  private fovTransitionT = 1
   private fovStartOffset = 0
   private fovDuration = 1.0
   // C12 fix: pulse phase-2 timer stored so destroy() can clear it.

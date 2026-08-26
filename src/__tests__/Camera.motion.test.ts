@@ -9,6 +9,17 @@ describe('Camera reduced-motion settlement', () => {
     vi.unstubAllGlobals()
   })
 
+  it('starts settled before any FOV transition is requested', () => {
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }))
+    const sizes = new Sizes()
+    const camera = new Camera(sizes, new THREE.PerspectiveCamera())
+
+    expect(camera.isPulsing).toBe(false)
+
+    camera.destroy()
+    sizes.destroy()
+  })
+
   it('snaps persistent section framing and clears an active pulse', () => {
     const media = { matches: false }
     vi.stubGlobal('matchMedia', vi.fn().mockReturnValue(media))

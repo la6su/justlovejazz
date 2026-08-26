@@ -183,6 +183,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
       reads the owner-local reduced-motion snapshot instead of re-querying the
       media preference on every scroll request.
 
+- [x] **Start Camera FOV demand settled** — a newly constructed camera no
+      longer reports an unrequested pulse, avoiding a false initial render
+      window before the first authored section transition.
+
 - [x] **Pool SceneCoordinator transform results** — per-frame camera/world
       metadata now reuses one owner-scoped result graph.
 
