@@ -49,6 +49,25 @@ describe('EventBus', () => {
     expect(count).toBe(1)
   })
 
+  it('dispatches a stable snapshot when a handler tears down listeners', () => {
+    const calls: string[] = []
+    const teardown: { removeSibling?: () => void } = {}
+    const first = (): void => {
+      calls.push('first')
+      teardown.removeSibling?.()
+    }
+    const sibling = (): void => {
+      calls.push('sibling')
+    }
+    eventBus.on('jlz:webgl-ready', first)
+    teardown.removeSibling = eventBus.on('jlz:webgl-ready', sibling)
+
+    eventBus.emit('jlz:webgl-ready')
+
+    expect(calls).toEqual(['first', 'sibling'])
+    eventBus.clear()
+  })
+
   it('clear() removes all subscribers', () => {
     let count = 0
     eventBus.on('jlz:webgl-ready', () => {

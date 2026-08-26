@@ -248,6 +248,8 @@ according to their current measured policy.
   `finally` block, including when TSL render throws during device loss.
 - PostProcessingManager exposes its live display values as a read-only view;
   Renderer snapshots them into its existing per-frame pipeline params object.
+- EventBus emits from a subscriber snapshot, so `off()`/`clear()` during a
+  handler affects future events without truncating the current dispatch.
 - Contact section activation captures the same Cyprus request generation before
   awaiting lazy initialization; a stale route callback cannot call `setActive`
   or raise render demand on a newer stage.

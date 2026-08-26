@@ -104,6 +104,8 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Expose post parameters as a read-only view** — consumers can no longer
   mutate the crossfade manager's live display state through its getter, without
   adding a per-frame object copy.
+- [x] **Snapshot typed event dispatch** — owner teardown during an emit no longer
+  skips sibling listeners that were subscribed to the same event.
 - [x] **Dispose route WorkCards on owner teardown** — `useJlzPage` now releases
   the module-level card/grid registry on full unmount as well as before route
   replacement, with lifecycle coverage for both paths.

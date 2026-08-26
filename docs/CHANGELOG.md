@@ -68,6 +68,9 @@
 - Post-processing display parameters are now exposed read-only, preventing
   accidental crossfade-state mutation without adding a per-frame copy.
 
+- Typed EventBus dispatch now snapshots subscribers, preserving the current
+  event's listener set when route teardown mutates registrations mid-flight.
+
 - `useJlzPage` now disposes the module-level `WorkCards` registry during route
   owner teardown as well as before route replacement, releasing delegated grid
   listeners and pending card timers on full unmount.

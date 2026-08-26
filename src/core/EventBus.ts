@@ -86,7 +86,10 @@ class EventBus {
   ): void {
     const set = this.listeners.get(event)
     if (set) {
-      for (const cb of set) cb(args[0])
+      // Dispatch the current subscriber snapshot. A handler may tear down its
+      // owner (and call off()/clear()) while the event is in flight; that must
+      // not silently skip siblings already subscribed to this dispatch.
+      for (const cb of [...set]) cb(args[0])
     }
   }
 
