@@ -1,7 +1,10 @@
 import * as THREE from 'three'
 
 export interface RuntimeResourceSnapshot {
-  canvasCount: number
+  /** The single renderer-owned canvas (`canvas.canvas`) required by SceneHost. */
+  rendererCanvasCount: number
+  /** All DOM canvases, including the intentionally separate 2D cursor canvas. */
+  documentCanvasCount: number
   scene: {
     geometries: number
     materials: number
@@ -53,7 +56,8 @@ export function captureRuntimeResourceSnapshot(
   scene: THREE.Scene,
   renderer: RendererResourceInfo,
   post: PostResourceInfo,
-  canvasCount = document.querySelectorAll('canvas').length,
+  rendererCanvasCount = document.querySelectorAll('canvas.canvas').length,
+  documentCanvasCount = document.querySelectorAll('canvas').length,
 ): RuntimeResourceSnapshot {
   const geometries = new Set<THREE.BufferGeometry>()
   const materials = new Set<THREE.Material>()
@@ -77,7 +81,8 @@ export function captureRuntimeResourceSnapshot(
 
   const info = renderer.info
   return {
-    canvasCount,
+    rendererCanvasCount,
+    documentCanvasCount,
     scene: { geometries: geometries.size, materials: materials.size, textures: textures.size },
     renderer: {
       geometries: info?.memory?.geometries ?? null,

@@ -415,7 +415,17 @@ Do not reopen completed migration phases. Current runtime contracts are in
       sufficient evidence for the next performance slice. The latest local
       WebGLBackend trace is recorded in
       [`docs/evidence/phase7-live-gate/2026-08-26T17-11-30-611Z-report.json`](docs/evidence/phase7-live-gate/2026-08-26T17-11-30-611Z-report.json);
-      a hardware WebGPU run remains required before this item can close.
+      a hardware WebGPU run remains required before this item can close. The
+      separately launched flagged Chrome was inspected through its live page:
+      `navigator.gpu.requestAdapter()` returned the Google SwiftShader adapter,
+      so its current `WebGLBackend` result is still software, not native GPU
+      evidence.
+
+- [x] **Make resource evidence name both canvas boundaries** — runtime
+      snapshots and DevPanel diagnostics now distinguish the single
+      renderer-owned `canvas.canvas` from the intentional 2D cursor canvas;
+      soak fallback reads the owner-backed renderer count instead of treating
+      every document canvas as a renderer leak.
 
 - [ ] **Verify browser device-loss recovery on WebGLBackend** — the e2e probe
       now drives a real `WEBGL_lose_context` event and checks the production

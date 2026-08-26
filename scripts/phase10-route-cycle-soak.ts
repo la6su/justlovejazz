@@ -155,16 +155,18 @@ interface CycleSnapshot extends SoakCounter {
 
 function counterOf(r: Record<string, unknown>): SoakCounter {
   const resources = (r.resources ?? null) as {
-    canvasCount: number
+    rendererCanvasCount: number
     scene: { geometries: number; materials: number; textures: number }
     renderer: { geometries: number | null; textures: number | null; programs: number | null }
     post: { renderTargets: number }
   } | null
   const n = (v: number | null | undefined): number => (v == null ? -1 : v)
   // Prefer the `.canvas`-scoped DOM count (the one-canvas invariant); fall
-  // back to the runtime snapshot's whole-document canvas count.
+  // back to the owner-backed renderer count when the probe is unavailable.
   const canvas =
-    typeof r.canvas === 'number' ? (r.canvas as number) : (resources?.canvasCount ?? -1)
+    typeof r.canvas === 'number'
+      ? (r.canvas as number)
+      : (resources?.rendererCanvasCount ?? -1)
   return {
     canvas,
     domNodes: n(r.domNodes as number | null),

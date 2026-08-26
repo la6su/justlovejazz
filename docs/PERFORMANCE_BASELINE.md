@@ -185,9 +185,11 @@ GC/driver-settle observation window. Exact heap values can be noisy; record raw
 runs and fail repeatable trends rather than one sample.
 
 Development builds expose `window.__jlzRuntimeSnapshot()` so soak automation
-can collect the same owner-visible values as the DevPanel: canvas count, scene
-geometries/materials/textures, renderer counters where Three.js exposes them,
-and post-pipeline targets/passes. Browser APIs do not expose a portable
+can collect the same owner-visible values as the DevPanel: separate renderer
+canvas and document canvas counts, scene geometries/materials/textures,
+renderer counters where Three.js exposes them, and post-pipeline targets/passes.
+The renderer count is the one-canvas invariant; the document count includes the
+intentional 2D cursor canvas. Browser APIs do not expose a portable
 driver-level WebGPU memory counter, so that value remains explicitly unavailable
 rather than being guessed.
 

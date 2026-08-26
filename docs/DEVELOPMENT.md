@@ -157,7 +157,9 @@ actual backend and resource counters. This trace is evidence for choosing the
 next owner; it is not a GPU timestamp or a substitute for a hardware profile.
 
 In development builds, `window.__jlzRuntimeSnapshot()` returns the same
-owner-visible inventory shown in the DevPanel: canvas count, scene geometries,
+owner-visible inventory shown in the DevPanel: renderer canvas count (the
+single `canvas.canvas` SceneHost owner) and document canvas count (which also
+includes the intentional 2D cursor canvas), scene geometries,
 materials and textures, renderer counters when exposed, post-pipeline
 targets/passes, the single loop driver's diagnostics (`loopActive`, `frames`)
 and the exact demand state behind the settle decision (`needsRender`,

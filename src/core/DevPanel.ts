@@ -80,7 +80,8 @@ export class DevPanel {
     sceneTextures: 0,
     postTargets: 0,
     postPasses: 0,
-    canvasCount: 0,
+    rendererCanvasCount: 0,
+    documentCanvasCount: 0,
   }
 
   // Controls
@@ -130,7 +131,14 @@ export class DevPanel {
     f.addBinding(this.stats, 'heap', { readonly: true, label: 'heap MB' })
     f.addBinding(this.stats, 'section', { readonly: true, label: 'section' })
     f.addBinding(this.stats, 'rendering', { readonly: true, label: 'rendering' })
-    f.addBinding(this.stats, 'canvasCount', { readonly: true, label: 'canvases' })
+    f.addBinding(this.stats, 'rendererCanvasCount', {
+      readonly: true,
+      label: 'renderer canvases',
+    })
+    f.addBinding(this.stats, 'documentCanvasCount', {
+      readonly: true,
+      label: 'document canvases',
+    })
     f.addBinding(this.stats, 'sceneGeometries', { readonly: true, label: 'scene geometries' })
     f.addBinding(this.stats, 'sceneMaterials', { readonly: true, label: 'scene materials' })
     f.addBinding(this.stats, 'sceneTextures', { readonly: true, label: 'scene textures' })
@@ -237,7 +245,8 @@ export class DevPanel {
       this.stats.lowFps = this.exp.lowFps
       this.stats.lang = getLang()
       const resources = this.getResourceSnapshot()
-      this.stats.canvasCount = resources.canvasCount
+      this.stats.rendererCanvasCount = resources.rendererCanvasCount
+      this.stats.documentCanvasCount = resources.documentCanvasCount
       this.stats.sceneGeometries = resources.scene.geometries
       this.stats.sceneMaterials = resources.scene.materials
       this.stats.sceneTextures = resources.scene.textures
