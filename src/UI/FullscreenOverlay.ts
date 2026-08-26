@@ -331,10 +331,7 @@ export class FullscreenOverlay {
     }
     this._mediaGeneration += 1
     this._cancelVideoReveal()
-    if (this._autoplayTimer) {
-      clearTimeout(this._autoplayTimer)
-      this._autoplayTimer = null
-    }
+    this._cancelAutoplay()
     this.container.classList.remove('is-playing')
     this.container.classList.remove('is-entered')
     this.video.pause()
@@ -440,7 +437,7 @@ export class FullscreenOverlay {
       if (isFinite(this.video.duration)) {
         this.video.currentTime = 0
       }
-      if (this._autoplayTimer) clearTimeout(this._autoplayTimer)
+      this._cancelAutoplay()
       this._autoplayTimer = setTimeout(() => {
         this._autoplayTimer = null
         this.video.play().catch(() => {
@@ -450,9 +447,17 @@ export class FullscreenOverlay {
     }
   }
 
+  private _cancelAutoplay(): void {
+    if (this._autoplayTimer) {
+      clearTimeout(this._autoplayTimer)
+      this._autoplayTimer = null
+    }
+  }
+
   /** Apply overlay options to the DOM (shared by open + preload). */
   private _applyOptions(opts: OverlayOptions): void {
     this._hideHandled = false
+    this._cancelAutoplay()
     this._cancelVideoReveal()
     this._mediaGeneration += 1
     // Store the per-open close callback (called in the 'hide' handler).
@@ -579,10 +584,7 @@ export class FullscreenOverlay {
     this._posterRequestId += 1
     this._mediaGeneration += 1
     this._cancelVideoReveal()
-    if (this._autoplayTimer) {
-      clearTimeout(this._autoplayTimer)
-      this._autoplayTimer = null
-    }
+    this._cancelAutoplay()
     if (this._enterFallback) {
       cancelAnimationFrame(this._enterFallback)
       this._enterFallback = null

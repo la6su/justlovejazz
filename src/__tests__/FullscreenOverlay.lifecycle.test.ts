@@ -170,4 +170,30 @@ describe('FullscreenOverlay close ownership', () => {
       vi.useRealTimers()
     }
   })
+
+  it('cancels autoplay when media options are replaced', () => {
+    vi.useFakeTimers()
+    const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout')
+    const overlay = new FullscreenOverlay() as unknown as OverlayInternals
+
+    try {
+      overlay.container.classList.add('is-video-mode')
+      const source = overlay.video.querySelector('source')!
+      source.src = '/assets/video/showreel.mp4'
+      overlay._tryAutoplay()
+      const pendingTimer = overlay._autoplayTimer
+
+      overlay._applyOptions({ mode: 'image', poster: '/assets/images/project.webp' })
+
+      expect(pendingTimer).not.toBeNull()
+      expect(overlay._autoplayTimer).toBeNull()
+      expect(clearTimeoutSpy).toHaveBeenCalledWith(pendingTimer)
+      vi.runAllTimers()
+      expect(overlay.video.paused).toBe(true)
+    } finally {
+      overlay.dispose()
+      clearTimeoutSpy.mockRestore()
+      vi.useRealTimers()
+    }
+  })
 })

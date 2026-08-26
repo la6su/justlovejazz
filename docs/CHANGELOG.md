@@ -46,8 +46,9 @@
 - `WorksPortfolio.goTo()` now rejects non-finite indices, preventing malformed
   overlay events from corrupting carousel navigation state.
 
-- `FullscreenOverlay` now coalesces duplicate autoplay timers, preventing a
-  stale video-play callback from surviving modal teardown.
+- `FullscreenOverlay` now owns one autoplay timer across duplicate show/shown
+  callbacks and media replacement, preventing stale video-play callbacks from
+  surviving modal teardown or changing the active media mode.
 
 - `useJlzPage` now disposes the module-level `WorkCards` registry during route
   owner teardown as well as before route replacement, releasing delegated grid

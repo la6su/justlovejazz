@@ -84,8 +84,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
   recreation stops the old loop and prevents updates against a disposed renderer.
 - [x] **Reject malformed Works navigation indices** — non-finite overlay input
   no longer poisons the shared portfolio/carousel index state.
-- [x] **Coalesce overlay autoplay timers** — repeated UIkit show/shown paths
-  cannot leave an orphaned video timer alive after overlay teardown.
+- [x] **Own overlay autoplay timers across media replacement** — repeated UIkit
+  show/shown paths and preload/open replacement cannot leave an orphaned video
+  timer alive after overlay teardown or mode changes.
 - [x] **Dispose route WorkCards on owner teardown** — `useJlzPage` now releases
   the module-level card/grid registry on full unmount as well as before route
   replacement, with lifecycle coverage for both paths.
