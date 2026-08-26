@@ -95,6 +95,9 @@ under `src/builder/`; the public builds do not import the editor graph.
 - Direct scene owners such as `EnvSphere` and `SplashCube` detach themselves
   before disposing geometry/material resources; a destroyed owner cannot
   remain as a child of the Tres-owned scene with invalid GPU state.
+- Native WebGPU post processing is conditional on the selected quality policy;
+  low-tier instances render the scene directly and do not construct a TSL
+  `PassNode` graph whose effects are disabled.
 - Route resources, listeners, timers, async work and GPU allocations have one
   owner and one terminal cleanup path.
 - `RouteTransition` owns both cover and reveal timers. Cancellation clears the

@@ -83,4 +83,22 @@ describe('RenderPipeline failure lifecycle', () => {
     expect(scene.fog).toBe(fog)
     expect(render).toHaveBeenCalledOnce()
   })
+
+  it('skips the TSL graph when native WebGPU post processing is disabled', () => {
+    const render = vi.fn()
+    const renderer = {
+      backend: new WebGPUBackend(),
+      render,
+    }
+    const pipeline = Object.assign(Object.create(RenderPipeline.prototype), {
+      _renderer: renderer,
+      _postProcessingEnabled: false,
+      _webgpuPipeline: null,
+    }) as RenderPipeline
+
+    pipeline.render(new THREE.Scene(), new THREE.PerspectiveCamera())
+
+    expect(render).toHaveBeenCalledOnce()
+    expect((pipeline as unknown as { _webgpuPipeline: unknown })._webgpuPipeline).toBeNull()
+  })
 })

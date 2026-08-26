@@ -1030,6 +1030,16 @@ Acceptance: owner lifecycle coverage proves both parents are cleared after
 dispose; type checks, production build, budget and serial E2E gates pass.
 Rollback: restore the prior resource-only disposal path.
 
+#### Phase 10 low-tier native-WebGPU post gate — 2026-08-26
+
+`RenderPipeline` now retains the capability-produced post-processing flag. On
+native WebGPU low-tier devices, the owner renders directly and never creates a
+TSL `PassNode` graph; the premium WebGPU path remains unchanged.
+
+Acceptance: lifecycle coverage proves disabled native-WebGPU post bypasses graph
+creation; type checks, production build, budget and serial E2E gates pass.
+Rollback: restore unconditional native-WebGPU TSL graph construction.
+
 #### Phase 5/7 StoryController source bridge — 2026-08-25
 
 `src/core/storyController.ts` is now the runtime owner that translates a

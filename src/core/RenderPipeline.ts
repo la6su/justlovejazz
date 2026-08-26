@@ -61,6 +61,7 @@ export class RenderPipeline {
 
   private _renderer!: WebGPURenderer
   private _webgpuPipeline: WebGPUPostPipeline | null = null
+  private _postProcessingEnabled = true
   /** Terminal for this pipeline instance: avoid retrying a broken TSL graph every frame. */
   private _webgpuPostFailed = false
 
@@ -117,6 +118,7 @@ export class RenderPipeline {
     const pipeline = new RenderPipeline()
 
     pipeline._renderer = renderer
+    pipeline._postProcessingEnabled = _config?.bloomEnabled !== false
 
     // WebGPU TSL pipeline is built lazily on first render() — it needs the
     // live scene + camera references to bind into the PassNode.
@@ -154,7 +156,7 @@ export class RenderPipeline {
     // Check if we're on REAL WebGPU (not WebGL2 fallback via WebGPURenderer)
     const isRealWebGPU = this._renderer.backend?.constructor?.name === 'WebGPUBackend'
 
-    if (isRealWebGPU) {
+    if (isRealWebGPU && this._postProcessingEnabled !== false) {
       // WebGPU native: TSL RenderPipeline + PassNode + BloomNode + vignette/grain Fn.
       if (!this._webgpuPostFailed) {
         try {
@@ -197,6 +199,14 @@ export class RenderPipeline {
           this._webgpuPipeline = null
         }
       }
+      this._renderer.render(scene, camera)
+      return
+    }
+
+    // Native WebGPU low-tier policy: skip the full-screen TSL graph entirely.
+    // The direct renderer path preserves the scene while avoiding PassNode and
+    // post graph work when DeviceCapability has disabled post processing.
+    if (isRealWebGPU) {
       this._renderer.render(scene, camera)
       return
     }

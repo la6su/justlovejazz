@@ -66,6 +66,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
   now remove themselves from the Tres-owned scene before releasing GPU
   resources, preventing disposed objects from remaining in the live graph.
 
+- [x] **Honor low-tier post policy** — native WebGPU low-tier rendering now
+  skips the TSL full-screen graph and uses direct scene rendering, matching
+  `supportsPostProcessing()` instead of paying for disabled effects.
+
 - [x] **Align WebGLBackend quality state** — direct-render fallback no longer
   advertises or updates the unused TSL post graph; native WebGPU retains the
   crossfade and post parameter path.

@@ -25,6 +25,9 @@
 - `EnvSphere` and `SplashCube` now remove themselves from the Tres-owned scene
   before disposing their GPU resources, closing the direct-owner teardown gap.
 
+- Low-tier native WebGPU now honors the disabled post-processing policy by
+  skipping TSL graph construction and rendering the scene directly.
+
 - `Experience` now observes live `prefers-reduced-motion` changes instead of
   caching the preference only at startup. Enabling reduction cancels ambient
   breathing and settles the scheduler; disabling it raises one typed catch-up
