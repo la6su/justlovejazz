@@ -410,7 +410,12 @@ export class Experience {
     // scene directly under their own owner (fresh per coordinator instance).
     // The coordinator reads them through its sceneGroups getter; init() needs
     // them (carousel prewarm + final visibility), so build before init.
-    this.sectionGroups = new SectionGroups(this.scene, undefined, () => this.currentPage())
+    this.sectionGroups = new SectionGroups(
+      this.scene,
+      undefined,
+      () => this.currentPage(),
+      () => this._storyNav?.getSide() ?? 'center',
+    )
     // Phase 8 slice 6: the project stream (BakuCarousel) is created by the
     // works section factory as a child of the Works group — it enters the
     // scene graph with the group, but its reference + init + per-frame drive

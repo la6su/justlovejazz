@@ -4,8 +4,12 @@ import * as THREE from 'three'
 import { JunniParticles } from '../../Experience/World/JunniParticles'
 import { BakuCarousel } from '../../Experience/World/BakuCarousel'
 import type { PageId } from '../_shared/constants'
+import type { StorySide } from '../../core/storyState'
 
-export function createSection3(page: () => PageId = () => 'home'): THREE.Group {
+export function createSection3(
+  page: () => PageId = () => 'home',
+  storySide: () => StorySide = () => 'center',
+): THREE.Group {
   const g = new THREE.Group()
   g.name = 'works'
 
@@ -25,7 +29,7 @@ export function createSection3(page: () => PageId = () => 'home'): THREE.Group {
   // BakuCarousel — the project stream resolves from depth around the baku.
   // Once revealed (morphT > 0.5) the stream can be scrolled/dragged,
   // and clicking a card opens the fullscreen ProjectOverlay.
-  const carousel = new BakuCarousel(page)
+  const carousel = new BakuCarousel(page, storySide)
   carousel.userData.keepVisible = true
   g.add(carousel)
   g.userData.carousel = carousel

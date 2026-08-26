@@ -32,6 +32,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
   reach their authored color synchronously instead of stopping mid-lerp when
   the reduced-motion scheduler settles.
 
+- [x] **Route story-side state through the scene owner boundary** —
+  `CinematicNav.getSide()` now supplies the typed Menu/Contact/center state to
+  `BakuCarousel`; the UI `cinematicSheet` dataset remains a projection only.
+
 - [x] **Align WebGLBackend quality state** — direct-render fallback no longer
   advertises or updates the unused TSL post graph; native WebGPU retains the
   crossfade and post parameter path.

@@ -34,6 +34,7 @@ import { createSection4 } from '../../sections/contact/scene'
 import { createSection5 } from '../../sections/menu/scene'
 import { disposeMaterialDeep } from '../../Utils/dispose'
 import type { PageId } from '../../sections/_shared/constants'
+import type { StorySide } from '../../core/storyState'
 
 /** Canonical six-slot layout (one group per world slot / cube face). */
 export const SECTION_GROUP_COUNT = 6
@@ -59,7 +60,7 @@ export function disposeSceneObjectResources(
 }
 
 // Index → creator function. 6 sections (1:1 cube faces).
-type SectionCreator = (page: () => PageId) => THREE.Group
+type SectionCreator = (page: () => PageId, storySide: () => StorySide) => THREE.Group
 
 const SECTION_CREATORS: ReadonlyArray<SectionCreator> = [
   createSection0, // 0: canonical Lab scene behind the public Contact finale
@@ -71,9 +72,13 @@ const SECTION_CREATORS: ReadonlyArray<SectionCreator> = [
 ]
 
 /** Create the section group for a canonical slot (falls back to slot 0). */
-function createSectionGroupByIndex(i: number, page: () => PageId): THREE.Group {
+function createSectionGroupByIndex(
+  i: number,
+  page: () => PageId,
+  storySide: () => StorySide,
+): THREE.Group {
   const fn = SECTION_CREATORS[i] ?? SECTION_CREATORS[0]
-  return (fn ?? SECTION_CREATORS[0]!)(page)
+  return (fn ?? SECTION_CREATORS[0]!)(page, storySide)
 }
 
 /**
@@ -98,9 +103,10 @@ export class SectionGroups {
     scene: THREE.Scene,
     count: number = SECTION_GROUP_COUNT,
     page: () => PageId = () => 'home',
+    storySide: () => StorySide = () => 'center',
   ) {
     for (let i = 0; i < count; i++) {
-      const group = createSectionGroupByIndex(i, page)
+      const group = createSectionGroupByIndex(i, page, storySide)
       // Hide non-particle geometry until bespoke visuals are ready (T-070..T-074).
       // Particles remain for atmospheric depth. Remove this call section by section
       // as real visuals are added.

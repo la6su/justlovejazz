@@ -337,6 +337,11 @@ export class CinematicNav {
     return this._mainSection
   }
 
+  /** Read-only story-side port for scene owners; the DOM dataset is only a UI projection. */
+  getSide(): StorySide {
+    return this._side
+  }
+
   getOverallProgress(): number {
     if (this._side === 'footer') return 0
     if (this._side === 'menu') return 1

@@ -378,6 +378,10 @@ Scene code does not query `document.body.dataset`, translations or router
 state. Typed readonly ports carry route, locale, effective theme, reduced
 motion and story progress into the scene. Scene code emits typed intents and
 runtime failures; it does not mutate route DOM.
+The story-side port follows the same boundary: `CinematicNav.getSide()` flows
+through `Experience` and `SectionGroups` into the Works `BakuCarousel`. The
+`cinematicSheet` body dataset remains a UI/CSS projection written by the
+navigation owner; scene input never reads it.
 `SceneCoordinator` receives the current `PageId` through an injected getter;
 the application boundary owns the typed in-memory route port, while Vue route
 roots own their semantic `data-page-view` markers. The coordinator itself has

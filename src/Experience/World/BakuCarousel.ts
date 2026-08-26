@@ -16,13 +16,11 @@ function isUiChromeEvent(e: Event): boolean {
     '#cinematic-nav, #jlz-fs-overlay, #jlz-app-loader, [data-cinematic-menu], [data-contact-footer], [data-baku-carousel-control]',
   )
 }
-function isMenuOpen(): boolean {
-  return document.body.dataset.cinematicSheet === 'menu'
-}
 import { PROJECTS } from '../../Data/Projects'
 import { CasePlane, CLOTH_PARAMS } from './CasePlane'
 import { loadCaseTexture, releaseCaseTexture } from './caseTexture'
 import type { PageId } from '../../sections/_shared/constants'
+import type { StorySide } from '../../core/storyState'
 import { eventBus } from '../../core/EventBus'
 // PlaneTransition removed — unified animation uses direct overlay open.
 
@@ -84,7 +82,10 @@ export class BakuCarousel extends THREE.Group {
   private _tmpStreamPos = new THREE.Vector3()
   private _tmpRingRot = new THREE.Euler()
 
-  constructor(private readonly page: () => PageId = () => 'home') {
+  constructor(
+    private readonly page: () => PageId = () => 'home',
+    private readonly storySide: () => StorySide = () => 'center',
+  ) {
     super()
     this.name = 'baku-carousel'
   }
@@ -196,7 +197,7 @@ export class BakuCarousel extends THREE.Group {
   private addEventListeners(): void {
     this.pointerDownHandler = (e: PointerEvent) => {
       if (!this._active || this._morphT < 0.5) return
-      if (isMenuOpen() || isUiChromeEvent(e)) return
+      if (this.storySide() === 'menu' || isUiChromeEvent(e)) return
       // D-15 fix: only intercept on home page (carousel is home-only; on
       // content pages the window listener would block WorkCard clicks if
       // the carousel's _active flag were stuck true from a prior home visit).

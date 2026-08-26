@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('../Experience/World/caseTexture', () => mocks)
 
 import { BakuCarousel } from '../Experience/World/BakuCarousel'
+import type { StorySide } from '../core/storyState'
 
 describe('BakuCarousel texture lifecycle', () => {
   beforeEach(() => {
@@ -92,6 +93,34 @@ describe('BakuCarousel texture lifecycle', () => {
     carousel.setActive(true)
     carousel.update(1 / 60)
     expect(update).toHaveBeenCalledWith(1 / 60, false)
+  })
+
+  it('uses the typed story side for the menu input guard', async () => {
+    mocks.loadCaseTexture.mockImplementation(async () => new THREE.Texture())
+    let side: StorySide = 'menu'
+    const carousel = new BakuCarousel(
+      () => 'home',
+      () => side,
+    )
+    await carousel.init()
+    carousel.setActive(true)
+    Object.assign(carousel as unknown as Record<string, unknown>, { _morphT: 1 })
+
+    // The UI projection can disagree; scene input must follow the typed owner port.
+    document.body.dataset.cinematicSheet = 'center'
+    document.body.dispatchEvent(
+      new MouseEvent('pointerdown', { bubbles: true, clientX: 0, clientY: 0 }),
+    )
+    expect((carousel as unknown as { isDown: boolean }).isDown).toBe(false)
+
+    side = 'center'
+    document.body.dispatchEvent(
+      new MouseEvent('pointerdown', { bubbles: true, clientX: 0, clientY: 0 }),
+    )
+    expect((carousel as unknown as { isDown: boolean }).isDown).toBe(true)
+
+    carousel.dispose()
+    delete document.body.dataset.cinematicSheet
   })
 
   it('keeps momentum damping stable across refresh rates', () => {
