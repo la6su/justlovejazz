@@ -88,6 +88,9 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `RenderScheduler` stops its loop when a host frame throws, restoring the
   driver invariant that a failed window is not left active; later invalidation
   remains the explicit retry boundary.
+- `SceneCoordinator.init()` clears derived config/range caches before rebuilding
+  a route, so a reused coordinator cannot resolve the previous page's scene
+  contract.
 - `Experience` observes the live reduced-motion media query for the lifetime
   of the runtime. Enabling it cancels ambient breathing and settles the single
   render scheduler; disabling it raises one `motion-preference` invalidation.

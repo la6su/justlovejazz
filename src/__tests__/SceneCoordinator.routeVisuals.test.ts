@@ -80,4 +80,16 @@ describe('SceneCoordinator route visuals (Phase 8 slice 10: the gate left `World
     coordinator.syncRouteVisuals()
     expect(cube.visible).toBe(true)
   })
+
+  it('refreshes page-specific config caches when reinitialized', async () => {
+    await coordinator.init()
+    expect(coordinator.getConfig('sec_intro')).toBeDefined()
+
+    page = 'works'
+    await coordinator.init()
+
+    expect(coordinator.getConfig('content_works_0')).toBeDefined()
+    expect(coordinator.getConfig('sec_intro')).toBeUndefined()
+    coordinator.dispose()
+  })
 })

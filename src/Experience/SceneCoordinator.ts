@@ -120,6 +120,11 @@ export class SceneCoordinator {
   public async init(): Promise<void> {
     const pageKey = this.page()
     this.configs = getWorldConfigForPage(pageKey)
+    // Route re-entry can reuse the coordinator instance. Invalidate derived
+    // caches before rebuilding page-specific configs so lookups and ranges do
+    // not retain the previous route's scene contract.
+    this._configMap = null
+    this._rangesCache = null
     this.disposeSections()
     // Phase 8 slice 10: the route-specific visibility gate runs first (matches
     // the legacy World ordering) — it toggles the shared cube + Lab object and

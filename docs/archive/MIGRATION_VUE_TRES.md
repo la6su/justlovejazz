@@ -3509,6 +3509,18 @@ after the failure and a successful recovery restart. Rollback: remove the
 catch/stop boundary and restore the previous unbounded callback behavior; the
 renderer ownership model remains unchanged.
 
+#### SceneCoordinator route-cache reset — 2026-08-26
+
+`SceneCoordinator.init()` now clears its derived config map and range cache
+before rebuilding page-specific configs. A reused coordinator therefore cannot
+serve home IDs or ranges after entering a content route, while the normal
+single-init path remains allocation-free per frame.
+
+Acceptance: `SceneCoordinator.routeVisuals.test.ts` reinitializes home then
+Works and verifies the correct page-specific config set. Rollback: remove the
+cache invalidation lines and restore the previous reuse behavior; renderer
+ownership is unchanged.
+
 ### Removal ledger
 
 | Legacy element                           | Remove after                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Status |

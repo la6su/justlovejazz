@@ -128,6 +128,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
   longer strands the animation loop active; a later typed invalidation can
   retry the bounded window.
 
+- [x] **Refresh coordinator route caches** — reinitializing the shared
+  SceneCoordinator now invalidates page-specific config and range caches.
+
 - [x] **Align WebGLBackend quality state** — direct-render fallback no longer
   advertises or updates the unused TSL post graph; native WebGPU retains the
   crossfade and post parameter path.

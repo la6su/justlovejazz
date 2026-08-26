@@ -22,6 +22,8 @@
   events, avoiding unnecessary DOM and scene re-synchronization.
 - RenderScheduler now stops after a host frame exception so a failed owner
   cannot strand the renderer loop; explicit recovery invalidation can retry.
+- SceneCoordinator now invalidates derived route caches on reinitialization,
+  preventing stale page-specific config lookups after route reuse.
 
 - Renderer device-loss fallback now clears the retired software-adapter
   replacement before forced-WebGL recreation; a failed second initialization
