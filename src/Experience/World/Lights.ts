@@ -114,6 +114,7 @@ export class CinematicLights {
   private _targetRimIntensity = 1.2
   private _targetVolumetricIntensity = 0.6
   private _targetHemiIntensity = 0.3
+  private _reducedMotionSettled = false
 
   // Speed multiplier for lerp — higher = faster transition (junni: ~0.5s)
   private static readonly LERP_SPEED = 3.0
@@ -165,6 +166,10 @@ export class CinematicLights {
   public changeSection(config: PhaseConfig): void {
     const preset = SECTION_PRESETS[config.id] ?? DEFAULT_PRESET
     this._applyPresetToTargets(preset)
+    if (prefersReducedMotion()) {
+      this._snapToTargets()
+      this._reducedMotionSettled = true
+    }
   }
 
   /**
@@ -172,6 +177,14 @@ export class CinematicLights {
    * Uses framerate-independent exponential decay (~0.5s transition).
    */
   public update(dt: number): void {
+    if (prefersReducedMotion()) {
+      if (!this._reducedMotionSettled) {
+        this._snapToTargets()
+        this._reducedMotionSettled = true
+      }
+      return
+    }
+    this._reducedMotionSettled = false
     const t = Math.min(dt * CinematicLights.LERP_SPEED, 1)
 
     // Colors

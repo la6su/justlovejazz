@@ -74,6 +74,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
   persistent SceneHost now tolerate Tres manager disposal, application cleanup
   and late failed-init cleanup without double-disposing the underlying owner.
 
+- [x] **Snap CinematicLights under reduced motion** — section-driven light
+  colors, intensities and key position now settle to their authored targets
+  immediately, while normal motion retains the existing interpolation.
+
 - [x] **Align WebGLBackend quality state** — direct-render fallback no longer
   advertises or updates the unused TSL post graph; native WebGPU retains the
   crossfade and post parameter path.
