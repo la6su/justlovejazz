@@ -185,6 +185,9 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `Section` has a terminal, idempotent StateBus boundary. Once its state and
   opacity channels/listener are removed, late transitions cannot recreate or
   mutate those channels, and the detached section cannot re-enter the scene.
+- `WorksPortfolio` has a terminal, idempotent callback boundary. After project
+  metadata and carousel callback release, late navigation is inert and cannot
+  mutate the retired index.
 - `Cursor.drawCircle()` reuses one owner-scoped ring-point buffer and color
   view. The active pointer path remains allocation-free while theme refreshes
   mutate only the cached values.

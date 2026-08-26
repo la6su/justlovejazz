@@ -481,6 +481,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Make Section teardown terminal** — late StateBus transitions become inert
   after owner channels/listeners are removed; repeated disposal detaches the
   section without reintroducing channels.
+- [x] **Make WorksPortfolio teardown terminal** — late navigation calls become
+  inert after callback/project release; repeated disposal cannot mutate the
+  retired index or notify the carousel.
 - [x] **Release the WorksPortfolio owner** — `ExperienceUI.destroy()` now calls
       the portfolio disposer before dropping its reference; disposal clears the
       project/callback references and navigation becomes a safe no-op.

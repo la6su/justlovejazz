@@ -3902,6 +3902,17 @@ channels, detached parent and all late transition calls; focused type-check/
 lint pass. Rollback: revert this bounded state-machine lifecycle slice if
 section opacity or completion synchronization regresses.
 
+### WorksPortfolio terminal teardown — 2026-08-26
+
+`WorksPortfolio` now rejects late `next`, `prev` and `goTo` calls after its
+project metadata and carousel callback are released. Disposal is idempotent;
+the existing index wrapping and callback behavior while mounted are unchanged.
+
+Acceptance: `WorksPortfolio.test.ts` covers repeated disposal, inert late
+navigation and callback suppression; focused type-check/lint pass. Rollback:
+revert this bounded portfolio callback slice if Works navigation parity
+regresses.
+
 ## Definition of done
 
 The migration is done when the target topology is the only production path;
