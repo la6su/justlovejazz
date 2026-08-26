@@ -9,13 +9,18 @@ import {
   isWorldSlotId,
   type WorldSlotId,
 } from '../core/worldSlots'
-import { getWorldConfigForPage } from '../core/WorldConfig'
+import { DEFAULT_CAMERA_SMOOTHING, getWorldConfigForPage } from '../core/WorldConfig'
 import { SplashCube } from '../Experience/World/SplashCube'
 
 /** The former inline literals, kept as the regression baseline. */
 const LEGACY_FACE_ROTATIONS = [0, -Math.PI / 2, Math.PI, Math.PI / 2, -Math.PI / 4, Math.PI / 4]
 
 describe('world slot contract', () => {
+  it('uses one shared camera smoothing default for generated section configs', () => {
+    const configs = getWorldConfigForPage('home')
+    expect(configs[1]?.camSmoothing).toBe(DEFAULT_CAMERA_SMOOTHING)
+    expect(getWorldConfigForPage('services')[0]?.camSmoothing).toBe(DEFAULT_CAMERA_SMOOTHING)
+  })
   it('declares exactly the six canonical slots in stable index order', () => {
     expect(WORLD_SLOT_COUNT).toBe(6)
     expect(WORLD_SLOT_IDS).toEqual(['lab', 'intro', 'about', 'works', 'contact', 'menu'])

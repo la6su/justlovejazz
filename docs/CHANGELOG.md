@@ -9,6 +9,10 @@
 - Builder card CSS now has one real UIkit owner in the application baseline;
   generated page deltas omit the duplicate import and parity-test the artifact.
 
+- Camera smoothing now has one shared `WorldConfig` fallback; per-section
+  authored overrides remain unchanged and `Experience` no longer duplicates the
+  transition default.
+
 - Contact section activation now validates the Cyprus request generation after
   lazy initialization, preventing a stale route callback from activating a
   newer stage or raising redundant render demand.

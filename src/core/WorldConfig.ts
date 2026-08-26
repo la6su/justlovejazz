@@ -75,6 +75,9 @@ export interface SceneControl {
   }
 }
 
+/** Shared fallback for sections that do not override camera smoothing. */
+export const DEFAULT_CAMERA_SMOOTHING = 5
+
 export interface PhaseConfig {
   id: string
   context: string
@@ -145,7 +148,7 @@ const DEFAULTS: Omit<RawScene, 'id' | 'context' | 'domSection' | 'range'> = {
   camFov: 60,
   camFovOffset: 0.3,
   camFovDuration: 0.8,
-  camSmoothing: 5,
+  camSmoothing: DEFAULT_CAMERA_SMOOTHING,
   bakuRole: BakuRole.GLASS,
   bakuOpacity: 0.4,
   bakuDisplace: 0.06,

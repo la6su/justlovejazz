@@ -9,6 +9,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
 
 ## Active engineering queue
 
+- [x] **Single-source camera smoothing defaults** — `WorldConfig` owns the
+  shared fallback used by `Experience`; authored per-section overrides remain
+  in the canonical phase configuration.
+
 - [x] **Complete documentation reconciliation** — finish the remaining
   README/architecture wording review, keep evidence append-only and ensure
   agent-operation guidance stays separate from project contracts.

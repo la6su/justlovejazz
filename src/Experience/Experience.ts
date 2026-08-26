@@ -22,6 +22,7 @@ import type { FinalMode } from '../core/rendererBackend'
 // called). updateWorldDNAAudio set uniforms nobody read. All dead.
 import { prefersReducedMotion } from '../core/motionPolicy'
 import { WORLD_SLOT_COUNT, worldSlotIndex } from '../core/worldSlots'
+import { DEFAULT_CAMERA_SMOOTHING } from '../core/WorldConfig'
 import {
   NO_ACTIVITY,
   anyActivity,
@@ -58,15 +59,6 @@ function contentRoot(): ParentNode {
   // short bootstrap window before the route shell mounts.
   return document.getElementById('spa-content') ?? document
 }
-
-/**
- * Section-arrival transition tuning.
- * TODO(track-b): move per-step values into WorldConfig so each phase can
- * define its own FOV pop amplitude and camera smoothing (ROADMAP M2).
- */
-const SECTION_TRANSITION = {
-  cameraSmoothing: 5,
-} as const
 
 /** The Works story frame — the six-slot contract, not a literal. */
 const WORKS_SLOT_INDEX = worldSlotIndex('works')!
@@ -1430,7 +1422,7 @@ export class Experience {
     // with the legacy `if (this._needsRender)` because the anyActivity OR
     // above already raised the flag for any active source.
     if (shouldRender(this._needsRender, activity)) {
-      const smoothing = cfg?.camSmoothing ?? SECTION_TRANSITION.cameraSmoothing
+      const smoothing = cfg?.camSmoothing ?? DEFAULT_CAMERA_SMOOTHING
       this.camera.updateSmooth(cameraTarget, dt, smoothing)
       this.lights.update(dt)
       this.camera.update(dt)

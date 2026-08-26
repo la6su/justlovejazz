@@ -122,6 +122,8 @@ The public Contact finale intentionally occupies the runtime `lab` slot.
 `src/core/worldSlots.ts` is now the single framework-neutral readonly source
 of the six-slot model; `WorldConfig.ts` and `SplashCube` consume it instead
 of re-declaring the slot ids, face rotations and story ranges.
+`WorldConfig.DEFAULT_CAMERA_SMOOTHING` is likewise the single fallback for
+camera arrival smoothing; authored phase overrides stay in each `PhaseConfig`.
 
 `CinematicNav` owns four story frames plus the Contact and Menu sheets. It
 accepts router/hash/input commands and remains the native story source;
