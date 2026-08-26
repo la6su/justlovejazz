@@ -272,6 +272,9 @@ according to their current measured policy.
 - Renderer recovery checks its lifecycle generation in the failure path too;
   a teardown-raced rejection cannot surface unsupported UI or touch a disposed
   renderer instance.
+- Renderer fallback recovery clears the retired software-adapter replacement
+  before starting forced-WebGL creation, so a failed second attempt cannot
+  dispose the same GPU owner twice.
 - WebGPU post rendering restores the renderer's prior tone-mapping state in a
   `finally` block, including when TSL render throws during device loss.
 - PostProcessingManager exposes its live display values as a read-only view;

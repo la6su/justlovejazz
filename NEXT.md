@@ -40,6 +40,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
   instances now update the SceneHost-owned renderer slot, so a later Vue
   unmount disposes the live GPU owner instead of the stale initial instance.
 
+- [x] **Make fallback recovery disposal exactly-once** — a failed forced-WebGL
+  recreation no longer reaches the catch cleanup with an already-disposed
+  software-adapter replacement.
+
 - [x] **Align WebGLBackend quality state** — direct-render fallback no longer
   advertises or updates the unused TSL post graph; native WebGPU retains the
   crossfade and post parameter path.

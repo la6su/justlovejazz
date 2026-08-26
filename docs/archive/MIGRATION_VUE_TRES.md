@@ -957,6 +957,18 @@ Acceptance: focused SceneHost bridge/lifecycle tests, type checks, production
 build and serial E2E pass. Rollback: remove the renderer-owner binding and
 restore initial-instance-only host disposal.
 
+#### Phase 7 bounded recovery disposal hardening — 2026-08-26
+
+When device-loss recovery detects another software adapter, the first
+replacement is disposed before forced-WebGL recreation. The recovery owner now
+clears that retired reference immediately, so a failed second creation cannot
+dispose the same renderer twice. The focused device-loss lifecycle test covers
+the software-backend → forced-WebGL failure path.
+
+Acceptance: focused Renderer device-loss lifecycle tests, type checks and
+`git diff --check` pass. Rollback: restore the prior replacement reference
+until the next recovery hardening slice.
+
 #### Phase 5/7 StoryController source bridge — 2026-08-25
 
 `src/core/storyController.ts` is now the runtime owner that translates a

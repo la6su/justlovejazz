@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Renderer device-loss fallback now clears the retired software-adapter
+  replacement before forced-WebGL recreation; a failed second initialization
+  no longer double-disposes the first replacement.
+
 - `Experience` now observes live `prefers-reduced-motion` changes instead of
   caching the preference only at startup. Enabling reduction cancels ambient
   breathing and settles the scheduler; disabling it raises one typed catch-up

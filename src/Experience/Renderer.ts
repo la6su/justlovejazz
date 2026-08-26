@@ -316,6 +316,7 @@ export class Renderer {
         // The replacement landed on a software adapter again — force WebGL2.
         this._forceWebGL = true
         replacement.dispose()
+        replacement = null
         // Re-create on the SAME canvas element (still in the DOM — do not
         // remove it, unlike the init-time path where setupCanvas has not run).
         replacement = await createUnifiedWebGPUInstanceAndInit(canvas, true)

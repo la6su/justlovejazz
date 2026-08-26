@@ -4,6 +4,8 @@ import * as THREE from 'three'
 const mocks = vi.hoisted(() => ({
   create: vi.fn(),
   init: vi.fn(),
+  inspect: vi.fn(() => ({ backendName: 'WebGPU', isFallbackAdapter: false })),
+  plan: vi.fn(() => ({ recreate: false, mode: 'webgpu' })),
   pipelineCreate: vi.fn(() => ({
     dispose: vi.fn(),
     resize: vi.fn(),
@@ -16,12 +18,12 @@ const mocks = vi.hoisted(() => ({
 vi.mock('../core/unifiedRenderer', () => ({
   createUnifiedWebGPUInstance: mocks.create,
   initUnifiedWebGPUInstance: mocks.init,
-  inspectUnifiedBackend: vi.fn(() => ({ backendName: 'WebGPU', isFallbackAdapter: false })),
+  inspectUnifiedBackend: mocks.inspect,
 }))
 
 vi.mock('../core/rendererBackend', () => ({
   deviceLostAction: vi.fn(() => 'recover'),
-  planUnifiedBackend: vi.fn(() => ({ recreate: false, mode: 'webgpu' })),
+  planUnifiedBackend: mocks.plan,
 }))
 
 vi.mock('../core/RenderPipeline', () => ({
@@ -75,6 +77,10 @@ describe('Renderer device-loss lifecycle', () => {
   beforeEach(() => {
     mocks.create.mockReset()
     mocks.init.mockReset()
+    mocks.inspect.mockReset()
+    mocks.inspect.mockReturnValue({ backendName: 'WebGPU', isFallbackAdapter: false })
+    mocks.plan.mockReset()
+    mocks.plan.mockReturnValue({ recreate: false, mode: 'webgpu' })
     mocks.pipelineCreate.mockClear()
   })
 
@@ -144,6 +150,25 @@ describe('Renderer device-loss lifecycle', () => {
 
     expect(onInstanceReplaced).toHaveBeenCalledWith(replacement)
     expect(replacement.setAnimationLoop).toHaveBeenCalledOnce()
+  })
+
+  it('disposes the first fallback replacement exactly once when forced recreation fails', async () => {
+    const oldInstance = fakeRenderer()
+    const firstReplacement = fakeRenderer()
+    const error = new Error('forced WebGL recreation failed')
+    mocks.create.mockReturnValueOnce(firstReplacement).mockImplementationOnce(() => {
+      throw error
+    })
+    mocks.init.mockResolvedValue(undefined)
+    mocks.inspect.mockReturnValue({ backendName: 'WebGPU', isFallbackAdapter: true })
+    mocks.plan.mockReturnValue({ recreate: true, mode: 'webgl' })
+    const renderer = makeRenderer(oldInstance, vi.fn())
+
+    await renderer.recoverFromDeviceLost()
+
+    expect(firstReplacement.dispose).toHaveBeenCalledOnce()
+    expect(document.querySelector('.renderer-unsupported')).not.toBeNull()
+    document.querySelector('.renderer-unsupported')?.remove()
   })
 
   it('stops rendering and surfaces failure when recovery recreation fails', async () => {
