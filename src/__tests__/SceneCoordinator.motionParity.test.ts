@@ -33,6 +33,34 @@ function makeCoordinator(matches: boolean, update: ReturnType<typeof vi.fn>): Sc
 }
 
 describe('SceneCoordinator reduced-motion particle parity', () => {
+  it('does not report hidden particle owners as visible activity', () => {
+    const group = new THREE.Group()
+    const particles = new THREE.Group()
+    particles.visible = false
+    group.userData.particles = particles
+    const owners = {
+      ground: () => null,
+      sectionGroups: () => ({ groups: [group] }) as unknown as SectionGroups,
+      envSphere: () => null,
+      baku: () => null,
+      particleBurst: () => null,
+      drawTrail: () => null,
+      carousel: () => null,
+      worksPlaneStage: () => null,
+      contactTypographyStage: () => null,
+      contactCyprusStage: () => null,
+      labGamepad: () => null,
+    } satisfies SceneCoordinatorOwners
+    const coordinator = Object.assign(Object.create(SceneCoordinator.prototype), {
+      owners,
+      page: () => 'contact',
+    }) as SceneCoordinator
+
+    expect(coordinator.hasVisibleParticles()).toBe(false)
+    particles.visible = true
+    expect(coordinator.hasVisibleParticles()).toBe(true)
+  })
+
   it('does not advance particle drift when reduced motion is enabled', () => {
     const update = vi.fn()
     const coordinator = makeCoordinator(true, update)

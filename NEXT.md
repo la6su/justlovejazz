@@ -106,6 +106,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
   adding a per-frame object copy.
 - [x] **Snapshot typed event dispatch** — owner teardown during an emit no longer
   skips sibling listeners that were subscribed to the same event.
+- [x] **Ignore hidden particle owners in render demand** — Contact's quiet
+  Agros frame no longer keeps the renderer alive after its particle group is
+  hidden.
 - [x] **Dispose route WorkCards on owner teardown** — `useJlzPage` now releases
   the module-level card/grid registry on full unmount as well as before route
   replacement, with lifecycle coverage for both paths.

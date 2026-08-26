@@ -71,6 +71,9 @@
 - Typed EventBus dispatch now snapshots subscribers, preserving the current
   event's listener set when route teardown mutates registrations mid-flight.
 
+- Hidden Contact particle groups no longer report render activity, allowing the
+  quiet Agros section to settle without continuous GPU draws.
+
 - `useJlzPage` now disposes the module-level `WorkCards` registry during route
   owner teardown as well as before route replacement, releasing delegated grid
   listeners and pending card timers on full unmount.

@@ -253,7 +253,8 @@ export class SceneCoordinator {
   public hasVisibleParticles(): boolean {
     for (const group of this.sceneGroups) {
       if (!group.visible) continue
-      if (group.userData.particles) return true
+      const particles = group.userData.particles as THREE.Object3D | undefined
+      if (particles?.visible) return true
     }
     return false
   }
