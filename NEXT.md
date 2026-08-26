@@ -216,6 +216,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
       the lerp calculation when the same section pair and eased `t` recur; theme
       sync and changed transitions remain immediate.
 
+- [x] **Stop settled post crossfades** — the real-WebGPU post manager now skips
+      six-value interpolation after all targets settle and snaps exact values at
+      the epsilon boundary; preset interruption and reduced motion remain live.
+
 - [x] **Cache CinematicNav scroll policy** — programmatic section navigation
       reads the owner-local reduced-motion snapshot instead of re-querying the
       media preference on every scroll request.

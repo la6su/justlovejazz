@@ -210,6 +210,9 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `StateBus.set()` preserves absent-channel creation and animation ownership but
   skips an identical numeric value, keeping settled section-opacity passes from
   performing redundant channel-map writes.
+- `PostProcessingManager` tracks whether its six display parameters are still
+  crossfading; settled real-WebGPU frames skip interpolation, while preset
+  changes and reduced-motion settlement retain exact target ownership.
 - `CinematicLights` applies the same reduced-motion boundary to section light
   transitions: colors, intensities and key position snap to their targets and
   skip interpolation/orbit work; normal motion retains authored lerp timing.

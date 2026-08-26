@@ -102,6 +102,7 @@ export class PostProcessingManager {
   private tier: QualityTier = 'high'
   private phase = 'sec_intro'
   private sectionPost: SectionPostParams = DEFAULT_SECTION_POST
+  private _crossfadeActive = false
 
   constructor() {
     this.tier = this.capability.tier
@@ -126,6 +127,7 @@ export class PostProcessingManager {
     this.current.chromatic *= scaler.chromatic ?? 1
     // bloomRadius + bloomThreshold are NOT scaled by quality tier (they are
     // shape parameters, not intensity — scaling would distort the look).
+    this._crossfadeActive = !this.displayMatchesCurrent()
   }
 
   /** Settle a live post crossfade before reduced-motion stops the scheduler. */
@@ -137,6 +139,7 @@ export class PostProcessingManager {
     this.display.chromatic = this.current.chromatic
     this.display.bloomRadius = this.current.bloomRadius
     this.display.bloomThreshold = this.current.bloomThreshold
+    this._crossfadeActive = false
   }
 
   /** Refresh quality scalars after WebGPU initialization selected WebGL. */
@@ -147,6 +150,7 @@ export class PostProcessingManager {
 
   /** Update display values (call each frame with dt) */
   update(dt: number): void {
+    if (!this._crossfadeActive) return
     const factor = Math.min(dt * this.crossfadeSpeed, 1)
 
     this.display.bloom = lerp(this.display.bloom, this.current.bloom, factor)
@@ -158,6 +162,26 @@ export class PostProcessingManager {
       this.display.bloomThreshold,
       this.current.bloomThreshold,
       factor,
+    )
+    if (this.displayMatchesCurrent(0.001)) {
+      this.display.bloom = this.current.bloom
+      this.display.vignette = this.current.vignette
+      this.display.grain = this.current.grain
+      this.display.chromatic = this.current.chromatic
+      this.display.bloomRadius = this.current.bloomRadius
+      this.display.bloomThreshold = this.current.bloomThreshold
+      this._crossfadeActive = false
+    }
+  }
+
+  private displayMatchesCurrent(epsilon = 0): boolean {
+    return (
+      Math.abs(this.display.bloom - this.current.bloom) <= epsilon &&
+      Math.abs(this.display.vignette - this.current.vignette) <= epsilon &&
+      Math.abs(this.display.grain - this.current.grain) <= epsilon &&
+      Math.abs(this.display.chromatic - this.current.chromatic) <= epsilon &&
+      Math.abs(this.display.bloomRadius - this.current.bloomRadius) <= epsilon &&
+      Math.abs(this.display.bloomThreshold - this.current.bloomThreshold) <= epsilon
     )
   }
 
