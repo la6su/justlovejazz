@@ -76,6 +76,8 @@ under `src/builder/`; the public builds do not import the editor graph.
 - Persistent `UIMenu` controls rehydrate only the changed UIkit icon after a
   typed sound-toggle event; the shell retains one delegated DOM listener and
   one disposal owner.
+- `SfxSystem.dispose()` is terminal for its Web Audio owner; late `play()` calls
+  are silent no-ops and cannot allocate a replacement context after teardown.
 - `Experience` observes the live reduced-motion media query for the lifetime
   of the runtime. Enabling it cancels ambient breathing and settles the single
   render scheduler; disabling it raises one `motion-preference` invalidation.

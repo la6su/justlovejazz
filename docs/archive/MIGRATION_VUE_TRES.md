@@ -3451,6 +3451,17 @@ Acceptance: `UIMenu.lifecycle.test.ts` covers construction hydration and the
 second update after an external unmute event. Rollback: remove the targeted
 UIkit update call; the event and disposal boundaries remain unchanged.
 
+#### SfxSystem terminal disposal — 2026-08-26
+
+`SfxSystem` now marks itself disposed before closing its `AudioContext`. Both
+`play()` and lazy `init()` reject later work, so stale UI callbacks cannot
+recreate a context after the Experience owner has released it.
+
+Acceptance: `SfxSystem.lifecycle.test.ts` covers one lazy context, close on
+dispose and no context creation after disposal. Rollback: remove the terminal
+guard and restore the prior reusable-instance behavior; no scene or renderer
+boundary changes are involved.
+
 ### Removal ledger
 
 | Legacy element                           | Remove after                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Status |

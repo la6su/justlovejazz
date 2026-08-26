@@ -12,6 +12,8 @@
   video element, avoiding redundant media events and work.
 - UIMenu now refreshes the UIkit sound icon after external sound-toggle events,
   keeping the visible control aligned with persisted mute state.
+- SFX teardown is now terminal, preventing late UI events from recreating an
+  unowned Web Audio context after `Experience` disposal.
 
 - Renderer device-loss fallback now clears the retired software-adapter
   replacement before forced-WebGL recreation; a failed second initialization
