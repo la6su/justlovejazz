@@ -229,6 +229,8 @@ according to their current measured policy.
 - Renderer device-loss recovery fails closed: if replacement creation fails,
   the old loop is cleared, an explicit unsupported state is shown, and update/
   resize calls cannot touch the disposed renderer.
+- WorksPortfolio ignores non-finite `goTo` input before modulo arithmetic, so
+  malformed overlay events cannot propagate `NaN` into carousel navigation.
 - Contact section activation captures the same Cyprus request generation before
   awaiting lazy initialization; a stale route callback cannot call `setActive`
   or raise render demand on a newer stage.

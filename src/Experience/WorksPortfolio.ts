@@ -33,7 +33,7 @@ export class WorksPortfolio {
 
   goTo(idx: number): void {
     const n = this.projects.length
-    if (n === 0) return
+    if (n === 0 || !Number.isFinite(idx)) return
     this.currentIdx = ((Math.round(idx) % n) + n) % n
     this.onCardClick(this.currentIdx)
   }
