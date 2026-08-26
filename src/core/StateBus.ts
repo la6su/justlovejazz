@@ -110,6 +110,18 @@ export class StateBus {
     return this
   }
 
+  /** Remove an owner-scoped channel and any animation still attached to it. */
+  removeChannel(name: string): StateBus {
+    this.#animations.delete(name)
+    this.#channels.delete(name)
+    return this
+  }
+
+  /** Check whether an owner-scoped channel is still registered. */
+  hasChannel(name: string): boolean {
+    return this.#channels.has(name)
+  }
+
   /** Subscribe to events on a channel pattern */
   on(channelName: string, listener: StateListener): StateBus {
     const list = this.#listeners.get(channelName) ?? []
@@ -125,6 +137,7 @@ export class StateBus {
       if (list) {
         const idx = list.indexOf(listener)
         if (idx >= 0) list.splice(idx, 1)
+        if (list.length === 0) this.#listeners.delete(channelName)
       }
     } else {
       this.#listeners.delete(channelName)

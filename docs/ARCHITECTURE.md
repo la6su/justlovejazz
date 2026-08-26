@@ -589,6 +589,9 @@ explicit policy:
 Late async results are disposed immediately. Vue unmount alone is insufficient
 for GPU work; the scene scope closes first, then the component releases its
 port. Shared resources are never implicitly disposed by a primitive adapter.
+State-machine channels are owner-scoped too: `Section.dispose()` removes its
+StateBus state/opacity channels after cancelling animations and listeners, so
+the singleton bus cannot retain route state across a runtime teardown.
 
 Migration acceptance includes twenty route cycles without monotonic growth in
 canvas/context, listener, timer, texture, geometry, program or memory counts.

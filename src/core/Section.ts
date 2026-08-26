@@ -187,6 +187,8 @@ export class Section extends THREE.Group {
       bus.off(`done:${this.stateChannel}`, this._stateDoneHandler)
       this._stateDoneHandler = null
     }
+    bus.removeChannel(this.stateChannel)
+    bus.removeChannel(this.opacityChannel)
     this._opacityMeshCache = null
     this.traverse((obj: THREE.Object3D) => {
       if (obj instanceof THREE.Mesh) {

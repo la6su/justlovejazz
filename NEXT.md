@@ -426,6 +426,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Close the Phase 10 soak summary** — the performance baseline now links
   the accepted 20-cycle route evidence instead of leaving the cutover row in
   `pending` after the JSON report had already passed.
+- [x] **Release StateBus section channels** — `Section.dispose()` now removes
+  its state/opacity channels and `StateBus.off()` drops empty listener buckets,
+  preventing singleton-owned route state from surviving teardown.
 - [x] **Release the WorksPortfolio owner** — `ExperienceUI.destroy()` now calls
   the portfolio disposer before dropping its reference; disposal clears the
   project/callback references and navigation becomes a safe no-op.

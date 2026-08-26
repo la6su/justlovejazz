@@ -3692,6 +3692,17 @@ steady-state cycles, `allPassed: true`, one canvas, no fatal errors and no
 resource-series growth. Backend-unavailable program counters and flat
 headless heap readings remain explicitly non-gating.
 
+### StateBus section-channel teardown — 2026-08-26
+
+`Section.dispose()` now removes its owner-scoped StateBus channels after
+cancelling animations and unsubscribing completion handlers. `StateBus.off()`
+also deletes empty listener buckets. This closes singleton state retention
+across repeated Vue/Tres runtime teardown without changing animation events.
+
+Acceptance: `StateBus.test.ts` verifies channel removal and empty-bucket
+unsubscribe behavior. Rollback: revert this bounded lifecycle slice if section
+state transitions regress.
+
 ## Definition of done
 
 The migration is done when the target topology is the only production path;
