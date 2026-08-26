@@ -49,7 +49,11 @@ const camera = markRaw(new PerspectiveCamera(75, window.innerWidth / window.inne
 // the dev-forced classic `?renderer=webgl` QA owner was removed in Phase 10).
 const rendererFactory = (ctx: TresRendererSetupContext): UnifiedRenderSurface => {
   const canvas = toValue(ctx.canvas) ?? document.createElement('canvas')
-  return createUnifiedWebGPUInstance(canvas, false)
+  const renderer = createUnifiedWebGPUInstance(canvas, false)
+  // Tres may report an initialization error before `onReady`; retain the
+  // created owner so that the error path can release it as well.
+  createdRenderer = renderer
+  return renderer
 }
 
 const tresRef = ref<{ $el: Element } | null>(null)
