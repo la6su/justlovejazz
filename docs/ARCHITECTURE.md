@@ -122,6 +122,9 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `SplashCube` uses its synchronized motion snapshot for opener and face
   reactions; live preference propagation remains the only media-query boundary
   for the persistent cube owner.
+- `EnvSphere` uses the same synchronized motion snapshot for section palette
+  changes; `setReducedMotion()` updates that snapshot before settling a live
+  crossfade, so later route changes cannot re-query policy out of band.
 - `WorksPlaneStage` snapshots reduced-motion state once per media-query change;
   its per-card frame path no longer calls `matchMedia()` for every card. The
   observer is released with the stage, preserving the lazy route owner's

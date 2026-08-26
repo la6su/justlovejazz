@@ -34,6 +34,22 @@ describe('EnvSphere reduced-motion transitions', () => {
     expect(sphere.parent).toBeNull()
   })
 
+  it('uses the synchronized motion snapshot for later section changes', () => {
+    const media = { matches: false }
+    const matchMedia = vi.fn().mockReturnValue(media)
+    vi.stubGlobal('matchMedia', matchMedia)
+    const sphere = new EnvSphere()
+
+    sphere.setReducedMotion(true)
+    media.matches = false
+    sphere.changeSection(3, false)
+
+    const back = (sphere.children[1] as THREE.Mesh | undefined)?.material as THREE.MeshBasicMaterial
+    expect(back.color.getHex()).toBe(0x17120f)
+    expect(matchMedia).toHaveBeenCalledTimes(1)
+    sphere.dispose()
+  })
+
   it('settles an active crossfade synchronously when motion is reduced', () => {
     vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }))
     const sphere = new EnvSphere()

@@ -41,6 +41,7 @@ export class EnvSphere extends THREE.Group {
   private _sectionWeights: number[] = [0, 1, 0, 0, 0, 0]
   private _targetWeights: number[] = [0, 1, 0, 0, 0, 0]
   private _isLight = false
+  private _reducedMotion = prefersReducedMotion()
   private readonly _backMaterial: THREE.MeshBasicMaterial
   private readonly _leftMaterial: THREE.MeshBasicMaterial
   private readonly _rightMaterial: THREE.MeshBasicMaterial
@@ -142,7 +143,7 @@ export class EnvSphere extends THREE.Group {
   changeSection(idx: number, isLight: boolean): void {
     if (this._disposed) return
     if (idx < 0 || idx >= SECTION_PATTERNS.length) return
-    if (prefersReducedMotion()) {
+    if (this._reducedMotion) {
       this.snapToSection(idx, isLight)
       return
     }
@@ -167,6 +168,7 @@ export class EnvSphere extends THREE.Group {
   /** Settle an active palette crossfade synchronously on a live policy change. */
   setReducedMotion(reduced: boolean): void {
     if (this._disposed) return
+    this._reducedMotion = reduced
     if (!reduced) return
     for (let i = 0; i < this._targetWeights.length; i++) {
       this._sectionWeights[i] = this._targetWeights[i]!

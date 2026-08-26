@@ -191,6 +191,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
       synchronized owner snapshot instead of re-querying media state after
       live preference propagation.
 
+- [x] **Cache EnvSphere motion policy** — section palette changes reuse the
+      ambient owner's synchronized preference snapshot while live toggles still
+      settle or resume the transition boundary explicitly.
+
 - [x] **Pool SceneCoordinator transform results** — per-frame camera/world
       metadata now reuses one owner-scoped result graph.
 
