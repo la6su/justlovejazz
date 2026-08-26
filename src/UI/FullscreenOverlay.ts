@@ -440,6 +440,7 @@ export class FullscreenOverlay {
       if (isFinite(this.video.duration)) {
         this.video.currentTime = 0
       }
+      if (this._autoplayTimer) clearTimeout(this._autoplayTimer)
       this._autoplayTimer = setTimeout(() => {
         this._autoplayTimer = null
         this.video.play().catch(() => {

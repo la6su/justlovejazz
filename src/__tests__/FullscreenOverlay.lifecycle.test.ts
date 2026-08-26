@@ -7,8 +7,10 @@ type OverlayInternals = {
   video: HTMLVideoElement
   titleEl: HTMLElement
   _applyOptions: (options: OverlayOptions) => void
+  _tryAutoplay: () => void
   revealVideoAfterFirstFrame: () => void
   _videoRevealFrame: number | null
+  _autoplayTimer: ReturnType<typeof setTimeout> | null
   dispose: () => void
 }
 
@@ -139,6 +141,33 @@ describe('FullscreenOverlay close ownership', () => {
       expect(document.body.classList.contains('uk-modal-page')).toBe(false)
     } finally {
       overlay.dispose()
+    }
+  })
+
+  it('coalesces duplicate autoplay timers before disposal', () => {
+    vi.useFakeTimers()
+    const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout')
+    const overlay = new FullscreenOverlay() as unknown as OverlayInternals
+
+    try {
+      overlay.container.classList.add('is-video-mode')
+      const source = overlay.video.querySelector('source')!
+      source.src = '/assets/video/showreel.mp4'
+      overlay._tryAutoplay()
+      const firstTimer = overlay._autoplayTimer
+      overlay._tryAutoplay()
+      const secondTimer = overlay._autoplayTimer
+
+      expect(firstTimer).not.toBeNull()
+      expect(secondTimer).not.toBeNull()
+      expect(secondTimer).not.toBe(firstTimer)
+      expect(clearTimeoutSpy).toHaveBeenCalledWith(firstTimer)
+      overlay.dispose()
+      expect(overlay._autoplayTimer).toBeNull()
+      expect(clearTimeoutSpy).toHaveBeenCalledWith(secondTimer)
+    } finally {
+      clearTimeoutSpy.mockRestore()
+      vi.useRealTimers()
     }
   })
 })

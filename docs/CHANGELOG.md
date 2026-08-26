@@ -46,6 +46,9 @@
 - `WorksPortfolio.goTo()` now rejects non-finite indices, preventing malformed
   overlay events from corrupting carousel navigation state.
 
+- `FullscreenOverlay` now coalesces duplicate autoplay timers, preventing a
+  stale video-play callback from surviving modal teardown.
+
 - `useJlzPage` now disposes the module-level `WorkCards` registry during route
   owner teardown as well as before route replacement, releasing delegated grid
   listeners and pending card timers on full unmount.
