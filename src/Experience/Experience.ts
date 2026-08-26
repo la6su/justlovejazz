@@ -479,6 +479,13 @@ export class Experience {
     this.drawTrail = new DrawTrail()
     this.scene.add(this.drawTrail.object)
     this.drawTrail.object.visible = false
+    // These owners are read by the demand-driven frame path. Construct them
+    // before the first async coordinator/prewarm step so an early resize or
+    // invalidation can never enter `update()` with an undefined ground/light
+    // owner. Their section-dependent configuration is applied below once the
+    // coordinator has completed its synchronous setup.
+    this.lights = new CinematicLights(this.scene)
+    this.ground = new GroundPlane(this.scene)
     await this.coordinator.init()
     if (!this.isLifecycleCurrent(token)) return
     // Phase 8 slice 6: the home-carousel init await moved out of
@@ -522,8 +529,6 @@ export class Experience {
     // them), and the intro-section steps World.init() used to run for them
     // (first-section light targets + ground color/opacity) run here — still
     // before the first rendered frame, so the boot frame is unchanged.
-    this.lights = new CinematicLights(this.scene)
-    this.ground = new GroundPlane(this.scene)
     const firstCfg = this.coordinator.getConfig(
       this.coordinator.sections[1]?.phaseConfig?.id ?? 'sec_intro',
     )
