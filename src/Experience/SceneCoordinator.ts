@@ -59,6 +59,7 @@ export class SceneCoordinator {
   // in updateTransform → 360 array allocs/sec at 60fps). Ranges are immutable
   // after init(), so cache once.
   private _rangesCache: [number, number][] | null = null
+  private _reducedMotion = prefersReducedMotion()
   private sceneRef: THREE.Scene
   private owners: SceneCoordinatorOwners
   private page: () => PageId
@@ -859,6 +860,11 @@ export class SceneCoordinator {
 
   /** Check whether reduced motion is active */
   public get isReducedMotion(): boolean {
-    return prefersReducedMotion()
+    return this._reducedMotion
+  }
+
+  /** Keep frame-path policy synchronized by the Experience owner. */
+  public setReducedMotion(reduced: boolean): void {
+    this._reducedMotion = reduced
   }
 }

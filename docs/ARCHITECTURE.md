@@ -91,6 +91,9 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `SceneCoordinator.init()` clears derived config/range caches before rebuilding
   a route, so a reused coordinator cannot resolve the previous page's scene
   contract.
+- `SceneCoordinator` receives reduced-motion changes from `Experience` and
+  caches the policy used by its frame-path predicates; coordinator updates no
+  longer query media state repeatedly while deciding which owners to advance.
 - Terminal renderer recovery emits `jlz:webgl-failed` before the unsupported
   overlay, keeping the bootstrap state machine aligned with the actual failed
   renderer lifecycle.

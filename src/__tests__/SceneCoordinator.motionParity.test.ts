@@ -33,6 +33,7 @@ function makeCoordinator(
   return Object.assign(Object.create(SceneCoordinator.prototype), {
     owners,
     page: () => 'home',
+    _reducedMotion: matches,
   }) as SceneCoordinator
 }
 

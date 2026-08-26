@@ -175,6 +175,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
       per-card `matchMedia()` call from the cloth frame path while preserving
       synchronous reduced-motion settling.
 
+- [x] **Cache SceneCoordinator motion policy** — frame-path owner predicates
+      now read the synchronized coordinator snapshot, while Experience remains
+      the single live media-query observer and propagation boundary.
+
 - [x] **Pool SceneCoordinator transform results** — per-frame camera/world
       metadata now reuses one owner-scoped result graph.
 

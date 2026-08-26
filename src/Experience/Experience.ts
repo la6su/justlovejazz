@@ -375,6 +375,7 @@ export class Experience {
     if (reduced === this._reducedMotion || this._destroyed) return
     this._reducedMotion = reduced
     this.envSphere?.setReducedMotion(reduced)
+    this.coordinator?.setReducedMotion(reduced)
     this.lights?.setReducedMotion(reduced)
     this.baku?.setReducedMotion(reduced)
     this.carousel?.setReducedMotion(reduced)
