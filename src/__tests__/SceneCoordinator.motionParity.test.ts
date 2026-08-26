@@ -127,6 +127,36 @@ describe('SceneCoordinator reduced-motion particle parity', () => {
     expect(cyprusUpdate).not.toHaveBeenCalled()
   })
 
+  it('updates the ambient palette only on a demanded frame', () => {
+    const envUpdate = vi.fn()
+    const envSphere = { isAnimating: false, update: envUpdate }
+    const owners = {
+      ground: () => null,
+      sectionGroups: () => ({ groups: [] }) as unknown as SectionGroups,
+      envSphere: () => envSphere as never,
+      baku: () => null,
+      particleBurst: () => null,
+      drawTrail: () => null,
+      carousel: () => null,
+      worksPlaneStage: () => null,
+      contactTypographyStage: () => null,
+      contactCyprusStage: () => null,
+      labGamepad: () => null,
+    } satisfies SceneCoordinatorOwners
+    const coordinator = Object.assign(Object.create(SceneCoordinator.prototype), {
+      owners,
+      page: () => 'home',
+      _reducedMotion: false,
+    }) as SceneCoordinator
+
+    coordinator.update(0.25, false)
+    expect(envUpdate).not.toHaveBeenCalled()
+
+    coordinator.update(0.25, true)
+    expect(envUpdate).toHaveBeenCalledOnce()
+    expect(envUpdate).toHaveBeenCalledWith(0.25)
+  })
+
   it('snapshots route and scene owners once per active update pass', () => {
     const pageReader = vi.fn(() => 'works' as const)
     const worksSetActive = vi.fn()

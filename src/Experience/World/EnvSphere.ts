@@ -176,6 +176,15 @@ export class EnvSphere extends THREE.Group {
     this._applyColor(true)
   }
 
+  /** True while a normal-motion palette crossfade still needs frames. */
+  get isAnimating(): boolean {
+    if (this._disposed || this._reducedMotion) return false
+    for (let i = 0; i < this._targetWeights.length; i++) {
+      if (this._sectionWeights[i] !== this._targetWeights[i]) return true
+    }
+    return false
+  }
+
   update(dt: number): void {
     if (this._disposed) return
     for (let i = 0; i < SECTION_PATTERNS.length; i++) {

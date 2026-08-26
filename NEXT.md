@@ -179,6 +179,11 @@ Do not reopen completed migration phases. Current runtime contracts are in
       now read the synchronized coordinator snapshot, while Experience remains
       the single live media-query observer and propagation boundary.
 
+- [x] **Gate EnvSphere work by render demand** — ambient palette interpolation
+      now advertises an explicit animation signal and advances only while a
+      frame can be presented; section changes keep the demand window alive
+      until the palette reaches its target.
+
 - [x] **Cache CinematicNav scroll policy** — programmatic section navigation
       reads the owner-local reduced-motion snapshot instead of re-querying the
       media preference on every scroll request.

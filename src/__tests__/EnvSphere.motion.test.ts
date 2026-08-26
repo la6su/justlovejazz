@@ -28,8 +28,11 @@ describe('EnvSphere reduced-motion transitions', () => {
     sphere.changeSection(3, false)
 
     expect(back.color.getHex()).toBe(initial)
+    expect(sphere.isAnimating).toBe(true)
     sphere.update(0.25)
     expect(back.color.getHex()).not.toBe(initial)
+    sphere.snapToSection(3, false)
+    expect(sphere.isAnimating).toBe(false)
     sphere.dispose()
     expect(sphere.parent).toBeNull()
   })
@@ -63,6 +66,7 @@ describe('EnvSphere reduced-motion transitions', () => {
 
     expect(back.color.getHex()).toBe(0x17120f)
     expect(back.color.getHex()).not.toBe(intermediate)
+    expect(sphere.isAnimating).toBe(false)
     sphere.dispose()
     expect(sphere.parent).toBeNull()
   })

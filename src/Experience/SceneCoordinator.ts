@@ -290,6 +290,7 @@ export class SceneCoordinator {
    */
   public hasVisibleAmbientMotion(): boolean {
     if (this.isReducedMotion) return false
+    if (this.owners.envSphere()?.isAnimating) return true
     if (this.owners.baku()?.isAmbientlyAnimated) return true
     if (this.contactTypographyStage?.visible && this.contactTypographyStage.isAnimating) return true
     return false
@@ -305,10 +306,6 @@ export class SceneCoordinator {
     // so the owner path does not repeat the live page getter at each branch;
     // the getter remains authoritative on the next frame after navigation.
     const page = this.page()
-    // EnvSphere manages the visible background.
-    // Phase 8 slice 3: forwarded to the Experience-owned EnvSphere owner.
-    this.owners.envSphere()?.update(deltaTime)
-
     // The splash handoff owns its short render window, independent of ambient
     // scene animation. Experience keeps `_needsRender` raised while active.
     const burst = this.owners.particleBurst()
@@ -329,6 +326,11 @@ export class SceneCoordinator {
       }
       return
     }
+
+    // EnvSphere is a demand-driven owner too: its palette crossfade advertises
+    // `isAnimating` through hasVisibleAmbientMotion(), so this update remains
+    // on the rendered path until the target weights settle.
+    this.owners.envSphere()?.update(deltaTime)
 
     const worksStage = this.owners.worksPlaneStage()
     if (worksStage) {

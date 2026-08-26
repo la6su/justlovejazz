@@ -181,6 +181,10 @@ under `src/builder/`; the public builds do not import the editor graph.
   teardown cannot leave the background between section colors.
 - `EnvSphere` also settles an already-running palette crossfade synchronously
   when the live reduced-motion preference changes, before the scheduler pause.
+- `EnvSphere.isAnimating` participates in the shared ambient activity signal;
+  `SceneCoordinator.update(_, false)` therefore leaves its palette untouched,
+  while a normal-motion section crossfade keeps demand raised until its target
+  weights settle on presented frames.
 - `CinematicLights` applies the same reduced-motion boundary to section light
   transitions: colors, intensities and key position snap to their targets and
   skip interpolation/orbit work; normal motion retains authored lerp timing.
