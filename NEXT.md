@@ -96,6 +96,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
   scroll motion and edge warp now settle synchronously, while Works reveals
   snap to their target without retaining render demand.
 
+- [x] **Settle story parallax under reduced motion** — `CinematicNav` now
+  clears decorative section shifts on live policy changes while preserving
+  semantic section state and navigation behavior.
+
 - [x] **Align WebGLBackend quality state** — direct-render fallback no longer
   advertises or updates the unused TSL post graph; native WebGPU retains the
   crossfade and post parameter path.

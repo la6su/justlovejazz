@@ -57,6 +57,7 @@ export class CinematicNav {
   private _sheetClickHandler: ((event: MouseEvent) => void) | null = null
   private _navButtons: HTMLButtonElement[] = []
   private _navButtonHandlers = new Map<HTMLButtonElement, () => void>()
+  private _reducedMotion = prefersReducedMotion()
 
   /**
    * Loop-wake port (Phase 7). Native track scrolling is a renderer-loop wake
@@ -249,8 +250,14 @@ export class CinematicNav {
       const distance = Math.min(1, Math.abs(index - position))
       section.dataset.storyState = state
       section.style.setProperty('--jlz-story-distance', String(distance))
-      section.style.setProperty('--jlz-story-shift', `${(index - position) * 3}vh`)
-      section.style.setProperty('--jlz-story-shift-opposite', `${(position - index) * 2.5}vh`)
+      section.style.setProperty(
+        '--jlz-story-shift',
+        this._reducedMotion ? '0vh' : `${(index - position) * 3}vh`,
+      )
+      section.style.setProperty(
+        '--jlz-story-shift-opposite',
+        this._reducedMotion ? '0vh' : `${(position - index) * 2.5}vh`,
+      )
       section.style.setProperty('--jlz-story-title-opacity', String(1 - distance * 0.7))
       section.style.setProperty('--jlz-story-panel-opacity', String(1 - distance * 0.82))
     })
@@ -261,6 +268,13 @@ export class CinematicNav {
       if (active) button.setAttribute('aria-current', 'step')
       else button.removeAttribute('aria-current')
     })
+  }
+
+  /** Settle decorative story parallax when the live motion policy changes. */
+  setReducedMotion(reduced: boolean): void {
+    if (this._reducedMotion === reduced) return
+    this._reducedMotion = reduced
+    this._updateStoryState(this._mainSection - FIRST_MAIN)
   }
 
   private _refreshLabels(): void {

@@ -378,6 +378,7 @@ export class Experience {
     this.camera?.setReducedMotion(reduced)
     this.contactCyprusStage?.setReducedMotion(reduced)
     this.contactTypographyStage?.setReducedMotion(reduced)
+    this._storyNav?.setReducedMotion(reduced)
     if (reduced) {
       this._cancelBreath()
       this._scheduler.settleNow()

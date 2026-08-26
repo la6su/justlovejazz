@@ -3405,6 +3405,18 @@ reveals settle and `isAnimating` becomes false in one update. Rollback: revert
 the two owner changes and their focused tests together; renderer and backend
 boundaries remain unchanged.
 
+#### CinematicNav live reduced-motion settlement — 2026-08-26
+
+`CinematicNav` now owns the live policy boundary for story parallax. Its
+`--jlz-story-shift` and opposite-shift CSS variables are synchronously reset to
+zero when reduction is enabled, while section state, scroll position, labels
+and accessibility semantics remain unchanged. `Experience` forwards the
+preference before scheduler settlement.
+
+Acceptance: `CinematicNav.test.ts` covers live enable/disable behavior and
+preserves normal parallax after restoration. Rollback: remove the nav setter
+and forwarding call; no renderer or Tres ownership changes are required.
+
 ### Removal ledger
 
 | Legacy element                           | Remove after                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Status |

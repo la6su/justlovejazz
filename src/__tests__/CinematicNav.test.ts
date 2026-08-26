@@ -83,6 +83,21 @@ describe('CinematicNav — vertical story and sheets', () => {
     expect(nav.getOverallProgress()).toBeCloseTo(0.5, 5)
   })
 
+  it('removes decorative story parallax when reduced motion is enabled', () => {
+    const track = document.getElementById('spa-content')!
+    nav = createNav()
+    track.scrollTop = MAIN_HEIGHT * 1.5
+
+    nav.setReducedMotion(true)
+
+    const section = track.querySelector<HTMLElement>('[data-section="about"]')!
+    const panel = section.style.getPropertyValue('--jlz-story-shift-opposite')
+    expect(section.style.getPropertyValue('--jlz-story-shift')).toBe('0vh')
+    expect(panel).toBe('0vh')
+    nav.setReducedMotion(false)
+    expect(section.style.getPropertyValue('--jlz-story-shift')).not.toBe('0vh')
+  })
+
   it('opens the desktop/mobile Menu sheet and returns to the previous chapter', () => {
     nav = createNav()
     const indices: number[] = []

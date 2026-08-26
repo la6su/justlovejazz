@@ -4,6 +4,8 @@
 
 - Reduced-motion settlement now covers Works `CasePlane` deformation and
   `WorksPlaneStage` card reveals, preventing avoidable render-demand tails.
+- Story navigation now clears decorative CSS parallax shifts on live
+  reduced-motion changes without altering semantic section state.
 
 - Renderer device-loss fallback now clears the retired software-adapter
   replacement before forced-WebGL recreation; a failed second initialization

@@ -65,6 +65,9 @@ under `src/builder/`; the public builds do not import the editor graph.
 - Works card deformation and reveal transitions follow the same contract:
   transient TSL uniforms settle to rest and visible card opacity reaches its
   target in one update.
+- `CinematicNav` treats story parallax as decorative policy state; enabling
+  reduced motion clears its CSS shifts synchronously without changing route,
+  section or accessibility state.
 - `Experience` observes the live reduced-motion media query for the lifetime
   of the runtime. Enabling it cancels ambient breathing and settles the single
   render scheduler; disabling it raises one `motion-preference` invalidation.
