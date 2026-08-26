@@ -116,6 +116,7 @@ export class CinematicLights {
   private _targetVolumetricIntensity = 0.6
   private _targetHemiIntensity = 0.3
   private _reducedMotionSettled = false
+  private _reducedMotion = prefersReducedMotion()
 
   // Speed multiplier for lerp — higher = faster transition (junni: ~0.5s)
   private static readonly LERP_SPEED = 3.0
@@ -168,7 +169,7 @@ export class CinematicLights {
     if (this._disposed) return
     const preset = SECTION_PRESETS[config.id] ?? DEFAULT_PRESET
     this._applyPresetToTargets(preset)
-    if (prefersReducedMotion()) {
+    if (this._reducedMotion) {
       this._snapToTargets()
       this._reducedMotionSettled = true
     }
@@ -177,6 +178,7 @@ export class CinematicLights {
   /** Reconcile a live preference change without waiting for another frame. */
   public setReducedMotion(reduced: boolean): void {
     if (this._disposed) return
+    this._reducedMotion = reduced
     this._reducedMotionSettled = reduced
     if (reduced) this._snapToTargets()
   }
@@ -187,7 +189,7 @@ export class CinematicLights {
    */
   public update(dt: number): void {
     if (this._disposed) return
-    if (prefersReducedMotion()) {
+    if (this._reducedMotion) {
       if (!this._reducedMotionSettled) {
         this._snapToTargets()
         this._reducedMotionSettled = true
@@ -215,7 +217,7 @@ export class CinematicLights {
 
     // Volumetric light: slow orbit for organic atmosphere
     // (frozen when prefers-reduced-motion — continuous orbit is a vestibular hazard)
-    if (!prefersReducedMotion()) {
+    if (!this._reducedMotion) {
       const time = performance.now() * 0.0004
       this.volumetricLight.position.x = Math.sin(time) * 2.5
       this.volumetricLight.position.z = Math.cos(time) * 2.5

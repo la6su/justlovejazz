@@ -126,6 +126,8 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `CinematicLights` applies the same reduced-motion boundary to section light
   transitions: colors, intensities and key position snap to their targets and
   skip interpolation/orbit work; normal motion retains authored lerp timing.
+  The owner caches the live policy between preference changes, so its frame
+  update does not query `matchMedia()` repeatedly.
 - A failed native-WebGPU TSL post-graph build is terminal for that
   `RenderPipeline` owner: it disposes the partial graph and uses direct
   rendering thereafter, so the demand scheduler cannot retry the same failure

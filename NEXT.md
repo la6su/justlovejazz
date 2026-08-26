@@ -158,6 +158,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
       `matchMedia()` for every card on every frame; the observer is disposed
       with the lazy route owner.
 
+- [x] **Cache CinematicLights reduced-motion policy** — section transitions and
+      the per-frame orbit now read the owner-local policy snapshot; live
+      `setReducedMotion()` updates remain the single reconciliation boundary.
+
 - [x] **Pool SceneCoordinator transform results** — per-frame camera/world
       metadata now reuses one owner-scoped result graph.
 
