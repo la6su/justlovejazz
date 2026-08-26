@@ -33,4 +33,21 @@ describe('DrawTrail lifecycle', () => {
     expect(internals._cameraForward).toBe(forward)
     trail.dispose()
   })
+
+  it('keeps TSL uniform state isolated between trail owners', () => {
+    const first = new DrawTrail()
+    const second = new DrawTrail()
+    const firstUniforms = (first as unknown as { _uniforms: { uEnergy: { value: number } } })
+      ._uniforms
+    const secondUniforms = (second as unknown as { _uniforms: { uEnergy: { value: number } } })
+      ._uniforms
+
+    firstUniforms.uEnergy.value = 0.37
+
+    expect(firstUniforms).not.toBe(secondUniforms)
+    expect(secondUniforms.uEnergy.value).not.toBe(0.37)
+
+    first.dispose()
+    second.dispose()
+  })
 })

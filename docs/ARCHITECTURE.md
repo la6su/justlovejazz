@@ -170,6 +170,9 @@ under `src/builder/`; the public builds do not import the editor graph.
   wrapper instances may be constructed during recovery or tests without
   sharing cursor-follow history or mutable Three.js temporaries; the
   externally owned `PerspectiveCamera` remains undisposed by the wrapper.
+- `DrawTrail` creates its TSL uniform set and color/opacity node closures per
+  owner. Trail time, velocity and energy are never shared across route-stage
+  instances; geometry/material disposal remains explicit at that owner.
 - Native WebGPU post processing is conditional on the selected quality policy;
   low-tier instances render the scene directly and do not construct a TSL
   `PassNode` graph whose effects are disabled.
