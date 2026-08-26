@@ -443,8 +443,11 @@ Do not reopen completed migration phases. Current runtime contracts are in
       objects now belong to each Camera wrapper instead of shared module state;
       concurrent recovery/HMR instances cannot advance one another's camera.
 - [x] **Isolate DrawTrail TSL uniforms** — each trail owns its time, velocity
-      and energy uniforms and node closures; independent trail owners no longer
-      overwrite one another's GPU signal state.
+  and energy uniforms and node closures; independent trail owners no longer
+  overwrite one another's GPU signal state.
+- [x] **Isolate ParticleBurst TSL uniforms** — each intro burst owns its time
+  and duration uniforms and node closures; concurrent splash owners no longer
+  share animation progress.
 - [x] **Release the WorksPortfolio owner** — `ExperienceUI.destroy()` now calls
       the portfolio disposer before dropping its reference; disposal clears the
       project/callback references and navigation becomes a safe no-op.

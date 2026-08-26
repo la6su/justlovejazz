@@ -173,6 +173,10 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `DrawTrail` creates its TSL uniform set and color/opacity node closures per
   owner. Trail time, velocity and energy are never shared across route-stage
   instances; geometry/material disposal remains explicit at that owner.
+- `ParticleBurst` creates its trace time/duration uniforms and TSL node
+  closures per owner. Triggering one intro burst cannot advance another
+  burst's shader timeline; terminal geometry/material disposal remains
+  unchanged.
 - Native WebGPU post processing is conditional on the selected quality policy;
   low-tier instances render the scene directly and do not construct a TSL
   `PassNode` graph whose effects are disabled.

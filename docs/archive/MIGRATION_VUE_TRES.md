@@ -3758,6 +3758,19 @@ Acceptance: `DrawTrail.lifecycle.test.ts` verifies independent uniform state;
 type-check and focused lint pass. Rollback: revert this bounded TSL ownership
 slice if trail signal parity regresses.
 
+### ParticleBurst TSL uniform isolation — 2026-08-26
+
+`ParticleBurst` now creates `uTime` and `uDuration` per instance and builds its
+TSL color/opacity closures from that owner-local set. A concurrent splash
+owner cannot advance another burst's shader timeline; terminal teardown and
+the instanced geometry path are unchanged.
+
+Worker review: Qwen3.8 returned `SAFE` for the owner-local node binding and
+unchanged disposal boundary. Acceptance: `ParticleBurst.lifecycle.test.ts`,
+type-check and focused lint pass; the full release gate remains required for
+milestone admission. Rollback: revert this bounded intro TSL ownership slice
+if splash timing or visual parity regresses.
+
 ## Definition of done
 
 The migration is done when the target topology is the only production path;
