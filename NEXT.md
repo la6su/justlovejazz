@@ -231,6 +231,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Cache Renderer post source values** — real-WebGPU `scaleIntensity` and
       wrapper writes now run only when manager values change or a new pipeline is
       created; the direct WebGLBackend path stays untouched.
+- [x] **Own the unsupported renderer overlay** — failure-state DOM is now
+      idempotent and removed with `Renderer.dispose()`, including repeated
+      device-loss failures.
 
 - [x] **Cache CinematicNav scroll policy** — programmatic section navigation
       reads the owner-local reduced-motion snapshot instead of re-querying the

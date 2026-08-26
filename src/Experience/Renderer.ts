@@ -84,6 +84,9 @@ export class Renderer {
   // context after a device-loss recovery re-creation.
   private _ownsCanvas = true
   private _onInstanceReplaced: ((instance: RenderSurface) => void) | null = null
+  // Failure-state DOM owner. Keep one overlay per renderer and remove it on
+  // terminal teardown so repeated device-loss failures cannot accumulate UI.
+  private _unsupportedOverlay: HTMLElement | null = null
   // Animation-loop owner boundary: Experience registers its frame callback
   // here so device-loss recovery can re-attach it to the replacement renderer.
   private _loopCallback: ((time: number) => void) | null = null
@@ -129,6 +132,7 @@ export class Renderer {
   }
 
   private showUnsupportedMessage(): void {
+    if (this._disposed || this._unsupportedOverlay) return
     const overlay = document.createElement('div')
     overlay.className = 'renderer-unsupported'
     overlay.innerHTML = `
@@ -136,6 +140,7 @@ export class Renderer {
       <p>This experience requires WebGL2. WebGPU is optional. Please use a current browser with hardware acceleration enabled.</p>
     `
     document.body.appendChild(overlay)
+    this._unsupportedOverlay = overlay
   }
 
   async init(adopted?: AdoptedRenderer): Promise<void> {
@@ -494,6 +499,8 @@ export class Renderer {
     this._onInstanceReplaced = null
     this.pipeline?.dispose()
     this.instance.dispose()
+    this._unsupportedOverlay?.remove()
+    this._unsupportedOverlay = null
     // A-3 fix: remove the canvas DOM element owned by this class (legacy
     // path). The Phase 7 adopted canvas is Vue-owned (SceneHost unmount) and
     // must survive Renderer.dispose().

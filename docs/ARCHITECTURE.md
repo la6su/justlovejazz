@@ -221,6 +221,9 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `Renderer` snapshots the six manager post values before scaling and invalidates
   that snapshot whenever a pipeline is created or recovered; settled real-WebGPU
   frames therefore skip redundant scaling and wrapper mutation.
+- The renderer failure overlay is an explicit `Renderer`-owned DOM resource:
+  repeated unsupported/device-loss failures reuse one element, and terminal
+  disposal removes it.
 - `CinematicLights` applies the same reduced-motion boundary to section light
   transitions: colors, intensities and key position snap to their targets and
   skip interpolation/orbit work; normal motion retains authored lerp timing.

@@ -243,6 +243,21 @@ describe('Renderer device-loss lifecycle', () => {
     document.querySelector('.renderer-unsupported')?.remove()
   })
 
+  it('keeps the unsupported overlay idempotent and disposes its DOM owner', () => {
+    const renderer = makeRenderer(fakeRenderer(), vi.fn())
+    const showUnsupported = (renderer as unknown as { showUnsupportedMessage: () => void }).showUnsupportedMessage
+
+    showUnsupported.call(renderer)
+    showUnsupported.call(renderer)
+
+    expect(document.querySelectorAll('.renderer-unsupported')).toHaveLength(1)
+    renderer.dispose()
+    expect(document.querySelector('.renderer-unsupported')).toBeNull()
+    showUnsupported.call(renderer)
+    expect(document.querySelector('.renderer-unsupported')).toBeNull()
+    expect(() => renderer.dispose()).not.toThrow()
+  })
+
   it('skips unused post parameter work on the WebGLBackend direct path', () => {
     const postUpdate = vi.fn()
     const updateParams = vi.fn()
