@@ -216,6 +216,8 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `RenderPipeline` forwards post uniforms to `WebGPUPostPipeline` only when the
   parameter set, section grade or scene/camera binding is dirty; a newly created
   TSL post owner is always primed before its first render.
+- The same dirty boundary owns preparation of the reusable scalar/grade cache,
+  so settled WebGPU frames avoid both tuple writes and uniform handoff.
 - `CinematicLights` applies the same reduced-motion boundary to section light
   transitions: colors, intensities and key position snap to their targets and
   skip interpolation/orbit work; normal motion retains authored lerp timing.

@@ -182,25 +182,24 @@ export class RenderPipeline {
           }
           const sceneChanged = this._webgpuPipeline.setScene(scene, camera)
           if (sceneChanged) this._webgpuParamsDirty = true
-          // PERF-11 fix: mutate cached params object instead of allocating a new
-          // one + 2 arrays every frame. gradeShadows/Highlights are tuple arrays
-          // reused in place (updateParams copies into uniforms).
-          const p = this._webgpuParamsCache
-          p.bloom = this._params.bloom
-          p.bloomRadius = this._params.bloomRadius
-          p.bloomThreshold = this._params.bloomThreshold
-          p.vignette = this._params.vignette
-          p.grain = this._params.grain
-          p.chromatic = this._params.chromatic
-          p.refract = this._sectionRefract
-          p.border = this._sectionBorder
-          p.gradeShadows[0] = this._sectionShadows.x
-          p.gradeShadows[1] = this._sectionShadows.y
-          p.gradeShadows[2] = this._sectionShadows.z
-          p.gradeHighlights[0] = this._sectionHighlights.x
-          p.gradeHighlights[1] = this._sectionHighlights.y
-          p.gradeHighlights[2] = this._sectionHighlights.z
           if (this._webgpuParamsDirty !== false) {
+            // PERF-11: mutate the cached params object only on dirty handoff;
+            // settled WebGPU frames need neither scalar nor tuple writes.
+            const p = this._webgpuParamsCache
+            p.bloom = this._params.bloom
+            p.bloomRadius = this._params.bloomRadius
+            p.bloomThreshold = this._params.bloomThreshold
+            p.vignette = this._params.vignette
+            p.grain = this._params.grain
+            p.chromatic = this._params.chromatic
+            p.refract = this._sectionRefract
+            p.border = this._sectionBorder
+            p.gradeShadows[0] = this._sectionShadows.x
+            p.gradeShadows[1] = this._sectionShadows.y
+            p.gradeShadows[2] = this._sectionShadows.z
+            p.gradeHighlights[0] = this._sectionHighlights.x
+            p.gradeHighlights[1] = this._sectionHighlights.y
+            p.gradeHighlights[2] = this._sectionHighlights.z
             this._webgpuPipeline.updateParams(p)
             this._webgpuParamsDirty = false
           }

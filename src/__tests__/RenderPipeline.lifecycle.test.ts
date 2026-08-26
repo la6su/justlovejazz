@@ -149,11 +149,18 @@ describe('RenderPipeline failure lifecycle', () => {
     const scene = new THREE.Scene()
     const camera = new THREE.PerspectiveCamera()
     pipeline.render(scene, camera)
+    const cache = (pipeline as unknown as {
+      _webgpuParamsCache: { bloom: number }
+    })._webgpuParamsCache
     pipeline.render(scene, camera)
     expect(updateParams).toHaveBeenCalledOnce()
+    cache.bloom = 99
+    pipeline.render(scene, camera)
+    expect(cache.bloom).toBe(99)
 
     pipeline.updateParams({ bloom: 0.8, vignette: 0.5, grain: 0.25 })
     pipeline.render(scene, camera)
     expect(updateParams).toHaveBeenCalledTimes(2)
+    expect(cache.bloom).toBe(0.8)
   })
 })
