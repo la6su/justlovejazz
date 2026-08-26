@@ -29,6 +29,16 @@ describe('FrameTiming', () => {
     })
   })
 
+  it('reuses the ring values across repeated snapshots', () => {
+    const timing = new FrameTiming(4)
+    timing.record(sample(8))
+    timing.record(sample(2))
+
+    expect(timing.snapshot()?.scene).toEqual({ p50: 2, p95: 8, latest: 2 })
+    timing.record(sample(5))
+    expect(timing.snapshot()?.scene).toEqual({ p50: 5, p95: 8, latest: 5 })
+  })
+
   it('rejects an invalid capacity before allocating samples', () => {
     expect(() => new FrameTiming(0)).toThrow(RangeError)
     expect(() => new FrameTiming(1.5)).toThrow(RangeError)

@@ -427,6 +427,11 @@ Do not reopen completed migration phases. Current runtime contracts are in
       soak fallback reads the owner-backed renderer count instead of treating
       every document canvas as a renderer leak.
 
+- [x] **Reuse frame-timing percentile scratch storage** — `FrameTiming`
+      sorts its typed-array scratch buffer in place, removing the per-refresh
+      `Array.from(...).sort()` allocation while preserving the public snapshot
+      shape and ring semantics.
+
 - [ ] **Verify browser device-loss recovery on WebGLBackend** — the e2e probe
       now drives a real `WEBGL_lose_context` event and checks the production
       recovery handoff, one-canvas ownership and fatal-error boundary through

@@ -58,7 +58,10 @@ export class FrameTiming {
     const summary = (metric: FrameTimingMetric): FrameTimingMetricSummary => {
       const values = this._samples[metric]
       this._sorted.set(values.subarray(0, this._count))
-      const sorted = Array.from(this._sorted.subarray(0, this._count)).sort((a, b) => a - b)
+      // TypedArray#sort is numeric and mutates the reused scratch buffer.
+      // Keeping the sort in-place avoids allocating an Array on every DevPanel
+      // refresh while leaving the owner ring untouched.
+      const sorted = this._sorted.subarray(0, this._count).sort()
       const p50Index = Math.min(sorted.length - 1, Math.ceil(sorted.length * 0.5) - 1)
       const p95Index = Math.min(sorted.length - 1, Math.ceil(sorted.length * 0.95) - 1)
       const round = (value: number) => Math.round(value * 100) / 100
