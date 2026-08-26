@@ -3796,6 +3796,18 @@ calls; full release gate remains required for milestone admission. Rollback:
 revert this bounded Works-stage lifecycle slice if route media transitions
 regress.
 
+### SplashCube terminal teardown — 2026-08-26
+
+`SplashCube` now has an idempotent terminal disposal boundary. Section/theme
+callbacks, opener/wobble triggers, material/environment updates and late frame
+updates become inert after the persistent scene owner is released; animation
+predicates settle false without touching disposed geometry or materials.
+
+Acceptance: `SplashCube.motion.test.ts` covers repeated disposal and all late
+public calls; focused type-check/lint pass. Rollback: revert this bounded
+persistent-cube lifecycle slice if opener, face or reduced-motion behavior
+regresses.
+
 ## Definition of done
 
 The migration is done when the target topology is the only production path;

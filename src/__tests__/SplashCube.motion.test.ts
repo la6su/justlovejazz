@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import * as THREE from 'three'
 import { SplashCube } from '../Experience/World/SplashCube'
 
 describe('SplashCube reduced-motion transitions', () => {
@@ -60,5 +61,35 @@ describe('SplashCube reduced-motion transitions', () => {
     expect(mesh?.rotation.z).toBe(0)
     cube.dispose()
     expect(cube.parent).toBeNull()
+  })
+
+  it('ignores late public calls after terminal teardown', () => {
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }))
+    const cube = new SplashCube()
+    const mesh = cube.children[0]
+    const before = mesh?.scale.toArray()
+
+    cube.dispose()
+    cube.dispose()
+    cube.triggerOpener()
+    cube.triggerWobblePulse()
+    cube.bindEnvironment(new THREE.Texture())
+    cube.setTheme(false)
+    cube.updateMaterial({ roughness: 0.5 })
+    cube.rotateToFace(4)
+    cube.snapToFace(2)
+    cube.setReducedMotion(true)
+    cube.updateWorldBlend(
+      new THREE.Color(0x111111),
+      new THREE.Color(0x222222),
+      new THREE.Color(0x333333),
+      new THREE.Color(0x444444),
+      1,
+    )
+    cube.update(1 / 60)
+
+    expect(cube.isRotating).toBe(false)
+    expect(cube.isOpenerActive).toBe(false)
+    expect(mesh?.scale.toArray()).toEqual(before)
   })
 })

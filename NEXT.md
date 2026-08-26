@@ -454,6 +454,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Make WorksPlaneStage teardown terminal** — late route controls,
   hit-tests, updates and prewarm calls become inert after disposal while the
   existing async texture cancellation boundary remains intact.
+- [x] **Make SplashCube teardown terminal** — late section/theme/material
+  callbacks and frame updates become inert after persistent scene teardown;
+  animation predicates settle false and disposal is idempotent.
 - [x] **Release the WorksPortfolio owner** — `ExperienceUI.destroy()` now calls
       the portfolio disposer before dropping its reference; disposal clears the
       project/callback references and navigation becomes a safe no-op.

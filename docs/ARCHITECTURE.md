@@ -185,6 +185,10 @@ under `src/builder/`; the public builds do not import the editor graph.
   resize/camera binding, hit-tests, shader prewarm and frame updates are inert
   afterward; async texture setup still re-checks disposal before creating
   cards or retaining cache references.
+- `SplashCube.dispose()` is terminal and idempotent. Late section, theme,
+  material and frame callbacks cannot mutate freed cube resources; all three
+  animation predicates return false after teardown so the persistent scene
+  host cannot retain demand.
 - Native WebGPU post processing is conditional on the selected quality policy;
   low-tier instances render the scene directly and do not construct a TSL
   `PassNode` graph whose effects are disabled.

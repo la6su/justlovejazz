@@ -41,6 +41,7 @@ const JELLY_UPDATE_INTERVAL = 1 / 30
 // (GRADIENT_COLORS removed — was Apple Fifth Avenue port. Now using JLZ palette.)
 
 export class SplashCube extends THREE.Mesh {
+  private _disposed = false
   private cubeMesh!: THREE.Mesh
   private cubeMaterial!: THREE.MeshPhysicalMaterial
   private cubePositions!: THREE.BufferAttribute
@@ -106,17 +107,17 @@ export class SplashCube extends THREE.Mesh {
 
   /** True only while an authored cube reaction still needs animation frames. */
   get isAmbientlyAnimated(): boolean {
-    return this.visible && (this.jellyEnergy > 0.001 || this.jellyTarget > 0.001)
+    return !this._disposed && this.visible && (this.jellyEnergy > 0.001 || this.jellyTarget > 0.001)
   }
 
   /** True while the opener scale-pulse is animating (opening or closing). */
   get isOpenerActive(): boolean {
-    return this.openerPhase !== 'done' && this.openerPhase !== 'idle'
+    return !this._disposed && this.openerPhase !== 'done' && this.openerPhase !== 'idle'
   }
 
   /** True while the cube is rotating to a new face (section change). */
   get isRotating(): boolean {
-    return this._faceLerp < 1
+    return !this._disposed && this._faceLerp < 1
   }
 
   // Scratch
@@ -239,6 +240,7 @@ export class SplashCube extends THREE.Mesh {
   // (setProgress removed — dead no-op, zero callers.)
 
   triggerOpener(): void {
+    if (this._disposed) return
     // Under reduced-motion the opener never animates (baku.update() is skipped
     // by World), so snap immediately to 'done' — otherwise openerPhase stays
     // 'opening' forever and forces continuous rendering (B-1).
@@ -255,6 +257,7 @@ export class SplashCube extends THREE.Mesh {
 
   /** Trigger a scale pulse alongside the continuous jelly motion. */
   triggerWobblePulse(): void {
+    if (this._disposed) return
     this.triggerOpener()
   }
 
@@ -263,6 +266,7 @@ export class SplashCube extends THREE.Mesh {
    *  rendered through either backend's post-processing target.
    *  Called by Experience.setupEnvironment() after PMREM is generated. */
   bindEnvironment(envTexture: THREE.Texture): void {
+    if (this._disposed) return
     if (this.cubeMaterial) {
       this.cubeMaterial.envMap = envTexture
       this.cubeMaterial.needsUpdate = true
@@ -271,11 +275,13 @@ export class SplashCube extends THREE.Mesh {
 
   /** Keep the transparent shell legible when UI theme flips light ↔ dark. */
   setTheme(isLight: boolean): void {
+    if (this._disposed) return
     this._isLightTheme = isLight
     this._themeTint.setHex(isLight ? 0x5f536b : 0xd0c5dc)
   }
 
   updateMaterial(params: BakuMaterialState): void {
+    if (this._disposed) return
     this.targetParams = {
       color: params.color ? new THREE.Color(params.color) : this.targetParams.color,
       emissive: params.emissive ? new THREE.Color(params.emissive) : this.targetParams.emissive,
@@ -290,6 +296,7 @@ export class SplashCube extends THREE.Mesh {
    *  over the next ~0.8s (lerped in update()). Called by Experience.ts
    *  on jlz:section-change. */
   rotateToFace(sectionIndex: number): void {
+    if (this._disposed) return
     if (prefersReducedMotion()) {
       this.snapToFace(sectionIndex)
       return
@@ -308,6 +315,7 @@ export class SplashCube extends THREE.Mesh {
 
   /** Apply the boot section without replaying a visible entrance animation. */
   snapToFace(sectionIndex: number): void {
+    if (this._disposed) return
     const idx = Math.max(0, Math.min(SplashCube.FACE_ROTATIONS.length - 1, sectionIndex))
     const rotation = SplashCube.FACE_ROTATIONS[idx] ?? 0
     this._targetFaceRotY = rotation
@@ -320,6 +328,7 @@ export class SplashCube extends THREE.Mesh {
 
   /** Settle all decorative cube reactions when motion policy changes live. */
   setReducedMotion(reduced: boolean): void {
+    if (this._disposed) return
     if (!reduced) return
 
     this._idleRotY = this._targetFaceRotY
@@ -352,6 +361,7 @@ export class SplashCube extends THREE.Mesh {
     _fromDisplace: number = 0.05,
     _toDisplace: number = 0.05,
   ): void {
+    if (this._disposed) return
     this._blendFromColor.copy(fromColor)
     this._blendToColor.copy(toColor)
     this._blendFromEmissive.copy(fromEmissive)
@@ -363,6 +373,7 @@ export class SplashCube extends THREE.Mesh {
   // UPDATE — called every frame when rendering
   // ════════════════════════════════════════════════════════════════════
   update(dt: number): void {
+    if (this._disposed) return
     this.time += dt
 
     // A driven envelope gives the silicone wobble a quick response and a long,
@@ -482,6 +493,8 @@ export class SplashCube extends THREE.Mesh {
   //  deleted. JLZ branding no longer rendered inside the glass cube.)
 
   dispose(): void {
+    if (this._disposed) return
+    this._disposed = true
     this.removeFromParent()
     // (Pulse timers removed — triggerWobblePulse now uses animated sin-envelope
     //  in update() instead of setTimeout, so there are no timers to clear.)
