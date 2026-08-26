@@ -188,6 +188,9 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `GroundPlane.applyTransform()` skips color/opacity writes when the effective
   state is unchanged; section `t` changes and `syncTheme()` still apply their
   material state immediately, and the owner remains disposed by `Experience`.
+- `CinematicLights` stops writing converged transition properties after its
+  targets settle; the volumetric light orbit remains an explicit normal-motion
+  signal, while reduced motion still snaps and disables transition work.
 - `CinematicLights` applies the same reduced-motion boundary to section light
   transitions: colors, intensities and key position snap to their targets and
   skip interpolation/orbit work; normal motion retains authored lerp timing.

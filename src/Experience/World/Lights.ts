@@ -117,6 +117,7 @@ export class CinematicLights {
   private _targetHemiIntensity = 0.3
   private _reducedMotionSettled = false
   private _reducedMotion = prefersReducedMotion()
+  private _transitionActive = false
 
   // Speed multiplier for lerp — higher = faster transition (junni: ~0.5s)
   private static readonly LERP_SPEED = 3.0
@@ -172,6 +173,9 @@ export class CinematicLights {
     if (this._reducedMotion) {
       this._snapToTargets()
       this._reducedMotionSettled = true
+      this._transitionActive = false
+    } else {
+      this._transitionActive = true
     }
   }
 
@@ -180,7 +184,10 @@ export class CinematicLights {
     if (this._disposed) return
     this._reducedMotion = reduced
     this._reducedMotionSettled = reduced
-    if (reduced) this._snapToTargets()
+    if (reduced) {
+      this._snapToTargets()
+      this._transitionActive = false
+    }
   }
 
   /**
@@ -197,23 +204,30 @@ export class CinematicLights {
       return
     }
     this._reducedMotionSettled = false
-    const t = Math.min(dt * CinematicLights.LERP_SPEED, 1)
+    if (this._transitionActive) {
+      const t = Math.min(dt * CinematicLights.LERP_SPEED, 1)
 
-    // Colors
-    this.keyLight.color.lerp(this._targetKeyColor, t)
-    this.fillLight.color.lerp(this._targetFillColor, t)
-    this.rimLight.color.lerp(this._targetRimColor, t)
+      // Colors
+      this.keyLight.color.lerp(this._targetKeyColor, t)
+      this.fillLight.color.lerp(this._targetFillColor, t)
+      this.rimLight.color.lerp(this._targetRimColor, t)
 
-    // Intensities
-    this.keyLight.intensity += (this._targetKeyIntensity - this.keyLight.intensity) * t
-    this.fillLight.intensity += (this._targetFillIntensity - this.fillLight.intensity) * t
-    this.rimLight.intensity += (this._targetRimIntensity - this.rimLight.intensity) * t
-    this.volumetricLight.intensity +=
-      (this._targetVolumetricIntensity - this.volumetricLight.intensity) * t
-    this.hemiLight.intensity += (this._targetHemiIntensity - this.hemiLight.intensity) * t
+      // Intensities
+      this.keyLight.intensity += (this._targetKeyIntensity - this.keyLight.intensity) * t
+      this.fillLight.intensity += (this._targetFillIntensity - this.fillLight.intensity) * t
+      this.rimLight.intensity += (this._targetRimIntensity - this.rimLight.intensity) * t
+      this.volumetricLight.intensity +=
+        (this._targetVolumetricIntensity - this.volumetricLight.intensity) * t
+      this.hemiLight.intensity += (this._targetHemiIntensity - this.hemiLight.intensity) * t
 
-    // Key light position (lerp toward target — no alloc, uses lerp in-place)
-    this.keyLight.position.lerp(this._targetKeyPos, t)
+      // Key light position (lerp toward target — no alloc, uses lerp in-place)
+      this.keyLight.position.lerp(this._targetKeyPos, t)
+
+      if (this.isAtTargets()) {
+        this._snapToTargets()
+        this._transitionActive = false
+      }
+    }
 
     // Volumetric light: slow orbit for organic atmosphere
     // (frozen when prefers-reduced-motion — continuous orbit is a vestibular hazard)
@@ -264,5 +278,25 @@ export class CinematicLights {
     this.rimLight.intensity = this._targetRimIntensity
     this.volumetricLight.intensity = this._targetVolumetricIntensity
     this.hemiLight.intensity = this._targetHemiIntensity
+  }
+
+  private isAtTargets(): boolean {
+    return (
+      Math.abs(this.keyLight.color.r - this._targetKeyColor.r) < 0.001 &&
+      Math.abs(this.keyLight.color.g - this._targetKeyColor.g) < 0.001 &&
+      Math.abs(this.keyLight.color.b - this._targetKeyColor.b) < 0.001 &&
+      Math.abs(this.fillLight.color.r - this._targetFillColor.r) < 0.001 &&
+      Math.abs(this.fillLight.color.g - this._targetFillColor.g) < 0.001 &&
+      Math.abs(this.fillLight.color.b - this._targetFillColor.b) < 0.001 &&
+      Math.abs(this.rimLight.color.r - this._targetRimColor.r) < 0.001 &&
+      Math.abs(this.rimLight.color.g - this._targetRimColor.g) < 0.001 &&
+      Math.abs(this.rimLight.color.b - this._targetRimColor.b) < 0.001 &&
+      Math.abs(this.keyLight.intensity - this._targetKeyIntensity) < 0.001 &&
+      Math.abs(this.fillLight.intensity - this._targetFillIntensity) < 0.001 &&
+      Math.abs(this.rimLight.intensity - this._targetRimIntensity) < 0.001 &&
+      Math.abs(this.volumetricLight.intensity - this._targetVolumetricIntensity) < 0.001 &&
+      Math.abs(this.hemiLight.intensity - this._targetHemiIntensity) < 0.001 &&
+      this.keyLight.position.distanceToSquared(this._targetKeyPos) < 0.000001
+    )
   }
 }

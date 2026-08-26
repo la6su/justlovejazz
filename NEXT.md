@@ -188,6 +188,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
       effective color/opacity before touching its material; section interpolation
       and explicit theme synchronization remain the only dirty boundaries.
 
+- [x] **Stop settled light-transition writes** — `CinematicLights` now gates
+      converged color/intensity/position lerps while preserving its intentional
+      volumetric orbit and reduced-motion snap behavior.
+
 - [x] **Cache CinematicNav scroll policy** — programmatic section navigation
       reads the owner-local reduced-motion snapshot instead of re-querying the
       media preference on every scroll request.

@@ -66,6 +66,25 @@ describe('CinematicLights reduced-motion transitions', () => {
     lights.dispose()
   })
 
+  it('stops settled transition writes without stopping the volumetric orbit', () => {
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }))
+    vi.stubGlobal('performance', { now: vi.fn().mockReturnValueOnce(0).mockReturnValueOnce(1000) })
+    const lights = new CinematicLights(new THREE.Scene())
+    const config = getWorldConfigForPage('home').find((entry) => entry.id === 'sec_works')!
+    const state = internals(lights)
+    const colorLerp = vi.spyOn(state.keyLight.color, 'lerp')
+
+    lights.changeSection(config)
+    lights.update(1)
+    const lerpCalls = colorLerp.mock.calls.length
+    const beforeOrbit = state.volumetricLight.position.clone()
+    lights.update(1)
+
+    expect(colorLerp).toHaveBeenCalledTimes(lerpCalls)
+    expect(state.volumetricLight.position.distanceTo(beforeOrbit)).toBeGreaterThan(0.001)
+    lights.dispose()
+  })
+
   it('ignores late section, preference and frame calls after teardown', () => {
     vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: false }))
     const scene = new THREE.Scene()
