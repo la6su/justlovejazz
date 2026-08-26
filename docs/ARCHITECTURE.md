@@ -213,6 +213,9 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `PostProcessingManager` tracks whether its six display parameters are still
   crossfading; settled real-WebGPU frames skip interpolation, while preset
   changes and reduced-motion settlement retain exact target ownership.
+- `RenderPipeline` forwards post uniforms to `WebGPUPostPipeline` only when the
+  parameter set, section grade or scene/camera binding is dirty; a newly created
+  TSL post owner is always primed before its first render.
 - `CinematicLights` applies the same reduced-motion boundary to section light
   transitions: colors, intensities and key position snap to their targets and
   skip interpolation/orbit work; normal motion retains authored lerp timing.

@@ -23,6 +23,7 @@ describe('RenderPipeline failure lifecycle', () => {
         render,
         dispose: vi.fn(),
       },
+      _webgpuParamsDirty: true,
       _params: {
         bloom: 0.4,
         vignette: 0.5,
@@ -100,5 +101,59 @@ describe('RenderPipeline failure lifecycle', () => {
 
     expect(render).toHaveBeenCalledOnce()
     expect((pipeline as unknown as { _webgpuPipeline: unknown })._webgpuPipeline).toBeNull()
+  })
+
+  it('skips settled WebGPU uniform handoff until params become dirty', () => {
+    const updateParams = vi.fn()
+    const render = vi.fn()
+    const renderer = {
+      backend: new WebGPUBackend(),
+      toneMapping: THREE.NoToneMapping,
+    }
+    const pipeline = Object.assign(Object.create(RenderPipeline.prototype), {
+      _renderer: renderer,
+      _webgpuPipeline: {
+        setScene: vi.fn(() => false),
+        updateParams,
+        render,
+      },
+      _postProcessingEnabled: true,
+      _webgpuPostFailed: false,
+      _webgpuParamsDirty: true,
+      _params: {
+        bloom: 0.4,
+        vignette: 0.5,
+        grain: 0.25,
+        chromatic: 0,
+        bloomRadius: 0.6,
+        bloomThreshold: 0.5,
+      },
+      _sectionRefract: 0.05,
+      _sectionBorder: 0,
+      _sectionShadows: new THREE.Vector3(1, 1, 1),
+      _sectionHighlights: new THREE.Vector3(1, 1, 1),
+      _webgpuParamsCache: {
+        bloom: 0,
+        bloomRadius: 0,
+        bloomThreshold: 0,
+        vignette: 0,
+        grain: 0,
+        chromatic: 0,
+        refract: 0,
+        border: 0,
+        gradeShadows: [1, 1, 1],
+        gradeHighlights: [1, 1, 1],
+      },
+    }) as RenderPipeline
+
+    const scene = new THREE.Scene()
+    const camera = new THREE.PerspectiveCamera()
+    pipeline.render(scene, camera)
+    pipeline.render(scene, camera)
+    expect(updateParams).toHaveBeenCalledOnce()
+
+    pipeline.updateParams({ bloom: 0.8, vignette: 0.5, grain: 0.25 })
+    pipeline.render(scene, camera)
+    expect(updateParams).toHaveBeenCalledTimes(2)
   })
 })

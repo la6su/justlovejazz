@@ -72,14 +72,16 @@ export class WebGPUPostPipeline {
     return new WebGPUPostPipeline(renderer, scene, camera)
   }
 
-  setScene(scene: Scene, camera: Camera): void {
+  setScene(scene: Scene, camera: Camera): boolean {
     if (scene !== this._scene || camera !== this._camera) {
       this._scene = scene
       this._camera = camera
       this._needsBuild = true
+      return true
     }
     // Background is handled by PassNode's clear color (scene.background)
     // via Background.js — no need to composite it manually in the TSL graph.
+    return false
   }
 
   updateParams(params: WebGPUPostParams): void {

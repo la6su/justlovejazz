@@ -220,6 +220,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
       six-value interpolation after all targets settle and snaps exact values at
       the epsilon boundary; preset interruption and reduced motion remain live.
 
+- [x] **Cache settled WebGPU post handoff** — `RenderPipeline` now updates TSL
+      uniforms only after post parameters, section grade or scene ownership is
+      dirty; direct WebGLBackend rendering remains unchanged.
+
 - [x] **Cache CinematicNav scroll policy** — programmatic section navigation
       reads the owner-local reduced-motion snapshot instead of re-querying the
       media preference on every scroll request.

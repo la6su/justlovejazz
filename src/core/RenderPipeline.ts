@@ -64,6 +64,7 @@ export class RenderPipeline {
   private _postProcessingEnabled = true
   /** Terminal for this pipeline instance: avoid retrying a broken TSL graph every frame. */
   private _webgpuPostFailed = false
+  private _webgpuParamsDirty = true
 
   // PERF-11: the WebGPU params object + tuple arrays are mutated in place each
   // frame (updateParams copies into the TSL uniform nodes) — no per-frame
@@ -130,12 +131,26 @@ export class RenderPipeline {
 
   /** Update post-processing parameters (cross-fade from PostProcessingManager) */
   public updateParams(params: PostParams): void {
+    const nextChromatic = params.chromatic ?? this._params.chromatic ?? 0
+    const nextBloomRadius = params.bloomRadius ?? this._params.bloomRadius
+    const nextBloomThreshold = params.bloomThreshold ?? this._params.bloomThreshold
+    if (
+      Object.is(this._params.bloom, params.bloom) &&
+      Object.is(this._params.vignette, params.vignette) &&
+      Object.is(this._params.grain, params.grain) &&
+      Object.is(this._params.chromatic, nextChromatic) &&
+      Object.is(this._params.bloomRadius, nextBloomRadius) &&
+      Object.is(this._params.bloomThreshold, nextBloomThreshold)
+    ) {
+      return
+    }
     this._params.bloom = params.bloom
     this._params.vignette = params.vignette
     this._params.grain = params.grain
-    this._params.chromatic = params.chromatic ?? this._params.chromatic ?? 0
-    this._params.bloomRadius = params.bloomRadius ?? this._params.bloomRadius
-    this._params.bloomThreshold = params.bloomThreshold ?? this._params.bloomThreshold
+    this._params.chromatic = nextChromatic
+    this._params.bloomRadius = nextBloomRadius
+    this._params.bloomThreshold = nextBloomThreshold
+    this._webgpuParamsDirty = true
   }
 
   /** Set section-driven color grading (shadows tint, highlights tint, refraction). */
@@ -149,6 +164,7 @@ export class RenderPipeline {
     this._sectionBorder = border
     this._sectionShadows.copy(shadowTint)
     this._sectionHighlights.copy(highlightTint)
+    this._webgpuParamsDirty = true
   }
 
   /** Render: scene → post passes → screen */
@@ -162,8 +178,10 @@ export class RenderPipeline {
         try {
           if (!this._webgpuPipeline) {
             this._webgpuPipeline = WebGPUPostPipeline.create(this._renderer, scene, camera)
+            this._webgpuParamsDirty = true
           }
-          this._webgpuPipeline.setScene(scene, camera)
+          const sceneChanged = this._webgpuPipeline.setScene(scene, camera)
+          if (sceneChanged) this._webgpuParamsDirty = true
           // PERF-11 fix: mutate cached params object instead of allocating a new
           // one + 2 arrays every frame. gradeShadows/Highlights are tuple arrays
           // reused in place (updateParams copies into uniforms).
@@ -182,7 +200,10 @@ export class RenderPipeline {
           p.gradeHighlights[0] = this._sectionHighlights.x
           p.gradeHighlights[1] = this._sectionHighlights.y
           p.gradeHighlights[2] = this._sectionHighlights.z
-          this._webgpuPipeline.updateParams(p)
+          if (this._webgpuParamsDirty !== false) {
+            this._webgpuPipeline.updateParams(p)
+            this._webgpuParamsDirty = false
+          }
           // Disable renderer tone mapping during TSL pipeline render — the TSL
           // graph applies ACES manually (step 6). outputColorTransform=true
           // (default) on the pipeline applies renderOutput() which uses
