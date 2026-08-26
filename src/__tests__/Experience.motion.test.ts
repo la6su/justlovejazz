@@ -8,6 +8,7 @@ function createExperience(reducedMotion: boolean): Experience {
     _scheduler: { settleNow: vi.fn() },
     _cancelBreath: vi.fn(),
     _raiseRenderDemand: vi.fn(),
+    contactTypographyStage: null,
   }) as Experience
 }
 
@@ -26,6 +27,20 @@ describe('Experience reduced-motion synchronization', () => {
     expect(owner._reducedMotion).toBe(true)
     expect(owner._scheduler.settleNow).toHaveBeenCalledOnce()
     expect(owner._cancelBreath).toHaveBeenCalledOnce()
+  })
+
+  it('forwards a live preference change to the mounted Contact typography owner', () => {
+    const experience = createExperience(false)
+    const setReducedMotion = vi.fn()
+    const owner = experience as unknown as {
+      _handleReducedMotionChange: (reduced: boolean) => void
+      contactTypographyStage: { setReducedMotion: (reduced: boolean) => void }
+    }
+    owner.contactTypographyStage = { setReducedMotion }
+
+    owner._handleReducedMotionChange(true)
+
+    expect(setReducedMotion).toHaveBeenCalledWith(true)
   })
 
   it('raises one typed demand when reduction is disabled again', () => {

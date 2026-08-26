@@ -34,6 +34,12 @@ export class ContactTypographyStage extends THREE.Group {
     this.typography.setActive(active)
   }
 
+  /** Forward a live preference change to the already-mounted glyph owner. */
+  setReducedMotion(reduced: boolean): void {
+    if (this.disposed) return
+    this.typography.setReducedMotion(reduced)
+  }
+
   setTheme(isLight: boolean): void {
     if (this.disposed) return
     this.typography.setTheme(isLight)

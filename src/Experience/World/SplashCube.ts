@@ -290,6 +290,10 @@ export class SplashCube extends THREE.Mesh {
    *  over the next ~0.8s (lerped in update()). Called by Experience.ts
    *  on jlz:section-change. */
   rotateToFace(sectionIndex: number): void {
+    if (prefersReducedMotion()) {
+      this.snapToFace(sectionIndex)
+      return
+    }
     const idx = Math.max(0, Math.min(SplashCube.FACE_ROTATIONS.length - 1, sectionIndex))
     this._targetFaceRotY = SplashCube.FACE_ROTATIONS[idx] ?? 0
     // D-16 fix: capture start rotation + shortest-path delta for absolute lerp.

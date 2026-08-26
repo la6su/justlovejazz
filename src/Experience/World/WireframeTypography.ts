@@ -101,6 +101,13 @@ export class WireframeTypography extends THREE.Group {
     }
   }
 
+  /** Apply a live preference change without requiring a route reactivation. */
+  setReducedMotion(reduced: boolean): void {
+    if (this.disposed) return
+    this.userData.reducedMotion = reduced
+    if (reduced && this.active) this.settleReducedMotion()
+  }
+
   get isAnimating(): boolean {
     return !this.disposed && this.active && this.revealProgress < 1
   }
@@ -111,12 +118,7 @@ export class WireframeTypography extends THREE.Group {
     if (!this.active) return
 
     if (this.userData.reducedMotion === true) {
-      this.revealProgress = 1
-      for (const { mesh, x } of this.glyphs) {
-        mesh.position.set(x, 0, 0)
-        mesh.rotation.set(0, 0, 0)
-        mesh.scale.setScalar(1)
-      }
+      this.settleReducedMotion()
       return
     }
 
@@ -136,6 +138,15 @@ export class WireframeTypography extends THREE.Group {
         bob * 0.1 + (1 - this.revealProgress) * (phase % 2 ? -0.2 : 0.2),
       )
       mesh.scale.set(breathe, breathe * (1 - bob * 0.025), breathe)
+    }
+  }
+
+  private settleReducedMotion(): void {
+    this.revealProgress = 1
+    for (const { mesh, x } of this.glyphs) {
+      mesh.position.set(x, 0, 0)
+      mesh.rotation.set(0, 0, 0)
+      mesh.scale.setScalar(1)
     }
   }
 

@@ -7,6 +7,14 @@
   breathing and settles the scheduler; disabling it raises one typed catch-up
   demand. The listener is removed during teardown.
 
+- `SplashCube` now snaps to the requested face when reduced motion is enabled;
+  section changes no longer leave a skipped cube animation active forever or
+  retain the demand-driven render loop.
+
+- Contact typography now receives live reduced-motion changes while mounted;
+  glyphs settle immediately when reduction is enabled and resume authored
+  motion after it is disabled without a route re-entry.
+
 - Contact Cyprus lazy initialization now has a single request-owned prewarm
   continuation; stale entry-route promises cannot prewarm a newer stage or
   schedule an unnecessary render frame.

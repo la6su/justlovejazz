@@ -66,6 +66,12 @@ under `src/builder/`; the public builds do not import the editor graph.
   of the runtime. Enabling it cancels ambient breathing and settles the single
   render scheduler; disabling it raises one `motion-preference` invalidation.
   Teardown removes the observer before releasing the runtime owners.
+- `SplashCube.rotateToFace()` snaps synchronously under reduced motion because
+  `SceneCoordinator` skips decorative cube animation in that mode; no face
+  transition may leave `_faceLerp` active or keep render demand alive.
+- The lazy Contact typography owner receives the same live preference while
+  mounted. Its glyphs settle synchronously on enable and resume bob/sway on
+  disable, so route re-entry is not required to reconcile motion state.
 - Route resources, listeners, timers, async work and GPU allocations have one
   owner and one terminal cleanup path.
 - `RouteTransition` owns both cover and reveal timers. Cancellation clears the

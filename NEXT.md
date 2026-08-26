@@ -16,6 +16,14 @@ Do not reopen completed migration phases. Current runtime contracts are in
   live media preference, settles ambient work when reduction is enabled and
   raises one typed demand when normal motion is restored.
 
+- [x] **Settle cube face transitions under reduced motion** — `SplashCube`
+  now snaps section rotations instead of leaving `_faceLerp` active while the
+  reduced-motion scene coordinator intentionally skips cube animation.
+
+- [x] **Synchronize Contact typography motion preference** — an already-active
+  glyph stage now settles or resumes its authored motion when the OS setting
+  changes, without requiring route re-entry.
+
 - [x] **Align WebGLBackend quality state** — direct-render fallback no longer
   advertises or updates the unused TSL post graph; native WebGPU retains the
   crossfade and post parameter path.

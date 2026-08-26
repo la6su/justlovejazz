@@ -42,6 +42,28 @@ describe('ContactTypographyStage motion policy', () => {
     }
   })
 
+  it('updates an already-active stage when the preference changes', () => {
+    mockMotionPreference(false)
+    const stage = new ContactTypographyStage()
+    try {
+      stage.setActive(true)
+      stage.update(1)
+      stage.setReducedMotion(true)
+      const settled = stage.children[0]?.children.map((glyph) => glyph.matrix.elements.slice())
+      stage.update(1)
+      expect(stage.children[0]?.children.map((glyph) => glyph.matrix.elements.slice())).toEqual(
+        settled,
+      )
+
+      stage.setReducedMotion(false)
+      stage.update(0.25)
+      expect(stage.children[0]?.children.some((glyph) => glyph.position.y !== 0)).toBe(true)
+    } finally {
+      stage.dispose()
+      vi.restoreAllMocks()
+    }
+  })
+
   it('ignores activity after disposal', () => {
     mockMotionPreference(false)
     const stage = new ContactTypographyStage()
