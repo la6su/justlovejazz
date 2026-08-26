@@ -73,6 +73,9 @@ under `src/builder/`; the public builds do not import the editor graph.
   or pending callbacks.
 - `FullscreenOverlay` only reloads its video element when replacing an actual
   film source; image-only Works handoffs do not trigger empty media resets.
+- Persistent `UIMenu` controls rehydrate only the changed UIkit icon after a
+  typed sound-toggle event; the shell retains one delegated DOM listener and
+  one disposal owner.
 - `Experience` observes the live reduced-motion media query for the lifetime
   of the runtime. Enabling it cancels ambient breathing and settles the single
   render scheduler; disabling it raises one `motion-preference` invalidation.

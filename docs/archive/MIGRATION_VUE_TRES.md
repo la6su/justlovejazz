@@ -3440,6 +3440,17 @@ image preload does not call `load()`, while existing film replacement behavior
 remains covered. Rollback: restore the unconditional image-mode load; no Vue,
 Tres or renderer boundary changes are required.
 
+#### UIMenu dynamic icon hydration — 2026-08-26
+
+`UIMenu` now calls the existing UIkit update port for the sound icon after its
+`uk-icon` attribute changes. External typed sound-toggle events therefore
+update the rendered icon as well as `aria-pressed`, title and persisted state,
+without rehydrating the entire persistent shell.
+
+Acceptance: `UIMenu.lifecycle.test.ts` covers construction hydration and the
+second update after an external unmute event. Rollback: remove the targeted
+UIkit update call; the event and disposal boundaries remain unchanged.
+
 ### Removal ledger
 
 | Legacy element                           | Remove after                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Status |

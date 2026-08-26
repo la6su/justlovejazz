@@ -10,6 +10,8 @@
   router errors, closing a short-lived DOM-owner leak.
 - Image-only FullscreenOverlay preloads no longer reinitialize a source-less
   video element, avoiding redundant media events and work.
+- UIMenu now refreshes the UIkit sound icon after external sound-toggle events,
+  keeping the visible control aligned with persisted mute state.
 
 - Renderer device-loss fallback now clears the retired software-adapter
   replacement before forced-WebGL recreation; a failed second initialization

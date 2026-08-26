@@ -145,6 +145,7 @@ export class UIMenu {
     const iconSpan = this._soundBtn.querySelector('[uk-icon]')
     if (iconSpan) {
       iconSpan.setAttribute('uk-icon', `icon: ${muted ? 'muted' : 'sound'}`)
+      ;(UIkit as unknown as { update(element: Element): void }).update(iconSpan)
     }
   }
 
