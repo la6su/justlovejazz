@@ -578,6 +578,79 @@ test.describe('JustLoveJazz — Phase 7 persistent scene host', () => {
 })
 
 test.describe('JustLoveJazz — runtime health', () => {
+  test('DEV probe: WebGLBackend survives a real webglcontextlost handoff', async ({ page }) => {
+    test.setTimeout(120000)
+    const errors: string[] = []
+    let backendLog = ''
+    let recovered = false
+    attachErrorCapture(page, errors)
+    page.on('console', (message) => {
+      if (message.text().startsWith('[entry-app] Phase 7 host ready:')) backendLog = message.text()
+      if (message.text().includes('device-loss recovery complete')) recovered = true
+    })
+    await page.goto('/')
+    await expect(page.locator('main#spa-content')).toBeAttached({ timeout: 20000 })
+    await expect(page.locator('#jlz-splash-enter')).toHaveClass(/is-ready/, { timeout: 90000 })
+
+    test.skip(
+      !backendLog.includes('backend=WebGLBackend'),
+      `WebGLBackend probe skipped: ${backendLog || 'backend was not reported'}`,
+    )
+
+    const probe = await page.evaluate(async () => {
+      const canvas = document.querySelector('canvas.canvas')
+      if (!(canvas instanceof HTMLCanvasElement)) {
+        return { available: false, reason: 'persistent canvas is unavailable' }
+      }
+      const gl = canvas.getContext('webgl2')
+      if (!gl) {
+        return { available: false, reason: 'active WebGL2 context is unavailable' }
+      }
+      const lose = gl.getExtension('WEBGL_lose_context')
+      if (!lose) {
+        return { available: false, reason: 'WEBGL_lose_context extension is unavailable' }
+      }
+
+      const lost = await new Promise<boolean>((resolve) => {
+        let settled = false
+        const finish = (value: boolean) => {
+          if (settled) return
+          settled = true
+          resolve(value)
+        }
+        canvas.addEventListener(
+          'webglcontextlost',
+          (event) => {
+            event.preventDefault()
+            finish(true)
+          },
+          { once: true },
+        )
+        lose.loseContext()
+        window.setTimeout(() => finish(false), 2000)
+      })
+
+      // Keep the browser's context-loss contract realistic: preventing the
+      // default loss event allows WEBGL_lose_context to restore the context,
+      // while the production Renderer recovery runs asynchronously.
+      if (lost) {
+        await new Promise((resolve) => window.setTimeout(resolve, 100))
+        lose.restoreContext()
+      }
+
+      return { available: true, lost }
+    })
+
+    test.skip(!probe.available, `WebGLBackend probe skipped: ${probe.reason}`)
+    expect(probe.lost, 'WEBGL_lose_context did not dispatch webglcontextlost').toBe(true)
+    await page.waitForTimeout(3000)
+
+    expect(recovered, 'the production renderer recovery handoff did not complete').toBe(true)
+    expect(await page.locator('canvas.canvas').count()).toBe(1)
+    const fatal = errors.filter(isFatalError)
+    expect(fatal, `Fatal errors:\n${fatal.join('\n')}`).toEqual([])
+  })
+
   test('no fatal JS errors on home load', async ({ page }) => {
     const errors: string[] = []
     attachErrorCapture(page, errors)
