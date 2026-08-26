@@ -121,4 +121,41 @@ describe('SceneCoordinator route visuals (Phase 8 slice 10: the gate left `World
     expect(carouselReader).toHaveBeenCalledOnce()
     isolated.dispose()
   })
+
+  it('skips repeated section opacity writes when fade is unchanged', async () => {
+    const groups = Array.from({ length: 6 }, () => new THREE.Group())
+    const material = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.6 })
+    let opacity = material.opacity
+    let writes = 0
+    Object.defineProperty(material, 'opacity', {
+      configurable: true,
+      get: () => opacity,
+      set: (value: number) => {
+        writes++
+        opacity = value
+      },
+    })
+    groups[1]!.add(new THREE.Mesh(new THREE.BufferGeometry(), material))
+    const owners: SceneCoordinatorOwners = {
+      ground: () => null,
+      sectionGroups: () => ({ groups }) as unknown as SectionGroups,
+      envSphere: () => null,
+      baku: () => null,
+      particleBurst: () => null,
+      drawTrail: () => null,
+      carousel: () => null,
+      worksPlaneStage: () => null,
+      contactCyprusStage: () => null,
+      labGamepad: () => null,
+    }
+    const isolated = new SceneCoordinator(new THREE.Scene(), owners, () => 'home')
+    await isolated.init()
+    isolated.updateTransform(0.2)
+    const writesAfterFirstTransform = writes
+    isolated.updateTransform(0.2)
+
+    expect(writes).toBe(writesAfterFirstTransform)
+    isolated.dispose()
+    material.dispose()
+  })
 })

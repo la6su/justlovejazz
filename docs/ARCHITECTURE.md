@@ -201,6 +201,9 @@ under `src/builder/`; the public builds do not import the editor graph.
   scale, skipping identical material/transform writes while always recomputing
   visibility; lazy loading, prewarm, reduced-motion and disposal boundaries are
   unchanged.
+- `SceneCoordinator.updateTransform()` caches each opacity-capable mesh's last
+  section fade, avoiding repeated material writes on settled transform passes;
+  group visibility and route-owner activation still run every pass.
 - `CinematicLights` applies the same reduced-motion boundary to section light
   transitions: colors, intensities and key position snap to their targets and
   skip interpolation/orbit work; normal motion retains authored lerp timing.

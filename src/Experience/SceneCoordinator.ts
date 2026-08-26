@@ -554,11 +554,12 @@ export class SceneCoordinator {
               if (!Array.isArray(mat) && 'opacity' in mat) {
                 const m = mat as THREE.Material & {
                   opacity: number
-                  userData: { baseOpacity?: number }
+                  userData: { baseOpacity?: number; lastFade?: number }
                 }
                 if (m.userData.baseOpacity === undefined) {
                   m.userData.baseOpacity = m.opacity
                 }
+                m.userData.lastFade = undefined
                 meshCache!.push(obj)
               }
             }
@@ -568,9 +569,12 @@ export class SceneCoordinator {
         for (const mesh of meshCache) {
           const m = mesh.material as THREE.Material & {
             opacity: number
-            userData: { baseOpacity?: number }
+            userData: { baseOpacity?: number; lastFade?: number }
           }
-          m.opacity = (m.userData.baseOpacity ?? 1) * fade
+          if (m.userData.lastFade !== fade) {
+            m.opacity = (m.userData.baseOpacity ?? 1) * fade
+            m.userData.lastFade = fade
+          }
         }
 
         // BakuCarousel visibility — only on the home Works phase. Its state is
