@@ -42,7 +42,7 @@ production build.
 | Phase 1 toolchain            |     pending |  pending |     pending |           pending |            pending | inert scaffold       |
 | Phase 5 Vue shell            |     pending |  pending |         n/a |           pending |            pending | native scene         |
 | Phase 7 Tres root            |     pending |  pending |     pending |           pending |            pending | legacy world adapter |
-| Phase 10 cutover             |     pending |  pending |     pending |           pending |            pending | no legacy paths      |
+| Phase 10 cutover             |      2.70 kB |      n/a |        n/a |       298.42 kB |             n/a | no legacy paths      |
 
 The initial route gzip is populated from the first clean production build of
 the current dependency set (commit `6f02896`, 2026-08-21, build identifiers in
@@ -53,6 +53,19 @@ measurement is a record, not a budget; no initial-route budget value is implied.
 The splash budget remains 5 KB gzip. The existing Three.js budget is not
 silently expanded to absorb Vue or TresJS. A dependency must replace owned code
 or provide measured value, and its chunk must remain attributable.
+
+### Phase 10 delivery recheck — 2026-08-26
+
+Commit `658ce3c` passed `bun run build` and `bun run budget:build` after the
+BlurFade performance slice. The current production output measures splash
+startup at **2.70 kB gzip**, the lazy Three.js vendor at **298.42 kB gzip**
+against the **350.00 kB** gate, and the shared UIkit vendor at **53.66 kB gzip**
+against the **56.00 kB** gate. Public media is **18,923.03 kB** in total, with
+the known placeholder video at **16,352.70 kB**. Vue and TresJS are not split
+into independently attributable vendor chunks in this manifest, so those table
+cells remain `n/a` rather than implying a fabricated measurement. The build's
+WebSocket `EPERM` messages occur only in the restricted prerender sandbox and
+do not change the successful production output.
 
 ### UIkit icon-footprint slice — 2026-08-25
 

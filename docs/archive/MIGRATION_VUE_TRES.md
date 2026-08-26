@@ -3669,6 +3669,14 @@ Acceptance: `BlurFade.lifecycle.test.ts` verifies stable rotation-cache
 identity and span coverage across repeated ticks. Rollback: revert this
 bounded DOM-animation performance slice if title motion regresses.
 
+### Phase 10 delivery evidence refresh — 2026-08-26
+
+The current cutover output is now recorded in `docs/PERFORMANCE_BASELINE.md`:
+2.70 kB gzip splash startup, 298.42 kB gzip lazy Three.js, and 53.66 kB gzip
+UIkit vendor. Vue/TresJS cells remain explicitly unattributed because the
+current manifest does not expose independent vendor chunks; no inferred number
+is used as migration evidence.
+
 ## Definition of done
 
 The migration is done when the target topology is the only production path;

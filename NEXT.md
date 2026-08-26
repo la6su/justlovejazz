@@ -416,6 +416,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Cache BlurFade rotation metadata** — reveal ticks now reuse the
   authored per-span rotation values instead of parsing `data-rot` on every
   frame.
+- [x] **Refresh Phase 10 delivery evidence** — the current production build
+  and budget measurements are recorded in `docs/PERFORMANCE_BASELINE.md`,
+  including explicit `n/a` attribution where the manifest has no separate
+  Vue/TresJS vendor chunks.
 - [x] **Release the WorksPortfolio owner** — `ExperienceUI.destroy()` now calls
   the portfolio disposer before dropping its reference; disposal clears the
   project/callback references and navigation becomes a safe no-op.
