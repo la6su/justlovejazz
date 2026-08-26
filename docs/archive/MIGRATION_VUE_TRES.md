@@ -3724,6 +3724,17 @@ Acceptance: `Camera.motion.test.ts` and `cursorSettle.test.ts` cover repeated
 teardown and late calls. Rollback: revert this bounded input/camera lifecycle
 slice if route transition or cursor settling regresses.
 
+### Cursor redraw buffer reuse — 2026-08-26
+
+`Cursor.drawCircle()` now mutates one owner-scoped 16-segment ring buffer and
+returns one cached theme-color view. The quadratic path, noisy radius and
+canvas draw order are unchanged, while pointer-motion redraws avoid transient
+point records and palette wrapper objects.
+
+Acceptance: `cursorSettle.test.ts`, Vue type-check and lint pass; the full
+release gate remains required before the milestone merge. Rollback: revert this
+bounded cursor hot-path slice if visual contour parity regresses.
+
 ## Definition of done
 
 The migration is done when the target topology is the only production path;

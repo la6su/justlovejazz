@@ -436,6 +436,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
   external HMR callbacks now become inert after `Camera.destroy()` or
   `Cursor.destroy()`; teardown is idempotent and cursor wake callbacks are
   released.
+- [x] **Pool cursor redraw geometry** — active cursor frames reuse the fixed
+  ring-point records and cached theme-color view instead of allocating a point
+  array and palette object on every canvas redraw.
 - [x] **Release the WorksPortfolio owner** — `ExperienceUI.destroy()` now calls
   the portfolio disposer before dropping its reference; disposal clears the
   project/callback references and navigation becomes a safe no-op.

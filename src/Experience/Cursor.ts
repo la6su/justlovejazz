@@ -29,6 +29,9 @@ function lerp(a: number, b: number, n: number): number {
 // Phase 2: canvas 100→120 for larger cursor (baseRadius 28 + targetRadius 44)
 const CANVAS_SIZE = 120
 const CANVAS_HALF = CANVAS_SIZE / 2
+const SMOOTH_SEGMENTS = 16
+
+type CursorThemeColors = { accent: string; accentGlow: string; teal: string }
 
 export class Cursor {
   private _disposed = false
@@ -48,7 +51,13 @@ export class Cursor {
   private _cachedAccent = '#ffd60a'
   private _cachedAccentGlow = 'rgba(255, 214, 10, 0.35)'
   private _cachedTeal = '#5eb0ff'
+  private readonly _themeColors: CursorThemeColors = {
+    accent: this._cachedAccent,
+    accentGlow: this._cachedAccentGlow,
+    teal: this._cachedTeal,
+  }
   private _cacheDirty = true
+  private readonly _ringPoints = Array.from({ length: SMOOTH_SEGMENTS }, () => ({ x: 0, y: 0 }))
 
   /** Refresh cached theme colors from CSS variables. Call on theme change. */
   refreshThemeCache(): void {
@@ -58,17 +67,16 @@ export class Cursor {
     this._cachedAccentGlow =
       styles.getPropertyValue('--jlz-color-accent-glow').trim() || 'rgba(255, 214, 10, 0.35)'
     this._cachedTeal = styles.getPropertyValue('--jlz-color-signal-teal').trim() || '#5eb0ff'
+    this._themeColors.accent = this._cachedAccent
+    this._themeColors.accentGlow = this._cachedAccentGlow
+    this._themeColors.teal = this._cachedTeal
     this._cacheDirty = false
   }
 
   /** Get cached colors, refreshing if dirty. */
-  private _getThemeColors(): { accent: string; accentGlow: string; teal: string } {
+  private _getThemeColors(): CursorThemeColors {
     if (this._cacheDirty) this.refreshThemeCache()
-    return {
-      accent: this._cachedAccent,
-      accentGlow: this._cachedAccentGlow,
-      teal: this._cachedTeal,
-    }
+    return this._themeColors
   }
 
   // Phase 2: spring physics for wobble (skaltenegger-style, smoothed)
@@ -384,10 +392,9 @@ export class Cursor {
 
     // Noisy distortion only when expanded enough
     const isNoisy = this.isStuck && this.currentRadius > this.baseRadius + 5
-    const smoothSegments = 16
-    const points: Array<{ x: number; y: number }> = []
-    for (let i = 0; i < smoothSegments; i++) {
-      const angle = (i / smoothSegments) * Math.PI * 2
+    const points = this._ringPoints
+    for (let i = 0; i < SMOOTH_SEGMENTS; i++) {
+      const angle = (i / SMOOTH_SEGMENTS) * Math.PI * 2
       let segRadius = radius
 
       if (isNoisy) {
@@ -396,10 +403,9 @@ export class Cursor {
         segRadius += (noiseX + noiseY) * this.noiseRange
       }
 
-      points.push({
-        x: cx + Math.cos(angle) * segRadius,
-        y: cy + Math.sin(angle) * segRadius,
-      })
+      const point = points[i]!
+      point.x = cx + Math.cos(angle) * segRadius
+      point.y = cy + Math.sin(angle) * segRadius
     }
 
     // Smoothed ring (quadraticCurveTo midpoint method)

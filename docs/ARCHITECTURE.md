@@ -163,6 +163,9 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `Camera` and `Cursor` have terminal, idempotent teardown boundaries. After
   disposal, late scheduler frames and external callbacks are inert; `Cursor`
   also releases its activity wake callback and DOM drawing context.
+- `Cursor.drawCircle()` reuses one owner-scoped ring-point buffer and color
+  view. The active pointer path remains allocation-free while theme refreshes
+  mutate only the cached values.
 - Native WebGPU post processing is conditional on the selected quality policy;
   low-tier instances render the scene directly and do not construct a TSL
   `PassNode` graph whose effects are disabled.
