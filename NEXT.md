@@ -62,6 +62,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
   current renderer receives `setAnimationLoop(null)` before the failure state
   is surfaced.
 
+- [x] **Detach direct scene owners on disposal** — `EnvSphere` and `SplashCube`
+  now remove themselves from the Tres-owned scene before releasing GPU
+  resources, preventing disposed objects from remaining in the live graph.
+
 - [x] **Align WebGLBackend quality state** — direct-render fallback no longer
   advertises or updates the unused TSL post graph; native WebGPU retains the
   crossfade and post parameter path.

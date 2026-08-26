@@ -14,6 +14,7 @@ describe('SplashCube reduced-motion transitions', () => {
 
     expect(cube.isRotating).toBe(false)
     cube.dispose()
+    expect(cube.parent).toBeNull()
   })
 
   it('keeps the authored face transition when reduced motion is disabled', () => {
@@ -24,6 +25,7 @@ describe('SplashCube reduced-motion transitions', () => {
 
     expect(cube.isRotating).toBe(true)
     cube.dispose()
+    expect(cube.parent).toBeNull()
   })
 
   it('does not advance an unowned idle mesh rotation on demand frames', () => {
@@ -37,5 +39,6 @@ describe('SplashCube reduced-motion transitions', () => {
     expect(mesh?.rotation.y).toBe(0)
     expect(mesh?.rotation.z).toBe(0)
     cube.dispose()
+    expect(cube.parent).toBeNull()
   })
 })

@@ -16,6 +16,7 @@ describe('EnvSphere reduced-motion transitions', () => {
     sphere.update(1)
     expect(back.color.getHex()).toBe(0x17120f)
     sphere.dispose()
+    expect(sphere.parent).toBeNull()
   })
 
   it('keeps the authored color interpolation when motion is enabled', () => {
@@ -30,5 +31,6 @@ describe('EnvSphere reduced-motion transitions', () => {
     sphere.update(0.25)
     expect(back.color.getHex()).not.toBe(initial)
     sphere.dispose()
+    expect(sphere.parent).toBeNull()
   })
 })

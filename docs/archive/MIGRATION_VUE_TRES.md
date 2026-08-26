@@ -1019,6 +1019,17 @@ detachment and failure presentation; type checks, production build, budget and
 serial E2E gates pass. Rollback: restore the prior exhausted branch without
 terminal loop cleanup.
 
+#### Phase 10 direct scene-owner detachment — 2026-08-26
+
+The direct `EnvSphere` and `SplashCube` owners now remove themselves from the
+Tres-owned scene before disposing their geometry and materials. This prevents
+HMR or repeated runtime teardown from retaining disposed objects in the live
+scene graph.
+
+Acceptance: owner lifecycle coverage proves both parents are cleared after
+dispose; type checks, production build, budget and serial E2E gates pass.
+Rollback: restore the prior resource-only disposal path.
+
 #### Phase 5/7 StoryController source bridge — 2026-08-25
 
 `src/core/storyController.ts` is now the runtime owner that translates a

@@ -232,6 +232,7 @@ export class EnvSphere extends THREE.Group {
   }
 
   dispose(): void {
+    this.removeFromParent()
     this._geometries.forEach((geometry) => geometry.dispose())
     this._backMaterial.dispose()
     this._leftMaterial.dispose()

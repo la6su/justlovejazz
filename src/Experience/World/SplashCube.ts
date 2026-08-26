@@ -460,6 +460,7 @@ export class SplashCube extends THREE.Mesh {
   //  deleted. JLZ branding no longer rendered inside the glass cube.)
 
   dispose(): void {
+    this.removeFromParent()
     // (Pulse timers removed — triggerWobblePulse now uses animated sin-envelope
     //  in update() instead of setTimeout, so there are no timers to clear.)
     // (PlayButton3D dispose removed — dead render path deleted)

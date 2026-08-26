@@ -92,6 +92,9 @@ under `src/builder/`; the public builds do not import the editor graph.
 - Exhausting the bounded device-loss recovery budget is terminal: `Renderer`
   clears its callback and detaches the live renderer loop before surfacing the
   explicit failure state.
+- Direct scene owners such as `EnvSphere` and `SplashCube` detach themselves
+  before disposing geometry/material resources; a destroyed owner cannot
+  remain as a child of the Tres-owned scene with invalid GPU state.
 - Route resources, listeners, timers, async work and GPU allocations have one
   owner and one terminal cleanup path.
 - `RouteTransition` owns both cover and reveal timers. Cancellation clears the

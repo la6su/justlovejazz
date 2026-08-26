@@ -22,6 +22,9 @@
   errors: the current animation loop is detached before the failure overlay is
   shown.
 
+- `EnvSphere` and `SplashCube` now remove themselves from the Tres-owned scene
+  before disposing their GPU resources, closing the direct-owner teardown gap.
+
 - `Experience` now observes live `prefers-reduced-motion` changes instead of
   caching the preference only at startup. Enabling reduction cancels ambient
   breathing and settles the scheduler; disabling it raises one typed catch-up
