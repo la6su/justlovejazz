@@ -336,10 +336,11 @@ export class SceneCoordinator {
       worksStage.update(deltaTime)
     }
     this.contactTypographyStage?.update(deltaTime)
-    this.owners.contactCyprusStage()?.update(deltaTime)
+    const contactCyprusStage = this.owners.contactCyprusStage()
+    contactCyprusStage?.update(deltaTime)
+    const baku = this.owners.baku()
 
     if (!this.isReducedMotion) {
-      const baku = this.owners.baku()
       if (baku?.visible) baku.update(deltaTime)
       const isStandaloneWorks = page === 'works'
       const isWorksStoryFrame = this._currentSectionIndex === 3
@@ -361,14 +362,13 @@ export class SceneCoordinator {
     // can freeze the planes half-folded and keep a persistent render reason.
     if (carousel && (carouselGroup?.visible || carousel.isAnimating)) carousel.update(deltaTime)
     if (carousel) {
-      const baku = this.owners.baku()
       if (baku) {
         // Works becomes a pure media field once the cube-face handoff settles:
         // only the planes and the existing particle field remain visible.
         baku.visible =
           page !== 'lab' &&
           page !== 'works' &&
-          !(page === 'contact' && (this.owners.contactCyprusStage()?.isActive ?? false)) &&
+          !(page === 'contact' && (contactCyprusStage?.isActive ?? false)) &&
           (page !== 'home' || !(carousel.isActive && carousel.morphProgress > 0.82))
       }
     }

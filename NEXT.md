@@ -236,6 +236,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
       repeating it across owner branches; navigation remains live on the next
       synchronous frame.
 
+- [x] **Snapshot repeated scene owners per update pass** — active frames now
+      reuse one Baku and one Contact Cyprus owner read while preserving the
+      same update/visibility ordering and lazy owner boundary.
+
 - [x] **Snapshot SceneCoordinator route owners per transform pass** — the
       six-group visibility loop now reuses one route page and carousel owner
       read, preserving the live getter boundary while removing repeated reads

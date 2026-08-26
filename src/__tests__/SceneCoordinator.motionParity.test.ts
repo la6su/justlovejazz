@@ -131,18 +131,20 @@ describe('SceneCoordinator reduced-motion particle parity', () => {
     const pageReader = vi.fn(() => 'works' as const)
     const worksSetActive = vi.fn()
     const worksUpdate = vi.fn()
+    const bakuReader = vi.fn(() => null)
+    const cyprusReader = vi.fn(() => null)
     const owners = {
       ground: () => null,
       sectionGroups: () => ({ groups: [] }) as unknown as SectionGroups,
       envSphere: () => null,
-      baku: () => null,
+      baku: bakuReader,
       particleBurst: () => null,
       drawTrail: () => null,
       carousel: () => null,
       worksPlaneStage: () =>
         ({ setActive: worksSetActive, update: worksUpdate }) as unknown as WorksPlaneStage,
       contactTypographyStage: () => null,
-      contactCyprusStage: () => null,
+      contactCyprusStage: cyprusReader,
       labGamepad: () => null,
     } satisfies SceneCoordinatorOwners
     const coordinator = Object.assign(Object.create(SceneCoordinator.prototype), {
@@ -155,6 +157,8 @@ describe('SceneCoordinator reduced-motion particle parity', () => {
     coordinator.update(0.25)
 
     expect(pageReader).toHaveBeenCalledOnce()
+    expect(bakuReader).toHaveBeenCalledOnce()
+    expect(cyprusReader).toHaveBeenCalledOnce()
     expect(worksSetActive).toHaveBeenCalledWith(true, 0)
     expect(worksUpdate).toHaveBeenCalledWith(0.25)
   })
