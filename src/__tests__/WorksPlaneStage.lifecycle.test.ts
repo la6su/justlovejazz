@@ -135,6 +135,25 @@ describe('WorksPlaneStage async lifecycle', () => {
     stage.dispose()
   })
 
+  it('does not dirty the settled layout when the same camera is handed off again', async () => {
+    mocks.loadCaseTexture.mockImplementation(async () => new THREE.Texture())
+    motion.reduced = true
+    const stage = new WorksPlaneStage()
+    await stage.init()
+    const camera = new THREE.PerspectiveCamera()
+    stage.setCamera(camera)
+    stage.setActive(true, 0)
+    stage.update(1 / 60)
+
+    const cards = (stage as unknown as { cards: THREE.Object3D[] }).cards
+    const reveal = vi.spyOn(cards[0] as unknown as { setReveal: (value: number) => void }, 'setReveal')
+    stage.setCamera(camera)
+    stage.update(1 / 60)
+
+    expect(reveal).not.toHaveBeenCalled()
+    stage.dispose()
+  })
+
   it('updates the frame snapshot from the live policy and unsubscribes on dispose', () => {
     const stage = new WorksPlaneStage()
     const internals = stage as unknown as { _reducedMotion: boolean }

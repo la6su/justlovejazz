@@ -247,6 +247,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
       on-demand mode without manual delayed `advance()`, and its loop is
       stopped before the RenderScheduler bridge can yield or unmount.
 
+- [x] **Keep Works camera handoff idempotent** — repeated per-frame binding of
+      the same camera no longer dirties the settled route layout; a real camera
+      replacement still invalidates the card reconciliation pass.
+
 - [x] **Cache CinematicNav scroll policy** — programmatic section navigation
       reads the owner-local reduced-motion snapshot instead of re-querying the
       media preference on every scroll request.

@@ -199,6 +199,7 @@ export class WorksPlaneStage extends THREE.Group {
 
   setCamera(camera: THREE.Camera): void {
     if (this._disposed) return
+    if (this._camera === camera) return
     this._camera = camera
     this._layoutDirty = true
   }

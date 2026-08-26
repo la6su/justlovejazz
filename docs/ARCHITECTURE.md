@@ -231,6 +231,10 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `WorksPlaneStage` uses the same settled-layout contract with camera world-pose
   tracking: route cards reconcile once, then remain untouched until camera,
   viewport, section, reduced-motion or card animation state invalidates the pass.
+- `Experience` may hand the shared camera to `WorksPlaneStage` on every frame;
+  the stage treats the same camera identity as an idempotent binding, so that
+  handoff does not re-dirty a settled layout. A real camera replacement still
+  invalidates reconciliation.
 - `DrawTrail` has a settled fast path keyed by pointer and camera world matrix;
   it skips ray/unprojection and uniform work when the trail is fully faded, but
   remains wakeable by first use, pointer movement, camera movement and motion
