@@ -295,6 +295,7 @@ const ALL_REASONS: FrameReason[] = [
   'nav',
   'cursor',
   'resize',
+  'motion-preference',
   'visibility-resume',
   'recovery',
 ]

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- `Experience` now observes live `prefers-reduced-motion` changes instead of
+  caching the preference only at startup. Enabling reduction cancels ambient
+  breathing and settles the scheduler; disabling it raises one typed catch-up
+  demand. The listener is removed during teardown.
+
 - Contact Cyprus lazy initialization now has a single request-owned prewarm
   continuation; stale entry-route promises cannot prewarm a newer stage or
   schedule an unnecessary render frame.

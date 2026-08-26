@@ -12,6 +12,10 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Restore tone mapping after TSL graph build failure** — the shared
   renderer state is restored even when `TSLRenderPipeline` construction throws.
 
+- [x] **Synchronize reduced-motion changes** — Experience now observes the
+  live media preference, settles ambient work when reduction is enabled and
+  raises one typed demand when normal motion is restored.
+
 - [x] **Align WebGLBackend quality state** — direct-render fallback no longer
   advertises or updates the unused TSL post graph; native WebGPU retains the
   crossfade and post parameter path.

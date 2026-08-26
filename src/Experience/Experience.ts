@@ -20,7 +20,7 @@ import { SceneCoordinator } from './SceneCoordinator'
 import type { FinalMode } from '../core/rendererBackend'
 // worldDNA.ts removed — TSL node system never attached (attachWorldDNA never
 // called). updateWorldDNAAudio set uniforms nobody read. All dead.
-import { prefersReducedMotion } from '../core/motionPolicy'
+import { observeReducedMotion, prefersReducedMotion } from '../core/motionPolicy'
 import { WORLD_SLOT_COUNT, worldSlotIndex } from '../core/worldSlots'
 import { DEFAULT_CAMERA_SMOOTHING } from '../core/WorldConfig'
 import {
@@ -238,7 +238,8 @@ export class Experience {
   // raises demand + fires a typed 'breath' invalidation on the scheduler.
   private _breathTimer: ReturnType<typeof setTimeout> | null = null
   private static readonly AMBIENT_BREATH_INTERVAL = 2.5 // seconds between idle refresh frames
-  private _reducedMotion = false // cached prefers-reduced-motion (updated in init)
+  private _reducedMotion = false // synchronized with prefers-reduced-motion (updated in init)
+  private _reducedMotionUnsub: (() => void) | null = null
   // Phase 7 (ADR 0004): the single animation-loop driver. Experience is the
   // only setAnimationLoop caller (through the Renderer owner boundary); the
   // scheduler starts the loop on invalidation and stops it after the settled
@@ -366,6 +367,17 @@ export class Experience {
 
   private isLifecycleCurrent(token: number): boolean {
     return !this._destroyed && token === this._lifecycleGeneration
+  }
+
+  private _handleReducedMotionChange(reduced: boolean): void {
+    if (reduced === this._reducedMotion || this._destroyed) return
+    this._reducedMotion = reduced
+    if (reduced) {
+      this._cancelBreath()
+      this._scheduler.settleNow()
+    } else {
+      this._raiseRenderDemand('motion-preference')
+    }
   }
 
   private async buildWorld(token: number): Promise<void> {
@@ -846,6 +858,10 @@ export class Experience {
     // browser's vertical scrolling and snap behavior. ProjectOverlay locks
     // body overflow directly while the fullscreen overlay is open.
     this._reducedMotion = prefersReducedMotion()
+    this._reducedMotionUnsub?.()
+    this._reducedMotionUnsub = observeReducedMotion((reduced) =>
+      this._handleReducedMotionChange(reduced),
+    )
     this.contentReveal = new ContentReveal(() => this.currentPage())
     this.cursor = new Cursor(this.sfx)
     // Phase 7: the cursor's own pointer/hover handlers are loop wake sources
@@ -1484,6 +1500,8 @@ export class Experience {
     // setAnimationLoop callback, the visibility listener and any pending
     // invalidation, so no frame fires after dispose().
     this._scheduler.destroy()
+    this._reducedMotionUnsub?.()
+    this._reducedMotionUnsub = null
     this._cancelBreath()
     // Cancel pending rAF for mouse trail (prevents fire after destroy)
     this._mouseTrailRafPending = false

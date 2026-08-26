@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { prefersReducedMotion } from '../core/motionPolicy'
+import { observeReducedMotion, prefersReducedMotion } from '../core/motionPolicy'
 
 // motionPolicy is the typed motion preference port (Phase 3): small but
 // critical — it gates Lenis smoothing, gallery transitions, camera shake and
@@ -41,5 +41,28 @@ describe('motionPolicy', () => {
       // Here we just confirm the function does not throw on edge cases.
       expect(() => prefersReducedMotion()).not.toThrow()
     })
+  })
+
+  it('observes preference changes and releases its media-query listener', () => {
+    const listeners = new Map<string, EventListener>()
+    const remove = vi.fn((type: string) => listeners.delete(type))
+    const media = {
+      matches: false,
+      addEventListener: vi.fn((type: string, listener: EventListener) => {
+        listeners.set(type, listener)
+      }),
+      removeEventListener: remove,
+    } as unknown as MediaQueryList
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue(media))
+    const changed = vi.fn()
+
+    const dispose = observeReducedMotion(changed)
+    const listener = listeners.get('change')
+    listener?.({ matches: true } as MediaQueryListEvent)
+
+    expect(changed).toHaveBeenCalledWith(true)
+    dispose()
+    expect(remove).toHaveBeenCalledWith('change', listener)
+    vi.unstubAllGlobals()
   })
 })

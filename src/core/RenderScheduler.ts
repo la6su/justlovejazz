@@ -24,6 +24,7 @@ export type FrameReason =
   | 'nav'
   | 'cursor'
   | 'resize'
+  | 'motion-preference'
   | 'visibility-resume'
   | 'recovery'
 

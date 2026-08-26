@@ -62,6 +62,10 @@ under `src/builder/`; the public builds do not import the editor graph.
 - Reduced-motion branches synchronously reach the authored final state and
   release render activity; entry title/eyebrow observers do not allocate RAF
   loops or safety timers in reduced-motion mode.
+- `Experience` observes the live reduced-motion media query for the lifetime
+  of the runtime. Enabling it cancels ambient breathing and settles the single
+  render scheduler; disabling it raises one `motion-preference` invalidation.
+  Teardown removes the observer before releasing the runtime owners.
 - Route resources, listeners, timers, async work and GPU allocations have one
   owner and one terminal cleanup path.
 - `RouteTransition` owns both cover and reveal timers. Cancellation clears the
