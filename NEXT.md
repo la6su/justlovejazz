@@ -90,6 +90,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Keep Camera motion refresh-rate invariant** — the update step no longer
   floors `dt` to 120 Hz, so shake and organic motion preserve wall-clock timing
   on 144/240 Hz displays.
+- [x] **Keep carousel momentum displacement refresh-rate invariant** — the
+  60 Hz-authored fling velocity now scales both decay and travel distance by
+  elapsed frame time.
 - [x] **Dispose route WorkCards on owner teardown** — `useJlzPage` now releases
   the module-level card/grid registry on full unmount as well as before route
   replacement, with lifecycle coverage for both paths.

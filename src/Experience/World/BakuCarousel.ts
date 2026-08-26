@@ -361,10 +361,16 @@ export class BakuCarousel extends THREE.Group {
 
     // Phase 4: momentum — apply velocity after drag release
     if (!this.isDown && Math.abs(this.velocity) > MOMENTUM_THRESHOLD) {
-      this.scroll.target += this.velocity
+      // Velocity is authored in 60 Hz frame units. Integrate the decaying
+      // velocity over the elapsed frame span so the fling travels the same
+      // distance at 60/120/144 Hz (not merely the same decay curve).
+      const frameSpan = Math.max(0, dt) * 60
+      const decay = Math.pow(MOMENTUM_DECAY, frameSpan)
+      const displacementScale = (1 - decay) / (1 - MOMENTUM_DECAY)
+      this.scroll.target += this.velocity * displacementScale
       // Keep momentum duration stable across refresh rates. The authored
       // factor is calibrated for 60 Hz, so scale its exponent by elapsed time.
-      this.velocity *= Math.pow(MOMENTUM_DECAY, Math.max(0, dt) * 60)
+      this.velocity *= decay
       if (Math.abs(this.velocity) < MOMENTUM_THRESHOLD) {
         this.velocity = 0
         this.scheduleSnap(120) // snap after momentum settles

@@ -97,6 +97,22 @@ describe('BakuCarousel async lifecycle', () => {
     expect(velocityAt120Hz).toBeCloseTo(velocityAt60Hz, 12)
   })
 
+  it('keeps momentum displacement stable across refresh rates', () => {
+    const at60Hz = new BakuCarousel()
+    Object.assign(at60Hz as unknown as Record<string, unknown>, { velocity: 0.4 })
+    for (let i = 0; i < 10; i += 1) at60Hz.update(1 / 60)
+
+    const at120Hz = new BakuCarousel()
+    Object.assign(at120Hz as unknown as Record<string, unknown>, { velocity: 0.4 })
+    for (let i = 0; i < 20; i += 1) at120Hz.update(1 / 120)
+
+    const targetAt60Hz = (at60Hz as unknown as { scroll: { target: number } }).scroll.target
+    const targetAt120Hz = (at120Hz as unknown as { scroll: { target: number } }).scroll.target
+    expect(targetAt120Hz).toBeCloseTo(targetAt60Hz, 8)
+    at60Hz.dispose()
+    at120Hz.dispose()
+  })
+
   it('clears callback, camera, input owners and motion state on dispose', () => {
     const carousel = new BakuCarousel()
     carousel.setCamera(new THREE.PerspectiveCamera())
