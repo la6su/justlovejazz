@@ -219,6 +219,11 @@ Do not reopen completed migration phases. Current runtime contracts are in
       uniforms now clear at the GPU owner boundary, so a paused coordinator
       cannot leave a stale trail activity flag keeping the loop alive.
 
+- [x] **Snapshot SceneCoordinator route owners per transform pass** — the
+      six-group visibility loop now reuses one route page and carousel owner
+      read, preserving the live getter boundary while removing repeated reads
+      from every group on a demand frame.
+
 - [x] **Pool SceneCoordinator transform results** — per-frame camera/world
       metadata now reuses one owner-scoped result graph.
 

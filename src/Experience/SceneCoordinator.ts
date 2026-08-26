@@ -412,6 +412,12 @@ export class SceneCoordinator {
     // Story progress contract: non-finite settles to 0, clamp to [0, 1].
     scrollValue = clampStoryProgress(scrollValue)
     if (this.sections.length === 0) return this.defaultResult()
+    // Route and carousel ownership are stable for this synchronous transform
+    // pass. Snapshot them once so the six-group visibility loop cannot repeat
+    // owner lookups on every group while preserving the live getter boundary
+    // across subsequent route transitions.
+    const page = this.page()
+    const carouselOwner = this.owners.carousel()
 
     // ── Find from/to indices from range config
     // PERF-1 fix: use cached ranges (built once in init) instead of map() every frame
@@ -495,9 +501,8 @@ export class SceneCoordinator {
     // same section index, so this must run outside the arrival-only branch.
     const trail = this.owners.drawTrail()
     if (trail) {
-      const carousel = this.owners.carousel()
-      const isStandaloneWorks = this.page() === 'works'
-      trail.object.visible = isStandaloneWorks || (activeIndex === 3 && !carousel?.isActive)
+      const isStandaloneWorks = page === 'works'
+      trail.object.visible = isStandaloneWorks || (activeIndex === 3 && !carouselOwner?.isActive)
     }
 
     // ── BG sphere section switch (junni pattern: lerp BG color continuously)
@@ -510,7 +515,9 @@ export class SceneCoordinator {
     // transition. NON-DESTRUCTIVE: cache baseOpacity in userData, apply fade
     // multiplicatively. Keep factory opacity values as the base and apply the
     // transition fade multiplicatively.
-    this.sceneGroups.forEach((g, i) => {
+    const groups = this.sceneGroups
+    for (let i = 0; i < groups.length; i++) {
+      const g = groups[i]!
       const isFrom = i === fromIndex
       const isTo = i === toIndex
       let fade = 0
@@ -521,9 +528,9 @@ export class SceneCoordinator {
       const shouldShow = isFrom || isTo
       // The carousel is only on the Works group (index 3) — read it from the
       // Experience-owned reference.
-      const carousel = i === 3 ? this.owners.carousel() : undefined
+      const carousel = i === 3 ? carouselOwner : undefined
       const cfg = this.configs[i]
-      const showCarousel = this.page() === 'home' && cfg?.scene?.objects?.bakuCarousel === true
+      const showCarousel = page === 'home' && cfg?.scene?.objects?.bakuCarousel === true
 
       if (shouldShow) {
         g.visible = fade > 0.001
@@ -582,7 +589,7 @@ export class SceneCoordinator {
         carousel?.setActive(false)
         if (carousel) carousel.visible = false
       }
-    })
+    }
 
     const fromSec = this.sections[fromIndex]
     const toSec = this.sections[toIndex] ?? this.sections[fromIndex]

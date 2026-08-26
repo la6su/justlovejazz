@@ -141,6 +141,10 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `DrawTrail.setReducedMotion(true)` clears ribbon energy and motion uniforms at
   the owner boundary; stopping trail updates cannot strand `isAnimating` or
   demand after a live preference change.
+- `SceneCoordinator.updateTransform()` snapshots the current route page and
+  carousel owner once per synchronous pass before applying six-group visibility;
+  the getter boundary remains live across route transitions without repeating
+  owner reads inside the per-group frame path.
 - `WorksPlaneStage` snapshots reduced-motion state once per media-query change;
   its per-card frame path no longer calls `matchMedia()` for every card. The
   observer is released with the stage, preserving the lazy route owner's

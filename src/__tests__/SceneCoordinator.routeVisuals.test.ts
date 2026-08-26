@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { SceneCoordinator, type SceneCoordinatorOwners } from '../Experience/SceneCoordinator'
 import { SplashCube } from '../Experience/World/SplashCube'
+import type { SectionGroups } from '../Experience/Scene/SectionGroups'
 import { getLabExperiment, labExperiments } from '../Experience/Lab/manifest'
 import type { PageId } from '../sections/_shared/constants'
 
@@ -91,5 +92,33 @@ describe('SceneCoordinator route visuals (Phase 8 slice 10: the gate left `World
     expect(coordinator.getConfig('content_works_0')).toBeDefined()
     expect(coordinator.getConfig('sec_intro')).toBeUndefined()
     coordinator.dispose()
+  })
+
+  it('snapshots route and carousel owners once per transform pass', async () => {
+    const pageReader = vi.fn(() => page)
+    const carouselReader = vi.fn(() => null)
+    const groups = Array.from({ length: 6 }, () => new THREE.Group())
+    const owners: SceneCoordinatorOwners = {
+      ground: () => null,
+      sectionGroups: () => ({ groups }) as unknown as SectionGroups,
+      envSphere: () => null,
+      baku: () => null,
+      particleBurst: () => null,
+      drawTrail: () => null,
+      carousel: carouselReader,
+      worksPlaneStage: () => null,
+      contactCyprusStage: () => null,
+      labGamepad: () => null,
+    }
+    const isolated = new SceneCoordinator(new THREE.Scene(), owners, pageReader)
+    await isolated.init()
+    pageReader.mockClear()
+    carouselReader.mockClear()
+
+    isolated.updateTransform(0.2)
+
+    expect(pageReader).toHaveBeenCalledOnce()
+    expect(carouselReader).toHaveBeenCalledOnce()
+    isolated.dispose()
   })
 })
