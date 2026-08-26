@@ -71,6 +71,8 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `RouteTransition` owns its temporary overlay and timers; router error
   handling disposes that owner so failed navigation cannot retain detached DOM
   or pending callbacks.
+- `FullscreenOverlay` only reloads its video element when replacing an actual
+  film source; image-only Works handoffs do not trigger empty media resets.
 - `Experience` observes the live reduced-motion media query for the lifetime
   of the runtime. Enabling it cancels ambient breathing and settles the single
   render scheduler; disabling it raises one `motion-preference` invalidation.

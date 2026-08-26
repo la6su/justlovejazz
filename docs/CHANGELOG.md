@@ -8,6 +8,8 @@
   reduced-motion changes without altering semantic section state.
 - Route-transition teardown now removes its temporary overlay and timers on
   router errors, closing a short-lived DOM-owner leak.
+- Image-only FullscreenOverlay preloads no longer reinitialize a source-less
+  video element, avoiding redundant media events and work.
 
 - Renderer device-loss fallback now clears the retired software-adapter
   replacement before forced-WebGL recreation; a failed second initialization

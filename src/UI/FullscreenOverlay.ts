@@ -476,9 +476,12 @@ export class FullscreenOverlay {
       this.video.style.display = ''
     } else {
       // Works image mode never inherits or autoplays the showreel source.
+      const hadVideoSource = Boolean(source?.getAttribute('src'))
       if (source) {
         source.removeAttribute('src')
-        this.video.load()
+        // Avoid reinitializing an already source-less video element for every
+        // image preload/open. A load is only needed to abort a prior film.
+        if (hadVideoSource) this.video.load()
       }
       this.controlsEl.style.display = 'none'
       this.video.style.display = 'none'

@@ -104,6 +104,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
   its overlay and timers through an explicit lifecycle boundary; router errors
   use that boundary instead of retaining stale DOM work.
 
+- [x] **Avoid redundant overlay media reloads** — image-only FullscreenOverlay
+  opens and preloads no longer call `video.load()` when no film source exists.
+
 - [x] **Align WebGLBackend quality state** — direct-render fallback no longer
   advertises or updates the unused TSL post graph; native WebGPU retains the
   crossfade and post parameter path.

@@ -3428,6 +3428,18 @@ Acceptance: `routeTransition.lifecycle.test.ts` verifies overlay removal and a
 zero pending-timer count after disposal. Rollback: remove the disposal call and
 restore the prior error cancellation behavior; route semantics remain intact.
 
+#### FullscreenOverlay media reload guard — 2026-08-26
+
+The shared overlay now calls `HTMLMediaElement.load()` in image mode only when
+it is actually clearing a previous film source. Empty image preloads and
+repeated Works opens therefore avoid spurious media reset events while the
+single overlay owner and its disposal contract remain unchanged.
+
+Acceptance: `FullscreenOverlay.lifecycle.test.ts` verifies that a source-less
+image preload does not call `load()`, while existing film replacement behavior
+remains covered. Rollback: restore the unconditional image-mode load; no Vue,
+Tres or renderer boundary changes are required.
+
 ### Removal ledger
 
 | Legacy element                           | Remove after                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Status |

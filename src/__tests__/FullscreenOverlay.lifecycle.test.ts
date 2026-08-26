@@ -196,4 +196,17 @@ describe('FullscreenOverlay close ownership', () => {
       vi.useRealTimers()
     }
   })
+
+  it('does not reload a source-less video during image preloads', () => {
+    const load = vi.spyOn(HTMLMediaElement.prototype, 'load').mockImplementation(() => {})
+    const overlay = new FullscreenOverlay() as unknown as OverlayInternals
+
+    try {
+      overlay._applyOptions({ mode: 'image', poster: '/assets/images/project.webp' })
+      expect(load).not.toHaveBeenCalled()
+    } finally {
+      overlay.dispose()
+      load.mockRestore()
+    }
+  })
 })
