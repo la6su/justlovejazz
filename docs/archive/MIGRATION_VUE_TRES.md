@@ -3842,6 +3842,18 @@ Acceptance: `CinematicLights.motion.test.ts` covers repeated disposal and all
 late public calls; focused type-check/lint pass. Rollback: revert this bounded
 light-owner lifecycle slice if section lighting or motion parity regresses.
 
+### JunniParticles terminal teardown — 2026-08-26
+
+`JunniParticles` now rejects late timeline updates, blending changes and
+auto-reduce count rebuilds after releasing its instanced geometry and TSL
+material. Disposal is idempotent and detaches the particle owner from the
+scene; the shader graph and count policy while mounted are unchanged.
+
+Acceptance: `JunniParticles.lifecycle.test.ts` covers repeated disposal and
+all late public GPU mutations; focused type-check/lint pass. Rollback: revert
+this bounded particle-owner lifecycle slice if count reduction or TSL motion
+parity regresses.
+
 ## Definition of done
 
 The migration is done when the target topology is the only production path;

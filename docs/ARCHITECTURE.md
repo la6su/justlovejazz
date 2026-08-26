@@ -169,6 +169,9 @@ under `src/builder/`; the public builds do not import the editor graph.
 - `CinematicLights` has a terminal, idempotent teardown boundary. Once its
   detached lights are disposed, late section, preference and frame calls are
   inert and cannot mutate released scene resources.
+- `JunniParticles` has a terminal, idempotent teardown boundary. After its
+  instanced geometry and TSL material are released, late timeline, blending
+  and count-reduction calls cannot rebuild or mutate disposed GPU state.
 - `Cursor.drawCircle()` reuses one owner-scoped ring-point buffer and color
   view. The active pointer path remains allocation-free while theme refreshes
   mutate only the cached values.

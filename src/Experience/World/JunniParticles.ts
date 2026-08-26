@@ -80,6 +80,7 @@ type TSLVec2 = any
 type TSLVec3 = any
 
 export class JunniParticles extends THREE.InstancedMesh {
+  private _disposed = false
   private _time = 0
   private readonly _baseCount: number
   private readonly _range: THREE.Vector3
@@ -285,6 +286,7 @@ export class JunniParticles extends THREE.InstancedMesh {
 
   /** Advance the particle animation. Call each frame while rendering. */
   update(dt: number): void {
+    if (this._disposed) return
     this._time += dt
     ;(this._uTime as UniformVal).value = this._time
   }
@@ -294,6 +296,7 @@ export class JunniParticles extends THREE.InstancedMesh {
    *  Normal: light theme (alpha-over — particles visible on white bg).
    *  Called by Experience on jlz:theme-applied. */
   setBlending(additive: boolean): void {
+    if (this._disposed) return
     const mat = this.material as THREE.Material & { blending: number }
     mat.blending = additive ? THREE.AdditiveBlending : THREE.NormalBlending
   }
@@ -307,6 +310,7 @@ export class JunniParticles extends THREE.InstancedMesh {
    * that can re-trigger low FPS. Call setCount(baseCount, false) to force-restore.
    */
   setCount(newCount: number, markReduced = true): void {
+    if (this._disposed) return
     if (newCount === this.count) return
     if (newCount < 1) newCount = 1
 
@@ -348,7 +352,10 @@ export class JunniParticles extends THREE.InstancedMesh {
   }
 
   dispose(): void {
+    if (this._disposed) return
+    this._disposed = true
     this.geometry.dispose()
     ;(this.material as THREE.Material).dispose()
+    this.removeFromParent()
   }
 }
