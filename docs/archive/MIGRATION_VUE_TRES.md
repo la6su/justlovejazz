@@ -3600,6 +3600,16 @@ Acceptance: `DrawTrail.lifecycle.test.ts` verifies scratch identity remains
 stable across repeated updates. Rollback: revert this bounded performance slice
 if ribbon geometry regresses.
 
+### Works layout scratch reuse — 2026-08-26
+
+`WorksPlaneStage.layoutInView()` now mutates one owner-scoped `CaseLayout`
+scratch object instead of allocating a viewport result for each visible card on
+every frame.
+
+Acceptance: `WorksPlaneStage.lifecycle.test.ts` verifies stable layout identity
+across repeated calculations. Rollback: revert this bounded performance slice
+if responsive placement regresses.
+
 ## Definition of done
 
 The migration is done when the target topology is the only production path;

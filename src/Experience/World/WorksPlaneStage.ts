@@ -58,6 +58,9 @@ export class WorksPlaneStage extends THREE.Group {
   private _tmpCameraPosition = new THREE.Vector3()
   private _tmpTargetPosition = new THREE.Vector3()
   private _tmpTargetRotation = new THREE.Euler()
+  // Reused per-frame layout result; visible cards are laid out every frame and
+  // must not allocate a fresh object for each viewport calculation.
+  private _tmpScaledLayout: CaseLayout = { x: 0, y: 0, z: 0, scale: 0 }
 
   constructor() {
     super()
@@ -291,12 +294,13 @@ export class WorksPlaneStage extends THREE.Group {
     // Portrait cards stay width-led with a deliberate gutter; the semantic
     // UIkit grid uses the same stacked rhythm below the medium breakpoint.
     const heightScale = (viewHeight * layout.scale) / (9 / 16)
-    return {
-      x: viewWidth * layout.x,
-      y: viewHeight * layout.y,
-      z: layout.z,
-      scale: this._stackedLayout ? Math.min(widthScale, heightScale) : widthScale,
-    }
+    this._tmpScaledLayout.x = viewWidth * layout.x
+    this._tmpScaledLayout.y = viewHeight * layout.y
+    this._tmpScaledLayout.z = layout.z
+    this._tmpScaledLayout.scale = this._stackedLayout
+      ? Math.min(widthScale, heightScale)
+      : widthScale
+    return this._tmpScaledLayout
   }
 
   dispose(): void {

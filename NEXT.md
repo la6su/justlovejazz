@@ -150,6 +150,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Remove DrawTrail frame allocations** — camera basis scratch vectors are
   now reused across ribbon rebuilds instead of allocated per render frame.
 
+- [x] **Remove Works layout frame allocations** — WorksPlaneStage reuses its
+  scaled viewport layout scratch object for visible cards.
+
 - [x] **Align WebGLBackend quality state** — direct-render fallback no longer
   advertises or updates the unused TSL post graph; native WebGPU retains the
   crossfade and post parameter path.

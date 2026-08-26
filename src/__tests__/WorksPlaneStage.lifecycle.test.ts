@@ -98,4 +98,18 @@ describe('WorksPlaneStage async lifecycle', () => {
     expect(stage.isAnimating).toBe(false)
     stage.dispose()
   })
+
+  it('reuses the scaled layout scratch object across viewport calculations', () => {
+    const stage = new WorksPlaneStage()
+    stage.setCamera(new THREE.PerspectiveCamera())
+    const internals = stage as unknown as {
+      layoutInView: (layout: { x: number; y: number; z: number; scale: number }) => unknown
+    }
+    const layout = { x: 0.1, y: 0.2, z: -3, scale: 0.5 }
+    const first = internals.layoutInView(layout)
+    const second = internals.layoutInView(layout)
+
+    expect(second).toBe(first)
+    stage.dispose()
+  })
 })

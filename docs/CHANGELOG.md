@@ -36,6 +36,8 @@
   wobble pulse and scheduler wake contract.
 - DrawTrail now reuses camera-basis scratch vectors, removing three per-frame
   allocations from the ribbon rebuild path.
+- WorksPlaneStage now reuses its scaled viewport layout scratch object instead
+  of allocating one per visible card on every frame.
 
 - Renderer device-loss fallback now clears the retired software-adapter
   replacement before forced-WebGL recreation; a failed second initialization

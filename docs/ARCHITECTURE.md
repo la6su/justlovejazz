@@ -147,6 +147,8 @@ under `src/builder/`; the public builds do not import the editor graph.
   stage remains the sole owner of card pulse state and the shared loop is woken.
 - DrawTrail reuses camera-basis scratch vectors during ribbon rebuilds; its
   render-loop path does not allocate transient basis objects per frame.
+- WorksPlaneStage reuses its scaled viewport layout scratch object while
+  updating visible cards, keeping per-frame layout allocation-free.
 - Direct scene owners such as `EnvSphere` and `SplashCube` detach themselves
   before disposing geometry/material resources; a destroyed owner cannot
   remain as a child of the Tres-owned scene with invalid GPU state.
