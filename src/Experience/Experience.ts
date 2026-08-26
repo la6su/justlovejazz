@@ -248,6 +248,8 @@ export class Experience {
   // Last per-frame activity snapshot — read by the settle decision AFTER the
   // frame, so a same-frame raise (section change, breath fire, …) is honored.
   private _lastActivity: RenderActivity = { ...NO_ACTIVITY }
+  /** Reused per-frame activity snapshot; predicates consume it synchronously. */
+  private _activitySnapshot: RenderActivity = { ...NO_ACTIVITY }
   // Render-budget FPS tracker — rolling window of frame times. If FPS < 30
   // sustained over LOW_FPS_WINDOW consecutive frames, _lowFps flips true.
   // Read by DevPanel (low fps ⚠ indicator). Future: auto-reduce particle count.
@@ -1277,20 +1279,19 @@ export class Experience {
     // The per-frame activity snapshot — the demand decision below is the
     // pure renderDemand contract (single source of the 12-flag OR /
     // 9-flag breath-idle sets, unit-locked against the legacy logic).
-    const activity: RenderActivity = {
-      nav: navActive,
-      carousel: carouselActive,
-      worksPlane: worksPlaneActive,
-      contactCyprus: contactCyprusActive,
-      drawTrail: drawTrailActive,
-      opener: openerActive,
-      burst: burstActive,
-      camShaking,
-      cubeRotating,
-      camPulsing,
-      particles: particlesActive,
-      ambientScene: ambientSceneActive,
-    }
+    const activity = this._activitySnapshot
+    activity.nav = navActive
+    activity.carousel = carouselActive
+    activity.worksPlane = worksPlaneActive
+    activity.contactCyprus = contactCyprusActive
+    activity.drawTrail = drawTrailActive
+    activity.opener = openerActive
+    activity.burst = burstActive
+    activity.camShaking = camShaking
+    activity.cubeRotating = cubeRotating
+    activity.camPulsing = camPulsing
+    activity.particles = particlesActive
+    activity.ambientScene = ambientSceneActive
 
     if (anyActivity(activity)) {
       this._needsRender = true

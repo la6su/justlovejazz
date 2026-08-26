@@ -151,6 +151,8 @@ under `src/builder/`; the public builds do not import the editor graph.
   updating visible cards, keeping per-frame layout allocation-free.
 - SceneCoordinator returns one synchronously-consumed pooled transform result;
   camera/world metadata does not allocate a nested object graph per frame.
+- Experience reuses one `RenderActivity` snapshot for demand predicates; the
+  scheduler-facing activity flags do not allocate a new object per frame.
 - Direct scene owners such as `EnvSphere` and `SplashCube` detach themselves
   before disposing geometry/material resources; a destroyed owner cannot
   remain as a child of the Tres-owned scene with invalid GPU state.

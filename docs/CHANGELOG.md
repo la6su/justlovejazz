@@ -40,6 +40,8 @@
   of allocating one per visible card on every frame.
 - SceneCoordinator now pools its per-frame transform result and nested metadata,
   removing a recurring object graph allocation from scroll/render updates.
+- Experience now pools its per-frame `RenderActivity` snapshot, removing a
+  recurring allocation from demand/settle evaluation.
 
 - Renderer device-loss fallback now clears the retired software-adapter
   replacement before forced-WebGL recreation; a failed second initialization

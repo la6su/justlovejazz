@@ -156,6 +156,9 @@ Do not reopen completed migration phases. Current runtime contracts are in
 - [x] **Pool SceneCoordinator transform results** — per-frame camera/world
   metadata now reuses one owner-scoped result graph.
 
+- [x] **Pool Experience activity snapshots** — render-demand flags now reuse
+  one owner-scoped snapshot instead of allocating per frame.
+
 - [x] **Align WebGLBackend quality state** — direct-render fallback no longer
   advertises or updates the unused TSL post graph; native WebGPU retains the
   crossfade and post parameter path.

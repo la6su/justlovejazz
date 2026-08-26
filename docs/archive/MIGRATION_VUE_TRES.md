@@ -3621,6 +3621,15 @@ Acceptance: full unit/E2E and budget gates pass; rollback: revert this bounded
 coordinator performance slice if transform consumers retain results across
 frames.
 
+### Experience activity snapshot pooling — 2026-08-26
+
+`Experience.update()` now mutates one owner-scoped `RenderActivity` snapshot
+before running the pure demand predicates. The existing evaluation order and
+flag set are unchanged; only transient object allocation is removed.
+
+Acceptance: full unit/E2E and budget gates pass. Rollback: revert this bounded
+render-demand performance slice if a consumer requires historical snapshots.
+
 ## Definition of done
 
 The migration is done when the target topology is the only production path;
