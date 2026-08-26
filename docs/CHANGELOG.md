@@ -87,6 +87,9 @@
 - DrawTrail teardown now clears its disposed ribbon and activity state, avoiding
   stale persistent owners retaining the released cursor mesh.
 
+- Published builder styles no longer import UIkit `card.less` twice; the
+  application baseline remains the single owner of that component CSS.
+
 - `useJlzPage` now disposes the module-level `WorkCards` registry during route
   owner teardown as well as before route replacement, releasing delegated grid
   listeners and pending card timers on full unmount.

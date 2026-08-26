@@ -4,6 +4,9 @@ import type { BuilderDocument, BuilderNode } from './schema'
 const BASE_UIKIT_COMPONENTS = new Set([
   'base',
   'button',
+  // The generated application baseline is imported by `_import.less`; card
+  // is intentionally owned there so published pages do not emit it twice.
+  'card',
   'close',
   'container',
   'flex',

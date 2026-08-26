@@ -56,7 +56,7 @@ describe('Page Builder document', () => {
   it('emits only optional UIkit components missing from the app baseline', () => {
     expect(getBuilderUIKitComponents(DEFAULT_BUILDER_DOCUMENT)).toContain('card')
     const less = generateBuilderComponentLess(DEFAULT_BUILDER_DOCUMENT)
-    expect(less).toContain('/card.less')
+    expect(less).not.toContain('/card.less')
     expect(less).not.toContain('/grid.less')
     expect(less).not.toContain('/button.less')
   })

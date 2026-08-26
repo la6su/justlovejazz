@@ -262,6 +262,9 @@ according to their current measured policy.
   stale route owners cannot retain disposed mesh trees.
 - DrawTrail clears its ribbon child and activity state during disposal, so the
   persistent scene owner cannot retain a disposed cursor mesh.
+- The builder compiler treats `card` as an application-baseline UIkit component;
+  published page Less emits only component deltas and cannot duplicate the card
+  import from `components.generated.less`.
 - Contact section activation captures the same Cyprus request generation before
   awaiting lazy initialization; a stale route callback cannot call `setActive`
   or raise render demand on a newer stage.
